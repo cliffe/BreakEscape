@@ -31,17 +31,36 @@ The gate (user, 2026-11-13): no production deploy until the ongoing access, netw
 - Walkthroughs (build/rel-walkthroughs 98e12b41a): sis01 and sis02 TESTING_WALKTHROUGH.md rechecked against the scenario at da5f53f34 (about 55 and 70 corrections). From that pass: sis02's architecture diagram called HMI-OPS-01 password-protected though it is unlocked, so the claim was removed (text only, not voiced). Withdrawn: the drug library minigame's "speak to David" text is only a JS fallback; sis01 supplies its own source messages, which point to the binder. Left as intended: sis02's Confirm SIS Tamper is not gated on the certification document (only Compare is).
 - Walkthrough review (independent, Sonnet): about 115 statements sampled across both files, 0 wrong facts; 1 M, 4 m, all fixed in 6860ece41. M: sis02's ESD steps came after the workshop, but the hydrogen timers start at Helen's briefing (evacuation at 43 minutes skips the ESD task), so a note now sends testers to an ESD station straight after the historian. m: sis01 button labels are matched by their leading words (the game's labels contain dash or arrow characters); three spoilers the refresh added now point to where the player finds them; the Ravi aim gate (assess_ward first) is stated; a stale ERB comment about meet_ravi was corrected.
 
-## To do before the release playtests
+## Held bark overlap (engine, user's yes 2026-11-13)
 
-- The release m01 run takes LAUNCH at the final choice, so both branches have been played once.
-- Refresh TESTING_WALKTHROUGH.md for sis01 (monitoring display buttons, pump modal wording, network map toggles) and sis02 (HMI-OPS-01 not locked, the FLAG SESSION step), so the release testers don't report drift.
-- Harness: interact() clicks an object's top-left origin, which can land on a neighbour's hit box (sis02 HMI-OPS-01 vs the status board); moveToNear can click an object while walking (sis01 trolley PC). For the tools backlog.
-- Shared minor across all three missions: after a reload the player respawns at the start point. Ask the UI session whether it is known.
+- Found by train 31's live check (game 3212): with the network map open, Ravi's network_isolated bark was held, and after release his voice ran into Helen's. Cause: _renderBark's promise settled when a voice started, so releaseHeldBarks never waited for a voice to end, and the drain cleared while the last held voice still played.
+- Fix (build/bark-hold-drain): the release waits for the later of voice end + 300 ms and 2.5 s after the previous bark, including after the last spoken bark, with a 30 s cap per voice. Barks that were never held are unchanged. Two review rounds (opus55): R1 0/0/5 plus 2 nits, all fixed (95648cb96); R2 ready, 0/0/0 plus 4 nits. bark-release-policy 30/30; 9 of its tests fail on the old code.
+- Live proof: held runs 3258, 3262, 3265 and 3273 have every voice at least 0.3 s after the previous one (3273: gaps 475, 369, 382 ms). In the unheld run 3274, Helen started 258 ms after Ravi, because a voice starts about 0.2 s after its bark shows. So Helen, Sarah and David move 0.3 s later (fd1f383b2), scenario only.
+- Follow-up, not built: a clip whose duration reads NaN becomes null (tts-manager.js:101, npc-barks.js:152), so a playing voice counts as silent and nothing waits for it. Older than this fix; not seen in any run.
+
+## Release playtests on 48b755b81 (train 34, main tip)
+
+| Mission | Game | Result | Findings |
+|---|---|---|---|
+| sis01_healthcare | 3283 | Passed: ending, credits, 17/18 tasks (the open one is optional warn_sarah), no "Not Yet" toast | 0 B, 0 M. m: network_isolated gaps 2860, 261 and 342 ms; the 261 ms gap is under the 300 ms target, accepted as host load (the 0.3 s shift gives headroom on a normal machine). Bed 4 patrol move noted |
+| sis02_energy | 3284 | Passed: ending, credits, 19/19 tasks, score 100 | 0 B, 0 M. m: F1, F2, P2-1, P2-2 (see the run report). F3 withdrawn: the globals it named are declared "" defaults |
+| m01_first_contact | 3285 (two parts) | Passed: LAUNCH branch, debrief, credits, 29/29 tasks, score 100, 4 flags (stand-ins from FLAGS_XML). Both final choices have now been played once (ABORT in 3137) | 0 B, 0 M after checks. Derek's PC "password locked" text: static observation text (scenario.json.erb:1957) shown by container-minigame.js after unlock; Sonnet check on game 3292; m, fixed in breakescape-d3's PC polish branch with no scenario edit. Launch panel after EXECUTE LAUNCH (or ABORT): the result title is right, but the "armed" header and the "yours to abort" reward line stay, because showFinalState replaces only the input area; same code in production 1.0.15, so m and not a regression. Other m: controls appear about 4 s after the accepted flag; CONTINGENCY label wraps mid-word |
+
+Gate result (orchestrator): all three missions pass a fresh end-to-end playtest on 48b755b81, with no blockers or majors open. A save and reload held state in each run. The deploy and version bump are the user's call.
+
+Not checked here: P2-3 from game 3285. The stand-in flag tokens are numbered by XML order and any shatter_server flag was accepted at the drop-site; whether the real VM's flags map to each station as the scenario names them is a question for the real-VM playtest.
+
+## Follow-ups after the release (none block it)
+
+- Launch panel final state: clear the "armed" header and the reward line when ABORT or LAUNCH is chosen (flag-station-minigame.js showFinalState).
+- PC polish (breakescape-d3, after its slice 6): the desktop and taskbar stop repeating observations; the interaction menu drops the observations line once a PC is unlocked; the CONTINGENCY label stops wrapping mid-word.
+- The network map closes itself about 2 s after SEVER; confirm it is intended.
+- sis02: the isolation scope can stay unchosen.
+- A clip whose duration reads NaN counts as silent (see Held bark overlap).
+- Harness: interact() clicks an object's top-left origin, which can land on a neighbour's hit box; moveToNear can click an object while walking. For the tools backlog.
+- After a reload the player respawns at the start point: by design (js/core/resume-spawn.js); progress survives.
 
 ## Waiting on the user
 
-On the Release Readiness Picks page (https://claude.ai/artifact/8RVcPNYB9tiTZkyCrj54hP):
-- sis01-david-clip: does David's bed 2 clip say "library"?
-- sis01-barks-tts: voice the other 26 uncached sis01 barks (under $1)?
-
-On breakescape-35's picks page: the Hacktivity test-fixtures edit.
+- Three sis01 clips on the Release Readiness Picks page (https://claude.ai/artifact/8RVcPNYB9tiTZkyCrj54hP): Sarah "Ms Okafor", the patrol nurse "Bed 4", Ravi "NetSol's". A retake keeps the same cache key, so it can follow the release.
+- The production deploy and version bump.
