@@ -18,7 +18,6 @@ const UPDATED_TEXT =
   'This game has been updated. Reload the page to keep playing with the latest version.';
 
 let held = null; // the format version the tab holds; null until the bootstrap is read
-let bannerShown = false;
 
 // The real fetch, captured once. Every later module calls the wrapper instead.
 const realFetch =
@@ -174,7 +173,6 @@ function showBanner(text) {
       document.body.appendChild(el);
     }
     el.textContent = text;
-    bannerShown = true;
   } catch (_) {
     /* a banner is best-effort; its absence never stops saving */
   }

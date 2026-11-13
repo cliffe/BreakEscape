@@ -53,9 +53,11 @@ rooms = sd['rooms'] || {}
 abort "--start-room: no room '#{start_room}' in #{dir}. Rooms: #{rooms.keys.join(', ')}" if start_room && !rooms.key?(start_room)
 sd['startRoom'] = start_room if start_room
 
-# Stamp the format version on the swapped data, the way a created game is stamped (the swap
-# path updates an existing row, so before_create does not run). --format-version forces a
-# version for the refusal proof only (900, far from any real format); normally it is current.
+# Stamp the format version on the swapped data, the way a created game is stamped. The first
+# g.save! below is a create and runs before_create :stamp_format_version, which stamps current;
+# this override survives only because the second g.save! overwrites scenario_data with sd (which
+# carries it here). --format-version forces a version for the refusal proof only (900, far from
+# any real format); normally it is current.
 stamped_version = format_override.nil? ? BreakEscape::FormatUpgrade.current : format_override
 sd['formatVersion'] = stamped_version
 

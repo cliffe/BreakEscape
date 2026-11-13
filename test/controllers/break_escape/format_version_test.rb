@@ -147,6 +147,25 @@ module BreakEscape
       assert_equal updated_before.to_i, game.updated_at.to_i
     end
 
+    test 'sync_state refuses a game whose formatVersion is a JSON string scalar, as set_game does' do
+      game = make_game
+      # A stored JSON string scalar "1": set_game refuses it as unreadable (see the GET scenario test
+      # above). sync_format_refusal must agree, reading the value the same way regardless of adapter.
+      game.update_column(:scenario_data, scenario('formatVersion' => '1'))
+      state_before = game.reload.player_state
+      updated_before = game.updated_at
+
+      put sync_state_game_url(game), params: { globalVariables: { 'g' => 1 }, clientTs: 1 }, as: :json
+      assert_response :conflict
+      assert_equal 'format', response.parsed_body['error']
+      assert_match(/cannot be read/, response.parsed_body['message'])
+      assert_equal '0', response.headers[HEADER]
+
+      game.reload
+      assert_equal state_before, game.player_state
+      assert_equal updated_before.to_i, game.updated_at.to_i
+    end
+
     # --- upgrade on load, with a fixture step list ---
 
     test 'a game at 0 is upgraded and ships formatVersion 1 on GET scenario' do

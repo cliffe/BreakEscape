@@ -657,11 +657,16 @@ the swap-tool `--format-version` support, the README note, and the live proofs.
   `409 format` (no header) reloads once then banners with the message and the not-saved line; another 409
   error, a non-JSON 409 and an unparseable body all do nothing and the caller keeps its response;
   `showBootstrapRefusal` shows the message in `#loading` on a `409 format` and nothing otherwise.
-- **`test/js/format-guard-sites.test.mjs` (new, 5).** The static scan: no module-level or property fetch
-  capture; no `XMLHttpRequest`/`navigator.sendBeacon`; the only engine-route `load.json` is the
-  `gameScenarioJSON` bootstrap in `core/game.js`; `format-guard.js` is main.js's first import. The capture
-  regex was checked against bad and good forms (`const f = fetch` and `this._fetch = window.fetch` match;
-  `deps.fetch ?? (... ? fetch : null)` and `const realFetch = ... : fetch` do not).
+- **`test/js/format-guard-sites.test.mjs` (new, 5).** A static lint (a backstop, not a soundness proof):
+  no fetch capture (assignment, bracket access, destructuring off a global, or passing fetch as an
+  argument); none of the non-fetch transports that could load `scenario_data` past the wrapper
+  (`XMLHttpRequest`, `EventSource`, `WebSocket`, `navigator.sendBeacon`); the only engine-route
+  `load.json` is the `gameScenarioJSON` bootstrap in `core/game.js`; `format-guard.js` is main.js's first
+  import. A sufficiently indirect reference (a computed property, fetch reached through another object)
+  is out of its reach; none exists today. The capture patterns were checked against bad and good forms
+  (`const f = fetch`, `this._fetch = window.fetch`, `window['fetch']`, `const { fetch } = window`,
+  `foo(window.fetch)` match; `deps.fetch ?? (... ? fetch : null)` and `const realFetch = ... : fetch`
+  do not).
 - **`test/controllers/break_escape/format_deployed_scenarios_test.rb` (new, 7).** For m01_first_contact,
   sis01_healthcare, sis02_energy and lab_social_engineering: a no-op step (current 1 via a fixture list)
   stamps and never re-prepares, on both a prepared and a raw unprepared render, adding only
@@ -872,11 +877,13 @@ was already curl-proven last session (game 2394). This remaining work is verific
      stored game reads `formatVersion: 900`, no second reload happens (the `be-format-reload` session
      key), and a further action saves.
   3. The refusal: a `swap-scenario-game.rb ... --format-version 900` game on :3280 without the switch
-     shows the refusal page on `show` and the refusal text in `#loading` on a direct bootstrap fetch
-     (already curl-proven as game 2394 last session; redo in-browser). Then a tab holding 900 (after a
-     switch-on reload) kept open while :3280 restarts without the switch: its next room fetch and next
-     sync each get the 409 `format` body, the tab reloads once, the reloaded bootstrap is refused and
-     shows the message in `#loading`, player_state unchanged (read before and after).
+     shows the full HTML refusal page on `show` (already curl-proven as game 2394 last session; redo
+     in-browser). The `#loading` path is only a fallback for a show that answers 200 while `/scenario`
+     answers 409, which a too-new game never reaches, since show refuses first. Then a tab holding 900
+     (after a switch-on reload) kept open while :3280 restarts without the switch: its next room fetch
+     and next sync each get the 409 `format` body and the tab reloads once; the reloaded page is itself
+     the show route's full HTML refusal page (the stored game is still too new), not a `#loading`
+     message. player_state unchanged (read before and after).
   4. Clean-up: every game stamped 900 (by the switch or by `--format-version 900`) is set back to
      `formatVersion: 0` with a one-off `bin/rails runner` naming the ids, and each id recorded here as
      unusable for later proofs. Stop the branch server by PID.
@@ -966,6 +973,19 @@ tests + the curl refusal proof), phase 3 (live proofs 1, 2, 4), and phase 4 (pro
 the orchestrator: the full Rails and `MERGE_BATCH=1 bin/test-js -j 3` suites and the validator sweep at
 the merge batch (the congestion rule kept this builder to targeted files), the six skill-wording
 proposals in phase 2, and the README/validator wording.
+
+**R1 fixes (build/harden-7, 2026-11-13).** The four review nits from
+`SCENARIO_FORMAT_HARDENING_STEP7_REVIEW_R1.md`: n1 dropped the dead `bannerShown` state in
+`format-guard.js`; n2 rewrote `sync_format_refusal` to read the stored `formatVersion` with
+`jsonb_typeof` plus `->>` so it rebuilds the value exactly as `set_game` sees it on any adapter (a
+stored JSON string scalar such as `"1"` is now Unreadable on both paths), with a new sync string-scalar
+test in `format_version_test.rb`; n3 corrected the `swap-scenario-game.rb` stamping comment (the first
+`save!` is a create that stamps current; the override survives via the second `save!`); n4 widened the
+request-site lint to bracket access, destructuring and argument-passing fetch captures, banned
+`EventSource`/`WebSocket`/`sendBeacon`, and reworded the test names and this log as a lint, not a proof.
+Also corrected the phase-3 handover's open-tab wording: the reloaded page is itself the show route's
+full HTML refusal page, not a `#loading` message. Node lints green (5 + 9); the Rails format tests run
+below.
 
 - **Done:** (1) schema resolver and notes helper + unit tests (732f41433); (2) **phase A** (afe5b6ca3): schema marks, eager enumerator, schema-walk test; (3) **phase A continued:** validator migration, `_`-skip audit, action-in-a-note warning, README line; (4) **phase B1:** every granting/deriving walker skips notes and visits free data, `CaptureModel.each_capture_writer`'s `notes:` keyword, schema-walk parts 3 and 6, the corpus before/after proof (identical), and the implant/plant Rails route tests with a revert proof (see "Phase B1"); (5) **phase B2, this session:** `strip_notes!` at every client payload builder, the route audit, the boot initializer, the Rails note/capture/boot tests (each with a revert proof), the part-6 ruling recorded, README item 8, and the live proof on port 3270. See "Phase B2" above. **Step 2b is complete.**
 - **In progress:** none.

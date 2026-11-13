@@ -2020,20 +2020,25 @@ module BreakEscape
 
     # Step 7. Pluck the stored formatVersion under the sync row lock and judge it. Returns a
     # FormatUpgrade::TooNew (stored above current) or Unreadable (a bad value) to refuse the sync, or
-    # nil to proceed. pick of a jsonb expression may come back decoded (Integer / nil) or as its JSON
-    # text, depending on the adapter's result type map, so a String is parsed before version_of, which
-    # itself rejects anything that is not a non-negative Integer.
+    # nil to proceed. The narrow sync load has no scenario_data, so the value is read with
+    # jsonb_typeof plus ->> rather than the whole column. This rebuilds the Ruby value exactly as
+    # set_game sees it once the adapter decodes the full jsonb column, no matter how a given adapter
+    # maps a bare jsonb expression. A JSON string scalar (for example "1") stays a Ruby String here,
+    # so version_of refuses it as Unreadable on this path just as set_game does; a JSON integer
+    # becomes an Integer, a fractional number a Float (Unreadable), JSON null or a missing key is 0.
     def sync_format_refusal
-      raw = Game.where(id: @game.id).pick(Arel.sql("scenario_data -> 'formatVersion'"))
+      type, text = Game.where(id: @game.id).pick(
+        Arel.sql("jsonb_typeof(scenario_data -> 'formatVersion')"),
+        Arel.sql("scenario_data ->> 'formatVersion'")
+      )
       value =
-        if raw.is_a?(String)
-          begin
-            JSON.parse(raw)
-          rescue JSON::ParserError
-            raw
-          end
-        else
-          raw
+        case type
+        when 'number' then text =~ /\A-?\d+\z/ ? text.to_i : Float(text)
+        when 'string' then text
+        when 'true' then true
+        when 'false' then false
+        when 'null', nil then nil
+        else type # object / array: a non-Integer, so version_of raises Unreadable
         end
       stored = BreakEscape::FormatUpgrade.version_of({ 'formatVersion' => value })
       current = BreakEscape::FormatUpgrade.current

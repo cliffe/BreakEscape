@@ -1,7 +1,12 @@
-// Step 7 phase 2: the static scan that keeps every request site behind the fetch guard.
-// It fails on a module-level stored fetch reference, on an XMLHttpRequest, sendBeacon or
-// engine-route this.load.json that bypasses the wrapper (bar the bootstrap load in
-// core/game.js), and on a format-guard.js import that is not main.js's first import.
+// Step 7 phase 2: a static lint that keeps every request site behind the fetch guard. It is a
+// backstop, not a soundness proof: it catches the forms a request site would plausibly use to
+// hold the real fetch (an assignment, a bracket access, destructuring from a global, or passing
+// fetch as a call argument), bans the non-fetch transports that could load scenario_data past the
+// wrapper (XMLHttpRequest, EventSource, WebSocket, navigator.sendBeacon) outside the bootstrap,
+// and keeps format-guard.js as main.js's first import. A sufficiently indirect reference (computed
+// property names, fetch reached through another object) is out of its reach; none exists today.
+// It also fails on an engine-route this.load.json that bypasses the wrapper (bar the bootstrap
+// load in core/game.js).
 // Run with: node test/js/format-guard-sites.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -49,23 +54,32 @@ function stripComments(src) {
 
 const files = walk(js);
 
-test('no module file keeps a fetch reference at module or property level', () => {
-  const capture = /(?:\b(?:const|let|var)\s+[\w$]+|this\.[\w$]+)\s*=\s*(?:window\.|self\.|globalThis\.)?fetch\b(?!\s*\()/;
+test('lint: no module file captures a fetch reference past the guard', () => {
+  // Each pattern is a plausible way to grab the real fetch: a stored assignment, a bracket access
+  // on a global, destructuring fetch off a global, or passing fetch as a call argument. (?!\s*\()
+  // keeps a plain fetch(...) call, which goes through the wrapper, from matching.
+  const patterns = [
+    /(?:\b(?:const|let|var)\s+[\w$]+|this\.[\w$]+)\s*=\s*(?:window\.|self\.|globalThis\.)?fetch\b(?!\s*\()/, // X = fetch
+    /(?:window|self|globalThis)\s*\[\s*(['"])fetch\1\s*\]/, // window['fetch']
+    /(?:\b(?:const|let|var)\s*)\{[^}]*\bfetch\b[^}]*\}\s*=\s*(?:window|self|globalThis)\b/, // const { fetch } = window
+    /[(,]\s*(?:window\.|self\.|globalThis\.)?fetch\b(?!\s*[(.])/ // foo(fetch) / foo(window.fetch)
+  ];
   const offenders = [];
   for (const f of files) {
     const code = stripComments(readFileSync(f, 'utf8'));
-    if (capture.test(code)) offenders.push(relative(js, f));
+    if (patterns.some((re) => re.test(code))) offenders.push(relative(js, f));
   }
   assert.deepEqual(offenders, [], `a stored fetch reference bypasses the guard: ${offenders.join(', ')}`);
 });
 
-test('no XMLHttpRequest or navigator.sendBeacon in the engine JS', () => {
+test('lint: no XMLHttpRequest, EventSource, WebSocket or navigator.sendBeacon in the engine JS', () => {
+  const banned = /\bXMLHttpRequest\b|\bEventSource\b|\bWebSocket\b|navigator\.sendBeacon\b/;
   const offenders = [];
   for (const f of files) {
     const code = stripComments(readFileSync(f, 'utf8'));
-    if (/\bXMLHttpRequest\b/.test(code) || /navigator\.sendBeacon\b/.test(code)) offenders.push(relative(js, f));
+    if (banned.test(code)) offenders.push(relative(js, f));
   }
-  assert.deepEqual(offenders, [], `an XHR or sendBeacon bypasses the guard: ${offenders.join(', ')}`);
+  assert.deepEqual(offenders, [], `a non-fetch transport bypasses the guard: ${offenders.join(', ')}`);
 });
 
 test('the only engine-route this.load.json is the bootstrap in core/game.js', () => {
