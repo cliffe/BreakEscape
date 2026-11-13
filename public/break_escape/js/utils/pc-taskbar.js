@@ -280,9 +280,18 @@ export function mountPcTaskbar(root, model, { windowTitle = '', takeable = false
     root.classList?.add?.('pc-has-taskbar');
     const start = taskbar.querySelector('.pc-start-btn');
 
+    // The panel's picture at x2, or x1 on a short screen so the panel fits without scrolling
+    const panelScale = () => (root.closest?.('.pc-monitor')?.hasAttribute?.('data-short') ? 1 : 2);
+    const panelPicture = () => {
+        const box = panel.querySelector('.pc-start-headshot');
+        if (!box || !model?.account) return;
+        const scale = panelScale();
+        box.dataset.scale = String(scale);
+        applyAccountPicture(box, model.account, { scale });
+    };
     if (model?.account) {
         applyAccountPicture(taskbar.querySelector('.pc-taskbar-headshot'), model.account, { scale: 1 });
-        applyAccountPicture(panel.querySelector('.pc-start-headshot'), model.account, { scale: 2 });
+        panelPicture();
     }
 
     const items = () => [...panel.querySelectorAll('[role="menuitem"]')];
@@ -317,6 +326,7 @@ export function mountPcTaskbar(root, model, { windowTitle = '', takeable = false
     function show() {
         if (open) return;
         open = true;
+        panelPicture();
         panel.hidden = false;
         start.setAttribute('aria-expanded', 'true');
         start.classList.add('pc-start-open');

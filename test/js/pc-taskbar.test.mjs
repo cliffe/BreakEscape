@@ -219,6 +219,11 @@ test('a missing headshot shows the pixel silhouette, at x1 and x2, looked up onc
     assert.equal(big.dataset.frame, 'silhouette');
     assert.equal(big.style.backgroundSize, '64px 64px');
     assert.equal(taskbarMod.taskbarHeadshotCount(), 1, 'one cached entry for the account');
+    // A short screen (915x412): the panel's picture at x1, so the panel fits without scrolling
+    document.querySelector('.pc-monitor').setAttribute('data-short', '');
+    startBtn().click();
+    assert.equal(big.dataset.scale, '1');
+    assert.equal(big.style.backgroundSize, '32px 32px');
 });
 
 test('Take Container stays on the taskbar', async () => {
