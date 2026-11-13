@@ -53,6 +53,8 @@ VAR closing_asked = 0
 
 === start ===
 {debrief_complete:
+    // Re-fire the task tag: if the final POST was lost, this recovers it. Completing a done task is a no-op.
+    #complete_task:attend_debrief
     Priya S.: {&We're done. My notes go to Helen this week.|That's everything from me. Thank you.}
     #exit_conversation
     -> END

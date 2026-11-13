@@ -90,7 +90,7 @@
 #   safety_claim_hc007_assessed — npc_helen.ink:safety_case_hc007 ✓
 #   ico_notified              — npc_helen.ink (helen_persuaded early, or after isolation) ✓
 #   ncsc_notified             — NOT in npc_hartley.ink source; moved to NOT YET WIRED below
-#   debrief_complete          — npc_sharma.ink:closing ✓
+#   debrief_complete          — npc_sharma.ink:debrief_end ✓
 #   [WIRED via scenario timers / eventMappings]
 #   patient_bed4_state        — timers escalate → distressed → critical → deceased ✓
 #   patient_bed2_state        — pump_dose_error eventMapping → sedated; bed2_double_jeopardy timer → critical ✓
@@ -2381,7 +2381,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
     Knots: start, main_debrief, patient_outcomes, safety_claims, isolation_review, regulatory,
            recovery, recovery_trade, ransom_review, root_cause, risk_review, closing, debrief_end
     Hidden until debrief_started=true (setVisible fires from eventMapping).
-    KEY: closing knot sets debrief_complete=true → ends scenario.
+    KEY: debrief_end knot sets debrief_complete=true → ends scenario.
     Blind playtest D1 (2026-10-03): restartOnRetalk:false removed. With it, a reload (which
     restores only her ink variables) left her story with no position, so after "Give me a few
     minutes" the debrief could never be reopened. Every re-talk now restarts at start, and

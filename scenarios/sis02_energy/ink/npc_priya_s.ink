@@ -65,6 +65,8 @@ VAR debrief_quiet = false
 // Once the closing has run, it never replays: replaying it re-ran #set_global:debrief_complete,
 // which rolled the credits and POSTed /conclude a second time (commit 33f7e1e).
 { debrief_closed:
+    // Re-fire the task tag: if the final POST was lost, this recovers it. Completing a done task is a no-op.
+    #complete_task:talk_to_priya_s
     -> debrief_over
 }
 { start_quiet:

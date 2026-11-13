@@ -1830,6 +1830,165 @@
       }
     ]
   },
+  "sis01_healthcare": {
+    "globals": {
+      "briefing_played": false,
+      "ward_monitor_status": "offline",
+      "ehr_status": "offline",
+      "bed4_alarm_active": true,
+      "patient_bed4_state": "resting_unmonitored",
+      "patient_bed2_state": "stable",
+      "patient_bed4_deceased": false,
+      "patient_bed2_deceased": false,
+      "bed4_escalated": false,
+      "bed4_monitor_viewed": false,
+      "paper_charts_collected": false,
+      "siem_escalated": false,
+      "siem_missed_alerts": false,
+      "vpn_anomaly_identified": false,
+      "vpn_threat_intel_checked": false,
+      "vpn_impossible_travel_identified": false,
+      "ravi_siem_briefed": false,
+      "ravi_vpn_briefed": false,
+      "network_rules_reviewed": false,
+      "itsec_authorised": false,
+      "clinical_eng_authorised": false,
+      "safety_claim_hc001_assessed": false,
+      "hc001_verdict": "",
+      "isolation_compensating_controls": false,
+      "isolation_risk_accepted": false,
+      "helen_tamper_view_heard": false,
+      "pump_console_advice": "",
+      "bed2_alarm_raised": false,
+      "bed2_seen_unwell": false,
+      "debrief_forced": false,
+      "network_isolation_authorised": false,
+      "isolation_aborted": false,
+      "network_isolated": false,
+      "dual_auth_failed": false,
+      "backup_recovery_source": "",
+      "nas_scan_requested": false,
+      "nas_integrity_checked": false,
+      "recovery_eta_hours": 0,
+      "backup_restore_initiated": false,
+      "backup_reinfected": false,
+      "drug_library_compromised": false,
+      "drug_library_verified": false,
+      "drug_library_restored": false,
+      "manufacturer_datasheet_available": false,
+      "library_tamper_timestamp_noted": false,
+      "mar_charts_drug_referenced": false,
+      "manufacturer_datasheet_referenced": false,
+      "safety_claim_hc003_assessed": false,
+      "pump_dose_correct": false,
+      "pump_dose_error": false,
+      "pump_programmed_at": "",
+      "drug_library_override": false,
+      "sarah_pump_warned": false,
+      "safety_claim_hc007_assessed": false,
+      "ico_notified": false,
+      "ico_deadline_missed": false,
+      "ico_notified_early": false,
+      "ico_guidance_read": false,
+      "hartley_backs_early_ico": false,
+      "helen_ico_view_heard": false,
+      "patient_disclosure": "",
+      "ransom_advice": "",
+      "sarah_given_soon_estimate": false,
+      "patrol_nurse_at_bed4": false,
+      "patrol_nurse_at_bed2": false,
+      "sarah_at_bed2": false,
+      "pharmacist_on_ward": false,
+      "ward_monitoring_timeout_started": false,
+      "debrief_started": false,
+      "debrief_complete": false,
+      "sharma_visible": false,
+      "ncsc_notified": false,
+      "ehr_terminal_viewed_offline": false,
+      "ehr_terminal_viewed_online": false,
+      "ransomware_deployed": true,
+      "monitoring_station_viewed": false
+    },
+    "npcs": [
+      {
+        "id": "sarah_mitchell",
+        "npcType": "person",
+        "storyPath": "scenarios/sis01_healthcare/ink/npc_sarah.json",
+        "currentKnot": "start",
+        "room": "ward_7"
+      },
+      {
+        "id": "patrol_nurse",
+        "npcType": "person",
+        "storyPath": "scenarios/sis01_healthcare/ink/npc_patrol_nurse.json",
+        "currentKnot": "patrol_idle",
+        "room": "ward_7"
+      },
+      {
+        "id": "bed4_patient",
+        "npcType": "person",
+        "storyPath": "scenarios/sis01_healthcare/ink/npc_bed4_patient.json",
+        "currentKnot": "state_resting_unmonitored",
+        "room": "ward_7"
+      },
+      {
+        "id": "bed2_patient",
+        "npcType": "person",
+        "storyPath": "scenarios/sis01_healthcare/ink/npc_bed2_patient.json",
+        "currentKnot": "state_stable",
+        "room": "ward_7"
+      },
+      {
+        "id": "bed5_patient",
+        "npcType": "person",
+        "storyPath": "scenarios/sis01_healthcare/ink/npc_bed5_patient.json",
+        "currentKnot": "stable_witness",
+        "room": "ward_7"
+      },
+      {
+        "id": "pharmacist_npc",
+        "npcType": "person",
+        "storyPath": "scenarios/sis01_healthcare/ink/npc_pharmacist.json",
+        "currentKnot": "start",
+        "room": "ward_7"
+      },
+      {
+        "id": "ravi_anand",
+        "npcType": "person",
+        "storyPath": "scenarios/sis01_healthcare/ink/npc_ravi.json",
+        "currentKnot": "start",
+        "room": "it_security_office"
+      },
+      {
+        "id": "david_osei",
+        "npcType": "person",
+        "storyPath": "scenarios/sis01_healthcare/ink/npc_david.json",
+        "currentKnot": "start",
+        "room": "major_incident_room"
+      },
+      {
+        "id": "helen_carver",
+        "npcType": "person",
+        "storyPath": "scenarios/sis01_healthcare/ink/npc_helen.json",
+        "currentKnot": "start",
+        "room": "major_incident_room"
+      },
+      {
+        "id": "dr_hartley",
+        "npcType": "person",
+        "storyPath": "scenarios/sis01_healthcare/ink/npc_hartley.json",
+        "currentKnot": "start",
+        "room": "major_incident_room"
+      },
+      {
+        "id": "dr_sharma",
+        "npcType": "person",
+        "storyPath": "scenarios/sis01_healthcare/ink/npc_sharma.json",
+        "currentKnot": "start",
+        "room": "major_incident_room"
+      }
+    ]
+  },
   "m10_full_disclosure": {
     "globals": {
       "ending": "",
