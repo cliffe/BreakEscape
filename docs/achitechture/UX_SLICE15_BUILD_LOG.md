@@ -110,6 +110,53 @@ Orchestrator ruling on the 180: widen the search to two cells and accept what is
 
 - The wedge (`store_wedge`) should stand against the open door leaf so it reads as holding the door, not beside the doorway (review n2).
 
+## R2 fixes
+
+Against `UX_SLICE15_REVIEW_R2.md` (b0e20f00a).
+
+### M1: the north doorway strip
+
+Root cause of the vanishing stick: Lena. `kit_usb` carries `needsTag: dev_usb`, and Lena in `usb_room` has an interest in `dev_usb` (the U1 beat: "Drop Lena's storage stick here ... Lena takes it to her PC"). Instrumented on game 2626 (every NPC event, `destroy` and `setVisible(false)` of the sprite): `item_dropped:kit_usb`, then `npc_left_post:lena`, then `npc_picked_up:kit_usb` 3 s later, and she carries it to her PC. Nothing in the drop, door or room code removes it. A reload brings it back because the server keeps a drop until an NPC uses it up (npc-needs.js consumeHeld), not while she holds it; she collects it again. `post_usb`, which no one in `usb_room` wants, stays. Main shows the same: with main's item-drop.js (feet drop, checked out locally in this worktree only, then restored) on game 2636, the stick lands at (44.5, 44) and Lena collects it 2.3 s later.
+
+What the strip does break, found while proving the pick-up with a real mouse click (games 2655, 2656, 2667): the drop at (44.5, 60) belongs to `usb_room` by the same-room rule, but a tap on it walks the player to a stand point south of it, in the lobby, where the use is refused. The bridge's `interact` hides this differently: it walks to the item's own point first, which is also lobby, and reports `different-room`.
+
+Changes:
+- `item-drop.js` `dropPoint`: a candidate whose box touches `opts.avoid` (door sprites of the loaded rooms, other loaded rooms' rectangles that touch this room; `dropClearance` gathers them) is skipped on a first pass and taken only when nothing else is clear. From feet in the north strip every candidate in reach touches the lobby, so that drop still lands at (44.5, 60).
+- `tap-pick.js` `objectStandPoint`: a new `sameRoom` rule (game.js passes `sameRoomFrom` at the stand point), so a stand point only counts when the feet there are in the object's room; and, with that rule, a second look north of the object within the full range. Live, a click from the lobby now no longer counts a lobby stand point as usable, but the strip item at y 60 is in reach (plain centre distance, `isObjectInInteractionRange`) of no walkable feet point in `usb_room`, so the walk still ends in the lobby and nothing is picked up. **Open**, see the handover.
+
+### m1, n1 to n4
+
+- m1 (`lighting.js`): both marks have a 1 px dark ring (0x1a1c2c) round the dot, 6 px locked and 8 px open, whole-pixel, NEAREST. One texture: the dot white, the ring dark; the variant tint multiplies the ring too, which keeps it near-black (blue tint: 0x060f2c). The open mark breathes between 0.8 and 1 (`indicatorBreathe`); ransom screens keep their own breathe. Contrast composited on the PNGs at each anchor (`m1-ring-contrast.json`, `m1-ring-contrast-sheet.png`), worst of ring or dot against each screen pixel round the mark: pc 3.42 locked, 4.01 open trough; pc3 9.23, 4.76; pc5 2.79, 4.48; pc6 5.64, 3.34; pc7 4.06, 3.17; pc9 6.25, 3.71; pc11 2.48, 4.49; every `_locked` picture 4.16 locked, 7.81 open trough. The reviewer's worst was 1.19. pc5 and pc11 with the locked mark on the base picture (the password-session case) stay under 3:1.
+- n1: the last fallback is shifted so its box lies inside the room (`clampIntoRoom`). The sweep's outside count went from 144 to 0.
+- n2: `dropClearance` keeps only static and immovable bodies that touch the room grown by 16 px: 49 to 95 per room in test_access_work, from 980.
+- n3: "Switch on" at the rack power adds the hint "The rack powers up. The server network is back." (not re-shot live, see the handover).
+- n4: the coffee, office copier and kitchen copier sockets switch back on with a named confirm worded like Ian's ("Switch the coffee machine back on at the wall?", "Switch on" / "Leave it"); the kitchen copier socket had no confirm at all and was one-way. Not re-shot live.
+
+### R2 tests
+
+- `item-drop.test.mjs` 25 pass (new: the fallback clamp; door and room rectangles ranked last; `dropClearance` lists doors and touching rooms and only nearby bodies). `lighting-workstation-indicators.test.mjs` 18 pass (new: ring pixels for 4 and 6, breathe floor, texture size). `tap-pick.test.mjs` 43 pass (new: a strip object is approached from its own room; no rule, no change).
+- Every test file importing item-drop, lighting, tap-pick, game.js or their importers, plus npc-printer-power: 40 files, 596 pass, 0 fail.
+- Validator `--no-graph`: test_needs_sims, test_access_networks, test_access_work, test_access_social: 0 ❌ each, exit 0.
+
+### R2 live proof
+
+Keyless headless server on :3364 from this worktree, 1400x1000 with scrollbars shown, setFPS(20) with fixed steps on. New games via `tools/playtest/swap-scenario-game.rb` on host test_seating, test_access_work with --unlock-all: 2626 (M1 trace), 2636 (main's drop code), 2638 (sweep), 2639, 2640, 2653 to 2656, 2667 (drop and pick-up runs). Shots and reports: session scratchpad `ux-shots/slice15-final/`.
+- The reviewer's 23-room sweep on game 2638, 77,964 calls: drops whose box reaches into the next room while the feet do not, 1302 to 3 (hall_c, one foot cell); on a door sprite 1902 to 1668 (feet already in a door strip); outside the room 144 to 0; unwalkable 0; furthest 23 px; `dropPoint` 0.1 ms at the 99th percentile, 0.6 ms at most; `dropClearance` 0.2 ms median.
+- `post_usb` dropped in the north strip stays visible in `usb_room` after a walk into the lobby and back (`m1-a-north-strip-drop-3x`, `m1-a-north-strip-after-walk-3x`).
+
 ## Handover
+
+R2 fix round stopped at the call budget. Done: M1 root cause (Lena, by design, as on main), the door and room ranking, the stand-point same-room rule, m1, n1 to n4, tests, validator, sweep.
+
+Open:
+- **M1 pick-up in the north strip.** A drop at (44.5, 60) in `usb_room` cannot be picked up by a tap: no walkable feet point in `usb_room` has its sprite centre within 32 px of it. Two ways on: (a) in `dropPoint`, refuse (not just rank last) a cell that no own-room feet point can reach, using `sameRoomFrom` and the pathfinder, so the drop moves north to the feet (44.5, 48) cell, which is in reach from feet 52 and 60; or (b) let the arrival check count the facing-down reach. (a) is the smaller change. The `objectStandPoint` second pass (tap-pick.js) can go once (a) is in, or stay as a guard.
+- Shots not taken: main-18, main-21, main3-14, main3-17, main3-21, main3-22 after shots; the south-gap drop (`s15f_drops.mjs` part B depends on part A's pick-up); n3 and n4 confirms live.
+- Scripts: `s15f_lib.mjs`, `s15f_m1probe.mjs`, `s15f_drops.mjs`, `s15f_sweep.mjs`, `s15f_ring_contrast.py` in the session scratchpad.
+
+Gotchas: the bridge's `interact` walks to an off-screen item's own point first, which in a shared strip lands in the other room; use a real `page.mouse.click` for tap proofs. `isObjectInInteractionRange` measures plain centre distance; `getInteractionDistance` (the E key) adds a facing offset.
+
+Commits this round: 82468e97a (drop ranking, clamp, bodies), 583b17582 (dot ring and breathe), 892c4666a (rack hint, sockets), 111fd1dad and d298702e7 (stand point), and this log.
+
+## Handover (build and R1)
 
 Done. Commits: 294ec3b9b (dot, labels, drop, tests), 4fba8919c (sockets and wedge), e6ffd6cfa (wedge nudge), ef884d740 (this log), 9e190b1a9 (R1 fixes), 0ab221f91 (the R1 section of this log), 79cf24039 (wider drop search), and the ruling section of this log.
