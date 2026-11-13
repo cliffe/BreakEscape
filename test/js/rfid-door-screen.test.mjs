@@ -55,7 +55,7 @@ globalThis.document = { createElement: mk, body: mk('body'),
 const { RFIDAnimations } = await import(animUrl);
 const { RFIDMinigame } = await import(minigameUrl);
 const { RFIDDataManager } = await import(pathToFileURL(join(tmp, 'rfid-data.mjs')).href);
-const { RFIDUIRenderer, pixelIcon, PIXEL_ICONS, clonerName, clonerNameInSentence, EMULATION_HOLD_MS } = await import(pathToFileURL(join(tmp, 'rfid-ui.mjs')).href);
+const { RFIDUIRenderer, pixelIcon, PIXEL_ICONS, clonerName, clonerNameInSentence, EMULATION_HOLD_MS, wholePixelOffset } = await import(pathToFileURL(join(tmp, 'rfid-ui.mjs')).href);
 const { savedCardConfirmation } = await import(minigameUrl);
 
 const texts = () => flat(screen).map(e => e.textContent + e._html).join('\n');
@@ -186,15 +186,23 @@ test('the copier frame keeps its stepped corners, outline and bevel following th
     }
     assert.match(frame, /clip-path:\s*var\(--copier-steps\)/, 'the frame is clipped to the steps');
     assert.doesNotMatch(frame, /border:|box-shadow/, 'a border or shadow would be cut away at the corners');
-    for (const layer of ['::before', '::after']) {
-        assert.match(css, new RegExp(`\\.flipper-zero-frame::before,\\s*\\.flipper-zero-frame::after \\{[^}]*clip-path:\\s*var\\(--copier-steps\\)`), `${layer} clipped to the same steps`);
-    }
+    assert.match(css, /\.flipper-zero-frame::before,\s*\.flipper-zero-frame::after \{[^}]*clip-path:\s*var\(--copier-steps\)/,
+        '::before and ::after are clipped to the same steps');
     assert.match(rule('.flipper-zero-frame::before'), /inset:\s*2px/, 'the bevel sits inside a 2px outline');
+    // The body sits 2px inside the light bevel at the top and left (4px from the frame's
+    // edge) and 2px inside the outline at the right and bottom, where its inset shadow is
+    // the 2px dark bevel
+    // The standalone ::after rule (the first match is the shared ::before, ::after rule)
+    const after = [...css.matchAll(/\n\.flipper-zero-frame::after \{([^}]*)\}/g)].map(m => m[1]).pop() || '';
+    for (const [side, px] of [['top', 4], ['left', 4], ['right', 2], ['bottom', 2]]) {
+        assert.match(after, new RegExp(`(^|\\s)${side}:\\s*${px}px;`), `::after ${side} ${px}px`);
+    }
+    assert.match(after, /box-shadow:\s*inset -2px -2px 0 #b35a00/, 'a hard 2px dark bevel');
     assert.doesNotMatch(css, /box-shadow:[^;]*\d+px\s+\d+px\s+[1-9]\d*px\s+(?!0)/, 'no blurred shadow');
 });
 
 // UX feedback slice 3a (main2-21): the emulation details stay up long enough to read.
-test('the emulation screen holds at least 1.5 s, with the reader breadcrumb at a door', () => {
+test('the emulation screen holds at least 1.5 s, with the reader trail at a door', () => {
     assert.ok(EMULATION_HOLD_MS >= 1500);
     const timers = [];
     globalThis.setTimeout = (f, ms) => { timers.push({ f, ms }); return timers.length; };
@@ -203,7 +211,7 @@ test('the emulation screen holds at least 1.5 s, with the reader breadcrumb at a
         let emulated = null;
         g.handleEmulate = (c) => { emulated = c; };
         g.ui.showEmulationScreen(visitor());
-        assert.match(texts(), /At the reader &gt; Emulating|At the reader > Emulating/);
+        assert.match(texts(), /RFID &gt; Reader &gt; Emulating|RFID > Reader > Emulating/, 'one trail on from the reader screen (R1 n5)');
         assert.match(texts(), /Visitor card 07/, 'the card is named on the screen');
         assert.equal(emulated, null, 'no result yet');
         assert.equal(timers.length, 1);
@@ -218,4 +226,115 @@ test('the emulation screen holds at least 1.5 s, with the reader breadcrumb at a
         g.ui.showEmulationScreen(visitor());
         assert.match(texts(), /RFID &gt; Saved &gt; Emulating|RFID > Saved > Emulating/);
     } finally { globalThis.setTimeout = realTimeout; }
+});
+
+// UX slice 3a R1 m2: press Emulate, cancel within the hold, open the copier again: the old
+// timer must not play the old card into the new copier ("Access Granted", card_emulated).
+test('a cancelled or replaced copier never runs its emulation hold timer', () => {
+    const timers = [];
+    const cleared = [];
+    globalThis.setTimeout = (f, ms) => { timers.push({ f, ms }); return timers.length; };
+    const realClear = globalThis.clearTimeout;
+    globalThis.clearTimeout = (id) => { cleared.push(id); };
+    try {
+        // Superseded: another copier is now the current minigame (the screen id is shared)
+        const old = makeGame({ mode: 'unlock', requiredCardIds: ['VISITOR-07'], availableCards: [] });
+        let oldEmulated = 0;
+        old.handleEmulate = () => { oldEmulated++; };
+        old.ui.showEmulationScreen(visitor());
+        const fresh = makeGame({ mode: 'unlock', requiredCardIds: ['OTHER'], availableCards: [] });
+        fresh.gameState = { isActive: true };
+        window.MinigameFramework = { currentMinigame: fresh };
+        timers[0].f();
+        assert.equal(oldEmulated, 0, 'the old copier\'s timer does nothing in the new one');
+
+        // Cancelled: cleanup clears the hold, and a late fire still does nothing
+        timers.length = 0; cleared.length = 0;
+        const g = makeGame({ mode: 'unlock', requiredCardIds: ['VISITOR-07'], availableCards: [] });
+        g.gameState = { isActive: true };
+        window.MinigameFramework = { currentMinigame: g };
+        let emulated = 0;
+        g.handleEmulate = () => { emulated++; };
+        g.ui.showEmulationScreen(visitor());
+        g.cleanup();
+        assert.deepEqual(cleared, [1], 'the hold timer is cleared on cleanup');
+        g.gameState.isActive = false;
+        timers[0].f();
+        assert.equal(emulated, 0, 'no emulation after the copier closed');
+
+        // The live copier still emulates when its hold ends
+        timers.length = 0;
+        const live = makeGame({ mode: 'unlock', requiredCardIds: ['VISITOR-07'], availableCards: [] });
+        live.gameState = { isActive: true };
+        window.MinigameFramework = { currentMinigame: live };
+        let liveEmulated = 0;
+        live.handleEmulate = () => { liveEmulated++; };
+        live.ui.showEmulationScreen(visitor());
+        timers[0].f();
+        assert.equal(liveEmulated, 1);
+
+        // The "unreadable data" fallback is guarded the same way
+        timers.length = 0;
+        live.handleEmulate = () => { throw new Error('bad data'); };
+        let shownSaved = 0;
+        live.ui.showSavedCards = () => { shownSaved++; };
+        live.ui.showError = () => {};
+        const realError = console.error; console.error = () => {};
+        live.ui.showEmulationScreen(visitor());
+        timers[0].f();
+        console.error = realError;
+        window.MinigameFramework = { currentMinigame: fresh };
+        timers[1].f();
+        assert.equal(shownSaved, 0, 'the fallback does not redraw a copier opened since');
+    } finally {
+        globalThis.setTimeout = realTimeout;
+        globalThis.clearTimeout = realClear;
+        delete window.MinigameFramework;
+    }
+});
+
+// UX slice 3a R1 m1: the frame lands on whole pixels, so the stepped corners stay crisp
+// when the overlay centres it in a space of odd size (y 164.5 at 1400x1000).
+test('the copier frame is snapped to whole pixels, now and on resize', () => {
+    assert.deepEqual(wholePixelOffset({ left: 480, top: 164.5 }), { x: 0, y: 0.5 });
+    assert.deepEqual(wholePixelOffset({ left: -0.5, top: 20 }), { x: 0.5, y: 0 });
+    assert.deepEqual(wholePixelOffset({ left: 180, top: 20 }), { x: 0, y: 0 });
+    assert.deepEqual(wholePixelOffset({ left: 10.25, top: 3.75 }, 2), { x: 0.25, y: 0.25 }, 'device pixels at 2x');
+
+    const listeners = {};
+    const realAdd = window.addEventListener, realRemove = window.removeEventListener;
+    window.addEventListener = (t, f) => { listeners[t] = f; };
+    window.removeEventListener = (t, f) => { if (listeners[t] === f) delete listeners[t]; };
+    try {
+        let top = 164.5;
+        const frame = { isConnected: true, style: {}, getBoundingClientRect: () => ({ left: 480, top }) };
+        const g = makeGame({ mode: 'unlock', requiredCardIds: [], availableCards: [] });
+        g.ui.snapFrameToPixels(frame);
+        assert.equal(frame.style.translate, '0px 0.5px');
+        top = 170;
+        listeners.resize();
+        assert.equal(frame.style.translate, '', 'already whole: no offset');
+        g.ui.cleanup();
+        assert.equal(listeners.resize, undefined, 'the resize listener goes with the copier');
+    } finally {
+        window.addEventListener = realAdd; window.removeEventListener = realRemove;
+    }
+    const ui = readFileSync(src('minigames/rfid/rfid-ui.js'), 'utf8');
+    assert.equal((ui.match(/appendChild\(flipper\);\s*this\.snapFrameToPixels\(flipper\);/g) || []).length, 2,
+        'both copier interfaces snap their frame');
+});
+
+// UX slice 3a R1 m3: at phone width the frame and its outline stay inside the window.
+test('at phone width the frame fits inside the window with its outline', () => {
+    const css = readFileSync(src('../css/rfid-minigame.css'), 'utf8');
+    const phone = css.match(/@media \(max-width: 500px\) \{\s*(\/\*[\s\S]*?\*\/\s*)?\.flipper-zero-frame \{([^}]*)\}/);
+    assert.ok(phone, 'a phone rule for the frame');
+    const r = phone[2];
+    assert.match(r, /box-sizing:\s*border-box/, 'the padding counts inside the width');
+    assert.match(r, /width:\s*calc\(100% - 32px\)/, '16px from each side');
+    assert.doesNotMatch(r, /width:\s*90%/);
+    // The wide-screen frame keeps content-box sizing (400px of content)
+    const wide = css.match(/(^|\n)\.flipper-zero-frame \{([^}]*)\}/)[2];
+    assert.doesNotMatch(wide, /box-sizing/);
+    assert.match(wide, /width:\s*400px/);
 });

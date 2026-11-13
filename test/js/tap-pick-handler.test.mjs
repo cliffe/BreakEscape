@@ -11,6 +11,10 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as tapPick from '../../public/break_escape/js/systems/tap-pick.js';
 import * as reachMod from '../../public/break_escape/js/systems/interaction-reach.js';
+// The menu icons live in ui/interaction-menu.js (shared with the action menu); it sets
+// window globals as it loads, so a bare window must exist first
+globalThis.window ??= {};
+const menuIcons = await import('../../public/break_escape/js/ui/interaction-menu.js');
 
 const js = join(dirname(fileURLToPath(import.meta.url)), '../../public/break_escape/js');
 const src = readFileSync(join(js, 'core/game.js'), 'utf8');
@@ -73,7 +77,7 @@ function handlerSource() {
     return src.slice(arrow, blockEnd(src, src.indexOf('{', arrow)));
 }
 
-const HELPERS = ['findObjectsAtPosition', 'interactionIconsBase', 'openHandIcon', 'jabHandIcon', 'talkIcon',
+const HELPERS = ['findObjectsAtPosition',
     'gatherInteractablesNearClick', 'useObjectInReach', 'tapAlphaAt', 'walkToObjectThenUse',
     'farObjectCandidate', 'findNPCAtPosition', 'findDoorAtPosition', 'allNpcSprites', 'npcBesidePlayer'];
 const STUBS = ['window', 'document', 'Phaser', 'player', 'playerIsMoving', 'pendingGateWalk', 'doorGates',
@@ -81,10 +85,10 @@ const STUBS = ['window', 'document', 'Phaser', 'player', 'playerIsMoving', 'pend
     'movePlayerToPoint', 'facePlayerToward', 'startHoldWalk', 'showInteractionMenu', 'isInteractionMenuOpen',
     'closeInteractionMenu', 'resolveObjectField', 'TILE_SIZE', 'SPRITE_PADDING_BOTTOM_ATLAS',
     'SPRITE_PADDING_BOTTOM_LEGACY', 'DOOR_INTERACTION_RANGE', 'INTERACTION_RANGE'];
-const IMPORTS = { ...tapPick, ...reachMod };
+const IMPORTS = { ...tapPick, ...reachMod, openHandIcon: menuIcons.openHandIcon, jabHandIcon: menuIcons.jabHandIcon, talkIcon: menuIcons.talkIcon };
 const IMPORT_NAMES = ['tapPickList', 'farUnderTap', 'npcYieldsToObject', 'npcYieldTarget', 'opaqueAt', 'opaqueNear', 'objectStandPoint',
     'createPendingTapUse', 'aimX', 'withoutChairsIfOthers', 'takeablesBeforeChairs', 'npcGivesWay', 'objectIdOf',
-    'withoutLeavingNpcsIfObjects'];
+    'withoutLeavingNpcsIfObjects', 'openHandIcon', 'jabHandIcon', 'talkIcon'];
 const body = [
     ...HELPERS.map(fnSource),
     stmtSource('const pendingTapUse = createPendingTapUse({'),

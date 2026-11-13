@@ -334,3 +334,21 @@ test('menu icons: an exact-size image is centred at that size, a sheet frame fil
     assert.equal(icons[2].style.backgroundSize, 'contain', 'an image with no size keeps the old rule');
     closeInteractionMenu();
 });
+
+// UX slice 3a R1 M1: a menu entry's detail shows in full. With a 64px icon in the row the
+// old two-line clamp cut the Copy entry's last sentence (the one that tells Copy from Take).
+test('no menu detail is clamped or cut with an ellipsis', () => {
+    showInteractionMenu([
+        { label: 'Copy it', detail: 'Read the card and save a copy on the card copier. The card stays where it is.',
+            icon: { src: '/a/rfid_cloner.png', width: 22, height: 44 }, onSelect() {} }
+    ], 50, 50, 'Card');
+    const css = document.getElementById('be-interaction-menu-styles').textContent;
+    const rule = css.match(/#be-interaction-menu \.be-im-detail \{([^}]*)\}/);
+    assert.ok(rule, 'the detail has a rule');
+    assert.doesNotMatch(rule[1], /line-clamp|text-overflow|overflow\s*:\s*hidden|white-space\s*:\s*nowrap|max-height|-webkit-box/,
+        'the detail wraps to as many lines as it needs');
+    assert.doesNotMatch(css, /ellipsis|line-clamp/, 'nothing in the menu is cut with an ellipsis');
+    const detail = document.querySelector('.be-im-detail');
+    assert.match(detail.textContent, /The card stays where it is\.$/, 'the whole detail is in the entry');
+    closeInteractionMenu();
+});

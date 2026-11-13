@@ -7,9 +7,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
+import { readFileSync } from 'node:fs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const mod = join(here, '../../public/break_escape/js/systems/action-menu.js');
+// The shared menu icons (ui/interaction-menu.js, read by action-menu.js through window)
+globalThis.window = {};
+const { openHandIcon, jabHandIcon, talkIcon } = await import(pathToFileURL(join(here, '../../public/break_escape/js/ui/interaction-menu.js')).href);
 
 let shown = null;
 function resetWindow(extra = {}) {
@@ -22,6 +26,7 @@ function resetWindow(extra = {}) {
         handleObjectInteraction: (sprite) => { globalThis.window._handled = sprite; },
         applyActions: (list, opts) => { globalThis.window._applied = { list, opts }; },
         gameAlert: () => {},
+        menuIcons: { openHand: openHandIcon, jabHand: jabHandIcon, talk: talkIcon },
         ...extra
     };
 }
@@ -144,4 +149,24 @@ test('the menu icons fall back to the default assets path', () => {
     const [copy, take] = objectActions(worldKeycard());
     assert.match(copy.icon.src, /^\/break_escape\/assets\/objects\//);
     assert.match(take.icon.src, /^\/break_escape\/assets\/icons\//);
+});
+
+// R1 n3: one hand-sheet definition, shared by the tap menu (game.js) and this menu
+test('Take uses the shared open-hand icon from the interaction menu', () => {
+    resetWindow({ inventory: { items: [cloner] }, breakEscapeConfig: { assetsPath: '/assets' } });
+    const [, take] = objectActions(worldKeycard());
+    assert.deepEqual(take.icon, openHandIcon());
+    const game = readFileSync(join(here, '../../public/break_escape/js/core/game.js'), 'utf8');
+    assert.doesNotMatch(game, /function (openHandIcon|interactionIconsBase)\(/, 'game.js keeps no copy of its own');
+    assert.match(game, /import \{[^}]*openHandIcon[^}]*\} from '\.\.\/ui\/interaction-menu\.js'/);
+    const self = readFileSync(mod, 'utf8');
+    assert.doesNotMatch(self, /hand_frames\.png/, 'action-menu.js keeps no copy of the hand sheet');
+});
+
+// R1 M1: the fact that separates Copy from Take stays in each entry's detail
+test('Copy says the card stays, Take says the owner will notice', () => {
+    resetWindow({ inventory: { items: [cloner] } });
+    const [copy, take] = objectActions(worldKeycard());
+    assert.match(copy.detail, /stays where it is/);
+    assert.match(take.detail, /owner will notice/);
 });

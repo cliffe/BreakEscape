@@ -547,6 +547,9 @@ export class RFIDMinigame extends MinigameScene {
     cleanup() {
         this._endDenial();
 
+        // The copier's own timers (the emulation hold) and resize listener
+        if (this.ui && typeof this.ui.cleanup === 'function') this.ui.cleanup();
+
         // Cleanup animations
         if (this.animations) {
             this.animations.cleanup();

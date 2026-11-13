@@ -23,14 +23,15 @@
  * tests import it directly with a stubbed window.
  */
 
-// Menu icons. The interaction menu draws them in a 64px box. Take uses the open hand
-// from the HUD's hand sheet (a 4x4 grid of 32px frames, x2). Copy uses the copier's
-// world sprite (11x22) at x2, centred, as a placeholder until its own menu icon is drawn.
+// Menu icons. The interaction menu draws them in a 64px box. Take uses the open hand,
+// defined once in ui/interaction-menu.js (window.menuIcons, set before this module
+// loads). Copy uses the copier's world sprite (11x22) at x2, centred, as a placeholder
+// until its own menu icon is drawn.
 function assetsBase() {
     return (typeof window !== 'undefined' && window.breakEscapeConfig?.assetsPath) || '/break_escape/assets';
 }
 export const COPIER_ICON_SCALE = 2;
-export function takeIcon() { return { src: `${assetsBase()}/icons/hand_frames.png`, frame: 0, cols: 4, cell: 32 }; }
+export function takeIcon() { return window.menuIcons?.openHand?.(); }
 export function copyIcon() {
     return { src: `${assetsBase()}/objects/rfid_cloner.png`, width: 11 * COPIER_ICON_SCALE, height: 22 * COPIER_ICON_SCALE };
 }

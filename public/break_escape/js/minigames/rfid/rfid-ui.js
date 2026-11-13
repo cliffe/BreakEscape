@@ -22,11 +22,22 @@ import { escapeHtml } from '../../utils/escape-html.js';
 /** Shown under "No keycards in inventory" on the Read screen. */
 export const NO_KEYCARDS_HINT = 'The cloner reads a badge at close range: one you hold, or one someone is carrying.';
 
-/** What the device is called on screen and in the menus: the scenario's own name for the
- *  rfid_cloner item ("Card copier"), so the inventory, the menus and the device agree. */
 /** How long the emulation screen (card name, protocol, data) stays up before the result. */
 export const EMULATION_HOLD_MS = 1500;
 
+/** The offset that moves a box onto whole device pixels. A box centred in a space of odd
+ *  size sits half a pixel off, and every edge of the copier's stepped frame (outline,
+ *  bevel, each 2px step) then blends across two rows (UX slice 3a R1 m1). */
+export function wholePixelOffset(rect, dpr = 1) {
+    const snap = (v) => Math.round(v * dpr) / dpr - v;
+    const x = snap(rect.left), y = snap(rect.top);
+    // Round off float noise, so a box already on whole pixels gets exactly 0
+    const tidy = (v) => (Math.abs(v) < 1e-6 ? 0 : Math.round(v * 1e4) / 1e4);
+    return { x: tidy(x), y: tidy(y) };
+}
+
+/** What the device is called on screen and in the menus: the scenario's own name for the
+ *  rfid_cloner item ("Card copier"), so the inventory, the menus and the device agree. */
 export const DEFAULT_CLONER_NAME = 'Card copier';
 export function clonerName(items = (typeof window !== 'undefined' && window.inventory && window.inventory.items) || []) {
     const cloner = (items || []).find(it => it && it.scenarioData && it.scenarioData.type === 'rfid_cloner');
@@ -141,6 +152,7 @@ export class RFIDUIRenderer {
 
         // Append to container first so screen element is in the DOM
         this.container.appendChild(flipper);
+        this.snapFrameToPixels(flipper);
 
         // At a reader the copier opens on that reader: the saved cards to play back and the
         // cards held to tap, one press each. From the inventory (no reader) it opens on its menu.
@@ -224,6 +236,7 @@ export class RFIDUIRenderer {
 
         // Append to container first so screen element is in the DOM
         this.container.appendChild(flipper);
+        this.snapFrameToPixels(flipper);
 
         // Auto-start reading if card provided
         if (this.minigame.params.cardToClone) {
@@ -512,8 +525,9 @@ export class RFIDUIRenderer {
         // Breadcrumb
         const breadcrumb = document.createElement('div');
         breadcrumb.className = 'flipper-breadcrumb';
-        // From a door the copier opened on that reader, so the trail says so
-        breadcrumb.textContent = this.minigame.isLockingAttempt ? 'At the reader > Emulating' : 'RFID > Saved > Emulating';
+        // From a door the copier opened on that reader's screen ("RFID > Reader"), so the
+        // trail carries on from it
+        breadcrumb.textContent = this.minigame.isLockingAttempt ? 'RFID > Reader > Emulating' : 'RFID > Saved > Emulating';
         screen.appendChild(breadcrumb);
 
         // Emulation icon
@@ -557,16 +571,65 @@ export class RFIDUIRenderer {
         // Trigger emulation once the player has had time to read this screen (it showed for
         // only half a second before, too short to see). If it throws (bad card data), say so
         // rather than leaving "Emulating..." up with nothing happening.
-        setTimeout(() => {
-            if (!this.getScreen()) return; // closed meanwhile
+        // The timer is this copier's own: Cancel or close clears it (cleanup), and it checks
+        // that this copier is still the one open, because #rfid-screen is a global id and a
+        // copier opened again within the hold has a screen of the same id (R1 m2).
+        this.clearTimers();
+        this._emulationTimer = setTimeout(() => {
+            this._emulationTimer = null;
+            if (!this.isLive() || !this.getScreen()) return; // closed or replaced meanwhile
             try {
                 this.minigame.handleEmulate(card);
             } catch (e) {
                 console.error('Emulation failed:', e);
                 this.showError('Emulation failed', 'The saved card data is unreadable. Read the card again.');
-                setTimeout(() => { if (this.getScreen()) this.showSavedCards(); }, 3000);
+                this._fallbackTimer = setTimeout(() => {
+                    this._fallbackTimer = null;
+                    if (this.isLive() && this.getScreen()) this.showSavedCards();
+                }, 3000);
             }
         }, EMULATION_HOLD_MS);
+    }
+
+    /** True while this renderer's copier is the minigame on screen. */
+    isLive() {
+        const framework = typeof window !== 'undefined' ? window.MinigameFramework : null;
+        if (framework && framework.currentMinigame !== this.minigame) return false;
+        return this.minigame?.gameState?.isActive !== false;
+    }
+
+    clearTimers() {
+        if (this._emulationTimer) { clearTimeout(this._emulationTimer); this._emulationTimer = null; }
+        if (this._fallbackTimer) { clearTimeout(this._fallbackTimer); this._fallbackTimer = null; }
+    }
+
+    /**
+     * Move the frame onto whole pixels (see wholePixelOffset), now and on every resize, so
+     * the stepped corners stay crisp at any window size. Only this frame: the overlay's
+     * centring is each minigame's own nested flex layout, so snapping it centrally would
+     * move every minigame (R1 m1).
+     */
+    snapFrameToPixels(frame) {
+        if (typeof window === 'undefined' || !frame || typeof frame.getBoundingClientRect !== 'function') return;
+        const snap = () => {
+            if (!frame.isConnected) return;
+            frame.style.translate = '';
+            const { x, y } = wholePixelOffset(frame.getBoundingClientRect(), window.devicePixelRatio || 1);
+            if (x || y) frame.style.translate = `${x}px ${y}px`;
+        };
+        snap();
+        // Once more after the first paint, in case fonts or the overlay settle the layout
+        if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(snap);
+        if (this._onResize) window.removeEventListener('resize', this._onResize);
+        this._onResize = snap;
+        window.addEventListener('resize', snap);
+    }
+
+    /** Called from the minigame's cleanup: no timer or listener outlives the copier. */
+    cleanup() {
+        this.clearTimers();
+        if (this._onResize && typeof window !== 'undefined') window.removeEventListener('resize', this._onResize);
+        this._onResize = null;
     }
 
     /**

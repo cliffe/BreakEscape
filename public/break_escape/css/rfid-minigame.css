@@ -547,10 +547,18 @@
 
 /* Responsive */
 @media (max-width: 500px) {
+    /* At phone width the frame and its stepped outline stay inside the window, 16px in
+       from each side. Content-box sizing (400px of content plus padding) is kept for wider
+       screens; here the padding counts inside the width, or 90% plus 40px of padding ran
+       past both edges (UX slice 3a R1 m3). The height is the old 80vh of content plus the
+       padding, rounded to whole 2px so the bottom steps land on whole pixels. */
     .flipper-zero-frame {
-        width: 90%;
-        height: 80vh;
-        min-height: 500px;
+        box-sizing: border-box;
+        width: calc(100% - 32px);
+        max-width: 440px;
+        height: calc(80vh + 40px);
+        height: round(down, calc(80vh + 40px), 2px);
+        min-height: 540px;
     }
 }
 
