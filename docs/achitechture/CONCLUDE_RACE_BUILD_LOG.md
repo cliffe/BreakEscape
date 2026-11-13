@@ -67,8 +67,8 @@ travels the same validated sync path; the fix only orders it before the POST.
 - `public/break_escape/js/systems/objectives-manager.js`
 - `app/models/break_escape/game.rb`
 - `test/js/conclude-race.test.mjs` (new)
-- `test/controllers/break_escape/conclude_race_test.rb` (new)
-- `scenarios/test_conclude_race/` (new, minimal test scenario)
+- `test/controllers/break_escape/conclude_race_test.rb` (new; the Rails test uses an
+  inline `scenario_data`, so no scenario directory was added)
 
 ## Tests
 
@@ -97,8 +97,74 @@ Touched-file importers run (no full suites):
 
 ## Live proof
 
-(filled as it lands)
+Not yet run in a browser (handed back near the context budget). The two tests above
+exercise the real code paths, not mocks of them: the node test drives the real
+`ObjectivesManager.completeTask` flow (only `stateSync`/`fetch` are seams) and asserts
+the sync runs before the completion POST; the Rails test goes over real HTTP through
+the real controller and `Game#complete_task!`. Both reproduce the ordering and are red
+before the fix.
+
+### Important finding that changes the proof cases
+
+- **ca01's conclude gate is already protected**, so it will NOT show the race live.
+  Its gate global `episode_e1_invoice_fraud_defend_complete` is written by the inbox
+  triage minigame through `triage-starter.js` `persistTriageResult`, which already does
+  "sync, then emit": it writes the globals with `deferEmit`, awaits
+  `stateSync.syncConfirmed()`, and only then emits `global_variable_changed:...complete`
+  (the event that completes `sort_payments_inbox`). That is a per-feature workaround for
+  this exact race. ca01 has the shape but the triage path hand-rolled the fix.
+- **The generic race is the plain path**: `apply-actions.js` `setGlobal` calls
+  `writeGlobal(..., { emitAlways: true })`, which emits the change immediately, no sync.
+  Any eventMapping that completes a conclude-gate task on that change is the race. The
+  engine fix makes this path safe, so a scenario no longer needs the triage-starter
+  workaround. This is the case to prove live.
+
+### Live-proof plan (for the follow-up runner)
+
+Keyless server on :3061 only (start by hand like `tools/playtest/start-keyless-server.sh`
+but `-p 3061`; log at `tmp/keyless-3061.log`; stop it after, by PID). Use setFPS(20),
+fixed steps on. No VM flags needed (sis02 and ca01 have no VMs).
+
+1. **Minimal plain-path scenario** (cleanest): a scenario with a start room, an
+   interactable whose `onInteract` runs `setGlobal gate_global true` (the plain,
+   immediate-emit path), an eventMapping `global_variable_changed:gate_global ->
+   completeTask: final_task`, and a `missionConclusion` aim whose single task is
+   `final_task` with `concludeRequires.globals: ["gate_global"]` and a `bond_visualiser`
+   conclusionScreen. Create a game row directly (a `bin/rails runner` with inline
+   `scenario_data`, as `conclude_race_test.rb` does — avoids seeding a Mission). Load
+   `/break_escape/games/:id`, drive the interact via `window.__test`, assert the credits
+   open and no "Not Yet" toast fired. Then `grep` `tmp/keyless-3061.log` for the order:
+   `Started PUT ".../sync_state"` must precede `Started POST ".../objectives/tasks/final_task"`,
+   and that POST completes 200 (not a 422/warning). `tools/playtest/count-task-posts.sh`
+   and `verify-run.rb <id>` confirm the single completion and `mission_concluded_at`.
+2. **sis02 old-gate test copy**: copy sis02's scenario to `scenarios/test_*` (or a scratch
+   row), restore its old globals conclude gate (the FLAG SESSION global, set via the plain
+   path, not triage), drive to the FLAG SESSION beat and conclusion, same log-order check.
+   Do NOT edit sis02 itself.
+3. **ca01**: expected to conclude cleanly BECAUSE triage-starter already syncs-then-emits;
+   worth running once to confirm no regression and to show the log order (the sync lands
+   before the `sort_payments_inbox` POST either way). Not a demonstration of the engine
+   fix on its own.
 
 ## Handover
 
-(only if the context limit is reached)
+Status at hand-back (near context budget):
+
+- **Done and committed** (`2fb8f961e`): the engine fix + both failing-first tests + build
+  log. Branch `build/conclude-race` off main `2f5471209`, worktree
+  `.claude/worktrees/p-conclude-race`.
+- **Root cause / fix / request payloads**: see the sections above. No `player_state`
+  growth; no new server trust.
+- **Tests green**: node conclude-race 2/2 and all 15 objectives-manager importers; Rails
+  conclude_race 2/2 plus task_set_global, social_sync_then_emit, conclude_mission,
+  game_test, reload_persistence, games_controller, game_state_locking (all pass). Full
+  suites deliberately not run (test-lock rule).
+- **Open**: the three browser live proofs (plan above). Note the ca01/triage-starter
+  finding — ca01 will not show the race on its own.
+- **Gotchas**: `complete_task!`'s already-completed branch now returns `missionConcluded`
+  and sometimes `warning`; two existing tests assert only `json['message']`, still green.
+  The conclude POST path (`scenario-music-events.js` `concludeMission`) already pre-flushed;
+  only the task-completion and skip paths were missing it.
+- **Files touched**: `public/break_escape/js/systems/objectives-manager.js`,
+  `app/models/break_escape/game.rb`, `test/js/conclude-race.test.mjs`,
+  `test/controllers/break_escape/conclude_race_test.rb`, this log.
