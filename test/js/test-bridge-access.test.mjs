@@ -129,6 +129,15 @@ test('workstation() reports the live sprite\'s texture, display size and locked 
   delete window.rooms; delete window.screenStates;
 });
 
+test('train 31 item 2: workstation() reports the real locked state after a no-owner outright lock (autoLockMin 0), not null', () => {
+  const pc = { id: 'hot_desk', lockType: 'login' };
+  // ian owns ian_pc, not the hot desk, so the hot desk has no owner.
+  const { ws } = installWorkstations([pc], [{ id: 'ian', needsHome: 'ian_pc' }], { policyFor: () => ({ autoLockMin: 0 }) });
+  assert.equal(accessBridge.workstation('hot_desk').screenLocked, null, 'null before any lock');
+  ws.onBorrowedSession('hot_desk', 'ian');
+  assert.equal(accessBridge.workstation('hot_desk').screenLocked, true, 'the outright lock on a no-owner PC is queryable, not null');
+});
+
 // Networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, step 6): the client's footholds and last views.
 test('footholds() is empty without network-links.js, and reads its list() or footholds', () => {
   delete window.networkLinks;
