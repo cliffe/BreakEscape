@@ -18,12 +18,14 @@ writeFileSync(join(dir, 'constants.js'), 'export const INTERACTION_RANGE = 64; e
 writeFileSync(join(dir, 'conditional-text.js'),
     'export function resolveObjectField(data, field, fallback) { const v = data && data[field]; return typeof v === "function" ? v() : (v || fallback); }');
 writeFileSync(join(dir, 'display-dashes.js'), 'export const displayDashes = t => t;');
+writeFileSync(join(dir, 'pc-observations.js'), readFileSync(join(js, 'utils/pc-observations.js'), 'utf8'));
 writeFileSync(join(dir, 'walls.js'), 'export const interactionLineClear = () => true;');
 writeFileSync(join(dir, 'reach.js'), 'export const reachX = o => o.x; export const aimX = o => o.x;');
 const code = readFileSync(join(js, 'ui/info-label.js'), 'utf8')
     .replace("'../utils/constants.js'", "'./constants.js'")
     .replace("'../utils/conditional-text.js'", "'./conditional-text.js'")
     .replace("'../utils/display-dashes.js'", "'./display-dashes.js'")
+    .replace("'../utils/pc-observations.js'", "'./pc-observations.js'")
     .replace("'../systems/interaction-walls.js'", "'./walls.js'")
     .replace("'../systems/interaction-reach.js'", "'./reach.js'");
 writeFileSync(join(dir, 'info-label.js'), code);

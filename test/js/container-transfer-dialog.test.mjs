@@ -133,8 +133,7 @@ test('the desktop loads from container for the session and names the account, wi
     assert.ok(document.getElementById('pc-start-signout'));
     assert.equal(document.getElementById('pc-start-lock'), null, 'no Lock until the server supports it');
     assert.equal(document.querySelector('.pc-start-username').textContent, 'ishaw');
-    const note = document.querySelector('.pc-desktop-status .desktop-taskbar-note');
-    assert.ok(note && note.compareDocumentPosition(bar) & window.Node.DOCUMENT_POSITION_FOLLOWING, 'description above the taskbar');
+    assert.equal(document.querySelector('.pc-desktop-status, .desktop-taskbar-note'), null, 'the PC\'s observations are not repeated on its desktop');
     assert.equal(document.querySelector('.pc-monitor-name').textContent, mg.containerItem.scenarioData.name, 'the PC name on the bezel');
     assert.deepEqual(events.filter(([n]) => n === 'pc_desktop_opened').map(([, d]) => d),
         [{ pcId: 'hot_desk', npcId: 'ian', via: 'password', restored: false }]);

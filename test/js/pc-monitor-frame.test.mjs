@@ -693,19 +693,19 @@ test('R1 m6: a tap on the note does not mark it dragged; a move does', async () 
     }
 });
 
-test('R1 M3: a long description is all in its strip above the taskbar, wrapped and scrolled, never cut with an ellipsis', async () => {
+test('UI PC polish 1: the desktop does not repeat the PC\'s observations, however long; a share\'s status line still wraps and scrolls', async () => {
     const restore = sizeWindow(390, 844);
     const long = 'A shared hot desk PC. Anyone with an account can sign in here, and the last user left a sticky note about the payroll share on the second floor.';
     try {
         await desktop({ observations: long });
-        const note = document.querySelector('.desktop-taskbar-note');
-        assert.equal(note.textContent, long, 'every word is in the DOM');
-        assert.ok(note.classList.contains('pixel-scroll'), 'the pixel scrollbar when it scrolls');
+        assert.equal(document.querySelector('.desktop-taskbar-note'), null, 'no description on the desktop');
+        assert.equal(document.querySelector('.pc-desktop-status'), null, 'no strip for it');
+        assert.ok(!document.querySelector('.pc-desktop').textContent.includes('payroll share'), 'the words are not on the desktop');
     } finally {
         restore();
     }
     const box = css('container-minigame.css');
-    for (const sel of ['.desktop-taskbar-note {', '.share-folder-status {']) {
+    for (const sel of ['.share-folder-status {']) {
         const rule = box.slice(box.indexOf(sel), box.indexOf('}', box.indexOf(sel)));
         assert.match(rule, /white-space: normal/, sel);
         assert.doesNotMatch(rule, /text-overflow: ellipsis|nowrap/, sel);
@@ -775,7 +775,7 @@ test('R2 M2: the desktop\'s icon area has the pixel scrollbar and "More below" w
     assert.match(cue, /border-top: 2px solid/);
 });
 
-test('R2 m4 / slice 6: no empty description strip; the taskbar is always under the desktop', async () => {
+test('R2 m4 / slice 6 / UI PC polish 1: no description strip, with or without observations; the taskbar is always under the desktop', async () => {
     const restore = sizeWindow(390, 844);
     try {
         const a = await desktop({ observations: '' });
@@ -783,7 +783,7 @@ test('R2 m4 / slice 6: no empty description strip; the taskbar is always under t
         assert.ok(document.querySelector('.pc-desktop > .pc-taskbar'), 'the taskbar');
         a.cleanup?.();
         const b = await desktop({ observations: 'A hot desk.' });
-        assert.ok(document.querySelector('.pc-desktop-status .desktop-taskbar-note'), 'a description gets its strip');
+        assert.equal(document.querySelector('.pc-desktop-status'), null, 'a description gets no strip (item 1)');
         b.cleanup?.();
     } finally {
         restore();

@@ -1009,22 +1009,6 @@
     gap: 8px;
 }
 
-/* The PC's description (its observations, which can carry clues): wrapped, up to three lines,
-   then it scrolls; never cut off (R1 M3) */
-.desktop-taskbar-note {
-    display: block;
-    font-size: 16px;
-    line-height: 18px;
-    color: #cfd6dc;
-    white-space: normal;
-    overflow-wrap: anywhere;
-    max-height: 54px;
-    overflow-x: hidden;
-    overflow-y: auto;
-    min-width: 0;
-    flex: 1 1 auto;
-}
-
 .pc-monitor[data-compact] .container-minigame.desktop-mode.pc-desktop .desktop-icons {
     padding: 8px;
     gap: 8px;

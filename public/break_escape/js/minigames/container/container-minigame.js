@@ -1017,13 +1017,12 @@ export class ContainerMinigame extends MinigameScene {
     
     /**
      * The desktop on the monitor's screen (UX slices 2c and 6): a top strip only for a claimed
-     * or remote session's notice, the icons on the wallpaper, the computer's description, and
+     * or remote session's notice, the icons on the wallpaper, and
      * the taskbar with Start, the account and the computer name (utils/pc-taskbar.js). The PC's
      * name is on the bezel's top strip and the post-it on the frame.
      */
     createMonitorDesktopUI() {
         const notices = this.sessionNoticesHtml();
-        const note = this.headerObservations();
         this.gameContainer.innerHTML = `
             <div class="container-minigame desktop-mode pc-desktop">
                 ${notices ? `<div class="pc-desktop-topbar">${notices}
@@ -1034,7 +1033,6 @@ export class ContainerMinigame extends MinigameScene {
                     </div>
                 </div>
                 <div class="desktop-more" hidden aria-hidden="true"><span class="desktop-more-arrow"></span><span class="desktop-more-text">${DESKTOP_MORE_BELOW_TEXT}</span></div>
-                ${note ? `<div class="pc-desktop-status"><span class="desktop-taskbar-note pixel-scroll">${escapeHtml(displayDashes(note))}</span></div>` : ''}
             </div>
         `;
         this.mountTaskbar(this.gameContainer.querySelector('.pc-desktop'));

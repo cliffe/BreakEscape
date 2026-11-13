@@ -711,15 +711,6 @@
     outline: none;
 }
 
-/* The desktop's description, above the taskbar: wrapped, up to three lines, then it scrolls */
-.pc-monitor .pc-desktop > .pc-desktop-status {
-    flex: 0 0 auto;
-    display: flex;
-    padding: 2px 8px;
-    background: #1c1c1c;
-    border-top: 2px solid #3a3a3a;
-}
-
 /* A short screen (a landscape phone): the panel fits without scrolling. Wider, so the remote
    line stays on one line; the PC's name is left to the bezel's top strip, which shows it;
    entries without their 2px padding. */
