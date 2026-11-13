@@ -297,6 +297,18 @@ module BreakEscape
       assert_equal({ 'username' => 'lfox', 'displayName' => 'Lena Fox', 'via' => 'password', 'remote' => true }, row['session'])
     end
 
+    # UI slice 6 (R2 minor 2): the network view carries the lock on a remote PC so it shows
+    # Locked rather than offering an open the server would refuse.
+    test 'the view carries locked on a locked remote session' do
+      with_office_foothold
+      sign_in('lena_pc', 'lfox', NS::LENA_PASSWORD, foothold: OFFICE)
+      lock_session('lena_pc')
+      assert_response :success
+      row = network_view['footholds'][0]['hosts'].find { |h| h['id'] == 'lena_pc' }
+      assert_equal({ 'username' => 'lfox', 'displayName' => 'Lena Fox', 'via' => 'password', 'remote' => true, 'locked' => true },
+                   row['session'])
+    end
+
     # ---- a locked session is a server boundary on the share and remote paths (UI slice 6) ----
 
     def lock_session(pc_id)

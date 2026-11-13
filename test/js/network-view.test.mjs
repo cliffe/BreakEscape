@@ -145,6 +145,17 @@ test('hostAction: a host that is not responding wins over every other action', (
     assert.equal(hostAction({ responding: true, remoteSignIn: true }), 'sign-in', 'only false marks it');
 });
 
+// UI slice 6: a held-but-locked session is shown Locked, not Open
+test('hostAction: a locked password session is locked, not open', () => {
+    assert.equal(hostAction({ remoteSignIn: true, session: { via: 'password', remote: true, locked: true } }), 'locked');
+    assert.equal(hostAction({ remoteSignIn: true, session: { via: 'password', remote: false, locked: true } }), 'locked',
+        'a local locked session too');
+    assert.equal(hostAction({ remoteSignIn: true, session: { via: 'password', remote: true } }), 'open',
+        'an unlocked session still opens');
+    assert.equal(hostAction({ responding: false, remoteSignIn: true, session: { via: 'password', locked: true } }), 'not_responding',
+        'not responding still wins over a locked session');
+});
+
 test('a not-responding host row shows the text and no control, and its test state says so', async () => {
     const hosts = HOSTS.map(h => (h.id === 'lena_pc'
         ? { id: 'lena_pc', kind: 'pc', name: "Lena's PC", host: 'HB-FIN-02', sprite: 'pc_desktop', headless: false, responding: false }
@@ -202,6 +213,21 @@ test('the view lists each row with its action and the row attributes, from GET /
     assert.equal(row('data-resource-id', 'scanned_inbox').querySelector('[data-action]').dataset.action, 'open');
     assert.equal(row('data-resource-id', 'print_queue').querySelector('[data-action]').dataset.action, 'observe');
     assert.equal(scenarioReads, 0, 'the view never reads scenario data');
+});
+
+// UI slice 6: a locked remote PC shows the padlock "Locked" badge in place of Open, and
+// offers no action to click (the server refuses the open until the password is re-entered).
+test('a locked remote session shows a Locked badge and no open action', async () => {
+    const hosts = HOSTS.map(h => h.id === 'lena_pc'
+        ? { ...h, session: { ...h.session, locked: true } } : h);
+    setup({ hosts });
+    links.open('jack_comms_port');
+    await settle();
+    const lena = row('data-host-id', 'lena_pc');
+    assert.equal(lena.querySelector('[data-action]'), null, 'no open button on a locked PC');
+    assert.match(lena.querySelector('.network-row-locked').textContent, /Locked/);
+    // sam_pc is still an ordinary open
+    assert.equal(row('data-host-id', 'sam_pc').querySelector('[data-action]').dataset.action, 'open');
 });
 
 test('network_viewed carries the network, the host ids and hostList; it fires on every open', async () => {
