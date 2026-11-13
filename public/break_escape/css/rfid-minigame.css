@@ -355,7 +355,7 @@
 }
 
 .flipper-info-dim {
-    color: #888;
+    color: #c8c8c8;   /* readable on the copier's dark screen (critique A44) */
     margin: 10px 0;
     text-align: center;
     font-size: 14px;

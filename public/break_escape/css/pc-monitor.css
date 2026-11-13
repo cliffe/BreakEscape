@@ -4,6 +4,9 @@
    look only. Pixel art: 2px borders, stepped corners, flat fills, pixel fonts. */
 
 .minigame-container.pc-view {
+    /* The PC view places its own monitor: the shell never scrolls, so a post-it dragged past
+       the window edge adds no scrollbars (UI shell review m6) */
+    overflow: hidden;
     /* The monitor is placed by left/top from the window's own box */
     display: block;
     /* The dynamic viewport (R2 M3): a phone's address bar is left out, and neither a pinch

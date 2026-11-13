@@ -294,3 +294,28 @@
 @media (max-width: 960px) {
     .combination-dials { gap: 12px; padding-left: 8px; padding-right: 8px; }
 }
+
+/* Phone portrait (critique A01): three dials in a row are ~740px wide, so on a narrow window
+   the row cropped dials 1 and 3 off both sides. Below 600px the dials stack, one per line,
+   with the label beside the arrows; the wrapper grows with them and the frame scrolls, and
+   the dial the arrows turn now keeps its orange outline (combination-minigame.js scrolls it
+   into view). Nothing in the row is centred past the frame's edge (`safe center`). */
+@media (max-width: 600px) {
+    .combination-wrapper { height: auto; min-height: 100%; overflow: visible; }
+    .combination-header { padding: 8px 12px; }
+    .combination-help { font-size: 16px; }
+    .combination-dials {
+        flex: 0 0 auto;
+        flex-direction: column;
+        justify-content: safe center;
+        gap: 12px;
+        padding: 12px 8px;
+        overflow: visible;
+    }
+    .combination-dial-group { flex-direction: row; gap: 8px; }
+    .combination-dial-label { width: 80px; text-align: right; font-size: 16px; }
+    /* 32px is 4x Press Start 2P's 8px grid: two digits fit 64px */
+    .combination-dial-display { font-size: 32px; width: 80px; height: 56px; padding: 6px 8px; }
+    .combination-status { padding: 6px 12px; }
+    .combination-footer { padding: 8px 12px; }
+}

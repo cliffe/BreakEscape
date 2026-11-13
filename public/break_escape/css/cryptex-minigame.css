@@ -302,3 +302,31 @@
     .cryptex-status { min-height: 0; padding: 4px 16px; }
     .cryptex-footer { padding: 6px 16px; }
 }
+
+/* Phone portrait (critique A02): five wheels at 124px were wider than a 390px window and the
+   centred row cropped wheels 1 and 5 off both sides. Below 600px each wheel is 56px wide with
+   a 41px GNF letter (two font pixels a grid step, GNF's other crisp size), so five fit in about
+   330px; a longer word wraps onto a second row instead of running off the edge. */
+@media (max-width: 600px) {
+    .cryptex-wrapper { height: auto; min-height: 100%; overflow: visible; }
+    .cryptex-header { padding: 8px 12px; }
+    .cryptex-wheels {
+        flex: 0 0 auto;
+        flex-wrap: wrap;
+        justify-content: safe center;
+        gap: 12px 6px;
+        padding: 16px 8px;
+        overflow: visible;
+    }
+    .cryptex-wheel-label { font-size: 16px; }
+    .cryptex-wheel-arrow { width: 40px; height: 32px; padding: 0; }
+    .cryptex-wheel-display {
+        font-size: 41px;
+        line-height: 28px;
+        width: 36px;
+        height: 48px;
+        padding: 4px 8px 6px;
+    }
+    .cryptex-hint-strip { padding: 8px 12px; flex-wrap: wrap; }
+    .cryptex-footer { padding: 8px 12px; }
+}

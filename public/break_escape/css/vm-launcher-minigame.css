@@ -4,7 +4,7 @@
 
 .vm-launcher {
     padding: 15px;
-    font-family: 'GNF', 'Courier New', monospace;
+    font-family: 'GNF', monospace;
     max-height: 400px;
     overflow-y: auto;
 }
@@ -75,8 +75,10 @@
 }
 
 .vm-status.console {
-    background: #0088ff;
-    color: #fff;
+    /* a muted console tag, not a bright web-blue button (critique A30) */
+    background: #12304a;
+    color: #9ee6ff;
+    border: 2px solid #9ee6ff;
 }
 
 .vm-details {
@@ -91,7 +93,8 @@
 }
 
 .vm-ip {
-    font-family: 'Courier New', monospace;
+    font-family: 'VT323', monospace;   /* a pixel face for the address (critique A30) */
+    font-size: 24px;
     color: #ffaa00;
 }
 
@@ -108,7 +111,7 @@
     border: 2px solid #000;
     padding: 10px 20px;
     font-family: 'Press Start 2P', monospace;
-    font-size: 12px;
+    font-size: 16px;   /* on its 8px grid */
     cursor: pointer;
     transition: background 0.2s;
 }
@@ -159,7 +162,7 @@
 
 .standalone-instructions {
     background: #1a1a1a;
-    border: 1px solid #333;
+    border: 2px solid #333;
     padding: 15px;
     margin-top: 15px;
     font-size: 13px;
