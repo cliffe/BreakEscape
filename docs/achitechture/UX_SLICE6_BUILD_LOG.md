@@ -179,3 +179,48 @@ Tests: `pc-taskbar` 22 (was 14), `pc-monitor-frame` 48; 27 test files that impor
 (434 tests) all pass. Files: `pc-taskbar.js`, `npc-headshot.js`, `password-minigame.js`,
 `container-minigame.js`, `text-file-minigame.js`, `css/pc-monitor.css`, `pc-taskbar.test.mjs`,
 `pc-monitor-frame.test.mjs`.
+
+## 2026-11-13: review round 2 fixes
+
+Every finding of `UX_SLICE6_REVIEW_R2.md`. Live proof on a keyless server (:3464, stopped by PID),
+games made with `tools/playtest/swap-scenario-game.rb`, 1400x1000, scrollbars shown. Scripts and
+shots are in the scratch folder `ui-slice6-fix2/`.
+
+- Blocker 1, a locked remote session was stranded: fixed by the preferred route. A locked host
+  row in the network view keeps its padlock "Locked" badge and gains a "Sign in" button
+  (`data-action="sign-in"`); it opens the remote sign-in screen, exactly as a locked local PC opens
+  its own. That screen now passes `preselect` (the held session's username) as the local screen
+  does, so the "Locked: <name>" banner shows and the account is pre-filled. Unlock is the ordinary
+  POST /login; no new server route. Lock stays on remote sessions. Live, each through the drop box:
+  `door_box` (test_access_networks, headless), Lena's PC (captured card read first) and
+  `store_controller` (lab_physical_pentest, headless). Each one: Lock, the row reads "Locked" plus
+  Sign in, the sign-in screen shows the locked banner with the account filled, a wrong password
+  gives "Incorrect username or password." and keeps the screen, the right password returns to the
+  remote desktop and the server record has no `locked`.
+- Major 1, stale taskbar test: the first half of the Lock test now sets `lockSession` to
+  undefined on the sessions object, opens the panel and checks it is open with no Lock entry, so it
+  still tests a server that reports locking with a client that cannot ask. `pc-taskbar` 22 of 22.
+- Minor 1, 4 px panel overflow at 1400x1000: entries take 1 px vertical padding (was 2 px), which
+  pays for the 18 px icon box. Live: panel `scrollHeight - clientHeight` is 0. No layout in the
+  test harness, so `pc-monitor-frame.test.mjs` pins the two numbers (padding and icon height).
+- Minor 2, Lock from a reader closed silently: after a successful lock the reader takes the parked
+  message from `pcSessions.takeEndedMessage` and shows it as the toast, then closes. Live: the
+  alerts list ends with "Locked. Sign in again to continue." after the reader Lock.
+- Minor 3, own Lock rule: `pcTaskbarModel` takes `canLock` (passed from `pcSessions.canLock(pcId)`
+  by the desktop and the reader) and uses it for the Lock entry, keeping `lockSupported` as the
+  gate and the guest exclusion. With no `canLock` supplied it falls back to the old password test,
+  so direct model calls and tests are unchanged.
+- Nit 1, the PC sprite does not show the player's own lock: left, as the review marks it optional
+  polish.
+
+New test: `network-view` "a locked remote session shows a Locked badge and a Sign in control, not
+Open" (also clicks it and checks the sign-in screen opens for `lena_pc`). Counts: `pc-taskbar` 22,
+`pc-sessions` 43, `pc-monitor-frame` 49, `network-view` 45, `workstation-state` 55, bark tests 173
+(10 files), all pass; Rails `access_model_login`, `network_pivot`, `network_remote_signin` 76 runs,
+745 assertions, 0 failures.
+
+Merge of main (48b755b81, train 34: bark hold drain in `bark-release-policy.js` and `npc-barks.js`,
+plus `sis01_healthcare` and docs): clean, no conflicts, merge commit only.
+
+Files: `network-view-minigame.js`, `unlock-system.js`, `pc-taskbar.js`, `container-minigame.js`,
+`text-file-minigame.js`, `css/pc-monitor.css`, tests `network-view`, `pc-taskbar`, `pc-monitor-frame`.
