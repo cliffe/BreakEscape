@@ -92,7 +92,7 @@ export class TextFileMinigame extends MinigameScene {
                         <div class="content-actions">
                             <button class="action-btn" id="copy-btn" title="Copy to clipboard"><img src="/break_escape/assets/icons/copy-sm.png" alt="Clipboard" class="icon-small"> Copy</button>
                             <button class="action-btn" id="select-all-btn" title="Select all text">Select All</button>
-                            <button class="action-btn" id="minigame-notebook" title="Add to Notepad"><img src="/break_escape/assets/icons/notes.png" alt="" class="icon-small notepad-btn-icon"> Add to Notepad</button>
+                            <button class="action-btn" id="minigame-notebook" title="Add to Notepad"><img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad</button>
                         </div>
                     </div>
                     <div class="file-content" id="file-content">
