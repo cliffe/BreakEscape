@@ -163,6 +163,36 @@ test('cut by a knock-out after a heard line: heard', () => {
     assert.equal(o.emitted('npc_exchange_heard:ex_parcel').length, 1);
 });
 
+test('cut gives the held use back: a still-using NPC is not pinned for the rest of the exchange (R1 n2)', () => {
+    let down = null;
+    const o = office({ ko: id => id === down });
+    o.until(() => o.exLines().length === 2, 30000, 'two lines overheard');
+    const chat = o.sys._chats.get('cooler');
+    const bob = o.sys.states.get('bob');
+    const held = bob.job.useUntil;
+    const bUseBefore = chat.ex.bUseBefore;
+    assert.ok(Number.isFinite(bUseBefore) && held > bUseBefore, 'the hold pushed bob past his own cooler use');
+    assert.ok(bUseBefore > o.sys.clockMs, 'the cut comes while bob still has use left');
+    down = 'ann';                       // ko ann: the pair breaks while bob is still using
+    o.sys.step(NEEDS_TICK_MS);
+    assert.equal(o.evs('exchange_cut').length, 1, 'cut');
+    assert.equal(bob.job.useUntil, bUseBefore, 'bob got the held time back: his use ends at his own pre-hold end');
+    assert.ok(bob.job.useUntil < held, 'strictly less than the knot-end hold');
+});
+
+test('a cut while an exchange NPC is frozen in a player conversation hands the hold back off useRemaining (R1 n2)', () => {
+    const o = office();
+    o.until(() => o.exLines().length === 2, 30000, 'two lines');
+    const bob = o.sys.states.get('bob');
+    const held = bob.job.useUntil;
+    o.w.setChat('bob');                 // bob freezes, then the pair is cut
+    o.sys.step(NEEDS_TICK_MS * 2);
+    assert.equal(o.evs('exchange_cut').length, 1, 'cut');
+    assert.equal(bob.mode, 'frozen');
+    const end = o.sys.clockMs + (bob.job.useRemaining || 0);
+    assert.ok(end < held, 'bob is no longer held to the knot end once he unfreezes');
+});
+
 test('cut before any line reached the player: unplayed, and a later meeting plays it whole', () => {
     let down = null;
     const o = office({ ko: id => id === down });

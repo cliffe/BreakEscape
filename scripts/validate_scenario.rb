@@ -2919,17 +2919,54 @@ end
 def check_revoke_card_globals(json_data)
   issues = []
   found = false
-  walk = nil
-  walk = lambda do |node|
+  revoked_ids = []
+  granted = {} # card_id => the pointer of the give_item or start item that hands it over
+
+  # Every card_id string under a granted item subtree: its own card_id and any nested
+  # rfidCard/card/contents card_id, so a card handed over inside a container counts too.
+  card_ids_under = nil
+  card_ids_under = lambda do |node, out|
     case node
     when Hash
-      found = true if node['type'] == 'revoke_card'
-      node.each_value { |v| walk.call(v) }
+      cid = node['card_id']
+      out << cid if cid.is_a?(String) && !cid.empty?
+      out.concat(cid.select { |c| c.is_a?(String) && !c.empty? }) if cid.is_a?(Array)
+      node.each_value { |v| card_ids_under.call(v, out) }
     when Array
-      node.each { |v| walk.call(v) }
+      node.each { |v| card_ids_under.call(v, out) }
+    end
+    out
+  end
+
+  walk = nil
+  walk = lambda do |node, pointer|
+    case node
+    when Hash
+      if node['type'] == 'revoke_card'
+        found = true
+        cid = node['card_id']
+        revoked_ids << cid if cid.is_a?(String) && !cid.empty?
+        revoked_ids.concat(cid.select { |c| c.is_a?(String) && !c.empty? }) if cid.is_a?(Array)
+      end
+      if node['type'] == 'give_item' && node['item'].is_a?(Hash)
+        card_ids_under.call(node['item'], []).each { |c| granted[c] ||= "#{pointer}/item" }
+      end
+      node.each { |k, v| walk.call(v, "#{pointer}/#{k}") }
+    when Array
+      node.each_with_index { |v, i| walk.call(v, "#{pointer}/#{i}") }
     end
   end
-  walk.call(json_data)
+  walk.call(json_data, '#')
+
+  # Start items the player begins with: each carried card_id is granted at game start.
+  if json_data['startItemsInInventory'].is_a?(Array)
+    json_data['startItemsInInventory'].each_with_index do |item, i|
+      next unless item.is_a?(Hash)
+
+      card_ids_under.call(item, []).each { |c| granted[c] ||= "#/startItemsInInventory/#{i}" }
+    end
+  end
+
   return issues unless found
 
   globals = json_data['globalVariables']
@@ -2939,6 +2976,18 @@ def check_revoke_card_globals(json_data)
               "not declared as an array. The server enforces card cancellation from this global " \
               "(stored grow-only) and the client reads it for the UI; without the declared array " \
               "default [] the cancellation never takes, so a revoked card keeps opening its door."
+  end
+
+  # Advisory (hardening item 2): a card handed to the player that a revoke_card also cancels.
+  # revoked_card_ids is grow-only (merge_global_variables! unions it every sync and there is no
+  # un-revoke path), so a card re-issued under the same id after revocation stays dead. Fires on
+  # nothing in the corpus; purely an authoring guard.
+  (revoked_ids.uniq & granted.keys).sort.each do |cid|
+    issues << "⚠️ WARNING: #{granted[cid]}: card_id '#{cid}' is handed to the player (give_item or a " \
+              "start item) and is also cancelled by a 'revoke_card' action. revoked_card_ids is " \
+              "grow-only, so once this id is revoked it stays refused for the rest of the game. That is " \
+              "fine for a card given and later cancelled. If the player is meant to get a working card " \
+              "back after the revoke, give the re-issued card a fresh card_id."
   end
   issues
 end
