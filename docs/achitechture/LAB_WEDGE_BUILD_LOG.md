@@ -107,3 +107,37 @@ R1 suite results, under the shared test lock:
 - `RBENV_VERSION=2.7.8 bin/rails test`: 2392 runs, 42745 assertions, 0 failures, 0 errors, 1 skip (run from 6f27be98a; the later commit 2c1c71429 changes one readable string and the backlog, and the five lab Rails files were rerun on it: 57 runs, 0 failures).
 - `MERGE_BATCH=1 bin/test-js -j 3`: 598 files passed, 0 failed (run from 0a802ed6f).
 - Validator (`--no-graph`): `lab_physical_pentest` 0 ❌ (new warning: the two extinguishers 0 px apart, intended); `test_access_work` 0 ❌.
+
+## Review R2 fixes
+
+Review: `LAB_WEDGE_REVIEW_R2.md` (B 0, M 0, m 9). Commits a3ef067a6 (wording, comments, backlog), b91cda9a9 (validator rule 6 and its test), then the PLAYTEST rows and this log.
+
+| Finding | Fix |
+|---|---|
+| m1 disposal line and capture | Ruth's debrief line now fits all three routes (floor printer, Melanie's printout, the post room): paper left out where anyone passing could read it; the controls are secure print release, a clear desk and a locked waste bin. The `doc_disposal` capture: roleLabel "Ledgerwell Ltd, print points and desks", host "Print points", and a note with no post-room-only detail. |
+| m2 Ruth's hint | The paper hint says what to look at again (printer trays and bins, on the floor and in the post room). The door pointer is its own stage-1 choice, gated on `not kp_propped_door` rather than on the paper finding; after the wedge its reply says the door is standing open (`VAR kp_propped_door`, `VAR lw_post_door_propped` added). |
+| m3 Dev | "he'll let you in" (Kieran buzzes from his desk). Once `lw_post_door_propped` is true, Dev says the door is wedged open and to walk in (`VAR lw_post_door_propped` added). |
+| m4 courier trust | Comment at Kieran's `unlockable` names the accepted gap and why; backlog line for an optional `unlockableWhen` server gate on server-owned globals. |
+| m5 real vest | Proved live, game 3057 (below). |
+| m6 0 px warning | Validator rule 6 skips a pair when either object is `interactable: false` (the tap filter and the proximity pass both skip such objects). New test `test/js/validator-pinned-pair-interactable.test.mjs` (3 tests). The ERB comment on the extinguishers says not to move them apart. |
+| m7 PLAYTEST rows | H5.22 to H5.27: the jam, the wedge, the lesson, the walk-in, the courier choice, and Dev, Kieran and Ruth after the wedge. |
+| m8 lesson overlap | P2's fire-door readable unchanged. P1's middle paragraph now says what is different here: an internal badge door, propped by staff who hold a badge, still wedged after the printer was fixed; its controls paragraph leads with fixing reported nuisances and a held-open report from the reader. |
+| m9 proof dismiss | `lwr2/lib.mjs` `dismiss()` retries an ambiguous blocking UI with safe labels (Close first; never New Session or Restart). Game 3058 closed the readable and walked into P1 with no reload. |
+
+Validator over the whole corpus (178 scenarios, `--no-graph`), before and after the rule change: 177 outputs identical; `lab_physical_pentest` goes from 7 warnings to 6 (the 0 px extinguisher pair gone), 0 ❌ both times, every exit code 0 both times. No other scenario had a rule 6 warning.
+
+Live proof (keyless :3066 from this worktree, 1400x1000, scrollbars shown, `setFPS(20)` with fixed steps on, new games 3057 and 3058 via `swap-scenario-game.rb`):
+
+- Game 3057, the real vest: `kit_hivis` in the briefing room, the wear confirm, "Hi-vis on" toast, `courier_ready` false then true, nothing set by hand. Reception (not via the hall, so no jam): Dev's parcel choice gives the new "he'll let you in" line; Kieran offers the courier choice, and picking it posts `unlock door P1 kieran npc` (200); the server's `unlockedRooms` then holds P1. Hall, then P1: entered with no lock. `courier_ready` still true; `kp_propped_door` false (no prop yet), as intended. The unlock toast was not caught by the script's selector or in shot r2-03 (the conversation covers it); R1's game 2996 showed it.
+- Game 3058, after the wedge: vest on, hall entered; door propped 59 s later (wall clock), the jam cleared, the toast shown. The reworded readable read from the hall, closed with the fixed `dismiss()`, then P1 entered at once: `kp_propped_door` true. Dev's parcel choice gives "Door's wedged open anyway, just walk in." The follow-up talk to Kieran did not open: he was in an exchange with Dev at the time (speech bubbles in r2-09). His post-wedge gate is the ink condition the wedge test pins.
+- Ruth's phone choices were not driven live; the ink compiles and the gates are plain VAR checks.
+- Shots, session scratchpad `ux-shots/lab-wedge-r2fix/`: r2-01 to r2-09. Scripts `lwr2/courier_r2.mjs`, `lwr2/wedged_r2.mjs`, `lwr2/lib.mjs`, corpus runner `lwr2/corpus.sh`.
+
+### Lines that need TTS after R2 (none generated)
+
+- Kieran (`ink/kieran.ink`): the greeting, the three hub openers, the two "where does the post go" lines, the courier line, the two "door is wedged open" lines, the goodbye. Unchanged in R2.
+- Kieran's own chatter: `work_fail_printer` (two), `work_fail_fed_up` (one), `wk_prop_door` (one). Unchanged.
+- Dev (`ink/dev.ink`): the courier line before the wedge (reworded in R2), the courier line after the wedge (new in R2), "Deliveries sign in at the hatch..." (R1).
+- Ruth on the phone (`ink/ruth_phone.ink`): the paper hint (reworded in R2), the door pointer before the wedge and after it (two lines, new in R2).
+- Ruth's debrief (`ink/ruth_debrief.ink`): the document-disposal line (reworded in R2), the propped-door line (R1).
+- Kieran still needs visemes from talk runs.
