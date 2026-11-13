@@ -16,7 +16,7 @@ import { watchTts, goRoom, playThrough } from './_live.mjs';
 
 export async function setup(page, bridge) {
   await clearScreen(page, bridge, () => {});
-  await goRoom(page, bridge, 'trading_floor');
+  await goRoom(page, bridge, ['security_checkpoint', 'trading_floor']);
   const s = await bridge.getState();
   const f = s.nearby.find(n => n.id === 'irina_volkova');
   if (!f) throw new Error('Irina not in trading_floor');

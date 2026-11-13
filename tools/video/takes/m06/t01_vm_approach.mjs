@@ -45,7 +45,7 @@ async function monitorState(page) {
 
 export async function setup(page, bridge) {
   await clearScreen(page, bridge, () => {});
-  await goRoom(page, bridge, 'server_room');
+  await goRoom(page, bridge, ['security_checkpoint', 'trading_floor', 'server_room']);
   // The launcher's reported x/y is its sprite corner, not where a player stands to use it: find the standing point once
   // with moveToNear (off camera), then back off down and to the right so the take walks up to it with keys.
   const m = await bridge.moveToNear(VM_ID, { timeoutMs: 20000 });
