@@ -136,18 +136,21 @@ test('Copy and Take carry pixel icons at whole-number scales', () => {
     assert.equal(take.icon.src, '/assets/icons/hand_frames.png');
     assert.equal(take.icon.frame, 0, 'the open hand');
     assert.equal(take.icon.cell, 32, '32px cells, x2 in the 64px box');
-    assert.equal(copy.icon.src, '/assets/objects/rfid_cloner.png');
-    // The placeholder sprite is 11x22: the drawn size must be the same whole multiple of both
-    const k = copy.icon.width / 11;
-    assert.ok(Number.isInteger(k) && k >= 1, `width ${copy.icon.width} is a whole multiple of 11`);
-    assert.equal(copy.icon.height, 22 * k, 'the same multiple of 22');
+    // Slice 3b (q90): the card copier's own 16px menu icon, at a whole-number scale
+    assert.equal(copy.icon.src, '/assets/icons/card-copier.png');
+    const k = copy.icon.width / 16;
+    assert.ok(Number.isInteger(k) && k >= 1, `width ${copy.icon.width} is a whole multiple of 16`);
+    assert.equal(copy.icon.height, 16 * k, 'the same multiple of 16');
+    const png = readFileSync(join(here, '../../public/break_escape/assets/icons/card-copier.png'));
+    assert.equal(png.readUInt32BE(16), 16, 'the icon file is 16px wide');
+    assert.equal(png.readUInt32BE(20), 16, 'and 16px tall');
     assert.ok(copy.icon.width <= 64 && copy.icon.height <= 64, 'fits the 64px box');
 });
 
 test('the menu icons fall back to the default assets path', () => {
     resetWindow({ inventory: { items: [cloner] } });
     const [copy, take] = objectActions(worldKeycard());
-    assert.match(copy.icon.src, /^\/break_escape\/assets\/objects\//);
+    assert.match(copy.icon.src, /^\/break_escape\/assets\/icons\//);
     assert.match(take.icon.src, /^\/break_escape\/assets\/icons\//);
 });
 

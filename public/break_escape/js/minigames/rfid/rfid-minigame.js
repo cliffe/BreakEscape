@@ -56,7 +56,14 @@ export class RFIDMinigame extends MinigameScene {
         // it and the card's id (SYNC_DELTAS_PLAN 5.2, access model 4.2).
         this.cloneSource = params.cloneSource || null;
         this.cloneFrom = params.cloneFrom || null;
-        this.isLockingAttempt = this.requiredCardIds.length > 0; // True if trying to unlock a specific lock, false if just browsing
+        // At a lock with an access list (UX slice 3b) the server decides: each Emulate or
+        // tap sends that one card's id through params.requestAccess (unlock-system.js
+        // requestRfidAccessUnlock) and follows the answer. Such a lock may have no
+        // `requires` at all, so it still counts as a reader.
+        this.accessList = params.accessList === true && typeof params.requestAccess === 'function';
+        this._accessPending = false;
+        // True if trying to unlock a specific lock, false if just browsing
+        this.isLockingAttempt = this.requiredCardIds.length > 0 || this.accessList;
 
         // Components
         this.ui = null;
@@ -131,6 +138,19 @@ export class RFIDMinigame extends MinigameScene {
             const name = card.scenarioData?.name || 'This card';
             this._showDenial('Card cancelled', () => this.ui.showTapInterface(), 'revoked',
                 `${name} has been deactivated — the reader rejects it.`);
+            return;
+        }
+
+        // At an access list the server decides for this one card
+        if (this.accessList) {
+            const name = card.scenarioData?.name || null;
+            this._askAccessList(cardId, {
+                cardName: name,
+                emulated: false,
+                back: () => this.ui.showTapInterface(),
+                deniedTitle: 'Access Denied',
+                deniedDetail: `${name || 'This card'} is not cleared for this reader.`
+            });
             return;
         }
 
@@ -215,7 +235,7 @@ export class RFIDMinigame extends MinigameScene {
                 }
             }, 0)
         };
-        if (this.isLockingAttempt && typeof this.params.onRefused === 'function') {
+        if (reason && this.isLockingAttempt && typeof this.params.onRefused === 'function') {
             try { this.params.onRefused(reason); } catch (e) { console.warn('onRefused failed:', e); }
         }
     }
@@ -231,6 +251,82 @@ export class RFIDMinigame extends MinigameScene {
             d.screen.removeEventListener('click', d.onTap);
             d.screen.removeEventListener('keydown', d.onKey);
         }
+    }
+
+    /** True while this copier is the minigame on screen (the UI's own check). */
+    _isLive() {
+        if (this.ui && typeof this.ui.isLive === 'function') return this.ui.isLive();
+        return this.gameState?.isActive !== false;
+    }
+
+    /**
+     * Ask the server whether this one card opens an access-list lock (UX slice 3b), and
+     * follow its answer. The request is unlock-system.js requestRfidAccessUnlock, which waits
+     * for a copy still being recorded; the server decides from its own record of the
+     * player's cards (a copy it has not seen, a revoked card, a UID-only copy at a lock that
+     * wants full authentication are all refused there). On a yes the answer is kept in
+     * gameResult.serverResponse, so the door opens from it with no second unlock request.
+     * One request at a time: a second press while one is out does nothing.
+     */
+    _askAccessList(cardId, { cardName, emulated, protocol, isUIDOnly, back, deniedTitle, deniedDetail }) {
+        if (this._accessPending) return;
+        this._accessPending = true;
+        const emit = (fields) => {
+            if (!emulated || !window.eventDispatcher) return;
+            window.eventDispatcher.emit('card_emulated', {
+                cardName, cardId, protocol: protocol || 'EM4100', uidOnly: !!isUIDOnly,
+                timestamp: Date.now(), ...fields
+            });
+        };
+        Promise.resolve()
+            .then(() => this.params.requestAccess([String(cardId)]))
+            .catch(() => ({ outcome: 'error', response: null }))
+            .then((answer) => {
+                this._accessPending = false;
+                const outcome = answer && answer.outcome;
+                const response = answer && answer.response;
+                const result = { success: true, cardName: cardName || null, emulated, serverResponse: response };
+                // A yes has already opened the lock on the server, so the world must follow
+                // even when the copier was closed (or replaced) before it could say so
+                const late = () => {
+                    if (typeof this.params.onLateAccessUnlock !== 'function') return;
+                    try { this.params.onLateAccessUnlock(result); } catch (e) { console.warn('onLateAccessUnlock failed:', e); }
+                };
+                if (!this._isLive()) {
+                    if (outcome === 'unlocked') late();
+                    return;
+                }
+                if (outcome === 'unlocked') {
+                    if (window.playUISound) window.playUISound('card_scan');
+                    if (emulated) this.animations.showEmulationSuccess();
+                    else this.animations.showTapSuccess();
+                    this.ui.showSuccess('Access Granted');
+                    this.gameResult = result;
+                    emit({ success: true });
+                    setTimeout(() => {
+                        if (this._isLive()) this.complete(true);
+                        else late();
+                    }, emulated ? 2000 : 1500);
+                    return;
+                }
+                if (outcome === 'error') {
+                    // No answer is not a refusal: nothing reported to the door
+                    this._showDenial('No answer from the reader', back, null,
+                        'The card could not be checked. Try again.', 'notice');
+                    return;
+                }
+                if (window.playUISound) window.playUISound('reject');
+                if (emulated) this.animations.showEmulationFailure();
+                else this.animations.showTapFailure();
+                if (outcome === 'uid_only') {
+                    emit({ success: false, readerRejectsUIDOnly: true });
+                    this._showDenial('Reader requires full authentication', back, 'uid_only',
+                        'Only the UID was copied. This reader checks the card\'s encryption keys too.');
+                    return;
+                }
+                emit({ success: false });
+                this._showDenial(deniedTitle, back, 'wrong_card', deniedDetail);
+            });
     }
 
     /**
@@ -297,6 +393,20 @@ export class RFIDMinigame extends MinigameScene {
 
             this._showDenial('Reader requires full authentication', () => this.ui.showSavedCards(), 'uid_only',
                 'Only the UID was copied. This reader checks the card\'s encryption keys too.');
+            return;
+        }
+
+        // At an access list the server decides for this one copy (q97: one at a time)
+        if (this.accessList) {
+            this._askAccessList(cardId, {
+                cardName: savedCard.name || null,
+                emulated: true,
+                protocol,
+                isUIDOnly,
+                back: () => this.ui.showSavedCards(),
+                deniedTitle: 'Card not accepted',
+                deniedDetail: `The clone works, but this reader doesn't take ${savedCard.name || 'that card'}.`
+            });
             return;
         }
 

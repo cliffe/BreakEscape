@@ -25,15 +25,15 @@
 
 // Menu icons. The interaction menu draws them in a 64px box. Take uses the open hand,
 // defined once in ui/interaction-menu.js (window.menuIcons, set before this module
-// loads). Copy uses the copier's world sprite (11x22) at x2, centred, as a placeholder
-// until its own menu icon is drawn.
+// loads). Copy uses the card copier icon (icons/card-copier.png, 16x16, drawn by hand in
+// the copier's colours) at x4, which fills the box (UX slice 3b, q90).
 function assetsBase() {
     return (typeof window !== 'undefined' && window.breakEscapeConfig?.assetsPath) || '/break_escape/assets';
 }
-export const COPIER_ICON_SCALE = 2;
+export const COPIER_ICON_SCALE = 4;
 export function takeIcon() { return (typeof window !== 'undefined' && window.menuIcons?.openHand?.()) || undefined; }
 export function copyIcon() {
-    return { src: `${assetsBase()}/objects/rfid_cloner.png`, width: 11 * COPIER_ICON_SCALE, height: 22 * COPIER_ICON_SCALE };
+    return { src: `${assetsBase()}/icons/card-copier.png`, width: 16 * COPIER_ICON_SCALE, height: 16 * COPIER_ICON_SCALE };
 }
 
 /** True when the player is carrying an RFID cloner. */

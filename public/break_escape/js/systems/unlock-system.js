@@ -121,8 +121,12 @@ export function hasRfidAccessList(lockRequirements) {
  * worked out as evaluateRfidCredential does. The client never resolves a card to its
  * owner's roles: the server does, because the admitted NPC may be in a room the client
  * has not loaded (access model 4.1).
+ *
+ * { copies: false } leaves the copier's saved cards out: the first request at an access-list
+ * door carries the physical keycards only, because a copy opens a door only through the
+ * copier's Emulate, one copy per request (UX slice 3b, q97).
  */
-export function heldRfidCardIds() {
+export function heldRfidCardIds({ copies = true } = {}) {
     const items = (window.inventory && window.inventory.items) || [];
     const getCardId = (cardData) => cardData.card_id || window.lockRef(cardData);
     // A cancelled card_id (the left-card consequence, §3.3b) is left out, so the UI never
@@ -139,7 +143,7 @@ export function heldRfidCardIds() {
     items.forEach(item => {
         if (item && item.scenarioData && item.scenarioData.type === 'keycard') add(item.scenarioData);
     });
-    items.forEach(item => {
+    if (copies) items.forEach(item => {
         if (item && item.scenarioData && item.scenarioData.type === 'rfid_cloner') {
             (item.scenarioData.saved_cards || []).forEach(add);
         }
@@ -1112,10 +1116,22 @@ export function handleUnlock(lockable, type) {
                 try { playUISound('door_release'); } catch (e) {}
             };
 
-            // The card copier's reader screen: tap a held card or emulate a saved one
-            const startRfidReader = () => {
-                // Start RFID minigame in unlock mode
-                window.startRFIDMinigame(lockable, type, {
+            // An access-list unlock the server allowed: take the contents it sent back for
+            // an object, then open the target with that answer (no second unlock request)
+            const applyRfidAccessUnlock = (response, line) => {
+                if (response && response.hasContents && response.contents && lockable.scenarioData) {
+                    lockable.scenarioData.contents = response.contents;
+                }
+                playRfidUnlockSound();
+                unlockTarget(lockable, type, lockable.layer, response);
+                window.gameAlert(line, 'success', 'Access Granted', 3000);
+            };
+
+            // The card copier's reader screen: tap a held card or emulate a saved one.
+            // accessList: the lock is decided by the server from its access list (UX slice
+            // 3b): each Emulate (or tap) sends that one card's id and waits for the answer.
+            const startRfidReader = ({ accessList = false } = {}) => {
+                const params = {
                     mode: 'unlock',
                     requiredCardIds: requiredCardIds,
                     acceptsUIDOnly: acceptsUIDOnly,
@@ -1127,22 +1143,53 @@ export function handleUnlock(lockable, type) {
                     // wrong_card or uid_only), same as a refused key or fingerprint
                     onRefused: refusedWithHint,
                     onComplete: async (success, result) => {
-                        if (success) {
-                            // Notify server and get room/container data
-                            const serverResponse = await notifyServerUnlock(lockable, type, 'rfid');
-                            setTimeout(() => {
-                                playRfidUnlockSound();
-                                unlockTarget(lockable, type, lockable.layer, serverResponse);
-                                window.gameAlert(rfidOpenedLine(result), 'success', 'Access Granted', 3000);
-                            }, 100);
+                        if (!success) return;
+                        // At an access list the copier already has the server's yes
+                        if (result && result.serverResponse) {
+                            setTimeout(() => applyRfidAccessUnlock(result.serverResponse, rfidOpenedLine(result)), 100);
+                            return;
                         }
+                        // Notify server and get room/container data
+                        const serverResponse = await notifyServerUnlock(lockable, type, 'rfid');
+                        setTimeout(() => {
+                            playRfidUnlockSound();
+                            unlockTarget(lockable, type, lockable.layer, serverResponse);
+                            window.gameAlert(rfidOpenedLine(result), 'success', 'Access Granted', 3000);
+                        }, 100);
                     }
-                });
+                };
+                if (accessList) {
+                    params.accessList = true;
+                    params.requestAccess = (cardIds) => requestRfidAccessUnlock(lockable, type, cardIds);
+                    // The copier was closed while the server was still answering, and the answer
+                    // was yes: the server has unlocked it, so the world follows
+                    params.onLateAccessUnlock = (result) => applyRfidAccessUnlock(result.serverResponse, rfidOpenedLine(result));
+                }
+                window.startRFIDMinigame(lockable, type, params);
             };
 
             // Access model 4.1: a lock with an access list (roles or people) is decided by
-            // the server from every card id the player holds.
-            const accessCardIds = hasRfidAccessList(lockRequirements) ? heldRfidCardIds() : [];
+            // the server. The first request carries the physical keycards only; a copy opens
+            // the door only through the copier, one copy per Emulate (UX slice 3b, q97).
+            const rfidAccessList = hasRfidAccessList(lockRequirements);
+            const accessKeycardIds = rfidAccessList ? heldRfidCardIds({ copies: false }) : [];
+            // Saved copies to offer at the reader. A cancelled one is still listed, so the
+            // copier shows it refused ("Card cancelled") rather than hiding it.
+            const copierHasCopies = hasCloner && savedCards.length > 0;
+            const showAccessRefusal = (outcome) => {
+                if (outcome === 'uid_only') {
+                    playUISound('reject');
+                    window.gameAlert(appendLockedHint('Reader requires full authentication', lockable), 'error', doorRefusalTitle(lockable, 'Access Denied'), lockedHintDuration(lockable, 4000, 'Reader requires full authentication'));
+                    emitDoorUnlockFailed('uid_only');
+                } else if (outcome === 'denied') {
+                    playUISound('reject');
+                    const deniedLine = rfidAccessDeniedLine(lockRequirements.access, type);
+                    window.gameAlert(appendLockedHint(deniedLine, lockable), 'error', doorRefusalTitle(lockable, 'Access Denied'), lockedHintDuration(lockable, 4000, deniedLine));
+                    emitDoorUnlockFailed('wrong_card');
+                } else {
+                    window.gameAlert('Failed to verify access', 'error', 'Error', 3000);
+                }
+            };
 
             // STEP 1a: a held keycard matches `requires` - open directly (today's rule)
             if (hasValidCard) {
@@ -1164,33 +1211,29 @@ export function handleUnlock(lockable, type) {
             else if (hasValidClone) {
                 startRfidReader();
             }
-            // STEP 2: the lock has an access list - send every held card id in one request
-            // and show the server's answer
-            else if (accessCardIds.length > 0) {
-                console.log('RFID ACCESS LIST: asking the server', { cards: accessCardIds.length });
-                requestRfidAccessUnlock(lockable, type, accessCardIds).then(({ outcome, response }) => {
-                    if (outcome === 'unlocked') {
-                        // Container contents come back with an object unlock
-                        if (response.hasContents && response.contents && lockable.scenarioData) {
-                            lockable.scenarioData.contents = response.contents;
+            // STEP 2: the lock has an access list. The held keycards go in one request; if
+            // the server refuses them (or none is held) and the copier holds saved cards, the
+            // copier opens on the reader, where each Emulate asks the server about one copy.
+            else if (rfidAccessList && (accessKeycardIds.length > 0 || copierHasCopies)) {
+                if (accessKeycardIds.length === 0) {
+                    console.log('RFID ACCESS LIST: no keycard held, the copier opens at the reader');
+                    startRfidReader({ accessList: true });
+                } else {
+                    console.log('RFID ACCESS LIST: asking the server', { cards: accessKeycardIds.length });
+                    requestRfidAccessUnlock(lockable, type, accessKeycardIds).then(({ outcome, response }) => {
+                        if (outcome === 'unlocked') {
+                            // The server names the player's own card that passed
+                            applyRfidAccessUnlock(response, rfidOpenedLine(rfidAccessUnlockResult(response)));
+                        } else if (outcome !== 'error' && copierHasCopies) {
+                            // The badges did not open it: the reader buzzes, and the copier
+                            // comes up on the reader with the saved copies to try
+                            playUISound('reject');
+                            startRfidReader({ accessList: true });
+                        } else {
+                            showAccessRefusal(outcome);
                         }
-                        playRfidUnlockSound();
-                        unlockTarget(lockable, type, lockable.layer, response);
-                        // The server names the player's own card that passed; a copy only as "a copied card"
-                        window.gameAlert(rfidOpenedLine(rfidAccessUnlockResult(response)), 'success', 'Access Granted', 3000);
-                    } else if (outcome === 'uid_only') {
-                        playUISound('reject');
-                        window.gameAlert(appendLockedHint('Reader requires full authentication', lockable), 'error', doorRefusalTitle(lockable, 'Access Denied'), lockedHintDuration(lockable, 4000, 'Reader requires full authentication'));
-                        emitDoorUnlockFailed('uid_only');
-                    } else if (outcome === 'denied') {
-                        playUISound('reject');
-                        const deniedLine = rfidAccessDeniedLine(lockRequirements.access, type);
-                        window.gameAlert(appendLockedHint(deniedLine, lockable), 'error', doorRefusalTitle(lockable, 'Access Denied'), lockedHintDuration(lockable, 4000, deniedLine));
-                        emitDoorUnlockFailed('wrong_card');
-                    } else {
-                        window.gameAlert('Failed to verify access', 'error', 'Error', 3000);
-                    }
-                });
+                    });
+                }
             }
             // STEP 3: today's flow. A cloner with nothing to offer (no keycards to tap, no
             // saved clones): the reader just refuses, rather than opening an empty cloner

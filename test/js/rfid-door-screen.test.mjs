@@ -797,3 +797,163 @@ test('Enter continues from a refusal, as a tap does', async () => {
     assert.equal(g._denial, null, 'the hold timer is cleared');
     document.activeElement = null;
 });
+
+// ── UX slice 3b: copies at access-list doors, through the copier ─────────────
+// An access-list door may have no `requires`: the copier still opens on the reader, and
+// each Emulate (or tap) asks the server about that one card (q97).
+function aclGame(answers, extra = {}) {
+    const asked = [], refused = [], late = [];
+    const g = makeGame({ mode: 'unlock', requiredCardIds: [], availableCards: [], accessList: true,
+        requestAccess: async (ids) => { asked.push(ids); return typeof answers === 'function' ? answers(ids) : answers; },
+        onRefused: (r) => refused.push(r), onLateAccessUnlock: (r) => late.push(r), ...extra });
+    g.gameState = { isActive: true };
+    let completed = null;
+    g.complete = (ok) => { completed = ok; };
+    return { g, asked, refused, late, done: () => completed };
+}
+const tick = () => new Promise(r => realTimeout(r, 0));
+const dana = () => ({ card_id: 'DANA-1', rfid_protocol: 'EM4100', name: "Dana's badge", rfid_data: { hex: '01' } });
+
+test('an access-list door with no requires shows the door screen', () => {
+    window.inventory.items = [{ scenarioData: { type: 'rfid_cloner', saved_cards: [dana()] } }];
+    const { g } = aclGame({ outcome: 'denied' });
+    assert.equal(g.isLockingAttempt, true);
+    g.ui.showDoorScreen();
+    assert.match(texts(), /At the reader/);
+    assert.match(texts(), /Emulate Dana/);
+    // without requestAccess it is not an access-list copier (no reader at all)
+    const plain = makeGame({ mode: 'unlock', requiredCardIds: [], accessList: true });
+    assert.equal(plain.isLockingAttempt, false);
+    window.inventory.items = [];
+});
+
+test('Emulate at an access list sends one card id and keeps the server answer for the door', async () => {
+    const timers = [];
+    globalThis.setTimeout = (f) => { timers.push(f); return 0; };
+    try {
+        const response = { success: true, type: 'door', roomData: { id: 'r' }, viaCopy: true };
+        const { g, asked, refused, done } = aclGame({ outcome: 'unlocked', response });
+        g.handleEmulate(dana());
+        await tick();
+        assert.deepEqual(asked, [['DANA-1']], 'a single-id request');
+        assert.deepEqual(g.gameResult, { success: true, cardName: "Dana's badge", emulated: true, serverResponse: response });
+        assert.match(texts(), /Access Granted/);
+        timers.forEach(f => f());
+        assert.equal(done(), true);
+        assert.deepEqual(refused, []);
+    } finally { globalThis.setTimeout = realTimeout; }
+});
+
+test('a second press while the server is answering sends nothing more', async () => {
+    let release;
+    const { g, asked } = aclGame(() => new Promise(r => { release = r; }));
+    g.handleEmulate(dana());
+    g.handleEmulate(dana());
+    await tick();
+    assert.equal(asked.length, 1);
+    globalThis.setTimeout = () => 0;
+    try { release({ outcome: 'denied' }); await tick(); } finally { globalThis.setTimeout = realTimeout; }
+    g._endDenial();
+});
+
+test('a refused copy at an access list: "Card not accepted", reported as wrong_card', async () => {
+    globalThis.setTimeout = () => 0;
+    try {
+        const { g, refused, done } = aclGame({ outcome: 'denied', response: { success: false } });
+        g.handleEmulate(dana());
+        await tick();
+        assert.match(texts(), /Card not accepted/);
+        assert.deepEqual(refused, ['wrong_card']);
+        assert.equal(done(), null);
+        g._endDenial();
+        const u = aclGame({ outcome: 'uid_only', response: { reason: 'uid_only' } });
+        u.g.handleEmulate(dana());
+        await tick();
+        assert.match(texts(), /Reader requires full authentication/);
+        assert.deepEqual(u.refused, ['uid_only']);
+        u.g._endDenial();
+    } finally { globalThis.setTimeout = realTimeout; }
+});
+
+test('no answer from the server is a notice, not a refusal', async () => {
+    globalThis.setTimeout = () => 0;
+    try {
+        const { g, refused } = aclGame({ outcome: 'error', response: null });
+        g.handleEmulate(dana());
+        await tick();
+        assert.match(texts(), /No answer from the reader/);
+        assert.deepEqual(refused, []);
+        g._endDenial();
+    } finally { globalThis.setTimeout = realTimeout; }
+});
+
+test('a UID-only copy and a cancelled card are refused at an access list without asking', async () => {
+    globalThis.setTimeout = () => 0;
+    try {
+        const uid = { card_id: 'EXEC-1', rfid_protocol: 'MIFARE_DESFire', name: 'Exec badge', rfid_data: {} };
+        let t = aclGame({ outcome: 'unlocked', response: {} });
+        t.g.handleEmulate(uid);
+        await tick();
+        assert.deepEqual(t.asked, []);
+        assert.deepEqual(t.refused, ['uid_only']);
+        t.g._endDenial();
+        // the lock takes UID-only copies: then the server is asked
+        t = aclGame({ outcome: 'denied' }, { acceptsUIDOnly: true });
+        t.g.handleEmulate(uid);
+        await tick();
+        assert.deepEqual(t.asked, [['EXEC-1']]);
+        t.g._endDenial();
+        window.isCardRevoked = (id) => id === 'DANA-1';
+        t = aclGame({ outcome: 'unlocked', response: {} });
+        t.g.handleEmulate(dana());
+        await tick();
+        assert.deepEqual(t.asked, []);
+        assert.deepEqual(t.refused, ['revoked']);
+        assert.match(texts(), /Card cancelled/);
+        t.g._endDenial();
+    } finally { globalThis.setTimeout = realTimeout; delete window.isCardRevoked; }
+});
+
+test('a yes that lands after the copier closed still reaches the door', async () => {
+    const response = { success: true, type: 'door', roomData: { id: 'r' } };
+    const { g, late, done } = aclGame({ outcome: 'unlocked', response });
+    g.handleEmulate(dana());
+    g.gameState.isActive = false;
+    await tick();
+    assert.equal(late.length, 1);
+    assert.equal(late[0].serverResponse, response);
+    assert.equal(done(), null, 'the closed copier does not complete');
+    // a refusal after closing is dropped
+    const r = aclGame({ outcome: 'denied' });
+    r.g.handleEmulate(dana());
+    r.g.gameState.isActive = false;
+    await tick();
+    assert.deepEqual(r.late, []);
+    assert.deepEqual(r.refused, []);
+});
+
+test('closed during the success hold: the door still opens, once', async () => {
+    const timers = [];
+    globalThis.setTimeout = (f) => { timers.push(f); return 0; };
+    try {
+        const { g, late, done } = aclGame({ outcome: 'unlocked', response: { success: true } });
+        g.handleEmulate(dana());
+        await tick();
+        g.gameState.isActive = false;
+        timers.forEach(f => f());
+        assert.equal(done(), null);
+        assert.equal(late.length, 1);
+    } finally { globalThis.setTimeout = realTimeout; }
+});
+
+test('a held card tapped at an access list is asked about on its own too', async () => {
+    globalThis.setTimeout = () => 0;
+    try {
+        const { g, asked } = aclGame({ outcome: 'unlocked', response: { success: true, cardId: 'STAFF-2' } });
+        g.handleCardTap({ scenarioData: { name: 'Staff badge', card_id: 'STAFF-2' } });
+        await tick();
+        assert.deepEqual(asked, [['STAFF-2']]);
+        assert.equal(g.gameResult.emulated, false);
+        assert.equal(g.gameResult.cardName, 'Staff badge');
+    } finally { globalThis.setTimeout = realTimeout; }
+});
