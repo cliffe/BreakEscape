@@ -128,6 +128,48 @@ Drove the real page through window.__test; recorded the actual POST bodies and r
 The no-card refusal is covered by the Rails tests above (no honest client path reaches a
 requires-only lock with no held card; the client refuses locally before any request).
 
+## Review R1 follow-up (opens_lock live proofs + multiprotocol minor 2)
+
+Keyless server on :3634 from this worktree (TTS off). Games started with
+tools/playtest/new-game.rb; the opens_lock keycard was seeded into the honest games
+with a one-off runner (append_keycard.rb) as a head-start for the pickup step. Each
+proof is the real page's own fetch to breakEscapeConfig.apiBasePath + "/unlock" with
+the page's csrf token, issued after window.__test was confirmed present, replicating
+apiClient.unlock('door', <door>, null, 'rfid') (no card_ids, client step 1a).
+
+- m01 honest, game 3187 (holds a keycard with opens_lock=server_keycard):
+  `POST /break_escape/games/3187/unlock {targetType:"door", targetId:"server_room",
+  method:"rfid"}` (no card_ids) -> 200 `{success:true}`, roomData returned. The
+  opens_lock keycard is resolved server-side via held_keycard_ref_ids and matches the
+  door's `requires: "server_keycard"`. Honest opens_lock play is not blocked.
+- m01 forged, game 3188 (no card held): same POST from the page's own fetch ->
+  422 `{success:false, message:"Invalid attempt"}`. rfid_requires_held? sees no held
+  card or clone, so the requires-only door is refused. This is the closed gap.
+- sis02 honest, game 3189 (holds a keycard with opens_lock=battery_hall_badge):
+  `POST /break_escape/games/3189/unlock {targetType:"door", targetId:"battery_hall_1",
+  method:"rfid"}` (no card_ids) -> 200 `{success:true}`, roomData returned. Matches
+  `requires: "battery_hall_badge"`. Honest opens_lock play is not blocked.
+
+window.__test was an object on all three pages, so the real game and bridge had loaded.
+Server stopped afterwards.
+
+### Minor 2: test-rfid-multiprotocol Level 4
+
+Level 4's intent is a positive demonstration (its note: DESFire "only UID emulation
+works... Requires weakly-configured reader (poor UID validation)", and the end note
+marks all four levels passed). As written the Level 4 door required `corporate_badge`
+(the Classic card from Level 3) and the DESFire card `executive_card` gated nothing,
+with its guard (guard_high) sitting inside the Level 4 room, so setting acceptsUIDOnly
+on that door alone would have been inert (corporate_badge is not UID-only). To make the
+demo teach its point: the DESFire guard (guard_high) moved to the Level 3 room
+(mifare_custom_room) so its UID clone is obtainable before the door; the desfire_room
+lock now `requires: ["executive_card"]` with `acceptsUIDOnly: true`. A DESFire clone is
+recorded uidOnly (game.rb:2677) and rfid_requires_held? credits it only at a lock with
+acceptsUIDOnly, so the UID clone now opens the weakly-configured Level 4 reader, exactly
+the lesson. Validator: 0 errors, 23 warnings (all pre-existing: decoy keycards, legacy
+sprites). Scenario has no automated-test references.
+
 ## Handover
 
-Complete. Fix, tests and proof done; committed on build/hard-rfid.
+Complete. Fix, tests and proof done; R1 follow-up (opens_lock live proofs, minor 2
+scenario fix) done; committed on build/hard-rfid.

@@ -132,3 +132,31 @@ controller path and the builder's recorded browser proof on `test-rfid` exercise
 `notifyServerUnlock -> POST /unlock method:rfid -> rfid_lock_passes? -> rfid_requires_held?`
 chain that m01's opens_lock keycard uses. The `access_model_rfid_test` "opened by a held
 opens_lock keycard" case covers m01/sis02's card shape directly.
+
+## Outcomes (R1 follow-up by the builder)
+
+- Minor 1 (brief lists lab_social_engineering, which has no rfid lock): no change.
+  Informational note for the deploy checklist; nothing to fix.
+- Minor 2 (test-rfid-multiprotocol Level 4 DESFire/UID): fixed. Level 4's documented
+  intent is a positive UID-emulation demo, but the Level 4 door required corporate_badge
+  (a Classic card) and the DESFire card gated nothing, so acceptsUIDOnly on that door
+  alone would have been inert. The DESFire guard (guard_high) was moved to the Level 3
+  room so its UID clone is obtainable before the door, and the desfire_room lock now
+  `requires: ["executive_card"]` with `acceptsUIDOnly: true`. A DESFire clone is recorded
+  uidOnly and is credited only at an acceptsUIDOnly lock, so the UID clone now opens the
+  weakly-configured Level 4 reader, teaching the intended lesson. Validator: 0 errors.
+- Minor 3 (UID-only rule correct and consistent): no change. Confirmed by the fix.
+
+### Live proofs on the real page (builder, keyless server :3634, window.__test present)
+
+Real page's own fetch, apiClient.unlock('door', <door>, null, 'rfid') shape (no card_ids):
+
+| Mission | Game | Door | Held | Request | Answer |
+|---|---|---|---|---|---|
+| m01 honest | 3187 | server_room | keycard opens_lock=server_keycard | POST /unlock door server_room method rfid (no card_ids) | 200 {success:true} |
+| m01 forged | 3188 | server_room | none | POST /unlock door server_room method rfid (no card_ids) | 422 {success:false, "Invalid attempt"} |
+| sis02 honest | 3189 | battery_hall_1 | keycard opens_lock=battery_hall_badge | POST /unlock door battery_hall_1 method rfid (no card_ids) | 200 {success:true} |
+
+The honest opens_lock keycard is resolved server-side (held_keycard_ref_ids) and matches
+the door's requires; the forged no-card request is refused by rfid_requires_held?, the
+closed gap. Server stopped after the run.
