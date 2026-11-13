@@ -323,6 +323,12 @@
     white-space: nowrap;
 }
 
+/* ...unless the host label is too long for a phone row: then it may break (PC polish R2 proof) */
+.network-row-title:has(> .network-row-hostname-long),
+.network-row-hostname-long {
+    white-space: normal;
+}
+
 /* "Open (Sam Okafor)" breaks before the bracket, never inside the name (code review R3 n1) */
 .network-row-who {
     white-space: nowrap;
