@@ -530,13 +530,18 @@ module BreakEscape
         # from scenario_data on every request.
         is_world_room = @game.awareness_world_room?(room_id)
 
-        unless is_start_room || is_unlocked || is_world_room
+        # A gated route room the player is slipping into (GATED_DOOR §3.2): served so the
+        # avatar and NPCs load, but not promoted to unlockedRooms, so its contents stay gated.
+        is_route_room = @game.in_npc_route_room?(room_id)
+
+        unless is_start_room || is_unlocked || is_world_room || is_route_room
           return render_error("Room not accessible: #{room_id}", :forbidden)
         end
 
         # Auto-add room to unlockedRooms when accessed
         # This ensures items in the room can be collected
-        if !is_unlocked
+        # A route room is deliberately NOT auto-unlocked (§3.2): promotion is earned, not a GET.
+        if !is_unlocked && !is_route_room
           @game.player_state['unlockedRooms'] ||= []
           @game.player_state['unlockedRooms'] << room_id unless @game.player_state['unlockedRooms'].include?(room_id)
           @game.save!
@@ -1133,10 +1138,33 @@ module BreakEscape
       # id, a copy only as viaCopy (UX devices R1)
       rfid_card_answer = method == 'rfid' && card_ids && !already_open ? @game.rfid_unlock_card_answer(target_type, target_id, card_ids) : nil
 
+      # Object-action gate (GATED_DOOR §3.6): an object in a served-but-unearned route room is
+      # refused before any write, so a locked container, its contents and its unlock credit stay
+      # gated until the room is promoted. The refusal is retryable: an honest player who just
+      # earned the pass (viaPass) may be one sync behind, so the client flushes a sync and re-posts
+      # (the object-path retry in unlock-system.js). It surfaces only if the room never promotes.
+      # Keyed on target_type so no door is ever gated here (a door into a route room is the split
+      # itself, §3.5). Placed before the transaction so the refusal writes nothing.
+      if target_type != 'door' && @game.object_in_unpromoted_route_room?(target_id)
+        return render json: { success: false, reason: 'room_not_reachable', retryable: true },
+                      status: :forbidden
+      end
+
       # Use transaction to ensure atomic update
       ActiveRecord::Base.transaction do
         if target_type == 'door'
-          room_data = serve_opened_room(target_id)
+          if @game.gated_route_room?(attempt, target_id) && !@game.room_unlocked?(target_id)
+            # Gated route-room split (§3.5): the NPC route opened the door for the player's
+            # slip-in, but the room is not yet earned. Record it in npcRouteRooms rather than
+            # unlockedRooms and serve it without unlock_room!, so its contents stay gated (§3.6).
+            # Still compose filtered_room_data and track_npc_encounters, or route-room NPCs go
+            # untracked until promotion.
+            @game.record_npc_route_room!(target_id)
+            room_data = @game.filtered_room_data(target_id)
+            track_npc_encounters(target_id, room_data)
+          else
+            room_data = serve_opened_room(target_id)
+          end
 
           door_answer = {
             success: true,
@@ -2098,7 +2126,11 @@ module BreakEscape
     def merge_last_write_wins_sections
       if params[:currentRoom]
         room = params[:currentRoom]
+        # Accept currentRoom for a gated route room the player is slipping into (GATED_DOOR
+        # §3.3a), so the avatar and the saved room agree (no snap-back) and the no-vest slip-in
+        # works. This is acceptance only; the viaPass promotion/credit is Chunk B.
         unless Array(@game.player_state['unlockedRooms']).include?(room) ||
+               Array(@game.player_state['npcRouteRooms']).include?(room) ||
                Game.where(id: @game.id).pick(Arel.sql("scenario_data->>'startRoom'")) == room
           return "Cannot enter locked room: #{room}"
         end

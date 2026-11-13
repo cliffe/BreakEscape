@@ -37,7 +37,35 @@ export async function notifyServerUnlock(lockable, type, method) {
                 lockable.scenarioData.contents = serverResponse.contents;
             }
         } catch (error) {
-            console.error(`Failed to notify server of ${method} unlock:`, error);
+            // Object unlock in a served-but-unearned route room (GATED_DOOR §3.6): the server
+            // refuses with 403 { reason: 'room_not_reachable', retryable: true } during the short
+            // window before the viaPass currentRoom sync promotes the room. This path owns its own
+            // one-shot retry: flush one state sync (so the room promotes), then re-post once. Fires
+            // only on that reason-and-flag body, and never for a door (a door into a route room is
+            // the split itself, never gated by §3.6).
+            const body = error && error.body;
+            const canRetry = type !== 'door' && body &&
+                body.reason === 'room_not_reachable' && body.retryable === true;
+            if (canRetry) {
+                // Awaited for its ordering, never for its success: a rejecting (or absent) sync
+                // still proceeds to the one re-post (§3.6, same tolerance as the pre-flush).
+                try {
+                    await Promise.resolve(window.stateSync?.sync?.()).catch(() => false);
+                } catch (syncError) { /* a synchronous throw must not swallow the re-post */ }
+                try {
+                    const targetId = unlockTargetId(lockable, type);
+                    serverResponse = await apiClient.unlock(type, targetId, null, method);
+                    if (serverResponse && serverResponse.hasContents && serverResponse.contents && lockable.scenarioData) {
+                        lockable.scenarioData.contents = serverResponse.contents;
+                    }
+                } catch (retryError) {
+                    // Still refused after the re-post (the room never promoted, i.e. a forge):
+                    // surface it as the normal refusal, exactly as before this retry existed.
+                    console.error(`Failed to notify server of ${method} unlock (after retry):`, retryError);
+                }
+            } else {
+                console.error(`Failed to notify server of ${method} unlock:`, error);
+            }
         }
     }
 

@@ -139,6 +139,119 @@ module BreakEscape
       world.is_a?(Hash) && world['room'].is_a?(String) && world['room'] == room_id
     end
 
+    # Gated-door tailgating (GATED_DOOR_SERVER_CHECK_PLAN.md §3). A room an NPC route
+    # opened for the player's slip-in but which the player has not yet earned. Kept apart
+    # from unlockedRooms: the player may stand in a route room, but its contents stay gated
+    # (§3.6) until the pass is earned. Server-written only; never part of the client sync
+    # payload (SYNC SIZE §9). Defaults to [] on first read.
+    def npc_route_rooms
+      list = player_state.is_a?(Hash) ? player_state['npcRouteRooms'] : nil
+      list.is_a?(Array) ? list : []
+    end
+
+    def in_npc_route_room?(room_id)
+      return false if room_id.blank?
+      npc_route_rooms.include?(room_id)
+    end
+
+    # Record a route room for the player's slip-in, keeping it out of unlockedRooms.
+    def record_npc_route_room!(room_id)
+      return if room_id.blank?
+      player_state['npcRouteRooms'] ||= []
+      player_state['npcRouteRooms'] << room_id unless player_state['npcRouteRooms'].include?(room_id)
+      save!
+    end
+
+    # True when `name` is a global a client sync_state cannot write: a worn-costume global,
+    # an imported global, or a named server-owned global. The same union the viaPass check
+    # uses (§3.3a). serverCreditGlobals join this set in Chunk B.
+    def server_owned_global_name?(name)
+      return false if name.blank?
+      (worn_global_names + imported_global_names +
+       self.class::SERVER_OWNED_GLOBAL_NAMES).include?(name.to_s)
+    end
+
+    # True when the scenario defines any rfid_cloner object (presence is enough; §3.1). The
+    # runtime split predicate does not trace whether a specific card is reachable from it;
+    # the validator (§11) owns the sharper check.
+    def scenario_has_rfid_cloner?
+      return false unless scenario_data.is_a?(Hash)
+      rooms = scenario_data['rooms']
+      return false unless rooms.is_a?(Hash)
+
+      rooms.each_value.any? do |room|
+        next false unless room.is_a?(Hash) && room['objects'].is_a?(Array)
+        room['objects'].any? { |obj| object_subtree_rfid_cloner?(obj) }
+      end
+    end
+
+    # A gate splits (its NPC route unlock records the room in npcRouteRooms rather than
+    # unlockedRooms) only when a provable path into it exists (§3.1). The runtime test is the
+    # simplest safe one: the gate's playerMayPassIf is a server-owned global, or the scenario
+    # contains an rfid_cloner object at all. It may over-split, but an over-split gate credits
+    # nothing it should not (§3.1).
+    def gate_splits?(gate)
+      return false unless gate.is_a?(Hash)
+      pass_global = gate['playerMayPassIf']
+      return true if pass_global.present? && server_owned_global_name?(pass_global)
+      scenario_has_rfid_cloner?
+    end
+
+    # The gate (with openFor) on the door whose connectedRoom is `room_id`, or nil. Doors live
+    # per-room, so the door into a room sits in the adjacent room's doors array.
+    def gate_for_connected_room(room_id)
+      return nil if room_id.blank? || !scenario_data.is_a?(Hash)
+      rooms = scenario_data['rooms']
+      return nil unless rooms.is_a?(Hash)
+
+      rooms.each_value do |room|
+        next unless room.is_a?(Hash) && room['doors'].is_a?(Array)
+        room['doors'].each do |door|
+          next unless door.is_a?(Hash) && door['connectedRoom'] == room_id
+          gate = door['gate']
+          return gate if gate.is_a?(Hash) && gate['openFor'].present?
+        end
+      end
+      nil
+    end
+
+    # NPC-keyed (§3.1): true when a door into room_id has a gate.openFor naming npc_id and the
+    # split condition holds. Selects the method: npc route branch of the unlock action (§3.5).
+    def gated_route_room?(npc_id, room_id)
+      return false if npc_id.blank? || room_id.blank?
+      gate = gate_for_connected_room(room_id)
+      return false unless gate
+      return false unless Array(gate['openFor']).map(&:to_s).include?(npc_id.to_s)
+      gate_splits?(gate)
+    end
+
+    # Door-keyed, attempt-independent (§3.1): true when the room's door has a gate.openFor and
+    # the split condition holds. Selects the credential branch (§3.3b, Chunk B), where the
+    # method: rfid unlock carries attempt: null and the NPC-keyed helper would never match.
+    def split_gated_door?(room_id)
+      gate = gate_for_connected_room(room_id)
+      gate ? gate_splits?(gate) : false
+    end
+
+    # The object-action gate predicate (§3.6): true when `target_id` resolves to an object
+    # whose room is a served-but-unearned route room (in npcRouteRooms, not in unlockedRooms).
+    # An object added at runtime resolves to room_id: nil and is not gated (§3.2, permissive).
+    def object_in_unpromoted_route_room?(target_id)
+      room_id = login_scope_of(target_id)&.[](:room_id)
+      return false if room_id.blank?
+      in_npc_route_room?(room_id) &&
+        !Array(player_state['unlockedRooms']).include?(room_id)
+    end
+
+    # True when this object, or anything nested in its contents, is an rfid_cloner.
+    def object_subtree_rfid_cloner?(obj)
+      return false unless obj.is_a?(Hash)
+      type = obj['type'] || obj.dig('scenarioData', 'type')
+      return true if type == 'rfid_cloner'
+      contents = obj['contents']
+      contents.is_a?(Array) && contents.any? { |item| object_subtree_rfid_cloner?(item) }
+    end
+
     # Object management
     def unlock_object!(object_id)
       player_state['unlockedObjects'] ||= []
@@ -2632,6 +2745,8 @@ module BreakEscape
     # copy at a lock without acceptsUIDOnly: the controller answers reason "uid_only".
     def uid_only_refusal?(target_type, target_id, card_ids)
       return false if target_type != 'door' && unlock_scope_refused?(target_id)
+      # Served-but-unearned route room (§3.6): leak no uid_only reason for its objects.
+      return false if target_type != 'door' && object_in_unpromoted_route_room?(target_id)
 
       lock = target_type == 'door' ? room_data(target_id) : find_scenario_object(target_id)
       return false unless lock.is_a?(Hash) && lock['lockType'] == 'rfid' && self.class.acl_lock?(lock)
@@ -3277,6 +3392,8 @@ module BreakEscape
     def pin_cracker_feedback(target_type, target_id, attempt)
       return nil unless has_pin_cracker_in_inventory?
       return nil if target_type != 'door' && unlock_scope_refused?(target_id)
+      # Served-but-unearned route room (§3.6): leak no pin pips for its objects.
+      return nil if target_type != 'door' && object_in_unpromoted_route_room?(target_id)
 
       lock = target_type == 'door' ? room_data(target_id) : find_scenario_object(target_id)
       return nil unless lock && lock['lockType'] == 'pin' && lock['requires'].present?
@@ -3289,6 +3406,8 @@ module BreakEscape
     # It tells the player only that their own entry was right apart from case.
     def password_case_mismatch?(target_type, target_id, attempt)
       return false if target_type != 'door' && unlock_scope_refused?(target_id)
+      # Served-but-unearned route room (§3.6): leak no case hint for its objects.
+      return false if target_type != 'door' && object_in_unpromoted_route_room?(target_id)
 
       lock = target_type == 'door' ? room_data(target_id) : find_scenario_object(target_id)
       return false unless lock && lock['lockType'] == 'password'
