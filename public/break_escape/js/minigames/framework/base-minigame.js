@@ -111,7 +111,10 @@ export class MinigameScene {
         const cs = window.getComputedStyle(frame);
         const gap = 4;
         const top = Math.max(r.top, c.top) + (parseFloat(cs.borderTopWidth) || 0) + gap - c.top;
-        const right = c.right - Math.min(r.right, c.right) + (parseFloat(cs.borderRightWidth) || 0) + gap;
+        // A frame that scrolls keeps its scrollbar clear of the X
+        const borders = (parseFloat(cs.borderLeftWidth) || 0) + (parseFloat(cs.borderRightWidth) || 0);
+        const scrollbar = Math.max(0, (frame.offsetWidth || 0) - (frame.clientWidth || 0) - borders);
+        const right = c.right - Math.min(r.right, c.right) + (parseFloat(cs.borderRightWidth) || 0) + scrollbar + gap;
         btn.style.top = `${Math.round(top)}px`;
         btn.style.right = `${Math.round(right)}px`;
         btn.classList.add('minigame-close-in-frame');

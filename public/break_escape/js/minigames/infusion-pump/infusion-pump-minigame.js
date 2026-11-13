@@ -4,12 +4,13 @@ import { wirePhaserGameSoundToBreakEscape } from '../../music/phaser-audio-bus.j
 import { currentClockText } from '../../systems/game-clock.js';
 
 // Canvas dimensions for the Phaser scene
-const W = 820;  // canvas width
+// 784 wide so the canvas fits an 800px window at zoom 1 (slice 7 R2 M2)
+const W = 784;  // canvas width
 const H = 510;  // canvas height
 
 // Layout constants
 const RX_X = 8;   const RX_Y = 8;   const RX_W = 290; const RX_H = 494;  // prescription panel
-const PMP_X = 302; const PMP_Y = 8;  const PMP_W = 510; const PMP_H = 494; // pump bezel
+const PMP_X = 302; const PMP_Y = 8;  const PMP_W = 474; const PMP_H = 494; // pump bezel
 
 // Pump inner area (12px padding inside bezel)
 const PMP_IX = PMP_X + 12;  // 314
@@ -66,9 +67,65 @@ export class InfusionPumpMinigame extends MinigameScene {
 
     // ── Lifecycle ────────────────────────────────────────────────────────────
 
-    // The X sits inside the pump's canvas (FIT-scaled and centred), not the screen's corner
+    // The X sits inside the pump's canvas, not the screen's corner. When the canvas is larger
+    // than the window at zoom 1 it scrolls inside its box, and the X sits in the part of the
+    // canvas the box shows, so it stays put while the canvas scrolls under it.
     closeAnchor() {
-        return this.gameContainer?.querySelector?.('canvas') || this.gameContainer;
+        return this.gameContainer?.querySelector?.('#ip-phaser-container') || this.gameContainer;
+    }
+
+    placeCloseButton() {
+        const btn = this.container?.querySelector?.('#minigame-close');
+        const box = this.gameContainer?.querySelector?.('#ip-phaser-container');
+        const canvas = box?.querySelector?.('canvas');
+        if (!canvas) return super.placeCloseButton();
+        if (!btn || btn.style.display === 'none') return;
+        const b = box.getBoundingClientRect();
+        const r = canvas.getBoundingClientRect();
+        const c = this.container.getBoundingClientRect();
+        if (!r.width || !r.height) return;
+        const gap = 4;
+        // The visible part of the canvas: the box less its scrollbars
+        const top = Math.max(r.top, b.top, c.top);
+        const right = Math.min(r.right, b.left + box.clientWidth, c.right);
+        btn.style.top = `${Math.round(top - c.top + gap)}px`;
+        btn.style.right = `${Math.round(c.right - right + gap)}px`;
+        btn.classList.add('minigame-close-in-frame');
+    }
+
+    // Pixel text is drawn only at a whole-number zoom: the largest that fits, never below 1
+    // (slice 7 R2 M2). A window too small for zoom 1 scrolls the canvas inside its box.
+    static wholeZoom(availW, availH, w = W, h = H) {
+        const z = Math.floor(Math.min(availW / w, availH / h));
+        return Number.isFinite(z) && z >= 1 ? z : 1;
+    }
+
+    _fitZoom() {
+        const game = this.phaserGame;
+        const box = this.gameContainer?.querySelector?.('#ip-phaser-container');
+        if (!game?.scale || !box) return;
+        const z = InfusionPumpMinigame.wholeZoom(box.clientWidth, box.clientHeight);
+        if (game.scale.zoom !== z) game.scale.setZoom(z);
+        this.placeCloseButton?.();
+    }
+
+    _watchZoom() {
+        const fit = () => this._fitZoom();
+        this._zoomOnResize = fit;
+        window.addEventListener('resize', fit);
+        const box = this.gameContainer?.querySelector?.('#ip-phaser-container');
+        if (box && typeof window.ResizeObserver === 'function') {
+            this._zoomObserver = new window.ResizeObserver(fit);
+            this._zoomObserver.observe(box);
+        }
+        fit();
+    }
+
+    _unwatchZoom() {
+        if (this._zoomOnResize) window.removeEventListener('resize', this._zoomOnResize);
+        this._zoomOnResize = null;
+        this._zoomObserver?.disconnect?.();
+        this._zoomObserver = null;
     }
 
     init() {
@@ -88,8 +145,8 @@ export class InfusionPumpMinigame extends MinigameScene {
             return;
         }
 
-        this.gameContainer.style.cssText = 'width:100%;height:100%;min-height:400px;';
-        this.gameContainer.innerHTML = '<div id="ip-phaser-container" style="width:100%;height:100%"></div>';
+        this.gameContainer.style.cssText = 'width:100%;height:100%;min-height:0;';
+        this.gameContainer.innerHTML = '<div id="ip-phaser-container" class="ip-phaser-container"></div>';
         this._setupPhaserGame();
     }
 
@@ -99,6 +156,7 @@ export class InfusionPumpMinigame extends MinigameScene {
 
     complete(success) {
         this._stopCursor();
+        this._unwatchZoom();
         if (this.phaserGame) {
             this.phaserGame.destroy(true);
             this.phaserGame = null;
@@ -108,6 +166,7 @@ export class InfusionPumpMinigame extends MinigameScene {
 
     cleanup() {
         this._stopCursor();
+        this._unwatchZoom();
         if (this.phaserGame) {
             this.phaserGame.destroy(true);
             this.phaserGame = null;
@@ -127,8 +186,9 @@ export class InfusionPumpMinigame extends MinigameScene {
                 self._buildPrescriptionPanel(this);
                 self._buildPumpDevice(this);
                 self._startCursor();
-                // The canvas exists now: put the X inside its top-right corner
-                self.placeCloseButton?.();
+                // The canvas exists now: pick its whole-number zoom, then put the X
+                // inside its top-right corner
+                self._watchZoom();
             }
         }
 
@@ -139,8 +199,8 @@ export class InfusionPumpMinigame extends MinigameScene {
                 width: W,
                 height: H,
                 backgroundColor: '#0d1324',
-                // The canvas is scaled to fit: draw it with hard pixels, never smoothed
-                // (slice 7 R1 M3)
+                // Hard pixels, never smoothed (slice 7 R1 M3), and only ever zoomed by a whole
+                // number (R2 M2): a fractional FIT scale drops rows of the pixel text
                 pixelArt: true,
                 roundPixels: true,
                 scene: InfusionPumpScene,
@@ -148,8 +208,9 @@ export class InfusionPumpMinigame extends MinigameScene {
                     context: MusicController.context
                 },
                 scale: {
-                    mode: Phaser.Scale.FIT,
-                    autoCenter: Phaser.Scale.CENTER_BOTH
+                    mode: Phaser.Scale.NONE,
+                    autoCenter: Phaser.Scale.NO_CENTER,
+                    zoom: 1
                 }
             });
             const wireIpAudio = () => wirePhaserGameSoundToBreakEscape(this.phaserGame);
@@ -182,82 +243,80 @@ export class InfusionPumpMinigame extends MinigameScene {
         const valueStyle = { ...mono, fontSize: '16px', wordWrap: { width: RX_X + RX_W - 8 - x1 } };
         const tinyStyle  = { ...mono, fontSize: '16px', color: '#444444' };
 
+        // Rows are placed from each text's measured height, with a 4px gap below the
+        // tallest text of a row and dividers 4px clear of the text on both sides, so no
+        // divider runs through a row (slice 7 R2 M1)
+        let y = 12;
+        const divider = () => {
+            y += 2;
+            gfx.lineStyle(2, 0xc8b880);
+            gfx.lineBetween(RX_X + 6, y, RX_X + RX_W - 6, y);
+            y += 6;
+        };
+        const row = (lbl, val, style = valueStyle) => {
+            const l = scene.add.text(x0, y, lbl, labelStyle);
+            const v = scene.add.text(x1, y, val, style);
+            y += Math.ceil(Math.max(l.height, v.height)) + 4;
+        };
+
         // Hospital header
-        scene.add.text(cx, 14, 'NORTHGATE GENERAL HOSPITAL NHS TRUST', {
+        const header = scene.add.text(cx, y, 'NORTHGATE GENERAL HOSPITAL NHS TRUST', {
             fontFamily: "'Press Start 2P', monospace", fontSize: '8px', color: '#1a1a1a',
             align: 'center', lineSpacing: 4, wordWrap: { width: RX_W - 16 }
         }).setOrigin(0.5, 0);
+        y += Math.ceil(header.height) + 4;
 
-        scene.add.text(cx, 36, 'WARD 7: MEDICATION ADMINISTRATION RECORD', {
+        const sub = scene.add.text(cx, y, 'WARD 7: MEDICATION ADMINISTRATION RECORD', {
             ...tinyStyle, align: 'center', wordWrap: { width: RX_W - 16 }
         }).setOrigin(0.5, 0);
-
-        // Divider
-        gfx.lineStyle(2, 0xc8b880);
-        gfx.lineBetween(RX_X + 6, 56, RX_X + RX_W - 6, 56);
+        y += Math.ceil(sub.height);
+        divider();
 
         // Patient info fields
-        const fields1 = [
-            ['PATIENT',    this.sd.patient    || 'CHEN, MARY (DOB: 14/03/1962)', 63],
-            ['WARD',       this.sd.ward_bed   || 'Ward 7, Bed 2',                79],
-            ['CONSULTANT', this.sd.consultant || 'Dr. J. Patel',                 95],
-        ];
-        fields1.forEach(([lbl, val, y]) => {
-            scene.add.text(x0, y, lbl, labelStyle);
-            scene.add.text(x1, y, val, valueStyle);
-        });
-
-        gfx.lineBetween(RX_X + 6, 108, RX_X + RX_W - 6, 108);
+        row('PATIENT',    this.sd.patient    || 'CHEN, MARY (DOB: 14/03/1962)');
+        row('WARD',       this.sd.ward_bed   || 'Ward 7, Bed 2');
+        row('CONSULTANT', this.sd.consultant || 'Dr. J. Patel');
+        divider();
 
         // Drug field
-        scene.add.text(x0, 116, 'DRUG', labelStyle);
-        scene.add.text(x1, 116, `${this.drugName} (IV)`, valueStyle);
+        row('DRUG', `${this.drugName} (IV)`);
+        y += 2;
 
         // ── Dose line (the decimal-ambiguity mechanic) ──
         // Highlighted box — dose always shown as "10.0 mg/hr" in VT323 with tight
         // letter-spacing so the decimal is visually tiny, tempting misread as "100".
-        gfx.fillStyle(0xede8d8);
-        gfx.fillRect(RX_X + 6, 130, RX_W - 12, 52);
-        gfx.lineStyle(2, 0xc8b880);
-        gfx.strokeRect(RX_X + 6, 130, RX_W - 12, 52);
-
-        scene.add.text(x0, 134, 'RATE', labelStyle);
+        const boxY = y;
+        scene.add.text(x0, boxY + 4, 'RATE', labelStyle).setDepth(1);
 
         // VT323 with letterSpacing: -2 makes the "." tiny — the ambiguity mechanic
-        scene.add.text(x1, 134, this.rateDisplay, {
+        const rate = scene.add.text(x1, boxY + 4, this.rateDisplay, {
             fontFamily: 'VT323',
             fontSize: '36px',
             color: '#1a1a1a',
             letterSpacing: -2
-        });
-
-        gfx.lineBetween(RX_X + 6, 190, RX_X + RX_W - 6, 190);
+        }).setDepth(1);
+        const boxH = Math.max(52, Math.ceil(rate.height) + 8);
+        const boxGfx = scene.add.graphics();
+        boxGfx.fillStyle(0xede8d8);
+        boxGfx.fillRect(RX_X + 6, boxY, RX_W - 12, boxH);
+        boxGfx.lineStyle(2, 0xc8b880);
+        boxGfx.strokeRect(RX_X + 6, boxY, RX_W - 12, boxH);
+        y = boxY + boxH + 4;
+        divider();
 
         // Remaining fields
-        const fields2 = [
-            ['ROUTE',    'Intravenous',  198],
-            ['DURATION', this.sd.duration || '4 hours', 214],
-        ];
-        fields2.forEach(([lbl, val, y]) => {
-            scene.add.text(x0, y, lbl, labelStyle);
-            scene.add.text(x1, y, val, valueStyle);
-        });
-
-        gfx.lineBetween(RX_X + 6, 228, RX_X + RX_W - 6, 228);
+        row('ROUTE',    'Intravenous');
+        row('DURATION', this.sd.duration || '4 hours');
+        divider();
 
         // Signature fields
-        scene.add.text(x0, 236, 'PRESCRIBER', labelStyle);
-        scene.add.text(x1, 236, this.sd.prescriber || 'Dr. J. Patel', valueStyle);
-
-        scene.add.text(x0, 252, 'PHARMACY', labelStyle);
-        scene.add.text(x1, 252, 'Checked', valueStyle);
-
-        scene.add.text(x0, 268, 'NURSE', labelStyle);
-        scene.add.text(x1, 268, '____________', { ...mono, fontSize: '16px', color: '#aaaaaa' });
+        row('PRESCRIBER', this.sd.prescriber || 'Dr. J. Patel');
+        row('PHARMACY', 'Checked');
+        row('NURSE', '____________', { ...mono, fontSize: '16px', color: '#aaaaaa' });
 
         if (this.sd.allergies) {
-            scene.add.text(x0, 288, 'ALLERGIES', labelStyle);
-            scene.add.text(x1, 288, this.sd.allergies, { ...valueStyle, color: '#b00020' });
+            y += 4;
+            row('ALLERGIES', this.sd.allergies, { ...valueStyle, color: '#b00020' });
         }
     }
 
@@ -381,7 +440,7 @@ export class InfusionPumpMinigame extends MinigameScene {
             const label = isBack ? 'DEL' : k;   // pixel font has no erase glyph (slice 7)
             scene.add.text(cx, cy, label, {
                 fontFamily: "'Press Start 2P', monospace",
-                fontSize:   isDot  ? '18px' : isBack ? '8px' : '12px',
+                fontSize:   isBack ? '8px' : '16px',   // Press Start 2P on its 8px grid
                 color: '#1a1a1a'
             }).setOrigin(0.5);
         });
@@ -401,7 +460,7 @@ export class InfusionPumpMinigame extends MinigameScene {
 
         scene.add.text(cx, cy, 'CONFIRM', {
             fontFamily: "'Press Start 2P', monospace",
-            fontSize: '11px',
+            fontSize: '16px',
             color: '#00ff88',
             letterSpacing: 1
         }).setOrigin(0.5);

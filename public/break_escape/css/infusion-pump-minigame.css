@@ -304,7 +304,7 @@
 .ip-no-charts-text {
     color: #f59e0b;
     font-family: 'Press Start 2P', monospace;
-    font-size: 9px;
+    font-size: 8px;   /* Press Start 2P on its 8px grid (slice 7 R2 n3) */
     margin-bottom: 16px;
     line-height: 1.6;
 }
@@ -315,4 +315,20 @@
     font-size: 16px;
     line-height: 1.5;
     max-width: 320px;
+}
+
+/* The pump canvas: zoomed by a whole number only, centred when it fits, scrolling inside
+   its box when the window is too small for zoom 1 (slice 7 R2 M2). Auto margins centre
+   a flex child without pushing it off the scrollable start. */
+.ip-phaser-container {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    display: flex;
+}
+
+.ip-phaser-container > canvas {
+    margin: auto;
+    flex: none;
+    image-rendering: pixelated;
 }
