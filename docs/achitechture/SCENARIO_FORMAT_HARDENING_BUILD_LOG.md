@@ -1272,3 +1272,54 @@ intact.
 `.claude/worktrees/p-harden-8a-base` is **left in place** (as the task directed), not moved to
 `tmp/delete/`. Games 2613, 2614 and 2620 are development-DB games that carry the proof's picked-up
 items; they are at format 1 and reusable, recorded here. No other game was touched.
+
+### Step 8a corpus equivalence, reader parity and full suites (2026-11-13, fourth builder)
+
+Items 1 and 2 of the second handover (corpus equivalence, reader parity, the item 2 prepared-data
+remainder) are now done as committed tests, and the full suites were run under the shared lock.
+
+**Corpus equivalence and the prepared-data remainder (committed Rails test).**
+`test/unit/format_8a_corpus_test.rb` renders each of the four rewritten scenarios from the merge
+base (`git merge-base main HEAD` = `8b6cf6a0d`, old field names read with `git show <base>:<path>`)
+and from the branch, each with `srand(1)`. For every scenario it shows: the 8a `scenario` transform
+applied to the old render equals the new render (parsed JSON, key order ignored); the transform is a
+no-op on the new render; `FormatUpgrade.retired_keys_in` finds nothing in the new render; and
+`prepare_scenario_data!` agrees across the rename, the transform on the prepared old data (an
+unsaved `Game` built with the render) equalling the prepared new data. That prepared-data check is
+the item 2 remainder (the 8a transform on prepared data through a built, unsaved `Game`). Moved
+keys per scenario (matching the step's own record): test_access_networks 1 network `downIf`, 1
+object `affordance.offWhen` (bench_pc, the one emptied affordance); test_access_social 5 resource,
+2 object; test_access_work 7 resource, 1 object; test_needs_sims 3 object.
+
+**Reader parity.** The same Rails test loads the old object outage reader from the merge base as
+`BreakEscape::AccessWorkOld` (the module text eval'd at the top-level binding, require lines
+dropped) and runs it on the old render, the live reader on the new render: the derived object
+outage condition of every object matches, and the up/down verdict of every network, resource and
+object matches across a sweep of its outage globals (all off, then each name on). A network's and a
+resource's old reader is a bare field read (`downIf`), so the old side reads that field directly on
+the old render. bench_pc keeps a truthy (`{}`) affordance and gains `offWhen`, so it stays in the
+needs target lists. The JS counterpart, `test/js/format-8a-reader-parity.test.mjs`, loads the old
+and new `pcSwitchedOff` (the shared object-off evaluator) from `git show` and the working tree and
+matches their verdicts over every object in the four scenarios and the global sweep, and checks
+that every object keeps its affordance truthiness (needs-target membership unchanged).
+
+**Format-version test migration (previously missed).** Raising `FormatUpgrade.current` from 0 to 1
+activates creation stamping and the load and sync format checks that step 7 kept inert, which
+turned eleven step-7 tests red (they pinned the current-0 behaviour). Migrated:
+`format_version_test.rb` (the three inert-path tests stub an empty step list to hold current 0; the
+header and too-new-`current` assertions read `FormatUpgrade.current`); `access_model_loader_test.rb`
+and `npc_habits_loader_test.rb` (a created game is now stamped, so the hand-set-data checks compare
+`except('formatVersion')`); `reload_persistence_test.rb` (the narrow sync load now also runs the
+`formatVersion` jsonb pluck, so two `break_escape_games` SELECTs, still never the full
+`scenario_data` blob). These are the stamping consequences the step-7 log's own comments
+anticipated.
+
+**Full suites (under `scratchpad/tests.lock`).**
+- `RBENV_VERSION=2.7.8 bin/rails test`: 2330 runs, 42087 assertions, 0 failures, 0 errors, 1 skip.
+- `MERGE_BATCH=1 bin/test-js -j 3`: 586 files, 586 passed, 0 failed.
+- Validator loop (`--no-graph`) over `scenarios/*/scenario.json.erb` and the `.json` scenarios: the
+  four touched scenarios validate with 0 errors each. Unrelated pre-existing known failures remain
+  in other tracks (crypto, labs, escape-room, biometric), none touched by this branch.
+
+**Commits:** `4c9b2a552` (corpus equivalence and reader-parity tests), `d14afa363` (format-version
+test migration), and the commit holding this log.
