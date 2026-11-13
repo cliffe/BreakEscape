@@ -127,6 +127,57 @@ Checked in every run and looked at in the shots:
 - Tiles show the `male_office_worker_v2`, `male_nerd_v2` and `female_blowse_v2` headshots (64px at 390x844, 32px only in the short frame); the desktop bar shows Sam's headshot.
 - The Wi-Fi key join (test_access_networks, `guest_ap`, and `guest_ap2` at 390x844 where the receptionist stands in front of the first) opens in the old password frame: no `.pc-monitor`, no `pc-view`, the `.password-frame` as before.
 
+## Review round 2 fixes
+
+Review: `docs/achitechture/UX_SLICE2C_REVIEW_R2.md` (B 0, M 3, m 5). All eight fixed.
+
+### M1. The PC's password screen is the sign-in form's twin
+
+Inside the PC monitor only (Wi-Fi keys, archives, safes and case locks keep the old frame, badge and keyboard tile):
+
+- No `.attempts-counter`. The message line carries the count ("Incorrect password. 2 attempts remaining."). The submit reveal falls back to `#password-message`; `getTestState().attemptsText` reads the count from the game data on a PC.
+- The label is the plain "Password:" in the sign-in label's look (white on the dark backing), without the PC name.
+- The keyboard toggle is in the field row beside the eye (`.password-field-wrapper`), and there is no separate `.password-controls` tile.
+- One button look for the PC's OS: `.pc-os-btn` (css/pc-monitor.css) puts the theme's thin skin on Submit, Show Hint, Sign in, Change, the eye and the keyboard toggle, the skin Switch user, Sign out and the chin buttons already had. Take Container on the taskbar gets it too. With no theme it is a flat fill with a 2px border. The eye and keyboard are icon buttons as tall as the field (40px, 32px compact) with whole-number icons (the 8x8 eye at x2, the 40x16 keyboard at x1). The `scale(0.95)` press is gone from the keyboard tile and the on-screen keys everywhere.
+- Nothing scrolls at x2 after a wrong password. The PC password screen fits once the badge and tile go. The sign-in screen at x2 also ran 47px past the bottom after a wrong password, so at x2 the tile row folds away once an account is chosen (Change brings it back), as the short frame already did. The remote sign-in at x2 ran 23px over because of its on-screen title; see the note below.
+- On-screen title: every PC monitor now hides `.signin-title`. The bezel names the PC, and the title repeated it (the same point as M1's prompt). On the portrait phone it also broke inside the host name ("HB-FIN-" / "02)") and sat white on the wallpaper's clouds. This reverses R1 m1's "the portrait phone keeps its title"; the narrow frame's bezel name already runs to the X (R1 m11).
+
+Tests: `password-signin-mode.test.mjs` "2c R2 M1" (no badge, the label, the toggle beside the eye, `pc-os-btn` on every screen button on both screens, a safe keeps its badge and tile, the thin skin and no `scale(0.95)` in CSS). jsdom has no layout, so the `scrollHeight <= clientHeight` check is in the live proof.
+
+### M2. The desktop's icon area
+
+`.desktop-background` in the monitor desktop has `pixel-scroll`. A `.desktop-more` strip ("More below", the network view's words, strip and stepped arrow) sits under the icon area while the icons run past it, updated on scroll, on resize, when the fonts arrive and after the icons are drawn. Its text is rounded to an even width so the centring lands on a whole pixel. Unit test: the class, the cue shown and hidden by the scroll position.
+
+### M3. Sized from 100dvh
+
+`.minigame-container.pc-view` is `height: 100vh; height: 100dvh`. `pcViewSpace` reads only the container's box (else the window), not `visualViewport`, and the visual viewport listener is gone. A pinch zoom or the keyboard's pan no longer rebuilds or moves the frame, and the field stays in view through `scrollIntoView`. Test: a visual viewport at `scale: 2`, and one with `offsetTop: 120`, give the same space and metrics as none.
+
+### Minors
+
+- m1: one kept note height per PC, `{ sizeKey, height }`, replaced on a resize. The mounted note's own measurement replaces the kept one, so a height taken before GNF arrived is lowered; within one update the larger measurement stays. Tests: two sizes then the first leaves one entry; a kept 72 is lowered to the measured 52 and the chin follows.
+- m2: `cssZoomOf(el)` in `utils/pc-monitor.js` (`currentCSSZoom`, else the screen area's drawn width over its layout width, else 1) is used by `snapInnerBoxes` and `evenShareLabels`. Unit test with a fake element. No WebKit run: Playwright WebKit is not installed and needs the user's yes.
+- m3: on the monitor a desktop icon label has the dark backing and 2px border of `.pc-screen-note` and no outline. It is as wide as its text (up to 112px) and rounded to an even width by `evenShareLabels(grid, '.desktop-icon-label')`. Stretched to the icon's width, the backing read as a heavy plate and its padding broke "handbook.txt".
+- m4: `.desktop-taskbar` renders only with a description or a Take button (remote desktop shots: no empty strip). Test.
+- m5: at x2 the bezel name is 16px Press Start 2P, centred in the 38px strip. Test.
+
+## Round 2 live proof
+
+Keyless server on :3062 (stopped afterwards), setFPS(20) with fixed steps, scrollbars shown, new games only (`tools/playtest/new-game.rb`): m01_first_contact 2938, 2920, 2921, 2922 (`--start-room kevin_office`); test_access_signin 2966 to 2969; test_access_networks 2970 to 2973. Driver and logs: the scratchpad's `ux-shots/slice2c-r2fix/` (`drive.mjs`, `run-all.sh`, one log per run). Shots in the same folder as PNG at 1400x1000, 800x600, 915x412 and 390x844: `main-01`, `main-02`, `main-03`, `m01-kevin-lock`, `m01-kevin-wrong`, `m01-kevin-desktop`, `desktop-overflow`, `desktop-overflow-scrolled`, `desktop-overflow-click`, `remote-signin`, `remote-desktop`, `shares`, `wifi-join`.
+
+Overflowing desktop: a temporary fixture in the page only (no file changed). The hot desk's own two icons are repeated to ten (the same item records, so a click does what the original does) and redrawn with `populateDesktopIcons`. Then a mouse wheel over the icon area and a real mouse click on the last icon (row 3 at 1400x1000, row 4 at 390x844, row 3 at 915x412), which opened the text file viewer each time. At 800x600 the ten icons fit the screen, so it shows no cue and nothing to scroll (the click there was on row 1).
+
+Checked in every run:
+
+- After a wrong password the screen area's `scrollHeight - clientHeight` is 0 at every size, for Kevin's PC and the hot desk sign-in. No `.attempts-counter`, the label is "Password:", and the keyboard toggle is in the field row. Every visible screen button has the thin skin.
+- Remote sign-in, remote desktop and share: no scroll at any size; the remote desktop has no taskbar strip.
+- Overflowing desktop: `pixel-scroll` on the scroller, the cue shown at the top (overflow 164 at x2, 254 at 915x412, 166 at 390x844) and hidden once scrolled to the end.
+- The frame is the same box for lock, wrong password and desktop, sign-in and desktop, remote sign-in, remote desktop and the share. Every visible box with text or a border in the screen is on a whole pixel (0 off the grid).
+- The bezel name is 16px at x2. The Wi-Fi key join still opens in the old password frame (`guest_ap2`, by the lift).
+
 ## Handover
+
+Round 2 done. Commits: `ef0239c30` (the fixes and tests), `f1eae17e4` (icon labels as wide as their text), `fe2745e44` (x2 sign-in folds its tiles), `159748439` (x2 title hidden, More below text even), `a97c789d1` (no on-screen title in any PC monitor), and the docs commit with this section.
+
+Open: a WebKit check of `cssZoomOf` (needs the Playwright WebKit download, the user's call). The remote sign-in's "Captured sign-ins" box has a see-through olive fill and sits on the wallpaper; it predates this slice and was not in the review.
 
 Round 1 done. Commits on `build/ux-slice2c`: `9f6d521c1` (the fixes and tests), `9139111bd` (note width), `59461b604` (desktop line boxes), `e60135807` (share labels), and the docs commit with this log and the backlog entries.
