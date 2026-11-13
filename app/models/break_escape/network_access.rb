@@ -257,7 +257,9 @@ module BreakEscape
       player_state['footholds'] = network_footholds
       seq = network_footholds.values.map { |f| f.is_a?(Hash) ? f['seq'].to_i : 0 }.max.to_i + 1
       player_state['footholds'][foothold_id] = {
-        'via' => 'jack', 'network' => jack[:network], 'source' => jack_id, 'device' => copy, 'seq' => seq
+        'via' => 'jack', 'network' => jack[:network], 'source' => jack_id, 'device' => copy, 'seq' => seq,
+        'name' => jack[:object]['linkName'].presence ||
+                  default_link_name(LINK_DEVICE_WORDS[copy.is_a?(Hash) ? 'drop_box' : 'jack'], room_display_name(jack[:room_id]))
       }
       player_state['gainedFootholds'] = gained_footholds
       player_state['gainedFootholds'] << jack_id if first
@@ -359,7 +361,8 @@ module BreakEscape
       seq = network_footholds.values.map { |f| f.is_a?(Hash) ? f['seq'].to_i : 0 }.max.to_i + 1
       net_name = network_name(network_id).presence || 'Wi-Fi'
       record = { 'via' => 'wifi', 'network' => network_id, 'source' => ap_object_id,
-                 'name' => ap[:object]['linkName'].presence || "Wi-Fi: #{net_name}", 'seq' => seq }
+                 'name' => ap[:object]['linkName'].presence || default_link_name(LINK_DEVICE_WORDS['wifi'], net_name),
+                 'seq' => seq }
       ap_sprite = ap[:object]['sprite']
       record['sprite'] = ap_sprite if ap_sprite.is_a?(String) && !ap_sprite.empty?
       player_state['footholds'][foothold_id] = record
@@ -499,7 +502,7 @@ module BreakEscape
       player_state['footholds'] = network_footholds
       seq = network_footholds.values.map { |f| f.is_a?(Hash) ? f['seq'].to_i : 0 }.max.to_i + 1
       record = { 'via' => 'implant', 'network' => network, 'source' => pc_id, 'seq' => seq,
-                 'name' => action[:name], 'sprite' => implant_sprite(device_copy, info[:object]) }
+                 'name' => implant_link_name(action, shape, info), 'sprite' => implant_sprite(device_copy, info[:object]) }
       record['device'] = device_copy if device_copy.is_a?(Hash)
       player_state['footholds'][foothold_id] = record
       player_state['gainedFootholds'] = gained_footholds
@@ -512,6 +515,39 @@ module BreakEscape
       consumed_id = device_copy['id'] if device_copy.is_a?(Hash)
       { status: :ok, body: { success: true, consumedId: consumed_id, foothold: foothold_for_client(foothold_id), first: first
                            }.merge(inventory_answer_fields(delta, [link_item_id(foothold_id), consumed_id])) }
+    end
+
+    # Default link names (UX feedback round slice 1, o-link-names): one pattern for every
+    # foothold kind, "<device>: <place>", written into the foothold record once at grant. The
+    # place is the source object's room for a physical kind; a Wi-Fi link names its network,
+    # since one network spans several rooms. An authored name wins: a jack's or a PC's
+    # `linkName`, or a grant_foothold action's `name`. A record granted before this has no
+    # stored name (a jack) or the old authored one (an implant) and keeps the name it had.
+    LINK_DEVICE_WORDS = { 'drop_box' => 'Drop box', 'session' => 'Keystroke injector', 'dropped' => 'USB stick',
+                          'jack' => 'Network jack', 'wifi' => 'Wi-Fi' }.freeze
+
+    def default_link_name(device_word, place)
+      place.present? ? "#{device_word}: #{place}" : device_word
+    end
+
+    # A room's player-facing name, as getRoomDisplayName (utils/room-display-name.js) gives it:
+    # the door sign or room name, else the id with underscores as spaces, each word capitalised.
+    def room_display_name(room_id)
+      return nil if room_id.blank?
+
+      room = scenario_data.is_a?(Hash) && scenario_data['rooms'].is_a?(Hash) ? scenario_data['rooms'][room_id.to_s] : nil
+      named = room.is_a?(Hash) ? (room['door_sign'].presence || room['name'].presence) : nil
+      return named if named.is_a?(String)
+
+      room_id.to_s.tr('_', ' ').gsub(/\b\w/, &:upcase)
+    end
+
+    def implant_link_name(action, shape, info)
+      authored = action[:name].presence || info[:object]['linkName'].presence
+      return authored if authored.is_a?(String)
+
+      word = LINK_DEVICE_WORDS[shape == 'dropped' ? 'dropped' : 'session']
+      default_link_name(word, room_display_name(info[:room_id]))
     end
 
     def implant_no_action
@@ -568,7 +604,8 @@ module BreakEscape
       item = {
         'id' => link_item_id(foothold_id),
         'type' => 'network_link',
-        'name' => jack['linkName'].presence || "#{device_name}: #{jack_name}",
+        # The name stored at plant (o-link-names); a jack planted before that derives it as it did
+        'name' => foothold['name'].presence || jack['linkName'].presence || "#{device_name}: #{jack_name}",
         'sprite' => device['sprite'].presence || device['type'],
         'takeable' => false,
         'footholdId' => foothold_id,
@@ -636,21 +673,35 @@ module BreakEscape
           held_foothold_ids
         end
       footholds = ids.map do |id|
+        place = { 'source' => link_source_place(id) }
         # An implant on a switched-off PC (review R3 M1) is listed, marked not responding, and
         # reaches nothing: no rows of its own network, and only greyed blocks
         if implant_source_off?(id)
           source = find_login_pc(network_footholds[id]['source'])
-          next foothold_for_client(id).merge('responding' => false, 'sourceHost' => source ? host_label(source[:object]) : nil,
+          next foothold_for_client(id).merge(place).merge('responding' => false, 'sourceHost' => source ? host_label(source[:object]) : nil,
                                              'hosts' => [], 'networks' => network_blocks(id))
         end
 
         # A foothold whose own network is down (an outage, 5.2) lists none of its rows: they
         # would only be refused, and the hosts leave every view while the network is down
         own = network_footholds[id]['network']
-        foothold_for_client(id).merge('hosts' => network_up?(own) ? network_rows(own) : [],
+        foothold_for_client(id).merge(place).merge('hosts' => network_up?(own) ? network_rows(own) : [],
                                       'networks' => network_blocks(id))
       end
       { status: :ok, body: { footholds: footholds } }
+    end
+
+    # The object a foothold was made at and its room, for the view's subtitle (UX feedback
+    # round slice 1): { name:, room: }. Both are what the player saw in the world when they
+    # planted, implanted or joined there, so neither is new information.
+    def link_source_place(foothold_id)
+      foothold = network_footholds[foothold_id.to_s]
+      return nil unless foothold.is_a?(Hash)
+
+      info = foothold['via'] == 'implant' ? find_login_pc(foothold['source']) : network_room_object(foothold['source'])
+      return nil unless info && info[:object].is_a?(Hash)
+
+      { 'name' => info[:object]['name'].presence || foothold['source'].to_s, 'room' => room_display_name(info[:room_id]) }
     end
 
     # The per-foothold network blocks (5.1): one `up` entry per network in player_reach (the
@@ -682,7 +733,13 @@ module BreakEscape
       nets = session_hosts.map { |h| h[:net] }.uniq.reject { |net| reach.include?(net) }
       nets.select { |net| structural.include?(net) }.sort.map do |net|
         # A down block advertises no action the server would refuse: no sign-in, no session
-        rows = session_hosts.select { |h| h[:net] == net }.map { |h| host_row(h[:pc]).except('remoteSignIn', 'session', 'responding', 'heldAs') }
+        # It names the account a session is kept for, as a powered-down row does (heldAs).
+        rows = session_hosts.select { |h| h[:net] == net }.map do |h|
+          full = host_row(h[:pc])
+          held_as = full.dig('session', 'displayName') || full['heldAs']
+          row = full.except('remoteSignIn', 'session', 'responding', 'heldAs')
+          held_as.present? ? row.merge('heldAs' => held_as) : row
+        end
         { 'id' => net, 'name' => network_name(net), 'via' => via_for(net, session_hosts, structural),
           'hosts' => rows, 'route' => 'down' }
       end
