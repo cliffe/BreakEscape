@@ -183,6 +183,8 @@ test('Open shows the file without taking it', async () => {
     assert.equal(opened[0].scenarioData.id, 'ian_rota');
     assert.equal(opened[0].scenarioData.takeable, false, 'the viewer copy is not taken');
     assert.equal(ended.length, 1, 'the desktop closes for the viewer');
+    // UX slice 2c R3 M2: the reader opens in this PC's monitor frame
+    assert.ok(opened[0].pcScreen && opened[0].pcScreen.pcId, 'the PC screen is handed on');
 });
 
 test('a plain PC desktop (not a sign-in PC) keeps today\'s behaviour: no dialog, no source_pc_id', async () => {

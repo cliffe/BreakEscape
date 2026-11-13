@@ -1350,7 +1350,8 @@ export class ContainerMinigame extends MinigameScene {
         this.complete(false);
         const viewItem = { ...item, takeable: false };
         if (window.handleObjectInteraction) {
-            window.handleObjectInteraction({ scenarioData: viewItem, name: item.type, objectId: `temp_${Date.now()}` });
+            // In the PC monitor the reader opens in the same frame (R3 M2 live check)
+            window.handleObjectInteraction({ scenarioData: viewItem, name: item.type, objectId: `temp_${Date.now()}`, ...this.pcScreenExtras() });
         }
     }
     
