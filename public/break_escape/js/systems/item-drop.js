@@ -207,8 +207,14 @@ export function dropRingOffsets(facing = null) {
  * a first pass and taken only when no other candidate is clear (UX slice 15 R2, M1): an
  * item dropped there is drawn on a door gap or over the next room's wall.
  *
- * `opts`: { size: {w, h}, roomRect, bodies, props, avoid, facing } (dropClearance gathers
- * the middle five; `facing` is the player's direction, e.g. 'left', 'down-right').
+ * A candidate that `opts.reachable` refuses (pickupReachable: no walkable feet point in the
+ * drop's own room has it within pick-up range) is never taken (UX slice 15 R2 final, M1): in
+ * the strip where a room's floor overlaps the next room's back wall, the cell below the feet
+ * is in reach only from the other room, where the pick-up is refused. The final fallback
+ * (the feet cell) is not checked: the player stands there.
+ *
+ * `opts`: { size: {w, h}, roomRect, bodies, props, avoid, facing, reachable } (dropClearance
+ * gathers the middle five; `facing` is the player's direction, e.g. 'left', 'down-right').
  * With no pathfinder, candidates count as walkable.
  */
 export function dropPoint(playerFeet, pathfindingManager, opts = {}) {
@@ -216,6 +222,7 @@ export function dropPoint(playerFeet, pathfindingManager, opts = {}) {
     const size = opts.size || { w: 16, h: 16 };
     const roomRect = opts.roomRect || null;
     const avoid = Array.isArray(opts.avoid) ? opts.avoid : [];
+    const reachable = typeof opts.reachable === 'function' ? opts.reachable : () => true;
     const step = pm?.worldGridBounds?.step || DROP_AHEAD_PX;
     const feet = { x: playerFeet.x, y: playerFeet.y };
     const candidates = [
@@ -232,7 +239,7 @@ export function dropPoint(playerFeet, pathfindingManager, opts = {}) {
     const clear = [];
     for (const c of candidates) {
         const cell = snap(c, 0);
-        const ok = !!cell && insideRect(cell, roomRect) && dropSpotClear(cell, size, { ...opts, roomRect });
+        const ok = !!cell && insideRect(cell, roomRect) && dropSpotClear(cell, size, { ...opts, roomRect }) && reachable(cell);
         if (!ok) continue;
         if (!avoid.length) return { x: cell.x, y: cell.y };
         const box = dropBox(cell, size);
@@ -242,6 +249,35 @@ export function dropPoint(playerFeet, pathfindingManager, opts = {}) {
     if (clear.length) return { x: clear[0].x, y: clear[0].y };
     const near = snap(feet, 2);
     return clampIntoRoom(near && insideRect(near, roomRect) ? { x: near.x, y: near.y } : feet, size, roomRect);
+}
+
+/**
+ * True when some walkable feet point in room `roomId` has the drop centred at `cell` within
+ * pick-up range: the arrival check (interactions.js isObjectInInteractionRange) measures
+ * the plain distance from the player's sprite centre, which sits `footOffset` above the
+ * feet, to the item's centre (UX slice 15 R2 final, M1).
+ *
+ * `deps`: { findCell(x, y, r) (the pathfinder's nearest walkable cell), roomAt(x, y) (the
+ * room id of feet there, interaction-walls.js roomIdAtFeet), roomId, footOffset {x, y},
+ * range (INTERACTION_RANGE), step (the grid step), margin (px kept inside the range, 2) }.
+ * With no findCell or roomAt, every cell counts as reachable.
+ */
+export function pickupReachable(cell, deps = {}) {
+    const { findCell, roomAt, roomId } = deps;
+    if (typeof findCell !== 'function' || typeof roomAt !== 'function' || !roomId) return true;
+    const off = deps.footOffset || { x: 0, y: 0 };
+    const range = (deps.range ?? TILE) - (deps.margin ?? 2);
+    const step = deps.step || DROP_AHEAD_PX;
+    // The feet points whose sprite centre is within range: a disc round cell + footOffset
+    const cx = cell.x + off.x, cy = cell.y + off.y;
+    const n = Math.ceil(range / step);
+    for (let j = -n; j <= n; j++) for (let i = -n; i <= n; i++) {
+        const f = findCell(cx + i * step, cy + j * step, 0);
+        if (!f) continue;
+        if (Math.hypot(f.x - off.x - cell.x, f.y - off.y - cell.y) > range) continue;
+        if (roomAt(f.x, f.y) === roomId) return true;
+    }
+    return false;
 }
 
 /** `p` moved so that the box of `size` centred on it lies inside `roomRect` (when it fits). */
@@ -394,8 +430,21 @@ export function dropInventoryItem(sprite) {
     const loaded = scene.textures.exists(textureKey);
     const firstTexture = loaded ? textureKey
         : (scene.textures.exists(DROPPED_ITEM_TEXTURE) ? DROPPED_ITEM_TEXTURE : '__DEFAULT');
+    // Only a spot the player can pick up again from this room (pickupReachable)
+    const pm0 = w.pathfindingManager;
+    const iw = w.interactionWalls;
+    const half = Number.isFinite(player.body?.halfHeight) ? player.body.halfHeight : undefined;
+    const reachDeps = {
+        findCell: pm0?.findNearestWalkableWorldCell ? (x, y, r) => pm0.findNearestWalkableWorldCell(x, y, r) : null,
+        roomAt: iw?.roomIdAtFeet ? (x, y) => iw.roomIdAtFeet(x, y, w.rooms, half) : null,
+        roomId,
+        footOffset: { x: feet.x - player.x, y: feet.y - player.y },
+        range: TILE,   // INTERACTION_RANGE
+        step: pm0?.worldGridBounds?.step
+    };
+    const reachable = cell => pickupReachable(cell, reachDeps);
     // A first spot for the stand-in; place() picks again with the item's own size
-    const at0 = dropPoint(feet, w.pathfindingManager, { size: { w: TILE / 2, h: TILE / 2 }, facing: player.direction, ...dropClearance(scene, room, null, player) });
+    const at0 = dropPoint(feet, w.pathfindingManager, { size: { w: TILE / 2, h: TILE / 2 }, facing: player.direction, reachable, ...dropClearance(scene, room, null, player) });
 
     if (!w.removeFromInventory?.(sprite)) {
         console.warn('[drop] item was not in the inventory');
@@ -443,7 +492,7 @@ export function dropInventoryItem(sprite) {
             snap = snapToTable(feet, tables, size, roomObstacles(room, obj), usable);
         }
         // On the floor: the first clear spot for this size (dropPoint), so it shows
-        const spot = snap ? null : dropPoint(feet, w.pathfindingManager, { size, facing: player.direction, ...dropClearance(scene, room, obj, player) });
+        const spot = snap ? null : dropPoint(feet, w.pathfindingManager, { size, facing: player.direction, reachable, ...dropClearance(scene, room, obj, player) });
         // Whole-pixel top-left, so the saved position reloads to the same place
         const left = snap ? snap.left : Math.round(spot.x - size.w / 2);
         const top = snap ? snap.top : Math.round(spot.y - size.h / 2);

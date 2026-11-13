@@ -460,6 +460,34 @@ test('UX slice 15 R2 (M1, n2): dropClearance lists door sprites and touching roo
         'the lobby door and the lobby rectangle, not the far room or its door');
 });
 
+test('UX slice 15 R2 final (M1): a drop no feet point in its own room can pick up is refused', async () => {
+    const { dropPoint, pickupReachable } = await import(pathToFileURL(join(js, 'systems/item-drop.js')).href);
+    // Feet above y 56 stand in the north room; below, in the south room (the strip where the
+    // north floor overlaps the south room's back wall ends there). The sprite centre sits
+    // 28 px above the feet, as the player's does.
+    const pm = gridPm();
+    const deps = {
+        findCell: (x, y, r) => pm.findNearestWalkableWorldCell(x, y, r),
+        roomAt: (x, y) => (y < 56 ? 'north' : 'south'),
+        roomId: 'north',
+        footOffset: { x: 0, y: 28 },
+        range: 32,
+        step: 8
+    };
+    const reachable = c => pickupReachable(c, deps);
+    assert.equal(reachable({ x: 44, y: 60 }), false, 'the cell below the last north feet row: only south feet reach it');
+    assert.equal(reachable({ x: 44, y: 52 }), true, 'the feet cell itself is in reach from the feet');
+    assert.equal(pickupReachable({ x: 44, y: 60 }, { ...deps, roomId: 'south' }), true, 'from the south it is in reach');
+    const feet = { x: 44, y: 52 };
+    assert.deepEqual(dropPoint(feet, pm, { size: { w: 16, h: 16 } }), { x: 44, y: 60 }, 'with no rule: the aim');
+    assert.deepEqual(dropPoint(feet, pm, { size: { w: 16, h: 16 }, reachable }), { x: 44, y: 52 },
+        'with the rule: the aim is skipped and the feet cell taken');
+    // Nothing reachable: the feet cell, the fallback
+    assert.deepEqual(dropPoint(feet, pm, { size: { w: 16, h: 16 }, reachable: () => false }), { x: 44, y: 52 });
+    // No pathfinder or room lookup: every cell counts
+    assert.equal(pickupReachable({ x: 44, y: 60 }, { roomId: 'north' }), true);
+});
+
 test('UX slice 15 (R15): a 16x16 drop sits with its bottom below the feet, so it draws in front', async () => {
     const scene = fakeScene(['pic']);
     world(scene);
