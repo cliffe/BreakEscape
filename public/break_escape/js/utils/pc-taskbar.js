@@ -157,8 +157,8 @@ export function pcStartPanelHtml(model, { shareIcon = PC_PLACE_SHARE_ICON } = {}
                 <span class="pc-start-username">${escapeHtml(a.username)}</span>` : ''}
             </span>
         </div>` : '';
-    const lines = [m.host, m.pcName && m.pcName !== m.host ? m.pcName : '']
-        .filter(Boolean).map(t => `<span class="pc-start-line">${escapeHtml(displayDashes(t))}</span>`).join('');
+    const lines = `<span class="pc-start-line pc-start-host">${escapeHtml(displayDashes(m.host))}</span>`
+        + (m.pcName && m.pcName !== m.host ? `<span class="pc-start-line pc-start-pcname">${escapeHtml(displayDashes(m.pcName))}</span>` : '');
     const remote = m.remote ? `<span class="pc-start-line pc-start-remote">Remote through ${escapeHtml(displayDashes(m.linkName))}</span>` : '';
     const item = (attrs, icon, label, cls = '') => `
             <button type="button" role="menuitem" class="pc-start-item${cls}" ${attrs}><img class="pc-start-item-icon" src="${icon}" alt=""><span>${label}</span></button>`;
