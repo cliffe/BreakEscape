@@ -353,6 +353,9 @@
 @media (max-height: 560px) {
     .sh-chart-area { min-height: 140px; }
     .sh-dzdt-panel { height: 80px; min-height: 80px; }
+    /* Phone landscape: hint plus the 140px chart is taller than the window, so the chart column
+       scrolls (pixel scrollbar) and the time axis stays reachable (review R1 m6) */
+    .sh-charts { overflow-y: auto; overflow-x: hidden; }
 }
 
 /* Phones: channel list above the chart, the progress bar under the hint, the range

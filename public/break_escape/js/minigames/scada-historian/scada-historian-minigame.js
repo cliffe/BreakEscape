@@ -229,7 +229,7 @@ export class ScadaHistorianMinigame extends MinigameScene {
         right.appendChild(toolbar);
 
         // Charts area
-        const charts = this._el('div', 'sh-charts');
+        const charts = this._el('div', 'sh-charts pixel-scroll');
 
         // Hint line at the top of the chart (the framework's Close button covers the bottom),
         // with a progress bar while a falsified point is inspected
