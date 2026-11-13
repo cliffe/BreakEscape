@@ -63,3 +63,49 @@ Display only. Barks and bubbles are not synced; nothing is added to player_state
 Done: all of slice 5 as planned, tests, live proof, shots. Nothing in progress.
 Files: `public/break_escape/js/systems/npc-barks.js`, `npc-world-bubbles.js`, `npc-action-icons.js`, `interactions.js`; `test/js/ux-bark-bubbles.test.mjs` (new), `npc-chatter-one-bubble.test.mjs`, `npc-social-pairing.test.mjs`; `scenarios/test_bark_bubbles/` (new).
 Gotchas: `swap-scenario-game.rb` games open with the title card, the Mission Brief and the tutorial prompt; the driver presses Space, closes the minigame and sets `tutorial_completed` in localStorage. NPCs in a room that has not loaded have no event listeners yet, so an out-of-view bark needs that room visited first.
+
+## R1 fixes (review `UX_SLICE5_REVIEW_R1.md`, with the orchestrator's rulings)
+
+### Merge of main first
+Main moved to de63f5900 (phone-calls track). It touched `npc-barks.js` (a `phoneRinger.callActive` hold in `_shouldDefer`) and `npc-manager.js`, both files this branch changes. Merged with `git merge --no-ff main` (7442ec3ac): no conflicts. Bark, phone and door tests after the merge: 67 files, 0 failures.
+
+### Findings
+- **M1, fixed.** In view now means on camera. `viewFacts` returns `onCamera`: the head anchor inside `cameras.main.worldView`, inset by `CAMERA_MARGIN` (8 px); `routeBark` gives the toast when it is false, and `_inView` uses it, so a bubble whose NPC leaves the camera hands the rest of its line to the toast. The clipped top the review also named is fixed: a bubble stays inside the view (centred, slid left or right, lifted); over an NPC at the top edge it sits beside the head, lowered into the view, with no tail.
+- **M2, fixed as ruled.** `refuseAtGate` (doors.js) emits `door_gate_denied` first and then reads the event data. The NPC manager marks the data (`answeredInView`, `answeredBy`) when a bark mapping (`bark` text or a knot bark) fires for an NPC whose bark would go to the bubble: `NPCBarkSystem.answersInView` (same room, lit, on camera, no minigame). It is decided at mapping time, after the cooldown and condition have passed. Inside the cooldown, out of the room, dark, off camera, or with a delayed mapping (`delayMs`), nothing is marked and the notification shows. With the notification dropped, a gate's `lockedHint` still shows as a toast of its own, titled with the door sign. No other import was added to npc-manager or doors (harness copy lists unchanged).
+  - Scenarios with a gate that has a hint AND an NPC answering `door_gate_denied`: none. `test_access_habits` (Sara, store B) answers but its gates have no hint; `lab_physical_pentest` has a hint on `secure_area` but no bark on the event (it was removed earlier). The fixture now has both cases.
+  - Side finding, not changed: `barkDelay` on an event mapping is never copied into the mapping config (`_buildMappingConfig`), so it does nothing in any scenario (sis02 sets it to 0).
+- **m1, fixed.** The bubble pages `displayDashes(text)`; TTS still gets the raw text.
+- **m2, fixed.** New tests fail if the `setAudioMs` wiring in `_renderBark` or the even-width rounding is removed (checked by removing each).
+- **m3, fixed.** A speech bubble never plays the phone's sound: not for a voiceless bark, and not as the fallback when TTS gives no audio (`_speakBark(..., { beep: false })`). A toast keeps it.
+- **n1, fixed.** Padding comes from the glyphs' ink bounds read off the Text canvas, so the left and right gaps match (4 px each in the zoom shot). `TEXT_RIGHT_SLACK` (2 px) is only the fallback when the canvas cannot be read.
+- **n2, fixed.** Lee has his own `ink/lee.ink` (compiled `lee.json`) with his own name.
+- **n3, fixed.** The source test now looks only for the old `scale... to: 1.25` tween.
+- **n4, fixed.** Bubbles are placed in turn (barks first, nearest first) clear of each other and the player's head: centred, then slid left or right (the tail stays over the head), then lifted with a 2 px stem down to the head. Last frame's choice is tried first, so bubbles do not flip sides.
+- **n5, fixed in part.** A bark bubble asks the bark's `stillValid()` every 250 ms and closes with no remainder when it fails. Dismissing a bubble or clearing it with "Clear all" was not asked for and is not done.
+- **n6.** `node_modules` (untracked symlink) kept out of every commit.
+- **main-19 (crisp text).** Canvas `fillText` smoothed the glyph edges (964 part-alpha pixels against 207 solid on one bubble). `crispText` now thresholds the Text canvas to clear or solid text colour and uploads it again, as Phaser's `updateText` does: 0 part-alpha pixels live. VT323 stays at 16 px (whole number); box, text and frame positions are whole pixels; the game renders with `pixelArt`, `antialias: false`, `roundPixels`.
+
+### Tests (no lock, per the test lock rule)
+- `ux-bark-bubbles.test.mjs`: 28 pass (15 new: off-camera routing and hand-on, onCamera margin, displayDashes, setAudioMs wiring, odd width, right slack, no phone sound over a bubble, stillValid, two NPCs a tile apart, placeBubble, view clamping (2), crispText, ink padding).
+- New `ux-bark-gate-refusal.test.mjs`: 9 pass (real NPC manager, bark system, bubble layer and doors.js): in-view answer drops the notification and the event goes first; cooldown; other room, dark, off camera; no listener; lockedHint alone; lockedHint with no answer; delayed mapping; knot bark; `answersInView`.
+- Mutation check: removing each fix (setAudioMs line, even rounding, onCamera in routeBark and `_inView`, displayDashes, beep flag, stillValid close, placement, the `answeredInView` read, the text-bark and knot-bark marks) turns at least one test red.
+- Source tests updated for the new order and call: `locked-hint-refusals` (9 pass), `phone-player-lines` (23 pass).
+- Every test file importing a changed module, plus all phone and door tests: 129 files, 0 failures. Rails sweeps over every scenario (`scenario_schema`, `ink_compiled_staleness`, `tts_mission_lines`, `capture_payload_secret`): 29 runs, 0 failures.
+- Validator on `test_bark_bubbles`: 0 errors, 3 warnings (the two store badges no item provides, by design, and the unmodelled two-door south wall).
+
+### Live proof (keyless server on :3332 from this worktree, headless, setFPS(20), fixed steps on)
+Driver: `scratchpad/slice5_r1_shots.mjs`. Games 2465, 2466, 2467 (new, `swap-scenario-game.rb test_access_habits test_bark_bubbles`); the final shots are from 2467, the zoom and alpha numbers from 2466 and 2467. Shots in `scratchpad/ux-shots/slice5-r1/` (lossless webp), numbers in `report.json`:
+- `r1-1-in-view-bubbles`, `r1-1-in-view-closeup`: Dana and Lee, two bubbles, no toast.
+- `r1-2-off-camera-toast`: camera panned 700 px away, NPCs still in the player's room: both barks are toasts. `r1-2b-left-camera-remainder-toast`: the long bark's rest goes to the toast when the camera leaves Dana.
+- `r1-3-gate-refusal-in-view-no-notification`: store A gate, Dana answers in a bubble (beside her head, she stands at the top of the view), no notification.
+- `r1-4-gate-refusal-cooldown-notification`: again 1.5 s later, inside her 4 s cooldown: the notification shows.
+- `r1-5-gate-refusal-lockedhint-toast`: store B gate: Dana's bubble, and the hint alone in a toast titled "Store B".
+- `r1-6-two-npcs-a-tile-apart`, `r1-6-two-npcs-closeup`: Dana and Lee a tile apart with the player's head just above them: Dana's bubble slides left, Lee's right, neither covers the other or the head.
+- `r1-7-bubble-text-3x-nearest`: Dana's bubble read off the game canvas at its own resolution (640x400 game, CSS 2x) and scaled 3x with nearest neighbour: hard-edged glyphs, even side gaps, 2 px frame.
+Server stopped afterwards.
+
+### Sync
+Display only, unchanged: nothing added to player_state. The `answeredInView` mark lives on one event's data object in memory.
+
+### Handover (R1)
+Done: all R1 findings and the main-19 note. Not done: dismissing a bubble or clearing it with "Clear all" (n5, not asked). Files: `npc-barks.js`, `npc-world-bubbles.js`, `npc-manager.js`, `doors.js`; `test/js/ux-bark-bubbles.test.mjs`, `ux-bark-gate-refusal.test.mjs` (new), `locked-hint-refusals.test.mjs`, `phone-player-lines.test.mjs`; `scenarios/test_bark_bubbles/` (gates, store rooms, Lee's ink). Gotchas: the driver pans with `cameras.main.stopFollow()` and must `startFollow(window.player)` afterwards; an NPC moved onto the back wall gets pushed out by physics, so the overlap shot moves both NPCs onto open floor.
