@@ -478,6 +478,7 @@ module BreakEscape
         # A non-foothold session only: a claim or a keyboard sign-in, never a live
         # remote-through-foothold session (testing via alone is wrong, 5.5).
         return implant_not_ready unless session.is_a?(Hash) && session['foothold'].blank?
+        # A locked session still takes an implant, by design: a physical USB plant needs no unlocked screen and reads no account data (slice 6 Lock, integrator ruling).
 
         entry = inventory_item_matching(action[:needs_held])
         return implant_not_ready unless entry
