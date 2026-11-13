@@ -495,16 +495,16 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
     catalogue_server flag 1 = the catalogue (the hidden part), flag 2 = the
     Initiative's ledger; tomb_beta_server flag 1 = the owner's credential,
     flag 2 = full control (the mirror job).
-    FLAG ORDER IS BUILD-STABLE and confirmed against the real build (SecGen
-    project d_61_137, set 918): catalogue flag_1 is the catalogue index leaked
-    into the catalogsvc home (foothold), flag_2 is the Initiative ledger leaked
-    into /root (privesc); tomb flag_1 is the enrolment record in the web service
-    account home (RCE), flag_2 is the mirror job in /root (privesc). This matches
-    the SecGen module document order and holds on every build. The 2026-11-13
-    film handover's "catalogue flag order reversed" note was a misread (the two
-    captured values were transcribed to the wrong steps); see
-    tmp/playtest/handover_m09_flagorder.md. Keep the aim targetFlags and
-    flagRewards pinned to this order. %>
+    FLAG ORDER FOLLOWS SECGEN DOCUMENT ORDER: catalogue flag_1 is the catalogue
+    index leaked into the catalogsvc home (foothold), flag_2 is the Initiative
+    ledger leaked into /root (privesc); tomb flag_1 is the enrolment record in the
+    web service account home (RCE), flag_2 is the mirror job in /root (privesc).
+    This matches the SecGen module document order and is now guaranteed by the flag
+    ingest recording each flag's document position and the game numbering flag_1..N
+    by that position (Flag#position; extract_flags_by_vm), so it no longer rides on
+    database row order (which earlier shuffled per set and could reverse the
+    numbering - see tmp/playtest/handover_m05_flagorder2.md and the flag-numbering
+    fix). Keep the aim targetFlags and flagRewards pinned to this order. %>
   "flags": {
     "catalogue_server": <%= vm_flags_json('catalogue_server', ['flag{m09_catalogue_index}', 'flag{m09_initiative_ledger}']) %>,
     "tomb_beta_server": <%= vm_flags_json('tomb_beta_server', ['flag{m09_tomb_beta_owner}', 'flag{m09_tomb_beta_control}']) %>

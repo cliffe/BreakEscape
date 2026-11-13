@@ -108,11 +108,14 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
       Hacktivity mode the real per-build values replace these placeholders, keyed by
       the same system name. Additive to the flag-station's flags array, which still
       drives in-game submission.
-      Flag numbering is build-stable: the SecGen scenario (document order) fixes
-      flag_1 = recon note, flag_2 = RCE, flag_3 = staging manifest, flag_4 = root,
-      confirmed against a real build. The submit_flagN task labels, flagRewards and
-      the per-flag HaX beats below are pinned to that order, so keep them aligned to
-      it and do not reorder the SecGen flag_generators. %>
+      Flag numbering follows the SecGen document order: flag_1 = recon note,
+      flag_2 = RCE, flag_3 = staging manifest, flag_4 = root. This is now guaranteed
+      by the flag ingest recording each flag's document position and the game numbering
+      flag_1..flag_N by that position (Flag#position; extract_flags_by_vm), so it no
+      longer depends on database row order, which earlier shuffled per set and reversed
+      the numbering on some sets. The submit_flagN task labels, flagRewards and the
+      per-flag HaX beats below are pinned to that order, so keep them aligned to it and
+      do not reorder the SecGen flag_generators. %>
   "flags": {
     "qdc_research_server": <%= vm_flags_json('qdc_research_server', ['flag{leaked_bludit_admin_credentials}', 'flag{bludit_authenticated_upload_rce}', 'flag{torres_staging_manifest}', 'flag{architect_acquisition_authorisation}']) %>
   },

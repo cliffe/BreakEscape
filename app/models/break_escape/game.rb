@@ -5639,9 +5639,22 @@ module BreakEscape
     # In Hacktivity, flags belong to individual VMs (not to SecGenBatch).
     def extract_flags_by_vm(vm_set)
       vm_set.vms.each_with_object({}) do |vm, hash|
-        # Hacktivity's read_secgen_flags_job inserts flags in reverse XML order,
-        # so reversing here restores flag_1..flag_N to match the scenario's references.
-        hash[vm.title] = vm.flags.order(:id).map(&:flag_key).reverse
+        flags = vm.flags.to_a
+        ordered =
+          if flags.any? && flags.all? { |f| f.respond_to?(:position) && !f.position.nil? }
+            # Stable: order by the flag's document position in SecGen's flag_hints.xml
+            # (recorded at ingest by ReadSecgenFlagsJob). This makes flag_1..flag_N match
+            # SecGen document order, i.e. the order the scenario task/reward texts and
+            # standalone mode (Mission.parse_flag_hints_xml) both use. No reversal.
+            flags.sort_by(&:position)
+          else
+            # Legacy sets whose flag positions were never recorded (ingested before the
+            # document-order fix and not yet backfilled): fall back to the historical
+            # id-order-reversed behaviour so they are no worse than before. Backfill with
+            # Hacktivity's backfill_flag_positions rake task to make these stable too.
+            flags.sort_by(&:id).reverse
+          end
+        hash[vm.title] = ordered.map(&:flag_key)
       end
     end
 
