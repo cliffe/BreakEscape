@@ -78,6 +78,29 @@ test('objectStandPoint: a stand point behind a wall is not kept when a clear one
     assert.ok(t.y >= 0 && Math.hypot(t.x - obj.x, t.y - obj.y) <= RANGE - 4);
 });
 
+test('UX slice 15 R2 (M1): an object in a shared strip is approached from its own room, not across the line', () => {
+    // usb_room's floor runs down to y 64, over the lobby's back wall; the lobby's feet start
+    // at y 64. A stick dropped at (44, 60) belongs to usb_room. The player stands north of
+    // it, feet (48, 16), sprite centre 31 px higher; the aim and the near cells south of it
+    // are in the lobby, where the use is refused.
+    const player = { x: 48, y: -15, body: { center: { x: 48, y: 16 } } };
+    const obj = { x: 44, y: 60 };
+    const findCell = (x, y) => ({ x, y });
+    const sameRoom = (p) => p.y < 64;            // feet south of y 64 are in the lobby
+    const t = objectStandPoint(obj, player, { range: RANGE, findCell, sameRoom });
+    assert.ok(t.y < 64, `the stand point is on usb_room's side: ${JSON.stringify(t)}`);
+    // In reach as the game measures it facing down: from 16 px below the sprite centre
+    assert.ok(Math.hypot(t.x - obj.x, t.y - 31 + 16 - obj.y) <= RANGE - 4, `and in reach facing down: ${JSON.stringify(t)}`);
+    // Without a sameRoom rule nothing changes: the nearest plain-reach point, in the lobby
+    assert.ok(objectStandPoint(obj, player, { range: RANGE, findCell }).y >= 64);
+    // From the lobby side (feet (48, 140)), with no rule, the aim is in the lobby
+    const below = { x: 48, y: 109, body: { center: { x: 48, y: 140 } } };
+    const plain = objectStandPoint(obj, below, { range: RANGE, findCell });
+    assert.ok(plain.y >= 64, 'without the rule the walk would end in the lobby');
+    const ruled = objectStandPoint(obj, below, { range: RANGE, findCell, sameRoom });
+    assert.ok(ruled.y < 64, `with it, the walk goes through to usb_room's side: ${JSON.stringify(ruled)}`);
+});
+
 test('objectStandPoint: a blocked aim whose snapped cell is in reach returns the cell, not the raw aim (R3 m1)', () => {
     const player = { x: 0, y: 0 };
     const obj = { x: 100, y: 0 };
