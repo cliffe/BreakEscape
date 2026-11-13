@@ -2868,3 +2868,130 @@ in player_state, so the player_state transform is a no-op and no sync payload ch
 - Chunk 7 full-suite sweep: grep the tree for `screenHabit`/`printHabit`/`usbHabit`; legitimate hits
   are comments, the schema's "was screenHabit" notes, the retired list, the frozen format_8a/8b/8c
   fixtures, and the docs listed above.
+
+## Step 8c chunk 6 — live proofs (including the old-game proof) (2026-11-13)
+
+Chunk 6 of the seven-chunk split: the live proofs from the chunk-6 plan, each on the real page with the
+real `window.__test` bridge, headless. Two keyless servers sharing the dev DB: the branch server on
+**:3616** (branch `build/hard-8c`, tip `6bf4eca9c`, `FormatUpgrade.current` 3), the base server on
+**:3617** from the pre-prepared base worktree `.claude/worktrees/p-hard-8b` at `ab14d1926` (the 8b tip,
+format 2, `current` 2), which the brief directed as the old-code server (its `.bundle/config` and
+`node_modules` were already in place, so no `bundle install` was needed; the chunk-5 GemNotFound in a
+fresh detached worktree did not recur). Both started by hand the way `start-keyless-server.sh` does,
+`env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true`, the GEMINI warning confirmed in each boot log. No
+`db:` task anywhere. Drivers, the read-only row reader (`dump_habits.rb`, counts retired top-level
+`screenHabit`/`printHabit`/`usbHabit` and prints each NPC's `habits` block) and the captures live in the
+session scratchpad (`8c-chunk6/`); per the plan nothing was added to the repo except this section.
+
+**Scenario pick.** The brief let the old-game proof use test_access_habits (screen only, loader-filled
+from awareness) or test_needs_sims, "pick one that exercises screen and print habits". test_needs_sims
+was chosen because it authors both (amara and sanjay `screenHabit`, tom `printHabit`), so one game
+exercises the screen and print folds together; this diverges from the chunk-6 plan's test_access_habits
+priya_pc example, on the brief's explicit instruction.
+
+### Proof 1 — the stored-game (old-game) proof on test_needs_sims (game 3334)
+
+The old game was made on the base (`:3617`, `current` 2) by the **base worktree's own `new-game.rb`**
+(real standalone creation path, Mission row 236 present), never the swap tool. Played on the base's real
+page (`:3617`): opened the kitchen door, then waited; the autonomous needs system drove the habit beats
+and the `see_auto_lock` task completed (`waitFor task:see_auto_lock` returned after 185 s), then synced.
+
+**Before (base, format 2), `dump_habits.rb 3334`:** `formatVersion 2`; **3** retired top-level habit keys
+in `scenario_data` (office/amara `screenHabit`, office/tom `printHabit`, office/sanjay `screenHabit`),
+`habits` absent on all three; **0** retired keys in `player_state`. `player_state` held real habit-driven
+state from the base play: `sanjay_pc_screen_locked true`, `sanjay_pc_owner_away true`, `kitchen` in
+`unlockedRooms`, and 13 completed tasks including `see_auto_lock`, `see_printout`, `see_left_behind`,
+`spot_open_screen`. Base `verify-run.rb 3334`: progress recorded, 1 room beyond the first.
+
+Loaded the same game on the branch (`:3616`). First **GET /scenario -> 200**, header
+**`X-Break-Escape-Format: 3`**, bootstrap body `formatVersion 3`: the load upgraded the game through the
+real server path (`set_game -> ensure_current_format!`, under the row lock).
+
+**After (branch, format 3), `dump_habits.rb 3334`:** `formatVersion 3`; **0** retired keys in
+`scenario_data` and **0** in `player_state`; the three keys folded, each keeping its own sub-keys:
+office/amara `habits.screen {lockIfAwayOverSeconds: 20}`, office/sanjay `habits.screen {lockChance: 0}`,
+office/tom `habits.print {forgetChance: 0.5, fetchAfterSeconds: [30,120], _comment}`. The `player_state`
+habit state carried across unchanged (`sanjay_pc_screen_locked true`, `sanjay_pc_owner_away true`,
+`kitchen` still unlocked, the completed tasks kept): the `player_state` transform is a no-op for habits,
+as the chunk-1 plan states, because NPC records are not stored in player_state. Re-driving the upgraded
+game on the branch (resume, real page) fired the same folded-reader behaviour: `sanjay_pc_screen_locked`
+toggled (its `habits.screen.lockChance 0` leaves the machine's auto-lock to fire),
+`workstation_owner_left`/`workstation_owner_returned` for amara_pc, sanjay_pc and tom_pc, and copier print
+output picked up and placed. Branch `verify-run.rb 3334`: progress recorded, 18 tasks completed. **PASS.**
+
+A second old game (3318) was also made on the base (format 2, 3 retired keys) and loaded on the branch
+via the browser bootstrap; it upgraded to format 3 with the keys folded and 0 retired, but was not played
+far on the base (`verify-run` BOOTSTRAP ONLY), so 3334 is the primary old-game proof and 3318 the clean
+fold-on-load confirmation.
+
+### Proof 2 — the X-Break-Escape-Format header / old-tab path (games 3318 and 3334 on the base)
+
+The branch server stamps `X-Break-Escape-Format: 3` on every engine response; the base stamps `2`
+(confirmed on the root redirect and on `/scenario`). After the branch upgraded 3318 and 3334 to format 3,
+the base server (reads up to 2) refuses each, which is the "old client tab holding format 2 against a game
+a newer server advanced" case:
+
+- base **GET show** (`/break_escape/games/<id>`): **409**, header `X-Break-Escape-Format: 2`, full-page
+  HTML "...newer version of Break Escape (format 3; this server reads up to 2)".
+- base **GET /scenario** and **GET /room/office** (the `set_game` routes the format guard wraps): **409**,
+  header `X-Break-Escape-Format: 2`, body
+  `{"error":"format","message":"This game was saved by a newer version of Break Escape (format 3; this server reads up to 2)","current":2}`.
+- branch same routes: **200**, header `X-Break-Escape-Format: 3`.
+
+The format guard's reload-once-then-banner on a 409/header mismatch is unit-proven
+(`format-guard.test.mjs`); the mechanism is format-agnostic and was proved end-to-end at step 7/8a. Both
+games showed the identical 409 + header 2, so the header path behaves as the plan says. **PASS.**
+
+### Proof 3 — fresh branch game, screen and print habits on the real path (games 3322 and 3345)
+
+**3322 (test_needs_sims, native format 3, `dump_habits.rb`: folded `habits.screen`/`habits.print`, 0
+retired).** Opened the kitchen door and watched the office; the folded habit readers drove the behaviour
+live. Events seen: `workstation_auto_locked:sanjay_pc`, `workstation_lock_heard:sanjay_pc`,
+`sanjay_pc_screen_locked` (sanjay's `habits.screen.lockChance 0` leaves the auto-lock to fire),
+`workstation_owner_left`/`_returned` for amara_pc, sanjay_pc and tom_pc, `amara_pc_owner_away` (she left
+unlocked for a short trip, her `lockIfAwayOverSeconds 20`), `tom_badge_left`, and copier output produced
+and collected. `verify-run.rb 3322`: progress recorded, 1 room beyond the first, **14 tasks completed**
+including `see_auto_lock` and `spot_open_screen` (screen habit) and `see_printout` (the print pipeline).
+**PASS** (screen habit on the real browser path).
+
+**3345 (test_needs_sims, print habit specifically).** Walked to the Print Queue note and read it, which
+releases a held print as Tom; `waitFor event:npc_print_uncollected:tom` returned
+`{ownerId:"tom", slotId:"copier_out_a", producerId:"office_copier", ageMs:150000, forgotten:true}` (tom's
+`habits.print` forget behaviour). During the same wait Tom printed again and fetched it
+(`copier_out_b` produced, `npc_picked_up:copier_out_b`, `npc_placed:copier_out_b`, task `see_printout`
+completed) and `tom_pc_screen_locked` toggled (his `lockChance 0.5` roll). `verify-run.rb 3345` is
+BOOTSTRAP ONLY because the run stayed in the office (no room transition), so the `npc_print_uncollected:tom`
+event and the 10 task completions are the evidence, the same gate note as 8b's test_needs_sims. **PASS**
+(print habit on the real browser path, reading the folded `habits.print`).
+
+### Sync size
+
+No growth. The `scenario_data` fold renames each top-level habit key into `habits.<screen|print|usb>` in
+place (the sub-object holds exactly what the top-level key held, so no addition); the `player_state`
+transform is a no-op for habits (NPC records are not in player_state), and the habit-driven globals it
+does carry (`*_screen_locked`, `*_owner_away`, `tom_badge_left`) are bounded booleans the needs system
+already wrote before 8c. `sync_state` reads and writes no habit field, so nothing is re-sent because of
+8c. The upgraded old game (3334) `player_state` held the same bounded data before and after the load.
+
+### Servers and clean-up
+
+Branch server `:3616` and base server `:3617` both stopped by their own listening pids; both confirmed
+down by curl (connection refused). All browser sessions quit. The base worktree `.claude/worktrees/p-hard-8b`
+is left in place and unchanged (read-only, as directed). Games 3318, 3322, 3334, 3345 are development-DB
+games left at format 3, recorded here; no other game was touched.
+
+### Handover
+
+- **Done:** chunk 6 as specified. Old game 3334 upgraded on the branch's real load (format 2 -> 3, the 3
+  retired habit keys folded to `habits.screen`/`habits.print`, 0 retired in `scenario_data` and
+  `player_state`, header 3, habit `player_state` state preserved, the screen and print beats behaving the
+  same after the fold). The X-Break-Escape-Format old-tab path shows 409 + header 2 on the base for both
+  format-3 games. A fresh branch game (3322) and the Tom print game (3345) prove the screen habit
+  (auto-lock, owner-left tracking, `spot_open_screen`) and the print habit (`npc_print_uncollected:tom`,
+  print fetched) on the real page, reading the folded keys.
+- **Old game made via:** the base worktree's own `new-game.rb` (real creation path, Mission row 236),
+  never the swap tool.
+- **Proof scripts** live only in the session scratchpad (`8c-chunk6/`), per the plan's "nothing added to
+  the repo except this log's proof section"; `dump_habits.rb` is the read-only row reader.
+- **For chunk 7:** the full-suite sweep and the stale author-facing docs still naming the retired habit
+  keys (chunk-5 handover list) remain.
