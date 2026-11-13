@@ -86,3 +86,40 @@ Keyless headless server on :3342 from this worktree, setFPS(20) with fixed steps
 ## Handover (R1)
 
 Stopped at the call budget. Done: everything above, committed. Open: the slice 9 remainder and audit leftovers listed above. Files touched: see the commits. Gotchas: `bin/test-js` with a file list is the quickest way to run importers; the audit script needs its playwright import pointed at this worktree's node_modules when run from the scratchpad.
+
+## R2 fixes
+
+Review: `UX_SLICE7_REVIEW_R2.md` (1 blocker, 2 majors, 6 minors, 5 nits). Commits d675858f1, 7dc46d2fa, e996fd65b, 0307a4800, f406f58b1, 5417d1940, 1c420f48d, ed76b6444 and this log.
+
+Sync: client display only. Nothing new in player_state; no sync changes.
+
+### Findings
+
+- B1, fixed. `minigame-html-sweep-b.test.mjs` allows exactly the NCSC brief's trusted icons: class `ncsc-envelope-icon` with src `assets/icons/mail-new.png`, class `ncsc-badge-icon` with src `npc-lock.png` or `mark-tick.png`, and no attribute beyond class, src, alt, width and height. Any other `<img>` still fails.
+- M1, fixed. The MAR card places each row from its texts' measured heights (4px below the taller of label and value), and each divider sits 2px below the last row and 6px above the next, so no rule crosses text. The header, sub-header and rate box are placed the same way.
+- M2, fixed. The pump canvas uses `Phaser.Scale.NONE` and `setZoom()` with the largest whole number that fits its box, at least 1 (`InfusionPumpMinigame.wholeZoom`). Below zoom 1 the canvas scrolls inside its box (auto margins centre it when it fits). The canvas is 784px wide now (pump bezel 474) so it fits an 800px window at zoom 1. The X sits on the visible part of the canvas, so it stays put while the canvas scrolls. Zoom is 1 at 1400x1000 (1.78 rounds down), 800x600 and 915x412 (scrolls 138px), 2 at 1700x1150; clicks land on the right key at zoom 1 and 2. The keypad digits and CONFIRM are Press Start 2P 16px, DEL 8px.
+- m1, fixed with a different face than asked. Measured on black, white text, 13 letters each, with the faces loaded from the game server: VT323 (16 to 96px), GNF (8 to 96px) and Pixelify Sans (32 to 64px) draw grey edge pixels at every size (VT323 80px: 1951 grey against 6613 white). Press Start 2P at a multiple of 8 draws none (56px: 7; at 48px and under Chrome adds its 1px LCD colour fringe, as on the combination). So the cryptex letters are Press Start 2P 48px, in brass (#e8c070) to set them apart from the combination's white digits. Crops: `zoom/cryptex_*_after_x3.png`, 8 colours in the wheel boxes (background, glyph, border, two fringe colours).
+- m2, fixed. Every `font-weight: bold` in the combination and cryptex CSS is normal, the wrappers set `font-synthesis: none`, and the worn hint lost its italic. Headings are 16px. The audit reports both scenes clean.
+- m3, fixed. The BLE scanner is a column: the device list takes what height is left (`flex: 0 1 auto`, at most 220px, at least 48px) and scrolls inside the frame; the game area scrolls if even that does not fit. On screens under 560px high the scanner may use the height below its top offset.
+- m4, fixed. The Bluetooth panel is a column too: every section keeps its height, the device list shrinks, the game area scrolls inside the frame, and the expanded controls have no fixed max-height. The header also clears the expand toggle, which drew over the scanner icon.
+- m5, fixed. `test/js/minigame-close-shell.test.mjs` (jsdom, 9 tests): a plain scene given `showCancel: true` draws no Cancel and an empty controls row, and its X closes as the player; a `keepsCancelButton` scene draws Cancel and it calls `closeByPlayer` once; `showCancel: false` and `disableClose` still hide it; `placeCloseButton()` with stubbed rects (border, 4px gap, a frame larger than the window, a 12px scrollbar), a hidden X and an unmeasured frame; the `closeInsideFrame` watcher observes the frame, re-places on resize, and `cleanup()` disconnects it and drops the resize listener; the pump's `wholeZoom`.
+- m6, fixed. Add to Notepad is a button in the text file window's own toolbar, beside Copy and Select All; the toolbar wraps on narrow windows.
+- n1, fixed by removal. No caller anywhere passes `closeButtonAction` (both lockpicking starters pass only `cancelText: 'Close'`), no plan or design note mentions a reset from that button, and the branch dates from before the move to `public/` with no use since. So lockpicking no longer keeps a Cancel, and the reset option and the listener filtering (which left the base close attached) are gone; the X and Esc close through `closeByPlayer()`.
+- n2, fixed. The NCSC TLP bar is at least 42px tall with 44px side padding, so the X sits on the bar above its amber rule at every size.
+- n3, fixed where the slice set it: the pump gate headline 9px to 8px, DEL 12px to 16px, the X 18px to 16px; the pump keypad and CONFIRM also on the grid (above).
+- n4, fixed. The example dump in `docs/test-bridge.md` is the notes reader, which keeps its Continue as `#minigame-cancel`, so it stays; a note under it says which scenes still draw one.
+- n5, fixed. The comments follow the semicolon.
+
+### Proof
+
+Keyless headless server on :3344 from this worktree, setFPS(20) with fixed steps on, stopped afterwards. Games 2517 (before) and 2539 (after), both new, made with `swap-scenario-game.rb test_seating test_seating`. Shots in scratchpad `ux-shots/slice7-r2fix/`: sweep webp per scene and size (`*_before`, `*_after`, review ids in the names), `zoom/` 3x nearest crops of the cryptex, combination and pump card and screen at 1400x1000, 800x600 and 915x412, `fonts/` the face and size measurements, `audit/` the audit shots and JSON, `probe/` single-scene shots.
+
+- Sweep (`pixel-style-sweep.mjs --offline` with the R2 params) on 17 scenes at three sizes: PASS, VT323 loaded with the Google font hosts blocked.
+- Audit (`ui-rules-audit.mjs`) on the same: 0 x-on-frame; combination, cryptex, pump, network architecture and container clean; BLE and Bluetooth overflow gone (faux-bold only). Overflow left: PIN and SIEM full-window borders 2px past the viewport (predates the slice), SIEM at 915x412, the kit's field note when opened title-only (all listed at R1).
+- Tests: the whole JS suite, `MERGE_BATCH=1 bin/test-js -j 3` under the shared lock, on 1c420f48d plus the m5 test (ed76b6444): 545 files passed, 0 failed.
+
+### Left for slice 11
+
+- Press Start 2P off grid outside the ruling: PIN keys 20px bold and ENTER 12px (`pin.css`), the reader sign 11px, the remaining faux bold the audit counts (342) and off-grid sizes (156) across the slice scenes.
+- Two "&mdash;" strings in `ncsc-brief-minigame.js` (player-facing, unchanged lines).
+- The 35 inert `showCancel: true` params and the rfid opt-in (slice 9 and 3a lists).
