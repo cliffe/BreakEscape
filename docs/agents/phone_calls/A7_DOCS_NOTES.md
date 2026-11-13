@@ -15,6 +15,8 @@ Written 2026-11-12 on `build/phone-calls`. Field names, defaults and behaviour f
 
 ## Skill changes needed (not made: `.claude/skills/*` is not mine to edit)
 
+Applied 2026-11-13 by 8eee93115; see below for any bullet changed to match the code. Changed: the tts-audio "Audio step note" bullet was not added (one moment in the track), and the renamed-id gotcha is worded to match the cache key, which holds no NPC id (a re-key happens when the new record's voice or style differs).
+
 **tts-audio** (`.claude/skills/tts-audio/SKILL.md`)
 
 - Line 17 (delivery note): delete "Voiced phone calls don't send a note yet, so the extractor gives their lines none." Voiced call lines send `#delivery:` since A1 (`line_delivery` returns the note for voiced call knots as well as video knots; narration in a voiced call stays unspoken).
