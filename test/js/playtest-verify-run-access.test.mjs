@@ -111,9 +111,9 @@ const HABITS_SCENARIO = {
   rooms: {
     office: {
       objects: [
-        { id: 'dana_pc', type: 'pc', lockType: 'login' },
-        { id: 'priya_pc', type: 'pc', lockType: 'login', lockChance: 1 },
-        { id: 'omar_pc', type: 'pc', lockType: 'login' },
+        { id: 'dana_pc', type: 'pc', lockType: 'login', owner: 'dana' },
+        { id: 'priya_pc', type: 'pc', lockType: 'login', lockChance: 1, owner: 'priya' },
+        { id: 'omar_pc', type: 'pc', lockType: 'login', owner: 'omar' },
         { id: 'plain', type: 'notes' }
       ],
       npcs: [

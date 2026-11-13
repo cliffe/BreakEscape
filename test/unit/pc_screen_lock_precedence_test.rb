@@ -46,7 +46,7 @@ class PcScreenLockPrecedenceTest < ActiveSupport::TestCase
     { 'never' => [false, true], 'always' => [true, false] }.each do |value, (locks, open)|
       [[{}, locks, open],
        [{ 'locksScreenOnLeave' => !locks }, !locks, !open]].each do |fields, want_locks, want_open|
-        pc = { 'type' => 'pc', 'id' => 'jake_pc', 'workstation' => true }.merge(fields)
+        pc = { 'type' => 'pc', 'id' => 'jake_pc', 'workstation' => true, 'owner' => 'jake' }.merge(fields)
         jake = { 'id' => 'jake', 'displayName' => 'Jake', 'needsHome' => 'jake_pc', 'habits' => { 'locksScreen' => value } }
         data = { 'startRoom' => 'office',
                  'rooms' => { 'office' => { 'type' => 'room_office', 'objects' => [pc], 'npcs' => [jake] } } }

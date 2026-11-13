@@ -367,7 +367,7 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
       'startRoom' => 'office',
       'rooms' => { 'office' => {
         'type' => 'room_office', 'connections' => {},
-        'objects' => [{ 'id' => 'omar_pc', 'type' => 'pc', 'name' => "Omar's PC", 'locked' => true, 'lockType' => 'login' },
+        'objects' => [{ 'id' => 'omar_pc', 'type' => 'pc', 'name' => "Omar's PC", 'locked' => true, 'lockType' => 'login', 'owner' => 'omar' },
                       { 'id' => 'hot_desk', 'type' => 'pc', 'name' => 'Hot desk', 'locked' => true, 'lockType' => 'login' }],
         'npcs' => [
           { 'id' => 'omar', 'npcType' => 'person', 'needsHome' => 'omar_pc', 'habits' => { 'writesDown' => true },

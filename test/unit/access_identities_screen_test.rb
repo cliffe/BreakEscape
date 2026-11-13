@@ -53,7 +53,7 @@ class AccessIdentitiesScreenTest < ActiveSupport::TestCase
   test 'the library runs in plain Ruby with only access_identities.rb and npc_habits.rb' do
     fixture = {
       'rooms' => { 'office' => {
-        'objects' => [{ 'type' => 'pc', 'workstation' => true }, { 'type' => 'pc', 'id' => 'mia_pc', 'lockType' => 'login' }],
+        'objects' => [{ 'type' => 'pc', 'workstation' => true, 'owner' => 'jake' }, { 'type' => 'pc', 'id' => 'mia_pc', 'lockType' => 'login', 'owner' => 'mia' }],
         'npcs' => [{ 'id' => 'jake', 'awareness' => 'low', 'needsHome' => 'office_pc_0', 'creds' => { 'username' => 'j' } },
                    { 'id' => 'mia', 'role' => 'front', 'needsHome' => 'mia_pc', 'habits' => { 'writesDown' => true } }]
       } },

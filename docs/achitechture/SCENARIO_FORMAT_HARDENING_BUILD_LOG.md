@@ -2152,3 +2152,58 @@ worktree `.claude/worktrees/p-hard-8b-base` is left in place, as 8a did. Games 3
   two owner-read events are the evidence there; not a regression. The two extra validator node tests the
   chunk-2 follow-up still leaves red (`validator-access-reactive`, `validator-network-model`) are
   independent of chunk 5.
+
+## Step 8b full-suite fixes — the last test fixtures still deriving an owner (2026-11-13)
+
+The integrator's full JS and Rails suites on the merge tip `92460079a` left four JS files and five
+Rails cases red. Each is a test fixture that still relied on an owner derived from `needsHome`, or
+still authored a retired owner key; no production reader was wrong. Every owner reader the failures
+exercise was confirmed to read `owner` only and never derive from `needsHome`:
+`scripts/generate_dungeon_graph.rb` (through `AccessIdentities.owner_id`), `tools/playtest/verify-run.rb`
+(`owner_id`), `tools/playtest/lib/access_leak_scanner.rb` (through `Game#login_pc_owner`, game.rb:2088,
+which reads `pc['owner']`), `NpcHabits.owned_workstations` (`owner_id`) and `scripts/validate_network.rb`
+(`owner_id`). The brief-named readers (`generate_dungeon_graph.rb`, `verify-run.rb`,
+`access_leak_scanner.rb`, `access_identities.rb`, `npc_habits.rb`) were all already on format 2;
+nothing an earlier chunk missed.
+
+### Fixes (test-only, each reproduces the retired needsHome derivation with an explicit `owner`)
+
+- **test/js/dungeon-graph-habits.test.mjs** (9/9): the sticky-note fixture's `omar_pc` and the
+  locksScreen fixture's six PCs (`dana_pc`...`tom_pc`) gain `owner: '<npc>'` matching each NPC's
+  `needsHome`. The graph's writesDown and locksScreen edges hang off `owner_id`/`screen[:filled]`, so
+  without an explicit owner it drew none. kai_pc (policy instant), priya_pc (own `locksScreenOnLeave`),
+  ian_pc (always locks) and tom_pc (needs untracked) are still correctly edge-free with the owner set.
+- **test/js/playtest-verify-run-access.test.mjs** (15/15): `HABITS_SCENARIO`'s dana_pc/priya_pc/omar_pc
+  gain `owner`, so `verify-run --access` prints the per-PC owner lines the test asserts.
+- **test/js/validator-access-reactive.test.mjs** (10/10): dana's held phone used retired `phoneOf: 'dana'`;
+  now `owner: 'dana'`, so the q35 "holds no Friendface phone" error no longer fires on the clean feed.
+- **test/js/validator-network-model.test.mjs** (64/64): the clean fixture's `lena_pc` gains `owner: 'lena'`,
+  so the "headless host is a workstation with an owner" error bites (the check reads `owner_id`).
+- **test/unit/pc_screen_lock_precedence_test.rb** (8 cases): the bare PC gains `owner: 'jake'` so
+  `NpcHabits.expand!` fills jake's screenHabit from `habits.locksScreen`.
+- **test/unit/access_identities_screen_test.rb** (plain-Ruby case): the two PCs gain `owner: 'jake'`/
+  `owner: 'mia'`. The raw-data assertion (the id-less PC owns nothing) still holds: `workstation?`
+  needs an id, so the unstamped raw PC is not an owned workstation.
+- **test/unit/access_leak_scanner_test.rb** (:399, :406, :420): `habits_scenario`'s `omar_pc` gains
+  `owner: 'omar'` so `login_pc_owner` resolves and the owner's own postitNote/savedNotes exception
+  fires; `hot_desk` is left ownerless by design (its three cases expect the password reported).
+
+### Grep sweep (whole tree)
+
+Remaining hits for `screenOwner`/`phoneOwner`/`phoneOf`/`leftBehindBy`/`affordance.owners`/
+`affordance.private`/needsHome-as-owner are all legitimate: the `CLIENT_ITEM_FORBIDDEN_FIELDS` list and
+its test (`games_controller.rb`, `friendface_phone_test.rb`), the schema `owner`/`deskPhone`
+descriptions, the `rewrite_templates.rb` upgrade transform, the frozen `test/fixtures/format_8b/*.old.json`
+renders with their old-reader parity tests (`format_8b_corpus_test.rb`, `format-8b-reader-parity.test.mjs`),
+and `check_owner_fields` in `validate_scenario.rb` (the plan's intended migration-aid block that
+detects the pre-rename conflict and warns when `needsHome` names an ownerless workstation). `owner_claim.rb`
+reads `needsHome` only for the owner's idle/print position, with an explicit comment that it no longer
+sets an owner. No stray reader left.
+
+### Tests
+
+- JS: dungeon-graph-habits 9/9, playtest-verify-run-access 15/15, validator-access-reactive 10/10,
+  validator-network-model 64/64.
+- Rails: pc_screen_lock_precedence + access_identities_screen + access_leak_scanner together 55 runs,
+  318 assertions, 0 failures.
+- Only test-fixture files changed; nothing imports them, so no other importer to run.
