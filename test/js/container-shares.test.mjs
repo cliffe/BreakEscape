@@ -858,6 +858,31 @@ test('R2: an archive password that unlocks hands over to the archive, not back t
     assert.equal(current().containerItem.scenarioData.id, 'ian_archive');
 });
 
+// UX slice 2a R3 m5: once the archive has opened, nothing is left pending for the desktop, so
+// closing the archive and then the Notes later stays in the world
+test('R3 m5: after an archive unlock, closing it and then the Notes does not reopen the desktop', async () => {
+    setup();
+    await openLocalDesk();
+    current().handleInteractiveItem({ ...ARCHIVE }, null);
+    assert.equal(window.pendingContainerReturn?.loginDesktopReturn, true, 'the desktop return is marked');
+    const stand = interactions.at(-1);
+    endPinPad(true);
+    await settle();
+    window.startContainerMinigame({ ...stand, scenarioData: { ...ARCHIVE, locked: false } }, null, false, false);
+    await settle();
+    assert.equal(current().containerItem.scenarioData.id, 'ian_archive');
+    assert.equal(window.pendingContainerReturn, null, 'nothing pending once the archive is open');
+    // the archive's own Close
+    current().closedByPlayer = true;
+    window.MinigameFramework.endMinigame(false, null);
+    await settle();
+    assert.equal(current(), null, 'the world');
+    // the Notes, opened and closed later from the world
+    returnToContainerAfterNotes();
+    await settle();
+    assert.equal(current(), null, 'no desktop reopens from nowhere');
+});
+
 // UX slice 2a R2 m2: desktop icons at a whole-number scale in their 56px box
 test('R2 m2: a mapped share icon on a desktop lands at x2; a 16px glyph at x3; the box keeps its size', async () => {
     setup();

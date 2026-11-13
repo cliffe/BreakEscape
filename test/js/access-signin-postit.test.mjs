@@ -186,17 +186,18 @@ test('R2: the bezel adds no scroll overflow; the frame scrollbar is pixel art; s
     assert.match(thumb, /border:\s*2px solid/, 'a 2px-bordered thumb');
     assert.match(thumb, /border-radius:\s*0/, 'square');
     assert.doesNotMatch(css, /scrollbar[\s\S]{0,200}border-radius:\s*[1-9]/, 'no rounded scrollbar part');
-    assert.match(css, /@supports \(-moz-appearance: none\) \{\s*\.password-frame > \.minigame-game-container \{\s*scrollbar-color:[^;]+;\s*scrollbar-width:\s*thin;/,
-        'Firefox gets scrollbar-color and scrollbar-width (Chromium would drop the pixel-art rules for them)');
+    // R3 n2: slice 1's guard, which tests the feature the fallback stands in for
+    assert.match(css, /@supports not selector\(::-webkit-scrollbar\) \{\s*\.password-frame > \.minigame-game-container \{\s*scrollbar-color:[^;]+;\s*scrollbar-width:\s*auto;/,
+        'only an engine with no ::-webkit-scrollbar gets scrollbar-color and scrollbar-width (Chromium would drop the pixel-art rules for them)');
     assert.match(css, /`\.pixel-scroll`/, 'names the shared rule a later slice merges this into');
     const controls = rule('.password-frame > .minigame-controls');
     assert.match(controls, /flex:\s*0 0 auto/, 'a fixed row that does not scroll');
     const short = css.indexOf('@media (max-height: 640px)');
     assert.ok(short >= 0);
     const block = css.slice(short);
-    assert.match(block, /\.password-frame \.signin-portrait \{\s*width:\s*32px;\s*height:\s*32px;/, 'a 32px portrait (a quarter of a 128px frame)');
+    assert.match(block, /\.password-frame \.signin-portrait \{\s*width:\s*32px;\s*height:\s*32px;/, 'a 32px portrait (R3 n1: a 32x32 crop at scale 1, not the frame shrunk)');
     assert.match(block, /\.password-frame \.signin-username \{\s*display:\s*none;/, 'no username line under a tile');
     assert.match(block, /\.password-frame \.signin-tile \{\s*width:\s*84px;/);
-    assert.match(rule('.password-minigame-area.signin-mode .postit-note'), /margin-top:\s*-40px;/, 'the sign-in note clears the message line');
-    assert.match(block, /\.password-frame \.password-minigame-area\.signin-mode \.postit-note \{\s*margin-top:\s*-24px;/, 'and in a short window');
+    assert.match(css, /\n\.password-minigame-area\.signin-mode \.postit-note,[^{]*\{\s*margin-top:\s*-40px;/, 'the sign-in note clears the message line');
+    assert.match(block, /\.password-frame \.password-minigame-area\.signin-mode \.postit-note,[^{]*\{\s*margin-top:\s*-24px;/, 'and in a short window');
 });

@@ -174,7 +174,7 @@ for (const [name, Cls, statusSel, setup, submit, wrongText] of screens) {
 
 // ── The password starter: no "Password Rejected" toast after the screen said why ────
 
-test('startPasswordMinigame shows no toast for a refused result, and still does for a cancel', async () => {
+test('startPasswordMinigame shows no toast for a refused result or a player close, and still does for a refusal', async () => {
     const dataUrl = (src) => 'data:text/javascript;base64,' + Buffer.from(src).toString('base64');
     const stubs = {
         './key-lock-system.js': 'export const generateKeyCutsForLock = () => {}; export const doesKeyMatchLock = () => false; export const PREDEFINED_LOCK_CONFIGS = {};',
@@ -204,6 +204,11 @@ test('startPasswordMinigame shows no toast for a refused result, and still does 
     params.onComplete(false, { success: false, cancelled: true, refused: 'off' });
     assert.deepEqual(alerts, [], 'the screen already said "This PC is off."');
     assert.equal(calls.length, 1, 'the caller still hears the close');
-    params.onComplete(false, { success: false, cancelled: true });
-    assert.equal(alerts.length, 1, 'a plain cancel keeps its info toast');
+    // UX slice 2a R3 m3: the X, Esc or the on-screen Esc key (PasswordMinigame.closeByPlayer)
+    params.onComplete(false, { success: false, reason: 'closed', cancelled: true, closedByPlayer: true, attempts: 0 });
+    assert.deepEqual(alerts, [], "the player's own close is not a rejection");
+    assert.equal(calls.length, 2);
+    params.onComplete(false, { success: false, reason: 'max_attempts_exceeded', attempts: 3 });
+    assert.equal(alerts.length, 1, 'running out of tries still shows the rejection');
+    assert.equal(alerts[0][1], 'error');
 });

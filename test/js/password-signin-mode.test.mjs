@@ -36,7 +36,7 @@ globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const {
     PasswordMinigame, applyTilePortrait, isTalkSheetSize, tileInitials, portraitUrl, signInRefusalMessage, signInErrorMessage, capturedSignIns,
-    passwordScreenKind
+    passwordScreenKind, headCropOffset, wholePixelOffset, SHORT_PORTRAIT_PX
 } = await import(pathToFileURL(join(dir, 'minigames/password/password-minigame.js')));
 
 const TILES = [
@@ -498,4 +498,241 @@ test('R2 M2: choosing a tile reveals Submit; a wrong password and a lockout reve
     } finally {
         if (had) proto.scrollIntoView = had; else delete proto.scrollIntoView;
     }
+});
+
+// ── UX slice 2a R3 ───────────────────────────────────────────────────────────
+
+function openPlain(extra = {}) {
+    const calls = [];
+    document.body.innerHTML = '<div id="mg"></div>';
+    window.MinigameFramework = { currentMinigame: null, endMinigame: (s, r) => calls.push([s, r]) };
+    window.playUISound = () => {};
+    const mg = new PasswordMinigame(document.getElementById('mg'), {
+        title: 'Office PC', lockable: { scenarioData: { id: 'pc1', type: 'pc' } }, type: 'object',
+        correctPassword: 'x', postitNote: 'pw: x', showPostit: true, maxAttempts: 3, ...extra
+    });
+    window.MinigameFramework.currentMinigame = mg;
+    mg.init(); mg.start();
+    return { mg, calls };
+}
+
+// m1: the frame lands on whole pixels
+test('R3 m1: wholePixelOffset moves a box onto whole device pixels', () => {
+    assert.deepEqual(wholePixelOffset({ left: 135.5, top: 210.25 }), { x: 0.5, y: -0.25 });
+    assert.deepEqual(wholePixelOffset({ left: 100, top: 47 }), { x: 0, y: 0 });
+    assert.deepEqual(wholePixelOffset({ left: 10.25, top: 3.75 }, 2), { x: 0.25, y: 0.25 });
+    assert.deepEqual(wholePixelOffset({ left: 100.0000001, top: 0 }), { x: 0, y: 0 }, 'float noise is 0');
+});
+
+test('R3 m1: the frame is snapped by top/left, again on resize, and the snap stops when the screen ends', () => {
+    let rect = { left: 135.5, top: 118.5 };
+    const proto = window.HTMLElement.prototype;
+    const had = proto.getBoundingClientRect;
+    proto.getBoundingClientRect = function () {
+        if (!this.classList?.contains('password-frame')) return had.call(this);
+        const dx = parseFloat(this.style.left) || 0, dy = parseFloat(this.style.top) || 0;
+        return { left: rect.left + dx, top: rect.top + dy, right: 0, bottom: 0, width: 0, height: 0 };
+    };
+    try {
+        const { mg } = openPlain();
+        const frame = q('.password-frame');
+        assert.equal(frame.style.left, '0.5px');
+        assert.equal(frame.style.top, '0.5px');
+        rect = { left: 140, top: 104.25 };
+        window.dispatchEvent(new window.Event('resize'));
+        assert.equal(frame.style.left, '', 'already whole: no offset');
+        assert.equal(frame.style.top, '-0.25px');
+        mg.complete(false);
+        rect = { left: 1.5, top: 1.5 };
+        window.dispatchEvent(new window.Event('resize'));
+        assert.equal(frame.style.left, '', 'no snap after the screen ended');
+    } finally {
+        proto.getBoundingClientRect = had;
+    }
+});
+
+test('R3 m1: tile text has whole-pixel line heights', () => {
+    const css = readFileSync(join(here, '../../public/break_escape/css/password-minigame.css'), 'utf8');
+    const rule = (sel) => css.slice(css.indexOf(`${sel} {`), css.indexOf('}', css.indexOf(`${sel} {`)));
+    assert.match(rule('.signin-name'), /line-height:\s*17px/);
+    assert.match(rule('.signin-username'), /line-height:\s*15px/);
+    assert.match(rule('.password-message'), /line-height:\s*20px/);
+    assert.doesNotMatch(css, /line-height:\s*1\.1\b/);
+});
+
+// m2: the plain screen's message goes on a line inside the screen, not the floating box
+test('R3 m2: a wrong password on the plain screen is written on a line inside the screen, with no box', async () => {
+    const { mg, calls } = openPlain();
+    const line = q('#password-message');
+    assert.ok(line.closest('.monitor-screen'), 'inside the screen');
+    assert.equal(line.hidden, true, 'hidden until there is something to say');
+    window.breakEscapeConfig = { gameId: 7 };
+    window.ApiClient = { unlock: async () => { const e = new Error('422'); e.status = 422; e.body = {}; throw e; } };
+    window.eventDispatcher = { emit: () => {} };
+    q('#password-field').value = 'nope';
+    await mg.submitPassword();
+    assert.equal(line.hidden, false);
+    assert.equal(line.textContent, 'Incorrect password. 2 attempts remaining.');
+    assert.equal(line.dataset.kind, 'error');
+    assert.equal(document.querySelectorAll('.minigame-failure-message').length, 0, 'no floating box');
+    // the next try clears it while it waits
+    window.ApiClient = { unlock: () => new Promise(() => {}) };
+    q('#password-field').value = 'again';
+    mg.submitPassword();
+    await settle();
+    assert.equal(line.hidden, true);
+    assert.equal(calls.length, 0);
+    delete window.ApiClient; delete window.breakEscapeConfig;
+});
+
+test('R3 m2: running out of tries says so on the line, then the screen closes as a failure', async () => {
+    const { mg, calls } = openPlain({ maxAttempts: 1 });
+    window.breakEscapeConfig = { gameId: 7 };
+    window.ApiClient = { unlock: async () => { const e = new Error('422'); e.status = 422; e.body = {}; throw e; } };
+    window.eventDispatcher = { emit: () => {} };
+    q('#password-field').value = 'nope';
+    const realTimeout = globalThis.setTimeout;
+    const timers = [];
+    globalThis.setTimeout = (fn, ms) => { timers.push(ms); return realTimeout(fn, 0); };
+    try {
+        await mg.submitPassword();
+    } finally {
+        globalThis.setTimeout = realTimeout;
+    }
+    assert.equal(q('#password-message').textContent, 'Maximum attempts exceeded. Access denied.');
+    assert.equal(document.querySelectorAll('.minigame-failure-message').length, 0);
+    assert.ok(timers.includes(1500));
+    await settle();
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0][0], false);
+    assert.equal(calls[0][1].reason, 'max_attempts_exceeded');
+    assert.notEqual(calls[0][1].closedByPlayer, true);
+    delete window.ApiClient; delete window.breakEscapeConfig;
+});
+
+test('R3 m2: the plain note sits below the message line (the same pull-up as the sign-in note)', () => {
+    const css = readFileSync(join(here, '../../public/break_escape/css/password-minigame.css'), 'utf8');
+    assert.match(css, /\.password-minigame-area\.signin-mode \.postit-note,\s*\.password-minigame-area \.monitor-bezel:has\(\.password-message:not\(\[hidden\]\)\) \+ \.postit-note \{\s*margin-top: -40px;/);
+    assert.match(css, /\.password-frame \.password-minigame-area\.signin-mode \.postit-note,\s*\.password-frame \.password-minigame-area \.monitor-bezel:has\(\.password-message:not\(\[hidden\]\)\) \+ \.postit-note \{\s*margin-top: -24px;/);
+});
+
+// m3: the player's own close has its own result; cancelPassword is gone
+test("R3 m3: the X, Esc and the on-screen Esc key end with the player's own close result", () => {
+    for (const how of ['X', 'Esc', 'key']) {
+        const { mg, calls } = openPlain({ showKeyboard: true });
+        if (how === 'X') q('#minigame-close').click();
+        else if (how === 'Esc') q('#password-field').dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        else q('.key[data-key="Escape"]').click();
+        assert.equal(calls.length, 1, how);
+        assert.deepEqual(calls[0], [false, { success: false, reason: 'closed', cancelled: true, closedByPlayer: true, attempts: 0 }], how);
+        assert.equal(mg.closedByPlayer, true);
+    }
+    assert.equal(typeof PasswordMinigame.prototype.cancelPassword, 'undefined', 'cancelPassword is retired');
+});
+
+test('R3 m3: a lockout keeps its own result when the player then closes', async () => {
+    const mg = open();
+    document.querySelectorAll('.signin-tile')[0].click();
+    nextResult = { ok: false, reason: 'locked_out', message: 'Locked out' };
+    q('#password-field').value = 'nope';
+    await mg.submitPassword();
+    q('#minigame-close').click();
+    assert.deepEqual(ended.at(-1), [false, { success: false, reason: 'locked_out' }]);
+});
+
+// m4: in a short window the tile row folds away once an account is chosen
+test('R3 m4: choosing an account marks the screen chosen; Change goes back to the tiles', () => {
+    const mg = open();
+    const area = q('.signin-mode');
+    assert.equal(area.classList.contains('signin-chosen'), false);
+    document.querySelectorAll('.signin-tile')[0].click();
+    assert.equal(area.classList.contains('signin-chosen'), true);
+    assert.equal(q('#signin-selected').textContent, 'Sam Okafor (sokafor)', 'the name line is unchanged');
+    q('#password-field').value = 'half typed';
+    q('#signin-change').click();
+    assert.equal(area.classList.contains('signin-chosen'), false);
+    assert.equal(visible(q('#signin-form')), false, 'the tiles again, no form');
+    assert.equal(q('#password-field').value, '', 'the field is cleared');
+    assert.equal(messageText(), 'Choose an account.');
+    assert.equal(mg.signInState.selected, null);
+    document.querySelectorAll('.signin-tile')[2].click();
+    assert.equal(area.classList.contains('signin-chosen'), true, 'Other user counts as chosen');
+    // a remote screen has no tiles to fold
+    const remote = open({ picker: false, tiles: [] });
+    assert.equal(q('.signin-mode').classList.contains('signin-chosen'), false);
+    remote.cleanup?.();
+});
+
+test('R3 m4: the short-window rule hides the tiles once chosen and shows Change only there', () => {
+    const css = readFileSync(join(here, '../../public/break_escape/css/password-minigame.css'), 'utf8');
+    const short = css.slice(css.indexOf('@media (max-height: 640px)'));
+    assert.match(short, /\.password-frame \.signin-mode\.signin-chosen \.signin-tiles \{\s*display: none;/);
+    assert.match(short, /\.password-frame \.signin-mode\.signin-chosen \.signin-change \{\s*display: inline-block;/);
+    const base = css.slice(css.indexOf('.signin-change {'), css.indexOf('}', css.indexOf('.signin-change {')));
+    assert.match(base, /display: none/);
+    assert.match(base, /border: 2px solid/);
+});
+
+// n1: the 32px portrait is never the 128px frame scaled down
+test('R3 n1: headCropOffset centres a 32x32 box on the head, 4px below its top', () => {
+    // a 128 frame with a head from x 50 to 77 starting at row 6, shoulders wider lower down
+    const alpha = (x, y) => ((y >= 6 && y < 40 && x >= 50 && x <= 77) || (y >= 40 && x >= 20 && x <= 108)) ? 255 : 0;
+    assert.deepEqual(headCropOffset(alpha, 128), { left: 48, top: 10 });
+    assert.deepEqual(headCropOffset(() => 0, 128), { left: 48, top: 0 }, 'blank: top centre');
+    const edge = (x, y) => (y >= 120 && x < 4) ? 255 : 0;
+    assert.deepEqual(headCropOffset(edge, 128), { left: 0, top: 96 }, 'kept inside the frame');
+    assert.equal(SHORT_PORTRAIT_PX, 32);
+});
+
+test('R3 n1: a talk sheet gives the short window a head crop at scale 1; a 32x32 avatar comes first', async () => {
+    const head = (x, y) => (y >= 2 && x >= 40 && x <= 70) ? 255 : 0;
+    const el = document.createElement('span');
+    applyTilePortrait(el, TILES[0], fakeImage({ '/break_escape/assets/characters/sam_talk.png': [256, 256] }), () => head);
+    await settle();
+    assert.equal(el.dataset.short, 'head-crop');
+    assert.equal(el.style.getPropertyValue('--signin-short-size'), '256px 256px', 'the whole sheet at scale 1');
+    assert.equal(el.style.getPropertyValue('--signin-short-position'), '-39px -6px');
+    assert.match(el.style.getPropertyValue('--signin-short-image'), /sam_talk\.png/);
+    assert.equal(el.style.backgroundSize, '200% 200%', 'the 64px tile keeps its picture');
+
+    const unreadable = document.createElement('span');
+    applyTilePortrait(unreadable, TILES[0], fakeImage({ '/break_escape/assets/characters/sam_talk.png': [256, 256] }), () => null);
+    await settle();
+    assert.equal(unreadable.style.getPropertyValue('--signin-short-position'), '-48px 0px', 'top centre of the frame');
+
+    const withAvatar = document.createElement('span');
+    const tile = { ...TILES[0], avatar: 'assets/characters/sam_headshot.png' };
+    applyTilePortrait(withAvatar, tile, fakeImage({
+        '/break_escape/assets/characters/sam_talk.png': [256, 256],
+        '/break_escape/assets/characters/sam_headshot.png': [32, 32]
+    }), () => head);
+    await settle(); await settle();
+    assert.equal(withAvatar.dataset.short, 'avatar');
+    assert.equal(withAvatar.style.getPropertyValue('--signin-short-size'), '32px 32px');
+    assert.equal(withAvatar.style.getPropertyValue('--signin-short-position'), '0px 0px');
+    assert.equal(withAvatar.dataset.frame, 'talk-sheet', 'the 64px tile still shows the talk frame');
+
+    const bigAvatar = document.createElement('span');
+    applyTilePortrait(bigAvatar, { ...TILES[0], avatar: 'assets/npc/avatars/sam.png' }, fakeImage({
+        '/break_escape/assets/characters/sam_talk.png': [256, 256],
+        '/break_escape/assets/npc/avatars/sam.png': [64, 64]
+    }), () => head);
+    await settle(); await settle();
+    assert.equal(bigAvatar.dataset.short, 'head-crop', 'a 64px avatar would need a downscale: the crop stays');
+});
+
+test('R3 n1: the short-window portrait rule reads the crop properties; no 1/4 frame rule is left', () => {
+    const css = readFileSync(join(here, '../../public/break_escape/css/password-minigame.css'), 'utf8');
+    const short = css.slice(css.indexOf('@media (max-height: 640px)'));
+    assert.match(short, /\.password-frame \.signin-portrait\[data-short\] \{\s*background-image: var\(--signin-short-image\) !important;\s*background-size: var\(--signin-short-size\) !important;\s*background-position: var\(--signin-short-position\) !important;/);
+    assert.doesNotMatch(short, /quarter of a 128px/);
+});
+
+// n2: the Firefox scrollbar guard is slice 1's
+test('R3 n2: the scrollbar guard tests the feature, and the scroller resets the inherited properties', () => {
+    const css = readFileSync(join(here, '../../public/break_escape/css/password-minigame.css'), 'utf8');
+    assert.match(css, /@supports not selector\(::-webkit-scrollbar\) \{\s*\.password-frame > \.minigame-game-container \{\s*scrollbar-color: #555 #101010;\s*scrollbar-width: auto;/);
+    assert.match(css, /\.password-frame > \.minigame-game-container \{\s*scrollbar-color: auto;\s*scrollbar-width: auto;\s*\}/);
+    assert.doesNotMatch(css, /-moz-appearance/);
+    assert.match(css, /`\.pixel-scroll`/, 'the comment names the shared rule');
 });

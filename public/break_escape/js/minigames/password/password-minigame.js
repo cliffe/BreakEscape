@@ -78,12 +78,74 @@ export function portraitUrl(path) {
     return path.startsWith('assets/') ? `/break_escape/${path}` : `${ASSETS_PATH}/${path}`;
 }
 
+/** The short-window tile's portrait box (css/password-minigame.css, max-height: 640px). */
+export const SHORT_PORTRAIT_PX = 32;
+
+/**
+ * Where to cut a box x box head crop from a talk sheet's first frame (frameSize square), at
+ * scale 1 (UX slice 2a R3 n1: the 32px tile showed the whole 128px frame at a quarter, a
+ * downscale that lost the face). `alpha(x, y)` reads the frame's alpha. The crop starts 4px
+ * below the top of the head and is centred on the head's width over its first 24 rows, so
+ * the eyes, nose and mouth are in the box. A blank frame gives the top-centre box.
+ */
+export function headCropOffset(alpha, frameSize, box = SHORT_PORTRAIT_PX) {
+    const clamp = (v) => Math.max(0, Math.min(frameSize - box, v));
+    let y0 = -1;
+    for (let y = 0; y < frameSize && y0 < 0; y++) {
+        for (let x = 0; x < frameSize; x++) { if (alpha(x, y) > 0) { y0 = y; break; } }
+    }
+    if (y0 < 0) return { left: clamp(Math.round(frameSize / 2) - box / 2), top: 0 };
+    let minX = Infinity, maxX = -1;
+    for (let y = y0; y < Math.min(frameSize, y0 + 24); y++) {
+        for (let x = 0; x < frameSize; x++) {
+            if (alpha(x, y) > 0) { if (x < minX) minX = x; if (x > maxX) maxX = x; }
+        }
+    }
+    const cx = maxX >= 0 ? (minX + maxX) / 2 : frameSize / 2;
+    return { left: clamp(Math.round(cx) - box / 2), top: clamp(y0 + 4) };
+}
+
+/** The alpha reader for an image's top-left frameSize square, or null when the canvas
+ *  cannot be read (no canvas, or a tainted one). */
+function frameAlphaReader(img, frameSize) {
+    try {
+        if (typeof document === 'undefined') return null;
+        const canvas = document.createElement('canvas');
+        canvas.width = frameSize;
+        canvas.height = frameSize;
+        const ctx = canvas.getContext && canvas.getContext('2d');
+        if (!ctx) return null;
+        ctx.drawImage(img, 0, 0);
+        const data = ctx.getImageData(0, 0, frameSize, frameSize).data;
+        return (x, y) => data[(y * frameSize + x) * 4 + 3];
+    } catch (e) {
+        return null;
+    }
+}
+
+/**
+ * The short window's portrait (UX slice 2a R3 n1), as custom properties the max-height:
+ * 640px rule reads, so the 64px tile keeps its picture. A 32x32 avatar (the scenario's NPC
+ * headshot, as the phone and the OSINT browser show it) at scale 1 comes first; else a 32x32
+ * head crop of the talk sheet's first frame, at scale 1. Never a scaled-down frame.
+ */
+export function setShortPortrait(el, { src, width, height, kind, offset = null }) {
+    if (!el?.style?.setProperty) return;
+    el.style.setProperty('--signin-short-image', `url("${src}")`);
+    el.style.setProperty('--signin-short-size', `${width}px ${height}px`);
+    const left = offset ? offset.left : 0;
+    const top = offset ? offset.top : 0;
+    el.style.setProperty('--signin-short-position', `${left ? -left : 0}px ${top ? -top : 0}px`);
+    el.dataset.short = kind;
+}
+
 /**
  * Draw a tile's picture into `el` as person-chat would: the portrait, else the avatar,
  * else the display name's initials. A talk sheet shows only its top-left frame (closed
- * mouth). `ImageCtor` is injectable for tests.
+ * mouth). The short window's 32px box gets its own whole-scale picture (setShortPortrait).
+ * `ImageCtor` and `readAlpha` are injectable for tests.
  */
-export function applyTilePortrait(el, tile, ImageCtor = (typeof Image !== 'undefined' ? Image : null)) {
+export function applyTilePortrait(el, tile, ImageCtor = (typeof Image !== 'undefined' ? Image : null), readAlpha = frameAlphaReader) {
     const sources = [tile?.portrait, tile?.avatar].map(portraitUrl).filter(Boolean);
     const initials = () => {
         el.style.backgroundImage = '';
@@ -105,17 +167,54 @@ export function applyTilePortrait(el, tile, ImageCtor = (typeof Image !== 'undef
                 el.style.backgroundSize = '200% 200%';
                 el.style.backgroundPosition = '0 0';
                 el.dataset.frame = 'talk-sheet';
+                const frameSize = w / 2;
+                const alpha = readAlpha ? readAlpha(img, frameSize) : null;
+                const offset = alpha
+                    ? headCropOffset(alpha, frameSize)
+                    : { left: frameSize / 2 - SHORT_PORTRAIT_PX / 2, top: 0 };
+                setShortPortrait(el, { src, width: w, height: h, kind: 'head-crop', offset });
             } else {
                 el.style.backgroundSize = 'contain';
                 el.style.backgroundPosition = 'center';
                 el.dataset.frame = 'single';
+                if (w === SHORT_PORTRAIT_PX && h === SHORT_PORTRAIT_PX) {
+                    setShortPortrait(el, { src, width: w, height: h, kind: 'avatar' });
+                }
             }
             el.dataset.src = src;
+            preferAvatar(src);
         };
         img.onerror = () => tryAt(i + 1);
         img.src = src;
     };
+    // The avatar, when it is a 32x32 headshot, is the short window's picture
+    const avatar = portraitUrl(tile?.avatar);
+    const preferAvatar = (shown) => {
+        if (!avatar || avatar === shown || !ImageCtor) return;
+        const a = new ImageCtor();
+        a.onload = () => {
+            const w = a.naturalWidth || a.width;
+            const h = a.naturalHeight || a.height;
+            if (w === SHORT_PORTRAIT_PX && h === SHORT_PORTRAIT_PX) {
+                setShortPortrait(el, { src: avatar, width: w, height: h, kind: 'avatar' });
+            }
+        };
+        a.onerror = () => {};
+        a.src = avatar;
+    };
     tryAt(0);
+}
+
+/** The offset that moves a box onto whole device pixels: a box centred in a space of odd
+ *  size, or under text with a fractional line height, sits part of a pixel off and its
+ *  text and borders blend across two rows (UX slice 2a R3 m1; slice 3a's copier frame does
+ *  the same). */
+export function wholePixelOffset(rect, dpr = 1) {
+    const snap = (v) => Math.round(v * dpr) / dpr - v;
+    const x = snap(rect.left), y = snap(rect.top);
+    // Round off float noise, so a box already on whole pixels gets exactly 0
+    const tidy = (v) => (Math.abs(v) < 1e-6 ? 0 : Math.round(v * 1e4) / 1e4);
+    return { x: tidy(x), y: tidy(y) };
 }
 
 /**
@@ -321,6 +420,82 @@ export class PasswordMinigame extends MinigameScene {
         const cross = this.container.querySelector('#minigame-close');
         if (cross) frame.appendChild(cross);
         this.frameElement = frame;
+        this.snapFrameToPixels(frame);
+    }
+
+    /**
+     * Keep the frame on whole pixels (UX slice 2a R3 m1): its flex centring puts it on a
+     * half or quarter pixel when the window or its own height is odd, and every line of text
+     * in it then sits off the pixel grid. A layout offset (the frame is position: relative),
+     * not a transform, as slice 3a's copier frame does: Chrome draws a clip-path where layout
+     * put it. Re-snapped after the first paint, on a window resize, and when the frame or
+     * the overlay changes size (a message line, a chosen tile). The snap changes only
+     * top/left, never a size, so it cannot retrigger itself.
+     */
+    snapFrameToPixels(frame) {
+        if (typeof window === 'undefined' || !frame || typeof frame.getBoundingClientRect !== 'function') return;
+        this.stopFrameSnap();
+        const snap = () => {
+            if (!frame.isConnected) { this.stopFrameSnap(); return; }
+            frame.style.left = '';
+            frame.style.top = '';
+            const { x, y } = wholePixelOffset(frame.getBoundingClientRect(), window.devicePixelRatio || 1);
+            if (x) frame.style.left = `${x}px`;
+            if (y) frame.style.top = `${y}px`;
+        };
+        this._frameSnap = snap;
+        snap();
+        if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(snap);
+        window.addEventListener('resize', snap);
+        const RO = window.ResizeObserver;
+        if (typeof RO === 'function') {
+            this._frameObserver = new RO(() => snap());
+            this._frameObserver.observe(frame);
+            if (this.container?.nodeType === 1) this._frameObserver.observe(this.container);
+        }
+    }
+
+    stopFrameSnap() {
+        if (this._frameSnap && typeof window !== 'undefined') window.removeEventListener('resize', this._frameSnap);
+        this._frameSnap = null;
+        if (this._frameObserver) { this._frameObserver.disconnect(); this._frameObserver = null; }
+    }
+
+    complete(success) {
+        this.stopFrameSnap();
+        super.complete(success);
+    }
+
+    /**
+     * The player's own close (the X, Esc, the on-screen Esc key) has its own result, so the
+     * starter can tell it from a refusal and show no toast (UX slice 2a R3 m3). A result
+     * already set (a lockout) is kept.
+     */
+    closeByPlayer() {
+        if (!this.gameResult) {
+            this.gameResult = { success: false, reason: 'closed', cancelled: true, closedByPlayer: true,
+                                attempts: this.gameData?.attempts ?? 0 };
+        }
+        super.closeByPlayer();
+    }
+
+    /**
+     * A message on a line inside the screen (UX slice 2a R3 m2), as the sign-in screen has:
+     * the old box, fixed in the middle of the window, drew over the post-it in a short
+     * window. With no line (a screen built without one) it falls back to that box.
+     * closeAfterMs > 0 ends the screen after that long, as a failure.
+     */
+    showScreenMessage(text, { kind = 'error', closeAfterMs = 0, duration = 1500 } = {}) {
+        const line = this.passwordMessageEl;
+        if (!line || line.isConnected === false) {
+            if (text) this.showFailure(text, closeAfterMs > 0, closeAfterMs > 0 ? closeAfterMs : duration);
+            return;
+        }
+        line.textContent = text || '';
+        line.dataset.kind = kind;
+        line.hidden = !text;
+        if (text) revealInFrame(line);
+        if (closeAfterMs > 0) setTimeout(() => this.complete(false), closeAfterMs);
     }
 
     /**
@@ -421,6 +596,7 @@ export class PasswordMinigame extends MinigameScene {
                                 </div>
                             </div>
                         ` : ''}
+                        <div class="password-message" id="password-message" aria-live="polite" hidden></div>
                     </div>
                 </div>
                 
@@ -508,6 +684,7 @@ export class PasswordMinigame extends MinigameScene {
         this.submitBtn = document.getElementById('submit-password');
         this.keyboardToggleBtn = document.getElementById('keyboard-toggle');
         this.attemptsDisplay = document.getElementById('attempts-display');
+        this.passwordMessageEl = this.gameContainer.querySelector('#password-message');
 
         // Make the post-it note draggable (rendered via HTML template above)
         if (this.gameData.showPostit && this.gameData.postitNote) {
@@ -722,9 +899,10 @@ export class PasswordMinigame extends MinigameScene {
         console.log('Entered password:', enteredPassword);
 
         if (!enteredPassword) {
-            this.showFailure("Please enter a password", false, 1000);
+            this.showScreenMessage('Please enter a password', { duration: 1000 });
             return;
         }
+        this.showScreenMessage('');
 
         this.gameData.attempts++;
         this.attemptsDisplay.textContent = this.gameData.attempts;
@@ -751,9 +929,10 @@ export class PasswordMinigame extends MinigameScene {
         if (!this.gameState.isActive) return;
         const key = this.passwordField ? this.passwordField.value : '';
         if (!key) {
-            this.showFailure('Please enter the key', false, 1000);
+            this.showScreenMessage('Please enter the key', { duration: 1000 });
             return;
         }
+        this.showScreenMessage('');
         const links = window.networkLinks;
         const result = (links && typeof links.join === 'function') ? await links.join(this.join.apId, key) : { action: 'error' };
         if (result.action === 'joined' || result.action === 'already') {
@@ -764,11 +943,11 @@ export class PasswordMinigame extends MinigameScene {
         } else if (result.action === 'wrong_key') {
             this.joinMessage = 'That key was not accepted.';
             if (window.playUISound) window.playUISound('reject');
-            this.showFailure(this.joinMessage, false, 1500);
+            this.showScreenMessage(this.joinMessage);
             this.passwordField.value = '';
             this.passwordField.focus();
         } else {
-            this.showFailure('The network did not respond. Try again.', false, 1500);
+            this.showScreenMessage('The network did not respond. Try again.');
         }
     }
 
@@ -820,13 +999,13 @@ export class PasswordMinigame extends MinigameScene {
                 this.gameData.attempts--;
                 this.attemptsDisplay.textContent = this.gameData.attempts;
                 this.cleanup();
-                this.showFailure(LOCK_SCOPE_REFUSAL_TEXT[refusal], true, 2000);
+                this.showScreenMessage(LOCK_SCOPE_REFUSAL_TEXT[refusal], { closeAfterMs: 2000 });
                 this.gameResult = { success: false, reason: 'cancelled', cancelled: true, refused: refusal,
                                     attempts: this.gameData.attempts };
             } else if (error?.status === 422 || error?.message?.includes('422')) {
                 this.passwordIncorrect({ caseMismatch: error?.body?.caseMismatch === true });
             } else {
-                this.showFailure("Network error. Please try again.", false, 1500);
+                this.showScreenMessage('Network error. Please try again.');
                 // Decrease attempts counter since this wasn't a real attempt
                 this.gameData.attempts--;
                 this.attemptsDisplay.textContent = this.gameData.attempts;
@@ -855,7 +1034,7 @@ export class PasswordMinigame extends MinigameScene {
             this.passwordFailed({ caseMismatch });
         } else {
             if (window.playUISound) window.playUISound('reject');
-            this.showFailure(incorrectPasswordMessage(remaining, caseMismatch), false, caseMismatch ? 3000 : 1500);
+            this.showScreenMessage(incorrectPasswordMessage(remaining, caseMismatch), { duration: caseMismatch ? 3000 : 1500 });
             
             // Clear the password field
             this.passwordField.value = '';
@@ -898,26 +1077,15 @@ export class PasswordMinigame extends MinigameScene {
     passwordFailed({ caseMismatch = false } = {}) {
         this.cleanup();
         if (window.playUISound) window.playUISound('reject');
-        this.showFailure(
+        this.showScreenMessage(
             caseMismatch
                 ? "Maximum attempts exceeded. Access denied. Passwords are case-sensitive."
                 : "Maximum attempts exceeded. Access denied.",
-            true, caseMismatch ? 2500 : 1500);
+            { closeAfterMs: caseMismatch ? 2500 : 1500 });
         
         this.gameResult = {
             success: false,
             reason: 'max_attempts_exceeded',
-            attempts: this.gameData.attempts
-        };
-    }
-    
-    cancelPassword() {
-        this.cleanup();
-        this.showFailure(this.join ? "Join cancelled." : (this.signIn ? "Sign-in cancelled." : "Password entry cancelled."), true, 800);
-        
-        this.gameResult = {
-            success: false,
-            reason: 'cancelled',
             attempts: this.gameData.attempts
         };
     }
@@ -1039,7 +1207,10 @@ export class PasswordMinigame extends MinigameScene {
                         ${current}
                         ${tiles}
                         <div class="signin-form" id="signin-form">
-                            <div class="signin-selected" id="signin-selected"></div>
+                            <div class="signin-selected-row">
+                                <div class="signin-selected" id="signin-selected"></div>
+                                <button type="button" class="signin-change" id="signin-change">Change</button>
+                            </div>
                             <div class="signin-field-row" id="signin-username-row">
                                 <label for="signin-username">Username:</label>
                                 <input type="text" id="signin-username" class="password-field" placeholder="Username" maxlength="64" autocomplete="off" spellcheck="false">
@@ -1080,6 +1251,8 @@ export class PasswordMinigame extends MinigameScene {
             this.addEventListener(el, 'click', () => this.selectSignInTile(idx));
         });
         this.bindCapturedSignIns();
+        const change = this.gameContainer.querySelector('#signin-change');
+        if (change) this.addEventListener(change, 'click', () => this.clearSignInChoice());
 
         if (this.gameData.showPostit && this.gameData.postitNote) {
             const postit = this.gameContainer.querySelector('.postit-note');
@@ -1134,12 +1307,30 @@ export class PasswordMinigame extends MinigameScene {
         this.renderSignInForm();
     }
 
+    /** Back to the tiles (the Change button, shown in a short window once an account is chosen). */
+    clearSignInChoice() {
+        const st = this.signInState;
+        if (!st || this.signIn?.picker === false) return;
+        st.selected = null;
+        st.other = false;
+        this.passwordField.value = '';
+        this.gameData.password = '';
+        this.setSignInMessage('');
+        this.renderSignInForm();
+        this.gameContainer.querySelector('.signin-tile')?.focus?.();
+    }
+
     renderSignInForm() {
         const st = this.signInState;
         const chosen = st.other || st.selected !== null;
         const show = (el, on) => { if (el) el.style.display = on ? '' : 'none'; };
         show(this.gameContainer.querySelector('#signin-form'), chosen);
         show(this.gameContainer.querySelector('#signin-username-row'), st.other);
+        // In a short window the tile row folds away once an account is chosen, so the field,
+        // Submit, the message line and the post-it fit together (UX slice 2a R3 m4); the
+        // chosen account's line holds a Change button back to the tiles.
+        const area = this.gameContainer.querySelector('.signin-mode');
+        area?.classList.toggle('signin-chosen', chosen && this.signIn.picker !== false);
         const selectedEl = this.gameContainer.querySelector('#signin-selected');
         const tile = st.tiles.find(t => t.username === st.selected);
         if (selectedEl) {

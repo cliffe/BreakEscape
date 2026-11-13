@@ -633,8 +633,13 @@ export class ContainerMinigame extends MinigameScene {
         // A container opening now means no reader is about to hand back to a network screen
         // recorded earlier (a locked folder that opened after its PIN leaves one behind), so
         // a later text file read from the world must not reopen it (slice 9.3a, 4.3)
+        // The same for a sign-in desktop's return (Ian's archive password): once the archive
+        // has opened, closing it, or the Notes later, must not bring the desktop back (UX
+        // slice 2a R3 m5)
         const pending = window.pendingContainerReturn;
-        if (pending?.containerItem && isNetworkScreenContainer(pending.containerItem)) window.pendingContainerReturn = null;
+        if (pending?.containerItem && (isNetworkScreenContainer(pending.containerItem) || pending.loginDesktopReturn === true)) {
+            window.pendingContainerReturn = null;
+        }
         disarmNetworkReturn();
 
         // A folder opened from a sign-in desktop shows the session's files too, so it closes
@@ -1318,6 +1323,7 @@ export class ContainerMinigame extends MinigameScene {
         const fromLoginDesktop = !fromNetwork && !!this.loginPcId && this.desktopMode;
         const armReturn = this.mode !== 'npc' && item.type !== 'text_file'
             && (fromNetwork || fromLoginDesktop);
+        if (armReturn && fromLoginDesktop) containerState.loginDesktopReturn = true;
         if (armReturn) armNetworkReturn(containerState, { playerCloseOnly: fromLoginDesktop });
         
         // Create a temporary sprite-like object for the main game handler
