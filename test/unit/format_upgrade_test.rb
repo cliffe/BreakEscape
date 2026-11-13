@@ -182,7 +182,28 @@ module BreakEscape
       refute inv.key?('phoneOf')
       added = state['room_states']['office']['objects_added'][0]
       assert_equal 'sam', added['owner']
-      assert_equal 0, added['leftBehindChance']
+      refute added.key?('leftBehindChance'), 'the player_state path renames only, writing no marker key'
+    end
+
+    test 'step 8b player_state rename gains at most the one owner key and no marker, idempotently' do
+      state = {
+        # a left-behind copy with no leftBehindChance, and a desk-phone copy
+        'droppedItems' => [{ 'id' => 'mug', 'leftBehindBy' => 'sam' }],
+        'copiedItems' => [{ 'id' => 'rosa_phone', 'phoneOwner' => 'rosa' }]
+      }
+      FU.one_owner_field_in_player_state!(state)
+      mug = state['droppedItems'][0]
+      assert_equal 'sam', mug['owner'], 'leftBehindBy becomes owner'
+      refute mug.key?('leftBehindBy')
+      refute mug.key?('leftBehindChance'), 'no leftBehindChance marker on a stored copy'
+      phone = state['copiedItems'][0]
+      assert_equal 'rosa', phone['owner'], 'phoneOwner becomes owner'
+      refute phone.key?('phoneOwner')
+      refute phone.key?('deskPhone'), 'no deskPhone marker on a stored copy'
+
+      before = Marshal.load(Marshal.dump(state))
+      FU.one_owner_field_in_player_state!(state)
+      assert_equal before, state, 'rename-only is idempotent'
     end
 
     test 'upgrade! runs the steps above the stored version in order and is idempotent' do

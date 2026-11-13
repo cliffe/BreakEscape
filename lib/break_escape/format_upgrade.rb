@@ -316,7 +316,11 @@ module BreakEscape
 
     # The player_state transform: every item copy the server stored (inventory, objects added to a
     # room, and the dropped / copied / cloned lists) has its owner fields renamed in place. Item
-    # copies carry no room structure, so no owner is derived; only the renames apply.
+    # copies carry no room structure, so no owner is derived; only the renames apply, and
+    # `write_markers: false` so a stored copy is renamed in place and gains at most the one `owner`
+    # key (no `deskPhone: true` or `leftBehindChance: 0` second key). The scenario path keeps the
+    # markers; the player_state path never needs them (a copy's left-behind or desk-phone behaviour
+    # is already settled on its scenario source).
     def one_owner_field_in_player_state!(state)
       return state unless state.is_a?(Hash)
 
@@ -326,7 +330,7 @@ module BreakEscape
 
         list.each do |item|
           BreakEscape::AuthorNotes.each_live(item, item_node, free: :skip) do |value, _n, _keys|
-            rename_one_hash_owner_fields!(value) if value.is_a?(Hash)
+            rename_one_hash_owner_fields!(value, write_markers: false) if value.is_a?(Hash)
           end
         end
       end
@@ -336,8 +340,11 @@ module BreakEscape
     # Rename the owner fields of one Hash in place (shared by the scenario and player_state walks).
     # Each move is guarded by `unless value.key?('owner')` so a second run, format-2 data, or the
     # unexpected two-field conflict is a no-op on the destination (the first field read wins), and
-    # an affordance emptied by the two moves keeps `{}`.
-    def rename_one_hash_owner_fields!(value)
+    # an affordance emptied by the two moves keeps `{}`. The scenario walk passes `write_markers:
+    # true` (the default) so `phoneOwner` marks `deskPhone: true` and a left-behind item gets the
+    # default `leftBehindChance: 0`; the player_state walk passes `false` so a renamed stored copy
+    # gains at most the one `owner` key and no marker.
+    def rename_one_hash_owner_fields!(value, write_markers: true)
       if value.key?('screenOwner')
         so = value.delete('screenOwner')
         value['owner'] = so unless value.key?('owner')
@@ -345,7 +352,7 @@ module BreakEscape
       if value.key?('phoneOwner')
         po = value.delete('phoneOwner')
         value['owner'] = po unless value.key?('owner')
-        value['deskPhone'] = true unless value.key?('deskPhone')
+        value['deskPhone'] = true if write_markers && !value.key?('deskPhone')
       end
       if value.key?('phoneOf')
         pf = value.delete('phoneOf')
@@ -354,7 +361,7 @@ module BreakEscape
       if value.key?('leftBehindBy')
         lb = value.delete('leftBehindBy')
         value['owner'] = lb unless value.key?('owner')
-        value['leftBehindChance'] = 0 unless value.key?('leftBehindChance')
+        value['leftBehindChance'] = 0 if write_markers && !value.key?('leftBehindChance')
       end
 
       aff = value['affordance']

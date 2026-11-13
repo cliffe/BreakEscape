@@ -170,6 +170,24 @@ test('8b: a list owner on a private object is allowed (no error)', { skip }, () 
     assert.deepEqual(out.filter(l => l.includes('❌')), []);
 });
 
+test('8b: a workstation that is an NPC needsHome with no owner warns needsHome no longer sets one', { skip }, () => {
+    const out = owner({ rooms: { r: {
+        npcs: [{ id: 'rosa', needsHome: 'rosa_pc' }],
+        objects: [{ id: 'rosa_pc', workstation: true }]
+    } } });
+    const warns = out.filter(l => l.includes('⚠️'));
+    assert.equal(warns.length, 1, JSON.stringify(out));
+    assert.match(warns[0], /needsHome no longer sets an owner.*owner: 'rosa'/);
+});
+
+test('8b: the same workstation with an explicit owner fires no such warning', { skip }, () => {
+    const out = owner({ rooms: { r: {
+        npcs: [{ id: 'rosa', needsHome: 'rosa_pc' }],
+        objects: [{ id: 'rosa_pc', workstation: true, owner: 'rosa' }]
+    } } });
+    assert.deepEqual(out, []);
+});
+
 test('8b: owner, private and deskPhone print no unknown-field warning', { skip }, () => {
     const out = unknownWarnings({ rooms: { r: { objects: [{ id: 'pc', type: 'pc', name: 'PC', owner: 'a', private: true, deskPhone: true }] } } });
     assert.deepEqual(out.filter(l => /'(owner|private|deskPhone)'/.test(l)), []);

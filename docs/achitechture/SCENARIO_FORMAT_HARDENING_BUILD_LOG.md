@@ -2207,3 +2207,26 @@ sets an owner. No stray reader left.
 - Rails: pc_screen_lock_precedence + access_identities_screen + access_leak_scanner together 55 runs,
   318 assertions, 0 failures.
 - Only test-fixture files changed; nothing imports them, so no other importer to run.
+
+## Step 8b review R1 minor fixes
+
+Two coverage/wording nits from `SCENARIO_FORMAT_HARDENING_STEP8B_REVIEW_R1.md`, no correctness defect.
+
+- **Player_state rename is marker-free.** `rename_one_hash_owner_fields!` now takes `write_markers:`
+  (default true). The scenario walk keeps the markers (`phoneOwner` sets `deskPhone: true`, a
+  left-behind item gets `leftBehindChance: 0`). The player_state walk
+  (`one_owner_field_in_player_state!`) passes `write_markers: false`, so a stored item copy is renamed
+  in place and gains at most the one `owner` key. This keeps the SYNC SIZE RULE tight by construction:
+  the upgrade cannot add a second key to a re-sent copy, independent of what the corpus happens to
+  carry. A copy's left-behind or desk-phone behaviour is already settled on its scenario source.
+- **The needsHome warning now has an executing test.** `validator-retired-keys.test.mjs` fires
+  `check_owner_fields`' "needsHome no longer sets an owner" warning (a workstation that is an NPC's
+  `needsHome` with no owner of its own) and asserts the matching case with an explicit owner stays
+  silent.
+
+### Tests
+
+- Ruby: `format_upgrade_test`, `format_8b_corpus_test`, `format_8b_deployed_noop_test` together
+  51 runs, 594 assertions, 0 failures. (`engine.rb` is the only other requirer of `format_upgrade.rb`;
+  the deployed-noop test exercises its load path.)
+- JS: `validator-retired-keys.test.mjs` 24/24 (was 22; two new 8b owner-warning cases).

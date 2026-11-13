@@ -101,3 +101,8 @@ nits, not correctness defects.
   from the schema, so a reintroduced one fails the schema as a retired-key rename line.
 - No stale old-key reader remains in `app/`, `lib/`, the engine JS, the validators,
   `tools/playtest/verify-run.rb`, the test-bridge or `docs/test-bridge.md` (grepped).
+
+## Outcomes (R1 fixes)
+
+- minor 1 (shared renamer writes a second key on a player_state copy): fixed. `rename_one_hash_owner_fields!` takes `write_markers:` (default true, scenario path unchanged); `one_owner_field_in_player_state!` passes false, so a stored copy is renamed in place and gains at most the one `owner` key (no `deskPhone`/`leftBehindChance`). New `format_upgrade_test` case covers a left-behind copy with no chance and a desk-phone copy gaining no marker, idempotent.
+- minor 2 (`check_owner_fields` needsHome warning had no executing test): fixed. `validator-retired-keys.test.mjs` gains one case firing the warning (a workstation that is an NPC's `needsHome` with no owner) and one that does not (an explicit owner present).
