@@ -89,6 +89,15 @@ persists in the game, so a second run in the same game starts signed in). Scroll
 - The first "before" run of item 6 and items 2 and 3 used the base files swapped in by hand and
   restored with `git checkout HEAD`; nothing of that is committed.
 
+## Review round 1 fixes
+
+- M1: `isPcData` uses `isComputerType(data.type)` (pc, pc3, pc10, pc_desktop and so on), keeping the password/login lock and not-headless conditions. `utils/computer-keywords.js` joins the copy lists of `info-label-proximity` and `workaround-door-label`. New test for pc3, pc10, pc_desktop, a phone and a headless pc10.
+- m1: desktop labels stay at 16px GNF. `LABEL_FIT_SIZES` is gone; a word too wide for the label ends in an ellipsis with the full name in the title attribute. Wrapping is still at spaces only.
+- m2: the network view wraps each word of a resource name and of a reason in a nowrap span (`wordsHtml`), so "Ledger-Archive", "Scanned-Inbox" and "Remote sign-in off" never break at a hyphen. Resource rows wrap: the button or badge drops under the label, right-aligned, where label and control do not fit side by side. A host row with a reason does the same (`:has`).
+- m3: `npc-headshot.js` header and log line say silhouette; `applyTilePortrait` lost its unused `readAlpha` parameter (callers and tests updated) and `password-minigame.js` its unused crop imports (the re-exports stay).
+
+Live proof (keyless server :3477, scrollbars shown): m10 `model_terminal` (pc10) line present while locked, gone after DOUBLECOUNT (HUD shows the name); test_access_social `kiosk` (pc3) line present while locked, gone once Omar is signed in. m01 desktop labels all 16px at five sizes; injected over-long names end in an ellipsis with the title set. Network view at 390x844, 360x740, 800x600, 915x412, 1400x1000 and 667x375: no sideways scroll, no overlapping children, names whole. Shots and scripts in the scratchpad folder `ui-pc-polish-fix1`.
+
 ## Handover
 
 Everything above is built and committed. See the final report for the tip hash.

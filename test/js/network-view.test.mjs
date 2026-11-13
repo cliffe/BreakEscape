@@ -256,10 +256,10 @@ test('the padlock badge says Locked for a locked session and Needs account for a
 
 test('a locked share\'s badge keeps its width instead of spilling over the description', () => {
     const css = readFileSync(join(js, '../css/network-view-minigame.css'), 'utf8');
-    const rule = css.slice(css.indexOf('.network-row-wide .network-row-control {'), css.indexOf('}', css.indexOf('.network-row-wide .network-row-control {')));
+    const rule = css.slice(css.indexOf('.network-row-resource .network-row-control {'), css.indexOf('}', css.indexOf('.network-row-resource .network-row-control {')));
     assert.match(rule, /flex: 0 0 auto;/);
     assert.match(rule, /margin-left: auto;/, 'in a narrow column the badge drops under the label');
-    assert.match(css, /\.network-row-wide \{\s*flex-wrap: wrap;/);
+    assert.match(css, /\.network-row-resource \{\s*flex-wrap: wrap;/);
     assert.match(css, /\.network-row-word \{\s*white-space: nowrap;/, 'names never break at a hyphen');
     // and a column narrower than a 340px row never scrolls sideways
     assert.match(css, /minmax\(min\(340px, 100%\), 1fr\)/);
