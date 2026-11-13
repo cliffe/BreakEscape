@@ -1,0 +1,13 @@
+{
+  "key": "7234f31df6bc57aa8ce278cd19b452dd",
+  "npc": "agent_0x99_handler",
+  "text": "Watching still works if we detain him. The payout's pre-signed; we keep it quiet until it's gone.",
+  "voice": "Aoede",
+  "style": "Intelligence handler speaking over a secure phone line. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-13",
+  "recorded_at": "2026-11-13T00:31:07Z"
+}

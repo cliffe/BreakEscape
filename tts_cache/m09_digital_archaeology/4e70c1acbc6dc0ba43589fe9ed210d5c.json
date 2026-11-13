@@ -1,0 +1,13 @@
+{
+  "key": "4e70c1acbc6dc0ba43589fe9ed210d5c",
+  "npc": "gary_phone",
+  "text": "Director of Cyber Security, me. They gave me a lanyard with my name spelt right. That's how you know it's serious.",
+  "voice": "Charon",
+  "style": "Hospital IT systems administrator, mid-thirties, running on vending machine coffee. Consistent Birmingham / Black Country accent throughout. Flat, tired, self-deprecating -- a man who has been right for six months and got nothing for it. Anger sits under the surface, not on top of it.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-13",
+  "recorded_at": "2026-11-13T00:24:04Z"
+}
