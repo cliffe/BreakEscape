@@ -1395,9 +1395,13 @@ export class PasswordMinigame extends MinigameScene {
     
     cleanup() {
         // Release the frame-snap observers and the PC monitor's chin ResizeObserver when the
-        // game ends without complete() (endMinigame calls cleanup() only); both are idempotent
-        this.stopFrameSnap?.();
-        this.pcMonitor?.destroy?.();
+        // game really ends (endMinigame sets _ending, then calls cleanup(); the X goes the same
+        // way). Mid-flow cleanup() calls (lockout, accepted, wrong password) leave the screen up
+        // with a message, so the snap and pc-view stay; both releases are idempotent
+        if (this._ending) {
+            this.stopFrameSnap?.();
+            this.pcMonitor?.destroy?.();
+        }
         // Call parent cleanup (handles event listeners)
         super.cleanup();
     }

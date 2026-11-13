@@ -218,13 +218,40 @@ test('a PC sign-in ended through cleanup() (as endMinigame does) releases the ch
         for (let i = 0; i < 3; i++) {
             const mg = await signInScreen();
             assert.ok(live.size >= 1, 'observers are live while the sign-in is open');
+            mg._ending = true; // endMinigame sets this before it calls cleanup()
             mg.cleanup();
             assert.equal(live.size, 0, `open ${i + 1}: cleanup() released it`);
         }
         const d = await desktop();
         assert.ok(live.size >= 1);
+        d._ending = true;
         d.cleanup();
         assert.equal(live.size, 0, 'the desktop releases it too');
+    } finally {
+        restore();
+        if (Real) window.ResizeObserver = Real; else delete window.ResizeObserver;
+        if (RealG) globalThis.ResizeObserver = RealG; else delete globalThis.ResizeObserver;
+    }
+});
+
+test('a mid-flow cleanup() (lockout screen) keeps the frame snap and pc-view; the real end releases them (UI quick R3 m1)', async () => {
+    const live = new Set();
+    const Real = window.ResizeObserver, RealG = globalThis.ResizeObserver;
+    class Counting { constructor() {} observe() { live.add(this); } disconnect() { live.delete(this); } unobserve() {} }
+    window.ResizeObserver = globalThis.ResizeObserver = Counting;
+    const restore = sizeWindow(915, 412);
+    try {
+        const mg = await signInScreen();
+        const before = live.size;
+        assert.ok(before >= 1);
+        assert.ok(document.querySelector('.pc-monitor-frame, .pc-view') || mg.pcMonitor, 'monitor is up');
+        const hadView = !!document.querySelector('.pc-view');
+        mg.signInLockedOut?.();
+        assert.equal(live.size, before, 'the lockout screen keeps its observers');
+        assert.equal(!!document.querySelector('.pc-view'), hadView, 'pc-view stays on the container');
+        mg._ending = true;
+        mg.cleanup();
+        assert.equal(live.size, 0, 'the real end releases them');
     } finally {
         restore();
         if (Real) window.ResizeObserver = Real; else delete window.ResizeObserver;
