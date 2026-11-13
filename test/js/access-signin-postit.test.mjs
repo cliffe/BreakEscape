@@ -135,9 +135,32 @@ test('slice 2a: the sign-in post-it CSS pins the note to the bezel lower-left, n
     };
     const note = rule('.password-minigame-area .postit-note');
     assert.match(note, /align-self:\s*flex-start/, 'at the left of the column');
-    assert.match(note, /left:\s*-\d+px/, 'overhangs the bezel left edge');
-    assert.match(note, /margin:\s*-\d+px\s+0\s+0\s+0/, 'pulled up over the bezel frame');
+    // The exact place the user approved (review R1 n4): 14px past the bezel's left edge, as on
+    // the desktop, and pulled 48px up over the frame
+    assert.match(note, /\n\s*left:\s*-14px;/, 'overhangs the bezel left edge by 14px');
+    assert.match(note, /margin:\s*-48px\s+0\s+0\s+0;/, 'pulled 48px up over the bezel frame');
+    const desktop = readFileSync(join(js, '../css/container-minigame.css'), 'utf8');
+    const deskNote = desktop.slice(desktop.indexOf('\n.container-minigame.desktop-mode > .postit-note {'));
+    assert.match(deskNote.slice(0, deskNote.indexOf('}')), /left:\s*-14px;/, 'the same overhang as the desktop note');
     assert.match(note, /top:\s*auto/, 'no inherited top offset');
     assert.doesNotMatch(note, /translateX|margin-left:\s*auto|align-self:\s*center/, 'no centring');
     assert.doesNotMatch(css, /\.password-minigame-area \.postit-note:nth-child/, 'no nth-child margin moves it across');
+});
+
+// The user's UX notes (unlock-44, unlock-53): the password screen's frame wraps its content at
+// every size, with the X inside it, and the area is sized to its content (no fixed-height band)
+test('the password frame wraps the area: no fixed height, the X inside the frame', () => {
+    const css = readFileSync(join(js, '../css/password-minigame.css'), 'utf8');
+    const rule = (sel) => {
+        const at = css.indexOf(`\n${sel} {`);
+        assert.ok(at >= 0, `${sel} rule present`);
+        return css.slice(at, css.indexOf('}', at));
+    };
+    assert.match(rule('.password-minigame-area'), /height:\s*auto;/, 'the area is sized to its content');
+    assert.doesNotMatch(rule('.password-minigame-area'), /calc\(100%/, 'no fixed share of the window');
+    const frame = rule('.minigame-container > .password-frame');
+    assert.match(frame, /border:\s*2px solid/, 'a 2px frame');
+    assert.match(frame, /flex:\s*0 1 auto/, 'shrinks in a short window');
+    assert.match(rule('.password-frame > .minigame-game-container'), /overflow-y:\s*auto/, 'the area scrolls inside the frame');
+    assert.match(rule('.password-frame > .minigame-close-button'), /top:\s*6px;[\s\S]*right:\s*6px;/, 'the X sits inside the frame corner');
 });

@@ -716,7 +716,10 @@
     border: 2px solid #404040;
     border-right-color: #fff;
     border-bottom-color: #fff;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    /* Fixed 160px columns, so every file sits on a whole pixel (1fr columns put the 16px
+       glyph at x4 on a quarter pixel, which blurs it) */
+    grid-template-columns: repeat(auto-fill, 160px);
+    justify-content: start;
     grid-auto-rows: min-content;
     align-content: start;
     gap: 56px 10px;

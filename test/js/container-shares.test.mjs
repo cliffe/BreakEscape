@@ -744,3 +744,57 @@ test('slice 2a: a share opened from the network view is a folder window too, and
     document.querySelector('#minigame-cancel').click();
     assert.deepEqual(landings, [['share', 'close', {}]]);
 });
+
+// Slice 2a review R1: the header icon at a whole-number scale (M1), files drawn large on the
+// white pane with no tooltip repeating their label (M2, m1), and the mapped share's header
+// line names its host, as the network view's does (n3).
+const { fitWholeScale } = await imp('minigames/container/container-item-image.js');
+
+test('slice 2a R1: fitWholeScale draws at a whole-number scale, capped, centred by padding', () => {
+    const fake = (w, h) => ({ naturalWidth: w, naturalHeight: h, complete: true, style: {}, dataset: {} });
+    const folder = fake(26, 18);
+    fitWholeScale(folder, 80, { maxScale: 2, pad: true });
+    assert.deepEqual([folder.style.width, folder.style.height, folder.dataset.scale], ['52px', '36px', '2']);
+    assert.equal(folder.style.padding, '22px 14px 22px 14px', 'centred in the 80px box');
+    const glyph = fake(16, 16);
+    fitWholeScale(glyph, 64);
+    assert.deepEqual([glyph.style.width, glyph.dataset.scale], ['64px', '4'], 'a 16px glyph at x4');
+    const big = fake(40, 27);
+    fitWholeScale(big, 64);
+    assert.equal(big.dataset.scale, '1', 'never a fraction: a 40px picture stays x1 in a 64px cell');
+    const huge = fake(100, 100);
+    fitWholeScale(huge, 64);
+    assert.equal(huge.dataset.scale, '1', 'never below x1');
+});
+
+test('slice 2a R1: the folder window header icon is marked for x2; files carry no repeating tooltip; the header names the host', async () => {
+    setup();
+    await openRemote();
+    icon('Ledger-Archive').click();
+    await settle();
+    const header = document.querySelector('.container-image-section img.container-image');
+    assert.ok(header.classList.contains('share-header-icon'), 'sized by the share header rule (52x36, not object-fit contain)');
+    assert.equal(document.querySelectorAll('.share-folder-files .container-content-tooltip').length, 0, 'no tooltip box to clip');
+    for (const img of document.querySelectorAll('.share-folder-files .container-content-item')) {
+        assert.equal(img.title, '', `${img.alt}: no title repeating the label`);
+    }
+    assert.equal(document.querySelector('.container-info p').textContent, 'A file share on HB-FS01.');
+});
+
+test('slice 2a R1: the folder window CSS fills the frame, with no tile fill and whole-pixel columns', () => {
+    const css = readFileSync(join(here, '../../public/break_escape/css/container-minigame.css'), 'utf8');
+    const rule = (sel) => {
+        const at = css.indexOf(`\n${sel} {`);
+        assert.ok(at >= 0, `${sel} rule present`);
+        return css.slice(at, css.indexOf('}', at));
+    };
+    assert.match(rule('.share-folder-layout'), /height:\s*100%/);
+    assert.match(rule('.container-minigame.share-folder'), /flex:\s*1 1 auto/, 'the window grows with the frame');
+    const files = rule('.container-contents-grid.share-folder-files');
+    assert.match(files, /max-height:\s*none/);
+    assert.match(files, /background:\s*#ffffff/, 'the white pane');
+    assert.match(files, /grid-template-columns:\s*repeat\(auto-fill, 160px\)/, 'fixed columns, no quarter pixels');
+    const slot = rule('.share-folder-files .container-content-slot,\n.share-folder-files .container-content-slot:hover');
+    assert.match(slot, /background:\s*transparent/, 'no grey tile');
+    assert.match(rule('.container-image.share-header-icon'), /width:\s*52px;\s*height:\s*36px;\s*padding:\s*22px 14px;/);
+});

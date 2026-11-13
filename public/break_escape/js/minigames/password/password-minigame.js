@@ -255,6 +255,7 @@ export class PasswordMinigame extends MinigameScene {
         this.params = { ...this.params, showCancel: false };
         // Call parent init to set up basic UI structure
         super.init();
+        this.wrapInFrame();
 
         if (this.signIn) {
             this.initSignIn();
@@ -294,6 +295,24 @@ export class PasswordMinigame extends MinigameScene {
         this.setupEventListeners();
     }
     
+    /**
+     * The password screen's frame: a box that wraps the game area at every window size, with
+     * the X inside its top-right corner (the user's UX notes: the frame wraps its content, and
+     * the X sits inside the frame, clear of its border). The game area scrolls inside the frame
+     * when the window is too short for it, so nothing in it can cover the controls row below.
+     */
+    wrapInFrame() {
+        const area = this.gameContainer;
+        if (!area?.parentNode || typeof document === 'undefined') return;
+        const frame = document.createElement('div');
+        frame.className = 'password-frame';
+        area.parentNode.insertBefore(frame, area);
+        frame.appendChild(area);
+        const cross = this.container.querySelector('#minigame-close');
+        if (cross) frame.appendChild(cross);
+        this.frameElement = frame;
+    }
+
     /**
      * The controls row under the game area, made on first use: with no Cancel button the base
      * scene draws none, and an empty row would only add a gap.
