@@ -263,3 +263,45 @@ Shots in `ux-shots/slice2a-final/` (refreshed): `main-01` to `main-05`, `main-07
 ### Handover (R4)
 
 Done: m1, m2, n1 to n5. Commits: 6794aa8b1 (fixes and tests), 2c050b621 (1/64px step, image and font re-snap, gaps), 4be85c8e0 (padding), and this log. Open: q98 (prompt skin). Possible follow-up: a scenario `portraitCrop` field passed through the tile builder, if a posed portrait ever becomes a sign-in account.
+
+## Final fixes
+
+For UX_SLICE2A_REVIEW_R5.md (0 blockers, 1 major, 3 minors, 5 nits). There is no further review round: the live run below is the acceptance proof.
+
+- **M1.** `core/game.js` builds the start room with `createRoom` directly, so it skipped the per-room syncs that the loader in `core/rooms.js` makes. It now makes the same four (`screenStates`, `networkLinks`, `postitMarks`, `npcWorkarounds`) right after `createRoom(startRoomId, ...)`. Live on game 2822 and again on 2840 (`omar_room` start): `postitMarks.marks` holds `omar_pc` after boot with no hand sync, its bottom at the PC's bottom (120 against 120). `main-09` and `main-11` are retaken and show the note on the monitor (on `main-11`, the locked screen with its padlock).
+- **m1.** `snapInnerBoxes` skips a box drawn scaled, rotated or skewed (a press's `scale(0.95)`), and everything inside it; a pure translate (the eye toggle's -50%) is still measured. The returned list carries a non-enumerable `skipped` count. When the last snap left a box out, the frame snaps again on that box's `transitionend` or `transitioncancel` for transform, or on the frame after a `pointerup` or `keyup`. Live, after a real mouse press: the keyboard toggle ends at 664,585 (1400x1000), 364,331 (800x600) and 422,218 (915x412) with no inline offset, and Shift at 460,805, 160,551 and 218,551. Every off-grid count after the press is 0.
+- **m2.** A narrower note (`max-width: 200px`) wrapped m01's note to four lines and made 800x600 overflow by 12px, so that change was dropped. Instead, in the short window the plain screen's note is pulled up 44px, not 48px, when no message line shows. It covers no control in any state at 800x600 or 915x412 (`noteHits` empty throughout).
+- **m3.** Press Start 2P now sits on its 8px grid everywhere on these screens. The sign-in title is 16px, and 8px in the short window, where 16px together with the n4 backing made the chosen screen 5px too tall at 915x412. The frame's X goes from the framework's 18px to 16px, and the device header (`.password-info h4`) from 20px bold to 16px normal. The rules audit also found two synthetic bolds and two fractional sizes on these screens, all fixed: the attempts count is no longer bold, and the keyboard toggle and the tiles get 16px in place of the browser's 13.33px button default. GNF sizes are unchanged, pending the user's font policy for GNF (q105): the tile name at 15px, the username at 13px, Change at 14px (it is GNF, inherited, not Press Start 2P), the field at 18px, the prompt title at 22px, the plain label at 20px.
+- **n1.** The snap reads before it writes. One pass reads every rect and computed style, adds each box's moved ancestors to its rect, rounds, then writes. A second pass checks the result and normally finds nothing to do, so a snap costs two layouts however many boxes move. With the on-screen keyboard shown (88 boxes, 26 moved): 6 to 9ms a run, 12.4ms at most, against 25 to 36ms before.
+- **n2.** `.key` fades `color` with its background.
+- **n3.** `.password-field` is `box-sizing: border-box`.
+- **n4.** `.signin-field-row label` has the plain label's `#101820` backing, 2px 8px padding and `align-self: flex-start`.
+- **n5.** In the short window a prompt's bezel padding is 6px 12px, its title margin 4px and its controls' top margin 4px. The archive's wrong state at 915x412 now overflows by 0, with no bar and the attempts box whole.
+
+### Tests
+
+New: `postit-marks.test.mjs` (a start-room sign-in PC has its mark once the start room is built; game.js makes the four syncs between `createRoom(startRoomId` and `revealRoom(startRoomId)`). `password-signin-mode.test.mjs` adds three tests: a scaled box and its child are skipped and a translated one is not; one read pass and one check pass (6 reads for 3 boxes) with a child carried by its parent's move; and the CSS for m2, m3 (every Press Start 2P size a multiple of 8), n2 to n5, the X, the attempts weight and the 16px button sizes.
+
+Run without the lock: 54 node test files that import or read `password-minigame.js` or its CSS, `minigames/index.js`, `minigame-starters.js`, `network-links.js`, `core/game.js` or `postit-marks.js`: 838 pass, 0 fail. The full JS suite once, `MERGE_BATCH=1 bin/test-js -j 3` under the lock, on 60b08e672: 543 files passed, 0 failed.
+
+### Live proof
+
+A keyless server on :3320 from this worktree, stopped afterwards (killed by its own PID). Headless Chromium with scrollbars shown (`--hide-scrollbars` removed), and `setFPS(20)` with fixed steps on (`[20, true]` logged on every run). The scripts are the R5 reviewer's `drive-r5.mjs` and `probe-snap.mjs`, copied to `ux-shots/slice2a-fix/` with the port, the output folder and three changes. The habits scene logs the post-it marks. The probe scrolls the toggle, the letters and Shift into view before pressing, because at 915x412 a press below the fold landed on the game and closed the screen. The probe also clears its counters before the toggle press. The UI rules audit (`p-ux-audit/tools/playtest/ui-rules-audit.mjs`) is copied there with scrollbars shown, and run with the surface files `surfaces-plain.mjs`, `surfaces-signin.mjs` and `surfaces-wifi.mjs`. Logs are in `slice2a-fix/logs/`. Shots go to `slice2a-final/`.
+
+New games:
+- Pass 1 (all fixes but the short-window title): test_access_signin (swapped onto test_access_networks) for the sign-in scenes 2804 to 2806 and the lockout and archive 2810 to 2812; m01 (`--start-room kevin_office`) 2837 to 2839; test_access_networks (`--give kit_dropbox`) 2819 and 2820; m02 (`--start-room it_department`) 2823; test_access_habits (swapped, `--start-room omar_room`) 2840; the probe on 2807 to 2809 (sign-in) and 2816 to 2818 (m01); the audit on 2841 (sign-in), 2842 (m01) and 2843 (Wi-Fi). Earlier runs during the fixes used 2813 to 2815, 2822, 2827 to 2829 and 2834 to 2836. 2821, 2824 to 2826 and 2830 to 2833 are stray games and were not used.
+- Pass 2 (final CSS), for every scene the short-window title touches: sign-in 2845 to 2847, lockout and archive 2858 (800x600) and 2848 (915x412), networks 2849 (915x412), the probe on 2851, 2853 and 2855 (m01) and 2852, 2854 and 2856 (sign-in), and the audit on 2857. 2850 was made and not used.
+
+Measured, with the final code, across every state at all three sizes (hot desk tiles, chosen, wrong, Change, Switch user, Ian's PC open and refused, lockout one left and locked, archive open and wrong, m01 plain open, empty, wrong, refusal, network error and maxed, m02, Wi-Fi open, empty and wrong, Lena's and SV-FS02's remote sign-ins, SV-FS02 refused, Omar's PC):
+- Off the pixel grid: 0 in every state, and 0 after the eye toggle, the keyboard toggle press, 10 on-screen letters, Shift twice, six Tabs, a resize and a wheel scroll.
+- The post-it covers no control in any state.
+- X inside the frame, no Cancel, no radius or 1px border, no box moved out of its parent or onto a sibling (largest move 0.5px).
+- A scrollbar shows only where content truly overflows, all at 915x412: m01 plain (113px open, 179px with the line), the sign-in wrong state (39px), the remote sign-ins (31px, 73px refused). Chosen, Change, Switch user, Ian's PC, the lockout, the archive (open and wrong) and Wi-Fi fit with no bar.
+- The audit on the password screens (plain open, wrong and keyboard; sign-in tiles, chosen, wrong and typed username; archive open and wrong; Wi-Fi open and wrong) at the three sizes: 0 breaches. The only findings at 1400x1000 belong to other windows the audit's first open caught behind the password screen (the notes window open at boot, and the hot desk's container desktop under the archive). They are not password screens and are left for the general audit.
+- End to end, unchanged: local sign-in, Switch user, Ian's PC refusing then signing in, lockout and Esc, the archive unlock with no stale return, Wi-Fi, the plant, Lena's remote sign-in and Ledger-Archive, the pivot, SV-FS02 and Backup-Vault. No page errors. The console errors are the expected 422s and the faked 403 and 500.
+
+Shots refreshed in `ux-shots/slice2a-final/`: `main-01` to `main-05`, `main-07`, `main-08`, `main-09`, `main-11`, `main-12`, `main3-01`, `main3-05`, `main3-07`, `main3-08`, `unlock-44`, `unlock-53`, and the per-size `tiles-*`, `chosen-*`, `wrong-*`, `switch-*`, `lockout-*`, `archive-*`, `plain-*`, `wifi-*`, `remote-*`, `m02-*` shots.
+
+### Handover (final)
+
+Done: M1, m1, m2, m3, n1 to n5. Open for the user: q105 (GNF sizes). Not done: the 1400x1000 audit findings on the notes window and the container desktop, which are outside this slice.
