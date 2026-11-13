@@ -52,7 +52,7 @@
 
 .lockpicking-item-info h4 {
     font-family: 'Press Start 2P', monospace;
-    font-size: 20px;
+    font-size: 16px;   /* on its 8px grid (slice 7 R5 M2) */
     margin: 0 0 10px 0;
     color: #3498db;
 }
@@ -97,6 +97,27 @@
     display: block;
 }
 
+/* Short screens (915x412): the 400px lock fits whole with a 4px margin, and the game area
+   scrolls inside the frame, with the local pixel-art scrollbar, to reach the feedback strip
+   below it, instead of running off the window (slice 7 R5, from the final audit) */
+@media (max-height: 560px) {
+    .minigame-game-container:has(> #phaser-game-container) {
+        margin: 0 auto;
+        overflow-y: auto;
+        scrollbar-color: auto;
+        scrollbar-width: auto;
+    }
+
+    .minigame-game-container:has(> #phaser-game-container)::-webkit-scrollbar { width: 12px; }
+    .minigame-game-container:has(> #phaser-game-container)::-webkit-scrollbar-track { background: #10161c; border-radius: 0; }
+    .minigame-game-container:has(> #phaser-game-container)::-webkit-scrollbar-thumb { background: #2d3a44; border: 2px solid #6f8a9c; border-radius: 0; }
+    .minigame-game-container:has(> #phaser-game-container)::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+
+    #phaser-game-container {
+        margin: 4px auto;
+    }
+}
+
 /* Portrait mobile: let the canvas fill available vertical space */
 @media (max-width: 768px) and (orientation: portrait) {
     #phaser-game-container {
@@ -120,7 +141,8 @@
     }
 
     .lockpicking-item-info h4 {
-        font-size: 13px;
+        font-size: 8px;   /* Press Start 2P on its 8px grid (slice 7 R5 M2) */
+        line-height: 16px;
     }
 
     .lockpicking-item-info p {
