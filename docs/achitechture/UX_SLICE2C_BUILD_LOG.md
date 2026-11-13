@@ -217,7 +217,35 @@ Checked in every run:
 - m01: lock, wrong password and desktop are one frame; no scroll after a wrong password; no badge.
 - The Wi-Fi join still opens in the old frame, now with a bordered Submit.
 
+## Review round 4 fixes
+
+From `UX_SLICE2C_REVIEW_R4.md` (B 0, M 0, m 7). m1 to m4 and m7 are fixed here; m5, m6 and the m4 `fileType` idea are in `docs/IDEAS_BACKLOG.md`.
+
+- m1, back from the Notepad: the R3 claim was not true (the desktop came back first and the reader's return was dropped). The Notes viewer's close now skips the container return when a file is waiting to come back (`pendingTextFileReturn`), unless the container return holds a note to take (`itemToTake`). The reader reopens in its PC frame, and its own X then spends the desktop's or share's return as usual. `pendingTextFileReturn` carries `itemId`, so `cameFrom` matches by id. jsdom test: the real `startNotesMinigame` close branch and `returnToTextFileAfterNotes`, with a desktop's return set; plus one that a note to take still goes through the container first.
+- m2, the post-it is on the monitor: `ContainerMinigame.monitorPostit()` gives the PC's note for the desktop and for a share window opened from a desktop (`parentLockable`); a share opened from the network view has no PC and no note. The share window shows the note and its chin button; that button notes the PC's post-it (`postitNotebookEntry` in `utils/pc-monitor.js`), without the share's file list. `pcScreenExtras()` carries the raw note text as `postitNote`; the reader escapes it, mounts it with the monitor (so it measures its own note at any size, and a resize no longer collapses the chin), makes it draggable (helpers.js loaded on demand) and puts its Add to Notepad in the chin, which goes to the Notepad and back to the file. The R3 test's `"note":null` replacement is gone.
+- m3, the Copy / Move dialog: `centreOnWholePixels` sets `left` and `top` to the spare width and height halved and rounded down, after it is added, when the pixel font arrives and on resize (one listener per scene). The CSS rule loses `right`, `bottom` and `margin: auto`.
+- m4: the monitor reader shows Copy and Add to Notepad only (one row on a phone); the old viewer keeps Select All. The test_access_signin fixture "Mail" is now "Mail export.txt", with matching text and observations.
+- m7: in the monitor the sign-in tiles are `#101820` with a `#2a3a48` edge, and `#1a2c3a` with the `#9ee6ff` edge when hovered or chosen. The old frame's tiles are unchanged.
+
+Open question for the user: the reader now has two "Add to Notepad" buttons, the file's on the toolbar and the post-it's in the chin (as on the desktop, where the chin button is the only one). They do different things; a clearer chin label (for example "Note the post-it") would be a small follow-up.
+
+Tests: `pc-monitor-frame.test.mjs` 40 (5 new for R4: the Notepad round trip, a note to take, the resize and the share note, the dialog centring, the tile colours). Its harness copies `notes-minigame.js`, `note-markdown.js` and `test-state-text.js`.
+
+## Round 4 live proof
+
+Keyless server on :3062 (stopped afterwards), setFPS(20) with fixed steps, scrollbars shown (Playwright `ignoreDefaultArgs: ['--hide-scrollbars']`; a test box measured a 15px bar in every run), new games only (`tools/playtest/new-game.rb`): test_access_signin 3062 (1400x1000) and 3063 (390x844); test_access_networks 3064, 3065 (remote share) and 3067, 3068 (Sam's PC and its mapped share). Driver and logs: the scratchpad's `ux-shots/slice2c-r4fix/`. Shots there as PNG at 1400x1000 and 390x844: `main-01`, `main-02`, `main-03`, `textfile`, `notepad-return`, `shares`, `share-dialog`, `share-file`, `sam-desktop`, `share-note`, plus `textfile-resized-801x601`.
+
+- m1: Add to Notepad, then the Notepad's X: the reader is back, in the same frame as the desktop, with the note; its X then returns to the desktop. Both sizes.
+- m2: the reader's note is in the desktop's place to the pixel, with the chin button. Resized from 1400x1000 to 801x601 with the reader open: the note's top is 4px under the screen and its bottom 4px above the frame's. Sam's mapped share keeps Sam's note in the same place and the same frame as his desktop.
+- m3: the dialog's offset from the screen area is whole in the area's own pixels on both axes (x2 at 1400x1000, x1 at 390x844), margin 0.
+- m4: no Select All; one toolbar row on the phone.
+- m7: tiles `rgb(16, 24, 32)` with a `rgb(42, 58, 72)` edge; the chosen tile shows the light blue edge (main-02).
+
 ## Handover
+
+Round 4 done. Commits: `0589d2edf` (the fixes, tests and backlog), `b8beeead0` and `6c891876c` (the reader's escape import: `escaping-shared-helpers` pinned a one-name import line, and splitting the line broke `phone-intro-once-and-notepad-raw`, whose harness rewrites only the first match, so the line is whole again and the shared-helper test accepts other names from the same module), and the docs commit with this section. Full suites under the shared lock: `bin/rails test` on `0589d2edf`: 2386 runs, 42523 assertions, 0 failures, 0 errors, 1 skip (the later commits change JS and tests only). `MERGE_BATCH=1 bin/test-js -j 3` on `0589d2edf`: 598 passed, 1 failed (`escaping-shared-helpers`, fixed above); rerun on `6c891876c`: 599 files passed, 0 failed.
+
+Open: the two "Add to Notepad" buttons in the reader (above); m5 and m6 in the backlog; the WebKit check of `cssZoomOf` still needs the user's yes.
 
 Round 3 done. Commits: `c96413436` (the fixes and tests), `9c1275bc1` (Copy / Move dialog fits the screen, captured title on the items' line), `df83bd790` (the dialog's Open keeps the frame), and the docs commit with this section. Full suites: `bin/rails test` on `c96413436`: 2386 runs, 42523 assertions, 0 failures, 0 errors, 1 skip (later commits change JS and CSS only). `MERGE_BATCH=1 bin/test-js -j 3` on `c96413436` (it picked up the later JS edits as it ran): 599 files passed, 0 failed; rerun on `df83bd790`: 599 files passed, 0 failed.
 
