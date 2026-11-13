@@ -131,3 +131,129 @@ test('a closeInsideFrame scene re-places its X when the shell scrolls', () => {
     assert.ok(placed > before, 'scroll on the shell places the X again');
     mg.cleanup?.();
 });
+
+// ── Lock and core scenes (critique A) ─────────────────────────────────────────
+
+test('combination: below 600px the dials stack and nothing is centred past the edge (A01)', () => {
+    const r = rule(css('combination-minigame.css'), '.combination-dials', 'max-width: 600px');
+    assert.equal(r['flex-direction'], 'column');
+    assert.equal(r['justify-content'], 'safe center');
+    assert.equal(r.overflow, 'visible', 'no crop of the outer dials');
+    const d = rule(css('combination-minigame.css'), '.combination-dial-display', 'max-width: 600px');
+    assert.equal(Number.parseInt(d['font-size'], 10) % 8, 0, 'Press Start 2P on its grid');
+    assert.match(src('minigames/combination/combination-minigame.js'), /scrollIntoView\?\.\(\{ block: 'nearest'/, 'the active dial is brought on screen');
+});
+
+test('cryptex: below 600px five wheels fit and longer words wrap (A02)', () => {
+    const r = rule(css('cryptex-minigame.css'), '.cryptex-wheels', 'max-width: 600px');
+    assert.equal(r['flex-wrap'], 'wrap');
+    assert.equal(r['justify-content'], 'safe center');
+    assert.equal(r.overflow, 'visible');
+    const d = rule(css('cryptex-minigame.css'), '.cryptex-wheel-display', 'max-width: 600px');
+    // 36 + 2 x 8 padding + 2 x 2 border = 56px a wheel: five wheels and gaps under 360px
+    assert.equal(d.width, '36px');
+    assert.equal(d['font-size'], '41px', 'a crisp GNF size');
+});
+
+test('notes: the notepad fits a phone and the nav row is in the flow under it (A03, A04, A06)', () => {
+    const notes = css('notes.css');
+    assert.equal(rules(notes, '.notes-minigame-notepad', 'max-width: 768px').some(r => r.left), false, 'no left shift');
+    assert.equal(rule(notes, '.notes-minigame-notepad', 'max-width: 768px')['min-width'], '0');
+    const nav = rule(notes, '.notes-minigame-nav-container');
+    assert.equal(nav.position, 'relative');
+    assert.equal(nav['flex-wrap'], 'wrap');
+    assert.equal(nav.bottom, undefined, 'not pinned over the page');
+    const tape = rule(notes, '.notes-minigame-celotape');
+    assert.equal(tape.border, undefined, 'no grey box that reads as an empty field');
+    const js = src('minigames/notes/notes-minigame.js');
+    assert.match(js, /this\.gameContainer\.after\(navContainer\)/);
+    assert.match(js, /closeAnchor\(\) \{\s*return this\.gameContainer\?\.querySelector\?\.\('\.notes-minigame-notepad'\)/);
+    assert.match(js, /notes-minigame-content-area pixel-scroll/);
+});
+
+test('PIN: a wrong code is reported on the keypad\'s own line, not over the keys (A10, A11)', () => {
+    const js = src('minigames/pin/pin-minigame.js');
+    assert.match(js, /className = 'pin-minigame-message'/);
+    assert.doesNotMatch(js, /this\.showFailure\(message, false, 1500\)/);
+    assert.ok(rule(css('pin.css'), '.pin-minigame-message')['min-height'], 'keeps its height when empty');
+    assert.equal(rule(css('pin.css'), '.pin-minigame-attempt.incorrect').background, '#2c3e50');
+});
+
+test('alarm panel: scrolls on a short window, stepped lamps, 8px labels, X in the panel (A41-A43)', () => {
+    const c = css('alarm-panel-minigame.css');
+    const g = rule(c, '.ap-game-container');
+    assert.equal(g.overflow, 'auto');
+    assert.equal(g['justify-content'], 'safe center');
+    assert.equal(rule(c, '.ap-panel-wrap')['max-height'], '100%');
+    assert.equal(rule(c, '.ap-label')['font-size'], '8px');
+    assert.equal(rule(c, '.ap-row-sep')['stroke-width'], '2');
+    assert.equal(rule(c, '.ap-live-dot')['border-radius'], undefined);
+    const js = src('minigames/alarm-panel/alarm-panel-minigame.js');
+    assert.doesNotMatch(js, /<circle/);
+    assert.match(js, /static closeInsideFrame = true;/);
+});
+
+test('alarm panel lamp points step in whole 4px squares', async () => {
+    const { steppedLampPoints } = await import(pathToFileURL(join(root, 'js/minigames/alarm-panel/alarm-panel-minigame.js')).href);
+    const pts = steppedLampPoints(40, 64, 16).split(' ').map(p => p.split(',').map(Number));
+    assert.equal(pts.length, 20);
+    for (let i = 0; i < pts.length; i++) {
+        const [a, b] = [pts[i], pts[(i + 1) % pts.length]];
+        assert.ok(a[0] === b[0] || a[1] === b[1], 'every edge is horizontal or vertical');
+    }
+    const xs = pts.map(p => p[0]);
+    assert.deepEqual([Math.min(...xs), Math.max(...xs)], [24, 56]);
+});
+
+test('biometrics: the samples list keeps two rows; instructions are a closed disclosure (A18, A19)', () => {
+    const c = css('biometrics-minigame.css');
+    const l = rule(c, '.biometrics-samples-list-container');
+    assert.equal(l['min-height'], '160px');
+    assert.equal(l.flex, '0 0 auto');
+    assert.match(src('minigames/biometrics/biometrics-minigame.js'), /document\.createElement\('details'\);\s*instructionsContainer\.className = 'biometrics-scanner-instructions'/);
+    assert.equal(rule(c, '.biometrics-categories', 'max-width: 768px')['flex-direction'], undefined, 'chips stay inline');
+});
+
+test('X inside the frame for dusting, examine, flag station, VM launcher, text file (A14, A26, A30, A34, A40)', () => {
+    for (const f of ['dusting/dusting-game.js', 'examine/examine-minigame.js', 'flag-station/flag-station-minigame.js',
+        'vm-launcher/vm-launcher-minigame.js', 'text-file/text-file-minigame.js']) {
+        assert.match(src(`minigames/${f}`), /static closeInsideFrame = true;/, f);
+    }
+    assert.match(src('minigames/dusting/dusting-game.js'), /querySelector\?\.\('\.dusting-root'\)/);
+    assert.doesNotMatch(src('minigames/dusting/dusting-game.js'), /data-action="close"/, 'no Close beside the X (A16)');
+    const tf = src('minigames/text-file/text-file-minigame.js');
+    assert.doesNotMatch(tf, /class="window-controls"/, 'no traffic-light buttons');
+    assert.match(tf, /querySelector\?\.\('\.text-file-container'\)/);
+    assert.equal(rule(css('biometrics-minigame.css'), '.fpr-led').position, undefined, 'the reader LED is in the heading row, not in the X corner (A24)');
+});
+
+test('no Courier New or hairlines left in the flag station and VM launcher (A27, A30)', () => {
+    for (const f of ['flag-station/flag-station-minigame.js', 'vm-launcher/vm-launcher-minigame.js']) {
+        assert.doesNotMatch(src(`minigames/${f}`), /Courier New|1px solid/, f);
+    }
+    for (const f of ['flag-station-minigame.css', 'vm-launcher-minigame.css']) {
+        assert.doesNotMatch(css(f), /Courier New|1px solid/, f);
+    }
+    assert.doesNotMatch(src('minigames/vm-launcher/vm-launcher-minigame.js'), /in the game\./, 'no fourth-wall copy (A31)');
+});
+
+test('dusting kit is capped to the window and scrolls inside its frame (A15, A17)', () => {
+    const c = css('dusting.css');
+    assert.equal(rule(c, '.dusting-root')['overflow-y'], 'auto');
+    assert.equal(rule(c, '.minigame-container > .dusting-game-container')['max-height'], 'none');
+    assert.equal(rule(c, '.dusting-options input[type="checkbox"]').appearance, 'none');
+    assert.doesNotMatch(c, /1px solid/);
+});
+
+test('lockpicking phone window covers the lock and its labels; labels have a backing (A07, A08)', () => {
+    const js = src('minigames/lockpicking/lockpicking-game-phaser.js');
+    assert.match(js, /config\.width = 580;\s*config\.height = 340;\s*this\._portraitCameraOffset = \{ x: 0, y: 20 \}/);
+    assert.equal((src('minigames/lockpicking/pin-management.js').match(/backgroundColor: '#0b0f0c'/g) || []).length, 4);
+});
+
+test('title hint on its grid with a line height (A37); text-file toolbar readable on phones (A36)', () => {
+    const t = rule(css('title-screen.css'), '.title-screen-prompt-hint');
+    assert.equal(t['font-size'], '8px');
+    assert.equal(t['line-height'], '16px');
+    assert.equal(rule(css('text-file-minigame.css'), '.action-btn', 'max-width: 768px')['font-size'], '16px');
+});
