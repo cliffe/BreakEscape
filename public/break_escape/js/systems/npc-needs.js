@@ -2709,23 +2709,57 @@ export class NPCNeedsSystem {
     _startExchange(c, ex, A, B) {
         let total = 0;
         for (const l of ex.lines) total += exchangeLineMs(l.text) + CHAT_GAP_MS;
-        const end = this.clockMs + Math.min(total, EXCHANGE_MAX_MS);
-        if (A.job && A.job.useUntil < end) A.job.useUntil = end;
-        if (!c.queue && B.job && B.job.useUntil < end) B.job.useUntil = end;
+        ex.startedAt = this.clockMs;
+        ex.holdCap = this.clockMs + EXCHANGE_MAX_MS;
+        ex.heardLines = 0;
         c.ex = ex;
+        this._holdExchange(c, A, B, total);
         this._log(ex.ownerId, 'exchange_started', { knot: ex.knot, with: ex.ownerId === c.a ? c.b : c.a });
     }
 
-    _finishExchange(c) {
+    /**
+     * Hold the pair for what is left of the exchange (`ms` from now, capped at EXCHANGE_MAX_MS from
+     * its start). Run again before each line: a line that waited for the speech lock pushes the rest
+     * later, and the use must not end under it. A queue's front NPC is not using anything: its queue
+     * wait does not run out while the exchange is held (_tickQueue reads c.ex).
+     */
+    _holdExchange(c, A, B, ms) {
+        const end = Math.min(this.clockMs + ms, c.ex.holdCap);
+        if (A.job && A.job.useUntil < end) A.job.useUntil = end;
+        if (!c.queue && B.job && B.job.useUntil < end) B.job.useUntil = end;
+    }
+
+    /**
+     * The exchange ends, played to the end (`complete`) or cut short (`reason`: the pair broke up,
+     * a hush). The rule for heard (EXCHANGE_HEARD_FIX_LOG.md): played to the end, or cut after the
+     * player overheard at least one of its lines. Heard: heard_<knot> (a global: one key per knot,
+     * set once) and npc_exchange_heard:<knot> { complete }, never played again. Cut before any line
+     * reached the player: unplayed, so a later meeting in earshot plays it from the start.
+     */
+    _finishExchange(c, { complete = true, reason = null } = {}) {
         const ex = c.ex;
         c.ex = null;
         c.exDone = true;
+        const front = c.queue ? this.states.get(c.b) : null;
+        if (front?.job?.phase === 'queued') front.job.queuedAt += this.clockMs - ex.startedAt;
+        const heard = complete || ex.heardLines > 0;
+        if (!complete) this._log(ex.ownerId, 'exchange_cut', { knot: ex.knot, reason, line: ex.i, of: ex.lines.length, heardLines: ex.heardLines, heard });
+        if (!heard) return;
         this._exPlayed.add(ex.knot);
         if (typeof this.world.setGlobal === 'function') {
             try { this.world.setGlobal(`heard_${ex.knot}`, true); } catch (e) { /* keep the session flag */ }
         }
-        this._log(ex.ownerId, 'exchange_heard', { knot: ex.knot });
-        this._emit(`npc_exchange_heard:${ex.knot}`, { knot: ex.knot, ownerId: ex.ownerId, npcIds: [c.a, c.b].sort(), objectId: c.objectId });
+        this._log(ex.ownerId, 'exchange_heard', { knot: ex.knot, complete });
+        this._emit(`npc_exchange_heard:${ex.knot}`, { knot: ex.knot, ownerId: ex.ownerId, npcIds: [c.a, c.b].sort(), objectId: c.objectId, complete });
+    }
+
+    /** A chat ends: an exchange still running finishes first (complete if its last line is over). */
+    _endChat(oid, c, reason) {
+        if (c.ex) {
+            const over = c.ex.i >= c.ex.lines.length && (!c.current || this.clockMs >= c.current.until);
+            this._finishExchange(c, over ? {} : { complete: false, reason });
+        }
+        this._chats.delete(oid);
     }
 
     _carryCandidate(s, tag, it, objects, pos) {
@@ -3821,7 +3855,7 @@ export class NPCNeedsSystem {
             const c = this._chats.get(oid);
             const A = this.states.get(c.a), B = this.states.get(c.b);
             // Either one frozen in a conversation, gone, or finished: the pairing ends
-            if (!this._usingObj(A, oid) || !(c.queue ? this._queuedFront(B, oid) : this._usingObj(B, oid))) { this._chats.delete(oid); continue; }
+            if (!this._usingObj(A, oid) || !(c.queue ? this._queuedFront(B, oid) : this._usingObj(B, oid))) { this._endChat(oid, c, 'pair_ended'); continue; }
             if (c.current && this.clockMs >= c.current.until) {
                 c.current = null;
                 if (c.ex && c.ex.i >= c.ex.lines.length) this._finishExchange(c);
@@ -3830,7 +3864,7 @@ export class NPCNeedsSystem {
                 if (c.hush && !c.hushed && this._playerWithin([c.a, c.b])) c.hushed = true;
                 continue;
             }
-            if (c.hushed) { this._chats.delete(oid); continue; }
+            if (c.hushed) { this._endChat(oid, c, 'hushed'); continue; }
             if (this.clockMs < c.nextAt) continue;
             const overlapEnd = c.queue ? A.job.useUntil : Math.min(A.job.useUntil, B.job.useUntil);
             // Order of preference (11.4): an unplayed exchange with the player in earshot, then a
@@ -3841,6 +3875,10 @@ export class NPCNeedsSystem {
                 else if (!ex) c.exDone = true;   // none for this pair: no need to look again this meeting
             }
             if (c.ex) {
+                // Hold the pair for the lines left, from when the next one can start
+                let rest = Math.max(0, this._speechUntil - this.clockMs);
+                for (const r of c.ex.lines.slice(c.ex.i)) rest += exchangeLineMs(r.text) + CHAT_GAP_MS;
+                this._holdExchange(c, A, B, rest);
                 if (!this._speechFree()) { c.nextAt = this._speechUntil; continue; }   // queue behind another line
                 const l = c.ex.lines[c.ex.i];
                 const ms = exchangeLineMs(l.text);
@@ -3848,6 +3886,7 @@ export class NPCNeedsSystem {
                 c.current = { speakerId: l.speakerId, partnerId, line: l.text, until: this.clockMs + ms, knot: c.ex.knot };
                 c.ex.i++;
                 const h = typeof this.world.playerHears === 'function' ? (this.world.playerHears(l.speakerId, c.overhearRadius || OVERHEAR_RADIUS) || {}) : {};
+                if (h.overheard) c.ex.heardLines++;
                 this._speak(l.speakerId, l.text, c.current.until, { topic: c.topic, objectId: oid, knot: c.ex.knot, overheard: !!h.overheard });
                 const pa = this.world.npcPos(partnerId);
                 if (pa) this.world.faceTo(l.speakerId, pa.x, pa.y);
@@ -4341,7 +4380,10 @@ export class NPCNeedsSystem {
             this._leaveQueue(s, 'need_met');
             return;
         }
-        if (this.clockMs - job.queuedAt >= this._queueCfg(obj).maxWaitMs) {
+        // The front of the queue in an exchange with the user waits for its end (_finishExchange
+        // then takes the exchange's length off the wait, as a conversation's freeze does)
+        const inEx = this._chats.get(job.targetId);
+        if (this.clockMs - job.queuedAt >= this._queueCfg(obj).maxWaitMs && !(inEx?.ex && inEx.b === s.npcId)) {
             s.cooldowns[job.targetId] = this.clockMs + QUEUE_COOLDOWN_MS;
             this._leaveQueue(s, 'max_wait');
             return;
