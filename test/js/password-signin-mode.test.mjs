@@ -890,10 +890,10 @@ test('R4 m2: the offset keeps Chrome\'s 1/64px layout step; a late image or font
     assert.match(src, /addEventListener\('loadingdone', snap\)/);
 });
 
-test('R4 n2: the short-window sign-in screen has 4px gaps', () => {
+test('R4 n2: the short-window sign-in screen has 4px gaps and 6px above and below', () => {
     const css = readFileSync(join(here, '../../public/break_escape/css/password-minigame.css'), 'utf8');
     const short = css.slice(css.indexOf('@media (max-height: 640px)'));
-    assert.match(short, /\.password-frame \.signin-mode \.signin-screen \{\s*gap: 4px;\s*padding: 8px;/);
+    assert.match(short, /\.password-frame \.signin-mode \.signin-screen \{\s*gap: 4px;\s*padding: 6px 8px;/);
 });
 
 test('R4 m2: unsnapInnerBoxes puts back the inline values; nothing to move gives nothing', () => {
