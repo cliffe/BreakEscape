@@ -126,7 +126,7 @@ Changes:
 
 ### m1, n1 to n4
 
-- m1 (`lighting.js`): both marks have a 1 px dark ring (0x1a1c2c) round the dot, 6 px locked and 8 px open, whole-pixel, NEAREST. One texture: the dot white, the ring dark; the variant tint multiplies the ring too, which keeps it near-black (blue tint: 0x060f2c). The open mark breathes between 0.8 and 1 (`indicatorBreathe`); ransom screens keep their own breathe. Contrast composited on the PNGs at each anchor (`m1-ring-contrast.json`, `m1-ring-contrast-sheet.png`), worst of ring or dot against each screen pixel round the mark: pc 3.42 locked, 4.01 open trough; pc3 9.23, 4.76; pc5 2.79, 4.48; pc6 5.64, 3.34; pc7 4.06, 3.17; pc9 6.25, 3.71; pc11 2.48, 4.49; every `_locked` picture 4.16 locked, 7.81 open trough. The reviewer's worst was 1.19. pc5 and pc11 with the locked mark on the base picture (the password-session case) stay under 3:1.
+- m1 (`lighting.js`): both marks have a 1 px dark ring (0x1a1c2c) round the dot, 6 px locked and 8 px open, whole-pixel, NEAREST. One texture: the dot white, the ring dark; the variant tint multiplies the ring too, which keeps it near-black (blue tint: 0x060f2c). The open mark breathes between 0.8 and 1 (`indicatorBreathe`); ransom screens keep their own breathe. Contrast composited on the PNGs at each anchor (`m1-ring-contrast.json`, `m1-ring-contrast-sheet.png`), for each screen pixel round the mark, the better of ring or dot; the worst over those pixels: pc 3.42 locked, 4.01 open trough; pc3 9.23, 4.76; pc5 2.79, 4.48; pc6 5.64, 3.34; pc7 4.06, 3.17; pc9 6.25, 3.71; pc11 2.48, 4.49; every `_locked` picture 4.16 locked, 7.81 open trough. The reviewer's worst was 1.19. pc5 and pc11 with the locked mark on the base picture (the password-session case) stay under 3:1.
 - n1: the last fallback is shifted so its box lies inside the room (`clampIntoRoom`). The sweep's outside count went from 144 to 0.
 - n2: `dropClearance` keeps only static and immovable bodies that touch the room grown by 16 px: 49 to 95 per room in test_access_work, from 980.
 - n3: "Switch on" at the rack power adds the hint "The rack powers up. The server network is back." (not re-shot live, see the handover).
@@ -157,7 +157,7 @@ Finishes the R2 round from the handover below.
 
 ### m1: dot contrast
 
-The locked mark is filled 0x7ab4ff (`dotColor`, the mark only); its light on the light map stays 0x3d8bff. A separate untinted ring would not help: the failing screen pixel is a mid tone, where both the near-black ring and the old blue fall under 3:1. Only a lighter fill lifts it. `s15f_ring_contrast.py` (session scratchpad, now with the new blue), worst mark-against-screen contrast:
+The locked mark is filled 0x7ab4ff (`dotColor`, the mark only); its light on the light map stays 0x3d8bff. A separate untinted ring would not help: the failing screen pixel is a mid tone, where both the near-black ring and the old blue fall under 3:1. Only a lighter fill lifts it. `s15f_ring_contrast.py` (session scratchpad, now with the new blue), for each screen pixel round the mark, the better of ring or dot; the worst over those pixels (raw PNGs, not the rendered game; see "Final fixes" for rendered pixels):
 
 | Picture | Locked | Open | Open trough (0.8) |
 |---|---|---|---|
@@ -188,6 +188,41 @@ Keyless headless server on :3365 from this worktree, 1400x1000 with scrollbars s
 - **n3** (2677): breaker "Flip it", rack "Switch on", then a second trip and a second "Switch on". Both times the hint "The rack powers up. The server network is back." shows and `servers_offline` goes false. A click with the rack on shows "The server rack is on."
 - **n4** (2676): the coffee and office copier sockets offer "Switch off" (global true, off hint). The next click offers "Switch the ... back on at the wall?" with "Switch on" / "Leave it" (global false, on hint), and the click after offers off again. **The kitchen copier socket could not be used live**: the bridge's interact and a real click both end at feet (-44, 199), 39.6 px from the socket (plain distance), and nothing opens. The socket sits on the kitchen's east wall column (x -40 to -16 unwalkable). The only kitchen feet in reach are near (-44, 207 to 265), and the walk does not go there. Not fixed, see the handover.
 - **After shots** (all at 1400x1000): `main-18-breaker-confirm`; `main-21-a` to `-e` (Ian's socket both ways); `main3-14-a`, `-b` (bench power); `main3-17-a` to `-c` (stores switch, wedge; 3x closeup); `main3-21-a` (office dots), `main3-21-b-dot-amara_pc-3x` (the open mark on a real away owner), `main3-21-c-locked-dot-tom_pc-3x` (the locked mark in its new blue); `main3-22-office_coffee_socket-3x`, `main3-22-office_copier_socket-3x`. The contrast sheet is `contrast-after/m1-ring-contrast-sheet.png` (10x), and the before sheet is in `contrast-before/`.
+
+## Final fixes (review R3)
+
+From `UX_SLICE15_REVIEW_R3.md` (0 blockers, 0 majors, 2 minors, 2 nits). All four fixed.
+
+- **m1, marks under the dark-room glows: fixed.** `lighting.js` has a new `emitterGlowDepth(indicator, above, objDepth)`: an indicator mark is at `LIGHT_DEPTH + 2`, above every glow (`above` glows stay at `LIGHT_DEPTH + 1`, others just in front of their object). Live, the mark is at 100002 and the highest other glow at 100001 in the switched-off office (205.56 lit), with no glow over the mark in either. Measuring the rendered pixels also showed that pc5's open mark in the lit office fell to 2.96:1 at the old breathe trough (0.8), so `INDICATOR_BREATHE_FLOOR` is now 0.85. Test: `lighting-workstation-indicators.test.mjs` (20 pass; new: the mark is above a dark-room screen glow, a lit-room glow and an `above` variant, and the render pass sets depth through the helper; the floor is 0.85).
+- **m2, kitchen copier socket: fixed.** `test_needs_sims` `kitchen_copier_socket` moves from y 6.4 to y 7.4, on the east wall beside the copier, level with the walkable column at its side. Real mouse clicks only, from the kitchen's middle (game 2767): one click on the socket walks the player to feet (274.3, 259.5), 29.9 px from it, and opens "Switch off the kitchen copier at the wall?"; a click on "Switch off" sets `kitchen_copier_off` with the off hint. The next click on the socket opens "Switch the kitchen copier back on at the wall?"; "Switch on" clears it with the on hint.
+- **n1: fixed.** The `pickupReachable` comment now states its rule (plain centre distance within range less margin, 30 px) and how it compares with `isObjectInInteractionRange`: stricter than `reachX` on purpose, with no wall check and no check that the stand point can be walked to from the player.
+- **n2: fixed.** The two contrast lines above now say "for each screen pixel round the mark, the better of ring or dot; the worst over those pixels".
+- Backlog: the reviewer's side note (a door click from across the lobby in test_access_work stopping 18 px from the post_room door, door closed) is in `docs/IDEAS_BACKLOG.md`, dated, marked not yet checked on main.
+
+### Rendered contrast
+
+Measured on screenshots of the game, the light map and glows under the mark, with the reviewer's script (`s15r3_dots.py`, and `s15z_precise.py` for more decimals and the exact trough). One office workstation takes each picture; the locked mark is the password-session case (locked mark on the base picture), the open mark is caught at its breathe trough (alpha 0.85 to 0.86, then recomposited at exactly 0.85). Measure: for each screen pixel round the mark, the better of ring or dot; the worst over those pixels.
+
+No test scenario with workstations starts with a dark room (test_behind_wall_fade has dark rooms, but no workstations), so the dark run switches the office off with `lightingSystem.switchOff('office')`, as the reviewer did (level 0 throughout).
+
+| Picture | Lit, locked | Lit, open (0.85) | Dark, locked | Dark, open (0.85) |
+|---|---|---|---|---|
+| pc | 3.31 | 3.27 | 15.01 | 8.17 |
+| pc5 | 3.91 | 3.03 | 13.54 | 7.71 |
+| pc6 | 7.75 | 4.83 | 16.29 | 9.72 |
+| pc7 | 5.26 | 3.37 | 14.70 | 7.92 |
+| pc11 | 3.58 | 3.55 | 13.93 | 7.45 |
+
+Every mark is at 3:1 or more. Before the floor change (games 2768 and 2769, trough 0.8): lit pc5 open 2.96, everything else 3.10 or more; lit pc locked was 3.17 on that run and 3.31 on this one (the screen glow's flicker moves the pixels round the mark). The dark run before this round, on the reviewer's measure, was 1.24 to 2.36. In the dark office the locked dot now renders #7ab4ff with a #0c142c ring, as in a lit room.
+
+### Final tests and proof
+
+- Tests: every test file that imports lighting.js or item-drop.js or reads test_needs_sims, plus the R3 reviewer's list: 40 files, 645 pass, 0 fail.
+- Validator `--no-graph` on test_needs_sims: 0 ❌, exit 0.
+- Keyless headless server on :3367 from this worktree, 1400x1000 with scrollbars shown, setFPS(20) with fixed steps on, stopped by its PID. New games via `tools/playtest/swap-scenario-game.rb` on host test_seating, all test_needs_sims: 2766 (kitchen geometry, socket at its old place), 2767 (start kitchen: m2 clicks), 2768 and 2769 (lit and dark marks, old floor), 2786 and 2787 (lit and dark marks, final), 2788 (main3-21, main3-22).
+- Shots (session scratchpad `ux-shots/slice15-final/`): `contrast-r3/final-m1-{lit,dark}-{pc,pc5,pc6,pc7,pc11}-{locked,open}-3x.webp`, `contrast-r3/final-m1-{lit,dark}-office.webp`, `contrast-r3/dots-{lit,dark}-sheet.png` with the contrast JSON; `final-m2-a-kitchen-socket-3x`, `final-m2-b-off-confirm`, `-c-switched-off`, `-d-on-confirm`, `-e-switched-on`; `main3-21-a` to `-c` and `main3-22-*` refreshed (game 2788). Scripts: `s15z_*.mjs`, `s15z_precise.py`.
+
+Commits: 9a4eebebd (mark depth, n1 comment), 27221b637 (kitchen socket), 04d5eac2b (breathe floor 0.85), and this log with the backlog line.
 
 ## Handover (R2 final)
 
