@@ -144,7 +144,60 @@ Keyless headless server on :3364 from this worktree, 1400x1000 with scrollbars s
 - The reviewer's 23-room sweep on game 2638, 77,964 calls: drops whose box reaches into the next room while the feet do not, 1302 to 3 (hall_c, one foot cell); on a door sprite 1902 to 1668 (feet already in a door strip); outside the room 144 to 0; unwalkable 0; furthest 23 px; `dropPoint` 0.1 ms at the 99th percentile, 0.6 ms at most; `dropClearance` 0.2 ms median.
 - `post_usb` dropped in the north strip stays visible in `usb_room` after a walk into the lobby and back (`m1-a-north-strip-drop-3x`, `m1-a-north-strip-after-walk-3x`).
 
-## Handover
+## R2 fixes, final
+
+Finishes the R2 round from the handover below.
+
+### M1: a strip drop is picked up from its own room
+
+- `item-drop.js`: new `pickupReachable(cell, deps)`. A cell counts only when some walkable feet cell whose feet are in the drop's room (`roomIdAtFeet`, the player's half height) has the player's sprite centre (feet minus the foot offset, 31 px) within 30 px of the drop centre: the arrival check's plain distance (32) with a 2 px margin. `dropPoint` takes it as `opts.reachable` and refuses a candidate it rejects (a hard refusal, before the door ranking). The final fallback, the feet cell, is not checked. `dropInventoryItem` builds the rule from the pathfinder and `window.interactionWalls.roomIdAtFeet`.
+- In the north strip (feet 47.9, 48.3 in `usb_room`) the aim (44, 60) and the feet cell (44, 52) are both refused: the feet cell's nearest own-room stand point puts the sprite centre 31 px away, one past the margin. The drop takes the up-right diagonal and lands at (52.5, 44), not the (44.5, 48) the handover expected. I kept the margin, since a real click picks this spot up.
+- `tap-pick.js`'s second pass (north of the object, within the full range) stays as a guard.
+- Unit test (`item-drop.test.mjs`, 26 pass): a strip where the cell below the last own-room feet row is in reach only from the next room. The aim is refused and the feet cell taken. With nothing reachable, the drop falls back to the feet cell. With no lookups, every cell counts.
+
+### m1: dot contrast
+
+The locked mark is filled 0x7ab4ff (`dotColor`, the mark only); its light on the light map stays 0x3d8bff. A separate untinted ring would not help: the failing screen pixel is a mid tone, where both the near-black ring and the old blue fall under 3:1. Only a lighter fill lifts it. `s15f_ring_contrast.py` (session scratchpad, now with the new blue), worst mark-against-screen contrast:
+
+| Picture | Locked | Open | Open trough (0.8) |
+|---|---|---|---|
+| pc | 5.29 | 7.07 | 4.01 |
+| pc3 | 8.91 | 8.44 | 4.76 |
+| pc5 | 3.16 | 6.01 | 4.48 |
+| pc6 | 5.45 | 5.16 | 3.34 |
+| pc7 | 3.92 | 4.13 | 3.17 |
+| pc9 | 6.04 | 5.72 | 3.71 |
+| pc11 | 3.56 | 6.28 | 4.49 |
+| pc8 | 5.22 | 9.94 | 7.01 |
+| every `_locked` picture | 6.44 | 12.26 | 7.81 |
+
+Every mark is at 3:1 or more; the lowest are pc5 locked (3.16) and pc7 open trough (3.17). Test: `lighting-workstation-indicators.test.mjs` 19 pass (new: the mark takes `dotColor`, the light keeps `color`, the open mark takes its colour).
+
+### R2 final tests
+
+- Every test file that imports item-drop, lighting or game.js, plus the R2 list: 41 files, 636 pass, 0 fail.
+- Validator `--no-graph`: test_needs_sims, test_access_networks, test_access_work, test_access_social: 0 ❌ each, exit 0.
+
+### R2 final live proof
+
+Keyless headless server on :3365 from this worktree, 1400x1000 with scrollbars shown, setFPS(20) with fixed steps on, stopped by its PID. New games via `tools/playtest/swap-scenario-game.rb` on host test_seating: 2675 and 2678 (test_access_work, unlock-all: drops, sweep), 2676 (test_needs_sims: sockets, dots), 2677 (test_access_networks, server_room: rack, breaker), 2692 (test_access_work, cable_room: main-21), 2693 (store_lobby: main3-17), 2694 (test_access_networks, workshop: main3-14). Shots and reports: session scratchpad `ux-shots/slice15-final/`; scripts `s15g_*.mjs`.
+
+- **North strip, real mouse click** (2675, `post_usb`): dropped from feet (47.9, 48.3), it lands at (52.5, 44) in `usb_room`. It stays through a walk into the lobby and back. A `page.mouse.click` on it from feet (44.4, -21.6) walks the player to (44, 45.9), still in `usb_room`, and picks it up (`final-north-strip-drop-3x`).
+- **Sweep, all 23 rooms loaded** (2678), three facings, 78,018 calls, with the game's rule: drops from feet standing in their own room that no own-room feet point can pick up (plain 32 px, no margin): **0 of 62,817**. The other 1,512 unpickable drops all come from feet cells inside the rectangle that `roomIdAtFeet` puts in the neighbouring room (its walk-behind strip), where the game drops into that other room. Unwalkable 0, outside the room 0, into the next room with the feet not 3 (hall_c, as before), furthest 23 px, `dropPoint` 0.3 ms at the 99th percentile and 2.5 ms at most (`report-final-sweep-2678.json`).
+- **South gap** (2675): with the south door closed, feet in its sprite are refused ("You are in a doorway", inventory-menu.js, on main). Walking on opens the door, and doors.js destroys an opened door's sprite and removes it from `doorSprites`. From feet (48.7, 290.7) in the open gap the drop is then allowed and lands at (52.5, 300), drawn on the black gap. A real click from (149, 200) walks there and picks it up (`final-south-gap-drop-3x`). **Open**, see the handover.
+- **n3** (2677): breaker "Flip it", rack "Switch on", then a second trip and a second "Switch on". Both times the hint "The rack powers up. The server network is back." shows and `servers_offline` goes false. A click with the rack on shows "The server rack is on."
+- **n4** (2676): the coffee and office copier sockets offer "Switch off" (global true, off hint). The next click offers "Switch the ... back on at the wall?" with "Switch on" / "Leave it" (global false, on hint), and the click after offers off again. **The kitchen copier socket could not be used live**: the bridge's interact and a real click both end at feet (-44, 199), 39.6 px from the socket (plain distance), and nothing opens. The socket sits on the kitchen's east wall column (x -40 to -16 unwalkable). The only kitchen feet in reach are near (-44, 207 to 265), and the walk does not go there. Not fixed, see the handover.
+- **After shots** (all at 1400x1000): `main-18-breaker-confirm`; `main-21-a` to `-e` (Ian's socket both ways); `main3-14-a`, `-b` (bench power); `main3-17-a` to `-c` (stores switch, wedge; 3x closeup); `main3-21-a` (office dots), `main3-21-b-dot-amara_pc-3x` (the open mark on a real away owner), `main3-21-c-locked-dot-tom_pc-3x` (the locked mark in its new blue); `main3-22-office_coffee_socket-3x`, `main3-22-office_copier_socket-3x`. The contrast sheet is `contrast-after/m1-ring-contrast-sheet.png` (10x), and the before sheet is in `contrast-before/`.
+
+## Handover (R2 final)
+
+Done: M1 reachability (pickupReachable, test, live click, sweep), m1 contrast (dotColor, test, table), n3 live, n4 office sockets live, after shots, tests, validator. Commits: 34babc840 (reachability), 14a2e310e (dot fill), and this log.
+
+Open:
+- **South gap after the door opens.** Opened doors leave `doorSprites`, so `dropBlockedReason` and the door ranking stop seeing the gap, and a drop from feet in the gap lands on the black gap (it can still be picked up). One way on: count opened doorways too, from door-gaps.js's provider (`calculateDoorPositionsForRoom`). The catch: the same rule would refuse the north-strip drop (feet 48.3 lie inside the lobby's north door rectangle, y 0 to 64) with "You are in a doorway". That is a design call for the orchestrator.
+- **Kitchen copier socket unreachable** (test_needs_sims, `kitchen_copier_socket` at x 9.05, y 6.4): neither the tap walk nor the bridge's approach reaches a stand point in range. Either move the socket (for example y 7.4, so feet at (-44, 236) are level with it) or have the stand-point search find the band below it. I did not check whether main behaves the same.
+
+## Handover (R2 fixes)
 
 R2 fix round stopped at the call budget. Done: M1 root cause (Lena, by design, as on main), the door and room ranking, the stand-point same-room rule, m1, n1 to n4, tests, validator, sweep.
 
