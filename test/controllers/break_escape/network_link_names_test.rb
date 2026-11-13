@@ -127,6 +127,42 @@ module BreakEscape
       assert_equal 'Network drop box: Bench switch', held['name']
     end
 
+    # A second drop box and a second jack in the workshop, beside bench_port (code review R1 n5, n4)
+    def two_jack_scenario(second_jack)
+      data = names_scenario
+      data['rooms']['lobby']['objects'] << NS::DROP_BOX.merge('id' => 'kit_dropbox2')
+      data['rooms']['workshop']['objects'] << { 'id' => 'bench_port_b', 'type' => 'pc', 'networkJack' => true }.merge(second_jack)
+      data
+    end
+
+    def plant_both
+      take_drop_box
+      post game_path('inventory'), params: { action_type: 'add', item: { type: 'pc', id: 'kit_dropbox2', name: 'Network drop box' } },
+                                   as: :json
+      assert_response :success, response.body
+      assert_response :success, plant('bench_port', 'kit_dropbox').inspect
+      body = plant('bench_port_b', 'kit_dropbox2')
+      assert_response :success, body.inspect
+      body
+    end
+
+    test 'two drop boxes in one room: the second adds its jack name, so the link items differ' do
+      build_network_game({}, two_jack_scenario('name' => 'Spare bench port'))
+      body = plant_both
+      assert_equal 'Drop box: Workshop', link_name('jack_bench_port')
+      assert_equal 'Drop box: Workshop, Spare bench port', link_name('jack_bench_port_b')
+      assert_equal 'Drop box: Workshop, Spare bench port', state['footholds']['jack_bench_port_b']['name']
+      assert_equal 'Drop box: Workshop, Spare bench port', body.dig('foothold', 'name')
+    end
+
+    test 'a jack with no name is named readably, never by its raw id' do
+      build_network_game({}, two_jack_scenario({}))
+      plant_both
+      assert_equal 'Drop box: Workshop, Bench port b', link_name('jack_bench_port_b')
+      source = network_view('jack_bench_port_b')['footholds'][0]['source']
+      assert_equal({ 'name' => 'Bench port b', 'room' => 'Workshop' }, source)
+    end
+
     test 'the view names the source object and its room for the subtitle' do
       build_network_game({}, names_scenario)
       take_drop_box

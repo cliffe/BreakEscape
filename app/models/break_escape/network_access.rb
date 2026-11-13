@@ -259,7 +259,9 @@ module BreakEscape
       player_state['footholds'][foothold_id] = {
         'via' => 'jack', 'network' => jack[:network], 'source' => jack_id, 'device' => copy, 'seq' => seq,
         'name' => jack[:object]['linkName'].presence ||
-                  default_link_name(LINK_DEVICE_WORDS[copy.is_a?(Hash) ? 'drop_box' : 'jack'], room_display_name(jack[:room_id]))
+                  distinct_link_name(foothold_id,
+                                     default_link_name(LINK_DEVICE_WORDS[copy.is_a?(Hash) ? 'drop_box' : 'jack'], room_display_name(jack[:room_id])),
+                                     readable_object_name(jack[:object], jack_id))
       }
       player_state['gainedFootholds'] = gained_footholds
       player_state['gainedFootholds'] << jack_id if first
@@ -502,7 +504,7 @@ module BreakEscape
       player_state['footholds'] = network_footholds
       seq = network_footholds.values.map { |f| f.is_a?(Hash) ? f['seq'].to_i : 0 }.max.to_i + 1
       record = { 'via' => 'implant', 'network' => network, 'source' => pc_id, 'seq' => seq,
-                 'name' => implant_link_name(action, shape, info), 'sprite' => implant_sprite(device_copy, info[:object]) }
+                 'name' => implant_link_name(foothold_id, action, shape, info), 'sprite' => implant_sprite(device_copy, info[:object]) }
       record['device'] = device_copy if device_copy.is_a?(Hash)
       player_state['footholds'][foothold_id] = record
       player_state['gainedFootholds'] = gained_footholds
@@ -542,12 +544,40 @@ module BreakEscape
       room_id.to_s.tr('_', ' ').gsub(/\b\w/, &:upcase)
     end
 
-    def implant_link_name(action, shape, info)
+    def implant_link_name(foothold_id, action, shape, info)
       authored = action[:name].presence || info[:object]['linkName'].presence
       return authored if authored.is_a?(String)
 
       word = LINK_DEVICE_WORDS[shape == 'dropped' ? 'dropped' : 'session']
-      default_link_name(word, room_display_name(info[:room_id]))
+      distinct_link_name(foothold_id, default_link_name(word, room_display_name(info[:room_id])),
+                         readable_object_name(info[:object], info[:object]['id']))
+    end
+
+    # Two footholds in one room would share a default name (code review R1 n5): the newer one
+    # adds its source object's name, "Drop box: Desks, Spare wall port", and a number only if
+    # that is taken too. An authored name is never changed.
+    def distinct_link_name(foothold_id, name, source_name)
+      taken = network_footholds.reject { |id, _f| id == foothold_id.to_s }
+                               .keys.map { |id| link_item_for(id)['name'] }
+      return name unless taken.include?(name)
+
+      named = source_name.present? ? "#{name}, #{source_name}" : name
+      return named unless taken.include?(named)
+
+      n = 2
+      n += 1 while taken.include?("#{named} #{n}")
+      "#{named} #{n}"
+    end
+
+    # An object's player-facing name (code review R1 n4): its name, a PC's host label, else its
+    # id with underscores as spaces and a capital first letter. Never the raw id.
+    def readable_object_name(object, fallback_id)
+      obj = object.is_a?(Hash) ? object : {}
+      named = obj['name'].presence || obj['host'].presence
+      return named if named.is_a?(String)
+
+      text = fallback_id.to_s.tr('_', ' ').strip
+      text.empty? ? nil : text.sub(/\A\w/, &:upcase)
     end
 
     def implant_no_action
@@ -701,7 +731,7 @@ module BreakEscape
       info = foothold['via'] == 'implant' ? find_login_pc(foothold['source']) : network_room_object(foothold['source'])
       return nil unless info && info[:object].is_a?(Hash)
 
-      { 'name' => info[:object]['name'].presence || foothold['source'].to_s, 'room' => room_display_name(info[:room_id]) }
+      { 'name' => readable_object_name(info[:object], foothold['source']), 'room' => room_display_name(info[:room_id]) }
     end
 
     # The per-foothold network blocks (5.1): one `up` entry per network in player_reach (the
