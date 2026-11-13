@@ -259,9 +259,8 @@ module BreakEscape
       player_state['footholds'][foothold_id] = {
         'via' => 'jack', 'network' => jack[:network], 'source' => jack_id, 'device' => copy, 'seq' => seq,
         'name' => jack[:object]['linkName'].presence ||
-                  distinct_link_name(foothold_id,
-                                     default_link_name(LINK_DEVICE_WORDS[copy.is_a?(Hash) ? 'drop_box' : 'jack'], room_display_name(jack[:room_id])),
-                                     readable_object_name(jack[:object], jack_id))
+                  distinct_link_name(default_link_name(LINK_DEVICE_WORDS[copy.is_a?(Hash) ? 'drop_box' : 'jack'], room_display_name(jack[:room_id])),
+                                     jack_id, room_objects_where(jack[:room_id]) { |obj| NetworkModel.jack?(obj) })
       }
       player_state['gainedFootholds'] = gained_footholds
       player_state['gainedFootholds'] << jack_id if first
@@ -504,7 +503,7 @@ module BreakEscape
       player_state['footholds'] = network_footholds
       seq = network_footholds.values.map { |f| f.is_a?(Hash) ? f['seq'].to_i : 0 }.max.to_i + 1
       record = { 'via' => 'implant', 'network' => network, 'source' => pc_id, 'seq' => seq,
-                 'name' => implant_link_name(foothold_id, action, shape, info), 'sprite' => implant_sprite(device_copy, info[:object]) }
+                 'name' => implant_link_name(action, shape, info), 'sprite' => implant_sprite(device_copy, info[:object]) }
       record['device'] = device_copy if device_copy.is_a?(Hash)
       player_state['footholds'][foothold_id] = record
       player_state['gainedFootholds'] = gained_footholds
@@ -544,29 +543,51 @@ module BreakEscape
       room_id.to_s.tr('_', ' ').gsub(/\b\w/, &:upcase)
     end
 
-    def implant_link_name(foothold_id, action, shape, info)
+    def implant_link_name(action, shape, info)
       authored = action[:name].presence || info[:object]['linkName'].presence
       return authored if authored.is_a?(String)
 
       word = LINK_DEVICE_WORDS[shape == 'dropped' ? 'dropped' : 'session']
-      distinct_link_name(foothold_id, default_link_name(word, room_display_name(info[:room_id])),
-                         readable_object_name(info[:object], info[:object]['id']))
+      implantable = NetworkModel.grant_foothold_actions(scenario_data).select { |a| a[:shape] == shape }.map { |a| a[:pc] }
+      distinct_link_name(default_link_name(word, room_display_name(info[:room_id])), info[:object]['id'],
+                         room_objects_where(info[:room_id]) { |obj| implantable.include?(obj['id'].to_s) })
     end
 
-    # Two footholds in one room would share a default name (code review R1 n5): the newer one
-    # adds its source object's name, "Drop box: Desks, Spare wall port", and a number only if
-    # that is taken too. An authored name is never changed.
-    def distinct_link_name(foothold_id, name, source_name)
-      taken = network_footholds.reject { |id, _f| id == foothold_id.to_s }
-                               .keys.map { |id| link_item_for(id)['name'] }
-      return name unless taken.include?(name)
+    # Two footholds in one room would share a default name (code review R1 n5). The decision
+    # rests on the scenario, never on what is held (code review R2 n1): when the source's room
+    # has more than one source of that kind (`peers`, in scenario order), every one of them adds
+    # its own name, "Drop box: Desks, Spare wall port", so a link reads the same however the
+    # player replants. Two peers with one readable name are numbered by their scenario order.
+    # An authored name never comes here.
+    def distinct_link_name(name, source_id, peers)
+      return name if peers.size <= 1
 
+      source = peers.find { |obj| obj['id'].to_s == source_id.to_s }
+      source_name = readable_object_name(source, source_id)
       named = source_name.present? ? "#{name}, #{source_name}" : name
-      return named unless taken.include?(named)
+      twins = peers.select { |obj| readable_object_name(obj, obj['id']) == source_name }
+      index = twins.index { |obj| obj['id'].to_s == source_id.to_s }.to_i
+      index.zero? ? named : "#{named} #{index + 1}"
+    end
 
-      n = 2
-      n += 1 while taken.include?("#{named} #{n}")
-      "#{named} #{n}"
+    # A room's objects (and their contents, as network_object_in walks them) that the block
+    # picks, in scenario order.
+    def room_objects_where(room_id, &pick)
+      room = room_data(room_id)
+      out = []
+      collect_room_objects(room.is_a?(Hash) ? room['objects'] : nil, out, &pick)
+      out
+    end
+
+    def collect_room_objects(list, out, &pick)
+      return unless list.is_a?(Array)
+
+      list.each do |obj|
+        next unless obj.is_a?(Hash)
+
+        out << obj if pick.call(obj)
+        collect_room_objects(obj['contents'], out, &pick) unless NetworkModel.sign_in_object?(obj)
+      end
     end
 
     # An object's player-facing name (code review R1 n4): its name, a PC's host label, else its

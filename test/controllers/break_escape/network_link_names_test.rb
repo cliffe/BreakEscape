@@ -146,13 +146,38 @@ module BreakEscape
       body
     end
 
-    test 'two drop boxes in one room: the second adds its jack name, so the link items differ' do
+    # The name rests on the scenario, not on what is held (code review R2 n1): with two jacks
+    # in the workshop, both links always carry their jack's name.
+    test 'two jacks in one room: each link adds its own jack name, so the link items differ' do
       build_network_game({}, two_jack_scenario('name' => 'Spare bench port'))
       body = plant_both
-      assert_equal 'Drop box: Workshop', link_name('jack_bench_port')
+      assert_equal 'Drop box: Workshop, Bench switch', link_name('jack_bench_port')
       assert_equal 'Drop box: Workshop, Spare bench port', link_name('jack_bench_port_b')
       assert_equal 'Drop box: Workshop, Spare bench port', state['footholds']['jack_bench_port_b']['name']
       assert_equal 'Drop box: Workshop, Spare bench port', body.dig('foothold', 'name')
+    end
+
+    test 'replanted in the other order, each jack keeps the name it had' do
+      build_network_game({}, two_jack_scenario('name' => 'Spare bench port'))
+      plant_both
+      unplug('bench_port')
+      assert_response :success, response.body
+      unplug('bench_port_b')
+      assert_response :success, response.body
+      assert_nil link_name('jack_bench_port')
+      assert_nil link_name('jack_bench_port_b')
+      assert_response :success, plant('bench_port_b', 'kit_dropbox').inspect
+      assert_equal 'Drop box: Workshop, Spare bench port', link_name('jack_bench_port_b'), 'planted alone, it still says which jack'
+      assert_response :success, plant('bench_port', 'kit_dropbox2').inspect
+      assert_equal 'Drop box: Workshop, Bench switch', link_name('jack_bench_port')
+      assert_equal 'Drop box: Workshop, Spare bench port', link_name('jack_bench_port_b')
+    end
+
+    test 'one jack in a room keeps the plain room name' do
+      build_network_game({}, names_scenario)
+      take_drop_box
+      plant('bench_port')
+      assert_equal 'Drop box: Workshop', link_name('jack_bench_port')
     end
 
     test 'a jack with no name is named readably, never by its raw id' do
@@ -161,6 +186,13 @@ module BreakEscape
       assert_equal 'Drop box: Workshop, Bench port b', link_name('jack_bench_port_b')
       source = network_view('jack_bench_port_b')['footholds'][0]['source']
       assert_equal({ 'name' => 'Bench port b', 'room' => 'Workshop' }, source)
+    end
+
+    test 'two jacks with one readable name are numbered by scenario order' do
+      build_network_game({}, two_jack_scenario('name' => 'Bench switch'))
+      plant_both
+      assert_equal 'Drop box: Workshop, Bench switch', link_name('jack_bench_port')
+      assert_equal 'Drop box: Workshop, Bench switch 2', link_name('jack_bench_port_b')
     end
 
     test 'the view names the source object and its room for the subtitle' do
