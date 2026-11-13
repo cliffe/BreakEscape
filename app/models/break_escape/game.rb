@@ -2305,7 +2305,15 @@ module BreakEscape
       return refusal.call('access list does not admit the guest') unless pc_admits_account?(pc, guest)
 
       auto_lock = effective_policy(pc)['autoLockMin']
-      return refusal.call('policy autoLockMin is 0') if auto_lock.is_a?(Numeric) && auto_lock.zero?
+      # Review R1 minor 2: a policy that locks outright never opens a guest session, so purge any
+      # stale record before refusing, as the locked-out and timed-out branches below do. Only
+      # reachable if a record predates a flip to autoLockMin 0, which static policies cannot do
+      # today; it keeps the three outright-refusal branches consistent if runtime policy ever lands.
+      if auto_lock.is_a?(Numeric) && auto_lock.zero?
+        end_guest_session_at!(pc['id'])
+        save!
+        return refusal.call('policy autoLockMin is 0')
+      end
       return refusal.call('a careful guest') if careful_guest?(guest)
       # Sub-slice L review R1 m1 (6.6): a guest who cannot sign in here left no session open.
       # Review R2 n2: the record goes too, as for a timed-out session, since it can never be claimed

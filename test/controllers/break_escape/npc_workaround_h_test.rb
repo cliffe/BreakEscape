@@ -251,6 +251,17 @@ module BreakEscape
       assert_equal 422, claim.status
     end
 
+    test 'R1 minor 2: an autoLockMin 0 claim refusal purges a stale guest record, as the locked-out and timed-out branches do' do
+      data = scenario
+      data['policies']['kiosk'] = { 'autoLockMin' => 0 }
+      data['rooms']['office']['objects'].find { |o| o['id'] == 'hot_desk' }['policy'] = 'kiosk'
+      # a record predating a flip to autoLockMin 0 (static policies cannot do this today, but the
+      # refusal still cleans it up so no stale record lingers for a later read)
+      build(data: data, player_state: { 'guestSessions' => { 'hot_desk' => 'ian' } })
+      assert_equal 422, claim.status
+      assert_empty state['guestSessions'], 'the refusal purges the stale guest record'
+    end
+
     test 'the guest claim succeeds with a guest record and nobody signed in' do
       build
       borrow_done!
