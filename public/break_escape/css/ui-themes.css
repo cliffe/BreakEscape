@@ -648,6 +648,87 @@
   50% { filter: drop-shadow(0 0 4px var(--ui-danger)); }
 }
 
+/* Phone width (UX slice 4 R1 M3): the group shrinks to the avatar ring, so
+   four slots fit beside it, and health sits above the ring. Fixed, because the
+   strip scrolls and would clip anything drawn above it. */
+@media (max-width: 480px) {
+  [data-ui-theme] #inventory-container {
+    padding: 0 8px;
+  }
+
+  [data-ui-theme] #player-hud-buttons,
+  [data-ui-theme][data-health-style="bar"] #player-hud-buttons {
+    width: 80px;
+    margin-right: 4px !important;
+  }
+
+  [data-ui-theme] #player-hud-buttons #health-ui-container,
+  [data-ui-theme][data-health-style="bar"] #player-hud-buttons #health-ui-container {
+    position: fixed;
+    left: 8px;
+    top: auto;
+    bottom: calc(108px + var(--tray-scrollbar, 0px));
+  }
+}
+
+/* The "more" cue at the strip's right edge while slots are out of view
+   (inventory.js updateTrayOverflow): the small button skin with the theme's
+   chevron turned to point right, or left once the strip is at its end. */
+#inventory-more {
+  position: fixed;
+  z-index: 1001;
+  width: calc(44px * var(--hud-zoom, 1));
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border-style: solid;
+  border-width: var(--ui-small-button-px, 2px);
+  border-image-source: var(--ui-small-button-image, none);
+  border-image-slice: var(--ui-small-button-slice, 2) fill;
+  border-image-width: var(--ui-small-button-px, 2px);
+  border-radius: 0;
+  background: none;
+  image-rendering: pixelated;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+#inventory-more[hidden] {
+  display: none;
+}
+
+#inventory-more::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(28px * var(--hud-zoom, 1));
+  height: calc(16px * var(--hud-zoom, 1));
+  margin: calc(-8px * var(--hud-zoom, 1)) 0 0 calc(-14px * var(--hud-zoom, 1));
+  background: url('/break_escape/assets/icons/chevron-down.png') no-repeat 0 0 / 100% 100%;
+  image-rendering: pixelated;
+  transform: rotate(-90deg);
+}
+
+#inventory-more[data-side="left"]::before {
+  transform: rotate(90deg);
+}
+
+#inventory-more:hover {
+  filter: brightness(1.2) var(--ui-glow-filter, brightness(1));
+}
+
+/* Room at the strip's end for the cue, so the last slot scrolls clear of it */
+#inventory-container.tray-overflows {
+  padding-right: 52px;
+}
+
+/* A classic scrollbar (desktop) takes height from the strip: add it back
+   (inventory.js measures it into --tray-scrollbar) */
+[data-ui-theme] #inventory-container.pixel-scroll {
+  height: calc(108px + var(--tray-scrollbar, 0px));
+}
+
 
 
 /* ===================================================================

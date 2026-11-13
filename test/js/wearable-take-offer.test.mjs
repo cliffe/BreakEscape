@@ -25,7 +25,7 @@ const stubs = {
     './unlock-system.js': 'export function handleUnlock(){}',
     './doors.js': 'export function handleDoorInteraction(){}',
     './biometrics.js': 'export function collectFingerprint(){} export function handleBiometricScan(){}',
-    './inventory.js': 'export function addToInventory(s){ window.__added.push(s.scenarioData.id); return Promise.resolve(window.__addResult); } export function createItemIdentifier(){return "";}',
+    './inventory.js': 'export function addToInventory(s){ window.__added.push(s.scenarioData.id); if (window.__addResult?.reason === "added") window.inventory.items.push({ scenarioData: s.scenarioData }); return Promise.resolve(window.__addResult); } export function createItemIdentifier(){return "";}',
     './ui-sounds.js': 'export function playUISound(){} export function playGameSound(){}',
     './apply-actions.js': 'export function applyActions(){}',
     '../utils/conditional-text.js': 'export function resolveObjectField(obj,key){ return obj ? obj[key] : undefined; }',
@@ -67,13 +67,17 @@ function rig(result = { ok: true, reason: 'added' }) {
         inventory: { items: [] },
         __added: [],
         __addResult: result,
+        __skip: null,
         gameAlert: () => {},
+        __announced: [],
+        announcePickup: (sprite) => window.__announced.push(sprite.scenarioData.id),
         showInteractionMenu: (...a) => menus.push(a),
         maybeShowObjectActionMenu: undefined,
         player: { x: 0, y: 0 },
         wearables: {
             wearableSpec: (d) => (d?.wearable ? d.wearable : null),
             offerAfterTake: (id) => { offers.push(id); return Promise.resolve(true); },
+            offerSkipReason: () => window.__skip ?? null,
             toggle: () => { throw new Error('a world click must not put it on'); }
         }
     });
@@ -122,4 +126,45 @@ test('a held wearable is not offered: its click is the tray toggle', async () =>
     assert.equal(toggled, 1);
     assert.deepEqual(offers, []);
     assert.deepEqual(window.__added, []);
+});
+
+// UX slice 4 R1 m6: the offer opens "Taken: <name>.", so it is the take's announcement
+test('the offer replaces the "Picked up" toast; a take with no offer still gets the toast', async () => {
+    let r = rig();
+    handleObjectInteraction(worldSprite({ wearable: WEAR, droppable: true }));
+    await tick();
+    assert.deepEqual(r.offers, ['vest']);
+    assert.deepEqual(window.__announced, [], 'no toast beside the offer');
+    // Watched (or busy, or offered before): no offer, so the toast says it was taken
+    r = rig();
+    window.__skip = 'watched';
+    handleObjectInteraction(worldSprite({ wearable: WEAR, droppable: true }));
+    await tick();
+    assert.deepEqual(window.__announced, ['vest']);
+    // Any other item: the toast as before
+    r = rig();
+    handleObjectInteraction(worldSprite());
+    await tick();
+    assert.deepEqual(window.__announced, ['vest']);
+    assert.deepEqual(r.offers, []);
+});
+
+// UX slice 4 R1 m7 item 3: only the world take asks. Gifts (give_item, an NPC's give, a
+// container take, a reload restore) add the item through addToInventory and never reach
+// offerAfterTake, so a scenario's own wear action is never raced by a question.
+test('gifts never offer: offerAfterTake has one caller, the world take in interactions.js', async () => {
+    const { readdirSync, statSync } = await import('node:fs');
+    const callers = [];
+    const walk = (dir) => {
+        for (const name of readdirSync(dir)) {
+            const p = join(dir, name);
+            if (statSync(p).isDirectory()) walk(p);
+            else if (name.endsWith('.js') && !p.endsWith(join('systems', 'wearables.js'))
+                && readFileSync(p, 'utf8').includes('offerAfterTake')) callers.push(p.slice(js.length + 1));
+        }
+    };
+    walk(js);
+    assert.deepEqual(callers, [join('systems', 'interactions.js')]);
+    const src = readFileSync(join(js, 'systems/interactions.js'), 'utf8');
+    assert.equal(src.split('offerAfterTake').length - 1, 1, 'called once, in the world take');
 });

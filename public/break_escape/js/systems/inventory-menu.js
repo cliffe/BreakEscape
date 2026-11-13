@@ -8,10 +8,11 @@
  *   droppable wearable                 "Put on" or "Take off", "Drop here", "Examine"
  *   droppable, no triggerOnInteract    "Drop here", "Examine"
  *   droppable with triggerOnInteract   "Use" (useLabel overrides the word), "Drop here", "Examine"
+ *   wearable, not droppable, with text "Put on" or "Take off", "Examine"
  *   everything else                    no menu: the click does what it did before
  *
- * A wearable that is not droppable (the lab's hi-vis vest) has no menu: its click puts it
- * on or takes it off (wearables.js). A wearable's actions live here only (UX slice 4, q91):
+ * A wearable that is not droppable and has no observations has no menu: its click puts it
+ * on or takes it off (wearables.js). Each entry has an icon (inventoryMenuIcon). A wearable's actions live here only (UX slice 4, q91):
  * a click in the world takes it, and the first take asks once whether to put it on now. A worn wearable under unseenOnly is not dropped while
  * someone in the room is watching.
  *
@@ -29,7 +30,7 @@
  * tested in node.
  */
 import { isDroppableInventoryItem, dropInventoryItem } from './item-drop.js';
-import { showInteractionMenu } from '../ui/interaction-menu.js';
+import { showInteractionMenu, menuIconsBase } from '../ui/interaction-menu.js';
 
 // interactions.js takes the chain's drop test and the drop itself from here, so the
 // menu and the chain read the same functions.
@@ -87,7 +88,16 @@ export function inventoryMenuFor(sprite, ctx = {}) {
     if (!data) return null;
 
     const items = ctx.inventoryItems ?? (typeof window !== 'undefined' ? window.inventory?.items : undefined);
-    if (!isDroppableInventoryItem(sprite, items)) return null;
+    const ctxWindow = ctx.window ?? (typeof window !== 'undefined' ? window : {});
+    const wearLabel = ctxWindow.wearables?.menuLabel?.(data, ctxWindow);
+    if (!isDroppableInventoryItem(sprite, items)) {
+        // A wearable that cannot be dropped (the lab's carried vest) still has two things
+        // to do when it has something to read: put it on or take it off, and Examine
+        // (UX slice 4 R1 m5). With nothing to read its click stays the one toggle.
+        const hasText = typeof data.observations === 'string' && data.observations.trim();
+        if (wearLabel && hasText) return [{ id: 'use', label: wearLabel }, { id: 'examine', label: 'Examine' }];
+        return null;
+    }
 
     const blocked = 'dropBlocked' in ctx ? ctx.dropBlocked : dropBlockedReason();
     const drop = blocked
@@ -96,8 +106,6 @@ export function inventoryMenuFor(sprite, ctx = {}) {
     const entries = [];
     // A wearable's first entry puts it on or takes it off (wearables.js); "Use" maps to the
     // click, which interactions.js routes to the wearable before any triggerOnInteract
-    const ctxWindow = ctx.window ?? (typeof window !== 'undefined' ? window : {});
-    const wearLabel = ctxWindow.wearables?.menuLabel?.(data, ctxWindow);
     if (wearLabel) {
         entries.push({ id: 'use', label: wearLabel });
     } else if (hasTriggerOnInteract(data)) {
@@ -106,6 +114,27 @@ export function inventoryMenuFor(sprite, ctx = {}) {
     }
     entries.push(drop, { id: 'examine', label: 'Examine' });
     return entries;
+}
+
+// The menu draws icons in a 64px box (ui/interaction-menu.js)
+const MENU_ICON_BOX = 64;
+
+/**
+ * The icon of one tray menu entry (UX slice 4 R1 m1): the item's own tray picture for the
+ * entry that uses it (Put on, Take off, Use), and the shared menu icons for Drop here and
+ * Examine. Drawn at a whole-number scale (or an exact halving for a large picture), so
+ * pixel art stays crisp. Undefined when there is nothing to draw.
+ */
+export function inventoryMenuIcon(id, el) {
+    if (id === 'drop') return { src: `${menuIconsBase()}/menu-drop.png`, width: 64, height: 64 };
+    if (id === 'examine') return { src: `${menuIconsBase()}/menu-examine.png`, width: 64, height: 64 };
+    if (id !== 'use' || !el?.src) return undefined;
+    const w = el.naturalWidth || 0;
+    const h = el.naturalHeight || 0;
+    if (!(w > 0 && h > 0)) return { src: el.src };
+    const big = Math.max(w, h);
+    const scale = big <= MENU_ICON_BOX ? Math.floor(MENU_ICON_BOX / big) : 1 / Math.ceil(big / MENU_ICON_BOX);
+    return { src: el.src, width: Math.round(w * scale), height: Math.round(h * scale) };
 }
 
 /** The top centre of a tray item, for a menu opened with no pointer; undefined when it has no box. */
@@ -158,6 +187,7 @@ export function openInventoryItemMenu(el, clientX, clientY, deps = {}) {
     // with keys 1 to 9 picking an entry
     const show = deps.showInteractionMenu ?? showInteractionMenu;
     show(entries.map(e => ({
+        icon: inventoryMenuIcon(e.id, el),
         label: e.label,
         detail: e.disabled ? e.reason : undefined,
         disabled: !!e.disabled,

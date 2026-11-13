@@ -1992,10 +1992,17 @@ export function handleObjectInteraction(sprite) {
         // Every pickup says so ("Picked up <name>"), not only the few types with a
         // toast of their own (inventory.js announcePickup)
         Promise.resolve(added).then(res => {
-            window.announcePickup?.(sprite, res);
             // A wearable taken for the first time asks once whether to put it on now
-            // (UX slice 4, q91); it is put on, taken off, dropped and examined from the tray
-            if (res?.ok && res.reason === 'added' && data.wearable) {
+            // (UX slice 4, q91); it is put on, taken off, dropped and examined from the tray.
+            // That offer opens "Taken: <name>.", so it is the take's announcement and no
+            // "Picked up" toast is shown beside it (UX slice 4 R1 m6)
+            const offered = res?.ok && res.reason === 'added' && data.wearable;
+            const held = offered && typeof window.wearables?.offerSkipReason === 'function'
+                ? (window.inventory?.items || []).find(i => i?.scenarioData?.id === data.id) : null;
+            if (!(held && window.wearables.offerSkipReason(held) === null)) {
+                window.announcePickup?.(sprite, res);
+            }
+            if (offered) {
                 window.wearables?.offerAfterTake?.(data.id)?.catch?.(e => console.warn('[Interaction] wear offer failed:', e));
             }
         });

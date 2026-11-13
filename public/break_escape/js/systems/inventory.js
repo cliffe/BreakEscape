@@ -154,7 +154,123 @@ export function refreshInventoryTray() {
         const name = item.scenarioData?.name || item.scenarioData?.type || 'item';
         window.gameAlert?.(`Added to ${holderName(items, holderId)}: ${name}`, 'info', '', 3000);
     }
+    refreshHoveredLabel(items);
     window.eventDispatcher?.emit('inventory_changed', { items });
+}
+
+// The hover label is set on mouseenter; a change while the pointer rests on the item
+// (a wearable put on or taken off) would leave it stale, so the refresh sets it again
+// (UX slice 4 R1 m2)
+function refreshHoveredLabel(items) {
+    const hovered = items.find(item => {
+        try { return item?.matches?.(':hover') === true; } catch { return false; }
+    });
+    if (hovered?.scenarioData) setHudLabel(inventoryHoverLabel(hovered.scenarioData));
+}
+
+// ---------------------------------------------------------------------------
+// The tray at narrow widths (UX slice 4 R1 M3): when the slots run past the
+// strip's end, a "more" cue sits at its right edge. Tapping it scrolls one page
+// on, or back to the start once at the end. A slot added for a take is scrolled
+// into view, so a fresh take is never off screen.
+// ---------------------------------------------------------------------------
+
+export const TRAY_OVERFLOW_CLASS = 'tray-overflows';
+const TRAY_MORE_ID = 'inventory-more';
+
+/** Whether the strip has slots out of view: 'right', 'left' (scrolled to the end) or null. */
+export function trayOverflowSide(container) {
+    if (!container) return null;
+    const hidden = container.scrollWidth - container.clientWidth;
+    if (!(hidden > 1)) return null;
+    return container.scrollLeft < hidden - 1 ? 'right' : 'left';
+}
+
+function trayMoreButton(container) {
+    let btn = document.getElementById(TRAY_MORE_ID);
+    if (btn || !container?.parentNode) return btn;
+    btn = document.createElement('button');
+    btn.id = TRAY_MORE_ID;
+    btn.type = 'button';
+    btn.hidden = true;
+    btn.setAttribute('aria-label', 'More items');
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const side = trayOverflowSide(container);
+        if (side === 'right') container.scrollBy({ left: Math.max(68, container.clientWidth - 140), behavior: 'auto' });
+        else if (side === 'left') container.scrollTo({ left: 0, behavior: 'auto' });
+        updateTrayOverflow();
+    });
+    btn.addEventListener('mouseenter', () => setHudLabel(btn.getAttribute('aria-label')));
+    btn.addEventListener('mouseleave', () => clearHudLabel());
+    container.parentNode.insertBefore(btn, container.nextSibling);
+    return btn;
+}
+
+/** Show, place or hide the "more" cue for the strip's current scroll. */
+export function updateTrayOverflow() {
+    if (typeof document === 'undefined') return null;
+    const container = document.getElementById('inventory-container');
+    if (!container) return null;
+    let side = trayOverflowSide(container);
+    container.classList.toggle(TRAY_OVERFLOW_CLASS, !!side);
+    // The class adds end padding, which can change the scroll width: read it again
+    side = trayOverflowSide(container);
+    // A classic scrollbar takes height from the strip; the CSS adds it back
+    const bar = Math.max(0, container.offsetHeight - container.clientHeight);
+    const barPx = `${bar}px`;
+    if (document.documentElement.style.getPropertyValue('--tray-scrollbar') !== barPx) {
+        document.documentElement.style.setProperty('--tray-scrollbar', barPx);
+    }
+    const btn = trayMoreButton(container);
+    if (!btn) return side;
+    btn.hidden = !side;
+    if (side) {
+        btn.dataset.side = side;
+        btn.setAttribute('aria-label', side === 'right' ? 'More items' : 'Back to the first items');
+        // As tall as a slot and level with the slots, at the strip's right end
+        const r = container.getBoundingClientRect();
+        const slotBox = container.querySelector('.inventory-slot')?.getBoundingClientRect();
+        const top = slotBox?.height ? slotBox.top : r.top;
+        const height = slotBox?.height ? slotBox.height : r.height;
+        btn.style.top = `${Math.round(top)}px`;
+        btn.style.height = `${Math.round(height)}px`;
+        btn.style.left = `${Math.round(r.right - btn.getBoundingClientRect().width)}px`;
+    }
+    return side;
+}
+
+/** Scroll the strip so this slot is fully in view, clear of the cue. */
+export function revealTraySlot(slot) {
+    const container = slot?.parentElement;
+    if (!container || container.id !== 'inventory-container') return;
+    updateTrayOverflow();
+    // The last slot: scroll to the very end, so nothing is left to the right
+    if (slot === container.lastElementChild) {
+        container.scrollLeft = container.scrollWidth;
+        updateTrayOverflow();
+        return;
+    }
+    const c = container.getBoundingClientRect();
+    const s = slot.getBoundingClientRect();
+    const btn = document.getElementById(TRAY_MORE_ID);
+    const cue = btn && !btn.hidden ? btn.getBoundingClientRect().width : 0;
+    const zoom = c.width && container.offsetWidth ? c.width / container.offsetWidth : 1;
+    if (s.right > c.right - cue) container.scrollLeft += (s.right - (c.right - cue) + 4) / zoom;
+    else if (s.left < c.left) container.scrollLeft -= (c.left - s.left + 4) / zoom;
+    updateTrayOverflow();
+}
+
+let trayOverflowWatched = null;
+function watchTrayOverflow(container) {
+    if (!container || trayOverflowWatched === container) return;
+    trayOverflowWatched = container;
+    container.addEventListener('scroll', () => updateTrayOverflow(), { passive: true });
+    if (typeof MutationObserver !== 'undefined') {
+        new MutationObserver(() => updateTrayOverflow()).observe(container, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+    }
+    window.addEventListener?.('resize', () => updateTrayOverflow());
+    updateTrayOverflow();
 }
 
 /**
@@ -205,6 +321,7 @@ export function initializeInventory() {
     
     // Store reference to container
     window.inventory.container = inventoryContainer;
+    watchTrayOverflow(inventoryContainer);
     
     // Add notepad to inventory
     addNotepadToInventory();
@@ -937,6 +1054,8 @@ export async function addToInventory(sprite) {
         // Apply pulse animation to the slot instead of showing notification
         // (not to a filed item's hidden slot: its arrival was a toast)
         if (!slot.classList.contains(TRAY_HIDDEN_CLASS)) {
+            // A narrow strip scrolls: bring the new slot into view (UX slice 4 R1 M3)
+            if (!trayRestored.has(itemImg)) revealTraySlot(slot);
             slot.classList.add('pulse');
             // Remove the pulse class after the animation completes
             setTimeout(() => {
@@ -1407,7 +1526,7 @@ window.removeFromInventory = removeFromInventory;
 window.addNotepadToInventory = addNotepadToInventory;
 window.createItemIdentifier = createItemIdentifier;
 window.handleKeyRingInteraction = handleKeyRingInteraction;
-window.updatePhoneBadge = updatePhoneBadge; window.refreshInventoryTray = refreshInventoryTray;
+window.updatePhoneBadge = updatePhoneBadge; window.refreshInventoryTray = refreshInventoryTray; window.updateTrayOverflow = updateTrayOverflow;
 window.registerTrayRule = registerTrayRule;
 window.showServerItem = showServerItem;
 window.syncInventoryFromServer = syncInventoryFromServer;
