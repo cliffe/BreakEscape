@@ -700,3 +700,14 @@
 .share-folder-files .empty-contents {
     color: #404040;
 }
+
+/* File names in the folder window wrap anywhere (a name like "backup_readme.txt" has no
+   space to break at, and was cut off at the slot's width) */
+.container-contents-grid.share-folder-files {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+}
+
+.share-folder-files .container-content-label {
+    width: 152px;
+    overflow-wrap: anywhere;
+}
