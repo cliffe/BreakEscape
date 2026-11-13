@@ -6,7 +6,7 @@ import { escapeHtml } from '../../utils/escape-html.js';
 import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } from '../../utils/lock-scope-refusal.js';
 import { isComputerType } from '../../utils/computer-keywords.js';
-import { mountPcMonitor, cssZoomOf } from '../../utils/pc-monitor.js';
+import { mountPcMonitor, cssZoomOf, PC_POSTIT_BUTTON_LABEL, pcPostitButtonHtml } from '../../utils/pc-monitor.js';
 import { headshotCandidates, headshotKeys, noteMissingHeadshot, npcRecordFor, headshotSourceFor, applyHeadshotBox,
     SHORT_PORTRAIT_PX, TILE_PORTRAIT_PX, isTalkSheetSize, portraitCropOverride, headCropOffset, frameAlphaReader } from '../../utils/npc-headshot.js';
 // The portrait crop helpers live with the headshots (UX slice 2c R1 m8: the desktop bar
@@ -518,7 +518,12 @@ export class PasswordMinigame extends MinigameScene {
             const notebookBtn = document.createElement('button');
             notebookBtn.className = 'minigame-button';
             notebookBtn.id = 'minigame-notebook-postit';
-            notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
+            if (this.pcMonitor) {
+                notebookBtn.title = PC_POSTIT_BUTTON_LABEL;
+                notebookBtn.innerHTML = pcPostitButtonHtml();
+            } else {
+                notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
+            }
             this.ensureControlsRow()?.appendChild(notebookBtn);
         }
         
@@ -1491,7 +1496,12 @@ export class PasswordMinigame extends MinigameScene {
                 const notebookBtn = document.createElement('button');
                 notebookBtn.className = 'minigame-button';
                 notebookBtn.id = 'minigame-notebook-postit';
-                notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
+                if (this.pcMonitor) {
+                    notebookBtn.title = PC_POSTIT_BUTTON_LABEL;
+                    notebookBtn.innerHTML = pcPostitButtonHtml();
+                } else {
+                    notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
+                }
                 controls.appendChild(notebookBtn);
                 this.addEventListener(notebookBtn, 'click', () => this.addPostitToNotebook());
             }

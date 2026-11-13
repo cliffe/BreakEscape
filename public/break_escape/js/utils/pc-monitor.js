@@ -7,7 +7,7 @@
  * moves the monitor.
  *
  * The monitor is the whole window: the X sits in the bezel's top strip, the footer buttons
- * (Add to Notepad) in its chin, and the PC's post-it is stuck on the chin just under the
+ * (Add Postit to notepad) in its chin, and the PC's post-it is stuck on the chin just under the
  * screen. The chin grows to hold the note's measured height (R1 M1), and that height is
  * kept per PC for the current window size, so a view of the same PC without the note (a share window)
  * keeps the same frame.
@@ -52,8 +52,24 @@ export const PC_BEZEL = Object.freeze({
 export const PC_POSTIT_INSET = Object.freeze({ full: 24, compact: 12 });
 export const PC_POSTIT_GAP = 4;
 
-/** The chin's right part kept clear of the note: Add to Notepad, the power light and the padding. */
-export const PC_CHIN_BUTTON_ROOM = 190;
+/**
+ * The chin's right part kept clear of the note: the "Add Postit to notepad" button (212px
+ * wide in the full bezel, 204px in the compact one, measured in a browser), the power light,
+ * the padding to the bezel's edge and a gap to the note. A narrow frame (a phone) hides the
+ * light, which gives that room back.
+ */
+export const PC_CHIN_BUTTON_ROOM = Object.freeze({ full: 254, compact: 238, narrow: 222 });
+
+/** The narrowest the note's column gets when the chin is short of room (the note wraps instead). */
+export const PC_POSTIT_MIN_WIDTH = 96;
+
+/** The chin button's label: it adds the post-it, so it is not the file reader's "Add to Notepad". */
+export const PC_POSTIT_BUTTON_LABEL = 'Add Postit to notepad';
+
+/** The chin button's inner HTML (icon and label), the one wording for every PC view. */
+export function pcPostitButtonHtml() {
+    return `<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> ${PC_POSTIT_BUTTON_LABEL}`;
+}
 
 /** The room left between the note's bottom and the bezel's outline. */
 export const PC_POSTIT_CLEAR = 2;
@@ -123,12 +139,12 @@ export function pcMonitorMetrics(viewW, viewH, { postitHeight = 0 } = {}) {
     // The screen's bottom edge on the frame: the bezel's 2px outline, the strip, the rim,
     // the screen and the rim again
     const screenBottom = 3 * PC_FRAME_EDGE + bezel.top + height;
-    // As wide as the chin allows left of Add to Notepad (about 190px with the light and the
+    // As wide as the chin allows left of Add Postit to notepad (with the light and the
     // padding), so the note takes fewer lines and the chin stays low
     const postit = {
         left: bezel.side + inset,
         top: screenBottom + PC_POSTIT_GAP,
-        maxWidth: Math.max(120, Math.min(340, outerW - (bezel.side + inset) - PC_CHIN_BUTTON_ROOM))
+        maxWidth: Math.max(PC_POSTIT_MIN_WIDTH, Math.min(340, outerW - (bezel.side + inset) - (narrow ? PC_CHIN_BUTTON_ROOM.narrow : compact ? PC_CHIN_BUTTON_ROOM.compact : PC_CHIN_BUTTON_ROOM.full)))
     };
     const uiScale = Math.max(1, Math.floor(Math.min(width / PC_UI_BASE.width, height / PC_UI_BASE.height)));
     return { compact, narrow, short, uiScale, bezel, screen: { width, height }, width: outerW, height: outerH, left, top, postit };

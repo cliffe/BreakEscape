@@ -129,6 +129,11 @@
     max-width: calc(100% - 2 * var(--pc-bezel-side, 12px) - 38px);
 }
 
+/* A phone's chin has no room to spare: the light goes, the button takes its place */
+.pc-monitor[data-narrow] .pc-monitor-led {
+    display: none;
+}
+
 .pc-monitor-led {
     order: 2;
     flex: 0 0 auto;
@@ -309,6 +314,8 @@
     z-index: 6;
     box-sizing: border-box;
     width: max-content;
+    /* A long word (a password) is never cut by the max-width the frame sets */
+    min-width: min-content;
     padding: 10px 14px;
     font-size: 18px;
     line-height: 20px;

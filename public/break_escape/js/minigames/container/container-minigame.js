@@ -8,7 +8,7 @@ import { resolveObjectField } from '../../utils/conditional-text.js';
 import { escapeHtml } from '../../utils/escape-html.js';
 import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { mentionsComputer } from '../../utils/computer-keywords.js';
-import { mountPcMonitor, cssZoomOf, postitNotebookEntry } from '../../utils/pc-monitor.js';
+import { mountPcMonitor, cssZoomOf, postitNotebookEntry, PC_POSTIT_BUTTON_LABEL, pcPostitButtonHtml } from '../../utils/pc-monitor.js';
 import { MORE_BELOW_TEXT } from '../../utils/more-below.js';
 import { applyHeadshotBox, npcRecordFor, headshotSourceFor } from '../../utils/npc-headshot.js';
 
@@ -782,7 +782,12 @@ export class ContainerMinigame extends MinigameScene {
             const notebookBtn = document.createElement('button');
             notebookBtn.className = 'minigame-button';
             notebookBtn.id = 'minigame-notebook-postit';
-            notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
+            if (this.pcMonitor) {
+                notebookBtn.title = PC_POSTIT_BUTTON_LABEL;
+                notebookBtn.innerHTML = pcPostitButtonHtml();
+            } else {
+                notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
+            }
             // Insert before the cancel button (first child in controls)
             controls.insertBefore(notebookBtn, controls.firstChild);
         }

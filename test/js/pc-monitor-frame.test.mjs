@@ -37,7 +37,7 @@ globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const imp = (rel) => import(pathToFileURL(join(dir, rel)));
 const { pcMonitorMetrics, pcViewSpace, mountPcMonitor, resetPostitHeights, keptPostitHeight, keepPostitHeight, keptPostitCount, cssZoomOf, PC_BEZEL, PC_SCREEN_ASPECT, PC_PORTRAIT_ASPECT, PC_SCREEN_MIN,
-    PC_POSTIT_GAP, PC_POSTIT_CLEAR, PC_FRAME_EDGE } = await imp('utils/pc-monitor.js');
+    PC_POSTIT_GAP, PC_POSTIT_CLEAR, PC_FRAME_EDGE, PC_POSTIT_BUTTON_LABEL, pcPostitButtonHtml } = await imp('utils/pc-monitor.js');
 const { headshotKeys, headshotCandidates, headshotUrl, characterKey, noteMissingHeadshot, resetMissingHeadshots, npcRecordFor, applyHeadshotBox } = await imp('utils/npc-headshot.js');
 const { PasswordMinigame, applyTilePortrait } = await imp('minigames/password/password-minigame.js');
 const { ContainerMinigame } = await imp('minigames/container/container-minigame.js');
@@ -107,6 +107,21 @@ test('short and narrow windows use the compact bezel, with sensible minimums', (
 });
 
 // ── The post-it ──────────────────────────────────────────────────────────────
+
+test('the chin button is labelled Add Postit to notepad, and the note leaves it room at every size', () => {
+    assert.equal(PC_POSTIT_BUTTON_LABEL, 'Add Postit to notepad');
+    assert.ok(pcPostitButtonHtml().endsWith(' Add Postit to notepad'), 'the html carries the label');
+    assert.notEqual(PC_POSTIT_BUTTON_LABEL, 'Add to Notepad');
+    // Button widths measured in a browser: 212px in the full bezel, 204px in the compact one
+    // (the light's 6px and the chin's padding come on top, except on a phone, which hides the light)
+    for (const [w, h] of SIZES) {
+        const m = pcMonitorMetrics(w, h);
+        const button = m.compact ? 204 : 212;
+        const light = m.narrow ? 0 : 14;
+        const buttonLeft = m.width - m.bezel.side - light - button;
+        assert.ok(m.postit.left + m.postit.maxWidth <= buttonLeft, `${w}x${h}: the note ends (${m.postit.left + m.postit.maxWidth}) before the button starts (${buttonLeft})`);
+    }
+});
 
 test('the post-it sits on the chin: its top just under the screen, in from the left, at every size', () => {
     for (const [w, h] of SIZES) {
@@ -790,6 +805,13 @@ test('R3 M2: a file opened from a PC desktop opens in that PC\'s monitor frame; 
             // R4 m2: the post-it and its button stay on the monitor
             assert.equal(document.querySelector('.pc-monitor-postit').textContent, 'Sam: sokafor / x');
             assert.ok(document.querySelector('.pc-monitor-controls #minigame-notebook-postit'), 'the note\'s Add to Notepad in the chin');
+            // The chin's button says it adds the post-it; the toolbar's adds the file: two labels
+            const chinLabel = document.getElementById('minigame-notebook-postit').textContent.trim();
+            const toolLabel = document.getElementById('minigame-notebook').textContent.trim();
+            assert.equal(chinLabel, 'Add Postit to notepad', 'the chin button');
+            assert.equal(toolLabel, 'Add to Notepad', 'the file reader toolbar button is unchanged');
+            assert.notEqual(chinLabel, toolLabel, 'the chin and toolbar labels differ');
+            assert.equal(document.getElementById('minigame-notebook-postit').title, 'Add Postit to notepad', 'title matches the label');
             assert.equal(document.querySelector('.pc-monitor-name').textContent, 'Hot desk PC');
             assert.ok(document.querySelector('.pc-monitor-bezel > #minigame-close'), 'the X in the bezel');
             assert.equal(document.querySelector('.window-controls'), null, 'no window buttons');

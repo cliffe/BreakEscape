@@ -1,7 +1,7 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { escapeHtml, escapeHtmlKeepWords } from '../../utils/escape-html.js';
-import { mountPcMonitor, postitNotebookEntry } from '../../utils/pc-monitor.js';
+import { mountPcMonitor, postitNotebookEntry, PC_POSTIT_BUTTON_LABEL, pcPostitButtonHtml } from '../../utils/pc-monitor.js';
 
 // File names, types and observations are scenario text: escaped before they reach HTML
 
@@ -111,7 +111,8 @@ export class TextFileMinigame extends MinigameScene {
         btn.type = 'button';
         btn.className = 'minigame-button';
         btn.id = 'minigame-notebook-postit';
-        btn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
+        btn.title = PC_POSTIT_BUTTON_LABEL;
+        btn.innerHTML = pcPostitButtonHtml();
         row.appendChild(btn);
         this.addEventListener(btn, 'click', () => this.addPostitToNotebook());
     }
