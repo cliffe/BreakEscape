@@ -25,18 +25,17 @@
 
 // Menu icons. The interaction menu draws them in a 64px box. Take uses the open hand,
 // defined once in ui/interaction-menu.js (window.menuIcons, set before this module
-// loads). Copy uses the card copier icon (icons/card-copier-32.png, 32x32, portrait like the
-// copier, drawn by hand in the frame's colours) at x2, the hand's scale, so both entries
-// have the same pixel density (UX slice 3b, q90, R1 m8). The earlier 16x16 drawing
-// (icons/card-copier.png) is kept for the user's choice.
+// loads). Copy uses the card copier icon (icons/card-copier.png, 16x16, a small landscape
+// copier drawn by hand in the frame's colours) at x4, which fills the box. The user picked
+// it over two 32x32 drawings (UX slice 3b, q90, q107).
 function assetsBase() {
     return (typeof window !== 'undefined' && window.breakEscapeConfig?.assetsPath) || '/break_escape/assets';
 }
-export const COPIER_ICON_SIZE = 32;
-export const COPIER_ICON_SCALE = 2;
+export const COPIER_ICON_SIZE = 16;
+export const COPIER_ICON_SCALE = 4;
 export function takeIcon() { return (typeof window !== 'undefined' && window.menuIcons?.openHand?.()) || undefined; }
 export function copyIcon() {
-    return { src: `${assetsBase()}/icons/card-copier-32.png`, width: COPIER_ICON_SIZE * COPIER_ICON_SCALE, height: COPIER_ICON_SIZE * COPIER_ICON_SCALE };
+    return { src: `${assetsBase()}/icons/card-copier.png`, width: COPIER_ICON_SIZE * COPIER_ICON_SCALE, height: COPIER_ICON_SIZE * COPIER_ICON_SCALE };
 }
 
 /** True when the player is carrying an RFID cloner. */
