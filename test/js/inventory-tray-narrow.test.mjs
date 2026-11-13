@@ -146,3 +146,25 @@ test('a change while the pointer rests on a tray item sets the hover label again
         delete window.inventory;
     }
 });
+
+test('on a screen that cannot hover, a tray refresh shows no label for the last-tapped item (R2 m1)', () => {
+    // Phones keep :hover on the last-tapped element, and there setHudLabel shows a brief label
+    window.wearables = { isWorn: () => true };
+    const tapped = { scenarioData: { id: 'vest', name: 'Hi-vis vest' }, matches: (sel) => sel === ':hover' };
+    window.inventory = { items: [tapped] };
+    const had = window.matchMedia;
+    window.matchMedia = (q) => ({ matches: q === '(hover: none)', media: q });
+    try {
+        globalThis.__labels.length = 0;
+        inv.refreshInventoryTray();
+        assert.deepEqual(globalThis.__labels, [], 'no label on a refresh');
+        // A screen that can hover still gets it
+        window.matchMedia = (q) => ({ matches: false, media: q });
+        inv.refreshInventoryTray();
+        assert.deepEqual(globalThis.__labels, ['Hi-vis vest (worn)']);
+    } finally {
+        window.matchMedia = had;
+        delete window.wearables;
+        delete window.inventory;
+    }
+});

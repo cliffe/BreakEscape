@@ -160,8 +160,22 @@ export function refreshInventoryTray() {
 
 // The hover label is set on mouseenter; a change while the pointer rests on the item
 // (a wearable put on or taken off) would leave it stale, so the refresh sets it again
-// (UX slice 4 R1 m2)
+// (UX slice 4 R1 m2). A screen that cannot hover keeps :hover on the last-tapped item,
+// and there setHudLabel shows a brief label, so a refresh there would flash that item's
+// name after every wear, take or badge change: it does nothing (UX slice 4 R2 m1).
+// The same test as cannotHover in ui/info-label.js. It is repeated here because the many
+// test harnesses that load this file stub info-label.js with setHudLabel and clearHudLabel only.
+function screenCannotHover() {
+    try {
+        return typeof window !== 'undefined' && typeof window.matchMedia === 'function' &&
+            window.matchMedia('(hover: none)').matches;
+    } catch {
+        return false;
+    }
+}
+
 function refreshHoveredLabel(items) {
+    if (screenCannotHover()) return;
     const hovered = items.find(item => {
         try { return item?.matches?.(':hover') === true; } catch { return false; }
     });
