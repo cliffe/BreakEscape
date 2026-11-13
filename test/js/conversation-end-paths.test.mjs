@@ -120,3 +120,43 @@ test('the story ending on its own (complete(true)) runs the same teardown', () =
     assert.ok(c.rec.events.includes('minigame_completed'));
     assertSameEnd(c, 'story end', true);
 });
+
+// UX slice 16 R1 m6: the paths the close shell could break next time it changes
+
+test('a forced close (complete(false), a hit or a knock-out) runs the same teardown, not as the player', () => {
+    const c = openConversation();
+    c.mg.complete(false);
+    assert.notEqual(c.mg.closedByPlayer, true, 'not a player close');
+    assertSameEnd(c, 'forced close', false);
+});
+
+test('a minigame opened over the chat ends it without complete: saved, event once, inactive', () => {
+    const c = openConversation();
+    c.fw.endMinigame(false, null);
+    assert.deepEqual(c.rec.saves.slice(0, 1), [NPC], 'the ink state is saved');
+    assert.equal(c.rec.events.filter(e => e === `conversation_closed:${NPC}`).length, 1, 'conversation_closed once');
+    assert.equal(c.mg.gameState.isActive, false);
+    assert.equal(c.fw.currentMinigame, null);
+    assert.equal(window.currentConversationNPCId, null);
+    c.mg.cleanup(); // a second cleanup (the displaced scene torn down again) fires nothing more
+    assert.equal(c.rec.events.filter(e => e === `conversation_closed:${NPC}`).length, 1, 'still once');
+});
+
+test('disableClose: no X, Esc does nothing, no cancel row', () => {
+    document.body.innerHTML = '<div id="mg"></div>';
+    const fw = Object.create(MinigameFramework);
+    fw.currentMinigame = null;
+    window.MinigameFramework = fw;
+    window.eventDispatcher = { emit() {}, on() {}, off() {} };
+    const mg = new PersonChatMinigame(document.getElementById('mg'), { npcId: NPC, title: 'Agent 0x99', disableClose: true });
+    try { mg.init(); } catch { /* no canvas in jsdom: the shell is already built */ }
+    MinigameScene.prototype.start.call(mg);
+    fw.currentMinigame = mg;
+    const x = document.getElementById('minigame-close');
+    assert.ok(!x || x.style.display === 'none', 'the X is hidden');
+    assert.equal(document.getElementById('minigame-cancel'), null, 'no cancel row');
+    document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape' }));
+    assert.equal(fw.currentMinigame, mg, 'Esc leaves the chat open');
+    assert.equal(mg.gameState.isActive, true);
+    mg.cleanup();
+});
