@@ -32,15 +32,49 @@ function cannotHover() {
     }
 }
 
+// On a screen that can't hover, a tap still shows the label (the only name an icon-only
+// button or a one-action tray item has), but only briefly: it clears after TOUCH_LABEL_MS
+// or on the next tap anywhere (UX slice 16 R2 m1). The tap's own mouseenter comes after
+// its pointerdown, so the listener added here waits for the next tap.
+export const TOUCH_LABEL_MS = 1500;
+let touchTimer = null;
+let touchTapOff = null;
+
+function stopTouchLabel() {
+    if (touchTimer) { clearTimeout(touchTimer); touchTimer = null; }
+    if (touchTapOff) {
+        try { document.removeEventListener('pointerdown', touchTapOff, true); } catch (e) { /* no document */ }
+        touchTapOff = null;
+    }
+}
+
+function showTouchLabel(text) {
+    stopTouchLabel();
+    hoverText = text;
+    _applyText(hoverText);
+    const end = () => {
+        stopTouchLabel();
+        if (hoverText === text) hoverText = null;
+        _applyText(hoverText ?? proximityText);
+    };
+    touchTimer = setTimeout(end, TOUCH_LABEL_MS);
+    if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+        touchTapOff = end;
+        document.addEventListener('pointerdown', touchTapOff, true);
+    }
+}
+
 /** Called by HUD elements on mouseenter to override the proximity label. */
 export function setHudLabel(text) {
-    if (text && cannotHover()) return;
+    if (text && cannotHover()) { showTouchLabel(text); return; }
+    stopTouchLabel();
     hoverText = text || null;
     _applyText(hoverText ?? proximityText);
 }
 
 /** Called by HUD elements on mouseleave to restore the proximity label. */
 export function clearHudLabel() {
+    stopTouchLabel();
     hoverText = null;
     _applyText(proximityText);
 }

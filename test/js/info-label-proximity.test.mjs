@@ -78,6 +78,38 @@ test('a HUD hover overrides the line only until the hover ends', () => {
     assert.equal(shown(), null, 'back to the proximity text, which is nothing out of reach');
 });
 
+test('on a screen that cannot hover a tap shows the label briefly (UX slice 16 R2 m1)', async () => {
+    const { TOUCH_LABEL_MS } = await import(pathToFileURL(join(dir, 'info-label.js')));
+    const listeners = [];
+    document.addEventListener = (type, fn) => listeners.push({ type, fn });
+    document.removeEventListener = (type, fn) => {
+        const i = listeners.findIndex((l) => l.type === type && l.fn === fn);
+        if (i >= 0) listeners.splice(i, 1);
+    };
+    window.matchMedia = (q) => ({ matches: q === '(hover: none)' });
+    try {
+        tick(300, 420);                       // nothing in reach
+        setHudLabel('Music Controls');
+        assert.equal(shown(), 'Music Controls', 'the tap shows the name');
+        assert.equal(listeners.filter((l) => l.type === 'pointerdown').length, 1);
+        await new Promise((r) => setTimeout(r, TOUCH_LABEL_MS + 50));
+        assert.equal(shown(), null, 'gone after the delay');
+        assert.equal(listeners.length, 0, 'the tap listener is removed');
+
+        tick(300, 330);                       // the PC in reach
+        setHudLabel('Lockpick set');
+        assert.equal(shown(), 'Lockpick set');
+        listeners.find((l) => l.type === 'pointerdown').fn({});
+        assert.equal(shown(), pcText, 'the next tap anywhere brings the proximity line back');
+        assert.equal(listeners.length, 0);
+    } finally {
+        delete window.matchMedia;
+        delete document.addEventListener;
+        delete document.removeEventListener;
+        clearHudLabel();
+    }
+});
+
 test('an object that is taken or hidden stops being described', () => {
     tick(300, 330);
     pc.active = false;
