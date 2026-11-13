@@ -1398,3 +1398,139 @@ blob, and is edit-proof; the live guard above covers returning old names.
 **Proof it still bites.** Prefixing the renamed value in `rename_one_hash_outage_fields!` turns the
 Ruby corpus test red (6 failures); reverting restores green (21 runs, 298 assertions, 0 failures).
 The node parity test passes (1 file). README updated with how both sides are made.
+
+## Step 8b build plan (re-anchored 2026-11-13, anchor 2f5471209)
+
+Step 8b (one owner field, format 2) is re-anchored in the plan against `2f5471209`; see
+`SCENARIO_FORMAT_HARDENING_STEP8B_REANCHOR.md` (verdict: mechanical). Split into five chunks, each a
+fresh agent under about 150k tokens, built on branch `build/harden-8b` from a main that holds steps 7
+and 8a. 8a needed four builders plus a review-fix pass; 8b is the same shape. Each chunk commits its
+own files with explicit paths; the integrator runs the full suites once per merge batch.
+
+Standing rules for every chunk: no `db:` task on the shared DB; the validator runs with
+`LANG=C.UTF-8 /usr/bin/ruby3.2 scripts/validate_scenario.rb <file> --no-graph`; a new static JS import
+goes on each test-harness copy list; count every `❌` line as a failure.
+
+### Chunk 1 — schema, transform, validator (first; others build on it)
+
+- **Scope.** `scripts/scenario-schema.json`: add object-level `owner` (string or array of strings),
+  `private` (boolean), `deskPhone` (boolean), and item-level `owner`; remove object `screenOwner`,
+  `phoneOwner`, `affordance.owners`, `affordance.private` and item `phoneOf`, `leftBehindBy` from the
+  closed blocks, all in one commit. Make `leftBehindChance` the left-behind marker (required for a
+  left-behind item). `lib/break_escape/format_upgrade.rb`: `STEP_8B` (version 2,
+  `one_owner_field`), `current` now 2; the `scenario` transform renames each old field to `owner`,
+  moves `affordance.owners`/`affordance.private` up to object `owner`/`private`, writes an explicit
+  `owner` wherever the old `needsHome` rule derived one (computed on the data as supplied), marks desk
+  phones `deskPhone: true` and left-behind items `leftBehindChance: 0` where absent, and empties an
+  affordance it drains to `{}`; the `player_state` transform renames the keys inside item copies
+  (inventory, `room_states.*.objects_added`, dropped/copied/cloned lists) in place. Both idempotent,
+  skip notes and free data, no-op on format-2 data. `retired`: object `screenOwner`, `phoneOwner`,
+  `affordance.owners`, `affordance.private`; item `phoneOf`, `leftBehindBy`. Validator:
+  `known_item_fields` (validate_scenario.rb:780-814) loses the four item/object names and gains
+  `owner`, `private`, `deskPhone`; the list-owner errors for a workstation / desk phone / Friendface
+  phone / left-behind item; the `needsHome`-no-longer-sets-an-owner warning; the two-field conflict
+  report (`screenOwner` vs `affordance.owners`, none expected); the formatter suppresses the schema
+  unknown-key line for a reintroduced retired key (as 8a's dedup does).
+- **Files.** `scripts/scenario-schema.json`, `lib/break_escape/format_upgrade.rb`,
+  `scripts/validate_scenario.rb`, `test/unit/format_upgrade_test.rb`,
+  `test/js/validator-retired-keys.test.mjs`.
+- **Tests.** `format_upgrade_test.rb` (the 8b transform on raw and on prepared data: derived owner for
+  a workstation, a private object, a desk phone, a left-behind item, and an object that is an NPC's
+  `needsHome` but none of those gets no owner; the player_state transform on a phone in the inventory
+  and on a room-added item; idempotence; no-op on format-2); `validator-retired-keys.test.mjs` (each
+  retired key one rename line; a list owner on each single-owner kind one error, on a private object
+  none; `owner`/`private`/`deskPhone` print no unknown-field warning). Hand-verify the validator
+  prints the rename error on a reintroduced `screenOwner`.
+- **Done when.** Those two test files pass alone; the four touched scenarios still need the rewrite
+  (chunk 4) so they are not validated clean yet; `FormatUpgrade.current` is 2.
+
+### Chunk 2 — Ruby readers
+
+- **Scope.** Move every Ruby owner reader to `owner`/`private`/`deskPhone`, reading only the new
+  names: `AccessIdentities.owner_id` (access_identities.rb:230), `OwnerClaim` (owner_claim.rb:244,
+  :375-377), `NpcHabits.owned_workstations` (npc_habits.rb:165, through `owner_id`), `AccessWork`
+  (hot-desk owner, access_work.rb:1381), `SocialFeed` (`friendface_owner`, social_feed.rb:343, and
+  `held_friendface_phone`), `Game` (`login_pc_owner` game.rb:2088, the held-phone check game.rb:1739),
+  `GamesController` (found item game.rb/controller:2671, the allowed-field list :2535, and
+  `CLIENT_ITEM_FORBIDDEN_FIELDS` :2533-2538 gains `owner`, keeps `phoneOf`). Validator owner-derivers:
+  `validate_access_work.rb:397`/`:1226-1230`, `validate_npc_needs.rb` (`owners_of` :1075, :507/:1078,
+  desk phone :148-170, left-behind :1437-1474), `validate_npc_habits.rb:403`/`:242`/`:450`,
+  `validate_network.rb:189`, `validate_scenario.rb:6960`/`:7011`; `tools/playtest/verify-run.rb`
+  :161/:177. The desk-phone marker becomes `deskPhone: true` (not the presence of `phoneOwner`).
+- **Files.** The Ruby files above plus their support fixtures (`test/support/*_scenario.rb` that set
+  owner fields) and the Rails tests named in the plan (`owner_claim_test.rb`,
+  `owner_claim_enforce_test.rb`, `npc_habits_test.rb`, `npc_habits_loader_test.rb`,
+  `npc_habits_postit_test.rb`, `friendface_phone_test.rb`, `feed_post_reply_test.rb`,
+  `validator-access-*`). Grep `test/` for `screenOwner|phoneOwner|phoneOf|leftBehindBy|affordance.*owners|affordance.*private`
+  for the full list.
+- **Tests.** Each touched Rails test alone, RBENV_VERSION=2.7.8: `owner_id` reads `owner` only and an
+  object with only a `needsHome` NPC has no owner; a client-built item carrying `owner` (and one
+  carrying `phoneOf`) is stored without it; a game at format 1 with a Friendface phone in its
+  inventory still opens the same feed after load and the NPC still has no phone.
+- **Done when.** Every touched Rails/support file passes alone; readers read no retired name (grep of
+  app/lib/scripts/tools leaves only comments, the schema, and the retired list).
+
+### Chunk 3 — JS readers, the reveal event, fixtures
+
+- **Scope.** Move every JS owner reader: `workstation-state.js` `ownerOf` (:115), `npc-needs.js`
+  (`_owners` :1218, `affordance.private` :1231, desk-phone owner :3989, the shipped-copy builder
+  :4633/:4640, left-behind reveal :4594/:5205/:5229), `npc-action-icons.js` (:301),
+  `office-room-tone.js` (:115, now reads `deskPhone`), `left-card-consequence.js`,
+  `friendface-phone.js` (:34/:123/:141). Rename the `object_revealed:<id>` payload key `leftBehindBy`
+  to `owner` (emit npc-needs.js:5229, read left-card-consequence.js:57) in the same commit; grep
+  scenarios, ink and `docs/` for a handler of the payload key (none expected).
+- **Files.** The JS files above; `test/js/fixtures/` that carry owner fields; the node tests
+  (`workstation-state.test.mjs`, `npc-needs.test.mjs`, `npc-left-behind.test.mjs`,
+  `npc-desk-phone.test.mjs`, `left-card-consequence.test.mjs`, `friendface-phone.test.mjs`); each
+  harness copy list if a new import appears.
+- **Tests.** Each touched node test alone (`bin/test-js` runs plain node): `ownerOf` reads `owner`
+  only; a desk phone with `owner` and `deskPhone: true` rings for its owner and an object with `owner`
+  and no `deskPhone` does not; a left-behind item with `owner` and `leftBehindChance` is a reveal
+  slot; the `object_revealed` payload carries `owner`.
+- **Done when.** Every touched node file passes alone; no JS reader reads a retired name.
+
+### Chunk 4 — template rewrite, corpus equivalence, reader parity
+
+- **Scope.** `tools/format/rewrite_templates.rb --step 2` rewrites the nine templates
+  (lab_physical_pentest [incl. its 1 `affordance.private`], test_access_habits, test_access_sessions,
+  test_access_social, test_access_work, test_capture_log, test_clone_left_card, test_needs_sims, and
+  test_npc_needs which holds no retired key but gains derived `owner`s). lab_physical_pentest is on the
+  labs track: the user's decision covers the edit; the labs track is told before the branch merges.
+  Update any `_comment`/ERB note that names a retired key. Freeze both sides as fixtures as 8a learnt
+  (`test/fixtures/format_8b/<scenario>.old.json` and `.new.json`, captured with `srand(1)` and
+  SecureRandom stubbed), never read through `git merge-base`; add an edit-proof live guard that
+  renders the live templates and asserts no retired owner key has returned.
+- **Files.** The nine `scenarios/*/scenario.json.erb`; `tools/format/rewrite_templates.rb` (if the
+  8b case needs owner-derivation support); `test/fixtures/format_8b/*`;
+  `test/unit/format_8b_corpus_test.rb`; `test/js/format-8b-reader-parity.test.mjs`.
+- **Tests.** Corpus equivalence: the 8b `scenario` transform on each old render equals the new render
+  (parsed JSON, key order ignored); `prepare_scenario_data!` agrees across the rename;
+  `retired_keys_in` finds nothing in any new render. Reader parity: the old `owner_id`/`ownerOf`
+  reproduced inline (own field read, no office preset defines an owner field — confirm by grep) equal
+  the new `owner` for every object; for every private object the NPCs allowed; for every desk phone
+  and left-behind item its owner; and the needs target lists for test_needs_sims tom_pc and sanjay_pc
+  (the emptied affordances) are unchanged. Record whether the old Ruby and JS rules ever disagree
+  (none expected: no object is two NPCs' `needsHome` on the corpus). Prove both tests still bite
+  (prefix a renamed value → red).
+- **Done when.** The four test scenarios most changed (and the nine in all) validate with 0 errors
+  (`--no-graph`); the corpus and parity tests pass and bite; moved keys per scenario are logged with
+  counts matching the re-anchor.
+
+### Chunk 5 — live proofs (including the old-game proof)
+
+- **Scope.** Two keyless servers sharing the dev DB, `setFPS(20)` with fixed steps on, headless, on
+  the builder's assigned ports (not :3000/:3001/:3002). Branch server on one port; base server on a
+  hand-made base worktree at `git merge-base main build/harden-8b`. Prove, per plan step 8b Live
+  proof: test_access_sessions owner claim at a PC whose owner used to be derived; test_needs_sims the
+  desk phone rings and its owner answers and a left-behind item appears when its owner leaves;
+  test_access_social Jake's Friendface phone; lab_physical_pentest the left-card beat; and the
+  stored-game proof — a real old game made on the base (section 2 one-off runner, or
+  `swap-scenario-game.rb` if the brief directs, recording which), Jake's phone taken on the base
+  before the switch, loaded on the branch, upgrading to format 2 on first load (old keys gone from
+  `scenario_data` and from the stored item copies, read with `bin/rails runner`), the beat behaving,
+  an old tab's sync refused with 409 and the header, `verify-run.rb` showing progress. Keep both dumps
+  (before and after the load). Stop both servers by PID.
+- **Files.** Drivers and the read-only row reader in the session scratchpad only; nothing added to the
+  repo except this log's proof section.
+- **Done when.** Each beat passes; the stored game shows format 2 with the renamed keys; the old-tab
+  refusal shows 409 + header; both servers confirmed down.
