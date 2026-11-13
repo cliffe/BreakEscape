@@ -91,8 +91,43 @@ and shape; nothing new is re-sent each sync.
 
 ## Tests
 
-(filled after the build)
+Rails (RBENV_VERSION=2.7.8, no lock, every file touched by the change):
+
+- `test/controllers/break_escape/access_model_rfid_test.rb` — 53 runs, 212 assertions, 0 failures.
+  New/changed: a mixed door opens for a held requires card with no card_ids; a mixed door with
+  no card held is refused; a requires-only door refused with no card; opened by a held
+  opens_lock keycard; opened by a recorded clone; refuses a UID-only clone unless acceptsUIDOnly.
+- `test/integration/unlock_system_test.rb` — 46 runs, 153 assertions, 0 failures. Rewrote the
+  old "RFID lock should trust client validation" test: refused without the required card, opened
+  with a held opens_lock keycard.
+- `test/models/break_escape/game_test.rb` — 99 runs, 413 assertions, 0 failures. The lock-method
+  matrix now arms the player with the 'badge' keycard, since a requires-only rfid lock needs a
+  held card.
+- `test/controllers/break_escape/clone_card_saved_cards_test.rb`,
+  `test/controllers/break_escape/reload_persistence_test.rb`,
+  `test/models/break_escape/access_model_withholding_test.rb`,
+  `test/controllers/break_escape/lab_physical_pentest_wedge_test.rb`,
+  `test/controllers/break_escape/npc_workaround_test.rb` — all green (101 + 75 across two runs).
+
+No client JS changed, so no node test or harness copy-list change.
+
+## Browser proof (keyless server on :3630, headless, scenario test-rfid)
+
+Drove the real page through window.__test; recorded the actual POST bodies and responses.
+
+- Card unlock (player holds a physical keycard carrying card_id master_keycard): clicking the
+  secure door sent `POST /unlock {targetType:"door", targetId:"test_secure", method:"rfid"}` with
+  no card_ids (client step 1a). Server answered `{success:true}` and the door opened. Honest
+  held-card play is not blocked by the fix.
+- Cloner unlock (no physical card): talk to the guard, choose "Subtly scan their badge", Save the
+  clone -> `POST /clone_card {npc_id:"security_guard", card_id:"master_keycard"}` ->
+  `{success:true, recorded:true, saved:true}`. Then the reader Emulate sent
+  `POST /unlock method:"rfid"` with no card_ids -> `{success:true}`, door opened. Honest clone
+  play is not blocked.
+
+The no-card refusal is covered by the Rails tests above (no honest client path reaches a
+requires-only lock with no held card; the client refuses locally before any request).
 
 ## Handover
 
-(filled if context runs out)
+Complete. Fix, tests and proof done; committed on build/hard-rfid.
