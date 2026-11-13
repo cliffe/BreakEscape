@@ -1144,6 +1144,8 @@ module BreakEscape
             roomData: room_data
           }
           door_answer.merge!(rfid_card_answer) if rfid_card_answer
+          # Open before this request: say so, and name no card (R2 m2)
+          door_answer[:alreadyOpen] = true if already_open
           render json: door_answer
         else
           # Object/container unlock
@@ -1156,6 +1158,7 @@ module BreakEscape
             type: 'object'
           }
           response.merge!(rfid_card_answer) if rfid_card_answer
+          response[:alreadyOpen] = true if already_open
 
           # If object has contents, include them in response, filtered as
           # GET /container filters them (M7): a nested lock's requires and a

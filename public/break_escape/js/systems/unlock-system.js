@@ -184,9 +184,14 @@ export async function requestRfidAccessUnlock(lockable, type, cardIds) {
 /**
  * The success toast after an RFID unlock: which card opened it, and whether it was the
  * card itself or the copier playing back a copy. result: { cardName, emulated }, or
- * { viaCopy: true } when the server says only that a copy passed, not whose.
+ * { viaCopy: true } when the server says only that a copy passed, not whose, or
+ * { alreadyOpen: true } when it was open before the request. type: 'door' or an object.
  */
-export function rfidOpenedLine(result) {
+export function rfidOpenedLine(result, type = 'door') {
+    // The server says it was open before this request (R2 m2): no card is credited
+    if (result && (result.alreadyOpen === true || result.serverResponse?.alreadyOpen === true)) {
+        return type === 'door' ? 'The door is already open.' : 'It is already open.';
+    }
     if (result && result.viaCopy === true) return 'Opened with a copied card.';
     const name = result && typeof result.cardName === 'string' && result.cardName.trim();
     if (!name) return 'Card accepted.';
@@ -199,6 +204,7 @@ export function rfidOpenedLine(result) {
  * would tell the player whose identity the list admits.
  */
 export function rfidAccessUnlockResult(response) {
+    if (response && response.alreadyOpen === true) return { alreadyOpen: true };
     if (response && response.viaCopy === true) return { viaCopy: true };
     return rfidCardForId(response && response.cardId);
 }
@@ -1165,7 +1171,7 @@ export function handleUnlock(lockable, type) {
                         if (!success) return;
                         // At an access list the copier already has the server's yes
                         if (result && result.serverResponse) {
-                            setTimeout(() => applyRfidAccessUnlock(result.serverResponse, rfidOpenedLine(result)), 100);
+                            setTimeout(() => applyRfidAccessUnlock(result.serverResponse, rfidOpenedLine(result, type)), 100);
                             return;
                         }
                         // Notify server and get room/container data
@@ -1173,7 +1179,7 @@ export function handleUnlock(lockable, type) {
                         setTimeout(() => {
                             playRfidUnlockSound();
                             unlockTarget(lockable, type, lockable.layer, serverResponse);
-                            window.gameAlert(rfidOpenedLine(result), 'success', 'Access Granted', 3000);
+                            window.gameAlert(rfidOpenedLine(result, type), 'success', 'Access Granted', 3000);
                         }, 100);
                     }
                 };
@@ -1183,7 +1189,7 @@ export function handleUnlock(lockable, type) {
                     params.requestAccess = (cardIds) => requestRfidAccessUnlock(lockable, type, cardIds);
                     // The copier was closed while the server was still answering, and the answer
                     // was yes: the server has unlocked it, so the world follows
-                    params.onLateAccessUnlock = (result) => applyRfidAccessUnlock(result.serverResponse, rfidOpenedLine(result), { late: true });
+                    params.onLateAccessUnlock = (result) => applyRfidAccessUnlock(result.serverResponse, rfidOpenedLine(result, type), { late: true });
                 }
                 window.startRFIDMinigame(lockable, type, params);
             };
@@ -1243,7 +1249,7 @@ export function handleUnlock(lockable, type) {
                     requestRfidAccessUnlock(lockable, type, accessKeycardIds).then(({ outcome, response }) => {
                         if (outcome === 'unlocked') {
                             // The server names the player's own card that passed
-                            applyRfidAccessUnlock(response, rfidOpenedLine(rfidAccessUnlockResult(response)));
+                            applyRfidAccessUnlock(response, rfidOpenedLine(rfidAccessUnlockResult(response), type));
                         } else if (outcome !== 'error' && copierHasCopies) {
                             // The badges did not open it: the reader buzzes, the refusal is
                             // reported as at any refused door (no toast, the copier says it),

@@ -493,6 +493,11 @@ test('rfidOpenedLine names the card, and says when the copier played back a copy
     assert.equal(rfidOpenedLine(null), 'Card accepted.');
     assert.equal(rfidOpenedLine({ cardName: '  ' }), 'Card accepted.');
     assert.equal(rfidOpenedLine({ viaCopy: true }), 'Opened with a copied card.');
+    // Open before the request (R2 m2): no card credited, from either answer shape
+    assert.equal(rfidOpenedLine({ alreadyOpen: true }), 'The door is already open.');
+    assert.equal(rfidOpenedLine({ cardName: 'Visitor card 07', emulated: true, serverResponse: { alreadyOpen: true } }), 'The door is already open.');
+    assert.equal(rfidOpenedLine({ alreadyOpen: true }, 'object'), 'It is already open.');
+    assert.equal(rfidOpenedLine(rfidAccessUnlockResult({ success: true, alreadyOpen: true })), 'The door is already open.');
 });
 
 test('rfidAccessUnlockResult: viaCopy names no card; a cardId is looked up among held cards', () => {

@@ -543,6 +543,8 @@ module BreakEscape
         assert_equal true, body['success']
         refute body.key?('viaCopy'), "no viaCopy for #{ids.inspect}"
         refute body.key?('cardId'), "no cardId for #{ids.inspect}"
+        # It says the door was open already, so the toast credits no card (R2 m2)
+        assert_equal true, body['alreadyOpen'], "alreadyOpen for #{ids.inspect}"
       end
     end
 

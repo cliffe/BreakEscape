@@ -854,6 +854,24 @@ test('Emulate at an access list sends one card id and keeps the server answer fo
     } finally { globalThis.setTimeout = realTimeout; }
 });
 
+test('Emulate at a door that was already open says so and names no copy (R2 m2)', async () => {
+    const timers = [];
+    globalThis.setTimeout = (f) => { timers.push(f); return 0; };
+    try {
+        const response = { success: true, type: 'door', roomData: { id: 'r' }, alreadyOpen: true };
+        const { g, done } = aclGame({ outcome: 'unlocked', response });
+        g.handleEmulate(dana());
+        await tick();
+        assert.match(texts(), /Already open/);
+        assert.doesNotMatch(texts(), /Access Granted/);
+        assert.equal(g.gameResult.cardName, null, 'the toast does not name the copy');
+        assert.equal(g.gameResult.alreadyOpen, true);
+        assert.equal(g.gameResult.serverResponse, response);
+        timers.forEach(f => f());
+        assert.equal(done(), true);
+    } finally { globalThis.setTimeout = realTimeout; }
+});
+
 test('a second press while the server is answering sends nothing more', async () => {
     let release;
     const { g, asked } = aclGame(() => new Promise(r => { release = r; }));

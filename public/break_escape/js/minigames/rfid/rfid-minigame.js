@@ -340,7 +340,10 @@ export class RFIDMinigame extends MinigameScene {
                 this._accessPending = false;
                 const outcome = answer && answer.outcome;
                 const response = answer && answer.response;
-                const result = { success: true, cardName: cardName || null, emulated, serverResponse: response };
+                // Open before this request (R2 m2): the toast names no card, the copier says so
+                const alreadyOpen = !!(response && response.alreadyOpen === true);
+                const result = { success: true, cardName: alreadyOpen ? null : (cardName || null), emulated, serverResponse: response };
+                if (alreadyOpen) result.alreadyOpen = true;
                 // A yes has already opened the lock on the server, so the world must follow
                 // even when the copier was closed (or replaced) before it could say so
                 const late = () => {
@@ -355,7 +358,7 @@ export class RFIDMinigame extends MinigameScene {
                     if (window.playUISound) window.playUISound('card_scan');
                     if (emulated) this.animations.showEmulationSuccess();
                     else this.animations.showTapSuccess();
-                    this.ui.showSuccess('Access Granted');
+                    this.ui.showSuccess(alreadyOpen ? 'Already open' : 'Access Granted');
                     this.gameResult = result;
                     emit({ success: true });
                     setTimeout(() => {
