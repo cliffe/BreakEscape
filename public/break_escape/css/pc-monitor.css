@@ -1,0 +1,182 @@
+/* The one PC monitor frame (UX slice 2c, js/utils/pc-monitor.js). Every view of a PC sits in
+   it: the sign-in screen, a computer's password screen, the desktop, a share's folder window.
+   pcMonitorMetrics sets the sizes and places inline (whole pixels), so these rules hold the
+   look only. Pixel art: 2px borders, stepped corners, flat fills, pixel fonts. */
+
+.minigame-container.pc-view {
+    /* The monitor is placed by left/top from the window's own box */
+    display: block;
+}
+
+.pc-monitor {
+    position: absolute;
+    box-sizing: border-box;
+    z-index: 2;
+}
+
+/* The bezel: a flat dark grey case with a 2px outline and a 2px lighter inner edge, its
+   corners cut in 2px steps */
+.pc-monitor-bezel {
+    position: absolute;
+    inset: 0;
+    box-sizing: border-box;
+    background: #3d3d3d;
+    border: 2px solid #161616;
+    box-shadow: inset 0 0 0 2px #555555;
+    clip-path: polygon(
+        0 6px, 2px 6px, 2px 4px, 4px 4px, 4px 2px, 6px 2px, 6px 0,
+        calc(100% - 6px) 0, calc(100% - 6px) 2px, calc(100% - 4px) 2px, calc(100% - 4px) 4px,
+        calc(100% - 2px) 4px, calc(100% - 2px) 6px, 100% 6px,
+        100% calc(100% - 6px), calc(100% - 2px) calc(100% - 6px), calc(100% - 2px) calc(100% - 4px),
+        calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) calc(100% - 2px), calc(100% - 6px) calc(100% - 2px),
+        calc(100% - 6px) 100%,
+        6px 100%, 6px calc(100% - 2px), 4px calc(100% - 2px), 4px calc(100% - 4px),
+        2px calc(100% - 4px), 2px calc(100% - 6px), 0 calc(100% - 6px)
+    );
+}
+
+/* The webcam in the top strip */
+.pc-monitor-cam {
+    position: absolute;
+    top: calc(var(--pc-bezel-top, 38px) / 2 - 4px);
+    left: calc(50% - 4px);
+    width: 8px;
+    height: 8px;
+    background: #1c1c1c;
+    box-shadow: inset 0 0 0 2px #2a2a2a;
+}
+
+/* The screen: the desktop wallpaper behind every view, with a 2px dark rim. Its size and
+   place come from pcMonitorMetrics (left/top/width/height inline). */
+.pc-monitor-screen {
+    position: absolute;
+    box-sizing: content-box;
+    overflow: hidden;
+    margin: -2px 0 0 -2px;
+    border: 2px solid #111111;
+    background-color: #1e3a28;
+    background-image: url('../assets/mini-games/desktop-wallpaper.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    image-rendering: pixelated;
+}
+
+/* The game area is the screen's scroll area */
+.pc-monitor-screen > .minigame-game-container {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background: none;
+    box-shadow: none;
+}
+
+/* The chin under the screen: the PC's name, a power light, the footer buttons */
+.pc-monitor-chin {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: var(--pc-bezel-chin, 44px);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 0 calc(var(--pc-bezel-side, 20px) - 2px);
+    box-sizing: border-box;
+}
+
+.pc-monitor-name {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 36%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    line-height: 8px;
+    color: #9a9a9a;
+    pointer-events: none;
+}
+
+.pc-monitor-led {
+    order: 2;
+    flex: 0 0 auto;
+    width: 6px;
+    height: 6px;
+    background: #39d353;
+    box-shadow: 0 0 0 2px #1c4a24;
+}
+
+.pc-monitor-controls {
+    order: 1;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.pc-monitor-controls > .minigame-controls {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    gap: 6px;
+}
+
+/* Footer buttons sized to the chin */
+.pc-monitor-controls .minigame-button {
+    margin: 0;
+    padding: 4px 10px;
+    font-size: 14px;
+    line-height: 16px;
+    min-height: 0;
+}
+
+.pc-monitor-controls .minigame-button .icon-small {
+    width: 16px;
+    height: 16px;
+}
+
+.pc-monitor[data-compact] .pc-monitor-controls .minigame-button {
+    padding: 2px 8px;
+    font-size: 12px;
+}
+
+/* The X in the bezel's top strip, its right edge over the screen's right edge, so it is
+   inside the frame and never on the screen */
+.pc-monitor-bezel > .minigame-close-button.pc-monitor-close {
+    position: absolute;
+    top: calc((var(--pc-bezel-top, 38px) - 30px) / 2) !important;
+    right: calc(var(--pc-bezel-side, 20px) - 2px) !important;
+    left: auto;
+    margin: 0;
+    z-index: 5;
+}
+
+/* The post-it, stuck on the chin: its top just under the screen's bottom edge, in from the
+   left past the side bezel. pcMonitorMetrics sets left, top and max-width from the frame. */
+.pc-monitor > .postit-note.pc-monitor-postit {
+    position: absolute;
+    margin: 0;
+    bottom: auto;
+    right: auto;
+    transform: none;
+    z-index: 6;
+    box-sizing: border-box;
+    width: max-content;
+    padding: 10px 14px;
+    font-size: 18px;
+    line-height: 20px;
+}
+
+.pc-monitor[data-compact] > .postit-note.pc-monitor-postit {
+    padding: 6px 10px;
+    font-size: 16px;
+    line-height: 18px;
+}

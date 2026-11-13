@@ -8,6 +8,8 @@ import { resolveObjectField } from '../../utils/conditional-text.js';
 import { escapeHtml } from '../../utils/escape-html.js';
 import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { mentionsComputer } from '../../utils/computer-keywords.js';
+import { mountPcMonitor } from '../../utils/pc-monitor.js';
+import { applyHeadshotImg, npcRecordFor, headshotSourceFor } from '../../utils/npc-headshot.js';
 
 
 
@@ -273,6 +275,37 @@ export class ContainerMinigame extends MinigameScene {
                 || (data.networkShare && data.networkShare.footholdId ? data.id : null) || null);
         // Why this screen closed, reported to networkLinks.landed from cleanup (4.3)
         this.exitReason = 'close';
+        // A PC's desktop and a share's folder window sit in the one PC monitor frame (UX
+        // slice 2c, utils/pc-monitor.js), the same frame as the PC's sign-in screen
+        this.pcView = this.mode !== 'npc' && (this.desktopMode || this.shareFolder);
+        this.pcMonitor = null;
+    }
+
+    /** The name on the monitor's chin: the PC's (a share opened from a desktop keeps that PC's). */
+    monitorName() {
+        if (this.shareFolder && this.parentLockable?.scenarioData?.name) return this.parentLockable.scenarioData.name;
+        if (this.shareFolder) return shareLabelParts(this.containerItem?.scenarioData?.name).name || '';
+        return this.containerItem?.scenarioData?.name || '';
+    }
+
+    /** Put the game area in the PC monitor frame (after super.init()). */
+    mountMonitor() {
+        const data = this.containerItem?.scenarioData || {};
+        const note = this.desktopMode && data.postitNote && data.showPostit
+            ? escapeHtmlKeepWords(displayDashes(data.postitNote)) : '';
+        this.pcMonitor = mountPcMonitor(this, { name: displayDashes(this.monitorName()), postitHtml: note });
+        if (this.pcMonitor?.postit) makeDraggable(this.pcMonitor.postit);
+    }
+
+    // Footer buttons (Add to Notepad) go in the monitor's chin
+    controlsHost() {
+        return this.pcMonitor?.controls || null;
+    }
+
+    // In the monitor the X lives in the bezel's top strip (css/pc-monitor.css)
+    placeCloseButton() {
+        if (this.pcMonitor) return;
+        super.placeCloseButton();
     }
 
     /** The session this sign-in desktop shows (pc-sessions.js), or null. */
@@ -554,6 +587,7 @@ export class ContainerMinigame extends MinigameScene {
             this._unregisterDesktop();
             this._unregisterDesktop = null;
         }
+        this.pcMonitor?.destroy?.();
         if (typeof super.cleanup === 'function') super.cleanup();
         this.reportNetworkExit();
     }
@@ -633,8 +667,11 @@ export class ContainerMinigame extends MinigameScene {
     }
 
     async init() {
+        // In the PC monitor the X closes it: no Close button beside it (UX slice 2c)
+        if (this.pcView) this.params = { ...this.params, showCancel: false };
         // Call parent init first
         super.init();
+        if (this.pcView) this.mountMonitor();
 
         // A container opening now means no reader is about to hand back to a network screen
         // recorded earlier (a locked folder that opened after its PIN leaves one behind), so
@@ -790,6 +827,27 @@ export class ContainerMinigame extends MinigameScene {
         // The mapped stub has no observations; it gets the same line as a share opened from
         // the network view (slice 2a review R1 n3)
         const observations = this.headerObservations() || (host ? `A file share on ${host}.` : '');
+        if (this.pcMonitor) {
+            // On the monitor's screen (UX slice 2c): the folder window over the wallpaper, the
+            // description in its status bar, the header picture dropped
+            this.gameContainer.innerHTML = `
+            <div class="share-folder-layout pc-share">
+            <div class="container-minigame share-folder">
+                <div class="share-folder-window">
+                    <div class="desktop-window-titlebar share-folder-titlebar">
+                        <img class="share-folder-icon" src="${escapeHtml(data.iconImage || SHARE_ICON)}" alt="">
+                        <span class="share-folder-path">${escapeHtml(unc || name)}</span>
+                    </div>
+                    <div class="container-contents-grid share-folder-files pixel-scroll" id="container-contents-grid">
+                        <!-- Files will be populated here -->
+                    </div>
+                    <div class="share-folder-status">${escapeHtml(displayDashes(observations))}</div>
+                </div>
+            </div>
+            </div>
+        `;
+            return;
+        }
         this.gameContainer.innerHTML = `
             <div class="share-folder-layout">
             <div class="container-image-section">
@@ -833,6 +891,7 @@ export class ContainerMinigame extends MinigameScene {
             : `Signed in as <strong>${escapeHtml(name)}</strong> (${escapeHtml(session.username)})`;
         return `${remoteLine}${claimLine}
                     <div class="desktop-account-bar">
+                        ${this.pcMonitor ? '<img class="desktop-account-headshot" alt="" width="32" height="32" hidden>' : ''}
                         <span class="desktop-account-name">${who}</span>
                         <span class="desktop-account-actions">
                             <button type="button" class="minigame-button desktop-account-btn" id="desktop-switch-user">Switch user</button>
@@ -842,6 +901,7 @@ export class ContainerMinigame extends MinigameScene {
     }
 
     createDesktopUI() {
+        if (this.pcMonitor) { this.createMonitorDesktopUI(); return; }
         this.gameContainer.innerHTML = `
             <div class="container-image-section">
                 ${this.containerImageHtml()}
@@ -869,7 +929,7 @@ export class ContainerMinigame extends MinigameScene {
             </div>
         `;
 
-        if (this.containerItem.scenarioData.postitNote && this.containerItem.scenarioData.showPostit) {
+        if (!this.pcMonitor && this.containerItem.scenarioData.postitNote && this.containerItem.scenarioData.showPostit) {
             const postit = document.createElement('div');
             postit.className = 'postit-note';
             postit.innerHTML = escapeHtmlKeepWords(displayDashes(this.containerItem.scenarioData.postitNote));
@@ -880,6 +940,43 @@ export class ContainerMinigame extends MinigameScene {
         }
     }
     
+    /**
+     * The desktop on the monitor's screen (UX slice 2c): a top bar with the signed-in account
+     * (headshot, name, Switch user, Sign out), the icons on the wallpaper, and a taskbar with
+     * the computer's description. The PC's name is on the chin and the post-it on the frame.
+     */
+    createMonitorDesktopUI() {
+        const account = this.accountBarHtml();
+        const note = this.headerObservations();
+        this.gameContainer.innerHTML = `
+            <div class="container-minigame desktop-mode pc-desktop">
+                ${account ? `<div class="pc-desktop-topbar">${account}
+                </div>` : ''}
+                <div class="desktop-background">
+                    <div class="desktop-icons" id="desktop-icons">
+                        <!-- Desktop icons will be populated here -->
+                    </div>
+                </div>
+                <div class="desktop-taskbar">
+                    <span class="desktop-taskbar-note">${escapeHtml(displayDashes(note))}</span>
+                    <div class="desktop-actions">
+                        ${this.isTakeable ? '<button class="minigame-button" id="take-container-btn">Take Container</button>' : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+        this.applyAccountHeadshot();
+    }
+
+    /** The signed-in account's headshot in the desktop's top bar (UX slice 2c). */
+    applyAccountHeadshot() {
+        const img = this.gameContainer?.querySelector?.('.desktop-account-headshot');
+        const session = this.loginSession();
+        if (!img || !session) return;
+        const record = npcRecordFor({ npcId: session.npcId, username: session.username });
+        applyHeadshotImg(img, headshotSourceFor({}, record));
+    }
+
     populateContents() {
         if (this.desktopMode) {
             this.populateDesktopIcons();

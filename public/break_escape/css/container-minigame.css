@@ -792,3 +792,142 @@
         min-height: 80px;
     }
 }
+
+/* ── In the PC monitor (UX slice 2c, css/pc-monitor.css) ─────────────────────────────
+   The desktop and a share's folder window draw straight onto the monitor's screen, over the
+   frame's wallpaper: a top bar with the signed-in account, the icons, a taskbar with the
+   computer's description. The monitor sets the size, so these fill it. */
+.pc-monitor .container-minigame.desktop-mode.pc-desktop {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    min-height: 100%;
+    margin: 0;
+    padding: 0;
+    gap: 0;
+    box-sizing: border-box;
+}
+
+.pc-desktop-topbar {
+    flex: 0 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 12px;
+    padding: 4px 8px;
+    background: #1c1c1c;
+    border-bottom: 2px solid #3a3a3a;
+}
+
+.pc-desktop-topbar .desktop-account-bar {
+    margin: 0;
+    flex: 1 1 auto;
+}
+
+.pc-desktop-topbar .desktop-claim-line,
+.pc-desktop-topbar .desktop-remote-line {
+    margin: 0;
+}
+
+.desktop-account-headshot {
+    width: 32px;
+    height: 32px;
+    image-rendering: pixelated;
+    background: #2c3e50;
+    box-shadow: 0 0 0 2px #4a5560;
+    flex: 0 0 auto;
+}
+
+.desktop-account-headshot[hidden] {
+    display: none;
+}
+
+.pc-desktop > .desktop-background {
+    flex: 1 1 auto;
+    min-height: 0;
+    background: none;
+    overflow: auto;
+}
+
+.pc-desktop .desktop-icons {
+    box-sizing: border-box;
+    height: auto;
+    min-height: 100%;
+}
+
+.pc-desktop > .desktop-taskbar {
+    flex: 0 0 auto;
+    min-height: 0;
+    padding: 4px 8px;
+    gap: 8px;
+}
+
+.desktop-taskbar-note {
+    font-size: 16px;
+    line-height: 18px;
+    color: #cfd6dc;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.pc-monitor[data-compact] .pc-desktop .desktop-icons {
+    padding: 8px;
+    gap: 8px;
+}
+
+.pc-monitor[data-compact] .desktop-account-bar {
+    font-size: 16px;
+    gap: 4px 8px;
+}
+
+.pc-monitor[data-compact] .desktop-account-btn {
+    padding: 2px 8px;
+}
+
+.pc-monitor[data-compact] .desktop-account-headshot {
+    width: 32px;
+    height: 32px;
+}
+
+/* A share's folder window on the screen: it fills the screen less a margin of wallpaper */
+.pc-monitor .share-folder-layout.pc-share {
+    height: 100%;
+    padding: 12px;
+    box-sizing: border-box;
+}
+
+.pc-monitor .pc-share > .container-minigame.share-folder {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+}
+
+.share-folder-status {
+    flex: 0 0 auto;
+    margin: 4px 0 0;
+    padding: 2px 6px;
+    border: 2px solid #808080;
+    border-right-color: #fff;
+    border-bottom-color: #fff;
+    color: #000;
+    font-size: 16px;
+    line-height: 18px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.pc-monitor[data-compact] .share-folder-layout.pc-share {
+    padding: 6px;
+}
+
+.pc-monitor[data-compact] .container-contents-grid.share-folder-files {
+    min-height: 0;
+    padding: 8px 8px 32px;
+    gap: 32px 8px;
+}
