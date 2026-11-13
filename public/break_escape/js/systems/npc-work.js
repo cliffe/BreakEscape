@@ -45,12 +45,14 @@ function offWhenNames(cond) {
 
 /**
  * A need with no routes key is reachable; an empty list of routes never is; otherwise it is
- * reachable when some route has no truthy global.
+ * reachable when some route has no network down. Format 1 (step 8a): a route entry is a network's
+ * outage condition (offWhen, requireGlobal form), so a route is open while none of its conditions
+ * holds (offWhenHolds), which takes the { name: value } form down too.
  */
 export function reachable(need, globals) {
     if (!need || !Array.isArray(need.routes)) return true;
     const get = lookup(globals);
-    return need.routes.some(route => Array.isArray(route) && route.every(name => !truthy(get(name))));
+    return need.routes.some(route => Array.isArray(route) && route.every(cond => !offWhenHolds(cond, get)));
 }
 
 /** Every cause a use of `need` fails with, as [{ id, why }], in plan order. */
@@ -90,7 +92,7 @@ export function wakeOnFor(plan, missing, globals) {
         const r = byId.get(c.id);
         if (c.why === "down" && r && r.offWhen != null) { offWhenNames(r.offWhen).forEach(n => out.add(n)); continue; }
         if (c.why === "unreachable" && r && Array.isArray(r.routes)) {
-            const names = r.routes.flat().filter(n => truthy(get(n)));
+            const names = r.routes.flat().filter(cond => offWhenHolds(cond, get)).flatMap(offWhenNames);
             if (!names.length) return [];
             names.forEach(n => out.add(n));
             continue;
@@ -117,7 +119,7 @@ export function planGlobals(plan) {
     const out = new Set();
     for (const r of plan && Array.isArray(plan.needs) ? plan.needs : []) {
         if (r && r.offWhen != null) offWhenNames(r.offWhen).forEach(n => out.add(n));
-        if (r && Array.isArray(r.routes)) r.routes.flat().forEach(n => { if (typeof n === "string" && n) out.add(n); });
+        if (r && Array.isArray(r.routes)) r.routes.flat().forEach(cond => offWhenNames(cond).forEach(n => out.add(n)));
     }
     return [...out].sort();
 }

@@ -137,7 +137,7 @@ module BreakEscape
         'a private source the owner is listed on' =>
           scenario { |d| add_object(d, 'finance', coffee('private' => true, 'owners' => ['jake'])) },
         'a source that starts hidden or switched off (it can come on)' =>
-          scenario { |d| add_object(d, 'finance', coffee('offWhen' => 'power_out').merge('revealOnGlobal' => 'shown')) },
+          scenario { |d| add_object(d, 'finance', coffee.merge('offWhen' => 'power_out', 'revealOnGlobal' => 'shown')) },
         'a source outside every room (the start inventory)' =>
           scenario { |d| d['startItemsInInventory'] = [coffee] },
         'an office preset source with presets on' =>

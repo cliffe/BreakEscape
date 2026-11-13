@@ -260,7 +260,7 @@ test('an account password in a network or resource string is an error, and is ne
 
 test('no 9.3b field is refused as "needs slice 9.3b" any more (K, O, W, P, I all landed)', { skip }, () => {
     const sc = clean();
-    sc.networks.office_lan.downIf = 'power_off';
+    sc.networks.office_lan.offWhen = 'power_off';
     sc.globalVariables = { power_off: false };
     const out = errors(issues(sc));
     assertNot(out, 'needs slice 9.3b');
@@ -268,30 +268,30 @@ test('no 9.3b field is refused as "needs slice 9.3b" any more (K, O, W, P, I all
 
 // ---- Outages (sub-slice O, 5.2) ----
 
-// A second network with its own downIf, down by default, and a declared global.
+// A second network with its own offWhen, down by default, and a declared global.
 function withOutage({ down = true } = {}) {
     const sc = clean();
-    sc.networks.server_net = { name: 'Server network', downIf: 'servers_offline' };
+    sc.networks.server_net = { name: 'Server network', offWhen: 'servers_offline' };
     sc.networkLinks = [['office_lan', 'server_net']];
     sc.globalVariables = { servers_offline: down };
     return sc;
 }
 
-test('a clean network downIf scenario raises no outage error', { skip }, () => {
+test('a clean network offWhen scenario raises no outage error', { skip }, () => {
     const out = errors(issues(withOutage()));
-    assertNot(out, 'downIf');
+    assertNot(out, 'offWhen');
 });
 
-test('a network downIf that is not a string errors', { skip }, () => {
+test('a network offWhen that is not the requireGlobal form errors', { skip }, () => {
     const sc = withOutage();
-    sc.networks.server_net.downIf = 5;
-    assertHas(errors(issues(sc)), "'networks/server_net/downIf' must be a string");
+    sc.networks.server_net.offWhen = 5;
+    assertHas(errors(issues(sc)), "'networks/server_net/offWhen' must be a global name or { name: value } (the requireGlobal form).");
 });
 
-test('an undeclared network downIf global warns', { skip }, () => {
+test('an undeclared network offWhen global warns', { skip }, () => {
     const sc = withOutage();
     delete sc.globalVariables;
-    assertHas(warnings(issues(sc)), "networks.server_net.downIf 'servers_offline' is not declared in globalVariables");
+    assertHas(warnings(issues(sc)), "networks.server_net.offWhen names 'servers_offline', which is not declared in globalVariables");
 });
 
 test('an open share with contents on a network that starts down warns', { skip }, () => {
@@ -312,9 +312,9 @@ test('the same open share raises no start-down warning when the network starts u
     assertNot(warnings(issues(sc)), "open share 'public_drop' with contents is on network 'server_net', which starts down");
 });
 
-test('the outage info line reports a network downIf and its starting state', { skip }, () => {
+test('the outage info line reports a network offWhen and its starting state', { skip }, () => {
     const out = infos(issues(withOutage({ down: true })));
-    assertHas(out, "Outage: network 'server_net' is down while 'servers_offline' is truthy; it starts down.");
+    assertHas(out, "Outage: network 'server_net' is down while \"servers_offline\" holds; it starts down.");
 });
 
 // ---- grant_foothold (implants, sub-slice I) ----

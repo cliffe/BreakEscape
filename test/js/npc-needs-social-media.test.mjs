@@ -26,7 +26,7 @@ function jake(extra = {}) {
 
 function objects({ blocked = true, kiosk = false, tablet = false, otherDesk = false } = {}) {
     const out = [{ id: 'jake_pc', x: 100, y: 68, desk: true, socialBlocked: blocked,
-        affordance: { satisfies: 'work', restores: 10, useSeconds: 5, offWhen: 'jake_pc_off' } }];
+        offWhen: 'jake_pc_off', affordance: { satisfies: 'work', restores: 10, useSeconds: 5 } }];
     if (tablet) out.push({ id: 'tablet', x: 300, y: 300, affordance: { satisfies: 'social_media', restores: 50, useSeconds: 6 } });
     if (kiosk) out.push({ id: 'kiosk', x: 400, y: 300, desk: true, affordance: { satisfies: 'social_media', restores: 50, useSeconds: 6 } });
     if (otherDesk) out.push({ id: 'lena_pc', x: 200, y: 68, desk: true, affordance: { satisfies: 'social_media', restores: 50, useSeconds: 6 } });

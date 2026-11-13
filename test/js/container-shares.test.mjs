@@ -588,7 +588,7 @@ test('through the real minigame manager: desktop, share, a cancelled PIN pad, ba
 // Review R3 nit 2: a desktop left open when its PC is switched off closes, and so does a share
 // opened from it; the session is kept. At the keyboard: "This PC is off."; remotely: not_responding.
 const samDesktop = () => ({ scenarioData: { id: 'sam_pc', name: "Sam's PC", type: 'pc', lockType: 'login', locked: true,
-    affordance: { offWhen: 'sam_pc_off' } } });
+    offWhen: 'sam_pc_off' } });
 
 function switchSamOff() {
     window.gameState.globalVariables.sam_pc_off = true;

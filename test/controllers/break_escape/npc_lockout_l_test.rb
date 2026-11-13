@@ -296,7 +296,8 @@ module BreakEscape
     test 'q33: a recorded lockout is a social_media cause too; its fail counts and a social ease at the station is refused' do
       data = scenario
       jake_pc = data['rooms']['office']['objects'].find { |o| o['id'] == 'jake_pc' }
-      jake_pc['affordance'] = { 'satisfies' => %w[work social_media], 'useSeconds' => 5, 'offWhen' => 'jake_pc_off' }
+      jake_pc['offWhen'] = 'jake_pc_off'
+      jake_pc['affordance'] = { 'satisfies' => %w[work social_media], 'useSeconds' => 5 }
       data['globalVariables']['jake_pc_off'] = false
       npc_in(data, 'jake')['needs']['social_media'] = { 'decayPerMin' => 4, 'urgentAt' => 40 }
       npc_in(data, 'jake')['phone'] = false # social media at the desk only, so it can fail there

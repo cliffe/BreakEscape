@@ -8,8 +8,8 @@ import { makeWorld } from './needs-stub-world.mjs';
 export const PLAN = Object.freeze({
     breakDrain: 10,
     needs: [
-        { id: 'finance_share', kind: 'file_share', admitted: true, downIf: 'share_down' },
-        { id: 'printer', kind: 'printer', admitted: true, downIf: 'printer_jammed', object: 'office_printer' }
+        { id: 'finance_share', kind: 'file_share', admitted: true, offWhen: 'share_down' },
+        { id: 'printer', kind: 'printer', admitted: true, offWhen: 'printer_jammed', object: 'office_printer' }
     ]
 });
 
@@ -26,8 +26,8 @@ export function dana(extra = {}) {
 
 export function baseObjects() {
     return [
-        { id: 'dana_pc', x: 100, y: 68, desk: true, affordance: { satisfies: 'work', restores: 60, useSeconds: 5, offWhen: 'dana_pc_off' } },
-        { id: 'coffee', x: 300, y: 300, affordance: { satisfies: 'caffeine', restores: 70, useSeconds: 10, offWhen: 'coffee_off' } },
+        { id: 'dana_pc', x: 100, y: 68, desk: true, offWhen: 'dana_pc_off', affordance: { satisfies: 'work', restores: 60, useSeconds: 5 } },
+        { id: 'coffee', x: 300, y: 300, offWhen: 'coffee_off', affordance: { satisfies: 'caffeine', restores: 70, useSeconds: 10 } },
         { id: 'office_printer', x: 200, y: 300 }
     ];
 }

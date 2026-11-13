@@ -16,13 +16,13 @@ module BreakEscape
       AccessWorkScenario.staff(id, username, password, { 'workNeeds' => ['+rota'] }.merge(extra))
     end
 
-    # The A fixture plus: a `rota` resource with a downIf; Mei (writes_down at 50), Tom
+    # The A fixture plus: a `rota` resource with a offWhen; Mei (writes_down at 50), Tom
     # (prop_door to store_room at 40, which is behind an rfid door, Una inside), Ellis (emit at
     # 20). Staff perFail is 20.
     def scenario
       data = AccessWorkScenario.scenario
       data['globalVariables'].merge!('rota_down' => false, 'store_door_propped' => false)
-      data['resources']['rota'] = { 'kind' => 'rota', 'name' => 'Shift rota system', 'downIf' => 'rota_down' }
+      data['resources']['rota'] = { 'kind' => 'rota', 'name' => 'Shift rota system', 'offWhen' => 'rota_down' }
       office = data['rooms']['office']
       office['connections']['north'] = 'store_room'
       office['objects'] += [AccessWorkScenario.pc('mei_pc', 'lockChance' => 1), AccessWorkScenario.pc('tom_pc'),

@@ -1,4 +1,4 @@
-// Office life slice 18a (OFFICE_LIFE_PLAN 12.4): coffee off. affordance.offWhen takes a source out
+// Office life slice 18a (OFFICE_LIFE_PLAN 12.4): coffee off. offWhen takes a source out
 // of the candidates; walkers and queuers turn back with reason `off` (outside _recheck, so with no
 // avoidance radius too); one using it finishes; the fallback takes the next source or parks; an off
 // turn-back leaves a later avoidance turn-back possible; switching it back on (a real change)
@@ -21,7 +21,7 @@ import { runSimsDay } from './fixtures/needs-sims-world.mjs';
 const T = 32;
 const coffee = (initial = 90) => ({ caffeine: { decayPerMin: 1, urgentAt: 50, initial } });
 // Approach cell of a stub object is one tile below it. The office machine can be switched off
-const officeMachine = (extra = {}) => ({ id: 'office_coffee', x: 300, y: 100, affordance: { satisfies: 'caffeine', restores: 70, useSeconds: 10, offWhen: 'coffee_off', ...extra } });
+const officeMachine = ({ offWhen = 'coffee_off', ...extra } = {}) => ({ id: 'office_coffee', x: 300, y: 100, offWhen, affordance: { satisfies: 'caffeine', restores: 70, useSeconds: 10, ...extra } });
 const kitchenMachine = () => ({ id: 'kitchen_coffee', x: 900, y: 100, affordance: { satisfies: 'caffeine', restores: 70, useSeconds: 10 } });
 const nearQueue = { cells: [{ dx: -1, dy: 0 }, { dx: -2, dy: 0 }] };
 
@@ -263,7 +263,7 @@ test('validator: offWhen names a declared global that some object sets; a hint w
     const socket = (hint) => ({ id: 'socket', type: 'wall_socket1', name: 'Wall socket', triggerOnInteract: [{ type: 'set_global', key: 'coffee_off', value: true }, hint] });
     const scen = (offWhen, objs = [], globals = { coffee_off: false }) => ({
         globalVariables: globals,
-        rooms: { office: { type: 'room_office', objects: [{ id: 'm', type: 'coffee_station1', affordance: { satisfies: 'caffeine', restores: 50, offWhen } }, ...objs], npcs: [npc] } }
+        rooms: { office: { type: 'room_office', objects: [{ id: 'm', type: 'coffee_station1', offWhen, affordance: { satisfies: 'caffeine', restores: 50 } }, ...objs], npcs: [npc] } }
     });
     const mine = list => list.filter(s => /offWhen|hint/.test(s));
     assert.deepEqual(mine(check(scen('coffee_off', [socket({ type: 'hint', title: 'Wall socket', message: 'The coffee machine is switched off at the wall.' })]))), []);

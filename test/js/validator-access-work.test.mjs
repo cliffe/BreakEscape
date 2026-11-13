@@ -122,14 +122,14 @@ function workClean() {
         },
         resources: {
             email: { name: 'Email', kind: 'email' },
-            finance_share: { name: 'Finance share', kind: 'file_share', access: { roles: ['finance'] }, downIf: 'share_down' }
+            finance_share: { name: 'Finance share', kind: 'file_share', access: { roles: ['finance'] }, offWhen: 'share_down' }
         },
         roles: { staff: { workNeeds: ['email'], frustration: { perFail: 20 } }, finance: { workNeeds: ['finance_share'] } },
         globalVariables: { share_down: false, dana_pc_off: false },
         rooms: {
             office: {
                 type: 'room_office',
-                objects: [pc('dana_pc', { affordance: { satisfies: 'work', useSeconds: 5, restores: 10, offWhen: 'dana_pc_off' } })],
+                objects: [pc('dana_pc', { offWhen: 'dana_pc_off', affordance: { satisfies: 'work', useSeconds: 5, restores: 10 } })],
                 npcs: [worker('dana', { role: ['finance', 'staff'] })]
             }
         }
@@ -182,15 +182,15 @@ test('Work: an NPC with a resource it is not admitted to is warned (Kai, "work n
     assert.equal(w.length, 1, w.join('\n'));
 });
 
-test('Work: a resource its station can never reach, and an undeclared downIf, are warned', { skip }, () => {
+test('Work: a resource its station can never reach, and an undeclared offWhen, are warned', { skip }, () => {
     const s = workClean();
     s.networks = { corp: { name: 'Corp' }, fin: { name: 'Finance' } };
     s.rooms.office.network = 'corp';
     s.resources.finance_share.network = 'fin';
-    s.resources.email.downIf = 'mail_down';
+    s.resources.email.offWhen = 'mail_down';
     const w = warnings(issues(s));
     assertHas(w, "dana needs 'finance_share' but its station can never reach it");
-    assertHas(w, "resources.email.downIf 'mail_down' is not declared");
+    assertHas(w, "resources.email.offWhen names 'mail_down', which is not declared");
 });
 
 test('Work: needsDeferMin under 0.5 is warned for a work plan and for social media with no phone, not with a phone', { skip }, () => {
@@ -221,7 +221,7 @@ test('Work: the station warnings (no work affordance, a coordinate with a screen
     const v = workClean();
     v.rooms.office.objects.push(pc('pat_pc', { affordance: undefined, screenOwner: 'pat' }));
     v.rooms.office.npcs.push({ id: 'pat', npcType: 'person', role: 'staff', creds: { username: 'pat', password: 'pw-pat-long' } });
-    v.resources.email.downIf = undefined;
+    v.resources.email.offWhen = undefined;
     assert.ok(!has(issues(v), 'pat'), issues(v).join('\n'));
 });
 
@@ -268,7 +268,7 @@ test('Work: the report lines (resources, honest time, earliest by the park floor
     s.rooms.office.npcs[0].workarounds = [{ at: 50, do: 'emit', event: 'dana_gave_up' }];
     s.rooms.office.npcs[1].workarounds = [{ at: 50, do: 'writes_down' }];
     const lines = run(s, 'report_lines');
-    assertHas(lines, 'Work dana: finance_share (admitted, down while share_down); email (admitted, nothing takes it down); station \'dana_pc\' off while dana_pc_off.');
+    assertHas(lines, 'Work dana: finance_share (admitted, down while share_down); email (admitted, nothing takes it down); station \'dana_pc\' off while "dana_pc_off".');
     assertHas(lines, 'Work kai: email (admitted, nothing takes it down); finance_share (NOT admitted, down while share_down).');
     // dana: n = ceil(50/20) = 3; honest 5 + 2 x (30 + 5) = 75; earliest 2 x (0.9 x 5 - 3) = 3
     assertHas(lines, 'Workaround dana[0] emit at 50: opens event \'dana_gave_up\'; 3 failed use(s) at perFail 20; tell 1, tell 2, then the workaround; about 75 s of outage; earliest by a modified browser 3 s');
@@ -286,7 +286,7 @@ test('Work: earliest by a modified browser (review R1 m1, m2): halved park floor
     // fail alternate: half the park floor, 2 x 24 / 2 = 24
     const s = withKai(workClean());
     s.rooms.office.npcs[1].workarounds = [{ at: 50, do: 'writes_down' }];
-    s.rooms.office.objects[1].affordance.offWhen = 'kai_pc_off';
+    s.rooms.office.objects[1].offWhen = 'kai_pc_off';
     s.globalVariables.kai_pc_off = false;
     assertHas(run(s, 'report_lines'), 'earliest by a modified browser 24 s after');
 
@@ -296,6 +296,7 @@ test('Work: earliest by a modified browser (review R1 m1, m2): halved park floor
     n.networks = { corp: { name: 'Corp' } };
     n.resources.email.network = 'corp';
     n.rooms.office.objects[0].affordance = { satisfies: 'work', useSeconds: 5, restores: 10 };
+    delete n.rooms.office.objects[0].offWhen; // dana_pc is not off here: the station is the only ease place
     n.rooms.office.npcs[0].workarounds = [{ at: 50, do: 'emit', event: 'dana_gave_up' }];
     assertHas(run(n, 'report_lines'), 'earliest by a modified browser 48 s after');
     // review R2 m3: a non-desk place changes nothing, the server refuses every work ease for a
@@ -363,7 +364,7 @@ function wkClean() {
     s.chatter.wk_prop_door = ["I'm not badging in every time."];
     s.globalVariables.store_propped = false;
     s.rooms.office.connections = { north: 'store' };
-    s.rooms.office.objects.push(pc('tom_pc', { affordance: { satisfies: 'work', useSeconds: 5, restores: 10, offWhen: 'dana_pc_off' } }),
+    s.rooms.office.objects.push(pc('tom_pc', { offWhen: 'dana_pc_off', affordance: { satisfies: 'work', useSeconds: 5, restores: 10 } }),
         { id: 'store_wedge', type: 'fire_extinguisher1', name: 'Extinguisher', revealOnGlobal: 'store_propped' });
     s.rooms.office.npcs[0].workarounds = [{ at: 50, do: 'writes_down' }];
     s.rooms.office.npcs.push(worker('tom', {
@@ -467,10 +468,10 @@ test('Workarounds: a setGlobal that a server gate also reads is warned (review 9
     s.exportGlobals = ['store_propped'];
     assertHas(warnings(issues(s)), `${frag} (exportGlobals)`);
     s = wkClean();
-    s.resources.finance_share.downIf = 'store_propped';
-    assertHas(warnings(issues(s)), `${frag} (resources.finance_share.downIf)`);
+    s.resources.finance_share.offWhen = 'store_propped';
+    assertHas(warnings(issues(s)), `${frag} (resources.finance_share.offWhen)`);
     s = wkClean();
-    s.rooms.office.objects.find(o => o.id === 'tom_pc').affordance.offWhen = { store_propped: true };
+    s.rooms.office.objects.find(o => o.id === 'tom_pc').offWhen = { store_propped: true };
     assertHas(warnings(issues(s)), `${frag} (tom_pc offWhen)`);
     // An event mapping or a reveal reads it in the browser only: no warning
     s = wkClean();
@@ -533,8 +534,8 @@ function hClean() {
     s.chatter.wk_borrow = ["I'll use the spare PC."];
     s.chatter.wk_share_login = ['Ruth, a quick favour?'];
     s.chatter.login_aloud = ["Use mine. It's the usual one."];
-    s.rooms.office.objects.push(pc('ian_pc', { affordance: { satisfies: 'work', useSeconds: 5, restores: 10, offWhen: 'dana_pc_off' } }),
-        pc('hot_desk'), pc('sam_pc', { affordance: { satisfies: 'work', useSeconds: 5, restores: 10, offWhen: 'dana_pc_off' } }),
+    s.rooms.office.objects.push(pc('ian_pc', { offWhen: 'dana_pc_off', affordance: { satisfies: 'work', useSeconds: 5, restores: 10 } }),
+        pc('hot_desk'), pc('sam_pc', { offWhen: 'dana_pc_off', affordance: { satisfies: 'work', useSeconds: 5, restores: 10 } }),
         pc('ruth_pc'));
     s.rooms.office.npcs.push(
         worker('ian', { screenHabit: { lockChance: 0 }, workarounds: [{ at: 50, do: 'borrow_session', pc: 'hot_desk' }] }),

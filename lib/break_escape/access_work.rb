@@ -456,7 +456,10 @@ module BreakEscape
         off_when_present?(cond) && globals_hold?(cond, globals)
       when 'unreachable'
         rt = routes(data, npc, resources(data)[id])
-        !rt.nil? && rt.none? { |route| route.none? { |g| truthy_global?(globals[g.to_s]) } }
+        # Format 1 (step 8a): a route entry is a network's outage condition (offWhen, requireGlobal
+        # form), evaluated by globals_hold? so the { name: value } form takes a route down too. A
+        # route is open while none of its conditions holds; unreachable means every route is down.
+        !rt.nil? && rt.none? { |route| route.none? { |cond| globals_hold?(cond, globals) } }
       when 'no_access'
         !admitted?(resources(data)[id], npc)
       when 'off'

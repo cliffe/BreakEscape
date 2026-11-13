@@ -6,7 +6,7 @@ import { useVerdict, reachable, wakeOnFor, causesClear, planGlobals } from '../.
 const plan = {
     breakDrain: 10,
     needs: [
-        { id: 'finance_share', kind: 'file_share', admitted: true, downIf: 'share_down' },
+        { id: 'finance_share', kind: 'file_share', admitted: true, offWhen: 'share_down' },
         { id: 'secret_share', kind: 'file_share', admitted: false },
         { id: 'email', kind: 'email', admitted: true, routes: [['wan_down']] }
     ]

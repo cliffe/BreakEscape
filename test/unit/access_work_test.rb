@@ -12,8 +12,8 @@ class AccessWorkTest < ActiveSupport::TestCase
       'policies' => { 'managed' => { 'usb' => 'allowed' }, 'no_social' => { 'social' => 'blocked' } },
       'resources' => {
         'email' => { 'kind' => 'email' },
-        'finance_share' => { 'kind' => 'file_share', 'access' => { 'roles' => ['finance'] }, 'downIf' => 'finance_share_down' },
-        'printer' => { 'kind' => 'printer', 'object' => 'office_printer', 'downIf' => 'printer_jammed' }
+        'finance_share' => { 'kind' => 'file_share', 'access' => { 'roles' => ['finance'] }, 'offWhen' => 'finance_share_down' },
+        'printer' => { 'kind' => 'printer', 'object' => 'office_printer', 'offWhen' => 'printer_jammed' }
       },
       'roles' => {
         'staff' => { 'workNeeds' => ['email'], 'frustration' => { 'perFail' => 20 } },
@@ -26,7 +26,7 @@ class AccessWorkTest < ActiveSupport::TestCase
             { 'id' => 'plain_pc', 'type' => 'pc' },
             { 'id' => 'tablet', 'type' => 'tablet1', 'affordance' => { 'satisfies' => 'work', 'useSeconds' => 3 } },
             { 'id' => 'hot_desk', 'type' => 'pc', 'lockType' => 'login', 'affordance' => { 'satisfies' => 'work', 'useSeconds' => 7 } },
-            { 'id' => 'dead_pc', 'type' => 'pc', 'lockType' => 'login', 'affordance' => { 'satisfies' => 'work', 'offWhen' => 'dead' } },
+            { 'id' => 'dead_pc', 'type' => 'pc', 'lockType' => 'login', 'offWhen' => 'dead', 'affordance' => { 'satisfies' => 'work' } },
             { 'id' => 'kiosk', 'type' => 'kiosk1', 'workstation' => true, 'affordance' => { 'satisfies' => 'work' } }
           ],
           'npcs' => []
@@ -70,14 +70,14 @@ class AccessWorkTest < ActiveSupport::TestCase
     assert_nil AW.plan(scenario, npc('needs' => {}))
   end
 
-  test 'the plan holds ids, kinds, admitted and downIf, never a name or a network' do
+  test 'the plan holds ids, kinds, admitted and offWhen, never a name or a network' do
     d = scenario
     d['resources']['email']['name'] = 'Email system'
     plan = AW.plan(d, npc('workNeeds' => ['+printer']))
     assert_equal 10.0, plan['breakDrain']
-    assert_equal [{ 'id' => 'finance_share', 'kind' => 'file_share', 'admitted' => true, 'downIf' => 'finance_share_down' },
+    assert_equal [{ 'id' => 'finance_share', 'kind' => 'file_share', 'admitted' => true, 'offWhen' => 'finance_share_down' },
                   { 'id' => 'email', 'kind' => 'email', 'admitted' => true },
-                  { 'id' => 'printer', 'kind' => 'printer', 'admitted' => true, 'downIf' => 'printer_jammed', 'object' => 'office_printer' }],
+                  { 'id' => 'printer', 'kind' => 'printer', 'admitted' => true, 'offWhen' => 'printer_jammed', 'object' => 'office_printer' }],
                  plan['needs']
     kai = npc('id' => 'kai', 'role' => nil, 'workNeeds' => ['+finance_share'])
     assert_equal false, AW.plan(d, kai)['needs'].find { |n| n['id'] == 'finance_share' }['admitted']
@@ -97,9 +97,9 @@ class AccessWorkTest < ActiveSupport::TestCase
 
   test 'can fail: each cause, and none' do
     d = scenario
-    assert AW.can_fail?(d, npc, 'work'), 'a downIf'
+    assert AW.can_fail?(d, npc, 'work'), 'a offWhen'
     email_only = npc('role' => nil)
-    assert_not AW.can_fail?(d, email_only, 'work'), 'email only, no downIf, a live PC'
+    assert_not AW.can_fail?(d, email_only, 'work'), 'email only, no offWhen, a live PC'
     assert AW.can_fail?(d, email_only.merge('needsHome' => 'dead_pc'), 'work'), 'its station has an offWhen'
     assert AW.can_fail?(d, npc('id' => 'kai', 'role' => nil, 'workNeeds' => ['+finance_share']), 'work'), 'not admitted'
     borrow = email_only.merge('workarounds' => [{ 'at' => 50, 'do' => 'borrow_session', 'pc' => 'dead_pc' }])

@@ -387,7 +387,7 @@ test('a click on a switched-off PC says "This PC is off." and opens nothing, wit
     for (const held of [false, true]) {
         reset({ held });
         window.gameState = { globalVariables: { hot_desk_off: true } };
-        const out = await interactLoginPc(pc({ affordance: { offWhen: 'hot_desk_off' } }));
+        const out = await interactLoginPc(pc({ offWhen: 'hot_desk_off' }));
         assert.equal(out, 'off');
         assert.equal(started.length, 0, 'no sign-in screen');
         assert.equal(desktops.length, 0, 'no desktop');
@@ -400,14 +400,14 @@ test('a click on a switched-off PC says "This PC is off." and opens nothing, wit
 test('the { name: value } form of offWhen, and a PC switched back on, which syncs first then opens', async () => {
     reset();
     window.gameState = { globalVariables: { power: 'off' } };
-    assert.equal(await interactLoginPc(pc({ affordance: { offWhen: { power: 'off' } } })), 'off');
+    assert.equal(await interactLoginPc(pc({ offWhen: { power: 'off' } })), 'off');
 
     reset();
     const order = [];
     window.gameState = { globalVariables: { power: 'on' } };
     window.stateSync = { sync: async () => { order.push('sync'); return true; } };
     window.ApiClient.loginAccounts = async (pcId) => { order.push('loginAccounts'); return { pc_id: pcId, loginAccounts: TILES }; };
-    assert.equal(await interactLoginPc(pc({ affordance: { offWhen: { power: 'off' } } })), 'signin');
+    assert.equal(await interactLoginPc(pc({ offWhen: { power: 'off' } })), 'signin');
     await settle();
     assert.deepEqual(order, ['sync', 'loginAccounts'], 'the server hears the switch before it is asked');
     assert.equal(started.length, 1);

@@ -59,7 +59,7 @@ test('a failed use: no restore, no npc_used, npc_use_failed and a failed turn-ba
     assert.equal(reports.length, 1);
 });
 
-test('a failed park wakes when its downIf clears, not on a door, a room or an unrelated machine', () => {
+test('a failed park wakes when its offWhen clears, not on a door, a room or an unrelated machine', () => {
     const { sys, set, evs, reports } = workWorld({ globals: { share_down: true, coffee_off: true } });
     sys.registerAll();
     assert.ok(stepUntil(sys, () => evs('npc_use_failed:').length > 0, 30000));
@@ -215,7 +215,7 @@ test('a met judged use with frustration reports an ease; a coffee use does not, 
     assert.equal(sys.world.getObject('dana_pc') && true, true);
 });
 
-test('the outage kick: a need at 90 drops to urgentAt once when its downIf turns on, and fails within one use time', () => {
+test('the outage kick: a need at 90 drops to urgentAt once when its offWhen turns on, and fails within one use time', () => {
     const { sys, set, evs, log } = workWorld();
     sys.registerAll();
     sys.states.get('dana').levels.work = 90;
@@ -406,8 +406,8 @@ test('R1 m3: an ease is reported after a fail even while the mirror still says 0
 test('R1 m5: an off non-desk source (a kiosk) is never a counted fail', () => {
     const rec = dana({ needsHome: { room: 'office', x: 3, y: 3 } });
     const objects = [
-        { id: 'kiosk', x: 200, y: 200, affordance: { satisfies: 'work', restores: 60, useSeconds: 5, offWhen: 'kiosk_off' } },
-        { id: 'coffee', x: 300, y: 300, affordance: { satisfies: 'caffeine', restores: 70, useSeconds: 10, offWhen: 'coffee_off' } }
+        { id: 'kiosk', x: 200, y: 200, offWhen: 'kiosk_off', affordance: { satisfies: 'work', restores: 60, useSeconds: 5 } },
+        { id: 'coffee', x: 300, y: 300, offWhen: 'coffee_off', affordance: { satisfies: 'caffeine', restores: 70, useSeconds: 10 } }
     ];
     const { sys, evs, reports } = workWorld({ npcs: { dana: { pos: { x: 96, y: 96 }, rec } }, objects, globals: { kiosk_off: true } });
     sys.registerAll();

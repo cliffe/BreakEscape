@@ -1096,7 +1096,9 @@ module ValidateAccessWork
         res = AW.resources(json_data)[rid]
         next unless res
 
-        Array(AW.routes(json_data, e[:npc], res)).flatten.each { |g| reads[g.to_s] << "a route to '#{rid}'" }
+        Array(AW.routes(json_data, e[:npc], res)).flatten(1).each do |cond|
+          offwhen_global_names(cond).each { |g| reads[g] << "a route to '#{rid}'" }
+        end
       end
     end
     AW.object_index(json_data).each do |oid, entry|
@@ -1315,7 +1317,7 @@ module ValidateAccessWork
         bits << 'never reachable from its station' if rt && rt.empty?
         downs = []
         downs.concat(offwhen_global_names(r['offWhen'])) if AW.off_when_present?(r['offWhen'])
-        rt&.each { |route| downs.concat(route) }
+        rt&.each { |route| route.each { |cond| downs.concat(offwhen_global_names(cond)) } }
         bits << (downs.empty? ? 'nothing takes it down' : "down while #{downs.uniq.join(' or ')}")
         "#{rid} (#{bits.join(', ')})"
       end

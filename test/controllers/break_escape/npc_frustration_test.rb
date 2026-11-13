@@ -123,7 +123,7 @@ module BreakEscape
     test 'an unplug during a met use: an ease and an off fail in one request are both accepted' do
       data = AccessWorkScenario.scenario
       data['globalVariables']['omar_pc_unplugged'] = false
-      data['rooms']['office']['objects'].find { |o| o['id'] == 'omar_pc' }['affordance']['offWhen'] = 'omar_pc_unplugged'
+      data['rooms']['office']['objects'].find { |o| o['id'] == 'omar_pc' }['offWhen'] = 'omar_pc_unplugged'
       build(scenario: data, globals: { 'printer_jammed' => true })
       t = Time.current
       travel_to(t) { report(omar_down) }
@@ -170,7 +170,7 @@ module BreakEscape
     test 'R5 n1: an owned-cause fail after an off-only fail is held to the use floor, and the next off fail to the park floor' do
       data = AccessWorkScenario.scenario
       data['globalVariables']['kai_pc_unplugged'] = false
-      data['rooms']['office']['objects'].find { |o| o['id'] == 'kai_pc' }['affordance']['offWhen'] = 'kai_pc_unplugged'
+      data['rooms']['office']['objects'].find { |o| o['id'] == 'kai_pc' }['offWhen'] = 'kai_pc_unplugged'
       build(scenario: data)
       t = Time.current
       assert_equal 20, travel_to(t) { report(fail_r('kai', 'finance_share', 'no_access', 'kai_pc')).first['level'] }
@@ -488,7 +488,7 @@ module BreakEscape
     end
     # ── review R2 ───────────────────────────────────────────────────────
 
-    test 'R2 m1: a global named "" does not make a resource with no downIf go down' do
+    test 'R2 m1: a global named "" does not make a resource with no offWhen go down' do
       build(globals: { '' => true })
       assert_equal({ 'npcId' => 'dana', 'stale' => true }, report(fail_r('dana', 'email', 'down', 'dana_pc')).first)
       assert_nil level('dana')
@@ -534,7 +534,7 @@ module BreakEscape
     test 'R2 m4: after a fail listing off and an owned cause, the next such fail is held to the park floor' do
       data = AccessWorkScenario.scenario
       data['globalVariables']['kai_pc_unplugged'] = true
-      data['rooms']['office']['objects'].find { |o| o['id'] == 'kai_pc' }['affordance']['offWhen'] = 'kai_pc_unplugged'
+      data['rooms']['office']['objects'].find { |o| o['id'] == 'kai_pc' }['offWhen'] = 'kai_pc_unplugged'
       build(scenario: data, globals: { 'kai_pc_unplugged' => true })
       both = fail_r('kai', 'kai_pc', 'off', 'kai_pc').merge(missing: [{ id: 'kai_pc', why: 'off' }, { id: 'finance_share', why: 'no_access' }])
       t = Time.current
