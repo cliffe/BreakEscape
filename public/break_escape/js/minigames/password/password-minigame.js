@@ -118,6 +118,16 @@ export function applyTilePortrait(el, tile, ImageCtor = (typeof Image !== 'undef
     tryAt(0);
 }
 
+/**
+ * Scroll `el` into view inside the password frame's scroll area when the window is too short
+ * to show it (UX slice 2a R2 M2): 'nearest', so nothing moves when it is already on screen.
+ */
+export function revealInFrame(el) {
+    if (!el || typeof el.scrollIntoView !== 'function') return false;
+    el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    return true;
+}
+
 /** The line under the form after a refused sign-in: the server's message and attemptsLeft. */
 export function signInRefusalMessage(result) {
     const message = (result?.message || 'Incorrect username or password').replace(/\.$/, '');
@@ -315,14 +325,18 @@ export class PasswordMinigame extends MinigameScene {
 
     /**
      * The controls row under the game area, made on first use: with no Cancel button the base
-     * scene draws none, and an empty row would only add a gap.
+     * scene draws none, and an empty row would only add a gap. It sits inside the frame, after
+     * the game area, as a fixed row that does not scroll (the frame wraps all the content, the
+     * user's UX notes; UX slice 2a R2 m3): the area scrolls above it, so the post-it cannot
+     * cover it.
      */
     ensureControlsRow() {
         if (this.controlsElement) return this.controlsElement;
-        if (!this.container?.appendChild) return null;
+        const host = this.frameElement || this.container;
+        if (!host?.appendChild) return null;
         const row = document.createElement('div');
         row.className = 'minigame-controls';
-        this.container.appendChild(row);
+        host.appendChild(row);
         this.controlsElement = row;
         return row;
     }
@@ -475,7 +489,7 @@ export class PasswordMinigame extends MinigameScene {
                         </div>
                         <div class="keyboard-row">
                             <button class="key key-special" data-key="Enter">Enter</button>
-                            <button class="key key-special" data-key="Escape">Cancel</button>
+                            <button class="key key-special" data-key="Escape">Esc</button>
                         </div>
                     </div>
                 ` : ''}
@@ -585,8 +599,10 @@ export class PasswordMinigame extends MinigameScene {
                 this.submitPassword();
                 break;
             case 'Escape':
+                // The same close as the X, wherever the focus is (UX slice 2a R2 m1)
                 event.preventDefault();
-                this.cancelPassword();
+                event.stopPropagation();
+                this.closeByPlayer();
                 break;
         }
     }
@@ -644,7 +660,7 @@ export class PasswordMinigame extends MinigameScene {
         if (keyValue === 'Enter') {
             this.submitPassword();
         } else if (keyValue === 'Escape') {
-            this.cancelPassword();
+            this.closeByPlayer();
         } else if (keyValue === 'Shift') {
             this.toggleCapsLock();
         } else if (keyValue === 'Backspace') {
@@ -712,6 +728,8 @@ export class PasswordMinigame extends MinigameScene {
 
         this.gameData.attempts++;
         this.attemptsDisplay.textContent = this.gameData.attempts;
+        // The counter is on screen after each try, even in a short window (UX slice 2a R2 M2)
+        revealInFrame(this.attemptsDisplay?.closest?.('.attempts-counter') || this.attemptsDisplay);
 
         // SECURITY: ALWAYS use server-side validation for password attempts
         const apiClient = window.ApiClient || window.APIClient;
@@ -1079,7 +1097,8 @@ export class PasswordMinigame extends MinigameScene {
 
         const onKey = (event) => {
             if (!this.gameState.isActive) return;
-            if (event.key === 'Escape') { event.preventDefault(); this.cancelPassword(); return; }
+            // The same close as the X, wherever the focus is (UX slice 2a R2 m1)
+            if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); this.closeByPlayer(); return; }
             if (event.key !== 'Enter') return;
             event.preventDefault();
             if (event.target === this.usernameField && !this.passwordField.value) {
@@ -1137,6 +1156,9 @@ export class PasswordMinigame extends MinigameScene {
         }
         const focus = st.other && !this.usernameField.value ? this.usernameField : this.passwordField;
         if (chosen && focus && typeof focus.focus === 'function') focus.focus();
+        // Once an account is chosen, the form down to its message line (Submit, the attempts
+        // left) scrolls into view in a short window (UX slice 2a R2 M2)
+        if (chosen) revealInFrame(this.signInMessageEl?.textContent ? this.signInMessageEl : this.submitBtn);
     }
 
     /** The Captured sign-ins block's inner markup (a remote screen, 4.4). */
@@ -1196,6 +1218,9 @@ export class PasswordMinigame extends MinigameScene {
         if (!this.signInMessageEl) return;
         this.signInMessageEl.textContent = text;
         this.signInMessageEl.dataset.kind = kind;
+        // A result (a wrong password and the attempts left, a lockout) is always on screen,
+        // even in a short window where the frame scrolls (UX slice 2a R2 M2)
+        if (text && kind !== 'info') revealInFrame(this.signInMessageEl);
     }
 
     async _submitSignInOnce() {

@@ -64,10 +64,12 @@ test('a sign-in PC with hasPostit gets one picture at the bottom-left and the st
     const img = sc.images[0];
     assert.equal(img.key, POSTIT_TEXTURE);
     const s = sprites.omar_pc;
-    assert.equal(img.x, Math.round(s.x + POSTIT_INSET + POSTIT_SIZE / 2));
+    // Drawn from its bottom-left (review R2 n1), so its left edge is a whole pixel, inset
+    assert.equal(img.x, Math.round(s.x + POSTIT_INSET));
+    assert.ok(Number.isInteger(img.x) && img.x - s.x === POSTIT_INSET, 'the left edge on a whole pixel, inset');
     // UX feedback slice 2a (main-11): the note's bottom edge is level with the sprite's bottom
-    // Drawn from its bottom-centre (review R1 n1), so its bottom edge is exactly img.y
-    assert.equal(img.originX, 0.5);
+    // (review R1 n1), so its bottom edge is exactly img.y
+    assert.equal(img.originX, 0);
     assert.equal(img.originY, 1);
     assert.equal(img.y, s.y + s.displayHeight, 'the bottom edge is the sprite bottom, to the pixel');
     assert.ok(img.x < s.x + s.displayWidth / 2, 'on the left half, clear of the indicator dot at the top-right');
@@ -163,6 +165,7 @@ test('slice 2a (main-11): the mark sits on the sprite bottom for any origin', ()
         const bottom = sprite.y - sprite.displayHeight * originY + sprite.displayHeight;
         const left = sprite.x - sprite.displayWidth * originX;
         assert.equal(y, bottom, `origin ${originX},${originY}: bottom ${y} against sprite bottom ${bottom}`);
-        assert.equal(x, Math.round(left + POSTIT_INSET + POSTIT_SIZE / 2));
+        assert.equal(x, Math.round(left + POSTIT_INSET));
+        assert.ok(Number.isInteger(x), `origin ${originX},${originY}: left edge on a whole pixel`);
     }
 });

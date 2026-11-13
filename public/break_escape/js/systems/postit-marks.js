@@ -34,10 +34,11 @@ export function wantsPostit(data) {
 }
 
 /**
- * The picture's anchor for a sprite, whatever its origin: x is the picture's centre, inset from
- * the sprite's left edge; y is the picture's bottom, level with the sprite's bottom (UX feedback
- * slice 2a, main-11: it sat at the top-left). The picture is drawn with origin (0.5, 1), so its
- * bottom edge is exactly y.
+ * The picture's anchor for a sprite, whatever its origin: x is the picture's left edge, inset
+ * from the sprite's left edge; y is the picture's bottom, level with the sprite's bottom (UX
+ * feedback slice 2a, main-11: it sat at the top-left). The picture is drawn with origin (0, 1),
+ * so both edges land on whole pixels (with origin 0.5 the 9px picture's left edge sat on a half
+ * pixel; UX slice 2a R2 n1).
  */
 export function postitPosition(sprite) {
     const w = sprite.displayWidth ?? sprite.width ?? 32;
@@ -46,7 +47,7 @@ export function postitPosition(sprite) {
     const oy = sprite.originY ?? 0.5;
     const left = sprite.x - w * ox;
     const top = sprite.y - h * oy;
-    return { x: Math.round(left + POSTIT_INSET + POSTIT_SIZE / 2), y: Math.round(top + h) };
+    return { x: Math.round(left + POSTIT_INSET), y: Math.round(top + h) };
 }
 
 export class PostitMarks {
@@ -85,7 +86,7 @@ export class PostitMarks {
         if (!scene?.add?.image) return null;
         const { x, y } = postitPosition(sprite);
         const image = scene.add.image(x, y, POSTIT_TEXTURE);
-        image.setOrigin?.(0.5, 1);
+        image.setOrigin?.(0, 1);
         image.setDepth?.((sprite.depth ?? 0) + POSTIT_DEPTH_OFFSET);
         image.setVisible?.(sprite.visible !== false);
         image.disableInteractive?.();

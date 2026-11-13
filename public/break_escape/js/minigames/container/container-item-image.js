@@ -79,12 +79,14 @@ export function containerImageHtml(url, alt, extraClass = '') {
  * in the box by padding, so a bordered box keeps its size (slice 2a review R1 M1 and M2).
  * Runs when the picture has loaded; until then the CSS size stands.
  */
-export function fitWholeScale(img, box, { maxScale = Infinity, pad = false } = {}) {
+export function fitWholeScale(img, box, { maxScale = Infinity, pad = false, onlyIfFits = false } = {}) {
     if (!img) return;
     const apply = () => {
         const w = img.naturalWidth;
         const h = img.naturalHeight;
         if (!w || !h) return;
+        // onlyIfFits: a picture bigger than the box keeps its CSS sizing (it is drawn down)
+        if (onlyIfFits && Math.max(w, h) > box) return;
         const scale = Math.max(1, Math.min(maxScale, Math.floor(box / Math.max(w, h))));
         img.style.width = `${w * scale}px`;
         img.style.height = `${h * scale}px`;

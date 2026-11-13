@@ -745,8 +745,11 @@
     transform: none;
 }
 
+/* As wide as the name, up to the 152px slot, so the hover highlight covers the name only,
+   as a file browser selects it (UX slice 2a R2 n2) */
 .share-folder-files .container-content-label {
-    width: 152px;
+    width: max-content;
+    max-width: 152px;
     color: #000;
     text-shadow: none;
     overflow-wrap: anywhere;

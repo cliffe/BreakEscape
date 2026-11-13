@@ -404,3 +404,98 @@ test('no Cancel button and no empty controls row on the plain and prompt screens
         mg.cleanup?.();
     }
 });
+
+// UX slice 2a R2 m1: Esc behaves as the X wherever the focus is: at once, closedByPlayer true,
+// no "cancelled" message and no 800 ms wait.
+test('R2 m1: Esc in the password field, the username field or the page ends exactly as the X', () => {
+    const ends = {};
+    const run = (label, act) => {
+        const mg = open();
+        if (label !== 'page' && label !== 'X') document.querySelectorAll('.signin-tile')[label === 'username' ? 2 : 0].click();
+        act(mg);
+        ends[label] = { ended: JSON.stringify(ended), byPlayer: mg.closedByPlayer === true,
+            message: document.querySelector('.minigame-failure-message')?.textContent || null };
+    };
+    run('X', () => q('#minigame-close').click());
+    const esc = (el) => el.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    run('password', () => esc(q('#password-field')));
+    run('username', () => esc(q('#signin-username')));
+    run('page', () => esc(document));
+    for (const label of ['password', 'username', 'page']) {
+        assert.deepEqual(ends[label], ends.X, `Esc (${label}) matches the X`);
+    }
+    assert.equal(ends.X.byPlayer, true);
+    assert.equal(ends.X.message, null, 'no "Sign-in cancelled." message');
+    assert.equal(JSON.parse(ends.X.ended).length, 1, 'ended once, at once (no timer)');
+});
+
+test('R2 m1: Esc in the plain and prompt fields ends exactly as the X, at once', () => {
+    for (const params of [
+        { title: 'Office PC', lockable: { scenarioData: { id: 'pc1', type: 'pc' } }, type: 'object', correctPassword: 'x' },
+        { title: 'Archive', lockable: { scenarioData: { id: 'zip', type: 'zip_archive' } }, type: 'item', correctPassword: 'x', showKeyboard: true },
+        { title: 'Guest Wi-Fi', join: { apId: 'guest_ap', apName: 'Guest Wi-Fi' }, type: 'item' }
+    ]) {
+        const out = [];
+        for (const how of ['X', 'Esc', 'key']) {
+            const calls = [];
+            document.body.innerHTML = '<div id="mg"></div>';
+            window.MinigameFramework = { currentMinigame: null, endMinigame: (s, r) => calls.push([s, r]) };
+            const mg = new PasswordMinigame(document.getElementById('mg'), params);
+            window.MinigameFramework.currentMinigame = mg;
+            mg.init(); mg.start();
+            if (how === 'X') q('#minigame-close').click();
+            else if (how === 'Esc') q('#password-field').dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+            else {
+                const key = q('.key[data-key="Escape"]');
+                if (!key) { out.push(out[0]); continue; }
+                assert.equal(key.textContent, 'Esc', 'the on-screen key is Esc, not Cancel');
+                key.click();
+            }
+            out.push(JSON.stringify({ calls, byPlayer: mg.closedByPlayer === true, msg: !!q('.minigame-failure-message') }));
+            mg.cleanup?.();
+        }
+        assert.equal(out[1], out[0], `${params.title}: Esc in the field matches the X`);
+        assert.equal(out[2], out[0], `${params.title}: the on-screen Esc key matches the X`);
+        assert.match(out[0], /"byPlayer":true/, params.title);
+        assert.match(out[0], /"msg":false/, params.title);
+    }
+});
+
+// UX slice 2a R2 m3: the controls row (Add to Notepad) sits inside the frame, after the game area
+test('R2 m3: Add to Notepad is inside the frame, after the game area, on the sign-in and plain screens', () => {
+    open();
+    const frame = q('.password-frame');
+    const row = q('.minigame-controls');
+    assert.equal(row.parentElement, frame, 'sign-in: the row is a child of the frame');
+    assert.equal(frame.lastElementChild === row || row.previousElementSibling?.classList.contains('minigame-game-container') || !!frame.querySelector(':scope > .minigame-game-container ~ .minigame-controls'), true, 'after the game area');
+    document.body.innerHTML = '<div id="mg"></div>';
+    window.MinigameFramework = { currentMinigame: null, endMinigame: () => {} };
+    const mg = new PasswordMinigame(document.getElementById('mg'), { title: 'Office PC', lockable: { scenarioData: { id: 'pc1', type: 'pc' } }, type: 'object', correctPassword: 'x', postitNote: 'pw: x', showPostit: true });
+    window.MinigameFramework.currentMinigame = mg;
+    mg.init();
+    assert.ok(q('.password-frame > .minigame-game-container ~ .minigame-controls #minigame-notebook-postit'), 'plain: inside the frame, after the area');
+    mg.cleanup?.();
+});
+
+// UX slice 2a R2 M2: in a short window the result line and Submit scroll into view
+test('R2 M2: choosing a tile reveals Submit; a wrong password and a lockout reveal the message line', async () => {
+    const revealed = [];
+    const proto = window.HTMLElement.prototype;
+    const had = proto.scrollIntoView;
+    proto.scrollIntoView = function (opts) { revealed.push([this.id || this.className, opts?.block]); };
+    try {
+        const mg = open();
+        document.querySelectorAll('.signin-tile')[0].click();
+        assert.deepEqual(revealed.at(-1), ['submit-password', 'nearest'], 'Submit, after a tile is chosen');
+        nextResult = wrong(2);
+        q('#password-field').value = 'nope';
+        await mg.submitPassword();
+        assert.deepEqual(revealed.at(-1), ['signin-message', 'nearest'], 'the attempts-left line');
+        nextResult = { ok: false, reason: 'locked_out', message: 'Locked out' };
+        q('#password-field').value = 'nope';
+        await mg.submitPassword();
+        assert.deepEqual(revealed.at(-1), ['signin-message', 'nearest'], 'the lockout line');
+    } finally {
+        if (had) proto.scrollIntoView = had; else delete proto.scrollIntoView;
+    }
+});

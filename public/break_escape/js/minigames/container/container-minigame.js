@@ -192,12 +192,20 @@ function scheduleNetworkReturnCheck(ms) {
 }
 
 /** Arm the one return for a hand-over from a network screen (state: its pendingContainerReturn). */
-export function armNetworkReturn(state) {
+export function armNetworkReturn(state, { playerCloseOnly = false } = {}) {
     disarmNetworkReturn();
     if (!state?.containerItem) return;
     const dispatcher = window.eventDispatcher;
     const handler = (data) => {
         if (!networkReturn || networkReturn.handler !== handler) return;
+        // playerCloseOnly (a sign-in desktop at the keyboard): the ending screen is still
+        // the current minigame while it emits, so its closedByPlayer says whose close it was
+        if (playerCloseOnly && data?.success !== true
+            && window.MinigameFramework?.currentMinigame?.closedByPlayer !== true) {
+            disarmNetworkReturn();
+            if (window.pendingContainerReturn === state) window.pendingContainerReturn = null;
+            return;
+        }
         scheduleNetworkReturnCheck(data?.success === true ? NETWORK_RETURN_GRACE_MS : 0);
     };
     networkReturn = { handler, dispatcher, state, timer: null };
@@ -983,6 +991,11 @@ export class ContainerMinigame extends MinigameScene {
                 icon.addEventListener('click', () => this.takeItem(item, iconImg));
             }
             
+            // A whole-number scale in the icon's 56px box (48 plus its 4px padding): a 16px
+            // glyph at x3 as before, the 26x18 share folder at x2 (it was 1.85x; UX slice 2a
+            // R2 m2). The padding takes up what the picture leaves, so the box keeps its size.
+            fitWholeScale(iconImg, 56, { pad: true, onlyIfFits: true });
+
             icon.appendChild(iconImg);
             icon.appendChild(iconLabel);
             desktopIcons.appendChild(icon);
@@ -1297,9 +1310,15 @@ export class ContainerMinigame extends MinigameScene {
         // From a network screen, a hand-over to anything but the text-file reader (which
         // reopens the screen itself) comes back here when it ends without opening a
         // container: a cancelled PIN pad, a key alert, a lockout, a phone (4.3)
+        const fromNetwork = isNetworkScreenContainer(this.containerItem);
+        // A sign-in PC's own desktop at the keyboard (Ian's archive password): the player's
+        // own close of the lock screen (its X or Esc) comes back to the desktop it was opened
+        // from, as a share's Close does (UX slice 2a R2). A forced close (a hit, too many
+        // wrong passwords) stays in the world.
+        const fromLoginDesktop = !fromNetwork && !!this.loginPcId && this.desktopMode;
         const armReturn = this.mode !== 'npc' && item.type !== 'text_file'
-            && isNetworkScreenContainer(this.containerItem);
-        if (armReturn) armNetworkReturn(containerState);
+            && (fromNetwork || fromLoginDesktop);
+        if (armReturn) armNetworkReturn(containerState, { playerCloseOnly: fromLoginDesktop });
         
         // Create a temporary sprite-like object for the main game handler
         const tempSprite = {

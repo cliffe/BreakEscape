@@ -164,3 +164,37 @@ test('the password frame wraps the area: no fixed height, the X inside the frame
     assert.match(rule('.password-frame > .minigame-game-container'), /overflow-y:\s*auto/, 'the area scrolls inside the frame');
     assert.match(rule('.password-frame > .minigame-close-button'), /top:\s*6px;[\s\S]*right:\s*6px;/, 'the X sits inside the frame corner');
 });
+
+// UX slice 2a R2 M1, M2 and m3: no 4px overflow, a pixel-art scrollbar, smaller sign-in tiles in
+// a short window, and the controls row inside the frame. The live check (scrollHeight against
+// clientHeight with scrollbars shown) is in the build log's R2 fixes section.
+test('R2: the bezel adds no scroll overflow; the frame scrollbar is pixel art; short-window tiles; controls in the frame', () => {
+    const css = readFileSync(join(js, '../css/password-minigame.css'), 'utf8');
+    const rule = (sel, from = 0) => {
+        const at = css.indexOf(`\n${sel} {`, from);
+        assert.ok(at >= 0, `${sel} rule present`);
+        return css.slice(at, css.indexOf('}', at));
+    };
+    const before = rule('.monitor-bezel::before');
+    for (const side of ['top', 'left', 'right', 'bottom']) {
+        assert.match(before, new RegExp(`\\n\\s*${side}:\\s*0;`), `bezel ::before ${side} 0 (it overflowed 4px)`);
+    }
+    assert.doesNotMatch(before, /:\s*-4px;/);
+    const sb = '.password-frame > .minigame-game-container::-webkit-scrollbar';
+    assert.match(rule(sb), /width:\s*12px/);
+    const thumb = rule(`${sb}-thumb`);
+    assert.match(thumb, /border:\s*2px solid/, 'a 2px-bordered thumb');
+    assert.match(thumb, /border-radius:\s*0/, 'square');
+    assert.doesNotMatch(css, /scrollbar[\s\S]{0,200}border-radius:\s*[1-9]/, 'no rounded scrollbar part');
+    assert.match(css, /@supports \(-moz-appearance: none\) \{\s*\.password-frame > \.minigame-game-container \{\s*scrollbar-color:[^;]+;\s*scrollbar-width:\s*thin;/,
+        'Firefox gets scrollbar-color and scrollbar-width (Chromium would drop the pixel-art rules for them)');
+    assert.match(css, /`\.pixel-scroll`/, 'names the shared rule a later slice merges this into');
+    const controls = rule('.password-frame > .minigame-controls');
+    assert.match(controls, /flex:\s*0 0 auto/, 'a fixed row that does not scroll');
+    const short = css.indexOf('@media (max-height: 640px)');
+    assert.ok(short >= 0);
+    const block = css.slice(short);
+    assert.match(block, /\.password-frame \.signin-portrait \{\s*width:\s*32px;\s*height:\s*32px;/, 'a 32px portrait (a quarter of a 128px frame)');
+    assert.match(block, /\.password-frame \.signin-username \{\s*display:\s*none;/, 'no username line under a tile');
+    assert.match(block, /\.password-frame \.signin-tile \{\s*width:\s*84px;/);
+});

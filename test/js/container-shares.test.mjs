@@ -798,3 +798,91 @@ test('slice 2a R1: the folder window CSS fills the frame, with no tile fill and 
     assert.match(slot, /background:\s*transparent/, 'no grey tile');
     assert.match(rule('.container-image.share-header-icon'), /width:\s*52px;\s*height:\s*36px;\s*padding:\s*22px 14px;/);
 });
+
+// UX slice 2a R2: the X on a lock screen opened from a sign-in desktop at the keyboard (Ian's
+// archive password) goes back to that desktop, as a share's Close does. Only the player's own
+// close: a forced close (a hit, too many wrong passwords) stays in the world.
+const ARCHIVE = { id: 'ian_archive', type: 'zip_archive', name: 'Old configs.zip', takeable: false, locked: true, lockType: 'password' };
+async function openLocalDesk() {
+    await sessions.signIn('sam_pc', 'sokafor', 'x');
+    const desk = { scenarioData: { id: 'sam_pc', name: "Sam's PC", type: 'pc', lockType: 'login', locked: true } };
+    window.startContainerMinigame(desk, null, false, true);
+    await settle();
+    window.handleObjectInteraction = (sprite) => { interactions.push(sprite); openPinPad(); };
+    return desk;
+}
+function closeLockScreen({ byPlayer }) {
+    const m = current();
+    if (byPlayer) m.closedByPlayer = true;
+    window.eventDispatcher.emit('minigame_failed', { minigameName: 'PasswordMinigame', success: false });
+    window.MinigameFramework.endMinigame(false, null);
+}
+
+test('R2: the X on an archive password from a local sign-in desktop returns to that desktop', async () => {
+    setup();
+    const desk = await openLocalDesk();
+    current().handleInteractiveItem({ ...ARCHIVE }, null);
+    assert.equal(current()._sceneType, 'pin', 'the lock screen is open');
+    assert.equal(networkReturnArmed(), true);
+    closeLockScreen({ byPlayer: true });
+    await settle();
+    assert.equal(current()?.containerItem, desk, 'back on the desktop it was opened from');
+    assert.equal(current().loginPcId, 'sam_pc');
+    assert.equal(current().desktopMode, true);
+    assert.equal(window.pendingContainerReturn, null, 'the return is spent');
+    assert.equal(networkReturnArmed(), false);
+});
+
+test('R2: a forced close of that lock screen (not the player) stays in the world, with no stale return', async () => {
+    setup();
+    await openLocalDesk();
+    current().handleInteractiveItem({ ...ARCHIVE }, null);
+    closeLockScreen({ byPlayer: false });
+    await settle();
+    assert.equal(current(), null, 'the world');
+    assert.equal(window.pendingContainerReturn, null);
+    assert.equal(networkReturnArmed(), false);
+});
+
+test('R2: an archive password that unlocks hands over to the archive, not back to the desktop', async () => {
+    setup();
+    await openLocalDesk();
+    current().handleInteractiveItem({ ...ARCHIVE }, null);
+    const stand = interactions.at(-1);
+    endPinPad(true);
+    await settle();
+    assert.equal(current(), null, 'nothing reopened while the unlock opens the archive');
+    window.startContainerMinigame({ ...stand, scenarioData: { ...ARCHIVE, locked: false } }, null, false, false);
+    await settle();
+    assert.equal(networkReturnArmed(), false, 'the archive opening spends the return');
+    assert.equal(current().containerItem.scenarioData.id, 'ian_archive');
+});
+
+// UX slice 2a R2 m2: desktop icons at a whole-number scale in their 56px box
+test('R2 m2: a mapped share icon on a desktop lands at x2; a 16px glyph at x3; the box keeps its size', async () => {
+    setup();
+    await openRemote();
+    const imgs = [...document.querySelectorAll('.desktop-icon-image')];
+    assert.ok(imgs.length >= 1);
+    const load = (img, w, h) => {
+        Object.defineProperty(img, 'naturalWidth', { value: w, configurable: true });
+        Object.defineProperty(img, 'naturalHeight', { value: h, configurable: true });
+        img.dispatchEvent(new window.Event('load'));
+    };
+    const share = imgs[0];
+    load(share, 26, 18);
+    assert.equal(share.dataset.scale, '2');
+    assert.equal(share.style.width, '52px');
+    assert.equal(share.style.height, '36px');
+    assert.equal(share.style.padding, '10px 2px', '52x36 padded to the 56px box');
+    const glyph = document.createElement('img');
+    const { fitWholeScale } = await imp('minigames/container/container-item-image.js');
+    fitWholeScale(glyph, 56, { pad: true, onlyIfFits: true });
+    load(glyph, 16, 16);
+    assert.equal(glyph.style.width, '48px', 'a 16px glyph at x3, as before');
+    assert.equal(glyph.style.padding, '4px', 'the old 4px padding');
+    const big = document.createElement('img');
+    fitWholeScale(big, 56, { pad: true, onlyIfFits: true });
+    load(big, 64, 64);
+    assert.equal(big.style.width, '', 'a picture larger than the box keeps its CSS size');
+});
