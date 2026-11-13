@@ -30,6 +30,8 @@ const CONF_Y  = KP_Y0 + 4 * (KP_BTN_H + KP_GAP) + 3;  // ~416
 const CONF_H  = 54;
 // A press that moves further than this (canvas pixels) before release is a swipe, not a tap
 const TAP_SLOP = 12;
+// Mouse events this soon after a touch are the browser's compatibility echo of that touch
+export const MOUSE_AFTER_TOUCH_MS = 800;
 
 export class InfusionPumpMinigame extends MinigameScene {
     // The X sits inside the frame (MinigameScene.closeInsideFrame)
@@ -178,21 +180,40 @@ export class InfusionPumpMinigame extends MinigameScene {
                 box.scrollTo({ top: box.scrollHeight, behavior: 'auto' });
             });
             // Phaser also listens on the window and maps a press anywhere onto the canvas, so a
-            // press on the cue would reach the key under it: keep the cue's presses to itself
-            for (const type of ['mousedown', 'mouseup', 'touchstart', 'touchend', 'pointerdown', 'pointerup']) {
+            // press on the cue would reach the key under it: keep the cue's presses to itself.
+            // Releases go on to the window, so Phaser still ends a press begun on a key (R4 n1).
+            for (const type of ['mousedown', 'touchstart', 'pointerdown']) {
                 cue.addEventListener(type, (e) => e.stopPropagation());
             }
         }
         // With touch capture off, a tap on the canvas is followed by the browser's
-        // compatibility mouse events, which Phaser would read as a second press. Cancelling
-        // touchend stops them; a swipe has already scrolled by then, so panning is unaffected.
-        const canvas = box?.querySelector?.('canvas');
-        if (canvas) {
-            this._canvasTouchEnd = (e) => { if (e.cancelable) e.preventDefault(); };
-            this._touchCanvas = canvas;
-            canvas.addEventListener('touchend', this._canvasTouchEnd, { passive: false });
-        }
+        // compatibility mouse events, which Phaser would read as a second press. Touch events
+        // are left alone (cancelling touchend leaves every Phaser game's touch pointer held,
+        // slice 7 R4 B1); instead, mouse events within MOUSE_AFTER_TOUCH_MS of a touch are
+        // stopped on the box in the capture phase, before Phaser's canvas listener sees them.
+        if (box) this._watchCompatMouse(box);
         fit();
+    }
+
+    // True when a mouse event at `now` is the browser's echo of a touch at `lastTouch`
+    static isCompatMouse(now, lastTouch) {
+        return Number.isFinite(lastTouch) && now - lastTouch >= 0 && now - lastTouch < MOUSE_AFTER_TOUCH_MS;
+    }
+
+    _watchCompatMouse(box) {
+        const clock = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
+        let lastTouch = -Infinity;
+        const onTouch = () => { lastTouch = clock(); };
+        const onMouse = (e) => { if (InfusionPumpMinigame.isCompatMouse(clock(), lastTouch)) e.stopPropagation(); };
+        const listeners = [
+            ['touchstart', onTouch, { capture: true, passive: true }],
+            ['touchend', onTouch, { capture: true, passive: true }],
+            ['mousedown', onMouse, { capture: true }],
+            ['mouseup', onMouse, { capture: true }],
+            ['mousemove', onMouse, { capture: true }]
+        ];
+        for (const [type, fn, opts] of listeners) box.addEventListener(type, fn, opts);
+        this._compatMouse = { box, listeners };
     }
 
     _unwatchZoom() {
@@ -203,9 +224,11 @@ export class InfusionPumpMinigame extends MinigameScene {
         const box = this.gameContainer?.querySelector?.('#ip-phaser-container');
         if (box && this._onBoxScroll) box.removeEventListener('scroll', this._onBoxScroll);
         this._onBoxScroll = null;
-        if (this._touchCanvas && this._canvasTouchEnd) this._touchCanvas.removeEventListener('touchend', this._canvasTouchEnd);
-        this._touchCanvas = null;
-        this._canvasTouchEnd = null;
+        if (this._compatMouse) {
+            const { box: target, listeners } = this._compatMouse;
+            for (const [type, fn, opts] of listeners) target.removeEventListener(type, fn, opts);
+        }
+        this._compatMouse = null;
     }
 
     init() {

@@ -227,7 +227,7 @@ test('a pump button acts on a tap, not on a swipe or a press that scrolled the b
     assert.equal(taps, 2);
 });
 
-test('the pump keeps presses on More below to itself, scrolls to the end on a click, and cancels canvas touchend', () => {
+test('the pump keeps presses on More below to itself and scrolls to the end on a click', () => {
     const { mg, box, root } = pumpWithBox(0);
     Object.defineProperty(box, 'scrollHeight', { value: 510, configurable: true });
     Object.defineProperty(box, 'clientHeight', { value: 372, configurable: true });
@@ -244,11 +244,81 @@ test('the pump keeps presses on More below to itself, scrolls to the end on a cl
     assert.equal(box.scrollTop, 138);
     box.dispatchEvent(new window.Event('scroll'));
     assert.equal(cue.hidden, true, 'hidden at the end');
-    const end = new window.Event('touchend', { bubbles: true, cancelable: true });
-    root.querySelector('canvas').dispatchEvent(end);
-    assert.equal(end.defaultPrevented, true, 'no compatibility mouse events after a tap');
+    // Slice 7 R4 n1: a release on the cue goes on to the window, so Phaser ends the press
+    const ups = [];
+    for (const type of ['mouseup', 'touchend', 'pointerup']) window.addEventListener(type, () => ups.push(type));
+    for (const type of ['mouseup', 'touchend', 'pointerup']) cue.dispatchEvent(new window.Event(type, { bubbles: true }));
+    assert.deepEqual(ups, ['mouseup', 'touchend', 'pointerup'], 'releases on the cue reach the window');
     mg._unwatchZoom();
-    const end2 = new window.Event('touchend', { bubbles: true, cancelable: true });
-    root.querySelector('canvas').dispatchEvent(end2);
-    assert.equal(end2.defaultPrevented, false, 'the listener goes with the pump');
+});
+
+// Slice 7 R4 B1: cancelling the canvas touchend left every Phaser game's touch pointer held
+// down, so the world ignored touch after the pump closed. Touch events now pass untouched;
+// the browser's compatibility mouse events after a touch are stopped on the box instead.
+test('the pump never cancels a canvas touch, and stops mouse events only within 800ms of a touch', () => {
+    const { mg, root } = pumpWithBox(0);
+    mg._fitZoom = () => {};
+    const canvas = root.querySelector('canvas');
+    const seen = [];
+    for (const type of ['mousedown', 'mouseup', 'mousemove']) canvas.addEventListener(type, () => seen.push(type));
+    const realNow = performance.now;
+    let now = 10000;
+    performance.now = () => now;
+    try {
+        mg._watchZoom();
+        for (const type of ['touchstart', 'touchend']) {
+            const ev = new window.Event(type, { bubbles: true, cancelable: true });
+            canvas.dispatchEvent(ev);
+            assert.equal(ev.defaultPrevented, false, `${type} on the canvas is not cancelled`);
+        }
+        now += 50;
+        for (const type of ['mousedown', 'mouseup', 'mousemove']) canvas.dispatchEvent(new window.MouseEvent(type, { bubbles: true }));
+        assert.deepEqual(seen, [], 'the compatibility mouse events after a tap never reach the canvas');
+
+        now += 800;
+        canvas.dispatchEvent(new window.MouseEvent('mousedown', { bubbles: true }));
+        assert.deepEqual(seen, ['mousedown'], 'a mouse press 800ms after the last touch gets through');
+
+        mg._unwatchZoom();
+        canvas.dispatchEvent(new window.Event('touchend', { bubbles: true }));
+        now += 10;
+        canvas.dispatchEvent(new window.MouseEvent('mousedown', { bubbles: true }));
+        assert.deepEqual(seen, ['mousedown', 'mousedown'], 'the listeners go with the pump');
+        assert.equal(mg._compatMouse, null);
+    } finally {
+        performance.now = realNow;
+    }
+    assert.equal(InfusionPumpMinigame.isCompatMouse(100, 100), true);
+    assert.equal(InfusionPumpMinigame.isCompatMouse(899, 100), true);
+    assert.equal(InfusionPumpMinigame.isCompatMouse(900, 100), false);
+    assert.equal(InfusionPumpMinigame.isCompatMouse(100, -Infinity), false, 'no touch yet');
+});
+
+test('closing any minigame releases main-game touch pointers still held down', async () => {
+    const { MinigameFramework } = await imp('minigames/framework/minigame-manager.js');
+    const mouse = { isDown: true, active: true };
+    const held = () => ({ isDown: true, active: true, buttons: 1, identifier: 7, pointerId: 7 });
+    const pointers = [mouse, held(), held(), { isDown: false, active: false, identifier: -1 }];
+    const mainScene = {
+        input: {
+            mouse: { enabled: false },
+            keyboard: { enabled: false },
+            manager: { pointers, mousePointer: mouse }
+        }
+    };
+    const fw = Object.create(MinigameFramework);
+    fw.mainGameScene = mainScene;
+    fw.gameInputDisabled = true;
+    fw.registeredScenes = {};
+    fw._updateBarkLayer = () => {};
+    window.resumeKeyboardInput = () => {};
+    fw.currentMinigame = { cleanup() {}, params: {}, container: null };
+    fw.endMinigame(false, null);
+    const stillHeld = pointers.slice(1).filter((p) => p.isDown || p.active);
+    assert.deepEqual(stillHeld, [], 'no touch pointer is left held after close');
+    assert.equal(pointers[1].identifier, -1);
+    assert.equal(mouse.isDown, true, 'the mouse pointer is left alone');
+    assert.equal(fw.releaseHeldTouchPointers(), 0, 'nothing left to release');
+    fw.mainGameScene = null;
+    assert.equal(fw.releaseHeldTouchPointers(), 0, 'no main scene: no error');
 });

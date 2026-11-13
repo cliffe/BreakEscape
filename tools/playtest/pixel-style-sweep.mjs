@@ -40,7 +40,9 @@ const JSON_OUT = opt('json', null);
 const SHOTS = opt('shots', null);
 const TAG = opt('tag', 'shot');
 const SIZES = opt('sizes', '1400x1000').split(',').map(s => s.split('x').map(Number));
-// --names unlock: shots of scenes on the UX review page also get the page's id in the name
+// --names unlock: shots of scenes on the UX review page also get the page's id in the name.
+// These are the card ids from the review page (review-page/cards.json), not its image file
+// names, which run one ahead from container on.
 const REVIEW_IDS = {
     'container 915x412': 'unlock-43', 'password 915x412': 'unlock-44', 'pin 915x412': 'unlock-47',
     'text-file 915x412': 'unlock-48', 'container 800x600': 'unlock-52', 'password 800x600': 'unlock-53',

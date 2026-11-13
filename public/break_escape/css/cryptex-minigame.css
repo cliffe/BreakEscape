@@ -116,12 +116,13 @@
 }
 
 .cryptex-wheel-display {
-    /* GNF at 41px for the letter wheels, so the cryptex has its own face beside the
-       combination lock's Press Start 2P (the user's call, slice 7 R3 m1). GNF's font pixel
-       is size/20.48, so 41px (which draws the same pixels as 40.96px, two font pixels a
-       grid step) is one of its few crisp sizes, and only with grayscale text: will-change
-       switches off subpixel (LCD) text on this element. Brass on navy as before. */
-    font-size: 41px;
+    /* GNF for the letter wheels, so the cryptex has its own face beside the combination
+       lock's Press Start 2P (the user's call, slice 7 R3 m1). GNF's font pixel is
+       size/20.48, so 82px (four font pixels a grid step, R4 m1) is one of its few crisp
+       sizes, and only with grayscale text: will-change switches off subpixel (LCD) text on
+       this element. The line box is the glyph's 56px height, so flex centres the ink.
+       Brass on navy as before. */
+    font-size: 82px;
     font-weight: normal;
     color: #e8c070;
     background: #0f1826;
@@ -133,7 +134,7 @@
     align-items: center;
     justify-content: center;
     font-family: 'GNF', monospace;
-    line-height: 48px;
+    line-height: 56px;
     letter-spacing: 0;
     flex-shrink: 0;
     will-change: transform;

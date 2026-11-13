@@ -262,7 +262,11 @@ export const MinigameFramework = {
                 this.gameInputDisabled = false;
                 console.log('Re-enabled main game input');
             }
-            
+            // A minigame that cancels touch events can leave the main game's touch pointers
+            // held down (Phaser drops a cancelled touchend), and then the world ignores every
+            // later touch (slice 7 R4 B1): let go of any still held
+            this.releaseHeldTouchPointers();
+
             // Call completion callback
             // onComplete may start another minigame (cloner save -> return to the
             // conversation); that one is now currentMinigame and must not be
@@ -396,6 +400,32 @@ export const MinigameFramework = {
         }
     },
     
+    /**
+     * Release the main game's touch pointers that are still marked down or active. Phaser
+     * 3.60 has a fixed number of touch pointers and gives a new touch only a free one, so a
+     * pointer whose touchend it never saw blocks touch input until a reload. The mouse
+     * pointer is left alone. Returns how many pointers were released.
+     */
+    releaseHeldTouchPointers() {
+        const manager = this.mainGameScene?.input?.manager;
+        const pointers = Array.isArray(manager?.pointers) ? manager.pointers : [];
+        let released = 0;
+        for (const p of pointers) {
+            if (!p || p === manager.mousePointer) continue;
+            if (!p.isDown && !p.active) continue;
+            p.isDown = false;
+            p.primaryDown = false;
+            p.buttons = 0;
+            p.active = false;
+            p.wasCanceled = true;
+            p.identifier = -1;
+            p.pointerId = null;
+            released += 1;
+        }
+        if (released) console.log(`Released ${released} held main-game touch pointer(s)`);
+        return released;
+    },
+
     // Force close any running minigame
     forceCloseMinigame() {
         if (this.currentMinigame) {

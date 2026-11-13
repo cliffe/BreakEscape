@@ -97,16 +97,38 @@
     overflow-y: auto;
 }
 
+/* The game area scrolls too when even the folded stack does not fit (844x390, slice 7 R4
+   m2): it gets the same flat pixel-art bar as the Instructions and the list, never
+   Chrome's default with its rounded thumb and arrows. Chrome 121+ ignores the WebKit
+   rules once scrollbar-color or scrollbar-width is set, so both stay auto. */
+.bluetooth-scanner-minigame-container > .bluetooth-scanner-minigame-game-container,
+.bluetooth-scanner-instructions {
+    scrollbar-color: auto;
+    scrollbar-width: auto;
+}
+
+.bluetooth-scanner-minigame-game-container::-webkit-scrollbar,
 .bluetooth-scanner-instructions::-webkit-scrollbar {
     width: 8px;
 }
 
+.bluetooth-scanner-minigame-game-container::-webkit-scrollbar-track,
 .bluetooth-scanner-instructions::-webkit-scrollbar-track {
     background: rgba(0, 0, 0, 0.2);
+    border-radius: 0;
 }
 
+.bluetooth-scanner-minigame-game-container::-webkit-scrollbar-thumb,
 .bluetooth-scanner-instructions::-webkit-scrollbar-thumb {
     background: #00bcd4;
+    border-radius: 0;
+}
+
+.bluetooth-scanner-minigame-game-container::-webkit-scrollbar-button,
+.bluetooth-scanner-instructions::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
 }
 
 @media (max-height: 480px) {
@@ -119,7 +141,9 @@
     max-height: none;
 }
 
-@media (max-height: 560px) {
+/* Up to 720px high the panel takes the window's height, so the list and the Instructions
+   get room before the Instructions shrink (slice 7 R4 m3) */
+@media (max-height: 720px) {
     .bluetooth-scanner-minigame-container,
     .bluetooth-scanner-minigame-container.expanded {
         max-height: calc(95vh - 8px) !important;
