@@ -219,7 +219,7 @@ Checked in every run:
 
 ## Handover
 
-Round 3 done. Commits: `c96413436` (the fixes and tests), `9c1275bc1` (Copy / Move dialog fits the screen, captured title on the items' line), `df83bd790` (the dialog's Open keeps the frame), and the docs commit with this section. Full suites: `bin/rails test` on `c96413436`: 2386 runs, 42523 assertions, 0 failures, 0 errors, 1 skip (later commits change JS and CSS only). `MERGE_BATCH=1 bin/test-js -j 3` on `c96413436` (it picked up the later JS edits as it ran): 599 files passed, 0 failed; a rerun on `df83bd790` is queued under the shared lock.
+Round 3 done. Commits: `c96413436` (the fixes and tests), `9c1275bc1` (Copy / Move dialog fits the screen, captured title on the items' line), `df83bd790` (the dialog's Open keeps the frame), and the docs commit with this section. Full suites: `bin/rails test` on `c96413436`: 2386 runs, 42523 assertions, 0 failures, 0 errors, 1 skip (later commits change JS and CSS only). `MERGE_BATCH=1 bin/test-js -j 3` on `c96413436` (it picked up the later JS edits as it ran): 599 files passed, 0 failed; rerun on `df83bd790`: 599 files passed, 0 failed.
 
 Open: the Copy / Move dialog can sit half a pixel off the grid horizontally (its window's width minus its own is odd); a readable note opened from a desktop still opens the Notes viewer full window; the WebKit check of `cssZoomOf` still needs the user's yes.
 
