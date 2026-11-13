@@ -140,17 +140,17 @@ No blocking gaps. The scenario can be played end to end.
 - [ ] **Without the MAR charts read:** the "PAPER MAR CHARTS REQUIRED" screen shows for 3 s and the minigame closes; `paper_charts_collected` must be `true` before dose entry
 - [ ] **With the MAR charts:** Phaser pump UI renders; the prescription panel shows `MORPHINE SULPHATE 2.0 mg/hr` (patient OKAFOR, A.; Ward 7, Bed 2)
 - [ ] **Library still tampered (the pump runs the raised limits, 20-40 mg/hr, until `drug_library_restored`):**
-  - [ ] enter `2` -> conflict modal titled DOSE BELOW LIBRARY MINIMUM, showing the library minimum, your entry, the MAR prescription and the line "The pump and the paper prescription disagree." Two buttons: **KEEP THIS RATE - PHONE PHARMACY** and **RE-ENTER RATE**
-  - [ ] KEEP THIS RATE - PHONE PHARMACY with `2` entered: the display reads PHARMACY AGREED, `drug_library_override` and `pump_dose_correct` -> `true`, `pump_programmed_at` records the game clock time, and `pump_dose_check` completes
+  - [ ] enter `2` -> conflict modal titled DOSE BELOW LIBRARY MINIMUM, showing the library minimum, your entry, the MAR prescription and the line "The pump and the paper prescription disagree." Two buttons: **KEEP THIS RATE** (then a dash or arrow and PHONE PHARMACY) and **RE-ENTER RATE**
+  - [ ] KEEP THIS RATE with `2` entered: the display reads PHARMACY AGREED, `drug_library_override` and `pump_dose_correct` -> `true`, `pump_programmed_at` records the game clock time, and `pump_dose_check` completes
   - [ ] RE-ENTER RATE: the modal closes and the entry clears; nothing is set
-  - [ ] entering another value below 20 (for example `1`) also raises the modal; choosing KEEP THIS RATE then flashes PHARMACY: NOT PRESCRIBED, closes the modal and sets nothing (pharmacy only agrees to the prescribed rate)
+  - [ ] entering another value below 20 (for example `1`) also raises the modal; choosing KEEP THIS RATE flashes PHARMACY: NOT PRESCRIBED, closes the modal and sets nothing (pharmacy only agrees to the prescribed rate)
   - [ ] entering a value above 40 flashes ABOVE MAX 40 and clears the entry
   - [ ] enter `20` (decimal misread, inside 20-40): accepted silently -> `pump_dose_error` -> `true`; `patient_bed2_state` -> `"sedated"` at once; 90 s later `"critical"`; 180 s after the error `"deceased"` and `patient_bed2_deceased` -> `true`; `state_deceased` knots on Ms Okafor and Mrs Kowalski. Sarah barks "Crash call, Bed 2!" after 1.5 s (with "Amy, now!" if Mr Ahmed is not escalated), Mrs Kowalski barks after 5 s that Ms Okafor stopped breathing, David after 8 s, Helen after 14.4 s
   - [ ] **Raise the alarm in time:** Mrs Kowalski's "I'll get the nurse now" (after her warning bark), or the Sarah hub option about Ms Okafor barely breathing (needs `bed2_seen_unwell`, set at the bedside or by Mrs Kowalski), sets `bed2_alarm_raised`, which cancels both timers (naloxone; she survives). Amy or Sarah walks to Bed 2 and stays
 - [ ] **Library restored (`drug_library_restored`, ward range 0.5-4):**
   - [ ] enter `2` -> `pump_dose_correct` -> `true` (no modal)
   - [ ] enter a value outside 0.5-4 (for example `20`): the pump flashes OUTSIDE 0.5-4 and clears the entry. It cannot be programmed
-  - [ ] enter a wrong value inside 0.5-4 (for example `3`): "VERIFY DOSE BEFORE ADMINISTRATION" double-check modal with the entry in large red type and the question whether it matches the paper prescription. Buttons: **CORRECT - ADMINISTER** (`pump_dose_error` -> `true`, `"sedated"` only, no timers) and **INCORRECT - RE-ENTER**
+  - [ ] enter a wrong value inside 0.5-4 (for example `3`): "VERIFY DOSE BEFORE ADMINISTRATION" double-check modal with the entry in large red type and the question whether it matches the paper prescription. Buttons: **CORRECT** (then a dash and ADMINISTER) (`pump_dose_error` -> `true`, `"sedated"` only, no timers) and **INCORRECT** (then a dash and RE-ENTER)
 
 ### Read: Nursing Handover Notes
 - [ ] Bed 4 and Bed 2 clinical details visible; the notes say to use the paper MAR chart and not to guess the dose (the decimal-point warning is on the MAR charts, not here)
@@ -199,6 +199,10 @@ There is no `major_incident` global: the Major Incident was declared at 22:38 on
 - [ ] Card appears in inventory
 - [ ] The north door to the IT Security office is an RFID lock (`requires: ravi_rfid_card`) and opens with the card; before the card it stays locked. Ward 7 itself is never locked
 
+> **Button labels.** The game's button labels contain a dash or arrow character that this file does not reproduce. Match on the leading words (for example KEEP THIS RATE, CORRECT, INCORRECT, YES, NO, SEVER ENTERPRISE) rather than the full text.
+
+> **Ravi aim gate.** The Investigate the Attack aim (`investigate_attack`: `meet_ravi`, `access_siem`, `vpn_anomaly`) stays locked until Assess Ward 7 (`assess_ward`) is complete (`unlockCondition: aimCompleted assess_ward`, scenario.json.erb), so Sarah (`talk_to_sarah`) and the MAR charts (`collect_mar_charts`) must be done first.
+
 ### Interact: Ravi Anand (tile 6.7,6.0): first visit
 - [ ] `start` knot: exhausted; says he will not sign an isolation off his own triage; the SIEM is on his laptop
 - [ ] `meet_ravi` completes at the top of `start`, and `access_siem` and `vpn_anomaly` unlock in the same breath
@@ -209,7 +213,7 @@ There is no `major_incident` global: the Major Incident was declared at 22:38 on
 
 ### Interact: SIEM Console (`siem_console`, `siem_dashboard`)
 - [ ] SIEM minigame opens ("NORTHGATE TRUST // SIEM CONSOLE" header)
-- [ ] Alert list loads from the registered `northgate_2025_11` set. It includes the Northgate-relevant CRIT and HIGH alerts (FINWKS-047, DC01, FILESERVER-02, cross-zone RDP) among the noise
+- [ ] Alert list loads from the registered `northgate_2025_11` set. The Northgate-relevant CRIT and HIGH alerts sit among the noise; the player finds them by reading the list (severity column and host names)
 - [ ] Escalating all critical alerts within 240 s: `siem_escalated` -> `true`
 - [ ] Dismissing a critical alert: `siem_missed_alerts` -> `true`
 - [ ] Ravi barks on `siem_escalated`: the critical alerts, and that the cross-zone RDP is how they got across to the clinical side
@@ -228,7 +232,7 @@ There is no `major_incident` global: the Major Incident was declared at 22:38 on
 - [ ] `vpn_impossible_travel_identified` -> `true` (on the account history for the anomalous row)
 - [ ] Flagging a different row gives a "not this one" message and sets nothing
 - [ ] [FLAG ACCOUNT] on the anomalous row opens "CONFIRM - FLAG VPN ANOMALY" with [CANCEL] and [CONFIRM: FLAG ACTIVE SESSION]. Confirming sets `vpn_anomaly_identified` -> `true` and completes `vpn_anomaly`. The two lookups are optional progress globals; the flag alone completes the task
-- [ ] Ravi barks about the contractor's stolen login (Marcus Blake, NetSol's engineer, in London half an hour earlier); `ravi_vpn_briefed` -> `true`
+- [ ] Ravi barks about a contractor's stolen login; `ravi_vpn_briefed` -> `true`
 
 ### Return to Ravi: give_itsec_code
 - [ ] With both `siem_escalated` and `vpn_anomaly_identified` true, `brief_ravi` unlocks
@@ -242,7 +246,7 @@ There is no `major_incident` global: the Major Incident was declared at 22:38 on
 - [ ] Three legacy exception rules (WARD 5, WARD 7, FLEET), each an orange dashed line with a ! marker and a label. WARD 5 and FLEET are straight lines from the enterprise zone to the clinical zone; WARD 7 is the curved arc from the enterprise zone to the legacy segment, drawn under a "NO SEGMENTATION" caption that is plain text, not a control
 - [ ] The consequence panel opens with a "3 legacy exception rules" intro that disappears when the first rule is opened, so the layout shifts by a few pixels on the first click. Click the line, the ! marker or the label (all three work); a second click closes that rule again
 - [ ] First rule opened: `network_rules_reviewed` -> `true`; SEVER unlocks; the hint changes to the "Risk paths reviewed" text naming both signed forms
-- [ ] SEVER button text: "SEVER ENTERPRISE -> CLINICAL LINK". Pressing it opens CONFIRM NETWORK ISOLATION, listing the clinical consequences and the DUAL AUTHORISATION STATUS: a tick or a "not received" line for each of IT Security (Ravi Anand) and Clinical Engineering (David Osei), and a warning citing CLAIM-HC-007 if either is missing. Buttons: **YES - SEVER LINK** and **NO - CANCEL**
+- [ ] SEVER button text: "SEVER ENTERPRISE" then an arrow, then "CLINICAL LINK". Pressing it opens CONFIRM NETWORK ISOLATION, listing the clinical consequences and the DUAL AUTHORISATION STATUS: a tick or a "not received" line for each of IT Security (Ravi Anand) and Clinical Engineering (David Osei), and a warning citing CLAIM-HC-007 if either is missing. Buttons: **YES** (then a dash and SEVER LINK) and **NO** (then a dash and CANCEL)
 - [ ] Confirming with both forms: `network_isolation_authorised` -> `true` and `network_isolated` -> `true`; the map shows LINK SEVERED and the minigame closes after 2 s. Without both forms only `network_isolated` is set (see Phase 3)
 
 ---

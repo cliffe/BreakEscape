@@ -164,7 +164,7 @@ Go south back to the control room.
 
 On HMI-OPS-01, open the **Historian Trend Viewer** (sub-object inside the PC, `type: scada_historian`, `minigameId: scada-historian`). This is an in-game minigame; no external VM.
 
-**What the minigame shows**: temperature trends for Battery Hall 1 Racks A1-A4 from 18:00 Friday to 06:30 Saturday. Normal racks show natural noise (about 0.3-0.5°C around a base near 30°C). From the injection timestamp `2026-03-20T23:12:07` onwards, **all four racks show a perfectly flat line at 28.0°C**: zero variance. The last real reading before it was 36.5°C on Rack A1, so the injected value is a drop of 8.5°C.
+**What the minigame shows**: temperature trends for Battery Hall 1 Racks A1-A4 from 18:00 Friday to 06:30 Saturday. Normal racks show natural noise (about 0.3-0.5°C around a base near 30°C). Partway through the night, **all four racks go to a perfectly flat line**: zero variance. Find the injection point on the chart itself (the first flat point and the last real reading before it show when you inspect points on Rack A1).
 
 **Controls**:
 - Rack selector tick boxes, time range buttons (6h, 12h and so on)
@@ -178,6 +178,10 @@ On HMI-OPS-01, open the **Historian Trend Viewer** (sub-object inside the PC, `t
 - Helen's mapping on `historian_flatline_found` sets `incident_aware` (which **starts the NIS clock**, Step 27) and unlocks the Message Marcus Webb aim
 - Helen sends a text 2.5 s later: the data has been flat since twelve minutes past eleven and someone is writing it. It ends with "Get that ESD in, then message Marcus" or a shorter form, depending on whether the ESD has gone in and Marcus has been contacted
 - The alarm panel's BATTERY HALL 1 lamp changes to AMBER, ANOMALY DETECTED
+
+### Press an ESD station now (do Steps 17 and 18 here)
+
+Before going on to Marcus, the workshop or the jump server, press an ESD station for Battery Hall 1 (Steps 17 and 18 below; they stay under the ESD aim to keep the aim headings together). The hydrogen timers started when Helen briefed the player: the gas alarm fires at 25 minutes and an unclosable evacuation scene at 43 minutes skips `press_esd_button`, so a slow in-order run that leaves the ESD until after the jump server fails the Step 18 Verify block. Helen's own text after the historian says the same: ESD first, then Marcus.
 
 ### Step 11: Talk to Helen About the Historian (optional)
 
