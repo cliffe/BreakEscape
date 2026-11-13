@@ -89,12 +89,12 @@
     box-sizing: border-box;
 }
 
+/* The PC's name on the top strip's left, where the post-it on the chin never covers it */
 .pc-monitor-name {
     position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    max-width: 36%;
+    left: var(--pc-bezel-side, 20px);
+    top: calc(var(--pc-bezel-top, 38px) / 2 - 4px);
+    max-width: calc(50% - var(--pc-bezel-side, 20px) - 12px);
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;

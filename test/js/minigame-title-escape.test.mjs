@@ -152,9 +152,9 @@ test('the password device panel shows a hostile lockable name as text (lockable 
     const lockable = { texture: { key: 'pc' }, scenarioData: { name: HOSTILE, observations: HOSTILE } };
     const mg = new PasswordMinigame(fresh(), { title: 'Enter password', lockable, requiresKeyboardInput: true });
     initQuietly(mg);
-    // A computer's lock sits in the PC monitor frame (UX slice 2c): the name on the chin,
+    // A computer's lock sits in the PC monitor frame (UX slice 2c): the name on the bezel,
     // the observations on the screen, no device picture
-    assertText(document.querySelector('.pc-monitor-name'), 'password lockable name (monitor chin)');
+    assertText(document.querySelector('.pc-monitor-name'), 'password lockable name (monitor bezel)');
     assertText(document.querySelector('.pc-screen-note'), 'password lockable observations (screen note)');
     assert.equal(document.querySelector('img.password-image'), null, 'no device picture in the monitor');
 });
@@ -228,7 +228,7 @@ test('the container panel shows a hostile name and observations as text (desktop
     const mg = new ContainerMinigame(fresh(), { containerItem, contents: [], mode: 'pc', desktopMode: true });
     await initQuietlyAsync(mg);
     assert.ok(document.querySelector('.desktop-mode'), 'desktop mode rendered');
-    // In the PC monitor (UX slice 2c): the name on the chin, the observations in the taskbar
+    // In the PC monitor (UX slice 2c): the name on the bezel, the observations in the taskbar
     assertText(document.querySelector('.pc-monitor-name'), 'desktop monitor name');
     assertText(document.querySelector('.desktop-taskbar-note'), 'desktop taskbar observations');
 });

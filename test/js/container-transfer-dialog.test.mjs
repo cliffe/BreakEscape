@@ -128,7 +128,7 @@ test('the desktop loads from container for the session and names the account, wi
     assert.ok(bar && note, 'top bar and taskbar note');
     assert.ok(bar.compareDocumentPosition(note) & window.Node.DOCUMENT_POSITION_FOLLOWING);
     assert.ok(document.querySelector('.pc-monitor .pc-monitor-screen .desktop-account-bar'), 'the bar is on the monitor screen');
-    assert.equal(document.querySelector('.pc-monitor-name').textContent, mg.containerItem.scenarioData.name, 'the PC name on the chin');
+    assert.equal(document.querySelector('.pc-monitor-name').textContent, mg.containerItem.scenarioData.name, 'the PC name on the bezel');
     assert.deepEqual(events.filter(([n]) => n === 'pc_desktop_opened').map(([, d]) => d),
         [{ pcId: 'hot_desk', npcId: 'ian', via: 'password', restored: false }]);
     assert.deepEqual(mg.getTestState().signedInAs, { username: 'ishaw', displayName: 'Ian Shaw' });

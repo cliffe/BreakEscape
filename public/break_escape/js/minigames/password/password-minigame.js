@@ -595,7 +595,7 @@ export class PasswordMinigame extends MinigameScene {
         return passwordScreenKind({ join: this.join, lockable: target }) === 'screen';
     }
 
-    /** The PC's name for the monitor's chin. */
+    /** The PC's name for the monitor's top strip. */
     pcName() {
         if (this.signIn) return this.signIn.pcName || '';
         const target = this.params.lockable || this.params.sprite;

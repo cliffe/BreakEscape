@@ -281,7 +281,7 @@ export class ContainerMinigame extends MinigameScene {
         this.pcMonitor = null;
     }
 
-    /** The name on the monitor's chin: the PC's (a share opened from a desktop keeps that PC's). */
+    /** The name on the monitor's top strip: the PC's (a share opened from a desktop keeps that PC's). */
     monitorName() {
         if (this.shareFolder && this.parentLockable?.scenarioData?.name) return this.parentLockable.scenarioData.name;
         if (this.shareFolder) return shareLabelParts(this.containerItem?.scenarioData?.name).name || '';
@@ -943,7 +943,7 @@ export class ContainerMinigame extends MinigameScene {
     /**
      * The desktop on the monitor's screen (UX slice 2c): a top bar with the signed-in account
      * (headshot, name, Switch user, Sign out), the icons on the wallpaper, and a taskbar with
-     * the computer's description. The PC's name is on the chin and the post-it on the frame.
+     * the computer's description. The PC's name is on the bezel's top strip and the post-it on the frame.
      */
     createMonitorDesktopUI() {
         const account = this.accountBarHtml();

@@ -28,8 +28,8 @@ export const PC_SCREEN_MIN = Object.freeze({ width: 280, height: 200 });
 export const PC_COMPACT_BELOW = 560;
 
 /**
- * Bezel strips in CSS pixels. `top` holds the X (30px) with a whole-pixel gap, `chin` the
- * PC name and the footer buttons. `gutter` is the gap to the window edge, `hang` the room
+ * Bezel strips in CSS pixels. `top` holds the PC name and the X (30px), `chin` the
+ * footer buttons and the post-it. `gutter` is the gap to the window edge, `hang` the room
  * kept under the monitor for the post-it hanging off the chin.
  */
 export const PC_BEZEL = Object.freeze({
@@ -142,9 +142,9 @@ export function mountPcMonitor(scene, { name = '', postitHtml = '', view = (type
     root.innerHTML = `
         <div class="pc-monitor-bezel">
             <span class="pc-monitor-cam" aria-hidden="true"></span>
+            <span class="pc-monitor-name"></span>
             <div class="pc-monitor-screen"></div>
             <div class="pc-monitor-chin">
-                <span class="pc-monitor-name"></span>
                 <span class="pc-monitor-led" aria-hidden="true"></span>
                 <div class="pc-monitor-controls"></div>
             </div>
