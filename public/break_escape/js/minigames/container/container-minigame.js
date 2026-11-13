@@ -8,7 +8,7 @@ import { resolveObjectField } from '../../utils/conditional-text.js';
 import { escapeHtml } from '../../utils/escape-html.js';
 import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { mentionsComputer } from '../../utils/computer-keywords.js';
-import { mountPcMonitor, cssZoomOf, postitNotebookEntry } from '../../utils/pc-monitor.js';
+import { mountPcMonitor, cssZoomOf, postitNotebookEntry, pcPostitButtonHtml } from '../../utils/pc-monitor.js';
 import { MORE_BELOW_TEXT } from '../../utils/more-below.js';
 import { applyHeadshotBox, npcRecordFor, headshotSourceFor } from '../../utils/npc-headshot.js';
 
@@ -332,7 +332,7 @@ export class ContainerMinigame extends MinigameScene {
     /** Put the game area in the PC monitor frame (after super.init()). */
     mountMonitor() {
         const raw = this.monitorPostit();
-        const note = raw ? escapeHtmlKeepWords(displayDashes(raw)) : '';
+        const note = raw ? escapeHtmlKeepWords(displayDashes(raw), { joinPunctuation: true }) : '';
         this.pcMonitor = mountPcMonitor(this, { name: displayDashes(this.monitorName()), postitHtml: note, pcId: this.monitorPcId() });
         if (this.pcMonitor?.postit) makeDraggable(this.pcMonitor.postit);
     }
@@ -782,7 +782,11 @@ export class ContainerMinigame extends MinigameScene {
             const notebookBtn = document.createElement('button');
             notebookBtn.className = 'minigame-button';
             notebookBtn.id = 'minigame-notebook-postit';
-            notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
+            if (this.pcMonitor) {
+                notebookBtn.innerHTML = pcPostitButtonHtml();
+            } else {
+                notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
+            }
             // Insert before the cancel button (first child in controls)
             controls.insertBefore(notebookBtn, controls.firstChild);
         }

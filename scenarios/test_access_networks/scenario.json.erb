@@ -137,6 +137,8 @@
     }
   },
 
+  "social": { "captures": { "revealSecret": false } },
+
   "policies": {
     "hardened": { "remote": "blocked" },
     "counted": { "maxAttempts": 5, "remote": "allowed" },
@@ -150,7 +152,9 @@
     "servers_offline": false,
     "n7_armed": false,
     "bench_pc_off": true,
-    "n14_seen_off": false
+    "n14_seen_off": false,
+    "capture_card_lena": false,
+    "capture_card_ian": false
   },
 
   "objectives": [
@@ -284,6 +288,26 @@
           ]
         },
         {
+          "type": "notes", "id": "capture_note_lena", "name": "Capture card: Lena", "position": { "x": 4, "y": 6 },
+          "takeable": false, "interactable": true, "active": true, "readable": true,
+          "readDisplay": "gameDisplay", "addToNotes": false,
+          "observations": "A test card for the capture log.",
+          "text": "CAPTURE CARD (test)\n\nReading this records Lena's sign-in in the capture log. Her tile then shows under Captured sign-ins on a remote sign-in screen.",
+          "triggerOnInteract": [
+            { "type": "set_global", "key": "capture_card_lena", "value": true }
+          ]
+        },
+        {
+          "type": "notes", "id": "capture_note_ian", "name": "Capture card: Ian", "position": { "x": 4, "y": 7 },
+          "takeable": false, "interactable": true, "active": true, "readable": true,
+          "readDisplay": "gameDisplay", "addToNotes": false,
+          "observations": "A test card for the capture log.",
+          "text": "CAPTURE CARD (test)\n\nReading this records Ian's sign-in in the capture log. Lena's PC turns his account away: a wrong-account check.",
+          "triggerOnInteract": [
+            { "type": "set_global", "key": "capture_card_ian", "value": true }
+          ]
+        },
+        {
           "type": "notes1",
           "id": "sign_lobby",
           "name": "Sign: Start here",
@@ -367,7 +391,11 @@
           "currentKnot": "start",
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "role": "finance",
-          "creds": { "username": "lfox", "password": "Ledger-Lena-9" }
+          "creds": { "username": "lfox", "password": "Ledger-Lena-9" },
+          "captureProof": [ { "planted": "kit_dropbox", "on": "comms_port" } ],
+          "eventMappings": [
+            { "eventPattern": "global_variable_changed:capture_card_lena", "condition": "value === true", "onceOnly": true, "addCapture": { "targetId": "lena", "roleLabel": "Harbour office, finance", "kind": "credential", "address": "lfox", "note": "Test capture for the remote sign-in tiles." } }
+          ]
         },
         {
           "id": "ian",
@@ -381,7 +409,11 @@
           "currentKnot": "start",
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "role": "it",
-          "creds": { "username": "ishaw", "password": "Patchday!2026" }
+          "creds": { "username": "ishaw", "password": "Patchday!2026" },
+          "captureProof": [ { "planted": "kit_dropbox", "on": "comms_port" } ],
+          "eventMappings": [
+            { "eventPattern": "global_variable_changed:capture_card_ian", "condition": "value === true", "onceOnly": true, "addCapture": { "targetId": "ian", "roleLabel": "Harbour office, IT", "kind": "credential", "address": "ishaw", "note": "Test capture for the remote sign-in tiles (an account Lena's PC refuses)." } }
+          ]
         }
       ]
     },

@@ -90,7 +90,7 @@
 #   safety_claim_hc007_assessed — npc_helen.ink:safety_case_hc007 ✓
 #   ico_notified              — npc_helen.ink (helen_persuaded early, or after isolation) ✓
 #   ncsc_notified             — NOT in npc_hartley.ink source; moved to NOT YET WIRED below
-#   debrief_complete          — npc_sharma.ink:closing ✓
+#   debrief_complete          — npc_sharma.ink:debrief_end ✓
 #   [WIRED via scenario timers / eventMappings]
 #   patient_bed4_state        — timers escalate → distressed → critical → deceased ✓
 #   patient_bed2_state        — pump_dose_error eventMapping → sedated; bed2_double_jeopardy timer → critical ✓
@@ -361,7 +361,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "type": "npc_conversation",
           "targetNPC": "ravi_anand",
           "status": "active"
-<%# Completed via #complete_task:meet_ravi in npc_ravi.ink:siem_briefing.
+<%# Completed via #complete_task:meet_ravi at the top of npc_ravi.ink start.
     Also unlocks access_siem and vpn_anomaly simultaneously so both can be done in either order. %>
         },
         {
@@ -492,7 +492,12 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
       "aimId": "ncsc_debrief",
       "title": "NCSC Debrief",
       "missionConclusion": true,
-      "concludeRequires": { "globals": ["debrief_complete"] },
+      "concludeRequires": {},
+<%# Mission conclusion (sis02 pattern). No VM or flag work, so there is nothing the server must hold
+    the ending for: the empty gate trusts the client. npc_sharma.ink debrief_end sets debrief_complete
+    and completes attend_debrief straight after it; the music event on debrief_complete rolls the
+    credits and POSTs /conclude. The old globals gate on debrief_complete, with attend_debrief
+    completed as main_debrief began, answered "Not Yet..." at the start of every debrief. %>
       "description": "Priya S. from the NCSC is waiting in the Major Incident Room. Speak to her when you are ready.",
       "status": "locked",
       "order": 4,
@@ -504,7 +509,8 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "type": "npc_conversation",
           "targetNPC": "dr_sharma",
           "status": "active"
-<%# status: active — npc_conversation auto-completes on talking to Priya S. (no #unlock_task exists). %>
+<%# status: active. Completed by #complete_task:attend_debrief at the end of npc_sharma.ink debrief_end
+    (no #unlock_task exists). %>
         }
       ]
     }
@@ -871,28 +877,29 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "condition": "value === true",
               "onceOnly": true,
               "bark": "The pump console's just dropped off. Come and tell me what's happened.",
-              "barkDelay": 2000
+              "barkDelay": 11300
+<%# Bark timing (clip lengths measured, at least 0.3 s between voices that can fire together). network_isolated, both paths: Ravi 0.5 (his variant for the path), Helen 7.7, Sarah 11.3, David 15.8 (his variant for the path). drug_library_compromised: nurse 0, David 4.3, Sarah 10.3 (longest variant 5.6 s), Helen 16.3. ico_deadline_missed: Sarah 2, Hartley 7.3. patient_bed4_deceased: nurse 0.8, Sarah 2.8, Helen 6.6. patient_bed4_state: nurse 0, Mr Ahmed 4.3. %>
             },
             {
               "eventPattern": "global_variable_changed:drug_library_compromised",
               "condition": "value === true && !globalVars.pump_dose_correct && !globalVars.pump_dose_error",
               "onceOnly": true,
               "bark": "Come down when you can. Ms Okafor needs a new bag, and I need to know about that library.",
-              "barkDelay": 3000
+              "barkDelay": 10300
             },
             {
               "eventPattern": "global_variable_changed:drug_library_compromised",
               "condition": "value === true && globalVars.pump_dose_correct",
               "onceOnly": true,
               "bark": "The drug library's been changed? Come down and tell me when you can.",
-              "barkDelay": 3000
+              "barkDelay": 10300
             },
             {
               "eventPattern": "global_variable_changed:drug_library_compromised",
               "condition": "value === true && globalVars.pump_dose_error && !globalVars.pump_dose_correct",
               "onceOnly": true,
               "bark": "The drug library's been changed? Then I need to know what went into Bed 2.",
-              "barkDelay": 3000
+              "barkDelay": 10300
             },
             {
               "eventPattern": "global_variable_changed:patient_bed2_deceased",
@@ -926,7 +933,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "condition": "value === true",
               "onceOnly": true,
               "bark": "Mr Ahmed's arrested. Come and find me when you can.",
-              "barkDelay": 2500
+              "barkDelay": 2800
 <%# Mr Ahmed dies (Bed 4 timer). Sarah: crash call, patient safety incident, his family.
     The Trust's Major Incident was already declared at 22:38 on Monday; nobody re-declares it.
     (The old post_escalation mapping was removed: Sarah escalates inside her own conversation.) %>
@@ -1139,7 +1146,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "onceOnly": true,
               "targetKnot": "state_distressed",
               "bark": "Hello? Is anyone there? My machine is beeping.",
-              "barkDelay": 0
+              "barkDelay": 4300
 <%# Patient barks on distress transition — draws player attention to Bed 4 alarm.
     Ink knots: state_resting_unmonitored, state_distressed, state_critical, state_deceased, state_attended.
     TEST: Verify bark appears and observations reflect patient condition. %>
@@ -1320,7 +1327,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "targetKnot": "state_deceased",
               "bark": "She's gone. She stopped breathing.",
               "barkDelay": 5000
-<%# Witness bark: second of the four reactions to Ms Okafor's death, straight after Sarah's crash call (Sarah 1.5 s, Mrs Kowalski 5 s, David 8 s, Helen 14.4 s), spaced by each voice's measured speech rate so the voices do not overlap. %>
+<%# Witness bark: second of the four reactions to Ms Okafor's death, straight after Sarah's crash call (Sarah 1.5 s, Mrs Kowalski 5 s, David 8.6 s, Helen 15.1 s), spaced by the measured clip lengths (Kowalski 3.29 s, David 6.10 s) so the voices do not overlap. %>
             }
           ]
         },
@@ -1799,7 +1806,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "condition": "value === true && globalVars.network_isolation_authorised === true",
               "onceOnly": true,
               "bark": "We're cut. I'm in the office if you need me.",
-              "barkDelay": 1500
+              "barkDelay": 500
             },
             {
 <%# Bypass path: player used NSM SEVER without going through the dual-auth panel.
@@ -1809,7 +1816,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "condition": "value === true && !globalVars.network_isolation_authorised",
               "onceOnly": true,
               "bark": "The network's gone down, and I never signed for it. That needed IT and clinical sign-off.",
-              "barkDelay": 0
+              "barkDelay": 500
             }
           ]
         }
@@ -2198,7 +2205,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "condition": "value === true",
               "onceOnly": true,
               "bark": "That's the library. Talk to me before anything else goes on a pump.",
-              "barkDelay": 1000
+              "barkDelay": 4300
             },
             {
               "eventPattern": "global_variable_changed:network_isolated",
@@ -2206,14 +2213,14 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "condition": "value === true && globalVars.network_isolation_authorised === true && !globalVars.drug_library_restored",
               "onceOnly": true,
               "bark": "We're isolated. Talk to me before anyone touches the drug library.",
-              "barkDelay": 2500
+              "barkDelay": 15800
             },
             {
               "eventPattern": "global_variable_changed:network_isolated",
               "condition": "value === true && globalVars.network_isolation_authorised === true && globalVars.drug_library_restored",
               "onceOnly": true,
               "bark": "We're isolated, and the library's already checked. Come and see me.",
-              "barkDelay": 2500
+              "barkDelay": 15800
             },
             {
 <%# Bypass path: player used NSM SEVER without dual-auth. David never signed off.
@@ -2222,14 +2229,14 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "condition": "value === true && !globalVars.network_isolation_authorised",
               "onceOnly": true,
               "bark": "Hold on. The network's been cut and I haven't signed anything. Where was the clinical sign-off?",
-              "barkDelay": 0
+              "barkDelay": 15800
             },
             {
               "eventPattern": "global_variable_changed:patient_bed2_deceased",
               "condition": "value === true",
               "onceOnly": true,
               "bark": "Ms Okafor's dead? That's exactly what the library was meant to stop.",
-              "barkDelay": 8000
+              "barkDelay": 8600
             }
           ]
         },
@@ -2279,7 +2286,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "onceOnly": true,
               "setGlobal": { "pharmacist_on_ward": true },
               "bark": "David will tell you to wait. Come and hear my side too.",
-              "barkDelay": 4000
+              "barkDelay": 16300
 <%# IMPLEMENTED[Phase 1]: Helen dispatches pharmacist when drug library tamper detected.
     Ink knot npc_helen.ink:post_drug_tamper() fires; sets pharmacist_on_ward=true.
     Pharmacist appears in ward_7 at (3,2) via setVisible action.
@@ -2298,21 +2305,21 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "condition": "value === true",
               "onceOnly": true,
               "bark": "Isolated. Good. I'll want you up here next.",
-              "barkDelay": 500
+              "barkDelay": 7700
             },
             {
               "eventPattern": "global_variable_changed:patient_bed4_deceased",
               "condition": "value === true",
               "onceOnly": true,
               "bark": "Mr Ahmed? I'll have to tell the Board.",
-              "barkDelay": 6500
+              "barkDelay": 6600
             },
             {
               "eventPattern": "global_variable_changed:patient_bed2_deceased",
               "condition": "value === true",
               "onceOnly": true,
               "bark": "Ms Okafor? Through the pump? God. I'll have to tell the Board.",
-              "barkDelay": 14400
+              "barkDelay": 15100
             }
           ]
         },
@@ -2355,7 +2362,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "condition": "value === true && !globalVars.debrief_complete",
               "onceOnly": true,
               "bark": "The ICO deadline has gone. We need to talk.",
-              "barkDelay": 3000
+              "barkDelay": 7300
             }
           ]
         },
@@ -2375,7 +2382,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
     Knots: start, main_debrief, patient_outcomes, safety_claims, isolation_review, regulatory,
            recovery, recovery_trade, ransom_review, root_cause, risk_review, closing, debrief_end
     Hidden until debrief_started=true (setVisible fires from eventMapping).
-    KEY: closing knot sets debrief_complete=true → ends scenario.
+    KEY: debrief_end knot sets debrief_complete=true → ends scenario.
     Blind playtest D1 (2026-10-03): restartOnRetalk:false removed. With it, a reload (which
     restores only her ink variables) left her story with no position, so after "Give me a few
     minutes" the debrief could never be reopened. Every re-talk now restarts at start, and

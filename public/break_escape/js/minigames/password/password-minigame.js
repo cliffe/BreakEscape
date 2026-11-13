@@ -6,7 +6,7 @@ import { escapeHtml } from '../../utils/escape-html.js';
 import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } from '../../utils/lock-scope-refusal.js';
 import { isComputerType } from '../../utils/computer-keywords.js';
-import { mountPcMonitor, cssZoomOf } from '../../utils/pc-monitor.js';
+import { mountPcMonitor, cssZoomOf, pcPostitButtonHtml } from '../../utils/pc-monitor.js';
 import { headshotCandidates, headshotKeys, noteMissingHeadshot, npcRecordFor, headshotSourceFor, applyHeadshotBox,
     SHORT_PORTRAIT_PX, TILE_PORTRAIT_PX, isTalkSheetSize, portraitCropOverride, headCropOffset, frameAlphaReader } from '../../utils/npc-headshot.js';
 // The portrait crop helpers live with the headshots (UX slice 2c R1 m8: the desktop bar
@@ -425,7 +425,10 @@ export class PasswordMinigame extends MinigameScene {
                 tiles,
                 // null: no account chosen yet; '' with other: true: typing a username
                 selected: null,
-                other: picker === false,
+                // A remote screen with captures starts on its tiles as the keyboard does, with
+                // none on the typed form; while they load it shows neither (UX slice 2b0 R1 M2)
+                other: picker === false && !(this.signIn.remote && (this.signIn.capturedLoading
+                    || (Array.isArray(this.signIn.captured) && this.signIn.captured.length > 0))),
                 message: ''
             };
         }
@@ -456,7 +459,8 @@ export class PasswordMinigame extends MinigameScene {
                     ...(this.signIn.remote ? {
                         remote: { footholdId: this.signIn.remote.footholdId ?? null },
                         captured: (this.signIn.captured || []).map(c => ({ targetId: c.targetId, label: c.label, username: c.username, fillsPassword: !!c.password })),
-                        capturedLoading: !!this.signIn.capturedLoading
+                        capturedLoading: !!this.signIn.capturedLoading,
+                        capturedNote: this.signIn.capturedNote || null
                     } : {})
                 },
                 // clickText('<display name>') or clickText('Other user') first; then the visible
@@ -518,7 +522,11 @@ export class PasswordMinigame extends MinigameScene {
             const notebookBtn = document.createElement('button');
             notebookBtn.className = 'minigame-button';
             notebookBtn.id = 'minigame-notebook-postit';
-            notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
+            if (this.pcMonitor) {
+                notebookBtn.innerHTML = pcPostitButtonHtml();
+            } else {
+                notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
+            }
             this.ensureControlsRow()?.appendChild(notebookBtn);
         }
         
@@ -556,7 +564,7 @@ export class PasswordMinigame extends MinigameScene {
      */
     mountMonitor() {
         const note = this.gameData.showPostit && this.gameData.postitNote
-            ? escapeHtmlKeepWords(displayDashes(this.gameData.postitNote)) : '';
+            ? escapeHtmlKeepWords(displayDashes(this.gameData.postitNote), { joinPunctuation: true }) : '';
         this.pcMonitor = mountPcMonitor(this, { name: displayDashes(this.pcName()), postitHtml: note, pcId: this.pcId() });
         if (!this.pcMonitor) { this.wrapInFrame(); return; }
         this.frameElement = this.pcMonitor.root;
@@ -1390,6 +1398,14 @@ export class PasswordMinigame extends MinigameScene {
     }
     
     cleanup() {
+        // Release the frame-snap observers and the PC monitor's chin ResizeObserver when the
+        // game really ends (endMinigame sets _ending, then calls cleanup(); the X goes the same
+        // way). Mid-flow cleanup() calls (lockout, accepted, wrong password) leave the screen up
+        // with a message, so the snap and pc-view stay; both releases are idempotent
+        if (this._ending) {
+            this.stopFrameSnap?.();
+            this.pcMonitor?.destroy?.();
+        }
         // Call parent cleanup (handles event listeners)
         super.cleanup();
     }
@@ -1433,7 +1449,7 @@ export class PasswordMinigame extends MinigameScene {
                         <div class="signin-title">${escapeHtml(displayDashes(s.pcName))}</div>
                         ${remoteLine}
                         ${current}
-                        ${tiles}
+                        ${tiles}${capturedHtml}
                         <div class="signin-form" id="signin-form">
                             <div class="signin-selected-row">${inMonitor ? `
                                 <span class="signin-selected-headshot" aria-hidden="true" hidden></span>` : ''}
@@ -1456,7 +1472,7 @@ export class PasswordMinigame extends MinigameScene {
                             <div class="hint-controls">
                                 <button type="button" class="submit-btn${inMonitor ? ' pc-os-btn' : ''}" id="submit-password">Sign in</button>
                             </div>
-                        </div>${capturedHtml}
+                        </div>
                         <div class="signin-message" id="signin-message" aria-live="polite"></div>
                     </div>
                 </div>
@@ -1480,6 +1496,7 @@ export class PasswordMinigame extends MinigameScene {
             this.addEventListener(el, 'click', () => this.selectSignInTile(idx));
         });
         this.bindCapturedSignIns();
+        this.placeCapturedBlock();
         const change = this.gameContainer.querySelector('#signin-change');
         if (change) this.addEventListener(change, 'click', () => this.clearSignInChoice());
 
@@ -1491,7 +1508,11 @@ export class PasswordMinigame extends MinigameScene {
                 const notebookBtn = document.createElement('button');
                 notebookBtn.className = 'minigame-button';
                 notebookBtn.id = 'minigame-notebook-postit';
-                notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
+                if (this.pcMonitor) {
+                    notebookBtn.innerHTML = pcPostitButtonHtml();
+                } else {
+                    notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
+                }
                 controls.appendChild(notebookBtn);
                 this.addEventListener(notebookBtn, 'click', () => this.addPostitToNotebook());
             }
@@ -1539,9 +1560,12 @@ export class PasswordMinigame extends MinigameScene {
     /** Back to the tiles (the Change button, shown in a short window once an account is chosen). */
     clearSignInChoice() {
         const st = this.signInState;
-        if (!st || this.signIn?.picker === false) return;
+        if (!st) return;
+        const remote = !!this.signIn?.remote;
+        if (!remote && this.signIn?.picker === false) return;
         st.selected = null;
-        st.other = false;
+        // A remote screen goes back to its captured tiles, or to the typed form with none
+        st.other = remote && !this.signInTilesOffered();
         this.passwordField.value = '';
         this.gameData.password = '';
         this.setSignInMessage('');
@@ -1549,7 +1573,78 @@ export class PasswordMinigame extends MinigameScene {
         this.gameContainer.querySelector('.signin-tile')?.focus?.();
     }
 
-    renderSignInForm() {
+    /** Whether a tile (the PC's own or a captured sign-in) is the chosen one. */
+    signInTileSelected(el, captured = this.capturedTiles()) {
+        const st = this.signInState;
+        const { tileIndex, captureIndex } = el.dataset;
+        if (tileIndex !== undefined) {
+            if (tileIndex === 'other') return !!st.other && this.signInTilesOffered();
+            return st.selected !== null && st.tiles[Number(tileIndex)]?.username === st.selected;
+        }
+        if (captureIndex !== undefined) {
+            if (captureIndex === 'other') return !!st.other;
+            return !st.other && st.selected !== null && captured[Number(captureIndex)]?.username === st.selected;
+        }
+        return false;
+    }
+
+    /** A remote screen still waiting for its Captured sign-ins (GET /capture_secrets). */
+    signInLoading() {
+        return !!this.signIn?.remote && !!this.signIn.capturedLoading;
+    }
+
+    /**
+     * The Captured sign-ins block sits above the form while it holds tiles or is loading,
+     * and below the form, as one line, when there are none (UX slice 2b0 R1 m1).
+     */
+    placeCapturedBlock() {
+        const block = this.gameContainer?.querySelector?.('#signin-captured');
+        const form = this.gameContainer?.querySelector?.('#signin-form');
+        if (!block || !form) return;
+        const state = this.signInLoading() ? 'loading' : (this.capturedTiles().length ? 'tiles' : 'none');
+        block.dataset.state = state;
+        if (state === 'none') {
+            if (form.nextElementSibling !== block) form.after(block);
+        } else if (form.previousElementSibling !== block) {
+            form.before(block);
+        }
+    }
+
+    /** Whether this screen offers any tiles: its own accounts, or a remote screen's captures. */
+    signInTilesOffered() {
+        return this.signIn?.picker !== false || (!!this.signIn?.remote && this.capturedTiles().length > 0);
+    }
+
+    /** The account tile for a username: the PC's own, else a captured sign-in's. */
+    signInTileFor(username) {
+        if (username === null || username === undefined) return null;
+        return this.signInState.tiles.find(t => t.username === username)
+            || this.capturedTiles().find(t => t.username === username) || null;
+    }
+
+    /**
+     * A remote screen's Captured sign-ins as account tiles (UX slice 2b0): the name from the
+     * NPC record the client already holds (by the capture's target id, else its username),
+     * else the capture's label; the headshot from the same record. Nothing new is asked of
+     * the server.
+     */
+    capturedTiles() {
+        const list = Array.isArray(this.signIn?.captured) ? this.signIn.captured : [];
+        return list.map(c => {
+            const record = npcRecordFor({ npcId: c.targetId, username: c.username });
+            return {
+                username: c.username,
+                displayName: record?.displayName || c.label || c.username,
+                label: c.label || null,
+                targetId: c.targetId,
+                portrait: null,
+                avatar: null,
+                record
+            };
+        });
+    }
+
+    renderSignInForm({ quiet = false } = {}) {
         const st = this.signInState;
         const chosen = st.other || st.selected !== null;
         const show = (el, on) => { if (el) el.style.display = on ? '' : 'none'; };
@@ -1559,27 +1654,30 @@ export class PasswordMinigame extends MinigameScene {
         // Submit, the message line and the post-it fit together (UX slice 2a R3 m4); the
         // chosen account's line holds a Change button back to the tiles.
         const area = this.gameContainer.querySelector('.signin-mode');
-        area?.classList.toggle('signin-chosen', chosen && this.signIn.picker !== false);
+        area?.classList.toggle('signin-chosen', chosen && this.signInTilesOffered());
         const selectedEl = this.gameContainer.querySelector('#signin-selected');
-        const tile = st.tiles.find(t => t.username === st.selected);
+        const tile = st.other ? null : this.signInTileFor(st.selected);
         if (selectedEl) {
             selectedEl.textContent = tile ? `${tile.displayName || tile.username} (${tile.username})` : '';
             show(selectedEl, !!tile);
         }
         this.applySelectedHeadshot(tile);
+        // One pass over every tile, the PC's own and a remote screen's captures alike, so the
+        // chosen edge has one owner (UX slice 2b0 R1 m2)
+        const captured = this.capturedTiles();
         this.gameContainer.querySelectorAll('.signin-tile').forEach(el => {
-            const idx = el.dataset.tileIndex;
-            const on = idx === 'other' ? (st.other && this.signIn.picker !== false) : (st.tiles[Number(idx)]?.username === st.selected && st.selected !== null);
-            el.classList.toggle('selected', !!on);
+            el.classList.toggle('selected', this.signInTileSelected(el, captured));
         });
+        // While a remote screen's captures load, it shows only "Checking..." (R1 M2)
         if (!chosen) {
-            this.setSignInMessage(st.message || 'Choose an account.');
+            this.setSignInMessage(this.signInLoading() ? '' : (st.message || 'Choose an account.'));
         }
         const focus = st.other && !this.usernameField.value ? this.usernameField : this.passwordField;
-        if (chosen && focus && typeof focus.focus === 'function') focus.focus();
+        // quiet: a late Captured sign-ins list redraws without moving focus or scrolling (2b0 R2 m1)
+        if (!quiet && chosen && focus && typeof focus.focus === 'function') focus.focus();
         // Once an account is chosen, the form down to its message line (Submit, the attempts
         // left) scrolls into view in a short window (UX slice 2a R2 M2)
-        if (chosen) revealInFrame(this.signInMessageEl?.textContent ? this.signInMessageEl : this.submitBtn);
+        if (!quiet && chosen) revealInFrame(this.signInMessageEl?.textContent ? this.signInMessageEl : this.submitBtn);
     }
 
     /**
@@ -1599,28 +1697,54 @@ export class PasswordMinigame extends MinigameScene {
         }
         if (box.dataset.headshotFor === tile.username && !box.hidden) return;
         box.dataset.headshotFor = tile.username;
-        const record = npcRecordFor({ username: tile.username });
+        const record = tile.record !== undefined ? tile.record : npcRecordFor({ username: tile.username });
         const talk = typeof record?.spriteTalk === 'string' ? record.spriteTalk : '';
         const talkUrl = !talk ? null
             : (/^(\/|https?:|data:)/.test(talk) ? talk : `/break_escape/${talk.startsWith('assets/') ? '' : 'assets/'}${talk}`);
         applyHeadshotBox(box, headshotSourceFor(tile, record), { talkUrl });
     }
 
-    /** The Captured sign-ins block's inner markup (a remote screen, 4.4). */
+    /**
+     * The Captured sign-ins block's inner markup (a remote screen, 4.4): a heading, then the
+     * captures as the shared account tiles with an Other user tile for typing (UX slice 2b0).
+     */
     capturedListHtml() {
         const s = this.signIn || {};
-        const captured = Array.isArray(s.captured) ? s.captured : [];
-        const body = captured.length
-            ? captured.map((c, i) => `
-                            <button type="button" class="signin-captured-item${this.pcMonitor ? ' pc-os-btn' : ''}" data-capture-index="${i}" data-target-id="${escapeHtml(c.targetId)}">${escapeHtml(c.label)} (${escapeHtml(c.username)})</button>`).join('')
-            : (s.capturedLoading ? '<div class="signin-captured-empty">Checking...</div>' : '<div class="signin-captured-empty">None yet.</div>');
+        const tiles = this.capturedTiles();
+        const body = tiles.length
+            ? `
+                            <div class="signin-tiles signin-captured-tiles">${tiles.map((t, i) => `
+                                <button type="button" class="signin-tile signin-captured-tile" data-capture-index="${i}" data-target-id="${escapeHtml(t.targetId)}" title="${escapeHtml(t.label && t.label !== t.displayName ? `${t.displayName}, ${t.label}` : t.displayName)}">
+                                    <span class="signin-portrait"></span>
+                                    <span class="signin-name">${escapeHtml(t.displayName)}</span>
+                                    <span class="signin-username">${escapeHtml(t.username)}</span>
+                                </button>`).join('')}
+                                <button type="button" class="signin-tile signin-other" data-capture-index="other" title="Other user">
+                                    <span class="signin-portrait signin-portrait-initials">?</span>
+                                    <span class="signin-name">Other user</span>
+                                    <span class="signin-username">type a name</span>
+                                </button>
+                            </div>`
+            : (s.capturedLoading ? '<div class="signin-captured-empty">Checking...</div>' : null);
+        // None: one line below the form, as before the tiles (R1 m1). Still on its way after
+        // the wait cap, or failed, the line says so rather than "none yet" (2b0 R2 m1, n1).
+        const noneLine = s.capturedNote === 'pending' ? 'Captured sign-ins: still checking.'
+            : (s.capturedNote === 'failed' ? 'Captured sign-ins could not be loaded.' : 'Captured sign-ins: none yet.');
+        if (body === null) return `
+                            <div class="signin-captured-title">${noneLine}</div>`;
         return `
                             <div class="signin-captured-title">Captured sign-ins</div>${body}`;
     }
 
     bindCapturedSignIns() {
-        this.gameContainer?.querySelectorAll('.signin-captured-item[data-capture-index]').forEach(el => {
-            this.addEventListener(el, 'click', () => this.fillCapturedSignIn(Number(el.dataset.captureIndex)));
+        const tiles = this.capturedTiles();
+        this.gameContainer?.querySelectorAll('.signin-tile[data-capture-index]').forEach(el => {
+            const idx = el.dataset.captureIndex;
+            if (idx !== 'other') {
+                const t = tiles[Number(idx)];
+                if (t) applyTilePortrait(el.querySelector('.signin-portrait'), t, undefined, undefined, { record: t.record });
+            }
+            this.addEventListener(el, 'click', () => (idx === 'other' ? this.selectSignInTile('other') : this.fillCapturedSignIn(Number(idx))));
         });
     }
 
@@ -1628,28 +1752,43 @@ export class PasswordMinigame extends MinigameScene {
      * The Captured sign-ins arrive after the screen has opened (GET /capture_secrets), so
      * the view or desktop that opened it is replaced at once (review R1 minor 1).
      */
-    setCapturedSignIns(list) {
+    setCapturedSignIns(list, { pending = false, failed = false } = {}) {
         if (!this.signIn?.remote) return false;
+        // A list after the wait cap's empty one (2b0 R2 m1): the form already had its focus
+        // once, so the redraw adds the tiles without taking focus or scrolling
+        const late = this.signIn.capturedNote === 'pending';
         this.signIn.captured = Array.isArray(list) ? list : [];
         this.signIn.capturedLoading = false;
+        this.signIn.capturedNote = pending ? 'pending' : (failed ? 'failed' : null);
         const block = this.gameContainer?.querySelector('#signin-captured');
         if (!block) return false;
         block.innerHTML = this.capturedListHtml();
         this.bindCapturedSignIns();
+        this.placeCapturedBlock();
+        // The list decides the screen once: its tiles, as at the keyboard, or with none the
+        // typed form (focused then, not before; R1 M2). A player already in the typed form
+        // (a field holds text or focus) keeps it.
+        const st = this.signInState;
+        const active = typeof document !== 'undefined' ? document.activeElement : null;
+        const typing = !!st.other && !!(this.usernameField?.value || this.passwordField?.value
+            || (active && (active === this.usernameField || active === this.passwordField)));
+        if (st.selected === null && !typing) st.other = this.signIn.captured.length === 0;
+        this.renderSignInForm({ quiet: late });
         return true;
     }
 
     /**
-     * Fill the form from a captured sign-in: the username always, the password only when
-     * the server served it. The server's password check is the gate (4.4).
+     * Choose a captured sign-in's tile: the account is chosen as a tile at the keyboard is,
+     * and the password filled only when the server served it. The server's password check
+     * is the gate (4.4).
      */
     fillCapturedSignIn(index) {
         const c = (this.signIn?.captured || [])[index];
         if (!c || !this.gameState.isActive) return false;
         const st = this.signInState;
-        st.other = true;
-        st.selected = null;
-        if (this.usernameField) this.usernameField.value = c.username;
+        st.other = false;
+        st.selected = c.username;
+        if (this.usernameField) this.usernameField.value = '';
         if (this.passwordField) this.passwordField.value = c.password || '';
         this.gameData.password = c.password || '';
         this.setSignInMessage('');

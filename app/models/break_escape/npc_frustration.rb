@@ -278,6 +278,16 @@ module BreakEscape
       AccessIdentities.screen_always_locks?({}, npc)
     end
 
+    # A PC whose effective policy has autoLockMin 0 locks its screen the instant anyone leaves, so
+    # a borrower never leaves a guest session open there (UX slice 16 review R1 m4). The guest
+    # claim refuses the same PC (game.rb:2307-2308); this keeps record_borrow_done! in step.
+    def policy_locks_guest_outright?(pc)
+      return false unless pc
+
+      min = effective_policy(pc)['autoLockMin']
+      min.is_a?(Numeric) && min.zero?
+    end
+
     # The PCs this NPC's handed-over (or spent) borrow_session workarounds name: a place for the
     # need once the server has handed the borrow over (plan 9.1, "Belongs to the NPC"), never before
     def handed_borrow_pcs(npc, need = nil)
@@ -360,10 +370,14 @@ module BreakEscape
     # after a later borrower's (its answer was lost) is answered from lastSpent and writes
     # nothing; workaround_body then answers guest: false, so the client keeps the later one too.
     def record_borrow_done!(npc, w)
-      pc_id = borrow_pc_id(w)
+      pc = find_login_pc(w['pc'])&.dig(:object)
+      pc_id = (pc && pc['id'] || w['pc']).to_s
       player_state['sessions'] = access_sessions.except(pc_id)
-      # Sub-slice L review R1 m1: a borrower locked out at this PC cannot have signed in there
-      if careful_guest?(npc) || account_locked_out_at?(pc_id, npc)
+      # Sub-slice L review R1 m1: a borrower locked out at this PC cannot have signed in there.
+      # UX slice 16 review R1 m4: a policy with autoLockMin 0 locks the instant the guest leaves,
+      # so no guest session is left open (the guest claim refuses such a PC, game.rb:2307-2308);
+      # borrow_body then reads no guest record and answers guest: false, and onGuestLeft agrees.
+      if careful_guest?(npc) || account_locked_out_at?(pc_id, npc) || policy_locks_guest_outright?(pc)
         guest_sessions.delete(pc_id)
         guest_sessions_at.delete(pc_id)
       else
