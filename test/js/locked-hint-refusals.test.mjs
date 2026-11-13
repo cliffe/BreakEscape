@@ -81,9 +81,16 @@ test('key locks: wrong-key text keeps going through withLockedHint', () => {
     assert.match(m, /withLockedHint\('The selected key doesn\\'t work with this lock\.', lockable\)/);
 });
 
-test('gate door refusal appends the hint, then emits door_gate_denied', () => {
+test('gate door refusal emits door_gate_denied, then shows the notification with the hint appended', () => {
     const d = src('systems/doors.js');
-    assert.match(d, /const denied = 'Access denied: this door only opens for authorised staff\.';\s*window\.gameAlert\?\.\(appendLockedHint\(denied, hintSource\), 'error', doorRefusalTitle\(hintSource, 'Door'\), lockedHintDuration\(hintSource, 3000, denied\)\);\s*window\.eventDispatcher\?\.emit\?\.\('door_gate_denied'/);
+    // UX slice 5 R1 M2: the event goes first, so an in-view NPC's answer can drop the notification
+    // (behaviour in ux-bark-gate-refusal.test.mjs); the hint then shows on its own
+    const body = d.slice(d.indexOf('function refuseAtGate('));
+    const emitAt = body.indexOf("window.eventDispatcher?.emit?.('door_gate_denied', data);");
+    const alertAt = body.indexOf("window.gameAlert?.(appendLockedHint(denied, hintSource), 'error', title, lockedHintDuration(hintSource, 3000, denied));");
+    assert.ok(emitAt > 0 && alertAt > emitAt, 'door_gate_denied before the notification');
+    assert.match(body, /const denied = 'Access denied: this door only opens for authorised staff\.';/);
+    assert.match(body, /const title = doorRefusalTitle\(hintSource, 'Door'\);/);
     // either sprite of the doorway may take the click: the hint falls back to the gate group's
     assert.match(d, /props\.lockedHint \|\| gateGroup\?\.lockedHint/);
     assert.match(readFileSync(join(js, 'systems/door-gates.js'), 'utf8'), /g\.lockedHint = props\.lockedHint/);
@@ -129,7 +136,7 @@ test('every lockedHintDuration call passes its base line; no fixed duration is l
             assert.ok(args.length >= 3 && args.slice(2).join(',').trim(), `${f}: lockedHintDuration(${m[1]}) has no base line`);
         }
     }
-    assert.equal(calls, 15, 'the callers this test knows: 9 in unlock-system (3 server refusals, feedback plan 7), 4 in minigame-starters, 2 in doors (the gate refusal and the clone refusal)');
+    assert.equal(calls, 15, 'the callers this test knows: 9 in unlock-system (3 server refusals, feedback plan 7), 4 in minigame-starters, 2 in doors (the gate refusal and the clone refusal; with an NPC in view answering, the hint goes in her bubble: slice 5 R2 m3)');
     assert.doesNotMatch(src('systems/unlock-system.js'), /\b5500\b/);
     // every line that shows a hint takes its duration from the helper
     for (const f of files) {

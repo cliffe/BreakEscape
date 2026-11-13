@@ -4880,8 +4880,23 @@ export function createEngineWorld() {
         // Scenario chatter pools (object, false, or undefined for the built-ins)
         chatterConfig: () => W().gameScenario?.chatter,
         // Voiced chatter (slice 15): npc-needs-chatter.js speaks lines and runs exchange knots on
-        // a separate ink story instance; until it has loaded, lines are bubbles only
-        speak: (id, line, info) => W().npcChatterVoice?.say(id, line, info),
+        // a separate ink story instance; until it has loaded, lines are bubbles only. The voice
+        // waits for the bubble layer to place the line, and a line with no room is not voiced
+        // (UX slice 5 R4 n4). An exchange or call line (info.knot or info.call) is not deferred:
+        // it is voiced at once and the bubble layer toasts it when no bubble fits, since the
+        // exchange counts as heard (heard_<knot>) once its lines are done (R5 m2)
+        speak: (id, line, info) => {
+            const v = W().npcChatterVoice;
+            const wb = W().npcWorldBubbles;
+            if (info?.knot || info?.call) {
+                try { wb?.mustShowChatter?.(id, line); } catch (e) { /* display never breaks a tick */ }
+                return v ? v.say(id, line, info) : undefined;
+            }
+            if (!v) return undefined;
+            const say = () => v.say(id, line, info);
+            if (wb?.deferChatterVoice?.(id, line, say)) return undefined;
+            return say();
+        },
         // Slice 19: a call hung up stops its speaker's line in flight and drops its queued lines
         cancelSpeech: id => W().npcChatterVoice?.cancel?.(id),
         warmStory: id => W().npcChatterVoice?.warm?.(id),

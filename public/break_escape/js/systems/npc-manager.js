@@ -4,6 +4,14 @@
 import { isInLineOfSight, drawLOSCone, clearLOSCone, getNPCFacingDirection, losVisualSuppressed, losVisualOutOfRoom, losCatchSpent } from './npc-los.js';
 import { classifyPhoneLine, phoneStepLines } from '../minigames/phone-chat/phone-chat-speaker.js';
 
+// The InkEngine class, once imported: with it and the story cached, a knot bark builds the
+// NPC's engine with no await, so it can mark a gate refusal answered in time (R3 n4)
+let InkEngineClass = null;
+async function loadInkEngineClass() {
+  if (!InkEngineClass) InkEngineClass = (await import('./ink/ink-engine.js')).default;
+  return InkEngineClass;
+}
+
 /**
  * Safe condition evaluator — replaces eval() for CSP compliance (unsafe-eval blocked).
  * Supports the condition patterns used in scenario eventMappings:
@@ -838,9 +846,61 @@ export default class NPCManager {
         this.eventListeners.set(npcId, []);
       }
       this.eventListeners.get(npcId).push({ pattern: eventPattern, listener });
+      if (this._isKnotBark(npcId, config)) this._preloadKnotBark(npcId);
     }
 
     console.log(`✅ Registered ${mappingsArray.length} event mappings for ${npcId}`);
+  }
+
+  /** Does this mapping answer with a bark from an ink knot (no text of its own, no conversation)? */
+  _isKnotBark(npcId, config) {
+    const npc = this.npcs.get(npcId);
+    return !!(config?.knot && !config.bark && !config.message && !config.conversationMode
+      && npc?.npcType === 'person' && npc.storyPath);
+  }
+
+  /**
+   * The story JSON if either cache has it: ours, or the room loader's (npcLazyLoader fetches each
+   * room's stories before it registers the NPCs; without this the preload fetched them again:
+   * UX slice 5 R4 n3). A loader copy is put in ours. Null when neither has it.
+   */
+  _storyFromLoader(storyPath) {
+    if (!storyPath) return null;
+    if (this.storyCache.has(storyPath)) return this.storyCache.get(storyPath);
+    let cached = null;
+    try { cached = (typeof window !== 'undefined' ? window.npcLazyLoader?.getCachedStory?.(storyPath) : null) || null; } catch (e) { cached = null; }
+    if (cached) this.storyCache.set(storyPath, cached);
+    return cached;
+  }
+
+  /**
+   * Fetch the NPC's story and import the InkEngine class in the background, once, so the first
+   * knot bark runs with no await and a gate refusal it answers in view is marked in time: without
+   * it the door showed its notification over her bubble (R3 n4). Read only: the ink endpoint and
+   * the story cache. The engine itself is still built on first use (so a conversation that opens
+   * first keeps getInkEngine's global-variable sync). Failures are ignored: the bark then loads
+   * as before.
+   */
+  _preloadKnotBark(npcId) {
+    if (this.preloadKnotBarks === false) return null;
+    const npc = this.npcs.get(npcId);
+    if (!npc?.storyPath) return null;
+    if (!this._knotPreloads) this._knotPreloads = new Map();
+    if (this._knotPreloads.has(npc.storyPath)) return this._knotPreloads.get(npc.storyPath);
+    const p = (async () => {
+      try {
+        await loadInkEngineClass();
+        if (this._storyFromLoader(npc.storyPath) || typeof fetch !== 'function') return;
+        const gameId = typeof window !== 'undefined' ? window.breakEscapeConfig?.gameId : null;
+        const endpoint = gameId ? `/break_escape/games/${gameId}/ink?npc=${encodeURIComponent(npcId)}` : npc.storyPath;
+        const response = await fetch(endpoint);
+        if (!response.ok) return;
+        const storyJson = await response.json();
+        if (!this.storyCache.has(npc.storyPath)) this.storyCache.set(npc.storyPath, storyJson);
+      } catch (e) { /* the bark loads it on first use */ }
+    })();
+    this._knotPreloads.set(npc.storyPath, p);
+    return p;
   }
 
   /**
@@ -1201,6 +1261,32 @@ export default class NPCManager {
       if (typeof condition === 'function') return !!condition(eventData, this.getNPC(npcId));
       return !!safeEvaluateCondition(condition, eventData);
     };
+  }
+
+  /**
+   * A bark mapping is answering this event now: if the bark will show as a speech bubble over
+   * an NPC in view (npc-barks.js answersInView: same room, lit, on camera, no minigame), mark the
+   * event's data, so the sender can tell straight after its emit. doors.js refuseAtGate reads
+   * `answeredInView` and drops its own refusal notification, which covered the guard's bubble
+   * (UX slice 5 R1 M2). Only for a bark that has text now (R2 m4): a plain bark's text, or a
+   * knot bark once its ink has given a line, which is known in time only when the story is
+   * already loaded (_showBarkFromKnot runs to the end without waiting then). A knot that gives
+   * nothing, or ink still loading, leaves the event unmarked, so the refusal keeps its
+   * notification and is never silent.
+   * Returns the extras the bark carries when marked: the sender's `answerFollowUp` (a gate's
+   * lockedHint, shown in the bubble after the line: R2 m3), else null.
+   */
+  _markAnsweredInView(npcId, eventData) {
+    if (!eventData || typeof eventData !== 'object' || Object.isFrozen(eventData)) return null;
+    let inView = false;
+    try { inView = !!this.barkSystem?.answersInView?.(npcId); } catch (e) { inView = false; }
+    if (!inView) return null;
+    eventData.answeredInView = true;
+    eventData.answeredBy = npcId;
+    // One NPC carries the follow-up: the first to answer
+    const followUp = eventData.answerFollowUpTaken ? null : (eventData.answerFollowUp || null);
+    if (followUp) eventData.answerFollowUpTaken = npcId;
+    return { followUp };
   }
 
   /**
@@ -1846,6 +1932,10 @@ export default class NPCManager {
     // If bark text is provided, show it directly
     if (this.barkSystem && (config.bark || config.message)) {
       const barkText = config.bark || config.message;
+      // A delayed bark is not an answer in view: the sender keeps its own notification
+      const delayed = Number(config.barkDelay) > 0;
+      const hasText = typeof barkText === 'string' && barkText.trim() !== '';
+      const answered = (!delayed && hasText) ? this._markAnsweredInView(npcId, eventData) : null;
 
       const fireBark = (stillValid) => {
         // Add bark message to conversation history (marked as bark)
@@ -1866,7 +1956,9 @@ export default class NPCManager {
           startKnot: config.knot || null,   // none: a click reopens the thread (npc-barks.js)
           phoneId: npc.phoneId,
           useTTS: npc.npcType === 'person' && !!npc.voice,
-          stillValid
+          stillValid,
+          eventPattern,
+          followUp: answered?.followUp || null
         });
       };
 
@@ -1876,20 +1968,28 @@ export default class NPCManager {
     else if (this.barkSystem && config.knot && npc.storyPath) {
       console.log(`📖 Loading Ink story from knot: ${config.knot}`);
 
-      // Load the Ink story and navigate to the knot
+      // Load the Ink story and navigate to the knot. The event is marked answered only once the
+      // knot has given text, and only while this call has not yet returned (story already
+      // loaded): marked any later, the sender has already shown its own notification (R2 m4).
+      // A delayed bark never marks it (with no delay _delayBark shows at once, in time).
       const stillValid = this._barkStillValid(npcId, config, eventData);
+      let inTime = true;
+      const onText = Number(config.barkDelay) > 0
+        ? null
+        : () => (inTime ? this._markAnsweredInView(npcId, eventData) : null);
       this._delayBark(npcId, config.barkDelay,
-        (valid) => this._showBarkFromKnot(npcId, npc, config.knot, eventPattern, valid), stillValid);
+        (valid) => this._showBarkFromKnot(npcId, npc, config.knot, eventPattern, valid, onText), stillValid);
+      inTime = false;
     }
     
     console.log(`[NPCManager] Event '${eventPattern}' triggered for NPC '${npcId}' → knot '${config.knot}'`);
   }
   
   // Load Ink story, navigate to knot, and show the text as a bark
-  async _showBarkFromKnot(npcId, npc, knotName, eventPattern, stillValid) {
+  async _showBarkFromKnot(npcId, npc, knotName, eventPattern, stillValid, onText = null) {
     try {
-      // OPTIMIZATION: Fetch story from cache or network
-      let storyJson = this.storyCache.get(npc.storyPath);
+      // OPTIMIZATION: Fetch story from cache (ours or the room loader's: R4 n3) or network
+      let storyJson = this._storyFromLoader(npc.storyPath);
       if (!storyJson) {
         // Use Rails API endpoint instead of direct file fetch
         const gameId = window.breakEscapeConfig?.gameId;
@@ -1909,7 +2009,8 @@ export default class NPCManager {
       // OPTIMIZATION: Reuse cached InkEngine or create new one
       let inkEngine = this.inkEngineCache.get(npcId);
       if (!inkEngine) {
-        const { default: InkEngine } = await import('./ink/ink-engine.js');
+        // No await once the class is loaded (preloaded with the story, R3 n4)
+        const InkEngine = InkEngineClass || await loadInkEngineClass();
         inkEngine = new InkEngine(npcId);
         inkEngine.loadStory(storyJson);
         this.inkEngineCache.set(npcId, inkEngine);
@@ -1933,8 +2034,10 @@ export default class NPCManager {
         result = inkEngine.continue();
       }
       
-      if (result.text) {
-        
+      if (result.text && result.text.trim()) {
+        let answered = null;
+        try { answered = onText?.(result.text) || null; } catch (e) { answered = null; }
+
         // Add to conversation history (marked as bark)
         this.addMessage(npcId, 'npc', result.text, { 
           eventPattern,
@@ -1952,7 +2055,9 @@ export default class NPCManager {
           startKnot: knotName,
           phoneId: npc.phoneId,
           useTTS: npc.npcType === 'person' && !!npc.voice,
-          stillValid
+          stillValid,
+          eventPattern,
+          followUp: answered?.followUp || null
         });
       } else {
         console.warn(`⚠️ No text found in knot: ${knotName}`);
@@ -3117,6 +3222,7 @@ export default class NPCManager {
    */
   clearStoryCache(storyPath) {
     this.storyCache.delete(storyPath);
+    this._knotPreloads?.delete(storyPath);
   }
 
   /**
@@ -3125,6 +3231,7 @@ export default class NPCManager {
   clearAllCaches() {
     this.inkEngineCache.clear();
     this.storyCache.clear();
+    this._knotPreloads?.clear();
     console.log(`[NPCManager] Cleared all caches`);
   }
 

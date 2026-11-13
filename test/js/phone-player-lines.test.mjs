@@ -275,7 +275,7 @@ test('the bark popup filters its text before showing or voicing it', () => {
     const render = src.slice(src.indexOf('async _renderBark('));
     const filter = render.indexOf("const text = phoneBarkText(payload.text || payload.message || '', contact);");
     assert.ok(filter > 0, 'bark text goes through phoneBarkText');
-    assert.ok(filter < render.indexOf('this._speakBark(npcId, text)'), 'before TTS');
+    assert.ok(filter < render.indexOf('this._speakBark(npcId, text'), 'before TTS');
     assert.match(render, /if \(!text\) return null;/);
 });
 

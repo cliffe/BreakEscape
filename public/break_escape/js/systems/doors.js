@@ -755,14 +755,32 @@ function gateHintSource(props, gateGroup) {
     } };
 }
 
-/** A gate's refusal, for a refused click and for the bump: the toast and door_gate_denied. */
+/**
+ * A gate's refusal, for a refused click and for the bump: door_gate_denied, then the toast.
+ * The event goes first: when a person NPC in view answers it with a bark that has text now (the
+ * NPC manager marks the event data `answeredInView` as the mapping fires), the guard's speech
+ * bubble is the refusal and the generic notification, which covered it, is not shown (UX slice 5
+ * R1 M2, R2 m4). A gate's lockedHint is information, so it is never lost: with an answer in view
+ * it goes in the guard's bubble, as pages after her line (`answerFollowUp`, R2 m3). As a toast
+ * of its own it covered her and her bubble at 800x600, where the toast column is most of the
+ * screen's width and cannot be moved off her. An answer out of view, in the dark, inside the
+ * mapping's cooldown, from a knot whose ink is not loaded or gives nothing, or from no one keeps
+ * the notification, hint included; it then closes the guard's bubble from an earlier refusal,
+ * which would say the same thing beside it (R2 n1).
+ */
 function refuseAtGate(props, gateGroup) {
     const hintSource = gateHintSource(props, gateGroup);
     const denied = 'Access denied: this door only opens for authorised staff.';
-    window.gameAlert?.(appendLockedHint(denied, hintSource), 'error', doorRefusalTitle(hintSource, 'Door'), lockedHintDuration(hintSource, 3000, denied));
-    window.eventDispatcher?.emit?.('door_gate_denied', {
-        roomId: props.roomId, connectedRoom: props.connectedRoom, direction: props.direction
-    });
+    const data = { roomId: props.roomId, connectedRoom: props.connectedRoom, direction: props.direction };
+    const hint = hintSource.doorProperties.lockedHint;
+    if (typeof hint === 'string' && hint.trim()) data.answerFollowUp = hint.trim();
+    window.eventDispatcher?.emit?.('door_gate_denied', data);
+    if (data.answeredInView) return;
+    // The notification carries this gate's hint: a bubble showing the same one closes quietly,
+    // one with another gate's hint hands it on (R3 m1)
+    window.npcWorldBubbles?.closeTagged?.('door_gate_denied', { followUp: data.answerFollowUp || null });
+    const title = doorRefusalTitle(hintSource, 'Door');
+    window.gameAlert?.(appendLockedHint(denied, hintSource), 'error', title, lockedHintDuration(hintSource, 3000, denied));
 }
 
 /**
