@@ -705,3 +705,99 @@ the sync.
 
 Logs: `tools/playtest/lpp-hivis-3418-session.jsonl`, `lpp-clone-3419-session.jsonl`,
 `tgt-3420-session.jsonl`, `lpp-reload-3421-session.jsonl`, `lpp-throttle-3422-session.jsonl`.
+
+## Fixes after R3 and gameplay (2026-11-13)
+
+Commit `eb1230fef`. Tests, validator counts and a gameplay re-proof below. Branch `build/hard-tailgate-plan`.
+
+### The currentRoom defect (found by gameplay, also present on main)
+
+`public/break_escape/js/state-sync.js` built `currentRoom` from `window.currentRoom?.name`, but
+`window.currentRoom` is set to `null` in `main.js` and never assigned; the player's room is the string
+`window.currentPlayerRoom` (`core/rooms.js`). `buildPlayerSections` now reads `window.currentPlayerRoom`
+(empty string collapses to undefined, so the delta never sends a bare `''` the guard would refuse).
+
+What changes now that currentRoom really syncs, checked per the plan:
+
+- **Sync guard.** Every reader of `window.currentRoom` was checked first: `person-chat-minigame.js` and
+  `test-bridge/state.js` already prefer `currentPlayerRoom`/`npc.roomId`, so none wanted the object.
+  Enabling the sync means currentRoom now reaches `merge_last_write_wins_sections`. The old guard
+  accepted only unlockedRooms / npcRouteRooms / startRoom and refused everything else (a 403 that rolls
+  back the whole sync, a tested contract). That would newly 403 the one deployed case where the player
+  legitimately stands in a room not in those lists: an **awareness world room**. `enterWorld`
+  (`utils/world-play.js`) loads `episode.world.room` and places the player there with no door unlock, so
+  it is never in unlockedRooms (only `ca12_visitor_tailgater` has a world room, `lobby`, that is not the
+  start room; the other ca-episodes' world room is the start room). The guard now calls
+  `Game#may_sync_current_room?`, which mirrors `player_reached_room?` (minus its circular currentRoom
+  disjunct): the three cheap player_state lists first (no scenario read on an ordinary sync into an
+  unlocked room), then a lazy `scenario_data` load for the start-room and awareness-world-room checks.
+  A genuine forge (a locked room in none of these) is still refused.
+- **savedCurrentRoom at load.** Only `state-sync.js:130` consumes it, to seed the delta baseline so the
+  first post-load sync does not resend an unchanged room. Nothing repositions the player to the saved
+  room on load (m01 reload: player resumes in the start room, not the saved room). No spawn change.
+- **Delta rule (SYNC SIZE).** currentRoom is sent only when it is truthy and differs from the confirmed
+  value (`state-sync.js:487`), once per room change, then confirmed; an unchanged room sends nothing.
+  No per-sync growth.
+- **player_reached_room? currentRoom disjunct (Chunk F).** Still safe: the guard only ever saves
+  currentRoom to a room in the accepted set, so a forged currentRoom a sync rejects never persists, and
+  the disjunct can only match an already-durably-reachable room.
+
+### R3 minors and the observation
+
+- **Minor 1.** The `serverCompletedOnly` guard moved after the already-completed branch in both
+  `complete_task!` and `skip_task!`. An honest re-post of an already-credited task gets the idempotent
+  "Already completed"; a forge of a not-yet-completed task still hits the guard. Controller tests 5/5b/5c
+  (a not-yet-completed task) still refuse; new tests 5d/5e (an already-credited task) assert the
+  idempotent reply.
+- **Minor 2.** The validator warns when an eventMapping/reward/action completes (client `completeTask`) a
+  task that a `creditOnPass.completeTask` credits (the serverCompletedOnly set), mirroring the
+  credit-global client-writer warning; the creditOnPass blocks themselves are pruned. Node test bites.
+  It fires on no deployed scenario (lab, test_gate_tailgate, m01, sis01, sis02, lab_social_engineering).
+- **Minor 3.** The split predicate is aligned to the runtime `gate_splits?` (a server-owned pass, or an
+  rfid_cloner anywhere, with no room-`requires` condition). The validator (`check_gated_door_credit`) and
+  graph (`generate_dungeon_graph.rb`) dropped `&& requires`. Chosen because the runtime rule is the truth
+  and it wrongly splits no deployed gate: the only cloner gates (lab, test_gate_tailgate) each carry a
+  requires card, so the split decision and the committed graphs are byte-identical, while a cloner-split
+  gate with a client-writable pass is now caught. A shared note sits at `Game#gate_splits?`.
+- **Observation.** `migrate_soft_locked_route_rooms!` uses `next` in place of the non-local `return`
+  inside `with_lock`.
+
+### Tests (no full suites)
+
+- Rails models: `gated_route_room_test`, `gated_door_credit_test`, `gated_server_completed_task_test`,
+  `lab_gated_migration_test`, `enter_room_validation_test` -> 37 runs, 0 failures (before the two new
+  minor-1 model tests; with them `gated_server_completed_task_test` grows and still passes).
+- Rails controllers: `gated_route_room_controller_test`, `gated_door_credit_controller_test`,
+  `gated_server_completed_task_controller_test` (now with 5d/5e), `lab_gated_door_test`,
+  `reload_persistence_test`, `games_controller_test` (63 runs, 0 failures). All green except one
+  **pre-existing** `reload_persistence_test` failure (`the save reads neither scenario_data...`, expects
+  2 game SELECTs, gets 3) that also fails at `f3e6c63a8` with these changes reverted: a plain
+  globalVariables sync (no currentRoom) reads full `scenario_data`. Not caused by this work; flagged.
+- Node: `state-sync.test.mjs` (26, incl. 3 new currentPlayerRoom tests), `validator-gated-door-credit`
+  (13, incl. the two new minor tests), `enter-room-completion` (12), `lab-gated-credit-scan` (3). Pass.
+- Validator (ERROR/WARNING line counts, unchanged from R3): lab_physical_pentest 0/7, test_gate_tailgate
+  0/2, m01_first_contact 0/13, sis01_healthcare 0/10, sis02_energy 0/7, lab_social_engineering 0/5.
+
+### Gameplay re-proof (played as a student, headless, :3650, setFPS behaviour as before)
+
+The avatar was driven through `window.__test`: worn items from the kit, the NPC followed through the
+gate, the records/staff door reached, the **real client's own** `sync_state` capturing currentRoom (not
+hand-set). Server truth read back read-only.
+
+| Case | Game | Route | Outcome |
+|---|---|---|---|
+| 1 | 3456 | lab hi-vis (viaPass) | PASS: real sync sent `currentRoom:"secure_area"`; server promoted secure_area into unlockedRooms, `npcRouteRooms=[]`, `kp_badge_tailgated=true`, `tailgate_in` completed; `cm_deeds_key` picked up |
+| 3 | 3457 | test_gate_tailgate (viaPass) | PASS: `test_staff_entered=true`, staff_room promoted, `enter_staff` completed (the R3 claim that failed in real play before) |
+| 4 | 3456 | lab reload in secure_area | PASS: reload harmless, credit persisted, no errors; player resumes in the start room (nothing repositions to the saved room, as before) |
+| 6 | 3464 | lab no-vest slip-in | PASS: the gate never opens for the unauthorised player (`door_gate_opened` never fires), so he cannot enter; earns nothing; `currentRoom="open_plan"` synced and accepted |
+| 7 | 3458 | m01 reload after a second room | PASS: unlocked+entered main_office_area, `currentRoom` sync returned HTTP 200 (no 403) for both rooms; reload harmless, inventory intact |
+
+Not re-driven live this round, with reason: **clone (viaCredential)** runs in the `/unlock` door branch,
+untouched by the client currentRoom fix; its server path is proven by the passing controller test
+`the credited task still completes end to end via the cloned-badge route` (tailgate_in completed,
+secure_area unlocked). **Throttle (1.5-3s on sync/unlock)** only delays requests; the earlier proof
+already showed the tailgate works under that delay with no error, and the one open question then (the
+credit firing) is proven by case 1.
+
+Logs: `tools/playtest/lpp-hivis-3456-session.jsonl`, `tgt-3457-session.jsonl`,
+`lpp-novest-3464-session.jsonl`, `m01-reload-3458-session.jsonl`.
