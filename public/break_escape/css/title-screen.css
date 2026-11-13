@@ -14,6 +14,9 @@
     width: 100%;
     height: 100%;
     position: relative;
+    /* The logo's zoom to 200% stays inside the screen: the minigame shell scrolls now (UI
+       shell build), and the zoom would otherwise give it a sideways scrollbar on a phone */
+    overflow: hidden;
     background: transparent;
     display: flex;
     flex-direction: column;
@@ -110,7 +113,10 @@
 .title-screen-prompt-hint {
     display: block;
     margin-top: 8px;
-    font-size: 14px;
+    /* On Press Start 2P's 8px grid, with a line height, so a wrapped hint never draws its
+       second line over the first (critique A37) */
+    font-size: 8px;
+    line-height: 16px;
     font-weight: normal;
     letter-spacing: 1px;
     color: #9fdfae;
@@ -180,4 +186,17 @@
 
 @media (prefers-reduced-motion: reduce) {
     .title-screen-art { transition: none; }
+}
+
+/* Phone portrait (critique A37): a 16px gutter on both sides of the title and the prompt,
+   and the title one grid step smaller so a long mission name wraps inside the screen */
+@media (max-width: 480px) {
+    .title-screen-title,
+    .title-screen-prompt {
+        box-sizing: border-box;
+        max-width: 100%;
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+    .title-screen-title { font-size: 16px; }
 }

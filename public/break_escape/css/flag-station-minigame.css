@@ -4,7 +4,7 @@
 
 .flag-station {
     padding: 20px;
-    font-family: 'GNF', 'Courier New', monospace;
+    font-family: 'GNF', monospace;
 }
 
 .flag-station-header {
@@ -45,8 +45,8 @@
     border: 2px solid #333;
     color: #00ff00;
     padding: 12px 15px;
-    font-family: 'Courier New', monospace;
-    font-size: 16px;
+    font-family: 'VT323', monospace;   /* a pixel face for typed flags (critique A27) */
+    font-size: 24px;
     outline: none;
 }
 
@@ -64,7 +64,7 @@
     border: 2px solid #000;
     padding: 12px 20px;
     font-family: 'Press Start 2P', monospace;
-    font-size: 11px;
+    font-size: 16px;   /* on its 8px grid (critique A27) */
     cursor: pointer;
     white-space: nowrap;
 }
@@ -110,7 +110,7 @@
 
 .flag-history {
     margin-top: 30px;
-    border-top: 1px solid #333;
+    border-top: 2px solid #333;
     padding-top: 20px;
 }
 
@@ -140,9 +140,9 @@
 }
 
 .flag-value {
-    font-family: 'Courier New', monospace;
+    font-family: 'VT323', monospace;
     color: #00ff00;
-    font-size: 13px;
+    font-size: 20px;
 }
 
 .flag-check {

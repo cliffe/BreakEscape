@@ -121,6 +121,13 @@ export class TextFileMinigame extends MinigameScene {
         return this.pcMonitor?.controls || null;
     }
 
+    // The X sits in the file window's title bar, inside the window: there are no fake
+    // traffic-light buttons beside it any more (critique A34)
+    closeAnchor() {
+        if (this.pcMonitor) return this.gameContainer;
+        return this.gameContainer?.querySelector?.('.text-file-container') || this.gameContainer;
+    }
+
     // In the monitor the X lives in the bezel's top strip (css/pc-monitor.css)
     placeCloseButton() {
         if (this.pcMonitor) return;
@@ -248,11 +255,6 @@ export class TextFileMinigame extends MinigameScene {
         this.gameContainer.innerHTML = `
             <div class="text-file-container">
                 <div class="text-file-window-header">
-                    <div class="window-controls">
-                        <button class="window-control close" title="Close"></button>
-                        <button class="window-control minimize" title="Minimize"></button>
-                        <button class="window-control maximize" title="Maximize"></button>
-                    </div>
                     <div class="window-title">${escapeHtml(displayDashes(this.textFileData.fileName))}</div>
                     <div></div>
                 </div>

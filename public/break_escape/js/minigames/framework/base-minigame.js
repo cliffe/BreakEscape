@@ -62,6 +62,10 @@ export class MinigameScene {
         this.gameContainer = this.container.querySelector('.minigame-game-container');
         this.messageContainer = this.container.querySelector('.minigame-message-container');
         this.controlsElement = this.container.querySelector('.minigame-controls');
+        // The shell and the game area scroll when a short window cannot hold a frame: both
+        // show the shared pixel-art scrollbar (css/utilities.css, UI shell build)
+        this.container.classList?.add?.('pixel-scroll');
+        this.gameContainer?.classList?.add?.('pixel-scroll');
 
         // Set up close button (skipped if disableClose)
         const closeBtn = document.getElementById('minigame-close');
@@ -136,14 +140,46 @@ export class MinigameScene {
         const c = this.container.getBoundingClientRect();
         const cs = window.getComputedStyle(frame);
         const gap = 4;
-        const top = Math.max(r.top, c.top) + (parseFloat(cs.borderTopWidth) || 0) + gap - c.top;
+        // The X is fixed to the window (css/minigames-framework.css), so these are window
+        // coordinates: a shell scrolled down or sideways moves the frame under the X, which
+        // stays on the visible top-right of the frame (M1, M2 of the UI shell review).
+        const shellBar = this.shellScrollbarWidth();
+        const top = Math.max(r.top, c.top) + (parseFloat(cs.borderTopWidth) || 0) + gap;
         // A frame that scrolls keeps its scrollbar clear of the X
         const borders = (parseFloat(cs.borderLeftWidth) || 0) + (parseFloat(cs.borderRightWidth) || 0);
         const scrollbar = Math.max(0, (frame.offsetWidth || 0) - (frame.clientWidth || 0) - borders);
-        const right = c.right - Math.min(r.right, c.right) + (parseFloat(cs.borderRightWidth) || 0) + scrollbar + gap;
+        // The visible edge of the shell, less its own scrollbar
+        const edge = c.right - shellBar;
+        // `right` of a fixed box counts from the window's right edge, not the shell's (R2 B1:
+        // a shell that is a narrow panel, as the scanners are, put the X at the window edge)
+        const vw = document.documentElement.clientWidth || window.innerWidth;
+        const right = vw - Math.min(r.right, edge) + (parseFloat(cs.borderRightWidth) || 0) + scrollbar + gap;
         btn.style.top = `${Math.round(top)}px`;
-        btn.style.right = `${Math.round(right)}px`;
+        btn.style.right = `${Math.round(Math.max(right, vw - c.right + shellBar + gap))}px`;
         btn.classList.add('minigame-close-in-frame');
+    }
+
+    // Width of the shell's own vertical scrollbar (0 when it does not scroll)
+    shellScrollbarWidth() {
+        const el = this.container;
+        if (!el) return 0;
+        const ccs = window.getComputedStyle(el);
+        const borders = (parseFloat(ccs.borderLeftWidth) || 0) + (parseFloat(ccs.borderRightWidth) || 0);
+        return Math.max(0, (el.offsetWidth || 0) - (el.clientWidth || 0) - borders);
+    }
+
+    // The default X is fixed to the window's top-right corner, so it stays reachable while the
+    // shell scrolls either way; it sits left of the shell's scrollbar when one shows.
+    _watchShellScrollbar() {
+        const set = () => this.container?.style?.setProperty?.('--minigame-shell-bar', `${this.shellScrollbarWidth()}px`);
+        const raf = window.requestAnimationFrame || ((f) => setTimeout(f, 16));
+        set();
+        raf(set);
+        this.addEventListener(window, 'resize', set);
+        if (typeof window.ResizeObserver === 'function' && this.container?.nodeType === 1) {
+            this._shellObserver = new window.ResizeObserver(set);
+            this._shellObserver.observe(this.container);
+        }
     }
 
     _watchCloseButton() {
@@ -151,6 +187,10 @@ export class MinigameScene {
         const raf = window.requestAnimationFrame || ((f) => setTimeout(f, 16));
         raf(place);
         this.addEventListener(window, 'resize', place);
+        // A scrolled shell keeps the X at the visible top of the frame
+        // (scroll does not bubble, so listen in the capture phase: a game area that is the
+        // scroller inside the shell moves the frame too, R2 m1)
+        if (this.container?.addEventListener) this.addEventListener(this.container, 'scroll', place, { capture: true, passive: true });
         if (typeof window.ResizeObserver === 'function') {
             const frame = this.closeAnchor?.();
             if (frame) {
@@ -163,6 +203,7 @@ export class MinigameScene {
     start() {
         this.gameState.isActive = true;
         console.log("Minigame started");
+        try { this._watchShellScrollbar(); } catch (e) { console.warn('watchShellScrollbar', e); }
         if (this.constructor.closeInsideFrame === true && this.params.disableClose !== true) {
             try { this._watchCloseButton(); } catch (e) { console.warn('placeCloseButton', e); }
         }
@@ -222,9 +263,9 @@ export class MinigameScene {
         }
     }
     
-    addEventListener(element, eventType, handler) {
-        element.addEventListener(eventType, handler);
-        this._eventListeners.push({ element, eventType, handler });
+    addEventListener(element, eventType, handler, options) {
+        element.addEventListener(eventType, handler, options);
+        this._eventListeners.push({ element, eventType, handler, options });
     }
     
     showSuccess(message, autoClose = true, duration = 2000) {
@@ -346,11 +387,13 @@ export class MinigameScene {
     }
 
     cleanup() {
-        this._eventListeners.forEach(({ element, eventType, handler }) => {
-            element.removeEventListener(eventType, handler);
+        this._eventListeners.forEach(({ element, eventType, handler, options }) => {
+            element.removeEventListener(eventType, handler, options);
         });
         this._eventListeners = [];
         
+        this._shellObserver?.disconnect?.();
+        this._shellObserver = null;
         this._closeObserver?.disconnect?.();
         this._closeObserver = null;
 

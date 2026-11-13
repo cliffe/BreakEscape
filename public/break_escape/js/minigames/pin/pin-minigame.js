@@ -135,6 +135,14 @@ export class PinMinigame extends MinigameScene {
         
         displayContainer.appendChild(this.displayElement);
         interfaceContainer.appendChild(displayContainer);
+
+        // The keypad's own message line, under the display: a wrong code says so here rather
+        // than in the framework's toast, which sat over keys 4 to 6 (critique A10)
+        this.messageLineElement = document.createElement('div');
+        this.messageLineElement.className = 'pin-minigame-message';
+        this.messageLineElement.setAttribute('role', 'status');
+        this.messageLineElement.setAttribute('aria-live', 'polite');
+        interfaceContainer.appendChild(this.messageLineElement);
         
         // Create keypad
         this.keypadElement = document.createElement('div');
@@ -296,6 +304,8 @@ export class PinMinigame extends MinigameScene {
         }
 
         if (window.playUISound) window.playUISound('keypad');
+        // The next code clears the last wrong-code line
+        if (this.currentInput.length === 0 && this.messageLineElement?.textContent) this.showPinMessage('');
         this.currentInput += number;
         this.updateDisplay();
         
@@ -366,7 +376,7 @@ export class PinMinigame extends MinigameScene {
             this.updateDisplay();
             this.isLocked = true;
             this.gameResult = { success: false, cancelled: true, refused: reason, attempts: this.attemptCount };
-            this.showFailure(PIN_SCOPE_REFUSAL_TEXT[reason], true, 2000);
+            this.showPinMessage(PIN_SCOPE_REFUSAL_TEXT[reason], 'wrong', 2000);
             return;
         }
 
@@ -465,7 +475,7 @@ export class PinMinigame extends MinigameScene {
             }
 
             console.error('Server validation error:', error);
-            this.showFailure("Network error. Please try again.", false, 3000);
+            this.showPinMessage('Network error. Please try again.', 'wrong');
             // Decrease attempts counter since this wasn't a real attempt
             this.attemptCount--;
             // ...and say so, so the caller can keep the visible attempt history
@@ -623,6 +633,22 @@ export class PinMinigame extends MinigameScene {
         };
     }
     
+    /**
+     * Writes a line under the display (kind: 'wrong' or ''). closeAfterMs closes the keypad
+     * afterwards, as the framework's showFailure(…, true, ms) did.
+     */
+    showPinMessage(text, kind = '', closeAfterMs = 0) {
+        const line = this.messageLineElement;
+        if (line) {
+            line.textContent = text || '';
+            line.className = `pin-minigame-message${kind ? ` ${kind}` : ''}`;
+        } else if (text) {
+            this.showFailure(text, closeAfterMs > 0, closeAfterMs || 2000);
+            return;
+        }
+        if (closeAfterMs > 0) setTimeout(() => this.complete(false), closeAfterMs);
+    }
+
     handleFailure() {
         this.currentInput = '';
         this.updateDisplay();
@@ -633,7 +659,7 @@ export class PinMinigame extends MinigameScene {
             this.displayElement.classList.add('locked');
             this.displayElement.textContent = 'LOCKED';
 
-            this.showFailure('Maximum attempts reached. System locked. Your guesses so far are kept.', true, 3000);
+            this.showPinMessage('Locked out. Your guesses are kept.', 'wrong', 3000);
             
             // Set game result
             this.gameResult = {
@@ -647,15 +673,8 @@ export class PinMinigame extends MinigameScene {
             const message = Number.isFinite(remainingAttempts)
                 ? `Incorrect PIN. ${remainingAttempts} attempt${remainingAttempts > 1 ? 's' : ''} remaining.`
                 : 'Incorrect PIN. Read the cracker\'s lights and try again.';
-            this.showFailure(message, false, 1500);
-            
-            // Clear the failure message after delay
-            setTimeout(() => {
-                const failureMessage = this.messageContainer.querySelector('.minigame-failure-message');
-                if (failureMessage) {
-                    failureMessage.remove();
-                }
-            }, 1500);
+            // Stays until the next key press, so the player can read it while typing again
+            this.showPinMessage(message, 'wrong');
         }
     }
     

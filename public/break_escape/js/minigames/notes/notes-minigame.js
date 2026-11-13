@@ -26,6 +26,11 @@ export class NotesMinigame extends MinigameScene {
     // The bottom button is Continue, the way on from reading a note
     static keepsCancelButton = true;
 
+    // The X sits in the notepad's top-right corner, not out at the window's edge
+    closeAnchor() {
+        return this.gameContainer?.querySelector?.('.notes-minigame-notepad') || this.gameContainer;
+    }
+
     constructor(container, params) {
         // Ensure params is defined before calling parent constructor
         params = params || {};
@@ -86,7 +91,7 @@ export class NotesMinigame extends MinigameScene {
 
         // Create content area
         const contentArea = document.createElement('div');
-        contentArea.className = 'notes-minigame-content-area';
+        contentArea.className = 'notes-minigame-content-area pixel-scroll';
 
                 // Create text box container to look like it's stuck in a binder
                 const textBox = document.createElement('div');
@@ -232,7 +237,10 @@ export class NotesMinigame extends MinigameScene {
                 noteCounter.textContent = `${this.currentNoteIndex + 1}/${this.collectedNotes.length}`;
                 navContainer.appendChild(noteCounter);
                 
-                this.container.appendChild(navContainer);
+                // In the shell's column straight under the notepad, above Continue
+                // (critique A04: it was drawn over the page)
+                if (this.gameContainer.after) this.gameContainer.after(navContainer);
+                else this.container.appendChild(navContainer);
             }
         }
         
