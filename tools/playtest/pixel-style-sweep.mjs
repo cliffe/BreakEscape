@@ -42,11 +42,20 @@ const TAG = opt('tag', 'shot');
 const SIZES = opt('sizes', '1400x1000').split(',').map(s => s.split('x').map(Number));
 // --names unlock: shots of scenes on the UX review page also get the page's id in the name.
 // These are the card ids from the review page (review-page/cards.json), not its image file
-// names, which run one ahead from container on.
+// names, which run one ahead of the card ids on every unlock card (card unlock-43, container
+// 915x412, shows branch-after-unlock-44-container-915x412-after.webp).
 const REVIEW_IDS = {
-    'container 915x412': 'unlock-43', 'password 915x412': 'unlock-44', 'pin 915x412': 'unlock-47',
-    'text-file 915x412': 'unlock-48', 'container 800x600': 'unlock-52', 'password 800x600': 'unlock-53',
-    'combination 800x600': 'unlock-54', 'cryptex 800x600': 'unlock-55', 'pin 800x600': 'unlock-56'
+    'notes 915x412': 'unlock-42', 'container 915x412': 'unlock-43', 'password 915x412': 'unlock-44',
+    'combination 915x412': 'unlock-45', 'cryptex 915x412': 'unlock-46', 'pin 915x412': 'unlock-47',
+    'text-file 915x412': 'unlock-48', 'siem-dashboard 915x412': 'unlock-49', 'backup-recovery 915x412': 'unlock-50',
+    'notes 800x600': 'unlock-51', 'container 800x600': 'unlock-52', 'password 800x600': 'unlock-53',
+    'combination 800x600': 'unlock-54', 'cryptex 800x600': 'unlock-55', 'pin 800x600': 'unlock-56',
+    'text-file 800x600': 'unlock-57', 'siem-dashboard 800x600': 'unlock-58', 'backup-recovery 800x600': 'unlock-59'
+};
+// Scenes with one card for every size (the page shows them at 1400x1000)
+const REVIEW_SCENE_IDS = {
+    'bluetooth-scanner': 'unlock-13', 'esd-pushbutton': 'unlock-28', 'infusion-pump': 'unlock-29',
+    'alarm-panel': 'unlock-32', 'cryptex': 'unlock-39', 'combination': 'unlock-40', 'examine': 'unlock-41'
 };
 
 // Slice 7 scope, worst first (UNLOCK_GAPS_BUILD_LOG.md minigame sweep). The framework shell
@@ -347,7 +356,8 @@ async function checkScene(page, scene) {
 }
 
 async function main() {
-    const browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE, headless: true });
+    // Scrollbars shown, as a desktop player sees them (the headless shell hides them by default)
+    const browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE, headless: true, ignoreDefaultArgs: ['--hide-scrollbars'] });
     const page = await browser.newPage({ viewport: { width: SIZES[0][0], height: SIZES[0][1] } });
     await page.addInitScript(() => { try { localStorage.setItem('tutorial_declined', 'true'); } catch { /* blocked */ } });
     // --offline: block the Google font hosts, to prove nothing depends on them
@@ -388,7 +398,7 @@ async function main() {
                 if (cv) res.breaches.push(...cv.breaches);
             }
             if (SHOTS) {
-                const id = REVIEW_IDS[`${scene} ${w}x${h}`];
+                const id = REVIEW_IDS[`${scene} ${w}x${h}`] || REVIEW_SCENE_IDS[scene];
                 const png = join(SHOTS, `${id ? `${id}_` : ''}${scene}_${w}x${h}_${TAG}.png`);
                 await page.screenshot({ path: png, type: 'png' });
                 // webp via ImageMagick (lossless, so the pixels stay sharp)
