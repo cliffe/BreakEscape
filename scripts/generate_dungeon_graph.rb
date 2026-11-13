@@ -24,6 +24,7 @@ require_relative '../lib/break_escape/network_model'
 require_relative '../lib/break_escape/npc_habits'
 require_relative '../lib/break_escape/npc_habits/clues'
 require_relative '../lib/break_escape/access_work'
+require_relative '../lib/break_escape/wearable_model'
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -507,6 +508,42 @@ end
   parts << "held by #{holders.join(', ')}" if holders.any?
   parts << "not held by #{gate['noHold'].join(', ')}"
   node[:label] = "#{node[:label]}<br/>gate: #{parts.join('; ')}"
+end
+
+# A split gated door (GATED_DOOR_SERVER_CHECK_PLAN.md §12): the server owns the way in. The door
+# opens on a server-owned pass (walk in behind the guard wearing it) or on a cloned/held requires
+# card at the reader, and the server credits the passage itself. Label it so the structure is
+# visible: the holdsDoors block above skips a gate with a playerMayPassIf, so these get no label
+# otherwise. Mirrors Game#gate_splits?: a server-owned playerMayPassIf, or an rfid_cloner present.
+DG_SERVER_OWNED_GLOBALS = (BreakEscape::WearableModel.worn_globals(scenario) +
+  Array(scenario['importGlobals']).filter_map { |e| e.is_a?(Hash) ? (e['as'] || e['completed'] || e['var']) : nil } +
+  %w[se_captures]).map(&:to_s).to_set
+dg_cloner_walk = lambda do |node|
+  case node
+  when Array then node.any? { |n| dg_cloner_walk.call(n) }
+  when Hash then node['type'] == 'rfid_cloner' || node.each_value.any? { |v| dg_cloner_walk.call(v) }
+  else false
+  end
+end
+dg_has_cloner = dg_cloner_walk.call(scenario)
+(habits_copy['rooms'].is_a?(Hash) ? BreakEscape::NpcHabits.gate_entries(habits_copy) : []).each do |entry|
+  next if entry[:doorway]
+
+  gate = entry[:gate]
+  pass_if = gate['playerMayPassIf']
+  pass_server_owned = pass_if.is_a?(String) && !pass_if.empty? && DG_SERVER_OWNED_GLOBALS.include?(pass_if)
+  room = (habits_copy['rooms'][entry[:connected_room]] if habits_copy['rooms'].is_a?(Hash))
+  room_requires = room.is_a?(Hash) ? Array(room['requires']).map(&:to_s).reject(&:empty?) : []
+  has_credential = dg_has_cloner && room_requires.any?
+  next unless pass_server_owned || has_credential
+
+  node = $nodes["door_#{entry[:connected_room]}"]
+  next unless node
+
+  label_parts = []
+  label_parts << 'credential' if has_credential
+  label_parts << 'server pass' if pass_server_owned
+  node[:label] = "#{node[:label]}<br/>gated: #{label_parts.join(' or ')}"
 end
 
 # ---------------------------------------------------------------------------
