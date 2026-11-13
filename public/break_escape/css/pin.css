@@ -20,6 +20,9 @@
     gap: 20px;
     overflow-y: auto;
     box-sizing: border-box;
+    /* Undo the framework's min-height: 0 (36f0c92b0), which let the plate stop short of
+       its content once the Cancel row moved into the column (d043ab9a1) */
+    min-height: auto;
 
     max-width: 600px;
     margin: 12px auto;

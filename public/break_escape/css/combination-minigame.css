@@ -124,15 +124,15 @@
 
 .combination-dial-display {
     /* Press Start 2P: chunky square digits, like a padlock's stamped number wheels
-       (the user asked for a different pixel face here, slice 7 R1). 32px is 4x its
+       (the user asked for a different pixel face here, slice 7 R1). 48px is 6x its
        8px grid, so every pixel lands whole. */
-    font-size: 32px;
+    font-size: 48px;
     font-weight: normal;
     color: #ffffff;
     background: #0f1826;
     border: 2px solid #334466;
-    padding: 10px 20px;
-    width: 90px;
+    padding: 10px 12px;
+    width: 120px;   /* two 48px digits */
     height: 80px;
     display: flex;
     align-items: center;
