@@ -990,7 +990,7 @@ export class ContainerMinigame extends MinigameScene {
                         <!-- Desktop icons will be populated here -->
                     </div>
                 </div>
-                <div class="desktop-more" hidden aria-hidden="true"><span class="desktop-more-arrow"></span><span>${DESKTOP_MORE_BELOW_TEXT}</span></div>
+                <div class="desktop-more" hidden aria-hidden="true"><span class="desktop-more-arrow"></span><span class="desktop-more-text">${DESKTOP_MORE_BELOW_TEXT}</span></div>
                 ${(note || this.isTakeable) ? `<div class="desktop-taskbar">
                     ${note ? `<span class="desktop-taskbar-note pixel-scroll">${escapeHtml(displayDashes(note))}</span>` : ''}
                     <div class="desktop-actions">
@@ -1025,7 +1025,10 @@ export class ContainerMinigame extends MinigameScene {
         const more = this.desktopMoreElement;
         if (!area || !more || more.isConnected === false) return false;
         const below = (area.scrollHeight - area.clientHeight - area.scrollTop) > 2;
+        const was = more.hidden;
         more.hidden = !below;
+        // The centred words at an even width, so they land on a whole pixel (as a share's names)
+        if (below && was) evenShareLabels(more, '.desktop-more-text');
         return below;
     }
 
