@@ -42,7 +42,11 @@ sessions). Six small fixes to the PC sign-in, desktop and network views. No scen
    A locked held session keeps "Locked" (`HOST_LOCKED_LABEL`); a share that needs an account says
    "Needs account" (`SHARE_LOCKED_LABEL`); `lockBadgeLabel(kind)` picks, one badge look. The wider
    share badge no longer spills over the share's description in a narrow column: a wide row's
-   control keeps its width (max 45%) and the badge text wraps.
+   control keeps its width (max 45%) and the badge text wraps. The taller share row put a
+   vertical scrollbar on the 390px view, which exposed an old fault: the grid's 340px minimum
+   column made a sideways scrollbar. It is now `minmax(min(340px, 100%), 1fr)`, so one column
+   narrower than 340px holds a row at its own width. Side effect at 390px: a narrower row wraps
+   "Remote sign-in off" at its hyphen.
 
 ## Tests
 

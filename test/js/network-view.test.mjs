@@ -259,6 +259,8 @@ test('a locked share\'s badge keeps its width instead of spilling over the descr
     const rule = css.slice(css.indexOf('.network-row-wide .network-row-control {'), css.indexOf('}', css.indexOf('.network-row-wide .network-row-control {')));
     assert.match(rule, /flex: 0 0 auto;/);
     assert.match(rule, /max-width: 45%;/);
+    // and a column narrower than a 340px row never scrolls sideways
+    assert.match(css, /minmax\(min\(340px, 100%\), 1fr\)/);
 });
 
 test('network_viewed carries the network, the host ids and hostList; it fires on every open', async () => {
@@ -825,7 +827,7 @@ test('"More below" shows while the list overflows the frame and hides at the end
 });
 
 test('rows lay out in two columns when there is room; headings and locked shares span (R1 m2)', async () => {
-    assert.match(ruleBody('.network-view-rows') || '', /grid-template-columns:\s*repeat\(auto-fill, minmax\(\d+px, 1fr\)\)/);
+    assert.match(ruleBody('.network-view-rows') || '', /grid-template-columns:\s*repeat\(auto-fill, minmax\((?:\d+px|min\(\d+px, 100%\)), 1fr\)\)/);
     setup();
     links.open('jack_comms_port');
     await settle();
