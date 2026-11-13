@@ -289,6 +289,8 @@ export function mountPcTaskbar(root, model, { windowTitle = '', takeable = false
     let open = false;
     const onKey = (e) => {
         if (!open) return;
+        // A panel whose view went away without its cleanup lets go of the keys
+        if (!panel.isConnected) { close(); return; }
         if (e.key === 'Escape') {
             e.preventDefault();
             e.stopPropagation();
@@ -307,6 +309,7 @@ export function mountPcTaskbar(root, model, { windowTitle = '', takeable = false
     };
     const onPress = (e) => {
         if (!open) return;
+        if (!panel.isConnected) { close(); return; }
         const t = e.target;
         if (panel.contains(t) || start.contains(t)) return;
         close();

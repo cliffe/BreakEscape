@@ -27,7 +27,7 @@ put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n
 put('utils/conditional-text.js', 'export function resolveObjectField(o, f, d) { return (o && o[f] != null) ? o[f] : d; }\n');
 put('systems/inventory.js', 'export async function addToInventory() { return { ok: true }; }\nexport function removeFromInventory() {}\nexport function inventoryImageKey(d) { return d?.type; }\n');
 for (const rel of ['utils/escape-html.js', 'utils/computer-keywords.js', 'utils/author-html.js', 'utils/lock-scope-refusal.js',
-    'utils/pc-monitor.js', 'utils/more-below.js', 'utils/npc-headshot.js', 'minigames/framework/base-minigame.js',
+    'utils/pc-monitor.js', 'utils/more-below.js', 'utils/npc-headshot.js', 'utils/pc-taskbar.js', 'minigames/framework/base-minigame.js',
     'minigames/container/container-item-image.js', 'minigames/container/container-minigame.js',
     'minigames/password/password-minigame.js', 'systems/pc-sessions.js', 'minigames/text-file/text-file-minigame.js',
     'minigames/notes/notes-minigame.js', 'utils/note-markdown.js', 'utils/test-state-text.js']) copy(rel);
@@ -542,17 +542,24 @@ test('a PC\'s sign-in screen and its desktop use the same frame, at the same siz
     }
 });
 
-test('the desktop\'s account bar shows the signed-in NPC\'s headshot', async () => {
+test('the desktop\'s taskbar shows the signed-in NPC\'s headshot (x1), the start panel at x2 (UX slice 6)', async () => {
     const restore = sizeWindow(1400, 1000);
+    const { resetTaskbarHeadshots } = await imp('utils/pc-taskbar.js');
+    resetTaskbarHeadshots();
     globalThis.Image = fakeImage({ '/break_escape/assets/characters/male_office_worker_v2_headshot.png': [32, 32] });
     try {
         await desktop();
         await settle(5); await settle(5);
-        const box = document.querySelector('.pc-desktop-topbar .desktop-account-headshot');
-        assert.ok(box, 'a headshot in the top bar');
+        assert.equal(document.querySelector('.pc-desktop-topbar'), null, 'no top bar for a password session');
+        const box = document.querySelector('.pc-taskbar .pc-taskbar-headshot');
+        assert.ok(box, 'a headshot in the taskbar');
         assert.equal(box.dataset.headshot, 'male_office_worker_v2');
         assert.match(box.style.backgroundImage, /male_office_worker_v2_headshot\.png/);
+        assert.equal(box.style.backgroundSize, '32px 32px');
         assert.equal(box.hidden, false);
+        const big = document.querySelector('.pc-start-panel .pc-start-headshot');
+        assert.equal(big.style.backgroundSize, '64px 64px', 'the panel draws it at x2');
+        resetTaskbarHeadshots();
     } finally {
         delete globalThis.Image;
         restore();
@@ -669,7 +676,7 @@ test('R1 m6: a tap on the note does not mark it dragged; a move does', async () 
     }
 });
 
-test('R1 M3: a long description is all in the taskbar, wrapped and scrolled, never cut with an ellipsis', async () => {
+test('R1 M3: a long description is all in its strip above the taskbar, wrapped and scrolled, never cut with an ellipsis', async () => {
     const restore = sizeWindow(390, 844);
     const long = 'A shared hot desk PC. Anyone with an account can sign in here, and the last user left a sticky note about the payroll share on the second floor.';
     try {
@@ -751,14 +758,15 @@ test('R2 M2: the desktop\'s icon area has the pixel scrollbar and "More below" w
     assert.match(cue, /border-top: 2px solid/);
 });
 
-test('R2 m4: no taskbar strip under a desktop with no description and nothing to take', async () => {
+test('R2 m4 / slice 6: no empty description strip; the taskbar is always under the desktop', async () => {
     const restore = sizeWindow(390, 844);
     try {
         const a = await desktop({ observations: '' });
-        assert.equal(document.querySelector('.desktop-taskbar'), null, 'no empty strip');
+        assert.equal(document.querySelector('.pc-desktop-status'), null, 'no empty strip');
+        assert.ok(document.querySelector('.pc-desktop > .pc-taskbar'), 'the taskbar');
         a.cleanup?.();
         const b = await desktop({ observations: 'A hot desk.' });
-        assert.ok(document.querySelector('.desktop-taskbar .desktop-taskbar-note'), 'a description keeps it');
+        assert.ok(document.querySelector('.pc-desktop-status .desktop-taskbar-note'), 'a description gets its strip');
         b.cleanup?.();
     } finally {
         restore();
