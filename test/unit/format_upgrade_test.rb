@@ -77,8 +77,8 @@ module BreakEscape
       }
       state = { 'inventory' => [{ 'id' => 'c', 'affordance' => { 'offWhen' => 'c_off', 'useSeconds' => 2 } }] }
       res = FU.upgrade!(data, state)
-      assert_equal 1, data['formatVersion']
-      assert_equal ['one_outage_field_offWhen'], res[:ran]
+      assert_equal 2, data['formatVersion']
+      assert_equal %w[one_outage_field_offWhen one_owner_field], res[:ran]
       assert_equal 'net_off', data.dig('networks', 'n', 'offWhen')
       refute data['networks']['n'].key?('downIf')
       assert_equal 'jam', data.dig('resources', 'r', 'offWhen')
@@ -105,6 +105,84 @@ module BreakEscape
       assert_equal({ 'mode' => 'maint' }, data.dig('resources', 'r', 'offWhen'))
       assert BreakEscape::AccessWork.globals_hold?({ 'mode' => 'maint' }, { 'mode' => 'maint' })
       refute BreakEscape::AccessWork.globals_hold?({ 'mode' => 'maint' }, { 'mode' => 'on' })
+    end
+
+    # Step 8b (format 2): the real STEP_8B transform. One owner field, with needsHome derivation.
+    def owner_scenario
+      {
+        'rooms' => {
+          'office' => {
+            'npcs' => [
+              { 'id' => 'rosa', 'needsHome' => 'rosa_pc' },
+              { 'id' => 'sam', 'needsHome' => 'sam_pc' },
+              { 'id' => 'tom', 'needsHome' => 'tom_pc' },
+              { 'id' => 'jake', 'itemsHeld' => [{ 'type' => 'phone_friendface', 'phoneOf' => 'jake' }] }
+            ],
+            'objects' => [
+              { 'id' => 'boss_pc', 'workstation' => true, 'screenOwner' => 'rosa' },
+              { 'id' => 'sam_pc', 'lockChance' => 1 },
+              { 'id' => 'shared_printer',
+                'affordance' => { 'private' => true, 'owners' => %w[rosa sam], 'satisfies' => 'print' } },
+              { 'id' => 'tom_pc', 'workstation' => true, 'affordance' => { 'private' => true } },
+              { 'id' => 'rosa_phone', 'phoneOwner' => 'rosa' },
+              { 'id' => 'mug', 'leftBehindBy' => 'sam' },
+              { 'id' => 'rosa_pc', 'affordance' => { 'satisfies' => 'x' } }
+            ],
+            '_note' => { 'objects' => [{ 'id' => 'ghost', 'screenOwner' => 'nope' }] }
+          }
+        }
+      }
+    end
+
+    test 'step 8b writes one owner from every old field and derives from needsHome' do
+      data = owner_scenario
+      res = FU.upgrade!(data, {})
+      assert_equal 2, data['formatVersion']
+      assert_includes res[:ran], 'one_owner_field'
+      objs = data['rooms']['office']['objects'].each_with_object({}) { |o, h| h[o['id']] = o }
+
+      assert_equal 'rosa', objs['boss_pc']['owner'], 'screenOwner becomes owner'
+      refute objs['boss_pc'].key?('screenOwner')
+      assert_equal 'sam', objs['sam_pc']['owner'], 'a workstation owner is derived from needsHome (String)'
+      assert_equal %w[rosa sam], objs['shared_printer']['owner'], 'affordance.owners moves up as a list'
+      assert_equal true, objs['shared_printer']['private'], 'affordance.private moves up'
+      assert_equal({ 'satisfies' => 'print' }, objs['shared_printer']['affordance'])
+      assert_equal 'tom', objs['tom_pc']['owner'], 'a private workstation derives a single String owner'
+      assert_equal true, objs['tom_pc']['private']
+      assert_equal({}, objs['tom_pc']['affordance'], 'an emptied affordance stays {}')
+      assert_equal 'rosa', objs['rosa_phone']['owner']
+      assert_equal true, objs['rosa_phone']['deskPhone'], 'phoneOwner marks a desk phone'
+      refute objs['rosa_phone'].key?('phoneOwner')
+      assert_equal 'sam', objs['mug']['owner']
+      assert_equal 0, objs['mug']['leftBehindChance'], 'a left-behind item with no chance gets 0'
+      refute objs['mug'].key?('leftBehindBy')
+      refute objs['rosa_pc'].key?('owner'), 'a needsHome target that is neither workstation nor private gets no owner'
+      phone = data['rooms']['office']['npcs'][3]['itemsHeld'][0]
+      assert_equal 'jake', phone['owner'], 'an item phoneOf becomes owner'
+      assert_equal 'nope', data['rooms']['office']['_note']['objects'][0]['screenOwner'],
+                   'a note property is left as written'
+    end
+
+    test 'step 8b is idempotent and a no-op on format-2 data' do
+      data = owner_scenario
+      FU.upgrade!(data, {})
+      before = Marshal.load(Marshal.dump(data))
+      FU.one_owner_field!(data)
+      assert_equal before, data, 'running the transform again changes nothing'
+    end
+
+    test 'step 8b player_state renames item copies in place without deriving' do
+      state = {
+        'inventory' => [{ 'type' => 'phone_friendface', 'phoneOf' => 'jake', 'name' => 'Phone' }],
+        'room_states' => { 'office' => { 'objects_added' => [{ 'id' => 'mug', 'leftBehindBy' => 'sam' }] } }
+      }
+      FU.one_owner_field_in_player_state!(state)
+      inv = state['inventory'][0]
+      assert_equal 'jake', inv['owner']
+      refute inv.key?('phoneOf')
+      added = state['room_states']['office']['objects_added'][0]
+      assert_equal 'sam', added['owner']
+      assert_equal 0, added['leftBehindChance']
     end
 
     test 'upgrade! runs the steps above the stored version in order and is idempotent' do
@@ -201,7 +279,7 @@ module BreakEscape
       assert_nil FU.install_dev_test_step!(env: 'development', enabled: true)
     ensure
       FU::STEPS.reject! { |s| s[:version] == 900 }
-      assert_equal 1, FU.current, 'the 900 dev step is removed, leaving step 8a (format 1)'
+      assert_equal 2, FU.current, 'the 900 dev step is removed, leaving steps 8a and 8b (format 2)'
     end
   end
 end

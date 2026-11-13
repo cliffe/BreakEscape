@@ -1534,3 +1534,98 @@ goes on each test-harness copy list; count every `❌` line as a failure.
   repo except this log's proof section.
 - **Done when.** Each beat passes; the stored game shows format 2 with the renamed keys; the old-tab
   refusal shows 409 + header; both servers confirmed down.
+
+## Step 8b chunk 1 — schema, transform, validator (2026-11-13)
+
+Branch `build/harden-8b` from `0193813e9` (tip; steps 7 and 8a merged, format subsystem live at
+current 1). Chunk 1 of the five-chunk split: the schema, the `FormatUpgrade` step and the validator
+only. Templates and the Rails/JS owner readers stay on the old names (chunks 2 to 4), so the corpus
+is not validated clean yet; the expected failures that follow are cleared by chunk 4's template
+rewrite.
+
+### What changed
+
+- **`scripts/scenario-schema.json`.** The closed `affordance` block loses `owners` and `private`.
+  The `item` definition (the one object/item node) loses `screenOwner`, `phoneOwner`, `phoneOf` and
+  `leftBehindBy`, and gains `owner` (string or non-empty array of strings), `private` (boolean) and
+  `deskPhone` (boolean). `leftBehindChance` stays and its description now makes it the left-behind
+  marker. Descriptions that taught the old names (`workstation`, the `site` phone, the two
+  `phone_friendface` type notes) now name `owner`. No `x-ref` added (step 4 owns that).
+- **`lib/break_escape/format_upgrade.rb`.** `STEP_8B` (version 2, name `one_owner_field`); `STEPS`
+  is now `[STEP_8A, STEP_8B]` so `current` is 2. The `scenario` transform `one_owner_field!` runs in
+  two phases: phase A walks every live Hash (`AuthorNotes.each_live`, `free: :skip`) and renames
+  `screenOwner`/`phoneOwner`/`phoneOf`/`leftBehindBy` to `owner`, moves `affordance.owners` and
+  `affordance.private` up to `owner`/`private` (an emptied affordance stays `{}`), marks a desk phone
+  `deskPhone: true` and writes `leftBehindChance: 0` where absent; phase B writes the explicit owner
+  the old `needsHome` rule derived — a String on a workstation (the inlined `isWorkstation` rule),
+  a one-element list on a private object — only where no owner is present. The `needsHome` map and
+  the room-object walk are inlined (not `AccessIdentities`, which chunk 2 changes) so the upgrade
+  stays fixed. The `player_state` transform renames the same keys inside the stored item copies
+  (inventory, `room_states.*.objects_added`, dropped/copied/cloned lists) in place, with no
+  derivation. `retired`: object `screenOwner`, `phoneOwner`, `affordance.owners`, `affordance.private`;
+  item `phoneOf`, `leftBehindBy`. Both transforms idempotent and a no-op on format-2 data.
+- **`scripts/validate_scenario.rb`.** `known_item_fields` loses `screenOwner`, `phoneOwner`,
+  `phoneOf`, `leftBehindBy` and gains `owner`, `private`, `deskPhone` (`screenLocked`, `rings`, `site`,
+  `leftBehindChance` kept). New `check_owner_fields` (registered after `check_retired_keys`): a list
+  `owner` on a workstation / desk phone / Friendface phone / left-behind item is one error (a private
+  object may list several); a warning where a workstation or private object has no owner of its own
+  but an NPC's `needsHome` names it; the pre-rename two-field conflict (`screenOwner` vs
+  `affordance.owners`, differing) is an error (none expected). `check_item_fields` now suppresses the
+  redundant unknown-field warning for a retired key name, so a reintroduced item-level retired key
+  (open block, no schema `additionalProperties` line for 8a's formatter dedup to catch) prints only
+  the one rename error from `check_retired_keys`.
+
+### Tests
+
+- `test/unit/format_upgrade_test.rb` (RBENV_VERSION=2.7.8): **17 runs, 85 assertions, 0 failures.**
+  Added three 8b tests (every old field to one owner plus needsHome derivation and an emptied
+  affordance; idempotent and no-op on format-2; the player_state rename without derivation). Fixed
+  the two 8a assertions the current bump moved (`formatVersion`/`ran` now cover both steps; the dev
+  switch leaves `current` 2).
+- `test/js/validator-retired-keys.test.mjs`: **22 tests, 0 fail.** Added the six retired owner keys
+  (each one rename line to `owner` in format 2; `affordance.owners`/`private` as moved-up renames; the
+  reintroduced-`affordance.private` schema-line suppression); a list owner on each single-owner kind
+  is one error and on a private object none; `owner`/`private`/`deskPhone` print no unknown-field
+  warning.
+- Hand-verify: the full validator on a scenario with a reintroduced `screenOwner` prints exactly one
+  line — the format-2 rename error, no duplicate unknown-field warning.
+- Importers of the changed module (current 1 to 2): `format_version_test.rb` + `format_deployed_scenarios_test.rb`
+  (27 runs, 0 fail — they stub `steps`); `access_model_loader_test.rb`, `npc_habits_loader_test.rb`,
+  `upgrade_games_tool_test.rb`, `capture_proofs_test.rb`, `reload_persistence_test.rb` (125 runs, 0
+  fail); the access validator node tests `validator-access-work/social/model` (99 tests, 0 fail).
+
+### Expected failures left for later chunks
+
+- `test/unit/format_8a_corpus_test.rb`: **9 failures.** It asserts the live templates carry no retired
+  key; the un-rewritten corpus still holds the 8b owner keys (test_access_work screenOwner +
+  affordance.private; test_access_social 11 phoneOf; test_needs_sims affordance.private x3 +
+  leftBehindBy + phoneOwner). Cleared by **chunk 4** (template rewrite). The paths and counts match
+  the re-anchor's per-scenario lists.
+- The nine corpus scenarios do not validate clean (retired-key errors plus the needsHome-no-owner
+  warnings) until **chunk 4** rewrites them.
+
+### Sync size
+
+No growth. The `player_state` transform renames item copies in place once per game at load; a copy
+keeps its size (owner replaces the old key) or gains at most one bounded key (`deskPhone` bool or
+`leftBehindChance: 0`). Sync reads and writes no owner field, so nothing is re-sent because of 8b.
+
+### Files touched
+
+`scripts/scenario-schema.json`, `lib/break_escape/format_upgrade.rb`, `scripts/validate_scenario.rb`,
+`test/unit/format_upgrade_test.rb`, `test/js/validator-retired-keys.test.mjs`,
+`docs/achitechture/SCENARIO_FORMAT_HARDENING_BUILD_LOG.md`.
+
+### Handover
+
+- **Done:** chunk 1 as specified. `FormatUpgrade.current` is 2; the two named test files pass alone.
+- **For chunk 2 (Ruby readers):** `AccessIdentities.owner_id`, `OwnerClaim`, `NpcHabits`, `AccessWork`,
+  `SocialFeed`, `Game`, `GamesController` (and `CLIENT_ITEM_FORBIDDEN_FIELDS` gains `owner`), plus the
+  validator owner-derivers at `validate_scenario.rb:6960`/`:7011` and the `validate_access_*`/`npc_*`
+  scripts, all still read the old names. `check_owner_fields`' new `owner`-reading checks and the
+  derived-owner transform already read the new names.
+- **For chunk 4:** rewrite the nine templates and freeze the format_8b fixtures; the 9
+  `format_8a_corpus_test` failures and the corpus validation errors clear then.
+- **Note for chunks 4/5:** verify the real 8b transform is a no-op on the four deployed scenarios
+  (m01, sis01, sis02, lab_social_engineering) — the plan asserts it, but chunk 1 did not render them
+  (the deployed-scenarios Rails test stubs `steps`, so it did not exercise the real transform).
