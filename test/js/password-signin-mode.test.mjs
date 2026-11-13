@@ -94,7 +94,7 @@ test('tiles for each account plus Other user; choosing a tile shows only the pas
 test('the post-it never breaks a word across lines: each word is a keep-whole span (UX access R1 finding 7)', () => {
     open({ postitNote: 'Omar: ohaddad / Cedar-Omar-58 <b>' });
     const words = [...document.querySelectorAll('.postit-note .keep-whole')].map(el => el.textContent);
-    assert.deepEqual(words, ['Omar:', 'ohaddad', '/', 'Cedar-Omar-58', '<b>']);
+    assert.deepEqual(words, ['Omar:', 'ohaddad\u00a0/', 'Cedar-Omar-58', '<b>']);
     assert.equal(q('.postit-note b'), null, 'still escaped');
 });
 

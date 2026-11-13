@@ -45,7 +45,7 @@ export const PC_UI_BASE = Object.freeze({ width: 560, height: 350 });
  */
 export const PC_BEZEL = Object.freeze({
     full: Object.freeze({ side: 20, top: 38, chin: 44, gutter: 16, hang: 4 }),
-    compact: Object.freeze({ side: 12, top: 34, chin: 36, gutter: 8, hang: 4 })
+    compact: Object.freeze({ side: 12, top: 34, chin: 44, gutter: 8, hang: 4 })
 });
 
 /** The post-it's inset from the monitor's left edge, past the side bezel, and its gap under the screen. */
@@ -53,7 +53,8 @@ export const PC_POSTIT_INSET = Object.freeze({ full: 24, compact: 12 });
 export const PC_POSTIT_GAP = 4;
 
 /**
- * The chin's right part kept clear of the note: the "Add Postit to notepad" button (212px
+ * The fallback for the chin's right part kept clear of the note (the page measures it, see
+ * update()): the "Add Postit to notepad" button (212px
  * wide in the full bezel, 204px in the compact one, measured in a browser), the power light,
  * the padding to the bezel's edge and a gap to the note. A narrow frame (a phone) hides the
  * light, which gives that room back.
@@ -66,9 +67,15 @@ export const PC_POSTIT_MIN_WIDTH = 96;
 /** The chin button's label: it adds the post-it, so it is not the file reader's "Add to Notepad". */
 export const PC_POSTIT_BUTTON_LABEL = 'Add Postit to notepad';
 
-/** The chin button's inner HTML (icon and label), the one wording for every PC view. */
+/**
+ * The chin button's inner HTML (icon and label), the one wording for every PC view. The label
+ * is two spans (the text reads as one line), so a compact or narrow frame can stack them
+ * ("Add Postit" over "to notepad", css/pc-monitor.css) and leave the note more room.
+ */
 export function pcPostitButtonHtml() {
-    return `<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> ${PC_POSTIT_BUTTON_LABEL}`;
+    const [first, second] = [PC_POSTIT_BUTTON_LABEL.slice(0, 10), PC_POSTIT_BUTTON_LABEL.slice(11)];
+    return `<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> `
+        + `<span class="pc-postit-label"><span>${first}</span> <span>${second}</span></span>`;
 }
 
 /** The room left between the note's bottom and the bezel's outline. */
@@ -103,7 +110,7 @@ export function postitNotebookEntry(pcName, note) {
  *        left, top, postit: { left, top, maxWidth } }
  * `postit` is relative to the monitor's own top-left corner.
  */
-export function pcMonitorMetrics(viewW, viewH, { postitHeight = 0 } = {}) {
+export function pcMonitorMetrics(viewW, viewH, { postitHeight = 0, chinRoom = 0 } = {}) {
     const vw = Math.max(0, Math.floor(Number(viewW) || 0));
     const vh = Math.max(0, Math.floor(Number(viewH) || 0));
     const narrow = vw < PC_COMPACT_BELOW;
@@ -141,10 +148,13 @@ export function pcMonitorMetrics(viewW, viewH, { postitHeight = 0 } = {}) {
     const screenBottom = 3 * PC_FRAME_EDGE + bezel.top + height;
     // As wide as the chin allows left of Add Postit to notepad (with the light and the
     // padding), so the note takes fewer lines and the chin stays low
+    // `chinRoom` is the room the chin's right part really takes (measured in the page); with
+    // none, the stored estimate for the frame's size stands in (tests, the first pass)
+    const reserve = chinRoom > 0 ? chinRoom : (narrow ? PC_CHIN_BUTTON_ROOM.narrow : compact ? PC_CHIN_BUTTON_ROOM.compact : PC_CHIN_BUTTON_ROOM.full);
     const postit = {
         left: bezel.side + inset,
         top: screenBottom + PC_POSTIT_GAP,
-        maxWidth: Math.max(PC_POSTIT_MIN_WIDTH, Math.min(340, outerW - (bezel.side + inset) - (narrow ? PC_CHIN_BUTTON_ROOM.narrow : compact ? PC_CHIN_BUTTON_ROOM.compact : PC_CHIN_BUTTON_ROOM.full)))
+        maxWidth: Math.max(PC_POSTIT_MIN_WIDTH, Math.min(340, outerW - (bezel.side + inset) - reserve))
     };
     const uiScale = Math.max(1, Math.floor(Math.min(width / PC_UI_BASE.width, height / PC_UI_BASE.height)));
     return { compact, narrow, short, uiScale, bezel, screen: { width, height }, width: outerW, height: outerH, left, top, postit };
@@ -339,10 +349,21 @@ export function mountPcMonitor(scene, { name = '', postitHtml = '', pcId = null,
     };
     // The chin holds the note's measured height; a view of the PC with no note (or before
     // it is measured) uses the height kept for that PC at this window size
+    // The room the chin's right part takes, measured: the buttons, the power light (when
+    // shown), the chin's right padding and a gap to the note. 0 where nothing is laid out.
+    const measureChinRoom = () => {
+        const w = Math.ceil(parts.controls?.offsetWidth || 0);
+        if (!(w > 0)) return 0;
+        const led = chin.querySelector('.pc-monitor-led');
+        const ledW = led?.offsetWidth > 0 ? led.offsetWidth + 8 : 0;
+        const side = parts.metrics?.bezel?.side ?? 0;
+        return w + ledW + side + 8;
+    };
     const update = () => {
         const space = pcViewSpace(container, view);
         const sizeKey = `${Math.floor(space.width)}x${Math.floor(space.height)}`;
         let noteH = keptPostitHeight(pcId, sizeKey);
+        let chinRoom = 0;
         let m = apply(pcMonitorMetrics(space.width, space.height, { postitHeight: noteH }));
         if (parts.postit) {
             // The note's width follows the frame, and the frame its height: settle in a few
@@ -350,13 +371,15 @@ export function mountPcMonitor(scene, { name = '', postitHtml = '', pcId = null,
             // before the pixel font arrived may be a line too tall); within this update the
             // larger measurement stays, so the loop cannot swing between two heights.
             let measured = 0;
-            for (let i = 0; i < 3; i++) {
+            for (let i = 0; i < 4; i++) {
                 const h = Math.ceil(parts.postit.offsetHeight || 0);
                 if (!(h > 0)) break;
                 measured = Math.max(measured, h);
-                if (measured === noteH) break;
+                const room = measureChinRoom();
+                if (measured === noteH && room === chinRoom) break;
                 noteH = measured;
-                m = apply(pcMonitorMetrics(space.width, space.height, { postitHeight: noteH }));
+                chinRoom = room;
+                m = apply(pcMonitorMetrics(space.width, space.height, { postitHeight: noteH, chinRoom }));
             }
             keepPostitHeight(pcId, sizeKey, noteH);
         }
@@ -382,12 +405,20 @@ export function mountPcMonitor(scene, { name = '', postitHtml = '', pcId = null,
         else target.addEventListener(type, update);
     };
     listen(view, 'resize');
+    // The button is added after the frame is mounted (and the container's views swap it):
+    // a change in the chin's size re-fits the note
+    let chinWatch = null;
+    if (parts.postit && typeof ResizeObserver === 'function' && controls) {
+        chinWatch = new ResizeObserver(() => { if (root.isConnected) update(); });
+        chinWatch.observe(controls);
+    }
     // A pixel font that arrives late changes the note's height
     document.fonts?.ready?.then?.(() => { if (root.isConnected) update(); });
     parts.update = update;
     parts.destroy = () => {
         view?.removeEventListener?.('resize', update);
         unwatch();
+        chinWatch?.disconnect?.();
         container.classList?.remove?.('pc-view');
     };
     return parts;
