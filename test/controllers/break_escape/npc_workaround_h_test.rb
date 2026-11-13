@@ -235,6 +235,22 @@ module BreakEscape
       assert_equal 422, claim.status
     end
 
+    test 'slice 16 m4: a hot desk with autoLockMin 0 leaves no guest record and the borrow answers guest false' do
+      data = scenario
+      data['policies']['kiosk'] = { 'autoLockMin' => 0 }
+      data['rooms']['office']['objects'].find { |o| o['id'] == 'hot_desk' }['policy'] = 'kiosk'
+      build(data: data)
+      t = Time.current
+      run = fails('ian', 2, t).last['run']
+      assert_equal 'borrow_session', run['do']
+      res = done('ian', run, t + 60)
+      assert_equal 200, res.status
+      assert_equal({ 'pcId' => 'hot_desk', 'guest' => false }, res.parsed_body,
+                   'the borrow no longer promises a guest the claim refuses')
+      assert_empty state['guestSessions']
+      assert_equal 422, claim.status
+    end
+
     test 'the guest claim succeeds with a guest record and nobody signed in' do
       build
       borrow_done!
