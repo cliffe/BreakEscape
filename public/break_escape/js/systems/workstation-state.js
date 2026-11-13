@@ -304,7 +304,7 @@ export class WorkstationState {
      */
     onBorrowedSession(pcId, npcId) {
         const data = this._find(pcId);
-        if (!data || typeof npcId !== 'string' || !npcId || ownerOf(data, this.env.npcs())) return false;
+        if (!data || typeof npcId !== 'string' || !npcId || ownerOf(data)) return false;
         if (this._policy(data)?.autoLockMin !== 0) return false;
         this.guests.delete(pcId);
         data.screenLocked = true;
