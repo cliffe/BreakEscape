@@ -2,12 +2,19 @@
  * The one PC monitor frame (UX slice 2c): every view of a PC (the sign-in screen, a
  * computer's password screen, the desktop, a share's folder window, a remote sign-in) sits
  * in this frame, with one bezel look (css/pc-monitor.css) and one sizing rule
- * (pcMonitorMetrics). The size depends only on the space the minigame window has, so moving
- * from a PC's sign-in screen to its desktop neither resizes nor moves the monitor.
+ * (pcMonitorMetrics). The size depends only on the space the minigame window has and the
+ * PC's post-it, so moving from a PC's sign-in screen to its desktop neither resizes nor
+ * moves the monitor.
  *
  * The monitor is the whole window: the X sits in the bezel's top strip, the footer buttons
  * (Add to Notepad) in its chin, and the PC's post-it is stuck on the chin just under the
- * screen, placed from the frame's own metrics, never from the viewport.
+ * screen. The chin grows to hold the note's measured height (R1 M1), and that height is
+ * kept per PC and window size, so a view of the same PC without the note (a share window)
+ * keeps the same frame.
+ *
+ * The screen's content is drawn at a whole-number scale (R1 M2, `uiScale`): x2 once the
+ * screen has room for twice the 560x350 base layout, so a large window gets larger pixel
+ * text and boxes instead of a small block in an empty screen.
  *
  * Pure apart from mountPcMonitor, which builds the DOM.
  */
@@ -15,8 +22,8 @@
 /** A landscape monitor's screen: 16:10. */
 export const PC_SCREEN_ASPECT = 16 / 10;
 
-/** The tallest a portrait monitor gets (a phone held upright): 3:4. */
-export const PC_PORTRAIT_ASPECT = 3 / 4;
+/** The tallest a portrait monitor gets (a phone held upright): 10:16 (R1 m10). */
+export const PC_PORTRAIT_ASPECT = 10 / 16;
 
 /** The screen stops growing here, so a large window does not get a wall-sized monitor. */
 export const PC_SCREEN_MAX = Object.freeze({ width: 1120, height: 700 });
@@ -24,22 +31,29 @@ export const PC_SCREEN_MAX = Object.freeze({ width: 1120, height: 700 });
 /** The smallest screen worth drawing, when the window has the room for it. */
 export const PC_SCREEN_MIN = Object.freeze({ width: 280, height: 200 });
 
-/** Below this width or height the frame uses its compact bezel. */
+/** Below this width the frame is narrow, below this height short; either uses the compact bezel. */
 export const PC_COMPACT_BELOW = 560;
+
+/** The layout the screen's content is drawn for at x1; the scale is how many times it fits. */
+export const PC_UI_BASE = Object.freeze({ width: 560, height: 350 });
 
 /**
  * Bezel strips in CSS pixels. `top` holds the PC name and the X (30px), `chin` the
- * footer buttons and the post-it. `gutter` is the gap to the window edge, `hang` the room
- * kept under the monitor for the post-it hanging off the chin.
+ * footer buttons and the post-it (grown to the note's height when it needs more). `gutter`
+ * is the gap to the window edge, `hang` the room kept under the monitor for the note's
+ * 4px offset shadow.
  */
 export const PC_BEZEL = Object.freeze({
-    full: Object.freeze({ side: 20, top: 38, chin: 44, gutter: 16, hang: 24 }),
-    compact: Object.freeze({ side: 12, top: 34, chin: 36, gutter: 8, hang: 16 })
+    full: Object.freeze({ side: 20, top: 38, chin: 44, gutter: 16, hang: 4 }),
+    compact: Object.freeze({ side: 12, top: 34, chin: 36, gutter: 8, hang: 4 })
 });
 
 /** The post-it's inset from the monitor's left edge, past the side bezel, and its gap under the screen. */
 export const PC_POSTIT_INSET = Object.freeze({ full: 24, compact: 12 });
 export const PC_POSTIT_GAP = 4;
+
+/** The room left between the note's bottom and the bezel's outline. */
+export const PC_POSTIT_CLEAR = 2;
 
 /** The bezel's outline and the screen's rim, both 2px (css/pc-monitor.css). */
 export const PC_FRAME_EDGE = 2;
@@ -48,22 +62,29 @@ const even = (v) => Math.max(0, Math.floor(v / 2) * 2);
 
 /**
  * The monitor's geometry for a window of viewW x viewH CSS pixels: the screen, the whole
- * monitor, its place in the window (whole pixels), and the post-it's place on the frame.
- *   -> { compact, bezel, screen: { width, height }, width, height, left, top,
- *        postit: { left, top, maxWidth } }
+ * monitor, its place in the window (whole pixels), the post-it's place on the frame and the
+ * content scale. `postitHeight` is the note's measured height (0 for no note): the chin
+ * grows to hold it, so the note never hangs below the monitor.
+ *   -> { compact, narrow, short, uiScale, bezel, screen: { width, height }, width, height,
+ *        left, top, postit: { left, top, maxWidth } }
  * `postit` is relative to the monitor's own top-left corner.
  */
-export function pcMonitorMetrics(viewW, viewH) {
+export function pcMonitorMetrics(viewW, viewH, { postitHeight = 0 } = {}) {
     const vw = Math.max(0, Math.floor(Number(viewW) || 0));
     const vh = Math.max(0, Math.floor(Number(viewH) || 0));
-    const compact = vw < PC_COMPACT_BELOW || vh < PC_COMPACT_BELOW;
-    const bezel = compact ? PC_BEZEL.compact : PC_BEZEL.full;
+    const narrow = vw < PC_COMPACT_BELOW;
+    const short = vh < PC_COMPACT_BELOW;
+    const compact = narrow || short;
+    const base = compact ? PC_BEZEL.compact : PC_BEZEL.full;
+    const noteH = Math.max(0, Math.ceil(Number(postitHeight) || 0));
+    const chin = noteH ? Math.max(base.chin, PC_POSTIT_GAP + noteH + PC_POSTIT_CLEAR) : base.chin;
+    const bezel = { ...base, chin };
     const edges = 4 * PC_FRAME_EDGE;
     const availW = Math.max(0, vw - 2 * bezel.gutter - 2 * bezel.side - edges);
     const availH = Math.max(0, vh - 2 * bezel.gutter - bezel.top - bezel.chin - bezel.hang - edges);
 
     // Landscape space: a 16:10 screen. Portrait space (a phone held upright): a portrait
-    // monitor that follows the space, no taller than 3:4.
+    // monitor that follows the space, no taller than 10:16.
     const spaceRatio = availH > 0 ? availW / availH : PC_SCREEN_ASPECT;
     const ratio = spaceRatio >= 1 ? PC_SCREEN_ASPECT : Math.max(PC_PORTRAIT_ASPECT, spaceRatio);
 
@@ -89,15 +110,55 @@ export function pcMonitorMetrics(viewW, viewH) {
         top: screenBottom + PC_POSTIT_GAP,
         maxWidth: Math.max(120, Math.min(340, Math.floor(outerW * 0.45)))
     };
-    return { compact, bezel, screen: { width, height }, width: outerW, height: outerH, left, top, postit };
+    const uiScale = Math.max(1, Math.floor(Math.min(width / PC_UI_BASE.width, height / PC_UI_BASE.height)));
+    return { compact, narrow, short, uiScale, bezel, screen: { width, height }, width: outerW, height: outerH, left, top, postit };
 }
 
-/** The window space a minigame container offers: its own box, else the viewport. */
+/**
+ * The window space a minigame container offers: its own box, else the viewport, never
+ * more than the visible viewport (R1 m5): on a phone `100vh` includes the area behind the
+ * address bar, and the on-screen keyboard shrinks only the visual viewport.
+ */
 export function pcViewSpace(container, view = (typeof window !== 'undefined' ? window : null)) {
     const r = container?.getBoundingClientRect?.();
-    if (r && r.width > 0 && r.height > 0) return { width: r.width, height: r.height };
-    return { width: view?.innerWidth || 0, height: view?.innerHeight || 0 };
+    let width = view?.innerWidth || 0;
+    let height = view?.innerHeight || 0;
+    if (r && r.width > 0 && r.height > 0) { width = r.width; height = r.height; }
+    const vv = view?.visualViewport;
+    if (vv && vv.width > 0 && vv.height > 0) {
+        width = Math.min(width, vv.width);
+        height = Math.min(height, vv.height);
+    }
+    return { width, height };
 }
+
+// The post-it heights measured per PC (R1 M1): pcId -> Map('WxH' -> height)
+const postitHeights = new Map();
+
+/** The note height kept for a PC at a window size, or 0. */
+export function keptPostitHeight(pcId, sizeKey) {
+    return (pcId && postitHeights.get(pcId)?.get(sizeKey)) || 0;
+}
+
+/** Keep a PC's note height at a window size; the larger of the kept and the new one stays. */
+export function keepPostitHeight(pcId, sizeKey, height) {
+    if (!pcId || !(height > 0)) return 0;
+    let sizes = postitHeights.get(pcId);
+    if (!sizes) { sizes = new Map(); postitHeights.set(pcId, sizes); }
+    const kept = Math.max(sizes.get(sizeKey) || 0, Math.ceil(height));
+    sizes.set(sizeKey, kept);
+    return kept;
+}
+
+/** Forget the kept note heights (tests). */
+export function resetPostitHeights() {
+    postitHeights.clear();
+}
+
+const flag = (el, name, on) => {
+    if (!el?.dataset) return;
+    if (on) el.dataset[name] = ''; else delete el.dataset[name];
+};
 
 /** Write the metrics onto the frame's elements (inline sizes and places, whole pixels). */
 export function applyPcMonitorMetrics(parts, m) {
@@ -110,7 +171,11 @@ export function applyPcMonitorMetrics(parts, m) {
     root.style.setProperty?.('--pc-bezel-side', `${m.bezel.side}px`);
     root.style.setProperty?.('--pc-bezel-top', `${m.bezel.top}px`);
     root.style.setProperty?.('--pc-bezel-chin', `${m.bezel.chin}px`);
-    if (m.compact) root.dataset.compact = ''; else delete root.dataset.compact;
+    root.style.setProperty?.('--pc-ui-scale', String(m.uiScale || 1));
+    flag(root, 'compact', m.compact);
+    flag(root, 'narrow', m.narrow);
+    flag(root, 'short', m.short);
+    if (root.dataset) root.dataset.uiScale = String(m.uiScale || 1);
     if (screen?.style) {
         screen.style.left = `${m.bezel.side}px`;
         screen.style.top = `${m.bezel.top}px`;
@@ -126,13 +191,49 @@ export function applyPcMonitorMetrics(parts, m) {
 }
 
 /**
+ * Mark the note as dragged only once it has moved (R1 m6): a press that does not move it
+ * (a tap, a click on the red corner) leaves it following the frame. helpers.js
+ * makeDraggable writes left/top on the press; this compares them on the release.
+ */
+function watchPostitDrag(postit, place) {
+    const doc = postit.ownerDocument || (typeof document !== 'undefined' ? document : null);
+    if (!doc) return () => {};
+    let start = null;
+    const release = () => {
+        doc.removeEventListener('mouseup', release);
+        doc.removeEventListener('touchend', release);
+        if (!start) return;
+        const moved = postit.style.left !== start.left || postit.style.top !== start.top;
+        start = null;
+        if (moved) postit.dataset.dragged = 'true';
+        else place();
+    };
+    const press = () => {
+        // Compare with the place the frame gave the note: makeDraggable's press pins the
+        // note where it is drawn, which is that place until it moves
+        start = { left: postit.dataset.placedLeft || postit.style.left, top: postit.dataset.placedTop || postit.style.top };
+        doc.addEventListener('mouseup', release);
+        doc.addEventListener('touchend', release);
+    };
+    postit.addEventListener('mousedown', press);
+    postit.addEventListener('touchstart', press, { passive: true });
+    return () => {
+        postit.removeEventListener('mousedown', press);
+        postit.removeEventListener('touchstart', press);
+        doc.removeEventListener('mouseup', release);
+        doc.removeEventListener('touchend', release);
+    };
+}
+
+/**
  * Put a minigame's game area into the PC monitor frame. `scene` is a MinigameScene after
  * super.init() (it has container and gameContainer). The game area becomes the screen's
  * scroll area, the X moves into the bezel's top strip, and `postitHtml` (already escaped)
- * becomes a note stuck on the chin. Returns { root, bezel, screen, chin, controls, postit,
- * metrics, update(), destroy() }; `controls` is the host for the scene's footer row.
+ * becomes a note stuck on the chin. `pcId` keys the note height kept for the PC. Returns
+ * { root, bezel, screen, chin, controls, postit, metrics, update(), destroy() };
+ * `controls` is the host for the scene's footer row.
  */
-export function mountPcMonitor(scene, { name = '', postitHtml = '', view = (typeof window !== 'undefined' ? window : null) } = {}) {
+export function mountPcMonitor(scene, { name = '', postitHtml = '', pcId = null, view = (typeof window !== 'undefined' ? window : null) } = {}) {
     const container = scene?.container;
     const area = scene?.gameContainer;
     if (!container || !area?.parentNode || typeof document === 'undefined') return null;
@@ -170,30 +271,63 @@ export function mountPcMonitor(scene, { name = '', postitHtml = '', view = (type
     }
     container.classList?.add?.('pc-view');
 
-    let postit = null;
-    if (postitHtml) {
-        postit = document.createElement('div');
-        postit.className = 'postit-note pc-monitor-postit';
-        postit.innerHTML = postitHtml;
-        // A drag (helpers.js makeDraggable) marks the note, so a resize leaves it where it was put
-        const dragged = () => { postit.dataset.dragged = 'true'; };
-        postit.addEventListener?.('mousedown', dragged);
-        postit.addEventListener?.('touchstart', dragged, { passive: true });
-        root.appendChild(postit);
-    }
-
-    const parts = { root, bezel, screen, chin, controls, postit, metrics: null };
+    const parts = { root, bezel, screen, chin, controls, postit: null, metrics: null };
+    const apply = (m) => {
+        parts.metrics = m;
+        applyPcMonitorMetrics(parts, m);
+        if (parts.postit?.dataset) {
+            parts.postit.dataset.placedLeft = `${m.postit.left}px`;
+            parts.postit.dataset.placedTop = `${m.postit.top}px`;
+        }
+        return m;
+    };
+    // The chin holds the note's measured height; a view of the PC with no note (or before
+    // it is measured) uses the height kept for that PC at this window size
     const update = () => {
         const space = pcViewSpace(container, view);
-        parts.metrics = pcMonitorMetrics(space.width, space.height);
-        applyPcMonitorMetrics(parts, parts.metrics);
-        return parts.metrics;
+        const sizeKey = `${Math.floor(space.width)}x${Math.floor(space.height)}`;
+        let noteH = keptPostitHeight(pcId, sizeKey);
+        let m = apply(pcMonitorMetrics(space.width, space.height, { postitHeight: noteH }));
+        if (parts.postit) {
+            // The note's width follows the frame, and the frame its height: settle in a few steps
+            for (let i = 0; i < 3; i++) {
+                const want = Math.max(noteH, Math.ceil(parts.postit.offsetHeight || 0));
+                if (want === noteH) break;
+                noteH = want;
+                m = apply(pcMonitorMetrics(space.width, space.height, { postitHeight: noteH }));
+            }
+            keepPostitHeight(pcId, sizeKey, noteH);
+        }
+        return m;
     };
+
+    let unwatch = () => {};
+    if (postitHtml) {
+        const postit = document.createElement('div');
+        postit.className = 'postit-note pc-monitor-postit';
+        postit.innerHTML = postitHtml;
+        root.appendChild(postit);
+        parts.postit = postit;
+        unwatch = watchPostitDrag(postit, () => applyPcMonitorMetrics(parts, parts.metrics));
+    }
+
     update();
-    view?.addEventListener?.('resize', update);
+    // Through the scene, so its cleanup() removes them even when the manager ends the
+    // minigame without complete() (R1 m4)
+    const listen = (target, type) => {
+        if (!target?.addEventListener) return;
+        if (typeof scene.addEventListener === 'function') scene.addEventListener(target, type, update);
+        else target.addEventListener(type, update);
+    };
+    listen(view, 'resize');
+    listen(view?.visualViewport, 'resize');
+    // A pixel font that arrives late changes the note's height
+    document.fonts?.ready?.then?.(() => { if (root.isConnected) update(); });
     parts.update = update;
     parts.destroy = () => {
         view?.removeEventListener?.('resize', update);
+        view?.visualViewport?.removeEventListener?.('resize', update);
+        unwatch();
         container.classList?.remove?.('pc-view');
     };
     return parts;

@@ -9,7 +9,7 @@ import { escapeHtml } from '../../utils/escape-html.js';
 import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { mentionsComputer } from '../../utils/computer-keywords.js';
 import { mountPcMonitor } from '../../utils/pc-monitor.js';
-import { applyHeadshotImg, npcRecordFor, headshotSourceFor } from '../../utils/npc-headshot.js';
+import { applyHeadshotBox, npcRecordFor, headshotSourceFor } from '../../utils/npc-headshot.js';
 
 
 
@@ -293,8 +293,14 @@ export class ContainerMinigame extends MinigameScene {
         const data = this.containerItem?.scenarioData || {};
         const note = this.desktopMode && data.postitNote && data.showPostit
             ? escapeHtmlKeepWords(displayDashes(data.postitNote)) : '';
-        this.pcMonitor = mountPcMonitor(this, { name: displayDashes(this.monitorName()), postitHtml: note });
+        this.pcMonitor = mountPcMonitor(this, { name: displayDashes(this.monitorName()), postitHtml: note, pcId: this.monitorPcId() });
         if (this.pcMonitor?.postit) makeDraggable(this.pcMonitor.postit);
+    }
+
+    /** The PC whose frame this is (the share's PC for a folder window), for its kept post-it height. */
+    monitorPcId() {
+        if (this.shareFolder) return this.parentLockable?.scenarioData?.id || this.sourcePcId || null;
+        return this.loginPcId || this.containerItem?.scenarioData?.id || null;
     }
 
     // Footer buttons (Add to Notepad) go in the monitor's chin
@@ -841,7 +847,7 @@ export class ContainerMinigame extends MinigameScene {
                     <div class="container-contents-grid share-folder-files pixel-scroll" id="container-contents-grid">
                         <!-- Files will be populated here -->
                     </div>
-                    <div class="share-folder-status">${escapeHtml(displayDashes(observations))}</div>
+                    <div class="share-folder-status pixel-scroll">${escapeHtml(displayDashes(observations))}</div>
                 </div>
             </div>
             </div>
@@ -891,7 +897,7 @@ export class ContainerMinigame extends MinigameScene {
             : `Signed in as <strong>${escapeHtml(name)}</strong> (${escapeHtml(session.username)})`;
         return `${remoteLine}${claimLine}
                     <div class="desktop-account-bar">
-                        ${this.pcMonitor ? '<img class="desktop-account-headshot" alt="" width="32" height="32" hidden>' : ''}
+                        ${this.pcMonitor ? '<span class="desktop-account-headshot" aria-hidden="true" hidden></span>' : ''}
                         <span class="desktop-account-name">${who}</span>
                         <span class="desktop-account-actions">
                             <button type="button" class="minigame-button desktop-account-btn" id="desktop-switch-user">Switch user</button>
@@ -958,7 +964,7 @@ export class ContainerMinigame extends MinigameScene {
                     </div>
                 </div>
                 <div class="desktop-taskbar">
-                    <span class="desktop-taskbar-note">${escapeHtml(displayDashes(note))}</span>
+                    <span class="desktop-taskbar-note pixel-scroll">${escapeHtml(displayDashes(note))}</span>
                     <div class="desktop-actions">
                         ${this.isTakeable ? '<button class="minigame-button" id="take-container-btn">Take Container</button>' : ''}
                     </div>
@@ -968,13 +974,19 @@ export class ContainerMinigame extends MinigameScene {
         this.applyAccountHeadshot();
     }
 
-    /** The signed-in account's headshot in the desktop's top bar (UX slice 2c). */
+    /**
+     * The signed-in account's headshot in the desktop's top bar (UX slice 2c), with the same
+     * fallback as a sign-in tile: the talk sheet's head crop, and the keys logged (R1 m8).
+     */
     applyAccountHeadshot() {
-        const img = this.gameContainer?.querySelector?.('.desktop-account-headshot');
+        const box = this.gameContainer?.querySelector?.('.desktop-account-headshot');
         const session = this.loginSession();
-        if (!img || !session) return;
+        if (!box || !session) return;
         const record = npcRecordFor({ npcId: session.npcId, username: session.username });
-        applyHeadshotImg(img, headshotSourceFor({}, record));
+        const talk = typeof record?.spriteTalk === 'string' ? record.spriteTalk : '';
+        const talkUrl = !talk ? null
+            : (/^(\/|https?:|data:)/.test(talk) ? talk : `/break_escape/${talk.startsWith('assets/') ? '' : 'assets/'}${talk}`);
+        applyHeadshotBox(box, headshotSourceFor({}, record), { talkUrl });
     }
 
     populateContents() {

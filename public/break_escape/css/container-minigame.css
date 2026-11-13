@@ -835,7 +835,7 @@
     width: 32px;
     height: 32px;
     image-rendering: pixelated;
-    background: #2c3e50;
+    background-color: #2c3e50;
     box-shadow: 0 0 0 2px #4a5560;
     flex: 0 0 auto;
 }
@@ -868,13 +868,18 @@
     gap: 8px;
 }
 
+/* The PC's description (its observations, which can carry clues): wrapped, up to three lines,
+   then it scrolls; never cut off (R1 M3) */
 .desktop-taskbar-note {
+    display: block;
     font-size: 16px;
     line-height: 18px;
     color: #cfd6dc;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    max-height: 54px;
+    overflow-x: hidden;
+    overflow-y: auto;
     min-width: 0;
     flex: 1 1 auto;
 }
@@ -891,10 +896,11 @@
 
 /* Switch user and Sign out on the theme's thin button skin, so the top bar stays one
    headshot tall instead of taking 70px of the screen */
+/* GNF at 16px, the size it draws crisply at (R1 m2); the thin skin leaves the room */
 .pc-desktop-topbar .minigame-button.desktop-account-btn {
     margin: 0;
-    padding: 2px 10px;
-    font-size: 12px;
+    padding: 0 8px;
+    font-size: 16px;
     line-height: 16px;
 }
 
@@ -906,7 +912,7 @@
 }
 
 .pc-monitor[data-compact] .pc-desktop-topbar .minigame-button.desktop-account-btn {
-    padding: 2px 8px;
+    padding: 0 6px;
 }
 
 /* A share's folder window on the screen: maximised, so no wallpaper shows and it never reads
@@ -933,9 +939,14 @@
     color: #000;
     font-size: 16px;
     line-height: 18px;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
+    /* Wrapped, up to three lines, then it scrolls; never cut off (R1 M3). The border-box
+       height is the three lines plus the 2px padding and 2px border on each side */
+    white-space: normal;
+    overflow-wrap: anywhere;
+    max-height: 62px;
+    box-sizing: border-box;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 

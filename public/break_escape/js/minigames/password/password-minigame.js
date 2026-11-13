@@ -7,7 +7,12 @@ import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } from '../../utils/lock-scope-refusal.js';
 import { isComputerType } from '../../utils/computer-keywords.js';
 import { mountPcMonitor } from '../../utils/pc-monitor.js';
-import { headshotCandidates, headshotKeys, noteMissingHeadshot, npcRecordFor, headshotSourceFor } from '../../utils/npc-headshot.js';
+import { headshotCandidates, headshotKeys, noteMissingHeadshot, npcRecordFor, headshotSourceFor,
+    SHORT_PORTRAIT_PX, TILE_PORTRAIT_PX, isTalkSheetSize, portraitCropOverride, headCropOffset, frameAlphaReader } from '../../utils/npc-headshot.js';
+// The portrait crop helpers live with the headshots (UX slice 2c R1 m8: the desktop bar
+// falls back the same way as a tile); exported here too for the tests and callers that
+// import them from the password screen
+export { SHORT_PORTRAIT_PX, TILE_PORTRAIT_PX, isTalkSheetSize, PORTRAIT_CROP_OVERRIDES, portraitCropOverride, headCropOffset } from '../../utils/npc-headshot.js';
 
 /**
  * The keypad's line after a wrong password. A near miss (right apart from letter
@@ -68,41 +73,11 @@ export function tileInitials(name) {
     return letters || '?';
 }
 
-/** A square image of at least 256 pixels with even sides is a 2x2 talk sheet (person-chat's _isTalkSheet). */
-export function isTalkSheetSize(width, height) {
-    return width >= 256 && width === height && width % 2 === 0;
-}
-
 /** A portrait path from the server ("assets/characters/x_talk.png") as a URL. */
 export function portraitUrl(path) {
     if (typeof path !== 'string' || !path) return null;
     if (path.startsWith('/') || path.startsWith('http') || path.startsWith('data:')) return path;
     return path.startsWith('assets/') ? `/break_escape/${path}` : `${ASSETS_PATH}/${path}`;
-}
-
-/** The short-window tile's portrait box (css/password-minigame.css, max-height: 640px). */
-export const SHORT_PORTRAIT_PX = 32;
-
-/** The tile's portrait box at every other size (css/password-minigame.css, .signin-portrait). */
-export const TILE_PORTRAIT_PX = 64;
-
-/**
- * Head crops for posed portraits the finder cannot read (UX slice 2a R4 n3): in a bedside
- * portrait the pillow or the hair is the first opaque row, so the finder's box lands on
- * bedding. Keyed by the talk sheet's file name (one sheet per character); `tile` is the
- * 64x64 crop's top-left in the first frame, `short` the 32x32 crop's, both at scale 1.
- */
-export const PORTRAIT_CROP_OVERRIDES = Object.freeze({
-    'mr_ahmed_talk.png': { tile: { left: 36, top: 18 }, short: { left: 46, top: 32 } },
-    'mr_pryce_talk.png': { tile: { left: 22, top: 6 }, short: { left: 38, top: 20 } },
-    'mrs_kowalski_talk.png': { tile: { left: 28, top: 0 }, short: { left: 45, top: 12 } },
-    'ms_okafor_talk.png': { tile: { left: 20, top: 12 }, short: { left: 36, top: 30 } }
-});
-
-/** The crop override for a portrait URL, or null. */
-export function portraitCropOverride(src) {
-    const name = String(src || '').split(/[?#]/)[0].split('/').pop();
-    return Object.prototype.hasOwnProperty.call(PORTRAIT_CROP_OVERRIDES, name) ? PORTRAIT_CROP_OVERRIDES[name] : null;
 }
 
 /**
@@ -118,48 +93,6 @@ export function setTilePortrait(el, { src, width, height, kind, offset = null, s
     el.style.backgroundSize = `${width * scale}px ${height * scale}px`;
     el.style.backgroundPosition = `${left ? -left : 0}px ${top ? -top : 0}px`;
     el.dataset.frame = kind;
-}
-
-/**
- * Where to cut a box x box head crop from a talk sheet's first frame (frameSize square), at
- * scale 1 (UX slice 2a R3 n1: the 32px tile showed the whole 128px frame at a quarter, a
- * downscale that lost the face). `alpha(x, y)` reads the frame's alpha. The crop starts 4px
- * below the top of the head and is centred on the head's width over its first 24 rows, so
- * the eyes, nose and mouth are in the box. A blank frame gives the top-centre box.
- */
-export function headCropOffset(alpha, frameSize, box = SHORT_PORTRAIT_PX) {
-    const clamp = (v) => Math.max(0, Math.min(frameSize - box, v));
-    let y0 = -1;
-    for (let y = 0; y < frameSize && y0 < 0; y++) {
-        for (let x = 0; x < frameSize; x++) { if (alpha(x, y) > 0) { y0 = y; break; } }
-    }
-    if (y0 < 0) return { left: clamp(Math.round(frameSize / 2) - box / 2), top: 0 };
-    let minX = Infinity, maxX = -1;
-    for (let y = y0; y < Math.min(frameSize, y0 + 24); y++) {
-        for (let x = 0; x < frameSize; x++) {
-            if (alpha(x, y) > 0) { if (x < minX) minX = x; if (x > maxX) maxX = x; }
-        }
-    }
-    const cx = maxX >= 0 ? (minX + maxX) / 2 : frameSize / 2;
-    return { left: clamp(Math.round(cx) - box / 2), top: clamp(y0 + 4) };
-}
-
-/** The alpha reader for an image's top-left frameSize square, or null when the canvas
- *  cannot be read (no canvas, or a tainted one). */
-function frameAlphaReader(img, frameSize) {
-    try {
-        if (typeof document === 'undefined') return null;
-        const canvas = document.createElement('canvas');
-        canvas.width = frameSize;
-        canvas.height = frameSize;
-        const ctx = canvas.getContext && canvas.getContext('2d');
-        if (!ctx) return null;
-        ctx.drawImage(img, 0, 0);
-        const data = ctx.getImageData(0, 0, frameSize, frameSize).data;
-        return (x, y) => data[(y * frameSize + x) * 4 + 3];
-    } catch (e) {
-        return null;
-    }
 }
 
 /**
@@ -203,8 +136,9 @@ export function applyTilePortrait(el, tile, ImageCtor = (typeof Image !== 'undef
     const noteMissing = (i) => {
         if (missingNoted || i < heads.length) return;
         missingNoted = true;
-        el.dataset.headshotMissing = headKeys[headKeys.length - 1] || '';
-        onMissing?.(headKeys[headKeys.length - 1]);
+        // Every key tried, the world sprite's first (R1 m8)
+        el.dataset.headshotMissing = headKeys.join(' ');
+        onMissing?.(headKeys);
     };
     const initials = () => {
         el.style.backgroundImage = '';
@@ -351,12 +285,16 @@ export function snapInnerBoxes(root, dpr = 1, view = (typeof window !== 'undefin
             }
             rec.x = tidy(rec.x + x);
             rec.y = tidy(rec.y + y);
+            // The moves are measured on screen; inside the PC monitor's scaled screen (CSS
+            // zoom, UX slice 2c R1 M2) a length on the box is drawn `zoom` times larger
+            const z = Number(el.currentCSSZoom) > 0 ? Number(el.currentCSSZoom) : 1;
+            const lx = tidy(rec.x / z), ly = tidy(rec.y / z);
             if (rec.mode === 'translate') {
-                el.style.translate = `${rec.x}px ${rec.y}px`;
+                el.style.translate = `${lx}px ${ly}px`;
             } else {
                 if (rec.pos !== 'relative') el.style.position = 'relative';
-                if (rec.x) el.style.left = `${tidy(rec.left + rec.x)}px`;
-                if (rec.y) el.style.top = `${tidy(rec.top + rec.y)}px`;
+                if (rec.x) el.style.left = `${tidy(rec.left + lx)}px`;
+                if (rec.y) el.style.top = `${tidy(rec.top + ly)}px`;
             }
         }
     }
@@ -595,6 +533,13 @@ export class PasswordMinigame extends MinigameScene {
         return passwordScreenKind({ join: this.join, lockable: target }) === 'screen';
     }
 
+    /** The PC's id, for the post-it height its frame keeps (utils/pc-monitor.js). */
+    pcId() {
+        if (this.signIn) return this.signIn.pcId || null;
+        const target = this.params.lockable || this.params.sprite;
+        return target?.scenarioData?.id || target?.objectId || null;
+    }
+
     /** The PC's name for the monitor's top strip. */
     pcName() {
         if (this.signIn) return this.signIn.pcName || '';
@@ -610,7 +555,7 @@ export class PasswordMinigame extends MinigameScene {
     mountMonitor() {
         const note = this.gameData.showPostit && this.gameData.postitNote
             ? escapeHtmlKeepWords(displayDashes(this.gameData.postitNote)) : '';
-        this.pcMonitor = mountPcMonitor(this, { name: displayDashes(this.pcName()), postitHtml: note });
+        this.pcMonitor = mountPcMonitor(this, { name: displayDashes(this.pcName()), postitHtml: note, pcId: this.pcId() });
         if (!this.pcMonitor) { this.wrapInFrame(); return; }
         this.frameElement = this.pcMonitor.root;
         if (this.pcMonitor.postit) makeDraggable(this.pcMonitor.postit);

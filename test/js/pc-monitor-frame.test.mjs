@@ -35,8 +35,9 @@ const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true 
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const imp = (rel) => import(pathToFileURL(join(dir, rel)));
-const { pcMonitorMetrics, PC_BEZEL, PC_SCREEN_ASPECT, PC_SCREEN_MIN, PC_POSTIT_GAP, PC_FRAME_EDGE } = await imp('utils/pc-monitor.js');
-const { headshotKeys, headshotCandidates, headshotUrl, characterKey, noteMissingHeadshot, resetMissingHeadshots, npcRecordFor } = await imp('utils/npc-headshot.js');
+const { pcMonitorMetrics, pcViewSpace, mountPcMonitor, resetPostitHeights, keptPostitHeight, PC_BEZEL, PC_SCREEN_ASPECT, PC_PORTRAIT_ASPECT, PC_SCREEN_MIN,
+    PC_POSTIT_GAP, PC_POSTIT_CLEAR, PC_FRAME_EDGE } = await imp('utils/pc-monitor.js');
+const { headshotKeys, headshotCandidates, headshotUrl, characterKey, noteMissingHeadshot, resetMissingHeadshots, npcRecordFor, applyHeadshotBox } = await imp('utils/npc-headshot.js');
 const { PasswordMinigame, applyTilePortrait } = await imp('minigames/password/password-minigame.js');
 const { ContainerMinigame } = await imp('minigames/container/container-minigame.js');
 const { PcSessions } = await imp('systems/pc-sessions.js');
@@ -79,12 +80,18 @@ test('a landscape window keeps the 16:10 screen; a portrait phone gets a portrai
     }
     const phone = pcMonitorMetrics(390, 844);
     assert.ok(phone.screen.height > phone.screen.width, 'portrait');
-    assert.ok(phone.screen.width / phone.screen.height >= 0.75 - 0.01, 'no taller than 3:4');
+    assert.ok(phone.screen.width / phone.screen.height >= PC_PORTRAIT_ASPECT - 0.01, 'no taller than 10:16');
+    // R1 m10: the 10:16 cap uses the phone's height (about 342x546, was 342x456)
+    assert.ok(phone.screen.height >= 540, `the phone's height is used (${phone.screen.width}x${phone.screen.height})`);
 });
 
 test('short and narrow windows use the compact bezel, with sensible minimums', () => {
     assert.equal(pcMonitorMetrics(915, 412).compact, true);
     assert.equal(pcMonitorMetrics(390, 844).compact, true);
+    // R1 m1: a portrait phone is narrow, not short; a phone on its side is short
+    assert.deepEqual([pcMonitorMetrics(390, 844).narrow, pcMonitorMetrics(390, 844).short], [true, false]);
+    assert.deepEqual([pcMonitorMetrics(915, 412).narrow, pcMonitorMetrics(915, 412).short], [false, true]);
+    assert.deepEqual([pcMonitorMetrics(800, 600).narrow, pcMonitorMetrics(800, 600).short], [false, false]);
     for (const [w, h] of [[915, 412], [390, 844]]) {
         const m = pcMonitorMetrics(w, h);
         assert.ok(m.screen.width >= PC_SCREEN_MIN.width, `${w}x${h}: at least ${PC_SCREEN_MIN.width} wide`);
@@ -106,6 +113,41 @@ test('the post-it sits on the chin: its top just under the screen, in from the l
         assert.ok(m.postit.left > m.bezel.side, `${w}x${h}: in past the side bezel (${m.postit.left})`);
         assert.ok(m.postit.left + m.postit.maxWidth <= m.width, `${w}x${h}: never past the right edge`);
     }
+});
+
+test('R1 M1: the chin holds the note: its bottom edge is on the bezel at every size, for one and two lines', () => {
+    // A fixed note height per line count: full 44 (one line) and 64 (two); compact 36 and 54
+    for (const [w, h] of SIZES) {
+        const compact = pcMonitorMetrics(w, h).compact;
+        for (const noteH of compact ? [36, 54] : [44, 64]) {
+            const m = pcMonitorMetrics(w, h, { postitHeight: noteH });
+            const bottom = m.postit.top + noteH;
+            assert.ok(bottom <= m.height - PC_FRAME_EDGE, `${w}x${h} ${noteH}px: the bottom (${bottom}) is inside the outline (${m.height})`);
+            assert.ok(bottom >= m.height - 4, `${w}x${h} ${noteH}px: and on the chin, within 4px of the frame's bottom (${bottom} of ${m.height})`);
+            assert.equal(m.bezel.chin, Math.max(m.bezel.chin, PC_POSTIT_GAP + noteH + PC_POSTIT_CLEAR));
+            assert.ok(m.top + m.height + m.bezel.hang <= h, `${w}x${h} ${noteH}px: still inside the window`);
+        }
+    }
+    // A short note in a tall chin keeps the chin's own height
+    const plain = pcMonitorMetrics(1400, 1000, { postitHeight: 20 });
+    assert.equal(plain.bezel.chin, PC_BEZEL.full.chin);
+});
+
+test('R1 M2: the screen content scales in whole steps: x2 at 1400x1000, x1 at the smaller sizes', () => {
+    const want = { '1400x1000': 2, '800x600': 1, '915x412': 1, '390x844': 1 };
+    for (const [w, h] of SIZES) {
+        const m = pcMonitorMetrics(w, h);
+        assert.equal(Number.isInteger(m.uiScale), true);
+        assert.equal(m.uiScale, want[`${w}x${h}`], `${w}x${h}`);
+    }
+    assert.equal(pcMonitorMetrics(1920, 1080).uiScale, 2, 'capped by the 1120x700 screen');
+});
+
+test('R1 m5: the space is never more than the visible viewport', () => {
+    const container = { getBoundingClientRect: () => ({ width: 390, height: 844 }) };
+    assert.deepEqual(pcViewSpace(container, { innerWidth: 390, innerHeight: 844 }), { width: 390, height: 844 });
+    const view = { innerWidth: 390, innerHeight: 844, visualViewport: { width: 390, height: 700 } };
+    assert.deepEqual(pcViewSpace(container, view), { width: 390, height: 700 }, 'the address bar or keyboard takes the rest');
 });
 
 // ── Headshots ────────────────────────────────────────────────────────────────
@@ -138,6 +180,9 @@ test('a missing headshot is logged once per key', () => {
     assert.equal(noteMissingHeadshot('mr_pryce', (m) => logs.push(m)), true);
     assert.equal(logs.length, 2);
     assert.match(logs[0], /ms_okafor_headshot\.png/);
+    // R1 m8: the log names every key tried, the world sprite's first
+    assert.equal(noteMissingHeadshot(['mr_pryce_sprite', 'mr_pryce_v2', 'mr_pryce'], (m) => logs.push(m)), true);
+    assert.match(logs[2], /none of mr_pryce_sprite_headshot\.png, mr_pryce_v2_headshot\.png, mr_pryce_headshot\.png/);
 });
 
 function fakeImage(sizes) {
@@ -190,8 +235,33 @@ test('no headshot file: the talk crop as before, and the key is logged once', as
     for (let i = 0; i < 4; i++) await settle(5);
     assert.equal(el.dataset.frame, 'talk-sheet', 'the crop fallback');
     assert.equal(el.dataset.headshot, undefined);
-    assert.deepEqual(missing, ['ms_okafor'], 'logged once, by its key');
-    assert.equal(el.dataset.headshotMissing, 'ms_okafor');
+    assert.deepEqual(missing, [['ms_okafor_v2', 'ms_okafor']], 'logged once, with every key tried');
+    assert.equal(el.dataset.headshotMissing, 'ms_okafor_v2 ms_okafor');
+});
+
+test('R1 m8: the desktop bar falls back the same way as a tile: the talk sheet\'s 32x32 head crop', async () => {
+    const box = document.createElement('span');
+    const missing = [];
+    applyHeadshotBox(box, { spriteSheet: 'ms_okafor_sprite', portrait: 'assets/characters/ms_okafor_talk.png' }, {
+        talkUrl: '/break_escape/assets/characters/ms_okafor_talk.png',
+        ImageCtor: fakeImage({ '/break_escape/assets/characters/ms_okafor_talk.png': [256, 256] }),
+        readAlpha: () => null, onMissing: (k) => missing.push(k)
+    });
+    for (let i = 0; i < 6; i++) await settle(5);
+    assert.deepEqual(missing, [['ms_okafor_sprite', 'ms_okafor_v2', 'ms_okafor']], 'every key, the sprite sheet first');
+    assert.equal(box.dataset.frame, 'head-crop');
+    assert.equal(box.hidden, false);
+    assert.equal(box.style.backgroundSize, '256px 256px', 'at scale 1');
+    // the bedside override (the same crop as the short tile)
+    assert.equal(box.style.backgroundPosition, '-36px -30px');
+    // a headshot file wins, at x1
+    const shot = document.createElement('span');
+    applyHeadshotBox(shot, { spriteSheet: 'male_nerd_v2' }, {
+        ImageCtor: fakeImage({ '/break_escape/assets/characters/male_nerd_v2_headshot.png': [32, 32] }), onMissing: () => assert.fail('not missing')
+    });
+    await settle(5); await settle(5);
+    assert.equal(shot.dataset.headshot, 'male_nerd_v2');
+    assert.equal(shot.style.backgroundSize, '32px 32px');
 });
 
 // ── One frame for sign-in and desktop ────────────────────────────────────────
@@ -232,7 +302,7 @@ async function signInScreen() {
     return mg;
 }
 
-async function desktop() {
+async function desktop({ showPostit = true, observations = 'A hot desk.' } = {}) {
     document.body.innerHTML = '<div id="mg"></div>';
     window.inventory = { items: [] };
     window.breakEscapeConfig = { gameId: 7 };
@@ -243,7 +313,7 @@ async function desktop() {
     await window.pcSessions.signIn('hot_desk', 'sokafor', 'x');
     window.npcManager = { npcs: new Map([['sam', { id: 'sam', spriteSheet: 'male_office_worker_v2' }]]), getNPC(id) { return this.npcs.get(id); } };
     window.MinigameFramework = { currentMinigame: null, endMinigame: () => {} };
-    const containerItem = { scenarioData: { id: 'hot_desk', type: 'pc', name: 'Hot desk PC', locked: true, lockType: 'login', observations: 'A hot desk.', postitNote: 'Sam: sokafor / x', showPostit: true } };
+    const containerItem = { scenarioData: { id: 'hot_desk', type: 'pc', name: 'Hot desk PC', locked: true, lockType: 'login', observations, postitNote: 'Sam: sokafor / x', showPostit } };
     const mg = new ContainerMinigame(document.getElementById('mg'), { title: 'Hot desk PC', containerItem, contents: null, desktopMode: true, showCancel: true, cancelText: 'Close' });
     window.MinigameFramework.currentMinigame = mg;
     await mg.init();
@@ -276,13 +346,135 @@ test('a PC\'s sign-in screen and its desktop use the same frame, at the same siz
 
 test('the desktop\'s account bar shows the signed-in NPC\'s headshot', async () => {
     const restore = sizeWindow(1400, 1000);
+    globalThis.Image = fakeImage({ '/break_escape/assets/characters/male_office_worker_v2_headshot.png': [32, 32] });
     try {
         await desktop();
-        const img = document.querySelector('.pc-desktop-topbar .desktop-account-headshot');
-        assert.ok(img, 'a headshot in the top bar');
-        assert.equal(img.getAttribute('src'), '/break_escape/assets/characters/male_office_worker_v2_headshot.png');
+        await settle(5); await settle(5);
+        const box = document.querySelector('.pc-desktop-topbar .desktop-account-headshot');
+        assert.ok(box, 'a headshot in the top bar');
+        assert.equal(box.dataset.headshot, 'male_office_worker_v2');
+        assert.match(box.style.backgroundImage, /male_office_worker_v2_headshot\.png/);
+        assert.equal(box.hidden, false);
+    } finally {
+        delete globalThis.Image;
+        restore();
+    }
+});
+
+// ── R1: the note's height, the content scale, listeners, drag, the description ──
+
+function stubNoteHeight(px) {
+    const proto = window.HTMLElement.prototype;
+    const had = Object.getOwnPropertyDescriptor(proto, 'offsetHeight');
+    Object.defineProperty(proto, 'offsetHeight', {
+        configurable: true,
+        get() { return this.classList?.contains('pc-monitor-postit') ? px : (had?.get ? had.get.call(this) : 0); }
+    });
+    return () => Object.defineProperty(proto, 'offsetHeight', had);
+}
+
+test('R1 M1: the mounted frame grows its chin to the note, and keeps that height for the PC\'s views without it', async () => {
+    for (const [w, h] of SIZES) {
+        resetPostitHeights();
+        const restore = sizeWindow(w, h);
+        const unstub = stubNoteHeight(52);
+        try {
+            const a = await signInScreen();
+            const signIn = frameBox();
+            const root = document.querySelector('.pc-monitor');
+            const note = document.querySelector('.pc-monitor-postit');
+            const bottom = parseInt(note.style.top, 10) + 52;
+            assert.ok(bottom <= parseInt(root.style.height, 10) - PC_FRAME_EDGE, `${w}x${h}: the two-line note ends on the bezel`);
+            assert.equal(keptPostitHeight('hot_desk', `${w}x${h}`), 52, 'kept for the PC');
+            a.cleanup?.();
+            // The same PC's desktop with no note on it: the same frame
+            const b = await desktop({ showPostit: false });
+            assert.equal(document.querySelector('.pc-monitor-postit'), null);
+            const desk = JSON.parse(frameBox());
+            const was = JSON.parse(signIn);
+            assert.deepEqual(desk.root, was.root, `${w}x${h}: same size and place without the note`);
+            assert.deepEqual(desk.screen, was.screen);
+            b.cleanup?.();
+        } finally {
+            unstub();
+            restore();
+        }
+    }
+    resetPostitHeights();
+});
+
+test('R1 M2: the frame carries its whole-number content scale for the CSS zoom', async () => {
+    for (const [w, h] of SIZES) {
+        const restore = sizeWindow(w, h);
+        try {
+            const a = await signInScreen();
+            const root = document.querySelector('.pc-monitor');
+            assert.equal(root.dataset.uiScale, String(pcMonitorMetrics(w, h).uiScale), `${w}x${h}`);
+            assert.equal(root.style.getPropertyValue('--pc-ui-scale'), root.dataset.uiScale);
+            a.cleanup?.();
+        } finally {
+            restore();
+        }
+    }
+    const frame = css('pc-monitor.css');
+    assert.match(frame, /\.pc-monitor-screen > \.minigame-game-container \{[^}]*zoom: var\(--pc-ui-scale, 1\);/);
+});
+
+test('R1 m4: the resize listeners go with the scene\'s cleanup, even when complete() never runs', async () => {
+    const restore = sizeWindow(800, 600);
+    const added = [], removed = [];
+    const add = window.addEventListener, remove = window.removeEventListener;
+    window.addEventListener = function (type, fn, o) { if (type === 'resize') added.push(fn); return add.call(this, type, fn, o); };
+    window.removeEventListener = function (type, fn, o) { if (type === 'resize') removed.push(fn); return remove.call(this, type, fn, o); };
+    try {
+        const mg = await signInScreen();
+        const update = mg.pcMonitor.update;
+        assert.ok(added.includes(update), 'listening');
+        mg.cleanup();
+        assert.ok(removed.includes(update), 'removed by cleanup alone');
+    } finally {
+        window.addEventListener = add;
+        window.removeEventListener = remove;
+        restore();
+    }
+});
+
+test('R1 m6: a tap on the note does not mark it dragged; a move does', async () => {
+    const restore = sizeWindow(800, 600);
+    try {
+        await signInScreen();
+        const note = document.querySelector('.pc-monitor-postit');
+        // makeDraggable (stubbed here) pins the note where it is drawn on the press: the same place
+        note.dispatchEvent(new window.MouseEvent('mousedown', { bubbles: true }));
+        document.dispatchEvent(new window.MouseEvent('mouseup', { bubbles: true }));
+        assert.equal(note.dataset.dragged, undefined, 'a tap leaves it following the frame');
+        note.dispatchEvent(new window.MouseEvent('mousedown', { bubbles: true }));
+        note.style.left = `${parseInt(note.style.left, 10) + 30}px`;
+        document.dispatchEvent(new window.MouseEvent('mouseup', { bubbles: true }));
+        assert.equal(note.dataset.dragged, 'true', 'a move pins it');
     } finally {
         restore();
+    }
+});
+
+test('R1 M3: a long description is all in the taskbar, wrapped and scrolled, never cut with an ellipsis', async () => {
+    const restore = sizeWindow(390, 844);
+    const long = 'A shared hot desk PC. Anyone with an account can sign in here, and the last user left a sticky note about the payroll share on the second floor.';
+    try {
+        await desktop({ observations: long });
+        const note = document.querySelector('.desktop-taskbar-note');
+        assert.equal(note.textContent, long, 'every word is in the DOM');
+        assert.ok(note.classList.contains('pixel-scroll'), 'the pixel scrollbar when it scrolls');
+    } finally {
+        restore();
+    }
+    const box = css('container-minigame.css');
+    for (const sel of ['.desktop-taskbar-note {', '.share-folder-status {']) {
+        const rule = box.slice(box.indexOf(sel), box.indexOf('}', box.indexOf(sel)));
+        assert.match(rule, /white-space: normal/, sel);
+        assert.doesNotMatch(rule, /text-overflow: ellipsis|nowrap/, sel);
+        assert.match(rule, /max-height: \d+px/, sel);
+        assert.match(rule, /overflow-y: auto/, sel);
     }
 });
 
@@ -290,7 +482,9 @@ test('the desktop\'s account bar shows the signed-in NPC\'s headshot', async () 
 
 test('the bezel look is held in css/pc-monitor.css only, pixel art (2px edges, stepped corners, no radius)', () => {
     const frame = css('pc-monitor.css');
-    assert.match(frame, /\.pc-monitor-bezel \{[^}]*border: 2px solid[^}]*clip-path: polygon\(/);
+    const bezelRule = frame.slice(frame.indexOf('.pc-monitor-bezel {'), frame.indexOf('}', frame.indexOf('.pc-monitor-bezel {')));
+    assert.match(bezelRule, /border: 2px solid/);
+    assert.match(bezelRule, /clip-path: polygon\(/);
     assert.doesNotMatch(frame, /border-radius:\s*[1-9]/);
     assert.match(frame, /\.pc-monitor > \.postit-note\.pc-monitor-postit \{[^}]*position: absolute/);
     assert.doesNotMatch(css('password-minigame.css'), /\.pc-monitor-bezel\s*\{/, 'not copied into the password screen');

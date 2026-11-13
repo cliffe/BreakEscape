@@ -937,6 +937,56 @@ test('R4 n1: an empty Submit brings the post-it into view first, then the line',
     assert.equal(q('#password-message').textContent, 'Please enter a password');
 });
 
+// UX slice 2c R1 m9: the old password frame (Wi-Fi keys, archives, safes, case locks) keeps
+// its own coverage now that the PC screens moved to the monitor
+test('2c R1 m9: a non-computer lock keeps the password frame, with Add to Notepad after the game area', () => {
+    const { mg } = openPlain({ title: 'Wall safe', lockable: { scenarioData: { id: 'safe1', type: 'safe' } } });
+    assert.equal(q('.pc-monitor'), null, 'no PC monitor for a safe');
+    const frame = q('.password-frame');
+    assert.ok(frame, 'the password frame');
+    const row = q('.minigame-controls');
+    assert.ok(row && frame.contains(row), 'the row is inside the frame');
+    assert.ok(q('.password-frame > .minigame-game-container').compareDocumentPosition(row) & window.Node.DOCUMENT_POSITION_FOLLOWING, 'after the game area');
+    assert.ok(row.querySelector('#minigame-notebook-postit'), 'Add to Notepad in the row');
+    mg.cleanup?.();
+});
+
+test('2c R1 m9: on a non-computer lock an empty Submit brings the post-it into view first, then the line', async () => {
+    const { mg } = openPlain({ title: 'Archive', lockable: { scenarioData: { id: 'zip1', type: 'zip_archive' } } });
+    const order = [];
+    const note = q('.password-frame .postit-note');
+    assert.ok(note, 'the note is in the password frame');
+    assert.equal(q('.pc-monitor-postit'), null, 'not a monitor note');
+    note.scrollIntoView = () => order.push('postit');
+    q('#password-message').scrollIntoView = () => order.push('line');
+    q('#password-field').value = '';
+    await mg.submitPassword();
+    assert.deepEqual(order, ['postit', 'line']);
+    mg.cleanup?.();
+});
+
+test('2c R1 M2: inside the scaled PC screen a snap move is divided by the zoom', () => {
+    const restore = mockRects([]);
+    try {
+        document.body.innerHTML = '<div class="a"><span class="b"></span></div>';
+        const b = q('.b');
+        Object.defineProperty(b, 'currentCSSZoom', { value: 2 });
+        // A box drawn at x2: its own left/top move it twice as far on screen
+        b.getBoundingClientRect = () => {
+            const left = 3.5 + 2 * (parseFloat(b.style.left) || 0);
+            const top = 4.5 + 2 * (parseFloat(b.style.top) || 0);
+            return { left, top, right: left + 10, bottom: top + 10, width: 10, height: 10 };
+        };
+        const moved = snapInnerBoxes(q('.a'), 1, window);
+        assert.equal(moved.length, 1);
+        // 0.5px on screen is 0.25px on a box drawn at x2
+        assert.equal(q('.b').style.left, '0.25px');
+        assert.equal(q('.b').style.top, '0.25px');
+    } finally {
+        restore();
+    }
+});
+
 test('R5 m1: a scaled box (a press) and everything in it is left out of the snap; a pure translate is not', () => {
     const restore = mockRects([['.p', { left: 10.5, top: 4 }], ['.pi', { left: 12.5, top: 6 }], ['.t', { left: 30.5, top: 8.5 }]]);
     try {
