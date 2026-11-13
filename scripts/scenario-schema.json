@@ -4843,7 +4843,7 @@
         "barkDelay": {
           "type": "number",
           "minimum": 0,
-          "description": "Milliseconds to wait before showing the bark (default 0). Use to stagger multi-NPC responses."
+          "description": "Milliseconds to wait before showing the bark (default 0); the rest of the mapping runs at the event. Use to stagger multi-NPC responses. Dropped if the condition stops holding or the NPC is knocked out, changes room or is hidden first."
         },
         "targetKnot": { "type": "string" },
         "conversationMode": {
