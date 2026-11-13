@@ -1210,9 +1210,11 @@ export default class NPCManager {
    * no longer holds, or the NPC is knocked out, has changed room (walking out counts)
    * or been hidden. Otherwise showBark takes it as usual, so an open minigame or
    * conversation, including one with this NPC, holds it until it closes. show() is
-   * handed a stillValid that repeats all four checks, so a held bark is also dropped
-   * on release (bark-release-policy.js) if its NPC was knocked out, moved or hidden
-   * while it was held. Timers live with the NPC's delayMs timers, so _cancelDelayedMappings
+   * handed a stillValid that repeats the condition, knocked-out and hidden checks, so a
+   * held bark is also dropped on release (bark-release-policy.js) if its NPC was knocked
+   * out or hidden while it was held. The room check runs only when the delay ends: NPCs
+   * keep walking behind a minigame, and a patroller that crosses rooms during a long
+   * hold keeps its bark. Timers live with the NPC's delayMs timers, so _cancelDelayedMappings
    * (NPC re-registered or removed, manager destroyed) cancels them too.
    */
   _delayBark(npcId, delayMs, show, stillValid) {
@@ -1226,22 +1228,22 @@ export default class NPCManager {
     if (!this._delayedMappings.has(npcId)) this._delayedMappings.set(npcId, new Map());
     const pending = this._delayedMappings.get(npcId);
     const key = `bark:${++this._delayedBarkSeq}`;
-    // Why the bark should not show now, or null. Run when the delay ends and again,
-    // through stillValid, when a held bark is released.
-    const lapse = () => {
+    // Why the bark should not show now, or null. Run when the delay ends (with the room
+    // check) and again, through stillValid, when a held bark is released (without it).
+    const lapse = (checkRoom) => {
       const now = where();
       if (typeof stillValid === 'function' && !stillValid()) return 'condition no longer holds';
       if (window.npcHostileSystem?.isNPCKO?.(npcId)) return 'NPC knocked out';
-      if (now.room !== before.room) return `NPC left ${before.room}`;
+      if (checkRoom && now.room !== before.room) return `NPC left ${before.room}`;
       if (now.hidden && !before.hidden) return 'NPC hidden';
       return null;
     };
     pending.set(key, setTimeout(() => {
       pending.delete(key);
-      const reason = lapse();
+      const reason = lapse(true);
       if (reason) { console.log(`⏭️ Delayed bark for ${npcId} dropped: ${reason}`); return; }
       show(() => {
-        const why = lapse();
+        const why = lapse(false);
         if (why) console.log(`⏭️ Held delayed bark for ${npcId} is stale: ${why}`);
         return !why;
       });

@@ -19,8 +19,18 @@ writeFileSync(join(dir, 'npc-manager.mjs'),
     readFileSync(join(sys, 'npc-manager.js'), 'utf8').replace("'./npc-los.js'", "'./npc-los.mjs'")
         .replace("'../minigames/phone-chat/phone-chat-speaker.js'", "'./phone-chat-speaker.mjs'"));
 
+// npc-barks.js with its imports stubbed, for _dropStaleVisibleBarks only.
+writeFileSync(join(dir, 'npc-barks.mjs'), `
+const ASSETS_PATH = '', overlayDepth = () => 0, displayDashes = (s) => s, releaseHeldBarks = () => {};
+const workstationPopupOpen = () => false, phoneThreadOpenFor = () => false, openPhoneThread = () => null, threadTextKey = () => '';
+const barkLifetimeMs = () => 0, barksToTrim = () => 0, BARK_RESUME_MIN_MS = 0, inventoryBlockedByForcedMinigame = () => false;
+const phoneBarkText = (s) => s;
+class TTSManager {}
+` + readFileSync(join(sys, 'npc-barks.js'), 'utf8').replace(/^import [\s\S]*?;\s*$/gm, '').replace('export default class', 'export class'));
+
 globalThis.window = { gameState: { globalVariables: {} } };
 const { default: NPCManager } = await import(pathToFileURL(join(dir, 'npc-manager.mjs')).href);
+const { NPCBarkSystem } = await import(pathToFileURL(join(dir, 'npc-barks.mjs')).href);
 
 function makeDispatcher() {
     const listeners = new Map();
@@ -231,7 +241,7 @@ test('due during a person-chat with that NPC: handed to showBark to hold, not dr
     } finally { t.restore(); }
 });
 
-test('held during a chat: stale on release if the NPC is hidden, knocked out or moved while held', () => {
+test('held during a chat: stale on release if the NPC is hidden or knocked out, kept if it only moved', () => {
     for (const change of ['hidden', 'ko', 'room']) {
         const t = setup([{ ...base }]);   // no condition: only the NPC checks can make it stale
         try {
@@ -251,9 +261,63 @@ test('held during a chat: stale on release if the NPC is hidden, knocked out or 
             if (change === 'hidden') t.m.getNPC('nurse').isVisible = false;
             if (change === 'ko') ko.add('nurse');
             if (change === 'room') beh.roomId = 'corridor';
-            assert.equal(held[0].stillValid(), false, `${change}: stale on release`);
+            // The room check runs only when the delay ends: a patroller that crosses rooms
+            // behind a minigame keeps its bark.
+            if (change === 'room') assert.equal(held[0].stillValid(), true, 'room: kept on release');
+            else assert.equal(held[0].stillValid(), false, `${change}: stale on release`);
         } finally { t.restore(); }
     }
+});
+
+test('a delayed toast already on screen closes when its NPC is hidden; one being removed is skipped', () => {
+    const t = setup([{ ...base }]);   // no condition: only the NPC checks can make it stale
+    try {
+        let payload = null;
+        t.m.barkSystem.showBark = (p) => { payload = p; };
+        t.m.eventDispatcher.emit(ev, { value: true });
+        t.advance(1500);
+        assert.equal(typeof payload?.stillValid, 'function');
+        // The toast as npc-barks.js renders it: el._stillValid = payload.stillValid.
+        const shown = { textContent: payload.message, _stillValid: payload.stillValid };
+        let leavingChecks = 0;
+        const leaving = { textContent: 'leaving', _removing: true, _stillValid: () => { leavingChecks++; return false; } };
+        const removed = [];
+        const bark = Object.create(NPCBarkSystem.prototype);
+        bark.container = { querySelectorAll: () => [shown, leaving] };
+        bark._removeBark = (el) => removed.push(el);
+        bark._dropStaleVisibleBarks();
+        assert.deepEqual(removed, [], 'nothing closes while the NPC is unchanged');
+        t.m.getNPC('nurse').isVisible = false;
+        bark._dropStaleVisibleBarks();
+        assert.deepEqual(removed, [shown], 'closed as stale once its NPC is hidden');
+        assert.equal(leavingChecks, 0, 'a toast already being removed is not checked again');
+    } finally { t.restore(); }
+});
+
+test('a bark with no delay carries only its condition', () => {
+    const t = setup([{ ...base, barkDelay: 0 }]);   // no condition
+    try {
+        let payload = null;
+        t.m.barkSystem.showBark = (p) => { payload = p; };
+        t.m.eventDispatcher.emit(ev, { value: true });
+        assert.ok(payload, 'barked at once');
+        assert.equal(payload.stillValid, undefined, 'no condition, no stillValid');
+        t.m.getNPC('nurse').isVisible = false;
+        assert.equal(payload.stillValid, undefined, 'hiding the NPC changes nothing');
+    } finally { t.restore(); }
+
+    const t2 = setup([{ ...base, barkDelay: 0, condition: 'globalVars.alarm === true' }]);
+    try {
+        let payload = null;
+        t2.m.barkSystem.showBark = (p) => { payload = p; };
+        window.gameState.globalVariables = { alarm: true };
+        t2.m.eventDispatcher.emit(ev, { value: true });
+        assert.equal(typeof payload?.stillValid, 'function');
+        t2.m.getNPC('nurse').isVisible = false;
+        assert.equal(payload.stillValid(), true, 'hidden NPC: the condition alone decides');
+        window.gameState.globalVariables.alarm = false;
+        assert.equal(payload.stillValid(), false);
+    } finally { t2.restore(); }
 });
 
 test('a delayed knot bark waits too, carries stillValid, and is cancelled with the NPC', () => {
