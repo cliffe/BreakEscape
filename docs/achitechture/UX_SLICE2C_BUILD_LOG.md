@@ -178,6 +178,8 @@ Checked in every run:
 
 Round 2 done. Commits: `ef0239c30` (the fixes and tests), `f1eae17e4` (icon labels as wide as their text), `fe2745e44` (x2 sign-in folds its tiles), `159748439` (x2 title hidden, More below text even), `a97c789d1` (no on-screen title in any PC monitor), and the docs commit with this section.
 
+Full suites under the shared lock: `bin/rails test` on `159748439`: 2386 runs, 42523 assertions, 0 failures, 0 errors, 1 skip (`a97c789d1` after it changes one CSS rule only). `MERGE_BATCH=1 bin/test-js -j 3` on `07f63a6f9`: 599 files passed, 0 failed.
+
 Open: a WebKit check of `cssZoomOf` (needs the Playwright WebKit download, the user's call). The remote sign-in's "Captured sign-ins" box has a see-through olive fill and sits on the wallpaper; it predates this slice and was not in the review.
 
 Round 1 done. Commits on `build/ux-slice2c`: `9f6d521c1` (the fixes and tests), `9139111bd` (note width), `59461b604` (desktop line boxes), `e60135807` (share labels), and the docs commit with this log and the backlog entries.
