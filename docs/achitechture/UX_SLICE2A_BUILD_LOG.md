@@ -66,3 +66,47 @@ main3-01 not retaken (q98 open, nothing changed). Games 2408, 2419 and 2423 were
 ## Handover
 
 Done: everything in slice 2a except the q98 skin. Commits: 0ecbfb614 (post-it, mark), 6282b2658 (shares), b5c13e2d5 (file label width), plus this log. In progress: nothing. Open: q98; slice 2b waits on q92 and this branch's merge.
+
+## R1 fixes
+
+Review: `UX_SLICE2A_REVIEW_R1.md` (0 blockers, 2 majors, 2 minors, 4 nits), with the orchestrator's rulings and the user's general notes on the password screens (unlock-44, unlock-53). Every finding is fixed.
+
+| Finding | Fix | Files |
+|---|---|---|
+| M1, share header icon at 3.08x | The header `<img>` gets `share-header-icon`: 52x36 (exactly x2) with 22px/14px padding, so it is centred in the same 80px box with no `object-fit: contain`. `fitWholeScale(img, 80, { maxScale: 2, pad: true })` sets the same sizes from the loaded picture, so a share with its own `iconImage` also lands on a whole-number scale. Measured live: box 84x84, padding 22px 14px, picture 26x18. | `container-item-image.js` (`fitWholeScale`, `containerImageHtml` extra class), `container-minigame.js`, `container-minigame.css` |
+| M2, folder window unfinished | The folder window fills the frame below the header (`.share-folder-layout`, flex column, the window `flex: 1 1 auto`, `width: min(880px, 100% - 40px)`): 880x699 at 1400x1000, 724x323 at 800x600. The grey tile fill is gone: files sit on the white pane with no box; hover marks the name navy on white, as a file browser selects. No larger document icon exists in `assets/icons` or `assets/objects` (the document glyphs are all 16x16; `case-file.png` 40x27 is a folder), so the 16px glyph is drawn at x4 (64px) by `fitWholeScale(img, 64)`. Columns are a fixed 160px, so the glyph sits on a whole pixel (1fr columns put it on a quarter pixel). | `container-minigame.js`, `container-minigame.css` |
+| m1, clipped and repeated tooltip | No tooltip repeats a printed label: the `.container-content-tooltip` box and the item `title` are gone from the standard grid. A share's UNC path (which its label leaves out) stays as the native `title` on its icon, which the browser draws outside any clipping box. | `container-minigame.js` |
+| m2, post-it over Add to Notepad | The password screen is now a frame that wraps its content (below); the game area scrolls inside it, and the controls row sits under the frame, so the note can never reach a button. Checked with `elementFromPoint` on every button at three sizes on all three screens. | `password-minigame.js`, `password-minigame.css` |
+| n1, half pixel | The mark is drawn with `setOrigin(0.5, 1)` at `y = round(top + h)`: its bottom is the sprite's bottom to the pixel (live: 120 against 120; before 119.5). | `postit-marks.js` |
+| n2, orphaned JSDoc | Removed. | `container-minigame.js` |
+| n3, header line differs | The mapped stub's empty header line becomes "A file share on HOST." from its UNC host, the same line as a share from the network view. | `container-minigame.js` |
+| n4, loose CSS test | The test pins `left: -14px` and `margin: -48px 0 0 0`, and checks the desktop note uses the same `-14px`. | `test/js/access-signin-postit.test.mjs` |
+
+### The user's notes on the password screens
+
+- No Cancel button in any mode (sign-in, Wi-Fi prompt, plain). `PasswordMinigame.init` passes `showCancel: false` to the base scene; the controls row is made only when it holds Add to Notepad (`ensureControlsRow`). The X and Esc close the screen. On a lockout the X takes the focus (it used to relabel Cancel as Close). Other minigames keep their Cancel (slice 7).
+- The frame wraps its content at every size. `wrapInFrame` puts the game area and the X in a `.password-frame` (2px border, 644px wide, capped at the window less 32px). The area is `height: auto` (it was a fixed share of the window, which left the empty band under the monitor). The X sits at 6px inside the frame's top-right corner, clear of the border; the area's 44px top padding keeps the content clear of it. In a window 640px tall or less, the device header goes and the bezel and padding shrink, so the field and Submit show at 915x412 without scrolling; anything taller scrolls inside the frame.
+- With the full-window dark game area gone, the dimmed game shows around the frame, as it does around the other framed panels.
+
+### Tests (without the lock, every file that imports a changed module)
+
+access-remote-signin 15, access-signin-postit 7 (one new: the frame), container-shares 38 (three new: `fitWholeScale`, the folder window header/tooltips/host line, the folder CSS), container-transfer-dialog 14, engine-fixes-pass4b 10, engine-fixes-round6 9, escaping-shared-helpers 20, inventory-restore-sprite-image 10 (counts `${this.containerImageHtml(` calls), keypad-title 6, lock-scope-refusal 12, minigame-controls-layout 11 (the password area rule now pins `height: auto` and the frame's scroll), minigame-title-escape 23, password-case-hint 5, password-join-mode 6, password-minigame-submit 2, password-signin-mode 21 (the lockout closes by the X; two new: no Cancel and no empty controls row on the sign-in, plain and prompt screens), postit-marks 9 (exact bottom and origin), toast-once-across-panel-handover 6, toast-once-before-container 8, unlock-r1-ux 11, variants-in-lock-panels 4. All pass. No new module file, so no harness copy-list change.
+
+### Live proof
+
+Keyless server on :3312 from this worktree, headless Chromium, `setFPS(20)` with fixed steps on (`[20, true]` logged each run). New games: 2459 (test_access_signin, swap), 2460 and 2464 (test_access_habits, swap; 2464 starts in omar_room, the mark forced on with `postitMarks.mark` because the server shows a note only when the owner has written the password down), 2461 (test_access_networks, `new-game.rb --give kit_dropbox`: the swap script has no `--give`), 2462 (m01, `new-game.rb --start-room kevin_office`). Before shots were taken with the pre-fix files checked out over the worktree for the run, then restored from the commit. Shots and the driver (`drive.mjs`, `after-log.txt`) are in the session scratchpad under `ux-shots/slice2a-r1/`:
+
+- `before-` and `after-main-01-12-signin-{1400x1000,800x600,915x412}.png`
+- `before-` and `after-m01-plain-password-{1400x1000,800x600,915x412}.png` (the m01 note at 800x600 among them)
+- `before-` and `after-wifi-prompt-{1400x1000,800x600,915x412}.png`
+- `before-` and `after-main-11-room-mark-1400x1000.png`, and `-zoom-`
+- `before-` and `after-main3-05-remote-desktop-{1400x1000,800x600}.png`
+- `before-` and `after-main3-08-share-folder-{1400x1000,800x600}.png`, and `-share-hover-`
+
+### Art need
+
+- A document icon larger than 16x16 for the folder window (about 32x32, shown x2), so a file does not depend on a 16px glyph at x4. Not generated.
+
+### Handover (R1)
+
+Done: every R1 finding and the user's password-screen notes. Commits: b07685776, cf7841113, 939fa9485, plus this log. Open: q98 (prompt skin), unchanged. Not done: nothing in scope.
