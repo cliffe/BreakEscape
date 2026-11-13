@@ -3637,7 +3637,24 @@ module BreakEscape
 
       # Check if already completed
       if player_state.dig('objectivesState', 'tasks', task_id, 'status') == 'completed'
-        return { success: true, taskId: task_id, message: 'Already completed' }
+        # Idempotent re-post. The task is done, but a concludeRequires global can
+        # reach the server only after the first completion raced ahead of its state
+        # sync (the conclude race). Re-evaluate the gate so a client retry, after
+        # flushing the globals, still concludes the mission instead of leaving it
+        # stranded with "Already completed". No-op once the mission has concluded.
+        was_concluded_before = mission_concluded_at.nil?
+        recheck_pending_mission_conclusions!
+        save! if changed?
+        mission_just_concluded = was_concluded_before && mission_concluded_at.present?
+        response = { success: true, taskId: task_id, message: 'Already completed',
+                     missionConcluded: mission_just_concluded }
+        if mission_concluded_at.nil?
+          aim = scenario_data['objectives']&.find { |a| a['aimId'] == task['aimId'] }
+          if aim && aim['missionConclusion'] && unmet_conclude_requirements(aim).any?
+            response[:warning] = 'Complete required objectives first to conclude the mission.'
+          end
+        end
+        return response
       end
 
       # Validate based on task type
