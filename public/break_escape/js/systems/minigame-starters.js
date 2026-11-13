@@ -140,7 +140,6 @@ export function startLockpickingMinigame(lockable, scene, difficulty = 'medium',
         itemName: itemName,
         itemImage: itemImage,
         itemObservations: itemObservations,
-        cancelText: 'Close',
         canSwitchToKeyMode: window.inventory.items.some(item => 
             item && item.scenarioData && 
             item.scenarioData.type === 'key'
@@ -420,7 +419,6 @@ export function startKeySelectionMinigame(lockable, type, playerKeys, requiredKe
         itemName: itemName,
         itemImage: itemImage,
         itemObservations: itemObservations,
-        cancelText: 'Close',
         canSwitchToPickMode: window.inventory.items.some(item => 
             item && item.scenarioData && 
             item.scenarioData.type === 'lockpick'

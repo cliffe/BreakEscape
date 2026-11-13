@@ -255,9 +255,16 @@
    label beside it; the dark scheme below puts it back to white. */
 .action-btn .icon-small,
 .file-observations h4 .icon-small {
-    filter: brightness(0) opacity(0.75);
     margin-right: 4px;
     vertical-align: -2px;
+}
+
+/* Only the white copy icon is darkened: notes.png (Add to Notepad) is a white page with
+   its own dark outline and lines, which a brightness(0) filter turned into a solid block
+   (slice 7 R3 m4) */
+#copy-btn .icon-small,
+.file-observations h4 .icon-small {
+    filter: brightness(0) opacity(0.75);
 }
 
 .file-observations h4 .icon-small {
@@ -453,7 +460,7 @@
         color: #fbbf24;
     }
 
-    .action-btn .icon-small,
+    #copy-btn .icon-small,
     .file-observations h4 .icon-small {
         filter: none;
     }

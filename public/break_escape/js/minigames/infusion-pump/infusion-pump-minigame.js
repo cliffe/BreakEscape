@@ -106,7 +106,25 @@ export class InfusionPumpMinigame extends MinigameScene {
         if (!game?.scale || !box) return;
         const z = InfusionPumpMinigame.wholeZoom(box.clientWidth, box.clientHeight);
         if (game.scale.zoom !== z) game.scale.setZoom(z);
+        // Phaser may set its own touch-action on the canvas; the box must pan on a swipe
+        const canvas = box.querySelector('canvas');
+        if (canvas) canvas.style.touchAction = 'pan-y';
         this.placeCloseButton?.();
+        this._updateMoreBelow();
+    }
+
+    // "More below" shows while part of the canvas is under the bottom of its box, and hides
+    // once the player has scrolled to the end (slice 7 R3 M1). A click scrolls to the end.
+    static hasMoreBelow(box) {
+        if (!box) return false;
+        return box.scrollHeight - box.clientHeight - box.scrollTop > 2;
+    }
+
+    _updateMoreBelow() {
+        const box = this.gameContainer?.querySelector?.('#ip-phaser-container');
+        const cue = this.gameContainer?.querySelector?.('#ip-more-below');
+        if (!cue) return;
+        cue.hidden = !InfusionPumpMinigame.hasMoreBelow(box);
     }
 
     _watchZoom() {
@@ -118,6 +136,16 @@ export class InfusionPumpMinigame extends MinigameScene {
             this._zoomObserver = new window.ResizeObserver(fit);
             this._zoomObserver.observe(box);
         }
+        const cue = this.gameContainer?.querySelector?.('#ip-more-below');
+        if (box) {
+            this._onBoxScroll = () => this._updateMoreBelow();
+            box.addEventListener('scroll', this._onBoxScroll, { passive: true });
+        }
+        if (cue && box) {
+            cue.addEventListener('click', () => {
+                box.scrollTo({ top: box.scrollHeight, behavior: 'auto' });
+            });
+        }
         fit();
     }
 
@@ -126,6 +154,9 @@ export class InfusionPumpMinigame extends MinigameScene {
         this._zoomOnResize = null;
         this._zoomObserver?.disconnect?.();
         this._zoomObserver = null;
+        const box = this.gameContainer?.querySelector?.('#ip-phaser-container');
+        if (box && this._onBoxScroll) box.removeEventListener('scroll', this._onBoxScroll);
+        this._onBoxScroll = null;
     }
 
     init() {
@@ -146,7 +177,10 @@ export class InfusionPumpMinigame extends MinigameScene {
         }
 
         this.gameContainer.style.cssText = 'width:100%;height:100%;min-height:0;';
-        this.gameContainer.innerHTML = '<div id="ip-phaser-container" class="ip-phaser-container"></div>';
+        this.gameContainer.innerHTML = '<div class="ip-scroll-frame">'
+            + '<div id="ip-phaser-container" class="ip-phaser-container ip-pixel-scroll"></div>'
+            + '<button type="button" id="ip-more-below" class="ip-more-below" hidden>MORE BELOW<span class="ip-more-below-arrow" aria-hidden="true"></span></button>'
+            + '</div>';
         this._setupPhaserGame();
     }
 
@@ -204,6 +238,13 @@ export class InfusionPumpMinigame extends MinigameScene {
                 pixelArt: true,
                 roundPixels: true,
                 scene: InfusionPumpScene,
+                // A swipe on the canvas scrolls its box on a short screen (slice 7 R3 M1): Phaser
+                // stops capturing touch, taps still reach the keys, and the canvas CSS allows
+                // vertical panning. The wheel is left to the browser for the same reason.
+                input: {
+                    touch: { capture: false },
+                    mouse: { preventDefaultWheel: false }
+                },
                 audio: {
                     context: MusicController.context
                 },
@@ -365,37 +406,38 @@ export class InfusionPumpMinigame extends MinigameScene {
         scene.add.text(sx, SCR_Y + 26, 'CURRENT RATE:  -- mg/hr',         screenText);
         scene.add.text(sx, SCR_Y + 44, 'VOL REMAINING: 50 mL',            screenText);
 
-        // Divider line on screen
+        // Divider line on screen, clear of the VOL REMAINING glyphs above it and the rows below
+        // (slice 7 R3 m3): the 16px VT323 row at +44 inks down to about +62
         const dg = scene.add.graphics();
         dg.lineStyle(2, 0x1a5a1a);
-        dg.lineBetween(SCR_X + 4, SCR_Y + 60, SCR_X + SCR_W - 4, SCR_Y + 60);
+        dg.lineBetween(SCR_X + 4, SCR_Y + 66, SCR_X + SCR_W - 4, SCR_Y + 66);
 
         const libraryCompromised = this._libraryTampered();
 
         if (libraryCompromised && this.sd.library_ok_global) {
-            scene.add.text(sx, SCR_Y + 63,
+            scene.add.text(sx, SCR_Y + 69,
                 `LIBRARY RANGE: ${this.libraryMin}${this.libraryMax != null ? ' \u2013 ' + this.libraryMax : ''} mg/hr`, {
                 fontFamily: 'VT323', fontSize: '16px', color: '#00e060'
             });
-            scene.add.text(sx, SCR_Y + 78, 'ENTER NEW RATE (mg/hr):', screenText);
+            scene.add.text(sx, SCR_Y + 84, 'ENTER NEW RATE (mg/hr):', screenText);
         } else if (libraryCompromised) {
-            scene.add.text(sx, SCR_Y + 63, '! DRUG LIB MIN: 25 mg/hr  [LIBRARY OVERRIDE]', {
+            scene.add.text(sx, SCR_Y + 69, '! DRUG LIB MIN: 25 mg/hr  [LIBRARY OVERRIDE]', {
                 fontFamily: 'VT323', fontSize: '16px', color: '#ff8800'
             });
-            scene.add.text(sx, SCR_Y + 78, 'ENTER OVERRIDE RATE (mg/hr):', {
+            scene.add.text(sx, SCR_Y + 84, 'ENTER OVERRIDE RATE (mg/hr):', {
                 ...screenText, color: '#ff8800'
             });
         } else if (this.restoredMin != null && this.restoredMax != null) {
-            scene.add.text(sx, SCR_Y + 63, `LIBRARY RANGE: ${this.restoredMin} \u2013 ${this.restoredMax} mg/hr`, {
+            scene.add.text(sx, SCR_Y + 69, `LIBRARY RANGE: ${this.restoredMin} \u2013 ${this.restoredMax} mg/hr`, {
                 fontFamily: 'VT323', fontSize: '16px', color: '#00e060'
             });
-            scene.add.text(sx, SCR_Y + 78, 'ENTER NEW RATE (mg/hr):', screenText);
+            scene.add.text(sx, SCR_Y + 84, 'ENTER NEW RATE (mg/hr):', screenText);
         } else {
-            scene.add.text(sx, SCR_Y + 68, 'ENTER NEW RATE (mg/hr):', screenText);
+            scene.add.text(sx, SCR_Y + 74, 'ENTER NEW RATE (mg/hr):', screenText);
         }
 
         // Display row — larger text showing current input + cursor
-        this._displayText = scene.add.text(sx, (libraryCompromised || (this.restoredMin != null && this.restoredMax != null)) ? SCR_Y + 104 : SCR_Y + 96, '_', {
+        this._displayText = scene.add.text(sx, (libraryCompromised || (this.restoredMin != null && this.restoredMax != null)) ? SCR_Y + 110 : SCR_Y + 102, '_', {
             fontFamily: 'VT323',
             fontSize: '32px',
             color: (libraryCompromised && !this.sd.library_ok_global) ? '#ff8800' : '#00ff88',
@@ -440,7 +482,7 @@ export class InfusionPumpMinigame extends MinigameScene {
             const label = isBack ? 'DEL' : k;   // pixel font has no erase glyph (slice 7)
             scene.add.text(cx, cy, label, {
                 fontFamily: "'Press Start 2P', monospace",
-                fontSize:   isBack ? '8px' : '16px',   // Press Start 2P on its 8px grid
+                fontSize:   '16px',   // Press Start 2P on its 8px grid; DEL matches the digits (R3 n3)
                 color: '#1a1a1a'
             }).setOrigin(0.5);
         });

@@ -65,9 +65,15 @@ function assertClean(label) {
         const allowed = TRUSTED_ICONS[cls];
         assert.ok(allowed, `${label}: no img injected (found class "${cls}")`);
         assert.ok(allowed.includes(img.getAttribute('src')), `${label}: icon ${cls} keeps its asset src`);
-        assert.equal(img.attributes.length, 5, `${label}: icon ${cls} carries only class, src, alt, width and height`);
+        const names = Array.from(img.attributes, (a) => a.name).sort();
+        assert.deepEqual(names, ['alt', 'class', 'height', 'src', 'width'], `${label}: icon ${cls} carries only class, src, alt, width and height`);
+        assert.ok(!names.some((n) => n.startsWith('on')), `${label}: icon ${cls} has no event handler attribute`);
     }
-    assert.equal(root.querySelector('[onerror], [onmouseover], u'), null, `${label}: no injected handler or element`);
+    assert.equal(root.querySelector('u'), null, `${label}: no injected element`);
+    for (const el of root.querySelectorAll('*')) {
+        const handler = Array.from(el.attributes).find((a) => a.name.startsWith('on'));
+        assert.equal(handler, undefined, `${label}: no injected handler (${handler?.name} on ${el.tagName})`);
+    }
 }
 
 test('backup recovery: a scenario outcomeTone cannot break out of the panel class', () => {
