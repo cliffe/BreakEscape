@@ -121,6 +121,35 @@ Tests: `rfid-door-screen` pins `safe center` on the base rule (and not on the ph
 
 Live proof: keyless server on :3326 from this worktree, physics at setFPS(20) with fixed steps on, stopped afterwards. New games, each `test_access_doors` swapped onto a `test_access_social` host with `tools/playtest/swap-scenario-game.rb`: 2504 (all six sizes, both screens, Save at 915x412) and 2505 (copier opened fresh at 915x412 and 320x568). Shots in the session scratchpad, `ux-shots/slice3a-r3fix/`: `copy-<size>.png` (top of the screen), `copy-<size>-scrolled.png` (Save in view), `reader-<size>.png`, and `fresh-copy-*` and `fresh-reader-*` for game 2505.
 
+## R4 fixes
+
+Review: `UX_SLICE3A_CODE_REVIEW_R4.md` (0 blockers, 0 majors, 2 minors, 1 nit). All three fixed in commit 42ddbc91a (CSS, `rfid-ui.js`, tests).
+
+- **m1, main action or status below the fold at short sizes: fixed.** The copier now uses the network view's layout (slice 1): a fixed header, a scrolling body, a fixed footer. `createFlipperFrame` builds the header, then `.flipper-display` (the grey screen: the scrolling body `#rfid-screen` over a "More below" strip), then `.flipper-footer`. Every view clears both through `freshScreen()`, and the main controls go in the footer through `addToFooter()`: Save (or Save UID, or Crack keys first) and Abandon read on the copy screen, "> Emulate" and Back on the details screen, Back on the saved and tap lists, and Back and Abandon read on the protocol screen. The footer is hidden when empty (`:empty`), so the menu, the reader and the emulating screens look as before. "Emulating..." now comes straight after the breadcrumb, the read status and its progress bar come first on the reading screen, and the keyless crack hint sits above the card data. The body has a pixel-art scrollbar: a local copy of slice 1's `.pixel-scroll` shape (14px, 2px borders, flat colours, no arrow buttons) scoped to `.flipper-zero-frame` in `rfid-minigame.css`, with a comment naming `.pixel-scroll` in `css/utilities.css` on build/ux-net so the two can be merged; the old translucent 8px bars are gone. The saved-card list no longer has its own inner scroller, so each screen has one scroll area and one cue. "More below" (stepped orange arrow) shows while the body runs past the display's bottom edge and hides at the end; a scroll listener, the existing ResizeObserver and one MutationObserver on the body keep it current, and cleanup disconnects the MutationObserver. The stepped corners, bevel layers and frame sizes are unchanged. The reviewer's optional short-window tightening was not needed and is not done.
+- **m2, `max-height: 100%` credited with the shrink fix: fixed.** `max-height` is removed from the wide frame, `flex-shrink: 1` is written out, and the comment now says that flex shrink with `min-height: 0` holds the frame to its area, and why a 100% cap on this content-box frame never bound. The test pins `flex-shrink` as present and not 0, refuses a `flex: none` shorthand and any `max-height`, and models the wide height as `min(590, area)` because the frame shrinks.
+- **n1, X over the frame at 501 to 529px wide: fixed.** The phone breakpoint is `max-width: 530px`.
+
+Live, every screen opened fresh at each size, no scrolling (frame x, y, width, height; the frame is the same on every screen at a size):
+
+| Size | Frame | Footer controls visible, no scroll | Status line in view | "More below" shown on |
+|---|---|---|---|---|
+| 1400x1000 | 480, 205, 440, 590 | all | yes | none (all fit) |
+| 800x600 | 180, 20, 440, 560 | all | yes | copy, NPC copy |
+| 915x412 | 238, 20, 440, 372 | all | yes | copy, NPC copy, details, both emulating |
+| 390x844 | 16, 65, 358, 714 | all | yes | none |
+| 375x667 | 16, 53, 343, 562 | all | yes | copy, NPC copy |
+| 320x568 | 16, 52, 288, 464 | all | yes | copy, NPC copy, details, both emulating |
+
+All ten screens at all six sizes: frame inside the window on whole pixels, X clear of the frame and hit by `elementFromPoint`, no `#minigame-cancel`, every control in the body and the footer hit at its own centre without scrolling, "More below" shown exactly where the body overflows and hidden once scrolled to the end. The scrollbar shows (14px) wherever the body overflows. Corner check: 60 screens, 0 off-palette pixels in the four 12px corner squares. Listeners: 3 `resize` and 1 ResizeObserver in the world, and the same after every size's opens and closes.
+
+n1, each screen opened at 1400x1000 and resized into the band (at 501x400 the objectives panel blocks the test bridge's interact, so the screens cannot be opened there): copy and reader screens at 501x400 (frame 31, 52, 440, 296), 529x600 and 530x600 (45, 52, 440, 496), and 531x400 (wide rule, 46, 20, 440, 360), plus the door emulating screen at 501x400. The X is clear of the frame at every one, footers in view, corners clean (9 screens).
+
+Flow at 915x412, real mouse, no scrolling: Save at y 326..372 in the footer; a click posted `clone_card` (200). At the visitor room reader a click on the saved card showed "RFID > Reader > Emulating" with "Emulating..." in view, then `POST unlock` (`visitor_room`, `method: rfid`, 200), `card_emulated` true, and `enterRoom('visitor_room')` went through. NPC path at 915x412: a real click on Save (no scrolling) posted `clone_card` for Dana and the chat came back on its hub. Abandon at 320x568: a real click at y 464, no scrolling, closed the copier with no request.
+
+Tests: `rfid-door-screen` gains seven tests (frame structure; footer contents on the copy, details, saved and protocol screens; status first on emulating and reading; the cue's show and hide; the body watcher's cleanup; footer, display and scrollbar CSS) and has the m2 and n1 changes: 28/28. Every `test/js` file that imports `rfid-minigame` or the rfid folder or reads `rfid-minigame.css`, run without the lock (test lock rule): 16 files, all passing.
+
+Live proof: keyless server on :3328 from this worktree, physics at setFPS(20) with fixed steps on, scrollbars shown (Playwright's `--hide-scrollbars` default dropped), stopped afterwards. New games, each `test_access_doors` swapped onto a `test_access_social` host with `tools/playtest/swap-scenario-game.rb`: 2550 (all ten screens at six sizes), 2551 (Save, Emulate, door at 915x412), 2552 (n1 band), 2582 (Abandon at 320x568). Game 2551's Abandon step did not run (the objectives panel stayed blocking after the door), so 2582 was made for it. Shots in the session scratchpad, `ux-shots/slice3a-r4fix/` (`<screen>-<size>.png`, `copy-<size>-scrolled.png`, `flow-915x412-*.png`, `flow-320x568-abandon-in-view.png`, `phones-r4fix.png`, and `n1/`).
+
 ## Handover
 
-Slice 3a and its R1, R2 and R3 fixes are done. Nothing in progress. Open: the copier menu icon art is still slice 8. R3 n1 (bevel jogs at two corners) left as it is unless the user asks.
+Slice 3a and its R1, R2, R3 and R4 fixes are done. Nothing in progress. Open: the copier menu icon art is still slice 8. R3 n1 (bevel jogs at two corners) left as it is unless the user asks.
