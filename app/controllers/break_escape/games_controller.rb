@@ -1094,8 +1094,13 @@ module BreakEscape
       method = params[:method]
       # Every card id the client holds, for an rfid lock with an access list (4.1).
       card_ids = params.key?(:card_ids) ? Array(params[:card_ids]).map(&:to_s) : nil
+      # Open before this request: validate_unlock grants it whatever is sent, so the answer
+      # must not say which of the sent cards the list admits, or a request per copy would
+      # sort the player's copies after the first yes (UX slice 3b R1 m1)
+      already_open = method == 'rfid' && card_ids &&
+                     (target_type == 'door' ? @game.room_unlocked?(target_id) : @game.object_unlocked?(target_id))
 
-      is_valid = @game.validate_unlock(target_type, target_id, attempt, method, card_ids: card_ids)
+      is_valid =@game.validate_unlock(target_type, target_id, attempt, method, card_ids: card_ids)
 
       unless is_valid
         # Under a session the player holds at a PC that is off, or over a route that is down
@@ -1126,7 +1131,7 @@ module BreakEscape
 
       # An access-list rfid unlock says which held card passed: the player's own keycard by
       # id, a copy only as viaCopy (UX devices R1)
-      rfid_card_answer = method == 'rfid' && card_ids ? @game.rfid_unlock_card_answer(target_type, target_id, card_ids) : nil
+      rfid_card_answer = method == 'rfid' && card_ids && !already_open ? @game.rfid_unlock_card_answer(target_type, target_id, card_ids) : nil
 
       # Use transaction to ensure atomic update
       ActiveRecord::Base.transaction do

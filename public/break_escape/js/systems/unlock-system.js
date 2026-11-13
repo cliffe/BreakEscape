@@ -1117,21 +1117,40 @@ export function handleUnlock(lockable, type) {
             };
 
             // An access-list unlock the server allowed: take the contents it sent back for
-            // an object, then open the target with that answer (no second unlock request)
-            const applyRfidAccessUnlock = (response, line) => {
+            // an object, then open the target with that answer (no second unlock request). For
+            // an object with contents, the container opens only when the player was there to
+            // see it: a late yes (late: true) leaves it for the player to open (review R1 M1).
+            // A yes for a target the client has already opened is dropped, so two copiers
+            // answered yes on one door open it once (R1 m6).
+            const rfidTargetOpen = () => type === 'door'
+                ? lockable.doorProperties?.locked === false
+                : (lockable.scenarioData ? lockable.scenarioData.locked === false : lockable.locked === false);
+            const applyRfidAccessUnlock = (response, line, { late = false } = {}) => {
+                if (rfidTargetOpen()) return;
                 if (response && response.hasContents && response.contents && lockable.scenarioData) {
                     lockable.scenarioData.contents = response.contents;
                 }
+                if (late) {
+                    // Another copier still up on this lock has nothing left to do
+                    const open = window.MinigameFramework?.currentMinigame;
+                    if (open && open.params && open.params.rfidLockTarget === lockable && typeof open.complete === 'function') {
+                        try { open.complete(false); } catch (e) { console.warn('closing the copier failed:', e); }
+                    }
+                }
                 playRfidUnlockSound();
-                unlockTarget(lockable, type, lockable.layer, response);
+                unlockTarget(lockable, type, lockable.layer, response, { autoOpen: !late });
                 window.gameAlert(line, 'success', 'Access Granted', 3000);
             };
 
             // The card copier's reader screen: tap a held card or emulate a saved one.
             // accessList: the lock is decided by the server from its access list (UX slice
             // 3b): each Emulate (or tap) sends that one card's id and waits for the answer.
-            const startRfidReader = ({ accessList = false } = {}) => {
+            // refusedKeycards: the held keycards the server has just refused at this reader,
+            // which the copier names as refused rather than offering them again (R1 m3).
+            const startRfidReader = ({ accessList = false, refusedKeycards = [] } = {}) => {
                 const params = {
+                    // The lock this copier is held to, so a late yes can close it (R1 m6)
+                    rfidLockTarget: lockable,
                     mode: 'unlock',
                     requiredCardIds: requiredCardIds,
                     acceptsUIDOnly: acceptsUIDOnly,
@@ -1160,10 +1179,11 @@ export function handleUnlock(lockable, type) {
                 };
                 if (accessList) {
                     params.accessList = true;
+                    params.refusedKeycards = refusedKeycards;
                     params.requestAccess = (cardIds) => requestRfidAccessUnlock(lockable, type, cardIds);
                     // The copier was closed while the server was still answering, and the answer
                     // was yes: the server has unlocked it, so the world follows
-                    params.onLateAccessUnlock = (result) => applyRfidAccessUnlock(result.serverResponse, rfidOpenedLine(result));
+                    params.onLateAccessUnlock = (result) => applyRfidAccessUnlock(result.serverResponse, rfidOpenedLine(result), { late: true });
                 }
                 window.startRFIDMinigame(lockable, type, params);
             };
@@ -1225,10 +1245,12 @@ export function handleUnlock(lockable, type) {
                             // The server names the player's own card that passed
                             applyRfidAccessUnlock(response, rfidOpenedLine(rfidAccessUnlockResult(response)));
                         } else if (outcome !== 'error' && copierHasCopies) {
-                            // The badges did not open it: the reader buzzes, and the copier
-                            // comes up on the reader with the saved copies to try
+                            // The badges did not open it: the reader buzzes, the refusal is
+                            // reported as at any refused door (no toast, the copier says it),
+                            // and the copier comes up on the reader with the saved copies to try
                             playUISound('reject');
-                            startRfidReader({ accessList: true });
+                            emitDoorUnlockFailed(outcome === 'uid_only' ? 'uid_only' : 'wrong_card');
+                            startRfidReader({ accessList: true, refusedKeycards: accessKeycardIds });
                         } else {
                             showAccessRefusal(outcome);
                         }
@@ -1243,9 +1265,11 @@ export function handleUnlock(lockable, type) {
                 window.gameAlert(appendLockedHint('Access denied. No keycard, and nothing saved on the cloner.', lockable), 'error', doorRefusalTitle(lockable, 'Access Denied'), lockedHintDuration(lockable, 4000, 'Access denied. No keycard, and nothing saved on the cloner.'));
                 emitDoorUnlockFailed('no_card');
             }
-            // If player has RFID cloner, open minigame to emulate or read cards
+            // If player has RFID cloner, open minigame to emulate or read cards. At an access
+            // list (only cancelled or id-less keycards held, nothing saved) it opens on the
+            // reader, where a cancelled card is refused, not on the menu that would read it (R1 m5)
             else if (hasCloner) {
-                startRfidReader();
+                startRfidReader({ accessList: rfidAccessList });
             }
             // No valid keycard and no cloner
             else {
@@ -1360,7 +1384,10 @@ export function getLockRequirementsForItem(item) {
     };
 }
 
-export function unlockTarget(lockable, type, layer, serverResponse) {
+// opts.autoOpen false: an object with contents is unlocked and its contents kept, but the
+// container minigame is not launched (a late access-list yes, when the player may be
+// elsewhere or in another minigame: UX slice 3b R1 M1).
+export function unlockTarget(lockable, type, layer, serverResponse, { autoOpen = true } = {}) {
     console.log('🔓 unlockTarget called:', { type, lockable, serverResponse });
 
     if (type === 'door') {
@@ -1411,7 +1438,7 @@ export function unlockTarget(lockable, type, layer, serverResponse) {
 
                 // Automatically launch container minigame after unlocking
                 setTimeout(() => {
-                    if (window.handleContainerInteraction) {
+                    if (autoOpen && window.handleContainerInteraction) {
                         console.log('Auto-launching container minigame after unlock');
                         window.handleContainerInteraction(lockable);
                     }
@@ -1446,7 +1473,7 @@ export function unlockTarget(lockable, type, layer, serverResponse) {
                 
                 // Automatically launch container minigame after unlocking
                 setTimeout(() => {
-                    if (window.handleContainerInteraction) {
+                    if (autoOpen && window.handleContainerInteraction) {
                         console.log('Auto-launching container minigame after unlock');
                         window.handleContainerInteraction(lockable);
                     }

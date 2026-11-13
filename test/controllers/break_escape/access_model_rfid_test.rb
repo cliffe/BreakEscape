@@ -530,6 +530,22 @@ module BreakEscape
       assert_includes @game.reload.player_state['unlockedRooms'], 'records'
     end
 
+    # Review R1 m1: once a door is open, any request is granted, so the answer names no card.
+    # Otherwise a request per remaining copy would tell the player which ones the list admits.
+    test 'Emulate: after a copy opened the door, further requests say nothing about the cards sent' do
+      build('inventory' => [CLONER.dup])
+      clone_card(JAKE_CARD_ID, npc_id: 'jake')
+      clone_card(EXEC_CARD_ID, npc_id: 'exec')
+      assert_equal true, door('records', card_ids: [JAKE_CARD_ID])['viaCopy']
+      [[JAKE_CARD_ID], [EXEC_CARD_ID], [JAKE_CARD_ID, EXEC_CARD_ID]].each do |ids|
+        body = door('records', card_ids: ids)
+        assert_response :success, body.inspect
+        assert_equal true, body['success']
+        refute body.key?('viaCopy'), "no viaCopy for #{ids.inspect}"
+        refute body.key?('cardId'), "no cardId for #{ids.inspect}"
+      end
+    end
+
     test 'Emulate: a single-id request for a copy the server never saw made is refused' do
       build('inventory' => [CLONER.dup])
       assert_refused door('records', card_ids: [JAKE_CARD_ID])

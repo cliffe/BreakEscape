@@ -29,7 +29,18 @@ export function savedCardConfirmation(cardData) {
     return `${name} is saved on your ${clonerNameInSentence()}. Hold it to the card's reader to play it back.`;
 }
 
+// The close X sits inside the copier's frame (UI design language: the X is inside the frame,
+// never on its border). From the frame's outer edge: 2px outline, 2px bevel, then the body,
+// whose own corner steps reach 10px further in. 12px from the top and right clears all of it.
+export const COPIER_CLOSE_INSET = 12;
+// The battery keeps this gap from the X
+export const COPIER_CLOSE_GAP = 8;
+
 export class RFIDMinigame extends MinigameScene {
+    // The X goes inside the frame (MinigameScene.closeInsideFrame), placed by the copier's
+    // own placeCloseButton below
+    static closeInsideFrame = true;
+
     constructor(container, params) {
         // Set title based on mode
         const title = params.mode === 'clone' ? 'Cloning Card...' : 'RFID Reader';
@@ -99,6 +110,48 @@ export class RFIDMinigame extends MinigameScene {
         }
 
         console.log('🔐 RFIDMinigame initialized');
+    }
+
+    // The copier's frame holds the X
+    closeAnchor() {
+        return this.gameContainer?.querySelector?.('.flipper-zero-frame') || this.gameContainer;
+    }
+
+    /**
+     * The X inside the copier frame at its top right, at every window size: clear of the
+     * stepped corner (COPIER_CLOSE_INSET), level with the header's name line, and the
+     * header's battery moved left so it never sits under the X. Re-run on resize and when
+     * the frame changes size (MinigameScene._watchCloseButton).
+     */
+    placeCloseButton() {
+        const btn = this.container?.querySelector?.('#minigame-close');
+        const frame = this.closeAnchor();
+        if (!btn || !frame?.getBoundingClientRect || btn.style.display === 'none') return;
+        const r = frame.getBoundingClientRect();
+        if (!r.width || !r.height) return;
+        const c = this.container.getBoundingClientRect();
+        const b = btn.getBoundingClientRect();
+        const header = frame.querySelector?.('.flipper-header');
+        if (header) header.style.paddingRight = '';
+        const h = header ? header.getBoundingClientRect() : null;
+        const frameTop = Math.max(r.top, c.top);
+        let top = frameTop + COPIER_CLOSE_INSET;
+        // Level with the header's name line (its box less the rule under it)
+        if (h && h.height && b.height) {
+            const cs = window.getComputedStyle ? window.getComputedStyle(header) : null;
+            const below = cs ? (parseFloat(cs.paddingBottom) || 0) + (parseFloat(cs.borderBottomWidth) || 0) : 0;
+            top = Math.max(top, h.top + (h.height - below - b.height) / 2);
+        }
+        const right = c.right - Math.min(r.right, c.right) + COPIER_CLOSE_INSET;
+        btn.style.top = `${Math.round(top - c.top)}px`;
+        btn.style.right = `${Math.round(right)}px`;
+        btn.classList.add('minigame-close-in-frame', 'rfid-close-in-frame');
+        // Keep the battery clear of the X
+        if (header && h && b.width) {
+            const xLeft = c.right - right - b.width;
+            const reserve = Math.round(h.right - xLeft + COPIER_CLOSE_GAP);
+            if (reserve > 0) header.style.paddingRight = `${reserve}px`;
+        }
     }
 
     start() {
@@ -271,6 +324,8 @@ export class RFIDMinigame extends MinigameScene {
     _askAccessList(cardId, { cardName, emulated, protocol, isUIDOnly, back, deniedTitle, deniedDetail }) {
         if (this._accessPending) return;
         this._accessPending = true;
+        // A tap leaves the door list on screen: show it is being checked (R1 m7)
+        if (!emulated && this.ui && typeof this.ui.showAccessChecking === 'function') this.ui.showAccessChecking(cardName);
         const emit = (fields) => {
             if (!emulated || !window.eventDispatcher) return;
             window.eventDispatcher.emit('card_emulated', {

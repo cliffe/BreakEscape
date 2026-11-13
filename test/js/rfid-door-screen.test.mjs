@@ -134,10 +134,13 @@ test('a successful emulation or tap names the card in the result', () => {
     try {
         let g = makeGame({ mode: 'unlock', requiredCardIds: ['VISITOR-07'] });
         g.handleEmulate(visitor());
-        assert.deepEqual(g.gameResult, { success: true, cardName: 'Visitor card 07', emulated: true });
+        // The fields the door's toast reads (rfidOpenedLine), not the whole object (R1 m9)
+        assert.equal(g.gameResult.cardName, 'Visitor card 07');
+        assert.equal(g.gameResult.emulated, true);
         g = makeGame({ mode: 'unlock', requiredCardIds: ['VISITOR-07'] });
         g.handleCardTap({ scenarioData: { name: 'Visitor card 07', card_id: 'VISITOR-07' } });
-        assert.deepEqual(g.gameResult, { success: true, cardName: 'Visitor card 07', emulated: false });
+        assert.equal(g.gameResult.cardName, 'Visitor card 07');
+        assert.equal(g.gameResult.emulated, false);
     } finally { globalThis.setTimeout = realTimeout; }
 });
 
@@ -812,7 +815,13 @@ function aclGame(answers, extra = {}) {
     return { g, asked, refused, late, done: () => completed };
 }
 const tick = () => new Promise(r => realTimeout(r, 0));
-const dana = () => ({ card_id: 'DANA-1', rfid_protocol: 'EM4100', name: "Dana's badge", rfid_data: { hex: '01' } });
+// setTimeout stubbed to collect callbacks; endHold() runs them, which is the refusal's hold
+// passing: the public way a refusal ends, back to the reader (R1 m9). Each test that calls
+// holdTimers() puts the real setTimeout back in its finally.
+let held = [];
+const holdTimers = () => { held = []; globalThis.setTimeout = (f) => { held.push(f); return 0; }; };
+const endHold = () => { while (held.length) held.shift()(); };
+const dana =() => ({ card_id: 'DANA-1', rfid_protocol: 'EM4100', name: "Dana's badge", rfid_data: { hex: '01' } });
 
 test('an access-list door with no requires shows the door screen', () => {
     window.inventory.items = [{ scenarioData: { type: 'rfid_cloner', saved_cards: [dana()] } }];
@@ -836,7 +845,8 @@ test('Emulate at an access list sends one card id and keeps the server answer fo
         g.handleEmulate(dana());
         await tick();
         assert.deepEqual(asked, [['DANA-1']], 'a single-id request');
-        assert.deepEqual(g.gameResult, { success: true, cardName: "Dana's badge", emulated: true, serverResponse: response });
+        assert.equal(g.gameResult.serverResponse, response, 'the server\'s answer kept for the door');
+        assert.equal(g.gameResult.cardName, "Dana's badge");
         assert.match(texts(), /Access Granted/);
         timers.forEach(f => f());
         assert.equal(done(), true);
@@ -851,13 +861,13 @@ test('a second press while the server is answering sends nothing more', async ()
     g.handleEmulate(dana());
     await tick();
     assert.equal(asked.length, 1);
-    globalThis.setTimeout = () => 0;
+    holdTimers();
     try { release({ outcome: 'denied' }); await tick(); } finally { globalThis.setTimeout = realTimeout; }
-    g._endDenial();
+    endHold();
 });
 
 test('a refused copy at an access list: "Card not accepted", reported as wrong_card', async () => {
-    globalThis.setTimeout = () => 0;
+    holdTimers();
     try {
         const { g, refused, done } = aclGame({ outcome: 'denied', response: { success: false } });
         g.handleEmulate(dana());
@@ -865,30 +875,30 @@ test('a refused copy at an access list: "Card not accepted", reported as wrong_c
         assert.match(texts(), /Card not accepted/);
         assert.deepEqual(refused, ['wrong_card']);
         assert.equal(done(), null);
-        g._endDenial();
+        endHold();
         const u = aclGame({ outcome: 'uid_only', response: { reason: 'uid_only' } });
         u.g.handleEmulate(dana());
         await tick();
         assert.match(texts(), /Reader requires full authentication/);
         assert.deepEqual(u.refused, ['uid_only']);
-        u.g._endDenial();
+        endHold();
     } finally { globalThis.setTimeout = realTimeout; }
 });
 
 test('no answer from the server is a notice, not a refusal', async () => {
-    globalThis.setTimeout = () => 0;
+    holdTimers();
     try {
         const { g, refused } = aclGame({ outcome: 'error', response: null });
         g.handleEmulate(dana());
         await tick();
         assert.match(texts(), /No answer from the reader/);
         assert.deepEqual(refused, []);
-        g._endDenial();
+        endHold();
     } finally { globalThis.setTimeout = realTimeout; }
 });
 
 test('a UID-only copy and a cancelled card are refused at an access list without asking', async () => {
-    globalThis.setTimeout = () => 0;
+    holdTimers();
     try {
         const uid = { card_id: 'EXEC-1', rfid_protocol: 'MIFARE_DESFire', name: 'Exec badge', rfid_data: {} };
         let t = aclGame({ outcome: 'unlocked', response: {} });
@@ -896,13 +906,13 @@ test('a UID-only copy and a cancelled card are refused at an access list without
         await tick();
         assert.deepEqual(t.asked, []);
         assert.deepEqual(t.refused, ['uid_only']);
-        t.g._endDenial();
+        endHold();
         // the lock takes UID-only copies: then the server is asked
         t = aclGame({ outcome: 'denied' }, { acceptsUIDOnly: true });
         t.g.handleEmulate(uid);
         await tick();
         assert.deepEqual(t.asked, [['EXEC-1']]);
-        t.g._endDenial();
+        endHold();
         window.isCardRevoked = (id) => id === 'DANA-1';
         t = aclGame({ outcome: 'unlocked', response: {} });
         t.g.handleEmulate(dana());
@@ -910,7 +920,7 @@ test('a UID-only copy and a cancelled card are refused at an access list without
         assert.deepEqual(t.asked, []);
         assert.deepEqual(t.refused, ['revoked']);
         assert.match(texts(), /Card cancelled/);
-        t.g._endDenial();
+        endHold();
     } finally { globalThis.setTimeout = realTimeout; delete window.isCardRevoked; }
 });
 
@@ -947,7 +957,7 @@ test('closed during the success hold: the door still opens, once', async () => {
 });
 
 test('a held card tapped at an access list is asked about on its own too', async () => {
-    globalThis.setTimeout = () => 0;
+    holdTimers();
     try {
         const { g, asked } = aclGame({ outcome: 'unlocked', response: { success: true, cardId: 'STAFF-2' } });
         g.handleCardTap({ scenarioData: { name: 'Staff badge', card_id: 'STAFF-2' } });
@@ -956,4 +966,96 @@ test('a held card tapped at an access list is asked about on its own too', async
         assert.equal(g.gameResult.emulated, false);
         assert.equal(g.gameResult.cardName, 'Staff badge');
     } finally { globalThis.setTimeout = realTimeout; }
+});
+
+// Review R1 m3: the badges the server refused are named as refused and not offered again
+test('refused badges: a line says so, and they are left out of the tap list', () => {
+    window.inventory.items = [{ scenarioData: { type: 'rfid_cloner', saved_cards: [dana()] } }];
+    const visitorCard = { scenarioData: { name: 'Visitor card 07', card_id: 'VISITOR-07' } };
+    const staff = { scenarioData: { name: 'Staff badge', card_id: 'STAFF-2' } };
+    const { g } = aclGame({ outcome: 'denied' }, { availableCards: [visitorCard, staff], refusedKeycards: ['VISITOR-07'] });
+    g.ui.showDoorScreen();
+    assert.match(texts(), /Your badge was refused\. Try a saved card\./);
+    assert.match(texts(), /Emulate Dana/);
+    assert.doesNotMatch(texts(), /Tap Visitor card 07/, 'the refused badge is not offered');
+    assert.match(texts(), /Tap Staff badge/, 'a badge not tried is still offered');
+    // two refused
+    const two = aclGame({ outcome: 'denied' }, { availableCards: [visitorCard, staff], refusedKeycards: ['VISITOR-07', 'STAFF-2'] });
+    two.g.ui.showDoorScreen();
+    assert.match(texts(), /Your badges were refused/);
+    assert.doesNotMatch(texts(), /Tap a card you hold/, 'no empty tap section');
+    // none refused: no line
+    const none = aclGame({ outcome: 'denied' }, { availableCards: [visitorCard] });
+    none.g.ui.showDoorScreen();
+    assert.doesNotMatch(texts(), /refused/);
+    assert.match(texts(), /Tap Visitor card 07/);
+    window.inventory.items = [];
+});
+
+// Review R1 m7: a tap shows it is being checked, and the list waits for the answer
+test('a tap at an access list shows "Checking" and the list does nothing until the answer', async () => {
+    window.inventory.items = [{ scenarioData: { type: 'rfid_cloner', saved_cards: [dana()] } }];
+    let release;
+    const staff = { scenarioData: { name: 'Staff badge', card_id: 'STAFF-2' } };
+    const { g, asked } = aclGame(() => new Promise(r => { release = r; }), { availableCards: [staff] });
+    let emulating = 0;
+    g.ui.showEmulationScreen = () => { emulating++; };
+    g.ui.showDoorScreen();
+    const rows = items();
+    assert.equal(rows.length, 2, 'Emulate Dana, Tap Staff badge');
+    rows[1].listeners.click();
+    await tick();
+    assert.deepEqual(asked, [['STAFF-2']]);
+    assert.match(texts(), /Checking Staff badge\.\.\./);
+    assert.ok(rows.every(r => r.disabled === true), 'every entry disabled');
+    rows[0].listeners.click();
+    rows[1].listeners.click();
+    assert.equal(emulating, 0, 'a second choice does not start');
+    assert.equal(asked.length, 1, 'nothing more is sent');
+    holdTimers();
+    try { release({ outcome: 'denied' }); await tick(); } finally { globalThis.setTimeout = realTimeout; }
+    assert.match(texts(), /Access Denied/);
+    endHold();
+    // back at the reader, the list works again
+    items()[0].listeners.click();
+    assert.equal(emulating, 1);
+    window.inventory.items = [];
+});
+
+// The close X sits inside the copier frame at every size (UI design language: the X is inside
+// the frame, never on its border), clear of the stepped corner, and the battery moves left
+test('the close X is placed inside the copier frame, clear of the corner and the battery', async () => {
+    const { RFIDMinigame: Copier, COPIER_CLOSE_INSET } = await import(minigameUrl);
+    assert.equal(Copier.closeInsideFrame, true);
+    const rect = (left, top, width, height) => ({ left, top, width, height, right: left + width, bottom: top + height });
+    const place = (win, frameRect, headerRect) => {
+        const btn = { style: {}, cls: [], classList: { add(...a) { btn.cls.push(...a); } }, getBoundingClientRect: () => rect(0, 0, 30, 30) };
+        const header = { style: { paddingRight: '99px' }, getBoundingClientRect: () => rect(...headerRect) };
+        const frame = { getBoundingClientRect: () => rect(...frameRect), querySelector: (s) => s === '.flipper-header' ? header : null };
+        const g = Object.create(Copier.prototype);
+        g.container = { querySelector: (s) => s === '#minigame-close' ? btn : null, getBoundingClientRect: () => rect(0, 0, ...win) };
+        g.gameContainer = { querySelector: (s) => s === '.flipper-zero-frame' ? frame : null };
+        g.params = {};
+        g.placeCloseButton();
+        const right = parseInt(btn.style.right, 10), top = parseInt(btn.style.top, 10);
+        return { btn, header, x0: win[0] - right - 30, x1: win[0] - right, y0: top, y1: top + 30 };
+    };
+    const prevStyle = window.getComputedStyle;
+    window.getComputedStyle = () => ({ paddingBottom: '10px', borderBottomWidth: '2px' });
+    try {
+        // 1400x1000: frame 436 x 586 at (482, 207); header row 396 x 34 inside the 20px padding
+        let p = place([1400, 1000], [482, 207, 436, 586], [502, 227, 396, 34]);
+        assert.equal(p.x1, 918 - COPIER_CLOSE_INSET, 'inside the right edge by the inset');
+        assert.ok(p.y0 >= 207 + COPIER_CLOSE_INSET, 'below the top edge by the inset');
+        assert.ok(p.y1 <= 227 + 34 - 2, 'above the rule under the header');
+        assert.ok(p.btn.cls.includes('minigame-close-in-frame'));
+        assert.equal(p.header.style.paddingRight, `${898 - p.x0 + 8}px`, 'the battery ends 8px left of the X');
+        // 390x844: the phone frame, 16px in from each side
+        p = place([390, 844], [16, 52, 358, 740], [36, 72, 318, 34]);
+        assert.ok(p.x0 >= 16 + COPIER_CLOSE_INSET && p.x1 <= 374 - COPIER_CLOSE_INSET, 'inside the phone frame');
+        assert.ok(p.y0 >= 52 + COPIER_CLOSE_INSET && p.y1 <= 52 + 740, 'inside it vertically');
+        // a frame taller than the window keeps the X on screen
+        p = place([390, 412], [16, -40, 358, 600], [36, -20, 318, 34]);
+        assert.ok(p.y0 >= COPIER_CLOSE_INSET, 'on screen');
+    } finally { window.getComputedStyle = prevStyle; }
 });

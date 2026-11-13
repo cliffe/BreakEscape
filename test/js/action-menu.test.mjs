@@ -136,14 +136,15 @@ test('Copy and Take carry pixel icons at whole-number scales', () => {
     assert.equal(take.icon.src, '/assets/icons/hand_frames.png');
     assert.equal(take.icon.frame, 0, 'the open hand');
     assert.equal(take.icon.cell, 32, '32px cells, x2 in the 64px box');
-    // Slice 3b (q90): the card copier's own 16px menu icon, at a whole-number scale
-    assert.equal(copy.icon.src, '/assets/icons/card-copier.png');
-    const k = copy.icon.width / 16;
-    assert.ok(Number.isInteger(k) && k >= 1, `width ${copy.icon.width} is a whole multiple of 16`);
-    assert.equal(copy.icon.height, 16 * k, 'the same multiple of 16');
-    const png = readFileSync(join(here, '../../public/break_escape/assets/icons/card-copier.png'));
-    assert.equal(png.readUInt32BE(16), 16, 'the icon file is 16px wide');
-    assert.equal(png.readUInt32BE(20), 16, 'and 16px tall');
+    // Slice 3b (q90, R1 m8): the card copier's own 32px menu icon, at x2 like the hand,
+    // so both entries have the same pixel density
+    assert.equal(copy.icon.src, '/assets/icons/card-copier-32.png');
+    assert.equal(copy.icon.width, 64, '32px at x2');
+    assert.equal(copy.icon.height, 64);
+    assert.equal(copy.icon.width / 32, take.icon.cell * 2 / 32, 'the hand\'s scale');
+    const png = readFileSync(join(here, '../../public/break_escape/assets/icons/card-copier-32.png'));
+    assert.equal(png.readUInt32BE(16), 32, 'the icon file is 32px wide');
+    assert.equal(png.readUInt32BE(20), 32, 'and 32px tall');
     assert.ok(copy.icon.width <= 64 && copy.icon.height <= 64, 'fits the 64px box');
 });
 

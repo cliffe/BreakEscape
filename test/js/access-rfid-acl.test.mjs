@@ -24,7 +24,8 @@ globalThis.__unlockedDoors = [];
 const stubs = {
     '../utils/constants.js': dataUrl('export const DOOR_ALIGN_OVERLAP = 64;'),
     '../core/rooms.js': dataUrl('export const rooms = {};'),
-    './doors.js': dataUrl('export function unlockDoor(door, roomData) { globalThis.__unlockedDoors.push([door, roomData]); }'),
+    // As the real unlockDoor, the door's own state is unlocked at once (doors.js props.locked = false)
+    './doors.js': dataUrl('export function unlockDoor(door, roomData) { if (door.doorProperties) door.doorProperties.locked = false; globalThis.__unlockedDoors.push([door, roomData]); }'),
     './minigame-starters.js': dataUrl('export function startLockpickingMinigame() {} export function startKeySelectionMinigame() {} export function startPinMinigame() {} export function startPasswordMinigame() {} export function startRansomwareDisplayMinigame() {} export function startBackupRecoveryMinigame() {} export function startInfusionPumpMinigame() {}'),
     './ui-sounds.js': dataUrl('export function playUISound() {}'),
     '../utils/locked-hint.js': dataUrl(readFileSync(join(js, 'utils/locked-hint.js'), 'utf8')),
@@ -178,7 +179,35 @@ test('keycards refused and copies saved: the copier opens at the reader in acces
     assert.deepEqual(p.requiredCardIds, [], 'an access-only door has no requires');
     assert.equal(p.readerName, 'Finance');
     assert.ok(!alerts.some(a => /None of your cards/.test(a[0])), 'no refusal toast over the copier');
-    assert.ok(!events.some(([n]) => n === 'door_unlock_failed'), 'the copier reports its own refusals');
+    // R1 m2: the reader refused a real badge, so listeners hear it, once, with no toast
+    const failed = events.filter(([n]) => n === 'door_unlock_failed');
+    assert.equal(failed.length, 1, 'one door_unlock_failed for the refused badge');
+    assert.equal(failed[0][1].reason, 'wrong_card');
+    assert.equal(failed[0][1].connectedRoom, 'finance_office', 'the same payload as a refused door');
+    assert.equal(events.filter(([n]) => n === 'door_unlock_failed:finance_office').length, 1);
+    assert.equal(alerts.length, 0, 'no toast');
+    // R1 m3: the copier is told which badges were refused, so it does not offer them again
+    assert.deepEqual(p.refusedKeycards, ['VISITOR-07']);
+});
+
+test('a uid_only refusal of the badges is reported as uid_only before the copier opens', async () => {
+    reset({ items: [keycard({ card_id: 'PRIYA-1' }), cloner([{ card_id: 'DANA-1' }])],
+        answer: refusal({ success: false, reason: 'uid_only' }) });
+    handleUnlock(door({ access: FINANCE }), 'door');
+    await settle();
+    assert.equal(rfidStarts.length, 1);
+    const failed = events.filter(([n]) => n === 'door_unlock_failed');
+    assert.equal(failed.length, 1);
+    assert.equal(failed[0][1].reason, 'uid_only');
+    assert.equal(alerts.length, 0);
+});
+
+test('no keycard held: the copier opens with no refused badges and no event', async () => {
+    reset({ items: [cloner([{ card_id: 'DANA-1' }])] });
+    handleUnlock(door({ access: FINANCE }), 'door');
+    await settle();
+    assert.deepEqual(rfidStarts[0][2].refusedKeycards, []);
+    assert.ok(!events.some(([n]) => n === 'door_unlock_failed'));
 });
 
 test('no keycard held and copies saved: the copier opens at once, with no request', async () => {
@@ -215,6 +244,89 @@ test('a copier closed before the yes still opens the door from the answer', asyn
         serverResponse: { success: true, type: 'door', roomData: { id: 'r' } } });
     assert.equal(globalThis.__unlockedDoors.length, 1);
     assert.equal(unlockCalls.length, 0);
+});
+
+// Review R1 M1: a late yes must not pop a container window over whatever the player is doing
+test('a late yes on an rfid object with contents unlocks it but does not open the container', async () => {
+    const contents = [{ id: 'ledger', type: 'notes' }];
+    reset({ items: [cloner([{ card_id: 'DANA-1', name: "Dana's badge" }])] });
+    const opened = [];
+    window.handleContainerInteraction = (obj) => opened.push(obj);
+    const timers = [];
+    const realSetTimeout = globalThis.setTimeout;
+    try {
+        const cabinet = object({ access: FINANCE, requires: '' });
+        handleUnlock(cabinet, 'item');
+        await settle();
+        globalThis.setTimeout = (f, ms) => { timers.push([f, ms]); return 0; };
+        rfidStarts[0][2].onLateAccessUnlock({ success: true, cardName: "Dana's badge", emulated: true,
+            serverResponse: { success: true, type: 'object', hasContents: true, contents } });
+        timers.forEach(([f]) => f());
+        assert.equal(cabinet.scenarioData.locked, false, 'unlocked');
+        assert.deepEqual(cabinet.scenarioData.contents, contents, 'its contents kept');
+        assert.equal(cabinet.scenarioData.isUnlockedButNotCollected, true, 'left for the player to open');
+        assert.ok(events.some(([n, d]) => n === 'item_unlocked' && d.itemId === 'finance_cabinet'));
+        assert.equal(alerts.at(-1)[0], "Opened with your copy of Dana's badge.");
+        assert.equal(opened.length, 0, 'handleContainerInteraction is not called');
+        // the copier still up when the yes lands (onComplete) opens it, as before
+        timers.length = 0;
+        globalThis.setTimeout = realSetTimeout;
+        const shelf = object({ id: 'finance_shelf', access: FINANCE, requires: '' });
+        handleUnlock(shelf, 'item');
+        await settle();
+        globalThis.setTimeout = (f, ms) => { timers.push([f, ms]); return 0; };
+        await rfidStarts[1][2].onComplete(true, { success: true, cardName: "Dana's badge", emulated: true,
+            serverResponse: { success: true, type: 'object', hasContents: true, contents } });
+        for (let i = 0; i < 3 && timers.length; i++) timers.splice(0).forEach(([f]) => f());
+        assert.equal(opened.length, 1, 'the container opens while the player is at it');
+        assert.equal(opened[0], shelf);
+    } finally {
+        globalThis.setTimeout = realSetTimeout;
+        delete window.handleContainerInteraction;
+    }
+});
+
+// Review R1 m6: two copiers on one door, both answered yes, open it once
+test('two copiers on one door both answered yes: one door_unlocked, and the open copier closes', async () => {
+    const yes = { success: true, type: 'door', roomData: { id: 'r' }, viaCopy: true };
+    reset({ items: [cloner([{ card_id: 'DANA-1', name: "Dana's badge" }])], answer: yes });
+    const d = door({ access: FINANCE });
+    handleUnlock(d, 'door');
+    await settle();
+    handleUnlock(d, 'door');
+    await settle();
+    assert.equal(rfidStarts.length, 2, 'the door was touched again while the first answer was out');
+    const [first, second] = [rfidStarts[0][2], rfidStarts[1][2]];
+    const closed = [];
+    window.MinigameFramework = { currentMinigame: { params: second, complete: (ok) => closed.push(ok) } };
+    try {
+        const result = { success: true, cardName: "Dana's badge", emulated: true, serverResponse: yes };
+        first.onLateAccessUnlock(result);
+        assert.deepEqual(closed, [false], 'the second copier, on the same door, is closed');
+        await second.onComplete(true, result);
+        await new Promise(r => setTimeout(r, 150));
+        assert.equal(events.filter(([n]) => n === 'door_unlocked').length, 1, 'one door_unlocked');
+        assert.equal(globalThis.__unlockedDoors.length, 1, 'unlockDoor once');
+        assert.equal(alerts.filter(a => a[2] === 'Access Granted').length, 1, 'one success toast');
+    } finally { delete window.MinigameFramework; }
+});
+
+// Review R1 m5: a cancelled keycard and nothing saved opens the copier on the reader, not its menu
+test('a copier with only a cancelled keycard at an access list opens on the reader', async () => {
+    reset({ items: [keycard({ card_id: 'OLD-1', name: 'Old badge' }), cloner([])] });
+    window.isCardRevoked = (id) => id === 'OLD-1';
+    try {
+        handleUnlock(door({ access: FINANCE }), 'door');
+        await settle();
+        assert.equal(unlockCalls.length, 0, 'a cancelled card is never sent');
+        assert.equal(rfidStarts.length, 1);
+        assert.equal(rfidStarts[0][2].accessList, true, 'reader mode, where the card is refused as cancelled');
+        // a lock with no access list keeps today's browse mode
+        reset({ items: [keycard({ card_id: 'OLD-1' }), cloner([])] });
+        handleUnlock(door({ requires: ['OTHER'] }), 'door');
+        await settle();
+        assert.equal(rfidStarts[0][2].accessList, undefined);
+    } finally { delete window.isCardRevoked; }
 });
 
 test('keycards refused and the copier empty: the refusal toast, no copier', async () => {
