@@ -80,11 +80,16 @@
     font-style: normal;
 }
 
+/* The header stays at the top of the frame while the list scrolls under it, so the X (in the
+   header's reserved corner) never sits over a row, and the title stays in view */
 .network-view-header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    margin: -10px -10px 0 -10px;
+    padding: 10px 48px 6px 10px;
+    background: #10161c;
     border-bottom: 2px solid #2d3a44;
-    padding-bottom: 6px;
-    /* Room for the X in the frame's corner */
-    padding-right: 40px;
 }
 
 .network-view-title {
