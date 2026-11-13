@@ -67,7 +67,7 @@
     overflow: hidden;
     /* Four 144px zones and the gaps the rule lines need: past this the body scrolls, so
        every zone and dashed rule stays reachable (critique B NSM1) */
-    min-width: 680px;
+    min-width: 760px;
     min-height: 340px;
     box-sizing: border-box;
 }

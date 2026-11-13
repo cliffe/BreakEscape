@@ -23,6 +23,7 @@
 }
 
 .cb-header {
+    flex-shrink: 0;
     min-height: 48px;
     padding: 10px 56px 10px 12px;
     display: flex;
@@ -351,6 +352,7 @@
 }
 
 .cb-entry-bar {
+    flex-shrink: 0;
     min-height: 50px;
     border-top: 2px solid #1e2d48;
     background: #0a0f1e;

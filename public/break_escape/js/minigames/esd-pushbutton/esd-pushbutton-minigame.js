@@ -101,7 +101,7 @@ export class EsdPushbuttonMinigame extends MinigameScene {
         const confirmDesc = this._sd.confirmDesc || 'This action is irreversible without manual reset.';
 
         this.gameContainer.innerHTML = `
-            <div class="esd-panel">
+            <div class="esd-panel pixel-scroll">
                 <div class="esd-label">${escapeHtml(displayDashes(label))}</div>
                 <div class="esd-housing">
                     <div class="esd-guard" id="esd-guard" aria-label="Safety Guard"></div>

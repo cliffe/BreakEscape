@@ -14,13 +14,19 @@
     max-height: 100%;
     margin: 0 auto;
     box-sizing: border-box;
-    overflow: auto;
+    overflow: hidden;
 }
 
 .esd-panel {
     position: relative;
     width: 100%;
     max-width: 600px;
+    /* The panel is the frame: on a short window its content scrolls inside it, so the
+       yellow border always wraps what shows (critique B ESD1) */
+    flex: 0 1 auto;
+    min-height: 0;
+    max-height: 100%;
+    overflow-y: auto;
     margin: 0 auto;
     padding: 20px;
     border: 2px solid #ffd12a;
