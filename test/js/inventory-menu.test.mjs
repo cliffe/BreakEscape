@@ -17,7 +17,7 @@ const dom = new JSDOM('<!doctype html><html><head></head><body></body></html>');
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const {
-    inventoryMenuFor, openInventoryItemMenu, dropBlockedReason, hasTriggerOnInteract, slotPoint
+    inventoryMenuFor, openInventoryItemMenu, dropBlockedReason, hasTriggerOnInteract, slotPoint, inventoryMenuIcon
 } = await import(pathToFileURL(join(js, 'systems/inventory-menu.js')).href);
 const { showInteractionMenu, isInteractionMenuOpen, closeInteractionMenu } = await import(pathToFileURL(join(js, 'ui/interaction-menu.js')).href);
 
@@ -95,7 +95,7 @@ test('an item no longer in the inventory, or with no data, has no menu', () => {
     assert.equal(menu(null), null);
 });
 
-test('the carried vest keeps its one click (a wearable that is not droppable has no menu)', () => {
+test('a carried vest with nothing to read keeps its one click (not droppable, no observations: no menu)', () => {
     // As the lab gives it (give_item): wearable, not droppable
     const vest = held({ id: 'kit_hivis_vest', type: 'aes_hivis_hook1', name: 'Hi-vis courier vest',
         sprite: 'aes_hivis_hook1', wearable: { costume: 'courier', global: 'courier_ready' } });
@@ -137,6 +137,43 @@ test('"Drop here" is greyed with a reason between rooms or in a doorway', () => 
     assert.equal(entries[1].disabled, undefined);
 });
 
+
+// UX slice 4 R1 m1: menu entries carry icons, at whole-number scale
+test('every tray menu entry has a pixel icon: the item picture for Use, shared icons for Drop and Examine', () => {
+    const el = held({ id: 'b10', name: 'Beacon', droppable: true, triggerOnInteract: [] });
+    Object.assign(el, { src: '/x/beacon.png', naturalWidth: 20, naturalHeight: 16 });
+    let shown;
+    openInventoryItemMenu(el, 10, 20, {
+        ctx: { inventoryItems: items, dropBlocked: null },
+        window: {},
+        dropBlockedReason: () => null,
+        showInteractionMenu: (entries) => { shown = entries; }
+    });
+    assert.deepEqual(shown.map(e => e.icon), [
+        { src: '/x/beacon.png', width: 60, height: 48 },
+        { src: '/break_escape/assets/icons/menu-drop.png', width: 64, height: 64 },
+        { src: '/break_escape/assets/icons/menu-examine.png', width: 64, height: 64 }
+    ]);
+    // The two shared icons are 32x32 PNGs, drawn at 2x like the hand icon
+    for (const f of ['menu-drop.png', 'menu-examine.png']) {
+        const b = readFileSync(join(js, '../assets/icons', f));
+        assert.equal(b.toString('ascii', 1, 4), 'PNG', f);
+        assert.deepEqual([b.readUInt32BE(16), b.readUInt32BE(20)], [32, 32], f);
+    }
+    // A picture larger than the 64px box is never shrunk (R2 m6): it gets the shared open hand,
+    // drawn at a whole-number scale; one that fits is scaled up by a whole number
+    const hand = inventoryMenuIcon('use', { src: 'a.png', naturalWidth: 100, naturalHeight: 50 });
+    assert.deepEqual(hand, { src: '/break_escape/assets/icons/hand_frames.png', frame: 0, cols: 4, cell: 32 });
+    assert.equal(Number.isInteger(64 / hand.cell), true);
+    assert.equal(inventoryMenuIcon('use', { src: 'a.png', naturalWidth: 65, naturalHeight: 10 }).src, hand.src);
+    assert.deepEqual(inventoryMenuIcon('use', { src: 'a.png', naturalWidth: 64, naturalHeight: 30 }), { src: 'a.png', width: 64, height: 30 });
+    assert.deepEqual(inventoryMenuIcon('use', { src: 'a.png', naturalWidth: 30, naturalHeight: 25 }), { src: 'a.png', width: 60, height: 50 });
+    assert.equal(inventoryMenuIcon('use', {}), undefined);
+    // The rendered menu draws them
+    showInteractionMenu(shown, 10, 20, 'Beacon', { numberKeys: true });
+    assert.equal(document.querySelectorAll('#be-interaction-menu .be-im-icon').length, 3);
+    closeInteractionMenu();
+});
 test('the tray click maps the entries onto drop, examine and use', () => {
     const calls = [];
     const el = held({ id: 'b9', name: 'Beacon', droppable: true, triggerOnInteract: [] });

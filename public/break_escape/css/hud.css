@@ -123,7 +123,8 @@ html .game-display-dialog {
   --combat-strip-height: 80px; /* inventory.css; ui-themes.css sets 108px */
   position: fixed;
   right: 24px;
-  bottom: 116px;
+  /* the strip grows by a classic scrollbar's height (UX slice 4 R2 m2) */
+  bottom: calc(116px + var(--tray-scrollbar, 0px));
   z-index: 1100;
   display: flex;
   gap: 28px;
@@ -270,18 +271,7 @@ html .game-display-dialog {
     overflow-y: hidden;
 }
 
-#inventory-container::-webkit-scrollbar {
-    height: 8px;
-}
-
-#inventory-container::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.1);
-}
-
-#inventory-container::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 4px;
-}
+/* The strip's scrollbar is the shared .pixel-scroll (utilities.css), set on the element */
 
 .inventory-slot {
     min-width: 64px;
@@ -403,7 +393,7 @@ html .game-display-dialog {
 @media (max-width: 899.98px) and (orientation: portrait),
        (max-width: 899.98px) and (min-height: 500.02px) {
   body:has(#combat-buttons) #hud-info-label {
-    bottom: 200px;
+    bottom: calc(200px + var(--tray-scrollbar, 0px));
   }
 }
 
