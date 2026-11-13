@@ -659,7 +659,7 @@ end
 # q94: desktopUser on a PC or laptop is { name, character? }: an object with a non-empty string name,
 # and character (if set) a non-empty string. A character with no <key>_headshot.png in the character
 # assets is a warning, since the desktop frame then shows a silhouette. Walks room objects (and
-# their contents and itemsHeld) and the starting inventory.
+# their contents and itemsHeld), NPC itemsHeld and the starting inventory. Warns when set on a sign-in PC.
 DESKTOP_USER_CHARS_DIR = File.join(File.expand_path('..', __dir__), 'public/break_escape/assets/characters')
 
 def check_desktop_users(json_data, chars_dir = DESKTOP_USER_CHARS_DIR)
@@ -670,6 +670,10 @@ def check_desktop_users(json_data, chars_dir = DESKTOP_USER_CHARS_DIR)
     if item.key?('desktopUser')
       du = item['desktopUser']
       where = "'#{path}' desktopUser"
+      if item['lockType'] == 'login' || item.key?('access')
+        issues << "⚠️ WARNING: #{where} is set on a sign-in PC (it has an access list or sign-in accounts): " \
+                  'the live session shows the signed-in user there, so desktopUser is ignored or conflicts. Remove it.'
+      end
       if !du.is_a?(Hash)
         issues << "❌ ERROR: #{where} must be an object { \"name\": \"...\", \"character\": \"...\" }."
       else
@@ -686,7 +690,7 @@ def check_desktop_users(json_data, chars_dir = DESKTOP_USER_CHARS_DIR)
           end
         end
         (du.keys - %w[name character]).each do |k|
-          issues << "⚠️ WARNING: #{where} has unknown field '#{k}' (known: name, character)."
+          issues << "❌ ERROR: #{where} has unknown field '#{k}' (known: name, character); the schema allows no others."
         end
       end
     end
@@ -703,6 +707,20 @@ def check_desktop_users(json_data, chars_dir = DESKTOP_USER_CHARS_DIR)
   end
   inv = json_data.is_a?(Hash) ? json_data['startItemsInInventory'] : nil
   inv.each_with_index { |obj, i| check.call(obj, "startItemsInInventory[#{i}]") } if inv.is_a?(Array)
+  # Objects an NPC carries (itemsHeld), on room NPCs and on the top-level npcs list.
+  npc_held = lambda do |npc, npath|
+    next unless npc.is_a?(Hash) && npc['itemsHeld'].is_a?(Array)
+
+    npc['itemsHeld'].each_with_index { |obj, i| check.call(obj, "#{npath}/itemsHeld[#{i}]") }
+  end
+  rooms.each do |room_id, room|
+    next unless room.is_a?(Hash) && room['npcs'].is_a?(Array)
+
+    room['npcs'].each_with_index { |n, i| npc_held.call(n, "rooms/#{room_id}/npcs[#{i}](#{(n.is_a?(Hash) && n['id']) || '?'})") }
+  end
+  if json_data.is_a?(Hash) && json_data['npcs'].is_a?(Array)
+    json_data['npcs'].each_with_index { |n, i| npc_held.call(n, "npcs[#{i}](#{(n.is_a?(Hash) && n['id']) || '?'})") }
+  end
   issues
 end
 

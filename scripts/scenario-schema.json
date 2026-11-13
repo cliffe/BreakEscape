@@ -5336,7 +5336,7 @@
         "host": { "type": "string", "description": "Networks 3.2: a PC's computer name (HB-FIN-02), on any PC or laptop. A sign-in PC's label on the network; on any PC the computer name in the desktop taskbar (q94). Default: its name. Not secret." },
         "desktopUser": {
           "type": "object",
-          "description": "q94: the user signed in on a PC or laptop that is not a sign-in PC, shown on its unlocked desktop and taskbar only (never on a lock or password screen). Authored text, not an account.",
+          "description": "q94: the user signed in on a PC or laptop that is not a sign-in PC, shown on its unlocked desktop and taskbar only (never on a lock or password screen). Authored text, not an account. It is sent to the browser with the room before the PC unlocks, so it must never hold a secret or a clue.",
           "required": ["name"],
           "additionalProperties": false,
           "properties": {

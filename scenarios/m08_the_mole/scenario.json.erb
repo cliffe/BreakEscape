@@ -2104,10 +2104,11 @@ CREDITS
           "type": "workstation",
           "id": "cyberchef_workstation",
           "name": "CyberChef Workstation",
-          "host": "CYBER-LAP-01",
+          "host": "LAB-DECODE-01",
           "takeable": false,
           "observations": "The lab's decoding station, CyberChef loaded and waiting. Whatever turns up encoded in this building, this is where it comes apart."
         },
+        <%# No host or desktopUser here on purpose: this is a text-only object that never opens a desktop, and a numbered host would pair with the lab terminal log clue. %>
         {
           "_comment": "Nightshade's desk. PASS 3 (P8): bare. The USB stick and the recruitment brief moved to his locker in the break room, so the signed mail no longer sits, decodable, in the room he is interviewed in. Type pc with no contents key keeps its desk slot and opens no container (interactions.js:1287).",
           "type": "pc",
