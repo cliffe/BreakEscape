@@ -256,8 +256,9 @@ export function applyTilePortrait(el, tile, ImageCtor = (typeof Image !== 'undef
 export function wholePixelOffset(rect, dpr = 1) {
     const snap = (v) => Math.round(v * dpr) / dpr - v;
     const x = snap(rect.left), y = snap(rect.top);
-    // Round off float noise, so a box already on whole pixels gets exactly 0
-    const tidy = (v) => (Math.abs(v) < 1e-6 ? 0 : Math.round(v * 1e4) / 1e4);
+    // Round off float noise, so a box already on whole pixels gets exactly 0. Six places,
+    // not four: Chrome lays out in 1/64px steps, and 0.0156 would lose the 0.015625 step (R4 m2)
+    const tidy = (v) => (Math.abs(v) < 1e-6 ? 0 : Math.round(v * 1e6) / 1e6);
     return { x: tidy(x), y: tidy(y) };
 }
 
@@ -290,8 +291,8 @@ export function snapInnerBoxes(root, dpr = 1, view = (typeof window !== 'undefin
             const left = pos === 'relative' ? base(cs?.left) : 0;
             const top = pos === 'relative' ? base(cs?.top) : 0;
             if (pos !== 'relative') el.style.position = 'relative';
-            if (x) el.style.left = `${Math.round((left + x) * 1e4) / 1e4}px`;
-            if (y) el.style.top = `${Math.round((top + y) * 1e4) / 1e4}px`;
+            if (x) el.style.left = `${Math.round((left + x) * 1e6) / 1e6}px`;
+            if (y) el.style.top = `${Math.round((top + y) * 1e6) / 1e6}px`;
         }
         moved.push(saved);
     }
@@ -560,6 +561,14 @@ export class PasswordMinigame extends MinigameScene {
             this._contentObserver = new MO(() => snap());
             this._contentObserver.observe(frame, { subtree: true, childList: true, characterData: true, attributes: true });
         }
+        // An image that finishes loading (the Add to Notepad icon) changes its line's layout
+        // with no DOM change; load does not bubble, so listen in the capture phase
+        frame.addEventListener('load', snap, true);
+        this._frameSnapHost = frame;
+        // A pixel font that arrives late re-flows the text the same way
+        const fonts = typeof document !== 'undefined' ? document.fonts : null;
+        if (fonts?.addEventListener) fonts.addEventListener('loadingdone', snap);
+        fonts?.ready?.then?.(() => { if (this._frameSnap === snap) snap(); });
     }
 
     /** Snap the frame and its boxes again now (a test or a caller that changed layout). */
@@ -569,7 +578,10 @@ export class PasswordMinigame extends MinigameScene {
 
     stopFrameSnap() {
         if (this._frameSnap && typeof window !== 'undefined') window.removeEventListener('resize', this._frameSnap);
+        if (this._frameSnap && this._frameSnapHost) this._frameSnapHost.removeEventListener('load', this._frameSnap, true);
+        if (this._frameSnap && typeof document !== 'undefined') document.fonts?.removeEventListener?.('loadingdone', this._frameSnap);
         this._frameSnap = null;
+        this._frameSnapHost = null;
         if (this._frameObserver) { this._frameObserver.disconnect(); this._frameObserver = null; }
         if (this._contentObserver) { this._contentObserver.disconnect(); this._contentObserver = null; }
     }

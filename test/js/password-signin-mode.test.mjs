@@ -883,6 +883,19 @@ test('R4 m2: odd boxes inside the frame are moved onto whole pixels, a positione
     }
 });
 
+test('R4 m2: the offset keeps Chrome\'s 1/64px layout step; a late image or font re-snaps', () => {
+    assert.deepEqual(wholePixelOffset({ left: 0, top: 702.984375 }), { x: 0, y: 0.015625 });
+    const src = readFileSync(join(js, 'minigames/password/password-minigame.js'), 'utf8');
+    assert.match(src, /frame\.addEventListener\('load', snap, true\)/);
+    assert.match(src, /addEventListener\('loadingdone', snap\)/);
+});
+
+test('R4 n2: the short-window sign-in screen has 4px gaps', () => {
+    const css = readFileSync(join(here, '../../public/break_escape/css/password-minigame.css'), 'utf8');
+    const short = css.slice(css.indexOf('@media (max-height: 640px)'));
+    assert.match(short, /\.password-frame \.signin-mode \.signin-screen \{\s*gap: 4px;\s*padding: 8px;/);
+});
+
 test('R4 m2: unsnapInnerBoxes puts back the inline values; nothing to move gives nothing', () => {
     const restore = mockRects([['.b', { left: 3.5, top: 4.5 }]]);
     try {
