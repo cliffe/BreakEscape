@@ -9,7 +9,7 @@
  * The monitor is the whole window: the X sits in the bezel's top strip, the footer buttons
  * (Add to Notepad) in its chin, and the PC's post-it is stuck on the chin just under the
  * screen. The chin grows to hold the note's measured height (R1 M1), and that height is
- * kept per PC and window size, so a view of the same PC without the note (a share window)
+ * kept per PC for the current window size, so a view of the same PC without the note (a share window)
  * keeps the same frame.
  *
  * The screen's content is drawn at a whole-number scale (R1 M2, `uiScale`): x2 once the
@@ -120,39 +120,59 @@ export function pcMonitorMetrics(viewW, viewH, { postitHeight = 0 } = {}) {
 }
 
 /**
- * The window space a minigame container offers: its own box, else the viewport, never
- * more than the visible viewport (R1 m5): on a phone `100vh` includes the area behind the
- * address bar, and the on-screen keyboard shrinks only the visual viewport.
+ * The window space a minigame container offers: its own box, else the viewport. The
+ * container in the PC view is `100dvh` tall (css/pc-monitor.css, R2 M3), so a phone's
+ * address bar is left out by the browser. The visual viewport is not read: a pinch zoom
+ * shrinks it (the frame would never grow, which is why a player pinches), and the
+ * on-screen keyboard pans it, while the field is kept in view by scrollIntoView. So the
+ * frame keeps one size from "before typing" to "typing".
  */
 export function pcViewSpace(container, view = (typeof window !== 'undefined' ? window : null)) {
     const r = container?.getBoundingClientRect?.();
-    let width = view?.innerWidth || 0;
-    let height = view?.innerHeight || 0;
-    if (r && r.width > 0 && r.height > 0) { width = r.width; height = r.height; }
-    const vv = view?.visualViewport;
-    if (vv && vv.width > 0 && vv.height > 0) {
-        width = Math.min(width, vv.width);
-        height = Math.min(height, vv.height);
-    }
-    return { width, height };
+    if (r && r.width > 0 && r.height > 0) return { width: r.width, height: r.height };
+    return { width: view?.innerWidth || 0, height: view?.innerHeight || 0 };
 }
 
-// The post-it heights measured per PC (R1 M1): pcId -> Map('WxH' -> height)
+/**
+ * The CSS zoom a box is drawn at (R2 m2): `currentCSSZoom` where the browser has it, else,
+ * inside the PC monitor's zoomed screen area, the area's drawn width over its layout width
+ * (the area's width is a whole number, so the ratio is the zoom). 1 anywhere else.
+ */
+export function cssZoomOf(el) {
+    const z = Number(el?.currentCSSZoom);
+    if (z > 0) return z;
+    const area = el?.closest?.('.pc-monitor-area');
+    const layout = Number(area?.offsetWidth) || 0;
+    const drawn = Number(area?.getBoundingClientRect?.()?.width) || 0;
+    if (layout > 0 && drawn > 0) {
+        const ratio = Math.round((drawn / layout) * 100) / 100;
+        if (ratio > 0) return ratio;
+    }
+    return 1;
+}
+
+// The post-it height measured per PC (R1 M1), at the window size it was measured at:
+// pcId -> { sizeKey, height }. One entry per PC (R2 m1): only the current size matters for
+// the frame staying put between that PC's views, so a resize replaces it.
 const postitHeights = new Map();
 
 /** The note height kept for a PC at a window size, or 0. */
 export function keptPostitHeight(pcId, sizeKey) {
-    return (pcId && postitHeights.get(pcId)?.get(sizeKey)) || 0;
+    const kept = pcId ? postitHeights.get(pcId) : null;
+    return (kept && kept.sizeKey === sizeKey) ? kept.height : 0;
 }
 
-/** Keep a PC's note height at a window size; the larger of the kept and the new one stays. */
+/** Keep a PC's note height at a window size: the new measurement replaces the old one. */
 export function keepPostitHeight(pcId, sizeKey, height) {
     if (!pcId || !(height > 0)) return 0;
-    let sizes = postitHeights.get(pcId);
-    if (!sizes) { sizes = new Map(); postitHeights.set(pcId, sizes); }
-    const kept = Math.max(sizes.get(sizeKey) || 0, Math.ceil(height));
-    sizes.set(sizeKey, kept);
+    const kept = Math.ceil(height);
+    postitHeights.set(pcId, { sizeKey, height: kept });
     return kept;
+}
+
+/** How many PCs have a kept note height (tests). */
+export function keptPostitCount() {
+    return postitHeights.size;
 }
 
 /** Forget the kept note heights (tests). */
@@ -294,11 +314,17 @@ export function mountPcMonitor(scene, { name = '', postitHtml = '', pcId = null,
         let noteH = keptPostitHeight(pcId, sizeKey);
         let m = apply(pcMonitorMetrics(space.width, space.height, { postitHeight: noteH }));
         if (parts.postit) {
-            // The note's width follows the frame, and the frame its height: settle in a few steps
+            // The note's width follows the frame, and the frame its height: settle in a few
+            // steps. The note's own measurement wins over the kept one (R2 m1: a height taken
+            // before the pixel font arrived may be a line too tall); within this update the
+            // larger measurement stays, so the loop cannot swing between two heights.
+            let measured = 0;
             for (let i = 0; i < 3; i++) {
-                const want = Math.max(noteH, Math.ceil(parts.postit.offsetHeight || 0));
-                if (want === noteH) break;
-                noteH = want;
+                const h = Math.ceil(parts.postit.offsetHeight || 0);
+                if (!(h > 0)) break;
+                measured = Math.max(measured, h);
+                if (measured === noteH) break;
+                noteH = measured;
                 m = apply(pcMonitorMetrics(space.width, space.height, { postitHeight: noteH }));
             }
             keepPostitHeight(pcId, sizeKey, noteH);
@@ -325,13 +351,11 @@ export function mountPcMonitor(scene, { name = '', postitHtml = '', pcId = null,
         else target.addEventListener(type, update);
     };
     listen(view, 'resize');
-    listen(view?.visualViewport, 'resize');
     // A pixel font that arrives late changes the note's height
     document.fonts?.ready?.then?.(() => { if (root.isConnected) update(); });
     parts.update = update;
     parts.destroy = () => {
         view?.removeEventListener?.('resize', update);
-        view?.visualViewport?.removeEventListener?.('resize', update);
         unwatch();
         container.classList?.remove?.('pc-view');
     };

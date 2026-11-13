@@ -8,7 +8,7 @@ import { resolveObjectField } from '../../utils/conditional-text.js';
 import { escapeHtml } from '../../utils/escape-html.js';
 import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { mentionsComputer } from '../../utils/computer-keywords.js';
-import { mountPcMonitor } from '../../utils/pc-monitor.js';
+import { mountPcMonitor, cssZoomOf } from '../../utils/pc-monitor.js';
 import { applyHeadshotBox, npcRecordFor, headshotSourceFor } from '../../utils/npc-headshot.js';
 
 
@@ -234,13 +234,16 @@ const TRANSFER_LABELS = {
  * name's width up to an even number of pixels once it is laid out, and again when the
  * pixel font arrives.
  */
+/** The desktop's scroll cue, the same words as the network view's (MORE_BELOW_TEXT there). */
+export const DESKTOP_MORE_BELOW_TEXT = 'More below';
+
 export function evenShareLabels(grid) {
     if (!grid?.querySelectorAll) return;
     const even = () => {
         for (const label of grid.querySelectorAll('.container-content-label')) {
             label.style.width = '';
             const w = label.getBoundingClientRect?.().width || 0;
-            const z = Number(label.currentCSSZoom) > 0 ? Number(label.currentCSSZoom) : 1;
+            const z = cssZoomOf(label);
             const local = w / z;
             if (!(local > 0)) continue;
             const target = Math.ceil(local - 1e-6) + (Math.ceil(local - 1e-6) % 2);
@@ -982,20 +985,48 @@ export class ContainerMinigame extends MinigameScene {
             <div class="container-minigame desktop-mode pc-desktop">
                 ${account ? `<div class="pc-desktop-topbar">${account}
                 </div>` : ''}
-                <div class="desktop-background">
+                <div class="desktop-background pixel-scroll">
                     <div class="desktop-icons" id="desktop-icons">
                         <!-- Desktop icons will be populated here -->
                     </div>
                 </div>
-                <div class="desktop-taskbar">
-                    <span class="desktop-taskbar-note pixel-scroll">${escapeHtml(displayDashes(note))}</span>
+                <div class="desktop-more" hidden aria-hidden="true"><span class="desktop-more-arrow"></span><span>${DESKTOP_MORE_BELOW_TEXT}</span></div>
+                ${(note || this.isTakeable) ? `<div class="desktop-taskbar">
+                    ${note ? `<span class="desktop-taskbar-note pixel-scroll">${escapeHtml(displayDashes(note))}</span>` : ''}
                     <div class="desktop-actions">
                         ${this.isTakeable ? '<button class="minigame-button" id="take-container-btn">Take Container</button>' : ''}
                     </div>
-                </div>
+                </div>` : ''}
             </div>
         `;
         this.applyAccountHeadshot();
+        this.watchDesktopScroll();
+    }
+
+    /**
+     * The icon area scrolls inside the screen when the icons run past its bottom (R2 M2): the
+     * pixel scrollbar, and "More below" under it while there is more to see, as in the
+     * network view. Re-checked on scroll, on a resize and once the fonts are in.
+     */
+    watchDesktopScroll() {
+        const area = this.gameContainer?.querySelector?.('.pc-desktop > .desktop-background');
+        const more = this.gameContainer?.querySelector?.('.pc-desktop > .desktop-more');
+        if (!area || !more) return;
+        this.desktopScrollArea = area;
+        this.desktopMoreElement = more;
+        this.addEventListener(area, 'scroll', () => this.updateDesktopScrollCue());
+        if (typeof window !== 'undefined') this.addEventListener(window, 'resize', () => this.updateDesktopScrollCue());
+        if (typeof document !== 'undefined') document.fonts?.ready?.then?.(() => this.updateDesktopScrollCue());
+    }
+
+    /** Show "More below" while the desktop's icons run past the icon area's bottom edge. */
+    updateDesktopScrollCue() {
+        const area = this.desktopScrollArea;
+        const more = this.desktopMoreElement;
+        if (!area || !more || more.isConnected === false) return false;
+        const below = (area.scrollHeight - area.clientHeight - area.scrollTop) > 2;
+        more.hidden = !below;
+        return below;
     }
 
     /**
@@ -1146,6 +1177,10 @@ export class ContainerMinigame extends MinigameScene {
             icon.appendChild(iconLabel);
             desktopIcons.appendChild(icon);
         });
+        this.updateDesktopScrollCue();
+        if (this.desktopMoreElement && typeof requestAnimationFrame === 'function') {
+            requestAnimationFrame(() => this.updateDesktopScrollCue());
+        }
     }
     
     setupEventListeners() {

@@ -6,7 +6,7 @@ import { escapeHtml } from '../../utils/escape-html.js';
 import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } from '../../utils/lock-scope-refusal.js';
 import { isComputerType } from '../../utils/computer-keywords.js';
-import { mountPcMonitor } from '../../utils/pc-monitor.js';
+import { mountPcMonitor, cssZoomOf } from '../../utils/pc-monitor.js';
 import { headshotCandidates, headshotKeys, noteMissingHeadshot, npcRecordFor, headshotSourceFor,
     SHORT_PORTRAIT_PX, TILE_PORTRAIT_PX, isTalkSheetSize, portraitCropOverride, headCropOffset, frameAlphaReader } from '../../utils/npc-headshot.js';
 // The portrait crop helpers live with the headshots (UX slice 2c R1 m8: the desktop bar
@@ -286,8 +286,9 @@ export function snapInnerBoxes(root, dpr = 1, view = (typeof window !== 'undefin
             rec.x = tidy(rec.x + x);
             rec.y = tidy(rec.y + y);
             // The moves are measured on screen; inside the PC monitor's scaled screen (CSS
-            // zoom, UX slice 2c R1 M2) a length on the box is drawn `zoom` times larger
-            const z = Number(el.currentCSSZoom) > 0 ? Number(el.currentCSSZoom) : 1;
+            // zoom, UX slice 2c R1 M2) a length on the box is drawn `zoom` times larger; the
+            // zoom is measured where the browser has no currentCSSZoom (R2 m2)
+            const z = cssZoomOf(el);
             const lx = tidy(rec.x / z), ly = tidy(rec.y / z);
             if (rec.mode === 'translate') {
                 el.style.translate = `${lx}px ${ly}px`;
@@ -465,7 +466,8 @@ export class PasswordMinigame extends MinigameScene {
         }
         return {
             ...super.getTestState(),
-            attemptsText: (this.attemptsDisplay?.innerText || '').trim() || null,
+            // A PC's screen has no counter (R2 M1): the count comes from the game data
+            attemptsText: (this.attemptsDisplay?.innerText || '').trim() || (this.pcMonitor && !this.join ? String(this.gameData.attempts) : null),
             hasPasswordField: !!document.getElementById('password-field'),
             // Type into field 0 then clickText('Submit'), or type(0, pw, {submit:true}).
             entryHint: 'type(0, "<password>", { submit: true })'
@@ -757,7 +759,9 @@ export class PasswordMinigame extends MinigameScene {
 
         // Name the lock over the field, as the PIN keypad does ("Enter PIN: Cable
         // Vault"); the framework hides the header, so it read just "Password:" (m07 #5)
-        const fieldLabel = this.join ? 'Network key' : passwordFieldLabel(this.params.title);
+        // In the PC monitor the bezel names the PC, so the label is the sign-in form's plain
+        // "Password:" (UX slice 2c R2 M1)
+        const fieldLabel = this.join ? 'Network key' : (this.pcMonitor ? 'Password:' : passwordFieldLabel(this.params.title));
         const kind = passwordScreenKind({ join: this.join, lockable: this.params.lockable || this.params.sprite });
         // The framework hides the header, so a Wi-Fi prompt names its network on the panel
         const promptTitle = this.join ? `Join Wi-Fi: ${this.join.apName || 'network'}` : '';
@@ -769,6 +773,12 @@ export class PasswordMinigame extends MinigameScene {
         // no second bezel, and the post-it is on the monitor's chin (mountPcMonitor)
         const inMonitor = !!this.pcMonitor;
         const observations = imageData?.observations || '';
+        // The PC's OS has one button look (R2 M1): the theme's thin skin (css/pc-monitor.css)
+        const osBtn = inMonitor ? ' pc-os-btn' : '';
+        const keyboardToggle = this.gameData.showKeyboard ? `
+                        <button type="button" class="keyboard-toggle-btn${inMonitor ? ' pc-os-btn pc-os-icon-btn' : ''}" id="keyboard-toggle">
+                            <img class="icon-keyboard" src="/break_escape/assets/objects/keyboard1.png" alt="Toggle keyboard">
+                        </button>` : '';
 
         this.gameContainer.innerHTML = `
             <div class="password-minigame-area${kind === 'prompt' ? ' prompt-mode' : ''}${caseLock ? ' case-lock' : ''}${inMonitor ? ' pc-screen-area' : ''}">
@@ -795,17 +805,17 @@ export class PasswordMinigame extends MinigameScene {
                                        class="password-field"
                                        placeholder="${this.join ? 'Enter key...' : 'Enter password...'}"
                                        maxlength="50">
-                                <button type="button" class="toggle-password-btn" id="toggle-password">
+                                <button type="button" class="toggle-password-btn${inMonitor ? ' pc-os-btn pc-os-icon-btn' : ''}" id="toggle-password">
                                     <img class="icon-small" src="/break_escape/assets/icons/${this.gameData.showPassword ? 'visible.png' : 'hidden.png'}" alt="Toggle password visibility">
-                                </button>
+                                </button>${inMonitor ? keyboardToggle : ''}
                             </div>
                         </div>
 
                         <div class="hint-controls">
                             ${this.gameData.showHint ? `
-                                <button type="button" class="hint-btn" id="show-hint">Show Hint</button>
+                                <button type="button" class="hint-btn${osBtn}" id="show-hint">Show Hint</button>
                             ` : ''}
-                            <button type="button" class="submit-btn" id="submit-password">Submit</button>
+                            <button type="button" class="submit-btn${osBtn}" id="submit-password">Submit</button>
                         </div>
                         ${this.gameData.showHint ? `
                             <div class="password-hint-container">
@@ -824,13 +834,8 @@ export class PasswordMinigame extends MinigameScene {
                     </div>
                 ` : ''}
                 
-                <div class="password-controls">
-                    ${this.gameData.showKeyboard ? `
-                        <button type="button" class="keyboard-toggle-btn" id="keyboard-toggle">
-                            <img class="icon-keyboard" src="/break_escape/assets/objects/keyboard1.png" alt="Toggle keyboard">
-                        </button>
-                    ` : ''}
-                </div>
+                ${inMonitor ? '' : `<div class="password-controls">${keyboardToggle}
+                </div>`}
                 
                 ${this.gameData.showKeyboard ? `
                     <div class="onscreen-keyboard" id="onscreen-keyboard" style="display: ${this.gameData.keyboardVisible ? 'flex' : 'none'}">
@@ -888,7 +893,7 @@ export class PasswordMinigame extends MinigameScene {
                     </div>
                 ` : ''}
                 
-                ${this.join ? '' : `
+                ${(this.join || inMonitor) ? '' : `
                 <div class="attempts-counter">
                     Attempts: <span id="attempts-display">${escapeHtml(this.gameData.attempts)}</span>/${escapeHtml(this.gameData.maxAttempts)}
                 </div>
@@ -1123,9 +1128,11 @@ export class PasswordMinigame extends MinigameScene {
         this.showScreenMessage('');
 
         this.gameData.attempts++;
-        this.attemptsDisplay.textContent = this.gameData.attempts;
-        // The counter is on screen after each try, even in a short window (UX slice 2a R2 M2)
-        revealInFrame(this.attemptsDisplay?.closest?.('.attempts-counter') || this.attemptsDisplay);
+        if (this.attemptsDisplay) this.attemptsDisplay.textContent = this.gameData.attempts;
+        // The counter is on screen after each try, even in a short window (UX slice 2a R2 M2).
+        // A PC's screen has no counter: its message line carries the count and is revealed
+        // when it is written (UX slice 2c R2 M1)
+        revealInFrame(this.attemptsDisplay?.closest?.('.attempts-counter') || this.attemptsDisplay || this.passwordMessageEl);
 
         // SECURITY: ALWAYS use server-side validation for password attempts
         const apiClient = window.ApiClient || window.APIClient;
@@ -1215,7 +1222,7 @@ export class PasswordMinigame extends MinigameScene {
                 // The PC the lock sits on is off, not responding or out of reach (review R4
                 // m2): not an attempt and not a wrong password, so say why and close as cancelled
                 this.gameData.attempts--;
-                this.attemptsDisplay.textContent = this.gameData.attempts;
+                if (this.attemptsDisplay) this.attemptsDisplay.textContent = this.gameData.attempts;
                 this.cleanup();
                 this.showScreenMessage(LOCK_SCOPE_REFUSAL_TEXT[refusal], { closeAfterMs: 2000 });
                 this.gameResult = { success: false, reason: 'cancelled', cancelled: true, refused: refusal,
@@ -1226,7 +1233,7 @@ export class PasswordMinigame extends MinigameScene {
                 this.showScreenMessage('Network error. Please try again.');
                 // Decrease attempts counter since this wasn't a real attempt
                 this.gameData.attempts--;
-                this.attemptsDisplay.textContent = this.gameData.attempts;
+                if (this.attemptsDisplay) this.attemptsDisplay.textContent = this.gameData.attempts;
             }
         }
     }
@@ -1428,7 +1435,7 @@ export class PasswordMinigame extends MinigameScene {
                         <div class="signin-form" id="signin-form">
                             <div class="signin-selected-row">
                                 <div class="signin-selected" id="signin-selected"></div>
-                                <button type="button" class="signin-change" id="signin-change">Change</button>
+                                <button type="button" class="signin-change${inMonitor ? ' pc-os-btn' : ''}" id="signin-change">Change</button>
                             </div>
                             <div class="signin-field-row" id="signin-username-row">
                                 <label for="signin-username">Username:</label>
@@ -1438,13 +1445,13 @@ export class PasswordMinigame extends MinigameScene {
                                 <label for="password-field">Password:</label>
                                 <div class="password-field-wrapper">
                                     <input type="password" id="password-field" class="password-field" placeholder="Password" maxlength="64" autocomplete="off">
-                                    <button type="button" class="toggle-password-btn" id="toggle-password">
+                                    <button type="button" class="toggle-password-btn${inMonitor ? ' pc-os-btn pc-os-icon-btn' : ''}" id="toggle-password">
                                         <img class="icon-small" src="/break_escape/assets/icons/hidden.png" alt="Toggle password visibility">
                                     </button>
                                 </div>
                             </div>
                             <div class="hint-controls">
-                                <button type="button" class="submit-btn" id="submit-password">Sign in</button>
+                                <button type="button" class="submit-btn${inMonitor ? ' pc-os-btn' : ''}" id="submit-password">Sign in</button>
                             </div>
                         </div>${capturedHtml}
                         <div class="signin-message" id="signin-message" aria-live="polite"></div>

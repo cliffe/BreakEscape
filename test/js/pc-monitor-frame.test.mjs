@@ -35,7 +35,7 @@ const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true 
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const imp = (rel) => import(pathToFileURL(join(dir, rel)));
-const { pcMonitorMetrics, pcViewSpace, mountPcMonitor, resetPostitHeights, keptPostitHeight, PC_BEZEL, PC_SCREEN_ASPECT, PC_PORTRAIT_ASPECT, PC_SCREEN_MIN,
+const { pcMonitorMetrics, pcViewSpace, mountPcMonitor, resetPostitHeights, keptPostitHeight, keepPostitHeight, keptPostitCount, cssZoomOf, PC_BEZEL, PC_SCREEN_ASPECT, PC_PORTRAIT_ASPECT, PC_SCREEN_MIN,
     PC_POSTIT_GAP, PC_POSTIT_CLEAR, PC_FRAME_EDGE } = await imp('utils/pc-monitor.js');
 const { headshotKeys, headshotCandidates, headshotUrl, characterKey, noteMissingHeadshot, resetMissingHeadshots, npcRecordFor, applyHeadshotBox } = await imp('utils/npc-headshot.js');
 const { PasswordMinigame, applyTilePortrait } = await imp('minigames/password/password-minigame.js');
@@ -143,11 +143,38 @@ test('R1 M2: the screen content scales in whole steps: x2 at 1400x1000, x1 at th
     assert.equal(pcMonitorMetrics(1920, 1080).uiScale, 2, 'capped by the 1120x700 screen');
 });
 
-test('R1 m5: the space is never more than the visible viewport', () => {
+test('R2 M3: the space is the container\'s 100dvh box; a pinch zoom or the keyboard\'s pan does not change it', () => {
     const container = { getBoundingClientRect: () => ({ width: 390, height: 844 }) };
-    assert.deepEqual(pcViewSpace(container, { innerWidth: 390, innerHeight: 844 }), { width: 390, height: 844 });
-    const view = { innerWidth: 390, innerHeight: 844, visualViewport: { width: 390, height: 700 } };
-    assert.deepEqual(pcViewSpace(container, view), { width: 390, height: 700 }, 'the address bar or keyboard takes the rest');
+    const base = pcViewSpace(container, { innerWidth: 390, innerHeight: 844 });
+    assert.deepEqual(base, { width: 390, height: 844 });
+    // A pinch at x2: the visual viewport is half the size, the frame is not rebuilt smaller
+    const pinched = { innerWidth: 390, innerHeight: 844, visualViewport: { width: 195, height: 422, scale: 2, offsetTop: 0, offsetLeft: 0 } };
+    assert.deepEqual(pcViewSpace(container, pinched), base, 'scale 2 gives the same space as scale 1');
+    assert.equal(JSON.stringify(pcMonitorMetrics(pcViewSpace(container, pinched).width, pcViewSpace(container, pinched).height)),
+        JSON.stringify(pcMonitorMetrics(base.width, base.height)), 'and the same metrics');
+    // The iOS keyboard pans the visual viewport: the frame neither moves nor shrinks
+    const keyboard = { innerWidth: 390, innerHeight: 844, visualViewport: { width: 390, height: 500, scale: 1, offsetTop: 120, offsetLeft: 0 } };
+    assert.deepEqual(pcViewSpace(container, keyboard), base, 'offsetTop 120 leaves it unchanged');
+    // With no box yet, the window's size
+    assert.deepEqual(pcViewSpace(null, { innerWidth: 800, innerHeight: 600 }), { width: 800, height: 600 });
+    const frame = css('pc-monitor.css');
+    const rule = frame.slice(frame.indexOf('.minigame-container.pc-view {'), frame.indexOf('}', frame.indexOf('.minigame-container.pc-view {')));
+    assert.match(rule, /height: 100vh;\s*height: 100dvh;/, '100dvh with the 100vh fallback first');
+    assert.doesNotMatch(readFileSync(join(js, 'utils/pc-monitor.js'), 'utf8'), /visualViewport\??\.(add|remove)EventListener|listen\(view\?\.visualViewport/, 'no visual viewport listener');
+});
+
+test('R2 m2: cssZoomOf reads currentCSSZoom, else the screen area\'s drawn-to-layout ratio', () => {
+    assert.equal(cssZoomOf({ currentCSSZoom: 2 }), 2);
+    const area = { offsetWidth: 560, getBoundingClientRect: () => ({ width: 1120 }) };
+    const inside = { closest: (sel) => (sel === '.pc-monitor-area' ? area : null) };
+    assert.equal(cssZoomOf(inside), 2, 'no currentCSSZoom, a 2:1 rect-to-offset ratio');
+    assert.equal(cssZoomOf({ closest: () => null }), 1, 'outside the monitor');
+    assert.equal(cssZoomOf(null), 1);
+    for (const rel of ['minigames/password/password-minigame.js', 'minigames/container/container-minigame.js']) {
+        const src = readFileSync(join(js, rel), 'utf8');
+        assert.doesNotMatch(src, /Number\(\w+\.currentCSSZoom\)/, `${rel}: through cssZoomOf only`);
+        assert.match(src, /cssZoomOf\(/, rel);
+    }
 });
 
 // ── Headshots ────────────────────────────────────────────────────────────────
@@ -302,19 +329,19 @@ async function signInScreen() {
     return mg;
 }
 
-async function desktop({ showPostit = true, observations = 'A hot desk.' } = {}) {
+async function desktop({ showPostit = true, observations = 'A hot desk.', contents = null } = {}) {
     document.body.innerHTML = '<div id="mg"></div>';
     window.inventory = { items: [] };
     window.breakEscapeConfig = { gameId: 7 };
     window.eventDispatcher = { emit: () => {} };
     window.ApiClient = { login: async () => ({ success: true, npcId: 'sam', username: 'sokafor', displayName: 'Sam Okafor', via: 'password' }) };
-    window.fetch = globalThis.fetch = async () => ({ ok: true, status: 200, json: async () => ({ contents: [] }) });
+    window.fetch = globalThis.fetch = async () => ({ ok: true, status: 200, json: async () => ({ contents: contents || [] }) });
     window.pcSessions = new PcSessions();
     await window.pcSessions.signIn('hot_desk', 'sokafor', 'x');
     window.npcManager = { npcs: new Map([['sam', { id: 'sam', spriteSheet: 'male_office_worker_v2' }]]), getNPC(id) { return this.npcs.get(id); } };
     window.MinigameFramework = { currentMinigame: null, endMinigame: () => {} };
     const containerItem = { scenarioData: { id: 'hot_desk', type: 'pc', name: 'Hot desk PC', locked: true, lockType: 'login', observations, postitNote: 'Sam: sokafor / x', showPostit } };
-    const mg = new ContainerMinigame(document.getElementById('mg'), { title: 'Hot desk PC', containerItem, contents: null, desktopMode: true, showCancel: true, cancelText: 'Close' });
+    const mg = new ContainerMinigame(document.getElementById('mg'), { title: 'Hot desk PC', containerItem, contents, desktopMode: true, showCancel: true, cancelText: 'Close' });
     window.MinigameFramework.currentMinigame = mg;
     await mg.init();
     return mg;
@@ -490,6 +517,97 @@ test('R1 M3: a long description is all in the taskbar, wrapped and scrolled, nev
         assert.match(rule, /max-height: \d+px/, sel);
         assert.match(rule, /overflow-y: auto/, sel);
     }
+});
+
+test('R2 m1: one kept note height per PC, replaced on a resize; a smaller measurement lowers the chin', async () => {
+    resetPostitHeights();
+    keepPostitHeight('pc', '800x600', 60);
+    keepPostitHeight('pc', '1400x1000', 40);
+    keepPostitHeight('pc', '800x600', 52);
+    assert.equal(keptPostitCount(), 1, 'one entry for the PC');
+    assert.equal(keptPostitHeight('pc', '800x600'), 52, 'the last measurement, not the larger');
+    assert.equal(keptPostitHeight('pc', '1400x1000'), 0, 'the other size is gone');
+    resetPostitHeights();
+    // Mounted: a height kept before the font arrived (72) is lowered by the note's own 52
+    const restore = sizeWindow(800, 600);
+    const unstub = stubNoteHeight(52);
+    try {
+        keepPostitHeight('hot_desk', '800x600', 72);
+        const a = await signInScreen();
+        assert.equal(keptPostitHeight('hot_desk', '800x600'), 52, 'lowered to the measured height');
+        const want = pcMonitorMetrics(800, 600, { postitHeight: 52 });
+        assert.equal(document.querySelector('.pc-monitor').style.height, `${want.height}px`, 'the chin follows it down');
+        a.cleanup?.();
+    } finally {
+        unstub();
+        restore();
+        resetPostitHeights();
+    }
+});
+
+const manyIcons = (n) => Array.from({ length: n }, (_, i) => ({ id: `f${i}`, type: 'text_file', name: `File ${i + 1}.txt`, takeable: true }));
+
+function stubScroll(sel, { scrollHeight, clientHeight }) {
+    const el = document.querySelector(sel);
+    Object.defineProperty(el, 'scrollHeight', { configurable: true, get: () => scrollHeight });
+    Object.defineProperty(el, 'clientHeight', { configurable: true, get: () => clientHeight });
+    return el;
+}
+
+test('R2 M2: the desktop\'s icon area has the pixel scrollbar and "More below" while icons run past it', async () => {
+    const restore = sizeWindow(1400, 1000);
+    try {
+        const mg = await desktop({ contents: manyIcons(8) });
+        const area = document.querySelector('.pc-desktop > .desktop-background');
+        assert.ok(area.classList.contains('pixel-scroll'), 'the scroller has pixel-scroll');
+        assert.equal(document.querySelectorAll('#desktop-icons .desktop-icon').length, 8);
+        const more = document.querySelector('.pc-desktop > .desktop-more');
+        assert.ok(more, 'the cue is there');
+        assert.equal(more.textContent.trim(), 'More below');
+        stubScroll('.pc-desktop > .desktop-background', { scrollHeight: 400, clientHeight: 250 });
+        area.scrollTop = 0;
+        area.dispatchEvent(new window.Event('scroll'));
+        assert.equal(more.hidden, false, 'shown while there is more below');
+        area.scrollTop = 150;
+        area.dispatchEvent(new window.Event('scroll'));
+        assert.equal(more.hidden, true, 'hidden at the end');
+        mg.cleanup?.();
+    } finally {
+        restore();
+    }
+    const box = css('container-minigame.css');
+    const cue = box.slice(box.indexOf('.pc-monitor .pc-desktop > .desktop-more {'));
+    assert.match(cue, /border-top: 2px solid/);
+    const network = readFileSync(join(js, 'minigames/network-view/network-view-minigame.js'), 'utf8');
+    assert.match(network, /MORE_BELOW_TEXT = 'More below'/, 'the same words as the network view');
+});
+
+test('R2 m4: no taskbar strip under a desktop with no description and nothing to take', async () => {
+    const restore = sizeWindow(390, 844);
+    try {
+        const a = await desktop({ observations: '' });
+        assert.equal(document.querySelector('.desktop-taskbar'), null, 'no empty strip');
+        a.cleanup?.();
+        const b = await desktop({ observations: 'A hot desk.' });
+        assert.ok(document.querySelector('.desktop-taskbar .desktop-taskbar-note'), 'a description keeps it');
+        b.cleanup?.();
+    } finally {
+        restore();
+    }
+});
+
+test('R2 m3 and m5: icon labels on the monitor have the dark backing, not the outline; the bezel name is 16px at x2', () => {
+    const box = css('container-minigame.css');
+    const start = box.indexOf('.pc-monitor .pc-desktop .desktop-icon-label {');
+    const label = box.slice(start, box.indexOf('}', start));
+    assert.match(label, /text-shadow: none;/);
+    assert.match(label, /border: 2px solid/);
+    assert.match(label, /background: #101820;/);
+    assert.match(label, /padding: 0 6px;/);
+    const frame = css('pc-monitor.css');
+    const s = frame.indexOf('.pc-monitor[data-ui-scale="2"] .pc-monitor-name {');
+    assert.ok(s > 0, 'an x2 rule for the name');
+    assert.match(frame.slice(s, frame.indexOf('}', s)), /font-size: 16px;\s*line-height: 16px;/);
 });
 
 // ── The one rule in CSS ──────────────────────────────────────────────────────

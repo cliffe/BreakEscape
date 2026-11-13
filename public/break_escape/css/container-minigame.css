@@ -833,9 +833,62 @@
     line-height: 18px;
 }
 
+/* On the monitor's wallpaper a label has the dark backing of every other line of text there
+   (.pc-screen-note, R1 m3) instead of the outline: at x2 the 2px outline became 4px and
+   filled the letters in (R2 m3) */
 .pc-monitor .pc-desktop .desktop-icon-label {
     align-self: stretch;
+    box-sizing: border-box;
     line-height: 18px;
+    padding: 0 6px;
+    background: #101820;
+    border: 2px solid #2a3a48;
+    color: #dde6ee;
+    text-shadow: none;
+}
+
+/* "More below" under the icon area while the icons run past it (R2 M2), the network view's
+   cue: a flat strip with a 2px top edge and a stepped arrow */
+.pc-monitor .pc-desktop > .desktop-more {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 2px 8px;
+    background: #1d2a36;
+    border-top: 2px solid #2d3a44;
+    color: #9ee6ff;
+    font-size: 16px;
+    line-height: 18px;
+}
+
+.pc-monitor .pc-desktop > .desktop-more[hidden] {
+    display: none;
+}
+
+/* A stepped down arrow, 12 x 6 in 2px steps (rows 12, 8 and 4 wide) */
+.desktop-more-arrow {
+    width: 12px;
+    height: 6px;
+    background: #9ee6ff;
+    clip-path: polygon(0 0, 12px 0, 12px 2px, 10px 2px, 10px 4px, 8px 4px, 8px 6px,
+                       4px 6px, 4px 4px, 2px 4px, 2px 2px, 0 2px);
+}
+
+/* Take Container on the taskbar: the PC's one button look, the theme's thin skin (R2 M1) */
+.pc-monitor .desktop-taskbar .minigame-button {
+    margin: 0;
+    padding: 0 8px;
+    font-size: 16px;
+    line-height: 16px;
+}
+
+[data-ui-theme] .pc-monitor .desktop-taskbar .minigame-button {
+    border-width: var(--ui-small-button-px);
+    border-image-source: var(--ui-small-button-image);
+    border-image-slice: var(--ui-small-button-slice) fill;
+    border-image-width: var(--ui-small-button-px);
 }
 
 .pc-desktop-topbar .desktop-claim-line,

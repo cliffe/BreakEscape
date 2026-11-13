@@ -937,6 +937,51 @@ test('R4 n1: an empty Submit brings the post-it into view first, then the line',
     assert.equal(q('#password-message').textContent, 'Please enter a password');
 });
 
+// UX slice 2c R2 M1: a PC's password screen is the sign-in form's twin
+test('2c R2 M1: a PC\'s password screen: "Password:", no attempts badge, the keyboard beside the eye, one button look', async () => {
+    const { mg } = openPlain({ title: 'Kevin\'s Workstation', showKeyboard: true });
+    assert.ok(q('.pc-monitor'), 'in the PC monitor');
+    assert.equal(q('.attempts-counter'), null, 'no attempts badge');
+    assert.equal(q('label[for="password-field"]').textContent, 'Password:', 'the plain label, no PC name');
+    const row = q('.password-field-wrapper');
+    const eye = q('#toggle-password'), keys = q('#keyboard-toggle');
+    assert.ok(keys && row.contains(keys) && row.contains(eye), 'the keyboard toggle is in the field row');
+    assert.equal(eye.nextElementSibling, keys, 'beside the eye');
+    assert.equal(q('.password-controls'), null, 'no separate keyboard tile');
+    for (const b of [eye, keys, q('#submit-password')]) assert.ok(b.classList.contains('pc-os-btn'), `${b.id}: the OS button look`);
+    // A wrong password: the message line carries the count, and the test state still reads it
+    mg.passwordField.value = 'wrong';
+    mg.gameData.attempts = 1;
+    mg.passwordIncorrect();
+    assert.match(q('#password-message').textContent, /2 attempts remaining/);
+    assert.equal(mg.getTestState().attemptsText, '1');
+    mg.cleanup?.();
+    // The sign-in screen's buttons wear the same look
+    document.body.innerHTML = '<div id="mg"></div>';
+    window.MinigameFramework = { currentMinigame: null, endMinigame: () => {} };
+    const s = new PasswordMinigame(document.getElementById('mg'), {
+        title: 'Sign in', signIn: { pcId: 'hot_desk', pcName: 'Hot desk PC', picker: 'accounts', tiles: [{ username: 'sokafor', displayName: 'Sam Okafor' }] }
+    });
+    window.MinigameFramework.currentMinigame = s;
+    s.init();
+    for (const id of ['#submit-password', '#signin-change', '#toggle-password']) assert.ok(q(id).classList.contains('pc-os-btn'), `${id}: the OS button look`);
+    s.cleanup?.();
+    // Outside a PC the old frame keeps its badge and keyboard tile
+    const { mg: safe } = openPlain({ title: 'Wall safe', lockable: { scenarioData: { id: 'safe1', type: 'safe' } }, showKeyboard: true });
+    assert.ok(q('.attempts-counter'), 'a safe keeps its badge');
+    assert.ok(q('.password-controls #keyboard-toggle'), 'and its keyboard tile');
+    assert.equal(q('.pc-os-btn'), null);
+    safe.cleanup?.();
+    // CSS: the thin theme skin, and no scale on press
+    const css = readFileSync(join(here, '../../public/break_escape/css/password-minigame.css'), 'utf8');
+    const frame = readFileSync(join(here, '../../public/break_escape/css/pc-monitor.css'), 'utf8');
+    assert.doesNotMatch(css, /scale\(0\.95\)/, 'no scale(0.95) on the keyboard tile');
+    const skin = frame.slice(frame.indexOf('[data-ui-theme] .pc-monitor button.pc-os-btn {'));
+    assert.match(skin.slice(0, skin.indexOf('}')), /border-image-source: var\(--ui-small-button-image\);/);
+    const base = frame.slice(frame.indexOf('.pc-monitor button.pc-os-btn {'));
+    assert.match(base.slice(0, base.indexOf('}')), /border: 2px solid/);
+});
+
 // UX slice 2c R1 m9: the old password frame (Wi-Fi keys, archives, safes, case locks) keeps
 // its own coverage now that the PC screens moved to the monitor
 test('2c R1 m9: a non-computer lock keeps the password frame, with Add to Notepad after the game area', () => {
