@@ -1,6 +1,6 @@
 # Credential keyring: build plan for phases 0 and 1
 
-Status: plan. Decided by the user on 2026-11-13 (q92, option 3: "remote sign-in model: credential keyring, option 3"). Engine paths are under `public/break_escape/js/`. Line numbers are on main 1ce7486c7, which contains UX slice 2b0 (remote sign-in captured tiles), the conclude-race fix and the rfid server-trust fix.
+Status: plan. Decided by the user on 2026-11-13 (q92, option 3: "remote sign-in model: credential keyring, option 3"). Engine paths are under `public/break_escape/js/`; the Ruby files cited by bare name (`game.rb`, `network_access.rb`, `capture_proofs.rb`, `npc_frustration.rb`) are under `app/models/break_escape/`, and `games_controller.rb` is under `app/controllers/break_escape/`. Line numbers are on main 1ce7486c7, which contains UX slice 2b0 (remote sign-in captured tiles), the conclude-race fix and the rfid server-trust fix.
 
 ## 1. What this builds
 
@@ -30,7 +30,7 @@ Each is shown on the picks page. The ones marked "Default" are behaviour the pla
 | Default: under `remoteScreen: "typed"` the screen still shows the player's own captured sign-ins, tagged (the explainer's typed screen "asks first and shows nothing") | The captures are the player's own notes, not the PC's list; the screen says the PC lists none |
 | Default: a refused credential gets a specific answer (wrong PC, policy, lockout, ended) once its proof holds; the explainer refused every failed check as an unknown credential | The proof check runs first, so the browser still cannot probe the registry, and honest play learns why |
 | Machine accounts, if built, live in a top-level `machineAccounts` block, not `accounts` (D3) | `accounts` already names `social.mail.accounts` and a `loginPicker` value |
-| Default: the invite can also end on a timer (90 seconds in the test scenario) after the relay desktop first opens, as well as through Jake's later ink | Teaches that an invite is short-lived; the ink ending alone may never be reached |
+| Default: the invite can also end on a timer (90 seconds in the test scenario) after the relay desktop first opens, as well as through Jake's later ink. The timer shows no countdown (`showCountdown: false`) | Teaches that an invite is short-lived; the ink ending alone may never be reached. No countdown keeps the end a surprise, as a real holder's choice would be; the closing line and Jake's bark name what happened |
 | The keyring reaches the client by GET /keyring with a `rev` digest, asked after the events that can change it, not as deltas inside other answers | One reader, no change to every answer that could earn a credential; a repeat costs a few bytes |
 | Default: a relay session (assist invite) gives no network reach, maps no shares, is no source for a desktop sign-in, is not listed in the network view, is not offered at the holder's keyboard and ends on reload (the explainer said every route after sign-in is unchanged) | The invite is Jake's own screen shared through his vendor's relay, not a foothold on his network |
 | The assist code comes from Jake through an ink gift (`#give_item` from his `itemsHeld`), not a declared grant | A declared grant can be claimed from the first second, skipping the conversation |
@@ -39,7 +39,7 @@ Each is shown on the picks page. The ones marked "Default" are behaviour the pla
 | Default: a lockout refuses a saved connection too | A saved connection presents the password, so the lockout applies; an assist invite (the person's own session) is not refused |
 | Default: keyboard screens show password entries only | Connecting kinds are used from somewhere else (section 3.7) |
 | The keyring view ("the capture log grown") is not in phase 1 (D4, recommended (c)) | The capture log is carried by one test scenario; the sign-in screens and Connect are where credentials are used |
-| Item type `remote_access` becomes an existing type with a tray slot (`text_file`) | No new art or item type; a small connection icon is logged in the backlog |
+| Item type `remote_access` becomes an existing type with a tray slot (`text_file`) | No new item art or item type; a small connection icon is logged in the backlog. The only new art is two 8x8 badge glyphs for the short window (section 5.2) |
 | `token` leaves the phase 1 default `accepts` | Tokens are phase 2 (D2) |
 | The inline item shape (a credential described inside the item) is not accepted | No content uses it; a second shape is a second thing to test |
 | New-game conversion of the labs' items moves out of phase 1 (D5) | The honest kind for them is `token` |
@@ -47,6 +47,17 @@ Each is shown on the picks page. The ones marked "Default" are behaviour the pla
 | Default: Connect signs in directly when the server accepts; a saved connection's sign-in screen opens only to show a policy or lockout refusal | One meaningful action acts directly |
 | Default: the relay desktop says whose session it is and has Disconnect, not Switch user and Sign out | The player did not sign in; they were let in |
 | The explainer's later kinds (an RFID card as a credential, a one-time code, a key file) are not planned | Logged in `docs/IDEAS_BACKLOG.md` in K1 |
+
+Evidence for the Default rows on the picks page, each beside its alternative (the explainer's behaviour):
+- file password never filled, and the "In file" wait: beat R3 and mock m1 (Jake's tile untagged, then tagged with the found-password line), beside a mock of the filled field;
+- typed screen still shows captures: the K0 shot of HB-OPS-02, beside the same screen with no tiles;
+- specific refusals: mock m2 and the m9 sheet's refusal toasts, beside the generic "Incorrect username or password";
+- the invite timer: the 9.1 timer JSON and beat R7a, beside R7b's ink-only ending;
+- the relay sink: the R6 view shot (no bridge named after Jake) and the 3.7 route table, beside a view with a `server_lan` block through HB-FIN-03;
+- assist invite by Connect only, and lockout refuses a saved connection: mock m9's toasts and K2's check list;
+- keyboard screens show password entries only: a mock of HB-DESK-01's keyboard screen;
+- Connect signs in directly: mock m3 and the R2 desktop shot;
+- the relay desktop's bar: mock m4.
 
 ## 2. What exists today
 
@@ -252,9 +263,9 @@ Base: main. Size: M. Merges after D1 is picked (the picks page sits between K0's
   - Under `typed`: the captured tiles, tagged, then Other user.
   - A headless host: the captured tiles, tagged, then Other user. No NLA line: it is a device's web sign-in, not a PC with that control.
   - Lines, one string per state, each at most two lines in GNF 16px at 390x844 (about 38 characters a line), in the message line under the form (section 8.5 has the table): loading "Checking..."; late "Still checking for accounts..."; a `tiles` screen with no captures, none; `typed`, "{host} lists no accounts until you sign in (NLA)."; a headless host, "{host} lists no accounts of its own."; `/login_accounts` failed, "{host}'s accounts could not be loaded."; `/capture_secrets` failed, "Your captured sign-ins could not be loaded."; both failed (and, from K3a, any two lists), "{host}'s sign-in details could not be loaded." The host is the answer's `host`, never "This PC". The state line takes the place of "Choose an account.", stays until a refusal replaces it, and comes back on Change.
-  - **Remote error lines.** On every remote screen (not only in scenarios with `credentials`), `signInErrorMessage` and `signInRefusalMessage` use the shared remote strings of 8.5: `notRespondingMessage(host)`, `unreachableMessage(host)`, the remote-off sentence for a `remoteBlocked` answer in place of the server's `REMOTE_BLOCKED` text, and host-named lines for not permitted ("That account can't sign in on {host}.") and lockout ("{host} has locked this account."), which need no name, so they also serve a name typed under Other user. The keyboard keeps its own "This PC ..." lines.
+  - **Remote error lines.** On every remote screen (not only in scenarios with `credentials`), `signInErrorMessage` and `signInRefusalMessage` use the shared remote strings of 8.5: `notRespondingMessage(host)`, `unreachableMessage(host)`, the remote-off sentence for a `remoteBlocked` answer in place of the server's `REMOTE_BLOCKED` text, and host-named lines for not permitted ("That account can't sign in on {host}.") and lockout ("{host} has locked this account."), which need no name, so they also serve a name typed under Other user. The keyboard keeps its own "This PC ..." lines, including "This PC's sign-in details could not be loaded." when two or more of its lists fail (from K3a).
   - Tags: Press Start 2P at its 8px grid size, one line each, at most two per tile and then "+N"; text that does not fit is cut with an ellipsis, the full kind name in the tile's title and on the chosen line. Every phase 1 tag fits a compact tile whole (section 8.5).
-  - Short window (915x412, where the username line is hidden): tags become one 12x12 CSS px corner badge (an 8x8 pixel glyph inside a 2px border), one glyph per group: a key for a password kind, a plug for a connecting kind; tested at DPR 3.
+  - Short window (915x412, where the username line is hidden): tags become one 12x12 CSS px corner badge (an 8x8 pixel glyph inside a 2px border), one glyph per group: a key for a password kind, a plug for a connecting kind; tested at DPR 3. The glyphs are new art, hand-drawn at 8x8 under the pixel-art rule: `assets/icons/badge-key.png` (K0) and `assets/icons/badge-plug.png` (K3a).
   - **Fit.** The tile row's box is sized from the height left after the form and the message line, not by a row count: on the 560x350 base (x1 and x2) that is one row of tiles; extra tiles scroll inside the box with the pixel scrollbar and a "More below" cue, and the form never scrolls. The message line takes a fixed two-line slot under the form, so the Other user form plus a refusal line fits `.pc-monitor-area` at 1400x1000 (today it overflows by 14px); `pc-monitor-frame.test.mjs` asserts `scrollHeight <= clientHeight` for that state, for the typed screen with its line, for each K0 line, and for a row of tagged tiles, at all four sizes.
   - The chosen line, Change and the fold rules are the keyboard's.
 - Keyboard screens are unchanged: they show no captures. From K3a, in a scenario that declares `credentials`, keyboard screens show password entries with their tags; the README says so.
@@ -313,7 +324,7 @@ Base: main after K0. Size: M. No sign-in behaviour changes.
 
 ### 6.2 GET /keyring
 
-`GET /games/:id/keyring?pc_id=&foothold=&from=&relay=&rev=`, `no-store`, a read with no side effects.
+`GET /games/:id/keyring?pc_id=&foothold=&from=&relay=&rev=`, `no-store`, a read with no side effects. The `keyring` action joins the `before_action :set_game` `only:` list in `games_controller.rb` and stays off the `with_game_lock` list.
 
 ```json
 { "rev": "9f2c1a",
@@ -420,7 +431,7 @@ The typed branch (`username` and `password`) refuses a body carrying `relay` wit
 
 ### 7.2 Other server changes
 
-Section 3.8's server readers (`session_route_up?`, `reach_session_hosts`, `resource_admits_player?`, `mapped_shares`, `host_row`, `desktop_request_allowed?` with `desktop_refusal` and `render_login_desktop` threading the route and refusing a no-route request at a relay session, `unlock_session_refusal`, `settle_session_at_keyboard!`, `session_for_client`, reload); `start_login_session!` takes the credential fields and skips `signedInPcs` for a relay; `login_session_answer` adds `kind`, `label` and the route; GET /container passes `relay=1` (and in K4 `from=`) through; POST /logout ends a relay session as any other. The server counterpart of `displaced` skips a relay session when the NPC sitting down is the account holder: it is his own session.
+Section 3.8's server readers (`session_route_up?`, `reach_session_hosts`, `resource_admits_player?`, `mapped_shares`, `host_row`, `desktop_request_allowed?` with `desktop_refusal` and `render_login_desktop` threading the route and refusing a no-route request at a relay session, `unlock_session_refusal`, `settle_session_at_keyboard!`, `session_for_client`, reload); `start_login_session!` takes the credential fields and skips `signedInPcs` for a relay; `login_session_answer` adds `kind`, `label` and the route; GET /container passes `relay=1` (and in K4 `from=`) through; POST /logout ends a relay session as any other. `start_login_session!` ends a guest session at the PC for every sign-in that is not a claim (`end_guest_session_at!`, `npc_frustration.rb:253`); a relay sign-in keeps that, by the one-screen, one-session rule. The server counterpart of `displaced` skips a relay session when the NPC sitting down is the account holder: it is his own session.
 
 ### 7.3 Tests
 
@@ -476,7 +487,8 @@ Only in a scenario that declares `credentials` (shipped scenarios are unchanged)
 - **Loading:** the remote screen waits for `/login_accounts`, `/capture_secrets` and `/keyring?pc_id=&<route>` together, under K0's 3 s cap and late redraw; the keyboard screen, in a scenario with `credentials`, waits for `/login_accounts` and `/keyring` under the same cap and redraw. A failed `/keyring` shows the screen without keyring entries and the line "Your keyring could not be loaded."; two or more failed lists give K0's single combined line.
 - **Worst cases to prove, at all four sizes:**
   - the tile row: seven admitted accounts, three with keyring entries (one with two tags and a 32-character file name), in K0's one-row box with its own scroller and "More below" cue;
-  - the chosen line: Lena with a captured password, the .rdp and a refused kind. The chosen line may scroll inside its own box with the pixel scrollbar and "More below"; the first credential button must be in view without scrolling, at x1 and at the x2 560x350 layout and at 800x600.
+  - the chosen line: Lena with a captured password, the .rdp and a refused kind, and Jake's found-password line with a 32-character file name. The chosen line may scroll inside its own box with the pixel scrollbar and "More below"; the first credential button must be in view without scrolling at all four sizes. A button label and the found-password line keep their fixed words whole ("Connect with", "Password in", ": type it from the file.") and cut only the label with an ellipsis, its full text in the title and in Examine;
+  - the remote .rdp desktop's top bar at 915x412 and 390x844: "Remote session through {link}" above the account bar's two lines, with the frame test asserting the desktop area keeps its first row of icons in view.
 - **Desktop:** the account bar keeps "Signed in as Lena Fox (lfox)" and adds a second line, "with the saved connection HB-FIN-02.rdp" (`container-minigame.js`); the bezel keeps the PC name. If UI slice 6's start panel has merged first, the line goes where the panel names the signed-in account; the build log says which. Switch user reuses the session's own route.
 - **Screen look:** `systems/screen-states.js:83` as section 3.8.
 
@@ -484,9 +496,9 @@ K3a uses the foothold route only. After K3a, a player with a planted drop box op
 
 Files: `minigames/password/password-minigame.js`, `css/password-minigame.css`, `systems/unlock-system.js` (the fetches), `api-client.js` (`keyring`, `loginWithCredential`), `systems/keyring.js` (new: the cache, `rev` and the opened `foundIn` set), `systems/screen-states.js`, `minigames/container/container-minigame.js` (account bar line), `systems/pc-sessions.js` (credential sessions).
 
-Tests: `test/js/keyring-signin.test.mjs` (one tile per account, tags by kind, the two-tag limit with "+N", the `foundIn` wait and the reload case, buttons above an always-present Password field, the found-password line, no invite tag or button on a foothold screen of HB-FIN-03, greyed refused credential with its reason in the short window and an empty error line, password-only at the keyboard, error texts including the lockout line and the remote strings, loading, the cap and failure at both screens, nothing new in a scenario without `credentials`); `test/js/pc-monitor-frame.test.mjs` (both worst cases inside the screen at x1 and x2); `test/js/screen-states.test.mjs` (a password and a credential session show the desktop look, a claim paints locked); harness copy lists for `systems/keyring.js`.
+Tests: `test/js/keyring-signin.test.mjs` (the label cut keeping the fixed words whole; one tile per account, tags by kind, the two-tag limit with "+N", the `foundIn` wait and the reload case, buttons above an always-present Password field, the found-password line, no invite tag or button on a foothold screen of HB-FIN-03, greyed refused credential with its reason in the short window and an empty error line, password-only at the keyboard, error texts including the lockout line and the remote strings, loading, the cap and failure at both screens, nothing new in a scenario without `credentials`); `test/js/pc-monitor-frame.test.mjs` (the three worst cases inside the screen at all four sizes); `test/js/screen-states.test.mjs` (a password and a credential session show the desktop look, a claim paints locked); harness copy lists for `systems/keyring.js`.
 
-Live proof: beats R2, R4 and R5a of section 9.1 with the drop box planted, shots of every state at the four sizes with scrollbars shown, both worst-case fixture screens, `verify-run.rb`.
+Live proof: beats R2, R4 and R5a of section 9.1 with the drop box planted, and the sign-in screen half of R3 (Jake's tile on HB-FIN-02's Switch user screen untagged before passwords.txt is opened, tagged "In file" after), shots of every state at the four sizes with scrollbars shown, both worst-case fixture screens, `verify-run.rb`.
 
 Sync: nothing stored; one GET /keyring per screen open, usually `unchanged`.
 
@@ -496,26 +508,27 @@ Base: main after K3a. Size: M.
 
 - **Connect from the tray.** `inventoryMenuFor` (`systems/inventory-menu.js:87`): a held item with a connecting `credential` gets `[Connect, Examine]` (plus Drop here when droppable); with no observations, the click is Connect directly. Connect opens only from an uncovered tray, as the existing guard already ensures. While a Connect is running the entry is disabled and further clicks do nothing. Connect first flushes any pending sync, then asks GET /keyring and reads the entry, in this order:
   1. GET /keyring fails: toast "Connect could not reach the game server. Try again.";
-  2. the entry is missing: toast "{label} no longer works.";
+  2. the entry is missing: toast "{label} no longer works.", with `{label}` from the tray item's `name` (the entry that would carry it is gone);
   3. `ended`: toast "{displayName} ended the remote assist.";
   4. `targetOff`: toast `notRespondingMessage(host)`;
   5. `sessionHeld`: open its desktop by the session's route;
   6. `remoteBlocked`: toast the remote-off sentence;
   7. no route: toast "{host} can't be reached from here. You need a way onto its network.";
-  8. a route (K4's `from` first, then footholds, then relay): POST /login with the credential and that route. On success, open the desktop and show the teaching toast the first time for the kind. On a network failure, the toast of step 1. On a refusal: for a saved connection's `kindRefused` or lockout, open the target's remote sign-in screen with the account and credential chosen and the refusal shown as 8.1 says; for `LOGIN_NOT_PERMITTED`, toast "That account can't sign in on {host}."; for an assist invite's `kindRefused` or `ended`, the toast of 8.5. (`wrongPc` cannot occur: Connect always posts to `connectsTo`.)
+  8. a route (K4's `from` first, then footholds, then relay): POST /login with the credential and that route. On success, open the desktop and show the teaching toast the first time for the kind. On a network failure, the toast of step 1. A race since the GET answers as steps 4, 6 and 7 do: 403 `not_responding` gives `notRespondingMessage(host)`, 403 unreachable gives step 7's line, 422 `remoteBlocked` gives the remote-off sentence. On a refusal: for a saved connection's `kindRefused` or lockout, open the target's remote sign-in screen with the account and credential chosen and the refusal shown as 8.1 says; for `LOGIN_NOT_PERMITTED`, toast "That account can't sign in on {host}."; for an assist invite's `kindRefused` or `ended`, the toast of 8.5. (`wrongPc` cannot occur: Connect always posts to `connectsTo`.)
   Connect starts no network-view trip, so closing the screen or desktop returns to the world, or to the opener given as `returnTo` (K4: the desktop it was started from).
 - **Find toasts.** `systems/keyring.js` fetches a baseline after bootstrap, then asks with `rev` after a successful sign-in (once the desktop has opened), an inventory add or removal of an item with `credential`, a plant, implant or Wi-Fi join, and the opening of a `foundIn` item. Registry entries new since the last answer give one toast, worded by use under D4 (c), with names, hosts and labels from the entry:
-  - saved connection: "Saved connection found: {label}, for {displayName} on {host}.";
+  - saved connection: "Saved connection found: {label} for {displayName} on {host}.";
   - assist invite: "{label}: Connect it from your inventory to join {displayName}'s session.";
   - password in a file: "{displayName}'s password is in {label}.";
   - with more than two at once, two then "and N more".
+  A find caused by an NPC give (the ink gift) is held until the conversation closes, so it never lands beside the gift's own "Received" toast.
   Captured entries stay silent (the capture has its own notice). A `foundIn` entry waits until the item is opened. Nothing is written to globals or player state. D4 has the wording under its other options.
 - **The keyring view** follows D4 (recommended: none in phase 1).
 - **Backlog:** the NPC gift toast's emoji (`chat-helpers.js:141`) breaks the pixel-font rule; logged in `docs/IDEAS_BACKLOG.md`.
 
 Files: `systems/inventory-menu.js`, `systems/unlock-system.js`, `systems/keyring.js`, `systems/pc-sessions.js`, `systems/network-links.js` (no trip for Connect; the helpers reused, unchanged).
 
-Tests: `test/js/keyring-client.test.mjs` (baseline at load, `rev` reuse, toast wording per kind and grouping, silence for captures, `foundIn` wait, Connect's outcomes in order including both failures and the no-route text, the in-flight guard against a double click, the flush before the GET, direct sign-in and the screen only on a saved connection's policy or lockout refusal, the `LOGIN_NOT_PERMITTED` toast, `returnTo`); the inventory-menu test file (`[Connect, Examine]`, direct Connect without observations, the assist code's tray slot).
+Tests: `test/js/keyring-client.test.mjs` (baseline at load, `rev` reuse, toast wording per kind and grouping, silence for captures, `foundIn` wait, Connect's outcomes in order including both failures, the 403 and 422 race answers and the no-route text, the missing-entry toast named from the tray item, the find toast held during a conversation, the in-flight guard against a double click, the flush before the GET, direct sign-in and the screen only on a saved connection's policy or lockout refusal, the `LOGIN_NOT_PERMITTED` toast, `returnTo`); the inventory-menu test file (`[Connect, Examine]`, direct Connect without observations, the assist code's tray slot).
 
 Live proof: beats R1, R3 and R5b on new games of `test_access_keyring`, shots at the four sizes, `verify-run.rb`.
 
@@ -533,7 +546,7 @@ Base: main after K3b. Size: M.
 - **Ending.** `pc-sessions.js` handles the sync answer's `endedRelayPcIds` as `linkDropped` handles `endedPcIds`: the mirror drops the session and an open relay desktop closes with "{displayName} ended the remote assist.".
 - **Displacement.** The holder sitting down at his own PC does not end the relay session (unit test only; the test scenario's Jake never sits).
 
-Files: `systems/unlock-system.js`, `systems/pc-sessions.js`, `systems/screen-states.js`, `systems/keyring.js`, `minigames/container/container-minigame.js`, `systems/state-sync.js` (sync answer handling; harness copy lists if an import is added).
+Files: `systems/unlock-system.js`, `systems/pc-sessions.js`, `systems/screen-states.js`, `systems/keyring.js`, `minigames/container/container-minigame.js`, `state-sync.js` (sync answer handling; harness copy lists if an import is added).
 
 Tests: `test/js/access-remote-signin.test.mjs` (relay headers and params, re-entry by Connect, the holder's keyboard opens the sign-in screen); `test/js/keyring-client.test.mjs` (`endedRelayPcIds` closes the desktop with the text; refusal toasts for an invite; a global change during a relay asks for a sync, and none after it ends); `test/js/pc-sessions.test.mjs` (no displacement by the holder; `relay` and `kind` on both events); `test/js/screen-states.test.mjs` (a relay session paints locked).
 
@@ -573,7 +586,7 @@ Lines:
 |---|---|---|
 | password in a file teach | "People save passwords in files. Anyone who reaches the file has the account. Keep passwords in a password manager, not a file." | "A password in a file is a password anyone can read." |
 | saved_connection teach | "The password is saved inside this file, so opening it signs you in as {displayName}. A policy that always asks for the password stops it." | "This file remembers {displayName}'s password. Whoever holds it is {displayName}." |
-| assist_invite teach | "{displayName} let you into their session. Check who is asking before you share access." | "{displayName} let you into their session. Nobody checked who was asking." |
+| assist_invite teach | "{displayName} let you into the session. Check who is asking before you share access." | "{displayName} let you in. Nobody checked who was asking." |
 | saved_connection refused | "{host} always asks for the password, so a saved one is ignored. That setting is the fix." | "{host} does not accept saved passwords. That setting stops this attack." |
 | assist_invite refused | "{host} does not allow remote assistance." | "Remote assistance is turned off on {host}." |
 | locked out (remote screen, typed or credential, and Connect) | "{host} has locked this account." | |
@@ -581,7 +594,8 @@ Lines:
 | saved_connection refused, short (under the greyed button) | "{host} always asks for the password." | |
 | wrong PC (sign-in screen) | "This connection is for another PC." | |
 | ended | "{displayName} ended the remote assist." | |
-| no longer works | "{label} no longer works." | |
+| no longer works | "{label} no longer works." (`{label}` from the tray item's `name`) | |
+| keyboard, two or more lists failed | "This PC's sign-in details could not be loaded." | |
 | Connect failed | "Connect could not reach the game server. Try again." | |
 | keyring failed | "Your keyring could not be loaded." | |
 | K0 lines | as section 5.2 | |
@@ -641,7 +655,7 @@ Browser-only, no VM, built in K1 and grown through K4. `social.captures.revealSe
 **Registry:** `lena_rdp` (saved connection, `held: lena_rdp_file`); `ops_rdp` (saved connection for Ian, `connectsTo: ops_pc`, `held: ops_rdp_file`); `jake_pw_note` (`session: lena_pc`, `foundIn: lena_passwords_txt`); `jake_assist` (`held: jake_assist_code`, `endsOnGlobal: jake_ended_assist`).
 
 **Jake.** `jake_assist_code` (type `text_file`) is in Jake's `itemsHeld`. Posing as the helpdesk, one ink choice gives it with `#give_item:text_file:jake_assist_code`, shown once (gated on a global set by the item's `onPickup`). Two ways end the invite, both setting `jake_ended_assist`:
-- the timer: a mapping on Jake for `pc_desktop_opened` with condition `data.relay === true && data.pcId === 'jake_pc' && !globalVars.jake_ended_assist`, `onceOnly`, sets `jake_assist_armed`; a top-level `timers` entry with `startOnGlobal: jake_assist_armed`, `delayMs: 90000` (long enough for R6's checks), condition `!globalVars.jake_ended_assist`, sets `jake_ended_assist` and `jake_timer_ended_assist`. On reload the timer resumes from its saved running time, so the invite still ends about 90 seconds after the relay desktop first opened, counting only time in play;
+- the timer: a mapping on Jake for `pc_desktop_opened` with condition `data.relay === true && data.pcId === 'jake_pc' && !globalVars.jake_ended_assist`, `onceOnly`, sets `jake_assist_armed`; a top-level `timers` entry with `startOnGlobal: jake_assist_armed`, `delayMs: 90000` (long enough for R6's checks), condition `!globalVars.jake_ended_assist`, `showCountdown: false`, sets `jake_ended_assist` and `jake_timer_ended_assist`. On reload the timer resumes from its saved running time, so the invite still ends about 90 seconds after the relay desktop first opened, counting only time in play;
 - the ink: a later conversation, after the player has used the invite, lets him grow suspicious and sets the same global.
 The bark is on a Jake mapping for `global_variable_changed:jake_timer_ended_assist` (so the ink ending, which has its own lines, gets no bark), in his NPC JSON, in the past tense: "I've ended that session. The helpdesk never calls me back." It waits behind the relay desktop, which the prompt sync of K3c closes within a second or so, so the player reads the end line, then hears Jake.
 
@@ -670,7 +684,7 @@ The bark is on a Jake mapping for `global_variable_changed:jake_timer_ended_assi
 | R6 | Open Finance with the PIN, talk Jake into the code. Sign out at HB-FIN-02: the SV-OPS-01 session ends with its "has ended" notice (its reach was through Lena's session), and the drop box view lists `office_lan` only. Connect the code: his desktop opens directly; "Using Jake Brooks's session"; no share folder; the teaching toast. Close the desktop: the view still lists `office_lan` only, with no bridge named after Jake; clicking HB-FIN-03 at its keyboard opens the sign-in screen, not his desktop. Connect again: the desktop reopens (the session is held) | K2, K3c |
 | R7a | With the relay desktop open, the timer ends the invite about 90 seconds after R6's first Connect: the desktop closes with "Jake Brooks ended the remote assist.", then Jake's bark | K2, K3c |
 | R7b | Connect again: toast "Jake Brooks ended the remote assist." (and, on a game where the timer was not reached, the ink end gives the same) | K2, K3c |
-| R8 | (Run B) Reload with the relay desktop open: the relay session is gone, the .rdp session through the drop box is kept, Connect works again, and the resumed timer ends the invite about 90 seconds after the first Connect, less the time the reload took | K2, K3c |
+| R8 | (Run B) Reload with the relay desktop open: the relay session is gone, the .rdp session through the drop box is kept, Connect works again, and the resumed timer ends the invite after about 90 seconds of play from the first Connect (the reload's own time does not count) | K2, K3c |
 | R9 | Unplug the drop box: the .rdp session ends as a password session would | K2 |
 | R10 | No drop box: from Sam's keyboard session, Connect on the .rdp signs in from HB-DESK-01 | K4 |
 | R11 | Tampered-client checks of sections 7.4 and 9 | K2, K4 |
@@ -810,7 +824,7 @@ Mocks to build: (m1) the chosen line with each sign-in kind's tag and button; (m
 - Connect signs in directly when accepted; a saved connection's screen opens only for a policy or lockout refusal; Connect opens only from an uncovered tray and ignores clicks while running.
 - The inline item shape is not accepted.
 
-## Appendix A. Handover (2026-11-13, round 6 majors applied)
+## Appendix A. Handover (2026-11-13, round 6 applied)
 
 For the next agent continuing the plan's review loop. Remove this appendix when the loop ends.
 
@@ -818,7 +832,7 @@ For the next agent continuing the plan's review loop. Remove this appendix when 
 - **Round 4 re-check on the merged code.** Every finding held; none rejected. Evidence re-read: `network_access.rb:1115, 1218-1256, 1265-1285, 1183-1194`; `game.rb:2051, 2416-2430, 2758-2782, 2914-2924`; `unlock-system.js:260, 302-307`; `password-minigame.js:358-363`; `network-links.js:66-68`; `network-view-minigame.js:59`; `screen-states.js:83`; `pc-sessions.js:49, 545`; `README_scenario_design.md:298, 2753, 2755`; `scenario-schema.json:785`; `inventory-menu.js:171-174`; `password-minigame.css:779, 1067`; lab `scenario.json.erb:78, 187, 1698, 1893-1950`; `test_access_networks/scenario.json.erb:295`; lab `PLAYTEST.md:1028, 1033`; no `x-ref` in the schema code.
 - **Round 5 re-check.** Every finding held; none rejected. Evidence: `network_access.rb:772, 790, 812, 828` (view readers take every session); no session `locked` code on main (grep of app/, lib/ and the engine); `ui/scenario-timer-dispatcher.js:86-96` (reload resumes a timer).
 - **Choices made.** Round 4: the `held` scope gains declared grants; no relay sign-in screen; neutral engine text, per-entry teaching override to the backlog; the 14px overflow fix folded into K0. Round 5: every `locked` item moves to a follow-up K-lock (8.6) after both K3c and UI slice 6, so K2 and K3 do not wait on q93; the teaching line is toast-only on every screen; the tile row is one row on the 560x350 base; K0 lines kept to about 60 characters; remote error lines move into K0; the test timer is 90 s and Run A checks the view and keyboard while the relay is held; a prompt sync during a relay.
-- **Round 6 re-check and what is applied.** All five majors held (`network_access.rb:475-479`: the implant session-shape branch takes any blank-foothold session; `:1115-1125`: Sam's keyboard session pivots, so R2's `server_lan` came through HB-DESK-01). Applied: the implant reader in 3.8; R1 ends with a sign-out at HB-DESK-01; a two-line message slot with K0 lines at most two lines at 390x844 and the fit test at all four sizes; a short refused reason under the greyed button with the full one in the message slot on click; name-free not-permitted and lockout lines that also serve a typed name. **Not yet applied (round 6 minors and nits, see the two R6 files):** server m1 (GET /keyring in the `set_game` before_action list, off `with_game_lock`), n1 (cite `app/models/break_escape/` paths), n2 (a relay sign-in ends a guest session: document or skip); UX minors: unmapped 403 and 422 races in Connect step 8; "{label} no longer works." has no label when the entry is gone (keep the item name client-side); "their" in the assist line against the no-pronoun rule; long labels and 915x412 missing from the worst cases; K3a's proof leaves out R3's "In file" wait; a keyboard failure line uses `{host}` against the "This PC" rule; no art source for the key and plug badge glyphs; 1.1's Default rows need evidence on the picks page; the three-line desktop top bar in no worst case; and five nits.
+- **Round 6 re-check and what is applied.** All five majors held (`network_access.rb:475-479`: the implant session-shape branch takes any blank-foothold session; `:1115-1125`: Sam's keyboard session pivots, so R2's `server_lan` came through HB-DESK-01). Applied: the implant reader in 3.8; R1 ends with a sign-out at HB-DESK-01; a two-line message slot with K0 lines at most two lines at 390x844 and the fit test at all four sizes; a short refused reason under the greyed button with the full one in the message slot on click; name-free not-permitted and lockout lines that also serve a typed name. **Round 6 minors and nits, applied after the majors:** server m1 (GET /keyring on `set_game`, off `with_game_lock`), n1 (Ruby paths in the header), n2 (a relay sign-in keeps the guest-session end, documented in 7.2); UX m1 (Connect step 8 maps the 403 and 422 races), m2 (missing-entry label from the tray item's `name`), m3 (assist line says "the session"), m4 (label cut keeping fixed words; first button at all four sizes), m5 (R3's sign-in half in K3a's proof), m6 (keyboard combined failure line), m7 (`badge-key.png`, `badge-plug.png`, hand-drawn 8x8), m8 (evidence list under 1.1), m9 (remote .rdp desktop top bar worst case); nits n1 (R8 timing), n2 (`state-sync.js` path), n3 (toast comma), n4 (`showCountdown: false`), n5 (find toast held during a conversation).
 - **Recurring themes.** Each round has found more relay reach readers (round 3 the reach walk, round 4 shares and `from`, round 5 the view's bridge labels) and more fit problems on the 560x350 monitor base (rounds 3 to 5). The relay and the K3 layout carry most of the remaining risk.
 - **Next step.** Apply the round 6 minors above, then round 7 with fresh reviewers (server and security; UX and game design), same briefs as round 6. Stop at the first round with 0 B and 0 M from both. If round 7 is no better than round 6 (5 B+M), stop and propose the scope cut: phase 1a is K0, K1, K2 (without the relay branch) and K3a; phase 1b is K3b, K3c, K4 and K-lock under their own plan.
 - **Files touched:** `docs/achitechture/CREDENTIAL_KEYRING_PLAN.md` and the review files beside it. Branch `plan/keyring` in worktree `.claude/worktrees/p-keyring-plan`.
