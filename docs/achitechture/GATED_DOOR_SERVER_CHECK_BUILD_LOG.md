@@ -48,6 +48,27 @@ Client (`public/break_escape/js/systems/objectives-manager.js`):
   after the new `enter_room` pre-flush and the inline re-sync, and the `online` listener is the main
   reconnect drain. Amended in section 8.3 and the Chunk F bullet.
 
+### R1 (Chunk F review) minors folded
+
+- Minor 2: a second `retryable` `enter_room` refusal (after the one re-sync and one re-post) now feeds
+  the bounded `enterRoomQueue` like a transient result, instead of surfacing a hard "Room not reached".
+  The `!response.success` branch enqueues on `response.transient || response.retryable`. Once Chunk A's
+  `npcRouteRooms` lands, a legitimate player can briefly be refused while a separate `method: npc` route
+  POST is still in flight; the queue now carries that honest crossing rather than hard-blocking it, so an
+  honest player is never refused. A forge enters the queue too but never completes (the server keeps
+  refusing), and the queue cannot spin: each drain is one `completeTask` run, triggered only by `online`
+  or a manager sync, re-entry guarded. Amended in section 8.3, the section 11 node-test descriptions and
+  the Chunk F bullet in section 14. Node tests updated: the former "forge surfaces once" test now asserts
+  the forge stays queued, shows no `Objective Blocked`, and that a drain is bounded (two POSTs) and never
+  completes; the "drained non-transient drop" test now uses a genuinely non-retryable response so the drop
+  still holds.
+- Minor 3: the two unawaited `drainEnterRoomQueue()` calls inside `completeTask` (the pre-flush and the
+  inline retryable path) are now `void`-prefixed with a one-line note that the drain swallows its own
+  errors. No behavioural change.
+- Minor 1: no code change; added a one-line comment on node test 8 that `__status5xx` stands in for the
+  transient shape, not the `online` trigger, with genuine offline-then-reconnect covered by live-proof
+  Case 3.
+
 ### Plan drift (line citations re-checked against `b1256d2be`)
 
 - `complete_task!` is at `game.rb:3675` and the `enter_room` branch at `:3745` (plan cited `:3745`;

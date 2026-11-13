@@ -9,8 +9,12 @@
 //    write carries the server check), so a rejecting or absent pre-flush must not
 //    block the POST;
 //  - a `retryable` refusal re-syncs once (for ordering, never for success) and
-//    re-posts once, then surfaces a genuine second refusal (a forge) without
-//    looping;
+//    re-posts once; a second `retryable` result is then enqueued rather than
+//    surfaced as a hard block (R1 minor 2), so an honest route-room race whose
+//    npc-route membership write is still in flight is carried by the queue, while a
+//    forge stays queued but never completes (the server keeps refusing) and the
+//    queue cannot spin (each drain is one completeTask run, fired only externally);
+//  - a genuinely non-retryable refusal still reverts and surfaces a hard block;
 //  - a transient/offline failure (the dominant path) and a thrown error feed a
 //    bounded in-memory re-send queue keyed by task id, drained on the browser
 //    `online` event and on the syncs the manager awaits, through the full
@@ -135,17 +139,29 @@ test('a retryable refusal re-syncs once and re-posts once, then self-heals when 
     assert.equal(m.taskIndex['enter_office'].status, 'completed', 'the honest ordering gap healed');
 });
 
-test('a forge stays refused after one re-post and surfaces once, without looping', async () => {
+test('a forge that stays retryable after one re-post is queued, never hard-blocked, and does not loop or complete (R1 minor 2)', async () => {
+    // Every POST returns the same `retryable` refusal (the harness repeats the last
+    // response), modelling a server that refuses a room the player never reached.
     const { m, order, alerts } = harness([
         { success: false, error: 'Room not reached', retryable: true }
     ]);
 
     await m.completeTask('enter_office');
 
+    // One completeTask run makes exactly two POSTs (the with-retry call, then the one
+    // inline re-post). It does not loop on the second retryable result.
     assert.equal(order.filter(e => e.startsWith('post:')).length, 2, 'the client re-posted exactly once, then stopped');
-    assert.equal(m.taskIndex['enter_office'].status, 'active', 'the forged task stays active');
-    const blocked = alerts.filter(a => a.title === 'Objective Blocked');
-    assert.equal(blocked.length, 1, 'the refusal surfaces exactly once');
+    assert.equal(m.taskIndex['enter_office'].status, 'active', 'the task stays active');
+    assert.ok(m.enterRoomQueue.has('enter_office'), 'the second retryable refusal is enqueued, not surfaced');
+    assert.equal(alerts.filter(a => a.title === 'Objective Blocked').length, 0,
+        'no hard "Room not reached" block is shown; an honest route-room race must never be refused');
+
+    // A forge never completes: draining is one more completeTask run (two more POSTs),
+    // after which it is simply re-added, so it cannot spin and the server keeps refusing.
+    await m.drainEnterRoomQueue();
+    assert.equal(order.filter(e => e.startsWith('post:')).length, 4, 'each drain is one bounded completeTask run, not a loop');
+    assert.equal(m.taskIndex['enter_office'].status, 'active', 'the forge still never completes');
+    assert.ok(m.enterRoomQueue.has('enter_office'), 'a still-retryable entry is re-added for the next external drain');
 });
 
 test('a retryable refusal with a rejecting re-sync still re-posts once', async () => {
@@ -188,6 +204,9 @@ test('a genuine non-transient refusal is not queued and surfaces', async () => {
 
 test('offline feed and reconnect drain: a transient failure queues, the online event re-posts and completes', async () => {
     // The completion POST 5xxes on every attempt of the retry loop, then succeeds on the drain.
+    // `__status5xx` stands in for the transient failure shape here, not the `online` trigger: a real
+    // 5xx does not itself fire `online` (the browser was never offline). The genuine offline-then-
+    // reconnect path (real setOffline + real `online` event) is covered by live-proof Case 3 (R1 minor 1).
     let offline = true;
     const { m, fireOnline } = harness(() => (offline ? { __status5xx: true } : { success: true }));
 
@@ -223,14 +242,15 @@ test('a thrown error also feeds the queue', async () => {
     assert.equal(m.taskIndex['enter_office'].status, 'active');
 });
 
-test('a drained entry whose re-post is a non-transient refusal is dropped, not retried forever', async () => {
-    // Seed the queue directly, then drain against a permanent refusal.
-    const { m } = harness([{ success: false, error: 'Room not reached', retryable: true }]);
+test('a drained entry whose re-post is a genuinely non-retryable refusal is dropped, not retried forever', async () => {
+    // Seed the queue directly, then drain against a permanent non-retryable refusal
+    // (no `retryable`, no `transient`): this is dropped, unlike a still-retryable one.
+    const { m } = harness([{ success: false, error: 'Nope' }]);
     m.enqueueEnterRoom('enter_office');
 
     await m.drainEnterRoomQueue();
 
-    assert.equal(m.enterRoomQueue.size, 0, 'the drained entry is dropped on a not-transient refusal');
+    assert.equal(m.enterRoomQueue.size, 0, 'the drained entry is dropped on a genuinely non-retryable refusal');
     assert.equal(m.taskIndex['enter_office'].status, 'active');
 });
 

@@ -683,11 +683,14 @@ export class ObjectivesManager {
    * itself awaits (the enter_room pre-flush and the inline retryable re-sync).
    * Removes each entry, then re-runs the full this.completeTask(taskId) path, so a
    * drained completion that ends a mission still fires the end-screen and
-   * conclude-race handling. Only a fresh transient or thrown failure re-adds the id
-   * (the feed rule in completeTask), so a drained entry that comes back success or
-   * any not-transient refusal is dropped and cannot retry forever; the server's
-   * already-completed branch makes a duplicate a no-op. Re-entry guarded so a
-   * drain-triggered sync does not recurse into another drain.
+   * conclude-race handling. A fresh transient, a still-`retryable` enter_room refusal
+   * (R1 minor 2) or a thrown failure re-adds the id (the feed rule in completeTask);
+   * a drained entry that comes back success or a genuinely non-retryable refusal is
+   * dropped. A re-added id cannot retry forever: each drain is one completeTask run
+   * and is triggered only by the `online` event or a manager sync, never by the drain
+   * itself (re-entry guarded, so a drain-triggered sync does not recurse), so a forge
+   * stays queued without spinning. The server's already-completed branch makes a
+   * duplicate a no-op.
    */
   async drainEnterRoomQueue() {
     if (this._drainingEnterRoomQueue) return;
@@ -771,7 +774,7 @@ export class ObjectivesManager {
       // queued enter_room completions while we are flushing.
       if (task.type === 'enter_room') {
         await this.safeSyncOnce();
-        this.drainEnterRoomQueue();
+        void this.drainEnterRoomQueue(); // fire-and-forget: drain swallows its own errors
       }
 
       let response = await this.serverCompleteTaskWithRetry(taskId);
@@ -780,25 +783,35 @@ export class ObjectivesManager {
       // ('Room not reached') means the durable membership may not have reached the
       // completion yet (an honest ordering gap) or the room was never reached (a
       // forge). Re-sync once (for ordering, never for success) and re-post once.
-      // An honest gap self-heals; a forge is refused again and surfaced below. A
-      // transient re-post result (a network blip during that single re-post) falls
-      // through to the transient path below (revert and enqueue), not a hard
-      // surface (R9 minor 1).
+      // An honest gap self-heals. A still-`retryable` result after the re-post is
+      // enqueued below (R1 minor 2): once Chunk A's npcRouteRooms lands, a separate
+      // method:npc route POST may still be in flight, so an honest player can briefly
+      // be refused while the membership is written; the queue carries it to the next
+      // drain rather than showing a hard block, and the honest player is never
+      // refused. A forge is refused there too, stays queued and never completes (the
+      // server keeps refusing; each drain is one completeTask run). A transient
+      // re-post result (a network blip during that single re-post) also falls to the
+      // transient path below (R9 minor 1).
       if (!response.success && response.retryable) {
         await this.safeSyncOnce();
-        this.drainEnterRoomQueue();
+        void this.drainEnterRoomQueue(); // fire-and-forget: drain swallows its own errors
         response = await this.serverCompleteTask(taskId);
       }
 
       if (!response.success) {
         task.status = 'active'; // Revert on server rejection
         this.replayPendingPickups(task);
-        if (task.type === 'enter_room' && response.transient) {
-          // Offline, a 5xx, an exhausted retry, or an inline retryable re-post that
-          // then dropped offline (R9 minor 1). Queue it: the browser `online` event
-          // and the next awaited sync re-post it, and the durable unlockedRooms
-          // write persists across the gap, so the re-post passes once the network
-          // returns. The honest player is never stranded, so no hard block here.
+        if (task.type === 'enter_room' && (response.transient || response.retryable)) {
+          // Offline, a 5xx, an exhausted retry, an inline retryable re-post that then
+          // dropped offline (R9 minor 1), or a still-`retryable` refusal after the one
+          // re-sync and re-post (R1 minor 2 -- an honest route-room race whose
+          // method:npc membership write is still in flight, or a forge). Queue it: the
+          // browser `online` event and the next awaited sync re-post it, and for an
+          // honest crossing the durable membership write persists across the gap, so
+          // the re-post passes once it lands. The honest player is never stranded, so
+          // no hard block here; a forge simply stays queued and never completes (the
+          // server keeps refusing, and each drain is one completeTask run triggered by
+          // `online` or a manager sync, so the queue cannot spin).
           this.enqueueEnterRoom(taskId);
           if (window.gameAlert) {
             window.gameAlert('Could not save that objective yet. It will retry -- keep playing.',
