@@ -73,6 +73,10 @@ Review: `docs/achitechture/UX_SLICE4_REVIEW_R1.md` (B 0, M 3, m 7).
 - m4, m5, m6: as in "What changed" above. The lab vest's text now says to choose Put on or Take off.
 - m7: tests for a watcher walking in while the offer is open (refused, no post, the toast), the server refusing after the offer (not worn, no onWear), busy under an open confirm, the non-droppable wearable's menu, a `give_item` wearable with no offer, `offerAfterTake` having one caller (the world take), the offer replacing the toast, menu icons, the tray cue and reveal, the pixel scrollbar, and the hover label refresh (`test/js/inventory-tray-narrow.test.mjs`, new).
 
+### Suites (on fafc5ce53)
+
+`MERGE_BATCH=1 bin/test-js -j 3`: 603 files passed, 0 failed. `bin/rails test`: 2392 runs, 42555 assertions, 0 failures, 0 errors, 1 skip. Validator: test_wearable and lab_physical_pentest, 0 ❌ each.
+
 ### Sync
 
 Unchanged: no new synced state. The cue, the scroll position and the hover label are page state only.
