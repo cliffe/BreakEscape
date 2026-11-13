@@ -783,6 +783,11 @@ test('slice 16 m4: a policy with autoLockMin 0 locks the hot desk the instant th
     assert.equal(globals.hot_desk_screen_locked, true);
     assert.equal(globals.hot_desk_owner_away, true);
     assert.deepEqual(emitted.find(([n]) => n === 'workstation_auto_locked:hot_desk')[1], { objectId: 'hot_desk', ownerId: 'ian', guest: true });
+    // cue parity (R1 minor): the office visuals key their lock cue on workstation_screen_changed,
+    // so the outright lock must emit it with how 'auto', as guestClaimRefused and _autoLock do.
+    assert.deepEqual(emitted.find(([n]) => n === 'workstation_screen_changed:hot_desk')[1],
+        { objectId: 'hot_desk', ownerId: 'ian', locked: true, how: 'auto' },
+        'the kiosk guest-leave auto-lock emits workstation_screen_changed so the lock cue plays');
     assert.equal(emitted.filter(([n]) => n === 'workstation_owner_left:hot_desk').length, 0, 'no owner_left: the session never opened');
     assert.equal(ws.onInteract('hot_desk'), 'signin');
 });

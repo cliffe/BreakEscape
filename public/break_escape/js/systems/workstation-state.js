@@ -304,6 +304,10 @@ export class WorkstationState {
             this.guests.delete(pcId);
             this._publishGuest(pcId, true, true);
             this.env.emit(`workstation_auto_locked:${pcId}`, { objectId: pcId, ownerId: npcId, guest: true });
+            // Emit the screen-changed event the office visuals key their lock cue on, as the
+            // sibling outright-lock paths (guestClaimRefused, _autoLock) do; without it the kiosk
+            // guest-leave auto-lock plays no flash/glyph/chime (npc-office-visuals.js line 580).
+            this._changed(data, npcId, true, 'auto');
             return true;
         }
         const rec = { npcId };
