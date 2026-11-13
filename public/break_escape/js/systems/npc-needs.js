@@ -2719,6 +2719,12 @@ export class NPCNeedsSystem {
         // with the player in earshot and is meant to be overheard, so that hush must not cut it
         c.hush = false;
         c.hushed = false;
+        // The use each NPC had before the hold raised it to the knot's end. A cut gives this back
+        // (EXCHANGE_HEARD_FIX_REVIEW_R1 n2), so a cut exchange does not strand the NPC at the object
+        // for the rest of its lines while the queue waits. Only the held sides (A always; B unless
+        // it is a queue front, which _holdExchange leaves alone) are recorded.
+        ex.aUseBefore = A.job ? A.job.useUntil : undefined;
+        ex.bUseBefore = (!c.queue && B.job) ? B.job.useUntil : undefined;
         this._holdExchange(c, A, B, total);
         this._log(ex.ownerId, 'exchange_started', { knot: ex.knot, with: ex.ownerId === c.a ? c.b : c.a });
     }
@@ -2759,11 +2765,33 @@ export class NPCNeedsSystem {
         this._emit(`npc_exchange_heard:${ex.knot}`, { knot: ex.knot, ownerId: ex.ownerId, npcIds: [c.a, c.b].sort(), objectId: c.objectId, complete });
     }
 
+    /**
+     * Give back the hold an exchange put on a still-running NPC's use. `before` is the use end it
+     * had before the hold; lower `useUntil` to that (never below now) so it leaves the object
+     * instead of standing for the lines that will not play. A frozen NPC (a player conversation)
+     * carries its end as `useRemaining`, inflated by the same hold, so take the hold back off that
+     * too; its `useUntil` is recomputed from `useRemaining` on unfreeze. (EXCHANGE_HEARD R1 n2.)
+     */
+    _releaseExchangeHold(state, before) {
+        const job = state?.job;
+        if (!job || !Number.isFinite(before) || job.phase !== 'using') return;
+        const added = Math.max(0, job.useUntil - before);
+        job.useUntil = Math.max(before, this.clockMs);
+        if (Number.isFinite(job.useRemaining)) job.useRemaining = Math.max(0, job.useRemaining - added);
+    }
+
     /** A chat ends: an exchange still running finishes first (complete if its last line is over). */
     _endChat(oid, c, reason) {
         if (c.ex) {
-            const over = c.ex.i >= c.ex.lines.length && (!c.current || this.clockMs >= c.current.until);
+            const ex = c.ex;
+            const over = ex.i >= ex.lines.length && (!c.current || this.clockMs >= c.current.until);
             this._finishExchange(c, over ? {} : { complete: false, reason });
+            // A cut leaves lines unplayed: hand the held time back, so the NPC is not pinned to the
+            // object for the rest of the exchange while anyone queued behind it waits.
+            if (!over) {
+                this._releaseExchangeHold(this.states.get(c.a), ex.aUseBefore);
+                this._releaseExchangeHold(this.states.get(c.b), ex.bUseBefore);
+            }
         }
         this._chats.delete(oid);
     }

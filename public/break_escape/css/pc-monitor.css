@@ -129,6 +129,11 @@
     max-width: calc(100% - 2 * var(--pc-bezel-side, 12px) - 38px);
 }
 
+/* A phone's chin has no room to spare: the light goes, the button takes its place */
+.pc-monitor[data-narrow] .pc-monitor-led {
+    display: none;
+}
+
 .pc-monitor-led {
     order: 2;
     flex: 0 0 auto;
@@ -312,6 +317,35 @@
     padding: 10px 14px;
     font-size: 18px;
     line-height: 20px;
+}
+
+/* The note stays inside the width the frame gives it (never over the chin's button): a word
+   wider than that wraps at its hyphens, and failing that anywhere, rather than overflow */
+.pc-monitor > .postit-note.pc-monitor-postit {
+    overflow-wrap: anywhere;
+}
+
+.pc-monitor > .postit-note.pc-monitor-postit .keep-whole {
+    display: inline-block;
+    max-width: 100%;
+    white-space: normal;
+}
+
+/* The chin button's label: one line on a full frame, two on a compact or narrow one, which
+   gives the note about 90px back */
+.pc-postit-label {
+    white-space: nowrap;
+}
+
+.pc-monitor[data-compact] .pc-postit-label {
+    display: inline-block;
+    vertical-align: middle;
+    text-align: left;
+    line-height: 14px;
+}
+
+.pc-monitor[data-compact] .pc-postit-label > span {
+    display: block;
 }
 
 .pc-monitor[data-compact] > .postit-note.pc-monitor-postit {
