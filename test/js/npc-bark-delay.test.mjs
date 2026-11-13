@@ -231,6 +231,31 @@ test('due during a person-chat with that NPC: handed to showBark to hold, not dr
     } finally { t.restore(); }
 });
 
+test('held during a chat: stale on release if the NPC is hidden, knocked out or moved while held', () => {
+    for (const change of ['hidden', 'ko', 'room']) {
+        const t = setup([{ ...base }]);   // no condition: only the NPC checks can make it stale
+        try {
+            const ko = new Set();
+            const beh = { roomId: 'ward' };
+            window.npcHostileSystem = { isNPCKO: (id) => ko.has(id) };
+            window.npcBehaviorManager = { getBehavior: (id) => (id === 'nurse' ? beh : null) };
+            const held = [];
+            t.m.barkSystem.showBark = (p) => held.push(p);
+            window.currentConversationMinigameType = 'person-chat';
+            window.currentConversationNPCId = 'nurse';
+            t.m.eventDispatcher.emit(ev, { value: true });
+            t.advance(1500);
+            assert.equal(held.length, 1, `${change}: handed to showBark to hold`);
+            assert.equal(typeof held[0].stillValid, 'function', `${change}: carries stillValid`);
+            assert.equal(held[0].stillValid(), true, `${change}: valid while nothing has changed`);
+            if (change === 'hidden') t.m.getNPC('nurse').isVisible = false;
+            if (change === 'ko') ko.add('nurse');
+            if (change === 'room') beh.roomId = 'corridor';
+            assert.equal(held[0].stillValid(), false, `${change}: stale on release`);
+        } finally { t.restore(); }
+    }
+});
+
 test('a delayed knot bark waits too, carries stillValid, and is cancelled with the NPC', () => {
     const knotMapping = { eventPattern: ev, onceOnly: true, knot: 'on_alarm', barkDelay: 1500,
         condition: 'globalVars.alarm === true' };
@@ -251,6 +276,9 @@ test('a delayed knot bark waits too, carries stillValid, and is cancelled with t
         assert.equal(calls[0].stillValid(), true);
         window.gameState.globalVariables.alarm = false;
         assert.equal(calls[0].stillValid(), false);
+        window.gameState.globalVariables.alarm = true;
+        t.m.getNPC('nurse').isVisible = false;
+        assert.equal(calls[0].stillValid(), false, 'the knot bark also goes stale if the NPC is hidden');
     } finally { t.restore(); }
 
     const t2 = setup([knotMapping], { storyPath: 'nurse.json' });

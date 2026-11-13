@@ -1209,12 +1209,14 @@ export default class NPCManager {
    * bark waits. When the delay is up the bark is dropped if its condition (stillValid)
    * no longer holds, or the NPC is knocked out, has changed room (walking out counts)
    * or been hidden. Otherwise showBark takes it as usual, so an open minigame or
-   * conversation, including one with this NPC, holds it until it closes and then
-   * re-checks its condition (bark-release-policy.js), as for a bark with no delay. Timers live with the NPC's delayMs timers, so _cancelDelayedMappings
+   * conversation, including one with this NPC, holds it until it closes. show() is
+   * handed a stillValid that repeats all four checks, so a held bark is also dropped
+   * on release (bark-release-policy.js) if its NPC was knocked out, moved or hidden
+   * while it was held. Timers live with the NPC's delayMs timers, so _cancelDelayedMappings
    * (NPC re-registered or removed, manager destroyed) cancels them too.
    */
   _delayBark(npcId, delayMs, show, stillValid) {
-    if (!(delayMs > 0)) { show(); return; }
+    if (!(delayMs > 0)) { show(stillValid); return; }
     const where = () => {
       const npc = this.getNPC(npcId);
       const room = window.npcBehaviorManager?.getBehavior?.(npcId)?.roomId ?? npc?.roomId ?? null;
@@ -1224,16 +1226,25 @@ export default class NPCManager {
     if (!this._delayedMappings.has(npcId)) this._delayedMappings.set(npcId, new Map());
     const pending = this._delayedMappings.get(npcId);
     const key = `bark:${++this._delayedBarkSeq}`;
+    // Why the bark should not show now, or null. Run when the delay ends and again,
+    // through stillValid, when a held bark is released.
+    const lapse = () => {
+      const now = where();
+      if (typeof stillValid === 'function' && !stillValid()) return 'condition no longer holds';
+      if (window.npcHostileSystem?.isNPCKO?.(npcId)) return 'NPC knocked out';
+      if (now.room !== before.room) return `NPC left ${before.room}`;
+      if (now.hidden && !before.hidden) return 'NPC hidden';
+      return null;
+    };
     pending.set(key, setTimeout(() => {
       pending.delete(key);
-      const now = where();
-      let reason = null;
-      if (typeof stillValid === 'function' && !stillValid()) reason = 'condition no longer holds';
-      else if (window.npcHostileSystem?.isNPCKO?.(npcId)) reason = 'NPC knocked out';
-      else if (now.room !== before.room) reason = `NPC left ${before.room}`;
-      else if (now.hidden && !before.hidden) reason = 'NPC hidden';
+      const reason = lapse();
       if (reason) { console.log(`⏭️ Delayed bark for ${npcId} dropped: ${reason}`); return; }
-      show();
+      show(() => {
+        const why = lapse();
+        if (why) console.log(`⏭️ Held delayed bark for ${npcId} is stale: ${why}`);
+        return !why;
+      });
     }, delayMs));
   }
 
@@ -1834,7 +1845,7 @@ export default class NPCManager {
     if (this.barkSystem && (config.bark || config.message)) {
       const barkText = config.bark || config.message;
 
-      const fireBark = () => {
+      const fireBark = (stillValid) => {
         // Add bark message to conversation history (marked as bark)
         this.addMessage(npcId, 'npc', barkText, {
           eventPattern,
@@ -1853,7 +1864,7 @@ export default class NPCManager {
           startKnot: config.knot || null,   // none: a click reopens the thread (npc-barks.js)
           phoneId: npc.phoneId,
           useTTS: npc.npcType === 'person' && !!npc.voice,
-          stillValid: this._barkStillValid(npcId, config, eventData)
+          stillValid
         });
       };
 
@@ -1866,7 +1877,7 @@ export default class NPCManager {
       // Load the Ink story and navigate to the knot
       const stillValid = this._barkStillValid(npcId, config, eventData);
       this._delayBark(npcId, config.barkDelay,
-        () => this._showBarkFromKnot(npcId, npc, config.knot, eventPattern, stillValid), stillValid);
+        (valid) => this._showBarkFromKnot(npcId, npc, config.knot, eventPattern, valid), stillValid);
     }
     
     console.log(`[NPCManager] Event '${eventPattern}' triggered for NPC '${npcId}' → knot '${config.knot}'`);
