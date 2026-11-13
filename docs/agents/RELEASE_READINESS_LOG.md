@@ -8,7 +8,7 @@ The gate (user, 2026-11-13): no production deploy until the ongoing access, netw
 
 | Mission | Game | Result | Open findings |
 |---|---|---|---|
-| sis01_healthcare | 3134 | Ending reached, 18/18 tasks, every secret earned | F1 M ending race ("Not Yet" toast over the credits), fixing on build/rel-fixes. F2 M and F6 m: Sonnet check running. F3 to F5 m: respawn at start after reload, walkthrough drift |
+| sis01_healthcare | 3134 | Ending reached, 18/18 tasks, every secret earned | F1 M ending race ("Not Yet" toast over the credits), fixing on build/rel-fixes. F2 withdrawn (harness: moveToNear Ravi clicked inside the trolley PC's click zone; a real click on Ravi opens only the chat; game 3155). F6 withdrawn (Ward 7 rule opens its panel; earlier clicks missed after the map shifts about 12 px on the first rule click). Two minors noted from the check: the "NO SEGMENTATION" caption is unwired text, and the map re-flows on first click. F3 to F5 m: respawn at start after reload, walkthrough drift |
 | sis02_energy | 3133 | Partial, stopped after the ESD button | F1 M (HMI-OPS-01 interact resolves to the status board) and F6 M (FLAG SESSION step unprompted): Sonnet check and finish running. Four minors |
 | m01_first_contact | 3137 | Steps 1 to 18 pass, 0 B/M | Steps 19 to 29 (incl. the never-completed abort/launch choice) running |
 
