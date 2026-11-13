@@ -2019,3 +2019,136 @@ current validator wording. No validator script changed. Branch `build/hard-8b`, 
   `validator-network-model.test.mjs` ("headless … on an owned workstation is an error", uses a
   needsHome-derived owner). The chunk-4 handover's "six" undercounts: these two need the same
   migration. Left for the orchestrator (not in this agent's file ownership).
+
+## Step 8b chunk 5 — live proofs (including the old-game proof) (2026-11-13)
+
+Chunk 5 of the five-chunk split: the five live proofs from plan step 8b "Live proof", each on the
+real page with the real `window.__test` bridge, headless. Two keyless servers sharing the dev DB:
+the branch server on **:3610** (branch `build/hard-8b`, `FormatUpgrade.current` 2), the base server
+on **:3611** from the hand-made base worktree `.claude/worktrees/p-hard-8b-base` at the merge base
+`2f5471209` (8a merged, `current` 1). Both started by hand the way `start-keyless-server.sh` does,
+`env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true`, GEMINI warning confirmed in each boot log. No
+`db:` task anywhere. Drivers, the read-only row reader (`dump_owner.rb`) and the captures live in the
+session scratchpad (`8b-chunk5/`); nothing was added to the repo except this section.
+
+Branch games were made by `new-game.rb` (the real standalone-new-game creation path) where the
+scenario has a Mission row, and by `swap-scenario-game.rb` only for `test_access_sessions` (no row;
+its branch game is a current game, not an old one, so the swap tool is allowed there). The old game
+for the stored-game proof was made by the **base worktree's own `new-game.rb`** (real-page creation,
+Mission row 245 present), never the swap tool, per the 8a lesson and plan section 2.
+
+All four branch games read back `formatVersion` 2 with zero retired owner keys in `scenario_data` and
+`player_state`, and carry explicit `owner` on the derived PCs: `test_access_social` (3221) jake_pc
+`owner "jake"`, lena_pc `owner "lena"`, jake_phone `owner "jake"`; `test_needs_sims` (3222) tom_pc
+`owner "tom"`/`private true`, tom_badge `owner "tom"`/`leftBehindChance 0.7`, tom_phone `owner
+"tom"`/`deskPhone true`; `test_access_sessions` (3224) dana_pc `owner "dana"`, ian_pc `owner "ian"`.
+
+### Proof 1 — test_access_sessions, owner claim at a derived-owner PC (branch game 3224)
+
+Beat T2. Entered `dana_room`; `waitFor npc_left_post:dana` returned (Dana to `dana_coffee`). After a
+4 s settle, `interact dana_pc` opened her desktop with no password. The server's room payload for
+`dana_room` carried `dana_pc ... "owner":"dana"` (derived owner, now explicit in format 2). The claim
+request **POST /login -> 200** `{"success":true,"npcId":"dana","username":"dreyes","via":"claim"}`;
+**GET /container/dana_pc -> 200** with `session {via: claim}`. `drain` held `pc_signed_in`,
+`workstation_accessed`, `workstation_owner_left`; `window.__test.access.sessions()` =
+`[{pcId:"dana_pc", npcId:"dana", username:"dreyes", via:"claim"}]`. `verify-run.rb 3224`:
+`sessions 1: dana_pc = dana (claim)`, `signedInPcs dana_pc`, progress recorded (8 rooms beyond the
+first). **PASS.**
+
+### Proof 2 — test_needs_sims, desk phone answered by its owner + left-behind item (branch game 3222)
+
+Desk phone: `interact spare_phone` (its `triggerOnInteract` emits `desk_phone_ring:tom_phone`) while
+Tom was at his desk. Recorded event **`desk_phone_answered:tom_phone` `{ownerId:"tom",
+answeredBy:"tom", knot:"call_supplier"}`** followed by `npc_call_heard:call_supplier
+{speakerId:"tom", ownerId:"tom", phoneId:"tom_phone"}`; task `hear_tom_call` completed. The owner is
+read from the `deskPhone` object's `owner` field. Left-behind: on Tom's real leave,
+`npc_left_post:tom {leftBehind:["tom_badge"]}` and **`object_revealed:tom_badge` `{npcId:"tom",
+objectId:"tom_badge", owner:"tom"}`** — the `object_revealed` payload carries the renamed `owner` key
+(chunk 3's `leftBehindBy -> owner`), and the badge drew on the empty desk (visible, interactable);
+task `see_left_behind` completed. `verify-run.rb` reports this single-room office scenario as
+"BOOTSTRAP ONLY" by its rooms/objects/flags gate (no room transition and the badge pickup did not
+register as an object unlock), but the two task completions and the two events are the evidence that
+both owner reads fire on the live path. **PASS** (desk-phone owner answer and left-behind reveal).
+
+### Proof 3 — test_access_social, Jake's Friendface phone (branch game 3221)
+
+`debugKO jake` dropped `jake_phone` (`owner "jake"`); picked it up (`interact jake_phone`, now in the
+inventory). Opening it issued **POST /friendface_phone -> 200** `{"npcId":"jake","site":"friendface",
+"person":"jake"}` and the osint-browser opened on **Jake Brooks'** profile. The server reads the held
+phone's `owner` (SocialFeed `held_friendface_phone`/`friendface_owner`). Task `f14_jake_phone`
+completed; `verify-run.rb 3221` progress recorded, inventory holds Jake's phone. **PASS.**
+
+### Proof 4 — lab_physical_pentest, the left-card beat (branch game 3241)
+
+Through the briefing to `open_plan`; `waitFor workstation_owner_left:staff_pc_2` returned
+`{ownerId:"pierce", screenLocked:false, reason:"needs"}`. The needs system set
+`pierce_comms_card_left` and the card revealed: **`object_revealed:pierce_comms_card` `{npcId:"pierce",
+objectId:"pierce_comms_card", owner:"pierce"}`**. The open_plan room payload then carried
+`pierce_comms_card ... "owner":"pierce","card_id":"lw_comms_card"` (format 2 owner on the keycard, the
+left-card the owner leaves when she steps away). `verify-run.rb 3241`: progress recorded (4 rooms
+beyond the first), globals include `pierce_comms_card_left` and `staff_pc_2_owner_away`. Clone/take of
+the card was not driven (it needs the RFID cloner from the kit); the reveal and the server owner field
+are the owner-read under test. **PASS** (left-card reveal reads `owner`).
+
+### Proof 5 — the stored-game (old-game) proof on test_access_social (game 3239)
+
+The old game was made on the base (`:3611`, `current` 1) by the **base worktree's `new-game.rb`**
+(real creation path: `generate_scenario_data` renders the base template, then `prepare_scenario_data!`
+fills, then `stamp_format_version` stamps 1; Mission row 245 present), NOT the swap tool. Played on
+the base's real page: `jake_room`, `debugKO jake`, picked up `jake_phone`, synced, so `player_state`
+holds the old stored copy.
+
+**Before (base, format 1), `dump_owner.rb 3239`:** `formatVersion 1`; **11** retired keys in
+`scenario_data` (every `*_phone/phoneOf`, incl. `jake_phone phoneOf "jake"`); the derived PC owners
+are not materialised in format 1 (read-time only). `player_state["inventory"]` `jake_phone` copy keys
+include **`phoneOf "jake"`**, no `owner`. Base **GET /scenario** header `X-Break-Escape-Format: 1`;
+base **POST /friendface_phone -> 200** `{"npcId":"jake","person":"jake"}` (old reader read `phoneOf`).
+
+Stopped the base session, then the base server (by its listening pid), confirmed `:3611` down.
+
+Loaded the same game on the branch (`:3610`). First **GET /scenario -> 200**, header
+**`X-Break-Escape-Format: 2`** — the load upgraded the game (`set_game` ->
+`ensure_current_format!`, under the row lock).
+
+**After (branch, format 2), `dump_owner.rb 3239`:** `formatVersion 2`; **0** retired keys in
+`scenario_data` and **0** in `player_state`; `jake_phone owner "jake"` (object), jake_pc `owner "jake"`
+and lena_pc `owner "lena"` (the derived owners now explicit); `player_state` `jake_phone` inventory
+copy **`owner "jake"`, no retired key** (the `player_state` transform renamed the stored copy in
+place). The phone still counts as taken (it is still in the inventory after the upgrade; the taken
+check reads the inventory copy). Opening the held phone on the branch page: **POST /friendface_phone
+-> 200** `{"npcId":"jake","person":"jake"}`, the feed opened on Jake Brooks the same as before.
+`verify-run.rb 3239`: progress recorded (1 room beyond the first, inventory holds Jake's phone, task
+`f14_jake_phone` completed). **PASS.** (The old-tab 409 refusal is outside this brief's listed
+requirements; the 409 + `X-Break-Escape-Format` header mechanism is format-agnostic and was proved at
+step 8a, section "3c".)
+
+### Sync size
+
+No growth. Every proof's `player_state` sync carried the same bounded data before and after the owner
+rename: the stored item copy's `phoneOf` became `owner` **in place** (one shorter key, no addition),
+a derived-owner PC gains at most the one `owner` key once at upgrade, and `sync_state` reads and
+writes no owner field (globals and encountered NPCs only). The upgraded old game (3239) `player_state`
+holds the same inventory it held before, one key renamed.
+
+### Servers and clean-up
+
+Branch server `:3610` and base server `:3611` both stopped by their own listening pids; both
+confirmed down by curl. All browser sessions stopped by `session-stop.sh` (or their pidfile). The base
+worktree `.claude/worktrees/p-hard-8b-base` is left in place, as 8a did. Games 3221, 3222, 3224, 3236,
+3239, 3241 are development-DB games left at format 2, recorded here; no other game was touched.
+
+### Handover
+
+- **Done:** chunk 5 as specified. All five proofs pass on the real page. The stored game upgraded on
+  first load (format 1 -> 2, the 11 `phoneOf` keys gone from `scenario_data` and the renamed key gone
+  from the stored `jake_phone` copy, header `X-Break-Escape-Format: 2`, phone still taken, feed opens
+  the same, `verify-run` progress). Branch games are format 2 with derived owners explicit and zero
+  retired keys.
+- **Old games made:** stored-game proof via the base worktree's own `new-game.rb` (real-page creation,
+  Mission row 245), never the swap tool; `test_access_sessions`' branch game via `swap-scenario-game.rb`
+  (current game, not an old one).
+- **For the orchestrator:** `test_needs_sims`' `verify-run` prints "BOOTSTRAP ONLY" because it is a
+  single-room office scenario (no room transition, no object unlock) — the two task completions and the
+  two owner-read events are the evidence there; not a regression. The two extra validator node tests the
+  chunk-2 follow-up still leaves red (`validator-access-reactive`, `validator-network-model`) are
+  independent of chunk 5.
