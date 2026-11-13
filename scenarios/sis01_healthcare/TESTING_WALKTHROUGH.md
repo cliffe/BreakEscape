@@ -56,7 +56,7 @@ completes the task; the playtest reaches them by playing, not by setting them.
 | 4 | `verify_drug_library` | `drug_library_verified=true` → David eventMapping → `completeTask`; also triggers Sharma `debrief_started=true` |
 | 4 (optional) | `warn_sarah` | locked until `drug_library_compromised=true` (Sarah `unlockTask`); `#complete_task:warn_sarah` in `post_drug_tamper` |
 | 4 | `helen_ico_advisory` | `ico_notified=true` → Helen eventMapping → `completeTask` |
-| 5 | `attend_debrief` | `debrief_complete=true` → Priya S. eventMapping → `completeTask` |
+| 5 | `attend_debrief` | Priya S. debrief_end: `#set_global:debrief_complete:true`, then `#complete_task:attend_debrief` |
 
 ### Things that were previously bypassed
 
@@ -309,7 +309,7 @@ _`access_siem` and `vpn_anomaly` can be completed in either order after this bri
 - [ ] `safety_claims`: reads CLAIM-HC-001/003/007 and evidence of failure
 - [ ] `regulatory`: acknowledges ico_notified or notes missed deadline (no editorial)
 - [ ] `root_cause`: presents attack chain; _"The attack revealed that the safety measures depended on IT infrastructure that was never treated as safety-critical."_
-- [ ] `closing`: sets `debrief_complete` → `true`
+- [ ] `debrief_end`: sets `debrief_complete` → `true`
 
 ---
 
@@ -366,7 +366,7 @@ After a complete test run, verify all expected global variables:
 | `patient_bed4_state` | Timer chain or nurse arrival | `"attended"` or `"critical"` |
 | `debrief_started` | Priya S. eventMapping (both `drug_library_verified` AND `backup_restore_initiated` true) | `true` |
 | `sharma_visible` | Priya S. eventMapping | `true` |
-| `debrief_complete` | Priya S. Ink closing knot | `true` |
+| `debrief_complete` | Priya S. Ink debrief_end knot | `true` |
 | `pump_dose_correct` | infusion_pump minigame (MG-08) | `true` (correct path) |
 | `pump_dose_error` | infusion_pump minigame (MG-08) | `true` (wrong dose confirmed) |
 | `patient_bed2_state` | pump_dose_error eventMapping | `"sedated"` (normal error); `"critical"` (double-jeopardy) |
@@ -383,4 +383,4 @@ After a complete test run, verify all expected global variables:
 - [ ] SIEM `alertConfig: northgate_2025_11` is ignored — minigame uses hardcoded seeded alerts (which already match Northgate content); full config support is a P2 task
 - [ ] Pharmacist NPC (`initiallyHidden:true` + `patrol.enabled:true`) — verify patrol does not run while hidden; should only activate on `setVisible:true` from `pharmacist_on_ward` eventMapping
 - [ ] All NPC positions are first-pass estimates — verify against room tile renders before sign-off
-- [ ] `debrief_complete` set in `npc_sharma.ink:closing` — verify Ink `~ debrief_complete = true` correctly propagates to engine globalVariables
+- [ ] `debrief_complete` set in `npc_sharma.ink:debrief_end` — verify Ink `~ debrief_complete = true` correctly propagates to engine globalVariables
