@@ -425,8 +425,9 @@ module BreakEscape
         filtered['sessions'] = @game.sessions_for_client
         filtered['signedInPcs'] = @game.signed_in_pcs
         # UI slice 6: the server supports locking a held session, so the UI may show the Lock
-        # button. A capability flag, not per-session state; the client never sends it back.
-        filtered['sessionLockingSupported'] = true
+        # button, but only when the scenario has at least one sign-in PC (R1 minor 2). A
+        # capability flag, not per-session state; the client never sends it back.
+        filtered['sessionLockingSupported'] = @game.scenario_has_login_pc?
         # Footholds held and every jack one was gained from (slice 9.3a, section 6)
         filtered['footholds'] = @game.footholds_for_client
         filtered['gainedFootholds'] = @game.gained_footholds

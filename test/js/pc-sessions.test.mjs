@@ -719,3 +719,38 @@ test('lockingSupported defaults to false when the scenario answer does not say s
     s.load({}, []);
     assert.equal(s.lockingSupported(), false);
 });
+
+test('canLock offers Lock only for a held password session while locking is supported', () => {
+    const s = setup();
+    s.load(
+        { sam_pc: { npcId: 'sam', username: 'sokafor', displayName: 'Sam Okafor', via: 'password' },
+          ian_pc: { npcId: 'ian', username: 'ishaw', displayName: 'Ian Shaw', via: 'password', locked: true } },
+        ['sam_pc', 'ian_pc'],
+        { lockingSupported: true }
+    );
+    // A claim session is held without a password (set directly: load ends restored claims)
+    s.sessions.set('jake_pc', { npcId: 'jake', username: 'jbrooks', displayName: 'Jake Brooks', via: 'claim' });
+    assert.equal(s.canLock('sam_pc'), true);
+    assert.equal(s.canLock('jake_pc'), false, 'a claim has no password to unlock it');
+    assert.equal(s.canLock('ian_pc'), false, 'an already-locked session is not offered Lock again');
+    assert.equal(s.canLock('missing_pc'), false);
+});
+
+test('canLock is false when the server does not support locking', () => {
+    const s = setup();
+    s.load({ sam_pc: { npcId: 'sam', username: 'sokafor', displayName: 'Sam Okafor', via: 'password' } }, ['sam_pc'], { lockingSupported: false });
+    assert.equal(s.canLock('sam_pc'), false);
+});
+
+test('lockSession never attempts to lock a password-free claim/guest session', async () => {
+    const s = setup();
+    let posted = false;
+    window.ApiClient.lockSession = async () => { posted = true; return { success: true }; };
+    s.load({}, [], { lockingSupported: true });
+    s.sessions.set('jake_pc', { npcId: 'jake', username: 'jbrooks', displayName: 'Jake Brooks', via: 'claim' });
+    const r = await s.lockSession('jake_pc');
+    assert.equal(r.ok, false);
+    assert.equal(r.reason, 'refused');
+    assert.equal(posted, false, 'no POST /lock_session is sent for a password-free session');
+    assert.equal(s.isLocked('jake_pc'), false);
+});

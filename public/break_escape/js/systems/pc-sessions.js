@@ -208,6 +208,19 @@ export class PcSessions {
     /** True when the held session at pcId is locked (UI slice 6): the open flow shows the sign-in screen. */
     isLocked(pcId) { return this.sessions.get(pcId)?.locked === true; }
 
+    /**
+     * Whether the start panel may offer Lock for pcId (UI slice 6): the server supports
+     * locking, a session is held here, it was entered with a password (not a claim or guest,
+     * which no password could unlock), and it is not already locked. The server enforces the
+     * same rule (lock_session! refuses a non-password session with 422); this keeps the
+     * affordance from ever being shown or attempted for those.
+     */
+    canLock(pcId) {
+        if (!this.lockingSupported()) return false;
+        const s = this.sessions.get(pcId);
+        return !!s && s.via === 'password' && s.locked !== true;
+    }
+
     _endRestoredClaim(pcId, s) {
         const api = apiClient();
         const done = () => this._emit('pc_signed_out', { pcId, npcId: s.npcId ?? null, reason: 'claim_ended' });
@@ -464,6 +477,9 @@ export class PcSessions {
         const s = this.sessions.get(pcId);
         if (!s) return { ok: false, reason: 'no_session' };
         if (s.locked === true) return { ok: true, alreadyLocked: true };
+        // Only a password sign-in can be locked (UI slice 6): a claim or guest session has no
+        // password to unlock it. The server also refuses this with 422; never attempt it.
+        if (s.via !== 'password') return { ok: false, reason: 'refused', message: 'Only a signed-in session can be locked' };
         const api = apiClient();
         if (!api?.lockSession) return { ok: false, reason: 'error', message: 'Locking is not available' };
         try {

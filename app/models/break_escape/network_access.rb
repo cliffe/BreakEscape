@@ -1240,6 +1240,8 @@ module BreakEscape
       open_share = resource['access'].nil?
       access_sessions.any? do |pc_id, session|
         next false unless session.is_a?(Hash)
+        # UI slice 6: a locked session maps no shares until the password is entered again.
+        next false if session_locked?(session)
 
         info = find_login_pc(pc_id)
         npc = scenario_room_npc(session['id'])

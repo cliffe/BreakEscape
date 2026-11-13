@@ -296,5 +296,51 @@ module BreakEscape
       row = network_view['footholds'][0]['hosts'].find { |h| h['id'] == 'lena_pc' }
       assert_equal({ 'username' => 'lfox', 'displayName' => 'Lena Fox', 'via' => 'password', 'remote' => true }, row['session'])
     end
+
+    # ---- a locked session is a server boundary on the share and remote paths (UI slice 6) ----
+
+    def lock_session(pc_id)
+      post game_path('lock_session'), params: { pc_id: pc_id }, as: :json
+      response.parsed_body
+    end
+
+    test 'a share mapped on a locked PC is refused, both the list and a file, then served after the password' do
+      build_network_game
+      sign_in('sam_pc', 'sokafor', NS::SAM_PASSWORD)
+      assert_response :success
+      # The open share maps on Sam's desktop and is reachable while the session is live
+      container('scanned_inbox')
+      assert_response :success
+      lock_session('sam_pc')
+      assert_response :success
+      # Locked: the share list and a file within it answer "not found", exactly as with no session
+      container('scanned_inbox')
+      assert_response :not_found
+      container('inbox_letter')
+      assert_response :not_found
+      # The right password clears the lock and the share is reachable again
+      sign_in('sam_pc', 'sokafor', NS::SAM_PASSWORD)
+      assert_response :success
+      body = container('scanned_inbox')
+      assert_response :success
+      assert_equal 'inbox_letter', body['contents'].first['id']
+    end
+
+    test 'the remote desktop of a locked PC is refused as signed-out, then served after a remote re-sign-in' do
+      with_office_foothold
+      sign_in('lena_pc', 'lfox', NS::LENA_PASSWORD, foothold: OFFICE)
+      container('lena_pc', foothold: OFFICE)
+      assert_response :success
+      lock_session('lena_pc')
+      assert_response :success
+      body = container('lena_pc', foothold: OFFICE)
+      assert_response :forbidden
+      assert_equal 'no_session', body['reason']
+      # A remote re-sign-in through the same foothold clears the lock and serves the desktop
+      sign_in('lena_pc', 'lfox', NS::LENA_PASSWORD, foothold: OFFICE)
+      assert_response :success
+      container('lena_pc', foothold: OFFICE)
+      assert_response :success
+    end
   end
 end
