@@ -624,3 +624,84 @@ in unlockedRooms -- nothing changed):
 - UID-only after-promotion discrimination test: left (heavy fixture), see above.
 - The object-action-gate "open before promotion" forge was not re-run live (no lockable object in a
   deployed split route room); covered by Rails tests 11a-13.
+
+## Gameplay proof: played as a student, not fetched (2026-11-13)
+
+Driven through the window.__test bridge in a headless browser on a keyless server on :3650 from this
+worktree: real avatar movement, the hi-vis/lanyard worn from the kit through its confirm, the NPC
+followed through the gate, the cloner minigame run against the NPC, and the records door clicked. This
+is the path the earlier Chunk E live proof skipped by firing the sync and unlock POSTs from a loaded
+page. Server truth read back read-only.
+
+### Result per case
+
+| Case | Game | Route | Outcome |
+|---|---|---|---|
+| 1 | 3418 | lab hi-vis (viaPass) | FAIL: credit never fires in real play |
+| 2 | 3419 | lab clone (viaCredential) | PASS |
+| 3 | 3420 | test_gate visitor_pass (viaPass) | enter_staff completes, but the viaPass credit does NOT fire |
+| 4 | 3421 | lab hi-vis, reload | recovers, but position lost and task still uncompletable via hi-vis |
+| 5 | 3422 | lab hi-vis, throttled | tailgate works, no error, but credit still does not fire |
+
+### The defect the fetch-driven proof hid
+
+The viaPass credit (GATED_DOOR §3.3a) is wired to fire on the `currentRoom` sync. The real client never
+sends `currentRoom` in `PUT /sync_state`. `public/break_escape/js/state-sync.js:385` builds the field as
+`out.currentRoom = window.currentRoom?.name`, but `window.currentRoom` is set to `null` in
+`public/break_escape/js/main.js:64` and is never assigned a room object anywhere (it stays null in every
+session, not just bridge-driven ones). The engine's real player room lives in `window.currentPlayerRoom`
+(set in `core/rooms.js:3182-3183`), which the field should read. Because the built field is always
+undefined, the sync delta at `state-sync.js:480-481` never adds `currentRoom`, so the controller branch
+at `games_controller.rb:2146-2163` that calls `credit_via_pass_on_sync!` is never reached.
+
+Proven three ways while standing inside the gated room, game 3418: `window.currentPlayerRoom` was
+`"secure_area"` while `window.currentRoom` was `null`; a forced full `window.stateSync.sync()` sent a body
+whose only keys were `globalVariables, scenarioClock, timedMessages, clientTs` (no `currentRoom`); and the
+server, after the walk and sync, still held `currentRoom="briefing_room"` (the start room, never advanced),
+`secure_area` in `npcRouteRooms` not `unlockedRooms`, `kp_badge_tailgated` unset, `tailgate_in` not
+completed. The Chunk E live proof (game 3397) set `kp_badge_tailgated`/`tailgate_in` only because it fired
+a `/sync_state` fetch with `currentRoom` hand-set; the real client cannot produce that request.
+
+The clone route is unaffected because its credit (viaCredential) runs in the `/unlock` door branch, not
+the sync.
+
+### Server truth
+
+- **Case 1, game 3418 (hi-vis).** Wore the hi-vis from the kit (confirm "Put it on", `courier_ready`
+  true), waited by the ledger shelves, walked in behind Len on his badge read (crossed into
+  `secure_area`, `window.currentPlayerRoom="secure_area"`). After sync: `currentRoom="briefing_room"`,
+  `unlockedRooms` without `secure_area`, `npcRouteRooms=["secure_area"]`, `kp_badge_tailgated` unset,
+  `tailgate_in` not completed (only `brief_heard` completed). Player-visible: the objective "Get past the
+  records door" stays active while the avatar is standing inside the records office, with no error or
+  toast to explain why. Screenshot:
+  `scratchpad/tgplay/case1-stuck-in-secure_area.png`.
+- **Case 2, game 3419 (clone).** Picked up the RFID cloner (`cloner_held` true), stood by Len, chose
+  "Chat with Len, close enough for the cloner...", the RFID read opened, clicked Save (clone of
+  `cm_records_badge` saved, `opt_clone` completed), clicked the records door. Toast "Door: Access granted:
+  cloned staff badge accepted." Truth: `kp_records_cloned=true`, `tailgate_in` completed, `secure_area` in
+  `unlockedRooms`, `npcRouteRooms=[]`. Clean pass.
+- **Case 3, game 3420 (visitor_pass).** Wore the visitor lanyard from the kit (`visitor_pass` true),
+  followed Sam through the gate into `staff_room`. Truth: `enter_staff` completed and the "enter" aim
+  completed (the enter_room task validates against `npcRouteRooms` membership, which the NPC wrote). BUT
+  `test_staff_entered` unset and `staff_room` still in `npcRouteRooms`, not `unlockedRooms`: the viaPass
+  credit did not fire, the same defect as case 1. The brief's stated outcome (enter_staff completes)
+  holds; the Chunk E claim of `test_staff_entered` true and the room promoted does not hold in real play.
+- **Case 4, game 3421 (reload).** Wore the hi-vis, slipped into `secure_area`, synced, reloaded with
+  `?skip_resume=1`. The game recovered and was playable; the Mission Brief replayed (intended). The player
+  resumed in `briefing_room`, not `secure_area`: because `currentRoom` never synced, all physical progress
+  through the building was lost on reload. Truth after reload: `secure_area` still in `npcRouteRooms`
+  (gate still slippable), `courier_ready` still true, `tailgate_in` not completed. The task stays
+  completable only via the clone route, never via the hi-vis route. No crash, no error toast.
+- **Case 5, game 3422 (throttled).** Repeated case 1 with a page-level fetch delay of 1.5 to 3 s on every
+  `/sync_state` and `/unlock` request (8 requests delayed). The tailgate into `secure_area` worked, no
+  JavaScript error fired (window error and unhandledrejection listeners stayed empty) and no error toast
+  showed. `tailgate_in` still not completed: the throttle changes nothing, the non-completion is the
+  viaPass defect, not the delay.
+
+### What could not be driven
+
+- The viaPass "promoted after reload" variant of case 4 could not be exercised, because promotion never
+  happens via the hi-vis route (the defect above), so there is no promoted state to reload into.
+
+Logs: `tools/playtest/lpp-hivis-3418-session.jsonl`, `lpp-clone-3419-session.jsonl`,
+`tgt-3420-session.jsonl`, `lpp-reload-3421-session.jsonl`, `lpp-throttle-3422-session.jsonl`.
