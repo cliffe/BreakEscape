@@ -55,7 +55,7 @@ globalThis.document = { createElement: mk, body: mk('body'),
 const { RFIDAnimations } = await import(animUrl);
 const { RFIDMinigame } = await import(minigameUrl);
 const { RFIDDataManager } = await import(pathToFileURL(join(tmp, 'rfid-data.mjs')).href);
-const { RFIDUIRenderer, pixelIcon, PIXEL_ICONS, clonerName, clonerNameInSentence } = await import(pathToFileURL(join(tmp, 'rfid-ui.mjs')).href);
+const { RFIDUIRenderer, pixelIcon, PIXEL_ICONS, clonerName, clonerNameInSentence, EMULATION_HOLD_MS } = await import(pathToFileURL(join(tmp, 'rfid-ui.mjs')).href);
 const { savedCardConfirmation } = await import(minigameUrl);
 
 const texts = () => flat(screen).map(e => e.textContent + e._html).join('\n');
@@ -167,6 +167,55 @@ test('pixel icons: crisp SVG at a whole-number scale, every row the same width, 
     assert.doesNotMatch(ui, /[\u{1F300}-\u{1FAFF}\u{26A0}\u{26A1}]/u, 'no emoji in the copier UI');
     assert.doesNotMatch(ui, /[\u2190\u2713\u2717]/u, 'no text arrow, tick or cross glyphs (pixel icons instead)');
     const css = readFileSync(src('../css/rfid-minigame.css'), 'utf8');
-    assert.doesNotMatch(css, /border-radius|clip-path|1px solid/, 'square corners, 2px borders');
+    assert.doesNotMatch(css, /border-radius|1px solid/, 'no smooth radius, 2px borders');
     assert.doesNotMatch(css, /font-size:\s*[\d.]+em/, 'whole pixel font sizes');
+});
+
+// UX feedback slice 3a (main2-17, main2-22): the stepped corners are pixel art and stay.
+test('the copier frame keeps its stepped corners, outline and bevel following the steps', () => {
+    const css = readFileSync(src('../css/rfid-minigame.css'), 'utf8');
+    const rule = (sel) => (css.match(new RegExp(`(^|\\n)${sel.replace(/[.:]/g, m => '\\' + m)} \\{([^}]*)\\}`)) || [])[2] || '';
+    const frame = rule('.flipper-zero-frame');
+    const steps = (frame.match(/--copier-steps:\s*polygon\(([^;]*)\);/) || [])[1];
+    assert.ok(steps, 'the stepped polygon is defined on the frame');
+    const points = steps.split(',').map(p => p.trim());
+    assert.equal(points.length, 36, 'nine points per corner');
+    // Every step is a whole 2px: each offset from an edge is 0, 2, 4, 6 or 10 px
+    for (const p of points) {
+        for (const v of p.match(/calc\([^)]*\)|\S+/g)) assert.match(v, /^(0px|2px|4px|6px|10px|100%|calc\(100% - (2|4|6|10)px\))$/, `whole-pixel step: ${p}`);
+    }
+    assert.match(frame, /clip-path:\s*var\(--copier-steps\)/, 'the frame is clipped to the steps');
+    assert.doesNotMatch(frame, /border:|box-shadow/, 'a border or shadow would be cut away at the corners');
+    for (const layer of ['::before', '::after']) {
+        assert.match(css, new RegExp(`\\.flipper-zero-frame::before,\\s*\\.flipper-zero-frame::after \\{[^}]*clip-path:\\s*var\\(--copier-steps\\)`), `${layer} clipped to the same steps`);
+    }
+    assert.match(rule('.flipper-zero-frame::before'), /inset:\s*2px/, 'the bevel sits inside a 2px outline');
+    assert.doesNotMatch(css, /box-shadow:[^;]*\d+px\s+\d+px\s+[1-9]\d*px\s+(?!0)/, 'no blurred shadow');
+});
+
+// UX feedback slice 3a (main2-21): the emulation details stay up long enough to read.
+test('the emulation screen holds at least 1.5 s, with the reader breadcrumb at a door', () => {
+    assert.ok(EMULATION_HOLD_MS >= 1500);
+    const timers = [];
+    globalThis.setTimeout = (f, ms) => { timers.push({ f, ms }); return timers.length; };
+    try {
+        let g = makeGame({ mode: 'unlock', requiredCardIds: ['VISITOR-07'], availableCards: [] });
+        let emulated = null;
+        g.handleEmulate = (c) => { emulated = c; };
+        g.ui.showEmulationScreen(visitor());
+        assert.match(texts(), /At the reader &gt; Emulating|At the reader > Emulating/);
+        assert.match(texts(), /Visitor card 07/, 'the card is named on the screen');
+        assert.equal(emulated, null, 'no result yet');
+        assert.equal(timers.length, 1);
+        assert.ok(timers[0].ms >= 1500, `held for ${timers[0].ms} ms`);
+        timers[0].f();
+        assert.equal(emulated.name, 'Visitor card 07');
+
+        // From the inventory (no reader) the trail stays the device's own
+        timers.length = 0;
+        g = makeGame({ mode: 'unlock', requiredCardIds: [], availableCards: [] });
+        g.handleEmulate = () => {};
+        g.ui.showEmulationScreen(visitor());
+        assert.match(texts(), /RFID &gt; Saved &gt; Emulating|RFID > Saved > Emulating/);
+    } finally { globalThis.setTimeout = realTimeout; }
 });

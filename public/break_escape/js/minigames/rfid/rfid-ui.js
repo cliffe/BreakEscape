@@ -24,6 +24,9 @@ export const NO_KEYCARDS_HINT = 'The cloner reads a badge at close range: one yo
 
 /** What the device is called on screen and in the menus: the scenario's own name for the
  *  rfid_cloner item ("Card copier"), so the inventory, the menus and the device agree. */
+/** How long the emulation screen (card name, protocol, data) stays up before the result. */
+export const EMULATION_HOLD_MS = 1500;
+
 export const DEFAULT_CLONER_NAME = 'Card copier';
 export function clonerName(items = (typeof window !== 'undefined' && window.inventory && window.inventory.items) || []) {
     const cloner = (items || []).find(it => it && it.scenarioData && it.scenarioData.type === 'rfid_cloner');
@@ -509,7 +512,8 @@ export class RFIDUIRenderer {
         // Breadcrumb
         const breadcrumb = document.createElement('div');
         breadcrumb.className = 'flipper-breadcrumb';
-        breadcrumb.textContent = 'RFID > Saved > Emulating';
+        // From a door the copier opened on that reader, so the trail says so
+        breadcrumb.textContent = this.minigame.isLockingAttempt ? 'At the reader > Emulating' : 'RFID > Saved > Emulating';
         screen.appendChild(breadcrumb);
 
         // Emulation icon
@@ -550,7 +554,8 @@ export class RFIDUIRenderer {
         }
         screen.appendChild(emulating);
 
-        // Trigger emulation after showing screen. If it throws (bad card data), say so
+        // Trigger emulation once the player has had time to read this screen (it showed for
+        // only half a second before, too short to see). If it throws (bad card data), say so
         // rather than leaving "Emulating..." up with nothing happening.
         setTimeout(() => {
             if (!this.getScreen()) return; // closed meanwhile
@@ -561,7 +566,7 @@ export class RFIDUIRenderer {
                 this.showError('Emulation failed', 'The saved card data is unreadable. Read the card again.');
                 setTimeout(() => { if (this.getScreen()) this.showSavedCards(); }, 3000);
             }
-        }, 500);
+        }, EMULATION_HOLD_MS);
     }
 
     /**
