@@ -367,6 +367,52 @@ export function pcSwitchedOff(data, globals = (typeof window !== 'undefined' && 
 }
 
 /**
+ * The NPC using sign-in PC pcId now, or null: its owner when present, else anybody else at it
+ * (9.2 H, 6.4: a borrower at a hot desk). workstationState.presence; null without it.
+ */
+export function pcUserAt(pcId) {
+    const ws = typeof window !== 'undefined' ? window.workstationState : null;
+    if (!pcId || !ws?.presence) return null;
+    const { ownerId, present, userId = null } = ws.presence(pcId) || {};
+    return ownerId && present ? ownerId : (userId || null);
+}
+
+/**
+ * Who stops the player using this sign-in PC, or null: a PC that would say "<name> is using
+ * this PC." on a click (step 1 of interactLoginPc). A headless host and a switched-off PC say
+ * something else first, so they answer null. A far tap on the PC (game.js) asks this before
+ * walking, so the player is told at once instead of walking into the seated owner.
+ */
+export function pcInUseBy(lockable) {
+    const data = lockable?.scenarioData || {};
+    if (data.lockType !== 'login' || !data.id) return null;
+    if (isHeadlessHost(lockable) || pcSwitchedOff(data)) return null;
+    return pcUserAt(data.id);
+}
+
+/**
+ * "<name> is using this PC." with the PC's resolved observations, as a toast, and the
+ * pc_in_use record (pcSessions.inUseShown). The only place that text is written.
+ */
+export async function showPcInUse(lockable, userAt = pcInUseBy(lockable)) {
+    const data = lockable?.scenarioData || {};
+    if (!userAt) return false;
+    const owner = window.npcManager?.getNPC?.(userAt);
+    const name = owner?.displayName || userAt;
+    let obs = data.observations || '';
+    try {
+        const { resolveObjectField } = await import('../utils/conditional-text.js');
+        obs = resolveObjectField(data, 'observations', '') || '';
+    } catch (e) { /* unresolved base observations */ }
+    // The toast is plain text by default, so the name and observations go in unescaped
+    // (escaping here as well would show "&lt;" on screen)
+    const message = obs ? `${name} is using this PC.\n${obs}` : `${name} is using this PC.`;
+    window.gameAlert?.(message, 'info', data.name || 'PC', 4000);
+    window.pcSessions?.inUseShown?.(data.id, userAt);
+    return true;
+}
+
+/**
  * A click on a sign-in PC (access model 5.4, "The interaction at a sign-in PC"):
  *   0. a headless host (slice 9.3a): its observations, and stop;
  *   0b. switched off (affordance.offWhen holds, q72): "This PC is off.", and stop. A session
@@ -403,22 +449,9 @@ export async function interactLoginPc(lockable) {
     }
     const ws = window.workstationState;
     const sessions = window.pcSessions;
-    const { ownerId, present, userId = null } = ws?.presence ? ws.presence(pcId) : { ownerId: null, present: null };
-    // 9.2 H (6.4): anybody using the PC now (a borrower at a hot desk) is present too
-    const userAt = ownerId && present ? ownerId : userId;
+    const userAt = pcUserAt(pcId);
     if (userAt) {
-        const owner = window.npcManager?.getNPC?.(userAt);
-        const name = owner?.displayName || userAt;
-        let obs = data.observations || '';
-        try {
-            const { resolveObjectField } = await import('../utils/conditional-text.js');
-            obs = resolveObjectField(data, 'observations', '') || '';
-        } catch (e) { /* unresolved base observations */ }
-        // The toast is plain text by default, so the name and observations go in unescaped
-        // (escaping here as well would show "&lt;" on screen)
-        const message = obs ? `${name} is using this PC.\n${obs}` : `${name} is using this PC.`;
-        window.gameAlert?.(message, 'info', data.name || 'PC', 4000);
-        sessions?.inUseShown?.(pcId, userAt);
+        await showPcInUse(lockable, userAt);
         return 'in_use';
     }
     if (sessions?.has?.(pcId)) {
@@ -1381,6 +1414,8 @@ window.getLockRequirementsForItem = getLockRequirementsForItem;
 window.unlockTarget = unlockTarget;
 window.openLoginPc = openLoginPc;
 window.interactLoginPc = interactLoginPc;
+window.pcInUseBy = pcInUseBy;
+window.showPcInUse = showPcInUse;
 window.openLoginSignIn = openLoginSignIn;
 // The network screens (slice 9.3a): network-links.js looks openRemoteDesktop up on window
 window.openRemoteSignIn = openRemoteSignIn;

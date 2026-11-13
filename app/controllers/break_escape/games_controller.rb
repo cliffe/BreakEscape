@@ -32,7 +32,7 @@ module BreakEscape
     before_action :require_game_in_host_event, only: [:show]
     # Review R2 n1: runs before set_game, whose params[:id] parses the whole JSON body, so the
     # cap limits parse cost as well as report cost. Reads only the Content-Length header.
-    prepend_before_action :refuse_oversized_npc_frustration, only: [:npc_frustration]
+    prepend_before_action :refuse_oversized_body, only: [:npc_frustration, :clone_card]
 
 
     # Actions that read-modify-write @game.player_state and then save! need a
@@ -278,12 +278,24 @@ module BreakEscape
     def scenario
       authorize @game if defined?(Pundit)
 
+      # One locked, read-only-when-idle bootstrap step before any saved* block is
+      # read, so the client sees the repaired inventory and migrated record
+      # (SYNC_DELTAS_PLAN 2.4). It takes no lock unless a repair is actually due.
+      @game.prepare_bootstrap_state!
+
       begin
         # Use filtered bootstrap scenario and remove 'requires' fields for security
         filtered = @game.filtered_scenario_for_bootstrap
 
         # Remove 'requires' fields recursively for security
         filter_requires_recursive(filtered)
+
+        # Step 2b (plan item 3): author notes ("_"-prefixed properties) never ship. Strip them from
+        # the bootstrap copy here, after this route's own filtering and before any player-state key
+        # (objectivesState, savedGlobalVariables, captures, savedCurrentRoom, ...) is attached, so a
+        # "_"-prefixed saved global is kept. Free data (object/array globals, minigameData) holds no
+        # notes and ships as authored. The secret-keeping filters above still visit notes.
+        BreakEscape::AuthorNotes.strip_notes!(filtered, BreakEscape::ScenarioSchema.root)
 
         # Include objectives state for page reload recovery
         # This allows the client to restore completed/progress state
@@ -310,6 +322,20 @@ module BreakEscape
         # `briefing_played` to persist across page reloads.
         if @game.player_state['globalVariables'].present?
           filtered['savedGlobalVariables'] = @game.player_state['globalVariables']
+        end
+
+        # The server-owned capture record (sync deltas R2, 6a): shipped as `captures`. The client
+        # (core/game.js) mirrors it into its se_captures global for the readers; it no longer rides
+        # savedGlobalVariables. The entries carry no secret: GET /capture_secrets serves those once
+        # earned (main's authored path).
+        captures = @game.captures_for_client
+        filtered['captures'] = captures if captures.any?
+
+        # The saved current room, so the first sync after a load does not resend
+        # currentRoom unless the page starts the player somewhere else (R1,
+        # SYNC_DELTAS_PLAN 3.2). One short string; the old client ignores it.
+        if @game.player_state['currentRoom'].is_a?(String)
+          filtered['savedCurrentRoom'] = @game.player_state['currentRoom']
         end
 
         # Include saved notes (with player observations) for session resume.
@@ -785,10 +811,24 @@ module BreakEscape
         authorize @game if defined?(Pundit)
 
         stale = stale_sync_request?
+        # 6b review m1: fingerprint the phish evidence before the merge, only when something is
+        # waiting on it, so the capture step can tell whether this request advanced that evidence
+        # and skip the scenario load otherwise. A forged, never-provable unproven entry no longer
+        # forces the scenario load on every later evidence-carrying sync.
+        # Branch review R1 n2: gate on phish_gated_unproven_captures?, not unproven_captures?. An
+        # entry unproven only because a part 3 proof (a captureProof) has not yet held can never be
+        # advanced by a sync_state request (part 3 proofs arrive through other routes), so it needs
+        # no fingerprint; walking the whole mailbox to produce one a sync can never move is wasted.
+        @phish_fp_before = (!stale && @game.phish_gated_unproven_captures?) ? @game.phish_evidence_fingerprint : nil
         refusal = merge_last_write_wins_sections unless stale
         raise ActiveRecord::Rollback if refusal
 
         merge_grow_only_sections
+        # Server-owned capture record (sync deltas R2, 6a). Runs on a stale request too (a
+        # capture is grow-only and safe to repeat): it intercepts the current client's
+        # se_captures global and records params[:captures], taking every field from the
+        # scenario, so the client never owns the record.
+        apply_capture_sync_step(stale: stale)
         # validate: false because the validations here are player and mission
         # presence (twice each: belongs_to is required and validates :player /
         # :mission repeat it), which load both rows on every save, and the
@@ -803,13 +843,119 @@ module BreakEscape
       if refusal
         render json: { success: false, message: refusal }, status: :forbidden
       elsif stale
-        render json: { success: true, stale: true }
+        body = { success: true, stale: true }
+        add_capture_answer_fields(body)
+        render json: body
       else
         body = { success: true }
         body[:notSaved] = @not_saved if @not_saved.any?
         body[:mailTrimmed] = @mail_trimmed if @mail_trimmed.present?
+        add_capture_answer_fields(body)
         render json: body
       end
+    end
+
+    # The se_captures interception and record (sync deltas R2, 6a), inside the sync_state row
+    # lock. The incoming entries are params[:captures] plus the values of the current client's
+    # params[:globalVariables]['se_captures'] (which merge_global_variables! drops, so it is
+    # never stored as a global). Each is recorded through record_capture!, which takes every
+    # stored field from the scenario. Loads the scenario only when there is something to record
+    # or a legacy global to migrate (the narrow sync_state load has no scenario_data).
+    def apply_capture_sync_step(stale: false)
+      incoming = incoming_capture_entries
+      @capture_answers = {}
+      @capture_refused = {}
+      @capture_incoming_any = incoming.any?
+      # 6b: a request that carries globalVariables or mailState can complete an unproven entry's
+      # part 2 evidence, so the step runs (and loads the scenario) to stamp it, even with no new
+      # capture. A stale request's mail is not merged and confirms nothing, so it never stamps.
+      # 6b review m1: only when this request actually advanced the phish evidence. The merge has
+      # already run, so compare the post-merge fingerprint (counting the request's own sent
+      # messages, so a mail section refused over a cap still counts) with the pre-merge one. When
+      # they match, no new evidence arrived and the scenario load is skipped, so a forged,
+      # never-provable unproven entry does not force the load on every later sync.
+      mail_incoming = params[:mailState].respond_to?(:to_unsafe_h) ? params[:mailState].to_unsafe_h : nil
+      # Branch review R1 m1: parse the incoming mail (incoming_sent_messages re-sanitises the whole
+      # body) only when extra_sent can be used: when this request can advance the phish evidence
+      # (an unproven phish-gated entry, so @phish_fp_before is set), or carries a new capture, or
+      # has a legacy global to migrate and then stamp. The common sync (no incoming, nothing
+      # unproven and phish-gated, no legacy) now skips the second mail walk.
+      extra_sent = (!stale && (incoming.any? || !@phish_fp_before.nil? || @game.legacy_captures?)) ?
+        @game.incoming_sent_messages(mail_incoming) : []
+      needs_stamp = false
+      if !stale && !@phish_fp_before.nil?
+        needs_stamp = @game.phish_evidence_fingerprint(extra_sent: extra_sent) != @phish_fp_before
+      end
+      return if incoming.empty? && !@game.legacy_captures? && !needs_stamp
+
+      scenario = @game.stored_scenario_data
+      @game.migrate_legacy_captures!(scenario: scenario) if @game.legacy_captures?
+
+      incoming.first(BreakEscape::CaptureProofs::MAX_CAPTURES_PER_SYNC).each do |entry|
+        target_id = entry.is_a?(Hash) ? entry['targetId'] : nil
+        result = @game.record_capture!(entry, scenario: scenario)
+        case result[:result]
+        when :recorded, :already
+          stored = result[:entry]
+          tid = (stored && stored['targetId']) || target_id
+          @capture_answers[tid] = client_capture_entry(stored) if tid
+        when :refused
+          @capture_refused[target_id] = result[:reason] if target_id
+        end
+      end
+      # Entries beyond the per-sync cap are refused, unless the same target id was already
+      # recorded or answered within the cap (review 6a-server N2): a duplicate id is stored
+      # first-wins, so answering and refusing the one id would send both a captures entry and a
+      # capturesRefused entry for it. Skip the refusal when the id already has an answer.
+      incoming.drop(BreakEscape::CaptureProofs::MAX_CAPTURES_PER_SYNC).each do |entry|
+        target_id = entry.is_a?(Hash) ? entry['targetId'] : nil
+        next unless target_id
+        next if @capture_answers.key?(target_id)
+
+        @capture_refused[target_id] = 'invalid'
+      end
+
+      # 6b: stamp proven: true on any unproven entry whose evidence now holds, counting the
+      # request's own sent messages (the capture and its landed phish mail ride one sync; a mail
+      # section refused over a cap still proves the capture). Non-stale only: a stale request's
+      # mail is not merged. The answers rebuild below from the stamped record.
+      return if stale
+
+      # extra_sent was computed above (reused from the needs_stamp fingerprint check).
+      @game.stamp_proven_captures!(scenario: scenario, extra_sent: extra_sent)
+    end
+
+    # params[:captures] (an array) plus each value of the old tab's
+    # params[:globalVariables]['se_captures'] map, as plain hashes.
+    def incoming_capture_entries
+      entries = []
+      caps = params[:captures]
+      Array(caps).each do |cap|
+        entries << (cap.respond_to?(:to_unsafe_h) ? cap.to_unsafe_h : cap) if cap.is_a?(ActionController::Parameters) || cap.is_a?(Hash)
+      end
+
+      globals = params[:globalVariables]
+      globals = globals.to_unsafe_h if globals.respond_to?(:to_unsafe_h)
+      legacy = globals.is_a?(Hash) ? globals['se_captures'] : nil
+      legacy.each_value { |entry| entries << entry if entry.is_a?(Hash) } if legacy.is_a?(Hash)
+      entries
+    end
+
+    # One stored entry as the client reads it: the safe fields only, never proven or a secret.
+    def client_capture_entry(entry)
+      return nil unless entry.is_a?(Hash)
+
+      out = { 'targetId' => entry['targetId'], 'kind' => entry['kind'] || 'credential' }
+      %w[roleLabel address host note at].each { |k| out[k] = entry[k] if entry.key?(k) && !entry[k].nil? }
+      out
+    end
+
+    # Add captures / capturesRefused to a sync answer, only when the body carried captures.
+    def add_capture_answer_fields(body)
+      return unless @capture_incoming_any
+
+      body[:captures] = @capture_answers if @capture_answers.present?
+      body[:capturesRefused] = @capture_refused if @capture_refused.present?
     end
 
     # POST /games/:id/update_room
@@ -1057,7 +1203,7 @@ module BreakEscape
           # gift record for that NPC is kept.
           if source_npc_id.blank? && source_pc_id.blank? && source_resource_id.blank? && @game.inventory_includes?(item.to_unsafe_h)
             Rails.logger.info "[BreakEscape] Item already in inventory, accepted without revalidation: #{item['type']} / #{item['name']}"
-            return render json: { success: true, inventory: client_inventory }
+            return render json: { success: true, already: true }
           end
           validation_error = validate_item_collectible(item, source_npc_id, source_pc_id: source_pc_id, transfer: transfer,
                                                                           source_resource_id: source_resource_id)
@@ -1083,7 +1229,9 @@ module BreakEscape
           # Copy: the file stays on the PC and in its profile (access model 5.1)
           @game.record_copied_item!(@collectible_item['id']) if (source_pc_id || source_resource_id) && @collectible_transfer == 'copy'
           Rails.logger.info "[BreakEscape] Item added successfully. Current inventory size: #{@game.player_state['inventory']&.length}"
-          render json: { success: true, inventory: client_inventory }
+          # No client reads the inventory echo from this answer (sync deltas P2); the
+          # tray is reconciled by PUT /sync_state and the network delta answers.
+          render json: { success: true }
 
         when 'remove'
           # A plant (engine plan section 6): the client names the object the device was used
@@ -1091,10 +1239,11 @@ module BreakEscape
           used_on = params[:used_on] || params[:usedOn]
           @game.record_planted_item!(item['id'], used_on) if used_on.present?
           @game.remove_inventory_item!(item['id'])
-          render json: { success: true, inventory: client_inventory }
+          render json: { success: true }
 
         when 'update_saved_cards'
-          # The RFID cloner's saved cards, so a reload doesn't empty it
+          # The RFID cloner's saved cards (kept for one release while old tabs still send
+          # it; SYNC_DELTAS_PLAN 5.4). A filtered merge now: only a recorded card is kept.
           cards = Array(params[:saved_cards]).map { |c| c.respond_to?(:to_unsafe_h) ? c.to_unsafe_h : c }
           if @game.update_cloner_saved_cards!(cards)
             render json: { success: true }
@@ -1102,6 +1251,12 @@ module BreakEscape
             render json: { success: false, message: 'No RFID cloner in inventory, or invalid card data' },
                    status: :unprocessable_entity
           end
+
+        when 'remove_saved_card'
+          # Remove one display card from the cloner's list (SYNC_DELTAS_PLAN P1). The copy
+          # itself stands; the list is a display convenience.
+          @game.remove_saved_card!(params[:card_id].to_s)
+          render json: { success: true }
 
         else
           render json: { success: false, message: 'Invalid action' }, status: :bad_request
@@ -1202,11 +1357,16 @@ module BreakEscape
     def clone_card
       authorize @game if defined?(Pundit)
 
+      # The display card the copy saves to the cloner's list (SYNC_DELTAS_PLAN P1): stored
+      # only for a copy the server records, and only its rfid_data is read from the client.
+      # Capped at 8 KB before parsing (refuse_oversized_body, clone_card).
+      card = params[:card].respond_to?(:to_unsafe_h) ? params[:card].to_unsafe_h : nil
       result = @game.record_card_clone!(
         card_id: params[:card_id].to_s,
         npc_id: params[:npc_id].presence&.to_s,
         object_id: params[:object_id].presence&.to_s,
-        held_card: ActiveModel::Type::Boolean.new.cast(params[:held_card]) == true
+        held_card: ActiveModel::Type::Boolean.new.cast(params[:held_card]) == true,
+        card: card
       )
       render json: result[:body], status: result[:status]
     end
@@ -1303,7 +1463,7 @@ module BreakEscape
       jack_id = params[:jack_id].to_s
       return render json: { success: false, error: 'Missing jack_id' }, status: :bad_request if jack_id.empty?
 
-      result = @game.plant_device!(jack_id, params[:device_id].presence&.to_s)
+      result = @game.plant_device!(jack_id, params[:device_id].presence&.to_s, delta: inventory_delta_opt_in?)
       render json: result[:body], status: result[:status]
     end
 
@@ -1333,7 +1493,7 @@ module BreakEscape
       ap_id = params[:ap_id].to_s
       return render json: { success: false, error: 'Missing ap_id' }, status: :bad_request if ap_id.empty?
 
-      result = @game.join_network!(ap_id, params[:key].presence&.to_s)
+      result = @game.join_network!(ap_id, params[:key].presence&.to_s, delta: inventory_delta_opt_in?)
       render json: result[:body], status: result[:status]
     end
 
@@ -1344,7 +1504,7 @@ module BreakEscape
       jack_id = params[:jack_id].to_s
       return render json: { success: false, error: 'Missing jack_id' }, status: :bad_request if jack_id.empty?
 
-      result = @game.unplug_device!(jack_id)
+      result = @game.unplug_device!(jack_id, delta: inventory_delta_opt_in?)
       render json: result[:body], status: result[:status]
     end
 
@@ -1360,7 +1520,7 @@ module BreakEscape
       shape = params[:shape].presence&.to_s
       return render json: { success: false, error: 'Missing shape' }, status: :bad_request unless %w[dropped session].include?(shape)
 
-      result = @game.implant_foothold!(pc_id, shape, params[:path].presence&.to_s)
+      result = @game.implant_foothold!(pc_id, shape, params[:path].presence&.to_s, delta: inventory_delta_opt_in?)
       render json: result[:body], status: result[:status]
     end
 
@@ -1742,8 +1902,26 @@ module BreakEscape
 
     private
 
-    def refuse_oversized_npc_frustration
-      return unless request.content_length.to_i > NPC_FRUSTRATION_MAX_BYTES
+    # A network route answers the `added`/`removed` inventory delta (sync deltas P2) only when
+    # the request opts in with `delta: true`; an old open tab that still reads the whole-inventory
+    # echo gets the old shape until the next release removes it (4.4).
+    def inventory_delta_opt_in?
+      ActiveModel::Type::Boolean.new.cast(params[:delta]) == true
+    end
+
+    # Pre-parse body caps per action, read from Content-Length alone so an oversized
+    # body is refused before it is parsed (SYNC_DELTAS_PLAN 2.5). npc_frustration
+    # keeps its limit; clone_card gets 8 KB (a saved card is at most 4 KB,
+    # Game::MAX_SAVED_CARD_BYTES). PUT /sync_state keeps its own after-parse caps.
+    CLONE_CARD_MAX_BODY_BYTES = 8 * 1024
+    OVERSIZED_BODY_LIMITS = {
+      'npc_frustration' => NPC_FRUSTRATION_MAX_BYTES,
+      'clone_card' => CLONE_CARD_MAX_BODY_BYTES
+    }.freeze
+
+    def refuse_oversized_body
+      limit = OVERSIZED_BODY_LIMITS[action_name]
+      return unless limit && request.content_length.to_i > limit
 
       render json: { error: 'request too large' }, status: :payload_too_large
     end
@@ -1908,7 +2086,7 @@ module BreakEscape
       end
 
       if params[:biometricSamples].is_a?(Array)
-        scenario = Game.where(id: @game.id).pick(:scenario_data)
+        scenario = @game.stored_scenario_data
         @game.merge_biometric_samples!(params[:biometricSamples], scenario: scenario)
       end
     end
@@ -2211,6 +2389,12 @@ module BreakEscape
       end
 
       Rails.logger.debug "[BreakEscape] Container has #{filtered_contents.length} items after filtering"
+
+      # Step 2b (plan item 3): author notes never ship. Strip them from the returned contents copy
+      # (each item is already a deep_dup), with the Node of a contents list.
+      BreakEscape::AuthorNotes.strip_notes!(
+        filtered_contents, BreakEscape::ScenarioSchema.at('#/definitions/item/properties/contents')
+      )
       filtered_contents
     end
 

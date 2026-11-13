@@ -14,6 +14,9 @@
 # json_data is the authored scenario; expanded and report are what
 # BreakEscape::NpcHabits.expanded_copy(json_data) returns. No line ever quotes a password or
 # any text from one: pieces are named by position and kind, sources by path.
+require_relative '../lib/break_escape/scenario_schema' unless defined?(BreakEscape::ScenarioSchema)
+require_relative '../lib/break_escape/author_notes' unless defined?(BreakEscape::AuthorNotes)
+
 module ValidateNpcHabits
   NH = BreakEscape::NpcHabits
   AI = BreakEscape::AccessIdentities
@@ -88,8 +91,10 @@ module ValidateNpcHabits
     roles = json_data['roles']
     if json_data.key?('roles')
       if roles.is_a?(Hash)
+        roles_node = BreakEscape::ScenarioSchema.at('#/properties/roles')
         roles.each do |name, entry|
-          next if name.to_s.start_with?('_')
+          # roles is an id map: a "_" key is a role name (an id, never a note), so it is checked.
+          next if BreakEscape::AuthorNotes.note?(roles_node, name.to_s)
 
           unless entry.is_a?(Hash)
             err(issues, "roles.#{name} must be an object.")
@@ -116,14 +121,14 @@ module ValidateNpcHabits
         err(issues, "#{who} habits must be an object of habit names.")
         next
       end
+      # Unknown habit names are the schema's job (npc.habits is closed, "_" keys pass), so a slip
+      # prints one line; this checks only the values of the names it knows.
       habits.each do |name, value|
-        next if name == '_comment'
+        next if name.to_s.start_with?('_')
 
         if NH::PARAMETERS.include?(name)
           err(issues, "#{who} habits.#{name} must be a non-empty string.") unless NH.valid_parameter?(name, value)
-        elsif !NH::HABITS.key?(name)
-          err(issues, "#{who} has unknown habit '#{name}' (known: #{NH::HABITS.keys.join(', ')}).")
-        elsif !NH.valid_habit?(name, value)
+        elsif NH::HABITS.key?(name) && !NH.valid_habit?(name, value)
           err(issues, "#{who} habit '#{name}' has value #{value.inspect}; allowed: #{NH::HABITS[name].map(&:inspect).join(', ')}.")
         end
       end

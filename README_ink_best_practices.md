@@ -49,7 +49,7 @@ The same trap catches `Nurse:` (displayName `Sister Doyle`), `Guard:` (displayNa
 
 If you want a shorter label on screen, **change the `displayName` in the scenario** — do not shorten the prefix in the ink.
 
-`ruby scripts/validate_scenario.rb <scenario>` now checks this. A prefix used five or more times in a file that matches no NPC is reported as ❌ INVALID; a one-off is reported as 💡 SUGGESTION, because prose labels (`Command: nmap -sV ...`, `Reasoning: ...`) look identical to a naive check and render harmlessly.
+`ruby scripts/validate_scenario.rb <scenario>` now checks this. A prefix used five or more times in a file that matches no NPC is reported as ❌ ERROR; a one-off is reported as 💡 SUGGESTION, because prose labels (`Command: nmap -sV ...`, `Reasoning: ...`) look identical to a naive check and render harmlessly.
 
 **`You:` is safe** — the engine aliases it to the player character. `Player:` works too.
 

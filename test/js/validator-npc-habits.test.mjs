@@ -89,14 +89,16 @@ test('awareness or habits on an NPC record that is not a room NPC', () => {
     assertHas(errors(out.habits), "'phoneNPCs[0]' has 'habits'");
 });
 
-test('an unknown level, habit or value, and a roles level', () => {
+test('an unknown level or value, and a roles level (an unknown habit is left to the schema)', () => {
     const out = run(scenario({
         npcs: [person('dana', { awareness: 'paranoid', habits: { phishable: true, locksScreen: 'often', holdsDoors: 'no' } })],
         extra: { roles: { staff: { awareness: 'max' } } }
     }));
     const e = errors(out.habits);
     assertHas(e, "awareness 'paranoid'");
-    assertHas(e, "unknown habit 'phishable'");
+    // an unknown habit name is the schema's line (npc.habits is closed), not this module's
+    assertLacks(e, "unknown habit 'phishable'");
+    assertLacks(e, "'phishable'");
     assertHas(e, "habit 'holdsDoors' has value \"no\"");
     assertLacks(e, "unknown habit 'holdsDoors'");
     assertHas(e, "habit 'locksScreen' has value \"often\"");

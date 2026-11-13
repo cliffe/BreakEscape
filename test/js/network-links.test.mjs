@@ -135,17 +135,17 @@ async function reset({ items = [], planted = false } = {}) {
     window.rooms = {};
     window.showServerItem = inventory.showServerItem;
     window.syncInventoryFromServer = inventory.syncInventoryFromServer;
+    window.applyInventoryDelta = inventory.applyInventoryDelta;
     window.ApiClient = {
         async networkPlant(jackId, deviceId) {
             calls.push(['plant', jackId, deviceId]);
             const first = !links.wasGained(jackId);
-            const inv = window.inventory.items.map(it => it.scenarioData).filter(d => d.id !== deviceId && d.type !== 'notepad');
-            return { success: true, foothold, inventory: [...inv, linkItem], first };
+            // Sync deltas P2: the server names the touched items (the link added, the device removed).
+            return { success: true, foothold, added: [linkItem], removed: deviceId ? [deviceId] : [], first };
         },
         async networkUnplug(jackId) {
             calls.push(['unplug', jackId]);
-            const inv = window.inventory.items.map(it => it.scenarioData).filter(d => d.id !== linkItem.id && d.type !== 'notepad');
-            return { success: true, inventory: [...inv, box], endedPcIds: ['door_box'] };
+            return { success: true, added: [box], removed: [linkItem.id], endedPcIds: ['door_box'] };
         },
         async network(footholdId) {
             calls.push(['network', footholdId]);
@@ -155,14 +155,14 @@ async function reset({ items = [], planted = false } = {}) {
             calls.push(['implant', pcId, shape, path]);
             if (implantThrowsLeft > 0) { implantThrowsLeft--; const e = new Error('network down'); e.status = 500; throw e; }
             if (implantAnswer instanceof Error) throw implantAnswer;
-            const inv = window.inventory.items.map(it => it.scenarioData).filter(d => d.type !== 'notepad');
-            return { success: true, foothold: implantFoothold, inventory: [...inv, implantLink], first: true, ...implantAnswer };
+            const consumed = implantAnswer && implantAnswer.consumedId;
+            return { success: true, foothold: implantFoothold, first: true,
+                     added: [implantLink], removed: consumed ? [consumed] : [], ...implantAnswer };
         },
         async networkJoin(apId, key) {
             calls.push(['join', apId, key]);
             if (typeof joinAnswer === 'function') return joinAnswer(apId, key);
-            const inv = window.inventory.items.map(it => it.scenarioData).filter(d => d.type !== 'notepad');
-            return { success: true, foothold: wifiFoothold, inventory: [...inv, wifiLinkItem], first: false };
+            return { success: true, foothold: wifiFoothold, added: [wifiLinkItem], removed: [], first: false };
         }
     };
     inventory.initializeInventory();
@@ -917,8 +917,7 @@ test('the first join opens the view', async () => {
     await reset();
     withStarters();
     joinAnswer = () => {
-        const inv = window.inventory.items.map(it => it.scenarioData).filter(d => d.type !== 'notepad');
-        return { success: true, foothold: wifiFoothold, inventory: [...inv, wifiLinkItem], first: true };
+        return { success: true, foothold: wifiFoothold, added: [wifiLinkItem], removed: [], first: true };
     };
     await links.interactWifiAp(wifiApSprite());
     await settle();
@@ -933,8 +932,7 @@ test('a keyed network: the probe gets wrong_key, the key minigame opens, and a r
     joinAnswer = (apId, key) => {
         if (joined || (key && key === 'seabreeze-2025')) {
             joined = true;
-            const inv = window.inventory.items.map(it => it.scenarioData).filter(d => d.type !== 'notepad');
-            return { success: true, foothold: wifiFoothold, inventory: [...inv, wifiLinkItem], first: false };
+            return { success: true, foothold: wifiFoothold, added: [wifiLinkItem], removed: [], first: false };
         }
         const e = new Error('x'); e.status = 422; e.body = { reason: 'wrong_key' }; throw e;
     };
@@ -1006,8 +1004,7 @@ test('a second access point of a joined network answers already, emits network_j
     await settle();
     views.length = 0;
     joinAnswer = (apId) => {
-        const inv = window.inventory.items.map(it => it.scenarioData).filter(d => d.type !== 'notepad');
-        return { success: true, already: true, first: false, foothold: wifiFoothold, inventory: inv };
+        return { success: true, already: true, first: false, foothold: wifiFoothold, added: [wifiLinkItem], removed: [] };
     };
     const r = await links.interactWifiAp(wifiApSprite('guest_ap2', 'Guest AP (lift)'));
     await settle();

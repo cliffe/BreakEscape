@@ -66,7 +66,9 @@ test('the menu uses the cloner\'s own name and Clone records the copy\'s source'
     const acts = objectActions(card);
     assert.equal(acts[0].label, 'Copy it with the RFID cloner');
     acts[0].onSelect();
-    assert.deepEqual(globalThis.window._rfid[2].cloneSource, { object_id: 'clerk_card_item' });
+    // A world card clone reports its source with the P1 cloneFrom convention (as the normal
+    // interaction path does); recordCloneOnServer then keys the copy on the card's stamped id.
+    assert.equal(globalThis.window._rfid[2].cloneFrom, 'world');
 });
 
 test('Take runs the normal interaction with the action-menu bypass set', () => {

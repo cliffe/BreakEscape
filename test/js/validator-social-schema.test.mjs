@@ -1,7 +1,7 @@
 // scripts/scenario-schema.json: the closed `social` schema (MECHANICS_AUDIT packet M3).
 // Every social block names the keys the engine or the validator reads, so a mistyped key or a
 // wrong shape fails. The base fixture (test/js/fixtures/social_schema/base.json) is valid; each
-// case mutates a copy of it. Schema errors under #/social are reported as "❌ SOCIAL: schema:"
+// case mutates a copy of it. Schema errors under #/social are reported as "❌ ERROR: SOCIAL: schema:"
 // issues, fatal under --strict-social like the other social errors.
 // Run with: bundle exec node --test test/js/validator-social-schema.test.mjs
 import test from 'node:test';
@@ -118,7 +118,7 @@ test('every block rejects a typo, and the late options reject a wrong shape', { 
     const { social, other } = results[i];
     assert.deepEqual(other, [], `${name}: an error outside #/social\n${other.join('\n')}`);
     assert.ok(social.length >= 1, `${name}: no schema error`);
-    assert.ok(social.every((e) => e.startsWith('❌ SOCIAL: schema: ')), `${name}: ${social.join('\n')}`);
+    assert.ok(social.every((e) => e.startsWith('❌ ERROR: SOCIAL: schema: ')), `${name}: ${social.join('\n')}`);
     assert.ok(social.some((e) => e.includes(path) && e.includes(detail)),
       `${name}: no error naming ${path} and ${detail}\n${social.join('\n')}`);
     assert.ok(social.every((e) => !/ in schema [0-9a-f-]{36}/.test(e)), `${name}: the schema uuid tail was not stripped`);
@@ -139,7 +139,7 @@ test('lockedHint: the room and item schemas take a non-empty string only', { ski
   assert.ok(c.other.some((e) => e.includes("'#/rooms/office/lockedHint'")), c.other.join('\n'));
 });
 
-test('the CLI: a social typo prints as a social error, and fails the run under --strict-social', { skip }, () => {
+test('the CLI: a social typo prints as a social error, and fails the run with or without --strict-social', { skip }, () => {
   const dir = mkdtempSync(join(tmpdir(), 'social-schema-'));
   try {
     const j = clone();
@@ -151,12 +151,12 @@ test('the CLI: a social typo prints as a social error, and fails the run under -
       '--no-graph', '--skip-ink', '--no-lint', ...flags], { encoding: 'utf8', env, cwd: root });
     const strict = run('--strict-social');
     assert.equal(strict.status, 1, strict.stdout + strict.stderr);
-    assert.match(strict.stdout, /❌ SOCIAL: schema: The property '#\/social\/mailClient' contains additional properties \["checklistTimeing"\]/);
+    assert.match(strict.stdout, /❌ ERROR: SOCIAL: schema: The property '#\/social\/mailClient' contains additional properties \["checklistTimeing"\]/);
     assert.match(strict.stdout, /--strict-social: \d+ social lint error/);
     assert.match(strict.stdout, /✓ Schema validation passed!/); // nothing outside #/social failed
     const plain = run();
-    assert.equal(plain.status, 0, plain.stdout + plain.stderr);
-    assert.match(plain.stdout, /❌ SOCIAL: schema: .*checklistTimeing/);
+    assert.equal(plain.status, 1, plain.stdout + plain.stderr); // every ❌ fails the run (hardening step 1)
+    assert.match(plain.stdout, /❌ ERROR: SOCIAL: schema: .*checklistTimeing/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

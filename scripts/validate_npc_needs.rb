@@ -338,7 +338,6 @@ module ValidateNpcNeeds
   # habit with nothing that prints for it does nothing; a producer in a room the owner may not
   # reach is never fetched from. Per producer, slots against printing NPCs (forgotten prints hold
   # slots until a reload or a recycle).
-  PRINT_HABIT_KEYS = %w[fetchAfterSeconds forgetChance weight shareAfterSeconds _comment].freeze
 
   def self.fetch_range_ok?(v)
     v.is_a?(Array) && v.length == 2 && v.all? { |x| x.is_a?(Numeric) && x >= 0 && x <= 3600 } && v[0] <= v[1]
@@ -395,7 +394,6 @@ module ValidateNpcNeeds
       habit = npc['printHabit']
       unless habit.nil?
         if habit.is_a?(Hash)
-          (habit.keys - PRINT_HABIT_KEYS).each { |k| issues << "⚠️ WARNING: #{where} printHabit has unknown key '#{k}'." }
           if habit.key?('fetchAfterSeconds') && !fetch_range_ok?(habit['fetchAfterSeconds'])
             issues << "❌ ERROR: #{where} printHabit.fetchAfterSeconds must be [min, max] seconds, 0 <= min <= max <= 3600 (default [20, 60])."
           end
@@ -533,9 +531,6 @@ module ValidateNpcNeeds
       unless h.is_a?(Hash)
         issues << "❌ ERROR: #{where} must be an object { lockChance, lockIfAwayOverSeconds }."
         next
-      end
-      (h.keys - %w[lockChance lockIfAwayOverSeconds _comment]).each do |k|
-        issues << "⚠️ WARNING: #{where} has unknown field '#{k}' (lockChance, lockIfAwayOverSeconds)."
       end
       if h.key?('lockChance') && !(h['lockChance'].is_a?(Numeric) && h['lockChance'] >= 0 && h['lockChance'] <= 1)
         issues << "❌ ERROR: #{where}.lockChance must be a number from 0 to 1."

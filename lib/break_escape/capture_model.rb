@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require 'set'
+# Step 2b: author_notes (and, through it, scenario_schema) so each_capture_writer can skip notes.
+require_relative 'author_notes' unless defined?(BreakEscape::AuthorNotes)
 
 module BreakEscape
   # Capture routes and capture proofs (docs/achitechture/PHYSICAL_PENTEST_FEEDBACK_PLAN_ENGINE.md,
@@ -23,6 +25,18 @@ module BreakEscape
 
     PROOF_KINDS = %w[planted dropped session].freeze
 
+    # The two capture kinds a client entry may carry, mirroring captures.js CAPTURE_KINDS. A
+    # missing or unknown kind counts as credential (makeCaptureEntry does the same), so the two
+    # sides never disagree about an authored writer.
+    CAPTURE_KINDS = %w[credential foothold].freeze
+
+    # Capture string limits (sync deltas R2, 6a). The validator reports an authored capture
+    # string over its limit; record_capture! refuses a client string over it. Measured in code
+    # points (Ruby String#length counts code points for valid UTF-8).
+    MAX_CAPTURE_NOTE_CHARS = 2000
+    MAX_CAPTURE_FIELD_CHARS = 200
+    MAX_CAPTURE_TARGET_CHARS = 100
+
     def present_string?(value)
       value.is_a?(String) && !value.strip.empty?
     end
@@ -35,10 +49,14 @@ module BreakEscape
     # kind :action for an add_capture action (capture_hash is its `capture`), :mapping for a
     # mapping's addCapture. owner is the nearest enclosing hash that carries eventMappings (an
     # NPC), or nil.
-    def each_capture_writer(data, &block)
-      return enum_for(:each_capture_writer, data) unless block
+    # Step 2b: notes: :skip (the default) skips a writer an author parked in a "_" note, so such
+    # a writer never widens the target ids the server accepts, never serves or shadows a secret,
+    # and never turns proof-gating on or satisfies it. notes: :visit visits notes too, which the
+    # withholding callers (item 4) pass. Free data holds no notes and is visited either way.
+    def each_capture_writer(data, notes: :skip, &block)
+      return enum_for(:each_capture_writer, data, notes: notes) unless block
 
-      walk = lambda do |node, path, owner|
+      walk = lambda do |node, snode, path, owner|
         case node
         when Hash
           here_owner = node['eventMappings'].is_a?(Array) ? node : owner
@@ -46,12 +64,18 @@ module BreakEscape
             yield node['capture'], :action, path, here_owner
           end
           yield node['addCapture'], :mapping, "#{path}/addCapture", here_owner if node['addCapture'].is_a?(Hash)
-          node.each { |key, value| walk.call(value, "#{path}/#{key}", here_owner) }
+          node.each do |key, value|
+            ks = key.to_s
+            next if notes == :skip && AuthorNotes.note?(snode, ks)
+
+            walk.call(value, ScenarioSchema.child(snode, ks), "#{path}/#{ks}", here_owner)
+          end
         when Array
-          node.each_with_index { |value, idx| walk.call(value, "#{path}[#{idx}]", owner) }
+          inode = ScenarioSchema.item(snode)
+          node.each_with_index { |value, idx| walk.call(value, inode, "#{path}[#{idx}]", owner) }
         end
       end
-      walk.call(data, '', nil)
+      walk.call(data, ScenarioSchema.root, '', nil)
     end
 
     # [{ target_id:, kind:, path: }] for each capture writer with a target id.
@@ -265,6 +289,258 @@ module BreakEscape
       return false unless obj['triggerOnInteract'].is_a?(Array)
 
       obj['consumesItem'] == true || removes_item?(obj['triggerOnInteract'], names)
+    end
+
+    # --- Server-owned capture record (sync deltas R2, 6a) -------------------------------------
+
+    # Whether this scenario reveals a captured secret (social.captures.revealSecret). A pure
+    # copy of Game#reveal_capture_secret?, so shared_login_capture composes the same note the
+    # heard answer does.
+    def reveal_secret?(data)
+      social = data.is_a?(Hash) ? data['social'] : nil
+      cap = social.is_a?(Hash) ? social['captures'] : nil
+      cap.is_a?(Hash) && cap['revealSecret'] == true
+    end
+
+    # The target ids a client capture may legitimately carry: the authored writers, usePayload
+    # targets and phish targets. Heard-share ids are not in it (the server records those itself).
+    def client_target_ids(data)
+      declared_target_ids(data)
+    end
+
+    # One capture entry's fields, built as the honest client's makeCaptureEntry builds them
+    # (captures.js): only the closed keys, the kind defaulted to credential, blank strings
+    # dropped, no secret. Returns nil without a present targetId.
+    def capture_entry_fields(raw)
+      return nil unless raw.is_a?(Hash) && present_string?(raw['targetId'])
+
+      kind = CAPTURE_KINDS.include?(raw['kind']) ? raw['kind'] : 'credential'
+      out = { 'targetId' => raw['targetId'], 'kind' => kind }
+      %w[roleLabel address host note].each { |k| out[k] = raw[k] if present_string?(raw[k]) }
+      out
+    end
+
+    def landing_pages(data)
+      social = data.is_a?(Hash) ? data['social'] : nil
+      list = social.is_a?(Hash) ? social['landingPages'] : nil
+      return list if list.is_a?(Array)
+
+      list.is_a?(Hash) ? list.values : []
+    end
+
+    def landing_page_capture(data, page_id)
+      page = landing_pages(data).find { |p| p.is_a?(Hash) && p['id'] == page_id }
+      page.is_a?(Hash) && page['capture'].is_a?(Hash) ? page['capture'] : nil
+    end
+
+    def phish_targets(data)
+      social = data.is_a?(Hash) ? data['social'] : nil
+      list = social.is_a?(Hash) ? social['phishTargets'] : nil
+      list.is_a?(Hash) ? list.values : Array(list)
+    end
+
+    def phish_target(data, target_id)
+      phish_targets(data).find { |t| t.is_a?(Hash) && t['id'] == target_id }
+    end
+
+    # { pageId => { address:, kits: [kitIds] } } for every landing page a link kit in
+    # social.mailClient.payloadKit names (part 2 evidence; here used to build phish credential
+    # candidates, one per such page).
+    def page_evidence_kits(data)
+      social = data.is_a?(Hash) ? data['social'] : nil
+      mail_client = social.is_a?(Hash) ? social['mailClient'] : nil
+      kits = mail_client.is_a?(Hash) ? mail_client['payloadKit'] : nil
+      out = {}
+      Array(kits).each do |kit|
+        next unless kit.is_a?(Hash) && kit['kind'] == 'link' && present_string?(kit['landingPageId'])
+
+        page_id = kit['landingPageId']
+        entry = (out[page_id] ||= { address: nil, kits: [] })
+        entry[:kits] << kit['id'] if present_string?(kit['id'])
+      end
+      out.each do |page_id, info|
+        cap = landing_page_capture(data, page_id)
+        info[:address] = cap['address'] if cap.is_a?(Hash) && present_string?(cap['address'])
+      end
+      out
+    end
+
+    def owner_id_of(owner)
+      owner.is_a?(Hash) ? owner['id'] : nil
+    end
+    private_class_method :owner_id_of
+
+    # A capture whose owner NPC holds an account, authored with no address, takes the account's
+    # username as its address: the server owns the record, and both readers key an account
+    # holder's secret on entry['address'] (capture_secrets_for_client's by_username and
+    # NetworkAccess#account_capture_usernames), so the username is the address the server stores.
+    # Only a self-capture (the writer's targetId is the owner's own id) takes the owner's
+    # username (review 6a-server M2). A writer on account holder A that captures a different
+    # target B must author an explicit address, or the server would bind A's username to B
+    # and serve A's password for B. The validator errors when that address is missing, so a
+    # scoped-out default here fails loudly at authoring time, not silently at serve time.
+    def default_account_address!(fields, owner)
+      return if present_string?(fields['address'])
+      return unless account_holder?(owner)
+      return unless owner_id_of(owner).to_s == fields['targetId'].to_s
+
+      username = owner['creds']['username']
+      fields['address'] = username if present_string?(username)
+    end
+    private_class_method :default_account_address!
+
+    # Every capture entry the scenario could write for any target: an add_capture action or
+    # addCapture mapping (plain, and overlaid with the owner NPC's usePayload where it has one,
+    # payload wins), a phish credential (one per named landing page) and a phish foothold. Each
+    # { fields:, source: }; source[:overlaid] marks an overlaid candidate so record_capture!
+    # prefers a plain one.
+    def all_capture_candidates(data)
+      out = []
+      each_capture_writer(data) do |capture, kind, path, owner|
+        base = capture_entry_fields(capture)
+        if base
+          default_account_address!(base, owner)
+          out << { fields: base, source: { writer: path, proof: capture['proof'], owner: owner_id_of(owner), overlaid: false } }
+        end
+
+        next unless kind == :mapping && owner.is_a?(Hash) && owner['usePayload'].is_a?(Hash)
+
+        overlaid = capture_entry_fields(capture.merge(owner['usePayload']))
+        next unless overlaid
+
+        default_account_address!(overlaid, owner)
+        out << { fields: overlaid,
+                 source: { writer: "#{path}+payload:#{owner_id_of(owner)}", proof: capture['proof'],
+                           owner: owner_id_of(owner), payload_owner: owner_id_of(owner), overlaid: true } }
+      end
+
+      # An NPC whose usePayload carries its own targetId is a standalone writer (usepayload_captures
+      # "with its own targetId the payload fills that one"), with no addCapture mapping to overlay.
+      room_npc_list(data).each do |npc|
+        payload = npc['usePayload']
+        next unless payload.is_a?(Hash) && present_string?(payload['targetId'])
+
+        fields = capture_entry_fields(payload)
+        next unless fields
+
+        default_account_address!(fields, npc)
+        out << { fields: fields,
+                 source: { writer: "/usePayload:#{owner_id_of(npc)}", owner: owner_id_of(npc),
+                           payload_owner: owner_id_of(npc), overlaid: true } }
+      end
+
+      phish_target_ids(data).each do |target_id|
+        target = phish_target(data, target_id)
+        role = target && present_string?(target['role']) ? target['role'] : nil
+        page_evidence_kits(data).each do |page_id, info|
+          cap = landing_page_capture(data, page_id)
+          address = cap && present_string?(cap['address']) ? cap['address'] : (target && present_string?(target['address']) ? target['address'] : nil)
+          note = cap && present_string?(cap['note']) ? cap['note'] : nil
+          fields = capture_entry_fields({ 'targetId' => target_id, 'kind' => 'credential', 'roleLabel' => role, 'address' => address, 'note' => note })
+          out << { fields: fields, source: { page: page_id, kits: info[:kits], overlaid: false } } if fields
+        end
+
+        foothold = target && target['foothold'].is_a?(Hash) ? target['foothold'] : nil
+        next unless foothold
+
+        fields = capture_entry_fields({ 'targetId' => target_id, 'kind' => 'foothold', 'roleLabel' => role, 'host' => foothold['host'], 'note' => foothold['note'] })
+        out << { fields: fields, source: { phish_foothold: true, overlaid: false } } if fields
+      end
+
+      out
+    end
+
+    # The candidates for a (target, kind): what the server may store when the client claims that
+    # target. The client may choose only between these (plain or overlaid, a page's address or
+    # the target's own), never an arbitrary string.
+    def capture_candidates(data, target_id, kind)
+      all_capture_candidates(data).select do |cand|
+        cand[:fields]['targetId'] == target_id && cand[:fields]['kind'] == kind
+      end
+    end
+
+    # Whether an NPC has a share_login workaround (its own list, else its role's).
+    def share_login_npc?(data, npc_id)
+      npc = room_npc_list(data).find { |n| n['id'] == npc_id }
+      return false unless npc
+
+      BreakEscape::AccessWork.workarounds(data, npc).any? { |w| w.is_a?(Hash) && w['do'] == 'share_login' }
+    end
+
+    # An NPC whose only capture route is a heard share_login: it has a share_login workaround and
+    # no authored writer, usePayload or phish target declares its id. The server records such a
+    # capture itself, from its own sharedLogins record.
+    def share_only_target?(data, target_id)
+      return false if client_target_ids(data).include?(target_id)
+
+      share_login_npc?(data, target_id)
+    end
+
+    # The capture hash npc_frustration.rb shared_login_body composes, as a pure function of the
+    # scenario: the NPC's username as the address, and a note naming the colleague of the given
+    # share_login workaround (or the NPC's first one when none is given), with the password only
+    # where social.captures.revealSecret is on.
+    def shared_login_capture(data, npc_id, workaround: nil)
+      npc = room_npc_list(data).find { |n| n['id'] == npc_id }
+      return nil unless npc.is_a?(Hash) && account_holder?(npc)
+
+      work = workaround
+      work ||= BreakEscape::AccessWork.workarounds(data, npc).find { |w| w.is_a?(Hash) && w['do'] == 'share_login' }
+      username = npc['creds']['username'].to_s
+      password = npc['creds']['password'].to_s
+      name = npc['displayName'] || npc['id']
+      colleague = work.is_a?(Hash) ? room_npc_list(data).find { |n| n['id'] == work['with'] } : nil
+      other = colleague && (colleague['displayName'] || colleague['id'])
+      note = "#{name} told #{other} their login out loud: #{username} / #{password}"
+      capture_note = reveal_secret?(data) ? note : "#{name} told #{other} their login out loud: #{username}"
+      # The composed note is the one capture string with no authored bound (review 6a-server N3):
+      # a very long displayName would otherwise ship unbounded. Clip to the same limit the
+      # validator enforces on authored notes.
+      capture_note = capture_note[0, MAX_CAPTURE_NOTE_CHARS] if capture_note.length > MAX_CAPTURE_NOTE_CHARS
+      { 'targetId' => npc_id, 'kind' => 'credential', 'address' => username, 'note' => capture_note }
+    end
+
+    # Landing page ids that carry a non-empty capture secret. The single-secret fallback (the
+    # reader's only_secret pass, and part 2's single-page evidence) counts these.
+    def pages_with_secret(data)
+      landing_pages(data).filter_map do |page|
+        next unless page.is_a?(Hash)
+
+        cap = page['capture']
+        next unless cap.is_a?(Hash) && present_string?(cap['secret']) && present_string?(page['id'])
+
+        page['id']
+      end
+    end
+
+    # Part 3's proofs for a target (sync deltas R2, 6b): for each credential candidate for that
+    # target, the proofs of the account it captures. When a candidate's address is an account
+    # holder's username, that holder's proofs (proofs_for, as the account pass keys them); else
+    # the captureProof of the candidate's owner or payload_owner NPC and the candidate's own
+    # `proof`. Keyed on the captured account, not the mapping owner, so a mapping that captures
+    # another NPC's account applies that account's proofs. Empty means the entry is revealable
+    # once part 2 (if any) holds.
+    def target_capture_proofs(data, target_id)
+      holders = room_npc_list(data).select { |npc| account_holder?(npc) }
+      by_username = holders.to_h { |npc| [normalise_username(npc['creds']['username']), npc] }
+      proofs = []
+      capture_candidates(data, target_id, 'credential').each do |cand|
+        fields = cand[:fields]
+        source = cand[:source] || {}
+        holder = present_string?(fields['address']) ? by_username[normalise_username(fields['address'])] : nil
+        if holder
+          proofs.concat(proofs_for(holder, data))
+        else
+          [source[:owner], source[:payload_owner]].compact.uniq.each do |npc_id|
+            npc = room_npc_list(data).find { |n| n['id'] == npc_id }
+            next unless npc.is_a?(Hash) && npc['captureProof'].is_a?(Array)
+
+            proofs.concat(npc['captureProof'].select { |p| p.is_a?(Hash) })
+          end
+          proofs << source[:proof] if source[:proof].is_a?(Hash)
+        end
+      end
+      proofs.uniq
     end
   end
 end

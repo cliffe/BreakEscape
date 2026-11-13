@@ -608,11 +608,11 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     end
   end
 
-  test 'a heard share_login answer may hold the sharer\'s password at line, note and capture.note, then in savedNotes and se_captures' do
+  test 'a heard share_login answer may hold the sharer\'s password at line, note and capture.note, then in savedNotes and the bootstrap captures record' do
     game = share_game(['sam'])
     saved = ['GET', '/break_escape/games/1/scenario',
              { 'savedNotes' => [{ 'id' => 'n1', 'text' => heard_answer['note'] }],
-               'globalVariables' => { 'se_captures' => [heard_answer['capture']] } }]
+               'captures' => { 'sam' => heard_answer['capture'] } }]
     assert_empty AccessLeakScanner.new(game.scenario_data, game: game).scan(post_rows(['POST', SHARE, heard_answer], saved))
   end
 

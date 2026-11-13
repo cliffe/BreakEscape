@@ -52,8 +52,9 @@
  * HEAR_TICK_MS of the window the runner asks whether the player
  * hears (`NPCNeedsSystem.playerHears`); the first tick that hears notes the player's room. "Done"
  * carries `heard` and that `room_id`. A heard answer { capture, line, note, displayName } shows a
- * toast titled "Overheard: <displayName>", adds the evidence note, records the capture through
- * `window.recordSECapture` and emits `npc_overheard_login:<npcId>`; an unheard one ({}) does
+ * toast titled "Overheard: <displayName>", adds the evidence note, mirrors the capture through
+ * `window.mirrorSECapture` (the server recorded this heard share itself, so the client only
+ * mirrors it for display) and emits `npc_overheard_login:<npcId>`; an unheard one ({}) does
  * nothing.
  *
  * A run names ids, a kind and a dwell; no password is in it. The one answer that carries a
@@ -489,7 +490,7 @@ export function installNpcWorkarounds(api) {
         playerRoom: () => w.currentPlayerRoom || null,
         toast: (line, title, opts) => (typeof w.gameAlert === 'function' ? w.gameAlert(line, 'info', title, 8000, opts || {}) : null),
         addNote: (title, text) => (typeof w.addNote === 'function' ? w.addNote(title, text, true) : null),
-        recordCapture: capture => (typeof w.recordSECapture === 'function' ? w.recordSECapture(capture) : null)
+        recordCapture: capture => (typeof w.mirrorSECapture === 'function' ? w.mirrorSECapture(capture) : null)
     });
     w.npcWorkarounds = runner;
     const on = (name, fn) => w.eventDispatcher?.on?.(name, fn);

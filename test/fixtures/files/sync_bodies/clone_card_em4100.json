@@ -1,0 +1,19 @@
+{
+  "object_id": "ceo_keycard",
+  "card_id": "ceo_keycard",
+  "card": {
+    "card_id": "ceo_keycard",
+    "name": "CEO access card",
+    "rfid_protocol": "EM4100",
+    "rfid_hex": "1A2B3C4D5E",
+    "rfid_facility": 42,
+    "rfid_card_number": 1337,
+    "timestamp": 1731460000000,
+    "rfid_data": {
+      "cardId": "ceo_keycard",
+      "hex": "1A2B3C4D5E",
+      "facility": 42,
+      "cardNumber": 1337
+    }
+  }
+}

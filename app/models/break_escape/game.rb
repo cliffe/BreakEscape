@@ -183,6 +183,44 @@ module BreakEscape
       end
     end
 
+    # A deep copy of a stored inventory item without saved_cards, for any item an
+    # answer carries (SYNC_DELTAS_PLAN 2.3). The cloner's saved_cards list can be up
+    # to 64 KB, so it must never ride an inventory echo, even when the cloner is
+    # itself a touched item. Every item an answer returns goes through this. It is
+    # also filtered through the same answer-stripping as client_inventory (unlock
+    # gaps R2 M2), so a delta's `added` item never carries a lock answer, PIN,
+    # generator-only key, declared-grant contents or capture secret.
+    def item_for_answer(item)
+      return item unless item.is_a?(Hash)
+
+      copy = item.deep_dup
+      copy.delete('saved_cards')
+      filter_inventory_for_client!(copy)
+      # Step 2b (plan item 3): author notes never ship. One item handed over; Node of an item.
+      AuthorNotes.strip_notes!(copy, ScenarioSchema.at('#/definitions/item'))
+      copy
+    end
+
+    # Read-only bootstrap guard (SYNC_DELTAS_PLAN 2.4). GET /scenario is not under a
+    # row lock, so any save! from the loaded copy would overwrite a PUT /sync_state
+    # that committed after the load. This decides from the loaded copy whether any
+    # bootstrap repair is needed; each predicate reads only the loaded copy and
+    # writes nothing. When none holds, it returns without a lock. Otherwise it takes
+    # the row lock (reloading the row), repeats each check, runs the writers (none of
+    # which saves) and saves once. Steps 4 (P1 repair_saved_cards!) and 6a (R2
+    # migrate_legacy_captures!, record_shared_logins!, stamp_proven_captures!) add
+    # their predicates and writers here; until then nothing needs a write.
+    def prepare_bootstrap_state!
+      return unless bootstrap_state_needs_write?
+
+      with_lock do
+        next unless bootstrap_state_needs_write?
+
+        changed = run_bootstrap_writers!
+        save! if changed
+      end
+    end
+
     # Remember that an NPC has handed an item to the player. The scenario's
     # itemsHeld is restored on every room load, so without this record a reload
     # gives the item back to the NPC and a later KO drops a duplicate.
@@ -292,6 +330,10 @@ module BreakEscape
     # included, is dropped.
     def merge_global_variables!(variables)
       globals = player_state['globalVariables'] ||= {}
+      # Server-owned globals (sync deltas R2, 6a) are never stored here: se_captures is recorded
+      # through record_capture! in the sync_state capture step, so the client's write (an old
+      # tab's whole map, or a stray key) is dropped whenever it appears.
+      variables = variables.reject { |key, _| SERVER_OWNED_GLOBAL_NAMES.include?(key.to_s) }
       # Imported globals and the worn globals with pp_disguise (Wearables: only POST wear
       # writes them)
       read_only = imported_global_names + wearable_read_only_globals
@@ -351,16 +393,11 @@ module BreakEscape
       return unless incoming.is_a?(Array)
 
       known_owners = []
-      collect = lambda do |node|
-        case node
-        when Hash
-          known_owners << node['fingerprintOwner'] if node['fingerprintOwner'].is_a?(String)
-          node.each_value { |v| collect.call(v) }
-        when Array
-          node.each { |v| collect.call(v) }
-        end
+      # Step 2b: AuthorNotes.each_live skips "_" notes (so a fingerprintOwner an author parked in
+      # a note is not a known owner for a synced sample) and visits free data in full.
+      AuthorNotes.each_live(scenario || scenario_data, ScenarioSchema.root) do |node, _snode, _keys|
+        known_owners << node['fingerprintOwner'] if node.is_a?(Hash) && node['fingerprintOwner'].is_a?(String)
       end
-      collect.call(scenario || scenario_data)
 
       merged = Array(player_state['biometricSamples']).select { |s| s.is_a?(Hash) }.map { |s| s.slice(*BIOMETRIC_SAMPLE_KEYS) }
       incoming.each do |raw|
@@ -733,10 +770,76 @@ module BreakEscape
       inventory = player_state.is_a?(Hash) ? player_state['inventory'] : nil
       return inventory unless inventory.is_a?(Array)
 
-      inventory.deep_dup.tap { |items| filter_inventory_for_client!(items) }
+      inventory.deep_dup.tap do |items|
+        filter_inventory_for_client!(items)
+        # Step 2b (plan item 3): author notes never ship. A list of items; Node of a contents list.
+        AuthorNotes.strip_notes!(items, ScenarioSchema.at('#/definitions/item/properties/contents'))
+      end
+    end
+
+    # The stored scenario column, read one way for every capture-recording path (review
+    # 6a-server N1): the sync step (apply_capture_sync_step and the biometric merge both run
+    # under the narrow sync_state load that has no scenario_data accessor) and the bootstrap
+    # writers (run_bootstrap_writers!) both read it here, so the two paths cannot drift to
+    # different scenario sources.
+    def stored_scenario_data
+      # On a full load (GET /scenario, GET /capture_secrets) the scenario_data column is already
+      # in memory, so read it and save the extra query (review N1 follow-up). The sync_state row
+      # lock loads a narrow column set without it (SYNC_STATE_COLUMNS), so there the attribute is
+      # not present and it is fetched. with_lock reloads every column, so the bootstrap path also
+      # reads the freshly locked value: one source either way.
+      return read_attribute(:scenario_data) if has_attribute?('scenario_data')
+
+      self.class.where(id: id).pick(:scenario_data)
+    end
+
+    # The request's own sent messages (sync deltas R2, 6b): each mailboxes.<box>.<msgId> update
+    # mail_state_updates keeps, sanitised, with folder 'sent', landed true, a targetId and a
+    # link.kitId. The capture stamp takes these as extra part 2 evidence, so a capture whose sent
+    # mail rides the same request, or whose mail section was refused over a cap, is still proven.
+    # Reads the parsed body; stores nothing.
+    def incoming_sent_messages(mail_incoming)
+      return [] unless mail_incoming.is_a?(Hash)
+
+      mail_state_updates(mail_incoming).filter_map do |path, value|
+        next unless path.is_a?(Array) && path[0] == 'mailboxes' && value.is_a?(Hash)
+        next unless value['folder'] == 'sent' && value['landed'] == true && value['targetId'].is_a?(String)
+
+        link = value['link']
+        value if link.is_a?(Hash) && link['kitId'].is_a?(String)
+      end
     end
 
     private
+
+    # True when prepare_bootstrap_state! must take the lock and write. Each check
+    # reads only the loaded copy and writes nothing (SYNC_DELTAS_PLAN 2.4). Steps 4
+    # and 6a OR in cards_need_repair?, legacy_captures?, unrecorded_shared_logins?
+    # and stampable_captures?; until then no bootstrap write is ever needed.
+    def bootstrap_state_needs_write?
+      cards_need_repair? || legacy_cloned_cards? || legacy_captures? || unrecorded_shared_logins? ||
+        stampable_captures?
+    end
+
+    # Run the bootstrap writers inside the lock (none of which saves) and return
+    # whether anything changed. Steps 4 and 6a add repair_saved_cards!,
+    # migrate_legacy_captures!, record_shared_logins! and stamp_proven_captures!.
+    def run_bootstrap_writers!
+      # Each writer reports whether it changed anything, so a lock taken for one does not force a
+      # needless save when another was the reason. migrate first, so a legacy heard-share entry
+      # exists before the backfill looks for a gap.
+      scenario = stored_scenario_data
+      # Branch review R1 case F: reconcile a legacy copy (listed, no serverClones) before the repair,
+      # so a confirmable one has its record in place and an unconfirmable one is already dropped.
+      changed = backfill_legacy_cloned_cards!
+      changed = repair_saved_cards! || changed
+      changed = migrate_legacy_captures!(scenario: scenario) || changed
+      changed = record_shared_logins!(scenario: scenario) || changed
+      # 6b: an unproven entry whose page evidence now holds is stamped proven: true on the
+      # bootstrap, so a secret earned across a reload is served without a fresh sync.
+      changed = stamp_proven_captures!(scenario: scenario) || changed
+      changed
+    end
 
     def filter_inventory_for_client!(obj)
       case obj
@@ -1233,12 +1336,34 @@ module BreakEscape
     # record of the client-computed verdict (se_captures is written only when a phish lands
     # and is synced to the server), not a bare request claim: a fresh game, whose persisted
     # se_captures is empty, gets nothing.
+    # The server-owned capture record (sync deltas R2, 6a). Entries live in
+    # player_state['seCaptures'], written only by the server's own capture steps
+    # (CaptureProofs#record_capture! and the heard-share composition). An old save whose
+    # captures still sit in the legacy globalVariables.se_captures global is read in place until
+    # the bootstrap migrates it, so main's serving path and its tests see the same entries either
+    # way. The reader never writes.
+    def se_captures_record
+      record = player_state['seCaptures']
+      return record if record.is_a?(Hash)
+
+      legacy = player_state.dig('globalVariables', 'se_captures')
+      return {} unless legacy.is_a?(Hash)
+
+      # A legacy globalVariables.se_captures is a pre-deploy save, earned under the old rules, so
+      # every kept entry is grandfathered revealable (the bootstrap migration stamps proven: true
+      # the same way). Marked in a copy so capture_revealable? serves it; nothing is written, and
+      # the migration replaces this fallback on the first bootstrap.
+      legacy.each_with_object({}) do |(target_id, entry), out|
+        out[target_id] = entry.is_a?(Hash) ? entry.merge('proven' => true) : entry
+      end
+    end
+
     def capture_secrets_for_client
       return {} unless reveal_capture_secret?
 
       social = scenario_data['social']
 
-      earned = player_state.dig('globalVariables', 'se_captures')
+      earned = se_captures_record
       return {} unless earned.is_a?(Hash) && earned.any?
 
       # The authored secrets, by the capture address they were authored beside.
@@ -1274,6 +1399,9 @@ module BreakEscape
         next unless entry.is_a?(Hash)
         next if entry['kind'] && entry['kind'] != 'credential'
         next unless declared.include?(target_id.to_s)
+        # 6b: a capture recorded on a client claim alone is not served until its evidence holds.
+        # Entries recorded under 6a are stamped proven: true and stay revealable.
+        next unless capture_revealable?(entry, scenario: scenario_data)
 
         address = entry['address']
         secret = by_address[address]
@@ -1438,6 +1566,11 @@ module BreakEscape
       room.delete('network')
       attach_network_state!(room['objects'])
 
+      # Step 2b (plan item 3): author notes never ship. Strip them from the room copy (already a
+      # deep_dup), after this method's own filtering, with the Node of a room. Covers GET /room/:id,
+      # the door answer's roomData from POST /unlock (serve_opened_room) and POST /npc_workaround.
+      BreakEscape::AuthorNotes.strip_notes!(room, BreakEscape::ScenarioSchema.at('#/definitions/room'))
+
       room
     end
 
@@ -1601,6 +1734,14 @@ module BreakEscape
       # Sub-slice C (9.4): how many of each NPC's feed posts are out, and when the last came out
       'feedRevealed' => {}
     }.freeze
+
+    # Globals the server owns (sync deltas R2, 6a): the client never stores them. se_captures
+    # is intercepted out of every PUT /sync_state and recorded through record_capture!, migrated
+    # out of an old save on the bootstrap, and refused as a carry-over import. The server's copy
+    # of the client's SERVER_OWNED_GLOBALS. scripts/validate_scenario.rb hardcodes the same list
+    # for the carry-over import guard (it cannot load this constant); carry_over_server_owned_globals_test
+    # asserts the two stay in sync, so add a second server-owned global in both places.
+    SERVER_OWNED_GLOBAL_NAMES = %w[se_captures].freeze
 
     # loginFailures and loginLockouts keep at most this many entries for usernames that
     # are not accounts; entries for real accounts are never dropped (section 6).
@@ -2374,43 +2515,56 @@ module BreakEscape
 
     # POST /clone_card (section 6): record a copy the card copier made, only of the
     # source's own card. Returns { status:, body: }.
-    def record_card_clone!(card_id:, npc_id: nil, object_id: nil, held_card: false)
+    def record_card_clone!(card_id:, npc_id: nil, object_id: nil, held_card: false, card: nil)
       refuse = ->(message) { { status: :forbidden, body: { success: false, message: message } } }
       return refuse.call('No card copier') unless rfid_cloner_held?
 
       if npc_id.present?
         npc = scenario_room_npc(npc_id)
-        card = self.class.npc_card(npc)
-        return refuse.call('No card to copy') unless card && card['card_id'].present?
+        definition = self.class.npc_card(npc)
+        return refuse.call('No card to copy') unless definition && definition['card_id'].present?
         return refuse.call('NPC not encountered') unless Array(player_state['encounteredNPCs']).include?(npc['id'])
         return refuse.call('This card cannot be copied') if npc['cloneable'] == false
 
         source = { 'npc' => npc['id'] }
       elsif object_id.present?
-        card = clone_source_keycard(object_id)
-        return refuse.call('Keycard not within reach') unless card
+        definition = clone_source_keycard(object_id)
+        return refuse.call('Keycard not within reach') unless definition
 
-        source = { 'object' => card['id'] || object_id.to_s }
+        source = { 'object' => definition['id'] || object_id.to_s }
       elsif held_card
         # A held keycard with no id (an NPC's itemsHeld badge): the source is the held
         # card that carries this card_id, as held_rfid_cards decides "held".
-        card = held_clone_source_keycard(card_id)
-        return refuse.call('Keycard not held') unless card
+        definition = held_clone_source_keycard(card_id)
+        return refuse.call('Keycard not held') unless definition
 
-        source = { 'held' => card['card_id'].to_s }
+        source = { 'held' => definition['card_id'].to_s }
       else
         return { status: :bad_request, body: { success: false, message: 'Missing npc_id, object_id or held_card' } }
       end
 
-      return { status: :ok, body: { success: true, recorded: false } } unless card['card_id'].to_s == card_id.to_s
+      return { status: :ok, body: { success: true, recorded: false } } unless definition['card_id'].to_s == card_id.to_s
 
+      stored_card_id = definition['card_id'].to_s
       player_state['serverClones'] = server_clones
-      player_state['serverClones'][card['card_id'].to_s] = {
+      # Overwriting the record drops any `listed: false` mark (remove_saved_card!), so a
+      # fresh copy of a removed card is listed again by the bootstrap repair (SYNC_DELTAS_PLAN 5.2).
+      player_state['serverClones'][stored_card_id] = {
         'source' => source,
-        'uidOnly' => card['rfid_protocol'] == 'MIFARE_DESFire'
+        'uidOnly' => definition['rfid_protocol'] == 'MIFARE_DESFire'
       }
+
+      # Only a recorded copy stores a display card, and only its name/protocol/authored
+      # fields come from the server definition; the client supplies attack progress alone (5.2).
+      saved = add_saved_card!(definition, card) if card.is_a?(Hash)
       save!
-      { status: :ok, body: { success: true, recorded: true } }
+
+      body = { success: true, recorded: true }
+      unless card.nil?
+        body[:saved] = saved == :saved
+        body[:reason] = saved.to_s unless saved == :saved
+      end
+      { status: :ok, body: body }
     end
 
     # The scenario keycard a held-card copy may be taken from: one the scenario defines
@@ -3534,9 +3688,19 @@ module BreakEscape
     # Get current objectives state
     def objectives_state
       {
-        'objectives' => filter_target_flags(scenario_data['objectives']&.map(&:deep_dup)),
+        'objectives' => strip_objective_notes(filter_target_flags(scenario_data['objectives']&.map(&:deep_dup))),
         'state' => objectives_state_for_client
       }
+    end
+
+    # Step 2b review R1 (B1): GET /objectives deep_dups each objective straight out of scenario_data,
+    # so an author "_" note on an objective (open-with-properties -> undeclared -> note) would ship.
+    # Strip each duped objective on the copy this method owns, after filter_target_flags.
+    def strip_objective_notes(objectives)
+      return objectives unless objectives.is_a?(Array)
+
+      node = BreakEscape::ScenarioSchema.at('#/definitions/objective')
+      objectives.each { |aim| BreakEscape::AuthorNotes.strip_notes!(aim, node) if aim.is_a?(Hash) }
     end
 
     # The saved objectivesState plus the aim reveals the client makes but never
@@ -3673,28 +3837,241 @@ module BreakEscape
 
     MAX_SAVED_CARDS = 50
     MAX_SAVED_CARDS_BYTES = 64.kilobytes
+    MAX_SAVED_CARD_BYTES = 4.kilobytes
+    # The fields a stored display card carries. card_id, name, rfid_protocol and the authored
+    # rfid_* fields come from the server's definition; rfid_data (attack progress) from the
+    # client, to a closed key set (SYNC_DELTAS_PLAN 5.2).
+    SAVED_CARD_KEYS = %w[card_id name rfid_protocol rfid_hex rfid_facility rfid_card_number rfid_data timestamp].freeze
+    SAVED_CARD_AUTHORED_KEYS = %w[rfid_hex rfid_facility rfid_card_number].freeze
+    SAVED_CARD_DATA_KEYS = %w[cardId hex facility cardNumber uid sectors masterKeyKnown].freeze
 
-    # Store the RFID cloner's saved cards on its inventory entry. The cards
-    # lived only in the client's copy of the item, so a reload emptied the
-    # cloner. The playerInventory sent on load carries them back. RFID unlocks
-    # are already client-trusted, so this stores nothing the client couldn't
-    # already assert. Returns false when there is no cloner or the data is bad.
+    # The real RFID cloner in the inventory (never a forged clientAdded one, so a real
+    # cloner is found when both are present), or nil.
+    def real_cloner
+      Array(player_state['inventory']).find do |item|
+        next false if BreakEscape::ItemIdentity.client_forged?(item)
+
+        item.is_a?(Hash) && (item['type'] || item.dig('scenarioData', 'type')) == 'rfid_cloner'
+      end
+    end
+
+    # Build the stored display card for a recorded copy: identity and name from the server's
+    # definition, attack progress (rfid_data) from the client picked to SAVED_CARD_DATA_KEYS,
+    # timestamp from the server. No save (the caller saves). Returns :saved, :full, :too_big
+    # or :no_cloner. A card with the same card_id is replaced in place; otherwise it is added
+    # unless 50 are held or a byte cap would be passed (SYNC_DELTAS_PLAN 5.2).
+    def add_saved_card!(definition, client_card)
+      cloner = real_cloner
+      return :no_cloner unless cloner
+
+      card_id = definition['card_id'].to_s
+      stored = { 'card_id' => card_id }
+      stored['name'] = definition['name'] if definition['name'].present?
+      stored['rfid_protocol'] = definition['rfid_protocol'] if definition['rfid_protocol'].present?
+      SAVED_CARD_AUTHORED_KEYS.each { |k| stored[k] = definition[k] if definition[k].present? }
+      if client_card.is_a?(Hash) && client_card['rfid_data'].is_a?(Hash)
+        data = client_card['rfid_data'].slice(*SAVED_CARD_DATA_KEYS)
+        stored['rfid_data'] = data unless data.empty?
+      end
+      stored['timestamp'] = (Time.now.to_f * 1000).round
+      return :too_big if stored.to_json.bytesize > MAX_SAVED_CARD_BYTES
+
+      list = cloner['saved_cards'].is_a?(Array) ? cloner['saved_cards'] : []
+      idx = list.index { |c| c.is_a?(Hash) && c['card_id'].to_s == card_id }
+      new_list = list.dup
+      if idx
+        new_list[idx] = stored
+      else
+        return :full if list.length >= MAX_SAVED_CARDS
+
+        new_list << stored
+      end
+      return :too_big if new_list.to_json.bytesize > MAX_SAVED_CARDS_BYTES
+
+      cloner['saved_cards'] = new_list
+      :saved
+    end
+
+    # Remove one display card from the cloner's list and mark its serverClones record
+    # listed:false, so the bootstrap repair does not put it back. The copy itself stands;
+    # a later copy of the same card clears the mark (SYNC_DELTAS_PLAN 5.2). Saves.
+    def remove_saved_card!(card_id)
+      card_id = card_id.to_s
+      # Branch review R1 n1: save and return true only when something changed. POST /inventory
+      # remove_saved_card is reachable by any client, so a loop of junk ids (no held cloner, no
+      # serverClones record) must not force an unconditional player_state write each time.
+      changed = false
+      cloner = real_cloner
+      list = cloner && cloner['saved_cards'].is_a?(Array) ? cloner['saved_cards'] : nil
+      if list
+        trimmed = list.reject { |c| c.is_a?(Hash) && c['card_id'].to_s == card_id }
+        if trimmed.length != list.length
+          cloner['saved_cards'] = trimmed
+          changed = true
+        end
+      end
+      clone = server_clones[card_id]
+      if clone.is_a?(Hash) && clone['listed'] != false
+        player_state['serverClones'] = server_clones
+        player_state['serverClones'][card_id]['listed'] = false
+        changed = true
+      end
+      return false unless changed
+
+      save!
+      true
+    end
+
+    # A serverClones card id whose copy should be listed but is not: it has a recorded
+    # copy, no listed:false mark, and no stored display card, while a real cloner is held.
+    def saved_card_ids_to_repair
+      return [] unless real_cloner
+
+      cloner = real_cloner
+      stored_ids = Array(cloner['saved_cards']).filter_map { |c| c['card_id'].to_s if c.is_a?(Hash) }
+      server_clones.filter_map do |cid, record|
+        next unless record.is_a?(Hash) && record['listed'] != false
+        next if stored_ids.include?(cid.to_s)
+
+        cid.to_s
+      end
+    end
+
+    # Whether the bootstrap repair would add any card (the unlocked predicate, no write).
+    def cards_need_repair?
+      saved_card_ids_to_repair.any?
+    end
+
+    # A listed display card with no serverClones record, while a real cloner is held: a copy an old
+    # tab made on pre-branch code (update_saved_cards with no clone record) and then reloaded onto
+    # the branch (SYNC_DELTAS branch review R1, case F). Cheap predicate (no write).
+    def legacy_cloned_cards?
+      cloner = real_cloner
+      return false unless cloner
+
+      list = cloner['saved_cards']
+      list.is_a?(Array) && list.any? do |c|
+        c.is_a?(Hash) && c['card_id'].present? && !server_clones.key?(c['card_id'].to_s)
+      end
+    end
+
+    # Reconcile a legacy copy (listed, no serverClones) the server can still confirm the player
+    # could have cloned: branch review R1 case F. Access is validated against held_rfid_cards, which
+    # counts a copy only through serverClones, so without a record the old copy would be listed but
+    # refused, a regression for a game in progress at the deploy. Cheat policy q78: access honest
+    # play reached must not be refused; access honest play could never reach must be refused. So a
+    # copy the server can confirm now (a cloner held and the card's holder NPC encountered, or its
+    # keycard object still within reach) is backfilled a serverClones record and keeps its access;
+    # one the server cannot confirm is dropped from the list, so the player re-clones it honestly.
+    # The branch's own copies (a serverClones key already) are untouched. Returns whether it wrote.
+    def backfill_legacy_cloned_cards!
+      cloner = real_cloner
+      return false unless cloner
+
+      list = cloner['saved_cards']
+      return false unless list.is_a?(Array) && list.any?
+
+      changed = false
+      kept = []
+      list.each do |card|
+        card_id = card.is_a?(Hash) ? card['card_id'].to_s : ''
+        if card_id.empty? || server_clones.key?(card_id)
+          kept << card
+          next
+        end
+
+        source, definition = confirmable_clone_source(card_id)
+        if source
+          # uidOnly must come from the definition confirmable_clone_source actually confirmed,
+          # not a fresh card_id lookup: a keycard object and an NPC card can share a card_id but
+          # differ in rfid_protocol, and the lookup preferred the object, so an NPC-sourced copy
+          # could have been minted a full clone where the honest NPC clone would be UID-only.
+          player_state['serverClones'] = server_clones
+          player_state['serverClones'][card_id] = {
+            'source' => source,
+            'uidOnly' => definition.is_a?(Hash) && definition['rfid_protocol'] == 'MIFARE_DESFire',
+            'backfilled' => true
+          }
+          kept << card
+        end
+        changed = true
+      end
+
+      cloner['saved_cards'] = kept if changed
+      changed
+    end
+
+    # A clone source the server can confirm now for a legacy copy's card_id (branch review R1 case
+    # F): an encountered, cloneable NPC whose card carries it, or a cloneable keycard object still
+    # within reach (clone_source_keycard). Returns [source, definition], the source hash and the
+    # resolved card definition it confirmed (so the caller computes uidOnly from the same card the
+    # honest clone would, not a card_id lookup that may pick a different definition). nil when the
+    # server cannot confirm the player could have cloned it, so the copy is dropped rather than
+    # granted access honest play may never have reached.
+    def confirmable_clone_source(card_id)
+      card_id = card_id.to_s
+      self.class.scenario_room_npcs(scenario_data).each do |npc|
+        card = self.class.npc_card(npc)
+        next unless card && card['card_id'].to_s == card_id && npc['cloneable'] != false
+        return [{ 'npc' => npc['id'] }, card] if Array(player_state['encounteredNPCs']).include?(npc['id'])
+      end
+
+      scenario_keycard_definitions.each do |k|
+        next unless k['card_id'].to_s == card_id && k['id'].present?
+
+        definition = clone_source_keycard(k['id'])
+        return [{ 'object' => (definition['id'] || k['id']).to_s }, definition] if definition
+      end
+      nil
+    end
+
+    # Put back a recorded copy missing from the list, built from the scenario definition
+    # alone (no sectors), so a save whose card request was lost, or an old tab, still lists
+    # it after a reload. No save (the locked bootstrap step saves). Returns whether it wrote.
+    def repair_saved_cards!
+      wrote = false
+      saved_card_ids_to_repair.each do |card_id|
+        definition = scenario_keycard_definitions.find { |k| k['card_id'].to_s == card_id } ||
+                     npc_card_definition_for(card_id)
+        next unless definition
+
+        wrote = true if add_saved_card!(definition, nil) == :saved
+      end
+      wrote
+    end
+
+    # The scenario card definition for a card_id carried by an NPC (its creds/rfidCard card).
+    def npc_card_definition_for(card_id)
+      card_id = card_id.to_s
+      self.class.scenario_room_npcs(scenario_data).each do |npc|
+        card = self.class.npc_card(npc)
+        return card if card && card['card_id'].to_s == card_id
+      end
+      nil
+    end
+
+    # Store the RFID cloner's saved cards on its inventory entry (kept for one release while
+    # old tabs still send update_saved_cards, SYNC_DELTAS_PLAN 5.4). A filtered merge now:
+    # stored cards stay; an incoming card is added or replaced only when its card_id names a
+    # serverClones key (through add_saved_card!), never removing anything. Returns false when
+    # there is no cloner or the data is bad.
     def update_cloner_saved_cards!(cards)
       return false unless cards.is_a?(Array) && cards.length <= MAX_SAVED_CARDS
       return false unless cards.all? { |c| c.is_a?(Hash) }
       return false if cards.to_json.bytesize > MAX_SAVED_CARDS_BYTES
 
-      cloner = (player_state['inventory'] || []).find do |item|
-        # A forged clientAdded item typed rfid_cloner must not be treated as the cloner
-        # (rfid_cloner_held? already skips it for cloning; keep writes off it too, so a
-        # real cloner is found when both are present) (code review R2, B1 sweep).
-        next false if BreakEscape::ItemIdentity.client_forged?(item)
-
-        item.is_a?(Hash) && (item['type'] || item.dig('scenarioData', 'type')) == 'rfid_cloner'
-      end
+      cloner = real_cloner
       return false unless cloner
 
-      cloner['saved_cards'] = cards
+      recorded = server_clones
+      cards.each do |card|
+        card_id = card['card_id'].to_s
+        next if card_id.empty? || !recorded.key?(card_id)
+
+        definition = scenario_keycard_definitions.find { |k| k['card_id'].to_s == card_id } ||
+                     npc_card_definition_for(card_id) || { 'card_id' => card_id }
+        add_saved_card!(definition, card)
+      end
       save!
       true
     end
@@ -3822,7 +4199,11 @@ module BreakEscape
           next unless obj.is_a?(Hash) && obj['type'] == 'command_board'
 
           config = obj['commandBoard'] || obj.dig('scenarioData', 'commandBoard')
-          return config.is_a?(Hash) ? config : {}
+          return {} unless config.is_a?(Hash)
+
+          # Step 2b (plan item 3): author notes never ship. The schema does not declare commandBoard,
+          # so every "_" key in it is a note; strip a deep_dup (never the stored scenario_data).
+          return BreakEscape::AuthorNotes.strip_notes!(config.deep_dup, nil)
         end
       end
       nil
@@ -3949,6 +4330,8 @@ module BreakEscape
     end
 
     MAX_NPC_INK_VARIABLES_BYTES = 128.kilobytes
+    # Longest NPC id or ink variable name kept by merge_npc_ink_variables!, in code points.
+    MAX_NPC_INK_NAME_CHARS = 100
 
     # Merge NPC-local ink variables (the ones that aren't scenario globals)
     # sent by the client, one entry per NPC. These are what the client's
@@ -3961,10 +4344,10 @@ module BreakEscape
 
       merged = (player_state['npcInkVariables'] || {}).dup
       incoming.each do |npc_id, vars|
-        next unless npc_id.is_a?(String) && npc_id.length <= 100 && vars.is_a?(Hash)
+        next unless npc_id.is_a?(String) && npc_id.length <= MAX_NPC_INK_NAME_CHARS && vars.is_a?(Hash)
 
         merged[npc_id] = vars.select do |k, v|
-          k.is_a?(String) && k.length <= 100 &&
+          k.is_a?(String) && k.length <= MAX_NPC_INK_NAME_CHARS &&
             (v.is_a?(String) || v.is_a?(Numeric) || v == true || v == false || v.nil?)
         end
       end
@@ -4036,6 +4419,13 @@ module BreakEscape
     MAX_PHONE_VOICEMAILS = 10
     MAX_PHONE_CALL_GLOBALS = 10
     MAX_PHONE_ANSWER_SECONDS = 3600
+    # Per-field caps inside sanitize_phone_state_entry, in code points.
+    MAX_PHONE_TYPE_CHARS = 20
+    MAX_PHONE_STORY_PATH_CHARS = 300
+    MAX_PHONE_KNOT_CHARS = 200
+    MAX_PHONE_DEFERRED_TAG_CHARS = 300
+    MAX_PHONE_DEFERRED_TAGS = 100
+    MAX_PHONE_SCALAR_KEY_CHARS = 100
 
     # Merge the client's phone threads, one entry per phone contact, each replacing
     # the saved one: the texts (with read state), the ink story position, and a
@@ -4085,14 +4475,14 @@ module BreakEscape
       history = Array(entry['history']).last(MAX_PHONE_HISTORY_MESSAGES).filter_map do |msg|
         next unless msg.is_a?(Hash) && msg['type'].is_a?(String) && msg['text'].is_a?(String)
         next if msg['text'].empty?
-        next if msg['type'].length > 20 # a typeless line would not draw
+        next if msg['type'].length > MAX_PHONE_TYPE_CHARS # a typeless line would not draw
         # Call rows are fixed engine text: plain shape only
         next if msg['type'] == 'call' && !msg['text'].match?(PHONE_CALL_ROW_TEXT)
 
         kept = msg.to_h.slice(*PHONE_MESSAGE_KEYS).select do |key, value|
           case key
           when 'deliveryTags' then false # cleaned below
-          when 'type' then value.length <= 20 # always true: the `next` above already refused a longer type (A4 R1 n1)
+          when 'type' then value.length <= MAX_PHONE_TYPE_CHARS # always true: the `next` above already refused a longer type (A4 R1 n1)
           when 'callEvent' then value.is_a?(String) && PHONE_CALL_EVENTS.include?(value)
           when 'text' then true
           # gameTime: elapsed game ms when the text arrived (the time its bubble shows)
@@ -4110,16 +4500,16 @@ module BreakEscape
       story_state = entry['storyState']
       if story_state.is_a?(String) && story_state.bytesize <= MAX_PHONE_STORY_STATE_BYTES
         clean['storyState'] = story_state
-        clean['storyPath'] = entry['storyPath'] if entry['storyPath'].is_a?(String) && entry['storyPath'].length <= 300
+        clean['storyPath'] = entry['storyPath'] if entry['storyPath'].is_a?(String) && entry['storyPath'].length <= MAX_PHONE_STORY_PATH_CHARS
       end
       %w[currentKnot lastEnteredKnot preloadedKnot].each do |key|
-        clean[key] = entry[key] if entry[key].is_a?(String) && entry[key].length <= 200
+        clean[key] = entry[key] if entry[key].is_a?(String) && entry[key].length <= MAX_PHONE_KNOT_CHARS
       end
-      tags = Array(entry['deferredTags']).select { |t| t.is_a?(String) && t.length <= 300 }.first(100)
+      tags = Array(entry['deferredTags']).select { |t| t.is_a?(String) && t.length <= MAX_PHONE_DEFERRED_TAG_CHARS }.first(MAX_PHONE_DEFERRED_TAGS)
       clean['deferredTags'] = tags if tags.any?
       scalar_map = lambda do |hash|
         hash.to_h.select do |k, v|
-          k.is_a?(String) && k.length <= 100 &&
+          k.is_a?(String) && k.length <= MAX_PHONE_SCALAR_KEY_CHARS &&
             (v.is_a?(String) || v.is_a?(Numeric) || v == true || v == false || v.nil?)
         end
       end
@@ -4238,6 +4628,21 @@ module BreakEscape
     MAIL_JOB_BOOL_KEYS = %w[plain afterSend chaser loadPosition].freeze
     MAIL_DRAFT_KEYS = %w[to subject templates slots attachment link targetId headerFrom contactId freeText].freeze
     MAIL_METRIC_COUNTS = %w[sent failed landed].freeze
+    # Per-field caps and value sets inside the mail sanitisers, in code points
+    # except the key/mode lists. Named so the client mirror and the constants
+    # test read the same values (SYNC_DELTAS_PLAN 2.1).
+    MAIL_BODY_KEYS = %w[body hiddenText hiddenTextLabel].freeze
+    MAIL_FOLDERS = %w[inbox sent].freeze
+    MAX_MAIL_TELL_CHARS = 100
+    MAX_MAIL_TELLS = 50
+    MAX_MAIL_JSON_KEY_CHARS = 100
+    MAX_MAIL_BOX_ID_CHARS = 100
+    MAX_MAIL_THREAD_KEY_CHARS = 200
+    MAX_MAIL_THREAD_CHOICES = 20
+    MAIL_EXPECT_MODES = %w[choices compose waiting].freeze
+    MAX_MAIL_EXPECT_TARGET_CHARS = 100
+    MAX_MAIL_EXPECT_OPTIONS = 10
+    MAX_MAIL_DRAFT_ACCOUNT_CHARS = 100
 
     # Merge the mail client's keyed section (00 §10a "Persistence"). Keys:
     #   mailboxes.<box>.<msgId>  one message, upserted by id into the mailbox
@@ -4339,7 +4744,7 @@ module BreakEscape
           end
         elsif key.start_with?('threads.')
           thread_key = key.delete_prefix('threads.')
-          next unless thread_key.present? && thread_key.length <= 200
+          next unless thread_key.present? && thread_key.length <= MAX_MAIL_THREAD_KEY_CHARS
 
           if value.nil?
             updates[['threads', thread_key]] = nil
@@ -4441,10 +4846,10 @@ module BreakEscape
 
         value = msg[key]
         case key
-        when 'body', 'hiddenText', 'hiddenTextLabel'
+        when *MAIL_BODY_KEYS
           clean[key] = value[0, MAX_MAIL_BODY_CHARS] if value.is_a?(String)
         when 'folder'
-          clean[key] = value if %w[inbox sent].include?(value)
+          clean[key] = value if MAIL_FOLDERS.include?(value)
         when 'gameTime'
           clean[key] = value if value.is_a?(Numeric)
         when 'read', 'seeded'
@@ -4452,7 +4857,7 @@ module BreakEscape
         when 'landed'
           clean[key] = value if [true, false, nil].include?(value)
         when 'tells'
-          clean[key] = value.select { |t| t.is_a?(String) && t.length <= 100 }.first(50) if value.is_a?(Array)
+          clean[key] = value.select { |t| t.is_a?(String) && t.length <= MAX_MAIL_TELL_CHARS }.first(MAX_MAIL_TELLS) if value.is_a?(Array)
         else
           clean[key] = sanitize_mail_json(value)
         end
@@ -4483,7 +4888,7 @@ module BreakEscape
       return nil unless value.is_a?(Hash)
 
       value.each_with_object({}) do |(key, thread), clean|
-        next unless key.is_a?(String) && key.length <= 200 && thread.is_a?(Hash)
+        next unless key.is_a?(String) && key.length <= MAX_MAIL_THREAD_KEY_CHARS && thread.is_a?(Hash)
 
         entry = {}
         position = thread['position']
@@ -4491,15 +4896,15 @@ module BreakEscape
            (position.is_a?(String) ? position.bytesize : position.to_json.bytesize) <= MAX_MAIL_THREAD_POSITION_BYTES
           entry['position'] = position.is_a?(Hash) ? position.to_h : position
         end
-        entry['choices'] = sanitize_mail_json(thread['choices'].first(20)) if thread['choices'].is_a?(Array)
+        entry['choices'] = sanitize_mail_json(thread['choices'].first(MAX_MAIL_THREAD_CHOICES)) if thread['choices'].is_a?(Array)
         expects = thread['expects']
-        if expects.is_a?(Hash) && %w[choices compose waiting].include?(expects['mode'])
+        if expects.is_a?(Hash) && MAIL_EXPECT_MODES.include?(expects['mode'])
           entry['expects'] = { 'mode' => expects['mode'] }
-          entry['expects']['targetId'] = expects['targetId'] if expects['targetId'].is_a?(String) && expects['targetId'].length <= 100
+          entry['expects']['targetId'] = expects['targetId'] if expects['targetId'].is_a?(String) && expects['targetId'].length <= MAX_MAIL_EXPECT_TARGET_CHARS
           # The "Choose a reply" option texts (01 N8): kept so the follow-up control
           # survives a reload before the player picks. Bounded in count and length.
           if expects['options'].is_a?(Array)
-            opts = expects['options'].select { |o| o.is_a?(String) }.first(10).map { |o| o[0, MAX_MAIL_STRING] }
+            opts = expects['options'].select { |o| o.is_a?(String) }.first(MAX_MAIL_EXPECT_OPTIONS).map { |o| o[0, MAX_MAIL_STRING] }
             entry['expects']['options'] = opts unless opts.empty?
           end
         end
@@ -4511,7 +4916,7 @@ module BreakEscape
       return nil unless value.is_a?(Hash)
 
       value.each_with_object({}) do |(account_id, draft), clean|
-        next unless account_id.is_a?(String) && account_id.length <= 100 && draft.is_a?(Hash)
+        next unless account_id.is_a?(String) && account_id.length <= MAX_MAIL_DRAFT_ACCOUNT_CHARS && draft.is_a?(Hash)
 
         clean[account_id] = draft.slice(*MAIL_DRAFT_KEYS).to_h.transform_values { |v| sanitize_mail_json(v) }
       end
@@ -4537,7 +4942,7 @@ module BreakEscape
     end
 
     def mail_box_id?(value)
-      value.is_a?(String) && value.present? && value.length <= 100
+      value.is_a?(String) && value.present? && value.length <= MAX_MAIL_BOX_ID_CHARS
     end
 
     # Plain JSON only: string-keyed hashes, arrays, short strings, finite
@@ -4551,7 +4956,7 @@ module BreakEscape
         return {} if depth >= MAX_MAIL_JSON_DEPTH
 
         value.first(MAX_MAIL_JSON_ENTRIES).each_with_object({}) do |(k, v), out|
-          out[k.to_s] = sanitize_mail_json(v, depth + 1) if k.to_s.length <= 100
+          out[k.to_s] = sanitize_mail_json(v, depth + 1) if k.to_s.length <= MAX_MAIL_JSON_KEY_CHARS
         end
       when Array
         return [] if depth >= MAX_MAIL_JSON_DEPTH

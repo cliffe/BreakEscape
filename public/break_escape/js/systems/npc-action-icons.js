@@ -61,6 +61,22 @@
  */
 import { iconShown, roomIsDark, npcIconAnchor } from './npc-office-visuals.js';
 
+// Phaser 3.60 measures a Text's ascent and descent once, when its style is made, and
+// updateText() reuses them. A text made before VT323 arrived would keep the fallback
+// font's line height, so the redraw asks the style to measure again first (code review R2
+// m2). A text with no style (a test stub) is just redrawn.
+export function refreshCanvasText(text) {
+    if (text?.style && typeof text.style.update === 'function') return text.style.update(true);
+    return text?.updateText?.();
+}
+
+// VT323 for the text stand-ins is fetched at boot (utils/canvas-fonts.js); a text made
+// before it arrived redraws, and its backing is re-laid out, once it has (review R1 m5).
+function redrawOnFonts(redraw) {
+    const p = typeof window !== 'undefined' ? window.canvasFontsReady : null;
+    if (p && typeof p.then === 'function') p.then(() => { try { redraw(); } catch (e) { /* gone */ } });
+}
+
 // The 16x16 NPC icon set (OFFICE_LIFE_PLAN 9.1, assets/icons/npc-<name>.png), drawn at native
 // size. Referenced by name only, so a swapped file needs no code change. No fallback art: text.
 export const NPC_ICON_NAMES = ['caffeine', 'thirst', 'hunger', 'rest', 'social', 'work', 'curiosity',
@@ -340,13 +356,19 @@ export class NpcActionIcons {
     }
 
     _make(scene) {
-        const bg = scene.add.rectangle(0, 0, 10, 10, 0x1b2a41).setOrigin(0.5, 1);
+        // UX access R2 (finding 11): the same light card and dark outline as the thought
+        // bubbles, square, so a doing icon and a wanting bubble read as one family. The dark
+        // chip it had read as a UI tile laid over the world.
+        const bg = scene.add.rectangle(0, 0, 10, 10, BUBBLE_FILL).setOrigin(0.5, 1);
+        bg.setStrokeStyle?.(1, BUBBLE_LINE, 1);
         const text = scene.add.text(0, 0, '', {
-            fontFamily: 'monospace', fontSize: `${ICON_TEXT_PX}px`, fontStyle: 'bold', color: '#ffffff'
+            fontFamily: "'VT323', monospace", fontSize: `${ICON_TEXT_PX}px`, color: '#1b2a41'
         }).setOrigin(0.5, 0.5);
         const img = scene.add.image(0, -2, '__DEFAULT').setOrigin(0.5, 1).setVisible(false);
         const box = scene.add.container(0, 0, [bg, text, img]).setDepth(5000);
-        return { box, bg, text, img, shown: null };
+        const ic = { box, bg, text, img, shown: null };
+        redrawOnFonts(() => { ic.shown = null; refreshCanvasText(text); });
+        return ic;
     }
 
     /** Draw `r` into the icon; re-laid out only when what it shows changes. */
@@ -373,7 +395,7 @@ export class NpcActionIcons {
     _makeBubble(scene) {
         const g = scene.add.graphics();
         const text = scene.add.text(0, 0, '', {
-            fontFamily: 'monospace', fontSize: `${ICON_TEXT_PX - 4}px`, fontStyle: 'bold', color: '#1b2a41'
+            fontFamily: "'VT323', monospace", fontSize: `${ICON_TEXT_PX - 4}px`, color: '#1b2a41'
         }).setOrigin(0.5, 0.5);
         const img = scene.add.image(0, 0, '__DEFAULT').setOrigin(0.5, 0.5).setVisible(false);
         // Slice 14: the avoided person's face (a crop of their frame), and a badge with its cross
@@ -381,7 +403,9 @@ export class NpcActionIcons {
         const badge = scene.add.image(0, 0, '__DEFAULT').setOrigin(0.5, 0.5).setVisible(false);
         const cross = scene.add.graphics().setVisible(false);
         const box = scene.add.container(0, 0, [g, text, img, face, badge, cross]).setDepth(5000);
-        return { box, g, text, img, face, badge, cross, shown: null, w: 0, h: 0 };
+        const bubble = { box, g, text, img, face, badge, cross, shown: null, w: 0, h: 0 };
+        redrawOnFonts(() => { bubble.shown = null; refreshCanvasText(text); });
+        return bubble;
     }
 
     /** The backing and its two trailing dots, redrawn only when the size changes. */

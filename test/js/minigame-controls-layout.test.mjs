@@ -81,7 +81,7 @@ test('the case-lock panel has no soft focus glow (R2 m1)', () => {
     assert.equal(rule(css('password-minigame.css'), '.password-minigame-area.case-lock .password-field:focus')['box-shadow'], 'none');
 });
 
-test('the password and container panels fit inside the game area with their margins', () => {
+test('the password and container panels fit inside the game area; the desktop sizes to its screen', () => {
     for (const [file, sel] of [['password-minigame.css', '.password-minigame-area'],
         ['container-minigame.css', '.container-minigame']]) {
         const r = rule(css(file), sel);
@@ -90,7 +90,19 @@ test('the password and container panels fit inside the game area with their marg
         // 20px margin and 20px padding top and bottom: 80px less than the area
         assert.equal(r.height, 'calc(100% - 80px)', sel);
     }
-    assert.equal(rule(css('container-minigame.css'), '.container-minigame.desktop-mode').height, 'calc(100% - 40px)');
+    // The desktop sizes itself to its 16:10 screen (capped by the screen's max-height),
+    // so its height is auto rather than a share of the game area
+    assert.equal(rule(css('container-minigame.css'), '.container-minigame.desktop-mode').height, 'auto');
+});
+
+test('a disabled Sign in looks disabled: flat fill, no hover change, not-allowed cursor', () => {
+    const src = css('password-minigame.css');
+    const off = rule(src, '.submit-btn:disabled');
+    assert.notEqual(off.background, rule(src, '.submit-btn').background);
+    assert.equal(off.cursor, 'not-allowed');
+    assert.equal(rule(src, '.submit-btn:disabled:hover').background, off.background);
+    assert.doesNotMatch(Object.values(off).join(' '), /gradient|radius|blur|rgba/);
+    assert.equal(rule(src, '.signin-tile:disabled').cursor, 'not-allowed');
 });
 
 test('on a short landscape screen the notes Continue stays beside the notepad', () => {
@@ -100,4 +112,33 @@ test('on a short landscape screen the notes Continue stays beside the notepad', 
     const r = rule(media, '.minigame-container:has(.notes-minigame-notepad) .minigame-controls');
     assert.equal(r.position, 'absolute');
     assert.equal(r.right, '24px');
+});
+
+// Code review R2 m3: a fixed 240px floor on the desktop screen pushed the monitor under
+// the Close row in a window under about 660px tall (a 1366x768 laptop with browser bars).
+test('the desktop screen floor never rises above its height budget, and a short window slims the bezel', () => {
+    const src = css('container-minigame.css');
+    const all = rules(src, '.container-minigame.desktop-mode .desktop-background');
+    assert.ok(all.length >= 2, 'a base rule and a short-window rule');
+    assert.equal(all[0]['max-height'], 'calc(100vh - 440px)');
+    assert.equal(all[0]['min-height'], 'min(240px, max(140px, calc(100vh - 440px)))');
+    assert.equal(all[1]['max-height'], 'calc(100vh - 400px)');
+    assert.equal(all[1]['min-height'], 'min(240px, max(140px, calc(100vh - 400px)))');
+    assert.match(src, /@media \(max-height: 700px\)/);
+    assert.equal(rule(src, '.container-minigame.desktop-mode .container-monitor-bezel').padding, '12px');
+});
+
+// Code review R2 n2 and n3
+test('the sign-in message has no 1px shadow and sits on the GNF grid', () => {
+    const r = rule(css('password-minigame.css'), '.signin-message');
+    assert.equal(r['text-shadow'], undefined);
+    assert.equal(r['font-size'], '16px');
+});
+
+test('the case-lock panel has its own height and label rules, not prompt-mode\'s', () => {
+    const src = css('password-minigame.css');
+    assert.equal(rule(src, '.password-minigame-area.case-lock .monitor-screen')['min-height'], '0');
+    const label = rule(src, '.password-minigame-area.case-lock .password-input-container label');
+    assert.equal(label.background, 'none');
+    assert.equal(label.padding, '0');
 });

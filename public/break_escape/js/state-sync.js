@@ -16,7 +16,7 @@ const KEYED_SECTIONS = ['globalVariables', 'npcVisibility', 'npcHostility', 'tri
 // mailState.jobs: remainingMs counts down every tick, so only which jobs exist
 // (ids, account, message) is a change, as timedMessages diffs its pending ids;
 // the current times ride along with anything else that is sent (00 S9).
-const mailJobsChangeKey = jobs => json((jobs || []).map(j =>
+const mailJobsChangeKey = jobs => stableJson((jobs || []).map(j =>
   [j.jobId, j.kind, j.accountId ?? null, j.msgId ?? null, j.messageId ?? null]));
 const CHANGE_KEYS = { mailState: { jobs: mailJobsChangeKey } };
 
@@ -39,14 +39,102 @@ const LANDING_CHOICE_KEYS = ['brand', 'purpose', 'domainId', 'logo', 'wording', 
 const LANDING_VICTIM_KEYS = ['visited', 'submitted', 'noticed'];
 const LANDING_TELL_IDS = ['brand', 'purpose', 'domain', 'logo', 'wording', 'form', 'padlock', 'formOrigin', 'hoverMismatch'];
 
-// se_captures: one entry per phish target the campaign got something from (a credential sign-in
-// or a document/exe foothold). The closed key set mirrors systems/captures.js CAPTURE_ENTRY_KEYS;
-// the social-captures test asserts they stay in step. Sanitised here so a hand-edited or older
-// save can never push an unknown key to the server (defence in depth, as for the landing state).
-const CAPTURES_KEY = 'se_captures';
-const CAPTURE_ENTRY_KEYS = ['targetId', 'roleLabel', 'address', 'kind', 'secret', 'host', 'note', 'at'];
+// Deterministic JSON: object keys sorted at every depth, arrays kept in order,
+// undefined dropped as JSON.stringify drops it. A value stored in the jsonb
+// player_state column comes back with its object keys reordered (jsonb sorts
+// keys by length then bytes), so a plain JSON.stringify of the current value
+// never matches the stored copy. Comparing stableJson of each makes the first
+// sync after a reload send only what truly changed (SYNC_DELTAS_PLAN 2.1).
+export function stableJson(value) {
+  return JSON.stringify(value, function sortKeys(_key, val) {
+    if (val && typeof val === 'object' && !Array.isArray(val)) {
+      const sorted = {};
+      for (const k of Object.keys(val).sort()) sorted[k] = val[k];
+      return sorted;
+    }
+    return val;
+  });
+}
 
-const json = v => JSON.stringify(v);
+// Globals the server owns: the client never sends them and never seeds them from
+// the bootstrap. se_captures is server-owned (sync deltas R2, 6a): a capture rides the
+// `captures` sync part instead, and the mirror the client keeps for its readers is left
+// out of the outgoing globals (buildSharedSections) and of the seed (SYNC_DELTAS_PLAN 3.2).
+export const SERVER_OWNED_GLOBALS = new Set(['se_captures']);
+
+// The synced fields of a note and a biometric sample, as one place both the seed
+// (seedFromSaved) and the export (buildPlayerSections) read, so they cannot drift.
+export function pickNote(n) {
+  return { id: n.id, title: n.title, text: n.text, timestamp: n.timestamp, read: n.read, important: n.important };
+}
+export function pickSample(s) {
+  return {
+    id: s.id, type: s.type, owner: s.owner, ownerId: s.ownerId, ownerName: s.ownerName,
+    quality: s.quality, rating: s.rating, pattern: s.pattern, identified: s.identified,
+    sourceObjectId: s.sourceObjectId, sourceRoomId: s.sourceRoomId, sourceName: s.sourceName,
+    surface: s.surface, collectedAt: s.collectedAt
+  };
+}
+
+// The timed-texts and clock comparison keys, as buildChanges builds them, so the
+// seed and the diff agree (SYNC_DELTAS_PLAN 3.2).
+function timedMessagesKeyOf(timed) {
+  return stableJson({ pending: (timed?.pending || []).map(m => m.id), delivered: timed?.delivered || [] });
+}
+function clockKeyOf(clock) {
+  const t = clock?.timers || {};
+  return stableJson({ fired: t.fired || [], cancelled: t.cancelled || [], started: Object.keys(t.started || {}).sort() });
+}
+
+/**
+ * A `confirmed`-shaped object built from the bootstrap's saved blocks, every value
+ * turned into its stableJson string (the same strings buildChanges compares), so
+ * the first sync after a load sends only what truly changed (SYNC_DELTAS_PLAN 3.2).
+ * Pure: `mailKeys` is the flattened savedMailState (flattenSavedMailState), passed
+ * in so this module needs no import of mail-scheduler.js.
+ */
+export function seedFromSaved(saved, mailKeys = {}) {
+  const confirmed = {};
+  const put = (section, key, value) => { (confirmed[section] ||= {})[key] = stableJson(value); };
+
+  const keyed = [
+    ['globalVariables', 'savedGlobalVariables'],
+    ['npcVisibility', 'savedNpcVisibility'],
+    ['npcHostility', 'savedNpcHostility'],
+    ['triggeredEvents', 'savedTriggeredEvents'],
+    ['npcInkVariables', 'savedNpcInkVariables']
+  ];
+  for (const [section, field] of keyed) {
+    const obj = saved?.[field];
+    if (!obj || typeof obj !== 'object') continue;
+    for (const [k, v] of Object.entries(obj)) {
+      if (section === 'globalVariables' && SERVER_OWNED_GLOBALS.has(k)) continue;
+      put(section, k, v);
+    }
+  }
+
+  // Mail: the flattened keys. jobs compare by mailJobsChangeKey, as buildChanges does.
+  for (const [k, v] of Object.entries(mailKeys || {})) {
+    if (k === 'jobs') (confirmed.mailState ||= {}).jobs = mailJobsChangeKey(v);
+    else put('mailState', k, v);
+  }
+
+  for (const note of Array.isArray(saved?.savedNotes) ? saved.savedNotes : []) {
+    if (note && note.id !== undefined) put('notes', note.id, pickNote(note));
+  }
+
+  if (Array.isArray(saved?.savedCommandBoardLog)) confirmed.commandBoardLog = stableJson(saved.savedCommandBoardLog);
+  if (Array.isArray(saved?.savedBiometricSamples)) confirmed.biometricSamples = stableJson(saved.savedBiometricSamples.map(pickSample));
+  if (saved?.savedPlayerHealth) confirmed.playerHealth = stableJson(saved.savedPlayerHealth);
+  if (saved?.scenarioBriefShown) confirmed.scenarioBriefShown = true;
+  if (typeof saved?.savedCurrentRoom === 'string') confirmed.currentRoom = saved.savedCurrentRoom;
+  if (saved?.savedTimedMessages) confirmed.timedMessagesKey = timedMessagesKeyOf(saved.savedTimedMessages);
+  if (saved?.savedScenarioClock) {
+    confirmed.clockKey = clockKeyOf(saved.savedScenarioClock);
+    confirmed.clockElapsedMs = saved.savedScenarioClock.elapsedMs;
+  }
+  return confirmed;
+}
 
 const isPlainObject = v => v != null && typeof v === 'object' && !Array.isArray(v);
 const pickKeys = (obj, keys) => {
@@ -92,14 +180,7 @@ function guardLandingState(globals) {
   if (Object.prototype.hasOwnProperty.call(globals, LANDING_DRAFTS_KEY)) {
     globals[LANDING_DRAFTS_KEY] = sanitizeLandingMap(globals[LANDING_DRAFTS_KEY], sanitizeLandingChoices);
   }
-  if (Object.prototype.hasOwnProperty.call(globals, CAPTURES_KEY)) {
-    globals[CAPTURES_KEY] = sanitizeLandingMap(globals[CAPTURES_KEY], sanitizeCaptureEntry);
-  }
 }
-
-// One capture entry: the eight closed keys only; a non-object becomes {} so nothing unexpected
-// is sent. The map is keyed by target id (sanitizeLandingMap keeps the keys as-is).
-const sanitizeCaptureEntry = entry => (isPlainObject(entry) ? pickKeys(entry, CAPTURE_ENTRY_KEYS) : {});
 
 /**
  * Periodic state synchronisation with the server.
@@ -138,6 +219,109 @@ export class StateSync {
     this.lastError = null; // error from the latest failed run (status set for HTTP errors)
     this._boolFor = new WeakMap(); // run promise -> the boolean promise sync() hands out
     this._notSavedLogged = new Set(); // sections already warned about on this page
+    this._seeded = false; // seedFromBootstrap runs once per page
+    // Keyed-section keys this page has ever held in its current state. A confirmed
+    // key missing from the current state is only sent as null (a delete) when it is
+    // held here, so a key the server holds that the client never showed this page is
+    // left alone, as the first sync leaves it today (SYNC_DELTAS_PLAN 3.2, 3.3).
+    this._held = {};
+    // Named extra parts of the sync body (SYNC_DELTAS_PLAN 2.2). A capture (R2)
+    // rides inside the sync body as a part; a part with a value counts as a change
+    // and keeps syncConfirmed() false until the server has acknowledged it. Empty
+    // until step 6a registers one.
+    this._parts = new Map();
+    // Requests that must settle before syncConfirmed()'s first run (a card clone,
+    // P1). Each promise removes itself when it settles.
+    this._tracked = new Set();
+  }
+
+  /**
+   * Register a named extra part of the sync body (SYNC_DELTAS_PLAN 2.2). Two kinds
+   * of write now leave the keyed globals: a capture (R2), which travels inside the
+   * sync body as a part, and a card (P1), which travels in its own tracked request.
+   * @param {string} name - the body key the part sends under
+   * @param {Object} part
+   * @param {function():*} [part.build] - the value to send, or undefined for none.
+   *   A non-undefined value counts as a change, so buildChanges() does not return
+   *   null while the part has one.
+   * @param {function(Object):void} [part.onAnswer] - called after every 2xx answer,
+   *   stale or not, before the stale check returns; never on a refused (403) or
+   *   failed sync, so a part's entries stay pending until a 2xx records them.
+   * @param {function():number} [part.pendingCount] - entries the server has not yet
+   *   acknowledged. syncConfirmed() stays false while any part has pending entries.
+   * @param {function(Object):Object} [part.flushKeep] - extra keyed changes the
+   *   pagehide flush must keep in its reduced fallback lists.
+   */
+  registerPart(name, part = {}) {
+    this._parts.set(name, part);
+  }
+
+  /**
+   * Keep a request (a card clone, P1) in flight until it settles, so
+   * syncConfirmed() can wait for it before its first run. Returns the promise.
+   */
+  track(promise) {
+    this._tracked.add(promise);
+    Promise.resolve(promise).finally(() => this._tracked.delete(promise));
+    return promise;
+  }
+
+  /** Part build values present now, as { name: value }. */
+  _partBodies() {
+    const out = {};
+    for (const [name, part] of this._parts) {
+      const value = part.build?.();
+      if (value !== undefined) out[name] = value;
+    }
+    return out;
+  }
+
+  /** Extra keyed changes every part asks the pagehide flush to keep (flushKeep). */
+  _flushKeep(changes) {
+    let keep = {};
+    for (const part of this._parts.values()) {
+      const extra = part.flushKeep?.(changes);
+      if (extra && typeof extra === 'object') keep = { ...keep, ...extra };
+    }
+    return keep;
+  }
+
+  /** True while any registered part has entries the server has not acknowledged. */
+  _partsPending() {
+    for (const part of this._parts.values()) {
+      if ((part.pendingCount?.() || 0) > 0) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Seed `confirmed` from the bootstrap's saved blocks, once per page, so the first
+   * sync after a load sends only what changed since the server saved it, not every
+   * section whole (SYNC_DELTAS_PLAN 3.2). A value is set only where `confirmed` has
+   * none yet, so a sync that ran before the seed keeps its acknowledgements.
+   * @param {Object} scenario - the bootstrap (gameScenario)
+   * @param {Object} [opts.mailKeys] - the flattened savedMailState (flattenSavedMailState)
+   */
+  seedFromBootstrap(scenario, { mailKeys = {} } = {}) {
+    if (this._seeded) return;
+    this._seeded = true;
+    const seed = seedFromSaved(scenario, mailKeys);
+    for (const [section, value] of Object.entries(seed)) {
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        const target = this.confirmed[section] ||= {};
+        for (const [k, v] of Object.entries(value)) if (!(k in target)) target[k] = v;
+      } else if (this.confirmed[section] === undefined) {
+        this.confirmed[section] = value;
+      }
+    }
+    // The page applies every saved global with Object.assign, so it holds them from
+    // the start; a saved global the client then deletes must go up as null (3.2).
+    const savedGlobals = scenario?.savedGlobalVariables;
+    if (savedGlobals && typeof savedGlobals === 'object') {
+      const held = this._held.globalVariables ||= new Set();
+      for (const k of Object.keys(savedGlobals)) if (!SERVER_OWNED_GLOBALS.has(k)) held.add(k);
+    }
+    if (this.confirmed.clockKey !== undefined) this.clockConfirmedAt = Date.now();
   }
 
   start() {
@@ -162,6 +346,9 @@ export class StateSync {
     const out = {};
     // Shallow copy, so a later change to a global doesn't alter what was built
     out.globalVariables = { ...(window.gameState?.globalVariables || {}) };
+    // Server-owned globals (se_captures) never ride the sync: the client keeps a display mirror
+    // but the record is server-owned and travels in the `captures` part (SYNC_DELTAS_PLAN 3.2, 6a)
+    for (const k of SERVER_OWNED_GLOBALS) delete out.globalVariables[k];
     // Keep the landing-page globals to their closed shapes before they are synced or flushed (N4)
     guardLandingState(out.globalVariables);
 
@@ -198,18 +385,11 @@ export class StateSync {
     out.currentRoom = window.currentRoom?.name;
 
     // Notes, so observations survive page reloads. Plain data only (no sprites).
-    out.notes = (window.gameState?.notes || []).map(n => ({
-      id: n.id,
-      title: n.title,
-      text: n.text,
-      timestamp: n.timestamp,
-      read: n.read,
-      important: n.important
-    }));
+    out.notes = (window.gameState?.notes || []).map(pickNote);
 
     // Phone threads: texts, read state and story position per contact. With
     // onlyChanged, only contacts changed since the last confirmed sync.
-    const phoneState = window.npcManager?.exportPhoneState?.({ onlyChanged });
+    const phoneState = window.npcManager?.exportPhoneState?.({ onlyChanged, keyOf: stableJson });
     if (phoneState && Object.keys(phoneState).length > 0) out.phoneState = phoneState;
 
     // NPC-local ink variables (met_x, first_meeting, ...) so intros don't replay
@@ -224,12 +404,7 @@ export class StateSync {
     if (playerHealth) out.playerHealth = playerHealth;
 
     // Lifted fingerprints, plain fields only, so they survive a reload.
-    const biometricSamples = (window.gameState?.biometricSamples || []).map(s => ({
-      id: s.id, type: s.type, owner: s.owner, ownerId: s.ownerId, ownerName: s.ownerName,
-      quality: s.quality, rating: s.rating, pattern: s.pattern, identified: s.identified,
-      sourceObjectId: s.sourceObjectId, sourceRoomId: s.sourceRoomId, sourceName: s.sourceName,
-      surface: s.surface, collectedAt: s.collectedAt
-    }));
+    const biometricSamples = (window.gameState?.biometricSamples || []).map(pickSample);
     if (biometricSamples.length > 0) out.biometricSamples = biometricSamples;
 
     // Timed texts already counting down (and NPC-level ones already delivered), so
@@ -271,13 +446,17 @@ export class StateSync {
       const changes = {};
       const acked = {};
       const changeKeys = CHANGE_KEYS[section] || {};
+      const held = this._held[section] ||= new Set();
       for (const [key, value] of Object.entries(current)) {
         if (value === undefined) continue;
-        const s = changeKeys[key] ? changeKeys[key](value) : json(value);
+        held.add(key);
+        const s = changeKeys[key] ? changeKeys[key](value) : stableJson(value);
         if (confirmed[key] !== s) { changes[key] = value; acked[key] = s; }
       }
       for (const key of Object.keys(confirmed)) {
-        if (current[key] === undefined) { changes[key] = null; acked[key] = null; }
+        // Only delete a key this page held and then lost, never one the server holds
+        // that the client never showed this page (SYNC_DELTAS_PLAN 3.3).
+        if (current[key] === undefined && held.has(key)) { changes[key] = null; acked[key] = null; }
       }
       if (Object.keys(changes).length > 0) { body[section] = changes; ack[section] = acked; }
     }
@@ -287,14 +466,14 @@ export class StateSync {
     const notes = [];
     const ackedNotes = {};
     for (const note of full.notes || []) {
-      const s = json(note);
+      const s = stableJson(note);
       if (confirmedNotes[note.id] !== s) { notes.push(note); ackedNotes[note.id] = s; }
     }
     if (notes.length > 0) { body.notes = notes; ack.notes = ackedNotes; }
 
     for (const section of WHOLE_SECTIONS) {
       if (full[section] === undefined) continue;
-      const s = json(full[section]);
+      const s = stableJson(full[section]);
       if (this.confirmed[section] !== s) { body[section] = full[section]; ack[section] = s; }
     }
 
@@ -316,7 +495,7 @@ export class StateSync {
     // current times ride along with anything else that is sent.
     let timedKey = null;
     if (full.timedMessages) {
-      timedKey = json({
+      timedKey = stableJson({
         pending: (full.timedMessages.pending || []).map(m => m.id),
         delivered: full.timedMessages.delivered || []
       });
@@ -327,15 +506,21 @@ export class StateSync {
     let clockKey = null;
     if (full.scenarioClock) {
       const t = full.scenarioClock.timers || {};
-      clockKey = json({ fired: t.fired || [], cancelled: t.cancelled || [], started: Object.keys(t.started || {}).sort() });
+      clockKey = stableJson({ fired: t.fired || [], cancelled: t.cancelled || [], started: Object.keys(t.started || {}).sort() });
     }
+    // Extra sync-body parts (a capture, R2). A part with a value counts as a
+    // change, so a part alone keeps buildChanges() from returning null. Parts are
+    // not confirmed by ack; they use onAnswer/pendingCount (SYNC_DELTAS_PLAN 2.2).
+    const partBodies = this._partBodies();
+    const hasParts = Object.keys(partBodies).length > 0;
+
     const clockStateChanged = clockKey !== null && clockKey !== this.confirmed.clockKey;
     const somethingElse = Object.keys(body).length > 0 || ack.timedMessagesKey !== undefined;
     const clockDue = full.scenarioClock &&
       full.scenarioClock.elapsedMs !== this.confirmed.clockElapsedMs &&
       now - this.clockConfirmedAt >= CLOCK_ONLY_INTERVAL_MS;
 
-    if (!somethingElse && !clockStateChanged && !clockDue && !forceClock) return null;
+    if (!somethingElse && !clockStateChanged && !clockDue && !forceClock && !hasParts) return null;
 
     if (full.scenarioClock) {
       body.scenarioClock = full.scenarioClock;
@@ -352,6 +537,7 @@ export class StateSync {
       body.mailState = { ...(body.mailState || {}), jobs: mailJobs };
       ack.mailState = { ...(ack.mailState || {}), jobs: mailJobsChangeKey(mailJobs) };
     }
+    for (const [name, value] of Object.entries(partBodies)) body[name] = value;
     if (Object.keys(body).length === 0) return null;
     return { body, ack };
   }
@@ -375,7 +561,7 @@ export class StateSync {
       if (ack[key] !== undefined) this.confirmed[key] = ack[key];
     }
     if (body.scenarioClock) this.clockConfirmedAt = now;
-    if (body.phoneState && !refused.has('phoneState')) window.npcManager?.markPhoneStateSynced?.(body.phoneState);
+    if (body.phoneState && !refused.has('phoneState')) window.npcManager?.markPhoneStateSynced?.(body.phoneState, { keyOf: stableJson });
   }
 
   /**
@@ -446,6 +632,10 @@ export class StateSync {
       if (!changes) return { ok: true, error: null };
       const body = { ...changes.body, clientTs: this.nextClientTs() };
       const response = await ApiClient.put('/sync_state', body);
+      // Every part sees every 2xx answer, stale or not, before the stale check
+      // returns; a 403 or a failure throws and skips this, so the part's entries
+      // stay pending (SYNC_DELTAS_PLAN 2.2).
+      for (const part of this._parts.values()) part.onAnswer?.(response);
       if (response?.stale) {
         console.warn('State sync answered stale; resending with the next sync');
         this.lastError = null;
@@ -467,8 +657,9 @@ export class StateSync {
       console.log('✓ State synced to server');
       // A run that left a capped section refused is not fully confirmed (N-4): the
       // saved sections are confirmed above, but syncConfirmed must not report success
-      // while a section stays unsaved and is resent on every sync.
-      return { ok: notSaved.length === 0, error: null };
+      // while a section stays unsaved and is resent on every sync. Nor while a part
+      // still has pending entries the server has not acknowledged (2.2).
+      return { ok: notSaved.length === 0 && !this._partsPending(), error: null };
     } catch (error) {
       // Nothing is marked confirmed, so the next sync sends it again
       this.lastError = error;
@@ -484,6 +675,9 @@ export class StateSync {
    * blip, so it stops at once. Resolves true when confirmed, false otherwise.
    */
   async syncConfirmed({ attempts = 6, onRetry } = {}) {
+    // Wait for every tracked request (a card clone, P1) to settle first, so the
+    // server holds everything before the first run reads pendingCount (2.2).
+    if (this._tracked.size) await Promise.allSettled([...this._tracked]);
     for (let i = 0; i < attempts; i++) {
       const { ok, error } = await this._syncRun();
       if (ok) return true;
@@ -514,9 +708,13 @@ export class StateSync {
         // since the last sync. mailState is dropped whole, never cut, in the
         // second list (00 §10a "The pagehide flush has a size budget").
         const { globalVariables, mailState, triggeredEvents, timedMessages, phoneState, scenarioClock, npcVisibility, npcHostility, commandBoardLog, playerHealth, clientTs } = payload;
-        body = JSON.stringify({ globalVariables, mailState, triggeredEvents, timedMessages, phoneState, scenarioClock, npcVisibility, npcHostility, commandBoardLog, playerHealth, clientTs });
+        // Parts (a capture, R2) ride in each reduced list after clientTs; a part
+        // also names extra keyed changes to keep through flushKeep (2.2).
+        const parts = this._partBodies();
+        const keep = this._flushKeep(changes);
+        body = JSON.stringify({ globalVariables, mailState, triggeredEvents, timedMessages, phoneState, scenarioClock, npcVisibility, npcHostility, commandBoardLog, playerHealth, ...keep, ...parts, clientTs });
         if (body.length > KEEPALIVE_BODY_LIMIT) {
-          body = JSON.stringify({ globalVariables, triggeredEvents, timedMessages, scenarioClock, npcVisibility, npcHostility, commandBoardLog, playerHealth, clientTs });
+          body = JSON.stringify({ globalVariables, triggeredEvents, timedMessages, scenarioClock, npcVisibility, npcHostility, commandBoardLog, playerHealth, ...keep, ...parts, clientTs });
           if (body.length > KEEPALIVE_BODY_LIMIT) return;
         }
       }
@@ -536,3 +734,7 @@ export class StateSync {
     }
   }
 }
+
+// Exposed on the class so a caller holding window.stateSync can reach it as
+// window.stateSync.constructor.stableJson without importing the module.
+StateSync.stableJson = stableJson;

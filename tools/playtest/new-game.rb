@@ -56,6 +56,15 @@
 #                          straight to the state) and submit_flags task progress. FLAG_ID is
 #                          vm:flag_N, vm-flagN or station:vm-flagN. Repeatable. Unknown ids
 #                          abort and list the flags. Hacktivity scoring is skipped.
+#   --seed-full-cloner     (test_access_networks only) put an rfid_cloner item holding 50
+#                          made-up EM4100 cards (about 9.5 KB, under the 64 KB cap) into this
+#                          game's inventory, the shape an old save written by update_saved_cards
+#                          has. For the sync-delta live proof case B (SYNC_DELTAS_PLAN 10.3):
+#                          test_access_networks has no card copier, and no route can fill a
+#                          list past the scenario's own cards, so the full list is seeded here.
+#                          No value. Aborts unless the scenario is test_access_networks, the
+#                          env is development or test, and the inventory holds no rfid_cloner;
+#                          writes under the game's row lock.
 # Set globals sit in player_state like any played-in value; imported globals
 # (importGlobals) are re-applied by the server, so use --imports=<file> for those.
 # --help prints this text.
@@ -66,6 +75,7 @@ if ARGV.include?('--help') || ARGV.include?('-h')
 end
 
 imports_opt = 'none'
+seed_full_cloner = false
 start_room_opt = nil
 unlock_opts = []
 carry_opts = []
@@ -81,7 +91,9 @@ args = ARGV.dup
 until args.empty?
   a = args.shift
   name, inline = a.split('=', 2)
-  if head_start.key?(name)
+  if name == '--seed-full-cloner'
+    seed_full_cloner = true
+  elsif head_start.key?(name)
     val = inline || args.shift
     abort "#{name} needs a value (see --help)" if val.nil?
     head_start[name].call(val)
@@ -427,6 +439,54 @@ if complete_opts.any? || flag_opts.any?
     head_start_notes << "submit-flag #{fid} -> station=#{station && (station['id'] || station['name'])} flagIds=#{ids.first(2).join('|')} rewards=[#{applied.join('; ')}] tasks_completed=#{outcome[:completed_tasks].inspect} tasks_updated=#{outcome[:updated_tasks].inspect}"
   end
   g.save!
+end
+
+# Seed a full RFID cloner (test only; sync-delta live proof case B, SYNC_DELTAS_PLAN
+# 10.3). Guarded tightly: it only ever touches the game this run created (g), and
+# only test_access_networks in development or test, with no cloner already held.
+# The write runs under the game's row lock, which reloads the row, so it is safe
+# even though the page is not open yet. Builds the shape an old save written by
+# update_saved_cards has: a top-level saved_cards list on the cloner item.
+if seed_full_cloner
+  abort '--seed-full-cloner: only in development or test' unless Rails.env.development? || Rails.env.test?
+  abort "--seed-full-cloner: only test_access_networks, not #{mission.name}" unless mission.name == 'test_access_networks'
+
+  make_card = lambda do |i|
+    hex = format('%010X', ((i + 1) * 0x9E3779B1) & 0xFFFFFFFFFF)
+    facility = hex[0, 2].to_i(16)
+    card_number = hex[2, 4].to_i(16)
+    {
+      'card_id' => "seeded_card_#{format('%02d', i)}",
+      'name' => "Visitor Badge ##{1000 + i}",
+      'rfid_hex' => hex,
+      'rfid_facility' => facility,
+      'rfid_card_number' => card_number,
+      'rfid_protocol' => 'EM4100',
+      'rfid_data' => { 'hex' => hex, 'facility' => facility, 'cardNumber' => card_number, 'uid' => hex },
+      'timestamp' => 1_700_000_000 + i
+    }
+  end
+  cards = (0...50).map { |i| make_card.call(i) }
+
+  g.with_lock do
+    inv = Array(g.player_state['inventory'])
+    already = inv.any? { |it| it.is_a?(Hash) && (it['type'] || it.dig('scenarioData', 'type')) == 'rfid_cloner' }
+    abort '--seed-full-cloner: an rfid_cloner is already in the inventory' if already
+
+    cloner = {
+      'id' => 'seeded_full_cloner',
+      'type' => 'rfid_cloner',
+      'name' => 'RFID Flipper',
+      'saved_cards' => cards,
+      'observations' => 'Seeded for the sync-delta live proof (case B).'
+    }
+    ps = g.player_state
+    ps['inventory'] = inv + [cloner]
+    g.player_state = ps
+    g.save!
+  end
+  head_start_notes << "seed-full-cloner: 50 cards, #{cards.to_json.bytesize} bytes"
+  puts "SEEDED_FULL_CLONER=game #{g.id} (#{mission.name}): 50 EM4100 cards, #{cards.to_json.bytesize} bytes"
 end
 
 # Sprite-restricted missions (validSprites) redirect the game page to the

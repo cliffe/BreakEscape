@@ -141,10 +141,49 @@ export default class NPCManager {
   static PHONE_MESSAGE_MAX_CHARS = 4000;
   static PHONE_DELIVERY_TAG_MAX_CHARS = 300; // a #delivery: tag (game.rb PHONE_DELIVERY_TAG_MAX)
   static PHONE_DELIVERY_TAGS_MAX = 5;
-  static PHONE_STORY_STATE_MAX_CHARS = 60000;
+  // A call row's text and event, as game.rb keeps them (PHONE_CALL_ROW_TEXT, PHONE_CALL_EVENTS)
+  static PHONE_CALL_ROW_TEXT = /^[A-Za-z0-9 ,:]{1,60}$/;
+  static PHONE_CALL_EVENTS = ['missed', 'incoming', 'outgoing', 'no_answer', 'voicemail'];
+  // 60.kilobytes, now a UTF-8 byte limit (the server's bytesize, game.rb
+  // MAX_PHONE_STORY_STATE_BYTES), not a character count (SYNC_DELTAS_PLAN 2.1).
+  static PHONE_STORY_STATE_MAX_BYTES = 61440;
+  // Per-field phone export caps, server names (game.rb), measured in code points.
+  static MAX_PHONE_TYPE_CHARS = 20;
+  static MAX_PHONE_STORY_PATH_CHARS = 300;
+  static MAX_PHONE_KNOT_CHARS = 200;
+  static MAX_PHONE_DEFERRED_TAG_CHARS = 300;
+  static MAX_PHONE_DEFERRED_TAGS = 100;
+  static MAX_PHONE_SCALAR_KEY_CHARS = 100;
   // gameTime: elapsed game ms when the message arrived (window.gameClock), so its
   // shown time stays put across reopen and reload (messageClockText in game-clock.js)
   static PHONE_MESSAGE_FIELDS = ['type', 'text', 'timestamp', 'gameTime', 'read', 'isBark', 'timed', 'preloaded', 'deliveryTags', 'callEvent'];
+
+  // Code-point helpers (SYNC_DELTAS_PLAN 2.1). Ruby's String#length and [0, n]
+  // count code points; JavaScript's length and slice count UTF-16 units, so a
+  // string with an emoji or other astral character is cut at a different place
+  // on each side. The export clips must count and cut by code points to mirror
+  // the server exactly. Kept as module-local/static copies (here, and in
+  // mail-scheduler.js and npc-conversation-state.js) rather than a shared
+  // module, so no node harness copy list changes; one node test
+  // (test/js/cp-helpers.test.mjs) runs every copy over the same astral strings.
+
+  /** True when s has at most n code points. */
+  static cpWithin(s, n) {
+    // A UTF-16 length never undercounts code points, so this fast path is exact.
+    if (s.length <= n) return true;
+    return Array.from(s).length <= n;
+  }
+
+  /** The first n code points of s. */
+  static cpSlice(s, n) {
+    if (s.length <= n) return s;
+    return Array.from(s).slice(0, n).join('');
+  }
+
+  /** UTF-8 byte length, the server's bytesize (SYNC_DELTAS_PLAN 2.1). */
+  static utf8ByteLength(s) {
+    return new TextEncoder().encode(s).length;
+  }
 
   /**
    * Resolve a "Name:" speaker prefix to a character id (social build item 0.6,
@@ -2503,9 +2542,14 @@ export default class NPCManager {
    * @param {Object} [opts]
    * @param {boolean} [opts.onlyChanged] - only NPCs changed since markPhoneStateSynced
    *   (keeps the unload flush small)
+   * @param {function} [opts.keyOf] - how an entry is serialised for the
+   *   "changed since last save" compare (SYNC_DELTAS_PLAN 2.1). Defaults to
+   *   JSON.stringify; the sync passes stableJson so a thread restored in jsonb
+   *   key order still matches its seed and is not resent on the first sync after
+   *   a load. Passed in, not imported, so no node harness copy list changes.
    * @returns {Object} { npcId: { history, storyState, storyPath, currentKnot, ... } }
    */
-  exportPhoneState({ onlyChanged = false } = {}) {
+  exportPhoneState({ onlyChanged = false, keyOf = JSON.stringify } = {}) {
     const out = {};
     for (const npc of this.npcs.values()) {
       if (npc.npcType !== 'phone') continue;
@@ -2519,7 +2563,7 @@ export default class NPCManager {
         if (hadSlot) out[npc.id] = { history: [], pendingCall: null };
         continue;
       }
-      if (onlyChanged && this._phoneStateSent.get(npc.id) === JSON.stringify(entry)) continue;
+      if (onlyChanged && this._phoneStateSent.get(npc.id) === keyOf(entry)) continue;
       out[npc.id] = entry;
     }
     // Saved threads for NPCs this session hasn't registered yet are kept as they are
@@ -2529,30 +2573,65 @@ export default class NPCManager {
     return out;
   }
 
-  /** Record what the server now holds, after a sync that included exportPhoneState(). */
-  markPhoneStateSynced(exported) {
+  /**
+   * Record what the server now holds, after a sync that included exportPhoneState().
+   * keyOf must match the one exportPhoneState was called with (SYNC_DELTAS_PLAN 2.1).
+   */
+  markPhoneStateSynced(exported, { keyOf = JSON.stringify } = {}) {
     if (!exported || typeof exported !== 'object') return;
     for (const [npcId, entry] of Object.entries(exported)) {
-      this._phoneStateSent.set(npcId, JSON.stringify(entry));
+      this._phoneStateSent.set(npcId, keyOf(entry));
     }
   }
 
   _phoneStateEntry(npc) {
     const C = NPCManager;
+    // An exact mirror of sanitize_phone_state_entry (game.rb), so the seed built
+    // from the bootstrap matches this export and the thread is not resent on the
+    // first sync after a load (SYNC_DELTAS_PLAN 2.1).
     const history = (this.conversationHistory.get(npc.id) || [])
       .slice(-C.PHONE_HISTORY_MAX_MESSAGES)
-      .filter(msg => msg && typeof msg.text === 'string' && msg.text)
+      .filter(msg => msg && typeof msg === 'object' && typeof msg.type === 'string' && typeof msg.text === 'string' && msg.text)
+      // game.rb drops a line whose type is too long, and a call row whose text is not the plain engine shape
+      .filter(msg => C.cpWithin(msg.type, C.MAX_PHONE_TYPE_CHARS))
+      .filter(msg => msg.type !== 'call' || C.PHONE_CALL_ROW_TEXT.test(msg.text))
       .map(msg => {
         const copy = {};
         for (const field of C.PHONE_MESSAGE_FIELDS) {
-          if (msg[field] !== undefined && msg[field] !== null) copy[field] = msg[field];
+          const value = msg[field];
+          if (value === undefined) continue;
+          switch (field) {
+            case 'type':
+              if (typeof value === 'string' && C.cpWithin(value, C.MAX_PHONE_TYPE_CHARS)) copy.type = value;
+              break;
+            case 'text':
+              copy.text = value; // already a string (filter above)
+              break;
+            case 'timestamp':
+            case 'gameTime':
+              if (typeof value === 'number') copy[field] = value;
+              break;
+            case 'callEvent':
+              if (typeof value === 'string' && C.PHONE_CALL_EVENTS.includes(value)) copy.callEvent = value;
+              break;
+            case 'deliveryTags': {
+              // clean_phone_delivery_tags: strings within the cap, no control characters but tab and newlines
+              if (!Array.isArray(value)) break;
+              const tags = value.filter(t => typeof t === 'string' && C.cpWithin(t, C.PHONE_DELIVERY_TAG_MAX_CHARS) &&
+                !/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/.test(t)).slice(0, C.PHONE_DELIVERY_TAGS_MAX);
+              if (tags.length > 0) copy.deliveryTags = tags;
+              break;
+            }
+            default: // read, isBark, timed, preloaded: boolean only
+              if (value === true || value === false) copy[field] = value;
+          }
         }
-        copy.text = copy.text.slice(0, C.PHONE_MESSAGE_MAX_CHARS);
+        copy.text = C.cpSlice(copy.text, C.PHONE_MESSAGE_MAX_CHARS);
         copy.read = !!msg.read;
         return copy;
       });
     const storyState = typeof npc.storyState === 'string' &&
-      npc.storyState.length <= C.PHONE_STORY_STATE_MAX_CHARS ? npc.storyState : null;
+      C.utf8ByteLength(npc.storyState) <= C.PHONE_STORY_STATE_MAX_BYTES ? npc.storyState : null;
     // A call in flight or a callback waiting is saved with its contact (plan 2.7, A4)
     const pendingCall = npc.pendingCall && typeof npc.pendingCall === 'object'
       ? JSON.parse(JSON.stringify(npc.pendingCall)) : null;
@@ -2562,28 +2641,30 @@ export default class NPCManager {
     if (storyState) {
       entry.storyState = storyState;
       // A story position only fits the story it came from (changeStoryPath)
-      if (npc.storyPath) entry.storyPath = npc.storyPath;
+      if (typeof npc.storyPath === 'string' && C.cpWithin(npc.storyPath, C.MAX_PHONE_STORY_PATH_CHARS)) entry.storyPath = npc.storyPath;
     }
-    if (npc.currentKnot) entry.currentKnot = npc.currentKnot;
-    if (npc.lastEnteredKnot) entry.lastEnteredKnot = npc.lastEnteredKnot;
-    if (npc.preloadedKnot) entry.preloadedKnot = npc.preloadedKnot;
+    for (const key of ['currentKnot', 'lastEnteredKnot', 'preloadedKnot']) {
+      if (typeof npc[key] === 'string' && C.cpWithin(npc[key], C.MAX_PHONE_KNOT_CHARS)) entry[key] = npc[key];
+    }
     // A preload's deferred tags and globals run when the thread is first opened;
     // if the player reloads before that, they still have to run
-    if (Array.isArray(npc.deferredTags) && npc.deferredTags.length > 0) {
-      entry.deferredTags = npc.deferredTags.filter(t => typeof t === 'string');
+    if (Array.isArray(npc.deferredTags)) {
+      const tags = npc.deferredTags.filter(t => typeof t === 'string' && C.cpWithin(t, C.MAX_PHONE_DEFERRED_TAG_CHARS)).slice(0, C.MAX_PHONE_DEFERRED_TAGS);
+      if (tags.length > 0) entry.deferredTags = tags;
     }
     if (npc.deferredGlobals && typeof npc.deferredGlobals === 'object') {
       const scalar = v => v === null || ['string', 'number', 'boolean'].includes(typeof v);
+      const keyOk = k => typeof k === 'string' && C.cpWithin(k, C.MAX_PHONE_SCALAR_KEY_CHARS);
       const globals = {};
       for (const [k, v] of Object.entries(npc.deferredGlobals)) {
-        if (scalar(v)) globals[k] = v;
+        if (keyOk(k) && scalar(v)) globals[k] = v;
       }
       if (Object.keys(globals).length > 0) {
         entry.deferredGlobals = globals;
         // Each one's value at preload: applied on first open only if still unchanged
         const base = {};
         for (const [k, v] of Object.entries(npc.deferredGlobalsBase || {})) {
-          if (k in globals && scalar(v)) base[k] = v;
+          if (k in globals && keyOk(k) && scalar(v)) base[k] = v;
         }
         if (Object.keys(base).length > 0) entry.deferredGlobalsBase = base;
       }
@@ -2595,14 +2676,19 @@ export default class NPCManager {
    * Restore exportPhoneState() output on load (game.js), before the phone can open.
    * Applied now to NPCs already registered, otherwise when registerNPC sees them.
    * @param {Object} saved - { npcId: entry }
+   * @param {Object} [opts]
+   * @param {function} [opts.keyOf] - how the seed is serialised for the
+   *   "changed since last save" compare (SYNC_DELTAS_PLAN 2.1). Must match the
+   *   one exportPhoneState uses; the sync passes stableJson so the jsonb-reordered
+   *   saved entry matches the client's export and is not resent.
    */
-  restorePhoneState(saved) {
+  restorePhoneState(saved, { keyOf = JSON.stringify } = {}) {
     if (!saved || typeof saved !== 'object') return;
     for (const [npcId, entry] of Object.entries(saved)) {
       if (!entry || typeof entry !== 'object') continue;
       this._savedPhoneState.set(npcId, entry);
       // The server holds this already; only send it again once it changes
-      this._phoneStateSent.set(npcId, JSON.stringify(entry));
+      this._phoneStateSent.set(npcId, keyOf(entry));
       if (this.npcs.has(npcId)) this._applySavedPhoneState(npcId);
     }
     console.log(`📱 Restored saved phone state for ${Object.keys(saved).length} contact(s)`);

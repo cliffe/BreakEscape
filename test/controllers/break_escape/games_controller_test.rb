@@ -409,7 +409,8 @@ module BreakEscape
       assert_response :success
       json = JSON.parse(@response.body)
       assert json['success']
-      assert_equal 1, json['inventory'].length
+      # Sync deltas P2: the /inventory add answer no longer echoes the inventory.
+      assert_nil json['inventory']
 
       @game.reload
       assert_equal 1, @game.player_state['inventory'].length
@@ -710,7 +711,7 @@ module BreakEscape
         ['opens_lock-only keys: hidden', { 'type' => 'key', 'name' => 'Office Key', 'opens_lock' => 'office' }, { 'type' => 'key', 'name' => 'Office Key', 'opens_lock' => 'office' }, true],
         ['opens_lock-only keys, different locks: kept', { 'type' => 'key', 'name' => 'Key', 'opens_lock' => 'a' }, { 'type' => 'key', 'name' => 'Key', 'opens_lock' => 'b' }, false],
         ['different type, same name: kept', { 'type' => 'notes', 'name' => 'Locked Briefcase' }, { 'type' => 'suitcase', 'name' => 'Locked Briefcase' }, false],
-        ['room item with no id or name: hidden by type', { 'type' => 'suitcase' }, { 'type' => 'suitcase', 'name' => 'Locked Briefcase', 'id' => 'bag_1' }, true],
+        ['room item with no id or name: hidden by type', { 'type' => 'suitcase' }, { 'type' => 'suitcase', 'name' => 'Locked Briefcase', 'id' => 'bag_1' }, true]
       ].freeze
 
     CONTAINER_FILTER_CASES.each_with_index do |(label, item, held, hidden), i|

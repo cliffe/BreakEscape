@@ -133,7 +133,9 @@ test('a player line survives a reload as the player\'s; a thread saved before th
 
 test('the server keeps a player message as sent (type "player" passes the sanitiser)', () => {
     const src = readFileSync(join(here, '../../app/models/break_escape/game.rb'), 'utf8');
-    assert.match(src, /when 'type' then value\.length <= 20/);
+    // The 20-char type limit is now the named constant MAX_PHONE_TYPE_CHARS (sync-deltas groundwork)
+    assert.match(src, /when 'type' then value\.length <= MAX_PHONE_TYPE_CHARS/);
+    assert.match(src, /MAX_PHONE_TYPE_CHARS = 20\b/);
 });
 
 // ---------------------------------------------------------------- live run and reopen

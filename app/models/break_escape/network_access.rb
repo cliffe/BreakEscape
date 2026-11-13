@@ -187,8 +187,39 @@ module BreakEscape
       end
     end
 
+    # The inventory part of a network route answer (sync deltas P2). touched_ids are the ids
+    # the action added or removed. An id now present in the server inventory is returned in
+    # `added` (through item_for_answer, so no saved_cards can ride an echo); an id now absent
+    # is returned in `removed`. The same rule on every route and every retry reconciles the
+    # tray exactly, and an id the player still holds a copy of is never named as removed.
+    def network_inventory_delta(touched_ids)
+      inv = Array(player_state['inventory'])
+      added = []
+      removed = []
+      touched_ids.compact.map(&:to_s).uniq.each do |id|
+        item = inv.find { |it| it.is_a?(Hash) && it['id'].to_s == id }
+        if item
+          added << item_for_answer(item)
+        else
+          removed << id
+        end
+      end
+      { added: added, removed: removed }
+    end
+
+    # The inventory fields for a network answer: the `added`/`removed` delta for a request
+    # that opted in with `delta: true`, or the whole-inventory echo otherwise (one release of
+    # compatibility for an old open tab, 4.4). Merged into each route's success and already body.
+    def inventory_answer_fields(delta, touched_ids)
+      if delta
+        network_inventory_delta(touched_ids)
+      else
+        { inventory: client_inventory }
+      end
+    end
+
     # POST /network/plant (section 5). Returns { status:, body: }.
-    def plant_device!(jack_id, device_id = nil)
+    def plant_device!(jack_id, device_id = nil, delta: false)
       jack = find_jack(jack_id)
       return { status: :not_found, body: { success: false, error: JACK_NOT_FOUND } } unless jack
       unless object_reachable?(jack)
@@ -205,8 +236,11 @@ module BreakEscape
       jack_id = jack[:object]['id'].to_s
       foothold_id = foothold_id_for(jack_id)
       if network_footholds.key?(foothold_id)
-        return { status: :ok, body: { success: true, already: true, first: false, foothold: foothold_for_client(foothold_id),
-                                      inventory: client_inventory } }
+        stored = network_footholds[foothold_id]
+        stored_device_id = stored.is_a?(Hash) && stored['device'].is_a?(Hash) ? stored['device']['id'] : nil
+        touched = [link_item_id(foothold_id), stored_device_id]
+        return { status: :ok, body: { success: true, already: true, first: false, foothold: foothold_for_client(foothold_id)
+                                    }.merge(inventory_answer_fields(delta, touched)) }
       end
 
       device = held_rogue_device(device_id)
@@ -232,12 +266,13 @@ module BreakEscape
       release_worn_unless_held!
       save!
 
-      { status: :ok, body: { success: true, foothold: foothold_for_client(foothold_id), inventory: client_inventory,
-                             first: first } }
+      touched = [link_item_id(foothold_id), copy['id']]
+      { status: :ok, body: { success: true, foothold: foothold_for_client(foothold_id), first: first
+                           }.merge(inventory_answer_fields(delta, touched)) }
     end
 
     # POST /network/unplug (section 5). Returns { status:, body: }.
-    def unplug_device!(jack_id)
+    def unplug_device!(jack_id, delta: false)
       jack = find_jack(jack_id)
       return { status: :not_found, body: { success: false, error: JACK_NOT_FOUND } } unless jack
 
@@ -260,7 +295,9 @@ module BreakEscape
       ended = end_sessions_through!(foothold_id)
       save!
 
-      { status: :ok, body: { success: true, inventory: client_inventory, endedPcIds: ended } }
+      device_id = device.is_a?(Hash) ? device['id'] : nil
+      touched = [link_id, device_id]
+      { status: :ok, body: { success: true, endedPcIds: ended }.merge(inventory_answer_fields(delta, touched)) }
     end
 
     # ==========================================
@@ -295,7 +332,7 @@ module BreakEscape
     # on the server (an open network, psk absent, skips the check). A wrong key is never
     # counted. Joining a network already held answers already: true and still records the
     # access point in gainedFootholds.
-    def join_network!(ap_id, key = nil)
+    def join_network!(ap_id, key = nil, delta: false)
       ap = find_wifi_ap(ap_id)
       return { status: :not_found, body: { success: false, error: AP_NOT_FOUND } } unless ap
       unless object_reachable?(ap)
@@ -308,7 +345,8 @@ module BreakEscape
       if network_footholds.key?(foothold_id)
         record_gained_ap!(ap_object_id)
         return { status: :ok, body: { success: true, already: true, first: false,
-                                      foothold: foothold_for_client(foothold_id), inventory: client_inventory } }
+                                      foothold: foothold_for_client(foothold_id)
+                                    }.merge(inventory_answer_fields(delta, [link_item_id(foothold_id)])) }
       end
 
       psk = ap[:wifi]['psk']
@@ -331,8 +369,8 @@ module BreakEscape
       player_state['inventory'] << link_item_for(foothold_id)
       save!
 
-      { status: :ok, body: { success: true, foothold: foothold_for_client(foothold_id),
-                             inventory: client_inventory, first: first } }
+      { status: :ok, body: { success: true, foothold: foothold_for_client(foothold_id), first: first
+                           }.merge(inventory_answer_fields(delta, [link_item_id(foothold_id)])) }
     end
 
     # Add an access point id to gainedFootholds if absent, and save (5.3, N9): a task or
@@ -405,7 +443,7 @@ module BreakEscape
     # POST /network/implant (5.5, section 6). shape is 'dropped' or 'session'; path picks the
     # action when a PC has several. Returns { status:, body: }. It gives a foothold on the PC's
     # own network and nothing else: no session, no desktop, no owner's access.
-    def implant_foothold!(pc_id, shape, path)
+    def implant_foothold!(pc_id, shape, path, delta: false)
       pc_id = pc_id.to_s
       shape = shape.to_s
       action = grant_foothold_action_for(pc_id, shape, path)
@@ -420,7 +458,8 @@ module BreakEscape
         held = network_footholds[foothold_id]
         consumed = held.is_a?(Hash) && held['device'].is_a?(Hash) ? held['device']['id'] : nil
         return { status: :ok, body: { success: true, already: true, first: false, consumedId: consumed,
-                                      foothold: foothold_for_client(foothold_id), inventory: client_inventory } }
+                                      foothold: foothold_for_client(foothold_id)
+                                    }.merge(inventory_answer_fields(delta, [link_item_id(foothold_id), consumed])) }
       end
 
       info = find_login_pc(pc_id)
@@ -471,8 +510,8 @@ module BreakEscape
       # consumedId names the one tray device the session shape removed, so the client reconciles
       # only the ids that changed (review R1 client M1); the dropped shape consumes nothing.
       consumed_id = device_copy['id'] if device_copy.is_a?(Hash)
-      { status: :ok, body: { success: true, consumedId: consumed_id, foothold: foothold_for_client(foothold_id),
-                             inventory: client_inventory, first: first } }
+      { status: :ok, body: { success: true, consumedId: consumed_id, foothold: foothold_for_client(foothold_id), first: first
+                           }.merge(inventory_answer_fields(delta, [link_item_id(foothold_id), consumed_id])) }
     end
 
     def implant_no_action
@@ -1233,7 +1272,7 @@ module BreakEscape
     # revealSecret says, and never from the landing-page or single-secret passes. It
     # carries only the address the browser wrote, so it reveals no secret.
     def account_capture_usernames
-      earned = player_state.dig('globalVariables', 'se_captures')
+      earned = se_captures_record
       return {} unless earned.is_a?(Hash) && earned.any?
 
       usernames = account_capture_passwords
@@ -1246,6 +1285,9 @@ module BreakEscape
         next unless entry.is_a?(Hash)
         next if entry['kind'] && entry['kind'] != 'credential'
         next unless declared.include?(target_id.to_s)
+        # 6b: skip an entry whose evidence does not yet hold (capture_revealable?), as
+        # capture_secrets_for_client does, so the two readers agree on what was earned.
+        next unless capture_revealable?(entry, scenario: scenario_data)
 
         address = entry['address']
         next unless address.is_a?(String) && !address.strip.empty?

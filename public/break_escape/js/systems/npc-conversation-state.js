@@ -12,6 +12,30 @@ const RUN_SCOPED_PREFIXES = ['email_'];
 // Engine-written call variables (phone calls plan 2.11): an exact list, not a `call_` prefix
 const RUN_SCOPED_NAMES = ['call_answer_seconds', 'call_is_callback'];
 
+// Cap on an NPC id and an ink variable name (game.rb MAX_NPC_INK_NAME_CHARS),
+// in code points; the export mirrors it so the seed matches (SYNC_DELTAS_PLAN 2.1).
+export const MAX_NPC_INK_NAME_CHARS = 100;
+
+// Code-point helpers (SYNC_DELTAS_PLAN 2.1). Ruby counts code points, JavaScript
+// counts UTF-16 units, so an astral character is cut at a different place on each
+// side. exportNpcInkVariables measures by code points to mirror the server. A
+// module-local copy (the same code lives in mail-scheduler.js and as NPCManager
+// statics) so no node harness copy list changes; one node test
+// (test/js/cp-helpers.test.mjs) runs every copy over the same astral strings.
+
+/** True when s has at most n code points. */
+export function cpWithin(s, n) {
+    // A UTF-16 length never undercounts code points, so this fast path is exact.
+    if (s.length <= n) return true;
+    return Array.from(s).length <= n;
+}
+
+/** The first n code points of s. */
+export function cpSlice(s, n) {
+    if (s.length <= n) return s;
+    return Array.from(s).slice(0, n).join('');
+}
+
 class NPCConversationStateManager {
     constructor() {
         this.conversationStates = new Map(); // { npcId: { storyState, variables, ... } }
@@ -225,10 +249,15 @@ class NPCConversationStateManager {
         const out = {};
         for (const [npcId, state] of this.conversationStates) {
             if (!state?.variables) continue;
+            // Mirror merge_npc_ink_variables! (game.rb): an NPC id or a variable
+            // name over MAX_NPC_INK_NAME_CHARS code points is dropped, so the seed
+            // built from the bootstrap matches this export (SYNC_DELTAS_PLAN 2.1).
+            if (!cpWithin(npcId, MAX_NPC_INK_NAME_CHARS)) continue;
             const vars = {};
             for (const [key, value] of Object.entries(state.variables)) {
                 if (this.isGlobalVariable(key)) continue;
                 if (this.isRunScopedVariable(key)) continue;
+                if (!cpWithin(key, MAX_NPC_INK_NAME_CHARS)) continue;
                 if (value === null || ['string', 'number', 'boolean'].includes(typeof value)) {
                     vars[key] = value;
                 }

@@ -1,6 +1,7 @@
 import { GAME_CONFIG } from './utils/constants.js';
 import { preload, create, update } from './core/game.js';
 import { initializeNotifications } from './systems/notifications.js';
+import { loadCanvasFonts } from './utils/canvas-fonts.js';
 // Bluetooth scanner is now handled as a minigame
 // Biometrics is now handled as a minigame
 import { startLockpickingMinigame } from './systems/minigame-starters.js';
@@ -40,6 +41,7 @@ import './systems/room-state-sync.js';
 
 // Import global state sync (persists gameState.globalVariables to server every 30s)
 import { StateSync } from './state-sync.js';
+import { installCaptureClient } from './systems/capture-client.js';
 
 // Import Music Controller and Widget
 import MusicController from './music/music-controller.js';
@@ -106,6 +108,9 @@ function initializeGame() {
         }
     };
 
+    // Fetch the canvas web fonts now, before the first room draws its icons (review R1 m5)
+    loadCanvasFonts();
+
     // Create the Phaser game instance
     window.game = new Phaser.Game(config);
 
@@ -146,6 +151,9 @@ function initializeGame() {
 
     // Start periodic global state sync (saves globalVariables to server every 30s)
     window.stateSync = new StateSync(30000);
+    // Capture client (sync deltas R2, 6a): registers the `captures` sync part and sets
+    // window.submitSECapture / window.mirrorSECapture, before any game code captures.
+    installCaptureClient(window.stateSync);
     window.stateSync.start();
     
     console.log('✅ NPC systems initialized');

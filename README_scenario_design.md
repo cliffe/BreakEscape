@@ -31,14 +31,31 @@ ruby scripts/validate_scenario.rb scenarios/my_scenario/scenario.json.erb --verb
 
 # Print the rendered JSON to stdout (useful for debugging ERB substitution)
 ruby scripts/validate_scenario.rb scenarios/my_scenario/scenario.json.erb --output-json
+
+# Ignore the known-failures list and see the raw result
+ruby scripts/validate_scenario.rb scenarios/my_scenario/scenario.json.erb --no-known-failures
 ```
+
+### The exit code is the answer
+
+Every hard finding prints as `❌ ERROR: <text>` (social lints as `❌ ERROR: SOCIAL: <text>`, schema errors as `❌ ERROR: schema: <json pointer> (<room, object or NPC>): <message>`). The validator **exits 1 when any `❌` line is not covered by the known-failures list**, and 0 otherwise; warnings (`⚠️`) and suggestions never fail a run. You no longer count `❌` lines by hand. An error line is one that starts with `❌` (after indentation and a list number); a `❌` inside your own content, such as a note's text in the `-o` dump or an ink line quoted by the dialogue lint, is not counted.
+
+- **Every section prints.** A schema failure, a structure failure or an ink-check failure no longer stops the run, so the common issues, habits report and work report print in the same pass. An ink file that fails to compile still skips the checks that read its compiled JSON, and the output says so.
+- **A check that raises** (on data that failed the schema, say) prints `❌ ERROR: <check> could not run: <message>`, counts as an error, and the checks after it still run.
+- **The last line** is `Result: <n> errors (<k> known), <m> warnings`, plus `; <j> known failure(s) not checked (<stage> skipped)` when a stage did not run in full (`--skip-ink`, an ink compile failure, a check that raised).
+- **The dungeon graph** (when you leave out `--no-graph`): a generator that stops or aborts prints `❌ ERROR: ...` and fails the run; its reason is on stderr above.
+- **Social schema errors** (`#/social/...`) are fatal on every run, like any other `❌`. `--strict-social` is still accepted (CI passes it) and no longer changes the exit code.
+
+**The known-failures list** (`scripts/validator_known_failures.json`) holds the `❌` lines another track owns and has not fixed yet. Each entry names a `scenario` (the repo-relative template path), a `stage` (`ink`, `schema`, `common`, `habits`, `work` or `social`), a `match` (a substring of the line that does not depend on line numbers), the exact `count` of lines it covers, an `owner`, `added` and `reviewBy` dates, and `approved`: a dated heading in `docs/agents/VALIDATOR_DECISIONS.md` whose one `json` block restates the entry's scenario, stage, match and count. A covered line still prints, marked `(known: <owner>, since <added>)`. When the entry's stage ran in full, fewer lines than `count` print `❌ ERROR: stale known failure: ...` and more lines than `count` count the extra ones. `could not run`, `stale known failure` and `Result:` lines are never matched, nor is an ink compile failure (it stops the checks on that file's compiled JSON, so fix the ink). A `match` names one class of line, at least eight characters beyond the `❌ ERROR: `, `schema: #/` and `SOCIAL: ` prefixes. Your own scenario's lines are fixed, never listed; adding or raising an entry needs a sign-off in the decisions file, which `test/js/validator-known-failures.test.mjs` checks. Under `MERGE_BATCH=1` that test also fails on a passed `reviewBy` and on any section still marked "awaiting orchestrator sign-off".
 
 ### What the Validator Checks
 
 The validator performs three phases:
 
 1. **ERB rendering** – renders the `.json.erb` template with randomised placeholder values (`random_password`, `random_pin`, `random_code`, `vm_object()`, `flags_for_vm()`)
-2. **Schema validation** – checks the rendered JSON against `scripts/scenario-schema.json`
+2. **Schema validation** – checks the rendered JSON against `scripts/scenario-schema.json`. The access, network and office-life blocks are closed: the entries of `networks` (and their `wifi`), `resources`, `policies`, `accountProfiles` and `roles` (with their `workarounds` and `frustration`), every access list (`access`, `for`), and on an NPC `creds`, `habits`, `screenHabit`, `printHabit`, `usbHabit`, `frustration`, each `needs` entry, each `workarounds` entry, `feed` and its posts, and an object's `affordance`, plus every `grant_foothold` action wherever it sits. A key the schema does not declare there is an error, `❌ ERROR: schema: <path>: unknown key '<k>'`, with `did you mean '<known>'?` when one declared key is close (a swap of two neighbouring letters counts as one edit, and a note key written without its `_`, such as `comment`, `comments`, `note` or `notes`, gets `did you mean '_comment'?`). One slip prints one schema line: a misspelt required key does not also print "required". A later check may still report what the missing key breaks, for example `"At"` for `at` in a workaround also prints that `at` is missing. These slips used to be silent and some change play: `wifi: { "PSK": ... }` leaves `psk` missing, which makes the network open. Inside these blocks a key starting with `_` (such as `_comment`) always passes, and the schema does not check its value. The maps themselves (`networks`, `resources`, `policies`, `accountProfiles`, `roles`) hold only ids, so a `_comment` directly under `roles` is an error: put the note inside an entry. An id is never a note: a room (or any map entry) whose id starts with `_` is checked like any other. Rooms, objects and NPCs themselves stay open for now: an unknown field there is a warning, with the same hint. An author note is dead data: the engine never runs it and it never reaches the browser, so a secret parked in one is kept on the server but does not belong there. Free data (an object or array global, `minigameData`, `config`, a `usePayload`) is real game state, so a `_` key there is not a note; it ships as authored and every check reads it, which is why a secret must never sit in free data. Whether a `_` key is a note, an id or free data is decided by the schema (one resolver, `BreakEscape::ScenarioSchema`), never by a list of names. If a note's value holds an action (a block with a `type` the engine runs), the validator warns that the action is dead, since a note is never executed.
+
+How the engine tells the three kinds apart: a key of a map (a node whose `additionalProperties` is a schema, or one marked `"x-id-map": true`) is an id; a node marked `"x-free-data": true` holds free data; anything else is described structure, where a `_` key is a note. If you add a new open node to the schema (an object with no declared `properties` and no `additionalProperties` schema, an array with no `items`, or a bare node with no type), it must carry exactly one mark: `"x-id-map": true` when its keys are names (globals, variables, VM names), `"x-id-map": false` when they are fixed field names, or `"x-free-data": true` when it holds game state or minigame input. A map node never carries a `^_` pattern, because a map key is an id and is validated against the map's value schema. The schema walk test (`test/unit/scenario_schema_test.rb`) fails on an open node with no mark, two marks, or a `^_` pattern on a map, so a new node cannot arrive unmarked.
 3. **Common issues** – structural checks including:
    - Object types with no matching sprite file in `public/break_escape/assets/objects/`
    - Containers with `contents` that are missing the required `locked` field
@@ -2190,7 +2207,7 @@ There is nothing for a submission to match against, so the task stays open forev
 }
 ```
 
-The validator now reports a missing `targetFlags` as ❌ INVALID.
+The validator now reports a missing `targetFlags` as ❌ ERROR.
 
 **2. `flagRewards` using `emit_event` does not set a global.**
 
@@ -2633,7 +2650,7 @@ The canonical reference scenario is `scenarios/m01_first_contact/scenario.json.e
 
 11. **Testing and Validation**:
     - Run `ruby scripts/validate_scenario.rb scenarios/my_scenario/scenario.json.erb` before playtesting
-    - Fix all `❌ INVALID` errors before testing; review `⚠ WARNING` items
+    - Fix all `❌ ERROR` lines before testing (the validator exits 1 while any unlisted one remains); review `⚠ WARNING` items
     - Use `--output-json` to inspect ERB rendering if substitution looks wrong
     - Play through to verify the scenario is solvable from start to finish
 
@@ -3356,11 +3373,11 @@ The mechanics write globals; the characters who comment on them are ordinary ink
 
 ### Validating: `--strict-social`
 
-`ruby scripts/validate_scenario.rb <scenario> --strict-social` makes the validator exit 1 when any social lint reports an error (a line starting `❌ SOCIAL:`). Without the flag those errors print and the run still exits 0. That includes schema errors under `/social`: they are listed with the social lints rather than failing the schema step, so **a mistyped social key only fails the run under `--strict-social`**. A scenario with no `social` key always exits 0 on these lints. Pass `--no-graph --skip-ink` when another session may be editing the scenario, so the run rewrites no `dungeon_graph.*` or compiled ink.
+Social lint errors print as `❌ ERROR: SOCIAL: <text>` and, like every `❌` line, fail the run with or without `--strict-social` (see "The exit code is the answer" above). That includes schema errors under `/social`: they are listed with the social lints, and a mistyped social key fails the run. `--strict-social` is still accepted, because CI passes it, and only adds a count line. Pass `--no-graph --skip-ink` when another session may be editing the scenario, so the run rewrites no `dungeon_graph.*` or compiled ink.
 
 What runs:
 
-- **For every scenario**: aim `unlockCondition` keys (anything other than `aimCompleted`, `aimsCompleted`, `globalVariable` and `equals` leaves the aim unlocked from the start); object ids unique across rooms; a warning when a locked object's id or name is matched first by another object; the `lockedHint` checks. They print for any scenario but fail a run only for a social one under the flag.
+- **For every scenario**: aim `unlockCondition` keys (anything other than `aimCompleted`, `aimsCompleted`, `globalVariable` and `equals` leaves the aim unlocked from the start); object ids unique across rooms; a warning when a locked object's id or name is matched first by another object; the `lockedHint` checks. They print, and fail the run, for any scenario.
 - **With a `social` key**: the closed schema; declared and not-imported globals; an ink fallback for every `EXTERNAL` in a social story; sprites for the social object types; the character lints above (`syncedVars` declared, the influence `VAR` in every channel story with a matching default, `influence.start` equal to the influence global's declared value (and to the `VAR` default when no global is declared), thresholds ordered, `min` below `max`, `clearOnRearm` only on booleans, a lockout expiry or `alternativeRoute`, the `recoverTo` rule, `influenceDisplay` keys); then one file per area under `scripts/validate_social/`: `mail.rb`, `osint.rb`, `board.rb`, `triage.rb`, `pretext.rb`, `landing.rb`, `lab.rb` and `options.rb` (`hintsByFactor`, `labelBy`, `checklistTiming`, `bodyMode`/`freeTextFlavour`, `mirrorToBehavior`).
 
 Both social scenarios pass with exit 0 today. Fix every `❌`; read every `⚠️`.

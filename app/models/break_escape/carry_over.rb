@@ -115,6 +115,13 @@ module BreakEscape
         name = CarryOver.import_name(entry)
         next unless name && entry['from'].is_a?(String)
 
+        # A server-owned global (sync deltas R2, 6a) is never written into a game by an import,
+        # so the capture migration can never mistake it for an old save. No scenario has one.
+        if Game::SERVER_OWNED_GLOBAL_NAMES.include?(name)
+          Rails.logger.warn "[BreakEscape] Ignored a carry-over import of server-owned global '#{name}'"
+          next
+        end
+
         source = sources[entry['from']]
         if entry.key?('completed')
           found = overrides.is_a?(Hash) ? overrides[name] == true : !source.nil?
@@ -220,8 +227,9 @@ module BreakEscape
 
       defaults = scenario_data['globalVariables'] || {}
       player_state['globalVariables'] ||= {}
-      record.each_key { |name| player_state['globalVariables'][name] = defaults[name] }
-      player_state[IMPORTED_NAMES_KEY] = record.keys
+      names = record.keys.reject { |name| Game::SERVER_OWNED_GLOBAL_NAMES.include?(name) }
+      names.each { |name| player_state['globalVariables'][name] = defaults[name] }
+      player_state[IMPORTED_NAMES_KEY] = names
     end
   end
 end
