@@ -352,13 +352,66 @@ test('at phone width the frame starts below the close X', () => {
     assert.match(area[1], /padding:\s*32px 0/, 'with the 20px margin, 52px: clear of the X, which ends 45px down');
     assert.match(readFileSync(src('../css/minigames-framework.css'), 'utf8'), /\.minigame-game-container \{[^}]*margin:\s*20px auto/,
         'the 20px the padding adds to');
-    assert.match(area[1], /justify-content:\s*safe center/, 'a too-tall frame starts at the top of the area');
+    // "safe" centring now sits on the base rule, so it holds at every width (R3 M1)
+    const base = css.match(/(^|\n)\.rfid-minigame-game-container \{([^}]*)\}/)[2];
+    assert.match(base, /justify-content:\s*safe center/, 'a too-tall frame starts at the top of the area');
+    assert.doesNotMatch(area[1], /justify-content/, 'the phone rule inherits it');
     const frame = media.match(/\.flipper-zero-frame \{([^}]*)\}/)[1];
     assert.match(frame, /round\(down, min\(calc\(80vh \+ 40px\), calc\(100vh - 104px\)\), 2px\)/,
         'the frame height fits between the two 52px bands');
     const close = readFileSync(src('../css/minigames-framework.css'), 'utf8').match(/\.minigame-close-button \{([^}]*)\}/)[1];
     assert.match(close, /top:\s*15px/);
     assert.match(close, /height:\s*30px/);
+});
+
+// UX slice 3a R3 M1: the frame wraps its content at every size. A flex item's automatic
+// minimum height is its content, so without min-height: 0 the copy screen (577px after a
+// read) ran off a 412px-high window with Save out of reach. Capped to its area, the frame
+// stays inside and the screen scrolls instead. R3 n2: the phone minimum fits a short window.
+const copierRules = () => {
+    const css = readFileSync(src('../css/rfid-minigame.css'), 'utf8');
+    const media = css.match(/@media \(max-width: 500px\) \{([\s\S]*?)\n\}/)[1];
+    return {
+        area: css.match(/(^|\n)\.rfid-minigame-game-container \{([^}]*)\}/)[2],
+        wide: css.match(/(^|\n)\.flipper-zero-frame \{([^}]*)\}/)[2],
+        phone: media.match(/\.flipper-zero-frame \{([^}]*)\}/)[1],
+        screen: css.match(/(^|\n)\.flipper-screen \{([^}]*)\}/)[2],
+    };
+};
+
+test('the copier frame is capped to its area and the screen scrolls inside it', () => {
+    const { area, wide, phone, screen } = copierRules();
+    assert.match(area, /justify-content:\s*safe center/, 'never centred off both edges');
+    assert.doesNotMatch(area, /justify-content:\s*center/);
+    assert.match(wide, /min-height:\s*0;/, 'the frame may shrink below its content');
+    assert.match(wide, /max-height:\s*100%;/, 'and never grows past its area');
+    assert.match(screen, /flex:\s*1;/, 'the screen takes the frame\'s spare height');
+    assert.match(screen, /overflow-y:\s*auto;/, 'and scrolls what does not fit (its own minimum is then 0)');
+    assert.match(phone, /min-height:\s*min\(540px, calc\(100vh - 104px\)\);/, 'phone minimum no taller than its area');
+});
+
+test('the copy screen\'s frame fits a 412px-high window', () => {
+    // Layout cannot be measured in node, so check the arithmetic the rules give.
+    const { wide, phone } = copierRules();
+    const px = (rule, prop) => Number((rule.match(new RegExp(`(^|\\s)${prop}:\\s*(\\d+)px;`)) || [])[2]);
+    const vh = 412;
+    // Wide (915x412): the game container sits 20px in from the top and bottom (framework
+    // margin), so the area is 372px. The frame's height is capped at the area and its
+    // minimum is 0, whatever its content needs (577px on the copy screen).
+    const areaH = vh - 2 * 20;
+    const contentNeeds = 577;
+    const capped = /max-height:\s*100%;/.test(wide) && /min-height:\s*0;/.test(wide);
+    const wideH = capped ? Math.min(px(wide, 'height') + 40, areaH) : Math.max(px(wide, 'height') + 40, contentNeeds);
+    assert.ok(wideH <= areaH, `wide frame ${wideH}px fits the ${areaH}px area`);
+    // Phone rule, at the same height (a 412px-high portrait window): the area is
+    // 100vh - 104px, and neither the height formula nor the minimum can pass it.
+    const phoneArea = vh - 104;
+    const minH = Math.min(540, vh - 104);
+    const h = Math.max(Math.floor(Math.min(0.8 * vh + 40, vh - 104) / 2) * 2, minH);
+    assert.match(phone, /round\(down, min\(calc\(80vh \+ 40px\), calc\(100vh - 104px\)\), 2px\)/);
+    assert.ok(h <= phoneArea, `phone frame ${h}px fits the ${phoneArea}px area`);
+    // 320x568 (R3 n2): the bottom outline now stays inside the window
+    assert.equal(Math.max(Math.floor(Math.min(0.8 * 568 + 40, 568 - 104) / 2) * 2, Math.min(540, 568 - 104)), 464);
 });
 
 // UX slice 3a R2 m2: the copier closes with the X and Esc only, no Cancel button
