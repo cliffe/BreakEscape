@@ -74,9 +74,12 @@ open. The real `npc_borrowed_session:hot_desk` reaches `onBorrowedSession`: the 
 `screenLocked: true`, `guest: null` (no claimable session), `hot_desk_screen_locked`/`_owner_away`
 globals true, `workstation_auto_locked` and `workstation_screen_changed` (how `auto`, locked) fired,
 and no `npc_guest_left` was sent. Script `scratchpad/hard-fixes2/hotdesk-lock-proof.mjs` (PROOF PASS).
-Note: Ian's documented hot-desk borrow (H1, a station `offWhen` outage) does not fire in the driven
-keyless standalone because the computed work plan routes his work through an un-gated `email` source,
-so Rosa's network-route outage was used instead; both borrow the hot desk and leave it open.
+Note: Ian's documented hot-desk borrow (H1, a station `offWhen` outage) did not happen on its own in
+the driven run, so Rosa's network-route outage was used instead; both borrow the hot desk and leave it
+open. The H1 mechanic itself works (npc_workaround_h_test.rb:66, and review R1 item 3): his dead
+station counts as an `off` failure, but the needs clock is frozen while an outage holds
+(test_access_work PLAYTEST.md), so one unplug does not reach the three failures that frustration 50
+needs. Driving H1 live needs repeated attempts or clock steps.
 
 ## Item 5 — grant_foothold_actions skips `_` note keys
 
