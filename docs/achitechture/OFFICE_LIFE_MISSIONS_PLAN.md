@@ -122,9 +122,10 @@ Outputs, in `scenarios/<m>/office_life/`:
   - the `gameClock` start and rate, if any;
   - the cached clip count;
   - the walkthrough file it was checked against.
-- `baseline_locks.json`, the **lock and key baseline**, written by V9 (section 4). It starts from the dungeon graph's JSON, which already holds a lock node for every door and lockable object, the key, code and password edges, and `optional` flags. V9 adds what the graph lacks:
+- `baseline_locks.json`, the **lock and key baseline**, written by V9 (section 4). It takes the lock nodes, key edges and `optional` flags from the dungeon graph's JSON. The graph scrubs secrets and builds the critical path only for its HTML and Markdown, so V9 adds, from the rendered scenario:
+  - a hash of each lock's requirement (key id, code, password, card), so a moved or changed secret shows without the secret being written down;
   - every `gate`, `access` list and `wearable`;
-  - every task, objective and `concludeRequires` with its trigger.
+  - every task, objective and `concludeRequires` with its trigger, and the aim chain worked out from them.
 - Saved copies of the validator's `ℹ️` lines, for later diffs.
 - The base commit's hash. The `--office-summary` baseline (V1) is generated from that commit once V1 exists, before stage 4 starts.
 
@@ -206,11 +207,11 @@ Paid steps wait for the picks. Mission-local work that needs no approval carries
 
 Work happens on a branch, `build/office-life-<m>`. A Sonnet implementer works from the approved plan in slices, one commit per slice, with explicit paths. An Opus writer handles the exchange and phone-call knots. The security-writing agent type handles the pentest openings' text. The slices, in order:
 
-1. New rooms and objects, then presets, needs, posts, leashes and privacy. Tiled decor that should take part (a coffee point or copier drawn into the map) is declared as a scenario object so it can carry a preset.
-2. Dressing and lighting of every changed room: mission-room-dressing, then mission-room-lighting (new screens, machine glow, dark corners), each run as its own design-heavy loop of about five cycles. Need objects, queue cells, posts and workstations are re-checked by the validator after each cycle.
-3. Workstation habits (screen, print, USB) and awareness.
-4. Chatter pools and exchange knots.
-5. Levers and physical-pentest openings.
+1. New rooms and objects, then presets, needs, posts, leashes and privacy. Tiled decor that should take part (a coffee point or copier drawn into the map) is declared as a scenario object so it can carry a preset. An undeclared decor sprite is hidden when another sprite with the same image is claimed, so every same-image twin in the room is declared too, or given a distinct variant. Preset queue cells are checked against neighbouring objects and walls, and replaced with hand-written `queue.cells` (or `"queue": false`) where they clash.
+2. Workstation habits (screen, print, USB) and awareness.
+3. Chatter pools and exchange knots.
+4. Levers and physical-pentest openings, with any switches, reveal slots, magnet spots and desk phones they need.
+5. Dressing and lighting of every changed room: mission-room-dressing, then mission-room-lighting (new screens, machine glow, dark corners), each run as its own design-heavy loop of about five cycles, up to ten while it keeps improving. Need objects, queue cells, posts and workstations are re-checked by the validator after each cycle.
 6. Room tone, last, because it follows the final layout and dressing.
 
 Checks after each slice, from AGENTS.md's mission loop:
@@ -252,7 +253,7 @@ The tts-audio skill runs once the mission's words are signed off (section 10).
 - Record each round's severity table and every finding's outcome in `scenarios/<m>/office_life/LOG.md`.
 - Flag the lab-sheet impact for the user: new optional routes and openings change what a student can do, and lab sheets are written last, by the user's rule.
 - Update `CYBOK_MAPPING.md` if an opening teaches something new.
-- Merge, following the merge rule in section 10: rebase onto main, re-run the checks on the rebased hash, and fast-forward main to exactly that hash.
+- Merge, following the merge rule in section 10: the voiced branch goes into the current merge batch, its checks run on the batch tip beside the full suites, and main is fast-forwarded to exactly that hash.
 - Fold the lessons into the skill's references.
 
 ## 4. Validator and report support
@@ -279,11 +280,11 @@ New tooling for the skill. None of it changes the game at runtime.
 | V2 | A needs NPC who owns a knot that sets a required task, or is the target of a conversation-mode mapping, or is a key or card source, and whose needs can take it out of its own room without `deferrable: false` or a `needs: suspend` mapping before the beat. | warning | Story NPCs must stay reachable. |
 | V3 | An `npc_arrived:<id>` mapping on an NPC that has `needs`. | warning | Needs arrivals fire these mappings. Nothing to catch today; cheap insurance. |
 | V4 | A needs NPC in a scenario without `disableAttacks`, until the E1 probe has passed. After that it becomes an info line that lists the NPC's KO globals and tasks for the reviewer. | warning, then info | Any NPC can be attacked mid-walk. |
-| V5 | A required task, objective, `concludeRequires`, required lock, or mapping that completes a required task, whose trigger is a global written only by office life or an office-life event. The globals are a workaround `setGlobal`, an `onUse.setGlobal`, a magnet servings global, `heard_<knot>` (exchanges and phone calls), the workstation globals and the reveal globals. The events are `npc_exchange_heard`, `npc_call_heard`, `npc_chatted`, `npc_used`, `npc_queued`, `desk_phone_answered`, `workstation_screen_changed`, `npc_left_post`, `object_revealed`, `magnet_placed`, `npc_workaround` and `npc_print_*`. | error | Rule 1. Extends the existing workaround-global rule to every office-life global and event. |
-| V6 | `rails break_escape:tts:office_lines[<mission>]`, a rake task in the existing `break_escape:tts` namespace beside `tts:wasted`, run keyless against the development database (it reads only; no database setup or migration commands from a worktree) that uses `TtsLineExtractor` with `chatter: true`. It lists every chatter, exchange, call and bark clip **per voice** (a shared pool line counts once for each voiced NPC who can say it), marks each as cached or uncached under the current cache key, and totals characters and clips. | report task | Prices the voice cost in stage 2 and drives stage 7. It has to live in Rails, because the cache key and line extractor do. |
+| V5 | A required task, objective, `concludeRequires`, required lock, or mapping that completes a required task, whose trigger is a global written only by office life or an office-life event. The globals are a workaround `setGlobal`, an `onUse.setGlobal`, `<id>_servings`, `heard_<knot>` (exchanges and phone calls), the workstation globals including `<id>_accessed`, and the reveal globals. The events are matched by prefix from one constant, `OFFICE_LIFE_EVENT_PREFIXES`, which covers the `npc_` needs, chatter, exchange, call, print, workaround and post events, the `workstation_` events, `desk_phone_`, `magnet_`, `object_revealed`, `door_propped` and `item_dropped`. A fixture test checks the constant against the event catalogue in `NPC_NEEDS_SYSTEM.md`, so a new engine event cannot slip past. | error | Rule 1. Extends the existing workaround-global rule to every office-life global and event. |
+| V6 | `rails break_escape:tts:office_lines[<mission>]`, a rake task in the existing `break_escape:tts` namespace beside `tts:wasted`, run keyless against the development database (it reads only; no database setup or migration commands from a worktree) that uses `TtsLineExtractor` with `chatter: true`. It lists every chatter, exchange, call and bark clip **per voice**, counted exactly as the extractor counts them, marks each as cached or uncached under the current cache key, and totals characters and clips. | report task | Prices the voice cost in stage 2 and drives stage 7. It has to live in Rails, because the cache key and line extractor do. |
 | V7 | A chatter pool line that repeats another pool line or an existing bark word for word, or matches the first line of the same NPC's ink opener. | warning | npc-dialog-review's "same fact twice" rule, made mechanical. |
-| V8 | Sync budget: counts, by kind, the globals office life can write (the same kinds as section 7) and prints each kind's total and the sum. Warns when a kind passes its cap in section 7. | info, warning above a cap | Keeps the sync size rule visible. |
-| V9 | `scripts/lock_key_diff.rb <baseline>`: reads the JSON that `generate_dungeon_graph.rb` writes (lock nodes, key edges, `optional` flags) and adds `gate`, `access` lists, `wearable`s and task and objective triggers, which the graph does not hold. It diffs the result against the stage 0 baseline and flags any new door or gate whose far side holds a required task or a critical-path lock. | report tool | Rule 2. Reusing the graph's parser keeps one lock parser in step with format changes. |
+| V8 | Sync budget: counts, by kind, every piece in section 7 that the scenario can write, and prints each kind's total and the sum. Warns when a kind passes its cap. | info, warning above a cap | Keeps the sync size rule visible. |
+| V9 | `scripts/lock_key_diff.rb <baseline>`: reads the lock nodes, key edges and `optional` flags from the JSON that `generate_dungeon_graph.rb` writes, and adds from the rendered scenario a hash of each lock's requirement, the `gate`s, `access` lists, `wearable`s, task and objective triggers, and the aim chain. It diffs the result against the stage 0 baseline and flags any new door or gate whose far side holds a required task or a critical-path lock. | report tool | Rule 2. Reusing the graph's lock parser keeps one parser in step with format changes. |
 
 All nine are built before the pilot's stage 4. Each gets fixture tests under `test/` and a line in `README_scenario_design.md`.
 
@@ -300,7 +301,7 @@ This table comes from a survey of the ten scenario files on 2026-11-13. "Cached"
 | m03 ghost_in_the_machine | Pentest firm, night infiltration | 7 rooms, no kitchen, few staff. Cached 643. | Tier 0, or a small Tier 1: a coffee point and an exchange at reception before the night transition. | Night premise. The night transition is a story beat. |
 | m04 critical_failure | Battery storage plant | Ops office and reception only. Hostile operatives. Timed. Cached 525. | Tier 1. An ops-office kettle, and desk presets for Robert Vance confined to his room. A little shift chatter. | Live threat and a timer. Hostile NPCs never get needs. |
 | m05 insider_trading | Quantum crypto company hunting an insider, from 16:30 | Break room (leaflet note) and an open office with no declared objects. Every staff NPC is story-critical: Owen (required talk, RFID clone source), Patricia (keycard; two records), Halloran (badge in the flag deduction), Lisa (talk task, KO task). Cached 725. | Tier 2 or 3. Kitchen kit in the break room, with Lisa's needs confined to it. A thinning evening office with one or two new ambient staff at new desks. Screen-lock and print habits on those new desks. Story staff stationary. | Every existing NPC carries a beat. The visible life needs new NPCs and desks, so art and approvals come first. |
-| m06 follow_the_money | A 24-hour crypto exchange late at night, still staffed; the player poses as a visiting supervisor | Trading floor with Irina (story-critical, holds a server-room item) and Dani (optional flavour, `taskOnKO` fallback), a trading workstation, and a coffee point and copier drawn as Tiled decor. Priya (optional flavour) works in the blockchain lab. Water coolers in the lobby and checkpoint as decor. All four floor walls already have doors. The floor's POV background is two images. No campaign feed. Cached 566. | Tier 2 inside existing rooms. Declare the floor's coffee point and copier as scenario objects. Dani posted and leashed to the floor; Priya posted in the lab with leave to use the floor's coffee point. Screen habits on trading desks. A print-and-forget printout of optional intel. A cake or desk-phone lever. Openings into optional content. Night-crew chatter. A new kitchenette is an optional Tier 3 approval item (extra door, Tiled work, two POV redos). The checkpoint patrol is left as it is. | The visitor cover: staff lines must fit an FCA supervisor walking the floor at night. Irina and Satoshi carry the story and stay stationary. |
+| m06 follow_the_money | A crypto exchange late at night, still staffed; the player poses as a visiting supervisor | Trading floor with Irina (story-critical, holds a server-room item) and Dani (optional flavour, `taskOnKO` fallback), a trading workstation, and a coffee point and copier drawn as Tiled decor. Priya (optional flavour) works in the blockchain lab. Water coolers in the lobby and checkpoint as decor. All four floor walls already have doors. The floor's POV background is two images. No campaign feed. Cached 566. | Tier 2 inside existing rooms. Declare the floor's coffee point and copier as scenario objects, and every same-image monitor on the floor. Dani posted and leashed to the floor; Priya posted in the lab (its door to the floor is unlocked) with leave to use the floor's coffee point. Screen habits on trading desks. A print-and-forget printout of optional intel. One player lever, chosen in stage 2: neither a cake nor a breaker exists in m06, so the lever needs an in-world source (a declared desk phone with an extension on a note, or a cake from the lobby). Openings limited to workstation, print and left-behind slots. Night-crew chatter in NPC-own pools. A new kitchenette is an optional Tier 3 approval item (extra door, Tiled work, two POV redos). The checkpoint guard and Kemal Aydin (who patrols, holds a sight challenge and a cover beat, and is the CEO office's key source) are left as they are. | The visitor cover: staff lines must fit an FCA supervisor walking the floor at night. Irina and Satoshi carry the story and stay stationary. The floor's POV background shows the copier and coffee point on the back wall, unlike the map, and its left or right image follows the NPC's position, so Dani's post decides which image shows. |
 | m07 architects_gambit | Grid control facility | 6 rooms. Badge station, handover sheet, abandoned workstation. Elena is the only friendly staff member; the rest are hostile. Timed. Cached 629. | Tier 1. Elena gets desk presets and needs confined to the server room, with a kettle there. Shift-handover chatter. | Crisis timer, and only one friendly NPC. |
 | m08 the_mole | SAFETYNET HQ | Break room with a coffee-machine note, visitor badge printer, operations floor. Colleagues are suspects or allies; ATHENA is an AI receptionist; Nightshade has two records. The off-duty agent in the break room is a sight beat (he catches lock picking). Cached 39, because most of m08 is unvoiced, so its voicing cost is mainly the existing backlog. | Tier 2. A real coffee machine in the break room. Needs for the junior analyst. The off-duty agent stays stationary or keeps needs inside the break room. Suspects stationary. Exchanges that add colour without new clues. | Every named NPC matters to the deduction, and exchanges must not leak or contradict clues. |
 | m09 digital_archaeology | Records archive after hours (finale) | No break room. Hostile staff. Sorensen has three records. Heavily scripted. Cached 137. | Tier 0, or Tier 1 limited to a front-desk kettle and a short pool for Jesse Tran. | Scripted finale with hostile staff. |
@@ -310,7 +311,7 @@ This table comes from a survey of the ten scenario files on 2026-11-13. "Cached"
 
 **Pilot: m06 follow_the_money.** The reasons:
 
-- **It has a working floor with movable staff.** HashChain is a 24-hour exchange, staffed at night (its lighting plan and night-shift ambient). Dani on the trading floor and Priya in the lab have optional flavour conversations with `taskOnKO` fallbacks (TESTING_WALKTHROUGH.md:62). They can walk to the floor's coffee point and copier and back without touching a required beat. Trading never stops, and Dani is written as running on caffeine. A night crew on a working floor is the case Tier 2 is built for, with the stage 1 rule for night missions met by keeping the crew small.
+- **It has a working floor with movable staff.** HashChain is still staffed at night (its lighting plan says so, and the room uses the night-shift ambient). Dani on the trading floor and Priya in the lab have optional flavour conversations with `taskOnKO` fallbacks (TESTING_WALKTHROUGH.md:62). They can walk to the floor's coffee point and copier and back without touching a required beat. Trading never stops, and Dani is written as running on caffeine. A night crew on a working floor is the case Tier 2 is built for, with the stage 1 rule for night missions met by keeping the crew small.
 - **It needs no new room.** The coffee point and copier already sit on the floor as decor and only need declaring as scenario objects. The pilot can stay inside existing rooms, so its art cost is a re-dress check, a lighting check and the floor's two POV images.
 - **It fits the lessons.** A visiting supervisor walking a night floor suits office life: unlocked trading screens while their owners are at the coffee point, printouts left on the copier tray. The pilot's PLAN.md settles how staff lines acknowledge the visitor without contradicting the cover story's existing beats.
 - **It is off the deploy gate.** It is not one of the scenarios students play (the deployed list is in `docs/achitechture/SCENARIO_FORMAT_HARDENING_PLAN.md:27`), and the pilot needs no runtime engine change (section 9). Its work stays on its branch until reviewed and voiced, so it cannot affect the gated release.
@@ -351,6 +352,10 @@ Needs state lives in the browser and is never synced: levels, positions, queues,
 | Friendface reveals | server `feedRevealed` | delta through `/feed_post`; the bootstrap once per load | bounded by authored posts; at most 10 posts |
 | A dropped magnet item (the cake) | `room_states.objects_added`, deduplicated by id | one entry when dropped | one per magnet item; at most 2 |
 | An attacked NPC | `npcHostility` and the KO record, as for any NPC today | one entry per NPC when it changes | bounded by the cast; not new to office life |
+| A claimed unlocked session | the server's `sessions` and `signedInPcs`, sent in the bootstrap | one entry when claimed, removed when it ends | one per owned workstation; covered by the workstation cap |
+| A propped door | `door_propped:<room>` event plus the workaround's `setGlobal` (row above) | one key | covered by the workaround cap |
+
+Openings that write state sent whole are **not used by the pilot** and need their own approval item with a sync note: capture-log targets (`se_captures`, `__capture_log_seen`, both sent whole on each new capture), cloned cards (the cloner's `saved_cards`, sent whole in every inventory echo), footholds, lockouts and worn disguises. A later mission that adds one is capped at 2 capture targets, 1 clonable card and 1 foothold, and its plan states the bytes each adds to those whole-sent records. The pilot's openings are limited to workstation, print and left-behind slots, which use only the rows above.
 
 The worst case at these caps is 58 small keys and about 3 KB of server records. None of it grows with play time: each piece has a fixed authored ceiling, and each change sends one key. The workstation globals change most often, but each change is one boolean. A plan that needs more than a cap must say why, and the reviewer checks the sums against V8.
 
@@ -401,15 +406,17 @@ The pilot needs **no runtime engine change**. That keeps it clear of the product
 The user deferred voicing the office-life chatter pools until the proper office-life scenarios exist. Whether the pilot counts as one is the user's call (decision 4). The plan below fits either answer.
 
 - **During development**, all office-life playtests run on the keyless server on :3001, so no audio is generated. New lines show as text and speech bubbles. Nobody plays a pass branch on :3000 or any other keyed server, which would generate clips on first play. If that happens anyway, `tts:wasted` and the tts-audio pruning step clear the stray clips before commit.
-- **No release carries unvoiced office-life lines.** Missions ship together in the gem, and a deploy is a separate, gated step. Merging to main is not shipping. A mission's office-life branch merges to main once its reviews and playtests have closed, so branches stay short-lived. Before any version bump, a release check runs V6 for every mission and must report 0 uncached office-life clips. A mission whose lines are not yet voiced holds its office-life content back from that release: it is either voiced first or reverted from the release branch.
-- **Merge rule.** Before merging, rebase the branch onto main. Then re-run the validator, the route suite, V9, V6 and a short regression playtest on the rebased hash, and fast-forward main to exactly that hash. If main moved during the checks, run them again. A voice-style change on main after voicing re-keys clips, so V6 is re-run after every rebase.
+- **Voice before merge.** Missions ship together in the gem, and releases are cut as branches from main. Reverting one mission's commits from a release branch would conflict with later work, so office-life content reaches main only once it is voiced. Voicing runs straight after the reviews and playtests close, so a branch waits days, not weeks.
+- **Merge rule.** The voiced `build/office-life-<m>` branch merges into the current merge batch like any other build branch. The mission's own checks run on the batch tip next to the full suites (`bin/rails test`, `bin/test-js -j 3`): the validator, the route suite, V9, V6 (0 uncached office-life clips) and a short Haiku regression playtest. Main is fast-forwarded to exactly the hash those runs used. A voice-style change on main re-keys clips, so V6 runs on every batch tip that carries the mission.
+- **Safety net.** The bump-version skill gains a step: run V6 across `scenarios/m*/` and stop on any uncached office-life clip (section 13).
+- m06 is not one of the scenarios served to students, which limits the harm if anything slips past.
 - **At sign-off:**
   1. V6 lists every new clip per voice, with characters and cached state.
   2. The tts-audio skill prices the batch, and the user approves the spend.
   3. The pass sets `"ttsPregenerateChatter": true` for the mission so the batch includes chatter pools. Exchange and call knots are ordinary ink lines and are included already.
   4. The batch is generated, a sample is checked by ear, then it is pruned and committed as tts-audio says.
 - **When:** last, after the mission's dialogue review and playtests have closed, never part-way.
-- **If the user keeps voicing deferred past the pilot,** merged missions carry unvoiced lines on main. The release check then holds their office-life content out of every release until a later batch voices several missions together.
+- **If the user keeps voicing deferred past the pilot,** finished missions wait on their branches, each kept current by a periodic rebase and re-run of its checks, until one batch voices several missions together.
 - **Design rules for lines:**
   - no printed variables;
   - 40 characters at most for chatter;
@@ -421,7 +428,7 @@ The user deferred voicing the office-life chatter pools until the proper office-
   - Tier 2: about 40 to 80;
   - Tier 3: about 80 to 140.
 
-  A shared scenario pool line costs one clip per voiced NPC who can say it, so the plan prefers NPC-own pools for anything with more than three speakers. V6 gives the exact figure.
+  Campaign missions use **NPC-own chatter pools only**, with no scenario-level `chatter`. The line extractor voices every shared pool line for every voiced room NPC (in m06, about 11 voices, briefing and debrief records included), and the waste report treats those clips as expected, so shared pools would voice lines nobody speaks. If shared pools are wanted later, narrowing the extractor to NPCs with needs or chatter is an engine item for approval. V6 gives the exact figure.
 
 ## 11. Art, voice and approval costs
 
@@ -444,9 +451,9 @@ All of a mission's approvals go to the user on one review page in stage 3, with 
 
 Round rules, from the standing rules for built missions:
 
-- **Plan review** runs 3 to 5 rounds and stops at a round with 0 blockers and 0 majors after round 3.
-- **Built-mission phases** (implementation review, scenario design, dialogue) always run rounds 1 to 5, unless a round finds 0 majors and 0 minors. From round 5 on, a round with only minor findings closes the phase once its fixes are applied.
-- **Room dressing and lighting** (stage 4, slice 2) are design-heavy: about five cycles each, up to ten while they keep improving, stopping when a cycle finds nothing above minor.
+- **Plan review** runs 3 to 5 rounds and stops at a round with 0 blockers and 0 majors after round 3. This is stricter than the AGENTS.md minimum of 2, because the plan changes finished missions.
+- **Built-mission phases** (implementation review, scenario design, dialogue) follow AGENTS.md: at least 2 rounds and at most 5, stopping after round 2 or later once a round finds no blockers or majors. Dialogue aims for about five cycles, as a design-heavy stage.
+- **Room dressing and lighting** (stage 4, slice 5) are design-heavy: about five cycles each, up to ten while they keep improving, stopping when a cycle finds nothing above minor.
 
 Each round is a fresh read-only Opus reviewer, with findings tagged blocker, major or minor and cited by file:line. A resumed fixer acts on them: Sonnet for mechanical findings, Opus for findings that need a design call. Every finding gets an outcome: fixed, withdrawn with the reason, or deferred with the reason.
 
@@ -486,7 +493,7 @@ Each round is a fresh read-only Opus reviewer, with findings tagged blocker, maj
 ## 13. Building the skill itself
 
 1. Write `.claude/skills/mission-office-life/SKILL.md` and the four reference files from this plan. An Opus writer does this, followed by one review round by a fresh Opus reviewer against the showcase scenarios.
-2. Build V9 (the lock and key diff) and V6 (the voice report task), with fixture tests. A Sonnet implementer works from a short spec, followed by one Opus code review.
+2. Build V9 (the lock and key diff) and V6 (the voice report task), with fixture tests, and add the V6 stop to the bump-version skill. A Sonnet implementer works from a short spec, followed by one Opus code review.
 3. Run the E1 probe.
 4. Run the pilot's stages 0 to 3 on m06.
 5. Once 8b and 8c have merged, build V1 to V5, V7 and V8 on the format 3 names, with fixture tests and one Opus code review.
@@ -507,8 +514,8 @@ Each round is a fresh read-only Opus reviewer, with findings tagged blocker, maj
    - (a) Design now; build the tooling and implement after both have merged; if 8c slips more than three weeks, add the pilot to the hardening scope and write today's names. Recommended.
    - (b) Implement now on today's names and let the rewrite tool rename them.
 4. **Voicing.**
-   - (a) The pilot counts as a proper office-life scenario: voice each mission's new lines in one batch at its sign-off. Branches merge once reviewed, and a release check holds back any mission with uncached office-life clips. Recommended.
-   - (b) Keep voicing deferred: merged missions keep their office-life content out of every release until several are voiced together in one batch.
+   - (a) The pilot counts as a proper office-life scenario: voice each mission's new lines in one batch straight after its reviews and playtests, then merge. Recommended.
+   - (b) Keep voicing deferred: finished missions wait on their branches until several are voiced together in one batch.
    - (c) Ship unvoiced and let first play generate audio on the production server. Not recommended: uncontrolled cost and a lag before each line.
 5. **New rooms and NPCs.**
    - (a) Allow Tier 3 extensions (at most one new room and two ambient NPCs per mission), each approved on the mission's review page. Recommended.
