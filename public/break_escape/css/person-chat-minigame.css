@@ -542,6 +542,11 @@
     .person-chat-vc-statusbar {
         font-size: 16px;
         gap: 10px;
+        white-space: nowrap;
+    }
+    /* Room for LIVE, the name and the timer on one line beside the X (R2 m5) */
+    .person-chat-vc-link {
+        display: none;
     }
 }
 
