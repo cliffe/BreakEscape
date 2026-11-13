@@ -10,7 +10,9 @@
  * The start panel: the account (headshot, name, username), This PC (computer name, PC name,
  * the remote link), Places (Desktop and the shares mapped on the desktop), then Lock, Switch
  * user and Sign out for a sign-in session. Lock shows only once the server reports that it
- * supports it (pcSessions.lockSupported and pcSessions.lock).
+ * supports locking (pcSessions.lockingSupported() and lockSession), and only for a session
+ * the player signed in to with a password: a claimed or guest session could not be unlocked
+ * again by a password sign-in, so the server refuses those (422) and the panel hides Lock.
  *
  * Who shows (q94, agreed with the data owner): a sign-in PC shows its live session's account
  * and never `desktopUser`; a PC that opens straight to its desktop shows `desktopUser` when
@@ -89,7 +91,8 @@ export function pcTaskbarModel({ pcData = null, session = null, remote = false, 
         if (du) account = { kind: 'desktopUser', name: du.name, character: du.character };
     }
     const isRemote = !!remote || session?.remote === true;
-    const actions = signIn && session ? [...(lockSupported ? ['lock'] : []), 'switch', 'signout'] : [];
+    const lockable = lockSupported && session?.via === 'password' && session?.guest !== true;
+    const actions = signIn && session ? [...(lockable ? ['lock'] : []), 'switch', 'signout'] : [];
     return {
         signIn,
         account,
@@ -104,7 +107,16 @@ export function pcTaskbarModel({ pcData = null, session = null, remote = false, 
 
 /** Lock is offered only when the server reports it and the client can ask for it. */
 export function lockSupported(sessions = win().pcSessions) {
-    return sessions?.lockSupported === true && typeof sessions?.lock === 'function';
+    return typeof sessions?.lockingSupported === 'function' && sessions.lockingSupported() === true
+        && typeof sessions?.lockSession === 'function';
+}
+
+/** Lock the PC's held session (pc-sessions.js closes its views); a refusal says why. */
+export async function lockPcSession(pcId, sessions = win().pcSessions) {
+    if (!lockSupported(sessions)) return { ok: false, reason: 'unsupported' };
+    const result = await sessions.lockSession(pcId);
+    if (result && result.ok === false && result.message) win().gameAlert?.(result.message, 'warning', 'Lock', 3000);
+    return result;
 }
 
 const shareName = (item) => {

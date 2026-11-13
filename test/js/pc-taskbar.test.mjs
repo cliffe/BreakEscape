@@ -121,7 +121,12 @@ test('who shows: the session on a sign-in PC, never desktopUser; desktopUser onl
     assert.equal(pcTaskbarModel({ pcData: { name: 'Kiosk' } }).account, null, 'no desktopUser: nobody');
     const claimed = pcTaskbarModel({ pcData: { lockType: 'login' }, session: { username: 'dreyes', displayName: 'Dana Reyes', via: 'claim' } });
     assert.equal(claimed.account.claimed, true);
-    assert.deepEqual(pcTaskbarModel({ pcData: { lockType: 'login' }, session: { username: 'a' }, lockSupported: true }).actions, ['lock', 'switch', 'signout']);
+    // Lock only for a password sign-in (integration ruling): a claimed or guest session could
+    // not be unlocked by a password sign-in, so the server refuses it and the panel hides Lock
+    assert.deepEqual(pcTaskbarModel({ pcData: { lockType: 'login' }, session: { username: 'a', via: 'password' }, lockSupported: true }).actions, ['lock', 'switch', 'signout']);
+    assert.deepEqual(pcTaskbarModel({ pcData: { lockType: 'login' }, session: { username: 'a', via: 'claim' }, lockSupported: true }).actions, ['switch', 'signout']);
+    assert.deepEqual(pcTaskbarModel({ pcData: { lockType: 'login' }, session: { username: 'a', via: 'claim', guest: true }, lockSupported: true }).actions, ['switch', 'signout']);
+    assert.deepEqual(pcTaskbarModel({ pcData: { lockType: 'login' }, session: { username: 'a', via: 'password' }, lockSupported: false }).actions, ['switch', 'signout']);
 });
 
 test('the computer name: a remote session\'s host, else host, else the PC name; desktopUser must be well formed', () => {
@@ -259,21 +264,43 @@ test('Esc closes the panel first, then the PC; a press outside closes the panel;
     assert.ok(mg && mg2);
 });
 
-test('Lock shows only when the server reports support and the client can lock', async () => {
+test('Lock shows only when the server reports locking, the client can lock, and the session is a password one', async () => {
     base();
     await sessions.signIn('hot_desk', 'ishaw', 'x');
-    sessions.lockSupported = true;
+    sessions.lockingSupported = () => true;
     await open(loginPc());
-    assert.equal(document.getElementById('pc-start-lock'), null, 'reported, but no lock() yet');
+    assert.equal(document.getElementById('pc-start-lock'), null, 'reported, but no lockSession()');
     base();
     await sessions.signIn('hot_desk', 'ishaw', 'x');
     const locked = [];
-    sessions.lockSupported = true;
-    sessions.lock = (pcId) => locked.push(pcId);
+    sessions.lockingSupported = () => true;
+    sessions.lockSession = async (pcId) => { locked.push(pcId); return { ok: true }; };
     await open(loginPc());
     startBtn().click();
     document.getElementById('pc-start-lock').click();
+    await settle();
     assert.deepEqual(locked, ['hot_desk']);
+    // a claimed session: no Lock
+    base();
+    await sessions.signIn('hot_desk', 'ishaw', 'x');
+    sessions.sessions.get('hot_desk').via = 'claim';
+    sessions.lockingSupported = () => true;
+    sessions.lockSession = async () => ({ ok: true });
+    await open(loginPc());
+    startBtn().click();
+    assert.equal(document.getElementById('pc-start-lock'), null, 'hidden for a claimed session');
+    // a refusal is said
+    base();
+    await sessions.signIn('hot_desk', 'ishaw', 'x');
+    const alerts = [];
+    window.gameAlert = (...a) => alerts.push(a);
+    sessions.lockingSupported = () => true;
+    sessions.lockSession = async () => ({ ok: false, reason: 'refused', message: 'This session cannot be locked' });
+    await open(loginPc());
+    startBtn().click();
+    document.getElementById('pc-start-lock').click();
+    await settle();
+    assert.equal(alerts[0]?.[0], 'This session cannot be locked');
 });
 
 test('a share window opened from the desktop keeps the account in view and goes back through Desktop', async () => {

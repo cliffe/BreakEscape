@@ -128,10 +128,6 @@ export class PcSessions {
         // a reader; the container return shows it (container-minigame.js, review M2)
         this.endedUnseen = new Map();
         this._listening = null;
-        // Lock in the start panel (UX slice 6): offered only once the scenario answer says the
-        // server keeps a locked held session (`sessionLock: true`) and this class has lock().
-        // Until then the panel hides it (docs/achitechture/UX_SLICE6_BUILD_LOG.md).
-        this.lockSupported = false;
     }
 
     /**
@@ -170,9 +166,8 @@ export class PcSessions {
      * session ends (POST /logout, pc_signed_out): the workstation state resets with every
      * owner back at the desk, so the end rules for a claim could no longer apply (5.3).
      */
-    load(sessions = {}, signedInPcs = [], { lockSupported = false } = {}) {
+    load(sessions = {}, signedInPcs = []) {
         this.listen();
-        this.lockSupported = lockSupported === true;
         this.sessions.clear();
         this.signedIn.clear();
         (Array.isArray(signedInPcs) ? signedInPcs : []).forEach(pcId => {

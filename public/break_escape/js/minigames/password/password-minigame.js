@@ -1433,7 +1433,10 @@ export class PasswordMinigame extends MinigameScene {
                 </button>
             </div>`;
         const current = s.current
-            ? `<div class="signin-current">Signed in now: ${escapeHtml(s.current.displayName || s.current.username)} (${escapeHtml(s.current.username)})</div>`
+            ? (s.current.locked === true
+                // A locked session (UI slice 6): it is held, but needs its password again
+                ? `<div class="signin-current signin-current-locked">Locked: ${escapeHtml(s.current.displayName || s.current.username)}. Enter the password to unlock</div>`
+                : `<div class="signin-current">Signed in now: ${escapeHtml(s.current.displayName || s.current.username)} (${escapeHtml(s.current.username)})</div>`)
             : '';
         const remoteLine = s.remote
             ? `<div class="signin-remote">Remote sign-in${s.remote.linkName ? ` through ${escapeHtml(displayDashes(s.remote.linkName))}` : ''}</div>`

@@ -10,7 +10,7 @@ import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { mentionsComputer } from '../../utils/computer-keywords.js';
 import { mountPcMonitor, cssZoomOf, postitNotebookEntry, pcPostitButtonHtml } from '../../utils/pc-monitor.js';
 import { MORE_BELOW_TEXT } from '../../utils/more-below.js';
-import { mountPcTaskbar, pcTaskbarModel, lockSupported, rememberDesktop, rememberedDesktop, findPcData } from '../../utils/pc-taskbar.js';
+import { mountPcTaskbar, pcTaskbarModel, lockSupported, lockPcSession, rememberDesktop, rememberedDesktop, findPcData } from '../../utils/pc-taskbar.js';
 
 
 
@@ -1107,7 +1107,7 @@ export class ContainerMinigame extends MinigameScene {
     /** Start panel Lock, Switch user and Sign out (through pc-sessions.js). */
     taskbarAction(action, pcId) {
         if (action === 'signout') { window.pcSessions?.signOut?.(pcId); return; }
-        if (action === 'lock') { if (lockSupported()) window.pcSessions.lock(pcId); return; }
+        if (action === 'lock') { lockPcSession(pcId); return; }
         if (action === 'switch') this.switchUser();
     }
 

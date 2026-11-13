@@ -542,6 +542,23 @@ test('a PC\'s sign-in screen and its desktop use the same frame, at the same siz
     }
 });
 
+test('UX slice 6: a locked session\'s sign-in screen says it is locked; an open one says signed in now', async () => {
+    for (const [locked, want] of [[true, 'Locked: Sam Okafor. Enter the password to unlock'], [false, 'Signed in now: Sam Okafor (sokafor)']]) {
+        document.body.innerHTML = '<div id="mg"></div>';
+        window.MinigameFramework = { currentMinigame: null, endMinigame: () => {} };
+        window.playUISound = () => {};
+        const mg = new PasswordMinigame(document.getElementById('mg'), {
+            title: 'Sign in',
+            signIn: { pcId: 'hot_desk', pcName: 'Hot desk PC', picker: 'accounts', tiles: [{ username: 'sokafor', displayName: 'Sam Okafor' }],
+                      current: { username: 'sokafor', displayName: 'Sam Okafor', via: 'password', ...(locked ? { locked: true } : {}) } }
+        });
+        window.MinigameFramework.currentMinigame = mg;
+        mg.init();
+        assert.equal(document.querySelector('.signin-current').textContent.trim(), want);
+        mg.cleanup?.();
+    }
+});
+
 test('the desktop\'s taskbar shows the signed-in NPC\'s headshot (x1), the start panel at x2 (UX slice 6)', async () => {
     const restore = sizeWindow(1400, 1000);
     const { resetTaskbarHeadshots } = await imp('utils/pc-taskbar.js');

@@ -206,7 +206,7 @@ export class TextFileMinigame extends MinigameScene {
             },
             onAction: (action) => {
                 if (action === 'signout') { leaveFor(() => window.pcSessions?.signOut?.(pcId)); return; }
-                if (action === 'lock') { if (m.lockSupported()) leaveFor(() => window.pcSessions.lock(pcId)); return; }
+                if (action === 'lock') { if (m.lockSupported()) leaveFor(() => m.lockPcSession(pcId)); return; }
                 if (action === 'switch' && desktop) {
                     const r = desktop.scenarioData?.remote?.footholdId ? desktop.scenarioData.remote : null;
                     leaveFor(() => window.openLoginSignIn?.(desktop, r ? { switching: true, remote: r } : { switching: true }));
