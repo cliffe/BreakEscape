@@ -145,3 +145,39 @@ cover and `filtered_room_data` does not strip, so the plan's "nothing leaks ther
 object-unlock, or correct the claim and relocate the secret), close the three minors, and the plan is
 buildable chunk by chunk. Closure 1 (the `scenario_data`-only load) is sound bar the one missing
 assertion in MINOR-1.
+
+## Outcomes
+
+All four findings verified in code before reworking the plan.
+
+- **BLOCKER-1 — resolved by a narrow object-action gate, plus a corrected claim and a flagged
+  residual.** Confirmed: the `/unlock` object branch (`games_controller.rb:1151-1168`) calls
+  `unlock_object!` with no room check; `filtered_room_data` (`game.rb:1603-1627`) does not strip a
+  readable note's `text`; `deeds_signout` in `secure_area` carries `7041`, which is `p4_safe`'s
+  `requires` (`scenario.json.erb:2248`, `:2793`); `p4_safe` sits in `P4` (a key-locked room, reached
+  only from `secure_area`), not in `secure_area` itself. New §3.6 adds an object-action gate: a model
+  predicate `object_in_unpromoted_route_room?` (room resolved via `login_scope_of`) refuses the
+  `/unlock` object branch and silences `pin_cracker_feedback` / `password_case_mismatch?` for any
+  object whose room is in `npcRouteRooms`. This blocks a locked container, its served contents and the
+  two feedback leaks in a served-but-unearned route room, with a "not reachable yet" answer. Rooms in
+  general are not gated (per the ruling). The cheat-policy reasoning is stated in §3.2 and §3.6:
+  reading a code from a readable note early only saves time, because the object it opens stays refused
+  until promotion. The false "nothing leaks" and "structural guarantee" claims are removed (§3.2, §5).
+  The lab's `p4_safe` is a true residual the gate cannot reach (it lives in `P4`, not a route room),
+  so it is flagged as open question Q5 with options (recommend: accept, credit optional, nothing
+  takeable). Tests added: an un-promoted player with the right key refused at the object and accepted
+  after promotion (test 11), feedback gated (test 12), honest object unlock unaffected (test 13).
+- **MINOR-1 — fixed.** Test 2 now asserts `saved_changes.keys` excludes `scenario_data`, so a missing
+  dirty-clear after the `scenario_data`-only load fails red rather than silently rewriting the column.
+- **MINOR-2 — folded in.** §3.2 and §11 now state that sign-in PCs (`object_reachable?`,
+  `network_access.rb:124`) and flag/launch stations (launcher gate, `games_controller.rb:1897`) are
+  already room-gated on `room_unlocked?`, so `npcRouteRooms` alone does not unlock them and the
+  builder must not weaken those gates; the locked-container `/unlock` branch was the one un-room-gated
+  vector, now covered by §3.6. The §11 validator rule is reworked: the three-type ban is dropped as
+  redundant (all now runtime-gated) and replaced by a warning on readable text that carries a
+  server-enforced lock code in a split gated room, the only residual no runtime gate can catch.
+- **MINOR-3 — fixed.** §3.4 now names the target explicitly: union `serverCreditGlobals` into the
+  local `read_only` list at `game.rb:340` (`imported_global_names + wearable_read_only_globals`), not
+  the frozen `SERVER_OWNED_GLOBAL_NAMES` constant (`game.rb:1798`, the separate `reject` at `:337`).
+
+New open question surfaced: **Q5** (the `p4_safe` cross-room code leak), added to §14.
