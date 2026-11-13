@@ -268,7 +268,11 @@ test('Lock shows only when the server reports locking, the client can lock, and 
     base();
     await sessions.signIn('hot_desk', 'ishaw', 'x');
     sessions.lockingSupported = () => true;
+    // the no-locking-support case: the server reports locking, this client cannot ask for it
+    sessions.lockSession = undefined;
     await open(loginPc());
+    startBtn().click();
+    assert.ok(document.getElementById('pc-start-signout'), 'the panel is open');
     assert.equal(document.getElementById('pc-start-lock'), null, 'reported, but no lockSession()');
     base();
     await sessions.signIn('hot_desk', 'ishaw', 'x');

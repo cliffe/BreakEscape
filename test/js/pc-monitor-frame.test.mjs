@@ -1261,3 +1261,13 @@ test('UI quick: the chin button reads Add Postit to notepad on the sign-in scree
         sizing();
     }
 });
+
+// UI slice 6 review R2 minor 1: the 18 px icon box made each panel entry 2 px taller and the
+// panel scrolled by 4 px at 1400x1000; the entry's own padding is 1 px to pay for it. The real
+// measurement is a live one (no layout here), so this pins the two numbers that must agree.
+test('R2 m1: a panel entry is an 18 px icon box with 1 px vertical padding', () => {
+    const sheet = css('pc-monitor.css');
+    const item = sheet.match(/\.pc-monitor button\.pc-start-item \{[^}]*\}/)[0];
+    assert.match(item, /padding:\s*1px 6px/);
+    assert.match(sheet.match(/\.pc-start-item-icon \{\s*width: 26px;[^}]*\}/)[0], /height:\s*18px/);
+});

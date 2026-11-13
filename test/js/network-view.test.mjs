@@ -215,19 +215,24 @@ test('the view lists each row with its action and the row attributes, from GET /
     assert.equal(scenarioReads, 0, 'the view never reads scenario data');
 });
 
-// UI slice 6: a locked remote PC shows the padlock "Locked" badge in place of Open, and
-// offers no action to click (the server refuses the open until the password is re-entered).
-test('a locked remote session shows a Locked badge and no open action', async () => {
+// UI slice 6: a locked remote PC shows the padlock "Locked" badge in place of Open, with a
+// Sign in control that opens the remote sign-in screen (review R2 blocker 1: never stranded).
+test('a locked remote session shows a Locked badge and a Sign in control, not Open', async () => {
     const hosts = HOSTS.map(h => h.id === 'lena_pc'
         ? { ...h, session: { ...h.session, locked: true } } : h);
     setup({ hosts });
     links.open('jack_comms_port');
     await settle();
     const lena = row('data-host-id', 'lena_pc');
-    assert.equal(lena.querySelector('[data-action]'), null, 'no open button on a locked PC');
+    const actions = [...lena.querySelectorAll('[data-action]')].map(b => b.dataset.action);
+    assert.deepEqual(actions, ['sign-in'], 'Sign in only, no open button on a locked PC');
     assert.match(lena.querySelector('.network-row-locked').textContent, /Locked/);
     // sam_pc is still an ordinary open
     assert.equal(row('data-host-id', 'sam_pc').querySelector('[data-action]').dataset.action, 'open');
+    const before = signIns.length;
+    lena.querySelector('[data-action="sign-in"]').click();
+    assert.equal(signIns.length, before + 1, 'Sign in opens the remote sign-in screen');
+    assert.equal(signIns[signIns.length - 1][0], 'lena_pc');
 });
 
 test('network_viewed carries the network, the host ids and hostList; it fires on every open', async () => {

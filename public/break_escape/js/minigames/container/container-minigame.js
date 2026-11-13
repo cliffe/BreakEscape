@@ -1081,7 +1081,7 @@ export class ContainerMinigame extends MinigameScene {
         } else {
             places = rememberedDesktop(pcId)?.places || [];
         }
-        const model = pcTaskbarModel({ pcData, session, remote: !!remote, linkName, places, lockSupported: lockSupported(), canSwitch: !!desktop });
+        const model = pcTaskbarModel({ pcData, session, remote: !!remote, linkName, places, lockSupported: lockSupported(), canLock: window.pcSessions?.canLock?.(pcId), canSwitch: !!desktop });
         this.taskbarModel = model;
         this.taskbar = mountPcTaskbar(host, model, {
             windowTitle,

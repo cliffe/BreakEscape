@@ -73,7 +73,7 @@ export function pcHostName(pcData, session = null) {
  * `account` is { kind: 'session', name, username, npcId, claimed } or
  * { kind: 'desktopUser', name, character } or null.
  */
-export function pcTaskbarModel({ pcData = null, session = null, remote = false, linkName = null, places = [], lockSupported = false, canSwitch = true } = {}) {
+export function pcTaskbarModel({ pcData = null, session = null, remote = false, linkName = null, places = [], lockSupported = false, canLock, canSwitch = true } = {}) {
     const signIn = pcData?.lockType === 'login' || !!session;
     let account = null;
     if (signIn) {
@@ -91,7 +91,9 @@ export function pcTaskbarModel({ pcData = null, session = null, remote = false, 
         if (du) account = { kind: 'desktopUser', name: du.name, character: du.character };
     }
     const isRemote = !!remote || session?.remote === true;
-    const lockable = lockSupported && session?.via === 'password' && session?.guest !== true;
+    // pcSessions.canLock is the one rule when the caller has it; without it the same test is made here
+    const lockable = lockSupported && session?.guest !== true
+        && (typeof canLock === 'boolean' ? canLock : session?.via === 'password');
     // Switch user needs the PC's desktop to come back to; a view with none (a reader reached
     // without the desktop this page load) does not offer it rather than do nothing (R1 m3)
     const actions = signIn && session ? [...(lockable ? ['lock'] : []), ...(canSwitch ? ['switch'] : []), 'signout'] : [];

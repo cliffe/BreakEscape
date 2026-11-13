@@ -422,7 +422,10 @@ export class NetworkViewMinigame extends MinigameScene {
             } else if (action === 'locked') {
                 // UI slice 6: the same padlock "Locked" badge a locked share shows, in place of
                 // the Open button; the server refuses the open until the password is re-entered.
-                control = '<span class="network-row-locked"><img class="network-row-padlock" src="/break_escape/assets/icons/padlock_32.png" alt=""> Locked</span>';
+                // The row also offers Sign in (the remote sign-in screen with the held account
+                // pre-chosen), so a locked remote session is never stranded (review R2 blocker 1).
+                control = '<span class="network-row-locked"><img class="network-row-padlock" src="/break_escape/assets/icons/padlock_32.png" alt=""> Locked</span>'
+                    + '<button type="button" class="minigame-button network-row-action" data-action="sign-in">Sign in</button>';
             } else if (action === 'open') {
                 const who = row.session.displayName || row.session.username || 'session';
                 control = `<button type="button" class="minigame-button network-row-action" data-action="open">Open <span class="network-row-who">(${escapeHtml(who)})</span></button>`;

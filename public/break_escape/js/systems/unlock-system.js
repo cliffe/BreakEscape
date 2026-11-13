@@ -674,6 +674,8 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
             picker: false,
             tiles: [],
             current: held && held.via !== 'claim' ? held : null,
+            // A locked held session pre-chooses its own account, as the local screen does
+            preselect: held && held.via !== 'claim' && held.locked ? held.username : null,
             remote: { footholdId, linkName },
             captured: [],
             capturedLoading: true
