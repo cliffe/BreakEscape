@@ -95,10 +95,65 @@ Touched-file importers run (no full suites):
   game_test + reload_persistence (168/668), games_controller + game_state_locking
   (68/230). All pass.
 
-## Live proof
+## Live proof (run 2026-11-13)
 
-Not yet run in a browser (handed back near the context budget). The two tests above
-exercise the real code paths, not mocks of them: the node test drives the real
+Run in a real headless browser, setFPS(20) with fixed steps on. Branch server: keyless,
+`:3061` from this worktree (`tmp/keyless-3061.log`). Base server: a hand-made worktree at
+main `2f5471209` (`p-conclude-base`), keyless on `:3063` (`:3060` and `:3062` were taken by
+another session; `tmp/keyless-3063.log`). The "Not Yet" toast is caught by wrapping
+`window.gameAlert`. Request order is read from each server's request log; the server record
+(`status`, `mission_concluded_at`, the gate global) is the authority.
+
+**Case 1 - plain path (`test_conclude_race`, committed).** A switch object's
+`triggerOnInteract` runs a plain `set_global gate_global` (apply-actions.js, emitAlways); an
+NPC `eventMapping` on `global_variable_changed:gate_global` completes `final_task`, the single
+task of a `missionConclusion` aim with `concludeRequires.globals: ["gate_global"]`.
+
+- Base / main (game 3192... see below; plain-path game **3185** on `:3063`): the log shows
+  only `POST .../objectives/tasks/final_task` (line 14064) with **no** preceding
+  `PUT .../sync_state` for the gate. The "Not Yet..." toast fired
+  ("Complete required objectives first to conclude the mission."). Server record:
+  `status=in_progress`, `mission_concluded_at=nil`, `gate_global=nil` - the global never
+  reached the server and the mission was left stranded. The race reproduced.
+- Branch (game **3177** on `:3061`): `PUT .../sync_state` (log line 42123) **precedes**
+  `POST .../objectives/tasks/final_task` (42135); exactly one completion POST, 200. No toast
+  (only "Task Complete" / "Objective Complete"). Server record: `status=completed`,
+  `mission_concluded_at` set, `gate_global=true`. The fix orders the sync first and the
+  mission concludes on the first POST.
+
+**Case 2 - sis02's old globals gate (`test_sis02_conclude`, scratch, not committed).** A copy
+of sis02 with the old gate restored (`concludeRequires.globals: ["debrief_complete"]`). The
+gate takes the plain path: `npc_priya_s.ink` `closing_end` sets `#set_global:debrief_complete`
+(chat-helpers.js, immediate emit, no sync) then `#complete_task:talk_to_priya_s` on the next
+beat. Head-start seeded the two prerequisite aims complete and `priya_s_visible`; the driver
+emitted the reveal event, then navigated the debrief to "Nothing else from us." (`closing_end`).
+
+- Branch (game **3190** on `:3061`): `PUT .../sync_state` (log line 70831) **precedes** both
+  `POST .../conclude` (70849) and `POST .../objectives/tasks/talk_to_priya_s` (70850). No
+  "Not Yet" toast; `status=completed`, `mission_concluded_at` set, `debrief_complete=true`.
+  sis02's gate concludes cleanly on the branch.
+
+**Case 3 - ca01 (`ca01_invoice_fraud`), no-regression only.** Driven by the committed full
+episode-e1 bridge script (`tools/playtest/se/bridge-e1-full.jsonl`) through the real inbox
+triage, whose `triage-starter.js` already does sync-then-emit.
+
+- Branch (game **3191** on `:3061`): the triage's several `PUT .../sync_state` all precede
+  `POST .../objectives/tasks/sort_payments_inbox` (log line 85320). `status=completed`,
+  `mission_concluded_at` set, gate `episode_e1_invoice_fraud_defend_complete=true`,
+  `sort_payments_inbox` and `land_supplier_contact` completed. No "Not Yet".
+- Base / main (game **3192** on `:3063`): concludes identically (`status=completed`,
+  gate `true`). `check-bridge.mjs` reports the same 11/14 evals pass on both branch and base,
+  with the same three failures (bridge lines 7, 65, 73) - pre-existing drift in the recorded
+  assertions against the current build, present on main too, not caused by this fix. ca01
+  concludes as before: no regression.
+
+Screenshots of the endings are in the scratchpad (`branch_3177.png`, `base_3185.png`,
+`branch_sis02_3190.png`). Validator on the committed `test_conclude_race`: 0 errors, 0 known,
+1 advisory warning (no `*_talk.png` portrait for the gate NPC).
+
+### Note on prior test text
+
+The two automated tests exercise the real code paths, not mocks of them: the node test drives the real
 `ObjectivesManager.completeTask` flow (only `stateSync`/`fetch` are seams) and asserts
 the sync runs before the completion POST; the Rails test goes over real HTTP through
 the real controller and `Game#complete_task!`. Both reproduce the ordering and are red
