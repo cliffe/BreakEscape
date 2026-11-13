@@ -65,9 +65,9 @@
     position: relative;
     padding: 44px 14px 16px;
     overflow: hidden;
-    /* Four 144px zones and the gaps the rule lines need: past this the body scrolls, so
+    /* Four 144px zones and gaps wide enough for the 16px rule labels: past this the body scrolls, so
        every zone and dashed rule stays reachable (critique B NSM1) */
-    min-width: 760px;
+    min-width: 840px;
     /* Tall enough for the clinical zone's six devices at the 16px label size (915x412) */
     min-height: 384px;
     box-sizing: border-box;
@@ -483,9 +483,9 @@
     border-color: #ff4400;
 }
 
-/* Windows under 1100px (map 760px + panel up to 320px): the consequence panel goes under the map; the map keeps its width and
+/* Windows under 1180px (map 840px + panel up to 320px): the consequence panel goes under the map; the map keeps its width and
    scrolls sideways inside the body (critique B NSM1) */
-@media (max-width: 1100px) {
+@media (max-width: 1180px) {
     .nsm-body {
         flex-direction: column;
     }

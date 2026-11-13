@@ -269,7 +269,7 @@ test('review round 1: buttons the framework styles in GNF are declared GNF at th
 
 test('review round 1: segmentation map keeps its panel in view (M1), SIS title wraps (m1), X bands (m3), graph scrollbar (m4)', () => {
     const nsm = css('network-segmentation-map-minigame.css');
-    assert.match(nsm, /@media \(max-width: 1100px\) \{\s*\.nsm-body \{\s*flex-direction: column/, 'map and panel stack under 1100px (760px map + 320px panel)');
+    assert.match(nsm, /@media \(max-width: 1180px\) \{\s*\.nsm-body \{\s*flex-direction: column/, 'map and panel stack under 1180px (840px map + 320px panel)');
     assert.match(nsm, /\.nsm-topology-area \{\s*flex: 0 0 auto;\s*(\/\*[\s\S]*?\*\/\s*)?min-height: 480px/, 'stacked map tall enough for every device');
     assert.match(css('scada-historian-minigame.css'), /\.sh-charts \{ overflow-y: auto/);
     assert.match(css('sis-config-threshold-minigame.css'), /\.sis-modal h4 \{\s*overflow-wrap: anywhere/);

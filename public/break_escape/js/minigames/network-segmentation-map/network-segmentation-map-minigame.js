@@ -491,7 +491,7 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
                 const from = slot[rule.fromSlot];
                 const to   = slot[rule.toSlot];
                 const midX = (from.right + to.left) / 2;
-                const rY   = centerY + i * 32;
+                const rY   = centerY + i * 46;
                 const active = this.ruleStates[rule.id];
 
                 const ruleLine = this._svgLine(svg, ns, from.right, rY, to.left, rY, '#ff7700', 2, '8 5', active ? 1 : 0.45);
