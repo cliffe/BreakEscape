@@ -1,6 +1,6 @@
 // eventMappings `barkDelay`: the bark shows that many ms after its event, not before, and
-// a delay that is cancelled (NPC re-registered, knocked out, moved, hidden, condition gone,
-// player talking to the NPC) never shows. Run with: node test/js/npc-bark-delay.test.mjs
+// a delay that is cancelled (NPC re-registered, knocked out, moved, hidden, condition gone)
+// never shows, and one that comes due while the player talks to that NPC waits for the chat. Run with: node test/js/npc-bark-delay.test.mjs
 
 import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -100,25 +100,42 @@ test('staggered barks from two NPCs on one event land in delay order', () => {
     } finally { t.restore(); }
 });
 
-test('onceOnly applies at the event: a repeat during the delay schedules nothing', () => {
+test('onceOnly applies at the event: a repeat after the default cooldown schedules nothing', () => {
     const t = setup([{ ...base }]);
     try {
         t.m.eventDispatcher.emit(ev, { value: true });
+        t.advance(6000);   // the bark has landed and the default 5000 ms cooldown has run out
+        assert.equal(t.barks.length, 1);
         t.m.eventDispatcher.emit(ev, { value: true });
-        assert.equal(t.live(), 1);
-        t.advance(5000);
+        assert.equal(t.live(), 0, 'no second timer');
+        t.advance(20000);
         assert.equal(t.barks.length, 1);
     } finally { t.restore(); }
 });
 
-test('cooldown applies at the event', () => {
+test('the same repeat barks again without onceOnly (control for the test above)', () => {
+    const t = setup([{ ...base, onceOnly: false }]);
+    try {
+        t.m.eventDispatcher.emit(ev, { value: true });
+        t.advance(6000);
+        t.m.eventDispatcher.emit(ev, { value: true });
+        t.advance(20000);
+        assert.deepEqual(t.barks.map(b => b.at), [1500, 7500]);
+    } finally { t.restore(); }
+});
+
+test('cooldown runs from the event, not from when the bark lands', () => {
     const t = setup([{ ...base, onceOnly: false, cooldown: 10000 }]);
     try {
         t.m.eventDispatcher.emit(ev, { value: true });
-        t.advance(2000);
-        t.m.eventDispatcher.emit(ev, { value: true });   // inside the cooldown
-        t.advance(20000);
-        assert.equal(t.barks.length, 1);
+        t.advance(9000);
+        t.m.eventDispatcher.emit(ev, { value: true });   // inside the cooldown from either 0 or 1500
+        t.advance(10200);
+        // 10200 ms after the event the cooldown has run out; measured from the landing
+        // (1500) it would still have 1300 ms to go.
+        t.m.eventDispatcher.emit(ev, { value: true });
+        t.advance(30000);
+        assert.deepEqual(t.barks.map(b => b.at), [1500, 11700]);
     } finally { t.restore(); }
 });
 
@@ -191,19 +208,61 @@ test('dropped when its condition stops holding during the delay', () => {
     } finally { t.restore(); }
 });
 
-test('dropped when the player is in a person-chat with that NPC; kept for another NPC', () => {
+test('due during a person-chat with that NPC: handed to showBark to hold, not dropped', () => {
     const t = setup({
-        nurse: [{ ...base, bark: 'nurse line' }],
+        nurse: [{ ...base, bark: 'nurse line', condition: 'globalVars.alarm === true' }],
         doctor: [{ ...base, bark: 'doctor line' }]
     });
     try {
-        t.m.eventDispatcher.emit(ev, { value: true });
+        const held = [];
+        t.m.barkSystem.showBark = (p) => held.push(p);
+        window.gameState.globalVariables = { alarm: true };
         window.currentConversationMinigameType = 'person-chat';
         window.currentConversationNPCId = 'nurse';
+        t.m.eventDispatcher.emit(ev, { value: true });   // set inside the chat with the nurse
         t.advance(5000);
-        // The doctor's bark goes to showBark, whose hold policy keeps it behind the chat.
-        assert.deepEqual(t.barks.map(b => b.text), ['doctor line']);
+        // Both reach showBark, whose hold policy keeps them until the chat closes
+        // (npc-barks.js _shouldDefer: any person-chat) and re-checks stillValid then.
+        assert.deepEqual(held.map(p => p.message).sort(), ['doctor line', 'nurse line']);
+        const nurse = held.find(p => p.npcId === 'nurse');
+        assert.equal(nurse.stillValid(), true, 'still shown on release while the condition holds');
+        window.gameState.globalVariables.alarm = false;
+        assert.equal(nurse.stillValid(), false, 'dropped on release if the condition lapsed');
     } finally { t.restore(); }
+});
+
+test('a delayed knot bark waits too, carries stillValid, and is cancelled with the NPC', () => {
+    const knotMapping = { eventPattern: ev, onceOnly: true, knot: 'on_alarm', barkDelay: 1500,
+        condition: 'globalVars.alarm === true' };
+    const t = setup([knotMapping], { storyPath: 'nurse.json' });
+    try {
+        const calls = [];
+        t.m._showBarkFromKnot = (npcId, npc, knot, pattern, stillValid) =>
+            calls.push({ at: Date.now() - 1_000_000, npcId, knot, stillValid });
+        window.gameState.globalVariables = { alarm: true };
+        t.m.eventDispatcher.emit(ev, { value: true });
+        t.advance(1499);
+        assert.equal(calls.length, 0, 'not before the delay');
+        t.advance(1500);
+        assert.equal(calls.length, 1);
+        assert.equal(calls[0].at, 1500);
+        assert.equal(calls[0].knot, 'on_alarm');
+        assert.equal(typeof calls[0].stillValid, 'function');
+        assert.equal(calls[0].stillValid(), true);
+        window.gameState.globalVariables.alarm = false;
+        assert.equal(calls[0].stillValid(), false);
+    } finally { t.restore(); }
+
+    const t2 = setup([knotMapping], { storyPath: 'nurse.json' });
+    try {
+        let called = 0;
+        t2.m._showBarkFromKnot = () => { called++; };
+        window.gameState.globalVariables = { alarm: true };
+        t2.m.eventDispatcher.emit(ev, { value: true });
+        t2.m._removeEventMappingListeners('nurse');
+        t2.advance(10000);
+        assert.equal(called, 0, 'NPC removed during the delay');
+    } finally { t2.restore(); }
 });
 
 test('the bark carries stillValid so the hold queue can re-check it', () => {

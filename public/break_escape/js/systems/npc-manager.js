@@ -1207,10 +1207,10 @@ export default class NPCManager {
    * Show a mapping's bark `barkDelay` ms after its event (staggered reactions). The
    * mapping's onceOnly, cooldown and actions have already run at the event; only the
    * bark waits. When the delay is up the bark is dropped if its condition (stillValid)
-   * no longer holds, the NPC is knocked out, has changed room or been hidden, or the
-   * player is in a person-chat with that NPC. Otherwise showBark takes it as usual, so
-   * an open minigame or conversation holds it (bark-release-policy.js), as for any
-   * other bark. Timers live with the NPC's delayMs timers, so _cancelDelayedMappings
+   * no longer holds, or the NPC is knocked out, has changed room (walking out counts)
+   * or been hidden. Otherwise showBark takes it as usual, so an open minigame or
+   * conversation, including one with this NPC, holds it until it closes and then
+   * re-checks its condition (bark-release-policy.js), as for a bark with no delay. Timers live with the NPC's delayMs timers, so _cancelDelayedMappings
    * (NPC re-registered or removed, manager destroyed) cancels them too.
    */
   _delayBark(npcId, delayMs, show, stillValid) {
@@ -1232,8 +1232,6 @@ export default class NPCManager {
       else if (window.npcHostileSystem?.isNPCKO?.(npcId)) reason = 'NPC knocked out';
       else if (now.room !== before.room) reason = `NPC left ${before.room}`;
       else if (now.hidden && !before.hidden) reason = 'NPC hidden';
-      else if (window.currentConversationMinigameType === 'person-chat'
-               && window.currentConversationNPCId === npcId) reason = 'player is talking to the NPC';
       if (reason) { console.log(`⏭️ Delayed bark for ${npcId} dropped: ${reason}`); return; }
       show();
     }, delayMs));
