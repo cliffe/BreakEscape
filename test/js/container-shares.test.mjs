@@ -28,6 +28,7 @@ const copy = (rel) => put(rel, readFileSync(join(js, rel), 'utf8'));
 put('utils/helpers.js', 'export function makeDraggable() {}\n');
 put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n');
 copy('utils/escape-html.js');
+copy('utils/more-below.js');
 copy('utils/computer-keywords.js');
 copy('utils/pc-monitor.js');
 copy('utils/npc-headshot.js');

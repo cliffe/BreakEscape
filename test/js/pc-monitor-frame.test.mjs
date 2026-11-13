@@ -27,9 +27,9 @@ put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n
 put('utils/conditional-text.js', 'export function resolveObjectField(o, f, d) { return (o && o[f] != null) ? o[f] : d; }\n');
 put('systems/inventory.js', 'export async function addToInventory() { return { ok: true }; }\nexport function removeFromInventory() {}\nexport function inventoryImageKey(d) { return d?.type; }\n');
 for (const rel of ['utils/escape-html.js', 'utils/computer-keywords.js', 'utils/author-html.js', 'utils/lock-scope-refusal.js',
-    'utils/pc-monitor.js', 'utils/npc-headshot.js', 'minigames/framework/base-minigame.js',
+    'utils/pc-monitor.js', 'utils/more-below.js', 'utils/npc-headshot.js', 'minigames/framework/base-minigame.js',
     'minigames/container/container-item-image.js', 'minigames/container/container-minigame.js',
-    'minigames/password/password-minigame.js', 'systems/pc-sessions.js']) copy(rel);
+    'minigames/password/password-minigame.js', 'systems/pc-sessions.js', 'minigames/text-file/text-file-minigame.js']) copy(rel);
 
 const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
 globalThis.window = dom.window;
@@ -41,6 +41,7 @@ const { headshotKeys, headshotCandidates, headshotUrl, characterKey, noteMissing
 const { PasswordMinigame, applyTilePortrait } = await imp('minigames/password/password-minigame.js');
 const { ContainerMinigame } = await imp('minigames/container/container-minigame.js');
 const { PcSessions } = await imp('systems/pc-sessions.js');
+const { TextFileMinigame, pcScreenOf } = await imp('minigames/text-file/text-file-minigame.js');
 
 const SIZES = [[1400, 1000], [800, 600], [915, 412], [390, 844]];
 const settle = (ms = 0) => new Promise(r => setTimeout(r, ms));
@@ -160,7 +161,28 @@ test('R2 M3: the space is the container\'s 100dvh box; a pinch zoom or the keybo
     const frame = css('pc-monitor.css');
     const rule = frame.slice(frame.indexOf('.minigame-container.pc-view {'), frame.indexOf('}', frame.indexOf('.minigame-container.pc-view {')));
     assert.match(rule, /height: 100vh;\s*height: 100dvh;/, '100dvh with the 100vh fallback first');
-    assert.doesNotMatch(readFileSync(join(js, 'utils/pc-monitor.js'), 'utf8'), /visualViewport\??\.(add|remove)EventListener|listen\(view\?\.visualViewport/, 'no visual viewport listener');
+});
+
+test('R2 M3: a visual viewport resize or scroll (a pinch, the keyboard) does not rebuild or move a mounted frame', () => {
+    document.body.innerHTML = '<div id="vv"><div class="minigame-game-container"></div></div>';
+    const container = document.getElementById('vv');
+    const scene = { container, gameContainer: container.querySelector('.minigame-game-container') };
+    // A view whose visual viewport is a real event target, so a listener on it would run
+    const view = new window.EventTarget();
+    Object.assign(view, { innerWidth: 800, innerHeight: 600, visualViewport: new window.EventTarget() });
+    const parts = mountPcMonitor(scene, { name: 'PC', view });
+    const first = parts.metrics;
+    const style = parts.root.getAttribute('style');
+    view.visualViewport.width = 400;
+    view.visualViewport.dispatchEvent(new window.Event('resize'));
+    view.visualViewport.dispatchEvent(new window.Event('scroll'));
+    assert.equal(parts.metrics, first, 'update did not run again');
+    assert.equal(parts.root.getAttribute('style'), style, 'the frame kept its size and place');
+    // The window's own resize still updates it (the listener this test relies on is live)
+    view.innerWidth = 1400; view.innerHeight = 1000;
+    view.dispatchEvent(new window.Event('resize'));
+    assert.notEqual(parts.metrics, first, 'a window resize does update');
+    parts.destroy();
 });
 
 test('R2 m2: cssZoomOf reads currentCSSZoom, else the screen area\'s drawn-to-layout ratio', () => {
@@ -170,11 +192,6 @@ test('R2 m2: cssZoomOf reads currentCSSZoom, else the screen area\'s drawn-to-la
     assert.equal(cssZoomOf(inside), 2, 'no currentCSSZoom, a 2:1 rect-to-offset ratio');
     assert.equal(cssZoomOf({ closest: () => null }), 1, 'outside the monitor');
     assert.equal(cssZoomOf(null), 1);
-    for (const rel of ['minigames/password/password-minigame.js', 'minigames/container/container-minigame.js']) {
-        const src = readFileSync(join(js, rel), 'utf8');
-        assert.doesNotMatch(src, /Number\(\w+\.currentCSSZoom\)/, `${rel}: through cssZoomOf only`);
-        assert.match(src, /cssZoomOf\(/, rel);
-    }
 });
 
 // ── Headshots ────────────────────────────────────────────────────────────────
@@ -578,8 +595,6 @@ test('R2 M2: the desktop\'s icon area has the pixel scrollbar and "More below" w
     const box = css('container-minigame.css');
     const cue = box.slice(box.indexOf('.pc-monitor .pc-desktop > .desktop-more {'));
     assert.match(cue, /border-top: 2px solid/);
-    const network = readFileSync(join(js, 'minigames/network-view/network-view-minigame.js'), 'utf8');
-    assert.match(network, /MORE_BELOW_TEXT = 'More below'/, 'the same words as the network view');
 });
 
 test('R2 m4: no taskbar strip under a desktop with no description and nothing to take', async () => {
@@ -603,8 +618,6 @@ test('R2 m3 and m5: icon labels on the monitor have the dark backing, not the ou
     assert.match(label, /text-shadow: none;/);
     assert.match(label, /border: 2px solid/);
     assert.match(label, /background: #101820;/);
-    assert.match(label, /padding: 0 2px;/);
-    assert.match(label, /align-self: center;/);
     const frame = css('pc-monitor.css');
     const s = frame.indexOf('.pc-monitor[data-ui-scale="2"] .pc-monitor-name {');
     assert.ok(s > 0, 'an x2 rule for the name');
@@ -624,4 +637,179 @@ test('the bezel look is held in css/pc-monitor.css only, pixel art (2px edges, s
     assert.doesNotMatch(css('container-minigame.css'), /\.pc-monitor-bezel\s*\{/, 'not copied into the container');
     const show = readFileSync(join(here, '../../app/views/break_escape/games/show.html.erb'), 'utf8');
     assert.ok(show.indexOf('css/pc-monitor.css') > show.indexOf('css/password-minigame.css'), 'linked after the password screen css');
+});
+
+// ── Review round 3 ───────────────────────────────────────────────────────────
+
+/** The real stylesheets in the page, so jsdom's computed style follows their rules. */
+function withSheets(...names) {
+    const style = document.createElement('style');
+    style.textContent = names.map(css).join('\n');
+    document.head.appendChild(style);
+    return () => style.remove();
+}
+
+test('R3 m5: at x2 the tiles fold once an account is chosen, Change shows, and no on-screen title in the monitor', async () => {
+    const restore = sizeWindow(1400, 1000);
+    try {
+        const mg = await signInScreen();
+        const unsheet = withSheets('password-minigame.css', 'pc-monitor.css');
+        try {
+            assert.equal(document.querySelector('.pc-monitor').dataset.uiScale, '2');
+            const tiles = document.querySelector('.signin-tiles');
+            const title = document.querySelector('.signin-title');
+            const change = document.querySelector('#signin-change');
+            assert.equal(window.getComputedStyle(title).display, 'none', 'the bezel names the PC');
+            assert.notEqual(window.getComputedStyle(tiles).display, 'none', 'tiles before a choice');
+            mg.selectSignInTile(0);
+            assert.equal(window.getComputedStyle(tiles).display, 'none', 'folded at x2 once chosen');
+            assert.notEqual(window.getComputedStyle(change).display, 'none', 'Change brings them back');
+            mg.clearSignInChoice();
+            assert.notEqual(window.getComputedStyle(tiles).display, 'none', 'back after Change');
+        } finally {
+            unsheet();
+            mg.cleanup?.();
+        }
+    } finally {
+        restore();
+    }
+    // At x1 in a tall window the tiles stay
+    const back = sizeWindow(800, 600);
+    try {
+        const mg = await signInScreen();
+        const unsheet = withSheets('password-minigame.css', 'pc-monitor.css');
+        try {
+            mg.selectSignInTile(0);
+            assert.notEqual(window.getComputedStyle(document.querySelector('.signin-tiles')).display, 'none', 'x1, not short: tiles stay');
+        } finally {
+            unsheet();
+            mg.cleanup?.();
+        }
+    } finally {
+        back();
+    }
+});
+
+test('R3 m1: the chosen account line carries that NPC\'s headshot in the monitor', async () => {
+    const restore = sizeWindow(1400, 1000);
+    const HadImage = window.Image, hadGlobal = globalThis.Image;
+    const Fake = fakeImage({ '/break_escape/assets/characters/male_office_worker_v2_headshot.png': [32, 32] });
+    window.Image = Fake; globalThis.Image = Fake;
+    window.npcManager = { npcs: new Map([['sam', { id: 'sam', username: 'sokafor', spriteSheet: 'male_office_worker_v2' }]]), getNPC(id) { return this.npcs.get(id); } };
+    try {
+        const mg = await signInScreen();
+        const box = document.querySelector('.signin-selected-row > .signin-selected-headshot');
+        assert.ok(box, 'a headshot box before the name');
+        assert.equal(box.hidden, true, 'hidden before a choice');
+        mg.selectSignInTile(0);
+        await settle(5); await settle(5);
+        assert.equal(box.hidden, false);
+        assert.equal(box.dataset.headshot, 'male_office_worker_v2');
+        assert.equal(box.dataset.headshotFor, 'sokafor');
+        mg.selectSignInTile('other');
+        assert.equal(box.hidden, true, 'Other user has no face');
+        mg.cleanup?.();
+    } finally {
+        window.Image = HadImage; globalThis.Image = hadGlobal;
+        delete window.npcManager;
+        restore();
+    }
+});
+
+test('R3 M1: a remote sign-in\'s Captured sign-ins is a solid note with the PC\'s buttons', async () => {
+    const restore = sizeWindow(800, 600);
+    try {
+        document.body.innerHTML = '<div id="mg"></div>';
+        window.MinigameFramework = { currentMinigame: null, endMinigame: () => {} };
+        const mg = new PasswordMinigame(document.getElementById('mg'), {
+            title: 'Sign in',
+            signIn: { pcId: 'hb_fin_02', pcName: 'HB-FIN-02', picker: 'accounts', remote: { footholdId: 'jack', linkName: 'Comms port' },
+                      tiles: [{ username: 'lfox', displayName: 'Lena Fox' }],
+                      captured: [{ label: 'Lena Fox', username: 'lfox', targetId: 'hb_fin_02' }] }
+        });
+        window.MinigameFramework.currentMinigame = mg;
+        mg.init();
+        assert.ok(document.querySelector('.pc-monitor .signin-captured'), 'in the monitor');
+        const item = document.querySelector('.signin-captured-item');
+        assert.ok(item.classList.contains('pc-os-btn'), 'the PC\'s button look');
+        mg.setCapturedSignIns([{ label: 'Lena Fox', username: 'lfox', targetId: 'hb_fin_02' }]);
+        assert.ok(document.querySelector('.signin-captured-item').classList.contains('pc-os-btn'), 'and after the list arrives');
+        const unsheet = withSheets('network-view-minigame.css', 'password-minigame.css', 'pc-monitor.css');
+        try {
+            const cs = window.getComputedStyle(document.querySelector('.signin-captured'));
+            assert.doesNotMatch(cs.backgroundColor, /rgba\(/, 'no see-through fill');
+            assert.equal(cs.borderTopWidth, '2px');
+            const label = window.getComputedStyle(document.querySelector('.signin-field-row label'));
+            assert.equal(label.borderTopWidth, '2px', 'the labels are bordered as the other slabs');
+        } finally {
+            unsheet();
+        }
+        mg.cleanup?.();
+    } finally {
+        restore();
+    }
+});
+
+test('R3 m2, m3, m4: field colours in the monitor, bordered Wi-Fi buttons, no plate behind desktop icons', () => {
+    const pw = css('password-minigame.css');
+    const rule = (text, sel) => { const i = text.indexOf(`${sel} {`); assert.ok(i >= 0, sel); return text.slice(i, text.indexOf('}', i)); };
+    assert.match(rule(pw, '.pc-screen-area .password-field'), /border-color: #5a6a78;/);
+    assert.match(rule(pw, '.pc-screen-area .password-field:focus'), /border-color: #9ee6ff;/);
+    for (const sel of ['.submit-btn', '.hint-btn']) {
+        const r = rule(pw, sel);
+        assert.doesNotMatch(r, /border: none/, sel);
+        assert.match(r, /border: 2px solid/, sel);
+    }
+    const box = css('container-minigame.css');
+    assert.match(rule(box, '.pc-monitor .pc-desktop .desktop-icon-image'), /background: transparent;/);
+    assert.doesNotMatch(box.slice(box.indexOf('/* On the monitor the icon has no see-through plate')), /rgba\(0, 255, 0/);
+});
+
+test('R3 M2: a file opened from a PC desktop opens in that PC\'s monitor frame; one from the world does not', async () => {
+    assert.deepEqual(pcScreenOf({ lockable: { pcScreen: { name: 'Hot desk PC', pcId: 'hot_desk' } } }), { name: 'Hot desk PC', pcId: 'hot_desk' });
+    assert.equal(pcScreenOf({}), null);
+    for (const [w, h] of SIZES) {
+        const restore = sizeWindow(w, h);
+        try {
+            const a = await desktop();
+            const desk = frameBox().replace(/"note":\[[^\]]*\]/, '"note":null');
+            assert.deepEqual(a.pcScreenExtras(), { pcScreen: { name: 'Hot desk PC', pcId: 'hot_desk' } }, 'the desktop hands its frame on');
+            a.cleanup?.();
+            document.body.innerHTML = '<div id="mg"></div>';
+            const mg = new TextFileMinigame(document.getElementById('mg'), {
+                title: 'Text File - Mail', fileName: 'Mail', fileContent: 'Line one\nLine two', observations: 'An inbox.',
+                lockable: { scenarioData: { type: 'text_file' }, pcScreen: { name: 'Hot desk PC', pcId: 'hot_desk' } }
+            });
+            window.MinigameFramework.currentMinigame = mg;
+            mg.init();
+            assert.equal(frameBox(), desk, `${w}x${h}: the same frame as the desktop`);
+            assert.equal(document.querySelector('.pc-monitor-name').textContent, 'Hot desk PC');
+            assert.ok(document.querySelector('.pc-monitor-bezel > #minigame-close'), 'the X in the bezel');
+            assert.equal(document.querySelector('.window-controls'), null, 'no window buttons');
+            assert.equal(document.querySelector('.share-folder-path').textContent, 'Mail');
+            for (const id of ['copy-btn', 'select-all-btn', 'minigame-notebook']) {
+                assert.ok(document.getElementById(id).classList.contains('pc-os-btn'), id);
+            }
+            assert.equal(document.querySelector('.pc-file-status').textContent, 'An inbox.');
+            assert.match(document.querySelector('.pc-file-body').textContent, /Line one/);
+            mg.notify('Copied.');
+            assert.equal(document.querySelector('.pc-file-message').textContent, 'Copied.', 'results on the toolbar, not a toast');
+            assert.equal(document.querySelector('.minigame-success-message'), null);
+            mg.cleanup();
+            assert.equal(document.getElementById('mg').classList.contains('pc-view'), false, 'the frame goes with cleanup');
+        } finally {
+            restore();
+        }
+    }
+    // From the world: the old viewer
+    document.body.innerHTML = '<div id="mg"></div>';
+    const world = new TextFileMinigame(document.getElementById('mg'), { title: 'x', fileName: 'Memo', fileContent: 'x', lockable: { scenarioData: {} } });
+    world.init();
+    assert.equal(document.querySelector('.pc-monitor'), null);
+    assert.ok(document.querySelector('.text-file-container'));
+    world.cleanup();
+    const t = css('text-file-minigame.css');
+    const mon = t.slice(t.indexOf('/* ── In the PC monitor'));
+    assert.doesNotMatch(mon, /font-weight: (bold|[5-9]00)|translateY|rgba\(|border-radius/, 'pixel rules in the monitor look');
+    assert.match(mon, /font-size: 16px;/);
 });

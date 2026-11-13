@@ -9,6 +9,7 @@ import { escapeHtml } from '../../utils/escape-html.js';
 import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { mentionsComputer } from '../../utils/computer-keywords.js';
 import { mountPcMonitor, cssZoomOf } from '../../utils/pc-monitor.js';
+import { MORE_BELOW_TEXT } from '../../utils/more-below.js';
 import { applyHeadshotBox, npcRecordFor, headshotSourceFor } from '../../utils/npc-headshot.js';
 
 
@@ -228,14 +229,15 @@ const TRANSFER_LABELS = {
     cancel: 'Cancel'
 };
 
+/** The desktop's scroll cue, the network view's words (utils/more-below.js). */
+export const DESKTOP_MORE_BELOW_TEXT = MORE_BELOW_TEXT;
+
 /**
  * A share's file names are as wide as their text and centred under the file by -50%, so an
  * odd width puts the text on a half pixel (UX slice 2c R1 live check at x1). Round each
  * name's width up to an even number of pixels once it is laid out, and again when the
  * pixel font arrives.
  */
-/** The desktop's scroll cue, the same words as the network view's (MORE_BELOW_TEXT there). */
-export const DESKTOP_MORE_BELOW_TEXT = 'More below';
 
 export function evenShareLabels(grid, selector = '.container-content-label') {
     if (!grid?.querySelectorAll) return;
@@ -1262,6 +1264,14 @@ export class ContainerMinigame extends MinigameScene {
         return extras;
     }
 
+    /**
+     * A file read from this desktop or share opens in the same PC monitor frame (UX slice 2c
+     * R3 M2): the reader takes the frame's name and the PC whose kept post-it height sizes it.
+     */
+    pcScreenExtras() {
+        return this.pcMonitor ? { pcScreen: { name: this.monitorName(), pcId: this.monitorPcId() } } : {};
+    }
+
     /** What a stand-in for an item taken or read from here carries: the PC or the share it came from. */
     sourceExtras() {
         if (this.mode === 'npc') return {};
@@ -1453,7 +1463,8 @@ export class ContainerMinigame extends MinigameScene {
                 scenarioData: item,
                 name: item.type,
                 objectId: `temp_${Date.now()}`,
-                ...this.childExtras()
+                ...this.childExtras(),
+                ...this.pcScreenExtras()
             };
             
             // Delegate to main game's handler for viewing/reading items (notes, phone, files, etc.)
@@ -1513,7 +1524,8 @@ export class ContainerMinigame extends MinigameScene {
             scenarioData: item,
             name: item.type,
             objectId: `temp_${Date.now()}`,
-            ...this.childExtras()
+            ...this.childExtras(),
+            ...this.pcScreenExtras()
         };
         
         // Delegate to main game's handler for viewing/reading items (notes, phone, files, etc.)

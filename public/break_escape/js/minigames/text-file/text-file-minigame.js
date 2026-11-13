@@ -1,6 +1,7 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { escapeHtml } from '../../utils/escape-html.js';
+import { mountPcMonitor } from '../../utils/pc-monitor.js';
 
 // File names, types and observations are scenario text: escaped before they reach HTML
 
@@ -22,6 +23,17 @@ export function textFileNotebookEntry(data) {
     };
 }
 
+/**
+ * The PC a file was opened from (a desktop or a share's folder window in the PC monitor),
+ * as { name, pcId }, or null. The desktop puts it on the item it hands over (pcScreen), and
+ * the reader passes it on when it comes back from the Notepad.
+ */
+export function pcScreenOf(params) {
+    const raw = params?.pcScreen || params?.lockable?.pcScreen || null;
+    if (!raw || typeof raw !== 'object') return null;
+    return { name: typeof raw.name === 'string' ? raw.name : '', pcId: typeof raw.pcId === 'string' && raw.pcId ? raw.pcId : null };
+}
+
 export class TextFileMinigame extends MinigameScene {
     // The X sits inside the frame (MinigameScene.closeInsideFrame)
     static closeInsideFrame = true;
@@ -41,11 +53,18 @@ export class TextFileMinigame extends MinigameScene {
             observations: safeParams.observations || '',
             source: safeParams.source || 'Unknown Source'
         };
+        // Opened from a PC's desktop or share: the file opens in that PC's monitor frame
+        // (UX slice 2c R3 M2), as a maximised window like the share's folder window
+        this.pcScreen = pcScreenOf(safeParams);
+        this.pcMonitor = null;
     }
     
     init() {
         // Call parent init to set up basic UI structure
         super.init();
+        if (this.pcScreen) {
+            this.pcMonitor = mountPcMonitor(this, { name: displayDashes(this.pcScreen.name), pcId: this.pcScreen.pcId });
+        }
         
         // Customize the header
         // The file name is scenario text: appended as a text node, never parsed as HTML
@@ -62,7 +81,64 @@ export class TextFileMinigame extends MinigameScene {
         this.setupEventListeners();
     }
     
+    // In the monitor the X lives in the bezel's top strip (css/pc-monitor.css)
+    placeCloseButton() {
+        if (this.pcMonitor) return;
+        super.placeCloseButton();
+    }
+
+    /**
+     * The file in the PC monitor: a maximised window in the share window's look, the file
+     * name in its title bar, Copy, Select All and Add to Notepad in the PC's button look, the
+     * text in GNF at 16px, and the observations in the status bar. The X is on the bezel.
+     */
+    setupMonitorInterface() {
+        const name = escapeHtml(displayDashes(this.textFileData.fileName));
+        const observations = this.textFileData.observations
+            ? `<div class="share-folder-status pc-file-status pixel-scroll">${escapeHtml(displayDashes(this.textFileData.observations))}</div>` : '';
+        this.gameContainer.innerHTML = `
+            <div class="share-folder-layout pc-share pc-file">
+            <div class="container-minigame share-folder">
+                <div class="share-folder-window pc-file-window">
+                    <div class="desktop-window-titlebar share-folder-titlebar">
+                        <img class="pc-file-icon" src="/break_escape/assets/objects/text_file.png" alt="">
+                        <span class="share-folder-path">${name}</span>
+                    </div>
+                    <div class="pc-file-toolbar">
+                        <button type="button" class="pc-os-btn" id="copy-btn">Copy</button>
+                        <button type="button" class="pc-os-btn" id="select-all-btn">Select All</button>
+                        <button type="button" class="pc-os-btn" id="minigame-notebook"><img src="/break_escape/assets/icons/notes.png" alt="" class="icon-small"> Add to Notepad</button>
+                        <span class="pc-file-message" aria-live="polite"></span>
+                    </div>
+                    <div class="pc-file-body pixel-scroll" id="file-content">${this.formatFileContent()}</div>${observations}
+                </div>
+            </div>
+            </div>
+        `;
+        this.fileContent = this.gameContainer.querySelector('#file-content');
+        this.copyBtn = this.gameContainer.querySelector('#copy-btn');
+        this.selectAllBtn = this.gameContainer.querySelector('#select-all-btn');
+        this.closeBtn = null;
+        this.minimizeBtn = null;
+        this.maximizeBtn = null;
+    }
+
+    /** A short result line: on the window's toolbar in the monitor, else the framework's message. */
+    notify(text, ok = true, duration = 2000) {
+        const line = this.pcMonitor ? this.gameContainer?.querySelector('.pc-file-message') : null;
+        if (line) {
+            line.textContent = text;
+            line.classList.toggle('pc-file-message-error', !ok);
+            clearTimeout(this._notifyTimer);
+            this._notifyTimer = setTimeout(() => { if (line.textContent === text) line.textContent = ''; }, duration);
+            return;
+        }
+        if (ok) this.showSuccess(text, false, duration);
+        else this.showFailure(text, false, duration);
+    }
+
     setupTextFileInterface() {
+        if (this.pcMonitor) { this.setupMonitorInterface(); return; }
         // Create the text file interface with Mac-style window
         this.gameContainer.innerHTML = `
             <div class="text-file-container">
@@ -147,17 +223,17 @@ export class TextFileMinigame extends MinigameScene {
     }
     
     setupEventListeners() {
-        // Window controls
-        this.addEventListener(this.closeBtn, 'click', () => {
+        // Window controls (none in the PC monitor: the X on the bezel closes it)
+        if (this.closeBtn) this.addEventListener(this.closeBtn, 'click', () => {
             this.closeByPlayer();
         });
-        
-        this.addEventListener(this.minimizeBtn, 'click', () => {
+
+        if (this.minimizeBtn) this.addEventListener(this.minimizeBtn, 'click', () => {
             // Minimize by closing the minigame (common behavior for modal windows)
             this.closeByPlayer();
         });
-        
-        this.addEventListener(this.maximizeBtn, 'click', () => {
+
+        if (this.maximizeBtn) this.addEventListener(this.maximizeBtn, 'click', () => {
             // Maximize by toggling fullscreen mode
             this.toggleFullscreen();
         });
@@ -173,7 +249,7 @@ export class TextFileMinigame extends MinigameScene {
         });
         
         // Notebook button (in minigame controls)
-        const notebookBtn = document.getElementById('minigame-notebook');
+        const notebookBtn = this.gameContainer.querySelector('#minigame-notebook');
         if (notebookBtn) {
             this.addEventListener(notebookBtn, 'click', () => {
                 this.addToNotebook();
@@ -218,7 +294,7 @@ export class TextFileMinigame extends MinigameScene {
             // Use the modern clipboard API if available
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(this.textFileData.fileContent).then(() => {
-                    this.showSuccess("File content copied to clipboard!", false, 2000);
+                    this.notify(this.pcMonitor ? "Copied." : "File content copied to clipboard!");
                 }).catch(err => {
                     console.error('Failed to copy to clipboard:', err);
                     this.fallbackCopyToClipboard();
@@ -248,13 +324,13 @@ export class TextFileMinigame extends MinigameScene {
             const successful = document.execCommand('copy');
             
             if (successful) {
-                this.showSuccess("File content copied to clipboard!", false, 2000);
+                this.notify(this.pcMonitor ? "Copied." : "File content copied to clipboard!");
             } else {
-                this.showFailure("Failed to copy to clipboard", false, 2000);
+                this.notify("Failed to copy to clipboard", false);
             }
         } catch (err) {
             console.error('Fallback copy failed:', err);
-            this.showFailure("Copy not supported on this browser", false, 2000);
+            this.notify("Copy not supported on this browser", false);
         } finally {
             document.body.removeChild(textArea);
         }
@@ -268,7 +344,7 @@ export class TextFileMinigame extends MinigameScene {
         selection.removeAllRanges();
         selection.addRange(range);
         
-        this.showSuccess("All text selected", false, 1000);
+        this.notify("All text selected", true, 1000);
     }
     
     toggleFullscreen() {
@@ -294,7 +370,7 @@ export class TextFileMinigame extends MinigameScene {
     addToNotebook() {
         // Check if there's content to add
         if (!this.textFileData.fileContent || this.textFileData.fileContent.trim() === '') {
-            this.showFailure("No content to add to notepad", false, 2000);
+            this.notify("No content to add to notepad", false);
             return;
         }
         
@@ -313,6 +389,7 @@ export class TextFileMinigame extends MinigameScene {
                 fileType: this.textFileData.fileType,
                 observations: this.textFileData.observations,
                 source: this.textFileData.source,
+                pcScreen: this.pcScreen,
                 params: this.params
             };
             
@@ -368,6 +445,8 @@ export class TextFileMinigame extends MinigameScene {
     }
 
     cleanup() {
+        clearTimeout(this._notifyTimer);
+        this.pcMonitor?.destroy?.();
         // Call parent cleanup (handles event listeners)
         super.cleanup();
 
@@ -439,6 +518,7 @@ export function returnToTextFileAfterNotes() {
                 fileType: textFileState.fileType,
                 observations: textFileState.observations,
                 source: textFileState.source,
+                pcScreen: textFileState.pcScreen || null,
                 onComplete: (success, result) => {
                     console.log('Text file minigame completed:', success, result);
                 }

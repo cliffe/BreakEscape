@@ -850,6 +850,22 @@
     text-shadow: none;
 }
 
+/* On the monitor the icon has no see-through plate (R3 m4): the label is its solid backing.
+   The hover is the OS accent on a 2px edge, not the old terminal green. */
+.pc-monitor .pc-desktop .desktop-icon-image {
+    background: transparent;
+}
+
+.pc-monitor .pc-desktop .desktop-icon:hover .desktop-icon-image,
+.pc-monitor .pc-desktop .desktop-icon:focus-visible .desktop-icon-image {
+    border-color: #9ee6ff;
+    background: transparent;
+}
+
+.pc-monitor .pc-desktop .desktop-icon:hover .desktop-icon-label {
+    border-color: #9ee6ff;
+}
+
 /* "More below" under the icon area while the icons run past it (R2 M2), the network view's
    cue: a flat strip with a 2px top edge and a stepped arrow */
 .pc-monitor .pc-desktop > .desktop-more {

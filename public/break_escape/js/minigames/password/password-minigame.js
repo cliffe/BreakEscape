@@ -7,7 +7,7 @@ import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } from '../../utils/lock-scope-refusal.js';
 import { isComputerType } from '../../utils/computer-keywords.js';
 import { mountPcMonitor, cssZoomOf } from '../../utils/pc-monitor.js';
-import { headshotCandidates, headshotKeys, noteMissingHeadshot, npcRecordFor, headshotSourceFor,
+import { headshotCandidates, headshotKeys, noteMissingHeadshot, npcRecordFor, headshotSourceFor, applyHeadshotBox,
     SHORT_PORTRAIT_PX, TILE_PORTRAIT_PX, isTalkSheetSize, portraitCropOverride, headCropOffset, frameAlphaReader } from '../../utils/npc-headshot.js';
 // The portrait crop helpers live with the headshots (UX slice 2c R1 m8: the desktop bar
 // falls back the same way as a tile); exported here too for the tests and callers that
@@ -1131,8 +1131,10 @@ export class PasswordMinigame extends MinigameScene {
         if (this.attemptsDisplay) this.attemptsDisplay.textContent = this.gameData.attempts;
         // The counter is on screen after each try, even in a short window (UX slice 2a R2 M2).
         // A PC's screen has no counter: its message line carries the count and is revealed
-        // when it is written (UX slice 2c R2 M1)
-        revealInFrame(this.attemptsDisplay?.closest?.('.attempts-counter') || this.attemptsDisplay || this.passwordMessageEl);
+        // when it is written (UX slice 2c R2 M1), so nothing is revealed here: the line was
+        // just emptied (R3 m6)
+        const counter = this.attemptsDisplay?.closest?.('.attempts-counter') || this.attemptsDisplay;
+        if (counter) revealInFrame(counter);
 
         // SECURITY: ALWAYS use server-side validation for password attempts
         const apiClient = window.ApiClient || window.APIClient;
@@ -1433,7 +1435,8 @@ export class PasswordMinigame extends MinigameScene {
                         ${current}
                         ${tiles}
                         <div class="signin-form" id="signin-form">
-                            <div class="signin-selected-row">
+                            <div class="signin-selected-row">${inMonitor ? `
+                                <span class="signin-selected-headshot" aria-hidden="true" hidden></span>` : ''}
                                 <div class="signin-selected" id="signin-selected"></div>
                                 <button type="button" class="signin-change${inMonitor ? ' pc-os-btn' : ''}" id="signin-change">Change</button>
                             </div>
@@ -1563,6 +1566,7 @@ export class PasswordMinigame extends MinigameScene {
             selectedEl.textContent = tile ? `${tile.displayName || tile.username} (${tile.username})` : '';
             show(selectedEl, !!tile);
         }
+        this.applySelectedHeadshot(tile);
         this.gameContainer.querySelectorAll('.signin-tile').forEach(el => {
             const idx = el.dataset.tileIndex;
             const on = idx === 'other' ? (st.other && this.signIn.picker !== false) : (st.tiles[Number(idx)]?.username === st.selected && st.selected !== null);
@@ -1578,13 +1582,37 @@ export class PasswordMinigame extends MinigameScene {
         if (chosen) revealInFrame(this.signInMessageEl?.textContent ? this.signInMessageEl : this.submitBtn);
     }
 
+    /**
+     * The chosen account's headshot beside its name, in the monitor (R3 m1): once the tiles
+     * fold away at x2 or in a short window, an NPC's identity still shows its face. The same
+     * 32px box and fallback as the desktop's account bar; shown at every size, so the line
+     * has one look. Hidden for Other user and with no tile chosen.
+     */
+    applySelectedHeadshot(tile) {
+        const box = this.gameContainer?.querySelector?.('.signin-selected-headshot');
+        if (!box) return;
+        if (!tile) {
+            box.hidden = true;
+            box.style.backgroundImage = '';
+            delete box.dataset.headshotFor;
+            return;
+        }
+        if (box.dataset.headshotFor === tile.username && !box.hidden) return;
+        box.dataset.headshotFor = tile.username;
+        const record = npcRecordFor({ username: tile.username });
+        const talk = typeof record?.spriteTalk === 'string' ? record.spriteTalk : '';
+        const talkUrl = !talk ? null
+            : (/^(\/|https?:|data:)/.test(talk) ? talk : `/break_escape/${talk.startsWith('assets/') ? '' : 'assets/'}${talk}`);
+        applyHeadshotBox(box, headshotSourceFor(tile, record), { talkUrl });
+    }
+
     /** The Captured sign-ins block's inner markup (a remote screen, 4.4). */
     capturedListHtml() {
         const s = this.signIn || {};
         const captured = Array.isArray(s.captured) ? s.captured : [];
         const body = captured.length
             ? captured.map((c, i) => `
-                            <button type="button" class="signin-captured-item" data-capture-index="${i}" data-target-id="${escapeHtml(c.targetId)}">${escapeHtml(c.label)} (${escapeHtml(c.username)})</button>`).join('')
+                            <button type="button" class="signin-captured-item${this.pcMonitor ? ' pc-os-btn' : ''}" data-capture-index="${i}" data-target-id="${escapeHtml(c.targetId)}">${escapeHtml(c.label)} (${escapeHtml(c.username)})</button>`).join('')
             : (s.capturedLoading ? '<div class="signin-captured-empty">Checking...</div>' : '<div class="signin-captured-empty">None yet.</div>');
         return `
                             <div class="signin-captured-title">Captured sign-ins</div>${body}`;
