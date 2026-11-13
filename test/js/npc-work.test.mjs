@@ -37,6 +37,19 @@ test('reach: no routes key is reachable, [] never, [[]] always, a route with no 
     assert.equal(reachable({ id: 'x', routes: [['a', 'b']] }, { b: true }), false);
 });
 
+test('reach: a route condition in the { name: value } form takes the route down on a match (step 8a ruling)', () => {
+    const need = { id: 'x', routes: [[{ power: 'off' }]] };
+    assert.equal(reachable(need, { power: 'on' }), true, 'value does not match: route open');
+    assert.equal(reachable(need, { power: 'off' }), false, 'value matches: route down');
+    // a bare name and a hash condition on the same route: either one down takes the route down
+    const mixed = { id: 'y', routes: [['wan_down', { power: 'off' }]] };
+    assert.equal(reachable(mixed, { power: 'on' }), true);
+    assert.equal(reachable(mixed, { wan_down: true }), false);
+    // planGlobals and wakeOnFor read the names out of the hash condition too
+    assert.deepEqual(planGlobals({ needs: [mixed] }), ['power', 'wan_down']);
+    assert.deepEqual(wakeOnFor({ needs: [mixed] }, [{ id: 'y', why: 'unreachable' }], { power: 'off' }), ['power']);
+});
+
 test('wakeOn: down and truthy route globals; empty when a cause has no global', () => {
     assert.deepEqual(wakeOnFor(plan, [{ id: 'finance_share', why: 'down' }], {}), ['share_down']);
     assert.deepEqual(wakeOnFor(plan, [{ id: 'email', why: 'unreachable' }], { wan_down: true }), ['wan_down']);

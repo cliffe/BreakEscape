@@ -725,7 +725,7 @@ module BreakEscape
     # The rows of a network's view: each sign-in host, then each resource, each sorted by id.
     def network_rows(network_id)
       hosts = NetworkModel.sign_in_objects_on(network_id, scenario_data).map { |entry| host_row(entry[:object]) }
-      # A resource whose own downIf is truthy is withheld while down (5.2), as a resource on a
+      # A resource whose own offWhen holds is withheld while down (5.2), as a resource on a
       # down network is: its row leaves the view until the global clears.
       resources = NetworkModel.resources_on(network_id, scenario_data).reject { |_id, resource| resource_down?(resource) }
       hosts + resources.map { |id, resource| resource_row(id, resource) }
@@ -888,13 +888,6 @@ module BreakEscape
       BreakEscape::AccessWork.globals_hold?(cond, frustration_globals)
     end
 
-    # A global's current value for an outage test (5.2). Delegates to Game#global_variable_value,
-    # the shared globals reader; npc_frustration.rb#frustration_globals applies the same
-    # key-presence merge for NPC frustration, so both read the same server state.
-    def outage_global(name)
-      global_variable_value(name)
-    end
-
     # The scoped-request route test (5.2), judged from the server's own session record, never
     # a client-sent foothold. A scoped request (a folder under a desktop, an inventory add, an
     # unlock) under a remote session (its sessions[pc] carries a foothold) is allowed only
@@ -939,7 +932,7 @@ module BreakEscape
     end
 
     # Memoised per game object on what the walk reads (review O R2 nit 2): the foothold record,
-    # the held session keys and every network's downIf value. A scoped request asks once per held
+    # the held session keys and every network's offWhen value. A scoped request asks once per held
     # session (session_admits?'s profile scope), so repeat asks in one request reuse the walk; any
     # change to the inputs (a sign-in, an unplug, an outage global) misses the cache. A copy is
     # returned so a caller that changes the set cannot alter the cached one.
@@ -1110,7 +1103,7 @@ module BreakEscape
       return false unless resource.is_a?(Hash)
       # A listed-only share has nothing to serve, so GET /container answers "not found"
       return false if NetworkModel.listed_only_share?(resource)
-      # A resource whose own downIf is truthy is off (5.2): not served, like one on a down
+      # A resource whose own offWhen holds is off (5.2): not served, like one on a down
       # network. network_up? below also refuses a resource on a down network (player_reach).
       return false if resource_down?(resource)
 
@@ -1168,7 +1161,7 @@ module BreakEscape
       networks_reachable_from(network).each do |net|
         NetworkModel.resources_on(net, scenario_data).each do |id, resource|
           next unless resource['kind'] == 'file_share' && !NetworkModel.listed_only_share?(resource)
-          # A share whose own downIf is truthy is off (5.2): not mapped while down.
+          # A share whose own offWhen holds is off (5.2): not mapped while down.
           next if resource_down?(resource)
 
           admit = resource['access'].nil? ? net == network : resource_acl_admits?(resource, npc)

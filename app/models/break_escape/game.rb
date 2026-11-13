@@ -371,8 +371,8 @@ module BreakEscape
     # The current value of a scenario global for a server-side gate: the player's own value if
     # the key is set, else the scenario's declared default in globalVariables, else nil. Read
     # from server state alone, never a request parameter, so the server decides. This is the one
-    # shared globals reader for outages: NetworkAccess#outage_global (5.2) delegates here. NPC
-    # frustration and the reactive feed (9.2 C2) read the same key-presence merge through
+    # shared globals reader for outages: NetworkAccess reads it through frustration_globals (5.2).
+    # NPC frustration and the reactive feed (9.2 C2) read the same key-presence merge through
     # NpcFrustration#frustration_globals and AccessWork.
     def global_variable_value(name)
       globals = player_state['globalVariables']

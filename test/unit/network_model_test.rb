@@ -149,6 +149,17 @@ class NetworkModelTest < ActiveSupport::TestCase
     assert_equal [['a_down']], NM.reach_conditions(d, 'a', { 'network' => 'a' })
   end
 
+  test 'reach_conditions keeps a network offWhen in the { name: value } form on the route' do
+    d = linked_scenario([%w[a b]])
+    d['networks']['a']['offWhen'] = { 'a_power' => 'off' }
+    d['networks']['b']['offWhen'] = 'b_down'
+    res_on_b = { 'network' => 'b' }
+    # The hash form is carried whole, so a consumer can evaluate it with globals_hold?; it is not
+    # dropped as a route that is always up (the pre-ruling behaviour).
+    assert_equal [[{ 'a_power' => 'off' }, 'b_down']], NM.reach_conditions(d, 'a', res_on_b)
+    assert_equal [[{ 'a_power' => 'off' }]], NM.reach_conditions(d, 'a', { 'network' => 'a' })
+  end
+
   test 'a scenario with no networks answers empty everywhere' do
     bare = { 'startRoom' => 'lobby', 'rooms' => { 'lobby' => { 'objects' => [{ 'id' => 'pc', 'lockType' => 'login' }] } } }
     assert_empty NM.networks(bare)

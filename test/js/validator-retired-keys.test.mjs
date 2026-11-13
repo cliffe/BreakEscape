@@ -56,3 +56,49 @@ test('an aliased retired key is a warning, not an error', { skip }, () => {
     assert.equal(out.length, 1);
     assert.match(out[0], /WARNING:.*downIf.*alias/);
 });
+
+// ---- Step 8a (format 1): the real retired entries, with no injected step ----
+
+test('8a: a network downIf is one rename error to offWhen', { skip }, () => {
+    const out = issues({ networks: { corp: { downIf: 'servers_offline' } } });
+    assert.equal(out.length, 1);
+    assert.match(out[0], /ERROR:.*networks\/corp\/downIf.*renamed to 'offWhen' in format 1/);
+});
+
+test('8a: a resource downIf is one rename error to offWhen', { skip }, () => {
+    const out = issues({ resources: { printer: { downIf: 'printer_jammed' } } });
+    assert.equal(out.length, 1);
+    assert.match(out[0], /ERROR:.*resources\/printer\/downIf.*renamed to 'offWhen' in format 1/);
+});
+
+test('8a: an object affordance.offWhen is one rename error (moved up to the object)', { skip }, () => {
+    const out = issues({ rooms: { r1: { objects: [{ id: 'pc1', affordance: { offWhen: 'pc_off' } }] } } });
+    assert.equal(out.length, 1);
+    assert.match(out[0], /ERROR:.*affordance\/offWhen.*renamed to 'offWhen \(moved up to the object\)' in format 1/);
+});
+
+// Step 2 dedup (format hardening step 8a, item 4): a retired key reintroduced in a closed block
+// reaches the schema as an unknown key and is also caught by check_retired_keys. format_schema_errors
+// suppresses the schema line for it, so one slip prints one line (the rename, from check_retired_keys).
+function schemaErrors(scenario, messages) {
+    const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
+      puts JSON.generate(format_schema_errors(JSON.parse(STDIN.read), ${JSON.stringify(messages)}))`;
+    const r = spawnSync('ruby', ['-e', script], {
+        input: JSON.stringify(scenario), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' }
+    });
+    assert.equal(r.status, 0, r.stderr);
+    return JSON.parse(r.stdout.trim().split('\n').pop());
+}
+
+test('8a: a reintroduced retired key in a closed block prints no schema unknown-key line', { skip }, () => {
+    const msg = "The property '#/networks/corp' contains additional properties [\"downIf\"] outside of the schema when none are allowed";
+    const out = schemaErrors({ networks: { corp: { downIf: 'servers_offline' } } }, [msg]);
+    assert.deepEqual(out, []);
+});
+
+test('8a: a genuine unknown key in a closed block still prints its schema line', { skip }, () => {
+    const msg = "The property '#/networks/corp' contains additional properties [\"bogus\"] outside of the schema when none are allowed";
+    const out = schemaErrors({ networks: { corp: { bogus: 'x' } } }, [msg]);
+    assert.equal(out.length, 1);
+    assert.match(out[0], /unknown key 'bogus'/);
+});

@@ -287,7 +287,16 @@ ADDITIONAL_PROPERTIES_RE = /\AThe property '(#[^']*)' contains additional proper
 def format_schema_errors(json_data, messages, schema = nil)
   schema ||= JSON.parse(File.read(File.join(__dir__, 'scenario-schema.json')))
   texts = messages.map { |m| m.to_s.sub(/ in schema [0-9a-f-]+#?\s*\z/, '') }
+  # A retired key reintroduced in a closed block reaches the schema as an unknown key and is also
+  # caught by check_retired_keys, which prints the rename line. Suppress the schema line for it, so
+  # one slip prints one line (the rename). The retired pointers are the json-pointer paths
+  # FormatUpgrade.retired_keys_in finds in this data.
+  retired_pointers = BreakEscape::FormatUpgrade.retired_keys_in(json_data).map { |r| r[:path] }
+  retired_ptr = lambda do |ptr, key|
+    "#{ptr}/#{key.to_s.gsub('~', '~0').gsub('/', '~1')}"
+  end
   unknown = []   # [index, pointer, key, suggestion]
+  additional = []  # message indices that matched the additional-properties rule
   texts.each_with_index do |text, i|
     m = text.match(ADDITIONAL_PROPERTIES_RE)
     next unless m
@@ -297,12 +306,18 @@ def format_schema_errors(json_data, messages, schema = nil)
     rescue JSON::ParserError
       next
     end
+    additional << i
     known = schema_known_keys(schema, json_data, m[1], underscore: true)
     plain = known.reject { |k| k.start_with?('_') }
-    keys.each { |k| unknown << [i, m[1], k.to_s, suggest_key(k.to_s, plain, known - plain)] }
+    keys.each do |k|
+      next if retired_pointers.include?(retired_ptr.call(m[1], k))
+
+      unknown << [i, m[1], k.to_s, suggest_key(k.to_s, plain, known - plain)]
+    end
   end
   suggested = unknown.map { |_, ptr, _, s| [ptr, s] if s }.compact.to_set
   replaced = unknown.map(&:first).to_set
+  additional = additional.to_set
   out = []
   texts.each_with_index do |text, i|
     if replaced.include?(i)
@@ -312,6 +327,9 @@ def format_schema_errors(json_data, messages, schema = nil)
       end
       next
     end
+    # An additional-properties message whose only unknown keys were retired keys: the rename line
+    # (check_retired_keys) stands in for it, so the raw schema message is dropped.
+    next if additional.include?(i)
     req = text.match(/\AThe property '(#[^']*)' did not contain a required property of '([^']*)'\z/)
     next if req && suggested.include?([req[1], req[2]])
 
