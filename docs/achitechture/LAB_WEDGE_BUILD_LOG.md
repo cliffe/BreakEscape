@@ -62,4 +62,9 @@ Findings from the live runs, fixed: the jam and walk-in mappings first sat on Ru
 
 ## Suite results
 
-(filled in below)
+Under the shared test lock:
+
+- `RBENV_VERSION=2.7.8 bin/rails test`: 2389 runs, 42640 assertions, 0 failures, 0 errors, 1 skip (run from c95d73ecb).
+- `MERGE_BATCH=1 bin/test-js -j 3`: 598 files passed, 0 failed (run from 76aa2fda1).
+
+Later commits change only the wedge's position, the voice-style and ink-comment wording, and this log. The lab validator and the new test file were rerun on each.
