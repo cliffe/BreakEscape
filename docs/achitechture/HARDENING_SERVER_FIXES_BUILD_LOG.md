@@ -19,7 +19,13 @@ session is open there (the owner-leave roll already locks outright on such a pol
 - Server: new `policy_locks_guest_outright?(pc)` helper; `record_borrow_done!` now deletes the
   guest record for such a PC, so `borrow_body` reads no record and answers `guest: false`.
 - Client: `onGuestLeft` locks the screen outright and opens no guest session when
-  `autoLockMin === 0`, mirroring `guestClaimRefused`'s publish/emit.
+  `autoLockMin === 0`, mirroring `guestClaimRefused`'s publish/emit. (R1 minor 1: it now also calls
+  `_changed(..., 'auto')` so the `workstation_screen_changed` event fires and the office-visuals lock
+  cue plays, as the sibling `guestClaimRefused` and `_autoLock` paths do.)
+
+R1 minor 2: the server's `autoLockMin 0` guest-claim refusal (game.rb) now purges any stale guest
+record before refusing, matching the locked-out and timed-out branches, so no record can linger for a
+later read if a runtime policy flip to `autoLockMin 0` is ever introduced.
 
 Tests:
 - `test/controllers/break_escape/npc_workaround_h_test.rb` — new test: a kiosk (`autoLockMin 0`)
@@ -57,6 +63,10 @@ Proof: browser proof on :3620 (game 3138, m01), real bridge + DOM, three cases:
 - dismiss that second while the mission's own UI still covers the canvas → `ok:false` (no carry-on);
 - dismiss an overlay over a clear canvas → `ok:true`, `stillBlocked:false`.
 Script `scratchpad/hard-fixes/dismiss-proof.mjs` (PROOF PASS). Doc updated: `docs/test-bridge.md`.
+R1 minor 3: a committed regression test now guards the branch, `test/js/test-bridge-dismiss.test.mjs`
+(3 tests): over a stubbed state.js/DOM, a click that leaves a second blocker returns `ok:false`
+reason `still-blocked-after-dismiss`, a click that clears returns `ok:true stillBlocked:false`, and
+nothing-to-dismiss returns `ok:true`. Fails on the old `ok:true` behaviour (verified by mutation).
 Related, left open: backlog line of 2026-11-13 (barkDelay R2 n2) covers the wider pressKey/_pick
 "no change" reporting and getState hiding blockingUi during a minigame; out of scope here.
 
@@ -222,15 +232,19 @@ What would be recorded (server-owned, the way footholds/plants are in network_ac
   the build minigame calls on completion. The gate verifies the page is authored
   (`CaptureModel`/scenario), that the chosen capture address and link kits are the authored ones,
   and stamps `built` server-side. `meetsThreshold` (enough convincing elements) is a minigame score
-  the server cannot recompute without the minigame rules, so either the threshold check moves
-  server-side (preferred, fully server-owned) or the route records the client's asserted score with
-  a bound and the reveal gate treats it as a client control-flow step (see cheat bucket).
+  the server cannot recompute without the minigame rules. Which path is allowed is not a free choice:
+  when the served `capture.secret` is a protected value (see cheat bucket) the threshold check must
+  move server-side, so the gate is fully server-owned. Only when the secret is not a hard-access
+  value may the route record the client's asserted score with a bound and let the reveal gate treat
+  it as a client control-flow step.
 - One append-only record per phish send that landed, keyed by `targetId/kitId` (or a send id),
   written by a new gated route the mail-send path calls. The gate verifies the target is an authored
   phish target, the kit is one of the authored page's link kits, and the message was actually sent
   (not just drafted). `victim.submitted` (the simulated victim entering the credential) is a
   scripted minigame result; the server can record that the send to an authored target happened, but
-  the victim's submission is a client outcome unless that logic also moves server-side.
+  the victim's submission is a client outcome unless that logic also moves server-side. The same
+  conditionality applies: when the served `capture.secret` is a protected value, `victim.submitted`
+  must be decided server-side, because it is one of the two gates on the reveal.
 - `capture_evidence_holds?` then reads these server records instead of `se_landing_pages` /
   `mailState`; the client copies stay for UI only. `phish_evidence_fingerprint` and the sync-skip
   machinery are retired for this path (the server no longer trusts the synced evidence).
@@ -241,20 +255,40 @@ bounded by (authored pages) + (authored phish targets x kits); both are fixed pe
 a delta, never an ever-growing re-send. The reveal gate stops depending on the client re-sending
 `se_landing_pages`/`mailState`, which shrinks what has to be trusted on each sync.
 
-Cheat-policy bucket: the phished `capture.secret` can be a hard-access value, so under the cheat
-policy the secret itself must be server-hard-enforced. Recording the page build and the landed send
-as server facts, gated on authored pages/targets/kits, moves the gate from "client said so" to
-"server saw an authored build and an authored landed send", which is the hard part. The residual
-`meetsThreshold`/`victim.submitted` are minigame outcomes: either move that logic server-side for a
-fully server-owned gate, or keep them as client control-flow steps behind the server sanity check
-(an authored page, an authored landed send to an authored target) — acceptable only because honest
-play produces the same evidence and there is no cross-player impact in a self-paced lab. It must not
-break an SE lab that intends the phished credential to then sign in: the sign-in path reads the
-served `capture.secret`, so the gate must still serve it on honest completion.
+Cheat-policy bucket (the gate's decisive rule, review R1 major): the phished `capture.secret` can be
+a hard-access value (a lock code, PSK or flag), so under the cheat policy the secret itself must be
+server-hard-enforced. Recording the page build and the landed send as server facts, gated on
+authored pages/targets/kits, moves part of the gate from "client said so" to "server saw an authored
+build and an authored landed send". That is necessary but not sufficient, because the reveal is gated
+on `rec['meetsThreshold'] == true` and `victim['submitted'] == true`, which are the exact values a
+tampered client would forge.
+
+The rule the build must follow, not a preference:
+
+- When `capture.secret` is itself a protected value, a server-side threshold check and victim check
+  are MANDATORY. The server must decide `meetsThreshold` and `victim.submitted` from what it has
+  verified, never from a client-asserted outcome. A client that has not run the phish minigame must
+  not be served the secret. Recording only the authored build and landed send, while still reading
+  the two gate values from the client, leaves the very cheat this item closes open, so it is not an
+  acceptable build for a protected secret.
+- The client-control-flow fallback (keeping `meetsThreshold`/`victim.submitted` as client steps
+  behind the server sanity check of an authored page and an authored landed send) is allowed ONLY
+  where those two values are deterministic consequences of what the server has already verified, so
+  that an authored build and an authored landed send to an authored target can reach the reveal by no
+  path other than honest play. In practice that holds only when the served `capture.secret` is not a
+  hard-access value: if the server records the build/send but cannot derive the two gate values from
+  them, the fallback is a client-asserted gate and is ruled out by the clause above.
+
+Honest play must still work: an SE lab that intends the phished credential to then sign in reads the
+served `capture.secret`, so the server-owned gate must serve it the moment it has verified an
+authored build and an authored landed send and (server-side) that the threshold and victim conditions
+hold. The hardening closes the forge without blocking the intended solve.
 
 Size estimate: M to L. Two new gated routes, a server-written store plus its gates (mirroring the
 foothold/plant recording), reader changes in `capture_proofs.rb`, retiring the client-evidence
-fingerprint for this path, a decision on whether the threshold/victim logic moves server-side, and
-Rails tests (forged client page/send refused; honest build+send served; the SE sign-in still works)
-plus a hostile-input test. Comparable in shape to the foothold-recording work already in
-network_access.rb. Not built here per the brief.
+fingerprint for this path, and the server-side threshold/victim logic wherever a scenario phishes a
+protected secret (mandatory there, per the cheat-policy bucket above, not an open decision), and
+Rails tests (forged client page/send AND a forged `meetsThreshold`/`victim.submitted` refused for a
+protected secret; honest build+send served; the SE sign-in still works) plus a hostile-input test.
+Comparable in shape to the foothold-recording work already in network_access.rb. Not built here per
+the brief.

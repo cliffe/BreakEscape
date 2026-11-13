@@ -136,3 +136,31 @@ both fixed per scenario, so it is a bounded delta, not an ever-growing re-send; 
   threshold/victim logic server-side is mandatory, not optional; the client-control-flow fallback is
   acceptable only when the served `capture.secret` is not a hard-access value. Otherwise the item,
   as designed, can be built in a way that reopens the very cheat it closes.
+
+## Outcomes (R1 fixes, 2026-11-13)
+
+- major (item 7 design, capture_proofs.rb:445-448): FIXED in the design. The item 7 section of the
+  build log now states the rule, not a preference: when `capture.secret` is a protected value, a
+  server-side threshold check and victim check are mandatory, and the client control-flow fallback is
+  allowed only where `meetsThreshold`/`victim.submitted` are deterministic consequences of the
+  authored build and landed send the server already verified (in practice, only when the served
+  secret is not a hard-access value). Honest-play serving preserved. Build: none (design only).
+- minor 1 (item 1 cue parity, workstation-state.js:302-308): FIXED. The `min === 0` branch now calls
+  `_changed(data, npcId, true, 'auto')`, so `workstation_screen_changed` fires and the office-visuals
+  lock cue plays. Test: `workstation-state.test.mjs` slice-16-m4 asserts the event; fails without the
+  fix (mutation: not ok 44).
+- minor 2 (item 1 stale-record, game.rb:2307-2308): FIXED. The `autoLockMin 0` guest-claim refusal
+  now purges the guest record (`end_guest_session_at!`) before refusing, as the locked-out and
+  timed-out branches do. Test: new `npc_workaround_h_test.rb` "R1 minor 2"; fails without the fix.
+- minor 3 (item 6 coverage, no committed regression test): FIXED. New committed test
+  `test/js/test-bridge-dismiss.test.mjs` (3 tests) drives the real `dismissBlockingUi` over a stubbed
+  state.js/DOM; fails on the old `ok:true` behaviour (mutation). The browser proof was scratchpad-only.
+- minor 4 (item 3 no-action, npc-needs.js:2778): NO CHANGE. A queued held side's stale `useUntil` is
+  never read, because queued NPCs run off `queuedAt` once `c.ex` clears, so there is no leak; the
+  review flagged it only so a later reader does not mistake it for one. Nothing to fix.
+- minor 5 (item 5 confirmation, network_model.rb:262-265): NO CHANGE. `grant_foothold_actions` walks
+  via `AuthorNotes.each_live`, which already skips `_` notes, so a grant parked in a note never
+  widens the allow list. Confirmed correct by `network_notes_not_live_test.rb`; no code change needed.
+- item 1 server negative proof (re-run, which the review could not): with the item 1 server fix
+  reverted (npc_frustration.rb at `9bf16fc6b^`), `npc_workaround_h_test.rb` slice-16-m4 goes red
+  (the borrow answers `guest: true`); restored, it is green, and the tree is a zero diff against HEAD.
