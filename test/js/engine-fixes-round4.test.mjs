@@ -88,8 +88,10 @@ test('m08 N-8-2: the text viewer darkens its white copy icons on light panels, n
     const css = readFileSync(join(pub, 'css/text-file-minigame.css'), 'utf8');
     const dark = css.indexOf('@media (prefers-color-scheme: dark)');
     const base = css.slice(0, dark);
-    assert.match(base, /\.action-btn \.icon-small,\s*\.file-observations h4 \.icon-small \{\s*filter: brightness\(0\)/);
-    assert.match(css.slice(dark), /\.action-btn \.icon-small,\s*\.file-observations h4 \.icon-small \{\s*filter: none;/);
+    // Only the copy icon: the notepad icon is already dark-outlined (slice 7 R3 m4)
+    assert.match(base, /#copy-btn \.icon-small,\s*\.file-observations h4 \.icon-small \{\s*filter: brightness\(0\)/);
+    assert.match(css.slice(dark), /#copy-btn \.icon-small,\s*\.file-observations h4 \.icon-small \{\s*filter: none;/);
+    assert.doesNotMatch(base, /\.action-btn \.icon-small[^{]*\{[^}]*filter/, 'no filter on every toolbar icon');
     // The icon really is white, which is why it vanished
     const markup = readFileSync(join(js, 'minigames/text-file/text-file-minigame.js'), 'utf8');
     assert.match(markup, /copy-sm\.png" alt="Clipboard" class="icon-small"> Copy/);
