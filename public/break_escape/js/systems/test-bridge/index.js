@@ -940,7 +940,7 @@ const bridge = {
         }
 
         let sinceSeq = currentSeq();
-        await clickWorld(entity.x, entity.y);
+        await clickWorld(entity.clickX ?? entity.x, entity.clickY ?? entity.y);
 
         // The click may have raised the disambiguation menu instead of acting,
         // if other interactables were within tap slop. Pick our target from it.
@@ -1037,7 +1037,7 @@ const bridge = {
         }
         sinceSeq = currentSeq();
         interactStartT = performance.now();
-        await clickWorld(after.x, after.y);
+        await clickWorld(after.clickX ?? after.x, after.clickY ?? after.y);
         await sleepFrames(4);
         if (interactionMenuState()) {
             const menuSeq = currentSeq();
