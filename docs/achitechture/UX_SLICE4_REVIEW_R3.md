@@ -9,7 +9,7 @@ Verdict: pass. The merge is clean, the observer does what the log says with no l
 Merge base dedfa3422. Main touched 89 files; two of them were also changed on this branch.
 
 - For every file only main touched, the merge equals main (`git diff b1eb68049^2 b1eb68049 -- <file>` empty for all). For every file only this branch touched, the merge equals the branch. Nothing from either side is lost.
-- `app/views/break_escape/games/show.html.erb`: the changed lines between main and the merge are exactly this branch's change (`class="pixel-scroll"` on `#inventory-container`, line 135), and the changed lines between the branch and the merge are exactly main's change. Both kept.
+- `app/views/break_escape/games/show.html.erb`: the changed lines between main and the merge are exactly this branch's change (`class="pixel-scroll"` on `#inventory-container`, line 136), and the changed lines between the branch and the merge are exactly main's change. Both kept.
 - `scenarios/lab_physical_pentest/scenario.json.erb`: the same two-way check holds (this branch's "Put on" wording, main's wedge additions). Validator `--no-graph`: 0 lines with ❌.
 
 ## 2. The ResizeObserver (6c39c5481, `public/break_escape/js/main.js:332-340`)
