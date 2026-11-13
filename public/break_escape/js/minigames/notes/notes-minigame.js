@@ -858,8 +858,12 @@ export function startNotesMinigame(item, noteContent, observationText, navigateT
                 window.pendingTextFileReturn = null;
             };
 
-            // Check if we need to return to a container after notes minigame
-            if (window.pendingContainerReturn && window.returnToContainerAfterNotes) {
+            // Check if we need to return to a container after notes minigame. A file read
+            // from a container comes back first (below), and its own X then spends the
+            // container's return (R4 m1). A note to take (itemToTake) is always handled here.
+            const fileFirst = !!window.pendingTextFileReturn && !!window.returnToTextFileAfterNotes
+                && !window.pendingContainerReturn?.itemToTake;
+            if (window.pendingContainerReturn && window.returnToContainerAfterNotes && !fileFirst) {
                 console.log('Returning to container after notes minigame');
                 // The notes panel is closing and the container opens 100 ms later. Held
                 // toasts released in that gap showed, were pulled back by the container

@@ -27,6 +27,8 @@ put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n
 copy('utils/escape-html.js');
 copy('utils/lock-scope-refusal.js');
 copy('utils/computer-keywords.js');
+copy('utils/pc-monitor.js');
+copy('utils/npc-headshot.js');
 copy('utils/author-html.js');
 copy('minigames/framework/base-minigame.js');
 copy('minigames/password/password-minigame.js');
@@ -466,17 +468,20 @@ test('R2 m1: Esc in the plain and prompt fields ends exactly as the X, at once',
 
 // UX slice 2a R2 m3: the controls row (Add to Notepad) sits inside the frame, after the game area
 test('R2 m3: Add to Notepad is inside the frame, after the game area, on the sign-in and plain screens', () => {
+    // UX slice 2c: a PC's screens sit in the PC monitor frame, and the row is in its chin,
+    // under the screen that holds the game area
     open();
-    const frame = q('.password-frame');
     const row = q('.minigame-controls');
-    assert.equal(row.parentElement, frame, 'sign-in: the row is a child of the frame');
-    assert.equal(frame.lastElementChild === row || row.previousElementSibling?.classList.contains('minigame-game-container') || !!frame.querySelector(':scope > .minigame-game-container ~ .minigame-controls'), true, 'after the game area');
+    assert.equal(row.parentElement, q('.pc-monitor-chin .pc-monitor-controls'), 'sign-in: the row is in the monitor chin');
+    assert.ok(q('.pc-monitor-screen > .minigame-game-container'), 'the game area is the screen');
+    assert.ok(q('.pc-monitor-screen').compareDocumentPosition(row) & window.Node.DOCUMENT_POSITION_FOLLOWING, 'after the game area');
     document.body.innerHTML = '<div id="mg"></div>';
     window.MinigameFramework = { currentMinigame: null, endMinigame: () => {} };
     const mg = new PasswordMinigame(document.getElementById('mg'), { title: 'Office PC', lockable: { scenarioData: { id: 'pc1', type: 'pc' } }, type: 'object', correctPassword: 'x', postitNote: 'pw: x', showPostit: true });
     window.MinigameFramework.currentMinigame = mg;
     mg.init();
-    assert.ok(q('.password-frame > .minigame-game-container ~ .minigame-controls #minigame-notebook-postit'), 'plain: inside the frame, after the area');
+    assert.ok(q('.pc-monitor-chin .pc-monitor-controls #minigame-notebook-postit'), 'plain: in the monitor chin');
+    assert.equal(q('.password-frame'), null, 'a PC screen has no password frame');
     mg.cleanup?.();
 });
 
@@ -537,7 +542,8 @@ test('R3 m1: the frame is snapped by top/left, again on resize, and the snap sto
         return { left: rect.left + dx, top: rect.top + dy, right: 0, bottom: 0, width: 0, height: 0 };
     };
     try {
-        const { mg } = openPlain();
+        // A lock that is not a computer keeps the password frame (a PC's sits in the monitor)
+        const { mg } = openPlain({ lockable: { scenarioData: { id: 'safe1', type: 'safe' } } });
         const frame = q('.password-frame');
         assert.equal(frame.style.left, '0.5px');
         assert.equal(frame.style.top, '0.5px');
@@ -567,7 +573,7 @@ test('R3 m1: tile text has whole-pixel line heights', () => {
 test('R3 m2: a wrong password on the plain screen is written on a line inside the screen, with no box', async () => {
     const { mg, calls } = openPlain();
     const line = q('#password-message');
-    assert.ok(line.closest('.monitor-screen'), 'inside the screen');
+    assert.ok(line.closest('.pc-monitor-screen'), 'inside the screen (the PC monitor, UX slice 2c)');
     assert.equal(line.hidden, true, 'hidden until there is something to say');
     window.breakEscapeConfig = { gameId: 7 };
     window.ApiClient = { unlock: async () => { const e = new Error('422'); e.status = 422; e.body = {}; throw e; } };
@@ -714,7 +720,10 @@ test('R3 n1: a talk sheet gives the short window a head crop at scale 1; a 32x32
     assert.equal(withAvatar.dataset.short, 'avatar');
     assert.equal(withAvatar.style.getPropertyValue('--signin-short-size'), '32px 32px');
     assert.equal(withAvatar.style.getPropertyValue('--signin-short-position'), '0px 0px');
-    assert.equal(withAvatar.dataset.frame, 'talk-sheet', 'the 64px tile still shows the talk frame');
+    // UX slice 2c: the headshot is the tile's picture too (x2), never the talk crop
+    assert.equal(withAvatar.dataset.frame, 'single', 'the 64px tile shows the headshot at x2');
+    assert.equal(withAvatar.dataset.headshot, 'sam');
+    assert.equal(withAvatar.style.backgroundSize, '64px 64px');
 
     const bigAvatar = document.createElement('span');
     applyTilePortrait(bigAvatar, { ...TILES[0], avatar: 'assets/npc/avatars/sam.png' }, fakeImage({
@@ -915,14 +924,112 @@ test('R4 m2: unsnapInnerBoxes puts back the inline values; nothing to move gives
 });
 
 test('R4 n1: an empty Submit brings the post-it into view first, then the line', async () => {
+    // UX slice 2c: on a PC the post-it is stuck on the monitor's chin, outside the screen's
+    // scroll area, so it is always in view and only the line is revealed
     const { mg } = openPlain();
     const order = [];
     q('.postit-note').scrollIntoView = () => order.push('postit');
     q('#password-message').scrollIntoView = () => order.push('line');
     q('#password-field').value = '';
     await mg.submitPassword();
-    assert.deepEqual(order, ['postit', 'line']);
+    assert.ok(q('.pc-monitor > .postit-note.pc-monitor-postit'), 'the note is on the frame');
+    assert.deepEqual(order, ['line']);
     assert.equal(q('#password-message').textContent, 'Please enter a password');
+});
+
+// UX slice 2c R2 M1: a PC's password screen is the sign-in form's twin
+test('2c R2 M1: a PC\'s password screen: "Password:", no attempts badge, the keyboard beside the eye, one button look', async () => {
+    const { mg } = openPlain({ title: 'Kevin\'s Workstation', showKeyboard: true });
+    assert.ok(q('.pc-monitor'), 'in the PC monitor');
+    assert.equal(q('.attempts-counter'), null, 'no attempts badge');
+    assert.equal(q('label[for="password-field"]').textContent, 'Password:', 'the plain label, no PC name');
+    const row = q('.password-field-wrapper');
+    const eye = q('#toggle-password'), keys = q('#keyboard-toggle');
+    assert.ok(keys && row.contains(keys) && row.contains(eye), 'the keyboard toggle is in the field row');
+    assert.equal(eye.nextElementSibling, keys, 'beside the eye');
+    assert.equal(q('.password-controls'), null, 'no separate keyboard tile');
+    for (const b of [eye, keys, q('#submit-password')]) assert.ok(b.classList.contains('pc-os-btn'), `${b.id}: the OS button look`);
+    // A wrong password: the message line carries the count, and the test state still reads it
+    mg.passwordField.value = 'wrong';
+    mg.gameData.attempts = 1;
+    mg.passwordIncorrect();
+    assert.match(q('#password-message').textContent, /2 attempts remaining/);
+    assert.equal(mg.getTestState().attemptsText, '1');
+    mg.cleanup?.();
+    // The sign-in screen's buttons wear the same look
+    document.body.innerHTML = '<div id="mg"></div>';
+    window.MinigameFramework = { currentMinigame: null, endMinigame: () => {} };
+    const s = new PasswordMinigame(document.getElementById('mg'), {
+        title: 'Sign in', signIn: { pcId: 'hot_desk', pcName: 'Hot desk PC', picker: 'accounts', tiles: [{ username: 'sokafor', displayName: 'Sam Okafor' }] }
+    });
+    window.MinigameFramework.currentMinigame = s;
+    s.init();
+    for (const id of ['#submit-password', '#signin-change', '#toggle-password']) assert.ok(q(id).classList.contains('pc-os-btn'), `${id}: the OS button look`);
+    s.cleanup?.();
+    // Outside a PC the old frame keeps its badge and keyboard tile
+    const { mg: safe } = openPlain({ title: 'Wall safe', lockable: { scenarioData: { id: 'safe1', type: 'safe' } }, showKeyboard: true });
+    assert.ok(q('.attempts-counter'), 'a safe keeps its badge');
+    assert.ok(q('.password-controls #keyboard-toggle'), 'and its keyboard tile');
+    assert.equal(q('.pc-os-btn'), null);
+    safe.cleanup?.();
+    // CSS: the thin theme skin, and no scale on press
+    const css = readFileSync(join(here, '../../public/break_escape/css/password-minigame.css'), 'utf8');
+    const frame = readFileSync(join(here, '../../public/break_escape/css/pc-monitor.css'), 'utf8');
+    assert.doesNotMatch(css, /scale\(0\.95\)/, 'no scale(0.95) on the keyboard tile');
+    const skin = frame.slice(frame.indexOf('[data-ui-theme] .pc-monitor button.pc-os-btn {'));
+    assert.match(skin.slice(0, skin.indexOf('}')), /border-image-source: var\(--ui-small-button-image\);/);
+    const base = frame.slice(frame.indexOf('.pc-monitor button.pc-os-btn {'));
+    assert.match(base.slice(0, base.indexOf('}')), /border: 2px solid/);
+});
+
+// UX slice 2c R1 m9: the old password frame (Wi-Fi keys, archives, safes, case locks) keeps
+// its own coverage now that the PC screens moved to the monitor
+test('2c R1 m9: a non-computer lock keeps the password frame, with Add to Notepad after the game area', () => {
+    const { mg } = openPlain({ title: 'Wall safe', lockable: { scenarioData: { id: 'safe1', type: 'safe' } } });
+    assert.equal(q('.pc-monitor'), null, 'no PC monitor for a safe');
+    const frame = q('.password-frame');
+    assert.ok(frame, 'the password frame');
+    const row = q('.minigame-controls');
+    assert.ok(row && frame.contains(row), 'the row is inside the frame');
+    assert.ok(q('.password-frame > .minigame-game-container').compareDocumentPosition(row) & window.Node.DOCUMENT_POSITION_FOLLOWING, 'after the game area');
+    assert.ok(row.querySelector('#minigame-notebook-postit'), 'Add to Notepad in the row');
+    mg.cleanup?.();
+});
+
+test('2c R1 m9: on a non-computer lock an empty Submit brings the post-it into view first, then the line', async () => {
+    const { mg } = openPlain({ title: 'Archive', lockable: { scenarioData: { id: 'zip1', type: 'zip_archive' } } });
+    const order = [];
+    const note = q('.password-frame .postit-note');
+    assert.ok(note, 'the note is in the password frame');
+    assert.equal(q('.pc-monitor-postit'), null, 'not a monitor note');
+    note.scrollIntoView = () => order.push('postit');
+    q('#password-message').scrollIntoView = () => order.push('line');
+    q('#password-field').value = '';
+    await mg.submitPassword();
+    assert.deepEqual(order, ['postit', 'line']);
+    mg.cleanup?.();
+});
+
+test('2c R1 M2: inside the scaled PC screen a snap move is divided by the zoom', () => {
+    const restore = mockRects([]);
+    try {
+        document.body.innerHTML = '<div class="a"><span class="b"></span></div>';
+        const b = q('.b');
+        Object.defineProperty(b, 'currentCSSZoom', { value: 2 });
+        // A box drawn at x2: its own left/top move it twice as far on screen
+        b.getBoundingClientRect = () => {
+            const left = 3.5 + 2 * (parseFloat(b.style.left) || 0);
+            const top = 4.5 + 2 * (parseFloat(b.style.top) || 0);
+            return { left, top, right: left + 10, bottom: top + 10, width: 10, height: 10 };
+        };
+        const moved = snapInnerBoxes(q('.a'), 1, window);
+        assert.equal(moved.length, 1);
+        // 0.5px on screen is 0.25px on a box drawn at x2
+        assert.equal(q('.b').style.left, '0.25px');
+        assert.equal(q('.b').style.top, '0.25px');
+    } finally {
+        restore();
+    }
 });
 
 test('R5 m1: a scaled box (a press) and everything in it is left out of the snap; a pure translate is not', () => {

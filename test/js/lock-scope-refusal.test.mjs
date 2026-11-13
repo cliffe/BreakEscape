@@ -22,6 +22,8 @@ put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n
 put('utils/escape-html.js', read('utils/escape-html.js'));
 put('utils/lock-scope-refusal.js', read('utils/lock-scope-refusal.js'));
 put('utils/computer-keywords.js', read('utils/computer-keywords.js'));
+put('utils/pc-monitor.js', read('utils/pc-monitor.js'));
+put('utils/npc-headshot.js', read('utils/npc-headshot.js'));
 put('minigames/framework/base-minigame.js', 'export class MinigameScene { constructor() {} cleanup() {} }\n');
 for (const rel of ['minigames/password/password-minigame.js', 'minigames/combination/combination-minigame.js',
     'minigames/cryptex/cryptex-minigame.js']) put(rel, read(rel));

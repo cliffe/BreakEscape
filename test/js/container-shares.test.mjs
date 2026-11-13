@@ -28,7 +28,10 @@ const copy = (rel) => put(rel, readFileSync(join(js, rel), 'utf8'));
 put('utils/helpers.js', 'export function makeDraggable() {}\n');
 put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n');
 copy('utils/escape-html.js');
+copy('utils/more-below.js');
 copy('utils/computer-keywords.js');
+copy('utils/pc-monitor.js');
+copy('utils/npc-headshot.js');
 copy('utils/author-html.js');
 put('utils/conditional-text.js', 'export function resolveObjectField(o, f, d) { return (o && o[f] != null) ? o[f] : d; }\n');
 put('systems/inventory.js',
@@ -682,8 +685,9 @@ test('slice 2a: the share header picture is the folder icon, never network_share
     await openRemote();
     icon('Ledger-Archive').click();
     await settle();
-    const header = document.querySelector('.container-image-section img.container-image');
-    assert.equal(header.getAttribute('src'), SHARE_ICON);
+    // In the PC monitor (UX slice 2c) the folder icon is the window's title bar icon
+    const icon2 = document.querySelector('.pc-monitor .share-folder-titlebar img.share-folder-icon');
+    assert.equal(icon2.getAttribute('src'), SHARE_ICON);
     assert.doesNotMatch(document.body.innerHTML, /network_share\.png/);
 });
 
@@ -696,9 +700,11 @@ test('slice 2a: a mapped share opens as a folder window: UNC title bar, file lis
     assert.equal(m.shareFolder, true);
     assert.equal(m.desktopMode, false);
     assert.equal(document.querySelector('.desktop-wallpaper'), null, 'no wallpaper');
-    assert.equal(document.querySelector('.container-monitor-bezel'), null, 'no monitor');
+    assert.equal(document.querySelector('.container-monitor-bezel'), null, 'no old desktop bezel');
+    // The folder window fills the screen of the one PC monitor frame (UX slice 2c)
+    assert.ok(document.querySelector('.pc-monitor .pc-monitor-screen .share-folder-window'), 'the folder window on the monitor screen');
+    assert.equal(document.querySelector('.desktop-icons'), null, 'no desktop icons');
     assert.equal(document.querySelector('.share-folder-path').textContent, '\\\\HB-FS01\\Ledger-Archive');
-    assert.equal(document.querySelector('.container-info h4').textContent, 'Ledger-Archive');
     const files = [...document.querySelectorAll('.share-folder-files .container-content-label')].map(el => el.textContent);
     assert.deepEqual(files, ['IT handover.txt', 'Year-end']);
     icon('IT handover').querySelector('img').click();
@@ -773,13 +779,13 @@ test('slice 2a R1: the folder window header icon is marked for x2; files carry n
     await openRemote();
     icon('Ledger-Archive').click();
     await settle();
-    const header = document.querySelector('.container-image-section img.container-image');
-    assert.ok(header.classList.contains('share-header-icon'), 'sized by the share header rule (52x36, not object-fit contain)');
+    // In the PC monitor (UX slice 2c) there is no header box: the icon is the title bar's
+    assert.equal(document.querySelector('.container-image-section'), null, 'no header box on the monitor');
     assert.equal(document.querySelectorAll('.share-folder-files .container-content-tooltip').length, 0, 'no tooltip box to clip');
     for (const img of document.querySelectorAll('.share-folder-files .container-content-item')) {
         assert.equal(img.title, '', `${img.alt}: no title repeating the label`);
     }
-    assert.equal(document.querySelector('.container-info p').textContent, 'A file share on HB-FS01.');
+    assert.equal(document.querySelector('.share-folder-status').textContent, 'A file share on HB-FS01.', 'the status bar names the host');
 });
 
 test('slice 2a R1: the folder window CSS fills the frame, with no tile fill and whole-pixel columns', () => {
