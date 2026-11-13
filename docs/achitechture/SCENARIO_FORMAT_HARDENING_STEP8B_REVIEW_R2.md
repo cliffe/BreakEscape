@@ -115,3 +115,8 @@ compared it with what a fresh format-2 game stores for the same item:
   change (presence of `leftBehindChance` is now the marker, so its absence means "not a left-behind
   item" rather than "never left") and are replaced by the `owner`-based equivalents. The friendface
   test was strengthened, not weakened. No assertion was quietly loosened to pass.
+
+## Outcomes
+
+- Minor 1 (stored-copy marker claim too strong): build log wording tightened; the key is not re-added, by design.
+- Minor 2 (fixtures cover four scenarios): the build log records why the four cover every transform path and which rewritten scenarios have no frozen fixture.

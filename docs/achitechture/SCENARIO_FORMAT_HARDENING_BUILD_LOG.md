@@ -2218,7 +2218,17 @@ Two coverage/wording nits from `SCENARIO_FORMAT_HARDENING_STEP8B_REVIEW_R1.md`, 
   (`one_owner_field_in_player_state!`) passes `write_markers: false`, so a stored item copy is renamed
   in place and gains at most the one `owner` key. This keeps the SYNC SIZE RULE tight by construction:
   the upgrade cannot add a second key to a re-sent copy, independent of what the corpus happens to
-  carry. A copy's left-behind or desk-phone behaviour is already settled on its scenario source.
+  carry. Left-behind slots are read from scenario-sourced room objects, never from stored copies,
+  and desk phones are not takeable, so no reader needs the markers on a stored copy. One unreachable
+  case remains: a left-behind item that is also droppable, re-dropped after the upgrade, carries no
+  `leftBehindChance` where a fresh game's re-dropped copy would. No corpus left-behind item is
+  droppable, and the reveal global already gates it, so the key is deliberately not re-added.
+- **Corpus coverage.** The frozen equivalence and parity fixtures cover test_access_habits,
+  test_access_social, test_access_work and test_needs_sims, which between them exercise every path of
+  the transform (derived workstation and private owners, emptied affordance, desk phone, left-behind,
+  Friendface phone). test_access_sessions, test_npc_needs, test_clone_left_card, test_capture_log and
+  lab_physical_pentest were rewritten by the same transform (or by hand for the two with ERB) and
+  validate with no retired-key line; they have no frozen fixture of their own.
 - **The needsHome warning now has an executing test.** `validator-retired-keys.test.mjs` fires
   `check_owner_fields`' "needsHome no longer sets an owner" warning (a workstation that is an NPC's
   `needsHome` with no owner of its own) and asserts the matching case with an explicit owner stays
