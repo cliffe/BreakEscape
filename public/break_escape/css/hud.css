@@ -383,6 +383,7 @@ html .game-display-dialog {
     /* the label is zoomed by --hud-zoom, so the window width is divided back down or a
        long caption ran off both sides of a phone (UX slice 16 R2 m6) */
     max-width: min(720px, calc(100vw / var(--hud-zoom, 1) - 32px));
+    box-sizing: border-box; /* the themed frame and padding count inside the limit */
 
     background: rgba(0, 0, 0, 0.72);
     border: 2px solid rgba(255, 255, 255, 0.18);
