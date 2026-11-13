@@ -270,8 +270,16 @@ module BreakEscape
       names = player_state['serverCreditGlobals']
       return names.grep(String) if names.is_a?(Array)
 
-      data = has_attribute?(:scenario_data) ? scenario_data : self.class.where(id: id).pick(:scenario_data)
-      player_state['serverCreditGlobals'] = self.class.credit_global_names_in(data)
+      # Memo absent. Derive only when scenario_data is already loaded in-request (game creation,
+      # show, the credit paths that call ensure_scenario_data_loaded! first); never read it here.
+      # An ordinary sync runs on the narrow SYNC_STATE_COLUMNS row, so reading scenario_data would
+      # reload the whole blob on every sync (the sync-deltas / SYNC SIZE rule forbids it). The memo
+      # is seeded at creation (initialize_player_state), so a game created by this code always has
+      # it. An absent memo therefore means a game stored before this change, whose scenario snapshot
+      # predates creditOnPass and so credits no global at all; [] is correct and the safe direction
+      # (a client cannot write a credit global that does not exist for this game).
+      return [] unless has_attribute?(:scenario_data) && scenario_data.is_a?(Hash)
+      player_state['serverCreditGlobals'] = self.class.credit_global_names_in(scenario_data)
     end
 
     # Walk every door gate's creditOnPass block and collect the setGlobal names, sorted/unique.
@@ -307,8 +315,13 @@ module BreakEscape
       ids = player_state['serverCompletedOnly']
       return ids.grep(String) if ids.is_a?(Array)
 
-      data = has_attribute?(:scenario_data) ? scenario_data : self.class.where(id: id).pick(:scenario_data)
-      player_state['serverCompletedOnly'] = self.class.completed_only_task_ids_in(data)
+      # Same rule as server_credit_global_names: derive only when scenario_data is already loaded,
+      # never read it on the narrow sync row. Seeded at creation; an absent memo is a pre-change
+      # game whose snapshot predates creditOnPass, so no task is server-completed-only and [] is the
+      # safe default (complete_task!/skip_task! then impose no extra server-completed-only guard,
+      # matching that game's scenario, which has no such tasks).
+      return [] unless has_attribute?(:scenario_data) && scenario_data.is_a?(Hash)
+      player_state['serverCompletedOnly'] = self.class.completed_only_task_ids_in(scenario_data)
     end
 
     # Walk every door gate's creditOnPass block and collect the completeTask ids, sorted/unique.
@@ -6343,6 +6356,18 @@ module BreakEscape
 
       # Worn globals (Wearables): read-only to sync_state from the start
       refresh_wearable_globals!
+
+      # Gated-door credit (GATED_DOOR §3.4, §7): derive the server-owned credit globals and the
+      # server-completed-only task ids once, from scenario_data (loaded here at creation), and
+      # memoise them into player_state. sync_state then reads them from the narrow player_state
+      # load and never reloads scenario_data (the sync-deltas / SYNC SIZE rule). Both are bounded,
+      # server-written only, and never grow per sync. A game created without this code (before this
+      # change) has no memo; its sync-path readers fall back to [] safely (its scenario predates
+      # creditOnPass, so it credits nothing).
+      if scenario_data.is_a?(Hash)
+        self.player_state['serverCreditGlobals'] = self.class.credit_global_names_in(scenario_data)
+        self.player_state['serverCompletedOnly'] = self.class.completed_only_task_ids_in(scenario_data)
+      end
     end
 
     def set_started_at
