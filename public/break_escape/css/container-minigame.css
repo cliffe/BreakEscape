@@ -837,10 +837,13 @@
    (.pc-screen-note, R1 m3) instead of the outline: at x2 the 2px outline became 4px and
    filled the letters in (R2 m3) */
 .pc-monitor .pc-desktop .desktop-icon-label {
-    align-self: stretch;
+    /* As wide as its text (evenShareLabels rounds it to an even width, so the centring lands
+       on a whole pixel), up to the icon's 112px */
+    align-self: center;
     box-sizing: border-box;
+    max-width: 112px;
     line-height: 18px;
-    padding: 0 6px;
+    padding: 0 2px;
     background: #101820;
     border: 2px solid #2a3a48;
     color: #dde6ee;

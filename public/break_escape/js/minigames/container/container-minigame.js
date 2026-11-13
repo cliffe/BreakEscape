@@ -237,10 +237,10 @@ const TRANSFER_LABELS = {
 /** The desktop's scroll cue, the same words as the network view's (MORE_BELOW_TEXT there). */
 export const DESKTOP_MORE_BELOW_TEXT = 'More below';
 
-export function evenShareLabels(grid) {
+export function evenShareLabels(grid, selector = '.container-content-label') {
     if (!grid?.querySelectorAll) return;
     const even = () => {
-        for (const label of grid.querySelectorAll('.container-content-label')) {
+        for (const label of grid.querySelectorAll(selector)) {
             label.style.width = '';
             const w = label.getBoundingClientRect?.().width || 0;
             const z = cssZoomOf(label);
@@ -1177,6 +1177,9 @@ export class ContainerMinigame extends MinigameScene {
             icon.appendChild(iconLabel);
             desktopIcons.appendChild(icon);
         });
+        // On the monitor a label is a backed box as wide as its text (R2 m3): an even width,
+        // so centring it under the icon lands on a whole pixel
+        if (this.pcMonitor) evenShareLabels(desktopIcons, '.desktop-icon-label');
         this.updateDesktopScrollCue();
         if (this.desktopMoreElement && typeof requestAnimationFrame === 'function') {
             requestAnimationFrame(() => this.updateDesktopScrollCue());

@@ -603,7 +603,8 @@ test('R2 m3 and m5: icon labels on the monitor have the dark backing, not the ou
     assert.match(label, /text-shadow: none;/);
     assert.match(label, /border: 2px solid/);
     assert.match(label, /background: #101820;/);
-    assert.match(label, /padding: 0 6px;/);
+    assert.match(label, /padding: 0 2px;/);
+    assert.match(label, /align-self: center;/);
     const frame = css('pc-monitor.css');
     const s = frame.indexOf('.pc-monitor[data-ui-scale="2"] .pc-monitor-name {');
     assert.ok(s > 0, 'an x2 rule for the name');
