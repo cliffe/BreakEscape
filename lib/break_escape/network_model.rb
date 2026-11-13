@@ -274,10 +274,10 @@ module BreakEscape
     # list of condition globals: [[]] is one route with no conditions, [] is no route. A
     # resource with no network is reachable with no condition; one on the station's own
     # network is reached by the station network's own outage condition; one on another
-    # network is reached over the links, each route the downIf globals of the networks on one
-    # of its simple paths (the station's, every intermediate's and the resource's network,
-    # not the resource's own downIf). No path means no route. In sub-slice K no network
-    # carries downIf (sub-slice O un-reserves it), so every route is empty; the shape is
+    # network is reached over the links, each route the offWhen conditions of the networks on
+    # one of its simple paths (the station's, every intermediate's and the resource's network,
+    # not the resource's own offWhen). No path means no route. In sub-slice K no network
+    # carries an outage (sub-slice O un-reserves it), so every route is empty; the shape is
     # ready for O. 9.2's NPC-work composer reads this as `routes`.
     def reach_conditions(data, station_network, resource)
       target = resource.is_a?(Hash) ? resource['network'] : nil
@@ -288,10 +288,18 @@ module BreakEscape
       return [] if paths.empty?
 
       nets = networks(data)
+      # Format 1 (step 8a): a route is a list of the outage conditions of the networks on its
+      # path, each in the requireGlobal form the network's own offWhen carries. A bare name (every
+      # corpus network) stays a String; the { name: value } form is kept whole, so a network that
+      # is down under either form is down on a link route too, evaluated the same way as
+      # network_up? (AccessWork.globals_hold?). A network with no outage contributes nothing.
       down_of = lambda do |net_id|
         net = nets[net_id]
-        down = net.is_a?(Hash) ? net['downIf'] : nil
-        present_string?(down) ? down : nil
+        down = net.is_a?(Hash) ? net['offWhen'] : nil
+        case down
+        when String then down.strip.empty? ? nil : down
+        when Hash then down.empty? ? nil : down
+        end
       end
       paths.map { |path| path.map { |net_id| down_of.call(net_id) }.compact.uniq }
     end

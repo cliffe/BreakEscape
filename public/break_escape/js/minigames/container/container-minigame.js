@@ -113,22 +113,26 @@ export function networkScreenKind(item) {
 export const PC_OFF_TEXT = 'This PC is off.';
 
 /**
- * Does a sign-in PC's `affordance.offWhen` hold on these globals? The same reading as
+ * Does a sign-in PC's object-level `offWhen` hold on these globals? The same reading as
  * unlock-system.js pcSwitchedOff and the server's host_service_off? (a global name, or
  * { name: value } all to match). Kept here so this module imports nothing more.
  */
 export function offWhenHolds(pcData, globals = (typeof window !== 'undefined' && window.gameState?.globalVariables) || {}) {
-    const cond = pcData?.affordance?.offWhen;
+    const cond = pcData?.offWhen;
     if (cond === undefined || cond === null || cond === false || cond === '') return false;
     const g = globals || {};
     if (typeof cond === 'string') return !!g[cond];
-    if (typeof cond === 'object') return Object.entries(cond).every(([name, value]) => g[name] === value);
+    if (typeof cond === 'object') {
+        // An empty object is "no condition" (matches Ruby off_when_present?), so it never holds.
+        const pairs = Object.entries(cond);
+        return pairs.length > 0 && pairs.every(([name, value]) => g[name] === value);
+    }
     return false;
 }
 
 /** The globals an offWhen reads, for the global_variable_changed listeners. */
 export function offWhenGlobals(pcData) {
-    const cond = pcData?.affordance?.offWhen;
+    const cond = pcData?.offWhen;
     if (typeof cond === 'string' && cond) return [cond];
     if (cond && typeof cond === 'object') return Object.keys(cond);
     return [];

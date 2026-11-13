@@ -2,12 +2,12 @@
 # (docs/achitechture/ACCESS_MODEL_SLICE_9_2_PLAN.md, sub-slice A). Build games from it with
 # create_access_game (test_helper.rb).
 #
-# - dana: finance and staff, a work need, needs finance_share (downIf) and email; perFail 34;
+# - dana: finance and staff, a work need, needs finance_share (offWhen) and email; perFail 34;
 #   a workaround and a feed, so the withholding tests see them go;
 # - kai: staff, +finance_share, which he is not admitted to (a cause the server owns);
 # - ian: staff (email only), his own PC has an offWhen;
 # - amy: staff, email only, a live PC: she cannot fail;
-# - omar: staff, +printer (a resource tied to an object, with a downIf);
+# - omar: staff, +printer (a resource tied to an object, with an offWhen);
 # - temp_user: an account holder with the role and no needs (no plan);
 # Every PC's use time is 5 seconds (the hot desk's 7), so each NPC's shortest use time is 5.
 module AccessWorkScenario
@@ -38,8 +38,8 @@ module AccessWorkScenario
       'resources' => {
         'email' => { 'kind' => 'email', 'name' => 'Corporate email' },
         'finance_share' => { 'kind' => 'file_share', 'name' => 'Finance share', 'access' => { 'roles' => ['finance'] },
-                             'downIf' => 'finance_share_down' },
-        'printer' => { 'kind' => 'printer', 'name' => 'Second floor printer', 'object' => 'office_printer', 'downIf' => 'printer_jammed' }
+                             'offWhen' => 'finance_share_down' },
+        'printer' => { 'kind' => 'printer', 'name' => 'Second floor printer', 'object' => 'office_printer', 'offWhen' => 'printer_jammed' }
       },
       'roles' => {
         'staff' => { 'workNeeds' => ['email'], 'frustration' => { 'perFail' => 20 } },
@@ -64,7 +64,7 @@ module AccessWorkScenario
           'type' => 'room_office', 'connections' => { 'south' => 'lobby' }, 'locked' => true, 'lockType' => 'key',
           'objects' => [
             pc('dana_pc'), pc('kai_pc'), pc('amy_pc'), pc('omar_pc'),
-            pc('ian_pc', 'affordance' => { 'satisfies' => 'work', 'useSeconds' => 5, 'offWhen' => 'ian_pc_unplugged' }),
+            pc('ian_pc', 'offWhen' => 'ian_pc_unplugged', 'affordance' => { 'satisfies' => 'work', 'useSeconds' => 5 }),
             pc('hot_desk', 'affordance' => { 'satisfies' => 'work', 'useSeconds' => 7 }),
             { 'type' => 'printer1', 'id' => 'office_printer', 'name' => 'Printer' },
             { 'type' => 'coffee_station1', 'id' => 'coffee', 'name' => 'Coffee' }

@@ -125,7 +125,7 @@ class NetworkModelTest < ActiveSupport::TestCase
   test 'reach_conditions over a link: same network, linked, and unreachable' do
     d = linked_scenario([%w[a b]])
     res_on_b = { 'network' => 'b' }
-    assert_equal [[]], NM.reach_conditions(d, 'a', res_on_b), 'linked, no downIf: one empty route'
+    assert_equal [[]], NM.reach_conditions(d, 'a', res_on_b), 'linked, no offWhen: one empty route'
     assert_equal [[]], NM.reach_conditions(d, 'b', res_on_b), 'same network'
     assert_equal [], NM.reach_conditions(d, 'a', { 'network' => 'd' }), 'no link'
     assert_equal [[]], NM.reach_conditions(d, 'a', { 'kind' => 'printer' }), 'no network'
@@ -138,15 +138,26 @@ class NetworkModelTest < ActiveSupport::TestCase
     ['false', 'x', '0', true, 1, -1, 0.1, [], {}, ' '].each { |truthy| assert NM.truthy?(truthy), "#{truthy.inspect} should be truthy" }
   end
 
-  test 'reach_conditions over a link carries each network downIf global on the route' do
+  test 'reach_conditions over a link carries each network offWhen global on the route' do
     d = linked_scenario([%w[a b]])
-    d['networks']['a']['downIf'] = 'a_down'
-    d['networks']['b']['downIf'] = 'b_down'
+    d['networks']['a']['offWhen'] = 'a_down'
+    d['networks']['b']['offWhen'] = 'b_down'
     res_on_b = { 'network' => 'b' }
     assert_equal [%w[a_down b_down]], NM.reach_conditions(d, 'a', res_on_b), 'both networks on the route are conditions'
-    assert_equal [['b_down']], NM.reach_conditions(d, 'b', res_on_b), 'same network: its own downIf only'
+    assert_equal [['b_down']], NM.reach_conditions(d, 'b', res_on_b), 'same network: its own offWhen only'
     # The station network's own outage is a condition even for a same-network resource.
     assert_equal [['a_down']], NM.reach_conditions(d, 'a', { 'network' => 'a' })
+  end
+
+  test 'reach_conditions keeps a network offWhen in the { name: value } form on the route' do
+    d = linked_scenario([%w[a b]])
+    d['networks']['a']['offWhen'] = { 'a_power' => 'off' }
+    d['networks']['b']['offWhen'] = 'b_down'
+    res_on_b = { 'network' => 'b' }
+    # The hash form is carried whole, so a consumer can evaluate it with globals_hold?; it is not
+    # dropped as a route that is always up (the pre-ruling behaviour).
+    assert_equal [[{ 'a_power' => 'off' }, 'b_down']], NM.reach_conditions(d, 'a', res_on_b)
+    assert_equal [[{ 'a_power' => 'off' }]], NM.reach_conditions(d, 'a', { 'network' => 'a' })
   end
 
   test 'a scenario with no networks answers empty everywhere' do

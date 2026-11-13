@@ -351,6 +351,15 @@ module ValidateAccessWork
   # ── sub-slice A: work, outages and frustration ───────────────────────
 
   AW = BreakEscape::AccessWork
+
+  # Format 1 (step 8a): the global names an outage condition (offWhen, requireGlobal form) reads.
+  def self.offwhen_global_names(cond)
+    case cond
+    when String then cond.strip.empty? ? [] : [cond]
+    when Hash then cond.keys.map(&:to_s)
+    else []
+    end
+  end
   A_ONLY_FIELDS = %w[workNeeds frustration workarounds feed usbHabit].freeze
   STATION_POOL = 'station_fail'
   NO_ACCESS_POOL = 'work_fail_no_access'
@@ -417,9 +426,10 @@ module ValidateAccessWork
       if r.key?('object') && !ids.include?(r['object'])
         err(issues, "resources.#{rid}.object '#{r['object']}' names no room object.")
       end
-      dn = r['downIf']
-      if AW.present_string?(dn) && !globals.key?(dn)
-        warn(issues, "resources.#{rid}.downIf '#{dn}' is not declared in globalVariables.")
+      if AW.off_when_present?(r['offWhen'])
+        offwhen_global_names(r['offWhen']).each do |g|
+          warn(issues, "resources.#{rid}.offWhen names '#{g}', which is not declared in globalVariables.") unless globals.key?(g)
+        end
       end
     end
 
@@ -889,7 +899,7 @@ module ValidateAccessWork
 
       causes << ["no access to '#{rid}'", NO_ACCESS_POOL] unless AW.admitted?(r, npc)
       rt = AW.routes(json_data, npc, r)
-      can_drop = AW.present_string?(r['downIf']) || (rt && (rt.empty? || rt.any? { |route| !route.empty? }))
+      can_drop = AW.off_when_present?(r['offWhen']) || (rt && (rt.empty? || rt.any? { |route| !route.empty? }))
       kind = AW.present_string?(r['kind']) ? r['kind'] : nil
       causes << ["'#{rid}' going down", kind ? "work_fail_#{kind}" : nil] if can_drop
     end
@@ -1056,8 +1066,8 @@ module ValidateAccessWork
   end
 
   # { global name => [where] } for the places the server reads a global: an unlockCondition
-  # globalVariable, concludeRequires.globals, exportGlobals, a resource's downIf, a route's
-  # gate globals and an affordance offWhen
+  # globalVariable, concludeRequires.globals, exportGlobals, a resource's offWhen, a route's
+  # gate globals and an object's offWhen
   def server_read_globals(json_data)
     reads = Hash.new { |h, k| h[k] = [] }
     walk = lambda do |node|
@@ -1077,18 +1087,22 @@ module ValidateAccessWork
     walk.call(json_data)
     Array(json_data['exportGlobals']).each { |g| reads[g.to_s] << 'exportGlobals' }
     AW.resources(json_data).each do |rid, r|
-      reads[r['downIf']] << "resources.#{rid}.downIf" if r.is_a?(Hash) && AW.present_string?(r['downIf'])
+      if r.is_a?(Hash) && AW.off_when_present?(r['offWhen'])
+        offwhen_global_names(r['offWhen']).each { |g| reads[g] << "resources.#{rid}.offWhen" }
+      end
     end
     room_npcs(json_data).each do |e|
       AW.work_list(json_data, e[:npc]).each do |rid|
         res = AW.resources(json_data)[rid]
         next unless res
 
-        Array(AW.routes(json_data, e[:npc], res)).flatten.each { |g| reads[g.to_s] << "a route to '#{rid}'" }
+        Array(AW.routes(json_data, e[:npc], res)).flatten(1).each do |cond|
+          offwhen_global_names(cond).each { |g| reads[g] << "a route to '#{rid}'" }
+        end
       end
     end
     AW.object_index(json_data).each do |oid, entry|
-      off = AW.affordance(json_data, entry[:obj])&.dig('offWhen')
+      off = AW.object_off_when(entry[:obj])
       off_names = case off
       when String then [off]
       when Hash then off.keys.map(&:to_s)
@@ -1302,13 +1316,13 @@ module ValidateAccessWork
         rt = AW.routes(json_data, npc, r)
         bits << 'never reachable from its station' if rt && rt.empty?
         downs = []
-        downs << r['downIf'] if AW.present_string?(r['downIf'])
-        rt&.each { |route| downs.concat(route) }
+        downs.concat(offwhen_global_names(r['offWhen'])) if AW.off_when_present?(r['offWhen'])
+        rt&.each { |route| route.each { |cond| downs.concat(offwhen_global_names(cond)) } }
         bits << (downs.empty? ? 'nothing takes it down' : "down while #{downs.uniq.join(' or ')}")
         "#{rid} (#{bits.join(', ')})"
       end
       st = AW.station(json_data, npc)
-      station_off = st && AW.off_when?(json_data, st) ? "; station '#{st['id']}' off while #{AW.affordance(json_data, st)['offWhen']}" : ''
+      station_off = st && AW.off_when?(json_data, st) ? "; station '#{st['id']}' off while #{AW.object_off_when(st).inspect}" : ''
       if AW.lockout_station?(json_data, npc)
         max = AW.policy_of(json_data, st)['maxAttempts']
         station_off += "; locked out at '#{st['id']}' after #{max.to_i} wrong passwords for its username there (a denial of service)"
@@ -1318,9 +1332,9 @@ module ValidateAccessWork
         nth = every == 1 ? 'every' : "every #{every}#{every == 2 ? 'nd' : every == 3 ? 'rd' : 'th'}"
         station_off += if AW.usb_habit_refused?(json_data, npc)
                          "; #{nth} use at '#{st['id']}' copies to a USB stick, which its policy refuses (cause usb_refused)"
-                       else
+        else
                          "; #{nth} use at '#{st['id']}' copies to a USB stick, which its policy allows"
-                       end
+        end
       end
       lines << "ℹ️ Work #{npc['id']}: #{parts.join('; ')}#{station_off}."
       AW.workarounds(json_data, npc).each_with_index do |w, i|
@@ -1393,7 +1407,7 @@ module ValidateAccessWork
     res = AW.resources(json_data)
     AW.work_list(json_data, npc).filter_map { |id| res[id] }.none? do |r|
       rt = AW.routes(json_data, npc, r)
-      !AW.admitted?(r, npc) || AW.present_string?(r['downIf']) || (rt && (rt.empty? || rt.any? { |route| !route.empty? }))
+      !AW.admitted?(r, npc) || AW.off_when_present?(r['offWhen']) || (rt && (rt.empty? || rt.any? { |route| !route.empty? }))
     end
   end
 
@@ -1884,7 +1898,7 @@ module ValidateAccessWork
   end
 
   # When the NPC's work need first turns urgent (seconds, needs clock), if its work plan reaches
-  # a resource that starts down (its downIf, or its network's, is truthy at load); else nil.
+  # a resource that starts down (its offWhen, or its network's, holds at load); else nil.
   # That is the earliest its first counted work failure can come.
   def work_failure_seconds(json_data, npc)
     return nil unless AW.work_plan?(json_data, npc)
@@ -1892,7 +1906,7 @@ module ValidateAccessWork
     globals = json_data['globalVariables'].is_a?(Hash) ? json_data['globalVariables'] : {}
     nets = json_data['networks'].is_a?(Hash) ? json_data['networks'] : {}
     res = AW.resources(json_data)
-    down = ->(item) { item.is_a?(Hash) && AW.present_string?(item['downIf']) && ![nil, false, 0, ''].include?(globals[item['downIf']]) }
+    down = ->(item) { item.is_a?(Hash) && AW.off_when_present?(item['offWhen']) && AW.globals_hold?(item['offWhen'], globals) }
     starts_down = AW.work_list(json_data, npc).any? do |id|
       r = res[id]
       r && (down.call(r) || down.call(nets[r['network']]))
@@ -2189,18 +2203,18 @@ module ValidateAccessWork
           lines << if nth == 1
                      "ℹ️ Reply #{name.call(npc)} answers in the thread of '#{r['replyTo']}', in place of '#{r['insteadOf']}', only if a reply " \
                        'is out by the time that post is due.'
-                   else
+          else
                      "ℹ️ Reply #{name.call(npc)} may answer again in the thread of '#{r['replyTo']}', in place of '#{r['insteadOf']}', only " \
                        "if another NPC has replied since #{name.call(npc)}'s last answer by the time that post is due."
-                   end
+          end
           next
         end
         line = if nth == 1
                  "ℹ️ Reply #{name.call(npc)} replies to #{name.call(owner)}'s '#{r['replyTo']}', in place of '#{r['insteadOf']}'"
-               else
+        else
                  "ℹ️ Reply #{name.call(npc)} may reply again in the thread of '#{r['replyTo']}', in place of '#{r['insteadOf']}', only if " \
                    "#{name.call(owner)} has answered there since #{name.call(npc)}'s last reply by the time that post is due"
-               end
+        end
         line += ". When: #{reactive_condition_words(json_data, npc, r['when'])}" if r['when'].is_a?(Hash)
         if r['when'].is_a?(Hash) && tpost && tpost['when'].is_a?(Hash) &&
            %w[cause need].none? { |k| !r['when'][k].nil? && r['when'][k] == tpost['when'][k] }

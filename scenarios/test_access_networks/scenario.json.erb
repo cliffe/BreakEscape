@@ -10,7 +10,7 @@
   "networks": {
     "office_lan": { "name": "Harbour office LAN" },
     "workshop_lan": { "name": "Workshop bench LAN" },
-    "server_net": { "name": "Server network", "downIf": "servers_offline" },
+    "server_net": { "name": "Server network", "offWhen": "servers_offline" },
     "guest_wifi": { "name": "Guest Wi-Fi", "wifi": { "ssid": "Harbour-Guest", "psk": "seabreeze-2025" } }
   },
 
@@ -602,7 +602,8 @@
           "locked": true,
           "lockType": "login",
           "access": { "roles": ["staff"] },
-          "affordance": { "offWhen": "bench_pc_off" },
+          "affordance": {},
+          "offWhen": "bench_pc_off",
           "spriteVariants": [
             { "condition": "globalVars.bench_pc_off", "value": "aw_pc_off1" }
           ],

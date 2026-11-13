@@ -240,7 +240,8 @@
           "takeable": false,
           "observations": "The office coffee station. One person at a time; anyone else waits in line.",
           "_comment": "The coffee preset stands the NPC below the machine (useFrom 0,1) and queues two a row below; this one's own useFrom and queue win. Slice 10: the queue runs left along the bottom row (the row below is the wall; up and left put the line on the way back to the desks, where people walking home ran into it), and the coffee pool gives the user and the first in line something to say. Slice 18a: offWhen office_coffee_off (set by the wall socket): while it holds the machine is no source; anyone walking to it or queued for it turns back with a grumble_off line and goes to the kitchen (or parks while the kitchen is shut); anyone pouring finishes.",
-          "affordance": { "useFrom": { "dx": -1, "dy": 0 }, "queue": { "cells": [{ "dx": -1, "dy": 0 }, { "dx": -2, "dy": 0 }] }, "chatter": "coffee", "offWhen": "office_coffee_off" }
+          "affordance": { "useFrom": { "dx": -1, "dy": 0 }, "queue": { "cells": [{ "dx": -1, "dy": 0 }, { "dx": -2, "dy": 0 }] }, "chatter": "coffee" },
+          "offWhen": "office_coffee_off"
         },
         {
           "type": "wall_socket1",
@@ -299,7 +300,8 @@
           "position": { "x": 4.4, "y": 2 },
           "takeable": false,
           "observations": "The office photocopier. Sanjay's and Tom's desk PCs print to it.",
-          "affordance": { "uncollectedAfterSeconds": 150, "offWhen": "office_copier_off" },
+          "affordance": { "uncollectedAfterSeconds": 150 },
+          "offWhen": "office_copier_off",
           "_comment": "Slice 7 producer: sanjay_pc's and tom_pc's onUse revealOutput show its first free slot (copier_out_a, then b to e). Slice 17: uncollectedAfterSeconds 150 is above Tom's fetchAfterSeconds range (30 to 120), so npc_print_uncollected:tom marks a print that is really forgotten. The copier preset (photocopier1) gives the rest of its affordance; nobody satisfies a need here. Slice 22: offWhen office_copier_off (set by office_copier_socket): while it holds Tom's prints go to the kitchen copier (his hook lists both) and Sanjay's (a string hook) print nothing; a print already on the tray stays."
         },
         {
@@ -697,7 +699,8 @@
           "position": { "x": 7.9, "y": 7.3 },
           "takeable": false,
           "observations": "An old photocopier pushed into the kitchen corner. Tom's PC prints here when the office one is off.",
-          "affordance": { "uncollectedAfterSeconds": 150, "offWhen": "kitchen_copier_off" },
+          "affordance": { "uncollectedAfterSeconds": 150 },
+          "offWhen": "kitchen_copier_off",
           "_comment": "Slice 22: Tom's second printer (his hook lists office_copier first). In the south-east corner, square to the east wall and clear of the door; the copier preset stands him below it. offWhen kitchen_copier_off, set by kitchen_copier_socket: with both copiers off his prints are blocked."
         },
         {

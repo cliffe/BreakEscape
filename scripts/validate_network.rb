@@ -19,6 +19,26 @@ require_relative '../lib/break_escape/npc_habits/clues'
 # arrive in the player's hand (7.2).
 NETWORK_PHYSICAL_ITEM_TYPES = %w[key keycard lockpick lockpick_set rfid_cloner key-ring].freeze
 
+# Format 1 (step 8a): a network/resource outage condition is `offWhen` in the requireGlobal form.
+# The global names it reads (a bare name, or the keys of { name: value }); nil when the shape is
+# neither a non-empty string nor a non-empty Hash.
+def offwhen_names(cond)
+  return [cond] if cond.is_a?(String) && !cond.strip.empty?
+  return cond.keys if cond.is_a?(Hash) && !cond.empty?
+
+  nil
+end
+
+# Whether an offWhen condition holds on a globals map (the declared defaults, for start-down):
+# a bare name is truthy, { name: value } matches every pair.
+def offwhen_holds_on?(cond, globals, nm)
+  case cond
+  when String then nm.truthy?(globals[cond])
+  when Hash then cond.all? { |k, v| globals[k.to_s] == v }
+  else false
+  end
+end
+
 def check_network_model(json_data, scenario_dir = nil)
   issues = []
   return issues unless json_data.is_a?(Hash)
@@ -277,29 +297,30 @@ def check_network_model(json_data, scenario_dir = nil)
   end
 
   # ---- Outages (slice 9.3b sub-slice O, 5.2 and 9.2) ----
-  # A network downIf names a global; the network is down while it is truthy. The value must be
-  # a string, and the global should be declared. 9.2 owns the resource downIf checks
+  # A network offWhen names a global; the network is down while it is truthy. The value must be
+  # a string, and the global should be declared. 9.2 owns the resource offWhen checks
   # (validate_access_work.rb); this adds the network side and the start-down open-share warning.
   decl_globals = json_data['globalVariables'].is_a?(Hash) ? json_data['globalVariables'] : {}
   networks.each do |net_id, net|
-    next unless net.key?('downIf')
+    next unless net.key?('offWhen')
 
-    dn = net['downIf']
-    unless dn.is_a?(String)
-      err.call("'networks/#{net_id}/downIf' must be a string naming a global.")
+    names = offwhen_names(net['offWhen'])
+    unless names
+      err.call("'networks/#{net_id}/offWhen' must be a global name or { name: value } (the requireGlobal form).")
       next
     end
-    next if dn.strip.empty?
 
-    warn.call("networks.#{net_id}.downIf '#{dn}' is not declared in globalVariables.") unless decl_globals.key?(dn)
+    names.each do |nm_name|
+      warn.call("networks.#{net_id}.offWhen names '#{nm_name}', which is not declared in globalVariables.") unless decl_globals.key?(nm_name)
+    end
   end
-  # An open share with contents on a network whose downIf default is truthy (it starts down): a
+  # An open share with contents on a network whose offWhen default holds (it starts down): a
   # browser can write the global false, so a secret that must not be read early needs a session
   # as well, not an outage alone.
   net_starts_down = lambda do |net_id|
     net = networks[net_id]
-    dn = net.is_a?(Hash) ? net['downIf'] : nil
-    nm.present_string?(dn) && nm.truthy?(decl_globals[dn])
+    cond = net.is_a?(Hash) ? net['offWhen'] : nil
+    !offwhen_names(cond).nil? && offwhen_holds_on?(cond, decl_globals, nm)
   end
   resources.each do |res_id, res|
     next unless res['kind'] == 'file_share' && res['access'].nil? && nm.resource_contents?(res)
@@ -307,7 +328,7 @@ def check_network_model(json_data, scenario_dir = nil)
     net = res['network']
     next unless net.is_a?(String) && net_starts_down.call(net)
 
-    warn.call("open share '#{res_id}' with contents is on network '#{net}', which starts down (its downIf default is " \
+    warn.call("open share '#{res_id}' with contents is on network '#{net}', which starts down (its offWhen default is " \
               'truthy); a browser can set that global false, so a secret that must not be read early needs an ' \
               'account-gated share or a session as well, not an outage alone.')
   end
@@ -667,18 +688,18 @@ def check_network_model(json_data, scenario_dir = nil)
     via = host_ids.empty? ? 'no sign-in host to pivot through' : "pivot hosts #{quote_list.call(host_ids)}"
     info << "ℹ️ Link reach: from '#{net_id}' a pivot reaches #{quote_list.call(reached)}; #{via}"
   end
-  # Outages: each network and resource with a downIf, and its declared starting state (5.2).
+  # Outages: each network and resource with an offWhen, and its declared starting state (5.2).
   networks.keys.sort.each do |net_id|
-    dn = networks[net_id]['downIf']
-    next unless nm.present_string?(dn)
+    cond = networks[net_id]['offWhen']
+    next unless offwhen_names(cond)
 
-    info << "ℹ️ Outage: network '#{net_id}' is down while '#{dn}' is truthy; it starts #{nm.truthy?(decl_globals[dn]) ? 'down' : 'up'}."
+    info << "ℹ️ Outage: network '#{net_id}' is down while #{cond.inspect} holds; it starts #{offwhen_holds_on?(cond, decl_globals, nm) ? 'down' : 'up'}."
   end
   resources.keys.sort.each do |res_id|
-    dn = resources[res_id]['downIf']
-    next unless nm.present_string?(dn)
+    cond = resources[res_id]['offWhen']
+    next unless offwhen_names(cond)
 
-    info << "ℹ️ Outage: resource '#{res_id}' is down while '#{dn}' is truthy; it starts #{nm.truthy?(decl_globals[dn]) ? 'down' : 'up'}."
+    info << "ℹ️ Outage: resource '#{res_id}' is down while #{cond.inspect} holds; it starts #{offwhen_holds_on?(cond, decl_globals, nm) ? 'down' : 'up'}."
   end
 
   resources.keys.sort.each do |res_id|

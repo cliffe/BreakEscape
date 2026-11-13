@@ -71,7 +71,11 @@ module BreakEscape
       count = 0
       sub = ActiveSupport::Notifications.subscribe('sql.active_record') do |*, payload|
         sql = payload[:sql].to_s
-        count += 1 if sql.start_with?('SELECT') && sql.include?('scenario_data') && !sql.include?('*')
+        # Count only full scenario_data column loads (the quoted column), not the formatVersion
+        # jsonb-scalar pluck sync_format_refusal issues on every sync once current is non-zero
+        # (step 8a makes current 1). The quoted "scenario_data" appears only in the full-column
+        # load; the pluck uses the unquoted scalar form, as reload_persistence_test.rb:841 draws it.
+        count += 1 if sql.start_with?('SELECT') && sql.include?('"scenario_data"') && !sql.include?('*')
       end
       yield
       count

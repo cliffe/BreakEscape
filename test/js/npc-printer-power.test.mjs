@@ -1,6 +1,6 @@
 // Office life slice 22 (OFFICE_LIFE_PLAN 12.12): printer power. revealOutput (and the print
 // command's producer) may list printers in preference order; a print goes to the first that is on
-// (affordance.offWhen does not hold) and has a free or recyclable slot; with none on nothing prints
+// (offWhen does not hold) and has a free or recyclable slot; with none on nothing prints
 // (print_blocked, npc_print_blocked:<npcId>, a grumble_printer_off line or the blocked picture). The
 // owner's errand walks to whichever printer printed, with a longer expectedAwayMs; a print on a tray
 // stays when its printer is switched off, and an errand already walking there still collects; a
@@ -30,8 +30,8 @@ function powerWorld({ tickCache = true, list = BOTH, habit = null, power = {}, k
     const w = makeSimsWorld();
     addCopierBeat(w);
     const office = w.objs.find(o => o.id === 'office_copier');
-    office.affordance = { ...office.affordance, offWhen: 'copier_off' };
-    w.objs.push({ id: 'kitchen_copier', room: 'kitchen', x: -150, y: 200, affordance: { useSeconds: 8, capacity: 1, useFrom: { dx: 0, dy: 1 }, offWhen: 'kitchen_copier_off' } });
+    office.offWhen = 'copier_off';
+    w.objs.push({ id: 'kitchen_copier', room: 'kitchen', x: -150, y: 200, offWhen: 'kitchen_copier_off', affordance: { useSeconds: 8, capacity: 1, useFrom: { dx: 0, dy: 1 } } });
     for (const id of ['kitchen_out_a', 'kitchen_out_b']) {
         const o = { id, room: 'kitchen', x: -150, y: 186, needsTag: 'printout', slot: true, pickable: false, outputOf: 'kitchen_copier', global: `${id}_shown`, takeable: true, home: { roomId: 'kitchen', x: -150, y: 186 } };
         w.objs.push(o);
@@ -253,7 +253,7 @@ test('a copier that satisfies a need turns its walker back when switched off (18
     const T = 32;
     const globals = { copier_off: false };
     const w = makeWorld({ npcs: { tom: { pos: { x: 100, y: 500 }, rec: { id: 'tom', needsHome: { room: 'office', x: 100 / T, y: 500 / T }, needs: { work: { decayPerMin: 1, urgentAt: 50, initial: 90 } } } } },
-        objects: [{ id: 'copier', x: 700, y: 100, affordance: { satisfies: 'work', restores: 60, useSeconds: 8, offWhen: 'copier_off' } }] });
+        objects: [{ id: 'copier', x: 700, y: 100, offWhen: 'copier_off', affordance: { satisfies: 'work', restores: 60, useSeconds: 8 } }] });
     w.world.globalHolds = cond => requiredGlobalsHold(cond, globals);
     w.world.playerHears = () => ({ overheard: false, distance: null });
     w.world.playerProximity = () => ({ nearby: false, distance: null });
@@ -278,7 +278,7 @@ function validate(npcPatch, { mappings = [], kitchenPrivate = false } = {}) {
         rooms: {
             office: { type: 'room_office', connections: { west: 'kitchen' }, objects: [
                 { type: 'pc', id: 'tom_pc', name: 'PC', takeable: false, affordance: { satisfies: 'work', restores: 60, useSeconds: 10 } },
-                { type: 'photocopier1', id: 'office_copier', name: 'Copier', takeable: false, affordance: { offWhen: 'copier_off' } },
+                { type: 'photocopier1', id: 'office_copier', name: 'Copier', takeable: false, offWhen: 'copier_off' },
                 { type: 'wall_socket1', id: 'socket', name: 'Wall socket', takeable: false, triggerOnInteract: [{ type: 'set_global', key: 'copier_off', value: true }] },
                 { type: 'notes1', id: 'out_a', name: 'Printout', takeable: true, readable: true, text: 'x', outputOf: 'office_copier', revealOnGlobal: 'out_a_shown' }
             ], npcs: [{ id: 'tom', displayName: 'Tom', npcType: 'person', position: { x: 2, y: 2 }, spriteSheet: 'hacker', needsHome: 'tom_pc',

@@ -7,7 +7,7 @@
  *
  * - No fail is sent for an NPC the server called settled until an ease has been sent for it,
  *   including one GET /scenario called settled when the game loaded (restore).
- * - When a global named in a loaded NPC's work plan (a downIf, a route global) or in its home
+ * - When a global named in a loaded NPC's work plan (an offWhen, a route global) or in its home
  *   station's offWhen changes, one state sync is awaited before the next batch, so the server's
  *   copy of the global is current when it checks the cause.
  * - A report answered `stale` triggers one state sync and is sent once more.
@@ -299,7 +299,7 @@ export function watchedGlobal(name, w = (typeof window !== 'undefined' ? window 
         const home = typeof rec?.needsHome === 'string' ? rec.needsHome : null;
         if (!home || !rec?.work) continue;
         const sp = w.npcNeedsSystem?.world?.getObject?.(home);
-        const cond = sp?.affordance?.offWhen;
+        const cond = sp?.offWhen;
         if (typeof cond === 'string' ? cond === name : (cond && typeof cond === 'object' && Object.prototype.hasOwnProperty.call(cond, name))) return true;
     }
     return false;

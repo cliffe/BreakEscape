@@ -1532,9 +1532,9 @@
           "affordance": {
             "satisfies": "work",
             "restores": 10,
-            "useSeconds": 5,
-            "offWhen": "ian_pc_unplugged"
+            "useSeconds": 5
           },
+          "offWhen": "ian_pc_unplugged",
           "observations": "Ian's PC: a sign-in PC.",
           "lockChance": 1
         },
@@ -2777,38 +2777,38 @@
           "finance"
         ]
       },
-      "downIf": "finance_share_down"
+      "offWhen": "finance_share_down"
     },
     "printer": {
       "name": "Copy room printer",
       "kind": "printer",
       "object": "office_printer",
-      "downIf": "printer_jammed"
+      "offWhen": "printer_jammed"
     },
     "printer_w7": {
       "name": "Slow room printer",
       "kind": "printer",
-      "downIf": "printer_w7_jammed"
+      "offWhen": "printer_w7_jammed"
     },
     "intranet": {
       "name": "Staff intranet",
       "kind": "intranet",
-      "downIf": "intranet_down"
+      "offWhen": "intranet_down"
     },
     "rota": {
       "name": "Rota system",
       "kind": "rota",
-      "downIf": "rota_down"
+      "offWhen": "rota_down"
     },
     "stores": {
       "name": "Stores system",
       "kind": "stores",
-      "downIf": "stores_down"
+      "offWhen": "stores_down"
     },
     "crm": {
       "name": "CRM",
       "kind": "crm",
-      "downIf": "crm_down"
+      "offWhen": "crm_down"
     }
   },
   "roles": {

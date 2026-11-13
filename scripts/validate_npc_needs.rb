@@ -433,32 +433,31 @@ module ValidateNpcNeeds
     end
   end
 
-  # Slice 18a (OFFICE_LIFE_PLAN 12.4): affordance.offWhen (the requireGlobal form) takes a source
+  # Slice 18a (OFFICE_LIFE_PLAN 12.4): an object's offWhen (the requireGlobal form; affordance.offWhen before format 1) takes a source
   # out while it holds. Each name it reads must be a declared global (error); something should set
   # it (warning; ink is not read). A hint action with no title shows "Intelligence Received", a spy
   # title, so in a scenario with needs NPCs or officePresets it warns.
   def self.check_off_when(json, npcs, objs, issues)
     globals = json['globalVariables'].is_a?(Hash) ? json['globalVariables'] : {}
     objs.each do |o|
-      aff = o.data['affordance']
-      next unless aff.is_a?(Hash) && aff.key?('offWhen')
+      next unless o.data.is_a?(Hash) && o.data.key?('offWhen')
 
-      cond = aff['offWhen']
+      cond = o.data['offWhen']
       names = if cond.is_a?(String) && !cond.empty? then [cond]
-              elsif cond.is_a?(Hash) && !cond.empty? then cond.keys
-              end
+      elsif cond.is_a?(Hash) && !cond.empty? then cond.keys
+      end
       unless names
-        issues << "❌ ERROR: object '#{o.id}' affordance.offWhen must be a global name or { name: value } (the requireGlobal form)."
+        issues << "❌ ERROR: object '#{o.id}' offWhen must be a global name or { name: value } (the requireGlobal form)."
         next
       end
       names.each do |name|
         unless globals.key?(name)
-          issues << "❌ ERROR: object '#{o.id}' affordance offWhen '#{name}' is not declared in globalVariables."
+          issues << "❌ ERROR: object '#{o.id}' offWhen '#{name}' is not declared in globalVariables."
           next
         end
         next if global_set_somewhere?(json, name)
 
-        issues << "⚠️ WARNING: object '#{o.id}' affordance offWhen '#{name}': nothing in the scenario sets it (a set_global action or a mapping's setGlobal; ink is not checked), so the source is never switched off."
+        issues << "⚠️ WARNING: object '#{o.id}' offWhen '#{name}': nothing in the scenario sets it (a set_global action or a mapping's setGlobal; ink is not checked), so the source is never switched off."
       end
     end
     needs_scenario = json['officePresets'] == true || npcs.any? { |_, n| n['needs'].is_a?(Hash) || n['interests'].is_a?(Hash) }

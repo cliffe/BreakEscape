@@ -837,13 +837,18 @@ module BreakEscape
       assert_response :success
 
       game_loads = sql.select { |s| s.start_with?('SELECT') && s.include?('"break_escape_games"') }
-      # Just the narrow FOR UPDATE load. At current 0 (step 7) the format check is inert and reads no
-      # scenario_data at all (the sync-deltas rule, also pinned by capture_proofs_test); once a format
-      # step lands it adds one jsonb-scalar pluck of formatVersion, never the full scenario_data blob.
-      assert_equal 1, game_loads.size, sql.join("\n")
+      # The narrow FOR UPDATE load, plus (step 8a, current 1) one jsonb-scalar pluck of formatVersion
+      # that the sync format check runs; never the full scenario_data blob. At current 0 (step 7) the
+      # check was inert and read no scenario_data at all (the sync-deltas rule, also pinned by
+      # capture_proofs_test).
+      assert_equal 2, game_loads.size, sql.join("\n")
       narrow_load = game_loads.find { |s| s.include?('FOR UPDATE') }
       assert narrow_load, "a FOR UPDATE load is expected:\n#{sql.join("\n")}"
       refute_includes narrow_load, '"break_escape_games".*', 'scenario_data must not be loaded to save'
+      format_pluck = game_loads.find { |s| s.include?('formatVersion') }
+      assert format_pluck, "the formatVersion pluck is expected:\n#{sql.join("\n")}"
+      # The quoted full column ("break_escape_games"."scenario_data") never appears: the pluck reads
+      # scenario_data only through the jsonb arrow operators.
       refute game_loads.any? { |s| s.include?('"break_escape_games"."scenario_data"') },
              "the full scenario_data column must not be loaded:\n#{sql.join("\n")}"
       assert sql.none? { |s| s.include?('"break_escape_missions"') }, "mission loaded:\n#{sql.join("\n")}"

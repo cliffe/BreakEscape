@@ -1017,3 +1017,384 @@ Step 1 is done; nothing in progress. Commits on `build/harden-step1`: 22e29b9db 
 Step 2 is done; nothing in progress. Commits on `build/harden-step2`: 3f80b61cb (schema, validator, tests), 2a49c4341 (this log and the README note), and for review round 1: 35c7c20fa (fixes), df825084c (tests) and the commit holding the R1 section of this log. Review round 2: 47f808d16 (fixes) and the commit holding the R2 section of this log.
 
 R2 n3 (a value slip in habits, screenHabit or printHabit prints the schema line and the hand check's line) predates step 2 and belongs to a later step.
+
+## Step 8a. One outage field: offWhen (format 1)
+
+Date: 2026-11-13. Branch `build/harden-8a`, made from main `8b6cf6a0d` (step 7 merged, inert at
+current 0). This step renames the two outage fields into one, `offWhen`, and makes `FormatUpgrade`
+current 1 with the first real upgrade step. The step 7 review R2 carry-overs (m1, n1, n2, and the
+8a Sync line) are done here.
+
+### What changed
+
+- **`scripts/scenario-schema.json`.** `networks.*.downIf` and `resources.*.downIf` become `offWhen`
+  in the requireGlobal form (`oneOf` string | `{"x-id-map": true, "type": "object"}`); `offWhen` is
+  removed from `#/definitions/affordance` and declared as an object-level item property (same
+  requireGlobal form). The bare-name form keeps the old meaning; the `{ name: value }` form is now
+  possible on networks, resources and objects.
+- **`lib/break_escape/format_upgrade.rb`.** `STEPS = [STEP_8A]` (version 1,
+  `one_outage_field_offWhen`). `current` is now 1. The `scenario` transform walks live data from the
+  root (`AuthorNotes.each_live`, `free: :skip`) and, for every live Hash, renames a bare `downIf` to
+  `offWhen` and moves an `affordance.offWhen` up to the object (`rename_one_hash_outage_fields!`); an
+  emptied affordance stays `{}`. The `player_state` transform applies the same move to each item copy
+  (inventory, `room_states.*.objects_added`, `droppedItems`/`copiedItems`/`serverClones`) from the
+  item Node. Both are idempotent, skip notes and free data, and leave format-1 data unchanged.
+  `retired`: `networks.*.downIf`, `resources.*.downIf`, `affordance.offWhen` at any depth.
+- **Readers moved to the new names.** Ruby: `app/models/break_escape/network_access.rb`
+  (`host_service_off?` reads object-level `offWhen` via `AccessWork.object_off_when`; `network_up?`
+  and `resource_down?` read `offWhen` and evaluate it through the shared `AccessWork.globals_hold?`;
+  `reach_cache_key` keys on `network_up?`), `lib/break_escape/access_work.rb` (new
+  `off_when_present?` and `object_off_when` helpers; `cause_holds?`, `cause_why_reachable?`, `plan`,
+  `off_when?`, `can_fail?` read `offWhen`), `lib/break_escape/network_model.rb` (route `down_of`
+  reads `offWhen`; the `{ name: value }` form cannot be a route name, so a network carrying it is
+  treated as up through a link route, its own `network_up?` still gating direct access), `game.rb`
+  (work-plan comment). JS: `npc-work.js` (the work plan carries `offWhen` values, checked with a
+  local `offWhenHolds`/`offWhenNames` since this module stays import-free), `npc-needs.js`,
+  `npc-reports.js`, `unlock-system.js`, `container/container-minigame.js` (object-level `offWhen`).
+- **Validators and dungeon graph.** `validate_network.rb` (new `offwhen_names`/`offwhen_holds_on?`
+  helpers; the network outage check, the start-down open-share warning and the outage info lines read
+  `offWhen`), `validate_access_work.rb` (new `offwhen_global_names`; the resource outage,
+  leak-scanner, work-fail and starts-down reads), `validate_npc_needs.rb` (`check_off_when` reads
+  object-level `offWhen`), `generate_dungeon_graph.rb` (network label and the NPC outage list),
+  `validate_scenario.rb` `known_item_fields` gains `offWhen`.
+- **Scenarios rewritten (4, none with ERB).** test_access_networks (network `downIf` -> `offWhen`;
+  bench_pc's `affordance.offWhen` moved up, its affordance emptied to `{}`), test_access_social (5
+  resource `downIf`, 2 object `affordance.offWhen`), test_access_work (7, 1), test_needs_sims (0
+  resource; 3 object `affordance.offWhen`: coffee, office copier, kitchen copier). All validate with
+  0 errors (`--no-graph`): networks 7 warn, social 6, work 8, needs_sims 32 (pre-existing counts).
+
+### Carry-overs from the step 7 R2 review (done here)
+
+- m1: `capture_proofs_test.rb` `count_scenario_loads` now counts only the quoted `"scenario_data"`
+  full-column load, not the `sync_format_refusal` jsonb-scalar pluck that runs on every sync once
+  current is non-zero (reason in the test, as `reload_persistence_test.rb:841` draws it).
+- n1: the stale stamping comment in `tools/playtest/swap-scenario-game.rb` reworded.
+- n2: the plan wording at the fields table and the "Stamped at creation" bullet reworded (nothing
+  stamped while current is 0; first stamped by the step that raises current).
+- The step 8a Sync line in the plan states player_state renames in place, once per game, on the
+  server, and that sync neither upgrades nor refuses a below-current game.
+
+### Tests
+
+- `test/unit/format_upgrade_test.rb`: two existing "no steps" tests now stub `steps` to `[]`
+  (current is a real 1); the dev-switch ensure asserts current returns to 1; two new tests cover the
+  8a transform (rename, emptied affordance, note left as written, player_state item copies,
+  idempotence) and the `{ name: value }` resource form. 14 runs, 59 assertions, 0 failures.
+- Verified by hand: the validator prints the rename error on a reintroduced network `downIf`
+  (format 1).
+
+### NOT DONE (handover)
+
+Stopped at the context budget after the core implementation, the carry-overs and the
+format_upgrade unit tests. Remaining, in plan order:
+
+1. **Test migration** of every existing outage test to the new names. The fixtures and inline
+   scenarios still use `downIf`/`affordance.offWhen` in: `test/support/access_work_scenario.rb`,
+   `test/support/network_model_scenario.rb`, `test/js/fixtures/needs-work-world.mjs`, and the Rails
+   and node tests the plan names (`network_outages_test.rb`, `network_host_service_off_test.rb`,
+   `npc_frustration_test.rb`, `access_work_test.rb`, `network_model_test.rb`,
+   `access_work_plan_test.rb`, `access_work_social_test.rb`, `npc_workaround_test.rb`,
+   `feed_post_test.rb`, `npc_lockout_l_test.rb`, `social_lockout_q33_test.rb`,
+   `owner_claim_enforce_test.rb`, `network_implants_test.rb`, and the node tests
+   `npc-coffee-off`, `npc-printer-power`, `npc-needs-work`, `npc-work`, `npc-reports`,
+   `dungeon-graph-networks`, `dungeon-graph-workarounds`, `validator-network-model`,
+   `validator-access-work`, `validator-access-reactive`, `validator-strict-keys`,
+   `validator-access-reply`, `npc-needs-social-media`, `container-shares`, `access-signin-routing`).
+   Grep for `downIf` and `affordance.offWhen`/`affordance?.offWhen` in `test/` for the full list.
+2. **New unit/validator tests the plan lists:** the step on raw and prepared data at the model
+   level; the validator "one rename error per key" tests (see item 4 below about the double line);
+   add 8a cases to `validator-retired-keys.test.mjs`.
+3. **The step 2 formatter / retired-key dedup.** A reintroduced retired key in a closed block now
+   prints BOTH the schema `unknown key` line and the rename line (two errors for one slip). The plan
+   wants one line (step 7: step 2's unknown-key formatter reads `retired` and prints the rename line
+   instead). Wire `scripts/validate_scenario.rb`'s unknown-key formatter to suppress a key that
+   `FormatUpgrade.retired_entries` lists, so one slip prints one rename line. (Rewritten scenarios
+   have no retired keys, so this is cosmetic double-counting, not a false pass.)
+4. **Corpus equivalence and reader parity** runs (plan step 8): render each of the 4 scenarios from
+   the merge base and from the branch with `srand(1)`, confirm the transform applied to the old
+   render equals the new render and that `prepare_scenario_data!` agrees; load the old readers from
+   the merge base and compare derived outage conditions and the needs target lists (bench_pc is the
+   one emptied affordance). The JS reader parity (old module text via `git show <base>:<path>`).
+5. **Full suites** under the shared lock: `bin/rails test` (RBENV_VERSION=2.7.8) and `bin/test-js
+   -j 3`. Not run; expect failures until the item-1 fixtures are migrated.
+6. **docs/test-bridge.md:406** still says the work plan's `needs[].downIf`; update to `offWhen`.
+7. **Live proof** (plan step 8a): two keyless servers (branch 3080, old-game base 3081 at
+   `git merge-base main build/harden-8a`), setFPS(20) with fixed steps on. Show test_access_networks
+   outage on/off and a host leaving/returning; test_access_work printer outage and a work failure
+   with cause `down`; a stored old game (made on the base, played through the printer outage, loaded
+   on the branch) upgrading to format 1 with the old keys gone and the beat behaving; an old tab's
+   sync refused with 409 and the header; `verify-run.rb` progress. Stop both servers.
+8. **Remaining stale comments:** a few pure-comment `downIf` mentions in network_access.rb
+   (728, 942, 1113, 1171) and a PLAYTEST.md; `outage_global` in network_access.rb is now unused but
+   kept (load-bearing-oddity caution).
+
+No blockers found. The transform, schema, readers, scenarios and validators are consistent; the
+remaining work is test migration and proof.
+
+### Continuation (2026-11-13, second builder)
+
+Done since the handover above:
+
+- **Test migration (item 1): complete.** Every `downIf` and `affordance.offWhen` in the Rails and
+  node tests and in the shared fixtures moved to the single object/network/resource `offWhen`:
+  `test/support/access_work_scenario.rb`, `test/support/network_model_scenario.rb`,
+  `test/js/fixtures/needs-work-world.mjs`, the nine Rails behaviour tests, and the node tests
+  (needs/work/reports/coffee/printer/social-media/container/signin/dungeon). The four
+  validator-message node tests (`validator-access-work`, `validator-network-model`,
+  `validator-access-reactive`, `validator-access-reply`) and `validator-strict-keys` were migrated
+  and their expected strings reconciled against the validator's new wording (the undeclared-global
+  line is now `offWhen names 'x', which is not declared`; the station-off report quotes the
+  condition with `.inspect`; a non-requireGlobal `offWhen` errors `must be a global name or
+  { name: value }`). One real find: `validator-access-work.test.mjs` m2 relied on overwriting an
+  object's `affordance` to also drop its outage; with `offWhen` at object level the test now
+  deletes `objects[0].offWhen` so dana_pc stays on (48 s, not 24 s). All migrated files pass alone.
+- **Orchestrator ruling (item 3): done, no exception.** `NetworkModel.reach_conditions` keeps each
+  network's `offWhen` condition whole on the route (bare name stays a String, `{ name: value }` kept
+  as a Hash); `AccessWork.cause_holds?` (unreachable) and `npc-work.js` `reachable`, `wakeOnFor`,
+  `planGlobals` evaluate a route entry with `globals_hold?`/`offWhenHolds` and read names with
+  `offwhen_global_names`/`offWhenNames`. A network down under either form is down on a link route.
+  Tests: `network_model_test.rb` (hash form carried on the route) and `npc-work.test.mjs` (reachable,
+  planGlobals and wakeOnFor on the `{ name: value }` and mixed route). The access-work validator's
+  two route-global collectors read through `offwhen_global_names`.
+- **Formatter dedup (item 4): done.** `format_schema_errors` suppresses the schema unknown-key line
+  for a key that `FormatUpgrade.retired_keys_in` lists at that pointer (and drops the raw
+  additional-properties message when every unknown key there was retired), so one reintroduced
+  retired key prints one rename line. Tests in `validator-retired-keys.test.mjs` (dedup plus a
+  genuine unknown key still printing); 8a retired cases added there too.
+- **Stale comments (item 6): done.** `docs/test-bridge.md` work plan `offWhen?`; the pure-comment
+  `downIf` mentions in `network_access.rb` reworded; `outage_global` was genuinely unused
+  (grep: no callers in app/lib/scripts/test) and removed, its `game.rb` comment reference updated.
+
+Validator over the four touched scenarios and m01: 0 errors each. format_upgrade_test 14/59 green.
+
+NOT DONE (second handover), in plan order:
+
+1. **Model-level and prepared-data unit tests (item 2 remainder).** `format_upgrade_test.rb` already
+   covers the 8a transform on raw data, the emptied affordance, the player_state item copies,
+   idempotence and the `{ name: value }` resource form. Still to add if the plan wants them
+   explicitly: the transform on *prepared* data through a built (unsaved) `Game`, and a Rails
+   `prepare_scenario_data!` agreement check (these overlap item 5's corpus/parity run).
+2. **Corpus equivalence and reader parity (item 5).** Not run. Render each of the four scenarios
+   from the merge base and the branch with `srand(1)`; the 8a `scenario` transform on the old render
+   must equal the new render; `prepare_scenario_data!` must agree; old Ruby and JS readers (loaded
+   from `git show <base>:<path>`) must give the same outage conditions and needs target lists
+   (bench_pc is the emptied affordance).
+3. **Full suites under the lock (item 7).** Not run here (test-lock rule: the orchestrator runs the
+   full suites per merge batch). Every touched test file passes run alone. Expect green.
+4. **Live proof (item 8).** Not done: two keyless servers (branch 3080, base 3081 from a worktree at
+   `git merge-base main build/harden-8a`), setFPS(20) fixed steps on; an old game made on the base,
+   loaded on the branch, upgrading to format 1 under the row lock; an outage through `offWhen`; an
+   old tab's sync refused with 409 and the header; `verify-run.rb` progress.
+
+### Step 8a live proof (2026-11-13, third builder)
+
+Item 8 above is now done. Two keyless servers sharing the development database, `setFPS(20)` with
+fixed steps on, headless. The branch server on **:3080** ran from `p-harden-8a` (tip `4c9b2a552`;
+the task was briefed at `23e68344f`, which the parallel corpus/parity commit advanced, tests only,
+no change to the upgrader or the readers this proof exercises; `FormatUpgrade.current` is 1). The
+base server on **:3081** ran from a hand-made base worktree `.claude/worktrees/p-harden-8a-base` at
+`git merge-base main build/harden-8a` = **`8b6cf6a0d`** (step 7 merged, inert at current 0);
+`node_modules` symlinked from `p-9-2-h`, `.bundle/config` copied from `p-9-2-h`. No `db:` task was
+run anywhere. Drivers and the read-only row reader live in the session scratchpad (`p-8a-proof/`),
+nothing added to the repo.
+
+**How the old games were made (deviation from the plan, on the brief's instruction).** The plan's
+"Old games for live proofs" rule makes a test scenario's old game with a one-off runner that
+prepares the data; the brief for this proof instead directed `tools/playtest/swap-scenario-game.rb`.
+Each old game was therefore made on the base with
+`swap-scenario-game.rb <scenario> <scenario> --unlock-all` (current 0, so stored `formatVersion` 0,
+unprepared raw render), then played on the base server's real page to pick up takeable items so
+player_state held real item copies. One consequence is recorded under 3a below: because the base
+game is unprepared, the branch's first load re-prepares it (the transform changes `scenario_data`,
+so `ensure_current_format!` re-runs `prepare_scenario_data!`), so the upgraded row also gains the
+loader's usual fills; the outage-key rename itself is isolated and exact.
+
+Games (all development DB): **2613** `test_access_networks` and **2614** `test_access_work` (old,
+base, upgraded on the branch); **2620** `test_access_networks` (new branch game, 3e). None of the
+three outage scenarios has a takeable object carrying the outage key, so the item copies picked up
+(spare USB stick, keystroke injector, storage USB sticks) carry no outage field; the player_state
+transform walks them and correctly leaves them unchanged.
+
+**Before (base, pre-upgrade), read-only runner.**
+- 2613: `formatVersion` 0; `scenario_data/networks/server_net/downIf`; one
+  `scenario_data/rooms/workshop/objects[2]/affordance/offWhen` (bench_pc); inventory copies
+  `kit_stick`, `kit_badusb` (no outage key). Base `GET /scenario`: status 200, header **0**,
+  bootstrap `formatVersion` 0.
+- 2614: `formatVersion` 0; seven `resources/*/downIf` (crm, rota, stores, printer, intranet,
+  printer_w7, finance_share); one `rooms/cable_room/objects[1]/affordance/offWhen`; inventory copies
+  `kit_usb`, `kit_badusb`.
+
+**3a. Upgrade on the branch's real load, under the row lock.** Loading each game on :3080 goes
+through `set_game` to `Game#ensure_current_format!` (`with_lock { reload; upgrade; save }`). After
+the load, read-only runner:
+- 2613: `formatVersion` **1**; zero `downIf`, zero `affordance.offWhen`; two `offWhen`, at
+  `rooms/workshop/objects[2]/offWhen` (object level) and `networks/server_net/offWhen`. Inventory
+  copies `kit_stick`, `kit_badusb` unchanged, none carrying `downIf`/`affordance.offWhen`/`offWhen`.
+  Branch `GET /scenario`: status 200, header **1**, bootstrap `formatVersion` 1; one page load, no
+  `be-format-reload` key.
+- 2614: `formatVersion` **1**; zero `downIf`, zero `affordance.offWhen`; eight `offWhen` (seven
+  `resources/*/offWhen`, one `rooms/cable_room/objects[1]/offWhen`). Inventory copies unchanged.
+The outage-key rename is exactly the 8a transform; the row's other differences from the base row are
+the expected `prepare_scenario_data!` fills of a first-time load of an unprepared game (see the
+deviation note), not an 8a change.
+
+**3b. The outage still works after upgrade (object `offWhen`, branch game 2613).** In the workshop,
+with `bench_pc_off` true and synced, `interact bench_pc` opens nothing (the PC is off). With
+`bench_pc_off` false and synced, `interact bench_pc` opens the sign-in (`password`) minigame (the PC
+is back on). The field the client reads is the object-level `offWhen` the step moved up from
+`affordance.offWhen`.
+
+**3c. An old tab is refused (409 + header).** A base tab (old code, :3081) was opened on 2613 while
+it was still format 0 (bootstrap `formatVersion` 0, header 0; it holds 0). The branch then upgraded
+2613 to format 1 (3a). The still-open base tab's next `set_game` request, `GET /room/lobby`,
+returned **409** with body
+`{"error":"format","message":"This game was saved by a newer version of Break Escape (format 1; this server reads up to 0)","current":0}`;
+base responses carry `X-Break-Escape-Format: 0`. The format guard reloaded the tab once (session key
+`be-format-reload:2613:0:0`), and the reloaded base `show` route is itself the full-page 409 HTML
+refusal ("newer version of Break Escape (format 1; this server reads up to 0)", header
+`X-Break-Escape-Format: 0`). Note: on the base (current 0) `sync_state` is inert and does not itself
+refuse, so a concurrent base sync returned 200; the refusal surfaces on the `set_game` routes (room
+fetch and show), which the guard wraps. This is the intended "a game upgraded by a newer branch
+refuses to load on older code".
+
+**3d. `verify-run.rb` on the upgraded games.** 2613: "progress recorded, 7 rooms beyond the first",
+inventory Notepad, Spare USB stick, Keystroke injector; exit 0. 2614: "progress recorded, 22 rooms
+beyond the first", inventory Notepad and the two storage USB sticks; exit 0.
+
+**3e. A new game on the branch is format 1 and plays.** `swap-scenario-game.rb` of
+`test_access_networks` on the branch created **2620** stamped `formatVersion` **1** at creation
+(`scenario_data` carries `offWhen`, no `downIf`). Played on :3080: items picked up and synced, and
+`verify-run.rb` reports "progress recorded"; the stored row stays `formatVersion` 1 with `offWhen`
+intact.
+
+**Servers and clean-up.** Both servers were stopped by their own PIDs (branch puma pid 3843423 on
+:3080, base puma pid 3843420 on :3081); both confirmed down. The base worktree
+`.claude/worktrees/p-harden-8a-base` is **left in place** (as the task directed), not moved to
+`tmp/delete/`. Games 2613, 2614 and 2620 are development-DB games that carry the proof's picked-up
+items; they are at format 1 and reusable, recorded here. No other game was touched.
+
+### Step 8a corpus equivalence, reader parity and full suites (2026-11-13, fourth builder)
+
+Items 1 and 2 of the second handover (corpus equivalence, reader parity, the item 2 prepared-data
+remainder) are now done as committed tests, and the full suites were run under the shared lock.
+
+**Corpus equivalence and the prepared-data remainder (committed Rails test).**
+`test/unit/format_8a_corpus_test.rb` renders each of the four rewritten scenarios from the merge
+base (`git merge-base main HEAD` = `8b6cf6a0d`, old field names read with `git show <base>:<path>`)
+and from the branch, each with `srand(1)`. For every scenario it shows: the 8a `scenario` transform
+applied to the old render equals the new render (parsed JSON, key order ignored); the transform is a
+no-op on the new render; `FormatUpgrade.retired_keys_in` finds nothing in the new render; and
+`prepare_scenario_data!` agrees across the rename, the transform on the prepared old data (an
+unsaved `Game` built with the render) equalling the prepared new data. That prepared-data check is
+the item 2 remainder (the 8a transform on prepared data through a built, unsaved `Game`). Moved
+keys per scenario (matching the step's own record): test_access_networks 1 network `downIf`, 1
+object `affordance.offWhen` (bench_pc, the one emptied affordance); test_access_social 5 resource,
+2 object; test_access_work 7 resource, 1 object; test_needs_sims 3 object.
+
+**Reader parity.** The same Rails test loads the old object outage reader from the merge base as
+`BreakEscape::AccessWorkOld` (the module text eval'd at the top-level binding, require lines
+dropped) and runs it on the old render, the live reader on the new render: the derived object
+outage condition of every object matches, and the up/down verdict of every network, resource and
+object matches across a sweep of its outage globals (all off, then each name on). A network's and a
+resource's old reader is a bare field read (`downIf`), so the old side reads that field directly on
+the old render. bench_pc keeps a truthy (`{}`) affordance and gains `offWhen`, so it stays in the
+needs target lists. The JS counterpart, `test/js/format-8a-reader-parity.test.mjs`, loads the old
+and new `pcSwitchedOff` (the shared object-off evaluator) from `git show` and the working tree and
+matches their verdicts over every object in the four scenarios and the global sweep, and checks
+that every object keeps its affordance truthiness (needs-target membership unchanged).
+
+**Format-version test migration (previously missed).** Raising `FormatUpgrade.current` from 0 to 1
+activates creation stamping and the load and sync format checks that step 7 kept inert, which
+turned eleven step-7 tests red (they pinned the current-0 behaviour). Migrated:
+`format_version_test.rb` (the three inert-path tests stub an empty step list to hold current 0; the
+header and too-new-`current` assertions read `FormatUpgrade.current`); `access_model_loader_test.rb`
+and `npc_habits_loader_test.rb` (a created game is now stamped, so the hand-set-data checks compare
+`except('formatVersion')`); `reload_persistence_test.rb` (the narrow sync load now also runs the
+`formatVersion` jsonb pluck, so two `break_escape_games` SELECTs, still never the full
+`scenario_data` blob). These are the stamping consequences the step-7 log's own comments
+anticipated.
+
+**Full suites (under `scratchpad/tests.lock`).**
+- `RBENV_VERSION=2.7.8 bin/rails test`: 2330 runs, 42087 assertions, 0 failures, 0 errors, 1 skip.
+- `MERGE_BATCH=1 bin/test-js -j 3`: 586 files, 586 passed, 0 failed.
+- Validator loop (`--no-graph`) over `scenarios/*/scenario.json.erb` and the `.json` scenarios: the
+  four touched scenarios validate with 0 errors each. Unrelated pre-existing known failures remain
+  in other tracks (crypto, labs, escape-room, biometric), none touched by this branch.
+
+**Commits:** `4c9b2a552` (corpus equivalence and reader-parity tests), `d14afa363` (format-version
+test migration), and the commit holding this log.
+
+## Step 8a review R1 fixes (2026-11-13)
+
+Addressing `SCENARIO_FORMAT_HARDENING_STEP8A_REVIEW_R1.md` (0 blockers, 1 major, 1 minor, 4 nits).
+
+**maj1: the corpus and parity tests no longer read through git.** Both tests derived the "old" side
+from `git merge-base main HEAD`, so they would go vacuous or fail once 8a lands on main (the merge
+base then points at the new code) and error in a gitless checkout. The four old renders are now
+vendored as fixtures under `test/fixtures/format_8a/<scenario>.old.json` (captured from the base
+`8b6cf6a0d`, each base template rendered with `srand(1)`; the folder's README records how). The old
+readers are reproduced inline: in the Rails test `object_off_when_old` reads an object's own
+`affordance.offWhen` (no preset merge is needed, because no office preset defines `offWhen`, so the
+own-affordance read is the whole answer on this corpus) and `globals_hold_old?` is the pre-8a
+evaluator; the networks and resources still read a bare `downIf` on the fixture. In the node test
+`pcSwitchedOffOld` is the pre-8a `data.affordance.offWhen` reader, inline, while the live
+`pcSwitchedOff` is still pulled from the working-tree module so the parity stays bound to real code.
+Every `git show`, `merge-base` and the AccessWorkOld eval are gone. Proof it still bites: breaking
+the scenario transform locally (prefixing the renamed value) turns the corpus test red (6 failures),
+and reverting restores green.
+
+**min1:** `scenarios/test_access_networks/PLAYTEST.md` now names the fields in their current shape:
+the network and resource outage conditions as `offWhen`, and the host one as object-level `offWhen`
+rather than `affordance.offWhen`.
+
+**nit1:** the `npc-work.js` `offWhenHolds` docstring now reads "(was `downIf`, a bare name)".
+
+**nit3:** the JS outage helpers (`offWhenHolds` in `npc-work.js` and `container-minigame.js`,
+`pcSwitchedOff` in `unlock-system.js`, `_isOff` in `npc-needs.js`) now treat an empty-object
+`offWhen` as "no condition" (never off), matching Ruby `AccessWork.off_when_present?`. New test
+`test/js/outage-empty-hash-guard.test.mjs` extracts each live helper and checks the empty-object
+edge both ways.
+
+**nit4:** the stale `downIf` comments at `generate_dungeon_graph.rb:1069`, `npc-needs.js` (the
+early-return note) and `npc-reports.js` now say `offWhen`.
+
+**nit2 (not applied, needs a decision).** The outdented `else`/`elsif`/`end` in
+`generate_dungeon_graph.rb`, `validate_access_work.rb` and `validate_npc_needs.rb` are not stray
+editor noise: `rubocop-rails-omakase` (the repo's inherited config) flags main's deeper
+(keyword-aligned) `else`/`end` on these assignment-position conditionals as `Layout/ElseAlignment`
+and `Layout/EndAlignment` offences and autocorrects them to column 4. The mandatory post-edit and
+pre-commit rubocop hooks both re-outdent the lines and the pre-commit hook blocks any commit that
+still carries the deeper alignment, so main's indentation cannot be restored without an inline
+`rubocop:disable` (itself new noise) or a config change. Left as the branch (and rubocop) has it.
+
+
+## Step 8a corpus-test design fix (2026-11-13)
+
+Batch 21 (main + network-views slice 1 + copier + barkDelay + step 8a) failed two step-8a corpus
+tests for `test_access_networks`: the equivalence and the `prepare_scenario_data!` check. Slice 1
+legitimately edited that scenario (dropped `linkName` overrides, changed sign text), so the corpus
+test's "new" side, which it read by rendering the LIVE template, no longer equalled
+`transform(old fixture)`. Any later edit to one of the four test scenarios would break the test the
+same way. A test-design flaw, not a transform bug.
+
+**Fix: freeze both sides.** The new render is now vendored beside the old one as
+`test/fixtures/format_8a/<scenario>.new.json`, captured from this branch's templates at its tip
+(`srand(1)` then ERB via `Mission::ScenarioBinding`, then pretty JSON). On this branch
+`transform(old)` already equals that render, so freezing it is safe; a later scenario edit changes
+the live render but not the frozen pair. The equivalence and prepare checks, and the Ruby/JS reader
+parity, now read the frozen pair.
+
+**Edit-proof live guard.** A separate test in each file renders the four LIVE templates and asserts
+no retired outage key has come back (`retired_keys_in` in Ruby; an inline object/network/resource
+walk in the node test). It pins no content, so ordinary scenario edits pass, but a returning
+`downIf` or `affordance.offWhen` turns it red.
+
+**JS reader parity decision.** The node parity test also read its "new" side from the live template
+and matched objects to the frozen old fixture by id, so an object-set change in a scenario would
+break it too. Its new side now reads `<scenario>.new.json`. It stays a reader-vs-reader check (old
+`pcSwitchedOff` on the old render vs live `pcSwitchedOff` on the new render), never a frozen-expected
+blob, and is edit-proof; the live guard above covers returning old names.
+
+**Proof it still bites.** Prefixing the renamed value in `rename_one_hash_outage_fields!` turns the
+Ruby corpus test red (6 failures); reverting restores green (21 runs, 298 assertions, 0 failures).
+The node parity test passes (1 file). README updated with how both sides are made.

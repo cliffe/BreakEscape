@@ -234,9 +234,9 @@ module NetworkModelScenario
     data
   end
 
-  # Slice 9.3b sub-slice O: the pivot fixture with server_net carrying a downIf global,
+  # Slice 9.3b sub-slice O: the pivot fixture with server_net carrying an offWhen global,
   # down by default (servers_offline true). A repair sets the global false. The player side
-  # of the resource downIf is exercised by backup_vault_down, an open share on office_lan
+  # of the resource offWhen is exercised by backup_vault_down, an open share on office_lan
   # whose own service can be switched off while its network stays up.
   OUTAGE_GLOBAL = 'servers_offline'.freeze
   RESOURCE_OUTAGE_GLOBAL = 'archive_offline'.freeze
@@ -245,18 +245,18 @@ module NetworkModelScenario
 
   def with_outage(down: true)
     data = with_pivot
-    data['networks']['server_net']['downIf'] = OUTAGE_GLOBAL
+    data['networks']['server_net']['offWhen'] = OUTAGE_GLOBAL
     data['globalVariables'] = (data['globalVariables'] || {}).merge(OUTAGE_GLOBAL => down)
     data
   end
 
-  # A resource whose own downIf takes its service off while its network (office_lan) stays
+  # A resource whose own offWhen takes its service off while its network (office_lan) stays
   # up: an open share listing contents, down while archive_offline is truthy.
   def with_resource_outage(down: true)
     data = scenario
     data['resources']['archive_down'] = {
       'kind' => 'file_share', 'name' => OUTAGE_SHARE_NAME, 'host' => FS_HOST, 'network' => 'office_lan',
-      'downIf' => RESOURCE_OUTAGE_GLOBAL,
+      'offWhen' => RESOURCE_OUTAGE_GLOBAL,
       'contents' => [{ 'id' => 'archive_note', 'type' => 'text_file', 'name' => 'archive_readme.txt',
                        'takeable' => true, 'text' => OUTAGE_SHARE_TEXT }]
     }

@@ -260,9 +260,9 @@ module BreakEscape
       assert @game.session_route_up?('bench_pc'), 'a blank-foothold session is judged as 9.3a did'
     end
 
-    # ---- The resource-side outage (the player side of a resource downIf) -----------------
+    # ---- The resource-side outage (the player side of a resource offWhen) -----------------
 
-    test 'a resource whose own downIf is truthy is withheld and not served, and returns on repair' do
+    test 'a resource whose own offWhen is truthy is withheld and not served, and returns on repair' do
       build_network_game({}, NS.with_resource_outage(down: true))
       take_drop_box
       plant('comms_port')
@@ -285,7 +285,7 @@ module BreakEscape
     # network's rows, and they come back on repair.
     test 'a foothold on a network that is down lists no rows of its own network, and they return on repair' do
       data = NS.scenario
-      data['networks']['office_lan']['downIf'] = 'office_down'
+      data['networks']['office_lan']['offWhen'] = 'office_down'
       data['globalVariables'] = (data['globalVariables'] || {}).merge('office_down' => false)
       build_network_game({}, data)
       take_drop_box
@@ -313,7 +313,7 @@ module BreakEscape
     # the foothold's own network stays listed, greyed, while that network is down.
     test 'a session held on the own network shows as a greyed block while it is down, and returns on repair' do
       data = NS.scenario
-      data['networks']['office_lan']['downIf'] = 'office_down'
+      data['networks']['office_lan']['offWhen'] = 'office_down'
       data['globalVariables'] = (data['globalVariables'] || {}).merge('office_down' => false)
       build_network_game({}, data)
       take_drop_box

@@ -229,11 +229,11 @@ module BreakEscape
     VENT_TEXT = 'Server down again, second time this week on the finance share.'.freeze
     VENT_FACT_TEXT = 'Jake Brooks keeps the finance backups on a personal drive.'.freeze
 
-    # jake gains a work need on `srv` (downIf srv_down) and a reactive vent post. `order` sets the
+    # jake gains a work need on `srv` (offWhen srv_down) and a reactive vent post. `order` sets the
     # feed order; the three ordered posts of AccessSocialScenario stay.
     def reactive_scenario(order: 'reactive_first')
       data = AccessSocialScenario.scenario
-      data['resources'] = { 'srv' => { 'kind' => 'file_share', 'name' => 'Finance share', 'downIf' => 'srv_down' } }
+      data['resources'] = { 'srv' => { 'kind' => 'file_share', 'name' => 'Finance share', 'offWhen' => 'srv_down' } }
       data['globalVariables'] = { 'srv_down' => false }
       data['social']['intelFacts']['jake_vent_fact'] =
         { 'label' => 'Backups', 'subject' => 'jake', 'text' => VENT_FACT_TEXT }

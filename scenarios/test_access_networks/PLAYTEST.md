@@ -307,7 +307,7 @@ covers it).
 ## Slice 9.3b sub-slice O: Outages (N5 to N7)
 
 Added by sub-slice O (`ACCESS_MODEL_SLICE_9_3B_PLAN.md`, section 5.2). `server_net` now carries
-`downIf: "servers_offline"` and the global starts `false` (up), so the pivot beats N1 to N4 are
+`offWhen: "servers_offline"` and the global starts `false` (up), so the pivot beats N1 to N4 are
 unchanged. In the server room (north of the comms room) a rack breaker (`server_breaker`) takes
 the network down, a power switch (`server_power`) restores it. All outage state is read on the
 server from its own globals, so a tampered client cannot reach a downed network, clear the global
@@ -322,7 +322,7 @@ it cannot set, or keep using a no-route session.
 ### N14: a host whose own service is off (plan 5.2)
 
 In the workshop, `bench_pc` (WS-BENCH-01, a sign-in PC on `workshop_lan`, `access` staff) carries
-`affordance.offWhen: "bench_pc_off"`, true at the start. The `bench_power` switch flips it with two
+`offWhen: "bench_pc_off"`, true at the start. The `bench_power` switch flips it with two
 `confirm_action`s. The box's view sends the latest globals before it fetches, so a flip shows at
 once. Off is off at the keyboard too (user decision q72). While off the PC shows `aw_pc_off1` (a
 dark monitor and tower, through `spriteVariants`), and back on it shows its map picture again.
@@ -336,7 +336,7 @@ Its desktop holds a PIN folder, `bench_logs` (PIN 3141, given in its observation
 The scoped-request route test: a folder, inventory add or unlock scoped under the remote
 `sv_fs02` session is allowed only while the route is up, read from the server's own
 `sessions[sv_fs02].foothold`, never a client parameter. A local (keyboard or claim) session is
-never affected. A resource whose own `downIf` is truthy is withheld from the view and not served
+never affected. A resource whose own `offWhen` holds is withheld from the view and not served
 in the same way, returning when its global clears.
 
 ## Earned secrets

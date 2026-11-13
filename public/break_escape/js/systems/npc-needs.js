@@ -663,7 +663,7 @@ export class NPCNeedsSystem {
         if (typeof name !== 'string') return;
         // Access 9.2 A (plan 5.2): a failed park whose wakeOn names this global, and whose causes
         // would all pass now, retries soon. Before the early return: a scenario whose only outages
-        // are resource downIfs has no offWhen object at all.
+        // are resource offWhen conditions has no object-level offWhen at all.
         this._wakeFailedFor(name);
         if (!this._offSeen.size) return;
         let woke = false;
@@ -685,8 +685,10 @@ export class NPCNeedsSystem {
 
     /** affordance.offWhen holds: not a source (slice 18a). Records the state for onGlobalChanged. */
     _isOff(o) {
-        const cond = o?.affordance?.offWhen;
+        const cond = o?.offWhen;
         if (cond === undefined || cond === null || cond === false || cond === '') return false;
+        // An empty object is "no condition" (matches Ruby off_when_present?), so it never holds.
+        if (typeof cond === 'object' && Object.keys(cond).length === 0) return false;
         const off = this._globalHolds(cond);
         this._offSeen.set(o.id, { cond, off });
         return off;
@@ -1625,7 +1627,7 @@ export class NPCNeedsSystem {
             ? homeObj : this._nearestReachable(s, opts, pos);
         if (!target) return queued();
         const pick = { kind: 'use', targetId: target.id };
-        if (target.affordance.offWhen !== undefined) pick.offWhen = target.affordance.offWhen;
+        if (target.offWhen !== undefined) pick.offWhen = target.offWhen;
         if (skipped && !quiet) pick.leashed = skipped;
         if (priv && !quiet) pick.privateSkipped = priv;
         return withAnyway(pick);
@@ -1638,7 +1640,7 @@ export class NPCNeedsSystem {
         const o = this.world.getObject(b.pcId);
         if (!o || this._isOff(o) || this._hidden(o) || !this._free(s, o) || !this._reachable(s, o)) return null;
         const pick = { kind: 'use', targetId: o.id, borrowed: true };
-        if (o.affordance?.offWhen !== undefined) pick.offWhen = o.affordance.offWhen;
+        if (o.offWhen !== undefined) pick.offWhen = o.offWhen;
         return pick;
     }
 
@@ -2332,7 +2334,7 @@ export class NPCNeedsSystem {
         const rules = this.world.workRules;
         const conds = [];
         const st = this._stationId(s) ? this.world.getObject(this._stationId(s)) : null;
-        const stationOff = st?.affordance?.offWhen;
+        const stationOff = st?.offWhen;
         if (this._judged(s, 'work')) {
             const names = rules?.planGlobals ? rules.planGlobals(this._plan(s)) : [];
             for (const n of names) conds.push({ key: `g:${n}`, cond: n, need: 'work' });
@@ -4328,7 +4330,7 @@ export class NPCNeedsSystem {
         const target = this._nearestReachable(s, list, pos);
         if (!target) return null;
         const pick = { kind: 'use', targetId: target.id, queue: true };
-        if (target.affordance.offWhen !== undefined) pick.offWhen = target.affordance.offWhen;
+        if (target.offWhen !== undefined) pick.offWhen = target.offWhen;
         return pick;
     }
 

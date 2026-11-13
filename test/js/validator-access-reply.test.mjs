@@ -313,7 +313,7 @@ test('a reply piece inside an ink line raises the unique-text warning; the fille
 // _countFailure), so the Feed estimate brings forward only the NPC whose work resource starts down
 test('report lines: the Feed estimate takes breakDrain off an NPC whose work resource starts down', { skip }, () => {
     const s = pair();
-    s.resources = { drive: { name: 'Team storage area', kind: 'file_share', downIf: 'drive_down' } };
+    s.resources = { drive: { name: 'Team storage area', kind: 'file_share', offWhen: 'drive_down' } };
     const ivy = s.rooms.office.npcs.find(n => n.id === 'ivy');
     ivy.workNeeds = ['drive'];
     ivy.needs.work = { decayPerMin: 6, urgentAt: 50, initial: 45 };

@@ -3,7 +3,7 @@ require_relative '../../support/network_model_scenario'
 
 module BreakEscape
   # Networks slice 9.3b, plan 5.2 "A host whose own service is off": a sign-in host whose
-  # office-life `affordance.offWhen` (9.2's field) holds on the server shows as not responding
+  # office-life `offWhen` (9.2's field, object-level since format 1) holds on the server shows as not responding
   # in the view, and a remote sign-in, a remote desktop and a scoped request under a remote
   # session there are refused 403 not_responding. A session already held there is kept, and
   # works again once the service is back. Off is off at the keyboard too (user decision q72):
@@ -32,8 +32,8 @@ module BreakEscape
     def scenario_with_service_off(lena_off:, sam_power: 'on')
       data = NS.scenario
       pcs = data['rooms'].values.flat_map { |room| room['objects'] || [] }
-      pcs.find { |o| o['id'] == 'lena_pc' }['affordance'] = { 'offWhen' => LENA_OFF }
-      pcs.find { |o| o['id'] == 'sam_pc' }['affordance'] = { 'offWhen' => { 'sam_pc_power' => 'off' } }
+      pcs.find { |o| o['id'] == 'lena_pc' }['offWhen'] = LENA_OFF
+      pcs.find { |o| o['id'] == 'sam_pc' }['offWhen'] = { 'sam_pc_power' => 'off' }
       data['globalVariables'] = (data['globalVariables'] || {}).merge(LENA_OFF => lena_off, 'sam_pc_power' => sam_power)
       data
     end
@@ -42,7 +42,7 @@ module BreakEscape
     def with_pivot_foothold
       data = NS.with_pivot
       lena = data['rooms'].values.flat_map { |room| room['objects'] || [] }.find { |o| o['id'] == 'lena_pc' }
-      lena['affordance'] = { 'offWhen' => LENA_OFF }
+      lena['offWhen'] = LENA_OFF
       data['globalVariables'] = (data['globalVariables'] || {}).merge(LENA_OFF => false)
       build_network_game({}, data)
       take_drop_box
@@ -264,7 +264,7 @@ module BreakEscape
     test 'the via of an up block skips an off session host' do
       data = NS.with_pivot
       pcs = data['rooms'].values.flat_map { |room| room['objects'] || [] }
-      pcs.find { |o| o['id'] == 'sam_pc' }['affordance'] = { 'offWhen' => 'sam_pc_off' }
+      pcs.find { |o| o['id'] == 'sam_pc' }['offWhen'] = 'sam_pc_off'
       data['globalVariables'] = (data['globalVariables'] || {}).merge('sam_pc_off' => false)
       build_network_game({}, data)
       take_drop_box

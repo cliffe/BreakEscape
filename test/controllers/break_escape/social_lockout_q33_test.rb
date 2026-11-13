@@ -276,7 +276,7 @@ module BreakEscape
       data = scenario
       data['globalVariables'] = (data['globalVariables'] || {}).merge('tara_pc_off' => false)
       pc = data['rooms']['office']['objects'].find { |o| o['id'] == 'tara_pc' }
-      pc['affordance'] = (pc['affordance'] || {}).merge('offWhen' => 'tara_pc_off')
+      pc['offWhen'] = 'tara_pc_off'
       build(data: data, player_state: { 'globalVariables' => { 'tara_pc_off' => true } })
       assert ask('tara', object_id: 'tara_pc')['refused'], 'off: the PC is unusable'
       build(data: data, player_state: { 'globalVariables' => { 'tara_pc_off' => false } })

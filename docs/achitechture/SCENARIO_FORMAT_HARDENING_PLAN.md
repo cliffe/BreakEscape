@@ -445,7 +445,7 @@ Built in two parts, each size M and each its own branch and merge batch: **6a-1*
 | `timedMessages` | 1 (timed_messages_example) | none at the top level (the NPC manager reads each NPC's own `timedMessages`) |
 | `showTitleScreen` | 1 (title-screen-demo) | none (`main.js` starts the title screen unconditionally) |
 | `acknowledgedClues` | 2 once m06's and m08's markers land | none; declared and deleted from the bootstrap in step 3 |
-| `formatVersion` | none (the server stamps every game; templates never carry it) | server (step 7); the client's reload check |
+| `formatVersion` | none (templates never carry it; the server stamps nothing while current is 0, and from the first step that raises current it stamps at creation) | server (step 7); the client's reload check |
 
 The three scenarios with a top-level `name` (test-ble-scanner, test-rfid-multiprotocol, test-rfid) have no needs NPCs, so the seed fallback changes nothing today; it would for a future needs scenario that relies on it.
 
@@ -576,7 +576,7 @@ Door entries resolve their lock type from the connected room before the `require
 - **A missing field is 0, everywhere.** One reader on the server, `FormatUpgrade.version_of(data)`: an absent or nil `formatVersion` is 0; a non-negative Integer is itself; any other value (a string, a float, a negative number) raises `FormatUpgrade::Unreadable`, which refuses the game as a too-new one does (below), because only the server writes the field. Every server path that needs the version calls it; none reads `data['formatVersion']` directly. The client applies the same rule to the bootstrap (below).
 - `BreakEscape::FormatUpgrade.current` (in `lib/break_escape/format_upgrade.rb`) is the code's version: a method that returns the `version` of the last entry in `STEPS`, or 0 when `STEPS` is empty. It is a method, never a constant, so nothing caches an old value and the test switch below needs no constant reassigned. Step 7 lands it as 0. "CURRENT" in this plan means its value.
 - Templates never carry it. A rendered template already has the current names (the validator rejects retired keys, below), so the server stamps the number. The validator errors on a template that sets `formatVersion` ("the server stamps formatVersion at creation; remove it").
-- Stamped at creation: `Game#generate_scenario_data` sets it to CURRENT after `prepare_scenario_data!`. When the caller supplies `scenario_data` (the method returns early when it is present, which tests use), a `before_create` stamps CURRENT if the field is absent; an upgrader test that wants an old game sets `formatVersion: 0` itself. `tools/playtest/swap-scenario-game.rb` stamps CURRENT on the data it swaps in, and gains `--format-version <n>` for the refusal proof only (the proof uses 900, far from any real format). It is never used to make an old game (section 2, "Old games for live proofs").
+- Stamped at creation once current is non-zero: `before_create :stamp_format_version` stamps CURRENT onto data with no `formatVersion`, after `prepare_scenario_data!`. While current is 0 (step 7 before any rename lands) it stamps nothing, because `version_of` already reads a missing field as 0; a game is first stamped by the step that raises current (8a, to 1). When the caller supplies `scenario_data` with `formatVersion: 0`, the `0 ||=` no-op keeps 0, so an upgrader test that wants an old game sets `formatVersion: 0` itself. `tools/playtest/swap-scenario-game.rb` stamps CURRENT on the data it swaps in, and gains `--format-version <n>` for the refusal proof only (the proof uses 900, far from any real format). It is never used to make an old game (section 2, "Old games for live proofs").
 - **A game created before step 7 is never written because of step 7.** Its `version_of` is 0, equal to CURRENT, so it is not upgraded and not stamped; the bootstrap reports 0 and the header says 0, so the client neither reloads nor stops saving. It is stamped by the first step that raises CURRENT, and only then.
 - Declared in the schema as a top-level integer, minimum 0, and shipped in the bootstrap, because the client's reload check reads it (6b marks it `x-client: true`).
 
@@ -721,7 +721,7 @@ The build log lists each moved key per scenario with its count.
 
 **Live proof.** test_access_networks: the network's outage global switched on and off, a host leaving and returning; test_access_work: a printer outage turning an NPC back and a work failure with cause `down`; the stored-game proof (step 8, a real old game) on test_access_work through the same outage.
 
-**Sync.** No new state; item copies keep their size.
+**Sync.** No new state; item copies keep their size. The synced player_state does not grow and changes only by delta: 8a's `player_state` transform renames keys inside the item copies already stored (inventory, objects added to a room, dropped/copied/cloned lists) in place, once per game, on the server at load, so a copy keeps its size or gains at most the one moved `offWhen` key and nothing is re-sent because of it. Sync reads no renamed key: outage switches are globals, globals keep their names, and sync's `scenario_data` reads (`fingerprintOwner`, the capture fields) are untouched, so `sync_state` neither upgrades nor refuses a below-current game (it is synced and upgraded on the next load).
 
 ### Step 8b. One owner field (format 2)
 
