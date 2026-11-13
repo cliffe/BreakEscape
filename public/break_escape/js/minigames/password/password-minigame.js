@@ -6,7 +6,7 @@ import { escapeHtml } from '../../utils/escape-html.js';
 import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } from '../../utils/lock-scope-refusal.js';
 import { isComputerType } from '../../utils/computer-keywords.js';
-import { mountPcMonitor, cssZoomOf } from '../../utils/pc-monitor.js';
+import { mountPcMonitor, cssZoomOf, pcPostitButtonHtml } from '../../utils/pc-monitor.js';
 import { headshotCandidates, headshotKeys, noteMissingHeadshot, npcRecordFor, headshotSourceFor, applyHeadshotBox,
     SHORT_PORTRAIT_PX, TILE_PORTRAIT_PX, isTalkSheetSize, portraitCropOverride, headCropOffset, frameAlphaReader } from '../../utils/npc-headshot.js';
 // The portrait crop helpers live with the headshots (UX slice 2c R1 m8: the desktop bar
@@ -518,7 +518,11 @@ export class PasswordMinigame extends MinigameScene {
             const notebookBtn = document.createElement('button');
             notebookBtn.className = 'minigame-button';
             notebookBtn.id = 'minigame-notebook-postit';
-            notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
+            if (this.pcMonitor) {
+                notebookBtn.innerHTML = pcPostitButtonHtml();
+            } else {
+                notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
+            }
             this.ensureControlsRow()?.appendChild(notebookBtn);
         }
         
@@ -556,7 +560,7 @@ export class PasswordMinigame extends MinigameScene {
      */
     mountMonitor() {
         const note = this.gameData.showPostit && this.gameData.postitNote
-            ? escapeHtmlKeepWords(displayDashes(this.gameData.postitNote)) : '';
+            ? escapeHtmlKeepWords(displayDashes(this.gameData.postitNote), { joinPunctuation: true }) : '';
         this.pcMonitor = mountPcMonitor(this, { name: displayDashes(this.pcName()), postitHtml: note, pcId: this.pcId() });
         if (!this.pcMonitor) { this.wrapInFrame(); return; }
         this.frameElement = this.pcMonitor.root;
@@ -1390,6 +1394,14 @@ export class PasswordMinigame extends MinigameScene {
     }
     
     cleanup() {
+        // Release the frame-snap observers and the PC monitor's chin ResizeObserver when the
+        // game really ends (endMinigame sets _ending, then calls cleanup(); the X goes the same
+        // way). Mid-flow cleanup() calls (lockout, accepted, wrong password) leave the screen up
+        // with a message, so the snap and pc-view stay; both releases are idempotent
+        if (this._ending) {
+            this.stopFrameSnap?.();
+            this.pcMonitor?.destroy?.();
+        }
         // Call parent cleanup (handles event listeners)
         super.cleanup();
     }
@@ -1491,7 +1503,11 @@ export class PasswordMinigame extends MinigameScene {
                 const notebookBtn = document.createElement('button');
                 notebookBtn.className = 'minigame-button';
                 notebookBtn.id = 'minigame-notebook-postit';
-                notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
+                if (this.pcMonitor) {
+                    notebookBtn.innerHTML = pcPostitButtonHtml();
+                } else {
+                    notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
+                }
                 controls.appendChild(notebookBtn);
                 this.addEventListener(notebookBtn, 'click', () => this.addPostitToNotebook());
             }

@@ -37,7 +37,7 @@ globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const imp = (rel) => import(pathToFileURL(join(dir, rel)));
 const { pcMonitorMetrics, pcViewSpace, mountPcMonitor, resetPostitHeights, keptPostitHeight, keepPostitHeight, keptPostitCount, cssZoomOf, PC_BEZEL, PC_SCREEN_ASPECT, PC_PORTRAIT_ASPECT, PC_SCREEN_MIN,
-    PC_POSTIT_GAP, PC_POSTIT_CLEAR, PC_FRAME_EDGE } = await imp('utils/pc-monitor.js');
+    PC_POSTIT_GAP, PC_POSTIT_CLEAR, PC_FRAME_EDGE, PC_POSTIT_BUTTON_LABEL, pcPostitButtonHtml } = await imp('utils/pc-monitor.js');
 const { headshotKeys, headshotCandidates, headshotUrl, characterKey, noteMissingHeadshot, resetMissingHeadshots, npcRecordFor, applyHeadshotBox } = await imp('utils/npc-headshot.js');
 const { PasswordMinigame, applyTilePortrait } = await imp('minigames/password/password-minigame.js');
 const { ContainerMinigame } = await imp('minigames/container/container-minigame.js');
@@ -47,6 +47,8 @@ const { startNotesMinigame } = await imp('minigames/notes/notes-minigame.js');
 const { centreOnWholePixels } = await imp('minigames/container/container-minigame.js');
 
 const SIZES = [[1400, 1000], [800, 600], [915, 412], [390, 844]];
+// The note keeps a lone "/" with the word before it by a no-break space; compare as plain text
+const plain = (t) => String(t ?? '').replace(/\u00a0/g, ' ');
 const settle = (ms = 0) => new Promise(r => setTimeout(r, ms));
 
 // ── Sizing ───────────────────────────────────────────────────────────────────
@@ -108,6 +110,155 @@ test('short and narrow windows use the compact bezel, with sensible minimums', (
 
 // ── The post-it ──────────────────────────────────────────────────────────────
 
+test('the chin button is labelled Add Postit to notepad, and the note leaves it room at every size', () => {
+    assert.equal(PC_POSTIT_BUTTON_LABEL, 'Add Postit to notepad');
+    const probe = document.createElement('div');
+    probe.innerHTML = pcPostitButtonHtml();
+    assert.equal(probe.textContent.trim(), 'Add Postit to notepad', 'the html carries the label as one line of text');
+    assert.equal(probe.querySelectorAll('.pc-postit-label > span').length, 2, 'two spans a compact frame can stack');
+    assert.notEqual(PC_POSTIT_BUTTON_LABEL, 'Add to Notepad');
+    // The chin's real width (measured in the page) is what the note leaves room for
+    for (const [w, h] of SIZES) {
+        for (const chinRoom of [130, 160, 254]) {
+            const m = pcMonitorMetrics(w, h, { chinRoom });
+            const noteEnd = m.postit.left + m.postit.maxWidth;
+            const floor = m.postit.left + 96;
+            assert.ok(noteEnd <= Math.max(m.width - chinRoom, floor), `${w}x${h} room ${chinRoom}: the note ends (${noteEnd}) before the chin's right part (${m.width - chinRoom})`);
+        }
+    }
+    // A bigger measured room narrows the note; none given falls back to the stored estimate
+    assert.ok(pcMonitorMetrics(390, 844, { chinRoom: 200 }).postit.maxWidth < pcMonitorMetrics(390, 844, { chinRoom: 120 }).postit.maxWidth);
+});
+
+test('the chin button and the note: the CSS stacks the label on compact frames, and a long word wraps inside the note', () => {
+    const sheet = css('pc-monitor.css');
+    const rule = (sel) => (sheet.match(new RegExp(sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*\\{([^}]*)\\}')) || [])[1] || '';
+    const note = rule('.pc-monitor > .postit-note.pc-monitor-postit');
+    assert.ok(!/min-width:\s*min-content/.test(note), 'min-content no longer lets the note beat its max-width');
+    assert.ok(/overflow-wrap:\s*anywhere/.test(sheet), 'a word wider than the room wraps rather than overflows');
+    assert.match(rule('.pc-monitor[data-compact] .pc-postit-label > span'), /display:\s*block/, 'two lines on a compact or narrow frame');
+    assert.match(rule('.pc-postit-label'), /white-space:\s*nowrap/, 'one line on a full frame');
+});
+
+test('update() lays the note out at the chin\'s measured width and sizes the chin by the larger of note and button, with the stale fallback in place (UI quick R2 M1)', () => {
+    // jsdom has no layout, so the page's measurements are stubbed: the chin's buttons are
+    // 90, 125 or 170px wide, the light is hidden (a phone) or 6px (a short frame), the button
+    // is 44px tall, and the note's height FOLLOWS the width it is given (style.maxWidth), as a
+    // real note's does. The mount's first update() ran before these stubs, so the fallback
+    // reserve is what the first pass of the next update() would use without a carried room.
+    for (const [w, h, ledW] of [[390, 844, 0], [360, 740, 0], [915, 412, 6]]) {
+        for (const btnW of [90, 125, 170]) {
+            const restore = sizeWindow(w, h);
+            try {
+                document.body.innerHTML = '<div id="mg"><div class="minigame-game-container"></div></div>';
+                const container = document.getElementById('mg');
+                const scene = { gameContainer: container.querySelector('.minigame-game-container'), container };
+                const word = 'Abcdefghijklmnopqrs';
+                const parts = mountPcMonitor(scene, { name: 'PC', postitHtml: `<span class="keep-whole">${word}</span>`, pcId: `long_${w}_${btnW}` });
+                const noteAt = (maxWidth) => 20 * Math.ceil(1200 / Math.max(1, maxWidth));
+                Object.defineProperty(parts.controls, 'offsetWidth', { configurable: true, get: () => btnW });
+                Object.defineProperty(parts.controls, 'offsetHeight', { configurable: true, get: () => 44 });
+                Object.defineProperty(parts.chin.querySelector('.pc-monitor-led'), 'offsetWidth', { configurable: true, get: () => ledW });
+                Object.defineProperty(parts.postit, 'offsetHeight', { configurable: true, get: () => noteAt(parseFloat(parts.postit.style.maxWidth) || 0) });
+                parts.update();
+                let m = parts.metrics;
+                const room = btnW + (ledW ? ledW + 8 : 0) + m.bezel.side + 8;
+                const noteRight = m.postit.left + m.postit.maxWidth;
+                const tag = `${w}x${h} button ${btnW}`;
+                assert.equal(parts.postit.style.maxWidth, `${m.postit.maxWidth}px`);
+                assert.ok(noteRight <= Math.max(m.width - room, m.postit.left + 96), `${tag}: the note's right edge (${noteRight}) stops before the button (${m.width - room})`);
+                assert.ok(noteRight <= m.width, `${tag}: and inside the bezel`);
+                // The chin follows the note at the width it is drawn at now, and the button
+                const noteNow = noteAt(m.postit.maxWidth);
+                const want = Math.max(44, noteNow + PC_POSTIT_GAP + PC_POSTIT_CLEAR);
+                assert.equal(m.bezel.chin, want, `${tag}: chin ${m.bezel.chin} equals max(button, note ${noteNow} + padding) after one update()`);
+                // Calling it again changes nothing
+                parts.update();
+                assert.equal(parts.metrics.bezel.chin, want, `${tag}: a second update() keeps the chin`);
+                assert.equal(parts.metrics.postit.maxWidth, m.postit.maxWidth);
+                parts.destroy();
+            } finally {
+                restore();
+            }
+        }
+    }
+});
+
+test('the chin button and the share window carry the chin label (UI quick R2 m2)', async () => {
+    const restore = sizeWindow(915, 412);
+    try {
+        window.inventory = { items: [] };
+        window.MinigameFramework = { currentMinigame: null, endMinigame: () => {} };
+        window.playUISound = () => {};
+        resetPostitHeights();
+        document.body.innerHTML = '<div id="mg"></div>';
+        const parentLockable = { scenarioData: { id: 'hot_desk', type: 'pc', name: 'Hot desk PC', postitNote: 'Sam: sokafor / x', showPostit: true } };
+        const share = new ContainerMinigame(document.getElementById('mg'), {
+            title: 'Payroll', containerItem: { scenarioData: { id: 'payroll_share', type: 'network_share', name: '\\\\fs01\\payroll', locked: false }, parentLockable }, contents: []
+        });
+        window.MinigameFramework.currentMinigame = share;
+        await share.init();
+        const btn = document.querySelector('.pc-monitor-controls #minigame-notebook-postit');
+        assert.ok(btn, 'the share window has the chin button');
+        assert.equal(btn.textContent.replace(/\s+/g, ' ').trim(), 'Add Postit to notepad');
+        share.cleanup?.();
+    } finally {
+        restore();
+        resetPostitHeights();
+    }
+});
+
+test('a PC sign-in ended through cleanup() (as endMinigame does) releases the chin and frame-snap ResizeObservers (UI quick R2 m1)', async () => {
+    const live = new Set();
+    const Real = window.ResizeObserver, RealG = globalThis.ResizeObserver;
+    class Counting { constructor() {} observe() { live.add(this); } disconnect() { live.delete(this); } unobserve() {} }
+    window.ResizeObserver = globalThis.ResizeObserver = Counting;
+    const restore = sizeWindow(915, 412);
+    try {
+        for (let i = 0; i < 3; i++) {
+            const mg = await signInScreen();
+            assert.ok(live.size >= 1, 'observers are live while the sign-in is open');
+            mg._ending = true; // endMinigame sets this before it calls cleanup()
+            mg.cleanup();
+            assert.equal(live.size, 0, `open ${i + 1}: cleanup() released it`);
+        }
+        const d = await desktop();
+        assert.ok(live.size >= 1);
+        d._ending = true;
+        d.cleanup();
+        assert.equal(live.size, 0, 'the desktop releases it too');
+    } finally {
+        restore();
+        if (Real) window.ResizeObserver = Real; else delete window.ResizeObserver;
+        if (RealG) globalThis.ResizeObserver = RealG; else delete globalThis.ResizeObserver;
+    }
+});
+
+test('a mid-flow cleanup() (lockout screen) keeps the frame snap and pc-view; the real end releases them (UI quick R3 m1)', async () => {
+    const live = new Set();
+    const Real = window.ResizeObserver, RealG = globalThis.ResizeObserver;
+    class Counting { constructor() {} observe() { live.add(this); } disconnect() { live.delete(this); } unobserve() {} }
+    window.ResizeObserver = globalThis.ResizeObserver = Counting;
+    const restore = sizeWindow(915, 412);
+    try {
+        const mg = await signInScreen();
+        const before = live.size;
+        assert.ok(before >= 1);
+        assert.ok(document.querySelector('.pc-monitor-frame, .pc-view') || mg.pcMonitor, 'monitor is up');
+        const hadView = !!document.querySelector('.pc-view');
+        mg.signInLockedOut?.();
+        assert.equal(live.size, before, 'the lockout screen keeps its observers');
+        assert.equal(!!document.querySelector('.pc-view'), hadView, 'pc-view stays on the container');
+        mg._ending = true;
+        mg.cleanup();
+        assert.equal(live.size, 0, 'the real end releases them');
+    } finally {
+        restore();
+        if (Real) window.ResizeObserver = Real; else delete window.ResizeObserver;
+        if (RealG) globalThis.ResizeObserver = RealG; else delete globalThis.ResizeObserver;
+    }
+});
+
 test('the post-it sits on the chin: its top just under the screen, in from the left, at every size', () => {
     for (const [w, h] of SIZES) {
         const m = pcMonitorMetrics(w, h);
@@ -120,10 +271,10 @@ test('the post-it sits on the chin: its top just under the screen, in from the l
 });
 
 test('R1 M1: the chin holds the note: its bottom edge is on the bezel at every size, for one and two lines', () => {
-    // A fixed note height per line count: full 44 (one line) and 64 (two); compact 36 and 54
+    // A fixed note height per line count: full 44 (one line) and 64 (two); compact 38 and 54
     for (const [w, h] of SIZES) {
         const compact = pcMonitorMetrics(w, h).compact;
-        for (const noteH of compact ? [36, 54] : [44, 64]) {
+        for (const noteH of compact ? [38, 54] : [44, 64]) {
             const m = pcMonitorMetrics(w, h, { postitHeight: noteH });
             const bottom = m.postit.top + noteH;
             assert.ok(bottom <= m.height - PC_FRAME_EDGE, `${w}x${h} ${noteH}px: the bottom (${bottom}) is inside the outline (${m.height})`);
@@ -788,8 +939,15 @@ test('R3 M2: a file opened from a PC desktop opens in that PC\'s monitor frame; 
             mg.init();
             assert.equal(frameBox(), desk, `${w}x${h}: the same frame as the desktop, the note in the same place`);
             // R4 m2: the post-it and its button stay on the monitor
-            assert.equal(document.querySelector('.pc-monitor-postit').textContent, 'Sam: sokafor / x');
+            assert.equal(plain(document.querySelector('.pc-monitor-postit').textContent), 'Sam: sokafor / x');
             assert.ok(document.querySelector('.pc-monitor-controls #minigame-notebook-postit'), 'the note\'s Add to Notepad in the chin');
+            // The chin's button says it adds the post-it; the toolbar's adds the file: two labels
+            const chinLabel = document.getElementById('minigame-notebook-postit').textContent.trim();
+            const toolLabel = document.getElementById('minigame-notebook').textContent.trim();
+            assert.equal(chinLabel, 'Add Postit to notepad', 'the chin button');
+            assert.equal(toolLabel, 'Add to Notepad', 'the file reader toolbar button is unchanged');
+            assert.notEqual(chinLabel, toolLabel, 'the chin and toolbar labels differ');
+            assert.equal(document.getElementById('minigame-notebook-postit').title, '', 'no title repeating the visible label');
             assert.equal(document.querySelector('.pc-monitor-name').textContent, 'Hot desk PC');
             assert.ok(document.querySelector('.pc-monitor-bezel > #minigame-close'), 'the X in the bezel');
             assert.equal(document.querySelector('.window-controls'), null, 'no window buttons');
@@ -874,7 +1032,7 @@ test('R4 m1: back from the Notepad, a file read from a desktop reopens in its fr
         assert.notEqual(again, reader);
         assert.ok(document.querySelector('.pc-monitor .pc-file-window'), 'in the PC monitor frame');
         assert.equal(document.querySelector('.pc-monitor-name').textContent, 'Hot desk PC');
-        assert.equal(document.querySelector('.pc-monitor-postit')?.textContent, 'Sam: sokafor / x', 'with the PC\'s note');
+        assert.equal(plain(document.querySelector('.pc-monitor-postit')?.textContent), 'Sam: sokafor / x', 'with the PC\'s note');
         assert.equal(again.textFileData.itemId, 'staff_mail', 'matched to the desktop by id');
         assert.equal(window.pendingContainerReturn, back, 'the desktop return waits for the reader\'s X');
         // The reader's own X: back to the desktop
@@ -952,7 +1110,7 @@ test('R4 m2: the reader measures its own note, so a resize keeps the chin; a sha
         });
         window.MinigameFramework.currentMinigame = share;
         await share.init();
-        assert.equal(document.querySelector('.pc-monitor-postit')?.textContent, 'Sam: sokafor / x', 'the note is on the monitor');
+        assert.equal(plain(document.querySelector('.pc-monitor-postit')?.textContent), 'Sam: sokafor / x', 'the note is on the monitor');
         assert.ok(document.querySelector('.pc-monitor-controls #minigame-notebook-postit'), 'with its button in the chin');
         assert.equal(document.querySelector('.pc-monitor').style.height, `${m.height}px`, 'the same frame as the desktop');
         assert.equal(share.pcScreenExtras().pcScreen.postitNote, 'Sam: sokafor / x', 'and a file opened from the share keeps it');
@@ -1029,5 +1187,49 @@ test('R4 m7: the sign-in tiles in the monitor are solid, with the OS accent on t
         assert.match(pw.slice(i, pw.indexOf('}', i)), /#00ff00/);
     } finally {
         restore();
+    }
+});
+
+// ── The chin button's label on every call site (UI quick R1 m2) ───────────────
+
+test('UI quick: the chin button reads Add Postit to notepad on the sign-in screen, the PC password prompt, the desktop and the file reader; a non-PC lock keeps Add to Notepad', async () => {
+    const label = () => document.getElementById('minigame-notebook-postit')?.textContent.replace(/\s+/g, ' ').trim();
+    const sizing = sizeWindow(1400, 1000);
+    try {
+        // sign-in screen
+        let mg = await signInScreen();
+        assert.equal(label(), 'Add Postit to notepad', 'sign-in screen');
+        assert.equal(document.getElementById('minigame-notebook-postit').title, '', 'no title repeating the label');
+        mg.cleanup?.();
+        // a PC's password prompt (not the sign-in)
+        document.body.innerHTML = '<div id="mg"></div>';
+        window.MinigameFramework = { currentMinigame: null, endMinigame: () => {} };
+        window.playUISound = () => {};
+        mg = new PasswordMinigame(document.getElementById('mg'), {
+            title: 'Office PC', lockable: { scenarioData: { id: 'pc1', type: 'pc', name: 'Office PC' } }, type: 'object',
+            correctPassword: 'x', postitNote: 'pw: x', showPostit: true
+        });
+        window.MinigameFramework.currentMinigame = mg;
+        mg.init();
+        assert.ok(document.querySelector('.pc-monitor'), 'the PC is in the monitor frame');
+        assert.equal(label(), 'Add Postit to notepad', 'PC password prompt');
+        mg.cleanup?.();
+        // the desktop (container)
+        const d = await desktop();
+        assert.equal(label(), 'Add Postit to notepad', 'desktop');
+        d.cleanup?.();
+        // a non-PC password lock with a note keeps the plain label
+        document.body.innerHTML = '<div id="mg"></div>';
+        mg = new PasswordMinigame(document.getElementById('mg'), {
+            title: 'Safe', lockable: { scenarioData: { id: 'safe1', type: 'safe', name: 'Safe' } }, type: 'object',
+            correctPassword: 'x', postitNote: 'pw: x', showPostit: true
+        });
+        window.MinigameFramework.currentMinigame = mg;
+        mg.init();
+        assert.equal(document.querySelector('.pc-monitor'), null, 'a safe is not a monitor');
+        assert.equal(label(), 'Add to Notepad', 'non-PC lock');
+        mg.cleanup?.();
+    } finally {
+        sizing();
     }
 });
