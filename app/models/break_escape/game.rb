@@ -290,6 +290,43 @@ module BreakEscape
       names.uniq.sort
     end
 
+    # The task ids any gate credits through creditOnPass.*.completeTask (§7). A task in this set
+    # is server-completed only: complete_task! refuses it unless called with trusted: true, and
+    # skip_task! refuses it outright, so a tampered client cannot forge the objective tick that
+    # the server-checked passage is meant to earn. Derived once and memoised in player_state as
+    # server_credit_global_names does, so the read path never saves; sync_state loads the narrow
+    # row without scenario_data, so that is read on its own there.
+    def server_completed_only_task_ids
+      return [] unless player_state.is_a?(Hash)
+
+      ids = player_state['serverCompletedOnly']
+      return ids.grep(String) if ids.is_a?(Array)
+
+      data = has_attribute?(:scenario_data) ? scenario_data : self.class.where(id: id).pick(:scenario_data)
+      player_state['serverCompletedOnly'] = self.class.completed_only_task_ids_in(data)
+    end
+
+    # Walk every door gate's creditOnPass block and collect the completeTask ids, sorted/unique.
+    def self.completed_only_task_ids_in(data)
+      return [] unless data.is_a?(Hash)
+      rooms = data['rooms']
+      return [] unless rooms.is_a?(Hash)
+
+      ids = []
+      rooms.each_value do |room|
+        next unless room.is_a?(Hash) && room['doors'].is_a?(Array)
+        room['doors'].each do |door|
+          credit = door.is_a?(Hash) && door['gate'].is_a?(Hash) ? door['gate']['creditOnPass'] : nil
+          next unless credit.is_a?(Hash)
+          credit.each_value do |block|
+            task = block.is_a?(Hash) ? block['completeTask'] : nil
+            ids << task.to_s if task.present?
+          end
+        end
+      end
+      ids.uniq.sort
+    end
+
     # Make the record whole for a credit about to fire on the sync path, which loads the narrow
     # SYNC_STATE_COLUMNS (§3.3a). The viaPass credit runs the whole complete_task! tree, which
     # reads scenario_data and reads/writes the stat columns (tasks_completed, score,
@@ -327,7 +364,9 @@ module BreakEscape
       write_server_globals!(set_globals) if set_globals.is_a?(Hash) && set_globals.any?
 
       task_id = block['completeTask']
-      complete_task!(task_id) if task_id.present?
+      # trusted: the server itself is crediting a server-completed-only task (§7); the
+      # complete_task! guard would otherwise refuse it as a client forge.
+      complete_task!(task_id, trusted: true) if task_id.present?
       true
     end
 
@@ -3962,11 +4001,21 @@ module BreakEscape
     end
 
     # Complete a task with server-side validation
-    def complete_task!(task_id, validation_data = {})
+    def complete_task!(task_id, validation_data = {}, trusted: false)
       initialize_objectives
 
       task = find_task_in_scenario(task_id)
       return { success: false, error: 'Task not found' } unless task
+
+      # Server-completed-only guard (§7): a task credited by a gate's creditOnPass completes
+      # only through the server-checked passage (apply_credit_on_pass! passes trusted: true).
+      # Every client route (POST /complete_task, and the ink/eventMapping/NPC completeTask
+      # mappings that drive it) lands here with trusted false, so a direct forge of the
+      # objective tick is refused. trusted is a real keyword, never read from validation_data,
+      # so a client cannot smuggle { "trusted": true } through the request body.
+      if !trusted && server_completed_only_task_ids.include?(task_id.to_s)
+        return { success: false, error: 'Task is server-completed only' }
+      end
 
       # Check if already completed
       if player_state.dig('objectivesState', 'tasks', task_id, 'status') == 'completed'
@@ -4098,6 +4147,14 @@ module BreakEscape
 
       task = find_task_in_scenario(task_id)
       return { success: false, error: 'Task not found' } unless task
+
+      # Server-completed-only guard (§7): skip_task! runs check_aim_completion for any task id
+      # the client names, so a tampered skip_task of a credited task would otherwise reach its
+      # aim without the server-checked passage. A credited task is never legitimately skipped,
+      # so this refuses outright (no trusted bypass).
+      if server_completed_only_task_ids.include?(task_id.to_s)
+        return { success: false, error: 'Task is server-completed only' }
+      end
 
       current = player_state.dig('objectivesState', 'tasks', task_id, 'status')
       return { success: true, taskId: task_id, status: current, message: "Already #{current}" } if %w[completed skipped].include?(current)

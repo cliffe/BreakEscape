@@ -74,15 +74,22 @@ No new static import, so no test-harness copy-list change.
   `npcRouteRooms` id is bounded and server-only (SYNC SIZE unaffected). Resolved by Chunk B: the
   viaCredential promotion now removes the room from `npcRouteRooms` (`credit_via_credential!`), so the
   two lists are disjoint again.
-- **Deployment gate (review R1 MAJOR 1): Chunk A must not reach main without Chunks B and D.** Under
-  Chunk A alone the lab's and `test_gate_tailgate`'s tailgate (hi-vis / viaPass) path is a dead end:
-  Len's route records `secure_area`/`staff_room` in `npcRouteRooms` but nothing promotes it (no
-  viaPass/viaCredential credit until Chunk B), so an honest hi-vis player cannot pick up the loose
-  `cm_deeds_key` (pickup reads `unlockedRooms`) or unlock any object there, and the finding never
-  earns. The cloned-badge path still completes in A (it runs `serve_opened_room` -> `unlock_room!`),
-  only the tailgate path is stranded. Chunk B adds the promotion; Chunk D adds the lab `creditOnPass`
-  and removes the now double-firing client credit writers. The integrator must merge A, B and D
-  together (never A alone) so no scenario ships with a broken tailgate path.
+- **Deployment gate (review R1 MAJOR 1, amended review R2 MAJOR 1): Chunks A, B, C and D must land
+  together, with E's validator, before players see a credited gate. Chunk A must not reach main
+  without B, C and D.** Under Chunk A alone the lab's and `test_gate_tailgate`'s tailgate (hi-vis /
+  viaPass) path is a dead end: Len's route records `secure_area`/`staff_room` in `npcRouteRooms` but
+  nothing promotes it (no viaPass/viaCredential credit until Chunk B), so an honest hi-vis player
+  cannot pick up the loose `cm_deeds_key` (pickup reads `unlockedRooms`) or unlock any object there,
+  and the finding never earns. The cloned-badge path still completes in A (it runs
+  `serve_opened_room` -> `unlock_room!`), only the tailgate path is stranded. Chunk B adds the
+  promotion; Chunk D adds the lab `creditOnPass` and removes the now double-firing client credit
+  writers. **Chunk C is equally load-bearing for players (review R2 MAJOR 1):** without it
+  `tailgate_in` stays client-completable, so a tampered client posts `/complete_task tailgate_in`
+  directly and ticks the task and the `tailgate` aim without the server-checked passage (the
+  objective-tick forge plan §7 closes, plan §5 "the aim behind `tailgate_in` is reachable only
+  through the server-checked passage"). So shipping A+B+D without C would still leave the credited
+  task forgeable. The integrator must merge A, B, C and D together (never A alone, and never without
+  C), with E's validator, so no scenario ships with a broken or forgeable tailgate path.
 - uid_only promoted-path discrimination (reason returns after promotion) is left to Chunk E's
   end-to-end UID-only clone fixture; the route-room guard for uid_only is proven false here and is
   byte-identical to the pin/password guards, which are proven both ways.
@@ -177,8 +184,107 @@ three slice tests that inline-stub unlock-system's imports (`access-rfid-acl`, `
   `unlockDoor`/`unlockable` mapping, or a flag door-unlock reward) targets a split gated room, so an
   author cannot silently defeat the split; also the uid_only promoted-path discrimination needs the
   end-to-end UID-only clone fixture (carried from Chunk A).
+  **Chunk E to-do (from review R2 MINOR 2):** the validator must also assert a split gate's rfid room
+  lock is `requires`-only (no `access` ACL list). `credit_via_credential!` re-asserts possession with
+  `rfid_lock_passes?(lock, card_ids)`, forwarding the client `card_ids`; for a `requires`-only lock
+  that delegates to `rfid_requires_held?`, which reads server-held inventory and `server_clones` and
+  ignores `card_ids`, so the credit is server-possession-only. An ACL (`access`-list) split gate would
+  instead consult the client `card_ids` through the access model, so the credit would inherit the
+  access model's possession semantics rather than a dedicated server check. No current scenario is an
+  ACL split gate; the validator rule (or an explicit `rfid_requires_held?` branch for a split room in
+  the credit path) closes the latent gap.
 - enter_room validation untouched (Chunk F, parallel branch); the enter_room branch of
   `complete_task!` and `objectives-manager.js` were not touched.
+
+## Chunk C: server-completed tasks (2026-11-13)
+
+`serverCompletedOnly` (a credited task completes only through the server-checked passage), the
+`complete_task!` and `skip_task!` guards, and the `trusted:` keyword (§7). Also folds review R2:
+MAJOR 1 (deployment gate now names Chunk C), MINOR 1 (inline retryable re-post scoped to
+`enter_room`), MINOR 2 (Chunk E to-do: validator asserts a split gate's rfid lock is `requires`-only).
+
+### Done
+
+Model (`app/models/break_escape/game.rb`):
+
+- `server_completed_only_task_ids`: the distinct `creditOnPass.*.completeTask` ids, derived once via
+  `self.completed_only_task_ids_in(data)` and memoised in `player_state['serverCompletedOnly']`
+  exactly as `server_credit_global_names` does (reads `scenario_data` on a full load, a `pick` on the
+  narrow sync row; the read path never saves).
+- `complete_task!(task_id, validation_data = {}, trusted: false)`: a new `trusted:` keyword. A guard
+  at the top (after the task lookup, before the already-completed branch) refuses a
+  `serverCompletedOnly` task unless `trusted` is true. The `!trusted && ...` short-circuit means the
+  trusted credit path never even evaluates the set (no extra scenario read on the credit path).
+- `skip_task!`: a guard that refuses a `serverCompletedOnly` task outright (no `trusted` bypass; the
+  server never legitimately skips a credited task), so a tampered `skip_task tailgate_in` cannot reach
+  the `tailgate` aim without the passage.
+- `apply_credit_on_pass!`: now calls `complete_task!(task_id, trusted: true)` so the server's own
+  gate credit completes the credited task through the guard.
+
+Controller (`app/controllers/break_escape/games_controller.rb`): both positional-hash callers of
+`complete_task!` pass an explicit trailing `trusted: false` (the flag-object completion at the `unlock`
+action, and the `complete_task` client action). This keeps `trusted` client-untrusted **and** keeps
+the positional `validation_data` hash unambiguous under Ruby 2.7 keyword separation (a symbol-keyed
+hash as the last positional arg to a method with a keyword otherwise raises `unknown keyword`).
+
+Client (`public/break_escape/js/systems/objectives-manager.js`, review R2 MINOR 1): the inline
+one-sync-one-re-post block (`:800`) now also requires `task.type === 'enter_room'`, matching the retry
+to its stated scope (the pre-flush and the enqueue are already `enter_room`-only; only the `enter_room`
+branch of `complete_task!` returns `retryable`). No behavioural change for current scenarios.
+
+### Server-side callers of a credited completion (checked, §7)
+
+- **Chunk B credit path** (`apply_credit_on_pass!` -> `complete_task!`): passes `trusted: true`. The
+  only legitimate server-side completion of a credited task.
+- **NPC / ink / eventMapping `completeTask`**: these fire on the client (confirmed by the
+  `unlockDoor`-mapping comment at `game.rb` noting completeTask/setGlobal mappings fire client-side),
+  so they drive the client `POST /complete_task` and land untrusted, correctly refused for a credited
+  task. The lab's two `room_entered:secure_area` `completeTask` backstops are exactly such client
+  mappings and are removed in Chunk D (they can no longer complete the task once it is
+  `serverCompletedOnly`).
+- **`task_set_global` / event path**: `apply_task_set_globals!` (from `process_task_completion`) sets
+  globals, it does not complete tasks, and runs only inside a server-verified completion. No change.
+- **Flag completion** (`games_controller.rb` `unlock` flag branch at `:1222`, and
+  `process_flag_task_completions!`): complete only `submit_flags` tasks, never a gate-credit task
+  (`tailgate_in` is `manual`/`custom`). `process_flag_task_completions!` writes task status directly
+  (bypasses `complete_task!`), so if an author ever named a `submit_flags` task in a gate credit it
+  would bypass the guard; no deployed scenario does this, and the Chunk E validator's "second unlock
+  route" rule is the place to reject such an overlap. Left untrusted (the safe default).
+
+### Tests
+
+- Rails, new `test/models/break_escape/gated_server_completed_task_test.rb` (8 runs) and
+  `test/controllers/break_escape/gated_server_completed_task_controller_test.rb` (6 runs): 14 runs,
+  43 assertions, green. Covers plan tests 5 (`POST /complete_task tailgate_in` refused), 5b
+  (`POST /skip_task tailgate_in` refused, aim not reached), 5c (`{ trusted: true }` in the body, and
+  as a nested `validation_data` entry, still refused); the `serverCompletedOnly` derivation and
+  dedup; the model-level untrusted-refuse / trusted-complete / validation_data-cannot-smuggle cases;
+  an ordinary task unaffected; and **the end-to-end proof that the credited task still completes
+  through the real endpoints** with the guard in place, via the hi-vis pass route (`wear` + `unlock
+  method:npc` + `sync_state currentRoom`, viaPass) and the cloned-badge route (`unlock method:rfid`,
+  viaCredential).
+- Rails neighbours, all green: `gated_route_room_test`, `gated_door_credit_test`,
+  `enter_room_validation_test`, `gated_route_room_controller_test`, `gated_door_credit_controller_test`
+  (47 runs, 218 assertions), `task_set_global_test` and `conclude_race_test` (in that batch),
+  `game_test` + `games_controller_test` (162 runs, 619 assertions).
+- Node neighbours (objectives-manager.js touched by MINOR 1), all green: `enter-room-completion`
+  (12), and `objectives-*` (all-optional-aim, global-unlock, network-footholds, panel-scroll,
+  required-marker, reveal, signin-pc, skip, target-ids).
+
+### Plan drift
+
+- `complete_task!` is at `game.rb:3965` (plan/Chunk F cited `:3675`/`:3745`; the method and its
+  `enter_room` branch are the same, shifted by the merges on this branch). `skip_task!` at `:4096`.
+  The guards go where the plan says (top of each, after the task lookup).
+- Ruby 2.7 keyword separation (not called out in the plan): adding the `trusted:` keyword forces the
+  two positional-hash controller callers to pass an explicit trailing `trusted:` or they raise
+  `unknown keyword`. Verified empirically on 2.7.8. All direct test callers use the single-arg form,
+  so none needed changing.
+
+### Open / not done in Chunk C (by design)
+
+- No scenario edits, no lab `creditOnPass` (Chunk D); no validator rule, fixtures or live proof
+  (Chunk E). The Chunk E validator owes the `requires`-only split-gate assertion (R2 MINOR 2, above).
 
 ## Chunk F: enter_room server validation (section 8)
 

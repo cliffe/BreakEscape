@@ -791,8 +791,11 @@ export class ObjectivesManager {
       // refused. A forge is refused there too, stays queued and never completes (the
       // server keeps refusing; each drain is one completeTask run). A transient
       // re-post result (a network blip during that single re-post) also falls to the
-      // transient path below (R9 minor 1).
-      if (!response.success && response.retryable) {
+      // transient path below (R9 minor 1). Scoped to enter_room (review R2 minor 1): the
+      // pre-flush and the enqueue are already enter_room-only, and only the enter_room branch
+      // of complete_task! returns `retryable`, so this matches the retry to its stated scope
+      // and keeps a future task type that gains a `retryable` refusal from a spurious re-post.
+      if (!response.success && response.retryable && task.type === 'enter_room') {
         await this.safeSyncOnce();
         void this.drainEnterRoomQueue(); // fire-and-forget: drain swallows its own errors
         response = await this.serverCompleteTask(taskId);

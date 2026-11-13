@@ -1219,7 +1219,9 @@ module BreakEscape
               # Use the flag ref directly ("vm:flag_N") as the submitted identifier —
               # avoids collision with station-position-based flag_ids ("vm-flagN").
               flag_ref    = object_data['requires'] || ''
-              task_result = @game.complete_task!(task_id, { submittedFlags: [flag_ref] })
+              # trusted: false (a client-driven completion); the explicit keyword also keeps the
+              # positional validation_data hash unambiguous under Ruby 2.7 keyword separation.
+              task_result = @game.complete_task!(task_id, { submittedFlags: [flag_ref] }, trusted: false)
               completed_tasks << task_id if task_result[:success]
             end
             response[:completedTasks] = completed_tasks
@@ -1657,7 +1659,11 @@ module BreakEscape
         validation_data[:currentCount] = params[:currentCount].to_i
       end
 
-      result = @game.complete_task!(task_id, validation_data)
+      # trusted: false — this is the client route; a server-completed-only task (a gate's
+      # creditOnPass completeTask) is refused here and completes only through the server's own
+      # credit path. The explicit keyword also keeps validation_data unambiguously positional
+      # under Ruby 2.7 keyword separation.
+      result = @game.complete_task!(task_id, validation_data, trusted: false)
 
       if result[:success]
         Rails.logger.info "[BreakEscape] Task completed: #{task_id}"
