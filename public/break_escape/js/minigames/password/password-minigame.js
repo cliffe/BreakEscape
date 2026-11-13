@@ -271,32 +271,95 @@ export function wholePixelOffset(rect, dpr = 1) {
  * relative left/top (added to any its rules give it); a positioned one (absolute, fixed,
  * sticky) gets a `translate`, which keeps its own anchors. Returns the boxes it moved with
  * their old inline values, for unsnapInnerBoxes.
+ *
+ * A box drawn scaled or rotated (a pressed control's `scale(0.95)` on :active) is skipped
+ * with everything inside it, since its rect is not where it rests (R5 m1); `skipped` on the
+ * returned array counts them, so the caller can snap again once the press ends. A pure
+ * translate (the eye toggle's -50%) is measured as usual.
+ *
+ * Reads come before writes (R5 n1): one pass reads every rect, then writes every offset. A
+ * box's rect after the writes is its old rect plus the moves of the boxes around it, so the
+ * pass adds its ancestors' moves before rounding. A second pass then checks the result (a box
+ * newly made relative can move an absolute child by a different amount) and is usually
+ * empty, so a snap costs two layouts however many boxes move.
  */
 export function snapInnerBoxes(root, dpr = 1, view = (typeof window !== 'undefined' ? window : null)) {
     const moved = [];
+    // Not enumerable, so the list still compares as a plain list of moved boxes
+    Object.defineProperty(moved, 'skipped', { value: 0, writable: true, enumerable: false });
     if (!root?.querySelectorAll || !view) return moved;
-    for (const el of root.querySelectorAll('*')) {
-        if (!el.style || typeof el.getBoundingClientRect !== 'function') continue;
-        const rect = el.getBoundingClientRect();
-        if (!rect.width && !rect.height) continue;
-        const { x, y } = wholePixelOffset(rect, dpr);
-        if (!x && !y) continue;
-        const saved = { el, position: el.style.position, left: el.style.left, top: el.style.top, translate: el.style.translate };
-        const cs = view.getComputedStyle ? view.getComputedStyle(el) : null;
-        const pos = cs?.position || 'static';
-        if (pos === 'absolute' || pos === 'fixed' || pos === 'sticky') {
-            el.style.translate = `${x}px ${y}px`;
-        } else {
-            const base = (v) => (Number.isFinite(parseFloat(v)) ? parseFloat(v) : 0);
-            const left = pos === 'relative' ? base(cs?.left) : 0;
-            const top = pos === 'relative' ? base(cs?.top) : 0;
-            if (pos !== 'relative') el.style.position = 'relative';
-            if (x) el.style.left = `${Math.round((left + x) * 1e6) / 1e6}px`;
-            if (y) el.style.top = `${Math.round((top + y) * 1e6) / 1e6}px`;
+    const all = [...root.querySelectorAll('*')].filter(el => el.style && typeof el.getBoundingClientRect === 'function');
+    const records = new Map();
+    const tidy = (v) => Math.round(v * 1e6) / 1e6;
+    const base = (v) => (Number.isFinite(parseFloat(v)) ? parseFloat(v) : 0);
+    for (let pass = 0; pass < 3; pass++) {
+        // Read pass: every rect and computed style before any write
+        const reads = all.map(el => ({ el, rect: el.getBoundingClientRect(), cs: view.getComputedStyle ? view.getComputedStyle(el) : null }));
+        const skip = new Set();
+        const shift = new Map();
+        const writes = [];
+        for (const { el, rect, cs } of reads) {
+            const parent = el.parentElement;
+            if ((parent && skip.has(parent)) || isScaledOrRotated(cs)) { skip.add(el); continue; }
+            const inherited = (parent && shift.get(parent)) || { x: 0, y: 0 };
+            let own = { x: 0, y: 0 };
+            if (rect.width || rect.height) {
+                own = wholePixelOffset({ left: rect.left + inherited.x, top: rect.top + inherited.y }, dpr);
+                if (own.x || own.y) writes.push({ el, cs, x: own.x, y: own.y });
+            }
+            if (own.x || own.y || inherited.x || inherited.y) {
+                shift.set(el, { x: inherited.x + own.x, y: inherited.y + own.y });
+            }
         }
-        moved.push(saved);
+        if (pass === 0) moved.skipped = skip.size;
+        if (!writes.length) break;
+        // Write pass
+        for (const { el, cs, x, y } of writes) {
+            let rec = records.get(el);
+            if (!rec) {
+                const pos = cs?.position || 'static';
+                rec = {
+                    saved: { el, position: el.style.position, left: el.style.left, top: el.style.top, translate: el.style.translate },
+                    mode: (pos === 'absolute' || pos === 'fixed' || pos === 'sticky') ? 'translate' : 'offset',
+                    left: pos === 'relative' ? base(cs?.left) : 0,
+                    top: pos === 'relative' ? base(cs?.top) : 0,
+                    pos,
+                    x: 0,
+                    y: 0
+                };
+                records.set(el, rec);
+                moved.push(rec.saved);
+            }
+            rec.x = tidy(rec.x + x);
+            rec.y = tidy(rec.y + y);
+            if (rec.mode === 'translate') {
+                el.style.translate = `${rec.x}px ${rec.y}px`;
+            } else {
+                if (rec.pos !== 'relative') el.style.position = 'relative';
+                if (rec.x) el.style.left = `${tidy(rec.left + rec.x)}px`;
+                if (rec.y) el.style.top = `${tidy(rec.top + rec.y)}px`;
+            }
+        }
     }
     return moved;
+}
+
+/** True when a computed style draws the box scaled, rotated or skewed (not a pure translate). */
+function isScaledOrRotated(cs) {
+    if (!cs) return false;
+    const t = cs.transform;
+    if (t && t !== 'none') {
+        const m = /^matrix\(([^)]*)\)$/.exec(t);
+        // A browser gives a matrix; a declared value of translate functions only is a move
+        if (!m) return !/^(\s*translate(?:X|Y|Z|3d)?\([^)]*\)\s*)+$/.test(t);
+        const [a, b, c, d] = m[1].split(',').map(Number);
+        if (Math.abs(a - 1) > 1e-6 || Math.abs(d - 1) > 1e-6 || Math.abs(b) > 1e-6 || Math.abs(c) > 1e-6) return true;
+    }
+    const scale = cs.scale;
+    if (scale && scale !== 'none' && scale.split(' ').some(v => Math.abs(parseFloat(v) - 1) > 1e-6)) return true;
+    const rotate = cs.rotate;
+    if (rotate && rotate !== 'none' && parseFloat(rotate.split(' ').pop()) !== 0) return true;
+    return false;
 }
 
 /** Undo snapInnerBoxes, last box first. */
@@ -564,6 +627,21 @@ export class PasswordMinigame extends MinigameScene {
         // An image that finishes loading (the Add to Notepad icon) changes its line's layout
         // with no DOM change; load does not bubble, so listen in the capture phase
         frame.addEventListener('load', snap, true);
+        // A pressed control (scale on :active) is left out of a snap made mid-press (R5 m1):
+        // snap again when its transform transition ends, or on the next frame after the
+        // release if it has none. Only when the last snap left a box out, so typing stays free.
+        const afterPress = (e) => {
+            if (!this._innerSnapped?.skipped) return;
+            if (e.type === 'transitionend' || e.type === 'transitioncancel') {
+                if (!/^(transform|scale|rotate)$/.test(e.propertyName || '')) return;
+                snap();
+                return;
+            }
+            if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(() => { if (this._frameSnap === snap) snap(); });
+            else snap();
+        };
+        for (const type of ['transitionend', 'transitioncancel', 'pointerup', 'keyup']) frame.addEventListener(type, afterPress, true);
+        this._frameAfterPress = afterPress;
         this._frameSnapHost = frame;
         // A pixel font that arrives late re-flows the text the same way
         const fonts = typeof document !== 'undefined' ? document.fonts : null;
@@ -579,6 +657,12 @@ export class PasswordMinigame extends MinigameScene {
     stopFrameSnap() {
         if (this._frameSnap && typeof window !== 'undefined') window.removeEventListener('resize', this._frameSnap);
         if (this._frameSnap && this._frameSnapHost) this._frameSnapHost.removeEventListener('load', this._frameSnap, true);
+        if (this._frameAfterPress && this._frameSnapHost) {
+            for (const type of ['transitionend', 'transitioncancel', 'pointerup', 'keyup']) {
+                this._frameSnapHost.removeEventListener(type, this._frameAfterPress, true);
+            }
+        }
+        this._frameAfterPress = null;
         if (this._frameSnap && typeof document !== 'undefined') document.fonts?.removeEventListener?.('loadingdone', this._frameSnap);
         this._frameSnap = null;
         this._frameSnapHost = null;

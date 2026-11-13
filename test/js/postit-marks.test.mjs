@@ -158,6 +158,31 @@ test('label passes a non-string observation through unchanged, marked or not', (
     assert.equal(marks.label('plain_pc', "Mei's PC"), "Mei's PC (a sticky note on the monitor)");
 });
 
+test('slice 2a R5 M1: a sign-in PC in the start room gets its mark once the start room is built', async () => {
+    // Boot order: installPostitMarks runs before any room exists, so its own pass finds nothing
+    for (const k of Object.keys(window)) delete window[k];
+    const sc = scene();
+    window.rooms = {};
+    const marks = new PostitMarks().install(sc);
+    assert.equal(marks.marks.size, 0);
+    // Then the start room is made directly (game.js), not through the room loader
+    window.rooms.omar_room = { objects: { obj_omar_pc: sprite(sc, login('omar_pc', { hasPostit: true })) } };
+    window.postitMarks = marks;
+    // game.js must make the same per-room syncs for the start room as core/rooms.js does
+    const { readFileSync } = await import('node:fs');
+    const src = readFileSync(new URL('../../public/break_escape/js/core/game.js', import.meta.url), 'utf8');
+    const at = src.indexOf('createRoom(startRoomId');
+    assert.ok(at > 0, 'game.js builds the start room');
+    const after = src.slice(at, src.indexOf('revealRoom(startRoomId)', at));
+    for (const sync of ['screenStates', 'networkLinks', 'postitMarks', 'npcWorkarounds']) {
+        assert.match(after, new RegExp(`window\\.${sync}\\?\\.syncRoom\\?\\.\\(startRoomId\\)`),
+            `${sync}.syncRoom(startRoomId) runs after the start room is built`);
+    }
+    window.postitMarks?.syncRoom?.('omar_room');
+    assert.equal(marks.marks.size, 1);
+    assert.ok(marks.marks.has('omar_pc'), "Omar's PC has its mark after boot");
+});
+
 test('slice 2a (main-11): the mark sits on the sprite bottom for any origin', () => {
     for (const [originX, originY] of [[0, 0], [0.5, 0.5], [0.5, 1]]) {
         const sprite = { x: 100, y: 200, displayWidth: 32, displayHeight: 48, originX, originY };

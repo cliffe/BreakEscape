@@ -925,6 +925,68 @@ test('R4 n1: an empty Submit brings the post-it into view first, then the line',
     assert.equal(q('#password-message').textContent, 'Please enter a password');
 });
 
+test('R5 m1: a scaled box (a press) and everything in it is left out of the snap; a pure translate is not', () => {
+    const restore = mockRects([['.p', { left: 10.5, top: 4 }], ['.pi', { left: 12.5, top: 6 }], ['.t', { left: 30.5, top: 8.5 }]]);
+    try {
+        document.body.innerHTML = '<div class="a"><button class="p" style="transform: scale(0.95)"><span class="pi"></span></button>'
+            + '<span class="t" style="transform: translateY(-50%)"></span></div>';
+        const moved = snapInnerBoxes(q('.a'), 1, window);
+        assert.equal(moved.skipped, 2, 'the pressed button and its icon');
+        assert.equal(q('.p').style.left, '', 'a pressed box is not moved mid-scale');
+        assert.equal(q('.pi').style.left, '');
+        assert.ok(whole(q('.t')), 'a translated box is still snapped');
+        assert.equal(Object.keys(moved).length, 1, 'skipped is not a listed entry');
+    } finally {
+        restore();
+    }
+    // The press's end snaps again: the transition's end, else the frame after the release
+    const src = readFileSync(join(js, 'minigames/password/password-minigame.js'), 'utf8');
+    assert.match(src, /\['transitionend', 'transitioncancel', 'pointerup', 'keyup'\]\) frame\.addEventListener\(type, afterPress, true\)/);
+    assert.match(src, /if \(!this\._innerSnapped\?\.skipped\) return;/, 'only after a snap that left a box out');
+});
+
+test('R5 n1: the snap reads every box before it writes; a child moved with its parent is not moved again', () => {
+    const restore = mockRects([['.p', { left: 10.5, top: 4.5 }], ['.c', { left: 20.5, top: 9.5 }], ['.d', { left: 40.25, top: 2 }]]);
+    const proto = window.HTMLElement.prototype;
+    const mocked = proto.getBoundingClientRect;
+    let reads = 0;
+    proto.getBoundingClientRect = function () { reads++; return mocked.call(this); };
+    try {
+        document.body.innerHTML = '<div class="a"><div class="p"><span class="c"></span></div><span class="d"></span></div>';
+        const moved = snapInnerBoxes(q('.a'), 1, window);
+        // one read pass that writes, one that checks and finds nothing: 3 boxes, 6 reads
+        assert.equal(reads, 6);
+        for (const sel of ['.p', '.c', '.d']) assert.ok(whole(q(sel)), sel);
+        assert.equal(q('.c').style.left, '', 'the child rides on its parent\'s move');
+        assert.equal(moved.length, 2);
+    } finally {
+        proto.getBoundingClientRect = mocked;
+        restore();
+    }
+});
+
+test('R5 m2, m3, n2 to n5: the CSS', () => {
+    const css = readFileSync(join(here, '../../public/break_escape/css/password-minigame.css'), 'utf8');
+    const rule = (sel) => { const i = css.indexOf(`${sel} {`); assert.ok(i >= 0, sel); return css.slice(i, css.indexOf('}', i)); };
+    // m2: the plain and prompt screens' note ends left of Submit
+    assert.match(rule('.password-minigame-area:not(.signin-mode) .postit-note'), /max-width: 200px;/);
+    // m3: Press Start 2P on its 8px grid
+    assert.match(rule('.signin-title'), /font-size: 16px;/);
+    for (const m of css.matchAll(/font-family: 'Press Start 2P'[^}]*?font-size: (\d+)px/g)) {
+        if (m.index < css.indexOf('/* ── Sign-in mode')) continue;
+        assert.equal(+m[1] % 8, 0, `Press Start 2P at ${m[1]}px`);
+    }
+    // n2: the key's label colour fades with its background
+    assert.match(rule('.key'), /transition: [^;]*color 0\.2s ease/);
+    // n3: the padding and border sit inside the field's 100%
+    assert.match(rule('.password-field'), /box-sizing: border-box;/);
+    // n4: the sign-in labels get the plain screen's dark backing
+    assert.match(rule('.signin-field-row label'), /background: #101820;[\s\S]*padding: 2px 8px;/);
+    // n5: a wrong archive password fits the short window
+    const short = css.slice(css.indexOf('@media (max-height: 640px)'));
+    assert.match(short, /\.password-frame \.prompt-mode \.monitor-bezel \{\s*padding: 6px 12px;/);
+});
+
 test('R4 n4: showScreenMessage has no duration option, and no caller passes one', () => {
     const src = readFileSync(join(js, 'minigames/password/password-minigame.js'), 'utf8');
     assert.match(src, /showScreenMessage\(text, \{ kind = 'error', closeAfterMs = 0 \} = \{\}\)/);
