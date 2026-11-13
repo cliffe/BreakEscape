@@ -233,20 +233,20 @@ test('the default alert and confirm pass no html option (toasts are plain text b
     assert.equal(alerts[0][4], undefined, 'no options: plain text');
     w.npcManager.npcs.get('tom').roomId = 'hall';
     assert.equal(await W.putOn('vest', { confirm: true }, deps), true);
-    // UX slice 4 (q99): two named buttons and no X
-    assert.deepEqual(confirms[0], ['Put it on?', 'Put on', 'Not now', { closeButton: false }]);
+    // UX q99: the confirm has no X, so both buttons are named for what they do
+    assert.deepEqual(confirms[0], ['Put it on?', 'Put it on', 'Leave it off']);
     assert.equal(await W.takeOff('vest', { confirm: true }, deps), true);
-    assert.deepEqual(confirms[1], ['Take it off?', 'Take off', 'Keep it on', { closeButton: false }]);
+    assert.deepEqual(confirms[1], ['Take it off?', 'Take it off', 'Keep it on']);
 });
 
 // UX slice 4 (q91): a world take asks once, "Put it on now?"
-test('take offer: asked once, Put on wears it with no second confirm', async () => {
+test('take offer: asked once, Put it on wears it with no second confirm', async () => {
     const { w, deps, log } = rig();
     const labels = [];
     deps.confirm = async (text, l) => { log.confirms.push(text); labels.push(l); return true; };
     assert.equal(await W.offerAfterTake('vest', deps), true);
     assert.deepEqual(log.confirms, ['Taken: Hi-vis vest.\nPut it on now?'], 'only the offer, not confirmOn as well');
-    assert.deepEqual(labels[0], { ok: 'Put on', cancel: 'Not now' });
+    assert.deepEqual(labels[0], ['Put it on', 'Leave it off']);
     assert.equal(W.wornItemId(w), 'vest');
     assert.deepEqual(log.posts, [{ item_id: 'vest', worn: true }]);
     assert.deepEqual(log.actions, ['on'], 'onWear runs as from the tray');
@@ -256,7 +256,7 @@ test('take offer: asked once, Put on wears it with no second confirm', async () 
     assert.equal(log.confirms.length, 1);
 });
 
-test('take offer: Not now leaves it carried and is not asked again', async () => {
+test('take offer: Leave it off leaves it carried and is not asked again', async () => {
     const { w, deps, log } = rig();
     deps.confirm = async (text) => { log.confirms.push(text); return false; };
     assert.equal(await W.offerAfterTake('vest', deps), false);

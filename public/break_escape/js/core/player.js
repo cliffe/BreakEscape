@@ -15,6 +15,7 @@ import {
 import { ensureCharacterTexture } from '../systems/character-textures.js';
 import { playerTalkPath, syncScenarioPlayer } from '../utils/player-avatar.js';
 import { insertDoorwayWaypoints } from '../systems/path-doorways.js';
+import { openModalCount } from '../ui/modal-stack.js';
 
 export let player = null;
 export let targetPoint = null;
@@ -101,9 +102,8 @@ export function pauseKeyboardInput() {
     console.log('🔒 Keyboard input PAUSED for minigame (keyboardPaused = true)');
 }
 
-export function resumeKeyboardInput() {
-    keyboardPaused = false;
-    // Clear all keyboard state when resuming
+// Drop every held key: nothing keeps walking once input is taken away.
+function clearKeyboardMovement() {
     keyboardInput.up = false;
     keyboardInput.down = false;
     keyboardInput.left = false;
@@ -111,6 +111,12 @@ export function resumeKeyboardInput() {
     keyboardInput.space = false;
     keyboardInput.shift = false;
     isKeyboardMoving = false;
+}
+
+export function resumeKeyboardInput() {
+    keyboardPaused = false;
+    // Clear all keyboard state when resuming
+    clearKeyboardMovement();
     console.log('🔓 Keyboard input RESUMED (keyboardPaused = false)');
 }
 
@@ -281,6 +287,15 @@ function setupKeyboardInput() {
         // Skip if keyboard input is paused (for minigames that need keyboard input)
         if (keyboardPaused) {
             console.log('⏸️ Keydown blocked (paused):', event.key);
+            return;
+        }
+
+        // A confirm or display dialog is open (ui/modal-stack.js): it holds the game's keys, so E
+        // can't open a second copy of the same confirm, the arrows can't walk away from it, and F
+        // and Space don't punch or jump behind it. A held arrow stops here too. Enter and Space on
+        // the dialog's focused button are left to the dialog.
+        if (openModalCount() > 0) {
+            clearKeyboardMovement();
             return;
         }
         
@@ -1032,6 +1047,12 @@ export function updatePlayerMovement() {
         window.playerCombat.showGuardPose();
         updateFootstepSound(false);
         return;
+    }
+
+    // A dialog opened while an arrow was held: stop walking (the keydown guard drops new presses)
+    if (isKeyboardMoving && openModalCount() > 0) {
+        clearKeyboardMovement();
+        player.body.setVelocity(0, 0);
     }
 
     // Handle keyboard movement (takes priority over mouse movement)

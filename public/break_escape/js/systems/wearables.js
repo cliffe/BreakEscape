@@ -29,9 +29,6 @@
 export const WORN_CLASS = 'tray-worn';
 export const WORN_LABEL = '(worn)';
 
-// The two named buttons of each confirm (UX slice 4, q99: no X, two named choices)
-export const CONFIRM_ON = Object.freeze({ ok: 'Put on', cancel: 'Not now' });
-export const CONFIRM_OFF = Object.freeze({ ok: 'Take off', cancel: 'Keep it on' });
 export const OFFER_TEXT = 'Put it on now?';
 
 const win = () => (typeof window !== 'undefined' ? window : {});
@@ -114,6 +111,11 @@ export function changeRefusal(data, change = 'change', w = win()) {
 // Every text this module shows (watcher names, the item name, the server's message, confirmOn
 // and confirmOff) is author or server text: shown as plain text, never as markup.
 
+// The confirm's two named buttons (UX q99: a confirm has no X, so both buttons say what they do;
+// Esc means the second, the safe choice).
+export const PUT_ON_LABELS = Object.freeze(['Put it on', 'Leave it off']);
+export const TAKE_OFF_LABELS = Object.freeze(['Take it off', 'Keep it on']);
+
 function defaults(deps = {}) {
     const w = deps.window ?? win();
     return {
@@ -124,10 +126,8 @@ function defaults(deps = {}) {
             const { writeGlobal } = await import('./global-writer.js');
             writeGlobal(k, v, { emitAlways: false, openChat: false });
         }),
-        // A confirm names its two choices and has no X (UX slice 4, q99); Esc still says no
-        confirm: deps.confirm ?? ((text, labels = CONFIRM_ON) => (w.gameConfirm
-            ? w.gameConfirm(text, labels.ok, labels.cancel, { closeButton: false })
-            : Promise.resolve(true))),
+        confirm: deps.confirm ?? ((text, labels = PUT_ON_LABELS) => (w.gameConfirm
+            ? w.gameConfirm(text, labels[0], labels[1]) : Promise.resolve(true))),
         alert: deps.alert ?? ((msg, title) => w.gameAlert?.(msg, 'warning', title || '', 4000)),
         applyActions: deps.applyActions ?? ((acts) => w.applyActions?.(acts, { source: 'wearable' })),
         refresh: deps.refresh ?? (() => w.refreshInventoryTray?.())
@@ -226,7 +226,7 @@ async function putOnNow(itemId, opts, d) {
     };
     if (refused()) return false;
     if (opts.confirm && spec.confirmOn) {
-        if (!(await d.confirm(spec.confirmOn, CONFIRM_ON))) return false;
+        if (!(await d.confirm(spec.confirmOn, PUT_ON_LABELS))) return false;
         // Someone may have walked in while the confirm was up
         if (refused()) return false;
     }
@@ -296,7 +296,7 @@ async function takeOffNow(itemId, opts, d) {
     };
     if (refused()) return false;
     if (opts.confirm && spec?.confirmOff) {
-        if (!(await d.confirm(spec.confirmOff, CONFIRM_OFF))) return false;
+        if (!(await d.confirm(spec.confirmOff, TAKE_OFF_LABELS))) return false;
         if (refused()) return false;
     }
     let body;
@@ -346,14 +346,15 @@ export function offerText(data) {
 /**
  * Why the take offer is not shown for this held item now, or null when it is. Not for an item
  * already offered, already worn, refused here under unseenOnly (asking would only lead to the
- * refusal toast), or while a minigame, chat or menu is open.
+ * refusal toast), or while a minigame, chat, menu or another confirm is open.
  */
 export function offerSkipReason(item, w = win()) {
     const data = item?.scenarioData;
     if (!wearableSpec(data) || !isStr(data.id)) return 'not a wearable';
     if (offeredSet(w).has(data.id)) return 'already offered';
     if (isWorn(item, w)) return 'worn';
-    if (w.MinigameFramework?.currentMinigame || w.isInteractionMenuOpen?.()) return 'busy';
+    if (w.MinigameFramework?.currentMinigame || w.isInteractionMenuOpen?.()
+        || w.gameConfirmOpen?.()) return 'busy';
     const prevId = wornItemId(w);
     const prevData = prevId && prevId !== data.id ? heldItem(prevId, w)?.scenarioData || null : null;
     if (swapRefusal(data, prevData, w)) return 'watched';
@@ -362,10 +363,11 @@ export function offerSkipReason(item, w = win()) {
 
 /**
  * A wearable taken from the world (interactions.js, after a new slot): ask once, "Put it on
- * now?", with Put on and Not now. Put on goes through putOn with no second confirm, so the
- * server check, the unseenOnly check and onWear all run as from the tray. Not now leaves it
- * carried; the tray menu puts it on later. Returns putOn's answer, false for Not now, or null
- * when nothing was asked.
+ * now?", with Put it on and Leave it off. Put it on goes through putOn with no second confirm,
+ * so the server check, the unseenOnly check and onWear all run as from the tray. Leave it off
+ * leaves it carried; the tray menu puts it on later. Returns putOn's answer, false for Leave it
+ * off, or null when nothing was asked. The offer is also the take's announcement, so the caller
+ * shows no "Picked up" toast when it is asked (offerSkipReason null).
  */
 export async function offerAfterTake(itemOrId, deps = {}) {
     const d = defaults(deps);
@@ -373,7 +375,7 @@ export async function offerAfterTake(itemOrId, deps = {}) {
         : heldItem(itemOrId?.scenarioData?.id, d.w);
     if (!item || offerSkipReason(item, d.w)) return null;
     offeredSet(d.w).add(item.scenarioData.id);
-    if (!(await d.confirm(offerText(item.scenarioData), CONFIRM_ON))) return false;
+    if (!(await d.confirm(offerText(item.scenarioData), PUT_ON_LABELS))) return false;
     return putOn(item.scenarioData.id, {}, deps);
 }
 

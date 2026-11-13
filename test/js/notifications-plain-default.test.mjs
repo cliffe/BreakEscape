@@ -86,28 +86,34 @@ test('gameConfirm: a hostile message and both labels are text by default', () =>
     assert.equal(dialog.querySelector('.game-confirm-cancel').textContent, '<i>Leave</i>');
 });
 
-// UX slice 4 (q99): closeButton: false drops the X from that confirm only; Esc still cancels
-test('gameConfirm: every confirm has two named buttons; the X stays unless closeButton is false', async () => {
+// UX q99: a confirm keeps its two named buttons and has no X; Esc is the cancel choice
+test('gameConfirm has no close X, both buttons named, and Esc resolves false', async () => {
+    for (const html of [false, true]) {
+        reset();
+        const answer = gameConfirm('Switch off the copier?', 'Switch off', 'Leave it', { html });
+        const dialog = document.querySelector('.game-confirm-dialog');
+        assert.equal(dialog.querySelector('.game-modal-close'), null, `html ${html}: no X`);
+        assert.equal(dialog.querySelectorAll('button').length, 2, `html ${html}: exactly two buttons`);
+        assert.equal(dialog.querySelector('.game-confirm-ok').textContent, 'Switch off');
+        assert.equal(dialog.querySelector('.game-confirm-cancel').textContent, 'Leave it');
+        document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        assert.equal(await answer, false, `html ${html}: Esc picks the cancel choice`);
+        assert.equal(document.querySelector('.game-confirm-overlay'), null, 'the dialog is gone');
+    }
     reset();
-    gameConfirm('Plain?', 'Yes', 'No');
-    let dialog = document.querySelector('.game-confirm-dialog');
-    assert.ok(dialog.querySelector('.game-modal-close'), 'a confirm without the option keeps its X');
-    assert.ok(dialog.querySelector('.game-confirm-cancel'), 'and its cancel button');
-    dialog.querySelector('.game-confirm-cancel').click();
-    reset();
-    const answer = gameConfirm('Put it on now?', 'Put on', 'Not now', { closeButton: false });
-    dialog = document.querySelector('.game-confirm-dialog');
-    assert.equal(dialog.querySelector('.game-modal-close'), null, 'no X');
-    assert.ok(dialog.classList.contains('game-confirm-no-close'));
-    assert.equal(dialog.querySelector('.game-confirm-ok').textContent, 'Put on');
-    assert.equal(dialog.querySelector('.game-confirm-cancel').textContent, 'Not now');
-    document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    assert.equal(await answer, false, 'Esc cancels');
-    assert.equal(document.querySelector('.game-confirm-overlay'), null, 'and closes it');
-    // The html form drops its X the same way
-    gameConfirm('<b>Sure</b>?', 'Yes', 'No', { html: true, closeButton: false });
-    assert.equal(document.querySelector('.game-modal-close'), null);
+    const yes = gameConfirm('Go?', 'Go', 'Stay');
     document.querySelector('.game-confirm-ok').click();
+    assert.equal(await yes, true);
+    reset();
+    const no = gameConfirm('Go?', 'Go', 'Stay');
+    document.querySelector('.game-confirm-cancel').click();
+    assert.equal(await no, false);
+});
+
+test('gameDisplay keeps its close X (it is not a confirm)', () => {
+    reset();
+    gameDisplay('Body', 'Title');
+    assert.ok(document.querySelector('.game-display-dialog .game-modal-close'));
 });
 
 test('gameConfirm with { html: true } keeps deliberate markup', () => {
@@ -216,4 +222,14 @@ test('interactions: an onInteract confirmationText is text in the confirm dialog
     assert.ok(dialog, 'the confirm opened');
     assertNoMarkup(dialog, 'confirmation');
     assert.match(dialog.querySelector('.game-confirm-message').textContent, /<img src=x/);
+});
+
+test('interactions: an onInteract confirm names its buttons from confirmLabel and cancelLabel', async () => {
+    interactWindow();
+    handleObjectInteraction(obj({ onInteract: { confirmationText: 'Pull the lever?', confirmLabel: 'Pull it', cancelLabel: 'Leave it' } }));
+    await tick();
+    const dialog = document.querySelector('.game-confirm-dialog');
+    assert.equal(dialog.querySelector('.game-modal-close'), null, 'no X (UX q99)');
+    assert.equal(dialog.querySelector('.game-confirm-ok').textContent, 'Pull it');
+    assert.equal(dialog.querySelector('.game-confirm-cancel').textContent, 'Leave it');
 });

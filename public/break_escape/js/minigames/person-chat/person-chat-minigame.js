@@ -34,8 +34,10 @@ const DIALOGUE_AUTO_ADVANCE_DELAY = 5000; // Default delay in milliseconds for n
 const DIALOGUE_END_DELAY = 1000; // Delay in milliseconds for ending conversations (1 second)
 
 export class PersonChatMinigame extends MinigameScene {
-    // End Conversation stays (conversation UI is another slice)
-    static keepsCancelButton = true;
+    // No End Conversation button (UX q100): the X and Esc end a conversation. All three
+    // always took the same path (closeByPlayer -> complete(false) -> cleanup), so the ink
+    // state save, the conversation-closed events and the music hand-back run as before.
+    static keepsCancelButton = false;
 
     /**
      * Create a PersonChatMinigame instance
@@ -189,9 +191,6 @@ export class PersonChatMinigame extends MinigameScene {
      */
     init() {
         // Set up basic minigame structure (header, container, etc.)
-        if (!this.params.cancelText) {
-            this.params.cancelText = 'End Conversation';
-        }
         super.init();
         
         // Initialize timer for auto-advance

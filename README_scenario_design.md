@@ -815,6 +815,8 @@ Use `confirm_action` to require player confirmation before executing actions:
     {
       "type": "confirm_action",
       "text": "Disconnect cable JS-SCADA-LAN?",
+      "confirmLabel": "Disconnect",
+      "cancelLabel": "Leave it",
       "onConfirm": [
         { "type": "set_global", "key": "jump_server_isolated", "value": true }
       ]
@@ -822,6 +824,8 @@ Use `confirm_action` to require player confirmation before executing actions:
   ]
 }
 ```
+
+A confirm dialog has no close X: its two buttons are the only way to answer, so name both for what they do (`confirmLabel`, `cancelLabel`; they fall back to "Confirm" and "Cancel"). Esc picks the cancel button. An object's `onInteract.confirmationText` takes the same two labels inside `onInteract`.
 
 #### Observation Display Mode
 
@@ -851,7 +855,7 @@ Control how observation text is displayed using `observationDisplay`:
 | `unlock_object` | `objectId` | Unlocks a world object |
 | `unlock_door` | `room_id` | Unlocks a door connection |
 | `give_item` | `item` | Adds an item to inventory. Give the item its own `id` and it is a **declared grant** — the server allowlists the scenario's own `give_item` actions, so it needs **no** world object (see the note below). |
-| `confirm_action` | `text`, `onConfirm` | Shows confirmation dialog, executes nested actions on confirm |
+| `confirm_action` | `text`, `onConfirm`, `confirmLabel`, `cancelLabel` | Shows a confirm dialog with two named buttons (no X; Esc cancels), executes nested actions on confirm |
 | `tint_objects` | `roomId`, `textureKey`, `color`, `pulse` | Tints all sprites of a type in a room |
 | `show_end_screen` | `title`, `body`, `buttonText`, `outcome` | Shows scenario end screen |
 | `hint` | `message`, `title` (optional) | Shows an information toast. It lasts by the length of `message`: 300 ms per word, at least 6 s and at most 12 s (20 words or fewer give 6 s, 40 or more give 12 s), so keep a hint under 40 words. Like every information toast it is held while a conversation or a full-screen panel is open and shown when that closes |
@@ -1061,6 +1065,20 @@ The owner's return carries what the screen was: `workstation_owner_returned:<id>
 ```
 
 This event carries no `usePayload`, so write the capture's `address` and `host` in the mapping (neither is a secret; the server serves the password by matching the address to the NPC's `creds`). A once-only mapping is not spent while its condition is false, so returns before the plant do not use it up. For the capture to be certain, the PC must lock on every leave (`locksScreenOnLeave: true` and no `lockChance`).
+
+#### Who decides the lock: the PC's setting beats its owner's habit
+
+When the owner leaves, one rule decides whether the screen locks, in this order. The first that applies wins and nothing below it is read:
+
+1. **The PC's policy.** A `policy` (or the scenario's `defaultPolicy`) with `autoLockMin: 0` locks on every leave.
+2. **The PC's `lockChance`.** 0 never locks, 1 always locks, in between rolls once per leave.
+3. **The PC's `locksScreenOnLeave`.** `false` leaves it open; `true` (or any other value) locks.
+4. **The owner's habit.** Only when the PC sets neither field: the owner's `screenHabit`, written by hand or filled from `habits.locksScreen` (`always`, `sometimes`, `never`). A trip expected to last at most `lockIfAwayOverSeconds` stays open; otherwise its `lockChance` decides (a threshold alone locks).
+5. **Nothing set.** The screen locks.
+
+So a PC with `lockChance` or `locksScreenOnLeave` ignores its owner's habit entirely: a careless owner (`locksScreen: "never"`) at a PC with `"locksScreenOnLeave": true` still leaves it locked, and a careful owner at a PC with `"lockChance": 0` leaves it open. Use the PC's field when the machine itself should decide (a shared kiosk that always locks, a broken lock); use the habit when the lock should follow the person, wherever they sit. `workstation: true` alone sets nothing, so it defers to the habit. One exception: at a hot desk an NPC borrows (`borrow_session`), the borrower's habit decides whether they leave it signed in and the hot desk's own `lockChance` and `locksScreenOnLeave` are not read, but a policy with `autoLockMin: 0` there still ends the guest's session (see "The careful guest" below). The validator warns when a `locksScreen` habit is hidden by its PC's own field ("which wins"). The PC's idle locks are separate and apply on top: `autoLockSeconds` and a policy's `autoLockMin` above 0 lock an open screen later, whatever the leave decided.
+
+The browser (`decideLocked` in `js/systems/workstation-state.js`) reads all five steps. The server's readers (`AccessIdentities.screen_always_locks?`, `OwnerClaim.open_without_estimate?`) read steps 2 to 5; the server checks a policy on its own where it needs it (the guest claim does). So a PC whose only lock is a policy with `autoLockMin: 0` always locks in the browser, while the owner claim may still count the knock-out route for it; there the server is the more permissive of the two.
 
 ### Work, frustration and workarounds
 

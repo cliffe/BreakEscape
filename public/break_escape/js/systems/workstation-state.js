@@ -129,6 +129,14 @@ export function habitOf(ownerId, npcs) {
 }
 
 /**
+ * The PC's own setting beats its owner's habit (user decision q89, 2026-11-13; it has always
+ * worked this way). The order, first match wins: the policy's autoLockMin 0, then the object's
+ * lockChance, then the object's locksScreenOnLeave, then the owner's screenHabit, then "locks".
+ * A habit is never read for a PC that sets lockChance or locksScreenOnLeave. The server's
+ * AccessIdentities.screen_always_locks? and OwnerClaim.open_without_estimate? read the same
+ * order; README_scenario_design.md "Who decides the lock" documents it for authors, and
+ * test/js/workstation-state.test.mjs plus test/unit/pc_screen_lock_precedence_test.rb pin it.
+ *
  * Decide whether the screen locks on this leave. A lockChance wins over locksScreenOnLeave and
  * is resolved through `roll(npcId, salt)` (NPCNeedsSystem.roll, seeded); without a roller it
  * falls back to the plain config so the mechanic still works in a stub world. With neither

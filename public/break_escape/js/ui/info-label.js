@@ -21,8 +21,20 @@ let proximityText = null; // text from nearest world object (updated on interval
 let hoverText     = null; // text from HUD element hover (takes priority)
 const UPDATE_INTERVAL = 100; // ms
 
+// A screen that can't hover (a phone, a tablet) fires mouseenter on a tap and never the
+// mouseleave, so a hover label would stick under the HUD buttons (UX slice 16 R1 m13).
+function cannotHover() {
+    try {
+        return typeof window !== 'undefined' && typeof window.matchMedia === 'function' &&
+            window.matchMedia('(hover: none)').matches;
+    } catch (e) {
+        return false;
+    }
+}
+
 /** Called by HUD elements on mouseenter to override the proximity label. */
 export function setHudLabel(text) {
+    if (text && cannotHover()) return;
     hoverText = text || null;
     _applyText(hoverText ?? proximityText);
 }

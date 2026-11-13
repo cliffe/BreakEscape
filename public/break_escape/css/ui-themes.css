@@ -1143,7 +1143,7 @@
    =================================================================== */
 
 /* --- Conversations (person-chat): the portrait stays full-bleed and the
-       caption fade stays; the names and buttons take the theme --- */
+       caption band stays; the names and buttons take the theme --- */
 [data-ui-theme] .person-chat-speaker-name.npc-speaker {
   color: var(--ui-accent);
   text-shadow: var(--ui-text-glow);

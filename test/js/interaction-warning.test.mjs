@@ -218,13 +218,13 @@ function makeOverlay() {
     '.game-confirm-message': makeNode(),
     '.game-confirm-ok': makeNode(),
     '.game-confirm-cancel': makeNode(),
-    '.game-modal-close': makeNode(),
   };
   let _h = '';
   const o = {
     className: '',
     set innerHTML(v) { _h = v; }, get innerHTML() { return _h; },
     querySelector: (sel) => children[sel],
+    addEventListener() {}, // the confirm's own key handling (Enter, Tab)
     remove() {},
   };
   lastOverlay = o;

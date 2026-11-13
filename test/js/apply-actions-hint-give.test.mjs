@@ -227,17 +227,18 @@ test('confirm_action: passes its named labels, and Confirm or Cancel when they a
     delete window.gameConfirm;
 });
 
-test('confirm_action: closeButton false drops the X; without it nothing extra is passed (UX slice 4)', async () => {
+test('confirm_action: passes exactly the text and two labels, nothing more (no X option)', async () => {
     const calls = [];
     window.gameConfirm = (...a) => { calls.push(a); return Promise.resolve(false); };
     await quietly(() => applyActions([
-        { type: 'confirm_action', text: 'Put it on?', confirmLabel: 'Put on', cancelLabel: 'Not now', closeButton: false, onConfirm: [] },
-        { type: 'confirm_action', text: 'Plain?', closeButton: true, onConfirm: [] }
+        { type: 'confirm_action', text: 'Put it on?', confirmLabel: 'Put it on', cancelLabel: 'Leave it off', closeButton: false, onConfirm: [] },
+        { type: 'confirm_action', text: 'Plain?', onConfirm: [] }
     ]));
     assert.deepEqual(calls, [
-        ['Put it on?', 'Put on', 'Not now', { closeButton: false }],
+        ['Put it on?', 'Put it on', 'Leave it off'],
         ['Plain?', 'Confirm', 'Cancel']
     ]);
+    assert.ok(calls.every(c => c.length === 3), 'three arguments each');
     delete window.gameConfirm;
 });
 
