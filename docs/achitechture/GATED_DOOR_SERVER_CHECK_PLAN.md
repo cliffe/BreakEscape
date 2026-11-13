@@ -6,6 +6,14 @@ puts the avatar. What the server owns is whether the pass was earned, and whethe
 contents open. No code here; this is the plan the implementation works from. Every code claim is
 pinned to a file and line at the current tree.
 
+**Prerequisite.** The credential path (§3.3b) depends on branch `build/hard-rfid`, which hardens
+`rfid_lock_passes?` so a `requires`-only rfid lock (no `access` list) passes only when the server
+confirms the player provably holds a keycard or a live clone whose `card_id` is in the lock's
+`requires`. Both split rooms are `requires`-only, so without that branch the rfid validation is
+client-trusted and proves no possession. This plan does not design that possession check; it states
+what it needs from it (a server-held possession result, independent of the shipped trusted boolean)
+and gates the credential credit on it. Land `build/hard-rfid` before Chunk B's credential write.
+
 ## 1. The weakness as it stands
 
 A gated room is opened, and the tailgate credited, in the player's browser.
@@ -63,11 +71,22 @@ So the server can prove the pass was *earned*, not that the avatar reached a pix
 passes, and one unprovable case:
 
 - **Credential pass.** The player presents the room's `requires` card at the gate. The clone path
-  already POSTs `notifyServerUnlock(doorSprite, 'door', 'rfid')`
-  (`public/break_escape/js/systems/doors.js:693`), so `validate_unlock` sees it as a `method: rfid`
-  door unlock and `rfid_lock_passes?` checks it against the cards the server knows are held. The
-  lab's `cm_records_badge` is reachable through an `rfid_cloner`; `test_gate_tailgate`'s
-  `test_staff_badge` likewise.
+  POSTs `notifyServerUnlock(doorSprite, 'door', 'rfid')` (`public/break_escape/js/systems/doors.js:693`),
+  so `validate_unlock` sees it as a `method: rfid` door unlock. Both split rooms are
+  `locked:true, lockType:rfid, requires:<card>` with **no `access` list**
+  (lab `secure_area`, `scenarios/lab_physical_pentest/scenario.json.erb:2122-2124`;
+  `test_gate_tailgate` `staff_room`, `scenarios/test_gate_tailgate/scenario.json.erb:156-161`). As
+  shipped, `rfid_lock_passes?` on such a lock takes the trusted branch
+  `return !rfid_requires_revoked?(lock)` (`game.rb:2541`), which is **true for a player holding
+  nothing**, and the clone POST sends no `card_ids` (`doors.js:684-693`). So the shipped rfid
+  validation proves no possession; it cannot carry the credential credit on its own. This path is
+  therefore a **prerequisite** path: it depends on branch `build/hard-rfid`, which hardens
+  `rfid_lock_passes?` for every rfid lock, including a `requires`-only lock, so that it returns true
+  only when the server confirms the player provably holds a keycard or a live clone whose `card_id`
+  is in the lock's `requires`, read from server-held inventory and `serverClones` honouring
+  `rfid_cloner_held?` (`game.rb:2449,2457,2465,2491`), never from a client field. The lab's
+  `cm_records_badge` is reachable through an `rfid_cloner`; `test_gate_tailgate`'s `test_staff_badge`
+  likewise. viaCredential credits only when that server possession check has passed (§3.3b).
 - **Server-owned pass global.** `playerMayPassIf` names a global the server owns, so its truth
   means the player earned the disguise through a server-checked act. `courier_ready` is worn and
   server-owned, so it qualifies.
@@ -139,26 +158,47 @@ stands in the room, collects nothing, is credited nothing, and is turned round b
 designed.
 
 `sync_state` loads the row with `SYNC_STATE_COLUMNS` only (`games_controller.rb:2022`, no
-`scenario_data`), so reading `@game.scenario_data` there raises. The pass check needs the gate's
-`playerMayPassIf` name and the `creditOnPass.viaPass` block, which live only in the scenario door.
-Load them on the sync path with a targeted `pick`, the pattern this path already uses for the
-start-room check (`Game.where(id: @game.id).pick(Arel.sql("scenario_data->>'startRoom'"))`,
-`games_controller.rb:2097`) and for `worn_global_names` (`wearables.rb:33`). Read the door blob once
-and reuse it for the credit derivation (3.4) in the same request.
+`scenario_data`), so **every** scenario read on this path raises `ActiveModel::MissingAttributeError`.
+This is not limited to reading the gate blob. The viaPass credit, once the pass check is to run,
+calls in order: the guard `!room_unlocked?(room_id)` -> `start_room?` -> `scenario_data['startRoom']`
+(`game.rb:122-127`); then `complete_task!(..., trusted: true)` -> `find_task_in_scenario` ->
+`scenario_data['objectives']` (`game.rb:5217`), plus `check_aim_completion` (`game.rb:5361`). Each of
+those reads the bare `scenario_data` column, so a `pick` for the gate blob alone does not save them.
+
+The fix is the one the capture path already uses on this same narrow sync row: fetch the scenario
+**once** through the existing `stored_scenario_data` single-source helper (`game.rb:797-806`, which
+reads the loaded attribute on a full load and does one `pick` on the sync row) and **thread it as a
+`scenario:` keyword** into every scenario-consuming call on the promotion path, mirroring
+`record_capture!(entry, scenario: scenario)` (`games_controller.rb:923`) and
+`migrate_legacy_captures!(scenario:)` (`:919`). Concretely: the pass check reads `playerMayPassIf`
+and `creditOnPass.viaPass` from that scenario; the `room_unlocked?`/`start_room?` guard, the
+`creditOnPass` task completion and the aim check take the injected scenario rather than reading the
+column. This is the cheaper and safer of the two options over a full-row reload: a mid-merge reload
+would discard the in-flight `player_state` merge that `sync_state` is still building, whereas the
+injection reuses an established one-source mechanism, touches scenario reads only on the promotion path,
+and runs its single `pick` only when a promotion is actually pending (not on every sync). SYNC SIZE
+is unchanged: the scenario is server-held, read-only, and never part of the client payload (§8).
 
 #### 3.3b Credential path, in the `unlock` action
 
 In the `unlock` action's door branch (`games_controller.rb:1139-1148`), select the credential path
-with the door-keyed `split_gated_door?(target_id)`, independent of `attempt`. When that door is
-being unlocked by its own `requires` credential (`validate_unlock` already true for `method: rfid`
-via `rfid_lock_passes?`, `game.rb:2539`, the shipped case for both split rooms which are
-`lockType: rfid`; or `method: key` via `has_key_in_inventory?`) and the room is not yet in
-`unlockedRooms`, promote with the `viaCredential` block there. `serve_opened_room` still runs; the
-added step is the `creditOnPass.viaCredential` write, the `npcRouteRooms` delete, and a `save!`
-after the credit write (a `viaCredential` block that sets a global but completes no task would
-otherwise not persist, since only `complete_task!` saves at its tail). This credits the clone the
-moment the server validates the badge, whether or not Len's route has already recorded the room,
-and covers `test_gate_tailgate`'s `test_staff_badge` unlock.
+with the door-keyed `split_gated_door?(target_id)`, independent of `attempt`. Credit viaCredential
+only when the **server possession check passes**: the player provably holds a keycard or a live
+clone whose `card_id` is in the door's `requires`. That check is `rfid_lock_passes?` as hardened by
+the `build/hard-rfid` prerequisite (it then returns false for a `requires`-only lock when the player
+holds nothing), read for `method: rfid`; `has_key_in_inventory?` (`game.rb:252`) for `method: key`.
+The credit is gated on that possession result, never on the shipped trusted boolean, which would
+credit a player holding nothing (§6). Because the hardened `validate_unlock` already refuses to open
+the door without possession, a non-holder never reaches this branch; the credit site asserts the
+same possession result so the two cannot drift. When possession passes and the room is not yet in
+`unlockedRooms`, promote with the `viaCredential` block. `serve_opened_room` still runs; the added
+steps are the `creditOnPass.viaCredential` write, the `npcRouteRooms` delete, and a `save!` after
+the credit write (a `viaCredential` block that sets a global but completes no task would otherwise
+not persist, since only `complete_task!` saves at its tail). All of this sits inside the existing
+`ActiveRecord::Base.transaction` opened at `games_controller.rb:1141`, so a mid-write failure rolls
+back the credit, the room unlock and the list delete together. This credits the clone the moment the
+server validates the badge, whether or not Len's route has already recorded the room, and covers
+`test_gate_tailgate`'s `test_staff_badge` unlock.
 
 ### 3.4 The credit, set and owned by the server
 
@@ -201,7 +241,10 @@ The lab's Ruth debrief still reads `kp_badge_tailgated` and `kp_records_cloned` 
 controller `unlock` action, not inside `serve_opened_room` or `validate_unlock`. For a split route
 room reached by `method: npc`: validate as now (still returns true), but before calling
 `serve_opened_room`, record the room in `npcRouteRooms` and return the served room data without
-`unlock_room!`. Select the branch with `@game.gated_route_room?(attempt, target_id)` **and**
+`unlock_room!`. `serve_opened_room` (`games_controller.rb:2239-2246`) does three things: `unlock_room!`,
+`filtered_room_data`, and `track_npc_encounters`. The route-room branch skips only the first; it must
+still compose `filtered_room_data(room_id)` and run `track_npc_encounters(room_id, room_data)`, or
+NPCs in the route room go untracked until the room is promoted. Select the branch with `@game.gated_route_room?(attempt, target_id)` **and**
 `!@game.room_unlocked?(target_id)`: after promotion the room is unlocked, and on reload the gate is
 rebuilt shut so Len re-walks and re-POSTs `method: npc`, where `validate_unlock` returns true early
 via `room_unlocked?` (`game.rb:3055-3058`). The `!room_unlocked?` guard stops a re-fired route
@@ -241,7 +284,11 @@ could never reach must be refused; and hardening must never block a student play
 
 ## 6. Which scenarios use gated doors, and how each keeps working
 
-`grep -rl '"openFor"' scenarios/` returns four files.
+`grep -rl '"openFor"' scenarios/` returns four files. Note that `lockType: rfid` does **not** by
+itself mean the door is server credential-checked: both split rooms are `requires`-only with no
+`access` list, so as shipped neither is checked server-side (`game.rb:2541-2547`). The credential
+proof for those rooms is **added** by the `build/hard-rfid` prerequisite, not inherited from the
+existing rfid validation.
 
 | Scenario | Gated room(s) | `openFor` | `playerMayPassIf` | Room `requires` | Cloner? | Splits? |
 |---|---|---|---|---|---|---|
@@ -254,17 +301,23 @@ could never reach must be refused; and hardening must never block a student play
   `cm_records_badge`). Hi-vis wearer: `courier_ready` server-true (proven by `POST /wear`), so on
   the `currentRoom` sync it is promoted via `viaPass`, setting `kp_badge_tailgated` and
   `tailgate_in`. Clone: presenting `cm_records_badge` is a `method: rfid` unlock (`doors.js:693`),
-  credited via `viaCredential` in the `unlock` action, setting `kp_records_cloned` and
-  `tailgate_in`. No-vest slip-in: stands in the room via `npcRouteRooms`, no promotion, no credit,
-  turned round as designed. Tampered sync of either credit global: dropped. Scenario edits: add
-  `creditOnPass` to the gate; **delete the client credit writers found by grep, not line number**
-  (today the `setGlobal` writers are `:915` and `:932`; re-audit the `room_entered:secure_area`
-  backstops at `:728` and `:729`, which must not re-credit after the server owns the globals). Keep
-  the presentation mappings (`len_at_door` `:923`, `player_on_floor` `:754`, `kp_tailgate_cue`
+  credited via `viaCredential` in the `unlock` action **only when the server possession check
+  passes** (the hardened `rfid_lock_passes?`, `build/hard-rfid` prerequisite), setting
+  `kp_records_cloned` and `tailgate_in`. No-vest slip-in: stands in the room via `npcRouteRooms`, no
+  promotion, no credit, turned round as designed. Tampered sync of either credit global: dropped.
+  Scenario edits: add `creditOnPass` to the gate; **delete the client credit writers found by grep,
+  not line number** (today the `setGlobal` writers are `:915` and `:932`); and **delete the two
+  `room_entered:secure_area` client `completeTask` backstops** (`:728`, `:729`). Once `tailgate_in`
+  is `serverCompletedOnly` (§7), those backstops can never complete the task; they would only be
+  rejected by the `complete_task!` guard and logged on every entry while their condition holds. Move
+  the removed mappings to `tmp/delete/` per the common rules, staging the removal by explicit path.
+  Keep the presentation mappings (`len_at_door` `:923`, `player_on_floor` `:754`, `kp_tailgate_cue`
   `:759`).
 - **`test_gate_tailgate`.** The credential path splits (`test_staff_badge` is cloneable;
-  `staff_clone_held` and an `rfid_cloner` are present). `visitor_pass` is client-set, so the pass
-  path does not split as shipped (section 11, Q2). The fixture adds a gate `creditOnPass` with a new
+  `staff_clone_held` and an `rfid_cloner` are present), and its viaCredential credit is gated on the
+  same hardened possession check: `staff_room` is also `requires`-only, so without `build/hard-rfid`
+  an unproven rfid unlock would credit it. `visitor_pass` is client-set, so the pass path does not
+  split as shipped (Q1). The fixture adds a gate `creditOnPass` with a new
   declared server-credit global (for example `test_staff_entered`) in both `viaCredential` and
   `viaPass`, so there is a server-owned global to assert on. The objective `enter_staff` is an
   `enter_room` task (`:37`), which `complete_task!` trusts outright, so the fixture asserts on server
@@ -396,11 +449,18 @@ Rails (`test/controllers/break_escape/`, `test/models/break_escape/`), one each:
 1. `sync currentRoom: secure_area` with no hi-vis, no card: room accepted (avatar not desynced),
    NOT in `unlockedRooms`, no credit global, `tailgate_in` incomplete. (The designed slip-in.)
 2. `POST /wear` the hi-vis, then `sync currentRoom: secure_area`: promoted to `unlockedRooms`,
-   `kp_badge_tailgated` server-true, `tailgate_in` complete, proving the pass check loads the gate
-   via its own `pick` on a sync row that carries no `scenario_data`.
-3. Hold the cloned `cm_records_badge`, no hi-vis, `POST /unlock method: rfid` on the records door:
-   credited via `viaCredential`, `kp_records_cloned` server-true, `tailgate_in` complete, before and
-   without any `method: npc` route having run.
+   `kp_badge_tailgated` server-true, `tailgate_in` complete. This runs the whole viaPass credit on
+   the narrow sync row (no `scenario_data` column), so it proves the scenario-injection fix: the
+   guard, the credit and the aim check all take the scenario fetched via `stored_scenario_data`, and
+   none raises `MissingAttributeError`.
+3. Hold the cloned `cm_records_badge`, no hi-vis, `POST /unlock method: rfid` on the records door
+   (with `build/hard-rfid` in the tree): credited via `viaCredential`, `kp_records_cloned`
+   server-true, `tailgate_in` complete, before and without any `method: npc` route having run.
+3b. **Negative credential test.** `POST /unlock method: rfid` on the records door with **no clone and
+   no keycard** held: the hardened `rfid_lock_passes?` refuses, the door does not open, the room is
+   not in `unlockedRooms`, `kp_records_cloned` stays false, `tailgate_in` incomplete. This pins the
+   credential path's server enforcement; both split rooms are `requires`-only, so the gap is not
+   lab-specific.
 4. `sync globalVariables: { kp_badge_tailgated: true }` before earning: dropped (read-only via
    `serverCreditGlobals`); stays false.
 5. `POST /complete_task tailgate_in` directly: rejected (`serverCompletedOnly`).
@@ -411,8 +471,10 @@ Rails (`test/controllers/break_escape/`, `test/models/break_escape/`), one each:
    promote it, `unlockedRooms` unchanged.
 7. `playerMayPassIf` is a client-writable global (test_gate_tailgate `visitor_pass` as shipped):
    forge it true, sync `currentRoom`: no `viaPass` promotion, because the name is not server-owned.
-8. Clone a UID-only / wrong card and claim the credential path: `rfid_lock_passes?` refuses, no
-   promotion.
+8. Hold a wrong card (a clone whose `card_id` is not in the door's `requires`) and claim the
+   credential path: the hardened `rfid_lock_passes?` finds no held card whose id is in `requires`,
+   refuses the unlock, and no promotion or credit follows. (As shipped, before `build/hard-rfid`,
+   this lock trusts a non-holder; the test asserts the hardened behaviour.)
 9. Migration: seed a game with `secure_area` in `unlockedRooms`, every credit global false,
    `tailgate_in` incomplete, credit writers removed: a `GET room/secure_area` moves the room back
    into `npcRouteRooms`, sets `routeRoomsMigrated`, and that request's auto-unlock does not re-add
@@ -441,13 +503,17 @@ unlock. The tampered step is the proof the fix bites. Record game ids in the bui
   `split_gated_door?` helpers; the `unlock` action route-room branch (3.5); `GET room` and
   auto-unlock changes (3.2); `currentRoom` acceptance for route rooms (3.3a, acceptance only). Rails
   tests 1, 6, 10. No credit yet.
-- **Chunk B: the credit, server-owned.** `creditOnPass` schema; `serverCreditGlobals` derivation and
-  read-only union (3.4); `write_server_globals!` credit write; the `viaPass` check on `currentRoom`
-  (3.3a) and the `viaCredential` write in the `unlock` action (3.3b). Rails tests 2, 3, 4, 7, 8.
+- **Chunk B: the credit, server-owned.** Prerequisite: `build/hard-rfid` is in the tree before the
+  credential write. `creditOnPass` schema; `serverCreditGlobals` derivation and read-only union
+  (3.4); `write_server_globals!` credit write; the `viaPass` check on `currentRoom` with the
+  scenario-injection fix threading `stored_scenario_data` through the guard/credit/aim calls (3.3a,
+  B2); the `viaCredential` write in the `unlock` action gated on the hardened possession check (3.3b,
+  B1). Rails tests 2, 3, 3b, 4, 7, 8.
 - **Chunk C: server-completed tasks.** `serverCompletedOnly` set; the `complete_task!` and
   `skip_task!` guards; the `trusted:` keyword (section 7). Rails tests 5, 5b, 5c.
 - **Chunk D: scenario migration and lab edits.** Add `creditOnPass` to the lab gate; remove the
-  client credit writers and re-audit the backstops; the soft-lock demotion (section 9). Rails test 9;
+  client credit writers (`:915`, `:932`) and the two `room_entered:secure_area` `completeTask`
+  backstops (`:728`, `:729`) into `tmp/delete/`; the soft-lock demotion (section 9). Rails test 9;
   node scenario-scan.
 - **Chunk E: fixtures, validator, graph, live proof.** `test_gate_tailgate` `creditOnPass` fixture;
   validator rules (section 11); dungeon-graph label and regenerate; the four-scenario validator run
@@ -460,10 +526,16 @@ unlock. The tampered step is the proof the fix bites. Record game ids in the bui
   not credited via `viaPass`. Require every split gate's pass global to be server-owned
   (validator-enforced) and make `visitor_pass` a server-set pass, or allow a client pass global and
   rely on the credential path there? **Recommend:** require server-owned; make `visitor_pass`
-  server-set so the fixture proves the strong path.
+  server-set so the fixture proves the strong path. (The credential path gets its rigour separately,
+  from the `build/hard-rfid` possession check, so the server-owned-pass rule is only half the
+  guarantee without it.)
 - **Q2. Scope now.** Land the full change for the lab now (split, server-owned credit, migration,
-  server-completed tasks), or land only the server split and defer the credit machinery? **Recommend:**
-  the full change now, since the lab is the shipped teaching scenario.
+  server-completed tasks), or land only the server split and the viaPass credit and defer
+  viaCredential? The full change is safe to land now **provided `build/hard-rfid` merges before
+  Chunk B's credential write**: without that possession check the viaCredential credit would fire
+  for a player holding nothing. **Recommend:** the full change now, sequenced behind `build/hard-rfid`,
+  since the lab is the shipped teaching scenario. If `build/hard-rfid` slips, land the server split
+  plus viaPass and hold viaCredential until it lands.
 - **Q3. The two holds-doors demos.** `test_bark_bubbles` and `test_access_habits` are carved out of
   the split (nothing provable, nothing forgeable). Any objection to leaving them presentation-only,
   noted in each README? **Recommend:** leave them; they credit nothing and gate no outcome.

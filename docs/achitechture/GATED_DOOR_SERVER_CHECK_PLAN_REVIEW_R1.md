@@ -115,3 +115,16 @@ rules) so the serverCompletedOnly rejection path is not routinely exercised by t
 the viaCredential credit proves nothing server-side (B1) and the viaPass credit as routed raises on
 the sync path and would soft-lock the honest earn (B2). Both are in the credit core (Chunk B).
 Re-plan those two paths, add the negative credential test (M1), and the plan is buildable.
+
+## Outcomes
+
+- B1: fixed. The credential path now depends on the `build/hard-rfid` possession check (prerequisite, §1, §3.3b); the viaCredential credit is gated on that server-held possession result, never on the shipped trusted boolean.
+- B2: fixed. The viaPass credit threads the scenario once via `stored_scenario_data` as a `scenario:` keyword through the guard, credit and aim calls (§3.3a), the cheaper and safer choice over a mid-merge full-row reload that would clobber the in-flight `player_state` merge.
+- M1: fixed. Added negative credential test 3b (no clone and no keycard -> not credited, room not unlocked); test 8's premise corrected to the hardened refusal.
+- M2: fixed. §6 now states `lockType: rfid` does not imply a server credential check; the proof is added by `build/hard-rfid`, not inherited.
+- M3: fixed. §6 and Chunk D direct removal of the `:728`/`:729` backstops into `tmp/delete/`, not a re-audit, since `serverCompletedOnly` would only reject and log them.
+- m1: fixed. §3.5 states the route-room branch must still run `filtered_room_data` and `track_npc_encounters`.
+- m2: fixed. §3.3b states the credit write, `npcRouteRooms` delete and `save!` sit inside the existing transaction at `games_controller.rb:1141`.
+- m3: fixed. Q1 notes the credential path's rigour comes from `build/hard-rfid`, so the server-owned-pass rule alone is half the guarantee.
+- m4: withdrawn. Line-drift note only; no action needed (lines confirmed close enough to locate the code).
+- m5: withdrawn. Confirmed the `currentRoom` guard reads `npcRouteRooms` from `player_state`, not `scenario_data`; acceptance does not trip the missing-attribute problem.
