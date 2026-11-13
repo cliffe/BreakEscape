@@ -199,16 +199,23 @@ export function dropRingOffsets(facing = null) {
  * walkable, inside the room and clear (dropSpotClear) wins. When none is, the player is
  * standing behind the same prop (the walk-behind convention) and the drop stays with
  * them: the feet snapped to a walkable cell in the room, else the raw feet, never the raw
- * aim (which can be inside a wall or a desk's strip).
+ * aim (which can be inside a wall or a desk's strip). That fallback's box is shifted into
+ * the room when it sticks out (UX slice 15 R2, n1).
  *
- * `opts`: { size: {w, h}, roomRect, bodies, props, facing } (dropClearance gathers the
- * middle four; `facing` is the player's direction, e.g. 'left', 'down-right').
+ * A candidate whose box touches a rectangle in `opts.avoid` (a door sprite, another loaded
+ * room's rectangle: the doorway strips where two rooms overlap, dropClearance) is skipped on
+ * a first pass and taken only when no other candidate is clear (UX slice 15 R2, M1): an
+ * item dropped there is drawn on a door gap or over the next room's wall.
+ *
+ * `opts`: { size: {w, h}, roomRect, bodies, props, avoid, facing } (dropClearance gathers
+ * the middle five; `facing` is the player's direction, e.g. 'left', 'down-right').
  * With no pathfinder, candidates count as walkable.
  */
 export function dropPoint(playerFeet, pathfindingManager, opts = {}) {
     const pm = pathfindingManager;
     const size = opts.size || { w: 16, h: 16 };
     const roomRect = opts.roomRect || null;
+    const avoid = Array.isArray(opts.avoid) ? opts.avoid : [];
     const step = pm?.worldGridBounds?.step || DROP_AHEAD_PX;
     const feet = { x: playerFeet.x, y: playerFeet.y };
     const candidates = [
@@ -221,28 +228,73 @@ export function dropPoint(playerFeet, pathfindingManager, opts = {}) {
     const snap = typeof pm?.findNearestWalkableWorldCell === 'function'
         ? (p, r) => pm.findNearestWalkableWorldCell(p.x, p.y, r)
         : (p) => ({ x: p.x, y: p.y });
+    // Each candidate's cell is looked up once, however many passes read it
+    const clear = [];
     for (const c of candidates) {
         const cell = snap(c, 0);
-        if (cell && insideRect(cell, roomRect) && dropSpotClear(cell, size, { ...opts, roomRect })) {
-            return { x: cell.x, y: cell.y };
-        }
+        const ok = !!cell && insideRect(cell, roomRect) && dropSpotClear(cell, size, { ...opts, roomRect });
+        if (!ok) continue;
+        if (!avoid.length) return { x: cell.x, y: cell.y };
+        const box = dropBox(cell, size);
+        if (!avoid.some(r => overlapArea(box, r) > 0)) return { x: cell.x, y: cell.y };
+        clear.push(cell);
     }
+    if (clear.length) return { x: clear[0].x, y: clear[0].y };
     const near = snap(feet, 2);
-    return near && insideRect(near, roomRect) ? { x: near.x, y: near.y } : feet;
+    return clampIntoRoom(near && insideRect(near, roomRect) ? { x: near.x, y: near.y } : feet, size, roomRect);
+}
+
+/** `p` moved so that the box of `size` centred on it lies inside `roomRect` (when it fits). */
+export function clampIntoRoom(p, size, roomRect) {
+    if (!roomRect) return p;
+    const box = dropBox(p, size);
+    let { x, y } = p;
+    if (box.w <= roomRect.w) {
+        if (box.x < roomRect.x) x += roomRect.x - box.x;
+        else if (box.x + box.w > roomRect.x + roomRect.w) x -= box.x + box.w - (roomRect.x + roomRect.w);
+    }
+    if (box.h <= roomRect.h) {
+        if (box.y < roomRect.y) y += roomRect.y - box.y;
+        else if (box.y + box.h > roomRect.y + roomRect.h) y -= box.y + box.h - (roomRect.y + roomRect.h);
+    }
+    return { x, y };
 }
 
 /**
  * What a drop in `room` must keep clear of, for dropPoint: the room's rectangle, the
- * static and immovable physics bodies (not the player's or an NPC's), and the shown
- * non-takeable room objects other than `except` (the drop itself), with their depths.
+ * static and immovable physics bodies near the room (not the player's or an NPC's), and
+ * the shown non-takeable room objects other than `except` (the drop itself), with their
+ * depths. `avoid` (ranked last, not refused): the door sprites of the loaded rooms and the
+ * other loaded rooms' rectangles that touch this room (`rooms`, default window.rooms).
  */
-export function dropClearance(scene, room, except = null, player = null) {
-    const out = { roomRect: null, bodies: [], props: [] };
-    const pos = room?.position;
-    const wpx = room?.map?.widthInPixels, hpx = room?.map?.heightInPixels;
-    if (pos && wpx > 0 && hpx > 0) out.roomRect = { x: pos.x, y: pos.y, w: wpx, h: hpx };
+export function dropClearance(scene, room, except = null, player = null, rooms = (typeof window !== 'undefined' ? window.rooms : null)) {
+    const out = { roomRect: null, bodies: [], props: [], avoid: [] };
+    const rectOf = r => {
+        const pos = r?.position;
+        const wpx = r?.map?.widthInPixels, hpx = r?.map?.heightInPixels;
+        return pos && wpx > 0 && hpx > 0 ? { x: pos.x, y: pos.y, w: wpx, h: hpx } : null;
+    };
+    out.roomRect = rectOf(room);
+    // Only what can touch a drop box (inside the room) counts: the room grown by two cells
+    // (UX slice 15 R2, n2: every static body in the world was 980 rectangles in a 23-room map)
+    const reach = out.roomRect ? { x: out.roomRect.x - 16, y: out.roomRect.y - 16, w: out.roomRect.w + 32, h: out.roomRect.h + 32 } : null;
+    const near = r => !reach || overlapArea(r, reach) > 0;
     const keep = body => body && body.enable !== false && body.gameObject !== player && !body.gameObject?.npcId;
-    const add = body => out.bodies.push({ x: body.left, y: body.top, w: body.right - body.left, h: body.bottom - body.top });
+    const add = body => {
+        const r = { x: body.left, y: body.top, w: body.right - body.left, h: body.bottom - body.top };
+        if (near(r)) out.bodies.push(r);
+    };
+    for (const other of Object.values(rooms || {})) {
+        if (!other) continue;
+        for (const d of other.doorSprites || []) {
+            if (!d || d.destroyed || d.active === false) continue;
+            const r = spriteRect(d);
+            if (r.w > 0 && r.h > 0 && near(r)) out.avoid.push(r);
+        }
+        if (other === room || !out.roomRect) continue;
+        const r = rectOf(other);
+        if (r && overlapArea(r, out.roomRect) > 0) out.avoid.push(r);
+    }
     const world = scene?.physics?.world;
     world?.staticBodies?.iterate?.(body => { if (keep(body)) add(body); });
     world?.bodies?.iterate?.(body => { if (keep(body) && body.immovable) add(body); });

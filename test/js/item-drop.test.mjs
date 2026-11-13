@@ -395,10 +395,69 @@ test('UX slice 15 R1 (m4, n3): nothing clear falls back to the feet, never the r
     const none = gridPm(() => true);
     assert.deepEqual(dropPoint({ x: 61, y: 157 }, none, { size }), { x: 61, y: 157 });
     // A doorway foot cell in a room that starts at x 100, where the only walkable cells
-    // are in the next room (x < 96): the raw feet, never a cell over there
+    // are in the next room (x < 96): the raw feet, never a cell over there, shifted so the
+    // box (x 96..112) lies inside the room (R2 n1): centre x 108
     const roomRect = { x: 100, y: 0, w: 220, h: 320 };
     const nextRoom = gridPm((cx) => cx >= 12);
-    assert.deepEqual(dropPoint({ x: 104, y: 76 }, nextRoom, { size, roomRect }), { x: 104, y: 76 });
+    assert.deepEqual(dropPoint({ x: 104, y: 76 }, nextRoom, { size, roomRect }), { x: 108, y: 76 });
+});
+
+test('UX slice 15 R2 (n1): the last fallback box is clamped into the room on every side', async () => {
+    const { dropPoint, clampIntoRoom, dropBox } = await import(pathToFileURL(join(js, 'systems/item-drop.js')).href);
+    const size = { w: 16, h: 16 };
+    const roomRect = { x: 0, y: 0, w: 320, h: 320 };
+    // A foot cell in the top strip (y 4) with nothing walkable: the box starts 4 px above
+    // the room, so the centre moves down to y 8
+    const none = gridPm(() => true);
+    const at = dropPoint({ x: 228, y: 4 }, none, { size, roomRect });
+    assert.deepEqual(at, { x: 228, y: 8 });
+    const b = dropBox(at, size);
+    assert.ok(b.y >= 0 && b.x >= 0 && b.x + b.w <= 320 && b.y + b.h <= 320, 'the box is inside the room');
+    assert.deepEqual(clampIntoRoom({ x: 318, y: 316 }, size, roomRect), { x: 312, y: 312 }, 'right and bottom');
+    assert.deepEqual(clampIntoRoom({ x: 2, y: 100 }, size, roomRect), { x: 8, y: 100 }, 'left');
+    assert.deepEqual(clampIntoRoom({ x: 2, y: 3 }, size, null), { x: 2, y: 3 }, 'no room: unchanged');
+});
+
+test('UX slice 15 R2 (M1): a door gap or another room under the box is ranked last, not refused', async () => {
+    const { dropPoint, dropBox } = await import(pathToFileURL(join(js, 'systems/item-drop.js')).href);
+    const size = { w: 16, h: 16 };
+    const roomRect = { x: 0, y: 0, w: 320, h: 320 };
+    // A door just south of the feet (60, 156): its rectangle (x 48..80, from y 166) touches
+    // the aim box (y 156..172), so the drop goes to a cell whose box clears it
+    const door = { x: 48, y: 166, w: 32, h: 64 };
+    const at = dropPoint({ x: 60, y: 156 }, gridPm(), { size, roomRect, avoid: [door] });
+    const b = dropBox(at, size);
+    const touches = b.x < door.x + door.w && b.x + b.w > door.x && b.y < door.y + door.h && b.y + b.h > door.y;
+    assert.ok(!touches, `the drop box ${JSON.stringify(b)} clears the door`);
+    assert.deepEqual(at, { x: 60, y: 156 }, 'the feet: the first candidate whose box ends above the door');
+    // The next room's rectangle under everything in reach: the first clear candidate (the aim)
+    const nextRoom = { x: 0, y: 100, w: 320, h: 220 };
+    assert.deepEqual(dropPoint({ x: 60, y: 156 }, gridPm(), { size, roomRect, avoid: [nextRoom] }), { x: 60, y: 164 });
+    // A side cell when the aim and feet both touch the door (a door on the feet's column)
+    const column = { x: 56, y: 120, w: 8, h: 80 };
+    const side = dropPoint({ x: 60, y: 156 }, gridPm(), { size, roomRect, avoid: [column] });
+    assert.ok(Math.abs(side.x - 60) >= 8, 'off the door column');
+    const sb = dropBox(side, size);
+    assert.ok(sb.x >= 64 || sb.x + sb.w <= 56, 'the box clears the column');
+});
+
+test('UX slice 15 R2 (M1, n2): dropClearance lists door sprites and touching rooms to avoid, and only nearby bodies', async () => {
+    const { dropClearance } = await import(pathToFileURL(join(js, 'systems/item-drop.js')).href);
+    const body = (left, top, right, bottom) => ({ left, top, right, bottom, enable: true, gameObject: {} });
+    const statics = [body(10, 10, 40, 20), body(2000, 2000, 2040, 2020), body(-30, 50, -10, 60)];
+    const scene = { physics: { world: { staticBodies: { iterate: f => statics.forEach(f) }, bodies: { iterate: () => {} } } } };
+    const map = (w, h) => ({ widthInPixels: w, heightInPixels: h });
+    const lobby = { position: { x: 0, y: 0 }, map: map(320, 320), objects: {},
+        doorSprites: [{ x: 48, y: 32, displayWidth: 32, displayHeight: 64, originX: 0.5, originY: 0.5 }] };
+    const usb = { position: { x: 0, y: -256 }, map: map(320, 320), objects: {}, doorSprites: [] };
+    const far = { position: { x: 1000, y: 1000 }, map: map(320, 320), objects: {},
+        doorSprites: [{ x: 1048, y: 1032, displayWidth: 32, displayHeight: 64 }] };
+    const out = dropClearance(scene, usb, null, null, { lobby, usb, far });
+    assert.deepEqual(out.roomRect, { x: 0, y: -256, w: 320, h: 320 });
+    assert.deepEqual(out.bodies, [{ x: 10, y: 10, w: 30, h: 10 }, { x: -30, y: 50, w: 20, h: 10 }],
+        'the far body is left out; one just outside the room (within two cells) is kept');
+    assert.deepEqual(out.avoid, [{ x: 32, y: 0, w: 32, h: 64 }, { x: 0, y: 0, w: 320, h: 320 }],
+        'the lobby door and the lobby rectangle, not the far room or its door');
 });
 
 test('UX slice 15 (R15): a 16x16 drop sits with its bottom below the feet, so it draws in front', async () => {
