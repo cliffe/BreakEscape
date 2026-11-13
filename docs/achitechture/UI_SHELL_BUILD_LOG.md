@@ -230,3 +230,66 @@ escaping-shared-helpers): 6 passed, 0 failed (full suites are the orchestrator's
 
 Shots: run2/shots-after in the scratchpad ui-shell folder, same names as shots/before,
 re-shot on the tip.
+
+
+## Review round 1 fixes (2026-11-13)
+
+Review: docs/achitechture/UI_SHELL_REVIEW_R1.md. Fix commit 28596758f (code and tests), this log
+in the commit after it. Paths are under public/break_escape/ unless they start with tools/ or test/.
+
+| Finding | Outcome |
+|---|---|
+| M1 default X scrolls away | Fixed, one framework fix. `.minigame-container > .minigame-close-button` is `position: fixed` (css/minigames-framework.css) with `right: calc(15px + var(--minigame-shell-bar))`; base-minigame.js `_watchShellScrollbar()` publishes the shell's scrollbar width in that variable (resize and a ResizeObserver on the shell), so the X sits left of the bar. Scenes that move their X into a frame (a parent other than the shell: password, network view, PC bezel) keep their own absolute rules. |
+| M2 X ignores scrollLeft | Fixed by the same change: `placeCloseButton` now works in window coordinates (frame rect against the shell's visible edge, less its scrollbar), so a sideways scroll is already in the frame's rect, and the X is clamped to the visible right edge. closeInsideFrame scenes (notes, pin, network architecture, biometrics, rfid, infusion pump) still sit in their frame's corner. |
+| M3 notes X on the scrollbar | Fixed: css/notes.css starts the page's scroll box at `top: 48px` (below the X) with `height: calc(90% - 48px)` and no top padding, so its bar never runs under the X. |
+| M4 lockpicking strip on phones | Fixed: css/lockpicking.css gives `#phaser-game-container` `aspect-ratio: 580 / 340; height: auto; flex: 0 0 auto` at 768px and under, so the strip follows the lock. |
+| M5 alarm panel text scaled | Fixed: the SVG is drawn at its viewBox size (`width` and `height` in the markup, 1:1), the panel is `flex: 0 0 auto` with no max-height or max-width, and `.ap-game-container` (already `overflow: auto`) scrolls. On a 390px phone the panel scrolls sideways at native size. |
+| m1 stale pointer after a scroll | Fixed: lockpicking-game-phaser.js `_watchLockScroll()` calls `game.scale.updateBounds()` on scroll of the game area and the shell (listeners removed in `complete`). Not re-measured at 50 ms in a browser; covered by a source test. |
+| m2 PIN line wraps | Fixed: `.pin-minigame-message` `min-height: 56px` (two lines), and the lock-out text shortened to "Locked out. Your guesses are kept." so it never takes three. shell-x-check asserts the keypad top does not move for either message at three sizes. |
+| m3 audit false positive (collapsed block) | Fixed in tools/playtest/ui-rules-audit.mjs: a clipping ancestor with zero client height or width, or opacity 0, is skipped. Unit test added. |
+| m4 `--strict` passes unopened scenes | Fixed: an unopened scene or an open error is "NOT AUDITED", and `--strict` fails on it unless it is in `--skip a,b`. `container` and `phone-chat` got BUILTIN_PARAMS and now open. `person-chat` (needs the game's NPC) and `network-view` (needs the game's network links) cannot open from a title-only start: allowed with `--skip person-chat,network-view`, and the review's own shots cover them. The clipped loop no longer stops at the first scroll box: the box stands in for the element and the outer boxes are still checked. Unit tests added. |
+| m5 two horizontal bars, network architecture | Deferred: scene content wider than the frame, the consoles branch owns it. Note for that branch: at 390x844 the diagram scroller and the shell both scroll sideways. |
+| m6 PC view inherits the scrolling shell | Fixed: `.minigame-container.pc-view { overflow: hidden }` in css/pc-monitor.css. Found by reading, as the review did; checked in CSS and by a test, not by dragging a post-it past the edge. |
+| m7 `box-sizing` zero-specificity rule narrows some scenes | Deferred, noted: the ESD panel is 600px wide, not 640px, at 800x600 (its status line wraps). Nothing broke. Consoles owners decide whether to restore the width. |
+| m8 tests read source text | Fixed in part: new behaviour tests for the default X (published scrollbar width), `placeCloseButton` in window coordinates with a vertical and a horizontal scroll, the right-edge clamp, `hasMoreBelow`; the alarm, PIN, notes, lockpicking and PC view tests now check the new values. Live: tools/playtest/shell-x-check.mjs (below). Not done: `showPinMessage` timing and `_refreshDials` `scrollIntoView` tests (the live message check covers the layout part). |
+
+### New live check: tools/playtest/shell-x-check.mjs
+
+Opens each registered scene (or `--scenes a,b`) at 915x412, 800x600 and 390x844, scrolls the shell
+and every scroll box to the end, and fails if the X is outside the viewport, over the shell's
+scrollbar or over the scrollbar of the box under it (M1, M2, M3), and for the PIN pad if a wrapped
+message moves the keys (m2). `--legacy` puts the old absolute X and the old notes box back: the
+check then fails (backup recovery: X at y=-177, -247, -21; notes: X over the page's scrollbar),
+which is the proof it bites. Merge batch:
+
+    PLAYWRIGHT_CHROMIUM_EXECUTABLE=... SHELL_X_PORT=<keyless port> SHELL_X_GAME=<game id> \
+        node --test test/js/shell-x-check.test.mjs
+
+(skips when the two variables are unset; `SHELL_X_SCENES=a,b` narrows it). Audit gate:
+`node tools/playtest/ui-rules-audit.mjs --port P --game G --all --strict --skip person-chat,network-view`.
+
+### Results (tip 28596758f, game 3084, :3450, 1400x1000, 800x600, 915x412, 390x844)
+
+| Run | window-offscreen | frame-offscreen | clipped | `--strict` |
+|---|---|---|---|---|
+| main 6b2344e20 | 28 (28) | 10 (10) | 64 (18) | not run |
+| tip a6fc9e79c (review) | 0 (0) | 4 (4) | 53 (16) | exit 1 |
+| tip 28596758f | 0 (0) | 5 (5) | 23 (8) | exit 1, 0 surface-sizes not audited |
+
+Clipped fell from 53 to 23 (the biometrics and Bluetooth false positives are gone; the changed
+scroll-box rule found nothing new). Frame-offscreen rose by one on purpose: the alarm panel at
+390x844 is now drawn at 1x (460px) and scrolls sideways, so the audit sees its frame past the
+window edge (M5 chose native size over blurred text). The rest are the consoles' own, as before:
+ESD pushbutton and claims management (800, 915), command board (915), SIEM, network segmentation
+map, SCADA historian, ransomware display and drug library (390), title screen (390, accepted).
+`--strict` still exits 1 for those. Run with `--skip person-chat,network-view`.
+
+shell-x-check, all registered scenes, three sizes: 120 checked, 0 failed. Tests: minigame-shell-fit
+27, ui-rules-audit-fit 5, minigame-close-shell 16 (two expectations updated for the shell
+observer), shell-x-check 1 skipped without a server; 122 importer files run, all pass (two flaked
+under load and passed alone: rfid-door-screen, toast-once-across-panel-handover).
+
+Handover: nothing in progress. Open: consoles owners (m5, m7 and the breaches above); `showPinMessage`
+timing and dial `scrollIntoView` tests; a before/after re-shot of lockpicking at 390x844 to see the
+strip under the lock (checked by CSS and the numbers only). The keyless server on :3450 is still
+running (tmp/pids/server-3450.pid), left for the orchestrator.

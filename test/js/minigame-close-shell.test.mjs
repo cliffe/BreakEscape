@@ -135,13 +135,14 @@ test('a closeInsideFrame scene watches its frame on start, and cleanup disconnec
     let placed = 0;
     mg.placeCloseButton = () => { placed++; };
     mg.start();
-    assert.deepEqual(observed, [mg.gameContainer], 'the frame (closeAnchor) is observed');
+    assert.ok(observed.includes(mg.gameContainer), 'the frame (closeAnchor) is observed');
+    assert.ok(observed.includes(mg.container), 'and the shell, for its scrollbar width');
     assert.ok(placed >= 1, 'the X is placed on start');
     window.dispatchEvent(new window.Event('resize'));
     const afterResize = placed;
     assert.ok(afterResize >= 2, 'and again on a window resize');
     mg.cleanup();
-    assert.equal(disconnected, 1, 'cleanup disconnects the observer');
+    assert.equal(disconnected, 2, 'cleanup disconnects both observers');
     assert.equal(mg._closeObserver, null);
     window.dispatchEvent(new window.Event('resize'));
     assert.equal(placed, afterResize, 'the resize listener is gone too');
@@ -154,7 +155,7 @@ test('a scene without closeInsideFrame does not watch or move the X', () => {
     const mg = new MinigameScene(fresh(), {});
     mg.init();
     mg.start();
-    assert.equal(made, 0);
+    assert.equal(made, 1, 'only the shell scrollbar watcher, no frame observer');
     assert.equal(document.getElementById('minigame-close').style.top, '');
     mg.cleanup();
     delete window.ResizeObserver;
