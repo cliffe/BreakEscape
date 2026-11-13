@@ -17,6 +17,8 @@
  *   storageState  Playwright storageState file (login.mjs output). launchPersistentContext has no storageState option,
  *             so its cookies are added to the context and its localStorage is replayed by an init script.
  *   ignoreHttpsErrors  true -> accept a self-signed certificate (default false)
+ *   hideHostToasts  true -> hide Hacktivity's notifyjs toasts ("Shutdown timer extended ...") in every frame, including the
+ *             nested VM panel iframes (an init script: a <style> plus a short sweep). Live-game takes on :3000 set it.
  *   env BE_SWIFTSHADER=1  adds --enable-unsafe-swiftshader (software GL on a box with no GPU); off by default
  *   profileDir  fresh dir per run (default: mkdtemp under $VIDEO_STATE_DIR or os tmpdir)
  */
@@ -55,6 +57,9 @@ export const HUD_CSS = [
   '#hud-info-label',                                      // the "A chair." / object description text box
   '#music-widget-btn-anchor', '#scenario-timer-display', '#toggle-buttons-container',
 ].join(',') + '{display:none !important}';
+
+// Hacktivity's $.notify toasts (layouts/_messages.html.erb, vms/_show_vm.js.erb) inside the VM panel iframes.
+export const HOST_TOAST_CSS = '.notifyjs-corner,.notifyjs-wrapper,.notifyjs-container{display:none !important}';
 
 export function withSkipResume(url) {
   return url + (url.includes('?') ? '&' : '?') + 'skip_resume=1';
@@ -112,6 +117,15 @@ export async function launchGame(opts) {
         } catch (_) {}
       }, origins);
     }
+  }
+
+  if (opts.hideHostToasts) {
+    // context.addInitScript runs in every frame, so the nested VM panel / console iframes get it too.
+    await context.addInitScript((css) => {
+      const add = () => { if (document.getElementById('be-hide-host-toasts')) return; const st = document.createElement('style'); st.id = 'be-hide-host-toasts'; st.textContent = css; (document.head || document.documentElement).appendChild(st); };
+      if (document.documentElement) add(); else document.addEventListener('DOMContentLoaded', add);
+      let n = 0; const t = setInterval(() => { try { add(); document.querySelectorAll('.notifyjs-corner,.notifyjs-wrapper').forEach(e => e.remove()); } catch (_) {} if (++n > 600) clearInterval(t); }, 500);
+    }, HOST_TOAST_CSS);
   }
 
   // Settings must exist before any game script runs.

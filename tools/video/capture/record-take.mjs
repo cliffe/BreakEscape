@@ -8,6 +8,9 @@
  *        --take ../takes/m01/foo.mjs --out <dir>/foo [--fps 30] [--size 1920x1080] [--music 0] \
  *        [--sfx 1 --voice 1 --master 1] [--zoom-step 1] [--hide-hud] [--title-take] [--no-sandbox true|false] [--no-bridge]
  *        [--no-game --storage-state FILE [--ignore-https-errors]]   (no --url needed with --no-game)
+ *        [--live --storage-state FILE]   (a live Hacktivity game on :3000, see below)
+ *        [--tail-ms N]   recording kept running N ms after the end slate (default 700; 2500 with --live). A loaded box lags the
+ *                        audio input, and too short a tail cuts the end tone (check-take then finds only one tone slate)
  *   Writes <out>.mkv, <out>.markers.json, <out>.ffmpeg.log
  *
  * Library: import { recordTake } from './record-take.mjs'.
@@ -16,6 +19,13 @@
  *   title screen, no music or AudioContext check and no sound: the take module's setup(page, null) opens the page before
  *   recording starts, both slates are picture-only, and the file is checked with check-take.mjs --video-only.
  *   --storage-state FILE signs the browser in (login.mjs output); --ignore-https-errors accepts the dev box's certificate.
+ *
+ * --live: a game take of a LIVE Hacktivity-hosted game (https://localhost:3000/hacktivities/<event>/play/mission/<game>), the
+ *   keyed server, so uncached TTS lines are voiced too. Needs --url and --storage-state (login.mjs output for the game's player);
+ *   implies --ignore-https-errors and hides Hacktivity's notifyjs toasts in every frame (launch.mjs hideHostToasts). Fails at
+ *   once if the storage state lands on the sign-in page. Everything else is a normal game take (bridge, title, slates, audio).
+ *
+ * Every game take reports `frame` (window and game-canvas size) and `fullFrame` (the canvas fills the whole capture size).
  *
  * A take module: export default async (page, bridge, mark) => { ... }
  *   optional: export async function setup(page, bridge) { ... }  runs after the title is passed and BEFORE recording starts
@@ -124,6 +134,20 @@ async function startFfmpeg({ display, sink, fps, size, outFile, logFile, pixFmt,
   return st;
 }
 
+/** Window and largest visible canvas (the Phaser game) in CSS px. */
+export async function gameFrame(page) {
+  return page.evaluate(() => {
+    const cs = [...document.querySelectorAll('canvas')].map(c => c.getBoundingClientRect()).filter(r => r.width > 0 && r.height > 0);
+    const r = cs.sort((a, b) => b.width * b.height - a.width * a.height)[0];
+    return { iw: innerWidth, ih: innerHeight, dpr: devicePixelRatio, canvas: r ? { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) } : null };
+  });
+}
+/** The viewport is exactly the capture size at 1x and the game canvas covers it edge to edge (no letterbox, no chrome). */
+export function isFullFrame(f, w, h) {
+  const c = f && f.canvas;
+  return !!(f && c && f.iw === w && f.ih === h && f.dpr === 1 && c.x <= 0 && c.y <= 0 && c.x + c.w >= w && c.y + c.h >= h);
+}
+
 /** Injected into the page: white full-screen div for `ms` (3 capture frames)  + tone on the game's context. */
 async function slate(page, { ms = 100, toneMs = 100, hz = 1000, videoOnly = false } = {}) {
   return page.evaluate(({ ms, toneMs, hz, videoOnly }) => new Promise((resolve) => {
@@ -150,8 +174,8 @@ export async function recordTake(o) {
   const {
     display, url, outBase, fps = 30, size = '1920x1080', takeFile,
     volumes = {}, zoomStep, noSandbox, bridge: useBridge = true, mode = 'kiosk', hideHud = false, titleTake = false,
-    noGame = false, storageState, ignoreHttpsErrors = false,
-    pixFmt = 'yuv420p', crf = 14, preset = 'veryfast', audioDelayMs = 0, titleTimeoutMs = 90000,
+    noGame = false, storageState, ignoreHttpsErrors = false, live = false,
+    pixFmt = 'yuv420p', crf = 14, preset = 'veryfast', audioDelayMs = 0, titleTimeoutMs = 90000, tailMs = 700,
   } = o;
   const [w, h] = size.split('x').map(Number);
   const sink = o.sink || `be_rec_${display}`;
@@ -165,7 +189,9 @@ export async function recordTake(o) {
 
   if (noGame && titleTake) throw new Error('--no-game and --title-take cannot be combined');
   if (noGame && !takeFile) throw new Error('--no-game needs a take module (--take), which opens the page');
-  const g = await launchGame({ display, url: noGame ? undefined : url, width: w, height: h, volumes, zoomStep, noSandbox, mode, hideHud, noGoto: titleTake, storageState, ignoreHttpsErrors });
+  if (live && (noGame || !storageState || !url)) throw new Error('--live needs --url and --storage-state, and is a game take (not --no-game)');
+  if (live) report.live = true;
+  const g = await launchGame({ display, url: noGame ? undefined : url, width: w, height: h, volumes, zoomStep, noSandbox, mode, hideHud, noGoto: titleTake, storageState, ignoreHttpsErrors: ignoreHttpsErrors || live, hideHostToasts: live });
   const { page } = g;
   let ff = null, poll = null, t0 = null;
   const errors = [];
@@ -240,6 +266,7 @@ export async function recordTake(o) {
       report.loadavg = fs.readFileSync('/proc/loadavg', 'utf8').trim().split(' ').slice(0, 3).map(Number);
     } else {
     // 1. wait for game, pass title screen with trusted clicks
+    if (live && /\/users\/sign_in/.test(new URL(page.url()).pathname)) throw new Error('live take: the storage state is not signed in (landed on the sign-in page); re-run login.mjs (delete the state file first)');
     if (useBridge) {
       await page.waitForFunction(() => !!window.__test, null, { timeout: 120000 });
       await page.evaluate(() => window.__test.waitUntilReady({ timeoutMs: 60000 })).catch(() => {});
@@ -260,6 +287,9 @@ export async function recordTake(o) {
     if (state !== 'running') throw new Error(`AudioContext is '${state}', not 'running'`);
     if (useBridge) await page.evaluate(() => window.__test.waitUntilReady({ timeoutMs: 30000 })).catch(() => {});
     report.window = await page.evaluate(() => ({ iw: innerWidth, ih: innerHeight, ow: outerWidth, oh: outerHeight, dpr: devicePixelRatio }));
+    report.frame = await gameFrame(page);
+    report.fullFrame = isFullFrame(report.frame, w, h);
+    if (!report.fullFrame) report.notes.push(`game canvas does not fill the ${size} frame: ${JSON.stringify(report.frame)}`);
     // optional take-module setup(page, bridge): runs before recording starts (close the Mission Brief, dismiss tutorial prompts, ...)
     if (takeSetup && useBridge) { await takeSetup(page, makeBridge(page)); await sleep(500); }
     await sleep(500);
@@ -297,7 +327,7 @@ export async function recordTake(o) {
     // 5. end slate, stop
     const s2 = await slate(page, { ms: slateMs, toneMs: slateMs });
     report.endSlate = { epochMs: s2.epochMs, ctxState: s2.ctxState };
-    await sleep(700);
+    await sleep(tailMs);   // on a loaded box the pulse input lags the picture: stopping too soon cuts the end tone
     const cpu1 = cpuSample();
     await ff.stop();
     report.cpuBusyPct = +(100 * (1 - (cpu1.idle - cpu0.idle) / (cpu1.total - cpu0.total))).toFixed(1);
@@ -329,7 +359,7 @@ export async function recordTake(o) {
 }
 
 // ---- CLI ----
-const VALUE_FLAGS_BOOL = new Set(['hide-hud', 'title-take', 'no-bridge', 'no-game', 'ignore-https-errors']);
+const VALUE_FLAGS_BOOL = new Set(['hide-hud', 'title-take', 'no-bridge', 'no-game', 'ignore-https-errors', 'live']);
 /** argv -> { flag: value | true }. A flag followed by another flag, or by nothing, is true. */
 export function parseCliArgs(av) {
   const a = {};
@@ -343,6 +373,8 @@ export function recordOptionsFromArgs(a) {
   if (!a.display || !a.out || (!noGame && !a.url)) return { error: 'usage' };
   if (noGame && !a.take) return { error: '--no-game needs --take' };
   if (noGame && a['title-take']) return { error: '--no-game and --title-take cannot be combined' };
+  const live = !!a.live;
+  if (live && (noGame || typeof a['storage-state'] !== 'string')) return { error: '--live needs --url and --storage-state (and not --no-game)' };
   const volumes = {};
   for (const k of ['music', 'sfx', 'voice', 'master']) if (a[k] !== undefined) volumes[k] = Number(a[k]);
   return { opts: {
@@ -351,13 +383,14 @@ export function recordOptionsFromArgs(a) {
     hideHud: !!a['hide-hud'], titleTake: !!a['title-take'],
     noSandbox: a['no-sandbox'] === undefined ? undefined : a['no-sandbox'] === 'true',
     bridge: !a['no-bridge'] && !noGame, mode: a.mode || 'kiosk', pixFmt: a['pix-fmt'] || 'yuv420p', preset: a.preset || 'veryfast', audioDelayMs: Number(a['audio-delay-ms']) || 0,
-    noGame, storageState: typeof a['storage-state'] === 'string' ? a['storage-state'] : undefined, ignoreHttpsErrors: !!a['ignore-https-errors'],
+    noGame, storageState: typeof a['storage-state'] === 'string' ? a['storage-state'] : undefined, ignoreHttpsErrors: !!a['ignore-https-errors'] || live, live,
+    tailMs: a['tail-ms'] !== undefined ? Number(a['tail-ms']) : (live ? 2500 : 700),
   } };
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
   const { opts, error } = recordOptionsFromArgs(parseCliArgs(process.argv.slice(2)));
-  if (error) { console.error(error === 'usage' ? 'usage: record-take.mjs --display N --url URL --out BASE [--take FILE] [--fps 30] [--size 1920x1080] [--music 0] [--zoom-step N] [--hide-hud] [--title-take] [--no-sandbox true|false] [--no-bridge] [--preset veryfast|ultrafast] [--audio-delay-ms 65]\n       record-take.mjs --no-game --display N --out BASE --take FILE --storage-state FILE [--ignore-https-errors]' : error); process.exit(2); }
+  if (error) { console.error(error === 'usage' ? 'usage: record-take.mjs --display N --url URL --out BASE [--take FILE] [--fps 30] [--size 1920x1080] [--music 0] [--zoom-step N] [--hide-hud] [--title-take] [--no-sandbox true|false] [--no-bridge] [--preset veryfast|ultrafast] [--audio-delay-ms 65]\n       record-take.mjs --no-game --display N --out BASE --take FILE --storage-state FILE [--ignore-https-errors]\n       record-take.mjs --live --display N --url https://localhost:3000/hacktivities/E/play/mission/G --storage-state FILE --out BASE --take FILE [game take flags]' : error); process.exit(2); }
   const r = await recordTake(opts);
   console.log(JSON.stringify(r, null, 2));
   process.exit(r.ok ? 0 : 1);
