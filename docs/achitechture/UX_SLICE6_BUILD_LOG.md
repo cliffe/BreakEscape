@@ -43,44 +43,49 @@ coordination answer), the "< Desktop" toolbar button (E08, being asked separatel
   what the file came from.
 - `npc-headshot.js`: `applyHeadshotBox` takes `onResult` (what was drawn, or null) so the taskbar
   can keep the lookup; the headshot key is set before it reports.
-- `pc-sessions.js` and `game.js`: `pcSessions.lockSupported`, from the scenario answer's
-  `sessionLock: true`. Lock shows only when that is true and `pcSessions.lock` exists; neither
-  exists yet, so Lock is hidden.
+- Lock (coded against the lock branch's API, `build/ui-slice6-lock`, not yet merged here): the
+  panel shows Lock only when `pcSessions.lockingSupported()` is true, `pcSessions.lockSession`
+  exists, and the held session came from a password sign-in (integration ruling: claimed and
+  guest sessions are hidden, since the server refuses them with a 422). A refusal shows its
+  message. This branch leaves `pc-sessions.js` and `game.js` alone so the lock branch merges
+  cleanly (checked with `git merge-tree`: no conflicts).
+- `password-minigame.js`: a locked session's sign-in banner reads "Locked: <name>. Enter the
+  password to unlock" instead of "Signed in now: <name> (<username>)" (integration ruling; reads
+  `current.locked` from the lock branch's session entry).
 - Art (drawn at native size, pixel by pixel): `pc-start.png`, `pc-desktop.png`,
   `pc-switch-user.png`, `pc-sign-out.png` (16x16), `pc-user-silhouette.png` (32x32). Lock uses the
   existing `npc-lock.png`; shares use the share folder icon.
 - CSS in `css/pc-monitor.css`: 2px borders, square corners, GNF 16px, pictures at whole scales;
-  the taskbar is 38px tall; on a narrow screen the account shows as its headshot only.
+  the taskbar is 38px tall; on a narrow screen the account shows as its headshot only. On a
+  short screen (915x412) the panel draws the headshot at x1, is 340px wide, leaves the PC name
+  to the bezel's top strip and drops the entries' padding, so it fits without scrolling
+  (measured: no overflow in any shot).
 - The bezel and chin sizing (`utils/pc-monitor.js`) is unchanged: the frame is the same size
   before and after at each window size (measured in the live shots).
 
 ## Lock: what the server must provide
 
-1. The scenario answer carries `sessionLock: true` at the top level once the server supports it
-   (the client passes it to `pcSessions.load`).
-2. A request to lock the player's held session on a PC (for example `POST /lock_session`
-   with `pc_id`), answering the session entry with `locked: true`. One boolean on a held
-   session, bounded by the number of sign-in PCs; the client reads it and never sends it back.
-3. The sessions in the scenario answer carry `locked: true` for a locked one, so a reload
-   keeps it.
-4. While locked, `GET /container/<pc>` refuses the desktop with a distinct answer (403 with
-   `locked: true`, not `no_session`), so the client shows the sign-in screen for that account.
-5. `POST /login` on a locked PC: the same account with the right password unlocks it (clears the
-   flag, keeps `via`, the foothold and `signedInPcs`); another account replaces it as Switch user
-   does; wrong passwords count toward the lockout as now.
-6. A remote session locks the same way and keeps its foothold.
-7. Decision needed: Lock on a claimed session (someone else's open screen). Suggest it ends the
-   claim, as the screen's own auto lock does, rather than leaving a locked claim.
+Built separately on `build/ui-slice6-lock` (`lockSession`, `isLocked`, `lockingSupported`). What
+this panel relies on:
 
-Client work once the server lands: `pcSessions.lock(pcId)` (the request, the local `locked`
-flag, close the PC's open views with "Screen locked"), `load()` keeps `locked`, and the sign-in
-screen preselects the locked account and asks only for its password.
+1. `pcSessions.lockingSupported()` true once the scenario answer reports that the server
+   supports locking.
+2. `pcSessions.lockSession(pcId)` resolving `{ ok: true }`, or `{ ok: false, message }` on a
+   refusal (the panel shows the message); it closes the PC's open views itself.
+3. The server refuses Lock on a claimed or guest session (422); the panel already hides it there.
+4. `pcSessions.get(pcId).locked === true` for a locked session (the sign-in banner wording), and
+   the open flow sends a locked session to the sign-in screen with the account pre-chosen.
+5. The locked flag is one boolean per held session, bounded by the sign-in PCs; the client never
+   sends it back.
 
 ## Merge with main 1ce7486c7 (slice 2b0)
 
 Fast-forward of main into the branch before any slice 6 commit: no conflicts. 2b0's captured
-sign-in tiles on the remote sign-in screen are untouched by this slice; the live proof signs in
-to Lena's PC through her captured tile and checks the taskbar on that remote desktop.
+sign-in tiles on the remote sign-in screen are untouched by this slice. Live proof: game 3252
+(created after the merge, so it has the capture cards), Lena's capture card read, then the remote
+sign-in screen through the drop box shows her captured tile; signing in through it reaches her
+remote desktop with the taskbar (Lena Fox, Remote, HB-FIN-02) and the panel (Remote through
+Drop box: Comms room; Places Ledger-Archive and Scanned-Inbox).
 
 ## Tests
 
@@ -94,16 +99,44 @@ to Lena's PC through her captured tile and checks the taskbar on that remote des
 - Updated: `container-transfer-dialog`, `access-remote-signin` (Switch user and Sign out through
   the panel), `pc-monitor-frame` (headshot in the taskbar and panel; the description strip),
   `container-shares` (copy list).
-- Run: every test file that imports a changed module (198 files), all pass.
+- Lock (ruling): shown for a password session when supported; hidden without `lockSession`,
+  for a claimed session; a refusal's message shown. The locked banner wording is tested in
+  `pc-monitor-frame`.
+- Run: every test file that imports a changed module, plus the password minigame's importers
+  (210 files), all pass. No Ruby changed.
 
 ## Live proof
 
-Keyless server on :3460, games 3232 (m01), 3233 (test_access_networks), 3234 (m02), at 1400x1000,
-800x600, 915x412 and 390x844 with scrollbars shown. Shots before (main) and after in
-the scratch folder `ui-slice6/shots/before` and `ui-slice6/shots/after`.
+Keyless server on :3460; games 3232 (m01), 3233 and 3252 (test_access_networks), 3234 (m02); at
+1400x1000, 800x600, 915x412 and 390x844, scrollbars shown (Playwright without
+`--hide-scrollbars`). Shots in the scratch folder `ui-slice6/shots/before` (main 6b2344e20) and
+`ui-slice6/shots/after` (this branch), with `log.txt` measurements.
 
-(Results below.)
+- m01 Kevin's Workstation (password, then straight to the desktop): taskbar "Kevin Park",
+  KEVIN-WS, his authored headshot; the panel; a file opened from the desktop keeps the taskbar.
+- test_access_networks Sam's PC (sign-in): desktop, panel, the Scanned-Inbox share window and
+  a file from it, each with the taskbar and panel (E11).
+- Remote: Lena's PC through the drop box and her 2b0 captured tile, desktop, panel, a mapped share.
+- m02 Gary's Workstation (password): "Gary Whitlock", IT-ADM-01.
+- The monitor frame is the same size and place before and after at every size, and the same from
+  the sign-in screen to the desktop (measured).
+- Harness note: at 390x844 the tray's link item did not open the network view in the script, so
+  the 390 remote shots open Lena's held session with `openRemoteDesktop` (the call the view's
+  Open makes); the 2b0 tile sign-in itself was shot at 1400x1000 and 800x600.
 
 ## Handover
 
-(Filled in at the end of the build.)
+- Done: taskbar and start panel on desktop, share and file views; who-shows rules; silhouette;
+  Esc order; Lock behind the lock branch's API with the password-only ruling; locked banner
+  wording; tests; live proof at four sizes.
+- Open: wallpapers (q95); E08 "< Desktop" button (not added, by instruction); merging
+  `build/ui-slice6-lock` (merges clean today) and a live Lock proof once it is in.
+- For the user: the five new icons are drawn by hand at 16x16 and 32x32 (Start is three bars,
+  no brand logo); swap them if wanted. On a short screen the panel leaves out the PC name
+  (the bezel shows it).
+- Files: `js/utils/pc-taskbar.js` (new), `container-minigame.js`, `text-file-minigame.js`,
+  `password-minigame.js`, `npc-headshot.js`, `css/pc-monitor.css`, five icons, tests
+  `pc-taskbar` (new), `pc-monitor-frame`, `container-transfer-dialog`, `access-remote-signin`,
+  `container-shares`.
+- Gotcha: a game created before a scenario change keeps its old scenario (game 3233 had no
+  capture cards); make a new game for a scenario that changed.
