@@ -3,7 +3,6 @@
 // default export class NPCBarkSystem
 
 import { ASSETS_PATH } from '../config.js';
-import { overlayDepth } from '../utils/constants.js';
 import TTSManager from './tts-manager.js';
 import { phoneBarkText } from '../minigames/phone-chat/phone-chat-speaker.js';
 import { displayDashes } from '../utils/display-dashes.js';
@@ -11,6 +10,19 @@ import { releaseHeldBarks } from './bark-release-policy.js';
 import { workstationPopupOpen, phoneThreadOpenFor, openPhoneThread, threadTextKey } from '../utils/overlay-open.js';
 import { barkLifetimeMs, barksToTrim, BARK_RESUME_MIN_MS } from './bark-lifetime.js';
 import { inventoryBlockedByForcedMinigame } from './forced-minigame-guard.js';
+
+/**
+ * Where a bark shows (UX feedback round slice 5, o-barks): the speech bubble over a person NPC
+ * whose sprite is in the player's room, with the room lit and no minigame open; the toast
+ * otherwise. Phone contacts always use the toast. The voice is the same either way.
+ * @param {object} f  { npcType, hasSprite, npcRoom, playerRoom, dark, minigameOpen }
+ * @returns {'bubble'|'toast'}
+ */
+export function routeBark({ npcType, hasSprite = false, npcRoom = null, playerRoom = null, dark = false, minigameOpen = false } = {}) {
+  if (npcType === 'phone') return 'toast';
+  if (!hasSprite || minigameOpen || dark) return 'toast';
+  return (npcRoom && npcRoom === playerRoom) ? 'bubble' : 'toast';
+}
 
 export default class NPCBarkSystem {
   constructor(npcManager) {
@@ -135,6 +147,7 @@ export default class NPCBarkSystem {
       // TTS unavailable — fall back to the standard notification sound
       this.playBarkSound();
     }
+    return duration || null;
   }
 
   /**
@@ -280,87 +293,6 @@ export default class NPCBarkSystem {
   }
 
   /**
-   * Find a Phaser NPC sprite by npcId, searching all loaded rooms.
-   * @param {string} npcId
-   * @returns {Phaser.GameObjects.Sprite|null}
-   */
-  _findNPCSprite(npcId) {
-    const rooms = window.rooms;
-    if (!rooms) return null;
-    for (const room of Object.values(rooms)) {
-      if (!room.npcSprites) continue;
-      const sprite = room.npcSprites.find(s => s.npcId === npcId);
-      if (sprite) return sprite;
-    }
-    return null;
-  }
-
-  /**
-   * Show a pulsing talk icon above the NPC sprite for the duration of a bark.
-   * Uses a dedicated sprite.barkIcon separate from the proximity interactionIndicator
-   * so the two systems don't interfere with each other.
-   * @param {string} npcId
-   * @param {number} duration  ms to keep the icon visible
-   */
-  _showBarkIcon(npcId, duration) {
-    const sprite = this._findNPCSprite(npcId);
-    if (!sprite || !sprite.scene) return;
-
-    const scene = sprite.scene;
-
-    // Lazy-create a dedicated bark icon the first time it's needed
-    if (!sprite.barkIcon) {
-      sprite.barkIcon = scene.add.image(
-        Math.round(sprite.x + 5),
-        Math.round(sprite.y - 38),
-        'talk'
-      );
-      sprite.barkIcon.setDepth(overlayDepth(sprite.depth + 2)); // above proximity indicator
-      sprite.barkIcon.setVisible(false);
-    }
-
-    const icon = sprite.barkIcon;
-
-    // Cancel any in-progress bark pulse
-    if (sprite._barkTween) {
-      sprite._barkTween.stop();
-      sprite._barkTween = null;
-    }
-    if (sprite._barkHideTimer) {
-      clearTimeout(sprite._barkHideTimer);
-      sprite._barkHideTimer = null;
-    }
-
-    // Show and start pulsing
-    icon.setVisible(true);
-    icon.setScale(1);
-    icon.setAlpha(1);
-
-    sprite._barkTween = scene.tweens.add({
-      targets: icon,
-      scaleX: { from: 1, to: 1.25 },
-      scaleY: { from: 1, to: 1.25 },
-      alpha:  { from: 1, to: 0.55 },
-      duration: 380,
-      yoyo: true,
-      repeat: -1,
-      ease: 'Sine.easeInOut'
-    });
-
-    // Auto-hide after duration
-    sprite._barkHideTimer = setTimeout(() => {
-      if (sprite._barkTween) {
-        sprite._barkTween.stop();
-        sprite._barkTween = null;
-      }
-      icon.setVisible(false);
-      icon.setScale(1);
-      icon.setAlpha(1);
-      sprite._barkHideTimer = null;
-    }, duration);
-  }
-
-  /**
    * Actually render the bark to DOM
    */
   async _renderBark(payload = {}) {
@@ -375,7 +307,6 @@ export default class NPCBarkSystem {
       console.debug('[barks] dropped, already in the open thread:', text);
       return null;
     }
-    const duration = ('duration' in payload) ? payload.duration : 5000;
     const playSound = payload.playSound !== false; // Default true
     
     // Person NPCs with a voice config speak their bark via TTS; everyone else gets the phone beep
@@ -386,11 +317,20 @@ export default class NPCBarkSystem {
       this.playBarkSound();
     }
 
-    // Flash a pulsing talk icon above the NPC's sprite for the bark duration
-    if (npcId) {
-      this._showBarkIcon(npcId, duration);
+    // A person NPC in view says it in a speech bubble over their head, in place of the toast
+    // (slice 5). The rest of a line cut short by leaving view comes back here as a toast.
+    if (!payload.forceToast && this._routeFor(payload, contact) === 'bubble') {
+      const handle = window.npcWorldBubbles?.say?.(npcId, text, {
+        onRemainder: (rest) => this._toastRemainder(payload, rest)
+      });
+      if (handle) {
+        this.lastRoute = { npcId, route: 'bubble' };
+        if (ttsPromise) ttsPromise.then(ms => { if (ms) handle.setAudioMs(ms); }, () => {});
+        return ttsPromise;
+      }
     }
-    
+    this.lastRoute = { npcId, route: 'toast' };
+
     // Create bark element (using DocumentFragment for batch update)
     const el = document.createElement('div');
     el.className = 'npc-bark';
@@ -461,6 +401,28 @@ export default class NPCBarkSystem {
     }
 
     return ttsPromise;
+  }
+
+  /** The bubble-or-toast decision for this bark, from the bubble layer's view of the NPC. */
+  _routeFor(payload, contact) {
+    const npcId = payload?.npcId;
+    const bubbles = window.npcWorldBubbles;
+    if (!npcId || !bubbles?.viewFacts) return 'toast';
+    const manager = this.npcManager || window.npcManager;
+    const npc = manager?.getNPC?.(npcId) || contact || {};
+    let facts;
+    try { facts = bubbles.viewFacts(npcId); } catch (e) { return 'toast'; }
+    return routeBark({ npcType: npc.npcType, ...facts });
+  }
+
+  /**
+   * The rest of a bubble line (the NPC left view, the room went dark, a minigame opened, or a
+   * nearer bark took the bubble's place), as a toast with the speaker's name. Silent: the
+   * audio carries on. Goes through showBark, so it is held while a panel is open.
+   */
+  _toastRemainder(payload, rest) {
+    if (!rest) return;
+    this.showBark({ ...payload, message: rest, text: undefined, playSound: false, useTTS: false, forceToast: true });
   }
 
   _startAutoClose(el, ms) {

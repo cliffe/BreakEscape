@@ -164,11 +164,6 @@ function updateNPCTalkIcons() {
                 if (sprite.interactionIndicator && sprite.interactionIndicator.visible) {
                     sprite.interactionIndicator.setPosition(iconX, iconY);
                 }
-
-                // Also keep the bark-pulse icon tracking the NPC while it's visible
-                if (sprite.barkIcon && sprite.barkIcon.visible) {
-                    sprite.barkIcon.setPosition(iconX, iconY);
-                }
             });
         }
     });
