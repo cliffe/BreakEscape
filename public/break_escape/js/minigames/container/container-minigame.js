@@ -1,7 +1,7 @@
 // Container Minigame
 import { MinigameScene } from '../framework/base-minigame.js';
 import { addToInventory, removeFromInventory, inventoryImageKey } from '../../systems/inventory.js';
-import { containerImageUrl, containerImageHtml, takeStandIn } from './container-item-image.js';
+import { containerImageUrl, containerImageHtml, takeStandIn, SHARE_ICON, shareLabelParts, fitWholeScale } from './container-item-image.js';
 import { makeDraggable } from '../../utils/helpers.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { resolveObjectField } from '../../utils/conditional-text.js';
@@ -196,12 +196,20 @@ function scheduleNetworkReturnCheck(ms) {
 }
 
 /** Arm the one return for a hand-over from a network screen (state: its pendingContainerReturn). */
-export function armNetworkReturn(state) {
+export function armNetworkReturn(state, { playerCloseOnly = false } = {}) {
     disarmNetworkReturn();
     if (!state?.containerItem) return;
     const dispatcher = window.eventDispatcher;
     const handler = (data) => {
         if (!networkReturn || networkReturn.handler !== handler) return;
+        // playerCloseOnly (a sign-in desktop at the keyboard): the ending screen is still
+        // the current minigame while it emits, so its closedByPlayer says whose close it was
+        if (playerCloseOnly && data?.success !== true
+            && window.MinigameFramework?.currentMinigame?.closedByPlayer !== true) {
+            disarmNetworkReturn();
+            if (window.pendingContainerReturn === state) window.pendingContainerReturn = null;
+            return;
+        }
         scheduleNetworkReturnCheck(data?.success === true ? NETWORK_RETURN_GRACE_MS : 0);
     };
     networkReturn = { handler, dispatcher, state, timer: null };
@@ -210,9 +218,6 @@ export function armNetworkReturn(state) {
         dispatcher.on('minigame_failed', handler);
     }
 }
-
-/** The folder picture for a share stub (it has no object sprite of its own). */
-const SHARE_ICON = '/break_escape/assets/objects/m09_folder1.png';
 
 const TRANSFER_LABELS = {
     open: 'Open',
@@ -248,6 +253,12 @@ export class ContainerMinigame extends MinigameScene {
         this.sourcePcId = this.mode === 'npc' ? null
             : (params.sourcePcId || this.containerItem?.sourcePcId || this.loginPcId || null);
         if (this.loginPcId) this.desktopMode = true;
+        // A network share (mapped on a desktop, or opened from the network view) opens as a
+        // folder window: a title bar with its UNC path and a file list, no wallpaper, so it
+        // never reads as another PC's desktop (UX feedback slice 2a, main3-08). Its return
+        // paths (parentLockable, the remote desktop) are unchanged.
+        this.shareFolder = this.mode !== 'npc' && !this.loginPcId && data.type === 'network_share';
+        if (this.shareFolder) this.desktopMode = false;
         this._unregisterDesktop = null;
         this.transferDialog = null;
 
@@ -346,8 +357,8 @@ export class ContainerMinigame extends MinigameScene {
     }
 
     /** The header picture; nothing when the container has none to show. */
-    containerImageHtml() {
-        return containerImageHtml(this.getContainerImageUrl(), this.containerItem?.scenarioData?.name);
+    containerImageHtml(extraClass = '') {
+        return containerImageHtml(this.getContainerImageUrl(), this.containerItem?.scenarioData?.name, extraClass);
     }
 
     shouldUseDesktopMode() {
@@ -628,8 +639,13 @@ export class ContainerMinigame extends MinigameScene {
         // A container opening now means no reader is about to hand back to a network screen
         // recorded earlier (a locked folder that opened after its PIN leaves one behind), so
         // a later text file read from the world must not reopen it (slice 9.3a, 4.3)
+        // The same for a sign-in desktop's return (Ian's archive password): once the archive
+        // has opened, closing it, or the Notes later, must not bring the desktop back (UX
+        // slice 2a R3 m5)
         const pending = window.pendingContainerReturn;
-        if (pending?.containerItem && isNetworkScreenContainer(pending.containerItem)) window.pendingContainerReturn = null;
+        if (pending?.containerItem && (isNetworkScreenContainer(pending.containerItem) || pending.loginDesktopReturn === true)) {
+            window.pendingContainerReturn = null;
+        }
         disarmNetworkReturn();
 
         // A folder opened from a sign-in desktop shows the session's files too, so it closes
@@ -642,7 +658,7 @@ export class ContainerMinigame extends MinigameScene {
         this.watchPcPower();
 
         // Play drawer/container opening sound (not for PC/desktop containers)
-        if (this.mode !== 'pc' && !this.desktopMode) {
+        if (this.mode !== 'pc' && !this.desktopMode && !this.shareFolder) {
             try {
                 if (window.game && window.game.sound) {
                     const sound = window.game.sound.get('drawer_open') || window.game.sound.add('drawer_open');
@@ -702,6 +718,8 @@ export class ContainerMinigame extends MinigameScene {
             this.createNPCUI();
         } else if (this.desktopMode) {
             this.createDesktopUI();
+        } else if (this.shareFolder) {
+            this.createShareFolderUI();
         } else {
             this.createStandardUI();
         }
@@ -759,6 +777,44 @@ export class ContainerMinigame extends MinigameScene {
         `;
     }
     
+    /**
+     * A share's folder window (UX feedback slice 2a, main3-08): the header with the share's
+     * icon and short name, then a window whose title bar carries the UNC path, over the file
+     * list (the standard contents grid, so taking, reading and Copy / Move work as before).
+     */
+    createShareFolderUI() {
+        const data = this.containerItem.scenarioData;
+        const { name, unc } = shareLabelParts(data.name);
+        const host = unc ? unc.replace(/^\\\\/, '').split('\\')[0] : '';
+        // The mapped stub has no observations; it gets the same line as a share opened from
+        // the network view (slice 2a review R1 n3)
+        const observations = this.headerObservations() || (host ? `A file share on ${host}.` : '');
+        this.gameContainer.innerHTML = `
+            <div class="share-folder-layout">
+            <div class="container-image-section">
+                ${this.containerImageHtml('share-header-icon')}
+                <div class="container-info">
+                    <h4>${escapeHtml(displayDashes(name))}</h4>
+                    <p>${escapeHtml(displayDashes(observations))}</p>
+                </div>
+            </div>
+            <div class="container-minigame share-folder">
+                <div class="share-folder-window">
+                    <div class="desktop-window-titlebar share-folder-titlebar">
+                        <img class="share-folder-icon" src="${escapeHtml(data.iconImage || SHARE_ICON)}" alt="">
+                        <span class="share-folder-path">${escapeHtml(unc || name)}</span>
+                    </div>
+                    <div class="container-contents-grid share-folder-files" id="container-contents-grid">
+                        <!-- Files will be populated here -->
+                    </div>
+                </div>
+            </div>
+            </div>
+        `;
+        // The folder icon at exactly x2 (26x18 drawn 52x36), centred in the 80px header box
+        fitWholeScale(this.gameContainer.querySelector('.share-header-icon'), 80, { maxScale: 2, pad: true });
+    }
+
     /** The signed-in account with Switch user and Sign out, for a sign-in desktop's header. */
     accountBarHtml() {
         const session = this.loginSession();
@@ -850,7 +906,8 @@ export class ContainerMinigame extends MinigameScene {
             // desktop that has no object sprite of its own).
             itemImg.src = item.iconImage || `/break_escape/assets/objects/${item.type}.png`;
             itemImg.alt = item.name;
-            itemImg.title = displayDashes(item.name);
+            // No tooltip that repeats the name printed under the item (slice 2a review R1 m1);
+            // a share's UNC path, which the label leaves out, is its title below
             
             // Add item data
             itemImg.scenarioData = item;
@@ -860,9 +917,11 @@ export class ContainerMinigame extends MinigameScene {
             // Add click handler for all items (both takeable and interactive)
             itemImg.style.cursor = 'pointer';
             
-            if (item.type === 'network_share') {
+            const shareParts = item.type === 'network_share' ? shareLabelParts(item.name) : null;
+            if (shareParts) {
                 // A mapped share (4.5): its own folder, never the generic flow
                 if (!item.iconImage) itemImg.src = SHARE_ICON;
+                if (shareParts.unc) itemImg.title = shareParts.unc;
                 itemImg.addEventListener('click', () => this.openMappedShare(item));
             } else if (this.offersTransfer(item)) {
                 // A takeable file from a sign-in desktop offers Open / Copy / Move first
@@ -875,19 +934,17 @@ export class ContainerMinigame extends MinigameScene {
                 itemImg.addEventListener('click', () => this.takeItem(item, itemImg));
             }
             
-            // Create tooltip
-            const tooltip = document.createElement('div');
-            tooltip.className = 'container-content-tooltip';
-            tooltip.textContent = displayDashes(item.name);
-            
             // A name under every item, so the player can read what is inside without
             // hovering each one (UX pass, 2026-11-12)
             const label = document.createElement('div');
             label.className = 'container-content-label';
-            label.textContent = displayDashes(item.name);
+            label.textContent = displayDashes(shareParts ? shareParts.name : item.name);
+
+            // In a share's folder window a file is drawn at a whole-number scale that fills
+            // a 64px cell (a 16px glyph at x4), not the grid's x2 (slice 2a review R1 M2)
+            if (this.shareFolder) fitWholeScale(itemImg, 64);
 
             slot.appendChild(itemImg);
-            slot.appendChild(tooltip);
             slot.appendChild(label);
             contentsGrid.appendChild(slot);
         });
@@ -927,6 +984,11 @@ export class ContainerMinigame extends MinigameScene {
             // handleObjectInteraction or POST /unlock
             if (item.type === 'network_share') {
                 if (!item.iconImage) iconImg.src = SHARE_ICON;
+                // The share's name under the icon; its UNC path in the tooltip, as the full
+                // path wrapped into a block of tiny text (UX feedback slice 2a, main3-05)
+                const { name, unc } = shareLabelParts(item.name);
+                iconLabel.textContent = displayDashes(name);
+                if (unc) icon.title = unc;
                 icon.dataset.resourceId = item.id || '';
                 icon.addEventListener('click', () => this.openMappedShare(item));
             } else if (this.offersTransfer(item)) {
@@ -940,6 +1002,11 @@ export class ContainerMinigame extends MinigameScene {
                 icon.addEventListener('click', () => this.takeItem(item, iconImg));
             }
             
+            // A whole-number scale in the icon's 56px box (48 plus its 4px padding): a 16px
+            // glyph at x3 as before, the 26x18 share folder at x2 (it was 1.85x; UX slice 2a
+            // R2 m2). The padding takes up what the picture leaves, so the box keeps its size.
+            fitWholeScale(iconImg, 56, { pad: true, onlyIfFits: true });
+
             icon.appendChild(iconImg);
             icon.appendChild(iconLabel);
             desktopIcons.appendChild(icon);
@@ -1005,7 +1072,7 @@ export class ContainerMinigame extends MinigameScene {
         };
         this.exitReason = 'share';
         this.complete(false);
-        if (typeof window.startContainerMinigame === 'function') window.startContainerMinigame(share, null, false, true);
+        if (typeof window.startContainerMinigame === 'function') window.startContainerMinigame(share, null, false, false);
     }
 
     /**
@@ -1036,7 +1103,7 @@ export class ContainerMinigame extends MinigameScene {
         this.closeTransferDialog();
         const held = this.isHeld(item);
         const choices = transferChoices(item, held);
-        const host = this.gameContainer.querySelector('.desktop-background') || this.gameContainer;
+        const host = this.gameContainer.querySelector('.desktop-background, .share-folder-window') || this.gameContainer;
         const dialog = document.createElement('div');
         dialog.className = 'desktop-transfer-dialog';
         dialog.setAttribute('role', 'dialog');
@@ -1254,9 +1321,16 @@ export class ContainerMinigame extends MinigameScene {
         // From a network screen, a hand-over to anything but the text-file reader (which
         // reopens the screen itself) comes back here when it ends without opening a
         // container: a cancelled PIN pad, a key alert, a lockout, a phone (4.3)
+        const fromNetwork = isNetworkScreenContainer(this.containerItem);
+        // A sign-in PC's own desktop at the keyboard (Ian's archive password): the player's
+        // own close of the lock screen (its X or Esc) comes back to the desktop it was opened
+        // from, as a share's Close does (UX slice 2a R2). A forced close (a hit, too many
+        // wrong passwords) stays in the world.
+        const fromLoginDesktop = !fromNetwork && !!this.loginPcId && this.desktopMode;
         const armReturn = this.mode !== 'npc' && item.type !== 'text_file'
-            && isNetworkScreenContainer(this.containerItem);
-        if (armReturn) armNetworkReturn(containerState);
+            && (fromNetwork || fromLoginDesktop);
+        if (armReturn && fromLoginDesktop) containerState.loginDesktopReturn = true;
+        if (armReturn) armNetworkReturn(containerState, { playerCloseOnly: fromLoginDesktop });
         
         // Create a temporary sprite-like object for the main game handler
         const tempSprite = {

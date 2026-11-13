@@ -81,15 +81,18 @@ test('the case-lock panel has no soft focus glow (R2 m1)', () => {
     assert.equal(rule(css('password-minigame.css'), '.password-minigame-area.case-lock .password-field:focus')['box-shadow'], 'none');
 });
 
-test('the password and container panels fit inside the game area; the desktop sizes to its screen', () => {
-    for (const [file, sel] of [['password-minigame.css', '.password-minigame-area'],
-        ['container-minigame.css', '.container-minigame']]) {
-        const r = rule(css(file), sel);
-        assert.equal(r.padding, '20px', sel);
-        assert.equal(r.margin, '20px auto', sel);
-        // 20px margin and 20px padding top and bottom: 80px less than the area
-        assert.equal(r.height, 'calc(100% - 80px)', sel);
-    }
+test('the container panel fits inside the game area, the password area inside its frame; the desktop sizes to its screen', () => {
+    const r = rule(css('container-minigame.css'), '.container-minigame');
+    assert.equal(r.padding, '20px');
+    assert.equal(r.margin, '20px auto');
+    // 20px margin and 20px padding top and bottom: 80px less than the area
+    assert.equal(r.height, 'calc(100% - 80px)');
+    // The password area is sized to its content inside a frame that wraps it and scrolls in a
+    // short window (slice 2a R1, the user's notes: no fixed-height empty band under the monitor)
+    const pw = rule(css('password-minigame.css'), '.password-minigame-area');
+    assert.equal(pw.height, 'auto');
+    assert.equal(pw.margin, '0 auto');
+    assert.equal(rule(css('password-minigame.css'), '.password-frame > .minigame-game-container')['overflow-y'], 'auto');
     // The desktop sizes itself to its 16:10 screen (capped by the screen's max-height),
     // so its height is auto rather than a share of the game area
     assert.equal(rule(css('container-minigame.css'), '.container-minigame.desktop-mode').height, 'auto');

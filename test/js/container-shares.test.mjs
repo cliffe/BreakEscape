@@ -136,7 +136,8 @@ function setup() {
 
 const current = () => window.MinigameFramework.currentMinigame;
 const named = (n) => events.filter(([e]) => e === n).map(([, d]) => d);
-const icon = (name) => [...document.querySelectorAll('.desktop-icon')].find(el => el.textContent.includes(name));
+// A desktop icon, or a file slot in a share's folder window (UX feedback slice 2a)
+const icon = (name) => [...document.querySelectorAll('.desktop-icon, .container-content-slot')].find(el => el.textContent.includes(name));
 const remoteDesktop = () => ({ scenarioData: { id: 'lena_pc', name: "Lena's PC", host: 'HB-FIN-02', type: 'pc', lockType: 'login', locked: true, remote: { footholdId: 'jack_comms_port' } } });
 const viewShare = () => ({ scenarioData: { id: 'scanned_inbox', type: 'network_share', name: 'Scanned-Inbox', locked: false, networkShare: { footholdId: 'jack_comms_port' } }, sourceResourceId: 'scanned_inbox' });
 
@@ -471,7 +472,7 @@ test('a cancelled PIN pad on a folder in a share from the view returns to that s
     endPinPad(false);
     await settle();
     assert.equal(current()?.containerItem?.scenarioData?.id, 'scanned_inbox', 'back in the share');
-    assert.equal(current().desktopMode, true, 'in its desktop layout');
+    assert.equal(current().shareFolder, true, 'in its folder window layout (slice 2a)');
     assert.equal(window.pendingContainerReturn, null);
     if (!TextFileMinigame) { t.skip('text-file minigame did not load here'); return; }
     window.MinigameFramework.endMinigame(false, null);
@@ -529,7 +530,7 @@ test('a hand-over from an ordinary container arms no return', async () => {
     assert.equal(current(), null, 'the world, as before');
 });
 
-test('a note read from a share from the view is added with its share; the share comes back in its desktop layout (review R1 minor 4)', async () => {
+test('a note read from a share from the view is added with its share; the share comes back in its own layout (review R1 minor 4)', async () => {
     setup();
     window.startContainerMinigame(viewShare(), null, false, true);
     await settle();
@@ -542,7 +543,8 @@ test('a note read from a share from the view is added with its share; the share 
     await settle();
     assert.equal(adds.at(-1).sourceResourceId, 'scanned_inbox');
     assert.equal(current()?.containerItem?.scenarioData?.id, 'scanned_inbox');
-    assert.equal(current().desktopMode, true);
+    assert.equal(current().shareFolder, true, 'the folder window again (slice 2a)');
+    assert.ok(document.querySelector('.share-folder-window'));
 });
 
 // The jsdom mock above ends a minigame as minigame-manager.js does today; this one drives a
@@ -648,4 +650,264 @@ test('a share clicked on a desktop whose PC is already off says "This PC is off.
     } finally { ANSWERS.scanned_inbox = saved; }
     assert.equal(current(), null);
     assert.deepEqual(alerts.map(a => a[0]), ['This PC is off.'], 'no "Could not load container contents"');
+});
+
+// UX feedback slice 2a (main3-05, main3-08): a share icon on a desktop shows the share's name
+// only, with the UNC path in its tooltip; a share opens as a folder window (title bar with the
+// UNC path, a file list, no wallpaper) whose header picture is the folder icon, never the
+// missing network_share.png; Close still goes back the way it came.
+const { shareLabelParts, containerImageUrl, SHARE_ICON } = await imp('minigames/container/container-item-image.js');
+
+test('slice 2a: shareLabelParts splits "Name (\\\\HOST\\Name)"; a bare name has no path', () => {
+    assert.deepEqual(shareLabelParts('Ledger-Archive (\\\\HB-FS01\\Ledger-Archive)'), { name: 'Ledger-Archive', unc: '\\\\HB-FS01\\Ledger-Archive' });
+    assert.deepEqual(shareLabelParts('Scanned-Inbox'), { name: 'Scanned-Inbox', unc: null });
+    assert.deepEqual(shareLabelParts('Notes (old)'), { name: 'Notes (old)', unc: null });
+    assert.deepEqual(shareLabelParts(undefined), { name: '', unc: null });
+});
+
+test('slice 2a: a share icon on a remote desktop shows the name only, its UNC path in the tooltip', async () => {
+    setup();
+    await openRemote();
+    const el = document.querySelector('.desktop-icon[data-resource-id="ledger_archive"]');
+    assert.ok(el, 'the share icon is drawn');
+    assert.equal(el.querySelector('.desktop-icon-label').textContent, 'Ledger-Archive');
+    assert.equal(el.title, '\\\\HB-FS01\\Ledger-Archive');
+    assert.equal(el.querySelector('img').getAttribute('src'), SHARE_ICON);
+});
+
+test('slice 2a: the share header picture is the folder icon, never network_share.png', async () => {
+    assert.equal(containerImageUrl({ scenarioData: { type: 'network_share' }, name: 'network_share' }, (d) => d.type), SHARE_ICON);
+    assert.equal(containerImageUrl({ scenarioData: { type: 'network_share', iconImage: '/x.png' } }, (d) => d.type), '/x.png');
+    setup();
+    await openRemote();
+    icon('Ledger-Archive').click();
+    await settle();
+    const header = document.querySelector('.container-image-section img.container-image');
+    assert.equal(header.getAttribute('src'), SHARE_ICON);
+    assert.doesNotMatch(document.body.innerHTML, /network_share\.png/);
+});
+
+test('slice 2a: a mapped share opens as a folder window: UNC title bar, file list, no wallpaper', async () => {
+    setup();
+    await openRemote();
+    icon('Ledger-Archive').click();
+    await settle();
+    const m = current();
+    assert.equal(m.shareFolder, true);
+    assert.equal(m.desktopMode, false);
+    assert.equal(document.querySelector('.desktop-wallpaper'), null, 'no wallpaper');
+    assert.equal(document.querySelector('.container-monitor-bezel'), null, 'no monitor');
+    assert.equal(document.querySelector('.share-folder-path').textContent, '\\\\HB-FS01\\Ledger-Archive');
+    assert.equal(document.querySelector('.container-info h4').textContent, 'Ledger-Archive');
+    const files = [...document.querySelectorAll('.share-folder-files .container-content-label')].map(el => el.textContent);
+    assert.deepEqual(files, ['IT handover.txt', 'Year-end']);
+    icon('IT handover').querySelector('img').click();
+    assert.ok(document.querySelector('.share-folder-window .desktop-transfer-dialog'), 'Copy / Move opens inside the folder window');
+});
+
+test('slice 2a: a share from a local desktop closes back to that desktop (parentLockable kept)', async () => {
+    setup();
+    await sessions.signIn('sam_pc', 'sokafor', 'x');
+    const desk = { scenarioData: { id: 'sam_pc', name: "Sam's PC", type: 'pc', lockType: 'login', locked: true } };
+    window.startContainerMinigame(desk, null, false, true);
+    await settle();
+    icon('Scanned-Inbox').click();
+    await settle();
+    assert.equal(current().shareFolder, true);
+    assert.equal(current().parentLockable, desk);
+    document.querySelector('#minigame-cancel').click();
+    await settle();
+    assert.equal(current().loginPcId, 'sam_pc', 'back on the local desktop');
+    assert.equal(current().desktopMode, true);
+    assert.equal(fetches.at(-1), '/break_escape/games/9/container/sam_pc');
+});
+
+test('slice 2a: a share from a remote desktop closes back to the remote desktop', async () => {
+    setup();
+    await openRemote();
+    icon('Ledger-Archive').click();
+    await settle();
+    assert.equal(current().shareFolder, true);
+    document.querySelector('#minigame-cancel').click();
+    await settle();
+    assert.equal(current().loginPcId, 'lena_pc');
+    assert.ok(current().remote, 'the remote desktop again');
+    assert.equal(fetches.at(-1), '/break_escape/games/9/container/lena_pc?foothold=jack_comms_port');
+});
+
+test('slice 2a: a share opened from the network view is a folder window too, and still reports share/close', async () => {
+    setup();
+    window.startContainerMinigame(viewShare(), null, false, true);
+    await settle();
+    assert.equal(current().shareFolder, true);
+    assert.ok(document.querySelector('.share-folder-window'));
+    document.querySelector('#minigame-cancel').click();
+    assert.deepEqual(landings, [['share', 'close', {}]]);
+});
+
+// Slice 2a review R1: the header icon at a whole-number scale (M1), files drawn large on the
+// white pane with no tooltip repeating their label (M2, m1), and the mapped share's header
+// line names its host, as the network view's does (n3).
+const { fitWholeScale } = await imp('minigames/container/container-item-image.js');
+
+test('slice 2a R1: fitWholeScale draws at a whole-number scale, capped, centred by padding', () => {
+    const fake = (w, h) => ({ naturalWidth: w, naturalHeight: h, complete: true, style: {}, dataset: {} });
+    const folder = fake(26, 18);
+    fitWholeScale(folder, 80, { maxScale: 2, pad: true });
+    assert.deepEqual([folder.style.width, folder.style.height, folder.dataset.scale], ['52px', '36px', '2']);
+    assert.equal(folder.style.padding, '22px 14px 22px 14px', 'centred in the 80px box');
+    const glyph = fake(16, 16);
+    fitWholeScale(glyph, 64);
+    assert.deepEqual([glyph.style.width, glyph.dataset.scale], ['64px', '4'], 'a 16px glyph at x4');
+    const big = fake(40, 27);
+    fitWholeScale(big, 64);
+    assert.equal(big.dataset.scale, '1', 'never a fraction: a 40px picture stays x1 in a 64px cell');
+    const huge = fake(100, 100);
+    fitWholeScale(huge, 64);
+    assert.equal(huge.dataset.scale, '1', 'never below x1');
+});
+
+test('slice 2a R1: the folder window header icon is marked for x2; files carry no repeating tooltip; the header names the host', async () => {
+    setup();
+    await openRemote();
+    icon('Ledger-Archive').click();
+    await settle();
+    const header = document.querySelector('.container-image-section img.container-image');
+    assert.ok(header.classList.contains('share-header-icon'), 'sized by the share header rule (52x36, not object-fit contain)');
+    assert.equal(document.querySelectorAll('.share-folder-files .container-content-tooltip').length, 0, 'no tooltip box to clip');
+    for (const img of document.querySelectorAll('.share-folder-files .container-content-item')) {
+        assert.equal(img.title, '', `${img.alt}: no title repeating the label`);
+    }
+    assert.equal(document.querySelector('.container-info p').textContent, 'A file share on HB-FS01.');
+});
+
+test('slice 2a R1: the folder window CSS fills the frame, with no tile fill and whole-pixel columns', () => {
+    const css = readFileSync(join(here, '../../public/break_escape/css/container-minigame.css'), 'utf8');
+    const rule = (sel) => {
+        const at = css.indexOf(`\n${sel} {`);
+        assert.ok(at >= 0, `${sel} rule present`);
+        return css.slice(at, css.indexOf('}', at));
+    };
+    assert.match(rule('.share-folder-layout'), /height:\s*100%/);
+    assert.match(rule('.container-minigame.share-folder'), /flex:\s*1 1 auto/, 'the window grows with the frame');
+    const files = rule('.container-contents-grid.share-folder-files');
+    assert.match(files, /max-height:\s*none/);
+    assert.match(files, /background:\s*#ffffff/, 'the white pane');
+    assert.match(files, /grid-template-columns:\s*repeat\(auto-fill, 160px\)/, 'fixed columns, no quarter pixels');
+    const slot = rule('.share-folder-files .container-content-slot,\n.share-folder-files .container-content-slot:hover');
+    assert.match(slot, /background:\s*transparent/, 'no grey tile');
+    assert.match(rule('.container-image.share-header-icon'), /width:\s*52px;\s*height:\s*36px;\s*padding:\s*22px 14px;/);
+});
+
+// UX slice 2a R2: the X on a lock screen opened from a sign-in desktop at the keyboard (Ian's
+// archive password) goes back to that desktop, as a share's Close does. Only the player's own
+// close: a forced close (a hit, too many wrong passwords) stays in the world.
+const ARCHIVE = { id: 'ian_archive', type: 'zip_archive', name: 'Old configs.zip', takeable: false, locked: true, lockType: 'password' };
+async function openLocalDesk() {
+    await sessions.signIn('sam_pc', 'sokafor', 'x');
+    const desk = { scenarioData: { id: 'sam_pc', name: "Sam's PC", type: 'pc', lockType: 'login', locked: true } };
+    window.startContainerMinigame(desk, null, false, true);
+    await settle();
+    window.handleObjectInteraction = (sprite) => { interactions.push(sprite); openPinPad(); };
+    return desk;
+}
+function closeLockScreen({ byPlayer }) {
+    const m = current();
+    if (byPlayer) m.closedByPlayer = true;
+    window.eventDispatcher.emit('minigame_failed', { minigameName: 'PasswordMinigame', success: false });
+    window.MinigameFramework.endMinigame(false, null);
+}
+
+test('R2: the X on an archive password from a local sign-in desktop returns to that desktop', async () => {
+    setup();
+    const desk = await openLocalDesk();
+    current().handleInteractiveItem({ ...ARCHIVE }, null);
+    assert.equal(current()._sceneType, 'pin', 'the lock screen is open');
+    assert.equal(networkReturnArmed(), true);
+    closeLockScreen({ byPlayer: true });
+    await settle();
+    assert.equal(current()?.containerItem, desk, 'back on the desktop it was opened from');
+    assert.equal(current().loginPcId, 'sam_pc');
+    assert.equal(current().desktopMode, true);
+    assert.equal(window.pendingContainerReturn, null, 'the return is spent');
+    assert.equal(networkReturnArmed(), false);
+});
+
+test('R2: a forced close of that lock screen (not the player) stays in the world, with no stale return', async () => {
+    setup();
+    await openLocalDesk();
+    current().handleInteractiveItem({ ...ARCHIVE }, null);
+    closeLockScreen({ byPlayer: false });
+    await settle();
+    assert.equal(current(), null, 'the world');
+    assert.equal(window.pendingContainerReturn, null);
+    assert.equal(networkReturnArmed(), false);
+});
+
+test('R2: an archive password that unlocks hands over to the archive, not back to the desktop', async () => {
+    setup();
+    await openLocalDesk();
+    current().handleInteractiveItem({ ...ARCHIVE }, null);
+    const stand = interactions.at(-1);
+    endPinPad(true);
+    await settle();
+    assert.equal(current(), null, 'nothing reopened while the unlock opens the archive');
+    window.startContainerMinigame({ ...stand, scenarioData: { ...ARCHIVE, locked: false } }, null, false, false);
+    await settle();
+    assert.equal(networkReturnArmed(), false, 'the archive opening spends the return');
+    assert.equal(current().containerItem.scenarioData.id, 'ian_archive');
+});
+
+// UX slice 2a R3 m5: once the archive has opened, nothing is left pending for the desktop, so
+// closing the archive and then the Notes later stays in the world
+test('R3 m5: after an archive unlock, closing it and then the Notes does not reopen the desktop', async () => {
+    setup();
+    await openLocalDesk();
+    current().handleInteractiveItem({ ...ARCHIVE }, null);
+    assert.equal(window.pendingContainerReturn?.loginDesktopReturn, true, 'the desktop return is marked');
+    const stand = interactions.at(-1);
+    endPinPad(true);
+    await settle();
+    window.startContainerMinigame({ ...stand, scenarioData: { ...ARCHIVE, locked: false } }, null, false, false);
+    await settle();
+    assert.equal(current().containerItem.scenarioData.id, 'ian_archive');
+    assert.equal(window.pendingContainerReturn, null, 'nothing pending once the archive is open');
+    // the archive's own Close
+    current().closedByPlayer = true;
+    window.MinigameFramework.endMinigame(false, null);
+    await settle();
+    assert.equal(current(), null, 'the world');
+    // the Notes, opened and closed later from the world
+    returnToContainerAfterNotes();
+    await settle();
+    assert.equal(current(), null, 'no desktop reopens from nowhere');
+});
+
+// UX slice 2a R2 m2: desktop icons at a whole-number scale in their 56px box
+test('R2 m2: a mapped share icon on a desktop lands at x2; a 16px glyph at x3; the box keeps its size', async () => {
+    setup();
+    await openRemote();
+    const imgs = [...document.querySelectorAll('.desktop-icon-image')];
+    assert.ok(imgs.length >= 1);
+    const load = (img, w, h) => {
+        Object.defineProperty(img, 'naturalWidth', { value: w, configurable: true });
+        Object.defineProperty(img, 'naturalHeight', { value: h, configurable: true });
+        img.dispatchEvent(new window.Event('load'));
+    };
+    const share = imgs[0];
+    load(share, 26, 18);
+    assert.equal(share.dataset.scale, '2');
+    assert.equal(share.style.width, '52px');
+    assert.equal(share.style.height, '36px');
+    assert.equal(share.style.padding, '10px 2px', '52x36 padded to the 56px box');
+    const glyph = document.createElement('img');
+    const { fitWholeScale } = await imp('minigames/container/container-item-image.js');
+    fitWholeScale(glyph, 56, { pad: true, onlyIfFits: true });
+    load(glyph, 16, 16);
+    assert.equal(glyph.style.width, '48px', 'a 16px glyph at x3, as before');
+    assert.equal(glyph.style.padding, '4px', 'the old 4px padding');
+    const big = document.createElement('img');
+    fitWholeScale(big, 56, { pad: true, onlyIfFits: true });
+    load(big, 64, 64);
+    assert.equal(big.style.width, '', 'a picture larger than the box keeps its CSS size');
 });

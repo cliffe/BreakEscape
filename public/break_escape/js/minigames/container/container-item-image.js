@@ -29,12 +29,31 @@ const KEY_TO_FILE = {
 
 const objectUrl = (file) => `/break_escape/assets/objects/${file}.png`;
 
+/** The folder picture for a network share (until a share icon of its own is approved). */
+export const SHARE_ICON = '/break_escape/assets/objects/m09_folder1.png';
+
+/**
+ * A share's short name and UNC path. The server labels a mapped share "Name (\\HOST\Name)"
+ * (network_access.rb mapped_share_stubs) and the network view does the same (shareLockable).
+ * The label shows the name only; the UNC path goes in the tooltip and the folder title bar
+ * (UX feedback slice 2a, main3-05). A name with no path gives { name, unc: null }.
+ */
+export function shareLabelParts(name) {
+    const text = String(name ?? '');
+    const m = text.match(/^(.*\S)\s+\((\\\\[^()]+)\)$/);
+    return m ? { name: m[1], unc: m[2] } : { name: text, unc: null };
+}
+
 /**
  * @param {object} containerItem - a world sprite or an inventory tray <img>
  * @param {(itemData: object) => string} imageKey - inventory.js inventoryImageKey
  * @returns {string|null} null when there is nothing to show (the caller omits the image)
  */
 export function containerImageUrl(containerItem, imageKey) {
+    // A share has no sprite of its own: "network_share" names no picture file, and its
+    // header showed a broken image with the alt text (UX feedback slice 2a, main3-08)
+    const data = containerItem?.scenarioData;
+    if (data?.type === 'network_share' && !containerItem?.texture?.key) return data.iconImage || SHARE_ICON;
     const key = containerItem?.texture?.key;
     if (key) return objectUrl(KEY_TO_FILE[key] || key);
     // Opened from the tray: show the picture the tray shows
@@ -45,12 +64,43 @@ export function containerImageUrl(containerItem, imageKey) {
 }
 
 /** The header's <img>, or nothing when there is no picture to show. */
-export function containerImageHtml(url, alt) {
+export function containerImageHtml(url, alt, extraClass = '') {
     if (!url) return '';
     // The URL comes from a texture key, the scenario type or a tray src: both values are
     // escaped for an attribute, with the same five characters as the other minigame helpers
     const esc = (v) => String(v ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
-    return `<img src="${esc(url)}" alt="${esc(alt)}" class="container-image">`;
+    const cls = extraClass ? `container-image ${esc(extraClass)}` : 'container-image';
+    return `<img src="${esc(url)}" alt="${esc(alt)}" class="${cls}">`;
+}
+
+/**
+ * Draw a pixel-art picture at the largest whole-number scale that fits a square box (never a
+ * fraction, as object-fit: contain gives), capped at maxScale. With pad, the picture is centred
+ * in the box by padding, so a bordered box keeps its size (slice 2a review R1 M1 and M2).
+ * Runs when the picture has loaded; until then the CSS size stands.
+ */
+export function fitWholeScale(img, box, { maxScale = Infinity, pad = false, onlyIfFits = false } = {}) {
+    if (!img) return;
+    const apply = () => {
+        const w = img.naturalWidth;
+        const h = img.naturalHeight;
+        if (!w || !h) return;
+        // onlyIfFits: a picture bigger than the box keeps its CSS sizing (it is drawn down)
+        if (onlyIfFits && Math.max(w, h) > box) return;
+        const scale = Math.max(1, Math.min(maxScale, Math.floor(box / Math.max(w, h))));
+        img.style.width = `${w * scale}px`;
+        img.style.height = `${h * scale}px`;
+        img.dataset.scale = String(scale);
+        if (pad) {
+            const padX = Math.max(0, box - w * scale);
+            const padY = Math.max(0, box - h * scale);
+            const top = Math.floor(padY / 2);
+            const left = Math.floor(padX / 2);
+            img.style.padding = `${top}px ${padX - left}px ${padY - top}px ${left}px`;
+        }
+    };
+    if (img.complete && img.naturalWidth) apply();
+    else img.addEventListener?.('load', apply, { once: true });
 }
 
 /**

@@ -170,7 +170,7 @@ test('the container minigame builds its take stand-in and its header picture wit
     assert.match(src, /const tempSprite = takeStandIn\(item, inventoryImageKey,/);
     assert.match(src, /return containerImageUrl\(this\.containerItem, inventoryImageKey\);/);
     assert.doesNotMatch(src, /<img src="\$\{this\.getContainerImageUrl\(\)\}"/, 'no header <img> built from a possibly empty URL');
-    assert.equal(src.split('${this.containerImageHtml()}').length - 1, 2, 'both headers (standard and desktop) use the helper');
+    assert.equal(src.split('${this.containerImageHtml(').length - 1, 3, 'every header (standard, desktop and share folder) uses the helper');
 });
 
 test('a container header: world sprite by texture key, tray item by its tray picture, never "null"', () => {

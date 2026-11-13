@@ -78,12 +78,116 @@ export function portraitUrl(path) {
     return path.startsWith('assets/') ? `/break_escape/${path}` : `${ASSETS_PATH}/${path}`;
 }
 
+/** The short-window tile's portrait box (css/password-minigame.css, max-height: 640px). */
+export const SHORT_PORTRAIT_PX = 32;
+
+/** The tile's portrait box at every other size (css/password-minigame.css, .signin-portrait). */
+export const TILE_PORTRAIT_PX = 64;
+
+/**
+ * Head crops for posed portraits the finder cannot read (UX slice 2a R4 n3): in a bedside
+ * portrait the pillow or the hair is the first opaque row, so the finder's box lands on
+ * bedding. Keyed by the talk sheet's file name (one sheet per character); `tile` is the
+ * 64x64 crop's top-left in the first frame, `short` the 32x32 crop's, both at scale 1.
+ */
+export const PORTRAIT_CROP_OVERRIDES = Object.freeze({
+    'mr_ahmed_talk.png': { tile: { left: 36, top: 18 }, short: { left: 46, top: 32 } },
+    'mr_pryce_talk.png': { tile: { left: 22, top: 6 }, short: { left: 38, top: 20 } },
+    'mrs_kowalski_talk.png': { tile: { left: 28, top: 0 }, short: { left: 45, top: 12 } },
+    'ms_okafor_talk.png': { tile: { left: 20, top: 12 }, short: { left: 36, top: 30 } }
+});
+
+/** The crop override for a portrait URL, or null. */
+export function portraitCropOverride(src) {
+    const name = String(src || '').split(/[?#]/)[0].split('/').pop();
+    return Object.prototype.hasOwnProperty.call(PORTRAIT_CROP_OVERRIDES, name) ? PORTRAIT_CROP_OVERRIDES[name] : null;
+}
+
+/**
+ * The 64px tile's picture (UX slice 2a R4 m1): the image at a whole scale (`scale` 1, or 2
+ * for a 32x32 headshot), cut at `offset`. Never `contain` or a percentage size, which shrank
+ * the 128px talk frame to half.
+ */
+export function setTilePortrait(el, { src, width, height, kind, offset = null, scale = 1 }) {
+    const left = offset ? offset.left * scale : 0;
+    const top = offset ? offset.top * scale : 0;
+    el.style.backgroundImage = `url("${src}")`;
+    el.style.backgroundRepeat = 'no-repeat';
+    el.style.backgroundSize = `${width * scale}px ${height * scale}px`;
+    el.style.backgroundPosition = `${left ? -left : 0}px ${top ? -top : 0}px`;
+    el.dataset.frame = kind;
+}
+
+/**
+ * Where to cut a box x box head crop from a talk sheet's first frame (frameSize square), at
+ * scale 1 (UX slice 2a R3 n1: the 32px tile showed the whole 128px frame at a quarter, a
+ * downscale that lost the face). `alpha(x, y)` reads the frame's alpha. The crop starts 4px
+ * below the top of the head and is centred on the head's width over its first 24 rows, so
+ * the eyes, nose and mouth are in the box. A blank frame gives the top-centre box.
+ */
+export function headCropOffset(alpha, frameSize, box = SHORT_PORTRAIT_PX) {
+    const clamp = (v) => Math.max(0, Math.min(frameSize - box, v));
+    let y0 = -1;
+    for (let y = 0; y < frameSize && y0 < 0; y++) {
+        for (let x = 0; x < frameSize; x++) { if (alpha(x, y) > 0) { y0 = y; break; } }
+    }
+    if (y0 < 0) return { left: clamp(Math.round(frameSize / 2) - box / 2), top: 0 };
+    let minX = Infinity, maxX = -1;
+    for (let y = y0; y < Math.min(frameSize, y0 + 24); y++) {
+        for (let x = 0; x < frameSize; x++) {
+            if (alpha(x, y) > 0) { if (x < minX) minX = x; if (x > maxX) maxX = x; }
+        }
+    }
+    const cx = maxX >= 0 ? (minX + maxX) / 2 : frameSize / 2;
+    return { left: clamp(Math.round(cx) - box / 2), top: clamp(y0 + 4) };
+}
+
+/** The alpha reader for an image's top-left frameSize square, or null when the canvas
+ *  cannot be read (no canvas, or a tainted one). */
+function frameAlphaReader(img, frameSize) {
+    try {
+        if (typeof document === 'undefined') return null;
+        const canvas = document.createElement('canvas');
+        canvas.width = frameSize;
+        canvas.height = frameSize;
+        const ctx = canvas.getContext && canvas.getContext('2d');
+        if (!ctx) return null;
+        ctx.drawImage(img, 0, 0);
+        const data = ctx.getImageData(0, 0, frameSize, frameSize).data;
+        return (x, y) => data[(y * frameSize + x) * 4 + 3];
+    } catch (e) {
+        return null;
+    }
+}
+
+/**
+ * The short window's portrait (UX slice 2a R3 n1), as custom properties the max-height:
+ * 640px rule reads, so the 64px tile keeps its picture. A 32x32 avatar (the scenario's NPC
+ * headshot, as the phone and the OSINT browser show it) at scale 1 comes first; else a 32x32
+ * head crop of the talk sheet's first frame, at scale 1. Never a scaled-down frame.
+ */
+export function setShortPortrait(el, { src, width, height, kind, offset = null }) {
+    if (!el?.style?.setProperty) return;
+    el.style.setProperty('--signin-short-image', `url("${src}")`);
+    el.style.setProperty('--signin-short-size', `${width}px ${height}px`);
+    const left = offset ? offset.left : 0;
+    const top = offset ? offset.top : 0;
+    el.style.setProperty('--signin-short-position', `${left ? -left : 0}px ${top ? -top : 0}px`);
+    el.dataset.short = kind;
+}
+
 /**
  * Draw a tile's picture into `el` as person-chat would: the portrait, else the avatar,
- * else the display name's initials. A talk sheet shows only its top-left frame (closed
- * mouth). `ImageCtor` is injectable for tests.
+ * else the display name's initials. Every picture is at a whole scale (R4 m1 and n3):
+ * - a talk sheet: a 64x64 head crop of its top-left frame (closed mouth) at scale 1, and
+ *   a 32x32 crop for the short window (setShortPortrait);
+ * - a 64x64 image at scale 1, with a 32x32 head crop of it for the short window;
+ * - a 32x32 headshot at scale 2, and at scale 1 in the short window;
+ * - any other size is skipped (the next source, else initials in the pixel font), since
+ *   fitting it to the box would scale it down.
+ * `ImageCtor` and `readAlpha` are injectable for tests.
  */
-export function applyTilePortrait(el, tile, ImageCtor = (typeof Image !== 'undefined' ? Image : null)) {
+export function applyTilePortrait(el, tile, ImageCtor = (typeof Image !== 'undefined' ? Image : null), readAlpha = frameAlphaReader) {
     const sources = [tile?.portrait, tile?.avatar].map(portraitUrl).filter(Boolean);
     const initials = () => {
         el.style.backgroundImage = '';
@@ -98,24 +202,185 @@ export function applyTilePortrait(el, tile, ImageCtor = (typeof Image !== 'undef
         img.onload = () => {
             const w = img.naturalWidth || img.width;
             const h = img.naturalHeight || img.height;
-            el.textContent = '';
-            el.style.backgroundImage = `url("${src}")`;
-            el.style.backgroundRepeat = 'no-repeat';
+            const crop = (frameSize, box) => {
+                const alpha = readAlpha ? readAlpha(img, frameSize) : null;
+                return alpha ? headCropOffset(alpha, frameSize, box) : { left: frameSize / 2 - box / 2, top: 0 };
+            };
             if (isTalkSheetSize(w, h)) {
-                el.style.backgroundSize = '200% 200%';
-                el.style.backgroundPosition = '0 0';
-                el.dataset.frame = 'talk-sheet';
+                const frameSize = w / 2;
+                const override = portraitCropOverride(src);
+                setTilePortrait(el, { src, width: w, height: h, kind: 'talk-sheet',
+                                      offset: override?.tile || crop(frameSize, TILE_PORTRAIT_PX) });
+                setShortPortrait(el, { src, width: w, height: h, kind: 'head-crop',
+                                       offset: override?.short || crop(frameSize, SHORT_PORTRAIT_PX) });
+            } else if (w === TILE_PORTRAIT_PX && h === TILE_PORTRAIT_PX) {
+                setTilePortrait(el, { src, width: w, height: h, kind: 'single' });
+                setShortPortrait(el, { src, width: w, height: h, kind: 'head-crop', offset: crop(w, SHORT_PORTRAIT_PX) });
+            } else if (w === SHORT_PORTRAIT_PX && h === SHORT_PORTRAIT_PX) {
+                setTilePortrait(el, { src, width: w, height: h, kind: 'single', scale: TILE_PORTRAIT_PX / SHORT_PORTRAIT_PX });
+                setShortPortrait(el, { src, width: w, height: h, kind: 'avatar' });
             } else {
-                el.style.backgroundSize = 'contain';
-                el.style.backgroundPosition = 'center';
-                el.dataset.frame = 'single';
+                tryAt(i + 1);
+                return;
             }
+            el.textContent = '';
+            el.classList.remove('signin-portrait-initials');
             el.dataset.src = src;
+            preferAvatar(src);
         };
         img.onerror = () => tryAt(i + 1);
         img.src = src;
     };
+    // The avatar, when it is a 32x32 headshot, is the short window's picture
+    const avatar = portraitUrl(tile?.avatar);
+    const preferAvatar = (shown) => {
+        if (!avatar || avatar === shown || !ImageCtor) return;
+        const a = new ImageCtor();
+        a.onload = () => {
+            const w = a.naturalWidth || a.width;
+            const h = a.naturalHeight || a.height;
+            if (w === SHORT_PORTRAIT_PX && h === SHORT_PORTRAIT_PX) {
+                setShortPortrait(el, { src: avatar, width: w, height: h, kind: 'avatar' });
+            }
+        };
+        a.onerror = () => {};
+        a.src = avatar;
+    };
     tryAt(0);
+}
+
+/** The offset that moves a box onto whole device pixels: a box centred in a space of odd
+ *  size, or under text with a fractional line height, sits part of a pixel off and its
+ *  text and borders blend across two rows (UX slice 2a R3 m1; slice 3a's copier frame does
+ *  the same). */
+export function wholePixelOffset(rect, dpr = 1) {
+    const snap = (v) => Math.round(v * dpr) / dpr - v;
+    const x = snap(rect.left), y = snap(rect.top);
+    // Round off float noise, so a box already on whole pixels gets exactly 0. Six places,
+    // not four: Chrome lays out in 1/64px steps, and 0.0156 would lose the 0.015625 step (R4 m2)
+    const tidy = (v) => (Math.abs(v) < 1e-6 ? 0 : Math.round(v * 1e6) / 1e6);
+    return { x: tidy(x), y: tidy(y) };
+}
+
+/**
+ * Put every visible box inside `root` on whole device pixels (UX slice 2a R4 m2): a box of
+ * odd width centred in the frame (the field, Submit, a tile's name, the message line, Add to
+ * Notepad) or one centred by a -50% transform (the eye toggle) sits half a pixel off even
+ * when the frame is whole, and its text blends across two columns. Walks the boxes in
+ * document order, so a box is measured after its parent has moved. An in-flow box gets a
+ * relative left/top (added to any its rules give it); a positioned one (absolute, fixed,
+ * sticky) gets a `translate`, which keeps its own anchors. Returns the boxes it moved with
+ * their old inline values, for unsnapInnerBoxes.
+ *
+ * A box drawn scaled or rotated (a pressed control's `scale(0.95)` on :active) is skipped
+ * with everything inside it, since its rect is not where it rests (R5 m1); `skipped` on the
+ * returned array counts them, so the caller can snap again once the press ends. A pure
+ * translate (the eye toggle's -50%) is measured as usual.
+ *
+ * Reads come before writes (R5 n1): one pass reads every rect, then writes every offset. A
+ * box's rect after the writes is its old rect plus the moves of the boxes around it, so the
+ * pass adds its ancestors' moves before rounding. A second pass then checks the result (a box
+ * newly made relative can move an absolute child by a different amount) and is usually
+ * empty, so a snap costs two layouts however many boxes move.
+ */
+export function snapInnerBoxes(root, dpr = 1, view = (typeof window !== 'undefined' ? window : null)) {
+    const moved = [];
+    // Not enumerable, so the list still compares as a plain list of moved boxes
+    Object.defineProperty(moved, 'skipped', { value: 0, writable: true, enumerable: false });
+    if (!root?.querySelectorAll || !view) return moved;
+    const all = [...root.querySelectorAll('*')].filter(el => el.style && typeof el.getBoundingClientRect === 'function');
+    const records = new Map();
+    const tidy = (v) => Math.round(v * 1e6) / 1e6;
+    const base = (v) => (Number.isFinite(parseFloat(v)) ? parseFloat(v) : 0);
+    for (let pass = 0; pass < 3; pass++) {
+        // Read pass: every rect and computed style before any write
+        const reads = all.map(el => ({ el, rect: el.getBoundingClientRect(), cs: view.getComputedStyle ? view.getComputedStyle(el) : null }));
+        const skip = new Set();
+        const shift = new Map();
+        const writes = [];
+        for (const { el, rect, cs } of reads) {
+            const parent = el.parentElement;
+            if ((parent && skip.has(parent)) || isScaledOrRotated(cs)) { skip.add(el); continue; }
+            const inherited = (parent && shift.get(parent)) || { x: 0, y: 0 };
+            let own = { x: 0, y: 0 };
+            if (rect.width || rect.height) {
+                own = wholePixelOffset({ left: rect.left + inherited.x, top: rect.top + inherited.y }, dpr);
+                if (own.x || own.y) writes.push({ el, cs, x: own.x, y: own.y });
+            }
+            if (own.x || own.y || inherited.x || inherited.y) {
+                shift.set(el, { x: inherited.x + own.x, y: inherited.y + own.y });
+            }
+        }
+        if (pass === 0) moved.skipped = skip.size;
+        if (!writes.length) break;
+        // Write pass
+        for (const { el, cs, x, y } of writes) {
+            let rec = records.get(el);
+            if (!rec) {
+                const pos = cs?.position || 'static';
+                rec = {
+                    saved: { el, position: el.style.position, left: el.style.left, top: el.style.top, translate: el.style.translate },
+                    mode: (pos === 'absolute' || pos === 'fixed' || pos === 'sticky') ? 'translate' : 'offset',
+                    left: pos === 'relative' ? base(cs?.left) : 0,
+                    top: pos === 'relative' ? base(cs?.top) : 0,
+                    pos,
+                    x: 0,
+                    y: 0
+                };
+                records.set(el, rec);
+                moved.push(rec.saved);
+            }
+            rec.x = tidy(rec.x + x);
+            rec.y = tidy(rec.y + y);
+            if (rec.mode === 'translate') {
+                el.style.translate = `${rec.x}px ${rec.y}px`;
+            } else {
+                if (rec.pos !== 'relative') el.style.position = 'relative';
+                if (rec.x) el.style.left = `${tidy(rec.left + rec.x)}px`;
+                if (rec.y) el.style.top = `${tidy(rec.top + rec.y)}px`;
+            }
+        }
+    }
+    return moved;
+}
+
+/** True when a computed style draws the box scaled, rotated or skewed (not a pure translate). */
+function isScaledOrRotated(cs) {
+    if (!cs) return false;
+    const t = cs.transform;
+    if (t && t !== 'none') {
+        const m = /^matrix\(([^)]*)\)$/.exec(t);
+        // A browser gives a matrix; a declared value of translate functions only is a move
+        if (!m) return !/^(\s*translate(?:X|Y|Z|3d)?\([^)]*\)\s*)+$/.test(t);
+        const [a, b, c, d] = m[1].split(',').map(Number);
+        if (Math.abs(a - 1) > 1e-6 || Math.abs(d - 1) > 1e-6 || Math.abs(b) > 1e-6 || Math.abs(c) > 1e-6) return true;
+    }
+    const scale = cs.scale;
+    if (scale && scale !== 'none' && scale.split(' ').some(v => Math.abs(parseFloat(v) - 1) > 1e-6)) return true;
+    const rotate = cs.rotate;
+    if (rotate && rotate !== 'none' && parseFloat(rotate.split(' ').pop()) !== 0) return true;
+    return false;
+}
+
+/** Undo snapInnerBoxes, last box first. */
+export function unsnapInnerBoxes(moved) {
+    for (let i = (moved?.length || 0) - 1; i >= 0; i--) {
+        const { el, position, left, top, translate } = moved[i];
+        el.style.position = position;
+        el.style.left = left;
+        el.style.top = top;
+        el.style.translate = translate;
+    }
+}
+
+/**
+ * Scroll `el` into view inside the password frame's scroll area when the window is too short
+ * to show it (UX slice 2a R2 M2): 'nearest', so nothing moves when it is already on screen.
+ */
+export function revealInFrame(el) {
+    if (!el || typeof el.scrollIntoView !== 'function') return false;
+    el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    return true;
 }
 
 /** The line under the form after a refused sign-in: the server's message and attemptsLeft. */
@@ -252,8 +517,13 @@ export class PasswordMinigame extends MinigameScene {
 
 
     init() {
+        // No Cancel button in any mode (sign-in, prompt, plain): the X and Esc close the
+        // screen (the user's UX notes on unlock-44 and unlock-53). The controls row is made
+        // only when it has something to hold (Add to Notepad).
+        this.params = { ...this.params, showCancel: false };
         // Call parent init to set up basic UI structure
         super.init();
+        this.wrapInFrame();
 
         if (this.signIn) {
             this.initSignIn();
@@ -280,20 +550,190 @@ export class PasswordMinigame extends MinigameScene {
         // Set up the password interface
         this.setupPasswordInterface();
         
-        // Add notebook button to minigame controls if postit note exists (before cancel button)
-        if (this.controlsElement && this.gameData.showPostit && this.gameData.postitNote) {
+        // Add notebook button to minigame controls if postit note exists
+        if (this.gameData.showPostit && this.gameData.postitNote) {
             const notebookBtn = document.createElement('button');
             notebookBtn.className = 'minigame-button';
             notebookBtn.id = 'minigame-notebook-postit';
             notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
-            // Insert before the cancel button (first child in controls)
-            this.controlsElement.insertBefore(notebookBtn, this.controlsElement.firstChild);
+            this.ensureControlsRow()?.appendChild(notebookBtn);
         }
         
         // Set up event listeners
         this.setupEventListeners();
     }
     
+    /**
+     * The password screen's frame: a box that wraps the game area at every window size, with
+     * the X inside its top-right corner (the user's UX notes: the frame wraps its content, and
+     * the X sits inside the frame, clear of its border). The game area scrolls inside the frame
+     * when the window is too short for it, so nothing in it can cover the controls row below.
+     */
+    wrapInFrame() {
+        const area = this.gameContainer;
+        if (!area?.parentNode || typeof document === 'undefined') return;
+        const frame = document.createElement('div');
+        frame.className = 'password-frame';
+        area.parentNode.insertBefore(frame, area);
+        frame.appendChild(area);
+        const cross = this.container.querySelector('#minigame-close');
+        if (cross) frame.appendChild(cross);
+        this.frameElement = frame;
+        this.snapFrameToPixels(frame);
+    }
+
+    /**
+     * Keep the frame on whole pixels (UX slice 2a R3 m1): its flex centring puts it on a
+     * half or quarter pixel when the window or its own height is odd, and every line of text
+     * in it then sits off the pixel grid. A layout offset (the frame is position: relative),
+     * not a transform, as slice 3a's copier frame does: Chrome draws a clip-path where layout
+     * put it. Re-snapped after the first paint, on a window resize, and when the frame or
+     * the overlay changes size (a message line, a chosen tile). The snap changes only
+     * top/left, never a size, so it cannot retrigger itself.
+     *
+     * Then every box inside the frame is snapped the same way (R4 m2, snapInnerBoxes), and
+     * again whenever the screen's content changes: new text changes a centred box's width
+     * without changing the frame's size. A MutationObserver sees those changes; the records
+     * of the snap's own style writes are dropped, so it does not run itself again.
+     */
+    snapFrameToPixels(frame) {
+        if (typeof window === 'undefined' || !frame || typeof frame.getBoundingClientRect !== 'function') return;
+        this.stopFrameSnap();
+        const snap = () => {
+            if (!frame.isConnected) { this.stopFrameSnap(); return; }
+            unsnapInnerBoxes(this._innerSnapped);
+            this._innerSnapped = [];
+            frame.style.left = '';
+            frame.style.top = '';
+            const dpr = window.devicePixelRatio || 1;
+            const { x, y } = wholePixelOffset(frame.getBoundingClientRect(), dpr);
+            if (x) frame.style.left = `${x}px`;
+            if (y) frame.style.top = `${y}px`;
+            this._innerSnapped = snapInnerBoxes(frame, dpr, window);
+            this._contentObserver?.takeRecords?.();
+        };
+        this._frameSnap = snap;
+        snap();
+        if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(snap);
+        window.addEventListener('resize', snap);
+        const RO = window.ResizeObserver;
+        if (typeof RO === 'function') {
+            this._frameObserver = new RO(() => snap());
+            this._frameObserver.observe(frame);
+            if (this.container?.nodeType === 1) this._frameObserver.observe(this.container);
+        }
+        const MO = window.MutationObserver;
+        if (typeof MO === 'function') {
+            this._contentObserver = new MO(() => snap());
+            this._contentObserver.observe(frame, { subtree: true, childList: true, characterData: true, attributes: true });
+        }
+        // An image that finishes loading (the Add to Notepad icon) changes its line's layout
+        // with no DOM change; load does not bubble, so listen in the capture phase
+        frame.addEventListener('load', snap, true);
+        // A pressed control (scale on :active) is left out of a snap made mid-press (R5 m1):
+        // snap again when its transform transition ends, or on the next frame after the
+        // release if it has none. Only when the last snap left a box out, so typing stays free.
+        const afterPress = (e) => {
+            if (!this._innerSnapped?.skipped) return;
+            if (e.type === 'transitionend' || e.type === 'transitioncancel') {
+                if (!/^(transform|scale|rotate)$/.test(e.propertyName || '')) return;
+                snap();
+                return;
+            }
+            if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(() => { if (this._frameSnap === snap) snap(); });
+            else snap();
+        };
+        for (const type of ['transitionend', 'transitioncancel', 'pointerup', 'keyup']) frame.addEventListener(type, afterPress, true);
+        this._frameAfterPress = afterPress;
+        this._frameSnapHost = frame;
+        // A pixel font that arrives late re-flows the text the same way
+        const fonts = typeof document !== 'undefined' ? document.fonts : null;
+        if (fonts?.addEventListener) fonts.addEventListener('loadingdone', snap);
+        fonts?.ready?.then?.(() => { if (this._frameSnap === snap) snap(); });
+    }
+
+    /** Snap the frame and its boxes again now (a test or a caller that changed layout). */
+    resnapFrame() {
+        if (this._frameSnap) this._frameSnap();
+    }
+
+    stopFrameSnap() {
+        if (this._frameSnap && typeof window !== 'undefined') window.removeEventListener('resize', this._frameSnap);
+        if (this._frameSnap && this._frameSnapHost) this._frameSnapHost.removeEventListener('load', this._frameSnap, true);
+        if (this._frameAfterPress && this._frameSnapHost) {
+            for (const type of ['transitionend', 'transitioncancel', 'pointerup', 'keyup']) {
+                this._frameSnapHost.removeEventListener(type, this._frameAfterPress, true);
+            }
+        }
+        this._frameAfterPress = null;
+        if (this._frameSnap && typeof document !== 'undefined') document.fonts?.removeEventListener?.('loadingdone', this._frameSnap);
+        this._frameSnap = null;
+        this._frameSnapHost = null;
+        if (this._frameObserver) { this._frameObserver.disconnect(); this._frameObserver = null; }
+        if (this._contentObserver) { this._contentObserver.disconnect(); this._contentObserver = null; }
+    }
+
+    complete(success) {
+        this.stopFrameSnap();
+        super.complete(success);
+    }
+
+    /**
+     * The player's own close (the X, Esc, the on-screen Esc key) has its own result, so the
+     * starter can tell it from a refusal and show no toast (UX slice 2a R3 m3). A result
+     * already set (a lockout) is kept.
+     */
+    closeByPlayer() {
+        if (!this.gameResult) {
+            this.gameResult = { success: false, reason: 'closed', cancelled: true, closedByPlayer: true,
+                                attempts: this.gameData?.attempts ?? 0 };
+        }
+        super.closeByPlayer();
+    }
+
+    /**
+     * A message on a line inside the screen (UX slice 2a R3 m2), as the sign-in screen has:
+     * the old box, fixed in the middle of the window, drew over the post-it in a short
+     * window. With no line (a screen built without one) it falls back to that box.
+     * closeAfterMs > 0 ends the screen after that long, as a failure. The line stays until
+     * the next try, so it has no duration of its own (R4 n4).
+     */
+    showScreenMessage(text, { kind = 'error', closeAfterMs = 0 } = {}) {
+        const line = this.passwordMessageEl;
+        if (!line || line.isConnected === false) {
+            if (text) this.showFailure(text, closeAfterMs > 0, closeAfterMs > 0 ? closeAfterMs : 1500);
+            return;
+        }
+        line.textContent = text || '';
+        line.dataset.kind = kind;
+        line.hidden = !text;
+        // The post-it comes into view first and the line after it, as on the sign-in screen,
+        // so a short window shows both (R4 n1: an empty Submit left the note half out of view)
+        if (text) {
+            revealInFrame(this.gameContainer?.querySelector?.('.postit-note'));
+            revealInFrame(line);
+        }
+        if (closeAfterMs > 0) setTimeout(() => this.complete(false), closeAfterMs);
+    }
+
+    /**
+     * The controls row under the game area, made on first use: with no Cancel button the base
+     * scene draws none, and an empty row would only add a gap. It sits inside the frame, after
+     * the game area, as a fixed row that does not scroll (the frame wraps all the content, the
+     * user's UX notes; UX slice 2a R2 m3): the area scrolls above it, so the post-it cannot
+     * cover it.
+     */
+    ensureControlsRow() {
+        if (this.controlsElement) return this.controlsElement;
+        const host = this.frameElement || this.container;
+        if (!host?.appendChild) return null;
+        const row = document.createElement('div');
+        row.className = 'minigame-controls';
+        host.appendChild(row);
+        this.controlsElement = row;
+        return row;
+    }
+
     setupPasswordInterface() {
         // Create the password entry interface
         // Check if we can get the device image from sprite or params
@@ -374,6 +814,7 @@ export class PasswordMinigame extends MinigameScene {
                                 </div>
                             </div>
                         ` : ''}
+                        <div class="password-message" id="password-message" aria-live="polite" hidden></div>
                     </div>
                 </div>
                 
@@ -442,7 +883,7 @@ export class PasswordMinigame extends MinigameScene {
                         </div>
                         <div class="keyboard-row">
                             <button class="key key-special" data-key="Enter">Enter</button>
-                            <button class="key key-special" data-key="Escape">Cancel</button>
+                            <button class="key key-special" data-key="Escape">Esc</button>
                         </div>
                     </div>
                 ` : ''}
@@ -461,6 +902,7 @@ export class PasswordMinigame extends MinigameScene {
         this.submitBtn = document.getElementById('submit-password');
         this.keyboardToggleBtn = document.getElementById('keyboard-toggle');
         this.attemptsDisplay = document.getElementById('attempts-display');
+        this.passwordMessageEl = this.gameContainer.querySelector('#password-message');
 
         // Make the post-it note draggable (rendered via HTML template above)
         if (this.gameData.showPostit && this.gameData.postitNote) {
@@ -552,8 +994,10 @@ export class PasswordMinigame extends MinigameScene {
                 this.submitPassword();
                 break;
             case 'Escape':
+                // The same close as the X, wherever the focus is (UX slice 2a R2 m1)
                 event.preventDefault();
-                this.cancelPassword();
+                event.stopPropagation();
+                this.closeByPlayer();
                 break;
         }
     }
@@ -611,7 +1055,7 @@ export class PasswordMinigame extends MinigameScene {
         if (keyValue === 'Enter') {
             this.submitPassword();
         } else if (keyValue === 'Escape') {
-            this.cancelPassword();
+            this.closeByPlayer();
         } else if (keyValue === 'Shift') {
             this.toggleCapsLock();
         } else if (keyValue === 'Backspace') {
@@ -673,12 +1117,15 @@ export class PasswordMinigame extends MinigameScene {
         console.log('Entered password:', enteredPassword);
 
         if (!enteredPassword) {
-            this.showFailure("Please enter a password", false, 1000);
+            this.showScreenMessage('Please enter a password');
             return;
         }
+        this.showScreenMessage('');
 
         this.gameData.attempts++;
         this.attemptsDisplay.textContent = this.gameData.attempts;
+        // The counter is on screen after each try, even in a short window (UX slice 2a R2 M2)
+        revealInFrame(this.attemptsDisplay?.closest?.('.attempts-counter') || this.attemptsDisplay);
 
         // SECURITY: ALWAYS use server-side validation for password attempts
         const apiClient = window.ApiClient || window.APIClient;
@@ -700,9 +1147,10 @@ export class PasswordMinigame extends MinigameScene {
         if (!this.gameState.isActive) return;
         const key = this.passwordField ? this.passwordField.value : '';
         if (!key) {
-            this.showFailure('Please enter the key', false, 1000);
+            this.showScreenMessage('Please enter the key');
             return;
         }
+        this.showScreenMessage('');
         const links = window.networkLinks;
         const result = (links && typeof links.join === 'function') ? await links.join(this.join.apId, key) : { action: 'error' };
         if (result.action === 'joined' || result.action === 'already') {
@@ -713,11 +1161,11 @@ export class PasswordMinigame extends MinigameScene {
         } else if (result.action === 'wrong_key') {
             this.joinMessage = 'That key was not accepted.';
             if (window.playUISound) window.playUISound('reject');
-            this.showFailure(this.joinMessage, false, 1500);
+            this.showScreenMessage(this.joinMessage);
             this.passwordField.value = '';
             this.passwordField.focus();
         } else {
-            this.showFailure('The network did not respond. Try again.', false, 1500);
+            this.showScreenMessage('The network did not respond. Try again.');
         }
     }
 
@@ -769,13 +1217,13 @@ export class PasswordMinigame extends MinigameScene {
                 this.gameData.attempts--;
                 this.attemptsDisplay.textContent = this.gameData.attempts;
                 this.cleanup();
-                this.showFailure(LOCK_SCOPE_REFUSAL_TEXT[refusal], true, 2000);
+                this.showScreenMessage(LOCK_SCOPE_REFUSAL_TEXT[refusal], { closeAfterMs: 2000 });
                 this.gameResult = { success: false, reason: 'cancelled', cancelled: true, refused: refusal,
                                     attempts: this.gameData.attempts };
             } else if (error?.status === 422 || error?.message?.includes('422')) {
                 this.passwordIncorrect({ caseMismatch: error?.body?.caseMismatch === true });
             } else {
-                this.showFailure("Network error. Please try again.", false, 1500);
+                this.showScreenMessage('Network error. Please try again.');
                 // Decrease attempts counter since this wasn't a real attempt
                 this.gameData.attempts--;
                 this.attemptsDisplay.textContent = this.gameData.attempts;
@@ -804,7 +1252,7 @@ export class PasswordMinigame extends MinigameScene {
             this.passwordFailed({ caseMismatch });
         } else {
             if (window.playUISound) window.playUISound('reject');
-            this.showFailure(incorrectPasswordMessage(remaining, caseMismatch), false, caseMismatch ? 3000 : 1500);
+            this.showScreenMessage(incorrectPasswordMessage(remaining, caseMismatch));
             
             // Clear the password field
             this.passwordField.value = '';
@@ -847,26 +1295,15 @@ export class PasswordMinigame extends MinigameScene {
     passwordFailed({ caseMismatch = false } = {}) {
         this.cleanup();
         if (window.playUISound) window.playUISound('reject');
-        this.showFailure(
+        this.showScreenMessage(
             caseMismatch
                 ? "Maximum attempts exceeded. Access denied. Passwords are case-sensitive."
                 : "Maximum attempts exceeded. Access denied.",
-            true, caseMismatch ? 2500 : 1500);
+            { closeAfterMs: caseMismatch ? 2500 : 1500 });
         
         this.gameResult = {
             success: false,
             reason: 'max_attempts_exceeded',
-            attempts: this.gameData.attempts
-        };
-    }
-    
-    cancelPassword() {
-        this.cleanup();
-        this.showFailure(this.join ? "Join cancelled." : (this.signIn ? "Sign-in cancelled." : "Password entry cancelled."), true, 800);
-        
-        this.gameResult = {
-            success: false,
-            reason: 'cancelled',
             attempts: this.gameData.attempts
         };
     }
@@ -988,7 +1425,10 @@ export class PasswordMinigame extends MinigameScene {
                         ${current}
                         ${tiles}
                         <div class="signin-form" id="signin-form">
-                            <div class="signin-selected" id="signin-selected"></div>
+                            <div class="signin-selected-row">
+                                <div class="signin-selected" id="signin-selected"></div>
+                                <button type="button" class="signin-change" id="signin-change">Change</button>
+                            </div>
                             <div class="signin-field-row" id="signin-username-row">
                                 <label for="signin-username">Username:</label>
                                 <input type="text" id="signin-username" class="password-field" placeholder="Username" maxlength="64" autocomplete="off" spellcheck="false">
@@ -1029,23 +1469,27 @@ export class PasswordMinigame extends MinigameScene {
             this.addEventListener(el, 'click', () => this.selectSignInTile(idx));
         });
         this.bindCapturedSignIns();
+        const change = this.gameContainer.querySelector('#signin-change');
+        if (change) this.addEventListener(change, 'click', () => this.clearSignInChoice());
 
         if (this.gameData.showPostit && this.gameData.postitNote) {
             const postit = this.gameContainer.querySelector('.postit-note');
             if (postit) makeDraggable(postit);
-            if (this.controlsElement) {
+            const controls = this.ensureControlsRow();
+            if (controls) {
                 const notebookBtn = document.createElement('button');
                 notebookBtn.className = 'minigame-button';
                 notebookBtn.id = 'minigame-notebook-postit';
                 notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
-                this.controlsElement.insertBefore(notebookBtn, this.controlsElement.firstChild);
+                controls.appendChild(notebookBtn);
                 this.addEventListener(notebookBtn, 'click', () => this.addPostitToNotebook());
             }
         }
 
         const onKey = (event) => {
             if (!this.gameState.isActive) return;
-            if (event.key === 'Escape') { event.preventDefault(); this.cancelPassword(); return; }
+            // The same close as the X, wherever the focus is (UX slice 2a R2 m1)
+            if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); this.closeByPlayer(); return; }
             if (event.key !== 'Enter') return;
             event.preventDefault();
             if (event.target === this.usernameField && !this.passwordField.value) {
@@ -1081,12 +1525,30 @@ export class PasswordMinigame extends MinigameScene {
         this.renderSignInForm();
     }
 
+    /** Back to the tiles (the Change button, shown in a short window once an account is chosen). */
+    clearSignInChoice() {
+        const st = this.signInState;
+        if (!st || this.signIn?.picker === false) return;
+        st.selected = null;
+        st.other = false;
+        this.passwordField.value = '';
+        this.gameData.password = '';
+        this.setSignInMessage('');
+        this.renderSignInForm();
+        this.gameContainer.querySelector('.signin-tile')?.focus?.();
+    }
+
     renderSignInForm() {
         const st = this.signInState;
         const chosen = st.other || st.selected !== null;
         const show = (el, on) => { if (el) el.style.display = on ? '' : 'none'; };
         show(this.gameContainer.querySelector('#signin-form'), chosen);
         show(this.gameContainer.querySelector('#signin-username-row'), st.other);
+        // In a short window the tile row folds away once an account is chosen, so the field,
+        // Submit, the message line and the post-it fit together (UX slice 2a R3 m4); the
+        // chosen account's line holds a Change button back to the tiles.
+        const area = this.gameContainer.querySelector('.signin-mode');
+        area?.classList.toggle('signin-chosen', chosen && this.signIn.picker !== false);
         const selectedEl = this.gameContainer.querySelector('#signin-selected');
         const tile = st.tiles.find(t => t.username === st.selected);
         if (selectedEl) {
@@ -1103,6 +1565,9 @@ export class PasswordMinigame extends MinigameScene {
         }
         const focus = st.other && !this.usernameField.value ? this.usernameField : this.passwordField;
         if (chosen && focus && typeof focus.focus === 'function') focus.focus();
+        // Once an account is chosen, the form down to its message line (Submit, the attempts
+        // left) scrolls into view in a short window (UX slice 2a R2 M2)
+        if (chosen) revealInFrame(this.signInMessageEl?.textContent ? this.signInMessageEl : this.submitBtn);
     }
 
     /** The Captured sign-ins block's inner markup (a remote screen, 4.4). */
@@ -1162,6 +1627,14 @@ export class PasswordMinigame extends MinigameScene {
         if (!this.signInMessageEl) return;
         this.signInMessageEl.textContent = text;
         this.signInMessageEl.dataset.kind = kind;
+        // A result (a wrong password and the attempts left, a lockout) is always on screen,
+        // even in a short window where the frame scrolls (UX slice 2a R2 M2)
+        // The post-it holds the details the player is about to retype, so it comes into view
+        // first and the line after it (both fit once the tile row has folded; R3 m4)
+        if (text && kind !== 'info') {
+            revealInFrame(this.gameContainer?.querySelector?.('.signin-mode.signin-chosen .postit-note'));
+            revealInFrame(this.signInMessageEl);
+        }
     }
 
     async _submitSignInOnce() {
@@ -1214,7 +1687,7 @@ export class PasswordMinigame extends MinigameScene {
      * no failure box over it, which showed the same words three times and covered the PC
      * title) and the form disabled. The screen stays open until the player closes it, so the
      * reason (and any wait it names) can be read at any pace; it closed itself after 2.5 s
-     * (code review R1 m2). The Cancel button becomes Close.
+     * (code review R1 m2). The X and Esc close it (there is no Cancel button).
      */
     signInLockedOut(result) {
         this.cleanup();
@@ -1225,15 +1698,11 @@ export class PasswordMinigame extends MinigameScene {
         this.gameContainer?.querySelectorAll('.signin-mode input, .signin-mode button').forEach(el => { el.disabled = true; });
         // cleanup() took every listener, the closes too: put the player's closes back
         const closeByPlayer = (e) => { e?.preventDefault?.(); e?.stopPropagation?.(); this.closeByPlayer(); };
-        const cancel = document.getElementById('minigame-cancel');
-        if (cancel) {
-            cancel.textContent = 'Close';
-            cancel.disabled = false;
-            this.addEventListener(cancel, 'click', closeByPlayer);
-            cancel.focus?.();
-        }
         const cross = document.getElementById('minigame-close');
-        if (cross && this.params.disableClose !== true) this.addEventListener(cross, 'click', closeByPlayer);
+        if (cross && this.params.disableClose !== true) {
+            this.addEventListener(cross, 'click', closeByPlayer);
+            cross.focus?.();
+        }
         if (this.params.disableClose !== true) {
             this._fallbackCloseHandler = (e) => { if (e.key === 'Escape') this.closeByPlayer(); };
             document.addEventListener('keydown', this._fallbackCloseHandler);

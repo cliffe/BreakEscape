@@ -617,18 +617,10 @@ export function startPasswordMinigame(lockable, type, correctPassword, callback,
                 callback(true, result); // Pass result with serverResponse
             } else {
                 console.log('PASSWORD MINIGAME FAILED');
-                if (!window.minigameClosedByDamage?.()) {
-                    // A flag lock says so: a mistyped flag is not "a password"
+                // No toast for the player's own close (UX slice 2a R3 m3) or a refusal the screen said
+                if (!window.minigameClosedByDamage?.() && !result?.closedByPlayer && !result?.refused) {
                     const rej = rejectionAlert(lockable, type, { message: "Failed to enter correct password.", title: 'Password Rejected' });
-                    // A cancel is the player's own act, not a refusal: a short info toast,
-                    // which the 5 s error floor (notifications.js) leaves alone
-                    if (result?.refused) {
-                        // The screen already said the PC is off or out of reach (review R4 m2)
-                    } else if (result?.cancelled) {
-                        window.gameAlert(rej.message, 'info', rej.title, 3000);
-                    } else {
-                        window.gameAlert(appendLockedHint(rej.message, lockable), 'error', rej.title, lockedHintDuration(lockable, 3000, rej.message));
-                    }
+                    window.gameAlert(appendLockedHint(rej.message, lockable), 'error', rej.title, lockedHintDuration(lockable, 3000, rej.message));
                 }
                 callback(false, result);
             }
