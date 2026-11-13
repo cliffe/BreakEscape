@@ -577,14 +577,29 @@
   overflow-y: auto;
 }
 
+.dli-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  border-bottom: 2px solid #21262d;
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+/* The shared X, in the pop-up's header row (not floated over the title) */
+.dli-modal-head .dli-modal-close {
+  position: static;
+  flex: none;
+}
+
 .dli-modal-title {
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-size: 16px;
   color: #e6edf3;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-bottom: 2px solid #21262d;
-  padding-bottom: 8px;
-  margin-bottom: 12px;
 }
 
 .dli-modal-body {

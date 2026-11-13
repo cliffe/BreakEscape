@@ -355,7 +355,7 @@
 }
 
 .nsm-sever-btn {
-    font-family: 'Press Start 2P', monospace;
+    font-family: 'GNF', monospace;
     font-size: 16px;
     line-height: 24px;
     color: #ffffff;
@@ -454,7 +454,7 @@
 }
 
 .nsm-modal-btn {
-    font-family: 'Press Start 2P', monospace;
+    font-family: 'GNF', monospace;
     font-size: 16px;
     line-height: 24px;
     padding: 14px 24px;
@@ -537,5 +537,21 @@
         white-space: normal;
         max-width: 100%;
         box-sizing: border-box;
+    }
+}
+
+/* Phones held sideways: the pinned action bar (257px) left the map 29px. The whole scene scrolls
+   as one column instead (header, map, panel, action bar, SEVER) and the map keeps a usable
+   height; a map wider than the window still scrolls sideways inside the body */
+@media (max-height: 500px) {
+    .nsm-wrapper {
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+
+    .nsm-body {
+        flex: none;
+        overflow-x: auto;
+        overflow-y: hidden;
     }
 }

@@ -471,9 +471,9 @@
 .bce-flag-btn {
     display: block;
     margin: 8px 0 4px auto;
-    font-family: 'Press Start 2P', monospace;
-    font-size: 8px;
-    line-height: 16px;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 24px;
     padding: 10px 16px;
     background: #0d1f3e;
     color: #58a6ff;
@@ -537,9 +537,9 @@
 /* ── Close button ──────────────────────────────────────────── */
 
 .bce-close-btn {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 8px;
-    line-height: 16px;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 24px;
     padding: 8px 14px;
     background: #0d1117;
     color: #6a7280;
@@ -714,9 +714,9 @@
 
 .bce-mx-slots { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
 .bce-mx-slot-btn {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 8px;
-    line-height: 16px;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 24px;
     padding: 10px 12px;
     background: #0d1f3e;
     color: #58a6ff;

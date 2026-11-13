@@ -759,16 +759,37 @@ export class ScadaHistorianMinigame extends MinigameScene {
         const buttons = this._el('div', 'sh-modal-buttons');
         const confirmBtn = this._el('button', 'sh-modal-confirm-btn');
         confirmBtn.textContent = confirmLabel;
-        confirmBtn.addEventListener('click', () => { overlay.remove(); this._onComplete(); });
+        confirmBtn.addEventListener('click', () => { this._closeAnnotateModal(); this._onComplete(); });
         const cancelBtn = this._el('button', 'sh-modal-cancel-btn');
         cancelBtn.textContent = '[CANCEL]';
-        cancelBtn.addEventListener('click', () => overlay.remove());
+        cancelBtn.addEventListener('click', () => this._closeAnnotateModal());
         buttons.appendChild(confirmBtn);
         buttons.appendChild(cancelBtn);
         modal.appendChild(buttons);
 
         overlay.appendChild(modal);
         charts.appendChild(overlay);
+        this._annotateOverlay = overlay;
+        this._hideSceneX(true);
+    }
+
+    _closeAnnotateModal() {
+        if (this._annotateOverlay) this._annotateOverlay.remove();
+        this._annotateOverlay = null;
+        this._hideSceneX(false);
+    }
+
+    // The report is a confirm (two named buttons, no X), so the scene X hides while it is open
+    _hideSceneX(hidden) {
+        const x = this.container?.querySelector?.('#minigame-close');
+        if (x) x.style.visibility = hidden ? 'hidden' : '';
+    }
+
+    // Esc is Cancel while the report is open; with none open it closes the scene
+    handleEscapeKey() {
+        if (!this._annotateOverlay) return false;
+        this._closeAnnotateModal();
+        return true;
     }
 
     // ── Completion ─────────────────────────────────────────────────────────

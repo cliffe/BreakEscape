@@ -4,8 +4,9 @@
 // off a short window, phone layouts that stack, and the pixel-art rules in the console sheets.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, rmSync, readdirSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -183,18 +184,64 @@ test('review round 1: Esc is Cancel on an open pop-up or confirm and only closes
     }
 });
 
-test('review round 1: Esc handler runs the scene hook before closing (behaviour)', () => {
-    // The framework's handler logic, replayed: a hook that returns true stops the close
-    const run = (hook) => {
-        let closed = false;
-        const self = { handleEscapeKey: hook, closeByPlayer() { closed = true; } };
-        const e = { key: 'Escape' };
-        if (!(typeof self.handleEscapeKey === 'function' && self.handleEscapeKey(e))) self.closeByPlayer();
-        return closed;
+test('review round 2: every scene with a pop-up or confirm handles Esc and hides the scene X while it is open (m1)', () => {
+    const more = {
+        'network-segmentation-map': 'network-segmentation-map/network-segmentation-map-minigame.js',
+        'infusion-pump': 'infusion-pump/infusion-pump-minigame.js',
+        'scada-historian': 'scada-historian/scada-historian-minigame.js'
     };
-    assert.equal(run(() => true), false, 'pop-up open: scene stays');
-    assert.equal(run(() => false), true, 'no pop-up: scene closes');
-    assert.equal(run(undefined), true, 'no hook: scene closes');
+    for (const [name, rel] of Object.entries({ ...more, 'drug-library-integrity': SCENES['drug-library-integrity'] })) {
+        const code = src(rel);
+        assert.match(code, /handleEscapeKey\(\) \{/, `${name} handles Esc on its pop-up`);
+        assert.match(code, /_hideSceneX\(true\)/, `${name} hides the scene X on open`);
+        assert.match(code, /_hideSceneX\(false\)/, `${name} shows the scene X on close`);
+    }
+    // the segmentation map owns its X (#nsm-close), the others use the shell's
+    assert.match(src(more['network-segmentation-map']), /_hideSceneX\(hidden\) \{\s*const x = this\.container\?\.querySelector\?\.\('#nsm-close'\)/);
+    // the source pop-up is not a confirm: it carries the shared X in its header
+    assert.match(src(SCENES['drug-library-integrity']), /minigame-close-button dli-modal-close/);
+});
+
+test('review round 1: the real base-minigame Esc handler runs the scene hook before closing (behaviour)', async () => {
+    // Loads the real framework file (with its two utility imports) and fires the keydown
+    // handler it registers, so reordering or dropping the hook call in base-minigame.js fails here
+    const dir = mkdtempSync(join(tmpdir(), 'minigame-esc-'));
+    try {
+        writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
+        for (const rel of ['minigames/framework/base-minigame.js', 'utils/display-dashes.js', 'utils/escape-html.js']) {
+            mkdirSync(dirname(join(dir, rel)), { recursive: true });
+            writeFileSync(join(dir, rel), readFileSync(join(root, 'js', rel), 'utf8'));
+        }
+        const keydown = [];
+        const savedDoc = globalThis.document, savedWin = globalThis.window;
+        globalThis.document = { addEventListener: (t, f) => { if (t === 'keydown') keydown.push(f); }, removeEventListener() {}, getElementById: () => null };
+        globalThis.window = globalThis;
+        let MinigameScene;
+        try {
+            ({ MinigameScene } = await import(pathToFileURL(join(dir, 'minigames/framework/base-minigame.js')).href));
+        } finally { globalThis.document = savedDoc; globalThis.window = savedWin; }
+
+        const run = (hook, params = {}) => {
+            keydown.length = 0;
+            const calls = [];
+            const scene = new MinigameScene({ querySelector: () => null, addEventListener() {} }, params);
+            scene.closeByPlayer = () => calls.push('close');
+            if (hook) scene.handleEscapeKey = (e) => { calls.push('hook'); return hook(e); };
+            const sd = globalThis.document, sw = globalThis.window, log = console.log;
+            globalThis.document = { addEventListener: (t, f) => { if (t === 'keydown') keydown.push(f); }, removeEventListener() {} };
+            globalThis.window = globalThis;
+            const warn = console.warn;
+            console.log = () => {}; console.warn = () => {};
+            try { scene.start(); } finally { console.log = log; console.warn = warn; globalThis.document = sd; globalThis.window = sw; }
+            assert.equal(keydown.length, params.disableClose ? 0 : 1, 'start() registers one keydown handler');
+            if (keydown.length) { keydown[0]({ key: 'Escape' }); keydown[0]({ key: 'a' }); }
+            return calls;
+        };
+        assert.deepEqual(run(() => true), ['hook'], 'pop-up open: the hook runs and the scene stays');
+        assert.deepEqual(run(() => false), ['hook', 'close'], 'no pop-up: the hook runs first, then the scene closes');
+        assert.deepEqual(run(null), ['close'], 'no hook: the scene closes');
+        assert.deepEqual(run(() => true, { disableClose: true }), [], 'disableClose registers no Esc handler');
+    } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
 test('review round 1: buttons the framework styles in GNF are declared GNF at their size, none under the font floors (M2, m5)', () => {
@@ -230,4 +277,39 @@ test('review round 1: segmentation map keeps its panel in view (M1), SIS title w
     assert.match(css('sis-config-threshold-minigame.css'), /\.sis-threshold-header \{\s*margin-top: 28px/);
     assert.match(src(SCENES['blockchain-explorer']), /class="bce-graph-pane pixel-scroll"/);
     assert.match(css('claims-management-system-minigame.css'), /\.cms-nav-label \{[^}]*overflow-wrap: anywhere/);
+});
+
+test('review round 2: no button rule in the console sheets declares Press Start 2P while the framework GNF button rule overrides it (m4)', () => {
+    // .minigame-container button (specificity 0,1,1) wins over a single-class rule, so a
+    // declaration of Press Start 2P on a button class renders GNF and misleads the next edit
+    const sheets = ['backup-recovery', 'blockchain-explorer', 'capture-log', 'claims-management-system', 'command-board',
+        'coverage-decision-form', 'drug-library-integrity', 'ehr-terminal', 'esd-pushbutton', 'forensic-data-platform',
+        'infusion-pump', 'log-filter', 'ncsc-brief', 'network-architecture', 'network-segmentation-map', 'network-view',
+        'ransomware-display', 'scada-historian', 'siem-dashboard', 'sis-config-threshold', 'warranty-checklist']
+        .map((n) => `${n}-minigame.css`).filter((f) => readdirSync(join(root, 'css')).includes(f));
+    assert.ok(sheets.length >= 20, 'the console sheets are found');
+    const offenders = [];
+    for (const f of sheets) {
+        for (const m of css(f).matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+            if (!/Press Start 2P/.test(m[2]) || /!important/.test(m[2])) continue;
+            for (const sel of m[1].split(',').map((x) => x.trim())) {
+                if (!/(btn|button)[\w-]*(:[\w-]+)*$/.test(sel) || /\.(minigame-close-button|minigame-open-new-tab-button)/.test(sel)) continue;
+                const ids = (sel.match(/#[\w-]+/g) || []).length;
+                const classes = (sel.match(/\.[\w-]+|:[\w-]+/g) || []).length;
+                const els = (sel.match(/(^|[\s>+~])[a-z][\w-]*/gi) || []).length;
+                if (ids * 100 + classes * 10 + els <= 11) offenders.push(`${f}: ${sel}`);
+            }
+        }
+    }
+    assert.deepEqual(offenders, [], 'button rules declare Press Start 2P but render GNF');
+});
+
+test('review round 2: segmentation map labels are 16px VT323 and not bold, the scene scrolls as one column on a short window (m3, M1)', () => {
+    const code = src('network-segmentation-map/network-segmentation-map-minigame.js');
+    assert.doesNotMatch(code, /font-weight/, 'no bold VT323');
+    for (const m of code.matchAll(/'font-size',\s*(?:'(\d+)'|(\w+))/g)) assert.ok(!m[1] || +m[1] >= 16, `SVG text at ${m[1]}px`);
+    assert.match(code, /_svgRuleLabel\(svg, ns, x, y, text, fontSize = 16\)/);
+    const nsm = css('network-segmentation-map-minigame.css');
+    assert.match(nsm, /@media \(max-height: 500px\) \{\s*\.nsm-wrapper \{[^}]*overflow-y: auto[^}]*\}\s*\.nsm-body \{\s*flex: none/);
+    assert.match(code, /class="nsm-wrapper pixel-scroll"/);
 });

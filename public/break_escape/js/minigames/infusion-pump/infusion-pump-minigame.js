@@ -879,6 +879,7 @@ export class InfusionPumpMinigame extends MinigameScene {
     _showLibraryConflictModal(enteredValue) {
         if (!this.scene) return;
         this._modalVisible = true;
+        this._hideSceneX(true);
         const scene = this.scene;
 
         const mw = Math.min(420, this._L.w - 16);
@@ -965,6 +966,7 @@ export class InfusionPumpMinigame extends MinigameScene {
     _showDoubleCheckModal(enteredValue) {
         if (!this.scene) return;
         this._modalVisible = true;
+        this._hideSceneX(true);
         const scene = this.scene;
 
         const mw = Math.min(380, this._L.w - 16);
@@ -1061,6 +1063,20 @@ export class InfusionPumpMinigame extends MinigameScene {
     _destroyModal() {
         this._modalObjects.forEach(o => { try { o.destroy(); } catch (_) {} });
         this._modalObjects = [];
+        this._hideSceneX(false);
+    }
+
+    // Both pump pop-ups are confirms (two named buttons, no X), so the scene X hides while one is open
+    _hideSceneX(hidden) {
+        const x = this.container?.querySelector?.('#minigame-close');
+        if (x) x.style.visibility = hidden ? 'hidden' : '';
+    }
+
+    // Esc is Cancel while a pop-up is open; with none open it closes the scene
+    handleEscapeKey() {
+        if (!this._modalObjects.length) return false;
+        this._dismissModal();
+        return true;
     }
 
     // ── Global state writer ───────────────────────────────────────────────────

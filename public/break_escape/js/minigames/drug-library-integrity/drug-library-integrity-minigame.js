@@ -681,13 +681,20 @@ ${c.warning ? `<div class="dli-modal-warning">${escapeHtml(displayDashes(c.warni
         overlay.className = 'dli-modal-overlay';
         overlay.innerHTML = `
 <div class="dli-modal">
-  <div class="dli-modal-title">${escapeHtml(displayDashes(source.label))}</div>
+  <div class="dli-modal-head">
+    <div class="dli-modal-title">${escapeHtml(displayDashes(source.label))}</div>
+    <button type="button" class="minigame-close-button dli-modal-close" aria-label="Close">&times;</button>
+  </div>
   <div class="dli-modal-body">${bodyHtml}</div>
   <button class="dli-modal-confirm-btn" id="dli-modal-confirm">CONFIRM &mdash; Value noted</button>
 </div>`;
 
         this.gameContainer.style.position = 'relative';
         this.gameContainer.appendChild(overlay);
+        this._sourceOverlay = overlay;
+        this._hideSceneX(true);
+
+        this.addEventListener(overlay.querySelector('.dli-modal-close'), 'click', () => this._closeSourceModal());
 
         const confirmBtn = overlay.querySelector('#dli-modal-confirm');
         this.addEventListener(confirmBtn, 'click', () => {
@@ -696,12 +703,32 @@ ${c.warning ? `<div class="dli-modal-warning">${escapeHtml(displayDashes(c.warni
 
         // Click outside to close without confirming
         this.addEventListener(overlay, 'click', (e) => {
-            if (e.target === overlay) overlay.remove();
+            if (e.target === overlay) this._closeSourceModal();
         });
     }
 
+    _closeSourceModal() {
+        if (this._sourceOverlay) this._sourceOverlay.remove();
+        this._sourceOverlay = null;
+        this._hideSceneX(false);
+    }
+
+    // One close control at a time: the pop-up carries its own X, so the scene X hides while it
+    // is open
+    _hideSceneX(hidden) {
+        const x = this.container?.querySelector?.('#minigame-close');
+        if (x) x.style.visibility = hidden ? 'hidden' : '';
+    }
+
+    // Esc closes the pop-up and leaves the scene open; with none open it closes the scene
+    handleEscapeKey() {
+        if (!this._sourceOverlay) return false;
+        this._closeSourceModal();
+        return true;
+    }
+
     _onSourceConfirmed(source, overlay) {
-        overlay.remove();
+        this._closeSourceModal();
         this._sourcesConsulted.add(source.id);
 
         // Fire progress action

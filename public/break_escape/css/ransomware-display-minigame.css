@@ -161,7 +161,7 @@
     flex-direction: column;
     justify-content: center;
     gap: 6px;
-    font-family: 'Press Start 2P', monospace;
+    font-family: 'GNF', monospace;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
