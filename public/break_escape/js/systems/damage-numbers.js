@@ -4,6 +4,12 @@
  */
 
 import { overlayDepth } from '../utils/constants.js';
+import { pixelText, setPixelText, placePixelText } from '../utils/pixel-text.js';
+
+// GNF from its outlined bitmap sheet at x2 (q105): the 14 px figures the bold Arial drew,
+// on whole pixels, with the 1 px font outline (2 px at x2) in place of the stroke
+const DAMAGE_SCALE = 2;
+const COLOURS = { damage: 0xff4444, heal: 0x44ff44, blocked: 0xbbbbbb };
 
 export class DamageNumbersSystem {
   constructor(scene) {
@@ -14,13 +20,7 @@ export class DamageNumbersSystem {
 
     // Pre-create pool of text objects
     for (let i = 0; i < this.poolSize; i++) {
-      const text = scene.add.text(0, 0, '', {
-        fontSize: '20px',
-        fontFamily: 'Arial',
-        fontStyle: 'bold',
-        stroke: '#000000',
-        strokeThickness: 4
-      });
+      const text = pixelText(scene, 0, 0, '', { scale: DAMAGE_SCALE, outline: true, color: COLOURS.damage });
       text.setVisible(false);
       text.setDepth(overlayDepth(1000)); // Above everything
       this.pool.push(text);
@@ -45,18 +45,14 @@ export class DamageNumbersSystem {
     }
 
     // Configure text
-    text.setText(`${Math.round(amount)}`);
-    text.setPosition(x, y);
+    text.pixelAnchor = { x, y };
+    setPixelText(text, `${Math.round(amount)}`);
     text.setVisible(true);
 
-    // Set color based on type
-    if (type === 'damage') {
-      text.setColor('#ff4444'); // Red for damage
-    } else if (type === 'heal') {
-      text.setColor('#44ff44'); // Green for heal
-    } else if (type === 'blocked') {
-      text.setColor('#bbbbbb'); // Grey: what got through a guard or a block
-    }
+    // Colour by type: red for damage, green for heal, grey for what got through a guard or block
+    const colour = COLOURS[type] ?? COLOURS.damage;
+    if (text.pixelFallback) text.setColor?.(`#${colour.toString(16).padStart(6, '0')}`);
+    else text.setTint?.(colour);
 
     // Add to active list
     this.active.push({
@@ -88,7 +84,7 @@ export class DamageNumbersSystem {
         // Update position and opacity
         const riseDistance = 50;
         const newY = item.startY - (riseDistance * progress);
-        item.text.setY(newY);
+        placePixelText(item.text, item.text.pixelAnchor.x, newY);
 
         // Fade out
         const alpha = 1 - progress;

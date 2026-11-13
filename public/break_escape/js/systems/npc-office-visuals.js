@@ -33,6 +33,7 @@
  */
 import { TILE_SIZE } from '../utils/constants.js';
 import { hearingLevel, THROUGH_DOOR } from './room-hearing.js';
+import { pixelText, setPixelText } from '../utils/pixel-text.js';
 
 export const USE_SOUND_SCALE = 0.4;
 export const HEAR_TILES = 8;
@@ -407,7 +408,7 @@ export class NpcOfficeVisuals {
         const top = sprite.getTopCenter ? sprite.getTopCenter() : { x: sprite.x, y: sprite.y - (sprite.displayHeight || 32) / 2 };
         const bg = scene.add.rectangle(0, 0, 10, 10, 0x1b2a41).setOrigin(0, 1);
         const img = scene.add.image(0, 0, '__DEFAULT').setOrigin(0, 1).setVisible(false);
-        const text = scene.add.text(0, 0, '', { fontFamily: 'monospace', fontSize: '12px', fontStyle: 'bold', color: '#ffffff' }).setOrigin(0.5, 1);
+        const text = pixelText(scene, 0, -2, '', { color: 0xffffff, origin: [0.5, 1] });   // q105: GNF sheet
         const box = scene.add.container(Math.round(top.x), Math.round(top.y) - 2, [bg, img, text]).setDepth(5000);
         const draw = (state) => {
             const g = LOCK_GLYPHS[state];
@@ -417,7 +418,8 @@ export class NpcOfficeVisuals {
                 text.setVisible(false);
             } else {
                 img.setVisible(false);
-                text.setText(g.glyph).setPosition(0, -2).setVisible(true);
+                text.pixelAnchor = { x: 0, y: -2 };
+                setPixelText(text, g.glyph).setVisible(true);
             }
             bg.setPosition(left - 3, 0).setSize(g.w + 6, g.h + 4);
         };
@@ -475,7 +477,7 @@ export class NpcOfficeVisuals {
         const bg = scene.add.rectangle(-Math.ceil(fw / 2) - 3, 0, fw + 6, fh + 4, 0x1b2a41).setOrigin(0, 1);
         const parts = [bg];
         if (key) parts.push(scene.add.image(-Math.ceil(fw / 2), -2, key).setOrigin(0, 1));
-        else parts.push(scene.add.text(0, -2, 'Ph', { fontFamily: 'monospace', fontSize: '12px', fontStyle: 'bold', color: '#ffb347' }).setOrigin(0.5, 1));
+        else parts.push(pixelText(scene, 0, -2, 'Ph', { color: 0xffb347, origin: [0.5, 1] }));
         const box = scene.add.container(Math.round(top.x), Math.round(top.y) - 2, parts).setDepth(5000);
         const tween = scene.tweens?.add?.({ targets: box, alpha: { from: 1, to: 0.35 }, duration: 300, yoyo: true, repeat: -1 });
         const handle = {

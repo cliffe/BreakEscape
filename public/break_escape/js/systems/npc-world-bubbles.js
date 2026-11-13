@@ -36,8 +36,8 @@
  *     read as a second, empty bubble. It comes back when the line ends if the player is still in
  *     range. The pass runs on the scene's postupdate, after checkObjectInteractions.
  *
- * Pixel-art rule: VT323 at 16 px (the action icons' world font), loaded before the first Text is
- * made; a 2 px frame with stepped corners and a stepped tail, all whole-pixel fillRects; positions
+ * Pixel-art rule: GNF from its bitmap sheet at x1 (utils/pixel-text.js, q105), every glyph on the
+ * pixel grid; a 2 px frame with stepped corners and a stepped tail, all whole-pixel fillRects; positions
  * rounded; no scale on the container.
  *
  * Picture chat (slice 15, OFFICE_LIFE_PLAN 11.2): when talking.picture is set the bubble holds a
@@ -49,10 +49,13 @@
 import { iconShown, roomIsDark, npcIconAnchor } from './npc-office-visuals.js';
 import { loadCanvasFonts } from '../utils/canvas-fonts.js';
 import { LIGHT_DEPTH } from '../utils/constants.js';
+import { pixelText, setPixelText, placePixelText, pixelTextBox, pixelFontReady, preloadPixelFont } from '../utils/pixel-text.js';
 
 export const MAX_BUBBLES = 4;
-export const SPEECH_FONT = "'VT323', monospace";
-export const SPEECH_FONT_PX = 16;
+// q105: GNF from its bitmap sheet at x1 (utils/pixel-text.js); before the sheet is cached the
+// helper falls back to a canvas Text in the GNF web font at its native 10.24 px
+export const SPEECH_FONT = "'GNF', monospace";
+export const SPEECH_FONT_SCALE = 1;
 export const LINE_CHARS = 24;       // wrap width, in characters
 export const PAGE_LINES = 3;        // lines a page shows at most
 export const PAGE_MIN_MS = 1200;    // no page shows for less than this
@@ -512,9 +515,14 @@ export class NpcWorldBubbles {
         if (this.log.length > 60) this.log.shift();
     }
 
-    /** VT323 must be loaded before the first Text is made (canvas text does not fetch it). */
-    _ensureFonts() {
+    /**
+     * The GNF sheet (preloaded with the game) draws the text; with no sheet cached yet, ask for it
+     * and wait for the canvas fonts as before (the fallback Text needs a web font).
+     */
+    _ensureFonts(scene = null) {
         if (this.fontsReady) return true;
+        if (scene && pixelFontReady(scene)) { this.fontsReady = true; return true; }
+        if (scene) preloadPixelFont(scene, { start: true });
         if (!this._fontsAsked) {
             this._fontsAsked = true;
             const p = win().canvasFontsReady || loadCanvasFonts();
@@ -523,11 +531,15 @@ export class NpcWorldBubbles {
         return false;
     }
 
+    /** A scene to ask about the font: the first speaker's. */
+    _anyScene(order, info) {
+        for (const id of order) { const sc = info.get(id)?.sprite?.scene; if (sc) return sc; }
+        return null;
+    }
+
     _make(scene) {
         const g = scene.add.graphics();
-        const text = scene.add.text(0, 0, '', {
-            fontFamily: SPEECH_FONT, fontSize: `${SPEECH_FONT_PX}px`, color: '#1b2a41', lineSpacing: 0
-        }).setOrigin(0, 0);
+        const text = pixelText(scene, 0, 0, '', { scale: SPEECH_FONT_SCALE, color: LINE });
         const img = scene.add.image(0, 0, '__DEFAULT').setOrigin(0, 0).setVisible(false);
         const box = scene.add.container(0, 0, [g, text, img]).setDepth(bubbleDepth());
         return { box, g, text, img, line: null };
@@ -612,12 +624,21 @@ export class NpcWorldBubbles {
         if (ready) bb.img.setTexture(tex.key);
         const shown = picture ? (ready ? '' : '…') : String(line ?? '');
         // Chatter lines wrap the same way; a bark page is already wrapped
-        bb.text.setText(shown.includes('\n') ? shown : wrapLines(shown).join('\n'));
-        // Hard-edged glyphs; pad from the ink when it can be read, else from the measured width
-        const ink = ready ? null : crispText(bb.text);
-        bb.inkLeft = ink ? ink.left : 0;
-        const cw = ready ? PICTURE_PX : (ink ? ink.right - ink.left + 1 : Math.ceil(bb.text.width) + TEXT_RIGHT_SLACK);
-        const ch = ready ? PICTURE_PX : Math.ceil(bb.text.height);
+        setPixelText(bb.text, shown.includes('\n') ? shown : wrapLines(shown).join('\n'));
+        let cw, ch;
+        if (ready) { cw = PICTURE_PX; ch = PICTURE_PX; bb.inkLeft = 0; }
+        else if (!bb.text.pixelFallback) {
+            // The bitmap sheet: the glyphs' own ink box, already whole pixels
+            const box = pixelTextBox(bb.text);
+            cw = box.width; ch = box.height; bb.inkLeft = 0;
+        } else {
+            // Fallback canvas Text: hard-edged glyphs; pad from the ink when it can be read, else
+            // from the measured width
+            const ink = crispText(bb.text);
+            bb.inkLeft = ink ? ink.left : 0;
+            cw = ink ? ink.right - ink.left + 1 : Math.ceil(bb.text.width) + TEXT_RIGHT_SLACK;
+            ch = Math.ceil(bb.text.height);
+        }
         let w = cw + PAD_X * 2 + BORDER_PX * 2;
         if (w % 2) w += 1;                               // even, so -w/2 is a whole pixel
         const h = ch + PAD_Y * 2 + BORDER_PX * 2;
@@ -633,7 +654,7 @@ export class NpcWorldBubbles {
         const { w, h } = bb;
         const left = dx - w / 2 + BORDER_PX + PAD_X - (bb.inkLeft || 0);
         const top = -lift - TAIL - h + BORDER_PX + PAD_Y;
-        bb.text.setPosition(left, top);
+        placePixelText(bb.text, left, top);
         bb.img.setPosition(Math.round(dx - PICTURE_PX / 2), top);
         this._drawFrame(bb.g, w, h, dx, lift, beside, side, pointY);
     }
@@ -914,7 +935,7 @@ export class NpcWorldBubbles {
         }
         // First frames only: VT323 still loading. A chatter voice waiting stays for the next
         // frame's placement (at most one per NPC; the font promise settles either way)
-        if (shown.size && !this._ensureFonts()) return;
+        if (shown.size && !this._ensureFonts(this._anyScene(order, info))) return;
         // What bubbles keep off: the HUD panels, every other speaker's head (a bubble over it hid
         // who was talking: R2 m1 retake) and each bubble as it is placed (hard); the player's
         // head (soft)

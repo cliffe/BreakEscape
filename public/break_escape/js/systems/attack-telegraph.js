@@ -3,6 +3,13 @@
  * Visual indicators for incoming attacks to give players fair warning
  */
 
+import { pixelText, placePixelText, setPixelScale } from '../utils/pixel-text.js';
+
+// GNF '!' from the outlined bitmap sheet (q105): x3 (21 px tall, like the 24 px bold Arial),
+// pulsing in whole steps to x4 and back every PULSE_MS instead of a smooth 1.3 scale tween
+const MARK_SCALE = 3;
+const PULSE_MS = 250;
+
 export class AttackTelegraphSystem {
   constructor(scene) {
     this.scene = scene;
@@ -24,21 +31,9 @@ export class AttackTelegraphSystem {
     this.hide(npcId);
 
     // Create visual indicator - exclamation mark above NPC
-    const indicator = this.scene.add.text(
-      npcSprite.x,
-      npcSprite.y - 50,
-      '!',
-      {
-        fontSize: '24px',
-        fontFamily: 'Arial',
-        fontStyle: 'bold',
-        color: '#ff0000',
-        stroke: '#000000',
-        strokeThickness: 3
-      }
-    );
-    indicator.setOrigin(0.5, 0.5);
-    indicator.setDepth(900);
+    const indicator = pixelText(this.scene, npcSprite.x, npcSprite.y - 50, '!', {
+      scale: MARK_SCALE, outline: true, color: 0xff0000, origin: [0.5, 0.5], depth: 900
+    });
 
     // Create danger zone circle around NPC
     const dangerCircle = this.scene.add.circle(
@@ -50,17 +45,6 @@ export class AttackTelegraphSystem {
     );
     dangerCircle.setStrokeStyle(2, 0xff0000, 0.5);
     dangerCircle.setDepth(1);
-
-    // Pulse animation for indicator
-    this.scene.tweens.add({
-      targets: indicator,
-      scaleX: 1.3,
-      scaleY: 1.3,
-      duration: 250,
-      yoyo: true,
-      repeat: -1,
-      ease: 'Sine.easeInOut'
-    });
 
     // Pulse animation for circle
     this.scene.tweens.add({
@@ -122,10 +106,10 @@ export class AttackTelegraphSystem {
 
       // Update positions to follow NPC
       if (telegraph.indicator) {
-        telegraph.indicator.setPosition(
-          telegraph.npcSprite.x,
-          telegraph.npcSprite.y - 50
-        );
+        // Stepped pulse: x3, x4, x3 ... (whole-number scales only)
+        const step = Math.floor((Date.now() - telegraph.startTime) / PULSE_MS) % 2;
+        setPixelScale(telegraph.indicator, MARK_SCALE + step);
+        placePixelText(telegraph.indicator, telegraph.npcSprite.x, telegraph.npcSprite.y - 50);
       }
       if (telegraph.dangerCircle) {
         telegraph.dangerCircle.setPosition(
