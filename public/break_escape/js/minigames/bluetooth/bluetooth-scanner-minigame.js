@@ -6,6 +6,8 @@ import { escapeHtml } from '../../utils/escape-html.js';
 
 // Bluetooth Scanner Minigame Scene implementation
 export class BluetoothScannerMinigame extends MinigameScene {
+    // The X sits inside the frame (MinigameScene.closeInsideFrame)
+    static closeInsideFrame = true;
     constructor(container, params) {
         // Ensure params is defined before calling parent constructor
         params = params || {};
@@ -59,7 +61,7 @@ export class BluetoothScannerMinigame extends MinigameScene {
         // Create expand/collapse toggle button
         const expandToggle = document.createElement('div');
         expandToggle.className = 'bluetooth-scanner-expand-toggle';
-        expandToggle.innerHTML = '▼';
+        expandToggle.innerHTML = '+';
         expandToggle.title = 'Expand/Collapse';
         
         // Create scanner header
@@ -156,12 +158,12 @@ export class BluetoothScannerMinigame extends MinigameScene {
             if (isExpanded) {
                 // Collapse
                 this.container.classList.remove('expanded');
-                expandToggle.innerHTML = '▼';
+                expandToggle.innerHTML = '+';
                 expandToggle.title = 'Expand';
             } else {
                 // Expand
                 this.container.classList.add('expanded');
-                expandToggle.innerHTML = '▲';
+                expandToggle.innerHTML = '-';
                 expandToggle.title = 'Collapse';
             }
         });

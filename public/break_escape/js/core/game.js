@@ -2247,6 +2247,12 @@ export async function create() {
     // walking while another presses a HUD button.
     this.input.mouse?.disableContextMenu();
     this.input.addPointer(1);
+    // The minigame framework knows the main scene from the start, not only once a starter
+    // calls init: closing a minigame frees held touch pointers on this scene, and opening one
+    // disables its mouse and keys (slice 7 R5 m2; person-chat from an NPC calls no init).
+    if (window.MinigameFramework && !window.MinigameFramework.mainGameScene) {
+        window.MinigameFramework.init(this);
+    }
     this.input.on('pointerdown', (pointer) => {
         pendingGateWalk.clear(); // any new click replaces a far click on a gate
         pendingTapUse.clear();   // ...and a far tap on an object

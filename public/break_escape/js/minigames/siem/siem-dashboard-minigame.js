@@ -227,8 +227,16 @@ function createSeededAlerts() {
 }
 
 export class SiemDashboardMinigame extends MinigameScene {
+    // The X sits inside the frame (MinigameScene.closeInsideFrame)
+    static closeInsideFrame = true;
     // Its frame keeps a bar at the bottom for Cancel (minigames-framework.css)
     static controlsOverlay = true;
+
+    // The X sits inside the console panel's own border, in its header row beside the clock,
+    // not over the corner where that border turns (slice 7 R5 n1)
+    closeAnchor() {
+        return this.gameContainer?.querySelector?.('.siem-panel') || this.gameContainer;
+    }
 
     constructor(container, params = {}) {
         super(container, {
@@ -532,7 +540,7 @@ export class SiemDashboardMinigame extends MinigameScene {
         // Add severity breakdown section
         const breakdownSection = document.createElement('div');
         breakdownSection.className = 'siem-queue-section-title';
-        breakdownSection.textContent = '▸ SEVERITY BREAKDOWN';
+        breakdownSection.textContent = '> SEVERITY BREAKDOWN';
         
         const severityChart = this.renderSeverityChart();
         const severityLegend = this.renderSeverityLegend();
@@ -540,7 +548,7 @@ export class SiemDashboardMinigame extends MinigameScene {
         // Add alert score section
         const scoreSection = document.createElement('div');
         scoreSection.className = 'siem-queue-section-title';
-        scoreSection.textContent = '▸ ALERTS SCORE';
+        scoreSection.textContent = '> ALERTS SCORE';
         
         const scoreBox = document.createElement('div');
         scoreBox.className = 'siem-alert-score-box';
@@ -559,7 +567,7 @@ export class SiemDashboardMinigame extends MinigameScene {
         // Add top sources section
         const sourcesSection = document.createElement('div');
         sourcesSection.className = 'siem-queue-section-title';
-        sourcesSection.textContent = '▸ TOP SOURCES';
+        sourcesSection.textContent = '> TOP SOURCES';
 
         const sourcesBox = this.renderTopSources();
 

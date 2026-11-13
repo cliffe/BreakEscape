@@ -1177,6 +1177,8 @@
 [data-ui-theme] .person-chat-continue-button:focus {
   background: none;
   border-color: transparent;
+  /* The 9-slice skin is the button's edge: no square ring around it (slice 7 R1 m3) */
+  box-shadow: none;
   color: var(--ui-accent);
   filter: brightness(1.2) var(--ui-glow-filter);
 }

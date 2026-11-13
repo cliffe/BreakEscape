@@ -17,23 +17,15 @@ function setObservationText(div, text) {
 }
 
 
-// Load fonts
-const fontLink1 = document.createElement('link');
-fontLink1.href = 'https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap';
-fontLink1.rel = 'stylesheet';
-if (!document.querySelector('link[href*="Pixelify+Sans"]')) {
-    document.head.appendChild(fontLink1);
-}
-
-const fontLink2 = document.createElement('link');
-fontLink2.href = 'https://fonts.googleapis.com/css2?family=VT323&display=swap';
-fontLink2.rel = 'stylesheet';
-if (!document.querySelector('link[href*="VT323"]')) {
-    document.head.appendChild(fontLink2);
-}
+// Pixelify Sans and VT323 are self-hosted in css/fonts.css (no remote font links).
 
 // Notes Minigame Scene implementation
 export class NotesMinigame extends MinigameScene {
+    // The X sits inside the frame (MinigameScene.closeInsideFrame)
+    static closeInsideFrame = true;
+    // The bottom button is Continue, the way on from reading a note
+    static keepsCancelButton = true;
+
     constructor(container, params) {
         // Ensure params is defined before calling parent constructor
         params = params || {};

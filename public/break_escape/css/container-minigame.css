@@ -294,7 +294,7 @@
 
 .desktop-title {
     font-family: 'Press Start 2P', monospace;
-    font-size: 20px;
+    font-size: 16px;   /* on its 8px grid (slice 7 R5 M2) */
     color: #00ff00;
 }
 
@@ -314,7 +314,7 @@
     left: 50%;
     transform: translate(-50%, -50%);
     font-family: 'Press Start 2P', monospace;
-    font-size: 18px;
+    font-size: 16px;
     color: #666;
     text-align: center;
 }
@@ -338,9 +338,11 @@
     background: rgba(0, 0, 0, 0.3);
 }
 
+/* Press Start 2P on its 8px grid (slice 7 R5 M2) */
 .container-info h4 {
     font-family: 'Press Start 2P', monospace;
-    font-size: 20px;
+    font-size: 16px;
+    line-height: 24px;
     margin: 0 0 10px 0;
     color: #3498db;
 }
@@ -361,7 +363,8 @@
 
 .container-contents-section h4 {
     font-family: 'Press Start 2P', monospace;
-    font-size: 18px;
+    font-size: 16px;
+    line-height: 24px;
     margin: 0;
     color: #e74c3c;
     text-align: center;
@@ -594,7 +597,8 @@
     color: #fff;
     padding: 4px 8px;
     font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
+    font-size: 8px;
+    line-height: 16px;
 }
 
 .desktop-window-body {
@@ -630,4 +634,17 @@
     border: 2px solid #c08a2a;
     color: #ffe0a0;
     font-size: 16px;
+}
+
+/* Short screens (a 412px-high landscape phone): a tighter window, so the frame wraps the
+   heading and the contents; what is still taller scrolls inside the frame
+   (minigames-framework.css), never past it (slice 7 R1) */
+@media (max-height: 560px) {
+    .container-minigame:not(.desktop-mode) {
+        height: auto;
+        min-height: 0;
+        margin: 4px auto;
+        padding: 8px 20px;
+        gap: 8px;
+    }
 }

@@ -11,6 +11,8 @@ const EXCELLENT_LIFT = 0.85;
 
 // Biometrics Minigame Scene implementation (the fingerprint kit panel)
 export class BiometricsMinigame extends MinigameScene {
+    // The X sits inside the frame (MinigameScene.closeInsideFrame)
+    static closeInsideFrame = true;
     constructor(container, params) {
         // Ensure params is defined before calling parent constructor
         params = params || {};
@@ -53,7 +55,7 @@ export class BiometricsMinigame extends MinigameScene {
         // Create expand/collapse toggle button
         const expandToggle = document.createElement('div');
         expandToggle.className = 'biometrics-expand-toggle';
-        expandToggle.innerHTML = '▼';
+        expandToggle.innerHTML = '+';
         expandToggle.title = 'Expand/Collapse';
         expandToggle.setAttribute('role', 'button');
         expandToggle.setAttribute('tabindex', '0');
@@ -208,12 +210,12 @@ export class BiometricsMinigame extends MinigameScene {
             if (isExpanded) {
                 // Collapse
                 this.container.classList.remove('expanded');
-                expandToggle.innerHTML = '▼';
+                expandToggle.innerHTML = '+';
                 expandToggle.title = 'Expand';
             } else {
                 // Expand
                 this.container.classList.add('expanded');
-                expandToggle.innerHTML = '▲';
+                expandToggle.innerHTML = '-';
                 expandToggle.title = 'Collapse';
             }
         });

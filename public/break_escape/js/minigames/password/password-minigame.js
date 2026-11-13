@@ -164,6 +164,9 @@ export function capturedSignIns(captures, accounts, secrets) {
 if (typeof window !== 'undefined') window.capturedSignIns = capturedSignIns;
 
 export class PasswordMinigame extends MinigameScene {
+    // Keeps its Cancel (owned by UX slice 2a), see MinigameScene.keepsCancelButton
+    static keepsCancelButton = true;
+
     constructor(container, params) {
         super(container, params);
         

@@ -27,92 +27,8 @@
     box-sizing: border-box;
 }
 
-/* ---- Prescription panel (left) ---- */
-.ip-prescription-panel {
-    width: 38%;
-    min-width: 200px;
-    background: #f5f0e8;
-    color: #1a1a1a;
-    border: 2px solid #c8b880;
-    padding: 14px 12px;
-    overflow-y: auto;
-    box-sizing: border-box;
-    font-family: monospace;
-    font-size: 10px;
-    line-height: 1.5;
-    flex-shrink: 0;
-}
-
-.ip-rx-header {
-    font-size: 8px;
-    font-weight: bold;
-    text-align: center;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    margin-bottom: 2px;
-}
-
-.ip-rx-sub {
-    font-size: 7px;
-    text-align: center;
-    color: #444;
-    margin-bottom: 8px;
-}
-
-.ip-rx-divider {
-    border-top: 1px solid #c8b880;
-    margin: 8px 0;
-}
-
-.ip-rx-field {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 4px;
-}
-
-.ip-rx-label {
-    color: #666;
-    font-size: 8px;
-    min-width: 60px;
-    text-transform: uppercase;
-    flex-shrink: 0;
-}
-
-.ip-rx-value {
-    color: #1a1a1a;
-    font-size: 9px;
-}
-
-/* The critical dose line — ambiguous decimal rendered in VT323 */
-.ip-rx-dose-line {
-    display: flex;
-    align-items: baseline;
-    gap: 6px;
-    margin-bottom: 4px;
-    background: #ede8d8;
-    border: 1px solid #c8b880;
-    padding: 4px 6px;
-}
-
-.ip-rx-dose-value {
-    font-family: 'GNF', monospace;
-    font-size: 30px;
-    color: #1a1a1a;
-    line-height: 1;
-    letter-spacing: -2px;  /* tight tracking makes the decimal very small */
-}
-
-.ip-rx-sig {
-    font-style: italic;
-    font-size: 12px;
-    color: #333;
-}
-
-.ip-rx-blank {
-    color: #aaa;
-    font-size: 9px;
-    letter-spacing: 1px;
-}
+/* The MAR card is drawn on the Phaser canvas (infusion-pump-minigame.js); its old
+   HTML rules had no users and were removed (slice 7 R1 n1). */
 
 /* ---- Pump device (right) ---- */
 .ip-pump-device {
@@ -133,11 +49,7 @@
     flex-direction: column;
     gap: 10px;
     /* Corner screw aesthetic via box-shadow inset dots */
-    box-shadow:
-        inset 6px 6px 0 0 #a0a5a8,
-        inset -6px -6px 0 0 #a0a5a8,
-        inset 6px -6px 0 0 #a0a5a8,
-        inset -6px 6px 0 0 #a0a5a8;
+    box-shadow: inset 6px 6px 0 0 #a0a5a8, inset -6px -6px 0 0 #a0a5a8, inset 6px -6px 0 0 #a0a5a8, inset -6px 6px 0 0 #a0a5a8;
 }
 
 /* ---- Pump screen ---- */
@@ -156,7 +68,7 @@
 
 .ip-pump-screen.ip-screen-accepted {
     border-color: #00c853;
-    box-shadow: 0 0 14px rgba(0, 200, 83, 0.4);
+    box-shadow: none;
 }
 
 .ip-pump-screen-row {
@@ -164,14 +76,14 @@
 }
 
 .ip-pump-screen-divider {
-    border-top: 1px solid #1a5a1a;
+    border-top: 2px solid #1a5a1a;
     margin: 4px 0;
 }
 
 .ip-pump-display {
     font-size: 28px;
     color: #00ff88;
-    border-bottom: 1px solid #1a5a1a;
+    border-bottom: 2px solid #1a5a1a;
     padding: 2px 0;
     min-height: 36px;
     letter-spacing: 1px;
@@ -204,7 +116,7 @@
     border-bottom: 3px solid #6a7178;
     color: #1a1a1a;
     font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
+    font-size: 8px;   /* on its 8px grid (slice 7 R5 M2) */
     padding: 10px 4px;
     cursor: pointer;
     border-radius: 0;
@@ -253,7 +165,7 @@
     border: 2px solid #00c853;
     padding: 14px 8px;
     font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
+    font-size: 8px;   /* on its 8px grid (slice 7 R5 M2) */
     cursor: pointer;
     border-radius: 0;
     letter-spacing: 1px;
@@ -263,7 +175,7 @@
 
 .ip-confirm-btn:hover {
     background: #2a5a2a;
-    box-shadow: 0 0 8px rgba(0, 200, 83, 0.3);
+    box-shadow: none;
 }
 
 .ip-confirm-btn:active {
@@ -325,8 +237,8 @@
 
 .ip-modal-prompt {
     color: #aaaaaa;
-    font-family: monospace;
-    font-size: 11px;
+    font-family: 'VT323', monospace;
+    font-size: 16px;
     margin-bottom: 20px;
 }
 
@@ -392,15 +304,139 @@
 .ip-no-charts-text {
     color: #f59e0b;
     font-family: 'Press Start 2P', monospace;
-    font-size: 9px;
+    font-size: 8px;   /* Press Start 2P on its 8px grid (slice 7 R2 n3) */
     margin-bottom: 16px;
     line-height: 1.6;
 }
 
 .ip-no-charts-sub {
     color: #888;
-    font-family: monospace;
-    font-size: 12px;
+    font-family: 'VT323', monospace;
+    font-size: 16px;
     line-height: 1.5;
     max-width: 320px;
+}
+
+/* The pump canvas: zoomed by a whole number only, centred when it fits, scrolling inside
+   its box when the window is too small for zoom 1 (slice 7 R2 M2). Auto margins centre
+   a flex child without pushing it off the scrollable start. */
+.ip-phaser-container {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    display: flex;
+}
+
+.ip-phaser-container > canvas {
+    margin: auto;
+    flex: none;
+    image-rendering: pixelated;
+    /* A swipe on the canvas scrolls the box on a short screen; taps still reach the keys
+       (slice 7 R3 M1, with input.touch.capture off in the Phaser config) */
+    touch-action: pan-y !important;
+}
+
+/* Holds the scrolling box and its "More below" cue, which stays at the box's bottom edge
+   while the canvas scrolls under it (slice 7 R3 M1) */
+.ip-scroll-frame {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.ip-more-below {
+    position: absolute;
+    bottom: 4px;
+    left: 0;
+    right: 14px;   /* clear of the scrollbar */
+    width: max-content;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    line-height: 8px;
+    color: #9ee6ff;
+    background: #0d1324;
+    border: 2px solid #9ee6ff;
+    border-radius: 0;
+    box-shadow: none;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.ip-more-below[hidden] {
+    display: none;
+}
+
+.ip-more-below:hover,
+.ip-more-below:focus-visible {
+    color: #0d1324;
+    background: #9ee6ff;
+    outline: none;
+}
+
+/* An 8x4 down arrow drawn in whole-pixel steps */
+.ip-more-below-arrow {
+    display: block;
+    width: 8px;
+    height: 4px;
+    background: currentColor;
+    clip-path: polygon(0 0, 8px 0, 8px 1px, 7px 1px, 7px 2px, 6px 2px, 6px 3px, 5px 3px,
+        5px 4px, 3px 4px, 3px 3px, 2px 3px, 2px 2px, 1px 2px, 1px 1px, 0 1px);
+}
+
+/* Pixel-art scrollbar for the pump's box. A local copy of the shared `.pixel-scroll` rule
+   (css/utilities.css on build/ux-net, slice 1), which has not reached this branch: when that
+   lands, give #ip-phaser-container the `pixel-scroll` class and drop this copy. */
+.ip-pixel-scroll {
+    /* Chrome 121+ ignores the ::-webkit-scrollbar rules below once scrollbar-color or
+       scrollbar-width is set, so both are reset to auto here */
+    scrollbar-color: auto;
+    scrollbar-width: auto;
+    --pixel-scroll-track: #10161c;
+    --pixel-scroll-thumb: #2d3a44;
+    --pixel-scroll-edge: #6f8a9c;
+    --pixel-scroll-hover: #9ee6ff;
+}
+
+.ip-pixel-scroll::-webkit-scrollbar {
+    width: 14px;
+    height: 14px;
+}
+
+.ip-pixel-scroll::-webkit-scrollbar-track {
+    background: var(--pixel-scroll-track);
+    border-left: 2px solid var(--pixel-scroll-thumb);
+    border-radius: 0;
+}
+
+.ip-pixel-scroll::-webkit-scrollbar-thumb {
+    background: var(--pixel-scroll-thumb);
+    border: 2px solid var(--pixel-scroll-edge);
+    border-radius: 0;
+}
+
+.ip-pixel-scroll::-webkit-scrollbar-thumb:hover {
+    border-color: var(--pixel-scroll-hover);
+}
+
+.ip-pixel-scroll::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+.ip-pixel-scroll::-webkit-scrollbar-corner {
+    background: var(--pixel-scroll-track);
+}
+
+/* Firefox has no ::-webkit-scrollbar: square colours from the same tokens */
+@supports not selector(::-webkit-scrollbar) {
+    .ip-pixel-scroll {
+        scrollbar-width: auto;
+        scrollbar-color: var(--pixel-scroll-edge) var(--pixel-scroll-track);
+    }
 }

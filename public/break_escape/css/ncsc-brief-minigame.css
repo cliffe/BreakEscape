@@ -5,7 +5,7 @@
 .ncsc-minigame-container {
     background: #0d1117;
     color: #c9d1d9;
-    font-family: 'Courier New', Courier, monospace;
+    font-family: 'VT323', monospace;
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -34,11 +34,18 @@
     background: #3a2800;
     border-bottom: 2px solid #f0c040;
     color: #f0c040;
-    font-size: 15px;
-    font-weight: bold;
+    font-size: 19px;
+    font-weight: normal;
     letter-spacing: 0.1em;
     text-align: center;
-    padding: 6px 16px;
+    /* The X sits inside the frame's top right, on this bar: the bar is tall enough to hold
+       it above the amber rule, and the text keeps clear of it (slice 7 R2 n2) */
+    padding: 6px 44px;
+    min-height: 42px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
     text-transform: uppercase;
 }
@@ -65,14 +72,25 @@
     text-align: center;
 }
 
+/* Pixel icons from assets/icons at whole-number scale, in place of the emoji and
+   symbol glyphs the pixel fonts lack (slice 7 R1 m4) */
 .ncsc-envelope-icon {
-    font-size: 48px;
-    color: #8b949e;
-    line-height: 1;
+    display: block;
+    margin: 0 auto;
+    width: 64px;
+    height: 64px;
+    image-rendering: pixelated;
+}
+
+.ncsc-badge-icon {
+    width: 16px;
+    height: 16px;
+    vertical-align: -2px;
+    image-rendering: pixelated;
 }
 
 .ncsc-envelope-name {
-    font-size: 20px;
+    font-size: 24px;
     font-weight: bold;
     color: #e6edf3;
     letter-spacing: 0.06em;
@@ -80,18 +98,18 @@
 }
 
 .ncsc-envelope-ref {
-    font-size: 16px;
+    font-size: 20px;
     color: #6e7681;
     letter-spacing: 0.03em;
-    font-style: italic;
+    font-style: normal;   /* upright: a pixel font slanted by the browser smears (slice 7 R1 n5) */
 }
 
 /* ── Status badges ───────────────────────────────────────────────────────────── */
 
 .ncsc-status-badge {
     display: inline-block;
-    border-radius: 4px;
-    font-size: 15px;
+    border-radius: 0;
+    font-size: 19px;
     font-weight: bold;
     letter-spacing: 0.06em;
     padding: 5px 14px;
@@ -100,20 +118,20 @@
 
 .ncsc-status-locked {
     background: #21262d;
-    border: 1px solid #30363d;
+    border: 2px solid #30363d;
     color: #8b949e;
 }
 
 .ncsc-status-ready {
     background: #1a3d20;
-    border: 1px solid #2ea043;
+    border: 2px solid #2ea043;
     color: #3fb950;
 }
 
 /* ── Sealed / ready message text ─────────────────────────────────────────────── */
 
 .ncsc-sealed-message {
-    font-size: 17px;
+    font-size: 21px;
     color: #8b949e;
     max-width: 420px;
     line-height: 1.65;
@@ -127,43 +145,43 @@
 
 .ncsc-open-btn {
     background: #238636;
-    border: 1px solid #2ea043;
-    border-radius: 4px;
+    border: 2px solid #2ea043;
+    border-radius: 0;
     color: #ffffff;
     font-family: inherit;
-    font-size: 16px;
+    font-size: 20px;
     font-weight: bold;
     letter-spacing: 0.06em;
     padding: 10px 28px;
     cursor: pointer;
     text-transform: uppercase;
     transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
-    box-shadow: 0 0 10px rgba(35, 134, 54, 0.45), 0 0 22px rgba(35, 134, 54, 0.15);
+    box-shadow: none;
     margin-top: 6px;
 }
 
 .ncsc-open-btn:hover {
     background: #2ea043;
     border-color: #3fb950;
-    box-shadow: 0 0 14px rgba(46, 160, 67, 0.65), 0 0 30px rgba(46, 160, 67, 0.2);
+    box-shadow: none;
 }
 
 /* ── Brief content layout ────────────────────────────────────────────────────── */
 
 .ncsc-brief-content {
     padding: 16px 20px 20px;
-    font-size: 17px;
+    font-size: 21px;
     line-height: 1.65;
 }
 
 .ncsc-brief-header {
-    border-bottom: 1px solid #21262d;
+    border-bottom: 2px solid #21262d;
     padding-bottom: 10px;
     margin-bottom: 16px;
 }
 
 .ncsc-brief-title {
-    font-size: 18px;
+    font-size: 22px;
     font-weight: bold;
     color: #58a6ff;
     letter-spacing: 0.07em;
@@ -172,9 +190,9 @@
 }
 
 .ncsc-brief-meta {
-    font-size: 15px;
+    font-size: 19px;
     color: #6e7681;
-    font-style: italic;
+    font-style: normal;   /* upright: a pixel font slanted by the browser smears (slice 7 R1 n5) */
     line-height: 1.6;
 }
 
@@ -187,7 +205,7 @@
 }
 
 .ncsc-section-title {
-    font-size: 15px;
+    font-size: 19px;
     font-weight: bold;
     color: #58a6ff;
     text-transform: uppercase;
@@ -204,8 +222,8 @@
 
 .ncsc-badge {
     display: inline-block;
-    border-radius: 3px;
-    font-size: 14px;
+    border-radius: 0;
+    font-size: 18px;
     font-weight: bold;
     letter-spacing: 0.04em;
     padding: 2px 8px;
@@ -214,13 +232,13 @@
 
 .ncsc-badge-amber {
     background: #3a2800;
-    border: 1px solid rgba(240, 192, 64, 0.4);
+    border: 2px solid rgba(240, 192, 64, 0.4);
     color: #f0c040;
 }
 
 .ncsc-badge-green {
     background: #0d2615;
-    border: 1px solid rgba(46, 160, 67, 0.4);
+    border: 2px solid rgba(46, 160, 67, 0.4);
     color: #3fb950;
 }
 
@@ -230,7 +248,7 @@
     margin: 0 0 8px 18px;
     padding: 0;
     color: #8b949e;
-    font-size: 16px;
+    font-size: 20px;
     line-height: 1.7;
 }
 
@@ -241,20 +259,20 @@
 /* ── Inline note (two-actor model) ───────────────────────────────────────────── */
 
 .ncsc-note {
-    border: 1px solid rgba(56, 139, 253, 0.35);
+    border: 2px solid rgba(56, 139, 253, 0.35);
     border-left: 3px solid #388bfd;
     background: #071121;
-    border-radius: 0 4px 4px 0;
+    border-radius: 0;
     padding: 9px 13px;
     margin-top: 10px;
-    font-size: 16px;
+    font-size: 20px;
     color: #79c0ff;
     line-height: 1.6;
 }
 
 .ncsc-note-title {
     font-weight: bold;
-    font-size: 15px;
+    font-size: 19px;
     color: #58a6ff;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -269,20 +287,20 @@
 /* ── Legal threshold callout (red) ───────────────────────────────────────────── */
 
 .ncsc-legal-gap {
-    border: 1px solid rgba(248, 81, 73, 0.4);
+    border: 2px solid rgba(248, 81, 73, 0.4);
     border-left: 3px solid #f85149;
     background: #1c0a0a;
-    border-radius: 0 4px 4px 0;
+    border-radius: 0;
     padding: 10px 14px;
     margin-bottom: 18px;
-    font-size: 17px;
+    font-size: 21px;
     line-height: 1.65;
 }
 
 .ncsc-legal-gap-title {
     font-weight: bold;
     color: #f85149;
-    font-size: 15px;
+    font-size: 19px;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     margin-bottom: 7px;
@@ -300,20 +318,20 @@
 /* ── Coverage implication callout (amber) ────────────────────────────────────── */
 
 .ncsc-coverage-note {
-    border: 1px solid rgba(240, 192, 64, 0.4);
+    border: 2px solid rgba(240, 192, 64, 0.4);
     border-left: 3px solid #f0c040;
     background: #1c1600;
-    border-radius: 0 4px 4px 0;
+    border-radius: 0;
     padding: 10px 14px;
     margin-bottom: 4px;
-    font-size: 17px;
+    font-size: 21px;
     line-height: 1.65;
 }
 
 .ncsc-coverage-note-title {
     font-weight: bold;
     color: #f0c040;
-    font-size: 15px;
+    font-size: 19px;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     margin-bottom: 7px;

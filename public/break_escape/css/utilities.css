@@ -285,7 +285,7 @@
     ) !important;
 }
 
-/* Glow on hover — uses currentColor so it matches each button's text/border tint */
+/* Ring on hover: uses currentColor so it matches each button's text/border tint */
 .minigame-button:hover,
 .modal-button:hover,
 .password-modal-button:hover,
@@ -296,13 +296,14 @@
 .person-chat-choice-button:hover,
 .person-chat-continue-button:hover,
 .session-overlay-btn:hover {
-    box-shadow: 0 0 10px currentColor;
+    /* Hard 2px ring, not a blurred glow (pixel-art UI rule, slice 7) */
+    box-shadow: 0 0 0 2px currentColor;
 }
 
 /* Session overlay: glow uses border-color since text is always white */
-#session-resume-btn:hover  { box-shadow: 0 0 10px #4CAF50; }
-#session-restart-btn:hover { box-shadow: 0 0 10px #777; }
-#session-new-btn:hover     { box-shadow: 0 0 10px #1a6fb0; }
+#session-resume-btn:hover  { box-shadow: 0 0 0 2px #4CAF50; }
+#session-restart-btn:hover { box-shadow: 0 0 0 2px #777; }
+#session-new-btn:hover     { box-shadow: 0 0 0 2px #1a6fb0; }
 
 /* Physical "press" feel on click */
 .minigame-button:active,

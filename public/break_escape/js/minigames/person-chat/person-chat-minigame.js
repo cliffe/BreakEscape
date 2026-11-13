@@ -34,6 +34,9 @@ const DIALOGUE_AUTO_ADVANCE_DELAY = 5000; // Default delay in milliseconds for n
 const DIALOGUE_END_DELAY = 1000; // Delay in milliseconds for ending conversations (1 second)
 
 export class PersonChatMinigame extends MinigameScene {
+    // End Conversation stays (conversation UI is another slice)
+    static keepsCancelButton = true;
+
     /**
      * Create a PersonChatMinigame instance
      * @param {HTMLElement} container - Container element

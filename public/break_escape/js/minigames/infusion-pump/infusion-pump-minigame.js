@@ -4,12 +4,13 @@ import { wirePhaserGameSoundToBreakEscape } from '../../music/phaser-audio-bus.j
 import { currentClockText } from '../../systems/game-clock.js';
 
 // Canvas dimensions for the Phaser scene
-const W = 820;  // canvas width
+// 784 wide so the canvas fits an 800px window at zoom 1 (slice 7 R2 M2)
+const W = 784;  // canvas width
 const H = 510;  // canvas height
 
 // Layout constants
 const RX_X = 8;   const RX_Y = 8;   const RX_W = 290; const RX_H = 494;  // prescription panel
-const PMP_X = 302; const PMP_Y = 8;  const PMP_W = 510; const PMP_H = 494; // pump bezel
+const PMP_X = 302; const PMP_Y = 8;  const PMP_W = 474; const PMP_H = 494; // pump bezel
 
 // Pump inner area (12px padding inside bezel)
 const PMP_IX = PMP_X + 12;  // 314
@@ -27,8 +28,16 @@ const KP_BTN_W = Math.floor((PMP_IW - KP_GAP * 2) / 3);  // ~158
 // Confirm button
 const CONF_Y  = KP_Y0 + 4 * (KP_BTN_H + KP_GAP) + 3;  // ~416
 const CONF_H  = 54;
+// A press that moves further than this (canvas pixels) before release is a swipe, not a tap
+const TAP_SLOP = 12;
+// Mouse events this soon after a touch are the browser's compatibility echo of that touch
+export const MOUSE_AFTER_TOUCH_MS = 800;
+// ...and land this close (CSS pixels) to it, when the browser cannot say (no sourceCapabilities)
+export const MOUSE_NEAR_TOUCH_PX = 16;
 
 export class InfusionPumpMinigame extends MinigameScene {
+    // The X sits inside the frame (MinigameScene.closeInsideFrame)
+    static closeInsideFrame = true;
     constructor(container, params = {}) {
         super(container, {
             ...params,
@@ -64,6 +73,183 @@ export class InfusionPumpMinigame extends MinigameScene {
 
     // ── Lifecycle ────────────────────────────────────────────────────────────
 
+    // The X sits inside the pump's canvas, not the screen's corner. When the canvas is larger
+    // than the window at zoom 1 it scrolls inside its box, and the X sits in the part of the
+    // canvas the box shows, so it stays put while the canvas scrolls under it.
+    closeAnchor() {
+        return this.gameContainer?.querySelector?.('#ip-phaser-container') || this.gameContainer;
+    }
+
+    placeCloseButton() {
+        const btn = this.container?.querySelector?.('#minigame-close');
+        const box = this.gameContainer?.querySelector?.('#ip-phaser-container');
+        const canvas = box?.querySelector?.('canvas');
+        if (!canvas) return super.placeCloseButton();
+        if (!btn || btn.style.display === 'none') return;
+        const b = box.getBoundingClientRect();
+        const r = canvas.getBoundingClientRect();
+        const c = this.container.getBoundingClientRect();
+        if (!r.width || !r.height) return;
+        const gap = 4;
+        // The visible part of the canvas: the box less its scrollbars
+        const top = Math.max(r.top, b.top, c.top);
+        const right = Math.min(r.right, b.left + box.clientWidth, c.right);
+        btn.style.top = `${Math.round(top - c.top + gap)}px`;
+        btn.style.right = `${Math.round(c.right - right + gap)}px`;
+        btn.classList.add('minigame-close-in-frame');
+    }
+
+    // Pixel text is drawn only at a whole-number zoom: the largest that fits, never below 1
+    // (slice 7 R2 M2). A window too small for zoom 1 scrolls the canvas inside its box.
+    static wholeZoom(availW, availH, w = W, h = H) {
+        const z = Math.floor(Math.min(availW / w, availH / h));
+        return Number.isFinite(z) && z >= 1 ? z : 1;
+    }
+
+    _fitZoom() {
+        const game = this.phaserGame;
+        const box = this.gameContainer?.querySelector?.('#ip-phaser-container');
+        if (!game?.scale || !box) return;
+        const z = InfusionPumpMinigame.wholeZoom(box.clientWidth, box.clientHeight);
+        if (game.scale.zoom !== z) game.scale.setZoom(z);
+        // Phaser may set its own touch-action on the canvas; the box must pan on a swipe
+        const canvas = box.querySelector('canvas');
+        if (canvas) canvas.style.touchAction = 'pan-y';
+        this.placeCloseButton?.();
+        this._updateMoreBelow();
+    }
+
+    // "More below" shows while part of the canvas is under the bottom of its box, and hides
+    // once the player has scrolled to the end (slice 7 R3 M1). A click scrolls to the end.
+    static hasMoreBelow(box) {
+        if (!box) return false;
+        return box.scrollHeight - box.clientHeight - box.scrollTop > 2;
+    }
+
+    // A pump button acts on a tap: released over the button it was pressed on, without a drag
+    // and without the box having scrolled in between (slice 7 R3 M1). Now that a swipe on the
+    // canvas scrolls the box, acting on pointerdown would press whichever key a swipe starts on.
+    static isTap(distance, scrollMoved) {
+        return distance <= TAP_SLOP && Math.abs(scrollMoved) <= 2;
+    }
+
+    _boxScrollTop() {
+        return this.gameContainer?.querySelector?.('#ip-phaser-container')?.scrollTop || 0;
+    }
+
+    _armTap(obj) {
+        obj.on('pointerdown', () => { obj._tapArmed = true; obj._tapScroll = this._boxScrollTop(); });
+        obj.on('pointerout', () => { obj._tapArmed = false; });
+        obj.on('pointerup', (pointer) => {
+            const armed = obj._tapArmed;
+            obj._tapArmed = false;
+            if (!armed) return;
+            const distance = typeof pointer?.getDistance === 'function' ? pointer.getDistance() : 0;
+            if (InfusionPumpMinigame.isTap(distance, this._boxScrollTop() - obj._tapScroll)) obj.emit('tap', pointer);
+        });
+        return obj;
+    }
+
+    _onTap(obj, fn) {
+        this._armTap(obj);
+        obj.on('tap', fn);
+        return obj;
+    }
+
+    _updateMoreBelow() {
+        const box = this.gameContainer?.querySelector?.('#ip-phaser-container');
+        const cue = this.gameContainer?.querySelector?.('#ip-more-below');
+        if (!cue) return;
+        cue.hidden = !InfusionPumpMinigame.hasMoreBelow(box);
+    }
+
+    _watchZoom() {
+        const fit = () => this._fitZoom();
+        this._zoomOnResize = fit;
+        window.addEventListener('resize', fit);
+        const box = this.gameContainer?.querySelector?.('#ip-phaser-container');
+        if (box && typeof window.ResizeObserver === 'function') {
+            this._zoomObserver = new window.ResizeObserver(fit);
+            this._zoomObserver.observe(box);
+        }
+        const cue = this.gameContainer?.querySelector?.('#ip-more-below');
+        if (box) {
+            this._onBoxScroll = () => this._updateMoreBelow();
+            box.addEventListener('scroll', this._onBoxScroll, { passive: true });
+        }
+        if (cue && box) {
+            cue.addEventListener('click', () => {
+                box.scrollTo({ top: box.scrollHeight, behavior: 'auto' });
+            });
+            // Phaser also listens on the window and maps a press anywhere onto the canvas, so a
+            // press on the cue would reach the key under it: keep the cue's presses to itself.
+            // Releases go on to the window, so Phaser still ends a press begun on a key (R4 n1).
+            for (const type of ['mousedown', 'touchstart', 'pointerdown']) {
+                cue.addEventListener(type, (e) => e.stopPropagation());
+            }
+        }
+        // With touch capture off, a tap on the canvas is followed by the browser's
+        // compatibility mouse events, which Phaser would read as a second press. Touch events
+        // are left alone (cancelling touchend leaves every Phaser game's touch pointer held,
+        // slice 7 R4 B1); instead, mouse events within MOUSE_AFTER_TOUCH_MS of a touch are
+        // stopped on the box in the capture phase, before Phaser's canvas listener sees them.
+        if (box) this._watchCompatMouse(box);
+        fit();
+    }
+
+    // True when a mouse event at `now` is the browser's echo of a touch at `lastTouch`.
+    // Chrome says so outright: its compatibility mouse events carry
+    // sourceCapabilities.firesTouchEvents === true and a real mouse's carry false, so a real
+    // click right after a tap still gets through (slice 7 R5 m1). Without sourceCapabilities
+    // (Firefox, Safari) it falls back to the timer, and then, when both points are known,
+    // only an event within MOUSE_NEAR_TOUCH_PX of the touch counts as its echo.
+    static isCompatMouse(now, lastTouch, e = null, touchPoint = null) {
+        const caps = e?.sourceCapabilities;
+        if (caps && typeof caps.firesTouchEvents === 'boolean') return caps.firesTouchEvents;
+        const soon = Number.isFinite(lastTouch) && now - lastTouch >= 0 && now - lastTouch < MOUSE_AFTER_TOUCH_MS;
+        if (!soon) return false;
+        if (touchPoint && Number.isFinite(e?.clientX) && Number.isFinite(e?.clientY)) {
+            return Math.hypot(e.clientX - touchPoint.x, e.clientY - touchPoint.y) <= MOUSE_NEAR_TOUCH_PX;
+        }
+        return true;
+    }
+
+    _watchCompatMouse(box) {
+        const clock = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
+        let lastTouch = -Infinity;
+        let touchPoint = null;
+        const onTouch = (e) => {
+            lastTouch = clock();
+            const t = e?.changedTouches?.[0];
+            touchPoint = t && Number.isFinite(t.clientX) ? { x: t.clientX, y: t.clientY } : null;
+        };
+        const onMouse = (e) => { if (InfusionPumpMinigame.isCompatMouse(clock(), lastTouch, e, touchPoint)) e.stopPropagation(); };
+        const listeners = [
+            ['touchstart', onTouch, { capture: true, passive: true }],
+            ['touchend', onTouch, { capture: true, passive: true }],
+            ['mousedown', onMouse, { capture: true }],
+            ['mouseup', onMouse, { capture: true }],
+            ['mousemove', onMouse, { capture: true }]
+        ];
+        for (const [type, fn, opts] of listeners) box.addEventListener(type, fn, opts);
+        this._compatMouse = { box, listeners };
+    }
+
+    _unwatchZoom() {
+        if (this._zoomOnResize) window.removeEventListener('resize', this._zoomOnResize);
+        this._zoomOnResize = null;
+        this._zoomObserver?.disconnect?.();
+        this._zoomObserver = null;
+        const box = this.gameContainer?.querySelector?.('#ip-phaser-container');
+        if (box && this._onBoxScroll) box.removeEventListener('scroll', this._onBoxScroll);
+        this._onBoxScroll = null;
+        if (this._compatMouse) {
+            const { box: target, listeners } = this._compatMouse;
+            for (const [type, fn, opts] of listeners) target.removeEventListener(type, fn, opts);
+        }
+        this._compatMouse = null;
+    }
+
     init() {
         super.init();
         if (this.headerElement) this.headerElement.style.display = 'none';
@@ -81,8 +267,11 @@ export class InfusionPumpMinigame extends MinigameScene {
             return;
         }
 
-        this.gameContainer.style.cssText = 'width:100%;height:100%;min-height:400px;';
-        this.gameContainer.innerHTML = '<div id="ip-phaser-container" style="width:100%;height:100%"></div>';
+        this.gameContainer.style.cssText = 'width:100%;height:100%;min-height:0;';
+        this.gameContainer.innerHTML = '<div class="ip-scroll-frame">'
+            + '<div id="ip-phaser-container" class="ip-phaser-container ip-pixel-scroll"></div>'
+            + '<button type="button" id="ip-more-below" class="ip-more-below" hidden>MORE BELOW<span class="ip-more-below-arrow" aria-hidden="true"></span></button>'
+            + '</div>';
         this._setupPhaserGame();
     }
 
@@ -92,6 +281,7 @@ export class InfusionPumpMinigame extends MinigameScene {
 
     complete(success) {
         this._stopCursor();
+        this._unwatchZoom();
         if (this.phaserGame) {
             this.phaserGame.destroy(true);
             this.phaserGame = null;
@@ -101,6 +291,7 @@ export class InfusionPumpMinigame extends MinigameScene {
 
     cleanup() {
         this._stopCursor();
+        this._unwatchZoom();
         if (this.phaserGame) {
             this.phaserGame.destroy(true);
             this.phaserGame = null;
@@ -120,6 +311,9 @@ export class InfusionPumpMinigame extends MinigameScene {
                 self._buildPrescriptionPanel(this);
                 self._buildPumpDevice(this);
                 self._startCursor();
+                // The canvas exists now: pick its whole-number zoom, then put the X
+                // inside its top-right corner
+                self._watchZoom();
             }
         }
 
@@ -130,13 +324,25 @@ export class InfusionPumpMinigame extends MinigameScene {
                 width: W,
                 height: H,
                 backgroundColor: '#0d1324',
+                // Hard pixels, never smoothed (slice 7 R1 M3), and only ever zoomed by a whole
+                // number (R2 M2): a fractional FIT scale drops rows of the pixel text
+                pixelArt: true,
+                roundPixels: true,
                 scene: InfusionPumpScene,
+                // A swipe on the canvas scrolls its box on a short screen (slice 7 R3 M1): Phaser
+                // stops capturing touch, taps still reach the keys, and the canvas CSS allows
+                // vertical panning. The wheel is left to the browser for the same reason.
+                input: {
+                    touch: { capture: false },
+                    mouse: { preventDefaultWheel: false }
+                },
                 audio: {
                     context: MusicController.context
                 },
                 scale: {
-                    mode: Phaser.Scale.FIT,
-                    autoCenter: Phaser.Scale.CENTER_BOTH
+                    mode: Phaser.Scale.NONE,
+                    autoCenter: Phaser.Scale.NO_CENTER,
+                    zoom: 1
                 }
             });
             const wireIpAudio = () => wirePhaserGameSoundToBreakEscape(this.phaserGame);
@@ -160,88 +366,89 @@ export class InfusionPumpMinigame extends MinigameScene {
 
         const cx = RX_X + RX_W / 2;  // 153
         const x0 = RX_X + 10;         // left margin for labels
-        const x1 = RX_X + 80;         // left margin for values
+        const x1 = RX_X + 96;         // left margin for values (labels are 8px a letter)
 
-        const mono = { fontFamily: 'monospace', color: '#1a1a1a' };
-        const labelStyle = { ...mono, fontSize: '8px', color: '#666666' };
-        const valueStyle = { ...mono, fontSize: '9px' };
-        const tinyStyle  = { ...mono, fontSize: '7px', color: '#444444' };
+        // Legible pixel text (slice 7 R1 M3): VT323 at 16px for values, Press Start 2P at
+        // 8px for the small labels and the header; whole-pixel sizes only.
+        const mono = { fontFamily: 'VT323', color: '#1a1a1a' };
+        const labelStyle = { fontFamily: "'Press Start 2P', monospace", fontSize: '8px', color: '#666666', padding: { top: 4 } };
+        const valueStyle = { ...mono, fontSize: '16px', wordWrap: { width: RX_X + RX_W - 8 - x1 } };
+        const tinyStyle  = { ...mono, fontSize: '16px', color: '#444444' };
+
+        // Rows are placed from each text's measured height, with a 4px gap below the
+        // tallest text of a row and dividers 4px clear of the text on both sides, so no
+        // divider runs through a row (slice 7 R2 M1)
+        let y = 12;
+        const divider = () => {
+            y += 2;
+            gfx.lineStyle(2, 0xc8b880);
+            gfx.lineBetween(RX_X + 6, y, RX_X + RX_W - 6, y);
+            y += 6;
+        };
+        const row = (lbl, val, style = valueStyle) => {
+            const l = scene.add.text(x0, y, lbl, labelStyle);
+            const v = scene.add.text(x1, y, val, style);
+            y += Math.ceil(Math.max(l.height, v.height)) + 4;
+        };
 
         // Hospital header
-        scene.add.text(cx, 24, 'NORTHGATE GENERAL HOSPITAL NHS TRUST', {
-            ...mono, fontSize: '8px', fontStyle: 'bold', align: 'center', wordWrap: { width: RX_W - 16 }
+        const header = scene.add.text(cx, y, 'NORTHGATE GENERAL HOSPITAL NHS TRUST', {
+            fontFamily: "'Press Start 2P', monospace", fontSize: '8px', color: '#1a1a1a',
+            align: 'center', lineSpacing: 4, wordWrap: { width: RX_W - 16 }
         }).setOrigin(0.5, 0);
+        y += Math.ceil(header.height) + 4;
 
-        scene.add.text(cx, 38, 'WARD 7 \u2014 MEDICATION ADMINISTRATION RECORD', {
+        const sub = scene.add.text(cx, y, 'WARD 7: MEDICATION ADMINISTRATION RECORD', {
             ...tinyStyle, align: 'center', wordWrap: { width: RX_W - 16 }
         }).setOrigin(0.5, 0);
-
-        // Divider
-        gfx.lineStyle(1, 0xc8b880);
-        gfx.lineBetween(RX_X + 6, 54, RX_X + RX_W - 6, 54);
+        y += Math.ceil(sub.height);
+        divider();
 
         // Patient info fields
-        const fields1 = [
-            ['PATIENT',    this.sd.patient    || 'CHEN, MARY (DOB: 14/03/1962)', 63],
-            ['WARD',       this.sd.ward_bed   || 'Ward 7, Bed 2',                79],
-            ['CONSULTANT', this.sd.consultant || 'Dr. J. Patel',                 95],
-        ];
-        fields1.forEach(([lbl, val, y]) => {
-            scene.add.text(x0, y, lbl, labelStyle);
-            scene.add.text(x1, y, val, valueStyle);
-        });
-
-        gfx.lineBetween(RX_X + 6, 108, RX_X + RX_W - 6, 108);
+        row('PATIENT',    this.sd.patient    || 'CHEN, MARY (DOB: 14/03/1962)');
+        row('WARD',       this.sd.ward_bed   || 'Ward 7, Bed 2');
+        row('CONSULTANT', this.sd.consultant || 'Dr. J. Patel');
+        divider();
 
         // Drug field
-        scene.add.text(x0, 116, 'DRUG', labelStyle);
-        scene.add.text(x1, 116, `${this.drugName} (IV)`, valueStyle);
+        row('DRUG', `${this.drugName} (IV)`);
+        y += 2;
 
         // ── Dose line (the decimal-ambiguity mechanic) ──
         // Highlighted box — dose always shown as "10.0 mg/hr" in VT323 with tight
         // letter-spacing so the decimal is visually tiny, tempting misread as "100".
-        gfx.fillStyle(0xede8d8);
-        gfx.fillRect(RX_X + 6, 130, RX_W - 12, 52);
-        gfx.lineStyle(1, 0xc8b880);
-        gfx.strokeRect(RX_X + 6, 130, RX_W - 12, 52);
-
-        scene.add.text(x0, 134, 'RATE', labelStyle);
+        const boxY = y;
+        scene.add.text(x0, boxY + 4, 'RATE', labelStyle).setDepth(1);
 
         // VT323 with letterSpacing: -2 makes the "." tiny — the ambiguity mechanic
-        scene.add.text(x1, 134, this.rateDisplay, {
+        const rate = scene.add.text(x1, boxY + 4, this.rateDisplay, {
             fontFamily: 'VT323',
             fontSize: '36px',
             color: '#1a1a1a',
             letterSpacing: -2
-        });
-
-        gfx.lineBetween(RX_X + 6, 190, RX_X + RX_W - 6, 190);
+        }).setDepth(1);
+        const boxH = Math.max(52, Math.ceil(rate.height) + 8);
+        const boxGfx = scene.add.graphics();
+        boxGfx.fillStyle(0xede8d8);
+        boxGfx.fillRect(RX_X + 6, boxY, RX_W - 12, boxH);
+        boxGfx.lineStyle(2, 0xc8b880);
+        boxGfx.strokeRect(RX_X + 6, boxY, RX_W - 12, boxH);
+        y = boxY + boxH + 4;
+        divider();
 
         // Remaining fields
-        const fields2 = [
-            ['ROUTE',    'Intravenous',  198],
-            ['DURATION', this.sd.duration || '4 hours', 214],
-        ];
-        fields2.forEach(([lbl, val, y]) => {
-            scene.add.text(x0, y, lbl, labelStyle);
-            scene.add.text(x1, y, val, valueStyle);
-        });
-
-        gfx.lineBetween(RX_X + 6, 228, RX_X + RX_W - 6, 228);
+        row('ROUTE',    'Intravenous');
+        row('DURATION', this.sd.duration || '4 hours');
+        divider();
 
         // Signature fields
-        scene.add.text(x0, 236, 'PRESCRIBER', labelStyle);
-        scene.add.text(x1, 236, this.sd.prescriber || 'Dr. J. Patel', { ...valueStyle, fontStyle: 'italic' });
-
-        scene.add.text(x0, 252, 'PHARMACY', labelStyle);
-        scene.add.text(x1, 252, 'Checked \u2713', valueStyle);
-
-        scene.add.text(x0, 268, 'NURSE', labelStyle);
-        scene.add.text(x1, 268, '________________', { ...mono, fontSize: '9px', color: '#aaaaaa' });
+        row('PRESCRIBER', this.sd.prescriber || 'Dr. J. Patel');
+        row('PHARMACY', 'Checked');
+        row('NURSE', '____________', { ...mono, fontSize: '16px', color: '#aaaaaa' });
 
         if (this.sd.allergies) {
-            scene.add.text(x0, 288, 'ALLERGIES', labelStyle);
-            scene.add.text(x1, 288, this.sd.allergies, { ...valueStyle, color: '#b00020', fontStyle: 'bold' });
+            y += 4;
+            row('ALLERGIES', this.sd.allergies, { ...valueStyle, color: '#b00020' });
         }
     }
 
@@ -290,37 +497,38 @@ export class InfusionPumpMinigame extends MinigameScene {
         scene.add.text(sx, SCR_Y + 26, 'CURRENT RATE:  -- mg/hr',         screenText);
         scene.add.text(sx, SCR_Y + 44, 'VOL REMAINING: 50 mL',            screenText);
 
-        // Divider line on screen
+        // Divider line on screen, clear of the VOL REMAINING glyphs above it and the rows below
+        // (slice 7 R3 m3): the 16px VT323 row at +44 inks down to about +62
         const dg = scene.add.graphics();
-        dg.lineStyle(1, 0x1a5a1a);
-        dg.lineBetween(SCR_X + 4, SCR_Y + 60, SCR_X + SCR_W - 4, SCR_Y + 60);
+        dg.lineStyle(2, 0x1a5a1a);
+        dg.lineBetween(SCR_X + 4, SCR_Y + 66, SCR_X + SCR_W - 4, SCR_Y + 66);
 
         const libraryCompromised = this._libraryTampered();
 
         if (libraryCompromised && this.sd.library_ok_global) {
-            scene.add.text(sx, SCR_Y + 63,
+            scene.add.text(sx, SCR_Y + 69,
                 `LIBRARY RANGE: ${this.libraryMin}${this.libraryMax != null ? ' \u2013 ' + this.libraryMax : ''} mg/hr`, {
-                fontFamily: 'VT323', fontSize: '13px', color: '#00e060'
+                fontFamily: 'VT323', fontSize: '16px', color: '#00e060'
             });
-            scene.add.text(sx, SCR_Y + 78, 'ENTER NEW RATE (mg/hr):', screenText);
+            scene.add.text(sx, SCR_Y + 84, 'ENTER NEW RATE (mg/hr):', screenText);
         } else if (libraryCompromised) {
-            scene.add.text(sx, SCR_Y + 63, '\u26A0 DRUG LIB MIN: 25 mg/hr  [LIBRARY OVERRIDE]', {
-                fontFamily: 'VT323', fontSize: '13px', color: '#ff8800'
+            scene.add.text(sx, SCR_Y + 69, '! DRUG LIB MIN: 25 mg/hr  [LIBRARY OVERRIDE]', {
+                fontFamily: 'VT323', fontSize: '16px', color: '#ff8800'
             });
-            scene.add.text(sx, SCR_Y + 78, 'ENTER OVERRIDE RATE (mg/hr):', {
+            scene.add.text(sx, SCR_Y + 84, 'ENTER OVERRIDE RATE (mg/hr):', {
                 ...screenText, color: '#ff8800'
             });
         } else if (this.restoredMin != null && this.restoredMax != null) {
-            scene.add.text(sx, SCR_Y + 63, `LIBRARY RANGE: ${this.restoredMin} \u2013 ${this.restoredMax} mg/hr`, {
-                fontFamily: 'VT323', fontSize: '13px', color: '#00e060'
+            scene.add.text(sx, SCR_Y + 69, `LIBRARY RANGE: ${this.restoredMin} \u2013 ${this.restoredMax} mg/hr`, {
+                fontFamily: 'VT323', fontSize: '16px', color: '#00e060'
             });
-            scene.add.text(sx, SCR_Y + 78, 'ENTER NEW RATE (mg/hr):', screenText);
+            scene.add.text(sx, SCR_Y + 84, 'ENTER NEW RATE (mg/hr):', screenText);
         } else {
-            scene.add.text(sx, SCR_Y + 68, 'ENTER NEW RATE (mg/hr):', screenText);
+            scene.add.text(sx, SCR_Y + 74, 'ENTER NEW RATE (mg/hr):', screenText);
         }
 
         // Display row — larger text showing current input + cursor
-        this._displayText = scene.add.text(sx, (libraryCompromised || (this.restoredMin != null && this.restoredMax != null)) ? SCR_Y + 104 : SCR_Y + 96, '_', {
+        this._displayText = scene.add.text(sx, (libraryCompromised || (this.restoredMin != null && this.restoredMax != null)) ? SCR_Y + 110 : SCR_Y + 102, '_', {
             fontFamily: 'VT323',
             fontSize: '32px',
             color: (libraryCompromised && !this.sd.library_ok_global) ? '#ff8800' : '#00ff88',
@@ -329,7 +537,7 @@ export class InfusionPumpMinigame extends MinigameScene {
     }
 
     _buildKeypad(scene) {
-        const keys = ['1','2','3','4','5','6','7','8','9','.','0','\u232B'];
+        const keys = ['1','2','3','4','5','6','7','8','9','.','0','DEL'];
 
         keys.forEach((k, i) => {
             const col = i % 3;
@@ -341,7 +549,7 @@ export class InfusionPumpMinigame extends MinigameScene {
             const cy = by + KP_BTN_H / 2;
 
             // Colour differentiation
-            const isBack    = (k === '\u232B');
+            const isBack    = (k === 'DEL');
             const isDot     = (k === '.');
             const fillNorm  = isBack ? 0xd8c0b0 : isDot ? 0xd8d8c0 : 0xd0d5d8;
             const fillHover = isBack ? 0xe8d0c0 : isDot ? 0xe8e8d0 : 0xe0e5e8;
@@ -353,19 +561,19 @@ export class InfusionPumpMinigame extends MinigameScene {
                 .setInteractive({ useHandCursor: true })
                 .on('pointerover',  () => btn.setFillStyle(fillHover))
                 .on('pointerout',   () => btn.setFillStyle(this.confirmed ? fillNorm : fillNorm))
-                .on('pointerdown',  () => {
-                    btn.setFillStyle(fillDown);
-                    if (k === '\u232B') this.handleBackspace();
-                    else if (k === '.') this.handleDecimal();
-                    else this.handleDigit(k);
-                })
+                .on('pointerdown',  () => btn.setFillStyle(fillDown))
                 .on('pointerup',    () => btn.setFillStyle(fillNorm));
+            this._onTap(btn, () => {
+                if (k === 'DEL') this.handleBackspace();
+                else if (k === '.') this.handleDecimal();
+                else this.handleDigit(k);
+            });
 
             // Key label
-            const label = isBack ? '\u232B' : k;
+            const label = isBack ? 'DEL' : k;   // pixel font has no erase glyph (slice 7)
             scene.add.text(cx, cy, label, {
-                fontFamily: isBack ? 'monospace' : "'Press Start 2P', monospace",
-                fontSize:   isDot  ? '18px' : isBack ? '20px' : '12px',
+                fontFamily: "'Press Start 2P', monospace",
+                fontSize:   '16px',   // Press Start 2P on its 8px grid; DEL matches the digits (R3 n3)
                 color: '#1a1a1a'
             }).setOrigin(0.5);
         });
@@ -380,12 +588,12 @@ export class InfusionPumpMinigame extends MinigameScene {
             .setInteractive({ useHandCursor: true })
             .on('pointerover',  () => this._confirmBtn.setFillStyle(0x2a5a2a))
             .on('pointerout',   () => this._confirmBtn.setFillStyle(0x1a4a1a))
-            .on('pointerdown',  () => this.handleConfirm())
             .on('pointerup',    () => this._confirmBtn.setFillStyle(0x1a4a1a));
+        this._onTap(this._confirmBtn, () => this.handleConfirm());
 
         scene.add.text(cx, cy, 'CONFIRM', {
             fontFamily: "'Press Start 2P', monospace",
-            fontSize: '11px',
+            fontSize: '16px',
             color: '#00ff88',
             letterSpacing: 1
         }).setOrigin(0.5);
@@ -574,14 +782,14 @@ export class InfusionPumpMinigame extends MinigameScene {
         }).setOrigin(0.5).setDepth(102);
         const entryTxt = scene.add.text(mx, my - 10,
             `Your entry: ${enteredValue} mg/hr \u2014 flagged as below minimum`, {
-            fontFamily: 'monospace', fontSize: '10px', color: '#ffcc88',
+            fontFamily: 'VT323', fontSize: '16px', color: '#ffcc88',
             align: 'center', wordWrap: { width: mw - 40 }
         }).setOrigin(0.5).setDepth(102);
         const marTxt   = scene.add.text(mx, my + 18, `Paper MAR prescription: ${this.rateDisplay}`, {
-            fontFamily: 'monospace', fontSize: '11px', color: '#dddddd'
+            fontFamily: 'VT323', fontSize: '16px', color: '#dddddd'
         }).setOrigin(0.5).setDepth(102);
         const promptTxt = scene.add.text(mx, my + 40, this.sd.conflict_prompt || 'Trust the paper record and override the device?', {
-            fontFamily: 'monospace', fontSize: '10px', color: '#aaaaaa',
+            fontFamily: 'VT323', fontSize: '16px', color: '#aaaaaa',
             align: 'center', wordWrap: { width: mw - 40 }
         }).setOrigin(0.5).setDepth(102);
 
@@ -590,7 +798,7 @@ export class InfusionPumpMinigame extends MinigameScene {
         const BTN_FILL = 0x1c2430, BTN_HOVER = 0x2c3848, BTN_EDGE = 0x8fa3b8, BTN_TEXT = '#dde6f0';
         const confirmBtn = scene.add.rectangle(mx, my + 88, mw - 40, 38, BTN_FILL)
             .setStrokeStyle(2, BTN_EDGE).setInteractive({ useHandCursor: true }).setDepth(102)
-            .on('pointerdown', () => this._confirmLibraryOverride())
+            .on('tap', () => this._confirmLibraryOverride())
             .on('pointerover',  () => confirmBtn.setFillStyle(BTN_HOVER))
             .on('pointerout',   () => confirmBtn.setFillStyle(BTN_FILL));
         const confirmTxt = scene.add.text(mx, my + 88, this.sd.hold_label || 'CONFIRM OVERRIDE \u2014 USE PAPER MAR', {
@@ -599,9 +807,11 @@ export class InfusionPumpMinigame extends MinigameScene {
 
         const cancelBtn = scene.add.rectangle(mx, my + 138, mw - 40, 38, BTN_FILL)
             .setStrokeStyle(2, BTN_EDGE).setInteractive({ useHandCursor: true }).setDepth(102)
-            .on('pointerdown', () => this._dismissModal())
+            .on('tap', () => this._dismissModal())
             .on('pointerover',  () => cancelBtn.setFillStyle(BTN_HOVER))
             .on('pointerout',   () => cancelBtn.setFillStyle(BTN_FILL));
+        this._armTap(confirmBtn);
+        this._armTap(cancelBtn);
         const cancelTxt = scene.add.text(mx, my + 138, this.sd.reenter_label || 'CANCEL \u2014 RE-ENTER', {
             fontFamily: "'Press Start 2P', monospace", fontSize: '8px', color: BTN_TEXT
         }).setOrigin(0.5).setDepth(103);
@@ -676,15 +886,15 @@ export class InfusionPumpMinigame extends MinigameScene {
 
         // Prompt
         const promptTxt = scene.add.text(mx, my + 40, 'Does this match the paper prescription?', {
-            fontFamily: 'monospace',
-            fontSize: '11px',
+            fontFamily: 'VT323',
+            fontSize: '16px',
             color: '#aaaaaa'
         }).setOrigin(0.5).setDepth(102);
 
         // "CORRECT — ADMINISTER" button
         const correctBtn = scene.add.rectangle(mx, my + 82, mw - 40, 38, 0x1a4a1a)
             .setStrokeStyle(2, 0x00c853).setInteractive({ useHandCursor: true }).setDepth(102)
-            .on('pointerdown', () => this._confirmWrongDose())
+            .on('tap', () => this._confirmWrongDose())
             .on('pointerover',  () => correctBtn.setFillStyle(0x2a5a2a))
             .on('pointerout',   () => correctBtn.setFillStyle(0x1a4a1a));
         const correctTxt = scene.add.text(mx, my + 82, 'CORRECT \u2014 ADMINISTER', {
@@ -696,9 +906,11 @@ export class InfusionPumpMinigame extends MinigameScene {
         // "INCORRECT — RE-ENTER" button
         const wrongBtn = scene.add.rectangle(mx, my + 130, mw - 40, 38, 0x4a1a1a)
             .setStrokeStyle(2, 0xd32f2f).setInteractive({ useHandCursor: true }).setDepth(102)
-            .on('pointerdown', () => this._dismissModal())
+            .on('tap', () => this._dismissModal())
             .on('pointerover',  () => wrongBtn.setFillStyle(0x5a2a2a))
             .on('pointerout',   () => wrongBtn.setFillStyle(0x4a1a1a));
+        this._armTap(correctBtn);
+        this._armTap(wrongBtn);
         const wrongTxt = scene.add.text(mx, my + 130, 'INCORRECT \u2014 RE-ENTER', {
             fontFamily: "'Press Start 2P', monospace",
             fontSize: '8px',

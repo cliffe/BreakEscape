@@ -94,7 +94,9 @@ function assertText(el, label, { dashes = true, wordSpans = false } = {}) {
 }
 
 test('the base header shows a hostile title and cancel text as text', () => {
-    const mg = new MinigameScene(fresh(), { title: HOSTILE, cancelText: HOSTILE, headerElement: true });
+    // A scene that keeps its bottom button (MinigameScene.keepsCancelButton, slice 7 R1)
+    class KeepsCancel extends MinigameScene { static keepsCancelButton = true; }
+    const mg = new KeepsCancel(fresh(), { title: HOSTILE, cancelText: HOSTILE, headerElement: true });
     mg.init();
     assertText(document.querySelector('.minigame-header h3'), 'base header');
     assertText(document.getElementById('minigame-cancel'), 'cancel button', { dashes: false });

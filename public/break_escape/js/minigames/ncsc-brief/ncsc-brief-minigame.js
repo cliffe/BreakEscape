@@ -28,6 +28,8 @@ import { authorHtml } from '../../utils/author-html.js';
  */
 
 export class NcscBriefMinigame extends MinigameScene {
+    // The X sits inside the frame (MinigameScene.closeInsideFrame)
+    static closeInsideFrame = true;
     constructor(container, params = {}) {
         const sd = params.lockable?.scenarioData || {};
         const md = sd.minigameData || {};
@@ -91,10 +93,10 @@ export class NcscBriefMinigame extends MinigameScene {
         if (!el) return;
         el.innerHTML = `
 <div class="ncsc-envelope-panel">
-  <div class="ncsc-envelope-icon">&#9993;</div>
+  <img class="ncsc-envelope-icon" src="/break_escape/assets/icons/mail-new.png" alt="" width="64" height="64">
   <div class="ncsc-envelope-name">NCSC Attribution Brief</div>
   <div class="ncsc-envelope-ref">${authorHtml(this._caseRef)}</div>
-  <div class="ncsc-status-badge ncsc-status-locked">&#128274; SEALED &mdash; AUTHORISATION REQUIRED</div>
+  <div class="ncsc-status-badge ncsc-status-locked"><img class="ncsc-badge-icon" src="/break_escape/assets/icons/npc-lock.png" alt="" width="16" height="16"> SEALED &mdash; AUTHORISATION REQUIRED</div>
   <div class="ncsc-sealed-message">${authorHtml(this._sealedMessage)}</div>
 </div>`;
     }
@@ -106,10 +108,10 @@ export class NcscBriefMinigame extends MinigameScene {
         if (!el) return;
         el.innerHTML = `
 <div class="ncsc-envelope-panel">
-  <div class="ncsc-envelope-icon">&#9993;</div>
+  <img class="ncsc-envelope-icon" src="/break_escape/assets/icons/mail-new.png" alt="" width="64" height="64">
   <div class="ncsc-envelope-name">NCSC Attribution Brief</div>
   <div class="ncsc-envelope-ref">${authorHtml(this._caseRef)}</div>
-  <div class="ncsc-status-badge ncsc-status-ready">&#10003; ${authorHtml(this._openableBadge)}</div>
+  <div class="ncsc-status-badge ncsc-status-ready"><img class="ncsc-badge-icon" src="/break_escape/assets/icons/mark-tick.png" alt="" width="16" height="16"> ${authorHtml(this._openableBadge)}</div>
   <div class="ncsc-sealed-message ncsc-ready-message">${authorHtml(this._openableMessage)}</div>
   <button class="ncsc-open-btn" id="ncsc-open-btn">BREAK SEAL &mdash; OPEN BRIEF</button>
 </div>`;
@@ -177,7 +179,7 @@ export class NcscBriefMinigame extends MinigameScene {
         const paras = (s.paragraphs || []).map(p => `<p>${authorHtml(p)}</p>`).join('');
         return `
   <div class="ncsc-legal-gap">
-    <div class="ncsc-legal-gap-title">&#9888; ${authorHtml(s.title)}</div>
+    <div class="ncsc-legal-gap-title">${authorHtml(s.title)}</div>
     ${paras}
   </div>`;
     }
@@ -186,7 +188,7 @@ export class NcscBriefMinigame extends MinigameScene {
         const paras = (s.paragraphs || []).map(p => `<p>${authorHtml(p)}</p>`).join('');
         return `
   <div class="ncsc-coverage-note">
-    <div class="ncsc-coverage-note-title">&#9889; ${authorHtml(s.title)}</div>
+    <div class="ncsc-coverage-note-title">${authorHtml(s.title)}</div>
     ${paras}
   </div>`;
     }

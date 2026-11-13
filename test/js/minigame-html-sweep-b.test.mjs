@@ -51,10 +51,29 @@ function quietly(fn) {
 }
 
 // Nothing the scenario wrote became an element, attribute or handler
+// The NCSC brief draws trusted pixel icons as <img>: exactly these classes, each
+// pinned to its asset path. Any other <img> means scenario text became markup.
+const TRUSTED_ICONS = {
+    'ncsc-envelope-icon': ['/break_escape/assets/icons/mail-new.png'],
+    'ncsc-badge-icon': ['/break_escape/assets/icons/npc-lock.png', '/break_escape/assets/icons/mark-tick.png'],
+};
+
 function assertClean(label) {
     const root = document.getElementById('mg');
-    assert.equal(root.querySelector('img'), null, `${label}: no img injected`);
-    assert.equal(root.querySelector('[onerror], [onmouseover], u'), null, `${label}: no injected handler or element`);
+    for (const img of root.querySelectorAll('img')) {
+        const cls = img.getAttribute('class') || '';
+        const allowed = TRUSTED_ICONS[cls];
+        assert.ok(allowed, `${label}: no img injected (found class "${cls}")`);
+        assert.ok(allowed.includes(img.getAttribute('src')), `${label}: icon ${cls} keeps its asset src`);
+        const names = Array.from(img.attributes, (a) => a.name).sort();
+        assert.deepEqual(names, ['alt', 'class', 'height', 'src', 'width'], `${label}: icon ${cls} carries only class, src, alt, width and height`);
+        assert.ok(!names.some((n) => n.startsWith('on')), `${label}: icon ${cls} has no event handler attribute`);
+    }
+    assert.equal(root.querySelector('u'), null, `${label}: no injected element`);
+    for (const el of root.querySelectorAll('*')) {
+        const handler = Array.from(el.attributes).find((a) => a.name.startsWith('on'));
+        assert.equal(handler, undefined, `${label}: no injected handler (${handler?.name} on ${el.tagName})`);
+    }
 }
 
 test('backup recovery: a scenario outcomeTone cannot break out of the panel class', () => {

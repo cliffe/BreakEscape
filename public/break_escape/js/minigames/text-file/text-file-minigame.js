@@ -23,6 +23,8 @@ export function textFileNotebookEntry(data) {
 }
 
 export class TextFileMinigame extends MinigameScene {
+    // The X sits inside the frame (MinigameScene.closeInsideFrame)
+    static closeInsideFrame = true;
     constructor(container, params) {
         super(container, params);
         
@@ -52,21 +54,6 @@ export class TextFileMinigame extends MinigameScene {
             <p>Viewing text file contents</p>
         `;
         this.headerElement.querySelector('h3').append(displayDashes(this.textFileData.fileName ?? ''));
-        
-        // Add notebook button to minigame controls (before cancel button)
-        if (this.controlsElement) {
-            const notebookBtn = document.createElement('button');
-            notebookBtn.className = 'minigame-button';
-            notebookBtn.id = 'minigame-notebook';
-            notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
-            this.controlsElement.appendChild(notebookBtn);
-            
-            // Change cancel button text to "Close"
-            const cancelBtn = document.getElementById('minigame-cancel');
-            if (cancelBtn) {
-                cancelBtn.innerHTML = 'Close';
-            }
-        }
         
         // Set up the text file interface
         this.setupTextFileInterface();
@@ -105,6 +92,7 @@ export class TextFileMinigame extends MinigameScene {
                         <div class="content-actions">
                             <button class="action-btn" id="copy-btn" title="Copy to clipboard"><img src="/break_escape/assets/icons/copy-sm.png" alt="Clipboard" class="icon-small"> Copy</button>
                             <button class="action-btn" id="select-all-btn" title="Select all text">Select All</button>
+                            <button class="action-btn" id="minigame-notebook" title="Add to Notepad"><img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad</button>
                         </div>
                     </div>
                     <div class="file-content" id="file-content">

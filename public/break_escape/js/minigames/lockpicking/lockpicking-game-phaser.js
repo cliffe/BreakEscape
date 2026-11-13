@@ -155,10 +155,6 @@ export class LockpickingMinigamePhaser extends MinigameScene {
         // Lift speed parameter (can be set to fast values, but reasonable default for hard)
         this.liftSpeed = params.liftSpeed || (this.difficulty === 'hard' ? 1.2 : 1);
         
-        // Close button customization
-        this.closeButtonText = params.cancelText || 'Cancel';
-        this.closeButtonAction = params.closeButtonAction || 'close';
-        
         // Key mode settings
         this.keyMode = params.keyMode || false;
         this.keyData = params.keyData || null; // Key data with cuts/ridges
@@ -313,54 +309,10 @@ export class LockpickingMinigamePhaser extends MinigameScene {
     init() {
         super.init();
         
-        // Customize the close button
-        const closeBtn = document.getElementById('minigame-close');
-        if (closeBtn) {
-            closeBtn.textContent = '×';
-            
-            // Remove the default close action
-            this._eventListeners = this._eventListeners.filter(listener => 
-                !(listener.element === closeBtn && listener.eventType === 'click')
-            );
-            
-            // Add custom action based on closeButtonAction parameter
-            if (this.closeButtonAction === 'reset') {
-                this.addEventListener(closeBtn, 'click', () => {
-                    this.pinMgmt.resetAllPins();
-                    this.keyInsertion.updateFeedback("Lock reset - try again");
-                });
-            } else {
-                // Default close action
-                this.addEventListener(closeBtn, 'click', () => {
-                    this.complete(false);
-                });
-            }
-        }
-        
-        // Customize the cancel button
-        const cancelBtn = document.getElementById('minigame-cancel');
-        if (cancelBtn) {
-            cancelBtn.textContent = this.closeButtonText;
-            
-            // Remove the default cancel action
-            this._eventListeners = this._eventListeners.filter(listener => 
-                !(listener.element === cancelBtn && listener.eventType === 'click')
-            );
-            
-            // Add custom action based on closeButtonAction parameter
-            if (this.closeButtonAction === 'reset') {
-                this.addEventListener(cancelBtn, 'click', () => {
-                    this.pinMgmt.resetAllPins();
-                    this.keyInsertion.updateFeedback("Lock reset - try again");
-                });
-            } else {
-                // Default cancel action
-                this.addEventListener(cancelBtn, 'click', () => {
-                    this.complete(false);
-                });
-            }
-        }
-        
+        // The X and Esc close through the shell's closeByPlayer(). There is no Cancel beside
+        // the X: the old bottom button could only close as well, and its unused "reset the
+        // pins" option was dropped (slice 7 R2 n1).
+
         this.headerElement.innerHTML = `
             <h3>Lockpicking</h3>
             <p>Apply tension and hold click on pins to lift them to the shear line</p>

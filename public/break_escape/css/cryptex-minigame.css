@@ -2,6 +2,8 @@
 
 /* ── Wrapper ──────────────────────────────────────────────────────────────── */
 .cryptex-wrapper {
+    font-synthesis: none;
+    font-weight: normal;
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -30,8 +32,8 @@
 .cryptex-header h2 {
     font-family: var(--ui-heading-font, 'Press Start 2P'), monospace;
     margin: 0 0 8px;
-    font-size: 18px;
-    font-weight: bold;
+    font-size: 16px;   /* Press Start 2P on its 8px grid */
+    font-weight: normal;   /* no synthetic bold on a pixel face (slice 7 R2 m2) */
     color: #ffffff;
     letter-spacing: 0.05em;
     text-transform: uppercase;
@@ -68,7 +70,7 @@
     color: #8899bb;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    font-weight: bold;
+    font-weight: normal;   /* no synthetic bold on a pixel face (slice 7 R2 m2) */
     min-height: 12px;
 }
 
@@ -114,20 +116,30 @@
 }
 
 .cryptex-wheel-display {
-    font-size: 56px;
-    font-weight: bold;
-    color: #ffffff;
+    /* GNF for the letter wheels, so the cryptex has its own face beside the combination
+       lock's Press Start 2P (the user's call, slice 7 R3 m1). GNF's font pixel is
+       size/20.48, so 82px (four font pixels a grid step, R4 m1) is one of its few crisp
+       sizes, and only with grayscale text: will-change switches off subpixel (LCD) text on
+       this element. The line box is the glyph's 56px height. GNF's ink sits 2px below the
+       middle of its line box, and the line height does not move it (flex centres the line
+       box), so the padding is 2px lighter on top than below to centre the ink: equal
+       margins above and below the letter at every size (R4 m1). Brass on navy as before. */
+    font-size: 82px;
+    font-weight: normal;
+    color: #e8c070;
     background: #0f1826;
     border: 2px solid #334466;
-    padding: 10px 20px;
+    padding: 8px 20px 12px;
     width: 80px;
     height: 80px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: 'VT323', 'GNF', monospace;
-    letter-spacing: 0.1em;
+    font-family: 'GNF', monospace;
+    line-height: 56px;
+    letter-spacing: 0;
     flex-shrink: 0;
+    will-change: transform;
     transition: border-color 0.2s, color 0.2s;
 }
 
@@ -138,7 +150,6 @@
 
 .cryptex-wheel-display.worn {
     opacity: 0.3;
-    font-style: italic;
 }
 
 /* ── Hint strip ───────────────────────────────────────────────────────── */
@@ -157,7 +168,7 @@
 
 .hint-char {
     font-size: 18px;
-    font-weight: bold;
+    font-weight: normal;   /* no synthetic bold on a pixel face (slice 7 R2 m2) */
     color: #f5a623;
     font-family: 'VT323', 'GNF', monospace;
     letter-spacing: 0.05em;
@@ -192,12 +203,12 @@
 
 .cryptex-status-message.wrong {
     color: #ff8888;
-    font-weight: bold;
+    font-weight: normal;   /* no synthetic bold on a pixel face (slice 7 R2 m2) */
 }
 
 .cryptex-status-message.success {
     color: #88ee88;
-    font-weight: bold;
+    font-weight: normal;   /* no synthetic bold on a pixel face (slice 7 R2 m2) */
 }
 
 /* ── Footer with buttons ──────────────────────────────────────────────── */
@@ -275,5 +286,19 @@
 
 .cryptex-wrapper.opened .cryptex-header p {
     color: #88ee88;
-    font-weight: bold;
+    font-weight: normal;   /* no synthetic bold on a pixel face (slice 7 R2 m2) */
+}
+
+/* Short screens (a 412px-high landscape phone): tighter rows so the frame wraps the
+   wheels, the hint strip, the status and Reset/Submit (slice 7 R1); anything still taller
+   scrolls inside the frame */
+@media (max-height: 560px) {
+    .cryptex-wrapper { min-height: 0; }
+    .cryptex-header { padding: 6px 16px; }
+    .cryptex-wheels { padding: 8px 16px; }
+    .cryptex-wheel-group { gap: 4px; }
+    .cryptex-wheel-display { height: 64px; padding: 4px 16px 8px; }
+    .cryptex-hint-strip { padding: 4px 16px; min-height: 0; }
+    .cryptex-status { min-height: 0; padding: 4px 16px; }
+    .cryptex-footer { padding: 6px 16px; }
 }
