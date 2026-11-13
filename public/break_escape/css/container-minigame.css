@@ -626,15 +626,14 @@
 }
 
 /* The Copy / Move dialog on a PC monitor's screen (UX slice 2c R3): centred without a
-   transform (no half pixels), never taller than its window (it ran past the screen's top and
-   bottom at x2), GNF at 16px in the title bar as the share window's, the PC's thin buttons,
-   and no see-through shadow */
+   transform, on whole pixels by the script (R4 m3, centreOnWholePixels: margin: auto put an
+   odd spare width or height on a half pixel), never taller than its window (it ran past the
+   screen's top and bottom at x2), GNF at 16px in the title bar as the share window's, the
+   PC's thin buttons, and no see-through shadow */
 .pc-monitor .desktop-transfer-dialog {
     top: 0;
-    right: 0;
-    bottom: 0;
     left: 0;
-    margin: auto;
+    margin: 0;
     width: fit-content;
     height: fit-content;
     max-height: calc(100% - 8px);

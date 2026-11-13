@@ -8,7 +8,7 @@ import { resolveObjectField } from '../../utils/conditional-text.js';
 import { escapeHtml } from '../../utils/escape-html.js';
 import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { mentionsComputer } from '../../utils/computer-keywords.js';
-import { mountPcMonitor, cssZoomOf } from '../../utils/pc-monitor.js';
+import { mountPcMonitor, cssZoomOf, postitNotebookEntry } from '../../utils/pc-monitor.js';
 import { MORE_BELOW_TEXT } from '../../utils/more-below.js';
 import { applyHeadshotBox, npcRecordFor, headshotSourceFor } from '../../utils/npc-headshot.js';
 
@@ -257,6 +257,18 @@ export function evenShareLabels(grid, selector = '.container-content-label') {
     if (typeof document !== 'undefined') document.fonts?.ready?.then?.(even);
 }
 
+/**
+ * Centre an absolutely placed box in its host on whole pixels (R4 m3): left and top are
+ * the spare width and height halved and rounded down, never below 0.
+ */
+export function centreOnWholePixels(box, host) {
+    if (!box?.style || !host) return;
+    const left = Math.max(0, Math.floor(((host.clientWidth || 0) - (box.offsetWidth || 0)) / 2));
+    const top = Math.max(0, Math.floor(((host.clientHeight || 0) - (box.offsetHeight || 0)) / 2));
+    box.style.left = `${left}px`;
+    box.style.top = `${top}px`;
+}
+
 export class ContainerMinigame extends MinigameScene {
     // The X sits inside the frame (MinigameScene.closeInsideFrame)
     static closeInsideFrame = true;
@@ -319,11 +331,23 @@ export class ContainerMinigame extends MinigameScene {
 
     /** Put the game area in the PC monitor frame (after super.init()). */
     mountMonitor() {
-        const data = this.containerItem?.scenarioData || {};
-        const note = this.desktopMode && data.postitNote && data.showPostit
-            ? escapeHtmlKeepWords(displayDashes(data.postitNote)) : '';
+        const raw = this.monitorPostit();
+        const note = raw ? escapeHtmlKeepWords(displayDashes(raw)) : '';
         this.pcMonitor = mountPcMonitor(this, { name: displayDashes(this.monitorName()), postitHtml: note, pcId: this.monitorPcId() });
         if (this.pcMonitor?.postit) makeDraggable(this.pcMonitor.postit);
+    }
+
+    /**
+     * The post-it stuck on this PC's monitor, as raw text, or null (R4 m2). The note is on
+     * the monitor, not the desktop: a share window opened from a desktop shows that PC's
+     * note too. A share opened from the network view has no PC monitor of its own.
+     */
+    monitorPostit() {
+        if (this.mode === 'npc') return null;
+        const data = this.desktopMode ? this.containerItem?.scenarioData
+            : (this.shareFolder ? this.parentLockable?.scenarioData : null);
+        return data && data.showPostit && typeof data.postitNote === 'string' && data.postitNote.trim()
+            ? data.postitNote : null;
     }
 
     /** The PC whose frame this is (the share's PC for a folder window), for its kept post-it height. */
@@ -750,7 +774,10 @@ export class ContainerMinigame extends MinigameScene {
         }
 
         // Add notebook button to minigame controls if postit note exists (before cancel button)
-        const controls = (this.containerItem.scenarioData.postitNote && this.containerItem.scenarioData.showPostit) ? this.ensureControlsRow() : null;
+        // In the PC monitor the note's button follows the note onto every view (R4 m2)
+        const hasNote = this.pcMonitor ? !!this.monitorPostit()
+            : !!(this.containerItem.scenarioData.postitNote && this.containerItem.scenarioData.showPostit);
+        const controls = hasNote ? this.ensureControlsRow() : null;
         if (controls) {
             const notebookBtn = document.createElement('button');
             notebookBtn.className = 'minigame-button';
@@ -1269,7 +1296,9 @@ export class ContainerMinigame extends MinigameScene {
      * R3 M2): the reader takes the frame's name and the PC whose kept post-it height sizes it.
      */
     pcScreenExtras() {
-        return this.pcMonitor ? { pcScreen: { name: this.monitorName(), pcId: this.monitorPcId() } } : {};
+        if (!this.pcMonitor) return {};
+        const postitNote = this.monitorPostit();
+        return { pcScreen: { name: this.monitorName(), pcId: this.monitorPcId(), ...(postitNote ? { postitNote } : {}) } };
     }
 
     /** What a stand-in for an item taken or read from here carries: the PC or the share it came from. */
@@ -1306,12 +1335,28 @@ export class ContainerMinigame extends MinigameScene {
             </div>`;
         host.appendChild(dialog);
         this.transferDialog = { item, element, choices, el: dialog };
+        if (this.pcMonitor) {
+            // Centred on whole pixels on both axes (R4 m3): margin: auto split an odd spare
+            // width or height into half pixels. Again when the pixel font arrives and on resize.
+            this.centreTransferDialog();
+            if (typeof document !== 'undefined') document.fonts?.ready?.then?.(() => this.centreTransferDialog());
+            if (!this._transferDialogResize && typeof window !== 'undefined') {
+                this._transferDialogResize = true;
+                this.addEventListener(window, 'resize', () => this.centreTransferDialog());
+            }
+        }
         dialog.querySelectorAll('[data-choice]').forEach(btn => {
             this.addEventListener(btn, 'click', (e) => {
                 e.stopPropagation();
                 this.chooseTransfer(btn.dataset.choice);
             });
         });
+    }
+
+    /** Put the open Copy / Move dialog in the middle of its window, on whole pixels (R4 m3). */
+    centreTransferDialog() {
+        const dialog = this.transferDialog?.el;
+        if (dialog?.isConnected) centreOnWholePixels(dialog, dialog.parentElement);
     }
 
     closeTransferDialog() {
@@ -1544,37 +1589,45 @@ export class ContainerMinigame extends MinigameScene {
     addPostitToNotebook() {
         console.log('Adding postit note to notebook:', this.containerItem.scenarioData.postitNote);
 
-        const postitNote = this.containerItem.scenarioData.postitNote;
+        // A share window on a PC notes that PC's post-it (R4 m2), without the share's file list
+        const sharesNote = this.pcMonitor && this.shareFolder;
+        const postitNote = sharesNote ? this.monitorPostit() : this.containerItem.scenarioData.postitNote;
         if (!postitNote || postitNote.trim() === '') {
             this.showMessage('No postit note to add.', 'error');
             return;
         }
 
-        // Create comprehensive notebook content
-        const notebookTitle = `Postit Note - ${this.containerItem.scenarioData.name}`;
-        let notebookContent = `Postit Note:\n${'-'.repeat(50)}\n\n${postitNote}`;
-        
-        // Add container contents list
-        notebookContent += `\n\n${'='.repeat(20)}\n`;
-        notebookContent += `CONTAINER CONTENTS: ${this.containerItem.scenarioData.name}\n`;
-        notebookContent += `${'='.repeat(20)}\n`;
-        
-        if (this.contents && this.contents.length > 0) {
-            this.contents.forEach((item, index) => {
-                notebookContent += `${index + 1}. ${item.name || item.type}`;
-                if (item.description) {
-                    notebookContent += ` - ${item.description}`;
-                }
-                notebookContent += '\n';
-            });
+        let notebookTitle, notebookContent, notebookObservations;
+        if (sharesNote) {
+            ({ title: notebookTitle, content: notebookContent, observations: notebookObservations }
+                = postitNotebookEntry(this.monitorName(), postitNote));
         } else {
-            notebookContent += 'No items found\n';
+            // Create comprehensive notebook content
+            notebookTitle = `Postit Note - ${this.containerItem.scenarioData.name}`;
+            notebookContent = `Postit Note:\n${'-'.repeat(50)}\n\n${postitNote}`;
+
+            // Add container contents list
+            notebookContent += `\n\n${'='.repeat(20)}\n`;
+            notebookContent += `CONTAINER CONTENTS: ${this.containerItem.scenarioData.name}\n`;
+            notebookContent += `${'='.repeat(20)}\n`;
+
+            if (this.contents && this.contents.length > 0) {
+                this.contents.forEach((item, index) => {
+                    notebookContent += `${index + 1}. ${item.name || item.type}`;
+                    if (item.description) {
+                        notebookContent += ` - ${item.description}`;
+                    }
+                    notebookContent += '\n';
+                });
+            } else {
+                notebookContent += 'No items found\n';
+            }
+
+            notebookContent += `${'='.repeat(20)}\n`;
+            notebookContent += `Date: ${new Date().toLocaleString()}`;
+
+            notebookObservations = `Postit note found in ${this.containerItem.scenarioData.name}.`;
         }
-        
-        notebookContent += `${'='.repeat(20)}\n`;
-        notebookContent += `Date: ${new Date().toLocaleString()}`;
-        
-        const notebookObservations = `Postit note found in ${this.containerItem.scenarioData.name}.`;
 
         // Check if notes minigame is available
         if (window.startNotesMinigame) {

@@ -64,6 +64,21 @@ export const PC_FRAME_EDGE = 2;
 const even = (v) => Math.max(0, Math.floor(v / 2) * 2);
 
 /**
+ * The notepad entry for a PC's post-it, added from a view of the PC that is not its own
+ * desktop (a share window or a file opened from the desktop, R4 m2): the note is stuck on
+ * the monitor, so it can be noted from any of the PC's views.
+ *   -> { title, content, observations }
+ */
+export function postitNotebookEntry(pcName, note) {
+    const name = String(pcName || 'PC');
+    return {
+        title: `Postit Note - ${name}`,
+        content: `Postit Note:\n${'-'.repeat(20)}\n\n${String(note || '')}`,
+        observations: `Postit note found on ${name}.`
+    };
+}
+
+/**
  * The monitor's geometry for a window of viewW x viewH CSS pixels: the screen, the whole
  * monitor, its place in the window (whole pixels), the post-it's place on the frame and the
  * content scale. `postitHeight` is the note's measured height (0 for no note): the chin

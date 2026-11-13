@@ -29,7 +29,8 @@ put('systems/inventory.js', 'export async function addToInventory() { return { o
 for (const rel of ['utils/escape-html.js', 'utils/computer-keywords.js', 'utils/author-html.js', 'utils/lock-scope-refusal.js',
     'utils/pc-monitor.js', 'utils/more-below.js', 'utils/npc-headshot.js', 'minigames/framework/base-minigame.js',
     'minigames/container/container-item-image.js', 'minigames/container/container-minigame.js',
-    'minigames/password/password-minigame.js', 'systems/pc-sessions.js', 'minigames/text-file/text-file-minigame.js']) copy(rel);
+    'minigames/password/password-minigame.js', 'systems/pc-sessions.js', 'minigames/text-file/text-file-minigame.js',
+    'minigames/notes/notes-minigame.js', 'utils/note-markdown.js', 'utils/test-state-text.js']) copy(rel);
 
 const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
 globalThis.window = dom.window;
@@ -41,7 +42,9 @@ const { headshotKeys, headshotCandidates, headshotUrl, characterKey, noteMissing
 const { PasswordMinigame, applyTilePortrait } = await imp('minigames/password/password-minigame.js');
 const { ContainerMinigame } = await imp('minigames/container/container-minigame.js');
 const { PcSessions } = await imp('systems/pc-sessions.js');
-const { TextFileMinigame, pcScreenOf } = await imp('minigames/text-file/text-file-minigame.js');
+const { TextFileMinigame, pcScreenOf, returnToTextFileAfterNotes } = await imp('minigames/text-file/text-file-minigame.js');
+const { startNotesMinigame } = await imp('minigames/notes/notes-minigame.js');
+const { centreOnWholePixels } = await imp('minigames/container/container-minigame.js');
 
 const SIZES = [[1400, 1000], [800, 600], [915, 412], [390, 844]];
 const settle = (ms = 0) => new Promise(r => setTimeout(r, ms));
@@ -766,30 +769,36 @@ test('R3 m2, m3, m4: field colours in the monitor, bordered Wi-Fi buttons, no pl
 });
 
 test('R3 M2: a file opened from a PC desktop opens in that PC\'s monitor frame; one from the world does not', async () => {
-    assert.deepEqual(pcScreenOf({ lockable: { pcScreen: { name: 'Hot desk PC', pcId: 'hot_desk' } } }), { name: 'Hot desk PC', pcId: 'hot_desk' });
+    assert.deepEqual(pcScreenOf({ lockable: { pcScreen: { name: 'Hot desk PC', pcId: 'hot_desk' } } }), { name: 'Hot desk PC', pcId: 'hot_desk', postitNote: null });
+    assert.deepEqual(pcScreenOf({ pcScreen: { name: 'Hot desk PC', pcId: 'hot_desk', postitNote: 'Sam' } }).postitNote, 'Sam');
     assert.equal(pcScreenOf({}), null);
     for (const [w, h] of SIZES) {
         const restore = sizeWindow(w, h);
         try {
             const a = await desktop();
-            const desk = frameBox().replace(/"note":\[[^\]]*\]/, '"note":null');
-            assert.deepEqual(a.pcScreenExtras(), { pcScreen: { name: 'Hot desk PC', pcId: 'hot_desk' } }, 'the desktop hands its frame on');
+            const desk = frameBox();
+            assert.deepEqual(a.pcScreenExtras(), { pcScreen: { name: 'Hot desk PC', pcId: 'hot_desk', postitNote: 'Sam: sokafor / x' } }, 'the desktop hands its frame and note on');
             a.cleanup?.();
             document.body.innerHTML = '<div id="mg"></div>';
             const mg = new TextFileMinigame(document.getElementById('mg'), {
-                title: 'Text File - Mail', fileName: 'Mail', fileContent: 'Line one\nLine two', observations: 'An inbox.',
-                lockable: { scenarioData: { type: 'text_file' }, pcScreen: { name: 'Hot desk PC', pcId: 'hot_desk' } }
+                title: 'Text File - Mail export.txt', fileName: 'Mail export.txt', fileContent: 'Line one\nLine two', observations: 'An inbox.',
+                lockable: { scenarioData: { type: 'text_file' }, pcScreen: a.pcScreenExtras().pcScreen }
             });
             window.MinigameFramework.currentMinigame = mg;
             mg.init();
-            assert.equal(frameBox(), desk, `${w}x${h}: the same frame as the desktop`);
+            assert.equal(frameBox(), desk, `${w}x${h}: the same frame as the desktop, the note in the same place`);
+            // R4 m2: the post-it and its button stay on the monitor
+            assert.equal(document.querySelector('.pc-monitor-postit').textContent, 'Sam: sokafor / x');
+            assert.ok(document.querySelector('.pc-monitor-controls #minigame-notebook-postit'), 'the note\'s Add to Notepad in the chin');
             assert.equal(document.querySelector('.pc-monitor-name').textContent, 'Hot desk PC');
             assert.ok(document.querySelector('.pc-monitor-bezel > #minigame-close'), 'the X in the bezel');
             assert.equal(document.querySelector('.window-controls'), null, 'no window buttons');
-            assert.equal(document.querySelector('.share-folder-path').textContent, 'Mail');
-            for (const id of ['copy-btn', 'select-all-btn', 'minigame-notebook']) {
+            assert.equal(document.querySelector('.share-folder-path').textContent, 'Mail export.txt');
+            for (const id of ['copy-btn', 'minigame-notebook']) {
                 assert.ok(document.getElementById(id).classList.contains('pc-os-btn'), id);
             }
+            // R4 m4: no Select All in the monitor (Copy takes the whole file)
+            assert.equal(document.getElementById('select-all-btn'), null);
             assert.equal(document.querySelector('.pc-file-status').textContent, 'An inbox.');
             assert.match(document.querySelector('.pc-file-body').textContent, /Line one/);
             mg.notify('Copied.');
@@ -807,9 +816,218 @@ test('R3 M2: a file opened from a PC desktop opens in that PC\'s monitor frame; 
     world.init();
     assert.equal(document.querySelector('.pc-monitor'), null);
     assert.ok(document.querySelector('.text-file-container'));
+    assert.ok(document.getElementById('select-all-btn'), 'the old viewer keeps Select All');
     world.cleanup();
     const t = css('text-file-minigame.css');
     const mon = t.slice(t.indexOf('/* ── In the PC monitor'));
     assert.doesNotMatch(mon, /font-weight: (bold|[5-9]00)|translateY|rgba\(|border-radius/, 'pixel rules in the monitor look');
     assert.match(mon, /font-size: 16px;/);
+});
+
+// ── Review round 4 ───────────────────────────────────────────────────────────
+
+test('R4 m1: back from the Notepad, a file read from a desktop reopens in its frame, and its X then goes back to the desktop', async () => {
+    const restore = sizeWindow(1400, 1000);
+    const was = { MinigameFramework: window.MinigameFramework, startNotesMinigame: window.startNotesMinigame };
+    try {
+        const a = await desktop();
+        const pcScreen = a.pcScreenExtras().pcScreen;
+        const back = { containerItem: a.containerItem, contents: [{ id: 'staff_mail', name: 'Mail export.txt', type: 'text_file' }], isTakeable: false };
+        a.cleanup?.();
+        const open = (params) => {
+            document.body.innerHTML = '<div id="mg"></div>';
+            const mg = new TextFileMinigame(document.getElementById('mg'), params);
+            window.MinigameFramework.currentMinigame = mg;
+            mg.init();
+            return mg;
+        };
+        const started = [];
+        window.MinigameFramework = {
+            currentMinigame: null, registeredScenes: { notes: true }, endMinigame: () => {},
+            startMinigame(type, _c, params) {
+                started.push({ type, params });
+                // A new minigame ends the current one, as the framework does
+                window.MinigameFramework.currentMinigame?.cleanup?.();
+                window.MinigameFramework.currentMinigame = null;
+                if (type === 'text-file') open(params);
+                else window.MinigameFramework.currentMinigame = { type, params };
+            }
+        };
+        let containerReturns = 0;
+        window.returnToContainerAfterNotes = () => { containerReturns++; window.pendingContainerReturn = null; };
+        window.returnToTextFileAfterNotes = returnToTextFileAfterNotes;
+        window.startNotesMinigame = startNotesMinigame;
+        window.pendingContainerReturn = back;
+
+        const reader = open({ fileName: 'Mail export.txt', itemId: 'staff_mail', fileContent: 'Line one', lockable: { scenarioData: { type: 'text_file' }, pcScreen } });
+        reader.addToNotebook();
+        const notes = started.find(s => s.type === 'notes');
+        assert.ok(notes, 'the Notepad opened');
+        assert.equal(window.pendingContainerReturn, back, 'the desktop return is kept while the Notepad is open');
+        // The player closes the Notepad
+        window.MinigameFramework.currentMinigame = null;
+        notes.params.onComplete(true, {});
+        await settle(150);
+        const again = window.MinigameFramework.currentMinigame;
+        assert.equal(containerReturns, 0, 'not the desktop first');
+        assert.ok(again instanceof TextFileMinigame, 'the reader is back');
+        assert.notEqual(again, reader);
+        assert.ok(document.querySelector('.pc-monitor .pc-file-window'), 'in the PC monitor frame');
+        assert.equal(document.querySelector('.pc-monitor-name').textContent, 'Hot desk PC');
+        assert.equal(document.querySelector('.pc-monitor-postit')?.textContent, 'Sam: sokafor / x', 'with the PC\'s note');
+        assert.equal(again.textFileData.itemId, 'staff_mail', 'matched to the desktop by id');
+        assert.equal(window.pendingContainerReturn, back, 'the desktop return waits for the reader\'s X');
+        // The reader's own X: back to the desktop
+        again.closedByPlayer = true;
+        again.cleanup();
+        window.MinigameFramework.currentMinigame = null; // the framework clears it on close
+        await settle(150);
+        assert.equal(containerReturns, 1, 'the X goes back to the desktop');
+    } finally {
+        window.MinigameFramework = was.MinigameFramework;
+        window.startNotesMinigame = was.startNotesMinigame;
+        window.pendingContainerReturn = null;
+        window.pendingTextFileReturn = null;
+        restore();
+    }
+});
+
+test('R4 m1: a note taken from a container still goes through the container\'s return first', async () => {
+    const was = window.MinigameFramework;
+    try {
+        const started = [];
+        window.MinigameFramework = { currentMinigame: null, registeredScenes: { notes: true }, endMinigame: () => {}, startMinigame: (type, _c, params) => started.push({ type, params }) };
+        let containerReturns = 0;
+        window.returnToContainerAfterNotes = () => { containerReturns++; window.pendingContainerReturn = null; };
+        window.returnToTextFileAfterNotes = () => assert.fail('no file to return to');
+        window.pendingContainerReturn = { containerItem: {}, contents: [], itemToTake: { name: 'Memo' } };
+        window.pendingTextFileReturn = null;
+        startNotesMinigame({ scenarioData: { name: 'Memo' } }, 'x', 'y', null, false, false);
+        started[0].params.onComplete(true, {});
+        await settle(150);
+        assert.equal(containerReturns, 1);
+    } finally {
+        window.MinigameFramework = was;
+        window.pendingContainerReturn = null;
+    }
+});
+
+test('R4 m2: the reader measures its own note, so a resize keeps the chin; a share window on the PC shows the note and its button', async () => {
+    resetPostitHeights();
+    const unstub = stubNoteHeight(52);
+    let restore = sizeWindow(1400, 1000);
+    const wasNotes = window.startNotesMinigame;
+    try {
+        const a = await desktop();
+        const pcScreen = a.pcScreenExtras().pcScreen;
+        a.cleanup?.();
+        resetPostitHeights();
+        document.body.innerHTML = '<div id="mg"></div>';
+        const mg = new TextFileMinigame(document.getElementById('mg'), { fileName: 'Mail export.txt', fileContent: 'x', lockable: { scenarioData: { type: 'text_file' }, pcScreen } });
+        window.MinigameFramework.currentMinigame = mg;
+        mg.init();
+        // Resized while the reader is open: no height is kept for the new size
+        restore();
+        restore = sizeWindow(800, 600);
+        window.dispatchEvent(new window.Event('resize'));
+        const m = pcMonitorMetrics(800, 600, { postitHeight: 52 });
+        assert.ok(m.bezel.chin > pcMonitorMetrics(800, 600).bezel.chin, 'the note needs a taller chin');
+        assert.equal(document.querySelector('.pc-monitor').style.height, `${m.height}px`, 'the chin still holds the note at the new size');
+        // The reader's chin button notes the post-it and comes back to the file
+        let noted = null;
+        window.startNotesMinigame = (item, text) => { noted = { item, text }; };
+        document.getElementById('minigame-notebook-postit').click();
+        assert.equal(noted.item.scenarioData.name, 'Postit Note - Hot desk PC');
+        assert.match(noted.text, /Sam: sokafor \/ x/);
+        assert.equal(window.pendingTextFileReturn?.pcScreen?.postitNote, 'Sam: sokafor / x', 'back to this file, note and all');
+        window.pendingTextFileReturn = null;
+        mg.cleanup();
+
+        // A share window opened from that PC's desktop
+        resetPostitHeights();
+        document.body.innerHTML = '<div id="mg"></div>';
+        const parentLockable = { scenarioData: { id: 'hot_desk', type: 'pc', name: 'Hot desk PC', postitNote: 'Sam: sokafor / x', showPostit: true } };
+        const share = new ContainerMinigame(document.getElementById('mg'), {
+            title: 'Payroll', containerItem: { scenarioData: { id: 'payroll_share', type: 'network_share', name: '\\\\fs01\\payroll', locked: false }, parentLockable }, contents: []
+        });
+        window.MinigameFramework.currentMinigame = share;
+        await share.init();
+        assert.equal(document.querySelector('.pc-monitor-postit')?.textContent, 'Sam: sokafor / x', 'the note is on the monitor');
+        assert.ok(document.querySelector('.pc-monitor-controls #minigame-notebook-postit'), 'with its button in the chin');
+        assert.equal(document.querySelector('.pc-monitor').style.height, `${m.height}px`, 'the same frame as the desktop');
+        assert.equal(share.pcScreenExtras().pcScreen.postitNote, 'Sam: sokafor / x', 'and a file opened from the share keeps it');
+        noted = null;
+        document.getElementById('minigame-notebook-postit').click();
+        assert.equal(noted.item.scenarioData.name, 'Postit Note - Hot desk PC');
+        assert.doesNotMatch(noted.text, /CONTAINER CONTENTS/, 'the PC\'s note, not the share\'s file list');
+        share.cleanup?.();
+    } finally {
+        window.startNotesMinigame = wasNotes;
+        window.pendingContainerReturn = null;
+        window.pendingTextFileReturn = null;
+        unstub();
+        restore();
+        resetPostitHeights();
+    }
+});
+
+test('R4 m3: the Copy / Move dialog is centred on whole pixels on both axes', async () => {
+    const box = { offsetWidth: 300, offsetHeight: 150, style: {} };
+    centreOnWholePixels(box, { clientWidth: 1121, clientHeight: 701 });
+    assert.deepEqual([box.style.left, box.style.top], ['410px', '275px'], 'odd spare space rounds down to a whole pixel');
+    centreOnWholePixels(box, { clientWidth: 200, clientHeight: 100 });
+    assert.deepEqual([box.style.left, box.style.top], ['0px', '0px'], 'never off the window\'s top or left');
+    // On a desktop: placed by the script, not by margin: auto
+    const restore = sizeWindow(1400, 1000);
+    const proto = window.HTMLElement.prototype;
+    const had = { cw: Object.getOwnPropertyDescriptor(proto, 'clientWidth'), ch: Object.getOwnPropertyDescriptor(proto, 'clientHeight'), ow: Object.getOwnPropertyDescriptor(proto, 'offsetWidth'), oh: Object.getOwnPropertyDescriptor(proto, 'offsetHeight') };
+    try {
+        const a = await desktop({ contents: [{ id: 'f1', type: 'text_file', name: 'Licence keys.csv', takeable: true, text: 'k' }] });
+        const dlg = (el) => el.classList?.contains('desktop-transfer-dialog');
+        Object.defineProperty(proto, 'clientWidth', { configurable: true, get() { return this.querySelector?.(':scope > .desktop-transfer-dialog') ? 561 : 0; } });
+        Object.defineProperty(proto, 'clientHeight', { configurable: true, get() { return this.querySelector?.(':scope > .desktop-transfer-dialog') ? 351 : 0; } });
+        Object.defineProperty(proto, 'offsetWidth', { configurable: true, get() { return dlg(this) ? 260 : 0; } });
+        Object.defineProperty(proto, 'offsetHeight', { configurable: true, get() { return dlg(this) ? 120 : 0; } });
+        a.showTransferDialog(a.contents[0], null);
+        const d = document.querySelector('.pc-monitor .desktop-transfer-dialog');
+        assert.ok(d, 'the dialog is on the PC screen');
+        assert.deepEqual([d.style.left, d.style.top], ['150px', '115px']);
+        a.cleanup?.();
+    } finally {
+        for (const [k, name] of [['cw', 'clientWidth'], ['ch', 'clientHeight'], ['ow', 'offsetWidth'], ['oh', 'offsetHeight']]) {
+            if (had[k]) Object.defineProperty(proto, name, had[k]);
+        }
+        restore();
+    }
+    const box2 = css('container-minigame.css');
+    const i = box2.indexOf('.pc-monitor .desktop-transfer-dialog {');
+    assert.doesNotMatch(box2.slice(i, box2.indexOf('}', i)), /margin: auto|right: 0|bottom: 0/);
+});
+
+test('R4 m7: the sign-in tiles in the monitor are solid, with the OS accent on the chosen edge', async () => {
+    const restore = sizeWindow(1400, 1000);
+    try {
+        await signInScreen();
+        const unsheet = withSheets('password-minigame.css', 'pc-monitor.css');
+        try {
+            const tile = document.querySelector('.pc-screen-area .signin-tile');
+            assert.ok(tile, 'a tile in the monitor');
+            tile.classList.remove('selected');
+            const rest = window.getComputedStyle(tile);
+            assert.doesNotMatch(rest.backgroundColor, /rgba\(/, 'no see-through fill');
+            assert.equal(rest.backgroundColor, 'rgb(16, 24, 32)');
+            tile.classList.add('selected');
+            const chosen = window.getComputedStyle(tile);
+            assert.equal(chosen.borderTopColor, 'rgb(158, 230, 255)', 'the OS accent, not terminal green');
+            assert.doesNotMatch(chosen.backgroundColor, /rgba\(/);
+        } finally {
+            unsheet();
+        }
+        // The old frame's tiles keep their look
+        const pw = css('password-minigame.css');
+        const i = pw.indexOf('.signin-tile:hover,\n.signin-tile.selected {');
+        assert.match(pw.slice(i, pw.indexOf('}', i)), /#00ff00/);
+    } finally {
+        restore();
+    }
 });
