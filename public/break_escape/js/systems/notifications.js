@@ -467,9 +467,12 @@ export function gameDisplay(message, title = '', options = {}) {
 // author-written scenario text (an interactionWarning, a confirm action's text) is never markup.
 // options.html === true: all three were built as HTML on purpose, author text already escaped.
 // options.plainText is accepted and changes nothing.
+// options.closeButton === false leaves out the X (UX slice 4, q99: a confirm keeps its two
+// named buttons and has no X); Esc still cancels. Every other confirm keeps its X.
 export function gameConfirm(message, confirmLabel = 'Confirm', cancelLabel = 'Cancel', options = {}) {
     return new Promise(resolve => {
         const plainText = !(options && options.html === true);
+        const noClose = options?.closeButton === false;
         const overlay = document.createElement('div');
         overlay.className = 'game-confirm-overlay';
         if (plainText) {
@@ -508,7 +511,13 @@ export function gameConfirm(message, confirmLabel = 'Confirm', cancelLabel = 'Ca
 
         overlay.querySelector('.game-confirm-ok').addEventListener('click', () => finish(true));
         overlay.querySelector('.game-confirm-cancel').addEventListener('click', () => finish(false));
-        overlay.querySelector('.game-modal-close').addEventListener('click', () => finish(false));
+        const closeBtn = overlay.querySelector('.game-modal-close');
+        if (noClose) {
+            closeBtn.remove();
+            overlay.querySelector('.game-confirm-dialog').classList.add('game-confirm-no-close');
+        } else {
+            closeBtn.addEventListener('click', () => finish(false));
+        }
 
         document.body.appendChild(overlay);
     });

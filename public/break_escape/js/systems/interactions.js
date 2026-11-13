@@ -1989,7 +1989,14 @@ export function handleObjectInteraction(sprite) {
         const added = addToInventory(sprite);
         // Every pickup says so ("Picked up <name>"), not only the few types with a
         // toast of their own (inventory.js announcePickup)
-        Promise.resolve(added).then(res => window.announcePickup?.(sprite, res));
+        Promise.resolve(added).then(res => {
+            window.announcePickup?.(sprite, res);
+            // A wearable taken for the first time asks once whether to put it on now
+            // (UX slice 4, q91); it is put on, taken off, dropped and examined from the tray
+            if (res?.ok && res.reason === 'added' && data.wearable) {
+                window.wearables?.offerAfterTake?.(data.id)?.catch?.(e => console.warn('[Interaction] wear offer failed:', e));
+            }
+        });
 
         // Only show the observation notification if item was NOT added (duplicate)
         // because addToInventory() already shows its own notification

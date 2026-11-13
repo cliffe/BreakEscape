@@ -86,6 +86,30 @@ test('gameConfirm: a hostile message and both labels are text by default', () =>
     assert.equal(dialog.querySelector('.game-confirm-cancel').textContent, '<i>Leave</i>');
 });
 
+// UX slice 4 (q99): closeButton: false drops the X from that confirm only; Esc still cancels
+test('gameConfirm: every confirm has two named buttons; the X stays unless closeButton is false', async () => {
+    reset();
+    gameConfirm('Plain?', 'Yes', 'No');
+    let dialog = document.querySelector('.game-confirm-dialog');
+    assert.ok(dialog.querySelector('.game-modal-close'), 'a confirm without the option keeps its X');
+    assert.ok(dialog.querySelector('.game-confirm-cancel'), 'and its cancel button');
+    dialog.querySelector('.game-confirm-cancel').click();
+    reset();
+    const answer = gameConfirm('Put it on now?', 'Put on', 'Not now', { closeButton: false });
+    dialog = document.querySelector('.game-confirm-dialog');
+    assert.equal(dialog.querySelector('.game-modal-close'), null, 'no X');
+    assert.ok(dialog.classList.contains('game-confirm-no-close'));
+    assert.equal(dialog.querySelector('.game-confirm-ok').textContent, 'Put on');
+    assert.equal(dialog.querySelector('.game-confirm-cancel').textContent, 'Not now');
+    document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    assert.equal(await answer, false, 'Esc cancels');
+    assert.equal(document.querySelector('.game-confirm-overlay'), null, 'and closes it');
+    // The html form drops its X the same way
+    gameConfirm('<b>Sure</b>?', 'Yes', 'No', { html: true, closeButton: false });
+    assert.equal(document.querySelector('.game-modal-close'), null);
+    document.querySelector('.game-confirm-ok').click();
+});
+
 test('gameConfirm with { html: true } keeps deliberate markup', () => {
     reset();
     gameConfirm('Really <strong>sure</strong>?', 'Yes', 'No', { html: true });

@@ -151,6 +151,11 @@ body:has([data-minigame="phone-chat"]) #notification-container {
     padding-right: 40px;
 }
 
+/* A confirm with no X (gameConfirm closeButton: false): no room kept for it */
+.game-confirm-dialog.game-confirm-no-close .game-confirm-message {
+    padding-right: 0;
+}
+
 .game-confirm-message {
     font-family: 'GNF', monospace;
     font-size: 22px;

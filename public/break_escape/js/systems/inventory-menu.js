@@ -11,7 +11,8 @@
  *   everything else                    no menu: the click does what it did before
  *
  * A wearable that is not droppable (the lab's hi-vis vest) has no menu: its click puts it
- * on or takes it off (wearables.js). A worn wearable under unseenOnly is not dropped while
+ * on or takes it off (wearables.js). A wearable's actions live here only (UX slice 4, q91):
+ * a click in the world takes it, and the first take asks once whether to put it on now. A worn wearable under unseenOnly is not dropped while
  * someone in the room is watching.
  *
  * The two tests that decide this are the tests the interaction chain itself
