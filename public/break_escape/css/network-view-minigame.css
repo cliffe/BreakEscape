@@ -16,6 +16,17 @@
     font-synthesis: none;
 }
 
+/* The view's game area is as tall as the view (main3-02: no tall empty panel), centred with
+   Close under it; long lists scroll inside it */
+.network-view-minigame .minigame-game-container {
+    height: auto;
+    max-height: 100%;
+    max-width: 1000px;
+    overflow-y: auto;
+    background: transparent;
+    box-shadow: none;
+}
+
 .network-view * {
     font-style: normal;
 }
