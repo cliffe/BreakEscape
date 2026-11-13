@@ -335,7 +335,7 @@ test('a row whose screen does not start leaves the view open, and its Close then
     row('data-host-id', 'lena_pc').querySelector('[data-action]').click();
     assert.equal(view()._sceneType, 'network-view');
     assert.equal(view().exitReason, 'close');
-    document.querySelector('#minigame-close').click()   /* the X: no Cancel beside it (slice 7 R1) */;
+    document.querySelector('#minigame-close').click();   // the X: no Cancel beside it (slice 7 R1)
     await settle();
     assert.deepEqual(named('network_view_closed'), [{ footholdId: 'jack_comms_port', reason: 'closed' }]);
 });
@@ -400,7 +400,7 @@ test('the view\'s own Close ends the trip: network_view_closed once, reason clos
     let returned = null;
     links.open('jack_comms_port', { returnTo: (r) => { returned = r; } });
     await settle();
-    document.querySelector('#minigame-close').click()   /* the X: no Cancel beside it (slice 7 R1) */;
+    document.querySelector('#minigame-close').click();   // the X: no Cancel beside it (slice 7 R1)
     await settle();
     assert.deepEqual(named('network_view_closed'), [{ footholdId: 'jack_comms_port', reason: 'closed' }]);
     assert.deepEqual(returned, { reason: 'closed' });
@@ -466,7 +466,7 @@ test('a stale view closed before the sync lands does not refetch', async () => {
     await new Promise(r => setTimeout(r, 30));
     await settle();
     const m = view();
-    document.querySelector('#minigame-close').click()   /* the X: no Cancel beside it (slice 7 R1) */;
+    document.querySelector('#minigame-close').click();   // the X: no Cancel beside it (slice 7 R1)
     await settle();
     land(true);
     await m.refetched;

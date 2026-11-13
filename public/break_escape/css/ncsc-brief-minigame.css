@@ -35,10 +35,17 @@
     border-bottom: 2px solid #f0c040;
     color: #f0c040;
     font-size: 19px;
-    font-weight: bold;
+    font-weight: normal;
     letter-spacing: 0.1em;
     text-align: center;
-    padding: 6px 16px;
+    /* The X sits inside the frame's top right, on this bar: the bar is tall enough to hold
+       it above the amber rule, and the text keeps clear of it (slice 7 R2 n2) */
+    padding: 6px 44px;
+    min-height: 42px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
     text-transform: uppercase;
 }

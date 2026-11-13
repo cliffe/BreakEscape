@@ -218,7 +218,7 @@
     border: 4px solid #c0392b;
     cursor: pointer;
     font-family: 'Press Start 2P', monospace !important;
-    font-size: 18px;
+    font-size: 16px;   /* Press Start 2P on its 8px grid (slice 7 R2 n3) */
     z-index: 10000;
     display: flex;
     align-items: center;

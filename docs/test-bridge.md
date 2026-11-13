@@ -942,7 +942,10 @@ reports the last overworld position (the player is standing still behind the ove
 
 The `controls` and `fields` arrays come from the base class; `noteName`,
 `noteContent`, `observationText`, `noteIndex` and `noteCount` come from the
-`NotesMinigame` override.
+`NotesMinigame` override. The notes reader keeps its Continue button as `#minigame-cancel`;
+since UX slice 7 most other scenes draw no `#minigame-cancel` at all and close with the X
+(`#minigame-close`) or Esc. Only scenes with `static keepsCancelButton = true` (notes,
+the password screen, conversations) list one.
 
 `text` is the overlay's whole visible text, cut at 2000 characters. When it is cut the
 reply says so: `textTruncated: true` and `textLength` (the full length). For a note,

@@ -144,7 +144,7 @@ const device = () => (MF.currentMinigame instanceof log.CaptureLogMinigame ? MF.
 const keysIn = (section) => [...(device()?.root.querySelectorAll(`[data-section="${section}"] [data-key]`) || [])].map(n => n.dataset.key);
 const openDevice = async () => { log.startCaptureLog(held('capture_log')); await settle(); return device(); };
 const click = (key) => device().root.querySelector(`[data-key="${key}"] button`).click();
-const closeDevice = () => device().container.querySelector('#minigame-close').click()   /* the X: no Cancel beside it (slice 7 R1) */;
+const closeDevice = () => device().container.querySelector('#minigame-close').click();   // the X: no Cancel beside it (slice 7 R1)
 
 const HOLDER = { type: 'capture_log', id: 'capture_log', name: 'Capture log', takeable: true, holds: { captures: true, items: true } };
 const FINDING = { type: 'text_file', id: 'cable_capture', name: 'Juice-jack capture', storeIn: 'capture_log', readable: true, text: 'x' };

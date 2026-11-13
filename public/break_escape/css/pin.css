@@ -216,7 +216,8 @@
 .pin-minigame-backspace {
     background: #e74c3c;
     border-color: #c0392b;
-    font-size: 12px;   /* "DEL", the same size as ENTER */
+    font-size: 16px;   /* "DEL": Press Start 2P on its 8px grid (slice 7 R2 n3) */
+    font-weight: normal;
 }
 
 .pin-minigame-backspace:hover {
