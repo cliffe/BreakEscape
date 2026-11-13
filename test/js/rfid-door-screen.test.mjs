@@ -55,7 +55,7 @@ globalThis.document = { createElement: mk, body: mk('body'),
 const { RFIDAnimations } = await import(animUrl);
 const { RFIDMinigame } = await import(minigameUrl);
 const { RFIDDataManager } = await import(pathToFileURL(join(tmp, 'rfid-data.mjs')).href);
-const { RFIDUIRenderer, pixelIcon, PIXEL_ICONS, clonerName, clonerNameInSentence, EMULATION_HOLD_MS, wholePixelOffset } = await import(pathToFileURL(join(tmp, 'rfid-ui.mjs')).href);
+const { RFIDUIRenderer, pixelIcon, PIXEL_ICONS, clonerName, clonerNameInSentence, EMULATION_HOLD_MS, wholePixelOffset, MORE_BELOW_TEXT } = await import(pathToFileURL(join(tmp, 'rfid-ui.mjs')).href);
 const { savedCardConfirmation } = await import(minigameUrl);
 
 const texts = () => flat(screen).map(e => e.textContent + e._html).join('\n');
@@ -328,7 +328,7 @@ test('the copier frame is snapped to whole pixels, now and on resize', () => {
 // UX slice 3a R1 m3: at phone width the frame and its outline stay inside the window.
 test('at phone width the frame fits inside the window with its outline', () => {
     const css = readFileSync(src('../css/rfid-minigame.css'), 'utf8');
-    const phone = css.match(/@media \(max-width: 500px\) \{\s*(\/\*[\s\S]*?\*\/\s*)?(\.rfid-minigame-game-container \{[^}]*\}\s*)?\.flipper-zero-frame \{([^}]*)\}/);
+    const phone = css.match(/@media \(max-width: 530px\) \{\s*(\/\*[\s\S]*?\*\/\s*)?(\.rfid-minigame-game-container \{[^}]*\}\s*)?\.flipper-zero-frame \{([^}]*)\}/);
     assert.ok(phone, 'a phone rule for the frame');
     const r = phone[3];
     assert.match(r, /box-sizing:\s*border-box/, 'the padding counts inside the width');
@@ -345,7 +345,7 @@ test('at phone width the frame fits inside the window with its outline', () => {
 // fits in it, and "safe" centring starts a too-tall frame at the top, not under the X.
 test('at phone width the frame starts below the close X', () => {
     const css = readFileSync(src('../css/rfid-minigame.css'), 'utf8');
-    const media = css.match(/@media \(max-width: 500px\) \{([\s\S]*?)\n\}/)[1];
+    const media = css.match(/@media \(max-width: 530px\) \{([\s\S]*?)\n\}/)[1];
     const area = media.match(/\.rfid-minigame-game-container \{([^}]*)\}/);
     assert.ok(area, 'the phone rule pads the copier area');
     assert.match(area[1], /box-sizing:\s*border-box/);
@@ -370,7 +370,7 @@ test('at phone width the frame starts below the close X', () => {
 // stays inside and the screen scrolls instead. R3 n2: the phone minimum fits a short window.
 const copierRules = () => {
     const css = readFileSync(src('../css/rfid-minigame.css'), 'utf8');
-    const media = css.match(/@media \(max-width: 500px\) \{([\s\S]*?)\n\}/)[1];
+    const media = css.match(/@media \(max-width: 530px\) \{([\s\S]*?)\n\}/)[1];
     return {
         area: css.match(/(^|\n)\.rfid-minigame-game-container \{([^}]*)\}/)[2],
         wide: css.match(/(^|\n)\.flipper-zero-frame \{([^}]*)\}/)[2],
@@ -384,7 +384,13 @@ test('the copier frame is capped to its area and the screen scrolls inside it', 
     assert.match(area, /justify-content:\s*safe center/, 'never centred off both edges');
     assert.doesNotMatch(area, /justify-content:\s*center/);
     assert.match(wide, /min-height:\s*0;/, 'the frame may shrink below its content');
-    assert.match(wide, /max-height:\s*100%;/, 'and never grows past its area');
+    // R4 m2: flex shrink is what holds the frame to its area. A max-height of 100% on this
+    // content-box frame caps only the content box, 40px short of the padding, so none.
+    const shrink = wide.match(/flex-shrink:\s*(\d+)/);
+    assert.ok(shrink, 'flex-shrink pinned on the frame');
+    assert.notEqual(Number(shrink[1]), 0, 'and on: with it off the frame runs 40px past its area');
+    assert.doesNotMatch(wide, /(^|[;\s])flex:\s*none/, 'no flex shorthand turning the shrink off');
+    assert.doesNotMatch(wide, /max-height/, 'no cap that never binds');
     assert.match(screen, /flex:\s*1;/, 'the screen takes the frame\'s spare height');
     assert.match(screen, /overflow-y:\s*auto;/, 'and scrolls what does not fit (its own minimum is then 0)');
     assert.match(phone, /min-height:\s*min\(540px, calc\(100vh - 104px\)\);/, 'phone minimum no taller than its area');
@@ -396,12 +402,13 @@ test('the copy screen\'s frame fits a 412px-high window', () => {
     const px = (rule, prop) => Number((rule.match(new RegExp(`(^|\\s)${prop}:\\s*(\\d+)px;`)) || [])[2]);
     const vh = 412;
     // Wide (915x412): the game container sits 20px in from the top and bottom (framework
-    // margin), so the area is 372px. The frame's height is capped at the area and its
-    // minimum is 0, whatever its content needs (577px on the copy screen).
+    // margin), so the area is 372px. The frame (550px of content plus 40px of padding) is
+    // the area's only flex item: with shrink on and a minimum of 0 it shrinks to the area,
+    // whatever its content needs (577px on the copy screen). Without either it would not.
     const areaH = vh - 2 * 20;
     const contentNeeds = 577;
-    const capped = /max-height:\s*100%;/.test(wide) && /min-height:\s*0;/.test(wide);
-    const wideH = capped ? Math.min(px(wide, 'height') + 40, areaH) : Math.max(px(wide, 'height') + 40, contentNeeds);
+    const shrinks = /min-height:\s*0;/.test(wide) && !/flex-shrink:\s*0/.test(wide) && /flex-shrink:\s*1/.test(wide);
+    const wideH = shrinks ? Math.min(px(wide, 'height') + 40, areaH) : Math.max(px(wide, 'height') + 40, contentNeeds);
     assert.ok(wideH <= areaH, `wide frame ${wideH}px fits the ${areaH}px area`);
     // Phone rule, at the same height (a 412px-high portrait window): the area is
     // 100vh - 104px, and neither the height formula nor the minimum can pass it.
@@ -481,4 +488,141 @@ test('a ResizeObserver on the container and frame re-snaps, disconnected on clea
         window.ResizeObserver = saved;
         window.addEventListener = realAdd; window.removeEventListener = realRemove;
     }
+});
+
+// UX slice 3a R4 m1: the layout of the network view (slice 1). A fixed header, a scrolling
+// body and a fixed footer: the main controls (Save and Abandon, Emulate and Back) sit in
+// the footer, outside the scrolling body, so they show at every window size; the status
+// line comes before the card data; a "More below" strip shows while the body runs on.
+test('the frame is a fixed header, a scrolling display and a fixed footer', () => {
+    const ui = new RFIDUIRenderer(makeGame({ mode: 'unlock', requiredCardIds: [], availableCards: [] }));
+    const frame = ui.createFlipperFrame();
+    assert.deepEqual(frame.children.map(c => c.className), ['flipper-bevel', 'flipper-header', 'flipper-display', 'flipper-footer']);
+    const [, , display, footer] = frame.children;
+    assert.equal(footer.id, 'rfid-footer');
+    assert.deepEqual(display.children.map(c => c.className), ['flipper-screen pixel-scroll', 'flipper-more']);
+    assert.equal(display.children[0].id, 'rfid-screen', 'every screen still fills #rfid-screen');
+    assert.equal(display.children[1].hidden, true, 'no cue until the body overflows');
+    assert.match(display.children[1].innerHTML, new RegExp(MORE_BELOW_TEXT));
+    assert.equal(typeof display.children[0].listeners.scroll, 'function', 'the cue follows the scroll');
+});
+
+// A game whose copier has a footer: document.getElementById finds it
+function withFooter(params) {
+    const g = makeGame(params);
+    const footer = mk('div');
+    const realGet = document.getElementById;
+    document.getElementById = (id) => id === 'rfid-footer' ? footer : realGet(id);
+    return { g, footer, restore: () => { document.getElementById = realGet; } };
+}
+const allText = (e) => flat(e).map(x => x.textContent + x._html).join('\n');
+
+test('the copy screen puts Save and Abandon in the footer, not the scrolling body', () => {
+    const { g, footer, restore } = withFooter({ mode: 'clone', cardToClone: visitor() });
+    try {
+        g.ui.showCardDataScreen(visitor());
+        assert.equal(footer.children.length, 1);
+        assert.equal(footer.children[0].className, 'flipper-buttons');
+        assert.deepEqual(footer.children[0].children.map(b => b.textContent), ['Save', 'Abandon read']);
+        assert.ok(!flat(screen).some(e => e.className === 'flipper-buttons'), 'none left in the body');
+        // A keyless MIFARE read: the crack hint sits above the data, "Crack keys first" below
+        g.ui.showCardDataScreen(mifare());
+        assert.deepEqual(footer.children[0].children.map(b => b.textContent), ['Crack keys first', 'Abandon read'], 'the footer is emptied for each view');
+        const order = screen.children.map(c => c.className);
+        assert.ok(order.findIndex(c => /flipper-crack-hint/.test(c)) < order.findIndex(c => /flipper-card-data/.test(c)), 'hint before data');
+    } finally { restore(); }
+});
+
+test('the details screen puts Emulate and Back in the footer', () => {
+    const { g, footer, restore } = withFooter({ mode: 'unlock', requiredCardIds: [], availableCards: [] });
+    try {
+        g.ui.showCardDetails(visitor());
+        assert.deepEqual(footer.children.map(c => c.className), ['flipper-menu-item', 'flipper-button-back']);
+        assert.equal(footer.children[0].textContent, '> Emulate');
+        assert.match(allText(footer.children[1]), /Back/);
+        assert.ok(!flat(screen).some(e => /flipper-button-back|flipper-menu-item/.test(e.className)), 'none left in the body');
+        // Saved list and the tap list: Back in the footer too
+        g.ui.showSavedCards();
+        assert.deepEqual(footer.children.map(c => c.className), ['flipper-button-back']);
+        // A screen with no footer controls leaves it empty (hidden by :empty)
+        g.ui.showMainMenu('unlock');
+        assert.equal(footer.children.length, 0);
+    } finally { restore(); }
+});
+
+test('the emulating and reading screens show their status first', () => {
+    const { g, footer, restore } = withFooter({ mode: 'unlock', requiredCardIds: [], availableCards: [] });
+    try {
+        g.ui.showEmulationScreen(visitor());
+        const order = screen.children.map(c => c.className);
+        assert.equal(order[0], 'flipper-breadcrumb');
+        assert.equal(order[1], 'flipper-emulating', 'the status straight under the breadcrumb');
+        assert.ok(order.indexOf('flipper-emulating') < order.indexOf('flipper-card-data'));
+        assert.equal(footer.children.length, 0, 'no footer while emulating: the X closes');
+        g.ui.cleanup();
+        g.cardToClone = visitor();
+        g.startCardReading = () => {};
+        g.ui.showReadingScreen();
+        const read = screen.children.map(c => c.className);
+        assert.deepEqual(read.slice(0, 3), ['flipper-breadcrumb', 'flipper-info', 'rfid-progress-container'], 'status and progress first');
+    } finally { restore(); }
+});
+
+test('the protocol screen puts Back and Abandon in the footer', () => {
+    const { g, footer, restore } = withFooter({ mode: 'clone', cardToClone: mifare() });
+    try {
+        g.ui.showProtocolInfo(mifare());
+        assert.deepEqual(footer.children.map(c => c.className), ['flipper-button-back', 'flipper-button-back']);
+        assert.match(allText(footer.children[0]), /Back/);
+        assert.equal(footer.children[1].textContent, 'Abandon read');
+    } finally { restore(); }
+});
+
+test('"More below" shows while the body runs on and hides at its end', () => {
+    const g = makeGame({ mode: 'unlock', requiredCardIds: [], availableCards: [] });
+    g.ui.moreElement = { hidden: true };
+    Object.assign(screen, { scrollHeight: 483, clientHeight: 278, scrollTop: 0 });
+    assert.equal(g.ui.updateScrollCue(), true);
+    assert.equal(g.ui.moreElement.hidden, false);
+    screen.scrollTop = 204;  // a pixel of rounding short of the end
+    assert.equal(g.ui.updateScrollCue(), false);
+    assert.equal(g.ui.moreElement.hidden, true);
+    Object.assign(screen, { scrollHeight: 200, clientHeight: 278, scrollTop: 0 });
+    assert.equal(g.ui.updateScrollCue(), false, 'a body that fits has no cue');
+});
+
+test('the body watcher goes with the copier', () => {
+    const made = [];
+    const saved = window.MutationObserver;
+    window.MutationObserver = class { constructor(cb) { this.cb = cb; this.live = true; made.push(this); } observe(el) { this.el = el; } disconnect() { this.live = false; } };
+    try {
+        const g = makeGame({ mode: 'unlock', requiredCardIds: [], availableCards: [] });
+        g.ui.showMainMenu('unlock');
+        g.ui.showSavedCards();
+        assert.equal(made.length, 1, 'one watcher per screen, not one per view');
+        assert.equal(made[0].el, screen);
+        g.ui.cleanup();
+        assert.equal(made[0].live, false);
+    } finally { window.MutationObserver = saved; }
+});
+
+test('the footer, display and pixel scrollbar rules', () => {
+    const css = readFileSync(src('../css/rfid-minigame.css'), 'utf8');
+    const rule = (sel) => (css.match(new RegExp(`(^|\\n)${sel.replace(/[.:]/g, m => '\\' + m)} \\{([^}]*)\\}`)) || [])[2];
+    assert.match(rule('.flipper-header'), /flex:\s*none/, 'the header is fixed');
+    assert.match(rule('.flipper-footer'), /flex:\s*none/, 'the footer is fixed');
+    assert.match(rule('.flipper-footer:empty'), /display:\s*none/);
+    assert.match(rule('.flipper-display'), /flex:\s*1;[\s\S]*min-height:\s*0/, 'the display takes the spare height and may shrink');
+    assert.match(rule('.flipper-screen'), /min-height:\s*0/);
+    assert.match(rule('.flipper-more\\[hidden\\]') || css.match(/\.flipper-more\[hidden\] \{([^}]*)\}/)[1], /display:\s*none/);
+    // The pixel scrollbar: slice 1's .pixel-scroll shape, scoped to the copier, square,
+    // flat colours (no rgba blends), no arrow buttons
+    assert.match(css, /\.pixel-scroll rule in\s+css\/utilities\.css/, 'the comment names the shared rule');
+    const bars = [...css.matchAll(/\.flipper-zero-frame \.pixel-scroll::-webkit-scrollbar[\w-]*(:hover)? \{([^}]*)\}/g)].map(m => m[2]).join('\n');
+    assert.match(bars, /width:\s*14px/);
+    assert.match(bars, /border:\s*2px solid/);
+    assert.match(bars, /display:\s*none/);
+    assert.doesNotMatch(bars, /rgba|border-radius/);
+    assert.doesNotMatch(css, /\.flipper-screen::-webkit-scrollbar|\.flipper-card-list::-webkit-scrollbar/, 'the old translucent bars are gone');
+    assert.doesNotMatch(rule('.flipper-card-list'), /overflow-y|max-height/, 'one scroller per screen');
 });

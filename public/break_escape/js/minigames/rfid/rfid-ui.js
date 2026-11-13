@@ -25,6 +25,9 @@ export const NO_KEYCARDS_HINT = 'The cloner reads a badge at close range: one yo
 /** How long the emulation screen (card name, protocol, data) stays up before the result. */
 export const EMULATION_HOLD_MS = 1500;
 
+/** The cue under the copier's screen while its content runs on past the bottom edge. */
+export const MORE_BELOW_TEXT = 'More below';
+
 /** The offset that moves a box onto whole device pixels. A box centred in a space of odd
  *  size sits half a pixel off, and every edge of the copier's stepped frame (outline,
  *  bevel, each 2px step) then blends across two rows (UX slice 3a R1 m1). */
@@ -166,9 +169,8 @@ export class RFIDUIRenderer {
      * reader wants: trying them is the player's job.
      */
     showDoorScreen() {
-        const screen = this.getScreen();
+        const screen = this.freshScreen();
         if (!screen) return;
-        screen.innerHTML = '';
 
         const breadcrumb = document.createElement('div');
         breadcrumb.className = 'flipper-breadcrumb';
@@ -278,13 +280,37 @@ export class RFIDUIRenderer {
         header.appendChild(logo);
         header.appendChild(battery);
 
-        // Screen container
+        // The layout of the network view (UX slice 1): a fixed header, a scrolling body and
+        // a fixed footer (UX slice 3a R4 m1). The display is the grey screen: the body
+        // (#rfid-screen, which every screen fills) scrolls inside it, over a "More below"
+        // strip shown while the body runs on. The footer holds the screen's main controls
+        // (Save and Abandon, Emulate and Back), so they show at every window size.
+        const display = document.createElement('div');
+        display.className = 'flipper-display';
+
         const screen = document.createElement('div');
-        screen.className = 'flipper-screen';
+        screen.className = 'flipper-screen pixel-scroll';
         screen.id = 'rfid-screen';
 
+        const more = document.createElement('div');
+        more.className = 'flipper-more';
+        more.hidden = true;
+        more.setAttribute('aria-hidden', 'true');
+        more.innerHTML = `<span class="flipper-more-arrow"></span><span>${MORE_BELOW_TEXT}</span>`;
+
+        display.appendChild(screen);
+        display.appendChild(more);
+
+        const footer = document.createElement('div');
+        footer.className = 'flipper-footer';
+        footer.id = 'rfid-footer';
+
         frame.appendChild(header);
-        frame.appendChild(screen);
+        frame.appendChild(display);
+        frame.appendChild(footer);
+
+        this.moreElement = more;
+        screen.addEventListener('scroll', () => this.updateScrollCue());
 
         return frame;
     }
@@ -297,13 +323,70 @@ export class RFIDUIRenderer {
         return document.getElementById('rfid-screen');
     }
 
+    /** The frame's footer, under the screen (null before the frame is built). */
+    getFooter() {
+        return document.getElementById('rfid-footer');
+    }
+
+    /**
+     * The screen, emptied for the next view, with the footer emptied too and the body
+     * scrolled back to its top. Null when the copier has no screen.
+     */
+    freshScreen() {
+        const screen = this.getScreen();
+        if (!screen) return null;
+        screen.innerHTML = '';
+        if ('scrollTop' in screen) screen.scrollTop = 0;
+        const footer = this.getFooter();
+        if (footer) footer.innerHTML = '';
+        this.watchScreen(screen);
+        return screen;
+    }
+
+    /**
+     * Put a screen's main controls in the frame's footer, outside the scrolling body, so
+     * they show without scrolling. Without a footer (a frame built elsewhere) they go at
+     * the end of the screen, as before.
+     */
+    addToFooter(...controls) {
+        const target = this.getFooter() || this.getScreen();
+        if (!target) return;
+        for (const c of controls) target.appendChild(c);
+        this.updateScrollCue();
+    }
+
+    /**
+     * Show "More below" while the body runs past the display's bottom edge; hide it at the
+     * end. A pixel or two of rounding is not more below.
+     */
+    updateScrollCue() {
+        const screen = this.getScreen();
+        const more = this.moreElement;
+        if (!screen || !more) return false;
+        const below = (screen.scrollHeight - screen.clientHeight - screen.scrollTop) > 2;
+        more.hidden = !below;
+        return below;
+    }
+
+    /**
+     * Re-check the cue whenever the body's content changes (a new view, a progress line).
+     * One observer per copier, on its own screen, disconnected on cleanup.
+     */
+    watchScreen(screen) {
+        if (typeof window === 'undefined' || typeof window.MutationObserver !== 'function') return;
+        if (this._screenObserver && this._watchedScreen === screen) return;
+        if (this._screenObserver) this._screenObserver.disconnect();
+        this._watchedScreen = screen;
+        this._screenObserver = new window.MutationObserver(() => this.updateScrollCue());
+        this._screenObserver.observe(screen, { childList: true, subtree: true, characterData: true });
+    }
+
     /**
      * Show main menu
      * @param {string} mode - 'unlock' or 'clone'
      */
     showMainMenu(mode) {
-        const screen = this.getScreen();
-        screen.innerHTML = '';
+        const screen = this.freshScreen();
 
         // Breadcrumb
         const breadcrumb = document.createElement('div');
@@ -354,8 +437,7 @@ export class RFIDUIRenderer {
     showTapInterface() {
         // At a reader both lists live on the door screen
         if (this.minigame.isLockingAttempt) return this.showDoorScreen();
-        const screen = this.getScreen();
-        screen.innerHTML = '';
+        const screen = this.freshScreen();
 
         // Breadcrumb
         const breadcrumb = document.createElement('div');
@@ -408,9 +490,8 @@ export class RFIDUIRenderer {
 
         screen.appendChild(cardList);
 
-        // Back button
-        const back = backButton(() => this.showMainMenu('unlock'));
-        screen.appendChild(back);
+        // Back button, in the footer
+        this.addToFooter(backButton(() => this.showMainMenu('unlock')));
     }
 
     /**
@@ -419,8 +500,7 @@ export class RFIDUIRenderer {
     showSavedCards() {
         // At a reader both lists live on the door screen
         if (this.minigame.isLockingAttempt) return this.showDoorScreen();
-        const screen = this.getScreen();
-        screen.innerHTML = '';
+        const screen = this.freshScreen();
 
         // Breadcrumb
         const breadcrumb = document.createElement('div');
@@ -457,9 +537,8 @@ export class RFIDUIRenderer {
             screen.appendChild(cardList);
         }
 
-        // Back button
-        const back = backButton(() => this.showMainMenu('unlock'));
-        screen.appendChild(back);
+        // Back button, in the footer
+        this.addToFooter(backButton(() => this.showMainMenu('unlock')));
     }
 
     /**
@@ -467,8 +546,7 @@ export class RFIDUIRenderer {
      * @param {Object} card - Card to display
      */
     showCardDetails(card) {
-        const screen = this.getScreen();
-        screen.innerHTML = '';
+        const screen = this.freshScreen();
 
         const displayData = this.dataManager.getCardDisplayData(card);
 
@@ -511,11 +589,9 @@ export class RFIDUIRenderer {
         emulateBtn.className = 'flipper-menu-item';
         emulateBtn.textContent = '> Emulate';
         emulateBtn.addEventListener('click', () => this.showEmulationScreen(card));
-        screen.appendChild(emulateBtn);
 
-        // Back button
-        const back = backButton(() => this.showSavedCards());
-        screen.appendChild(back);
+        // Emulate and Back in the footer, so both show at every window size (R4 m1)
+        this.addToFooter(emulateBtn, backButton(() => this.showSavedCards()));
     }
 
     /**
@@ -523,8 +599,7 @@ export class RFIDUIRenderer {
      * @param {Object} card - Card to emulate
      */
     showEmulationScreen(card) {
-        const screen = this.getScreen();
-        screen.innerHTML = '';
+        const screen = this.freshScreen();
 
         // Get protocol-specific display data
         const displayData = this.dataManager.getCardDisplayData(card);
@@ -536,6 +611,17 @@ export class RFIDUIRenderer {
         // trail carries on from it
         breadcrumb.textContent = this.minigame.isLockingAttempt ? 'RFID > Reader > Emulating' : 'RFID > Saved > Emulating';
         screen.appendChild(breadcrumb);
+
+        // Emulating message: first, so the status shows at every window size before the
+        // screen moves on (R4 m1)
+        const emulating = document.createElement('div');
+        emulating.className = 'flipper-emulating';
+        if (displayData.protocol === 'MIFARE_DESFire' && !card.rfid_data?.masterKeyKnown) {
+            emulating.textContent = 'Emulating UID only...';
+        } else {
+            emulating.textContent = 'Emulating...';
+        }
+        screen.appendChild(emulating);
 
         // Emulation icon
         const icon = document.createElement('div');
@@ -564,16 +650,6 @@ export class RFIDUIRenderer {
         });
 
         screen.appendChild(data);
-
-        // Emulating message
-        const emulating = document.createElement('div');
-        emulating.className = 'flipper-emulating';
-        if (displayData.protocol === 'MIFARE_DESFire' && !card.rfid_data?.masterKeyKnown) {
-            emulating.textContent = 'Emulating UID only...';
-        } else {
-            emulating.textContent = 'Emulating...';
-        }
-        screen.appendChild(emulating);
 
         // Trigger emulation once the player has had time to read this screen (it showed for
         // only half a second before, too short to see). If it throws (bad card data), say so
@@ -642,7 +718,8 @@ export class RFIDUIRenderer {
         this.disconnectResizeObserver();
         const RO = window.ResizeObserver;
         if (typeof RO === 'function') {
-            this._resizeObserver = new RO(() => snap());
+            // The cue too: a new size can bring the body's end into view or push it out
+            this._resizeObserver = new RO(() => { snap(); this.updateScrollCue(); });
             if (this.container) this._resizeObserver.observe(this.container);
             this._resizeObserver.observe(frame);
         }
@@ -658,6 +735,8 @@ export class RFIDUIRenderer {
         if (this._onResize && typeof window !== 'undefined') window.removeEventListener('resize', this._onResize);
         this._onResize = null;
         this.disconnectResizeObserver();
+        if (this._screenObserver) { this._screenObserver.disconnect(); this._screenObserver = null; }
+        this._watchedScreen = null;
     }
 
     /**
@@ -665,8 +744,7 @@ export class RFIDUIRenderer {
      * @param {Object} cardData - Card data to display protocol info for
      */
     showProtocolInfo(cardData) {
-        const screen = this.getScreen();
-        screen.innerHTML = '';
+        const screen = this.freshScreen();
 
         const displayData = this.dataManager.getCardDisplayData(cardData);
         const protocol = displayData.protocol;
@@ -812,28 +890,27 @@ export class RFIDUIRenderer {
 
         // Back goes one step, to the read screen, keeping the read and any keys
         // already cracked. Abandoning the read is a separate, explicit choice.
+        // Both in the footer, so they show at every window size (R4 m1).
         const backBtn = backButton(() => this.showCardDataScreen(cardData));
-        actions.appendChild(backBtn);
 
         const abandonBtn = document.createElement('div');
         abandonBtn.className = 'flipper-button-back';
         abandonBtn.textContent = 'Abandon read';
         abandonBtn.addEventListener('click', () => this.minigame.complete(false));
-        actions.appendChild(abandonBtn);
 
         // The menu entries are divs: mark them as buttons for assistive tech and the
         // test bridge, which finds controls by role.
-        for (const item of actions.children) item.setAttribute?.('role', 'button');
+        for (const item of [...actions.children, backBtn, abandonBtn]) item.setAttribute?.('role', 'button');
 
         screen.appendChild(actions);
+        this.addToFooter(backBtn, abandonBtn);
     }
 
     /**
      * Show card reading screen (clone mode)
      */
     showReadingScreen() {
-        const screen = this.getScreen();
-        screen.innerHTML = '';
+        const screen = this.freshScreen();
 
         // Breadcrumb
         const breadcrumb = document.createElement('div');
@@ -845,23 +922,12 @@ export class RFIDUIRenderer {
         const card = this.minigame.cardToClone || {};
         const profile = getReadProfile(detectProtocol(card));
 
-        const band = document.createElement('div');
-        band.className = 'flipper-info-dim';
-        band.textContent = profile.band;
-        screen.appendChild(band);
-
+        // The read status and its progress bar first, so they show at every window size
+        // (R4 m1); what the cloner sees on the card follows
         const status = document.createElement('div');
         status.className = 'flipper-info';
         status.textContent = profile.cryptoClass === 'open' ? 'Reading ID...' : 'Reading UID...';
         screen.appendChild(status);
-
-        screen.appendChild(this.createCryptoLine(profile));
-
-        // Instruction
-        const instruction = document.createElement('div');
-        instruction.className = 'flipper-info-dim';
-        instruction.textContent = "Don't move card...";
-        screen.appendChild(instruction);
 
         // Progress bar
         const progressContainer = document.createElement('div');
@@ -873,6 +939,19 @@ export class RFIDUIRenderer {
 
         progressContainer.appendChild(progressBar);
         screen.appendChild(progressContainer);
+
+        // Instruction
+        const instruction = document.createElement('div');
+        instruction.className = 'flipper-info-dim';
+        instruction.textContent = "Don't move card...";
+        screen.appendChild(instruction);
+
+        const band = document.createElement('div');
+        band.className = 'flipper-info-dim';
+        band.textContent = profile.band;
+        screen.appendChild(band);
+
+        screen.appendChild(this.createCryptoLine(profile));
 
         // Start reading animation
         this.minigame.startCardReading(profile.readMs);
@@ -940,8 +1019,7 @@ export class RFIDUIRenderer {
      * @param {Object} cardData - Read card data
      */
     showCardDataScreen(cardData) {
-        const screen = this.getScreen();
-        screen.innerHTML = '';
+        const screen = this.freshScreen();
 
         // Get protocol-specific display data
         const displayData = this.dataManager.getCardDisplayData(cardData);
@@ -977,6 +1055,13 @@ export class RFIDUIRenderer {
             note.className = 'flipper-info';
             note.textContent = displayData.securityNote;
             screen.appendChild(note);
+        }
+
+        // A keyless MIFARE read: why there is no plain Save, above the data so it shows
+        // with the footer's "Crack keys first" (R4 m1)
+        if (keyless) {
+            screen.appendChild(iconLine('flipper-info flipper-crack-hint', 'lock',
+                'Sectors encrypted: recover the keys to read them. Default keys fall to a dictionary attack; custom keys need Darkside.'));
         }
 
         // Card data fields
@@ -1022,8 +1107,6 @@ export class RFIDUIRenderer {
         saveBtn.className = 'flipper-button';
         if (keyless) {
             // MIFARE Classic with no keys: no plain Save, point at the attack menu.
-            screen.appendChild(iconLine('flipper-info flipper-crack-hint', 'lock',
-                'Sectors encrypted: recover the keys to read them. Default keys fall to a dictionary attack; custom keys need Darkside.'));
             saveBtn.textContent = 'Crack keys first';
             saveBtn.addEventListener('click', () => this.showProtocolInfo(cardData));
         } else {
@@ -1040,7 +1123,9 @@ export class RFIDUIRenderer {
 
         buttons.appendChild(saveBtn);
         buttons.appendChild(cancelBtn);
-        screen.appendChild(buttons);
+        // In the footer, outside the scrolling body: Save and Abandon show at every
+        // window size, however long the card data (R4 m1)
+        this.addToFooter(buttons);
     }
 
     /**
@@ -1048,8 +1133,7 @@ export class RFIDUIRenderer {
      * @param {Object} data - Attack data {type, progress, currentSector, etc.}
      */
     showAttackProgress(data) {
-        const screen = this.getScreen();
-        screen.innerHTML = '';
+        const screen = this.freshScreen();
 
         // Breadcrumb
         const breadcrumb = document.createElement('div');
@@ -1155,8 +1239,7 @@ export class RFIDUIRenderer {
      * @param {string} message - Success message
      */
     showSuccess(message) {
-        const screen = this.getScreen();
-        screen.innerHTML = '';
+        const screen = this.freshScreen();
 
         const success = document.createElement('div');
         success.className = 'flipper-success';
@@ -1175,9 +1258,8 @@ export class RFIDUIRenderer {
      * @param {string} [tone] - 'notice' for "nothing happened" (amber, no cross)
      */
     showError(message, detail, tone) {
-        const screen = this.getScreen();
+        const screen = this.freshScreen();
         if (!screen) return;
-        screen.innerHTML = '';
 
         const notice = tone === 'notice';
         const error = document.createElement('div');

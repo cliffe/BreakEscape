@@ -82,12 +82,15 @@
     position: relative;
     width: 400px;
     height: 550px;
-    /* Never taller than its area: a flex item's automatic minimum is its content, so
-       without min-height: 0 the copy screen (577px after a read) ran off a 412px-high
-       window with Save out of reach. Capped, the frame wraps its content at every size
-       and .flipper-screen (overflow-y: auto) scrolls instead (UX slice 3a R3 M1). */
+    /* What keeps the frame inside its area is flex shrink: the frame is the area's only
+       flex item, and in a window shorter than 630px it shrinks to the area's height (the
+       window less 40px). That works only with min-height: 0, because a flex item's
+       automatic minimum is its content (577px on the copy screen), which ran the frame
+       off a 412px-high window (UX slice 3a R3 M1). The body inside then scrolls. No
+       height cap: on this content-box frame a 100% cap holds only the content box and
+       lets the frame run 40px past its area, so it never bound (R4 m2). Keep the shrink. */
     min-height: 0;
-    max-height: 100%;
+    flex-shrink: 1;
     background: #1a0d00;
     clip-path: var(--copier-steps);
     padding: 20px;
@@ -133,8 +136,9 @@
     background: #FF8200;
 }
 
-/* Header */
+/* Header: fixed at the top of the frame (UX slice 3a R4 m1) */
 .flipper-header {
+    flex: none;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -156,11 +160,23 @@
     font-family: 'GNF', monospace;
 }
 
-/* Screen */
-.flipper-screen {
+/* The display: the grey screen between the header and the footer. It holds the
+   scrolling body (.flipper-screen, #rfid-screen) and, under it, the "More below" strip.
+   The layout of the network view (UX slice 1): fixed header, scrolling body, fixed
+   footer (UX slice 3a R4 m1). */
+.flipper-display {
     flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
     background: #333;
     border: 2px solid #1a0d00;
+}
+
+/* The scrolling body, which every screen fills */
+.flipper-screen {
+    flex: 1;
+    min-height: 0;
     padding: 15px;
     color: white;
     font-size: 16px;
@@ -168,6 +184,59 @@
     display: flex;
     flex-direction: column;
     font-family: 'GNF', monospace;
+}
+
+/* "More below": pinned to the display's bottom edge while the body runs on, hidden at
+   the end (rfid-ui.js updateScrollCue), as on the network view */
+.flipper-more {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 4px 8px;
+    background: #222;
+    border-top: 2px solid #1a1a1a;
+    color: #FFA500;
+    font-size: 14px;
+    font-family: 'GNF', monospace;
+}
+
+.flipper-more[hidden] {
+    display: none;
+}
+
+/* A stepped down arrow, 12 x 6 in 2px steps (rows 12, 8 and 4 wide) */
+.flipper-more-arrow {
+    width: 12px;
+    height: 6px;
+    background: #FFA500;
+    clip-path: polygon(0 0, 12px 0, 12px 2px, 10px 2px, 10px 4px, 8px 4px, 8px 6px,
+                       4px 6px, 4px 4px, 2px 4px, 2px 2px, 0 2px);
+}
+
+/* The footer: the screen's main controls, fixed under the display so they show at every
+   window size without scrolling. Empty on screens with none (the X closes the copier). */
+.flipper-footer {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 10px;
+}
+
+.flipper-footer:empty {
+    display: none;
+}
+
+.flipper-footer .flipper-buttons {
+    padding-top: 0;
+    margin-top: 0;
+}
+
+.flipper-footer .flipper-button-back,
+.flipper-footer .flipper-button-back + .flipper-button-back {
+    margin-top: 0;
 }
 
 /* Breadcrumb */
@@ -227,8 +296,7 @@
     flex-direction: column;
     gap: 6px;
     margin-top: 15px;
-    max-height: 300px;
-    overflow-y: auto;
+    /* No scroller of its own: the body scrolls, so one scrollbar and one "More below" */
 }
 
 /* Card Name */
@@ -447,41 +515,52 @@
     cursor: pointer;
 }
 
-/* Scrollbar */
-.flipper-screen::-webkit-scrollbar {
-    width: 8px;
+/* Scrollbar: the pixel-art scrollbar of slice 1, the shared .pixel-scroll rule in
+   css/utilities.css on build/ux-net (not on this branch). This is a local copy of its
+   shape, scoped to the copier, with the copier's colours: once both slices are merged,
+   drop the shape rules here and keep only the colour variables on the frame. Square,
+   2px borders, flat colours, no arrow buttons. */
+.flipper-zero-frame .pixel-scroll {
+    --pixel-scroll-track: #1a1a1a;
+    --pixel-scroll-thumb: #4d4d4d;
+    --pixel-scroll-edge: #FF8200;
+    --pixel-scroll-hover: #FFA500;
 }
 
-.flipper-screen::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.2);
-    border-left: 2px solid rgba(0, 0, 0, 0.4);
+.flipper-zero-frame .pixel-scroll::-webkit-scrollbar {
+    width: 14px;
+    height: 14px;
 }
 
-.flipper-screen::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.3);
-    border: 2px solid #333;
+.flipper-zero-frame .pixel-scroll::-webkit-scrollbar-track {
+    background: var(--pixel-scroll-track);
+    border-left: 2px solid var(--pixel-scroll-thumb);
 }
 
-.flipper-screen::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.5);
+.flipper-zero-frame .pixel-scroll::-webkit-scrollbar-thumb {
+    background: var(--pixel-scroll-thumb);
+    border: 2px solid var(--pixel-scroll-edge);
 }
 
-.flipper-card-list::-webkit-scrollbar {
-    width: 6px;
+.flipper-zero-frame .pixel-scroll::-webkit-scrollbar-thumb:hover {
+    border-color: var(--pixel-scroll-hover);
 }
 
-.flipper-card-list::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.2);
-    border-left: 2px solid rgba(0, 0, 0, 0.4);
+.flipper-zero-frame .pixel-scroll::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
 }
 
-.flipper-card-list::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.3);
-    border: 2px solid #333;
+.flipper-zero-frame .pixel-scroll::-webkit-scrollbar-corner {
+    background: var(--pixel-scroll-track);
 }
 
-.flipper-card-list::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.5);
+@supports not selector(::-webkit-scrollbar) {
+    .flipper-zero-frame .pixel-scroll {
+        scrollbar-width: auto;
+        scrollbar-color: var(--pixel-scroll-edge) var(--pixel-scroll-track);
+    }
 }
 
 /* Protocol-Specific Displays */
@@ -567,8 +646,11 @@
     transition: width 0.5s steps(4);
 }
 
-/* Responsive */
-@media (max-width: 500px) {
+/* Responsive. The phone rule starts at 530px, not 500px: from 501px to 529px wide the
+   wide frame (440px, centred, 20px from the top in a short window) put its top-right
+   corner under the close X (R4 n1). The phone frame caps at 440px wide, so its width
+   does not change in that band. */
+@media (max-width: 530px) {
     /* At phone width the frame and its stepped outline stay inside the window, 16px in
        from each side. Content-box sizing (400px of content plus padding) is kept for wider
        screens; here the padding counts inside the width, or 90% plus 40px of padding ran
