@@ -127,3 +127,38 @@ Keyless server on :3064, new games of test_needs_sims (combat on, hearts drawn):
 ## Handover
 
 Done. Commits: bf83e3ca9, 8e6b9abc1 (slice), 55779aba7 (merge slice 16, M1, M2, m3), fafc5ce53 (R1 fixes), b095a41f1, 6d00997c9, 70a20ddb2, 084b4a2fe (R2 fixes). The two new menu icons still await the user's approval.
+
+## Finish, 2026-11-13: merge main, right-edge band, old scrollbar
+
+### Merge (b1eb68049)
+
+`git merge main` (2f5471209, train 28) into build/ux-slice4. No conflicts. Two files changed on both sides and merged on their own:
+
+- `app/views/break_escape/games/show.html.erb`: this branch's `class="pixel-scroll"` on `#inventory-container` and main's new `pc-monitor.css` link, in different hunks. Both kept.
+- `scenarios/lab_physical_pentest/scenario.json.erb`: this branch's "choose Put on" wording (four places) and main's lab wedge additions. Both kept; validator 0 failures.
+
+Main's PC monitor frame, RFID screen, confirm/close rules and GNF canvas font touched no file this branch changed.
+
+### The 15 px band at 390x844 (6c39c5481)
+
+Cause: the touch-only URL-bar script in `show.html.erb` sets `document.body.style.minHeight = (innerHeight + 1) + 'px'` at DOMContentLoaded and clears it 700 ms later. For that window the page is 845 px tall, so a classic root scrollbar (15 px) shows and `#game-container` is 375 px wide. `applyPixelPerfectScale` (`js/main.js`) ran inside that window and sized the canvas to 375. When the min-height went, the scrollbar went and the container returned to 390, but the window size did not change, so no `resize` fired and the canvas stayed 375: `#game-container`'s `background: #333` (`main.css`) showed from x 375 to 390. Only touch pages run the script; on this branch the canvas is now created inside the 700 ms window. The script itself is the same on main, so main can show the band too if its boot lands in that window (not checked on main).
+
+Fix: a `ResizeObserver` on `#game-container` calls the existing debounced `handleResize`, so any container size change without a window resize re-scales the canvas. The URL-bar script stays.
+
+Measured with scrollbars shown (15 px root, 14 px pixel scrollbar), 390x844, touch, tray-1 shot: before (observer off) canvas right 375, columns 375 to 389 are 81 to 88% solid #333 (the HUD covers the rest); after, canvas right 390, 0% in every 390 shot at 1x and 3x.
+
+### Old tray scrollbar
+
+Gone. The `#inventory-container::-webkit-scrollbar` rules (8 px, rounded thumb) are no longer in `hud.css` or `inventory.css`, and no other sheet styles the tray's scrollbar except `.pixel-scroll` (`utilities.css`, 14 px, square). `overflow-x: auto` stays in `hud.css`: the strip scrolls inside itself. `html` scrollWidth equals the viewport at every size (390 at 390); the strip's own scrollWidth is 504 with 5 items and 720 with 8 at 390, 916 with 8 at 800, with the "more" cue and the pixel scrollbar showing.
+
+### Tests
+
+Unlocked, per the test rule. 30 JS files: every file that imports or stubs `inventory.js`, `inventory-menu.js` or `main.js`, the slice 4 files (inventory-tray-narrow 6, inventory-menu 21, wearables 34, hud-caption-wrap 4, wearable-take-offer 5) and main's pixel-text and pc-monitor-frame: 30 passed. Rails: lab_physical_pentest_network and lab_physical_pentest_wedge, 10 runs, 335 assertions, 0 failures. Full suites left to the orchestrator.
+
+### Live proof
+
+Keyless server on :3430, new test_wearable games (`games.log` in the shot folder), scrollbars shown. The tray starts with one item; more are shown with `window.showServerItem` (display only, no server call) to 5 and 8. The menu shot is a real tap or click on the lock pick set: Drop here / Examine with icons. Viewports 1400x1000, 800x600, 915x412, 390x844 and 390x844 at deviceScaleFactor 3. Overflow (cue and pixel scrollbar) shows at 390 with 5 and 8 items and at 800 with 8; at 1400 and 915 all 8 fit. Shots, per-shot JSON and `tray-1-390x844-nofix.png` (the band, observer off) in `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/e7a32fee-bb00-4a46-ab62-f0d4de35d260/scratchpad/slice4-finish/shots/`.
+
+- A Bluetooth scanner shown in the tray starts its minigame at once, which blocks tray input; the proof uses a book in its place. Not a slice 4 change.
+
+`menu-drop.png` and `menu-examine.png` still await the user's approval; untouched.
