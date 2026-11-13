@@ -110,3 +110,60 @@ Keyless server on :3312 from this worktree, headless Chromium, `setFPS(20)` with
 ### Handover (R1)
 
 Done: every R1 finding and the user's password-screen notes. Commits: b07685776, cf7841113, 939fa9485, plus this log. Open: q98 (prompt skin), unchanged. Not done: nothing in scope.
+
+## R2 fixes
+
+Review: `UX_SLICE2A_REVIEW_R2.md` (0 blockers, 2 majors, 3 minors, 2 nits), with the orchestrator's rulings. Every finding is fixed, plus the archive password's X.
+
+**Correction to the R1 log.** R1 said "the field and Submit show at 915x412 without scrolling". That held for Ian's PC and the Wi-Fi prompt only. On the hot desk with a tile chosen, Submit and the attempts line were below the frame, and the shots missed it because headless Chromium hides scrollbars by default. The R2 proofs below were all taken with scrollbars shown.
+
+| Finding | Fix | Files |
+|---|---|---|
+| M1, 4px overflow and a system scrollbar | Bisected live by hiding each descendant of the frame's scroll area in turn: the overflow came from `.monitor-bezel::before`, set 4px past each edge of the bezel. The bezel's `clip-path` hides everything outside its own box, so those 4px never showed, but they still counted as scrollable overflow. The pseudo-element is now inset 0; the bezel is pixel-identical (compared live with the scroll held fixed). Where the area does scroll, it has a pixel-art scrollbar: a 12px track with a 2px left border, and a square thumb with a 2px border and no radius, following `biometrics-minigame.css`. `scrollbar-color` and `scrollbar-width` are set for Firefox only, inside `@supports (-moz-appearance: none)`, because Chromium drops the `::-webkit-scrollbar` rules once either is set. The rule is scoped in `password-minigame.css`, with a comment naming the shared `.pixel-scroll` rule that slice 1 adds to `utilities.css`. | `password-minigame.css` |
+| M2, sign-in at 915x412 | In the short-window block: 84px tiles, a 32px portrait (a quarter of a 128px talk-sheet frame), no username line, smaller gaps and a smaller controls row. The controls row is inside the frame (m3). `revealInFrame` (`scrollIntoView` with `block: 'nearest'`) brings Submit into view once a tile is chosen, and the message line into view on a wrong password or a lockout; the plain screen's attempts counter is revealed after each try. The sign-in post-it is pulled up 40px (24px in a short window) instead of 48px, so it stays below the message line; at 915x412 it had covered the start of "Incorrect username or password". | `password-minigame.css`, `password-minigame.js` |
+| m1, Esc in a field | The plain, prompt and sign-in key handlers call `closeByPlayer()` and stop propagation, as the X does: at once, `closedByPlayer` true, no "cancelled" message, no 800ms wait. The on-screen keyboard's Escape key is labelled Esc (it read Cancel) and closes the same way. `cancelPassword` has no callers left; it is kept for now. | `password-minigame.js` |
+| m2, share icon at 1.85x | Desktop icons go through `fitWholeScale(img, 56, { pad: true, onlyIfFits: true })`. 56 is the old 48px box plus its 4px padding, so the box keeps its size: a 16px glyph stays at x3 with 4px padding, and the 26x18 share folder is at x2 (52x36, padding 10px 2px). `onlyIfFits` (new) leaves a picture larger than the box at its CSS size. | `container-item-image.js`, `container-minigame.js` |
+| m3, Add to Notepad outside the frame | `ensureControlsRow` appends the row to the frame, after the game area, as `flex: 0 0 auto` with a 2px top rule. The area scrolls above it, so the post-it cannot reach it. | `password-minigame.js`, `password-minigame.css` |
+| n1, mark half pixel on x | The mark is drawn with origin (0, 1) at `x = round(left + inset)`: live, its left is at 163 against the sprite's 160, and its bottom at 120 against 120. | `postit-marks.js` |
+| n2, hover fills the label box | The folder window's label is `width: max-content; max-width: 152px`, so the navy highlight covers the name only (139px for "Backup-Vault"). | `container-minigame.css` |
+| Archive password X | A lock screen opened from a sign-in desktop at the keyboard arms the same one-shot return as a network screen, so the X (or Esc) on Ian's archive password goes back to his desktop, as a share's Close does. The return uses `playerCloseOnly`: a forced close (a hit, too many wrong passwords) stays in the world and clears the pending return. A successful unlock hands over to the archive. An ordinary container still arms no return. | `container-minigame.js` |
+
+### Tests
+
+Run without the lock: the 21 node test files that import `password-minigame.js`, `container-minigame.js`, `container-item-image.js` or `postit-marks.js`, or read their CSS. 256 pass, 0 fail. `toast-once-across-panel-handover` fails under `node --test` with a runner deserialise error (the script prints to stdout); it passes 6/6 run with plain `node`, as `bin/test-js` runs it.
+
+New or changed tests:
+- `password-signin-mode`: 4 new. Esc in the password field, the username field or on the page ends exactly as the X does (same `endMinigame` arguments, `closedByPlayer`, no failure message, ended once). The same holds on the plain, archive and Wi-Fi screens, including the on-screen Esc key. Add to Notepad sits inside the frame after the game area, on the sign-in and plain screens. Choosing a tile reveals Submit; a wrong password and a lockout reveal the message line.
+- `access-signin-postit`: 1 new. The bezel `::before` is inset 0; the scrollbar has a 2px-bordered square thumb and the Firefox properties in `@supports`; the controls row does not scroll; the short-window tile, portrait and post-it rules.
+- `container-shares`: 4 new. The archive X returns to the local desktop; a forced close stays in the world; an unlock hands over to the archive; desktop icons are drawn at a whole scale.
+- `postit-marks`: the mark's origin is (0, 1) and its left is a whole pixel.
+
+### Live proof
+
+Keyless server on :3314 from this worktree, stopped afterwards. Headless Chromium with `--hide-scrollbars` removed (scrollbars shown), `setFPS(20)` with fixed steps on (`[20, true]` logged on every run). New games:
+- 2540, 2558, 2559 (test_access_signin, swapped onto test_access_networks): Ian's PC, the lockout PC and the archive password at 1400x1000, 800x600 and 915x412.
+- 2587, 2588, 2589: the same, used for the final hot desk runs (the archive run leaves the hot desk signed in).
+- 2544, 2560, 2561 (m01, `--start-room kevin_office`).
+- 2545 (m02, `--start-room it_department`).
+- 2543 (test_access_networks, `--give kit_dropbox`): the Wi-Fi prompt at three sizes, the SV-FS02 desktop and the share folder.
+- 2542 (test_access_habits, `--start-room omar_room`): the room mark.
+
+Measured (scrollHeight minus clientHeight of the frame's scroll area, and its scrollbar width):
+- 1400x1000 and 800x600: overflow 0, no scrollbar, on every screen. This covers the hot desk (tiles, tile chosen, wrong password, Other user), Ian's PC, the lockout PC (open, wrong, locked), the archive, the Wi-Fi prompt, m01 (open, wrong, maxed) and m02. R2 measured 4px on most of these.
+- 915x412: the tile screen, Ian's PC, the archive, the Wi-Fi prompt and the lockout PC as opened fit with no scrollbar. Once a tile is chosen, the hot desk scrolls, with the 12px pixel-art scrollbar. Submit (284 to 329) is inside the visible area. After a wrong password the area scrolls by 55px, so the field, Submit and "Incorrect username or password. 4 attempts left." are all inside it, with the post-it below the line. The same holds for Other user. On the lockout PC the "locked" line is in view. On m01 the attempts counter is reachable by the scrollbar and scrolls into view after a try.
+- Add to Notepad is a child of `.password-frame` on the hot desk, m01 and m02. `elementFromPoint` reaches every control at every size.
+- The X and Esc (on the page and in a field) end with `closedByPlayer` true and nothing open, on the hot desk, m01, m02 and the Wi-Fi prompt. On the archive, both the X and Esc in the field go back to Ian's desktop (`ContainerMinigame` open).
+- SV-FS02 desktop: the share icon is `data-scale` 2, 52x36, with padding 10px 2px. The folder window hover is navy, 139px wide.
+- Room mark: origin (0, 1), left 163 (sprite 160), bottom 120 (sprite 120).
+
+Shots and logs are in the session scratchpad under `ux-shots/slice2a-r2fix/`: `after-signin-{tiles,chosen,wrong,other}-*`, `after-signin-typed-*`, `after-signin-lockout-wrong-*`, `after-signin-lockout-*`, `after-archive-password-*`, `after-plain-*kevin_office_pc_0-*`, `after-plain-*gary_workstation-1400x1000`, `after-wifi-prompt-*`, `after-remote-desktop-*`, `after-share-folder-*`, `after-share-hover-*`, `after-room-mark-zoom-1400x1000`, at 1400x1000, 800x600 and 915x412. Drivers: `drive.mjs`, `probe.mjs` (the overflow bisect); logs in `logs/` (the `signin2-*` runs failed on an already signed-in hot desk and were redone as `signin3-*`).
+
+### Noticed, not changed
+
+- At 1400x1000 the frame is centred on a quarter pixel when its height is odd (top 210.25 with a tile chosen), so its text can sit off the pixel grid. This predates the slice.
+- The plain screen's transient failure box ("Incorrect password. 2 attempts remaining.") draws over the post-it for its 1.5s at 915x412. This also predates the slice.
+- `cancelPassword` is now unused.
+
+### Handover (R2)
+
+Done: every R2 finding and the archive X. Commits: 89b795576, d03a1b7f2, plus this log. Open: q98 (prompt skin), unchanged. Not done: nothing in scope.
