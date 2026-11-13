@@ -1,0 +1,10 @@
+game 2314 (vance_ko)
+"opened robert_vance_phone"
+thread: {"choices":["1. (Close.)"],"header":"☎\nCall","thread":""}
+shot vance_ko_thread
+dialling: {"bar":"CALLING","thread":""}
+shot vance_ko_calling
+after ring out: {"bar":null,"thread":"☎ | No answer","header":"☎\nCall"} rows=["No answer"] conn=false
+shot vance_ko_no_answer
+/tts requests: ["narrator","A SAFETYNET operations room. Director Netherton is already on his feet; Agent HaX is patching in the technical desk."] ["director_netherton","Agent 0x00. ENTROPY used to steal. Now they break the things people can't live without."] ["director_netherton","I want my best in the room and my best on the wire. Nightshade has read the control systems. HaX has the rest."] ["ag
+[]

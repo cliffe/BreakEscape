@@ -106,7 +106,7 @@ Maya Chen: I suppose it doesn't matter now.
 - Keep the note under 200 characters, in plain ASCII words, with no `{braces}`. A note that prints anything (a variable `#delivery: {mood}`, a conditional `#delivery: {flag: loud|soft}` or a sequence `#delivery: {~one|two}`, with or without plain words before it) cannot be read by the server: the line plays untagged, and any note before it on the line or carried to it is dropped too. The same goes for a tag whose name is printed (`#{t}`), which may turn out to be a `#delivery:` note; to show a `#` in a spoken line, write `\#`. A longer note, or one with no letter or digit (`...`), is dropped and the line plays untagged.
 - Keep it short and about the voice: pace, volume, mood, a laugh or sigh in the voice (`quietly, almost to herself`, `flatly`, `with a tired laugh`, `slowly, choosing each word`). Things the character *does* are narration, or cut.
 - A note changes that line's audio, so adding, changing or removing one regenerates the clip. Untagged lines keep their existing clips.
-- Person-chat lines only, for now: a voiced phone call (`voiced: true`) doesn't send the note yet, so put nothing there you rely on.
+- Person-chat lines and voiced phone calls (the call's knots and what they reach) both send the note. A voicemail's `voice:` lines take none, and a text thread is not spoken.
 
 ❌ **WRONG**: an inline cue, and a line starting with `*`, which the compiler parses as a player choice:
 ```ink
@@ -544,6 +544,178 @@ When a player selects a choice tagged with `#exit_conversation`:
 - Story state is saved with all progression
 - On next conversation, story picks up from where it left off
 
+## Writing call and voicemail knots
+
+This extends "Remote conversations: write for the mode" (which modes there are, and writing a text as a text). It covers the calls that ring (`ring`) and the contacts the player can ring (`call`); the scenario side is in `README_scenario_design.md` "Voiced phone calls".
+
+### A call knot
+
+A call lives in its own knot, apart from the contact's home knot. The home knot is the text thread (`start`, or whatever the scenario's `currentKnot` says). The call knot is what rings or what the Call button dials. Mark the first knot of every call `// lint: call-knot` on the line under its heading, so `dialoguelint` stops flagging call wording ("on the line", "you picked up") in it. The mark spreads along diverts to the rest of the call and stops at the home knot, so one mark per call is enough.
+
+```ink
+VAR call_answer_seconds = 0
+VAR call_is_callback = false
+
+=== start ===
+Message me if you need anything.
++ [I'm done here. Bring me in.]
+    #place_call:extract_call
+    -> DONE
+
+=== first_call ===
+// lint: call-knot
+Root flag's in, and you need to hear what's on it.
++ [Go on.]
+    The ledger names three people. One of them is yours.
+    #exit_conversation
+    -> DONE
+
+=== extract_call ===
+// lint: call-knot
+Meet me at the east door.
+#exit_conversation
+-> DONE
+```
+
+Here `first_call` rings (a `ring` mapping's `targetKnot`) and `extract_call` is dialled by the hub choice (a `call` entry).
+
+Rules for a call knot:
+
+- **Write speech.** Short turns, one thought per line, about ten NPC lines for the whole call. No links, lists, emoji, "sent you" or "see above". Voiced lines can't print variables, and they carry no inline stage directions: delivery goes in a `#delivery:` tag on its own line, never inside an inline conditional (`{flag: Line. #delivery: x}` breaks the TTS walker). `Narrator:` lines are shown muted and not spoken, so use them rarely.
+- **End with `#exit_conversation`, then `-> DONE`.** On the last line or the last choice. A call whose story ends without the tag hangs up 2 s after its last line. The engine then moves the story to the home knot, so the thread afterwards reads as the thread.
+- **Never divert to the home knot, a hub, or any knot the text thread also uses.** After `#exit_conversation` the phone keeps running the story until it reaches choices. A `-> hub` there types the hub's lines, unvoiced, inside the call, and the call's voicing then reaches into the hub. The validator warns on a call that reaches the home knot, and on a home knot that reaches a call. Only a contact with contact-level `voiced: true` (the lab's Dev) diverts home.
+- **The home knot never routes into a call knot.** A thread opened by hand must not replay the call as silent texts. The call is delivered by the ring or the button.
+- **The thread comes back on the home knot after every call.** Write the home knot so it reads right after a call as well as before one. If the thread already shows the home knot's lines, the engine settles on its choices without typing them again, so a hub line is not shown twice.
+- **A contact who is only rung still needs a home knot that rests.** If it prints nothing and ends (`-> DONE`), the story is over: opening the thread by hand shows a "Conversation ended" notice and no choices, beside the Missed call row and its Call back button. Give it one choice whose whole text is in parentheses, looping home:
+
+  ```ink
+  === start ===
+  + [(Close.)]
+      #exit_conversation
+      -> start
+  ```
+
+  On the phone, a choice whose whole text is one pair of parentheses (`(Close.)`, `(Hang up.)`) is taken without a player bubble or the sent sound, and is not kept in the thread. That holds inside a call too, so put a real reply in parentheses only when the player saying nothing is the point.
+- **Where a call has several beats, give each its own knot** and list each in `call` (or ring it from its own mapping). Ringing again reruns the knot from the top, so the ink decides what a repeat says with visit counts or a `{once}` block.
+- **Two records, one name.** Where two characters or records share a display name (HaX on the phone and in the room), prefix the co-speaker line with the record's exact id (`agent_0x99: …`, `hax_voice: …`), not the display name. The id match is case-insensitive, never matches `narrator` or `player`, and the bubble and subtitle show the display name. With an id prefix, scenario order doesn't decide who speaks.
+
+### "Call me" means a call
+
+A text, a hub line or a bark that tells the player to call or ring a contact appears only where that contact can be called for that beat: a `call` entry, a pending callback, or a hub choice carrying `#place_call`. Everywhere else, write "message me", "text me" or "tell me". The validator warns on a "call me", "ring me", "phone me", "call anytime", "call when" or "call back" for a contact with no `call` entry and no `ring`. It checks the contact, not the beat, so the rule is yours to keep: if HaX is callable only at the bring-in, her other texts say "message me".
+
+The opposite also holds. Don't write an ink choice that fakes a call ("[Ring back.]" then "The number rings out."): once the contact has a `call` entry with `unavailable: "no_answer"`, the engine rings out for you.
+
+### A hub choice that places a call
+
+When a hub topic becomes a call, keep the choice and let it dial. The player picks the choice they know, and the lab sheet step that quotes it stays true.
+
+```ink
++ {attack_prevented and not mission_complete} [I'm done here. Bring me in.]
+    #place_call:extract_call
+    -> DONE
+```
+
+The tag goes on its own line in the choice's body, then `-> DONE`. Three things go wrong otherwise:
+
+- A tag inside or after the brackets (`[Bring me in.] #place_call`) never runs. The validator errors.
+- A divert to the hub after the tag (`-> hub`) carries the hub's first line with it, and the phone would type that line just before dialling. The validator warns when the next line isn't `-> DONE`.
+- The choice prints no NPC line; the call's knot speaks first. Don't add a "Sure, calling now" line above the tag.
+
+`<knot>` must be one of the contact's `call` entries (mark a beat that only this choice dials `"button": false`). A bare `#place_call` dials what the Call button would. If the call rings out, the thread comes back on the home knot and shows the hub again.
+
+### How the call came about: `call_answer_seconds` and `call_is_callback`
+
+The engine writes two variables into a call's story, if the ink declares them. A story that doesn't declare them is untouched.
+
+```ink
+VAR call_answer_seconds = 0
+VAR call_is_callback = false
+```
+
+| Variable | Value |
+|---|---|
+| `call_answer_seconds` | On an incoming call, the whole seconds the phone rang before the player answered. An auto-answer counts (it comes at 6 s at most), and so does ringing from an offer that a newer one replaced. Time queued behind something, time paused and time on hold don't count. Outgoing calls and callbacks: 0. |
+| `call_is_callback` | `true` when the call is a callback connecting (the Call back button, the missed row's button, or `#place_call` (bare, or naming the callback's knot) dialling a pending callback). `false` on every other call. |
+
+Both are set fresh on every load and never saved, so they are right even after a reload. Choose between whole lines with a conditional, and never print the number (voiced lines can't print variables):
+
+```ink
+=== first_call ===
+// lint: call-knot
+{
+- call_is_callback: Thanks for ringing back.
+- call_answer_seconds > 10: There you are. I was about to give up.
+- else: Good, you're there.
+}
+```
+
+- A call rings out at 20 s unless it has `untilAnswered`, so an ordinary call's slow-answer line must suit any wait from 11 to 19 s, and name no number. A call with `untilAnswered` can wait much longer.
+- Each branch is its own spoken line and its own audio clip. Keep to two or three.
+- Give a handler call that can be rung back a `call_is_callback` line, and a call that the player may leave ringing (`untilAnswered`, or any call where a wait means something) a `call_answer_seconds > 10` line. Callers who wouldn't care get neither: a stressed engineer who picks up on the first ring has no answer-delay line; a character who never thanks anyone for ringing back has no callback line.
+- Declare the variables only in a contact that has a `ring` or a `call` entry, or the validator warns that they are always 0 or false.
+
+### A voicemail knot
+
+A missed call with `onMissed: "voicemail"` runs `ring.voicemailKnot` silently into the thread, so the player finds a message. Write it as one speaker with no replies.
+
+```ink
+VAR heard_vm = false
+
+=== ring_vm ===
+~ heard_vm = true
+voice: You did not pick up. That is fine.
+voice: Leave this with me. I will ring again.
+-> DONE
+```
+
+- A line that starts `voice:` becomes a voice message with a play button, and is spoken in the contact's voice. The prefix is stripped. A line without it is an ordinary text in the thread, silent.
+- It runs only when nothing of that contact is open (its thread, or a call with it). If the player declined with the thread open, the knot, and anything it sets, waits until they leave, and it may run after the contact's next call. Write it so it reads right then: set only flags that no later call depends on having been set first, or give the later call a branch for both orders. Don't make a hub choice in the same thread depend on a voicemail global at once.
+- No choices, no `#exit_conversation`. The knot runs to its end and the thread is left on the home knot. Variables the knot sets (`heard_vm`) persist, so the home knot can read them on the next open.
+- The knot is not part of the call, so it doesn't widen what the call voices. The voiced-line rules (no printed variables, no inline stage directions) apply to it as to a call. If `dialoguelint` flags call wording in a text line of it, mark the knot `// lint: call-knot`.
+- A withheld caller (`withheld: true`) must have a voicemail knot: it is the only way back to what they had to say.
+
+### A bring-in hand-off
+
+When a call ends by starting a scene (HaX's "Bring me in." and the in-person debrief), the call still says its last line and ends `#exit_conversation`. The scene waits for the call, opens when it ends, and the phone does not reopen on top of it.
+
+```ink
+=== bring_in ===
+// lint: call-knot
+Forensics are ten minutes out. Anything you want, take it now.
++ [Bring me in.]
+    #complete_task:call_in
+    Loading dock. The van with no livery.
+    -> bring_in_confirm
++ [Not yet. I'm still looking.]
+    Fine. The site will keep.
+    #exit_conversation
+    -> DONE
+
+=== bring_in_confirm ===
+// lint: call-knot
++ [On my way. #ending_check]
+    #set_global:debrief_go:true
+    Stay sharp in there, and say nothing you don't have to.
+    #exit_conversation
+    -> DONE
+```
+
+- **The call-in task completes on the "[Bring me in.]" reply**, before the confirm choice. The ending check lists every optional objective still open, so a task that waited for the confirm would always be listed as unfinished.
+- **`#ending_check` goes inside the confirm choice's brackets.** The engine asks before the choice is taken. "End the mission now" takes it. "Keep going" leaves the call on the same choices, so the player can hang up and carry on, and the debrief global is never set. Never put `#ending_check` on a line or after the brackets in a call. "Keep going" would then drop every line and tag of the reply, and the call would hang up 2 s later with nothing said.
+
+Put the hand-off line after the choice, so the player hears it before the scene opens. A bring-in is two to four NPC lines, then the hand-off. It never reviews the mission ("Let's go over what happened" belongs to the debrief). Each mission's bring-in has its own opening, its own reply to "[Bring me in.]", its own "Not yet" reply and its own last line, tied to that mission's story.
+
+### Openings that don't all sound the same
+
+A handler who rings a dozen times a game, and several missions that each have a bring-in, can sound like one call heard again and again. For every call you write:
+
+- **Open on the beat, not on a greeting.** The first line says why she rang or picked up, in words tied to this mission: "Sixty-one. You were right not to trust their screens." or "Root flag's in, and you need to hear what's on it." No "Agent, it's HaX" unless the moment calls for formality.
+- **Use the two variables differently in each mission.** HaX dry and patient in one ("Took your time. Fine, nothing's on fire yet."), clipped in another when something is at risk ("There you are. That dial won't wait."), relieved after a long ring in a third. A callback can be thanked, teased, or skip straight to business.
+- **No line twice across missions.** Every HaX phone record has the same voice block, and a TTS clip is keyed by text plus voice, style and language. The same sentence in two missions' call knots is one clip played twice. This covers the opening line, the last NPC line of every call, and every line of a bring-in. Before you use a line, grep the other missions' call knots for it.
+- **Vary the shape within a mission.** No more than one handler call opens with the same kind of line (status report, question, reaction to a find). Read the openings of every call in the mission side by side.
+- **Fixed strings only.** Choose between whole lines with conditionals; never `{call_answer_seconds} seconds`.
+- **Other callers use the variables only where they fit the person.** One who enjoys keeping the player waiting can comment on the wait. One who never thanks anyone doesn't thank them for ringing back.
+
 ## Handling Repeated Interactions
 
 Break Escape uses Ink's built-in features to manage menu options across multiple conversations.
@@ -916,10 +1088,10 @@ A conversation is shown in one of five ways, and its ink has to read right in th
 | Mode | How it is configured | How it should read |
 |---|---|---|
 | Text thread | phone-chat contact, no `voiced` | short texts; history stays on screen; nothing spoken |
-| Voiced phone call | `voiced: true` on the phone-chat mapping or its `timedConversation` (contact-level `voiced` only through a pretext `callLaunch`) | speech: short turns, one thought per line; only the call's own knots are voiced, never the contact's home knot or hub |
+| Voiced phone call | `voiced: true` on the phone-chat mapping or its `timedConversation`; a `ring` (a call that rings, answer or decline) or a `call` entry (a contact the player can ring); contact-level `voiced` only through a pretext `callLaunch`. See "Writing call and voicemail knots" | speech: short turns, one thought per line; only the call's own knots are voiced, never the contact's home knot or hub |
 | Video call | `conversationMode: "video-call"` or `timedConversation.videoCall` | person-chat framed as a call: speech, and the caller can see the player |
 | In person | person-chat | speech in the room; narration for actions |
-| Voicemail or recording | `type: "phone"` object with `voice` and `ttsVoice` | one speaker, no replies |
+| Voicemail or recording | `type: "phone"` object with `voice` and `ttsVoice`; or a missed `ring` with `onMissed: "voicemail"` and `voicemailKnot` (its `voice:` lines). See "A voicemail knot" | one speaker, no replies |
 
 **Write a text as a text.** A text thread never says "Pick up", "I'm ringing you", "Take it when it rings", "on the line" or "Call me" unless a real call follows from that thread. If the call opens at once (a forced call), the text before it says nothing about ringing. The same rule covers what surrounds the thread: an objective titled "Call Marcus Webb", an object description that mentions "speed dial", or a lab sheet telling students to "phone three people" are all wrong when those contacts are text threads (sis02, sis03, lab_physical_pentest). Write "Message", "text" or "contact".
 

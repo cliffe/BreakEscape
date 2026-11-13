@@ -1,0 +1,30 @@
+== flag1
+   phone closed when the toast arrived: yes
+{"ok":true,"cmd":"eval","result":"clicked: npc-bark-text"}
+   thread tail:  in. It came with a list. / 04:45 / Series R is the restricted series. R-114 to R-161, bay ten, behind the cage mesh in the restricted stacks. / 04:45 / Sorensen's in there with them. The boxes on the clerk's trolleys are the ones on this list. / 04:45 / The catalogue keeps something else live. Their ledger. / 04:45 / 1. Ledger or stacks first? / 2. She's shredding Series R? / 3. Something else. /  Add to Notepad / Close
+{"notes":"Notepad|Catalogue: salvage cage","g":"flag1_submitted=true flag2_submitted=false ledger_read_heard=false deck_choice_made=false afterwards_heard=false flag4_submitted=false identity_scene_done=false hour_read_started=false hour_read_done=false"}
+   reopen (no replay expected):
+   thread tail: 45 / Got it. / 04:46 / I've a field guide for the ledger, if you want it. Ask me. / 04:46 / 1. The ledger. Where is it? / 2. The restricted series. / 3. Tran. / 4. I need a field guide. / 5. Where do I stand? / 6. That's all for now. / ▼ more choices /  Add to Notepad / Close
+== ledger
+   phone closed when the toast arrived: yes
+{"ok":true,"cmd":"eval","result":"clicked: npc-bark-text"}
+   thread tail: er's open on my screen. There's an entry you need to see. / 04:46 / The ledger's live. Twenty-three placements, forty-seven candidates. / 04:46 / And a legacy section, older than any list we've ever had off them. / 04:46 / One legacy entry, codename WREN. Updated on day ten, in Sorensen's hand. "Assigned TF Null, Montana operation." / 04:46 / 1. TF Null. That's the raid team. / 2. Who is WREN? /  Add to Notepad / Close
+{"notes":"Notepad|Catalogue: salvage cage","g":"flag1_submitted=true flag2_submitted=true ledger_read_heard=true deck_choice_made=false afterwards_heard=false flag4_submitted=false identity_scene_done=false hour_read_started=false hour_read_done=false"}
+   reopen (no replay expected):
+   thread tail: 04:46 / One legacy entry, codename WREN. Updated on day ten, in Sorensen's hand. "Assigned TF Null, Montana operation." / 04:46 / TF Null. That's the raid team. / 04:46 / WREN's on our team. One of the four you met at the briefing. / 04:46 / I've told the Director
+== afterwards
+   phone closed when the toast arrived: yes
+{"ok":true,"cmd":"eval","result":"clicked: npc-bark-text"}
+   thread tail: e. / 04:46 / The ledger's live. Twenty-three placements, forty-seven candidates. / 04:46 / And a legacy section, older than any list we've ever had off them. / 04:46 / One legacy entry, codename WREN. Updated on day ten, in Sorensen's hand. "Assigned TF Null, Montana operation." / 04:46 / TF Null. That's the raid team. / 04:46 / WREN's on our team. One of the four you met at the briefing. / 04:46 / I've told the Director
+{"notes":"Notepad|Catalogue: salvage cage","g":"flag1_submitted=true flag2_submitted=true ledger_read_heard=true deck_choice_made=true afterwards_heard=true flag4_submitted=false identity_scene_done=false hour_read_started=false hour_read_done=false"}
+   reopen (no replay expected):
+   thread tail: 04:46 / One legacy entry, codename WREN. Updated on day ten, in Sorensen's hand. "Assigned TF Null, Montana operation." / 04:46 / TF Null. That's the raid team. / 04:46 / WREN's on our team. One of the four you met at the briefing. / 04:46 / I've told the Director
+== hour_read
+   phone closed when the toast arrived: yes
+{"ok":true,"cmd":"eval","result":"clicked: npc-bark-text"}
+   thread tail: e. / 04:46 / The ledger's live. Twenty-three placements, forty-seven candidates. / 04:46 / And a legacy section, older than any list we've ever had off them. / 04:46 / One legacy entry, codename WREN. Updated on day ten, in Sorensen's hand. "Assigned TF Null, Montana operation." / 04:46 / TF Null. That's the raid team. / 04:46 / WREN's on our team. One of the four you met at the briefing. / 04:46 / I've told the Director
+{"notes":"Notepad|Catalogue: salvage cage","g":"flag1_submitted=true flag2_submitted=true ledger_read_heard=true deck_choice_made=true afterwards_heard=true flag4_submitted=true identity_scene_done=true hour_read_started=true hour_read_done=true"}
+   reopen (no replay expected):
+   thread tail: 85% / ON CALL / 0:22 / Agent HaX / AGENT HAX: And he asked if we'd liked his notes. / AGENT HAX: Netherton's on the ground at Helena. Tell me when you're ready to come in. / 1. Understood.
+== recruiter ring
+1366

@@ -703,6 +703,7 @@ module BreakEscape
       resolved = TtsLineResolver.new(
         scenario_name: @game.mission&.name,
         scenario_data: tts_scenario_data,
+        story_file: method(:resolve_and_compile_ink),
         player_name: tts_player_name
       ).resolve(npc_id, npc, text)
       return render_error(resolved.error, resolved.status) unless resolved.line

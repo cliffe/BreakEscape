@@ -26,6 +26,7 @@ require_relative 'validate_npc_needs'
 require_relative 'validate_network'
 require_relative 'validate_capture_log'
 require_relative 'validate_wearable'
+require_relative 'validate_phone_calls'
 require_relative '../lib/break_escape/scenario_schema'
 require_relative '../lib/break_escape/author_notes'
 require_relative '../lib/break_escape/format_upgrade'
@@ -677,7 +678,7 @@ def check_unknown_fields(json_data)
     needs interests needsHome needsSpeed needsRooms needsAvoidRooms needsCompany chatter chattiness usePayload onUse
     captureProof
     maxQueue needsDeferMin exchanges chatterCooldownMin swivel swivelChance screenHabit printHabit
-    answersPhones phoneCalls
+    answersPhones phoneCalls call
     role creds staff cloneable
     awareness habits
     workNeeds frustration workarounds phone socialUse feed usbHabit
@@ -702,7 +703,7 @@ def check_unknown_fields(json_data)
   known_event_mapping_fields = %w[
     eventPattern condition onceOnly maxTriggers cooldown fireOnlyWhenLoaded delayMs
     bark message barkDelay
-    targetKnot conversationMode background disableClose resume voiced callLabel videoLabel participantTag
+    targetKnot conversationMode background disableClose resume voiced callLabel videoLabel participantTag ring
     patrolOverride setPatrolSpeed setDwellMultiplier setVisible
     sendTimedMessage sendEmail setGlobal completeTask skipTask unlockTask unlockAim unlockDoor closeDoor
     openMinigame endingCheck needs addCapture emitEvent emitEventData
@@ -1214,6 +1215,22 @@ def give_item_placement_issues(ink_lines, source_ink_path)
               "Wrong: dialogue → tag. Correct: tag → dialogue."
   end
   issues
+end
+
+# A1 R1 m1: a record whose id is another record's display name (ignoring case). A line prefix such as
+# "ghost:" then names different records on the phone client (display names first) and the extractor
+# (first match in scenario order), so the voiced speaker can differ from the one shown.
+def check_speaker_id_name_clashes(json_data)
+  records = scenario_npc_records(json_data).map { |npc, path| [npc, path] }.select { |npc, _| npc['id'] }
+  records.flat_map do |npc, path|
+    id = npc['id'].to_s.downcase
+    records.filter_map do |other, other_path|
+      next if other.equal?(npc) || other['displayName'].to_s.downcase != id
+
+      "⚠️ WARNING: #{path}: NPC id '#{npc['id']}' is also the display name of '#{other['id']}' (#{other_path}); " \
+        "a '#{npc['id']}:' line prefix is ambiguous between the two. Rename one of them, or avoid the prefix."
+    end
+  end
 end
 
 def check_ink_files(json_data, base_dir, scenario_dir = nil)
@@ -4324,6 +4341,7 @@ RECURRING_SYNCED_INK_VARS = %w[
   has_keycard has_rfid_cloner card_protocol card_name card_card_id card_instant_clone
   card_needs_attack card_uid_only player_name current_mission_id npc_location mission_phase
   operational_stress_level equipment_status
+  call_answer_seconds call_is_callback
 ].freeze
 
 def recurring_norm_words(text)
@@ -7400,9 +7418,11 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
   end
   run.call('ValidateNpcNeeds') { ValidateNpcNeeds.check(json_data, screen_habits: npc_screen_habits(habits_copy)) }
   run.call('check_access_model') { check_access_model(json_data, repo_root, scenario_dir) }
+  run.call('check_speaker_id_name_clashes') { check_speaker_id_name_clashes(json_data) }
   run.call('check_network_model') { check_network_model(json_data, scenario_dir) }
   run.call('check_capture_log') { check_capture_log(json_data) }
   run.call('check_wearables') { check_wearables(json_data, scenario_dir) }
+  run.call('check_phone_calls') { check_phone_calls(json_data, repo_root) }
   run.call('ValidateAccessWork') { ValidateAccessWork.check(json_data) }
   run.call('ValidateNpcHabits') do
     ValidateNpcHabits.check(json_data, expanded: habits_copy, report: habits_report, scenario_dir: scenario_dir)

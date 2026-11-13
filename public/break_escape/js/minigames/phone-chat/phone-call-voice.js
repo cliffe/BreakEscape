@@ -100,14 +100,18 @@ export function phoneLineVoice(line, contact, characters) {
     const list = !characters ? []
         : (typeof characters.values === 'function' ? Array.from(characters.values()) : Object.values(characters));
     const names = list.map(c => c?.displayName).filter(Boolean);
-    const other = otherSpeaker(line.text, contact, names);
+    const ids = new Map(list.filter(c => c?.id).map(c => [c.id, c.displayName || c.id]));
+    const other = otherSpeaker(line.text, contact, names, ids);
     let speakerId = contact.id;
     let text = line.text.trim();
     if (other) {
         text = other.text;
         const wanted = other.name.trim().toLowerCase();
-        const who = list.find(c => c?.id && c.voice && c.displayName &&
-            c.displayName.trim().toLowerCase() === wanted);
+        // Matched by id: that record speaks, even if another shares its display name
+        const who = other.id
+            ? list.find(c => c?.id === other.id && c.voice)
+            : list.find(c => c?.id && c.voice && c.displayName &&
+                c.displayName.trim().toLowerCase() === wanted);
         // A speaker with no voice is read in the contact's voice, as person-chat does
         if (who) speakerId = who.id;
     } else if (STRIP_SPEAKER_PREFIX.test(text)) {
@@ -128,6 +132,20 @@ export function phoneLineVoice(line, contact, characters) {
 export function outcomeLineVoice(text, params, contact, characters) {
     if (!isVoicedCall(params) || typeof text !== 'string') return null;
     return phoneLineVoice({ type: 'npc', text }, contact, characters);
+}
+
+/**
+ * The delivery note for each line of one story step. A step's tags belong to the last line
+ * it printed (the line the tag ends), so a step of several lines with one #delivery: tag
+ * gives the note to the last and null to the others.
+ * @param {number} lineCount - lines the step printed
+ * @param {string|null} note - deliveryFromTags(step tags)
+ * @returns {Array<string|null>}
+ */
+export function stepDeliveries(lineCount, note) {
+    const out = new Array(Math.max(0, lineCount)).fill(null);
+    if (out.length && note) out[out.length - 1] = note;
+    return out;
 }
 
 /**
@@ -154,16 +172,18 @@ export class PhoneCallVoice {
      * @param {string} speakerId
      * @param {string} text
      * @param {string|Object|null} [fx] - the speaker's voice.fx, if any
+     * @param {{delivery?: string|null}} [options] - the line's #delivery: note (tts-delivery.js);
+     *   with none the request is exactly play(speakerId, text), so an untagged line keeps its clip
      * @returns {Promise<'played'|'silent'|'skipped'>}
      */
-    async speak(speakerId, text, fx = null) {
+    async speak(speakerId, text, fx = null, { delivery = null } = {}) {
         this._release();
         const token = {};
         this._token = token;
         if (fx) this.tts.setVoiceFX(speakerId, fx);
         let duration = null;
         try {
-            duration = await this.tts.play(speakerId, text);
+            duration = await this.tts.play(speakerId, text, delivery ? { delivery } : undefined);
         } catch (_) {
             duration = null;
         }

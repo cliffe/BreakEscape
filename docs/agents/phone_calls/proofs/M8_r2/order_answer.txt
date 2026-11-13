@@ -1,0 +1,9 @@
+SESSION=2165
+{"ok":true,"cmd":"bootstrap","result":{"trace":["cutscene choice 1 of 3","cutscene choice 1 of 3","cutscene choice 1 of 2","cutscene choice 1 of 2","cutscene choice 1 of 3","cutscene choice 1 of 2","c
+{"ok":true,"reason":null}
+banner: {"banner":"Agent HaX | SAFETYNET secure line | Incoming call | Answer | Decline","ringer":"ringing","queued":0}
+"answered"
+thread: ["npc: Agent, I'm your handler for this op. Message me if you need any guidan","npc: You're in.","npc: One test call before it's texts only.","npc: A contractor on the phone is nothing. A contractor overheard talking t","npc: So: quiet, deniable. Message me the moment you're stuck and I'll walk ","player: Understood. Texts it is.","npc: Good. Off you go.","call: Incoming call, 0:11","npc: Now get a feel for the place. 🦎 Check the desks, filing cabinets, not"]
+tour rows=1
+["phone_call_answered:agent_0x99@44.3","conversation_closed:agent_0x99@56.4"]
+shot order_answer_end

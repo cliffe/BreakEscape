@@ -1,0 +1,28 @@
+tee: docs/agents/phone_calls/proofs/M3R2/output.txt: No such file or directory
+== flag1: toast, open, close at the first choice
+   thread: Tomb Beta x0 | HL2015 x0 | tail:  trolleys are the ones on this list. / 04:45 / The catalogue keeps something else live. Their ledger. / 04:45 / 1. Ledger or stacks first? / 2. She's shredding Series R? / 3. Something else. /  Add to Notepad / Close
+== flag1: wait for the global to flip
+"1 salvage notes | flag1_read_heard=true ledger_guide_offered=true ledger_read_heard=false stacks_entered=false"
+== flag1: reopen
+   thread: Tomb Beta x0 | HL2015 x0 | tail: with them. The boxes on the clerk's trolleys are the ones on this list. / 04:45 / The catalogue keeps something else live. Their ledger. / 04:45 / I've a field guide for the ledger, if you want it. Ask me. / 04:45 / 1. Ledger or stacks first? / 2. She's shredding Series R? / 3. Something else. /  Add to Notepad / Close
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+KeyError: 'text'
+"1 salvage notes | flag1_read_heard=true ledger_guide_offered=true ledger_read_heard=false stacks_entered=false"
+== flag1: reopen again (hub expected)
+   thread: Tomb Beta x1 | HL2015 x0 | tail:  still drawing power, and nobody's scheduled it for anything. / 04:46 / Got it. / 04:46 / 1. The ledger. Where is it? / 2. The restricted series. / 3. Tran. / 4. I need a field guide. / 5. Where do I stand? / 6. That's all for now. / ▼ more choices /  Add to Notepad / Close
+== ledger: toast, open, close at the first choice
+   thread: Tomb Beta x1 | HL2015 x0 | tail: hem. / 04:47 / One legacy entry, codename WREN. Updated on day ten, in Sorensen's hand. "Assigned TF Null, Montana operation." / 04:47 / 1. TF Null. That's the raid team. / 2. Who is WREN? /  Add to Notepad / Close
+== ledger: wait for the global to flip
+"1 salvage notes | flag1_read_heard=true ledger_guide_offered=true ledger_read_heard=true stacks_entered=true"
+== ledger: reopen
+   thread: Tomb Beta x1 | HL2015 x0 | tail: ion, older than any list we've ever had off them. / 04:47 / One legacy entry, codename WREN. Updated on day ten, in Sorensen's hand. "Assigned TF Null, Montana operation." / 04:47 / Harwick & Lowe's boxes are in the open stacks, by their bay label. The lid takes that file number. / 04:47 / 1. TF Null. That's th
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+KeyError: 'text'
+"1 salvage notes | flag1_read_heard=true ledger_guide_offered=true ledger_read_heard=true stacks_entered=true"
+== ledger: reopen again (hub expected)
+   thread: Tomb Beta x1 | HL2015 x0 | tail: 04:47 / One legacy entry, codename WREN. Updated on day ten, in Sorensen's hand. "Assigned TF Null, Montana operation." / 04:47 / Harwick & Lowe's boxes are in the open stacks, by their bay label. The lid takes that file number. / 04:47 / TF Null. That's the r
+1422
+
+[exited with code 1]

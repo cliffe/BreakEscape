@@ -1,0 +1,1451 @@
+
+### lab_physical_pentest | briefing_room | npc ruth_phone "Ruth Adeyemi" | scenario.json.erb:633 | voice=yes | voiced=None callLabel=None | storyPath=ruth_phone.json | home=start | phoneId=player_phone
+  ink=scenarios/lab_physical_pentest/ink/ruth_phone.ink
+   ruth_phone.ink:40 knot start = 0 [HOME]
+   ruth_phone.ink:43 knot hub = 5
+   ruth_phone.ink:53 knot stage0 = 5
+   ruth_phone.ink:70 knot stage1 = 14
+   ruth_phone.ink:116 knot stage2 = 5
+   ruth_phone.ink:132 knot stage3 = 4
+   ruth_phone.ink:147 knot door_admin_tip = 1
+   ruth_phone.ink:152 knot closed = 2
+
+### lab_social_engineering | engagement_office | npc ruth_phone "Ruth Adeyemi" | scenario.json.erb:1631 | voice=yes | voiced=None callLabel=None | storyPath=ruth_phone.json | home=start | phoneId=player_phone
+  ink=scenarios/lab_social_engineering/ink/ruth_phone.ink
+   ruth_phone.ink:42 knot start = 0 [HOME]
+   ruth_phone.ink:45 knot hub = 10
+   ruth_phone.ink:67 knot stage0 = 6
+   ruth_phone.ink:84 knot stage1 = 11
+   ruth_phone.ink:111 knot stage2 = 6
+   ruth_phone.ink:128 knot stage3 = 11
+   ruth_phone.ink:157 knot stage4 = 16
+   ruth_phone.ink:188 knot stage5 = 13
+   ruth_phone.ink:222 knot stage6 = 6
+   ruth_phone.ink:239 knot stage7 = 7 spk={"Sort each message": 1}
+   ruth_phone.ink:261 knot stage_done = 4
+   ruth_phone.ink:272 knot closed = 2
+
+### lab_social_engineering | operations_room | npc dev_service_desk "Dev" | scenario.json.erb:1792 | voice=yes | voiced=True callLabel=Ledgerwell service desk | storyPath=dev_service_desk.json | home=start | phoneId=player_phone
+  ink=scenarios/lab_social_engineering/ink/dev_service_desk.ink
+   dev_service_desk.ink:34 knot fn:pretext_say = 0
+   dev_service_desk.ink:39 knot fn:pretext_ask = 0
+   dev_service_desk.ink:43 knot start = 1 [HOME]
+   dev_service_desk.ink:54 knot desk = 1
+   dev_service_desk.ink:76 knot reaction = 9
+   dev_service_desk.ink:116 knot ask_reaction = 5
+
+### lab_tesseract_trials | foyer | npc agent_0x99 "Agent HaX" | scenario.json.erb:422 | voice=yes | voiced=None callLabel=None | storyPath=phone_agent_0x99.json | home=start | phoneId=player_phone
+  ink=scenarios/lab_tesseract_trials/ink/phone_agent_0x99.ink
+   phone_agent_0x99.ink:60 knot start = 0 [HOME]
+   phone_agent_0x99.ink:63 knot hub = 5
+   phone_agent_0x99.ink:99 knot fn:field_note_waiting = 0
+   phone_agent_0x99.ink:105 knot send_field_note = 17
+   phone_agent_0x99.ink:148 knot comms_reminder = 2
+   phone_agent_0x99.ink:162 knot device_reaction = 2
+   phone_agent_0x99.ink:169 knot assessments_reaction = 2
+   phone_agent_0x99.ink:179 knot megan_request = 2
+   phone_agent_0x99.ink:191 knot send_report = 2
+   phone_agent_0x99.ink:206 knot warn_in_band = 2
+   phone_agent_0x99.ink:216 knot refusal_report = 1
+   phone_agent_0x99.ink:223 knot debrief = 1
+   phone_agent_0x99.ink:234 knot stuck = 10
+   phone_agent_0x99.ink:260 knot rung = 42
+   timedMessage {"delay": 3000, "message": "I'm on this line if you need me. Field notes and hints on request. Start with Dr Shaw.", "type": "text", "waitForEvent": "conversation_closed:briefing_cutscene"}
+   sendTimedMessage on objective_task_completed:get_lab_laptop delay 3000 "You left before I'd finished. Ask me about the fallback channel when y"
+   sendTimedMessage on item_picked_up:notes delay 1500 "Jordan's leaflet is in your notepad. Each number on it is one letter o"
+   sendTimedMessage on objective_task_completed:open_lockbox delay 1500 "Eight digits for a four-digit keypad. Odd. Bring the black box too; I "
+   sendTimedMessage on objective_task_completed:open_locker delay 8000 "That phrasing. I've read this voice before. Keep going, and keep your "
+   sendTimedMessage on room_entered:corridor delay 6000 "Not decimal, not hex, not binary. Something new on that wall. Field no"
+   sendTimedMessage on room_entered:library delay 2000 "Two layers on that slip, and the first real key of the night. Field no"
+   sendTimedMessage on objective_task_completed:open_pigeonholes delay 2000 "Got the IV from Trial VII? Paste it onto the drop box tag in your note"
+   sendTimedMessage on objective_task_completed:open_pigeonholes delay 8000 "And one on AES for the drop box, when you want it."
+   sendTimedMessage on objective_task_completed:open_drop_box delay 1500 "Brass. Old-fashioned. The workshop's north. Schreuders' door."
+   sendTimedMessage on item_picked_up:notes delay 12000 "Fingerprints, not passwords. I've a field note on hashes if you haven'"
+   sendTimedMessage on room_entered:workshop delay 2000 "The Keyholder's last Trial is in Schreuders' workshop. I'm not going t"
+   sendTimedMessage on conversation_closed:ghost delay 6000 "If you want to check a signature, I have a field note."
+   sendTimedMessage on global_variable_changed:ebcdic_seen delay 2000 "That tape isn't ASCII. Field note on request, if you're curious."
+   sendTimedMessage on global_variable_changed:decision_made delay 1500 "Received. Opening it now."
+   sendTimedMessage on global_variable_changed:decision_made delay 7500 "My phone just did something it shouldn't. Get out of the building. Cal"
+   sendTimedMessage on global_variable_changed:decision_made delay 1500 "Received. Opening it now."
+   sendTimedMessage on global_variable_changed:decision_made delay 7500 "The phone just did exactly what your flag said it would. Get out of th"
+   sendTimedMessage on global_variable_changed:decision_made delay 3000 "Your end's gone quiet. Talk to me."
+   sendTimedMessage on global_variable_changed:decision_made delay 6000 "Copy. Leave by the front. Don't run. Call me when you're clear."
+
+### lab_tesseract_trials | foyer | npc ghost "Keyholder" | scenario.json.erb:476 | voice=yes | voiced=None callLabel=None | storyPath=phone_ghost.json | home=start | phoneId=keyholder_device
+  ink=scenarios/lab_tesseract_trials/ink/phone_ghost.ink
+   phone_ghost.ink:47 knot start = 0 [HOME]
+   phone_ghost.ink:53 knot route = 4
+   phone_ghost.ink:61 knot intro = 4
+   phone_ghost.ink:77 knot waiting = 15
+   phone_ghost.ink:111 knot who_reply = 1
+   phone_ghost.ink:121 knot the_offer_call = 1 <- global_variable_changed:relay_opened conversationMode=video-call,onceOnly=True @501
+   phone_ghost.ink:126 knot the_offer = 9 spk={"Narrator": 2}
+   phone_ghost.ink:146 knot offer_terms = 13
+   phone_ghost.ink:171 knot offer_hub = 5
+   phone_ghost.ink:189 knot the_offer_again = 3
+   phone_ghost.ink:207 knot send_says_go = 1
+   phone_ghost.ink:214 knot refuse = 5
+   phone_ghost.ink:232 knot closed = 2
+   sendTimedMessage on objective_task_completed:open_locker delay 2000 "Trial II. Two hundred and twelve candidates picked up a card. Forty op"
+   sendTimedMessage on objective_task_completed:open_corridor delay 2000 "Trial IV. Thirty-one candidates left. Most of them asked the Magic but"
+   sendTimedMessage on objective_task_completed:open_library delay 2000 "Trial V. Twenty-two of you through that door. Trial VI is on the retur"
+   sendTimedMessage on objective_task_completed:open_special_collections delay 2000 "Special Collections. Fourteen left. The key to the next one is somewhe"
+   sendTimedMessage on global_variable_changed:megan_file_read delay 14000 "You read the other candidates' files. So did I. Candidate 7 is the int"
+   sendTimedMessage on global_variable_changed:megan_choice delay 2000 "Your handler's about to get generous with bursaries."
+   sendTimedMessage on objective_task_completed:open_drop_box delay 7000 "Hybrid encryption. Nine candidates got this far. It's how we locked fo"
+   sendTimedMessage on conversation_closed:ghost delay 1500 "You closed the call. I'll say it here instead."
+   sendTimedMessage on global_variable_changed:decision_made delay 14000 "Opened. Thank you, Candidate. That was the last Trial. The studentship"
+   sendTimedMessage on global_variable_changed:decision_made delay 14000 "Opened. Thank you, Candidate. That was the last Trial. The studentship"
+   sendTimedMessage on global_variable_changed:decision_made delay 2000 "I did say it listens. The studentship is withdrawn."
+
+### m01_first_contact | reception_area | npc agent_0x99 "Agent HaX" | scenario.json.erb:620 | voice=yes | voiced=None callLabel=None | storyPath=m01_phone_agent0x99.json | home=first_call | phoneId=player_phone
+  ink=scenarios/m01_first_contact/ink/m01_phone_agent0x99.ink
+   m01_phone_agent0x99.ink:80 knot start = 0
+   m01_phone_agent0x99.ink:93 knot first_call = 0 [HOME]
+   m01_phone_agent0x99.ink:101 knot support_hub = 1
+   m01_phone_agent0x99.ink:141 knot lockpick_help = 5
+   m01_phone_agent0x99.ink:161 knot ssh_help = 6 spk={"Command format": 1}
+   m01_phone_agent0x99.ink:184 knot linux_help = 5 spk={"Linux navigation basics": 1}
+   m01_phone_agent0x99.ink:204 knot sudo_help = 5 spk={"Command": 1}
+   m01_phone_agent0x99.ink:224 knot cyberchef_help = 5
+   m01_phone_agent0x99.ink:244 knot request_lockpicking_guide = 4
+   m01_phone_agent0x99.ink:264 knot request_field_guide = 5
+   m01_phone_agent0x99.ink:286 knot request_priv_esc_guide = 5
+   m01_phone_agent0x99.ink:304 knot request_cyberchef_guide = 4 spk={"Keep it simple": 1}
+   m01_phone_agent0x99.ink:324 knot general_advice = 6
+   m01_phone_agent0x99.ink:344 knot report_operation_shatter = 1
+   m01_phone_agent0x99.ink:355 knot shatter_details_1 = 2
+   m01_phone_agent0x99.ink:363 knot shatter_details_2 = 1
+   m01_phone_agent0x99.ink:369 knot shatter_casualties = 2
+   m01_phone_agent0x99.ink:379 knot shatter_reaction = 3
+   m01_phone_agent0x99.ink:389 knot updated_objectives = 3 spk={"New priority objective": 1}
+   m01_phone_agent0x99.ink:401 knot people_at_stake = 3
+   m01_phone_agent0x99.ink:410 knot mission_commitment = 3
+   m01_phone_agent0x99.ink:427 knot event_derek_office_locked = 4
+   m01_phone_agent0x99.ink:449 knot event_lockpick_acquired = 4
+   m01_phone_agent0x99.ink:472 knot event_server_room_entered = 3
+   m01_phone_agent0x99.ink:492 knot event_first_flag = 4
+   m01_phone_agent0x99.ink:513 knot event_derek_office_entered = 5
+   m01_phone_agent0x99.ink:536 knot event_all_flags_submitted = 5
+   m01_phone_agent0x99.ink:559 knot framing_evidence_briefing = 5
+   m01_phone_agent0x99.ink:582 knot event_contingency_found = 3
+   m01_phone_agent0x99.ink:596 knot contingency_reaction = 3
+   m01_phone_agent0x99.ink:605 knot contingency_options = 2
+   m01_phone_agent0x99.ink:623 knot confront_kevin_choice = 5 spk={"Just remember": 1}
+   m01_phone_agent0x99.ink:646 knot warn_kevin_choice = 4
+   m01_phone_agent0x99.ink:666 knot plant_evidence_choice = 5
+   m01_phone_agent0x99.ink:688 knot ignore_kevin_choice = 6
+   m01_phone_agent0x99.ink:711 knot event_act2_complete = 5 spk={"Time to decide": 1}
+   m01_phone_agent0x99.ink:735 knot event_sarah_attacked = 4
+   m01_phone_agent0x99.ink:753 knot event_sarah_ko = 4 spk={"For the record": 1}
+   m01_phone_agent0x99.ink:775 knot event_maya_attacked = 5
+   m01_phone_agent0x99.ink:795 knot event_maya_ko = 6
+   m01_phone_agent0x99.ink:821 knot event_kevin_attacked = 5
+   m01_phone_agent0x99.ink:844 knot event_kevin_ko = 5 spk={"For the record": 1}
+   m01_phone_agent0x99.ink:868 knot event_main_office_entered = 4
+   m01_phone_agent0x99.ink:890 knot event_kevin_accused = 6
+   m01_phone_agent0x99.ink:915 knot event_entropy_reveal_read = 7
+   m01_phone_agent0x99.ink:942 knot closing_debrief = 3
+   timedMessage {"delay": 3000, "message": "Agent, I'm your handler for this op. Message me if you need any guidance.", "type": "text", "waitForEvent": "conversation_closed:briefing_cutscene"}
+   sendTimedMessage on npc_attacked:sarah_martinez delay 1500 "Unorthodox check-in. Her items will be on the floor when she goes down"
+   sendTimedMessage on npc_ko:sarah_martinez delay 2000 "Check-in resolved. Sarah's key and badge are on the floor — she's got "
+   sendTimedMessage on npc_attacked:maya_chen delay 1500 "That's the informant, Agent. She came to us."
+   sendTimedMessage on npc_ko:maya_chen delay 2000 "We may never know what Maya had to tell us. She wasn't ENTROPY — she w"
+   sendTimedMessage on npc_attacked:kevin_park delay 1500 "That's one way to get the lockpick. Remember to minimise casualties wh"
+   sendTimedMessage on npc_ko:kevin_park delay 2000 "Kevin's down. His items are on the floor. For the record — he's got no"
+   sendTimedMessage on global_variable_changed:kevin_accused delay 1500 "Hold on — those logs pointing at Kevin were filed by Derek. Check his "
+   sendTimedMessage on door_unlock_attempt delay 1500 "That door's locked. A lockpick or a spare key would get you in."
+   sendTimedMessage on item_picked_up:lockpick delay 1000 "Lockpick acquired. 🦎 Any locked doors or containers you couldn't open "
+   sendTimedMessage on room_entered:main_office_area delay 1500 "You're in. 🦎 Get a feel for the place — check the desks, filing cabine"
+   sendTimedMessage on room_entered:server_room delay 1000 "You're in the server room. 🦎 That Kali terminal is connected to ENTROP"
+   sendTimedMessage on object_interacted delay 800 "That's your Kali terminal. 🦎 You need to get in remotely. Check what y"
+   sendTimedMessage on item_picked_up:notes delay 1500 "Derek's password list. 🦎 Save it to a file on the Kali, one password p"
+   sendTimedMessage on global_variable_changed:password_list_found delay 3000 "This list could help in the server room. I've a field guide on Linux c"
+   sendTimedMessage on global_variable_changed:ssh_flag_submitted delay 2000 "You have SSH access. 🦎 I’ve pushed the privilege escalation guide to y"
+   sendTimedMessage on room_entered:derek_office delay 1000 "You're in Derek's office. Computer's locked — try something he'd remem"
+   sendTimedMessage on global_variable_changed:derek_pc_unlocked delay 1000 "You're in. Check his files carefully — framing evidence, operational p"
+   sendTimedMessage on item_picked_up:workstation delay 1500 "Patricia's CyberChef workstation — good find. I can upload a field gui"
+   sendTimedMessage on global_variable_changed:whiteboard_cipher_seen delay 1500 "Those notes are encoded, and now you've got a proper lead. I can uploa"
+   sendTimedMessage on global_variable_changed:derek_personal_safe_opened delay 1500 "The Architect's Letter. Physical correspondence — this is rare. Derek "
+   sendTimedMessage on global_variable_changed:derek_storage_safe_opened delay 1500 "Derek decoded that note and used the combination. He wasn't just hidin"
+   sendTimedMessage on global_variable_changed:derek_cabinet_opened delay 1000 "Filing cabinet open. Secure everything inside — casualty projections, "
+   sendTimedMessage on global_variable_changed:contingency_file_read delay 2000 "You found a contingency plan in Derek's files. Read it carefully — thi"
+   sendTimedMessage on global_variable_changed:whiteboard_cipher_seen delay 1500 "That text is encoded. Ends in `=` or `==`, only letters, numbers, `+` "
+   sendTimedMessage on global_variable_changed:framing_evidence_seen delay 2000 "You found something on the PC. Read it carefully — not just the conten"
+   sendTimedMessage on global_variable_changed:entropy_reveal_read delay 2500 "That's the full picture. 🦎 The Architect is real. Derek is one node in"
+   sendTimedMessage on global_variable_changed:entropy_reveal_read delay 2500 "That's the full picture — and Derek's already contained. 🦎 Use the lau"
+   sendTimedMessage on objective_aim_completed:decrypt_entropy_intel delay 3000 "All intelligence secured. You have everything you need and the window "
+   sendTimedMessage on room_entered:testing delay 1000 "Mission complete. Return to HQ for debrief."
+   sendTimedMessage on global_variable_changed:ssh_flag_submitted delay 3000 "ENTROPY archive decryption key confirmed. 🦎 The archive is unlocked — "
+   sendTimedMessage on global_variable_changed:linux_flag_submitted delay 1500 "Directory traversal evidence secured. 🦎 Navigate the Operation Shatter"
+   sendTimedMessage on global_variable_changed:sudo_flag_submitted delay 2000 "Deployment intel secured. 🦎 Two things left: ~/launch_code/launch_flag"
+   sendTimedMessage on global_variable_changed:sudo_flag_submitted delay 2000 "Encoded deployment intel secured — the shatter_configuration confirms "
+   sendTimedMessage on global_variable_changed:sudo_flag_submitted delay 2000 "Encoded deployment intel secured — the shatter_configuration confirms "
+   sendTimedMessage on global_variable_changed:sudo_flag_submitted delay 2000 "Encoded deployment intel secured — the shatter_configuration confirms "
+   sendTimedMessage on item_picked_up:launch-device delay 1500 "You have the launch device. 🦎 Abort the launch: the authorization code"
+   sendTimedMessage on attack_aborted delay 2000 "Abort confirmed. Operation Shatter is dead. 🦎 Both codes secured. Call"
+   sendTimedMessage on attack_launched delay 4000 "...I'm seeing reports. 🦎 Hospital switchboards. Emergency lines floode"
+   sendTimedMessage on global_variable_changed:ssh_flag_submitted delay 3000 "All technical flags secured. 🦎 The ENTROPY archive is unlocked, so rea"
+   sendTimedMessage on global_variable_changed:linux_flag_submitted delay 3000 "All technical flags secured. 🦎 The ENTROPY archive is unlocked, so rea"
+   sendTimedMessage on global_variable_changed:sudo_flag_submitted delay 3000 "All technical flags secured. 🦎 The ENTROPY archive is unlocked, so rea"
+   sendTimedMessage on global_variable_changed:ssh_flag_submitted delay 3000 "All technical evidence secured. Derek is already contained. 🦎 Call me "
+   sendTimedMessage on global_variable_changed:linux_flag_submitted delay 3000 "All technical evidence secured. Derek is already contained. 🦎 Call me "
+   sendTimedMessage on global_variable_changed:sudo_flag_submitted delay 3000 "All technical evidence secured. Derek is already contained. 🦎 Call me "
+   sendTimedMessage on global_variable_changed:derek_confronted delay 1000 "Derek is contained and ENTROPY's full picture is in your hands. 🦎 Use "
+   sendTimedMessage on global_variable_changed:derek_confronted delay 1000 "Derek is contained. You still need to access the ENTROPY encrypted arc"
+
+### m02_ransomed_trust | reception_lobby | npc agent_0x99 "Agent HaX" | scenario.json.erb:705 | voice=yes | voiced=None callLabel=None | storyPath=m02_phone_agent0x99.json | home=first_call | phoneId=player_phone
+  ink=scenarios/m02_ransomed_trust/ink/m02_phone_agent0x99.ink
+   m02_phone_agent0x99.ink:92 knot start = 0
+   m02_phone_agent0x99.ink:99 knot first_call = 4 [HOME]
+   m02_phone_agent0x99.ink:112 knot first_call_choices = 6
+   m02_phone_agent0x99.ink:136 knot support_hub = 1
+   m02_phone_agent0x99.ink:209 knot field_guides = 0
+   m02_phone_agent0x99.ink:231 knot bed4_help = 4
+   m02_phone_agent0x99.ink:245 knot cover_burned_advice = 4
+   m02_phone_agent0x99.ink:257 knot cover_burned_advice_choices = 12
+   m02_phone_agent0x99.ink:282 knot cover_burned_who = 9
+   m02_phone_agent0x99.ink:312 knot ghost_contact_reaction = 8
+   m02_phone_agent0x99.ink:336 knot ghost_deal_reaction = 10 spk={"In exchange": 1, "Narrator": 1}
+   m02_phone_agent0x99.ink:367 knot board_email_reaction = 7
+   m02_phone_agent0x99.ink:394 knot hint_start = 8
+   m02_phone_agent0x99.ink:415 knot hint_lockpick = 10
+   m02_phone_agent0x99.ink:441 knot hint_password = 5
+   m02_phone_agent0x99.ink:459 knot hint_vm = 6
+   m02_phone_agent0x99.ink:478 knot request_lockpicking_guide = 3
+   m02_phone_agent0x99.ink:491 knot request_cyberchef_guide = 4
+   m02_phone_agent0x99.ink:512 knot name_the_badge = 1
+   m02_phone_agent0x99.ink:523 knot name_the_badge_choices = 0
+   m02_phone_agent0x99.ink:544 knot badge_reason = 1
+   m02_phone_agent0x99.ink:552 knot badge_reason_choices = 8
+   m02_phone_agent0x99.ink:586 knot badge_named_reeves = 3
+   m02_phone_agent0x99.ink:596 knot request_ssh_guide = 3
+   m02_phone_agent0x99.ink:609 knot request_privesc_guide = 3
+   m02_phone_agent0x99.ink:622 knot request_infoleak_note = 5
+   m02_phone_agent0x99.ink:638 knot request_scanning_guide = 3
+   m02_phone_agent0x99.ink:651 knot request_vulnerability_guide = 3
+   m02_phone_agent0x99.ink:664 knot request_scanning_exploitation_guide = 4
+   m02_phone_agent0x99.ink:678 knot request_exploitation_guide = 3
+   m02_phone_agent0x99.ink:691 knot hint_encoding = 6
+   m02_phone_agent0x99.ink:711 knot hint_pin_safe = 6
+   m02_phone_agent0x99.ink:734 knot hint_ransom_decision = 10
+   m02_phone_agent0x99.ink:759 knot hint_ransom_decision_choices = 8 spk={"What I'll say": 1}
+   m02_phone_agent0x99.ink:783 knot ghost_deal_recovery_advice = 5
+   m02_phone_agent0x99.ink:796 knot ghost_deal_recovery_advice_choices = 3
+   m02_phone_agent0x99.ink:809 knot discuss_ideology = 8
+   m02_phone_agent0x99.ink:832 knot hint_press_terminal = 4
+   m02_phone_agent0x99.ink:844 knot hint_press_terminal_choices = 4
+   m02_phone_agent0x99.ink:867 knot doors_nudge = 13
+   m02_phone_agent0x99.ink:898 knot general_advice = 20
+   timedMessage {"delay": 3000, "message": "Hospital ransomware. 47 patients on life support. We have 12 hours. Message me if you need guidance.", "type": "text", "waitForEvent": "conversation_closed:opening_briefing_cutscene"}
+   sendTimedMessage on objective_task_completed:make_ransom_decision delay 18000 "Dr Kim messaged the team. You told her you'd bring the wards back with"
+   sendTimedMessage on objective_task_completed:make_ransom_decision delay 18000 "Word from Dr Kim. She held the board off on your word, and someone wro"
+   sendTimedMessage on objective_task_completed:make_ransom_decision delay 18000 "Dr Kim's noted it. You told her to pay and that's how it ended. No sur"
+   sendTimedMessage on objective_task_completed:make_ransom_decision delay 18000 "Dr Kim clocked it. You told her to pay, then found a way that didn't n"
+   sendTimedMessage on conversation_closed:opening_briefing_cutscene delay 8000 "No badge opens anything tonight. Get a person to open a door for you, "
+   sendTimedMessage on global_variable_changed:noticed_struck_booking delay 2000 "You've read that right. Your booking's on the paper log with a line th"
+   sendTimedMessage on objective_task_completed:sign_in_at_reception delay 1500 "Signed in. That paper badge opens no internal doors. Kim called you in"
+   sendTimedMessage on global_variable_changed:decoded_ransomware_note delay 1500 "Note decoded -- 'Ransomware Incorporated', £150,000 in Bitcoin, 12-hou"
+   sendTimedMessage on global_variable_changed:read_ransom_cto delay 4500 "Read what they left on Kim's screen. Not a demand, a note about Gary's"
+   sendTimedMessage on room_entered:reception_lobby delay 2500 "You left the Boardroom relay mid-send. Go back and make sure it went o"
+   sendTimedMessage on room_entered:hospital_ward delay 1500 "Those are the patients at risk. Real people. Let's get them their syst"
+   sendTimedMessage on conversation_closed:security_guard_patrol delay 1500 "Val's done talking to you. Her office door is still the way in: pick i"
+   sendTimedMessage on global_variable_changed:ransom_decision_made delay 30000 "Before the press terminal: whoever carries SC-4471 is still in the bui"
+   sendTimedMessage on global_variable_changed:ransom_decision_made delay 30000 "Before the press terminal: whoever carries SC-4471 is still in the bui"
+   sendTimedMessage on objective_task_completed:meet_dr_kim delay 1500 "Kim can only vouch verbally. Gary Whitlock's next: IT, the right-hand "
+   sendTimedMessage on objective_task_completed:talk_to_gary delay 4000 "Stop. Two minutes ago someone rang the security desk from an internal "
+   sendTimedMessage on room_entered:staff_room delay 1500 "Val can disprove your cover now. Her Security Office, west end of the "
+   sendTimedMessage on item_picked_up:id_badge delay 1200 "Blank contractor pass, real hospital stock, no matter how you came by "
+   sendTimedMessage on item_picked_up:id_badge delay 1200 "Blank contractor pass, real hospital stock, no name. Nobody questions "
+   sendTimedMessage on item_picked_up:id_badge delay 1200 "Agency lanyard off the ward. Green ribbon, no photograph, and at four "
+   sendTimedMessage on global_variable_changed:read_handover_board delay 1500 "Friday's 'drill': doors on free egress, half two to three. The estate "
+   sendTimedMessage on global_variable_changed:found_safe_pin_clue delay 1400 "The escrow safe's PIN is the founding year. Flagged at three audits, n"
+   sendTimedMessage on global_variable_changed:read_operator_note delay 1500 "Their operator's handwriting. Word lengths kept, every letter shifted "
+   sendTimedMessage on global_variable_changed:password_hints_found delay 1200 "Shared admin credential on a sticky note. Emma2018, Hospital1987, StCa"
+   sendTimedMessage on global_variable_changed:cover_restored delay 1200 "Bernie's put her name against yours. Val will have heard by now -- ask"
+   sendTimedMessage on global_variable_changed:val_opened_office delay 1200 "That'll hold. Now -- whoever made that call is still in the building, "
+   sendTimedMessage on global_variable_changed:guard_knocked_out delay 1500 "You've put a security officer on the floor. Her office key's on her. M"
+   sendTimedMessage on global_variable_changed:ghost_keys_used delay 24000 "Ghost's keys are running the restore, ward first. The other half: the "
+   sendTimedMessage on objective_task_completed:access_server_room delay 1800 "Server room. The Kali terminal's your attack box, the drop-site takes "
+   sendTimedMessage on object_interacted delay 1200 "You're on the Kali terminal, your attack box. Want the whole path, fro"
+   sendTimedMessage on objective_task_completed:submit_ssh_flag delay 1800 "SSH foothold confirmed. Not root yet. Three guides for the next stretc"
+   sendTimedMessage on objective_task_completed:submit_ghost_log_flag delay 1500 "That's all four. Ghost's log says their key material is staged in the "
+   sendTimedMessage on item_picked_up:text_file delay 9000 "The drop-site's cut you a restore manifest. Every snapshot since Tuesd"
+   sendTimedMessage on item_picked_up:text_file delay 1500 "Ghost's own key material. Pair it with the offline escrow set from the"
+   sendTimedMessage on global_variable_changed:gary_ko delay 2000 "Gary's down, so no password hints from him now. He wrote them on a sti"
+   sendTimedMessage on global_variable_changed:insider_evidence_partial delay 1500 "That goes in the file. Somebody on staff has been working for ENTROPY,"
+   sendTimedMessage on objective_task_completed:submit_database_flag delay 2500 "That's their server notice off anonymous FTP. It points at the databas"
+   sendTimedMessage on objective_task_completed:submit_proftpd_flag delay 2000 "Ghost's deployment log. The inside contact is unpaid, with a grievance"
+   sendTimedMessage on objective_task_completed:submit_ghost_log_flag delay 9000 "Ghost's log names the badge that held the doors: SC-4471. 'A post, not"
+   sendTimedMessage on item_picked_up:notes delay 1500 "That's Gary's proof -- he warned them six months out and they buried i"
+   sendTimedMessage on global_variable_changed:offline_keys_recovered delay 1000 "The offline escrow keys. Your alternative to paying: twelve hours alon"
+   sendTimedMessage on global_variable_changed:pin_cracker_found delay 2000 "That case holds an ENTROPY keypad oracle. Every wrong try tells you ho"
+   sendTimedMessage on global_variable_changed:board_coverup_email_found delay 2000 "That email is damning. The board meant to scapegoat Gary before the in"
+   sendTimedMessage on objective_task_completed:make_ransom_decision delay 12000 "Restore's running. One more thing before this is over -- the boardroom"
+   sendTimedMessage on global_variable_changed:slow_path_window_open delay 6000 "The ward's radioed. Bed 4's alarming: Mr Pryce's ventilator's out of s"
+   sendTimedMessage on global_variable_changed:bed4_manually_stabilised delay 4000 "The ward says he's breathing and a nurse has the bag. That was you. Wh"
+   sendTimedMessage on global_variable_changed:patient_bed4_deceased delay 6000 "The ward's just told me about Bed 4. I'm sorry. There's one thing left"
+   sendTimedMessage on global_variable_changed:patient_assaulted delay 1200 "What are you doing? That is a patient in a hospital bed. Whatever you "
+
+### m02_ransomed_trust | reception_lobby | npc ghost "Ghost" | scenario.json.erb:1343 | voice=yes | voiced=None callLabel=None | storyPath=m02_phone_ghost.json | home=start | phoneId=ghost_terminal
+  ink=scenarios/m02_ransomed_trust/ink/m02_phone_ghost.ink
+   m02_phone_ghost.ink:33 knot start = 14 [HOME] <- item_picked_up:phone conversationMode=phone-chat,onceOnly=True @1364 spk={"You": 1}
+   m02_phone_ghost.ink:73 knot ghost_introduction = 3 spk={"Hospital response": 1}
+   m02_phone_ghost.ink:88 knot player_threatens = 4
+   m02_phone_ghost.ink:105 knot ghost_confirms_calculations = 8
+   m02_phone_ghost.ink:128 knot ghost_justification = 2
+   m02_phone_ghost.ink:137 knot ghost_philosophy = 10
+   m02_phone_ghost.ink:166 knot ransom_demand = 6
+   m02_phone_ghost.ink:190 knot ghost_warns_consequences = 3
+   m02_phone_ghost.ink:202 knot ghost_laughs_at_threat = 6
+   m02_phone_ghost.ink:224 knot return_contact = 1
+   m02_phone_ghost.ink:235 knot mid_mission_contact = 4
+   m02_phone_ghost.ink:265 knot on_cracker_taken = 7 <- item_picked_up:pin-cracker conversationMode=phone-chat,onceOnly=True @1384
+   m02_phone_ghost.ink:286 knot cracker_out = 2
+   m02_phone_ghost.ink:294 knot post_decision_contact = 0
+   m02_phone_ghost.ink:305 knot ghost_keys_response = 6
+   m02_phone_ghost.ink:323 knot ransom_paid_response = 8
+   m02_phone_ghost.ink:344 knot ransom_refused_response = 6
+   m02_phone_ghost.ink:365 knot ghost_rejects_responsibility = 3
+   m02_phone_ghost.ink:376 knot ghost_acknowledges_loss = 4
+   m02_phone_ghost.ink:393 knot ghost_final_statement = 7
+   m02_phone_ghost.ink:412 knot ghost_disconnects = 3
+   m02_phone_ghost.ink:428 knot end_contact = 2
+   m02_phone_ghost.ink:443 knot on_proftpd_exploited = 11 <- objective_task_completed:submit_proftpd_flag TEXT(sendTimedMessage),onceOnly=True @1378
+   m02_phone_ghost.ink:469 knot act1_end = 1
+   m02_phone_ghost.ink:482 knot on_backup_located = 8 <- objective_task_completed:submit_database_flag TEXT(sendTimedMessage),onceOnly=True @1389
+   m02_phone_ghost.ink:502 knot act2_reveal = 9
+   m02_phone_ghost.ink:533 knot on_recovery_console = 13 <- object_interacted voiced=True,conversationMode=video-call,onceOnly=True @1402 spk={"Narrator": 1}
+   m02_phone_ghost.ink:568 knot ghost_states_terms = 11
+   m02_phone_ghost.ink:600 knot act3_accept = 4
+   m02_phone_ghost.ink:610 knot act3_deal_accepted = 3
+   m02_phone_ghost.ink:622 knot act3_deal_refused = 4
+   m02_phone_ghost.ink:640 knot on_console_again = 4 <- object_interacted voiced=True,conversationMode=video-call,onceOnly=True @1411
+   m02_phone_ghost.ink:663 knot act3_dismissed = 3
+   sendTimedMessage on objective_task_completed:submit_proftpd_flag delay 9000 "Interesting choice of exploit. Pick up when you're done at the drop-si"
+   sendTimedMessage on objective_task_completed:submit_database_flag delay 16000 "Did you notice your network blink just now? Pick up."
+   sendTimedMessage on global_variable_changed:offline_keys_recovered delay 6000 "You found the physical keys. Clever. 30 minutes to full recovery, agai"
+
+### m02_ransomed_trust | conference_room | npc press_terminal_system "Hospital Comms Terminal" | scenario.json.erb:2957 | voice=no | voiced=None callLabel=None | storyPath=m02_object_press_terminal.json | home=start | phoneId=press_terminal
+  ink=scenarios/m02_ransomed_trust/ink/m02_object_press_terminal.ink
+   m02_object_press_terminal.ink:51 knot start = 9 [HOME]
+   m02_object_press_terminal.ink:88 knot relay_locked_investigation = 6
+   m02_object_press_terminal.ink:111 knot relay_locked_investigation_choices = 0
+   m02_object_press_terminal.ink:119 knot relay_locked_incident = 5 spk={"Evidence release held": 1}
+   m02_object_press_terminal.ink:133 knot relay_locked_incident_choices = 0
+   m02_object_press_terminal.ink:141 knot decision_menu = 0
+   m02_object_press_terminal.ink:158 knot confirm_upload = 4
+   m02_object_press_terminal.ink:175 knot do_upload = 13
+   m02_object_press_terminal.ink:210 knot confirm_stay_quiet = 6 spk={"CONFIRM": 1}
+   m02_object_press_terminal.ink:234 knot do_stay_quiet = 4
+   m02_object_press_terminal.ink:251 knot close_decision = 0
+   m02_object_press_terminal.ink:264 knot ambush_backstop = 1
+   m02_object_press_terminal.ink:276 knot decision_recorded = 4 spk={"Outgoing relay": 1, "Status": 2}
+   m02_object_press_terminal.ink:291 knot outcome_idle = 0
+
+### m03_ghost_in_the_machine | reception_lobby | npc agent_0x99 "Agent HaX" | scenario.json.erb:743 | voice=yes | voiced=None callLabel=None | storyPath=m03_phone_agent0x99.json | home=start | phoneId=player_phone
+  ink=scenarios/m03_ghost_in_the_machine/ink/m03_phone_agent0x99.ink
+   m03_phone_agent0x99.ink:93 knot start = 1 [HOME]
+   m03_phone_agent0x99.ink:108 knot hub = 1
+   m03_phone_agent0x99.ink:158 knot field_guides = 0
+   m03_phone_agent0x99.ink:174 knot hint_confrontation = 6
+   m03_phone_agent0x99.ink:191 knot request_rfid_guide = 3
+   m03_phone_agent0x99.ink:202 knot request_recon_guide = 2
+   m03_phone_agent0x99.ink:211 knot request_proftpd_guide = 2
+   m03_phone_agent0x99.ink:220 knot request_cyberchef_guide = 2
+   m03_phone_agent0x99.ink:229 knot request_lockpicking_guide = 3
+   m03_phone_agent0x99.ink:239 knot request_netexploit_guide = 2
+   m03_phone_agent0x99.ink:251 knot hint_sterling_night = 2 spk={"Finish the network first": 1}
+   m03_phone_agent0x99.ink:259 knot hint_danny = 2
+   m03_phone_agent0x99.ink:267 knot hint_guard = 3
+   m03_phone_agent0x99.ink:278 knot hint_guard_hostile = 2
+   m03_phone_agent0x99.ink:286 knot hint_safe = 2
+   m03_phone_agent0x99.ink:294 knot hint_clone = 3
+   m03_phone_agent0x99.ink:303 knot hint_rfid = 5 spk={"Weak defaults": 1}
+   m03_phone_agent0x99.ink:316 knot hint_lockpicking = 3
+   m03_phone_agent0x99.ink:325 knot hint_password = 3
+   m03_phone_agent0x99.ink:336 knot hint_encoding = 3
+   m03_phone_agent0x99.ink:345 knot hint_network = 3
+   m03_phone_agent0x99.ink:354 knot report_progress = 27
+   m03_phone_agent0x99.ink:442 knot report_end = 1
+   m03_phone_agent0x99.ink:447 knot on_victoria_computer_accessed = 4 <- global_variable_changed:draft_seen TEXT(sendTimedMessage),onceOnly=True @947; objective_task_completed:decode_client_roster TEXT(sendTimedMessage),onceOnly=True @955
+   m03_phone_agent0x99.ink:462 knot m2_revelation_call = 5 <- objective_task_completed:submit_distcc_flag TEXT(sendTimedMessage),onceOnly=True @1016 spk={"And a line under it": 1, "Target line": 1}
+   m03_phone_agent0x99.ink:478 knot m2_revelation_choices = 3
+   m03_phone_agent0x99.ink:489 knot m2_revelation_impact = 4
+   m03_phone_agent0x99.ink:503 knot m2_revelation_impact_choices = 1
+   m03_phone_agent0x99.ink:510 knot m2_revelation_end = 1
+   m03_phone_agent0x99.ink:519 knot on_exploit_catalog_found = 2 <- global_variable_changed:catalogue_seen TEXT(sendTimedMessage),onceOnly=True @972
+   m03_phone_agent0x99.ink:529 knot on_architect_directive_found = 2 <- objective_task_completed:lore_fragment_3 TEXT(sendTimedMessage),onceOnly=True @978
+   m03_phone_agent0x99.ink:538 knot directive_ask = 1
+   m03_phone_agent0x99.ink:543 knot directive_answer_choices = 0
+   m03_phone_agent0x99.ink:553 knot directive_wrong = 1
+   m03_phone_agent0x99.ink:562 knot directive_later = 1
+   m03_phone_agent0x99.ink:567 knot directive_right = 3
+   m03_phone_agent0x99.ink:579 knot on_victoria_ko_card = 5 <- npc_ko:victoria_sterling conversationMode=phone-chat,onceOnly=True @1090
+   m03_phone_agent0x99.ink:595 knot extract_offer = 2
+   m03_phone_agent0x99.ink:603 knot extract_choices = 2
+   m03_phone_agent0x99.ink:611 knot extract_confirm = 0
+   m03_phone_agent0x99.ink:615 knot extract_go = 1
+   timedMessage {"delay": 3000, "message": "Your interview's with Victoria Sterling in the conference room, behind a staff card reader. Reception will sign you in. Message me if you get stuck.", "type": "text", "waitForEvent": "conversa
+   sendTimedMessage on door_unlock_attempt delay 1500 "That reader wants a staff badge. The cloner in your kit copies one fro"
+   sendTimedMessage on room_entered:executive_wing_hallway delay 0 "Sterling's office is keyed -- that's your pick kit. A guard works this"
+   sendTimedMessage on room_entered:server_room delay 2500 "You're at their VM terminal. Nightshade's bridged it to your kit. Scan"
+   sendTimedMessage on card_emulated delay 1500 "That's the reception badge. The server room reader wants Sterling's ex"
+   sendTimedMessage on objective_task_completed:clone_reception_badge delay 1500 "Reception badge is in the cloner. Emulate it at the conference room re"
+   sendTimedMessage on npc_ko:ffion_rees delay 2500 "The receptionist's down. Her staff badge will be on the floor by her i"
+   sendTimedMessage on npc_ko:ffion_rees delay 2500 "The receptionist's down. She shouldn't even have been here this late. "
+   sendTimedMessage on global_variable_changed:victoria_card_cloned delay 2500 "Card's saved. Thank her. Once you step out into the hallway the day's "
+   sendTimedMessage on conversation_closed:night_transition delay 0 "You're in. Server room's at the north end of the main hallway: use Ste"
+   sendTimedMessage on item_picked_up:workstation delay 1200 "That's their CyberChef workstation. Paste anything that looks like gib"
+   sendTimedMessage on global_variable_changed:draft_seen delay 5000 "You're on her machine. Call me when you've had a look."
+   sendTimedMessage on objective_task_completed:decode_client_roster delay 5000 "You're on her machine. Call me when you've had a look."
+   sendTimedMessage on global_variable_changed:catalogue_seen delay 5000 "That's more than a price list. Call me when you've read it."
+   sendTimedMessage on objective_task_completed:lore_fragment_3 delay 5000 "A drive in her desk? Call me."
+   sendTimedMessage on objective_task_completed:submit_network_scan_flag delay 2000 "Scan's in. That's their lab mapped. One of those services should look "
+   sendTimedMessage on objective_task_completed:submit_ftp_flag delay 2000 "FTP's in. Read the note: they rehearse St. Catherine's before every he"
+   sendTimedMessage on objective_task_completed:submit_ftp_flag delay 2000 "FTP's in. Read the note: they rehearse St. Catherine's before every he"
+   sendTimedMessage on objective_task_completed:submit_http_flag delay 2000 "Price list's in, unlocked with Sterling's own shift. Read the healthca"
+   sendTimedMessage on objective_task_completed:submit_distcc_flag delay 4000 "Got the distcc logs. Call me when you're done at the drop-site."
+   sendTimedMessage on global_variable_changed:night_confrontation_ready delay 4000 "Everything's off their network. Sterling's waiting in the conference r"
+   sendTimedMessage on global_variable_changed:night_confrontation_ready delay 4000 "Everything's off their network. Sterling's waiting in the conference r"
+   sendTimedMessage on npc_ko:victoria_sterling delay 2500 "She's down. Finish the sweep and get out. Call me when you want bringi"
+   sendTimedMessage on global_variable_changed:night_confrontation_ready delay 6000 "Everything's off their network, and Sterling's still out cold. Want a "
+   sendTimedMessage on global_variable_changed:night_confrontation_ready delay 6000 "Everything's off their network, and Sterling's still out cold. Finish "
+   sendTimedMessage on global_variable_changed:revelation_heard delay 2000 "Everything's off their network. Sterling's waiting in the conference r"
+   sendTimedMessage on global_variable_changed:revelation_heard delay 2000 "Everything's off their network. Sterling's waiting in the conference r"
+   sendTimedMessage on global_variable_changed:revelation_heard delay 2000 "Everything's off their network, and Sterling's still out cold. Want a "
+   sendTimedMessage on global_variable_changed:revelation_heard delay 2000 "Everything's off their network, and Sterling's still out cold. Finish "
+
+### m04_critical_failure | main_entrance | npc agent_0x99 "Agent HaX" | scenario.json.erb:762 | voice=yes | voiced=None callLabel=None | storyPath=m04_phone_agent0x99.json | home=start | phoneId=player_phone
+  ink=scenarios/m04_critical_failure/ink/m04_phone_agent0x99.ink
+   m04_phone_agent0x99.ink:117 knot start = 0 [HOME]
+   m04_phone_agent0x99.ink:140 knot support_hub = 2
+   m04_phone_agent0x99.ink:200 knot field_guides = 0
+   m04_phone_agent0x99.ink:226 knot request_rfid_guide = 1
+   m04_phone_agent0x99.ink:232 knot request_lockpicking_guide = 1
+   m04_phone_agent0x99.ink:238 knot request_recon_guide = 1
+   m04_phone_agent0x99.ink:244 knot request_vuln_guide = 1
+   m04_phone_agent0x99.ink:250 knot request_erlang_guide = 1
+   m04_phone_agent0x99.ink:256 knot request_privesc_guide = 1
+   m04_phone_agent0x99.ink:262 knot request_proftpd_guide = 1
+   m04_phone_agent0x99.ink:268 knot request_cyberchef_guide = 1
+   m04_phone_agent0x99.ink:274 knot operative_down_advice = 6
+   m04_phone_agent0x99.ink:303 knot hint_guard = 2
+   m04_phone_agent0x99.ink:310 knot hint_clone = 2
+   m04_phone_agent0x99.ink:317 knot hint_dial = 2
+   m04_phone_agent0x99.ink:324 knot hint_relay = 2
+   m04_phone_agent0x99.ink:331 knot hint_reader = 7
+   m04_phone_agent0x99.ink:347 knot hint_voltage = 6
+   m04_phone_agent0x99.ink:364 knot hint_race = 2
+   m04_phone_agent0x99.ink:371 knot hint_crew = 12
+   m04_phone_agent0x99.ink:405 knot extract_offer = 1
+   m04_phone_agent0x99.ink:410 knot fn:hostile_standing = 0
+   m04_phone_agent0x99.ink:413 knot extract_blocked = 9
+   m04_phone_agent0x99.ink:432 knot extract_blocked_choices = 0
+   m04_phone_agent0x99.ink:438 knot extract_offer_text = 3
+   m04_phone_agent0x99.ink:449 knot extract_choices = 2
+   m04_phone_agent0x99.ink:457 knot extract_confirm = 0
+   m04_phone_agent0x99.ink:461 knot extract_go = 1
+   m04_phone_agent0x99.ink:477 knot on_relay_ko_card = 1 <- npc_ko:operative_relay conversationMode=phone-chat,onceOnly=True @1212
+   m04_phone_agent0x99.ink:494 knot on_anomaly_confirmed = 3 <- global_variable_changed:anomaly_detected TEXT(sendTimedMessage),onceOnly=True @898 spk={"His words": 1}
+   m04_phone_agent0x99.ink:502 knot on_anomaly_confirmed_choices = 4
+   m04_phone_agent0x99.ink:527 knot first_call = 1
+   m04_phone_agent0x99.ink:533 knot first_call_choices = 2
+   m04_phone_agent0x99.ink:567 knot vance_status_inquiry = 2
+   m04_phone_agent0x99.ink:581 knot vance_status_inquiry_choices = 0
+   m04_phone_agent0x99.ink:586 knot vance_cover_status = 0
+   m04_phone_agent0x99.ink:599 knot vance_cooperation_acknowledged = 1
+   m04_phone_agent0x99.ink:606 knot vance_skeptical_acknowledged = 1
+   m04_phone_agent0x99.ink:613 knot investigation_update = 1
+   m04_phone_agent0x99.ink:620 knot intel_update = 2
+   m04_phone_agent0x99.ink:629 knot first_call_objectives = 3
+   m04_phone_agent0x99.ink:644 knot first_call_objectives_choices = 0
+   m04_phone_agent0x99.ink:649 knot first_call_end = 1
+   m04_phone_agent0x99.ink:662 knot event_server_room_entered = 2
+   m04_phone_agent0x99.ink:673 knot event_server_room_entered_choices = 0
+   m04_phone_agent0x99.ink:681 knot vm_guidance = 2
+   m04_phone_agent0x99.ink:691 knot vm_guidance_choices = 0
+   m04_phone_agent0x99.ink:696 knot investigation_guidance = 2
+   m04_phone_agent0x99.ink:704 knot investigation_guidance_choices = 0
+   m04_phone_agent0x99.ink:709 knot server_room_event_end = 3
+   m04_phone_agent0x99.ink:728 knot event_attack_mechanism_identified = 2
+   m04_phone_agent0x99.ink:738 knot event_attack_mechanism_identified_choices = 0
+   m04_phone_agent0x99.ink:746 knot three_vector_confirmation = 5
+   m04_phone_agent0x99.ink:766 knot trigger_location_discussion = 2
+   m04_phone_agent0x99.ink:775 knot voltage_priority_update = 2
+   m04_phone_agent0x99.ink:785 knot voltage_priority_update_choices = 0
+   m04_phone_agent0x99.ink:799 knot capture_vs_speed_guidance = 5
+   m04_phone_agent0x99.ink:815 knot capture_vs_speed_guidance_choices = 0
+   m04_phone_agent0x99.ink:821 knot capture_attempt_acknowledged = 1
+   m04_phone_agent0x99.ink:828 knot attack_priority_acknowledged = 1
+   m04_phone_agent0x99.ink:837 knot judgment_trusted = 1
+   m04_phone_agent0x99.ink:844 knot final_phase_briefing = 3
+   m04_phone_agent0x99.ink:860 knot final_phase_briefing_choices = 0
+   m04_phone_agent0x99.ink:866 knot final_encouragement = 2
+   m04_phone_agent0x99.ink:886 knot report_progress = 32
+   timedMessage {"delay": 3000, "message": "Gate first. Regulator badge, routine audit, came early. Then find Vance in the operations office.", "type": "text", "waitForEvent": "conversation_closed:opening_briefing_cutscene"}
+   sendTimedMessage on global_variable_changed:static_left_alone delay 2000 "Static's gone out the dock door. Let him go. The button's what matters"
+   sendTimedMessage on conversation_closed:robert_vance delay 7000 "Vance's card is the old prox kind. If you want to know what the cloner"
+   sendTimedMessage on room_entered:battery_hall_1 delay 2500 "The workshop wants a Level 2 card. Vance hasn't got one. Relay has, an"
+   sendTimedMessage on global_variable_changed:anomaly_detected delay 6000 "Sixty-one on that dial? Call me when you're clear of it."
+   sendTimedMessage on global_variable_changed:anomaly_detected delay 30000 "Nine of Vance's night crew are behind the Hall 2 inverter wall till si"
+   sendTimedMessage on global_variable_changed:clock_started delay 15000 "Nine of Vance's night crew are behind the Hall 2 inverter wall till si"
+   sendTimedMessage on conversation_closed:operative_relay delay 2500 "That door was RFID. If you want to know how those readers and the clon"
+   sendTimedMessage on conversation_closed:operative_relay delay 7000 "And that plant-room door is biometric. Picks and cloner won't touch it"
+   sendTimedMessage on room_entered:battery_hall_2 delay 2500 "That plant-room door is biometric. Picks and cloner won't touch it. So"
+   sendTimedMessage on door_unlock_attempt delay 1500 "That reader wants a Level 1 card. Vance's is old prox: stand close whi"
+   sendTimedMessage on door_unlock_failed:plant_room delay 1500 "Their crew got through that door on the ninth, and whatever they used "
+   sendTimedMessage on item_picked_up:fingerprint_kit delay 1500 "The crew's own fingerprint kit. It's how they beat the plant reader. T"
+   sendTimedMessage on item_picked_up:fingerprint_kit delay 1500 "The crew's own fingerprint kit. It's how they beat the plant reader. V"
+   sendTimedMessage on card_cloned delay 2500 "Card's yours. She knows, and she'll walk that hall faster now. She won"
+   sendTimedMessage on global_variable_changed:hydrogen_alarm delay 5000 "Hall 2's night foreman rang the ops desk. Nine of them behind the inve"
+   sendTimedMessage on global_variable_changed:hydrogen_alarm delay 5000 "Hall 2's night foreman just rang the ops desk. Nine of them behind the"
+   sendTimedMessage on global_variable_changed:hydrogen_alarm delay 5000 "Hall 2's night foreman just rang the ops desk. Nine of them behind the"
+   sendTimedMessage on global_variable_changed:hydrogen_alarm delay 5000 "Bank B's venting. Hall 2 is empty, thanks to Vance's alarm. Now get to"
+   sendTimedMessage on global_variable_changed:crew_warned delay 8000 "That's the evacuation. Good. But Voltage heard it too, and he won't wa"
+   sendTimedMessage on global_variable_changed:crew_warned delay 8000 "That's the evacuation. Nine out of Hall 2. Voltage knows we're here no"
+   sendTimedMessage on global_variable_changed:crew_warned delay 8000 "That's the evacuation. Nine out of Hall 2. Nobody left in the plant ro"
+   sendTimedMessage on global_variable_changed:attack_prevented delay 2500 "Grid control confirms it. Banks isolated, vents at full, the trigger's"
+   sendTimedMessage on fingerprint_collected:robert_vance delay 1000 "That's Vance's print. He leaves it on every panel he touches, and the "
+   sendTimedMessage on room_entered:security_office delay 2000 "That equipment locker is a pin tumbler. Say the word and I'll send you"
+   sendTimedMessage on room_entered:engineering_workshop delay 3000 "You're on the OT network. The BMS jump server is their way in; scan it"
+   sendTimedMessage on room_entered:engineering_workshop delay 9000 "I've guides for mapping the network and reading its attack surface, if"
+   sendTimedMessage on objective_task_completed:submit_ftp_intel_flag delay 2000 "There's an Erlang/OTP SSH daemon on a high port there — the crew's way"
+   sendTimedMessage on objective_task_completed:submit_ftp_intel_flag delay 7000 "And once you're on the box, I've a sudo guide for getting to root."
+   sendTimedMessage on objective_task_completed:submit_erlang_rce_flag delay 2500 "You're on the box. If you want the sudo guide for getting to root, ask"
+   sendTimedMessage on objective_task_completed:submit_privesc_flag delay 4000 "Root. Now you can see what they changed from that box: the charge-ceil"
+   sendTimedMessage on objective_task_completed:submit_network_scan_flag delay 1500 "That FTP service. Same backdoored build you met at St Catherine's. Zer"
+   sendTimedMessage on global_variable_changed:lore_safehouse_address_found delay 2000 "That card in the go-bag is Base64. Paste it into the CyberChef worksta"
+   sendTimedMessage on npc_hostile_state_changed delay 1500 "Fight's on. Don't let him reach that bench."
+   sendTimedMessage on npc_hostile_state_changed delay 5500 "They keep swinging while you're on this phone. Get clear before you re"
+   sendTimedMessage on npc_hostile_state_changed delay 5500 "They keep swinging while you're on this phone. Get clear before you re"
+   sendTimedMessage on npc_hostile_state_changed delay 5500 "They keep swinging while you're on this phone. Get clear before you re"
+   sendTimedMessage on npc_hostile_state_changed delay 5500 "They keep swinging while you're on this phone. Get clear before you re"
+   sendTimedMessage on global_variable_changed:all_flags_in delay 2500 "Flags are in. Grid control still wants a real reading off the racks. T"
+   sendTimedMessage on objective_aim_completed:map_the_attack delay 1500 "Their route in, proven. They pushed the charge-ceiling override from t"
+   sendTimedMessage on objective_aim_completed:map_the_attack delay 1500 "Their route in, proven. They pushed the charge-ceiling override from t"
+   sendTimedMessage on objective_aim_completed:map_the_attack delay 6000 "Nightshade's run the numbers off that box. Bank B won't last till eigh"
+   sendTimedMessage on objective_aim_completed:map_the_attack delay 1500 "Their route in, proven. They pushed the charge-ceiling override from t"
+   sendTimedMessage on global_variable_changed:voltage_neutralised delay 1200 "He's out of the way, the sixty-one degrees in Hall 1 is on record, and"
+   sendTimedMessage on global_variable_changed:anomaly_detected delay 1200 "He's out of the way, the sixty-one degrees in Hall 1 is on record, and"
+   sendTimedMessage on global_variable_changed:attack_mechanism_known delay 2500 "He's out of the way, the sixty-one degrees in Hall 1 is on record, and"
+   sendTimedMessage on global_variable_changed:evidence_maintenance_logs_found delay 1500 "That work order was never authorised. There's your evidence. Don't tak"
+   sendTimedMessage on fingerprint_identified:voltage delay 1500 "Voltage's own thumb, on the bypass module. Whatever else he says tonig"
+
+### m04_critical_failure | main_entrance | npc robert_vance_phone "Robert Vance (ops desk)" | scenario.json.erb:1489 | voice=yes | voiced=None callLabel=None | storyPath=m04_phone_robert_vance.json | home=start | phoneId=player_phone
+  ink=scenarios/m04_critical_failure/ink/m04_phone_robert_vance.ink
+   m04_phone_robert_vance.ink:59 knot start = 2 [HOME]
+   m04_phone_robert_vance.ink:71 knot vance_not_yet_ally = 2
+   m04_phone_robert_vance.ink:78 knot vance_no_answer = 0
+   m04_phone_robert_vance.ink:83 knot vance_phone_support_start = 7
+   m04_phone_robert_vance.ink:102 knot support_hub = 4
+   m04_phone_robert_vance.ink:150 knot charge_control_systems_explanation = 4
+   m04_phone_robert_vance.ink:161 knot server_room_guidance = 5
+   m04_phone_robert_vance.ink:173 knot safe_disabling_guidance = 12
+   m04_phone_robert_vance.ink:203 knot priority_guidance = 12
+   m04_phone_robert_vance.ink:226 knot crew_offer = 7
+   m04_phone_robert_vance.ink:239 knot crew_offer_choices = 1
+   m04_phone_robert_vance.ink:246 knot crew_sound = 1
+   m04_phone_robert_vance.ink:252 knot urgency_assessment = 13
+   m04_phone_robert_vance.ink:272 knot support_call_end = 3
+   timedMessage {"delay": 20000, "message": "Every screen I've got says twenty-eight, and I don't believe one of them. Anything in Hall 1 older than the network, read it.", "type": "text", "waitForEvent": "global_variable_changed:vance_
+   sendTimedMessage on conversation_closed:robert_vance delay 2500 "It's Vance. I'm on the ops desk, and on comms if you're moving. Call m"
+
+### m05_insider_trading | reception_lobby | npc agent_0x99_handler "Agent HaX" | scenario.json.erb:894 | voice=yes | voiced=None callLabel=None | storyPath=m05_phone_agent_0x99.json | home=start | phoneId=player_phone
+  ink=scenarios/m05_insider_trading/ink/m05_phone_agent_0x99.ink
+   m05_phone_agent_0x99.ink:111 knot fn:has_motive = 0
+   m05_phone_agent_0x99.ink:114 knot fn:has_exfil = 0
+   m05_phone_agent_0x99.ink:120 knot fn:all_flags_in = 0
+   m05_phone_agent_0x99.ink:127 knot start = 0 [HOME]
+   m05_phone_agent_0x99.ink:139 knot first_call = 3
+   m05_phone_agent_0x99.ink:150 knot first_call_choices = 6
+   m05_phone_agent_0x99.ink:177 knot support_hub = 1
+   m05_phone_agent_0x99.ink:235 knot field_guides = 0
+   m05_phone_agent_0x99.ink:253 knot topic_recruitment_method = 3
+   m05_phone_agent_0x99.ink:265 knot topic_recruitment_method_choices = 2
+   m05_phone_agent_0x99.ink:274 knot topic_leverage = 7
+   m05_phone_agent_0x99.ink:292 knot topic_leverage_choices = 2
+   m05_phone_agent_0x99.ink:301 knot topic_journal = 2
+   m05_phone_agent_0x99.ink:311 knot topic_journal_choices = 3
+   m05_phone_agent_0x99.ink:321 knot topic_architect = 4
+   m05_phone_agent_0x99.ink:341 knot topic_architect_choices = 4
+   m05_phone_agent_0x99.ink:358 knot topic_recruiter = 2
+   m05_phone_agent_0x99.ink:368 knot topic_recruiter_choices = 1
+   m05_phone_agent_0x99.ink:383 knot flag_news = 11
+   m05_phone_agent_0x99.ink:416 knot about_torres = 0
+   m05_phone_agent_0x99.ink:428 knot name_to_hax = 2
+   m05_phone_agent_0x99.ink:437 knot name_to_hax_who = 3
+   m05_phone_agent_0x99.ink:453 knot hax_accuse_halloran = 5
+   m05_phone_agent_0x99.ink:470 knot hax_name_torres = 5
+   m05_phone_agent_0x99.ink:493 knot hax_case_why = 7
+   m05_phone_agent_0x99.ink:520 knot hax_case_proof = 3
+   m05_phone_agent_0x99.ink:537 knot hax_named = 12
+   m05_phone_agent_0x99.ink:567 knot hax_named_close = 1
+   m05_phone_agent_0x99.ink:580 knot hax_partial_naming = 2
+   m05_phone_agent_0x99.ink:594 knot hax_torres_why = 7
+   m05_phone_agent_0x99.ink:623 knot hax_log_reason_right = 4
+   m05_phone_agent_0x99.ink:651 knot on_patricia_ko_relay = 4 <- npc_ko:patricia_morgan conversationMode=phone-chat,onceOnly=True @1266
+   m05_phone_agent_0x99.ink:664 knot on_patricia_ko_relay_choices = 0
+   m05_phone_agent_0x99.ink:680 knot on_owen_ko_relay = 7 <- npc_ko:owen_gallagher conversationMode=phone-chat,onceOnly=True @1272
+   m05_phone_agent_0x99.ink:701 knot on_owen_ko_relay_choices = 0
+   m05_phone_agent_0x99.ink:709 knot on_owen_ko_office_card = 2 <- room_entered:reception_lobby conversationMode=phone-chat,onceOnly=True @None; room_entered:main_corridor conversationMode=phone-chat,onceOnly=True @None; room_entered:break_room conversationMode=phone-chat,onceOnly=True @None; room_entered:open_office_area conversationMode=phone-chat,onceOnly=True @None; room_entered:server_hallway conversationMode=phone-chat,onceOnly=True @None; room_entered:server_room conversationMode=phone-chat,onceOnly=True @None; room_entered:torres_office conversationMode=phone-chat,onceOnly=True @None; room_entered:research_lab conversationMode=phone-chat,onceOnly=True @None; room_entered:patricia_office conversationMode=phone-chat,onceOnly=True @None; room_entered:data_center conversationMode=phone-chat,onceOnly=True @None
+   m05_phone_agent_0x99.ink:717 knot on_owen_ko_office_card_choices = 0
+   m05_phone_agent_0x99.ink:724 knot post_ko_safety_net = 2 <- room_entered:data_center conversationMode=phone-chat,onceOnly=False @None
+   m05_phone_agent_0x99.ink:733 knot post_ko_safety_net_choices = 4
+   m05_phone_agent_0x99.ink:756 knot call_in_security = 5
+   m05_phone_agent_0x99.ink:777 knot post_ko_safety_net_sweep = 7
+   m05_phone_agent_0x99.ink:797 knot request_bludit_guide = 1
+   m05_phone_agent_0x99.ink:806 knot request_bludit_guide_choices = 1
+   m05_phone_agent_0x99.ink:811 knot request_lockpicking_guide = 2
+   m05_phone_agent_0x99.ink:822 knot request_lockpicking_guide_choices = 1
+   m05_phone_agent_0x99.ink:827 knot request_privesc_guide = 1
+   m05_phone_agent_0x99.ink:836 knot request_privesc_guide_choices = 1
+   m05_phone_agent_0x99.ink:841 knot request_rfid_guide = 1
+   m05_phone_agent_0x99.ink:850 knot request_rfid_guide_choices = 1
+   m05_phone_agent_0x99.ink:855 knot request_recon_guide = 2
+   m05_phone_agent_0x99.ink:866 knot request_recon_guide_choices = 1
+   m05_phone_agent_0x99.ink:875 knot confrontation_advice = 7
+   m05_phone_agent_0x99.ink:895 knot confrontation_advice_choices = 5 spk={"If it turns into a fight": 1}
+   m05_phone_agent_0x99.ink:912 knot moral_sounding_board = 2
+   m05_phone_agent_0x99.ink:923 knot moral_sounding_board_choices = 4
+   m05_phone_agent_0x99.ink:947 knot extract_offer = 6
+   m05_phone_agent_0x99.ink:969 knot extract_choices = 3
+   m05_phone_agent_0x99.ink:982 knot extract_confirm = 0
+   m05_phone_agent_0x99.ink:986 knot extract_go = 1
+   m05_phone_agent_0x99.ink:1004 knot report_progress = 79
+   m05_phone_agent_0x99.ink:1139 knot report_progress_choices = 0
+   sendTimedMessage on conversation_closed:opening_briefing delay 3000 "You're in. Patricia Morgan's office is off reception, on the east side"
+   sendTimedMessage on item_picked_up:notes delay 1500 "Three hundred and eighty thousand dollars, and the insurer walked away"
+   sendTimedMessage on item_picked_up:notes delay 1500 "A personal journal. Call me once you've read it."
+   sendTimedMessage on global_variable_changed:flag1_submitted delay 1500 "Recon flag in. A handover note on a web server, of all places. It says"
+   sendTimedMessage on global_variable_changed:flag2_submitted delay 1500 "Foothold flag in. You're on the research portal's box now. Find out wh"
+   sendTimedMessage on global_variable_changed:flag3_submitted delay 1500 "Manifest flag verified. Staged by badge 4471, no name on it. Find who "
+   sendTimedMessage on global_variable_changed:flag4_submitted delay 1500 "Root flag in. The Architect's authorisation, casualty projection and a"
+   sendTimedMessage on global_variable_changed:flag1_submitted delay 6000 "That's the last flag. Sweep the vault if you haven't, then call me and"
+   sendTimedMessage on global_variable_changed:flag1_submitted delay 6000 "That's the last flag. Call me."
+   sendTimedMessage on global_variable_changed:flag2_submitted delay 6000 "That's the last flag. Sweep the vault if you haven't, then call me and"
+   sendTimedMessage on global_variable_changed:flag2_submitted delay 6000 "That's the last flag. Call me."
+   sendTimedMessage on global_variable_changed:flag3_submitted delay 6000 "That's the last flag. Sweep the vault if you haven't, then call me and"
+   sendTimedMessage on global_variable_changed:flag3_submitted delay 6000 "That's the last flag. Call me."
+   sendTimedMessage on global_variable_changed:flag4_submitted delay 6000 "That's the last flag. Sweep the vault if you haven't, then call me and"
+   sendTimedMessage on global_variable_changed:flag4_submitted delay 6000 "That's the last flag. Call me."
+   sendTimedMessage on global_variable_changed:halloran_accused delay 15000 "Halloran's suspended on your word, and the research share started push"
+   sendTimedMessage on global_variable_changed:case_motive delay 8000 "That's both halves: why he'd do it, and proof it's leaving the buildin"
+   sendTimedMessage on global_variable_changed:case_motive delay 8000 "That's both halves: why he'd do it, and proof it's leaving the buildin"
+   sendTimedMessage on global_variable_changed:case_exfil delay 8000 "That's both halves: why he'd do it, and proof it's leaving the buildin"
+   sendTimedMessage on global_variable_changed:case_exfil delay 8000 "That's both halves: why he'd do it, and proof it's leaving the buildin"
+   sendTimedMessage on global_variable_changed:recruiter_texted delay 12000 "That TalentStack number is the Recruiter. Hear her out if you want. Ju"
+   sendTimedMessage on door_unlock_attempt delay 1500 "Staff prox reader. Your cloner will take a card off anyone who carries"
+   sendTimedMessage on door_unlock_attempt delay 1500 "Torres' office. Owen holds IT's spare, and he hands it over on Patrici"
+   sendTimedMessage on door_unlock_attempt delay 1500 "Office keycard. IT holds a spare for every office, but searching someo"
+   sendTimedMessage on door_unlock_attempt delay 1500 "Password lock. IT sets these; the notice by the door says who."
+   sendTimedMessage on door_unlock_attempt delay 1500 "Fingerprint reader on the key vault. Two prints enrolled: Dr Halloran'"
+   sendTimedMessage on door_unlock_failed:data_center delay 1500 "That's the vault reader. You've already lifted his print. Present that"
+   sendTimedMessage on fingerprint_collected:david_torres delay 1500 "That's Torres' print. The vault's north of the server room."
+   sendTimedMessage on fingerprint_collected:david_torres delay 1500 "Print's lifted off his mug. You didn't match it, but the vault reader "
+   sendTimedMessage on object_interacted delay 1500 "Pin tumbler. Your picks will do it. Want the guide?"
+   sendTimedMessage on object_interacted delay 1500 "Pin tumbler. Your picks will do it. Want the guide?"
+   sendTimedMessage on object_interacted delay 1500 "QDC's research portal runs Bludit. I've two guides: one for mapping th"
+   sendTimedMessage on conversation_closed:david_torres delay 2000 "The upload's dead. Good. Finish that research server before I pull you"
+   sendTimedMessage on conversation_closed:david_torres delay 2000 "The upload's dead. He's still on that floor. The research server isn't"
+   sendTimedMessage on conversation_closed:david_torres delay 2000 "The upload's dead. Good. Finish that research server before I pull you"
+   sendTimedMessage on conversation_closed:david_torres delay 2000 "The upload's dead. He's still on that floor. The research server isn't"
+   sendTimedMessage on conversation_closed:david_torres delay 2000 "The upload's dead. Good. Finish that research server before I pull you"
+   sendTimedMessage on conversation_closed:david_torres delay 2000 "The upload's dead. He's still on that floor. The research server isn't"
+   sendTimedMessage on conversation_closed:david_torres delay 2000 "The upload's dead. Good. Finish that research server before I pull you"
+   sendTimedMessage on conversation_closed:david_torres delay 2000 "The upload's dead. He's still on that floor. The research server isn't"
+   sendTimedMessage on conversation_closed:david_torres delay 2000 "Upload's dead. Sweep the vault before you go: whatever's on that desk "
+   sendTimedMessage on conversation_closed:david_torres delay 2000 "Upload's dead. If you're leaving him there, take what's on that desk a"
+   sendTimedMessage on conversation_closed:david_torres delay 7000 "Hands down: press Q until the open hand shows. While your fists are up"
+   sendTimedMessage on npc_hostile_state_changed delay 1000 "He's coming for you. Q switches to fists (again for a harder punch), t"
+   sendTimedMessage on npc_hostile_state_changed delay 5500 "Press Q till the open hand shows to walk by clicking. Can't take him? "
+   sendTimedMessage on npc_hostile_state_changed delay 3000 "Torres is still at that terminal, still angry. Q switches to fists, th"
+
+### m05_insider_trading | reception_lobby | npc recruiter "The Recruiter" | scenario.json.erb:1504 | voice=yes | voiced=None callLabel=None | storyPath=m05_phone_recruiter.json | home=start | phoneId=player_phone
+  ink=scenarios/m05_insider_trading/ink/m05_phone_recruiter.ink
+   m05_phone_recruiter.ink:35 knot start = 5 [HOME] spk={"Narrator": 1}
+   m05_phone_recruiter.ink:76 knot start_choices = 6 spk={"You": 1}
+   m05_phone_recruiter.ink:93 knot recruiter_introduction = 3
+   m05_phone_recruiter.ink:104 knot recruiter_introduction_choices = 1
+   m05_phone_recruiter.ink:113 knot recruiter_line_item = 4
+   m05_phone_recruiter.ink:126 knot recruiter_reveals_target = 3
+   m05_phone_recruiter.ink:137 knot recruiter_reveals_target_choices = 2
+   m05_phone_recruiter.ink:148 knot recruiter_confirms_casualties = 3
+   m05_phone_recruiter.ink:159 knot recruiter_confirms_casualties_choices = 3
+   m05_phone_recruiter.ink:174 knot recruiter_deal = 6
+   m05_phone_recruiter.ink:193 knot recruiter_deal_choices = 2
+   m05_phone_recruiter.ink:207 knot recruiter_deal_terms = 3
+   m05_phone_recruiter.ink:218 knot recruiter_deal_terms_choices = 1
+   m05_phone_recruiter.ink:230 knot recruiter_deal_taken = 3 spk={"Narrator": 1}
+   m05_phone_recruiter.ink:245 knot recruiter_deal_refused = 5 spk={"Narrator": 1}
+   m05_phone_recruiter.ink:268 knot return_contact = 0
+   m05_phone_recruiter.ink:277 knot mid_mission_contact = 4
+   m05_phone_recruiter.ink:298 knot mid_mission_contact_choices = 2
+   m05_phone_recruiter.ink:315 knot post_confrontation_contact = 0
+   m05_phone_recruiter.ink:327 knot deal_accepted_response = 2
+   m05_phone_recruiter.ink:336 knot deal_accepted_response_choices = 0
+   m05_phone_recruiter.ink:340 knot deal_refused_response = 2
+   m05_phone_recruiter.ink:349 knot deal_refused_response_choices = 1
+   m05_phone_recruiter.ink:357 knot recruiter_final_statement = 6 spk={"Narrator": 1}
+   m05_phone_recruiter.ink:380 knot never_talked_terms = 3 spk={"Narrator": 1}
+   m05_phone_recruiter.ink:391 knot hangs_up = 1 spk={"Narrator": 1}
+   m05_phone_recruiter.ink:397 knot end_contact = 2 spk={"Narrator": 1}
+   m05_phone_recruiter.ink:412 knot idle = 1 spk={"Narrator": 1}
+   m05_phone_recruiter.ink:426 knot not_yet = 1
+   sendTimedMessage on conversation_closed:patricia_morgan delay 7500 "TalentStack Executive Recruiting. We should talk before you do anythin"
+   sendTimedMessage on conversation_closed:patricia_phone delay 7500 "TalentStack Executive Recruiting. We should talk before you do anythin"
+   sendTimedMessage on conversation_closed:agent_0x99_handler delay 7500 "TalentStack Executive Recruiting. We should talk before you do anythin"
+
+### m05_insider_trading | reception_lobby | npc patricia_phone "Patricia Morgan" | scenario.json.erb:1535 | voice=yes | voiced=None callLabel=None | storyPath=m05_phone_patricia.json | home=start | phoneId=player_phone
+  ink=scenarios/m05_insider_trading/ink/m05_phone_patricia.ink
+   m05_phone_patricia.ink:66 knot fn:has_motive = 0
+   m05_phone_patricia.ink:69 knot fn:has_exfil = 0
+   m05_phone_patricia.ink:75 knot fn:all_flags_in = 0
+   m05_phone_patricia.ink:78 knot start = 2 [HOME]
+   m05_phone_patricia.ink:85 knot not_yet = 2
+   m05_phone_patricia.ink:96 knot no_answer = 0
+   m05_phone_patricia.ink:101 knot hub = 7
+   m05_phone_patricia.ink:131 knot phone_share_findings = 2
+   m05_phone_patricia.ink:137 knot phone_who = 5
+   m05_phone_patricia.ink:155 knot phone_accuse_halloran = 6
+   m05_phone_patricia.ink:173 knot phone_name_torres = 6
+   m05_phone_patricia.ink:197 knot phone_torres_why = 8
+   m05_phone_patricia.ink:227 knot phone_log_reason_right = 7
+   m05_phone_patricia.ink:255 knot phone_partial_naming = 1
+   m05_phone_patricia.ink:266 knot phone_case_why = 8
+   m05_phone_patricia.ink:294 knot phone_case_proof = 4
+   m05_phone_patricia.ink:312 knot phone_significant_findings = 12
+   m05_phone_patricia.ink:341 knot phone_significant_findings_choices = 2
+   m05_phone_patricia.ink:351 knot phone_hold_him = 3
+   m05_phone_patricia.ink:358 knot phone_hold_him_choices = 0
+   sendTimedMessage on conversation_closed:patricia_morgan delay 2500 "Patricia. This is my mobile. Ring me if anything changes; don't walk i"
+
+### m06_follow_the_money | reception_lobby | npc agent_0x99_handler "Agent HaX" | scenario.json.erb:904 | voice=yes | voiced=None callLabel=None | storyPath=m06_phone_agent_0x99.json | home=start | phoneId=player_phone
+  ink=scenarios/m06_follow_the_money/ink/m06_phone_agent_0x99.ink
+   m06_phone_agent_0x99.ink:105 knot start = 0 [HOME]
+   m06_phone_agent_0x99.ink:118 knot first_call = 2
+   m06_phone_agent_0x99.ink:124 knot first_call_choices = 4
+   m06_phone_agent_0x99.ink:145 knot initial_guidance = 3
+   m06_phone_agent_0x99.ink:155 knot hub = 1
+   m06_phone_agent_0x99.ink:226 knot password_help = 3
+   m06_phone_agent_0x99.ink:233 knot password_help_choices = 2
+   m06_phone_agent_0x99.ink:241 knot blockchain_help = 3
+   m06_phone_agent_0x99.ink:248 knot blockchain_help_choices = 2
+   m06_phone_agent_0x99.ink:256 knot irina_guidance = 2
+   m06_phone_agent_0x99.ink:261 knot irina_guidance_choices = 0
+   m06_phone_agent_0x99.ink:267 knot recruitment_strategy = 3
+   m06_phone_agent_0x99.ink:273 knot arrest_strategy = 2
+   m06_phone_agent_0x99.ink:278 knot recap = 36
+   m06_phone_agent_0x99.ink:394 knot on_password_lists_found = 2
+   m06_phone_agent_0x99.ink:400 knot on_first_server_cracked = 2
+   m06_phone_agent_0x99.ink:406 knot on_blockchain_discovered = 3
+   m06_phone_agent_0x99.ink:413 knot on_blockchain_choices = 4
+   m06_phone_agent_0x99.ink:423 knot on_architects_fund_discovered = 4
+   m06_phone_agent_0x99.ink:431 knot on_fund_choices = 0
+   m06_phone_agent_0x99.ink:437 knot coordinated_attack = 2
+   m06_phone_agent_0x99.ink:442 knot casualty_numbers = 2
+   m06_phone_agent_0x99.ink:447 knot critical_choice_preview = 3
+   m06_phone_agent_0x99.ink:453 knot critical_choice_choices = 1
+   m06_phone_agent_0x99.ink:461 knot handler_recommendation = 5
+   m06_phone_agent_0x99.ink:470 knot on_network_complete = 3
+   m06_phone_agent_0x99.ink:486 knot on_network_choices = 3
+   m06_phone_agent_0x99.ink:504 knot fund_hint = 4
+   m06_phone_agent_0x99.ink:529 knot relay_wordlist = 1
+   m06_phone_agent_0x99.ink:535 knot relay_cto_badge = 1
+   m06_phone_agent_0x99.ink:541 knot relay_exec_badge = 1
+   m06_phone_agent_0x99.ink:548 knot on_satoshi_ko = 4 <- npc_ko:satoshi_nakamoto conversationMode=phone-chat,onceOnly=True @1328; room_entered:satoshi_office conversationMode=phone-chat,onceOnly=False @1335
+   m06_phone_agent_0x99.ink:562 knot satoshi_ko_choice = 4
+   m06_phone_agent_0x99.ink:595 knot extract_offer = 2
+   m06_phone_agent_0x99.ink:603 knot extract_choices = 2
+   m06_phone_agent_0x99.ink:611 knot extract_confirm = 0
+   m06_phone_agent_0x99.ink:615 knot extract_go = 1
+   m06_phone_agent_0x99.ink:627 knot guide_menu = 1
+   m06_phone_agent_0x99.ink:632 knot guide_menu_choices = 0
+   m06_phone_agent_0x99.ink:648 knot request_lockpick_guide = 2
+   m06_phone_agent_0x99.ink:657 knot request_cracking_guide = 2
+   m06_phone_agent_0x99.ink:666 knot request_druid_guide = 2
+   m06_phone_agent_0x99.ink:675 knot request_privesc_guide = 3
+   m06_phone_agent_0x99.ink:685 knot request_recon_guide = 2
+   m06_phone_agent_0x99.ink:694 knot request_rfid_guide = 2
+   sendTimedMessage on conversation_closed:opening_briefing_npc delay 3000 "You're FCA on a routine visit. You want Dr Irina Volkova, the CTO: tra"
+   sendTimedMessage on conversation_closed:irina_volkova delay 17500 "Volkova didn't buy you. If she asks around, the FCA will say they've n"
+   sendTimedMessage on conversation_closed:irina_volkova delay 4000 "You've met Volkova. She built the mixer and hates what it's used for. "
+   sendTimedMessage on conversation_closed:irina_volkova delay 9000 "Their analysts sit east of the floor. If anyone has drawn the money, i"
+   sendTimedMessage on global_variable_changed:asset_decision_deferred delay 2500 "The recovery keys are on the vault account on the backend. That's the "
+   sendTimedMessage on global_variable_changed:asset_decision_deferred delay 2500 "Find his slot first. The custody console in the data centre, and Priya"
+   sendTimedMessage on item_picked_up:text_file delay 1500 "Good. Her list is the words people here pick for their doors. Put it n"
+   sendTimedMessage on room_entered:trading_floor delay 3000 "You're on the floor. Two doors here are on RFID, and your cloner reads"
+   sendTimedMessage on object_interacted delay 1800 "You're on the backend. A data-analytics service is listening that shou"
+   sendTimedMessage on global_variable_changed:server_passphrase_known delay 1200 "That's their house rule for door passphrases. Volkova keeps the list o"
+   sendTimedMessage on objective_task_completed:submit_flag1 delay 1200 "First account's yours, one of the weak staff passwords Volkova flagged"
+   sendTimedMessage on objective_task_completed:submit_flag2 delay 5500 "Second account, their ledger. Same password, as the rack sheet admitte"
+   sendTimedMessage on objective_task_completed:submit_flag3 delay 1500 "Financial database. It runs their doors: data centre code's in the exp"
+   sendTimedMessage on objective_task_completed:submit_flag4 delay 1800 "Full estate. The vault account had the recovery keys, and they're in y"
+   sendTimedMessage on global_variable_changed:found_blockchain_evidence delay 1500 "Priya's got the money as far as the mixer, with amounts and times. The"
+   sendTimedMessage on room_entered:data_center delay 2000 "That console opens one cold slot's file by number. One number per try,"
+   sendTimedMessage on room_entered:data_center delay 2000 "That console opens one cold slot's file by number. One number per try,"
+   sendTimedMessage on room_entered:executive_wing delay 1500 "Hold on. You haven't got the vault account yet, and without its keys y"
+   sendTimedMessage on room_entered:executive_wing delay 3500 "You're upstairs without his wallet. You can't freeze or watch a slot y"
+   sendTimedMessage on global_variable_changed:found_architects_fund delay 1500 "$12.8M in the wallet, six cells, seventy-two hours. Call me about it. "
+   sendTimedMessage on global_variable_changed:found_architects_fund delay 1500 "$12.8M in the wallet, six cells, seventy-two hours. Call me about it. "
+   sendTimedMessage on door_unlock_failed:executive_wing delay 800 "That reader wants Satoshi's spare badge. Your door export says ops sig"
+   sendTimedMessage on door_unlock_failed:executive_wing delay 800 "That reader wants Satoshi's spare badge, and Volkova has it. Ask her o"
+   sendTimedMessage on door_unlock_failed:executive_wing delay 800 "That reader wants Satoshi's spare badge. Volkova had it on her. Check "
+   sendTimedMessage on npc_ko:irina_volkova delay 2500 "Volkova's down. Well. That's one way to settle it. Her things are on t"
+   sendTimedMessage on npc_ko:irina_volkova delay 2500 "Volkova's down before we ever talked to her. Her things are on the flo"
+   sendTimedMessage on npc_ko:irina_volkova delay 2500 "Volkova's down, and she'd already come over to us. That goes in the re"
+   sendTimedMessage on npc_ko:irina_volkova delay 2500 "Volkova's down, and she was already in custody. The police will have q"
+   sendTimedMessage on global_variable_changed:assets_decided delay 2500 "That's the money settled. Volkova is still on the trading floor and no"
+   sendTimedMessage on global_variable_changed:assets_decided delay 8000 "Before I pull you out, finish the backend. I want all four flags at th"
+   sendTimedMessage on global_variable_changed:assets_decided delay 8000 "Before I pull you out, finish the backend. I want all four flags at th"
+   sendTimedMessage on global_variable_changed:assets_decided delay 8000 "Before I pull you out, finish the backend. I want all four flags at th"
+   sendTimedMessage on global_variable_changed:assets_decided delay 8000 "Before I pull you out, finish the backend. I want all four flags at th"
+   sendTimedMessage on global_variable_changed:irina_fate_decided delay 4000 "Before I pull you out, finish the backend. I want all four flags at th"
+   sendTimedMessage on global_variable_changed:guard_caught delay 3000 "The guard saw your picks. He'll ring the FCA to check on you, and they"
+   sendTimedMessage on npc_ko:checkpoint_guard delay 2500 "The guard was doing his job. That goes in the report, and so does the "
+   sendTimedMessage on npc_ko:checkpoint_guard delay 7000 "Somebody will find him and ring whoever sent you. The FCA has never he"
+   sendTimedMessage on npc_ko:trader_npc delay 2500 "Okonkwo had done nothing. That goes in the report."
+   sendTimedMessage on npc_ko:trader_npc delay 7000 "Someone on that floor is going to ring the FCA. Get what you need befo"
+   sendTimedMessage on npc_ko:blockchain_analyst delay 2500 "Raghavan drew us the money and had done nothing else. That goes in the"
+   sendTimedMessage on npc_ko:blockchain_analyst delay 7000 "Someone on that floor is going to ring the FCA. Get what you need befo"
+   sendTimedMessage on npc_ko:irina_volkova delay 7000 "Someone on that floor is going to ring the FCA. Get what you need befo"
+   sendTimedMessage on minigame_failed delay 2500 "Another wrong slot, and it's logged. They already know we're inside. N"
+   sendTimedMessage on minigame_failed delay 2500 "That console logs every slot it opens. Somebody's phone just buzzed."
+   sendTimedMessage on minigame_failed delay 2000 "That console just logged a slot that wasn't the fund. One more and som"
+   sendTimedMessage on conversation_closed:satoshi_minder delay 2500 "He won't take the FCA now. Wait by the trophy cabinet, unseen. When he"
+   sendTimedMessage on npc_hostile_state_changed delay 1000 "He's coming for you, and he won't wait while you read this. Q for fist"
+   sendTimedMessage on npc_hostile_state_changed delay 1000 "He's fighting, and he won't wait while you read this. Q for your fists"
+   sendTimedMessage on global_variable_changed:signing_record_found delay 2000 "His own thumb on his own release. That's the difference between runnin"
+   sendTimedMessage on global_variable_changed:irina_recruited delay 2500 "She's turned. Whatever she gives you tonight, write it down twice."
+   sendTimedMessage on global_variable_changed:irina_arrested delay 2500 "Police are on their way up for her. Leave her where she is; they'll ha"
+   sendTimedMessage on global_variable_changed:assets_seized delay 3000 "Transfer's confirmed. The balances are in a wallet we hold. ENTROPY wi"
+   sendTimedMessage on global_variable_changed:monitoring_enabled delay 3000 "Tags are on. When that release fires, every address it pays lights up "
+   sendTimedMessage on global_variable_changed:architect_identity_found delay 2500 "Tesseract. ...Bring that page out with you. Don't read it to anyone el"
+   sendTimedMessage on npc_ko:satoshi_minder delay 2500 "His minder's down. If Satoshi didn't hear that, he's the only one on t"
+   sendTimedMessage on conversation_closed:satoshi_nakamoto delay 13500 "That's both calls made, and the backend's done. Look round if you want"
+   sendTimedMessage on conversation_closed:satoshi_nakamoto delay 13500 "That's both calls made, and the backend's done. Look round if you want"
+   sendTimedMessage on conversation_closed:irina_volkova delay 13500 "That's both calls made, and the backend's done. Look round if you want"
+   sendTimedMessage on conversation_closed:irina_volkova delay 13500 "That's both calls made, and the backend's done. Look round if you want"
+   sendTimedMessage on minigame_completed delay 13500 "That's both calls made, and the backend's done. Look round if you want"
+   sendTimedMessage on minigame_completed delay 13500 "That's both calls made, and the backend's done. Look round if you want"
+   sendTimedMessage on minigame_failed delay 13500 "That's both calls made, and the backend's done. Look round if you want"
+   sendTimedMessage on minigame_failed delay 13500 "That's both calls made, and the backend's done. Look round if you want"
+   sendTimedMessage on room_entered:reception_lobby delay 13500 "That's both calls made, and the backend's done. Look round if you want"
+   sendTimedMessage on room_entered:reception_lobby delay 13500 "That's both calls made, and the backend's done. Look round if you want"
+   sendTimedMessage on room_entered:security_checkpoint delay 13500 "That's both calls made, and the backend's done. Look round if you want"
+   sendTimedMessage on room_entered:security_checkpoint delay 13500 "That's both calls made, and the backend's done. Look round if you want"
+   sendTimedMessage on room_entered:trading_floor delay 13500 "That's both calls made, and the backend's done. Look round if you want"
+   sendTimedMessage on room_entered:trading_floor delay 13500 "That's both calls made, and the backend's done. Look round if you want"
+   sendTimedMessage on room_entered:server_room delay 13500 "That's both calls made, and the backend's done. Look round if you want"
+   sendTimedMessage on room_entered:server_room delay 13500 "That's both calls made, and the backend's done. Look round if you want"
+   sendTimedMessage on room_entered:data_center delay 13500 "That's both calls made, and the backend's done. Look round if you want"
+   sendTimedMessage on room_entered:data_center delay 13500 "That's both calls made, and the backend's done. Look round if you want"
+   sendTimedMessage on room_entered:blockchain_lab delay 13500 "That's both calls made, and the backend's done. Look round if you want"
+   sendTimedMessage on room_entered:blockchain_lab delay 13500 "That's both calls made, and the backend's done. Look round if you want"
+   sendTimedMessage on room_entered:irina_office delay 13500 "That's both calls made, and the backend's done. Look round if you want"
+   sendTimedMessage on room_entered:irina_office delay 13500 "That's both calls made, and the backend's done. Look round if you want"
+   sendTimedMessage on room_entered:executive_wing delay 13500 "That's both calls made, and the backend's done. Look round if you want"
+   sendTimedMessage on room_entered:executive_wing delay 13500 "That's both calls made, and the backend's done. Look round if you want"
+   sendTimedMessage on room_entered:satoshi_office delay 13500 "That's both calls made, and the backend's done. Look round if you want"
+   sendTimedMessage on room_entered:satoshi_office delay 13500 "That's both calls made, and the backend's done. Look round if you want"
+
+### m07_architects_gambit | security_checkpoint | npc agent_0x99 "Agent HaX" | scenario.json.erb:818 | voice=yes | voiced=None callLabel=None | storyPath=m07_phone_agent_0x99.json | home=start | phoneId=player_phone
+  ink=scenarios/m07_architects_gambit/ink/m07_phone_agent_0x99.ink
+   m07_phone_agent_0x99.ink:97 knot start = 0 [HOME]
+   m07_phone_agent_0x99.ink:104 knot first_call = 0
+   m07_phone_agent_0x99.ink:111 knot first_call_committed = 4
+   m07_phone_agent_0x99.ink:134 knot first_call_committed_choices = 16
+   m07_phone_agent_0x99.ink:170 knot first_call_open = 2
+   m07_phone_agent_0x99.ink:183 knot commit_team = 4
+   m07_phone_agent_0x99.ink:223 knot hub = 2
+   m07_phone_agent_0x99.ink:312 knot report_progress = 38 spk={"One login": 1}
+   m07_phone_agent_0x99.ink:389 knot door_line = 1
+   m07_phone_agent_0x99.ink:399 knot password_line = 5
+   m07_phone_agent_0x99.ink:411 knot fn:guide_waiting = 0
+   m07_phone_agent_0x99.ink:416 knot field_guides = 0
+   m07_phone_agent_0x99.ink:439 knot fn:people_news = 0
+   m07_phone_agent_0x99.ink:442 knot fn:park_pointer_open = 0
+   m07_phone_agent_0x99.ink:445 knot fn:vault_news = 0
+   m07_phone_agent_0x99.ink:448 knot fn:stuck_news = 0
+   m07_phone_agent_0x99.ink:451 knot fn:vault_hint_open = 0
+   m07_phone_agent_0x99.ink:454 knot people_topics = 0
+   m07_phone_agent_0x99.ink:470 knot vault_finds = 0
+   m07_phone_agent_0x99.ink:482 knot stuck_topics = 0
+   m07_phone_agent_0x99.ink:514 knot bring_me_in = 2
+   m07_phone_agent_0x99.ink:533 knot deduce_schedule = 1
+   m07_phone_agent_0x99.ink:537 knot deduce_op_choices = 0
+   m07_phone_agent_0x99.ink:550 knot deduce_what = 1
+   m07_phone_agent_0x99.ink:554 knot deduce_what_choices = 0
+   m07_phone_agent_0x99.ink:572 knot deduce_wrong = 2
+   m07_phone_agent_0x99.ink:583 knot deduce_right = 9
+   m07_phone_agent_0x99.ink:612 knot redirect_open = 7
+   m07_phone_agent_0x99.ink:634 knot redirect_open_choices = 4 spk={"Narrator": 1}
+   m07_phone_agent_0x99.ink:658 knot redirect_closed = 3
+   m07_phone_agent_0x99.ink:677 knot moral_soundingboard = 3
+   m07_phone_agent_0x99.ink:687 knot moral_soundingboard_choices = 5
+   m07_phone_agent_0x99.ink:707 knot topic_hollis = 3
+   m07_phone_agent_0x99.ink:717 knot topic_elena = 5
+   m07_phone_agent_0x99.ink:733 knot topic_traffic = 6
+   m07_phone_agent_0x99.ink:753 knot topic_mercer = 3
+   m07_phone_agent_0x99.ink:763 knot topic_tomb = 2
+   m07_phone_agent_0x99.ink:776 knot topic_teacher = 7 spk={"Narrator": 1}
+   m07_phone_agent_0x99.ink:796 knot topic_mole = 8 spk={"Narrator": 1}
+   m07_phone_agent_0x99.ink:823 knot vm_hint_1 = 3
+   m07_phone_agent_0x99.ink:832 knot vm_hint_2 = 3
+   m07_phone_agent_0x99.ink:841 knot vm_hint_3 = 3
+   m07_phone_agent_0x99.ink:851 knot vm_hint_4 = 3
+   m07_phone_agent_0x99.ink:861 knot topic_park = 3
+   m07_phone_agent_0x99.ink:870 knot vault_hint = 4
+   m07_phone_agent_0x99.ink:897 knot guide_rfid = 4
+   m07_phone_agent_0x99.ink:909 knot guide_lockpicking = 4
+   m07_phone_agent_0x99.ink:921 knot guide_recon = 4
+   m07_phone_agent_0x99.ink:933 knot guide_nfs = 4
+   m07_phone_agent_0x99.ink:944 knot guide_ssh = 3
+   m07_phone_agent_0x99.ink:954 knot guide_privesc = 3
+   sendTimedMessage on global_variable_changed:team_assigned delay 2000 "Team's turned. Two of the three go unanswered tonight. Let it hurt aft"
+   sendTimedMessage on room_entered:operations_floor delay 1000 "You're inside, and the team's still over Denver waiting on your call. "
+   sendTimedMessage on room_entered:operations_floor delay 1000 "You're inside. Whatever you decide tonight, let it hurt afterwards, no"
+   sendTimedMessage on global_variable_changed:flag1_submitted delay 1500 "The relay's decoded the file their share points at: their own schedule"
+   sendTimedMessage on global_variable_changed:found_coordination_traffic delay 3000 "If a row in there doesn't match what we were told, call me and say whi"
+   sendTimedMessage on conversation_closed:elena_rodriguez delay 1500 "One frightened engineer, but it fits. Their share will have it in writ"
+   sendTimedMessage on conversation_closed:elena_rodriguez delay 1500 "One frightened engineer, but it fits. When you call the team, that's w"
+   sendTimedMessage on conversation_closed:elena_rodriguez delay 1500 "One frightened engineer, but it fits. The window's shut. If she's righ"
+   sendTimedMessage on conversation_closed:elena_rodriguez delay 1500 "If she's right, the team's already where it matters. Get it in writing"
+   sendTimedMessage on global_variable_changed:found_coordination_traffic delay 3000 "The share says what Elena told you. You moved the team on the right ev"
+   sendTimedMessage on global_variable_changed:flag2_submitted delay 1500 "Their listener gives out the operator's password in clear, and it's El"
+   sendTimedMessage on global_variable_changed:flag2_submitted delay 1500 "Their listener gives out the operator's password in clear, and the sam"
+   sendTimedMessage on global_variable_changed:flag1_submitted delay 9000 "You've got their operator's name. Elena says he's too vain to change a"
+   sendTimedMessage on conversation_closed:elena_rodriguez delay 6000 "You've got their operator's name. Elena says he's too vain to change a"
+   sendTimedMessage on global_variable_changed:flag2_submitted delay 6000 "The moment that operator flag goes through the relay, they see you and"
+   sendTimedMessage on global_variable_changed:flag3_submitted delay 1500 "They saw you. Sequence armed: fifteen minutes. The window to move the "
+   sendTimedMessage on global_variable_changed:flag3_submitted delay 1500 "They saw you. Sequence armed: fifteen minutes. The team's still over D"
+   sendTimedMessage on objective_task_completed:terminate_cascade_scripts delay 1500 "Root. Their job's dead and they're locked out. The console in the cont"
+   sendTimedMessage on object_interacted delay 800 "That console takes nothing typed into it. The root flag goes through t"
+   sendTimedMessage on global_variable_changed:countdown_expired delay 5000 "Seattle's dark. Step one ran. Steps two to four haven't. Get root, put"
+   sendTimedMessage on global_variable_changed:countdown_expired delay 5000 "Seattle's dark. Step one ran. Steps two to four haven't. Root's in, so"
+   sendTimedMessage on objective_task_completed:recover_vault_pin delay 1500 "'Don't write it down,' so they riveted it to the door. A code you can "
+   sendTimedMessage on room_entered:cable_vault delay 4000 "He was briefed on a building, not a body count. Mercer's projection is"
+   sendTimedMessage on npc_ko:ray_hollis delay 2000 "Hollis is down. His badge should be on the floor by him. Or the badge "
+   sendTimedMessage on npc_ko:elena_rodriguez delay 2000 "She's not talking now. You don't need her. How to read the vault code "
+   sendTimedMessage on npc_ko:thomas_park delay 2000 "Park's out of it. Whatever he came down to cut, he hadn't finished. Th"
+   sendTimedMessage on npc_hostile_state_changed delay 1000 "He's coming for you. Fists up, face him, hit him. Q a second time thro"
+   sendTimedMessage on npc_hostile_state_changed delay 5500 "He's slower than you, and he won't leave the checkpoint. If it's going"
+   sendTimedMessage on npc_hostile_state_changed delay 1000 "Park's swinging. Q switches to fists (again for a harder punch), then "
+   sendTimedMessage on npc_hostile_state_changed delay 5500 "To get clear, click open floor and walk, fists up or not. He's slower "
+   sendTimedMessage on npc_hostile_state_changed delay 1000 "Mercer's coming at you. Q switches to fists (again for a harder punch)"
+   sendTimedMessage on npc_hostile_state_changed delay 5500 "To get clear, click open floor and walk, fists up or not. He's slower "
+   sendTimedMessage on conversation_closed:opening_briefing_cutscene delay 2500 "The checkpoint guard is bought. If anyone swings at you: Q for fists, "
+   sendTimedMessage on npc_ko:ray_hollis delay 7000 "Hands down: press Q until the open hand shows. While your fists are up"
+   sendTimedMessage on npc_ko:thomas_park delay 7000 "Hands down: press Q until the open hand shows. While your fists are up"
+   sendTimedMessage on npc_ko:james_mercer delay 7000 "Hands down: press Q until the open hand shows. While your fists are up"
+   sendTimedMessage on door_unlock_failed:scada_control delay 800 "Right word, wrong case. Capital C, capital W."
+   sendTimedMessage on card_cloned delay 4000 "Got it. His badge never left his belt. Anyone who stands that close ca"
+   sendTimedMessage on npc_ko:james_mercer delay 2000 "Mercer's on the floor. The sequence never needed him awake. Finish the"
+   sendTimedMessage on npc_ko:james_mercer delay 2000 "Mercer's on the floor. The host's finished. The abort goes in at the c"
+   sendTimedMessage on npc_ko:james_mercer delay 2000 "Mercer's on the floor. The grid held without him, and it'll hold with "
+   sendTimedMessage on room_entered:operations_floor delay 9500 "Server hall door, far side of this floor, wants a server-zone badge. H"
+   sendTimedMessage on room_entered:server_room delay 9000 "Plant door, south side of this hall, is a keyed lock. There's a key on"
+   sendTimedMessage on object_interacted delay 1500 "Your attack box. Map the host first. NFS is the door they left open, a"
+   sendTimedMessage on global_variable_changed:grid_saved delay 4000 "Grid's held. Some of what you took off that host hasn't gone through t"
+   sendTimedMessage on global_variable_changed:grid_saved delay 4000 "Grid's held. Some of what you took off that host hasn't gone through t"
+   sendTimedMessage on global_variable_changed:grid_saved delay 4000 "Grid's held. Some of what you took off that host hasn't gone through t"
+   sendTimedMessage on global_variable_changed:architect_signoff_done delay 2500 "Grid's held. Netherton wants you. The plant's south of the server hall"
+   sendTimedMessage on global_variable_changed:architect_signoff_done delay 2500 "Grid's held. Netherton wants you on the link. Call me when you're read"
+   sendTimedMessage on global_variable_changed:debrief_timer_fired delay 500 "Netherton's done waiting. Next door you go through, he's on the link."
+   sendTimedMessage on global_variable_changed:debrief_timer_fired delay 500 "Netherton's done waiting. The moment the last of it is through the rel"
+   sendTimedMessage on global_variable_changed:debrief_timer_fired delay 500 "Netherton's done waiting. The moment the last of it is through the rel"
+   sendTimedMessage on global_variable_changed:debrief_timer_fired delay 500 "Netherton's done waiting. The moment the last of it is through the rel"
+   sendTimedMessage on item_picked_up:keycard delay 1500 "PIN set to the audit date, and the date's on a sheet in the next room."
+
+### m07_architects_gambit | security_checkpoint | npc the_architect "The Architect" | scenario.json.erb:1554 | voice=yes | voiced=None callLabel=None | storyPath=m07_architect_comms.json | home=start | phoneId=player_phone
+  ink=scenarios/m07_architects_gambit/ink/m07_architect_comms.ink
+   m07_architect_comms.ink:45 knot start = 0 [HOME] <- room_entered:operations_floor TEXT(sendTimedMessage),onceOnly=True @1577; global_variable_changed:architect_t20_played TEXT(sendTimedMessage),onceOnly=True @1583; global_variable_changed:architect_t10_played TEXT(sendTimedMessage),onceOnly=True @1583; global_variable_changed:architect_t10_played TEXT(sendTimedMessage),onceOnly=True @1583; global_variable_changed:architect_t10_played TEXT(sendTimedMessage),onceOnly=True @1583; global_variable_changed:architect_t5_played TEXT(sendTimedMessage),onceOnly=True @1583; global_variable_changed:architect_t1_played TEXT(sendTimedMessage),onceOnly=True @1583; global_variable_changed:countdown_expired TEXT(sendTimedMessage),onceOnly=True @1583
+   m07_architect_comms.ink:80 knot dormant = 0
+   m07_architect_comms.ink:95 knot taunt_t30 = 3 spk={"Narrator": 1}
+   m07_architect_comms.ink:106 knot taunt_t30_choices = 2
+   m07_architect_comms.ink:114 knot t30_close = 3 spk={"Narrator": 1}
+   m07_architect_comms.ink:133 knot taunt_t20 = 10 spk={"Narrator": 2}
+   m07_architect_comms.ink:173 knot taunt_t20_choices = 2
+   m07_architect_comms.ink:182 knot t20_close = 3 spk={"Narrator": 1}
+   m07_architect_comms.ink:203 knot taunt_t10 = 16 spk={"Narrator": 2}
+   m07_architect_comms.ink:252 knot taunt_t10_choices = 2
+   m07_architect_comms.ink:260 knot t10_close = 4 spk={"Narrator": 1}
+   m07_architect_comms.ink:281 knot taunt_t5 = 7 spk={"Narrator": 2}
+   m07_architect_comms.ink:314 knot taunt_t5_choices = 3
+   m07_architect_comms.ink:325 knot t5_close = 3 spk={"Narrator": 1}
+   m07_architect_comms.ink:341 knot taunt_t1 = 5 spk={"Narrator": 2}
+   m07_architect_comms.ink:367 knot taunt_t1_choices = 2
+   m07_architect_comms.ink:375 knot t1_close = 3 spk={"Narrator": 2}
+   m07_architect_comms.ink:393 knot sign_off = 9 <- minigame_completed conversationMode=phone-chat,onceOnly=True @None; minigame_failed conversationMode=phone-chat,onceOnly=True @None spk={"Narrator": 2}
+   m07_architect_comms.ink:431 knot sign_off_choices = 2
+   m07_architect_comms.ink:439 knot signoff_close = 2 spk={"Narrator": 1}
+   m07_architect_comms.ink:451 knot dead_air = 1 spk={"Narrator": 1}
+   m07_architect_comms.ink:456 knot dead_air_choices = 1 spk={"Narrator": 1}
+   m07_architect_comms.ink:475 knot parked = 0
+   m07_architect_comms.ink:491 knot after_win = 0
+   sendTimedMessage on room_entered:operations_floor delay 5000 "Agent 0x00."
+   sendTimedMessage on global_variable_changed:architect_t20_played delay 500 "A word, Agent 0x00."
+   sendTimedMessage on global_variable_changed:architect_t10_played delay 500 "Ten minutes before your team is too committed to move, Agent 0x00."
+   sendTimedMessage on global_variable_changed:architect_t10_played delay 500 "A word about Austin, Agent 0x00."
+   sendTimedMessage on global_variable_changed:architect_t10_played delay 500 "A word about doors, Agent 0x00."
+   sendTimedMessage on global_variable_changed:architect_t5_played delay 500 "Five minutes, Agent 0x00."
+   sendTimedMessage on global_variable_changed:architect_t1_played delay 500 "One minute, Agent 0x00."
+   sendTimedMessage on global_variable_changed:countdown_expired delay 500 "Seattle first. As scheduled."
+
+### m08_the_mole | main_lobby | npc agent_0x99 "Agent HaX" | scenario.json.erb:733 | voice=yes | voiced=None callLabel=None | storyPath=m08_phone_agent_0x99.json | home=start | phoneId=player_phone
+  ink=scenarios/m08_the_mole/ink/m08_phone_agent_0x99.ink
+   m08_phone_agent_0x99.ink:69 knot start = 0 [HOME]
+   m08_phone_agent_0x99.ink:76 knot first_call_text = 2
+   m08_phone_agent_0x99.ink:81 knot hub = 59
+   m08_phone_agent_0x99.ink:224 knot hax_read_1 = 2
+   m08_phone_agent_0x99.ink:233 knot hax_read_wrong_time = 1
+   m08_phone_agent_0x99.ink:237 knot hax_read_2 = 2
+   m08_phone_agent_0x99.ink:246 knot hax_read_wrong_who = 1
+   m08_phone_agent_0x99.ink:250 knot hax_read_right = 3
+   m08_phone_agent_0x99.ink:263 knot guides = 1
+   m08_phone_agent_0x99.ink:267 knot guides_menu = 6
+   sendTimedMessage on conversation_closed:opening_briefing_cutscene delay 2500 "I'm on the wire. Get the Director's brief before you spook anyone. And"
+   sendTimedMessage on global_variable_changed:flag1_submitted delay 1500 "Our own code server, and its repo is open to anyone. No password. That"
+   sendTimedMessage on global_variable_changed:flag2_submitted delay 1500 "You're in, and so were the credentials: committed straight into the re"
+   sendTimedMessage on global_variable_changed:flag3_submitted delay 1500 "The intercept's seal opened their drop. The mail goes to architect@ent"
+   sendTimedMessage on global_variable_changed:flag4_submitted delay 2000 "Root. Logs agree with your door audit: Cryptography Lab terminal 03, f"
+   sendTimedMessage on global_variable_changed:flag4_submitted delay 2000 "Root. Logs agree with the reading you gave me: Cryptography Lab termin"
+   sendTimedMessage on global_variable_changed:flag4_submitted delay 2000 "Root. Cryptography Lab terminal 03, forty-seven minutes, for our threa"
+   sendTimedMessage on global_variable_changed:flag4_submitted delay 2000 "Root. A terminal and a time, no face: Cryptography Lab terminal 03, D-"
+   sendTimedMessage on global_variable_changed:flag4_submitted delay 2000 "Root. A terminal and a time, no face: Cryptography Lab terminal 03, D-"
+   sendTimedMessage on global_variable_changed:flag4_submitted delay 2000 "Root. A terminal and a time, no face: Cryptography Lab terminal 03, D-"
+   sendTimedMessage on global_variable_changed:flag4_submitted delay 2000 "Root. A terminal and a time, no face: Cryptography Lab terminal 03, D-"
+   sendTimedMessage on global_variable_changed:flag4_submitted delay 2000 "Root. A terminal and a time, no face: Cryptography Lab terminal 03, D-"
+   sendTimedMessage on global_variable_changed:netherton_ko delay 4500 "With the Director down, I'm who you bring the name to. Get the door au"
+   sendTimedMessage on global_variable_changed:netherton_ko delay 4500 "With the Director down, I'm who you bring the name to. Read me the doo"
+   sendTimedMessage on global_variable_changed:found_badge_audit delay 2000 "That's the door audit. With the Director on his floor, you read it to "
+   sendTimedMessage on global_variable_changed:found_badge_audit delay 2000 "That's the door audit. The Director won't hear it from you, so read it"
+   sendTimedMessage on global_variable_changed:mole_identified delay 5000 "Put the rest of the box through the relay. I want the whole chain in f"
+   sendTimedMessage on global_variable_changed:all_flags_submitted delay 6000 "Whole chain's in, and it has a name. He's in the interrogation room, s"
+   sendTimedMessage on global_variable_changed:all_flags_submitted delay 6000 "Whole chain's in. Security have walked him down to the interrogation r"
+   sendTimedMessage on global_variable_changed:mole_identified delay 10000 "Whole chain's in, and it has a name. He's in the interrogation room, s"
+   sendTimedMessage on global_variable_changed:mole_identified delay 10000 "Whole chain's in. Security have walked him down to the interrogation r"
+   sendTimedMessage on global_variable_changed:all_flags_submitted delay 6000 "Whole chain's in: a terminal, a time, an account. The Director won't w"
+   sendTimedMessage on global_variable_changed:all_flags_submitted delay 6000 "Whole chain's in: a terminal, a time, an account. Nobody walks anyone "
+   sendTimedMessage on global_variable_changed:all_flags_submitted delay 6000 "Whole chain's in: a terminal, a time, an account. Nobody walks anyone "
+   sendTimedMessage on npc_ko:director_netherton delay 2000 "The Director is down. Tell me that wasn't you. His card's on the floor"
+   sendTimedMessage on npc_ko:agent_nightshade delay 2000 "You put Nightshade on the floor. Whatever he is, he isn't answering qu"
+   sendTimedMessage on npc_ko:agent_nightshade delay 2000 "You put Nightshade on the floor. The proof's on the server. His face c"
+   sendTimedMessage on npc_ko:agent_vector delay 2000 "You put Vector on the floor. Whatever he is, he isn't answering questi"
+   sendTimedMessage on npc_ko:agent_vector delay 2000 "You hit Vector? He's a mess and a genius and he is not your mole. The "
+   sendTimedMessage on npc_ko:agent_phantom delay 2000 "You put Phantom on the floor. Whatever he is, he isn't answering quest"
+   sendTimedMessage on npc_ko:agent_phantom delay 2000 "Phantom's down. All that snooping was him running the same hunt you ar"
+   sendTimedMessage on npc_ko:agent_0x99_person delay 2000 "That was me you just put on the break-room floor. I'm typing this from"
+   sendTimedMessage on npc_hostile_state_changed delay 1000 "The Director's coming for you. Q switches to fists (again for a harder"
+   sendTimedMessage on npc_hostile_state_changed delay 5500 "He won't talk like this. Bring me the door audit. He's slower and stay"
+   sendTimedMessage on npc_hostile_state_changed delay 5500 "He won't talk like this. Floor him for his card, or click open floor a"
+   sendTimedMessage on npc_hostile_state_changed delay 1000 "Vector's swinging. Q switches to fists (again for a harder punch), the"
+   sendTimedMessage on npc_hostile_state_changed delay 5500 "He won't talk to you while he's like this. Put him down or keep away: "
+   sendTimedMessage on npc_hostile_state_changed delay 1000 "Phantom's coming at you. Q switches to fists (again for a harder punch"
+   sendTimedMessage on npc_hostile_state_changed delay 5500 "He won't talk to you while he's like this. Put him down or keep away: "
+   sendTimedMessage on npc_hostile_state_changed delay 1000 "Nightshade's coming for you. Q switches to fists (again for a harder p"
+   sendTimedMessage on npc_hostile_state_changed delay 5500 "He won't talk to you while he's like this. Put him down or keep away: "
+   sendTimedMessage on npc_hostile_state_changed delay 1000 "He's coming over the table. Q switches to fists (again for a harder pu"
+   sendTimedMessage on npc_hostile_state_changed delay 5500 "He won't talk to you while he's like this. Put him down or keep away: "
+   sendTimedMessage on npc_hostile_state_changed delay 1000 "The analyst's swinging. Q switches to fists (again for a harder punch)"
+   sendTimedMessage on npc_hostile_state_changed delay 5500 "She won't talk to you while she's like this. Put her down or keep away"
+   sendTimedMessage on npc_hostile_state_changed delay 1000 "The off-duty agent's coming at you. Q switches to fists (again for a h"
+   sendTimedMessage on npc_hostile_state_changed delay 5500 "He won't talk to you while he's like this. Put him down or keep away: "
+   sendTimedMessage on npc_hostile_state_changed delay 1000 "That's ATHENA's reception avatar. She won't hit back, or answer you no"
+   sendTimedMessage on npc_hostile_state_changed delay 1000 "Ow. I'm not hitting back, 0x00, but I'm done talking in person tonight"
+   sendTimedMessage on global_variable_changed:found_architect_comms_local delay 1500 "That backup file's wrapped twice. Same tricks as your first week. The "
+   sendTimedMessage on global_variable_changed:found_architect_comms_local delay 1500 "Empty. Written over tonight, and not by accident. The print on the cas"
+   sendTimedMessage on conversation_closed:nightshade_confrontation delay 3000 "You walked out on him before it was entered. He hasn't moved. Step out"
+   sendTimedMessage on npc_ko:nightshade_confrontation delay 2000 "You put him down before he'd say his piece. So, no deal: he goes to th"
+   sendTimedMessage on item_picked_up:keycard delay 1500 "A server-zone badge off our own printer, PIN on a post-it by the kettl"
+   sendTimedMessage on card_cloned delay 2500 "You cloned the Director. At the reader, emulate it from the cloner's S"
+   sendTimedMessage on fingerprint_collected:nightshade delay 1500 "A print off the stick. Check it against the locker's owner. If it's hi"
+   sendTimedMessage on global_variable_changed:vector_seen delay 3000 "That's all three. Now go and see the Director about the server room. T"
+   sendTimedMessage on global_variable_changed:phantom_seen delay 3000 "That's all three. Now go and see the Director about the server room. T"
+   sendTimedMessage on global_variable_changed:nightshade_seen delay 3000 "That's all three. Now go and see the Director about the server room. T"
+   sendTimedMessage on global_variable_changed:accused_vector delay 2500 "You've said it to someone's face. On this floor, that's said to everyo"
+   sendTimedMessage on global_variable_changed:accused_phantom delay 2500 "You've said it to someone's face. On this floor, that's said to everyo"
+   sendTimedMessage on global_variable_changed:accused_nightshade delay 2500 "You've said it to someone's face. On this floor, that's said to everyo"
+   sendTimedMessage on global_variable_changed:locker_seen_picked delay 2500 "Someone saw you at the lockers. He'll tell the floor he saw nothing, w"
+   sendTimedMessage on npc_ko:background_agent delay 2000 "An agent out cold in the break room. That's round the floor by midnigh"
+   sendTimedMessage on npc_ko:background_analyst delay 2000 "You've put a junior analyst on the ops floor out cold. The whole floor"
+   sendTimedMessage on npc_ko:receptionist_ai delay 2000 "ATHENA's avatar is down, and she logged every second of it. Half this "
+   sendTimedMessage on conversation_closed:director_netherton delay 2000 "Three names, three rooms. Vector on the ops floor, Phantom north of it"
+   sendTimedMessage on global_variable_changed:go_bag_lining_known delay 9000 "Security searched his holdall once you named him. Passport in the lini"
+   sendTimedMessage on room_entered:server_room delay 2500 "You're on their internal network. The plan was opened from inside, and"
+   sendTimedMessage on object_interacted delay 1500 "That's the repo box. Fingerprint the service, then go for the GitList "
+
+### m09_digital_archaeology | loading_dock | npc agent_0x99 "Agent HaX" | scenario.json.erb:838 | voice=yes | voiced=None callLabel=None | storyPath=m09_phone_agent0x99.json | home=start | phoneId=player_phone
+  ink=scenarios/m09_digital_archaeology/ink/m09_phone_agent0x99.ink
+   m09_phone_agent0x99.ink:118 knot start = 5 [HOME] <- conversation_closed:briefing_cutscene conversationMode=phone-chat,delayMs=2000,onceOnly=True @None; game_loaded conversationMode=phone-chat,resume=True,delayMs=2000 @None
+   m09_phone_agent0x99.ink:146 knot tran_warning = 5
+   m09_phone_agent0x99.ink:160 knot dock = 15
+   m09_phone_agent0x99.ink:205 knot flag1_read = 10 <- global_variable_changed:flag1_submitted conversationMode=phone-chat,delayMs=2500,onceOnly=True @None
+   m09_phone_agent0x99.ink:238 knot ledger_read = 19 <- global_variable_changed:flag2_submitted conversationMode=phone-chat,delayMs=2500,onceOnly=True @None; room_entered conversationMode=phone-chat @None
+   m09_phone_agent0x99.ink:285 knot afterwards = 22 <- global_variable_changed:deck_choice_made conversationMode=phone-chat,delayMs=2500,onceOnly=True @None
+   m09_phone_agent0x99.ink:329 knot deck_resume = 9 <- room_exited voiced=True,conversationMode=phone-chat,disableClose=True @None; game_loaded voiced=True,conversationMode=phone-chat,disableClose=True @None; conversation_closed:agent_0x99 voiced=True,conversationMode=phone-chat,disableClose=True,delayMs=500 @None
+   m09_phone_agent0x99.ink:388 knot identity_scene = 54 <- global_variable_changed:flag3_submitted voiced=True,conversationMode=phone-chat,disableClose=True,delayMs=2500 @None; global_variable_changed:hand_matched voiced=True,conversationMode=phone-chat,disableClose=True,delayMs=1500 @None; room_entered voiced=True,conversationMode=phone-chat,disableClose=True @None spk={"Director Magnus Netherton": 3}
+   m09_phone_agent0x99.ink:563 knot identity_resume = 5 <- room_exited voiced=True,conversationMode=phone-chat,disableClose=True @None; game_loaded voiced=True,conversationMode=phone-chat,disableClose=True @None; conversation_closed:agent_0x99 voiced=True,conversationMode=phone-chat,disableClose=True,delayMs=500 @None; global_variable_changed:flag4_submitted voiced=True,conversationMode=phone-chat,disableClose=True,delayMs=1500 @None
+   m09_phone_agent0x99.ink:585 knot hour_read = 18 <- global_variable_changed:flag4_submitted conversationMode=phone-chat,disableClose=True,delayMs=1500 @None; global_variable_changed:identity_scene_done conversationMode=phone-chat,disableClose=True,delayMs=3000 @None; room_entered conversationMode=phone-chat,disableClose=True @None; room_exited conversationMode=phone-chat,disableClose=True @None; game_loaded conversationMode=phone-chat,disableClose=True @None; conversation_closed:agent_0x99 conversationMode=phone-chat,disableClose=True,delayMs=500 @None
+   m09_phone_agent0x99.ink:656 knot hour_read_resume = 3 <- room_exited conversationMode=phone-chat,disableClose=True @None; game_loaded conversationMode=phone-chat,disableClose=True @None; conversation_closed:agent_0x99 conversationMode=phone-chat,disableClose=True,delayMs=500 @None
+   m09_phone_agent0x99.ink:671 knot tesseract_call = 9 <- global_variable_changed:hour_read_done voiced=True,conversationMode=phone-chat,disableClose=True,delayMs=4000 @None; room_entered voiced=True,conversationMode=phone-chat,disableClose=True @None; room_exited voiced=True,conversationMode=phone-chat,disableClose=True @None; game_loaded voiced=True,conversationMode=phone-chat,disableClose=True @None; conversation_closed:agent_0x99 voiced=True,conversationMode=phone-chat,disableClose=True,delayMs=500 @None
+   m09_phone_agent0x99.ink:696 knot support_hub = 55
+   m09_phone_agent0x99.ink:894 knot notice_ask = 5
+   m09_phone_agent0x99.ink:908 knot reading_ask = 3
+   m09_phone_agent0x99.ink:920 knot nightshade_ask = 1
+   m09_phone_agent0x99.ink:929 knot nightshade_send = 1
+   m09_phone_agent0x99.ink:935 knot hand_ask = 5
+   m09_phone_agent0x99.ink:962 knot status = 50
+   m09_phone_agent0x99.ink:1036 knot bring_in_confirm = 9
+   m09_phone_agent0x99.ink:1086 knot guides_menu = 4
+   sendTimedMessage on object_interacted delay 0 "There's a field guide for the catalogue server if you want it. Ask me."
+   sendTimedMessage on door_unlock_failed:restricted_stacks delay 0 "That reader's on the catalogue server. Get me in there and I'll open i"
+   sendTimedMessage on door_unlock_attempt delay 0 "Her keypad's off the card system. There's no code to find for it. Leav"
+   sendTimedMessage on door_unlock_attempt delay 0 "That reader wants her own card, and she hasn't left it lying about. Le"
+   sendTimedMessage on door_unlock_failed:tape_room delay 0 "That reader wants a real card. Hers will be somewhere she trusts."
+   sendTimedMessage on global_variable_changed:flag1_submitted delay 0 "I've a field guide for the ledger, if you want it. Ask me."
+   sendTimedMessage on conversation_closed:agent_0x99 delay 0 "Tran's just sent the guard to your door."
+   sendTimedMessage on room_entered:restricted_stacks delay 0 "First time we've used Victoria. Her people read this building's mail. "
+   sendTimedMessage on global_variable_changed:cage_opened delay 0 "The legacy files are under Noor's desk. Let Sorensen shred the rest."
+   sendTimedMessage on global_variable_changed:cage_opened delay 0 "That box behind her is the last of the night. The legacy files."
+   sendTimedMessage on global_variable_changed:cage_opened delay 5000 "She gets to it when you pass her for the cabinet, or leave the cage. S"
+   sendTimedMessage on global_variable_changed:cage_opened delay 0 "That box behind her is the last of the night. The legacy files."
+   sendTimedMessage on global_variable_changed:cage_opened delay 5000 "She gets to it when you pass her for the cabinet, or leave the cage. S"
+   sendTimedMessage on room_entered:restricted_cage delay 0 "That cabinet takes a print. She stamps everything."
+   sendTimedMessage on objective_task_completed:open_plan_cabinet delay 0 "She can change a PIN tomorrow. She can't change her thumb, and she's l"
+   sendTimedMessage on room_entered delay 0 "She's still feeding it."
+   sendTimedMessage on npc_ko:sorensen delay 0 "She's sixty-six."
+   sendTimedMessage on npc_ko:old_coyote delay 0 "I asked you not to."
+   sendTimedMessage on npc_ko:noor_haddad delay 0 "She files deeds, 0x00."
+   sendTimedMessage on npc_ko:sorensen delay 5000 "She's done with that box."
+   sendTimedMessage on global_variable_changed:nightshade_file_held delay 0 "Hold his file next to the notebook scan in my case file. Then tell me "
+   sendTimedMessage on room_entered:sorensen_office delay 0 "Her cracker. Use it anyway."
+   sendTimedMessage on objective_task_completed:open_the_safe delay 0 "Safe's open. Kowalczyk will want to hear about her toy."
+   sendTimedMessage on objective_task_completed:open_the_safe delay 0 "Lease date. She picked a number she'd never forget, then printed it at"
+   sendTimedMessage on global_variable_changed:office_entered delay 0 "Sale. WREN. To Agent 0x00. Consideration, one deck. Booked."
+   sendTimedMessage on global_variable_changed:office_entered delay 5000 "She's booked you. You're in her ledger now."
+   sendTimedMessage on global_variable_changed:office_entered delay 0 "Sale. WREN. To Agent 0x00. Consideration, one deck. Booked."
+   sendTimedMessage on global_variable_changed:office_entered delay 5000 "She's booked you. You're in her ledger now."
+   sendTimedMessage on room_entered:tape_room delay 5000 "The salvage cage is through there. Tomb Beta's server. Still running."
+   sendTimedMessage on global_variable_changed:salvage_opened delay 6000 "She never wrote a code down. She hung the key beside the lock. A ciphe"
+   sendTimedMessage on global_variable_changed:salvage_keypad_seen delay 0 "If the cipher's new to you, there's an archive-code field guide. Ask m"
+   sendTimedMessage on room_entered:salvage_cage delay 0 "Field guide for his box is ready. Say the word."
+   sendTimedMessage on global_variable_changed:flag3_submitted delay 0 "Bring me Nightshade's file from the plan cabinet. Then we say the name"
+   sendTimedMessage on global_variable_changed:flag4_submitted delay 0 "Nightshade's file first. Then the rest of the box."
+   sendTimedMessage on global_variable_changed:flag4_submitted delay 0 "Owner first. Get me flag three, then we read the rest of his box."
+   sendTimedMessage on global_variable_changed:flag4_submitted delay 0 "His hand first. Put his file beside my notebook scan and tell me. Then"
+   sendTimedMessage on door_unlock_failed:staff_passage delay 0 "She took her card home with her. The shutter's still up."
+   sendTimedMessage on item_picked_up:notes delay 0 "There it is. Tomb Gamma has an address."
+   sendTimedMessage on item_picked_up:notes delay 0 "Same site Nightshade gave us. Now it has a lease."
+   sendTimedMessage on item_picked_up:notes delay 5000 "Big Sky was in Zero Day's sales ledger. Sterling's keys opened it afte"
+   sendTimedMessage on item_picked_up:notes delay 5000 "Big Sky was in Zero Day's sales ledger. Sterling's keys opened it afte"
+   sendTimedMessage on global_variable_changed:rent_ledger_read delay 0 "Irina's tip-off led us to this. Tell her it found us the bunker."
+   sendTimedMessage on global_variable_changed:refit_ledger_read delay 0 "St. Catherine's money. It bought the blast door."
+   sendTimedMessage on global_variable_changed:danny_sheet_read delay 0 "Danny's statement just became evidence."
+   sendTimedMessage on global_variable_changed:danny_sheet_read delay 0 "Danny's statement just became evidence."
+   sendTimedMessage on global_variable_changed:danny_sheet_read delay 5000 "Danny asked again last week. I didn't have an answer. Tonight I might."
+   sendTimedMessage on global_variable_changed:danny_sheet_read delay 5000 "Danny asked again last week. I didn't have an answer. Tonight I might."
+   sendTimedMessage on global_variable_changed:danny_sheet_read delay 0 ""Loose end, resolved." I rang. He's alive, and still hiding from them."
+   sendTimedMessage on global_variable_changed:legacy_box_read delay 0 "Nobody of ours in here. Ours are on the Recruiter's books, by codename"
+   sendTimedMessage on global_variable_changed:legacy_box_read delay 0 "Nobody of ours in here. Ours are on the Recruiter's books, by codename"
+   sendTimedMessage on global_variable_changed:legacy_box_read delay 0 "Nobody of ours in here. Ours are on the Recruiter's books, by codename"
+   sendTimedMessage on global_variable_changed:legacy_remark_sent delay 0 "Read the notes column. A son, a drink, boredom, a lonely night. That's"
+   sendTimedMessage on global_variable_changed:noor_told delay 0 "A bonus in her first week. Her dad's dialysis already on file. Kindnes"
+   sendTimedMessage on global_variable_changed:incident_log_read delay 0 "Five nights of warnings, and nobody read them. A log nobody reads is a"
+   sendTimedMessage on global_variable_changed:noor_box_read delay 0 "Nobody of ours in here. Ours are on the Recruiter's books, by codename"
+   sendTimedMessage on item_picked_up:notes delay 0 "There's your why. He was told to."
+   sendTimedMessage on item_picked_up:notes delay 0 "He wanted your headlines."
+   sendTimedMessage on item_picked_up:notes delay 0 ""Will not stop when they tell him to." He didn't."
+   sendTimedMessage on item_picked_up:notes delay 0 "He believed this more than the man who wrote it. You still offered him"
+   sendTimedMessage on global_variable_changed:sleeper_shortlist delay 0 "After Quantum Dynamics we checked everyone TalentStack ever touched. H"
+   sendTimedMessage on global_variable_changed:sleeper_shortlist delay 10000 "That sheet leaves two, and nothing in this building splits them. That "
+   sendTimedMessage on global_variable_changed:sleeper_shortlist delay 5000 "You took her side at the briefing. Keep it. Don't take her word."
+   sendTimedMessage on global_variable_changed:reeves_sheet_read delay 0 "Reeves' handler, from the hospital. Told to stand down the day we took"
+   sendTimedMessage on global_variable_changed:asset_tag_read delay 0 "Strategy Directorate. One of ours signed this out and never handed it "
+   sendTimedMessage on global_variable_changed:reading_finished delay 0 "He bet you'd save Derek's file. You didn't. First thing he's got wrong"
+   sendTimedMessage on global_variable_changed:reading_finished delay 0 "He bet you'd save Derek's file. You didn't. First thing he's got wrong"
+   sendTimedMessage on global_variable_changed:reading_finished delay 0 "He bet on Derek's file. He was right. Don't let it bother you."
+   sendTimedMessage on global_variable_changed:ledger_read_heard delay 0 "Harwick & Lowe's boxes are in the open stacks, by their bay label. The"
+   sendTimedMessage on global_variable_changed:case_file_read delay 0 "Your tags, from HashChain. Someone's paying rent on a building in Mont"
+
+### m09_digital_archaeology | loading_dock | npc recruiter "The Recruiter" | scenario.json.erb:899 | voice=yes | voiced=None callLabel=None | storyPath=m09_phone_recruiter.json | home=start | phoneId=player_phone
+  ink=scenarios/m09_digital_archaeology/ink/m09_phone_recruiter.ink
+   m09_phone_recruiter.ink:34 knot start = 1 [HOME] spk={"Narrator": 1}
+   m09_phone_recruiter.ink:45 knot call = 46 <- room_exited voiced=True,conversationMode=phone-chat,disableClose=True,delayMs=3000,onceOnly=True @None; room_entered voiced=True,conversationMode=phone-chat,disableClose=True,delayMs=15000,onceOnly=True @None; room_exited voiced=True,conversationMode=phone-chat,disableClose=True,resume=True @None; game_loaded voiced=True,conversationMode=phone-chat,disableClose=True,resume=True @None spk={"Agent HaX": 27}
+   m09_phone_recruiter.ink:249 knot resume_name = 2 <- room_exited voiced=True,conversationMode=phone-chat,disableClose=True @None; game_loaded voiced=True,conversationMode=phone-chat,disableClose=True @None spk={"Agent HaX": 1}
+   sendTimedMessage on room_entered:tape_room delay 0 "You took the name and something off my deck. I said I'd know. Your tea"
+
+### m09_digital_archaeology | loading_dock | npc nightshade_phone "Agent 0x47 'Nightshade'" | scenario.json.erb:919 | voice=yes | voiced=None callLabel=None | storyPath=m09_phone_nightshade.json | home=start | phoneId=player_phone
+  ink=scenarios/m09_digital_archaeology/ink/m09_phone_nightshade.ink
+   m09_phone_nightshade.ink:12 knot start = 1 [HOME] spk={"Narrator": 1}
+   m09_phone_nightshade.ink:19 knot call = 7 <- global_variable_changed:flag1_submitted conversationMode=phone-chat,delayMs=7000,onceOnly=True @None spk={"Agent HaX": 1}
+   sendTimedMessage on global_variable_changed:nightshade_shown_file delay 0 "You found what I cleared, too. Then you know I kept his notes. I'd hav"
+   sendTimedMessage on global_variable_changed:nightshade_shown_file delay 0 "Thank you. I'd rather not have known. No. That isn't true."
+
+### m09_digital_archaeology | loading_dock | npc torres_phone "David Torres" | scenario.json.erb:943 | voice=yes | voiced=None callLabel=None | storyPath=m09_phone_torres.json | home=start | phoneId=player_phone
+  ink=scenarios/m09_digital_archaeology/ink/m09_phone_torres.ink
+   m09_phone_torres.ink:18 knot start = 1 [HOME] spk={"Narrator": 1}
+   m09_phone_torres.ink:25 knot call = 8 <- object_interacted conversationMode=phone-chat,delayMs=1500,onceOnly=True @None; item_unlocked conversationMode=phone-chat,delayMs=1500,onceOnly=True @None; room_exited conversationMode=phone-chat,delayMs=1500,onceOnly=True @None
+
+### m09_digital_archaeology | loading_dock | npc gary_phone "Gary Whitlock" | scenario.json.erb:971 | voice=yes | voiced=None callLabel=None | storyPath=m09_phone_gary.json | home=start | phoneId=player_phone
+  ink=scenarios/m09_digital_archaeology/ink/m09_phone_gary.ink
+   m09_phone_gary.ink:15 knot start = 1 [HOME] spk={"Narrator": 1}
+   m09_phone_gary.ink:22 knot call = 7 <- door_unlock_attempt conversationMode=phone-chat,delayMs=1500,onceOnly=True @None
+
+### m10_full_disclosure | forward_post | npc agent_0x99 "Agent HaX" | scenario.json.erb:1617 | voice=yes | voiced=None callLabel=None | storyPath=m10_phone_agent0x99.json | home=start | phoneId=player_phone
+  ink=scenarios/m10_full_disclosure/ink/m10_phone_agent0x99.ink
+   m10_phone_agent0x99.ink:34 knot fn:hax_guide_ready = 0
+   m10_phone_agent0x99.ink:37 knot fn:hax_quintero_free = 0
+   m10_phone_agent0x99.ink:42 knot start = 3 [HOME]
+   m10_phone_agent0x99.ink:50 knot after_ending = 5
+   m10_phone_agent0x99.ink:63 knot line_dead = 0
+   m10_phone_agent0x99.ink:69 knot jammed = 1
+   m10_phone_agent0x99.ink:78 knot support_hub = 1
+   m10_phone_agent0x99.ink:117 knot where_are_we = 52
+   m10_phone_agent0x99.ink:190 knot field_guide = 9
+   m10_phone_agent0x99.ink:217 knot how_are_you = 7
+   m10_phone_agent0x99.ink:232 knot why_me = 4
+   m10_phone_agent0x99.ink:243 knot the_hour = 2
+   m10_phone_agent0x99.ink:249 knot the_head_start = 2
+   m10_phone_agent0x99.ink:255 knot fence = 1
+   m10_phone_agent0x99.ink:260 knot power_room_topic = 2
+   m10_phone_agent0x99.ink:271 knot door_log = 4
+   m10_phone_agent0x99.ink:285 knot alibi = 14
+   m10_phone_agent0x99.ink:318 knot signout = 1
+   m10_phone_agent0x99.ink:326 knot accuse = 1
+   m10_phone_agent0x99.ink:332 knot accuse_who = 1
+   m10_phone_agent0x99.ink:355 knot accuse_confirm = 14
+   m10_phone_agent0x99.ink:379 knot accuse_refused = 13
+   m10_phone_agent0x99.ink:404 knot accuse_right = 8 spk={"Director Magnus Netherton": 3, "Agent 0x2D 'Anchor'": 1}
+   m10_phone_agent0x99.ink:424 knot accuse_wrong = 23 spk={"Director Magnus Netherton": 7, "Officer Dev Malhotra": 1, "Agent 0x2D 'Anchor'": 1, "Officer Kenji Arakawa": 1, "Agent 0x23 'Vector'": 2, "Agent 0x88 'Phantom'": 1}
+   m10_phone_agent0x99.ink:463 knot recall_malhotra = 2 spk={"Director Magnus Netherton": 1, "Officer Dev Malhotra": 1}
+   m10_phone_agent0x99.ink:470 knot recall_quintero = 2 spk={"Director Magnus Netherton": 1, "Agent 0x2D 'Anchor'": 1}
+   m10_phone_agent0x99.ink:477 knot recall_arakawa = 2 spk={"Director Magnus Netherton": 1, "Officer Kenji Arakawa": 1}
+   m10_phone_agent0x99.ink:484 knot recall_vector = 2 spk={"Director Magnus Netherton": 1, "Agent 0x23 'Vector'": 1}
+   m10_phone_agent0x99.ink:491 knot recall_phantom = 2 spk={"Director Magnus Netherton": 1, "Agent 0x88 'Phantom'": 1}
+   m10_phone_agent0x99.ink:502 knot whats_live = 18
+   m10_phone_agent0x99.ink:543 knot what_went_out = 8
+   m10_phone_agent0x99.ink:561 knot backdoor_topic = 4
+   m10_phone_agent0x99.ink:573 knot hatch_topic = 5
+   m10_phone_agent0x99.ink:587 knot monitor_topic = 4
+   m10_phone_agent0x99.ink:600 knot box_topic = 4
+   m10_phone_agent0x99.ink:615 knot console_fact = 1
+   m10_phone_agent0x99.ink:620 knot vault_line = 2
+   m10_phone_agent0x99.ink:627 knot shutter_topic = 0
+   m10_phone_agent0x99.ink:634 knot console = 14 <- object_interacted conversationMode=phone-chat @1810
+   m10_phone_agent0x99.ink:663 knot console_shut = 1
+   m10_phone_agent0x99.ink:671 knot console_menu = 5
+   m10_phone_agent0x99.ink:695 knot console_backdoor = 3
+   m10_phone_agent0x99.ink:709 knot breach_call = 8 <- global_variable_changed:breach_open voiced=True,conversationMode=phone-chat,delayMs=1500,onceOnly=True @1723 spk={"Director Magnus Netherton": 1, "Agent 0x47 'Nightshade'": 1}
+   m10_phone_agent0x99.ink:725 knot inner_door_call = 1 <- global_variable_changed:inner_door_open voiced=True,conversationMode=phone-chat,delayMs=1500,onceOnly=True @1736
+   m10_phone_agent0x99.ink:730 knot tripwire_call = 2 <- global_variable_changed:tripwire_tripped voiced=True,conversationMode=phone-chat,delayMs=1500,onceOnly=True @1735
+   m10_phone_agent0x99.ink:735 knot ladder_call = 2 <- global_variable_changed:inner_door_open voiced=True,conversationMode=phone-chat,delayMs=1500,onceOnly=True @1737
+   m10_phone_agent0x99.ink:740 knot stair_call = 1 <- global_variable_changed:stair_open voiced=True,conversationMode=phone-chat,delayMs=1500,onceOnly=True @1744
+   m10_phone_agent0x99.ink:748 knot gallery_open_call = 7 <- global_variable_changed:mercer_fighting voiced=True,conversationMode=phone-chat,disableClose=True,delayMs=1500,onceOnly=True @1855; game_loaded voiced=True,conversationMode=phone-chat,disableClose=True,delayMs=2500,onceOnly=True @1855; global_variable_changed:gallery_open voiced=True,conversationMode=phone-chat,disableClose=True,delayMs=1500,onceOnly=True @1855
+   m10_phone_agent0x99.ink:770 knot cut_call = 3 <- global_variable_changed:power_fight_over voiced=True,conversationMode=phone-chat,delayMs=1500,onceOnly=True @1787; global_variable_changed:cut_by_hand voiced=True,conversationMode=phone-chat,delayMs=1500 @1787; room_entered:power_room voiced=True,conversationMode=phone-chat,delayMs=1500 @1787; object_interacted voiced=True,conversationMode=phone-chat,delayMs=1500 @1789
+   m10_phone_agent0x99.ink:784 knot cut_step_0 = 3
+   m10_phone_agent0x99.ink:801 knot cut_step_1 = 2
+   m10_phone_agent0x99.ink:818 knot cut_step_2 = 1
+   m10_phone_agent0x99.ink:826 knot cut_breakers = 2
+   m10_phone_agent0x99.ink:847 knot hax_close_way = 0
+   m10_phone_agent0x99.ink:852 knot hax_close_got = 0
+   m10_phone_agent0x99.ink:857 knot hax_close_und = 0
+   m10_phone_agent0x99.ink:862 knot hax_close_right = 0
+   sendTimedMessage on global_variable_changed:hax_jammed delay 1500 "Lost you up there. I'm back."
+   sendTimedMessage on global_variable_changed:door_scene_done delay 8000 "Field console by the gate first. Start it, then the terminal."
+   sendTimedMessage on object_interacted delay 1500 "Not the terminal yet. The field console beside it."
+   sendTimedMessage on object_interacted delay 1500 "That's the hatch. The release service runs on the host under it. One o"
+   sendTimedMessage on global_variable_changed:guide1_offered delay 20000 "There's a field guide for their monitoring host. Ask me."
+   sendTimedMessage on global_variable_changed:guide2_offered delay 2000 "Guide for the staging copy, if you want it. Its sign-in card's on the "
+   sendTimedMessage on global_variable_changed:guide3_offered delay 7000 "I've a guide for getting out of that container. Ask."
+   sendTimedMessage on global_variable_changed:guide4_offered delay 2000 "Guide for his box, when you want it. His access code's in the envelope"
+   sendTimedMessage on object_interacted delay 4000 "That's Ghost on the handset. They want one last sale before they leave"
+   sendTimedMessage on object_interacted delay 4000 "That's Ghost on the handset. They want one last sale before they leave"
+   sendTimedMessage on room_entered:power_room delay 1000 "He doesn't know. Tell him, and he'll want to warn somebody. Their swit"
+   sendTimedMessage on room_entered:power_room delay 6000 "I rang Vance. He said no. He said you'd know why."
+   sendTimedMessage on object_interacted delay 1500 "Static got out of Albion on his own. That's his."
+   sendTimedMessage on global_variable_changed:flag3_submitted delay 2500 "His kill config's on my screen. Six o'clock stops at his console and n"
+   sendTimedMessage on global_variable_changed:gallery_shutter_cut delay 2500 "The stair's open."
+   sendTimedMessage on global_variable_changed:gallery_shutter_cut delay 2500 "The stair's open."
+   sendTimedMessage on global_variable_changed:gallery_shutter_cut delay 2500 "Shutter's dead. The stair's open."
+   sendTimedMessage on global_variable_changed:gallery_shutter_cut delay 2500 "The hall's next."
+   sendTimedMessage on global_variable_changed:gallery_shutter_cut delay 2500 "The hall's next."
+   sendTimedMessage on global_variable_changed:gallery_shutter_cut delay 2500 "Shutter's dead. The hall's next."
+   sendTimedMessage on room_entered:forward_post delay 2500 "Everything below is still open. Ask me where we are."
+   sendTimedMessage on global_variable_changed:share_zero_day delay 2500 "Your trace is gone. Zero Day's order was pulled before it went, so the"
+   sendTimedMessage on global_variable_changed:hax_jammed delay 7000 "Your trace is gone. Zero Day's order was pulled before it went, so the"
+   sendTimedMessage on global_variable_changed:flag2_submitted delay 2500 "It's set for four. It goes when the outer lock opens."
+   sendTimedMessage on global_variable_changed:flag2_submitted delay 7500 "Infusion pumps, a hospital group. Dispatch software, a whole county. A"
+   sendTimedMessage on global_variable_changed:flag2_submitted delay 12500 "That's enough of that. You've got the rest on screen."
+   sendTimedMessage on room_entered:server_hall delay 2000 "That console takes what you pull from the staging copy."
+   sendTimedMessage on room_entered:server_hall delay 7000 "You walked past his sheet. It's worth the minute."
+   sendTimedMessage on room_entered:server_hall delay 12000 "Mercer drew us this room from memory. He got it right."
+   sendTimedMessage on object_interacted delay 1500 "Tran's handler is on that rota. He's in the Helena letters."
+   sendTimedMessage on object_interacted delay 1500 "Tran's handler is on that rota. Tran gave us the name himself, in Hele"
+   sendTimedMessage on object_interacted delay 7000 "There's the reply Netherton was waiting for. They've named the unit, a"
+   sendTimedMessage on object_interacted delay 12500 "It isn't going out from here. Nothing I can stop from this end."
+   sendTimedMessage on global_variable_changed:door_scene_done delay 3000 "The gate terminal's yours. Get me their monitoring."
+   sendTimedMessage on global_variable_changed:flag1_submitted delay 1500 "I'm in their monitoring. Their cameras and doors report here, and thei"
+   sendTimedMessage on global_variable_changed:flag1_submitted delay 6000 "Whoever's in the power room runs your lights."
+   sendTimedMessage on global_variable_changed:flag1_submitted delay 10500 "The office keeps a door log. Their desk will read it now."
+   sendTimedMessage on global_variable_changed:clue_door_log delay 1500 "Ten past two, the core's service door opened to one of our badges."
+   sendTimedMessage on global_variable_changed:clue_door_log delay 6500 "The log says Malhotra's badge. Malhotra was on with me at ten past."
+   sendTimedMessage on object_interacted delay 1500 "Reeves. From the hospital. He's theirs full time now."
+   sendTimedMessage on object_interacted delay 1500 "Reeves. From the hospital. He's theirs full time now."
+   sendTimedMessage on object_interacted delay 1500 "Reeves. From the hospital. He's theirs full time now."
+   sendTimedMessage on object_interacted delay 1500 "G. Reeves. St. Catherine's night security. We never knew."
+   sendTimedMessage on room_entered:blast_tunnel delay 2000 "Helena's plans didn't have him. Nightshade's would have."
+   sendTimedMessage on room_entered:blast_tunnel delay 2000 "Helena's plans didn't have him. Nightshade's would have."
+   sendTimedMessage on object_interacted delay 1500 "Still on their payroll. Two kids. I hope he stays in the hut."
+   sendTimedMessage on object_interacted delay 1500 "Stood down for the budget. Your freeze kept him home tonight."
+   sendTimedMessage on global_variable_changed:arakawa_call_done delay 4000 "Finance want to know about five hundred pounds and a security guard in"
+   sendTimedMessage on global_variable_changed:officer_out delay 20000 "Sheriff's asking who the road's closed for. Netherton's told him to wa"
+   sendTimedMessage on room_entered:workshop_floor delay 4000 "That's his sheet. Read it."
+   sendTimedMessage on global_variable_changed:casualty_sheet_read delay 2500 "There's something written in the margin. Not plain English."
+   sendTimedMessage on global_variable_changed:casualty_sheet_read delay 7500 "Copy just the code."
+   sendTimedMessage on global_variable_changed:sleeper_caught delay 6000 "Her cracker came off his bench. I wouldn't trust it at his door. The w"
+   sendTimedMessage on room_entered:workshop_floor delay 10000 "Her cracker came off his bench. I wouldn't trust it at his door. The w"
+   sendTimedMessage on global_variable_changed:casualty_sheet_read delay 30000 "Upper and lower case, digits, no spaces. You've seen that shape before"
+   sendTimedMessage on global_variable_changed:casualty_sheet_read delay 30000 "Upper and lower case, digits, no spaces. That's encoded, not encrypted"
+   sendTimedMessage on global_variable_changed:clue_bench_log delay 1500 "That's a cloner in our own breaching kit. The case's sign-out sheet is"
+   sendTimedMessage on global_variable_changed:clue_bench_log delay 10000 "Have a look at that rack in the corner bay."
+   sendTimedMessage on global_variable_changed:clue_bench_log delay 6000 "That's three things that point somewhere. Your call, and you don't hav"
+   sendTimedMessage on global_variable_changed:clue_bench_log delay 14000 "Malhotra's badge sat on the van step for ten minutes. That's all a clo"
+   sendTimedMessage on global_variable_changed:clue_alibi delay 6000 "That's three things that point somewhere. Your call, and you don't hav"
+   sendTimedMessage on global_variable_changed:clue_door_log delay 12000 "That's three things that point somewhere. Your call, and you don't hav"
+
+### m10_full_disclosure | forward_post | npc ghost_phone "Ghost" | scenario.json.erb:2371 | voice=yes | voiced=None callLabel=None | storyPath=m10_ghost_phone.json | home=start | phoneId=player_phone
+  ink=scenarios/m10_full_disclosure/ink/m10_ghost_phone.ink
+   m10_ghost_phone.ink:13 knot start = 0 [HOME]
+   m10_ghost_phone.ink:21 knot ghost_call = 3 <- object_interacted voiced=True,conversationMode=phone-chat,disableClose=True,resume=True @2384
+   m10_ghost_phone.ink:45 knot kept = 7
+   m10_ghost_phone.ink:71 knot refused = 7
+   m10_ghost_phone.ink:96 knot selling = 9 spk={"Agent HaX": 1}
+   m10_ghost_phone.ink:112 knot selling_menu = 6
+   m10_ghost_phone.ink:139 knot hook_refused = 1
+   m10_ghost_phone.ink:143 knot hook_lands = 2
+   m10_ghost_phone.ink:152 knot ghost_after = 0
+   m10_ghost_phone.ink:161 knot ghost_close_got = 0
+   m10_ghost_phone.ink:166 knot ghost_close_und = 0
+   sendTimedMessage on global_variable_changed:ghost_watch_on_route delay 500 "Left at the stairs. I can see you, and so can they."
+
+### m10_full_disclosure | forward_post | npc victoria_line "Victoria Sterling" | scenario.json.erb:2391 | voice=yes | voiced=None callLabel=None | storyPath=m10_victoria_line.json | home=start | phoneId=player_phone
+  ink=scenarios/m10_full_disclosure/ink/m10_victoria_line.ink
+   m10_victoria_line.ink:8 knot start = 0 [HOME]
+   m10_victoria_line.ink:17 knot victoria_call = 7 <- global_variable_changed:mercer_fighting voiced=True,conversationMode=phone-chat,resume=True,delayMs=6000,onceOnly=True @2403; game_loaded voiced=True,conversationMode=phone-chat,resume=True,delayMs=6000,onceOnly=True @2403; global_variable_changed:flag2_submitted voiced=True,conversationMode=phone-chat,resume=True,delayMs=1500,onceOnly=True @2403; conversation_closed:agent_0x99 voiced=True,conversationMode=phone-chat,resume=True,delayMs=1500,onceOnly=True @2404
+   m10_victoria_line.ink:48 knot call_after = 0
+   m10_victoria_line.ink:57 knot vic_close_und = 0
+
+### m10_full_disclosure | forward_post | npc vance_phone "Robert Vance" | scenario.json.erb:2411 | voice=yes | voiced=None callLabel=None | storyPath=m10_vance_phone.json | home=start | phoneId=player_phone
+  ink=scenarios/m10_full_disclosure/ink/m10_vance_phone.ink
+   m10_vance_phone.ink:8 knot start = 0 [HOME]
+   m10_vance_phone.ink:16 knot cut_call = 3 <- global_variable_changed:power_fight_over voiced=True,conversationMode=phone-chat,delayMs=1500,onceOnly=True @2422; global_variable_changed:cut_by_hand voiced=True,conversationMode=phone-chat,delayMs=1500 @2422; room_entered:power_room voiced=True,conversationMode=phone-chat,resume=True,delayMs=1500 @2422; object_interacted voiced=True,conversationMode=phone-chat,resume=True,delayMs=1500 @2424
+   m10_vance_phone.ink:30 knot cut_0 = 3
+   m10_vance_phone.ink:47 knot cut_1 = 2
+   m10_vance_phone.ink:64 knot cut_2 = 3
+   m10_vance_phone.ink:88 knot cut_done = 1 <- global_variable_changed:gallery_shutter_cut voiced=True,conversationMode=phone-chat,delayMs=1500,onceOnly=True @2421
+   m10_vance_phone.ink:93 knot cut_after = 0
+   m10_vance_phone.ink:102 knot cut_close_way = 0
+   m10_vance_phone.ink:107 knot cut_close_right = 0
+   sendTimedMessage on room_entered:power_room delay 1000 "He doesn't know. Tell him, and he'll want to warn somebody. Their swit"
+
+### m10_full_disclosure | forward_post | npc elena_phone "Elena Rodriguez" | scenario.json.erb:2432 | voice=yes | voiced=None callLabel=None | storyPath=m10_elena_phone.json | home=start | phoneId=player_phone
+  ink=scenarios/m10_full_disclosure/ink/m10_elena_phone.ink
+   m10_elena_phone.ink:9 knot start = 0 [HOME]
+   m10_elena_phone.ink:17 knot cut_call = 3 <- global_variable_changed:power_fight_over voiced=True,conversationMode=phone-chat,delayMs=1500,onceOnly=True @2443; global_variable_changed:cut_by_hand voiced=True,conversationMode=phone-chat,delayMs=1500 @2443; room_entered:power_room voiced=True,conversationMode=phone-chat,resume=True,delayMs=1500 @2443; object_interacted voiced=True,conversationMode=phone-chat,resume=True,delayMs=1500 @2445
+   m10_elena_phone.ink:31 knot cut_0 = 4
+   m10_elena_phone.ink:52 knot cut_1 = 2
+   m10_elena_phone.ink:69 knot cut_2 = 3
+   m10_elena_phone.ink:93 knot cut_done = 1 <- global_variable_changed:gallery_shutter_cut voiced=True,conversationMode=phone-chat,delayMs=1500,onceOnly=True @2442
+   m10_elena_phone.ink:98 knot cut_after = 0
+   m10_elena_phone.ink:107 knot cut_close_way = 0
+   m10_elena_phone.ink:112 knot cut_close_right = 0
+   sendTimedMessage on room_entered:power_room delay 1000 "He doesn't know. Tell him, and he'll want to warn somebody. Their swit"
+
+### sis02_energy | scada_control_room | npc marcus_webb "Marcus Webb" | scenario.json.erb:1040 | voice=yes | voiced=None callLabel=None | storyPath=npc_marcus_webb.json | home=start | phoneId=site_phone
+  ink=scenarios/sis02_energy/ink/npc_marcus_webb.ink
+   npc_marcus_webb.ink:59 knot start = 1 [HOME]
+   npc_marcus_webb.ink:72 knot first_call = 8
+   npc_marcus_webb.ink:97 knot first_call_next = 4
+   npc_marcus_webb.ink:119 knot hub = 7
+   npc_marcus_webb.ink:175 knot shutdown_argument_scene = 4
+   npc_marcus_webb.ink:197 knot evidence_scene = 6
+   npc_marcus_webb.ink:223 knot rdp_session_confirmed = 14
+   npc_marcus_webb.ink:272 knot isolation_scope_scene = 8
+   npc_marcus_webb.ink:303 knot nis_scene = 7
+   npc_marcus_webb.ink:324 knot nis_send = 19
+   npc_marcus_webb.ink:367 knot claim_en001 = 3
+   npc_marcus_webb.ink:376 knot boundary_more = 4
+   npc_marcus_webb.ink:396 knot sis_patch_view = 3
+   npc_marcus_webb.ink:408 knot current_status = 33
+   sendTimedMessage on global_variable_changed:jump_server_isolated delay 1500 "Good. That's his RDP session gone. Not the historian, mind. Message To"
+   sendTimedMessage on global_variable_changed:jump_server_isolated delay 1500 "Good. That's his RDP session gone. Message Tom and get the enterprise "
+   sendTimedMessage on global_variable_changed:jump_server_isolated delay 1500 "Good. That's his RDP session gone. Message Tom for the enterprise side"
+   sendTimedMessage on global_variable_changed:jump_server_isolated delay 1500 "Good. That's his RDP session gone, and CastleTech already have the ent"
+   sendTimedMessage on global_variable_changed:jump_server_isolated delay 1200 "Who pulled the jump server cable? It needed doing. Tell me next time."
+   sendTimedMessage on global_variable_changed:network_isolated delay 1000 "CastleTech have the enterprise side shut. Now the notification. The fo"
+   sendTimedMessage on global_variable_changed:network_isolated delay 1000 "CastleTech have the enterprise side shut. Now the notification. Messag"
+   sendTimedMessage on global_variable_changed:network_isolated delay 1000 "CastleTech have the enterprise side shut. You're still holding the not"
+   sendTimedMessage on global_variable_changed:facility_evacuated delay 20000 "Everyone out and counted? Good. Now the network. Cable first, then Tom"
+   sendTimedMessage on global_variable_changed:facility_evacuated delay 20000 "Everyone out and counted? Good. Now the network. Tom, for the enterpri"
+   sendTimedMessage on global_variable_changed:facility_evacuated delay 20000 "Everyone out and counted? Good. At least the enterprise side's cut off"
+   sendTimedMessage on global_variable_changed:bms_registers_saved delay 1500 "Got the registers? Good. Now press it."
+
+### sis02_energy | scada_control_room | npc tom_hadley "Tom Hadley" | scenario.json.erb:1150 | voice=yes | voiced=None callLabel=None | storyPath=npc_tom_hadley.json | home=start | phoneId=site_phone
+  ink=scenarios/sis02_energy/ink/npc_tom_hadley.ink
+   npc_tom_hadley.ink:41 knot start = 3 [HOME]
+   npc_tom_hadley.ink:56 knot first_call = 4
+   npc_tom_hadley.ink:76 knot hub = 3
+   npc_tom_hadley.ink:108 knot ot_scope = 5
+   npc_tom_hadley.ink:128 knot ot_caught_after = 2
+   npc_tom_hadley.ink:139 knot isolation_request = 2
+   npc_tom_hadley.ink:148 knot isolation_ask = 2
+   npc_tom_hadley.ink:161 knot isolation_verify = 2
+   npc_tom_hadley.ink:173 knot isolation_confirm = 7
+   npc_tom_hadley.ink:188 knot post_isolation = 2
+   npc_tom_hadley.ink:202 knot trent_water_topic = 4
+   npc_tom_hadley.ink:211 knot trent_water_action = 2
+   npc_tom_hadley.ink:224 knot trent_send = 1
+   timedMessage {"delay": 420000, "waitForEvent": "global_variable_changed:jump_server_confirmed", "skipIfGlobal": "castletech_contacted", "message": "Still here if you want the enterprise side shut off from SCADA. I'll ring Marcus to c
+   sendTimedMessage on global_variable_changed:jump_server_confirmed delay 9000 "Something wrote a file to the server you share with Trent Water at hal"
+
+### sis03_cyber_insurance | meridian_claims_suite | npc james_whitworth "James Whitworth" | scenario.json.erb:736 | voice=no | voiced=None callLabel=None | storyPath=npc_james_whitworth.json | home=start | phoneId=claims_phone
+  ink=scenarios/sis03_cyber_insurance/ink/npc_james_whitworth.ink
+   npc_james_whitworth.ink:30 knot start = 2 [HOME]
+   npc_james_whitworth.ink:45 knot call_initial = 3
+   npc_james_whitworth.ink:67 knot w07_remediation_discussion = 10
+   npc_james_whitworth.ink:98 knot sis_patch_discussion = 15 spk={"I won't pretend otherwise": 1}
+   npc_james_whitworth.ink:136 knot compensating_controls_discussion = 6
+   npc_james_whitworth.ink:157 knot business_interruption_discussion = 13
+   npc_james_whitworth.ink:198 knot shared_infrastructure_discussion = 11
+   npc_james_whitworth.ink:227 knot hub = 2
+   timedMessage {"delay": 15000, "message": "James Whitworth (Albion): I'm told you're handling our claim. I was on leave that weekend, so the morning is second-hand, but I can take you through the claim. Message me any time.", "type": 
+   sendTimedMessage on global_variable_changed:warranty_evidence_reviewed delay 8000 "James Whitworth: I wanted to follow up on the W-07 timeline. Our remed"
+
+### sis03_cyber_insurance | meridian_claims_suite | npc simon_hartley "Simon Hartley" | scenario.json.erb:766 | voice=no | voiced=None callLabel=None | storyPath=npc_simon_hartley.json | home=start | phoneId=claims_phone
+  ink=scenarios/sis03_cyber_insurance/ink/npc_simon_hartley.ink
+   npc_simon_hartley.ink:28 knot start = 2 [HOME]
+   npc_simon_hartley.ink:43 knot call_initial = 4
+   npc_simon_hartley.ink:67 knot incident_response_discussion = 8
+   npc_simon_hartley.ink:93 knot business_interruption_discussion = 7
+   npc_simon_hartley.ink:116 knot contested_business_interruption = 16
+   npc_simon_hartley.ink:149 knot physical_damage_discussion = 11
+   npc_simon_hartley.ink:179 knot evidence_gaps_discussion = 2
+   npc_simon_hartley.ink:194 knot evidence_gaps_context = 14 spk={"That's correct design": 1}
+   npc_simon_hartley.ink:227 knot trent_water_discussed = 15
+   npc_simon_hartley.ink:270 knot hub = 2
+   timedMessage {"delay": 25000, "message": "Simon Hartley (Fairbridge): My loss adjustment report is on Eleanor's desk. Total quantum is £8.2M — but the contested elements are worth talking through. Message me when you've reviewed it."
+   sendTimedMessage on global_variable_changed:loss_quantum_reviewed delay 6000 "Simon Hartley: You've seen my report. Call me about the contested item"
+
+### sis03_cyber_insurance | meridian_claims_suite | npc robert_ngata "Robert Ngata" | scenario.json.erb:796 | voice=no | voiced=None callLabel=None | storyPath=npc_robert_ngata.json | home=start | phoneId=claims_phone
+  ink=scenarios/sis03_cyber_insurance/ink/npc_robert_ngata.ink
+   npc_robert_ngata.ink:30 knot start = 3 [HOME]
+   npc_robert_ngata.ink:47 knot call_initial = 3
+   npc_robert_ngata.ink:69 knot attribution_discussion = 8 spk={"The basis is": 1}
+   npc_robert_ngata.ink:94 knot war_exclusion_context = 8 spk={"Speaking only for myself": 1}
+   npc_robert_ngata.ink:122 knot disclosure_discussion = 14 spk={"The challenge is": 1}
+   npc_robert_ngata.ink:158 knot trent_water_discussion = 12
+   npc_robert_ngata.ink:193 knot infrastructure_incentives_discussion = 14
+   npc_robert_ngata.ink:232 knot hub = 2
+   timedMessage {"delay": 35000, "message": "Robert Ngata (NCSC): Albion have shared our technical assessment with you, with our agreement. I lead the NCSC's threat assessment on the case. Message me once you've read it.", "type": "text
+   sendTimedMessage on global_variable_changed:attribution_brief_reviewed delay 10000 "Robert Ngata (NCSC): You have the assessment. I can talk through what "

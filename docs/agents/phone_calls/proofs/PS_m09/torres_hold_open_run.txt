@@ -1,0 +1,15 @@
+game 2272 (torres_hold_open)
+engine HEAD: 9b1b6e524
+lid: "PasswordMinigame"
+ringing: {"ringer":"torres_phone:ringing","torres_rang":true,"hl_box_opened":false,"torres_called":false,"callback":null,"rows":[],"mg":"PasswordMinigame"}
+shot torres_hold_open_ring_over_lid
+answered (hold): {"ringer":"torres_phone:held","torres_rang":true,"hl_box_opened":false,"torres_called":false,"callback":null,"rows":[],"mg":"PasswordMinigame"}
+{"ok":true,"cmd":"mg","result":{"ok":true,"typed":"HL2015-0477","submit":true,"submittedVia":"button:Submit"}}
+lid opened: {"ringer":null,"torres_rang":false,"hl_box_opened":true,"torres_called":false,"callback":null,"rows":[],"mg":"ContainerMinigame"}
+shot torres_hold_open_after_lid
+3 s later: {"ringer":null,"torres_rang":false,"hl_box_opened":true,"torres_called":false,"callback":null,"rows":[],"mg":"ContainerMinigame"}
+container closed: {"ringer":null,"torres_rang":false,"hl_box_opened":true,"torres_called":false,"callback":null,"rows":[],"mg":null}
+walk out of the stacks and back (room_exited fallback needs sorensen_office):
+  no ring in 10s (good)
+final: {"ringer":null,"torres_rang":false,"hl_box_opened":true,"torres_called":false,"callback":null,"rows":[],"mg":null}
+shot torres_hold_open_final

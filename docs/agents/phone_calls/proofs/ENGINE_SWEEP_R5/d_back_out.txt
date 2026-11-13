@@ -1,0 +1,6 @@
+game 2392 (d_back)
+"back clicked"
+shot d_back_after_back_1s
+back at 37793
+records: [{"npc":"the_architect","theme":"terminal","selfClose":false,"beatAt":37798,"completeAt":37799,"goneAt":37832,"laterCalls":null,"clipPlayingAtBeat":false,"lastLineAtBeat":"Don't look for the t","read_ms":1}]
+rows: ["Call: No caller ID"] mg=null

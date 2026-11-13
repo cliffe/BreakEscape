@@ -85,7 +85,7 @@ Agent 0x23 'Vector': Write this down. I'd only worry otherwise.
     -> menu
 }
 // Playtest R1 m-1: a condition, not a verdict, for the right officer too.
-Agent HaX: If that's wrong, Netherton loses Vector till you can clear him. Sure?
+agent_0x99: If that's wrong, Netherton loses Vector till you can clear him. Sure?
 + [I'm sure.]
     ~ officer_out = "vector"
     ~ wrong_accusation = true

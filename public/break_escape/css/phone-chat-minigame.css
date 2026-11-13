@@ -718,6 +718,74 @@
     opacity: 0.5;
 }
 
+/* A call row in a thread: "Missed call", "Incoming call, 1:24" (plan 2.6) */
+.message-call-row {
+    align-self: center;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 85%;
+    font-family: 'GNF', monospace;
+    font-size: 13px;
+    line-height: 1.4;
+    color: rgba(0, 0, 0, 0.6);
+    padding: 3px 8px;
+}
+
+.message-call-row.missed {
+    color: #c0392b;
+}
+
+.message-call-row .call-row-glyph {
+    font-size: 14px;
+}
+
+.contact-last-message.missed {
+    color: #c0392b;
+}
+
+/* The missed row's own "Call back" button (phone calls A6) */
+.message-call-row .call-row-callback {
+    margin-left: 6px;
+    padding: 1px 8px;
+    background: #2e9e4f;
+    border: 2px solid #000;
+    color: #fff;
+    font-family: 'GNF', monospace;
+    font-size: 13px;
+    line-height: 1.3;
+    cursor: pointer;
+}
+
+.message-call-row .call-row-callback:hover {
+    background: #25803f;
+}
+
+.message-call-row .call-row-callback:focus-visible {
+    outline: 3px solid #000;
+    outline-offset: 2px;
+}
+
+.phone-terminal-theme .message-call-row .call-row-callback {
+    background: transparent;
+    border-color: rgba(0, 255, 65, 0.5);
+    color: #00ff41;
+}
+
+.phone-terminal-theme .message-call-row {
+    align-self: stretch;
+    color: #5f8f6a;
+    font-size: 16px;
+}
+
+.phone-terminal-theme .message-call-row.missed {
+    color: #d96a5a;
+}
+
+.phone-social-theme .message-call-row {
+    color: var(--dm-muted);
+}
+
 .phone-terminal-theme .message-narration {
     align-self: stretch;
     color: #5f8f6a;
@@ -1158,6 +1226,14 @@
     gap: 8px;
 }
 
+.phone-call-mode .call-status-bar.call-ended {
+    background: rgba(0, 0, 0, 0.22);
+}
+
+.phone-call-mode .call-status-bar.call-ended .call-timer {
+    opacity: 0.75;
+}
+
 .phone-call-mode .call-status-dot {
     width: 10px;
     height: 10px;
@@ -1393,5 +1469,55 @@
     }
     .phone-call-mode .call-speaking-now .call-speaking span {
         height: 16px;
+    }
+}
+
+/* The header call button (phone calls A5): a green handset beside the contact's name */
+.conversation-header .call-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+    padding: 4px 12px;
+    background: #2e9e4f;
+    border: 2px solid #000;
+    color: #fff;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 1.2;
+    cursor: pointer;
+    transition: background 0.1s;
+}
+
+.conversation-header .call-button:hover {
+    background: #25803f;
+}
+
+.conversation-header .call-button:focus-visible {
+    outline: 3px solid #000;
+    outline-offset: 2px;
+}
+
+.conversation-header .call-button-glyph {
+    font-size: 18px;
+}
+
+.phone-terminal-theme .conversation-header .call-button {
+    background: transparent;
+    border-color: rgba(0, 255, 65, 0.5);
+    color: #00ff41;
+}
+
+.phone-call-mode .call-status-bar.call-dialling .call-status-label {
+    animation: call-dialling-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes call-dialling-pulse {
+    50% { opacity: 0.45; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .phone-call-mode .call-status-bar.call-dialling .call-status-label {
+        animation: none;
     }
 }

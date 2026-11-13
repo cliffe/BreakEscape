@@ -108,13 +108,13 @@ Narrator: She stamps a box DESTROYED and slides it back toward the noise.
 - else:
     Margaret Sorensen: You're not from the lease-holder. You're the one the Architect writes about.
 }
-Agent HaX: ...She's got a file on you.
+agent_0x99: ...She's got a file on you.
 #set_global:hatch_talked:true
-Agent HaX: Bin by the hatch is Derek Lawson's file, and it isn't Derek's handwriting on it. It's the only place anyone wrote down why he did what he did.
+agent_0x99: Bin by the hatch is Derek Lawson's file, and it isn't Derek's handwriting on it. It's the only place anyone wrote down why he did what he did.
 {m08_nightshade_tidied:
-    Agent HaX: The other's what Nightshade cleared from his locker. His own words on what he took. One of them's ash in a minute.
+    agent_0x99: The other's what Nightshade cleared from his locker. His own words on what he took. One of them's ash in a minute.
 - else:
-    Agent HaX: The other's the Social Fabric letters. Last one's about a union rep in Butte they're about to bury. One of them's ash in a minute.
+    agent_0x99: The other's the Social Fabric letters. Last one's about a union rep in Butte they're about to bury. One of them's ash in a minute.
 }
 ~ hatch_met = true
 -> back
@@ -148,9 +148,9 @@ Agent HaX: Bin by the hatch is Derek Lawson's file, and it isn't Derek's handwri
     #set_global:bin_chosen:true
     Margaret Sorensen: The letters. You'd rather save someone who's still walking around.
     Narrator: She passes them through the hatch and tips Derek Lawson's file into the feed.
-    Agent HaX: Arakawa's ringing Butte. She'll hear it from us first.
+    agent_0x99: Arakawa's ringing Butte. She'll hear it from us first.
     {m01_maya_ko:
-        Agent HaX: That's the warning we didn't have.
+        agent_0x99: That's the warning we didn't have.
     }
     -> back
 + {not bin_chosen and not bin_pulled and m08_nightshade_tidied} [Pull Nightshade's copy through.]
@@ -160,7 +160,7 @@ Agent HaX: Bin by the hatch is Derek Lawson's file, and it isn't Derek's handwri
     #set_global:bin_chosen:true
     Margaret Sorensen: His own words. He always did write a careful note.
     Narrator: She passes it through the hatch and tips Derek Lawson's file into the feed.
-    Agent HaX: So that's what he had time to clear.
+    agent_0x99: So that's what he had time to clear.
     -> back
 // Sticky, before and after the bin: her card is on a reel at her hip.
 // Playtest R1 B-M2: the choice says what it is; she answers first, and the

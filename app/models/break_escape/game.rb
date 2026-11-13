@@ -4437,7 +4437,25 @@ module BreakEscape
     MAX_PHONE_HISTORY_MESSAGES = 150
     MAX_PHONE_MESSAGE_TEXT = 4000
     MAX_PHONE_STORY_STATE_BYTES = 60.kilobytes
-    PHONE_MESSAGE_KEYS = %w[type text timestamp gameTime read isBark timed preloaded].freeze
+    PHONE_MESSAGE_KEYS = %w[type text timestamp gameTime read isBark timed preloaded deliveryTags callEvent].freeze
+    PHONE_DELIVERY_TAG_MAX = 300
+    PHONE_DELIVERY_TAGS_MAX = 5
+
+    # Calls in the phone state (phone calls plan 4.1, slice A4). Row texts are fixed by the engine,
+    # so a `type: "call"` row is kept only when its text has this plain shape.
+    PHONE_CALL_EVENTS = %w[missed incoming outgoing no_answer voicemail].freeze
+    PHONE_CALL_ROW_TEXT = /\A[A-Za-z0-9 ,:]{1,60}\z/
+    PHONE_CALL_STATES = %w[queued ringing held connected missed].freeze
+    PHONE_CALL_ON_MISSED = %w[callback voicemail].freeze
+    PHONE_CALL_KNOT = /\A[A-Za-z0-9_.]{1,200}\z/
+    PHONE_CALL_LABEL_MAX = 100
+    PHONE_CALL_BOOLEANS = %w[disableClose resume withheld untilAnswered opening].freeze
+    PHONE_CALL_GLOBAL_NAME = /\A[A-Za-z0-9_]{1,100}\z/
+    PHONE_CALL_CONTROL = /[\u0000-\u001F\u007F]/
+    MAX_PHONE_FORCED_CALLS = 10
+    MAX_PHONE_VOICEMAILS = 10
+    MAX_PHONE_CALL_GLOBALS = 10
+    MAX_PHONE_ANSWER_SECONDS = 3600
     # Per-field caps inside sanitize_phone_state_entry, in code points.
     MAX_PHONE_TYPE_CHARS = 20
     MAX_PHONE_STORY_PATH_CHARS = 300
@@ -4459,7 +4477,13 @@ module BreakEscape
         next unless npc_id.is_a?(String) && npc_id.length <= 100 && entry.is_a?(Hash)
 
         clean = sanitize_phone_state_entry(entry)
-        merged[npc_id] = clean if clean
+        if clean
+          merged[npc_id] = clean
+        elsif entry.key?('pendingCall') && entry['pendingCall'].nil?
+          # A contact with no thread or story whose call slot was cleared: the client has
+          # no entry left to send, so it sends this marker and the saved slot goes (A4 R1 m2)
+          merged.delete(npc_id)
+        end
       end
 
       if merged.to_json.bytesize > MAX_PHONE_STATE_BYTES
@@ -4471,23 +4495,45 @@ module BreakEscape
       true
     end
 
+    # A preloaded call opening's #delivery: tags, kept so the first open speaks the
+    # line with its note after a reload. Untrusted text: plain strings only, capped,
+    # no control characters. Never rendered; it only reaches the TTS prompt, which
+    # TtsService cleans again.
+    def clean_phone_delivery_tags(value)
+      return nil unless value.is_a?(Array)
+
+      tags = value.select do |t|
+        t.is_a?(String) && t.length <= PHONE_DELIVERY_TAG_MAX && !t.match?(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/)
+      end.first(PHONE_DELIVERY_TAGS_MAX)
+      tags.empty? ? nil : tags
+    end
+
     def sanitize_phone_state_entry(entry)
       history = Array(entry['history']).last(MAX_PHONE_HISTORY_MESSAGES).filter_map do |msg|
         next unless msg.is_a?(Hash) && msg['type'].is_a?(String) && msg['text'].is_a?(String)
         next if msg['text'].empty?
+        next if msg['type'].length > MAX_PHONE_TYPE_CHARS # a typeless line would not draw
+        # Call rows are fixed engine text: plain shape only
+        next if msg['type'] == 'call' && !msg['text'].match?(PHONE_CALL_ROW_TEXT)
 
-        msg.to_h.slice(*PHONE_MESSAGE_KEYS).select do |key, value|
+        kept = msg.to_h.slice(*PHONE_MESSAGE_KEYS).select do |key, value|
           case key
-          when 'type' then value.length <= MAX_PHONE_TYPE_CHARS
+          when 'deliveryTags' then false # cleaned below
+          when 'type' then value.length <= MAX_PHONE_TYPE_CHARS # always true: the `next` above already refused a longer type (A4 R1 n1)
+          when 'callEvent' then value.is_a?(String) && PHONE_CALL_EVENTS.include?(value)
           when 'text' then true
           # gameTime: elapsed game ms when the text arrived (the time its bubble shows)
           when 'timestamp', 'gameTime' then value.is_a?(Numeric)
           else value == true || value == false
           end
         end.merge('text' => msg['text'][0, MAX_PHONE_MESSAGE_TEXT])
+        delivery_tags = clean_phone_delivery_tags(msg['deliveryTags'])
+        delivery_tags ? kept.merge('deliveryTags' => delivery_tags) : kept
       end
 
       clean = { 'history' => history }
+      pending_call = clean_phone_pending_call(entry['pendingCall'])
+      clean['pendingCall'] = pending_call if pending_call
       story_state = entry['storyState']
       if story_state.is_a?(String) && story_state.bytesize <= MAX_PHONE_STORY_STATE_BYTES
         clean['storyState'] = story_state
@@ -4515,9 +4561,80 @@ module BreakEscape
         end
       end
 
-      return nil if history.empty? && !clean.key?('storyState')
+      return nil if history.empty? && !clean.key?('storyState') && !clean.key?('pendingCall')
 
       clean
+    end
+
+    # The saved call slot of one contact: { forced: [record], live: record, voicemails: [{ knot, withheld }], callback: record } (A2a notes), or the
+    # older single record. Untrusted: Hashes, plain strings, small numbers, nothing else.
+    def clean_phone_pending_call(value)
+      return nil unless value.is_a?(Hash)
+
+      unless value.key?('forced') || value.key?('live') || value.key?('voicemails') || value.key?('callback')
+        return clean_phone_call_record(value)
+      end
+
+      out = {}
+      if value['forced'].is_a?(Array)
+        forced = value['forced'].first(MAX_PHONE_FORCED_CALLS * 4).filter_map { |r| clean_phone_call_record(r) }.first(MAX_PHONE_FORCED_CALLS)
+        out['forced'] = forced if forced.any?
+      end
+      live = clean_phone_call_record(value['live'])
+      out['live'] = live if live
+      # Held voicemails, in arrival order (A6 R2 M1), and a callback kept beside a live record or a voicemail
+      if value['voicemails'].is_a?(Array)
+        vms = value['voicemails'].first(MAX_PHONE_VOICEMAILS * 4).filter_map { |r| clean_phone_voicemail(r) }.first(MAX_PHONE_VOICEMAILS)
+        out['voicemails'] = vms if vms.any?
+      end
+      callback = clean_phone_call_record(value['callback'])
+      out['callback'] = callback if callback
+      out.empty? ? nil : out
+    end
+
+    # One held voicemail: { knot, withheld }. Nothing else is kept.
+    def clean_phone_voicemail(rec)
+      return nil unless rec.is_a?(Hash)
+
+      knot = rec['knot']
+      return nil unless knot.is_a?(String) && knot.match?(PHONE_CALL_KNOT)
+
+      out = { 'knot' => knot }
+      out['withheld'] = rec['withheld'] if rec['withheld'] == true || rec['withheld'] == false
+      out
+    end
+
+    def clean_phone_call_record(rec)
+      return nil unless rec.is_a?(Hash)
+
+      knot = rec['knot']
+      return nil unless knot.is_a?(String) && knot.match?(PHONE_CALL_KNOT)
+
+      out = { 'knot' => knot }
+      vm = rec['voicemailKnot']
+      out['voicemailKnot'] = vm if vm.is_a?(String) && vm.match?(PHONE_CALL_KNOT)
+      out['state'] = rec['state'] if PHONE_CALL_STATES.include?(rec['state'])
+      out['onMissed'] = rec['onMissed'] if PHONE_CALL_ON_MISSED.include?(rec['onMissed'])
+      PHONE_CALL_BOOLEANS.each { |k| out[k] = rec[k] if rec[k] == true || rec[k] == false }
+      if rec['answerSeconds'].is_a?(Numeric) && rec['answerSeconds'].finite?
+        out['answerSeconds'] = rec['answerSeconds'].to_i.clamp(0, MAX_PHONE_ANSWER_SECONDS)
+      end
+      label = rec['callLabel']
+      # The engine draws it as text, but nothing markup-like belongs in a caption
+      if label.is_a?(String) && !label.empty? && label.length <= PHONE_CALL_LABEL_MAX &&
+         !label.match?(PHONE_CALL_CONTROL) && !label.match?(/[<>]/)
+        out['callLabel'] = label
+      end
+      globals = rec['setGlobalOnStart']
+      if globals.is_a?(Hash)
+        kept = globals.first(MAX_PHONE_CALL_GLOBALS * 4).select do |k, v|
+          k.is_a?(String) && k.match?(PHONE_CALL_GLOBAL_NAME) &&
+            (v == true || v == false || v.is_a?(Numeric) ||
+             (v.is_a?(String) && v.length <= 200 && !v.match?(PHONE_CALL_CONTROL) && !v.match?(/[<>]/)))
+        end.first(MAX_PHONE_CALL_GLOBALS).to_h
+        out['setGlobalOnStart'] = kept if kept.any?
+      end
+      out
     end
 
     # mailState: the social-engineering mail client's saved state (00 §10a,

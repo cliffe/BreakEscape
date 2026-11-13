@@ -1,0 +1,11 @@
+game 2393 (root_slow)
+banner: "The Recruiter | TalentStack Executive Recruiting | Incoming call | Answer | Decline" architect_approval_confirmed=false
+shot root_slow_ringing
+leaving it to ring 40 s (untilAnswered)...
+banner after 40s: "Agent HaX | SAFETYNET secure line | Incoming call | Answer | Decline"
+shot root_slow_ringing_40s
+call: {"bar":"ON CALL | 0:06","subs":["Agent HaX: Finally. Sit down for this.","Agent HaX: The Architect's own authorisation. I've read it twice. A casualty projection, reviewed, and signed off as an acceptable cost.","AGENT HAX: No rogue cell improvised that. Someone priced human lives and approved the invoice.","AGENT HAX: It's the strongest thing you'll find tonight. It puts this above Torres."],"choices":["1. This is bigger than one insider.","2. Then Torres is the only thread we've got to it."]}
+shot root_slow_call
+answer_seconds dispatched: see evs
+/tts requests: ["narrator","A SAFETYNET briefing room. Director Netherton stands at the head of the table. Beside him, Nightshade has three monitors of access logs open."] ["director_netherton","Agent 0x00. This one is close to home in a way I dislike. Someone inside a Home Office contractor is handing ENTROPY the crown jewels."] ["director_netherton","I have brought Nightshade in because catching a mole is precisely his trade. Learn from him. HaX will run you on the ground."] ["director_netherton","Task Force Null is three people and a whiteboard so far. Every cell we've hit bought something. This time it's bought a person. I want to know how."] ["director_netherton","That is what you are g
+["global_variable_changed:flag4_submitted@54.5","phone_call_missed:recruiter@69.7","phone_call_answered:agent_0x99_handler@96.9 as=27"]

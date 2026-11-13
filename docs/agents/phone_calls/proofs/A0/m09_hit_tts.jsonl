@@ -1,0 +1,62 @@
+{"t":1794455589970,"npc_id":"narrator","text":"Task Force Null's room at the Citadel. No windows. On the screen, a photograph of one typed sheet.","delivery":null,"status":200}
+{"t":1794455590096,"npc_id":"narrator","text":"\"Burn Helena before the Publication. Schedule attached. -- A.\"","delivery":null,"status":200}
+{"t":1794455590363,"npc_id":"narrator","text":"Four officers sit in kit nobody has unpacked. Your leave was meant to run three days. It ran one.","delivery":null,"status":200}
+{"t":1794455590581,"npc_id":"briefing_cutscene","text":"Last night a courier in Helena, Montana, carried this to a records archive. We read it. Then we let it go on. If it had not arrived, he would know.","delivery":null,"status":200}
+{"t":1794455590798,"npc_id":"briefing_cutscene","text":"The traitor we took two days ago kept a one-way ticket to Helena in his go-bag. We have read every courier out of that city since.","delivery":null,"status":200}
+{"t":1794455591012,"npc_id":"briefing_cutscene","text":"The label named the building. Mountain States Records & Retention, a commercial archive on the edge of Helena.","delivery":null,"status":200}
+{"t":1794455591371,"npc_id":"agent_0x99","text":"Sorry about the leave. This is why.","delivery":null,"status":200}
+{"t":1794455591638,"npc_id":"briefing_cutscene","text":"HaX. The wall.","delivery":null,"status":200}
+{"t":1794455591850,"npc_id":"agent_0x99","text":"One card for every operation against ENTROPY. The short version.","delivery":null,"status":200}
+{"t":1794455592064,"npc_id":"agent_0x99","text":"Albion, a grid battery site. Critical Mass got in. Voltage, who led it, disappeared after.","delivery":null,"status":200}
+{"t":1794455592278,"npc_id":"narrator","text":"She walks the wall fast, like someone who has rehearsed it.","delivery":null,"status":200}
+{"t":1794455592499,"npc_id":"agent_0x99","text":"Quantum Dynamics. David Torres stole for the Recruiter to pay for his wife's treatment. Arrested.","delivery":null,"status":200}
+{"t":1794455592713,"npc_id":"agent_0x99","text":"Portland. One team, four sites. Austin was reached in time. Two of ours died at the others.","delivery":null,"status":200}
+{"t":1794455592980,"npc_id":"agent_0x99","text":"Nightshade, fifteen years one of ours, sent the threat database to Montana. He's in custody and saying nothing.","delivery":null,"status":200}
+{"t":1794455593199,"npc_id":"agent_0x99","text":"The rest are files you can read on the plane.","delivery":null,"status":200}
+{"t":1794455593510,"npc_id":"narrator","text":"The last two cards have a photograph each and nothing written under them. HaX stops in front of them.","delivery":null,"status":200}
+{"t":1794455594196,"npc_id":"briefing_cutscene","text":"I will read those two myself. Later.","delivery":null,"status":200}
+{"t":1794455594478,"npc_id":"narrator","text":"Above the cards, pinned on its own, the signature from the order, blown up: -- A.","delivery":null,"status":200}
+{"t":1794455594714,"npc_id":"briefing_cutscene","text":"ENTROPY's planner. Every card on this wall has his initial on it somewhere.","delivery":null,"status":200}
+{"t":1794455594932,"npc_id":"briefing_cutscene","text":"They call him the Architect. We have a suspect.","delivery":null,"status":200}
+{"t":1794455595213,"npc_id":"briefing_cutscene","text":"I will not say the name in this room until we can prove it.","delivery":null,"status":200}
+{"t":1794455595430,"npc_id":"agent_0x99","text":"Whatever the Publication is, he's building it from that database. Every weakness we've ever catalogued.","delivery":null,"status":200}
+{"t":1794455595647,"npc_id":"agent_0x99","text":"One entry, for scale. A flaw in the infusion pumps of a hundred and forty hospitals.","delivery":null,"status":200}
+{"t":1794455595863,"npc_id":"agent_0x99","text":"Analysis says hundreds dead in the first month if the cells get it. They're guessing. I'd like to find out they guessed high.","delivery":null,"status":200}
+{"t":1794455596131,"npc_id":"briefing_cutscene","text":"Questions. Briefly.","delivery":null,"status":200}
+{"t":1794455596944,"npc_id":"agent_0x99","text":"We don't know. That's what tonight is for.","delivery":null,"status":503}
+{"t":1794455597164,"npc_id":"briefing_cutscene","text":"He chose the word. Whatever it is, he means everyone to read it.","delivery":null,"status":503}
+{"t":1794455597891,"npc_id":"briefing_cutscene","text":"Destruction. Series numbers from the archive's catalogue, and nothing else.","delivery":null,"status":503}
+{"t":1794455598169,"npc_id":"agent_0x99","text":"Every box on that list is ash by the time the team lands. Be in the building first.","delivery":null,"status":503}
+{"t":1794455598942,"npc_id":"agent_0x99","text":"Somebody always asks me that. This time it's now.","delivery":null,"status":503}
+{"t":1794455599795,"npc_id":"briefing_cutscene","text":"Quintero leads on the ground. Kowalczyk breaches. Malhotra runs comms. Arakawa talks to the Americans.","delivery":null,"status":200}
+{"t":1794455600041,"npc_id":"quintero","text":"One agent, no cover, in a building that's burning paper. If it goes wrong, I go into Montana a day late and one short.","delivery":null,"status":200}
+{"t":1794455600281,"npc_id":"quintero","text":"Orders don't fall off couriers, Director.","delivery":null,"status":200}
+{"t":1794455600579,"npc_id":"briefing_cutscene","text":"This one didn't, Quintero. Noted.","delivery":null,"status":200}
+{"t":1794455600800,"npc_id":"malhotra","text":"If something goes wrong in there, I'd like to hear it go wrong.","delivery":null,"status":200}
+{"t":1794455601014,"npc_id":"agent_0x99","text":"I run 0x00.","delivery":null,"status":200}
+{"t":1794455601362,"npc_id":"malhotra","text":"Of course. I'll keep the spare channel warm.","delivery":null,"status":503}
+{"t":1794455601616,"npc_id":"arakawa","text":"I've asked Helena PD to keep their cars off that side of town tonight. Nobody asked who for. Nobody will.","delivery":null,"status":503}
+{"t":1794455601829,"npc_id":"narrator","text":"Kowalczyk crosses the room and puts a PIN cracker in your hand.","delivery":null,"status":503}
+{"t":1794455602101,"npc_id":"kowalczyk","text":"Stores froze everything Nightshade ever signed for. This one's mine. Never been through stores, never been near him.","delivery":null,"status":503}
+{"t":1794455602314,"npc_id":"agent_0x99","text":"The long way is over.","delivery":null,"status":503}
+{"t":1794455602530,"npc_id":"kowalczyk","text":"The long way's for people who get paid by the hour.","delivery":null,"status":503}
+{"t":1794455603347,"npc_id":"quintero","text":"Then don't make me right.","delivery":null,"status":503}
+{"t":1794455603514,"npc_id":"briefing_cutscene","text":"The plane leaves in ninety minutes. The team follows tonight.","delivery":null,"status":503}
+{"t":1794455603786,"npc_id":"briefing_cutscene","text":"Bring me a name I can say in court.","delivery":null,"status":503}
+{"t":1794455604047,"npc_id":"agent_0x99","text":"Line's open from wheels down.","delivery":null,"status":503}
+{"t":1794455606562,"npc_id":"recruiter","text":"Agent 0x00, with a card cloner, a safe cracker and a handler listening. You're standing in my filing system. I thought I'd call.","delivery":null,"status":200}
+{"t":1794455621147,"npc_id":"recruiter","text":"Margaret's shredding eleven years of my placements tonight, for his schedule. I'd like something back on the books.","delivery":null,"status":200}
+{"t":1794455631193,"npc_id":"recruiter","text":"I work with him. Tonight he forgot the difference.","delivery":null,"status":503}
+{"t":1794455632622,"npc_id":"recruiter","text":"One of your four is mine. Was mine, until your Architect took them for Montana. The name tonight. You let my tape deck wipe.","delivery":null,"status":200}
+{"t":1794455644897,"npc_id":"recruiter","text":"Say no and I wipe it myself. Same deck, no name.","delivery":null,"status":200}
+{"t":1794455651902,"npc_id":"recruiter","text":"I can't see which tape you pull, only that you pulled one. Take the name and pull anything, and I call my placement.","delivery":null,"status":200}
+{"t":1794455662826,"npc_id":"agent_0x99","text":"Her file is her network, all of it. The Alpha tapes are him teaching, recorded.","delivery":null,"status":200}
+{"t":1794455670320,"npc_id":"agent_0x99","text":"He teaches what he'll do. If he built the bunker the way he taught it, it's on there.","delivery":null,"status":200}
+{"t":1794455676798,"npc_id":"agent_0x99","text":"I can beat that wipe.","delivery":null,"status":200}
+{"t":1794455680429,"npc_id":"recruiter","text":"Nobody has.","delivery":null,"status":200}
+{"t":1794455683664,"npc_id":"agent_0x99","text":"Buy from her and we go in an ENTROPY ledger, next to his orders. He'll read the sale, and he'll quote it at you.","delivery":null,"status":200}
+{"t":1794455715963,"npc_id":"recruiter","text":"Sensible. Halina Kowalczyk. Her mother's care home has had my check for eleven years.","delivery":null,"status":200}
+{"t":1794455725508,"npc_id":"recruiter","text":"She gave you something at the briefing, I expect. She's generous. It's how we hired her.","delivery":null,"status":200}
+{"t":1794455733394,"npc_id":"agent_0x99","text":"She's watching the deck. Pull her file and we get half her people. She warns the rest, and Kowalczyk runs.","delivery":null,"status":200}
+{"t":1794455740603,"npc_id":"agent_0x99","text":"She fired it from Sorensen's office. I'm on the door.","delivery":null,"status":200}
+{"t":1794455745441,"npc_id":"agent_0x99","text":"Her card for the tape room will be in that office.","delivery":null,"status":200}

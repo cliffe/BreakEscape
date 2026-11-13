@@ -153,12 +153,27 @@ module BreakEscape
     # phone: its start knot is the contact's currentKnot).
     def self.voiced_phone_call?(npc)
       return true if npc['voiced'] == true
+      return true if call_entries(npc).any?
       timed = npc['timedConversation']
-      return true if timed.is_a?(Hash) && timed['voiced'] == true && !video_call_timed?(timed)
+      return true if timed.is_a?(Hash) && (timed['voiced'] == true || ring?(timed)) && !video_call_timed?(timed)
 
       Array(npc['eventMappings']).any? do |m|
-        m.is_a?(Hash) && m['voiced'] == true && m['conversationMode'] == 'phone-chat'
+        m.is_a?(Hash) && (m['voiced'] == true || ring?(m)) && m['conversationMode'] == 'phone-chat'
       end
+    end
+
+    # `call` (a contact the player can ring, plan 3.2): one entry or a list; entries without a
+    # string knot are dropped. `button: false` entries count (`#place_call:<knot>` dials them).
+    def self.call_entries(npc)
+      raw = npc['call']
+      list = raw.is_a?(Array) ? raw : [raw]
+      list.select { |e| e.is_a?(Hash) && e['knot'].is_a?(String) && !e['knot'].strip.empty? }
+    end
+
+    # `ring` (an incoming call that rings, plan 3.1) implies voiced: true, whether it is
+    # written as true or as an object. Absent, null and false are not a ring.
+    def self.ring?(config)
+      config.is_a?(Hash) && !config['ring'].nil? && config['ring'] != false
     end
 
     # npc-manager.js: an event mapping with conversationMode "video-call" opens
@@ -214,16 +229,32 @@ module BreakEscape
       knots = []
       knots << knot_name(npc['currentKnot'] || 'start') if npc['voiced'] == true
       timed = npc['timedConversation']
-      if timed.is_a?(Hash) && timed['voiced'] == true && timed['targetKnot'] && !video_call_timed?(timed)
+      if timed.is_a?(Hash) && (timed['voiced'] == true || ring?(timed)) && timed['targetKnot'] && !video_call_timed?(timed)
         knots << knot_name(timed['targetKnot'])
       end
       Array(npc['eventMappings']).each do |m|
-        next unless m.is_a?(Hash) && m['voiced'] == true && m['conversationMode'] == 'phone-chat'
+        next unless m.is_a?(Hash) && (m['voiced'] == true || ring?(m)) && m['conversationMode'] == 'phone-chat'
 
         target = m['targetKnot'] || m['knot']
         knots << knot_name(target) if target
       end
+      call_entries(npc).each { |e| knots << knot_name(e['knot'].strip) }
       knots.uniq
+    end
+
+    # The voicemail knots of a phone contact (plan 2.6, 4.2): each `ring.voicemailKnot` on a phone-chat
+    # mapping or on a timedConversation. The client runs them silently into the thread and plays the
+    # `voice:` lines on tap, so only those lines are voiced. They do not widen the call walk.
+    def self.voicemail_knots(npc)
+      knots = []
+      timed = npc['timedConversation']
+      knots << timed.dig('ring', 'voicemailKnot') if timed.is_a?(Hash) && timed['ring'].is_a?(Hash) && !video_call_timed?(timed)
+      Array(npc['eventMappings']).each do |m|
+        next unless m.is_a?(Hash) && m['conversationMode'] == 'phone-chat' && m['ring'].is_a?(Hash)
+
+        knots << m['ring']['voicemailKnot']
+      end
+      knots.select { |k| k.is_a?(String) && !k.strip.empty? }.map { |k| knot_name(k.strip) }.uniq
     end
 
     # npc-manager.js: a video call opens on the mapping's targetKnot (or knot),
@@ -291,12 +322,20 @@ module BreakEscape
 
     # Which speaker the client asks for, and the text it sends, for one walker line.
     # Returns [npc_id, text], or nil when the line is not voiced (player, background).
+    #
+    # `id_names:` is true for a line of a voiced phone call (phone-call-voice.js, plan 2.10): an
+    # id prefix there names that record even when it shares the host's display name, so two
+    # same-named records (m10's `hax_post` and `agent_0x99`, both "Agent HaX") can be told
+    # apart. Person-chat sends the conversation's own id in that case (isOwnNpcByName), so the
+    # same-name rule below stays for person-chat lines and video-call knots.
+    #
     # With transcript: true a voice message's text is its transcript (no marker).
-    def resolve(line, host_id, notes: true, transcript: true)
+    def resolve(line, host_id, notes: true, id_names: false, transcript: true)
       raw = line.raw
       return nil if raw.match?(BACKGROUND_LINE)
 
       speaker = nil
+      named_by_id = false
       narrator = false
       text = raw
       prefix = line.prefix
@@ -311,11 +350,17 @@ module BreakEscape
           @notes << Note.new(source: host_id, path: line.path, text: raw,
                              reason: "Narrator[#{character}] names no character; the client voices it unprefixed")
         end
+      elsif id_names && own_name_prefix?(prefix, host_id)
+        # The client strips the contact's own name first (contactNames in phone-chat-speaker.js), so
+        # the line is the host's even when another record has that name as its id (R2 m1)
+        speaker = host_id
+        text = line.text
       elsif prefix
-        resolved = speaker_id_for(prefix, host_id)
+        resolved, by_id = speaker_id_for(prefix, host_id)
         if resolved
           speaker = resolved
           text = line.text
+          named_by_id = by_id && id_names
         end
       end
 
@@ -335,12 +380,23 @@ module BreakEscape
       other = characters[speaker]
       # person-chat sends the conversation's own id when the speaker shares its
       # display name (m05's Patricia in person and on the phone).
-      same_name = own_name && other && other['displayName'] == own_name
+      same_name = !named_by_id && own_name && other && other['displayName'] == own_name
       if speaker != host_id && other && other['voice'] && !same_name
         [speaker, text]
       else
         [host_id, text]
       end
+    end
+
+    # True when prefix is one of the host's own names as the client's contactNames builds them:
+    # displayName, id, and id with underscores read as spaces, compared case-insensitively.
+    def own_name_prefix?(prefix, host_id)
+      host = characters[host_id]
+      return false unless host
+
+      names = [host['displayName'], host_id, host_id.to_s.tr('_', ' ')]
+      wanted = prefix.to_s.strip.downcase
+      names.any? { |n| n.is_a?(String) && !n.strip.empty? && n.strip.downcase == wanted }
     end
 
     # The `#delivery:` note the scenario's ink gives the line the client voices as
@@ -367,12 +423,11 @@ module BreakEscape
       @delivered_lines
     end
 
-    # The `#delivery:` note person-chat sends for a line (TtsService.delivery_from_tags).
-    # Voiced phone calls don't send one (phone-call-voice.js), so their lines have none;
-    # a phone contact's video call is person-chat and does.
-    def line_delivery(line, person_chat)
-      return nil unless person_chat
-
+    # The `#delivery:` note the client sends for a line (TtsService.delivery_from_tags):
+    # person-chat does, and so does a voiced phone call (phone-call-voice.js, A1) for the
+    # lines it speaks. Every line each_host_line yields is one the client voices (the narration
+    # a voiced call leaves unspoken is skipped there), so every one sends its note.
+    def line_delivery(line)
       TtsService.delivery_from_tags(line.tags)
     end
 
@@ -456,10 +511,10 @@ module BreakEscape
     def index_host_lines
       spoken = {}
       delivered = {}
-      each_host_line do |_host, _path, line, npc_id, text, person_chat|
+      each_host_line do |_host, _path, line, npc_id, text|
         norm = self.class.normalize(text)
         spoken["#{npc_id}|#{TtsService.match_form(text)}"] ||= text
-        note = line_delivery(line, person_chat)
+        note = line_delivery(line)
         delivered["#{npc_id}|#{norm}|#{self.class.normalize(note)}"] ||= note if note
       end
       each_pretext_outcome_line { |npc_id, text, _path| spoken["#{npc_id}|#{TtsService.match_form(text)}"] ||= text }
@@ -471,9 +526,9 @@ module BreakEscape
       @entries = []
       seen = {}
 
-      each_host_line do |host_id, ink_path, line, npc_id, text, person_chat|
+      each_host_line do |host_id, ink_path, line, npc_id, text|
         add_entry(seen, npc_id, text, host_id, "#{File.basename(ink_path)}:#{line.path}",
-                  line_delivery(line, person_chat))
+                  line_delivery(line))
       end
 
       each_pretext_outcome_line do |npc_id, text, path|
@@ -509,6 +564,7 @@ module BreakEscape
           ink = JSON.parse(File.read(ink_path))
           call = self.class.call_knots(npc, ink)
           video = self.class.video_call_knots(npc, ink)
+          voicemail = self.class.voicemail_knots(npc)
           if call.empty? && video.empty?
             @notes << Note.new(source: host_id, path: npc['storyPath'], reason: 'voiced call has no targetKnot in its story; nothing voiced')
           end
@@ -521,8 +577,26 @@ module BreakEscape
           @notes << Note.new(source: host_id, path: "#{File.basename(ink_path)}:#{u.path}", text: u.text, reason: u.reason)
         end
 
+        # Voicemail (plan 2.6): the `voice:` lines of the voicemail knots, prefix stripped, in the
+        # contact's own voice. The client plays them from a voice bubble with no delivery note.
+        if phone && !voicemail.empty?
+          walker.lines.each do |line|
+            next unless voicemail.include?(self.class.line_knot(line.path))
+            next unless (m = line.raw.to_s.strip.match(/\Avoice:\s*(.+)\z/im))
+
+            text = m[1].strip
+            next if self.class.normalize(text).empty?
+
+            bare = line.dup
+            bare.tags = []
+            yield host_id, ink_path, bare, host_id, text
+          end
+        end
+
         lines.each do |line|
-          npc_id, text = resolve(line, host_id)
+          # A voiced phone call's own lines: an id prefix names its record outright
+          phone_call = phone && !video.include?(self.class.line_knot(line.path))
+          npc_id, text = resolve(line, host_id, id_names: phone_call)
           next unless npc_id
 
           # person_chat: the line is read as person-chat voices it (narration as
@@ -532,7 +606,9 @@ module BreakEscape
           person_chat = !phone || video.include?(self.class.line_knot(line.path))
           next if !person_chat && (npc_id == 'narrator' || phone_narration?(line.tags))
 
-          yield host_id, ink_path, line, npc_id, text, person_chat
+          # Both kinds of line send their #delivery: note (A1): person-chat and a video call
+          # always did, a voiced phone call's spoken lines now do too.
+          yield host_id, ink_path, line, npc_id, text
         end
       end
     end
@@ -592,17 +668,20 @@ module BreakEscape
                             delivery: delivery)
     end
 
+    # [id, matched_by_id] for a line's prefix, or nil. The first character in scenario order that
+    # matches by id or display name wins (the phone client checks display names first, then ids:
+    # the validator warns when one record's id is another's display name, so the orders agree).
     def speaker_id_for(prefix, host_id)
       wanted = prefix.downcase.strip
       return nil if wanted.empty?
-      return 'player' if wanted == 'player'
-      return host_id if wanted == 'npc'
+      return ['player', false] if wanted == 'player'
+      return [host_id, false] if wanted == 'npc'
 
       characters.each do |id, char|
-        return id if id.downcase == wanted
-        return id if char['displayName'] && char['displayName'].downcase == wanted
+        return [id, true] if id.downcase == wanted
+        return [id, false] if char['displayName'] && char['displayName'].downcase == wanted
       end
-      return 'player' if wanted == 'you'
+      return ['player', false] if wanted == 'you'
 
       nil
     end

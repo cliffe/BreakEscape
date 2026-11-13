@@ -83,7 +83,8 @@ test('phone-chat wiring: Esc, the back arrow and every story end honour disableC
     const releases = (src.match(/this\._releaseForcedCall\(\);/g) || []).length;
     assert.equal(releases, 5);
     assert.ok(ends >= releases);
-    assert.match(src, /_releaseForcedCall\(\) \{\s*\n\s*if \(!phoneCloseLocked\(this\.params\)\) return;/);
+    // A2b: a ringer call also closes at the story's end, so the guard reads `!phoneCloseLocked(...) && !ringer`
+    assert.match(src, /_releaseForcedCall\(\) \{[\s\S]{0,200}if \(!phoneCloseLocked\(this\.params\) && !ringer\) return;/);
 });
 
 test('a hit closes a forced call (no Esc to fight back), but leaves an ordinary phone open', () => {
@@ -228,7 +229,7 @@ test('another character speaking in a contact thread is labelled with their name
 
 test('the phone UI draws the other speaker as a name over the bubble', () => {
     const ui = read('minigames/phone-chat/phone-chat-ui.js');
-    assert.match(ui, /otherSpeaker\(trimmedText, contact, this\._knownSpeakerNames\(\)\)/);
+    assert.match(ui, /otherSpeaker\(trimmedText, contact, this\._knownSpeakerNames\(\), this\._knownSpeakerIds\(\)\)/);
     assert.match(ui, /sender\.className = 'message-sender'/);
     const css = readFileSync(join(here, '../../public/break_escape/css/phone-chat-minigame.css'), 'utf8');
     assert.match(css, /\.message-sender \{/);

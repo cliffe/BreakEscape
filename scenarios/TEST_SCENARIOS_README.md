@@ -237,6 +237,38 @@ Additional test scenarios to create:
 - [ ] Mixed size complex layout (all sizes together)
 - [ ] Edge cases (single-tile-wide rooms, very tall rooms)
 
+## test_phone_calls (phone calls track, slice A2b onwards)
+
+Engine trial for incoming calls that ring. One office, levers that ring each caller, and a person NPC for the opening briefing and the debrief a call hands over to. Compile its ink with `scripts/compile-ink.sh test_phone_calls`. Start it with `--set skip_timed=false` to hear the timed caller; the opening briefing plays first and `caller_basic` rings 3 s after it closes.
+
+| Contact | Shows |
+|---|---|
+| `caller_basic` | `ring` written without `voiced`; ink reads `call_answer_seconds` (fast and slow answer through the "rings again" lever), End, story end |
+| `caller_patient` | `ring: { untilAnswered: true }`: no timeout, a nudge every 10 s; declined, it leaves a callback (A6) |
+| `caller_decline` | Decline and timeout events set `declined_seen` and `missed_seen`; the missed call leaves a callback: the header "Call back" and the missed row's button connect to the same knot, whose `call_is_callback` line plays (A6) |
+| `caller_voicemail`, `caller_terminal` | `ring` with `onMissed: "voicemail"` (the first withheld, the second in the terminal look): a declined or missed call runs `ring_vm` silently into the thread, its `voice:` lines play on tap, and the VAR it sets is read by the home knot on the next open (A6). Fire `ring_voicemail` and `ring_terminal` |
+| `caller_debrief` | the call's choice sets `debrief_go`, a hand-off line, `#exit_conversation`; the person-chat debrief opens straight after |
+| `caller_queue`, `caller_queue_b` | two callers on one lever: the second rings after the first ends |
+| `caller_replace` | two ring mappings, only the newer knot rings |
+| `timed_caller` | `timedConversation` with `ring` |
+| `legacy_voiced` | a voiced mapping call with no `ring`: opens at once, as before |
+| `legacy_voiced` (second mapping) | set `globalVars.legacy_on`, hold a call over the keypad, complete the keypad: a `minigame_completed` mapping opens this call first while the held call waits (row 15) |
+| `texter` | plain texts |
+| `caller_hold` | `ring_hold` (lever, 8 s delay): rings over a keypad, lockpick, container, PC desktop or popup; Answer puts it on hold, closing the minigame opens it (rows 12 to 18) |
+| `caller_forced` | `disableClose`: no Decline, auto-answers after 6 s, a hit closes it and it rings back after 4 s without a hit (rows 22, 26) |
+| `caller_popup` | `ring_popup` (lever, 8 s delay): rings over the CyberChef or lab-sheet popup, which goes aside while the call runs and comes back after it (row 11) |
+| `caller_thread` | `ring_thread` (lever, 8 s delay): rings while the player's phone is open on its own thread, on another contact's thread, or on the contact list (the call shows as a panel inside the phone; Answer closes the phone with no `conversation_closed` for the open thread and it reopens on the same screen after the call). `desk_line` and the `desk_phone` object: a desk phone open at the time shows the banner and a hold instead (rows 10, 12). End pressed while the call's choices show reopens the thread on its home knot |
+| `desk_contact` | A5, `call` list: a header "Call" button (`desk_call`) and a `button: false` entry (`extract_call`) placed by the hub choice "I'm done here. Close the file." (`#place_call:extract_call`, then `-> DONE`; the call's "Yes, close it." carries `#ending_check`). Ink-local visit counts carry over a second call. `lever_ring_desk` rings `desk_call` 8 s later: ring it, press Call before answering, and the ring is dropped when the call connects (row 31) |
+| `away_contact`, `hidden_contact` | A5, `call` with `when: globalVars.away_back`: Away shows the button and rings out ("No answer" row) until `lever_back` sets the global, then connects; Hidden has no button until then |
+| `caller_debrief` (placed) | A5: also has a `call` entry on `ring_call` (`button: false`); the hub choice "I'm ready. Ring the debrief line." places it with `#place_call:ring_call`; the rest is as above |
+| `guard`, `brute` | a patrolling guard whose `player_in_view` challenge is dropped during a call (set `guard_off` to switch it off); a hostile NPC (`npcHostileSystem.setNPCHostile('brute', true)`) for a real hit |
+
+Objects: `keypad_safe` (PIN 1234), `pick_case` (lockpick), `open_case` (container with a note), `terminal_pc` (PC desktop with a file), `cyberchef_ws` and `lab_ws` (popups; the lab sheet is a real long page so its scroll position can be checked). Live routes: `tools/phone_calls/routes/a2c_live.sh` (`PC_PORT=<your port>`; hold, banners, popup, forced, v14 to v18, guard, brief).
+
+Later slices add callback and voicemail (A6).
+
+---
+
 ---
 
 **Last Updated**: 2025-11-16

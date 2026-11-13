@@ -243,6 +243,18 @@ function playEntry(entry, data) {
     // screen in front of a player who was simultaneously being told they were
     // not finished.
     const hasEnding = !!(entry.credits?.length || entry.closingCard);
+    // Phone calls plan 2.3 row 28: the ringer closes only once the server agrees the mission
+    // concluded (the two `result.concluded` branches below). A refusal leaves the player
+    // playing, so calls must still ring.
+    const closeRinger = () => {
+        try { window.phoneRinger?.close?.(); } catch (e) { console.warn(`${TAG} phoneRinger.close failed:`, e); }
+    };
+    // The ringer is held from now until the server answers: no call rings or opens over the
+    // credits while the conclude is in flight (A3 R1 m5, A2c R3 m1). Agreement closes it above;
+    // a refusal lifts the hold.
+    const suspendRinger = (on) => {
+        try { window.phoneRinger?.suspend?.(on); } catch (e) { console.warn(`${TAG} phoneRinger.suspend failed:`, e); }
+    };
     const ownsVisualiser = hasEnding;
     if (ownsVisualiser && window.BondVisualiser?.setAutoOpenSuppressed) {
         window.BondVisualiser.setAutoOpenSuppressed(true);
@@ -301,6 +313,7 @@ function playEntry(entry, data) {
             creditsAfter: MusicController.context?.state === 'suspended' ? audible?.ready : undefined,
         }));
 
+        suspendRinger(true);
         concludeMission().then((result) => {
             // Decision made: restore normal auto-open behaviour for any later
             // victory playlist change.
@@ -310,18 +323,21 @@ function playEntry(entry, data) {
                 // R14: the server never answered. The player keeps the ending, but it
                 // says the result is not recorded yet, and the conclude is retried.
                 _endingOwnsMusic = true;
+                closeRinger();
                 openCredits(offlineEndingOptions);
                 queueConcludeRetry(window.breakEscapeConfig?.gameId);
                 return;
             }
             if (result.concluded) {
                 _endingOwnsMusic = true;
+                closeRinger();
                 openCredits();
                 return;
             }
             // Refused: the scenario declared technical work that is not done.
             // Say what is outstanding rather than rolling credits.
             console.warn(`${TAG} Conclusion refused; missing:`, result.missing);
+            suspendRinger(false);
             if (window.gameAlert) {
                 window.gameAlert(
                     'Not finished yet -- there is outstanding work on their network before this is over.',

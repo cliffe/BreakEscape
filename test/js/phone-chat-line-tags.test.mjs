@@ -16,11 +16,13 @@ const here = dirname(fileURLToPath(import.meta.url));
 const js = join(here, '../../public/break_escape/js');
 const src = readFileSync(join(js, 'minigames/phone-chat/phone-chat-minigame.js'), 'utf8');
 const { phoneStepLines } = await import(join(js, 'minigames/phone-chat/phone-chat-speaker.js'));
+const { stepDeliveries } = await import(join(js, 'minigames/phone-chat/phone-call-voice.js'));
+const { deliveryFromTags } = await import(join(js, 'systems/tts-delivery.js'));
 const { partitionSlowTags } = await import(join(js, 'minigames/person-chat/person-chat-pending-reply.js'));
 console.log = () => {};
 console.trace = () => {};
 
-const INJECT = ['phoneStepLines', 'processGameActionTags', 'partitionSlowTags'];
+const INJECT = ['phoneStepLines', 'processGameActionTags', 'partitionSlowTags', 'stepDeliveries', 'deliveryFromTags'];
 function method(name, deps, isAsync = true) {
     const m = src.match(new RegExp(`\\n    ${isAsync ? 'async ' : ''}${name}\\(([^)]*)\\) \\{\\n([\\s\\S]*?)\\n    \\}\\n`));
     assert.ok(m, `${name} found`);
@@ -53,7 +55,7 @@ function harness({ slowDelay = 0 } = {}) {
     globalThis.window = { currentConversationNPCId: 'hax', gameState: { globalVariables: globals } };
     const applied = [];
     const deps = {
-        phoneStepLines, partitionSlowTags,
+        phoneStepLines, partitionSlowTags, stepDeliveries, deliveryFromTags,
         processGameActionTags: async (tags) => {
             for (const tag of tags) {
                 const [action, name, value] = tag.split(':');
@@ -159,4 +161,27 @@ test('preload dry run: set_global tags are mirrored into the temp story only', a
     PhoneChatConversation.mirrorSetGlobalTags(null, ['set_global:primed:false']);   // no story: no throw
     PhoneChatConversation.mirrorSetGlobalTags(story, undefined);
     assert.equal(window.gameState, undefined, 'the game globals are not written');
+});
+
+test('continueStory and handleChoice hand each line\'s #delivery: note to _presentOutput (A1 R1 m2)', async () => {
+    const { mg, globals } = harness();
+    mg.conversation = story(globals, { lines: [
+        () => ({ text: 'Quiet one.', tags: ['delivery: hushed'] }),
+        () => ({ text: 'Plain one.' }),
+        () => ({ text: 'Last, two lines\nwith one note.', tags: ['delivery: firm', 'set_global:x:true'] })
+    ] });
+    await mg.continueStory();
+    assert.deepEqual(mg.presented[0].opts.deliveries, ['hushed', null, null, 'firm'], 'the note of a step goes to its last line');
+
+    const again = harness();
+    again.mg.conversation = story(again.globals, { lines: [
+        () => ({ text: 'Reply.', tags: ['delivery: low'] }),
+        () => ({ text: 'More.' })
+    ] });
+    again.mg.ui.addChoices = () => {};
+    again.mg._showStoryLine = async (raw, delay, note) => { again.mg.shown = (again.mg.shown || []).concat([[raw, note]]); return true; };
+    again.mg.saveStoryState = () => {};
+    again.mg.complete = () => {};
+    await again.mg.handleChoice(0);
+    assert.deepEqual(again.mg.shown, [['Reply.', 'low'], ['More.', null]]);
 });

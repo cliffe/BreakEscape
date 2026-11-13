@@ -99,7 +99,7 @@ Gary Whitlock: That casing on the rack. I had one of those behind my server cabi
 
 === tech_1 ===
 ~ gary_t_stage = 1
-Agent HaX: At St. Catherine's I asked you not to be the fifth person to treat him as an overhead. He's had a few more since.
+agent_0x99: At St. Catherine's I asked you not to be the fifth person to treat him as an overhead. He's had a few more since.
 Gary Whitlock: Seven warnings, nobody listened. You're listening now?
 + [I'm listening.]
     -> tech_2
@@ -142,7 +142,7 @@ Gary Whitlock: Then you're the board. Card's on my belt.
     -> tech_menu
 }
 ~ gary_t_costs = true
-Agent HaX: A man on their bench who ships nothing is worth something. Later.
+agent_0x99: A man on their bench who ships nothing is worth something. Later.
 -> tech_menu
 
 === tech_menu ===

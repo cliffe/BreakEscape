@@ -1,0 +1,5 @@
+{"t":1794504961108,"npc_id":"debrief_host","text":"Welcome. This is the opening briefing. Close it when you are done.","delivery":null,"status":503}
+{"t":1794504961674,"npc_id":"debrief_host","text":"Good. A call will come in shortly.","delivery":null,"status":503}
+{"t":1794504965691,"npc_id":"guard","text":"Hold on. What are you doing in here?","delivery":null,"status":503}
+{"t":1794504967007,"npc_id":"guard","text":"Fine. Carry on.","delivery":null,"status":503}
+{"t":1794504983575,"npc_id":"caller_thread","text":"This is the thread caller. You can hear me now.","delivery":null,"status":503}

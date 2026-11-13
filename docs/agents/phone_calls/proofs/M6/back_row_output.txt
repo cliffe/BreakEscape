@@ -1,0 +1,7 @@
+game 2022 (back_row)
+in call: {"cur":{"npc":"the_architect","state":"connected","knot":"taunt_t30","opened":true},"q":0,"banner":null,"bimg":null}
+shot back_row_in_call
+press back arrow: "back clicked"
+after back: {"cur":null,"q":0,"banner":null,"bimg":null} mg=null
+rows: ["Call: No caller ID"]
+shot back_row_after_back

@@ -1,0 +1,10 @@
+game 2299 (hang_hist)
+"opened the_architect"
+history before: ["npc: voice: You let it ring. Sensible. Don't look for the trace.","npc: voice: There is a decision in front of you tonight. Make it however yo","npc: voice: Let it hurt afterwards, not during. I expect you've been told t","narrator: A carrier tone on a channel that should not have one. Nobody on it. He"]
+choices: ["1. (Hang up.)"]
+screen after click (every 250 ms): ["271ms closed","504ms closed","779ms closed","1004ms closed","1281ms closed","1524ms closed","1788ms closed","2011ms closed","2306ms closed","2538ms closed","2771ms closed","3021ms closed","3287ms closed","3537ms closed","3765ms closed","4003ms closed"]
+history after: ["npc: voice: There is a decision in front of you tonight. Make it however yo","npc: voice: Let it hurt afterwards, not during. I expect you've been told t","narrator: A carrier tone on a channel that should not have one. Nobody on it. He","narrator: The tone stops a half-second before you do."]
+mg=null
+"opened the_architect"
+reopened: player bubbles={"dom":0,"hist":[]} tail=nt of you tonight. Make it however you like. I only want to see it made. | Transcript: | Let it hurt afterwards, not during. I expect you've been told that. | A carrier tone on a channel that should not have one. Nobody on it. He calls when he chooses. | The tone stops a half-second before you do."
+shot hang_hist_reopened

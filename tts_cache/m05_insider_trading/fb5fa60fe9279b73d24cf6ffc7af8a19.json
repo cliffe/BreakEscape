@@ -1,0 +1,13 @@
+{
+  "key": "fb5fa60fe9279b73d24cf6ffc7af8a19",
+  "npc": "patricia_phone",
+  "text": "That's a pattern. It puts him at the door. It doesn't tell me why, and it doesn't show me the data leaving.",
+  "voice": "Kore",
+  "style": "Chief Security Officer, early fifties, ex-military. Speak with a consistent South Wales (Cardiff) accent throughout — do not shift to any other accent. Firm, low-to-mid pitch; brisk, economical pace. Direct, dry and steady under pressure; her warmth shows only in what she chooses to notice. On the phone.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-13",
+  "recorded_at": "2026-11-13T00:23:50Z"
+}

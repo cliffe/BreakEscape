@@ -68,7 +68,7 @@ VAR tess_bridge = false     // true only on the first pass through exch_bridge
 Narrator: Kowalczyk is standing by the service door, empty-handed. Tesseract hasn't left his chair.
 Dr Adrian Tesseract: ...it proves nothing. It has to be one of theirs.
 Agent 0x5E 'Lantern': Adrian.
-Agent HaX: ...Quintero. Core. Now.
+agent_0x99: ...Quintero. Core. Now.
 {
 - quintero_ko or officer_out == "quintero" or (nightshade_tethered and m09_sleeper_named):
     -> double_cross_take
@@ -115,32 +115,32 @@ Dr Adrian Tesseract: Take your time. It goes at six whatever we say. Or now, if 
     Dr Adrian Tesseract: You froze my bank. I had to economise on guards. I expect you noticed.
 }
 { m09_recruiter_offer == "double_crossed":
-    Agent HaX: 0x00. I've got you clean now.
+    agent_0x99: 0x00. I've got you clean now.
 - else:
-    Agent HaX: ...back. 0x00.
+    agent_0x99: ...back. 0x00.
 }
 {
 // Playtest R1 m-9: a trace gets its acknowledgement here, not only at 06:00.
 - head_start_out == "both" and share_zero_day == "traced":
-    Agent HaX: Confirmed. Both shares went at the lock. I'm on Zero Day's.
+    agent_0x99: Confirmed. Both shares went at the lock. I'm on Zero Day's.
 - head_start_out == "both":
-    Agent HaX: Confirmed. Both shares went at the lock.
+    agent_0x99: Confirmed. Both shares went at the lock.
 - head_start_out == "zero_day" and share_zero_day == "traced":
-    Agent HaX: Confirmed. Zero Day's share went, and I'm on it.
+    agent_0x99: Confirmed. Zero Day's share went, and I'm on it.
 - head_start_out == "zero_day":
-    Agent HaX: Confirmed. Zero Day's share went.
+    agent_0x99: Confirmed. Zero Day's share went.
 - head_start_out == "ghost":
-    Agent HaX: Confirmed. The resale went.
+    agent_0x99: Confirmed. The resale went.
 - else:
-    Agent HaX: Confirmed. Nothing left the lock.
+    agent_0x99: Confirmed. Nothing left the lock.
 }
 { m04_voltage_captured:
-    Agent HaX: Voltage said above Blackout it stops being a person you can arrest. There's the person.
+    agent_0x99: Voltage said above Blackout it stops being a person you can arrest. There's the person.
 }
 Dr Adrian Tesseract: Ninety-nine. You've done well with them.
-Agent HaX: Still HaX.
+agent_0x99: Still HaX.
 // R38: the reason first. If he reaches for the key, HaX wants a hand on the feed before anything leaves that console.
-Agent HaX: Get on his box — if anything moves off that console, I want a hand on the feed before it does. He'll keep.
+agent_0x99: Get on his box — if anything moves off that console, I want a hand on the feed before it does. He'll keep.
 ~ core_greeted = true
 ~ tess_menu = true
 -> arrival_menu
@@ -192,19 +192,19 @@ Dr Adrian Tesseract: Finish on my box first. I'll keep.
 // Scenario design R5 m2: a player who sent the notice in m09 is told so.
 {
 - m09_completed and m09_albion_notified:
-    Agent HaX: The notice from Helena is on his box. Nine years he sat on it. You sent it.
+    agent_0x99: The notice from Helena is on his box. Nine years he sat on it. You sent it.
 - m09_completed:
-    Agent HaX: The notice from Helena is on his box. Nine years, and never sent.
+    agent_0x99: The notice from Helena is on his box. Nine years, and never sent.
 - else:
-    Agent HaX: He argued for the vendor nine years ago and lost.
-    Agent HaX: The notice he wrote to the vendor is on his box. He never sent it.
+    agent_0x99: He argued for the vendor nine years ago and lost.
+    agent_0x99: The notice he wrote to the vendor is on his box. He never sent it.
 }
-Agent HaX: I've got his box. If anything goes out from that console, I can try to kill the feed. Try.
+agent_0x99: I've got his box. If anything goes out from that console, I can try to kill the feed. Try.
 + [Only try?]
-    Agent HaX: His console. I can't see what he's wired behind it.
+    agent_0x99: His console. I can't see what he's wired behind it.
 + [Understood.]
 -
-Agent HaX: And the line into our vault is open from here. We left it open.
+agent_0x99: And the line into our vault is open from here. We left it open.
 ~ flag4_heard = true
 -> core_router
 
@@ -235,29 +235,29 @@ Dr Adrian Tesseract: All four. Good. Now it's my turn.
     {
     - backdoor_channel_live and not backdoor_closed:
         ~ tess_loose = "backdoor"
-        Agent HaX: His backdoor's still open. The console in the hall closes it.
+        agent_0x99: His backdoor's still open. The console in the hall closes it.
     - whodunit_live and not wren_held and not kowalczyk_ko and not wren_at_core and accused == "" and clue_door_log:
         ~ tess_loose = "wren"
-        Agent HaX: We still haven't named WREN.
+        agent_0x99: We still haven't named WREN.
     - whodunit_live and not wren_held and not kowalczyk_ko and not wren_at_core and accused == "":
         ~ tess_loose = "wren"
-        Agent HaX: We never read the office's door log.
+        agent_0x99: We never read the office's door log.
     - not casualty_sheet_read:
         ~ tess_loose = "sheet"
-        Agent HaX: You never read his sheet. It's pinned above the workshop bench.
+        agent_0x99: You never read his sheet. It's pinned above the workshop bench.
     }
 - not tess_loose2_said:
     // Scenario design R3 n3: after "Not yet", the next loose end still open (once), not the one already named.
     ~ tess_loose2_said = true
     {
     - tess_loose != "backdoor" and backdoor_channel_live and not backdoor_closed:
-        Agent HaX: His backdoor's still open. The console in the hall closes it.
+        agent_0x99: His backdoor's still open. The console in the hall closes it.
     - tess_loose != "wren" and whodunit_live and not wren_held and not kowalczyk_ko and not wren_at_core and accused == "" and clue_door_log:
-        Agent HaX: We still haven't named WREN.
+        agent_0x99: We still haven't named WREN.
     - tess_loose != "wren" and whodunit_live and not wren_held and not kowalczyk_ko and not wren_at_core and accused == "":
-        Agent HaX: We never read the office's door log.
+        agent_0x99: We never read the office's door log.
     - tess_loose != "sheet" and not casualty_sheet_read:
-        Agent HaX: You never read his sheet. It's pinned above the workshop bench.
+        agent_0x99: You never read his sheet. It's pinned above the workshop bench.
     }
 }
 + [Go on, then.]
@@ -487,7 +487,7 @@ Dr Adrian Tesseract: Ghost put it best, at St. Catherine's. Not the money. The l
 + [(Say nothing.)]
 -
 // Educational R1 E-n6: the verdict is left to the exchanges.
-Agent HaX: Ghost wasn't wrong about the problem. I said so then. Wrong about the answer.
+agent_0x99: Ghost wasn't wrong about the problem. I said so then. Wrong about the answer.
 ->->
 
 // MC §6.2: m09's two Recruiter exports, once each, here.
@@ -499,13 +499,13 @@ Agent HaX: Ghost wasn't wrong about the problem. I said so then. Wrong about the
 {
 - m09_recruiter_secret == "kept":
     Dr Adrian Tesseract: You heard the receipt in Helena, Ninety-nine. Your agent never explained it, did they.
-    Agent HaX: I'll deal with that when this is done.
+    agent_0x99: I'll deal with that when this is done.
 - m09_recruiter_secret == "told" or m09_recruiter_secret == "confessed":
     Dr Adrian Tesseract: Forty-seven names, Ninety-nine. Your agent...
-    Agent HaX: They told me. Next.
+    agent_0x99: They told me. Next.
 - m09_recruiter_secret == "denied":
     Dr Adrian Tesseract: You heard the receipt in Helena, Ninety-nine. Forty-seven names, and your agent kept every one of them from you.
-    Agent HaX: You told me she was fishing.
+    agent_0x99: You told me she was fishing.
 }
 {
 - m09_recruiter_offer == "double_crossed":
@@ -778,11 +778,11 @@ Dr Adrian Tesseract: That's the price again. I've moved on to why.
 }
 Dr Adrian Tesseract: I taught rooms of twenty, once. Let it hurt afterwards, not during.
 { m07_architect_echo_heard:
-    Agent HaX: You heard him say that on your handset.
+    agent_0x99: You heard him say that on your handset.
 }
 Dr Adrian Tesseract: Somebody has to be the during. Better me.
 { m09_hax_confession_answer == "should_have_told":
-    Agent HaX: My agent told me I sat on it. They were right. You never told me anything.
+    agent_0x99: My agent told me I sat on it. They were right. You never told me anything.
 }
 ~ tess_menu = true
 -> exch_3_menu
@@ -810,10 +810,10 @@ Dr Adrian Tesseract: Somebody has to be the during. Better me.
     ~ exchange_3 = "record"
     -> ko_sting ->
     { m09_hax_confession_answer == "afterwards":
-        Agent HaX: All right. Let him hear it from me.
+        agent_0x99: All right. Let him hear it from me.
     }
-    Agent HaX: You said it to twenty of us in a room with no windows. I wrote it on the back of my hand.
-    Agent HaX: I've said it to every agent I've run since. I never once meant 'so someone else can bleed'.
+    agent_0x99: You said it to twenty of us in a room with no windows. I wrote it on the back of my hand.
+    agent_0x99: I've said it to every agent I've run since. I never once meant 'so someone else can bleed'.
     -> first_landed ->
     Dr Adrian Tesseract: Ninety-nine.
     -> exch_3_done
@@ -882,7 +882,7 @@ Dr Adrian Tesseract: Nobody elected the people who hoard, either. I asked who do
 }
 { m08_hax_ko:
     Dr Adrian Tesseract: At the Citadel, it was your own handler.
-    Agent HaX: He's right. Carry on.
+    agent_0x99: He's right. Carry on.
 }
 ->->
 
@@ -940,9 +940,9 @@ Dr Adrian Tesseract: That's my argument. The key is yours to use or not.
 }
 { m09_deck_pulled == "alpha_tapes" and whodunit_live and not wren_held and not kowalczyk_ko and not wren_at_core:
     {m09_alpha_clip_played:
-        Agent HaX: Service door. You heard him on the tape. He always builds his own way out first.
+        agent_0x99: Service door. You heard him on the tape. He always builds his own way out first.
     - else:
-        Agent HaX: Service door. He always builds his own way out first.
+        agent_0x99: Service door. He always builds his own way out first.
     }
 }
 Narrator: The release goes dead under your hands, the way his kill config said it would. He doesn't try to stop you.
@@ -956,9 +956,9 @@ Narrator: The release goes dead under your hands, the way his kill config said i
 }
 {
 - partial_release == "large":
-    Agent HaX: That's the backdoor. Its queue went the second you shut him down. Forty-seven million systems.
+    agent_0x99: That's the backdoor. Its queue went the second you shut him down. Forty-seven million systems.
 - partial_release == "small":
-    Agent HaX: That's the backdoor. What was left on it just went. Fourteen million systems.
+    agent_0x99: That's the backdoor. What was left on it just went. Fourteen million systems.
 }
 { partial_release != "none" and m07_countdown_expired:
     Dr Adrian Tesseract: Seattle first. As scheduled.
@@ -1016,7 +1016,7 @@ Narrator: Pressing it publishes the database to everyone, everywhere, in the sam
 { join_step < 2:
     ~ join_step = 2
 }
-Agent HaX: 0x00. Don't.
+agent_0x99: 0x00. Don't.
 Narrator: If you take it, the mission ends here, and you work for ENTROPY.
 ~ tess_menu = true
 -> join_2_menu
@@ -1100,7 +1100,7 @@ Agent 0x5E 'Lantern': Adrian.
 // named on the line (his "Too late to stop her walking in." covers that).
 === wren_react ===
 { not sleeper_caught:
-    Agent HaX: Kowalczyk. I sent her mum flowers. #delivery: the second sentence quietly
+    agent_0x99: Kowalczyk. I sent her mum flowers. #delivery: the second sentence quietly
 }
 ->->
 
@@ -1113,14 +1113,14 @@ Agent 0x5E 'Lantern': Adrian.
 // "Netherton's on the line." (the greeting and the costs are said once each).
 === database ===
 { tess_db_costs_said:
-    Agent HaX: Netherton's still on the line. Your call.
+    agent_0x99: Netherton's still on the line. Your call.
     ~ tess_menu = true
     -> database_menu
 }
 { tess_db_greeted:
     -> database_costs
 }
-Agent HaX: Netherton's on the line. He wants to hear this.
+agent_0x99: Netherton's on the line. He wants to hear this.
 + [Put him through.]
 + [Then he can listen.]
 -
@@ -1135,28 +1135,28 @@ Director Magnus Netherton: Half of these cannot be patched this year, and the ol
 + [And if we keep them?]
 + [Go on, sir.]
 -
-Agent HaX: Keep them, and the infusion pumps in a hundred and forty hospitals are still live next year.
+agent_0x99: Keep them, and the infusion pumps in a hundred and forty hospitals are still live next year.
 + [And if ours go to the vendors?]
 + [(Wait.)]
 -
 -> database_ops ->
 Director Magnus Netherton: Both of them run through holes on that list. Patch the holes and we lose the way in. I will sign it.
 // Educational R1 E-m1: coordinated disclosure ends in publication.
-Agent HaX: That's coordinated disclosure. Vendors first, with time to fix, then the public. The ones nobody can patch go to the operators, with workarounds.
+agent_0x99: That's coordinated disclosure. Vendors first, with time to fix, then the public. The ones nobody can patch go to the operators, with workarounds.
 {
 - m09_albion_notified and m09_debrief_notice_before:
-    Agent HaX: You sent his notice before anyone asked you to. This is that letter, a thousand times.
+    agent_0x99: You sent his notice before anyone asked you to. This is that letter, a thousand times.
 - m09_albion_notified:
-    Agent HaX: You burned the Critical Mass watch for one letter. This is that letter, a thousand times.
+    agent_0x99: You burned the Critical Mass watch for one letter. This is that letter, a thousand times.
 }
 // Playtest full 1 m-3: each prompt gets its own lead-in; the purge warning
 // is said on both, before the menu.
 + [And if I wipe both copies?]
-    Agent HaX: If both copies die, this room purges itself. He'll be ready for it, and you won't have him after.
+    agent_0x99: If both copies die, this room purges itself. He'll be ready for it, and you won't have him after.
 + [There's a third way.]
     // Regression fix pass n-2: the player's idea, named back.
     Director Magnus Netherton: I know the one you mean. Wipe both copies, his and ours.
-    Agent HaX: And if both copies die, this room purges itself. He'll be ready for it. You won't have him after.
+    agent_0x99: And if both copies die, this room purges itself. He'll be ready for it. You won't have him after.
 -
 Director Magnus Netherton: Then nobody has it, and nobody fixes anything either. We both answer for it.
 ~ tess_db_costs_said = true
@@ -1184,7 +1184,7 @@ Director Magnus Netherton: Then nobody has it, and nobody fixes anything either.
     -> ending_scorched
 + { not hax_asked_database } [HaX. What would you do?]
     ~ hax_asked_database = true
-    Agent HaX: No. This one's yours. If I choose, I'll choose for the wrong reasons.
+    agent_0x99: No. This one's yours. If I choose, I'll choose for the wrong reasons.
     ~ tess_menu = true
     -> database_menu
 
@@ -1329,7 +1329,7 @@ Narrator: His hands are empty and in plain sight. He isn't moving. If you fire n
 // ===========================================
 === ending_arrest ===
 { fire_held:
-    Agent HaX: Got it. Feed's dead. Hold. He's done. #delivery: a breath out before the last sentence, relief
+    agent_0x99: Got it. Feed's dead. Hold. He's done. #delivery: a breath out before the last sentence, relief
     Narrator: He takes his hand off the key and looks at it.
     Dr Adrian Tesseract: Ninety-nine.
     Narrator: Then he holds out his wrists.
@@ -1350,7 +1350,7 @@ Dr Adrian Tesseract: They never knew who I was. They'll work out who you are by 
 
 === ending_lethal ===
 Narrator: His hand is on the key. You fire. He falls against the console before it's pressed.
-Agent HaX: I was a second behind you. Log it. I'll sign under you.
+agent_0x99: I was a second behind you. Log it. I'll sign under you.
 ~ tess_quiet = true
 #exit_conversation
 -> parked
@@ -1358,7 +1358,7 @@ Agent HaX: I was a second behind you. Log it. I'll sign under you.
 === ending_executed ===
 Narrator: He is still looking at you when you fire.
 Narrator: The line stays silent for a long time.
-Agent HaX: 0x00.
+agent_0x99: 0x00.
 { quintero_wounded or quintero_ko or officer_out == "quintero":
     Narrator: Two of the van team come in from the lock. One of them takes the weapon out of your hand. Nobody speaks.
 - else:
@@ -1378,7 +1378,7 @@ Narrator: The wipe goes through. Then the room goes: the lights die, the suppres
 - else:
     Narrator: When the emergency lights come up, his chair is empty, and the service door is open. On the console, a card in his handwriting: 'Afterwards, then.'
 }
-Agent HaX: Out, 0x00. The team's at the lock. Follow their torches.
+agent_0x99: Out, 0x00. The team's at the lock. Follow their torches.
 ~ tess_quiet = true
 #exit_conversation
 -> parked

@@ -20,10 +20,19 @@ import { choiceIndexFromKey } from './phone-chat-choices.js';
 import { whenSessionOverlayClosed } from '../../utils/session-overlay-pause.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { escapeHtml } from '../../utils/escape-html.js';
-import { phoneCloseLocked, phoneEscapeAction, FORCED_CALL_END_CLOSE_MS } from './phone-call-lock.js';
-import { isVoicedCall, phoneLineVoice, outcomeLineVoice, PhoneCallVoice, voicedCallKnots, callStartKnots, callHomeKnot } from './phone-call-voice.js';
+import { phoneCloseLocked, phoneEscapeAction, FORCED_CALL_END_CLOSE_MS, TERMINAL_CALL_END_READ_MS } from './phone-call-lock.js';
+import { isVoicedCall, phoneLineVoice, outcomeLineVoice, PhoneCallVoice, stepDeliveries, voicedCallKnots, callStartKnots, callHomeKnot } from './phone-call-voice.js';
 import TTSManager from '../../systems/tts-manager.js';
+import { deliveryFromTags } from '../../systems/tts-delivery.js';
 import { resolvePhoneApp, npcDmFields, profileLaunch } from './phone-app.js';
+import { placeCallFromTags } from './phone-ring-config.js';
+import { startRingback, DIAL_MS, RING_OUT_MS, NO_ANSWER_BEAT_MS } from './phone-dial.js';
+
+/** How long a ringer call's screen holds on "Call ended m:ss" before it closes (plan 2.5). */
+const CALL_ENDED_BEAT_MS = 900;
+/** Sweep item 10: while a terminal-look call's last clip is still playing, poll this often, up to the cap. */
+const TERMINAL_CLIP_POLL_MS = 200;
+const TERMINAL_CLIP_WAIT_CAP_MS = 8000;
 
 export class PhoneChatMinigame extends MinigameScene {
     /**
@@ -126,6 +135,8 @@ export class PhoneChatMinigame extends MinigameScene {
         if (!this.params.cancelText) {
             this.params.cancelText = 'Close';
         }
+        // A ringer call (phone calls plan 2.5) has no Cancel: End call is the way out
+        if (this.params.ringerCall) this.params.showCancel = false;
         
         // Call parent init to set up basic structure
         super.init();
@@ -164,8 +175,10 @@ export class PhoneChatMinigame extends MinigameScene {
         this.ui = new PhoneChatUI(this.gameContainer, safeParams, this.npcManager, this.allowedNpcIds);
         this.ui.render();
         
-        // Add notebook button to minigame controls (before close button)
-        if (this.controlsElement) {
+        // Add notebook button to minigame controls (before close button). Not on a ringer call:
+        // startNotesMinigame would replace the call (row 32) and the phone would reopen as a
+        // plain thread carrying a stale ringerCall (A2a_NOTES, R3 M2).
+        if (this.controlsElement && !this.params.ringerCall) {
             const notebookBtn = document.createElement('button');
             notebookBtn.className = 'minigame-button';
             notebookBtn.id = 'minigame-notebook';
@@ -181,6 +194,9 @@ export class PhoneChatMinigame extends MinigameScene {
         
         // Set up event listeners
         this.setupEventListeners();
+
+        // The player's phone registers with the ringer, so a call rings inside it (row 10)
+        this._registerWithRinger();
         
         console.log('✅ PhoneChatMinigame initialized');
         
@@ -231,6 +247,22 @@ export class PhoneChatMinigame extends MinigameScene {
             });
         }
         
+        // A ringer call: the × is End call (row 25), never complete(false) / minigame_failed
+        if (this.params.ringerCall && !phoneCloseLocked(this.params)) {
+            const closeBtn = this.container?.querySelector('#minigame-close');
+            if (closeBtn) {
+                const endBtn = closeBtn.cloneNode(true);   // drops the base complete(false) listener
+                endBtn.setAttribute('aria-label', 'End call');
+                endBtn.setAttribute('title', 'End call');
+                closeBtn.replaceWith(endBtn);
+                this.addEventListener(endBtn, 'click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.closeConversation();
+                });
+            }
+        }
+
         // Notepad button (context-aware: saves contact list or conversation)
         const notebookBtn = document.getElementById('minigame-notebook');
         if (notebookBtn) {
@@ -262,17 +294,48 @@ export class PhoneChatMinigame extends MinigameScene {
     }
     
     /**
+     * Phone calls row 10: a text phone-chat (not a call, a voiced or forced chat, a pretext
+     * call or a cutscene) registers with the ringer while it is open. The ringer decides, per
+     * caller, whether this is the caller's own phone.
+     */
+    _registerWithRinger() {
+        const p = this.params || {};
+        if (p.ringerCall || p.voiced === true || p.disableClose === true || p.pretextCallId || p.cutscene === true) return;
+        window.phoneRinger?.registerPhone?.(this);
+    }
+
+    /** What the ringer needs to reopen this phone after a call: its params and the thread it was on (null: the list). */
+    callReopenState() {
+        const params = { ...this.params };
+        delete params._closingForCall;
+        return { params, thread: this.currentNPCId || null };
+    }
+
+    /** An incoming call rings inside the phone (row 10): see PhoneChatUI.showIncomingCall. */
+    showIncomingCall(view) { this.ui?.showIncomingCall?.(view); }
+    hideIncomingCall() { this.ui?.hideIncomingCall?.(); }
+
+    /**
      * Handle keyboard input
      * @param {KeyboardEvent} event - Keyboard event
      */
     handleKeyPress(event) {
         if (!this.gameState.isActive) return;
+        // The call panel covers the phone: a number key must not pick a reply nobody can see
+        if (this.ui?.incomingCallShowing?.() && /^[0-9]$/.test(event.key)) {
+            event.preventDefault();
+            return;
+        }
         
         switch(event.key) {
             case 'Escape': {
                 // A forced call (disableClose) ignores Esc, as person-chat does
                 const action = phoneEscapeAction(this.ui.getCurrentView(), this.params);
-                if (action === 'back') {
+                if (this.params?.ringerCall && action !== 'none') {
+                    // Esc on a ringer call is End call (row 25), never complete(false)
+                    event.preventDefault();
+                    this.closeConversation();
+                } else if (action === 'back') {
                     // Go back to contact list
                     event.preventDefault();
                     this.closeConversation();
@@ -300,11 +363,22 @@ export class PhoneChatMinigame extends MinigameScene {
     }
     
     /**
+     * Esc on a ringer call is End call (handleKeyPress); the base Esc handler would
+     * complete(false), so it is not kept, whatever the listener order (A2b R1 m1).
+     */
+    _dropBaseEscOnRingerCall() {
+        if (!this.params?.ringerCall || !this._fallbackCloseHandler) return;
+        document.removeEventListener('keydown', this._fallbackCloseHandler);
+        this._fallbackCloseHandler = null;
+    }
+
+    /**
      * Start the minigame
      */
     async start() {
         super.start();
-        
+        this._dropBaseEscOnRingerCall?.();
+
         // Preload intro messages for NPCs without history
         await this.preloadIntroMessages();
 
@@ -319,7 +393,12 @@ export class PhoneChatMinigame extends MinigameScene {
             // Track NPC context for tag processing and minigame return flow
             window.currentConversationNPCId = this.currentNPCId;
             window.currentConversationMinigameType = 'phone-chat';
-            this.openConversation(this.currentNPCId);
+            // An outgoing call dials first: it opens the story only once someone answers
+            if (this.params?.ringerCall?.direction === 'outgoing' && this.params.dial) {
+                this._runDial();
+            } else {
+                this.openConversation(this.currentNPCId);
+            }
         } else {
             // Show contact list for this phone
             window.currentConversationMinigameType = 'phone-chat';
@@ -428,6 +507,7 @@ export class PhoneChatMinigame extends MinigameScene {
         
         // Show conversation view
         this.ui.showConversation(npcId);
+        this._refreshCallButton?.(npcId);
         
         // A preload of this contact's opening may still be running (the inventory starts
         // one when the phone is picked up); let it finish so its lines are in the thread
@@ -458,7 +538,7 @@ export class PhoneChatMinigame extends MinigameScene {
         
         // Filter out bark-only and timed messages to check if there's real conversation history
         // (timed messages are just notifications, not actual Ink dialogue)
-        const conversationHistory = history.filter(msg => !msg.isBark && !msg.timed);
+        const conversationHistory = history.filter(msg => !msg.isBark && !msg.timed && msg.type !== 'call');
         const hasConversationHistory = conversationHistory.length > 0;
 
         // The explicit knot is the one whose opening was preloaded, and the player hasn't
@@ -476,8 +556,13 @@ export class PhoneChatMinigame extends MinigameScene {
         // (its opening was preloaded, nothing answered yet) types its lines out like a live
         // terminal rather than dumping them at once; genuine returning-visit history, and
         // every non-terminal contact, still draws instantly (see addMessages).
+        // A ringer call's screen shows only what the caller says in the call: its subtitles
+        // take "the line before" from the thread, which would be the contact's preloaded
+        // opening ("Queue One here.") or an old text, never spoken on this call. The history
+        // stays in the thread; the terminal look draws a thread, so it keeps it (A2b proof).
+        const callScreenOnly = !!safeParams.ringerCall && safeParams.theme !== 'terminal';
         if (history.length > 0) {
-            this.ui.addMessages(history, { typeTerminalOpening: wasPreloadedFirstOpen });
+            if (!callScreenOnly) this.ui.addMessages(history, { typeTerminalOpening: wasPreloadedFirstOpen });
             // Mark messages as read, and update the HUD badge now rather than on close
             this.history.markAllRead();
             if (window.updatePhoneBadge && this.phoneId) window.updatePhoneBadge(this.phoneId);
@@ -602,29 +687,7 @@ export class PhoneChatMinigame extends MinigameScene {
                 this._pretext?.fillVars?.();
             }, { force: forcePretextRebake });
 
-            // If the saved story had ended (DONE/END), the restored story has no position and
-            // would only show "Conversation ended". Restart at the NPC's knot instead. Skip when
-            // the only history is the preload intro (NPC config "restartOnRetalk": false also opts out): that intro has already been shown and its
-            // tags are still deferred, so replaying would duplicate both.
-            const onlyPreloaded = conversationHistory.every(msg => msg.preloaded);
-            if (reopen.renavigated) {
-                this._presentOutput(reopen.messages, reopen.tags, reopen.result);
-            } else if (npc.restartOnRetalk !== false && !onlyPreloaded &&
-                this.conversation.getCurrentState().hasEnded &&
-                this.conversation.restartAfterEnd()) {
-                console.log(`🔁 Previous conversation had ended - restarting ${npcId} at knot: ${npc.currentKnot}`);
-                this.continueStory();
-            } else {
-                // Show current choices without continuing
-                this.showCurrentChoices();
-            }
-
-            // A first call to a voiced contact (a desk-phone pretext call) opens on the lines the
-            // phone preloaded into its empty thread. Drawn from the history, they were never
-            // spoken (lab: Dev's "Service desk, Dev speaking"), so voice them now.
-            if (onlyPreloaded && npc.voiced === true && isVoicedCall(this.params) && !this._pretext?.resuming) {
-                this._speakPreloadedOpening(conversationHistory);
-            }
+            this._showRestoredThread(npc, npcId, conversationHistory, reopen);
 
             // Process any game action tags that were collected during preload but deferred
             // until the player actually opens the conversation (e.g. complete_task, set_global)
@@ -700,7 +763,7 @@ export class PhoneChatMinigame extends MinigameScene {
         } else if (result.hasEnded) {
             console.log('🏁 Story has ended');
             if (this._finishPretextCall()) return;
-            this.ui.showNotification('Conversation ended', 'info');
+            this._notifyConversationEnded();
             this.isConversationActive = false;
             this._releaseForcedCall();
         } else {
@@ -738,6 +801,8 @@ export class PhoneChatMinigame extends MinigameScene {
         // Accumulate messages and tags until we hit choices or end
         const accumulatedMessages = [];
         const accumulatedTags = [];
+        // One entry per message: the step's #delivery: note on the last line the tag ends (2.8)
+        const accumulatedDeliveries = [];
         let lastResult = null;
 
         // Keep reading lines until we get choices or the story ends
@@ -761,7 +826,9 @@ export class PhoneChatMinigame extends MinigameScene {
             }
 
             // Collect text (a line tagged #speaker:player comes back as "You: …")
-            accumulatedMessages.push(...phoneStepLines(result.text, result.tags));
+            const stepLines = phoneStepLines(result.text, result.tags);
+            accumulatedMessages.push(...stepLines);
+            accumulatedDeliveries.push(...stepDeliveries(stepLines.length, deliveryFromTags(result.tags)));
 
             // Stop conditions:
             // 1. Story has ended
@@ -796,7 +863,7 @@ export class PhoneChatMinigame extends MinigameScene {
             return;
         }
 
-        await this._presentOutput(accumulatedMessages, accumulatedTags, lastResult, { tagsApplied: true });
+        await this._presentOutput(accumulatedMessages, accumulatedTags, lastResult, { tagsApplied: true, deliveries: accumulatedDeliveries });
     }
 
     /**
@@ -808,17 +875,20 @@ export class PhoneChatMinigame extends MinigameScene {
      * @param {Object} [opts]
      * @param {boolean} [opts.tagsApplied] - the tags already ran line by line as the
      *   story continued (continueStory), so only the lines are shown
+     * @param {Array<string|null>} [opts.deliveries] - the #delivery: note for each message
+     *   (same order), spoken with the line on a voiced call; never shown
      */
-    async _presentOutput(accumulatedMessages, accumulatedTags, lastResult, { tagsApplied = false } = {}) {
+    async _presentOutput(accumulatedMessages, accumulatedTags, lastResult, { tagsApplied = false, deliveries = null } = {}) {
         const TYPING_DELAY_MS  = 1000;
         const INTER_MESSAGE_MS = 400;
         const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-        // If story has ended with no messages, end conversation immediately
-        if (lastResult.hasEnded && accumulatedMessages.length === 0) {
+        // If story has ended with no messages, end conversation immediately (unless the step places a
+        // call: #place_call is checked once the lines have shown, before the story-end checks)
+        if (lastResult.hasEnded && accumulatedMessages.length === 0 && !placeCallFromTags(accumulatedTags).found) {
             console.log('🏁 Conversation ended');
             if (this._finishPretextCall()) return;
-            this.ui.showNotification('Conversation ended', 'info');
+            this._notifyConversationEnded();
             this.isConversationActive = false;
             this._releaseForcedCall();
             return;
@@ -847,7 +917,12 @@ export class PhoneChatMinigame extends MinigameScene {
         // pendingNpcMessages is what has not reached the history yet: if the phone is closed
         // mid-typeout, _flushPendingMessages() keeps it (see there). Set before the tags,
         // since a tag can close the phone (a cutscene's set_global, m06 N-6-1).
-        if (await this._endingKeptGoing?.(accumulatedTags)) accumulatedMessages = [];
+        if (await this._endingKeptGoing?.(accumulatedTags)) {
+            accumulatedMessages = [];
+            // The tags go too on a ringer call, so a #exit_conversation beside the #ending_check
+            // does not hang up the call the player chose to stay on. A text thread keeps them (R2 m2).
+            if (this.params?.ringerCall) accumulatedTags = [];
+        }
 
         this._pendingNpcMessages = accumulatedMessages.filter(m => m.trim()).map(m => m.trim());
 
@@ -864,11 +939,21 @@ export class PhoneChatMinigame extends MinigameScene {
         for (let i = 0; i < accumulatedMessages.length; i++) {
             const message = accumulatedMessages[i];
             if (!message.trim()) continue;
-            if (!(await this._showStoryLine(message, TYPING_DELAY_MS))) return;
+            if (!(await this._showStoryLine(message, TYPING_DELAY_MS, deliveries?.[i] || null))) return;
             this._pendingNpcMessages.shift();
             if (i < accumulatedMessages.length - 1) await delay(INTER_MESSAGE_MS);
         }
         this._pendingNpcMessages = [];
+
+        // #place_call: the thread dials (after the lines, before the exit and story-end checks)
+        if (this._placeCallFromTags?.(accumulatedTags)) return;
+
+        // A ringer call that ends on #exit_conversation before any choice closes now, as on the
+        // after-choice path, not through the story-end branch two seconds later (plan 2.5)
+        if (this.params?.ringerCall && accumulatedTags.some(tag => String(tag).includes('exit_conversation'))) {
+            this._exitRingerCall();
+            return;
+        }
 
         // Display choices if available
         if (lastResult.choices && lastResult.choices.length > 0) {
@@ -906,9 +991,10 @@ export class PhoneChatMinigame extends MinigameScene {
      * prefix stripped, with no "typing…" from the NPC (U3); phone texts are not voiced, except in a voiced call (F17).
      * @param {string} raw - the line as the ink printed it
      * @param {number} typingDelayMs
+     * @param {string|null} [delivery] - the line's #delivery: note, spoken on a voiced call
      * @returns {Promise<boolean>} false if the conversation was closed meanwhile
      */
-    async _showStoryLine(raw, typingDelayMs) {
+    async _showStoryLine(raw, typingDelayMs, delivery = null) {
         // A thread closed (or swapped for another contact) during the await is no longer
         // this typeout's: its untyped lines were flushed to the right history on close
         const run = this._typeoutRun;
@@ -933,8 +1019,50 @@ export class PhoneChatMinigame extends MinigameScene {
         this.history.addMessage(line.type, line.text, { read: true });
         // A voiced call speaks the line now and the next one waits for it (F17). Already
         // in the history, so a close mid-line must not flush it again: always true here.
-        if (line.type === 'npc' && isVoicedCall(this.params)) await this._speakCallLine(line, raw);
+        if (line.type === 'npc' && isVoicedCall(this.params)) await this._speakCallLine(line, raw, { delivery });
         return true;
+    }
+
+    /**
+     * Choose how a reopened thread appears: the re-run's new lines (reopen.renavigated), a restart
+     * after an ended story, the saved choices, and, for a voiced call that opens on the lines the
+     * phone preloaded, those lines spoken. A method so a test can drive the real branches.
+     */
+    _showRestoredThread(npc, npcId, conversationHistory, reopen) {
+        // If the saved story had ended (DONE/END), the restored story has no position and
+        // would only show "Conversation ended". Restart at the NPC's knot instead. Skip when
+        // the only history is the preload intro (NPC config "restartOnRetalk": false also opts out): that intro has already been shown and its
+        // tags are still deferred, so replaying would duplicate both.
+        const onlyPreloaded = conversationHistory.every(msg => msg.preloaded);
+        if (reopen.renavigated) {
+            this._presentReopened(reopen);
+        } else if (npc.restartOnRetalk !== false && !onlyPreloaded &&
+            this.conversation.getCurrentState().hasEnded &&
+            this.conversation.restartAfterEnd()) {
+            console.log(`🔁 Previous conversation had ended - restarting ${npcId} at knot: ${npc.currentKnot}`);
+            this.continueStory();
+        } else {
+            // Show current choices without continuing
+            this.showCurrentChoices();
+        }
+
+        // A first call to a voiced contact (a desk-phone pretext call) opens on the lines the
+        // phone preloaded into its empty thread. Drawn from the history, they were never
+        // spoken (lab: Dev's "Service desk, Dev speaking"), so voice them now.
+        if (onlyPreloaded && npc.voiced === true && isVoicedCall(this.params) && !this._pretext?.resuming) {
+            this._speakPreloadedOpening(conversationHistory);
+        }
+    }
+
+    /**
+     * Show what a reopen's re-run of the current knot printed (PhoneChatConversation
+     * .reopenWithCurrentGlobals). A voiced call speaks those lines with their #delivery: notes,
+     * as continueStory does (A1 R1 M1).
+     * @param {{messages: string[], messageTags?: string[][], tags: string[], result: Object}} reopen
+     */
+    _presentReopened(reopen) {
+        const deliveries = (reopen.messageTags || []).map(t => deliveryFromTags(t));
+        return this._presentOutput(reopen.messages, reopen.tags, reopen.result, { deliveries });
     }
 
     /**
@@ -944,7 +1072,7 @@ export class PhoneChatMinigame extends MinigameScene {
      * @param {{type: string, text: string}} line - from classifyPhoneLine
      * @param {string} raw - the line as printed (its entry in _pendingNpcMessages)
      */
-    async _speakCallLine(line, raw, { preloaded = false } = {}) {
+    async _speakCallLine(line, raw, { preloaded = false, delivery = null } = {}) {
         // Only the call's own lines: a hub reply or text after the call stays silent (F20).
         // A preloaded opening came from a throwaway story, so it was never noted as one.
         if (!preloaded && this.conversation?.callKnots && !this.conversation.isCallLine(raw)) return;
@@ -963,7 +1091,7 @@ export class PhoneChatMinigame extends MinigameScene {
         await whenSessionOverlayClosed();
         this.ui?.setCallSpeaking?.(true);
         try {
-            await this._callVoice?.speak(voice.speakerId, voice.text, this.npcManager.getNPC(voice.speakerId)?.voice?.fx || null);
+            await this._callVoice?.speak(voice.speakerId, voice.text, this.npcManager.getNPC(voice.speakerId)?.voice?.fx || null, { delivery });
         } finally {
             this.ui?.setCallSpeaking?.(false);
         }
@@ -980,7 +1108,7 @@ export class PhoneChatMinigame extends MinigameScene {
         for (const msg of messages) {
             if (!this.isConversationActive || run !== this._typeoutRun) return;
             if (msg.type !== 'npc') continue;
-            try { await this._speakCallLine(msg, msg.text, { preloaded: true }); }
+            try { await this._speakCallLine(msg, msg.text, { preloaded: true, delivery: deliveryFromTags(msg.deliveryTags) }); }
             catch (e) { console.warn('⚠️ opening line voice failed:', e?.message); return; }
         }
     }
@@ -1070,12 +1198,19 @@ export class PhoneChatMinigame extends MinigameScene {
 
         console.log(`👆 Player chose: ${choiceText}`);
 
-        // Message sent: only for a choice that is taken (not one "Keep going" left untaken)
-        this.playMessageSent?.();
+        // A cosmetic home-stub choice whose whole text is one pair of parentheses ("(Close.)",
+        // "(Ring back.)": the lesson-21 pattern) keeps the story live but is not a line the player
+        // sends, so it posts no sent bubble and plays no sent sound (M1 m4). The choice is still taken.
+        const silentChoice = /^\s*\([^()]*\)\s*$/.test((choiceText ?? '').trim());
 
-        // Display player's choice as a message
-        this.ui.addMessage('player', choiceText);
-        this.history.addMessage('player', choiceText, { choice: choiceIndex });
+        if (!silentChoice) {
+            // Message sent: only for a choice that is taken (not one "Keep going" left untaken)
+            this.playMessageSent?.();
+
+            // Display player's choice as a message
+            this.ui.addMessage('player', choiceText);
+            this.history.addMessage('player', choiceText, { choice: choiceIndex });
+        }
 
         // Clear choices
         this.ui.clearChoices();
@@ -1097,6 +1232,7 @@ export class PhoneChatMinigame extends MinigameScene {
         // Accumulate messages and tags until we hit choices or end
         const accumulatedMessages = [];
         const accumulatedTags = [];
+        const accumulatedDeliveries = [];
         let lastResult = firstResult;
 
         // Process the first result from makeChoice
@@ -1104,7 +1240,9 @@ export class PhoneChatMinigame extends MinigameScene {
             accumulatedTags.push(...firstResult.tags);
             this._applyLineTags(firstResult.tags, npcId, conversation);
         }
-        accumulatedMessages.push(...phoneStepLines(firstResult.text, firstResult.tags));
+        const firstLines = phoneStepLines(firstResult.text, firstResult.tags);
+        accumulatedMessages.push(...firstLines);
+        accumulatedDeliveries.push(...stepDeliveries(firstLines.length, deliveryFromTags(firstResult.tags)));
 
         // Keep reading lines until we get choices or the story ends
         while (lastResult.canContinue && (!lastResult.choices || lastResult.choices.length === 0)) {
@@ -1125,7 +1263,9 @@ export class PhoneChatMinigame extends MinigameScene {
             }
 
             // Collect text (a line tagged #speaker:player comes back as "You: …")
-            accumulatedMessages.push(...phoneStepLines(result.text, result.tags));
+            const stepLines = phoneStepLines(result.text, result.tags);
+            accumulatedMessages.push(...stepLines);
+            accumulatedDeliveries.push(...stepDeliveries(stepLines.length, deliveryFromTags(result.tags)));
 
             // Stop if story ended
             if (result.hasEnded) {
@@ -1168,11 +1308,14 @@ export class PhoneChatMinigame extends MinigameScene {
         for (let i = 0; i < accumulatedMessages.length; i++) {
             const message = accumulatedMessages[i];
             if (!message.trim()) continue;
-            if (!(await this._showStoryLine(message, TYPING_DELAY_MS))) return;
+            if (!(await this._showStoryLine(message, TYPING_DELAY_MS, accumulatedDeliveries[i] || null))) return;
             this._pendingNpcMessages.shift();
             if (i < accumulatedMessages.length - 1) await delay(INTER_MESSAGE_MS);
         }
         this._pendingNpcMessages = [];
+
+        // #place_call: the thread dials (after the lines, before the exit and story-end checks)
+        if (this._placeCallFromTags?.(accumulatedTags)) return;
 
         // Check if the story output contains the exit_conversation tag
         const shouldExit = accumulatedTags.some(tag => tag.includes('exit_conversation'));
@@ -1180,6 +1323,11 @@ export class PhoneChatMinigame extends MinigameScene {
         // If this was an exit choice, close the minigame
         if (shouldExit) {
             console.log('🚪 Exit conversation tag detected - closing minigame');
+
+            if (this.params?.ringerCall) {
+                this._exitRingerCall();
+                return;
+            }
 
             // Save state before closing
             this.saveStoryState();
@@ -1194,7 +1342,7 @@ export class PhoneChatMinigame extends MinigameScene {
         if (lastResult.hasEnded) {
             console.log('🏁 Conversation ended');
             if (this._finishPretextCall()) return;
-            this.ui.showNotification('Conversation ended', 'info');
+            this._notifyConversationEnded();
             this.isConversationActive = false;
             this._releaseForcedCall();
             return;
@@ -1215,15 +1363,265 @@ export class PhoneChatMinigame extends MinigameScene {
     }
     
     /**
+     * "Conversation ended" toast at a story's end. A ringer call closes by itself a moment
+     * later, and the toast draws unstyled outside the call screen, so it is skipped there.
+     */
+    // ---- outgoing calls (A5, plan 2.5) ---------------------------------------------
+
+    /** The header call button for the open thread: shown only where the ringer says the contact can be rung from this phone. */
+    _refreshCallButton(npcId) {
+        if (!this.ui?.setCallButton) return;
+        const state = this.params?.ringerCall ? null : window.phoneRinger?.callButtonFor?.(npcId, this) || null;
+        this.ui.setCallButton(state, () => this._pressCall(npcId));
+        this._watchCallButton();
+    }
+
+    /**
+     * The button follows the contact's `call` entries while the thread is open (A5 R1 m2): any global
+     * variable change re-asks the ringer, so an entry that turns on (or off) mid-thread draws (or
+     * removes) the button. One listener per phone, removed at cleanup.
+     */
+    _watchCallButton() {
+        if (this._callWatch || !window.eventDispatcher?.on) return;
+        this._callWatch = () => {
+            const id = this.currentNPCId;
+            if (!id || this._ending || !this.gameState?.isActive || !this.conversation) return;
+            this._refreshCallButton(id);
+        };
+        window.eventDispatcher.on('global_variable_changed:*', this._callWatch);
+    }
+
+    _pressCall(npcId) {
+        if (!this.gameState?.isActive || this.currentNPCId !== npcId || this._ending) return;
+        this._flushPendingMessages();
+        this.saveStoryState();
+        if (window.phoneRinger?.placeCall?.(npcId, {})) return;
+        // The dial did not start. Either the entry went away since the button was drawn (the
+        // button goes too), or the call was refused while the entry still applies (a connected or
+        // held call, a paused scene, a knockout): tell the player so the press is not dead (A5 n-2).
+        const stillCallable = !!window.phoneRinger?.callButtonFor?.(npcId, this);
+        if (stillCallable) this.ui?.showNotification?.('Can’t call right now', 'info');
+        this._refreshCallButton(npcId);
+    }
+
+    /**
+     * Dial: "Calling..." with the ring-back for DIAL_MS, then the entry's `when` is checked. It holds
+     * (or this is a callback): the call connects and the story opens on the entry's knot. It does not:
+     * the call keeps ringing for RING_OUT_MS, shows "No answer" for a beat and ends, back to the
+     * thread. The terminal look has no call screen, so it connects or gives up at once.
+     */
+    _runDial() {
+        const npcId = this.currentNPCId;
+        const dial = this.params.dial || {};
+        const screen = !!this.ui?.isCallMode;
+        const answers = () => !!dial.callback || !dial.when || !!window.npcManager?.callConditionHolds?.(dial.when);
+        if (screen) {
+            this.ui.showConversation(npcId);
+            this.ui.setCallStatus('calling');
+            this._ringback = startRingback(window);
+        }
+        const decide = () => {
+            this._dialTimer = null;
+            if (!this.gameState?.isActive || this._ending) return;
+            if (answers()) {
+                this._connectOutgoing(npcId);
+            } else if (screen) {
+                this._dialTimer = setTimeout(() => this._ringOut(), RING_OUT_MS);
+            } else {
+                this._ringOut();
+            }
+        };
+        if (screen) this._dialTimer = setTimeout(decide, DIAL_MS); else decide();
+    }
+
+    _stopDial() {
+        if (this._dialTimer) clearTimeout(this._dialTimer);
+        this._dialTimer = null;
+        this._ringback?.stop?.();
+        this._ringback = null;
+    }
+
+    /** Someone answered: row 31 in the ringer, then the story opens on the entry's knot. */
+    _connectOutgoing(npcId) {
+        this._ringback?.stop?.();
+        this._ringback = null;
+        window.phoneRinger?.outgoingConnected?.(npcId, this.params.ringerCall?.id);
+        this.openConversation(npcId);
+    }
+
+    /** It rang out: "No answer" for a beat, then the call ends and the thread comes back (no story was opened). */
+    _ringOut() {
+        this._stopDial();
+        if (!this.gameState?.isActive || this._callEndedPending) return;
+        this._noAnswer = true;
+        this._endedByCall = true;
+        if (this.ui?.isCallMode) {
+            this._callEndedPending = true;
+            this.ui.setCallStatus('noanswer');
+            this.ui.elements?.choicesContainer && (this.ui.elements.choicesContainer.innerHTML = '');
+            setTimeout(() => { if (this.gameState?.isActive) this.complete(true); }, NO_ANSWER_BEAT_MS);
+        } else {
+            this.complete(true);
+        }
+    }
+
+    /**
+     * `#place_call[:knot]` among a step's tags (plan 2.5, "When the tag runs"): once the step's lines
+     * have shown, before the exit and story-end checks, the thread saves its story and dials. With
+     * `-> DONE` the story has ended, so it is moved to the home knot first and rests on its choices:
+     * if the call rings out (or cannot open) the thread comes back on its hub. Returns true when the
+     * call is dialling and the caller must stop.
+     */
+    _placeCallFromTags(tags) {
+        const { found, knot } = placeCallFromTags(tags);
+        if (!found) return false;
+        // A call cannot place a call, and a locked phone (disableClose) is not callable
+        if (this.params?.ringerCall || phoneCloseLocked(this.params)) return false;
+        const npcId = this.currentNPCId;
+        const conversation = this.conversation;
+        if (!npcId || !conversation || !window.phoneRinger?.placeCall) return false;
+        const story = conversation.engine?.story;
+        if (story && !story.canContinue && !(story.currentChoices?.length)) {
+            const npc = this.npcManager?.getNPC(npcId);
+            conversation.goToKnot(callHomeKnot(npc));
+            conversation.settleOnSeenLines?.(this.npcManager?.getConversationHistory?.(npcId));
+        }
+        this._pendingNpcMessages = [];
+        this.saveStoryState();
+        if (window.phoneRinger.placeCall(npcId, { knot })) return true;
+        // Not dialling (a call is on, the scene refused): the thread stays, back on its choices
+        console.warn(`📞 #place_call for ${npcId} could not dial; the thread stays open`);
+        this.isConversationActive = true;
+        this.showCurrentChoices();
+        return true;
+    }
+
+    _notifyConversationEnded() {
+        if (this.params?.ringerCall) return;
+        this.ui.showNotification('Conversation ended', 'info');
+    }
+
+    /**
      * A forced call (disableClose) whose story ended without #exit_conversation has no
      * way out: no x, no Close, no Esc, no back arrow. Close it for the player once the
      * last line has been read, as person-chat's showConversationOverMessage does.
      */
     _releaseForcedCall() {
-        if (!phoneCloseLocked(this.params)) return;
+        // A ringer call closes at the story's end whether forced or not (plan 2.5, "Ending")
+        const ringer = !!this.params?.ringerCall;
+        if (!phoneCloseLocked(this.params) && !ringer) return;
+        // Set now, so a hit in the two seconds before the timer fires is not read as a miss
+        if (ringer) this._callFinished = true;
         whenSessionOverlayClosed().then(() => setTimeout(() => {
-            if (this.gameState.isActive) this.complete(true);
+            if (!this.gameState.isActive) return;
+            if (ringer) {
+                if (this._callEndedPending) return;   // End was pressed in the gap; its beat is running
+                // Inside the timer: two branches save the story after this returns, so the
+                // reset's save comes last
+                this._endedByCall = true;
+                this._resetAfterRingerCall();
+                this._completeRingerCallWithBeat(true);   // the call closed itself (story end): read beat
+                return;
+            }
+            this.complete(true);
         }, FORCED_CALL_END_CLOSE_MS));
+    }
+
+    /**
+     * A ringer call has ended: leave its story on the home knot, so the thread never shows the
+     * call's choices as texts (plan 2.5, "Story position after a call"). Runs synchronously while
+     * the call's story is still loaded. Does nothing for a call with no `ringerCall` (callLaunch,
+     * legacy voiced mappings keep their saved stories) or for a story that diverted out of the
+     * call's knots on purpose.
+     */
+    _resetAfterRingerCall() {
+        if (!this.params?.ringerCall || !this.conversation || !this.currentNPCId) return;
+        if (this._ringerResetDone) return;
+        this._ringerResetDone = true;
+        const story = this.conversation.engine?.story;
+        const npc = this.npcManager?.getNPC(this.currentNPCId);
+        const home = callHomeKnot(npc);
+        const knot = story?.currentChoices?.[0]?.sourcePath?.split('.')[0]
+            || PhoneChatConversation.stepKnot(story);
+        const ended = !story?.canContinue && !(story?.currentChoices?.length);
+        if (!ended && !(knot && this.conversation.callKnots?.has(knot))) return;
+        this.conversation.goToKnot(home);                     // moves without continuing
+        // The thread already shows the home knot's lines (A3 R1 m1): leave the story resting on its
+        // choices, so the next open adds no second copy of the hub line
+        this.conversation.settleOnSeenLines?.(this.npcManager?.getConversationHistory?.(this.currentNPCId));
+        this._saveStoryStateFor(this.currentNPCId, this.conversation);
+    }
+
+    /**
+     * Row 32: a ringer call closed by a knockout or another minigame's startMinigame. A forced
+     * call closed this way keeps its position (row 26 resumes it) unless its story had ended.
+     */
+    _resetRingerCallOnTeardown() {
+        if (this.params?.ringerCall && !this._endedByCall
+            && (!phoneCloseLocked(this.params) || this._callFinished)) {
+            this._resetAfterRingerCall();
+        }
+    }
+
+    /** #exit_conversation on a ringer call: save, reset, mark the own-path end, complete. */
+    _exitRingerCall() {
+        this.saveStoryState();
+        this._endedByCall = true;
+        this._resetAfterRingerCall();
+        this._completeRingerCallWithBeat(true);   // #exit_conversation: the call closed itself, read beat
+    }
+
+    /**
+     * Finish a ringer call the way a handset does, whichever side hung up: "Call ended m:ss" for
+     * a beat, then complete(true). Shared by End / the back arrow, the story's end and
+     * #exit_conversation. `_endedByCall` and `_callFinished` are set before the beat, so a hit during
+     * it is still read as a call that ended.
+     *
+     * `selfClose` is true only when the call closed itself (#exit_conversation or the story's end):
+     * then the terminal look holds a read beat (sweep item 10). A player hang-up (the back arrow or
+     * Esc, `selfClose` false) closes at once in the terminal look, as before the sweep — otherwise the
+     * beat freezes the partial thread with the back arrow dead (R1 m3). The handset "Call ended" beat
+     * is unchanged either way.
+     */
+    _completeRingerCallWithBeat(selfClose = false) {
+        if (this._callEndedPending) return;   // idempotent: one beat, one complete timer
+        this._callEndedPending = true;
+        if (this.ui.showCallEnded?.()) {
+            // Call screen (handset look): the "Call ended m:ss" beat, then close.
+            this._callVoice?.stop();
+            setTimeout(() => { if (this.gameState?.isActive) this.complete(true); }, CALL_ENDED_BEAT_MS);
+            return;
+        }
+        if (selfClose && this.params?.theme === 'terminal') {
+            // Terminal look (no call screen, sweep item 10): without a beat the phone closed the instant
+            // #exit_conversation ran, so the last line of every Architect call showed for under 50 ms
+            // (M6 R1 M2). Hold a read beat before closing; where the last clip is still playing, let it
+            // finish first (the read beat then covers the unvoiced narration after it).
+            const closeAfterBeat = () => {
+                this._callVoice?.stop();
+                this._terminalReadTimer = setTimeout(() => {
+                    if (this.gameState?.isActive) this.complete(true);
+                }, TERMINAL_CALL_END_READ_MS);
+            };
+            if (this._callVoice?.tts?.isPlaying?.()) this._waitForCallClipThen(closeAfterBeat);
+            else closeAfterBeat();
+            return;
+        }
+        // No call screen and no terminal look: close at once, as before.
+        this._callVoice?.stop();
+        this.complete(true);
+    }
+
+    /** Sweep item 10: run `fn` once the call's last clip has finished (or the wait cap is hit). */
+    _waitForCallClipThen(fn) {
+        let waited = 0;
+        const poll = () => {
+            if (!this.gameState?.isActive) return;
+            if (!this._callVoice?.tts?.isPlaying?.() || waited >= TERMINAL_CLIP_WAIT_CAP_MS) { fn(); return; }
+            waited += TERMINAL_CLIP_POLL_MS;
+            this._terminalClipTimer = setTimeout(poll, TERMINAL_CLIP_POLL_MS);
+        };
+        poll();
     }
 
     /**
@@ -1407,6 +1805,8 @@ export class PhoneChatMinigame extends MinigameScene {
      */
     _emitConversationClosed(npcId) {
         if (!npcId || !this.conversation || !window.eventDispatcher) return;
+        // Row 10: a phone closed for a call reopens on this thread; the event fires when the player really closes it
+        if (this.params?._closingForCall) return;
         window.eventDispatcher.emit(`conversation_closed:${npcId}`, {
             npcId,
             timestamp: Date.now()
@@ -1445,12 +1845,25 @@ export class PhoneChatMinigame extends MinigameScene {
 
         this._flushPendingMessages();
         this._callVoice?.stop();   // a voiced call's line stops with the thread
+        if (this._callEndedPending) return;   // a second End or Esc during the "Call ended" beat
+        this._stopDial?.();        // End while dialling hangs up before anyone answers
+        const ringer = !!this.params?.ringerCall;
+        if (ringer) this._resetAfterRingerCall();   // while the story is loaded, before it is cleared
         this._endSocialRun();      // one run per open conversation (00 §8)
         this._emitConversationClosed(this.currentNPCId);
         this.isConversationActive = false;
         this.currentNPCId = null;
         this.conversation = null;
         this.history = null;
+        if (ringer) {
+            // End call / the back arrow: the player hung up (row 25). The call is over, so the
+            // minigame completes; the thread comes back through the ringer's reopen, not here.
+            this._endedByCall = true;
+            // "Call ended m:ss" for a beat before the screen goes (plan 2.5). A player hang-up, so no
+            // terminal read beat (R1 m3): the terminal look closes at once, the handset shows its beat.
+            this._completeRingerCallWithBeat(false);
+            return;
+        }
         
         // Show contact list
         this.ui.showContactList(this.phoneId);
@@ -1636,9 +2049,13 @@ export class PhoneChatMinigame extends MinigameScene {
         // A conversation still open at teardown counts as closed (closeConversation()
         // clears currentNPCId/conversation, so this can't double-emit)
         this._flushPendingMessages();
+        this._resetRingerCallOnTeardown();   // row 32
         this._emitConversationClosed(this.currentNPCId);
         this._callVoice?.destroy();
         this._callVoice = null;
+        window.phoneRinger?.unregisterPhone?.(this);
+        this._stopDial?.();          // a dial still running (the call closed while ringing)
+        if (this._callWatch) { window.eventDispatcher?.off?.('global_variable_changed:*', this._callWatch); this._callWatch = null; }
         this._endSocialRun();      // end any live influence run (00 §8)
 
         if (this.ui) {

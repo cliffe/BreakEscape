@@ -1,9 +1,10 @@
 // ================================================
 // Mission 9: Digital Archaeology - David Torres' call (C4)
-// Host: torres_phone (phone contact, loading_dock), unvoiced, opened only by its
-// mapping: at the Harwick & Lowe boxes after flag 2 (m05_torres_turned): on
-// trying the lid and backing out, or once the lid has opened (puzzle chains R1
-// P2); or the fallback on leaving Sorensen's office with the Reading found
+// Host: torres_phone (phone contact, loading_dock). Voiced incoming call (ring:
+// answer, decline or call back when missed). Rings once at the Harwick & Lowe
+// boxes after flag 2 (m05_torres_turned): on trying the lid and backing out, or
+// once the lid has opened (puzzle chains R1 P2); or the fallback on leaving
+// Sorensen's office with the Reading found
 // (P7; was on reading_found, which could shut the safe mid-read).
 // Turned branch only. His own lines take no prefix. m05's voice: soft, slow.
 // He knows the legacy filing scheme, one step off the search, and doesn't
@@ -16,13 +17,15 @@ VAR sleeper_shortlist = false
 VAR hl_box_opened = false   // Synced scenario global (puzzle chains R1 P2): HaX sets it on the box's unlock
 
 === start ===
-// Home stub: not reached by the call; shows only if the player opens his thread after it.
-+ [Ring back.]
-    Narrator: The number rings out.
+// Home stub (lesson 21): not reached by the call. A finished call rests the thread here and shows
+// the transcript; the Close choice keeps the story live, so no "Conversation ended" notice shows next to
+// a missed call's Call back button. A missed call still leaves the engine's Call back (no fake ring-back).
++ [(Close.)]
     #exit_conversation
-    -> DONE
+    -> start
 
 === call ===
+// lint: call-knot
 #set_global:torres_called:true
 I gave you this address back in October. It was a line in a list.
 I am still a live placement. Every morning I wake up, and I am still a line in her book.

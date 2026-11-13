@@ -422,6 +422,19 @@ module BreakEscape
         state[:tag_head] = nil
         return
       end
+      if item == '/#' && !state[:in_tag]
+        # `{cond: text #delivery: note}`: inklecate opens the tag inside the branch and closes it
+        # after the conditional, in this container, which never saw the open. Not supported:
+        # the line is left unresolved (so never listed or voiced as tagged) and logged, rather
+        # than raising and taking the whole story's extractor down. Write `{cond: text} #delivery: note`.
+        not_slot!(state, 'a #tag inside an inline conditional ({cond: text #tag}); put the tag after the closing brace')
+        unless @warned_inline_tag
+          @warned_inline_tag = true
+          Rails.logger.warn "[BreakEscape] InkLineWalker: #{path} has a tag inside an inline conditional " \
+                            '({cond: text #tag}); that line is skipped. Use {cond: text} #tag.'
+        end
+        return
+      end
       if item == '/#'
         state[:in_tag] = false
         tag = state[:tag_buf].strip

@@ -1,0 +1,27 @@
+game 2211 (ring_decline)
+start: room="reception_area" mg=null
+{"ok":true,"reason":null}
+entered, t=0
+shot ring_decline_entered
+diag: {"cur":{"n":"agent_0x99","s":"ringing"},"q":0,"mg":null,"g":true}
+banner: {"ringer":{"npc":"agent_0x99","state":"ringing","knot":"first_ring"},"banner":"Agent HaX | SAFETYNET secure line | Incoming call | Answer | Decline","pendingCb":"null"}
+shot ring_decline_banner
+"declined"
+declined: {"ringer":null,"banner":null,"pendingCb":"null"}
+rows=["Missed call"]
+shot ring_decline_declined
+"opened agent_0x99"
+thread: {"bar":null,"subs":[],"choices":["1. Got any general advice?","2. I'm good for now"],"header":"☎\nCall back","thread":"Agent, I'm your handler for this op. Message me if you need any guidance. | ☎ | Missed call | Call back | Texting from here, then. Now get a feel for the place. 🦎 Check the desks, filing cabinets, notice boards. The IT room is east, break room is west. Start broad."}
+shot ring_decline_thread_after_decline
+"header: ☎Call back"
+callback: {"bar":"ON CALL | 0:03","subs":["AGENT HAX: You rang back. Good habit.","AGENT HAX: One test call before it's texts only."],"choices":[],"header":null,"thread":"AGENT HAX: You rang back. Good habit. | AGENT HAX: One test call before it's texts only."}
+shot ring_decline_callback
+after: mg="PhoneChatMinigame phone-chat" rows=["Missed call","Outgoing call, 0:11"]
+thread: {"thread":"call | Texting from here, then. Now get a feel for the place. 🦎 Check the desks, filing cabinets, notice boards. The IT room is east, break room is west. Start broad. | You rang back. Good habit. | One test call before it's texts only. | A contractor on the phone is nothing. A contractor overheard talking to me is the end of your cover. | So: quiet, deniable. Message me the moment you're stuck and I'll walk you through it. | Understood. Texts it is. | Good. Off you go. | ☎ | Outgoing call, 0:11"}
+handler /tts:
+"You rang back. Good habit."
+"One test call before it's texts only."
+"A contractor on the phone is nothing. A contractor overheard talking to me is the end of your cover."
+"So: quiet, deniable. Message me the moment you're stuck and I'll walk you through it."
+"Good. Off you go."
+["phone_call_declined:agent_0x99@58.1","phone_call_answered:agent_0x99@70","conversation_closed:agent_0x99@81.1"]

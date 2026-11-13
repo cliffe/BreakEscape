@@ -32,11 +32,12 @@ VAR recruiter_hung_up = false
 // ===========================================
 
 === start ===
-// Shows only if the player opens her thread after the call. Choices only.
-+ [Ring back.]
-    Narrator: The number rings out.
+// Shows only if the player opens her thread after the call. Choices only; no fake ring-back
+// (lesson 21): her call is a forced re-ring the engine delivers, so the stub just rests here and
+// never promises a ring an ink line can't make, and never ends the story.
++ [(Close.)]
     #exit_conversation
-    -> DONE
+    -> start
 
 // ===========================================
 // THE CALL (voiced)

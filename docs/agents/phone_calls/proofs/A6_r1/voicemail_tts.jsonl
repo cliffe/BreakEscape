@@ -1,0 +1,4 @@
+{"t":1794504919213,"npc_id":"debrief_host","text":"Welcome. This is the opening briefing. Close it when you are done.","delivery":null,"status":503}
+{"t":1794504919809,"npc_id":"debrief_host","text":"Good. A call will come in shortly.","delivery":null,"status":503}
+{"t":1794504938077,"npc_id":"caller_voicemail","text":"You did not pick up. That is fine.","delivery":null,"status":503}
+{"t":1794504943559,"npc_id":"caller_voicemail","text":"Leave this with me. I will ring again.","delivery":null,"status":503}

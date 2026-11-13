@@ -214,6 +214,12 @@ Per `README_ink_best_practices.md` "Remote conversations: write for the mode". F
 - **Voiced call scope:** only the call's own knots are voiced; the contact's home knot and hub stay silent texts. A spoken-sounding home knot is a finding.
 - **Variety:** list the opening and last NPC line of every call in the mission, and of the same handler's calls in other missions. Flag repeated shapes or sentences.
 - **Debriefs:** in person by default; a call or video debrief needs a story reason.
+- **Call knot shape:** every call knot has `// lint: call-knot` and ends `#exit_conversation` then `-> DONE`, never a divert to the home knot or hub. A `#place_call` sits on its own line, then `-> DONE`. A call that can be rung back has a `call_is_callback` line, and one that can wait has a `call_answer_seconds > 10` line.
+- **"Call me" texts** only where the contact can be called for that beat. The validator checks the contact, not the beat.
+- **A bring-in** is two to four lines and reviews nothing. It completes its call-in task on the "[Bring me in.]" reply and carries `#ending_check` in the brackets of the confirm choice, never on a line.
+- **A contact who is only rung** has a home knot resting on a `[(Close.)]` choice that loops home. A reply wrapped wholly in parentheses posts no player bubble, so flag one that should be heard as the player's words.
+- **Voicemail order:** a voicemail can arrive after the same contact's next call, so a later call that reads a voicemail flag needs a branch for both orders.
+- **Validator rules:** the full error and warning list for rings, `call` entries, call knots and "call me" wording is in `README_scenario_design.md`, "What the validator checks for phone calls". Point to it; don't copy it. `dialoguelint.mjs` adds `call-in-text-thread` (warn).
 - **One character, two records** (m09/m10 HaX): co-speaker lines name the record by id, not the shared display name; the in-room record uses an in-person voice style; the phone record carries the talk and viseme art. Check `/tts` requests in a playtest go out under the expected id.
 
 ### 2k. Progress carried by texts

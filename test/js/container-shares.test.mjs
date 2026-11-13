@@ -298,7 +298,7 @@ test('M1: a reader closed by a hit (complete(false)) or the knockout screen stay
 test('M1: an own close followed by a hit, a knockout or a room change before the return stays in the world', async (t) => {
     if (!TextFileMinigame) { t.skip('text-file minigame did not load here'); return; }
     for (const [label, after] of [
-        ['a hit in the gap', () => { window.lastPlayerHitAt = () => Date.now(); }],
+        ['a hit in the gap', () => { window.lastPlayerHitAtWall = () => Date.now(); }],
         ['knocked out', () => { window.playerIsKnockedOut = () => true; }],
         ['another room', () => { window.currentPlayerRoom = 'corridor'; }]
     ]) {
@@ -310,7 +310,7 @@ test('M1: an own close followed by a hit, a knockout or a room change before the
         await wait(); await settle();
         assert.equal(current(), null, label);
         assert.equal(window.pendingContainerReturn, null, `${label}: the return is cleared`);
-        delete window.lastPlayerHitAt; delete window.playerIsKnockedOut; delete window.currentPlayerRoom;
+        delete window.lastPlayerHitAtWall; delete window.playerIsKnockedOut; delete window.currentPlayerRoom;
     }
     // The same close with none of them: back in the cabinet
     setup();

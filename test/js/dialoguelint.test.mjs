@@ -5,11 +5,12 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { readFileSync } from 'node:fs';
+import { readFileSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const tool = join(root, 'scripts/ink_runtime_check/dialoguelint.mjs');
-const { lintInk, lintTexts, scenarioInfo, tellHits, countWords } = await import(tool);
+const { lintInk, lintTexts, scenarioInfo, tellHits, countWords, structureFindings, lintTargets } = await import(tool);
 
 const words = n => Array.from({ length: n }, (_, i) => 'word' + i).join(' ');
 const rules = r => r.findings.map(f => f.rule);
@@ -488,4 +489,176 @@ test('delivery-note: a note over 200 characters, with braces, or with no letter 
   assert.match(f[1].note, /braces/);
   assert.match(f[2].note, /no ASCII letter or digit/);
   assert.equal(only(lintInk(ink), 'delivery-unread').length, 0);
+});
+
+// Review R2 m4: a tag inside an inline conditional or sequence is a walker skip on the server.
+test('delivery-note: warns for a tag inside {cond: text #tag}, quiet for the forms the server reads', () => {
+  const ink = [
+    'VAR on = true',
+    '=== a ===',
+    'Kevin Park: Before.',
+    '{on: Kevin Park: Odd one. #delivery: hushed}',       // 4: warns
+    '{on: Kevin Park: Fine one.} #delivery: calm',         // 5: tag after the brace
+    '{on:',                                                // 6
+    '    Kevin Park: Block line. #delivery: block',        // 7: multi-line block form
+    '}',
+    '{~Kevin Park: One. #delivery: x|Kevin Park: Two.}',   // 9: warns (sequence)
+    'Kevin Park: Plain. #delivery: ok',                    // 10
+    '-> END',
+  ].join('\n') + '\n';
+  for (const opts of [{}, { channel: 'phone' }]) {
+    const f = only(lintInk(ink, opts), 'delivery-note').filter(x => /inline conditional/.test(x.note));
+    assert.deepEqual(f.map(x => x.line), [4, 9], JSON.stringify(opts));
+  }
+});
+
+// ---- call-in-text-thread (phone-calls plan 4.4) ----
+const callHits = (ink, channel = 'phone') => lintInk(ink, { channel }).findings.filter(f => f.rule === 'call-in-text-thread');
+
+test('call-in-text-thread: call phrasing in a phone text knot warns, per phrase', () => {
+  const phrases = ['She picked up on the second ring.', 'I am on the line with her.', 'Get off my line.',
+    'He hangs up.', 'The line goes dead.', 'Your handset rings.', 'It rings out.', 'The caller ID reads unknown.'];
+  for (const p of phrases) {
+    const hits = callHits(`=== idle ===\nNarrator: ${p}\n`);
+    assert.equal(hits.length >= 1, true, p);
+    assert.equal(hits[0].level, 'warn');
+    assert.equal(hits[0].line, 2);
+  }
+  // an unprefixed contact line is checked too
+  assert.equal(callHits(`=== idle ===\nHe hangs up.\n`).length, 1);
+});
+
+test('call-in-text-thread: clean text, "call me", "ring <Name> back", choice brackets and player lines do not fire', () => {
+  const ink = [
+    '=== idle ===',
+    'Ring Dev back when you can.',
+    "I'll ring you tonight.",
+    'Call me if it gets worse.',
+    '+ [Hang up on her.]',
+    '    Fine.',
+    '    -> DONE',
+    'You: Why did she hang up?',
+    '',
+  ].join('\n');
+  assert.deepEqual(callHits(ink), []);
+});
+
+test('call-in-text-thread: only on the phone channel, and `// lint: call-knot` under the heading suppresses it', () => {
+  assert.deepEqual(callHits(`=== idle ===\nHe hangs up.\n`, 'person'), []);
+  const marked = `=== ring_call ===\n// lint: call-knot\nShe hangs up on the line.\n=== idle ===\nShe hangs up.\n`;
+  const hits = callHits(marked);
+  assert.equal(hits.length, 1);
+  assert.equal(hits[0].line, 5);
+  // a marker lower down in the knot is not "directly under" the heading
+  assert.equal(callHits(`=== k ===\nHello there.\n// lint: call-knot\nHe hangs up.\n`).length, 1);
+});
+
+test('delivery target checks run on phone call knots only (`// lint: call-knot`)', () => {
+  // a note on its own line with no spoken line after it in the knot
+  const body = (mark) => `=== k ===\n${mark ? '// lint: call-knot\n' : ''}#delivery: quiet\n+ [Ok.]\n    -> DONE\n`;
+  const unmarked = lintInk(body(false), { channel: 'phone' }).findings.filter(f => f.rule === 'delivery-unread');
+  const marked = lintInk(body(true), { channel: 'phone' }).findings.filter(f => f.rule === 'delivery-unread');
+  assert.equal(unmarked.length, 0);
+  assert.equal(marked.length, 1);
+});
+
+test('inline {cond: text #delivery} is already a delivery-note warning (A1 rule)', () => {
+  const r = lintInk(`=== k ===\n{met: Good to see you. #delivery: warm}\nNext.\n`, { channel: 'person' });
+  assert.equal(r.findings.some(f => f.rule === 'delivery-note' && /inline conditional/.test(f.note)), true);
+});
+
+// ---- A7a review round 1 fixes ----
+test('M2: a call-knot mark spreads along diverts and tunnels, and stops at the home knot', () => {
+  const ink = [
+    '=== start ===', 'Text me.', '+ [Ring.]', '    -> idle', '',
+    '=== ring_call ===', '// lint: call-knot', 'She hangs up first.', '+ [Ok.]', '    -> ring_close', '',
+    '=== ring_close ===', 'The line drops.', '-> deeper ->', '-> start', '',
+    '=== deeper ===', 'He hangs up.', '->->', '',
+    '=== idle ===', 'He hangs up.', '',
+  ].join('\n');
+  const hits = callHits(ink).map(h => h.line);
+  assert.deepEqual(hits, [22]);
+  // the home knot is read from the options, default start
+  const custom = lintInk(ink.replace('=== start ===', '=== hub ==='), { channel: 'phone', home: 'hub' }).findings.filter(f => f.rule === 'call-in-text-thread').map(f => f.line);
+  assert.deepEqual(custom, [22]);
+});
+
+test('M2: the delivery target checks run in a knot reached from a marked knot', () => {
+  const ink = '=== start ===\nHi.\n=== call ===\n// lint: call-knot\nHello.\n-> tail\n=== tail ===\n#delivery: quiet\n+ [Ok.]\n    -> DONE\n';
+  const f = lintInk(ink, { channel: 'phone' }).findings.filter(x => x.rule === 'delivery-unread');
+  assert.equal(f.length, 1);
+});
+
+test('m1: "Not on this line." (the channel idiom) does not fire; "on the line" still does', () => {
+  assert.deepEqual(callHits('=== idle ===\nNot on this line.\nCareful what you say on this line.\n'), []);
+  assert.equal(callHits('=== idle ===\nI am on the line with her.\n').length, 1);
+});
+
+test('m4: "she picked up the drive" does not fire; "she picked up." still does', () => {
+  assert.deepEqual(callHits('=== idle ===\nShe picked up the drive and left.\nHe picked up a pen.\n'), []);
+  assert.equal(callHits('=== idle ===\nShe picked up on the second ring.\n').length, 1);
+  assert.equal(callHits('=== idle ===\nShe picked up.\n').length, 1);
+});
+
+// ---- A7a review round 2 fixes ----
+test('N3: "The line stays quiet" and "You read it back to her" in a text knot fire; in a marked call knot they do not', () => {
+  for (const p of ['The line stays quiet for a while.', 'The line goes silent.', 'The line fell still.', 'You read it back to her.', 'You read it out to him.']) {
+    assert.equal(callHits(`=== idle ===\nNarrator: ${p}\n`).length, 1, p);
+  }
+  assert.deepEqual(callHits('=== call ===\n// lint: call-knot\nNarrator: The line stays quiet.\n'), []);
+  // the channel idiom stays quiet
+  assert.deepEqual(callHits('=== idle ===\nLine\'s open.\nThe room stays quiet.\n'), []);
+});
+
+test('m1: the spread stops at any knot the home knot reaches, not only at the home knot', () => {
+  const ink = [
+    '=== start ===', 'Hello.', '-> hub', '',
+    '=== hub ===', 'Text me.', '-> idle', '',
+    '=== idle ===', 'He hangs up.', '',
+    '=== ring_call ===', '// lint: call-knot', 'Hi.', '-> hub', '',
+  ].join('\n');
+  assert.deepEqual(callHits(ink).map(h => h.line), [10]);
+});
+
+const m2ink = [
+  '=== hub ===', 'Hello.', '-> idle', '',
+  '=== idle ===', 'He hangs up.', '',
+  '=== ring_call ===', '// lint: call-knot', 'Hi.', '-> hub', '',
+].join('\n');
+
+test('m2: a custom home reaches the spread in lintInk (the marked call diverts to the custom home)', () => {
+  const lines = h => lintInk(m2ink, { channel: 'phone', home: h }).findings.filter(f => f.rule === 'call-in-text-thread').map(f => f.line);
+  assert.deepEqual(lines('hub'), [6]);
+  // with the wrong home the call spreads through hub into idle and hides the hit
+  assert.deepEqual(lines('start'), []);
+});
+
+test('m2: a custom home reaches the delivery checks (structureFindings and lintInk)', () => {
+  const ink = '=== hub ===\nHello.\n-> tail\n=== tail ===\n#delivery: quiet\n+ [Ok.]\n    -> DONE\n=== call ===\n// lint: call-knot\nHi.\n-> hub\n';
+  const unread = f => f.filter(x => x.rule === 'delivery-unread').length;
+  assert.equal(unread(structureFindings(ink, { channel: 'phone', home: 'hub' })), 0);
+  assert.equal(unread(lintInk(ink, { channel: 'phone', home: 'hub' }).findings), 0);
+  assert.equal(unread(structureFindings(ink, { channel: 'phone', home: 'nowhere' })), 1);
+});
+
+test('m2: scenarioInfo reads currentKnot whether it sits before or after the storyPath', () => {
+  const erb = `{ "npcs": [
+    { "id": "a", "npcType": "phone", "currentKnot": "first_call", "storyPath": "scenarios/m/ink/a.json" },
+    { "id": "b", "npcType": "phone", "storyPath": "scenarios/m/ink/b.json", "currentKnot": "hub" }
+  ] }`;
+  const info = scenarioInfo(erb);
+  assert.equal(info.homes['a.json'], 'first_call');
+  assert.equal(info.homes['b.json'], 'hub');
+});
+
+test('m2: the CLI path hands each contact its home knot to the lint', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'dl-'));
+  try {
+    mkdirSync(join(dir, 'ink'));
+    writeFileSync(join(dir, 'scenario.json.erb'), '{ "npcs": [ { "id": "a", "npcType": "phone", "currentKnot": "hub", "storyPath": "scenarios/m/ink/h.json" } ] }');
+    writeFileSync(join(dir, 'ink', 'h.ink'), m2ink);
+    const r = lintTargets([dir]);
+    const hits = r.files[0].findings.filter(f => f.rule === 'call-in-text-thread').map(f => f.line);
+    assert.deepEqual(hits, [6]);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
 });

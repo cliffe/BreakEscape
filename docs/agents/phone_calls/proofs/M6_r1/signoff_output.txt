@@ -1,0 +1,12 @@
+game 2195 (signoff)
+console close with grid saved, no signoff yet
+ringer (should be sign_off forced, NOT debrief): {"cur":{"npc":"the_architect","state":"connected","knot":"sign_off","opened":true},"q":0,"banner":null,"bimg":null}
+debrief open? mg="PhoneChatMinigame phone-chat" start_debrief=false
+shot signoff_after_console
+sign_off call: {"lines":["You saved eight point four million people. I'm not being sarcastic."],"choices":[]}
+shot signoff_signoff_call
+sign_off walked to its end -- it closed itself (null = no force-close needed): mg="PhoneChatMinigame phone-chat"
+shot signoff_after_signoff
+architect_signoff_done=true debrief_requested=false start_debrief=false
+held ending (unarmed until the bring-in sets debrief_requested): null
+architect /tts: "You saved eight point four million people. I'm not being sarcastic." "I'll have the figures from Austin and San Francisco by morning." "I wasn't playing for tonight." "You'll have the figures too. Then we'll both know the same thing about you." 

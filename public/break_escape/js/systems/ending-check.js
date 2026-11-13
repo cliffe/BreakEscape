@@ -260,6 +260,10 @@ export function restoreHeldEnding(deps = {}) {
     return true;
 }
 
+// Phone calls plan 2.3 row 28: nothing here closes the phone ringer. "End the mission now" starts an
+// ending that the server can still refuse (concludeRequires), so the ringer closes only where the
+// server has agreed: scenario-music-events.js (credits) and objectives-manager.js handleMissionConcluded.
+
 /** End the mission now, from the panel button or once nothing optional is open. */
 export function endHeldEnding() {
     if (!held) return false;

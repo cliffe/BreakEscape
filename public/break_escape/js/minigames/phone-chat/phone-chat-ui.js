@@ -196,6 +196,14 @@ export default class PhoneChatUI {
         view.insertAdjacentHTML('afterbegin', CALL_STATUS_HTML);
         header.insertAdjacentHTML('beforeend', CALL_SPEAKING_HTML);
         view.insertAdjacentHTML('beforeend', CALL_CONTROLS_HTML);
+        // Resolve the caption now, before the first paint: otherwise the static "Voice call" shows
+        // for a frame or two until showConversation sets the real one (M1 R4/R5 n1). currentNPCId is
+        // not set at first render, so read the contact from params.npcId (a call opens one contact).
+        const caption = header.querySelector('#call-caption');
+        if (caption) {
+            const npc = this.params?.npcId ? this.npcManager?.getNPC?.(this.params.npcId) : null;
+            caption.textContent = callLabelFor(this.params, npc);
+        }
         const messages = view.querySelector('#messages-container');
         messages?.setAttribute('aria-live', 'polite');
         messages?.setAttribute('title', 'Click to skip the line');
@@ -219,6 +227,101 @@ export default class PhoneChatUI {
         this._callTimer = null;
     }
 
+    /**
+     * Freeze the call screen on "Call ended m:ss" (plan 2.5, Ending). Returns false when
+     * there is no call screen (terminal look, thread view), so the caller closes at once.
+     */
+    showCallEnded() {
+        const bar = document.getElementById('call-status-bar');
+        const timer = this.elements?.callTimer;
+        if (!this.isCallMode || !bar || !timer) return false;
+        const shown = timer.textContent || '0:00';
+        this.stopCallTimer();
+        const label = bar.querySelector('.call-status-label');
+        if (label) label.textContent = 'CALL ENDED';   // upper case, as the ON CALL bar it replaces (the dot goes with the text)
+        timer.textContent = shown;
+        bar.classList.add('call-ended');
+        this.elements.choicesContainer && (this.elements.choicesContainer.innerHTML = '');
+        return true;
+    }
+
+    /**
+     * The call bar's state (plan 2.5): 'oncall' (the running time), 'calling' (an outgoing call
+     * dialling: no timer, the bar reads CALLING and the caption keeps the callLabel), 'noanswer' (it rang out). A no-op without a call screen.
+     */
+    setCallStatus(mode) {
+        if (!this.isCallMode) return;
+        const bar = document.getElementById('call-status-bar');
+        const timer = this.elements?.callTimer;
+        if (!bar || !timer) return;
+        const label = bar.querySelector('.call-status-label');
+        const caption = this.container.querySelector('#call-caption');
+        bar.classList.toggle('call-ended', mode === 'noanswer');
+        bar.classList.toggle('call-dialling', mode === 'calling');
+        if (mode === 'oncall') {
+            if (label) label.innerHTML = '<span class="call-status-dot" aria-hidden="true"></span>ON CALL';
+            return;
+        }
+        this.stopCallTimer();
+        timer.textContent = '';
+        if (label) label.textContent = mode === 'calling' ? 'CALLING' : 'NO ANSWER';
+        // 'calling': the caption stays who is being rung (showConversation set it: the entry's or contact's callLabel, else "Voice call"); the bar says CALLING (A5 R1 m3)
+        if (caption && mode === 'noanswer') caption.textContent = 'No answer';
+    }
+
+    /**
+     * The header call button (plan 2.5): green phone, "Call" or "Call back". `state` is
+     * `{ label, ariaLabel }` from phoneRinger.callButtonFor, or null to remove it. `onClick` runs on a press.
+     */
+    setCallButton(state, onClick) {
+        const header = this.elements?.conversationHeader;
+        if (!header) return;
+        header.querySelector('.call-button')?.remove();
+        // Kept for the missed row's own "Call back" button (A6)
+        this._callState = state || null;
+        this._callPress = onClick || null;
+        this.refreshRowCallBack();
+        if (!state) return;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'call-button';
+        btn.setAttribute('aria-label', state.ariaLabel || state.label);
+        btn.title = state.label;
+        const glyph = document.createElement('span');
+        glyph.className = 'call-button-glyph';
+        glyph.setAttribute('aria-hidden', 'true');
+        glyph.textContent = '\u260E';
+        btn.appendChild(glyph);
+        const text = document.createElement('span');
+        text.className = 'call-button-text';
+        text.textContent = state.label;
+        btn.appendChild(text);
+        btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); onClick?.(); });
+        header.appendChild(btn);
+    }
+
+    /**
+     * The latest "Missed call" row carries a small "Call back" button while the contact has a pending
+     * callback (plan 2.6): the same call as the header button. Older missed rows have none.
+     */
+    refreshRowCallBack() {
+        const box = this.elements?.messagesContainer;
+        if (!box) return;
+        box.querySelectorAll('.call-row-callback').forEach((b) => b.remove());
+        const state = this._callState;
+        if (!state || state.kind !== 'callback') return;
+        const rows = box.querySelectorAll('.message-call-row.missed');
+        const last = rows[rows.length - 1];
+        if (!last) return;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'call-row-callback';
+        btn.setAttribute('aria-label', state.ariaLabel || state.label);
+        btn.textContent = 'Call back';
+        btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); this._callPress?.(); });
+        last.appendChild(btn);
+    }
+
     /** The speaking indicator under the portrait: on while a call line plays. */
     setCallSpeaking(on) {
         if (!this.isCallMode) return;
@@ -227,7 +330,7 @@ export default class PhoneChatUI {
 
     /** One subtitle line of a call (replaces a bubble in call mode). */
     _addCallSubtitle(type, text, contact, scrollToBottom) {
-        const other = type === 'npc' ? otherSpeaker(text, contact, this._knownSpeakerNames()) : null;
+        const other = type === 'npc' ? otherSpeaker(text, contact, this._knownSpeakerNames(), this._knownSpeakerIds()) : null;
         const sub = callSubtitle(type, text, contact, other);
         if (!sub.text) return Promise.resolve();
         const line = document.createElement('div');
@@ -597,7 +700,10 @@ export default class PhoneChatUI {
         for (let i = history.length - 1; i >= 0; i--) {
             if (!isNarration(history[i])) { lastMessage = history[i]; break; }
         }
-        const unreadCount = history.filter(msg => !msg.read && msg.type === 'npc').length;
+        // A missed call counts as unread, like a text (plan 2.6)
+        const unreadCount = history.filter(msg => !msg.read &&
+            (msg.type === 'npc' || (msg.type === 'call' && msg.callEvent === 'missed'))).length;
+        const lastIsMissedCall = !!lastMessage && lastMessage.type === 'call' && lastMessage.callEvent === 'missed';
         
         const contactItem = document.createElement('div');
         contactItem.className = 'contact-item';
@@ -635,7 +741,7 @@ export default class PhoneChatUI {
             <div class="contact-info">
                 <div class="contact-name">${escHtml(npc.displayName || npc.id)}</div>
                 ${npcDmFields(npc).handle ? `<div class="contact-handle">${escHtml(npcDmFields(npc).handle)}</div>` : ''}
-                <div class="contact-last-message">${escHtml(displayDashes(lastMessagePreview))}</div>
+                <div class="contact-last-message${lastIsMissedCall ? ' missed' : ''}">${escHtml(displayDashes(lastMessagePreview))}</div>
             </div>
             <div class="contact-meta">
                 ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
@@ -686,6 +792,7 @@ export default class PhoneChatUI {
             this.elements.conversationView.classList.remove('call-has-choices', 'call-speaking-now');
             const caption = this.elements.conversationView.querySelector('#call-caption');
             if (caption) caption.textContent = callLabelFor(this.params, npc);
+            this.setCallStatus('oncall');
             this.startCallTimer();
         }
         
@@ -820,7 +927,12 @@ export default class PhoneChatUI {
         // Only the NPC's lines are voice messages: a player line is never voiced in their voice
         const isVoiceMessage = type === 'npc' && trimmedText.toLowerCase().startsWith('voice:');
 
+        // A thread row is not something the caller said: a call screen that replays the
+        // thread (a legacy voiced call) leaves rows out (A4 R1 m3)
+        if (this.isCallMode && type === 'call') return Promise.resolve();
         if (this.isCallMode) return this._addCallSubtitle(type, trimmedText, contact, scrollToBottom);
+
+        if (type === 'call') return this._addCallRow(message, trimmedText, scrollToBottom);
 
         if (this.isTerminalTheme && type === 'npc' && !isVoiceMessage) {
             return this._typewriterMessage(displayDashes(trimmedText), scrollToBottom);
@@ -895,7 +1007,7 @@ export default class PhoneChatUI {
             // Another character's line in this thread ("Name: …") gets their name over
             // the bubble, prefix dropped, instead of reading as the contact's own (F14)
             let bodyText = trimmedText;
-            const other = type === 'npc' ? otherSpeaker(trimmedText, contact, this._knownSpeakerNames()) : null;
+            const other = type === 'npc' ? otherSpeaker(trimmedText, contact, this._knownSpeakerNames(), this._knownSpeakerIds()) : null;
             if (other) {
                 const sender = document.createElement('div');
                 sender.className = 'message-sender';
@@ -938,6 +1050,15 @@ export default class PhoneChatUI {
         const npcs = this.npcManager?.npcs;
         if (!npcs || typeof npcs.values !== 'function') return [];
         return Array.from(npcs.values()).map(n => n?.displayName).filter(Boolean);
+    }
+
+    /** Registered id -> display name of every character, for otherSpeaker() id prefixes (plan 2.10). */
+    _knownSpeakerIds() {
+        const npcs = this.npcManager?.npcs;
+        const ids = new Map();
+        if (!npcs || typeof npcs.values !== 'function') return ids;
+        for (const n of npcs.values()) if (n?.id) ids.set(n.id, n.displayName || n.id);
+        return ids;
     }
 
     _typewriterMessage(text, scrollToBottom) {
@@ -986,6 +1107,29 @@ export default class PhoneChatUI {
             };
             setTimeout(tick, CHAR_DELAY);
         });
+    }
+
+    /**
+     * A call row (plan 2.6): "Missed call", "Incoming call, 1:24" and the like. Centred and muted
+     * like narration, with a phone glyph; plain text only, never voiced or barked.
+     */
+    _addCallRow(message, text, scrollToBottom) {
+        const row = document.createElement('div');
+        const event = message && typeof message.callEvent === 'string' ? message.callEvent : '';
+        row.className = `message-call-row${event === 'missed' ? ' missed' : ''}`;
+        if (event) row.dataset.callEvent = event;
+        const glyph = document.createElement('span');
+        glyph.className = 'call-row-glyph';
+        glyph.setAttribute('aria-hidden', 'true');
+        glyph.textContent = '\u260E';
+        const label = document.createElement('span');
+        label.className = 'call-row-text';
+        label.textContent = displayDashes(text);
+        row.append(glyph, label);
+        this.elements.messagesContainer.appendChild(row);
+        if (event === 'missed') this.refreshRowCallBack();
+        if (scrollToBottom) this.scrollToBottom();
+        return Promise.resolve();
     }
 
     /**
@@ -1210,7 +1354,96 @@ export default class PhoneChatUI {
     /**
      * Cleanup and remove UI
      */
+    /**
+     * Row 10 (phone calls plan 2.4): an incoming call rings inside the phone, as a panel over its
+     * content with the caller's avatar, name, caption and Answer / Decline buttons.
+     * @param {{npcId, name, caption, avatar, withheld, forced, onAnswer, onDecline}} view
+     */
+    showIncomingCall(view) {
+        this.hideIncomingCall();
+        const host = this.container.querySelector('.phone-screen') || this.container;
+        const panel = document.createElement('div');
+        panel.className = 'phone-incoming-call';
+        panel.dataset.npcId = view.npcId || '';
+        panel.setAttribute('role', 'alertdialog');
+        panel.setAttribute('aria-label', `Incoming call from ${view.name}`);
+        const avatar = document.createElement('div');
+        avatar.className = 'phone-incoming-call-avatar';
+        if (view.avatar) {
+            const img = document.createElement('img');
+            img.alt = '';
+            img.src = view.avatar;
+            avatar.appendChild(img);
+        } else {
+            avatar.textContent = '\u260E';   // a plain handset glyph
+        }
+        panel.appendChild(avatar);
+        const name = document.createElement('div');
+        name.className = 'phone-incoming-call-name';
+        name.textContent = view.name || '';
+        panel.appendChild(name);
+        if (view.caption) {
+            const caption = document.createElement('div');
+            caption.className = 'phone-incoming-call-caption';
+            caption.textContent = view.caption;
+            panel.appendChild(caption);
+        }
+        const status = document.createElement('div');
+        status.className = 'phone-incoming-call-status';
+        status.textContent = view.connecting ? 'Connecting\u2026' : 'Incoming call';
+        panel.appendChild(status);
+        const buttons = document.createElement('div');
+        buttons.className = 'phone-incoming-call-buttons';
+        if (view.connecting) {
+            // Answered, not open yet: nothing to answer or decline (A3 R1 m3, m4)
+            if (view.onHangUp) {
+                const hang = document.createElement('button');
+                hang.type = 'button';
+                hang.className = 'phone-incoming-call-decline';
+                hang.textContent = 'Hang up';
+                hang.setAttribute('aria-label', 'Hang up');
+                hang.addEventListener('click', () => view.onHangUp());
+                buttons.appendChild(hang);
+            }
+            panel.appendChild(buttons);
+            host.appendChild(panel);
+            this._incomingCallPanel = panel;
+            return;
+        }
+        const answer = document.createElement('button');
+        answer.type = 'button';
+        answer.className = 'phone-incoming-call-answer';
+        answer.textContent = 'Answer';
+        answer.setAttribute('aria-label', `Answer call from ${view.name}`);
+        answer.addEventListener('click', () => view.onAnswer?.());
+        buttons.appendChild(answer);
+        if (!view.forced) {
+            const decline = document.createElement('button');
+            decline.type = 'button';
+            decline.className = 'phone-incoming-call-decline';
+            decline.textContent = 'Decline';
+            decline.setAttribute('aria-label', 'Decline call');
+            decline.addEventListener('click', () => view.onDecline?.());
+            buttons.appendChild(decline);
+        }
+        panel.appendChild(buttons);
+        host.appendChild(panel);
+        this._incomingCallPanel = panel;
+    }
+
+    hideIncomingCall() {
+        if (this._incomingCallPanel) {
+            this._incomingCallPanel.remove();
+            this._incomingCallPanel = null;
+        }
+    }
+
+    incomingCallShowing() {
+        return !!this._incomingCallPanel;
+    }
+
     cleanup() {
+        this.hideIncomingCall();
         this.stopCallTimer();
         this._chatInfluence?.destroy();
         this._chatInfluence = null;

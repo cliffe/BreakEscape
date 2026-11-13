@@ -1643,6 +1643,9 @@ Trigger a conversation automatically when the player loads the room:
 | `disableClose` | `true` prevents player closing the dialog (person-chat and phone; on the phone it also hides the back arrow and ignores Esc). Honoured since 2026-10-21; before that the field was read but dropped. |
 | `videoCall` | `true` opens the conversation as a video call, as an event mapping's `conversationMode: "video-call"` does: person-chat framed as a call, with the player's chosen avatar as a self-view. It works for a phone NPC too (the call is always a person-chat). `conversationMode: "video-call"` is accepted as the same thing. Absent, nothing changes. |
 | `videoLabel`, `participantTag` | With `videoCall`: the meeting-tool name on the call bar (default "SECURE VIDEO LINK") and a tag beside the peer's name (for example "External"). |
+| `ring` | `true` or an object (`onMissed`, `voicemailKnot`, `withheld`, `untilAnswered`, `callbackWhen`, `ringWhile`). The timed call rings (answer, decline, miss, callback) instead of opening at once. Phone NPCs only, not with `videoCall`. See [Voiced phone calls](#voiced-phone-calls). |
+| `voiced: true` | `phone-chat` only: the conversation opens at once as a voiced call (the older form; see "Every form, old and new"). Not needed with `ring`. |
+| `callLabel` | With `ring` or `voiced`: the caption under the caller's name, as the phone would show it ("SAFETYNET secure line"). |
 
 #### NPC Event Mappings
 
@@ -1691,9 +1694,12 @@ Event mapping actions (can be combined):
 | `bark: "text"` | Show a bark bubble above the NPC and play TTS audio (if NPC has `voice`). Each NPC has its own audio channel so multiple NPCs can bark simultaneously. |
 | `barkDelay: ms` | Milliseconds to wait before firing the bark (default `0`). Use to stagger responses from multiple NPCs reacting to the same event. |
 | `targetKnot: "knot_name"` | Jump to this Ink knot (person NPCs only; updates `currentKnot` so next conversation starts there; does NOT work on phone NPCs after first open) |
-| `conversationMode: "person-chat"` | Trigger a person-chat cutscene (person NPCs only). Requires `targetKnot`. `"phone-chat"` opens a phone NPC's thread at `targetKnot` (see [Forced phone calls](#forced-phone-calls-that-ring-again)); `"video-call"` opens any NPC in person-chat as a call. |
+| `conversationMode: "person-chat"` | Trigger a person-chat cutscene (person NPCs only). Requires `targetKnot`. `"phone-chat"` opens a phone NPC's thread at `targetKnot` (see [Forced phone calls](#forced-phone-calls-that-ring-again); add `ring` to make it ring, see [Voiced phone calls](#voiced-phone-calls)); `"video-call"` opens any NPC in person-chat as a call. |
 | `disableClose: true` | The conversation this mapping opens can't be closed by the player (no x, no Close, no Esc; on the phone no back arrow). It closes on `#exit_conversation`, by itself 2 s after a story that ends without one, or when the player takes a hit. |
 | `resume: true` | `phone-chat` only: reopen the thread from its saved story instead of jumping to `targetKnot`, so the player is back at the choice they left. With no saved story yet it rings at `targetKnot` like a first call. For re-ringing an unfinished call. |
+| `ring: true` or `{ onMissed, voicemailKnot, withheld, untilAnswered, callbackWhen, ringWhile }` | `phone-chat` on a phone NPC only: the call rings (answer, hold, decline, miss, callback or voicemail) instead of opening at once. Implies `voiced`. Needs `targetKnot`, the call's own knot (not the home knot). The mapping's `setGlobal` and other effects run when it rings, even if declined; `onceOnly` is spent then. `ringWhile` drops it quietly if its condition stops holding before pickup. Not allowed on `video-call`. See [Voiced phone calls](#voiced-phone-calls). |
+| `voiced: true` | `phone-chat` only: the conversation opens at once as a voiced call (the older form; see "Every form, old and new"). Not needed with `ring`. |
+| `callLabel` | With `ring` or `voiced`: the caption under the caller's name, as the phone would show it ("SAFETYNET secure line"). |
 | `background: "path"` | Background image for person-chat cutscene |
 | `patrolOverride: { "targetTile": {"x": n, "y": n}, "speed": n, "stopOnArrival": true }` | Override current patrol — NPC walks directly to target tile. `stopOnArrival: true` halts patrol when destination is reached. |
 | `setPatrolSpeed: number` | Change the NPC's patrol speed (pixels/second) from this point on |
@@ -1785,9 +1791,10 @@ Contacts in the player's phone. Not rendered in the world — they exist only in
 **Important phone NPC rules:**
 - Phone NPCs must **not** have `position` or `spriteSheet`
 - Phone NPCs must have `phoneId` matching a phone in `startItemsInInventory`
-- `targetKnot` in event mappings does **not** work after first conversation — use `setGlobal` + an Ink conditional hub choice instead
-- `conversationMode` other than `"phone-chat"` is ignored on phone NPCs
-- A phone NPC with no `timedMessages` still works as a contact the player can call manually
+- A bare `targetKnot` (no `conversationMode`) does **not** move a phone NPC's thread after the first conversation; use `setGlobal` and an Ink conditional hub choice. A `phone-chat` mapping (with or without `ring`) does open at its `targetKnot`.
+- On a phone NPC a mapping's `conversationMode` is `"phone-chat"` (the thread or call) or `"video-call"` (the contact opens in person-chat framed as a video call). `"person-chat"` is ignored on phone NPCs: it opens only for `npcType: "person"`.
+- `call` (one entry or a list) makes the contact rangeable: a Call button in its thread, and the target of `#place_call` in its ink. Fields `knot`, `when`, `unavailable`, `button`; see [Voiced phone calls](#voiced-phone-calls). Without a `call` entry (or a pending callback) a contact has no way to be called, so texts must not say "call me". A contact with `call` needs a `voice`, and a thread that shows (in the phone's `npcIds`, or with history from a `ring`, `timedMessages` or `sendTimedMessage`), or its button never appears. Not for contacts with `callId`.
+- A phone NPC with no `timedMessages` still has a thread the player can open from the contact list; it has no call button unless it has a `call` entry
 
 #### Direct messages (social theme)
 
@@ -1855,16 +1862,210 @@ A call the player must finish: it opens by itself, can't be closed, and if somet
 - While the call is open, texts from other contacts still arrive (they go in that contact's thread and show as a toast); clicking the toast does nothing until the call ends. A text from the caller is held until the phone closes.
 - A line in the caller's thread prefixed with another character's display name (`Director Netherton: Put her on.`) is drawn with that name over the bubble. Only registered characters' names count, so `Note: ...` stays plain text.
 - Test scenario: `scenarios/test_finale_calls_credits/`.
+- A forced call can also ring first: add `ring: true` to the mapping or timed conversation. It then shows an incoming-call banner with no Decline, answers itself after 6 s, and rings again after a hit as described under [Voiced phone calls](#voiced-phone-calls). Without `ring` it opens at once, as above.
 
 #### Voiced phone calls
 
-Phone texts are silent. A call can be spoken instead. There are three places to say so, and all are off unless set:
+Phone texts are silent. A call is spoken, and the phone has a real call flow: a call can ring and be answered, declined or missed, and the player can ring a contact. Everything is opt-in. A scenario that uses none of the fields below behaves as it always did.
 
-| Where | Form | What it voices |
+Two fields do the work. `ring` goes on the mapping or timed conversation that offers an incoming call. `call` goes on the phone NPC and lets the player ring out. The older forms (`voiced: true` on a mapping, a timed conversation or the contact) still work and are in the table under "Every form" below. Fixture: `scenarios/test_phone_calls/` (its README lists one contact per behaviour).
+
+##### `ring`: an incoming call that rings
+
+Allowed on an event mapping with `conversationMode: "phone-chat"` on a phone NPC, and on a phone NPC's `timedConversation` that is not a video call. It implies `voiced: true`. It needs a `targetKnot`: the call's own knot, which must not be the contact's home knot (`currentKnot`, default `start`) unless the contact has `voiced: true`.
+
+```json
+{
+  "eventPattern": "global_variable_changed:flag1_submitted",
+  "condition": "value === true",
+  "onceOnly": true,
+  "delayMs": 7000,
+  "conversationMode": "phone-chat",
+  "targetKnot": "call",
+  "ring": true,
+  "callLabel": "Agent 0x47"
+}
+```
+
+`ring: true` takes every default. The object form:
+
+| Field | Default | Meaning |
 |---|---|---|
-| An event mapping | `"voiced": true` on a mapping with `conversationMode: "phone-chat"`, next to `disableClose` and `resume` | the call that mapping opens: its `targetKnot` and what it reaches |
-| A timed conversation | `"voiced": true` on the contact's `timedConversation` (not a `videoCall` one, which is person-chat and always voiced) | the timed call's `targetKnot` and what it reaches |
-| The contact | `"voiced": true` on the phone NPC itself | a call the player places through a pretext card (`pretext-card.js` `callLaunch`, a desk phone in `lab_social_engineering`): it opens on the contact's home knot, so the home knot counts as a call knot |
+| `onMissed` | `"callback"` | What a missed call leaves: `"callback"` (a Call back button) or `"voicemail"` (a message in the thread). Declining counts as missing. |
+| `voicemailKnot` | none | Required with `onMissed: "voicemail"`. The knot's `voice: …` lines become voice messages. |
+| `withheld` | `false` | The banner, rows and toasts say "No caller ID", with no name, avatar or caption. Once answered, the call screen and the contact list still show the contact's `displayName`, so give a withheld caller a neutral display name if the name would give it away. A withheld number can't be rung back, so it needs `onMissed: "voicemail"` unless the call is forced. |
+| `callbackWhen` | none | With `onMissed: "callback"` only. A condition — an `&&` chain of `globalVars.*` terms (each a single `globalVars.<name>`, optionally negated with `!` or compared to a literal or another `globalVars.<name>`; no `||`, and no other term, both of which the validator rejects as errors) — under which the callback this missed call leaves is still worth placing. It is re-checked when the "Call back" button is built and as the callback dials; if it no longer holds, the callback is cleared quietly, so the button never dials an out-of-date knot. Example: a dial ring that becomes stale once the state it reported has been acted on — `"ring": { "onMissed": "callback", "callbackWhen": "globalVars.esd_authorized !== true" }`. The save format is unchanged (just `knot`, `state`, `onMissed`, `callLabel`); after a reload the condition is recovered from the ring mapping by knot, so a stale callback still clears. As with `call.when`, a flag the ink sets with `~` must be declared in `globalVariables`. |
+| `ringWhile` | none | A condition in the same grammar as `callbackWhen` (an `&&` chain of `globalVars.*` terms; `||` or any non-`globalVars.` term is a validator error), re-checked while the call is queued or ringing; the call is dropped quietly once it stops holding. See "A ring whose reason goes away" under [The ringer](#the-ringer-what-the-player-sees). As with `call.when`, a flag the ink sets with `~` must be declared in `globalVariables`. |
+| `untilAnswered` | `false` | No ring timeout. The call rings until the player answers or declines. After 20 s the ringtone stops looping and the phone vibrates once every 10 s, with the banner still up. Use it for a caller who would keep trying. Pair it with a `call_answer_seconds` line (see the ink README) so a long wait gets a comment. No effect on a forced call. |
+
+A call that rings with no `untilAnswered` rings out after 20 s and counts as missed. Every other mapping field still applies: `disableClose` (a forced call: no Decline, it answers itself after 6 s), `resume`, `callLabel`, `onceOnly`, `cooldown`, `delayMs`, `condition`.
+
+A mapping with `ring` is not held back by an open minigame (an ordinary mapping waits for it to close); the ringer decides when it can ring. Side effects fire at ring time: the mapping's `setGlobal`, `completeTask` and the rest run when the call is offered, even if the player declines, and `onceOnly` is spent then too. A ring dropped by `ringWhile` puts its own `setGlobal` keys back (see [The ringer](#the-ringer-what-the-player-sees)). An effect that should wait for the call to be taken goes on a second mapping on `phone_call_answered:<npcId>`, or in the call's ink.
+
+A `ring` on a `timedConversation` works the same way. Its `setGlobalOnStart` is set at the first ring, and the delivered mark is saved, so a reload does not schedule it again.
+
+`ring` is a validator error on a video call, on a non-phone NPC, and on any `conversationMode` but `phone-chat`.
+
+##### `call`: a contact the player can ring
+
+On a phone NPC, one entry or a list tried in order:
+
+```json
+"call": {
+  "knot": "support_call",
+  "when": "globalVars.vance_is_ally && !globalVars.robert_vance_ko",
+  "unavailable": "no_answer"
+}
+```
+
+```json
+"call": [
+  { "knot": "m2_revelation_call", "when": "globalVars.flag_distcc_submitted && !globalVars.revelation_heard", "unavailable": "hidden" },
+  { "knot": "extract_call", "button": false }
+]
+```
+
+| Field | Default | Meaning |
+|---|---|---|
+| `knot` | required | The knot the call opens on. A call knot (voiced, with everything it reaches). Not the home knot. |
+| `when` | always | A condition in the event-mapping grammar, using only `globalVars.` terms joined by `&&` (`value`, `name` and `data.` don't exist here). Checked as the call connects and, for button entries, to decide whether the button shows. The button is worked out again whenever a global changes while the thread is open, so it appears or goes without the player leaving the thread. For an OR, write two entries with the same knot: an `||` is a validator error, because the engine would read the whole condition as false. A flag the ink sets with `~` must be declared in `globalVariables`, or the condition never sees it. |
+| `unavailable` | `"no_answer"` | When `when` fails: `"no_answer"` (the button shows and the call rings out) or `"hidden"` (this entry gives no button). |
+| `button` | `true` | `false`: the entry never shows the header button. It is dialled only by `#place_call:<knot>` from the thread. Use it where the beat already has a hub choice, or where the condition needs more than `&&`. |
+
+The caption under the name is the call's own `callLabel` (on the ring mapping or `timedConversation`; a callback keeps the ring's), else the contact's `callLabel`. With neither, the incoming banner shows no caption, and the call screen and dialling show "Voice call". A withheld call's banner never shows one. So a contact-level `callLabel` covers the contact's rings, callbacks and placed calls at once; put one on a mapping only where that call should read differently. `call` entries take no `callLabel`.
+
+**What the button dials**, in order: a pending callback (it connects at once, skipping `when`); else the first entry with `button` not `false` whose `when` holds; else, if any such entry has `unavailable: "no_answer"`, a call that rings out; else nothing, and the button is hidden. The button sits in the open thread's header and reads "Call", or "Call back" while a callback is pending. Contacts with `callId` (judged pretext contacts) and phones opened with `disableClose` have no button.
+
+**Dialling.** The thread closes and a call screen shows "CALLING" with a ring-back tone for about 2.5 s. If `when` holds, it connects on the entry's knot, with the contact's saved story restored first, so ink variables and visit counts carry over. If not, it rings out for 6 s, shows "NO ANSWER", adds a "No answer" row and returns to the thread. There is no cooldown: ringing again reruns the knot, and the ink decides what a repeat says.
+
+**The `#place_call` tag.** In a contact's text thread, `#place_call` or `#place_call:<knot>` closes the thread and dials, as the button does. It is how a hub choice becomes a call. It has one form: the tag on its own line in the choice's body, then `-> DONE`.
+
+```ink
++ {attack_prevented and not mission_complete} [I'm done here. Bring me in.]
+    #place_call:extract_call
+    -> DONE
+```
+
+The choice prints no NPC line; the call's knot speaks first. If the call rings out, the thread comes back on its home knot and shows the hub again. A tag inside the brackets is never run and is a validator error. `<knot>` must be one of the contact's `call` entries. A bare `#place_call` dials what the button would. It does nothing inside a call, or in a `disableClose` thread. If it can't dial (a call is already on), the thread stays on its choices.
+
+A ring's `targetKnot` can also be a `call` entry (usually `"button": false`), so a hub choice can dial the beat the player missed. While that contact has a pending callback for the knot, `#place_call:<knot>` connects it as the callback (skipping `when`, `call_is_callback` true); otherwise it is an ordinary outgoing call.
+
+##### Every form, old and new
+
+| Form | What it does |
+|---|---|
+| Mapping `phone-chat` + `voiced: true` (m09, m10) | Opens at once, voiced, and closes whatever minigame is open. Unchanged. |
+| `timedConversation` + `voiced: true` | Opens at once, voiced. Unchanged. |
+| Contact `voiced: true` + `callLabel` (lab Dev) | A call through a pretext card (`callLaunch`) is voiced and opens on the home knot; the contact list opens a silent thread. Unchanged. If the contact also has a `call` block, the button uses `call.knot` and `callLaunch` the home knot. |
+| Mapping `video-call` / `timedConversation.videoCall` (m02, lab_tesseract_trials) | Person-chat framed as a call. Unchanged. `ring` is not allowed. |
+| Mapping `phone-chat`, no `voiced` | Opens a silent thread at once. Unchanged. |
+| `sendTimedMessage` / `timedMessages` | Toast and thread. Unchanged. |
+| Phone object with `voice` | A voice-message bubble. Unchanged. |
+| `ring` on a mapping or `timedConversation` | Rings: answer, hold, decline, miss, callback or voicemail. |
+| `call` on a contact | A call button in the thread, dialling, connects or no answer. |
+| `#place_call` in a text thread | The choice or line dials the contact. |
+| Id prefix on a call line (`agent_0x99: …`) | That record speaks, and the bubble and subtitle show its display name. Use it where two records share a name. |
+
+The old forms never touch the ringer: no banner, no rows, no callback. A call you want the player to be able to decline, miss or ring back is a `ring` call.
+
+##### The ringer: what the player sees
+
+An incoming call shows a banner at the top centre of the screen over everything except the pause menu: avatar, name, caption, a green Answer and a red Decline. With the player's phone open, the same fields show as a panel inside the phone instead. Esc does not answer or decline. A forced call has no Decline.
+
+**The call look.** A connected call draws a call screen (portrait, timer, End call) in the handset look. A contact with `phoneTheme: "terminal"` instead shows its call in the CRT terminal look, with no call screen (m07's Architect, a withheld caller): the last line of the call is held on screen for a short read beat before the phone closes **when the call closes itself** (`#exit_conversation` or the story's end), so a terminal call's closing narration stays readable rather than flashing by; a player hang-up (the back arrow or Esc) closes at once.
+
+The look is decided **once per phone session**, so a contact's `phoneTheme` is not a per-thread skin:
+
+- The contact's own **calls** use its `phoneTheme` (the ring, then the connected call).
+- A phone **opened directly on that contact** — a notification, a timed message that opens the thread, a call — uses its `phoneTheme`.
+- A thread **tapped from the device's contact list** keeps the **device** look, not the contact's `phoneTheme`: the look belongs to the phone session the player opened, and the list and device set it. So a terminal contact's thread, reached from a normal (non-terminal) phone's list, shows in that phone's look.
+
+A device's `app.theme` wins over a contact's `phoneTheme`, which is the fallback. A device with **no** `app.theme` takes its fallback look from the **first** contact's `phoneTheme`, so do not list a `terminal` contact first on a phone you want to render in the default look.
+
+What Answer does depends on what is on screen:
+
+| On screen | Answer |
+|---|---|
+| Nothing | The call opens after half a second. When it ends the player is back in the world. |
+| The player's phone (list or thread) | The phone closes and the call opens; when the call ends the phone reopens on the screen it was on. |
+| A workstation popup (CyberChef, a lab sheet) | The popup is hidden, the call opens, and the popup comes back as it was (recipe, input and scroll position kept). |
+| A minigame (lockpick, keypad, terminal, container, a desk phone's handset) | The call goes **on hold**. The banner shrinks to "<Name> · on hold · close this to talk" with a Hang up button. The call opens when the player closes the minigame. |
+| A conversation, or the knockout screen | Nothing rings yet: the call waits, first in, first out, and rings when it is over. |
+| The tutorial | The opening accept/skip prompt holds the call until the player accepts or skips the tutorial. While a tutorial step panel is up the call waits for at most 20 s of unpaused time from when it was offered, or until the step completes or the tutorial ends, whichever first. It then rings, with the banner moved clear of SKIP TUTORIAL and the step counter. Forced calls follow the same rule. |
+
+**A ring whose reason goes away (`ring.ringWhile`).** A trigger `condition` is checked only when the mapping fires, as everywhere else in the engine — the ringer does not re-check it, so a trigger-time guard (`!globalVars.hl_box_opened` on a ring that fires when a lid is touched) never silently drops a call later. To make a ring drop when its reason is gone, add the opt-in `ring.ringWhile`: a condition in the same grammar as `callbackWhen` — an `&&` chain of single `globalVars.<name>` terms, including `!globalVars.x` and a comparison to a literal or another `globalVars.<name>` (`||` or any non-`globalVars.` term is a validator error, since the ringer would skip it and never drop the ring). It is re-checked while the call is **queued or ringing**. If it stops holding, the call is dropped quietly: no "Missed call" row, no `phone_call_missed`, no callback or voicemail.
+
+Repeat the `ringWhile` terms in the mapping's trigger `condition` too. `ringWhile` drops the call, but the mapping still fired, so its `completeTask`, timed messages and other effects have already run (its own `setGlobal` keys are put back, below). A ring whose `ringWhile` is already false at fire time rings for no frame at all (it is dropped inside the offer) yet runs those effects. Guarding the trigger `condition` with the same terms stops the mapping firing for a call that could never ring. m04 does this: `esd_authorized !== true` is in both the `condition` and the `ringWhile`.
+
+Once the player has **answered or put the call on hold**, it is never dropped — `ringWhile` is a pre-pickup check only. A forced call (`disableClose`) is never dropped this way either. So the m04 dial ring carries `"ringWhile": "globalVars.esd_authorized !== true && globalVars.mission_complete !== true"`: it drops if the ESD goes live (or the mission ends) while HaX is still ringing, but a call the player picked up plays out. It carries the same string as `callbackWhen`, so a missed ring's Call back goes stale at the same moment.
+
+When a `ringWhile` ring is dropped quietly, the globals the mapping's **own** `setGlobal` wrote are put back to the values they had before the mapping fired (a mapping's `setGlobal` runs the moment the event fires, even before the call rings). So a latch pattern — mapping A sets `a_rang` and guards on `!a_rang`, its twin B rings on a later event with the same guard — is not left stuck: A's ring drops, `a_rang` goes back to where it was, and B can still ring. Only a key still holding the value the mapping wrote is put back, so a write of a different value by something else while the call rang stands rather than being clobbered by the restore. The restore does not emit `global_variable_changed`, so a mapping that re-fires on its own latch's change cannot loop on the drop, and the twin reads the restored value when its own event arrives rather than being woken by it. For the same reason, anything that mirrors a global's value (a sprite variant, `revealOnGlobal`, an open thread's `call.when` button) keeps showing the value from when the call was offered, so latch only a key used for gating. A dropped `onceOnly` ring does not re-fire itself, so give such a ring a twin on the later event rather than relying on the same `onceOnly` mapping firing twice. (This restore is in memory only; the save is unchanged.)
+
+**Hold.** A held call never rings again. It opens once the minigame closes and nothing else is open, and not while the player is under attack: it waits until 4 s have passed with no damage. Hang up counts as declining. A non-forced caller waits on hold for 90 s of unpaused time, then rings off: the call is missed (`phone_call_missed`), the toast reads "<Name> rang off. Call back from the thread." ("The caller rang off." if withheld, and none when a voicemail is left, because the voicemail toast replaces it) and `onMissed` applies. A forced call has no Hang up and no limit.
+
+**Hold and `minigame_failed`.** A puzzle the player closes with Esc or its close button to take a held call ends through its own failure path, which emits `minigame_failed` and may show the puzzle's failure toast. So a mapping on `minigame_failed` can fire when a player closes a puzzle to take a held call. Don't map `minigame_failed` to anything a held call can set off (a penalty, a story branch).
+
+**Several calls.** One call is on screen at a time. Further calls from any contact queue and ring in turn. A second offer from the same contact on the same knot is dropped; on a different knot it replaces the first while that is queued, ringing or held (m07's countdown taunts rely on this: the T-1 call replaces T-5 still waiting). A connected call is never replaced: the new offer queues. The replaced call leaves no row, voicemail or event, but its mapping's `setGlobal` and other effects have already run. When the player rings a contact, a queued incoming offer of that contact on the same knot is dropped. A forced call is never replaced: later offers queue behind it.
+
+**Forced calls** (`disableClose`). They can't be declined or missed. They answer themselves after 6 s of unpaused time with no damage for 4 s, over whatever is open. A hit that closes the call makes it ring again after 4 s of quiet, opening with `resume` so the unanswered choice shows. After a reload a forced call rings again 3 s after the game loads.
+
+**Sound.** A ringtone loops while it rings, with a vibrate once per cycle. Both stop on any outcome and while the game is paused. The ring timer stops under the Mission Brief too, and carries on when it closes.
+
+##### Missed calls, callback and voicemail
+
+Declining, ringing out, hanging up from hold, the 90 s hold limit, a connected call cut short and a reload all leave a "Missed call" row in the thread (unread, red in the contact list). The thread shows rows for calls it has made or taken too ("Incoming call, 1:24", "Outgoing call, 0:48", "No answer", "Voicemail"). Rows are never voiced.
+
+- **`onMissed: "callback"`** (the default). The contact gets a pending callback. The header button reads "Call back" even if the contact has no `call` block, and the Missed call row carries a Call back button. Either dials, shows CALLING for the dial, then connects on the same knot the ring would have opened, skipping `when`, with `call_is_callback` true. A bare `#place_call` dials it too. It clears when it connects, when a newer offer from the same contact starts ringing, and when its ring's `callbackWhen` no longer holds (above). A call that is only queued leaves it alone.
+- **`onMissed: "voicemail"`** with `voicemailKnot`. The knot runs silently into the thread. Lines that start `voice:` become voice-message bubbles with play buttons. The toast reads "New voicemail from <name>" ("New voicemail" if withheld). No callback. While anything of that contact is open on the phone (its thread, or a call with it), the voicemail waits: the Missed call row shows at once, and the knot runs, with its row, lines, toast and any globals it sets, when that closes. Several can wait at once; each runs once, in the order the calls were missed. So a voicemail can arrive after the same contact's next call: declined with the thread open, the contact rings again and is answered, and the voicemail runs when that call ends. A reload delivers every waiting voicemail after the load, in order, with no toast and no second Missed call row. A call missed because of a reload also leaves its voicemail with no toast, and once the mission's ending has closed the phone a voicemail still runs but shows no toast. A forced call can't be missed, so it has no voicemail.
+- **`withheld`.** For a caller whose number the player can't know (m07's Architect). Needs a voicemail, or the player has no way back to the message.
+- A story consequence for a miss goes on a mapping: `{ "eventPattern": "phone_call_declined:recruiter", "setGlobal": { "recruiter_snubbed": true } }`. A follow-up for a call the player didn't take maps both events; add `!data.reload` to the `missed` one if the text should not follow a reload.
+
+A reload turns every non-forced call that was queued, ringing, held or connected into a missed call (a row, no toast, `phone_call_missed` with `reload: true` once the game has loaded). A call that had not been answered then follows `onMissed`. One that was connected leaves a callback even with `onMissed: "voicemail"`, because the player had picked up, and a withheld one leaves nothing. A non-forced call closed some other way while connected (a knockout) is treated the same way. A story left on a call's knot by a reload goes back to the home knot. An outgoing call cut by a reload leaves no row.
+
+##### Events
+
+All carry `{ npcId, knot }` and work as `eventPattern`s:
+
+- `phone_call_answered:<npcId>`: also on auto-answer and when a callback connects. Data adds `answerSeconds` and `callback` (true for a callback). A plain outgoing call (the button or `#place_call`, not a callback) emits none, so don't map a placed call's effects to it.
+- `phone_call_declined:<npcId>`: Decline, or Hang up from hold.
+- `phone_call_missed:<npcId>`: ring-out, the caller ringing off after the hold limit, or a reload.
+
+`conversation_closed:<npcId>` fires once when a call ends, including a call placed from, or answered over, that contact's own thread. The thread is a separate conversation: when the player later leaves it, the event fires again for the same contact. So a mapping on `conversation_closed:<npcId>` for a contact with a `call` entry or a `ring` can run once per call and once per thread visit. Give it `onceOnly: true` or a `condition` that stops the later runs. The validator warns when it has neither.
+
+##### How a mission writes a call
+
+- Each call has its own knot (`call`, `support_call`, `first_call`). The home knot stays the text thread and never routes into a call knot, or a thread opened by hand would replay the call as silent texts.
+- A call ends with `#exit_conversation` on its last line or choice, then `-> DONE`. A call whose story ends without the tag hangs up 2 s after its last line. After the call the engine moves the story to the home knot. **A call never diverts to the home knot, a hub or any knot the text thread also uses**: the phone keeps running the story after `#exit_conversation` until it reaches choices, so a divert home would type the hub's lines, unvoiced, inside the call, and the call's voicing would reach into the hub. The validator warns. Only a contact with `voiced: true` (Dev's form) diverts home.
+- **"Call me" in a text means a call.** A text, hub line or bark that tells the player to call or ring a contact appears only where that contact can be called for that beat: a `call` entry, a pending callback or a hub choice with `#place_call`. Everywhere else it says "message me", "text me" or "tell me". The validator warns on a "call me" or "ring me" text for a contact with no `call` entry and no `ring`. Don't leave a hub topic out because it became a call: keep the choice and give it `#place_call:<knot>`, so the player picks the choice they know and the phone dials.
+- Drop an ink choice that fakes a call ("[Ring back.]" then "The number rings out.") once the contact has a `call` block with `unavailable: "no_answer"`: the engine does it.
+- Where two records share a display name (HaX on the phone and in person), prefix the co-speaker line with the record's id.
+- A call whose choice sets a global that opens a scene (the bring-in's debrief) still says its last line and ends with `#exit_conversation`. The scene queues behind the call and opens when it ends; the phone does not reopen. Put the hand-off line after the choice so the player hears it first.
+- The ink side (call and voicemail knots, the two engine variables, writing openings that don't repeat) is in `README_ink_best_practices.md` "Writing call and voicemail knots".
+
+##### While a call is on
+
+While a ringer call is connected or opening:
+
+- Scripted conversations (`person-chat`, `phone-chat` and `video-call` mappings and timed conversations) queue and open when the call ends, rather than closing it. A call itself queues behind a scripted beat that is on screen.
+- An auto-challenge (any `*_in_view` mapping, such as a guard who challenges on sight) is dropped, and fires again on the next sighting after the call.
+- Text toasts are held, and appear when the call ends. A click on another contact's toast would otherwise open that thread and end the call.
+- A legacy mapping that would have closed the phone waits.
+
+Only a call that goes through the ringer (`ring`, `call`, a callback) does this. A call opened by a `voiced: true` mapping still closes what is open.
+
+##### Endings and calls
+
+**`#ending_check` in a call.** Put it in the brackets of the choice that starts the ending (`+ [On my way. #ending_check]`). "Keep going" then leaves the call on the same choices. Don't use the line form in a call. On a line or after the brackets, "Keep going" drops every NPC line and every tag of that reply, `#exit_conversation` included, and the call ends 2 s after its story runs out, back on its home knot. A bring-in completes its call-in task on the "[Bring me in.]" reply, before the confirm choice: the ending check lists every optional objective still open, so a task that waited for the confirm would always be listed. The ink shape is in `README_ink_best_practices.md` "A bring-in hand-off".
+
+When a mission ends, the ringer closes: calls that are queued, ringing or held are removed with no row and no event, and new offers are refused. A call already connected finishes. This happens only when the server has agreed to conclude the mission (the credits, or the aim conclusion screen). "End the mission now" closes nothing on its own, because the conclude can still be refused (`concludeRequires`) and a refusal must leave calls ringing. So warn before a debrief or ending call and let the player finish up first.
+
+##### The call screen
+
+A voiced call (`params.voiced`, outside the `terminal` theme) draws a call screen in place of the message thread (`phone-call-ui.js`): an "ON CALL" bar with the running time, the contact's portrait large with a speaking indicator, subtitles for the current line (the previous one dimmed), the reply choices, and a red end-call button in place of the back arrow (hidden on a forced `disableClose` call). A call that came through the ringer ends with "Call ended m:ss" for a beat, and the thread gets its row. Its × and Esc end the call, there is no Cancel, and Add to Notepad is hidden while it is connected. The caption under the caller's name follows the rule under [`call`](#call-a-contact-the-player-can-ring). Write it as the phone would show it: "SAFETYNET secure line", "Unknown number", "Ledgerwell service desk". Every line still goes into the thread's history, so the notepad and a later open of the thread outside a call show it as messages.
+
+A contact on the `terminal` theme (m07's Architect) has no call screen: it rings with the normal banner, then opens in the terminal look, voiced, line by line.
+
+**Contact-level `voiced` (the lab's form)** stays exactly as it was:
 
 ```json
 { "id": "dev_service_desk", "displayName": "Dev", "npcType": "phone",
@@ -1874,16 +2075,43 @@ Phone texts are silent. A call can be spoken instead. There are three places to 
 
 The contact-level key only voices calls that go through `callLaunch`. Opening the same contact from the player's phone contact list is a silent text thread, because the phone app passes no `voiced` param. Use it for a contact who is only ever phoned, never texted.
 
-**The call screen.** A voiced call (`params.voiced`, outside the `terminal` theme) draws a call screen in place of the message thread (`phone-call-ui.js`): an "ON CALL" bar with the running time, the contact's portrait large with a speaking indicator, subtitles for the current line (the previous one dimmed), the reply choices, and a red end-call button in place of the back arrow (hidden on a forced `disableClose` call). The caption under the caller's name is the call's own `callLabel` (on the mapping or `timedConversation`), else the contact's `callLabel`, else "Voice call". Write it as the phone would show it: "SAFETYNET secure line", "Unknown number", "Ledgerwell service desk". Every line still goes into the thread's history, so the notepad and a later open of the thread outside a call show it as messages.
+**Write a call as a call, a text as a text.** The player sees a call screen and hears a voice, or reads a silent thread. Ink that says "you picked up", "get off her line", "Are you safe?" / "Please be quick" or "Your handset rings" needs a voiced form; a contact configured as plain phone-chat with call wording reads as a text thread that claims to be a phone call. Short typed messages, links, "sent you" and emoji belong in a text thread, not a voiced call. `dialoguelint` flags call wording in a text knot (`call-in-text-thread`); a call knot carries `// lint: call-knot`.
 
-**Write a call as a call, a text as a text.** The player sees a call screen and hears a voice, or reads a silent thread. Ink that says "you picked up", "get off her line", "Are you safe?" / "Please be quick" or "Your handset rings" needs a voiced form; a contact configured as plain phone-chat with call wording reads as a text thread that claims to be a phone call. Short typed messages, links, "sent you" and emoji belong in a text thread, not a voiced call.
-
-- Each line the contact speaks plays through TTS as it appears in the thread, as in person-chat, and the next line waits until it has finished. Clicking the thread skips the line playing.
-- A line prefixed with another character's display name (`Director Netherton: Put her on.`) is spoken in that character's `voice`, with their `voice.fx`. A character with no `voice` is read in the contact's voice. Player lines (`You: …`, `#speaker:player`) and narration are not spoken.
+- Each line the contact speaks plays through TTS as it appears in the thread, as in person-chat, and the next line waits until it has finished. Clicking the thread skips the line playing. A `#delivery:` note on a call line is sent to TTS, as in person-chat.
+- A line prefixed with another character's display name (`Director Netherton: Put her on.`) or exact id is spoken in that character's `voice`, with their `voice.fx`. A character with no `voice` is read in the contact's voice. Player lines (`You: …`, `#speaker:player`) and narration are not spoken.
 - With `resume`, lines already in the thread are not spoken again; only new lines after the unanswered choice are. Lines the player never heard because the call was closed mid-way (a hit) are in the thread but not replayed.
-- Only the call itself is spoken. The call is the voiced mapping's or `timedConversation`'s `targetKnot` plus every knot it reaches by diverts, tunnels and choices, stopping at the contact's home knot (its scenario `currentKnot`, default `start`: the knot the phone opens on outside a call). Lines in the home knot, and hub topics reached only from it, stay silent, even in the same open phone after the call. So a call that should end at the hub must divert to it (`-> hub`), and anything the call shares with the hub must live in knots the call reaches. A voiced key with no `targetKnot` voices nothing.
-- The contact needs a `voice`. Lines use the same cache as person-chat (text, voice, style, language, model), and `batch_generate` voices exactly the call's lines by the same rule, not the contact's texts. Voiced lines follow the standing rule: no printed variables.
+- Only the call itself is spoken. For a `ring` or `call` call that is the call's knot plus every knot it reaches by diverts, tunnels and choices, stopping at the contact's home knot. For an older `voiced` mapping or timed conversation, the `targetKnot` plus what it reaches, with the same stop. Lines in the home knot, and hub topics reached only from it, stay silent, even in the same open phone after the call. For the older forms a call that should end at the hub diverts to it (`-> hub`); a `ring` or `call` call must not (see "How a mission writes a call"). Voicemail knots are the exception to the walk: only their `voice:` lines are spoken, and they do not widen it.
+- The contact needs a `voice`. Lines use the same cache as person-chat (text, voice, style, language, model), and `batch_generate` voices exactly the call's lines by the same rule, not the contact's texts. Voiced lines follow the standing rule: no printed variables. Lines of the home knot and the hub are text, not voiced, and may print variables (`{player_name}`); the TTS test reads a phone contact's call, video-call and voicemail knots and what they reach, not its whole story.
 - A line with no clip on a server without a key is silent and doesn't hold up the call.
+
+##### What the validator checks for phone calls
+
+`ruby scripts/validate_scenario.rb scenarios/<name>/scenario.json.erb` runs `check_phone_calls` (`scripts/validate_phone_calls.rb`) over every phone NPC; the engine's own reading of the fields is in `public/break_escape/js/minigames/phone-chat/phone-ring-config.js`, and where it falls back with a console warning the validator reports the same thing. `dialoguelint.mjs` adds one rule for the ink (below). Tests: `test/js/validator-phone-calls.test.mjs`, `test/js/dialoguelint.test.mjs`.
+
+Errors (`❌ ERROR: phone calls:`):
+
+- `ring` on a non-phone NPC, on a video call, or on a mapping whose `conversationMode` isn't `phone-chat`; `ring` that is neither `true` nor an object; `ring` with no `targetKnot` (not an error on a contact with `voiced: true`).
+- `ring.onMissed` not `callback` or `voicemail`; `onMissed: "voicemail"` with no `voicemailKnot`; `ring.voicemailKnot` that isn't a knot in the contact's compiled ink; `withheld` or `untilAnswered` that isn't a boolean; `withheld: true` without `onMissed: "voicemail"` on a call that isn't forced; `ring.callbackWhen` that isn't a condition string, uses a term a call condition can't read, contains `||` or a non-`globalVars.` term (the callback would be cleared at once), or reads a `globalVars.<name>` nothing declares or sets (error), or is set with `onMissed` other than `callback` (warning, no effect); `ring.ringWhile` that isn't a condition string, uses a term a call condition can't read, contains `||` or a non-`globalVars.` term (the ring would never drop), or reads a `globalVars.<name>` nothing declares or sets (error), or is set on a forced call (warning, no effect).
+- A voicemail knot (or a knot it reaches) that produces no `voice:` line (warning): a lines-less voicemail on a contact the player never texts is overwritten by the intro preload.
+- A `ring` `targetKnot`, a ringing `timedConversation.targetKnot` or a `call` entry's `knot` that is the contact's home knot (unless the contact has `voiced: true`), or isn't a knot in the ink.
+- `call` that isn't an object or a list of objects; an entry with no string `knot`; `unavailable` not `no_answer` or `hidden`; `button` not a boolean; `call` on a non-phone NPC.
+- `call.when` that is not a string; `call.when` that uses `value`, `name` or `data.`, or reads `globalVars.<x>` where `x` is not declared in `globalVariables`, imported or set by anything (the condition would always see `undefined`); `call.when` containing `||` (the engine reads it as one unsupported term, so the whole condition fails; write two entries with the same knot).
+- `#place_call:<knot>` where `<knot>` is not one of the contact's `call` entries; a bare `#place_call` where the contact has no `call` entry and no ring with `onMissed: "callback"` to dial; a `#place_call` tag on a choice line (inside or after the brackets), where it never runs.
+- `call_answer_seconds` declared with a non-integer default, or `call_is_callback` with a non-boolean one.
+
+Warnings (`⚠️ WARNING: phone calls:`):
+
+- An unknown field in `ring` or a `call` entry (the engine ignores it); `untilAnswered` or `onMissed: "voicemail"` on a forced call (no effect); `untilAnswered` where the call knot never reads `call_answer_seconds`.
+- A call start knot that the home knot can reach (a thread opened by hand would replay the call as silent texts); a knot in the call that the home knot also reaches (shared, and the call would voice it); a call knot that diverts to the home knot. All three are waived for `voiced: true` contacts.
+- A `#place_call` line whose next line is not `-> DONE`.
+- A contact with `ring` or `call` and no `voice`; a `call` entry on a contact with `callId` (the button is hidden); a `call` contact not in its phone's `npcIds` and with nothing giving it history (its thread, and so its button, never appears).
+- A `conversation_closed:<npc>` mapping on a contact with a `call` entry or `ring` and neither `onceOnly` nor a `condition` (it runs once per call and again on each later thread visit).
+- A mapping `condition` on a ring or phone-chat mapping that reads `globalVars.<x>` nothing declares or sets.
+- A voiced call knot or voicemail knot that prints a variable (`{x}`) or has an inline stage direction (`*sighs*`, `(laughs)`).
+- `call_answer_seconds` or `call_is_callback` declared by a contact that has no `ring` and no `call` entry (always 0 or false).
+- **"Call me" text.** For phone contacts only: a `sendTimedMessage.message`, `timedMessages` text, bark, mapping `message` or ink line (not the bracketed choice text) that says "call me", "ring me" or "phone me", or promises a call ("call anytime", "call if", "call when", "call back", "call it in"), for a contact with no `call` entry and no `ring`. Not flagged: noun uses ("your call if", "a conference call"), the NPC's own ring ("I'll ring when") and someone else's call ("tell him to call back"). A contact with contact-level `voiced: true` is exempt. A contact whose only calls are `voiced: true` mappings is not.
+
+`node scripts/ink_runtime_check/dialoguelint.mjs scenarios/<name>/` adds `call-in-text-thread` (warning, phone channel): call wording in a text knot ("you picked up", "on the line", "get off her line", "hangs up", "the line goes dead", "your handset rings", "rings out", "caller ID"). It doesn't fire on "ring <Name> back", "call me", "I'll ring", "on this line", or choice text in brackets. A knot marked `// lint: call-knot` directly under its `=== knot ===` line is exempt, along with every knot it reaches by divert, tunnel or thread, stopping at the home knot (`currentKnot`, default `start`) and at anything the home knot reaches; so only the call's first knot needs the mark. On marked knots the delivery checks run as they do for person-chat.
 
 #### Field guides (exposure-gated handler lab sheets)
 
@@ -2107,7 +2335,7 @@ The engine adds a second warning on top of the story's own. Before an ending fir
 
 Warn at the point of no return, before the debrief starts, because a debrief that plays once cannot be taken back. Use whichever route fits how the debrief opens:
 
-- **A player choice starts it** (the "bring me in" option in a hub): put `#ending_check` as the **first tag** on that choice, before its `#set_global` or `#complete_task`. "Keep going" skips the rest of the line, so the debrief never starts and the player is back in the hub. Watch for a soft-lock: if the same choice also sets the opening global with an ink `~` assignment, or the hub is gated on `not <global>`, move that `~` after the confirm (or gate the hub on a separate global), or "Keep going" cannot re-offer the choice.
+- **A player choice starts it** (the "bring me in" option in a hub): put `#ending_check` as the **first tag** on that choice, before its `#set_global` or `#complete_task`. "Keep going" skips the rest of the line, so the debrief never starts and the player is back in the hub. Watch for a soft-lock: if the same choice also sets the opening global with an ink `~` assignment, or the hub is gated on `not <global>`, move that `~` after the confirm (or gate the hub on a separate global), or "Keep going" cannot re-offer the choice. A bring-in on a phone call is the exception: the tag goes in the brackets of the confirm choice (see [Endings and calls](#endings-and-calls)).
 - **The debrief is the conversation itself** (a choice that diverts straight into the debrief's lines, as Ruth's "Walk me through it." does in `lab_physical_pentest`): put `#ending_check` **inside the choice's brackets**. The chat asks before the choice is taken, and "Keep going" leaves the player at the same choices. After the brackets the tag cannot stop this debrief: ink has already moved into it, and with no other tag on the line to skip the debrief carries on whatever the player answers. `dialoguelint.mjs` reports that placement (`ending-check-after-bracket`). If the NPC offers the choice in their own words instead ("There are loose ends; leave them?"), tag the player's agreeing choice `#ending_confirmed`: it records the optional objectives open now as agreed, so the credits and the conclusion aim do not ask about them.
 - **An eventMapping opens it** (on `conversation_closed`, `room_entered`, or a flag), with no player choice to tag: put `"endingCheck": true` on that mapping. The engine asks before the mapping runs. "End the mission now" opens the debrief; "Keep going" does not run the mapping and instead holds the ending — the objectives panel's **End the mission** button appears and the ending runs by itself once the last optional objective is settled. This works for any trigger, including a one-shot `global_variable_changed:<flag>`, because the held ending does not depend on the trigger firing again.
 

@@ -1,0 +1,34 @@
+game 2188 (replay)
+T-30: enter ops
+T-30 banner: {"cur":{"npc":"the_architect","state":"ringing","knot":"taunt_t30","opened":false},"q":0,"banner":"☎ | No caller ID | Incoming call | Answer | Decline","bimg":null}
+shot replay_t30_banner
+T-30 call: {"bar":null,"subs":[],"choices":[]}
+shot replay_T-30_call
+T-30 ended: mg=null ringer={"cur":null,"q":0,"banner":null,"bimg":null}
+T-30 rows: ["Call: No caller ID"]
+fire architect_t20_played
+T-20 banner: {"cur":{"npc":"the_architect","state":"ringing","knot":"taunt_t20","opened":false},"q":0,"banner":"☎ | No caller ID | Incoming call | Answer | Decline","bimg":null}
+T-20 call: {"bar":null,"subs":[],"choices":[]}
+shot replay_T-20_call
+T-20 ended: mg=null ringer={"cur":null,"q":0,"banner":null,"bimg":null}
+T-20 rows: ["Call: No caller ID","Call: No caller ID"]
+fire architect_t10_played
+T-10 banner: {"cur":{"npc":"the_architect","state":"ringing","knot":"taunt_t10","opened":false},"q":0,"banner":"☎ | No caller ID | Incoming call | Answer | Decline","bimg":null}
+T-10 call: {"bar":null,"subs":[],"choices":[]}
+shot replay_T-10_call
+T-10 ended: mg=null ringer={"cur":null,"q":0,"banner":null,"bimg":null}
+T-10 rows: ["Call: No caller ID","Call: No caller ID","Call: No caller ID"]
+fire architect_t5_played
+T-5 banner: {"cur":{"npc":"the_architect","state":"ringing","knot":"taunt_t5","opened":false},"q":0,"banner":"☎ | No caller ID | Incoming call | Answer | Decline","bimg":null}
+T-5 call: {"bar":null,"subs":[],"choices":[]}
+shot replay_T-5_call
+T-5 ended: mg=null ringer={"cur":null,"q":0,"banner":null,"bimg":null}
+T-5 rows: ["Call: No caller ID","Call: No caller ID","Call: No caller ID","Call: No caller ID"]
+fire architect_t1_played
+T-1 banner: {"cur":{"npc":"the_architect","state":"ringing","knot":"taunt_t1","opened":false},"q":0,"banner":"☎ | No caller ID | Incoming call | Answer | Decline","bimg":null}
+T-1 call: {"bar":null,"subs":[],"choices":[]}
+shot replay_T-1_call
+T-1 ended: mg=null ringer={"cur":null,"q":0,"banner":null,"bimg":null}
+T-1 rows: ["Call: No caller ID","Call: No caller ID","Call: No caller ID","Call: No caller ID","Call: No caller ID"]
+rows after T-1: ["Call: No caller ID","Call: No caller ID","Call: No caller ID","Call: No caller ID","Call: No caller ID"]
+architect /tts: "Don't look for the trace. It isn't there." "I've read your file. Files are written by people who need you to be a particular shape. I prefer to watch." "Someone with a little of your attention tonight and no interest in wasting it." "There is a decision in front of you tonight. Make it however you like. I only want to see it made." "Let it hurt afterwards, not during. I expect you've been told that." "You've sent your team." "Washington. A hundred and eighty-seven million records, and a great deal of shouting afterwards about legitimacy." "Which leaves the software vendors, and it leaves San Francisco. Twelve companies. Eighty to a hundred and forty people this week, starting on your clock." "Then you'll have spent it on something." "Answer honestly. I'll know either way. Did you decide with a number, or with your stomach?" "Ten minutes before your team is too committed to move." "The beauty of entropy is that it doesn't require me to win. It only requires you to wait." "Stop this, and something else fails. Someone else dies. You simply won't be in the room for it." "Yes. That's rather the point." "You still have a door open. I'd hurry, but that's your business." "The man in your control room would give you his figure and defend it to your face. I respect that, even when it's monstrous." "You covered the records. Say the other two out loud. Trojan Horse. Meltdown." "Noted." "Do you believe in yours enough to name them? You will have to, eventually, to somebody with a tablet." "Closer than the file suggested. Not close enough to be comfortable." "But the grid was never the point." "They do. And I have written every one of them down." "Don't look for the trace. It isn't there." "I've read your file. Files are written by people who need you to be a particular shape. I prefer to watch." "Someone with a little of your attention tonight and no interest in wasting it." "There is a decision in front of you tonight. Make it however you like. I only want to see it made." "Let it hurt afterwards, not during. I expect you've been told that." "You've sent your team." "Washington. A hundred and eighty-seven million records, and a great deal of shouting afterwards about legitimacy." "Which leaves the software vendors, and it leaves San Francisco. Twelve companies. Eighty to a hundred and forty people this week, starting on your clock." "Then you'll have spent it on something." "Answer honestly. I'll know either way. Did you decide with a number, or with your stomach?" "Ten minutes before your team is too committed to move." "The beauty of entropy is that it doesn't require me to win. It only requires you to wait." "Stop this, and something else fails. Someone else dies. You simply won't be in the room for it." "Yes. That's rather the point." "You still have a door open. I'd hurry, but that's your business." "The man in your control room would give you his figure and defend it to your face. I respect that, even when it's monstrous." "You covered the records. Say the other two out loud. Trojan Horse. Meltdown." "Noted." "Do you believe in yours enough to name them? You will have to, eventually, to somebody with a tablet." "Closer than the file suggested. Not close enough to be comfortable." "But the grid was never the point." "They do. And I have written every one of them down." 

@@ -1,0 +1,3 @@
+game 2279 (hax_label)
+captions seen: [{"k":"-|-","t":"0.1"},{"k":"-|NotesMinigame:undefined:voiced=false","t":"0.5"},{"k":"-|-","t":"1.2"},{"k":"Voice call|PhoneChatMinigame:agent_0x99:voiced=true","t":"1.5"},{"k":"SAFETYNET secure line|PhoneChatMinigame:agent_0x99:voiced=true","t":"1.6"},{"k":"-|-","t":"27.2"}]
+contact callLabel: "SAFETYNET secure line"
