@@ -135,6 +135,18 @@ Tests: single files first (`access-rfid-acl`, `rfid-door-screen`, `action-menu` 
 
 Open: the icon choice (16, 32 A or 32 B) and then m7's tidy-up; m4 with slice 4.
 
+### The user's icon pick (q107) and m7's tidy-up
+
+- **Pick.** q107: "16: small landscape box". The Copy entry uses `icons/card-copier.png` (16x16) again, at x4 in the 64px box, as first built and as the choices sheet showed it. The art is not resized.
+- **Retired.** `card-copier-32.png` and `card-copier-32b.png` moved to the main tree's `tmp/delete/` (as `ux3b-card-copier-32.png` and `ux3b-card-copier-32b.png`) and their removal staged by path. No code or test refers to them now; older sections of this log and the R2 review still name them as history.
+- **m7.** `action-menu.js`: the icon comment names the 16px drawing and the user's pick; `COPIER_ICON_SIZE` 16, `COPIER_ICON_SCALE` 4. `action-menu.test.mjs`: Copy uses `card-copier.png`, 64x64, and the file is 16x16; the R2 "same scale as the hand" check is replaced by two pins, the copier at x4 and the hand at x2 (64 / cell), so a change to either scale fails.
+
+Tests: `action-menu` 16/16, `tap-pick-handler` 30/30, `rfid-door-screen` 46/46 (with plain `node`, as `bin/test-js` runs it; under `node --test` it sometimes fails at file level with "Unable to deserialize cloned data", the runner's own IPC error, before any assertion), `engine-fixes-pass4b` 10/10, `inventory-menu` 20/20; Rails `access_model_rfid_test.rb` 48 runs, 0 failures. Full suites under the shared lock, on 47a9324f7: `RBENV_VERSION=2.7.8 bin/rails test` 2391 runs, 42555 assertions, 0 failures, 0 errors, 1 skip; `MERGE_BATCH=1 bin/test-js -j 3` 598 files passed, 0 failed.
+
+Live shot: keyless server on :3065 from this worktree, setFPS(20) with fixed steps, scrollbars shown, stopped afterwards. New `test_access_doors` games (swapped onto `test_access_social` hosts): 3060 (1400x1000), 3061 (390x844). Script `slice3b-final-tools/menu-shot.js` in the session scratchpad. Shots in `ux-shots/slice3b-final/`, each looked at: `menu-icons` and `menu-icons-zoom` at both sizes. The copier icon draws at 64x64 with `image-rendering: pixelated`, crisp, beside the hand. The 390x844 shot still shows the grey horizontal page scrollbar at the bottom noted in round 1 (the game page's own overflow, outside this slice).
+
+Open: m4 with slice 4.
+
 ### Review round 2 fixes: handover (context limit reached)
 
 Review: `UX_SLICE3B_REVIEW_R2.md` (25fcf0c1b). Asked: m1, m2, m3, m5, m6, m7; m4 (inventory scrollbar) skipped, slice 4 reworks it.
