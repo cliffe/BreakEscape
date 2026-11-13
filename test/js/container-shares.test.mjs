@@ -174,7 +174,7 @@ test('a mapped share closed by its Close reopens the desktop it came from', asyn
     await openRemote();
     icon('Ledger-Archive').click();
     await settle();
-    document.querySelector('#minigame-cancel').click();
+    document.querySelector('#minigame-close').click()   /* the X: no Cancel beside it (slice 7 R1) */;
     await settle();
     assert.equal(current().loginPcId, 'lena_pc');
     assert.equal(fetches.at(-1), '/break_escape/games/9/container/lena_pc?foothold=jack_comms_port');
@@ -203,7 +203,7 @@ test('a share opened from the view reports share/close to the trip when closed',
     setup();
     window.startContainerMinigame(viewShare(), null, false, true);
     await settle();
-    document.querySelector('#minigame-cancel').click();
+    document.querySelector('#minigame-close').click()   /* the X: no Cancel beside it (slice 7 R1) */;
     assert.deepEqual(landings, [['share', 'close', {}]]);
 });
 
@@ -419,7 +419,7 @@ test('a locked folder opened below a network screen carries its parent, and reop
     window.startContainerMinigame({ ...stand, scenarioData: { ...YEAR_END, locked: false } }, null, false, true);
     await settle();
     assert.equal(window.pendingContainerReturn, null, 'a stale return is cleared when a container opens');
-    document.querySelector('#minigame-cancel').click();
+    document.querySelector('#minigame-close').click()   /* the X: no Cancel beside it (slice 7 R1) */;
     await settle();
     assert.equal(current().containerItem, share, 'back in the share');
 });
@@ -512,7 +512,7 @@ test('a PIN pad that unlocks its folder hands over to the folder, not back to th
     await settle();
     assert.equal(networkReturnArmed(), false, 'the folder opening spends the return');
     assert.equal(current().containerItem.scenarioData.id, 'ledger_yearend');
-    document.querySelector('#minigame-cancel').click();
+    document.querySelector('#minigame-close').click()   /* the X: no Cancel beside it (slice 7 R1) */;
     await settle();
     assert.equal(current().containerItem, share, 'and its Close is back in the share');
 });

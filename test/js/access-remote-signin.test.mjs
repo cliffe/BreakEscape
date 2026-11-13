@@ -323,7 +323,7 @@ test('the remote desktop closed by its Close returns to the view; Sign out too',
     setup();
     await remoteDesktopOpen();
     views.length = 0;
-    document.querySelector('#minigame-cancel').click();
+    document.querySelector('#minigame-close').click()   /* the X: no Cancel beside it (slice 7 R1) */;
     await settle();
     assert.deepEqual(views, [['jack_comms_port', null]]);
     openRemoteDesktop('lena_pc', 'jack_comms_port');
