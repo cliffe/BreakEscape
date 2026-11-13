@@ -678,13 +678,14 @@ export class ContainerMinigame extends MinigameScene {
         }
 
         // Add notebook button to minigame controls if postit note exists (before cancel button)
-        if (this.controlsElement && this.containerItem.scenarioData.postitNote && this.containerItem.scenarioData.showPostit) {
+        const controls = (this.containerItem.scenarioData.postitNote && this.containerItem.scenarioData.showPostit) ? this.ensureControlsRow() : null;
+        if (controls) {
             const notebookBtn = document.createElement('button');
             notebookBtn.className = 'minigame-button';
             notebookBtn.id = 'minigame-notebook-postit';
             notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
             // Insert before the cancel button (first child in controls)
-            this.controlsElement.insertBefore(notebookBtn, this.controlsElement.firstChild);
+            controls.insertBefore(notebookBtn, controls.firstChild);
         }
 
         // Show loading state

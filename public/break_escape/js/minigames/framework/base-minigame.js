@@ -13,9 +13,9 @@ export class MinigameScene {
 
     // The X closes a minigame (and Esc), so the shell draws no Cancel button beside it
     // (UX slice 7 R1, the user's screenshot notes). A scene whose bottom button is not a
-    // second close opts back in: the password screen (slice 2a owns it), the notes reader
-    // (Continue) and conversations (End Conversation). The .minigame-controls row stays for the scenes' own footer buttons
-    // (Add to Notepad) and hides itself when empty.
+    // second close opts back in: the notes reader (Continue) and conversations (End Conversation). The .minigame-controls row is drawn
+    // only when it has something to hold: the kept Cancel, or a scene's own footer button
+    // (Add to Notepad) added through ensureControlsRow(). A scene with neither has no row.
     static keepsCancelButton = false;
 
     // true: the X sits inside the scene's frame at its top right, never on the frame's border
@@ -49,7 +49,7 @@ export class MinigameScene {
             </div>
             <div class="minigame-game-container"></div>
             <div class="minigame-message-container"></div>
-            <div class="minigame-controls">${showCancel ? `<button class="minigame-button" id="minigame-cancel">${escapeHtml(this.params.cancelText || 'Cancel')}</button>` : ''}</div>
+            ${showCancel ? `<div class="minigame-controls"><button class="minigame-button" id="minigame-cancel">${escapeHtml(this.params.cancelText || 'Cancel')}</button></div>` : ''}
         `;
 
         // A full-window console whose frame keeps a bar at its bottom for Cancel opts in to
@@ -93,6 +93,32 @@ export class MinigameScene {
         }
     }
     
+    /**
+     * The controls row, made on first use: a scene with no Cancel gets no row from init(),
+     * so an empty row never adds a gap or a stray box. A footer button (Add to Notepad) goes
+     * in through here. The row sits under the message line, where the drawn row would be,
+     * unless controlsHost() names another parent (the password screen's frame).
+     */
+    ensureControlsRow() {
+        if (this.controlsElement) return this.controlsElement;
+        if (typeof document === 'undefined') return null;
+        const row = document.createElement('div');
+        row.className = 'minigame-controls';
+        const host = this.controlsHost();
+        const after = this.messageContainer;
+        if (host?.appendChild) host.appendChild(row);
+        else if (after?.parentNode) after.parentNode.insertBefore(row, after.nextSibling);
+        else if (this.container?.appendChild) this.container.appendChild(row);
+        else return null;
+        this.controlsElement = row;
+        return row;
+    }
+
+    // The parent for a row made by ensureControlsRow(); null puts it under the message line
+    controlsHost() {
+        return null;
+    }
+
     // The element whose top-right corner holds the X (closeInsideFrame scenes)
     closeAnchor() {
         return this.gameContainer;

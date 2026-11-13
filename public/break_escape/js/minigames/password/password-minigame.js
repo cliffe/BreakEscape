@@ -429,8 +429,8 @@ export function capturedSignIns(captures, accounts, secrets) {
 if (typeof window !== 'undefined') window.capturedSignIns = capturedSignIns;
 
 export class PasswordMinigame extends MinigameScene {
-    // Keeps its Cancel (owned by UX slice 2a), see MinigameScene.keepsCancelButton
-    static keepsCancelButton = true;
+    // No Cancel: the X and Esc close it (UX slice 2a removed the password Cancel), see MinigameScene.keepsCancelButton
+    static keepsCancelButton = false;
 
     constructor(container, params) {
         super(container, params);
@@ -717,21 +717,13 @@ export class PasswordMinigame extends MinigameScene {
     }
 
     /**
-     * The controls row under the game area, made on first use: with no Cancel button the base
-     * scene draws none, and an empty row would only add a gap. It sits inside the frame, after
-     * the game area, as a fixed row that does not scroll (the frame wraps all the content, the
-     * user's UX notes; UX slice 2a R2 m3): the area scrolls above it, so the post-it cannot
-     * cover it.
+     * The controls row (made on first use by the base ensureControlsRow, so there is none
+     * when it would be empty) sits inside the frame, after the game area, as a fixed row that
+     * does not scroll (the frame wraps all the content, the user's UX notes; UX slice 2a
+     * R2 m3): the area scrolls above it, so the post-it cannot cover it.
      */
-    ensureControlsRow() {
-        if (this.controlsElement) return this.controlsElement;
-        const host = this.frameElement || this.container;
-        if (!host?.appendChild) return null;
-        const row = document.createElement('div');
-        row.className = 'minigame-controls';
-        host.appendChild(row);
-        this.controlsElement = row;
-        return row;
+    controlsHost() {
+        return this.frameElement || null;
     }
 
     setupPasswordInterface() {

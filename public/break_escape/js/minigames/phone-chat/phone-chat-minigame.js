@@ -178,17 +178,18 @@ export class PhoneChatMinigame extends MinigameScene {
         // Add notebook button to minigame controls (before close button). Not on a ringer call:
         // startNotesMinigame would replace the call (row 32) and the phone would reopen as a
         // plain thread carrying a stale ringerCall (A2a_NOTES, R3 M2).
-        if (this.controlsElement && !this.params.ringerCall) {
+        const controls = this.params.ringerCall ? null : this.ensureControlsRow();
+        if (controls) {
             const notebookBtn = document.createElement('button');
             notebookBtn.className = 'minigame-button';
             notebookBtn.id = 'minigame-notebook';
             notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
             // Insert before the cancel/close button
-            const cancelBtn = this.controlsElement.querySelector('#minigame-cancel');
+            const cancelBtn = controls.querySelector('#minigame-cancel');
             if (cancelBtn) {
-                this.controlsElement.insertBefore(notebookBtn, cancelBtn);
+                controls.insertBefore(notebookBtn, cancelBtn);
             } else {
-                this.controlsElement.appendChild(notebookBtn);
+                controls.appendChild(notebookBtn);
             }
         }
         

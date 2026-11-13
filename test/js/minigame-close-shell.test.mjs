@@ -42,14 +42,16 @@ function track(mg) {
 
 const rect = (left, top, width, height) => ({ left, top, width, height, right: left + width, bottom: top + height, x: left, y: top });
 
-test('a plain scene given showCancel: true draws no Cancel, and its controls row is empty', () => {
+test('a plain scene given showCancel: true draws no Cancel, and no empty controls row', () => {
     const mg = track(new MinigameScene(fresh(), { title: 'Box', showCancel: true, cancelText: 'Close' }));
     mg.init();
     assert.equal(document.getElementById('minigame-cancel'), null, 'no Cancel beside the X');
-    const controls = document.querySelector('.minigame-controls');
-    assert.ok(controls, 'the controls row is still there for footer buttons');
-    assert.equal(controls.children.length, 0, 'and it is empty');
-    assert.equal(controls.textContent.trim(), '', 'with no text, so :empty hides it');
+    assert.equal(document.querySelectorAll('.minigame-controls').length, 0, 'no empty controls row');
+    // A footer button gets the row on first use, under the message line, made once
+    const controls = mg.ensureControlsRow();
+    assert.ok(controls?.classList.contains('minigame-controls'), 'the row is made for a footer button');
+    assert.equal(mg.ensureControlsRow(), controls, 'and made once');
+    assert.equal(controls.previousElementSibling, mg.messageContainer, 'under the message line');
     document.getElementById('minigame-close').click();
     assert.deepEqual(mg.calls, [{ success: false, byPlayer: true }], 'the X closes as the player');
 });

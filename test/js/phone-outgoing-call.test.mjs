@@ -287,7 +287,7 @@ test('A3 R1 m1: a call that diverted out of its knots is not settled either', ()
 test('wiring: a ringer call has no Cancel and no Add to Notepad; the x is End call', () => {
     const s = readFileSync(join(chat, 'phone-chat-minigame.js'), 'utf8');
     assert.match(s, /if \(this\.params\.ringerCall\) this\.params\.showCancel = false;/);
-    assert.match(s, /if \(this\.controlsElement && !this\.params\.ringerCall\) \{/);
+    assert.match(s, /const controls = this\.params\.ringerCall \? null : this\.ensureControlsRow\(\);/);
     assert.match(s, /endBtn\.setAttribute\('aria-label', 'End call'\)/);
     assert.match(s, /closeBtn\.cloneNode\(true\);\s*\/\/ drops the base complete\(false\) listener/);
     assert.match(readFileSync(join(here, '../../public/break_escape/js/minigames/phone-chat/phone-ringer-dom.js'), 'utf8'), /showCancel: false/);
