@@ -837,9 +837,15 @@ module BreakEscape
       assert_response :success
 
       game_loads = sql.select { |s| s.start_with?('SELECT') && s.include?('"break_escape_games"') }
+      # Just the narrow FOR UPDATE load. At current 0 (step 7) the format check is inert and reads no
+      # scenario_data at all (the sync-deltas rule, also pinned by capture_proofs_test); once a format
+      # step lands it adds one jsonb-scalar pluck of formatVersion, never the full scenario_data blob.
       assert_equal 1, game_loads.size, sql.join("\n")
-      refute_includes game_loads.first, '"break_escape_games".*', 'scenario_data must not be loaded to save'
-      assert_includes game_loads.first, 'FOR UPDATE'
+      narrow_load = game_loads.find { |s| s.include?('FOR UPDATE') }
+      assert narrow_load, "a FOR UPDATE load is expected:\n#{sql.join("\n")}"
+      refute_includes narrow_load, '"break_escape_games".*', 'scenario_data must not be loaded to save'
+      refute game_loads.any? { |s| s.include?('"break_escape_games"."scenario_data"') },
+             "the full scenario_data column must not be loaded:\n#{sql.join("\n")}"
       assert sql.none? { |s| s.include?('"break_escape_missions"') }, "mission loaded:\n#{sql.join("\n")}"
       assert sql.none? { |s| s.include?('"break_escape_demo_users"') && s.include?('WHERE "break_escape_demo_users"."id"') },
              "player loaded:\n#{sql.join("\n")}"
