@@ -10,7 +10,7 @@ The gate (user, 2026-11-13): no production deploy until the ongoing access, netw
 |---|---|---|---|
 | sis01_healthcare | 3134 | Ending reached, 18/18 tasks, every secret earned | F1 M ending race ("Not Yet" toast over the credits), fixing on build/rel-fixes. F2 withdrawn (harness: moveToNear Ravi clicked inside the trolley PC's click zone; a real click on Ravi opens only the chat; game 3155). F6 withdrawn (Ward 7 rule opens its panel; earlier clicks missed after the map shifts about 12 px on the first rule click). Two minors noted from the check: the "NO SEGMENTATION" caption is unwired text, and the map re-flows on first click. F3 to F5 m: respawn at start after reload, walkthrough drift |
 | sis02_energy | 3133 | Ending reached (second tester), 18/18 tasks, score 93, mission concluded | F1 withdrawn: the E key opens HMI-OPS-01 from three sides; the harness's interact() clicks the object's top-left origin, which overlaps the status board. A mouse click always raises a labelled menu (m, engine backlog). F6 down to m: FLAG SESSION is intended but nothing said so; the task title now says it (c203e4697). Minors: ESD labels blank, rack read reported no-effect then arrived late (host load), respawn at start after reload, TESTING_WALKTHROUGH.md stale (password lock, no flag step) |
-| m01_first_contact | 3137 | Steps 1 to 18 pass, 0 B/M | Steps 19 to 29 (incl. the never-completed abort/launch choice) running |
+| m01_first_contact | 3137 | Ending reached (two testers), 29/29 tasks, score 100, 4 flags (all seeded from FLAGS_XML), every in-game secret earned. First completed abort/launch choice (ABORT; LAUNCH not exercised) | 0 B/M. Minors: confront-Derek objective names no location (left: m01 is stable and deployed); inventory tray shows 7 of 39 items, asked breakescape-d3 whether an overflow view exists (major if not); harness-side safe approach and lock ok:false; respawn at start after reload |
 
 ## Decisions (orchestrator, overrule as needed)
 
@@ -21,6 +21,7 @@ The gate (user, 2026-11-13): no production deploy until the ongoing access, netw
 
 ## To do before the release playtests
 
+- The release m01 run takes LAUNCH at the final choice, so both branches have been played once.
 - Refresh TESTING_WALKTHROUGH.md for sis01 (monitoring display buttons, pump modal wording, network map toggles) and sis02 (HMI-OPS-01 not locked, the FLAG SESSION step), so the release testers don't report drift.
 - Harness: interact() clicks an object's top-left origin, which can land on a neighbour's hit box (sis02 HMI-OPS-01 vs the status board); moveToNear can click an object while walking (sis01 trolley PC). For the tools backlog.
 - Shared minor across all three missions: after a reload the player respawns at the start point. Ask the UI session whether it is known.
