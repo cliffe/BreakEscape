@@ -51,9 +51,22 @@ function quietly(fn) {
 }
 
 // Nothing the scenario wrote became an element, attribute or handler
+// The NCSC brief draws trusted pixel icons as <img>: exactly these classes, each
+// pinned to its asset path. Any other <img> means scenario text became markup.
+const TRUSTED_ICONS = {
+    'ncsc-envelope-icon': ['/break_escape/assets/icons/mail-new.png'],
+    'ncsc-badge-icon': ['/break_escape/assets/icons/npc-lock.png', '/break_escape/assets/icons/mark-tick.png'],
+};
+
 function assertClean(label) {
     const root = document.getElementById('mg');
-    assert.equal(root.querySelector('img'), null, `${label}: no img injected`);
+    for (const img of root.querySelectorAll('img')) {
+        const cls = img.getAttribute('class') || '';
+        const allowed = TRUSTED_ICONS[cls];
+        assert.ok(allowed, `${label}: no img injected (found class "${cls}")`);
+        assert.ok(allowed.includes(img.getAttribute('src')), `${label}: icon ${cls} keeps its asset src`);
+        assert.equal(img.attributes.length, 5, `${label}: icon ${cls} carries only class, src, alt, width and height`);
+    }
     assert.equal(root.querySelector('[onerror], [onmouseover], u'), null, `${label}: no injected handler or element`);
 }
 
