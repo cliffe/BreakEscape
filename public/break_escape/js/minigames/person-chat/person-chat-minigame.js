@@ -121,6 +121,15 @@ export class PersonChatMinigame extends MinigameScene {
         // Use global character registry if available
         if (window.characterRegistry) {
             const allCharacters = window.characterRegistry.getAllCharacters();
+            // NPCs register when their room loads, so after a reload a speaker from an unvisited room
+            // (m04's debrief: "Robert Vance:" lines, his room not loaded) did not resolve: the prefix
+            // showed under the conversation NPC's name and the line was voiced as that NPC (403).
+            // Scenario NPCs not registered yet are added after the registered ones, so a registered
+            // NPC still wins a display-name tie.
+            const rooms = this.scenario?.rooms || window.gameScenario?.rooms || {};
+            Object.values(rooms).forEach(room => (room?.npcs || []).forEach(def => {
+                if (def && typeof def === 'object' && def.id && !allCharacters[def.id]) allCharacters[def.id] = def;
+            }));
             console.log(`👥 Using global character registry with ${Object.keys(allCharacters).length} characters:`, Object.keys(allCharacters));
             return allCharacters;
         }

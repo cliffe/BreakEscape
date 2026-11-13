@@ -8,6 +8,13 @@
 // without calling in (nothing consumed); setup() now plays that menu through off camera.
 // Third form (2026-11-13, game 83): the second run called in (mission_complete set) but the debrief stayed shut behind the
 // open phone, so this take, from that state, walks into the next room to fire the debrief's room-entry backstop.
+// Fourth form (2026-11-13): the debrief was held, not lost. Run 2's call-in raised the ending warning (optional objectives
+// open) over the phone and closeAll's Esc answered "Keep going", so the ending sits on the objectives panel's "End the
+// mission" button (restored on every load); the take presses it.
+// Recorded 2026-11-13 02:49 (4th form): end-held via the panel button, debrief played (9 choices, 38 of 42 lines voiced; the
+// 4 "Robert Vance:" lines were 403: his room was not loaded, so the prefix resolved to HaX; engine fix in the same commit),
+// then the MISSION COMPLETE screen. Picture 0% drop, start offset -25 ms; the end slate tone is absent under the
+// conclusion screen, so check-take's auto-correct was wrong: trimmed with --no-correct (line onsets checked by hand, in sync).
 // One-shot: it finishes the mission's story (mission_complete, report_to_0x99). Recorded once, live, on 2026-11-13.
 // Entry state: LIVE game 83 (playtest04, m04, set 922): attack_prevented true, mission_complete false.
 // Record (LIVE mode, see run-take.sh):
@@ -60,6 +67,29 @@ export default async (page, bridge, mark) => {
     const s = await bridge.getState();
     if (s.activeMinigame && s.activeMinigame.id === 'person-chat') { open = s.activeMinigame; break; }
     await sleep(500);
+  }
+  // The ending warning (systems/ending-check.js): mission_complete's debrief mapping has endingCheck, so with optional
+  // objectives open the player is asked first. Run 2's closeAll answered it with Esc ("Keep going"), which holds the
+  // ending (saved as __ending_held, restored on load) and shows "End the mission" on the objectives panel; every later
+  // re-emit of mission_complete stands down behind the hold. That is the button a player presses, so press it on camera.
+  if (!open && await page.evaluate(() => !!(window.endingCheck && window.endingCheck.hasHeld && window.endingCheck.hasHeld()))) {
+    await closeAll(bridge);
+    await sleep(1000);
+    const how = await page.evaluate(() => {
+      const b = document.querySelector('.objectives-end-button');
+      if (b) { b.scrollIntoView({ block: 'center' }); return 'button'; }
+      return null;
+    });
+    await sleep(1500);
+    if (how) await page.click('.objectives-end-button').catch(async () => { await page.evaluate(() => window.endingCheck.endHeld()); });
+    else await page.evaluate(() => window.endingCheck.endHeld());
+    mark('end-held', { how: how || 'endHeld' });
+    for (let i = 0; i < 40; i++) {
+      const s = await bridge.getState();
+      if (s.activeMinigame && s.activeMinigame.id === 'person-chat') { open = s.activeMinigame; break; }
+      if (await page.$('#ending-check-end')) { await sleep(1500); await page.click('#ending-check-end'); mark('ending-check-end'); }
+      await sleep(500);
+    }
   }
   if (!open) {
     await closeAll(bridge);
