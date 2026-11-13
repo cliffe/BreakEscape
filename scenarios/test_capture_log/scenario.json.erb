@@ -316,7 +316,7 @@
             { "condition": "globalVars.box_planted", "value": "Your drop box is plugged in here." }
           ],
           "triggerOnInteract": [
-            { "type": "confirm_action", "text": "Plant the drop box in this port?", "onConfirm": [
+            { "type": "confirm_action", "text": "Plant the drop box in this port?", "confirmLabel": "Plant it", "cancelLabel": "Leave it", "onConfirm": [
               { "type": "remove_item", "item": "kit_box" },
               { "type": "set_global", "key": "box_planted", "value": true },
               { "type": "complete_task", "taskId": "beat_box" }
