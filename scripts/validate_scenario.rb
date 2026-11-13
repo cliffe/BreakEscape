@@ -2843,6 +2843,39 @@ def check_interaction_warnings(json_data)
   issues
 end
 
+# A scenario that cancels a card (apply-actions.js revoke_card, the left-card consequence §3.3b)
+# must declare the globalVariables.revoked_card_ids array. The server enforces the cancellation
+# from that global (Game#revoked_card_ids), stored grow-only, and round-trips it to the client for
+# the UI filter. Without the declared array the revocation is unenforceable: nothing seeds the
+# server default and the client has no base value to add to, so a cancelled card keeps opening its
+# door. Both test_clone_left_card and lab_physical_pentest already declare it.
+def check_revoke_card_globals(json_data)
+  issues = []
+  found = false
+  walk = nil
+  walk = lambda do |node|
+    case node
+    when Hash
+      found = true if node['type'] == 'revoke_card'
+      node.each_value { |v| walk.call(v) }
+    when Array
+      node.each { |v| walk.call(v) }
+    end
+  end
+  walk.call(json_data)
+  return issues unless found
+
+  globals = json_data['globalVariables']
+  value = globals.is_a?(Hash) ? globals['revoked_card_ids'] : nil
+  unless value.is_a?(Array)
+    issues << "❌ ERROR: a 'revoke_card' action is used but 'globalVariables.revoked_card_ids' is " \
+              "not declared as an array. The server enforces card cancellation from this global " \
+              "(stored grow-only) and the client reads it for the UI; without the declared array " \
+              "default [] the cancellation never takes, so a revoked card keeps opening its door."
+  end
+  issues
+end
+
 def check_common_issues(json_data, valid_item_types = nil)
   issues = []
 
@@ -7366,6 +7399,7 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
   run.call('check_npc_patrol_and_catch_locks') { check_npc_patrol_and_catch_locks(json_data, repo_root) }
   run.call('check_give_item_collectible') { check_give_item_collectible(json_data) }
   run.call('check_interaction_warnings') { check_interaction_warnings(json_data) }
+  run.call('check_revoke_card_globals') { check_revoke_card_globals(json_data) }
   run.call('check_engine_limits') { check_engine_limits(json_data) }
   run.call('check_vm_flags_load_bearing') { check_vm_flags_load_bearing(json_data) }
   run.call('check_recurring_bugs') { check_recurring_bugs(json_data, repo_root) }

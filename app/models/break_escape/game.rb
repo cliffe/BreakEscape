@@ -338,6 +338,17 @@ module BreakEscape
       # writes them)
       read_only = imported_global_names + wearable_read_only_globals
       variables.each do |key, value|
+        if key.to_s == REVOKED_CARDS_GLOBAL
+          # Grow-only union (the left-card consequence, apply-actions.js revoke_card, only ever
+          # adds ids). A client that drops or clears the key on a later sync cannot un-revoke a
+          # card the server has already recorded, so a cancelled card stays cancelled. Bounded:
+          # the set is the unique cancelled card ids, never a per-sync growth.
+          incoming = value.is_a?(Array) ? value.map(&:to_s).reject(&:empty?) : []
+          current = globals[REVOKED_CARDS_GLOBAL].is_a?(Array) ? globals[REVOKED_CARDS_GLOBAL].map(&:to_s) : []
+          merged = (current + incoming).uniq
+          globals[REVOKED_CARDS_GLOBAL] = merged unless merged == current
+          next
+        end
         if read_only.include?(key.to_s)
           # The first sync after a load resends every global, imports included
           # and unchanged; only a changed value is worth a warning. A fresh game has no
@@ -1743,6 +1754,12 @@ module BreakEscape
     # asserts the two stay in sync, so add a second server-owned global in both places.
     SERVER_OWNED_GLOBAL_NAMES = %w[se_captures].freeze
 
+    # The global that lists cancelled access cards (the left-card consequence, §3.3b). Not a
+    # SERVER_OWNED_GLOBAL_NAME (it still round-trips to the client for the UI filter), but merged
+    # grow-only in merge_global_variables! so a cancelled card can never be un-revoked by a client
+    # that drops the key. Read by the rfid unlock checks below; see revoked_card_ids.
+    REVOKED_CARDS_GLOBAL = 'revoked_card_ids'
+
     # loginFailures and loginLockouts keep at most this many entries for usernames that
     # are not accounts; entries for real accounts are never dropped (section 6).
     MAX_NON_ACCOUNT_LOGIN_ENTRIES = 200
@@ -2412,22 +2429,36 @@ module BreakEscape
       end.uniq
     end
 
+    # Cancelled access card ids (the left-card consequence, §3.3b), read from server state.
+    # Stored grow-only under the revoked_card_ids global (merge_global_variables!), so the server
+    # decides: a revoked id opens no rfid lock, of any kind, and a saved clone of a revoked card
+    # is dead too. Honest play reports the cancellation through an ordinary global sync; a client
+    # that drops the key cannot un-revoke it.
+    def revoked_card_ids
+      ids = player_state.dig('globalVariables', REVOKED_CARDS_GLOBAL)
+      ids.is_a?(Array) ? ids.map(&:to_s) : []
+    end
+
     # The cards the server knows the player holds: { card_id => uid_only }. A card_id is
     # the real card when a keycard in the inventory carries it and the scenario defines a
     # keycard with it (decided by card_id, never by name: two badges sharing a name are
     # still two cards); a recorded copy counts only while an rfid_cloner is held (4.2),
-    # and is UID-only when recorded so.
+    # and is UID-only when recorded so. A revoked card (and a clone of one) is excluded, so
+    # a cancelled card passes no access-list lock.
     def held_rfid_cards
       carried = held_keycard_ids
+      revoked = revoked_card_ids
       held = {}
       scenario_keycard_definitions.each do |card|
-        held[card['card_id'].to_s] = false if carried.include?(card['card_id'].to_s)
+        cid = card['card_id'].to_s
+        held[cid] = false if carried.include?(cid) && !revoked.include?(cid)
       end
       if rfid_cloner_held?
         server_clones.each do |card_id, record|
-          next if held.key?(card_id.to_s)
+          cid = card_id.to_s
+          next if held.key?(cid) || revoked.include?(cid)
 
-          held[card_id.to_s] = record.is_a?(Hash) && record['uidOnly'] == true
+          held[cid] = record.is_a?(Hash) && record['uidOnly'] == true
         end
       end
       held
@@ -2458,13 +2489,39 @@ module BreakEscape
     # An rfid lock (section 6, /unlock check 2). Without access: today's trusted rule.
     # With access and card_ids: the first held card that passes opens it. With access
     # and no card_ids: only a lock that also has requires keeps the trusted rule.
+    # A trusted `requires` path (no access list, or an access list opened by its requires
+    # with no card_ids sent) still refuses when the required card the player holds has been
+    # cancelled (the left-card consequence): honest play uses a live card, so this only turns
+    # away a revoked one. The access-list card path is already filtered through held_rfid_cards.
     def rfid_lock_passes?(lock, card_ids)
-      return true unless self.class.acl_lock?(lock)
+      unless self.class.acl_lock?(lock)
+        return !rfid_requires_revoked?(lock)
+      end
 
       ids = self.class.normalise_card_ids(card_ids)
-      return Array(lock['requires']).any? if ids.nil?
+      return Array(lock['requires']).any? && !rfid_requires_revoked?(lock) if ids.nil?
 
       !rfid_passing_card_id(lock, ids).nil?
+    end
+
+    # True when a lock's `requires` is satisfied only by a card the player holds that has been
+    # revoked: every held required card is cancelled and none is live. Used for the trusted
+    # requires paths, where the server does not otherwise resolve the card. Leaves the trust rule
+    # untouched when the server sees no held required card (a clone made before this session, say):
+    # that path is unchanged, so no honest unlock is newly refused.
+    def rfid_requires_revoked?(lock)
+      req = Array(lock['requires']).map(&:to_s)
+      return false if req.empty?
+
+      revoked = revoked_card_ids
+      return false if (req & revoked).empty?
+
+      held = held_keycard_ids
+      held += server_clones.keys.map(&:to_s) if rfid_cloner_held?
+      held_req = req & held
+      return false if held_req.empty?
+
+      (held_req - revoked).empty?
     end
 
     # The first of these held card ids that opens an access-list rfid lock, or nil.
