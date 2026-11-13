@@ -13,14 +13,14 @@ import { inventoryBlockedByForcedMinigame } from './forced-minigame-guard.js';
 
 /**
  * Where a bark shows (UX feedback round slice 5, o-barks): the speech bubble over a person NPC
- * whose sprite is in the player's room, with the room lit and no minigame open; the toast
- * otherwise. Phone contacts always use the toast. The voice is the same either way.
- * @param {object} f  { npcType, hasSprite, npcRoom, playerRoom, dark, minigameOpen }
+ * whose sprite is in the player's room and on camera, with the room lit and no minigame open;
+ * the toast otherwise. Phone contacts always use the toast. The voice is the same either way.
+ * @param {object} f  { npcType, hasSprite, npcRoom, playerRoom, dark, minigameOpen, onCamera }
  * @returns {'bubble'|'toast'}
  */
-export function routeBark({ npcType, hasSprite = false, npcRoom = null, playerRoom = null, dark = false, minigameOpen = false } = {}) {
+export function routeBark({ npcType, hasSprite = false, npcRoom = null, playerRoom = null, dark = false, minigameOpen = false, onCamera = true } = {}) {
   if (npcType === 'phone') return 'toast';
-  if (!hasSprite || minigameOpen || dark) return 'toast';
+  if (!hasSprite || minigameOpen || dark || onCamera === false) return 'toast';
   return (npcRoom && npcRoom === playerRoom) ? 'bubble' : 'toast';
 }
 
@@ -136,14 +136,16 @@ export default class NPCBarkSystem {
    *
    * @param {string} npcId
    * @param {string} text
+   * @param {{ beep?: boolean }} [opts]  beep: false for a speech bubble, which never plays the
+   *   phone's sound when there is no voice (slice 5 R1 m3)
    */
-  async _speakBark(npcId, text) {
+  async _speakBark(npcId, text, { beep = true } = {}) {
     if (!this.ttsManagers.has(npcId)) {
       this.ttsManagers.set(npcId, new TTSManager());
     }
     const mgr = this.ttsManagers.get(npcId);
     const duration = await mgr.play(npcId, text);
-    if (!duration) {
+    if (!duration && beep) {
       // TTS unavailable — fall back to the standard notification sound
       this.playBarkSound();
     }
@@ -311,26 +313,32 @@ export default class NPCBarkSystem {
       return null;
     }
     const playSound = payload.playSound !== false; // Default true
-    
-    // Person NPCs with a voice config speak their bark via TTS; everyone else gets the phone beep
-    let ttsPromise = null;
-    if (playSound && payload.useTTS && npcId && text) {
-      ttsPromise = this._speakBark(npcId, text);
-    } else if (playSound) {
-      this.playBarkSound();
-    }
 
     // A person NPC in view says it in a speech bubble over their head, in place of the toast
     // (slice 5). The rest of a line cut short by leaving view comes back here as a toast.
+    // The bubble shows the line with authored " -- " as a dash, as the toast does; the voice
+    // gets the raw text, so cached audio still matches (R1 m1).
+    let handle = null;
     if (!payload.forceToast && this._routeFor(payload, contact) === 'bubble') {
-      const handle = window.npcWorldBubbles?.say?.(npcId, text, {
-        onRemainder: (rest) => this._toastRemainder(payload, rest)
-      });
-      if (handle) {
-        this.lastRoute = { npcId, route: 'bubble' };
-        if (ttsPromise) ttsPromise.then(ms => { if (ms) handle.setAudioMs(ms); }, () => {});
-        return ttsPromise;
-      }
+      handle = window.npcWorldBubbles?.say?.(npcId, displayDashes(text), {
+        onRemainder: (rest) => this._toastRemainder(payload, rest),
+        stillValid: typeof payload.stillValid === 'function' ? payload.stillValid : null
+      }) || null;
+    }
+
+    // Person NPCs with a voice config speak their bark via TTS; a toast without one gets the
+    // phone's sound. A speech bubble never does: that sound belongs to phone contacts (R1 m3).
+    let ttsPromise = null;
+    if (playSound && payload.useTTS && npcId && text) {
+      ttsPromise = this._speakBark(npcId, text, { beep: !handle });
+    } else if (playSound && !handle) {
+      this.playBarkSound();
+    }
+
+    if (handle) {
+      this.lastRoute = { npcId, route: 'bubble' };
+      if (ttsPromise) ttsPromise.then(ms => { if (ms) handle.setAudioMs(ms); }, () => {});
+      return ttsPromise;
     }
     this.lastRoute = { npcId, route: 'toast' };
 
@@ -404,6 +412,15 @@ export default class NPCBarkSystem {
     }
 
     return ttsPromise;
+  }
+
+  /**
+   * Would a bark from this NPC, made now, show in a speech bubble? The NPC manager asks this
+   * when an event mapping's bark fires, so the event's sender can tell an in-view NPC answered
+   * it (a gate refusal drops its own notification then: doors.js refuseAtGate, R1 M2).
+   */
+  answersInView(npcId) {
+    return this._routeFor({ npcId }, null) === 'bubble';
   }
 
   /** The bubble-or-toast decision for this bark, from the bubble layer's view of the NPC. */

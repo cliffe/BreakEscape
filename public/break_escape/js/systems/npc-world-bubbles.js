@@ -14,6 +14,13 @@
  * Rules:
  *   - Only for NPCs in the player's current room, and not while that room is dark (the action
  *     icons' rule, npc-office-visuals.js iconShown/roomIsDark).
+ *   - A bark bubble also needs the NPC's head on camera (cameras.main.worldView, inset by
+ *     CAMERA_MARGIN): a bark from an NPC off screen is a toast, and a bark bubble whose NPC
+ *     leaves the camera hands the rest of its line to the toast (slice 5 R1 M1).
+ *   - Bubbles never cover each other or the player's head: each is placed in turn (barks first,
+ *     nearest first) centred, then slid left or right of its NPC (the tail stays over the head),
+ *     then lifted above what it would cover, with a 2 px stem down to the head (R1 n4).
+ *   - A bark whose stillValid() stops holding closes, with no remainder (R1 n5).
  *   - Hidden while any minigame is open (a person-chat, a PC, a lock).
  *   - One bubble per NPC (a bark wins over that NPC's chatter), at most MAX_BUBBLES on screen:
  *     barks first, then the speakers nearest the player.
@@ -47,6 +54,15 @@ export const AUDIO_TAIL_MS = 800;   // added to the voiced audio's length
 export const BORDER_PX = 2;
 const PAD_X = 4;
 const PAD_Y = 2;
+// Canvas measureText comes up short of VT323's drawn glyphs: the last glyph's right-hand
+// pixels sit past the measured width. Added to the measured width so the gap to the right
+// border matches the left one (R1 n1, checked in the 3x zoom shot).
+export const TEXT_RIGHT_SLACK = 2;
+export const CAMERA_MARGIN = 8;     // px: the head anchor must sit this far inside the view
+const STILL_VALID_EVERY_MS = 250;   // how often a bark's stillValid() is asked
+const HEAD_HALF_W = 10;             // px: the player's head box, either side of the anchor
+const HEAD_H = 22;                  // px: the player's head box, down from the anchor
+const TAIL_HALF = 6;                // px: tail half width plus border; the body must cover it
 const TAIL = 4;           // px: the stepped pointer under the bubble, towards the head
 const FILL = 0xffffff;
 const LINE = 0x1b2a41;
@@ -76,6 +92,50 @@ export function pickShown(list, max = MAX_BUBBLES) {
 /** Pure: the bubble container's position (its bottom-centre at the tail tip) for a head anchor. */
 export function speechPosition(at) {
     return { x: Math.round(at.x), y: Math.round(at.y) };
+}
+
+/**
+ * Pure: is this head anchor on camera? `view` is the camera's worldView ({ x, y, width, height });
+ * with no view (no camera yet, tests) the answer is yes. The anchor must be `margin` inside.
+ */
+export function onCamera(at, view, margin = CAMERA_MARGIN) {
+    if (!at || !view || !(view.width > 0) || !(view.height > 0)) return true;
+    return at.x >= view.x + margin && at.x <= view.x + view.width - margin
+        && at.y >= view.y + margin && at.y <= view.y + view.height - margin;
+}
+
+const overlaps = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+
+/**
+ * Pure: where a bubble of `w` by `h` (body, not counting the tail) sits over the head anchor
+ * `at` so it covers none of `taken` (rects { x, y, w, h } of bubbles already placed and the
+ * player's head). Tries centred, then slid left, then slid right (the tail stays over the head),
+ * then lifts above the lowest thing in the way and tries again. `prefer` (last frame's choice)
+ * is tried first at each lift, so a bubble does not flip sides from frame to frame.
+ * Returns { dx, lift, rect }: dx shifts the body sideways, lift raises body and tail.
+ */
+export function placeBubble(at, w, h, taken, { prefer = null, tail = TAIL, maxLifts = 3 } = {}) {
+    const slide = Math.max(0, Math.floor(w / 2) - TAIL_HALF);
+    let order = [0, -slide, slide];
+    if (prefer && order.includes(prefer.dx)) order = [prefer.dx, ...order.filter(d => d !== prefer.dx)];
+    const rectFor = (dx, lift) => ({ x: at.x + dx - w / 2, y: at.y - lift - tail - h, w, h: h + tail });
+    let lift = 0;
+    let last = null;
+    for (let i = 0; i <= maxLifts; i++) {
+        let lowestTop = null;
+        for (const dx of order) {
+            const rect = rectFor(dx, lift);
+            const hit = taken.filter(t => overlaps(rect, t));
+            if (hit.length === 0) return { dx, lift, rect };
+            for (const t of hit) lowestTop = lowestTop === null ? t.y : Math.max(lowestTop, t.y);
+            last = { dx: order[0], lift, rect: rectFor(order[0], lift) };
+        }
+        // Lift the centred body so its bottom (tail tip) clears the top of the lowest thing hit
+        const need = at.y - lowestTop + 2;
+        lift = Math.max(lift + 2, need);
+        if (lift % 2) lift += 1;
+    }
+    return last;
 }
 
 /** Pure: the texture key and path of a picture-chat icon. */
@@ -195,9 +255,13 @@ export class NpcWorldBubbles {
         return false;
     }
 
-    /** Draw the frame: 2 px border, stepped corners, stepped tail; whole pixels only. */
-    _drawFrame(g, w, h) {
-        const x = -w / 2, y = -TAIL - h, b = BORDER_PX;
+    /**
+     * Draw the frame: 2 px border, stepped corners, stepped tail; whole pixels only. `dx` slides
+     * the body sideways (the tail stays at x 0, over the head); `lift` raises body and tail, with a
+     * 2 px stem down to the head.
+     */
+    _drawFrame(g, w, h, dx = 0, lift = 0) {
+        const x = dx - w / 2, y = -lift - TAIL - h, b = BORDER_PX;
         g.clear();
         // Fill, inset so the corner notches stay clear
         g.fillStyle(FILL, 1);
@@ -209,7 +273,7 @@ export class NpcWorldBubbles {
         g.fillRect(x, y + b, b, h - 2 * b);              // left
         g.fillRect(x + w - b, y + b, b, h - 2 * b);      // right
         // Tail: two 2 px steps narrowing to the tip, opened into the box
-        const by = -TAIL;                                // box bottom edge
+        const by = -lift - TAIL;                         // box bottom edge
         g.fillStyle(FILL, 1);
         g.fillRect(-2, by - b, 4, b);                    // gap in the bottom edge
         g.fillStyle(LINE, 1);
@@ -221,8 +285,10 @@ export class NpcWorldBubbles {
         g.fillRect(-2, by, 4, 2);
         g.fillStyle(LINE, 1);
         g.fillRect(-2, by + 2, 4, 2);                    // tip
+        if (lift > 0) g.fillRect(-1, by + 4, 2, lift);   // stem down to the head
     }
 
+    /** Set the text (or picture) and measure the bubble; only when the line changes. */
     _render(bb, line, picture = null) {
         const tex = picture ? pictureTexture(picture) : null;
         const ready = !!(tex && bb.box.scene && this._textureReady(bb.box.scene, tex));
@@ -230,22 +296,40 @@ export class NpcWorldBubbles {
         if (bb.line === sig) return;
         bb.line = sig;
         bb.picture = picture;
+        bb.ready = ready;
         bb.img.setVisible(ready);
         if (ready) bb.img.setTexture(tex.key);
         const shown = picture ? (ready ? '' : '…') : String(line ?? '');
         // Chatter lines wrap the same way; a bark page is already wrapped
         bb.text.setText(shown.includes('\n') ? shown : wrapLines(shown).join('\n'));
-        const cw = ready ? PICTURE_PX : Math.ceil(bb.text.width);
+        const cw = ready ? PICTURE_PX : Math.ceil(bb.text.width) + TEXT_RIGHT_SLACK;
         const ch = ready ? PICTURE_PX : Math.ceil(bb.text.height);
         let w = cw + PAD_X * 2 + BORDER_PX * 2;
         if (w % 2) w += 1;                               // even, so -w/2 is a whole pixel
         const h = ch + PAD_Y * 2 + BORDER_PX * 2;
-        const left = -w / 2 + BORDER_PX + PAD_X;
-        const top = -TAIL - h + BORDER_PX + PAD_Y;
-        bb.text.setPosition(left, top);
-        bb.img.setPosition(Math.round(-PICTURE_PX / 2), top);
-        this._drawFrame(bb.g, w, h);
         bb.w = w; bb.h = h;
+        bb.layout = null;                                // redraw at the next _layout
+    }
+
+    /** Draw the frame and place the text for this layout ({ dx, lift }); only when it changes. */
+    _layout(bb, { dx = 0, lift = 0 } = {}) {
+        if (bb.layout && bb.layout.dx === dx && bb.layout.lift === lift) return;
+        bb.layout = { dx, lift };
+        const { w, h } = bb;
+        const left = dx - w / 2 + BORDER_PX + PAD_X;
+        const top = -lift - TAIL - h + BORDER_PX + PAD_Y;
+        bb.text.setPosition(left, top);
+        bb.img.setPosition(Math.round(dx - PICTURE_PX / 2), top);
+        this._drawFrame(bb.g, w, h, dx, lift);
+    }
+
+    /** The player's head as a rect bubbles keep off. */
+    _playerHead() {
+        const pl = win().player;
+        if (!pl) return null;
+        let at;
+        try { at = npcIconAnchor(pl); } catch (e) { return null; }
+        return { x: at.x - HEAD_HALF_W, y: at.y, w: HEAD_HALF_W * 2, h: HEAD_H };
     }
 
     // ---- where an NPC is ----
@@ -270,6 +354,17 @@ export class NpcWorldBubbles {
         return Math.hypot(pp.x - sprite.x, pp.y - sprite.y);
     }
 
+    /** Is this sprite's head on the main camera? Yes when there is no camera to ask. */
+    _onCamera(sprite) {
+        if (!sprite) return false;
+        const cam = sprite.scene?.cameras?.main || win().game?.cameras?.main;
+        const view = cam?.worldView;
+        if (!view) return true;
+        let at;
+        try { at = npcIconAnchor(sprite); } catch (e) { at = { x: sprite.x, y: sprite.y }; }
+        return onCamera(at, view);
+    }
+
     /** The facts npc-barks.js routeBark() needs for this NPC, read now. */
     viewFacts(npcId) {
         const { sprite, roomId } = this._spriteAndRoom(npcId);
@@ -279,13 +374,14 @@ export class NpcWorldBubbles {
             npcRoom: roomId,
             playerRoom: win().currentPlayerRoom,
             dark: roomId ? roomIsDark(roomId) : false,
-            minigameOpen: !!win().MinigameFramework?.currentMinigame
+            minigameOpen: !!win().MinigameFramework?.currentMinigame,
+            onCamera: live ? this._onCamera(sprite) : false
         };
     }
 
     _inView(npcId) {
         const f = this.viewFacts(npcId);
-        return f.hasSprite && speechShown(f);
+        return f.hasSprite && f.onCamera && speechShown(f);
     }
 
     /** Is a bark bubble up for this NPC now? (npc-action-icons.js hides its icons meanwhile.) */
@@ -301,8 +397,9 @@ export class NpcWorldBubbles {
      * @param {number|null} [o.audioMs]   the voiced audio's length, when already known
      * @param {(rest:string)=>void} [o.onRemainder]  the rest of the line, when it leaves view
      * @param {()=>void} [o.onDone]
+     * @param {()=>boolean} [o.stillValid]  the bark's conditions; false closes it, no remainder
      */
-    say(npcId, line, { audioMs = null, onRemainder = null, onDone = null } = {}) {
+    say(npcId, line, { audioMs = null, onRemainder = null, onDone = null, stillValid = null } = {}) {
         const pages = pageLine(line);
         if (!npcId || pages.length === 0) return null;
         if (!this._inView(npcId)) return null;
@@ -318,7 +415,8 @@ export class NpcWorldBubbles {
         const st = {
             npcId, line, pages, page: 0, started: this.now(), pageStarted: this.now(),
             times: pageTimes(pages, lineTotalMs({ audioMs, readingMs: reading })),
-            audioMs: audioMs > 0 ? audioMs : null, onRemainder, onDone
+            audioMs: audioMs > 0 ? audioMs : null, onRemainder, onDone,
+            stillValid: typeof stillValid === 'function' ? stillValid : null, validAt: this.now()
         };
         this.says.set(npcId, st);
         this._note(npcId, 'say', { page: 0, text: pages[0], pages: pages.length });
@@ -363,6 +461,12 @@ export class NpcWorldBubbles {
     _tickSays() {
         const t = this.now();
         for (const st of [...this.says.values()]) {
+            if (st.stillValid && t - st.validAt >= STILL_VALID_EVERY_MS) {
+                st.validAt = t;
+                let ok = true;
+                try { ok = st.stillValid() !== false; } catch (e) { ok = true; }
+                if (!ok) { this._end(st.npcId, 'stale'); continue; }
+            }
             if (!this._inView(st.npcId)) { this._leave(st.npcId, 'left-view'); continue; }
             while (st.page < st.pages.length && t - st.pageStarted >= st.times[st.page]) {
                 st.pageStarted += st.times[st.page];
@@ -400,7 +504,8 @@ export class NpcWorldBubbles {
                 info.set(id, { sprite, line: st.talking.line, picture: st.talking.picture || null, partnerId: st.talking.partnerId, bark: false });
             }
         }
-        const shown = new Set(pickShown(cands));
+        const order = pickShown(cands);
+        const shown = new Set(order);
         const muteTalk = new Set();
         for (const id of shown) {
             muteTalk.add(info.get(id).sprite);
@@ -413,12 +518,17 @@ export class NpcWorldBubbles {
             if (!shown.has(id)) bb.box.setVisible(false);
         }
         if (shown.size && !this._ensureFonts()) return;   // first frames only: VT323 still loading
-        for (const id of shown) {
+        const head = this._playerHead();
+        const taken = head ? [head] : [];
+        for (const id of order) {
             const { sprite, line, picture, partnerId, bark } = info.get(id);
             let bb = this.bubbles.get(id);
             if (!bb || !bb.box.scene) { bb = this._make(sprite.scene); this.bubbles.set(id, bb); }
             this._render(bb, line, picture);
             const pos = speechPosition(npcIconAnchor(sprite));
+            const place = placeBubble(pos, bb.w, bb.h, taken, { prefer: bb.layout });
+            taken.push(place.rect);
+            this._layout(bb, place);
             bb.box.setPosition(pos.x, pos.y).setVisible(true);
             bb.box.setData('line', line);
             bb.box.setData('picture', picture);

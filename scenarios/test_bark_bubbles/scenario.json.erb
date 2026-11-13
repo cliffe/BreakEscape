@@ -1,7 +1,7 @@
 {
   "scenario_id": "test_bark_bubbles",
   "scenario_name": "Test: Speech bubble barks",
-  "scenario_brief": "Throwaway engine test. Two guards in a hall and a clerk next door bark when a test event fires; a phone contact texts. Nothing to solve.",
+  "scenario_brief": "Throwaway engine test. A guard and a clerk in a hall and a worker next door bark when a test event fires; a phone contact texts. The guard answers a refusal at the two store gates south of the hall (store B has a locked hint). Nothing to solve.",
   "endGoal": "Nothing to solve.",
   "version": "1.0",
   "show_scenario_brief": "never",
@@ -45,7 +45,11 @@
     "hall": {
       "type": "room_lw_records",
       "door_sign": "Hall",
-      "connections": { "north": "lobby" },
+      "connections": { "north": "lobby", "south": ["store_a", "store_b"] },
+      "doors": [
+        { "connectedRoom": "store_a", "direction": "south", "gate": { "openFor": ["dana"], "openRadius": 48, "holdMs": 3000 } },
+        { "connectedRoom": "store_b", "direction": "south", "gate": { "openFor": ["dana"], "openRadius": 48, "holdMs": 3000 } }
+      ],
       "npcs": [
         {
           "id": "dana",
@@ -60,7 +64,8 @@
           "voice": { "name": "Kore", "style": "Security guard at a British office, forties, plain and patient.", "language": "en-GB" },
           "eventMappings": [
             { "eventPattern": "test_bark_long", "bark": "Badges on at all times past this point, please. If yours has stopped working, reception can print a new one. And don't wedge the fire door open again." },
-            { "eventPattern": "test_bark_short", "bark": "Not with you behind me. Ask at reception." }
+            { "eventPattern": "test_bark_short", "bark": "Not with you behind me. Ask at reception." },
+            { "eventPattern": "door_gate_denied", "cooldown": 4000, "bark": "Not with you behind me. Ask at reception." }
           ]
         },
         {
@@ -71,7 +76,7 @@
           "spriteSheet": "male_nerd_v2",
           "spriteTalk": "assets/characters/male_nerd_talk.png",
           "spriteVisemes": "assets/characters/male_nerd_visemes.png",
-          "storyPath": "scenarios/test_bark_bubbles/ink/dana.json",
+          "storyPath": "scenarios/test_bark_bubbles/ink/lee.json",
           "currentKnot": "start",
           "eventMappings": [
             { "eventPattern": "test_bark_short", "bark": "Morning. Printer's jammed again." }
@@ -89,6 +94,29 @@
           ]
         }
       ],
+      "objects": []
+    },
+
+    "store_a": {
+      "type": "room_office",
+      "door_sign": "Store A",
+      "locked": true,
+      "lockType": "rfid",
+      "requires": "store_a_badge",
+      "connections": { "north": "hall" },
+      "npcs": [],
+      "objects": []
+    },
+
+    "store_b": {
+      "type": "room_office",
+      "door_sign": "Store B",
+      "locked": true,
+      "lockType": "rfid",
+      "requires": "store_b_badge",
+      "lockedHint": "Store B needs a staff badge. Reception issues them to visitors with an escort.",
+      "connections": { "north": "hall" },
+      "npcs": [],
       "objects": []
     },
 

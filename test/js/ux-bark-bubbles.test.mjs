@@ -29,8 +29,9 @@ const barksMod = await imp('systems/npc-barks.js');
 const NPCBarkSystem = barksMod.default;
 const { routeBark } = barksMod;
 const B = await imp('systems/npc-world-bubbles.js');
-const { NpcWorldBubbles, pageLine, pagesText, pageTimes, lineTotalMs, readingMs, wrapLines,
-    MAX_BUBBLES, PAGE_LINES, LINE_CHARS, PAGE_MIN_MS, AUDIO_TAIL_MS, SPEECH_FONT, SPEECH_FONT_PX, BORDER_PX } = B;
+const { NpcWorldBubbles, pageLine, pagesText, pageTimes, lineTotalMs, readingMs, wrapLines, onCamera, placeBubble,
+    MAX_BUBBLES, PAGE_LINES, LINE_CHARS, PAGE_MIN_MS, AUDIO_TAIL_MS, SPEECH_FONT, SPEECH_FONT_PX, BORDER_PX, CAMERA_MARGIN, TEXT_RIGHT_SLACK } = B;
+const { displayDashes } = await imp('utils/display-dashes.js');
 
 // A 150-character bark, the length of the longest authored one (test_bark_bubbles, Dana)
 const LONG = "Badges on at all times past this point, please. If yours has stopped working, reception can print a new one. And don't wedge the fire door open again.";
@@ -50,10 +51,12 @@ function mk(scene, kind) {
     return o;
 }
 
-function rig({ playerRoom = 'hall', npcs = { sara: { x: 100, y: 100, room: 'hall' } }, player = { x: 100, y: 140 } } = {}) {
+function rig({ playerRoom = 'hall', npcs = { sara: { x: 100, y: 100, room: 'hall' } }, player = { x: 100, y: 140 }, view = null } = {}) {
     const tweens = [];
     const scene = { add: {}, textures: { exists: () => true }, load: { image() {}, once() {}, isLoading: () => true, start() {} },
         tweens: { add: (t) => { tweens.push(t); return { stop() {} }; } } };
+    // The main camera's world view (cameras.main.worldView); none means "no camera to ask"
+    if (view) scene.cameras = { main: { worldView: view } };
     scene.add.text = (x, y, t, style) => { const o = mk(scene, 'text'); o.style = style; return o; };
     scene.add.image = () => mk(scene, 'image');
     scene.add.graphics = () => mk(scene, 'graphics');
@@ -306,7 +309,173 @@ test('no Text is made before the pixel font has loaded', async () => {
 test('source: the pulsing talk icon and its 1.25 scale are gone from npc-barks', async () => {
     const { readFileSync } = await import('node:fs');
     const src = readFileSync(join(js, 'systems/npc-barks.js'), 'utf8');
-    assert.ok(!/_showBarkIcon|barkIcon|1\.25/.test(src));
+    assert.ok(!/_showBarkIcon|barkIcon/.test(src));
+    // The old icon's tween: scaleX/scaleY { from: 1, to: 1.25 } (any other 1.25 is allowed)
+    assert.ok(!/scale[XY]?\s*:\s*\{[^}]*\bto\s*:\s*1\.25/.test(src), 'the 1.25 scale tween is back');
     const inter = readFileSync(join(js, 'systems/interactions.js'), 'utf8');
     assert.ok(!/barkIcon/.test(inter));
+});
+
+// ---- review round 1 ----
+
+test('R1 M1: routeBark gives the toast for an NPC off camera', () => {
+    const base = { npcType: 'person', hasSprite: true, npcRoom: 'hall', playerRoom: 'hall', dark: false, minigameOpen: false };
+    assert.equal(routeBark({ ...base, onCamera: true }), 'bubble');
+    assert.equal(routeBark({ ...base, onCamera: false }), 'toast');
+    assert.equal(routeBark(base), 'bubble', 'no camera fact (no camera yet) counts as on camera');
+});
+
+test('R1 M1: onCamera wants the head anchor a margin inside the world view', () => {
+    const view = { x: 0, y: 0, width: 320, height: 240 };
+    assert.equal(onCamera({ x: 160, y: 120 }, view), true);
+    assert.equal(onCamera({ x: CAMERA_MARGIN - 1, y: 120 }, view), false);
+    assert.equal(onCamera({ x: 160, y: 240 - CAMERA_MARGIN + 1 }, view), false);
+    assert.equal(onCamera({ x: 160, y: -50 }, view), false);
+    assert.equal(onCamera({ x: 160, y: 120 }, null), true);
+});
+
+test('R1 M1: a bark from an NPC in the room but off camera is a toast; leaving the camera mid-line hands on the rest', async () => {
+    const view = { x: 0, y: 0, width: 400, height: 300 };
+    // Sara's head anchor sits at y 100 - 40 - 6 = 54, inside; Len is 600 px away, same room
+    const r = rig({ npcs: { sara: { x: 100, y: 100, room: 'hall' }, len: { x: 700, y: 100, room: 'hall' } }, view });
+    const sys = barkSystem();
+    assert.equal(r.bubbles.viewFacts('len').onCamera, false);
+    assert.equal(r.bubbles.viewFacts('sara').onCamera, true);
+    await sys._renderBark({ npcId: 'len', npcName: 'Len', message: 'Over here.' });
+    assert.deepEqual(toasts(), ['Len: Over here.']);
+    assert.equal(r.bubbles.hasLine('len'), false);
+    assert.equal(sys.lastRoute.route, 'toast');
+
+    await sys._renderBark({ npcId: 'sara', npcName: 'Sara', message: LONG });
+    const st = r.bubbles.says.get('sara');
+    r.bubbles.update();
+    assert.ok(r.bubbles.bubbles.get('sara').box.visible);
+    view.x = 500;   // the camera pans away; Sara stays in the room
+    r.bubbles.update();
+    await tick();
+    assert.equal(r.bubbles.hasLine('sara'), false);
+    assert.deepEqual(toasts(), ['Len: Over here.', `Sara: ${pagesText(st.pages)}`]);
+});
+
+test('R1 m1: the bubble shows authored " -- " as the toast does; the voice gets the raw text', async () => {
+    const r = rig();
+    const sys = barkSystem();
+    const spoken = [];
+    sys._speakBark = async (id, text) => { spoken.push(text); return null; };
+    const raw = 'Badge first -- then the door.';
+    await sys._renderBark({ npcId: 'sara', npcName: 'Sara', message: raw, useTTS: true });
+    r.bubbles.update();
+    const shown = r.bubbles.bubbles.get('sara').text.text.replace(/\n/g, ' ');
+    assert.equal(shown, displayDashes(raw));
+    assert.notEqual(shown, raw, 'displayDashes changed the line');
+    assert.deepEqual(spoken, [raw]);
+});
+
+test('R1 m2: a voiced bark re-times its later pages to the audio length (_renderBark wires setAudioMs)', async () => {
+    const r = rig();
+    const sys = barkSystem();
+    const calls = [];
+    sys._speakBark = async (id, text) => { calls.push([id, text]); return 12000; };
+    await sys._renderBark({ npcId: 'sara', npcName: 'Sara', message: LONG, useTTS: true });
+    await tick();
+    assert.deepEqual(calls, [['sara', LONG]], 'voiced once, the whole line');
+    const st = r.bubbles.says.get('sara');
+    assert.equal(st.audioMs, 12000);
+    const want = pageTimes(st.pages, 12000 + AUDIO_TAIL_MS);
+    for (let i = 1; i < st.pages.length; i++) assert.equal(st.times[i], want[i], `page ${i + 1} re-timed`);
+});
+
+test('R1 m2: an odd measured width is rounded up to even, so the frame sits on whole pixels', () => {
+    const r = rig();
+    // Mock width: 7 px a character. "abc" = 21, + slack, padding and border: odd before rounding
+    const raw = 21 + TEXT_RIGHT_SLACK + 4 * 2 + BORDER_PX * 2;
+    assert.equal(raw % 2, 1, 'the fixture must give an odd width');
+    r.bubbles.say('sara', 'abc');
+    r.bubbles.update();
+    const bb = r.bubbles.bubbles.get('sara');
+    assert.equal(bb.w, raw + 1);
+    for (const [, x, y, w, h] of bb.g.calls.filter(c => c[0] === 'fillRect')) {
+        for (const v of [x, y, w, h]) assert.ok(Number.isInteger(v), `fractional rect ${[x, y, w, h]}`);
+    }
+    assert.ok(Number.isInteger(bb.text.x));
+});
+
+test('R1 n1: the measured text width gets the right-hand slack, so both side gaps match', () => {
+    const r = rig();
+    r.bubbles.say('sara', 'abcd');   // 28 px of mock text: even, no rounding
+    r.bubbles.update();
+    const bb = r.bubbles.bubbles.get('sara');
+    assert.ok(TEXT_RIGHT_SLACK > 0);
+    assert.equal(bb.w, 28 + TEXT_RIGHT_SLACK + 4 * 2 + BORDER_PX * 2);
+});
+
+test('R1 m3: a bubble plays no phone sound, voiced or not; a toast still does', async () => {
+    const r = rig({ npcs: { sara: { x: 100, y: 100, room: 'hall' }, len: { x: 0, y: 0, room: 'lobby' } } });
+    const sys = barkSystem();
+    let beeps = 0;
+    sys.playBarkSound = () => { beeps++; };
+    sys.ttsManagers.set('sara', { play: async () => null, stop() {} });   // no audio (keyless)
+    await sys._renderBark({ npcId: 'sara', npcName: 'Sara', message: 'No voice.' });
+    assert.ok(r.bubbles.hasLine('sara'));
+    await sys._renderBark({ npcId: 'sara', npcName: 'Sara', message: 'Voice failed.', useTTS: true });
+    assert.equal(beeps, 0, 'no phone sound over a bubble');
+    await sys._renderBark({ npcId: 'len', npcName: 'Len', message: 'From the lobby.' });
+    assert.equal(beeps, 1, 'the toast keeps its sound');
+});
+
+test('R1 n5: a bark bubble whose stillValid() stops holding closes, with no remainder toast', async () => {
+    const r = rig();
+    const sys = barkSystem();
+    let valid = true;
+    await sys._renderBark({ npcId: 'sara', npcName: 'Sara', message: LONG, stillValid: () => valid });
+    r.bubbles.update();
+    assert.ok(r.bubbles.hasLine('sara'));
+    valid = false;
+    r.clock.advance(300);
+    r.bubbles.update();
+    await tick();
+    assert.equal(r.bubbles.hasLine('sara'), false);
+    assert.equal(r.bubbles.bubbles.get('sara').box.visible, false);
+    assert.deepEqual(toasts(), []);
+    assert.equal(r.bubbles.log.at(-1).event, 'stale');
+});
+
+const rectOf = (bb) => ({ x: bb.box.x + bb.layout.dx - bb.w / 2, y: bb.box.y - bb.layout.lift - 4 - bb.h, w: bb.w, h: bb.h + 4 });
+const hit = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+
+test('R1 n4: two NPCs a tile apart: their bubbles do not overlap, and neither covers the player\'s head', () => {
+    // The player stands just above Dana, so a centred bubble over Dana would cover his head
+    const r = rig({ npcs: { dana: { x: 100, y: 100, room: 'hall' }, lee: { x: 132, y: 100, room: 'hall' } }, player: { x: 100, y: 60 } });
+    r.bubbles.say('dana', 'Not with you behind me. Ask at reception.');
+    r.bubbles.say('lee', "Morning. Printer's jammed again.");
+    r.bubbles.update();
+    const a = r.bubbles.bubbles.get('dana'), b = r.bubbles.bubbles.get('lee');
+    assert.ok(a.box.visible && b.box.visible);
+    const ra = rectOf(a), rb = rectOf(b);
+    assert.equal(hit(ra, rb), false, `bubbles overlap: ${JSON.stringify([ra, rb])}`);
+    const head = r.bubbles._playerHead();
+    assert.equal(hit(ra, head), false, 'Dana\'s bubble covers the player\'s head');
+    assert.equal(hit(rb, head), false, 'Lee\'s bubble covers the player\'s head');
+    // The tail still points at each head: the container sits at the anchor, the body slides
+    for (const [bb, x] of [[a, 100], [b, 132]]) assert.equal(bb.box.x, x);
+    // Whole pixels after the move, and a lifted bubble draws its stem in whole pixels too
+    for (const bb of [a, b]) for (const [, x, y, w, h] of bb.g.calls.filter(c => c[0] === 'fillRect')) {
+        for (const v of [x, y, w, h]) assert.ok(Number.isInteger(v));
+    }
+    // Stable: the next frame keeps the same places
+    const before = [a.layout, b.layout].map(l => ({ ...l }));
+    r.bubbles.update();
+    assert.deepEqual([a.layout, b.layout], before);
+});
+
+test('R1 n4: placeBubble slides sideways first and lifts only when both sides are taken', () => {
+    const at = { x: 100, y: 100 };
+    assert.deepEqual(placeBubble(at, 60, 20, []).dx, 0);
+    const left = placeBubble(at, 60, 20, [{ x: 115, y: 70, w: 20, h: 30 }]);   // in the way on the right
+    assert.ok(left.dx < 0, 'slid left');
+    assert.equal(left.lift, 0);
+    const wall = [{ x: 0, y: 60, w: 300, h: 40 }];
+    const up = placeBubble(at, 60, 20, wall);
+    assert.ok(up.lift > 0 && up.lift % 2 === 0);
+    assert.equal(hit(up.rect, wall[0]), false);
 });

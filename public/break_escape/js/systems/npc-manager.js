@@ -1201,6 +1201,23 @@ export default class NPCManager {
     };
   }
 
+  /**
+   * A bark mapping is answering this event now: if the bark will show as a speech bubble over
+   * an NPC in view (npc-barks.js answersInView: same room, lit, on camera, no minigame), mark the
+   * event's data, so the sender can tell straight after its emit. doors.js refuseAtGate reads
+   * `answeredInView` and drops its own refusal notification, which covered the guard's bubble
+   * (UX slice 5 R1 M2). Decided here, where the cooldown and condition have just passed: the
+   * bark itself can reach the bubble later (a knot bark loads its ink first, the queue waits).
+   */
+  _markAnsweredInView(npcId, eventData) {
+    if (!eventData || typeof eventData !== 'object' || Object.isFrozen(eventData)) return;
+    let inView = false;
+    try { inView = !!this.barkSystem?.answersInView?.(npcId); } catch (e) { inView = false; }
+    if (!inView) return;
+    eventData.answeredInView = true;
+    eventData.answeredBy = npcId;
+  }
+
   // Handle when a mapped event fires
   _handleEventMapping(npcId, eventPattern, config, eventData) {
     console.log(`🎯 Event triggered: ${eventPattern} for NPC: ${npcId}`, eventData);
@@ -1798,6 +1815,7 @@ export default class NPCManager {
     if (this.barkSystem && (config.bark || config.message)) {
       const barkText = config.bark || config.message;
       const barkDelay = config.barkDelay || 0;
+      if (!(barkDelay > 0)) this._markAnsweredInView(npcId, eventData);
 
       const fireBark = () => {
         // Add bark message to conversation history (marked as bark)
@@ -1833,6 +1851,7 @@ export default class NPCManager {
       console.log(`📖 Loading Ink story from knot: ${config.knot}`);
 
       // Load the Ink story and navigate to the knot
+      this._markAnsweredInView(npcId, eventData);
       this._showBarkFromKnot(npcId, npc, config.knot, eventPattern, this._barkStillValid(npcId, config, eventData));
     }
     
