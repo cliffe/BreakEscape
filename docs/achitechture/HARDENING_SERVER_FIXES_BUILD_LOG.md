@@ -26,3 +26,36 @@ Tests:
   hot desk leaves no guest record and the borrow answers `guest: false`; the claim is refused.
 - `test/js/workstation-state.test.mjs` — new test: `autoLockMin 0` locks the hot desk on the
   leave, opens no guest session, emits `workstation_auto_locked`, next click is the sign-in screen.
+
+## Item 5 — grant_foothold_actions skips `_` note keys
+
+Status: already implemented (step 2b), confirmed, no change needed.
+
+`NetworkModel.grant_foothold_actions` (`lib/break_escape/network_model.rb:256`) already walks the
+scenario with `AuthorNotes.each_live`, which skips `_` note keys, so a grant parked in a note never
+widens the server's allow list while a grant in free data (a minigame action list) is honoured.
+Tests prove it: `test/controllers/break_escape/network_notes_not_live_test.rb` (a grant inside a
+`_draft` note is not enumerated and its implant is refused `no_action`; an `_annex` room id is
+honoured) and `test/unit/network_model_test.rb`. Both green (31 runs).
+
+## Item 6 — dismissBlockingUi carried on while still blocked
+
+Status: clear bug, fixed (test bridge).
+
+`__test.dismissBlockingUi` (`public/break_escape/js/systems/test-bridge/index.js`) clicked the
+button then answered `ok: true` with `stillBlocked: !!detectBlockingUi()`. A caller that trusts
+`ok` (a scripted `dismiss` step) carried on against a page that was still blocked, for instance
+after dismissing the tutorial prompt that sits over the session-resume overlay at startup.
+
+Fix: when a blocker remains after the click, return `fail('still-blocked-after-dismiss', { clicked,
+stillBlocked: true, blocker })`; return `ok: true, stillBlocked: false` only when the page is clear.
+The `.claude/skills/*` playtest bootstrap loop ignores the return value and re-reads blocking each
+pass, so it is unaffected; the `dismiss` step command and the `tools/` callers now see the failure.
+
+Proof: browser proof on :3620 (game 3138, m01), real bridge + DOM, three cases:
+- dismiss a blocker that reveals a second → `ok:false`, reason `still-blocked-after-dismiss`;
+- dismiss that second while the mission's own UI still covers the canvas → `ok:false` (no carry-on);
+- dismiss an overlay over a clear canvas → `ok:true`, `stillBlocked:false`.
+Script `scratchpad/hard-fixes/dismiss-proof.mjs` (PROOF PASS). Doc updated: `docs/test-bridge.md`.
+Related, left open: backlog line of 2026-11-13 (barkDelay R2 n2) covers the wider pressKey/_pick
+"no change" reporting and getState hiding blockingUi during a minigame; out of scope here.
