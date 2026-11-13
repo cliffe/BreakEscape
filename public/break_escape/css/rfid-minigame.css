@@ -17,31 +17,128 @@
     z-index: 1000;
 }
 
+/* "safe" centring: a frame taller than its area starts at the top of the area instead
+   of running off both edges (UX slice 3a R3 M1) */
 .rfid-minigame-game-container {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: safe center;
     width: 100%;
     height: 100%;
 }
 
-/* The card copier (pixel-art UI rule): square corners, a 2px dark outline and a hard
-   2px bevel drawn with unblurred inset shadows; no rounded outline, no soft shadow */
+/* The card copier (pixel-art UI rule). Its corners are cut in 2px steps by a clip-path
+   polygon, which is pixel art (only smooth radius is banned); it was in the original
+   design and the user asked for it back. A border or inset shadow on a clipped box is
+   cut away at the corners, so the outline and bevel are layers, each clipped by the
+   same stepped polygon (a staircase of 2px steps inset by 2px is the same staircase):
+   - the frame itself: the 2px dark outline (its background, showing round the edge);
+   - ::before, inset 2px: the light bevel, left and top, following the steps;
+   - .flipper-bevel (a child div, rfid-ui.js createFlipperFrame), offset 2px down and
+     right of ::before: the dark bevel, right and bottom, following the steps;
+   - ::after, inset 2px more on the right and bottom: the orange body.
+   Positioned z-index -1 layers paint in tree order: ::before, the child, then ::after.
+   No soft shadow: clip-path would cut it off anyway. */
 .flipper-zero-frame {
+    --copier-steps: polygon(
+        0px calc(100% - 10px),
+        2px calc(100% - 10px),
+        2px calc(100% - 6px),
+        4px calc(100% - 6px),
+        4px calc(100% - 4px),
+        6px calc(100% - 4px),
+        6px calc(100% - 2px),
+        10px calc(100% - 2px),
+        10px 100%,
+        calc(100% - 10px) 100%,
+        calc(100% - 10px) calc(100% - 2px),
+        calc(100% - 6px) calc(100% - 2px),
+        calc(100% - 6px) calc(100% - 4px),
+        calc(100% - 4px) calc(100% - 4px),
+        calc(100% - 4px) calc(100% - 6px),
+        calc(100% - 2px) calc(100% - 6px),
+        calc(100% - 2px) calc(100% - 10px),
+        100% calc(100% - 10px),
+        100% 10px,
+        calc(100% - 2px) 10px,
+        calc(100% - 2px) 6px,
+        calc(100% - 4px) 6px,
+        calc(100% - 4px) 4px,
+        calc(100% - 6px) 4px,
+        calc(100% - 6px) 2px,
+        calc(100% - 10px) 2px,
+        calc(100% - 10px) 0px,
+        10px 0px,
+        10px 2px,
+        6px 2px,
+        6px 4px,
+        4px 4px,
+        4px 6px,
+        2px 6px,
+        2px 10px,
+        0px 10px
+    );
+    position: relative;
     width: 400px;
     height: 550px;
-    background: #FF8200;
-    border: 2px solid #1a0d00;
-    box-shadow: inset 2px 2px 0 #ffb366, inset -2px -2px 0 #b35a00;
-    padding: 18px;
+    /* What keeps the frame inside its area is flex shrink: the frame is the area's only
+       flex item, and in a window shorter than 630px it shrinks to the area's height (the
+       window less 40px). That works only with min-height: 0, because a flex item's
+       automatic minimum is its content (577px on the copy screen), which ran the frame
+       off a 412px-high window (UX slice 3a R3 M1). The body inside then scrolls. No
+       height cap: on this content-box frame a 100% cap holds only the content box and
+       lets the frame run 40px past its area, so it never bound (R4 m2). Keep the shrink. */
+    min-height: 0;
+    flex-shrink: 1;
+    background: #1a0d00;
+    clip-path: var(--copier-steps);
+    padding: 20px;
     display: flex;
     flex-direction: column;
     font-family: 'GNF', monospace;
 }
 
-/* Header */
+/* The clip-path makes the frame a stacking context, so z-index -1 paints these above
+   the frame's own background and below its content */
+.flipper-zero-frame::before,
+.flipper-zero-frame > .flipper-bevel,
+.flipper-zero-frame::after {
+    position: absolute;
+    z-index: -1;
+    clip-path: var(--copier-steps);
+    pointer-events: none;
+}
+
+.flipper-zero-frame::before,
+.flipper-zero-frame::after {
+    content: '';
+}
+
+.flipper-zero-frame::before {
+    inset: 2px;
+    background: #ffb366;
+}
+
+.flipper-zero-frame > .flipper-bevel {
+    top: 4px;
+    left: 4px;
+    right: 2px;
+    bottom: 2px;
+    background: #b35a00;
+}
+
+.flipper-zero-frame::after {
+    top: 4px;
+    left: 4px;
+    right: 4px;
+    bottom: 4px;
+    background: #FF8200;
+}
+
+/* Header: fixed at the top of the frame (UX slice 3a R4 m1) */
 .flipper-header {
+    flex: none;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -63,11 +160,23 @@
     font-family: 'GNF', monospace;
 }
 
-/* Screen */
-.flipper-screen {
+/* The display: the grey screen between the header and the footer. It holds the
+   scrolling body (.flipper-screen, #rfid-screen) and, under it, the "More below" strip.
+   The layout of the network view (UX slice 1): fixed header, scrolling body, fixed
+   footer (UX slice 3a R4 m1). */
+.flipper-display {
     flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
     background: #333;
     border: 2px solid #1a0d00;
+}
+
+/* The scrolling body, which every screen fills */
+.flipper-screen {
+    flex: 1;
+    min-height: 0;
     padding: 15px;
     color: white;
     font-size: 16px;
@@ -75,6 +184,131 @@
     display: flex;
     flex-direction: column;
     font-family: 'GNF', monospace;
+}
+
+/* "More below": pinned to the display's bottom edge while the body runs on, hidden at
+   the end (rfid-ui.js updateScrollCue), as on the network view */
+.flipper-more {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 4px 8px;
+    background: #222;
+    border-top: 2px solid #1a1a1a;
+    color: #FFA500;
+    font-size: 14px;
+    font-family: 'GNF', monospace;
+}
+
+.flipper-more[hidden] {
+    display: none;
+}
+
+/* A stepped down arrow, 12 x 6 in 2px steps (rows 12, 8 and 4 wide) */
+.flipper-more-arrow {
+    width: 12px;
+    height: 6px;
+    background: #FFA500;
+    clip-path: polygon(0 0, 12px 0, 12px 2px, 10px 2px, 10px 4px, 8px 4px, 8px 6px,
+                       4px 6px, 4px 4px, 2px 4px, 2px 2px, 0 2px);
+}
+
+/* The footer: the screen's main controls, fixed under the display so they show at every
+   window size without scrolling. Empty on screens with none (the X closes the copier). */
+.flipper-footer {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 10px;
+}
+
+.flipper-footer:empty {
+    display: none;
+}
+
+.flipper-footer .flipper-buttons {
+    padding-top: 0;
+    margin-top: 0;
+}
+
+.flipper-footer .flipper-button-back,
+.flipper-footer .flipper-button-back + .flipper-button-back {
+    margin-top: 0;
+}
+
+/* Footer buttons on the orange body: a dark fill with a light top-left and a dark
+   bottom-right bevel, orange text, so each reads as a raised button and never as orange
+   on orange (UX slice 3a R5 n2). Abandon read keeps its grey. */
+.flipper-footer .flipper-button {
+    background: #2a2a2a;
+    color: #FFA500;
+    box-shadow: inset 2px 2px 0 #4d4d4d, inset -2px -2px 0 #111;
+}
+
+.flipper-footer .flipper-button:hover {
+    background: #3d3d3d;
+}
+
+.flipper-footer .flipper-button-secondary {
+    background: #555;
+    color: #fff;
+    box-shadow: inset 2px 2px 0 #6a6a6a, inset -2px -2px 0 #333;
+}
+
+.flipper-footer .flipper-button-secondary:hover {
+    background: #6a6a6a;
+}
+
+/* The protocol screen's attacks (or Read & Clone, Save UID Only), stacked over the
+   Back and Abandon read row (R5 m1) */
+.flipper-footer .flipper-footer-actions {
+    flex-direction: column;
+    gap: 6px;
+}
+
+.flipper-footer .flipper-footer-actions .flipper-button {
+    flex: none;
+    padding: 8px 12px;
+}
+
+.flipper-footer-row {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+/* The copier's controls are real buttons (R5 n1): no browser button look */
+.flipper-zero-frame button {
+    margin: 0;
+    font-family: 'GNF', monospace;
+    line-height: normal;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.flipper-zero-frame button.flipper-menu-item {
+    width: 100%;
+    box-sizing: border-box;
+    text-align: left;
+}
+
+/* The control the keyboard is on: a 2px white pixel ring, square, clear on the grey
+   screen and on the orange body alike */
+.flipper-zero-frame button:focus {
+    outline: none;
+}
+
+.flipper-zero-frame button:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 0;
+}
+
+.flipper-zero-frame button.flipper-menu-item:focus-visible {
+    border-color: #FFA500;
+    background: #4d4d4d;
 }
 
 /* Breadcrumb */
@@ -134,8 +368,7 @@
     flex-direction: column;
     gap: 6px;
     margin-top: 15px;
-    max-height: 300px;
-    overflow-y: auto;
+    /* No scroller of its own: the body scrolls, so one scrollbar and one "More below" */
 }
 
 /* Card Name */
@@ -354,41 +587,52 @@
     cursor: pointer;
 }
 
-/* Scrollbar */
-.flipper-screen::-webkit-scrollbar {
-    width: 8px;
+/* Scrollbar: the pixel-art scrollbar of slice 1, the shared .pixel-scroll rule in
+   css/utilities.css on build/ux-net (not on this branch). This is a local copy of its
+   shape, scoped to the copier, with the copier's colours: once both slices are merged,
+   drop the shape rules here and keep only the colour variables on the frame. Square,
+   2px borders, flat colours, no arrow buttons. */
+.flipper-zero-frame .pixel-scroll {
+    --pixel-scroll-track: #1a1a1a;
+    --pixel-scroll-thumb: #4d4d4d;
+    --pixel-scroll-edge: #FF8200;
+    --pixel-scroll-hover: #FFA500;
 }
 
-.flipper-screen::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.2);
-    border-left: 2px solid rgba(0, 0, 0, 0.4);
+.flipper-zero-frame .pixel-scroll::-webkit-scrollbar {
+    width: 14px;
+    height: 14px;
 }
 
-.flipper-screen::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.3);
-    border: 2px solid #333;
+.flipper-zero-frame .pixel-scroll::-webkit-scrollbar-track {
+    background: var(--pixel-scroll-track);
+    border-left: 2px solid var(--pixel-scroll-thumb);
 }
 
-.flipper-screen::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.5);
+.flipper-zero-frame .pixel-scroll::-webkit-scrollbar-thumb {
+    background: var(--pixel-scroll-thumb);
+    border: 2px solid var(--pixel-scroll-edge);
 }
 
-.flipper-card-list::-webkit-scrollbar {
-    width: 6px;
+.flipper-zero-frame .pixel-scroll::-webkit-scrollbar-thumb:hover {
+    border-color: var(--pixel-scroll-hover);
 }
 
-.flipper-card-list::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.2);
-    border-left: 2px solid rgba(0, 0, 0, 0.4);
+.flipper-zero-frame .pixel-scroll::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
 }
 
-.flipper-card-list::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.3);
-    border: 2px solid #333;
+.flipper-zero-frame .pixel-scroll::-webkit-scrollbar-corner {
+    background: var(--pixel-scroll-track);
 }
 
-.flipper-card-list::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.5);
+@supports not selector(::-webkit-scrollbar) {
+    .flipper-zero-frame .pixel-scroll {
+        scrollbar-width: auto;
+        scrollbar-color: var(--pixel-scroll-edge) var(--pixel-scroll-track);
+    }
 }
 
 /* Protocol-Specific Displays */
@@ -474,12 +718,37 @@
     transition: width 0.5s steps(4);
 }
 
-/* Responsive */
-@media (max-width: 500px) {
+/* Responsive. The phone rule starts at 530px, not 500px: from 501px to 529px wide the
+   wide frame (440px, centred, 20px from the top in a short window) put its top-right
+   corner under the close X (R4 n1). The phone frame caps at 440px wide, so its width
+   does not change in that band. */
+@media (max-width: 530px) {
+    /* At phone width the frame and its stepped outline stay inside the window, 16px in
+       from each side. Content-box sizing (400px of content plus padding) is kept for wider
+       screens; here the padding counts inside the width, or 90% plus 40px of padding ran
+       past both edges (UX slice 3a R1 m3). The height is the old 80vh of content plus the
+       padding, rounded to whole 2px so the bottom steps land on whole pixels.
+       The close X (top 15px, 30px square plus its 4px border: it ends at y 45) sits
+       above the frame and never on its border or stepped corner (R2 m1). The game
+       container already sits 20px in from the top and bottom (minigames-framework.css
+       margin: 20px auto), so 32px of padding starts the copier's area 52px down and ends
+       it 52px up (100vh - 104px high). The frame is centred in that area, or starts at
+       its top when it is too tall ("safe" centring never pushes it under the X). */
+    .rfid-minigame-game-container {
+        box-sizing: border-box;
+        padding: 32px 0;
+    }
+
     .flipper-zero-frame {
-        width: 90%;
-        height: 80vh;
-        min-height: 500px;
+        box-sizing: border-box;
+        width: calc(100% - 32px);
+        max-width: 440px;
+        height: calc(80vh + 40px);
+        height: round(down, min(calc(80vh + 40px), calc(100vh - 104px)), 2px);
+        /* 540px where the window has room; below that the area's height, so the bottom
+           outline and steps stay in a short window (320x568) and the screen scrolls
+           (R3 n2) */
+        min-height: min(540px, calc(100vh - 104px));
     }
 }
 

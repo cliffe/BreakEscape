@@ -106,16 +106,18 @@ function injectStyles() {
             font-size: 16px;
             color: #ffffff;
         }
+        /* The detail wraps to as many lines as it needs, never clipped: it is often the
+           fact that tells two entries apart (Copy keeps the card where it is, Take
+           removes it), and with a 64px icon in the row a two-line clamp cut it off
+           (UX slice 3a R1 M1). A tall menu scrolls (max-height above). */
         #be-interaction-menu .be-im-detail {
-            display: -webkit-box;
+            display: block;
             font-size: 16px;
             line-height: 1.5;
             color: #9fb0c4;
             margin-top: 6px;
             white-space: normal;
-            overflow: hidden;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
+            overflow-wrap: anywhere;
         }
     `;
     document.head.appendChild(style);
@@ -161,7 +163,7 @@ function onKeyDown(e) {
  * click menu, systems/inventory-menu.js). A disabled entry is shown greyed with its
  * `detail` as the reason, and choosing it does nothing. Esc or a tap outside closes it.
  *
- * @param {Array<{label:string, detail?:string, disabled?:boolean, icon?:{src:string, frame?:number, cols?:number, cell?:number}, onSelect:Function}>} candidates
+ * @param {Array<{label:string, detail?:string, disabled?:boolean, icon?:{src:string, frame?:number, cols?:number, cell?:number, width?:number, height?:number}, onSelect:Function}>} candidates
  * @param {number} clientX - viewport X of the tap (event.clientX)
  * @param {number} clientY - viewport Y of the tap (event.clientY)
  * @param {string} [titleText] - the heading (default "Interact with…"; the item's name for a held item)
@@ -210,6 +212,12 @@ export function showInteractionMenu(candidates, clientX, clientY, titleText, { n
                 const row = Math.floor(c.icon.frame / cols);
                 icon.style.backgroundSize = `${cols * cell * scale}px auto`;
                 icon.style.backgroundPosition = `-${col * cell * scale}px -${row * cell * scale}px`;
+            } else if (Number.isInteger(c.icon.width) && Number.isInteger(c.icon.height)) {
+                // A small image drawn at an exact size the caller picked (a whole-number
+                // multiple of its pixels), centred in the box, so it is never scaled by
+                // a fraction the way 'contain' would scale it.
+                icon.style.backgroundSize = `${c.icon.width}px ${c.icon.height}px`;
+                icon.style.backgroundPosition = 'center';
             } else {
                 icon.style.backgroundSize = 'contain';
                 icon.style.backgroundPosition = '0 0';
@@ -304,5 +312,18 @@ export function showInteractionMenu(candidates, clientX, clientY, titleText, { n
 
 // Global access (mirrors the other UI helpers in this codebase)
 window.showInteractionMenu = showInteractionMenu;
+
+// Menu icons shared by every menu: core/game.js imports them, and systems/action-menu.js
+// (no static imports) reads them from window. The hand sheet is a 4x4 grid of 32px
+// frames (frame 0 = open hand, frame 6 = fist/jab), matching the HUD toggle; the menu
+// draws it x2 in its 64px box.
+export function menuIconsBase() {
+    const assetsPath = (typeof window !== 'undefined' && window.breakEscapeConfig?.assetsPath) || '/break_escape/assets';
+    return `${assetsPath}/icons`;
+}
+export function openHandIcon() { return { src: `${menuIconsBase()}/hand_frames.png`, frame: 0, cols: 4, cell: 32 }; }
+export function jabHandIcon()  { return { src: `${menuIconsBase()}/hand_frames.png`, frame: 6, cols: 4, cell: 32 }; }
+export function talkIcon()     { return { src: `${menuIconsBase()}/talk.png` }; }
+window.menuIcons = { openHand: openHandIcon, jabHand: jabHandIcon, talk: talkIcon };
 window.closeInteractionMenu = closeInteractionMenu;
 window.isInteractionMenuOpen = isInteractionMenuOpen;

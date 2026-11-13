@@ -10,7 +10,7 @@ import { wallClearFrom, findClearStandPoint, sameRoomFrom, playerFeet } from '..
 import { aimX, withoutChairsIfOthers, takeablesBeforeChairs, npcGivesWay, objectIdOf, withoutLeavingNpcsIfObjects, walkAwayTracker } from '../systems/interaction-reach.js';
 import '../systems/door-gaps.js'; // registers open-doorway lookup for combat reach
 import { createInfoLabel, updateInfoLabel } from '../ui/info-label.js';
-import { showInteractionMenu, isInteractionMenuOpen, closeInteractionMenu } from '../ui/interaction-menu.js';
+import { showInteractionMenu, isInteractionMenuOpen, closeInteractionMenu, openHandIcon, jabHandIcon, talkIcon } from '../ui/interaction-menu.js';
 import { resolveObjectField, evaluateGlobalCondition } from '../utils/conditional-text.js';
 import { introduceScenario } from '../utils/helpers.js';
 import '../minigames/index.js';
@@ -2734,15 +2734,8 @@ function findObjectsAtPosition(worldX, worldY) {
     return objectsAtPosition;
 }
 
-// Interaction icons for the disambiguation menu. The hand sheet is a 4×4 grid of
-// 32px frames (frame 0 = open hand, frame 6 = fist/jab), matching the HUD toggle.
-function interactionIconsBase() {
-    const assetsPath = window.breakEscapeConfig?.assetsPath || '/break_escape/assets';
-    return `${assetsPath}/icons`;
-}
-function openHandIcon()  { return { src: `${interactionIconsBase()}/hand_frames.png`, frame: 0, cols: 4, cell: 32 }; }
-function jabHandIcon()   { return { src: `${interactionIconsBase()}/hand_frames.png`, frame: 6, cols: 4, cell: 32 }; }
-function talkIcon()      { return { src: `${interactionIconsBase()}/talk.png` }; }
+// Interaction icons for the disambiguation menu: openHandIcon, jabHandIcon and talkIcon
+// come from ui/interaction-menu.js, the one definition the action menu shares.
 
 /**
  * Gather every interactable entity (item, NPC, door) that is both within the

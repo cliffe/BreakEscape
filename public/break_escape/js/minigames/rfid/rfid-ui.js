@@ -22,6 +22,23 @@ import { escapeHtml } from '../../utils/escape-html.js';
 /** Shown under "No keycards in inventory" on the Read screen. */
 export const NO_KEYCARDS_HINT = 'The cloner reads a badge at close range: one you hold, or one someone is carrying.';
 
+/** How long the emulation screen (card name, protocol, data) stays up before the result. */
+export const EMULATION_HOLD_MS = 1500;
+
+/** The cue under the copier's screen while its content runs on past the bottom edge. */
+export const MORE_BELOW_TEXT = 'More below';
+
+/** The offset that moves a box onto whole device pixels. A box centred in a space of odd
+ *  size sits half a pixel off, and every edge of the copier's stepped frame (outline,
+ *  bevel, each 2px step) then blends across two rows (UX slice 3a R1 m1). */
+export function wholePixelOffset(rect, dpr = 1) {
+    const snap = (v) => Math.round(v * dpr) / dpr - v;
+    const x = snap(rect.left), y = snap(rect.top);
+    // Round off float noise, so a box already on whole pixels gets exactly 0
+    const tidy = (v) => (Math.abs(v) < 1e-6 ? 0 : Math.round(v * 1e4) / 1e4);
+    return { x: tidy(x), y: tidy(y) };
+}
+
 /** What the device is called on screen and in the menus: the scenario's own name for the
  *  rfid_cloner item ("Card copier"), so the inventory, the menus and the device agree. */
 export const DEFAULT_CLONER_NAME = 'Card copier';
@@ -90,10 +107,25 @@ export function pixelIcon(name, scale = 3) {
         `shape-rendering="crispEdges" aria-hidden="true" focusable="false">${rects}</svg>`;
 }
 
+/**
+ * A copier control: a real button, so Tab reaches it and Enter or Space presses it
+ * (UX slice 3a R5 n1). The role is kept for the test bridge, which finds controls by role.
+ */
+export function controlButton(className, onClick) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = className;
+    btn.setAttribute?.('role', 'button');
+    if (onClick) btn.addEventListener('click', onClick);
+    return btn;
+}
+
+/** The keys that move between the copier's controls: back (-1) or on (+1). */
+export const ARROW_STEPS = { ArrowUp: -1, ArrowLeft: -1, ArrowDown: 1, ArrowRight: 1 };
+
 /** A Back button: the pixel arrow, then the word (no text arrow glyph). */
 function backButton(onClick) {
-    const back = document.createElement('div');
-    back.className = 'flipper-button-back';
+    const back = controlButton('flipper-button-back', onClick);
     const art = document.createElement('span');
     art.className = 'px-icon-holder';
     art.innerHTML = pixelIcon('back', 2);
@@ -101,7 +133,6 @@ function backButton(onClick) {
     words.textContent = 'Back';
     back.appendChild(art);
     back.appendChild(words);
-    back.addEventListener('click', onClick);
     return back;
 }
 
@@ -138,6 +169,7 @@ export class RFIDUIRenderer {
 
         // Append to container first so screen element is in the DOM
         this.container.appendChild(flipper);
+        this.snapFrameToPixels(flipper);
 
         // At a reader the copier opens on that reader: the saved cards to play back and the
         // cards held to tap, one press each. From the inventory (no reader) it opens on its menu.
@@ -151,9 +183,8 @@ export class RFIDUIRenderer {
      * reader wants: trying them is the player's job.
      */
     showDoorScreen() {
-        const screen = this.getScreen();
+        const screen = this.freshScreen();
         if (!screen) return;
-        screen.innerHTML = '';
 
         const breadcrumb = document.createElement('div');
         breadcrumb.className = 'flipper-breadcrumb';
@@ -167,6 +198,7 @@ export class RFIDUIRenderer {
         const held = this.minigame.params?.availableCards || [];
         const list = document.createElement('div');
         list.className = 'flipper-card-list flipper-door-list';
+        const entries = [];
 
         if (saved.length > 0) {
             const head = document.createElement('div');
@@ -174,11 +206,9 @@ export class RFIDUIRenderer {
             head.textContent = 'Play back a saved card';
             list.appendChild(head);
             saved.forEach(card => {
-                const item = document.createElement('div');
-                item.className = 'flipper-menu-item';
-                item.setAttribute?.('role', 'button');
+                const item = this.listEntry('door', entries.length, () => this.showEmulationScreen(card));
                 item.innerHTML = `${pixelIcon('signal', 2)}<span>Emulate ${escapeHtml(displayDashes(card.name || 'Card'))}</span>`;
-                item.addEventListener('click', () => this.showEmulationScreen(card));
+                entries.push(item);
                 list.appendChild(item);
             });
         }
@@ -189,11 +219,9 @@ export class RFIDUIRenderer {
             list.appendChild(head);
             held.forEach(card => {
                 const name = displayDashes(card.scenarioData?.name || 'Keycard');
-                const item = document.createElement('div');
-                item.className = 'flipper-menu-item';
-                item.setAttribute?.('role', 'button');
+                const item = this.listEntry('door', entries.length, () => this.minigame.handleCardTap(card));
                 item.innerHTML = `${pixelIcon('card', 2)}<span>Tap ${escapeHtml(name)}</span>`;
-                item.addEventListener('click', () => this.minigame.handleCardTap(card));
+                entries.push(item);
                 list.appendChild(item);
             });
         }
@@ -208,6 +236,8 @@ export class RFIDUIRenderer {
             list.appendChild(how);
         }
         screen.appendChild(list);
+        // Back from a refusal: the list where the player left it (R5 n3)
+        this.showList('door', entries);
     }
 
     /**
@@ -221,6 +251,7 @@ export class RFIDUIRenderer {
 
         // Append to container first so screen element is in the DOM
         this.container.appendChild(flipper);
+        this.snapFrameToPixels(flipper);
 
         // Auto-start reading if card provided
         if (this.minigame.params.cardToClone) {
@@ -237,6 +268,13 @@ export class RFIDUIRenderer {
     createFlipperFrame() {
         const frame = document.createElement('div');
         frame.className = 'flipper-zero-frame';
+
+        // The dark bevel layer, between ::before (light bevel) and ::after (body), so the
+        // dark edge follows the stepped corners too (rfid-minigame.css, R2 n1)
+        const bevel = document.createElement('div');
+        bevel.className = 'flipper-bevel';
+        bevel.setAttribute('aria-hidden', 'true');
+        frame.appendChild(bevel);
 
         // Header with logo and battery
         const header = document.createElement('div');
@@ -255,15 +293,133 @@ export class RFIDUIRenderer {
         header.appendChild(logo);
         header.appendChild(battery);
 
-        // Screen container
+        // The layout of the network view (UX slice 1): a fixed header, a scrolling body and
+        // a fixed footer (UX slice 3a R4 m1). The display is the grey screen: the body
+        // (#rfid-screen, which every screen fills) scrolls inside it, over a "More below"
+        // strip shown while the body runs on. The footer holds the screen's main controls
+        // (Save and Abandon, Emulate and Back), so they show at every window size.
+        const display = document.createElement('div');
+        display.className = 'flipper-display';
+
         const screen = document.createElement('div');
-        screen.className = 'flipper-screen';
+        screen.className = 'flipper-screen pixel-scroll';
         screen.id = 'rfid-screen';
 
+        const more = document.createElement('div');
+        more.className = 'flipper-more';
+        more.hidden = true;
+        more.setAttribute('aria-hidden', 'true');
+        more.innerHTML = `<span class="flipper-more-arrow"></span><span>${MORE_BELOW_TEXT}</span>`;
+
+        display.appendChild(screen);
+        display.appendChild(more);
+
+        const footer = document.createElement('div');
+        footer.className = 'flipper-footer';
+        footer.id = 'rfid-footer';
+
         frame.appendChild(header);
-        frame.appendChild(screen);
+        frame.appendChild(display);
+        frame.appendChild(footer);
+
+        this.moreElement = more;
+        this.frameElement = frame;
+        screen.addEventListener('scroll', () => this.updateScrollCue());
+        // Enter, Space and the arrow keys on the copier's controls (R5 n1). Esc is left to
+        // bubble to the minigame's own close handler.
+        frame.addEventListener('keydown', (e) => this.onKey(e));
 
         return frame;
+    }
+
+    /** The copier's controls in screen order: the body's entries, then the footer's. */
+    controls() {
+        const frame = this.frameElement;
+        if (!frame || typeof frame.querySelectorAll !== 'function') return [];
+        return Array.from(frame.querySelectorAll('button')).filter(b => !b.disabled);
+    }
+
+    /**
+     * A key on the copier. Enter or Space presses the focused control (handled here and
+     * not left to the browser, so a key the game captures cannot swallow it); the arrow
+     * keys move between controls. Neither reaches the world behind the copier.
+     */
+    onKey(e) {
+        if (!e) return false;
+        const target = e.target;
+        const isControl = !!(target && target.tagName === 'BUTTON' && this.frameElement?.contains?.(target));
+        if ((e.key === 'Enter' || e.key === ' ') && isControl) {
+            e.preventDefault?.();
+            e.stopPropagation?.();
+            if (!e.repeat) target.click();
+            return true;
+        }
+        const step = ARROW_STEPS[e.key];
+        if (step) {
+            const list = this.controls();
+            if (list.length === 0) return false;
+            e.preventDefault?.();
+            e.stopPropagation?.();
+            const at = list.indexOf(typeof document !== 'undefined' ? document.activeElement : null);
+            const next = at < 0 ? list[0] : list[Math.max(0, Math.min(list.length - 1, at + step))];
+            next.focus?.();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Give a screen's main control the keyboard focus, so Enter does the screen's main
+     * action (R5 n1). Once more on the next tick, for a copier whose overlay is not yet
+     * shown when the first screen is built.
+     */
+    focusMain(el, options) {
+        if (!el || typeof el.focus !== 'function') return;
+        const go = () => {
+            if (!el.isConnected) return;
+            if (typeof document !== 'undefined' && document.activeElement === el) return;
+            try { el.focus(options); } catch (e) { /* not focusable yet */ }
+        };
+        go();
+        setTimeout(go, 0);
+    }
+
+    /**
+     * A list entry (a saved card, a held card): a button that remembers which entry was
+     * chosen, so the list comes back at that entry (R5 n3).
+     */
+    listEntry(key, index, onClick) {
+        return controlButton('flipper-menu-item', () => {
+            this._listChosen = { ...(this._listChosen || {}), [key]: index };
+            onClick();
+        });
+    }
+
+    /**
+     * Show a list screen: back at the scroll position and entry the player left it at when
+     * coming back to it (from a card's details, or after a refusal), else at its top with
+     * the first entry focused. `fallback` takes the focus when the list is empty.
+     */
+    showList(key, entries, fallback) {
+        const screen = this.getScreen();
+        this._listKey = key;
+        const top = this._listScroll && this._listScroll[key];
+        const chosen = this._listChosen && this._listChosen[key];
+        const restoring = typeof top === 'number' && screen && 'scrollTop' in screen;
+        const target = entries[restoring && chosen != null ? chosen : 0] || entries[0] || fallback;
+        if (restoring) {
+            this.focusMain(target, { preventScroll: true });
+            screen.scrollTop = top;
+            this.updateScrollCue();
+        } else {
+            this.focusMain(target);
+        }
+    }
+
+    /** Forget where the lists were left: the copier is back at its menu. */
+    forgetLists() {
+        this._listScroll = {};
+        this._listChosen = {};
     }
 
     /**
@@ -274,13 +430,75 @@ export class RFIDUIRenderer {
         return document.getElementById('rfid-screen');
     }
 
+    /** The frame's footer, under the screen (null before the frame is built). */
+    getFooter() {
+        return document.getElementById('rfid-footer');
+    }
+
+    /**
+     * The screen, emptied for the next view, with the footer emptied too and the body
+     * scrolled back to its top. Null when the copier has no screen.
+     */
+    freshScreen() {
+        const screen = this.getScreen();
+        if (!screen) return null;
+        // Leaving a list: keep where it was scrolled to, for the way back (R5 n3)
+        if (this._listKey && typeof screen.scrollTop === 'number') {
+            this._listScroll = { ...(this._listScroll || {}), [this._listKey]: screen.scrollTop };
+        }
+        this._listKey = null;
+        screen.innerHTML = '';
+        if ('scrollTop' in screen) screen.scrollTop = 0;
+        const footer = this.getFooter();
+        if (footer) footer.innerHTML = '';
+        this.watchScreen(screen);
+        return screen;
+    }
+
+    /**
+     * Put a screen's main controls in the frame's footer, outside the scrolling body, so
+     * they show without scrolling. Without a footer (a frame built elsewhere) they go at
+     * the end of the screen, as before.
+     */
+    addToFooter(...controls) {
+        const target = this.getFooter() || this.getScreen();
+        if (!target) return;
+        for (const c of controls) target.appendChild(c);
+        this.updateScrollCue();
+    }
+
+    /**
+     * Show "More below" while the body runs past the display's bottom edge; hide it at the
+     * end. A pixel or two of rounding is not more below.
+     */
+    updateScrollCue() {
+        const screen = this.getScreen();
+        const more = this.moreElement;
+        if (!screen || !more) return false;
+        const below = (screen.scrollHeight - screen.clientHeight - screen.scrollTop) > 2;
+        more.hidden = !below;
+        return below;
+    }
+
+    /**
+     * Re-check the cue whenever the body's content changes (a new view, a progress line).
+     * One observer per copier, on its own screen, disconnected on cleanup.
+     */
+    watchScreen(screen) {
+        if (typeof window === 'undefined' || typeof window.MutationObserver !== 'function') return;
+        if (this._screenObserver && this._watchedScreen === screen) return;
+        if (this._screenObserver) this._screenObserver.disconnect();
+        this._watchedScreen = screen;
+        this._screenObserver = new window.MutationObserver(() => this.updateScrollCue());
+        this._screenObserver.observe(screen, { childList: true, subtree: true, characterData: true });
+    }
+
     /**
      * Show main menu
      * @param {string} mode - 'unlock' or 'clone'
      */
     showMainMenu(mode) {
-        const screen = this.getScreen();
-        screen.innerHTML = '';
+        const screen = this.freshScreen();
 
         // Breadcrumb
         const breadcrumb = document.createElement('div');
@@ -292,19 +510,20 @@ export class RFIDUIRenderer {
         const menu = document.createElement('div');
         menu.className = 'flipper-menu';
 
+        // Back at the menu: the lists open at their tops again
+        this.forgetLists();
+        let first = null;
+
         if (mode === 'unlock') {
             // Read option (tap cards)
-            const readOption = document.createElement('div');
-            readOption.className = 'flipper-menu-item';
+            const readOption = controlButton('flipper-menu-item', () => this.showTapInterface());
             readOption.textContent = '> Read';
-            readOption.addEventListener('click', () => this.showTapInterface());
             menu.appendChild(readOption);
+            first = readOption;
 
             // Saved option (emulate)
-            const savedOption = document.createElement('div');
-            savedOption.className = 'flipper-menu-item';
+            const savedOption = controlButton('flipper-menu-item', () => this.showSavedCards());
             savedOption.textContent = '  Saved';
-            savedOption.addEventListener('click', () => this.showSavedCards());
             menu.appendChild(savedOption);
 
             // Nothing cloned yet: say so up front rather than after a trip into Saved
@@ -323,6 +542,7 @@ export class RFIDUIRenderer {
         }
 
         screen.appendChild(menu);
+        this.focusMain(first);
     }
 
     /**
@@ -331,8 +551,7 @@ export class RFIDUIRenderer {
     showTapInterface() {
         // At a reader both lists live on the door screen
         if (this.minigame.isLockingAttempt) return this.showDoorScreen();
-        const screen = this.getScreen();
-        screen.innerHTML = '';
+        const screen = this.freshScreen();
 
         // Breadcrumb
         const breadcrumb = document.createElement('div');
@@ -371,23 +590,20 @@ export class RFIDUIRenderer {
             how.className = 'flipper-info-dim';
             how.textContent = NO_KEYCARDS_HINT;
             cardList.appendChild(how);
-        } else {
-            availableCards.forEach(card => {
-                const cardItem = document.createElement('div');
-                cardItem.className = 'flipper-menu-item';
-                cardItem.textContent = `> ${displayDashes(card.scenarioData?.name || 'Keycard')}`;
-                cardItem.addEventListener('click', () => {
-                    this.minigame.handleCardTap(card);
-                });
-                cardList.appendChild(cardItem);
-            });
         }
+        const entries = availableCards.map((card, i) => {
+            const cardItem = this.listEntry('tap', i, () => this.minigame.handleCardTap(card));
+            cardItem.textContent = `> ${displayDashes(card.scenarioData?.name || 'Keycard')}`;
+            cardList.appendChild(cardItem);
+            return cardItem;
+        });
 
         screen.appendChild(cardList);
 
-        // Back button
+        // Back button, in the footer
         const back = backButton(() => this.showMainMenu('unlock'));
-        screen.appendChild(back);
+        this.addToFooter(back);
+        this.showList('tap', entries, back);
     }
 
     /**
@@ -396,8 +612,7 @@ export class RFIDUIRenderer {
     showSavedCards() {
         // At a reader both lists live on the door screen
         if (this.minigame.isLockingAttempt) return this.showDoorScreen();
-        const screen = this.getScreen();
-        screen.innerHTML = '';
+        const screen = this.freshScreen();
 
         // Breadcrumb
         const breadcrumb = document.createElement('div');
@@ -418,25 +633,28 @@ export class RFIDUIRenderer {
             how.className = 'flipper-info-dim';
             how.textContent = `Nothing to emulate yet. Read a keycard with the ${clonerNameInSentence()} to save it here.`;
             screen.appendChild(how);
-        } else {
+        }
+        const entries = [];
+        if (savedCards.length > 0) {
             // Card list
             const cardList = document.createElement('div');
             cardList.className = 'flipper-card-list';
 
-            savedCards.forEach(card => {
-                const cardItem = document.createElement('div');
-                cardItem.className = 'flipper-menu-item';
+            savedCards.forEach((card, i) => {
+                const cardItem = this.listEntry('saved', i, () => this.showCardDetails(card));
                 cardItem.textContent = `> ${displayDashes(card.name)}`;
-                cardItem.addEventListener('click', () => this.showCardDetails(card));
                 cardList.appendChild(cardItem);
+                entries.push(cardItem);
             });
 
             screen.appendChild(cardList);
         }
 
-        // Back button
+        // Back button, in the footer
         const back = backButton(() => this.showMainMenu('unlock'));
-        screen.appendChild(back);
+        this.addToFooter(back);
+        // Back from a card's details or a refusal: the list where the player left it (R5 n3)
+        this.showList('saved', entries, back);
     }
 
     /**
@@ -444,8 +662,7 @@ export class RFIDUIRenderer {
      * @param {Object} card - Card to display
      */
     showCardDetails(card) {
-        const screen = this.getScreen();
-        screen.innerHTML = '';
+        const screen = this.freshScreen();
 
         const displayData = this.dataManager.getCardDisplayData(card);
 
@@ -483,16 +700,13 @@ export class RFIDUIRenderer {
 
         screen.appendChild(data);
 
-        // Emulate button
-        const emulateBtn = document.createElement('div');
-        emulateBtn.className = 'flipper-menu-item';
+        // Emulate: a button in the copier's palette, like Save (R5 n2)
+        const emulateBtn = controlButton('flipper-button', () => this.showEmulationScreen(card));
         emulateBtn.textContent = '> Emulate';
-        emulateBtn.addEventListener('click', () => this.showEmulationScreen(card));
-        screen.appendChild(emulateBtn);
 
-        // Back button
-        const back = backButton(() => this.showSavedCards());
-        screen.appendChild(back);
+        // Emulate and Back in the footer, so both show at every window size (R4 m1)
+        this.addToFooter(emulateBtn, backButton(() => this.showSavedCards()));
+        this.focusMain(emulateBtn);
     }
 
     /**
@@ -500,8 +714,7 @@ export class RFIDUIRenderer {
      * @param {Object} card - Card to emulate
      */
     showEmulationScreen(card) {
-        const screen = this.getScreen();
-        screen.innerHTML = '';
+        const screen = this.freshScreen();
 
         // Get protocol-specific display data
         const displayData = this.dataManager.getCardDisplayData(card);
@@ -509,8 +722,21 @@ export class RFIDUIRenderer {
         // Breadcrumb
         const breadcrumb = document.createElement('div');
         breadcrumb.className = 'flipper-breadcrumb';
-        breadcrumb.textContent = 'RFID > Saved > Emulating';
+        // From a door the copier opened on that reader's screen ("RFID > Reader"), so the
+        // trail carries on from it
+        breadcrumb.textContent = this.minigame.isLockingAttempt ? 'RFID > Reader > Emulating' : 'RFID > Saved > Emulating';
         screen.appendChild(breadcrumb);
+
+        // Emulating message: first, so the status shows at every window size before the
+        // screen moves on (R4 m1)
+        const emulating = document.createElement('div');
+        emulating.className = 'flipper-emulating';
+        if (displayData.protocol === 'MIFARE_DESFire' && !card.rfid_data?.masterKeyKnown) {
+            emulating.textContent = 'Emulating UID only...';
+        } else {
+            emulating.textContent = 'Emulating...';
+        }
+        screen.appendChild(emulating);
 
         // Emulation icon
         const icon = document.createElement('div');
@@ -540,28 +766,92 @@ export class RFIDUIRenderer {
 
         screen.appendChild(data);
 
-        // Emulating message
-        const emulating = document.createElement('div');
-        emulating.className = 'flipper-emulating';
-        if (displayData.protocol === 'MIFARE_DESFire' && !card.rfid_data?.masterKeyKnown) {
-            emulating.textContent = 'Emulating UID only...';
-        } else {
-            emulating.textContent = 'Emulating...';
-        }
-        screen.appendChild(emulating);
-
-        // Trigger emulation after showing screen. If it throws (bad card data), say so
+        // Trigger emulation once the player has had time to read this screen (it showed for
+        // only half a second before, too short to see). If it throws (bad card data), say so
         // rather than leaving "Emulating..." up with nothing happening.
-        setTimeout(() => {
-            if (!this.getScreen()) return; // closed meanwhile
+        // The timer is this copier's own: Cancel or close clears it (cleanup), and it checks
+        // that this copier is still the one open, because #rfid-screen is a global id and a
+        // copier opened again within the hold has a screen of the same id (R1 m2).
+        this.clearTimers();
+        this._emulationTimer = setTimeout(() => {
+            this._emulationTimer = null;
+            if (!this.isLive() || !this.getScreen()) return; // closed or replaced meanwhile
             try {
                 this.minigame.handleEmulate(card);
             } catch (e) {
                 console.error('Emulation failed:', e);
                 this.showError('Emulation failed', 'The saved card data is unreadable. Read the card again.');
-                setTimeout(() => { if (this.getScreen()) this.showSavedCards(); }, 3000);
+                this._fallbackTimer = setTimeout(() => {
+                    this._fallbackTimer = null;
+                    if (this.isLive() && this.getScreen()) this.showSavedCards();
+                }, 3000);
             }
-        }, 500);
+        }, EMULATION_HOLD_MS);
+    }
+
+    /** True while this renderer's copier is the minigame on screen. */
+    isLive() {
+        const framework = typeof window !== 'undefined' ? window.MinigameFramework : null;
+        if (framework && framework.currentMinigame !== this.minigame) return false;
+        return this.minigame?.gameState?.isActive !== false;
+    }
+
+    clearTimers() {
+        if (this._emulationTimer) { clearTimeout(this._emulationTimer); this._emulationTimer = null; }
+        if (this._fallbackTimer) { clearTimeout(this._fallbackTimer); this._fallbackTimer = null; }
+    }
+
+    /**
+     * Move the frame onto whole pixels (see wholePixelOffset), now and on every resize, so
+     * the stepped corners stay crisp at any window size. Only this frame: the overlay's
+     * centring is each minigame's own nested flex layout, so snapping it centrally would
+     * move every minigame (R1 m1).
+     */
+    snapFrameToPixels(frame) {
+        if (typeof window === 'undefined' || !frame || typeof frame.getBoundingClientRect !== 'function') return;
+        // A layout offset (the frame is position: relative), not a transform: Chrome snaps
+        // the box's own paint to whole pixels but draws the clip-path where layout put it,
+        // so at y 164.5 the box is crisp and its stepped clip is blurred. A transform moves
+        // both by the same half pixel and swaps which one blurs; top/left moves the layout.
+        const snap = () => {
+            if (!frame.isConnected) return;
+            frame.style.left = '';
+            frame.style.top = '';
+            const { x, y } = wholePixelOffset(frame.getBoundingClientRect(), window.devicePixelRatio || 1);
+            if (x) frame.style.left = `${x}px`;
+            if (y) frame.style.top = `${y}px`;
+        };
+        snap();
+        // Once more after the first paint, in case fonts or the overlay settle the layout
+        if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(snap);
+        if (this._onResize) window.removeEventListener('resize', this._onResize);
+        this._onResize = snap;
+        window.addEventListener('resize', snap);
+        // A layout change inside the overlay with no window resize (a message, the controls
+        // row) can also move the frame: watch the copier's container and the frame. The snap
+        // changes only top/left, never a size, so it cannot retrigger itself (R2 n2).
+        this.disconnectResizeObserver();
+        const RO = window.ResizeObserver;
+        if (typeof RO === 'function') {
+            // The cue too: a new size can bring the body's end into view or push it out
+            this._resizeObserver = new RO(() => { snap(); this.updateScrollCue(); });
+            if (this.container) this._resizeObserver.observe(this.container);
+            this._resizeObserver.observe(frame);
+        }
+    }
+
+    disconnectResizeObserver() {
+        if (this._resizeObserver) { this._resizeObserver.disconnect(); this._resizeObserver = null; }
+    }
+
+    /** Called from the minigame's cleanup: no timer, listener or observer outlives the copier. */
+    cleanup() {
+        this.clearTimers();
+        if (this._onResize && typeof window !== 'undefined') window.removeEventListener('resize', this._onResize);
+        this._onResize = null;
+        this.disconnectResizeObserver();
+        if (this._screenObserver) { this._screenObserver.disconnect(); this._screenObserver = null; }
+        this._watchedScreen = null;
     }
 
     /**
@@ -569,8 +859,7 @@ export class RFIDUIRenderer {
      * @param {Object} cardData - Card data to display protocol info for
      */
     showProtocolInfo(cardData) {
-        const screen = this.getScreen();
-        screen.innerHTML = '';
+        const screen = this.freshScreen();
 
         const displayData = this.dataManager.getCardDisplayData(cardData);
         const protocol = displayData.protocol;
@@ -622,10 +911,16 @@ export class RFIDUIRenderer {
         });
         screen.appendChild(dataDiv);
 
-        // Actions based on protocol
+        // Actions based on protocol. They go in the footer, above Back and Abandon read, so
+        // the screen's action shows without scrolling at every window size (R5 m1).
         const actions = document.createElement('div');
-        actions.className = 'flipper-menu';
-        actions.style.marginTop = '20px';
+        actions.className = 'flipper-buttons flipper-footer-actions';
+        const action = (text, onClick, dim) => {
+            const btn = controlButton(dim ? 'flipper-button flipper-button-secondary' : 'flipper-button', onClick);
+            btn.textContent = text;
+            actions.appendChild(btn);
+            return btn;
+        };
 
         if (protocol === 'MIFARE_Classic_Weak_Defaults') {
             const keysKnown = cardData.rfid_data?.sectors ?
@@ -633,28 +928,13 @@ export class RFIDUIRenderer {
 
             if (keysKnown === 0) {
                 // Suggest dictionary first
-                const dictBtn = document.createElement('div');
-                dictBtn.className = 'flipper-menu-item';
-                dictBtn.textContent = '> Dictionary Attack (instant)';
-                dictBtn.addEventListener('click', () =>
-                    this.minigame.startKeyAttack('dictionary', cardData));
-                actions.appendChild(dictBtn);
+                action('> Dictionary Attack (instant)', () => this.minigame.startKeyAttack('dictionary', cardData));
             } else if (keysKnown < 16) {
                 // Some keys found
-                const nestedBtn = document.createElement('div');
-                nestedBtn.className = 'flipper-menu-item';
-                nestedBtn.textContent = `> Nested Attack (${16 - keysKnown} sectors)`;
-                nestedBtn.addEventListener('click', () =>
-                    this.minigame.startKeyAttack('nested', cardData));
-                actions.appendChild(nestedBtn);
+                action(`> Nested Attack (${16 - keysKnown} sectors)`, () => this.minigame.startKeyAttack('nested', cardData));
             } else {
                 // All keys - can clone
-                const readBtn = document.createElement('div');
-                readBtn.className = 'flipper-menu-item';
-                readBtn.textContent = '> Read & Clone';
-                readBtn.addEventListener('click', () =>
-                    this.showCardDataScreen(cardData));
-                actions.appendChild(readBtn);
+                action('> Read & Clone', () => this.showCardDataScreen(cardData));
             }
 
         } else if (protocol === 'MIFARE_Classic_Custom_Keys') {
@@ -663,81 +943,46 @@ export class RFIDUIRenderer {
 
             if (keysKnown === 0) {
                 // No keys - suggest Darkside
-                const darksideBtn = document.createElement('div');
-                darksideBtn.className = 'flipper-menu-item';
-                darksideBtn.textContent = '> Darkside Attack (~30 sec)';
-                darksideBtn.addEventListener('click', () =>
-                    this.minigame.startKeyAttack('darkside', cardData));
-                actions.appendChild(darksideBtn);
-
+                action('> Darkside Attack (~30 sec)', () => this.minigame.startKeyAttack('darkside', cardData));
                 // Dictionary unlikely but allow try
-                const dictBtn = document.createElement('div');
-                dictBtn.className = 'flipper-menu-item flipper-menu-item-dim';
-                dictBtn.textContent = '  Dictionary Attack (unlikely)';
-                dictBtn.addEventListener('click', () =>
-                    this.minigame.startKeyAttack('dictionary', cardData));
-                actions.appendChild(dictBtn);
+                action('  Dictionary Attack (unlikely)', () => this.minigame.startKeyAttack('dictionary', cardData), true);
             } else if (keysKnown < 16) {
                 // Some keys - nested attack
-                const nestedBtn = document.createElement('div');
-                nestedBtn.className = 'flipper-menu-item';
-                nestedBtn.textContent = `> Nested Attack (~10 sec)`;
-                nestedBtn.addEventListener('click', () =>
-                    this.minigame.startKeyAttack('nested', cardData));
-                actions.appendChild(nestedBtn);
+                action('> Nested Attack (~10 sec)', () => this.minigame.startKeyAttack('nested', cardData));
             } else {
                 // All keys
-                const readBtn = document.createElement('div');
-                readBtn.className = 'flipper-menu-item';
-                readBtn.textContent = '> Read & Clone';
-                readBtn.addEventListener('click', () =>
-                    this.showCardDataScreen(cardData));
-                actions.appendChild(readBtn);
+                action('> Read & Clone', () => this.showCardDataScreen(cardData));
             }
 
         } else if (protocol === 'MIFARE_DESFire') {
             // UID only
-            const uidBtn = document.createElement('div');
-            uidBtn.className = 'flipper-menu-item';
-            uidBtn.textContent = '> Save UID Only';
-            uidBtn.addEventListener('click', () =>
-                this.showCardDataScreen(cardData));
-            actions.appendChild(uidBtn);
+            action('> Save UID Only', () => this.showCardDataScreen(cardData));
 
         } else {
             // EM4100 - instant
-            const readBtn = document.createElement('div');
-            readBtn.className = 'flipper-menu-item';
-            readBtn.textContent = '> Read & Clone';
-            readBtn.addEventListener('click', () =>
-                this.showReadingScreen());
-            actions.appendChild(readBtn);
+            action('> Read & Clone', () => this.showReadingScreen());
         }
 
         // Back goes one step, to the read screen, keeping the read and any keys
         // already cracked. Abandoning the read is a separate, explicit choice.
+        // Both in the footer, on one row under the action (R4 m1, R5 m1).
         const backBtn = backButton(() => this.showCardDataScreen(cardData));
-        actions.appendChild(backBtn);
-
-        const abandonBtn = document.createElement('div');
-        abandonBtn.className = 'flipper-button-back';
+        const abandonBtn = controlButton('flipper-button-back', () => this.minigame.complete(false));
         abandonBtn.textContent = 'Abandon read';
-        abandonBtn.addEventListener('click', () => this.minigame.complete(false));
-        actions.appendChild(abandonBtn);
+        const row = document.createElement('div');
+        row.className = 'flipper-footer-row';
+        row.appendChild(backBtn);
+        row.appendChild(abandonBtn);
 
-        // The menu entries are divs: mark them as buttons for assistive tech and the
-        // test bridge, which finds controls by role.
-        for (const item of actions.children) item.setAttribute?.('role', 'button');
-
-        screen.appendChild(actions);
+        this.addToFooter(actions, row);
+        this.focusMain(actions.children[0]);
     }
 
     /**
      * Show card reading screen (clone mode)
      */
     showReadingScreen() {
-        const screen = this.getScreen();
-        screen.innerHTML = '';
+        const screen = this.freshScreen();
 
         // Breadcrumb
         const breadcrumb = document.createElement('div');
@@ -749,23 +994,12 @@ export class RFIDUIRenderer {
         const card = this.minigame.cardToClone || {};
         const profile = getReadProfile(detectProtocol(card));
 
-        const band = document.createElement('div');
-        band.className = 'flipper-info-dim';
-        band.textContent = profile.band;
-        screen.appendChild(band);
-
+        // The read status and its progress bar first, so they show at every window size
+        // (R4 m1); what the cloner sees on the card follows
         const status = document.createElement('div');
         status.className = 'flipper-info';
         status.textContent = profile.cryptoClass === 'open' ? 'Reading ID...' : 'Reading UID...';
         screen.appendChild(status);
-
-        screen.appendChild(this.createCryptoLine(profile));
-
-        // Instruction
-        const instruction = document.createElement('div');
-        instruction.className = 'flipper-info-dim';
-        instruction.textContent = "Don't move card...";
-        screen.appendChild(instruction);
 
         // Progress bar
         const progressContainer = document.createElement('div');
@@ -777,6 +1011,19 @@ export class RFIDUIRenderer {
 
         progressContainer.appendChild(progressBar);
         screen.appendChild(progressContainer);
+
+        // Instruction
+        const instruction = document.createElement('div');
+        instruction.className = 'flipper-info-dim';
+        instruction.textContent = "Don't move card...";
+        screen.appendChild(instruction);
+
+        const band = document.createElement('div');
+        band.className = 'flipper-info-dim';
+        band.textContent = profile.band;
+        screen.appendChild(band);
+
+        screen.appendChild(this.createCryptoLine(profile));
 
         // Start reading animation
         this.minigame.startCardReading(profile.readMs);
@@ -844,8 +1091,7 @@ export class RFIDUIRenderer {
      * @param {Object} cardData - Read card data
      */
     showCardDataScreen(cardData) {
-        const screen = this.getScreen();
-        screen.innerHTML = '';
+        const screen = this.freshScreen();
 
         // Get protocol-specific display data
         const displayData = this.dataManager.getCardDisplayData(cardData);
@@ -881,6 +1127,13 @@ export class RFIDUIRenderer {
             note.className = 'flipper-info';
             note.textContent = displayData.securityNote;
             screen.appendChild(note);
+        }
+
+        // A keyless MIFARE read: why there is no plain Save, above the data so it shows
+        // with the footer's "Crack keys first" (R4 m1)
+        if (keyless) {
+            screen.appendChild(iconLine('flipper-info flipper-crack-hint', 'lock',
+                'Sectors encrypted: recover the keys to read them. Default keys fall to a dictionary attack; custom keys need Darkside.'));
         }
 
         // Card data fields
@@ -926,8 +1179,6 @@ export class RFIDUIRenderer {
         saveBtn.className = 'flipper-button';
         if (keyless) {
             // MIFARE Classic with no keys: no plain Save, point at the attack menu.
-            screen.appendChild(iconLine('flipper-info flipper-crack-hint', 'lock',
-                'Sectors encrypted: recover the keys to read them. Default keys fall to a dictionary attack; custom keys need Darkside.'));
             saveBtn.textContent = 'Crack keys first';
             saveBtn.addEventListener('click', () => this.showProtocolInfo(cardData));
         } else {
@@ -944,7 +1195,10 @@ export class RFIDUIRenderer {
 
         buttons.appendChild(saveBtn);
         buttons.appendChild(cancelBtn);
-        screen.appendChild(buttons);
+        // In the footer, outside the scrolling body: Save and Abandon show at every
+        // window size, however long the card data (R4 m1)
+        this.addToFooter(buttons);
+        this.focusMain(saveBtn);
     }
 
     /**
@@ -952,8 +1206,7 @@ export class RFIDUIRenderer {
      * @param {Object} data - Attack data {type, progress, currentSector, etc.}
      */
     showAttackProgress(data) {
-        const screen = this.getScreen();
-        screen.innerHTML = '';
+        const screen = this.freshScreen();
 
         // Breadcrumb
         const breadcrumb = document.createElement('div');
@@ -1059,8 +1312,7 @@ export class RFIDUIRenderer {
      * @param {string} message - Success message
      */
     showSuccess(message) {
-        const screen = this.getScreen();
-        screen.innerHTML = '';
+        const screen = this.freshScreen();
 
         const success = document.createElement('div');
         success.className = 'flipper-success';
@@ -1079,9 +1331,8 @@ export class RFIDUIRenderer {
      * @param {string} [tone] - 'notice' for "nothing happened" (amber, no cross)
      */
     showError(message, detail, tone) {
-        const screen = this.getScreen();
+        const screen = this.freshScreen();
         if (!screen) return;
-        screen.innerHTML = '';
 
         const notice = tone === 'notice';
         const error = document.createElement('div');

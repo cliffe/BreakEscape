@@ -20,7 +20,7 @@ function copy(p, rewrites = {}) {
     return pathToFileURL(out).href;
 }
 writeFileSync(join(tmp, 'api-stub.mjs'), 'export const ApiClient = {};');
-writeFileSync(join(tmp, 'base-minigame.mjs'), 'export class MinigameScene { constructor() {} init() {} start() {} complete() {} cleanup() {} }');
+writeFileSync(join(tmp, 'base-minigame.mjs'), 'export class MinigameScene { constructor(c, p) { this.params = p; } init() {} start() {} complete() {} cleanup() {} }');
 copy('minigames/rfid/rfid-protocols.js');
 copy('utils/display-dashes.js');
 copy('utils/escape-html.js');

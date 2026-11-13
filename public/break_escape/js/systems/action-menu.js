@@ -23,6 +23,19 @@
  * tests import it directly with a stubbed window.
  */
 
+// Menu icons. The interaction menu draws them in a 64px box. Take uses the open hand,
+// defined once in ui/interaction-menu.js (window.menuIcons, set before this module
+// loads). Copy uses the copier's world sprite (11x22) at x2, centred, as a placeholder
+// until its own menu icon is drawn.
+function assetsBase() {
+    return (typeof window !== 'undefined' && window.breakEscapeConfig?.assetsPath) || '/break_escape/assets';
+}
+export const COPIER_ICON_SCALE = 2;
+export function takeIcon() { return (typeof window !== 'undefined' && window.menuIcons?.openHand?.()) || undefined; }
+export function copyIcon() {
+    return { src: `${assetsBase()}/objects/rfid_cloner.png`, width: 11 * COPIER_ICON_SCALE, height: 22 * COPIER_ICON_SCALE };
+}
+
 /** True when the player is carrying an RFID cloner. */
 function playerHasCloner() {
     const items = (typeof window !== 'undefined' && window.inventory && window.inventory.items) || [];
@@ -77,6 +90,7 @@ export function objectActions(sprite) {
         actions.push({
             label: `Copy it with the ${device}`,
             detail: `Read the card and save a copy on the ${device}. The card stays where it is.`,
+            icon: copyIcon(),
             onSelect: () => {
                 if (window.startRFIDMinigame) {
                     // A world keycard copied in place: its stamped id is the clone source, so the
@@ -90,6 +104,7 @@ export function objectActions(sprite) {
         actions.push({
             label: 'Take it',
             detail: 'Pick the card up and carry it. The owner will notice it gone.',
+            icon: takeIcon(),
             onSelect: () => runDefaultInteraction(sprite)
         });
     }
