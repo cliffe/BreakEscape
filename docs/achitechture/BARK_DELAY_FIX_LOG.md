@@ -118,3 +118,58 @@ Keyless headless server on :3092 from this worktree (no GEMINI key), `setFPS(20)
 - In game 2568 each death bark rendered within 1 ms of reaching `showBark`, since no minigame was open.
 
 Games 2553 (started in the incident room, where the start position could not reach Helen), 2554 and 2555 (created, not used), 2565 (Helen's opening offered no NCSC route), 2569, 2576 and 2590 (the key-press choice did not take in the debrief; 2611 clicks the choice buttons) were used for setup and are not proof. The server was stopped by PID afterwards.
+
+## R2 fixes
+
+Review: docs/achitechture/BARK_DELAY_FIX_REVIEW_R2.md (0 blockers, 0 majors, 3 minors, 4 nits). Commits: `57d523bd1` (m1), `4d7b6a78e` (m2, m3, n1), `6c8718cf6` (n2, n4 backlog), and this log.
+
+### m1. A held delayed bark re-runs all four checks on release (fixed)
+
+`_delayBark` (npc-manager.js) now builds one `lapse()` check: the mapping's condition, knocked out, changed room, newly hidden. It runs when the delay ends, as before, and `show()` is handed a `stillValid` that runs it again. `fireBark` and the knot path put that `stillValid` on the payload, so when a held bark is released (bark-release-policy.js) it is dropped if its NPC was hidden, knocked out or moved while it was held, and the console says why ("Held delayed bark for ... is stale: NPC hidden"). A bark with no delay is unchanged: it still carries only its condition. One side effect, judged right: a delayed bark already on screen behind a chat is closed when the chat closes (`_dropStaleVisibleBarks`) if its NPC has since left or been hidden. The README `barkDelay` entry says the checks run again on release.
+
+New test: "held during a chat: stale on release if the NPC is hidden, knocked out or moved while held" (one case each). The knot-bark test also checks its `stillValid` goes false when the NPC is hidden. Both fail on the R1 code (16 pass, 2 fail) and pass now.
+
+### m2 and m3. sis01 Ms Okafor's death: Mrs Kowalski second, spaced by measured speech rate (fixed)
+
+Mrs Kowalski, the witness in the next bed, now speaks second, straight after Sarah's crash call, as the authors first had her (3 s). Only `barkDelay` numbers changed. The bed 4 (Mr Ahmed) sequence is unchanged.
+
+Durations come from each NPC's cached sis01 audio (ffprobe on `tts_cache/sis01_healthcare`). Three estimates per line were made: the word count times the NPC's median seconds per word over all cached lines of four words or more; the same with the median of the 12 cached lines nearest in length; and a least-squares fit of duration against words, which catches the fixed lead-in and tail that make short lines slower per word. The review's own rates were checked too (Sarah 0.384, David 0.487, Helen 0.342, Mrs Kowalski 0.466 s a word). The longest estimate is used, then a 500 ms gap, rounded up to 100 ms. Scripts: session scratchpad `bark-delay-r2fix/rates.py` and `predict.py`.
+
+| Line | Words | Estimates (s) | Used (s) | Authored | R1 | R2 | Ends about |
+|---|---|---|---|---|---|---|---|
+| Sarah, "Crash call, Bed 2!" (both variants) | 6 | 2.34, 2.84, fit 3.00, review 2.30 | 3.00 | 1500 | 1500 | 1500 | 4.5 s |
+| Mrs Kowalski (`bed5_patient`) | 5 | 2.20, 2.35, fit 2.43, review 2.33 | 2.43 | 3000 | 13500 | 5000 | 7.4 s |
+| David | 12 | 5.46, 5.45, fit 5.64, review 5.84 | 5.84 | 1500 | 4100 | 8000 | 13.8 s |
+| Helen | 12 | 4.19, 4.18, fit 4.32, review 4.10 | 4.32 | 2500 | 8800 | 14400 | 18.7 s |
+
+Gaps between one line's estimated end and the next start: 0.5 s, 0.57 s and 0.56 s. The review's proposal (Kowalski 4100, David 6800, Helen 12900) used the median rate alone, and would leave Sarah's short line (fit 3.0 s, ending 4.5 s) running into Mrs Kowalski's. The ERB comment by Mrs Kowalski's mapping (n1) now gives the new order and delays.
+
+### n1. ERB comment (fixed)
+
+Updated to the new order and delays, as above.
+
+### n2. Test bridge key presses (backlog, not fixed here)
+
+Dated entry added to docs/IDEAS_BACKLOG.md: `pressKey` (test-bridge/minigames.js:295-303) and `_pick` (625-627) return ok without checking that anything changed, `getState` hides `blockingUi` while a minigame is open (test-bridge/state.js:767), and the ending-check overlay (ending-check.js:373-382) swallows keys under swap-scenario-game.rb because `test_seating` leaves `endingCheck` on. The fix is for the bridge to report "no change" and surface the blocking overlay.
+
+### n3. No cached audio for the bed 2 lines (noted, not generated)
+
+None of the five bed 2 death lines has cached audio, and no TTS was generated (the user's voicing question q103 is open). The table's durations are estimates from each voice's other lines. **Once audio exists for these lines, re-check the timings against the real durations.** A TTS top-up for sis01 is needed for that. On a server with a key, uncached lines are generated on first play, which adds a variable lag before each voice and can bring back overlaps.
+
+### n4. m02 overlapping reactions (backlog, no change to m02)
+
+Backlog line for the m02 owner: the four `patient_bed4_state` 'distressed' reactions at scenario.json.erb:1646, 1713, 1753 and 1841 all start within 0.8 s.
+
+### Tests
+
+`npc-bark-delay.test.mjs`: 18 tests, all pass. Every `*.test.mjs` that mentions npc-manager (40 files, `bin/test-js -j 3`, no lock, per the test lock rule): 40 passed, 0 failed. Validator on sis01 (`--no-graph`): 0 ❌, the same 14 ⚠ lines as at `f0c999108` (diffed line for line; the summary line counts 10 warnings).
+
+### Live proof
+
+Keyless headless server on :3094 from this worktree (boot log has the no-GEMINI-key warning), `setFPS(20)` with `fixedStep` true, read back from the world. New games from `tools/playtest/swap-scenario-game.rb test_seating sis01_healthcare --unlock-all`. The probe is the R2 review's (`bark-delay-r2fix/probe.mjs` in the session scratchpad, with the death wait lengthened to 21 s): it wraps `barkSystem.showBark` and `_renderBark` and polls the open minigame every 50 ms. Times are from the step's start.
+
+- Game 2650 (Ms Okafor's death): walked through the incident room back to ward_7, no minigame open, then set and emitted `patient_bed2_deceased`. Rendered: Sarah 1505, Mrs Kowalski 5005, David 8005, Helen 14405. Each within 1 ms of reaching `showBark`.
+- Game 2651 (m1, the review's game 2618 case): chat with Helen open, `ncsc_notified` set inside it, `showBark` at 503 ms with the person-chat open ("deferring bark"). Helen hidden with `npcBehaviorManager.setNPCVisible('helen_carver', false)` at about 1.5 s. The chat closed at 4936 ms, "Releasing 1 held bark(s)", then "Held delayed bark for helen_carver is stale: NPC hidden" and "dropped held bark (stale)". No render.
+- Game 2652 (control, not hidden): one `showBark` (503 ms), one render (5052 ms) as the chat closed at 5071 ms. A second chat with Helen (10.8 s to 14.5 s) brought nothing back.
+
+The server was stopped by PID afterwards.
