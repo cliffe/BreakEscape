@@ -17,11 +17,13 @@
     z-index: 1000;
 }
 
+/* "safe" centring: a frame taller than its area starts at the top of the area instead
+   of running off both edges (UX slice 3a R3 M1) */
 .rfid-minigame-game-container {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: safe center;
     width: 100%;
     height: 100%;
 }
@@ -80,6 +82,12 @@
     position: relative;
     width: 400px;
     height: 550px;
+    /* Never taller than its area: a flex item's automatic minimum is its content, so
+       without min-height: 0 the copy screen (577px after a read) ran off a 412px-high
+       window with Save out of reach. Capped, the frame wraps its content at every size
+       and .flipper-screen (overflow-y: auto) scrolls instead (UX slice 3a R3 M1). */
+    min-height: 0;
+    max-height: 100%;
     background: #1a0d00;
     clip-path: var(--copier-steps);
     padding: 20px;
@@ -575,7 +583,6 @@
     .rfid-minigame-game-container {
         box-sizing: border-box;
         padding: 32px 0;
-        justify-content: safe center;
     }
 
     .flipper-zero-frame {
@@ -584,7 +591,10 @@
         max-width: 440px;
         height: calc(80vh + 40px);
         height: round(down, min(calc(80vh + 40px), calc(100vh - 104px)), 2px);
-        min-height: 540px;
+        /* 540px where the window has room; below that the area's height, so the bottom
+           outline and steps stay in a short window (320x568) and the screen scrolls
+           (R3 n2) */
+        min-height: min(540px, calc(100vh - 104px));
     }
 }
 
