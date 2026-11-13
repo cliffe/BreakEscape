@@ -3349,6 +3349,18 @@ module BreakEscape
         found = find_object_in_contents(container, target_id)
         return found if found
       end
+      # A locked start item the player begins with (hardening item 4, 2026-11-13). Its answer
+      # is read from the authored scenario copy, which keeps `requires`, not the stored
+      # inventory copy that initialize_player_state strips. The bootstrap and sync payloads
+      # strip the answer (filter_requires_recursive / filter_requires_and_contents_recursive),
+      # so it is found here server-side only and never reaches the client. Without this source
+      # a locked start item could be found nowhere with its answer, so its /unlock never passed.
+      Array(scenario_data['startItemsInInventory']).each do |start_item|
+        next unless start_item.is_a?(Hash)
+
+        found = find_object_in_contents(start_item, target_id)
+        return found if found
+      end
       nil
     end
 

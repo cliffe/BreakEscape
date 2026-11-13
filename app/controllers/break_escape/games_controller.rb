@@ -2323,7 +2323,10 @@ module BreakEscape
         # room; its files come from the scenario (or the default), never from the browser
         find_container_recursive(@game.held_usb_sticks, container_id) ||
         # A container an NPC carried, released by a give or KO record (unlock gaps build)
-        find_container_recursive(@game.released_npc_containers, container_id)
+        find_container_recursive(@game.released_npc_containers, container_id) ||
+        # A locked start item the player begins with (hardening item 4): its contents are
+        # served filtered from the authored scenario copy, as held grants and sticks are
+        find_container_recursive(Array(@game.scenario_data['startItemsInInventory']), container_id)
     end
 
     def find_container_recursive(objects, container_id)
@@ -2381,6 +2384,14 @@ module BreakEscape
       # Then a container an NPC carried that a give or KO released, as Game#find_scenario_object.
       @game.released_npc_containers.each do |container|
         found = find_object_in_object(container, object_id)
+        return found if found
+      end
+      # Then a locked start item the player begins with (hardening item 4), as
+      # Game#find_scenario_object, so an opened start item serves its contents.
+      Array(@game.scenario_data['startItemsInInventory']).each do |start_item|
+        next unless start_item.is_a?(Hash)
+
+        found = find_object_in_object(start_item, object_id)
         return found if found
       end
       nil

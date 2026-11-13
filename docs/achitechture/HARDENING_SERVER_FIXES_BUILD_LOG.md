@@ -84,6 +84,43 @@ importer suites: 693 further node tests pass.
 
 ## Item 4 — A locked start item can never be opened
 
+Status: BUILT (option A, orchestrator decision 2026-11-13).
+
+Decision (reason): option A, enable it. Hardening should not block intended play; a locked start
+item an author ships should open, and the answer stays server-side (the user may overrule). Option B
+(a validator error forbidding the feature) was the fallback and is not taken.
+
+Built:
+- `Game#find_scenario_object` (game.rb) now adds `scenario_data['startItemsInInventory']` as a source
+  after the released-NPC-container source, iterating each authored start item through
+  `find_object_in_contents`. This is the lookup `validate_unlock`, `pin_cracker_feedback` and
+  `password_case_mismatch?` share, so all three resolve a locked start item's answer. The answer is
+  read from the authored scenario copy (which keeps `requires`), never the stored inventory copy
+  (`initialize_player_state` strips it) and never a synced payload.
+- The two controller contents lookups mirror the same source so an opened start item serves its
+  contents: `find_object_in_scenario` (unlock reply) and `find_container_in_scenario` (GET /container).
+- Security property holds unchanged: the bootstrap strips the answer via `filter_requires_recursive`
+  (key/pin/password `requires`, plus `strip_lock_answers!` for combination/cryptex), and the stored
+  inventory copy via `filter_requires_and_contents_recursive`. The new source only reads the raw
+  server scenario, which never ships.
+
+Tests (`test/controllers/break_escape/combination_cryptex_unlock_test.rb`, Rails integration on the
+real routes): existing "a locked start item is stored without its answer and ships none" already
+proved the no-leak property; new "a locked start item opens with the right answer and is refused
+with a wrong one" drives POST /unlock (cryptex and combination), GET /container and GET /scenario:
+the item opens only with the right answer, serves its contents through both the unlock reply and the
+container route, and neither the answer nor any client payload carries it. Full file green (21 runs,
+161 assertions). Related tests re-run green: `npc_container_unlock_test.rb`,
+`unlock_response_filter_test.rb`, `access_model_desktop_test.rb`, `game_test.rb` (138 runs together).
+
+Browser proof: no shipped or test scenario holds a locked start item (confirmed against the corpus),
+so there is no in-game walkthrough step to drive. The Rails integration tests exercise the real
+controller routes (the same `/unlock` endpoint the client lock minigame posts to), so the server path
+the game runs is covered. A locked start item was not added to a test scenario, since the real-route
+integration test already proves the path and no corpus scenario uses the feature.
+
+### Original decision write-up (kept for reference)
+
 Status: needs a decision (not built).
 
 Confirmed on the code. A start item lives in two places: the stored inventory copy in
@@ -113,6 +150,30 @@ should open, and the answer stays server-side. B is the fallback if locked start
 out of scope. Left for the orchestrator to greenlight before building.
 
 ## Item 2 — Re-issuing a revoked card id stays refused
+
+Status: BUILT (validator warning only; option A, orchestrator decision 2026-11-13).
+
+Decision (reason): the server stays grow-only. Un-revoking a card would be a cheat route past a
+captured credential, so the stickiness is correct and must stay (the user may overrule). No server
+change. Built the optional validator warning (option A) as an authoring aid.
+
+Built (`scripts/validate_scenario.rb`, `check_revoke_card_globals`): the existing check already
+required `globalVariables.revoked_card_ids` to be a declared array whenever a `revoke_card` action is
+present. It now also collects every `card_id` a `revoke_card` action cancels and every `card_id`
+handed to the player (a `give_item` action's item, or a `startItemsInInventory` item, including a
+nested `rfidCard`/`card`/`contents` card_id), and warns on the intersection: the card is grow-only
+once revoked, so a re-issued card under the same id would be dead; give a re-issued card a fresh
+card_id. World-object cards the player clones or takes (the intended revoke mechanic) are not
+"handed over", so they do not warn. Advisory only; no `validator_known_failures.json` entry.
+
+Tests (`test/js/validator-revoked-card-reissue.test.mjs`, 6 tests, all pass): a give_item re-issuing a
+revoked id warns; a start item with a revoked id (including a nested rfidCard) warns; a revoked
+world-object card the player clones does not warn; a given card never revoked does not warn; the
+declared-array error still fires; no revoke_card action means no checks. Corpus run: no re-issue
+warning and 0 errors on `test_clone_left_card` and `lab_physical_pentest` (the two revoke_card
+scenarios), so the warning fires on nothing shipped.
+
+### Original decision write-up (kept for reference)
 
 Status: needs a decision (no server change; working as intended).
 
