@@ -80,6 +80,10 @@ const tick = () => new Promise((r) => setTimeout(r, 0));
 
 function reset() {
     for (const o of overlays()) o.querySelector('.game-confirm-cancel')?.click();
+    // press() sends no keyup: let every key come up, or the confirm's held-key guard sees it held.
+    for (const key of ['e', 'f', 'q', 'd', ' ', 'Enter', 'Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown']) {
+        document.body.dispatchEvent(new window.KeyboardEvent('keyup', { key, bubbles: true }));
+    }
     log.length = 0;
     globalThis.__writes = [];
 }
@@ -142,6 +146,81 @@ test('the confirm focuses its cancel button and Enter presses the focused one', 
     press(' ', document.activeElement);
     assert.equal(await p2, true, 'Space presses the focused button');
     assert.deepEqual(log, [], 'Space never reached the game as a jump');
+});
+
+function release(key, target = document.body) {
+    target.dispatchEvent(new window.KeyboardEvent('keyup', { key, bubbles: true, cancelable: true }));
+}
+
+test('repeated arrows on the focused button leave focus on the safe choice (R2 M1)', async () => {
+    reset();
+    for (const k of ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown']) release(k);
+    const p = gameConfirm('Disconnect the cable?', 'Disconnect', 'Leave it');
+    const cancel = document.querySelector('.game-confirm-cancel');
+    for (let i = 0; i < 3; i++) {
+        const ev = new window.KeyboardEvent('keydown', { key: 'ArrowRight', repeat: true, bubbles: true, cancelable: true });
+        document.activeElement.dispatchEvent(ev);
+        assert.equal(ev.defaultPrevented, true, 'a repeat never reaches the game or scrolls');
+    }
+    assert.equal(document.activeElement, cancel, 'focus is still on the cancel button');
+    press('Enter', document.activeElement);
+    assert.equal(await p, false);
+});
+
+test('an arrow held since before the confirm opened moves nothing until it comes up (R2 M1)', async () => {
+    reset();
+    press('ArrowRight');
+    const p = gameConfirm('Disconnect the cable?', 'Disconnect', 'Leave it');
+    const cancel = document.querySelector('.game-confirm-cancel');
+    press('ArrowRight', cancel);
+    press('ArrowRight', document.activeElement);
+    assert.equal(document.activeElement, cancel, 'the held arrow (no repeat flag) does not move focus');
+    release('ArrowRight', document.activeElement);
+    press('ArrowRight', document.activeElement);
+    assert.equal(document.activeElement, document.querySelector('.game-confirm-ok'), 'a fresh press after the keyup moves focus');
+    press('Tab', document.activeElement);
+    press('Enter', document.activeElement);
+    assert.equal(await p, false);
+});
+
+test('a click on the dimmed backdrop keeps focus on the buttons (R2 m2)', async () => {
+    reset();
+    const p = gameConfirm('Sure?', 'Yes', 'No');
+    const overlay = document.querySelector('.game-confirm-overlay');
+    const onBack = new window.MouseEvent('mousedown', { bubbles: true, cancelable: true });
+    overlay.dispatchEvent(onBack);
+    assert.equal(onBack.defaultPrevented, true, 'the backdrop does not take focus');
+    const onBtn = new window.MouseEvent('mousedown', { bubbles: true, cancelable: true });
+    document.querySelector('.game-confirm-ok').dispatchEvent(onBtn);
+    assert.equal(onBtn.defaultPrevented, false, 'a button still takes its click');
+    document.querySelector('.game-confirm-cancel').click();
+    assert.equal(await p, false);
+});
+
+test('a different confirm_action still opens over an open one; the same one is dropped (R2 m3)', async () => {
+    reset();
+    window.tryInteractWithNearest();
+    applyActions([{ type: 'confirm_action', text: 'The timer asks something else?',
+        confirmLabel: 'Do it', cancelLabel: 'Not now', onConfirm: [{ type: 'set_global', key: 'timer_yes', value: true }] }]);
+    assert.equal(overlays().length, 2, 'a different confirm is not dropped');
+    assert.equal(window.gameConfirmOpen('Switch the breaker off?'), true);
+    assert.equal(window.gameConfirmOpen('Something not open'), false);
+    window.tryInteractWithNearest();
+    assert.equal(overlays().length, 2, 'the same confirm again is dropped');
+    reset();
+    await tick();
+    assert.equal(window.gameConfirmOpen(), false);
+    assert.equal(window.gameConfirmOpen('Switch the breaker off?'), false, 'the text count went back to zero');
+});
+
+test('the open count is taken only after the dialog is wired (R2 m3)', () => {
+    const src = readFileSync(join(js, 'systems/notifications.js'), 'utf8');
+    const fn = src.match(/export function gameConfirm\([\s\S]*?\n\}/)[0];
+    const inc = fn.indexOf('openConfirms++');
+    assert.ok(inc > fn.indexOf("cancelBtn.addEventListener('click'"), 'after the button listeners');
+    assert.ok(inc > fn.indexOf("overlay.addEventListener('keydown'"), 'after the key listener');
+    assert.ok(inc < fn.indexOf('document.body.appendChild(overlay)'), 'before the append');
+    assert.ok(fn.indexOf('unregister = registerModal') > fn.indexOf("cancelBtn.addEventListener('click'"));
 });
 
 test('the interaction warning opens no second confirm over an open one', async () => {
