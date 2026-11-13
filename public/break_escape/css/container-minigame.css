@@ -826,6 +826,18 @@
     flex: 1 1 auto;
 }
 
+/* Whole-pixel line boxes, so text centred beside the 32px headshot, or under an icon,
+   starts on a whole pixel at x1 and at the x2 content scale (R1 M2 live check: the name sat
+   at 7.5px in the bar and odd-width labels at a half pixel under the icon) */
+.pc-desktop-topbar .desktop-account-name {
+    line-height: 18px;
+}
+
+.pc-monitor .pc-desktop .desktop-icon-label {
+    align-self: stretch;
+    line-height: 18px;
+}
+
 .pc-desktop-topbar .desktop-claim-line,
 .pc-desktop-topbar .desktop-remote-line {
     margin: 0;
