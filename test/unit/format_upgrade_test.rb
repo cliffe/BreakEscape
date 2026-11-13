@@ -249,22 +249,35 @@ module BreakEscape
                    'a note is left as written')
     end
 
-    test 'step 8c folds a loader-filled screenHabit on prepared data, unchanged' do
-      scenario = {
+    test 'step 8c folds a loader-filled screenHabit on prepared data, matching the new loader' do
+      # A frozen fixture: the format-2 loader (NpcHabits.expand! on the 8b tip ab14d1926) filled a
+      # top-level screenHabit from awareness. Starting from that OLD-loader output proves the step
+      # moves it to habits.screen and that the result matches what the current (format-3) loader
+      # fills, field for field. Starting from the new loader (as this test used to) would already
+      # have filled habits.screen, so it would no longer test an old game.
+      path = File.expand_path('../fixtures/format_8c/priya_awareness.old.loaded.json', __dir__)
+      old_loaded = JSON.parse(File.read(path))
+      npc = old_loaded['rooms']['office']['npcs'][0]
+      assert npc.key?('screenHabit'), 'the format-2 loader filled a top-level screenHabit'
+      refute npc.dig('habits', 'screen'), 'the format-2 loader wrote no habits.screen'
+      filled = Marshal.load(Marshal.dump(npc['screenHabit']))
+
+      FU.habits_in_one_block!(old_loaded)
+      npc = old_loaded['rooms']['office']['npcs'][0]
+      refute npc.key?('screenHabit')
+      assert_equal filled, npc['habits']['screen'], 'the filled screenHabit folds to habits.screen unchanged'
+      assert_equal 'always', npc['habits']['locksScreen'], 'the awareness habit block is preserved'
+
+      # The folded result equals what the current (format-3) loader fills from the same scenario.
+      fresh = {
         'rooms' => { 'office' => {
           'npcs' => [{ 'id' => 'priya', 'awareness' => 'high', 'needsHome' => 'priya_pc' }],
           'objects' => [{ 'id' => 'priya_pc', 'workstation' => true, 'owner' => 'priya' }]
         } }
       }
-      BreakEscape::NpcHabits.expand!(scenario)
-      npc = scenario['rooms']['office']['npcs'][0]
-      assert npc.key?('screenHabit'), 'the loader filled a screenHabit from awareness'
-      filled = Marshal.load(Marshal.dump(npc['screenHabit']))
-
-      FU.habits_in_one_block!(scenario)
-      refute npc.key?('screenHabit')
-      assert_equal filled, npc['habits']['screen'], 'the filled screenHabit folds to habits.screen unchanged'
-      assert_equal 'always', npc['habits']['locksScreen'], 'the awareness habit block is preserved'
+      BreakEscape::NpcHabits.expand!(fresh)
+      assert_equal fresh['rooms']['office']['npcs'][0], npc,
+                   'the folded format-2 loader output matches the fresh format-3 loader output, field for field'
     end
 
     test 'step 8c is idempotent and a no-op on format-3 data' do

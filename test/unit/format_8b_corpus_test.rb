@@ -150,8 +150,10 @@ module BreakEscape
                      "#{name}: upgrading the old render must give exactly the new render"
         assert_equal new, transformed(new),
                      "#{name}: the transform is a no-op on the new (format-2) render"
-        assert_empty FU.retired_keys_in(new),
-                     "#{name}: no retired owner key remains in the new render"
+        # A format-2 render may still carry keys a LATER step retires (habit keys from 8c); it must
+        # only be clear of keys retired at or before 8b (version 2).
+        assert_empty FU.retired_keys_in(new).select { |e| e[:version] <= 2 },
+                     "#{name}: no step-8b retired owner key remains in the new render"
       end
 
       # The real load pipeline is upgrade THEN prepare (Game#ensure_current_format!: upgrade! then
@@ -165,8 +167,8 @@ module BreakEscape
 
         assert_equal prepared_new, prepared_old,
                      "#{name}: preparing the upgraded old data must equal preparing the new data"
-        assert_empty FU.retired_keys_in(prepared_new),
-                     "#{name}: no retired owner key remains in prepared new data"
+        assert_empty FU.retired_keys_in(prepared_new).select { |e| e[:version] <= 2 },
+                     "#{name}: no step-8b retired owner key remains in prepared new data"
       end
     end
 

@@ -26,6 +26,10 @@ FU = BreakEscape::FormatUpgrade
 RETIRED_OWNER_KEYS = %w[screenOwner phoneOwner phoneOf leftBehindBy].freeze
 ADD_KEYS = %w[owner private deskPhone leftBehindChance].freeze
 
+# Step 8c (--step 3). The three top-level office-life habit keys, each paired with its folded key
+# inside the NPC's `habits` block.
+HABIT_FOLD = { 'screenHabit' => 'screen', 'printHabit' => 'print', 'usbHabit' => 'usb' }.freeze
+
 def template_path(name)
   "scenarios/#{name}/scenario.json.erb"
 end
@@ -38,6 +42,12 @@ end
 def transform(data)
   copy = Marshal.load(Marshal.dump(data))
   FU::STEP_8B[:scenario].call(copy)
+  copy
+end
+
+def transform_8c(data)
+  copy = Marshal.load(Marshal.dump(data))
+  FU::STEP_8C[:scenario].call(copy)
   copy
 end
 
@@ -232,6 +242,83 @@ def rewrite_scenario(name, write:)
   puts "#{name}: #{changed_ids.length} objects rewritten; render == transform(old); no retired keys"
 end
 
+# Index (within `str`) of the `}` matching the `{` at `open_idx`. Brace counting ignores JSON
+# string contents; habit values hold no braces inside their strings, so this is safe for step 8c.
+def matching_brace(str, open_idx)
+  depth = 0
+  (open_idx...str.length).each do |i|
+    case str[i]
+    when '{' then depth += 1
+    when '}'
+      depth -= 1
+      return i if depth.zero?
+    end
+  end
+  raise 'unterminated brace block'
+end
+
+# Step 8c: fold the top-level NPC habit keys (screenHabit/printHabit/usbHabit) into the NPC's
+# `habits` block (screen/print/usb). Every affected NPC in the corpus has no pre-existing `habits`
+# block and exactly one habit key, so each fold wraps one key in a fresh `habits` block, preserving
+# the source's inline-vs-multiline style and the value text verbatim. The real STEP_8C transform is
+# the oracle: the rewritten template, rendered, must equal transform_8c(old render); an NPC that
+# already carried a `habits` block would collide (two `habits` keys) and fail that check, so such a
+# case is refused here for a hand edit.
+def rewrite_scenario_8c(name, write:)
+  path = template_path(name)
+  text = File.read(path)
+  raise "#{name}: ERB template, hand-edit only" if text.include?('<%')
+
+  old_data = render_text(text)
+  new_data = transform_8c(old_data)
+
+  lines = text.lines
+  targets = []
+  lines.each_with_index do |line, i|
+    m = line.match(/\A(\s*)"(screenHabit|printHabit|usbHabit)"\s*:\s*\{/)
+    targets << [i, m[1], m[2]] if m
+  end
+  # Edit bottom-up so earlier line indices stay valid.
+  targets.sort_by! { |i, _, _| -i }
+
+  moves = Hash.new(0)
+  targets.each do |i, indent, key|
+    folded = HABIT_FOLD[key]
+    region = lines[i..].join
+    open_idx = region.index('{')
+    close_idx = matching_brace(region, open_idx)
+    value_text = region[open_idx..close_idx]
+    after = region[(close_idx + 1)..] || ''
+    tail = after[/\A\s*,/] ? ',' : ''
+    # How many source lines the key:value pair spanned (for the splice).
+    span = value_text.count("\n") + 1
+
+    replacement =
+      if value_text.include?("\n")
+        vlines = value_text.split("\n", -1)
+        vlines[1..] = vlines[1..].map { |l| l.empty? ? l : "  #{l}" }
+        reindented = vlines.join("\n")
+        "#{indent}\"habits\": {\n#{indent}  \"#{folded}\": #{reindented}\n#{indent}}#{tail}\n"
+      else
+        "#{indent}\"habits\": { \"#{folded}\": #{value_text} }#{tail}\n"
+      end
+    lines[i...(i + span)] = [replacement]
+    moves[key] += 1
+  end
+
+  result = lines.join
+  rewritten = render_text(result)
+  unless rewritten == new_data
+    raise "#{name}: rewrite does not match transform_8c(old) (parsed inequality)"
+  end
+  retired = FU.retired_keys_in(rewritten)
+  raise "#{name}: retired keys remain after rewrite: #{retired.inspect}" unless retired.empty?
+
+  File.write(path, result) if write
+  summary = HABIT_FOLD.keys.select { |k| moves[k].positive? }.map { |k| "#{moves[k]} #{k}" }.join(', ')
+  puts "#{name}: folded #{summary.empty? ? 'nothing' : summary}; render == transform_8c(old); no retired keys"
+end
+
 # --- main ---
 step = nil
 check = false
@@ -244,7 +331,11 @@ ARGV.each_with_index do |a, _i|
   end
 end
 names.reject! { |n| n == step }
-abort 'only --step 2 is implemented' unless step == '2'
+abort 'only --step 2 and --step 3 are implemented' unless %w[2 3].include?(step)
 abort 'no scenarios given' if names.empty?
 
-names.each { |n| rewrite_scenario(n, write: !check) }
+if step == '2'
+  names.each { |n| rewrite_scenario(n, write: !check) }
+else
+  names.each { |n| rewrite_scenario_8c(n, write: !check) }
+end

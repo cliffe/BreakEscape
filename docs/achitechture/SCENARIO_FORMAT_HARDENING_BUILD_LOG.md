@@ -2761,3 +2761,110 @@ No growth. NPC records are not in player_state; the filter only prunes keys from
 `test/unit/access_leak_scanner_test.rb`, `test/models/break_escape/lab_physical_pentest_secrets_test.rb`,
 `test/controllers/break_escape/usb_habit_test.rb`, `test/unit/access_work_usb_habit_test.rb`,
 `docs/achitechture/SCENARIO_FORMAT_HARDENING_BUILD_LOG.md`.
+
+## Step 8c chunk 5 — template rewrite, README, corpus equivalence, reader parity (2026-11-13)
+
+Branch `build/hard-8c` on the chunk 1-4 tip (`21fff798c`). Chunk 5 rewrites the three authored-habit
+templates, updates the author-facing docs, freezes the `format_8c` fixtures, and adds the corpus
+equivalence, reader parity and stored-game equivalence tests. The old side for equivalence and parity
+is the step-8b tip `ab14d1926` (format 2). No runtime reader, schema, validator-script or
+`validate_scenario.rb` edit (owned by earlier chunks).
+
+### What changed
+
+- **`tools/format/rewrite_templates.rb`.** Added a `--step 3` path (`rewrite_scenario_8c`). For each
+  NPC with a top-level `screenHabit`/`printHabit`/`usbHabit`, it wraps the key's value verbatim in a
+  fresh `habits` block (`screen`/`print`/`usb`), preserving inline-vs-multiline source style, and
+  edits bottom-up. The real `STEP_8C` transform is the oracle: it refuses to write unless the
+  rewritten template, rendered, equals `transform_8c(old render)` and carries no retired key (so an
+  NPC that already held a `habits` block, which would collide, is refused for a hand edit — none in
+  the corpus).
+- **Templates.** `tools/format/rewrite_templates.rb --step 3` rewrote `test_access_social`
+  (5 `screenHabit` + 1 `usbHabit`), `test_access_work` (3 `screenHabit`) and `test_needs_sims`
+  (2 `screenHabit` + 1 `printHabit`), matching the re-anchor's per-scenario counts. By hand, the two
+  `_comment` author notes in `test_needs_sims` and the two `<%# %>` comments in
+  `lab_physical_pentest` that named `screenHabit` were reworded to `habits.screen`, so no template
+  teaches a retired name. `test_access_habits` authors none; it is re-validated only.
+- **`README_scenario_design.md`.** The habit teaching moved to `habits.screen`/`.print`/`.usb` (the
+  closed-blocks list; "The owner's habit"; the careful-guest rule; the USB-habit field and its
+  server-only note). In the same commit the leftover step-8a `downIf` wording was cleared: every
+  `downIf` (13 occurrences, networks and resources) now reads `offWhen`, the network-outage table row
+  and error wording were generalised to the requireGlobal form (`offWhen` accepts a name or a
+  `{ name: value }` object), and the station outage line now reads `offWhen` not `affordance.offWhen`.
+- **Fixtures.** `test/fixtures/format_8c/`: `<scenario>.old.json` (format-2 render) and `.new.json`
+  (format-3 render) for the three rewritten templates plus `test_access_habits`;
+  `test_access_habits.old.loaded.json`, `lab_physical_pentest.old.loaded.json` and
+  `priya_awareness.old.loaded.json` (format-2 loader output, `NpcHabits.expand!` on `ab14d1926`, a
+  top-level `screenHabit` filled). Captured on a detached base worktree at `ab14d1926`, removed after.
+
+### Moved keys per scenario (matching the re-anchor)
+
+- test_access_social: 5 `screenHabit` -> `habits.screen`, 1 `usbHabit` -> `habits.usb`.
+- test_access_work: 3 `screenHabit` -> `habits.screen`.
+- test_needs_sims: 2 `screenHabit` -> `habits.screen`, 1 `printHabit` -> `habits.print`.
+- test_access_habits, lab_physical_pentest: no template move (loader-filled habit only; stored-game change).
+
+### Tests
+
+- `test/unit/format_8c_corpus_test.rb` (new): **23 runs, 813 assertions, 0 failures.** Corpus
+  equivalence (`transform(old) == new`, notes stripped; no-op on new; `retired_keys_in(new)` empty);
+  prepare agrees across the fold; the edit-proof live guard (no retired key, and no author note names
+  one); Ruby reader parity on the effective screen-lock rule for every workstation and every NPC that
+  could borrow it (old `screen_always_locks?` reading `screenHabit` vs the live reader reading
+  `habits.screen`); the five named precedence fixtures (priya_pc, omar_pc, rosa_pc, ian_pc, jake_pc);
+  and the stored-game equivalence for test_access_habits and lab_physical_pentest (a format-2 loader
+  game, folded, equals a fresh format-3 game field for field and per-workstation lock rule). Proved to
+  bite: prefixing a folded value in a fixture turns it red (4 failures), restored.
+- `test/js/format-8c-reader-parity.test.mjs` (new): **PASS.** Loads the old `habitOf`/`decideLocked`
+  from `ab14d1926` with `git show` and the live ones; the effective lock rule (decideLocked over a
+  spread of trip lengths, roll null so deterministic) matches old-on-old vs new-on-new for every
+  workstation and borrower across the rewritten scenarios; the five named fixtures asserted directly
+  (test_access_habits via the loaded fixture and a JS fold); the edit-proof live guard. Proved to
+  bite, restored.
+- `test/unit/format_upgrade_test.rb:252` fixed: the "folds a loader-filled screenHabit on prepared
+  data" test now starts from the frozen `priya_awareness.old.loaded.json` (format-2 loader output,
+  top-level `screenHabit`), folds it, and asserts the result equals the current loader's format-3
+  fill field for field. **22 runs, 114 assertions, 0 failures.**
+- Expected failures chunks 1-4 left for chunk 5, all cleared:
+  - `format_8a_corpus_test.rb` and `format_8b_corpus_test.rb`: the frozen format-1/2 renders
+    legitimately still carry habit keys (retired by the later step 8c), so each test's retired-key
+    assertion was scoped to its own step version (`version <= 1` / `<= 2`); the live-template guards
+    pass unchanged now the templates no longer author habits. **50 runs, 0 failures.**
+  - `scenario_schema_test.rb` `test_corpus_has_no_setglobal_map_under_nil`: the folded `usbHabit`
+    now sits at `habits.usb`, which the schema places. **0 failures.**
+  - `npc-needs-slots.test.mjs`, `npc-left-behind.test.mjs` (`test_needs_sims` validator subtest), and
+    the validator subtests in `npc-office-visuals`/`npc-print-forget`/`npc-printer-power`: **5 files
+    PASS** (templates validate clean; chunk 4's `validate_npc_needs.rb` fold is committed).
+  - The three authored templates plus lab_physical_pentest and test_access_habits validate with
+    **0 errors** (`--no-graph`); no dungeon_graph side effects.
+
+### Sync size
+
+No change. The templates only move NPC-record keys inside `scenario_data`; NPC records are not stored
+in player_state, so the player_state transform is a no-op and no sync payload changes.
+
+### Files touched (chunk 5)
+
+`tools/format/rewrite_templates.rb`, `scenarios/test_access_social/scenario.json.erb`,
+`scenarios/test_access_work/scenario.json.erb`, `scenarios/test_needs_sims/scenario.json.erb`,
+`scenarios/lab_physical_pentest/scenario.json.erb`, `README_scenario_design.md`,
+`test/unit/format_upgrade_test.rb`, `test/unit/format_8a_corpus_test.rb`,
+`test/unit/format_8b_corpus_test.rb`, `test/unit/format_8c_corpus_test.rb`,
+`test/js/format-8c-reader-parity.test.mjs`, `test/fixtures/format_8c/*`,
+`docs/achitechture/SCENARIO_FORMAT_HARDENING_BUILD_LOG.md`.
+
+### For chunks 6 and 7
+
+- Chunk 6 (live proofs): the detached base worktree pattern worked (`git worktree add --detach
+  <path> ab14d1926`), but `bin/rails` there hit a bundler "GemNotFound" despite an identical
+  `Gemfile.lock`; the format-2 loader output was captured with a standalone `ruby3.2` script requiring
+  the libs directly (`NpcHabits.expand!`), no Rails. Chunk 6 needs a full server, so it may need the
+  existing `p-hard-8b` worktree's bundle or a `bundle install` on its base.
+- Stale author-facing docs still name the retired habit keys but were OUT of the build-plan's file
+  list, so left for a later sweep (flag to the orchestrator): per-scenario `PLAYTEST.md` and
+  `README.md` in test_access_habits/test_access_work/test_access_social/test_needs_sims/
+  lab_physical_pentest, `test_access_habits/mission.json` (`test_objective`), and the `usbHabit.setGlobal`
+  mention in `scenarios/test_access_social/ink/kim.ink`. None ships or is schema-validated.
+- Chunk 7 full-suite sweep: grep the tree for `screenHabit`/`printHabit`/`usbHabit`; legitimate hits
+  are comments, the schema's "was screenHabit" notes, the retired list, the frozen format_8a/8b/8c
+  fixtures, and the docs listed above.

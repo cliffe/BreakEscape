@@ -149,7 +149,7 @@
           "takeable": false,
           "locked": false,
           "observations": "Amara's desk PC.",
-          "_comment": "officePresets: type pc gives the desk_pc preset (work, restores 60, 10 s). Only what differs is written here. workstation: true with no lock field, so Amara's own screenHabit decides (slice 16): she locks it only for a trip she expects to take over 20 s. Locked: a steady blue dot at the screen's corner; open and away: a breathing white one.",
+          "_comment": "officePresets: type pc gives the desk_pc preset (work, restores 60, 10 s). Only what differs is written here. workstation: true with no lock field, so Amara's own habits.screen decides (slice 16): she locks it only for a trip she expects to take over 20 s. Locked: a steady blue dot at the screen's corner; open and away: a breathing white one.",
           "workstation": true,
           "observationVariants": [
             { "condition": "globalVars.amara_pc_screen_locked", "value": "Amara's desk PC. She locked it before she walked off." },
@@ -221,7 +221,7 @@
           "takeable": false,
           "locked": false,
           "observations": "Sanjay's desk PC.",
-          "_comment": "Slice 16: Sanjay's habit is never to lock (screenHabit.lockChance 0); the machine's policy locks it after 20 s idle with him away (autoLockSeconds; the plan's 30 s rarely showed, since his coffee, microwave and cooler trips take 19 to 27 s). Using it restarts the idle clock.",
+          "_comment": "Slice 16: Sanjay's habit is never to lock (habits.screen.lockChance 0); the machine's policy locks it after 20 s idle with him away (autoLockSeconds; the plan's 30 s rarely showed, since his coffee, microwave and cooler trips take 19 to 27 s). Using it restarts the idle clock.",
           "workstation": true,
           "autoLockSeconds": 20,
           "observationVariants": [
@@ -501,7 +501,7 @@
           "voice": { "name": "Aoede", "style": "Office administrator, thirties, British Nigerian, London accent. Warm and quick.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "needsHome": "amara_pc",
-          "screenHabit": { "lockIfAwayOverSeconds": 20 },
+          "habits": { "screen": { "lockIfAwayOverSeconds": 20 } },
           "needsSpeed": 90,
           "needs": {
             "caffeine": { "decayPerMin": 20, "urgentAt": 40, "initial": 58 },
@@ -587,7 +587,7 @@
             "work": { "decayPerMin": 8, "urgentAt": 50, "initial": 80 }
           },
           "onUse": { "fridge": { "setGlobal": "tom_had_lunch" }, "tom_pc": { "revealOutput": ["office_copier", "kitchen_copier"], "chance": 0.4, "_comment": "Slice 22: the office copier first; while it is off, the kitchen copier; both off, nothing prints and he grumbles (grumble_printer_off)." } },
-          "printHabit": { "fetchAfterSeconds": [30, 120], "forgetChance": 0.5, "_comment": "Slice 17: about four in ten of his work uses print; he fetches a print 30 to 120 s later, or forgets it (half of them). His prints are his: Amara's printout interest leaves them alone." },
+          "habits": { "print": { "fetchAfterSeconds": [30, 120], "forgetChance": 0.5, "_comment": "Slice 17: about four in ten of his work uses print; he fetches a print 30 to 120 s later, or forgets it (half of them). His prints are his: Amara's printout interest leaves them alone." } },
           "eventMappings": [
             { "eventPattern": "workstation_accessed:tom_pc", "cooldown": 60000, "needs": { "print": { "producer": ["office_copier", "kitchen_copier"], "fetchAfterSeconds": [5, 10], "forget": false } } },
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Print Queue'", "cooldown": 60000, "needs": { "print": { "producer": ["office_copier", "kitchen_copier"], "forget": true } } },
@@ -639,7 +639,7 @@
           "voice": { "name": "Puck", "style": "Developer, mid twenties, British Indian, Leicester accent. Polite and a little shy.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "needsHome": "sanjay_pc",
-          "screenHabit": { "lockChance": 0 },
+          "habits": { "screen": { "lockChance": 0 } },
           "needsSpeed": 85,
           "onUse": { "sanjay_pc": { "revealOutput": "office_copier" } },
           "needs": {
