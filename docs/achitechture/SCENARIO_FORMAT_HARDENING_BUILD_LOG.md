@@ -1130,3 +1130,58 @@ format_upgrade unit tests. Remaining, in plan order:
 
 No blockers found. The transform, schema, readers, scenarios and validators are consistent; the
 remaining work is test migration and proof.
+
+### Continuation (2026-11-13, second builder)
+
+Done since the handover above:
+
+- **Test migration (item 1): complete.** Every `downIf` and `affordance.offWhen` in the Rails and
+  node tests and in the shared fixtures moved to the single object/network/resource `offWhen`:
+  `test/support/access_work_scenario.rb`, `test/support/network_model_scenario.rb`,
+  `test/js/fixtures/needs-work-world.mjs`, the nine Rails behaviour tests, and the node tests
+  (needs/work/reports/coffee/printer/social-media/container/signin/dungeon). The four
+  validator-message node tests (`validator-access-work`, `validator-network-model`,
+  `validator-access-reactive`, `validator-access-reply`) and `validator-strict-keys` were migrated
+  and their expected strings reconciled against the validator's new wording (the undeclared-global
+  line is now `offWhen names 'x', which is not declared`; the station-off report quotes the
+  condition with `.inspect`; a non-requireGlobal `offWhen` errors `must be a global name or
+  { name: value }`). One real find: `validator-access-work.test.mjs` m2 relied on overwriting an
+  object's `affordance` to also drop its outage; with `offWhen` at object level the test now
+  deletes `objects[0].offWhen` so dana_pc stays on (48 s, not 24 s). All migrated files pass alone.
+- **Orchestrator ruling (item 3): done, no exception.** `NetworkModel.reach_conditions` keeps each
+  network's `offWhen` condition whole on the route (bare name stays a String, `{ name: value }` kept
+  as a Hash); `AccessWork.cause_holds?` (unreachable) and `npc-work.js` `reachable`, `wakeOnFor`,
+  `planGlobals` evaluate a route entry with `globals_hold?`/`offWhenHolds` and read names with
+  `offwhen_global_names`/`offWhenNames`. A network down under either form is down on a link route.
+  Tests: `network_model_test.rb` (hash form carried on the route) and `npc-work.test.mjs` (reachable,
+  planGlobals and wakeOnFor on the `{ name: value }` and mixed route). The access-work validator's
+  two route-global collectors read through `offwhen_global_names`.
+- **Formatter dedup (item 4): done.** `format_schema_errors` suppresses the schema unknown-key line
+  for a key that `FormatUpgrade.retired_keys_in` lists at that pointer (and drops the raw
+  additional-properties message when every unknown key there was retired), so one reintroduced
+  retired key prints one rename line. Tests in `validator-retired-keys.test.mjs` (dedup plus a
+  genuine unknown key still printing); 8a retired cases added there too.
+- **Stale comments (item 6): done.** `docs/test-bridge.md` work plan `offWhen?`; the pure-comment
+  `downIf` mentions in `network_access.rb` reworded; `outage_global` was genuinely unused
+  (grep: no callers in app/lib/scripts/test) and removed, its `game.rb` comment reference updated.
+
+Validator over the four touched scenarios and m01: 0 errors each. format_upgrade_test 14/59 green.
+
+NOT DONE (second handover), in plan order:
+
+1. **Model-level and prepared-data unit tests (item 2 remainder).** `format_upgrade_test.rb` already
+   covers the 8a transform on raw data, the emptied affordance, the player_state item copies,
+   idempotence and the `{ name: value }` resource form. Still to add if the plan wants them
+   explicitly: the transform on *prepared* data through a built (unsaved) `Game`, and a Rails
+   `prepare_scenario_data!` agreement check (these overlap item 5's corpus/parity run).
+2. **Corpus equivalence and reader parity (item 5).** Not run. Render each of the four scenarios
+   from the merge base and the branch with `srand(1)`; the 8a `scenario` transform on the old render
+   must equal the new render; `prepare_scenario_data!` must agree; old Ruby and JS readers (loaded
+   from `git show <base>:<path>`) must give the same outage conditions and needs target lists
+   (bench_pc is the emptied affordance).
+3. **Full suites under the lock (item 7).** Not run here (test-lock rule: the orchestrator runs the
+   full suites per merge batch). Every touched test file passes run alone. Expect green.
+4. **Live proof (item 8).** Not done: two keyless servers (branch 3080, base 3081 from a worktree at
+   `git merge-base main build/harden-8a`), setFPS(20) fixed steps on; an old game made on the base,
+   loaded on the branch, upgrading to format 1 under the row lock; an outage through `offWhen`; an
+   old tab's sync refused with 409 and the header; `verify-run.rb` progress.
