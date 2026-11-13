@@ -141,3 +141,10 @@ no other ink or client change). No new server finding beyond R1:
 Game 3207 (`test-rfid-multiprotocol`), keyless server :3636, stopped after the run. Results
 as under BLOCKER 1. No screenshots; the dialogue-choice and unlock-response captures are the
 proof.
+
+## Outcomes
+
+- BLOCKER 1: fixed by reverting scenarios/test-rfid-multiprotocol/scenario.json.erb to its 2f5471209 text (Level 4 again needs the Classic corporate badge, completable as before). Making the UID-only level teach its lesson needs a new clone branch in the shared guard ink, so it is filed in docs/IDEAS_BACKLOG.md instead of widening this branch. Validator: 0 errors.
+- Minor 1 (corporate_badge gates nothing): withdrawn by the revert; it gates Level 4 again.
+- Minor 2 (inert physical DESFire keycard): pre-existing, part of the backlog entry.
+- Minor 3 (UID-only negative not expressible in the scenario): no change; covered by access_model_rfid_test.

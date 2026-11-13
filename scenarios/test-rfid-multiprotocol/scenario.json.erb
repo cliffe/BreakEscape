@@ -158,24 +158,6 @@
             "rfid_protocol": "MIFARE_Classic_Custom_Keys",
             "name": "Corporate Badge"
           }
-        },
-        {
-          "id": "guard_high",
-          "displayName": "Guard (DESFire)",
-          "npcType": "person",
-          "position": { "x": 9, "y": 4 },
-          "spriteSheet": "hacker-red",
-          "spriteConfig": {
-            "idleFrameStart": 20,
-            "idleFrameEnd": 23
-          },
-          "storyPath": "scenarios/ink/rfid-security-guard-fixed.json",
-          "currentKnot": "start",
-          "rfidCard": {
-            "card_id": "executive_card",
-            "rfid_protocol": "MIFARE_DESFire",
-            "name": "Executive Card"
-          }
         }
       ],
       "objects": [
@@ -208,9 +190,27 @@
       },
       "locked": true,
       "lockType": "rfid",
-      "requires": ["executive_card"],
-      "acceptsUIDOnly": true,
-      "npcs": [],
+      "requires": ["corporate_badge"],
+      "npcs": [
+        {
+          "id": "guard_high",
+          "displayName": "Guard (DESFire)",
+          "npcType": "person",
+          "position": { "x": 6, "y": 4 },
+          "spriteSheet": "hacker-red",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/rfid-security-guard-fixed.json",
+          "currentKnot": "start",
+          "rfidCard": {
+            "card_id": "executive_card",
+            "rfid_protocol": "MIFARE_DESFire",
+            "name": "Executive Card"
+          }
+        }
+      ],
       "objects": [
         {
           "type": "notes",
