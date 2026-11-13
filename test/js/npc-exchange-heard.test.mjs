@@ -6,8 +6,23 @@
 // Run with: bin/test-js test/js/npc-exchange-heard.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { NPCNeedsSystem, requiredGlobalsHold, NEEDS_TICK_MS } from '../../public/break_escape/js/systems/npc-needs.js';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+import {
+    NPCNeedsSystem, requiredGlobalsHold, NEEDS_TICK_MS,
+    EXCHANGE_MAX_MS, EXCHANGE_LINE_MAX_MS, CHAT_BASE_MS, CHAT_PER_CHAR_MS, CHAT_GAP_MS
+} from '../../public/break_escape/js/systems/npc-needs.js';
 import { makeWorld } from './fixtures/needs-stub-world.mjs';
+
+const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
+const skipRuby = spawnSync('ruby', ['--version']).status !== 0 && 'ruby not found';
+const ruby = (body, input = '') => {
+    const script = `require ${JSON.stringify(join(root, 'scripts/validate_npc_needs.rb'))}\n${body}`;
+    const r = spawnSync('ruby', ['-e', script], { input, encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' } });
+    assert.equal(r.status, 0, r.stderr);
+    return JSON.parse(r.stdout.trim().split('\n').pop());
+};
 
 const thirsty = (initial = 20) => ({ thirst: { decayPerMin: 1, urgentAt: 50, initial, jitterPct: 0 } });
 const wantsCoffee = (initial = 20) => ({ caffeine: { decayPerMin: 1, urgentAt: 50, initial, jitterPct: 0 } });
@@ -214,6 +229,45 @@ test('reload: heard_<knot> saved after a cut exchange keeps it unplayed in a fre
     assert.ok(p.emitted('npc_chatted:').length >= 1, 'they chat with barks or pictures instead');
 });
 
+test('hush: a hush from an earlier bark does not cut the exchange after its first line (R1 n3)', () => {
+    let hearing = false;
+    let near = false;
+    const o = office({ hears: () => hearing });
+    o.w.world.chatterConfig = () => ({ cooler: { lines: ['Did you hear?', 'No, what?'], hush: true }, coffee: ['After you.'] });
+    o.w.world.playerProximity = () => ({ nearby: near, distance: near ? 40 : 400 });
+    // The player is out of earshot: a bark from the hush pool plays first
+    o.until(() => o.emitted('npc_chatted:').length === 1, 20000, 'a bark');
+    assert.equal(o.exLines().length, 0);
+    assert.equal(o.sys._chats.get('cooler')?.hush, true, 'the bark set the hush');
+    // The player comes into earshot: the exchange starts, then the player walks up close
+    hearing = true;
+    o.until(() => o.exLines().length === 1, 20000, 'the first exchange line');
+    near = true;
+    o.sys.step(40000);
+    assert.equal(o.evs('exchange_cut').length, 0, 'not hushed');
+    assert.equal(o.exLines().length, LINES.length, 'every line played');
+    assert.equal(o.emitted('npc_exchange_heard:ex_parcel')[0]?.data.complete, true);
+    assert.equal(o.globals.heard_ex_parcel, true);
+});
+
+test('coffee queue on a long use: the front waits for the exchange only until its hold cap (R1 n1)', () => {
+    const o = office({ coffee: true });
+    o.sys.world.getObject('coffee').affordance.useSeconds = 200;
+    o.until(() => o.exLines().length === 1, 30000, 'the first queue line');
+    const chat = o.sys._chats.get('coffee');
+    assert.ok(chat?.queue, 'a queue chat');
+    const cap = chat.ex.holdCap;
+    const userEnd = o.sys.states.get(chat.a).job.useUntil;
+    assert.ok(userEnd > cap + 30000, 'the use outlasts the hold cap');
+    o.sys._speechUntil = o.sys.clockMs + 150000;   // the lock starves the rest of the exchange
+    o.until(() => o.evs('queue_left').some(e => e.reason === 'max_wait'), 100000, 'the front to give up');
+    assert.ok(o.sys.clockMs >= cap, 'not before the hold cap');
+    assert.ok(o.sys.clockMs < userEnd, 'and not left waiting for the whole use');
+    const cut = o.evs('exchange_cut');
+    assert.equal(cut.length, 1);
+    assert.equal(cut[0].heard, true, 'cut after a heard line: heard');
+});
+
 test('sync size: an exchange writes one heard_<knot> key, once, whatever the number of meetings', () => {
     const writes = [];
     const o = office();
@@ -222,4 +276,29 @@ test('sync size: an exchange writes one heard_<knot> key, once, whatever the num
     o.sys.step(40000);
     for (let i = 0; i < 3; i++) { o.meetAgain(); o.sys.step(40000); }
     assert.deepEqual(writes.filter(n => n.startsWith('heard_')), ['heard_ex_parcel']);
+});
+
+// ── validator (scripts/validate_npc_needs.rb check_exchanges), R1 m3 ─────────
+
+test('validator: the line timing matches the engine', { skip: skipRuby }, () => {
+    const r = ruby(`puts JSON.generate(%w[EXCHANGE_MAX_MS EXCHANGE_LINE_MAX_MS CHAT_BASE_MS CHAT_PER_CHAR_MS CHAT_GAP_MS].map { |c| ValidateNpcNeeds.const_get(c) })`);
+    assert.deepEqual(r, [EXCHANGE_MAX_MS, EXCHANGE_LINE_MAX_MS, CHAT_BASE_MS, CHAT_PER_CHAR_MS, CHAT_GAP_MS]);
+});
+
+test('validator: an exchange longer than EXCHANGE_MAX_MS is a warning; a short one is not', { skip: skipRuby }, () => {
+    const scenario = {
+        globalVariables: { heard_ex_long: false, heard_ex_short: false },
+        rooms: { office: { type: 'room_office', objects: [], npcs: [
+            { id: 'ann', voice: {}, storyPath: 'test/js/fixtures/exchange_long_knot.json',
+              exchanges: [{ with: 'bob', knot: 'ex_long' }, { with: 'bob', knot: 'ex_short' }] },
+            { id: 'bob', voice: {} }
+        ] } }
+    };
+    const issues = ruby('puts JSON.generate(ValidateNpcNeeds.check(JSON.parse(STDIN.read)))', JSON.stringify(scenario));
+    const long = issues.filter(s => s.includes("'ex_long' runs about"));
+    assert.equal(long.length, 1, issues.join('\n'));
+    assert.match(long[0], /WARNING/);
+    assert.match(long[0], /about 65\.0 s, over the 60 s/);
+    assert.ok(!issues.some(s => s.includes("'ex_short' runs")), 'the short knot is fine');
+    assert.deepEqual(issues.filter(s => s.includes('ex_')).length, 1, issues.join('\n'));
 });

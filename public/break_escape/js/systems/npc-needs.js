@@ -2713,6 +2713,10 @@ export class NPCNeedsSystem {
         ex.holdCap = this.clockMs + EXCHANGE_MAX_MS;
         ex.heardLines = 0;
         c.ex = ex;
+        // A hush comes from the bark pool of an earlier line in this chat. An exchange starts only
+        // with the player in earshot and is meant to be overheard, so that hush must not cut it
+        c.hush = false;
+        c.hushed = false;
         this._holdExchange(c, A, B, total);
         this._log(ex.ownerId, 'exchange_started', { knot: ex.knot, with: ex.ownerId === c.a ? c.b : c.a });
     }
@@ -2730,8 +2734,8 @@ export class NPCNeedsSystem {
     }
 
     /**
-     * The exchange ends, played to the end (`complete`) or cut short (`reason`: the pair broke up,
-     * a hush). The rule for heard (EXCHANGE_HEARD_FIX_LOG.md): played to the end, or cut after the
+     * The exchange ends, played to the end (`complete`) or cut short (`reason`: the pair broke up;
+     * a hush cannot cut it, since _startExchange clears the chat's hush). The rule for heard (EXCHANGE_HEARD_FIX_LOG.md): played to the end, or cut after the
      * player overheard at least one of its lines. Heard: heard_<knot> (a global: one key per knot,
      * set once) and npc_exchange_heard:<knot> { complete }, never played again. Cut before any line
      * reached the player: unplayed, so a later meeting in earshot plays it from the start.
@@ -4381,9 +4385,11 @@ export class NPCNeedsSystem {
             return;
         }
         // The front of the queue in an exchange with the user waits for its end (_finishExchange
-        // then takes the exchange's length off the wait, as a conversation's freeze does)
+        // then takes the exchange's length off the wait, as a conversation's freeze does), but no
+        // longer than the exchange's hold cap: on a long use a starved exchange keeps c.ex set
         const inEx = this._chats.get(job.targetId);
-        if (this.clockMs - job.queuedAt >= this._queueCfg(obj).maxWaitMs && !(inEx?.ex && inEx.b === s.npcId)) {
+        const exWait = inEx?.ex && inEx.b === s.npcId && this.clockMs < inEx.ex.holdCap;
+        if (this.clockMs - job.queuedAt >= this._queueCfg(obj).maxWaitMs && !exWait) {
             s.cooldowns[job.targetId] = this.clockMs + QUEUE_COOLDOWN_MS;
             this._leaveQueue(s, 'max_wait');
             return;

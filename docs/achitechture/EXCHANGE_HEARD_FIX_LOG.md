@@ -101,8 +101,10 @@ needs-work fixtures): 34 files, all pass (`bin/test-js` on the list).
 
 ## Validator
 
-Scenarios with `exchanges`: test_needs_sims, test_exercise_station, lab_physical_pentest (the only
-shipped one). `validate_scenario.rb --no-graph`: 0 failures on each.
+Scenarios with NPC `exchanges`: test_needs_sims and lab_physical_pentest (the only shipped one).
+(Corrected in R1, n4: test_exercise_station's `exchanges` is the assistant-chat minigame's prompt
+list, not NPC exchanges; it was validated as a smoke check.) `validate_scenario.rb --no-graph`: 0
+failures on each of the three.
 
 ## Live proof
 
