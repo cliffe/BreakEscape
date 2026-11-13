@@ -48,6 +48,23 @@ module BreakEscape
       assert_equal longer, @game.reload.player_state["globalVariables"]["se_awareness_records"]
     end
 
+    test "revoked_card_ids merges grow-only: a client cannot un-revoke a card" do
+      @game.merge_global_variables!("revoked_card_ids" => ["clerk_card"])
+      @game.save!
+      assert_equal ["clerk_card"], @game.reload.player_state["globalVariables"]["revoked_card_ids"]
+
+      # A later sync adds a second cancelled card: the union keeps both.
+      @game.merge_global_variables!("revoked_card_ids" => ["guard_card"])
+      @game.save!
+      assert_equal %w[clerk_card guard_card], @game.reload.player_state["globalVariables"]["revoked_card_ids"].sort
+
+      # A client that resends an empty array, or drops the key with null, cannot clear it.
+      @game.merge_global_variables!("revoked_card_ids" => [])
+      @game.merge_global_variables!("revoked_card_ids" => nil)
+      @game.save!
+      assert_equal %w[clerk_card guard_card], @game.reload.player_state["globalVariables"]["revoked_card_ids"].sort
+    end
+
     test "NPC drop persists the full held item definition and survives pickup" do
       device = { 'type' => 'launch-device', 'name' => 'Launch Device', 'id' => 'entropy_launch_device',
                  'mode' => 'launch-abort', 'flags' => ['abort'], 'onLaunch' => { 'setGlobal' => { 'x' => true } } }
@@ -155,7 +172,7 @@ module BreakEscape
         ['opens_lock-only keys: hidden', { 'type' => 'key', 'name' => 'Office Key', 'opens_lock' => 'office' }, { 'type' => 'key', 'name' => 'Office Key', 'opens_lock' => 'office' }, true],
         ['opens_lock-only keys, different locks: kept', { 'type' => 'key', 'name' => 'Key', 'opens_lock' => 'a' }, { 'type' => 'key', 'name' => 'Key', 'opens_lock' => 'b' }, false],
         ['different type, same name: kept', { 'type' => 'notes', 'name' => 'Locked Briefcase' }, { 'type' => 'suitcase', 'name' => 'Locked Briefcase' }, false],
-        ['room item with no id or name: hidden by type', { 'type' => 'suitcase' }, { 'type' => 'suitcase', 'name' => 'Locked Briefcase', 'id' => 'bag_1' }, true],
+        ['room item with no id or name: hidden by type', { 'type' => 'suitcase' }, { 'type' => 'suitcase', 'name' => 'Locked Briefcase', 'id' => 'bag_1' }, true]
       ].freeze
 
     ITEM_FILTER_CASES.each_with_index do |(label, room_item, held, hidden), i|

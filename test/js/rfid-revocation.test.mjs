@@ -34,7 +34,7 @@ globalThis.window = {
 };
 globalThis.document = { querySelector: () => null };
 
-const { evaluateRfidCredential } = await import(pathToFileURL(join(dir, 'systems', 'unlock-system.mjs')).href);
+const { evaluateRfidCredential, heldRfidCardIds } = await import(pathToFileURL(join(dir, 'systems', 'unlock-system.mjs')).href);
 
 const physicalCard = () => ({ scenarioData: { type: 'keycard', card_id: 'clerk_card', name: 'Clerk card' } });
 const clonerWith = (...saved) => ({ scenarioData: { type: 'rfid_cloner', saved_cards: saved } });
@@ -77,4 +77,26 @@ test('revoking clerk_card cancels BOTH the physical card and a clone of the same
     const r = evaluateRfidCredential('clerk_card');
     assert.equal(r.hasValidCard, false);
     assert.equal(r.hasValidClone, false);
+});
+
+// heldRfidCardIds feeds the access-list request: a revoked id must not be sent, so the UI
+// agrees with the server (which refuses it anyway). A live card of a different id still rides.
+test('heldRfidCardIds drops a revoked id and keeps a live one', () => {
+    globalThis.window.inventory.items = [
+        { scenarioData: { type: 'keycard', card_id: 'clerk_card', name: 'Clerk card' } },
+        { scenarioData: { type: 'keycard', card_id: 'guard_card', name: 'Guard card' } },
+        clonerWith({ card_id: 'clerk_card', name: 'clone' })
+    ];
+    globalThis.window.gameState.globalVariables.revoked_card_ids = ['clerk_card'];
+    const ids = heldRfidCardIds();
+    assert.deepEqual(ids, ['guard_card'], 'the revoked id (card and clone) is left out');
+});
+
+test('heldRfidCardIds keeps every id when nothing is revoked', () => {
+    globalThis.window.inventory.items = [
+        { scenarioData: { type: 'keycard', card_id: 'clerk_card', name: 'Clerk card' } },
+        { scenarioData: { type: 'keycard', card_id: 'guard_card', name: 'Guard card' } }
+    ];
+    globalThis.window.gameState.globalVariables.revoked_card_ids = [];
+    assert.deepEqual(heldRfidCardIds().sort(), ['clerk_card', 'guard_card']);
 });
