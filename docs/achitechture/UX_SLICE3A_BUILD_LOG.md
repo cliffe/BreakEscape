@@ -96,6 +96,31 @@ Tests (no lock, test lock rule): every `test/js` file that imports a changed mod
 
 Live proof: keyless server on :3324 from this worktree, physics at setFPS(20) with fixed steps, stopped afterwards. New games, each `test_access_doors` swapped onto a `test_access_social` host with `tools/playtest/swap-scenario-game.rb`: 2468 (sizes, corners, layout nudge, listeners) and 2469 (close paths, race, cycles, emulate). Shots in the session scratchpad, `ux-shots/slice3a-r2fix/`: `door-<size>.png` at each size, `corner-<tl|tr|bl|br>-<size>.png`, `phones-side-by-side.png`, `corner-tr-390x844-x8.png`, `corner-br-1400x1000-x8.png`, `race-reopened-x.png`, `race-reopened-escape.png`, `emulating-1400x1000.png`.
 
+## R3 fixes
+
+Review: `UX_SLICE3A_CODE_REVIEW_R3.md` (0 blockers, 1 major, 0 minors, 2 nits). M1 and n2 fixed; n1 left as it is, as directed. Commits 1e5c05f27 (CSS) and f4500d0ac (tests).
+
+- **M1, copy screen off the window at 915x412, Save unreachable: fixed** with the reviewer's tested fix. `rfid-minigame.css`: `justify-content: safe center` moves from the phone rule to the base `.rfid-minigame-game-container` rule, so a frame taller than its area starts at the top at every width. The wide `.flipper-zero-frame` gets `min-height: 0; max-height: 100%`: the frame no longer grows to its content (577px on the copy screen after a read), it stays inside its area and `.flipper-screen` (`flex: 1`, `overflow-y: auto`) scrolls. Save and Abandon stay inside the scrolling screen; moving them out of it was the reviewer's optional extra and is not done.
+- **n2, bottom 24px of the frame below a 320x568 window: fixed.** The phone `min-height` is now `min(540px, calc(100vh - 104px))`, so the minimum never passes the area. At 320x568 the frame is 464px high, y 52 to 516.
+- **n1, light and dark bevels side by side at the top-right and bottom-left corners: left as it is.**
+
+Live, copy screen after reading the visitor card, then the door reader screen, at each size (frame x, y, width, height; the X ends at y 45 at every size and never meets the frame):
+
+| Size | Copy screen frame | Screen scroll (content in view) | Save after scrolling | Reader frame |
+|---|---|---|---|---|
+| 1400x1000 | 480, 205, 440, 590 | 496 in 496 | y 712..758 | same |
+| 800x600 | 180, 20, 440, 560 | 483 in 466 | y 497..543 | same |
+| 915x412 | 238, 20, 440, 372 | 483 in 278 | y 309..355 | same |
+| 390x844 | 16, 65, 358, 714 | 620 in 620 | y 696..742 | same |
+| 375x667 | 16, 53, 343, 562 | 519 in 468 | y 514..578 | same |
+| 320x568 | 16, 52, 288, 464 | 519 in 370 | y 415..479 | same |
+
+At every size the frame is inside the window, its edges are on whole pixels (snap check), and `elementFromPoint` at the centre of Save, scrolled into view, is Save. A real click on Save at 915x412 posted `clone_card` (`object_id: visitor_card`). Corner check: every pixel in the four 12px corner squares of the frame, on both screens at all six sizes, is a palette colour or the dark backdrop, no blends. Opening the copier fresh at 915x412 and at 320x568 (rather than resizing to them) gives the same frames.
+
+Tests: `rfid-door-screen` pins `safe center` on the base rule (and not on the phone rule), `min-height: 0` and `max-height: 100%` on the wide frame, `flex: 1` and `overflow-y: auto` on the screen, and the phone minimum. A new test checks, by the arithmetic of those rules (node cannot measure layout), that the copy screen's frame fits a 412px-high window, wide and phone, and that the 320x568 frame is 464px. Every `test/js` file that reads the changed CSS or imports `rfid-minigame` (no lock, test lock rule): 10 files, 90 tests, all green, `rfid-door-screen` 20/20.
+
+Live proof: keyless server on :3326 from this worktree, physics at setFPS(20) with fixed steps on, stopped afterwards. New games, each `test_access_doors` swapped onto a `test_access_social` host with `tools/playtest/swap-scenario-game.rb`: 2504 (all six sizes, both screens, Save at 915x412) and 2505 (copier opened fresh at 915x412 and 320x568). Shots in the session scratchpad, `ux-shots/slice3a-r3fix/`: `copy-<size>.png` (top of the screen), `copy-<size>-scrolled.png` (Save in view), `reader-<size>.png`, and `fresh-copy-*` and `fresh-reader-*` for game 2505.
+
 ## Handover
 
-Slice 3a, its R1 fixes and its R2 fixes are done. Nothing in progress. Open: the copier menu icon art is still slice 8. At 320x568 (below the sizes checked) the frame's 540px minimum runs 24px past the bottom of the window.
+Slice 3a and its R1, R2 and R3 fixes are done. Nothing in progress. Open: the copier menu icon art is still slice 8. R3 n1 (bevel jogs at two corners) left as it is unless the user asks.
