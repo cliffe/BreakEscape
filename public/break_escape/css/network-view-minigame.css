@@ -409,18 +409,11 @@
 .signin-captured-title {
     width: 100%;
     color: #ffe680;
-}
-
-.signin-captured-item {
-    background: #23313b;
-    color: #fff;
-    border: 2px solid #4b6070;
-    padding: 2px 8px;
-    font-family: inherit;
-    font-size: 16px;
-    cursor: pointer;
+    text-align: center;
 }
 
 .signin-captured-empty {
+    width: 100%;
+    text-align: center;
     color: #b8c4cc;
 }

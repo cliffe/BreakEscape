@@ -795,6 +795,22 @@ test('H-4: autoLockMin ends the guest session at lockAt with workstation_auto_lo
     assert.equal(ws.onInteract('hot_desk'), 'signin');
 });
 
+test('slice 16 m4: a policy with autoLockMin 0 locks the hot desk the instant the borrower leaves, so no guest session opens and the next click is the sign-in screen', () => {
+    const { ws, globals, emitted, handlers } = hotRig({ autoLockMin: 0 });
+    handlers['npc_guest_left:*']({ npcId: 'ian', objectId: 'hot_desk' });
+    assert.equal(ws.guestOf('hot_desk'), null, 'no open guest session, matching the refused claim');
+    assert.equal(globals.hot_desk_screen_locked, true);
+    assert.equal(globals.hot_desk_owner_away, true);
+    assert.deepEqual(emitted.find(([n]) => n === 'workstation_auto_locked:hot_desk')[1], { objectId: 'hot_desk', ownerId: 'ian', guest: true });
+    // cue parity (R1 minor): the office visuals key their lock cue on workstation_screen_changed,
+    // so the outright lock must emit it with how 'auto', as guestClaimRefused and _autoLock do.
+    assert.deepEqual(emitted.find(([n]) => n === 'workstation_screen_changed:hot_desk')[1],
+        { objectId: 'hot_desk', ownerId: 'ian', locked: true, how: 'auto' },
+        'the kiosk guest-leave auto-lock emits workstation_screen_changed so the lock cue plays');
+    assert.equal(emitted.filter(([n]) => n === 'workstation_owner_left:hot_desk').length, 0, 'no owner_left: the session never opened');
+    assert.equal(ws.onInteract('hot_desk'), 'signin');
+});
+
 test('R2 server m1: a refused guest claim locks the guest session before lockAt (the server timed it out on wall time)', () => {
     const { ws, globals, emitted, handlers, tick } = hotRig({ autoLockMin: 5 });
     handlers['npc_guest_left:*']({ npcId: 'ian', objectId: 'hot_desk' });

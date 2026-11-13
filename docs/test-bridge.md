@@ -264,6 +264,12 @@ guess when there is more than one button and no `labelMatch` is given, returning
 destructive (the session-resume overlay offers Resume / Restart / **New Session**,
 and picking wrong discards a save or reloads the page mid-run).
 
+When the click lands but the page is still blocked (the overlay did not close, or it
+revealed another, the tutorial prompt over the session-resume overlay at startup), it
+returns `ok: false, reason: 'still-blocked-after-dismiss'` with the remaining `blocker`,
+so a caller that trusts `ok` stops and dismisses the new blocker instead of carrying on
+against a blocked UI. It answers `ok: true, stillBlocked: false` only once the page is clear.
+
 ### `missionEnd`
 
 Non-null once the end-of-mission credits overlay is showing (a scenario whose

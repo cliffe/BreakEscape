@@ -292,8 +292,22 @@ export class WorkstationState {
     onGuestLeft(pcId, npcId) {
         const data = this._find(pcId);
         if (!data || typeof npcId !== 'string' || !npcId || ownerOf(data)) return false;
-        const rec = { npcId };
         const min = this._policy(data)?.autoLockMin;
+        // A policy with autoLockMin 0 locks the screen the instant the borrower leaves, so no
+        // guest session is ever open here. The server's guest claim refuses such a PC
+        // (game.rb "policy autoLockMin is 0") and record_borrow_done! writes no guest record, so
+        // lock the screen outright to agree with both, as the owner-leave roll does (_rollScreen).
+        if (min === 0) {
+            this.guests.delete(pcId);
+            this._publishGuest(pcId, true, true);
+            this.env.emit(`workstation_auto_locked:${pcId}`, { objectId: pcId, ownerId: npcId, guest: true });
+            // Emit the screen-changed event the office visuals key their lock cue on, as the
+            // sibling outright-lock paths (guestClaimRefused, _autoLock) do; without it the kiosk
+            // guest-leave auto-lock plays no flash/glyph/chime (npc-office-visuals.js line 580).
+            this._changed(data, npcId, true, 'auto');
+            return true;
+        }
+        const rec = { npcId };
         if (typeof min === 'number' && Number.isFinite(min) && min > 0) rec.lockAt = this._clock() + min * 60000;
         this.guests.set(pcId, rec);
         this._publishGuest(pcId, true, false);
