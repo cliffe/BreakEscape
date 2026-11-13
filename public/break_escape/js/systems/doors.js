@@ -776,7 +776,9 @@ function refuseAtGate(props, gateGroup) {
     if (typeof hint === 'string' && hint.trim()) data.answerFollowUp = hint.trim();
     window.eventDispatcher?.emit?.('door_gate_denied', data);
     if (data.answeredInView) return;
-    window.npcWorldBubbles?.closeTagged?.('door_gate_denied');
+    // The notification carries this gate's hint: a bubble showing the same one closes quietly,
+    // one with another gate's hint hands it on (R3 m1)
+    window.npcWorldBubbles?.closeTagged?.('door_gate_denied', { followUp: data.answerFollowUp || null });
     const title = doorRefusalTitle(hintSource, 'Door');
     window.gameAlert?.(appendLockedHint(denied, hintSource), 'error', title, lockedHintDuration(hintSource, 3000, denied));
 }

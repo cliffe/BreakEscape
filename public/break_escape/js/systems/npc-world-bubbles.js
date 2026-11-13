@@ -48,6 +48,7 @@
  */
 import { iconShown, roomIsDark, npcIconAnchor } from './npc-office-visuals.js';
 import { loadCanvasFonts } from '../utils/canvas-fonts.js';
+import { LIGHT_DEPTH } from '../utils/constants.js';
 
 export const MAX_BUBBLES = 4;
 export const SPEECH_FONT = "'VT323', monospace";
@@ -73,7 +74,16 @@ const HUD_EVERY_MS = 200;          // how often the HUD panels' screen rects are
 const HUD_GAP = 2;                  // px: kept between a bubble and a HUD panel
 export const HUD_SELECTORS = ['.objectives-panel', '#inventory-container', '#health-ui-container', '#hud-info-label',
     '#scenario-timer-display', '#music-widget-btn-anchor', '#toggle-buttons-container', '#combat-buttons',
-    '.phone-access-button', '.tutorial-panel'].join(', ');
+    '.phone-access-button', '.tutorial-panel',
+    // R3 n2: the open music panel, an incoming call, the talk prompt, the VM controls, the
+    // scanner panels, and each toast on screen (not the stacks, which can be empty and large)
+    '#music-widget-panel', '#phone-ring-layer .incoming-call', '.npc-interaction-prompt', '#vm-controls-overlay',
+    '.panel-container', '#bluetooth-panel', '#biometrics-panel',
+    '#npc-bark-container .npc-bark', '#notification-container .notification'].join(', ');
+// Above the room lighting (LIGHT_DEPTH, glows at +1 and +2): under it the fill took the
+// room's light, a soft ramp with a hard seam at the room's edge (R3 m2). Below the overlay
+// markers (overlayDepth: talk icons, health bars, damage numbers at LIGHT_DEPTH + 10 and up).
+export const BUBBLE_DEPTH = LIGHT_DEPTH + 3;
 const FILL = 0xffffff;
 const LINE = 0x1b2a41;
 
@@ -87,12 +97,16 @@ export function speechShown({ npcRoom, playerRoom, dark = false, minigameOpen = 
 }
 
 /**
- * Pure: which of the candidate speakers get a bubble: at most `max`; barks (`bark: true`) before
- * chatter, then nearest the player first, ties by id. `list` items are { npcId, distance, bark }.
+ * Pure: which of the candidate speakers get a bubble, in the order they are placed: at most
+ * `max`; barks (`bark: true`) before chatter; barks already on screen (`held: true`) before new
+ * ones, so a newcomer nearer the player cannot take the only free spot and send a line already
+ * being read to the toast (R3 n5); then nearest the player first, ties by id.
+ * `list` items are { npcId, distance, bark, held }.
  */
 export function pickShown(list, max = MAX_BUBBLES) {
     return [...list]
         .sort((a, b) => (b.bark ? 1 : 0) - (a.bark ? 1 : 0)
+            || (b.held ? 1 : 0) - (a.held ? 1 : 0)
             || (a.distance ?? Infinity) - (b.distance ?? Infinity)
             || (a.npcId < b.npcId ? -1 : a.npcId > b.npcId ? 1 : 0))
         .slice(0, max)
@@ -261,17 +275,42 @@ export function wrapLines(text, width = LINE_CHARS) {
     return lines;
 }
 
-/** Pure: the line in pages of at most `perPage` wrapped lines; each page is its lines joined by "\n". */
+/**
+ * Pure: the line in pages of at most `perPage` wrapped lines; each page is its lines joined by
+ * "\n". When the last page would be short (under half a page's share of the words, such as one
+ * word), the words are spread evenly over the same number of pages instead, if each still fits
+ * (R3 n3).
+ */
 export function pageLine(text, { width = LINE_CHARS, perPage = PAGE_LINES } = {}) {
     const lines = wrapLines(text, width);
     const pages = [];
     for (let i = 0; i < lines.length; i += perPage) pages.push(lines.slice(i, i + perPage).join('\n'));
-    return pages;
+    if (pages.length < 2) return pages;
+    const words = String(text ?? '').trim().split(/\s+/).filter(Boolean);
+    const n = pages.length;
+    if (wordsIn(pages[n - 1]) * 2 >= words.length / n) return pages;
+    const even = [];
+    for (let i = 0; i < n; i++) {
+        const chunk = wrapLines(words.slice(Math.round(i * words.length / n), Math.round((i + 1) * words.length / n)).join(' '), width);
+        if (chunk.length === 0 || chunk.length > perPage) return pages;
+        even.push(chunk.join('\n'));
+    }
+    return even;
 }
 
 /** Pure: a page (or pages) as plain one-line text: the words joined by single spaces. */
 export function pagesText(pages) {
     return pages.join(' ').split(/\s+/).filter(Boolean).join(' ');
+}
+
+/**
+ * Pure: a bark state's follow-up pages not yet read, from the page on screen when it is one of
+ * them, as one-line text ('' when there are none). R3 m1.
+ */
+export function followUpLeft(st) {
+    if (!st || !Array.isArray(st.pages)) return '';
+    const from = Math.max(st.page || 0, st.linePages ?? st.pages.length);
+    return pagesText(st.pages.slice(from));
 }
 
 const wordsIn = (s) => String(s).split(/\s+/).filter(Boolean).length;
@@ -345,7 +384,7 @@ export class NpcWorldBubbles {
             fontFamily: SPEECH_FONT, fontSize: `${SPEECH_FONT_PX}px`, color: '#1b2a41', lineSpacing: 0
         }).setOrigin(0, 0);
         const img = scene.add.image(0, 0, '__DEFAULT').setOrigin(0, 0).setVisible(false);
-        const box = scene.add.container(0, 0, [g, text, img]).setDepth(5001);
+        const box = scene.add.container(0, 0, [g, text, img]).setDepth(BUBBLE_DEPTH);
         return { box, g, text, img, line: null };
     }
 
@@ -521,13 +560,21 @@ export class NpcWorldBubbles {
     /**
      * Close every bark bubble answering `tag` (an event pattern), with no remainder: a newer
      * answer (the door's own notification for a refusal in the guard's cooldown) replaces it
-     * (R2 n1). Returns the NPCs closed.
+     * (R2 n1). `followUp` is the hint the new answer carries: a bubble whose unread follow-up is
+     * that same hint closes quietly; one with another hint hands it on (onFollowUpLost, R3 m1).
+     * Returns the NPCs closed.
      */
-    closeTagged(tag) {
+    closeTagged(tag, { followUp = null } = {}) {
         const closed = [];
         if (!tag) return closed;
+        // Compared on letters and digits only: the bubble's copy has authored dashes shown
+        const key = (x) => String(x || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+        const same = key(followUp);
         for (const st of [...this.says.values()]) {
-            if (st.tag === tag) { this._end(st.npcId, 'superseded'); closed.push(st.npcId); }
+            if (st.tag !== tag) continue;
+            const left = followUpLeft(st);
+            this._end(st.npcId, 'superseded', { handOn: !!left && key(left) !== same });
+            closed.push(st.npcId);
         }
         return closed;
     }
@@ -546,26 +593,40 @@ export class NpcWorldBubbles {
      * @param {string|null} [o.followUp]  pages shown after the line, timed for reading (not to the
      *   voice): a gate's lockedHint after the guard's refusal (R2 m3)
      * @param {string|null} [o.tag]  what the line answers (the event pattern), for closeTagged()
+     * @param {(text:string)=>void} [o.onFollowUpLost]  follow-up pages not yet read when the
+     *   bubble ends early (stillValid, close(), closeTagged with another hint): npc-barks.js shows
+     *   them as a toast of their own, so a lockedHint is never lost (R3 m1)
      */
-    say(npcId, line, { audioMs = null, onRemainder = null, onDone = null, stillValid = null, followUp = null, tag = null } = {}) {
+    say(npcId, line, { audioMs = null, onRemainder = null, onDone = null, stillValid = null, followUp = null, tag = null, onFollowUpLost = null } = {}) {
         const linePages = pageLine(line);
-        const extra = followUp ? pageLine(followUp) : [];
-        const pages = [...linePages, ...extra];
         if (!npcId || linePages.length === 0) return null;
         if (!this._inView(npcId)) return null;
         const { sprite } = this._spriteAndRoom(npcId);
         const distance = this._distance(sprite);
-        // A new line from the same NPC replaces its old one (its voice was cut too)
-        if (this.says.has(npcId)) this._end(npcId, 'replaced');
+        // A new line from the same NPC replaces its old one (its voice was cut too). Follow-up
+        // pages of the old line not yet read go after the new line, once (R3 m1)
+        const old = this.says.get(npcId) || null;
+        const carried = old ? followUpLeft(old) : '';
+        if (old) this._end(npcId, 'replaced', { handOn: false });
+        const lost = typeof onFollowUpLost === 'function' ? onFollowUpLost : (old?.onFollowUpLost || null);
+        const next = followUp ? pagesText([followUp]) : '';
+        const allFollow = carried && carried !== next ? [carried, next].filter(Boolean).join(' ') : next;
+        const extra = allFollow ? pageLine(allFollow) : [];
+        const pages = [...linePages, ...extra];
         const others = [...this.says.keys()].map(id => ({ npcId: id, distance: this._distance(this._spriteAndRoom(id).sprite) }));
         const cap = barkCapacity(others, distance);
-        if (!cap.ok) { this._note(npcId, 'full'); return null; }
+        if (!cap.ok) {
+            this._note(npcId, 'full');
+            // The caller toasts the new line with its own follow-up; a carried one goes on its own
+            if (carried && carried !== next) { try { lost?.(carried); } catch (e) { /* never break a frame */ } }
+            return null;
+        }
         if (cap.evict) this._leave(cap.evict, 'pushed');
         const reading = readingMs(line);
         const st = {
             npcId, line, pages, linePages: linePages.length, page: 0, started: this.now(), pageStarted: this.now(),
             times: [...pageTimes(linePages, lineTotalMs({ audioMs, readingMs: reading })), ...followUpTimes(extra)],
-            audioMs: audioMs > 0 ? audioMs : null, onRemainder, onDone, tag: tag || null,
+            audioMs: audioMs > 0 ? audioMs : null, onRemainder, onDone, tag: tag || null, onFollowUpLost: lost,
             stillValid: typeof stillValid === 'function' ? stillValid : null, validAt: this.now()
         };
         this.says.set(npcId, st);
@@ -589,7 +650,12 @@ export class NpcWorldBubbles {
         this._note(st.npcId, 'audio', { ms });
     }
 
-    _end(npcId, why) {
+    /**
+     * Close a bark bubble. Ended for any reason but 'done', its follow-up pages not yet read go
+     * to onFollowUpLost (R3 m1), unless `handOn` is false: the remainder paths already carry
+     * them, a replacing line takes them on, and a notification with the same hint shows it.
+     */
+    _end(npcId, why, { handOn = true } = {}) {
         const st = this.says.get(npcId);
         if (!st) return;
         this.says.delete(npcId);
@@ -597,6 +663,13 @@ export class NpcWorldBubbles {
         if (bb) { bb.box.setVisible(false); bb.line = null; }
         this._note(npcId, why, { page: st.page });
         if (why === 'done') { try { st.onDone?.(); } catch (e) { /* never break a frame */ } }
+        else if (handOn) {
+            const rest = followUpLeft(st);
+            if (rest) {
+                this._note(npcId, 'follow-up-lost', { page: st.page, text: rest });
+                try { st.onFollowUpLost?.(rest); } catch (e) { /* never break a frame */ }
+            }
+        }
     }
 
     /** Left view (or pushed out): close, and hand the rest of the line, this page onwards, on. */
@@ -604,7 +677,7 @@ export class NpcWorldBubbles {
         const st = this.says.get(npcId);
         if (!st) return;
         const rest = pagesText(st.pages.slice(st.page));
-        this._end(npcId, why);
+        this._end(npcId, why, { handOn: false });
         this._note(npcId, 'remainder', { page: st.page, text: rest });
         if (rest) { try { st.onRemainder?.(rest); } catch (e) { /* never break a frame */ } }
     }
@@ -640,7 +713,9 @@ export class NpcWorldBubbles {
         const info = new Map();
         for (const st of this.says.values()) {
             const { sprite } = this._spriteAndRoom(st.npcId);
-            cands.push({ npcId: st.npcId, distance: this._distance(sprite), bark: true });
+            const bb = this.bubbles.get(st.npcId);
+            const held = !!(bb && bb.box?.visible && bb.sayState === st);
+            cands.push({ npcId: st.npcId, distance: this._distance(sprite), bark: true, held });
             info.set(st.npcId, { sprite, line: st.pages[st.page], picture: null, partnerId: null, bark: true });
         }
         if (sys && mgr) {
@@ -709,6 +784,7 @@ export class NpcWorldBubbles {
             bb.box.setData('picture', picture);
             bb.box.setData('partner', partnerId);
             bb.box.setData('bark', bark);
+            bb.sayState = bark ? this.says.get(id) || null : null;
         }
     }
 
@@ -720,6 +796,9 @@ export class NpcWorldBubbles {
      * camera's view each frame. Anything hidden, empty or covering most of the screen (a full
      * screen layer) is left out. None without a DOM, a canvas or a view (node tests). R2 m2.
      */
+    /** Forget the HUD rects, so the next pass reads them again (window or canvas resize, R3 n1). */
+    clearHudCache() { this._hud = null; }
+
     _hudRects(view, scene = null) {
         if (!view || typeof document === 'undefined') return [];
         // window.game is the main scene; the canvas hangs off its game
@@ -792,6 +871,16 @@ export function installNpcWorldBubbles(scene) {
     const w = win();
     if (!w.npcWorldBubbles) w.npcWorldBubbles = new NpcWorldBubbles();
     const inst = w.npcWorldBubbles;
+    // A resize moves the HUD panels: read them again on the next pass, not up to HUD_EVERY_MS
+    // later, when a bubble could sit over one for a few frames (R3 n1)
+    if (!inst._resizeHooked && typeof w.addEventListener === 'function') {
+        inst._resizeHooked = true;
+        w.addEventListener('resize', () => inst.clearHudCache());
+    }
+    if (scene?.scale?.on && inst._scaleHooked !== scene.scale) {
+        inst._scaleHooked = scene.scale;
+        try { scene.scale.on('resize', () => inst.clearHudCache()); } catch (e) { /* no scale manager */ }
+    }
     if (scene?.events && inst.sceneHooked !== scene) {
         inst.sceneHooked = scene;
         // postupdate: after the scene's update() (checkObjectInteractions shows the talk icon

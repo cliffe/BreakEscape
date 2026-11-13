@@ -4,6 +4,14 @@
 import { isInLineOfSight, drawLOSCone, clearLOSCone, getNPCFacingDirection, losVisualSuppressed, losVisualOutOfRoom, losCatchSpent } from './npc-los.js';
 import { classifyPhoneLine, phoneStepLines } from '../minigames/phone-chat/phone-chat-speaker.js';
 
+// The InkEngine class, once imported: with it and the story cached, a knot bark builds the
+// NPC's engine with no await, so it can mark a gate refusal answered in time (R3 n4)
+let InkEngineClass = null;
+async function loadInkEngineClass() {
+  if (!InkEngineClass) InkEngineClass = (await import('./ink/ink-engine.js')).default;
+  return InkEngineClass;
+}
+
 /**
  * Safe condition evaluator — replaces eval() for CSP compliance (unsafe-eval blocked).
  * Supports the condition patterns used in scenario eventMappings:
@@ -837,9 +845,47 @@ export default class NPCManager {
         this.eventListeners.set(npcId, []);
       }
       this.eventListeners.get(npcId).push({ pattern: eventPattern, listener });
+      if (this._isKnotBark(npcId, config)) this._preloadKnotBark(npcId);
     }
 
     console.log(`✅ Registered ${mappingsArray.length} event mappings for ${npcId}`);
+  }
+
+  /** Does this mapping answer with a bark from an ink knot (no text of its own, no conversation)? */
+  _isKnotBark(npcId, config) {
+    const npc = this.npcs.get(npcId);
+    return !!(config?.knot && !config.bark && !config.message && !config.conversationMode
+      && npc?.npcType === 'person' && npc.storyPath);
+  }
+
+  /**
+   * Fetch the NPC's story and import the InkEngine class in the background, once, so the first
+   * knot bark runs with no await and a gate refusal it answers in view is marked in time: without
+   * it the door showed its notification over her bubble (R3 n4). Read only: the ink endpoint and
+   * the story cache. The engine itself is still built on first use (so a conversation that opens
+   * first keeps getInkEngine's global-variable sync). Failures are ignored: the bark then loads
+   * as before.
+   */
+  _preloadKnotBark(npcId) {
+    if (this.preloadKnotBarks === false) return null;
+    const npc = this.npcs.get(npcId);
+    if (!npc?.storyPath) return null;
+    if (!this._knotPreloads) this._knotPreloads = new Map();
+    if (this._knotPreloads.has(npc.storyPath)) return this._knotPreloads.get(npc.storyPath);
+    const p = (async () => {
+      try {
+        await loadInkEngineClass();
+        if (this.storyCache.has(npc.storyPath) || typeof fetch !== 'function') return;
+        const gameId = typeof window !== 'undefined' ? window.breakEscapeConfig?.gameId : null;
+        const endpoint = gameId ? `/break_escape/games/${gameId}/ink?npc=${encodeURIComponent(npcId)}` : npc.storyPath;
+        const response = await fetch(endpoint);
+        if (!response.ok) return;
+        const storyJson = await response.json();
+        if (!this.storyCache.has(npc.storyPath)) this.storyCache.set(npc.storyPath, storyJson);
+      } catch (e) { /* the bark loads it on first use */ }
+    })();
+    this._knotPreloads.set(npc.storyPath, p);
+    return p;
   }
 
   /**
@@ -1898,7 +1944,8 @@ export default class NPCManager {
       // OPTIMIZATION: Reuse cached InkEngine or create new one
       let inkEngine = this.inkEngineCache.get(npcId);
       if (!inkEngine) {
-        const { default: InkEngine } = await import('./ink/ink-engine.js');
+        // No await once the class is loaded (preloaded with the story, R3 n4)
+        const InkEngine = InkEngineClass || await loadInkEngineClass();
         inkEngine = new InkEngine(npcId);
         inkEngine.loadStory(storyJson);
         this.inkEngineCache.set(npcId, inkEngine);
@@ -3110,6 +3157,7 @@ export default class NPCManager {
    */
   clearStoryCache(storyPath) {
     this.storyCache.delete(storyPath);
+    this._knotPreloads?.delete(storyPath);
   }
 
   /**
@@ -3118,6 +3166,7 @@ export default class NPCManager {
   clearAllCaches() {
     this.inkEngineCache.clear();
     this.storyCache.clear();
+    this._knotPreloads?.clear();
     console.log(`[NPCManager] Cleared all caches`);
   }
 

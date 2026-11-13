@@ -326,7 +326,10 @@ export default class NPCBarkSystem {
         stillValid: typeof payload.stillValid === 'function' ? payload.stillValid : null,
         // A gate's lockedHint after the guard's refusal, in her bubble (R2 m3); never voiced
         followUp: followUp ? displayDashes(followUp) : null,
-        tag: payload.eventPattern || null
+        tag: payload.eventPattern || null,
+        // Her bubble ended before the hint was read (stillValid, closed, another gate's
+        // notification): the hint as a toast of its own, so it is never lost (R3 m1)
+        onFollowUpLost: (hint) => this._toastFollowUp(payload, hint)
       }) || null;
     }
 
@@ -452,6 +455,17 @@ export default class NPCBarkSystem {
     if (!rest) return;
     // The rest already holds any follow-up pages still to come
     this.showBark({ ...payload, message: rest, text: undefined, followUp: null, playSound: false, useTTS: false, forceToast: true });
+  }
+
+  /**
+   * A follow-up (a gate's lockedHint) whose bubble ended before it was read, as a toast of its
+   * own. Silent, and with no stillValid: the check that closed her bubble would close it too
+   * (R3 m1).
+   */
+  _toastFollowUp(payload, hint) {
+    if (!hint) return;
+    this.showBark({ ...payload, message: hint, text: undefined, followUp: null, playSound: false, useTTS: false,
+      forceToast: true, stillValid: undefined });
   }
 
   _startAutoClose(el, ms) {
