@@ -2036,7 +2036,11 @@ export function handleObjectInteraction(sprite) {
         };
 
         if (data.onInteract.confirmationText && window.gameConfirm) {
-            window.gameConfirm(data.onInteract.confirmationText).then(confirmed => {
+            // The confirm has no X (UX q99): name both buttons when the author does.
+            const named = (v, fallback) => (typeof v === 'string' && v.trim() ? v : fallback);
+            window.gameConfirm(data.onInteract.confirmationText,
+                named(data.onInteract.confirmLabel, 'Confirm'),
+                named(data.onInteract.cancelLabel, 'Cancel')).then(confirmed => {
                 if (confirmed) { applyOnInteract(); showObservation(); }
             });
             return;

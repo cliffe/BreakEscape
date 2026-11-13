@@ -146,7 +146,7 @@ body:has([data-minigame="phone-chat"]) #notification-container {
     background: #a93226;
 }
 
-.game-confirm-dialog .game-confirm-message,
+/* Room for the close X. A confirm has no X (UX q99), so its message runs the full width. */
 .game-display-dialog .game-display-title {
     padding-right: 40px;
 }

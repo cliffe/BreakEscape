@@ -463,6 +463,8 @@ export function gameDisplay(message, title = '', options = {}) {
 }
 
 // Show an in-game confirmation modal. Returns a Promise that resolves true (confirm) or false (cancel).
+// No close X: the two named buttons answer it, and Esc picks the cancel choice. Callers name both
+// buttons for what they do ("Switch off" and "Leave it"), never a bare Confirm or Cancel.
 // The message and both button labels are plain text (textContent) by default, newlines kept, so
 // author-written scenario text (an interactionWarning, a confirm action's text) is never markup.
 // options.html === true: all three were built as HTML on purpose, author text already escaped.
@@ -475,7 +477,6 @@ export function gameConfirm(message, confirmLabel = 'Confirm', cancelLabel = 'Ca
         if (plainText) {
             overlay.innerHTML = `
             <div class="game-confirm-dialog">
-                <button class="game-modal-close" aria-label="Cancel">&times;</button>
                 <div class="game-confirm-message" style="white-space: pre-wrap;"></div>
                 <div class="game-confirm-buttons">
                     <button class="game-confirm-btn game-confirm-ok"></button>
@@ -489,7 +490,6 @@ export function gameConfirm(message, confirmLabel = 'Confirm', cancelLabel = 'Ca
         } else {
             overlay.innerHTML = `
             <div class="game-confirm-dialog">
-                <button class="game-modal-close" aria-label="Cancel">&times;</button>
                 <div class="game-confirm-message">${displayDashes(message).replace(/\n/g, '<br>')}</div>
                 <div class="game-confirm-buttons">
                     <button class="game-confirm-btn game-confirm-ok">${confirmLabel}</button>
@@ -498,7 +498,8 @@ export function gameConfirm(message, confirmLabel = 'Confirm', cancelLabel = 'Ca
             </div>`;
         }
 
-        // Esc and the X both cancel (resolve false), same as the Cancel button.
+        // A confirm has no X (UX q99): its two named buttons are the only way to answer, and
+        // Esc means the cancel button's choice (resolve false), the safe one.
         const unregister = registerModal(() => finish(false));
         const finish = (result) => {
             unregister();
@@ -508,7 +509,6 @@ export function gameConfirm(message, confirmLabel = 'Confirm', cancelLabel = 'Ca
 
         overlay.querySelector('.game-confirm-ok').addEventListener('click', () => finish(true));
         overlay.querySelector('.game-confirm-cancel').addEventListener('click', () => finish(false));
-        overlay.querySelector('.game-modal-close').addEventListener('click', () => finish(false));
 
         document.body.appendChild(overlay);
     });

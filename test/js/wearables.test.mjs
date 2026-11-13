@@ -233,7 +233,10 @@ test('the default alert and confirm pass no html option (toasts are plain text b
     assert.equal(alerts[0][4], undefined, 'no options: plain text');
     w.npcManager.npcs.get('tom').roomId = 'hall';
     assert.equal(await W.putOn('vest', { confirm: true }, deps), true);
-    assert.deepEqual(confirms[0], ['Put it on?', 'Confirm', 'Cancel']);
+    // UX q99: the confirm has no X, so both buttons are named for what they do
+    assert.deepEqual(confirms[0], ['Put it on?', 'Put it on', 'Leave it off']);
+    assert.equal(await W.takeOff('vest', { confirm: true }, deps), true);
+    assert.deepEqual(confirms[1], ['Take it off?', 'Take it off', 'Keep it on']);
 });
 
 test('the server refusal message is shown as plain text', async () => {

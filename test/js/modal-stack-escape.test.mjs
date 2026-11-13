@@ -70,9 +70,10 @@ test('other keys pass through, and unregister on click-close leaves no listener'
     assert.equal(listeners.length, 0);
 });
 
-test('gameDisplay and gameConfirm register with the stack and have a close X', () => {
+test('gameDisplay and gameConfirm register with the stack; only gameDisplay has a close X', () => {
     const src = readFileSync(join(js, 'systems/notifications.js'), 'utf8');
     assert.equal((src.match(/registerModal\(/g) || []).length, 2);
-    assert.equal((src.match(/game-modal-close/g) || []).length >= 4, true);
+    // gameDisplay draws the X and wires it; a confirm has none (UX q99)
+    assert.equal((src.match(/game-modal-close/g) || []).length, 2);
     assert.match(src, /registerModal\(\(\) => finish\(false\)\)/, 'gameConfirm Esc must cancel (resolve false)');
 });
