@@ -216,6 +216,14 @@ export function placesNeedRoom(list, { rows = 3, rowHeight = 24 } = {}) {
     return list.scrollHeight - list.clientHeight > 2 && list.clientHeight < rows * rowHeight;
 }
 
+/**
+ * True when the panel's own parts do not fit and it would have to scroll as a whole (a one-place
+ * host at a large zoom, a short screen). Compact mode wins back height before that happens.
+ */
+export function panelOverflows(panel) {
+    return !!panel && panel.scrollHeight - panel.clientHeight > 1;
+}
+
 // ── Headshots (cached in memory, never synced) ───────────────────────────────
 
 const headshotCache = new Map();
@@ -376,7 +384,7 @@ export function mountPcTaskbar(root, model, { windowTitle = '', takeable = false
     const refit = () => {
         panel.classList?.remove?.('pc-start-compact');
         panelPicture();
-        if (placesNeedRoom(placesList)) {
+        if (placesNeedRoom(placesList) || panelOverflows(panel)) {
             panel.classList?.add?.('pc-start-compact');
             panelPicture();
         }

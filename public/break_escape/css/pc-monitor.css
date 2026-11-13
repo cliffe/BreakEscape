@@ -607,12 +607,21 @@
 }
 
 /* Places takes what is left and shrinks only down to its heading and one row of list
-   (min-content), so its list can never hang out over the actions below (R4 M1). A panel
-   that still cannot fit scrolls as a whole, as a last resort. */
+   (padding 8 + heading 18 + list 24 + border 2), so its list can never hang out over the
+   actions below (R4 M1). min-content would count the whole list. A panel that still cannot
+   fit scrolls as a whole, as a last resort. */
 .pc-monitor .pc-start-section.pc-start-places {
     position: relative;
     flex: 1 1 auto;
-    min-height: min-content;
+    min-height: 52px;
+}
+
+.pc-monitor .pc-start-compact .pc-start-section.pc-start-places {
+    min-height: 48px;
+}
+
+.pc-monitor .pc-start-compact .pc-start-more {
+    top: 2px;
 }
 
 .pc-monitor .pc-start-places-list {
@@ -703,6 +712,24 @@
    entries without their 2px padding. */
 .pc-monitor[data-short] .pc-start-panel {
     width: 340px;
+}
+
+/* Compact: tighter padding, so a short phone screen shows more before the panel has to scroll */
+.pc-monitor .pc-start-compact .pc-start-account {
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+/* On a short screen the This PC heading goes too: its lines (computer name, "Remote through")
+   say what they are, and the taskbar names the PC again. Places keeps its heading. */
+.pc-monitor[data-short] .pc-start-compact .pc-start-section:not(.pc-start-places) .pc-start-heading {
+    display: none;
+}
+
+.pc-monitor .pc-start-compact .pc-start-section,
+.pc-monitor .pc-start-compact .pc-start-actions {
+    padding-top: 2px;
+    padding-bottom: 2px;
 }
 
 .pc-monitor .pc-start-compact .pc-start-pcname,

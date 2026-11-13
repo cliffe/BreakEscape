@@ -260,3 +260,51 @@ Tests: new "R3 M1" tests in `pc-taskbar` (panel structure and CSS pins, `updateP
 
 Files: `css/pc-monitor.css`, `css/network-view-minigame.css`, `utils/pc-taskbar.js`,
 `network-view-minigame.js`, `password-minigame.js`, tests as above.
+
+## 2026-11-13: review round 4 fixes
+
+Findings of `UX_SLICE6_REVIEW_R4.md`. Live proof on a keyless server (:3473, stopped by PID), games
+from `tools/playtest/swap-scenario-game.rb`, headless shell with scrollbars shown. Scripts and
+shots are in the scratch folder `ui-slice6-fix4/`.
+
+- Major 1, Places list spilled over Lock on landscape phones: `.pc-start-places` no longer shrinks
+  to nothing. Its minimum is its padding, heading and one row of list (`min-height: 52px`, 48 px in
+  compact), and the list's own minimum is 24 px (was 40). `min-content` would have counted the whole
+  list, so the numbers are explicit. The old layout also hid a smaller version of the same fault on
+  `store_controller` (list 6 px over the actions at 1400x1000); that is now honest, so more cases
+  needed compact mode.
+- Compact is wider than before. It is set when Places is cramped or when the panel would scroll as a
+  whole (new `panelOverflows`), so a one-place host at 1400x1000 (zoom 2, 314 units of panel) goes
+  compact too. Compact also tightens the account and section padding to 2 px and, on a short
+  screen only, drops the This PC heading (its lines say what they are; the taskbar names the PC).
+  Places keeps its heading.
+- Nit 1, compact only decided on open: `show()` and a window resize now share one `refit()` (clear
+  compact, set the picture, test, set compact and picture again, refresh the cue). A second pass runs
+  on the next frame, after the frame's own resize handler has set `data-short`. A closed panel only
+  refreshes the cue.
+- Nit 2 (two "Locked" badges): left for the wording pass.
+
+Measured, fresh open, `elementFromPoint` at the centre of Lock / Switch user / Sign out (Y = the
+button). "Over" is panel `scrollHeight - clientHeight`; Places is the list's overflow.
+
+| Viewport | Lena / door_box (3 Places) | Sam local | store_controller |
+|---|---|---|---|
+| 667x375 | YYY, over 0, compact, Places scrolls 18 | YYY, 0 | YYY, 0 |
+| 740x360 | YYY, 0, Places scrolls 32 | YYY, 0 | YYn, panel over 14 |
+| 844x390 | YYY, 0 | YYY, 0 | YYY, 0 |
+| 568x320 | Ynn, panel over 36 | YYn, over 32 | Ynn, over 54 |
+| 915x412 | YYY, 0 | YYY, 0 | YYY, 0 |
+| 390x844, 800x600 | YYY, 0 (not compact) | YYY, 0 | YYY, 0 |
+| 1400x1000 | YYY, 0 (compact) | YYY, 0 | YYY, 0 (compact) |
+
+The Places list bottom is above the actions' top in every run (it overlapped by up to 48 px before).
+At 568x320, and store_controller at 740x360, the panel falls back to its own pixel scrollbar: the
+buttons are not covered, they sit below the fold. Resize with the panel open: 800x600 to 915x412
+goes compact and x1 on Lena, door_box and store_controller (Sam is x1 without compact), every action
+YYY, panel over 0; back to 800x600 it returns to x2, not compact; 1400x1000 to 915x412 likewise.
+
+Tests: `pc-taskbar` 30 (new: R4 M1 CSS pins, R4 N1 resize re-decision both ways and closed panel left
+alone, panelOverflows and its compact trigger, This PC heading rule), `pc-sessions` 43,
+`pc-monitor-frame` 49, `network-view` 46, `workstation-state` 55, `password-signin-mode` 66, all pass.
+
+Files: `css/pc-monitor.css`, `utils/pc-taskbar.js`, `test/js/pc-taskbar.test.mjs`.

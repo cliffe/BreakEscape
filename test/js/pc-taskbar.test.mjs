@@ -609,9 +609,10 @@ test('R3 M1: opening the panel measures the list; compact is set and cleared by 
 test('R4 M1: the Places section keeps its heading and a row of list, so the list cannot cover the actions', () => {
     const section = R3_CSS.match(/\.pc-monitor \.pc-start-section\.pc-start-places \{[^}]*\}/)[0];
     assert.doesNotMatch(section, /min-height:\s*0\b/, 'the section may not shrink to nothing');
-    assert.match(section, /min-height:\s*min-content/);
+    assert.match(section, /min-height:\s*52px/);
     const list = R3_CSS.match(/\.pc-monitor \.pc-start-places-list \{[^}]*\}/)[0];
     assert.match(list, /min-height:\s*24px/, 'one row');
+    assert.match(R3_CSS, /\.pc-start-compact \.pc-start-section\.pc-start-places \{\s*min-height:\s*48px/, "compact has 4px less padding");
 });
 
 test('R4 N1: a resize while the panel is open re-decides compact and the picture', () => {
@@ -646,4 +647,32 @@ test('R4 N1: a resize while the panel is open re-decides compact and the picture
     bar.destroy();
     size(72, 72);
     root.remove();
+});
+
+test('R4: a panel that would scroll as a whole goes compact even when its Places list fits', () => {
+    assert.equal(taskbarMod.panelOverflows({ scrollHeight: 640, clientHeight: 624 }), true);
+    assert.equal(taskbarMod.panelOverflows({ scrollHeight: 624, clientHeight: 624 }), false);
+    assert.equal(taskbarMod.panelOverflows({ scrollHeight: 625, clientHeight: 624 }), false, 'a pixel of rounding');
+    assert.equal(taskbarMod.panelOverflows(null), false);
+    const model = pcTaskbarModel({ pcData: { lockType: 'login', name: 'Door controller', host: 'HB-DOOR-01' },
+        session: { username: 'ishaw', displayName: 'Ian Shaw', via: 'password', remote: true }, lockSupported: true });
+    const root = document.createElement('div');
+    document.body.appendChild(root);
+    const bar = taskbarMod.mountPcTaskbar(root, model);
+    const def = (el, k, v) => Object.defineProperty(el, k, { value: v, configurable: true });
+    const list = bar.panel.querySelector('.pc-start-places-list');
+    def(list, 'scrollHeight', 34); def(list, 'clientHeight', 34);
+    def(bar.panel, 'scrollHeight', 640); def(bar.panel, 'clientHeight', 624);
+    bar.open();
+    assert.ok(bar.panel.classList.contains('pc-start-compact'));
+    bar.close();
+    def(bar.panel, 'scrollHeight', 624);
+    bar.open();
+    assert.ok(!bar.panel.classList.contains('pc-start-compact'));
+    bar.destroy();
+    root.remove();
+});
+
+test('R4: compact on a short screen drops the This PC heading but keeps Places', () => {
+    assert.match(R3_CSS, /\.pc-monitor\[data-short\] \.pc-start-compact \.pc-start-section:not\(\.pc-start-places\) \.pc-start-heading \{\s*display:\s*none/);
 });
