@@ -39,6 +39,11 @@ module BreakEscape
 
     LOCK_FIELDS = %w[lockChance locksScreenOnLeave].freeze
 
+    # Step 8c: the office-life habit sub-blocks that live in `habits` but are not awareness
+    # habits (they are not in HABITS or PARAMETERS). `authored`/`expanded` ignore them, so
+    # `expand!` carries an authored one across the awareness expansion unchanged.
+    FOLDED = %w[screen print usb].freeze
+
     def level?(value)
       value.is_a?(String) && LEVELS.include?(value)
     end
@@ -82,12 +87,18 @@ module BreakEscape
       habits.select { |k, v| valid_habit?(k, v) || valid_parameter?(k, v) }
     end
 
-    # The NPC's habits after the preset and the overrides; nil when it has neither a level
-    # nor a `habits` object.
+    # The NPC's habits after the preset and the overrides; nil when it has neither a level nor
+    # an awareness `habits` block. Step 8c: a `habits` block holding only the folded office-life
+    # sub-blocks (screen/print/usb) carries no awareness authoring, so with no level there is
+    # nothing to expand, exactly as a bare top-level screenHabit had no habits block before the
+    # fold. A block with any non-folded key (valid or not) is an awareness block and still
+    # expands, so an invalid-only block still resolves to {} as before.
     def expanded(npc, scenario)
       level = level_of(npc, scenario)
+      habits = npc.is_a?(Hash) ? npc['habits'] : nil
       own = authored(npc)
-      return nil if level.nil? && own.nil?
+      awareness_block = habits.is_a?(Hash) && habits.keys.any? { |k| !FOLDED.include?(k) }
+      return nil if level.nil? && !awareness_block
 
       (level ? PRESETS[level].dup : {}).merge(own || {})
     end
@@ -139,7 +150,12 @@ module BreakEscape
 
       plans.each do |plan|
         npc = plan[:entry][:npc]
-        npc['habits'] = plan[:habits] if plan[:level] || npc['habits'] != plan[:habits]
+        # Step 8c: screen/print/usb are not awareness habits, so they are absent from
+        # plan[:habits]; carry an authored one across so the write-back does not drop it.
+        current = npc['habits'].is_a?(Hash) ? npc['habits'] : {}
+        folded = FOLDED.each_with_object({}) { |k, h| h[k] = current[k] if current.key?(k) }
+        expanded_habits = plan[:habits].merge(folded)
+        npc['habits'] = expanded_habits if plan[:level] || npc['habits'] != expanded_habits
         item = { id: npc['id'], room: plan[:entry][:room], path: plan[:entry][:path],
                  level: plan[:level], level_source: plan[:level_source],
                  habits: plan[:habits].dup, sources: plan[:sources], screen: nil }
@@ -173,7 +189,7 @@ module BreakEscape
       out
     end
 
-    # The locksScreen fill (5.2): the NPC's own screenHabit, unless the author wrote one,
+    # The locksScreen fill (5.2): the NPC's own habits.screen, unless the author wrote one,
     # or the NPC owns no workstation, or every workstation it owns sets its own lock field.
     # No object is written. Returns the report's screen entry.
     def fill_screen_habit!(npc, value, stations)
@@ -186,7 +202,8 @@ module BreakEscape
           applied: field.nil?, field: field }
       end
       screen = { value: value, lock_chance: chance, pcs: pcs, filled: false, reason: nil }
-      if npc.key?('screenHabit')
+      habits = npc['habits'].is_a?(Hash) ? npc['habits'] : nil
+      if habits && habits.key?('screen')
         screen[:reason] = :authored_screen_habit
         pcs.each { |pc| pc[:applied] = false }
       elsif pcs.empty?
@@ -194,7 +211,7 @@ module BreakEscape
       elsif pcs.none? { |pc| pc[:applied] }
         screen[:reason] = :every_pc_sets_a_field
       else
-        npc['screenHabit'] = { 'lockChance' => chance }
+        (npc['habits'] ||= {})['screen'] = { 'lockChance' => chance }
         screen[:filled] = true
       end
       screen

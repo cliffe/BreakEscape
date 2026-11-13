@@ -2677,3 +2677,87 @@ reads captured response bodies only.
 `test/js/validator-usb-habit.test.mjs`, `test/js/validator-access-work.test.mjs`,
 `test/js/validator-access-model.test.mjs`, `test/js/playtest-verify-run-access.test.mjs`,
 `docs/achitechture/SCENARIO_FORMAT_HARDENING_BUILD_LOG.md`.
+
+## Step 8c chunk 2 — Ruby runtime readers and the ship filter (2026-11-13)
+
+Branch `build/hard-8c` on chunk 1's tip (`6943c3b47`). Chunk 2 moves every Ruby runtime habit
+reader to the folded paths and turns the NPC `habits` filter into an allow list. No schema,
+transform, validator-script or JS edit here (chunks 1, 3, 4). Ran with `RBENV_VERSION=2.7.8`.
+
+### What changed
+
+- **`lib/break_escape/npc_habits.rb`.** `fill_screen_habit!` reads and writes `npc['habits']['screen']`
+  (was the top-level `screenHabit`): the authored-habit guard is `habits.key?('screen')` and the fill
+  is `(npc['habits'] ||= {})['screen'] = { 'lockChance' => chance }`. `expand!` now carries the folded
+  office-life sub-blocks (`FOLDED = screen print usb`) across the awareness expansion so the write-back
+  (`npc['habits'] = plan[:habits].merge(folded)`) never drops an authored `habits.screen`/`.print`/`.usb`.
+  `expanded` gained a guard: a `habits` block holding only folded keys (no non-folded awareness key) and
+  no level expands to nothing, so a bare authored `habits.screen` leaves the NPC untouched and out of the
+  report, exactly as a bare top-level `screenHabit` did before the fold (an invalid-only awareness block
+  still resolves to `{}` as before, so `format_upgrade_test`/`npc_habits_test` passwordPattern cases hold).
+- **`lib/break_escape/access_identities.rb`.** `screen_always_locks?` reads `owner['habits']['screen']`.
+- **`lib/break_escape/owner_claim.rb`.** the owner-claim print source and `prints?` read
+  `owner['habits']['print']`; `open_without_estimate?` reads `owner['habits']['screen']`.
+- **`lib/break_escape/access_work.rb`.** `usb_habit` reads `npc['habits']['usb']`; the `work.usb` build
+  and `NpcFrustration` (through `AccessWork.usb_habit`) follow unchanged.
+- **`app/models/break_escape/game.rb`.** the filter is now an allow list. `WITHHELD_NPC_KEYS` loses
+  `habits`; `WITHHELD_WORK_NPC_KEYS` loses `usbHabit`; a new `SHIPPED_HABIT_KEYS = %w[screen print]`.
+  `withhold_npc_secrets!` keeps only `habits.slice('screen','print')` and deletes the rest of `habits`
+  (`locksScreen`, `writesDown`, `password`, `passwordPattern`, `holdsDoors`, `usb`, any later key); a
+  `habits` block that ends up empty, or is not a Hash, is deleted whole, as the old deny-list delete did.
+  `work.usb` is still built from `habits.usb` (`compile_npc_plan!` runs before the filter). The
+  `npc_habit`/`written_down?` reads (`habits.writesDown`, unchanged by the fold) and the precedence
+  comment beside `pc_always_locks?` are left reading the `habits` block.
+- Comments naming the retired keys (npc_frustration.rb:276, the readers above, test support) updated to
+  the folded names. Grep of `app/`/`lib/` for `screenHabit`/`printHabit`/`usbHabit` now leaves only
+  `lib/break_escape/format_upgrade.rb` (chunk 1's retired list and fold transform).
+
+### Tests
+
+All 14 assigned Rails/unit files migrated to the folded fixtures and run together:
+**296 runs, 2664 assertions, 0 failures.** Notable additions:
+
+- `access_model_withholding_test.rb`: the two filter tests now assert a shipped `habits` holds only
+  `screen` and `print`; a block of only server-only habits (dana's `password`) is dropped whole; a moved
+  NPC keeps its shipped `habits.screen`; the bootstrap JSON carries no `locksScreen`/`writesDown`/
+  `holdsDoors`/`passwordPattern`.
+- `usb_habit_test.rb`: a new what-ships test (the brief's requirement) — a room NPC carrying every
+  `habits` key arrives in the room payload with `habits` holding exactly `screen` and `print`,
+  `writesDown`/`password`/`holdsDoors`/`usb` absent, and `work.usb` still built from the usb habit; the
+  bootstrap carries no server-only habit key.
+- `access_leak_scanner_test.rb`: migrated to the scanner's per-subkey reporting (`npc:omar/habits.password`,
+  `npc:omar/habits.usb`) and `habits.usb` stick fixtures. The scanner itself
+  (`tools/playtest/lib/access_leak_scanner.rb`) is **chunk 4's** and was already folded in the shared
+  working tree; the chunk-2 test is aligned to that folded scanner (`SHIPPED_HABIT_KEYS = screen print`).
+
+### Expected failures and cross-chunk notes
+
+- **`test/unit/format_upgrade_test.rb:252` (chunk 1's file) now fails.** Its test "step 8c folds a
+  loader-filled screenHabit on prepared data, unchanged" asserts `expand!` fills a top-level
+  `screenHabit` for the transform to fold. After chunk 2 the loader fills `habits.screen` directly, so
+  there is no top-level key and the fold is a no-op. The test must be updated to assert the loader fills
+  `habits.screen` and the transform leaves it. **I did not edit it** (not a chunk-2 file); chunk 1 or the
+  integrator should update it.
+- `validator-npc-habits.test.mjs` line 240 (chunk 1's listed expected failure): the loader now fills
+  `habits.screen`, which `npc_screen_habits` already reads, so this clears once chunk 4 owns that test;
+  that file is chunk 4's, untouched here.
+- The leak-scanner alignment assumes chunk 4's folded `access_leak_scanner.rb` lands; against chunk 1's
+  committed tree the scanner is already folded in the working copy.
+
+### Sync size
+
+No growth. NPC records are not in player_state; the filter only prunes keys from room/bootstrap payloads
+(the shipped `habits` shrinks to at most `screen` and `print`), so each sync sends no more than before.
+
+### Files touched (chunk 2)
+
+`lib/break_escape/npc_habits.rb`, `access_identities.rb`, `owner_claim.rb`, `access_work.rb`;
+`app/models/break_escape/npc_frustration.rb`, `game.rb`; `test/support/access_model_scenario.rb`;
+`test/unit/npc_habits_test.rb`, `test/models/break_escape/npc_habits_loader_test.rb`,
+`test/unit/access_identities_screen_test.rb`, `test/unit/pc_screen_lock_precedence_test.rb`,
+`test/unit/owner_claim_test.rb`, `test/controllers/break_escape/owner_claim_enforce_test.rb`,
+`test/controllers/break_escape/npc_frustration_test.rb`, `npc_lockout_l_test.rb`,
+`npc_workaround_h_test.rb`, `test/models/break_escape/access_model_withholding_test.rb`,
+`test/unit/access_leak_scanner_test.rb`, `test/models/break_escape/lab_physical_pentest_secrets_test.rb`,
+`test/controllers/break_escape/usb_habit_test.rb`, `test/unit/access_work_usb_habit_test.rb`,
+`docs/achitechture/SCENARIO_FORMAT_HARDENING_BUILD_LOG.md`.

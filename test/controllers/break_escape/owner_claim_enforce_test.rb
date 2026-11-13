@@ -99,14 +99,14 @@ module BreakEscape
         'a habit whose away threshold is negative and no lock field on the PC' =>
           scenario(attacks: true) do |d|
             jake_pc(d).delete('lockChance')
-            jake(d)['screenHabit'] = { 'lockIfAwayOverSeconds' => -1 }
+            (jake(d)['habits'] ||= {})['screen'] = { 'lockIfAwayOverSeconds' => -1 }
           end,
         # Review R1 M1: a knock-out leave has no time-away estimate, so a habit threshold never
         # opens it and a habit with no lockChance locks
         'attacks on, but a knock-out always locks (a habit threshold, no lock chance, no PC field)' =>
           scenario(attacks: true) do |d|
             jake_pc(d).delete('lockChance')
-            jake(d)['screenHabit'] = { 'lockIfAwayOverSeconds' => '20' }
+            (jake(d)['habits'] ||= {})['screen'] = { 'lockIfAwayOverSeconds' => '20' }
           end,
         'revealOutput on a printer object is no print hook' =>
           scenario { |d| add_object(d, 'finance', { 'id' => 'printer', 'type' => 'notes', 'name' => 'Printer', 'revealOutput' => ['slot_1'] }) },
@@ -150,11 +150,11 @@ module BreakEscape
             jake(d)['answersPhones'] = true
             add_object(d, 'finance', { 'id' => 'dana_phone', 'type' => 'notes', 'name' => 'Desk phone', 'deskPhone' => true, 'owner' => 'dana' })
           end,
-        'the owner\'s own print hook with a printHabit gives an errand' =>
+        'the owner\'s own print hook with a habits.print gives an errand' =>
           scenario do |d|
             jake_pc(d)['affordance'] = { 'satisfies' => 'caffeine' }
             jake(d)['onUse'] = { 'jake_pc' => { 'revealOutput' => ['copier'] } }
-            jake(d)['printHabit'] = { 'fetchAfterSeconds' => [30, 60] }
+            (jake(d)['habits'] ||= {})['print'] = { 'fetchAfterSeconds' => [30, 60] }
           end,
         'a print command in the owner\'s event mappings gives an errand' =>
           scenario do |d|
@@ -163,7 +163,7 @@ module BreakEscape
         'attacks on with a habit lock chance below 1: a knock-out can find the PC open' =>
           scenario(attacks: true) do |d|
             jake_pc(d).delete('lockChance')
-            jake(d)['screenHabit'] = { 'lockIfAwayOverSeconds' => 20, 'lockChance' => 0.3 }
+            (jake(d)['habits'] ||= {})['screen'] = { 'lockIfAwayOverSeconds' => 20, 'lockChance' => 0.3 }
           end,
         'an interest with an item and a place for it' =>
           scenario(needs: {}) do |d|
@@ -193,7 +193,7 @@ module BreakEscape
         'a habit threshold written as a string, read as Number() reads it (a coffee in reach)' =>
           scenario(attacks: true) do |d|
             jake_pc(d).delete('lockChance')
-            jake(d)['screenHabit'] = { 'lockIfAwayOverSeconds' => '20' }
+            (jake(d)['habits'] ||= {})['screen'] = { 'lockIfAwayOverSeconds' => '20' }
             add_object(d, 'finance', coffee)
           end,
         # Review R3 B1: no room or leash test refuses a claim, since objects change room in play
@@ -206,7 +206,7 @@ module BreakEscape
         'a knock-out drop: a colleague holds a source, the owner\'s knock-out always locks' =>
           scenario(attacks: true) do |d|
             jake_pc(d).delete('lockChance')
-            jake(d)['screenHabit'] = { 'lockIfAwayOverSeconds' => 120 }
+            (jake(d)['habits'] ||= {})['screen'] = { 'lockIfAwayOverSeconds' => 120 }
             jake(d)['needsRooms'] = ['finance']
             d['rooms']['lobby']['npcs'].find { |n| n['id'] == 'imran' }['itemsHeld'] = [coffee]
           end,
@@ -257,7 +257,7 @@ module BreakEscape
         'a print hook on the own station used for social media' =>
           scenario(needs: { 'social_media' => { 'decayPerMin' => 30, 'urgentAt' => 40 } }) do |d|
             jake(d)['onUse'] = { 'jake_pc' => { 'revealOutput' => ['copier'] } }
-            jake(d)['printHabit'] = {}
+            (jake(d)['habits'] ||= {})['print'] = {}
           end,
         # Review R2: the cautious layer (a movement source the mirror does not model exactly)
         'cautious: a patrol on the owner' =>
@@ -268,7 +268,7 @@ module BreakEscape
           scenario { |d| jake(d)['storyPath'] = 'scenarios/ink/test-patrol-toggle.json' },
         'cautious: a social media need' =>
           scenario(needs: { 'social_media' => { 'decayPerMin' => 30, 'urgentAt' => 40 } }),
-        'cautious: a station hook with no printHabit' =>
+        'cautious: a station hook with no habits.print' =>
           scenario do |d|
             jake_pc(d)['affordance'] = { 'satisfies' => 'caffeine' }
             jake(d)['onUse'] = { 'jake_pc' => { 'revealOutput' => ['copier'] } }
@@ -280,8 +280,8 @@ module BreakEscape
           end,
         'cautious: the owner answers phones, but nobody else has one' =>
           scenario { |d| jake(d)['answersPhones'] = true },
-        'cautious: a printHabit' =>
-          scenario { |d| jake(d)['printHabit'] = { 'fetchAfterSeconds' => [30, 60] } },
+        'cautious: a habits.print' =>
+          scenario { |d| (jake(d)['habits'] ||= {})['print'] = { 'fetchAfterSeconds' => [30, 60] } },
         'cautious: a droppable source private to somebody else' =>
           scenario { |d| add_object(d, 'lobby', coffee.merge('private' => true, 'owner' => ['dana'], 'droppable' => true)) }
       }

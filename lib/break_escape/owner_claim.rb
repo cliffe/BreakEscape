@@ -154,7 +154,7 @@ module BreakEscape
       return 'station_hook' if owner['onUse'].is_a?(Hash) && !owner['onUse'].empty?
       return 'interest' unless interests.empty?
       return 'phones' if owner['answersPhones'] == true
-      return 'prints' if owner['printHabit'] || print_command?(owner)
+      return 'prints' if (owner['habits'].is_a?(Hash) && owner['habits']['print']) || print_command?(owner)
 
       # A source that can change room (movable?), whoever may use it and wherever it lands,
       # even where it is the owner's own needsHome. A hedge: the precise layer already counts
@@ -223,7 +223,7 @@ module BreakEscape
     # The PC's own setting beats its owner's habit (q89), as in decideLocked.
     # decideLocked (workstation-state.js) with expectedAwayMs null, as for a knock-out: can this
     # leave find the PC open? The PC's numeric lockChance below 1 (0 opens, between 0 and 1 the
-    # roll can), else its locksScreenOnLeave key set to false, else the owner's screenHabit with
+    # roll can), else its locksScreenOnLeave key set to false, else the owner's habits.screen with
     # a numeric lockChance below 1. A habit threshold (lockIfAwayOverSeconds) needs an estimate,
     # so it never opens this leave; a habit with no numeric lockChance locks.
     def open_without_estimate?(pc, owner)
@@ -232,7 +232,7 @@ module BreakEscape
       return chance < 1 if chance.is_a?(Numeric)
       return pc['locksScreenOnLeave'] == false if pc.key?('locksScreenOnLeave')
 
-      habit = owner.is_a?(Hash) ? owner['screenHabit'] : nil
+      habit = owner.is_a?(Hash) && owner['habits'].is_a?(Hash) ? owner['habits']['screen'] : nil
       return false unless habit.is_a?(Hash)
 
       raw = habit['lockChance']
@@ -251,13 +251,13 @@ module BreakEscape
     # needsHome object, so needsHome must name an object. A print is owned when it comes from
     # (a) a print command: an event mapping on the owner's record whose needs.print names a
     # producer (control always owns it), or (b) the owner's own onUse hook with revealOutput on
-    # an object one of their needs uses (only a need use prints, _completeJob), with a printHabit
+    # an object one of their needs uses (only a need use prints, _completeJob), with a habits.print
     # (an unowned print is never fetched) and a hook chance that is not 0 or less.
     def prints?(data, owner, objects, home_id)
       return false unless home_id && objects.any? { |e| e[:obj]['id'] == home_id }
       return true if print_command?(owner)
 
-      habit = owner['printHabit']
+      habit = owner['habits'].is_a?(Hash) ? owner['habits']['print'] : nil
       return false unless habit.is_a?(Hash) || habit.is_a?(Array)
 
       hooks = owner['onUse'].is_a?(Hash) ? owner['onUse'] : {}

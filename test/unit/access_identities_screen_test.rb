@@ -11,7 +11,7 @@ class AccessIdentitiesScreenTest < ActiveSupport::TestCase
   ROOT = File.expand_path('../..', __dir__)
 
   def owner(habit = :none)
-    habit == :none ? { 'id' => 'jake' } : { 'id' => 'jake', 'screenHabit' => habit }
+    habit == :none ? { 'id' => 'jake' } : { 'id' => 'jake', 'habits' => { 'screen' => habit } }
   end
 
   test 'the PC lockChance' do
@@ -32,7 +32,7 @@ class AccessIdentitiesScreenTest < ActiveSupport::TestCase
     assert AI.screen_always_locks?(nil, nil)
   end
 
-  test "the owner's screenHabit" do
+  test "the owner's habits.screen" do
     assert AI.screen_always_locks?({}, owner)
     assert AI.screen_always_locks?({}, owner({ 'lockChance' => 1 }))
     refute AI.screen_always_locks?({}, owner({ 'lockChance' => 0.5 }))
@@ -73,11 +73,11 @@ class AccessIdentitiesScreenTest < ActiveSupport::TestCase
     assert status.success?, err
     result = JSON.parse(out)
     npcs = result['copy']['rooms']['office']['npcs']
-    assert_equal({ 'lockChance' => 0 }, npcs[0]['screenHabit'])
-    assert_equal({ 'lockChance' => 1 }, npcs[1]['screenHabit'])
+    assert_equal({ 'lockChance' => 0 }, npcs[0]['habits']['screen'])
+    assert_equal({ 'lockChance' => 1 }, npcs[1]['habits']['screen'])
     assert_equal 2, result['report']
     assert_equal 'high', result['level']
-    refute result['data']['rooms']['office']['npcs'][0].key?('screenHabit'),
+    refute (result['data']['rooms']['office']['npcs'][0]['habits'] || {}).key?('screen'),
            'the raw data has no id on the PC, so expand! owns nothing there'
   end
 end

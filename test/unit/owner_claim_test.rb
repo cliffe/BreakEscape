@@ -90,7 +90,7 @@ class OwnerClaimTest < ActiveSupport::TestCase
       { 'lockChance' => 0 } => 'knock_out',
       { 'lockChance' => 1 } => nil
     }.each do |habit, want|
-      d = data(attacks: true) { |x| jake(x)['screenHabit'] = habit }
+      d = data(attacks: true) { |x| (jake(x)['habits'] ||= {})['screen'] = habit }
       assert_route want, route(d), habit.inspect
     end
     d = data(attacks: true) { |x| jake_pc(x)['lockChance'] = 0.5; jake(x)['koImmune'] = true }
@@ -100,7 +100,7 @@ class OwnerClaimTest < ActiveSupport::TestCase
 
   test 'a knock-out that always locks still finds a need route behind it' do
     d = data(attacks: true) do |x|
-      jake(x)['screenHabit'] = { 'lockIfAwayOverSeconds' => 20 }
+      (jake(x)['habits'] ||= {})['screen'] = { 'lockIfAwayOverSeconds' => 20 }
       add(x, 'office', { 'id' => 'coffee_1', 'affordance' => { 'satisfies' => 'caffeine' } })
     end
     assert_equal 'need:caffeine:coffee_1', route(d)
@@ -121,7 +121,7 @@ class OwnerClaimTest < ActiveSupport::TestCase
     assert_equal 'answers_phones', route(other)
   end
 
-  # M2: a print command gives an owned print whatever the printHabit
+  # M2: a print command gives an owned print whatever the habits.print
   test 'a print command in the owner\'s event mappings' do
     list = data { |x| jake(x)['eventMappings'] = [{ 'eventPattern' => 'go', 'needs' => { 'print' => 'copier' } }] }
     assert_equal 'prints', route(list)
@@ -140,27 +140,27 @@ class OwnerClaimTest < ActiveSupport::TestCase
     assert_nil route(other), 'a command on somebody else prints as them'
   end
 
-  # m1: a hook prints for the owner only on their own need use, and is fetched only with a printHabit
-  test 'the owner\'s own print hook with a printHabit' do
+  # m1: a hook prints for the owner only on their own need use, and is fetched only with a habits.print
+  test 'the owner\'s own print hook with a habits.print' do
     hooked = lambda do |habit: {}, chance: :none, target: 'jake_pc'|
       data do |x|
         jake_pc(x)['affordance'] = { 'satisfies' => 'caffeine' }
         hook = { 'revealOutput' => ['copier'] }
         hook['chance'] = chance unless chance == :none
         jake(x)['onUse'] = { target => hook }
-        jake(x)['printHabit'] = habit unless habit.nil?
+        (jake(x)['habits'] ||= {})['print'] = habit unless habit.nil?
       end
     end
     assert_equal 'prints', route(hooked.call)
     assert_equal 'prints', route(hooked.call(chance: 0.4))
-    assert_nil route(hooked.call(habit: nil)), 'no printHabit: the print is never fetched'
+    assert_nil route(hooked.call(habit: nil)), 'no habits.print: the print is never fetched'
     assert_nil route(hooked.call(chance: 0)), 'a chance of 0 never prints'
     assert_nil route(hooked.call(target: 'lamp')), 'no need uses the hooked object'
     printer = data { |x| add(x, 'office', { 'id' => 'printer', 'revealOutput' => ['slot_1'] }) }
     assert_nil route(printer), 'revealOutput on a printer object is no hook'
     dana = data do |x|
       jake_pc(x)['affordance'] = { 'satisfies' => 'caffeine' }
-      x['rooms']['office']['npcs'][1].merge!('onUse' => { 'jake_pc' => { 'revealOutput' => ['copier'] } }, 'printHabit' => {})
+      x['rooms']['office']['npcs'][1].merge!('onUse' => { 'jake_pc' => { 'revealOutput' => ['copier'] } }, 'habits' => { 'print' => {} })
     end
     assert_nil route(dana), 'another NPC\'s hook never sends this owner anywhere'
   end
@@ -236,7 +236,7 @@ class OwnerClaimTest < ActiveSupport::TestCase
     end
     # npc-hostile.js dropNPCItems: the colleague is knocked out in the office and drops it there.
     # The owner's habit means a knock-out of the owner always locks, so this is the only route.
-    habit = held.call({ 'screenHabit' => { 'lockIfAwayOverSeconds' => 120 } }, coffee)
+    habit = held.call({ 'habits' => { 'screen' => { 'lockIfAwayOverSeconds' => 120 } } }, coffee)
     assert_equal 'need:caffeine:b_coffee', route(habit), 'knock-out drop, the owner\'s knock-out always locks'
     assert OC.scenario_objects(habit).find { |e| e[:obj]['id'] == 'b_coffee' }[:held], 'an itemsHeld entry is held'
     ko_immune = held.call({ 'koImmune' => true }, coffee)
@@ -320,16 +320,16 @@ class OwnerClaimTest < ActiveSupport::TestCase
       data do |x|
         jake(x)['needs'] = { 'social_media' => { 'decayPerMin' => 2, 'urgentAt' => 40 } }
         jake(x)['onUse'] = { 'jake_pc' => { 'revealOutput' => 'printer' } }
-        jake(x)['printHabit'] = habit unless habit.nil?
+        (jake(x)['habits'] ||= {})['print'] = habit unless habit.nil?
         add(x, 'office', { 'id' => 'printer', 'type' => 'printer' })
       end
     end
     assert_equal 'prints', route(social.call)
-    assert_nil route(social.call(habit: nil)), 'no printHabit: the print is never fetched'
+    assert_nil route(social.call(habit: nil)), 'no habits.print: the print is never fetched'
     other = data do |x|
       jake(x)['needs'] = { 'social_media' => { 'decayPerMin' => 2, 'urgentAt' => 40 } }
       jake(x)['onUse'] = { 'lamp' => { 'revealOutput' => 'printer' } }
-      jake(x)['printHabit'] = {}
+      (jake(x)['habits'] ||= {})['print'] = {}
       add(x, 'office', { 'id' => 'lamp' })
     end
     assert_nil route(other), 'social media is added to the own station only'
@@ -353,7 +353,7 @@ class OwnerClaimTest < ActiveSupport::TestCase
       'station_hook' => ->(x) { jake(x)['onUse'] = { 'jake_pc' => { 'revealOutput' => 'printer' } } },
       'interest' => ->(x) { jake(x)['interests'] = { 'mail' => 2 } },
       'phones' => ->(x) { jake(x)['answersPhones'] = true },
-      'prints' => ->(x) { jake(x)['printHabit'] = { 'fetchAfterSeconds' => [10, 20] } },
+      'prints' => ->(x) { (jake(x)['habits'] ||= {})['print'] = { 'fetchAfterSeconds' => [10, 20] } },
       'prints (command, no needsHome)' => lambda { |x|
         jake(x).delete('needsHome')
         jake(x)['eventMappings'] = [{ 'eventPattern' => 'go', 'needs' => { 'print' => 'copier' } }]

@@ -32,7 +32,7 @@ module BreakEscape
       ]
       office['npcs'] += [
         AccessWorkScenario.staff('jake', 'jbrooks', JAKE_PASSWORD, 'displayName' => 'Jake Brooks',
-                                                                  'screenHabit' => { 'lockChance' => 0 },
+                                                                  'habits' => { 'screen' => { 'lockChance' => 0 } },
                                                                   'workarounds' => [{ 'at' => 40, 'do' => 'borrow_session', 'pc' => 'hot_desk' }]),
         AccessWorkScenario.staff('leo', 'lmarsh', LEO_PASSWORD, 'displayName' => 'Leo Marsh'),
         # Pip's own station names another owner: no lockout station for Pip

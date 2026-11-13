@@ -2,7 +2,7 @@ require 'test_helper'
 
 module BreakEscape
   # Slice 9.1 step 1 (ACCESS_MODEL_SLICE_9_1_PLAN.md, 5.1 and 5.2): the loader expands habits
-  # into the saved scenario data, the claim check reads the owner's screenHabit, and the
+  # into the saved scenario data, the claim check reads the owner's habits.screen, and the
   # scripts' copy agrees with the server. NpcHabits is reached by name with no require: the
   # proof that the engine's autoloader finds lib/break_escape/npc_habits.rb.
   class NpcHabitsLoaderTest < ActiveSupport::TestCase
@@ -50,16 +50,18 @@ module BreakEscape
       assert_equal %w[low medium high], BreakEscape::NpcHabits::LEVELS
     end
 
-    test 'a game holds the expanded habits and the filled screenHabit, and no PC gains a field' do
+    test 'a game holds the expanded habits and the filled habits.screen, and no PC gains a field' do
       game = build(scenario(npcs: [owner('dana', 'dana_pc', 'role' => 'front_desk'),
                                    owner('ian', 'ian_pc', 'awareness' => 'high', 'habits' => { 'writesDown' => true })],
                             objects: [login_pc('dana_pc'), login_pc('ian_pc')],
                             extra: { 'roles' => { 'front_desk' => { 'awareness' => 'low' } } }))
       game.reload
-      assert_equal({ 'locksScreen' => 'never', 'holdsDoors' => true }, npc_in(game, 'dana')['habits'])
-      assert_equal({ 'lockChance' => 0 }, npc_in(game, 'dana')['screenHabit'])
-      assert_equal({ 'locksScreen' => 'always', 'holdsDoors' => false, 'writesDown' => true }, npc_in(game, 'ian')['habits'])
-      assert_equal({ 'lockChance' => 1 }, npc_in(game, 'ian')['screenHabit'])
+      assert_equal({ 'locksScreen' => 'never', 'holdsDoors' => true, 'screen' => { 'lockChance' => 0 } },
+                   npc_in(game, 'dana')['habits'])
+      assert_equal({ 'lockChance' => 0 }, npc_in(game, 'dana')['habits']['screen'])
+      assert_equal({ 'locksScreen' => 'always', 'holdsDoors' => false, 'writesDown' => true, 'screen' => { 'lockChance' => 1 } },
+                   npc_in(game, 'ian')['habits'])
+      assert_equal({ 'lockChance' => 1 }, npc_in(game, 'ian')['habits']['screen'])
       game.scenario_data['rooms']['office']['objects'].each do |pc|
         refute pc.key?('lockChance'), pc['id']
         refute pc.key?('locksScreenOnLeave'), pc['id']
@@ -95,7 +97,7 @@ module BreakEscape
                       objects: [{ 'type' => 'pc', 'name' => 'Desk', 'workstation' => true, 'owner' => 'dana' }])
       game = build(data)
       assert_equal 'office_pc_0', game.scenario_data['rooms']['office']['objects'][0]['id']
-      assert_equal({ 'lockChance' => 0 }, npc_in(game, 'dana')['screenHabit'])
+      assert_equal({ 'lockChance' => 0 }, npc_in(game, 'dana')['habits']['screen'])
     end
 
     test 'a second prepare_scenario_data! changes nothing' do
@@ -136,7 +138,7 @@ module BreakEscape
       assert_equal :unprocessable_entity, claim_status(game, 'ian_pc')
     end
 
-    test 'the claim check reads an authored screenHabit, without any habit' do
+    test 'the claim check reads an authored habits.screen, without any habit' do
       cases = {
         { 'lockChance' => 0 } => :ok,
         # Owner claim q78: with nothing to meet Dana's need, her only leave is a knock-out, which
@@ -146,23 +148,23 @@ module BreakEscape
         nil => :unprocessable_entity
       }
       cases.each do |habit, expected|
-        extra = habit ? { 'screenHabit' => habit } : {}
+        extra = habit ? { 'habits' => { 'screen' => habit } } : {}
         game = build(scenario(npcs: [owner('dana', 'dana_pc', extra)], objects: [login_pc('dana_pc')]))
         assert_equal expected, claim_status(game, 'dana_pc'), habit.inspect
-        assert_equal habit, npc_in(game, 'dana')['screenHabit'] if habit
+        assert_equal habit, npc_in(game, 'dana')['habits']['screen'] if habit
       end
 
       # The same threshold with a coffee to fetch: a short trip can leave the screen open
       coffee = { 'id' => 'coffee_1', 'type' => 'notes', 'name' => 'Coffee', 'affordance' => { 'satisfies' => 'coffee' } }
-      game = build(scenario(npcs: [owner('dana', 'dana_pc', 'screenHabit' => { 'lockIfAwayOverSeconds' => 20 })],
+      game = build(scenario(npcs: [owner('dana', 'dana_pc', 'habits' => { 'screen' => { 'lockIfAwayOverSeconds' => 20 } })],
                             objects: [login_pc('dana_pc'), coffee]))
       assert_equal :ok, claim_status(game, 'dana_pc'), 'a threshold with a need source'
 
-      game = build(scenario(npcs: [owner('dana', 'dana_pc', 'screenHabit' => { 'lockChance' => 0 })],
+      game = build(scenario(npcs: [owner('dana', 'dana_pc', 'habits' => { 'screen' => { 'lockChance' => 0 } })],
                             objects: [login_pc('dana_pc', 'locksScreenOnLeave' => true)]))
       assert_equal :unprocessable_entity, claim_status(game, 'dana_pc'), 'the PC field wins'
 
-      game = build(scenario(npcs: [owner('dana', 'dana_pc', 'screenHabit' => { 'lockChance' => 0 })],
+      game = build(scenario(npcs: [owner('dana', 'dana_pc', 'habits' => { 'screen' => { 'lockChance' => 0 } })],
                             objects: [login_pc('dana_pc', 'policy' => 'instant')],
                             extra: { 'policies' => { 'instant' => { 'autoLockMin' => 0 } } }))
       assert_equal :unprocessable_entity, claim_status(game, 'dana_pc'), 'autoLockMin 0 still refuses'
@@ -190,9 +192,9 @@ module BreakEscape
       end
       assert_equal ids.call(game.scenario_data), ids.call(copy)
       %w[dana ian mei].each do |id|
-        server = npc_in(game, id)['screenHabit']
+        server = npc_in(game, id)['habits']['screen']
         refute_nil server, id
-        assert_equal server, copy['rooms']['office']['npcs'].find { |n| n['id'] == id }['screenHabit'], id
+        assert_equal server, copy['rooms']['office']['npcs'].find { |n| n['id'] == id }['habits']['screen'], id
       end
     end
   end

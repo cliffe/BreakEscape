@@ -428,21 +428,23 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
 
   test 'an NPC record with a withheld key is reported by key and NPC id; social characters and awareness are not' do
     body = {
-      'room' => { 'npcs' => [{ 'id' => 'omar', 'habits' => { 'writesDown' => true } }] },
+      'room' => { 'npcs' => [{ 'id' => 'omar', 'habits' => { 'password' => 'reused' } }] },
       'stray' => { 'id' => 'len', 'npcType' => 'person', 'role' => 'guard' },
       'social' => { 'characters' => { 'jo' => { 'role' => 'manager' } }, 'awareness' => { 'episodes' => [] } }
     }
     findings = scan(body, data: habits_scenario)
-    assert_equal [[1, 'withheld_key', 'npc:omar/habits'], [1, 'withheld_key', 'npc:len/role']], summary(findings)
+    # Step 8c: a shipped habits block is flagged per server-only subkey, not as the whole block.
+    assert_equal [[1, 'withheld_key', 'npc:omar/habits.password'], [1, 'withheld_key', 'npc:len/role']], summary(findings)
     lines = AccessLeakScanner.new(habits_scenario).report_lines(findings)
-    lines.each { |line| refute_includes line, 'writesDown' }
+    lines.each { |line| refute_includes line, 'reused' }
     lines.each { |line| refute_includes line, 'guard' }
   end
 
-  # USB habit review R1 m3: usbHabit ships only inside the resolved plan (work.usb)
-  test 'an NPC record carrying usbHabit is reported; work.usb is not' do
-    body = { 'room' => { 'npcs' => [{ 'id' => 'omar', 'usbHabit' => { 'every' => 2 }, 'work' => { 'usb' => { 'every' => 2 } } }] } }
-    assert_equal [[1, 'withheld_key', 'npc:omar/usbHabit']], summary(scan(body, data: habits_scenario))
+  # USB habit review R1 m3: the usb habit ships only inside the resolved plan (work.usb)
+  test 'an NPC record carrying a usb habit is reported; work.usb is not' do
+    body = { 'room' => { 'npcs' => [{ 'id' => 'omar', 'habits' => { 'usb' => { 'every' => 2 } },
+                                      'work' => { 'usb' => { 'every' => 2 } } }] } }
+    assert_equal [[1, 'withheld_key', 'npc:omar/habits.usb']], summary(scan(body, data: habits_scenario))
   end
 
   # USB habit review R2 m2: a habit stick's files, authored or the default, are secrets outside
@@ -455,7 +457,7 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     stick = { 'type' => 'usb', 'id' => 'omar_usb', 'name' => "Omar's USB stick", 'usbClass' => 'storage', 'takeable' => true }
     stick['contents'] = contents if contents
     omar = data['rooms']['office']['npcs'][0]
-    omar['usbHabit'] = { 'every' => 2 }
+    (omar['habits'] ||= {})['usb'] = { 'every' => 2 }
     omar['itemsHeld'] = [stick]
     data
   end

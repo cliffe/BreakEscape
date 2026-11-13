@@ -1208,9 +1208,9 @@ module BreakEscape
     USB_EVERY_DEFAULT = 2
     USB_EVERY_RANGE = (1..10).freeze
 
-    # The NPC's usbHabit object, or nil
+    # The NPC's habits.usb object, or nil
     def usb_habit(npc)
-      h = npc.is_a?(Hash) ? npc['usbHabit'] : nil
+      h = npc.is_a?(Hash) && npc['habits'].is_a?(Hash) ? npc['habits']['usb'] : nil
       h.is_a?(Hash) ? h : nil
     end
 
@@ -1256,7 +1256,7 @@ module BreakEscape
       end
     end
 
-    # The habit can be refused: a usbHabit, a work plan and a station whose policy refuses a
+    # The habit can be refused: a habits.usb, a work plan and a station whose policy refuses a
     # storage stick. Static, since a policy does not change in play.
     def usb_habit_refused?(data, npc)
       return false unless usb_habit(npc) && work_plan?(data, npc)
