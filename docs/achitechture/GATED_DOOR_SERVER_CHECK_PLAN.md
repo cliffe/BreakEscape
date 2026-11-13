@@ -615,8 +615,17 @@ durable membership is not yet visible to the completion (below), the server answ
 `window.stateSync.sync()` (flushing `currentRoom` and picking up the server's latest durable state),
 **wrapped so a rejecting sync still proceeds to the one re-post** (the re-sync is awaited for its
 ordering, never for its success, the same tolerance the pre-flush has), then re-posts the completion
-once; only a re-post that is still refused surfaces to the player. So a true forge (never unlocked,
-never slipped in) is refused and surfaced, while any honest ordering gap self-heals on the next sync.
+once. A **transient** re-post result (a network blip dropping that single re-post) is not a refusal:
+it takes the transient path below (revert to active and enqueue), so an honest player never sees a hard
+"Room not reached" over a double-fault. A **still-`retryable`** result after that re-post also takes the
+queue path rather than surfacing (R1 minor 2): once Chunk A's `npcRouteRooms` lands, an honest
+route-room crossing can be refused while a separate `method: npc` route POST is still in flight (the
+re-sync cannot accelerate that write), so the task is carried by the queue and re-posts once the
+membership lands, and the honest player is never refused. A true forge (never unlocked, never slipped
+in) is refused on every attempt, stays queued and never completes; the server keeps refusing it, and the
+queue cannot spin because each drain is one `completeTask` run triggered only by the `online` event or a
+manager sync. Only a genuinely **non-retryable** refusal (`!transient && !retryable`) surfaces a hard
+block to the player (R9 minor 1).
 The object-unlock refusal (§3.6) applies the same rule in its own client system: one sync, one
 re-post, bounded. They are two handlers applying one rule, not one shared code path.
 
@@ -625,8 +634,11 @@ re-post, bounded. They are two handlers applying one rule, not one shared code p
 written by the gate NPC's `method: npc` route POST, a separate client->server request the pre-flush
 does not touch. Honest play still holds because the client gate only opens once the NPC holds the
 door, which means that route POST has already fired and `npcRouteRooms` is written before the avatar
-can pass; and if a tight race still loses it, the retryable refusal re-posts after the next sync. So
-the slip-in completes without a bespoke ordering step.
+can pass; and if a tight race still loses both the first post and the one inline re-post (the route
+POST is in flight the whole time and the re-sync cannot accelerate it), the still-`retryable` refusal
+is carried by the re-send queue (R1 minor 2) and re-posts on the next drain once the membership lands,
+rather than showing the player a hard block. So the slip-in completes without a bespoke ordering step
+and the honest player is never refused.
 
 **A bounded in-memory re-send queue for offline and network failures.** The retryable re-post above
 heals an ordering gap within one request. A longer failure needs the queue. A plain offline drop does
@@ -649,30 +661,39 @@ points:
   scenario (a handful), never one per attempt.
 - **Scoped to `enter_room`.** Only `enter_room` completions enter it; every other task keeps its
   current behaviour and never queues.
-- **Fed only by a transient or network failure.** The enqueue sits in the `!response.success` branch
-  (`:687-694`), keyed on `response.transient === true` (the exhausted-retry/offline path), and in the
-  thrown-error catch (`:719-731`). A genuine non-retryable refusal (`!transient && !retryable`) reverts
-  and alerts as today without enqueuing, and an inline `retryable` refusal (`room_not_reachable`, the
-  honest residual race or a forge) is handled by the one-sync-one-repost path above, not the queue. So
-  a forge never enters the queue.
+- **Fed by a transient or network failure, or a still-`retryable` refusal.** The enqueue sits in the
+  `!response.success` branch, keyed on `response.transient === true` (the exhausted-retry/offline path)
+  **or** `response.retryable === true` (a `room_not_reachable` refusal that survived the one
+  sync-and-re-post above: an honest route-room race whose `method: npc` write is still in flight, or a
+  forge; R1 minor 2), and in the thrown-error catch. A genuine non-retryable refusal
+  (`!transient && !retryable`) reverts and alerts with the hard block as today without enqueuing. A forge
+  does enter the queue but can never complete: the server refuses it on every drain, so it is re-added
+  and re-posted but never credited, and the queue cannot spin because draining is triggered only
+  externally (the `online` event or a manager sync), never by the drain itself.
 - **Drained through the normal completion path, so the bound is explicit and no ending is dropped.**
   There is no sync-success event in `state-sync.js` (`sync()` at `state-sync.js:598-605` resolves to a
   boolean from `_syncOnce` at `:618-671` and fires no event or callback), and `ObjectivesManager` has
-  no sync-success subscription. Rather than add one, the drain fires from two points inside
-  `ObjectivesManager` itself: a `window.addEventListener('online', ...)` handler (the proven precedent
-  is `conclude-mission.js:156`), and each sync `ObjectivesManager` already awaits (the conclude-race
-  pre-flush at `:613-615` and the inline retryable re-sync). Both call `drainEnterRoomQueue()`, guarded
-  against re-entry so a drain-triggered sync does not recurse. The `online` listener alone already meets
-  the reconnect requirement; adding no event to the shared `state-sync` module keeps the change inside
-  one file. Draining **removes the entry, then re-runs `this.completeTask(taskId)`** (never a bare
+  no sync-success subscription. Rather than add one, the drain fires from inside
+  `ObjectivesManager` itself. The load-bearing reconnect drain is a
+  `window.addEventListener('online', ...)` handler (the proven precedent is `conclude-mission.js:156`);
+  that listener alone meets the offline-then-reconnect requirement. The awaited-sync drains are
+  opportunistic: the drain also runs after each sync `ObjectivesManager` itself awaits on the
+  `enter_room` path, namely the **new `enter_room` pre-flush** (§8.3, scoped to the completion path) and
+  the inline retryable re-sync. The conclude-race pre-flush inside `serverCompleteTaskWithRetry`
+  (`:613-614`) is gated on `scenarioGatesOnGlobals()` and does **not** fire for a pure `enter_room`
+  scenario (no `concludeRequires.globals`), so it is not a drain trigger there; the `online` listener and
+  the `enter_room` pre-flush cover the reconnect and in-session cases (R9 minor 2). All call
+  `drainEnterRoomQueue()`, guarded against re-entry so a drain-triggered sync does not recurse. Adding no
+  event to the shared `state-sync` module keeps the change inside one file. Draining **removes the entry, then re-runs `this.completeTask(taskId)`** (never a bare
   `serverCompleteTask`), so a drained completion goes through the full path at `:662-718`: the
   `endingCheck` confirm, the `missionConcluded` end-screen trigger and the conclude-race `warning`
-  pre-flush all still apply to a task that ends a mission. Because only a fresh transient or thrown
-  failure re-adds the id (the feed rule above), a drained entry that comes back any **not-transient**
-  outcome, success or any refusal (`room_not_reachable` retryable among them, whose race the inline
-  one-sync-one-repost path owns), is simply gone. So the bound is explicit: the queue drops on success
-  and on any not-transient refusal and can never retry forever; `complete_task!`'s already-completed
-  branch makes a duplicate a no-op, so draining never double-credits.
+  pre-flush all still apply to a task that ends a mission. A fresh transient, a still-`retryable`
+  `room_not_reachable` refusal (R1 minor 2) or a thrown failure re-adds the id (the feed rule above); a
+  drained entry that comes back success or a genuinely non-retryable refusal is simply gone. So the bound
+  is explicit: a re-added id cannot retry forever because each drain is one `completeTask` run triggered
+  only by the `online` event or a manager sync, never by the drain itself (re-entry guarded), so a forge
+  sits in the queue being re-posted and refused without ever spinning or completing. `complete_task!`'s
+  already-completed branch makes a duplicate a no-op, so draining never double-credits.
 
 Because the completion reads durable `unlockedRooms`, a drained re-post succeeds whenever the player
 honestly reached the room, and `complete_task!`'s already-completed branch makes a duplicate a no-op, so
@@ -992,25 +1013,30 @@ Add `objectives-manager` tests for the `enter_room` completion path:
 - **Completion does not depend on the pre-flush.** With `stateSync.sync()` stubbed to reject or to be
   absent (an old tab), the completion POST is still sent; the pre-flush is awaited but its outcome
   never blocks the POST. Fails if a pre-flush error swallowed the completion.
-- **Retryable refusal re-syncs and re-posts once.** When the completion returns
+- **Retryable refusal re-syncs and re-posts once, then queues.** When the completion returns
   `{ success: false, retryable: true, error: 'Room not reached' }`, the client awaits one
-  `stateSync.sync()` and re-posts; a second `retryable` refusal surfaces to the player (one alert, no
-  infinite loop). This exercises the §8.3 retry and would fail if `retryable` were treated as a hard
-  refusal (task stranded) or retried without bound.
+  `stateSync.sync()` and re-posts; a second `retryable` refusal is enqueued rather than surfaced as a
+  hard block (R1 minor 2) and the task stays active -- it never shows a "Room not reached" alert and
+  never completes against a server that keeps refusing. This exercises the §8.3 retry and would fail if
+  `retryable` were treated as a hard refusal (an honest route-room race hard-blocked) or retried without
+  bound.
 - **Retryable refusal with a rejecting re-sync still re-posts once.** With `stateSync.sync()` stubbed to
   reject, a `retryable` refusal still awaits the (rejecting) sync, swallows its rejection, and sends the
   single re-post. Fails if the re-sync rejection propagated and swallowed the re-post (the honest
   residual-race player would otherwise see the generic "Could not save" error).
 - **Offline re-send queue, feed and bound.** A transient return (`{ success: false, transient: true }`,
   the exhausted-retry/offline path landing in the `:687-694` branch) of an `enter_room` completion
-  queues the task id; a thrown error (the `:719-731` catch) also queues it; a non-transient refusal
-  (`!transient`, retryable or not) reverts without queuing. Firing the `window` `online` event drains
+  queues the task id; a thrown error (the `:719-731` catch) also queues it; a still-`retryable` refusal
+  after the inline re-post also queues it (R1 minor 2); a genuinely non-retryable refusal
+  (`!transient && !retryable`) reverts without queuing. Firing the `window` `online` event drains
   the queue (re-posting through `completeTask`) once and it succeeds; a sync `ObjectivesManager` itself
-  awaits also drains it. A drained entry whose re-post comes back a non-transient refusal is dropped (it
-  is not re-added, because only a transient or thrown failure feeds the queue), so it never retries
-  forever. Re-queuing the same task id does not grow the queue (at most one entry per task id). Fails if
-  the enqueue were wired only to the `:719` catch (missing the dominant offline path), if the queue were
-  unbounded, never drained, or drained a forge.
+  awaits also drains it. A drained entry whose re-post comes back success or a genuinely non-retryable
+  refusal is dropped; a forge whose re-post stays `retryable` is re-added but cannot spin, because each
+  drain is one `completeTask` run triggered only by the `online` event or a manager sync, never by the
+  drain itself, so it never retries forever and never completes. Re-queuing the same task id does not
+  grow the queue (at most one entry per task id). Fails if the enqueue were wired only to the `:719`
+  catch (missing the dominant offline path), if the queue were unbounded, if a drain re-entered itself,
+  or if a forge ever completed.
 - **Queued completion that concludes a mission.** A queued `enter_room` completion is the task that
   concludes a mission. On drain the queue re-runs `completeTask`, so the `missionConcluded` end-screen
   path (`:697-700`) and the conclude-race `warning` pre-flush (`:701-718`) still fire; assert the end
@@ -1120,15 +1146,23 @@ proves. Record game ids in the build log.
 - **Chunk F: `enter_room` server validation (§8).** `player_reached_room?`; the check and the
   `retryable` refusal in the `enter_room` branch of `complete_task!` (`game.rb:3745`); the
   `objectives-manager.js` pre-flush on the `enter_room` completion path and its handling of a
-  `retryable` refusal (one re-sync wrapped so a rejecting sync still proceeds, then one re-post, then
-  surface); the **bounded in-memory re-send queue** of failed `enter_room` completions (§8.3): a field
+  `retryable` refusal (one re-sync wrapped so a rejecting sync still proceeds, then one re-post; a
+  still-`retryable` result after that is enqueued, not surfaced, R1 minor 2); the **bounded in-memory
+  re-send queue** of failed `enter_room` completions (§8.3): a field
   on `ObjectivesManager`, keyed by task id, fed from the two failure points in `completeTask` (the
-  transient/offline branch `objectives-manager.js:687-694`, enqueuing on `response.transient === true`,
-  and the thrown-error catch `:719-731`), drained by a `window` `online` listener and by the syncs
-  `ObjectivesManager` itself awaits (the pre-flush `:613-615` and the inline retryable re-sync) through a
+  `!response.success` branch, enqueuing on `response.transient === true` **or** `response.retryable ===
+  true` so an honest route-room race that loses both posts is carried rather than hard-blocked while a
+  forge stays queued but never completes, and the thrown-error catch), drained by the load-bearing
+  `window` `online` listener and,
+  opportunistically, by the syncs `ObjectivesManager` itself awaits on the `enter_room` path (the new
+  `enter_room` pre-flush and the inline retryable re-sync; the conclude-race pre-flush at `:613-614` is
+  gated on `scenarioGatesOnGlobals()` and does not fire for a pure `enter_room` scenario, R9 minor 2)
+  through a
   re-entry-guarded `drainEnterRoomQueue()` that re-runs `this.completeTask(taskId)` so the end-screen and
-  conclude-race handling at `:662-718` still apply, dropped on success or any not-transient outcome,
-  never in `player_state` (no sync-success hook is added to `state-sync.js`); and the **init replay**
+  conclude-race handling at `:662-718` still apply, dropped on success or a genuinely non-retryable
+  refusal (a re-added transient or `retryable` entry cannot spin because each drain is one `completeTask`
+  run triggered only externally), never in `player_state` (no sync-success hook is added to
+  `state-sync.js`); and the **init replay**
   that closes the reload-in-room ordering gap (§8.3): at the end of `initialize` (after `:110`), if
   `window.currentPlayerRoom` is non-empty, call `handleRoomEntered(window.currentPlayerRoom)` once.
   Rails tests 14-21; the node pre-flush, old-tab, retry, rejecting-re-sync, offline-queue and

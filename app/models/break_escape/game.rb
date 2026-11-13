@@ -399,6 +399,29 @@ module BreakEscape
       applied
     end
 
+    # True when the server's durable record shows the player has legitimately
+    # reached this room (plan section 8). A room becomes a member of one of these
+    # lists only through a server-checked route the avatar cannot skip, so the
+    # union passes every player who honestly entered and refuses only a forge:
+    # - unlockedRooms (via room_unlocked?): added by a server-checked door unlock
+    #   before the avatar can cross, and monotonic (never shrinks on leaving).
+    # - startRoom (via room_unlocked?) and an awareness world room: open from the
+    #   start.
+    # - npcRouteRooms: a room an NPC route opened for a legitimate slip-in. The
+    #   list is server-written only.
+    # - currentRoom (last synced): a soft, defensive disjunct. The sync guard only
+    #   ever sets the saved currentRoom to a room already in one of the durable
+    #   lists, so it adds no coverage of its own; the durable terms carry the check.
+    # Room entry is low-stakes control flow, so this is a server sanity check, not
+    # a hard secret gate (cheat policy).
+    def player_reached_room?(room_id)
+      return false if room_id.blank?
+      return true if room_unlocked?(room_id)
+      return true if awareness_world_room?(room_id)
+      return true if in_npc_route_room?(room_id)
+      player_state['currentRoom'] == room_id
+    end
+
     # Object management
     def unlock_object!(object_id)
       player_state['unlockedObjects'] ||= []
@@ -4010,8 +4033,16 @@ module BreakEscape
           return { success: false, error: 'NPC not encountered' }
         end
       when 'enter_room'
-        # Room entry is validated by the client having discovered the room
-        # Trust the client for this low-stakes validation
+        # Server sanity check (plan section 8): the player must have reached the
+        # target room per the server's durable record (player_reached_room?). The
+        # refusal is retryable so an honest ordering gap self-heals on the client's
+        # re-sync and re-post rather than stranding the task; a true forge (never
+        # unlocked the door, never slipped in on a route, never synced currentRoom
+        # there) is refused. Room entry is low-stakes control flow, so this is a
+        # sanity check, not a hard secret gate.
+        unless player_reached_room?(task['targetRoom'])
+          return { success: false, error: 'Room not reached', retryable: true }
+        end
       when 'submit_flags'
         unless validate_flag_submission(task, validation_data[:submittedFlags])
           return { success: false, error: 'Not all required flags submitted' }
