@@ -492,6 +492,9 @@
 
     .nsm-topology-area {
         flex: 0 0 auto;
+        /* Stacked, the map no longer gets the panel's row height: tall enough for the clinical
+           zone's six devices at 16px (the zones are 84% of this less its padding) */
+        min-height: 480px;
     }
 
     .nsm-consequence-panel {
@@ -511,5 +514,28 @@
     .nsm-header-bar {
         flex-wrap: wrap;
         gap: 8px 20px;
+    }
+}
+
+/* Phones: the action bar and SEVER button wrap inside the window (360px) */
+@media (max-width: 600px) {
+    .nsm-action-bar {
+        padding: 12px 10px;
+    }
+
+    .nsm-sever-group {
+        justify-content: flex-start;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .nsm-sever-hint {
+        max-width: 100%;
+    }
+
+    .nsm-sever-btn {
+        white-space: normal;
+        max-width: 100%;
+        box-sizing: border-box;
     }
 }
