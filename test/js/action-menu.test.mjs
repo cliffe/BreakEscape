@@ -123,3 +123,25 @@ test('bypass flag suppresses the menu (the Take re-entry)', () => {
     card._beActionMenuBypass = true;
     assert.equal(maybeShowObjectActionMenu(card), false);
 });
+
+// UX feedback slice 3a (main2-16): both entries carry an icon.
+test('Copy and Take carry pixel icons at whole-number scales', () => {
+    resetWindow({ inventory: { items: [cloner] }, breakEscapeConfig: { assetsPath: '/assets' } });
+    const [copy, take] = objectActions(worldKeycard());
+    assert.equal(take.icon.src, '/assets/icons/hand_frames.png');
+    assert.equal(take.icon.frame, 0, 'the open hand');
+    assert.equal(take.icon.cell, 32, '32px cells, x2 in the 64px box');
+    assert.equal(copy.icon.src, '/assets/objects/rfid_cloner.png');
+    // The placeholder sprite is 11x22: the drawn size must be the same whole multiple of both
+    const k = copy.icon.width / 11;
+    assert.ok(Number.isInteger(k) && k >= 1, `width ${copy.icon.width} is a whole multiple of 11`);
+    assert.equal(copy.icon.height, 22 * k, 'the same multiple of 22');
+    assert.ok(copy.icon.width <= 64 && copy.icon.height <= 64, 'fits the 64px box');
+});
+
+test('the menu icons fall back to the default assets path', () => {
+    resetWindow({ inventory: { items: [cloner] } });
+    const [copy, take] = objectActions(worldKeycard());
+    assert.match(copy.icon.src, /^\/break_escape\/assets\/objects\//);
+    assert.match(take.icon.src, /^\/break_escape\/assets\/icons\//);
+});

@@ -317,3 +317,20 @@ test('a 0,0 position is no position: the menu is not pinned to the top-left corn
     const at = src.indexOf('if (clientX === 0 && clientY === 0) { clientX = undefined; clientY = undefined; }');
     assert.ok(at > 0 && at < src.indexOf('let x = (clientX ?? window.innerWidth / 2)'), 'cleared before the fallback is read');
 });
+
+// UX feedback slice 3a (main2-16): a small image icon drawn at the exact size asked for,
+// centred, never scaled by a fraction; a sheet frame scales to the 64px box.
+test('menu icons: an exact-size image is centred at that size, a sheet frame fills the box', () => {
+    showInteractionMenu([
+        { label: 'Copy it', icon: { src: '/a/rfid_cloner.png', width: 22, height: 44 }, onSelect() {} },
+        { label: 'Take it', icon: { src: '/a/hand_frames.png', frame: 0, cols: 4, cell: 32 }, onSelect() {} },
+        { label: 'Talk', icon: { src: '/a/talk.png' }, onSelect() {} }
+    ], 50, 50, 'Card');
+    const icons = [...document.querySelectorAll('.be-im-item .be-im-icon')];
+    assert.equal(icons.length, 3);
+    assert.equal(icons[0].style.backgroundSize, '22px 44px');
+    assert.equal(icons[0].style.backgroundPosition, 'center');
+    assert.equal(icons[1].style.backgroundSize, '256px auto', 'the 128px sheet at x2');
+    assert.equal(icons[2].style.backgroundSize, 'contain', 'an image with no size keeps the old rule');
+    closeInteractionMenu();
+});

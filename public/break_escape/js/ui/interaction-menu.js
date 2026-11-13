@@ -161,7 +161,7 @@ function onKeyDown(e) {
  * click menu, systems/inventory-menu.js). A disabled entry is shown greyed with its
  * `detail` as the reason, and choosing it does nothing. Esc or a tap outside closes it.
  *
- * @param {Array<{label:string, detail?:string, disabled?:boolean, icon?:{src:string, frame?:number, cols?:number, cell?:number}, onSelect:Function}>} candidates
+ * @param {Array<{label:string, detail?:string, disabled?:boolean, icon?:{src:string, frame?:number, cols?:number, cell?:number, width?:number, height?:number}, onSelect:Function}>} candidates
  * @param {number} clientX - viewport X of the tap (event.clientX)
  * @param {number} clientY - viewport Y of the tap (event.clientY)
  * @param {string} [titleText] - the heading (default "Interact with…"; the item's name for a held item)
@@ -210,6 +210,12 @@ export function showInteractionMenu(candidates, clientX, clientY, titleText, { n
                 const row = Math.floor(c.icon.frame / cols);
                 icon.style.backgroundSize = `${cols * cell * scale}px auto`;
                 icon.style.backgroundPosition = `-${col * cell * scale}px -${row * cell * scale}px`;
+            } else if (Number.isInteger(c.icon.width) && Number.isInteger(c.icon.height)) {
+                // A small image drawn at an exact size the caller picked (a whole-number
+                // multiple of its pixels), centred in the box, so it is never scaled by
+                // a fraction the way 'contain' would scale it.
+                icon.style.backgroundSize = `${c.icon.width}px ${c.icon.height}px`;
+                icon.style.backgroundPosition = 'center';
             } else {
                 icon.style.backgroundSize = 'contain';
                 icon.style.backgroundPosition = '0 0';
