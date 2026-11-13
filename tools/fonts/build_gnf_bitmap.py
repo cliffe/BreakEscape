@@ -53,7 +53,7 @@ WANTED = (
     [chr(c) for c in range(0x20, 0x7F)]
     + [chr(c) for c in range(0xA1, 0x100) if c != 0xAD]
     + list("ŁłŚśŠšŽžŒœ")
-    + list("–—‘’“”…•€←↑→↓✓✗")
+    + list("\u2013\u2014\u2018\u2019\u201C\u201D\u2026\u2022\u20AC\u2190\u2191\u2192\u2193\u2713\u2717")
 )
 
 
