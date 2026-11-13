@@ -167,3 +167,57 @@ Shots and logs are in the session scratchpad under `ux-shots/slice2a-r2fix/`: `a
 ### Handover (R2)
 
 Done: every R2 finding and the archive X. Commits: 89b795576, d03a1b7f2, plus this log. Open: q98 (prompt skin), unchanged. Not done: nothing in scope.
+
+## R3 fixes
+
+Review: `UX_SLICE2A_REVIEW_R3.md` (0 blockers, 0 majors, 5 minors, 2 nits). Every finding is fixed in code and tested; two of the final shots need a retake (see Not done).
+
+| Finding | Fix | Files |
+|---|---|---|
+| m1, frames on fractional pixels | `snapFrameToPixels` (as slice 3a's copier frame): after layout, the frame's `left`/`top` take the offset that puts its rect on whole device pixels (`wholePixelOffset`). Re-snapped after the first paint, on resize, and from a ResizeObserver on the frame and the overlay; stopped in `complete()`. The tile text has whole-pixel line heights (`.signin-name` 17px, `.signin-username` 15px). | `password-minigame.js`, `password-minigame.css` |
+| m2, failure box over the post-it | The plain and Wi-Fi screens have a message line inside the screen, under Submit (`#password-message`, styled as the sign-in line). A wrong password, an empty field, running out of tries, a refusal and a network error are written there (`showScreenMessage`); the floating box is only a fallback for a screen with no line. While the line shows, the note is pulled up 40px (24px in a short window), as on the sign-in screen. | `password-minigame.js`, `password-minigame.css` |
+| m3, toast on the player's own close | `PasswordMinigame.closeByPlayer` sets `{ success: false, reason: 'closed', cancelled: true, closedByPlayer: true, attempts }` unless a result is set (a lockout keeps `locked_out`). `startPasswordMinigame` shows no toast for `closedByPlayer` or `refused`; the dead `cancelled` branch is gone. `cancelPassword` is retired (its text is in `tmp/delete/`). A wrong password that runs out of tries still shows the rejection. | `password-minigame.js`, `minigame-starters.js` |
+| m4, post-it out of view at 915x412 | Once an account is chosen the screen gets `signin-chosen`; in the max-height 640px block that hides the tile row and shows a Change button beside the chosen name, which goes back to the tiles. After a wrong password the note is revealed, then the message line. | `password-minigame.js`, `password-minigame.css` |
+| m5, stale desktop return | The return armed from a sign-in desktop is marked `loginDesktopReturn`; a container opening (the unlocked archive) clears it, as it does a network screen's. | `container-minigame.js` |
+| n1, 32px portrait was the frame at 1/4 | The 32px box shows a 32x32 head crop of the talk sheet's first frame at scale 1 (`headCropOffset`: centred on the head's width over its first 24 rows, 4px below its top; checked over all 134 talk sheets), or a 32x32 avatar (the scenario's headshot) when the tile has one. Set as custom properties the short-window rule reads; the 64px tile is unchanged. | `password-minigame.js`, `password-minigame.css` |
+| n2, scrollbar guard | `@supports not selector(::-webkit-scrollbar)` with `scrollbar-width: auto`, and the scroller resets `scrollbar-color` and `scrollbar-width` to auto, as `.pixel-scroll` does. | `password-minigame.css` |
+
+### Tests
+
+Run without the lock: the 33 node test files that import or read `password-minigame.js`, `container-minigame.js`, `minigame-starters.js` or `password-minigame.css`. 388 pass, 1 failed on the first run (`player-damage-interrupt`: a comment pushed the damage guard more than 220 characters from the toast); the comment was shortened and the file passes 11/11.
+
+New or changed:
+- `password-signin-mode`: 13 new. `wholePixelOffset`; the frame snapped and re-snapped on resize, and not after the screen ends; whole-pixel line heights; the plain message line (inside the screen, no box, cleared on the next try); out of tries on the line, then a failure close; the note's pull-up rules; X, Esc and the on-screen Esc key give the close result; a lockout keeps its result; `signin-chosen` and Change; the short-window rules; `headCropOffset`; the head crop and 32px avatar properties; the n2 guard.
+- `container-shares`: 1 new. After an unlock, nothing is pending; closing the archive and then the Notes opens nothing.
+- `lock-scope-refusal`, `error-toast-floor`: the player's close shows no toast; running out of tries still does.
+- `access-signin-postit`: follows the new guard and the combined note rules.
+
+### Live proof
+
+Keyless server on :3316 from this worktree, stopped afterwards. Headless Chromium with scrollbars shown, `setFPS(20)` with fixed steps on (`[20, true]` logged on every run). New games:
+- 2658, 2659, 2660: test_access_signin (swapped onto test_access_networks), hot desk and lockout PC at 1400x1000, 800x600 and 915x412.
+- 2661: test_access_signin, Ian's archive and the stale-return check.
+- 2662, 2663, 2664: m01 (`--start-room kevin_office`) at the three sizes.
+- 2665: test_access_networks (`--give kit_dropbox`).
+- 2666: test_access_habits (swapped, `--start-room omar_room`).
+
+Measured:
+- m1: the frame's left and top are whole at every size and state: tiles, chosen, wrong, lockout (one left and locked), plain (open, wrong, maxed), archive, Wi-Fi and Omar's PC. The snap applied `0.5px` left at 915x412 and `0.5px` top where the height was odd. Every 32px and 64px portrait is on whole pixels.
+- m2: on m01 the message line and the note do not intersect at 1400x1000, 800x600 or 915x412; no `.minigame-failure-message` appears.
+- m3: X, Esc in the field and the on-screen Esc key end with `closedByPlayer` and no `gameAlert`, on m01 at three sizes, the hot desk, the archive and the Wi-Fi prompt. Running out of tries still raises "Failed to enter correct password." as an error.
+- m4: at 915x412, chosen: the note (267 to 322) is inside the scroll area (to 329). Wrong: the area scrolls 37px and the note (274 to 329) and the message line (230 to 268) are both in view. Change brings the tiles back.
+- m5: after the unlock the archive opens with nothing pending; its Close lands in the world, and the Notes closing later opens nothing.
+- n1: the short portraits use `256px 256px` at offsets such as `-58px -5px` (`data-short="head-crop"`).
+
+Shots in the session scratchpad under `ux-shots/slice2a-final/`, named by review page id: `main-01`, `main-02`, `main-03`, `main-04`, `main-07`, `main-08`, `main-09`, `main-11`, `main-12`, `main3-01`, `main3-05`, `main3-08`, `unlock-44` (m01, 915x412), `unlock-53` (m01, 800x600), plus `portrait-3x-915x412.png` (the new 32px portraits at 3x), `wrong-915x412`, `chosen-915x412`, `chosen-800x600`, `wrong-800x600`, `plain-wrong-1400x1000`, `archive-wrong-1400x1000`, `stale-after-notes-1400x1000`. Driver `drive.mjs`, logs in `logs/`.
+
+### Not done, and notes
+
+- `main-05` and `main3-07` need a retake: the driver's run measured no password frame for them (Ian's PC at it_room did not open a sign-in screen in that run, and the SV-FS02 remote sign-in did not open from `openRemoteSignIn`), so those two files do not show the intended screens.
+- Boxes of odd width centred inside the frame (the field label, Submit, Add to Notepad, some tile names, "Choose an account.") still sit on half a pixel horizontally. The frame itself is whole; fixing these needs even widths per element.
+- The 64px tile still draws the 128px talk frame at x0.5 (`background-size: 200%` of a 64px box). R3 n1 covered the 32px box only.
+- When an NPC has a 32x32 `avatar`, the short window shows that headshot rather than the talk-frame crop. Test_access_signin has no avatars, so the proof shows the crop, which shows the face better. Switching the order is one line in `applyTilePortrait`.
+
+### Handover (R3)
+
+Done: m1 to m5, n1, n2. Commits: c732c8d78 (fixes and tests), plus the follow-up (damage-guard comment, note reveal at 915x412) and this log. Open: q98 (prompt skin); the two retakes above.
