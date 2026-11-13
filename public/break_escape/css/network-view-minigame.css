@@ -304,6 +304,13 @@
     font-size: 16px;
 }
 
+/* A locked share's badge keeps the room its words need ("Needs account" wraps to two lines in
+   a narrow column) instead of shrinking to nothing and spilling over the share's description */
+.network-row-wide .network-row-control {
+    flex: 0 0 auto;
+    max-width: 45%;
+}
+
 /* A padlock badge, the size of the other rows' buttons */
 .network-row-locked {
     display: flex;

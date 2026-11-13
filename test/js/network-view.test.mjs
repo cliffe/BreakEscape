@@ -254,6 +254,13 @@ test('the padlock badge says Locked for a locked session and Needs account for a
     assert.equal(host.querySelector('img').getAttribute('src'), share.querySelector('img').getAttribute('src'));
 });
 
+test('a locked share\'s badge keeps its width instead of spilling over the description', () => {
+    const css = readFileSync(join(js, '../css/network-view-minigame.css'), 'utf8');
+    const rule = css.slice(css.indexOf('.network-row-wide .network-row-control {'), css.indexOf('}', css.indexOf('.network-row-wide .network-row-control {')));
+    assert.match(rule, /flex: 0 0 auto;/);
+    assert.match(rule, /max-width: 45%;/);
+});
+
 test('network_viewed carries the network, the host ids and hostList; it fires on every open', async () => {
     setup();
     links.open('jack_comms_port');
