@@ -72,7 +72,7 @@ still live and `pc-view` is still on the container.
 - No `ResizeObserver loop` or page errors across about 120 opens; the only console errors were
   403s for resources unrelated to the PC view.
 - Pre-existing, not from this branch: after `cleanup()` the monitor no longer re-fits on a window
-  resize (its resize listener goes through `scene.addEventListener`, `pc-monitor.js:396-401`,
+  resize (its resize listener goes through `scene.addEventListener`, `pc-monitor.js:409-414`,
   which the base cleanup removes). Live, a lockout screen at 1400x1000 resized to 800x600 kept
   a 1168x796 frame. Only reachable by resizing during a lockout; noted for the backlog.
 - The success box over the sign-in ("Signed in as Sam Okafor" twice, once in a box and once on
