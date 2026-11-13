@@ -401,7 +401,7 @@
 .lf-level-admin      { color: #cc5555; }
 
 /* Anomaly field highlights (within anomaly row) */
-.lf-anomaly-row .lf-field-account  { color: #ffbb44; font-weight: bold; }
+.lf-anomaly-row .lf-field-account  { color: #ffbb44; }
 .lf-anomaly-row .lf-field-ip       { color: #ffaa33; }
 .lf-anomaly-row .lf-field-duration { color: #ffaa33; }
 

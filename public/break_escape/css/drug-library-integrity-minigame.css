@@ -191,7 +191,7 @@
 .dli-col-drug { min-width: 140px; color: #e6edf3; }
 .dli-col-conc { min-width: 60px; color: #8b949e; text-align: right; }
 .dli-col-dmin { min-width: 60px; color: #8b949e; text-align: right; }
-.dli-col-dmax { min-width: 70px; color: #e6edf3; font-weight: bold; text-align: right; }
+.dli-col-dmax { min-width: 70px; color: #e6edf3; text-align: right; }
 .dli-col-unit { min-width: 80px; color: #8b949e; }
 .dli-col-rate { min-width: 70px; color: #8b949e; text-align: right; }
 .dli-col-status { min-width: 90px; }
@@ -394,7 +394,7 @@
   border-left: 3px solid #33cc66;
 }
 
-.dli-diff-value-large { font-size: 22px; font-weight: bold; line-height: 1; }
+.dli-diff-value-large { font-size: 22px; line-height: 1; }
 .dli-diff-val-tampered { color: #cc3333; }
 .dli-diff-val-correct  { color: #33cc66; }
 
@@ -408,7 +408,7 @@
   font-size: 16px;
 }
 
-.dli-diff-summary-title { font-weight: bold; margin-bottom: 3px; }
+.dli-diff-summary-title { margin-bottom: 3px; }
 
 /* ── Verification tab ──────────────────────────────────────── */
 .dli-verify-title {
@@ -605,8 +605,8 @@
 }
 
 .dli-modal-val          { color: #e6edf3; }
-.dli-modal-val-green    { color: #33cc66; font-weight: bold; }
-.dli-modal-val-amber    { color: #ccaa00; font-weight: bold; }
+.dli-modal-val-green    { color: #33cc66; }
+.dli-modal-val-amber    { color: #ccaa00; }
 
 .dli-modal-warning {
   margin-top: 10px;
@@ -699,7 +699,7 @@
 }
 
 .dli-badge-inactive { color: #3d444d; }
-.dli-serial-bold { font-weight: bold; color: #e6edf3; }
+.dli-serial-bold { color: #e6edf3; }
 
 .dli-view-log-btn {
   margin-top: 14px;
@@ -738,7 +738,7 @@
 }
 
 .dli-log-ts       { color: #0088cc; }
-.dli-log-event    { color: #e6edf3; font-weight: bold; }
+.dli-log-event    { color: #e6edf3; }
 .dli-log-field    { color: #7d8590; }
 .dli-log-val      { color: #c9d1d9; }
 .dli-log-tampered { color: #cc3333; }

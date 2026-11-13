@@ -402,7 +402,7 @@
     font-family: 'Press Start 2P', monospace;
     font-size: 8px;
     padding: 2px 5px;
-    border-radius: 2px;
+    border-radius: 0;
     flex-shrink: 0;
     white-space: nowrap;
     line-height: 16px;
@@ -423,7 +423,7 @@
 /* ── Mixer callout ─────────────────────────────────────────── */
 
 .bce-callout {
-    border-radius: 2px;
+    border-radius: 0;
     padding: 10px 14px;
     margin: 12px 0 8px;
 }
