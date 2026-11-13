@@ -409,6 +409,9 @@ Priya S.: Then thank you, all of you. My notes go to Marcus this week.
 // (saved state) or via start's debrief_closed guard (variables-only restore); neither replays
 // the closing, so debrief_complete is never set twice.
 === debrief_over ===
+// A reopen after closing the chat resumes here (saved story state), so re-send the task:
+// recovers a lost final POST; a no-op once completed (game.rb:3637, objectives-manager.js:616).
+#complete_task:talk_to_priya_s
 { debrief_quiet:
     ~ debrief_quiet = false
 - else:

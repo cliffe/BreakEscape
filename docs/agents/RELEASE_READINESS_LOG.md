@@ -19,6 +19,12 @@ The gate (user, 2026-11-13): no production deploy until the ongoing access, netw
 - 2026-11-13: q94 field names agreed with breakescape-d3: `host` reused, `desktopUser { name, character? }`, shown only on the unlocked desktop. VM-linked objects untouched.
 - 2026-11-13: q94 review R1 (0 B, 1 M, 6 m): remove hosts from three VM stand-ins (m07, m09, m10); keep Kevin signed in on both m01 PCs (the user's q94 answer named him, and it isn't a spoiler); fix the rest.
 
+## Review rounds
+
+- build/rel-fixes R1 (opus55): 0 B, 0 M, 4 m. Fixed in 07e8a28bf: log row corrected; the debrief task re-fires in both debrief NPCs' start (recovers a lost final POST; completing a done task is a no-op on server and client); stale knot names; a sis01 reopencheck entry.
+- build/rel-fixes R2 (opus55): ready, 0 B, 0 M, 2 m, both fixed by the orchestrator: sis02's in-session reopen resumes at debrief_over (saved story state), so the re-fire also sits at the top of debrief_over (an ink runtime probe shows the tag fires there in both branches); the sis01 missions.json entry was removed, because reopencheck drives only phone NPCs and all sis01 NPCs are person NPCs, so it added 159 lines to a shared file for no coverage.
+- build/q94-pc-fields R1 (opus55): 0 B, 1 M, 6 m, fixed in 0d78d91e9. R2: ready, 0 B, 0 M, 2 m (validator sign-in warning scope, duplicate unknown-key message), fixing.
+
 ## To do before the release playtests
 
 - The release m01 run takes LAUNCH at the final choice, so both branches have been played once.
