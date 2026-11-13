@@ -156,6 +156,68 @@ check for a held Hash directly rather than through `session_identity`.
   (server session still `locked:true`); the right password opened the desktop (ContainerMinigame)
   and cleared the lock (server session back to `{id sam, via password}`).
 
+## 2026-11-13 - R2 minor fixes, train 33 merge, live proof
+
+Tip `d3fe5efe3` (R2 fixes `450027522`, merge `6f72a651d`, hot-desk guard `d3fe5efe3`).
+
+### R2 minor 1 - a locked session no longer extends a foothold's pivot reach for access
+
+The access walk (`player_reach`, i.e. `reach_walk_uncached` with `ignore_outages: false`) now
+skips a locked session host, mirroring the host-off relay cut just above it
+(network_access.rb ~1110): `next if !ignore_outages && session_locked_at?(host[:pc_id])`.
+`structural_reach` (outages ignored) is unchanged, so the network view still draws the link.
+The walk cache (`reach_cache_key`) gains a per-session `sessions_locked` component for the
+outage walk, so locking a session invalidates its cached `player_reach`. This single cut fixes
+both `:1115` (the pivot) and the open-share/foothold consumer at `:1230`, because that branch
+reads `player_reach`; `session_route_up?` (a remote session chained beyond the locked pivot)
+is fixed by the same cut for the same reason. The owner ruled Lock is a real server boundary.
+
+Rails test (network_pivot_test.rb): an open share on server_net, bridged only through a locked
+office pivot (lena_pc), is refused (404) while locked and served after a correct POST /login;
+`player_reach` drops server_net while locked, `structural_reach` keeps it.
+
+### R2 minor 2 - the network view shows a locked remote PC as Locked
+
+`host_row` carries `locked` on the held-session row and `via_for` carries `locked` on the
+bridge object (network_access.rb). The client `hostAction` returns `'locked'` for a held,
+locked password session, and the host row draws the existing padlock "Locked" badge
+(`network-row-locked`, the same one a locked share uses) in place of Open; the "through
+&lt;host&gt;" block title gains "(Locked)" when the bridge is locked. No new look.
+Tests: network_remote_signin_test.rb (the row carries `locked`), network_pivot_test.rb (a down
+block through a locked pivot names the bridge locked), network-view.test.mjs (+2: hostAction
+and the DOM badge).
+
+### Train 33 merge (main ac526d218) - hot desk vs lock
+
+`git merge main` was a clean merge (no conflicts; only the client hot-desk
+workstation-state.js, its two node tests, and docs changed). Checked the interaction: the
+hot-desk borrow/guest-leave flow touches only the NPC-workstation sim (`guests` map, screen
+globals) and ends only `via: 'claim'` sessions via `ownerReturned`/`screenAutoLocked` (both
+guard `via === 'claim'`). A locked session is always a `via: 'password'` session, the server
+refuses claim/guest takeover of any held session and refuses locking a non-password session,
+so no hot-desk path can clear, bypass or create a lock. Added a node regression test
+(pc-sessions.test.mjs) that a hot-desk owner-return and auto-lock leave a locked password
+session held and locked.
+
+### Tests and live proof
+
+- Rails (touched + related access suites, unlocked): network_pivot 23, network_remote_signin
+  12 (the two touched files 35 runs / 260 assertions, 0 failures); access_model_login,
+  network_shares, network_outages, network_footholds, network_implants,
+  network_host_service_off, network_wifi, network_link_names together 167 runs / 1581
+  assertions, 0 failures.
+- Node: network-view 45, pc-sessions 43, workstation-state 55, test-bridge-access 15, all 0
+  fail.
+- Live on :3469 (keyless, stopped by PID; test game destroyed): through the real model
+  predicates and the real login path on the running app, with a locked lena_pc pivot and an
+  open share on the linked server_net - unlocked, `player_reach` reaches server_net, the open
+  share is admitted and `session_identity` is present; locked, `player_reach` drops server_net
+  while `structural_reach` keeps it, the open share and the remote desktop are refused and
+  `session_identity` is nil; after a correct login the lock clears and both serve again. HTTP
+  forged GETs on the locked game: `/container/lena_pc?foothold=...` -> 403 `no_session`,
+  `/container/server_public?foothold=...` -> 404; the office_lan own-network share stays 200
+  (not over-blocked); both serve 200 after the login.
+
 ## Handover
 
 - Done: the lock is now a real server boundary (re-auth gate); every read path refuses a locked
