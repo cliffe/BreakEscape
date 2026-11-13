@@ -757,7 +757,7 @@ function hotRig({ autoLockMin = 5, userOf } = {}) {
     if (userOf) env.userOf = userOf;
     assignOwners(objects, env.npcs());
     const ws = new WorkstationState(env).install();
-    return { ws, globals, emitted, handlers, tick: (ms) => { clock += ms; ws.checkAutoLocks(); } };
+    return { ws, globals, emitted, handlers, pc: objects[0], tick: (ms) => { clock += ms; ws.checkAutoLocks(); } };
 }
 
 test('H-4: a PC in use by a non-owner answers attended, and presence names the user', () => {
@@ -795,12 +795,16 @@ test('H-4: autoLockMin ends the guest session at lockAt with workstation_auto_lo
     assert.equal(ws.onInteract('hot_desk'), 'signin');
 });
 
-test('slice 16 m4: a policy with autoLockMin 0 locks the hot desk the instant the borrower leaves, so no guest session opens and the next click is the sign-in screen', () => {
-    const { ws, globals, emitted, handlers } = hotRig({ autoLockMin: 0 });
-    handlers['npc_guest_left:*']({ npcId: 'ian', objectId: 'hot_desk' });
+test('slice 16 m4 (train 31): a policy with autoLockMin 0 locks the hot desk on the real borrow-leave event (npc_borrowed_session), so no guest session opens and the next click is the sign-in screen', () => {
+    const { ws, globals, emitted, handlers, pc } = hotRig({ autoLockMin: 0 });
+    // The real event: the server answers guest: false for an autoLockMin 0 PC, so no npc_guest_left
+    // ever reaches the client; the client's own borrow-done is what fires here.
+    handlers['npc_borrowed_session:*']({ npcId: 'ian', objectId: 'hot_desk' });
     assert.equal(ws.guestOf('hot_desk'), null, 'no open guest session, matching the refused claim');
     assert.equal(globals.hot_desk_screen_locked, true);
     assert.equal(globals.hot_desk_owner_away, true);
+    // Item 2: the queryable state the test bridge reads (access.workstation().screenLocked) is set.
+    assert.equal(pc.screenLocked, true, 'the outright lock sets data.screenLocked, so the bridge reports it, not null');
     assert.deepEqual(emitted.find(([n]) => n === 'workstation_auto_locked:hot_desk')[1], { objectId: 'hot_desk', ownerId: 'ian', guest: true });
     // cue parity (R1 minor): the office visuals key their lock cue on workstation_screen_changed,
     // so the outright lock must emit it with how 'auto', as guestClaimRefused and _autoLock do.
@@ -809,6 +813,16 @@ test('slice 16 m4: a policy with autoLockMin 0 locks the hot desk the instant th
         'the kiosk guest-leave auto-lock emits workstation_screen_changed so the lock cue plays');
     assert.equal(emitted.filter(([n]) => n === 'workstation_owner_left:hot_desk').length, 0, 'no owner_left: the session never opened');
     assert.equal(ws.onInteract('hot_desk'), 'signin');
+});
+
+test('train 31: npc_guest_left never opens a guest session at an autoLockMin 0 PC (the dead min===0 branch is gone), and a borrow at a policy above 0 is left to the guest flow', () => {
+    // If the server ever did send npc_guest_left for an autoLockMin 0 PC, the open path would run;
+    // but the outright lock lives on npc_borrowed_session now, so npc_borrowed_session must not fire
+    // the lock for a policy above 0 (that borrow's open session is the guest flow's).
+    const { ws, emitted, pc } = hotRig({ autoLockMin: 5 });
+    ws.onBorrowedSession('hot_desk', 'ian');
+    assert.notEqual(pc.screenLocked, true, 'a policy above 0 does not lock outright on the borrow-leave');
+    assert.equal(emitted.filter(([n]) => n === 'workstation_auto_locked:hot_desk').length, 0, 'the guest flow (onGuestLeft) handles a policy above 0');
 });
 
 test('R2 server m1: a refused guest claim locks the guest session before lockAt (the server timed it out on wall time)', () => {
