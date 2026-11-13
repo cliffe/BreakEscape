@@ -1753,7 +1753,8 @@ export async function create() {
     import('../systems/wearables.js').catch(e => console.warn('⚠️ wearables failed to load:', e));
     // Sign-in PC sessions and the PCs signed in to (access model 5.3): password
     // sessions survive a reload, a claimed one ends (pc-sessions.js load).
-    pcSessions.load(gameScenario.sessions || {}, gameScenario.signedInPcs || []);
+    pcSessions.load(gameScenario.sessions || {}, gameScenario.signedInPcs || [],
+        { lockingSupported: gameScenario.sessionLockingSupported === true });
     // Footholds and the jacks they were gained at (slice 9.3a, 4.1): publishes
     // <jackId>_planted before any room loads; no request.
     networkLinks.load(gameScenario.footholds || [], gameScenario.gainedFootholds || []);

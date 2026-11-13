@@ -2396,13 +2396,57 @@ module BreakEscape
       end
     end
 
-    # One PC's entry of sessions_for_client, or nil.
+    # One PC's entry of sessions_for_client, or nil. A locked session (UI slice 6) carries
+    # `locked` so a reload keeps the lock; an unlocked one carries nothing (the absent key is
+    # "false"), so the answer never grows for the common case.
     def session_for_client(pc_id)
       session = access_sessions[pc_id.to_s]
       npc = session.is_a?(Hash) ? scenario_room_npc(session['id']) : nil
       return nil unless npc && self.class.account_holder?(npc)
 
-      login_session_answer(npc, session['via'], pc_id: pc_id.to_s, foothold: session['foothold'])
+      answer = login_session_answer(npc, session['via'], pc_id: pc_id.to_s, foothold: session['foothold'])
+      answer['locked'] = true if session_locked?(session)
+      answer
+    end
+
+    # A held session can be locked (UI slice 6): it stays held and signed in, but the player
+    # must re-enter the account's password (an ordinary POST /login, counted the same way) to
+    # use it again. The boolean lives on the existing session record, one per sign-in PC, so
+    # the synced state never grows past the number of sign-in PCs. One predicate and one
+    # setter serve every session kind (password, claim, a future keyring grant), so the same
+    # function locks and unlocks them all.
+    def session_locked?(session)
+      session.is_a?(Hash) && session['locked'] == true
+    end
+
+    # Lock or unlock a session record in place. Unlock (locked false) is reached only through
+    # a fresh sign-in, which start_login_session! builds with no `locked`; it is written here
+    # so a granted session can be reopened through the same function with no separate store.
+    def set_session_locked!(session, locked)
+      return unless session.is_a?(Hash)
+
+      if locked
+        session['locked'] = true
+      else
+        session.delete('locked')
+      end
+    end
+
+    # Lock the held session at a sign-in PC (UI slice 6). Only the session's holder can lock
+    # it: a PC with no held session is refused (:unprocessable_entity), which also covers a
+    # forged request for a PC the player does not hold. The session stays held and signedInPcs
+    # is untouched; the answer is the delta { pcId, locked }, never the whole sessions map.
+    def lock_session!(pc_id)
+      info = find_login_pc(pc_id)
+      key = info ? info[:object]['id'].to_s : pc_id.to_s
+      unless access_sessions[key].is_a?(Hash)
+        return { status: :unprocessable_entity, body: { success: false, message: 'No session is held at this PC' } }
+      end
+
+      player_state['sessions'] = access_sessions
+      set_session_locked!(player_state['sessions'][key], true)
+      save!
+      { status: :ok, body: { success: true, pcId: key, locked: true } }
     end
 
     def signed_in_pcs

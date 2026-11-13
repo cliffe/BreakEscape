@@ -218,6 +218,89 @@ module BreakEscape
       assert_equal ['jake_pc'], response.parsed_body['signedInPcs']
     end
 
+    # ---- locking a held session (UI slice 6) ---------------------------------------
+
+    def lock_session(pc_id = 'jake_pc')
+      post lock_session_game_url(@game), params: { pc_id: pc_id }, as: :json
+      response.parsed_body
+    end
+
+    test 'the holder locks a held session; it stays held and signed in' do
+      build
+      login('jbrooks', JAKE_PASSWORD)
+      body = lock_session
+      assert_response :success
+      assert_equal({ 'success' => true, 'pcId' => 'jake_pc', 'locked' => true }, body)
+      state = @game.reload.player_state
+      assert_equal({ 'id' => 'jake', 'via' => 'password', 'locked' => true }, state['sessions']['jake_pc'])
+      # Still signed in: a lock does not sign out
+      assert_equal ['jake_pc'], state['signedInPcs']
+    end
+
+    test 'the scenario answer carries locked for a locked session and the locking capability' do
+      build
+      login('jbrooks', JAKE_PASSWORD)
+      lock_session
+      get scenario_game_url(@game), as: :json
+      assert_equal true, response.parsed_body['sessionLockingSupported']
+      assert_equal({ 'npcId' => 'jake', 'username' => 'jbrooks', 'displayName' => 'Jake Brooks', 'via' => 'password', 'locked' => true },
+                   response.parsed_body['sessions']['jake_pc'])
+      # A reload keeps the lock on the server (a password session is not ended on load)
+      assert_equal true, @game.reload.player_state['sessions']['jake_pc']['locked']
+    end
+
+    test 'an unlocked session carries no locked key in the scenario answer' do
+      build
+      login('jbrooks', JAKE_PASSWORD)
+      get scenario_game_url(@game), as: :json
+      refute response.parsed_body['sessions']['jake_pc'].key?('locked')
+    end
+
+    test 'unlocking goes through the same password check, counting wrong tries toward maxAttempts' do
+      build
+      login('jbrooks', JAKE_PASSWORD)
+      lock_session
+      # A wrong password at a locked PC is counted exactly as a normal sign-in's wrong try
+      results = (1..4).map { login('jbrooks', 'nope') }
+      assert_equal [4, 3, 2, 1], results.map { |b| b['attemptsLeft'] }
+      # The session is still held and still locked while the player gets it wrong
+      assert_equal true, @game.reload.player_state['sessions']['jake_pc']['locked']
+      # The right password unlocks: a fresh session record with no locked flag
+      body = login('jbrooks', JAKE_PASSWORD)
+      assert_response :success
+      assert_equal 'jake', body['npcId']
+      assert_equal({ 'id' => 'jake', 'via' => 'password' }, @game.reload.player_state['sessions']['jake_pc'])
+    end
+
+    test 'enough wrong unlock tries lock the account out, as a normal sign-in would' do
+      build
+      login('jbrooks', JAKE_PASSWORD)
+      lock_session
+      results = (1..5).map { login('jbrooks', 'nope') }
+      assert_equal true, results.last['lockedOut']
+      assert_equal ['jake_pc|jbrooks'], @game.reload.player_state['loginLockouts']
+    end
+
+    test 'locking a PC the player holds no session at is refused 422 (a forged lock)' do
+      build
+      body = lock_session
+      assert_response :unprocessable_entity
+      assert_equal false, body['success']
+      assert_nil @game.reload.player_state['sessions']['jake_pc']
+    end
+
+    test 'a forged unlock without the right password is refused 422 and leaves the lock' do
+      build
+      login('jbrooks', JAKE_PASSWORD)
+      lock_session
+      # No unlock route exists: a request that claims to continue without the password is a
+      # wrong sign-in, refused the same way, and the session stays locked.
+      body = login('jbrooks', 'not-the-password')
+      assert_response :unprocessable_entity
+      assert_equal false, body['success']
+      assert_equal true, @game.reload.player_state['sessions']['jake_pc']['locked']
+    end
+
     test 'a reset clears every access model key' do
       build
       login('jbrooks', JAKE_PASSWORD)

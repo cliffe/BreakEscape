@@ -650,3 +650,72 @@ test('q44: Sign out, a claim ended by the owner and a restored claim say pc_sign
     await settle();
     assert.deepEqual(order.at(-1), ['pc_signed_out', 'claim_ended']);
 });
+
+// ── UI slice 6: locking a held session ──────────────────────────────────────────────
+
+test('lockSession posts /lock_session, marks the session locked, closes the desktop, keeps it held', async () => {
+    const s = setup();
+    window.ApiClient.lockSession = async (pcId) => { calls.push(['lock', pcId]); return { success: true, pcId, locked: true }; };
+    await s.signIn('hot_desk', 'sokafor', 'right-sam');
+    const closed = [];
+    s.registerDesktop('hot_desk', (message, reason) => closed.push([message, reason]));
+    calls.length = 0;
+    const r = await s.lockSession('hot_desk');
+    assert.equal(r.ok, true);
+    assert.deepEqual(calls, [['lock', 'hot_desk']]);
+    // Still held and signed in, now locked
+    assert.equal(s.has('hot_desk'), true);
+    assert.equal(s.isLocked('hot_desk'), true);
+    assert.equal(s.get('hot_desk').locked, true);
+    assert.equal(s.wasSignedIn('hot_desk'), true);
+    // The open desktop closed, and one pc_session_locked fired
+    assert.deepEqual(closed, [['Locked. Sign in again to continue.', 'locked']]);
+    assert.deepEqual(named('pc_session_locked'), [{ pcId: 'hot_desk', npcId: 'sam' }]);
+});
+
+test('lockSession refuses when the player holds no session there, and never sends locked back', async () => {
+    const s = setup();
+    let posted = false;
+    window.ApiClient.lockSession = async () => { posted = true; return { success: true }; };
+    const r = await s.lockSession('hot_desk');
+    assert.equal(r.ok, false);
+    assert.equal(r.reason, 'no_session');
+    assert.equal(posted, false, 'no request for a PC with no local session');
+    // The client re-sends sessions to no one: a locked session is not part of any sync payload
+    await s.signIn('hot_desk', 'sokafor', 'right-sam');
+    window.ApiClient.lockSession = async (pcId) => ({ success: true, pcId, locked: true });
+    await s.lockSession('hot_desk');
+    const sent = JSON.stringify(calls);
+    assert.ok(!sent.includes('"locked"'), 'the client never puts locked into an outbound request');
+});
+
+test('a server refusal (422) leaves the session unlocked and open', async () => {
+    const s = setup();
+    window.ApiClient.lockSession = async () => { throw Object.assign(new Error('x'), { status: 422, body: { success: false, message: 'No session is held at this PC' } }); };
+    await s.signIn('hot_desk', 'sokafor', 'right-sam');
+    const r = await s.lockSession('hot_desk');
+    assert.equal(r.ok, false);
+    assert.equal(r.reason, 'refused');
+    assert.equal(s.isLocked('hot_desk'), false);
+});
+
+test('load restores a locked session and the locking capability; a reload keeps the lock', () => {
+    const s = setup();
+    s.load(
+        { sam_pc: { npcId: 'sam', username: 'sokafor', displayName: 'Sam Okafor', via: 'password', locked: true },
+          ian_pc: { npcId: 'ian', username: 'ishaw', displayName: 'Ian Shaw', via: 'password' } },
+        ['sam_pc', 'ian_pc'],
+        { lockingSupported: true }
+    );
+    assert.equal(s.lockingSupported(), true);
+    assert.equal(s.isLocked('sam_pc'), true);
+    assert.equal(s.get('sam_pc').locked, true);
+    assert.equal(s.isLocked('ian_pc'), false);
+    assert.equal(s.get('ian_pc').locked, undefined);
+});
+
+test('lockingSupported defaults to false when the scenario answer does not say so', () => {
+    const s = setup();
+    s.load({}, []);
+    assert.equal(s.lockingSupported(), false);
+});
