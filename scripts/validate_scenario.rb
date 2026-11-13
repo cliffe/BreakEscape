@@ -6642,8 +6642,10 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
 
     capture_route = payload.is_a?(Hash) ||
                     Array(npc['eventMappings']).any? { |m| m.is_a?(Hash) && m['addCapture'].is_a?(Hash) }
-    reveal = json_data.dig('social', 'captures', 'revealSecret') if json_data['social'].is_a?(Hash) && json_data['social']['captures'].is_a?(Hash)
-    if capture_route && !reveal
+    captures_cfg = json_data['social'].is_a?(Hash) && json_data['social']['captures'].is_a?(Hash) ? json_data['social']['captures'] : {}
+    # An explicit revealSecret: false is a choice (the password is typed from its earned
+    # source), not a forgotten switch, so only a missing one is warned about
+    if capture_route && !captures_cfg.key?('revealSecret')
       warn.call("NPC #{name_of.call(npc)} has a capture route (usePayload or addCapture), but " \
                 'social.captures.revealSecret is not set, so a captured sign-in never shows its password.')
     end
