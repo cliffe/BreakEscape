@@ -20,6 +20,7 @@
     z-index: 1000;
     width: 100%;
     max-width: 600px;
+    box-sizing: border-box;   /* its padding stays inside a phone-width game area */
     margin-left: auto;
     margin-right: auto;
 }
@@ -95,6 +96,13 @@
 #phaser-game-container canvas {
     margin: 0 !important;
     display: block;
+}
+
+/* The lock's game area is capped to the window by the shell (UI shell build): what does not
+   fit (the feedback strip under the canvas on a phone, critique A07) scrolls inside it */
+.minigame-game-container:has(> #phaser-game-container) {
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 /* Short screens (915x412): the 400px lock fits whole with a 4px margin, and the game area

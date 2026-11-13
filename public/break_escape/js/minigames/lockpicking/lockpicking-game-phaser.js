@@ -503,17 +503,17 @@ export class LockpickingMinigamePhaser extends MinigameScene {
 
             if (isPortrait) {
                 // Portrait: a canvas window over the lock and its labels (tension wrench,
-                // pins, SHEAR LINE), which span about x=40..580; Scale.FIT shrinks it to the
+                // pins, SHEAR LINE), which span about x=0..580; Scale.FIT shrinks it to the
                 // screen. The old 400px window over x=80..480 cut the lock's right side and
                 // the labels (critique A07). Camera is scrolled in create().
-                config.width = 540;
+                config.width = 580;
                 config.height = 340;
-                this._portraitCameraOffset = { x: 40, y: 20 };
+                this._portraitCameraOffset = { x: 0, y: 20 };
             } else {
-                // Landscape: crop to the lock and its labels (x=40..580, y=30..370)
-                config.width = 540;
+                // Landscape: crop to the lock and its labels (x=0..580, y=30..370)
+                config.width = 580;
                 config.height = 340;
-                this._portraitCameraOffset = { x: 40, y: 30 };
+                this._portraitCameraOffset = { x: 0, y: 30 };
             }
 
             config.scale = {

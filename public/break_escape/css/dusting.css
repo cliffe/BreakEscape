@@ -26,7 +26,7 @@
 /* The kit's frame is the window here: it is capped to the screen and scrolls inside, so its
    title is never centred up past the top edge (critique A15). The game area around it is not
    capped (the shell's frame cap would centre the kit over both edges). */
-.minigame-container > .dusting-game-container { max-height: none; }
+.minigame-container > .dusting-game-container { max-height: none; margin: auto 0; }
 
 .dusting-root {
     align-self: center;
@@ -141,6 +141,7 @@
     border: 2px solid var(--d-accent);
     background: var(--d-bg);
     vertical-align: -2px;
+    font-size: 16px;   /* whole-pixel (the browser default is 13.33px) */
     cursor: pointer;
 }
 .dusting-options input[type="checkbox"]:checked {

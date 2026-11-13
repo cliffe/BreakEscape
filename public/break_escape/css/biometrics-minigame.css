@@ -232,6 +232,7 @@
 
 .biometrics-search-input {
     width: 100%;
+    box-sizing: border-box;   /* its padding stays inside the panel */
     padding: 8px 12px;
     background: rgba(0, 0, 0, 0.3);
     border: 2px solid #e74c3c;
