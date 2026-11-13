@@ -574,7 +574,18 @@ export class LockpickingMinigamePhaser extends MinigameScene {
         box.classList.toggle('lockpicking-zoomed', z > 1);
     }
 
+    // Phaser rereads the canvas's page position only on its resize interval, so a scroll of the
+    // game area or the shell leaves the pointer mapped to the old place for up to half a second
+    // (UI shell review m1). Reread it on the scroll itself.
+    _watchLockScroll() {
+        const update = () => { try { this.game?.scale?.updateBounds?.(); } catch (e) { /* game gone */ } };
+        this._lockScrollUpdate = update;
+        this._lockScrollEls = [this.gameContainer, this.container].filter(Boolean);
+        this._lockScrollEls.forEach((el) => el.addEventListener('scroll', update, { passive: true }));
+    }
+
     _watchLockZoom() {
+        this._watchLockScroll();
         if (window.innerWidth <= 768) return;
         const fit = () => this._fitLockZoom();
         this._lockZoomOnResize = fit;
@@ -655,6 +666,7 @@ export class LockpickingMinigamePhaser extends MinigameScene {
     complete(success) {
         if (this.game) {
             if (this._lockZoomOnResize) window.removeEventListener('resize', this._lockZoomOnResize);
+            this._lockScrollEls?.forEach((el) => el.removeEventListener("scroll", this._lockScrollUpdate));
             this.game.destroy(true);
             this.game = null;
         }

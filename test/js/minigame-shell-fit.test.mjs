@@ -102,20 +102,49 @@ globalThis.document = dom.window.document;
 const { MinigameScene } = await import(pathToFileURL(join(root, 'js/minigames/framework/base-minigame.js')).href);
 const rect = (left, top, width, height) => ({ left, top, width, height, right: left + width, bottom: top + height, x: left, y: top });
 
-test('placeCloseButton adds the shell scroll offset, so the X stays in the frame after a scroll', () => {
+test('the default X is fixed to the window, left of the shell scrollbar (M1)', () => {
+    const r = rule(framework, '.minigame-container > .minigame-close-button');
+    assert.equal(r.position, 'fixed', 'it stays put whichever way the shell scrolls');
+    assert.match(String(r.right), /var\(--minigame-shell-bar/, 'it clears the shell scrollbar');
+    // jsdom: the scrollbar width is published as a custom property
+    document.body.innerHTML = '<div id="mg"></div>';
+    const mg = new MinigameScene(document.getElementById('mg'), { title: 'Box' });
+    mg.init();
+    Object.defineProperty(mg.container, 'offsetWidth', { value: 414, configurable: true });
+    Object.defineProperty(mg.container, 'clientWidth', { value: 400, configurable: true });
+    mg._watchShellScrollbar();
+    assert.equal(mg.container.style.getPropertyValue('--minigame-shell-bar'), '14px');
+});
+
+test('placeCloseButton works in window coordinates: a scrolled shell or frame moves the frame, not the X (M1, M2)', () => {
     document.body.innerHTML = '<div id="mg"></div>';
     class Framed extends MinigameScene { static closeInsideFrame = true; }
     const mg = new Framed(document.getElementById('mg'), { title: 'Box' });
     mg.init();
     mg.container.getBoundingClientRect = () => rect(0, 0, 800, 600);
-    // The frame starts 300px above the window: the shell has scrolled 300px down
-    mg.gameContainer.getBoundingClientRect = () => rect(100, -300, 600, 1000);
+    // The frame starts 300px above the window and 120px left of it: scrolled down and sideways
+    mg.gameContainer.getBoundingClientRect = () => rect(-120, -300, 600, 1000);
     Object.defineProperty(mg.container, 'scrollTop', { value: 300, configurable: true });
+    Object.defineProperty(mg.container, 'scrollLeft', { value: 120, configurable: true });
     mg.placeCloseButton();
     const btn = document.getElementById('minigame-close');
-    // visible top of the frame (0) + gap (4) + scroll (300), in the shell's scrolled content
-    assert.equal(btn.style.top, '304px');
-    assert.equal(btn.style.right, '104px');
+    // visible top of the frame (0) + gap (4): no scroll offset added to a fixed X
+    assert.equal(btn.style.top, '4px');
+    // the frame's right edge is at 480 in the window: 800 - 480 + 4
+    assert.equal(btn.style.right, '324px');
+});
+
+test('placeCloseButton keeps the X inside the window when the frame runs past its right edge (M2)', () => {
+    document.body.innerHTML = '<div id="mg"></div>';
+    class Framed extends MinigameScene { static closeInsideFrame = true; }
+    const mg = new Framed(document.getElementById('mg'), { title: 'Box' });
+    mg.init();
+    mg.container.getBoundingClientRect = () => rect(0, 0, 390, 844);
+    mg.gameContainer.getBoundingClientRect = () => rect(-300, 10, 900, 300);
+    mg.placeCloseButton();
+    const btn = document.getElementById('minigame-close');
+    assert.equal(btn.style.top, '14px');
+    assert.equal(btn.style.right, '4px', 'the visible right edge of the shell, less the gap');
 });
 
 test('a closeInsideFrame scene re-places its X when the shell scrolls', () => {
@@ -175,7 +204,7 @@ test('PIN: a wrong code is reported on the keypad\'s own line, not over the keys
     const js = src('minigames/pin/pin-minigame.js');
     assert.match(js, /className = 'pin-minigame-message'/);
     assert.doesNotMatch(js, /this\.showFailure\(message, false, 1500\)/);
-    assert.ok(rule(css('pin.css'), '.pin-minigame-message')['min-height'], 'keeps its height when empty');
+    assert.equal(rule(css('pin.css'), '.pin-minigame-message')['min-height'], '56px', 'keeps two lines of height when empty (m2)');
     assert.equal(rule(css('pin.css'), '.pin-minigame-attempt.incorrect').background, '#2c3e50');
 });
 
@@ -184,7 +213,9 @@ test('alarm panel: scrolls on a short window, stepped lamps, 8px labels, X in th
     const g = rule(c, '.ap-game-container');
     assert.equal(g.overflow, 'auto');
     assert.equal(g['justify-content'], 'safe center');
-    assert.equal(rule(c, '.ap-panel-wrap')['max-height'], '100%');
+    assert.equal(rule(c, '.ap-panel-wrap')['max-height'], undefined, 'never scaled or shrunk below its native size (M5)');
+    assert.equal(rule(c, '.ap-panel-wrap').flex, '0 0 auto');
+    assert.match(src('minigames/alarm-panel/alarm-panel-minigame.js'), /<svg class="ap-svg" width="\$\{SVG_W\}" height="\$\{SVG_H\}"/);
     assert.equal(rule(c, '.ap-label')['font-size'], '8px');
     assert.equal(rule(c, '.ap-row-sep')['stroke-width'], '2');
     assert.equal(rule(c, '.ap-live-dot')['border-radius'], undefined);
@@ -289,4 +320,33 @@ test('BLE scanner list uses the pixel scrollbar, a More below cue and an accent 
     assert.equal(s.color, '#00bcd4');
     assert.equal(s.opacity, undefined);
     assert.ok(rules(c, '.ble-device-more').length);
+});
+
+test('notes: the page scroll box starts below the X, so its scrollbar never runs under it (M3)', () => {
+    const r = rule(css('notes.css'), '.notes-minigame-content-area');
+    assert.equal(r.top, '48px');
+    assert.match(r.height, /calc\(90% - 48px\)/);
+});
+
+test('lockpicking on phones: the canvas box has the canvas shape and the strip follows it (M4)', () => {
+    const c = css('lockpicking.css');
+    assert.match(c, /@media \(max-width: 768px\) \{\s*#phaser-game-container \{\s*aspect-ratio: 580 \/ 340;\s*height: auto;/);
+});
+
+test('lockpicking rereads the canvas position on a scroll of the shell or game area (m1)', () => {
+    const js = src('minigames/lockpicking/lockpicking-game-phaser.js');
+    assert.match(js, /_watchLockScroll\(\)/);
+    assert.match(js, /scale\?\.updateBounds\?\.\(\)/);
+    assert.match(js, /removeEventListener\("scroll", this\._lockScrollUpdate\)/);
+});
+
+test('the PC view does not scroll: a dragged post-it adds no bars (m6)', () => {
+    assert.equal(rule(css('pc-monitor.css'), '.minigame-container.pc-view').overflow, 'hidden');
+});
+
+test('BLE hasMoreBelow is true only while the list runs on', async () => {
+    const { BleScannerMinigame } = await import(pathToFileURL(join(root, 'js/minigames/ble-scanner/ble-scanner-minigame.js')).href);
+    assert.equal(BleScannerMinigame.hasMoreBelow({ scrollTop: 0, clientHeight: 100, scrollHeight: 300 }), true);
+    assert.equal(BleScannerMinigame.hasMoreBelow({ scrollTop: 200, clientHeight: 100, scrollHeight: 300 }), false);
+    assert.equal(BleScannerMinigame.hasMoreBelow({ scrollTop: 0, clientHeight: 100, scrollHeight: 100 }), false);
 });

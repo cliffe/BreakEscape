@@ -20,7 +20,8 @@
 // Printed per surface and size; --json keeps every breach. A summary at the end counts the
 // frame-offscreen and clipped breaches (and overflow of the window itself) over the run.
 //
-// --strict exits 1 when any window-offscreen, frame-offscreen or clipped breach is found.
+// --strict exits 1 when any window-offscreen, frame-offscreen or clipped breach is found, or a
+// scene did not open or threw on open (it was never audited; --skip a,b lists the ones allowed).
 //
 //   node tools/playtest/ui-rules-audit.mjs --port 3350 --game 2449 [--all | --scenes a,b] [--strict]
 //        [--surfaces surfaces.mjs] [--params scene-params.json] [--sizes 1400x1000,800x600,915x412]
@@ -101,7 +102,7 @@ export function audit({ rootSel }) {
             if (!(el instanceof HTMLElement) && el.tagName.toLowerCase() !== 'svg') continue;
             if (el.closest('svg') && el.tagName.toLowerCase() !== 'svg') continue;
             if (!leafy(el) || !visible(el) || el.closest('.minigame-close-button')) continue;
-            const b = el.getBoundingClientRect();
+            let b = el.getBoundingClientRect();
             for (let a = el.parentElement; a; a = a.parentElement) {
                 const acs = getComputedStyle(a);
                 const ab = a.getBoundingClientRect();
@@ -115,9 +116,13 @@ export function audit({ rootSel }) {
                 else if (hide(ox) && (b.left < l - 2 || b.right > rt + 2)) cut = 'x';
                 else if (scroll(oy) && b.top < t - a.scrollTop - 2) cut = 'before-top';
                 else if (scroll(ox) && b.left < l - a.scrollLeft - 2) cut = 'before-left';
-                // Past the end of a scroll box is reachable by scrolling it: stop here, so the
-                // boxes around the scroll box do not count it as cut
-                if (!cut && (scroll(oy) || scroll(ox))) break;
+                // A box collapsed to nothing (a panel closed by a toggle: max-height 0, opacity 0) is
+                // not cutting anything, it is hidden; its contents are not on show (review m3)
+                if (cut && (a.clientHeight === 0 || a.clientWidth === 0 || +acs.opacity === 0)) break;
+                // Past the end of a scroll box is reachable by scrolling it, so the box itself
+                // stands in for the element from here: an outer box that hides overflow can
+                // still cut the scroll box (review m4)
+                if (!cut && (scroll(oy) || scroll(ox))) { b = ab; continue; }
                 if (cut) {
                     // A box that is itself wholly cut away is reported once, at its own level
                     if (clippedCount++ < 5) out.push({ kind: 'clipped', where: path(el), detail: `${Math.round(b.left)},${Math.round(b.top)}-${Math.round(b.right)},${Math.round(b.bottom)} cut (${cut}) by ${path(a)} ${Math.round(l)},${Math.round(t)}-${Math.round(rt)},${Math.round(bt)}` });
@@ -195,6 +200,11 @@ const BUILTIN_PARAMS = {
     'combination': { title: 'Padlock', combination: [7, 21, 39], dials: 3 },
     'cryptex': { title: 'Cryptex', password: 'CIPHER', wheels: 6 },
     'password': { title: 'Password', correctPassword: 'secret', showHint: true, hint: 'A hint' },
+    // Review m4: a bare title-only start
+    // throws or finds no NPC. person-chat and network-view need the game's own NPCs and network, so they
+    // are reported as not audited (give --skip person-chat,network-view to allow it, or a --surfaces entry)
+    'container': { title: 'Container', containerItem: { name: 'Locker', scenarioData: { name: 'Locker', contents: [] } }, contents: [] },
+    'phone-chat': { title: 'Phone', npcId: 'test_npc' },
     'ble-scanner': { title: 'BLE scanner', devices: [{ name: 'Printer', mac: 'AA:BB:CC:00:11:22', rssi: -48 }] },
     'bluetooth-scanner': { title: 'Bluetooth scanner', devices: [{ name: 'Printer', mac: 'AA:BB:CC:00:11:22', rssi: -48 }] }
 };
@@ -267,7 +277,18 @@ async function main() {
     console.log(`SUMMARY window-offscreen ${counts['window-offscreen']} (${where['window-offscreen'].size} surface-sizes), frame-offscreen ${counts['frame-offscreen']} (${where['frame-offscreen'].size}), clipped ${counts.clipped} (${where.clipped.size})`);
     if (opt('json', null)) writeFileSync(opt('json'), JSON.stringify(report, null, 2));
     const fits = counts['window-offscreen'] + counts['frame-offscreen'] + counts.clipped;
-    if (flag('strict') && fits) { console.log(`FAIL: ${fits} fit breach(es)`); process.exit(1); }
+    // A scene that did not open (or threw on open) was never audited, so "clean" means nothing for
+    // it: --strict counts it as a failure unless it is on --skip (review m4)
+    const skip = new Set((opt('skip', '') || '').split(',').filter(Boolean));
+    const unaudited = [];
+    for (const [name, bySize] of Object.entries(report)) {
+        if (skip.has(name.replace(/^mg-/, '')) || skip.has(name)) continue;
+        for (const [size, r] of Object.entries(bySize)) {
+            if (!r.open || (r.errors || []).length) unaudited.push(`${name} ${size}${r.open ? ' (error)' : ' (not open)'}`);
+        }
+    }
+    if (unaudited.length) console.log(`NOT AUDITED ${unaudited.length}: ${[...new Set(unaudited.map(u => u.split(' ')[0]))].join(', ')}`);
+    if (flag('strict') && (fits || unaudited.length)) { console.log(`FAIL: ${fits} fit breach(es), ${unaudited.length} surface-size(s) not audited`); process.exit(1); }
 }
 
 if (IS_MAIN) main().catch(e => { console.error(e); process.exit(2); });

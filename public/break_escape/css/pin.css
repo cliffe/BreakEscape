@@ -574,10 +574,11 @@
 }
 
 /* The keypad's message line under the display (critique A10): a wrong code is reported here,
-   in the display's green-on-black LCD look, instead of over the keys. It keeps its height
-   when empty so the keys do not jump. */
+   in the display's green-on-black LCD look, instead of over the keys. It keeps the height of
+   two lines (24px each, plus its 2px padding and borders) when empty, so a wrong code that
+   wraps ("Incorrect PIN. 2 attempts remaining.") does not push the keys down (review m2). */
 .pin-minigame-message {
-    min-height: 24px;
+    min-height: 56px;
     max-width: 320px;
     margin: -12px auto 0;
     font-family: 'VT323', monospace;

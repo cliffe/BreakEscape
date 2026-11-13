@@ -326,7 +326,10 @@
     border: 2px solid #00ff00 !important;
 }
 
-/* Close button for minigames */
+/* Close button for minigames. The shell scrolls, so the X is fixed to the window: it stays
+   reachable whichever way the shell is scrolled (UI shell review M1, M2). The shell's own
+   scrollbar width comes in as --minigame-shell-bar (base-minigame.js) so the X sits left of
+   it. A scene that moves its X into a frame (a parent other than the shell) keeps absolute. */
 .minigame-close-button {
     position: absolute;
     top: 15px;
@@ -344,6 +347,11 @@
     align-items: center;
     justify-content: center;
     transition: background-color 0.3s ease;
+}
+
+.minigame-container > .minigame-close-button {
+    position: fixed;
+    right: calc(15px + var(--minigame-shell-bar, 0px));
 }
 
 /* A conversation's only exit on a phone is its X (UX q100): keep the drawn size but give it

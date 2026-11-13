@@ -68,3 +68,19 @@ test('a frame past the viewport is frame-offscreen; one inside is not', () => {
         { ...SHELL, '.minigame-game-container': [8, 8, 384, 784] });
     assert.equal(kinds(on, 'frame-offscreen').length, 0);
 });
+
+test('a block collapsed to nothing by its toggle (max-height 0) is not a clipped hit (m3)', () => {
+    const r = page(`<div class="minigame-container"><div class="minigame-game-container"><div class="ctl" style="overflow-x:hidden;overflow-y:hidden">
+        <input class="search" type="text"></div></div></div>`,
+    { ...SHELL, '.minigame-game-container': [0, 0, 400, 800], '.ctl': [0, 100, 400, 0], '.search': [10, 110, 200, 30] });
+    assert.equal(kinds(r, 'clipped').length, 0);
+});
+
+test('a scroll box that an outer hidden box cuts is reported, not passed (m4)', () => {
+    const r = page(`<div class="minigame-container"><div class="minigame-game-container"><div class="outer" style="overflow-x:hidden;overflow-y:hidden">
+        <div class="list" style="overflow-y:auto"><span class="row">Row</span></div></div></div></div>`,
+    { ...SHELL, '.minigame-game-container': [0, 0, 400, 800], '.outer': [0, 100, 400, 100], '.list': [0, 150, 400, 300], '.row': [0, 160, 100, 20] });
+    const c = kinds(r, 'clipped');
+    assert.equal(c.length, 1);
+    assert.match(c[0].detail, /cut \(y\)/);
+});

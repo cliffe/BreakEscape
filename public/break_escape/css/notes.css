@@ -76,11 +76,13 @@
 /* Content area */
 .notes-minigame-content-area {
     position: absolute;
-    top: 0;
+    /* The scroll box starts below the X (38px box plus its 4px gap and the page border), so
+       its scrollbar never runs under the X (UI shell review M3) */
+    top: 48px;
     left: 0;
     right: 0;
     bottom: 0;
-    padding: 2% 12% 8% 18%;
+    padding: 0 12% 8% 18%;
     font-size: 18px;
     line-height: 1.5;
     color: #333;
@@ -94,7 +96,7 @@
     --pixel-scroll-thumb: #b7ae98;
     --pixel-scroll-edge: #5c5446;
     --pixel-scroll-hover: #2c3e50;
-    height: 90%; /* so that it scolls before the bottom of the image */
+    height: calc(90% - 48px); /* so that it scrolls before the bottom of the image */
 }
 
 /* Text box container */

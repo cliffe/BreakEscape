@@ -140,21 +140,43 @@ export class MinigameScene {
         const c = this.container.getBoundingClientRect();
         const cs = window.getComputedStyle(frame);
         const gap = 4;
-        // The X is absolute inside the shell, which scrolls (UI shell build): its offsets are in
-        // the shell's scrolled content, so the scroll is added back
-        const scrollTop = this.container.scrollTop || 0;
-        const top = Math.max(r.top, c.top) + (parseFloat(cs.borderTopWidth) || 0) + gap - c.top + scrollTop;
+        // The X is fixed to the window (css/minigames-framework.css), so these are window
+        // coordinates: a shell scrolled down or sideways moves the frame under the X, which
+        // stays on the visible top-right of the frame (M1, M2 of the UI shell review).
+        const shellBar = this.shellScrollbarWidth();
+        const top = Math.max(r.top, c.top) + (parseFloat(cs.borderTopWidth) || 0) + gap;
         // A frame that scrolls keeps its scrollbar clear of the X
         const borders = (parseFloat(cs.borderLeftWidth) || 0) + (parseFloat(cs.borderRightWidth) || 0);
         const scrollbar = Math.max(0, (frame.offsetWidth || 0) - (frame.clientWidth || 0) - borders);
-        // right is measured from the shell's padding box, which a shell scrollbar narrows
-        const ccs = window.getComputedStyle(this.container);
-        const shellBorders = (parseFloat(ccs.borderLeftWidth) || 0) + (parseFloat(ccs.borderRightWidth) || 0);
-        const shellBar = Math.max(0, (this.container.offsetWidth || 0) - (this.container.clientWidth || 0) - shellBorders);
-        const right = c.right - Math.min(r.right, c.right) + (parseFloat(cs.borderRightWidth) || 0) + scrollbar + gap - shellBar;
+        // The visible edge of the shell, less its own scrollbar
+        const edge = c.right - shellBar;
+        const right = c.right - Math.min(r.right, edge) + (parseFloat(cs.borderRightWidth) || 0) + scrollbar + gap;
         btn.style.top = `${Math.round(top)}px`;
-        btn.style.right = `${Math.round(right)}px`;
+        btn.style.right = `${Math.round(Math.max(right, shellBar + gap))}px`;
         btn.classList.add('minigame-close-in-frame');
+    }
+
+    // Width of the shell's own vertical scrollbar (0 when it does not scroll)
+    shellScrollbarWidth() {
+        const el = this.container;
+        if (!el) return 0;
+        const ccs = window.getComputedStyle(el);
+        const borders = (parseFloat(ccs.borderLeftWidth) || 0) + (parseFloat(ccs.borderRightWidth) || 0);
+        return Math.max(0, (el.offsetWidth || 0) - (el.clientWidth || 0) - borders);
+    }
+
+    // The default X is fixed to the window's top-right corner, so it stays reachable while the
+    // shell scrolls either way; it sits left of the shell's scrollbar when one shows.
+    _watchShellScrollbar() {
+        const set = () => this.container?.style?.setProperty?.('--minigame-shell-bar', `${this.shellScrollbarWidth()}px`);
+        const raf = window.requestAnimationFrame || ((f) => setTimeout(f, 16));
+        set();
+        raf(set);
+        this.addEventListener(window, 'resize', set);
+        if (typeof window.ResizeObserver === 'function' && this.container?.nodeType === 1) {
+            this._shellObserver = new window.ResizeObserver(set);
+            this._shellObserver.observe(this.container);
+        }
     }
 
     _watchCloseButton() {
@@ -176,6 +198,7 @@ export class MinigameScene {
     start() {
         this.gameState.isActive = true;
         console.log("Minigame started");
+        try { this._watchShellScrollbar(); } catch (e) { console.warn('watchShellScrollbar', e); }
         if (this.constructor.closeInsideFrame === true && this.params.disableClose !== true) {
             try { this._watchCloseButton(); } catch (e) { console.warn('placeCloseButton', e); }
         }
@@ -364,6 +387,8 @@ export class MinigameScene {
         });
         this._eventListeners = [];
         
+        this._shellObserver?.disconnect?.();
+        this._shellObserver = null;
         this._closeObserver?.disconnect?.();
         this._closeObserver = null;
 

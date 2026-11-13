@@ -659,7 +659,7 @@ export class PinMinigame extends MinigameScene {
             this.displayElement.classList.add('locked');
             this.displayElement.textContent = 'LOCKED';
 
-            this.showPinMessage('Maximum attempts reached. System locked. Your guesses so far are kept.', 'wrong', 3000);
+            this.showPinMessage('Locked out. Your guesses are kept.', 'wrong', 3000);
             
             // Set game result
             this.gameResult = {

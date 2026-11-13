@@ -27,8 +27,10 @@
     background: #080e1b;
     border: 2px solid #2a3a5a;
     width: 460px;
-    max-width: 100%;
-    max-height: 100%;
+    /* Never narrower or shorter than its native size: the labels are 8px pixel text drawn in
+       the SVG, so the panel scrolls in .ap-game-container instead of scaling them down
+       (UI shell review M5) */
+    flex: 0 0 auto;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -74,12 +76,10 @@
 /* ── SVG panel ──────────────────────────────────────────────────────────── */
 
 .ap-svg {
-    width: 100%;
-    padding: 0 8px;
-    box-sizing: border-box;
-    /* On a short window the lamp rows shrink to fit between the header and the footer */
-    min-height: 0;
-    flex: 0 1 auto;
+    /* Drawn at the viewBox size (1:1, set in the markup), never scaled */
+    flex: 0 0 auto;
+    align-self: center;
+    max-width: none;
 }
 
 /* Colour transitions on the lamps */

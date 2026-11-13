@@ -140,6 +140,16 @@
     }
 }
 
+/* Phones: the box is the canvas's own shape (580 x 340), so the instructions strip sits right
+   under the lock, not under a box as tall as the game area (UI shell review M4). */
+@media (max-width: 768px) {
+    #phaser-game-container {
+        aspect-ratio: 580 / 340;
+        height: auto;
+        flex: 0 0 auto;
+    }
+}
+
 /* Portrait mobile: let the canvas fill available vertical space */
 @media (max-width: 768px) and (orientation: portrait) {
     #phaser-game-container {
