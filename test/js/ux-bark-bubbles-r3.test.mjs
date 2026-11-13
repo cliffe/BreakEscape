@@ -247,9 +247,11 @@ test('R3 m1: leaving view still sends line and hint together as the remainder (n
 test('R3 m2: bubbles are drawn above the room lighting, below the overlay markers', () => {
     const r = rig();
     assert.equal(BUBBLE_DEPTH, LIGHT_DEPTH + 3);
+    window.lightingSystem = { rooms: new Map() };   // lighting on (R4 n2: off has its own depth)
     r.bubbles.say('dana', LINE);
     r.bubbles.update();
     assert.equal(r.bubbles.bubbles.get('dana').box.depth, LIGHT_DEPTH + 3);
+    window.lightingSystem = null;
     assert.ok(BUBBLE_DEPTH < LIGHT_DEPTH + 10, 'talk icons, health bars and damage numbers (overlayDepth) stay on top');
 });
 
