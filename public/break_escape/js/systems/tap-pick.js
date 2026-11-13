@@ -254,37 +254,27 @@ export function objectStandPoint(obj, player, deps) {
         }
     }
     if (best && bestReach <= range - 4 && usable(best)) return best;
-    // Nothing usable in plain reach. Only for a `sameRoom` rule: an object at the foot of
-    // its room's floor, in the strip over the next room's back wall, is in reach of no
-    // feet point on its own side by the plain measure. The game measures reach from a point
-    // FACE_DOWN_REACH below the sprite centre when the player faces down (interactions.js
-    // getInteractionDistance), and the walk there ends heading down onto it, so stand points
-    // north of it, a little further out, count with that offset (UX slice 15 R2, M1).
+    // Nothing usable with the margin. Only for a `sameRoom` rule: an object at the foot of
+    // its room's floor, in the strip over the next room's back wall, is in reach of only a
+    // narrow band of feet points on its own side (the arrival check, interactions.js
+    // isObjectInInteractionRange, is the plain centre distance within the range). Look north
+    // of it for a usable point within the range itself, nearest walk first (UX slice 15 R2, M1).
     if (deps.sameRoom) {
-        const facedReach = (p) => {
-            const cx = p.x - footDx, cy = p.y - footDy;
-            const down = obj.y > cy && Math.abs(obj.y - cy) >= Math.abs(obj.x - cx);
-            return down ? Math.min(Math.hypot(cx - obj.x, cy - obj.y), Math.hypot(cx - obj.x, cy + FACE_DOWN_REACH - obj.y))
-                : Math.hypot(cx - obj.x, cy - obj.y);
-        };
-        let faced = null, facedWalk = Infinity;
+        let edge = null, edgeWalk = Infinity;
         for (let a = 0; a < 16; a++) {
             const ang = (a / 16) * Math.PI * 2;
             if (Math.sin(ang) >= 0) continue;    // only points north of the object
-            for (const r of [16, 24, 32, 40]) {
+            for (const r of [20, 24, 28, 30, 31]) {
                 const c = findCell(obj.x + Math.cos(ang) * r + footDx, obj.y + Math.sin(ang) * r + footDy, 3);
-                if (!c || facedReach(c) > range - 4 || !usable(c)) continue;
+                if (!c || reachAfter(c) > range - 1 || !usable(c)) continue;
                 const wk = walk(c);
-                if (wk < facedWalk) { faced = c; facedWalk = wk; }
+                if (wk < edgeWalk) { edge = c; edgeWalk = wk; }
             }
         }
-        if (faced) return faced;
+        if (edge) return edge;
     }
     return best || target;
 }
-
-/** How far below the sprite centre reach is measured when the player faces down (interactions.js). */
-const FACE_DOWN_REACH = 16;
 
 export const PENDING_TAP_USE_MS = 10000;
 const STOPPED_SHORT_MS = 400;   // not moving this long, and out of reach: he stopped short

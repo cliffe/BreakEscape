@@ -89,8 +89,8 @@ test('UX slice 15 R2 (M1): an object in a shared strip is approached from its ow
     const sameRoom = (p) => p.y < 64;            // feet south of y 64 are in the lobby
     const t = objectStandPoint(obj, player, { range: RANGE, findCell, sameRoom });
     assert.ok(t.y < 64, `the stand point is on usb_room's side: ${JSON.stringify(t)}`);
-    // In reach as the game measures it facing down: from 16 px below the sprite centre
-    assert.ok(Math.hypot(t.x - obj.x, t.y - 31 + 16 - obj.y) <= RANGE - 4, `and in reach facing down: ${JSON.stringify(t)}`);
+    // In reach as the arrival check measures it: the sprite centre within the range
+    assert.ok(Math.hypot(t.x - obj.x, t.y - 31 - obj.y) <= RANGE - 1, `and in reach on arrival: ${JSON.stringify(t)}`);
     // Without a sameRoom rule nothing changes: the nearest plain-reach point, in the lobby
     assert.ok(objectStandPoint(obj, player, { range: RANGE, findCell }).y >= 64);
     // From the lobby side (feet (48, 140)), with no rule, the aim is in the lobby
