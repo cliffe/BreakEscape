@@ -46,7 +46,7 @@ open in either run (fix the spec: see handover).
 
 | Item | Fix | Where |
 |---|---|---|
-| X5 | Scene-owned close buttons and their handlers removed: claims Close, coverage Close, warranty Close (and its empty footer), blockchain Close Terminal, EHR [CLOSE TERMINAL] (online view), log filter [CLOSE]. The log filter now draws into the framework game area (it used to clear the whole shell), so it has the standard X. EHR [UNDERSTOOD] kept (acknowledges the outage notice). Sub-dialog buttons kept: ESD confirm-dialog CANCEL, SIS detail and compare pop-up Close (they shut the pop-up, not the scene) | the scene JS files |
+| X5 | Scene-owned close buttons and their handlers removed: claims Close, coverage Close, warranty Close (and its empty footer), blockchain Close Terminal, EHR [CLOSE TERMINAL] (online view), log filter [CLOSE]. The log filter now draws into the framework game area (it used to clear the whole shell), so it has the standard X. EHR [UNDERSTOOD] kept (acknowledges the outage notice). Coordinator decisions (rule: minigames close with the X only; confirms keep two named buttons and no X): the ESD confirm keeps CONFIRM and CANCEL; the SIS detail and compare pop-ups are not confirms, so their Close text buttons became the shared X (`.minigame-close-button`) inside the pop-up, with the pop-up title padded for it. While the SIS overlay (pop-ups or confirm) or the ESD confirm is open, the scene X hides, so one close control shows at a time | the scene JS files |
 | X4 | closeInsideFrame with closeAnchor on the frame: EHR (.ehr-terminal-panel), ESD (.esd-panel), SIS config (game area), backup recovery (.backup-recovery-shell), command board (#cb-panel), log filter (.lf-wrapper), capture log (game area, now a framed window). Header right padding for the X (48 to 56px) on SIS, backup recovery, claims, coverage, DLI, SCADA, warranty, log filter, blockchain, NAD (54px, min-height 46), NCSC bar (52px, 50px tall) | css and js per scene |
 | X2 / scene heights | EHR, ESD, SIS, backup recovery: frames size to content with max-height 100% and scroll inside (pixel-scroll); claims, coverage, SCADA: 620/500px minimums gone; command board: 540px minimum and the `transform: scale(0.85)` below 1200px gone (crisp text), short windows scroll the board; ransomware: 100vw/100vh gone | css per scene |
 | X3 | Under 600px: claims nav wraps above the record, cards one per row; command board timeline above status, [AUTO] under the time; SIEM alerts on two lines, queue below; SCADA channel list above the chart; log filter builder above the table; blockchain graph above detail; EHR patient list above the record; SIS table rows as cards with the column name in each cell (data-label); segmentation map panel under the map below 900px, the map keeps 760px and scrolls sideways; network view locked badge holds its width and drops under the text under 480px | css per scene; data-label attributes in sis-config-threshold-minigame.js |
@@ -60,6 +60,7 @@ open in either run (fix the spec: see handover).
 | EHR1-2 | Panel sizes to content, content safe-centred and scrolls | ehr css/js |
 | ESD1-2 | Transparent game area, the panel is the frame and scrolls inside, label padded for the X | esd css/js |
 | FDP1 | Tabs wrap onto a second row | forensic css |
+| IP1 | When the pump's box is narrower than the 784px side-by-side canvas, the scene lays out one 368px column: the MAR record (as tall as its rows) above the pump; the pump screen wraps its rows and holds a two-line message; keypad and Confirm below, reached by scrolling the box with More below. Whole zoom only, no game-logic change. Turning the phone round rebuilds the scene in the other layout and keeps the typed rate. The pop-ups now centre on the visible part of the canvas (they were centred on the canvas, so off screen when scrolled) | infusion-pump js |
 | IP2 | More below in its own strip under the canvas | infusion-pump css |
 | NCSC1 | TLP bar 50px tall with 52px side padding, so the X sits inside the band clear of the text | ncsc css |
 | NSM1-2 | Body scrolls, panel stacks under 900px; SVG rule labels in VT323 | segmentation css/js |
@@ -73,79 +74,110 @@ open in either run (fix the spec: see handover).
 | CL1 | Framed window (2px frame, max 760px) with the framework title inside the frame as its bar and the X in it; list scrolls inside; 2px rows; text 16 to 20px | capture-log css/js |
 | LF1 | See X3/X5/X6 | log-filter css/js |
 
-Skipped:
-- IP1 (keypad beside the record at 390): the record and keypad are drawn on the Phaser canvas
-  (784px wide), so stacking them needs a portrait layout in the scene's Phaser drawing code. Not
-  attempted in this branch; at 390 the canvas scrolls sideways inside its box at 1x.
-- X8, NAD1, CF1: waiting on the user.
+Second builder (final pass):
+
+| Item | Fix | Where |
+|---|---|---|
+| 5a ESD at 800x600 | Fits (audit clean, shot checked). The confirm also now covers the part of the panel in view when the panel is scrolled (it sat at the panel's scroll top) and the panel holds still under it | esd js |
+| 5b title logo at 390 | Logo width min(300px, 50vw - 16px), so the zoom to 200% ends inside the screen | title-screen css |
+| 5c lockpicking at 915x412 | Short landscape windows (max-height 560, min-width 769): item strip compact, picture at its own 1x size in a row with the name; the strip went from 224 to about 112px and the pins, shear line and tools show without scrolling. The lock itself is not scaled (no whole step fits) | lockpicking css |
+| ESD audit | Hazard stripes start with an explicit 0 stop (hard stops, the audit accepts them); ESD button text size 16px (was the 13.33px button default) | esd css |
+| SIEM (after shots) | Rows had min-height in a fixed-height flex column, so they shrank and wrapped messages ran over the next row at 915x412; at 800 the message column was squeezed to one letter a line. Rows never shrink now, and below 1100px the message takes its own line under badge, time, host and buttons | siem css |
+| Command board (after audit) | The log field was 100% wide plus padding and ran 14px past the board at 390: border-box, minmax(0, 1fr) column | command-board css |
+| Segmentation map (after audit) | Map area 384px tall at least, so the clinical zone's six devices are not cut at 915x412 | segmentation css |
+| Pixel scrollbars (after shots) | Default scrollbars showed on the ransomware note, log filter panes and backup consequence panel: `pixel-scroll` added | those scene js |
+| Claims, backup recovery font-size | Nav buttons and source tiles had the 13.33px button default (their parts set their own sizes): 16px | those css |
+
+Not done:
+- 5d (Agent HaX incoming-call toast over the PIN title at 915x412): needs logic. The ring layer
+  is a fixed top-centre strip, and at 412px tall the minigame frame fills the window, so any
+  fixed spot covers some scene's content (top centre: titles; bottom: the lock or keypad rows;
+  top right: the X). Avoiding the title needs the open minigame's title rectangle measured and
+  the toast moved clear of it. Not attempted.
+- X8, NAD1, CF1: waiting on the user. NAD1 is the one remaining overflow line (network
+  architecture at 390, the 700px diagram).
 - SIEM3: false positive (DISMISS is a per-alert action); the audit still counts it as
   cancel-beside-x.
 
 ## 3. Tests
 
-- test/js/minigame-consoles-fit.test.mjs (8 tests, new): no scene-owned Close/[CLOSE]/Close
-  Terminal button in the 12 changed scenes; log filter never clears the shell; the framed scenes
-  opt into closeInsideFrame with the right anchor; no scene px minimum or viewport height that
-  pushes a frame off a short window; the command board is never scaled; pixel rules in the
-  console sheets (no Courier, 1px lines, radius, faux bold, soft gradients); Press Start on its
-  grid with px line heights; every multi-column console has a 600px phone rule.
+- test/js/minigame-consoles-fit.test.mjs (10 tests): no scene-owned Close/[CLOSE]/Close
+  Terminal button in the 12 changed scenes; pop-ups that are not confirms use the shared X,
+  confirms keep two named buttons, the scene X hides while either is open, EHR keeps
+  [UNDERSTOOD]; log filter never clears the shell; the framed scenes opt into closeInsideFrame
+  with the right anchor; no scene px minimum or viewport height that pushes a frame off a short
+  window; the command board is never scaled; pixel rules in the console sheets; Press Start on
+  its grid; every multi-column console has a 600px phone rule; the after-shot fixes (SIEM rows,
+  command board field, pixel scrollbars).
+- test/js/minigame-close-shell.test.mjs (19 tests, 3 new): pump stacking width and layouts,
+  keypad and Confirm geometry (side by side unchanged, stacked fits), pop-up centring on the
+  visible canvas.
 - Every test file that names a changed module, plus minigame-shell-fit and minigame-close-shell
-  (34 files, plain `node file`): 513 pass, 0 fail (before the last shot-fix commit 8d6c5398f;
-  the new test passes after it).
+  (36 files, plain `node file`): 524 pass, 0 fail on c13feb914..a2a4f5220; the files for the
+  last commit cc897d552 rerun after it: all pass (consoles-fit 10/10).
 
 ## 4. After results
 
-See the handover: the after audit was running when the context limit came.
+Audit on the tip (cc897d552), fresh game 3346 (test_seating), and the baseline worktree
+(fc4b4d8a5, :3481) re-run on the same game:
+
+`node tools/playtest/ui-rules-audit.mjs --port <port> --game 3346 --all --strict --skip person-chat,network-view --sizes 1400x1000,800x600,915x412,390x844`
+
+| Kind | Baseline fc4b4d8a5 | Tip cc897d552 |
+|---|---|---|
+| window-offscreen | 0 | 0 |
+| frame-offscreen | 5 | 1 (alarm panel 915, by design, in the baseline too) |
+| clipped | 23 | 0 |
+| x-on-frame | 0 | 0 |
+| overflow | 29 | 3 (network architecture 390, NAD1, in the baseline too) |
+
+The baseline re-run on game 3346 gave exactly the first builder's figures (5 / 23 / 0 / 29). No
+fit line on the tip is new against the baseline. An interim tip run (before cc897d552) had SIEM
+800/915 clipped and command board 390 clipped; cc897d552 fixed them. The title screen 390 line
+(accepted at the baseline) and ESD 800x600 are clean. SIEM still reports cancel-beside-x
+(SIEM3, false positive). Logs: scratchpad ui-consoles/after2/audit-base.log, audit-tip2.log.
+
+Shell X check (`node tools/playtest/shell-x-check.mjs --port 3480 --game 3346`): 168 checked, 1 failed (baseline: 164 checked, 0 failed). The failure is new: network segmentation map 915x412, "scrolled to the end: X over the scrollbar of div.nsm-consequence-body". Probably from cc897d552 (map area raised to 384px), which leaves the consequence panel short enough to scroll beside the map, with its scrollbar under the X. Open, see Handover. Log: after2/shell-x-tip.log.
+
+Shots: scratchpad ui-consoles/after2 (every critique B scene at the four sizes, plus SIS
+detail/compare/confirm, ESD confirm and confirm-scrolled, pump conflict and double-check
+pop-ups and rotation, lockpicking door, title screen); contact sheets in after2/sheets. Looked
+at every scene at every size. The SCADA spec now opens the historian from hmi_ops_01's
+contents (it is not a room object). The earlier coverage form, ransomware, blockchain and
+capture log shots are title-only starts with no data (layout only).
+
+## Final state (2026-11-13)
+
+Branch build/ui-consoles, tip: the commit of this log (after cc897d552). Not ready to merge until the open item below is fixed. Commits after the first builder's
+9518023ca: c13feb914 (IP1), 7e9810557 (close controls, ESD), a2a4f5220 (5b, 5c), cc897d552
+(after-shot fixes), and this log.
+
+Servers :3480 and :3481 stopped by PID. The baseline worktree .claude/worktrees/p-ui-consoles-base
+(detached at fc4b4d8a5) is left in place for the coordinator to remove.
+
+Gotchas: the server serves files live, so never edit while a baseline run is going on the same
+tree; `font-weight: bold` hides in one-line rules; a button with no text of its own still gets
+flagged for the 13.33px default size; a flex column that scrolls needs `flex-shrink: 0` on rows
+that set an explicit min-height.
 
 ## Handover (context limit, 2026-11-13)
 
-Done: sections 2 and 3, commits 8eb80aa66, 1ec5496d7, 20ee61065, dece21959, 836db485e,
-b67176897, 8d6c5398f (and the commit of this log).
+Done: IP1, the close-control decisions, 5a to 5c, the after audit and shell X check, shots of
+every scene at four sizes looked at, fixes from them (sections 2 to 4).
 
 Open, in order:
-1. Re-run the after audit and shell-x-check on the tip (the after audit in progress started
-   before 8d6c5398f, so its numbers mix two states):
-   start the keyless server from this worktree on :3480 (see UI_SHELL_BUILD_LOG.md "Merge
-   batch" for the command, pid file test/dummy/tmp/pids/server-3480.pid), then
-   `node tools/playtest/ui-rules-audit.mjs --port 3480 --game 3084 --all --strict --skip person-chat,network-view --sizes 1400x1000,800x600,915x412,390x844 --json <out>`
-   and `node tools/playtest/shell-x-check.mjs --port 3480 --game 3084`. Compare with section 1
-   (5 / 23 / 0 / 29) per kind and fill section 4. The baseline shell-x-check log is
-   scratchpad ui-consoles/before/shell-x.log.
-2. Re-shoot: `node <scratchpad>/ui-consoles/shoot.mjs --port 3480 --specs <scratchpad>/ui-consoles/specs.mjs --out <scratchpad>/ui-consoles/shots-after`
-   and look at every changed scene at the four sizes. Fix the SCADA spec first: the object
-   `historian_trend_viewer` is not in scada_control_room (grep sis02_energy for its room), or
-   start it title-only. Shots looked at so far: ESD 915 (fixed after: panel now scrolls inside),
-   backup recovery 915 (good), command board 390 (header overlap fixed after), SIEM 390 (good),
-   EHR 915 (icon clipped, fixed after), segmentation map 390 (map widened after), claims 390
-   (good). Not yet looked at: coverage form, ransomware, blockchain, capture log, log filter,
-   warranty, DLI, SIS, NCSC, FDP, network view (needs a joined foothold, use the real path).
-3. Remaining audit kinds to check in the after run: claims and backup recovery reported
-   `font-size` (probably GNF at an odd size; check the detail in the JSON); ESD reported
-   `gradient` (the hazard stripes are a hard-stop repeating gradient: check the audit's hard-stop
-   test accepts it, or draw the stripes another way); network architecture 390 `overflow` (NAD1
-   territory: note only).
-4. IP1 portrait canvas layout (skipped, see above): ask the orchestrator whether to build it.
-5. Coordinator additions (train 35 live check, shots in
-   /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/4ecd98f2-4e95-460a-a7ea-2031ffddfff5/scratchpad/train35-live/), not started:
-   a. ESD at 800x600: frame ran 40px past the bottom inside the scrolling shell. Probably fixed by
-      8d6c5398f (the panel is now the scroller, max-height 100%); confirm in the after audit.
-   b. Title screen at 390x844: the oversized logo is clipped by its container. Make the logo fit
-      at 390 (css/title-screen.css).
-   c. Lockpicking at 915x412: the 224px header leaves 188px for a 494px lock. Compact the header
-      or scale the lock by a whole step if it fits cleanly; otherwise note and skip.
-   d. Agent HaX's incoming-call toast covers the PIN title at 915x412: see whether the toast can
-      avoid an open minigame's title bar by layout alone; if it needs logic, note and skip.
-   Recipe fix for UI_SHELL_BUILD_LOG.md "Merge batch" (new-game.rb, pid file path): done in this commit.
-6. Known side effect to check: the ESD confirm modal is `position: absolute; inset: 0` inside
-   the now-scrolling panel, so on a short window it covers the panel's top, not the scrolled
-   view. Pressing the button scrolls the housing into view first in practice; check at 915x412.
+1. Shell X check failure, network segmentation map 915x412: X over the scrollbar of
+   `.nsm-consequence-body` when scrolled to the end. Look at the right edge of the body at
+   915x412 (the panel sits beside the map from 901px up); likely fixes: give the consequence
+   panel's top the X's clearance, or let `.nsm-body` scroll and drop the inner scroll on
+   `.nsm-consequence-body` at max-height 560. Then rerun
+   `node tools/playtest/shell-x-check.mjs --port <port> --game 3346` (about 10 minutes) and the
+   audit, and expect 168 checked, 0 failed with audit 0 / 1 / 0 / 0 / 3.
+2. 5d (toast over the PIN title): needs logic; see "Not done".
+3. X8, NAD1, CF1: waiting on the user.
 
-Servers: :3480 (this worktree) and :3481 (the baseline worktree
-.claude/worktrees/p-ui-consoles-base, detached at fc4b4d8a5) are stopped by PID at the end of
-this run; the baseline worktree is left for the next agent (remove it with `git worktree remove`
-when done).
-
-Gotchas: the server serves files live, so never edit while a baseline run is going on the same
-tree (the first baseline here was discarded for that reason); `font-weight: bold` hides in
-one-line rules the pixelfix script does not see; jsdom-free source tests only, no new engine
-imports (no harness copy list change needed).
+To resume: start the keyless server from this worktree on a port in 3480 to 3484 (recipe in
+UI_SHELL_BUILD_LOG.md "Merge batch"), game 3346. Shots: `node <scratchpad>/ui-consoles/shoot.mjs
+--port <port> --specs <scratchpad>/ui-consoles/specs.mjs --only network-segmentation-map --out
+<scratchpad>/ui-consoles/after2`, then `python3 -I <scratchpad>/ui-consoles/sheet.py after2
+after2/sheets` for a contact sheet.
