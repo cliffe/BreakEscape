@@ -575,6 +575,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
       "type": "workstation",
       "id": "cyberchef_workstation",
       "name": "CyberChef Workstation",
+      "host": "CYBER-LAP-01",
       "takeable": true,
       "puzzle_graph_role": "tool",
       "puzzle_graph_note": "Decoding tool for the go-bag's encoded safehouse card",
@@ -1692,6 +1693,8 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
         {
           "type": "pc",
           "name": "Vance's BMS Monitoring Terminal",
+          "host": "BMS-MON-01",
+          "desktopUser": {"name": "Robert Vance", "character": "robert_vance"},
           "takeable": false,
           "observations": "Vance's BMS terminal. Every rack bank green, 28°C, NORMAL: the same feed as the SCADA wall, so it agrees with it."
         },
@@ -1896,6 +1899,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
         {
           "type": "pc",
           "name": "Network Monitoring Station",
+          "host": "OT-NETMON-01",
           "position": "as-type:kvm_cart",
           "takeable": false,
           "observations": "A live traffic monitor for the OT network. Steady SCADA polling, and a second stream into the BMS jump server at <%= jump_server_ip %>, on a high port, from a host that isn't on Albion's asset list."
@@ -1960,6 +1964,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
         {
           "type": "pc",
           "name": "Security Camera Monitors",
+          "host": "SEC-CAM-WALL",
           "position": "as-type:cctv_monitors",
           "takeable": false,
           "observations": "The camera wall. Scrub back to the 9th and cameras 7, 8, 12 and 15 go black at 23:45 and come back at 03:00. Workshop corridor and the Hall 2 door."
@@ -2248,6 +2253,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
           "type": "pc",
           "id": "hall1_round_panel",
           "name": "Duty Round Panel",
+          "host": "HALL1-ROUND-01",
           "takeable": false,
           "position": "as-type:aes_round_terminal",
           "hasFingerprint": true,
@@ -2692,6 +2698,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
           "type": "pc",
           "sprite": "entropy_command_unit1",
           "name": "ENTROPY Command Laptop",
+          "host": "CM-FIELD-LT",
           "position": "as-type:laptop",
           "takeable": false,
           "readable": true,
