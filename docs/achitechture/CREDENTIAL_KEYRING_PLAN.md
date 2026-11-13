@@ -736,11 +736,26 @@ Mocks to build: (m1) the chosen line with each kind's tag and button; (m2) the g
 - Connect signs in directly when accepted; the screen opens only for a refusal. The tray offers Connect only with no screen open.
 - The inline item shape is not accepted.
 
-## Appendix A. Handover (2026-11-13, after review round 3 applied)
+## Appendix A. Handover (2026-11-13, after review round 4 written)
 
 For the next agent continuing the plan's review loop. Remove this appendix when the loop ends.
 
-- **Done.** Round 0 draft (8585b394b). Round 1: server B1 M2 m2 n2, UX B1 M11 m12 n5 (60159ca52). Round 2: server B0 M2 m4 n3, UX B2 M8 m12 n5; rewrite 71323e381. Round 3: server B1 M2 m3 n1 (d18976c43), UX B2 M8 m13 n3 (e0b6e123b); rewrite applying every B, M and minor (this commit), plus UI slice 6's session `locked` flag.
-- **Next step.** Round 4 reviews (`CREDENTIAL_KEYRING_PLAN_REVIEW_R4_SERVER.md`, `..._R4_UX.md`), each by a fresh reviewer; rewrite; round 5 at the latest; stop at the first round with 0 B and 0 M from both.
+- **Done.** Round 0 draft (8585b394b). Round 1: server B1 M2 m2 n2, UX B1 M11 m12 n5 (60159ca52). Round 2: server B0 M2 m4 n3, UX B2 M8 m12 n5; rewrite 71323e381. Round 3: server B1 M2 m3 n1 (d18976c43), UX B2 M8 m13 n3 (e0b6e123b); rewrite 66b998cf5, which also builds on UI slice 6's session `locked` flag (sections 2, 3.8, 8.3, 14). Round 4 reviews written: server B1 M1 m2 n2 (4c212e31c), UX B1 M10 m14 n3 (c808caa3b). The plan text above is the round 3 rewrite: no round 4 finding is applied yet.
+- **Next step.** Read both round 4 review files, check each finding in code, rewrite the plan as a standalone document with no references to reviews, commit. Then round 5 (fresh server reviewer on the opus48 agent type, fresh UX reviewer on opus55, same briefs as round 4). Round 5 is the last: fold in any remaining M and say so.
+- **Round 4 points to settle** (evidence in the review files):
+  - Server B1: a relay session must be a reach sink everywhere, not only in `reach_session_hosts`: also `resource_admits_player?` (`network_access.rb:1218, 1251`), `mapped_shares` (`:1265`) and the K4 `from` route (a `from` whose source is a relay session is refused). Test: POST /login `ops_rdp` with `from: jake_pc` during a relay is refused.
+  - Server M1: `held` item-definition scope must include declared-grant contents, or the validator must error on grant-only placement.
+  - Server minors: a relay sign-in adds the PC to grow-only `signedInPcs`, so a `session` proof keyed on it holds forever (exclude relay sign-ins, or forbid `session` proofs on relay targets); `unlock_session_refusal` (`game.rb:2727, 2752`) picks its text by foothold presence and needs the route; the schema `x-ref` the plan names has no mechanism (only `x-id-map`); `screen-states.js:83` is listed in both K2 and K3a.
+  - UX B1: K1's live proof cannot sign in at Lena's PC before K2 (no password source, and Finance's PIN is on her desktop); prove `session: lena_pc` by a model test or give the proof another route in K1.
+  - UX M1: K0's remote `/login_accounts` answer must carry `loginPicker` and `headless` (`remoteLockable` hard-codes `loginPicker: false`).
+  - UX M2: during a relay, clicking Jake's PC at its keyboard opens his desktop (`openLoginPc` `sessions.has`, the keyboard rule, `settle_session_at_keyboard!`); define and enforce "not offered there"; `screen-states.js:83` only sets the sprite look, so correct its description.
+  - UX M3: on a foothold screen of HB-FIN-03 the assist code must not get a Connect button (route not allowed for the kind); filter credential buttons by the screen's route.
+  - UX M4: NPC timers do not exist: timers are top-level, real time, no barks; `pc_desktop_opened` has no relay field; a reload restarts the timer. Redesign R7a's end (for example a top-level timer armed by a global set on relay sign-in, with the bark spoken through an existing NPC bark path before the end) and fix R8.
+  - UX M5: R4's "Jake's shares map" needs a declared resource in `test_access_keyring`, or drop the claim.
+  - UX M6: D1's lab argument is backwards: under (ii) LW-OPEN-07 still shows Pierce's captured tile filled (plus two more); under (i) only Pierce. Redo the trade-off and recommendation.
+  - UX M7 and M8: one phrasing per state is not met (`signInErrorMessage`, server `REMOTE_BLOCKED`, "This PC" in the refused line); Connect's no-route toast must not say "over this link", and the view's helper must not gain a second sentence.
+  - UX M9: Connect needs text for a failed GET /keyring, a failed POST /login and a second click while one is in flight.
+  - UX M10: kind tags do not fit a 104px tile in Press Start 2P (about 11 glyphs); shorter tags ("Saved", "In file", "Assist") or a smaller pixel font.
+  - UX minors (14) and nits (3): see the review file; the tray's "Close this screen first." state may be unreachable given the existing guard in `inventory-menu.js`.
 - **Files touched:** `docs/achitechture/CREDENTIAL_KEYRING_PLAN.md` and the review files beside it. Branch `plan/keyring` in worktree `.claude/worktrees/p-keyring-plan`.
 - **Gotchas:** HB-DOOR-01 and LW-DOOR01 are headless; the capture log is carried only by `test_capture_log`; PUT /sync_state loads no `scenario_data`; bootstrap writers run only when `bootstrap_state_needs_write?`; `notes` items never take a tray slot; accounts must be room NPCs; commit with explicit paths, UK English, no em or en dashes, no model names in repo files.
