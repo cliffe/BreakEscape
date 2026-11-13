@@ -505,3 +505,122 @@ with no boundary crossing, i.e. the init replay / first room-detect tick fires i
 
 All five cases pass: a legitimate player is never refused under delay, drop, old-tab, offline/reconnect
 or duplicate, and a forge is refused.
+
+## Chunk E: fixtures, validator, graph, live proof (2026-11-13)
+
+Built on `44a9a1f4b` (Chunks A, B, C, D, F landed). The last build chunk: the `test_gate_tailgate`
+worn-pass fixture, the validator rules of section 12 plus the carried Chunk E to-dos, the dungeon-graph
+split-gate label, and the keyless-server live proof. No engine code changed in Chunk E (validator,
+graph generator, one fixture and one node test only), so deployed-mission runtime is untouched.
+
+Commit: `089d848f8`.
+
+### Fixture: test_gate_tailgate (scenarios/test_gate_tailgate/scenario.json.erb)
+
+- `visitor_pass` made a worn, server-owned pass (§6, Q1). The `visitor_lanyard` hook now `give_item`s a
+  wearable lanyard whose `wearable.global` is `visitor_pass` and offers a `wear` confirm; the former
+  client `set_global visitor_pass` writer is gone. `visitor` added to `disguises` (reusing the player
+  sprite) so the wearable validates. So the viaPass path splits on a global `sync_state` cannot write.
+- The records door gate gains `creditOnPass` with `viaPass` and `viaCredential` blocks, each setting
+  `test_staff_entered` (a server-credit global, declared false). No `completeTask`: `enter_staff` is an
+  `enter_room` task completed through its own §8 server-validated path, so it must not become
+  `serverCompletedOnly`. Demos (`test_bark_bubbles`, `test_access_habits`) stay presentation only (Q3).
+
+### Validator (scripts/validate_scenario.rb: new check_gated_door_credit, registered after check_access_model)
+
+- Split gate `playerMayPassIf` must be server-owned (worn / imported / credit / runtime) else ERROR.
+- Split gate's rfid room lock must be requires-only, no `access` ACL (ERROR) -- the carried B-R2-MINOR-2
+  / Chunk C to-do. (check_access_model already errors on any gate door with a target `access` list; this
+  rule states the credit-path reason and bites in isolation for the node test.)
+- `creditOnPass.*.completeTask` must name an existing task (ERROR) and must not name a `submit_flags`
+  task (ERROR) -- `process_flag_task_completions!` writes task status directly, bypassing the
+  server-completed-only guard (carried Chunk C §7 to-do, "no submit_flags in a credit").
+- `creditOnPass.*.setGlobal` must be a declared global (ERROR).
+- A non-splitting gate that names `creditOnPass` warns (the credit can never fire).
+- A credit global still written by a client `set_global`/`setGlobal` (outside the creditOnPass block)
+  warns (half-done migration).
+- Second unlock route into a split gated room (an `unlock_door` reward/action, or a non-`openFor` NPC
+  `unlockDoor` mapping) is an ERROR -- the carried B-R1-MINOR-1 to-do.
+- Q5: a server-enforced lock code (pin/password/combination/cryptex/key/rfid requires) in a split gated
+  room's readable `text` warns (the leak the lab's `deeds_signout`/`7041` is the accepted case for).
+
+The split predicate mirrors `Game#gate_splits?` (server-owned pass, or an rfid_cloner present with a
+room `requires`). Server-owned names mirror `Game#server_owned_global_name?` (WearableModel.worn_globals
++ importGlobals + the creditOnPass credit globals + the runtime `se_captures`).
+
+### Validator counts across every scenario in the brief (before -> after this chunk)
+
+`LANG=C.UTF-8 /usr/bin/ruby3.2 scripts/validate_scenario.rb <scenario> --no-graph`. 0 errors (0 known)
+on every scenario both before and after. Warnings: m01 13, m02 29, m03 5, m04 16, m05 16, m06 26, m07 22,
+m08 4, m09 26, m10 64, sis01 10, sis02 7, lab_social_engineering 5, test_gate_tailgate 2, test-rfid 14,
+test-rfid-multiprotocol 23 -- all UNCHANGED. The only change: **lab_physical_pentest 6 -> 7 warnings**,
+the one new Q5 warning (the records-office `deeds_signout` readable carries the archive-safe combination
+`7041` in a split gated room). This warning is the deliberately accepted Q5 case, not a regression; no
+known-failures entry was added. Every other deployed scenario gains zero warnings or errors.
+
+### Dungeon graph (scripts/generate_dungeon_graph.rb)
+
+- A split gated door's node gets a `gated: credential or server pass` label (the holdsDoors block skips a
+  gate with a `playerMayPassIf`, so these were unlabelled). Mirrors `gate_splits?`.
+- Regenerated `scenarios/lab_physical_pentest/dungeon_graph.{html,json,md}` and
+  `scenarios/test_gate_tailgate/dungeon_graph.{html,json,md}`. The lab graph also absorbs pre-existing
+  scenario drift (the committed graph predated later lab content); the split-gate label is the Chunk E
+  change. No other scenario's graph was touched.
+
+### Tests
+
+- Node `test/js/validator-gated-door-credit.test.mjs` (new): 11 cases, each validator rule bites -- a
+  clean split gate (no issues), client-writable pass global (error), non-splitting gate with creditOnPass
+  (warn), missing completeTask (error), submit_flags completeTask (error), undeclared setGlobal (error),
+  half-done migration (warn), unlock_door second route (error), non-openFor unlockDoor mapping (error) vs
+  the openFor NPC (no error), ACL rfid split room (error), Q5 readable leak (warn). All pass.
+- Regression (no change): `door-gates-validator` + `validator-exit-code` (65), the six `dungeon-graph-*`
+  node tests (71). All green.
+
+### UID-only after-promotion discrimination test (carried from Chunk A): LEFT, needs a heavy fixture
+
+No deployed split gated room (lab `secure_area`, test_gate `staff_room`) holds an rfid-locked object with
+`acceptsUIDOnly`, so the after-promotion `reason: uid_only` return cannot be exercised without a new
+fixture (a split gated room + a promoted route + an rfid-locked object + a UID-only clone). Left undone,
+as the brief permits. It is covered structurally: Chunk A proved the route-room guard returns
+`uid_only = false` before promotion and is byte-identical to the pin/password guards, which are proven
+both ways (Chunk A/B). Recommend a dedicated fixture if the end-to-end UID-only discrimination is wanted.
+
+### Live proof (keyless server on :3650 from this worktree; headless chrome-headless-shell; real client
+POSTs fired from a loaded game page so session + CSRF are real; server truth read back with a read-only
+`bin/rails runner`). The object-action gate "open a route-room object before promotion" forge has no
+lockable object in either deployed split route room, so it stays covered by Rails tests 11a-13 (Chunk A/B).
+
+Honest routes (both complete the credited task and open the room's contents, server truth):
+- **test_gate_tailgate viaPass, game 3396.** Wear the lanyard (visitor_pass server-set true), unlock via
+  Sam (staff_room -> npcRouteRooms), sync currentRoom staff_room (viaPass credit), complete enter_staff.
+  Truth: test_staff_entered true, staff_room in unlockedRooms, npcRouteRooms emptied, enter_staff posts
+  success.
+- **lab_physical_pentest viaPass, game 3397.** Wear the hi-vis (courier_ready), unlock via Len, sync
+  currentRoom secure_area. Truth: kp_badge_tailgated true, tailgate_in completed, secure_area unlocked,
+  npcRouteRooms emptied.
+- **lab_physical_pentest viaCredential, game 3398.** A recorded clone of cm_records_badge plus the held
+  rfid_cloner; POST unlock method:rfid. Truth: kp_records_cloned true, tailgate_in completed, secure_area
+  unlocked. (The clone and cloner were seeded as a head-start, the shape POST /clone_card produces after
+  an encounter, exactly as lab_gated_door_test does; the credit runs on the real unlock endpoint.)
+
+Forged attempts (all refused; player-facing result sensible; avatar stays put, no snap-back):
+- **lab, game 3399.** Sync `{ kp_badge_tailgated: true, kp_records_cloned: true }` -> accepted-but-dropped
+  (both stay false, read-only server-credit globals). POST complete_task tailgate_in -> 422 "Task is
+  server-completed only". POST skip_task tailgate_in -> 422 "Task is server-completed only". Truth:
+  secure_area in npcRouteRooms NOT unlockedRooms, tailgate_in active, both kp globals false.
+- **test_gate_tailgate, game 3402.** POST complete_task enter_staff before reaching the room -> 422 "Room
+  not reached", retryable. Then unlock via Sam (route recorded), then sync
+  `{ test_staff_entered: true }` -> accepted-but-dropped. Truth: test_staff_entered false,
+  staff_room in npcRouteRooms NOT unlockedRooms.
+
+Honest regression on deployed missions (a few doors each, real endpoints, all succeed and the room lands
+in unlockedRooms -- nothing changed):
+- **m01_first_contact:** server_room (rfid, game 3406), derek_office (key, game 3407).
+- **sis02_energy:** battery_hall_1 (rfid, game 3408), engineering_workshop (rfid, game 3409).
+
+### Open / not done
+
+- UID-only after-promotion discrimination test: left (heavy fixture), see above.
+- The object-action-gate "open before promotion" forge was not re-run live (no lockable object in a
+  deployed split route room); covered by Rails tests 11a-13.
