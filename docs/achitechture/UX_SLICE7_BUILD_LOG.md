@@ -123,3 +123,37 @@ Keyless headless server on :3344 from this worktree, setFPS(20) with fixed steps
 - Press Start 2P off grid outside the ruling: PIN keys 20px bold and ENTER 12px (`pin.css`), the reader sign 11px, the remaining faux bold the audit counts (342) and off-grid sizes (156) across the slice scenes.
 - Two "&mdash;" strings in `ncsc-brief-minigame.js` (player-facing, unchanged lines).
 - The 35 inert `showCancel: true` params and the rfid opt-in (slice 9 and 3a lists).
+
+## R3 fixes
+
+Review: `UX_SLICE7_REVIEW_R3.md` (0 blockers, 1 major, 4 minors, 4 nits). Commits 4db8dca94, 12eafc04b, 4b358c8df, 033e555a8 and this log.
+
+Sync: client display only. Nothing new in player_state; no sync changes.
+
+### Findings
+
+- M1, fixed. The pump's Phaser config sets `input.touch.capture: false` and `input.mouse.preventDefaultWheel: false`, and the canvas has `touch-action: pan-y` (in the CSS, and set again on the element after each zoom). A swipe on the canvas, a mouse wheel over it, and a drag of the scrollbar all scroll the box. Two follow-on faults found live and fixed: with capture off, a tap was read twice (the browser's compatibility mouse events after the touch) and a swipe pressed the key it started on. So the canvas cancels `touchend`, and every pump button (keys, CONFIRM, both modals' buttons) acts on a tap: released over the button it was pressed on, moved no more than 12 canvas pixels, and with the box not scrolled in between. The box has a pixel-art scrollbar from `.ip-pixel-scroll` in `infusion-pump-minigame.css`, a local copy of the shared `.pixel-scroll` rule on build/ux-net (with the `scrollbar-color: auto; scrollbar-width: auto` reset and the `@supports not selector(::-webkit-scrollbar)` Firefox guard); a comment names `.pixel-scroll` so the merge can swap the class and drop the copy. A "MORE BELOW" cue (Press Start 2P 8px, 2px border, an 8x4 stepped arrow) sits on the box's bottom edge while part of the canvas is below it, hides at the end, and scrolls to the end on a click; its presses stop at the cue, because Phaser also listens on the window and would otherwise press the key under it.
+- m1, fixed. The cryptex letters are GNF 41px with `will-change: transform` on `.cryptex-wheel-display` (grayscale text, per element only), brass on navy as before. The UI-root `will-change` rule from the review's font section is not applied: that is a policy question for the user (q105).
+- m2, fixed. In the expanded Bluetooth panel the device list keeps its header and one whole card (list box at least 149px, list at least 72px content), the Instructions shrink and scroll inside their own box (`flex: 0 1 auto`, cyan square scrollbar like the list's), and fold away under 480px high. At 800x600 the list shows the first card whole and Instructions shrink to their heading line; at 915x412 Instructions are folded away and the list is 104px. The game area no longer scrolls at either size, so its default scrollbar is gone.
+- m3, fixed. The pump screen's divider is at SCR_Y + 66 (was 60) and the rows below it moved down 6px (prompt rows 69 and 84, or 74; the entry row 110, or 102).
+- m4, fixed. The darkening filter applies to `#copy-btn .icon-small` and the observations heading only; the notepad icon keeps its own art (a white page with a dark outline, which reads on the light button). `engine-fixes-round4.test.mjs` follows the scoped rule.
+- n1, fixed. The allow-list test checks the attribute names equal alt, class, height, src and width, and rejects any attribute starting with `on`, on the icons and on every element in the scene.
+- n2, fixed. The two lockpicking starters no longer pass `cancelText: 'Close'`.
+- n3, fixed. DEL is Press Start 2P 16px, as the digits.
+- n4, no change, for the user: most laptop windows (1366x768, 1440x900, 1536x864, 1400x1000) get zoom 1, so the pump is a 784x510 card with 8px labels in a large window; 1920x1080 gets zoom 2. Crisp and readable, but smaller than R1's smoothed fit. If wanted larger, the card labels could move to 16px. Shot: `unlock-30-infusion-pump-1400x1000-after.webp`.
+
+### Proof
+
+Keyless headless server on :3346 from this worktree, setFPS(20) with fixed steps on, scrollbars shown in every run, stopped afterwards. Games 2615 and 2616, both new, made with `swap-scenario-game.rb test_seating test_seating`. Shots in scratchpad `ux-shots/slice7-r3fix/`.
+
+- Pump touch probe (`tmp/r3/fix-pump.mjs`, mobile context with touch at 915x412): tap 5 gives "5" (before the tap fix: "55"); a swipe up that starts on key 1 scrolls the box 138px to its end, hides the cue and presses nothing; DEL, 2 and 0 by tap give "20"; a tap on CONFIRM opens the dose modal and a tap on its re-enter button closes it; a swipe down returns to the top and the cue shows again. Mouse at 915x412: a wheel over the canvas scrolls 138px; a click on MORE BELOW scrolls to the end without pressing the key under it; clicks on 0 and CONFIRM work (dose confirmed). At 1400x1000 and 800x600: zoom 1, nothing to scroll, no cue, no scrollbar. Scrollbar 14px, square thumb with a 2px edge (`crop_pump915_right_cue_x3.png`, `crop_pump915_touch_bottom_x2.png`). Divider crop: `crop_pump1400_screen_x3.png`. Log: `probe/pump-probe.log`.
+- Cryptex (`tmp/r3/fix-cryptex.mjs`): partial pixels counted inside the five letter boxes ("A" in each) between the box colour and the brass, at 1400x1000, 800x600 and 915x412 (the same counts at each size). Before (Press Start 2P 48px, the R2 rule put back by an injected style): 1440 partial pixels, 720 of them strong (blend between 32 and 223 of 255), all 1440 coloured LCD fringe. After (GNF 41px, grayscale): 140 partial, 0 strong, 0 coloured; the 140 are faint dark pixels under 32 of 255. Side by side for the user: `unlock-56-cryptex-letters-before-after-x6.png`; per-size crops and `cryptex-pixels.json` in `cryptex/`. The GNF letter is smaller in its box than the Press Start 2P one (about 16 by 23 pixels against 32 by 32).
+- Bluetooth (`tmp/r3/fix-bt.mjs`): section geometry before and after at three sizes in `probe/bt-before/` and `probe/bt-after/`; side by side `cmp_bt_800_915_after.png`.
+- Text file: `crop_text_notepad_x4.png`, the notepad icon in its own art beside "Add to Notepad".
+- Sweep (`pixel-style-sweep.mjs --offline` with the R2 params, scrollbars shown) on 19 scenes at three sizes: PASS for every in-scope scene. After shots named after the review page ids: `unlock-29` to `unlock-42` at all three sizes, `unlock-43` to `unlock-51` at 915x412 and `unlock-52` to `unlock-59` at 800x600 (41 files). The sweep tool's own `REVIEW_IDS` map is one behind the page from container onwards (it calls container 915x412 `unlock-43`, the page `unlock-44`); the shots were renamed from the page's list.
+- Tests, without the lock: the 60 test files that import or read a changed module or stylesheet (`minigame-close-shell` with 3 new pump tests, `minigame-html-sweep-b`, `minigame-pixel-art`, `engine-fixes-round4` among them): 690 of 690 pass.
+
+### Noted, not changed
+
+- Outside the slice 7 scope, the sweep still reports esd-pushbutton (2 gradients, a hairline, an off-grid size), alarm-panel (a radius), coverage-decision-form (3 non-pixel fonts, 2 hairlines) and backup-recovery (a gradient, 3 sizes).
+- The UI-root grayscale text rule (q105) and the sweep's crispness check forcing grayscale (review font policy, point 5) wait on the user's decision.
