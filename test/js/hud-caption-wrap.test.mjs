@@ -30,3 +30,13 @@ test('the caption keeps a readable width instead of shrinking to half the screen
     assert.match(r, /width:\s*max-content/);
     assert.match(r, /max-width:\s*min\(\d+px,\s*calc\(100vw - 32px\)\)/);
 });
+
+test('on an upright phone the caption sits above Punch and Block (UX slice 16 R2 m6)', () => {
+    const r = rule('body:has(#combat-buttons) #hud-info-label');
+    const bottom = Number(r.match(/bottom:\s*(\d+)px/)[1]);
+    // the row: bottom 116px, 68px buttons (themed), an 11px ring above them
+    assert.ok(bottom >= 116 + 68 + 11, 'clear of the combat row');
+    const at = css.indexOf('body:has(#combat-buttons) #hud-info-label {');
+    const media = css.lastIndexOf('@media', at);
+    assert.match(css.slice(media, at), /max-width:\s*899\.98px\) and \(orientation:\s*portrait\)/);
+});
