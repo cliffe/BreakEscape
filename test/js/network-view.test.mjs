@@ -258,7 +258,9 @@ test('a locked share\'s badge keeps its width instead of spilling over the descr
     const css = readFileSync(join(js, '../css/network-view-minigame.css'), 'utf8');
     const rule = css.slice(css.indexOf('.network-row-wide .network-row-control {'), css.indexOf('}', css.indexOf('.network-row-wide .network-row-control {')));
     assert.match(rule, /flex: 0 0 auto;/);
-    assert.match(rule, /max-width: 45%;/);
+    assert.match(rule, /margin-left: auto;/, 'in a narrow column the badge drops under the label');
+    assert.match(css, /\.network-row-wide \{\s*flex-wrap: wrap;/);
+    assert.match(css, /\.network-row-word \{\s*white-space: nowrap;/, 'names never break at a hyphen');
     // and a column narrower than a 340px row never scrolls sideways
     assert.match(css, /minmax\(min\(340px, 100%\), 1fr\)/);
 });
@@ -921,4 +923,11 @@ test('R3 n1: a locked host row marks its control so badge and button can sit sid
     const rule = cssText.match(/\.network-row-control-locked \{[^}]*\}/)[0];
     assert.match(rule, /flex-direction:\s*row/);
     assert.match(rule, /flex-wrap:\s*wrap/, 'it wraps (stacks) where it does not fit');
+});
+
+test('wordsHtml keeps each word whole (no break at a hyphen) and reads the same', async () => {
+    const { wordsHtml } = await import(join(js, 'minigames/network-view/network-view-minigame.js'));
+    const html = wordsHtml('Remote sign-in <off>');
+    assert.equal(html, '<span class="network-row-word">Remote</span> <span class="network-row-word">sign-in</span> <span class="network-row-word">&lt;off&gt;</span>');
+    assert.equal(wordsHtml(''), '');
 });

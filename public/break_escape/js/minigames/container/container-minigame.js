@@ -257,17 +257,14 @@ export function evenShareLabels(grid, selector = '.container-content-label') {
     if (typeof document !== 'undefined') document.fonts?.ready?.then?.(even);
 }
 
-/** Pixel font sizes a desktop icon label steps down through before it truncates a word. */
-export const LABEL_FIT_SIZES = [15, 14, 13, 12];
-
 /**
  * A word wider than its box is the only reason a label overflows sideways (labels wrap at
  * spaces only, never inside a word). Fit one label: reset it, and when a word still sticks
- * out, step the pixel font down one whole size at a time; if even the smallest does not fit,
- * go back to the full size and cut that word short with an ellipsis (its whole name stays in
- * the title). Never a break inside a word. Returns what was done: 'fits', 'shrunk' or 'ellipsis'.
+ * out, cut that word short with an ellipsis and keep the whole name in the title. The font
+ * stays at its 16px base: GNF is crisp only at whole multiples of its 8px grid, so there are
+ * no in-between sizes. Never a break inside a word. Returns 'fits' or 'ellipsis'.
  */
-export function fitIconLabel(label, sizes = LABEL_FIT_SIZES) {
+export function fitIconLabel(label) {
     if (!label?.style) return 'fits';
     const full = String(label.dataset?.fullName ?? label.textContent ?? '');
     if (label.dataset) label.dataset.fullName = full;
@@ -278,10 +275,6 @@ export function fitIconLabel(label, sizes = LABEL_FIT_SIZES) {
     if (label.firstElementChild) label.textContent = full;
     const over = () => (label.scrollWidth || 0) - (label.clientWidth || 0) > 0;
     if (!over()) return 'fits';
-    for (const size of sizes) {
-        label.style.fontSize = `${size}px`;
-        if (!over()) return 'shrunk';
-    }
     label.style.fontSize = '';
     label.setAttribute?.('title', full);
     label.classList?.add('desktop-icon-label-cut');

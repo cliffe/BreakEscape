@@ -1,3 +1,5 @@
+import { isComputerType } from './computer-keywords.js';
+
 /**
  * Whether a PC's world observations (its "password locked" line) are shown in the world menu
  * and the HUD label. They describe the lock, so they go once the PC is unlocked. Anything that
@@ -5,12 +7,13 @@
  */
 
 /**
- * True for a PC with a screen and a lock: type "pc" with a password or a sign-in. Other
- * type "pc" objects (wall ports, switches, USB sockets, a headless controller) keep their
- * observations, and so does a PC with no lock, which has nothing to unlock.
+ * True for a PC with a screen and a lock: a computer type ("pc", "pc3", "pc10", "pc_desktop"
+ * and the rest, as isComputerType reads them) with a password or a sign-in. Other objects
+ * (wall ports, switches, USB sockets, a headless controller) keep their observations, and
+ * so does a PC with no lock, which has nothing to unlock.
  */
 export function isPcData(data) {
-    return !!data && typeof data === 'object' && data.type === 'pc' && data.headless !== true &&
+    return !!data && typeof data === 'object' && isComputerType(data.type) && data.headless !== true &&
         (data.lockType === 'login' || data.lockType === 'password');
 }
 

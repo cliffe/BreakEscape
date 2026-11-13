@@ -8,7 +8,7 @@ import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } from '../../utils/lock-scop
 import { isComputerType } from '../../utils/computer-keywords.js';
 import { mountPcMonitor, cssZoomOf, pcPostitButtonHtml } from '../../utils/pc-monitor.js';
 import { headshotCandidates, headshotKeys, noteMissingHeadshot, npcRecordFor, headshotSourceFor, applyHeadshotBox, SILHOUETTE_URL,
-    SHORT_PORTRAIT_PX, TILE_PORTRAIT_PX, isTalkSheetSize, portraitCropOverride, headCropOffset, frameAlphaReader } from '../../utils/npc-headshot.js';
+    SHORT_PORTRAIT_PX, TILE_PORTRAIT_PX } from '../../utils/npc-headshot.js';
 // The portrait crop helpers live with the headshots (UX slice 2c R1 m8: the desktop bar
 // falls back the same way as a tile); exported here too for the tests and callers that
 // import them from the password screen
@@ -119,9 +119,9 @@ export function setShortPortrait(el, { src, width, height, kind, offset = null }
  * - the silhouette (also 32x32) the same;
  * - initials in the pixel font only when there is no image machinery at all.
  * The keys tried are logged once when no headshot file exists. `ImageCtor` is injectable for
- * tests; `readAlpha` is kept in the signature for callers and is no longer used.
+ * tests.
  */
-export function applyTilePortrait(el, tile, ImageCtor = (typeof Image !== 'undefined' ? Image : null), readAlpha = frameAlphaReader,
+export function applyTilePortrait(el, tile, ImageCtor = (typeof Image !== 'undefined' ? Image : null),
                                   { record = undefined, onMissing = noteMissingHeadshot } = {}) {
     const rec = record === undefined ? npcRecordFor({ username: tile?.username }) : record;
     const headSource = headshotSourceFor(tile || {}, rec);
@@ -1731,7 +1731,7 @@ export class PasswordMinigame extends MinigameScene {
             const idx = el.dataset.captureIndex;
             if (idx !== 'other') {
                 const t = tiles[Number(idx)];
-                if (t) applyTilePortrait(el.querySelector('.signin-portrait'), t, undefined, undefined, { record: t.record });
+                if (t) applyTilePortrait(el.querySelector('.signin-portrait'), t, undefined, { record: t.record });
             }
             this.addEventListener(el, 'click', () => (idx === 'other' ? this.selectSignInTile('other') : this.fillCapturedSignIn(Number(idx))));
         });

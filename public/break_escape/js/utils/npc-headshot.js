@@ -1,9 +1,9 @@
 /**
  * An NPC's headshot (UX slice 2c): the character's own `<key>_headshot.png` (32x32) in
  * assets/characters, wherever the PC flow shows an identity (sign-in tiles, the desktop's
- * signed-in account). A sign-in tile crops the talk portrait when no headshot file exists;
- * the desktop's account and the selected account (applyHeadshotBox) never do: the authored
- * file, else the pixel silhouette. The keys tried are logged once.
+ * signed-in account). Every one of them (sign-in tile, desktop account, selected account via
+ * applyHeadshotBox) shows the authored file, else the pixel silhouette; none crops the talk
+ * portrait. The keys tried are logged once.
  *
  * The key comes from, in order: an avatar that is already a headshot, the world sprite
  * (spriteSheet, after any lookalike swap), then the talk portrait's stem, its `_v2` sprite
@@ -55,7 +55,7 @@ export function noteMissingHeadshot(keys, log = (msg) => console.warn(msg)) {
     if (!id || warned.has(id)) return false;
     warned.add(id);
     const files = list.map((k) => `${k}_headshot.png`).join(', ');
-    log(`[headshot] none of ${files} in assets/characters; falling back to the talk portrait crop`);
+    log(`[headshot] none of ${files} in assets/characters; falling back to the silhouette`);
     return true;
 }
 

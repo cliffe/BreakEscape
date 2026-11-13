@@ -18,6 +18,7 @@ writeFileSync(join(dir, 'constants.js'), 'export const INTERACTION_RANGE = 64; e
 writeFileSync(join(dir, 'conditional-text.js'),
     'export function resolveObjectField(data, field, fallback) { const v = data && data[field]; return typeof v === "function" ? v() : (v || fallback); }');
 writeFileSync(join(dir, 'display-dashes.js'), 'export const displayDashes = t => t;');
+writeFileSync(join(dir, 'computer-keywords.js'), readFileSync(join(js, 'utils/computer-keywords.js'), 'utf8'));
 writeFileSync(join(dir, 'pc-observations.js'), readFileSync(join(js, 'utils/pc-observations.js'), 'utf8'));
 writeFileSync(join(dir, 'walls.js'), 'export const interactionLineClear = () => true;');
 writeFileSync(join(dir, 'reach.js'), 'export const reachX = o => o.x; export const aimX = o => o.x;');

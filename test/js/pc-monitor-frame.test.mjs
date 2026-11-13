@@ -403,7 +403,7 @@ test('a tile shows the headshot at x2, never the talk crop, when the file exists
     applyTilePortrait(el, { username: 'lfox', displayName: 'Lena Fox', portrait: 'assets/characters/female_blowse_talk.png' }, fakeImage({
         '/break_escape/assets/characters/female_blowse_v2_headshot.png': [32, 32],
         '/break_escape/assets/characters/female_blowse_talk.png': [256, 256]
-    }), () => null, { record: null, onMissing: (k) => missing.push(k) });
+    }), { record: null, onMissing: (k) => missing.push(k) });
     await settle(5); await settle(5);
     assert.equal(el.dataset.headshot, 'female_blowse_v2');
     assert.match(el.style.backgroundImage, /female_blowse_v2_headshot\.png/);
@@ -419,7 +419,7 @@ test('the world sprite from the NPC record picks the headshot', async () => {
     const el = document.createElement('span');
     applyTilePortrait(el, { username: 'ishaw', portrait: 'assets/characters/someone_else_talk.png' }, fakeImage({
         '/break_escape/assets/characters/male_nerd_v2_headshot.png': [32, 32]
-    }), () => null, { record: manager.npcs.get('ian') });
+    }), { record: manager.npcs.get('ian') });
     await settle(5); await settle(5);
     assert.equal(el.dataset.headshot, 'male_nerd_v2');
 });
@@ -429,7 +429,7 @@ test('no headshot file: the silhouette, never the talk crop, and the key is logg
     const missing = [];
     applyTilePortrait(el, { username: 'okafor', portrait: 'assets/characters/ms_okafor_talk.png' }, fakeImage({
         '/break_escape/assets/characters/ms_okafor_talk.png': [256, 256]
-    }), () => null, { record: null, onMissing: (k) => missing.push(k) });
+    }), { record: null, onMissing: (k) => missing.push(k) });
     for (let i = 0; i < 4; i++) await settle(5);
     assert.equal(el.dataset.frame, 'silhouette', 'the silhouette fallback');
     assert.equal(el.dataset.headshot, undefined);
@@ -816,24 +816,26 @@ function stubWidths(label, chars, perChar = 0.5, box = 104) {
     } });
 }
 
-test('UI PC polish 2: a word that does not fit shrinks one whole pixel size at a time, never breaking inside it', async () => {
-    const { fitIconLabel, LABEL_FIT_SIZES } = await imp('minigames/container/container-minigame.js');
-    assert.deepEqual(LABEL_FIT_SIZES, [15, 14, 13, 12], 'whole pixel sizes below the 16px base');
+test('UI PC polish 2: a label that fits keeps the 16px base; a wide word is never shrunk to a fractional size', async () => {
+    const mod = await imp('minigames/container/container-minigame.js');
+    const { fitIconLabel } = mod;
+    assert.equal(mod.LABEL_FIT_SIZES, undefined, 'no in-between font sizes (crisp GNF)');
     const fits = document.createElement('div');
     fits.textContent = 'Personal Notes - Safe';
     stubWidths(fits, 12);
     assert.equal(fitIconLabel(fits), 'fits');
     assert.equal(fits.style.fontSize, '', 'a label that fits keeps the base size');
-    // 14 characters at 8px a character is 112px wide at 16px, 105 at 15, 98 at 14
+    // 14 characters at 8px a character is 112px wide at 16px: wider than the box, so it is cut
     const word = document.createElement('div');
     word.textContent = 'CONTINGENCYXY';
     stubWidths(word, 14);
-    assert.equal(fitIconLabel(word), 'shrunk');
-    assert.equal(word.style.fontSize, '14px');
-    assert.equal(word.textContent, 'CONTINGENCYXY', 'the text is untouched');
+    assert.equal(fitIconLabel(word), 'ellipsis');
+    assert.equal(word.style.fontSize, '', 'the font size is never touched');
+    assert.equal(word.getAttribute('title'), 'CONTINGENCYXY');
+    assert.equal(word.textContent, 'CONTINGENCYXY', 'the text reads the same');
 });
 
-test('UI PC polish 2: a word too wide even at the smallest size ends in an ellipsis; the whole name stays in the title', async () => {
+test('UI PC polish 2: a word too wide for the label ends in an ellipsis; the whole name stays in the title', async () => {
     const { fitIconLabel } = await imp('minigames/container/container-minigame.js');
     const label = document.createElement('div');
     label.textContent = 'ELECTROENCEPHALOGRAPHY - Audit Response';

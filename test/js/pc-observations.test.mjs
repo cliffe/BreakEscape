@@ -42,6 +42,18 @@ test('anything that is not a locked-capable PC keeps its observations', () => {
     assert.equal(isPcLocked(note, sessions()), false);
 });
 
+test('sprite-variant computers (pc3, pc10, pc_desktop) count as PCs; non-computers named alike do not', () => {
+    const pc3 = { id: 'kiosk', type: 'pc3', lockType: 'login', locked: true };
+    const pc10 = { id: 'model_terminal', type: 'pc10', lockType: 'password', locked: true };
+    assert.equal(worldObservations(pc3, OBS, sessions()), OBS, 'pc3 with no session: locked');
+    assert.equal(worldObservations(pc3, OBS, sessions({ kiosk: true })), null, 'pc3 signed in: unlocked');
+    assert.equal(worldObservations(pc10, OBS, sessions()), OBS, 'pc10 locked');
+    assert.equal(worldObservations({ ...pc10, locked: false }, OBS, sessions()), null, 'pc10 unlocked');
+    assert.equal(isPcData({ id: 'x', type: 'pc_desktop', lockType: 'password' }), true);
+    assert.equal(isPcData({ id: 'x', type: 'phone', lockType: 'password' }), false);
+    assert.equal(isPcData({ id: 'x', type: 'pc10', lockType: 'login', headless: true }), false);
+});
+
 test('the world menu, the far-object line and the HUD label all go through it', () => {
     const game = readFileSync(join(js, 'core/game.js'), 'utf8');
     assert.match(game, /const detail = worldObservations\(data, resolveObjectField\(data, 'observations'/);

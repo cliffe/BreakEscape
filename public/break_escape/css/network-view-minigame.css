@@ -244,6 +244,17 @@
     white-space: nowrap;
 }
 
+/* A name or reason wraps at its spaces, never at a hyphen ("Ledger-Archive", "Remote sign-in";
+   wordsHtml in network-view-minigame.js wraps each word) */
+.network-row-word {
+    white-space: nowrap;
+}
+
+/* A resource's label is never narrower than its longest word */
+.network-row-resource .network-row-label {
+    min-width: min-content;
+}
+
 /* A PC row's label is never narrower than its host: the button beside it shrinks instead */
 .network-row-host .network-row-label {
     min-width: min-content;
@@ -306,11 +317,30 @@
     font-size: 16px;
 }
 
-/* A locked share's badge keeps the room its words need ("Needs account" wraps to two lines in
-   a narrow column) instead of shrinking to nothing and spilling over the share's description */
+/* A locked share's badge keeps the room its words need. Where the label and the badge do not
+   fit side by side (a narrow column), the badge drops under the label, right-aligned, instead
+   of squeezing the name into many short lines */
+.network-row-wide {
+    flex-wrap: wrap;
+}
+
+.network-row-wide .network-row-label {
+    flex: 1 1 0;
+}
+
 .network-row-wide .network-row-control {
     flex: 0 0 auto;
-    max-width: 45%;
+    margin-left: auto;
+}
+
+/* A reason such as "Remote sign-in off" keeps its words whole: where it does not fit beside
+   the label, the control drops under it */
+.network-row:has(> .network-row-control > .network-row-off) {
+    flex-wrap: wrap;
+}
+
+.network-row:has(> .network-row-control > .network-row-off) > .network-row-control {
+    margin-left: auto;
 }
 
 /* A padlock badge, the size of the other rows' buttons */

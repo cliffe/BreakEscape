@@ -229,7 +229,7 @@ test('UI PC polish 3: a tile never crops the talk image; a headshot, else the si
     applyTilePortrait(el, { ...TILES[0], portrait: 'assets/characters/sam_talk.png' }, fakeImage({
         '/break_escape/assets/characters/sam_talk.png': [256, 256],
         '/break_escape/assets/npc/avatars/sam.png': [64, 64]
-    }), undefined, { record: null, onMissing: (k) => missing.push(k) });
+    }), { record: null, onMissing: (k) => missing.push(k) });
     await settle(); await settle();
     assert.equal(el.dataset.frame, 'silhouette');
     assert.match(el.style.backgroundImage, /pc-user-silhouette\.png/);
@@ -245,7 +245,7 @@ test('UI PC polish 3: a tile never crops the talk image; a headshot, else the si
     applyTilePortrait(withHead, { ...TILES[0], portrait: 'assets/characters/sam_talk.png' }, fakeImage({
         '/break_escape/assets/characters/sam_talk.png': [256, 256],
         '/break_escape/assets/characters/sam_headshot.png': [32, 32]
-    }), undefined, { record: null });
+    }), { record: null });
     await settle(); await settle();
     assert.equal(withHead.dataset.frame, 'single');
     assert.equal(withHead.dataset.headshot, 'sam');
@@ -257,18 +257,18 @@ test('UI PC polish 3: a tile never crops the talk image; a headshot, else the si
     const odd = document.createElement('span');
     applyTilePortrait(odd, { ...TILES[0], portrait: 'assets/characters/sam_talk.png' }, fakeImage({
         '/break_escape/assets/characters/sam_headshot.png': [64, 64]
-    }), undefined, { record: null });
+    }), { record: null });
     await settle(); await settle();
     assert.equal(odd.dataset.frame, 'silhouette');
 });
 
 test('UI PC polish 3: initials only without any image machinery', async () => {
     const noImages = document.createElement('span');
-    applyTilePortrait(noImages, { username: 'ishaw', displayName: 'Ian Shaw' }, null, undefined, { record: null });
+    applyTilePortrait(noImages, { username: 'ishaw', displayName: 'Ian Shaw' }, null, { record: null });
     assert.equal(noImages.dataset.frame, 'initials');
     assert.equal(noImages.textContent, 'IS');
     const silhouette = document.createElement('span');
-    applyTilePortrait(silhouette, { username: 'ishaw', displayName: 'Ian Shaw' }, fakeImage({}), undefined, { record: null });
+    applyTilePortrait(silhouette, { username: 'ishaw', displayName: 'Ian Shaw' }, fakeImage({}), { record: null });
     assert.equal(silhouette.dataset.frame, 'silhouette', 'no pictures at all: the silhouette');
 });
 
@@ -896,7 +896,7 @@ test('R4 m1 / UI PC polish 3: every tile picture is at a whole multiple of its i
     ];
     for (const [name, pics, sizes, frame] of cases) {
         const el = document.createElement('span');
-        applyTilePortrait(el, { username: 'sokafor', displayName: 'Sam Okafor', ...pics }, fakeImage(sizes), undefined, { record: null });
+        applyTilePortrait(el, { username: 'sokafor', displayName: 'Sam Okafor', ...pics }, fakeImage(sizes), { record: null });
         await settle(); await settle();
         assert.equal(el.dataset.frame, frame, name);
         assert.doesNotMatch(el.style.backgroundSize, /%|contain|cover/, name);

@@ -56,6 +56,16 @@ import { MORE_BELOW_TEXT } from '../../utils/more-below.js';
 
 // The down-state words (UX feedback slice 1): one set for every kind of row, block and link.
 // NOT_RESPONDING_TEXT is the powered-down state's name; its row shows only the tag.
+/**
+ * Escaped text with each space-separated word in a nowrap span, so a name can wrap at its
+ * spaces but never at a hyphen ("Ledger-Archive", "sign-in"). The text reads the same.
+ */
+export function wordsHtml(text) {
+    return String(text ?? '').split(/(\s+)/).map((part) => (
+        !part || /^\s+$/.test(part) ? part : `<span class="network-row-word">${escapeHtml(part)}</span>`
+    )).join('');
+}
+
 export const REMOTE_OFF_TEXT = 'Remote sign-in off';
 export const NOT_RESPONDING_TEXT = 'Powered down';
 export const NO_ROUTE_TEXT = 'No route';
@@ -425,7 +435,7 @@ export class NetworkViewMinigame extends MinigameScene {
     /** The reason where a control would be, and the held session it keeps. */
     downControlHtml(ds) {
         const kept = ds?.kept ? `<span class="network-row-kept">${escapeHtml(sessionKeptText(ds.kept))}</span>` : '';
-        return `<span class="network-row-control">${ds?.reason ? `<span class="network-row-off">${escapeHtml(ds.reason)}</span>` : ''}${kept}</span>`;
+        return `<span class="network-row-control">${ds?.reason ? `<span class="network-row-off">${wordsHtml(ds.reason)}</span>` : ''}${kept}</span>`;
     }
 
     rowHtml(row) {
@@ -473,7 +483,7 @@ export class NetworkViewMinigame extends MinigameScene {
         return `
                 <li class="network-row network-row-resource${action === 'locked' ? ' network-row-wide' : ''}" data-resource-id="${escapeHtml(row.id)}" data-kind="${escapeHtml(row.kind || '')}">
                     <img class="network-row-icon" src="${icon}" alt="">
-                    <span class="network-row-label"><strong>${escapeHtml(row.name || row.id)}</strong>
+                    <span class="network-row-label"><strong>${wordsHtml(row.name || row.id)}</strong>
                         <span class="network-row-name">${escapeHtml(kindLabel)}${row.host ? ` on <span class="network-row-hostname">${escapeHtml(row.host)}</span>` : ''}</span>${action === 'locked' ? `
                         <span class="network-row-note">${SHARE_LOCKED_TEXT}</span>` : ''}</span>
                     <span class="network-row-control">${control}</span>
