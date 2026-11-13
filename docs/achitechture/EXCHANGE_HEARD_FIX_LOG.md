@@ -46,10 +46,10 @@ exchange was never marked heard, however much of it the player had heard.
 | Completed, pair still together on the next tick | heard | heard (`complete: true`) |
 | Completed, use ends on the tick after the last line (the live bug) | chat deleted, unheard, replays | heard (`complete: true`) |
 | Lines held by the speech lock past the hold | use ends mid-exchange, unheard | hold moved before each line, plays to the end |
-| Coffee queue: front reaches its wait limit | front leaves, unheard | front waits for the exchange, then the exchange's length comes off its wait |
+| Coffee queue: front reaches its wait limit | front leaves, unheard | front waits for the exchange (from R1: until its 60 s hold cap at most), then the exchange's length comes off its wait |
 | Player starts a conversation with either NPC (frozen) | unheard, replays | `exchange_cut` `pair_ended`; heard if a line was overheard |
 | Either NPC knocked out (unavailable) | unheard | same as a conversation |
-| Hush (`c.hushed`) | unheard | `exchange_cut` `hushed`; same rule |
+| Hush (`c.hushed`) | unheard | `exchange_cut` `hushed`; same rule. From R1 (n3): cannot happen, the hush is cleared when the exchange starts |
 | Player leaves the room mid-exchange | plays on, heard at the end | unchanged: heard at the end |
 | Cut before any line reached the player | unheard | unheard, a later meeting plays it whole |
 | Reload after it was heard | `heard_<knot>` true: not played | unchanged |
@@ -131,3 +131,65 @@ Driver and outputs: the session scratchpad, `exheard/drive.js`, `before-2859.jso
 
 - e3ab4a6c3: the fix and `test/js/npc-exchange-heard.test.mjs`.
 - This log, committed after it.
+
+## R1 fixes
+
+Review: `docs/achitechture/EXCHANGE_HEARD_FIX_REVIEW_R1.md` (0 blockers, 0 majors, 3 minors, 5 nits).
+
+- **m1.** `NPC_NEEDS_SYSTEM.md` 5.6a states the heard rule (played to the end, or cut after at least
+  one overheard line; cut before any: unplayed, played whole at a later meeting), the hold and its
+  60 s cap, the queue front's wait, `data.complete === true` for a task that needs the whole
+  exchange, and the validator warning. The decision log lists `exchange_cut` (`knot`, `reason`,
+  `line`, `of`, `heardLines`, `heard`) and `exchange_heard` (`knot`, `complete`); the event list gives
+  `complete` in the `npc_exchange_heard` payload and says it fires on completion or a heard cut.
+- **m2.** The `exchanges` description in `scripts/scenario-schema.json` says a heard cut counts
+  (`complete: false`, the rest never played), to bind with `condition: "data.complete === true"` when
+  the whole exchange is needed, to put what the player must learn in the first line, and to keep a
+  knot under 60 s. `README_scenario_design.md` does not document NPC exchanges anywhere (its only
+  "exchange" is the HashChain Exchange room), so nothing was mirrored there.
+- **m3.** `scripts/validate_npc_needs.rb` `check_exchanges` warns when a knot's lines add up to more
+  than `EXCHANGE_MAX_MS` (60 s), with the engine's estimate: `min(6000, 2500 + 50 * chars) + 500` per
+  line, timed on the text after the `Name:` prefix, as `exchangeLineMs` and `_startExchange` do. The
+  constants sit in the validator with a test that they match the engine's exports. Test fixture:
+  `test/js/fixtures/exchange_long_knot.ink` (and its compiled `.json`), a ten-line knot of about 65 s
+  and a two-line one.
+- **n1.** `_advanceQueued`: the front is exempt from `max_wait` only while the exchange is running and
+  the clock is before its `holdCap`. Test: a 200 s use, the lock starving the exchange; the front
+  leaves with `max_wait` after the cap and before the use ends, and the cut counts as heard. Without
+  the fix the test times out (the front waits for the whole use).
+- **n2.** Left as is (main behaves the same). Backlog line added in `docs/IDEAS_BACKLOG.md`.
+- **n3.** The stale hush was wrong: `c.hush` comes only from a bark pool, and an exchange starts only
+  with the player in earshot, so a hush from an earlier bark cut a meant-to-be-overheard exchange
+  after one line. `_startExchange` now clears `c.hush` and `c.hushed`. Nothing sets the hush while an
+  exchange runs, so an exchange can no longer end with reason `hushed`. Test: a hush-pool bark plays
+  out of earshot, the player comes into earshot (exchange starts) and then walks up close; all four
+  lines play, no cut, `complete: true`. Without the fix the test fails (cut after line 1).
+- **n4.** The Validator section above now lists only test_needs_sims and lab_physical_pentest as
+  scenarios with NPC exchanges.
+- **n5.** Not edited here (the comment lives on build/ux-barks). Wording for the merge, in
+  `createEngineWorld().speak`'s comment, replacing "since the exchange counts as heard (heard_<knot>)
+  once its lines are done (R5 m2)":
+
+  `since the exchange counts as heard (heard_<knot>) when its lines are done or it is cut after a heard line (R5 m2)`
+
+### R1 tests
+
+- `test/js/npc-exchange-heard.test.mjs`: 15 tests (11 before, plus n3, n1 and two validator tests),
+  all pass.
+- Every test file that imports npc-needs.js (directly, through the needs-stub, needs-sims or
+  needs-work fixtures, or an npc-needs* module), plus every JS test of `validate_npc_needs.rb` or
+  `scenario-schema.json`: 57 files, `bin/test-js -j 3` on the list without the lock, 57 passed.
+  `test/unit/scenario_schema_boot_test.rb`: 4 runs, 0 failures.
+- `validate_scenario.rb --no-graph` on test_needs_sims, lab_physical_pentest and
+  test_exercise_station: 0 ❌ each, and no knot over 60 s.
+
+### R1 live
+
+n1 and n3 change runtime behaviour, though no shipped knot meets either path (no hush pool with an
+exchange, no queued chatter use over 60 s). A regression run: keyless server on :3099 from this
+worktree, headless, setTimeout RAF, smoothStep off, `setFPS(20)` with fixed steps on; game 2886
+(lab_physical_pentest, started in open_plan, `swap-scenario-game.rb test_seating`), the review's
+`r1-lab.js --mode full`, two 120 s rounds. `coffee_exchange` played its three lines,
+`npc_exchange_heard` `complete: true` at 36750, `heard_coffee_exchange` true; round 2 had 17 more
+chat lines and no exchange line; eight `queue_front` turns, no `max_wait`, no `exchange_cut`, no
+page errors. Output: session scratchpad `exheard/r1fix-2886.json` and `.out`. Server stopped.
