@@ -199,11 +199,11 @@ test('a picture loaded on demand is placed by its own size: saved top-left, even
     await window.rooms.lab.objects.box._dropSync;
     const s = scene.sprites[0];
     assert.equal(s.key, 'big_box');
-    assert.deepEqual([s.x, s.y], [50, 60], 'centred on the feet by its own size');
-    assert.deepEqual(w.added[0].data.position, { x: 34 / 32, y: 44 / 32 }, 'the top-left of the 32x32 picture');
+    assert.deepEqual([s.x, s.y], [50, 68], 'centred one cell in front of the feet by its own size');
+    assert.deepEqual(w.added[0].data.position, { x: 34 / 32, y: 52 / 32 }, 'the top-left of the 32x32 picture');
     assert.equal(w.emitted.length, 1);
     assert.equal(w.emitted[0].name, 'item_dropped:box');
-    assert.deepEqual([payload.x, payload.y], [50, 60]);
+    assert.deepEqual([payload.x, payload.y], [50, 68]);
 });
 
 test('a magnet whose picture loads on demand snaps to the table by the loaded size', async () => {
@@ -279,4 +279,23 @@ test('an item picked up and then torn down is not put in the tray twice', async 
     assert.equal(await window.rooms.lab.objects.slow3._dropSync, false);
     assert.deepEqual(back, []);
     delete window.addToInventory;
+});
+
+test('UX slice 15 (R15): the drop is aimed in front of the feet, then snapped to a walkable cell', async () => {
+    const { dropPoint, DROP_AHEAD_PX } = await import(pathToFileURL(join(js, 'systems/item-drop.js')).href);
+    assert.deepEqual(dropPoint({ x: 50, y: 60 }, null), { x: 50, y: 60 + DROP_AHEAD_PX }, 'below the feet');
+    const asked = [];
+    const pm = { findNearestWalkableWorldCell: (x, y, r) => { asked.push([x, y, r]); return { x: 52, y: 68 }; } };
+    assert.deepEqual(dropPoint({ x: 50, y: 60 }, pm), { x: 52, y: 68 });
+    assert.deepEqual(asked, [[50, 60 + DROP_AHEAD_PX, 2]], 'the aim point is what is snapped');
+    assert.ok(DROP_AHEAD_PX > 0);
+});
+
+test('UX slice 15 (R15): a 16x16 drop sits with its bottom below the feet, so it draws in front', async () => {
+    const scene = fakeScene(['pic']);
+    world(scene);
+    dropInventoryItem(trayEl({ id: 'stick', type: 'm', name: 'Stick', sprite: 'pic', droppable: true }));
+    const s = scene.sprites.at(-1);
+    assert.ok(s.y + s.displayHeight / 2 > 60 + 8, 'its bottom is clearly below the feet');
+    assert.ok(s.depth > 60 + 8, 'its depth is past the feet line');
 });

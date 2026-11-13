@@ -60,13 +60,15 @@ test('workstationIndicators: none for a plain object or an ownerless workstation
   assert.deepEqual(workstationIndicators(undefined, NPCS), []);
 });
 
-test('workstationIndicators: locked first, then open; both above, at the top-right corner', () => {
+test('workstationIndicators: locked first, then open; both above, centred on the PC sprite', () => {
   const v = workstationIndicators({ id: 'tom_pc', lockChance: 0.5 }, NPCS, { width: 32, height: 40 });
   assert.equal(v.length, 2);
   assert.equal(v[0].condition, 'globalVars.tom_pc_screen_locked');
   assert.equal(v[1].condition, 'globalVars.tom_pc_owner_away');
   assert.ok(v.every(d => d.above === true));
-  assert.ok(v[0].offsetX > 0 && v[0].offsetY < 0, 'right of and above the centre');
+  assert.ok(v.every(d => d.offsetX === 0 && d.offsetY === 0), 'centred on the sprite (main3-21, Q11)');
+  const wide = workstationIndicators({ id: 'tom_pc', lockChance: 0.5 }, NPCS, { width: 96, height: 20 });
+  assert.ok(wide.every(d => d.offsetX === 0 && d.offsetY === 0), 'centred whatever the display size');
   assert.equal(v[0].effect, null, 'locked is steady');
   assert.equal(v[1].effect, 'breathe', 'open breathes');
   assert.ok(v[1].radius > v[0].radius, 'they differ in size too, for reduced motion');

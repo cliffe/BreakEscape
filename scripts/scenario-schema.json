@@ -5257,6 +5257,8 @@
                 "description": "Actions to execute on confirmation (for confirm_action)",
                 "items": {"x-id-map": false,  "type": "object" }
               },
+              "confirmLabel": { "type": "string", "minLength": 1, "description": "confirm_action: the confirm button's label, a named action (\"Switch off\", \"Flip it\"). Absent: Confirm." },
+              "cancelLabel": { "type": "string", "minLength": 1, "description": "confirm_action: the cancel button's label (\"Leave it\"). Absent: Cancel." },
               "objectId": { "type": "string" },
               "itemId": { "type": "string", "description": "wear: the held wearable item to put on; take_off: the worn item to take off (absent: whatever is worn)" },
               "room_id": { "type": "string" },

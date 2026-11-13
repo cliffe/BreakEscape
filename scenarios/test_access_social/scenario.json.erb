@@ -1239,6 +1239,8 @@
               "type": "confirm_action",
               "condition": "!globalVars.f10_share_down",
               "text": "Switch the accounts share off?",
+              "confirmLabel": "Switch off",
+              "cancelLabel": "Leave it",
               "onConfirm": [
                 {
                   "type": "set_global",
@@ -1251,6 +1253,8 @@
               "type": "confirm_action",
               "condition": "globalVars.f10_share_down",
               "text": "Switch the accounts share back on?",
+              "confirmLabel": "Switch on",
+              "cancelLabel": "Leave it",
               "onConfirm": [
                 {
                   "type": "set_global",
@@ -1550,6 +1554,8 @@
               "type": "confirm_action",
               "condition": "!globalVars.f12_crm_down",
               "text": "Switch the sales system off?",
+              "confirmLabel": "Switch off",
+              "cancelLabel": "Leave it",
               "onConfirm": [
                 {
                   "type": "set_global",
@@ -1562,6 +1568,8 @@
               "type": "confirm_action",
               "condition": "globalVars.f12_crm_down",
               "text": "Switch the sales system back on?",
+              "confirmLabel": "Switch on",
+              "cancelLabel": "Leave it",
               "onConfirm": [
                 {
                   "type": "set_global",
@@ -1587,7 +1595,9 @@
             {
               "type": "confirm_action",
               "condition": "!globalVars.f12_pc_unplugged",
-              "text": "Switch off the socket under Greg's desk?",
+              "text": "Switch off the wall socket under Greg's desk? His PC loses power.",
+              "confirmLabel": "Switch off",
+              "cancelLabel": "Leave it",
               "onConfirm": [
                 {
                   "type": "set_global",
@@ -1599,7 +1609,9 @@
             {
               "type": "confirm_action",
               "condition": "globalVars.f12_pc_unplugged",
-              "text": "Switch the socket back on?",
+              "text": "Switch the wall socket back on?",
+              "confirmLabel": "Switch on",
+              "cancelLabel": "Leave it",
               "onConfirm": [
                 {
                   "type": "set_global",
@@ -2061,6 +2073,8 @@
               "type": "confirm_action",
               "condition": "globalVars.l2_pc_off",
               "text": "Switch Hamid's PC back on?",
+              "confirmLabel": "Switch on",
+              "cancelLabel": "Leave it",
               "onConfirm": [
                 {
                   "type": "set_global",
@@ -2073,6 +2087,8 @@
               "type": "confirm_action",
               "condition": "!globalVars.l2_pc_off",
               "text": "Switch Hamid's PC off?",
+              "confirmLabel": "Switch off",
+              "cancelLabel": "Leave it",
               "onConfirm": [
                 {
                   "type": "set_global",

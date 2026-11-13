@@ -104,14 +104,12 @@ const RESOLVE_MS = 250;
 // offsetY comes from the base entry (kiosk screens sit high). `ransom` keeps the glow
 // above the light map in lit rooms too, and tints the floor red (see the draw loop).
 const RANSOM_VARIANT = { condition: 'globalVars.ransomware_deployed', color: 0xff3b30, radius: 44, intensity: 0.8, effect: 'breathe', ransom: true, floorTint: 0.85 };
-// Workstation indicators (OFFICE_LIFE_PLAN 2.3): a small `above` dot at the screen's top-right
-// corner while the owner is away. Locked: steady blue, listed first so it wins. Open (owner away,
+// Workstation indicators (OFFICE_LIFE_PLAN 2.3): a small `above` dot centred on the PC sprite
+// while the owner is away (UX slice 15, R13: a mark is centred on what it marks). Locked: steady blue, listed first so it wins. Open (owner away,
 // not locked): a larger warm-white dot that breathes. Colour is never the only cue: they differ
 // in size, and in motion unless reduced motion is on.
 const INDICATOR_LOCKED = { color: 0x3d8bff, radius: 10, intensity: 1, effect: null, above: true };
 const INDICATOR_OPEN = { color: 0xfff1c8, radius: 14, intensity: 1, effect: 'breathe', above: true };
-// Inset of the dot from the object's top-right corner, px.
-const INDICATOR_INSET = 5;
 // Lock flashes (slice 16): one per change of a screen's locked state (WCAG 2.3.1: one flash).
 const FLASH_KINDS = {
   lock: { color: INDICATOR_LOCKED.color, from: 18, to: INDICATOR_LOCKED.radius, fade: false },
@@ -137,13 +135,13 @@ export function flashShape(kind, t, reduced = false) {
 
 /**
  * Built-in indicator variants for a workstation object: none unless it is a workstation with a
- * known owner. Offsets put the dot at the object's top-right corner (from its display size).
+ * known owner. The dot sits at the object's centre (offsets 0), whatever its display size; the
+ * lock flash reads the same offsets, so it moves with the dot. `size` is kept for callers.
  */
 export function workstationIndicators(data, npcs, size = {}) {
   if (!isWorkstation(data) || !ownerOf(data, npcs)) return [];
-  const w = size.width || 32, h = size.height || 32;
-  const offsetX = Math.round(w / 2 - INDICATOR_INSET);
-  const offsetY = -Math.round(h / 2 - INDICATOR_INSET);
+  const offsetX = 0;
+  const offsetY = 0;
   return [
     { ...INDICATOR_LOCKED, condition: `globalVars.${data.id}_screen_locked`, offsetX, offsetY },
     { ...INDICATOR_OPEN, condition: `globalVars.${data.id}_owner_away`, offsetX, offsetY },

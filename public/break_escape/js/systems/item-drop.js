@@ -123,10 +123,18 @@ export function isDroppableInventoryItem(sprite, inventoryItems) {
     return Array.isArray(inventoryItems) && inventoryItems.includes(sprite);
 }
 
-/** Where the drop lands: the player's feet (body centre), snapped to a walkable cell. */
+/**
+ * How far below the feet (body centre) a drop is aimed, px: one pathfinding cell. The item
+ * lands in front of the player's feet, its bottom below theirs, so it draws in front of
+ * the player and shows (UX slice 15, R15: main3-12 had a stick hidden under the head).
+ */
+export const DROP_AHEAD_PX = 8;
+
+/** Where the drop lands: just in front of the player's feet, snapped to a walkable cell. */
 export function dropPoint(playerFeet, pathfindingManager) {
-    const near = pathfindingManager?.findNearestWalkableWorldCell?.(playerFeet.x, playerFeet.y, 2);
-    return near || { x: playerFeet.x, y: playerFeet.y };
+    const aim = { x: playerFeet.x, y: playerFeet.y + DROP_AHEAD_PX };
+    const near = pathfindingManager?.findNearestWalkableWorldCell?.(aim.x, aim.y, 2);
+    return near || aim;
 }
 
 /**

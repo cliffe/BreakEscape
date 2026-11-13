@@ -401,14 +401,19 @@ export function applyActions(actions, { source = 'scenario', gameId = null, obje
             }
 
             // Show confirmation dialog, then execute nested actions if confirmed
-            // action: { type: 'confirm_action', text, onConfirm: [...actions] }
+            // action: { type: 'confirm_action', text, onConfirm: [...actions],
+            //           confirmLabel?, cancelLabel? }
+            // The labels name the two choices (UX slice 15, R4e: a switch says "Switch off" and
+            // "Leave it"); a missing or empty label keeps gameConfirm's Confirm or Cancel.
             case 'confirm_action': {
                 if (!window.gameConfirm) {
                     console.warn('[applyActions] gameConfirm not available');
                     break;
                 }
                 const { text, onConfirm } = action;
-                window.gameConfirm(text).then(confirmed => {
+                const label = (v, fallback) => (typeof v === 'string' && v.trim() ? v : fallback);
+                window.gameConfirm(text, label(action.confirmLabel, 'Confirm'),
+                    label(action.cancelLabel, 'Cancel')).then(confirmed => {
                     if (confirmed && Array.isArray(onConfirm)) {
                         applyActions(onConfirm, { source, gameId, objectId });
                     }
