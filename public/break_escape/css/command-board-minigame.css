@@ -1,19 +1,20 @@
 .command-board-container {
     background: #0e1322;
-    border: 2px solid #2a3550;
 }
 
 .command-board-game-container {
     padding: 12px;
     box-sizing: border-box;
     background: #0e1322;
+    height: 100%;
     overflow: hidden;
 }
 
 .cb-panel {
     width: 100%;
     height: 100%;
-    min-height: 540px;
+    min-height: 0;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     border: 2px solid #2a3550;
@@ -46,12 +47,9 @@
 
 .cb-header-title {
     font-family: 'Press Start 2P', monospace;
-    font-size: 14px;
+    font-size: 16px;
+    line-height: 24px;
     color: #c8d8ff;
-    letter-spacing: 0.2px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 .cb-header-subtitle {
@@ -123,7 +121,8 @@
 
 .cb-section-title {
     font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
+    font-size: 8px;
+    line-height: 16px;
     color: #7090c0;
 }
 
@@ -217,8 +216,8 @@
     display: block;
     margin-top: 3px;
     font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
-    line-height: 1.45;
+    font-size: 8px;
+    line-height: 16px;
     color: #b0c0e0;
     word-break: break-word;
 }
@@ -227,8 +226,9 @@
     justify-self: end;
     font-family: 'Press Start 2P', monospace;
     font-size: 8px;
+    line-height: 16px;
     color: #c8d8ff;
-    padding: 4px 6px;
+    padding: 2px 6px;
     border: 2px solid #2a3a5a;
     background: #1a2337;
 }
@@ -246,6 +246,13 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.cb-status-row {
+    flex-shrink: 0;
 }
 
 .cb-status-row {
@@ -260,7 +267,8 @@
 
 .cb-status-label {
     font-family: 'Press Start 2P', monospace;
-    font-size: 9px;
+    font-size: 8px;
+    line-height: 16px;
     color: #7090c0;
 }
 
@@ -270,11 +278,11 @@
     justify-content: center;
     gap: 6px;
     font-family: 'Press Start 2P', monospace;
-    font-size: 9px;
-    padding: 7px 9px;
+    font-size: 8px;
+    padding: 5px 8px;
     min-width: 132px;
     min-height: 30px;
-    line-height: 1;
+    line-height: 16px;
     white-space: nowrap;
     border: 2px solid rgba(255, 255, 255, 0.15);
     transition: opacity 0.2s ease;
@@ -325,7 +333,7 @@
 
 .cb-status-badge.state-active::after {
     content: '⚠';
-    font-size: 9px;
+    font-size: 8px;
     line-height: 1;
     position: relative;
     top: -1px;
@@ -390,8 +398,67 @@
 }
 
 @media (max-width: 1200px) {
+    .cb-header-title {
+        font-size: 8px;
+        line-height: 16px;
+    }
+}
+
+/* Short windows: the board scrolls inside its frame rather than squeezing the columns */
+@media (max-height: 520px) {
     .cb-panel {
-        transform: scale(0.85);
-        transform-origin: center;
+        overflow-y: auto;
+    }
+
+    .cb-body {
+        flex: 1 0 auto;
+        min-height: 300px;
+    }
+}
+
+/* Phones: timeline above status, the AUTO/MANUAL tag under the time (critique B CB2) */
+@media (max-width: 600px) {
+    .command-board-game-container {
+        padding: 6px;
+    }
+
+    .cb-panel {
+        overflow-y: auto;
+    }
+
+    .cb-header {
+        flex-wrap: wrap;
+        padding-right: 48px;
+    }
+
+    .cb-header-right {
+        margin-left: 0;
+    }
+
+    .cb-body {
+        flex: 1 0 auto;
+        grid-template-columns: 1fr;
+    }
+
+    .cb-timeline-col {
+        border-right: 0;
+        border-bottom: 2px solid #1e2d48;
+    }
+
+    .cb-timeline-list {
+        max-height: 45vh;
+    }
+
+    .cb-entry-tile {
+        grid-template-columns: 4px minmax(0, 1fr);
+    }
+
+    .cb-entry-badge {
+        grid-column: 2;
+        justify-self: start;
+    }
+
+    .cb-entry-bar {
+        grid-template-columns: 1fr;
     }
 }

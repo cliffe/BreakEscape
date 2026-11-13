@@ -147,7 +147,7 @@ export class DrugLibraryIntegrityMinigame extends MinigameScene {
 <div class="dli-progress-wrap" id="dli-progress-wrap" style="display:none">
   <div class="dli-progress-bar" id="dli-progress-bar"></div>
 </div>
-<div class="dli-panel" id="dli-panel"></div>`;
+<div class="dli-panel pixel-scroll" id="dli-panel"></div>`;
 
         this.gameContainer.querySelectorAll('.dli-tab').forEach(btn => {
             this.addEventListener(btn, 'click', () => this._onTabClick(btn.dataset.tab));
@@ -246,7 +246,7 @@ export class DrugLibraryIntegrityMinigame extends MinigameScene {
 </table>
 ${alreadyRestored ? this._buildRestoredBanner() : alreadyFailed ? this._buildResultBanner() : ''}
 ${alreadyFailed && !alreadyRestored ? this._buildHashDetail(false) : ''}
-${!alreadyFailed ? `<button class="dli-run-btn" id="dli-run-btn">[ RUN INTEGRITY VERIFICATION ]</button>` : ''}`;
+${!alreadyFailed ? `<button class="minigame-button dli-run-btn" id="dli-run-btn">[ RUN INTEGRITY VERIFICATION ]</button>` : ''}`;
 
         if (!alreadyFailed) {
             const runBtn = panel.querySelector('#dli-run-btn');

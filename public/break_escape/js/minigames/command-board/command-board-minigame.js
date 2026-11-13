@@ -27,6 +27,13 @@ function isCriticalType(type) {
 }
 
 export class CommandBoardMinigame extends MinigameScene {
+    // The X sits inside the board's frame, in the padded header (critique B X4)
+    static closeInsideFrame = true;
+
+    closeAnchor() {
+        return this.gameContainer?.querySelector?.('#cb-panel') || this.gameContainer;
+    }
+
     constructor(container, params = {}) {
         const mergedParams = {
             ...params,
@@ -262,7 +269,7 @@ export class CommandBoardMinigame extends MinigameScene {
 
     renderLayout() {
         this.gameContainer.innerHTML = `
-            <div class="cb-panel" id="cb-panel">
+            <div class="cb-panel pixel-scroll" id="cb-panel">
                 <div class="cb-header" id="cb-header">
                     <div class="cb-header-title-wrap">
                         <div class="cb-header-title"></div>
@@ -285,7 +292,7 @@ export class CommandBoardMinigame extends MinigameScene {
                     </section>
                     <section class="cb-status-col">
                         <div class="cb-section-title">SYSTEM STATUS</div>
-                        <div class="cb-status-list" id="cb-status-list"></div>
+                        <div class="cb-status-list pixel-scroll" id="cb-status-list"></div>
                     </section>
                 </div>
                 <div class="cb-entry-bar">
