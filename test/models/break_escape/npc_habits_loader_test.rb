@@ -100,7 +100,8 @@ module BreakEscape
       data = scenario(npcs: [owner('dana', 'dana_pc', 'awareness' => 'low')], objects: [login_pc('dana_pc')])
       game = Game.create!(mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user),
                           scenario_data: data.deep_dup)
-      assert_equal data, game.reload.scenario_data
+      # Step 8a stamps formatVersion at creation (current 1); the hand-set fields are left untouched.
+      assert_equal data, game.reload.scenario_data.except('formatVersion')
     end
 
     test 'a game is created from each malformed fixture' do

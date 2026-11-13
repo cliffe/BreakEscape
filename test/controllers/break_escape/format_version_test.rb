@@ -54,7 +54,10 @@ module BreakEscape
     # (access_model_loader_test and npc_habits_loader_test pin that hand-set data is left byte for
     # byte). The game still ships version 0.
     test 'creation at current 0 writes no formatVersion and the version reads as 0' do
-      game = make_game
+      # Step 8a lands a real step (current 1), so the inert current-0 path is exercised with an
+      # empty step stub around creation.
+      game = nil
+      FU.stub(:steps, []) { game = make_game }
       assert_nil game.scenario_data['formatVersion'], 'nothing stamped at current 0'
       assert_equal 0, FU.version_of(game.scenario_data)
     end
@@ -77,10 +80,13 @@ module BreakEscape
       game.update_column(:scenario_data, scenario) # strip the stamp: now no formatVersion
       before = game.reload.updated_at
 
-      get scenario_game_url(game)
-      assert_response :success
-      assert_equal 0, response.parsed_body['formatVersion']
-      assert_equal '0', response.headers[HEADER]
+      # The inert current-0 path: with no step landed, a game at 0 is left alone on load.
+      FU.stub(:steps, []) do
+        get scenario_game_url(game)
+        assert_response :success
+        assert_equal 0, response.parsed_body['formatVersion']
+        assert_equal '0', response.headers[HEADER]
+      end
       assert_nil game.reload.scenario_data['formatVersion'], 'nothing written to scenario_data'
       assert_equal before.to_i, game.updated_at.to_i
     end
@@ -91,7 +97,7 @@ module BreakEscape
       game = make_game
       get scenario_game_url(game)
       assert_response :success
-      assert_equal '0', response.headers[HEADER]
+      assert_equal FU.current.to_s, response.headers[HEADER]
     end
 
     test 'set_format_header is the first before callback of every engine controller except the static one' do
@@ -113,9 +119,9 @@ module BreakEscape
       get scenario_game_url(game)
       assert_response :conflict
       assert_equal 'format', response.parsed_body['error']
-      assert_equal 0, response.parsed_body['current']
+      assert_equal FU.current, response.parsed_body['current']
       assert_match(/newer version/, response.parsed_body['message'])
-      assert_equal '0', response.headers[HEADER]
+      assert_equal FU.current.to_s, response.headers[HEADER]
 
       get room_game_url(game, room_id: 'lobby')
       assert_response :conflict
@@ -170,7 +176,10 @@ module BreakEscape
     test 'sync_state does not refuse a too-new game at current 0 (the check is inert)' do
       game = make_game
       game.update_column(:scenario_data, scenario('formatVersion' => 5))
-      put sync_state_game_url(game), params: { globalVariables: { 'g' => 1 }, clientTs: 1 }, as: :json
+      # The inert current-0 path: with no step landed the sync format check returns at once.
+      FU.stub(:steps, []) do
+        put sync_state_game_url(game), params: { globalVariables: { 'g' => 1 }, clientTs: 1 }, as: :json
+      end
       assert_response :success
     end
 
@@ -261,7 +270,7 @@ module BreakEscape
                                 player_state: { 'currentRoom' => 'lobby' })
       get scenario_game_url(other_game), as: :json
       assert_response :forbidden
-      assert_equal '0', response.headers[HEADER]
+      assert_equal FU.current.to_s, response.headers[HEADER]
     end
 
     test 'the header is present on a CSRF failure, answered 422 for a JSON request' do
@@ -271,7 +280,7 @@ module BreakEscape
                                      headers: { 'CONTENT_TYPE' => 'application/json' }
       assert_response :unprocessable_entity
       assert_equal 'invalid_authenticity_token', response.parsed_body['error']
-      assert_equal '0', response.headers[HEADER]
+      assert_equal FU.current.to_s, response.headers[HEADER]
     ensure
       BreakEscape::ApplicationController.allow_forgery_protection = false
     end
@@ -282,7 +291,7 @@ module BreakEscape
       post npc_frustration_game_url(game), params: { blob: big }.to_json,
                                            headers: { 'CONTENT_TYPE' => 'application/json' }
       assert_response :payload_too_large
-      assert_equal '0', response.headers[HEADER]
+      assert_equal FU.current.to_s, response.headers[HEADER]
     end
 
     test 'sync_state on a game at 0 succeeds and runs no upgrade even when current is 1' do
