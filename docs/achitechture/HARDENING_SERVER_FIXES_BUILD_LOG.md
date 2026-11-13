@@ -138,3 +138,57 @@ Options for the authoring foot-gun (a future validator aid, not a game-behaviour
 
 Recommendation: keep the server behaviour; A is a low-value nicety the orchestrator can greenlight
 if the authoring guard is wanted. Not built.
+
+## Item 7 — Record the landing-page build and phish send server-side (DESIGN ONLY, not built)
+
+Context (sync deltas 6b review R1 M1, accepted best effort under q78). The phish part-2 evidence
+that gates a credential's reveal is read from client-written, client-synced state: the landing-page
+record in `globalVariables.se_landing_pages` (per page: `built`, `meetsThreshold`,
+`victim.submitted`) and the landed sent mail in `mailState` (per message: `targetId`, `link.kitId`,
+`landed`). `CaptureProofs#capture_evidence_holds?` -> `phish_page_evidence_holds?` reads exactly
+these, so a tampered client can forge a built page and a landed send and be served a phished
+`capture.secret` that may be a hard-access value (a lock code, PSK or flag) without running the
+minigame. There is no server route for a page build or a phish send today: both are client minigame
+outcomes that reach the server only through the `sync_state` player_state merge.
+
+What would be recorded (server-owned, the way footholds/plants are in network_access.rb):
+- One append-only record per landing-page build, keyed by `page_id`, written by a new gated route
+  the build minigame calls on completion. The gate verifies the page is authored
+  (`CaptureModel`/scenario), that the chosen capture address and link kits are the authored ones,
+  and stamps `built` server-side. `meetsThreshold` (enough convincing elements) is a minigame score
+  the server cannot recompute without the minigame rules, so either the threshold check moves
+  server-side (preferred, fully server-owned) or the route records the client's asserted score with
+  a bound and the reveal gate treats it as a client control-flow step (see cheat bucket).
+- One append-only record per phish send that landed, keyed by `targetId/kitId` (or a send id),
+  written by a new gated route the mail-send path calls. The gate verifies the target is an authored
+  phish target, the kit is one of the authored page's link kits, and the message was actually sent
+  (not just drafted). `victim.submitted` (the simulated victim entering the credential) is a
+  scripted minigame result; the server can record that the send to an authored target happened, but
+  the victim's submission is a client outcome unless that logic also moves server-side.
+- `capture_evidence_holds?` then reads these server records instead of `se_landing_pages` /
+  `mailState`; the client copies stay for UI only. `phish_evidence_fingerprint` and the sync-skip
+  machinery are retired for this path (the server no longer trusts the synced evidence).
+
+Sync size: the records live in a server-written sub-store of player_state that the client never
+writes back (like `footholds`), so nothing in the client's re-sent payload grows. The store is
+bounded by (authored pages) + (authored phish targets x kits); both are fixed per scenario, so it is
+a delta, never an ever-growing re-send. The reveal gate stops depending on the client re-sending
+`se_landing_pages`/`mailState`, which shrinks what has to be trusted on each sync.
+
+Cheat-policy bucket: the phished `capture.secret` can be a hard-access value, so under the cheat
+policy the secret itself must be server-hard-enforced. Recording the page build and the landed send
+as server facts, gated on authored pages/targets/kits, moves the gate from "client said so" to
+"server saw an authored build and an authored landed send", which is the hard part. The residual
+`meetsThreshold`/`victim.submitted` are minigame outcomes: either move that logic server-side for a
+fully server-owned gate, or keep them as client control-flow steps behind the server sanity check
+(an authored page, an authored landed send to an authored target) — acceptable only because honest
+play produces the same evidence and there is no cross-player impact in a self-paced lab. It must not
+break an SE lab that intends the phished credential to then sign in: the sign-in path reads the
+served `capture.secret`, so the gate must still serve it on honest completion.
+
+Size estimate: M to L. Two new gated routes, a server-written store plus its gates (mirroring the
+foothold/plant recording), reader changes in `capture_proofs.rb`, retiring the client-evidence
+fingerprint for this path, a decision on whether the threshold/victim logic moves server-side, and
+Rails tests (forged client page/send refused; honest build+send served; the SE sign-in still works)
+plus a hostile-input test. Comparable in shape to the foothold-recording work already in
+network_access.rb. Not built here per the brief.
