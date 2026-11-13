@@ -673,6 +673,21 @@ test('lockSession posts /lock_session, marks the session locked, closes the desk
     assert.deepEqual(named('pc_session_locked'), [{ pcId: 'hot_desk', npcId: 'sam' }]);
 });
 
+// Merge (train 33) interaction: the hot-desk workstation events end claim/guest sessions
+// only, so a borrow or guest-leave flow can neither end nor clear a locked password session.
+test('a hot-desk owner-return or auto-lock never ends or clears a locked password session', async () => {
+    const s = setup();
+    window.ApiClient.lockSession = async (pcId) => ({ success: true, pcId, locked: true });
+    await s.signIn('hot_desk', 'sokafor', 'right-sam');
+    await s.lockSession('hot_desk');
+    assert.equal(s.isLocked('hot_desk'), true);
+    // A locked session is a password session; both hot-desk handlers guard on via === 'claim'.
+    assert.equal(await s.ownerReturned('hot_desk'), false, 'owner return does not touch a password session');
+    assert.equal(await s.screenAutoLocked('hot_desk'), false, 'auto lock does not touch a password session');
+    assert.equal(s.has('hot_desk'), true, 'the session is still held');
+    assert.equal(s.isLocked('hot_desk'), true, 'and still locked');
+});
+
 test('lockSession refuses when the player holds no session there, and never sends locked back', async () => {
     const s = setup();
     let posted = false;
