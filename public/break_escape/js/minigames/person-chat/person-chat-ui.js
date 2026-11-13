@@ -17,6 +17,8 @@ import { portraitFor } from '../../utils/portrait-variants.js';
 import { cameraViewFor } from './person-chat-camera.js';
 import { ChatInfluence } from '../../ui/pretext-chrome.js';
 
+export const MORE_BELOW_TEXT = 'More below';
+
 export default class PersonChatUI {
     /**
      * Create UI component
@@ -195,10 +197,30 @@ export default class PersonChatUI {
         // Add content wrapper to caption area
         captionArea.appendChild(captionContent);
         
+        // At phone width the caption scrolls under the portrait (R1 m11): a pixel-art
+        // scrollbar, and a "More below" strip under it while the choices run on (R2 m4).
+        // The strip is hidden by CSS above 600 px, where the caption does not scroll.
+        captionArea.classList.add('pixel-scroll');
+        const moreBelow = document.createElement('div');
+        moreBelow.className = 'person-chat-more';
+        moreBelow.hidden = true;
+        moreBelow.setAttribute('aria-hidden', 'true');
+        moreBelow.innerHTML = `<span class="person-chat-more-arrow"></span><span>${MORE_BELOW_TEXT}</span>`;
+
         // Assemble main content
         mainContent.appendChild(portraitSection);
         mainContent.appendChild(captionArea);
-        
+        mainContent.appendChild(moreBelow);
+        this.elements.moreBelow = moreBelow;
+        this._onCaptionChange = () => this.updateScrollCue();
+        captionArea.addEventListener('scroll', this._onCaptionChange);
+        if (typeof window !== 'undefined' && window.addEventListener) window.addEventListener('resize', this._onCaptionChange);
+        if (typeof ResizeObserver === 'function') {
+            this._captionObserver = new ResizeObserver(this._onCaptionChange);
+            this._captionObserver.observe(captionContent);
+            this._captionObserver.observe(captionArea);
+        }
+
         this.elements.mainContent = mainContent;
         this.elements.portraitSection = portraitSection;
         this.elements.portraitContainer = portraitContainer;
@@ -603,7 +625,9 @@ export default class PersonChatUI {
             
             this.elements.choicesContainer.appendChild(choiceButton);
         });
-        
+        // The ResizeObserver also catches this; a browser without one still gets the cue.
+        this.updateScrollCue();
+
         console.log(`✅ Displayed ${choices.length} choices`);
     }
     
@@ -677,7 +701,26 @@ export default class PersonChatUI {
      * Tear down renderers, timers and listeners. Called from the minigame's cleanup() so the
      * portrait renderers (including the video-call PiP) release their resize listeners / rAF loops.
      */
+    /** Show "More below" while the caption runs past its bottom edge; hide it at the end. */
+    updateScrollCue() {
+        const area = this.elements?.captionArea;
+        const more = this.elements?.moreBelow;
+        if (!area || !more) return false;
+        const below = (area.scrollHeight - area.clientHeight - area.scrollTop) > 2;
+        if (more.hidden === below) more.hidden = !below;
+        return below;
+    }
+
     destroy() {
+        if (this._captionObserver) {
+            this._captionObserver.disconnect();
+            this._captionObserver = null;
+        }
+        if (this._onCaptionChange) {
+            if (typeof window !== 'undefined' && window.removeEventListener) window.removeEventListener('resize', this._onCaptionChange);
+            this.elements?.captionArea?.removeEventListener?.('scroll', this._onCaptionChange);
+            this._onCaptionChange = null;
+        }
         if (this.callTimerInterval) {
             clearInterval(this.callTimerInterval);
             this.callTimerInterval = null;

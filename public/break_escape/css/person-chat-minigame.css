@@ -381,6 +381,38 @@
     .person-chat-choice-button {
         min-width: 0;
     }
+
+    /* "More below" (R2 m4): under the caption while its choices run past the bottom edge */
+    .person-chat-more:not([hidden]) {
+        display: flex;
+    }
+}
+
+/* Hidden above 600 px, where the caption grows instead of scrolling */
+.person-chat-more {
+    display: none;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 4px 8px;
+    background: #1d2a36;
+    border-top: 2px solid #2d3a44;
+    color: #9ee6ff;
+    font-family: 'VT323', 'Press Start 2P', monospace;
+    font-size: 18px;
+    z-index: 11;
+}
+
+/* A stepped down arrow, 12 x 6 in 2px steps (rows 12, 8 and 4 wide) */
+.person-chat-more-arrow {
+    width: 12px;
+    height: 6px;
+    background: currentColor;
+    clip-path: polygon(0 0, 12px 0, 12px 2px, 10px 2px, 10px 4px, 8px 4px, 8px 6px,
+                       4px 6px, 4px 4px, 2px 4px, 2px 2px, 0 2px);
 }
 
 /* ===========================================================================
