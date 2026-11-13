@@ -866,6 +866,20 @@ export default class NPCManager {
    * first keeps getInkEngine's global-variable sync). Failures are ignored: the bark then loads
    * as before.
    */
+  /**
+   * The story JSON if either cache has it: ours, or the room loader's (npcLazyLoader fetches each
+   * room's stories before it registers the NPCs; without this the preload fetched them again:
+   * UX slice 5 R4 n3). A loader copy is put in ours. Null when neither has it.
+   */
+  _storyFromLoader(storyPath) {
+    if (!storyPath) return null;
+    if (this.storyCache.has(storyPath)) return this.storyCache.get(storyPath);
+    let cached = null;
+    try { cached = (typeof window !== 'undefined' ? window.npcLazyLoader?.getCachedStory?.(storyPath) : null) || null; } catch (e) { cached = null; }
+    if (cached) this.storyCache.set(storyPath, cached);
+    return cached;
+  }
+
   _preloadKnotBark(npcId) {
     if (this.preloadKnotBarks === false) return null;
     const npc = this.npcs.get(npcId);
@@ -875,7 +889,7 @@ export default class NPCManager {
     const p = (async () => {
       try {
         await loadInkEngineClass();
-        if (this.storyCache.has(npc.storyPath) || typeof fetch !== 'function') return;
+        if (this._storyFromLoader(npc.storyPath) || typeof fetch !== 'function') return;
         const gameId = typeof window !== 'undefined' ? window.breakEscapeConfig?.gameId : null;
         const endpoint = gameId ? `/break_escape/games/${gameId}/ink?npc=${encodeURIComponent(npcId)}` : npc.storyPath;
         const response = await fetch(endpoint);
@@ -1923,8 +1937,8 @@ export default class NPCManager {
   // Load Ink story, navigate to knot, and show the text as a bark
   async _showBarkFromKnot(npcId, npc, knotName, eventPattern, stillValid, onText = null) {
     try {
-      // OPTIMIZATION: Fetch story from cache or network
-      let storyJson = this.storyCache.get(npc.storyPath);
+      // OPTIMIZATION: Fetch story from cache (ours or the room loader's: R4 n3) or network
+      let storyJson = this._storyFromLoader(npc.storyPath);
       if (!storyJson) {
         // Use Rails API endpoint instead of direct file fetch
         const gameId = window.breakEscapeConfig?.gameId;

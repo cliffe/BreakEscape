@@ -201,17 +201,18 @@ test('R3 m1: replaced by a line with another hint: the old hint, then the new on
     assert.equal(pagesText(st.pages.slice(st.linePages)), `${HINT} ${OTHER}`);
 });
 
-test('R3 m1: a hint read to the end is not carried into her next line', () => {
+test('R3 m1 (R4 n1): a hint on its last page is carried into her next line whole, never from mid-sentence', () => {
     const r = rig();
     const st0 = r.bubbles.say('dana', LINE, { followUp: HINT }).state;
     // Past the line page and the first hint page: only the last hint page is unread
     toHintPage(r, st0);
     r.clock.advance(st0.times[st0.page]);
     r.bubbles.update();
+    assert.equal(st0.page, st0.pages.length - 1, 'the last hint page is on screen');
     const left = followUpLeft(st0);
     const st = r.bubbles.say('dana', 'Mind the cables there.').state;
     assert.equal(pagesText(st.pages.slice(st.linePages)), left);
-    assert.ok(left.length < HINT.length);
+    assert.equal(left, HINT);
 });
 
 // ---- m1: closeTagged ----

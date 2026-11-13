@@ -84,10 +84,48 @@ export const HUD_SELECTORS = ['.objectives-panel', '#inventory-container', '#hea
 // room's light, a soft ramp with a hard seam at the room's edge (R3 m2). Below the overlay
 // markers (overlayDepth: talk icons, health bars, damage numbers at LIGHT_DEPTH + 10 and up).
 export const BUBBLE_DEPTH = LIGHT_DEPTH + 3;
+// With lighting off (window.lightingSystem null) overlayDepth gives raw depths: the combat
+// screen flash (10000) and the proximity ghost (9000) must stay above the bubbles, and the
+// action icons (5000, hidden while a bark is up) below them (R4 n2).
+export const BUBBLE_DEPTH_UNLIT = 8500;
 const FILL = 0xffffff;
 const LINE = 0x1b2a41;
 
 const win = () => (typeof window !== 'undefined' ? window : {});
+
+/** The bubbles' depth now: above the light map when lighting is on, else under the flash and ghost. */
+export function bubbleDepth() {
+    return win().lightingSystem ? BUBBLE_DEPTH : BUBBLE_DEPTH_UNLIT;
+}
+
+/** Pure: text compared on letters and digits only (the bubble's copy shows authored dashes). */
+export function textKey(x) {
+    return String(x || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+}
+
+/**
+ * Pure: the part of an unread follow-up `left` that `next` (the hint a newer answer carries)
+ * does not already show: '' when `next` equals or ends with it; `left` less its tail when it
+ * ends with `next` (a follow-up that carried an older hint before this one); else all of
+ * `left`. So a hint is never shown twice (R4 m1).
+ */
+export function followUpBeyond(left, next) {
+    const lk = textKey(left);
+    if (!lk) return '';
+    const nk = textKey(next);
+    if (!nk) return pagesText([left]);
+    if (nk.endsWith(lk)) return '';
+    if (lk.endsWith(nk)) {
+        const words = pagesText([left]).split(' ');
+        let acc = '';
+        for (let i = words.length - 1; i >= 0; i--) {
+            acc = textKey(words[i]) + acc;
+            if (acc === nk) return pagesText(words.slice(0, i));
+            if (acc.length > nk.length) break;
+        }
+    }
+    return pagesText([left]);
+}
 
 // ---- pure helpers ----
 
@@ -304,12 +342,14 @@ export function pagesText(pages) {
 }
 
 /**
- * Pure: a bark state's follow-up pages not yet read, from the page on screen when it is one of
- * them, as one-line text ('' when there are none). R3 m1.
+ * Pure: a bark state's follow-up, as one-line text, while any of it is still unread (the page on
+ * screen counts as unread); '' when it has none or the bubble has finished. Always the whole
+ * follow-up, never a part cut at a page break mid-sentence (R3 m1, R4 n1).
  */
 export function followUpLeft(st) {
     if (!st || !Array.isArray(st.pages)) return '';
-    const from = Math.max(st.page || 0, st.linePages ?? st.pages.length);
+    const from = st.linePages ?? st.pages.length;
+    if (from >= st.pages.length || (st.page || 0) >= st.pages.length) return '';
     return pagesText(st.pages.slice(from));
 }
 
@@ -360,6 +400,42 @@ export class NpcWorldBubbles {
         this.fontsReady = fontsReady;
         this._fontsAsked = false;
         this.log = [];           // [{ t, npcId, event, page, text }] for live checks (bounded)
+        // Chatter voice (R4 n4), each at most one entry per NPC: a voice waiting for this
+        // frame's placement, the chatter line on screen last frame, a line skipped (no room)
+        this.chatterVoice = new Map();    // npcId -> { line, speak }
+        this.chatterShown = new Map();    // npcId -> line
+        this.chatterSkipped = new Map();  // npcId -> line
+        this._updatedAt = null;
+    }
+
+    /**
+     * Needs chatter asks before it voices a line (npc-needs.js world.speak): the voice starts when
+     * this frame's update() places the line's bubble, and never when it finds no room (the line
+     * is skipped: no voice, no bubble, and it expires on the needs clock as before). Returns false
+     * when the layer is not running (no update for 500 ms): the caller speaks at once.
+     */
+    deferChatterVoice(npcId, line, speak) {
+        if (!npcId || !line || typeof speak !== 'function') return false;
+        if (this._updatedAt === null || this.now() - this._updatedAt > 500) return false;
+        this.chatterVoice.set(npcId, { line, speak });
+        return true;
+    }
+
+    _voiceChatter(npcId) {
+        const v = this.chatterVoice.get(npcId);
+        this.chatterVoice.delete(npcId);
+        if (v) { try { v.speak(); } catch (e) { /* audio never breaks a frame */ } }
+    }
+
+    /** A chatter line with no room: skipped; a voice waiting for it is dropped, one playing stopped. */
+    _skipChatter(npcId, line, why) {
+        const waiting = this.chatterVoice.get(npcId);
+        if (waiting && waiting.line === line) this.chatterVoice.delete(npcId);
+        const wasShown = this.chatterShown.get(npcId) === line;
+        this.chatterShown.delete(npcId);
+        this.chatterSkipped.set(npcId, line);
+        if (wasShown) { try { win().npcChatterVoice?.cancel?.(npcId); } catch (e) { /* already stopped */ } }
+        this._note(npcId, wasShown ? 'chatter-dropped' : 'chatter-skipped', { text: line, why });
     }
 
     _note(npcId, event, extra = {}) {
@@ -384,7 +460,7 @@ export class NpcWorldBubbles {
             fontFamily: SPEECH_FONT, fontSize: `${SPEECH_FONT_PX}px`, color: '#1b2a41', lineSpacing: 0
         }).setOrigin(0, 0);
         const img = scene.add.image(0, 0, '__DEFAULT').setOrigin(0, 0).setVisible(false);
-        const box = scene.add.container(0, 0, [g, text, img]).setDepth(BUBBLE_DEPTH);
+        const box = scene.add.container(0, 0, [g, text, img]).setDepth(bubbleDepth());
         return { box, g, text, img, line: null };
     }
 
@@ -567,13 +643,11 @@ export class NpcWorldBubbles {
     closeTagged(tag, { followUp = null } = {}) {
         const closed = [];
         if (!tag) return closed;
-        // Compared on letters and digits only: the bubble's copy has authored dashes shown
-        const key = (x) => String(x || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
-        const same = key(followUp);
         for (const st of [...this.says.values()]) {
             if (st.tag !== tag) continue;
-            const left = followUpLeft(st);
-            this._end(st.npcId, 'superseded', { handOn: !!left && key(left) !== same });
+            // Only what the new answer does not already show (R4 m1)
+            const rest = followUpBeyond(followUpLeft(st), followUp);
+            this._end(st.npcId, 'superseded', { handOn: !!rest, rest });
             closed.push(st.npcId);
         }
         return closed;
@@ -606,11 +680,12 @@ export class NpcWorldBubbles {
         // A new line from the same NPC replaces its old one (its voice was cut too). Follow-up
         // pages of the old line not yet read go after the new line, once (R3 m1)
         const old = this.says.get(npcId) || null;
-        const carried = old ? followUpLeft(old) : '';
+        const next = followUp ? pagesText([followUp]) : '';
+        // The whole unread follow-up, less what the new one already shows (R4 m1, n1)
+        const carried = old ? followUpBeyond(followUpLeft(old), next) : '';
         if (old) this._end(npcId, 'replaced', { handOn: false });
         const lost = typeof onFollowUpLost === 'function' ? onFollowUpLost : (old?.onFollowUpLost || null);
-        const next = followUp ? pagesText([followUp]) : '';
-        const allFollow = carried && carried !== next ? [carried, next].filter(Boolean).join(' ') : next;
+        const allFollow = [carried, next].filter(Boolean).join(' ');
         const extra = allFollow ? pageLine(allFollow) : [];
         const pages = [...linePages, ...extra];
         const others = [...this.says.keys()].map(id => ({ npcId: id, distance: this._distance(this._spriteAndRoom(id).sprite) }));
@@ -618,7 +693,7 @@ export class NpcWorldBubbles {
         if (!cap.ok) {
             this._note(npcId, 'full');
             // The caller toasts the new line with its own follow-up; a carried one goes on its own
-            if (carried && carried !== next) { try { lost?.(carried); } catch (e) { /* never break a frame */ } }
+            if (carried) { try { lost?.(carried); } catch (e) { /* never break a frame */ } }
             return null;
         }
         if (cap.evict) this._leave(cap.evict, 'pushed');
@@ -655,7 +730,7 @@ export class NpcWorldBubbles {
      * to onFollowUpLost (R3 m1), unless `handOn` is false: the remainder paths already carry
      * them, a replacing line takes them on, and a notification with the same hint shows it.
      */
-    _end(npcId, why, { handOn = true } = {}) {
+    _end(npcId, why, { handOn = true, rest: restGiven = null } = {}) {
         const st = this.says.get(npcId);
         if (!st) return;
         this.says.delete(npcId);
@@ -664,7 +739,7 @@ export class NpcWorldBubbles {
         this._note(npcId, why, { page: st.page });
         if (why === 'done') { try { st.onDone?.(); } catch (e) { /* never break a frame */ } }
         else if (handOn) {
-            const rest = followUpLeft(st);
+            const rest = restGiven ?? followUpLeft(st);
             if (rest) {
                 this._note(npcId, 'follow-up-lost', { page: st.page, text: rest });
                 try { st.onFollowUpLost?.(rest); } catch (e) { /* never break a frame */ }
@@ -676,7 +751,9 @@ export class NpcWorldBubbles {
     _leave(npcId, why) {
         const st = this.says.get(npcId);
         if (!st) return;
-        const rest = pagesText(st.pages.slice(st.page));
+        // On a follow-up page: the whole follow-up, not its tail from a mid-sentence break (R4 n1)
+        const n = st.linePages ?? st.pages.length;
+        const rest = pagesText(st.pages.slice(st.page < n ? st.page : n));
         this._end(npcId, why, { handOn: false });
         this._note(npcId, 'remainder', { page: st.page, text: rest });
         if (rest) { try { st.onRemainder?.(rest); } catch (e) { /* never break a frame */ } }
@@ -704,6 +781,7 @@ export class NpcWorldBubbles {
 
     /** Per-frame: one bubble per NPC that is saying a line now. */
     update() {
+        this._updatedAt = this.now();
         this._tickSays();
         const sys = win().npcNeedsSystem;
         const mgr = win().npcBehaviorManager;
@@ -718,11 +796,20 @@ export class NpcWorldBubbles {
             cands.push({ npcId: st.npcId, distance: this._distance(sprite), bark: true, held });
             info.set(st.npcId, { sprite, line: st.pages[st.page], picture: null, partnerId: null, bark: true });
         }
+        const chatterNow = new Map();   // npcId -> the chatter line it is saying now
         if (sys && mgr) {
             for (const id of sys.states.keys()) {
-                if (info.has(id)) continue;   // a bark wins over the same NPC's chatter
                 const st = sys.getState(id);
+                if (st?.talking?.line) chatterNow.set(id, st.talking.line);
+                if (this.chatterSkipped.has(id) && this.chatterSkipped.get(id) !== st?.talking?.line) this.chatterSkipped.delete(id);
+                if (info.has(id)) {
+                    // A bark wins over the same NPC's chatter: that line is skipped (R4 n4)
+                    const l = st?.talking?.line;
+                    if (l && this.chatterSkipped.get(id) !== l) this._skipChatter(id, l, 'own-bark');
+                    continue;
+                }
                 if (!st?.talking) continue;
+                if (st.talking.line && this.chatterSkipped.get(id) === st.talking.line) continue;   // skipped: not shown later
                 const b = mgr.getBehavior?.(id);
                 const sprite = b?.sprite;
                 if (!sprite || !sprite.active || !sprite.visible || sprite.destroyed) continue;
@@ -744,7 +831,16 @@ export class NpcWorldBubbles {
         for (const [id, bb] of this.bubbles) {
             if (!shown.has(id)) bb.box.setVisible(false);
         }
-        if (shown.size && !this._ensureFonts()) return;   // first frames only: VT323 still loading
+        // Chatter candidates left out by the bubble cap found no room (R4 n4)
+        for (const c of cands) {
+            if (c.bark || shown.has(c.npcId)) continue;
+            const line = info.get(c.npcId).line;
+            if (line) this._skipChatter(c.npcId, line, 'full');
+        }
+        if (shown.size && !this._ensureFonts()) {   // first frames only: VT323 still loading
+            for (const id of [...this.chatterVoice.keys()]) this._voiceChatter(id);
+            return;
+        }
         // What bubbles keep off: the HUD panels, every other speaker's head (a bubble over it hid
         // who was talking: R2 m1 retake) and each bubble as it is placed (hard); the player's
         // head (soft)
@@ -774,17 +870,34 @@ export class NpcWorldBubbles {
                 // (from the page on screen), chatter waits for room (R2 m1, m2)
                 bb.box.setVisible(false);
                 if (bark) this._leave(id, 'no-room');
+                else if (line) this._skipChatter(id, line, 'no-room');   // skipped, not waiting (R4 n4)
                 continue;
             }
             taken.push(place.rect);
             bb.rect = place.rect;
             this._layout(bb, place);
+            const depth = bubbleDepth();   // follows lighting on or off (R4 n2)
+            if (bb.box.depth !== depth) bb.box.setDepth(depth);
             bb.box.setPosition(pos.x, pos.y).setVisible(true);
+            if (!bark && line) {
+                this.chatterShown.set(id, line);
+                const v = this.chatterVoice.get(id);
+                if (v && v.line === line) this._voiceChatter(id);
+            }
             bb.box.setData('line', line);
             bb.box.setData('picture', picture);
             bb.box.setData('partner', partnerId);
             bb.box.setData('bark', bark);
             bb.sayState = bark ? this.says.get(id) || null : null;
+        }
+        for (const [id, line] of [...this.chatterShown]) {
+            if (!shown.has(id) || chatterNow.get(id) !== line) this.chatterShown.delete(id);
+        }
+        // A voice still waiting was for a line with no bubble to place (off camera, a dark room,
+        // a minigame open): it speaks as before. One whose NPC has a bark up is dropped.
+        for (const [id, v] of [...this.chatterVoice]) {
+            if (this.says.has(id) || this.chatterSkipped.get(id) === v.line) this.chatterVoice.delete(id);
+            else this._voiceChatter(id);
         }
     }
 
