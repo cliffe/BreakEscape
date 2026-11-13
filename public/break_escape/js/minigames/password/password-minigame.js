@@ -1411,7 +1411,12 @@ export class PasswordMinigame extends MinigameScene {
         this.signInMessageEl.dataset.kind = kind;
         // A result (a wrong password and the attempts left, a lockout) is always on screen,
         // even in a short window where the frame scrolls (UX slice 2a R2 M2)
-        if (text && kind !== 'info') revealInFrame(this.signInMessageEl);
+        // The post-it holds the details the player is about to retype, so it comes into view
+        // first and the line after it (both fit once the tile row has folded; R3 m4)
+        if (text && kind !== 'info') {
+            revealInFrame(this.gameContainer?.querySelector?.('.signin-mode.signin-chosen .postit-note'));
+            revealInFrame(this.signInMessageEl);
+        }
     }
 
     async _submitSignInOnce() {
