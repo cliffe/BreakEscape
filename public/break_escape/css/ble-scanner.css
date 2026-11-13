@@ -53,6 +53,10 @@
     overflow: hidden !important;
     transition: width 0.3s ease, max-height 0.3s ease !important;
     overflow-y: auto !important;
+    /* A column, so the device list takes what height is left and scrolls inside the
+       frame on short screens (slice 7 R2 m3) */
+    display: flex !important;
+    flex-direction: column !important;
 }
 
 
@@ -66,8 +70,28 @@
     position: relative !important;
     display: flex !important;
     flex-direction: column !important;
-    padding: 15px 15px 55px 15px !important;
+    padding: 15px !important;
     box-sizing: border-box !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;   /* if even the shrunk list does not fit, scroll inside the frame */
+}
+
+/* Short screens: the scanner may use the height below its top offset */
+@media (max-height: 560px) {
+    .ble-scanner-minigame-container {
+        max-height: calc(95vh - 8px) !important;
+    }
+}
+
+/* Everything keeps its height except the device list, which shrinks and scrolls */
+.ble-scanner-minigame-game-container > * {
+    flex-shrink: 0;
+}
+
+.ble-scanner-minigame-game-container > .ble-device-list-container {
+    flex: 1 1 auto;
+    min-height: 0;
 }
 
 /* Header */
@@ -191,6 +215,7 @@
 .ble-device-list-container {
     display: flex;
     flex-direction: column;
+    min-height: 0;
 }
 
 .ble-device-list-header {
@@ -220,6 +245,8 @@
     background: rgba(0, 0, 0, 0.1);
     border: 2px solid #333;
     max-height: 220px;
+    flex: 0 1 auto;
+    min-height: 48px;
 }
 
 .ble-device-list::-webkit-scrollbar { width: 6px; }

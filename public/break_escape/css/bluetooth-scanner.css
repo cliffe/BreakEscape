@@ -60,6 +60,40 @@
     max-height: 70vh !important;
 }
 
+/* The expanded panel stacks its sections in a column that scrolls inside the frame on
+   short screens; nothing is squeezed under its neighbour (slice 7 R2 m4) */
+.bluetooth-scanner-minigame-container {
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.bluetooth-scanner-minigame-container > .bluetooth-scanner-minigame-game-container {
+    flex: 1 1 auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+}
+
+.bluetooth-scanner-minigame-game-container > * {
+    flex-shrink: 0;
+}
+
+.bluetooth-scanner-minigame-game-container > .bluetooth-device-list-container {
+    flex: 1 1 auto;
+    min-height: 96px;
+}
+
+.bluetooth-scanner-minigame-container.expanded .bluetooth-scanner-controls {
+    max-height: none;
+}
+
+@media (max-height: 560px) {
+    .bluetooth-scanner-minigame-container,
+    .bluetooth-scanner-minigame-container.expanded {
+        max-height: calc(95vh - 8px) !important;
+    }
+}
+
 .bluetooth-scanner-minigame-game-container {
     width: 100% !important;
     height: 100% !important;
@@ -82,7 +116,7 @@
     align-items: center;
     margin-bottom: 10px;
     margin-right: 40px;   /* clear of the X, which sits inside the frame's top right (slice 7 R1) */
-    padding: 10px;
+    padding: 10px 10px 10px 32px;   /* clear of the expand toggle at its top left (R2) */
     background: rgba(0, 188, 212, 0.1);
     border: 2px solid #00bcd4;
     /* border-radius: 6px; */
