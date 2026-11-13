@@ -44,15 +44,28 @@ export default async (page, bridge, mark) => {
   await sleep(1500);
   const c = await openHax(bridge);
   mark('contact-picked', { ok: c && c.ok });
-  // Call the extraction in. The exact option texts: "I'm done here. Bring me in." then "Bring me in." then "On my way."
-  for (const re of [/Bring me in/i, /Bring me in/i, /On my way/i]) {
+  // Call the extraction in. The phone reopens on its saved first_call_choices, so the hub (where the
+  // "[I'm done here. Bring me in.]" option lives) is reached by first picking "I've been busy. Where are
+  // we up to?" -> recap -> hub. Then the call-in: "I'm done here. Bring me in." -> extract_offer,
+  // "Bring me in." -> extract_confirm, "On my way." -> extract_go (sets start_debrief_cutscene).
+  // The phone types its narrative then renders the next choice set, so poll for each target choice and
+  // click it when it appears (choices come from getState().dialogue.choices, the DOM .choice-button list).
+  const callTargets = [/where are we up to|been busy/i, /Bring me in/i, /Bring me in/i, /On my way/i];
+  let cti = 0;
+  const callStart = Date.now();
+  while (cti < callTargets.length && Date.now() - callStart < 70000) {
     const s = await bridge.getState();
-    if (!(s.activeMinigame && /person-chat|phone-chat/.test(s.activeMinigame.id))) break;
-    await sleep(1600);
-    const ch = await bridge.minigame.choose(re).catch(() => null);
-    if (ch && ch.ok) mark('choice:' + (ch.chose || re.source), { number: ch.number });
+    const choices = (s.dialogue && s.dialogue.choices) || [];
+    const want = callTargets[cti];
+    if (choices.some((c) => want.test(c.text))) {
+      await sleep(1100); // let the bubbles finish typing so they read on camera
+      const ch = await bridge.minigame.choose(want).catch(() => null);
+      if (ch && ch.ok) { mark('choice:' + (ch.chose || want.source), { number: ch.number }); cti++; await sleep(1800); continue; }
+    }
+    if (!s.activeMinigame) break;
     await sleep(600);
   }
+  mark('call-in-done', { picked: cti });
   // Close the phone; the ending-check overlay or the debrief follows.
   for (let i = 0; i < 3 && (await bridge.getState()).activeMinigame && /phone-chat/.test((await bridge.getState()).activeMinigame.id); i++) {
     await bridge.minigame.close().catch(() => {}); await sleep(600);
