@@ -18,7 +18,7 @@ class AccessWorkFeedReactionsTest < ActiveSupport::TestCase
   end
 
   def data(npcs)
-    { 'resources' => { 'srv' => { 'id' => 'srv', 'downIf' => 'srv_down' } },
+    { 'resources' => { 'srv' => { 'id' => 'srv', 'offWhen' => 'srv_down' } },
       'globalVariables' => { 'srv_down' => true },
       'rooms' => { 'r1' => { 'npcs' => npcs } } }
   end
