@@ -844,20 +844,24 @@
     display: none;
 }
 
-.pc-desktop > .desktop-background {
+/* Stronger than the old desktop rules (.container-minigame.desktop-mode .desktop-background
+   kept a 16:10 box capped at 100vh - 440px), so the icons fill the screen */
+.pc-monitor .container-minigame.desktop-mode.pc-desktop > .desktop-background {
+    aspect-ratio: auto;
+    max-height: none;
     flex: 1 1 auto;
     min-height: 0;
     background: none;
     overflow: auto;
 }
 
-.pc-desktop .desktop-icons {
+.pc-monitor .container-minigame.desktop-mode.pc-desktop .desktop-icons {
     box-sizing: border-box;
     height: auto;
     min-height: 100%;
 }
 
-.pc-desktop > .desktop-taskbar {
+.pc-monitor .container-minigame.desktop-mode.pc-desktop > .desktop-taskbar {
     flex: 0 0 auto;
     min-height: 0;
     padding: 4px 8px;
@@ -875,7 +879,7 @@
     flex: 1 1 auto;
 }
 
-.pc-monitor[data-compact] .pc-desktop .desktop-icons {
+.pc-monitor[data-compact] .container-minigame.desktop-mode.pc-desktop .desktop-icons {
     padding: 8px;
     gap: 8px;
 }
@@ -885,13 +889,24 @@
     gap: 4px 8px;
 }
 
-.pc-monitor[data-compact] .desktop-account-btn {
-    padding: 2px 8px;
+/* Switch user and Sign out on the theme's thin button skin, so the top bar stays one
+   headshot tall instead of taking 70px of the screen */
+.pc-desktop-topbar .minigame-button.desktop-account-btn {
+    margin: 0;
+    padding: 2px 10px;
+    font-size: 12px;
+    line-height: 16px;
 }
 
-.pc-monitor[data-compact] .desktop-account-headshot {
-    width: 32px;
-    height: 32px;
+[data-ui-theme] .pc-desktop-topbar .minigame-button.desktop-account-btn {
+    border-width: var(--ui-small-button-px);
+    border-image-source: var(--ui-small-button-image);
+    border-image-slice: var(--ui-small-button-slice) fill;
+    border-image-width: var(--ui-small-button-px);
+}
+
+.pc-monitor[data-compact] .pc-desktop-topbar .minigame-button.desktop-account-btn {
+    padding: 2px 8px;
 }
 
 /* A share's folder window on the screen: maximised, so no wallpaper shows and it never reads
