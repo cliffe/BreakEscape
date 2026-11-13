@@ -2063,6 +2063,8 @@ require 'base64'
             {
               "type": "confirm_action",
               "text": "Disconnect cable JS-SCADA-LAN?",
+              "confirmLabel": "Disconnect",
+              "cancelLabel": "Leave it",
               "onConfirm": [
                 { "type": "set_global", "key": "jump_server_isolated", "value": true }
               ]
