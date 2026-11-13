@@ -95,6 +95,18 @@ Live proof: keyless server on :3067, setFPS(20) with fixed steps on, new games 2
 
 Open: the user's call on bubble scale (the rule gives x2 on a dpr 3 phone, x1 on desktop).
 
+## Review R2 fixes (2026-11-13)
+
+Review: `docs/achitechture/GNF_CANVAS_FONT_REVIEW_R2.md` (m 3). Commit 5c0351255.
+
+- **m1 rescale mid-bark.** `_render` now wraps every line it draws at the rule in force, bark pages included: a page's own words are joined and wrapped again (`bubbleLines(shown.replace(/\n/g, ' '), this._wrap(scene))`). `st.pages`, `st.page`, `st.times` and the voice are untouched; after a step up the page on screen can run past PAGE_LINES until the next page (two extra lines at x3 in the proof). Test in `ux-bark-bubbles.test.mjs`: a two-page bark at x1, then x2 on a 480 px view (wrap 108 font px) during page 0; pages, page and times unchanged, the same words drawn in order, every line within the new wrap, and the x1 wrap shown to have broken it.
+- **m2 glyph scan.** Knots come from the `knot` field of any entry inside `exchanges`, `phoneCalls` or `eventMappings`, whatever the name (so `coffee_exchange` is scanned), as well as `exchange_` and `call_` knots named anywhere. Event mapping `message` strings are scanned, less those inside `sendTimedMessage` (phone messages). Every `lockedHint` is scanned. New test checks all three. No uncovered character found.
+- **m3 Pillow probe.** The build check test probes the Pillow version and skips with "Pillow 10.1 or later not available" when it is older or missing.
+
+Tests: ux-bark-bubbles 43, gnf-scenario-glyphs 3, pixel-text 19. Full suites on 5c0351255 under the lock: Rails 2386 runs, 42523 assertions, 0 failures, 0 errors, 1 skip; `MERGE_BATCH=1 bin/test-js -j 3` 600 of 600 files pass. `python3 tools/fonts/build_gnf_bitmap.py --check`: up to date, every glyph on the grid, largest sliver 6.0% (limit 7%).
+
+Live proof: keyless server on :3067, setFPS(20) with fixed steps on, new games 3025 and 3034 (test_bark_bubbles on the m01 host), 390 x 844 at dpr 3. The long bark started at x1 and the scale stepped mid-bark. To the rule's own x2 (game 3025) the x1 lines (widest 131 font px) already fit the x2 wrap of 131, so the page looks the same, only larger. With the HUD step at +1 (x3, game 3034) the page re-wrapped from 3 lines to 5 with the same words; pages and times unchanged ([5700, 5700] before and after). Shots in the scratchpad's `ux-shots/gnf-font-r2fix/` (`bubble_rescale_midbark_phone390_dpr3[_hud1][_full].png`); glyphs on the grid, frame fitted to the text.
+
 ## Handover
 
 Done: native size found, build script with grid check, sheets, helper, five call sites, tests, live proof.
