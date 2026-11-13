@@ -7,8 +7,8 @@ three top-level office-life habit keys into the NPC `habits` block:
 
 ## Rendered pairs
 
-- `<scenario>.old.json` — the **format-2** render (top-level `screenHabit` / `printHabit` / `usbHabit`).
-- `<scenario>.new.json` — the **format-3** render (one `habits` block holding `screen` / `print` / `usb`).
+- `<scenario>.old.json`: the **format-2** render (top-level `screenHabit` / `printHabit` / `usbHabit`).
+- `<scenario>.new.json`: the **format-3** render (one `habits` block holding `screen` / `print` / `usb`).
 
 For `test_access_social`, `test_access_work` and `test_needs_sims` (the three rewritten templates);
 plus `test_access_habits`, which authors no habit key, so its pair is identical bar the fold having
@@ -23,7 +23,7 @@ and checks separately that no live author note still names a retired key.
 
 ## Loader output (stored-game equivalence)
 
-- `<scenario>.old.loaded.json` — the **format-2 loader output**: `NpcHabits.expand!` run on the 8b tip
+- `<scenario>.old.loaded.json`: the **format-2 loader output**: `NpcHabits.expand!` run on the 8b tip
   `ab14d1926`, which fills a top-level `screenHabit` from `awareness` / `habits.locksScreen` the old
   way. For `test_access_habits` and `lab_physical_pentest` (neither authors a habit key; both carry
   awareness or `habits.locksScreen`), and a minimal `priya_awareness` scenario used by
