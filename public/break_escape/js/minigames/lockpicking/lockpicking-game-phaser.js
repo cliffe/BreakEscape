@@ -502,17 +502,18 @@ export class LockpickingMinigamePhaser extends MinigameScene {
             const isPortrait = window.innerHeight > window.innerWidth;
 
             if (isPortrait) {
-                // Portrait: use a canvas window that closely matches the lock area so the
-                // canvas can fill more of the screen height.  Camera is scrolled in create()
-                // so that game-world x=80..480, y=20..360 maps onto this 400x340 canvas.
-                config.width = 400;
+                // Portrait: a canvas window over the lock and its labels (tension wrench,
+                // pins, SHEAR LINE), which span about x=40..580; Scale.FIT shrinks it to the
+                // screen. The old 400px window over x=80..480 cut the lock's right side and
+                // the labels (critique A07). Camera is scrolled in create().
+                config.width = 540;
                 config.height = 340;
-                this._portraitCameraOffset = { x: 80, y: 20 };
+                this._portraitCameraOffset = { x: 40, y: 20 };
             } else {
-                // Landscape: crop to lock area horizontally (x=80..590, y=30..370)
-                config.width = 510;
+                // Landscape: crop to the lock and its labels (x=40..580, y=30..370)
+                config.width = 540;
                 config.height = 340;
-                this._portraitCameraOffset = { x: 80, y: 30 };
+                this._portraitCameraOffset = { x: 40, y: 30 };
             }
 
             config.scale = {

@@ -113,6 +113,9 @@ export function audit({ rootSel }) {
                 else if (hide(ox) && (b.left < l - 2 || b.right > rt + 2)) cut = 'x';
                 else if (scroll(oy) && b.top < t - a.scrollTop - 2) cut = 'before-top';
                 else if (scroll(ox) && b.left < l - a.scrollLeft - 2) cut = 'before-left';
+                // Past the end of a scroll box is reachable by scrolling it: stop here, so the
+                // boxes around the scroll box do not count it as cut
+                if (!cut && (scroll(oy) || scroll(ox))) break;
                 if (cut) {
                     // A box that is itself wholly cut away is reported once, at its own level
                     if (clippedCount++ < 5) out.push({ kind: 'clipped', where: path(el), detail: `${Math.round(b.left)},${Math.round(b.top)}-${Math.round(b.right)},${Math.round(b.bottom)} cut (${cut}) by ${path(a)} ${Math.round(l)},${Math.round(t)}-${Math.round(rt)},${Math.round(bt)}` });

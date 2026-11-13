@@ -23,8 +23,15 @@
     flex: 0 0 auto;
 }
 
+/* The kit's frame is the window here: it is capped to the screen and scrolls inside, so its
+   title is never centred up past the top edge (critique A15). The game area around it is not
+   capped (the shell's frame cap would centre the kit over both edges). */
+.minigame-container > .dusting-game-container { max-height: none; }
+
 .dusting-root {
     align-self: center;
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
     width: min(960px, 96vw);
     background: var(--d-bg);
     border: 2px solid var(--d-accent);

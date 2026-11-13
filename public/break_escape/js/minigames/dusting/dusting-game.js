@@ -269,7 +269,7 @@ export class DustingMinigame extends MinigameScene {
         this.gameContainer.removeAttribute('style');
 
         this.gameContainer.innerHTML = `
-            <div class="dusting-root" data-step="examine">
+            <div class="dusting-root pixel-scroll" data-step="examine">
                 <div class="dusting-title"><h2>Fingerprint kit</h2><span class="dusting-object"></span></div>
                 <ol class="dusting-steps" aria-label="Steps">
                     ${STEPS.map((s, i) => `<li data-step="${s}"><span class="dusting-step-num">${i + 1}</span> ${STEP_NAMES[s]}</li>`).join('')}

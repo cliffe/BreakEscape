@@ -104,7 +104,7 @@ export class VmLauncherMinigame extends MinigameScene {
                     left: 20px;
                     z-index: 15;
                     background: #ffff88;
-                    border: 1px solid #ddd;
+                    border: 2px solid #ddd;
                     padding: 15px;
                     box-shadow: 2px 2px 8px rgba(0,0,0,0.3);
                     transform: rotate(-2deg);
@@ -128,7 +128,7 @@ export class VmLauncherMinigame extends MinigameScene {
         style.textContent = `
             .vm-launcher {
                 padding: 15px;
-                font-family: 'VT323', 'Courier New', monospace;
+                font-family: 'VT323', monospace;
                 max-height: 400px;
                 overflow-y: auto;
             }
@@ -215,13 +215,13 @@ export class VmLauncherMinigame extends MinigameScene {
             }
             
             .vm-ip {
-                font-family: 'Courier New', monospace;
+                font-family: 'VT323', monospace;
                 color: #ffaa00;
             }
             
             .vm-ip-display {
                 background: rgba(255, 170, 0, 0.1);
-                border: 1px solid #ffaa00;
+                border: 2px solid #ffaa00;
                 padding: 12px 15px;
                 margin-top: 10px;
                 text-align: center;
@@ -235,7 +235,7 @@ export class VmLauncherMinigame extends MinigameScene {
             }
             
             .vm-ip-value {
-                font-family: 'Courier New', monospace;
+                font-family: 'VT323', monospace;
                 font-size: 20px;
                 font-weight: bold;
                 color: #ffaa00;
@@ -322,7 +322,7 @@ export class VmLauncherMinigame extends MinigameScene {
 
             .standalone-instructions {
                 background: #1a1a1a;
-                border: 1px solid #333;
+                border: 2px solid #333;
                 padding: 15px;
                 margin-top: 15px;
                 font-size: 13px;
@@ -355,7 +355,7 @@ export class VmLauncherMinigame extends MinigameScene {
                 font-weight: bold;
                 font-size: 16px;
                 border: 2px solid #000;
-                font-family: 'Courier New', monospace;
+                font-family: 'VT323', monospace;
             }
 
             .standalone-instructions h3 {
