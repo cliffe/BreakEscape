@@ -781,6 +781,117 @@ curl-proven, so they are verification, not new code.
   5. The static scan's capture regex is tuned to the current tree; a new call-time `fetch` guard shaped
      unlike `? fetch : null` or `: fetch` could trip it, so prefer those shapes.
 
+## Step 7 live proofs (phase 3, this session)
+
+Date: 2026-11-13. The browser-driven live proofs the phase-2 handover left open, plus the `pick`
+check. Two keyless servers sharing the development database: the branch on **:3280** and a base
+worktree at the merge base **c9a4f7a84** (the main step 7 branched from, before any step 7 code) on
+**:3281**. Base worktree made by hand (`git worktree add --detach`), node_modules symlinked to
+`p-9-2-h`, `.bundle/config` copied from `p-9-2-h`, and the branch `development_secret.txt` copied into
+the base for the run (md5 `73f96a0c...`; base had none) so CSRF holds across the swap. Headless runs
+used `setFPS(20)` with fixed steps on. Drivers live in the session scratchpad (`p-harden-7-proofs/`),
+nothing added to the repo. No `db:` task was run anywhere.
+
+Because m01's first progression door (reception to main_office_area) is a lockpicking dexterity
+minigame the test bridge cannot play, and the Main Office Key sits behind the receptionist, both games
+were head-started into `main_office_area` with `new-game.rb --start-room main_office_area --unlock
+main_office_area` (the sanctioned test-only option; it edits only the one game's row and never writes
+`formatVersion`). From there the real PIN locks are reached and driven through the real page: the
+filing-cabinet PIN **2024** (`main_office_area_safe_0`, an unlocked object) and the IT-room PIN **door**
+**2468** (`it_room`, an unlocked room). Both are real `pin` minigames solved by clicking the keypad.
+
+**Proof 1, an old game from before step 7 (game 2397).** Created on the base (old code), so
+`scenario_data` has no `formatVersion`. Played on the base server (:3281): the filing-cabinet PIN was
+opened; every base response carried no `X-Break-Escape-Format` header (old code) and the bootstrap had
+no `formatVersion`; `verify-run.rb` after the base run: 2 unlocked rooms, 1 unlocked object, score 2,
+VERDICT "progress recorded". The base server was stopped. The branch server (:3280) then loaded the
+same game 2397:
+- The page did **not** reload: one page load, and no `be-format-reload:*` key in `sessionStorage`
+  before or after play.
+- The bootstrap `GET /scenario` returned `formatVersion` the Integer **0** (`version_of` of an absent
+  field), and every engine response carried `X-Break-Escape-Format: 0` (`/scenario`, `/room/...`,
+  `/inventory`, `/sync_state`).
+- `scenario_data` still holds **no** `formatVersion` after the load (read with `bin/rails runner`): a
+  game at 0 is not stamped, as the plan says.
+- A further real beat on the branch: the IT-room PIN **door** (2468) opened on the first attempt and the
+  player entered `it_room`; the sync saved (200).
+- Nothing lost: `verify-run.rb` after the branch load shows 3 unlocked rooms (the base's
+  main_office_area plus the branch's it_room), the base's unlocked object still present, tasks_completed
+  3, score 10, VERDICT "progress recorded".
+
+**Proof 2, a new game on the branch (game 2398).** Created on the branch (new code): `scenario_data`
+is stamped `formatVersion` **0** at creation (DB read). Loaded and played on :3280: bootstrap
+`formatVersion` Integer 0, header 0 on every response, one page load and no reload key, the
+filing-cabinet PIN (2024) opened through the real page, the sync saved. `verify-run.rb`: 2 unlocked
+rooms, 1 unlocked object (`main_office_area_safe_0`), task `access_main_office` completed, score 2,
+VERDICT "progress recorded" (exit 0).
+
+**Proof 4, what `pick(scenario_data->'formatVersion')` returns on a live DB game.** On PostgreSQL
+(the development adapter), `Game.where(id: ...).pick(Arel.sql("scenario_data -> 'formatVersion'"))`
+returns a **decoded Ruby Integer** (0 on game 2398), and **nil** when the field is absent (game 2397).
+The text form `->>` returns the String `"0"`. The sync refusal (`sync_format_refusal`,
+games_controller.rb:2026) uses the `->` form, so on this adapter it already receives an Integer and the
+`String` branch is not exercised. **Decision: keep** phase 1's defensive `String`/`JSON.parse` branch
+unchanged. It is cheap, it is the documented contract (the plan notes `pick` of a jsonb expression "may
+come back decoded or as its JSON text, depending on the adapter's result type map"), and `version_of`
+rejects anything that is not a non-negative Integer regardless, so the branch is correct insurance
+against a different adapter or result type map rather than dead code on this one.
+
+**Games created this session (all development-DB, all `formatVersion` 0 or absent, none 900-stamped):**
+2397 (old, base, head-started, proof 1), 2398 (new, branch, head-started, proof 2). Also 2395 and 2396
+were m01 games made early to shake out the drivers before head-start was adopted; they are harmless and
+untouched. Game 2394 (the prior session's refusal proof) remains reset to 0. No 900-stamped game exists
+yet, so nothing needed resetting this session.
+
+**Still open (handed over): the reload-for-real and the refusal with an open tab (plan step 7, "The
+reload, for real" and "The refusal").** These need the development switch
+`BREAK_ESCAPE_FORMAT_TEST_STEP=1` and a page held open across a server restart. They were not started
+this session (context budget). See the handover below for exact resume steps. Everything they exercise
+(the switch, the header, the guard, the 409 bodies) is built and unit-proven; the server-side refusal
+was already curl-proven last session (game 2394). This remaining work is verification, not new code.
+
+### Step 7 phase 3 handover (build/harden-7)
+
+- **Done this session:** live proofs 1 (old game 2397: no reload, not stamped, header/bootstrap 0, PIN
+  door opens, saves, nothing lost), 2 (new game 2398: stamped 0, header/bootstrap 0, no reload, PIN
+  opens, saves) and 4 (the `pick` returns an Integer on PostgreSQL; the defensive String parse is kept
+  and the reason recorded). No engine code changed; no bug found.
+- **In progress:** none.
+- **Open (hand over): proof 3, the reload-for-real and the open-tab refusal.** Resume steps:
+  1. Make a base worktree again only if a fresh old game is wanted (proof 3 is branch-only, so it is not
+     needed). Start the branch keyless server on :3280 from `p-harden-7` by hand (the standard env:
+     `env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true RBENV_VERSION=2.7.8 bundle exec rails server -b
+     127.0.0.1 -p 3280`), confirming the keyless boot warning.
+  2. The reload: open a branch m01 game at 0 (e.g. a fresh head-started game, or reuse 2398) in a held
+     Playwright page (the `ready()` helper in the scratchpad `lib.mjs`, `setFPS(20)`, fixed steps on).
+     Stop :3280 and restart it with `BREAK_ESCAPE_FORMAT_TEST_STEP=1` exported (the initializer appends a
+     no-op step at version 900, so `FormatUpgrade.current` reads 900 and the stored game is upgraded to
+     900 on its next load). Keep the tab open; walk into a new room (a `GET /room/:id`) and watch the
+     page reload exactly once; on a second run, let the first request after the restart be a sync and
+     watch it reload on that. Record the triggering request from the network log. After the reload the
+     stored game reads `formatVersion: 900`, no second reload happens (the `be-format-reload` session
+     key), and a further action saves.
+  3. The refusal: a `swap-scenario-game.rb ... --format-version 900` game on :3280 without the switch
+     shows the refusal page on `show` and the refusal text in `#loading` on a direct bootstrap fetch
+     (already curl-proven as game 2394 last session; redo in-browser). Then a tab holding 900 (after a
+     switch-on reload) kept open while :3280 restarts without the switch: its next room fetch and next
+     sync each get the 409 `format` body, the tab reloads once, the reloaded bootstrap is refused and
+     shows the message in `#loading`, player_state unchanged (read before and after).
+  4. Clean-up: every game stamped 900 (by the switch or by `--format-version 900`) is set back to
+     `formatVersion: 0` with a one-off `bin/rails runner` naming the ids, and each id recorded here as
+     unusable for later proofs. Stop the branch server by PID.
+- **Gotchas / notes for the resumer:**
+  1. The drivers and helpers are in the scratchpad at `p-harden-7-proofs/` (`lib.mjs`, `playdriver.mjs`
+     and the `probe_*.mjs`). `lib.mjs` has `ready`, `clearConversations` (waits for the Agent HaX intro
+     cutscene to fully close, it reopens between segments), `openPinObject`, `openPinDoor`, the
+     `bootstrapFormat`/`reloadKeys` format readers, and the hold-across-restart pattern is the sync-F
+     driver (`p-sync-f/f_drive.mjs`) which starts and stops the server as a node child.
+  2. m01's first real door is a lockpicking dexterity minigame the bridge cannot play, so head-start into
+     `main_office_area` to reach the PIN locks. The PIN keypad is driven by `clickText('2')...('8')` then
+     `clickText('ENTER')`; it is slightly racy, so `openPinDoor` retries and confirms with `enterRoom`.
+  3. The base worktree for proofs 1/2 was removed with `git worktree remove` at the end of this session
+     and the copied secret went with it; the branch server was stopped. A resumer starts fresh.
+  4. No full suites were run (congestion rule); no Rails controller or model changed this session.
 
 
 - **Done:** (1) schema resolver and notes helper + unit tests (732f41433); (2) **phase A** (afe5b6ca3): schema marks, eager enumerator, schema-walk test; (3) **phase A continued:** validator migration, `_`-skip audit, action-in-a-note warning, README line; (4) **phase B1:** every granting/deriving walker skips notes and visits free data, `CaptureModel.each_capture_writer`'s `notes:` keyword, schema-walk parts 3 and 6, the corpus before/after proof (identical), and the implant/plant Rails route tests with a revert proof (see "Phase B1"); (5) **phase B2, this session:** `strip_notes!` at every client payload builder, the route audit, the boot initializer, the Rails note/capture/boot tests (each with a revert proof), the part-6 ruling recorded, README item 8, and the live proof on port 3270. See "Phase B2" above. **Step 2b is complete.**
