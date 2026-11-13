@@ -656,6 +656,56 @@ def check_notes_hold_no_actions(json_data)
   warnings
 end
 
+# q94: desktopUser on a PC or laptop is { name, character? }: an object with a non-empty string name,
+# and character (if set) a non-empty string. A character with no <key>_headshot.png in the character
+# assets is a warning, since the desktop frame then shows a silhouette. Walks room objects (and
+# their contents and itemsHeld) and the starting inventory.
+DESKTOP_USER_CHARS_DIR = File.join(File.expand_path('..', __dir__), 'public/break_escape/assets/characters')
+
+def check_desktop_users(json_data, chars_dir = DESKTOP_USER_CHARS_DIR)
+  issues = []
+  check = lambda do |item, path|
+    return unless item.is_a?(Hash)
+
+    if item.key?('desktopUser')
+      du = item['desktopUser']
+      where = "'#{path}' desktopUser"
+      if !du.is_a?(Hash)
+        issues << "❌ ERROR: #{where} must be an object { \"name\": \"...\", \"character\": \"...\" }."
+      else
+        unless du['name'].is_a?(String) && !du['name'].strip.empty?
+          issues << "❌ ERROR: #{where} needs a non-empty string 'name' (the display name shown as signed in)."
+        end
+        if du.key?('character')
+          ch = du['character']
+          if !ch.is_a?(String) || ch.strip.empty?
+            issues << "❌ ERROR: #{where} 'character' must be a non-empty string (a character key)."
+          elsif !File.exist?(File.join(chars_dir, "#{ch}_headshot.png"))
+            issues << "⚠️ WARNING: #{where} character '#{ch}' has no assets/characters/#{ch}_headshot.png: " \
+                      'the desktop frame shows a silhouette instead.'
+          end
+        end
+        (du.keys - %w[name character]).each do |k|
+          issues << "⚠️ WARNING: #{where} has unknown field '#{k}' (known: name, character)."
+        end
+      end
+    end
+    item['contents']&.each_with_index { |c, i| check.call(c, "#{path}/contents[#{i}]") } if item['contents'].is_a?(Array)
+    item['itemsHeld']&.each_with_index { |c, i| check.call(c, "#{path}/itemsHeld[#{i}]") } if item['itemsHeld'].is_a?(Array)
+  end
+  rooms = json_data.is_a?(Hash) && json_data['rooms'].is_a?(Hash) ? json_data['rooms'] : {}
+  rooms.each do |room_id, room|
+    next unless room.is_a?(Hash) && room['objects'].is_a?(Array)
+
+    room['objects'].each_with_index do |obj, i|
+      check.call(obj, "rooms/#{room_id}/objects[#{i}](#{(obj.is_a?(Hash) && (obj['id'] || obj['name'])) || '?'})")
+    end
+  end
+  inv = json_data.is_a?(Hash) ? json_data['startItemsInInventory'] : nil
+  inv.each_with_index { |obj, i| check.call(obj, "startItemsInInventory[#{i}]") } if inv.is_a?(Array)
+  issues
+end
+
 # Check for unknown fields in JSON that aren't in the schema
 def check_unknown_fields(json_data)
   warnings = []
@@ -808,7 +858,7 @@ def check_unknown_fields(json_data)
     phoneOwner rings
     actions onOwnerNoticesMissing interactionWarning saved_cards rfid_protocol
     access acceptsUIDOnly loginPicker policy transfer cloneable identity
-    network host headless networkJack jackConfirm plantedSprite linkName linkStoreIn rogueDevice
+    network host desktopUser headless networkJack jackConfirm plantedSprite linkName linkStoreIn rogueDevice
     wifiAp portSecurity portSecurityMessage
     _comment
   ]
@@ -7367,6 +7417,11 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
     puts "✓ No unknown fields"
   end
   puts
+
+  puts "Checking desktop users (q94)..."
+  desktop_user_issues = report.run_check('common', 'check_desktop_users') { check_desktop_users(json_data) }
+  print_issue_list(report, desktop_user_issues, error_header: 'Desktop user check failed with',
+                                                warning_header: 'Found %d desktop user warning(s):', ok_line: '✓ Desktop users valid')
 
   puts "Checking author notes hold no actions..."
   note_action_warnings = report.run_check('common', 'check_notes_hold_no_actions') { check_notes_hold_no_actions(json_data) }

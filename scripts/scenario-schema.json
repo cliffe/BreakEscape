@@ -5333,7 +5333,17 @@
         "loginPicker": { "oneOf": [ { "type": "string", "enum": ["accounts", "known"] }, { "type": "boolean", "enum": [false] } ], "description": "Access model 5.3: a sign-in PC's account tiles. accounts (default): every account its access admits; known: those the player has met; false: type the username." },
         "policy": { "type": "string", "description": "Access model 5.5: the named policy (top-level policies) this PC follows." },
         "network": { "type": "string", "description": "Networks 3.2: the network (a networks key) this object is on; overrides its room's network. Never sent to the browser." },
-        "host": { "type": "string", "description": "Networks 3.2: a sign-in PC's label on the network (HB-FIN-02). Default: its name. Not secret." },
+        "host": { "type": "string", "description": "Networks 3.2: a PC's computer name (HB-FIN-02), on any PC or laptop. A sign-in PC's label on the network; on any PC the computer name in the desktop taskbar (q94). Default: its name. Not secret." },
+        "desktopUser": {
+          "type": "object",
+          "description": "q94: the user signed in on a PC or laptop that is not a sign-in PC, shown on its unlocked desktop and taskbar only (never on a lock or password screen). Authored text, not an account.",
+          "required": ["name"],
+          "additionalProperties": false,
+          "properties": {
+            "name": { "type": "string", "minLength": 1, "description": "The display name shown as signed in." },
+            "character": { "type": "string", "minLength": 1, "description": "Optional character key for a headshot (assets/characters/<key>_headshot.png); without one the frame shows a silhouette." }
+          }
+        },
         "headless": { "type": "boolean", "description": "Networks 3.4: a sign-in object with no screen or keyboard (a door controller, a file server in a rack), signed in to only over the network through a foothold. A click shows its observations only. Unrelated to headless NPC records and headless browser runs." },
         "networkJack": { "type": "boolean", "description": "Networks 3.3: this room object is a jack; a rogue device planted in it gives a foothold on its network. Takes no triggerOnInteract, requiresItem, lock or lockType." },
         "jackConfirm": { "type": "string", "description": "Networks 3.3: the confirm text before a plant. Default: Plug <device name> into <jack name>?" },
