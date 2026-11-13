@@ -179,3 +179,42 @@ breaks remote network access and profile/share container unlocks, so it is not a
 targeted gate needs the same carve-outs; the leak is pre-existing, optional and yields nothing
 takeable, and the validator warning records it. With MAJOR-1 and the minors folded in, the plan is
 buildable chunk by chunk.
+
+## Outcomes
+
+Each finding was re-checked in the code at the pinned file:line before the plan was revised.
+
+- **MAJOR-1 (ungated `uid_only_refusal?`).** Confirmed: `uid_only_refusal?` (`game.rb:2602-2614`)
+  carries the same `return false if target_type != 'door' && unlock_scope_refused?(target_id)` guard,
+  resolves the lock for an object in any room, and is called in the `unless is_valid` block
+  (`games_controller.rb:1126`). §3.6 now describes the feedback helpers as a class named by the shared
+  `unlock_scope_refused?` guard (`pin_cracker_feedback`, `password_case_mismatch?`, `uid_only_refusal?`)
+  and gates all of them with the predicate; §3.2 and §11 reworded from "the two feedback leaks" /
+  "pin/password feedback" to "these feedback helpers" / "attempt-feedback hints (pin pips, password
+  case, the `uid_only` reason)". `unlock_session_refusal` (`game.rb:2727`) confirmed unreachable for a
+  route-room object (answers only under a held session with `path_unlocked?`) and noted as needing no
+  new guard. Build split (§13 Chunk A) and test 12 extended to the `uid_only` case.
+- **m1 (transient honest refusal, viaPass path).** Confirmed: viaPass promotes on the `currentRoom`
+  sync (§3.3a), so an honest unlock in the same batch before that sync hits the valid-path refusal.
+  §3.6 now states the window and requires the client gate to treat `room_not_reachable` as retryable;
+  a note for the client gate owner is included.
+- **m2 (runtime-added objects).** Confirmed: `login_scope_of` (`game.rb:1917`) reads
+  `scenario_data['rooms']`; a runtime-added object (`add_item_to_room!`, `game.rb:464-466`) resolves to
+  `room_id: nil`. §3.2's served-not-takeable list now states the gate covers scenario-defined objects
+  only (permissive, a leak-side limit, no soft-lock).
+- **m3 (unlocked-container GET).** Confirmed: `GET /container` (`games_controller.rb:616-627`) serves
+  an unlocked container's contents with no containing-room gate. §3.2's list now names unlocked-
+  container contents alongside readable text as "served, not takeable" (pickup stays room-gated).
+- **m4 (controller guard placement).** Confirmed: `validate_unlock` (`:1103`) returns true for the
+  honest key-holder and flow reaches `unlock_object!` (`:1152`); the feedback-helper `nil` returns live
+  only in the `unless is_valid` block. §3.6 now states the valid-path refusal is a distinct controller
+  guard checked in the object branch before the transaction and `unlock_object!`, separate from the
+  feedback-helper returns, and names both insertion points.
+- **Q5 (cross-room code leak / general gate).** Kept as an open question with the facts and four
+  options: (a) accept (recommended); (b) targeted gate on task-completing or capture-bearing objects,
+  which still needs the remote/profile/share carve-outs; (c) relocate the note (breaks the lesson);
+  (d) general room gate, which breaks remote network access (sis01, sis02 and the m-series network
+  rooms, where `login_scope_of` resolves to a room the player never entered) and profile/resource/share
+  unlocks (`room_id: nil`). Q1–Q5 each kept short with a recommendation.
+
+Verdict addressed: MAJOR-1 and the four minors folded into the plan; Q5 recorded as accept (a).

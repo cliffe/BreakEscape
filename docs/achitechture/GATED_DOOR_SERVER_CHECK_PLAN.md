@@ -151,10 +151,27 @@ and keeps the saved `currentRoom` in step with the avatar so there is no snap-ba
     covers them: it does not, they cover themselves.
   - **Locked containers and any object unlock were the one un-room-gated vector.** The object branch
     of `/unlock` (`games_controller.rb:1151-1168`) calls `unlock_object!` with no check that the
-    object's room is reachable, and the pin-cracker and password-case feedback paths
-    (`game.rb:3246`, `:3259`) likewise answer for an object in any room. A new object-action gate
-    (§3.6) refuses an object whose containing room is in `npcRouteRooms`, so a locked container, its
-    served contents, and the two feedback leaks are all blocked in a served-but-unearned route room.
+    object's room is reachable, and a set of feedback helpers that answer an invalid attempt
+    (`pin_cracker_feedback` `game.rb:3246`, `password_case_mismatch?` `game.rb:3259`,
+    `uid_only_refusal?` `game.rb:2602`) likewise answer for an object in any room. A new object-action
+    gate (§3.6) refuses an object whose containing room is in `npcRouteRooms`, so a locked container,
+    its served contents, and the hint leaks from these feedback helpers are all blocked in a
+    served-but-unearned route room.
+  - **An unlocked container's contents are served, and accepted.** `GET /container`
+    (`games_controller.rb:616-627`) serves a container's contents once `check_container_unlocked` is
+    true, with no containing-room gate. §3.6 stops a *locked* route-room container from ever being
+    unlocked, so its contents stay hidden; but a container that is not locked (or carries no lock) in a
+    route room has its contents served by this endpoint. This is the same accepted "served, not
+    takeable" line as readable text: pickup stays room-gated (`:2661-2667`), so the contents are seen
+    but nothing in them can be taken. No secret, so it is accepted and named here for completeness.
+  - **The object-action gate sees scenario-defined objects only.** The predicate resolves a room
+    through `login_scope_of`, which reads `scenario_data['rooms']` (`game.rb:1917`). An object added at
+    runtime lives in `player_state['room_states'][room_id]['objects_added']` (`add_item_to_room!`,
+    `game.rb:464-466`) and resolves to `room_id: nil`, so it is not gated. This stays permissive (it
+    never refuses an honest player); the only effect is that a locked container *dropped at runtime*
+    into a route room (an NPC KO drop, say) could be unlocked early. No current scenario does this, and
+    such drops are usually takeable loot whose pickup is room-gated, so it is a leak-side limit noted
+    here, not a soft-lock.
   - **Readable text is served, and accepted.** `filtered_room_data` (`game.rb:1603-1627`) strips
     `requires`, locked `contents` and author notes, but not a readable note's `text`. So a code
     written into a readable note in a route room does reach an un-promoted client. Under the cheat
@@ -312,26 +329,55 @@ existing caller's boolean contract is untouched.
 
 ### 3.6 The object-action gate for served route rooms
 
-A served route room (§3.2) exposes its objects to an un-promoted client, and three server paths act
-on an object without checking that its room is reachable: the `/unlock` object branch
-(`games_controller.rb:1151`, `unlock_object!` then the contents in the answer at `:1168`), the
-pin-cracker feedback (`game.rb:3246`), and the password-case feedback (`game.rb:3259`). Each can
-yield contents or a credit (an `unlock_object` task completes on unlock), or leak how close an
-attempt is, for an object the player has not earned reach to.
+A served route room (§3.2) exposes its objects to an un-promoted client. Two kinds of server path act
+on an object without checking that its room is reachable:
 
-A single model predicate gates all three: `object_in_unpromoted_route_room?(target_id)` resolves the
+- the `/unlock` object branch (`games_controller.rb:1151`, `unlock_object!` then the contents in the
+  answer at `:1168`), which yields contents or a credit (an `unlock_object` task completes on unlock);
+- a set of **feedback helpers** that answer an invalid attempt and share one shape: each carries the
+  guard `return false/nil if target_type != 'door' && unlock_scope_refused?(target_id)`, resolves the
+  lock for an object in any room, and is called in the controller's `unless is_valid` block
+  (`games_controller.rb:1117-1128`). They are `pin_cracker_feedback` (`game.rb:3246`, pips),
+  `password_case_mismatch?` (`game.rb:3259`, the case hint) and `uid_only_refusal?` (`game.rb:2602`,
+  the `uid_only` reason that tells a tampered client an rfid object is rfid-locked and that its held
+  copy is UID-only). Each leaks how close an attempt is, for an object the player has not earned reach
+  to. The gate below covers **these feedback helpers** as a class, named by the shared
+  `unlock_scope_refused?` guard, so a further helper added later with the same pattern is caught by the
+  same rule. (`unlock_session_refusal`, `game.rb:2727`, carries the same guard but answers only for an
+  object under a held session with `path_unlocked?`, which a route room, never signed into, cannot
+  satisfy; it is already unreachable for a route-room object, so it needs no new guard. Gating it for
+  symmetry is harmless if the builder prefers.)
+
+A single model predicate gates all of these: `object_in_unpromoted_route_room?(target_id)` resolves the
 object's room (`login_scope_of(target_id)&.[](:room_id)`, `game.rb:1913`, which already walks rooms
 and nested containers) and returns true when that room is in `player_state['npcRouteRooms']` and not
-in `unlockedRooms`. All three paths run in the `unlock`/feedback flow on a full game load, so
+in `unlockedRooms`. All of these paths run in the `unlock`/feedback flow on a full game load, so
 `scenario_data` is present (unlike the sync path), and `login_scope_of` reads it directly.
 
-- In the `unlock` action object branch, before `validate_unlock` is allowed to open the object,
-  refuse with a clear "not reachable yet" answer (`success: false`, a `reason` such as
-  `room_not_reachable`, `status: :forbidden`) when the predicate holds. Place the refusal so no
-  `unlock_object!`, no contents in the answer, and no flag submission runs.
-- `pin_cracker_feedback` and `password_case_mismatch?` return `nil`/`false` when the predicate holds,
+- **The valid-path refusal is its own controller guard, before `unlock_object!`.** `validate_unlock`
+  runs first (`games_controller.rb:1103`) and returns true for a route-room object an honest key-holder
+  targets, so flow reaches the object branch and `unlock_object!` (`:1152`) with no room check. The
+  feedback-helper `nil` returns below live only in the `unless is_valid` block (`:1105-1129`) and so
+  cover only the *invalid*-attempt branch; they do nothing for a valid attempt. So the refusal for the
+  valid path is a **distinct controller guard**, checked in the object branch before the
+  `ActiveRecord::Base.transaction` and `unlock_object!`: when `target_type != 'door'` and the predicate
+  holds, render a clear "not reachable yet" answer (`success: false`, `reason: room_not_reachable`,
+  `status: :forbidden`) and return, so no `unlock_object!`, no contents in the answer, and no flag
+  submission runs. The builder wires both insertion points: this valid-path controller guard, and the
+  feedback-helper returns below.
+- **The feedback helpers return `nil`/`false` when the predicate holds.** `pin_cracker_feedback`,
+  `password_case_mismatch?` and `uid_only_refusal?` each return `nil`/`false` for a route-room object,
   mirroring their existing `unlock_scope_refused?` guard, so the pad counts the attempt as any other
-  wrong code and leaks no pips or case hint for a route-room object.
+  wrong code and leaks no pips, case hint or `uid_only` reason for a route-room object.
+- **Transient honest-refusal window, viaPass path only.** viaPass promotes on the `currentRoom` sync
+  (§3.3a), not on an `/unlock`, so an honest hi-vis player who enters `secure_area` and unlocks a
+  container there within the same batch, before the promoting `currentRoom` sync lands, hits the
+  valid-path `room_not_reachable` refusal. It self-heals: the next sync promotes the room and the client
+  retries. The client gate must therefore treat `room_not_reachable` as **retryable** (re-attempt after
+  the next sync), not a hard error surfaced to the player. In practice the `currentRoom` sync precedes
+  walking to an object by seconds, so the window is unlikely, but the client owns the retry. The
+  credential path has no such window: it promotes synchronously inside the `/unlock` door branch (§3.3b)
+  before any object unlock.
 
 Doors are unaffected: the gate is only on the object branch (`target_type != 'door'`). A door into a
 route room is the split itself (§3.5); its objects are what this gate holds. After promotion the room
@@ -540,9 +586,9 @@ Validator (`scripts/validate_scenario.rb`):
 - **Readable server-enforced codes in a split gated room (warn).** The runtime gates now cover the
   object vectors: a sign-in PC and a flag or launch station are already refused in a route room (they
   read `room_unlocked?`, which `npcRouteRooms` does not satisfy; `network_access.rb:124`,
-  `games_controller.rb:1897`), and a locked container, its contents and the pin/password feedback are
-  refused by the object-action gate (§3.6). None of those needs a validator rule, so the earlier
-  "no locked container / flag station / sign-in PC" rule is dropped as redundant. What no runtime gate
+  `games_controller.rb:1897`), and a locked container, its contents and the attempt-feedback hints
+  (pin pips, password case, the `uid_only` reason) are refused by the object-action gate (§3.6). None
+  of those needs a validator rule. What no runtime gate
   can catch is a **readable note**: `filtered_room_data` serves its `text`, and a code in that text is
   learned the moment the room is served. So for every split gated door's `connectedRoom`, scan the
   room's readable objects (`readable: true`) and warn if any object's `text` contains a value that is
@@ -614,7 +660,9 @@ Rails (`test/controllers/break_escape/`, `test/models/break_escape/`), one each:
    (Lab or `test_gate_tailgate` fixture.)
 12. **Feedback leaks gated (§3.6).** With a PIN cracker held and a pin-locked object in a route room, a
    wrong `POST /unlock method:pin`: no `feedback` pips in the answer while the room is in
-   `npcRouteRooms`; after promotion the pips return. Same shape for the password case-mismatch hint.
+   `npcRouteRooms`; after promotion the pips return. Same shape for the password case-mismatch hint, and
+   for the `uid_only` reason (a UID-only copy against an rfid-locked object in a route room returns no
+   `reason: uid_only` while the room is unpromoted, and returns it after promotion).
 13. **Honest object unlock unaffected (§3.6).** An object in an ordinary unlocked room unlocks exactly
    as today: the predicate is false (room not in `npcRouteRooms`), so a player who never meets a gate
    sees no change.
@@ -638,8 +686,9 @@ unlock. The tampered step is the proof the fix bites. Record game ids in the bui
 - **Chunk A: server split and serve.** `npcRouteRooms` list; `gated_route_room?` and
   `split_gated_door?` helpers; the `unlock` action route-room branch (3.5); `GET room` and
   auto-unlock changes (3.2); `currentRoom` acceptance for route rooms (3.3a, acceptance only); the
-  object-action gate (§3.6) on the `/unlock` object branch, `pin_cracker_feedback` and
-  `password_case_mismatch?`. Rails tests 1, 6, 10, 11, 12, 13. No credit yet.
+  object-action gate (§3.6): the valid-path controller guard on the `/unlock` object branch and the
+  `nil`/`false` returns in `pin_cracker_feedback`, `password_case_mismatch?` and `uid_only_refusal?`.
+  Rails tests 1, 6, 10, 11, 12, 13. No credit yet.
 - **Chunk B: the credit, server-owned.** `creditOnPass` schema; `serverCreditGlobals` derivation and
   read-only union (3.4); `write_server_globals!` credit write; the `viaPass` check on `currentRoom`
   with the `scenario_data`-only load (fetch via `stored_scenario_data` once, only when a credit is
@@ -692,9 +741,28 @@ unlock. The tampered step is the proof the fix bites. Record game ids in the bui
   but not in `P4`, and the `/unlock` object branch is not position-gated, so once `secure_area` is
   served a tampered client can learn `7041` and open `p4_safe` from anywhere, completing the optional
   `opt_safe` finding without earning the tailgate. Nothing can be **taken** (the spare master keys'
-  pickup is room-gated on `P4`), only the finding text and its optional credit are exposed early.
-  Options: (a) accept, the credit is optional and only time is saved, with the validator warning on
-  record; (b) gate the `/unlock` object branch on the containing room being in `unlockedRooms`
-  **only** for an object that completes a task or yields a capture, a targeted gate, not the general
-  room gate ruled out; (c) relocate `deeds_signout`, which breaks the lesson. **Recommend (a)**, with
-  the "nothing leaks" claim corrected (done, §3.2 and §5).
+  pickup is room-gated on `P4`); only the finding text and its optional credit are exposed early, and
+  `opt_safe` is already a trusted `unlock_object` task a client can set directly (the Q4 gap), so the
+  code leak only adds the real `unlockedObjects` entry. The leak is pre-existing, not a regression: on
+  the shipped trunk `secure_area` enters `unlockedRooms` and is fully served the moment Len's route runs
+  (§1), so `7041` already leaks and `p4_safe` already opens from anywhere today. Options:
+  - **(a) Accept.** The credit is optional, nothing is taken, and only time is saved; the §11 validator
+    warning records any server-enforced code in a route room's readable text. **Recommended.**
+  - **(b) Targeted gate.** Gate the `/unlock` object branch on the containing room being in
+    `unlockedRooms` only for an object that completes a task or yields a capture. Narrower than a general
+    gate, but it still refuses any such object reached over a remote session, so it needs the same
+    remote/profile/share carve-outs as (d) before it is safe; not a clean win over §3.6.
+  - **(c) Relocate `deeds_signout`.** Moves the note out of the route room, which breaks the deliberate
+    "combination written on a card next door" lesson the author keeps.
+  - **(d) General room gate.** Refuse any object unlock whose containing room is neither the start room
+    nor in `unlockedRooms`. This breaks honest play in two central mechanics, which is why §3.6 is
+    narrow: (1) **remote network access** reaches an object over a session, not by entering its room, and
+    `login_scope_of` resolves it to a PC's room the player never entered and that is not in
+    `unlockedRooms`, so the gate refuses every remote container/folder unlock, breaking the sign-in/
+    network missions (sis01, sis02 and the network rooms of the m-series); (2) **profile, resource and
+    share objects** resolve to `room_id: nil`, which is not in `unlockedRooms`, so the gate refuses all
+    profile/share container unlocks too. Not a safe trade.
+
+  **Recommend (a).** Both the general gate (d) and the targeted gate (b) break remote network access and
+  profile/share unlocks unless laden with carve-outs that re-create §3.6's own narrowness; the leak is
+  pre-existing, optional and yields nothing takeable; the validator warning puts it on record.
