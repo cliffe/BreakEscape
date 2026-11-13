@@ -173,3 +173,16 @@ Keyless headless server on :3094 from this worktree (boot log has the no-GEMINI-
 - Game 2652 (control, not hidden): one `showBark` (503 ms), one render (5052 ms) as the chat closed at 5071 ms. A second chat with Helen (10.8 s to 14.5 s) brought nothing back.
 
 The server was stopped by PID afterwards.
+
+## R3 nits (commit `c384bb6fa`)
+
+Review: docs/achitechture/BARK_DELAY_FIX_REVIEW_R3.md (0 blockers, 0 majors, 0 minors, 4 nits).
+
+- **n1 (fixed, orchestrator ruling).** The room check runs only when the delay ends. `lapse()` in `_delayBark` takes a `checkRoom` flag: true at the end of the delay, false in the `stillValid` handed to `show()`. A held bark is still dropped on release if its condition lapsed or its NPC was knocked out or hidden, but an NPC that crosses rooms while a minigame is open keeps its bark. The same `stillValid` closes a toast already on screen, so that no longer closes for a room change either. README `barkDelay` entry and the JSDoc updated.
+- **n2 (fixed).** README_scenario_design.md: "A bark with no condition is never dropped for being stale, unless it has a `barkDelay` (above)."
+- **n3 (fixed).** Two tests in npc-bark-delay.test.mjs: a bark with no delay and no condition hands `showBark` no `stillValid`, and with a condition its `stillValid` ignores a hidden NPC; a delayed toast on screen is closed by the real `_dropStaleVisibleBarks` (npc-barks.js loaded with its imports stubbed, as in phone-call-bark-hold.test.mjs) once its NPC is hidden. The held-bark test now expects a room change to keep the bark on release.
+- **n4 (fixed).** `_dropStaleVisibleBarks` skips `el._removing`, so a toast closed by the first drain is not checked or logged again by the second. Covered by the on-screen toast test.
+
+### Tests
+
+`npc-bark-delay.test.mjs`: 20 tests, all pass. Every `*.test.mjs` that mentions npc-manager (40 files) and every one that mentions npc-barks (11 files), `bin/test-js -j 3` without the lock: 40 and 11 passed, 0 failed. No live run: the unit tests drive the real `_delayBark` and `_dropStaleVisibleBarks` for every changed path.
