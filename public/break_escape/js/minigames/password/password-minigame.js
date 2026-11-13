@@ -249,6 +249,10 @@ export class PasswordMinigame extends MinigameScene {
 
 
     init() {
+        // No Cancel button in any mode (sign-in, prompt, plain): the X and Esc close the
+        // screen (the user's UX notes on unlock-44 and unlock-53). The controls row is made
+        // only when it has something to hold (Add to Notepad).
+        this.params = { ...this.params, showCancel: false };
         // Call parent init to set up basic UI structure
         super.init();
 
@@ -277,20 +281,33 @@ export class PasswordMinigame extends MinigameScene {
         // Set up the password interface
         this.setupPasswordInterface();
         
-        // Add notebook button to minigame controls if postit note exists (before cancel button)
-        if (this.controlsElement && this.gameData.showPostit && this.gameData.postitNote) {
+        // Add notebook button to minigame controls if postit note exists
+        if (this.gameData.showPostit && this.gameData.postitNote) {
             const notebookBtn = document.createElement('button');
             notebookBtn.className = 'minigame-button';
             notebookBtn.id = 'minigame-notebook-postit';
             notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
-            // Insert before the cancel button (first child in controls)
-            this.controlsElement.insertBefore(notebookBtn, this.controlsElement.firstChild);
+            this.ensureControlsRow()?.appendChild(notebookBtn);
         }
         
         // Set up event listeners
         this.setupEventListeners();
     }
     
+    /**
+     * The controls row under the game area, made on first use: with no Cancel button the base
+     * scene draws none, and an empty row would only add a gap.
+     */
+    ensureControlsRow() {
+        if (this.controlsElement) return this.controlsElement;
+        if (!this.container?.appendChild) return null;
+        const row = document.createElement('div');
+        row.className = 'minigame-controls';
+        this.container.appendChild(row);
+        this.controlsElement = row;
+        return row;
+    }
+
     setupPasswordInterface() {
         // Create the password entry interface
         // Check if we can get the device image from sprite or params
@@ -1030,12 +1047,13 @@ export class PasswordMinigame extends MinigameScene {
         if (this.gameData.showPostit && this.gameData.postitNote) {
             const postit = this.gameContainer.querySelector('.postit-note');
             if (postit) makeDraggable(postit);
-            if (this.controlsElement) {
+            const controls = this.ensureControlsRow();
+            if (controls) {
                 const notebookBtn = document.createElement('button');
                 notebookBtn.className = 'minigame-button';
                 notebookBtn.id = 'minigame-notebook-postit';
                 notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
-                this.controlsElement.insertBefore(notebookBtn, this.controlsElement.firstChild);
+                controls.appendChild(notebookBtn);
                 this.addEventListener(notebookBtn, 'click', () => this.addPostitToNotebook());
             }
         }
@@ -1211,7 +1229,7 @@ export class PasswordMinigame extends MinigameScene {
      * no failure box over it, which showed the same words three times and covered the PC
      * title) and the form disabled. The screen stays open until the player closes it, so the
      * reason (and any wait it names) can be read at any pace; it closed itself after 2.5 s
-     * (code review R1 m2). The Cancel button becomes Close.
+     * (code review R1 m2). The X and Esc close it (there is no Cancel button).
      */
     signInLockedOut(result) {
         this.cleanup();
@@ -1222,15 +1240,11 @@ export class PasswordMinigame extends MinigameScene {
         this.gameContainer?.querySelectorAll('.signin-mode input, .signin-mode button').forEach(el => { el.disabled = true; });
         // cleanup() took every listener, the closes too: put the player's closes back
         const closeByPlayer = (e) => { e?.preventDefault?.(); e?.stopPropagation?.(); this.closeByPlayer(); };
-        const cancel = document.getElementById('minigame-cancel');
-        if (cancel) {
-            cancel.textContent = 'Close';
-            cancel.disabled = false;
-            this.addEventListener(cancel, 'click', closeByPlayer);
-            cancel.focus?.();
-        }
         const cross = document.getElementById('minigame-close');
-        if (cross && this.params.disableClose !== true) this.addEventListener(cross, 'click', closeByPlayer);
+        if (cross && this.params.disableClose !== true) {
+            this.addEventListener(cross, 'click', closeByPlayer);
+            cross.focus?.();
+        }
         if (this.params.disableClose !== true) {
             this._fallbackCloseHandler = (e) => { if (e.key === 'Escape') this.closeByPlayer(); };
             document.addEventListener('keydown', this._fallbackCloseHandler);

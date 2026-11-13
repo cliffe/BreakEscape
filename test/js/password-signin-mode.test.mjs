@@ -143,11 +143,12 @@ test('it stops only on a lockout, with the server\'s message', async () => {
     assert.equal(ended.length, 0, 'not closed by itself');
     assert.equal(mg.gameState.isActive, true);
     assert.equal(messageText(), 'This account is locked on this PC.', 'the reason is still on screen');
-    const close = q('#minigame-cancel');
-    assert.equal(close.textContent, 'Close');
+    // There is no Cancel button (the user's UX notes): the X closes it
+    assert.equal(q('#minigame-cancel'), null, 'no Cancel button');
+    const close = q('#minigame-close');
     assert.equal(close.disabled, false);
     close.click();
-    assert.equal(ended.length, 1, 'Close ends it');
+    assert.equal(ended.length, 1, 'the X ends it');
     assert.equal(ended[0][0], false);
 });
 
@@ -373,4 +374,33 @@ test('UX access R2: a Wi-Fi key and a non-computer lock get the plain prompt; a 
     }
     // a launch that passes only the sprite: its texture key counts
     assert.equal(passwordScreenKind({ lockable: { texture: { key: 'laptop2' } } }), 'screen');
+});
+
+test('no Cancel button in sign-in mode: the X and Esc close it; Add to Notepad has its own row', () => {
+    open();
+    assert.equal(q('#minigame-cancel'), null, 'no Cancel button');
+    assert.ok(q('#minigame-close'), 'the X stays');
+    const rows = document.querySelectorAll('.minigame-controls');
+    assert.equal(rows.length, 1, 'one controls row, for the notepad button');
+    assert.deepEqual([...rows[0].children].map(b => b.id), ['minigame-notebook-postit']);
+    document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    assert.ok(ended.length >= 1, 'Esc closes it');
+});
+
+test('no Cancel button and no empty controls row on the plain and prompt screens', () => {
+    for (const params of [
+        { title: 'Office PC', lockable: { scenarioData: { id: 'pc1', type: 'pc' } }, type: 'object', correctPassword: 'x' },
+        { title: 'Archive', lockable: { scenarioData: { id: 'zip', type: 'zip_file' } }, type: 'item', correctPassword: 'x' }
+    ]) {
+        document.body.innerHTML = '<div id="mg"></div>';
+        window.MinigameFramework = { currentMinigame: null, endMinigame: () => {} };
+        const mg = new PasswordMinigame(document.getElementById('mg'), params);
+        window.MinigameFramework.currentMinigame = mg;
+        mg.init();
+        assert.equal(!!q('.password-minigame-area.prompt-mode'), params.title === 'Archive', `${params.title}: the screen kind`);
+        assert.equal(q('#minigame-cancel'), null, `${params.title}: no Cancel button`);
+        assert.ok(q('#minigame-close'), `${params.title}: the X stays`);
+        assert.equal(document.querySelectorAll('.minigame-controls').length, 0, `${params.title}: no empty controls row`);
+        mg.cleanup?.();
+    }
 });

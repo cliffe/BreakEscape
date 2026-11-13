@@ -64,12 +64,41 @@ export function containerImageUrl(containerItem, imageKey) {
 }
 
 /** The header's <img>, or nothing when there is no picture to show. */
-export function containerImageHtml(url, alt) {
+export function containerImageHtml(url, alt, extraClass = '') {
     if (!url) return '';
     // The URL comes from a texture key, the scenario type or a tray src: both values are
     // escaped for an attribute, with the same five characters as the other minigame helpers
     const esc = (v) => String(v ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
-    return `<img src="${esc(url)}" alt="${esc(alt)}" class="container-image">`;
+    const cls = extraClass ? `container-image ${esc(extraClass)}` : 'container-image';
+    return `<img src="${esc(url)}" alt="${esc(alt)}" class="${cls}">`;
+}
+
+/**
+ * Draw a pixel-art picture at the largest whole-number scale that fits a square box (never a
+ * fraction, as object-fit: contain gives), capped at maxScale. With pad, the picture is centred
+ * in the box by padding, so a bordered box keeps its size (slice 2a review R1 M1 and M2).
+ * Runs when the picture has loaded; until then the CSS size stands.
+ */
+export function fitWholeScale(img, box, { maxScale = Infinity, pad = false } = {}) {
+    if (!img) return;
+    const apply = () => {
+        const w = img.naturalWidth;
+        const h = img.naturalHeight;
+        if (!w || !h) return;
+        const scale = Math.max(1, Math.min(maxScale, Math.floor(box / Math.max(w, h))));
+        img.style.width = `${w * scale}px`;
+        img.style.height = `${h * scale}px`;
+        img.dataset.scale = String(scale);
+        if (pad) {
+            const padX = Math.max(0, box - w * scale);
+            const padY = Math.max(0, box - h * scale);
+            const top = Math.floor(padY / 2);
+            const left = Math.floor(padX / 2);
+            img.style.padding = `${top}px ${padX - left}px ${padY - top}px ${left}px`;
+        }
+    };
+    if (img.complete && img.naturalWidth) apply();
+    else img.addEventListener?.('load', apply, { once: true });
 }
 
 /**

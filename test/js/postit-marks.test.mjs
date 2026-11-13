@@ -16,7 +16,7 @@ function scene() {
         image(x, y, key) {
             const img = {
                 x, y, key, depth: 0, visible: true, active: true, interactive: true, destroyed: false,
-                setOrigin() { return this; },
+                setOrigin(ox, oy) { this.originX = ox; this.originY = oy; return this; },
                 setDepth(d) { this.depth = d; return this; },
                 setVisible(v) { this.visible = v; return this; },
                 setPosition(nx, ny) { this.x = nx; this.y = ny; return this; },
@@ -66,8 +66,10 @@ test('a sign-in PC with hasPostit gets one picture at the bottom-left and the st
     const s = sprites.omar_pc;
     assert.equal(img.x, Math.round(s.x + POSTIT_INSET + POSTIT_SIZE / 2));
     // UX feedback slice 2a (main-11): the note's bottom edge is level with the sprite's bottom
-    const edge = img.y + POSTIT_SIZE / 2;
-    assert.ok(edge <= s.y + s.displayHeight && edge >= s.y + s.displayHeight - 0.5, 'the bottom edge is the sprite bottom (to the half pixel)');
+    // Drawn from its bottom-centre (review R1 n1), so its bottom edge is exactly img.y
+    assert.equal(img.originX, 0.5);
+    assert.equal(img.originY, 1);
+    assert.equal(img.y, s.y + s.displayHeight, 'the bottom edge is the sprite bottom, to the pixel');
     assert.ok(img.x < s.x + s.displayWidth / 2, 'on the left half, clear of the indicator dot at the top-right');
     assert.equal(img.depth, s.depth + POSTIT_DEPTH_OFFSET);
     assert.ok(img.depth < s.depth + 0.01, 'below an indicator drawn at the object depth + 0.01');
@@ -160,8 +162,7 @@ test('slice 2a (main-11): the mark sits on the sprite bottom for any origin', ()
         const { x, y } = postitPosition(sprite);
         const bottom = sprite.y - sprite.displayHeight * originY + sprite.displayHeight;
         const left = sprite.x - sprite.displayWidth * originX;
-        const edge = y + POSTIT_SIZE / 2;
-        assert.ok(edge <= bottom && edge >= bottom - 0.5, `origin ${originX},${originY}: edge ${edge}, bottom ${bottom}`);
+        assert.equal(y, bottom, `origin ${originX},${originY}: bottom ${y} against sprite bottom ${bottom}`);
         assert.equal(x, Math.round(left + POSTIT_INSET + POSTIT_SIZE / 2));
     }
 });

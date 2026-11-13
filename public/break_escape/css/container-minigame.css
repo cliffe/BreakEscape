@@ -634,14 +634,48 @@
 
 /* A network share opens as a folder window, not a desktop (UX feedback slice 2a, main3-08):
    the grey window and navy title bar of the desktop dialogs, the UNC path in the title bar,
-   the files on a white pane with dark labels. 2px bevel, square corners, pixel fonts. */
+   the files on a white pane with dark labels. 2px bevel, square corners, pixel fonts.
+   The window fills the frame below the header at every size (slice 2a review R1 M2: a fixed
+   600x261 box left about 450px of empty navy under it at 1400x1000). */
+.share-folder-layout {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+
+.share-folder-layout > .container-image-section {
+    flex: 0 0 auto;
+}
+
+/* The folder icon at exactly x2 (52x36), centred in the 80px header box by padding
+   (review R1 M1: object-fit contain drew it at 3.08x). fitWholeScale sets the same sizes
+   from the loaded picture, so another share icon also lands on a whole-number scale. */
+.container-image.share-header-icon {
+    box-sizing: content-box;
+    width: 52px;
+    height: 36px;
+    padding: 22px 14px;
+    object-fit: fill;
+}
+
 .container-minigame.share-folder {
+    flex: 1 1 auto;
+    min-height: 0;
     height: auto;
-    padding: 0 20px 20px;
+    width: min(880px, calc(100% - 40px));
+    max-width: none;
+    margin: 0 auto 20px;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 .share-folder-window {
     position: relative;
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
     background: #c0c0c0;
     border: 2px solid #fff;
     border-right-color: #404040;
@@ -656,6 +690,7 @@
     gap: 8px;
     margin: 0 -4px 4px;
     padding: 6px 8px;
+    flex: 0 0 auto;
 }
 
 .share-folder-icon {
@@ -671,43 +706,66 @@
     overflow-wrap: anywhere;
 }
 
+/* The white file pane: the window's contrasting fill. Files sit on it with no box. */
 .container-contents-grid.share-folder-files {
+    flex: 1 1 auto;
+    min-height: 120px;
+    max-height: none;
+    overflow-y: auto;
     background: #ffffff;
     border: 2px solid #404040;
     border-right-color: #fff;
     border-bottom-color: #fff;
-    min-height: 160px;
-    max-height: 300px;
-    overflow-y: auto;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    grid-auto-rows: min-content;
+    align-content: start;
+    gap: 56px 10px;
+    padding: 16px 16px 56px;
 }
 
-.share-folder-files .container-content-slot {
-    background: #e8e8f0;
-    border-color: transparent;
-}
-
+.share-folder-files .container-content-slot,
 .share-folder-files .container-content-slot:hover {
+    width: 64px;
+    height: 64px;
+    background: transparent;
+    border-color: transparent;
     transform: none;
-    border-color: #000080;
-    background: #d0d8f8;
+}
+
+/* A 16px file glyph drawn x4 (fitWholeScale sets the size from the loaded picture) */
+.share-folder-files .container-content-item,
+.share-folder-files .container-content-item:hover {
+    width: 64px;
+    height: 64px;
+    max-width: none;
+    max-height: none;
+    transform: none;
 }
 
 .share-folder-files .container-content-label {
+    width: 152px;
     color: #000;
     text-shadow: none;
+    overflow-wrap: anywhere;
+}
+
+/* Hover marks the name, as a file browser selects one: navy behind white text */
+.share-folder-files .container-content-slot:hover .container-content-label {
+    background: #000080;
+    color: #fff;
 }
 
 .share-folder-files .empty-contents {
     color: #404040;
 }
 
-/* File names in the folder window wrap anywhere (a name like "backup_readme.txt" has no
-   space to break at, and was cut off at the slot's width) */
-.container-contents-grid.share-folder-files {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-}
-
-.share-folder-files .container-content-label {
-    width: 152px;
-    overflow-wrap: anywhere;
+/* A short or narrow window (800x600, a phone on its side): a smaller header gives the
+   pane the height */
+@media (max-height: 640px) {
+    .share-folder-layout > .container-image-section {
+        padding: 8px 20px;
+    }
+    .container-contents-grid.share-folder-files {
+        min-height: 80px;
+    }
 }

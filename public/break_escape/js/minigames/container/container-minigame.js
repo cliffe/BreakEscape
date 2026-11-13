@@ -1,7 +1,7 @@
 // Container Minigame
 import { MinigameScene } from '../framework/base-minigame.js';
 import { addToInventory, removeFromInventory, inventoryImageKey } from '../../systems/inventory.js';
-import { containerImageUrl, containerImageHtml, takeStandIn, SHARE_ICON, shareLabelParts } from './container-item-image.js';
+import { containerImageUrl, containerImageHtml, takeStandIn, SHARE_ICON, shareLabelParts, fitWholeScale } from './container-item-image.js';
 import { makeDraggable } from '../../utils/helpers.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { resolveObjectField } from '../../utils/conditional-text.js';
@@ -207,8 +207,6 @@ export function armNetworkReturn(state) {
     }
 }
 
-/** The folder picture for a share stub (it has no object sprite of its own). */
-
 const TRANSFER_LABELS = {
     open: 'Open',
     copy: 'Copy to inventory',
@@ -345,8 +343,8 @@ export class ContainerMinigame extends MinigameScene {
     }
 
     /** The header picture; nothing when the container has none to show. */
-    containerImageHtml() {
-        return containerImageHtml(this.getContainerImageUrl(), this.containerItem?.scenarioData?.name);
+    containerImageHtml(extraClass = '') {
+        return containerImageHtml(this.getContainerImageUrl(), this.containerItem?.scenarioData?.name, extraClass);
     }
 
     shouldUseDesktopMode() {
@@ -768,12 +766,17 @@ export class ContainerMinigame extends MinigameScene {
     createShareFolderUI() {
         const data = this.containerItem.scenarioData;
         const { name, unc } = shareLabelParts(data.name);
+        const host = unc ? unc.replace(/^\\\\/, '').split('\\')[0] : '';
+        // The mapped stub has no observations; it gets the same line as a share opened from
+        // the network view (slice 2a review R1 n3)
+        const observations = this.headerObservations() || (host ? `A file share on ${host}.` : '');
         this.gameContainer.innerHTML = `
+            <div class="share-folder-layout">
             <div class="container-image-section">
-                ${this.containerImageHtml()}
+                ${this.containerImageHtml('share-header-icon')}
                 <div class="container-info">
                     <h4>${escapeHtml(displayDashes(name))}</h4>
-                    <p>${escapeHtml(displayDashes(this.headerObservations()))}</p>
+                    <p>${escapeHtml(displayDashes(observations))}</p>
                 </div>
             </div>
             <div class="container-minigame share-folder">
@@ -787,7 +790,10 @@ export class ContainerMinigame extends MinigameScene {
                     </div>
                 </div>
             </div>
+            </div>
         `;
+        // The folder icon at exactly x2 (26x18 drawn 52x36), centred in the 80px header box
+        fitWholeScale(this.gameContainer.querySelector('.share-header-icon'), 80, { maxScale: 2, pad: true });
     }
 
     /** The signed-in account with Switch user and Sign out, for a sign-in desktop's header. */
@@ -881,7 +887,8 @@ export class ContainerMinigame extends MinigameScene {
             // desktop that has no object sprite of its own).
             itemImg.src = item.iconImage || `/break_escape/assets/objects/${item.type}.png`;
             itemImg.alt = item.name;
-            itemImg.title = displayDashes(item.name);
+            // No tooltip that repeats the name printed under the item (slice 2a review R1 m1);
+            // a share's UNC path, which the label leaves out, is its title below
             
             // Add item data
             itemImg.scenarioData = item;
@@ -908,19 +915,17 @@ export class ContainerMinigame extends MinigameScene {
                 itemImg.addEventListener('click', () => this.takeItem(item, itemImg));
             }
             
-            // Create tooltip
-            const tooltip = document.createElement('div');
-            tooltip.className = 'container-content-tooltip';
-            tooltip.textContent = displayDashes(shareParts ? (shareParts.unc || shareParts.name) : item.name);
-            
             // A name under every item, so the player can read what is inside without
             // hovering each one (UX pass, 2026-11-12)
             const label = document.createElement('div');
             label.className = 'container-content-label';
             label.textContent = displayDashes(shareParts ? shareParts.name : item.name);
 
+            // In a share's folder window a file is drawn at a whole-number scale that fills
+            // a 64px cell (a 16px glyph at x4), not the grid's x2 (slice 2a review R1 M2)
+            if (this.shareFolder) fitWholeScale(itemImg, 64);
+
             slot.appendChild(itemImg);
-            slot.appendChild(tooltip);
             slot.appendChild(label);
             contentsGrid.appendChild(slot);
         });
