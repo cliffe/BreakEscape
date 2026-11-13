@@ -931,3 +931,12 @@ test('wordsHtml keeps each word whole (no break at a hyphen) and reads the same'
     assert.equal(html, '<span class="network-row-word">Remote</span> <span class="network-row-word">sign-in</span> <span class="network-row-word">&lt;off&gt;</span>');
     assert.equal(wordsHtml(''), '');
 });
+
+test('wordsHtml leaves a very long word out of the nowrap span, still escaped (PC polish R2 m2)', async () => {
+    const { wordsHtml, NOWRAP_WORD_MAX } = await import(join(js, 'minigames/network-view/network-view-minigame.js'));
+    const long = 'Quarterly-Reconciliation-Archive-<2026>';
+    assert.ok(long.length > NOWRAP_WORD_MAX);
+    assert.equal(wordsHtml(`Old ${long}`), '<span class="network-row-word">Old</span> Quarterly-Reconciliation-Archive-&lt;2026&gt;');
+    const edge = 'x'.repeat(NOWRAP_WORD_MAX);
+    assert.equal(wordsHtml(edge), `<span class="network-row-word">${edge}</span>`);
+});

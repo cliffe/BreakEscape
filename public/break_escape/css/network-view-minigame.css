@@ -236,6 +236,7 @@
 .network-row-name {
     color: #b8c4cc;
     font-size: 16px;
+    overflow-wrap: anywhere;   /* only a very long word breaks; short words sit in nowrap spans */
 }
 
 /* A host label never breaks at its hyphen in a narrow column ("HB-" / "GUEST-01"), a PC
@@ -253,6 +254,20 @@
 /* A resource's label is never narrower than its longest word */
 .network-row-resource .network-row-label {
     min-width: min-content;
+}
+
+/* A PC row wraps when its button does not fit beside the label: the button drops under it,
+   right-aligned, and keeps "Sign in" on one line (PC polish R2 m1, 360 and 320 wide) */
+.network-row-host {
+    flex-wrap: wrap;
+}
+
+.network-row-host > .network-row-control {
+    margin-left: auto;
+}
+
+.network-view .network-row-action {
+    white-space: nowrap;
 }
 
 /* A PC row's label is never narrower than its host: the button beside it shrinks instead */

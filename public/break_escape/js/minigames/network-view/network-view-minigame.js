@@ -60,10 +60,16 @@ import { MORE_BELOW_TEXT } from '../../utils/more-below.js';
  * Escaped text with each space-separated word in a nowrap span, so a name can wrap at its
  * spaces but never at a hyphen ("Ledger-Archive", "sign-in"). The text reads the same.
  */
+// A word longer than this is left out of the nowrap span, so one very long name can still
+// break instead of pushing the list sideways on a phone (PC polish R2 m2)
+export const NOWRAP_WORD_MAX = 20;
+
 export function wordsHtml(text) {
-    return String(text ?? '').split(/(\s+)/).map((part) => (
-        !part || /^\s+$/.test(part) ? part : `<span class="network-row-word">${escapeHtml(part)}</span>`
-    )).join('');
+    return String(text ?? '').split(/(\s+)/).map((part) => {
+        if (!part || /^\s+$/.test(part)) return part;
+        if (part.length > NOWRAP_WORD_MAX) return escapeHtml(part);
+        return `<span class="network-row-word">${escapeHtml(part)}</span>`;
+    }).join('');
 }
 
 export const REMOTE_OFF_TEXT = 'Remote sign-in off';
