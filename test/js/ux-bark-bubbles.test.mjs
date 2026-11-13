@@ -32,6 +32,7 @@ const B = await imp('systems/npc-world-bubbles.js');
 const { NpcWorldBubbles, crispText, pageLine, pagesText, pageTimes, lineTotalMs, readingMs, wrapLines, onCamera, placeBubble,
     MAX_LIFT, HEAD_POINT_DY, hookCameraPass, followUpTimes, MAX_BUBBLES, PAGE_LINES, LINE_CHARS, PAGE_MIN_MS, AUDIO_TAIL_MS, SPEECH_FONT, SPEECH_FONT_PX, BORDER_PX, CAMERA_MARGIN, TEXT_RIGHT_SLACK } = B;
 const { displayDashes } = await imp('utils/display-dashes.js');
+const { npcIconAnchor } = await imp('systems/npc-office-visuals.js');
 
 // A 150-character bark, the length of the longest authored one (test_bark_bubbles, Dana)
 const LONG = "Badges on at all times past this point, please. If yours has stopped working, reception can print a new one. And don't wedge the fire door open again.";
@@ -609,10 +610,32 @@ test('R2 m1: two speakers 40 px apart at the top of the view: no overlap, each p
             assert.ok(bb.layout.side < 0 ? bodyLeft + bb.w <= headX - 12 : bodyLeft >= headX + 12, `${id}: body clear of its head`);
         }
     }
+    // No bubble hides the other speaker's head
+    for (const id of shown) for (const other of ['dana', 'lee'].filter(o => o !== id)) {
+        const a = npcIconAnchor(r.sprites[other]);
+        const head = { x: a.x - 10, y: a.y, w: 20, h: 22 };
+        assert.equal(hit(r.bubbles.bubbles.get(id).rect, head), false, `${id}'s bubble covers ${other}'s head`);
+    }
     // Stable next frame
     const before = shown.map(id => ({ ...r.bubbles.bubbles.get(id).layout }));
     r.bubbles.update();
     assert.deepEqual(shown.map(id => r.bubbles.bubbles.get(id).layout), before);
+});
+
+test('R2 m1 retake: a bubble may cover the player\'s head but never another speaker\'s', () => {
+    // Lee nearer the player, Dana 40 px to his left, both at the top; the player just right of Lee
+    const view = { x: 0, y: 40, width: 400, height: 300 };
+    const r = rig({ npcs: { dana: { x: 160, y: 100, room: 'hall' }, lee: { x: 200, y: 100, room: 'hall' } }, view, player: { x: 236, y: 100 } });
+    r.bubbles.say('lee', "Morning. Printer's jammed again.");
+    r.bubbles.say('dana', 'Not with you behind me. Ask at reception.');
+    r.bubbles.update();
+    const lee = r.bubbles.bubbles.get('lee');
+    assert.ok(lee.box.visible);
+    const a = npcIconAnchor(r.sprites.dana);
+    assert.equal(hit(lee.rect, { x: a.x - 10, y: a.y, w: 20, h: 22 }), false, 'Lee\'s bubble leaves Dana\'s head clear');
+    const dana = r.bubbles.bubbles.get('dana');
+    if (dana?.box.visible) assert.equal(hit(dana.rect, lee.rect), false);
+    else assert.equal(r.bubbles.hasLine('dana'), false, 'Dana\'s line went to the toast');
 });
 
 test('R2 m1: a bark with no clear place goes to the toast from the page on screen', async () => {

@@ -17,8 +17,8 @@
  *   - A bark bubble also needs the NPC's head on camera (cameras.main.worldView, inset by
  *     CAMERA_MARGIN): a bark from an NPC off screen is a toast, and a bark bubble whose NPC
  *     leaves the camera hands the rest of its line to the toast (slice 5 R1 M1).
- *   - Bubbles never cover each other or the HUD panels (Objectives, inventory tray, buttons:
- *     R2 m2), and keep off the player's head and other speakers' heads where they can: each is
+ *   - Bubbles never cover each other, another speaker's head or the HUD panels (Objectives,
+ *     inventory tray, buttons: R2 m2), and keep off the player's head where they can: each is
  *     placed in turn (barks first, nearest first) centred, then slid left or right of its NPC (the
  *     tail stays over the head), then lifted by at most MAX_LIFT with a 2 px stem down to the head
  *     (R1 n4, R2 n3), then beside the head with a short stepped pointer at head height, so the
@@ -119,8 +119,8 @@ const overlaps = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h
 /**
  * Pure: where a bubble of `w` by `h` (body, not counting the tail) sits for the head anchor `at`
  * so it covers none of `taken` and stays inside `view` (the camera's world view, when given).
- * `taken` items are rects { x, y, w, h }: bubbles already placed and HUD panels are hard (never
- * covered); ones with `soft: true` (the player's head, other speakers' heads) are kept clear when
+ * `taken` items are rects { x, y, w, h }: bubbles already placed, other speakers' heads and HUD
+ * panels are hard (never covered); ones with `soft: true` (the player's head) are kept clear when
  * possible and covered only when nothing else fits.
  * Order tried:
  *   1. Above the head: centred, slid left, slid right (the tail stays over the head), then
@@ -670,8 +670,9 @@ export class NpcWorldBubbles {
             if (!shown.has(id)) bb.box.setVisible(false);
         }
         if (shown.size && !this._ensureFonts()) return;   // first frames only: VT323 still loading
-        // What bubbles keep off: the HUD panels (hard), the player's head and every speaker's head
-        // (soft), then each bubble as it is placed (hard)
+        // What bubbles keep off: the HUD panels, every other speaker's head (a bubble over it hid
+        // who was talking: R2 m1 retake) and each bubble as it is placed (hard); the player's
+        // head (soft)
         const first = order.length ? info.get(order[0]).sprite : null;
         const cam = first?.scene?.cameras?.main || null;
         const view = cam?.worldView || null;
@@ -680,7 +681,7 @@ export class NpcWorldBubbles {
         for (const id of order) {
             try {
                 const a = npcIconAnchor(info.get(id).sprite);
-                heads.set(id, { x: a.x - HEAD_HALF_W, y: a.y, w: HEAD_HALF_W * 2, h: HEAD_H, soft: true });
+                heads.set(id, { x: a.x - HEAD_HALF_W, y: a.y, w: HEAD_HALF_W * 2, h: HEAD_H, head: id });
             } catch (e) { /* no anchor: nothing to keep clear */ }
         }
         const taken = [...this._hudRects(view, first?.scene), ...(head ? [{ ...head, soft: true }] : [])];
