@@ -136,7 +136,8 @@ function setup() {
 
 const current = () => window.MinigameFramework.currentMinigame;
 const named = (n) => events.filter(([e]) => e === n).map(([, d]) => d);
-const icon = (name) => [...document.querySelectorAll('.desktop-icon')].find(el => el.textContent.includes(name));
+// A desktop icon, or a file slot in a share's folder window (UX feedback slice 2a)
+const icon = (name) => [...document.querySelectorAll('.desktop-icon, .container-content-slot')].find(el => el.textContent.includes(name));
 const remoteDesktop = () => ({ scenarioData: { id: 'lena_pc', name: "Lena's PC", host: 'HB-FIN-02', type: 'pc', lockType: 'login', locked: true, remote: { footholdId: 'jack_comms_port' } } });
 const viewShare = () => ({ scenarioData: { id: 'scanned_inbox', type: 'network_share', name: 'Scanned-Inbox', locked: false, networkShare: { footholdId: 'jack_comms_port' } }, sourceResourceId: 'scanned_inbox' });
 
@@ -471,7 +472,7 @@ test('a cancelled PIN pad on a folder in a share from the view returns to that s
     endPinPad(false);
     await settle();
     assert.equal(current()?.containerItem?.scenarioData?.id, 'scanned_inbox', 'back in the share');
-    assert.equal(current().desktopMode, true, 'in its desktop layout');
+    assert.equal(current().shareFolder, true, 'in its folder window layout (slice 2a)');
     assert.equal(window.pendingContainerReturn, null);
     if (!TextFileMinigame) { t.skip('text-file minigame did not load here'); return; }
     window.MinigameFramework.endMinigame(false, null);
@@ -529,7 +530,7 @@ test('a hand-over from an ordinary container arms no return', async () => {
     assert.equal(current(), null, 'the world, as before');
 });
 
-test('a note read from a share from the view is added with its share; the share comes back in its desktop layout (review R1 minor 4)', async () => {
+test('a note read from a share from the view is added with its share; the share comes back in its own layout (review R1 minor 4)', async () => {
     setup();
     window.startContainerMinigame(viewShare(), null, false, true);
     await settle();
@@ -542,7 +543,8 @@ test('a note read from a share from the view is added with its share; the share 
     await settle();
     assert.equal(adds.at(-1).sourceResourceId, 'scanned_inbox');
     assert.equal(current()?.containerItem?.scenarioData?.id, 'scanned_inbox');
-    assert.equal(current().desktopMode, true);
+    assert.equal(current().shareFolder, true, 'the folder window again (slice 2a)');
+    assert.ok(document.querySelector('.share-folder-window'));
 });
 
 // The jsdom mock above ends a minigame as minigame-manager.js does today; this one drives a
@@ -648,4 +650,97 @@ test('a share clicked on a desktop whose PC is already off says "This PC is off.
     } finally { ANSWERS.scanned_inbox = saved; }
     assert.equal(current(), null);
     assert.deepEqual(alerts.map(a => a[0]), ['This PC is off.'], 'no "Could not load container contents"');
+});
+
+// UX feedback slice 2a (main3-05, main3-08): a share icon on a desktop shows the share's name
+// only, with the UNC path in its tooltip; a share opens as a folder window (title bar with the
+// UNC path, a file list, no wallpaper) whose header picture is the folder icon, never the
+// missing network_share.png; Close still goes back the way it came.
+const { shareLabelParts, containerImageUrl, SHARE_ICON } = await imp('minigames/container/container-item-image.js');
+
+test('slice 2a: shareLabelParts splits "Name (\\\\HOST\\Name)"; a bare name has no path', () => {
+    assert.deepEqual(shareLabelParts('Ledger-Archive (\\\\HB-FS01\\Ledger-Archive)'), { name: 'Ledger-Archive', unc: '\\\\HB-FS01\\Ledger-Archive' });
+    assert.deepEqual(shareLabelParts('Scanned-Inbox'), { name: 'Scanned-Inbox', unc: null });
+    assert.deepEqual(shareLabelParts('Notes (old)'), { name: 'Notes (old)', unc: null });
+    assert.deepEqual(shareLabelParts(undefined), { name: '', unc: null });
+});
+
+test('slice 2a: a share icon on a remote desktop shows the name only, its UNC path in the tooltip', async () => {
+    setup();
+    await openRemote();
+    const el = document.querySelector('.desktop-icon[data-resource-id="ledger_archive"]');
+    assert.ok(el, 'the share icon is drawn');
+    assert.equal(el.querySelector('.desktop-icon-label').textContent, 'Ledger-Archive');
+    assert.equal(el.title, '\\\\HB-FS01\\Ledger-Archive');
+    assert.equal(el.querySelector('img').getAttribute('src'), SHARE_ICON);
+});
+
+test('slice 2a: the share header picture is the folder icon, never network_share.png', async () => {
+    assert.equal(containerImageUrl({ scenarioData: { type: 'network_share' }, name: 'network_share' }, (d) => d.type), SHARE_ICON);
+    assert.equal(containerImageUrl({ scenarioData: { type: 'network_share', iconImage: '/x.png' } }, (d) => d.type), '/x.png');
+    setup();
+    await openRemote();
+    icon('Ledger-Archive').click();
+    await settle();
+    const header = document.querySelector('.container-image-section img.container-image');
+    assert.equal(header.getAttribute('src'), SHARE_ICON);
+    assert.doesNotMatch(document.body.innerHTML, /network_share\.png/);
+});
+
+test('slice 2a: a mapped share opens as a folder window: UNC title bar, file list, no wallpaper', async () => {
+    setup();
+    await openRemote();
+    icon('Ledger-Archive').click();
+    await settle();
+    const m = current();
+    assert.equal(m.shareFolder, true);
+    assert.equal(m.desktopMode, false);
+    assert.equal(document.querySelector('.desktop-wallpaper'), null, 'no wallpaper');
+    assert.equal(document.querySelector('.container-monitor-bezel'), null, 'no monitor');
+    assert.equal(document.querySelector('.share-folder-path').textContent, '\\\\HB-FS01\\Ledger-Archive');
+    assert.equal(document.querySelector('.container-info h4').textContent, 'Ledger-Archive');
+    const files = [...document.querySelectorAll('.share-folder-files .container-content-label')].map(el => el.textContent);
+    assert.deepEqual(files, ['IT handover.txt', 'Year-end']);
+    icon('IT handover').querySelector('img').click();
+    assert.ok(document.querySelector('.share-folder-window .desktop-transfer-dialog'), 'Copy / Move opens inside the folder window');
+});
+
+test('slice 2a: a share from a local desktop closes back to that desktop (parentLockable kept)', async () => {
+    setup();
+    await sessions.signIn('sam_pc', 'sokafor', 'x');
+    const desk = { scenarioData: { id: 'sam_pc', name: "Sam's PC", type: 'pc', lockType: 'login', locked: true } };
+    window.startContainerMinigame(desk, null, false, true);
+    await settle();
+    icon('Scanned-Inbox').click();
+    await settle();
+    assert.equal(current().shareFolder, true);
+    assert.equal(current().parentLockable, desk);
+    document.querySelector('#minigame-cancel').click();
+    await settle();
+    assert.equal(current().loginPcId, 'sam_pc', 'back on the local desktop');
+    assert.equal(current().desktopMode, true);
+    assert.equal(fetches.at(-1), '/break_escape/games/9/container/sam_pc');
+});
+
+test('slice 2a: a share from a remote desktop closes back to the remote desktop', async () => {
+    setup();
+    await openRemote();
+    icon('Ledger-Archive').click();
+    await settle();
+    assert.equal(current().shareFolder, true);
+    document.querySelector('#minigame-cancel').click();
+    await settle();
+    assert.equal(current().loginPcId, 'lena_pc');
+    assert.ok(current().remote, 'the remote desktop again');
+    assert.equal(fetches.at(-1), '/break_escape/games/9/container/lena_pc?foothold=jack_comms_port');
+});
+
+test('slice 2a: a share opened from the network view is a folder window too, and still reports share/close', async () => {
+    setup();
+    window.startContainerMinigame(viewShare(), null, false, true);
+    await settle();
+    assert.equal(current().shareFolder, true);
+    assert.ok(document.querySelector('.share-folder-window'));
+    document.querySelector('#minigame-cancel').click();
+    assert.deepEqual(landings, [['share', 'close', {}]]);
 });

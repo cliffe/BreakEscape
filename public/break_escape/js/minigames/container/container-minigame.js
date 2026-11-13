@@ -1,7 +1,7 @@
 // Container Minigame
 import { MinigameScene } from '../framework/base-minigame.js';
 import { addToInventory, removeFromInventory, inventoryImageKey } from '../../systems/inventory.js';
-import { containerImageUrl, containerImageHtml, takeStandIn } from './container-item-image.js';
+import { containerImageUrl, containerImageHtml, takeStandIn, SHARE_ICON, shareLabelParts } from './container-item-image.js';
 import { makeDraggable } from '../../utils/helpers.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { resolveObjectField } from '../../utils/conditional-text.js';
@@ -208,7 +208,6 @@ export function armNetworkReturn(state) {
 }
 
 /** The folder picture for a share stub (it has no object sprite of its own). */
-const SHARE_ICON = '/break_escape/assets/objects/m09_folder1.png';
 
 const TRANSFER_LABELS = {
     open: 'Open',
@@ -242,6 +241,12 @@ export class ContainerMinigame extends MinigameScene {
         this.sourcePcId = this.mode === 'npc' ? null
             : (params.sourcePcId || this.containerItem?.sourcePcId || this.loginPcId || null);
         if (this.loginPcId) this.desktopMode = true;
+        // A network share (mapped on a desktop, or opened from the network view) opens as a
+        // folder window: a title bar with its UNC path and a file list, no wallpaper, so it
+        // never reads as another PC's desktop (UX feedback slice 2a, main3-08). Its return
+        // paths (parentLockable, the remote desktop) are unchanged.
+        this.shareFolder = this.mode !== 'npc' && !this.loginPcId && data.type === 'network_share';
+        if (this.shareFolder) this.desktopMode = false;
         this._unregisterDesktop = null;
         this.transferDialog = null;
 
@@ -636,7 +641,7 @@ export class ContainerMinigame extends MinigameScene {
         this.watchPcPower();
 
         // Play drawer/container opening sound (not for PC/desktop containers)
-        if (this.mode !== 'pc' && !this.desktopMode) {
+        if (this.mode !== 'pc' && !this.desktopMode && !this.shareFolder) {
             try {
                 if (window.game && window.game.sound) {
                     const sound = window.game.sound.get('drawer_open') || window.game.sound.add('drawer_open');
@@ -696,6 +701,8 @@ export class ContainerMinigame extends MinigameScene {
             this.createNPCUI();
         } else if (this.desktopMode) {
             this.createDesktopUI();
+        } else if (this.shareFolder) {
+            this.createShareFolderUI();
         } else {
             this.createStandardUI();
         }
@@ -753,6 +760,36 @@ export class ContainerMinigame extends MinigameScene {
         `;
     }
     
+    /**
+     * A share's folder window (UX feedback slice 2a, main3-08): the header with the share's
+     * icon and short name, then a window whose title bar carries the UNC path, over the file
+     * list (the standard contents grid, so taking, reading and Copy / Move work as before).
+     */
+    createShareFolderUI() {
+        const data = this.containerItem.scenarioData;
+        const { name, unc } = shareLabelParts(data.name);
+        this.gameContainer.innerHTML = `
+            <div class="container-image-section">
+                ${this.containerImageHtml()}
+                <div class="container-info">
+                    <h4>${escapeHtml(displayDashes(name))}</h4>
+                    <p>${escapeHtml(displayDashes(this.headerObservations()))}</p>
+                </div>
+            </div>
+            <div class="container-minigame share-folder">
+                <div class="share-folder-window">
+                    <div class="desktop-window-titlebar share-folder-titlebar">
+                        <img class="share-folder-icon" src="${escapeHtml(data.iconImage || SHARE_ICON)}" alt="">
+                        <span class="share-folder-path">${escapeHtml(unc || name)}</span>
+                    </div>
+                    <div class="container-contents-grid share-folder-files" id="container-contents-grid">
+                        <!-- Files will be populated here -->
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
     /** The signed-in account with Switch user and Sign out, for a sign-in desktop's header. */
     accountBarHtml() {
         const session = this.loginSession();
@@ -854,9 +891,11 @@ export class ContainerMinigame extends MinigameScene {
             // Add click handler for all items (both takeable and interactive)
             itemImg.style.cursor = 'pointer';
             
-            if (item.type === 'network_share') {
+            const shareParts = item.type === 'network_share' ? shareLabelParts(item.name) : null;
+            if (shareParts) {
                 // A mapped share (4.5): its own folder, never the generic flow
                 if (!item.iconImage) itemImg.src = SHARE_ICON;
+                if (shareParts.unc) itemImg.title = shareParts.unc;
                 itemImg.addEventListener('click', () => this.openMappedShare(item));
             } else if (this.offersTransfer(item)) {
                 // A takeable file from a sign-in desktop offers Open / Copy / Move first
@@ -872,13 +911,13 @@ export class ContainerMinigame extends MinigameScene {
             // Create tooltip
             const tooltip = document.createElement('div');
             tooltip.className = 'container-content-tooltip';
-            tooltip.textContent = displayDashes(item.name);
+            tooltip.textContent = displayDashes(shareParts ? (shareParts.unc || shareParts.name) : item.name);
             
             // A name under every item, so the player can read what is inside without
             // hovering each one (UX pass, 2026-11-12)
             const label = document.createElement('div');
             label.className = 'container-content-label';
-            label.textContent = displayDashes(item.name);
+            label.textContent = displayDashes(shareParts ? shareParts.name : item.name);
 
             slot.appendChild(itemImg);
             slot.appendChild(tooltip);
@@ -921,6 +960,11 @@ export class ContainerMinigame extends MinigameScene {
             // handleObjectInteraction or POST /unlock
             if (item.type === 'network_share') {
                 if (!item.iconImage) iconImg.src = SHARE_ICON;
+                // The share's name under the icon; its UNC path in the tooltip, as the full
+                // path wrapped into a block of tiny text (UX feedback slice 2a, main3-05)
+                const { name, unc } = shareLabelParts(item.name);
+                iconLabel.textContent = displayDashes(name);
+                if (unc) icon.title = unc;
                 icon.dataset.resourceId = item.id || '';
                 icon.addEventListener('click', () => this.openMappedShare(item));
             } else if (this.offersTransfer(item)) {
@@ -999,7 +1043,7 @@ export class ContainerMinigame extends MinigameScene {
         };
         this.exitReason = 'share';
         this.complete(false);
-        if (typeof window.startContainerMinigame === 'function') window.startContainerMinigame(share, null, false, true);
+        if (typeof window.startContainerMinigame === 'function') window.startContainerMinigame(share, null, false, false);
     }
 
     /**
@@ -1030,7 +1074,7 @@ export class ContainerMinigame extends MinigameScene {
         this.closeTransferDialog();
         const held = this.isHeld(item);
         const choices = transferChoices(item, held);
-        const host = this.gameContainer.querySelector('.desktop-background') || this.gameContainer;
+        const host = this.gameContainer.querySelector('.desktop-background, .share-folder-window') || this.gameContainer;
         const dialog = document.createElement('div');
         dialog.className = 'desktop-transfer-dialog';
         dialog.setAttribute('role', 'dialog');

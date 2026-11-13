@@ -29,12 +29,31 @@ const KEY_TO_FILE = {
 
 const objectUrl = (file) => `/break_escape/assets/objects/${file}.png`;
 
+/** The folder picture for a network share (until a share icon of its own is approved). */
+export const SHARE_ICON = '/break_escape/assets/objects/m09_folder1.png';
+
+/**
+ * A share's short name and UNC path. The server labels a mapped share "Name (\\HOST\Name)"
+ * (network_access.rb mapped_share_stubs) and the network view does the same (shareLockable).
+ * The label shows the name only; the UNC path goes in the tooltip and the folder title bar
+ * (UX feedback slice 2a, main3-05). A name with no path gives { name, unc: null }.
+ */
+export function shareLabelParts(name) {
+    const text = String(name ?? '');
+    const m = text.match(/^(.*\S)\s+\((\\\\[^()]+)\)$/);
+    return m ? { name: m[1], unc: m[2] } : { name: text, unc: null };
+}
+
 /**
  * @param {object} containerItem - a world sprite or an inventory tray <img>
  * @param {(itemData: object) => string} imageKey - inventory.js inventoryImageKey
  * @returns {string|null} null when there is nothing to show (the caller omits the image)
  */
 export function containerImageUrl(containerItem, imageKey) {
+    // A share has no sprite of its own: "network_share" names no picture file, and its
+    // header showed a broken image with the alt text (UX feedback slice 2a, main3-08)
+    const data = containerItem?.scenarioData;
+    if (data?.type === 'network_share' && !containerItem?.texture?.key) return data.iconImage || SHARE_ICON;
     const key = containerItem?.texture?.key;
     if (key) return objectUrl(KEY_TO_FILE[key] || key);
     // Opened from the tray: show the picture the tray shows

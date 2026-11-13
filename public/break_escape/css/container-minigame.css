@@ -631,3 +631,72 @@
     color: #ffe0a0;
     font-size: 16px;
 }
+
+/* A network share opens as a folder window, not a desktop (UX feedback slice 2a, main3-08):
+   the grey window and navy title bar of the desktop dialogs, the UNC path in the title bar,
+   the files on a white pane with dark labels. 2px bevel, square corners, pixel fonts. */
+.container-minigame.share-folder {
+    height: auto;
+    padding: 0 20px 20px;
+}
+
+.share-folder-window {
+    position: relative;
+    background: #c0c0c0;
+    border: 2px solid #fff;
+    border-right-color: #404040;
+    border-bottom-color: #404040;
+    box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.6);
+    padding: 0 4px 4px;
+}
+
+.share-folder-titlebar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 -4px 4px;
+    padding: 6px 8px;
+}
+
+.share-folder-icon {
+    width: 26px;
+    height: 18px;
+    image-rendering: pixelated;
+    flex: 0 0 auto;
+}
+
+.share-folder-path {
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    overflow-wrap: anywhere;
+}
+
+.container-contents-grid.share-folder-files {
+    background: #ffffff;
+    border: 2px solid #404040;
+    border-right-color: #fff;
+    border-bottom-color: #fff;
+    min-height: 160px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.share-folder-files .container-content-slot {
+    background: #e8e8f0;
+    border-color: transparent;
+}
+
+.share-folder-files .container-content-slot:hover {
+    transform: none;
+    border-color: #000080;
+    background: #d0d8f8;
+}
+
+.share-folder-files .container-content-label {
+    color: #000;
+    text-shadow: none;
+}
+
+.share-folder-files .empty-contents {
+    color: #404040;
+}
