@@ -32,7 +32,8 @@ module BreakEscape
     end
 
     test 'current is 0 with no steps and the last version with steps' do
-      assert_equal 0, FU.current
+      # Step 8a lands a real step (version 1), so the no-step case is exercised with an empty stub.
+      FU.stub(:steps, []) { assert_equal 0, FU.current }
       FU.stub(:steps, toy_steps) do
         assert_equal 2, FU.current
       end
@@ -52,12 +53,58 @@ module BreakEscape
     end
 
     test 'upgrade! with no steps stamps CURRENT and changes nothing else' do
-      data = { 'a' => 1 }
-      result = FU.upgrade!(data, {})
-      assert_equal 0, data['formatVersion']
-      assert_equal 1, data['a']
-      assert_equal [], result[:ran]
-      assert_equal false, result[:scenario_changed]
+      # With a real step landed (8a), the empty-list case is exercised with a stub so CURRENT is 0.
+      FU.stub(:steps, []) do
+        data = { 'a' => 1 }
+        result = FU.upgrade!(data, {})
+        assert_equal 0, data['formatVersion']
+        assert_equal 1, data['a']
+        assert_equal [], result[:ran]
+        assert_equal false, result[:scenario_changed]
+      end
+    end
+
+    # Step 8a (format 1): the real STEP_8A transform.
+    test 'step 8a renames the outage fields and is idempotent' do
+      data = {
+        'networks' => { 'n' => { 'name' => 'N', 'downIf' => 'net_off' } },
+        'resources' => { 'r' => { 'kind' => 'printer', 'downIf' => 'jam' } },
+        'rooms' => { 'o' => { 'objects' => [
+          { 'id' => 'pc', 'affordance' => { 'offWhen' => 'pc_off' } },
+          { 'id' => 'copier', 'affordance' => { 'satisfies' => 'work', 'offWhen' => 'copier_off' } }
+        ] } },
+        '_draft' => { 'resources' => { 'z' => { 'downIf' => 'keep' } } }
+      }
+      state = { 'inventory' => [{ 'id' => 'c', 'affordance' => { 'offWhen' => 'c_off', 'useSeconds' => 2 } }] }
+      res = FU.upgrade!(data, state)
+      assert_equal 1, data['formatVersion']
+      assert_equal ['one_outage_field_offWhen'], res[:ran]
+      assert_equal 'net_off', data.dig('networks', 'n', 'offWhen')
+      refute data['networks']['n'].key?('downIf')
+      assert_equal 'jam', data.dig('resources', 'r', 'offWhen')
+      pc = data['rooms']['o']['objects'][0]
+      assert_equal 'pc_off', pc['offWhen']
+      assert_equal({}, pc['affordance'], 'an emptied affordance stays {}')
+      copier = data['rooms']['o']['objects'][1]
+      assert_equal 'copier_off', copier['offWhen']
+      assert_equal({ 'satisfies' => 'work' }, copier['affordance'])
+      assert_equal 'keep', data.dig('_draft', 'resources', 'z', 'downIf'), 'a note is left as written'
+      item = state['inventory'][0]
+      assert_equal 'c_off', item['offWhen']
+      assert_equal({ 'useSeconds' => 2 }, item['affordance'])
+      before = Marshal.load(Marshal.dump(data))
+      FU.steps.each { |s| s[:scenario]&.call(data); s[:player_state]&.call(state) }
+      assert_equal before, data, 'idempotent'
+    end
+
+    test 'step 8a: a resource offWhen { name: value } goes down only when the value matches' do
+      res = { 'r' => { 'kind' => 'printer', 'offWhen' => { 'mode' => 'maint' } } }
+      data = { 'resources' => res, 'formatVersion' => 1 }
+      # a no-op on format-1 data: the Hash form survives untouched
+      FU.steps.each { |s| s[:scenario]&.call(data) }
+      assert_equal({ 'mode' => 'maint' }, data.dig('resources', 'r', 'offWhen'))
+      assert BreakEscape::AccessWork.globals_hold?({ 'mode' => 'maint' }, { 'mode' => 'maint' })
+      refute BreakEscape::AccessWork.globals_hold?({ 'mode' => 'maint' }, { 'mode' => 'on' })
     end
 
     test 'upgrade! runs the steps above the stored version in order and is idempotent' do
@@ -154,7 +201,7 @@ module BreakEscape
       assert_nil FU.install_dev_test_step!(env: 'development', enabled: true)
     ensure
       FU::STEPS.reject! { |s| s[:version] == 900 }
-      assert_equal 0, FU.current
+      assert_equal 1, FU.current, 'the 900 dev step is removed, leaving step 8a (format 1)'
     end
   end
 end

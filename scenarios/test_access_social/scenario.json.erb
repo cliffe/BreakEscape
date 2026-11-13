@@ -1530,9 +1530,9 @@
           "affordance": {
             "satisfies": "work",
             "useSeconds": 5,
-            "restores": 10,
-            "offWhen": "f12_pc_unplugged"
+            "restores": 10
           },
+          "offWhen": "f12_pc_unplugged",
           "observations": "Greg's PC, under the lax policy. The socket can cut its power."
         },
         {
@@ -2017,9 +2017,9 @@
           "affordance": {
             "satisfies": "work",
             "useSeconds": 5,
-            "restores": 10,
-            "offWhen": "l2_pc_off"
+            "restores": 10
           },
+          "offWhen": "l2_pc_off",
           "observations": "Hamid's PC. It has not worked all morning."
         },
         {
@@ -2881,17 +2881,17 @@
     "f10_share": {
       "name": "Finance drive",
       "kind": "file_share",
-      "downIf": "f10_share_down"
+      "offWhen": "f10_share_down"
     },
     "f12_crm": {
       "name": "Revenue tracker",
       "kind": "crm",
-      "downIf": "f12_crm_down"
+      "offWhen": "f12_crm_down"
     },
     "l2_ledger": {
       "name": "Facilities ledger",
       "kind": "file_share",
-      "downIf": "l2_ledger_down"
+      "offWhen": "l2_ledger_down"
     },
     "u1_reports": {
       "name": "Team reports",
@@ -2900,12 +2900,12 @@
     "f15_drive": {
       "name": "Project file share",
       "kind": "file_share",
-      "downIf": "f15_drive_down"
+      "offWhen": "f15_drive_down"
     },
     "f16_drive": {
       "name": "Team file share",
       "kind": "file_share",
-      "downIf": "f16_drive_down"
+      "offWhen": "f16_drive_down"
     }
   },
   "accountProfiles": {

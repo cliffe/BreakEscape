@@ -363,7 +363,7 @@ export const PC_OFF_SYNC_WAIT_MS = 3000;
  * field on its own copy (Game#host_service_off?). Exported for tests.
  */
 export function pcSwitchedOff(data, globals = (typeof window !== 'undefined' && window.gameState?.globalVariables) || {}) {
-    const cond = data?.affordance?.offWhen;
+    const cond = data?.offWhen;
     if (cond === undefined || cond === null || cond === false || cond === '') return false;
     const g = globals || {};
     if (typeof cond === 'string') return !!g[cond];
@@ -444,7 +444,7 @@ export async function interactLoginPc(lockable) {
         window.eventDispatcher?.emit?.('pc_off_shown', { pcId });
         return 'off';
     }
-    if (data.affordance?.offWhen !== undefined) {
+    if (data.offWhen !== undefined) {
         let timer;
         try {
             const synced = Promise.resolve(window.stateSync?.sync?.()).catch(() => false);

@@ -784,7 +784,7 @@ def check_unknown_fields(json_data)
     storyPath currentKnot
     completesTask completesTaskOnOpen
     puzzle_graph_links hintOnlyFlags acceptsVmLabels
-    affordance needsTag droppable officeType wearable
+    affordance offWhen needsTag droppable officeType wearable
     usbClass
     workstation locksScreenOnLeave lockChance screenOwner screenLocked autoLockSeconds
     phoneOwner rings

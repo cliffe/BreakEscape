@@ -5564,7 +5564,7 @@ module BreakEscape
     WITHHELD_WORK_NPC_KEYS = %w[workNeeds frustration feed usbHabit].freeze
 
     # Slice 9.2 (5.2): a room NPC with a `work` plan (a work need and a non-empty resolved work
-    # list) gains `work`: resource ids, kinds, `admitted`, `downIf` names, `object`, `routes`
+    # list) gains `work`: resource ids, kinds, `admitted`, `offWhen` values, `object`, `routes`
     # (with networks) and `breakDrain`, never a display name or a network. Runs before
     # withhold_npc_secrets!, which deletes the role it reads.
     # The plan is built from the scenario's own record of the NPC, never the room copy (which

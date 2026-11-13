@@ -118,7 +118,7 @@ export const PC_OFF_TEXT = 'This PC is off.';
  * { name: value } all to match). Kept here so this module imports nothing more.
  */
 export function offWhenHolds(pcData, globals = (typeof window !== 'undefined' && window.gameState?.globalVariables) || {}) {
-    const cond = pcData?.affordance?.offWhen;
+    const cond = pcData?.offWhen;
     if (cond === undefined || cond === null || cond === false || cond === '') return false;
     const g = globals || {};
     if (typeof cond === 'string') return !!g[cond];
@@ -128,7 +128,7 @@ export function offWhenHolds(pcData, globals = (typeof window !== 'undefined' &&
 
 /** The globals an offWhen reads, for the global_variable_changed listeners. */
 export function offWhenGlobals(pcData) {
-    const cond = pcData?.affordance?.offWhen;
+    const cond = pcData?.offWhen;
     if (typeof cond === 'string' && cond) return [cond];
     if (cond && typeof cond === 'object') return Object.keys(cond);
     return [];

@@ -452,15 +452,15 @@ module BreakEscape
       id = cause['id']
       case cause['why']
       when 'down'
-        dn = resources(data)[id]&.dig('downIf')
-        present_string?(dn) && truthy_global?(globals[dn])
+        cond = resources(data)[id]&.dig('offWhen')
+        off_when_present?(cond) && globals_hold?(cond, globals)
       when 'unreachable'
         rt = routes(data, npc, resources(data)[id])
         !rt.nil? && rt.none? { |route| route.none? { |g| truthy_global?(globals[g.to_s]) } }
       when 'no_access'
         !admitted?(resources(data)[id], npc)
       when 'off'
-        cond = affordance(data, object(data, id))&.dig('offWhen')
+        cond = object_off_when(object(data, id))
         !cond.nil? && globals_hold?(cond, globals)
       when 'social_blocked'
         need == 'social_media' && social_blocked?(data, npc)
@@ -508,7 +508,7 @@ module BreakEscape
       st = station(data, npc)
       case why
       when 'down'
-        need == 'work' && work_list(data, npc).any? { |id| present_string?(resources(data)[id]&.dig('downIf')) }
+        need == 'work' && work_list(data, npc).any? { |id| off_when_present?(resources(data)[id]&.dig('offWhen')) }
       when 'unreachable'
         need == 'work' && work_list(data, npc).any? do |id|
           r = resources(data)[id]
@@ -967,6 +967,17 @@ module BreakEscape
       v.is_a?(String) && !v.strip.empty?
     end
 
+    # Format 1 (step 8a): an outage condition is "present" (can switch the thing off) when it is a
+    # non-empty string or a non-empty Hash (the requireGlobal form). The shared reader for every
+    # network, resource and object outage, so a bare name and the { name: value } form read one way.
+    def off_when_present?(cond)
+      case cond
+      when String then !cond.strip.empty?
+      when Hash then !cond.empty?
+      else false
+      end
+    end
+
     # Routes from the NPC's home station to a resource, or nil in a scenario with no networks
     def routes(data, npc, resource)
       return nil if NetworkModel.networks(data).empty?
@@ -1002,7 +1013,7 @@ module BreakEscape
         next nil unless r
 
         entry = { 'id' => id, 'kind' => r['kind'].is_a?(String) ? r['kind'] : nil, 'admitted' => admitted?(r, npc) }
-        entry['downIf'] = r['downIf'] if present_string?(r['downIf'])
+        entry['offWhen'] = r['offWhen'] if off_when_present?(r['offWhen'])
         entry['object'] = r['object'] if present_string?(r['object'])
         rt = routes(data, npc, r)
         entry['routes'] = rt unless rt.nil?
@@ -1116,8 +1127,14 @@ module BreakEscape
 
     # ── can fail, belongs to, owned causes ──────────────────────────────
 
-    def off_when?(data, obj)
-      !obj.nil? && !affordance(data, obj)&.dig('offWhen').nil? && affordance(data, obj)['offWhen'] != false && affordance(data, obj)['offWhen'] != ''
+    # Format 1 (step 8a): an object's outage condition, read from the object itself (was
+    # affordance.offWhen). nil for a non-Hash object or one with no offWhen.
+    def object_off_when(obj)
+      obj.is_a?(Hash) ? obj['offWhen'] : nil
+    end
+
+    def off_when?(_data, obj)
+      off_when_present?(object_off_when(obj))
     end
 
     def policy_of(data, obj)
@@ -1140,7 +1157,7 @@ module BreakEscape
 
         res = resources(data)
         list = work_list(data, npc).filter_map { |id| res[id] }
-        return true if list.any? { |r| !admitted?(r, npc) || present_string?(r['downIf']) }
+        return true if list.any? { |r| !admitted?(r, npc) || off_when_present?(r['offWhen']) }
         return true if list.any? { |r| (rt = routes(data, npc, r)) && (rt.empty? || rt.any? { |route| !route.empty? }) }
 
         # Sub-slice L (6.6): its own sign-in PC under a policy with maxAttempts can lock it out

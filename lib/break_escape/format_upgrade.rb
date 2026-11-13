@@ -31,10 +31,32 @@ module BreakEscape
 
     # The ordered upgrade steps, one entry per version:
     #   { version:, name:, scenario: ->(data) {}, player_state: ->(state) {}, retired: [{ path:, key:, now: }] }
-    # Empty in step 7. Not frozen and never reassigned: the development-only test switch appends one
-    # step in place (see Engine's break_escape.format_upgrade_test_step initializer), so nothing
-    # caches an old current value. Every read goes through steps, so tests stub that one method.
-    STEPS = []
+    # Not frozen and never reassigned: the development-only test switch appends one step in place
+    # (see Engine's break_escape.format_upgrade_test_step initializer), so nothing caches an old
+    # current value. Every read goes through steps, so tests stub that one method.
+    #
+    # Step 8a (format 1), one outage field: `offWhen`.
+    #   - a network's or resource's `downIf` (a bare global name) becomes `offWhen` in the
+    #     requireGlobal form; a bare name keeps its meaning (the global is truthy), so the value
+    #     carries over as it is;
+    #   - an object's or item's `affordance.offWhen` moves up to the object as `offWhen`, same form;
+    #     an `affordance` emptied by the move stays `{}` (step 8, "An emptied affordance").
+    # Both transforms walk only live data through the resolver, so a note that names an old key, or
+    # holds an old-shaped block, is left as written; neither descends into free data (free: :skip),
+    # which holds no authored field names.
+    STEP_8A = {
+      version: 1,
+      name: 'one_outage_field_offWhen',
+      scenario: ->(data) { BreakEscape::FormatUpgrade.rename_outage_fields!(data, BreakEscape::ScenarioSchema.root) },
+      player_state: ->(state) { BreakEscape::FormatUpgrade.rename_outage_fields_in_player_state!(state) },
+      retired: [
+        { path: '\Anetworks/[^/]+\z', key: 'downIf', now: 'offWhen' },
+        { path: '\Aresources/[^/]+\z', key: 'downIf', now: 'offWhen' },
+        { path: '(\A|/)affordance\z', key: 'offWhen', now: 'offWhen (moved up to the object)' }
+      ]
+    }.freeze
+
+    STEPS = [STEP_8A]
 
     # Old keys a deployed scenario still uses, each with the step that retired it. Empty
     # (section 1 of the plan: none of the four deployed scenarios uses any retired key). The place
@@ -164,6 +186,71 @@ module BreakEscape
     # A json-pointer-style path for a key path (String keys and Integer indices).
     def pointer_for(keys)
       "##{keys.map { |k| "/#{k.to_s.gsub('~', '~0').gsub('/', '~1')}" }.join}"
+    end
+
+    # Step 8a. Walk every live Hash reachable from `node` and rename the outage fields in place:
+    # a bare `downIf` becomes `offWhen` (networks and resources), and an `affordance.offWhen` moves
+    # up to its object as `offWhen`. Notes and free data are skipped (free: :skip), so an old key in
+    # a note is left as written and no authored name lives in free data. Idempotent: on data that
+    # already has the new names it does nothing.
+    def rename_outage_fields!(data, node)
+      BreakEscape::AuthorNotes.each_live(data, node, free: :skip) do |value, _n, _keys|
+        next unless value.is_a?(Hash)
+
+        rename_one_hash_outage_fields!(value)
+      end
+      data
+    end
+
+    # The player_state transform: every item copy the server stored (inventory, objects added to a
+    # room, and any other list of item hashes) is walked from the item Node, and its
+    # `affordance.offWhen` moves up the same way. Item copies carry no network or resource, so only
+    # the affordance move applies; `rename_one_hash_outage_fields!` handles both regardless.
+    def rename_outage_fields_in_player_state!(state)
+      return state unless state.is_a?(Hash)
+
+      item_node = BreakEscape::ScenarioSchema.at('#/definitions/item')
+      player_state_item_lists(state).each do |list|
+        next unless list.is_a?(Array)
+
+        list.each do |item|
+          BreakEscape::AuthorNotes.each_live(item, item_node, free: :skip) do |value, _n, _keys|
+            rename_one_hash_outage_fields!(value) if value.is_a?(Hash)
+          end
+        end
+      end
+      state
+    end
+
+    # The lists of item hashes a sync may have stored in player_state: the held inventory
+    # (add_inventory_item!), items added to a room (add_item_to_room!), and the dropped / copied /
+    # cloned lists. A list that is absent is skipped.
+    def player_state_item_lists(state)
+      lists = []
+      lists << state['inventory']
+      rs = state['room_states']
+      if rs.is_a?(Hash)
+        rs.each_value { |room| lists << room['objects_added'] if room.is_a?(Hash) }
+      end
+      %w[droppedItems copiedItems serverClones].each { |k| lists << state[k] }
+      lists
+    end
+
+    # Rename the outage fields of one Hash in place (shared by the scenario and player_state walks).
+    # A bare `downIf` becomes `offWhen`; an `affordance.offWhen` moves up to this Hash. Each move is
+    # guarded by `unless value.key?('offWhen')` so a second run or format-1 data is a no-op, and an
+    # affordance emptied by the move keeps `{}`.
+    def rename_one_hash_outage_fields!(value)
+      if value.key?('downIf')
+        dn = value.delete('downIf')
+        value['offWhen'] = dn unless value.key?('offWhen')
+      end
+
+      aff = value['affordance']
+      if aff.is_a?(Hash) && aff.key?('offWhen')
+        moved = aff.delete('offWhen')
+        value['offWhen'] = moved unless value.key?('offWhen')
+      end
     end
 
     # The development-only test switch (live proof of the reload, step 7). When the environment is

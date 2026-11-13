@@ -754,7 +754,7 @@ module BreakEscape
     # client-synced. Clearing it only lets the player use a PC they could already reach.
     # `globals` lets a caller that asks for many hosts build the merged globals once.
     def host_service_off?(pc, globals = nil)
-      cond = BreakEscape::AccessWork.affordance(scenario_data, pc)&.dig('offWhen')
+      cond = BreakEscape::AccessWork.object_off_when(pc)
       return false if cond.nil? || cond == false || cond == ''
 
       BreakEscape::AccessWork.globals_hold?(cond, globals || frustration_globals)
@@ -851,8 +851,9 @@ module BreakEscape
     # Links and the pivot (slice 9.3b sub-slice K; sections 4.1 and 5.1)
     # ==========================================
 
-    # Is a network's route up now (5.1, 5.2)? A network with no downIf is always up.
-    # Otherwise the network is down while its downIf global is truthy (NetworkModel.truthy?).
+    # Is a network's route up now (5.1, 5.2)? A network with no offWhen is always up.
+    # Otherwise the network is down while its offWhen condition holds (AccessWork.globals_hold?,
+    # the requireGlobal form; a bare name keeps the old downIf meaning).
     # The global is read from server state (player_state, falling back to the scenario's
     # declared default), never from a parameter in this access call, so the server decides the
     # route from its own view rather than from a value the request carries.
@@ -869,21 +870,22 @@ module BreakEscape
       return true unless NetworkModel.present_string?(network_id)
 
       net = NetworkModel.networks(scenario_data)[network_id]
-      down_if = net.is_a?(Hash) ? net['downIf'] : nil
-      return true unless NetworkModel.present_string?(down_if)
+      cond = net.is_a?(Hash) ? net['offWhen'] : nil
+      return true unless BreakEscape::AccessWork.off_when_present?(cond)
 
-      !NetworkModel.truthy?(outage_global(down_if))
+      !BreakEscape::AccessWork.globals_hold?(cond, frustration_globals)
     end
 
-    # A resource whose own downIf is truthy (5.2, the player side of 9.2's resource downIf):
+    # A resource whose own offWhen holds (5.2, the player side of 9.2's resource outage):
     # its own service is off, so it is withheld from the view and never served, exactly as a
-    # resource on a down network is. A resource with no downIf is never down. 9.2 owns the NPC
-    # side of a resource outage; this reads the same field for the player.
+    # resource on a down network is. A resource with no offWhen is never down. 9.2 owns the NPC
+    # side of a resource outage; this reads the same field (format 1: offWhen, was downIf) for the
+    # player, in the requireGlobal form through the shared AccessWork helper.
     def resource_down?(resource)
-      down_if = resource.is_a?(Hash) ? resource['downIf'] : nil
-      return false unless NetworkModel.present_string?(down_if)
+      cond = resource.is_a?(Hash) ? resource['offWhen'] : nil
+      return false unless BreakEscape::AccessWork.off_when_present?(cond)
 
-      NetworkModel.truthy?(outage_global(down_if))
+      BreakEscape::AccessWork.globals_hold?(cond, frustration_globals)
     end
 
     # A global's current value for an outage test (5.2). Delegates to Game#global_variable_value,
@@ -949,7 +951,7 @@ module BreakEscape
 
     def reach_cache_key(foothold_id, ignore_outages)
       fid = foothold_id.to_s
-      outages = ignore_outages ? nil : NetworkModel.networks(scenario_data).map { |id, net| [id, net.is_a?(Hash) ? outage_global(net['downIf']) : nil] }
+      outages = ignore_outages ? nil : NetworkModel.networks(scenario_data).keys.map { |id| [id, network_up?(id)] }
       # The off state of each session host, which the outage walk reads (5.2)
       # (the merged globals are built once for them all, review R2 nit 2)
       unless ignore_outages

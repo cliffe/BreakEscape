@@ -624,9 +624,9 @@ def check_wifi_key_free(outputs)
     removed.each { |f| File.delete(f) }
     cause = if SCRUB_OFF_FOR_TEST
               'The label scrub was off because DUNGEON_GRAPH_TEST_NO_SCRUB=1 is set: unset it and run again.'
-            else
+    else
               'An authored string reaches the output by a path scripts/generate_dungeon_graph.rb does not scrub.'
-            end
+    end
     gone = removed.empty? ? 'No graph file was written.' : "No graph file was written, and the old #{removed.map { |f| File.basename(f) }.join(', ')} were deleted so a stale copy cannot stay on disk."
     warn "❌ ERROR: #{File.basename(file)} still holds a Wi-Fi key after the label scrub. #{gone} #{cause}"
     exit KEY_STOP_STATUS
@@ -636,7 +636,7 @@ if NETWORKS.any?
   nm = BreakEscape::NetworkModel
   ai = BreakEscape::AccessIdentities
   # An outage (slice 9.3b, plan 9.3) is a condition on the network node, not a gate: the
-  # label names the downIf global and says whether the network starts down.
+  # label names the offWhen condition and says whether the network starts down.
   globals_g = scenario['globalVariables'].is_a?(Hash) ? scenario['globalVariables'] : {}
   # A label from an authored value only when it is a non-blank string, else the fallback.
   npc_text = ->(value, fallback) { nm.present_string?(value) ? value : fallback.to_s }
@@ -648,10 +648,13 @@ if NETWORKS.any?
   net_node = lambda do |net_id|
     net = NETWORKS[net_id]
     label = "#{safe_text.call(net['name'], net_id)}<br/>Network"
-    down = net['downIf']
-    if nm.present_string?(down)
-      label += "<br/>down while #{down}"
-      label += ' (down at start)' if nm.truthy?(globals_g[down])
+    cond = net['offWhen']
+    present = cond.is_a?(String) ? !cond.strip.empty? : (cond.is_a?(Hash) && !cond.empty?)
+    if present
+      shown = cond.is_a?(String) ? cond : cond.map { |k, v| "#{k}=#{v}" }.join(' &amp; ')
+      label += "<br/>down while #{shown}"
+      down_at_start = cond.is_a?(String) ? nm.truthy?(globals_g[cond]) : cond.all? { |k, v| globals_g[k.to_s] == v }
+      label += ' (down at start)' if down_at_start
     end
     add_node("net_#{nid(net_id)}", label, 'room')
   end
@@ -1084,12 +1087,16 @@ aw_g.with_index(scenario) do
     res = aw_g.resources(scenario)
     if aw_g.need?(npc, 'work')
       aw_g.work_list(scenario, npc).each do |rid|
-        dn = res.dig(rid, 'downIf')
-        outages << dn if aw_g.present_string?(dn)
+        cond = res.dig(rid, 'offWhen')
+        if cond.is_a?(String) && !cond.strip.empty?
+          outages << cond
+        elsif cond.is_a?(Hash)
+          outages.concat(cond.keys.map(&:to_s))
+        end
       end
     end
     st = aw_g.station(scenario, npc)
-    off = st ? aw_g.affordance(scenario, st)&.dig('offWhen') : nil
+    off = st ? aw_g.object_off_when(st) : nil
     outages << off if off.is_a?(String) && !off.empty?
     outages.concat(off.keys.map(&:to_s)) if off.is_a?(Hash)
 

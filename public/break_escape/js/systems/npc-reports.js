@@ -299,7 +299,7 @@ export function watchedGlobal(name, w = (typeof window !== 'undefined' ? window 
         const home = typeof rec?.needsHome === 'string' ? rec.needsHome : null;
         if (!home || !rec?.work) continue;
         const sp = w.npcNeedsSystem?.world?.getObject?.(home);
-        const cond = sp?.affordance?.offWhen;
+        const cond = sp?.offWhen;
         if (typeof cond === 'string' ? cond === name : (cond && typeof cond === 'object' && Object.prototype.hasOwnProperty.call(cond, name))) return true;
     }
     return false;
