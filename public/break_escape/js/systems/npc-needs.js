@@ -1212,23 +1212,19 @@ export class NPCNeedsSystem {
     }
 
     /**
-     * Owners of an object: affordance.owners, else screenOwner, else the first registered NPC
-     * whose needsHome is the object (workstation-state's ownerOf rule, one owner).
+     * Owners of an object: its `owner` field, a single NPC id or a list of them (a private object).
      */
     _owners(o) {
-        const aff = o.affordance || {};
-        if (Array.isArray(aff.owners)) return aff.owners;
-        if (typeof o.screenOwner === 'string' && o.screenOwner) return [o.screenOwner];
-        for (const id of this.world.npcIds()) {
-            if (this.world.getNpc(id)?.needsHome === o.id) return [id];
-        }
+        const owner = o.owner;
+        if (Array.isArray(owner)) return owner;
+        if (typeof owner === 'string' && owner) return [owner];
         return [];
     }
 
     /** Room rules for any object; `private` only for a use (deliveries ignore it, OQ26). */
     _permitted(s, o, use) {
         if (this._roomForbidden(s, o.roomId)) return false;
-        if (use && o.affordance?.private === true) return this._owners(o).includes(s.npcId);
+        if (use && o.private === true) return this._owners(o).includes(s.npcId);
         return true;
     }
 
@@ -2948,7 +2944,7 @@ export class NPCNeedsSystem {
 
     /**
      * Left-behind items (OFFICE_LIFE_PLAN 2.10, slice 11): on a real leave, each declared item with
-     * leftBehindBy this NPC is shown at the post when a seeded roll falls under its
+     * owner this NPC is shown at the post when a seeded roll falls under its
      * leftBehindChance. The roll is keyed on the leave count and the item id, so a day replays the
      * same. A world without leftBehindItems (the plain stubs) has none, and the log is unchanged.
      */
@@ -3986,8 +3982,8 @@ export class NPCNeedsSystem {
      */
     onPhoneRing(phoneId) {
         const o = typeof phoneId === 'string' ? this.world.getObject(phoneId) : null;
-        const ownerId = o?.phoneOwner;
-        if (!o || typeof ownerId !== 'string' || !ownerId) { this._log(null, 'ring_ignored', { target: phoneId, reason: 'no_phone' }); return false; }
+        const ownerId = o && o.deskPhone === true && typeof o.owner === 'string' ? o.owner : null;
+        if (!o || !ownerId) { this._log(null, 'ring_ignored', { target: phoneId, reason: 'no_phone' }); return false; }
         if (this._rings.has(o.id) || this._calls.has(o.id)) {
             this._log(ownerId, 'ring_ignored', { target: o.id, reason: this._calls.has(o.id) ? 'call' : 'ringing' });
             return false;
@@ -4586,12 +4582,12 @@ export function createEngineWorld() {
         const a = sp?.scenarioData?.affordance;
         return a && typeof a === 'object' ? a : null;
     };
-    // Reveal slots (OFFICE_LIFE_PLAN 2.2 Part A): a declared object with outputOf (or leftBehindBy)
+    // Reveal slots (OFFICE_LIFE_PLAN 2.2 Part A): a declared object with outputOf (or leftBehindChance)
     // and an engine-owned revealOnGlobal. Delivered, it is placed or stowed, never consumed.
     const globalOf = sp => sp?.revealOnGlobal || sp?.scenarioData?.revealOnGlobal || null;
     const isSlot = sp => {
         const sd = sp?.scenarioData || {};
-        return !!((sd.outputOf || sd.leftBehindBy) && globalOf(sp));
+        return !!((sd.outputOf || sd.leftBehindChance !== undefined) && globalOf(sp));
     };
     const globalTrue = name => W().gameState?.globalVariables?.[name] === true;
     const inInventory = sp => {
@@ -4630,14 +4626,15 @@ export function createEngineWorld() {
             id, roomId, x: c.x, y: c.y,
             affordance,
             needsTag: typeof sd.needsTag === 'string' ? sd.needsTag : null,
-            screenOwner: typeof sd.screenOwner === 'string' ? sd.screenOwner : null,
+            owner: (typeof sd.owner === 'string' && sd.owner) || Array.isArray(sd.owner) ? sd.owner : null,
+            private: sd.private === true,
             // A slot an NPC set down is not a carry candidate, or the deliverer would pick it straight up
             pickable: sp.visible !== false && sp.active !== false && !sp._npcCarried && !sp._npcPlacedBy && !sp.destroyed,
             _sprite: sp
         };
         if (isSlot(sp)) { out.slot = true; out.takeable = sd.takeable === true; }
-        // Slice 19: a desk phone (its owner and ring count)
-        if (typeof sd.phoneOwner === 'string' && sd.phoneOwner) { out.phoneOwner = sd.phoneOwner; if (sd.rings !== undefined) out.rings = sd.rings; }
+        // Slice 19: a desk phone (deskPhone flag and ring count; its owner is on out.owner)
+        if (sd.deskPhone === true) { out.deskPhone = true; if (sd.rings !== undefined) out.rings = sd.rings; }
         // Slice 18b-i: a hidden object (reveal global not true) is no use target
         if (sd.affordance && globalOf(sp)) out.revealOnGlobal = globalOf(sp);
         // Access slice 9.2 U (plan 7): a device's class, and a target's effective USB policy
@@ -5192,7 +5189,7 @@ export function createEngineWorld() {
             const f = findSprite(slotId);
             if (f) f.sp._printedBy = npcId || null;
         },
-        // Left-behind items (2.10, slice 11): loaded declared items with leftBehindBy this NPC that
+        // Left-behind items (2.10, slice 11): loaded declared items with owner this NPC that
         // could be shown now (not taken, not already shown, not in a hand or set down), by id.
         leftBehindItems(npcId) {
             const out = [];
@@ -5202,7 +5199,7 @@ export function createEngineWorld() {
                 for (const k of Object.keys(objs)) {
                     const sp = objs[k];
                     const sd = sp?.scenarioData;
-                    if (!sd || sd.leftBehindBy !== npcId || !isSlot(sp)) continue;
+                    if (!sd || sd.owner !== npcId || !isSlot(sp)) continue;
                     if (sp.destroyed || sp.active === false || sp._npcCarried || sp._npcPlacedBy || inInventory(sp)) continue;
                     if (globalTrue(globalOf(sp))) continue;
                     out.push({ id: sd.id || sp.objectId || k, chance: Number(sd.leftBehindChance) || 0 });
@@ -5211,7 +5208,7 @@ export function createEngineWorld() {
             return out.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
         },
         // Show a left-behind item at its declared spot by a direct call (after a reload there is no
-        // reveal listener), global true, object_revealed:<id> with leftBehindBy.
+        // reveal listener), global true, object_revealed:<id> with owner.
         revealLeftBehind(itemId, npcId) {
             const f = findSprite(itemId);
             if (!f || f.sp.destroyed || f.sp.active === false || inInventory(f.sp)) return false;
@@ -5226,7 +5223,7 @@ export function createEngineWorld() {
                 const a = centreOf(home.sp), b = centreOf(f.sp);
                 if (Math.hypot(a.x - b.x, a.y - b.y) <= 2 * TILE) f.sp.setDepth?.(home.sp.depth + 0.1);
             }
-            W().eventDispatcher?.emit(`object_revealed:${itemId}`, { npcId, objectId: itemId, leftBehindBy: npcId });
+            W().eventDispatcher?.emit(`object_revealed:${itemId}`, { npcId, objectId: itemId, owner: npcId });
             return true;
         },
         removeCosmetic(handle) {

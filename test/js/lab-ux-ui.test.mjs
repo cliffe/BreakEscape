@@ -360,7 +360,7 @@ function arriveThenTap(stopAt = 400, until = 640) {
     return { tracker, player, npc, now: until };
 }
 function danaDesk() {
-    const objects = [{ id: 'dana_pc', workstation: true, lockType: 'login' }, { id: 'ian_pc', workstation: true }];
+    const objects = [{ id: 'dana_pc', workstation: true, lockType: 'login', owner: 'dana' }, { id: 'ian_pc', workstation: true, owner: 'ian' }];
     const env = {
         objects: () => objects,
         npcs: () => [{ id: 'dana', needsHome: 'dana_pc' }, { id: 'ian', needsHome: 'ian_pc' }],

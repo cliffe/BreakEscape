@@ -1015,27 +1015,32 @@ test('leash: an NPC a script left inside a forbidden room still walks home', () 
     assert.equal(home[0].avoidRooms.join(), 'lounge', 'the start room is exempted by the pathfinder, not dropped here');
 });
 
-test('private objects: owners from affordance.owners, screenOwner and needsHome; capacity 2 serves two owners', () => {
-    const coolerAt = (id, x, aff) => ({ id, roomId: 'office', x, y: 100, affordance: { satisfies: 'thirst', restores: 60, useSeconds: 30, private: true, ...aff } });
+test('private objects: owner is explicit (a single id or a list); capacity 2 serves two owners', () => {
+    // priv defaults true; owner and capacity are set per case (owner is top-level, step 8b)
+    const coolerAt = (id, x, { priv = true, owner, capacity } = {}) => ({
+        id, roomId: 'office', x, y: 100, private: priv,
+        ...(owner !== undefined ? { owner } : {}),
+        affordance: { satisfies: 'thirst', restores: 60, useSeconds: 30, ...(capacity !== undefined ? { capacity } : {}) }
+    });
     const npc = (id, x) => ({ pos: { x, y: 100 }, room: 'office', rec: { id, roomId: 'office', needs: thirsty, needsHome: `${id}_desk` } });
     const desk = (id, x) => ({ id: `${id}_desk`, roomId: 'office', x, y: 68, affordance: { useSeconds: 5 } });
-    // needsHome rule: a private "desk" that satisfies thirst serves only its owner
+    // a private "desk" that satisfies thirst serves only its explicit owner
     let r = leashRun({
         npcs: { amy: npc('amy', 100), ben: npc('ben', 200) },
-        objects: [{ ...desk('amy', 100), affordance: { satisfies: 'thirst', restores: 60, useSeconds: 5, private: true } }, coolerAt('pub', 280, { private: false })]
+        objects: [{ ...desk('amy', 100), private: true, owner: 'amy', affordance: { satisfies: 'thirst', restores: 60, useSeconds: 5 } }, coolerAt('pub', 280, { priv: false })]
     });
     assert.ok(r.used('amy').includes('amy_desk'));
     assert.ok(!r.used('ben').includes('amy_desk'));
-    // screenOwner
+    // a single-id owner
     r = leashRun({
         npcs: { amy: npc('amy', 100), ben: npc('ben', 200) },
-        objects: [desk('amy', 100), desk('ben', 200), { ...coolerAt('kettle', 150), screenOwner: 'ben' }, coolerAt('pub', 280, { private: false })]
+        objects: [desk('amy', 100), desk('ben', 200), coolerAt('kettle', 150, { owner: 'ben' }), coolerAt('pub', 280, { priv: false })]
     });
     assert.ok(r.used('ben').includes('kettle') && !r.used('amy').includes('kettle'));
-    // owners list with capacity 2: both owners together, the third waits or goes elsewhere
+    // an owner list with capacity 2: both owners together, the third waits or goes elsewhere
     r = leashRun({
         npcs: { amy: npc('amy', 100), ben: npc('ben', 110), cat: npc('cat', 120) },
-        objects: [desk('amy', 100), desk('ben', 110), desk('cat', 120), coolerAt('shared', 130, { owners: ['amy', 'ben'], capacity: 2 }), coolerAt('pub', 280, { private: false })]
+        objects: [desk('amy', 100), desk('ben', 110), desk('cat', 120), coolerAt('shared', 130, { owner: ['amy', 'ben'], capacity: 2 }), coolerAt('pub', 280, { priv: false })]
     });
     assert.ok(r.used('amy').includes('shared') && r.used('ben').includes('shared'));
     assert.ok(!r.used('cat').includes('shared') && r.used('cat').includes('pub'));
@@ -1050,7 +1055,7 @@ test('private objects: another NPC may still deliver to a private object (OQ26)'
             tom: { pos: { x: 200, y: 100 }, room: 'office', rec: { id: 'tom', roomId: 'office', needsHome: 'tom_pc' } }
         },
         objects: [
-            { id: 'tom_pc', roomId: 'office', x: 200, y: 68, affordance: { accepts: ['post'], private: true, useSeconds: 5 } },
+            { id: 'tom_pc', roomId: 'office', x: 200, y: 68, private: true, owner: 'tom', affordance: { accepts: ['post'], useSeconds: 5 } },
             { id: 'letter', roomId: 'office', x: 120, y: 120, needsTag: 'post' }
         ]
     };
@@ -1087,7 +1092,7 @@ test('private objects: passing over another owner\'s private object is private_s
     // Amy is thirsty; Ben's private desk-kettle is nearer than the shared cooler
     const objects = [
         { id: 'amy_desk', roomId: 'office', x: 100, y: 68, affordance: { useSeconds: 5 } },
-        { id: 'ben_kettle', roomId: 'office', x: 130, y: 100, affordance: { satisfies: 'thirst', restores: 60, useSeconds: 5, private: true, owners: ['ben'] } },
+        { id: 'ben_kettle', roomId: 'office', x: 130, y: 100, private: true, owner: ['ben'], affordance: { satisfies: 'thirst', restores: 60, useSeconds: 5 } },
         { id: 'office_cooler', roomId: 'office', x: 300, y: 100, affordance: { satisfies: 'thirst', restores: 60, useSeconds: 5 } }
     ];
     const r = leashRun({ npcs: { amy: { pos: { x: 100, y: 100 }, room: 'office', rec: { id: 'amy', roomId: 'office', needsHome: 'amy_desk', needs: thirsty } } }, objects }, 0);
@@ -1107,7 +1112,7 @@ test('private objects: passing over another owner\'s private object is private_s
 test('private objects: with only another owner\'s private object left, private_skipped once per episode and no leashed', () => {
     const objects = [
         { id: 'amy_desk', roomId: 'office', x: 100, y: 68, affordance: { useSeconds: 5 } },
-        { id: 'ben_kettle', roomId: 'office', x: 130, y: 100, affordance: { satisfies: 'thirst', restores: 60, useSeconds: 5, private: true, owners: ['ben'] } }
+        { id: 'ben_kettle', roomId: 'office', x: 130, y: 100, private: true, owner: ['ben'], affordance: { satisfies: 'thirst', restores: 60, useSeconds: 5 } }
     ];
     const r = leashRun({ npcs: { amy: { pos: { x: 100, y: 100 }, room: 'office', rec: { id: 'amy', roomId: 'office', needsHome: 'amy_desk', needs: thirsty } } }, objects }, 1);
     assert.equal(r.log.filter(e => e.ev === 'private_skipped').length, 1);
@@ -1120,7 +1125,7 @@ test('private objects: with only another owner\'s private object left, private_s
 test('leash and private together: leashed lists only the room-removed targets; the private one is logged apart', () => {
     const objects = [
         ...kitchenOffice,
-        { id: 'ben_kettle', roomId: 'office', x: 130, y: 100, affordance: { satisfies: 'thirst', restores: 60, useSeconds: 5, private: true, owners: ['ben'] } }
+        { id: 'ben_kettle', roomId: 'office', x: 130, y: 100, private: true, owner: ['ben'], affordance: { satisfies: 'thirst', restores: 60, useSeconds: 5 } }
     ];
     const r = leashRun({ npcs: { tom: { pos: { x: 100, y: 100 }, room: 'office', rec: tomRec({ needsAvoidRooms: ['lounge'] }) } }, objects });
     const l = r.log.find(e => e.ev === 'leashed');

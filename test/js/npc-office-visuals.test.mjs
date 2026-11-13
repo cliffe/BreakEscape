@@ -537,10 +537,10 @@ test('glyph text stand-ins until the icons have loaded', () => {
 
 test('validator (slice 16): screenHabit bounds, nothing to lock, shadowed habit; autoLockSeconds on a non-workstation or a station that always locks', { skip: ruby.status !== 0 && 'ruby not found' }, () => {
     const scenario = { lockCues: 'yes', rooms: { office: { objects: [
-        { id: 'pc_amara', type: 'pc1', workstation: true },
-        { id: 'pc_tom', type: 'pc1', lockChance: 0.5 },
-        { id: 'pc_san', type: 'pc1', workstation: true, autoLockSeconds: 30 },
-        { id: 'pc_def', type: 'pc1', workstation: true, autoLockSeconds: 30 },
+        { id: 'pc_amara', type: 'pc1', workstation: true, owner: 'amara' },
+        { id: 'pc_tom', type: 'pc1', lockChance: 0.5, owner: 'tom' },
+        { id: 'pc_san', type: 'pc1', workstation: true, autoLockSeconds: 30, owner: 'san' },
+        { id: 'pc_def', type: 'pc1', workstation: true, autoLockSeconds: 30, owner: 'def' },
         { id: 'pc_on', type: 'pc1', locksScreenOnLeave: true, autoLockSeconds: 30 },
         { id: 'lamp', type: 'lamp1', autoLockSeconds: 10 },
         { id: 'pc_bad', type: 'pc1', workstation: true, autoLockSeconds: -1 }

@@ -1629,3 +1629,104 @@ keeps its size (owner replaces the old key) or gains at most one bounded key (`d
 - **Note for chunks 4/5:** verify the real 8b transform is a no-op on the four deployed scenarios
   (m01, sis01, sis02, lab_social_engineering) — the plan asserts it, but chunk 1 did not render them
   (the deployed-scenarios Rails test stubs `steps`, so it did not exercise the real transform).
+
+## Step 8b chunk 3 — JS readers, the reveal event, fixtures (2026-11-13)
+
+Branch `build/harden-8b` (chunk 1 at tip `1aeb51d76`). Chunk 3 of the five-chunk split: the engine
+JS owner readers, the `object_revealed` payload key, and the node fixtures and tests that carry owner
+fields. Every reader now reads `owner`/`private`/`deskPhone` only, never deriving an owner from
+`needsHome`; single-owner readers take a String only. No new static import, so no harness copy list
+changed.
+
+### What changed (engine JS)
+
+- **`workstation-state.js`.** `ownerOf(data)` returns `data.owner` when it is a non-empty String, else
+  null (a list is not a single owner); the `npcs` argument and the `needsHome` fallback are gone. Its
+  call sites in this file, `lighting.js`, `screen-states.js` and `test-bridge/access.js` drop the
+  now-unused second argument; `_stationsOf`'s dead `npcs` local is removed. Doc comment updated.
+- **`npc-needs.js`.** `_owners(o)` reads `o.owner` (a String, or a list on a private object), no
+  affordance/screenOwner/needsHome fallbacks; `_permitted` reads top-level `o.private`. `onPhoneRing`
+  rings only when `o.deskPhone === true` and reads `o.owner` (String). The live-world `describe`
+  builder ships top-level `owner`, `private` and (for a desk phone) `deskPhone` + `rings` in place of
+  `screenOwner`/`phoneOwner`, so the needs world's `getObject`/`listObjects` carry the new fields.
+  `isSlot` treats `leftBehindChance !== undefined` as the left-behind marker; `leftBehindItems`
+  filters by `sd.owner`; the `object_revealed:<id>` reveal emit carries `owner: npcId` (was
+  `leftBehindBy`). Comments updated.
+- **`npc-action-icons.js`** (`d.deskPhone === true` for the phone icon), **`office-room-tone.js`**
+  (`sd.deskPhone === true` marks a desk phone), **`friendface-phone.js`** (`phoneKey`,
+  `syncOwners`, `openFriendfacePhone` read `data.owner`; comments updated),
+  **`left-card-consequence.js`** (payload comment only; it already reads `data.objectId`, not the
+  owner key).
+- **The reveal event.** `object_revealed:<id>`'s payload key `leftBehindBy` becomes `owner` (emit
+  `npc-needs.js`, read `left-card-consequence.js` via `objectId`). Grep of `scenarios/`, ink and
+  `docs/` found no condition or handler reading the payload key (only item-field declarations, which
+  chunk 4 rewrites); `docs/test-bridge.md` already names the bridge output `owner`, so it is
+  unchanged.
+
+### Fixtures and tests
+
+Node fixtures and the chunk's tests moved to the new names. `test/js/fixtures/needs-sims-world.mjs`:
+the three private PCs carry top-level `owner`/`private`; the left-behind helper uses `owner` and emits
+`owner`. `workstation-state.test.mjs` gets an `assignOwners(objects, npcs)` shim (and explicit
+`owner` on the late-pushed and inline-literal stations) that writes the owner the format-2 upgrade
+derives, so the readers see an explicit `owner`; the `ownerOf` unit test now asserts no derivation and
+that a list gives null. `npc-needs.test.mjs` private-object tests use top-level `owner` (single or
+list) and `private`; `npc-desk-phone.test.mjs` uses `owner`+`deskPhone`; `npc-left-behind.test.mjs`
+uses `owner`+`leftBehindChance` (and its validator sub-test matches chunk 2's new left-behind
+messages). `lighting-workstation-indicators.test.mjs`, `npc-needs-work.test.mjs`, `room-tone`,
+`friendface-phone`, `social-feed-replies`, `left-card-consequence`, `npc-action-icons`,
+`office-presets`, `lab-ux-ui`, `npc-lockout`, `screen-states`, `test-bridge-access` and
+`npc-office-visuals` moved to explicit owners.
+
+### Tests
+
+- Run alone (RBENV_VERSION=2.7.8, plain `node`): `workstation-state` (53), `npc-needs` (64),
+  `npc-desk-phone` (25), `npc-left-behind` (14 pass + 1 expected fail, below), `left-card-consequence`
+  (5), `friendface-phone` (11); all pass.
+- Every `test/js` file importing a changed module (`workstation-state.js`, `npc-needs.js`,
+  `npc-action-icons.js`, `office-room-tone.js`, `left-card-consequence.js`, `friendface-phone.js`,
+  plus `lighting.js`/`screen-states.js`/`test-bridge/access.js` touched by the `ownerOf` signature):
+  53 files via `bin/test-js`, **51 pass, 2 fail** (both expected, below). Fixed along the way:
+  `lighting-workstation-indicators`, `npc-lockout`, `screen-states`, `test-bridge-access`,
+  `npc-office-visuals`, `office-presets`, `room-tone`, `npc-needs`, `npc-needs-work`,
+  `social-feed-replies`, `social-feed-reactions`, `npc-action-icons`.
+
+### Expected failures left (cleared by chunk 4)
+
+- `npc-left-behind.test.mjs` test "validator: test_needs_sims has no errors and lists Tom's badge"
+  and `npc-needs-slots.test.mjs` test "validator: test_needs_sims has no errors and lists its copier
+  pool": both run the full validator on `scenarios/test_needs_sims/scenario.json.erb`, which still
+  carries the retired owner keys until **chunk 4** rewrites it. No other failure.
+
+### Sync size
+
+No growth. The JS readers read owner fields off the already-synced scenario/world data and the
+`player_state` item copies; the `describe` builder swaps `screenOwner`/`phoneOwner` for `owner` plus
+at most a bool `private`/`deskPhone` on an in-memory world copy that is never synced. Nothing a sync
+sends changes.
+
+### Files touched
+
+`public/break_escape/js/systems/workstation-state.js`, `.../npc-needs.js`, `.../npc-action-icons.js`,
+`.../office-room-tone.js`, `.../friendface-phone.js`, `.../left-card-consequence.js`,
+`.../lighting.js`, `.../screen-states.js`, `.../test-bridge/access.js`;
+`test/js/fixtures/needs-sims-world.mjs`; `test/js/{workstation-state,npc-needs,npc-needs-work,npc-desk-phone,npc-left-behind,left-card-consequence,friendface-phone,social-feed-replies,social-feed-reactions,room-tone,lighting-workstation-indicators,npc-action-icons,office-presets,lab-ux-ui,npc-lockout,screen-states,test-bridge-access,npc-office-visuals}.test.mjs`;
+this build log.
+
+### Handover
+
+- **Done:** chunk 3 as specified. No JS reader reads a retired owner name; the `object_revealed`
+  payload carries `owner`; all touched node files pass alone bar the two chunk-4-gated validator
+  sub-tests.
+- **For chunk 4:** rewriting `test_needs_sims` (and the other eight templates) clears the two expected
+  failures above. The chunk-3 fixtures were hand-moved to the new names; they do not depend on the
+  template rewrite.
+- **For chunk 5 (live proofs):** the desk phone rings only with `deskPhone: true`; the left-behind
+  slot shows for `sd.owner === <npc>` with `leftBehindChance` present; Jake's Friendface phone opens
+  at its owner from item `owner`. The `describe` builder is the live path for the needs world, so a
+  live proof that exercises private-object permission, desk-phone ring and left-behind reveal covers
+  the renamed shipped fields.
+- **Note:** `validator-access-*`, `validator-npc-habits`, `validator-npc-leash`, `validator-strict-keys`
+  and `validator-retired-keys` node tests drive the Ruby validator (not the changed JS modules) and
+  are chunk 1/2's; chunk 3 did not touch them. `lighting.js`'s `workstationIndicators(data, npcs, …)`
+  signature keeps its now-unused `npcs` param (external callers pass it); only `ownerOf`'s dropped.

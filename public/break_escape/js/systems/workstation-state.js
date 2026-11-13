@@ -2,8 +2,8 @@
  * Workstation screen state: is an unattended workstation's screen locked or left open?
  *
  * A workstation is a scenario object with `workstation: true`, or with `locksScreenOnLeave` or
- * `lockChance` set. Its owner is `screenOwner` (an NPC id), else the NPC whose `needsHome` is
- * the object's id. Config on the object:
+ * `lockChance` set. Its owner is `owner` (a single NPC id); an object with no `owner` has none.
+ * Config on the object:
  *
  *   locksScreenOnLeave  true | false (default true): the screen locks when the owner leaves
  *   lockChance          0..1: overrides locksScreenOnLeave. Rolled on each leave from the needs
@@ -112,12 +112,9 @@ export function isWorkstation(data) {
          data.lockType === 'login');
 }
 
-/** The NPC id that owns a workstation: explicit screenOwner, else the NPC with needsHome === id. */
-export function ownerOf(data, npcs) {
-    if (typeof data.screenOwner === 'string' && data.screenOwner) return data.screenOwner;
-    for (const npc of npcs || []) {
-        if (npc?.needsHome === data.id) return npc.id;
-    }
+/** The NPC id that owns a workstation: its `owner` (a single NPC id), else null. */
+export function ownerOf(data) {
+    if (data && typeof data.owner === 'string' && data.owner) return data.owner;
     return null;
 }
 
@@ -254,7 +251,7 @@ export class WorkstationState {
     presence(objectId) {
         const data = this._find(objectId);
         if (!data) return { ownerId: null, present: null, userId: null, guestId: null };
-        const ownerId = ownerOf(data, this.env.npcs());
+        const ownerId = ownerOf(data);
         const present = ownerId && typeof this.env.ownerPresent === 'function' ? !!this.env.ownerPresent(ownerId) : null;
         return { ownerId, present, userId: this._userOf(objectId), guestId: this.guestOf(objectId) };
     }
@@ -269,7 +266,7 @@ export class WorkstationState {
         const data = this._find(objectId);
         if (!data) return false;
         if (this.guests.get(objectId)?.npcId === npcId) return true;
-        return ownerOf(data, this.env.npcs()) === npcId && !!this.away.get(npcId)?.away;
+        return ownerOf(data) === npcId && !!this.away.get(npcId)?.away;
     }
 
     _userOf(objectId) {
@@ -294,7 +291,7 @@ export class WorkstationState {
     /** npc_guest_left:<pcId>: the borrower left the session open; a leave with the screen open. */
     onGuestLeft(pcId, npcId) {
         const data = this._find(pcId);
-        if (!data || typeof npcId !== 'string' || !npcId || ownerOf(data, this.env.npcs())) return false;
+        if (!data || typeof npcId !== 'string' || !npcId || ownerOf(data)) return false;
         const rec = { npcId };
         const min = this._policy(data)?.autoLockMin;
         if (typeof min === 'number' && Number.isFinite(min) && min > 0) rec.lockAt = this._clock() + min * 60000;
@@ -424,7 +421,7 @@ export class WorkstationState {
     isLocked(objectId) {
         const data = this._find(objectId);
         if (!data) return false;
-        const ownerId = ownerOf(data, this.env.npcs());
+        const ownerId = ownerOf(data);
         const rec = ownerId ? this.away.get(ownerId) : null;
         if (!rec?.away) return false;
         this._lateRoll(data, ownerId, rec);
@@ -434,7 +431,7 @@ export class WorkstationState {
     /** Lock one open screen whose lockAt has passed while its owner is still away. */
     _checkAutoLock(data) {
         if (!data || data.lockAt === undefined || data.screenLocked) return false;
-        const ownerId = ownerOf(data, this.env.npcs());
+        const ownerId = ownerOf(data);
         if (!this.away.get(ownerId)?.away) return false;
         if (this._clock() < data.lockAt) return false;
         this._autoLock(data, ownerId);
@@ -485,13 +482,12 @@ export class WorkstationState {
     }
 
     _stationsOf(npcId) {
-        const npcs = this.env.npcs();
         const out = [];
         const seen = new Set();
         for (const data of this.env.objects()) {
             if (!isWorkstation(data) || seen.has(data.id)) continue;
             seen.add(data.id);
-            if (ownerOf(data, npcs) === npcId) out.push(data);
+            if (ownerOf(data) === npcId) out.push(data);
         }
         return out;
     }
@@ -503,7 +499,7 @@ export class WorkstationState {
 
     _publish(data) {
         this.env.setGlobal(`${data.id}_screen_locked`, !!data.screenLocked);
-        const owner = ownerOf(data, this.env.npcs());
+        const owner = ownerOf(data);
         this.env.setGlobal(`${data.id}_owner_away`, !!this.away.get(owner)?.away);
     }
 
@@ -571,7 +567,7 @@ export class WorkstationState {
             const data = this._find(objectId);
             const ms = autoLockMs(data);
             if (!data || ms === null || data.screenLocked !== false) { this.idle.delete(objectId); continue; }
-            const ownerId = ownerOf(data, this.env.npcs());
+            const ownerId = ownerOf(data);
             if (!this.away.get(ownerId)?.away) { this.idle.delete(objectId); continue; }
             if (typeof this.env.inMinigame === 'function' && this.env.inMinigame(objectId)) { this.idle.set(objectId, nowMs); continue; }
             if (nowMs - since < ms) continue;
@@ -588,7 +584,7 @@ export class WorkstationState {
         if (!data) return null;
         // 9.2 H (6.4): anybody using the PC now is present, owner or not
         if (this._userOf(objectId)) return 'attended';
-        const ownerId = ownerOf(data, this.env.npcs());
+        const ownerId = ownerOf(data);
         if (!ownerId) {
             const guestId = this.guestOf(objectId);
             if (!guestId) return 'signin';

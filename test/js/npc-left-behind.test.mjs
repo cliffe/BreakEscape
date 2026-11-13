@@ -1,4 +1,4 @@
-// Office life slice 11 (OFFICE_LIFE_PLAN 2.10, 2.11): left-behind items (leftBehindBy,
+// Office life slice 11 (OFFICE_LIFE_PLAN 2.10, 2.11): left-behind items (owner,
 // leftBehindChance, a seeded roll per real leave keyed on leaveCount), the owner collecting them
 // on return, a taken item gone for good, stow on sight after a reload, and a queue-aware
 // expectedAwayMs. The needs core on the sims stub (addLeftBehind), the live adapter on a fake
@@ -85,7 +85,7 @@ test('the item shows at the post on leaving, the owner collects it on return, an
     // npc_left_post names what was left; object_revealed carries the owner
     const left = w.calls.emits.find(e => e.name === 'npc_left_post:tom' && e.data.leftBehind);
     assert.deepEqual(left.data.leftBehind, ['tom_badge']);
-    assert.ok(w.calls.emits.some(e => e.name === 'object_revealed:tom_badge' && e.data.leftBehindBy === 'tom'));
+    assert.ok(w.calls.emits.some(e => e.name === 'object_revealed:tom_badge' && e.data.owner === 'tom'));
 });
 
 test('taken by the player: one beat, gone for good, and the owner notices on return', () => {
@@ -195,8 +195,8 @@ function fakeSprite(id, roomId, x, y, sd = {}) {
 }
 
 function fakeWindow({ globals = {} } = {}) {
-    const badge = fakeSprite('tom_badge', 'office', 100, 150, { type: 'id_badge', leftBehindBy: 'tom', leftBehindChance: 0.7, revealOnGlobal: 'tom_badge_left', takeable: true });
-    const mug = fakeSprite('ann_mug', 'office', 200, 150, { type: 'mug', leftBehindBy: 'ann', leftBehindChance: 1, revealOnGlobal: 'ann_mug_left' });
+    const badge = fakeSprite('tom_badge', 'office', 100, 150, { type: 'id_badge', owner: 'tom', leftBehindChance: 0.7, revealOnGlobal: 'tom_badge_left', takeable: true });
+    const mug = fakeSprite('ann_mug', 'office', 200, 150, { type: 'mug', owner: 'ann', leftBehindChance: 1, revealOnGlobal: 'ann_mug_left' });
     const plain = fakeSprite('tom_pc', 'office', 90, 140, { type: 'pc' });
     for (const sp of [badge, mug]) if (globals[sp.revealOnGlobal] !== true) sp.visible = false;
     const win = {
@@ -225,7 +225,7 @@ test('adapter: leftBehindItems lists the owner\'s items; reveal shows it, stowSl
         assert.equal(w.revealLeftBehind('tom_badge', 'tom'), true);
         assert.equal(badge.visible, true);
         assert.equal(win.gameState.globalVariables.tom_badge_left, true);
-        assert.ok(win._emits.some(e => e.n === 'object_revealed:tom_badge' && e.d.leftBehindBy === 'tom'));
+        assert.ok(win._emits.some(e => e.n === 'object_revealed:tom_badge' && e.d.owner === 'tom'));
         assert.deepEqual(w.leftBehindItems('tom'), [], 'already showing');
         assert.equal(w.stowSlot('tom_badge'), true);
         assert.equal(badge.visible, false);
@@ -287,29 +287,28 @@ const scen = (item, { npc = {}, extra = [] } = {}) => ({
     rooms: { office: { type: 'room_office', objects: [
         { id: 'tom_pc', type: 'pc' },
         { id: 'coffee', type: 'coffee_station1', affordance: { satisfies: 'caffeine', restores: 70 } },
-        { id: 'badge', type: 'id_badge', takeable: true, leftBehindBy: 'tom', leftBehindChance: 0.7, revealOnGlobal: 'b_left', ...item },
+        { id: 'badge', type: 'id_badge', takeable: true, owner: 'tom', leftBehindChance: 0.7, revealOnGlobal: 'b_left', ...item },
         ...extra
     ], npcs: [{ id: 'tom', needsHome: 'tom_pc', needs: { caffeine: { decayPerMin: 10, urgentAt: 40 } }, ...npc }] } }
 });
 const has = (issues, frag) => issues.some(s => s.includes(frag));
 const errs = issues => issues.filter(s => s.startsWith('❌'));
 
-test('validator: leftBehindBy owner, chance range, own global, read in place', { skip }, () => {
+test('validator: owner, chance range, own global, read in place', { skip }, () => {
     const ok = check(scen({}));
     assert.deepEqual(errs(ok), []);
     assert.ok(has(ok, "Left-behind item 'badge' (tom, chance 0.7): takeable"));
-    assert.ok(has(check(scen({ leftBehindBy: 'ghost' })), "leftBehindBy names 'ghost'"));
+    assert.ok(has(check(scen({ owner: 'ghost' })), "owner names 'ghost'"));
     assert.ok(has(check(scen({}, { npc: { needsHome: undefined } })), 'has no needsHome'));
     assert.ok(has(check(scen({ leftBehindChance: 1.5 })), 'leftBehindChance must be a number from 0 to 1'));
     assert.ok(has(check(scen({ leftBehindChance: '0.5' })), 'leftBehindChance must be a number from 0 to 1'));
-    assert.ok(has(check(scen({ leftBehindChance: undefined })), 'never left'));
-    assert.ok(has(check(scen({ revealOnGlobal: undefined })), 'has leftBehindBy but no revealOnGlobal'));
+    assert.ok(has(check(scen({ revealOnGlobal: undefined })), 'has leftBehindChance but no revealOnGlobal'));
     assert.ok(has(check(scen({}, { extra: [{ id: 'memo', type: 'notes1', observationVariants: [{ condition: 'globalVars.b_left', value: 'x' }] }] })), 'is used elsewhere'));
-    assert.ok(has(check(scen({}, { extra: [{ id: 'other', type: 'key', leftBehindBy: 'tom', leftBehindChance: 0.1, revealOnGlobal: 'b_left' }] })), 'is shared with'));
+    assert.ok(has(check(scen({}, { extra: [{ id: 'other', type: 'key', owner: 'tom', leftBehindChance: 0.1, revealOnGlobal: 'b_left' }] })), 'is shared with'));
     assert.ok(has(check(scen({ type: 'notes1', readable: true, text: 'x', takeable: false })), 'without readDisplay'));
     assert.ok(!has(check(scen({ type: 'notes1', readable: true, text: 'x', takeable: false, readDisplay: 'gameDisplay' })), 'without readDisplay'));
-    assert.ok(has(check(scen({ outputOf: 'tom_pc' })), 'has both outputOf and leftBehindBy'));
-    assert.ok(has(check(scen({ leftBehindBy: undefined })), 'sets leftBehindChance without leftBehindBy'));
+    assert.ok(has(check(scen({ outputOf: 'tom_pc' })), 'has both outputOf and leftBehindChance'));
+    assert.ok(has(check(scen({ owner: undefined })), 'has leftBehindChance but no owner'));
 });
 
 test('validator: test_needs_sims has no errors and lists Tom\'s badge', { skip }, () => {
