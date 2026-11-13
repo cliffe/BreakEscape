@@ -77,6 +77,8 @@ From seating (systems/seating.js, 2026-11-05):
 - **Standing on a chair reaches high things** (user, 2026-11-05; M). Today standing on a chair (Space from sitting) is cosmetic. Objects marked high (a top shelf, a ceiling tile, a vent, a note pinned high on a wall) could be reachable only while standing on a chair, or let the player see over a partition. Rolling a swivel chair over to stand on it would make it a small puzzle.
 - **Lecture seat rows as seats** (seating decisions, 2026-11-05; S). `lecture_seat_row1` (58 placements) faces north with three places; it needs per-place anchors and a render check like the sofas.
 
+- **Device variants of the PC monitor frame** (UX slice 2c review R1 m7, 2026-11-13; S to M, settle the look with the user first). The keyword list in `utils/computer-keywords.js` sends tablets, iPads, servers, kiosks, smartboards and consoles to the one PC monitor frame (`utils/pc-monitor.js`), so since slice 2c they show a desktop monitor with the mountain wallpaper, which misdescribes the object. Add a `data-device` variant on `.pc-monitor` (tablet: thin even bezel, no chin buttons strip, portrait by default; server or console: a rack-mount or terminal case with a dark screen; kiosk and smartboard: a wall panel), chosen from the object's type, keeping the one sizing rule, the X in the top strip, the post-it on the frame and the name on the bezel.
+
 ## Story and missions
 
 - **Carry m03's Sterling and Danny threads forward** (m03 pass-2 dialogue review, 2026-10-12; M). No mission from m04 to m08 mentions Victoria Sterling or Danny Foster. A recruited Sterling could turn up as an asset or a liability later, and the debrief's "Somebody has to tell him she's walking. It should be you." could be paid off. **Partly done 2026-10-17:** m04 now names both fates through carry-over (HaX on Sterling in the briefing, on Danny at Task Force Null in the debrief). Still open: Sterling as a later asset or liability, and the "It should be you" payoff.
@@ -104,6 +106,7 @@ From seating (systems/seating.js, 2026-11-05):
 
 ## Art and audio
 
+- **Headshots for the NPCs that have none** (UX slice 2c review R1 m8, 2026-11-13; S per character, PixelLab or a crop from the bust; ask the user before generating). The sign-in tiles and the desktop's account bar fall back to a 32x32 crop of the talk sheet (and log `[headshot] none of ...`) for: `mr_ahmed`, `mrs_kowalski`, `ms_okafor` (sis01), `mr_pryce`, `mrs_hargreaves`, `ms_chen` (m02), `leila_nassar` (ca03), `david_torres_ko` (m05's knocked-out talk variant; `david_torres_headshot.png` exists), and the lab scenarios' legacy `hacker` and `hacker-red`. The user's rule is a real headshot, never a crop. ERB-built keys in m09 and m10 were not resolved; check them in a browser run.
 - **Sprite variety across missions** (m04 script editor; M). `male_telecom_v2` is Vance (m04), Owen (m05) and Park (m07); the m04 gate guard shares `hacker-red` with the four operatives. More v2 character sets (PixelLab) would let recurring-looking extras differ.
 
 - **Open sprites and opening animations for every container** (user, 2026-10-10; M–L). Each container sprite gets an open version and a short transition that plays when the player opens it: the safe door swings open, the bin lid lifts. A per-object attribute says whether it closes again afterwards.
