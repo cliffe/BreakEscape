@@ -131,6 +131,9 @@
     gap: 10px;
     align-items: center;
     min-height: 60px;
+    /* The list is a fixed-height column that scrolls: a row never shrinks below its
+       content, or a wrapped message runs over the next row */
+    flex-shrink: 0;
     padding: 8px;
     border: 2px solid #32466f;
     background: #1a2745;
@@ -564,8 +567,16 @@
 }
 
 @media (max-width: 1100px) {
+    /* Two lines: badge, time, host and the buttons; then the whole message below them, so
+       the message keeps the row's full width (at 800 it was squeezed to one letter a line) */
     .siem-alert-row {
-        grid-template-columns: 56px 72px 105px minmax(0, 1fr) 168px;
+        grid-template-columns: 56px 72px minmax(0, 1fr) auto;
+        row-gap: 6px;
+    }
+
+    .siem-description {
+        grid-column: 1 / -1;
+        grid-row: 2;
     }
 
     .siem-time,

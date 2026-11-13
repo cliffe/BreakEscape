@@ -129,6 +129,8 @@
     flex-direction: column;
     gap: 4px;
     font-family: 'GNF', monospace;
+    /* Its spans set their own sizes; this keeps the button itself off the 13.33px default */
+    font-size: 16px;
 }
 
 .cms-nav-button:hover,

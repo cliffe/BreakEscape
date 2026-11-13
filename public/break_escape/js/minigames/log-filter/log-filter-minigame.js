@@ -303,7 +303,7 @@ export class LogFilterMinigame extends MinigameScene {
         this._dom.tabBar = tabBar;
 
         // Body
-        const body = this._el('div', 'lf-body');
+        const body = this._el('div', 'lf-body pixel-scroll');
         wrap.appendChild(body);
         this._dom.body = body;
 
@@ -375,7 +375,7 @@ export class LogFilterMinigame extends MinigameScene {
 
     _renderSessionLogTab(body) {
         // Left pane: filter builder
-        const filterPane = this._el('div', 'lf-filter-pane');
+        const filterPane = this._el('div', 'lf-filter-pane pixel-scroll');
         body.appendChild(filterPane);
         this._dom.filterPane = filterPane;
         this._renderFilterPane(filterPane);
@@ -626,7 +626,7 @@ export class LogFilterMinigame extends MinigameScene {
         const oldTable = pane.querySelector('.lf-log-table-wrap');
         if (oldTable) oldTable.remove();
 
-        const wrap = this._el('div', 'lf-log-table-wrap');
+        const wrap = this._el('div', 'lf-log-table-wrap pixel-scroll');
         // Insert before session-detail if it exists
         const detail = pane.querySelector('.lf-session-detail');
         if (detail) {
@@ -791,7 +791,7 @@ export class LogFilterMinigame extends MinigameScene {
         // Only one Session Detail card at a time: a new render replaces the old one.
         pane.querySelectorAll('.lf-session-detail').forEach(el => el.remove());
 
-        const panel = this._el('div', 'lf-session-detail');
+        const panel = this._el('div', 'lf-session-detail pixel-scroll');
         this._dom.sessionDetail = panel;
 
         const header = this._el('div', 'lf-detail-header');
@@ -965,7 +965,7 @@ export class LogFilterMinigame extends MinigameScene {
         const overlay = this._el('div', 'lf-overlay');
         this._dom.body.appendChild(overlay);
 
-        const panel = this._el('div', 'lf-overlay-panel');
+        const panel = this._el('div', 'lf-overlay-panel pixel-scroll');
         overlay.appendChild(panel);
 
         switch (this._overlayMode) {
@@ -1221,7 +1221,7 @@ export class LogFilterMinigame extends MinigameScene {
         headerBar.appendChild(subtitleEl);
         pane.appendChild(headerBar);
 
-        const tableWrap = this._el('div', 'lf-audit-table-wrap');
+        const tableWrap = this._el('div', 'lf-audit-table-wrap pixel-scroll');
         pane.appendChild(tableWrap);
 
         const table = this._el('table', 'lf-audit-table');

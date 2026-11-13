@@ -364,6 +364,10 @@
 
 .cb-entry-input {
     width: 100%;
+    /* The border and padding stay inside the grid cell, so the field never runs past the
+       board's right edge on a phone */
+    box-sizing: border-box;
+    min-width: 0;
     border: 2px solid #2a3a5a;
     background: #0a0f1e;
     color: #b0c0e0;
@@ -461,6 +465,6 @@
     }
 
     .cb-entry-bar {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
     }
 }

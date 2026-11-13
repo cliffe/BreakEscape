@@ -614,7 +614,7 @@ export class BackupRecoveryMinigame extends MinigameScene {
                     ${tiles}
                 </div>
 
-                <div class="backup-recovery-panel">
+                <div class="backup-recovery-panel pixel-scroll">
                     <div id="backup-recovery-panel-header" class="backup-recovery-panel-header"></div>
                     <div id="backup-recovery-panel-banner" class="backup-recovery-panel-banner"></div>
                     <ul id="backup-recovery-panel-bullets" class="backup-recovery-panel-bullets"></ul>

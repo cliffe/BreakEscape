@@ -148,3 +148,18 @@ test('multi-column consoles stack under 600px (X3)', () => {
         assert.ok(text.slice(at).includes(sel), `${file} phone rule covers ${sel}`);
     }
 });
+
+test('after-shot fixes: SIEM rows never shrink and wrap the message onto its own line below 1100px; the command board field stays in its cell; scrolling panes use the pixel scrollbar', () => {
+    const siem = css('siem-dashboard-minigame.css');
+    assert.match(siem, /\.siem-alert-row \{[^}]*flex-shrink: 0/);
+    const mid = siem.slice(siem.indexOf('@media (max-width: 1100px)'));
+    assert.match(mid, /\.siem-alert-row \{[^}]*grid-template-columns: 56px 72px minmax\(0, 1fr\) auto/);
+    assert.match(mid, /\.siem-description \{[^}]*grid-column: 1 \/ -1;[^}]*grid-row: 2/);
+    assert.match(css('command-board-minigame.css'), /\.cb-entry-input \{[^}]*box-sizing: border-box/);
+    assert.match(src('ransomware-display/ransomware-display-minigame.js'), /class="ransomware-display-body pixel-scroll"/);
+    assert.match(src(SCENES['backup-recovery']), /class="backup-recovery-panel pixel-scroll"/);
+    const lf = src(SCENES['log-filter']);
+    for (const cls of ['lf-body', 'lf-filter-pane', 'lf-log-table-wrap', 'lf-session-detail', 'lf-overlay-panel', 'lf-audit-table-wrap']) {
+        assert.match(lf, new RegExp(`'${cls} pixel-scroll'`), `${cls} scrolls with the pixel scrollbar`);
+    }
+});
