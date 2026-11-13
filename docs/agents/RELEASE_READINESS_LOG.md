@@ -15,7 +15,7 @@ The gate (user, 2026-11-13): no production deploy until the ongoing access, netw
 ## Decisions (orchestrator, overrule as needed)
 
 - 2026-11-13: sis01 bed 2 death barks voiced (5 clips, build/sis01-tts-bed2 6943093e9). Measured lengths showed Mrs Kowalski overlapping David by 0.29 s, so David moves to 8.6 s and Helen to 14.9 s (861555e75); every gap is now at least 0.3 s.
-- 2026-11-13: sis01 ending gate: apply sis02's empty concludeRequires pattern (no VM or flags, so the server holds nothing back), because the globals gate on debrief_complete races the task POST against the state sync.
+- 2026-11-13: sis01 ending gate (eedf0f27d): the real cause was that npc_sharma.ink completed attend_debrief when the debrief opened, before debrief_complete, so the server warned at the start of every debrief. The task tag moves to debrief_end (straight after debrief_complete) and concludeRequires becomes {} (sis02's pattern; no VM or flags, so nothing for the server to hold). tagdiff: one tag moved, no prose changed, so no audio cost. Live proof: game 3156 before (toast at the first debrief choice), game 3157 after (no toast, credits, mission concluded). Engine follow-up passed to breakescape-35: the same race can hit any task that completes on a gate global's change (about 69 ca* awareness scenarios gate on globals; ca01 has the shape; untested live).
 - 2026-11-13: q94 field names agreed with breakescape-d3: `host` reused, `desktopUser { name, character? }`, shown only on the unlocked desktop. VM-linked objects untouched.
 - 2026-11-13: q94 review R1 (0 B, 1 M, 6 m): remove hosts from three VM stand-ins (m07, m09, m10); keep Kevin signed in on both m01 PCs (the user's q94 answer named him, and it isn't a spoiler); fix the rest.
 
