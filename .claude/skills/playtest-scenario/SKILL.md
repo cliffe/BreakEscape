@@ -124,6 +124,24 @@ Never reconstruct a trace from what you expected to happen. If a command was not
 - **Assigning a global through the bridge does not emit `global_variable_changed`**, so event mappings keyed on it don't fire. Trigger the real action, or emit the event yourself after setting the value.
 - **Prove texts and calls from the player's side.** For a text with a toast: ignore the toast and open the thread by hand, tap the toast, open the thread before the text arrives, and reload before and after delivery. For a voiced line, record the `/tts` requests (`npc_id`, text, delivery) and compare them with a known-good run; a screenshot of the subtitle doesn't show which voice was asked for.
 - **Compare saved conversation state without the seed.** `storySeed` is random per run, so compare `storyState` hashes with the seed removed.
+- **A ring times out after 20 s.** A script that waits longer before clicking Answer finds no banner. Auto-click it from the page (a `setInterval` on the incoming-call Answer button) rather than polling from the shell.
+- **`bootstrap` can ring out an opening call.** It waits up to 20 s (`OPENING_WAIT_MS`) while an opening call is pending, which equals the ring timeout. If `.incoming-call` is showing, answer it yourself first.
+- **A keyless server runs a call to its end in about 2 s** (no TTS to wait for). To prove something "during a call", use a call that stops at a choice and check `phoneRinger.callActive()` when the event fires.
+- **`{"cmd":"sync"}` is not a command.** Run `await window.stateSync.sync()` in the page before a reload test; state syncs on a 30 s tick, and a reload sooner leans on the unload flush.
+- **`jq '.x // .'` treats `false` as missing**, so a `false` result prints the whole reply and `grep -q true` matches `"ok":true`. Use `jq -e` or compare to the literal.
+- **A patrolling guard with a `player_in_view` mapping opens a person-chat about 30 s in**, which looks like an engine popup bug in a hold or popup proof. Turn it off (`guard_off`) first.
+- **An NPC cannot reach the player inside a minigame.** For a "hit" over a keypad use `playerHealth.damage(...)`; it does not close a legacy (non-ringer) voiced call, a real guard attack does.
+- **Hold proofs:** emit `ring_hold` directly once the object is open; `open_obj` retries when a neighbouring object opens.
+- **Never edit a route script while it runs**; bash reads it incrementally.
+- **`conversation_closed:<npc>` fires once per call**, including a call placed from that contact's thread, and again on a later visit to the thread. Count one per conversation.
+- **`ring.ringWhile` drops a queued or ringing call with no row, event or callback**, so check `phoneRinger` state, not the thread. An answered or held call is never dropped, and a mapping's trigger `condition` is not re-checked after it fires. The drop puts back the mapping's own `setGlobal` keys (only those still holding the value it wrote) and emits no `global_variable_changed`: read the global after the drop.
+- **A ring under a tutorial step panel waits** up to 20 s of unpaused time (or until the step changes), then rings with the banner clear of SKIP TUTORIAL. A route that skips the tutorial sees no wait.
+- **A terminal-look call that closes itself stays open for its read beat.** Wait for the phone to close before the next step.
+- **A choice written wholly in parentheses (`(Close.)`) posts no player bubble.** Don't count it as one.
+- **A contact's thread opened from a normal phone's list shows in the device look** even with `phoneTheme: "terminal"`. That is intended.
+- **The lab Dev and Ruth `sha256_noseed` hashes are the regression check** for anything that touches the phone.
+- **The Mission Brief popup reappearing after a resume is intended**, and a ring under it is frozen, not lost.
+- **jsdom harnesses for the ringer need `pretendToBeVisual`**, or `document.hidden` pauses it.
 
 ### Harness gotchas from pass 4 (October 2026)
 

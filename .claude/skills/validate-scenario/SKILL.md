@@ -51,6 +51,8 @@ Present **only** the items that need attention:
 
 For the ink-side classes (fall-through choices, blank re-entry, popup placement, phone prefixes, exits with no reply, stage cues) also run `node scripts/ink_runtime_check/dialoguelint.mjs scenarios/<mission>/` and report its `check` and `warn` counts for the new rules. The validator now runs the lint itself and prints it as a `DIALOGUE LINT` section (skip with `--no-lint`; `--skip-ink` skips it too; it needs `node`). To check a mission another agent is editing without rewriting its compiled ink or dungeon graph (`dungeon_graph.html`, `.md`, `.json`), add `--skip-ink --no-graph`.
 
+Phone contacts are checked by `check_phone_calls` (`scripts/validate_phone_calls.rb`), and `dialoguelint.mjs` adds `call-in-text-thread`. The expected "call me" warnings clear as each mission gets its `call` or `ring` entry; the baseline is `docs/agents/phone_calls/A7_VALIDATOR_BASELINE.md`. The full error and warning list is in `README_scenario_design.md`, "What the validator checks for phone calls": report from it, don't copy it. Two things it enforces that trip people: `ringWhile`, `callbackWhen` and `call.when` are `&&` chains of `globalVars.` terms, and `||` is an error (write two `call` entries with the same knot); and a ring that should stop once its reason is gone needs `ringWhile`.
+
 Then on its own line, report the dungeon graph stats:
 > Graph: Puzzle 33 nodes / 40 edges · Story 5/4 · Integrated 38/56 · Critical path (4 hops): Aim A → Aim B → …
 
