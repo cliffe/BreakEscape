@@ -197,4 +197,6 @@ test('R2: the bezel adds no scroll overflow; the frame scrollbar is pixel art; s
     assert.match(block, /\.password-frame \.signin-portrait \{\s*width:\s*32px;\s*height:\s*32px;/, 'a 32px portrait (a quarter of a 128px frame)');
     assert.match(block, /\.password-frame \.signin-username \{\s*display:\s*none;/, 'no username line under a tile');
     assert.match(block, /\.password-frame \.signin-tile \{\s*width:\s*84px;/);
+    assert.match(rule('.password-minigame-area.signin-mode .postit-note'), /margin-top:\s*-40px;/, 'the sign-in note clears the message line');
+    assert.match(block, /\.password-frame \.password-minigame-area\.signin-mode \.postit-note \{\s*margin-top:\s*-24px;/, 'and in a short window');
 });
