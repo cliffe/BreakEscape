@@ -5,7 +5,7 @@
 .fdp-minigame-container {
     background: #0d1117;
     color: #c9d1d9;
-    font-family: 'Courier New', Courier, monospace;
+    font-family: 'VT323', monospace;
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -35,7 +35,7 @@
     flex-direction: column;
     gap: 3px;
     padding: 12px 16px 10px;
-    border-bottom: 1px solid #21262d;
+    border-bottom: 2px solid #21262d;
     background: #0d1117;
     flex-shrink: 0;
 }
@@ -62,7 +62,7 @@
     flex-direction: row;
     gap: 6px;
     padding: 10px 14px;
-    border-bottom: 1px solid #21262d;
+    border-bottom: 2px solid #21262d;
     flex-shrink: 0;
     overflow-x: auto;
     scrollbar-width: thin;
@@ -72,8 +72,8 @@
 
 .fdp-tab {
     background: #161b22;
-    border: 1px solid #30363d;
-    border-radius: 20px;
+    border: 2px solid #30363d;
+    border-radius: 0;
     color: #8b949e;
     font-family: inherit;
     font-size: 15px;
@@ -132,7 +132,7 @@
     letter-spacing: 0.08em;
     margin: 0 0 12px 0;
     padding-bottom: 6px;
-    border-bottom: 1px solid #21262d;
+    border-bottom: 2px solid #21262d;
 }
 
 .fdp-panel p {
@@ -178,9 +178,9 @@
     flex-shrink: 0;
     width: 22px;
     height: 22px;
-    border-radius: 50%;
+    border-radius: 0;
     background: #161b22;
-    border: 1px solid #1f6feb;
+    border: 2px solid #1f6feb;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -234,13 +234,13 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
     padding: 6px 10px;
-    border-bottom: 1px solid #30363d;
+    border-bottom: 2px solid #30363d;
     background: #161b22;
 }
 
 .fdp-log-table td {
     padding: 5px 10px;
-    border-bottom: 1px solid #161b22;
+    border-bottom: 2px solid #161b22;
     color: #c9d1d9;
     vertical-align: top;
 }
@@ -269,13 +269,13 @@
 
 .fdp-setpoint-table td {
     padding: 6px 10px;
-    border-bottom: 1px solid #161b22;
+    border-bottom: 2px solid #161b22;
 }
 
 .fdp-setpoint-table td:first-child {
     color: #8b949e;
     width: 55%;
-    font-family: 'Courier New', Courier, monospace;
+    font-family: 'VT323', monospace;
 }
 
 .fdp-setpoint-table td:last-child {
@@ -294,10 +294,10 @@
 /* ── Callout boxes ───────────────────────────────────────────────────────────── */
 
 .fdp-evidence-gap {
-    border: 1px solid rgba(248, 81, 73, 0.4);
+    border: 2px solid rgba(248, 81, 73, 0.4);
     border-left: 3px solid #f85149;
     background: #1c0a0a;
-    border-radius: 0 4px 4px 0;
+    border-radius: 0;
     padding: 10px 14px;
     margin: 12px 0;
     font-size: 17px;
@@ -323,10 +323,10 @@
 }
 
 .fdp-session-record {
-    border: 1px solid rgba(240, 192, 64, 0.4);
+    border: 2px solid rgba(240, 192, 64, 0.4);
     border-left: 3px solid #f0c040;
     background: #1c1600;
-    border-radius: 0 4px 4px 0;
+    border-radius: 0;
     padding: 8px 14px;
     margin: 10px 0;
     font-size: 15px;
@@ -348,10 +348,10 @@
 }
 
 .fdp-compliance-note {
-    border: 1px solid rgba(56, 139, 253, 0.35);
+    border: 2px solid rgba(56, 139, 253, 0.35);
     border-left: 3px solid #388bfd;
     background: #071121;
-    border-radius: 0 4px 4px 0;
+    border-radius: 0;
     padding: 8px 14px;
     margin: 10px 0;
     font-size: 15px;
@@ -366,9 +366,9 @@
 /* ── Document excerpt ────────────────────────────────────────────────────────── */
 
 .fdp-doc-excerpt {
-    border: 1px solid #30363d;
+    border: 2px solid #30363d;
     background: #161b22;
-    border-radius: 4px;
+    border-radius: 0;
     padding: 14px 16px;
     margin: 10px 0;
     font-size: 15px;
@@ -408,14 +408,14 @@
 }
 
 .fdp-minigame-container .minigame-button {
-    font-family: 'Courier New', Courier, monospace;
+    font-family: 'VT323', monospace;
     font-size: 14px;
     letter-spacing: 0.05em;
     background: #161b22;
-    border: 1px solid #30363d;
+    border: 2px solid #30363d;
     color: #8b949e;
     padding: 6px 20px;
-    border-radius: 4px;
+    border-radius: 0;
 }
 
 .fdp-minigame-container .minigame-button:hover {
@@ -431,15 +431,15 @@
     flex-direction: column;
     gap: 7px;
     padding: 12px 16px;
-    border-top: 1px solid #21262d;
+    border-top: 2px solid #21262d;
     flex-shrink: 0;
     background: #0d1117;
 }
 
 .fdp-confirm-btn {
     background: #21262d;
-    border: 1px solid #30363d;
-    border-radius: 4px;
+    border: 2px solid #30363d;
+    border-radius: 0;
     color: #484f58;
     font-family: inherit;
     font-size: 16px;
@@ -457,13 +457,13 @@
     border-color: #2ea043;
     color: #ffffff;
     cursor: pointer;
-    box-shadow: 0 0 10px rgba(35, 134, 54, 0.45), 0 0 22px rgba(35, 134, 54, 0.15);
+    box-shadow: none;
 }
 
 .fdp-confirm-btn:not(:disabled):hover {
     background: #2ea043;
     border-color: #3fb950;
-    box-shadow: 0 0 14px rgba(46, 160, 67, 0.65), 0 0 30px rgba(46, 160, 67, 0.2);
+    box-shadow: none;
 }
 
 /* Confirmed state — disabled but green (detected via sibling hint class) */

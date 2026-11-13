@@ -9,8 +9,8 @@
     min-height: 500px;
     background: #0d1117;
     color: #e0e0e0;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 14px;
+    font-family: 'VT323', monospace;
+    font-size: 18px;
     box-sizing: border-box;
     overflow: hidden;
 }
@@ -26,24 +26,24 @@
     flex-shrink: 0;
 }
 .sh-header-title {
-    font-size: 17px;
+    font-size: 22px;
     font-weight: bold;
     color: #ffffff;
     letter-spacing: 0.06em;
     text-transform: uppercase;
 }
 .sh-header-subtitle {
-    font-size: 13px;
+    font-size: 18px;
     color: #8899cc;
     margin-left: 16px;
     letter-spacing: 0.03em;
 }
 .sh-close-btn {
     background: #1e2a44;
-    border: 1px solid #ffffff;
+    border: 2px solid #ffffff;
     color: #ffffff;
     font-family: inherit;
-    font-size: 15px;
+    font-size: 20px;
     cursor: pointer;
     padding: 2px 8px;
     letter-spacing: 0.05em;
@@ -71,12 +71,12 @@
     overflow-y: auto;
 }
 .sh-panel-section-title {
-    font-size: 12px;
+    font-size: 16px;
     color: #5566aa;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     margin-bottom: 4px;
-    border-bottom: 1px solid #334466;
+    border-bottom: 2px solid #334466;
     padding-bottom: 3px;
 }
 .sh-rack-label {
@@ -85,8 +85,8 @@
     gap: 6px;
     cursor: pointer;
     padding: 3px 4px;
-    border-radius: 2px;
-    font-size: 13px;
+    border-radius: 0;
+    font-size: 18px;
     color: #aabbdd;
     user-select: none;
 }
@@ -95,23 +95,23 @@
 .sh-rack-checkbox {
     width: 12px;
     height: 12px;
-    border: 1px solid #556688;
+    border: 2px solid #556688;
     background: #0d1117;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 10px;
+    font-size: 14px;
     color: #f5a623;
     flex-shrink: 0;
 }
 .sh-rack-checkbox.checked { border-color: #f5a623; background: #1a1a08; }
-.sh-divider { border: none; border-top: 1px solid #334466; margin: 8px 0; }
+.sh-divider { border: none; border-top: 2px solid #334466; margin: 8px 0; }
 .sh-annotate-btn {
     background: #1a1a1a;
-    border: 1px solid #333333;
+    border: 2px solid #333333;
     color: #555555;
     font-family: inherit;
-    font-size: 13px;
+    font-size: 18px;
     cursor: not-allowed;
     padding: 6px 8px;
     text-align: center;
@@ -144,18 +144,18 @@
     gap: 8px;
     padding: 6px 10px;
     background: #0f1826;
-    border-bottom: 1px solid #334466;
+    border-bottom: 2px solid #334466;
     flex-shrink: 0;
     flex-wrap: wrap;
 }
 .sh-toolbar-group { display: flex; align-items: center; gap: 3px; }
-.sh-toolbar-label { font-size: 12px; color: #556688; margin-right: 4px; letter-spacing: 0.05em; }
+.sh-toolbar-label { font-size: 16px; color: #556688; margin-right: 4px; letter-spacing: 0.05em; }
 .sh-range-btn {
     background: #1a233a;
-    border: 1px solid #445566;
+    border: 2px solid #445566;
     color: #8899bb;
     font-family: inherit;
-    font-size: 13px;
+    font-size: 18px;
     cursor: pointer;
     padding: 2px 7px;
     letter-spacing: 0.03em;
@@ -164,10 +164,10 @@
 .sh-range-btn.active { background: #1a2a0a; border-color: #f5a623; color: #f5a623; }
 .sh-toggle-btn {
     background: #1a233a;
-    border: 1px solid #445566;
+    border: 2px solid #445566;
     color: #8899bb;
     font-family: inherit;
-    font-size: 13px;
+    font-size: 18px;
     cursor: pointer;
     padding: 2px 10px;
     letter-spacing: 0.03em;
@@ -197,7 +197,7 @@
     height: 120px;
     min-height: 120px;
     background: #000000;
-    border-top: 1px solid #334466;
+    border-top: 2px solid #334466;
     position: relative;
     display: none;
     overflow: hidden;
@@ -209,9 +209,9 @@
 .sh-tooltip {
     position: absolute;
     background: #0d1a2e;
-    border: 1px solid #445566;
+    border: 2px solid #445566;
     padding: 6px 10px;
-    font-size: 13px;
+    font-size: 18px;
     pointer-events: none;
     z-index: 100;
     white-space: pre-wrap;
@@ -220,14 +220,14 @@
 }
 .sh-tooltip-anomaly { color: #f5a623; border-color: #f5a623; }
 .sh-tooltip-injection { color: #ff8888; border-color: #ff4040; }
-.sh-tooltip-label { color: #aabbdd; font-size: 12px; }
+.sh-tooltip-label { color: #aabbdd; font-size: 16px; }
 
 /* ── Banner ──────────────────────────────────────────────── */
 .sh-banner {
     background: #1e1e1e;
     border: 2px solid #f5a623;
     padding: 6px 12px;
-    font-size: 13px;
+    font-size: 18px;
     color: #ffffff;
     flex-shrink: 0;
     line-height: 1.5;
@@ -235,9 +235,9 @@
 .sh-banner-warn { color: #f5a623; font-weight: bold; }
 .sh-info-banner {
     background: #001a1a;
-    border: 1px solid #00c5cd;
+    border: 2px solid #00c5cd;
     padding: 6px 12px;
-    font-size: 13px;
+    font-size: 18px;
     color: #aadddd;
     flex-shrink: 0;
     line-height: 1.5;
@@ -259,38 +259,38 @@
     padding: 20px 24px;
     max-width: 560px;
     width: 90%;
-    font-size: 14px;
+    font-size: 18px;
     line-height: 1.6;
 }
 .sh-modal-title {
-    font-size: 16px;
+    font-size: 20px;
     font-weight: bold;
     color: #ffffff;
     letter-spacing: 0.05em;
     text-transform: uppercase;
     margin-bottom: 14px;
-    border-bottom: 1px solid #334466;
+    border-bottom: 2px solid #334466;
     padding-bottom: 8px;
 }
 .sh-modal-row { display: flex; gap: 10px; margin-bottom: 6px; }
-.sh-modal-key { color: #8899cc; min-width: 120px; font-size: 13px; }
-.sh-modal-val { color: #ddeeff; font-size: 13px; }
+.sh-modal-key { color: #8899cc; min-width: 120px; font-size: 18px; }
+.sh-modal-val { color: #ddeeff; font-size: 18px; }
 .sh-modal-finding {
     background: #0a1a0a;
-    border: 1px solid #446644;
+    border: 2px solid #446644;
     padding: 8px 12px;
     margin: 12px 0;
     color: #aaddaa;
-    font-size: 13px;
+    font-size: 18px;
     line-height: 1.6;
 }
 .sh-modal-buttons { display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end; }
 .sh-modal-confirm-btn {
     background: #1a2e1a;
-    border: 1px solid #44aa44;
+    border: 2px solid #44aa44;
     color: #88ee88;
     font-family: inherit;
-    font-size: 14px;
+    font-size: 18px;
     cursor: pointer;
     padding: 6px 16px;
     letter-spacing: 0.03em;
@@ -298,10 +298,10 @@
 .sh-modal-confirm-btn:hover { background: #224422; color: #ffffff; }
 .sh-modal-cancel-btn {
     background: #1a1a2e;
-    border: 1px solid #445566;
+    border: 2px solid #445566;
     color: #8899bb;
     font-family: inherit;
-    font-size: 14px;
+    font-size: 18px;
     cursor: pointer;
     padding: 6px 16px;
     letter-spacing: 0.03em;
@@ -316,16 +316,16 @@
     gap: 10px;
     padding: 5px 10px;
     background: #0a1220;
-    border-bottom: 1px solid #334466;
+    border-bottom: 2px solid #334466;
     color: #aabbdd;
-    font-size: 13px;
+    font-size: 18px;
     line-height: 1.4;
 }
 .sh-hint-text { flex: 1; }
 .sh-hint-progress {
     width: 90px;
     height: 8px;
-    border: 1px solid #445566;
+    border: 2px solid #445566;
     background: #000000;
     flex-shrink: 0;
 }
@@ -339,12 +339,12 @@
 .sh-hint.found .sh-hint-progress-fill { background: #44aa44; }
 .sh-annotate-note {
     margin-top: 6px;
-    font-size: 11px;
+    font-size: 16px;
     color: #667788;
     line-height: 1.3;
 }
 .sh-annotate-btn.active { animation: sh-ready-pulse 1.2s ease-in-out 3; }
 @keyframes sh-ready-pulse {
     0%, 100% { box-shadow: none; }
-    50% { box-shadow: 0 0 8px #44aa44; }
+    50% { box-shadow: 0 0 0 2px #44aa44; }
 }

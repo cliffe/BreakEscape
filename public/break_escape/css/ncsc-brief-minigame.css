@@ -5,7 +5,7 @@
 .ncsc-minigame-container {
     background: #0d1117;
     color: #c9d1d9;
-    font-family: 'Courier New', Courier, monospace;
+    font-family: 'VT323', monospace;
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -90,7 +90,7 @@
 
 .ncsc-status-badge {
     display: inline-block;
-    border-radius: 4px;
+    border-radius: 0;
     font-size: 15px;
     font-weight: bold;
     letter-spacing: 0.06em;
@@ -100,13 +100,13 @@
 
 .ncsc-status-locked {
     background: #21262d;
-    border: 1px solid #30363d;
+    border: 2px solid #30363d;
     color: #8b949e;
 }
 
 .ncsc-status-ready {
     background: #1a3d20;
-    border: 1px solid #2ea043;
+    border: 2px solid #2ea043;
     color: #3fb950;
 }
 
@@ -127,8 +127,8 @@
 
 .ncsc-open-btn {
     background: #238636;
-    border: 1px solid #2ea043;
-    border-radius: 4px;
+    border: 2px solid #2ea043;
+    border-radius: 0;
     color: #ffffff;
     font-family: inherit;
     font-size: 16px;
@@ -138,14 +138,14 @@
     cursor: pointer;
     text-transform: uppercase;
     transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
-    box-shadow: 0 0 10px rgba(35, 134, 54, 0.45), 0 0 22px rgba(35, 134, 54, 0.15);
+    box-shadow: none;
     margin-top: 6px;
 }
 
 .ncsc-open-btn:hover {
     background: #2ea043;
     border-color: #3fb950;
-    box-shadow: 0 0 14px rgba(46, 160, 67, 0.65), 0 0 30px rgba(46, 160, 67, 0.2);
+    box-shadow: none;
 }
 
 /* ── Brief content layout ────────────────────────────────────────────────────── */
@@ -157,7 +157,7 @@
 }
 
 .ncsc-brief-header {
-    border-bottom: 1px solid #21262d;
+    border-bottom: 2px solid #21262d;
     padding-bottom: 10px;
     margin-bottom: 16px;
 }
@@ -204,7 +204,7 @@
 
 .ncsc-badge {
     display: inline-block;
-    border-radius: 3px;
+    border-radius: 0;
     font-size: 14px;
     font-weight: bold;
     letter-spacing: 0.04em;
@@ -214,13 +214,13 @@
 
 .ncsc-badge-amber {
     background: #3a2800;
-    border: 1px solid rgba(240, 192, 64, 0.4);
+    border: 2px solid rgba(240, 192, 64, 0.4);
     color: #f0c040;
 }
 
 .ncsc-badge-green {
     background: #0d2615;
-    border: 1px solid rgba(46, 160, 67, 0.4);
+    border: 2px solid rgba(46, 160, 67, 0.4);
     color: #3fb950;
 }
 
@@ -241,10 +241,10 @@
 /* ── Inline note (two-actor model) ───────────────────────────────────────────── */
 
 .ncsc-note {
-    border: 1px solid rgba(56, 139, 253, 0.35);
+    border: 2px solid rgba(56, 139, 253, 0.35);
     border-left: 3px solid #388bfd;
     background: #071121;
-    border-radius: 0 4px 4px 0;
+    border-radius: 0;
     padding: 9px 13px;
     margin-top: 10px;
     font-size: 16px;
@@ -269,10 +269,10 @@
 /* ── Legal threshold callout (red) ───────────────────────────────────────────── */
 
 .ncsc-legal-gap {
-    border: 1px solid rgba(248, 81, 73, 0.4);
+    border: 2px solid rgba(248, 81, 73, 0.4);
     border-left: 3px solid #f85149;
     background: #1c0a0a;
-    border-radius: 0 4px 4px 0;
+    border-radius: 0;
     padding: 10px 14px;
     margin-bottom: 18px;
     font-size: 17px;
@@ -300,10 +300,10 @@
 /* ── Coverage implication callout (amber) ────────────────────────────────────── */
 
 .ncsc-coverage-note {
-    border: 1px solid rgba(240, 192, 64, 0.4);
+    border: 2px solid rgba(240, 192, 64, 0.4);
     border-left: 3px solid #f0c040;
     background: #1c1600;
-    border-radius: 0 4px 4px 0;
+    border-radius: 0;
     padding: 10px 14px;
     margin-bottom: 4px;
     font-size: 17px;

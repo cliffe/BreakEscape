@@ -59,7 +59,7 @@
     display: flex;
     align-items: center;
     gap: 5px;
-    font-family: monospace;
+    font-family: 'VT323', monospace;
     font-size: 10px;
     color: #94a3b8;
 }
@@ -138,7 +138,7 @@
 }
 
 .nad-line-label {
-    font-family: monospace;
+    font-family: 'VT323', monospace;
     font-size: 7px;
     fill: #64748b;
     text-anchor: middle;
@@ -200,7 +200,7 @@
 
 /* Node text */
 .nad-node-label {
-    font-family: monospace;
+    font-family: 'VT323', monospace;
     font-size: 9px;
     fill: #e2e8f0;
     text-anchor: middle;
@@ -208,7 +208,7 @@
 }
 
 .nad-node-sub {
-    font-family: monospace;
+    font-family: 'VT323', monospace;
     font-size: 7px;
     fill: #94a3b8;
     text-anchor: middle;
@@ -231,7 +231,7 @@
     overflow-y: auto;
     flex-shrink: 0;
     box-sizing: border-box;
-    font-family: monospace;
+    font-family: 'VT323', monospace;
     font-size: 11px;
     color: #94a3b8;
     line-height: 1.5;
@@ -259,7 +259,7 @@
 
 .nad-detail-vuln {
     background: #1c0a00;
-    border: 1px solid #92400e;
+    border: 2px solid #92400e;
     padding: 6px 8px;
     margin-bottom: 8px;
 }

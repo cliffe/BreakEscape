@@ -326,8 +326,8 @@ export class ScadaHistorianMinigame extends MinigameScene {
             const lbl = this._svgEl('text');
             lbl.setAttribute('x', PAD.left - 6); lbl.setAttribute('y', y + 4);
             lbl.setAttribute('text-anchor', 'end');
-            lbl.setAttribute('fill', '#556688'); lbl.setAttribute('font-size', '10');
-            lbl.setAttribute('font-family', 'Courier New, monospace');
+            lbl.setAttribute('fill', '#556688'); lbl.setAttribute('font-size', '14');
+            lbl.setAttribute('font-family', 'VT323, monospace');
             lbl.textContent = t + '°C';
             yAxisG.appendChild(lbl);
         }
@@ -347,8 +347,8 @@ export class ScadaHistorianMinigame extends MinigameScene {
             const lbl = this._svgEl('text');
             lbl.setAttribute('x', x); lbl.setAttribute('y', PAD.top + plotH + 14);
             lbl.setAttribute('text-anchor', 'middle');
-            lbl.setAttribute('fill', '#556688'); lbl.setAttribute('font-size', '10');
-            lbl.setAttribute('font-family', 'Courier New, monospace');
+            lbl.setAttribute('fill', '#556688'); lbl.setAttribute('font-size', '14');
+            lbl.setAttribute('font-family', 'VT323, monospace');
             lbl.textContent = this._fmtTime(new Date(tickTs));
             xAxisG.appendChild(lbl);
             tickTs += tickIntervalMs;
@@ -491,8 +491,8 @@ export class ScadaHistorianMinigame extends MinigameScene {
         // Y axis label
         const yLbl = this._svgEl('text');
         yLbl.setAttribute('x', 4); yLbl.setAttribute('y', pPAD.top + plotH / 2);
-        yLbl.setAttribute('fill', '#445566'); yLbl.setAttribute('font-size', '9');
-        yLbl.setAttribute('font-family', 'Courier New, monospace');
+        yLbl.setAttribute('fill', '#445566'); yLbl.setAttribute('font-size', '13');
+        yLbl.setAttribute('font-family', 'VT323, monospace');
         yLbl.setAttribute('writing-mode', 'tb');
         yLbl.textContent = 'dZ/dt';
         svg.appendChild(yLbl);

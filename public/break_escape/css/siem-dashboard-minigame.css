@@ -316,7 +316,7 @@
     }
     50% {
         border-color: #ff4f67;
-        box-shadow: 0 0 28px 6px rgba(255, 70, 94, 0.6);
+        box-shadow: none;
     }
     100% {
         border-color: #3a4a6d;
@@ -357,7 +357,7 @@
     height: 100%;
     min-height: 100%;
     box-sizing: border-box;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.1);
     min-width: 4px;
 }
 
@@ -397,7 +397,7 @@
     display: inline-block;
     width: 14px;
     height: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.2);
 }
 
 .siem-severity-item-color.sev-LOW {
@@ -489,7 +489,7 @@
 
 .siem-source-bar-container {
     background: rgba(0, 255, 255, 0.1);
-    border: 1px solid rgba(0, 255, 255, 0.3);
+    border: 2px solid rgba(0, 255, 255, 0.3);
     height: 12px;
     position: relative;
 }

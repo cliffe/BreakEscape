@@ -37,7 +37,7 @@
     padding: 14px 12px;
     overflow-y: auto;
     box-sizing: border-box;
-    font-family: monospace;
+    font-family: 'VT323', monospace;
     font-size: 10px;
     line-height: 1.5;
     flex-shrink: 0;
@@ -60,7 +60,7 @@
 }
 
 .ip-rx-divider {
-    border-top: 1px solid #c8b880;
+    border-top: 2px solid #c8b880;
     margin: 8px 0;
 }
 
@@ -90,7 +90,7 @@
     gap: 6px;
     margin-bottom: 4px;
     background: #ede8d8;
-    border: 1px solid #c8b880;
+    border: 2px solid #c8b880;
     padding: 4px 6px;
 }
 
@@ -133,11 +133,7 @@
     flex-direction: column;
     gap: 10px;
     /* Corner screw aesthetic via box-shadow inset dots */
-    box-shadow:
-        inset 6px 6px 0 0 #a0a5a8,
-        inset -6px -6px 0 0 #a0a5a8,
-        inset 6px -6px 0 0 #a0a5a8,
-        inset -6px 6px 0 0 #a0a5a8;
+    box-shadow: inset 6px 6px 0 0 #a0a5a8, inset -6px -6px 0 0 #a0a5a8, inset 6px -6px 0 0 #a0a5a8, inset -6px 6px 0 0 #a0a5a8;
 }
 
 /* ---- Pump screen ---- */
@@ -156,7 +152,7 @@
 
 .ip-pump-screen.ip-screen-accepted {
     border-color: #00c853;
-    box-shadow: 0 0 14px rgba(0, 200, 83, 0.4);
+    box-shadow: none;
 }
 
 .ip-pump-screen-row {
@@ -164,14 +160,14 @@
 }
 
 .ip-pump-screen-divider {
-    border-top: 1px solid #1a5a1a;
+    border-top: 2px solid #1a5a1a;
     margin: 4px 0;
 }
 
 .ip-pump-display {
     font-size: 28px;
     color: #00ff88;
-    border-bottom: 1px solid #1a5a1a;
+    border-bottom: 2px solid #1a5a1a;
     padding: 2px 0;
     min-height: 36px;
     letter-spacing: 1px;
@@ -263,7 +259,7 @@
 
 .ip-confirm-btn:hover {
     background: #2a5a2a;
-    box-shadow: 0 0 8px rgba(0, 200, 83, 0.3);
+    box-shadow: none;
 }
 
 .ip-confirm-btn:active {
@@ -325,7 +321,7 @@
 
 .ip-modal-prompt {
     color: #aaaaaa;
-    font-family: monospace;
+    font-family: 'VT323', monospace;
     font-size: 11px;
     margin-bottom: 20px;
 }
@@ -399,7 +395,7 @@
 
 .ip-no-charts-sub {
     color: #888;
-    font-family: monospace;
+    font-family: 'VT323', monospace;
     font-size: 12px;
     line-height: 1.5;
     max-width: 320px;
