@@ -376,7 +376,7 @@ test('notes: the short-landscape rule keeps the 48px offset in its height and dr
     const m = c.match(/@media \(orientation: landscape\) and \(max-height: 640px\) \{([\s\S]*?)\n\}\n/);
     assert.ok(m, 'short-landscape block found');
     const line = m[1].match(/\.notes-minigame-content-area \{([^}]*)\}/)[1];
-    assert.match(line, /height: calc\(94% - 48px\)/);
+    assert.match(line, /height: calc\(90% - 48px\)/);
     assert.match(line, /padding: 0 /, 'no top padding on top of the 48px offset');
 });
 
