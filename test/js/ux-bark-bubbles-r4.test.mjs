@@ -386,6 +386,34 @@ test('R4 n4: a chatter line with no bubble to place (off camera, other room, min
     assert.equal(r.bubbles.chatterVoice.size, 0);
 });
 
+test('R4 n4: on a first frame with the font still loading, a chatter voice waits for the placement (a skipped line is never voiced)', async () => {
+    const r = rig({ npcs: FIVE, player: { x: 300, y: 200 } });
+    r.bubbles.fontsReady = false;
+    window.canvasFontsReady = Promise.resolve();
+    for (const id of ['a', 'b', 'c', 'd']) r.bubbles.say(id, `Line from ${id}.`);
+    r.bubbles._updatedAt = r.clock.now();
+    const spoken = [];
+    r.talking.set('grace', { line: CHAT, partnerId: null });
+    r.bubbles.deferChatterVoice('grace', CHAT, () => spoken.push(CHAT));
+    r.bubbles.update();   // fonts not ready: nothing placed
+    assert.deepEqual(spoken, []);
+    await settle();
+    r.bubbles.update();   // fonts ready: the cap is full, her line is skipped
+    assert.deepEqual(spoken, []);
+    assert.equal(r.bubbles.chatterVoice.size, 0);
+    delete window.canvasFontsReady;
+});
+
+test('R4 n4: a waiting voice whose line has ended is dropped, not spoken late', () => {
+    const r = rig({ npcs: { grace: { x: 100, y: 100 } } });
+    r.bubbles.update();
+    const spoken = [];
+    r.bubbles.deferChatterVoice('grace', CHAT, () => spoken.push(CHAT));
+    r.bubbles.update();   // the needs clock ended it before this frame
+    assert.deepEqual(spoken, []);
+    assert.equal(r.bubbles.chatterVoice.size, 0);
+});
+
 test('R4 n4: the needs world voices through the bubble layer when it runs, at once when it does not', () => {
     const said = [];
     window.npcChatterVoice = { say: (id, line) => said.push([id, line]) };

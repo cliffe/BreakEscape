@@ -837,10 +837,9 @@ export class NpcWorldBubbles {
             const line = info.get(c.npcId).line;
             if (line) this._skipChatter(c.npcId, line, 'full');
         }
-        if (shown.size && !this._ensureFonts()) {   // first frames only: VT323 still loading
-            for (const id of [...this.chatterVoice.keys()]) this._voiceChatter(id);
-            return;
-        }
+        // First frames only: VT323 still loading. A chatter voice waiting stays for the next
+        // frame's placement (at most one per NPC; the font promise settles either way)
+        if (shown.size && !this._ensureFonts()) return;
         // What bubbles keep off: the HUD panels, every other speaker's head (a bubble over it hid
         // who was talking: R2 m1 retake) and each bubble as it is placed (hard); the player's
         // head (soft)
@@ -894,9 +893,11 @@ export class NpcWorldBubbles {
             if (!shown.has(id) || chatterNow.get(id) !== line) this.chatterShown.delete(id);
         }
         // A voice still waiting was for a line with no bubble to place (off camera, a dark room,
-        // a minigame open): it speaks as before. One whose NPC has a bark up is dropped.
+        // a minigame open): it speaks as before. One whose NPC has a bark up, or whose line has
+        // ended or been skipped, is dropped.
         for (const [id, v] of [...this.chatterVoice]) {
-            if (this.says.has(id) || this.chatterSkipped.get(id) === v.line) this.chatterVoice.delete(id);
+            const over = !!(sys && mgr) && chatterNow.get(id) !== v.line;
+            if (over || this.says.has(id) || this.chatterSkipped.get(id) === v.line) this.chatterVoice.delete(id);
             else this._voiceChatter(id);
         }
     }
