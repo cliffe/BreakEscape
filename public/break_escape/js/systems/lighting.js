@@ -130,6 +130,17 @@ export function indicatorBreathe(time, phase = 0) {
   return INDICATOR_BREATHE_FLOOR + (1 - INDICATOR_BREATHE_FLOOR) * (0.5 + 0.5 * Math.sin(time / 700 + phase));
 }
 
+/**
+ * Depth of an emitter's glow image. An indicator mark (normal blend) draws above every glow,
+ * LIGHT_DEPTH + 2: at LIGHT_DEPTH + 1 the ADD screen glows of a dark room drew over it and
+ * washed the locked blue and the dark ring out to white and grey (UX slice 15 R3, m1).
+ * An `above` glow sits just over the light map; any other glow just in front of its object.
+ */
+export function emitterGlowDepth(indicator, above, objDepth) {
+  if (indicator) return LIGHT_DEPTH + 2;
+  return above ? LIGHT_DEPTH + 1 : objDepth + 0.01;
+}
+
 /** Pixel size of an indicator's mark: its `dotPx`, else from its radius (10 -> 4, 14 -> 6), even. */
 export function indicatorDotPx(def) {
   const n = Number(def?.dotPx);
@@ -1348,7 +1359,7 @@ export class LightingSystem {
         // pixel up and left for the ring round the dot
         const dotAt = e.indicator ? indicatorDotOrigin(x, y, e.dotPx || indicatorDotPx(def)) : null;
         const at = dotAt ? { x: dotAt.x - 1, y: dotAt.y - 1 } : { x, y };
-        e.glow.setPosition(at.x, at.y).setDepth(above ? LIGHT_DEPTH + 1 : obj.depth + 0.01).setVisible(true)
+        e.glow.setPosition(at.x, at.y).setDepth(emitterGlowDepth(e.indicator, above, obj.depth)).setVisible(true)
           .setAlpha(Math.min(1, def.intensity * k * e.glowK * fade * (above ? e.fade : GLOW_BOOST)) * (obj.behindWallK ?? 1));
         // Keep an `above` glow's hue in a lit room (reds stayed red, not pink): multiply
         // its colour into the map under it first. Ransom screens have their own tint.

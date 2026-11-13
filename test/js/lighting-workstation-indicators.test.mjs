@@ -31,7 +31,7 @@ globalThis.Phaser = { AUTO: 0, Scale: { NONE: 0, CENTER_BOTH: 0, FIT: 0 }, Blend
 const NPCS = [{ id: 'tom', needsHome: 'tom_pc' }, { id: 'amara', needsHome: 'amara_pc' }];
 globalThis.window = { gameState: { globalVariables: {} }, npcManager: { npcs: new Map(NPCS.map(n => [n.id, n])) } };
 const { LightingSystem, workstationIndicators, flashShape, FLASH_MS, FLASH_REDUCED_MS, screenAnchor, SCREEN_ANCHORS,
-  indicatorDotPx, indicatorDotOrigin, indicatorDotPixels, indicatorMarkPixels, indicatorBreathe, INDICATOR_RING, INDICATOR_BREATHE_FLOOR } = await import(pathToFileURL(join(dir, 'lighting.mjs')).href);
+  indicatorDotPx, indicatorDotOrigin, indicatorDotPixels, indicatorMarkPixels, indicatorBreathe, INDICATOR_RING, INDICATOR_BREATHE_FLOOR, emitterGlowDepth } = await import(pathToFileURL(join(dir, 'lighting.mjs')).href);
 
 function fakeImage() {
   const img = {};
@@ -207,6 +207,23 @@ test('the indicator follows the globals; the screen record resolves the same in 
   assert.ok(seen[0], 'the screen glows');
   assert.ok(seen.every(d => d === seen[0]), 'the screen glow is the same definition throughout');
   assert.equal(seen[0].effect, 'screen');
+});
+
+test('UX slice 15 R3 (m1): an indicator mark draws above every glow, dark room or lit', async () => {
+  const { LIGHT_DEPTH } = await import(pathToFileURL(join(dir, 'constants.mjs')).href);
+  const objDepth = 5000;
+  const screenDark = emitterGlowDepth(false, true, objDepth);   // a screen glow in a dark room
+  const screenLit = emitterGlowDepth(false, false, objDepth);   // a screen glow in a lit room
+  const phoneLed = emitterGlowDepth(false, true, objDepth);     // an `above` variant
+  const mark = emitterGlowDepth(true, true, objDepth);
+  assert.equal(screenDark, LIGHT_DEPTH + 1);
+  assert.equal(screenLit, objDepth + 0.01);
+  assert.equal(mark, LIGHT_DEPTH + 2);
+  assert.ok(mark > screenDark && mark > screenLit && mark > phoneLed, 'the mark is above each glow');
+  assert.equal(emitterGlowDepth(true, false, objDepth), mark, 'the mark keeps its depth whether or not the room is dark');
+  // The render pass sets each glow's depth through this helper
+  const src = readFileSync(join(js, 'systems/lighting.js'), 'utf8');
+  assert.match(src, /e\.glow\.setPosition\(at\.x, at\.y\)\.setDepth\(emitterGlowDepth\(e\.indicator, above, obj\.depth\)\)/);
 });
 
 test('UX slice 15 R2 final (m1): the locked mark is filled a lighter blue than the light it casts', () => {

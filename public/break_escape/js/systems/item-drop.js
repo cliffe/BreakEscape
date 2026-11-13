@@ -253,9 +253,17 @@ export function dropPoint(playerFeet, pathfindingManager, opts = {}) {
 
 /**
  * True when some walkable feet point in room `roomId` has the drop centred at `cell` within
- * pick-up range: the arrival check (interactions.js isObjectInInteractionRange) measures
- * the plain distance from the player's sprite centre, which sits `footOffset` above the
- * feet, to the item's centre (UX slice 15 R2 final, M1).
+ * pick-up range (UX slice 15 R2 final, M1). The rule: the plain distance from the player's
+ * sprite centre (`footOffset` above the feet) to the drop's centre is within `range` less
+ * `margin` (30 px by default).
+ *
+ * How it compares with the real pick-up (interactions.js isObjectInInteractionRange): that
+ * check measures x to the nearest point of the item's sprite (reachX), allows the full
+ * range (32 px), and also needs interactionLineClear (same room, no wall between). Using
+ * the centre and a 2 px margin here is deliberately stricter than reachX. Walls between the
+ * stand point and the drop are not checked, and nor is whether the stand point can be
+ * walked to from where the player is now; a sweep of every room's feet cells found no drop
+ * that either gap lets through (UX slice 15 R3, n1).
  *
  * `deps`: { findCell(x, y, r) (the pathfinder's nearest walkable cell), roomAt(x, y) (the
  * room id of feet there, interaction-walls.js roomIdAtFeet), roomId, footOffset {x, y},
