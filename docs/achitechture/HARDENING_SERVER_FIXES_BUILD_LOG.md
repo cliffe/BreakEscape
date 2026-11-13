@@ -59,3 +59,25 @@ Proof: browser proof on :3620 (game 3138, m01), real bridge + DOM, three cases:
 Script `scratchpad/hard-fixes/dismiss-proof.mjs` (PROOF PASS). Doc updated: `docs/test-bridge.md`.
 Related, left open: backlog line of 2026-11-13 (barkDelay R2 n2) covers the wider pressKey/_pick
 "no change" reporting and getState hiding blockingUi during a minigame; out of scope here.
+
+## Item 3 — A cut exchange keeps its hold
+
+Status: clear bug, fixed (engine).
+
+`_startExchange` holds both NPCs' `useUntil` out to the knot's end (capped). On a cut (`_endChat`
+cut branch, `complete: false`), `_finishExchange` ran but nothing lowered `useUntil`, so an NPC
+stood at the object for the rest of the lines that will not play while anyone queued behind it
+waited. A frozen NPC (a player conversation) carried the same inflated hold as `useRemaining`.
+
+Fix (`public/break_escape/js/systems/npc-needs.js`):
+- `_startExchange` records the pre-hold use end for each held side (`ex.aUseBefore`, `ex.bUseBefore`;
+  B only when it is not a queue front, which `_holdExchange` does not hold).
+- New `_releaseExchangeHold(state, before)` lowers a still-using NPC's `useUntil` to that pre-hold
+  end (never below now) and takes the same amount off `useRemaining` when it is set (the frozen
+  case, whose `useUntil` is recomputed from `useRemaining` on unfreeze).
+- `_endChat`'s cut branch calls it for both NPCs. A completed exchange is untouched.
+
+Tests (`test/js/npc-exchange-heard.test.mjs`, 2 new, 17 pass): a cut by a knock-out restores the
+still-using NPC's `useUntil` to its own pre-hold end (< the knot-end hold); a cut while an NPC is
+frozen in a player conversation hands the hold back off `useRemaining`. Re-ran the npc-needs
+importer suites: 693 further node tests pass.
