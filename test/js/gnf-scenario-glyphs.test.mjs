@@ -1,7 +1,8 @@
 // q105 R1 m7: speech bubbles draw GNF from its bitmap sheet, and utils/pixel-text.js turns any
 // character the sheet lacks (and has no plain letter or stand-in for) into "?". This walks every
-// scenario's lines that reach a bubble (bark fields, the chatter pools, and the ink knots named
-// as exchanges or phone calls) and fails on any such character, so an emoji in a bark is caught
+// scenario's lines that reach a bubble (bark fields, the chatter pools, every lockedHint, event
+// mapping messages that are not phone messages, and the ink knots named by exchanges, phone calls
+// and event mappings) and fails on any such character, so an emoji in a bark is caught
 // at commit time rather than seen as "?" in play.
 // Run with: bin/test-js test/js/gnf-scenario-glyphs.test.mjs
 import test from 'node:test';
@@ -63,7 +64,23 @@ function scenarioLines(dir) {
         const block = balanced(src, m.index + m[0].length - 1);
         for (const s of block.matchAll(STRING)) lines.push({ where: 'chatter', text: unjson(s[1]) });
     }
+    // A lockedHint is said in the guard's bubble (npc-barks.js)
+    for (const m of src.matchAll(/"lockedHint"\s*:\s*"((?:[^"\\]|\\.)*)"/g)) lines.push({ where: 'lockedHint', text: unjson(m[1]) });
+    // Knots that reach a bubble: any knot named in an exchanges, phoneCalls or eventMappings entry,
+    // whatever its name (R2 m2: coffee_exchange), plus the exchange_ and call_ knots named anywhere
     const knots = new Set([...src.matchAll(/"knot"\s*:\s*"((?:exchange|call)_[A-Za-z0-9_]+)"/g)].map(m => m[1]));
+    for (const m of src.matchAll(/"(exchanges|phoneCalls|eventMappings)"\s*:\s*\[/g)) {
+        let block = balanced(src, m.index + m[0].length - 1);
+        for (const k of block.matchAll(/"knot"\s*:\s*"([A-Za-z0-9_.]+)"/g)) knots.add(k[1]);
+        if (m[1] !== 'eventMappings') continue;
+        // An event mapping's message is shown as a bark (npc-manager.js: config.bark || config.message);
+        // a sendTimedMessage's message goes to the phone, so leave those out
+        for (let at; (at = block.search(/"sendTimedMessage"\s*:\s*\{/)) >= 0;) {
+            const open = block.indexOf('{', at);
+            block = block.slice(0, at) + block.slice(open + balanced(block, open).length);
+        }
+        for (const s of block.matchAll(/"message"\s*:\s*"((?:[^"\\]|\\.)*)"/g)) lines.push({ where: 'mapping message', text: unjson(s[1]) });
+    }
     const inkDir = join(dir, 'ink');
     if (knots.size && existsSync(inkDir)) {
         for (const f of readdirSync(inkDir).filter(f => f.endsWith('.ink'))) {
@@ -94,6 +111,14 @@ test('every bark, chatter and exchange line in the scenarios draws in GNF withou
     assert.ok(count.bark > 50 && count.chatter > 20 && count.ink > 5, `lines found ${JSON.stringify(count)}: the walk has stopped finding them`);
     assert.ok(checked > 100, `only ${checked} lines found: the walk has stopped finding them`);
     assert.deepEqual(bad, [], 'characters GNF lacks would show as "?" in a speech bubble');
+});
+
+test('the walk reaches knots by where they are named, lockedHints and mapping messages (R2 m2)', () => {
+    const lines = scenarioLines(join(scenariosDir, 'lab_physical_pentest'));
+    assert.ok(lines.some(l => / coffee_exchange$/.test(l.where)), 'coffee_exchange is an exchange knot without the exchange_ prefix');
+    const all = readdirSync(scenariosDir).filter(n => statSync(join(scenariosDir, n)).isDirectory()).flatMap(n => scenarioLines(join(scenariosDir, n)));
+    assert.ok(all.filter(l => l.where === 'lockedHint').length >= 5, 'lockedHints scanned');
+    assert.ok(!all.some(l => l.where === 'mapping message' && /field note on request/i.test(l.text)), 'sendTimedMessage messages are phone messages, not bubbles');
 });
 
 test('the walk catches an emoji in a bark', () => {

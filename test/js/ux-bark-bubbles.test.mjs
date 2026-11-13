@@ -838,6 +838,29 @@ test('setDisplayScale: a phone at dpr 3 gets x2 bubbles, live bubbles take the n
     assert.equal(r.bubbles.setDisplayScale({ scale: 2, dpr: 1, viewWidth: 700 }), 1);
 });
 
+test('R2 m1: a scale change mid-bark re-wraps the page on screen at the new rule; pages and times stay', () => {
+    const r = bitmapRig({ npcs: { sara: { x: 100, y: 100, room: 'hall' } } });
+    r.bubbles.setDisplayScale({ scale: 2, dpr: 1, viewWidth: 700 });
+    const h = r.bubbles.say('sara', LONG);
+    const st = h.state;
+    r.bubbles.update();
+    const bb = r.bubbles.bubbles.get('sara');
+    assert.ok(st.pages.length >= 2, 'a two-page bark');
+    assert.ok(st.pages[0].includes('\n'), 'page 0 already cut into lines at x1');
+    const pages = [...st.pages], times = [...st.times];
+    // A narrow phone view at x2: the wrap drops to 108 font px, under the x1 page's widest line
+    assert.equal(r.bubbles.setDisplayScale({ scale: 2, dpr: 3, viewWidth: 480 }), 2);
+    r.bubbles.update();
+    assert.equal(st.page, 0);
+    assert.deepEqual(st.pages, pages, 'page boundaries unchanged');
+    assert.deepEqual(st.times, times, 'page times unchanged');
+    const limit = B.bubbleWrapPx({ viewWidth: 480, textScale: 2 });
+    const drawn = bb.text.text.split('\n');
+    assert.equal(drawn.join(' '), pages[0].split(/\s+/).join(' '), 'the same words, in order');
+    for (const l of drawn) assert.ok(inkWidth(l) <= limit || !l.includes(' '), `"${l}" is ${inkWidth(l)} font px, over ${limit}`);
+    assert.ok(Math.max(...pages[0].split('\n').map(inkWidth)) > limit, 'the x1 wrap would have broken the rule');
+});
+
 test('a bubble made before the sheet loaded switches to the bitmap text once it is cached (R1 m5)', () => {
     const r = bitmapRig({ npcs: { sara: { x: 100, y: 100, room: 'hall' } } }, { cached: false });
     r.bubbles.say('sara', 'First line');

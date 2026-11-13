@@ -111,8 +111,11 @@ test('the sheet: GNF at one font pixel a screen pixel (A is 5x7 on a 6 px advanc
 });
 
 test('the font build check: every glyph on the pixel grid, slivers under 7%, the committed sheets up to date', (t) => {
-    const probe = spawnSync('python3', ['-I', '-c', 'import PIL'], { encoding: 'utf8' });
-    if (probe.status !== 0) { t.skip('python3 with Pillow not available'); return; }
+    // The build needs Pillow 10.1 or later (its guard exits otherwise); CI's ubuntu-22.04 packages
+    // Pillow 9, so skip rather than fail when it is older or missing (R2 m3)
+    const versionProbe = "import PIL,sys; v=tuple(int(''.join(c for c in p if c.isdigit()) or 0) for p in PIL.__version__.split('.')[:2]); sys.exit(0 if v >= (10,1) else 3)";
+    const probe = spawnSync('python3', ['-I', '-c', versionProbe], { encoding: 'utf8' });
+    if (probe.status !== 0) { t.skip('Pillow 10.1 or later not available'); return; }
     const r = spawnSync('python3', ['-I', join(root, 'tools/fonts/build_gnf_bitmap.py'), '--check'], { encoding: 'utf8' });
     assert.equal(r.status, 0, r.stdout + r.stderr);
     assert.match(r.stdout, /up to date and every glyph is on the pixel grid/);

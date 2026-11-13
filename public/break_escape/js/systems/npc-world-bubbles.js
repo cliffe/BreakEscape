@@ -720,8 +720,11 @@ export class NpcWorldBubbles {
         bb.img.setVisible(ready);
         if (ready) bb.img.setTexture(tex.key);
         const shown = picture ? (ready ? '' : '…') : String(line ?? '');
-        // Chatter lines wrap the same way; a bark page is already wrapped
-        setPixelText(bb.text, shown.includes('\n') ? shown : bubbleLines(shown, this._wrap(scene)).join('\n'));
+        // Chatter lines and bark pages wrap at the rule in force now. A bark page was cut into
+        // lines at the scale it was paged at, so its own words are wrapped again here: after a
+        // scale change mid-bark the page keeps its words (pages, times and voice untouched) but
+        // takes the new wrap, and may run a line over PAGE_LINES until the next page (R2 m1)
+        setPixelText(bb.text, bubbleLines(shown.replace(/\n/g, ' '), this._wrap(scene)).join('\n'));
         let cw, ch;
         if (ready) { cw = PICTURE_PX; ch = PICTURE_PX; bb.inkLeft = 0; }
         else if (!bb.text.pixelFallback) {
