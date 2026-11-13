@@ -1113,6 +1113,17 @@ export default class NPCManager {
       });
     }
 
+    // A reconciliation re-announce (eventData._reconcile, from
+    // ObjectivesManager#reconcileCompletedFlagTasks on game_loaded) only needs
+    // to catch a story global up to a flag task that completed server-side but
+    // whose live objective_task_completed event was missed. It must NOT replay
+    // the mapping's player-facing side effects (a call, a timed message, a
+    // bark, a minigame): those had their one live moment. setGlobal above has
+    // run — guarded on !globalVars.<g> in the scenario, so idempotent, and its
+    // global_variable_changed emit drives the normal (non-reconcile) cascade
+    // that opens the door. Stop here, before completeTask and the rest.
+    if (eventData && eventData._reconcile) return;
+
     // Complete tasks directly (bypasses broken ink knot jumping)
     // Sequenced (not Promise.all/forEach) so each task's server round-trip
     // finishes before the next starts — two parallel completeTask requests

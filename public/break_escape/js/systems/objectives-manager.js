@@ -370,7 +370,52 @@ export class ObjectivesManager {
       this.handleFlagTasksUpdated(data);
     });
 
+    // Reconcile flag-task story wiring once every system is up (NPC
+    // eventMappings register before game_loaded, which initialize() does not).
+    // See reconcileCompletedFlagTasks.
+    this.eventDispatcher.on('game_loaded', () => {
+      this.reconcileCompletedFlagTasks();
+    });
+
     console.log('📋 ObjectivesManager event listeners registered');
+  }
+
+  /**
+   * Re-emit objective_task_completed for submit_flags tasks that are already
+   * completed in the restored server state.
+   *
+   * A submit_flags task is completed server-side the instant its flag is
+   * accepted (Game#process_flag_task_completions!), and that completion is
+   * what the scenario's story wiring listens for to set the globals that open
+   * the next door (e.g. objective_task_completed:submit_flag_1 → flag1_submitted
+   * → the blast door). Those events fire exactly once, live, from
+   * handleFlagTasksUpdated. If the live event is ever missed — a reload between
+   * the submission and the global syncing, a second submission that the server
+   * treats as already-submitted (so it returns no completedTasks and
+   * handleFlagTasksUpdated early-returns), or a replay that inherits the
+   * completed task but not the global — the global is never set and nothing
+   * reconciles it, stranding the critical path permanently (the task shows
+   * done, but the door never opens).
+   *
+   * On game_loaded we re-announce every already-completed flag task so its
+   * story listeners catch up. This is idempotent: the setGlobal mappings guard
+   * on !globalVars.<g>, so once the global is set a re-announcement is a no-op,
+   * and onceOnly message handlers do not re-fire (their triggeredEvents are
+   * restored before game_loaded). It emits only the story events — it does NOT
+   * re-run processTaskCompletion (unlocks/notifications already ran when the
+   * task first completed).
+   */
+  reconcileCompletedFlagTasks() {
+    if (!this.initialized) return;
+
+    Object.values(this.taskIndex).forEach(task => {
+      if (task.type !== 'submit_flags') return;
+      if (task.status !== 'completed') return;
+
+      const payload = { taskId: task.taskId, aimId: task.aimId, task, _reconcile: true };
+      this.eventDispatcher.emit('objective_task_completed', payload);
+      this.eventDispatcher.emit(`objective_task_completed:${task.taskId}`, payload);
+    });
   }
   
   /**
