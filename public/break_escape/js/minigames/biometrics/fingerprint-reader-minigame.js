@@ -73,6 +73,11 @@ function escapeHtml(text) {
 export class FingerprintReaderMinigame extends MinigameScene {
     // The X sits inside the frame (MinigameScene.closeInsideFrame)
     static closeInsideFrame = true;
+
+    // The reader's own panel is the frame
+    closeAnchor() {
+        return this.gameContainer?.querySelector?.('.fpr-panel') || this.gameContainer;
+    }
     constructor(container, params) {
         params = params || {};
         params.title = 'Fingerprint Reader';

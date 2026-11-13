@@ -119,13 +119,20 @@ const SETUP = {
             m.addBluetoothDevice('Phone', 'AA:BB:CC:00:11:44', 'Smartphone', true);
             m.addBluetoothDevice('Headset', 'AA:BB:CC:00:11:55', 'Audio', false);
             m.updateBluetoothPanel?.();
+            // the device list is in the expanded panel
+            document.querySelector('.bluetooth-scanner-expand-toggle')?.click();
             return m.bluetoothDevices.length;
         }
     },
-    'biometrics': { pre: () => { window.gameState.biometricSamples = [{ owner: 'Alice Chen', quality: 0.92, sourceName: 'Coffee mug' }, { owner: 'Bob Okafor', quality: 0.55, sourceName: 'Door handle' }]; } },
+    'biometrics': {
+        // the sample cards are in the expanded panel
+        post: () => { const t = document.querySelector('.biometrics-expand-toggle, [class*="expand-toggle"]'); t?.click(); return !!t; },
+        pre: () => { window.gameState.biometricSamples = [{ owner: 'Alice Chen', quality: 0.92, sourceName: 'Coffee mug' }, { owner: 'Bob Okafor', quality: 0.55, sourceName: 'Door handle' }]; }
+    },
     'fingerprint-reader': { pre: () => { window.gameState.biometricSamples = [{ owner: 'Alice Chen', quality: 0.92, sourceName: 'Coffee mug' }, { owner: 'Bob Okafor', quality: 0.55, sourceName: 'Door handle' }]; } }
 };
-const KEEPS_CANCEL = ['password'];
+// password (slice 2a) and the notes reader (Continue) keep their bottom button
+const KEEPS_CANCEL = ['password', 'notes'];
 
 // --params file.json: { scene: params } taken from a real scenario object (its minigameData),
 // for scenes that draw little without one (forensic data platform, network architecture).

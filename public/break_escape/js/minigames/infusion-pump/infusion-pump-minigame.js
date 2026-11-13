@@ -66,6 +66,11 @@ export class InfusionPumpMinigame extends MinigameScene {
 
     // ── Lifecycle ────────────────────────────────────────────────────────────
 
+    // The X sits inside the pump's canvas (FIT-scaled and centred), not the screen's corner
+    closeAnchor() {
+        return this.gameContainer?.querySelector?.('canvas') || this.gameContainer;
+    }
+
     init() {
         super.init();
         if (this.headerElement) this.headerElement.style.display = 'none';
@@ -122,6 +127,8 @@ export class InfusionPumpMinigame extends MinigameScene {
                 self._buildPrescriptionPanel(this);
                 self._buildPumpDevice(this);
                 self._startCursor();
+                // The canvas exists now: put the X inside its top-right corner
+                self.placeCloseButton?.();
             }
         }
 

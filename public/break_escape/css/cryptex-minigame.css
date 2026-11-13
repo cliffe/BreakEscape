@@ -279,3 +279,17 @@
     color: #88ee88;
     font-weight: bold;
 }
+
+/* Short screens (a 412px-high landscape phone): tighter rows so the frame wraps the
+   wheels, the hint strip, the status and Reset/Submit (slice 7 R1); anything still taller
+   scrolls inside the frame */
+@media (max-height: 560px) {
+    .cryptex-wrapper { min-height: 0; }
+    .cryptex-header { padding: 6px 16px; }
+    .cryptex-wheels { padding: 8px 16px; }
+    .cryptex-wheel-group { gap: 4px; }
+    .cryptex-wheel-display { height: 64px; padding: 6px 16px; }
+    .cryptex-hint-strip { padding: 4px 16px; min-height: 0; }
+    .cryptex-status { min-height: 0; padding: 4px 16px; }
+    .cryptex-footer { padding: 6px 16px; }
+}

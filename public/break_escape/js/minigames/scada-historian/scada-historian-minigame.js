@@ -142,11 +142,9 @@ export class ScadaHistorianMinigame extends MinigameScene {
         subtitleEl.textContent = displayDashes(this._subtitle);
         titleGroup.appendChild(titleEl);
         titleGroup.appendChild(subtitleEl);
-        const closeBtn = this._el('button', 'sh-close-btn');
-        closeBtn.textContent = '[CLOSE]';
-        closeBtn.addEventListener('click', () => this.complete(false));
+        // No [CLOSE] of its own: the framework X (inside the frame) and Esc close the
+        // console; a second close beside the X sat under it (slice 7 R1)
         header.appendChild(titleGroup);
-        header.appendChild(closeBtn);
         wrap.appendChild(header);
 
         // Body

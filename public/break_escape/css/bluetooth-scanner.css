@@ -81,6 +81,7 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 10px;
+    margin-right: 40px;   /* clear of the X, which sits inside the frame's top right (slice 7 R1) */
     padding: 10px;
     background: rgba(0, 188, 212, 0.1);
     border: 2px solid #00bcd4;

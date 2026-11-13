@@ -271,3 +271,18 @@
     cursor: not-allowed;
     opacity: 0.6;
 }
+
+/* Short screens (a 412px-high landscape phone): tighter rows so the frame wraps the
+   header, the dials, the status and Reset/Unlock (slice 7 R1, the frame wraps all its
+   content at every size); anything still taller scrolls inside the frame */
+@media (max-height: 560px) {
+    .combination-wrapper { min-height: 0; }
+    .combination-header { padding: 6px 16px; }
+    .combination-header h2 { margin: 0 0 4px; }
+    .combination-help { margin-top: 4px; font-size: 16px; }
+    .combination-dials { padding: 8px 16px; gap: 24px; }
+    .combination-dial-group { gap: 6px; }
+    .combination-dial-display { height: 64px; padding: 6px 16px; }
+    .combination-status { min-height: 0; padding: 4px 16px; }
+    .combination-footer { padding: 6px 16px; }
+}

@@ -614,6 +614,10 @@
 .fpr-panel {
     width: 100%;
     box-sizing: border-box;
+    /* The frame wraps everything at every size: a short screen scrolls inside it
+       (slice 7 R1) */
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
     background: #0a0f0c;
     border: 3px solid #00ff41;
     box-shadow: none;

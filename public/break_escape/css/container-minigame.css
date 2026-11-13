@@ -631,3 +631,16 @@
     color: #ffe0a0;
     font-size: 16px;
 }
+
+/* Short screens (a 412px-high landscape phone): a tighter window, so the frame wraps the
+   heading and the contents; what is still taller scrolls inside the frame
+   (minigames-framework.css), never past it (slice 7 R1) */
+@media (max-height: 560px) {
+    .container-minigame:not(.desktop-mode) {
+        height: auto;
+        min-height: 0;
+        margin: 4px auto;
+        padding: 8px 20px;
+        gap: 8px;
+    }
+}

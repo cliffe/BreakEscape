@@ -351,3 +351,9 @@
     0%, 100% { box-shadow: none; }
     50% { box-shadow: 0 0 0 2px #44aa44; }
 }
+
+/* Short screens: the chart gives up height so the console fits (slice 7 R1) */
+@media (max-height: 560px) {
+    .sh-chart-area { min-height: 140px; }
+    .sh-dzdt-panel { height: 80px; min-height: 80px; }
+}

@@ -120,6 +120,15 @@
     flex-shrink: 0;
 }
 
+/* The framed tool windows (container, combination, cryptex) scroll inside their frame when
+   a short screen cannot hold their content, so the frame always wraps it (slice 7 R1) */
+.minigame-container[data-minigame="container"] > .minigame-game-container,
+.minigame-container[data-minigame="combination"] > .minigame-game-container,
+.minigame-container[data-minigame="cryptex"] > .minigame-game-container {
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
 /* No Cancel beside the X any more (slice 7 R1): the row holds only a scene's own
    footer buttons, such as Add to Notepad, and takes no room when it has none */
 .minigame-controls:empty {
