@@ -20,7 +20,9 @@
 // Printed per surface and size; --json keeps every breach. A summary at the end counts the
 // frame-offscreen and clipped breaches (and overflow of the window itself) over the run.
 //
-//   node tools/playtest/ui-rules-audit.mjs --port 3350 --game 2449 [--all | --scenes a,b]
+// --strict exits 1 when any window-offscreen, frame-offscreen or clipped breach is found.
+//
+//   node tools/playtest/ui-rules-audit.mjs --port 3350 --game 2449 [--all | --scenes a,b] [--strict]
 //        [--surfaces surfaces.mjs] [--params scene-params.json] [--sizes 1400x1000,800x600,915x412]
 //        [--shots dir] [--json out.json]
 //
@@ -264,6 +266,8 @@ async function main() {
     }
     console.log(`SUMMARY window-offscreen ${counts['window-offscreen']} (${where['window-offscreen'].size} surface-sizes), frame-offscreen ${counts['frame-offscreen']} (${where['frame-offscreen'].size}), clipped ${counts.clipped} (${where.clipped.size})`);
     if (opt('json', null)) writeFileSync(opt('json'), JSON.stringify(report, null, 2));
+    const fits = counts['window-offscreen'] + counts['frame-offscreen'] + counts.clipped;
+    if (flag('strict') && fits) { console.log(`FAIL: ${fits} fit breach(es)`); process.exit(1); }
 }
 
 if (IS_MAIN) main().catch(e => { console.error(e); process.exit(2); });
