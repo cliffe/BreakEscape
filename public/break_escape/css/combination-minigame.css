@@ -286,3 +286,9 @@
     .combination-status { min-height: 0; padding: 4px 16px; }
     .combination-footer { padding: 6px 16px; }
 }
+
+/* Narrow windows: the 48px digits make each dial wider, so the three dials sit closer
+   together to stay inside the frame (slice 7 R1) */
+@media (max-width: 960px) {
+    .combination-dials { gap: 12px; padding-left: 8px; padding-right: 8px; }
+}
