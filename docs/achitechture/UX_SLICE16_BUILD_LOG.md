@@ -41,11 +41,39 @@ Keyless server on :3063 from this worktree, new games only (new-game.rb), headle
 
 ## Not done
 
-- Two mission confirms still fall back to Confirm / Cancel: the `confirm_action` in `lab_physical_pentest` and the `interactionWarning` in `sis01_healthcare`. Mission text, left for the mission owners.
+- Two mission confirms still fell back to Confirm / Cancel: the cable `confirm_action` in `sis02_energy` and the hi-vis `confirm_action` in `lab_physical_pentest`. (An earlier version of this line named an `interactionWarning` in sis01_healthcare; that is a medication note inside the EHR terminal's data, not a dialog.) Both are named in the R1 fixes below.
 - Minigame-internal confirm panels (ESD pushbutton "CONFIRM - INITIATE SHUTDOWN" / "CANCEL", SIS tamper report "Confirm" / "Cancel") already had no X and two buttons; their generic labels and Esc (which closes the whole minigame) are untouched.
 - The assistant chat (a social engineering app window) keeps its "Close" text button, like the mail client and the other SE overlays; it is not an NPC conversation.
 - Seen in the 390x844 chat shots and not part of this slice: the speaker name and line sit over the portrait, the choices are half width, and after the chat closes the "Menu (Esc)" hint sits under the Block and Punch buttons.
 - At 390 px the two confirm buttons stack with unequal widths; acceptable, but a later pass could give them equal width when wrapped.
+
+## Review round 1 fixes
+
+Review: `docs/achitechture/UX_SLICE16_REVIEW_R1.md`. Commits 07d13df3b, a3f86024f, 54d89d19a, b9a89b86a, b38a462a7.
+
+| Finding | Fix |
+|---|---|
+| M1 | `player.js` keydown returns early while `openModalCount() > 0` (gameConfirm or gameDisplay open) and drops held movement keys; `updatePlayerMovement` also stops a walk that was under way when a dialog opened. `gameConfirm` keeps an open count (`window.gameConfirmOpen`), and `maybeInteractionWarning` and the `confirm_action` case refuse to open a second confirm while one is open. No test harness imports the real `player.js` (all stub it), so no copy list needed `ui/modal-stack.js`; `social-return-to.test.mjs`, which lifts the pause and resume functions from the source, now lifts `clearKeyboardMovement` too. New `test/js/confirm-holds-keys.test.mjs` (5): a second and third E open no second confirm and yes runs `onConfirm` once; confirm_action twice opens one; F, Q, Space and the arrows do nothing behind a confirm and a held arrow stops; focus and Enter, Tab and Space; the interaction warning guard. |
+| M2 | `[data-minigame="person-chat"] .minigame-close-button::after` with `inset: -14px` under `(max-width: 600px), (pointer: coarse)`: nothing drawn, hit area at least 44 px. Live: points 7 px left of, right of and below the drawn X hit it at 390 (touch). |
+| M3 | sis02 cable confirm: "Disconnect" / "Leave it"; TESTING_WALKTHROUGH step 19 updated (it also named a stale `onRead`). Validator 0 ❌. |
+| m1 | lab_physical_pentest hi-vis confirm: "Put it on" / "Leave it off" (coordinator: one wearable pair across the game, matching `PUT_ON_LABELS`). Validator 0 ❌. |
+| m2 | The "Not done" line above corrected. |
+| m3, m4 | README: the browser reads all five steps, the server's two readers steps 2 to 5 and the policy on its own (the guest claim); a hot desk's policy with `autoLockMin: 0` still ends the guest's session. The guest-still-signed-in mismatch is a new line in `docs/IDEAS_BACKLOG.md`. |
+| m5 | `pc_screen_lock_precedence_test.rb`: the knock-out route of `OwnerClaim.precise_route` each way round, and a habit filled from `habits.locksScreen` by `NpcHabits.expand!` at a bare PC and beside a PC field (6 runs). |
+| m6 | `conversation-end-paths.test.mjs`: a forced `complete(false)` (not a player close), a minigame opened over the chat (saved, event once, inactive, a second cleanup adds nothing) and `disableClose` (no X, no cancel row, Esc does nothing) (8 tests). The music hand-back was not checked live: m01 has no `conversation_closed` music event. |
+| m7 | `m07_live.sh` closes the briefing with `#minigame-close`; `docs/test-bridge.md` lists notes and the password screen only; the dead `.game-modal-close` stub removed from `interaction-warning.test.mjs`. |
+| m8 | At `max-width: 480px` a wrapped pair is two full-width rows of equal size (live: 290 and 290 px). |
+| m9 | Buttons get `max-width: 100%; overflow: hidden; text-overflow: clip`; the validator warns on `confirmLabel`, `cancelLabel`, `proceedLabel` and `declineLabel` over 16 characters (`test/js/validator-confirm-label-length.test.mjs`, 2). |
+| m10 | `gameConfirm` focuses the cancel button on open and gives focus back on close; Enter or Space presses the focused button, Tab and the arrows move between the two, and none of these reach the game. A square 2px white focus ring (`:focus-visible`). |
+| m11, m12 | Under `max-width: 600px` the portrait sits at the top at 4:3 and the caption follows in flow (name and line under the portrait), one column, choices full width (358 px at 390), the caption scrolls if it outgrows the space. Desktop unchanged in layout. |
+| m13 | `setHudLabel` ignores hover labels when `(hover: none)` matches. Live at 390 with touch emulation, after the chat closes by a tap on the X the HUD shows the proximity caption, not "Menu (Esc)". At 1400 with a mouse the label still shows while the pointer rests on the menu button after the X click: that is a real hover. |
+| m14 | The caption is a flat `rgba(0,0,0,0.82)` band as tall as its content with a stepped top edge (two 4 px hard shadows, no blur); the line's text shadow is `2px 2px 0`. At 1400 the band is lower than the old 33% fade, so more of the portrait shows; the text stays readable. |
+
+Suites under the lock: Rails 2392 runs, 42555 assertions, 0 failures, 0 errors, 1 skip (started on b9a89b86a; b38a462a7, one CSS inset and one label string, landed during the run). JS `MERGE_BATCH=1 bin/test-js -j 3` on b38a462a7: 601 files passed, 0 failed.
+
+Live proof on :3063 (keyless, from this worktree), new games only (2981 to 2988 and 2994; 2989 was a probe), headless shell with scrollbars shown, `setFPS(20)` with fixed steps on. Shots in `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/4ecd98f2-4e95-460a-a7ea-2031ffddfff5/scratchpad/ux-shots/slice16-r1fix/`, each at 1400x1000 and 390x844 (the 390 chat with touch emulation): the switch and warning confirms show one overlay after two more E presses, the player did not move under a held arrow, focus starts on the safe button; Esc answers no in all three (coffee stays on, nothing worn, no minigame); the chat X and Esc each fire one `conversation_closed` and save the state.
+
+Still open (not in this round): the video-call mode of the chat keeps a gradient status bar, scanline gradient and soft text shadows (`person-chat-minigame.css`, video call section); at 390 the HUD proximity caption sits under the Block and Punch buttons (the same spot as the old Menu label; a HUD layout matter).
 
 ## Handover
 
