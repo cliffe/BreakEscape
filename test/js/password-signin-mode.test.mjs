@@ -205,7 +205,10 @@ function fakeImage(sizes) {
         get src() { return this._src; }
     };
 }
-const settle = () => new Promise(r => setTimeout(r, 25));
+// Wait a fixed number of timer turns, not wall-clock time: each fake image load is a 0 ms timer,
+// and a chain (headshot fails, silhouette loads) needs one turn per link. A timer queued earlier
+// always fires first, so this holds under parallel load where a 25 ms sleep did not (MERGE_BATCH -j 3 flake).
+const settle = async () => { for (let i = 0; i < 20; i++) await new Promise(r => setTimeout(r, 0)); };
 
 test('the talk-sheet rule and portrait URLs', () => {
     assert.equal(isTalkSheetSize(256, 256), true);
