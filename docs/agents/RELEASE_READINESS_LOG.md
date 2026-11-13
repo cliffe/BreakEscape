@@ -31,6 +31,13 @@ The gate (user, 2026-11-13): no production deploy until the ongoing access, netw
 - Walkthroughs (build/rel-walkthroughs 98e12b41a): sis01 and sis02 TESTING_WALKTHROUGH.md rechecked against the scenario at da5f53f34 (about 55 and 70 corrections). From that pass: sis02's architecture diagram called HMI-OPS-01 password-protected though it is unlocked, so the claim was removed (text only, not voiced). Withdrawn: the drug library minigame's "speak to David" text is only a JS fallback; sis01 supplies its own source messages, which point to the binder. Left as intended: sis02's Confirm SIS Tamper is not gated on the certification document (only Compare is).
 - Walkthrough review (independent, Sonnet): about 115 statements sampled across both files, 0 wrong facts; 1 M, 4 m, all fixed in 6860ece41. M: sis02's ESD steps came after the workshop, but the hydrogen timers start at Helen's briefing (evacuation at 43 minutes skips the ESD task), so a note now sends testers to an ESD station straight after the historian. m: sis01 button labels are matched by their leading words (the game's labels contain dash or arrow characters); three spoilers the refresh added now point to where the player finds them; the Ravi aim gate (assess_ward first) is stated; a stale ERB comment about meet_ravi was corrected.
 
+## Held bark overlap (engine, user's yes 2026-11-13)
+
+- Found by train 31's live check (game 3212): with the network map open, Ravi's network_isolated bark was held, and after release his voice ran into Helen's. Cause: _renderBark's promise settled when a voice started, so releaseHeldBarks never waited for a voice to end, and the drain cleared while the last held voice still played.
+- Fix (build/bark-hold-drain): the release waits for the later of voice end + 300 ms and 2.5 s after the previous bark, including after the last spoken bark, with a 30 s cap per voice. Barks that were never held are unchanged. Two review rounds (opus55): R1 0/0/5 plus 2 nits, all fixed (95648cb96); R2 ready, 0/0/0 plus 4 nits. bark-release-policy 30/30; 9 of its tests fail on the old code.
+- Live proof: held runs 3258, 3262, 3265 and 3273 have every voice at least 0.3 s after the previous one (3273: gaps 475, 369, 382 ms). In the unheld run 3274, Helen started 258 ms after Ravi, because a voice starts about 0.2 s after its bark shows. So Helen, Sarah and David move 0.3 s later (fd1f383b2), scenario only.
+- Follow-up, not built: a clip whose duration reads NaN becomes null (tts-manager.js:101, npc-barks.js:152), so a playing voice counts as silent and nothing waits for it. Older than this fix; not seen in any run.
+
 ## To do before the release playtests
 
 - The release m01 run takes LAUNCH at the final choice, so both branches have been played once.
