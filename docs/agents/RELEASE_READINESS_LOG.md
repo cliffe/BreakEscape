@@ -25,6 +25,11 @@ The gate (user, 2026-11-13): no production deploy until the ongoing access, netw
 - build/rel-fixes R2 (opus55): ready, 0 B, 0 M, 2 m, both fixed by the orchestrator: sis02's in-session reopen resumes at debrief_over (saved story state), so the re-fire also sits at the top of debrief_over (an ink runtime probe shows the tag fires there in both branches); the sis01 missions.json entry was removed, because reopencheck drives only phone NPCs and all sis01 NPCs are person NPCs, so it added 159 lines to a shared file for no coverage.
 - build/q94-pc-fields R1 (opus55): 0 B, 1 M, 6 m, fixed in 0d78d91e9. R2: ready, 0 B, 0 M, 2 m (validator sign-in warning scope, duplicate unknown-key message), fixing.
 
+## Audio and walkthroughs (2026-11-13)
+
+- sis01 audio (build/sis01-tts-bed2, train 31): all 31 uncached barks voiced and David's bed 2 clip retaken (user's yes). Same-event barks spaced to a gap of at least 0.3 s from measured clip lengths. network_isolated now plays Ravi, Helen, Sarah, David in both the authorised and unauthorised paths: keeping the old order left 14.6 s of silence before anyone spoke. An independent audit passed integrity, cache match (0 uncached, 0 orphans) and voices. Three clips have a name or number the transcript heard differently (Sarah "Ms Okafor", patrol nurse "Bed 4", Ravi "NetSol's"); they wait on the user's listen.
+- Walkthroughs (build/rel-walkthroughs 98e12b41a): sis01 and sis02 TESTING_WALKTHROUGH.md rechecked against the scenario at da5f53f34 (about 55 and 70 corrections). From that pass: sis02's architecture diagram called HMI-OPS-01 password-protected though it is unlocked, so the claim was removed (text only, not voiced). Withdrawn: the drug library minigame's "speak to David" text is only a JS fallback; sis01 supplies its own source messages, which point to the binder. Left as intended: sis02's Confirm SIS Tamper is not gated on the certification document (only Compare is).
+
 ## To do before the release playtests
 
 - The release m01 run takes LAUNCH at the final choice, so both branches have been played once.
