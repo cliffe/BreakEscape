@@ -719,9 +719,67 @@ proposed for the orchestrator to apply to the named skills (builders do not edit
 
 ### Live proofs
 
-Status recorded in the handover below. The two keyless servers are the branch on port 3280 and a base
-worktree at the merge base on port 3281 (sharing the development database; never any db: task). Any game
-stamped 900 by the dev switch or `--format-version 900` is recorded here as unusable and set back to 0.
+Two keyless servers: the branch on port 3280 (started this session) and a base worktree at the merge base
+on port 3281 (not yet made; see handover). Both share the development database; no db: task is ever run.
+
+**Done this session: the server-side refusal, via curl (no switch, so current 0).**
+`tools/playtest/swap-scenario-game.rb test_seating test_access_networks --format-version 900` made game
+**2394** (`formatVersion 900`). On the branch server at :3280 (current 0, a too-new game):
+
+- `GET /break_escape/games/2394` (show): `409`, HTML body "...newer version of Break Escape (format 900;
+  this server reads up to 0)", header `X-Break-Escape-Format: 0`.
+- `GET .../scenario`: `409`, body `{"error":"format","message":"This game was saved by a newer version of
+  Break Escape (format 900; this server reads up to 0)","current":0}`, header `0`.
+- `GET .../room/lobby`: `409`.
+- `PUT .../sync_state` by curl returns `422 invalid_authenticity_token` (CSRF first, no token in curl); the
+  `sync_state` 409 format refusal itself is proven by `format_version_test.rb`'s sync refusal test.
+- Nothing written: after the refusals the game's `scenario_data` still read `formatVersion 900` and its
+  `updated_at` was unchanged from the swap (`00:09:46Z`), with player_state intact.
+
+**Clean-up:** game **2394** was set back to `formatVersion: 0` with `update_column` (the swap had no real
+design). It is recorded here as **unusable for any later proof**. No other game was touched.
+
+**Not done this session, handed over (browser-driven, need the base worktree):**
+- The reload for real with the dev switch (`BREAK_ESCAPE_FORMAT_TEST_STEP=1`, version 900): a tab open on a
+  branch game at 0, server restarted with the switch, the page reloading once on a room fetch and (second
+  run) on a sync, then no second reload and a saved action. The dev switch, the header, the guard and the
+  409 bodies they consume are all built and unit-proven; this needs a real browser under the switch.
+- The refusal with an open tab across a switch-off restart (tab holding 900 after its reload, then the
+  server restarts without the switch): the next room fetch and sync each `409`, the tab reloads once, the
+  reloaded bootstrap is refused and shows the message in `#loading`, player_state unchanged.
+- The old game from before step 7, made on the base worktree at the merge base and loaded on the branch
+  (no reload, `scenario_data` holds no `formatVersion`, the PIN door opens, `verify-run.rb` shows progress).
+- The new game on the branch (m01 through the PIN door, stamped 0).
+These five browser proofs are the remaining phase-2 work; everything they exercise exists and is unit- or
+curl-proven, so they are verification, not new code.
+
+### Step 7 phase 2 handover (build/harden-7)
+
+- **Done:** the client guard and its wiring (format-guard.js, main.js first import, core/game.js version +
+  bootstrap refusal), the two node tests (wrapper + static scan), the two deferred Rails tests
+  (per-deployed-scenario re-prepare, alias rule), the sweep tool + dry-run test, swap-tool
+  `--format-version`, the README note, and the server-side refusal live proof via curl (game 2394, now
+  cleaned to 0). Commits `3dd665c5a`, `5f5bbde66`, `21a334aac`, `2591bf6c2`, `a486adf7c`, `63a39d59a`, and
+  this log commit.
+- **In progress:** none.
+- **Open (hand over):** the five browser-driven live proofs above. Steps to resume: (1) make the base
+  worktree by hand at `git merge-base main build/harden-7` (never an isolation worktree, plan section 2),
+  start its keyless server on :3281 sharing the dev DB; (2) make the old game there (m01 via new-game.rb,
+  or the base's one-off runner for a Mission-less scenario) and play it to the PIN door; (3) stop :3281,
+  load the same game on :3280, confirm no reload and no `formatVersion` written; (4) the dev-switch reload
+  proof: restart :3280 with `BREAK_ESCAPE_FORMAT_TEST_STEP=1` under an open tab, watch the reload on a room
+  fetch and on a sync (record the triggering request from the network log); (5) the switch-off refusal
+  proof; clean up every 900-stamped game back to 0 and record ids. The playtest-scenario skill drives the
+  browser via the `window.__test` bridge.
+- **Gotchas:**
+  1. The branch keyless server on :3280 was started this session; stop it (by PID) if still running.
+  2. `sync_state`'s 409 format refusal cannot be curled without a CSRF token (CSRF returns 422 first); it
+     is covered by `format_version_test.rb`, and a browser POST carries the token.
+  3. Game **2394** is a used 900-proof game, now at 0, unusable for later proofs.
+  4. No Rails controller or model changed in phase 2, so no existing Rails test is affected; the full
+     suites and the validator sweep are the orchestrator's merge-batch job (congestion rule).
+  5. The static scan's capture regex is tuned to the current tree; a new call-time `fetch` guard shaped
+     unlike `? fetch : null` or `: fetch` could trip it, so prefer those shapes.
 
 
 
