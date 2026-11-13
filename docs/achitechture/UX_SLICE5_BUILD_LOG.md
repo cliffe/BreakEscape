@@ -234,3 +234,57 @@ Display only, unchanged. Nothing is added to player_state and no request is new.
 
 ### Handover (R4)
 Done: m1, n1, n2, n3 and n4. Files: `npc-world-bubbles.js`, `npc-needs.js` (world.speak), `npc-manager.js`, `test/js/ux-bark-bubbles-r4.test.mjs` (new) and `test/js/ux-bark-bubbles-r3.test.mjs`. Open: with lighting on, the ghost stays under the bubbles (R3 behaviour). Raising it above them in both modes would also put it above the light map, which is a separate decision.
+
+## Final fixes (review `UX_SLICE5_REVIEW_R5.md`, merge with build/bark-delay)
+
+### Merge
+`git merge --no-ff build/bark-delay` (merge commit `39c90ca93`). `npc-barks.js` merged cleanly. `npc-manager.js` had 4 conflict hunks, resolved as the R5 recipe says:
+1. `_markAnsweredInView` and `_delayBark` are both kept.
+2. The bark-text branch keeps `hasText` and `answered`, with the delay test as `Number(config.barkDelay) > 0`.
+3. The `showBark` payload takes `stillValid` from `fireBark(stillValid)` and adds `eventPattern` and `followUp`. This branch's `setTimeout(fireBark, barkDelay)` is gone in favour of `_delayBark`.
+4. In the knot branch, the `_delayBark` call sits inside the `inTime` flag, and `onText` is passed only when there is no delay.
+
+After the merge, the bark-delay test, every `ux-bark-*` test and every test that mentions `npc-manager.js` or `npc-barks.js` ran: 46 files, 46 passed.
+
+### Findings
+- **m1, fixed.** New `minigameOpenNow()` in `npc-world-bubbles.js`: a minigame with `_ending` set counts as closed, matching `holdsBarks()`. Both `viewFacts` and `update` use it. A bark held during person-chat and released from its `cleanup()` now goes to the bubble when its NPC is in view.
+- **m2, fixed (option a).** `world.speak` (npc-needs.js) does not defer a line that has `info.knot` or `info.call`. It voices the line at once and tells the bubble layer through `mustShowChatter(id, line)`, which keeps at most one entry per NPC and drops it when the line ends. Where such a line would have been skipped (no room, the bubble cap, its own NPC's bark, or a bark pushing its bubble out), `_skipChatter` hands it to `_toastChatter` instead. That shows a silent toast once (`forceToast`, no sound, no TTS, no phone opening), leaves the voice playing and marks the line so it does not come back as a bubble. Exchange and call lines are never skipped any more, so nothing unheard can lead to `heard_<knot>`. Plain chatter keeps the R4 rule: with no room it gets no voice and no toast.
+- **n1, fixed.** Each bark state keeps its hints as a list (`st.hints`). The new pure helpers are `hintsLeft(st)` (the list while any follow-up is unread) and `hintsBeyond(hints, next)` (drops every entry whose `textKey` matches the new hint, and any repeats). `say()` and `closeTagged` use them, so "H G" plus H gives "G H". `followUpBeyond` stays exported for the older tests.
+- **n2, fixed.** Chatter candidates now skip NPCs that are off camera (`_onCamera`). Before R4, such a line was voiced at once and had no bubble. Now its waiting voice plays from the end-of-frame loop in the same frame, as it does for another room. If the NPC comes back on camera while the line is still running, the bubble shows and the line is not voiced again.
+- **n3, fixed.** `_storyFromLoader` and its doc comment now sit above `_preloadKnotBark`'s doc. The same slip in `npc-world-bubbles.js` (`clearHudCache` between `_hudRects`'s doc comment and `_hudRects`) is fixed too.
+
+### Tests (no lock)
+- New `test/js/ux-bark-bubbles-r5.test.mjs`: 12 pass.
+  - m1: an ending minigame counts as closed; a bark held in person-chat and released from cleanup goes to the bubble; an open minigame still counts as open; chatter shows while the framework still lists an ending minigame.
+  - m2: an exchange or call line is voiced at once, not deferred; with no room it becomes a silent toast once and is voiced once; a bark pushing its bubble out sends it to a toast and its voice carries on; plain chatter is still skipped.
+  - n1: `hintsBeyond` works at any position in the list; "H G" plus H keeps each hint once; `closeTagged` with H hands on G.
+  - n2: an off-camera line is voiced, not skipped, and shows later with no second voice.
+- Every test that imports a changed module (`npc-manager`, `npc-barks`, `npc-world-bubbles`, `npc-needs`), plus the bark-delay and `ux-bark-*` files: 79 files, 79 passed.
+- Full JS suite under the lock (`MERGE_BATCH=1 bin/test-js -j 3`): 591 files, 591 passed, 0 failed.
+
+### Live proof (keyless server on :3340 from this worktree, headless, setFPS(20), fixed steps on, scrollbars shown: 15 px probe)
+All games are new, from `swap-scenario-game.rb test_access_habits <dir>`. Shots and JSON are in `scratchpad/ux-shots/slice5-final/`.
+- **m1** (test_bark_bubbles, game 2792, 1400x1000):
+  - Lee's bark during person-chat with Dana was held (queue 1).
+  - At render time `currentMinigame` was still person-chat with `_ending: true`, `minigameOpen: false`, and the route was `bubble`, with no toast.
+  - Shots `big-chat-held`, `big-chat-released`; data in `big-chat.json`.
+- **Merge** (same game): a `barkDelay: 1500` mapping through `_handleEventMapping` did not mark the event (`answeredInView` false) and showed as Lee's bubble after the delay.
+- **Merge, sis01** (game 2821):
+  - After the briefing, Sarah's `network_isolated` mapping (`barkDelay: 2000`) reached render at 2060 ms. Nothing showed at 700 ms, the event was not marked, and the bark landed as her bubble (`route: bubble`, no toast).
+  - Shot `big-sis01-delayed-bubble`; data in `big-sis01.json`.
+- **m2** (test_needs_sims, Tom and Amara's parcel exchange at the office coffee station, player in earshot, `amara_opened_parcel` set, both caffeine needs set low):
+  - Game 2803, normal view: all 4 lines were shown in bubbles and voiced once each, with no toast.
+  - Game 2802, no room (the layer's HUD rects replaced by one covering the whole view, to stand in for a full HUD): all 4 lines were shown as toasts and voiced once each. There were no `chatter-skipped` entries for the exchange and no voice was cancelled.
+  - Shots `ex-normal-exchange-*`, `ex-noroom-exchange-*`; data in `ex-*-exchange.json`.
+  - Seen in passing, not changed: in neither run did the needs system call `_finishExchange` (no `exchange_heard` log entry, `heard_exchange_tom_parcel` unset). In an earlier run (game 2801) the same exchange played again at the next meeting. This is a queue chat at the coffee station: the chat ended before the last line's time was up, so the exchange was never marked heard. This is needs-system timing and lies outside this slice. Each replay was still shown and voiced once per line.
+- **n2** (test_needs_sims, game 2824, 915x412, camera panned 260 px down): all five NPCs were `onCamera: false` and `overheard: true`. Three lines were set; there were 0 skips and 3 voice attempts, each spoken once, with 0 voices waiting at the end. R5 measured 3 skips and 0 voices. Data in `phone-offcam-pan.json`.
+- **Chatter regression** (game 2825, 1400x1000): 0 overlap, 0 outside-view and 0 HUD frames. Tom's line was shown. Grace's and Amara's lines found no room (two Task Complete notifications take the right of the view) and were skipped unvoiced, as in R5's run and under the R4 ruling.
+- **Bubbles at three sizes** (test_bark_bubbles: 2798 at 1400x1000, 2799 at 800x600, 2800 at 915x412): main-16, hint pages, stale, replace, cooldown, top-two close-up and HUD resize were all retaken, with no step failures and 0 overlap frames in the HUD resize runs.
+- **Phone calls** (test_phone_calls, game 2794):
+  - Basic rang, answering connected it, and a person bark during the call was held (queue 1) and came out as a bubble.
+  - A phone contact's bark was a toast.
+  - After the voicemail decline, the scenario's guard conversation was open, so "New voicemail" was not seen in this run's shot (`calls2-4-voicemail`).
+- Server stopped afterwards.
+
+### Sync
+Display only. Nothing is added to player_state and no request is new. The new `chatterMust` map holds at most one line per NPC and empties when the line ends; it was empty at the end of every run. `st.hints` lives on the in-memory bark state only.
