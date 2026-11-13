@@ -893,6 +893,79 @@ was already curl-proven last session (game 2394). This remaining work is verific
      and the copied secret went with it; the branch server was stopped. A resumer starts fresh.
   4. No full suites were run (congestion rule); no Rails controller or model changed this session.
 
+## Step 7 proof 3 (phase 4, this session): the reload-for-real and the open-tab refusal
+
+Date: 2026-11-13. The two browser-driven proofs the phase-3 handover left open: the reload for
+real under the development switch, and the refusal with a tab held open on a 900-stamped game. One
+branch keyless server on **:3280** only (no base worktree: proof 3 is branch-only). The server was
+restarted three times as a detached child (its own process group, stopped with `SIGTERM` to the
+group), with the held Playwright tabs kept open across every restart: current **0** (switch off),
+current **900** (`BREAK_ESCAPE_FORMAT_TEST_STEP=1`), current **0** again. `setFPS(20)`, fixed steps
+on. No `db:` task was run. Driver `p-harden-7-proofs/proof3_drive.mjs` with reader `p3_read.rb`
+(both in the session scratchpad; nothing added to the repo). Engine code unchanged; no bug found.
+
+The switch raised current as designed: `FormatUpgrade.current` read 900 under the switch (runner),
+and the server-current probe (a `GET` of the swap-900 game's `scenario`, which mutates nothing)
+returned `409` header `0` at current 0 and `200` header `900` under the switch.
+
+**Games (all on the development DB, all reset to `formatVersion: 0` and recorded unusable below):**
+2410 (run A, reload on a room fetch, then the open-tab refusal), 2411 (run B, reload on a sync),
+2418 (the banner), 2412 (swap `--format-version 900`, the direct show refusal). 2410, 2411 and 2418
+are head-started m01 games (`new-game.rb --start-room main_office_area`), stamped `formatVersion` 0
+at creation; 2412 is a `test_access_networks` swap stamped 900.
+
+- **3a, reloads exactly once on a room fetch, and flushes the pending change (game 2410).** Tab
+  opened at current 0 (stored fv 0), its 30 s auto-sync timer stopped, and a pending global
+  `proof3_pendingA` set but left unsynced. Server restarted with the switch (current 900). The tab's
+  first engine request, `GET /room/main_office_area` (response header 900), tripped the guard: it
+  flushed the pending sync and reloaded once (one extra page load; session key
+  `be-format-reload:2410:0:900`). After the reload the stored game read **fv 900** and held
+  `proof3_pendingA` (the flush landed before the reload) plus `proof3_afterReloadA` from a further
+  `syncConfirmed` that returned true with no new reload key. One reload; saving carries on.
+- **3b, reloads exactly once on a sync (game 2411).** Same setup; the first post-restart request was
+  a forced `syncConfirmed` (`PUT /sync_state`, header 900). The guard reloaded once (key
+  `be-format-reload:2411:0:900`); the sync's own global `proof3_pendingB` persisted and the stored
+  game rose to fv 900.
+- **3c, a second mismatch shows the pixel-art banner and saving carries on (game 2418).** The session
+  key `be-format-reload:2418:0:900` was primed to stand for a pair that had already reloaded once (the
+  exact state a first reload leaves). With the switch on, a `GET /room/main_office_area` (header 900)
+  then showed the banner instead of reloading: `border-bottom: 2px solid rgb(255, 204, 0)`, font
+  `"Press Start 2P", GNF, VT323, monospace`, text "This game has been updated. Reload the page to keep
+  playing with the latest version.", and no extra page load. A following `syncConfirmed` returned true
+  and `proof3_banSave` persisted (fv 900): saving carries on after the banner.
+- **3d, the direct show refusal (game 2412).** On the current-0 server, `GET /break_escape/games/2412`
+  (show) returned **409** with the HTML refusal page carrying "...newer version of Break Escape
+  (format 900; this server reads up to 0)" and header `X-Break-Escape-Format: 0`. The show route
+  refuses outright with the full refusal page, so the Phaser bootstrap XHR never runs; the
+  `showBootstrapRefusal` `#loading` path is the fallback for a show that answers 200 while `/scenario`
+  answers 409, which a too-new game never reaches (show refuses first). That `#loading` path stays
+  covered by `test/js/format-guard.test.mjs`. This is correct behaviour, not a gap: the user sees a
+  full-page readable refusal rather than a `#loading` line.
+- **3e, the open-tab refusal across a switch-off restart (game 2410).** After 3a the tab held 900
+  (stored fv 900). The server dropped back to current 0. The held tab's next request, `GET
+  /room/it_room`, returned **409** `{ error: "format", message: "This game was saved by a newer
+  version of Break Escape (format 900; this server reads up to 0)", current: 0 }` (the 409 path,
+  readable message). The guard reloaded once more (new key `be-format-reload:2410:900:0` beside the
+  earlier `0:900`), and the reloaded page is the show route's full HTML refusal (the stored game is
+  still too new). **player_state unchanged across the refusal:** before and after, game 2410 read fv
+  900, the same two marks and the same `updated_at` (`00:54:21Z`); nothing was written. The concurrent
+  sync attempt was cut off by the reload navigation (expected) and wrote nothing.
+
+The version transitions are evidenced by the sessionStorage reload keys (each encodes the held version
+and the server's `n`) and the stored `formatVersion`, not by the page's `scenario.formatVersion`, which
+the guard keeps in a module-private `held` and does not expose on `window`.
+
+**Clean-up:** every 900-stamped game was set back to `formatVersion: 0` with a one-off `bin/rails
+runner` (`update_column`, no callbacks): **2410, 2411, 2418, 2412** all `900 -> 0`. All four are
+recorded **unusable for later proofs** (their player_state carries the proof's marker globals and, for
+2412, a swapped scenario with no Mission). The branch server was stopped (final stop confirmed, :3280
+down). No other game was touched.
+
+**Step 7 is complete:** phase 1 (server + validator), phase 2 (client + tools + the deferred Rails
+tests + the curl refusal proof), phase 3 (live proofs 1, 2, 4), and phase 4 (proof 3, above). Open for
+the orchestrator: the full Rails and `MERGE_BATCH=1 bin/test-js -j 3` suites and the validator sweep at
+the merge batch (the congestion rule kept this builder to targeted files), the six skill-wording
+proposals in phase 2, and the README/validator wording.
 
 - **Done:** (1) schema resolver and notes helper + unit tests (732f41433); (2) **phase A** (afe5b6ca3): schema marks, eager enumerator, schema-walk test; (3) **phase A continued:** validator migration, `_`-skip audit, action-in-a-note warning, README line; (4) **phase B1:** every granting/deriving walker skips notes and visits free data, `CaptureModel.each_capture_writer`'s `notes:` keyword, schema-walk parts 3 and 6, the corpus before/after proof (identical), and the implant/plant Rails route tests with a revert proof (see "Phase B1"); (5) **phase B2, this session:** `strip_notes!` at every client payload builder, the route audit, the boot initializer, the Rails note/capture/boot tests (each with a revert proof), the part-6 ruling recorded, README item 8, and the live proof on port 3270. See "Phase B2" above. **Step 2b is complete.**
 - **In progress:** none.
