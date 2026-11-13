@@ -425,9 +425,10 @@ export class PasswordMinigame extends MinigameScene {
                 tiles,
                 // null: no account chosen yet; '' with other: true: typing a username
                 selected: null,
-                // A remote screen with captures starts on its tiles as the keyboard does; with
-                // none (or while they load) on the typed form (UX slice 2b0)
-                other: picker === false && !(this.signIn.remote && Array.isArray(this.signIn.captured) && this.signIn.captured.length > 0),
+                // A remote screen with captures starts on its tiles as the keyboard does, with
+                // none on the typed form; while they load it shows neither (UX slice 2b0 R1 M2)
+                other: picker === false && !(this.signIn.remote && (this.signIn.capturedLoading
+                    || (Array.isArray(this.signIn.captured) && this.signIn.captured.length > 0))),
                 message: ''
             };
         }
@@ -1482,6 +1483,7 @@ export class PasswordMinigame extends MinigameScene {
             this.addEventListener(el, 'click', () => this.selectSignInTile(idx));
         });
         this.bindCapturedSignIns();
+        this.placeCapturedBlock();
         const change = this.gameContainer.querySelector('#signin-change');
         if (change) this.addEventListener(change, 'click', () => this.clearSignInChoice());
 
@@ -1554,6 +1556,43 @@ export class PasswordMinigame extends MinigameScene {
         this.gameContainer.querySelector('.signin-tile')?.focus?.();
     }
 
+    /** Whether a tile (the PC's own or a captured sign-in) is the chosen one. */
+    signInTileSelected(el, captured = this.capturedTiles()) {
+        const st = this.signInState;
+        const { tileIndex, captureIndex } = el.dataset;
+        if (tileIndex !== undefined) {
+            if (tileIndex === 'other') return !!st.other && this.signInTilesOffered();
+            return st.selected !== null && st.tiles[Number(tileIndex)]?.username === st.selected;
+        }
+        if (captureIndex !== undefined) {
+            if (captureIndex === 'other') return !!st.other;
+            return !st.other && st.selected !== null && captured[Number(captureIndex)]?.username === st.selected;
+        }
+        return false;
+    }
+
+    /** A remote screen still waiting for its Captured sign-ins (GET /capture_secrets). */
+    signInLoading() {
+        return !!this.signIn?.remote && !!this.signIn.capturedLoading;
+    }
+
+    /**
+     * The Captured sign-ins block sits above the form while it holds tiles or is loading,
+     * and below the form, as one line, when there are none (UX slice 2b0 R1 m1).
+     */
+    placeCapturedBlock() {
+        const block = this.gameContainer?.querySelector?.('#signin-captured');
+        const form = this.gameContainer?.querySelector?.('#signin-form');
+        if (!block || !form) return;
+        const state = this.signInLoading() ? 'loading' : (this.capturedTiles().length ? 'tiles' : 'none');
+        block.dataset.state = state;
+        if (state === 'none') {
+            if (form.nextElementSibling !== block) form.after(block);
+        } else if (form.previousElementSibling !== block) {
+            form.before(block);
+        }
+    }
+
     /** Whether this screen offers any tiles: its own accounts, or a remote screen's captures. */
     signInTilesOffered() {
         return this.signIn?.picker !== false || (!!this.signIn?.remote && this.capturedTiles().length > 0);
@@ -1606,20 +1645,15 @@ export class PasswordMinigame extends MinigameScene {
             show(selectedEl, !!tile);
         }
         this.applySelectedHeadshot(tile);
-        this.gameContainer.querySelectorAll('.signin-tile').forEach(el => {
-            const idx = el.dataset.tileIndex;
-            const on = idx === 'other' ? (st.other && this.signInTilesOffered()) : (st.tiles[Number(idx)]?.username === st.selected && st.selected !== null);
-            el.classList.toggle('selected', !!on);
-        });
-        // A remote screen's Captured sign-ins (UX slice 2b0): the same tiles, chosen the same way
+        // One pass over every tile, the PC's own and a remote screen's captures alike, so the
+        // chosen edge has one owner (UX slice 2b0 R1 m2)
         const captured = this.capturedTiles();
-        this.gameContainer.querySelectorAll('.signin-tile[data-capture-index]').forEach(el => {
-            const idx = el.dataset.captureIndex;
-            const c = idx === 'other' ? null : captured[Number(idx)];
-            el.classList.toggle('selected', idx === 'other' ? st.other : (!!c && !st.other && c.username === st.selected));
+        this.gameContainer.querySelectorAll('.signin-tile').forEach(el => {
+            el.classList.toggle('selected', this.signInTileSelected(el, captured));
         });
+        // While a remote screen's captures load, it shows only "Checking..." (R1 M2)
         if (!chosen) {
-            this.setSignInMessage(st.message || 'Choose an account.');
+            this.setSignInMessage(this.signInLoading() ? '' : (st.message || 'Choose an account.'));
         }
         const focus = st.other && !this.usernameField.value ? this.usernameField : this.passwordField;
         if (chosen && focus && typeof focus.focus === 'function') focus.focus();
@@ -1673,7 +1707,10 @@ export class PasswordMinigame extends MinigameScene {
                                     <span class="signin-username">type a name</span>
                                 </button>
                             </div>`
-            : (s.capturedLoading ? '<div class="signin-captured-empty">Checking...</div>' : '<div class="signin-captured-empty">None yet.</div>');
+            : (s.capturedLoading ? '<div class="signin-captured-empty">Checking...</div>' : null);
+        // None: one line below the form, as before the tiles (R1 m1)
+        if (body === null) return `
+                            <div class="signin-captured-title">Captured sign-ins: none yet.</div>`;
         return `
                             <div class="signin-captured-title">Captured sign-ins</div>${body}`;
     }
@@ -1702,11 +1739,15 @@ export class PasswordMinigame extends MinigameScene {
         if (!block) return false;
         block.innerHTML = this.capturedListHtml();
         this.bindCapturedSignIns();
-        // Captures to choose from and nothing typed yet: the screen shows its tiles, as at
-        // the keyboard; a player already typing keeps the form
+        this.placeCapturedBlock();
+        // The list decides the screen once: its tiles, as at the keyboard, or with none the
+        // typed form (focused then, not before; R1 M2). A player already in the typed form
+        // (a field holds text or focus) keeps it.
         const st = this.signInState;
-        const typed = !!(this.usernameField?.value || this.passwordField?.value);
-        if (this.signIn.captured.length > 0 && st.selected === null && !typed) st.other = false;
+        const active = typeof document !== 'undefined' ? document.activeElement : null;
+        const typing = !!st.other && !!(this.usernameField?.value || this.passwordField?.value
+            || (active && (active === this.usernameField || active === this.passwordField)));
+        if (st.selected === null && !typing) st.other = this.signIn.captured.length === 0;
         this.renderSignInForm();
         return true;
     }

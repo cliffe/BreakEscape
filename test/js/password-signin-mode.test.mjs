@@ -284,7 +284,7 @@ const CAPTURES = {
     dev: { targetId: 'dev', kind: 'foothold', at: 4 }
 };
 
-function openRemote(captured = []) {
+function openRemote(captured = [], { loading = false } = {}) {
     ended = []; signIns = []; alerts = [];
     document.body.innerHTML = '<div id="mg"></div>';
     window.MinigameFramework = { currentMinigame: null, endMinigame: (success, result) => ended.push([success, result]) };
@@ -294,7 +294,8 @@ function openRemote(captured = []) {
     const mg = new PasswordMinigame(document.getElementById('mg'), {
         title: "Lena's PC", type: 'item',
         signIn: { pcId: 'lena_pc', pcName: "Lena's PC (HB-FIN-02)", picker: false, tiles: [], current: null,
-            remote: { footholdId: 'jack_comms_port', linkName: 'Drop box: comms room' }, captured },
+            remote: { footholdId: 'jack_comms_port', linkName: 'Drop box: comms room' }, captured,
+            ...(loading ? { capturedLoading: true } : {}) },
         postitNote: '', showPostit: false
     });
     window.MinigameFramework.currentMinigame = mg;
@@ -391,21 +392,47 @@ test('UX 2b0: a captured tile signs in with its own username, and a refusal keep
     assert.deepEqual(signIns[1], ['lena_pc', 'lfox', 'Ledger-Lena-9', { foothold: 'jack_comms_port' }]);
 });
 
-test('9.3a: with no captures the list says so, under its own heading, and the typed form shows', () => {
+test('9.3a / 2b0 R1 m1: with no captures the typed form shows, and one line under it says so', () => {
     openRemote([]);
     assert.equal(document.querySelectorAll('.signin-tile').length, 0, 'no Other user tile with nothing to choose between');
-    assert.equal(q('.signin-captured-title').textContent, 'Captured sign-ins');
-    assert.match(q('.signin-captured-empty').textContent, /None yet/);
+    assert.equal(q('.signin-captured-title').textContent, 'Captured sign-ins: none yet.');
+    assert.equal(q('.signin-captured-empty'), null, 'one line, not a heading and a second line');
+    assert.equal(q('#signin-captured').dataset.state, 'none');
+    assert.ok(q('#signin-form').compareDocumentPosition(q('#signin-captured')) & 4, 'the line sits below the form');
     assert.ok(visible(q('#signin-username-row')));
 });
 
-test('9.3a: the captured list fills in after the screen has opened (review R1 minor 1)', () => {
-    const mg = openRemote([]);
-    mg.signIn.capturedLoading = true;
+test('2b0 R1 M2: while the captures load the screen shows "Checking..." with no form and no focused field', () => {
+    const mg = openRemote([], { loading: true });
+    const fields = () => [q('#signin-username'), q('#password-field')];
+    assert.match(q('#signin-captured').textContent, /Captured sign-ins\s*Checking\.\.\./);
+    assert.equal(q('#signin-captured').dataset.state, 'loading');
+    assert.ok(q('#signin-captured').compareDocumentPosition(q('#signin-form')) & 4, 'above where the form will be');
+    assert.equal(visible(q('#signin-form')), false, 'no form while loading');
+    assert.equal(mg.signInState.other, false, 'neither tiles nor the typed form chosen yet');
+    assert.ok(!fields().includes(document.activeElement), 'no field has focus while loading');
+    assert.equal(messageText(), '', 'no "Choose an account." with nothing to choose yet');
+    // The list arrives with captures: the tiles, and still no field focused
+    mg.setCapturedSignIns(capturedSignIns(CAPTURES, { lena: 'lfox' }, {}));
+    assert.equal(q('#signin-captured').dataset.state, 'tiles');
+    assert.equal(visible(q('#signin-form')), false);
+    assert.ok(!fields().includes(document.activeElement), 'tiles: no field has focus');
+    assert.equal(messageText(), 'Choose an account.');
+});
+
+test('2b0 R1 M2: with no captures the typed form appears once the list arrives, and only then takes focus', () => {
+    const mg = openRemote([], { loading: true });
+    assert.notEqual(document.activeElement, q('#signin-username'));
     mg.setCapturedSignIns([]);
-    assert.match(q('#signin-captured').textContent, /None yet/);
-    mg.signIn.capturedLoading = true;
-    q('#signin-captured').innerHTML = mg.capturedListHtml();
+    assert.equal(mg.signInState.other, true);
+    assert.ok(visible(q('#signin-form')) && visible(q('#signin-username-row')));
+    assert.equal(document.activeElement, q('#signin-username'), 'focus once, when the form appears');
+    assert.equal(q('.signin-captured-title').textContent, 'Captured sign-ins: none yet.');
+    assert.ok(q('#signin-form').compareDocumentPosition(q('#signin-captured')) & 4, 'the line moves below the form');
+});
+
+test('9.3a: the captured list fills in after the screen has opened (review R1 minor 1)', () => {
+    const mg = openRemote([], { loading: true });
     assert.match(q('#signin-captured').textContent, /Checking/);
     mg.setCapturedSignIns(capturedSignIns(CAPTURES, { lena: 'lfox' }, { lena: 'Ledger-Lena-9' }));
     const tiles = [...document.querySelectorAll('.signin-captured-tile')];
@@ -426,6 +453,15 @@ test('UX 2b0: a player already typing when the captures arrive keeps the typed f
     assert.ok(visible(q('#signin-username-row')));
     assert.equal(q('#signin-username').value, 'lf');
     assert.ok(q('#signin-captured .signin-other').classList.contains('selected'));
+});
+
+test('2b0 R1 M2: a player with the cursor in Username (nothing typed) keeps the typed form', () => {
+    const mg = openRemote([]);
+    q('#signin-username').focus();
+    assert.equal(document.activeElement, q('#signin-username'));
+    mg.setCapturedSignIns(capturedSignIns(CAPTURES, { lena: 'lfox' }, {}));
+    assert.equal(mg.signInState.other, true, 'focus counts as typing');
+    assert.ok(visible(q('#signin-username-row')));
 });
 
 test('9.3a: a remote sign-in sends the foothold through pc-sessions', async () => {
