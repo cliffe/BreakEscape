@@ -92,5 +92,29 @@ Keyless server on :3302 from this worktree, headless, physics at 20 fps with fix
 - The Wi-Fi glyph still awaits the user's approval (unchanged).
 - The own block heading on jack and implant views repeats the network named in the subtitle ("On Harbour office LAN, ..." then "Harbour office LAN"). The ruling covered the Wi-Fi view only, so this is left as it was.
 
+## R2 fixes
+
+From `docs/achitechture/UX_SLICE1_CODE_REVIEW_R2.md` (0 blockers, 0 majors, 3 minors, 2 nits) and the orchestrator's rulings. Every finding is fixed.
+
+- m1, own block heading: the own network's block is headed "Reachable" on every view (`OWN_HEADING`, was `WIFI_OWN_HEADING`). The subtitle names the network, so the heading no longer repeats it. Further networks keep their names ("Server network, through HB-FIN-02").
+- m2, header and scrollbar: the frame is now a column of header, scrolling list and "More below" strip. The header (`.network-view-header`, with `.network-view-header-body` for the lines) holds the X and sits outside the scroll area, so the list's scrollbar starts under it and never meets the X. The sticky header and its negative margins are gone. A shared rule, `.pixel-scroll`, is added to `css/utilities.css` (the file existed and `games/show.html.erb` loads it): a 14px bar, a square thumb with a 2px border, a flat track with a 2px divider on its left, no radius, no arrow buttons, colours from four variables (`--pixel-scroll-track`, `-thumb`, `-edge`, `-hover`). Firefox gets `scrollbar-width` and `scrollbar-color`, behind `@supports not selector(::-webkit-scrollbar)`, because Chrome drops the `::-webkit-scrollbar` art once `scrollbar-color` is set. Only the network view's list uses it in this slice.
+- m3, PC host label: a PC row's host `<strong>` carries `network-row-hostname` (nowrap). The label is never narrower than its host (`min-width: min-content`), and the control may shrink instead (`flex: 0 1 auto`), so at 800x600 with the scrollbar shown "Open (Lena Fox)" wraps inside its button and "HB-FIN-02" stays whole.
+- n1, names across replants: `distinct_link_name` now decides from the scenario. When the source's room holds more than one source of that kind (jacks for a jack; PCs that a `grant_foothold` of the same shape names, for an implant), every link from that room adds its own source name, whatever is held. Two sources with one readable name are numbered in scenario order. The name depends only on the source, so unplugging and planting in either order gives the same names. In `test_access_networks` the comms room has two jacks (the spare port and the locked switch port), so its drop box link now reads "Drop box: Comms room, Spare wall port"; the workshop's single jack still reads "Drop box: Workshop".
+- n2: the dead `.network-view-observations` rule is removed.
+
+### Tests
+- `test/js/network-view.test.mjs` (under the lock): 41/41. Updated: own heading expectations, the no-repeat test now covers the first block heading, the X test checks the X's parent is the header and that neither is in the scroll area (children of the frame are header, list, More below), the columns test covers a PC row's host label, and a new test checks the `.pixel-scroll` rule and that the layout loads `utilities.css`. Also green without the lock: `escaping-shared-helpers` 20, `network-links` 66, `network-links-routing` 4, `access-remote-signin` 15.
+- `test/controllers/break_escape/network_link_names_test.rb`: 14/14. Changed: two jacks in one room both carry their jack name. New: replanted in the other order keeps both names (and one planted alone still says which jack); one jack in a room keeps the plain name; two jacks with one readable name are numbered.
+- Network Rails tests (all 15 `*network*_test.rb` in `test/controllers/break_escape` and `test/models/break_escape`, under the lock): 194 runs, 3504 assertions, 0 failures, 0 errors, 0 skips.
+- Validator `--no-graph`: `test_access_networks` 0 ❌, `lab_physical_pentest` 0 ❌.
+
+### Live proof
+Keyless server on :3304 from this worktree, headless with the browser's scrollbars shown (`ignoreDefaultArgs: ['--hide-scrollbars']`), physics at 20 fps with fixed steps on, stopped afterwards. New games by `tools/playtest/swap-scenario-game.rb test_access_networks scenarios/test_access_networks --unlock-all`: 2531 for every shot (2532 was made as a spare and not used). Setup through the real `window.ApiClient` calls, each view opened through `window.networkLinks.open` after a reload. Shots in the scratchpad `ux-shots/slice1-r2fix/` at 1400x1000, 800x600 and 915x412: `jack`, `pivot` (top, middle, bottom), `down-no-route` (top, bottom), `wifi-joined`, `implant-injector` (top, bottom), `implant-stick`, `powered-down`, plus `remote-signin-*`, `after-esc` and `after-x`. Each shot with a scrollbar has a 3x nearest zoom of the scrollbar's top end beside the header and X (`*-scrollbar-x3.png`). Measured in every shot (`run.log`): own heading "Reachable"; wherever the list scrolls, the scrollbar is 14px wide, starts at the header's bottom edge and never overlaps the X (at 800x600 the X spans x 750 to 780 and the bar 772 to 786 from y 84 down, below the X's bottom at 50); no PC host label wraps and no row overflows; the frame is on screen and the page never scrolls sideways; "More below" shows exactly when the list is not at its end. Two columns at every size (477, 358 and 415 px with the bar). No page errors.
+
+### Open
+- The Wi-Fi glyph still awaits the user's approval (unchanged).
+- Other minigames' scrollbars adopt `.pixel-scroll` in a later slice; their own per-minigame rules are untouched here.
+- Firefox cannot draw a border on a scrollbar thumb, so there the bar is flat colours only; not checked live (no Firefox here).
+
 ## Handover
 Done: all of slice 1. Nothing in progress. Commits on `build/ux-net`: see the report.
