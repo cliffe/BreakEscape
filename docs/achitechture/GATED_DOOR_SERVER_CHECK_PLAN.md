@@ -263,7 +263,9 @@ The credit is gated on that possession result, never on the shipped trusted bool
 credit a player holding nothing (§6). Because the hardened `validate_unlock` already refuses to open
 the door without possession, a non-holder never reaches this branch; the credit site asserts the
 same possession result so the two cannot drift. When possession passes and the room is not yet in
-`unlockedRooms`, promote with the `viaCredential` block. `serve_opened_room` still runs; the added
+`unlockedRooms`, promote with the `viaCredential` block. Capture "the room is not yet in
+`unlockedRooms`" before `serve_opened_room` runs, because its `unlock_room!` adds the room and a check
+made after it would never credit. `serve_opened_room` still runs; the added
 steps are the `creditOnPass.viaCredential` write, the `npcRouteRooms` delete, and a `save!` after
 the credit write (a `viaCredential` block that sets a global but completes no task would otherwise
 not persist, since only `complete_task!` saves at its tail). All of this sits inside the existing
@@ -359,8 +361,10 @@ in `unlockedRooms`. All of these paths run in the `unlock`/feedback flow on a fu
   targets, so flow reaches the object branch and `unlock_object!` (`:1152`) with no room check. The
   feedback-helper `nil` returns below live only in the `unless is_valid` block (`:1105-1129`) and so
   cover only the *invalid*-attempt branch; they do nothing for a valid attempt. So the refusal for the
-  valid path is a **distinct controller guard**, checked in the object branch before the
-  `ActiveRecord::Base.transaction` and `unlock_object!`: when `target_type != 'door'` and the predicate
+  valid path is a **distinct controller guard**, checked before `unlock_object!` and before any
+  write. The object branch sits inside the `ActiveRecord::Base.transaction` (`:1137`), so the guard
+  goes either just before that transaction (keyed on `target_type`) or first thing in the object
+  branch; both refuse before anything is written. When `target_type != 'door'` and the predicate
   holds, render a clear "not reachable yet" answer (`success: false`, `reason: room_not_reachable`,
   `status: :forbidden`) and return, so no `unlock_object!`, no contents in the answer, and no flag
   submission runs. The builder wires both insertion points: this valid-path controller guard, and the
