@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════════
    Warranty Compliance Checklist — MG-04 sis03_cyber_insurance
    Paper document inset in dark game frame.
-   Font: Courier New throughout. Palette aligned to CDF/FDP.
+   Font: VT323 (a typed form in a pixel face). Palette aligned to CDF/FDP.
    ═══════════════════════════════════════════════════════════ */
 
 /* ── Outer containers (full-screen, matching FDP/CDF pattern) ── */
@@ -9,7 +9,7 @@
 .wcc-minigame-container {
     background: #0d1117;
     color: #c9d1d9;
-    font-family: 'Courier New', Courier, monospace;
+    font-family: 'VT323', monospace;
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -67,8 +67,9 @@
 
 .wcc-letterhead {
     background: #1a233a;
-    padding: 9px 20px;
+    padding: 9px 52px 9px 20px;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
@@ -76,19 +77,18 @@
 }
 
 .wcc-letterhead-title {
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 13px;
-    font-weight: bold;
+    font-family: 'VT323', monospace;
+    font-size: 18px;
     color: #ffffff;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    line-height: 1.4;
+    line-height: 1.2;
     margin: 0;
 }
 
 .wcc-letterhead-ref {
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 13px;
+    font-family: 'VT323', monospace;
+    font-size: 18px;
     color: #8899cc;
     white-space: nowrap;
 }
@@ -103,9 +103,8 @@
 }
 
 .wcc-doc-title {
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 14px;
-    font-weight: bold;
+    font-family: 'VT323', monospace;
+    font-size: 20px;
     color: #1a2240;
     text-align: center;
     letter-spacing: 0.06em;
@@ -120,17 +119,17 @@
     justify-content: center;
     gap: 8px;
     flex-wrap: wrap;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 13px;
+    font-family: 'VT323', monospace;
+    font-size: 18px;
     color: #556;
 }
 
 .wcc-doc-status {
     margin-left: auto;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 12px;
+    font-family: 'VT323', monospace;
+    font-size: 18px;
     padding: 1px 5px;
-    border: 1px solid currentColor;
+    border: 2px solid currentColor;
     line-height: 1.4;
     white-space: nowrap;
 }
@@ -144,11 +143,11 @@
 
 .wcc-gate-note {
     margin-top: 10px;
-    border: 1px solid #e0a0a0;
+    border: 2px solid #e0a0a0;
     background: #fdf4f4;
     color: #7a1a18;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 13px;
+    font-family: 'VT323', monospace;
+    font-size: 18px;
     line-height: 1.5;
     padding: 7px 12px;
 }
@@ -165,7 +164,7 @@
 /* ── Warranty rows ───────────────────────────────────────── */
 
 .wcc-row {
-    border-top: 1px solid #d8d4ce;
+    border-top: 2px solid #d8d4ce;
     padding: 12px 24px 14px 24px;
     background: #fefcf8;
     box-sizing: border-box;
@@ -193,9 +192,8 @@
 
 /* W-XX code badge */
 .wcc-code {
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 11px;
-    font-weight: bold;
+    font-family: 'VT323', monospace;
+    font-size: 16px;
     color: #fefcf8;
     background: #1a233a;
     padding: 2px 6px;
@@ -205,19 +203,18 @@
 }
 
 .wcc-row-title {
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 13px;
-    font-weight: bold;
+    font-family: 'VT323', monospace;
+    font-size: 18px;
     color: #1a2240;
     line-height: 1.5;
     flex: 1;
 }
 
 .wcc-claim-refs {
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 12px;
+    font-family: 'VT323', monospace;
+    font-size: 18px;
     color: #2a4878;
-    border: 1px solid #a8b8d0;
+    border: 2px solid #a8b8d0;
     padding: 1px 5px;
     background: #edf2fa;
     line-height: 1.4;
@@ -225,10 +222,10 @@
 }
 
 .wcc-verdict-badge {
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 12px;
+    font-family: 'VT323', monospace;
+    font-size: 18px;
     padding: 1px 5px;
-    border: 1px solid currentColor;
+    border: 2px solid currentColor;
     line-height: 1.4;
     white-space: nowrap;
 }
@@ -239,8 +236,8 @@
 
 /* Context/obligation text */
 .wcc-row-context {
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 13px;
+    font-family: 'VT323', monospace;
+    font-size: 18px;
     line-height: 1.5;
     color: #2a2a3a;
     padding: 0 0 8px 0;
@@ -264,8 +261,8 @@
 }
 
 .wcc-verdict-btn {
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 13px;
+    font-family: 'VT323', monospace;
+    font-size: 18px;
     line-height: 1;
     border: 2px solid #b0aba4;
     background: #fff;
@@ -342,8 +339,8 @@
 /* ── Hint ─────────────────────────────────────────────────── */
 
 .wcc-hint {
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 12px;
+    font-family: 'VT323', monospace;
+    font-size: 18px;
     line-height: 1.5;
     color: #445;
     border-left: 3px solid #a8b8d0;
@@ -362,13 +359,13 @@
 }
 
 .wcc-header-btn {
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 13px;
+    font-family: 'VT323', monospace;
+    font-size: 18px;
     letter-spacing: 0.04em;
     padding: 5px 16px;
     cursor: pointer;
     background: transparent;
-    border: 1px solid currentColor;
+    border: 2px solid currentColor;
 }
 
 .wcc-header-btn-submit {
@@ -390,37 +387,11 @@
 
 /* ── Footer close bar ────────────────────────────────────── */
 
-.wcc-footer {
-    border-top: 2px solid #334466;
-    background: #0f1826;
-    padding: 10px 20px;
-    display: flex;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.wcc-footer-btn {
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 14px;
-    letter-spacing: 0.05em;
-    background: #1a233a;
-    border: 1px solid #334466;
-    color: #8899cc;
-    padding: 6px 20px;
-    cursor: pointer;
-}
-
-.wcc-footer-btn:hover {
-    background: #233350;
-    border-color: #4455aa;
-    color: #aabbdd;
-}
-
 /* ── Empty state ──────────────────────────────────────────── */
 
 .wcc-empty-state {
     padding: 24px;
     color: #555;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 14px;
+    font-family: 'VT323', monospace;
+    font-size: 20px;
 }

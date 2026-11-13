@@ -240,14 +240,11 @@ export class WarrantyChecklistMinigame extends MinigameScene {
                                 <button id="wcc-submit-btn" class="wcc-header-btn wcc-header-btn-submit" type="button" ${submitDisabled}>${escapeText(submitLabel)}</button>
                             </div>
                         </div>
-                        <div class="wcc-doc-body">
+                        <div class="wcc-doc-body pixel-scroll">
                             ${emptyState}
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="wcc-footer">
-                <button id="wcc-close-btn" class="wcc-footer-btn" type="button">Close</button>
             </div>
         `;
 
@@ -260,11 +257,6 @@ export class WarrantyChecklistMinigame extends MinigameScene {
     }
 
     bindEvents() {
-        const closeBtn = this.gameContainer.querySelector('#wcc-close-btn');
-        if (closeBtn) {
-            this.addEventListener(closeBtn, 'click', () => this.complete(false));
-        }
-
         const submitBtn = this.gameContainer.querySelector('#wcc-submit-btn');
         if (submitBtn) {
             this.addEventListener(submitBtn, 'click', () => this.handleSubmit());
