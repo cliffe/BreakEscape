@@ -932,6 +932,14 @@ test('wordsHtml keeps each word whole (no break at a hyphen) and reads the same'
     assert.equal(wordsHtml(''), '');
 });
 
+test('hostnameClass keeps short host labels whole and lets very long ones break', async () => {
+    const { hostnameClass, NOWRAP_WORD_MAX } = await import(join(js, 'minigames/network-view/network-view-minigame.js'));
+    assert.equal(hostnameClass('HB-FS01'), 'network-row-hostname');
+    assert.equal(hostnameClass('x'.repeat(NOWRAP_WORD_MAX)), 'network-row-hostname');
+    assert.equal(hostnameClass('FINANCE-RECONCILIATION-WS-0001'), 'network-row-hostname-long');
+    assert.equal(hostnameClass(undefined), 'network-row-hostname');
+});
+
 test('wordsHtml leaves a very long word out of the nowrap span, still escaped (PC polish R2 m2)', async () => {
     const { wordsHtml, NOWRAP_WORD_MAX } = await import(join(js, 'minigames/network-view/network-view-minigame.js'));
     const long = 'Quarterly-Reconciliation-Archive-<2026>';
