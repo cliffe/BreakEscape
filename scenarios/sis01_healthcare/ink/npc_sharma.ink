@@ -72,7 +72,6 @@ VAR closing_asked = 0
 
 
 === main_debrief ===
-#complete_task:attend_debrief
 Priya S.: I've read Helen's draft for the patient safety incident review, and the decision log.
 Priya S.: I'm not here to blame anyone. What we learn here goes back out to other trusts.
 Priya S.: Let's start with the patients.
@@ -425,5 +424,8 @@ Priya S.: Thank you. My notes go to Helen this week, for the Trust's review.
     Priya S.: Nobody died today. Some of that was your decisions and some of it was luck. The review will say which.
 }
 #set_global:debrief_complete:true
+// The task completes after debrief_complete, at the end of the debrief (sis02 pattern). It used
+// to complete as main_debrief began, which concluded nothing and raised "Not Yet..." over the chat.
+#complete_task:attend_debrief
 #exit_conversation
 -> END

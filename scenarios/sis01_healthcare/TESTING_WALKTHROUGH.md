@@ -56,7 +56,7 @@ completes the task; the playtest reaches them by playing, not by setting them.
 | 4 | `verify_drug_library` | `drug_library_verified=true` → David eventMapping → `completeTask`; also triggers Sharma `debrief_started=true` |
 | 4 (optional) | `warn_sarah` | locked until `drug_library_compromised=true` (Sarah `unlockTask`); `#complete_task:warn_sarah` in `post_drug_tamper` |
 | 4 | `helen_ico_advisory` | `ico_notified=true` → Helen eventMapping → `completeTask` |
-| 5 | `attend_debrief` | `debrief_complete=true` → Priya S. eventMapping → `completeTask` |
+| 5 | `attend_debrief` | Priya S. debrief_end: `#set_global:debrief_complete:true`, then `#complete_task:attend_debrief` |
 
 ### Things that were previously bypassed
 

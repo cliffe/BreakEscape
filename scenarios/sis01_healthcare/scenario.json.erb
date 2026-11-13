@@ -492,7 +492,12 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
       "aimId": "ncsc_debrief",
       "title": "NCSC Debrief",
       "missionConclusion": true,
-      "concludeRequires": { "globals": ["debrief_complete"] },
+      "concludeRequires": {},
+<%# Mission conclusion (sis02 pattern). No VM or flag work, so there is nothing the server must hold
+    the ending for: the empty gate trusts the client. npc_sharma.ink debrief_end sets debrief_complete
+    and completes attend_debrief straight after it; the music event on debrief_complete rolls the
+    credits and POSTs /conclude. The old globals gate on debrief_complete, with attend_debrief
+    completed as main_debrief began, answered "Not Yet..." at the start of every debrief. %>
       "description": "Priya S. from the NCSC is waiting in the Major Incident Room. Speak to her when you are ready.",
       "status": "locked",
       "order": 4,
@@ -504,7 +509,8 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "type": "npc_conversation",
           "targetNPC": "dr_sharma",
           "status": "active"
-<%# status: active — npc_conversation auto-completes on talking to Priya S. (no #unlock_task exists). %>
+<%# status: active. Completed by #complete_task:attend_debrief at the end of npc_sharma.ink debrief_end
+    (no #unlock_task exists). %>
         }
       ]
     }
