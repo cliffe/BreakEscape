@@ -8,6 +8,9 @@ import { resolveObjectField } from '../../utils/conditional-text.js';
 import { escapeHtml } from '../../utils/escape-html.js';
 import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { mentionsComputer } from '../../utils/computer-keywords.js';
+import { mountPcMonitor, cssZoomOf, postitNotebookEntry } from '../../utils/pc-monitor.js';
+import { MORE_BELOW_TEXT } from '../../utils/more-below.js';
+import { applyHeadshotBox, npcRecordFor, headshotSourceFor } from '../../utils/npc-headshot.js';
 
 
 
@@ -226,6 +229,46 @@ const TRANSFER_LABELS = {
     cancel: 'Cancel'
 };
 
+/** The desktop's scroll cue, the network view's words (utils/more-below.js). */
+export const DESKTOP_MORE_BELOW_TEXT = MORE_BELOW_TEXT;
+
+/**
+ * A share's file names are as wide as their text and centred under the file by -50%, so an
+ * odd width puts the text on a half pixel (UX slice 2c R1 live check at x1). Round each
+ * name's width up to an even number of pixels once it is laid out, and again when the
+ * pixel font arrives.
+ */
+
+export function evenShareLabels(grid, selector = '.container-content-label') {
+    if (!grid?.querySelectorAll) return;
+    const even = () => {
+        for (const label of grid.querySelectorAll(selector)) {
+            label.style.width = '';
+            const w = label.getBoundingClientRect?.().width || 0;
+            const z = cssZoomOf(label);
+            const local = w / z;
+            if (!(local > 0)) continue;
+            const target = Math.ceil(local - 1e-6) + (Math.ceil(local - 1e-6) % 2);
+            if (Math.abs(target - local) > 1e-6) label.style.width = `${target}px`;
+        }
+    };
+    even();
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(even);
+    if (typeof document !== 'undefined') document.fonts?.ready?.then?.(even);
+}
+
+/**
+ * Centre an absolutely placed box in its host on whole pixels (R4 m3): left and top are
+ * the spare width and height halved and rounded down, never below 0.
+ */
+export function centreOnWholePixels(box, host) {
+    if (!box?.style || !host) return;
+    const left = Math.max(0, Math.floor(((host.clientWidth || 0) - (box.offsetWidth || 0)) / 2));
+    const top = Math.max(0, Math.floor(((host.clientHeight || 0) - (box.offsetHeight || 0)) / 2));
+    box.style.left = `${left}px`;
+    box.style.top = `${top}px`;
+}
+
 export class ContainerMinigame extends MinigameScene {
     // The X sits inside the frame (MinigameScene.closeInsideFrame)
     static closeInsideFrame = true;
@@ -273,6 +316,55 @@ export class ContainerMinigame extends MinigameScene {
                 || (data.networkShare && data.networkShare.footholdId ? data.id : null) || null);
         // Why this screen closed, reported to networkLinks.landed from cleanup (4.3)
         this.exitReason = 'close';
+        // A PC's desktop and a share's folder window sit in the one PC monitor frame (UX
+        // slice 2c, utils/pc-monitor.js), the same frame as the PC's sign-in screen
+        this.pcView = this.mode !== 'npc' && (this.desktopMode || this.shareFolder);
+        this.pcMonitor = null;
+    }
+
+    /** The name on the monitor's top strip: the PC's (a share opened from a desktop keeps that PC's). */
+    monitorName() {
+        if (this.shareFolder && this.parentLockable?.scenarioData?.name) return this.parentLockable.scenarioData.name;
+        if (this.shareFolder) return shareLabelParts(this.containerItem?.scenarioData?.name).name || '';
+        return this.containerItem?.scenarioData?.name || '';
+    }
+
+    /** Put the game area in the PC monitor frame (after super.init()). */
+    mountMonitor() {
+        const raw = this.monitorPostit();
+        const note = raw ? escapeHtmlKeepWords(displayDashes(raw)) : '';
+        this.pcMonitor = mountPcMonitor(this, { name: displayDashes(this.monitorName()), postitHtml: note, pcId: this.monitorPcId() });
+        if (this.pcMonitor?.postit) makeDraggable(this.pcMonitor.postit);
+    }
+
+    /**
+     * The post-it stuck on this PC's monitor, as raw text, or null (R4 m2). The note is on
+     * the monitor, not the desktop: a share window opened from a desktop shows that PC's
+     * note too. A share opened from the network view has no PC monitor of its own.
+     */
+    monitorPostit() {
+        if (this.mode === 'npc') return null;
+        const data = this.desktopMode ? this.containerItem?.scenarioData
+            : (this.shareFolder ? this.parentLockable?.scenarioData : null);
+        return data && data.showPostit && typeof data.postitNote === 'string' && data.postitNote.trim()
+            ? data.postitNote : null;
+    }
+
+    /** The PC whose frame this is (the share's PC for a folder window), for its kept post-it height. */
+    monitorPcId() {
+        if (this.shareFolder) return this.parentLockable?.scenarioData?.id || this.sourcePcId || null;
+        return this.loginPcId || this.containerItem?.scenarioData?.id || null;
+    }
+
+    // Footer buttons (Add to Notepad) go in the monitor's chin
+    controlsHost() {
+        return this.pcMonitor?.controls || null;
+    }
+
+    // In the monitor the X lives in the bezel's top strip (css/pc-monitor.css)
+    placeCloseButton() {
+        if (this.pcMonitor) return;
+        super.placeCloseButton();
     }
 
     /** The session this sign-in desktop shows (pc-sessions.js), or null. */
@@ -554,6 +646,7 @@ export class ContainerMinigame extends MinigameScene {
             this._unregisterDesktop();
             this._unregisterDesktop = null;
         }
+        this.pcMonitor?.destroy?.();
         if (typeof super.cleanup === 'function') super.cleanup();
         this.reportNetworkExit();
     }
@@ -633,8 +726,11 @@ export class ContainerMinigame extends MinigameScene {
     }
 
     async init() {
+        // In the PC monitor the X closes it: no Close button beside it (UX slice 2c)
+        if (this.pcView) this.params = { ...this.params, showCancel: false };
         // Call parent init first
         super.init();
+        if (this.pcView) this.mountMonitor();
 
         // A container opening now means no reader is about to hand back to a network screen
         // recorded earlier (a locked folder that opened after its PIN leaves one behind), so
@@ -678,7 +774,10 @@ export class ContainerMinigame extends MinigameScene {
         }
 
         // Add notebook button to minigame controls if postit note exists (before cancel button)
-        const controls = (this.containerItem.scenarioData.postitNote && this.containerItem.scenarioData.showPostit) ? this.ensureControlsRow() : null;
+        // In the PC monitor the note's button follows the note onto every view (R4 m2)
+        const hasNote = this.pcMonitor ? !!this.monitorPostit()
+            : !!(this.containerItem.scenarioData.postitNote && this.containerItem.scenarioData.showPostit);
+        const controls = hasNote ? this.ensureControlsRow() : null;
         if (controls) {
             const notebookBtn = document.createElement('button');
             notebookBtn.className = 'minigame-button';
@@ -790,6 +889,27 @@ export class ContainerMinigame extends MinigameScene {
         // The mapped stub has no observations; it gets the same line as a share opened from
         // the network view (slice 2a review R1 n3)
         const observations = this.headerObservations() || (host ? `A file share on ${host}.` : '');
+        if (this.pcMonitor) {
+            // On the monitor's screen (UX slice 2c): the folder window over the wallpaper, the
+            // description in its status bar, the header picture dropped
+            this.gameContainer.innerHTML = `
+            <div class="share-folder-layout pc-share">
+            <div class="container-minigame share-folder">
+                <div class="share-folder-window">
+                    <div class="desktop-window-titlebar share-folder-titlebar">
+                        <img class="share-folder-icon" src="${escapeHtml(data.iconImage || SHARE_ICON)}" alt="">
+                        <span class="share-folder-path">${escapeHtml(unc || name)}</span>
+                    </div>
+                    <div class="container-contents-grid share-folder-files pixel-scroll" id="container-contents-grid">
+                        <!-- Files will be populated here -->
+                    </div>
+                    <div class="share-folder-status pixel-scroll">${escapeHtml(displayDashes(observations))}</div>
+                </div>
+            </div>
+            </div>
+        `;
+            return;
+        }
         this.gameContainer.innerHTML = `
             <div class="share-folder-layout">
             <div class="container-image-section">
@@ -833,6 +953,7 @@ export class ContainerMinigame extends MinigameScene {
             : `Signed in as <strong>${escapeHtml(name)}</strong> (${escapeHtml(session.username)})`;
         return `${remoteLine}${claimLine}
                     <div class="desktop-account-bar">
+                        ${this.pcMonitor ? '<span class="desktop-account-headshot" aria-hidden="true" hidden></span>' : ''}
                         <span class="desktop-account-name">${who}</span>
                         <span class="desktop-account-actions">
                             <button type="button" class="minigame-button desktop-account-btn" id="desktop-switch-user">Switch user</button>
@@ -842,6 +963,7 @@ export class ContainerMinigame extends MinigameScene {
     }
 
     createDesktopUI() {
+        if (this.pcMonitor) { this.createMonitorDesktopUI(); return; }
         this.gameContainer.innerHTML = `
             <div class="container-image-section">
                 ${this.containerImageHtml()}
@@ -869,7 +991,7 @@ export class ContainerMinigame extends MinigameScene {
             </div>
         `;
 
-        if (this.containerItem.scenarioData.postitNote && this.containerItem.scenarioData.showPostit) {
+        if (!this.pcMonitor && this.containerItem.scenarioData.postitNote && this.containerItem.scenarioData.showPostit) {
             const postit = document.createElement('div');
             postit.className = 'postit-note';
             postit.innerHTML = escapeHtmlKeepWords(displayDashes(this.containerItem.scenarioData.postitNote));
@@ -880,6 +1002,80 @@ export class ContainerMinigame extends MinigameScene {
         }
     }
     
+    /**
+     * The desktop on the monitor's screen (UX slice 2c): a top bar with the signed-in account
+     * (headshot, name, Switch user, Sign out), the icons on the wallpaper, and a taskbar with
+     * the computer's description. The PC's name is on the bezel's top strip and the post-it on the frame.
+     */
+    createMonitorDesktopUI() {
+        const account = this.accountBarHtml();
+        const note = this.headerObservations();
+        this.gameContainer.innerHTML = `
+            <div class="container-minigame desktop-mode pc-desktop">
+                ${account ? `<div class="pc-desktop-topbar">${account}
+                </div>` : ''}
+                <div class="desktop-background pixel-scroll">
+                    <div class="desktop-icons" id="desktop-icons">
+                        <!-- Desktop icons will be populated here -->
+                    </div>
+                </div>
+                <div class="desktop-more" hidden aria-hidden="true"><span class="desktop-more-arrow"></span><span class="desktop-more-text">${DESKTOP_MORE_BELOW_TEXT}</span></div>
+                ${(note || this.isTakeable) ? `<div class="desktop-taskbar">
+                    ${note ? `<span class="desktop-taskbar-note pixel-scroll">${escapeHtml(displayDashes(note))}</span>` : ''}
+                    <div class="desktop-actions">
+                        ${this.isTakeable ? '<button class="minigame-button" id="take-container-btn">Take Container</button>' : ''}
+                    </div>
+                </div>` : ''}
+            </div>
+        `;
+        this.applyAccountHeadshot();
+        this.watchDesktopScroll();
+    }
+
+    /**
+     * The icon area scrolls inside the screen when the icons run past its bottom (R2 M2): the
+     * pixel scrollbar, and "More below" under it while there is more to see, as in the
+     * network view. Re-checked on scroll, on a resize and once the fonts are in.
+     */
+    watchDesktopScroll() {
+        const area = this.gameContainer?.querySelector?.('.pc-desktop > .desktop-background');
+        const more = this.gameContainer?.querySelector?.('.pc-desktop > .desktop-more');
+        if (!area || !more) return;
+        this.desktopScrollArea = area;
+        this.desktopMoreElement = more;
+        this.addEventListener(area, 'scroll', () => this.updateDesktopScrollCue());
+        if (typeof window !== 'undefined') this.addEventListener(window, 'resize', () => this.updateDesktopScrollCue());
+        if (typeof document !== 'undefined') document.fonts?.ready?.then?.(() => this.updateDesktopScrollCue());
+    }
+
+    /** Show "More below" while the desktop's icons run past the icon area's bottom edge. */
+    updateDesktopScrollCue() {
+        const area = this.desktopScrollArea;
+        const more = this.desktopMoreElement;
+        if (!area || !more || more.isConnected === false) return false;
+        const below = (area.scrollHeight - area.clientHeight - area.scrollTop) > 2;
+        const was = more.hidden;
+        more.hidden = !below;
+        // The centred words at an even width, so they land on a whole pixel (as a share's names)
+        if (below && was) evenShareLabels(more, '.desktop-more-text');
+        return below;
+    }
+
+    /**
+     * The signed-in account's headshot in the desktop's top bar (UX slice 2c), with the same
+     * fallback as a sign-in tile: the talk sheet's head crop, and the keys logged (R1 m8).
+     */
+    applyAccountHeadshot() {
+        const box = this.gameContainer?.querySelector?.('.desktop-account-headshot');
+        const session = this.loginSession();
+        if (!box || !session) return;
+        const record = npcRecordFor({ npcId: session.npcId, username: session.username });
+        const talk = typeof record?.spriteTalk === 'string' ? record.spriteTalk : '';
+        const talkUrl = !talk ? null
+            : (/^(\/|https?:|data:)/.test(talk) ? talk : `/break_escape/${talk.startsWith('assets/') ? '' : 'assets/'}${talk}`);
+        applyHeadshotBox(box, headshotSourceFor({}, record), { talkUrl });
+    }
+
     populateContents() {
         if (this.desktopMode) {
             this.populateDesktopIcons();
@@ -949,6 +1145,7 @@ export class ContainerMinigame extends MinigameScene {
             slot.appendChild(label);
             contentsGrid.appendChild(slot);
         });
+        if (this.shareFolder) evenShareLabels(contentsGrid);
     }
     
     populateDesktopIcons() {
@@ -1012,6 +1209,13 @@ export class ContainerMinigame extends MinigameScene {
             icon.appendChild(iconLabel);
             desktopIcons.appendChild(icon);
         });
+        // On the monitor a label is a backed box as wide as its text (R2 m3): an even width,
+        // so centring it under the icon lands on a whole pixel
+        if (this.pcMonitor) evenShareLabels(desktopIcons, '.desktop-icon-label');
+        this.updateDesktopScrollCue();
+        if (this.desktopMoreElement && typeof requestAnimationFrame === 'function') {
+            requestAnimationFrame(() => this.updateDesktopScrollCue());
+        }
     }
     
     setupEventListeners() {
@@ -1087,6 +1291,16 @@ export class ContainerMinigame extends MinigameScene {
         return extras;
     }
 
+    /**
+     * A file read from this desktop or share opens in the same PC monitor frame (UX slice 2c
+     * R3 M2): the reader takes the frame's name and the PC whose kept post-it height sizes it.
+     */
+    pcScreenExtras() {
+        if (!this.pcMonitor) return {};
+        const postitNote = this.monitorPostit();
+        return { pcScreen: { name: this.monitorName(), pcId: this.monitorPcId(), ...(postitNote ? { postitNote } : {}) } };
+    }
+
     /** What a stand-in for an item taken or read from here carries: the PC or the share it came from. */
     sourceExtras() {
         if (this.mode === 'npc') return {};
@@ -1106,7 +1320,8 @@ export class ContainerMinigame extends MinigameScene {
         const choices = transferChoices(item, held);
         const host = this.gameContainer.querySelector('.desktop-background, .share-folder-window') || this.gameContainer;
         const dialog = document.createElement('div');
-        dialog.className = 'desktop-transfer-dialog';
+        // In the monitor it scrolls inside the screen if it must, never cut off (R3 live check)
+        dialog.className = this.pcMonitor ? 'desktop-transfer-dialog pixel-scroll' : 'desktop-transfer-dialog';
         dialog.setAttribute('role', 'dialog');
         dialog.innerHTML = `
             <div class="desktop-window-titlebar">
@@ -1115,17 +1330,33 @@ export class ContainerMinigame extends MinigameScene {
             <div class="desktop-window-body">
                 <p>${held ? 'You already have this file.' : 'What do you want to do with this file?'}</p>
                 <div class="desktop-window-buttons">
-                    ${choices.map(c => `<button type="button" class="minigame-button desktop-transfer-btn" data-choice="${c}">${TRANSFER_LABELS[c]}</button>`).join('')}
+                    ${choices.map(c => `<button type="button" class="${this.pcMonitor ? 'pc-os-btn' : 'minigame-button'} desktop-transfer-btn" data-choice="${c}">${TRANSFER_LABELS[c]}</button>`).join('')}
                 </div>
             </div>`;
         host.appendChild(dialog);
         this.transferDialog = { item, element, choices, el: dialog };
+        if (this.pcMonitor) {
+            // Centred on whole pixels on both axes (R4 m3): margin: auto split an odd spare
+            // width or height into half pixels. Again when the pixel font arrives and on resize.
+            this.centreTransferDialog();
+            if (typeof document !== 'undefined') document.fonts?.ready?.then?.(() => this.centreTransferDialog());
+            if (!this._transferDialogResize && typeof window !== 'undefined') {
+                this._transferDialogResize = true;
+                this.addEventListener(window, 'resize', () => this.centreTransferDialog());
+            }
+        }
         dialog.querySelectorAll('[data-choice]').forEach(btn => {
             this.addEventListener(btn, 'click', (e) => {
                 e.stopPropagation();
                 this.chooseTransfer(btn.dataset.choice);
             });
         });
+    }
+
+    /** Put the open Copy / Move dialog in the middle of its window, on whole pixels (R4 m3). */
+    centreTransferDialog() {
+        const dialog = this.transferDialog?.el;
+        if (dialog?.isConnected) centreOnWholePixels(dialog, dialog.parentElement);
     }
 
     closeTransferDialog() {
@@ -1164,7 +1395,8 @@ export class ContainerMinigame extends MinigameScene {
         this.complete(false);
         const viewItem = { ...item, takeable: false };
         if (window.handleObjectInteraction) {
-            window.handleObjectInteraction({ scenarioData: viewItem, name: item.type, objectId: `temp_${Date.now()}` });
+            // In the PC monitor the reader opens in the same frame (R3 M2 live check)
+            window.handleObjectInteraction({ scenarioData: viewItem, name: item.type, objectId: `temp_${Date.now()}`, ...this.pcScreenExtras() });
         }
     }
     
@@ -1278,7 +1510,8 @@ export class ContainerMinigame extends MinigameScene {
                 scenarioData: item,
                 name: item.type,
                 objectId: `temp_${Date.now()}`,
-                ...this.childExtras()
+                ...this.childExtras(),
+                ...this.pcScreenExtras()
             };
             
             // Delegate to main game's handler for viewing/reading items (notes, phone, files, etc.)
@@ -1338,7 +1571,8 @@ export class ContainerMinigame extends MinigameScene {
             scenarioData: item,
             name: item.type,
             objectId: `temp_${Date.now()}`,
-            ...this.childExtras()
+            ...this.childExtras(),
+            ...this.pcScreenExtras()
         };
         
         // Delegate to main game's handler for viewing/reading items (notes, phone, files, etc.)
@@ -1355,37 +1589,45 @@ export class ContainerMinigame extends MinigameScene {
     addPostitToNotebook() {
         console.log('Adding postit note to notebook:', this.containerItem.scenarioData.postitNote);
 
-        const postitNote = this.containerItem.scenarioData.postitNote;
+        // A share window on a PC notes that PC's post-it (R4 m2), without the share's file list
+        const sharesNote = this.pcMonitor && this.shareFolder;
+        const postitNote = sharesNote ? this.monitorPostit() : this.containerItem.scenarioData.postitNote;
         if (!postitNote || postitNote.trim() === '') {
             this.showMessage('No postit note to add.', 'error');
             return;
         }
 
-        // Create comprehensive notebook content
-        const notebookTitle = `Postit Note - ${this.containerItem.scenarioData.name}`;
-        let notebookContent = `Postit Note:\n${'-'.repeat(50)}\n\n${postitNote}`;
-        
-        // Add container contents list
-        notebookContent += `\n\n${'='.repeat(20)}\n`;
-        notebookContent += `CONTAINER CONTENTS: ${this.containerItem.scenarioData.name}\n`;
-        notebookContent += `${'='.repeat(20)}\n`;
-        
-        if (this.contents && this.contents.length > 0) {
-            this.contents.forEach((item, index) => {
-                notebookContent += `${index + 1}. ${item.name || item.type}`;
-                if (item.description) {
-                    notebookContent += ` - ${item.description}`;
-                }
-                notebookContent += '\n';
-            });
+        let notebookTitle, notebookContent, notebookObservations;
+        if (sharesNote) {
+            ({ title: notebookTitle, content: notebookContent, observations: notebookObservations }
+                = postitNotebookEntry(this.monitorName(), postitNote));
         } else {
-            notebookContent += 'No items found\n';
+            // Create comprehensive notebook content
+            notebookTitle = `Postit Note - ${this.containerItem.scenarioData.name}`;
+            notebookContent = `Postit Note:\n${'-'.repeat(50)}\n\n${postitNote}`;
+
+            // Add container contents list
+            notebookContent += `\n\n${'='.repeat(20)}\n`;
+            notebookContent += `CONTAINER CONTENTS: ${this.containerItem.scenarioData.name}\n`;
+            notebookContent += `${'='.repeat(20)}\n`;
+
+            if (this.contents && this.contents.length > 0) {
+                this.contents.forEach((item, index) => {
+                    notebookContent += `${index + 1}. ${item.name || item.type}`;
+                    if (item.description) {
+                        notebookContent += ` - ${item.description}`;
+                    }
+                    notebookContent += '\n';
+                });
+            } else {
+                notebookContent += 'No items found\n';
+            }
+
+            notebookContent += `${'='.repeat(20)}\n`;
+            notebookContent += `Date: ${new Date().toLocaleString()}`;
+
+            notebookObservations = `Postit note found in ${this.containerItem.scenarioData.name}.`;
         }
-        
-        notebookContent += `${'='.repeat(20)}\n`;
-        notebookContent += `Date: ${new Date().toLocaleString()}`;
-        
-        const notebookObservations = `Postit note found in ${this.containerItem.scenarioData.name}.`;
 
         // Check if notes minigame is available
         if (window.startNotesMinigame) {

@@ -83,7 +83,8 @@ test('one escape helper: the minigames that had local copies now import the shar
     ];
     for (const rel of files) {
         const src = readFileSync(join(js, rel), 'utf8');
-        assert.match(src, /import \{ escapeHtml( as \w+)? \} from '(\.\.\/)+utils\/escape-html\.js';/, `${rel} imports the shared helper`);
+        // Other helpers from the same module may share the line (escapeHtmlKeepWords)
+        assert.match(src, /import \{ escapeHtml( as \w+)?(, \w+)* \} from '(\.\.\/)+utils\/escape-html\.js';/, `${rel} imports the shared helper`);
         assert.doesNotMatch(src, /'&': '&amp;'/, `${rel} keeps no local escape table`);
     }
     for (const rel of ['minigames/ncsc-brief/ncsc-brief-minigame.js', 'minigames/coverage-decision-form/coverage-decision-form-minigame.js', 'systems/apply-actions.js']) {

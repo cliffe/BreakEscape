@@ -36,8 +36,8 @@
  *     read as a second, empty bubble. It comes back when the line ends if the player is still in
  *     range. The pass runs on the scene's postupdate, after checkObjectInteractions.
  *
- * Pixel-art rule: VT323 at 16 px (the action icons' world font), loaded before the first Text is
- * made; a 2 px frame with stepped corners and a stepped tail, all whole-pixel fillRects; positions
+ * Pixel-art rule: GNF from its bitmap sheet at x1 (utils/pixel-text.js, q105), every glyph on the
+ * pixel grid; a 2 px frame with stepped corners and a stepped tail, all whole-pixel fillRects; positions
  * rounded; no scale on the container.
  *
  * Picture chat (slice 15, OFFICE_LIFE_PLAN 11.2): when talking.picture is set the bubble holds a
@@ -49,11 +49,23 @@
 import { iconShown, roomIsDark, npcIconAnchor } from './npc-office-visuals.js';
 import { loadCanvasFonts } from '../utils/canvas-fonts.js';
 import { LIGHT_DEPTH } from '../utils/constants.js';
+import { pixelText, setPixelText, placePixelText, pixelTextBox, pixelFontReady, preloadPixelFont, pixelFontData, setPixelScale,
+    measurePixelText, pixelSafe, PIXEL_FONT_SIZE } from '../utils/pixel-text.js';
 
 export const MAX_BUBBLES = 4;
-export const SPEECH_FONT = "'VT323', monospace";
-export const SPEECH_FONT_PX = 16;
-export const LINE_CHARS = 24;       // wrap width, in characters
+// q105: GNF from its bitmap sheet at x1 (utils/pixel-text.js); before the sheet is cached the
+// helper falls back to a canvas Text in the GNF web font at its native 10.24 px
+export const SPEECH_FONT = "'GNF', monospace";
+export const SPEECH_FONT_SCALE = 1;   // the smallest bubble text scale; bubbleTextScale picks the one in use
+export const LINE_CHARS = 24;       // wrap width in characters, before the font sheet is cached
+// q105 R1 M2: GNF capitals are CAP_PX font pixels tall; bubble text is scaled up until they are at
+// least MIN_CAP_CSS CSS pixels on screen, and the wrap is a pixel width that keeps a line under
+// WRAP_VIEW_SHARE of the view
+export const CAP_PX = 7;
+export const MIN_CAP_CSS = 7;
+export const MAX_TEXT_SCALE = 3;
+export const WRAP_MAX_PX = 144;     // font px: the 24 characters of the old wrap at GNF's 6 px advance
+export const WRAP_VIEW_SHARE = 0.45;
 export const PAGE_LINES = 3;        // lines a page shows at most
 export const PAGE_MIN_MS = 1200;    // no page shows for less than this
 export const AUDIO_TAIL_MS = 800;   // added to the voiced audio's length
@@ -327,6 +339,50 @@ export function pictureTexture(name) {
 
 export const PICTURE_PX = 16;
 
+/**
+ * Pure (q105 R1 M2): the bubble text's whole-number scale for a game scale (device px per game
+ * px), the device pixel ratio and the Display page's HUD size step. Capitals of at least
+ * MIN_CAP_CSS CSS px, plus the HUD step, between 1 and MAX_TEXT_SCALE. 1400x1000 at dpr 1
+ * (scale 2) and 390x844 at dpr 1 (scale 1) give 1; a phone at dpr 3 (scale 2) or dpr 2
+ * (scale 1) gives 2.
+ */
+export function bubbleTextScale({ scale = 1, dpr = 1, hudStep = 0 } = {}) {
+    const s = Math.max(1, Number(scale) || 1), d = Math.max(0.1, Number(dpr) || 1);
+    const need = Math.ceil(MIN_CAP_CSS * d / (CAP_PX * s) - 1e-9) + Math.max(0, Math.round(Number(hudStep) || 0));
+    return Math.min(MAX_TEXT_SCALE, Math.max(1, need));
+}
+
+/** Pure: the wrap width in font pixels for a view `viewWidth` game px wide at text scale `textScale`. */
+export function bubbleWrapPx({ viewWidth = null, textScale = 1 } = {}) {
+    const s = Math.max(1, Math.round(textScale) || 1);
+    if (!(viewWidth > 0)) return WRAP_MAX_PX;
+    return Math.max(PIXEL_FONT_SIZE, Math.min(WRAP_MAX_PX, Math.floor(WRAP_VIEW_SHARE * viewWidth / s)));
+}
+
+/**
+ * Pure: word-wrap by drawn width: no line's ink (with the glyphs the font lacks swapped, as they
+ * are drawn) wider than `limit` font px; a word wider than that gets a line of its own. `chars`
+ * is the font's chars map.
+ */
+export function wrapBubbleLines(text, { chars, limit = WRAP_MAX_PX }) {
+    const words = String(text ?? '').trim().split(/\s+/).filter(Boolean);
+    const width = (t) => { const m = measurePixelText(chars, pixelSafe(t, chars)); return m.right - m.left; };
+    const lines = [];
+    let cur = '';
+    for (const w of words) {
+        const next = cur ? `${cur} ${w}` : w;
+        if (!cur || width(next) <= limit) cur = next;
+        else { lines.push(cur); cur = w; }
+    }
+    if (cur) lines.push(cur);
+    return lines;
+}
+
+/** Pure: wrap a bubble line: by pixel width when `wrap` has the font's chars, else by characters. */
+export function bubbleLines(text, wrap = null, width = LINE_CHARS) {
+    return wrap?.chars ? wrapBubbleLines(text, wrap) : wrapLines(text, width);
+}
+
 /** Pure: word-wrap at `width` characters; a word longer than the width gets a line of its own. */
 export function wrapLines(text, width = LINE_CHARS) {
     const words = String(text ?? '').trim().split(/\s+/).filter(Boolean);
@@ -343,12 +399,13 @@ export function wrapLines(text, width = LINE_CHARS) {
 
 /**
  * Pure: the line in pages of at most `perPage` wrapped lines; each page is its lines joined by
- * "\n". When the last page would be short (under half a page's share of the words, such as one
+ * "\n", wrapped as the bubble draws them (`wrap`: { chars, limit } in font px; without it, at
+ * `width` characters). When the last page would be short (under half a page's share of the words, such as one
  * word), the words are spread evenly over the same number of pages instead, if each still fits
  * (R3 n3).
  */
-export function pageLine(text, { width = LINE_CHARS, perPage = PAGE_LINES } = {}) {
-    const lines = wrapLines(text, width);
+export function pageLine(text, { width = LINE_CHARS, perPage = PAGE_LINES, wrap = null } = {}) {
+    const lines = bubbleLines(text, wrap, width);
     const pages = [];
     for (let i = 0; i < lines.length; i += perPage) pages.push(lines.slice(i, i + perPage).join('\n'));
     if (pages.length < 2) return pages;
@@ -357,7 +414,7 @@ export function pageLine(text, { width = LINE_CHARS, perPage = PAGE_LINES } = {}
     if (wordsIn(pages[n - 1]) * 2 >= words.length / n) return pages;
     const even = [];
     for (let i = 0; i < n; i++) {
-        const chunk = wrapLines(words.slice(Math.round(i * words.length / n), Math.round((i + 1) * words.length / n)).join(' '), width);
+        const chunk = bubbleLines(words.slice(Math.round(i * words.length / n), Math.round((i + 1) * words.length / n)).join(' '), wrap, width);
         if (chunk.length === 0 || chunk.length > perPage) return pages;
         even.push(chunk.join('\n'));
     }
@@ -445,6 +502,37 @@ export class NpcWorldBubbles {
         this.chatterSkipped = new Map();  // npcId -> line
         this.chatterMust = new Map();     // npcId -> an exchange or call line: never skipped (R5 m2)
         this._updatedAt = null;
+        // Bubble text scale and wrap (q105 R1 M2): set by setDisplayScale from main.js's
+        // applyPixelPerfectScale, on every resize and Display page change
+        this.textScale = SPEECH_FONT_SCALE;
+        this.viewWidth = null;
+        this.fontChars = null;
+    }
+
+    /**
+     * The display changed (main.js applyPixelPerfectScale): pick the bubble text scale and the
+     * view width the wrap follows; live bubbles take the new scale and are measured again.
+     * Returns the text scale.
+     */
+    setDisplayScale({ scale = 1, dpr = 1, hudStep = 0, viewWidth = null } = {}) {
+        const s = bubbleTextScale({ scale, dpr, hudStep });
+        const changed = s !== this.textScale || (viewWidth || null) !== this.viewWidth;
+        this.textScale = s;
+        this.viewWidth = viewWidth || null;
+        if (changed) {
+            for (const bb of this.bubbles.values()) {
+                try { setPixelScale(bb.text, s); } catch (e) { /* a destroyed text is remade */ }
+                bb.line = null;
+            }
+        }
+        return s;
+    }
+
+    /** The wrap rule now: { chars, limit } in font px once the sheet is cached, else null. */
+    _wrap(scene = null) {
+        if (!this.fontChars && scene) this.fontChars = pixelFontData(scene)?.chars || null;
+        if (!this.fontChars) return null;
+        return { chars: this.fontChars, limit: bubbleWrapPx({ viewWidth: this.viewWidth, textScale: this.textScale }) };
     }
 
     /**
@@ -512,9 +600,14 @@ export class NpcWorldBubbles {
         if (this.log.length > 60) this.log.shift();
     }
 
-    /** VT323 must be loaded before the first Text is made (canvas text does not fetch it). */
-    _ensureFonts() {
+    /**
+     * The GNF sheet (preloaded with the game) draws the text; with no sheet cached yet, ask for it
+     * and wait for the canvas fonts as before (the fallback Text needs a web font).
+     */
+    _ensureFonts(scene = null) {
         if (this.fontsReady) return true;
+        if (scene && pixelFontReady(scene)) { this.fontsReady = true; return true; }
+        if (scene) preloadPixelFont(scene, { start: true });
         if (!this._fontsAsked) {
             this._fontsAsked = true;
             const p = win().canvasFontsReady || loadCanvasFonts();
@@ -523,11 +616,15 @@ export class NpcWorldBubbles {
         return false;
     }
 
+    /** A scene to ask about the font: the first speaker's. */
+    _anyScene(order, info) {
+        for (const id of order) { const sc = info.get(id)?.sprite?.scene; if (sc) return sc; }
+        return null;
+    }
+
     _make(scene) {
         const g = scene.add.graphics();
-        const text = scene.add.text(0, 0, '', {
-            fontFamily: SPEECH_FONT, fontSize: `${SPEECH_FONT_PX}px`, color: '#1b2a41', lineSpacing: 0
-        }).setOrigin(0, 0);
+        const text = pixelText(scene, 0, 0, '', { scale: this.textScale, color: LINE });
         const img = scene.add.image(0, 0, '__DEFAULT').setOrigin(0, 0).setVisible(false);
         const box = scene.add.container(0, 0, [g, text, img]).setDepth(bubbleDepth());
         return { box, g, text, img, line: null };
@@ -606,18 +703,42 @@ export class NpcWorldBubbles {
         const sig = picture ? `pic:${picture}:${ready}` : line;
         if (bb.line === sig) return;
         bb.line = sig;
+        // A text made before the sheet was cached is a canvas Text: once the sheet is in, swap it
+        // for a bitmap text, or the bubble stays on the blurred path for the session (R1 m5)
+        const scene = bb.box.scene;
+        if (bb.text.pixelFallback && scene && pixelFontReady(scene)) {
+            const fresh = pixelText(scene, 0, 0, '', { scale: this.textScale, color: LINE });
+            const at = bb.box.getIndex ? bb.box.getIndex(bb.text) : -1;
+            bb.box.remove?.(bb.text);
+            bb.text.destroy?.();
+            if (at >= 0 && bb.box.addAt) bb.box.addAt(fresh, at); else bb.box.add?.(fresh);
+            bb.text = fresh;
+            bb.layout = null;
+        }
         bb.picture = picture;
         bb.ready = ready;
         bb.img.setVisible(ready);
         if (ready) bb.img.setTexture(tex.key);
         const shown = picture ? (ready ? '' : '…') : String(line ?? '');
-        // Chatter lines wrap the same way; a bark page is already wrapped
-        bb.text.setText(shown.includes('\n') ? shown : wrapLines(shown).join('\n'));
-        // Hard-edged glyphs; pad from the ink when it can be read, else from the measured width
-        const ink = ready ? null : crispText(bb.text);
-        bb.inkLeft = ink ? ink.left : 0;
-        const cw = ready ? PICTURE_PX : (ink ? ink.right - ink.left + 1 : Math.ceil(bb.text.width) + TEXT_RIGHT_SLACK);
-        const ch = ready ? PICTURE_PX : Math.ceil(bb.text.height);
+        // Chatter lines and bark pages wrap at the rule in force now. A bark page was cut into
+        // lines at the scale it was paged at, so its own words are wrapped again here: after a
+        // scale change mid-bark the page keeps its words (pages, times and voice untouched) but
+        // takes the new wrap, and may run a line over PAGE_LINES until the next page (R2 m1)
+        setPixelText(bb.text, bubbleLines(shown.replace(/\n/g, ' '), this._wrap(scene)).join('\n'));
+        let cw, ch;
+        if (ready) { cw = PICTURE_PX; ch = PICTURE_PX; bb.inkLeft = 0; }
+        else if (!bb.text.pixelFallback) {
+            // The bitmap sheet: the glyphs' own ink box, already whole pixels
+            const box = pixelTextBox(bb.text);
+            cw = box.width; ch = box.height; bb.inkLeft = 0;
+        } else {
+            // Fallback canvas Text: hard-edged glyphs; pad from the ink when it can be read, else
+            // from the measured width
+            const ink = crispText(bb.text);
+            bb.inkLeft = ink ? ink.left : 0;
+            cw = ink ? ink.right - ink.left + 1 : Math.ceil(bb.text.width) + TEXT_RIGHT_SLACK;
+            ch = Math.ceil(bb.text.height);
+        }
         let w = cw + PAD_X * 2 + BORDER_PX * 2;
         if (w % 2) w += 1;                               // even, so -w/2 is a whole pixel
         const h = ch + PAD_Y * 2 + BORDER_PX * 2;
@@ -633,7 +754,7 @@ export class NpcWorldBubbles {
         const { w, h } = bb;
         const left = dx - w / 2 + BORDER_PX + PAD_X - (bb.inkLeft || 0);
         const top = -lift - TAIL - h + BORDER_PX + PAD_Y;
-        bb.text.setPosition(left, top);
+        placePixelText(bb.text, left, top);
         bb.img.setPosition(Math.round(dx - PICTURE_PX / 2), top);
         this._drawFrame(bb.g, w, h, dx, lift, beside, side, pointY);
     }
@@ -741,7 +862,8 @@ export class NpcWorldBubbles {
      *   them as a toast of their own, so a lockedHint is never lost (R3 m1)
      */
     say(npcId, line, { audioMs = null, onRemainder = null, onDone = null, stillValid = null, followUp = null, tag = null, onFollowUpLost = null } = {}) {
-        const linePages = pageLine(line);
+        const wrap = npcId ? this._wrap(this._spriteAndRoom(npcId)?.sprite?.scene) : null;
+        const linePages = pageLine(line, { wrap });
         if (!npcId || linePages.length === 0) return null;
         if (!this._inView(npcId)) return null;
         const { sprite } = this._spriteAndRoom(npcId);
@@ -758,7 +880,7 @@ export class NpcWorldBubbles {
         const lost = typeof onFollowUpLost === 'function' ? onFollowUpLost : (old?.onFollowUpLost || null);
         const hints = [...carriedHints, ...(next ? [next] : [])];
         const allFollow = hints.join(' ');
-        const extra = allFollow ? pageLine(allFollow) : [];
+        const extra = allFollow ? pageLine(allFollow, { wrap }) : [];
         const pages = [...linePages, ...extra];
         const others = [...this.says.keys()].map(id => ({ npcId: id, distance: this._distance(this._spriteAndRoom(id).sprite) }));
         const cap = barkCapacity(others, distance);
@@ -914,7 +1036,7 @@ export class NpcWorldBubbles {
         }
         // First frames only: VT323 still loading. A chatter voice waiting stays for the next
         // frame's placement (at most one per NPC; the font promise settles either way)
-        if (shown.size && !this._ensureFonts()) return;
+        if (shown.size && !this._ensureFonts(this._anyScene(order, info))) return;
         // What bubbles keep off: the HUD panels, every other speaker's head (a bubble over it hid
         // who was talking: R2 m1 retake) and each bubble as it is placed (hard); the player's
         // head (soft)
@@ -1064,6 +1186,8 @@ export function installNpcWorldBubbles(scene) {
     const w = win();
     if (!w.npcWorldBubbles) w.npcWorldBubbles = new NpcWorldBubbles();
     const inst = w.npcWorldBubbles;
+    // main.js keeps the last display scale here; it calls setDisplayScale itself on later changes
+    if (w.pixelDisplay) { try { inst.setDisplayScale(w.pixelDisplay); } catch (e) { /* keep x1 */ } }
     // A resize moves the HUD panels: read them again on the next pass, not up to HUD_EVERY_MS
     // later, when a bubble could sit over one for a few frames (R3 n1)
     if (!inst._resizeHooked && typeof w.addEventListener === 'function') {

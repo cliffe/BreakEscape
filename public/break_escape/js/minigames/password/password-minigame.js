@@ -6,6 +6,13 @@ import { escapeHtml } from '../../utils/escape-html.js';
 import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } from '../../utils/lock-scope-refusal.js';
 import { isComputerType } from '../../utils/computer-keywords.js';
+import { mountPcMonitor, cssZoomOf } from '../../utils/pc-monitor.js';
+import { headshotCandidates, headshotKeys, noteMissingHeadshot, npcRecordFor, headshotSourceFor, applyHeadshotBox,
+    SHORT_PORTRAIT_PX, TILE_PORTRAIT_PX, isTalkSheetSize, portraitCropOverride, headCropOffset, frameAlphaReader } from '../../utils/npc-headshot.js';
+// The portrait crop helpers live with the headshots (UX slice 2c R1 m8: the desktop bar
+// falls back the same way as a tile); exported here too for the tests and callers that
+// import them from the password screen
+export { SHORT_PORTRAIT_PX, TILE_PORTRAIT_PX, isTalkSheetSize, PORTRAIT_CROP_OVERRIDES, portraitCropOverride, headCropOffset } from '../../utils/npc-headshot.js';
 
 /**
  * The keypad's line after a wrong password. A near miss (right apart from letter
@@ -66,41 +73,11 @@ export function tileInitials(name) {
     return letters || '?';
 }
 
-/** A square image of at least 256 pixels with even sides is a 2x2 talk sheet (person-chat's _isTalkSheet). */
-export function isTalkSheetSize(width, height) {
-    return width >= 256 && width === height && width % 2 === 0;
-}
-
 /** A portrait path from the server ("assets/characters/x_talk.png") as a URL. */
 export function portraitUrl(path) {
     if (typeof path !== 'string' || !path) return null;
     if (path.startsWith('/') || path.startsWith('http') || path.startsWith('data:')) return path;
     return path.startsWith('assets/') ? `/break_escape/${path}` : `${ASSETS_PATH}/${path}`;
-}
-
-/** The short-window tile's portrait box (css/password-minigame.css, max-height: 640px). */
-export const SHORT_PORTRAIT_PX = 32;
-
-/** The tile's portrait box at every other size (css/password-minigame.css, .signin-portrait). */
-export const TILE_PORTRAIT_PX = 64;
-
-/**
- * Head crops for posed portraits the finder cannot read (UX slice 2a R4 n3): in a bedside
- * portrait the pillow or the hair is the first opaque row, so the finder's box lands on
- * bedding. Keyed by the talk sheet's file name (one sheet per character); `tile` is the
- * 64x64 crop's top-left in the first frame, `short` the 32x32 crop's, both at scale 1.
- */
-export const PORTRAIT_CROP_OVERRIDES = Object.freeze({
-    'mr_ahmed_talk.png': { tile: { left: 36, top: 18 }, short: { left: 46, top: 32 } },
-    'mr_pryce_talk.png': { tile: { left: 22, top: 6 }, short: { left: 38, top: 20 } },
-    'mrs_kowalski_talk.png': { tile: { left: 28, top: 0 }, short: { left: 45, top: 12 } },
-    'ms_okafor_talk.png': { tile: { left: 20, top: 12 }, short: { left: 36, top: 30 } }
-});
-
-/** The crop override for a portrait URL, or null. */
-export function portraitCropOverride(src) {
-    const name = String(src || '').split(/[?#]/)[0].split('/').pop();
-    return Object.prototype.hasOwnProperty.call(PORTRAIT_CROP_OVERRIDES, name) ? PORTRAIT_CROP_OVERRIDES[name] : null;
 }
 
 /**
@@ -116,48 +93,6 @@ export function setTilePortrait(el, { src, width, height, kind, offset = null, s
     el.style.backgroundSize = `${width * scale}px ${height * scale}px`;
     el.style.backgroundPosition = `${left ? -left : 0}px ${top ? -top : 0}px`;
     el.dataset.frame = kind;
-}
-
-/**
- * Where to cut a box x box head crop from a talk sheet's first frame (frameSize square), at
- * scale 1 (UX slice 2a R3 n1: the 32px tile showed the whole 128px frame at a quarter, a
- * downscale that lost the face). `alpha(x, y)` reads the frame's alpha. The crop starts 4px
- * below the top of the head and is centred on the head's width over its first 24 rows, so
- * the eyes, nose and mouth are in the box. A blank frame gives the top-centre box.
- */
-export function headCropOffset(alpha, frameSize, box = SHORT_PORTRAIT_PX) {
-    const clamp = (v) => Math.max(0, Math.min(frameSize - box, v));
-    let y0 = -1;
-    for (let y = 0; y < frameSize && y0 < 0; y++) {
-        for (let x = 0; x < frameSize; x++) { if (alpha(x, y) > 0) { y0 = y; break; } }
-    }
-    if (y0 < 0) return { left: clamp(Math.round(frameSize / 2) - box / 2), top: 0 };
-    let minX = Infinity, maxX = -1;
-    for (let y = y0; y < Math.min(frameSize, y0 + 24); y++) {
-        for (let x = 0; x < frameSize; x++) {
-            if (alpha(x, y) > 0) { if (x < minX) minX = x; if (x > maxX) maxX = x; }
-        }
-    }
-    const cx = maxX >= 0 ? (minX + maxX) / 2 : frameSize / 2;
-    return { left: clamp(Math.round(cx) - box / 2), top: clamp(y0 + 4) };
-}
-
-/** The alpha reader for an image's top-left frameSize square, or null when the canvas
- *  cannot be read (no canvas, or a tainted one). */
-function frameAlphaReader(img, frameSize) {
-    try {
-        if (typeof document === 'undefined') return null;
-        const canvas = document.createElement('canvas');
-        canvas.width = frameSize;
-        canvas.height = frameSize;
-        const ctx = canvas.getContext && canvas.getContext('2d');
-        if (!ctx) return null;
-        ctx.drawImage(img, 0, 0);
-        const data = ctx.getImageData(0, 0, frameSize, frameSize).data;
-        return (x, y) => data[(y * frameSize + x) * 4 + 3];
-    } catch (e) {
-        return null;
-    }
 }
 
 /**
@@ -187,8 +122,24 @@ export function setShortPortrait(el, { src, width, height, kind, offset = null }
  *   fitting it to the box would scale it down.
  * `ImageCtor` and `readAlpha` are injectable for tests.
  */
-export function applyTilePortrait(el, tile, ImageCtor = (typeof Image !== 'undefined' ? Image : null), readAlpha = frameAlphaReader) {
-    const sources = [tile?.portrait, tile?.avatar].map(portraitUrl).filter(Boolean);
+export function applyTilePortrait(el, tile, ImageCtor = (typeof Image !== 'undefined' ? Image : null), readAlpha = frameAlphaReader,
+                                  { record = undefined, onMissing = noteMissingHeadshot } = {}) {
+    // The character's own 32x32 headshot comes first (UX slice 2c): the talk sheet is cropped
+    // only when no headshot file exists, and that key is logged once
+    const rec = record === undefined ? npcRecordFor({ username: tile?.username }) : record;
+    const headSource = headshotSourceFor(tile || {}, rec);
+    const heads = headshotCandidates(headSource);
+    const headKeys = headshotKeys(headSource);
+    const sources = [...heads, ...[tile?.portrait, tile?.avatar].map(portraitUrl).filter(Boolean)]
+        .filter((v, i, a) => a.indexOf(v) === i);
+    let missingNoted = heads.length === 0;
+    const noteMissing = (i) => {
+        if (missingNoted || i < heads.length) return;
+        missingNoted = true;
+        // Every key tried, the world sprite's first (R1 m8)
+        el.dataset.headshotMissing = headKeys.join(' ');
+        onMissing?.(headKeys);
+    };
     const initials = () => {
         el.style.backgroundImage = '';
         el.dataset.frame = 'initials';
@@ -196,6 +147,7 @@ export function applyTilePortrait(el, tile, ImageCtor = (typeof Image !== 'undef
         el.textContent = tileInitials(tile?.displayName || tile?.username);
     };
     const tryAt = (i) => {
+        noteMissing(i);
         if (i >= sources.length || !ImageCtor) { initials(); return; }
         const src = sources[i];
         const img = new ImageCtor();
@@ -226,6 +178,7 @@ export function applyTilePortrait(el, tile, ImageCtor = (typeof Image !== 'undef
             el.textContent = '';
             el.classList.remove('signin-portrait-initials');
             el.dataset.src = src;
+            if (i < heads.length) { el.dataset.headshot = headKeys[i]; return; }
             preferAvatar(src);
         };
         img.onerror = () => tryAt(i + 1);
@@ -332,12 +285,17 @@ export function snapInnerBoxes(root, dpr = 1, view = (typeof window !== 'undefin
             }
             rec.x = tidy(rec.x + x);
             rec.y = tidy(rec.y + y);
+            // The moves are measured on screen; inside the PC monitor's scaled screen (CSS
+            // zoom, UX slice 2c R1 M2) a length on the box is drawn `zoom` times larger; the
+            // zoom is measured where the browser has no currentCSSZoom (R2 m2)
+            const z = cssZoomOf(el);
+            const lx = tidy(rec.x / z), ly = tidy(rec.y / z);
             if (rec.mode === 'translate') {
-                el.style.translate = `${rec.x}px ${rec.y}px`;
+                el.style.translate = `${lx}px ${ly}px`;
             } else {
                 if (rec.pos !== 'relative') el.style.position = 'relative';
-                if (rec.x) el.style.left = `${tidy(rec.left + rec.x)}px`;
-                if (rec.y) el.style.top = `${tidy(rec.top + rec.y)}px`;
+                if (rec.x) el.style.left = `${tidy(rec.left + lx)}px`;
+                if (rec.y) el.style.top = `${tidy(rec.top + ly)}px`;
             }
         }
     }
@@ -508,7 +466,8 @@ export class PasswordMinigame extends MinigameScene {
         }
         return {
             ...super.getTestState(),
-            attemptsText: (this.attemptsDisplay?.innerText || '').trim() || null,
+            // A PC's screen has no counter (R2 M1): the count comes from the game data
+            attemptsText: (this.attemptsDisplay?.innerText || '').trim() || (this.pcMonitor && !this.join ? String(this.gameData.attempts) : null),
             hasPasswordField: !!document.getElementById('password-field'),
             // Type into field 0 then clickText('Submit'), or type(0, pw, {submit:true}).
             entryHint: 'type(0, "<password>", { submit: true })'
@@ -523,7 +482,11 @@ export class PasswordMinigame extends MinigameScene {
         this.params = { ...this.params, showCancel: false };
         // Call parent init to set up basic UI structure
         super.init();
-        this.wrapInFrame();
+        // A computer's own screens (sign-in, a PC's password) sit in the one PC monitor frame
+        // (UX slice 2c, utils/pc-monitor.js); a Wi-Fi key, an archive and a case lock keep
+        // the password frame
+        if (this.isPcScreen()) this.mountMonitor();
+        else this.wrapInFrame();
 
         if (this.signIn) {
             this.initSignIn();
@@ -563,6 +526,44 @@ export class PasswordMinigame extends MinigameScene {
         this.setupEventListeners();
     }
     
+    /** True for a computer's own screen: a sign-in PC, or a computer's password lock. */
+    isPcScreen() {
+        if (this.signIn) return true;
+        if (this.join) return false;
+        const target = this.params.lockable || this.params.sprite;
+        if (isCaseLockTarget(target?.scenarioData)) return false;
+        return passwordScreenKind({ join: this.join, lockable: target }) === 'screen';
+    }
+
+    /** The PC's id, for the post-it height its frame keeps (utils/pc-monitor.js). */
+    pcId() {
+        if (this.signIn) return this.signIn.pcId || null;
+        const target = this.params.lockable || this.params.sprite;
+        return target?.scenarioData?.id || target?.objectId || null;
+    }
+
+    /** The PC's name for the monitor's top strip. */
+    pcName() {
+        if (this.signIn) return this.signIn.pcName || '';
+        const target = this.params.lockable || this.params.sprite;
+        return target?.scenarioData?.name || target?.name || this.params.deviceName || '';
+    }
+
+    /**
+     * Put the screen in the PC monitor frame (UX slice 2c): the X in the bezel, Add to
+     * Notepad in the chin, the post-it stuck on the chin. Boxes inside the screen still
+     * snap to whole pixels; the frame itself is placed on whole pixels by its metrics.
+     */
+    mountMonitor() {
+        const note = this.gameData.showPostit && this.gameData.postitNote
+            ? escapeHtmlKeepWords(displayDashes(this.gameData.postitNote)) : '';
+        this.pcMonitor = mountPcMonitor(this, { name: displayDashes(this.pcName()), postitHtml: note, pcId: this.pcId() });
+        if (!this.pcMonitor) { this.wrapInFrame(); return; }
+        this.frameElement = this.pcMonitor.root;
+        if (this.pcMonitor.postit) makeDraggable(this.pcMonitor.postit);
+        this.snapFrameToPixels(this.pcMonitor.root, { moveFrame: false });
+    }
+
     /**
      * The password screen's frame: a box that wraps the game area at every window size, with
      * the X inside its top-right corner (the user's UX notes: the frame wraps its content, and
@@ -596,19 +597,22 @@ export class PasswordMinigame extends MinigameScene {
      * without changing the frame's size. A MutationObserver sees those changes; the records
      * of the snap's own style writes are dropped, so it does not run itself again.
      */
-    snapFrameToPixels(frame) {
+    snapFrameToPixels(frame, { moveFrame = true } = {}) {
         if (typeof window === 'undefined' || !frame || typeof frame.getBoundingClientRect !== 'function') return;
         this.stopFrameSnap();
         const snap = () => {
             if (!frame.isConnected) { this.stopFrameSnap(); return; }
             unsnapInnerBoxes(this._innerSnapped);
             this._innerSnapped = [];
-            frame.style.left = '';
-            frame.style.top = '';
             const dpr = window.devicePixelRatio || 1;
-            const { x, y } = wholePixelOffset(frame.getBoundingClientRect(), dpr);
-            if (x) frame.style.left = `${x}px`;
-            if (y) frame.style.top = `${y}px`;
+            // The PC monitor is placed by its metrics, already on whole pixels (moveFrame false)
+            if (moveFrame) {
+                frame.style.left = '';
+                frame.style.top = '';
+                const { x, y } = wholePixelOffset(frame.getBoundingClientRect(), dpr);
+                if (x) frame.style.left = `${x}px`;
+                if (y) frame.style.top = `${y}px`;
+            }
             this._innerSnapped = snapInnerBoxes(frame, dpr, window);
             this._contentObserver?.takeRecords?.();
         };
@@ -675,6 +679,7 @@ export class PasswordMinigame extends MinigameScene {
 
     complete(success) {
         this.stopFrameSnap();
+        this.pcMonitor?.destroy?.();
         super.complete(success);
     }
 
@@ -723,7 +728,7 @@ export class PasswordMinigame extends MinigameScene {
      * R2 m3): the area scrolls above it, so the post-it cannot cover it.
      */
     controlsHost() {
-        return this.frameElement || null;
+        return this.pcMonitor?.controls || this.frameElement || null;
     }
 
     setupPasswordInterface() {
@@ -754,7 +759,9 @@ export class PasswordMinigame extends MinigameScene {
 
         // Name the lock over the field, as the PIN keypad does ("Enter PIN: Cable
         // Vault"); the framework hides the header, so it read just "Password:" (m07 #5)
-        const fieldLabel = this.join ? 'Network key' : passwordFieldLabel(this.params.title);
+        // In the PC monitor the bezel names the PC, so the label is the sign-in form's plain
+        // "Password:" (UX slice 2c R2 M1)
+        const fieldLabel = this.join ? 'Network key' : (this.pcMonitor ? 'Password:' : passwordFieldLabel(this.params.title));
         const kind = passwordScreenKind({ join: this.join, lockable: this.params.lockable || this.params.sprite });
         // The framework hides the header, so a Wi-Fi prompt names its network on the panel
         const promptTitle = this.join ? `Join Wi-Fi: ${this.join.apName || 'network'}` : '';
@@ -762,10 +769,20 @@ export class PasswordMinigame extends MinigameScene {
         // A carried case (a bag, briefcase or suitcase) has a code lock, not a computer
         // screen: it gets the case-lock look, with no desktop wallpaper (UX pass, 2026-11-12)
         const caseLock = isCaseLockTarget((this.params.lockable || this.params.sprite)?.scenarioData);
+        // In the PC monitor (UX slice 2c) the monitor is the frame: no device picture above it,
+        // no second bezel, and the post-it is on the monitor's chin (mountPcMonitor)
+        const inMonitor = !!this.pcMonitor;
+        const observations = imageData?.observations || '';
+        // The PC's OS has one button look (R2 M1): the theme's thin skin (css/pc-monitor.css)
+        const osBtn = inMonitor ? ' pc-os-btn' : '';
+        const keyboardToggle = this.gameData.showKeyboard ? `
+                        <button type="button" class="keyboard-toggle-btn${inMonitor ? ' pc-os-btn pc-os-icon-btn' : ''}" id="keyboard-toggle">
+                            <img class="icon-keyboard" src="/break_escape/assets/objects/keyboard1.png" alt="Toggle keyboard">
+                        </button>` : '';
 
         this.gameContainer.innerHTML = `
-            <div class="password-minigame-area${kind === 'prompt' ? ' prompt-mode' : ''}${caseLock ? ' case-lock' : ''}">
-                ${imageData ? `
+            <div class="password-minigame-area${kind === 'prompt' ? ' prompt-mode' : ''}${caseLock ? ' case-lock' : ''}${inMonitor ? ' pc-screen-area' : ''}">
+                ${imageData && !inMonitor ? `
                     <div class="password-image-section">
                         <img src="/break_escape/assets/objects/${escapeHtml(imageData.imageFile)}.png" 
                              alt="${escapeHtml(imageData.deviceName)}" 
@@ -776,8 +793,9 @@ export class PasswordMinigame extends MinigameScene {
                         </div>
                     </div>
                 ` : ''}
-                <div class="monitor-bezel">
-                    <div class="monitor-screen">
+                <div class="${inMonitor ? 'pc-lock-screen' : 'monitor-bezel'}">
+                    <div class="${inMonitor ? 'pc-lock-panel' : 'monitor-screen'}">
+                        ${inMonitor && observations ? `<div class="pc-screen-note">${escapeHtml(displayDashes(observations))}</div>` : ''}
                         <div class="password-input-container">
                             ${promptTitle ? `<div class="password-prompt-title">${escapeHtml(displayDashes(promptTitle))}</div>` : ''}
                             <label for="password-field">${escapeHtml(displayDashes(fieldLabel))}</label>
@@ -787,17 +805,17 @@ export class PasswordMinigame extends MinigameScene {
                                        class="password-field"
                                        placeholder="${this.join ? 'Enter key...' : 'Enter password...'}"
                                        maxlength="50">
-                                <button type="button" class="toggle-password-btn" id="toggle-password">
+                                <button type="button" class="toggle-password-btn${inMonitor ? ' pc-os-btn pc-os-icon-btn' : ''}" id="toggle-password">
                                     <img class="icon-small" src="/break_escape/assets/icons/${this.gameData.showPassword ? 'visible.png' : 'hidden.png'}" alt="Toggle password visibility">
-                                </button>
+                                </button>${inMonitor ? keyboardToggle : ''}
                             </div>
                         </div>
 
                         <div class="hint-controls">
                             ${this.gameData.showHint ? `
-                                <button type="button" class="hint-btn" id="show-hint">Show Hint</button>
+                                <button type="button" class="hint-btn${osBtn}" id="show-hint">Show Hint</button>
                             ` : ''}
-                            <button type="button" class="submit-btn" id="submit-password">Submit</button>
+                            <button type="button" class="submit-btn${osBtn}" id="submit-password">Submit</button>
                         </div>
                         ${this.gameData.showHint ? `
                             <div class="password-hint-container">
@@ -810,19 +828,14 @@ export class PasswordMinigame extends MinigameScene {
                     </div>
                 </div>
                 
-                ${this.gameData.showPostit && this.gameData.postitNote ? `
+                ${this.gameData.showPostit && this.gameData.postitNote && !inMonitor ? `
                     <div class="postit-note">
                         ${escapeHtmlKeepWords(displayDashes(this.gameData.postitNote))}
                     </div>
                 ` : ''}
                 
-                <div class="password-controls">
-                    ${this.gameData.showKeyboard ? `
-                        <button type="button" class="keyboard-toggle-btn" id="keyboard-toggle">
-                            <img class="icon-keyboard" src="/break_escape/assets/objects/keyboard1.png" alt="Toggle keyboard">
-                        </button>
-                    ` : ''}
-                </div>
+                ${inMonitor ? '' : `<div class="password-controls">${keyboardToggle}
+                </div>`}
                 
                 ${this.gameData.showKeyboard ? `
                     <div class="onscreen-keyboard" id="onscreen-keyboard" style="display: ${this.gameData.keyboardVisible ? 'flex' : 'none'}">
@@ -880,7 +893,7 @@ export class PasswordMinigame extends MinigameScene {
                     </div>
                 ` : ''}
                 
-                ${this.join ? '' : `
+                ${(this.join || inMonitor) ? '' : `
                 <div class="attempts-counter">
                     Attempts: <span id="attempts-display">${escapeHtml(this.gameData.attempts)}</span>/${escapeHtml(this.gameData.maxAttempts)}
                 </div>
@@ -898,9 +911,9 @@ export class PasswordMinigame extends MinigameScene {
 
         // Make the post-it note draggable (rendered via HTML template above)
         if (this.gameData.showPostit && this.gameData.postitNote) {
-            const postit = this.gameContainer
+            const postit = this.pcMonitor ? null : (this.gameContainer
                 ? this.gameContainer.querySelector('.postit-note')
-                : document.querySelector('.password-minigame-area .postit-note');
+                : document.querySelector('.password-minigame-area .postit-note'));
             if (postit) {
                 makeDraggable(postit);
             }
@@ -1115,9 +1128,13 @@ export class PasswordMinigame extends MinigameScene {
         this.showScreenMessage('');
 
         this.gameData.attempts++;
-        this.attemptsDisplay.textContent = this.gameData.attempts;
-        // The counter is on screen after each try, even in a short window (UX slice 2a R2 M2)
-        revealInFrame(this.attemptsDisplay?.closest?.('.attempts-counter') || this.attemptsDisplay);
+        if (this.attemptsDisplay) this.attemptsDisplay.textContent = this.gameData.attempts;
+        // The counter is on screen after each try, even in a short window (UX slice 2a R2 M2).
+        // A PC's screen has no counter: its message line carries the count and is revealed
+        // when it is written (UX slice 2c R2 M1), so nothing is revealed here: the line was
+        // just emptied (R3 m6)
+        const counter = this.attemptsDisplay?.closest?.('.attempts-counter') || this.attemptsDisplay;
+        if (counter) revealInFrame(counter);
 
         // SECURITY: ALWAYS use server-side validation for password attempts
         const apiClient = window.ApiClient || window.APIClient;
@@ -1207,7 +1224,7 @@ export class PasswordMinigame extends MinigameScene {
                 // The PC the lock sits on is off, not responding or out of reach (review R4
                 // m2): not an attempt and not a wrong password, so say why and close as cancelled
                 this.gameData.attempts--;
-                this.attemptsDisplay.textContent = this.gameData.attempts;
+                if (this.attemptsDisplay) this.attemptsDisplay.textContent = this.gameData.attempts;
                 this.cleanup();
                 this.showScreenMessage(LOCK_SCOPE_REFUSAL_TEXT[refusal], { closeAfterMs: 2000 });
                 this.gameResult = { success: false, reason: 'cancelled', cancelled: true, refused: refusal,
@@ -1218,7 +1235,7 @@ export class PasswordMinigame extends MinigameScene {
                 this.showScreenMessage('Network error. Please try again.');
                 // Decrease attempts counter since this wasn't a real attempt
                 this.gameData.attempts--;
-                this.attemptsDisplay.textContent = this.gameData.attempts;
+                if (this.attemptsDisplay) this.attemptsDisplay.textContent = this.gameData.attempts;
             }
         }
     }
@@ -1408,18 +1425,20 @@ export class PasswordMinigame extends MinigameScene {
         const capturedHtml = s.remote ? `
                         <div class="signin-captured" id="signin-captured">${this.capturedListHtml()}</div>` : '';
 
+        const inMonitor = !!this.pcMonitor;
         this.gameContainer.innerHTML = `
-            <div class="password-minigame-area signin-mode">
-                <div class="monitor-bezel">
-                    <div class="monitor-screen signin-screen">
+            <div class="password-minigame-area signin-mode${inMonitor ? ' pc-screen-area' : ''}">
+                <div class="${inMonitor ? 'pc-lock-screen' : 'monitor-bezel'}">
+                    <div class="${inMonitor ? 'signin-screen' : 'monitor-screen signin-screen'}">
                         <div class="signin-title">${escapeHtml(displayDashes(s.pcName))}</div>
                         ${remoteLine}
                         ${current}
                         ${tiles}
                         <div class="signin-form" id="signin-form">
-                            <div class="signin-selected-row">
+                            <div class="signin-selected-row">${inMonitor ? `
+                                <span class="signin-selected-headshot" aria-hidden="true" hidden></span>` : ''}
                                 <div class="signin-selected" id="signin-selected"></div>
-                                <button type="button" class="signin-change" id="signin-change">Change</button>
+                                <button type="button" class="signin-change${inMonitor ? ' pc-os-btn' : ''}" id="signin-change">Change</button>
                             </div>
                             <div class="signin-field-row" id="signin-username-row">
                                 <label for="signin-username">Username:</label>
@@ -1429,19 +1448,19 @@ export class PasswordMinigame extends MinigameScene {
                                 <label for="password-field">Password:</label>
                                 <div class="password-field-wrapper">
                                     <input type="password" id="password-field" class="password-field" placeholder="Password" maxlength="64" autocomplete="off">
-                                    <button type="button" class="toggle-password-btn" id="toggle-password">
+                                    <button type="button" class="toggle-password-btn${inMonitor ? ' pc-os-btn pc-os-icon-btn' : ''}" id="toggle-password">
                                         <img class="icon-small" src="/break_escape/assets/icons/hidden.png" alt="Toggle password visibility">
                                     </button>
                                 </div>
                             </div>
                             <div class="hint-controls">
-                                <button type="button" class="submit-btn" id="submit-password">Sign in</button>
+                                <button type="button" class="submit-btn${inMonitor ? ' pc-os-btn' : ''}" id="submit-password">Sign in</button>
                             </div>
                         </div>${capturedHtml}
                         <div class="signin-message" id="signin-message" aria-live="polite"></div>
                     </div>
                 </div>
-                ${this.gameData.showPostit && this.gameData.postitNote ? `
+                ${this.gameData.showPostit && this.gameData.postitNote && !inMonitor ? `
                     <div class="postit-note">${escapeHtmlKeepWords(this.gameData.postitNote)}</div>
                 ` : ''}
             </div>
@@ -1465,7 +1484,7 @@ export class PasswordMinigame extends MinigameScene {
         if (change) this.addEventListener(change, 'click', () => this.clearSignInChoice());
 
         if (this.gameData.showPostit && this.gameData.postitNote) {
-            const postit = this.gameContainer.querySelector('.postit-note');
+            const postit = inMonitor ? null : this.gameContainer.querySelector('.postit-note');
             if (postit) makeDraggable(postit);
             const controls = this.ensureControlsRow();
             if (controls) {
@@ -1547,6 +1566,7 @@ export class PasswordMinigame extends MinigameScene {
             selectedEl.textContent = tile ? `${tile.displayName || tile.username} (${tile.username})` : '';
             show(selectedEl, !!tile);
         }
+        this.applySelectedHeadshot(tile);
         this.gameContainer.querySelectorAll('.signin-tile').forEach(el => {
             const idx = el.dataset.tileIndex;
             const on = idx === 'other' ? (st.other && this.signIn.picker !== false) : (st.tiles[Number(idx)]?.username === st.selected && st.selected !== null);
@@ -1562,13 +1582,37 @@ export class PasswordMinigame extends MinigameScene {
         if (chosen) revealInFrame(this.signInMessageEl?.textContent ? this.signInMessageEl : this.submitBtn);
     }
 
+    /**
+     * The chosen account's headshot beside its name, in the monitor (R3 m1): once the tiles
+     * fold away at x2 or in a short window, an NPC's identity still shows its face. The same
+     * 32px box and fallback as the desktop's account bar; shown at every size, so the line
+     * has one look. Hidden for Other user and with no tile chosen.
+     */
+    applySelectedHeadshot(tile) {
+        const box = this.gameContainer?.querySelector?.('.signin-selected-headshot');
+        if (!box) return;
+        if (!tile) {
+            box.hidden = true;
+            box.style.backgroundImage = '';
+            delete box.dataset.headshotFor;
+            return;
+        }
+        if (box.dataset.headshotFor === tile.username && !box.hidden) return;
+        box.dataset.headshotFor = tile.username;
+        const record = npcRecordFor({ username: tile.username });
+        const talk = typeof record?.spriteTalk === 'string' ? record.spriteTalk : '';
+        const talkUrl = !talk ? null
+            : (/^(\/|https?:|data:)/.test(talk) ? talk : `/break_escape/${talk.startsWith('assets/') ? '' : 'assets/'}${talk}`);
+        applyHeadshotBox(box, headshotSourceFor(tile, record), { talkUrl });
+    }
+
     /** The Captured sign-ins block's inner markup (a remote screen, 4.4). */
     capturedListHtml() {
         const s = this.signIn || {};
         const captured = Array.isArray(s.captured) ? s.captured : [];
         const body = captured.length
             ? captured.map((c, i) => `
-                            <button type="button" class="signin-captured-item" data-capture-index="${i}" data-target-id="${escapeHtml(c.targetId)}">${escapeHtml(c.label)} (${escapeHtml(c.username)})</button>`).join('')
+                            <button type="button" class="signin-captured-item${this.pcMonitor ? ' pc-os-btn' : ''}" data-capture-index="${i}" data-target-id="${escapeHtml(c.targetId)}">${escapeHtml(c.label)} (${escapeHtml(c.username)})</button>`).join('')
             : (s.capturedLoading ? '<div class="signin-captured-empty">Checking...</div>' : '<div class="signin-captured-empty">None yet.</div>');
         return `
                             <div class="signin-captured-title">Captured sign-ins</div>${body}`;

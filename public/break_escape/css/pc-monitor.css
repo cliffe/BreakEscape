@@ -1,0 +1,321 @@
+/* The one PC monitor frame (UX slice 2c, js/utils/pc-monitor.js). Every view of a PC sits in
+   it: the sign-in screen, a computer's password screen, the desktop, a share's folder window.
+   pcMonitorMetrics sets the sizes and places inline (whole pixels), so these rules hold the
+   look only. Pixel art: 2px borders, stepped corners, flat fills, pixel fonts. */
+
+.minigame-container.pc-view {
+    /* The monitor is placed by left/top from the window's own box */
+    display: block;
+    /* The dynamic viewport (R2 M3): a phone's address bar is left out, and neither a pinch
+       zoom nor the on-screen keyboard changes it, so the frame keeps one size */
+    height: 100vh;
+    height: 100dvh;
+}
+
+.pc-monitor {
+    position: absolute;
+    box-sizing: border-box;
+    z-index: 2;
+}
+
+/* The bezel: a flat dark grey case with a 2px outline and a 2px lighter inner edge, its
+   corners cut in 2px steps */
+.pc-monitor-bezel {
+    position: absolute;
+    inset: 0;
+    box-sizing: border-box;
+    background: #3d3d3d;
+    border: 2px solid #161616;
+    box-shadow: inset 0 0 0 2px #555555;
+    clip-path: polygon(
+        0 6px, 2px 6px, 2px 4px, 4px 4px, 4px 2px, 6px 2px, 6px 0,
+        calc(100% - 6px) 0, calc(100% - 6px) 2px, calc(100% - 4px) 2px, calc(100% - 4px) 4px,
+        calc(100% - 2px) 4px, calc(100% - 2px) 6px, 100% 6px,
+        100% calc(100% - 6px), calc(100% - 2px) calc(100% - 6px), calc(100% - 2px) calc(100% - 4px),
+        calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) calc(100% - 2px), calc(100% - 6px) calc(100% - 2px),
+        calc(100% - 6px) 100%,
+        6px 100%, 6px calc(100% - 2px), 4px calc(100% - 2px), 4px calc(100% - 4px),
+        2px calc(100% - 4px), 2px calc(100% - 6px), 0 calc(100% - 6px)
+    );
+}
+
+/* The webcam in the top strip */
+.pc-monitor-cam {
+    position: absolute;
+    top: calc(var(--pc-bezel-top, 38px) / 2 - 4px);
+    left: calc(50% - 4px);
+    width: 8px;
+    height: 8px;
+    background: #1c1c1c;
+    box-shadow: inset 0 0 0 2px #2a2a2a;
+}
+
+/* The screen: the desktop wallpaper behind every view, with a 2px dark rim. Its size and
+   place come from pcMonitorMetrics (left/top/width/height inline). */
+.pc-monitor-screen {
+    position: absolute;
+    box-sizing: content-box;
+    overflow: hidden;
+    border: 2px solid #111111;
+    background-color: #1e3a28;
+    background-image: url('../assets/mini-games/desktop-wallpaper.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    image-rendering: pixelated;
+}
+
+/* The game area is the screen's scroll area. Its content is drawn at the frame's whole-number
+   scale (--pc-ui-scale from pcMonitorMetrics: 2 once the screen holds twice the 560x350 base
+   layout), so pixel text and 2px borders stay on the pixel grid at every size (R1 M2). */
+.pc-monitor-screen > .minigame-game-container {
+    zoom: var(--pc-ui-scale, 1);
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background: none;
+    box-shadow: none;
+}
+
+/* The chin under the screen: the PC's name, a power light, the footer buttons */
+.pc-monitor-chin {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: var(--pc-bezel-chin, 44px);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 0 var(--pc-bezel-side, 20px);
+    box-sizing: border-box;
+}
+
+/* The PC's name on the top strip's left, where the post-it on the chin never covers it */
+.pc-monitor-name {
+    position: absolute;
+    left: var(--pc-bezel-side, 20px);
+    top: calc(var(--pc-bezel-top, 38px) / 2 - 4px);
+    max-width: calc(50% - var(--pc-bezel-side, 20px) - 12px);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    line-height: 8px;
+    color: #9a9a9a;
+    pointer-events: none;
+}
+
+/* With the screen drawn at x2 the name is drawn at x2 too (R2 m5): 8px beside 32px screen
+   text was hard to read. The 38px strip holds it, centred from the strip's height. */
+.pc-monitor[data-ui-scale="2"] .pc-monitor-name {
+    top: calc(var(--pc-bezel-top, 38px) / 2 - 8px);
+    font-size: 16px;
+    line-height: 16px;
+}
+
+/* A narrow frame (a phone): no webcam, and the name uses the strip up to the X (R1 m11) */
+.pc-monitor[data-narrow] .pc-monitor-cam {
+    display: none;
+}
+
+.pc-monitor[data-narrow] .pc-monitor-name {
+    max-width: calc(100% - 2 * var(--pc-bezel-side, 12px) - 38px);
+}
+
+.pc-monitor-led {
+    order: 2;
+    flex: 0 0 auto;
+    width: 6px;
+    height: 6px;
+    background: #39d353;
+    box-shadow: 0 0 0 2px #1c4a24;
+}
+
+.pc-monitor-controls {
+    order: 1;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.pc-monitor-controls > .minigame-controls {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    gap: 6px;
+}
+
+/* Footer buttons sized to the chin, in GNF at 16px, the size it draws crisply at (R1 m2) */
+.pc-monitor-controls .minigame-button {
+    margin: 0;
+    padding: 2px 10px;
+    font-size: 16px;
+    line-height: 16px;
+    min-height: 0;
+}
+
+.pc-monitor-controls .minigame-button .icon-small {
+    width: 16px;
+    height: 16px;
+}
+
+.pc-monitor[data-compact] .pc-monitor-controls .minigame-button {
+    padding: 2px 6px;
+}
+
+/* The theme's thin button skin, so a chin button fits inside the chin (the full skin's
+   12px edges made it taller than the chin) */
+[data-ui-theme] .pc-monitor-controls .minigame-button {
+    border-width: var(--ui-small-button-px);
+    border-image-source: var(--ui-small-button-image);
+    border-image-slice: var(--ui-small-button-slice) fill;
+    border-image-width: var(--ui-small-button-px);
+}
+
+/* Every button the PC's OS draws on its screen (Submit, Sign in, Change, the eye and the
+   keyboard toggle; R2 M1) wears the theme's thin button skin, the look of Switch user and
+   Sign out and the chin buttons: one look per concept. Without a theme, a flat fill with a
+   2px border. No scale on press (it smears pixel art). */
+.pc-monitor button.pc-os-btn {
+    margin: 0;
+    padding: 4px 12px;
+    border: 2px solid #5a6a78;
+    border-radius: 0;
+    background: #22303c;
+    box-shadow: none;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 16px;
+    line-height: 16px;
+    cursor: pointer;
+    transform: none;
+    transition: none;
+    image-rendering: pixelated;
+}
+
+[data-ui-theme] .pc-monitor button.pc-os-btn {
+    border-style: solid;
+    border-width: var(--ui-small-button-px);
+    border-image-source: var(--ui-small-button-image);
+    border-image-slice: var(--ui-small-button-slice) fill;
+    border-image-width: var(--ui-small-button-px);
+    border-image-repeat: stretch;
+    background: none;
+    color: var(--ui-button-text);
+}
+
+.pc-monitor button.pc-os-btn:hover,
+.pc-monitor button.pc-os-btn:focus-visible {
+    background-color: transparent;
+    filter: brightness(1.25);
+    transform: none;
+}
+
+.pc-monitor button.pc-os-btn:active {
+    filter: brightness(0.9);
+    transform: none;
+}
+
+[data-ui-theme] .pc-monitor button.pc-os-btn:hover,
+[data-ui-theme] .pc-monitor button.pc-os-btn:active {
+    background: none;
+}
+
+/* A locked-out Sign in: the same skin, greyed, with no hover change */
+.pc-monitor button.pc-os-btn:disabled,
+.pc-monitor button.pc-os-btn:disabled:hover,
+.pc-monitor button.pc-os-btn:disabled:active {
+    filter: grayscale(1) brightness(0.7);
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+/* Change, as small as Switch user and Sign out */
+.pc-monitor button.pc-os-btn.signin-change {
+    padding: 0 8px;
+}
+
+/* The eye and the keyboard toggle: icon buttons in the field row, as tall as the field */
+.pc-monitor button.pc-os-btn.pc-os-icon-btn {
+    position: static;
+    flex: 0 0 auto;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pc-monitor button.pc-os-btn.keyboard-toggle-btn {
+    width: 56px;
+}
+
+/* The 8x8 eye at x2 and the 40x16 keyboard at x1: whole-number scales */
+.pc-monitor .pc-os-icon-btn .icon-small {
+    width: 16px;
+    height: 16px;
+}
+
+.pc-monitor .pc-os-icon-btn .icon-keyboard {
+    width: 40px;
+    height: 16px;
+}
+
+.pc-monitor[data-compact] button.pc-os-btn {
+    padding: 2px 10px;
+}
+
+.pc-monitor[data-compact] button.pc-os-btn.signin-change {
+    padding: 0 6px;
+}
+
+.pc-monitor[data-compact] button.pc-os-btn.pc-os-icon-btn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+}
+
+.pc-monitor[data-compact] button.pc-os-btn.keyboard-toggle-btn {
+    width: 52px;
+}
+
+/* The X in the bezel's top strip, its right edge over the screen's right edge, so it is
+   inside the frame and never on the screen */
+.pc-monitor-bezel > .minigame-close-button.pc-monitor-close {
+    position: absolute;
+    top: calc((var(--pc-bezel-top, 38px) - 30px) / 2) !important;
+    right: var(--pc-bezel-side, 20px) !important;
+    left: auto;
+    margin: 0;
+    z-index: 5;
+}
+
+/* The post-it, stuck on the chin: its top just under the screen's bottom edge, in from the
+   left past the side bezel. pcMonitorMetrics sets left, top and max-width from the frame. */
+.pc-monitor > .postit-note.pc-monitor-postit {
+    position: absolute;
+    margin: 0;
+    bottom: auto;
+    right: auto;
+    transform: none;
+    z-index: 6;
+    box-sizing: border-box;
+    width: max-content;
+    padding: 10px 14px;
+    font-size: 18px;
+    line-height: 20px;
+}
+
+.pc-monitor[data-compact] > .postit-note.pc-monitor-postit {
+    padding: 6px 10px;
+    font-size: 16px;
+    line-height: 18px;
+}

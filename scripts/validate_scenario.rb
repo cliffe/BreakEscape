@@ -5002,6 +5002,10 @@ def check_recurring_bugs(json_data, repo_root)
       # producer, or two slots of one producer, are meant to share a spot
       next if a['outputOf'].is_a?(String) && (a['outputOf'] == b['id'] || a['outputOf'] == b['outputOf'])
       next if b['outputOf'].is_a?(String) && b['outputOf'] == a['id']
+      # A click cannot open an object with interactable: false (the tap filter in game.js and the
+      # proximity pass in interactions.js both skip it), so such a pair cannot steal clicks. The
+      # lab's plain corridor extinguisher and its revealed wedge share one spot on purpose.
+      next if a['interactable'] == false || b['interactable'] == false
       issues << "⚠️ WARNING: rooms/#{rid}: objects[#{ai}] '#{a['name'] || a['id']}' and objects[#{bi}] '#{b['name'] || b['id']}' " \
                 "are pinned #{dist.round} px apart, inside the 32 px interaction range (constants.js INTERACTION_RANGE), so " \
                 "one click can open the other. Move them at least a tile apart. (Objects placed by Tiled slots aren't " \

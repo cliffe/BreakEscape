@@ -51,6 +51,7 @@
 
 import { MinigameScene } from '../framework/base-minigame.js';
 import { escapeHtml } from '../../utils/escape-html.js';
+import { MORE_BELOW_TEXT } from '../../utils/more-below.js';
 
 
 // The down-state words (UX feedback slice 1): one set for every kind of row, block and link.
@@ -64,7 +65,7 @@ export const sessionKeptText = (name) => `Session kept: ${name}`;
 // The own block's heading on every view: the subtitle (or a Wi-Fi title) already names the
 // network (R1 n2, code review R2 m1)
 export const OWN_HEADING = 'Reachable';
-export const MORE_BELOW_TEXT = 'More below';
+export { MORE_BELOW_TEXT };
 // Shown when the view was fetched before the latest globals reached the server (review R2 m3)
 export const STALE_TEXT = 'Still updating, so this may be out of date.';
 // An implant whose own PC is off (review R3 M1): the link is listed and reaches nothing

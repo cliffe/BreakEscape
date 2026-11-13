@@ -299,6 +299,11 @@ function initializeGame() {
         const hudZoom = Math.max(hudStep < 0 ? 1 / dpr : 1, hudDevicePixels / 2 / dpr);
         document.documentElement.style.setProperty('--hud-zoom', hudZoom);
 
+        // Canvas text that has to stay readable (speech bubbles) picks its own whole-number scale
+        // from this (q105 R1 M2); the bubble system reads it on install and is told of changes
+        window.pixelDisplay = { scale, dpr, hudStep, viewWidth: gameWidth };
+        try { window.npcWorldBubbles?.setDisplayScale?.(window.pixelDisplay); } catch (e) { /* bubbles keep their scale */ }
+
         console.log(`Pixel scale ${scale}x (dpr ${dpr}): game ${gameWidth}x${gameHeight}`);
     };
 

@@ -194,8 +194,32 @@ export class RFIDUIRenderer {
         const readerName = this.minigame.params?.readerName;
         screen.appendChild(iconLine('flipper-reader-head', 'reader', readerName ? `At the reader: ${displayDashes(readerName)}` : 'At the reader', 3));
 
+        // At an access list the held badges may have been tried already and refused: say so,
+        // and leave them out of the tap list, so the player is not invited to try them again
+        // (UX slice 3b R1 m3)
+        const refusedIds = (this.minigame.params?.refusedKeycards || []).map(String);
+        const cardIdOf = (data) => data ? (data.card_id || (typeof window !== 'undefined' && window.lockRef ? window.lockRef(data) : null)) : null;
+        if (refusedIds.length > 0) {
+            const refused = document.createElement('div');
+            refused.className = 'flipper-info-dim flipper-reader-refused';
+            refused.textContent = refusedIds.length > 1
+                ? 'Your badges were refused. Try a saved card.'
+                : 'Your badge was refused. Try a saved card.';
+            screen.appendChild(refused);
+        }
+        // A held card tapped here: "Checking..." while the server answers (R1 m7)
+        const status = document.createElement('div');
+        status.className = 'flipper-emulating flipper-reader-status';
+        status.hidden = true;
+        screen.appendChild(status);
+        this._doorStatus = status;
+
         const saved = this.dataManager.getSavedCards();
-        const held = this.minigame.params?.availableCards || [];
+        const held = (this.minigame.params?.availableCards || [])
+            .filter(card => !refusedIds.includes(String(cardIdOf(card && card.scenarioData))));
+        // While one card is being checked the list does nothing, so a second choice cannot
+        // start under the first one's answer (R1 m7)
+        const unlessBusy = (f) => () => { if (!this.minigame._accessPending) f(); };
         const list = document.createElement('div');
         list.className = 'flipper-card-list flipper-door-list';
         const entries = [];
@@ -206,7 +230,7 @@ export class RFIDUIRenderer {
             head.textContent = 'Play back a saved card';
             list.appendChild(head);
             saved.forEach(card => {
-                const item = this.listEntry('door', entries.length, () => this.showEmulationScreen(card));
+                const item = this.listEntry('door', entries.length, unlessBusy(() => this.showEmulationScreen(card)));
                 item.innerHTML = `${pixelIcon('signal', 2)}<span>Emulate ${escapeHtml(displayDashes(card.name || 'Card'))}</span>`;
                 entries.push(item);
                 list.appendChild(item);
@@ -219,7 +243,7 @@ export class RFIDUIRenderer {
             list.appendChild(head);
             held.forEach(card => {
                 const name = displayDashes(card.scenarioData?.name || 'Keycard');
-                const item = this.listEntry('door', entries.length, () => this.minigame.handleCardTap(card));
+                const item = this.listEntry('door', entries.length, unlessBusy(() => this.minigame.handleCardTap(card)));
                 item.innerHTML = `${pixelIcon('card', 2)}<span>Tap ${escapeHtml(name)}</span>`;
                 entries.push(item);
                 list.appendChild(item);
@@ -236,8 +260,26 @@ export class RFIDUIRenderer {
             list.appendChild(how);
         }
         screen.appendChild(list);
+        this._doorEntries = entries;
         // Back from a refusal: the list where the player left it (R5 n3)
         this.showList('door', entries);
+    }
+
+    /**
+     * A held card tapped at an access-list reader while the server answers: "Checking <card>..."
+     * under the reader head, and the door list disabled until the answer replaces the screen
+     * (UX slice 3b R1 m7). Emulate needs none of this: its own screen says "Emulating...".
+     */
+    showAccessChecking(cardName) {
+        const status = this._doorStatus;
+        if (status) {
+            status.textContent = cardName ? `Checking ${displayDashes(cardName)}...` : 'Checking...';
+            status.hidden = false;
+        }
+        (this._doorEntries || []).forEach(entry => {
+            entry.disabled = true;
+            entry.setAttribute?.('aria-disabled', 'true');
+        });
     }
 
     /**

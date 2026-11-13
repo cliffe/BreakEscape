@@ -516,6 +516,59 @@ module BreakEscape
       assert_refused door('mixed', card_ids: ['VISITOR-07'])
     end
 
+    # ---- POST /unlock, one copy per Emulate (UX slice 3b, q97) -------------------------
+    # Regression pins: the server is unchanged by the slice. The copier's Emulate now sends
+    # the one copy the player picked; the server still decides from its own records.
+
+    test 'Emulate: a single-id request for a recorded copy opens the door and says only viaCopy' do
+      build('inventory' => [CLONER.dup])
+      clone_card(JAKE_CARD_ID, npc_id: 'jake')
+      body = door('records', card_ids: [JAKE_CARD_ID])
+      assert_response :success, body.inspect
+      assert_equal true, body['viaCopy']
+      refute body.key?('cardId')
+      assert_includes @game.reload.player_state['unlockedRooms'], 'records'
+    end
+
+    # Review R1 m1: once a door is open, any request is granted, so the answer names no card.
+    # Otherwise a request per remaining copy would tell the player which ones the list admits.
+    test 'Emulate: after a copy opened the door, further requests say nothing about the cards sent' do
+      build('inventory' => [CLONER.dup])
+      clone_card(JAKE_CARD_ID, npc_id: 'jake')
+      clone_card(EXEC_CARD_ID, npc_id: 'exec')
+      assert_equal true, door('records', card_ids: [JAKE_CARD_ID])['viaCopy']
+      [[JAKE_CARD_ID], [EXEC_CARD_ID], [JAKE_CARD_ID, EXEC_CARD_ID]].each do |ids|
+        body = door('records', card_ids: ids)
+        assert_response :success, body.inspect
+        assert_equal true, body['success']
+        refute body.key?('viaCopy'), "no viaCopy for #{ids.inspect}"
+        refute body.key?('cardId'), "no cardId for #{ids.inspect}"
+        # It says the door was open already, so the toast credits no card (R2 m2)
+        assert_equal true, body['alreadyOpen'], "alreadyOpen for #{ids.inspect}"
+      end
+    end
+
+    test 'Emulate: a single-id request for a copy the server never saw made is refused' do
+      build('inventory' => [CLONER.dup])
+      assert_refused door('records', card_ids: [JAKE_CARD_ID])
+      refute_includes @game.reload.player_state['unlockedRooms'], 'records'
+    end
+
+    test 'Emulate: a single-id request for a recorded copy of a cancelled card is refused' do
+      build('inventory' => [CLONER.dup])
+      clone_card(JAKE_CARD_ID, npc_id: 'jake')
+      @game.reload
+      @game.player_state['globalVariables'] = { 'revoked_card_ids' => [JAKE_CARD_ID] }
+      @game.save!
+      assert_refused door('records', card_ids: [JAKE_CARD_ID])
+    end
+
+    test 'Emulate: a single-id request for a UID-only copy is refused with reason uid_only' do
+      build('inventory' => [CLONER.dup])
+      clone_card(EXEC_CARD_ID, npc_id: 'exec')
+      assert_refused door('exec_suite', card_ids: [EXEC_CARD_ID]), reason: 'uid_only'
+    end
+
     private
 
     def stored_cards
