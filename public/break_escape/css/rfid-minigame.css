@@ -33,8 +33,10 @@
    same stepped polygon (a staircase of 2px steps inset by 2px is the same staircase):
    - the frame itself: the 2px dark outline (its background, showing round the edge);
    - ::before, inset 2px: the light bevel, left and top, following the steps;
-   - ::after, offset 2px down and right of ::before: the orange body, with the dark
-     bevel on its right and bottom edges.
+   - .flipper-bevel (a child div, rfid-ui.js createFlipperFrame), offset 2px down and
+     right of ::before: the dark bevel, right and bottom, following the steps;
+   - ::after, inset 2px more on the right and bottom: the orange body.
+   Positioned z-index -1 layers paint in tree order: ::before, the child, then ::after.
    No soft shadow: clip-path would cut it off anyway. */
 .flipper-zero-frame {
     --copier-steps: polygon(
@@ -89,12 +91,17 @@
 /* The clip-path makes the frame a stacking context, so z-index -1 paints these above
    the frame's own background and below its content */
 .flipper-zero-frame::before,
+.flipper-zero-frame > .flipper-bevel,
 .flipper-zero-frame::after {
-    content: '';
     position: absolute;
     z-index: -1;
     clip-path: var(--copier-steps);
     pointer-events: none;
+}
+
+.flipper-zero-frame::before,
+.flipper-zero-frame::after {
+    content: '';
 }
 
 .flipper-zero-frame::before {
@@ -102,13 +109,20 @@
     background: #ffb366;
 }
 
-.flipper-zero-frame::after {
+.flipper-zero-frame > .flipper-bevel {
     top: 4px;
     left: 4px;
     right: 2px;
     bottom: 2px;
+    background: #b35a00;
+}
+
+.flipper-zero-frame::after {
+    top: 4px;
+    left: 4px;
+    right: 4px;
+    bottom: 4px;
     background: #FF8200;
-    box-shadow: inset -2px -2px 0 #b35a00;
 }
 
 /* Header */
@@ -551,13 +565,23 @@
        from each side. Content-box sizing (400px of content plus padding) is kept for wider
        screens; here the padding counts inside the width, or 90% plus 40px of padding ran
        past both edges (UX slice 3a R1 m3). The height is the old 80vh of content plus the
-       padding, rounded to whole 2px so the bottom steps land on whole pixels. */
+       padding, rounded to whole 2px so the bottom steps land on whole pixels.
+       The close X (top 15px, 30px square plus its 4px border: it ends at y 45) sits
+       above the frame and never on its border or stepped corner (R2 m1): the copier's
+       area starts 52px down and ends 52px up, and the frame is centred in it, or starts
+       at its top when it is too tall ("safe" centring never pushes it under the X). */
+    .rfid-minigame-game-container {
+        box-sizing: border-box;
+        padding: 52px 0;
+        justify-content: safe center;
+    }
+
     .flipper-zero-frame {
         box-sizing: border-box;
         width: calc(100% - 32px);
         max-width: 440px;
         height: calc(80vh + 40px);
-        height: round(down, calc(80vh + 40px), 2px);
+        height: round(down, min(calc(80vh + 40px), calc(100vh - 104px)), 2px);
         min-height: 540px;
     }
 }

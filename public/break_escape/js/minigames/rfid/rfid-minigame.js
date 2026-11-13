@@ -34,16 +34,17 @@ export class RFIDMinigame extends MinigameScene {
         // Set title based on mode
         const title = params.mode === 'clone' ? 'Cloning Card...' : 'RFID Reader';
 
+        // No Cancel button: minigames close with the X (and Esc) only (UX slice 3a R2 m2).
+        // The base constructor keeps this merged object as this.params; it is not replaced
+        // with the caller's own params, or showCancel would fall back to the default.
         super(container, {
             ...params,
             title: title,
-            showCancel: true,
-            cancelText: 'Close',
+            showCancel: false,
             requiresKeyboardInput: false
         });
 
         // Parameters
-        this.params = params;
         this.mode = params.mode || 'unlock'; // 'unlock' or 'clone'
         this.requiredCardIds = params.requiredCardIds || (params.requiredCardId ? [params.requiredCardId] : []); // Array of valid card IDs
         this.acceptsUIDOnly = params.acceptsUIDOnly || false; // For MIFARE DESFire UID-only emulation

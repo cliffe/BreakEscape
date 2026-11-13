@@ -21,7 +21,7 @@ function copy(p, rewrites = {}) {
     return pathToFileURL(out).href;
 }
 writeFileSync(join(tmp, 'api-stub.mjs'), 'export const ApiClient = {};');
-writeFileSync(join(tmp, 'base-minigame.mjs'), 'export class MinigameScene { constructor(c, p) { this.gameContainer = c; } init() {} start() {} complete() {} cleanup() {} }');
+writeFileSync(join(tmp, 'base-minigame.mjs'), 'export class MinigameScene { constructor(c, p) { this.gameContainer = c; this.params = p; } init() {} start() {} complete() {} cleanup() {} }');
 const P = "'./rfid-protocols.js'", PM = "'./rfid-protocols.mjs'";
 const protocolsUrl = copy('minigames/rfid/rfid-protocols.js');
 copy('utils/display-dashes.js');
@@ -186,18 +186,18 @@ test('the copier frame keeps its stepped corners, outline and bevel following th
     }
     assert.match(frame, /clip-path:\s*var\(--copier-steps\)/, 'the frame is clipped to the steps');
     assert.doesNotMatch(frame, /border:|box-shadow/, 'a border or shadow would be cut away at the corners');
-    assert.match(css, /\.flipper-zero-frame::before,\s*\.flipper-zero-frame::after \{[^}]*clip-path:\s*var\(--copier-steps\)/,
-        '::before and ::after are clipped to the same steps');
+    assert.match(css, /\.flipper-zero-frame::before,\s*\.flipper-zero-frame > \.flipper-bevel,\s*\.flipper-zero-frame::after \{[^}]*clip-path:\s*var\(--copier-steps\)/,
+        '::before, the dark bevel layer and ::after are clipped to the same steps');
     assert.match(rule('.flipper-zero-frame::before'), /inset:\s*2px/, 'the bevel sits inside a 2px outline');
     // The body sits 2px inside the light bevel at the top and left (4px from the frame's
-    // edge) and 2px inside the outline at the right and bottom, where its inset shadow is
-    // the 2px dark bevel
-    // The standalone ::after rule (the first match is the shared ::before, ::after rule)
+    // edge) and 2px inside the dark bevel layer at the right and bottom (4px from the edge),
+    // so the dark bevel follows the steps too (R2 n1)
+    // The standalone ::after rule (earlier matches are the shared rules)
     const after = [...css.matchAll(/\n\.flipper-zero-frame::after \{([^}]*)\}/g)].map(m => m[1]).pop() || '';
-    for (const [side, px] of [['top', 4], ['left', 4], ['right', 2], ['bottom', 2]]) {
+    for (const [side, px] of [['top', 4], ['left', 4], ['right', 4], ['bottom', 4]]) {
         assert.match(after, new RegExp(`(^|\\s)${side}:\\s*${px}px;`), `::after ${side} ${px}px`);
     }
-    assert.match(after, /box-shadow:\s*inset -2px -2px 0 #b35a00/, 'a hard 2px dark bevel');
+    assert.doesNotMatch(after, /box-shadow/, 'the dark bevel is its own layer, not an inset shadow');
     assert.doesNotMatch(css, /box-shadow:[^;]*\d+px\s+\d+px\s+[1-9]\d*px\s+(?!0)/, 'no blurred shadow');
 });
 
@@ -328,9 +328,9 @@ test('the copier frame is snapped to whole pixels, now and on resize', () => {
 // UX slice 3a R1 m3: at phone width the frame and its outline stay inside the window.
 test('at phone width the frame fits inside the window with its outline', () => {
     const css = readFileSync(src('../css/rfid-minigame.css'), 'utf8');
-    const phone = css.match(/@media \(max-width: 500px\) \{\s*(\/\*[\s\S]*?\*\/\s*)?\.flipper-zero-frame \{([^}]*)\}/);
+    const phone = css.match(/@media \(max-width: 500px\) \{\s*(\/\*[\s\S]*?\*\/\s*)?(\.rfid-minigame-game-container \{[^}]*\}\s*)?\.flipper-zero-frame \{([^}]*)\}/);
     assert.ok(phone, 'a phone rule for the frame');
-    const r = phone[2];
+    const r = phone[3];
     assert.match(r, /box-sizing:\s*border-box/, 'the padding counts inside the width');
     assert.match(r, /width:\s*calc\(100% - 32px\)/, '16px from each side');
     assert.doesNotMatch(r, /width:\s*90%/);
@@ -338,4 +338,92 @@ test('at phone width the frame fits inside the window with its outline', () => {
     const wide = css.match(/(^|\n)\.flipper-zero-frame \{([^}]*)\}/)[2];
     assert.doesNotMatch(wide, /box-sizing/);
     assert.match(wide, /width:\s*400px/);
+});
+
+// UX slice 3a R2 m1: at phone width the close X (y 15 to 45) never sits on the frame's
+// border or stepped corner. The copier's area starts 52px down and ends 52px up, the frame
+// fits in it, and "safe" centring starts a too-tall frame at the top, not under the X.
+test('at phone width the frame starts below the close X', () => {
+    const css = readFileSync(src('../css/rfid-minigame.css'), 'utf8');
+    const media = css.match(/@media \(max-width: 500px\) \{([\s\S]*?)\n\}/)[1];
+    const area = media.match(/\.rfid-minigame-game-container \{([^}]*)\}/);
+    assert.ok(area, 'the phone rule pads the copier area');
+    assert.match(area[1], /box-sizing:\s*border-box/);
+    assert.match(area[1], /padding:\s*52px 0/, 'clear of the X, which ends 45px down');
+    assert.match(area[1], /justify-content:\s*safe center/, 'a too-tall frame starts at the top of the area');
+    const frame = media.match(/\.flipper-zero-frame \{([^}]*)\}/)[1];
+    assert.match(frame, /round\(down, min\(calc\(80vh \+ 40px\), calc\(100vh - 104px\)\), 2px\)/,
+        'the frame height fits between the two 52px bands');
+    const close = readFileSync(src('../css/minigames-framework.css'), 'utf8').match(/\.minigame-close-button \{([^}]*)\}/)[1];
+    assert.match(close, /top:\s*15px/);
+    assert.match(close, /height:\s*30px/);
+});
+
+// UX slice 3a R2 m2: the copier closes with the X and Esc only, no Cancel button
+test('the copier has no Cancel button: the X and Esc close it', () => {
+    const g = makeGame({ mode: 'unlock', requiredCardIds: [], availableCards: [] });
+    assert.equal(g.params.showCancel, false, 'the merged params reach the base init');
+    assert.equal(g.params.cancelText, undefined, 'no dead Close label');
+    assert.equal(g.params.mode, 'unlock', 'the caller params are still there');
+    const code = readFileSync(src('minigames/rfid/rfid-minigame.js'), 'utf8');
+    assert.doesNotMatch(code, /showCancel:\s*true/);
+    assert.doesNotMatch(code, /cancelText/);
+    assert.doesNotMatch(code, /this\.params = params;/, 'the merged params are not replaced');
+    // The base scene draws no Cancel row when showCancel is false, and keeps the X and Esc
+    const base = readFileSync(src('minigames/framework/base-minigame.js'), 'utf8');
+    assert.match(base, /const showCancel = this\.params\.showCancel !== false/);
+    assert.match(base, /id="minigame-close"/);
+    assert.match(base, /e\.key === 'Escape'[\s\S]*?this\.closeByPlayer\(\)/);
+});
+
+// UX slice 3a R2 n1: the dark bevel is its own layer, clipped to the same steps
+test('the dark bevel layer follows the stepped corners', () => {
+    const ui = new RFIDUIRenderer(makeGame({ mode: 'unlock', requiredCardIds: [], availableCards: [] }));
+    const frame = ui.createFlipperFrame();
+    assert.equal(frame.children[0].className, 'flipper-bevel', 'first child, painted between ::before and ::after');
+    const css = readFileSync(src('../css/rfid-minigame.css'), 'utf8');
+    const bevel = css.match(/\.flipper-zero-frame > \.flipper-bevel \{([^}]*)\}/)[1];
+    assert.match(bevel, /top:\s*4px;\s*left:\s*4px;\s*right:\s*2px;\s*bottom:\s*2px;\s*background:\s*#b35a00/);
+    const body = [...css.matchAll(/\n\.flipper-zero-frame::after \{([^}]*)\}/g)].map(m => m[1]).pop();
+    assert.match(body, /top:\s*4px;\s*left:\s*4px;\s*right:\s*4px;\s*bottom:\s*4px;\s*background:\s*#FF8200/);
+    assert.doesNotMatch(body, /box-shadow/, 'the inset shadow stopped at the steps');
+    assert.match(css, /\.flipper-zero-frame::before,\s*\.flipper-zero-frame > \.flipper-bevel,\s*\.flipper-zero-frame::after \{[^}]*clip-path:\s*var\(--copier-steps\)/);
+});
+
+// UX slice 3a R2 n4: the snap moves the frame with top/left, which needs position: relative
+test('the frame stays position: relative, or the snap would do nothing', () => {
+    const css = readFileSync(src('../css/rfid-minigame.css'), 'utf8');
+    const wide = css.match(/(^|\n)\.flipper-zero-frame \{([^}]*)\}/)[2];
+    assert.match(wide, /(^|[;\s])position:\s*relative;/);
+});
+
+// UX slice 3a R2 n2: a layout change inside the overlay re-snaps the frame, and the
+// observer goes with the copier
+test('a ResizeObserver on the container and frame re-snaps, disconnected on cleanup', () => {
+    const made = [];
+    const saved = window.ResizeObserver;
+    window.ResizeObserver = class { constructor(cb) { this.cb = cb; this.watched = []; this.live = true; made.push(this); }
+        observe(el) { this.watched.push(el); } disconnect() { this.live = false; this.watched = []; } };
+    const realAdd = window.addEventListener, realRemove = window.removeEventListener;
+    window.addEventListener = () => {}; window.removeEventListener = () => {};
+    try {
+        let top = 20;
+        const frame = { isConnected: true, style: {}, getBoundingClientRect: () => ({ left: 16, top }) };
+        const g = makeGame({ mode: 'unlock', requiredCardIds: [], availableCards: [] });
+        g.ui.snapFrameToPixels(frame);
+        assert.equal(made.length, 1);
+        assert.deepEqual(made[0].watched, [g.ui.container, frame]);
+        top = 47.5;
+        made[0].cb();
+        assert.equal(frame.style.top, '0.5px', 'a layout change with no window resize re-snaps');
+        g.ui.snapFrameToPixels(frame);
+        assert.equal(made.length, 2);
+        assert.equal(made[0].live, false, 'a second snap replaces the old observer');
+        g.ui.cleanup();
+        assert.equal(made[1].live, false, 'cleanup disconnects it');
+        assert.equal(g.ui._resizeObserver, null);
+    } finally {
+        window.ResizeObserver = saved;
+        window.addEventListener = realAdd; window.removeEventListener = realRemove;
+    }
 });

@@ -254,6 +254,13 @@ export class RFIDUIRenderer {
         const frame = document.createElement('div');
         frame.className = 'flipper-zero-frame';
 
+        // The dark bevel layer, between ::before (light bevel) and ::after (body), so the
+        // dark edge follows the stepped corners too (rfid-minigame.css, R2 n1)
+        const bevel = document.createElement('div');
+        bevel.className = 'flipper-bevel';
+        bevel.setAttribute('aria-hidden', 'true');
+        frame.appendChild(bevel);
+
         // Header with logo and battery
         const header = document.createElement('div');
         header.className = 'flipper-header';
@@ -629,13 +636,28 @@ export class RFIDUIRenderer {
         if (this._onResize) window.removeEventListener('resize', this._onResize);
         this._onResize = snap;
         window.addEventListener('resize', snap);
+        // A layout change inside the overlay with no window resize (a message, the controls
+        // row) can also move the frame: watch the copier's container and the frame. The snap
+        // changes only top/left, never a size, so it cannot retrigger itself (R2 n2).
+        this.disconnectResizeObserver();
+        const RO = window.ResizeObserver;
+        if (typeof RO === 'function') {
+            this._resizeObserver = new RO(() => snap());
+            if (this.container) this._resizeObserver.observe(this.container);
+            this._resizeObserver.observe(frame);
+        }
     }
 
-    /** Called from the minigame's cleanup: no timer or listener outlives the copier. */
+    disconnectResizeObserver() {
+        if (this._resizeObserver) { this._resizeObserver.disconnect(); this._resizeObserver = null; }
+    }
+
+    /** Called from the minigame's cleanup: no timer, listener or observer outlives the copier. */
     cleanup() {
         this.clearTimers();
         if (this._onResize && typeof window !== 'undefined') window.removeEventListener('resize', this._onResize);
         this._onResize = null;
+        this.disconnectResizeObserver();
     }
 
     /**

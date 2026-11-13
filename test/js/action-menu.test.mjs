@@ -170,3 +170,19 @@ test('Copy says the card stays, Take says the owner will notice', () => {
     assert.match(copy.detail, /stays where it is/);
     assert.match(take.detail, /owner will notice/);
 });
+
+// UX slice 3a R2 n3: takeIcon guards window like its neighbours: no window, no icon, no throw
+test('takeIcon returns no icon outside a browser, and the open hand in one', async () => {
+    const { takeIcon } = await import(pathToFileURL(mod).href);
+    const saved = globalThis.window;
+    try {
+        delete globalThis.window;
+        assert.equal(takeIcon(), undefined);
+        globalThis.window = {};
+        assert.equal(takeIcon(), undefined, 'menu icons not loaded yet: Take has no icon');
+        globalThis.window = { menuIcons: { openHand: openHandIcon } };
+        assert.deepEqual(takeIcon(), openHandIcon());
+    } finally {
+        globalThis.window = saved;
+    }
+});

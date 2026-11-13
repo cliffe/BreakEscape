@@ -31,7 +31,7 @@ function assetsBase() {
     return (typeof window !== 'undefined' && window.breakEscapeConfig?.assetsPath) || '/break_escape/assets';
 }
 export const COPIER_ICON_SCALE = 2;
-export function takeIcon() { return window.menuIcons?.openHand?.(); }
+export function takeIcon() { return (typeof window !== 'undefined' && window.menuIcons?.openHand?.()) || undefined; }
 export function copyIcon() {
     return { src: `${assetsBase()}/objects/rfid_cloner.png`, width: 11 * COPIER_ICON_SCALE, height: 22 * COPIER_ICON_SCALE };
 }
