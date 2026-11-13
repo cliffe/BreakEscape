@@ -29,7 +29,7 @@ const barksMod = await imp('systems/npc-barks.js');
 const NPCBarkSystem = barksMod.default;
 const { routeBark } = barksMod;
 const B = await imp('systems/npc-world-bubbles.js');
-const { NpcWorldBubbles, pageLine, pagesText, pageTimes, lineTotalMs, readingMs, wrapLines, onCamera, placeBubble,
+const { NpcWorldBubbles, crispText, pageLine, pagesText, pageTimes, lineTotalMs, readingMs, wrapLines, onCamera, placeBubble,
     MAX_BUBBLES, PAGE_LINES, LINE_CHARS, PAGE_MIN_MS, AUDIO_TAIL_MS, SPEECH_FONT, SPEECH_FONT_PX, BORDER_PX, CAMERA_MARGIN, TEXT_RIGHT_SLACK } = B;
 const { displayDashes } = await imp('utils/display-dashes.js');
 
@@ -478,4 +478,46 @@ test('R1 n4: placeBubble slides sideways first and lifts only when both sides ar
     const up = placeBubble(at, 60, 20, wall);
     assert.ok(up.lift > 0 && up.lift % 2 === 0);
     assert.equal(hit(up.rect, wall[0]), false);
+});
+
+// A Text whose canvas holds smoothed glyph pixels: 4 wide, 2 high; ink in columns 1 and 2
+function fakeText(alphas, w, h) {
+    const data = new Uint8ClampedArray(w * h * 4);
+    alphas.forEach((a, i) => { data[i * 4] = 9; data[i * 4 + 3] = a; });
+    const uploads = [];
+    const canvas = { width: w, height: h, getContext: () => ({ getImageData: () => ({ data }), putImageData() {} }) };
+    return { data, uploads, t: { canvas, frame: { source: { glTexture: 'old' } },
+        renderer: { gl: {}, canvasToTexture: (c, tex, flip) => { uploads.push([tex, flip]); return 'new'; } } } };
+}
+
+test('main-19: crispText leaves every text pixel clear or solid, re-uploads the texture and gives the ink bounds', () => {
+    const { data, uploads, t } = fakeText([0, 200, 90, 0, 0, 255, 127, 0], 4, 2);
+    const ink = crispText(t, 0x1b2a41);
+    for (let i = 3; i < data.length; i += 4) assert.ok(data[i] === 0 || data[i] === 255, `alpha ${data[i]}`);
+    assert.deepEqual([...data.slice(4, 8)], [0x1b, 0x2a, 0x41, 255], 'solid pixels take the text colour');
+    assert.deepEqual(ink, { left: 1, right: 1, top: 0, bottom: 1 });
+    assert.deepEqual(uploads, [['old', true]]);
+    assert.equal(t.frame.glTexture, 'new');
+    assert.equal(crispText({}), null, 'no canvas: nothing to do');
+});
+
+test('main-19 / R1 n1: with readable ink the frame pads from the glyphs, the same on both sides', () => {
+    const r = rig();
+    const orig = r.scene.add.text;
+    r.scene.add.text = (...a) => {
+        const o = orig(...a);
+        // 40 px canvas; ink from column 1 to column 30 (the measured advance would say 40)
+        const alphas = new Array(40 * 2).fill(0);
+        alphas[1] = 255; alphas[30] = 255;
+        Object.assign(o, fakeText(alphas, 40, 2).t);
+        return o;
+    };
+    r.bubbles.say('sara', 'abc');
+    r.bubbles.update();
+    const bb = r.bubbles.bubbles.get('sara');
+    assert.equal(bb.w, 30 + 4 * 2 + BORDER_PX * 2);
+    const bodyLeft = bb.layout.dx - bb.w / 2;
+    const inkLeft = bb.text.x + 1, inkRight = bb.text.x + 30;
+    assert.equal(inkLeft - (bodyLeft + BORDER_PX), 4, 'left gap');
+    assert.equal((bodyLeft + bb.w - BORDER_PX) - (inkRight + 1), 4, 'right gap');
 });

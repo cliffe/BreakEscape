@@ -138,6 +138,45 @@ export function placeBubble(at, w, h, taken, { prefer = null, tail = TAIL, maxLi
     return last;
 }
 
+/**
+ * Make a Phaser Text's glyphs hard-edged: canvas fillText smooths glyph edges, which shows as
+ * grey fringes once the canvas is scaled up. Every pixel of the Text's own canvas becomes either
+ * clear or solid `colour` (alpha threshold at half), and the texture is uploaded again as
+ * Text.updateText does. Returns the ink's bounds { left, right, top, bottom } in canvas pixels,
+ * or null (no canvas, as in node tests, or no ink), so the frame can pad from the glyphs
+ * themselves rather than the font's measured advance (main-19, R1 n1).
+ */
+export function crispText(t, colour = LINE) {
+    const c = t?.canvas;
+    if (!c || !(c.width > 0) || !(c.height > 0) || typeof c.getContext !== 'function') return null;
+    let ctx, img;
+    try { ctx = c.getContext('2d'); img = ctx.getImageData(0, 0, c.width, c.height); } catch (e) { return null; }
+    const d = img.data, w = c.width, h = c.height;
+    const R = (colour >> 16) & 255, G = (colour >> 8) & 255, B = colour & 255;
+    let left = w, right = -1, top = h, bottom = -1;
+    for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+            const i = (y * w + x) * 4;
+            if (d[i + 3] >= 128) {
+                d[i] = R; d[i + 1] = G; d[i + 2] = B; d[i + 3] = 255;
+                if (x < left) left = x; if (x > right) right = x;
+                if (y < top) top = y; if (y > bottom) bottom = y;
+            } else {
+                d[i] = 0; d[i + 1] = 0; d[i + 2] = 0; d[i + 3] = 0;
+            }
+        }
+    }
+    ctx.putImageData(img, 0, 0);
+    try {
+        if (t.renderer?.gl && t.frame?.source) {
+            t.frame.source.glTexture = t.renderer.canvasToTexture(c, t.frame.source.glTexture, true);
+            t.frame.glTexture = t.frame.source.glTexture;
+        }
+    } catch (e) { /* the canvas renderer draws from the canvas itself */ }
+    t.dirty = true;
+    return right < 0 ? null : { left, right, top, bottom };
+}
+
 /** Pure: the texture key and path of a picture-chat icon. */
 export function pictureTexture(name) {
     return { key: `icon:npc-${name}`, path: `icons/npc-${name}.png` };
@@ -302,7 +341,10 @@ export class NpcWorldBubbles {
         const shown = picture ? (ready ? '' : '…') : String(line ?? '');
         // Chatter lines wrap the same way; a bark page is already wrapped
         bb.text.setText(shown.includes('\n') ? shown : wrapLines(shown).join('\n'));
-        const cw = ready ? PICTURE_PX : Math.ceil(bb.text.width) + TEXT_RIGHT_SLACK;
+        // Hard-edged glyphs; pad from the ink when it can be read, else from the measured width
+        const ink = ready ? null : crispText(bb.text);
+        bb.inkLeft = ink ? ink.left : 0;
+        const cw = ready ? PICTURE_PX : (ink ? ink.right - ink.left + 1 : Math.ceil(bb.text.width) + TEXT_RIGHT_SLACK);
         const ch = ready ? PICTURE_PX : Math.ceil(bb.text.height);
         let w = cw + PAD_X * 2 + BORDER_PX * 2;
         if (w % 2) w += 1;                               // even, so -w/2 is a whole pixel
@@ -316,7 +358,7 @@ export class NpcWorldBubbles {
         if (bb.layout && bb.layout.dx === dx && bb.layout.lift === lift) return;
         bb.layout = { dx, lift };
         const { w, h } = bb;
-        const left = dx - w / 2 + BORDER_PX + PAD_X;
+        const left = dx - w / 2 + BORDER_PX + PAD_X - (bb.inkLeft || 0);
         const top = -lift - TAIL - h + BORDER_PX + PAD_Y;
         bb.text.setPosition(left, top);
         bb.img.setPosition(Math.round(dx - PICTURE_PX / 2), top);
