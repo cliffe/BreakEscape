@@ -521,3 +521,30 @@ test('main-19 / R1 n1: with readable ink the frame pads from the glyphs, the sam
     assert.equal(inkLeft - (bodyLeft + BORDER_PX), 4, 'left gap');
     assert.equal((bodyLeft + bb.w - BORDER_PX) - (inkRight + 1), 4, 'right gap');
 });
+
+test('R1 M1: a bubble stays inside the camera view: slid in from a side edge, beside the head at the top edge', () => {
+    const view = { x: 0, y: 0, width: 400, height: 300 };
+    const inside = (r) => r.x >= 0 && r.x + r.w <= 400 && r.y >= 0 && r.y + r.h <= 300;
+    // Near the left edge: centred would leave the view, so it slides right, tail still on the head
+    const left = placeBubble({ x: 30, y: 150 }, 100, 40, [], { view });
+    assert.ok(left.dx > 0 && inside(left.rect) && !left.beside);
+    // Near the top: nothing above the head fits, so it sits beside it, lowered into the view
+    const top = placeBubble({ x: 200, y: 30 }, 100, 40, [], { view });
+    assert.equal(top.beside, true);
+    assert.ok(inside(top.rect), JSON.stringify(top.rect));
+    assert.ok(top.rect.x >= 200 + 10 || top.rect.x + top.rect.w <= 200 - 10, 'clear of the NPC\'s head');
+});
+
+test('R1 M1: live layer: an NPC at the top of the view gets a whole bubble on screen, with no tail', () => {
+    const view = { x: 0, y: 40, width: 400, height: 300 };
+    const r = rig({ npcs: { sara: { x: 200, y: 100, room: 'hall' } }, view, player: { x: 200, y: 250 } });
+    r.bubbles.say('sara', 'Not with you behind me. Ask at reception.');
+    r.bubbles.update();
+    const bb = r.bubbles.bubbles.get('sara');
+    assert.ok(bb.box.visible);
+    assert.equal(bb.layout.beside, true);
+    const top = bb.box.y - bb.layout.lift - 4 - bb.h;
+    assert.ok(top >= view.y, `bubble top ${top} above the view`);
+    const rects = bb.g.calls.filter(c => c[0] === 'fillRect');
+    assert.equal(rects.length, 5, 'fill and four edges: no tail pieces');
+});

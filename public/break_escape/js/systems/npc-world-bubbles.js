@@ -19,7 +19,9 @@
  *     leaves the camera hands the rest of its line to the toast (slice 5 R1 M1).
  *   - Bubbles never cover each other or the player's head: each is placed in turn (barks first,
  *     nearest first) centred, then slid left or right of its NPC (the tail stays over the head),
- *     then lifted above what it would cover, with a 2 px stem down to the head (R1 n4).
+ *     then lifted above what it would cover, with a 2 px stem down to the head (R1 n4). A bubble
+ *     stays inside the camera's view: over an NPC at the top of the view it sits beside the head,
+ *     with no tail (R1 M1, the clipped top).
  *   - A bark whose stillValid() stops holding closes, with no remainder (R1 n5).
  *   - Hidden while any minigame is open (a person-chat, a PC, a lock).
  *   - One bubble per NPC (a bark wins over that NPC's chatter), at most MAX_BUBBLES on screen:
@@ -109,33 +111,60 @@ const overlaps = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h
 /**
  * Pure: where a bubble of `w` by `h` (body, not counting the tail) sits over the head anchor
  * `at` so it covers none of `taken` (rects { x, y, w, h } of bubbles already placed and the
- * player's head). Tries centred, then slid left, then slid right (the tail stays over the head),
- * then lifts above the lowest thing in the way and tries again. `prefer` (last frame's choice)
- * is tried first at each lift, so a bubble does not flip sides from frame to frame.
- * Returns { dx, lift, rect }: dx shifts the body sideways, lift raises body and tail.
+ * player's head) and stays inside `view` (the camera's world view, when given). Tries centred,
+ * then slid left, then slid right (the tail stays over the head), then lifts above the lowest
+ * thing in the way and tries again. When nothing above the head fits in the view (an NPC at the
+ * top of the screen), the body sits beside the head, lowered into the view, with no tail
+ * (`beside: true`). `prefer` (last frame's choice) is tried first, so a bubble does not flip
+ * sides from frame to frame.
+ * Returns { dx, lift, rect, beside }: dx shifts the body sideways, lift raises body and tail
+ * (negative: lowered beside the head).
  */
-export function placeBubble(at, w, h, taken, { prefer = null, tail = TAIL, maxLifts = 3 } = {}) {
+export function placeBubble(at, w, h, taken, { prefer = null, view = null, tail = TAIL, maxLifts = 3 } = {}) {
     const slide = Math.max(0, Math.floor(w / 2) - TAIL_HALF);
     let order = [0, -slide, slide];
-    if (prefer && order.includes(prefer.dx)) order = [prefer.dx, ...order.filter(d => d !== prefer.dx)];
+    if (prefer && !prefer.beside && order.includes(prefer.dx)) order = [prefer.dx, ...order.filter(d => d !== prefer.dx)];
     const rectFor = (dx, lift) => ({ x: at.x + dx - w / 2, y: at.y - lift - tail - h, w, h: h + tail });
+    const inside = (r) => !view || (r.x >= view.x && r.x + r.w <= view.x + view.width
+        && r.y >= view.y && r.y + r.h <= view.y + view.height);
+    const free = (r) => !taken.some(t => overlaps(r, t));
     let lift = 0;
     let last = null;
     for (let i = 0; i <= maxLifts; i++) {
         let lowestTop = null;
+        let anyInside = false;
         for (const dx of order) {
             const rect = rectFor(dx, lift);
-            const hit = taken.filter(t => overlaps(rect, t));
-            if (hit.length === 0) return { dx, lift, rect };
-            for (const t of hit) lowestTop = lowestTop === null ? t.y : Math.max(lowestTop, t.y);
-            last = { dx: order[0], lift, rect: rectFor(order[0], lift) };
+            if (!inside(rect)) continue;
+            anyInside = true;
+            if (free(rect)) return { dx, lift, rect, beside: false };
+            for (const t of taken) if (overlaps(rect, t)) lowestTop = lowestTop === null ? t.y : Math.max(lowestTop, t.y);
+            if (!last) last = { dx, lift, rect, beside: false };
         }
-        // Lift the centred body so its bottom (tail tip) clears the top of the lowest thing hit
-        const need = at.y - lowestTop + 2;
-        lift = Math.max(lift + 2, need);
+        if (!anyInside || lowestTop === null) break;   // lifting higher only leaves the view
+        // Lift so the bottom (tail tip) clears the top of the lowest thing hit
+        lift = Math.max(lift + 2, at.y - lowestTop + 2);
         if (lift % 2) lift += 1;
     }
-    return last;
+    if (view) {
+        // Beside the head, inside the view: the side with more room first
+        const gap = HEAD_HALF_W + 2;
+        const sides = (at.x - view.x) >= (view.x + view.width - at.x) ? [-1, 1] : [1, -1];
+        if (prefer?.beside && Math.sign(prefer.dx) === sides[1]) sides.reverse();
+        const top = Math.ceil(view.y) + 2;
+        let fallback = null;
+        for (const side of sides) {
+            const dx = side * (Math.floor(w / 2) + gap);
+            const lift = at.y - tail - h - top;         // body top on the view's top edge (plus 2)
+            const rect = rectFor(dx, lift);
+            const r = { ...rect, h };                  // no tail beside the head
+            if (!inside(r)) continue;
+            if (free(r)) return { dx, lift, rect: r, beside: true };
+            if (!fallback) fallback = { dx, lift, rect: r, beside: true };
+        }
+        if (fallback && !last) return fallback;
+    }
+    return last || { dx: 0, lift: 0, rect: rectFor(0, 0), beside: false };
 }
 
 /**
@@ -299,7 +328,7 @@ export class NpcWorldBubbles {
      * the body sideways (the tail stays at x 0, over the head); `lift` raises body and tail, with a
      * 2 px stem down to the head.
      */
-    _drawFrame(g, w, h, dx = 0, lift = 0) {
+    _drawFrame(g, w, h, dx = 0, lift = 0, beside = false) {
         const x = dx - w / 2, y = -lift - TAIL - h, b = BORDER_PX;
         g.clear();
         // Fill, inset so the corner notches stay clear
@@ -311,6 +340,7 @@ export class NpcWorldBubbles {
         g.fillRect(x + b, y + h - b, w - 2 * b, b);      // bottom
         g.fillRect(x, y + b, b, h - 2 * b);              // left
         g.fillRect(x + w - b, y + b, b, h - 2 * b);      // right
+        if (beside) return;                              // beside the head: no tail
         // Tail: two 2 px steps narrowing to the tip, opened into the box
         const by = -lift - TAIL;                         // box bottom edge
         g.fillStyle(FILL, 1);
@@ -354,15 +384,15 @@ export class NpcWorldBubbles {
     }
 
     /** Draw the frame and place the text for this layout ({ dx, lift }); only when it changes. */
-    _layout(bb, { dx = 0, lift = 0 } = {}) {
-        if (bb.layout && bb.layout.dx === dx && bb.layout.lift === lift) return;
-        bb.layout = { dx, lift };
+    _layout(bb, { dx = 0, lift = 0, beside = false } = {}) {
+        if (bb.layout && bb.layout.dx === dx && bb.layout.lift === lift && bb.layout.beside === beside) return;
+        bb.layout = { dx, lift, beside };
         const { w, h } = bb;
         const left = dx - w / 2 + BORDER_PX + PAD_X - (bb.inkLeft || 0);
         const top = -lift - TAIL - h + BORDER_PX + PAD_Y;
         bb.text.setPosition(left, top);
         bb.img.setPosition(Math.round(dx - PICTURE_PX / 2), top);
-        this._drawFrame(bb.g, w, h, dx, lift);
+        this._drawFrame(bb.g, w, h, dx, lift, beside);
     }
 
     /** The player's head as a rect bubbles keep off. */
@@ -568,7 +598,8 @@ export class NpcWorldBubbles {
             if (!bb || !bb.box.scene) { bb = this._make(sprite.scene); this.bubbles.set(id, bb); }
             this._render(bb, line, picture);
             const pos = speechPosition(npcIconAnchor(sprite));
-            const place = placeBubble(pos, bb.w, bb.h, taken, { prefer: bb.layout });
+            const view = sprite.scene?.cameras?.main?.worldView || null;
+            const place = placeBubble(pos, bb.w, bb.h, taken, { prefer: bb.layout, view });
             taken.push(place.rect);
             this._layout(bb, place);
             bb.box.setPosition(pos.x, pos.y).setVisible(true);
