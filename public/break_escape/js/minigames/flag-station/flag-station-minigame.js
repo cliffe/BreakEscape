@@ -13,6 +13,8 @@ import { escapeHtml } from '../../utils/escape-html.js';
 import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } from '../../utils/lock-scope-refusal.js';
 
 export class FlagStationMinigame extends MinigameScene {
+    // The X sits inside the themed frame, not on its border (critique A26, A30)
+    static closeInsideFrame = true;
     static REWARD_ICONS = {
         give_item: '📦', unlock_door: '🔓', unlock_object: '🔓',
         emit_event: '⚡', hint: '💡', set_global: '✦'

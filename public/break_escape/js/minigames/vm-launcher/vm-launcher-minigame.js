@@ -46,6 +46,8 @@ export function vmPanelUrlWithTitle(panelUrl, title) {
 }
 
 export class VmLauncherMinigame extends MinigameScene {
+    // The X sits inside the themed frame, not on its border (critique A26, A30)
+    static closeInsideFrame = true;
     constructor(container, params) {
         super(container, params);
         this.vm = params.vm || null;
@@ -410,7 +412,7 @@ export class VmLauncherMinigame extends MinigameScene {
             return `
                 <div class="no-vms-message standalone-mode">
                     <h2>VM Terminal</h2>
-                    <p>You've discovered a computer terminal in the game. To interact with it, you need to launch the virtual machine on your local system.</p>
+                    <p>This terminal connects to a virtual machine. To use it, start the virtual machine on your own computer.</p>
 
                 </div>
             `;
@@ -421,7 +423,7 @@ export class VmLauncherMinigame extends MinigameScene {
         const hasConsole = this.vm.enable_console !== false;
         const statusClass = hasConsole ? 'console' : 'online';
         const statusText = hasConsole ? 'Console' : 'Active';
-        let html = `<p>You've discovered a computer terminal in the game. To interact with it, `;
+        let html = `<p>This terminal connects to a virtual machine. To use it, `;
 
         if (this.hacktivityMode && this.vmPanelRefused) {
             html += `

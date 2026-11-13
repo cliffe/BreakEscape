@@ -17,6 +17,7 @@
     align-items: center;
     gap: 14px;
     padding: 20px;
+    padding-top: 44px;   /* the X sits in the card's top-right corner (critique A40) */
     box-sizing: border-box;
 }
 

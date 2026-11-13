@@ -171,6 +171,14 @@ function softenField(field, rad) {
 }
 
 export class DustingMinigame extends MinigameScene {
+    // The X sits inside the kit's frame (critique A14), and closes it with Esc: the steps
+    // have no Close button of their own any more (A16)
+    static closeInsideFrame = true;
+
+    closeAnchor() {
+        return this.gameContainer?.querySelector?.('.dusting-root') || this.gameContainer;
+    }
+
     constructor(container, params) {
         super(container, { ...params, showCancel: false });
         this.item = params.item;
@@ -439,7 +447,6 @@ export class DustingMinigame extends MinigameScene {
             <div class="dusting-buttons">
                 <button class="dusting-btn dusting-primary" data-action="start">Dust for prints</button>
                 <button class="dusting-btn" data-action="use-normally">Use normally</button>
-                <button class="dusting-btn" data-action="close">Close</button>
             </div>`;
     }
 
@@ -452,7 +459,6 @@ export class DustingMinigame extends MinigameScene {
             <p class="dusting-feedback" data-dyn="feedback"></p>
             <div class="dusting-buttons">
                 <button class="dusting-btn dusting-hint" data-action="hint" ${this.hintReady ? '' : 'hidden'}>Hint</button>
-                <button class="dusting-btn" data-action="close">Close</button>
             </div>`;
     }
 
@@ -467,7 +473,7 @@ export class DustingMinigame extends MinigameScene {
             <p><strong>Surface:</strong> ${escapeHtml(this.surface.description)}</p>
             <p>Pick the powder whose label fits. If it does not show well you can change it.</p>
             <div class="dusting-jars">${jars}</div>
-            <div class="dusting-buttons"><button class="dusting-btn" data-action="close">Close</button></div>`;
+`;
     }
 
     _brushButtons() {
@@ -498,7 +504,6 @@ export class DustingMinigame extends MinigameScene {
                 <button class="dusting-btn dusting-primary" data-action="to-lift" data-dyn="lift-btn">Lift (L)</button>
                 <button class="dusting-btn" data-action="puff" aria-pressed="${this.puffMode}" title="Press T">Puff off excess (T)</button>
                 <button class="dusting-btn" data-action="change-powder" title="Press C">Change powder (C)</button>
-                <button class="dusting-btn" data-action="close">Close</button>
             </div>`;
     }
 
@@ -514,7 +519,6 @@ export class DustingMinigame extends MinigameScene {
             <div class="dusting-buttons">
                 <button class="dusting-btn dusting-primary" data-action="peel" title="Press P"><span data-slot="tape-roll" data-scale="1"></span> Peel and mount (P)</button>
                 <button class="dusting-btn" data-action="back-dust">Back to dusting</button>
-                <button class="dusting-btn" data-action="close">Close</button>
             </div>`;
     }
 
