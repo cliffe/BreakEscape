@@ -601,7 +601,17 @@
     border-bottom: 2px solid #3a4a58;
 }
 
-/* The account, This PC and the actions never scroll or shrink: Lock, Switch user and Sign out
+/* On the shortest screens (568x320, or a long PC name at 740x360) the whole panel scrolls as a
+   last resort. The actions stay pinned to its bottom edge so Lock, Switch user and Sign out are
+   still on show; the parts above scroll under them (slice 6 R5 m1). */
+.pc-monitor .pc-start-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    background: #1c2833;
+}
+
+/* The account, This PC and the actions never shrink: Lock, Switch user and Sign out
    are always on show. Only the Places list scrolls, under a "More below" strip (R3 M1). */
 .pc-monitor .pc-start-account,
 .pc-monitor .pc-start-section,
