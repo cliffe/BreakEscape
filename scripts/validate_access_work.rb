@@ -1304,6 +1304,7 @@ module ValidateAccessWork
     feed_report_lines(json_data, lines)
     reactive_report_lines(json_data, lines)
     reply_report_lines(json_data, lines)
+    reaction_report_lines(json_data, lines)
     room_npcs(json_data).each do |e|
       npc = e[:npc]
       next unless AW.work_plan?(json_data, npc)
@@ -1647,6 +1648,7 @@ module ValidateAccessWork
     end
 
     check_replies(json_data, issues)
+    check_reactions(json_data, issues)
 
     # A feed fact may be granted only by its feed post (plan 8.3)
     unless feed_facts.empty?
@@ -2229,5 +2231,268 @@ module ValidateAccessWork
       lines << "ℹ️ Complaint '#{c}': #{rep.empty? ? 'no member' : rep.join(', ')} can reply in place of their vent. " \
                "Possible members: #{who.join(', ')}."
     end
+  end
+
+  # ── reactions (docs/achitechture/FRIENDFACE_REACTIONS_PLAN.md section 8) ─────────────
+
+  DEAD_PHRASES = {
+    never_posts: 'its NPC never posts',
+    when_unreachable: 'its when can never hold',
+    instead_of_dead: 'its insteadOf post can never fire',
+    answer_unopenable: 'no reply can open it',
+    thread_never_opens: 'its thread can never open'
+  }.freeze
+
+  # The reasons a feed post (own post or reply) certainly never comes out, as codes; [] when it
+  # can. Uses the same predicates as check_reply, whose messages stay where they are; the
+  # agreement test in test/js/validator-access-reactions.test.mjs keeps the two in step.
+  def post_dead_reasons(json_data, npc, post, index = feed_post_index(json_data))
+    codes = []
+    codes << :never_posts unless AW.feeds?(npc)
+    codes << :when_unreachable if AW.reactive_post?(post) && !AW.when_reachable?(json_data, npc, post['when'])
+    return codes unless AW.reply_post?(post)
+
+    instead = AW.feed_posts(npc).find { |p| p['id'] == post['insteadOf'] }
+    codes << :instead_of_dead if instead && AW.reactive_post?(instead) && !AW.when_reachable?(json_data, npc, instead['when'])
+    if answer?(npc, post)
+      codes << :answer_unopenable if answer_repliers(json_data, npc, post).empty?
+    else
+      threads = reply_threads(json_data, npc, post, index)
+      if !threads.empty? && threads.none? { |poster, t| AW.feeds?(poster) && (!AW.reactive_post?(t) || AW.when_reachable?(json_data, poster, t['when'])) }
+        codes << :thread_never_opens
+      end
+    end
+    codes
+  end
+
+  def dead_words(codes)
+    codes.map { |c| DEAD_PHRASES[c] }.join(' and ')
+  end
+
+  # The alternative set of own post P: P and every reply standing in for it
+  def alt_set(npc, pid)
+    [pid] + AW.feed_replies(npc).select { |r| r['insteadOf'] == pid }.map { |r| r['id'] }
+  end
+
+  # Section 8's static order helper for reactor X and target T (with its owner): nil when T has no
+  # required post, else { served: [ids certainly served before T], spent: [ids certainly spent] }
+  def reaction_order_bound(json_data, x, owner, target)
+    return nil unless AW.reply_post?(target)
+
+    own = AW.own_feed_posts(x)
+    pid =
+      if AW.present_string?(target['replyTo'])
+        own.find { |p| p['id'] == target['replyTo'] }&.dig('id')
+      elsif AW.present_string?(target['replyToComplaint'])
+        c = target['replyToComplaint']
+        holders = room_npcs(json_data).map { |e| e[:npc] }.reject { |n| n['id'] == owner['id'] || !same_site?(n, owner) }
+                                      .select { |n| AW.own_feed_posts(n).any? { |p| p['complaint'] == c } }
+        mine = own.select { |p| p['complaint'] == c }
+        holders.map { |n| n['id'] } == [x['id']] && mine.size == 1 ? mine[0]['id'] : nil
+      end
+    return nil unless pid
+
+    before = AW.walk_order(x).take_while { |p| p['id'] != pid }.reject { |p| AW.reactive_post?(p) }.map { |p| p['id'] }
+    { served: before + [pid], spent: alt_set(x, pid) - [pid] }
+  end
+
+  # Each well-formed reaction of each reactor, with what the checks found: used by both the
+  # issues and the report lines so the two cannot disagree
+  def reaction_entries(json_data)
+    out = []
+    room_npcs(json_data).each do |e|
+      x = e[:npc]
+      feed = x['feed']
+      next unless feed.is_a?(Hash) && feed.key?('reacts')
+
+      out << { x: x, list: feed['reacts'] }
+    end
+    out
+  end
+
+  def check_reactions(json_data, issues)
+    reaction_analysis(json_data).each { |a| a[:issues].each { |kind, msg| kind == :err ? err(issues, msg) : warn(issues, msg) } }
+  end
+
+  # Per reactor: { x:, issues: [[:err|:warn, msg]], rows: [{ i:, r:, never:, line: }] }
+  def reaction_analysis(json_data)
+    index = feed_post_index(json_data)
+    name = ->(n) { AW.friendface_name(json_data, n) }
+    reaction_entries(json_data).map do |rec|
+      x = rec[:x]
+      xid = x['id']
+      list = rec[:list]
+      found = []
+      rows = []
+      unless list.is_a?(Array)
+        found << [:err, "#{xid}.feed.reacts must be an array of reactions."]
+        next { x: x, issues: found, rows: rows }
+      end
+
+      dead_reactor = false
+      if !AW.feeds?(x) && !list.empty?
+        found << [:warn, "#{xid}.feed.reacts is on an NPC that never posts (no posts, or no paced social_media need): its reactions never come out."]
+        dead_reactor = true
+      elsif !list.empty? && AW.feed_done?(json_data, x, [])
+        found << [:warn, "#{xid} can never post: its reactions never come out."]
+        dead_reactor = true
+      end
+
+      valid = []
+      list.each_with_index do |r, i|
+        tag = "#{xid}.feed.reacts[#{i}]"
+        unless r.is_a?(Hash)
+          found << [:err, "#{tag} is not an object."]
+          next
+        end
+        # `_`-prefixed keys (`_comment`) are annotations, as elsewhere in a scenario
+        (r.keys - AW::REACTION_FIELDS).reject { |k| k.to_s.start_with?('_') }.each do |k|
+          hint = AW::REACTION_FIELDS.find { |f| f.casecmp?(k.to_s) }
+          found << [:warn, "#{tag}: '#{k}' is not a reaction field#{hint ? "; did you mean '#{hint}'?" : ' (to, toComplaint, key, alongside)'}"]
+        end
+        bad = false
+        AW::REACTION_FIELDS.each do |k|
+          next if r[k].nil? || AW.present_string?(r[k])
+
+          found << [:err, "#{tag}.#{k} is present but not a non-empty string."]
+          bad = true
+        end
+        n = %w[to toComplaint].count { |k| !r[k].nil? }
+        if n != 1
+          found << [:err, "#{tag} needs exactly one of to and toComplaint (it has #{n})."]
+          bad = true
+        end
+        if r['key'].nil?
+          found << [:err, "#{tag} has no key."]
+          bad = true
+        elsif AW.present_string?(r['key']) && !AW::REACTION_KEYS.include?(r['key'])
+          found << [:err, "#{tag}.key '#{r['key']}' is not a reaction key (#{AW::REACTION_KEYS.join(', ')})."]
+          bad = true
+        end
+        next if bad
+
+        owner = target = nil
+        if r['to']
+          owner, target = index[r['to']]
+          if !owner
+            found << [:err, "#{tag}.to '#{r['to']}' names no post on any room NPC's feed."]
+            next
+          elsif owner['id'] == xid
+            found << [:err, "#{tag}.to '#{r['to']}' names a post of #{xid}'s own."]
+            next
+          elsif !same_site?(owner, x)
+            found << [:err, "#{tag}.to '#{r['to']}' is on '#{owner.dig('feed', 'site')}', not #{xid}'s site."]
+            next
+          end
+        end
+        vents = []
+        if r['toComplaint']
+          vents = room_npcs(json_data).map { |e| e[:npc] }.reject { |o| o['id'] == xid || !same_site?(o, x) }
+                                      .flat_map { |o| AW.own_feed_posts(o).select { |p| p['complaint'] == r['toComplaint'] }.map { |p| [o, p] } }
+          if vents.empty?
+            found << [:err, "#{tag}.toComplaint '#{r['toComplaint']}' is carried by no own post on another NPC's feed on the same site."]
+            next
+          end
+        end
+        along = nil
+        if r['alongside']
+          along = AW.feed_posts(x).find { |p| p['id'] == r['alongside'] }
+          unless along
+            found << [:err, "#{tag}.alongside '#{r['alongside']}' names no post or reply of #{xid}."]
+            next
+          end
+        end
+        valid << { i: i, r: r, tag: tag, owner: owner, target: target, vents: vents, along: along }
+      end
+
+      valid.each do |v|
+        r = v[:r]
+        tag = v[:tag]
+        never = dead_reactor
+        if v[:target]
+          codes = post_dead_reasons(json_data, v[:owner], v[:target], index)
+          unless codes.empty?
+            found << [:warn, "#{tag}: '#{r['to']}' never comes out (#{dead_words(codes)}): this reaction never comes out."]
+            never = true
+          end
+        elsif v[:vents].all? { |o, p| !post_dead_reasons(json_data, o, p, index).empty? }
+          found << [:warn, "#{tag}: no '#{r['toComplaint']}' vent on another NPC's feed can ever come out: this reaction never comes out."]
+          never = true
+        end
+        bound = v[:target] && reaction_order_bound(json_data, x, v[:owner], v[:target])
+        if v[:along] && !dead_reactor
+          codes = post_dead_reasons(json_data, x, v[:along], index)
+          if !codes.empty?
+            found << [:warn, "#{tag}: '#{r['alongside']}' never comes out (#{dead_words(codes)}): this reaction never comes out."]
+            never = true
+          elsif bound && (bound[:served].include?(r['alongside']) || bound[:spent].include?(r['alongside']))
+            found << [:warn, "#{tag}: '#{r['alongside']}' always comes out before '#{r['to']}': this reaction never comes out."]
+            never = true
+          end
+        end
+        v[:never] = never
+        v[:finished] = bound && AW.feed_done?(json_data, x, bound[:served])
+        v[:bound] = bound
+      end
+
+      # Two reactions by one NPC that can land on the same post
+      valid.combination(2).each do |a, b|
+        ra = a[:r]
+        rb = b[:r]
+        clash =
+          (ra['to'] && ra['to'] == rb['to']) ||
+          (ra['toComplaint'] && ra['toComplaint'] == rb['toComplaint']) ||
+          (ra['to'] && rb['toComplaint'] && a[:target] && !AW.reply_post?(a[:target]) && a[:target]['complaint'] == rb['toComplaint']) ||
+          (rb['to'] && ra['toComplaint'] && b[:target] && !AW.reply_post?(b[:target]) && b[:target]['complaint'] == ra['toComplaint'])
+        next unless clash
+
+        if ra['alongside'] && rb['alongside'] && ra['alongside'] != rb['alongside']
+          sets = AW.own_feed_posts(x).map { |p| alt_set(x, p['id']) }
+          next if sets.any? { |s| s.include?(ra['alongside']) && s.include?(rb['alongside']) }
+        end
+        found << [:warn, "#{a[:tag]} and #{b[:tag]} can land on the same post: only the first to come out shows."]
+      end
+
+      xn = name.call(x)
+      valid.each do |v|
+        r = v[:r]
+        what =
+          if r['to']
+            "#{name.call(v[:owner])}'s '#{r['to']}'"
+          else
+            "the oldest '#{r['toComplaint']}' vent#{r['alongside'] ? ' out by then' : ''}"
+          end
+        line = "ℹ️ Reaction #{xn} reacts #{r['key']} to #{what}"
+        line += if r['alongside']
+                  # The toComplaint form already says "out by then" in `what`
+                  r['to'] ? ", alongside '#{r['alongside']}', if '#{r['to']}' is out by then" : ", alongside '#{r['alongside']}'"
+                elsif v[:finished]
+                  ", with it, since #{xn} has finished posting by then"
+                else
+                  ", with #{xn}'s first post after it, or with it if #{xn} has finished posting by then"
+                end
+        ends = []
+        if v[:never]
+          ends = ['never comes out']
+        else
+          if v[:target] && !AW.reply_post?(v[:target]) && AW.feed_replies(v[:owner]).any? { |p| p['insteadOf'] == r['to'] }
+            ends << "only if '#{r['to']}' comes out, not a reply in its place"
+          end
+          if r['alongside'] && AW.set_member_ids(x).include?(r['alongside']) &&
+             !(v[:bound] && v[:bound][:spent].include?(r['alongside']))
+            ends << "#{ends.empty? ? 'only if ' : ''}'#{r['alongside']}' is the member served"
+          end
+        end
+        # Two endings only when the first is the "not a reply in its place" one: the comma keeps
+        # the second out of that "not"
+        line += " (#{ends.join(', and ')})" unless ends.empty?
+        rows << { i: v[:i], line: "#{line}." }
+      end
+      { x: x, issues: found, rows: rows }
+    end
+  end
+
+  def reaction_report_lines(json_data, lines)
+    reaction_analysis(json_data).each { |a| a[:rows].each { |row| lines << row[:line] } }
   end
 end

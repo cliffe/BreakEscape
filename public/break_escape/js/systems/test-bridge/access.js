@@ -22,7 +22,8 @@
  *                       "no" leaves alone) and borrowCleared (`pcId|npcId` keys of borrowers
  *                       whose "no" cleared the mark for them)
  *   feed()              slice 9.2 C: revealed feed post ids by NPC, done NPCs, request count;
- *                       C3: threads, { postId: [replyId, ...] } oldest first
+ *                       C3: threads, { postId: [replyId, ...] } oldest first; reactions,
+ *                       { postId: { key: [npcId, ...] } }
  *   guest(pcId)         slice 9.2 H: the guest a borrower left at a hot desk ({ npcId, lockAt }),
  *                       who is using the PC now, and the NPC's pending borrow, if any
  *
@@ -76,7 +77,7 @@ export const accessBridge = {
      */
     feed() {
         const f = window.socialFeed;
-        if (!f) return { revealed: {}, done: [], requests: 0, threads: {} };
+        if (!f) return { revealed: {}, done: [], requests: 0, threads: {}, reactions: {} };
         // C3: { postId: [replyId, ...] } in thread order, for every revealed post with replies.
         // A null-prototype object, so no post id can reach a prototype key before json() copies it.
         const threads = Object.create(null);
@@ -88,7 +89,18 @@ export const accessBridge = {
                 }
             }
         }
-        return json({ revealed: f.revealed(), done: [...f.done].sort(), requests: f.requests, threads });
+        // Reactions: { postId: { key: [npcId, ...] } }, null-prototype objects throughout
+        const reactions = Object.create(null);
+        if (typeof f.reactionsFor === 'function' && f.reactions instanceof Map) {
+            for (const postId of f.reactions.keys()) {
+                const groups = f.reactionsFor(postId);
+                if (!groups.length) continue;
+                const byKey = Object.create(null);
+                for (const g of groups) byKey[g.key] = g.people.map((p) => p.npcId);
+                reactions[postId] = byKey;
+            }
+        }
+        return json({ revealed: f.revealed(), done: [...f.done].sort(), requests: f.requests, threads, reactions });
     },
 
     /**

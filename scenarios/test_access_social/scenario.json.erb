@@ -256,6 +256,18 @@
           "title": "F16: Tomasz replies again after Ivy's answer",
           "type": "custom",
           "status": "active"
+        },
+        {
+          "taskId": "f15_reacted",
+          "title": "F15: Asha likes Mei's reply, with Mei's reply itself",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f16_reacted",
+          "title": "F16: Tomasz is sad at Ivy's answer, with his second reply",
+          "type": "custom",
+          "status": "active"
         }
       ]
     }
@@ -2452,9 +2464,22 @@
                   "need": "work"
                 }
               }
+            ],
+            "reacts": [
+              {
+                "to": "f15_mei_re_drive",
+                "key": "like"
+              }
             ]
           },
-          "eventMappings": [],
+          "eventMappings": [
+            {
+              "eventPattern": "npc_reacted:asha",
+              "onceOnly": true,
+              "completeTask": "f15_reacted",
+              "condition": "data.postId === 'f15_mei_re_drive' && data.key === 'like'"
+            }
+          ],
           "itemsHeld": [
             {
               "type": "phone_friendface",
@@ -2524,6 +2549,12 @@
                   "cause": "down",
                   "need": "work"
                 }
+              }
+            ],
+            "reacts": [
+              {
+                "toComplaint": "f15_drive",
+                "key": "sad"
               }
             ]
           },
@@ -2604,6 +2635,16 @@
                   "cause": "down",
                   "need": "work"
                 }
+              }
+            ],
+            "reacts": [
+              {
+                "toComplaint": "f15_drive",
+                "key": "sad"
+              },
+              {
+                "to": "f15_kofi_re_drive",
+                "key": "like"
               }
             ]
           },
@@ -2766,9 +2807,27 @@
                   "need": "work"
                 }
               }
+            ],
+            "reacts": [
+              {
+                "to": "f16_ivy_answer",
+                "key": "sad",
+                "alongside": "f16_tom_re_ivy_again"
+              },
+              {
+                "to": "f16_ivy_vent",
+                "key": "angry",
+                "alongside": "f16_tom_still_down"
+              }
             ]
           },
           "eventMappings": [
+            {
+              "eventPattern": "npc_reacted:tomasz",
+              "onceOnly": true,
+              "completeTask": "f16_reacted",
+              "condition": "data.postId === 'f16_ivy_answer' && data.key === 'sad'"
+            },
             {
               "eventPattern": "npc_posted:tomasz",
               "onceOnly": true,
@@ -2868,6 +2927,12 @@
                   "cause": "down",
                   "need": "work"
                 }
+              }
+            ],
+            "reacts": [
+              {
+                "to": "f16_tom_re_ivy",
+                "key": "like"
               }
             ]
           },

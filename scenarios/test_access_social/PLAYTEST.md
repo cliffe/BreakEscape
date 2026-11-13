@@ -197,9 +197,10 @@ beats (a taken phone stops that NPC posting from it).
 
 | Beat | Do | Expect | Server afterwards | `/feed_post` this beat |
 |---|---|---|---|---|
-| F15 | Enter `f15_room` (east of Kim's room) and stand back | Each NPC's `down` work failure reaches the server before its first `/feed_post`. Asha vents `f15_asha_vent` (about 0:30), Kofi replies `f15_kofi_re_drive` (about 0:45, task `f15_replied`), Mei replies `f15_mei_re_drive` (about 1:00, task `f15_thread`), each with `{name}` filled as "Asha". Toasts: "Kofi Mensah replied to Asha Rao on Friendface", then the same for Mei. Asha's profile shows the thread under her vent, Kofi then Mei; Kofi's and Mei's profiles each list their reply under "Replied to Asha Rao". `__test.access.feed().threads.f15_asha_vent` is `["f15_kofi_re_drive", "f15_mei_re_drive"]` | `feedRevealed` for asha, kofi, mei: one id each; `to` of each reply `{ post: f15_asha_vent, npc: asha }`; all three feeds `done` | 3 |
-| F16 | Enter `f16_room` and stand back about two and a half minutes | Ivy vents `f16_ivy_vent` (about 0:30); Tomasz replies `f16_tom_re_ivy` (about 0:50, task `f16_replied`, "Ivy" filled); Ivy answers `f16_ivy_answer` (about 1:50, task `f16_answered`, "Tomasz" filled; toast "Ivy Clarke replied to Tomasz Nowak on Friendface"); Tomasz replies again `f16_tom_re_ivy_again` (about 2:10, 20 s after Ivy's answer, task `f16_again`, "Ivy" filled; toast "Tomasz Nowak replied to Ivy Clarke on Friendface"). The thread reads Tomasz, Ivy, Tomasz; Tomasz's profile lists both replies with "Replied to Ivy Clarke". The player's phone badge counts each post once | `feedRevealed` ivy 2, tomasz 2; both feeds `done`; nothing more is posted | 4 |
-| F17 | Reload (`?skip_resume=1`) and open the Friendface terminal, then `player_phone` | Both threads in the same order with the same filled names; Kofi's and Tomasz's profiles still show "Replied to". No toast and no badge for posts already shown. The spent posts are in no response | unchanged | 0 |
+| F15 | Enter `f15_room` (east of Kim's room) and stand back | Each NPC's `down` work failure reaches the server before its first `/feed_post`. Asha vents `f15_asha_vent` (about 0:30), Kofi replies `f15_kofi_re_drive` (about 0:45, task `f15_replied`), Mei replies `f15_mei_re_drive` (about 1:00, task `f15_thread`), each with `{name}` filled as "Asha". Toasts: "Kofi Mensah replied to Asha Rao on Friendface", then the same for Mei. Asha's profile shows the thread under her vent, Kofi then Mei; Kofi's and Mei's profiles each list their reply under "Replied to Asha Rao". `__test.access.feed().threads.f15_asha_vent` is `["f15_kofi_re_drive", "f15_mei_re_drive"]`. Reactions: Kofi's sad on Asha's vent comes with his reply; Mei's sad on the vent and like on Kofi's reply come with hers, and so does Asha's like on Mei's reply (Asha's feed was done when Mei's reply was served), task `f15_reacted`. Asha's vent shows Sad 2 ("Sad: Kofi Mensah, Mei Tanaka"), Kofi's reply Like 1, Mei's reply Like 1. No toast and no badge for a reaction | `feedRevealed` for asha, kofi, mei: one id each; `to` of each reply `{ post: f15_asha_vent, npc: asha }`; all three feeds `done` | 3 |
+| F15i | After F15, open the Friendface terminal on Asha's profile at 1400x1000 and device pixel ratio 1, then again at 390x844. For every `.ob-reaction-icon` read `getBoundingClientRect()`, `naturalWidth` and `getComputedStyle(img).imageRendering`; for every `.ob-reaction` chip read its `getBoundingClientRect()`. Repeat after F17's reload | Every icon is exactly 32x32 (the 16x16 art at a whole 2x; never smaller, whatever stylesheet or inline style is in play), `naturalWidth` 16, `image-rendering` `pixelated`; every chip is at least 40x40; at 390px the page has no horizontal scroll. The node test only reads the page's stylesheets, so this live read is the guard for inline styles and anything jsdom cannot lay out | unchanged | 0 |
+| F16 | Enter `f16_room` and stand back about two and a half minutes | Ivy vents `f16_ivy_vent` (about 0:30); Tomasz replies `f16_tom_re_ivy` (about 0:50, task `f16_replied`, "Ivy" filled); Ivy answers `f16_ivy_answer` (about 1:50, task `f16_answered`, "Tomasz" filled; toast "Ivy Clarke replied to Tomasz Nowak on Friendface"); Tomasz replies again `f16_tom_re_ivy_again` (about 2:10, 20 s after Ivy's answer, task `f16_again`, "Ivy" filled; toast "Tomasz Nowak replied to Ivy Clarke on Friendface"). The thread reads Tomasz, Ivy, Tomasz; Tomasz's profile lists both replies with "Replied to Ivy Clarke". The player's phone badge counts each post once. Reactions: Ivy's like on Tomasz's first reply comes with her answer; Tomasz's sad on Ivy's answer comes with his second reply, task `f16_reacted`. Tomasz's angry on Ivy's vent never comes out in this run (`f16_tom_re_ivy_again` is served in `f16_tom_still_down`'s slot) | `feedRevealed` ivy 2, tomasz 2; both feeds `done`; nothing more is posted | 4 |
+| F17 | Reload (`?skip_resume=1`) and open the Friendface terminal, then `player_phone` | Both threads in the same order with the same filled names; Kofi's and Tomasz's profiles still show "Replied to". No toast and no badge for posts already shown. The spent posts are in no response. The same reactions on the same posts with the same counts and names, and no `npc_reacted` fires for them | unchanged | 0 |
 
 Expected `verify-run.rb --access` row (seq values depend on the earlier beats, so check the
 relations a < k < m and i < t < j < u):
@@ -207,6 +208,37 @@ relations a < k < m and i < t < j < u):
 ```
   feedRevealed    N: ...; asha 1 [f15_asha_vent:a]; ...; ivy 2 [f16_ivy_vent:i f16_ivy_answer:j>f16_ivy_vent]; ...; kofi 1 [f15_kofi_re_drive:k>f15_asha_vent]; ...; mei 1 [f15_mei_re_drive:m>f15_asha_vent]; ...; tomasz 2 [f16_tom_re_ivy:t>f16_ivy_vent f16_tom_re_ivy_again:u>f16_ivy_vent]; ...
 ```
+
+### Reactions (F15 to F17)
+
+Plan: `docs/achitechture/FRIENDFACE_REACTIONS_PLAN.md`, section 10. Reactions ride on the answers
+above: the `/feed_post` budgets and the `verify-run.rb --access` `feedRevealed` row are unchanged
+from C3 (reactions are derived on the server and never stored in `player_state`).
+
+Expected `__test.access.feed().reactions` after F16 (and again after F17's reload):
+
+```
+{ f15_asha_vent: { sad: ["kofi", "mei"] }, f15_kofi_re_drive: { like: ["mei"] },
+  f15_mei_re_drive: { like: ["asha"] }, f16_tom_re_ivy: { like: ["ivy"] },
+  f16_ivy_answer: { sad: ["tomasz"] } }
+```
+
+Tasks `f15_reacted` (on `npc_reacted:asha`, Mei's reply, like) and `f16_reacted` (on
+`npc_reacted:tomasz`, Ivy's answer, sad) complete only on a clean live run: a lost answer shows
+the reaction on the next load but leaves its task open, as `npc_posted` tasks do.
+
+Validator: no reaction warnings, and seven `Reaction` report lines: Kofi's and Mei's
+`toComplaint` sads and the likes by Mei, Asha and Ivy say "with X's first post after it, or with
+it if X has finished posting by then"; Tomasz's sad ends "(only if 'f16_tom_re_ivy_again' is the
+member served)"; Tomasz's angry ends "(only if 'f16_ivy_vent' comes out, not a reply in its place,
+and 'f16_tom_still_down' is the member served)".
+
+The leak check's counts line shows a reaction item count above 0 from F15 on: a clean verdict over
+no reaction items proves nothing.
+
+Esc in the browser: with a names line opened by a click, the first Esc closes only the names line
+(`getTestState().overlay.layers` goes from `["reaction-names"]` to empty), the second closes the
+browser.
 
 ## Earned secrets
 
@@ -257,6 +289,11 @@ relations a < k < m and i < t < j < u):
   first reply). A held phone's `/friendface_phone` answer holds only served posts and served
   replies. A spent post (`f15_kofi_vent`, `f15_mei_vent`, `f16_tom_vent`, `f16_ivy_re_tom`,
   `f16_ivy_still_down`, `f16_tom_still_down`, `f15_asha_re_drive`) never appears in any response.
+- F15 to F17 reactions (plan section 7): extra fields on `/feed_post` (`reaction`, `key`,
+  `post_id`, `to`, `alongside`) are ignored, and the answer matches the same call without them.
+  `POST /feed_react` is 404. Repeated `/feed_post` calls bring no reaction sooner: a reaction
+  comes only with a served post. `reacts` is in no room, bootstrap or phone response. A reaction
+  never names a post the server has not served (the leak check's `feed_reaction_target`).
 - L1 (q36, q33 R2 m1): after Sade's lockout at the hot desk, `POST /feed_post` for her with
   `object_id` `l1_hot_desk` is `{ post: null, done: false, refused: true }` and a social media
   `ease` for her there is refused.

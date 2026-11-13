@@ -572,4 +572,91 @@ class AccessLeakScannerFeedTest < ActiveSupport::TestCase
     assert_equal 4, c[:feed_posts], 'ivy_vent, ivy_re_tom, tom_vent, tom_re_ivy'
     assert_equal 5, c[:feed_texts], 'two vents, two pieces of ivy_re_tom, one of tom_re_ivy'
   end
+
+  # ── Friendface reactions (FRIENDFACE_REACTIONS_PLAN.md sections 9 and 11) ──────────────────
+  def lena_answer(reactions = nil)
+    body = { 'npcId' => 'lena', 'index' => 0, 'post' => { 'id' => 'lena_post_1', 'text' => AccessSocialScenario::LENA_POST },
+             'site' => 'friendface', 'person' => 'lena', 'done' => true }
+    body['reactions'] = reactions if reactions
+    body
+  end
+
+  def rx(post_id, npc, key)
+    { 'postId' => post_id, 'npc' => npc, 'person' => npc, 'key' => key }
+  end
+
+  test 'reactions: the scanner key set equals AccessWork::REACTION_KEYS' do
+    src = File.read(Rails.root.join('../../lib/break_escape/access_work.rb'))
+    assert_equal src[/REACTION_KEYS = %w\[([^\]]*)\]/, 1].split, AccessLeakScanner::REACTION_KEYS
+    assert_equal BreakEscape::AccessWork::REACTION_KEYS, AccessLeakScanner::REACTION_KEYS
+  end
+
+  test 'reactions: a reaction on a served post, from a poster, with a known key is clean and counted' do
+    scanner = AccessLeakScanner.new(data)
+    log = rows(['POST', FEED, first_answer], ['POST', FEED, lena_answer([rx('jake_post_1', 'lena', 'like'), rx('lena_post_1', 'jake', 'sad')])])
+    assert_empty scanner.scan(log), 'a reaction on the post in the same answer is judged after it is noted'
+    assert_equal 2, scanner.counts[:reaction_items]
+    assert_equal 0, AccessLeakScanner.new(data).tap { |s| s.scan(rows(['POST', FEED, first_answer])) }.counts[:reaction_items]
+  end
+
+  test 'reactions: feed_reaction_target for a reaction on an unserved post, resolved through its first owner' do
+    found = summary(AccessLeakScanner.new(data).scan(rows(['POST', FEED, first_answer], ['POST', FEED, lena_answer([rx('jake_post_2', 'lena', 'like')])])))
+    assert_equal [[2, 'feed_reaction_target', 'feed:jake|jake_post_2']], found
+  end
+
+  test 'reactions: feed_reaction_key for an unknown key; feed_reaction_reactor for a reactor with no served post' do
+    found = summary(AccessLeakScanner.new(data).scan(rows(['POST', FEED, first_answer], ['POST', FEED, lena_answer([rx('jake_post_1', 'lena', 'love'), rx('jake_post_1', 'omar', 'like')])])))
+    assert_equal [[2, 'feed_reaction_key', 'post:jake_post_1'], [2, 'feed_reaction_reactor', 'npc:omar']], found
+  end
+
+  test 'reactions: feed_reacts_key off an NPC record, on one beside feed, and in a scenario with no feed texts or facts' do
+    loose = bootstrap.merge('extra' => { 'reacts' => [{ 'to' => 'jake_post_1', 'key' => 'like' }] })
+    assert_equal [[1, 'feed_reacts_key', 'reacts']], summary(AccessLeakScanner.new(data).scan(rows(['GET', SCENARIO, loose])))
+    room = { 'room' => { 'npcs' => [{ 'id' => 'lena', 'npcType' => 'person', 'reacts' => [{ 'to' => 'jake_post_1', 'key' => 'like' }] }] } }
+    assert_includes summary(AccessLeakScanner.new(data).scan(rows(['GET', '/break_escape/games/1/room/office', room]))),
+                    [1, 'feed_reacts_key', 'reacts:lena']
+    bare = { 'scenario_name' => 'no feed', 'rooms' => {} }
+    assert_equal [[1, 'feed_reacts_key', 'reacts']], summary(AccessLeakScanner.new(bare).scan(rows(['GET', SCENARIO, loose])))
+  end
+
+  test 'reactions: a clean resumed run with reactions in feedPosts; one moved to an unserved post is reported' do
+    game = Struct.new(:player_state).new({ 'feedRevealed' => { 'jake' => { 'shown' => ['jake_post_1'], 'at' => 0 },
+                                                               'lena' => { 'shown' => ['lena_post_1'], 'at' => 0 } } })
+    item = first_answer.slice('index', 'post', 'fact').merge('reactions' => [{ 'npc' => 'lena', 'person' => 'lena', 'key' => 'sad' }])
+    lena_item = lena_answer.slice('index', 'post')
+    body = bootstrap.merge('feedPosts' => {
+                             'jake' => { 'site' => 'friendface', 'person' => 'jake', 'done' => false, 'posts' => [item] },
+                             'lena' => { 'site' => 'friendface', 'person' => 'lena', 'done' => true, 'posts' => [lena_item] }
+                           })
+    body['social']['intelFacts']['jake_pet_name'] = first_answer['fact']['entry']
+    scanner = AccessLeakScanner.new(data, game: game)
+    assert_empty scanner.scan(rows(['GET', SCENARIO, body]))
+    assert_equal 1, scanner.counts[:reaction_items]
+    moved = body.deep_dup
+    moved['feedPosts']['jake']['posts'] << { 'index' => 1, 'post' => { 'id' => 'jake_post_2', 'text' => 'x' },
+                                             'reactions' => [{ 'npc' => 'lena', 'person' => 'lena', 'key' => 'sad' }] }
+    found = summary(AccessLeakScanner.new(data, game: game).scan(rows(['GET', SCENARIO, moved])))
+    assert_equal [[1, 'feed_reaction_target', 'feed:jake|jake_post_2']], found
+  end
+
+  # Reactions code review R1 m2: Ivy's vent answer is lost (its body never reached the log), then
+  # Tomasz's reply answer names her vent and carries reactions on it and from her. The saved reveals
+  # account for the lost answer from its own line on, so none of it is a leak; the same answer
+  # before the lost line is still reported.
+  test 'review R1 m2: after a lost answer, a reply, a reaction on its post and a reaction from its NPC are clean' do
+    game = Struct.new(:player_state).new({ 'feedRevealed' => { 'ivy' => { 'shown' => ['ivy_vent'] }, 'tomasz' => { 'shown' => ['tom_re_ivy'] } } })
+    answer = reply_answer.merge('reactions' => [rx('ivy_vent', 'tomasz', 'sad'), rx('tom_re_ivy', 'ivy', 'like')])
+    lost = lost_answer.tap { |row| row[2]['npcId'] = 'ivy' }
+    scanner = AccessLeakScanner.new(reply_data, game: game)
+    assert_empty summary(scanner.scan(numbered([lost] + rows(['POST', FEED, answer]))))
+    assert_equal ['ivy'], scanner.feed_unknown
+    assert_equal 2, scanner.counts[:reaction_items]
+    early = summary(AccessLeakScanner.new(reply_data, game: game).scan(numbered(rows(['POST', FEED, answer]) + [lost])))
+    assert_includes early, [1, 'feed_reply_target', 'feed:ivy|ivy_vent']
+    assert_includes early, [1, 'feed_reaction_target', 'feed:ivy|ivy_vent']
+    assert_includes early, [1, 'feed_reaction_reactor', 'npc:ivy']
+    # with no lost line and no saved reveals the same answer is a leak on every count
+    bare = summary(AccessLeakScanner.new(reply_data).scan(rows(['POST', FEED, answer])))
+    assert_equal %w[feed_reaction_reactor feed_reaction_target feed_reply_target], bare.map { |f| f[1] }.uniq.sort
+  end
 end

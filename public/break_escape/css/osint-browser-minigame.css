@@ -339,6 +339,46 @@
 .cc-text { margin: 4px 0; }
 .cc-image { image-rendering: pixelated; max-width: 100%; }
 
+/* ── Friendface reactions (FRIENDFACE_REACTIONS_PLAN.md section 4): pixel-art UI, 2px square
+   borders, the pixel font, the 16x16 icons shown at a whole 2x (32px), never smaller. The chip is
+   40px: the 32px icon, 2px padding and the 2px border. The names line keeps one line reserved and
+   may wrap onto more. ── */
+.ob-reactions { display: flex; flex-direction: column; gap: 2px; margin: 0; }
+.ob-reaction-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.ob-reaction {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-width: 40px;
+    min-height: 40px;
+    padding: 2px 6px;
+    box-sizing: border-box;
+    font-family: var(--se-font-readable, 'GNF', monospace);
+    font-size: 16px;
+    color: #1f2430;
+    background: #fffdf8;
+    border: 2px solid var(--ui-line, #4c5b80);
+    border-radius: 0;
+    box-shadow: none;
+    cursor: pointer;
+}
+.ob-reaction:hover { background: #fff9e8; }
+.ob-reaction[data-open] { border: 2px solid var(--ui-accent, #ffcc44); box-shadow: none; }
+.ob-reaction:focus { outline: none; }
+.ob-reaction:focus-visible { outline: 2px solid var(--ui-accent, #ffcc44); outline-offset: 0; }
+.ob-reaction-icon { width: 32px; height: 32px; min-width: 32px; min-height: 32px; flex: none; image-rendering: pixelated; }
+.ob-reaction-label,
+.ob-reaction-count { font-family: var(--se-font-readable, 'GNF', monospace); }
+.ob-reaction-names {
+    margin: 0;
+    min-height: 1.4em;
+    font-family: var(--se-font-readable, 'GNF', monospace);
+    font-size: 14px;
+    color: #4a4f5c;
+    overflow-wrap: anywhere;
+}
+
 /* ── small screens: one column; the sites strip is a vertical list ── */
 @media (max-width: 700px) {
     .osint-browser-game-container { width: 100vw; height: 100vh; border-width: 2px; }

@@ -197,6 +197,10 @@ class AccessLeakScanner
     @feed_unknown = []          # npc ids that took a reveal from an unreadable answer
     @feed_ruled_out = []        # fallback npc ids that a lost answer's npcId tag ruled out of it
     @feed_tags_ignored = false  # a readable answer's npcId tag disagreed with its body
+    # Friendface reactions (FRIENDFACE_REACTIONS_PLAN.md section 9): NPCs with a served post so far,
+    # and the reaction items judged (a clean verdict proves something only when this is above 0)
+    @feed_posters = Set.new
+    @reaction_items = 0
     collect_passwords
     collect_items
     collect_network_secrets
@@ -223,7 +227,9 @@ class AccessLeakScanner
       feed_posts: @feed_texts.values.select { |f| f[:kind] == :post }.flat_map { |f| f[:served] }.uniq.length,
       feed_texts: @feed_texts.values.count { |f| f[:kind] == :post },
       feed_facts: @feed_fact_ids.length,
-      lockout_records: lockout_records.values.sum(&:length)
+      lockout_records: lockout_records.values.sum(&:length),
+      # Reaction items judged by scan so far (0 before a scan)
+      reaction_items: @reaction_items
     }
   end
 
@@ -280,6 +286,7 @@ class AccessLeakScanner
       scan_wifi_secrets(body, add)
       scan_workarounds(body, ctx, add)
       scan_lockouts(body, ctx, add)
+      scan_reacts_key(body, add)
       note_feed_served(body, ctx)
       scan_feed(body, ctx, add)
     end
@@ -315,6 +322,10 @@ class AccessLeakScanner
     'feed_text' => "a feed post's or feed fact's whole text before the server served it",
     'feed_fact_key' => 'an object keyed by a feed fact id with a text key before its post was served, or a bootstrap social.intelFacts that is not an object',
     'feed_reply_target' => 'a feed reply whose replyTo names a post the server had not served yet',
+    'feed_reacts_key' => 'an authored reacts key in a response (reactions are derived on the server, never shipped as authored)',
+    'feed_reaction_target' => 'a feed reaction on a post the server had not served yet',
+    'feed_reaction_key' => 'a feed reaction with a key outside like, laugh, sad, angry',
+    'feed_reaction_reactor' => 'a feed reaction from an NPC with no served post yet',
     'lockout_list' => 'a list of sign-in lockouts or failures, a lockout key, a lockedOut list outside GET /scenario ' \
                       'npcFrustration, a lockedOut flag outside a check or sign-in answer, or a lockoutPcs entry that is not a locked-out PC',
     'lockout_unrecorded' => 'a lockout the server\'s check did not record'
@@ -330,6 +341,10 @@ class AccessLeakScanner
   # ---- catalogue ---------------------------------------------------------------------------
 
   WORKAROUND_TARGET_KEYS = %w[door prop event pc with].freeze
+  # Kept equal to BreakEscape::AccessWork::REACTION_KEYS (the scanner keeps its own copy; a unit
+  # test checks they match)
+  REACTION_KEYS = %w[like laugh sad angry].freeze
+
   # Kept equal to BreakEscape::AccessWork::WORKAROUND_KINDS (the scanner loads no Rails code)
   WORKAROUND_KINDS = %w[writes_down prop_door emit borrow_session share_login].freeze
 
@@ -981,6 +996,7 @@ class AccessLeakScanner
   end
 
   def serve_feed(npc_id, post_id, fid)
+    @feed_posters << npc_id.to_s
     @feed_served << "#{npc_id}|#{post_id}"
     @feed_served << "fact:#{fid}" if fid
   end
@@ -989,14 +1005,85 @@ class AccessLeakScanner
     entry[:served].any? { |k| @feed_served.include?(k) }
   end
 
+  # Reactions: a `reacts` key anywhere is the authored list shipped; it needs no feed texts or facts,
+  # so it runs outside scan_feed's early return
+  def scan_reacts_key(body, add)
+    walk_hashes(body, '$') do |hash, json_path|
+      next unless hash.key?('reacts')
+
+      owner = hash['id'].is_a?(String) ? "reacts:#{hash['id']}" : 'reacts'
+      add.call('feed_reacts_key', owner, safe_path("#{json_path}.reacts"))
+    end
+  end
+
+  # Reaction items in a /feed_post answer ({ postId, npc, person, key }) and in a feedPosts block
+  # (on the item they target: { npc, person, key }). Each target must be served by now (the
+  # answer's own post and the block's own items were noted first), each key one of
+  # REACTION_KEYS, and each reactor an NPC with a served post.
+  def scan_reactions(body, ctx, add)
+    return unless body.is_a?(Hash)
+
+    if ctx[:route].end_with?('/feed_post')
+      Array(body['reactions']).each_with_index do |r, i|
+        next unless r.is_a?(Hash)
+
+        target = r['postId'].is_a?(String) ? @feed_post_key[r['postId']] : nil
+        judge_reaction(r, target, r['postId'], "$.reactions[#{i}]", add)
+      end
+    elsif (ctx[:scenario] || ctx[:friendface_phone]) && body['feedPosts'].is_a?(Hash)
+      body['feedPosts'].each do |npc_id, f|
+        Array(f.is_a?(Hash) ? f['posts'] : nil).each_with_index do |item, j|
+          next unless item.is_a?(Hash) && item['post'].is_a?(Hash)
+
+          post_id = item['post']['id']
+          Array(item['reactions']).each_with_index do |r, i|
+            next unless r.is_a?(Hash)
+
+            target = post_id.is_a?(String) ? "#{npc_id}|#{post_id}" : nil
+            judge_reaction(r, target, post_id, "$.feedPosts.#{npc_id}.posts[#{j}].reactions[#{i}]", add)
+          end
+        end
+      end
+    end
+  end
+
+  def judge_reaction(item, target, post_id, path, add)
+    @reaction_items += 1
+    unless target && feed_target_out?(target)
+      add.call('feed_reaction_target', target ? "feed:#{target}" : "post:#{post_id}", safe_path(path))
+    end
+    add.call('feed_reaction_key', "post:#{post_id}", safe_path("#{path}.key")) unless REACTION_KEYS.include?(item['key'])
+    reactor = item['npc'].to_s
+    add.call('feed_reaction_reactor', "npc:#{reactor}", safe_path("#{path}.npc")) unless feed_poster_out?(reactor)
+  end
+
+  # Whether a post ("npc|post_id") may be out at this point of the log: served by a line the log
+  # holds, or among the owner's saved reveal ids that a lost /feed_post answer passed so far (or a
+  # reveal before the log) accounts for (feed_allowed_ids). Reactions code review R1 m2: a post
+  # whose answer body was lost is never served by serve_feed, so a later reaction or reply on it
+  # would otherwise be a false leak.
+  def feed_target_out?(key)
+    return true if @feed_served.include?(key)
+
+    npc_id, post_id = key.split('|', 2)
+    @feed_order.key?(npc_id) && feed_allowed_ids(npc_id).include?(post_id)
+  end
+
+  # Whether an NPC may have a post out at this point of the log, by the same credit
+  def feed_poster_out?(npc_id)
+    @feed_posters.include?(npc_id) || (@feed_order.key?(npc_id) && feed_allowed_ids(npc_id).any?)
+  end
+
   def scan_feed(body, ctx, add)
     return if @feed_texts.empty? && @feed_fact_ids.empty?
+
+    scan_reactions(body, ctx, add)
 
     # C3: a served reply's replyTo names its thread post, which must be out already
     walk_hashes(body, '$') do |hash, json_path|
       target = hash['replyTo']
       next unless target.is_a?(String) && hash['id'].is_a?(String) && @feed_post_key.key?(target)
-      next if @feed_served.include?(@feed_post_key[target])
+      next if feed_target_out?(@feed_post_key[target])
 
       add.call('feed_reply_target', "feed:#{@feed_post_key[target]}", safe_path("#{json_path}.replyTo"))
     end
