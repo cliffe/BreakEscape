@@ -209,6 +209,23 @@ test('the indicator follows the globals; the screen record resolves the same in 
   assert.equal(seen[0].effect, 'screen');
 });
 
+test('UX slice 15 R2 final (m1): the locked mark is filled a lighter blue than the light it casts', () => {
+  const { sys, state } = stateWith();
+  sys.buildEmitters(state, [obj({ id: 'tom_pc', lockChance: 0.5 }, 'pc5')]);
+  const ind = state.emitters[1];
+  const tints = [];
+  const orig = ind.glow.setTint;
+  ind.glow.setTint = (c) => { tints.push(c); return orig.call(ind.glow, c); };
+  setGlobals({ tom_pc_owner_away: true, tom_pc_screen_locked: true });
+  sys.resolveEmitters(state);
+  assert.equal(ind.def.color, 0x3d8bff, 'the light stays the same blue');
+  assert.equal(ind.def.dotColor, 0x7ab4ff);
+  assert.equal(tints.at(-1), 0x7ab4ff, 'the mark takes dotColor');
+  setGlobals({ tom_pc_owner_away: true, tom_pc_screen_locked: false });
+  sys.resolveEmitters(state);
+  assert.equal(tints.at(-1), 0xfff1c8, 'the open mark, with no dotColor, takes its colour');
+});
+
 test('clusterEmitters does not damp an indicator; neighbouring screens still share a glow', () => {
   const { sys, state } = stateWith();
   sys.buildEmitters(state, [obj({ id: 'tom_pc', lockChance: 0.5 }, 'pc3', 100, 100), obj({ id: 'amara_pc', workstation: true }, 'pc3', 120, 100)]);

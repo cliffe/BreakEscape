@@ -108,7 +108,11 @@ const RANSOM_VARIANT = { condition: 'globalVars.ransomware_deployed', color: 0xf
 // while the owner is away (UX slice 15, R13: a mark is centred on what it marks). Locked: steady blue, listed first so it wins. Open (owner away,
 // not locked): a larger warm-white dot that breathes. Colour is never the only cue: they differ
 // in size, and in motion unless reduced motion is on.
-const INDICATOR_LOCKED = { color: 0x3d8bff, radius: 10, intensity: 1, effect: null, above: true, dotPx: 4 };
+// `dotColor`: the mark's own fill, where `color` is the light it casts. The locked mark is a
+// lighter blue than its light, so it reaches 3:1 on the sky-blue and striped screens (pc5,
+// pc11) when a password session keeps the base picture (UX slice 15 R2 final, m1: 2.79 and
+// 2.48 with 0x3d8bff; 3.16 and 3.56 with this).
+const INDICATOR_LOCKED = { color: 0x3d8bff, dotColor: 0x7ab4ff, radius: 10, intensity: 1, effect: null, above: true, dotPx: 4 };
 const INDICATOR_OPEN = { color: 0xfff1c8, radius: 14, intensity: 1, effect: 'breathe', above: true, dotPx: 6 };
 // The indicator mark itself is a crisp whole-pixel sprite (UX slice 15 R1, m2: the pixel-art
 // rule bans a soft glow as a UI mark), white so it takes the variant's tint, NEAREST filtered.
@@ -853,7 +857,7 @@ export class LightingSystem {
       if (!def) continue;
       if (e.indicator) {
         e.dotPx = indicatorDotPx(def);
-        e.glow.setTexture(this.indicatorDotTexture(e.dotPx)).setTint(def.color).setScale(1);
+        e.glow.setTexture(this.indicatorDotTexture(e.dotPx)).setTint(def.dotColor ?? def.color).setScale(1);
       } else e.glow.setTint(def.color).setScale((def.radius * 0.6) / (LIGHT_TEX_SIZE / 2));
       e.leds.forEach(l => l.img.setTint(def.ledColor ?? l.color));
     }
