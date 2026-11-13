@@ -108,8 +108,64 @@ const RANSOM_VARIANT = { condition: 'globalVars.ransomware_deployed', color: 0xf
 // while the owner is away (UX slice 15, R13: a mark is centred on what it marks). Locked: steady blue, listed first so it wins. Open (owner away,
 // not locked): a larger warm-white dot that breathes. Colour is never the only cue: they differ
 // in size, and in motion unless reduced motion is on.
-const INDICATOR_LOCKED = { color: 0x3d8bff, radius: 10, intensity: 1, effect: null, above: true };
-const INDICATOR_OPEN = { color: 0xfff1c8, radius: 14, intensity: 1, effect: 'breathe', above: true };
+const INDICATOR_LOCKED = { color: 0x3d8bff, radius: 10, intensity: 1, effect: null, above: true, dotPx: 4 };
+const INDICATOR_OPEN = { color: 0xfff1c8, radius: 14, intensity: 1, effect: 'breathe', above: true, dotPx: 6 };
+// The indicator mark itself is a crisp whole-pixel sprite (UX slice 15 R1, m2: the pixel-art
+// rule bans a soft glow as a UI mark), white so it takes the variant's tint, NEAREST filtered.
+// The soft light it casts on the light map stays.
+const INDICATOR_DOT_TEX = 'be_indicator_dot_';
+
+/** Pixel size of an indicator's mark: its `dotPx`, else from its radius (10 -> 4, 14 -> 6), even. */
+export function indicatorDotPx(def) {
+  const n = Number(def?.dotPx);
+  if (Number.isFinite(n) && n >= 2) return 2 * Math.round(n / 2);
+  return Math.max(2, 2 * Math.round((Number(def?.radius) || 10) * 0.2));
+}
+
+/** Whole-pixel top-left of an indicator mark n px wide centred at (x, y). */
+export function indicatorDotOrigin(x, y, n) {
+  return { x: Math.round(x - n / 2), y: Math.round(y - n / 2) };
+}
+
+/**
+ * Pixels of an n x n indicator mark, row by row: 1 lit, 0 clear. A square with its corner
+ * pixels cut once n is 4 or more, so it reads as a small stepped dot.
+ */
+export function indicatorDotPixels(n) {
+  const rows = [];
+  for (let y = 0; y < n; y++) {
+    const row = [];
+    for (let x = 0; x < n; x++) {
+      const corner = n >= 4 && (x === 0 || x === n - 1) && (y === 0 || y === n - 1);
+      row.push(corner ? 0 : 1);
+    }
+    rows.push(row);
+  }
+  return rows;
+}
+
+// Screen centre of each workstation picture, as an offset in source pixels from the sprite's
+// centre (UX slice 15 R1, m1: the dot sits on the screen, not between the monitor and a
+// tower). Measured from the screen's inner box in each PNG. `<key>_locked` shares its base's.
+export const SCREEN_ANCHORS = {
+  pc: [-4, -4.5], pc_desktop: [-4, -4.5], pc1: [-1.5, -4.5], pc3: [0, -4], pc4: [0, -3],
+  pc5: [-3, -5], pc6: [-2.5, -6], pc7: [0, -5], pc8: [-6.5, -4.5], pc9: [0, -4],
+  pc10: [-2, -5], pc11: [-4.5, -3.5], pc12: [0, -4],
+};
+
+/**
+ * The indicator offset from the sprite centre for a picture `key` shown at `size`
+ * ({ width, height } display, { sourceWidth, sourceHeight } of the frame, flipX): the
+ * screen anchor scaled to the display size, mirrored when flipped; 0, 0 for an unknown key.
+ */
+export function screenAnchor(key, size = {}) {
+  const base = typeof key === 'string' ? key.replace(/_locked$/, '') : '';
+  const a = SCREEN_ANCHORS[base];
+  if (!a) return { offsetX: 0, offsetY: 0 };
+  const sx = size.sourceWidth > 0 && size.width > 0 ? size.width / size.sourceWidth : 1;
+  const sy = size.sourceHeight > 0 && size.height > 0 ? size.height / size.sourceHeight : 1;
+  return { offsetX: a[0] * sx * (size.flipX ? -1 : 1), offsetY: a[1] * sy };
+}
 // Lock flashes (slice 16): one per change of a screen's locked state (WCAG 2.3.1: one flash).
 const FLASH_KINDS = {
   lock: { color: INDICATOR_LOCKED.color, from: 18, to: INDICATOR_LOCKED.radius, fade: false },
@@ -135,13 +191,13 @@ export function flashShape(kind, t, reduced = false) {
 
 /**
  * Built-in indicator variants for a workstation object: none unless it is a workstation with a
- * known owner. The dot sits at the object's centre (offsets 0), whatever its display size; the
- * lock flash reads the same offsets, so it moves with the dot. `size` is kept for callers.
+ * known owner. The dot sits on the screen: the picture's screen anchor (screenAnchor, from
+ * size.key) scaled to its display size, else the object's centre; the lock flash reads the same
+ * offsets, so it moves with the dot.
  */
 export function workstationIndicators(data, npcs, size = {}) {
   if (!isWorkstation(data) || !ownerOf(data, npcs)) return [];
-  const offsetX = 0;
-  const offsetY = 0;
+  const { offsetX, offsetY } = screenAnchor(size.key, size);
   return [
     { ...INDICATOR_LOCKED, condition: `globalVars.${data.id}_screen_locked`, offsetX, offsetY },
     { ...INDICATOR_OPEN, condition: `globalVars.${data.id}_owner_away`, offsetX, offsetY },
@@ -431,6 +487,20 @@ export class LightingSystem {
     scene.scale.on('resize', () => this.resizeLightMap());
   }
 
+  /** The n x n indicator mark texture (indicatorDotPixels), made once, NEAREST filtered. */
+  indicatorDotTexture(n) {
+    const key = INDICATOR_DOT_TEX + n;
+    if (!this.scene.textures.exists(key)) {
+      const tex = this.scene.textures.createCanvas(key, n, n);
+      const ctx = tex.getContext();
+      ctx.fillStyle = '#ffffff';
+      indicatorDotPixels(n).forEach((row, y) => row.forEach((on, x) => { if (on) ctx.fillRect(x, y, 1, 1); }));
+      tex.refresh();
+      tex.setFilter(Phaser.Textures.FilterMode.NEAREST);
+    }
+    return key;
+  }
+
   createLightTexture() {
     if (!this.scene.textures.exists(BLOCK_TEX)) {
       const block = this.scene.textures.createCanvas(BLOCK_TEX, BLOCK_SIZE, BLOCK_SIZE);
@@ -703,13 +773,16 @@ export class LightingSystem {
       const id = obj.scenarioData?.id ?? obj.objectId;
       let indicators = id ? state.indicatorCfg?.[id] : null;
       if (!indicators && isWorkstation(obj.scenarioData)) {
-        indicators = workstationIndicators(obj.scenarioData, npcs || (npcs = knownNpcs()),
-          { width: obj.displayWidth, height: obj.displayHeight });
+        indicators = workstationIndicators(obj.scenarioData, npcs || (npcs = knownNpcs()), {
+          key: emitterKey(obj), width: obj.displayWidth, height: obj.displayHeight,
+          sourceWidth: obj.width, sourceHeight: obj.height, flipX: !!obj.flipX,
+        });
       }
       if (indicators?.length) {
         state.emitters.push({
           obj, key, base: null, variants: indicators, indicator: true, def: null, variantIdx: -2,
-          glow: this.scene.add.image(0, 0, LIGHT_TEX).setBlendMode(Phaser.BlendModes.ADD).setVisible(false),
+          glow: this.scene.add.image(0, 0, this.indicatorDotTexture(indicatorDotPx(indicators[0])))
+            .setOrigin(0, 0).setVisible(false),
           phase: Math.random() * Math.PI * 2, leds: [], ledsMax: 0, flames: [], glowK: 1, stampK: 1,
         });
       }
@@ -740,7 +813,10 @@ export class LightingSystem {
       }
       e.def = def;
       if (!def) continue;
-      e.glow.setTint(def.color).setScale((def.radius * 0.6) / (LIGHT_TEX_SIZE / 2));
+      if (e.indicator) {
+        e.dotPx = indicatorDotPx(def);
+        e.glow.setTexture(this.indicatorDotTexture(e.dotPx)).setTint(def.color).setScale(1);
+      } else e.glow.setTint(def.color).setScale((def.radius * 0.6) / (LIGHT_TEX_SIZE / 2));
       e.leds.forEach(l => l.img.setTint(def.ledColor ?? l.color));
     }
     if (changed) this.clusterEmitters(state);
@@ -1226,7 +1302,9 @@ export class LightingSystem {
         // Indicator records (workstation dots) are small and must read across a lit room: full
         // strength, where other `above` glows are held at 0.6.
         const fade = e.indicator ? 1 : (def.ransom || def.above) ? 0.6 : glowFade;
-        e.glow.setPosition(x, y).setDepth(above ? LIGHT_DEPTH + 1 : obj.depth + 0.01).setVisible(true)
+        // An indicator mark sits at whole pixels, its top-left from the anchor point
+        const at = e.indicator ? indicatorDotOrigin(x, y, e.dotPx || indicatorDotPx(def)) : { x, y };
+        e.glow.setPosition(at.x, at.y).setDepth(above ? LIGHT_DEPTH + 1 : obj.depth + 0.01).setVisible(true)
           .setAlpha(Math.min(1, def.intensity * k * e.glowK * fade * (above ? e.fade : GLOW_BOOST)) * (obj.behindWallK ?? 1));
         // Keep an `above` glow's hue in a lit room (reds stayed red, not pink): multiply
         // its colour into the map under it first. Ransom screens have their own tint.

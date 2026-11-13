@@ -546,9 +546,20 @@
           "position": { "x": 7, "y": 6 },
           "takeable": false,
           "observations": "The power switch that restores the server network after the breaker trips.",
+          "_comment": "UX slice 15 R1 (m3, R4e): a named confirm, as every physical switch, only while the breaker has the rack off; with the rack on it says so.",
           "triggerOnInteract": [
-            { "type": "set_global", "key": "servers_offline", "value": false },
-            { "type": "complete_task", "taskId": "n6_repair" }
+            {
+              "type": "confirm_action",
+              "condition": "globalVars.servers_offline",
+              "text": "Switch the server rack back on?",
+              "confirmLabel": "Switch on",
+              "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "set_global", "key": "servers_offline", "value": false },
+                { "type": "complete_task", "taskId": "n6_repair" }
+              ]
+            },
+            { "type": "hint", "condition": "!globalVars.servers_offline", "title": "Server rack power", "message": "The server rack is on." }
           ]
         },
         {

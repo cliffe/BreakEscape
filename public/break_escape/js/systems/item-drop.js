@@ -130,11 +130,101 @@ export function isDroppableInventoryItem(sprite, inventoryItems) {
  */
 export const DROP_AHEAD_PX = 8;
 
-/** Where the drop lands: just in front of the player's feet, snapped to a walkable cell. */
-export function dropPoint(playerFeet, pathfindingManager) {
-    const aim = { x: playerFeet.x, y: playerFeet.y + DROP_AHEAD_PX };
-    const near = pathfindingManager?.findNearestWalkableWorldCell?.(aim.x, aim.y, 2);
-    return near || aim;
+/**
+ * How much of a drop's box another thing may cover before the spot is refused: a quarter.
+ * A desk's collision strip or a chair drawn over a corner of the item leaves it readable;
+ * more than that hides it (UX slice 15 R1, M1).
+ */
+export const DROP_COVER_LIMIT = 0.25;
+
+const overlapArea = (a, b) =>
+    Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) *
+    Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
+
+/** The item-sized box (whole-pixel top-left, as the drop is placed) of a drop centred at p. */
+export function dropBox(p, size) {
+    return { x: Math.round(p.x - size.w / 2), y: Math.round(p.y - size.h / 2), w: size.w, h: size.h };
+}
+
+/**
+ * True when a drop of `size` centred at `p` shows: its box lies inside `roomRect` (when
+ * given), no rectangle in `bodies` (static and immovable physics bodies) covers more than
+ * DROP_COVER_LIMIT of it, and no prop in `props` drawn over it (depth above the item's
+ * floor depth, table-drop.js placedDepth) covers more than that.
+ */
+export function dropSpotClear(p, size, { roomRect = null, bodies = [], props = [] } = {}) {
+    const box = dropBox(p, size);
+    const area = box.w * box.h;
+    if (!(area > 0)) return true;
+    if (roomRect && (box.x < roomRect.x || box.y < roomRect.y ||
+        box.x + box.w > roomRect.x + roomRect.w || box.y + box.h > roomRect.y + roomRect.h)) return false;
+    const limit = area * DROP_COVER_LIMIT;
+    if (bodies.some(b => overlapArea(box, b) > limit)) return false;
+    const depth = placedDepth(box.y, box.h, 0, roomRect?.y ?? 0);
+    return !props.some(o => o.depth > depth && overlapArea(box, o) > limit);
+}
+
+const insideRect = (p, r) => !r || (p.x >= r.x && p.x < r.x + r.w && p.y >= r.y && p.y < r.y + r.h);
+
+/**
+ * Where the drop lands, so that it always shows (R15; UX slice 15 R1, M1, m4, n3).
+ * Candidates in order: the aim (one cell below the feet, so the item draws in front of
+ * the player), the feet, then one cell left and right of the feet. Each is its own
+ * pathfinding cell (no wider snap: a wider search lands on a desk top or in the next
+ * room), and the first that is walkable, inside the room and clear (dropSpotClear) wins.
+ * When none is, the feet: snapped to a walkable cell in the room, else the raw feet,
+ * never the raw aim (which can be inside a wall or a desk's strip).
+ *
+ * `opts`: { size: {w, h}, roomRect, bodies, props } (dropClearance gathers them).
+ * With no pathfinder, candidates count as walkable.
+ */
+export function dropPoint(playerFeet, pathfindingManager, opts = {}) {
+    const pm = pathfindingManager;
+    const size = opts.size || { w: 16, h: 16 };
+    const roomRect = opts.roomRect || null;
+    const step = pm?.worldGridBounds?.step || DROP_AHEAD_PX;
+    const feet = { x: playerFeet.x, y: playerFeet.y };
+    const candidates = [
+        { x: feet.x, y: feet.y + DROP_AHEAD_PX },
+        feet,
+        { x: feet.x - step, y: feet.y },
+        { x: feet.x + step, y: feet.y }
+    ];
+    const snap = typeof pm?.findNearestWalkableWorldCell === 'function'
+        ? (p, r) => pm.findNearestWalkableWorldCell(p.x, p.y, r)
+        : (p) => ({ x: p.x, y: p.y });
+    for (const c of candidates) {
+        const cell = snap(c, 0);
+        if (cell && insideRect(cell, roomRect) && dropSpotClear(cell, size, { ...opts, roomRect })) {
+            return { x: cell.x, y: cell.y };
+        }
+    }
+    const near = snap(feet, 2);
+    return near && insideRect(near, roomRect) ? { x: near.x, y: near.y } : feet;
+}
+
+/**
+ * What a drop in `room` must keep clear of, for dropPoint: the room's rectangle, the
+ * static and immovable physics bodies (not the player's or an NPC's), and the shown
+ * non-takeable room objects other than `except` (the drop itself), with their depths.
+ */
+export function dropClearance(scene, room, except = null, player = null) {
+    const out = { roomRect: null, bodies: [], props: [] };
+    const pos = room?.position;
+    const wpx = room?.map?.widthInPixels, hpx = room?.map?.heightInPixels;
+    if (pos && wpx > 0 && hpx > 0) out.roomRect = { x: pos.x, y: pos.y, w: wpx, h: hpx };
+    const keep = body => body && body.enable !== false && body.gameObject !== player && !body.gameObject?.npcId;
+    const add = body => out.bodies.push({ x: body.left, y: body.top, w: body.right - body.left, h: body.bottom - body.top });
+    const world = scene?.physics?.world;
+    world?.staticBodies?.iterate?.(body => { if (keep(body)) add(body); });
+    world?.bodies?.iterate?.(body => { if (keep(body) && body.immovable) add(body); });
+    for (const sp of Object.values(room?.objects || {})) {
+        if (!sp || sp === except || sp.destroyed || sp.active === false || sp.visible === false) continue;
+        if (sp.scenarioData?.takeable === true || sp.takeable === true) continue;
+        const r = spriteRect(sp);
+        if (r.w > 0 && r.h > 0 && Number.isFinite(sp.depth)) out.props.push({ ...r, depth: sp.depth });
+    }
+    return out;
 }
 
 /**
@@ -217,7 +307,6 @@ export function dropInventoryItem(sprite) {
     }
     const data = { ...(sprite.scenarioData || {}) };
     const feet = { x: player.body?.center?.x ?? player.x, y: player.body?.center?.y ?? player.y };
-    const at0 = dropPoint(feet, w.pathfindingManager);
 
     // The item's own picture (see dropTextureKey). The tray element is a DOM <img>
     // with no texture, and its `type` (for a device, "usb") is often no picture at all.
@@ -225,6 +314,8 @@ export function dropInventoryItem(sprite) {
     const loaded = scene.textures.exists(textureKey);
     const firstTexture = loaded ? textureKey
         : (scene.textures.exists(DROPPED_ITEM_TEXTURE) ? DROPPED_ITEM_TEXTURE : '__DEFAULT');
+    // A first spot for the stand-in; place() picks again with the item's own size
+    const at0 = dropPoint(feet, w.pathfindingManager, { size: { w: TILE / 2, h: TILE / 2 }, ...dropClearance(scene, room, null, player) });
 
     if (!w.removeFromInventory?.(sprite)) {
         console.warn('[drop] item was not in the inventory');
@@ -271,9 +362,11 @@ export function dropInventoryItem(sprite) {
             const usable = nw ? (t => !!edgeCell({ x: feet.x, y: t.y }, t, tables, nw)) : null;
             snap = snapToTable(feet, tables, size, roomObstacles(room, obj), usable);
         }
+        // On the floor: the first clear spot for this size (dropPoint), so it shows
+        const spot = snap ? null : dropPoint(feet, w.pathfindingManager, { size, ...dropClearance(scene, room, obj, player) });
         // Whole-pixel top-left, so the saved position reloads to the same place
-        const left = snap ? snap.left : Math.round(at0.x - size.w / 2);
-        const top = snap ? snap.top : Math.round(at0.y - size.h / 2);
+        const left = snap ? snap.left : Math.round(spot.x - size.w / 2);
+        const top = snap ? snap.top : Math.round(spot.y - size.h / 2);
         const elevation = snap ? snap.elevation : 0;
         obj.setPosition(left + size.w / 2, top + size.h / 2);
         const at = { x: obj.x, y: obj.y };
