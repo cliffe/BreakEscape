@@ -659,7 +659,8 @@ end
 # q94: desktopUser on a PC or laptop is { name, character? }: an object with a non-empty string name,
 # and character (if set) a non-empty string. A character with no <key>_headshot.png in the character
 # assets is a warning, since the desktop frame then shows a silhouette. Walks room objects (and
-# their contents and itemsHeld), NPC itemsHeld and the starting inventory. Warns when set on a sign-in PC.
+# their contents and itemsHeld), NPC itemsHeld and the starting inventory. Warns when set on a sign-in PC (lockType login).
+# An unknown key inside desktopUser is reported once, by the schema (additionalProperties false).
 DESKTOP_USER_CHARS_DIR = File.join(File.expand_path('..', __dir__), 'public/break_escape/assets/characters')
 
 def check_desktop_users(json_data, chars_dir = DESKTOP_USER_CHARS_DIR)
@@ -670,8 +671,8 @@ def check_desktop_users(json_data, chars_dir = DESKTOP_USER_CHARS_DIR)
     if item.key?('desktopUser')
       du = item['desktopUser']
       where = "'#{path}' desktopUser"
-      if item['lockType'] == 'login' || item.key?('access')
-        issues << "⚠️ WARNING: #{where} is set on a sign-in PC (it has an access list or sign-in accounts): " \
+      if item['lockType'] == 'login'
+        issues << "⚠️ WARNING: #{where} is set on a sign-in PC (lockType login): " \
                   'the live session shows the signed-in user there, so desktopUser is ignored or conflicts. Remove it.'
       end
       if !du.is_a?(Hash)
@@ -688,9 +689,6 @@ def check_desktop_users(json_data, chars_dir = DESKTOP_USER_CHARS_DIR)
             issues << "⚠️ WARNING: #{where} character '#{ch}' has no assets/characters/#{ch}_headshot.png: " \
                       'the desktop frame shows a silhouette instead.'
           end
-        end
-        (du.keys - %w[name character]).each do |k|
-          issues << "❌ ERROR: #{where} has unknown field '#{k}' (known: name, character); the schema allows no others."
         end
       end
     end

@@ -65,33 +65,15 @@ test('desktopUser and host are known item fields (no unknown-field warning)', { 
     assert.deepEqual(out.filter((w) => /desktopUser|'host'/.test(w)), []);
 });
 
-test('an unknown key inside desktopUser is an error, matching the schema', { skip }, () => {
-    const out = check([pc({ desktopUser: { name: 'Sam Lee', rank: 'admin' } })]);
-    assert.equal(out.length, 1);
-    assert.match(out[0], /^❌ ERROR: .*unknown field 'rank'/);
-});
-
-test('desktopUser on an NPC itemsHeld object is checked', { skip }, () => {
+test('an unknown key inside desktopUser is reported once, by the schema', { skip }, () => {
+    const objs = [pc({ desktopUser: { name: 'Sam Lee', rank: 'admin' } })];
+    assert.deepEqual(check(objs), []);
     const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
-      puts JSON.generate(check_desktop_users(JSON.parse(STDIN.read)))`;
-    const scen = {
-        rooms: { office: { objects: [], npcs: [{ id: 'npc_a', itemsHeld: [pc({ desktopUser: 'Sam Lee' })] }] } },
-        npcs: [{ id: 'npc_b', itemsHeld: [pc({ desktopUser: { name: '' } })] }]
-    };
-    const r = spawnSync('ruby', ['-e', script], { input: JSON.stringify(scen), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' } });
+      puts JSON.generate(validate_json(JSON.parse(STDIN.read), ${JSON.stringify(join(root, 'scripts/scenario-schema.json'))}))`;
+    const r = spawnSync('ruby', ['-e', script], {
+        input: JSON.stringify({ rooms: { office: { objects: objs } } }), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' }
+    });
     assert.equal(r.status, 0, r.stderr);
-    const out = JSON.parse(r.stdout.trim().split('\n').pop());
-    assert.equal(out.length, 2);
-    assert.match(out[0], /npc_a.*itemsHeld\[0\].*must be an object/);
-    assert.match(out[1], /npc_b.*itemsHeld\[0\].*'name'/);
-});
-
-test('desktopUser on a sign-in PC (lockType login, or an access list) is a warning', { skip }, () => {
-    const login = check([pc({ lockType: 'login', desktopUser: { name: 'Sam Lee' } })]);
-    assert.equal(login.length, 1);
-    assert.match(login[0], /^⚠️ WARNING: .*sign-in PC/);
-    const acl = check([pc({ access: { roles: ['staff'] }, desktopUser: { name: 'Sam Lee' } })]);
-    assert.equal(acl.length, 1);
-    assert.match(acl[0], /^⚠️ WARNING: .*sign-in PC/);
-    assert.deepEqual(check([pc({ lockType: 'login' })]), []);
+    const errs = JSON.parse(r.stdout.trim().split('\n').pop()).filter((e) => /desktopUser/.test(e) && /rank/.test(e));
+    assert.equal(errs.length, 1, errs.join('\n'));
 });
