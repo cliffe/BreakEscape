@@ -52,7 +52,10 @@ function resetGame() {
   const sent = new Map();
   Object.assign(globalThis.window, {
     gameState: { globalVariables: { a: 1, b: true }, notes: [{ id: 'n1', title: 'T', text: 'x', sprite: {} }] },
-    currentRoom: { name: 'lobby' },
+    // The player's room is the detected room id (window.currentPlayerRoom), the source
+    // buildPlayerSections now reads. window.currentRoom is the dead legacy global (always null).
+    currentPlayerRoom: 'lobby',
+    currentRoom: null,
     gameClock: { exportState: () => ({ elapsedMs: clockMs }) },
     scenarioTimerDispatcher: { exportState: () => JSON.parse(JSON.stringify(timers)) },
     npcManager: {
@@ -127,7 +130,7 @@ test('notes, the room, phone threads and ink variables are sent only when they c
   await sync.sync();
 
   window.gameState.notes.push({ id: 'n2', title: 'U', text: 'y' });
-  window.currentRoom = { name: 'office' };
+  window.currentPlayerRoom = 'office';
   window.npcManager.phone.hax.history.push({ type: 'player', text: 'ok', read: true });
   window.npcConversationStateManager.vars.eve.met = true;
   await sync.sync();
@@ -409,4 +412,40 @@ test('a registered part with a build value makes buildChanges non-null when noth
   const changes = sync.buildChanges();
   assert.ok(changes, 'the part alone is a change');
   assert.deepEqual(changes.body.captures, [{ targetId: 'len', kind: 'credential' }]);
+});
+
+// Defect fix (GATED_DOOR §3.3a): the real client reads window.currentPlayerRoom (a room id
+// string), not the dead window.currentRoom. These assert the sync body carries the actual room
+// and that an unchanged room is a no-op, so the viaPass credit's currentRoom actually arrives.
+test('a real currentPlayerRoom change is sent in the body', () => {
+  const sync = resetGame();
+  markPhone();
+  sync.seedFromBootstrap(matchingSaved());           // confirmed room = lobby (the current one)
+  assert.equal(sync.buildChanges(), null, 'standing still sends nothing');
+  window.currentPlayerRoom = 'secure_area';          // the player slips into the route room
+  const changes = sync.buildChanges();
+  assert.ok(changes, 'moving room is a change');
+  assert.equal(changes.body.currentRoom, 'secure_area', 'the body carries the real room id');
+});
+
+test('an unchanged currentPlayerRoom is not re-sent', () => {
+  const sync = resetGame();
+  markPhone();
+  sync.seedFromBootstrap(matchingSaved());
+  window.currentPlayerRoom = 'secure_area';
+  const first = sync.buildChanges();
+  assert.equal(first.body.currentRoom, 'secure_area');
+  sync.confirm(first);                                // the server accepted it
+  assert.equal(sync.buildChanges(), null, 'the same room is not sent again');
+});
+
+// An empty detection ('' before the first detect) must not send a bare '' the server guard
+// would refuse; it collapses to undefined and is skipped.
+test('an empty currentPlayerRoom is never sent', () => {
+  const sync = resetGame();
+  markPhone();
+  sync.seedFromBootstrap(matchingSaved({ savedCurrentRoom: undefined }));
+  window.currentPlayerRoom = '';
+  const changes = sync.buildChanges();
+  if (changes) assert.equal(changes.body.currentRoom, undefined, 'no bare empty-string room');
 });

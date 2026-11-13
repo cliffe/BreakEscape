@@ -190,6 +190,11 @@ module BreakEscape
     # simplest safe one: the gate's playerMayPassIf is a server-owned global, or the scenario
     # contains an rfid_cloner object at all. It may over-split, but an over-split gate credits
     # nothing it should not (§3.1).
+    # A gate splits (its NPC route records the room in npcRouteRooms, not unlockedRooms) when a
+    # provable path exists: a server-owned pass global, or an rfid_cloner anywhere in the scenario
+    # (no condition on the target room's requires). This is the single source of truth for the
+    # split predicate; scripts/validate_scenario.rb (check_gated_door_credit) and
+    # scripts/generate_dungeon_graph.rb mirror it exactly (R3 minor 3). Change all three together.
     def gate_splits?(gate)
       return false unless gate.is_a?(Hash)
       pass_global = gate['playerMayPassIf']
@@ -461,6 +466,25 @@ module BreakEscape
       player_state['currentRoom'] == room_id
     end
 
+    # True when a sync_state request may set the saved currentRoom to this room. The acceptance set
+    # mirrors player_reached_room? minus its own circular currentRoom disjunct: the player
+    # legitimately occupies the room, so saving it is not a forge. A room outside this set is a
+    # forge and the sync refuses it (GATED_DOOR §3.3a). The three cheap player_state checks come
+    # first, so an ordinary sync into an unlocked room (the start room included, since unlockedRooms
+    # is seeded with it) reads no scenario. The scenario is loaded only when they all miss, to admit
+    # the awareness world room, which enterWorld (public/.../utils/world-play.js) places the player
+    # in without a door unlock, so it is never in unlockedRooms; before this method existed that was
+    # a genuine room the player stood in yet the guard would have 403'd once currentRoom began to
+    # sync. Runs on the narrow sync row (SYNC_STATE_COLUMNS), so it loads scenario_data lazily.
+    def may_sync_current_room?(room_id)
+      return false if room_id.blank?
+      return true if Array(player_state['unlockedRooms']).include?(room_id)
+      return true if in_npc_route_room?(room_id)
+      ensure_scenario_data_loaded!
+      return true if start_room?(room_id)
+      awareness_world_room?(room_id)
+    end
+
     # Stored-game soft-lock migration (GATED_DOOR_SERVER_CHECK_PLAN.md §10). A game saved before this
     # work may have a split gate's room already in unlockedRooms (Len's route ran) but no credit set,
     # because the player had not yet worn the hi-vis or cloned a badge when the client still wrote the
@@ -490,7 +514,10 @@ module BreakEscape
       clear_attribute_change('player_state')
 
       with_lock do
-        return if player_state['routeRoomsMigrated']
+        # next, not return: leave the block normally on the concurrent-migrate race (R3
+        # observation) so the lock/transaction closes cleanly rather than unwinding through a
+        # non-local return. No mutation has happened yet, so the empty transaction is a no-op.
+        next if player_state['routeRoomsMigrated']
 
         unlocked = player_state['unlockedRooms']
         unlocked = [] unless unlocked.is_a?(Array)
@@ -4114,16 +4141,6 @@ module BreakEscape
       task = find_task_in_scenario(task_id)
       return { success: false, error: 'Task not found' } unless task
 
-      # Server-completed-only guard (§7): a task credited by a gate's creditOnPass completes
-      # only through the server-checked passage (apply_credit_on_pass! passes trusted: true).
-      # Every client route (POST /complete_task, and the ink/eventMapping/NPC completeTask
-      # mappings that drive it) lands here with trusted false, so a direct forge of the
-      # objective tick is refused. trusted is a real keyword, never read from validation_data,
-      # so a client cannot smuggle { "trusted": true } through the request body.
-      if !trusted && server_completed_only_task_ids.include?(task_id.to_s)
-        return { success: false, error: 'Task is server-completed only' }
-      end
-
       # Check if already completed
       if player_state.dig('objectivesState', 'tasks', task_id, 'status') == 'completed'
         # Idempotent re-post. The task is done, but a concludeRequires global can
@@ -4144,6 +4161,19 @@ module BreakEscape
           end
         end
         return response
+      end
+
+      # Server-completed-only guard (§7, R3 minor 1): a task credited by a gate's creditOnPass
+      # completes only through the server-checked passage (apply_credit_on_pass! passes
+      # trusted: true). Every client route (POST /complete_task, and the ink/eventMapping/NPC
+      # completeTask mappings that drive it) lands here with trusted false, so a direct forge of
+      # the objective tick is refused. trusted is a real keyword, never read from validation_data,
+      # so a client cannot smuggle { "trusted": true } through the request body. The guard sits
+      # after the already-completed branch so an honest re-post of a task the server has already
+      # credited gets the idempotent "Already completed" rather than a hard block; a forge targets
+      # a not-yet-completed task, so it never enters that branch and still hits the guard here.
+      if !trusted && server_completed_only_task_ids.include?(task_id.to_s)
+        return { success: false, error: 'Task is server-completed only' }
       end
 
       # Validate based on task type
@@ -4255,16 +4285,19 @@ module BreakEscape
       task = find_task_in_scenario(task_id)
       return { success: false, error: 'Task not found' } unless task
 
-      # Server-completed-only guard (§7): skip_task! runs check_aim_completion for any task id
-      # the client names, so a tampered skip_task of a credited task would otherwise reach its
-      # aim without the server-checked passage. A credited task is never legitimately skipped,
-      # so this refuses outright (no trusted bypass).
+      current = player_state.dig('objectivesState', 'tasks', task_id, 'status')
+      return { success: true, taskId: task_id, status: current, message: "Already #{current}" } if %w[completed skipped].include?(current)
+
+      # Server-completed-only guard (§7, R3 minor 1): skip_task! runs check_aim_completion for any
+      # task id the client names, so a tampered skip_task of a credited task would otherwise reach
+      # its aim without the server-checked passage. A credited task is never legitimately skipped,
+      # so this refuses outright (no trusted bypass). The guard sits after the already-completed/
+      # skipped branch so an honest re-post of a credited task already completed by the server gets
+      # the idempotent "Already completed"; a forge targets a not-yet-settled task and still hits
+      # the guard here.
       if server_completed_only_task_ids.include?(task_id.to_s)
         return { success: false, error: 'Task is server-completed only' }
       end
-
-      current = player_state.dig('objectivesState', 'tasks', task_id, 'status')
-      return { success: true, taskId: task_id, status: current, message: "Already #{current}" } if %w[completed skipped].include?(current)
 
       was_not_concluded_before = mission_concluded_at.nil?
 

@@ -382,7 +382,14 @@ export class StateSync {
   /** Sections that belong to one player. */
   buildPlayerSections({ onlyChanged = false } = {}) {
     const out = {};
-    out.currentRoom = window.currentRoom?.name;
+    // The player's actual room is the detected room id (core/rooms.js sets both the module
+    // `currentPlayerRoom` and window.currentPlayerRoom). window.currentRoom is a legacy global that
+    // main.js sets to null and never assigns, so `window.currentRoom?.name` was always undefined and
+    // currentRoom never synced (true on main too). Read currentPlayerRoom so the real room reaches
+    // the server; an empty detection ('' before the first detect) collapses to undefined, so it is
+    // not sent (the delta below only sends a truthy, changed room), and never a bare '' the guard
+    // would refuse.
+    out.currentRoom = window.currentPlayerRoom || undefined;
 
     // Notes, so observations survive page reloads. Plain data only (no sprites).
     out.notes = (window.gameState?.notes || []).map(pickNote);

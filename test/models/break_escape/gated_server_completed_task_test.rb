@@ -108,5 +108,26 @@ module BreakEscape
       assert result[:success]
       assert_equal 'skipped', status(game, 'free_task')
     end
+
+    # R3 minor 1: the guard now sits after the already-completed branch, so an honest re-post of a
+    # credited task the server has already credited gets the idempotent "Already completed" rather
+    # than a hard 422 that would show an earned finding as "Objective Blocked".
+    test 'complete_task! on an already-credited task re-posted untrusted is idempotent, not blocked' do
+      game = build
+      assert game.complete_task!('tailgate_in', trusted: true)[:success], 'the server credit lands first'
+      result = game.complete_task!('tailgate_in') # the honest client re-post, untrusted
+      assert result[:success], 'an already-credited task is not blocked on a duplicate'
+      assert_equal 'Already completed', result[:message]
+      assert_equal 'completed', status(game, 'tailgate_in')
+    end
+
+    test 'skip_task! on an already-credited task re-posted is idempotent, not blocked' do
+      game = build
+      assert game.complete_task!('tailgate_in', trusted: true)[:success]
+      result = game.skip_task!('tailgate_in')
+      assert result[:success], 'an already-completed credited task is not blocked on a skip re-post'
+      assert_equal 'Already completed', result[:message]
+      assert_equal 'completed', status(game, 'tailgate_in'), 'it stays completed, not skipped'
+    end
   end
 end

@@ -534,8 +534,14 @@ dg_has_cloner = dg_cloner_walk.call(scenario)
   pass_server_owned = pass_if.is_a?(String) && !pass_if.empty? && DG_SERVER_OWNED_GLOBALS.include?(pass_if)
   room = (habits_copy['rooms'][entry[:connected_room]] if habits_copy['rooms'].is_a?(Hash))
   room_requires = room.is_a?(Hash) ? Array(room['requires']).map(&:to_s).reject(&:empty?) : []
+  # Split predicate mirrors runtime Game#gate_splits? and the validator exactly (R3 minor 3): a
+  # server-owned pass, or an rfid_cloner anywhere, with no room-requires condition. The credential
+  # LABEL still needs a requires card (a cloner with nothing to clone opens no door); a gate that
+  # splits only on a cloner with no card is labelled 'route only' (a shape no deployed scenario
+  # ships, which the validator errors on). Keep in step with Game#gate_splits? and the validator.
   has_credential = dg_has_cloner && room_requires.any?
-  next unless pass_server_owned || has_credential
+  splits = pass_server_owned || dg_has_cloner
+  next unless splits
 
   node = $nodes["door_#{entry[:connected_room]}"]
   next unless node
@@ -543,6 +549,7 @@ dg_has_cloner = dg_cloner_walk.call(scenario)
   label_parts = []
   label_parts << 'credential' if has_credential
   label_parts << 'server pass' if pass_server_owned
+  label_parts << 'route only' if label_parts.empty?
   node[:label] = "#{node[:label]}<br/>gated: #{label_parts.join(' or ')}"
 end
 

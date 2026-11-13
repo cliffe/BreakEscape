@@ -6729,6 +6729,21 @@ def check_gated_door_credit(json_data)
   worn = BreakEscape::WearableModel.worn_globals(json_data)
   imported = Array(json_data['importGlobals']).filter_map { |e| carry_over_import_name(e) }
 
+  # The runtime serverCompletedOnly set (mirrors Game.completed_only_task_ids_in): every task named
+  # by any door gate's creditOnPass.completeTask, independent of openFor or whether the gate splits.
+  credited_task_ids = Set.new
+  rooms.each_value do |room|
+    next unless room.is_a?(Hash) && room['doors'].is_a?(Array)
+    room['doors'].each do |door|
+      credit = door.is_a?(Hash) && door['gate'].is_a?(Hash) ? door['gate']['creditOnPass'] : nil
+      next unless credit.is_a?(Hash)
+      credit.each_value do |block|
+        t = block.is_a?(Hash) ? block['completeTask'] : nil
+        credited_task_ids << t.to_s if t.is_a?(String) && !t.strip.empty?
+      end
+    end
+  end
+
   # First pass: collect every openFor gate, its credit blocks and the credit globals.
   gates = []            # [{ room_id, i, connected, gate, requires, open_for }]
   credit_globals = Set.new
@@ -6766,9 +6781,14 @@ def check_gated_door_credit(json_data)
     pass_present = pass.is_a?(String) && !pass.strip.empty?
     pass_server_owned = pass_present && server_owned.include?(pass)
     # A gate splits (its NPC route records the room in npcRouteRooms rather than unlockedRooms) when a
-    # provable path exists: a server-owned pass, or an obtainable requires card (an rfid_cloner present,
-    # the runtime proxy). Mirrors Game#gate_splits?.
-    splits = pass_server_owned || (has_cloner && !g[:requires].empty?)
+    # provable path exists: a server-owned pass, or an rfid_cloner anywhere in the scenario. This
+    # mirrors runtime Game#gate_splits? exactly (R3 minor 3): the runtime does not condition the
+    # cloner term on the target room carrying a `requires` card, so neither does this. Dropping the
+    # former `&& !requires.empty?` closes the hole where the runtime split a cloner gate but the
+    # validator stayed silent on a client-writable pass; for every deployed/test scenario the only
+    # cloner gates (lab, test_gate_tailgate) carry a requires card, so the split decision is
+    # unchanged. Keep this in step with Game#gate_splits? and generate_dungeon_graph.rb.
+    splits = pass_server_owned || has_cloner
     credit = gate['creditOnPass']
 
     if splits
@@ -6833,6 +6853,33 @@ def check_gated_door_credit(json_data)
       issues << "⚠️ WARNING: credit global '#{name}' is still written by a client setter at '#{w[:path]}'. " \
                 "The server owns it through creditOnPass; remove the client writer so the credit cannot be forged or raced."
     end
+  end
+
+  # §12 / R3 minor 2: a credited task (named by a creditOnPass.completeTask, so serverCompletedOnly
+  # at runtime) that is ALSO completed by a client completeTask (an eventMapping, reward or action)
+  # is a half-done migration. With the server-completed-only guard now behind the already-completed
+  # branch (R3 minor 1), such a client completer, fired before the server credit lands, reaches the
+  # guard on a not-yet-completed task and surfaces a hard "Objective Blocked" to an honest player.
+  # Mirrors the credit-global client-writer warning above. The creditOnPass blocks themselves (the
+  # server writer) are pruned, so only a genuine client completer trips it.
+  unless credited_task_ids.empty?
+    walk_client_complete = lambda do |node|
+      case node
+      when Array then node.each { |n| walk_client_complete.call(n) }
+      when Hash
+        ct = node['completeTask']
+        if ct.is_a?(String) && credited_task_ids.include?(ct.to_s)
+          issues << "⚠️ WARNING: task '#{ct}' is credited by a gate's creditOnPass (server-completed only) but is " \
+                    "also completed by a client completeTask. Remove the client completer, or the credited task is " \
+                    "shown as 'Objective Blocked' to an honest player when the client fires before the server credit."
+        end
+        node.each do |k, v|
+          next if k.to_s == 'creditOnPass' # the server writer itself, not a client completer
+          walk_client_complete.call(v)
+        end
+      end
+    end
+    walk_client_complete.call(json_data)
   end
 
   unless split_rooms.empty?

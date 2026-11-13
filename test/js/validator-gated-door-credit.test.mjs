@@ -132,6 +132,30 @@ test('a split gate whose rfid room lock has an access ACL is an error (must be r
     assert.ok(out.some(m => /ERROR.*rfid lock with an 'access' ACL list/.test(m)), out.join('\n'));
 });
 
+test('R3 minor 2: a credited task also completed by a client completeTask warns (half-done migration)', { skip }, () => {
+    const s = cleanScenario();
+    // The credit now also completes the task (so enter_staff is serverCompletedOnly)...
+    s.rooms.office.doors[0].gate.creditOnPass.viaPass.completeTask = 'enter_staff';
+    // ...the creditOnPass block's own completeTask is the server writer, so it must not warn.
+    assert.ok(!issues(s).some(m => /also completed by a client completeTask/.test(m)), 'the server writer is not flagged');
+    // ...but a client eventMapping that also completes it is a leftover client completer: warn.
+    s.rooms.office.npcs[0].eventMappings.push({ eventPattern: 'z', completeTask: 'enter_staff' });
+    const out = issues(s);
+    assert.ok(out.some(m => /WARNING.*task 'enter_staff' is credited by a gate's creditOnPass .*also completed by a client completeTask/.test(m)), out.join('\n'));
+});
+
+test('R3 minor 3: a cloner-split gate (no requires card) with a client-writable pass now errors', { skip }, () => {
+    // Runtime gate_splits? treats a cloner anywhere as splitting, with no condition on the room
+    // carrying a requires card. The validator now mirrors that, so a client-writable pass on such a
+    // gate is caught (it was silently missed under the old `&& requires` condition).
+    const s = cleanScenario({ globalVariables: { client_flag: false, staff_entered: false } });
+    delete s.rooms.staff.requires;                  // no requires card: only the cloner split applies
+    s.rooms.office.doors[0].direction = 'north';
+    s.rooms.office.doors[0].gate.playerMayPassIf = 'client_flag';   // a plain, client-writable global
+    const out = issues(s);
+    assert.ok(out.some(m => /ERROR.*split gated door whose playerMayPassIf 'client_flag' is a client-writable global/.test(m)), out.join('\n'));
+});
+
 test('Q5: a server-enforced lock code in a split room readable warns', { skip }, () => {
     const s = cleanScenario();
     // A pin lock code 7041 placed in the split room's readable text.

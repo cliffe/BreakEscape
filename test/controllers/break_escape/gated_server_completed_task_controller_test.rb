@@ -103,6 +103,36 @@ module BreakEscape
       refute_equal 'completed', state(game).dig('objectivesState', 'tasks', 'tailgate_in', 'status')
     end
 
+    # Test 5d (R3 minor 1): once the server has credited the task (viaPass), an honest client
+    # re-post of /complete_task for it is the idempotent "Already completed", not a 422 the client
+    # would surface as "Objective Blocked" on an earned finding. The guard now sits after the
+    # already-completed branch; a forge (tests 5/5b/5c, a not-yet-completed task) still hits it.
+    test 'POST complete_task for an already-credited task is idempotent, not blocked' do
+      game = build('inventory' => [vest_item])
+      post wear_game_url(game), params: { item_id: 'vest', worn: true }, as: :json
+      post unlock_game_url(game), params: { targetType: 'door', targetId: 'secure_area', attempt: 'len', method: 'npc' }, as: :json
+      put sync_state_game_url(game), params: { currentRoom: 'secure_area' }, as: :json
+      assert_equal 'completed', state(game).dig('objectivesState', 'tasks', 'tailgate_in', 'status')
+
+      post complete_task_game_url(game, task_id: 'tailgate_in'), as: :json
+      assert_response :success
+      assert_equal 'Already completed', response.parsed_body['message']
+    end
+
+    # Test 5e (R3 minor 1): the same for /skip_task on an already-credited task: idempotent, not 422.
+    test 'POST skip_task for an already-credited task is idempotent, not blocked' do
+      game = build('inventory' => [vest_item])
+      post wear_game_url(game), params: { item_id: 'vest', worn: true }, as: :json
+      post unlock_game_url(game), params: { targetType: 'door', targetId: 'secure_area', attempt: 'len', method: 'npc' }, as: :json
+      put sync_state_game_url(game), params: { currentRoom: 'secure_area' }, as: :json
+      assert_equal 'completed', state(game).dig('objectivesState', 'tasks', 'tailgate_in', 'status')
+
+      post skip_task_game_url(game, task_id: 'tailgate_in'), as: :json
+      assert_response :success
+      assert_equal 'Already completed', response.parsed_body['message']
+      assert_equal 'completed', state(game).dig('objectivesState', 'tasks', 'tailgate_in', 'status')
+    end
+
     # An ordinary (non-credited) task is unaffected: the client endpoint still completes it.
     test 'POST complete_task for an ordinary task still succeeds' do
       game = build

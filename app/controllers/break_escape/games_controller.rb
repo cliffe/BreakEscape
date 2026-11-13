@@ -2149,9 +2149,13 @@ module BreakEscape
         # §3.3a), so the avatar and the saved room agree (no snap-back) and the no-vest slip-in
         # works. Acceptance is never promotion: the viaPass credit below runs only when the
         # gate's server-owned playerMayPassIf is true.
-        unless Array(@game.player_state['unlockedRooms']).include?(room) ||
-               Array(@game.player_state['npcRouteRooms']).include?(room) ||
-               Game.where(id: @game.id).pick(Arel.sql("scenario_data->>'startRoom'")) == room
+        # Acceptance mirrors player_reached_room? (Game#may_sync_current_room?): unlockedRooms, a
+        # route room, the start room, or the awareness world room. The last admits an awareness
+        # episode's world room (e.g. ca12's "lobby"), which enterWorld places the player in without a
+        # door unlock so it is never in unlockedRooms; without it, enabling the currentRoom sync
+        # would 403 every sync while the learner stood in that room. A room outside the set is still
+        # a forge and refused (the sync rolls back), as before.
+        unless @game.may_sync_current_room?(room)
           return "Cannot enter locked room: #{room}"
         end
 
