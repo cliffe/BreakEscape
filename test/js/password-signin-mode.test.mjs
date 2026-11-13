@@ -36,7 +36,8 @@ globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const {
     PasswordMinigame, applyTilePortrait, isTalkSheetSize, tileInitials, portraitUrl, signInRefusalMessage, signInErrorMessage, capturedSignIns,
-    passwordScreenKind, headCropOffset, wholePixelOffset, SHORT_PORTRAIT_PX
+    passwordScreenKind, headCropOffset, wholePixelOffset, SHORT_PORTRAIT_PX,
+    TILE_PORTRAIT_PX, PORTRAIT_CROP_OVERRIDES, portraitCropOverride, snapInnerBoxes, unsnapInnerBoxes
 } = await import(pathToFileURL(join(dir, 'minigames/password/password-minigame.js')));
 
 const TILES = [
@@ -219,20 +220,22 @@ test('the talk-sheet rule and portrait URLs', () => {
     assert.equal(tileInitials(''), '?');
 });
 
-test('a square talk sheet shows its top-left frame; a single image is shown whole', async () => {
+test('a square talk sheet shows a crop of its top-left frame; an odd-sized image is not fitted', async () => {
     const el = document.createElement('span');
     applyTilePortrait(el, TILES[0], fakeImage({ '/break_escape/assets/characters/sam_talk.png': [256, 256] }));
     await settle();
     assert.equal(el.dataset.frame, 'talk-sheet');
-    assert.equal(el.style.backgroundSize, '200% 200%');
-    assert.match(el.style.backgroundPosition, /^0(px)? 0(px)?$/);
+    assert.equal(el.style.backgroundSize, '256px 256px', 'the sheet at scale 1');
+    assert.equal(el.style.backgroundPosition, '-32px 0px', 'unreadable alpha: the top centre of the frame');
     assert.match(el.style.backgroundImage, /sam_talk\.png/);
 
+    // R4 n3: a 128x128 picture (no talk sheet, no 32 or 64 headshot) would have to shrink
     const single = document.createElement('span');
     applyTilePortrait(single, TILES[0], fakeImage({ '/break_escape/assets/characters/sam_talk.png': [128, 128] }));
     await settle();
-    assert.equal(single.dataset.frame, 'single');
-    assert.equal(single.style.backgroundSize, 'contain');
+    assert.equal(single.dataset.frame, 'initials');
+    assert.equal(single.textContent, 'SO');
+    assert.equal(single.style.backgroundSize, '');
 });
 
 test('a failed portrait falls back to the avatar, then to initials', async () => {
@@ -693,7 +696,8 @@ test('R3 n1: a talk sheet gives the short window a head crop at scale 1; a 32x32
     assert.equal(el.style.getPropertyValue('--signin-short-size'), '256px 256px', 'the whole sheet at scale 1');
     assert.equal(el.style.getPropertyValue('--signin-short-position'), '-39px -6px');
     assert.match(el.style.getPropertyValue('--signin-short-image'), /sam_talk\.png/);
-    assert.equal(el.style.backgroundSize, '200% 200%', 'the 64px tile keeps its picture');
+    assert.equal(el.style.backgroundSize, '256px 256px', 'the 64px tile keeps its own crop');
+    assert.equal(el.style.backgroundPosition, '-23px -6px');
 
     const unreadable = document.createElement('span');
     applyTilePortrait(unreadable, TILES[0], fakeImage({ '/break_escape/assets/characters/sam_talk.png': [256, 256] }), () => null);
@@ -735,4 +739,181 @@ test('R3 n2: the scrollbar guard tests the feature, and the scroller resets the 
     assert.match(css, /\.password-frame > \.minigame-game-container \{\s*scrollbar-color: auto;\s*scrollbar-width: auto;\s*\}/);
     assert.doesNotMatch(css, /-moz-appearance/);
     assert.match(css, /`\.pixel-scroll`/, 'the comment names the shared rule');
+});
+
+// R4 m1 and n3: every portrait is at a whole scale, in the 64px box as well as the 32px one
+const sizeScale = (size, w, h) => {
+    const m = /^(\d+)px (\d+)px$/.exec(size || '');
+    if (!m) return null;
+    const k = Number(m[1]) / w;
+    return Number.isInteger(k) && k >= 1 && Number(m[2]) === h * k ? k : null;
+};
+
+test('R4 m1: the 64px tile is a 64x64 head crop of the talk frame at scale 1', async () => {
+    assert.equal(TILE_PORTRAIT_PX, 64);
+    const head = (x, y) => (y >= 2 && x >= 40 && x <= 70) ? 255 : 0;
+    const el = document.createElement('span');
+    applyTilePortrait(el, TILES[0], fakeImage({ '/break_escape/assets/characters/sam_talk.png': [256, 256] }), () => head);
+    await settle();
+    assert.equal(el.style.backgroundSize, '256px 256px');
+    assert.equal(el.style.backgroundPosition, '-23px -6px', 'centred on the head, 4px below its top');
+    // the same finder as the 32px crop, with a 64px box (the R4 review's o64 = o32 - 16)
+    const alpha = (x, y) => ((y >= 6 && y < 40 && x >= 50 && x <= 77) || (y >= 40 && x >= 20 && x <= 108)) ? 255 : 0;
+    assert.deepEqual(headCropOffset(alpha, 128, 64), { left: 32, top: 10 });
+    assert.deepEqual(headCropOffset(alpha, 128), { left: 48, top: 10 });
+});
+
+test('R4 m1: no portrait box ever gets a background size that is not a whole multiple of the image', async () => {
+    const head = (x, y) => (y >= 2 && x >= 20 && x <= 44) ? 255 : 0;
+    const cases = [
+        ['talk sheet', { portrait: 'assets/characters/sam_talk.png' }, { '/break_escape/assets/characters/sam_talk.png': [256, 256] }, [256, 256], 'talk-sheet'],
+        ['big talk sheet', { portrait: 'assets/characters/sam_talk.png' }, { '/break_escape/assets/characters/sam_talk.png': [512, 512] }, [512, 512], 'talk-sheet'],
+        ['64 avatar', { avatar: 'assets/npc/avatars/sam.png' }, { '/break_escape/assets/npc/avatars/sam.png': [64, 64] }, [64, 64], 'single'],
+        ['32 headshot', { avatar: 'assets/characters/sam_headshot.png' }, { '/break_escape/assets/characters/sam_headshot.png': [32, 32] }, [32, 32], 'single'],
+        ['override sheet', { portrait: 'assets/characters/mr_ahmed_talk.png' }, { '/break_escape/assets/characters/mr_ahmed_talk.png': [256, 256] }, [256, 256], 'talk-sheet'],
+        ['120 picture', { portrait: 'assets/characters/male_hacker_hood_talk.png' }, { '/break_escape/assets/characters/male_hacker_hood_talk.png': [120, 120] }, null, 'initials'],
+        ['128 picture', { portrait: 'assets/characters/x.png' }, { '/break_escape/assets/characters/x.png': [128, 128] }, null, 'initials']
+    ];
+    for (const [name, pics, sizes, natural, frame] of cases) {
+        const el = document.createElement('span');
+        applyTilePortrait(el, { username: 'sokafor', displayName: 'Sam Okafor', ...pics }, fakeImage(sizes), () => head);
+        await settle(); await settle();
+        assert.equal(el.dataset.frame, frame, name);
+        assert.doesNotMatch(el.style.backgroundSize, /%|contain|cover/, name);
+        if (!natural) {
+            assert.equal(el.style.backgroundSize, '', `${name}: no picture`);
+            assert.equal(el.textContent, 'SO', `${name}: initials in the pixel font`);
+            assert.equal(el.dataset.short, undefined, name);
+            continue;
+        }
+        assert.ok(sizeScale(el.style.backgroundSize, ...natural), `${name}: 64px box at ${el.style.backgroundSize}`);
+        assert.equal(sizeScale(el.style.getPropertyValue('--signin-short-size'), ...natural), 1, `${name}: 32px box at scale 1`);
+        assert.match(el.style.backgroundPosition, /^-?\d+px -?\d+px$/, `${name}: whole-pixel offset`);
+    }
+    // the 32x32 headshot fills the 64px box at x2, the only upscale
+    const small = document.createElement('span');
+    applyTilePortrait(small, { displayName: 'Sam', avatar: 'assets/characters/sam_headshot.png' }, fakeImage({ '/break_escape/assets/characters/sam_headshot.png': [32, 32] }));
+    await settle();
+    assert.equal(small.style.backgroundSize, '64px 64px');
+    // the CSS has no fitted portrait rule left
+    const css = readFileSync(join(here, '../../public/break_escape/css/password-minigame.css'), 'utf8');
+    const rule = css.slice(css.indexOf('.signin-portrait {'), css.indexOf('}', css.indexOf('.signin-portrait {')));
+    assert.doesNotMatch(rule, /background-size/);
+});
+
+test('R4 n3: bedside portraits use their own crops; an odd sheet falls through to the avatar or initials', async () => {
+    for (const [file, crop] of Object.entries(PORTRAIT_CROP_OVERRIDES)) {
+        for (const [box, o] of [[64, crop.tile], [32, crop.short]]) {
+            assert.ok(o.left >= 0 && o.top >= 0 && o.left + box <= 128 && o.top + box <= 128, `${file} ${box} inside the frame`);
+        }
+    }
+    assert.deepEqual(Object.keys(PORTRAIT_CROP_OVERRIDES).sort(),
+        ['mr_ahmed_talk.png', 'mr_pryce_talk.png', 'mrs_kowalski_talk.png', 'ms_okafor_talk.png']);
+    assert.equal(portraitCropOverride('/break_escape/assets/characters/mr_pryce_talk.png?v=2'), PORTRAIT_CROP_OVERRIDES['mr_pryce_talk.png']);
+    assert.equal(portraitCropOverride('/break_escape/assets/characters/sam_talk.png'), null);
+
+    const el = document.createElement('span');
+    applyTilePortrait(el, { displayName: 'Mr Ahmed', portrait: 'assets/characters/mr_ahmed_talk.png' },
+        fakeImage({ '/break_escape/assets/characters/mr_ahmed_talk.png': [256, 256] }), () => () => 255);
+    await settle();
+    assert.equal(el.style.backgroundPosition, '-36px -18px', 'the override, not the finder');
+    assert.equal(el.style.getPropertyValue('--signin-short-position'), '-46px -32px');
+
+    const odd = document.createElement('span');
+    applyTilePortrait(odd, { displayName: 'Hood', portrait: 'assets/characters/male_hacker_hood_talk.png', avatar: 'assets/characters/male_hacker_hood_headshot.png' },
+        fakeImage({ '/break_escape/assets/characters/male_hacker_hood_talk.png': [120, 120], '/break_escape/assets/characters/male_hacker_hood_headshot.png': [32, 32] }));
+    await settle(); await settle();
+    assert.equal(odd.dataset.frame, 'single', 'the headshot, not the 120px picture');
+    assert.match(odd.style.backgroundImage, /headshot/);
+});
+
+// R4 m2: the boxes inside the frame are on whole pixels too
+function mockRects(base) {
+    const proto = window.HTMLElement.prototype;
+    const had = proto.getBoundingClientRect;
+    proto.getBoundingClientRect = function () {
+        const hit = base.find(([sel]) => this.matches(sel));
+        if (!hit) return { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
+        let dx = 0, dy = 0;
+        for (let n = this; n?.style; n = n.parentElement) {
+            dx += parseFloat(n.style.left) || 0;
+            dy += parseFloat(n.style.top) || 0;
+            const t = String(n.style.translate || '').split(' ');
+            dx += parseFloat(t[0]) || 0;
+            dy += parseFloat(t[1]) || 0;
+        }
+        return { left: hit[1].left + dx, top: hit[1].top + dy, right: 0, bottom: 0, width: 10, height: 10 };
+    };
+    return () => { proto.getBoundingClientRect = had; };
+}
+const whole = (el) => { const r = el.getBoundingClientRect(); return Number.isInteger(r.left) && Number.isInteger(r.top); };
+
+test('R4 m2: odd boxes inside the frame are moved onto whole pixels, a positioned one by translate', async () => {
+    const restore = mockRects([
+        ['.password-input-container', { left: 557.5, top: 300 }],
+        ['.toggle-password-btn', { left: 700, top: 520.5 }],
+        ['#minigame-notebook-postit', { left: 590.5, top: 296.5 }],
+        ['#password-message', { left: 613.5, top: 250 }]
+    ]);
+    try {
+        const { mg } = openPlain();
+        q('.toggle-password-btn').style.position = 'absolute';
+        mg.resnapFrame();
+        for (const sel of ['.password-input-container', '.toggle-password-btn', '#minigame-notebook-postit']) {
+            assert.ok(whole(q(sel)), sel);
+        }
+        assert.equal(q('.password-input-container').style.position, 'relative');
+        assert.equal(q('.password-input-container').style.left, '0.5px');
+        assert.equal(q('.toggle-password-btn').style.left, '', 'a positioned box keeps its anchors');
+        assert.equal(q('.toggle-password-btn').style.position, 'absolute');
+        assert.match(q('.toggle-password-btn').style.translate, /px/);
+        // a second snap starts from the layout, so offsets never add up
+        mg.resnapFrame();
+        assert.equal(q('.password-input-container').style.left, '0.5px');
+        assert.ok(whole(q('.toggle-password-btn')));
+        // a new message is snapped without a resize (the content observer)
+        q('#password-field').value = '';
+        await mg.submitPassword();
+        await settle();
+        assert.equal(q('#password-message').hidden, false);
+        assert.ok(whole(q('#password-message')), 'the message line');
+        mg.complete(false);
+    } finally {
+        restore();
+    }
+});
+
+test('R4 m2: unsnapInnerBoxes puts back the inline values; nothing to move gives nothing', () => {
+    const restore = mockRects([['.b', { left: 3.5, top: 4.5 }]]);
+    try {
+        document.body.innerHTML = '<div class="a"><span class="b" style="left: 2px"></span><span class="c"></span></div>';
+        const moved = snapInnerBoxes(q('.a'), 1, window);
+        assert.equal(moved.length, 1);
+        assert.ok(whole(q('.b')));
+        unsnapInnerBoxes(moved);
+        assert.equal(q('.b').style.left, '2px');
+        assert.equal(q('.b').style.position, '');
+        assert.deepEqual(snapInnerBoxes(q('.c'), 1, window), []);
+    } finally {
+        restore();
+    }
+    const css = readFileSync(join(here, '../../public/break_escape/css/password-minigame.css'), 'utf8');
+    assert.doesNotMatch(css, /transition:\s*all/, 'a snapped left/top must not animate');
+});
+
+test('R4 n1: an empty Submit brings the post-it into view first, then the line', async () => {
+    const { mg } = openPlain();
+    const order = [];
+    q('.postit-note').scrollIntoView = () => order.push('postit');
+    q('#password-message').scrollIntoView = () => order.push('line');
+    q('#password-field').value = '';
+    await mg.submitPassword();
+    assert.deepEqual(order, ['postit', 'line']);
+    assert.equal(q('#password-message').textContent, 'Please enter a password');
+});
+
+test('R4 n4: showScreenMessage has no duration option, and no caller passes one', () => {
+    const src = readFileSync(join(js, 'minigames/password/password-minigame.js'), 'utf8');
+    assert.match(src, /showScreenMessage\(text, \{ kind = 'error', closeAfterMs = 0 \} = \{\}\)/);
+    assert.doesNotMatch(src, /showScreenMessage\([^;]*duration/);
 });
