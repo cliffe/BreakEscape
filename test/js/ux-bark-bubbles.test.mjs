@@ -32,8 +32,8 @@ const B = await imp('systems/npc-world-bubbles.js');
 const { NpcWorldBubbles, pageLine, pagesText, pageTimes, lineTotalMs, readingMs, wrapLines,
     MAX_BUBBLES, PAGE_LINES, LINE_CHARS, PAGE_MIN_MS, AUDIO_TAIL_MS, SPEECH_FONT, SPEECH_FONT_PX, BORDER_PX } = B;
 
-// The longest authored bark (lab_physical_pentest, 150 characters)
-const LONG = "That card's just a printed code — nothing runs from it. It only matters if someone scans it and signs in. The planted BadUSB is still your core route.";
+// A 150-character bark, the length of the longest authored one (test_bark_bubbles, Dana)
+const LONG = "Badges on at all times past this point, please. If yours has stopped working, reception can print a new one. And don't wedge the fire door open again.";
 
 // ---- a scene whose Graphics records every call ----
 function mk(scene, kind) {
