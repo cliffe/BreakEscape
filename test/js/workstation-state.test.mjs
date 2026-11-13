@@ -238,8 +238,8 @@ test('slice 16 precedence: object lockChance and locksScreenOnLeave win over the
     assert.equal(decideLocked({ id: 'p', lockChance: 0, locksScreenOnLeave: true }, 'ann', 1, () => 0.9, { lockChance: 1 }, null), false, 'lockChance beats locksScreenOnLeave');
     assert.equal(decideLocked({ id: 'p', workstation: true }, 'ann', 1, () => 0.9, never, 0), false, 'workstation: true defers to the habit');
     assert.equal(decideLocked({ id: 'p', workstation: true }, 'ann', 1, () => 0.9, null, 0), true, 'no habit: the default locks');
-    assert.equal(habitOf('ann', [{ id: 'ann', screenHabit: never }]), never);
-    assert.equal(habitOf('bob', [{ id: 'ann', screenHabit: never }]), null);
+    assert.equal(habitOf('ann', [{ id: 'ann', habits: { screen: never } }]), never);
+    assert.equal(habitOf('bob', [{ id: 'ann', habits: { screen: never } }]), null);
 });
 
 test('slice 16 lockIfAwayOverSeconds: a short trip stays open, a long one locks; alone it implies lockChance 1; a null estimate is long', () => {
@@ -270,14 +270,14 @@ test('slice 16 the habit rolls with its own salt; an object screen: sequence is 
         return out;
     };
     const plain = seq([{ id: 'ann', needsHome: 'pc_a' }]);
-    const withHabit = seq([{ id: 'ann', needsHome: 'pc_a', screenHabit: { lockChance: 0.5, lockIfAwayOverSeconds: 1 } }]);
+    const withHabit = seq([{ id: 'ann', needsHome: 'pc_a', habits: { screen: { lockChance: 0.5, lockIfAwayOverSeconds: 1 } } }]);
     assert.deepEqual(withHabit, plain);
     assert.ok(plain.includes(true) && plain.includes(false), 'the sequence mixes');
 });
 
 test('slice 16 install passes the leave payload: expectedAwayMs drives the habit; events carry how', () => {
     const pc = { id: 'pc_a', workstation: true };
-    const r = rig16([pc], [{ id: 'ann', needsHome: 'pc_a', screenHabit: { lockIfAwayOverSeconds: 20 } }]);
+    const r = rig16([pc], [{ id: 'ann', needsHome: 'pc_a', habits: { screen: { lockIfAwayOverSeconds: 20 } } }]);
     r.handlers['npc_left_post:*']({ npcId: 'ann', expectedAwayMs: 8000 });
     assert.equal(pc.screenLocked, false);
     assert.deepEqual(r.changes(), [], 'open on leave: no change, no event');
@@ -297,7 +297,7 @@ test('slice 16 install passes the leave payload: expectedAwayMs drives the habit
 
 test('slice 16 auto-lock fires once after autoLockSeconds idle on the needs clock, and not after a return', () => {
     const pc = { id: 'pc_s', workstation: true, autoLockSeconds: 30 };
-    const r = rig16([pc], [{ id: 'san', needsHome: 'pc_s', screenHabit: { lockChance: 0 } }]);
+    const r = rig16([pc], [{ id: 'san', needsHome: 'pc_s', habits: { screen: { lockChance: 0 } } }]);
     r.setNow(1000);
     r.handlers['npc_left_post:*']({ npcId: 'san', expectedAwayMs: 60000 });
     assert.equal(pc.screenLocked, false);
@@ -317,7 +317,7 @@ test('slice 16 auto-lock fires once after autoLockSeconds idle on the needs cloc
 test('slice 16 auto-lock restarts on access and holds while a minigame is open on the object', () => {
     let open = false;
     const pc = { id: 'pc_s', workstation: true, autoLockSeconds: 30 };
-    const r = rig16([pc], [{ id: 'san', needsHome: 'pc_s', screenHabit: { lockChance: 0 } }], { minigame: (id) => open && id === 'pc_s' });
+    const r = rig16([pc], [{ id: 'san', needsHome: 'pc_s', habits: { screen: { lockChance: 0 } } }], { minigame: (id) => open && id === 'pc_s' });
     r.setNow(0);
     r.handlers['npc_left_post:*']({ npcId: 'san', expectedAwayMs: 60000 });
     r.setNow(20000);
@@ -336,7 +336,7 @@ test('slice 16 auto-lock restarts on access and holds while a minigame is open o
 
 test('slice 16 a station found after the leave decides through the habit with the stored estimate, idle clock from the leave, how late', () => {
     const objects = [];
-    const npcs = [{ id: 'ann', needsHome: 'pc_a', screenHabit: { lockIfAwayOverSeconds: 20 } }, { id: 'san', needsHome: 'pc_s', screenHabit: { lockChance: 0 } }];
+    const npcs = [{ id: 'ann', needsHome: 'pc_a', habits: { screen: { lockIfAwayOverSeconds: 20 } } }, { id: 'san', needsHome: 'pc_s', habits: { screen: { lockChance: 0 } } }];
     const r = rig16(objects, npcs);
     r.setNow(0);
     r.handlers['npc_left_post:*']({ npcId: 'ann', expectedAwayMs: 60000 });

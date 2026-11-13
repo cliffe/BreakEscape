@@ -2520,3 +2520,72 @@ nothing a sync writes or reads changes. The scenario transform renames keys insi
   `habits.screen`/`.print`/`.usb` and its `screenHabit` slip case treated as a retired key.
 - **For chunk 5:** rewrite the three authored-habit templates and freeze the `format_8c` fixtures; the
   9 + 10 corpus-test failures and the three scenarios' retired-key errors clear then.
+
+## Step 8c chunk 3 — JS readers and node reader tests (2026-11-13)
+
+Branch `build/hard-8c` on chunk 1's tip (`6943c3b47`). Chunk 3 moves the engine JS habit readers to the
+folded paths and migrates the four node test files that carry habit fixtures. No new static import, so
+no test-harness copy list changes.
+
+### What changed
+
+- **`public/break_escape/js/systems/workstation-state.js`.** `habitOf()` now reads
+  `npc?.habits?.screen` (was `npc?.screenHabit`). Precedence is untouched: the PC's own field still beats
+  the owner's habit, the order is unchanged. The three doc comments that named `screenHabit` as the data
+  key now say `habits.screen`.
+- **`public/break_escape/js/systems/npc-needs.js`.** The two print-errand readers (the `print` command at
+  :968 and the `revealOutput` hook path at :3350) now read `rec.habits?.print` (was `rec.printHabit`),
+  inlined so no local variable carries the retired substring. `work.usb` is read via `this._plan(s)?.usb`
+  (the work plan the ship filter builds from `habits.usb`) and is unchanged, as specified. The three
+  comments naming `printHabit` as the data key now say `habits.print`.
+- Engine-wide grep of `public/break_escape/js` for `screenHabit`/`printHabit`/`usbHabit`: clean (no reads,
+  no comments).
+
+### Tests
+
+All run with `bin/test-js` (plain node), `RBENV_VERSION=2.7.8` for the ruby-shelling validator sub-tests.
+
+- `workstation-state.test.mjs` (JS reader only): **PASS.** `habitOf`/`rig16` fixtures folded to
+  `habits.screen`; `decideLocked` takes the habit as a direct arg and was untouched.
+- `npc-print-forget.test.mjs`: **PASS.** The print-mechanic rig fixture folded (`tom.habits.print`); the
+  validator sub-test folded and its two `printHabit` assertion regexes moved to `habits\.print`.
+- `npc-printer-power.test.mjs`: **PASS.** Rig fixture and the three validator `printHabit: {}` fixtures
+  folded; its assertions key on `revealOutput`/room wording, unchanged.
+- `npc-office-visuals.test.mjs`: **PASS.** This file is validator-only for habits: npc fixtures folded to
+  `habits.screen`, the issue filter regex moved to `habits\.screen`, and the four message-substring
+  assertions moved to the folded wording (`NPC 'x' habits.screen never applies`,
+  `habits.screen.lockChance`, `habits.screen but the NPC owns no workstation`).
+- Importers sweep: ran every `test/js` file importing `npc-needs.js` or `workstation-state.js` (45 files,
+  fixtures excluded). **43 pass, 2 fail** — `npc-needs-slots.test.mjs` and `npc-left-behind.test.mjs`,
+  both only in their `validator: test_needs_sims has no errors` subtest. These are the live-template
+  retired-key errors chunk 1 introduced in `validate_scenario.rb` (the un-rewritten `test_needs_sims`
+  still authors 2 `screenHabit` + 1 `printHabit`), independent of chunk 3; cleared by **chunk 5**. Every
+  other test/js file that still names a habit key is chunk-4-owned (`validator-*`) or chunk-1's
+  `validator-retired-keys`; no reader-side test outside my four names a habit key.
+
+### Cross-chunk note (important)
+
+The validator sub-tests inside `npc-office-visuals`, `npc-print-forget` and `npc-printer-power` shell to
+`scripts/validate_npc_needs.rb`, which **chunk 4 owns and had already folded in the working tree** (reads
+`npc['habits']['screen']` / `habits.print`, messages say `habits.screen` / `habits.print`). My assertions
+are aligned to that folded wording. These sub-tests pass only once chunk 4's `validate_npc_needs.rb` fold
+is committed; against chunk 1's committed validator they would fail with retired-key errors. If chunk 4
+settles on different message wording, these three files' assertions must be re-checked (chunk 7 sweep).
+
+### Sync size
+
+No change. Chunk 3 only reads NPC records on the client; nothing is written to or read from player_state.
+
+### Files touched
+
+`public/break_escape/js/systems/workstation-state.js`, `public/break_escape/js/systems/npc-needs.js`,
+`test/js/workstation-state.test.mjs`, `test/js/npc-office-visuals.test.mjs`,
+`test/js/npc-print-forget.test.mjs`, `test/js/npc-printer-power.test.mjs`,
+`docs/achitechture/SCENARIO_FORMAT_HARDENING_BUILD_LOG.md`.
+
+### Expected failures left for later chunks
+
+- `npc-needs-slots.test.mjs`, `npc-left-behind.test.mjs` (the `test_needs_sims` validator subtest only):
+  cleared by **chunk 5** (template rewrite).
+- The three validator sub-tests in my files depend on **chunk 4**'s `validate_npc_needs.rb` fold being
+  committed (see cross-chunk note).

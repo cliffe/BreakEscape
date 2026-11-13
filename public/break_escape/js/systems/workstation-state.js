@@ -77,7 +77,7 @@
  *
  * Lock habits and auto-lock (OFFICE_LIFE_PLAN 12.2, slice 16):
  *
- *   NPC `screenHabit: { lockChance, lockIfAwayOverSeconds }`: the person's habit, used only when
+ *   NPC `habits.screen: { lockChance, lockIfAwayOverSeconds }`: the person's habit, used only when
  *     the object has neither lockChance nor locksScreenOnLeave (the object wins). A trip expected
  *     (npc_left_post expectedAwayMs) to last at most lockIfAwayOverSeconds stays open; a longer one
  *     (or one with no estimate) rolls lockChance (implied 1 when only the threshold is set), salt
@@ -121,14 +121,14 @@ export function ownerOf(data) {
 /** The owner's screen habit, or null. */
 export function habitOf(ownerId, npcs) {
     const npc = (npcs || []).find(n => n?.id === ownerId);
-    const h = npc?.screenHabit;
+    const h = npc?.habits?.screen;
     return h && typeof h === 'object' ? h : null;
 }
 
 /**
  * The PC's own setting beats its owner's habit (user decision q89, 2026-11-13; it has always
  * worked this way). The order, first match wins: the policy's autoLockMin 0, then the object's
- * lockChance, then the object's locksScreenOnLeave, then the owner's screenHabit, then "locks".
+ * lockChance, then the object's locksScreenOnLeave, then the owner's habits.screen, then "locks".
  * A habit is never read for a PC that sets lockChance or locksScreenOnLeave. The server's
  * AccessIdentities.screen_always_locks? and OwnerClaim.open_without_estimate? read the same
  * order; README_scenario_design.md "Who decides the lock" documents it for authors, and
@@ -137,7 +137,7 @@ export function habitOf(ownerId, npcs) {
  * Decide whether the screen locks on this leave. A lockChance wins over locksScreenOnLeave and
  * is resolved through `roll(npcId, salt)` (NPCNeedsSystem.roll, seeded); without a roller it
  * falls back to the plain config so the mechanic still works in a stub world. With neither
- * field on the object, the owner's `habit` (screenHabit) decides; `expectedAwayMs` is the
+ * field on the object, the owner's `habit` (habits.screen) decides; `expectedAwayMs` is the
  * leave's estimate (null counts as a long trip). With no habit either, the screen locks.
  * A `policy` (access model 5.5) with autoLockMin 0 locks whatever the object or habit says.
  */

@@ -964,13 +964,13 @@ export class NPCNeedsSystem {
             return true;
         }
         // Slice 17: { print: "<producerId>" } or { print: { producer, fetchAfterSeconds, forget } }
-        // prints as this NPC at once, owned, with its printHabit (the command's fields win)
+        // prints as this NPC at once, owned, with its habits.print (the command's fields win)
         if (cmd && typeof cmd === 'object' && cmd.print !== undefined) {
             const spec = typeof cmd.print === 'string' || Array.isArray(cmd.print) ? { producer: cmd.print } : (cmd.print && typeof cmd.print === 'object' ? cmd.print : null);
             const list = printerList(spec?.producer);
             if (!list.length) return false;
             const rec = this.world.getNpc(npcId) || {};
-            const own = { habit: rec.printHabit && typeof rec.printHabit === 'object' ? rec.printHabit : {}, viaCommand: true };
+            const own = { habit: rec.habits?.print && typeof rec.habits.print === 'object' ? rec.habits.print : {}, viaCommand: true };
             if (Array.isArray(spec.fetchAfterSeconds)) own.fetchAfterSeconds = spec.fetchAfterSeconds;
             if (typeof spec.forget === 'boolean') own.forget = spec.forget;
             // Slice 22: the first listed printer that is on and has a slot; none on prints nothing
@@ -1552,7 +1552,7 @@ export class NPCNeedsSystem {
             const cand = this._carryCandidate(s, tag, it, objects, pos);
             if (cand) best = { ...cand, need: null, score: it.weight };
         }
-        // A due print errand (slice 17): scored like an interest, printHabit.weight (default 2)
+        // A due print errand (slice 17): scored like an interest, habits.print.weight (default 2)
         if (this._prints.size) {
             const e = this._errandCandidate(s);
             if (e && (!best || e.score > best.score)) best = e;
@@ -3345,10 +3345,10 @@ export class NPCNeedsSystem {
             if (typeof hook.emitEvent === 'string' && hook.emitEvent) this._emit(hook.emitEvent, { npcId: id, objectId: job.targetId });
             // Something that prints: show the producer's first free reveal slot (2.2 Part A). Only a
             // need use prints (slice 17), never a delivery, and only when the start-time roll said so;
-            // the print is owned (reserved, fetched or forgotten) only when the NPC has a printHabit
+            // the print is owned (reserved, fetched or forgotten) only when the NPC has a habits.print
             // Slice 22: the producer is chosen now, from the list, by which printers are on
             if (printerList(hook.revealOutput).length && job.need && !job.carrying && job.printTo) {
-                const habit = rec.printHabit && typeof rec.printHabit === 'object' ? rec.printHabit : null;
+                const habit = rec.habits?.print && typeof rec.habits.print === 'object' ? rec.habits.print : null;
                 const pick = this._pickProducer(job.printTo);
                 if (pick.producerId) this._revealOutput(pick.producerId, id, habit ? { habit } : null, pick.skipped);
                 else this._printBlocked(s, job.targetId, job.printTo, false);
