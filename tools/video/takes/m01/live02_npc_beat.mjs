@@ -31,6 +31,8 @@ export default async (page, bridge, mark) => {
   const seen = watchTts(page, mark);
   const vw = makeVw(seen);
   await sleep(1000);
+  await bridge.moveToNear(NPC_ID, { timeoutMs: 20000 }).catch(() => {});
+  await sleep(500);
   const r = await bridge.interact(NPC_ID, { timeoutMs: 20000 });
   if (!r || r.ok === false) throw new Error('could not open NPC ' + NPC_ID + ' ' + JSON.stringify(r).slice(0, 300));
   await bridge.waitForDialogue({ timeoutMs: 10000 }).catch(() => {});

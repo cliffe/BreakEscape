@@ -37,20 +37,26 @@ export default async (page, bridge, mark) => {
   const mg = (await bridge.getState()).activeMinigame;
   mark('vault-open', { minigame: mg && mg.id });
   await sleep(3000); // hold on the opened case: EYES ONLY stamp, the recovered documents list
-  // Read each payoff document in turn (best-effort: the container lists them by name).
-  for (const name of DOCS) {
-    const c = await bridge.minigame.clickText(name).catch(() => ({ ok: false }));
-    if (c && c.ok) {
-      await sleep(400);
-      mark('read:' + name, { minigame: (await bridge.getState()).activeMinigame?.id });
-      await sleep(HOLD_MS[name] || 5000);
-      mark('hold-end:' + name);
-      // back out of the document to the container (or close if it closed the container)
-      for (let i = 0; i < 2; i++) { await bridge.minigame.close().catch(() => {}); await sleep(500); }
-      // re-open the archive if closing the doc also closed the case
+  // The container lists its documents as take-able items; open each by index (clickText does not match
+  // the control labels). Read the item list, then open the view items in turn.
+  const mgState = await bridge.minigame.getState().catch(() => ({}));
+  const items = (mgState && Array.isArray(mgState.items)) ? mgState.items : [];
+  mark('items', { names: items.map(i => (i && (i.name || i.label || i.title)) || i).slice(0, 6), count: items.length });
+  const viewIdx = items.map((it, i) => ({ it, i })).filter(({ it }) => !it || it.kind === undefined || it.kind === 'view' || /document|architect|architecture|authoriz/i.test(JSON.stringify(it)));
+  const toOpen = (viewIdx.length ? viewIdx : items.map((it, i) => ({ it, i }))).slice(0, 2);
+  for (const { it, i } of toOpen) {
+    const nm = (it && (it.name || it.label || it.title)) || ('item ' + i);
+    const c = await bridge.minigame.take(i).catch(() => ({ ok: false }));
+    if (c && c.ok !== false) {
+      await sleep(500);
+      mark('read:' + nm, { minigame: (await bridge.getState()).activeMinigame?.id });
+      const hold = HOLD_MS[nm] || (/architecture/i.test(nm) ? 5500 : 6500);
+      await sleep(hold);
+      mark('hold-end:' + nm);
+      for (let k = 0; k < 2; k++) { await bridge.minigame.close().catch(() => {}); await sleep(500); }
       if (!(await bridge.getState()).activeMinigame) { await bridge.interact(ARCHIVE_ID, { timeoutMs: 15000 }).catch(() => {}); await sleep(1200); }
     } else {
-      mark('read-skip:' + name, { why: JSON.stringify(c).slice(0, 120) });
+      mark('read-skip:' + nm, { why: JSON.stringify(c).slice(0, 120) });
     }
   }
   for (let i = 0; i < 4 && (await bridge.getState()).activeMinigame; i++) { await bridge.minigame.close().catch(() => {}); await sleep(600); }
