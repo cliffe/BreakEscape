@@ -1,0 +1,13 @@
+{
+  "key": "55292b75a737744ffe955e30e6e8fb0c",
+  "npc": "robert_vance_phone",
+  "text": "They didn't need me on the ninth. I log every round on the Hall 1 panel. They lifted my print off it. Do the same.",
+  "voice": "Orus",
+  "style": "Operations manager and OT engineer at a grid battery site, mid-fifties. Speak with a consistent North-East English (Teesside) accent throughout -- do not shift to any other accent. Firm, low-to-mid pitch; brisk, clipped pace. Conscientious and overworked; defensive at first, then alarmed and determined once he realises the threat is real. Speaking over a phone line from the control room.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-13",
+  "recorded_at": "2026-11-13T00:18:12Z"
+}

@@ -92,6 +92,16 @@ VAR archive_code_guide_hint_given = false
 
 // ---- Ink-local (CONTRACT §5.4; nothing outside this file reads them) ----
 VAR dock_heard = false
+// Phone calls M3: shadows for the read-outs. Each knot sets its own on its first
+// line, because the #set_global tag lands only after the next choice list is built.
+// flag1_read_heard is also a scenario global (the tag sets it; the flag 1 text's
+// skipIfGlobal reads it), so the shadow and the global share the name on purpose.
+VAR flag1_read_heard = false
+VAR ledger_read_here = false
+VAR flag1_read_done = false   // M3 R2 m1: the read-out has finished (ink-local)
+VAR ledger_read_done = false   // M3 R2 m1: the read-out has finished (ink-local)
+VAR afterwards_here = false
+VAR hour_read_here = false
 VAR catalogue_topic_given = false
 VAR series_topic_given = false
 VAR tran_topic_given = false
@@ -120,17 +130,24 @@ VAR hand_answered_here = false
 // Guard 1: a HaX scene is pending. Closing her thread fires the
 // conversation_closed:agent_0x99 re-ring (S4 §6).
 // Guard 2: the Recruiter's call is pending. Her ring comes back on the next
-// room exit, not on this close, so "take it when it rings".
+// room exit, not on this close.
+// Phone calls M3: both are plain texts. Guard 1 never promises a ring: for a
+// forced voiced scene the call opens at once when this thread closes, but for the
+// hour read's silent re-ring it is a text and for the Recruiter's scene (guard 2)
+// the ring waits for the next room exit.
 {
-- (recruiter_gone and not deck_choice_made) or (identity_scene_started and not identity_scene_done) or (hour_read_started and not hour_read_done) or (tesseract_call_started and not tesseract_call_done):
-    Pick up. I'm ringing you.
+- hax_voiced_scene_pending():
+    One moment. Something's come in.
     #exit_conversation
     -> DONE
 - recruiter_call_started and not recruiter_gone and not deck_choice_made:
-    Her call first. Take it when it rings.
+    Her call first. I'll be on it with you.
     + [Right.]
         #exit_conversation
     -> DONE
+// Phone calls M3: the read-outs (flag1_read, ledger_read, afterwards, hour_read) are
+// diverted to from the top of support_hub, which this block reaches and which a
+// reopened thread re-runs.
 // Stage 8 m-14: a first open after flag 1 (a late first open, or a seeded
 // playtest segment) skips the Act 1 dock lines and goes to the hub.
 - not dock_heard and not flag1_submitted:
@@ -203,6 +220,13 @@ Night guard. Twenty-four. Not ours, not theirs. Don't hurt him.
 // FLAG 1 READ (Beat 1.4; unvoiced)
 // ================================================
 === flag1_read ===
+// Idempotent: a stale toast tap, or a thread opened before her text arrived, shows the hub.
+// M3 R2 m1: a read-out that was started but not finished goes to its choices
+// (a reopen with changed globals re-runs this knot), a finished one to the hub.
+{flag1_read_done: -> support_hub}
+{flag1_read_heard: -> ask}
+~ flag1_read_heard = true
+#set_global:flag1_read_heard:true
 // The stacks door opens on its own mapping (S4 §4 row 1), which can retry,
 // so nothing here says the door is open.
 // Walkthrough R1 m-01: the salvage line is given on the first line, so a
@@ -211,6 +235,9 @@ Night guard. Twenty-four. Not ours, not theirs. Don't hurt him.
 Series R is the restricted series. R-114 to R-161, bay ten, behind the cage mesh in the restricted stacks.
 Sorensen's in there with them. The boxes on the clerk's trolleys are the ones on this list.
 The catalogue keeps something else live. Their ledger.
+-> ask
+
+= ask
 + [Ledger or stacks first?]
     The ledger keeps. Her shredder doesn't. Stacks first.
 + [She's shredding Series R?]
@@ -225,6 +252,11 @@ Her card's on a reel at her hip. You've done this before.
 I've sent you the odd one. Salvage cage, their own code.
 // Scenario design R3 m2: name Act 3's target where the line is handed over.
 The catalogue calls what's in there Tomb Beta. It's still drawing power, and nobody's scheduled it for anything.
+~ flag1_read_done = true
+// m1 R2: a scenario global so Nightshade's close-mapping ring keys on the card line
+// having played, not on flag1_read_heard (set on this knot's first line). A player who
+// closes at the first choice (before this) doesn't get him before the card line.
+#set_global:flag1_read_done:true
 {flag1_to_hub: -> support_hub}
 // Final playtest: the thread closed ~3 ms after the last line, so the call
 // ends on a one-word reply (m01/m05 pattern) and the line can be read.
@@ -236,12 +268,18 @@ The catalogue calls what's in there Tomb Beta. It's still drawing power, and nob
 // LEDGER READ (Beat 2.3; unvoiced)
 // ================================================
 === ledger_read ===
+{ledger_read_done: -> support_hub}
+{ledger_read_here or ledger_read_heard: -> ask}
 // First line sets ledger_read_heard: the Recruiter's ring (a) and ring (c)
 // key on it (CONTRACT §6.2; ring (b) removed at scenario design R4 m3). No pronoun for WREN.
+~ ledger_read_here = true
 #set_global:ledger_read_heard:true
 The ledger's live. Twenty-three placements, forty-seven candidates.
 And a legacy section, older than any list we've ever had off them.
 One legacy entry, codename WREN. Updated on day ten, in Sorensen's hand. "Assigned TF Null, Montana operation."
+-> ask
+
+= ask
 + [TF Null. That's the raid team.]
     WREN's on our team. One of the four you met at the briefing.
 + [Who is WREN?]
@@ -273,6 +311,7 @@ I've told the Director. He'll say nothing to them. Neither will you.
 - m08_named_on_evidence:
     You found Nightshade on paper. Same again.
 }
+~ ledger_read_done = true
 // Final playtest: the thread closed ~3 ms after the last line, so the call
 // ends on a one-word reply (m01/m05 pattern) and the line can be read.
 + [Got it.]
@@ -283,6 +322,8 @@ I've told the Director. He'll say nothing to them. Neither will you.
 // AFTERWARDS (Beat 2.7; unvoiced; hub topic 7 diverts here)
 // ================================================
 === afterwards ===
+{afterwards_here or afterwards_heard: -> support_hub}
+~ afterwards_here = true
 // One loss line, a fixed string per case (A-6): the bin that went, by
 // cage_bin (the other bin is Nightshade's copy on m08_nightshade_tidied),
 // with the tape that went, by deck_pulled.
@@ -583,10 +624,13 @@ It isn't my call. It isn't yours either. If you're going to, don't ask me first.
 // HOUR READ (Beat 3.5; text, forced, not voiced)
 // ================================================
 === hour_read ===
+// Idempotent. The forced re-rings use hour_read_resume, which enters body directly.
+{hour_read_here or hour_read_started: -> support_hub}
 -> body
 
 // Beat 3.5. Text, not voiced. UTC only.
 = body
+~ hour_read_here = true
 #set_global:hour_read_started:true
 #unlock_task:hear_the_mirror_job
 That job on his box still copies to Tomb Gamma. It's the Publication.
@@ -693,7 +737,29 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
 // ================================================
 // SUPPORT HUB (unvoiced; newest topics first; S4 §7.1)
 // ================================================
+// hax_voiced_scene_pending: a forced HaX scene is pending (start guard 1).
+// hax_scene_pending: that, or the Recruiter's call is pending (guard 2) too. A read-out waits for them.
+=== function hax_voiced_scene_pending() ===
+~ return (recruiter_gone and not deck_choice_made) or (identity_scene_started and not identity_scene_done) or (hour_read_started and not hour_read_done) or (tesseract_call_started and not tesseract_call_done)
+
+=== function hax_scene_pending() ===
+~ return hax_voiced_scene_pending() or (recruiter_call_started and not recruiter_gone and not deck_choice_made)
+
 === support_hub ===
+// Phone calls M3: progress never depends on tapping a toast. A thread opened by
+// hand, or reopened with a changed global, plays whichever read-out is still
+// pending, under the same conditions as its mapping. The voiced scenes' guard comes
+// first: while one is pending the hub shows its choices as before.
+{
+- not hax_scene_pending() and flag1_submitted and not flag1_read_heard:
+    -> flag1_read
+- not hax_scene_pending() and flag2_submitted and not ledger_read_heard and not ledger_read_here:
+    -> ledger_read
+- not hax_scene_pending() and deck_choice_made and not afterwards_heard and not afterwards_here:
+    -> afterwards
+- not hax_scene_pending() and flag4_submitted and identity_scene_done and not hour_read_started and not hour_read_here:
+    -> hour_read
+}
 // Phone resting knot: choices only. Topics use + with not-guards, never *.
 // 1. Bring me in. Scenario design R1 M1: a confirm step first (the user's rule:
 // warn before the debrief and let the player finish up). Up to two open threads.
@@ -781,7 +847,8 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
         It's a floor safe, in her office.
     }
     -> support_hub
-// 7. Afterwards, for a player who closed the call early.
+// 7. Afterwards, for a player who closed the call early. It also shows while
+// hax_scene_pending() holds back the hub's own divert to afterwards.
 + {deck_choice_made and not afterwards_heard} [Afterwards.]
     -> afterwards
 // 8. The Reading (MC §4.6).

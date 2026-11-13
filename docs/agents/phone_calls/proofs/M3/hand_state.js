@@ -1,0 +1,1 @@
+return { notes: (window.gameState.notes||[]).map(n=>n.title||n.id).join('|'), g: ['flag1_submitted','flag2_submitted','ledger_read_heard','deck_choice_made','afterwards_heard','flag4_submitted','identity_scene_done','hour_read_started','hour_read_done'].map(k=>k+'='+window.gameState.globalVariables[k]).join(' ') };

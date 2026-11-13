@@ -732,6 +732,7 @@ CREDITS
           "_comment": "Agent HaX -- handler, phone NPC on player_phone, reachable from every room. Runs the support hub, the per-stage VM hints, the field guides, and the emotional throughline -- she has worked with all three suspects for years. WP6 adds itemsHeld/hub gating; the eventMappings below wire flag rewards to narrative globals and acknowledge KOs.",
           "id": "agent_0x99",
           "displayName": "Agent HaX",
+          "callLabel": "SAFETYNET secure line",
           "npcType": "phone",
           "phoneId": "player_phone",
           "avatar": "assets/characters/agent_hax_v2_headshot.png",
@@ -742,6 +743,9 @@ CREDITS
             "language": "en-GB"
           },
           "currentKnot": "start",
+          "call": [
+            { "knot": "hax_read_1", "button": false }
+          ],
 <%# PASS 2 rework of HaX's mappings:
     - the 8 s timedMessage could land over the opening cutscene (lesson 20);
       it now fires when that cutscene closes.
@@ -871,7 +875,7 @@ CREDITS
               "eventPattern": "global_variable_changed:found_badge_audit",
               "condition": "value === true && globalVars.netherton_hostile === true && globalVars.netherton_ko !== true && globalVars.mole_identified !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 2000, "message": "That's the door audit. The Director won't hear it from you, so read it to me: the door against the minute the plan was opened. Call when you've got both." }
+              "sendTimedMessage": { "delay": 2000, "message": "That's the door audit. The Director won't hear it from you. Read it to me: the door against the minute the plan was opened. Call me when you've got both." }
             },
             {
               "eventPattern": "global_variable_changed:mole_identified",
@@ -1032,7 +1036,7 @@ CREDITS
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'agent_0x99_person' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1000, "message": "Ow. I'm not hitting back, 0x00, but I'm done talking in person tonight. Ring me. Q until the open hand shows to use anything." }
+              "sendTimedMessage": { "delay": 1000, "message": "Ow. I'm not hitting back, 0x00, but I'm done talking in person tonight. Message me. Q until the open hand shows to use anything." }
             },
             {
               "_comment": "PASS 3 (P2): the USB stick from Nightshade's locker is opened (container path fires its onPickup). Offers the CyberChef guide.",

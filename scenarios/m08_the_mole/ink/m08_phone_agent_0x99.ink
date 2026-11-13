@@ -89,7 +89,9 @@ So I'm going to be very professional tonight. Bear with me.
 // source as well as the door, as the Director's reading does.
 // Alignment C3 (K5): the audit-off-me reply is stale once he's down.
 // Design C1 (D1): or the Director punched and left standing.
-+ { (netherton_ko or netherton_hostile) and found_badge_audit and (found_timeline or found_access_logs_hint or found_access_logs) and not mole_identified } [I can name the leak.] -> hax_read_1
++ { (netherton_ko or netherton_hostile) and found_badge_audit and (found_timeline or found_access_logs_hint or found_access_logs) and not mole_identified } [I can name the leak.]
+    #place_call:hax_read_1
+    -> DONE
 + { mole_identified and not fate_decided and not asked_really } [It's really Nightshade.]
     ~ asked_really = true
     Yeah. It's really Nightshade.
@@ -222,32 +224,55 @@ So I'm going to be very professional tonight. Bear with me.
     -> hub
 
 === hax_read_1 ===
-{ mole_identified: -> hub }
-Two questions, the ones he'd ask. When was the plan opened?
+// lint: call-knot
+{ mole_identified:
+    #exit_conversation
+    -> DONE
+}
+{ hax_read_1 > 1:
+    Again, then. When was the plan opened?
+- else:
+    Two questions, the ones he'd ask. When was the plan opened?
+}
 + [10:15 UTC.] -> hax_read_wrong_time
 + [10:32 UTC.] -> hax_read_wrong_time
 + [10:38 UTC.] -> hax_read_2
 + [11:25 UTC.] -> hax_read_wrong_time
-+ [Let me read it again.] -> hub
++ [Let me read it again.]
+    Take your time. I'm not going anywhere.
+    #exit_conversation
+    -> DONE
 
 === hax_read_wrong_time ===
+// lint: call-knot
 That's a door moving or the file closing. When did it open? Read it again and call me back.
--> hub
+#exit_conversation
+-> DONE
 
 === hax_read_2 ===
-{ mole_identified: -> hub }
+// lint: call-knot
+{ mole_identified:
+    #exit_conversation
+    -> DONE
+}
 Who was behind the lab door at 10:38, and still inside?
 + [Vector.] -> hax_read_wrong_who
 + [Nightshade.] -> hax_read_right
 + [Phantom.] -> hax_read_wrong_who
 + [None of them.] -> hax_read_wrong_who
-+ [Let me read it again.] -> hub
++ [Let me read it again.]
+    Go on. The minute's there.
+    #exit_conversation
+    -> DONE
 
 === hax_read_wrong_who ===
+// lint: call-knot
 Read the door against the minute, not the man. Who was still inside at 10:38? Call me back.
--> hub
+#exit_conversation
+-> DONE
 
 === hax_read_right ===
+// lint: call-knot
 ~ mole_identified = true
 ~ named_by_hax = true
 #complete_task:name_the_mole
@@ -255,8 +280,14 @@ Read the door against the minute, not the man. Who was still inside at 10:38? Ca
 #set_global:mole_identified:true
 In at 10:15, out at 11:43. Vector was gone by 10:32, and Phantom was on a plane.
 Nightshade. I trained with him.
-{netherton_ko:I'll put it in front of the Director when he can stand.|I'll put it in front of the Director myself. He won't take it from you tonight.} You finish the chain.
--> hub
+{ - netherton_ko:
+    I'll put it in front of the Director when he can stand.
+- else:
+    I'll put it in front of the Director myself. He won't take it from you tonight.
+}
+You finish the chain.
+#exit_conversation
+-> DONE
 
 // PASS 3 (P1): text knot, then a choices-only knot, so a phone re-navigation
 // (which lands on the knot that owns the choices, E10/E13) replays nothing.

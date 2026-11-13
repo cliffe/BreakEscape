@@ -189,7 +189,7 @@ Agent 0x5E 'Lantern': Service side. Go on.
 // check gives nothing away.
 === accuse_check ===
 // Playtest R1 m-1: a condition, not a verdict, for the right officer too.
-Agent HaX: If that's wrong, Kowalczyk's off the raid till you can clear her. Sure?
+agent_0x99: If that's wrong, Kowalczyk's off the raid till you can clear her. Sure?
 + [I'm sure.]
     -> card_1
 + [Forget I said it.]
@@ -248,7 +248,7 @@ Narrator: For a moment she has nothing to say.
 ~ sleeper_caught = true
 ~ wren_held = true
 {m09_completed:
-    Agent HaX: "The long way is over." I said that the morning you handed it over.
+    agent_0x99: "The long way is over." I said that the morning you handed it over.
 }
 Agent 0x5E 'Lantern': Well. It was a good cracker. #delivery: flat on the first word, then almost laughing, rueful
 // m09 A1: what the player said to her about it on the apron.

@@ -117,6 +117,32 @@ module BreakEscape
       assert_equal [nil, 'Speaker:'], InkLineWalker.split_prefix('Speaker:')
       assert_equal [nil, 'No colon here'], InkLineWalker.split_prefix('No colon here')
     end
+
+    # Review R2 m4: inklecate writes `{cond: text #delivery: note}` with the tag opened inside the
+    # branch and closed after it, which used to raise NoMethodError and take the whole story down.
+    # Fixture inline_tag.ink (recompile with inklecate if it changes).
+    test "an inline {cond: text #tag} skips that line with a warning and keeps the rest" do
+      logged = []
+      logger = Object.new
+      logger.define_singleton_method(:warn) { |msg = nil, &blk| logged << (msg || blk&.call) }
+      original = Rails.logger
+      walker = begin
+        Rails.logger = logger
+        InkLineWalker.from_file(Engine.root.join('test/fixtures/files/ink_line_walker/inline_tag.json').to_s).tap(&:lines)
+      ensure
+        Rails.logger = original
+      end
+      raws = walker.lines.map(&:raw)
+      assert_includes raws, 'Before line.'
+      assert_includes raws, 'After line.'
+      assert_includes raws, 'Last line.'
+      refute(raws.any? { |r| r.include?('Hello there') || r.include?('Another one') }, 'the odd lines are not listed')
+      after = walker.lines.find { |l| l.raw == 'After line.' }
+      assert_equal ['delivery: calm'], after.tags
+      assert(walker.unresolved.any? { |u| u.reason.to_s.include?('inline conditional') })
+      assert_equal 1, logged.size, 'one warning per story'
+      assert_match(/inline conditional/, logged.first)
+    end
   end
 
   class TtsLineExtractorTest < ActiveSupport::TestCase

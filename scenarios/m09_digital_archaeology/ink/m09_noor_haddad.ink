@@ -121,7 +121,7 @@ VAR staff_card_cloned = false
     Noor Haddad: She knew my name before I said it. Gave me a five-hundred-dollar filing bonus my first week.
     // Playtest phase 5 m-6: the tell sends her home for good, so say so before it's on offer.
     {not (m05_found_pipeline_list and not m05_recruiter_deal_accepted):
-        Agent HaX: Tell her what that bonus was and she goes home tonight. Anything you need from her, get it first.
+        agent_0x99: Tell her what that bonus was and she goes home tonight. Anything you need from her, get it first.
     }
     -> back
 // R2 B-R2-02: the bonus button only once she has mentioned the bonus.
@@ -141,9 +141,9 @@ VAR staff_card_cloned = false
 Narrator: She has her phone out. Her thumb is already on his number.
 {not noor_tell_signposted:
     ~ noor_tell_signposted = true
-    Agent HaX: She's a witness now. She goes tonight, and she doesn't ring her dad for a while.
+    agent_0x99: She's a witness now. She goes tonight, and she doesn't ring her dad for a while.
 }
-Agent HaX: Don't let her ring from here.
+agent_0x99: Don't let her ring from here.
 + [Not tonight. Not from here.]
     #set_global:noor_told:true
     Noor Haddad: He waits up for my call. He'll think I forgot him.

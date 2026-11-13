@@ -312,16 +312,16 @@ Narrator: He lays the Montana order on a crate and uncaps a pen.
 Narrator: HaX is on the line from the Citadel, already packing.
 {
 - hax_confession_answer == "should_have_told":
-    Agent HaX: Everything I have on the bunker is on your phone. As promised.
+    agent_0x99: Everything I have on the bunker is on your phone. As promised.
 - hax_confession_answer == "same_in_your_place":
-    Agent HaX: I said thank you once. I'm not saying it twice. I haven't forgotten. #delivery: a beat's pause before the last sentence, softer
+    agent_0x99: I said thank you once. I'm not saying it twice. I haven't forgotten. #delivery: a beat's pause before the last sentence, softer
 - hax_confession_answer == "afterwards":
-    Agent HaX: You said afterwards. I'm holding you to it.
+    agent_0x99: You said afterwards. I'm holding you to it.
 }
 // R36 (VM weave): HaX names the player's own technical arc once, concept level.
-Agent HaX: And think how we did it. Onto their catalogue on a night-run login someone left on a slip, then up to the box's keeper to reach the ledger.
-Agent HaX: Onto the Architect's own server through a hole in his enrolment site, then the same climb to lift his name and his notice. Access, escalate, recover. Twice over.
-Agent HaX: I still owe you the rest. When this is over.
+agent_0x99: And think how we did it. Onto their catalogue on a night-run login someone left on a slip, then up to the box's keeper to reach the ledger.
+agent_0x99: Onto the Architect's own server through a hole in his enrolment site, then the same climb to lift his name and his notice. Access, escalate, recover. Twice over.
+agent_0x99: I still owe you the rest. When this is over.
 // Why the team goes in together, the last spoken line. double_crossed first.
 {
 - recruiter_offer == "double_crossed":

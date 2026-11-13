@@ -817,6 +817,7 @@ scada_password = "CascadeWindow19"
           "_comment": "Agent HaX -- handler, phone NPC on player_phone, reachable from every room. Runs the delegation, the redirect window, the five field guides and the per-stage VM hints. WP6 adds itemsHeld and the hub gating; WP9 adds the voice block.",
           "id": "agent_0x99",
           "displayName": "Agent HaX",
+          "callLabel": "SAFETYNET secure line",
           "npcType": "phone",
           "phoneId": "player_phone",
           <%# PASS 5 alignment r1 (regression M-2): HaX's own talk bust and visemes,
@@ -835,6 +836,10 @@ scada_password = "CascadeWindow19"
             "language": "en-GB"
           },
           "currentKnot": "start",
+          <%# Phone calls M6: the bring-in is placed from the hub choice [Bring me in.]
+              via #place_call:bring_me_in (button: false, so no header Call button; it is a
+              one-shot hand-off to Netherton's secure link, set up by debrief_requested). %>
+          "call": [{ "knot": "bring_me_in", "button": false }],
 <%# WP2 STATE BRIDGES on the handler. Two jobs only:
       (a) turn engine-observed progress into the globals CONTRACT.md S6 says the
           hub and the ink read, so nothing depends on a conversation being had;
@@ -866,7 +871,7 @@ scada_password = "CascadeWindow19"
               "condition": "!globalVars.hurt_line_said && !globalVars.team_assigned",
               "onceOnly": true,
               "setGlobal": { "hurt_line_said": true },
-              "sendTimedMessage": { "delay": 1000, "message": "You're inside, and the team's still over Denver waiting on your call. Phone me when you've decided. Let it hurt afterwards, not during." }
+              "sendTimedMessage": { "delay": 1000, "message": "You're inside, and the team's still over Denver waiting on your word. Message me where they go. Let it hurt afterwards, not during." }
             },
             {
               "eventPattern": "room_entered:operations_floor",
@@ -893,7 +898,7 @@ scada_password = "CascadeWindow19"
               "eventPattern": "global_variable_changed:found_coordination_traffic",
               "condition": "value === true && !globalVars.projection_revised",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 3000, "message": "If a row in there doesn't match what we were told, call me and say which.", "skipIfGlobal": "projection_revised" }
+              "sendTimedMessage": { "delay": 3000, "message": "If a row in there doesn't match what we were told, message me and say which.", "skipIfGlobal": "projection_revised" }
             },
             {
               "_comment": "PASS 3 (P5): Elena's verdict, sent once (verdict_sent latch; the hub's deduce_right sets it too). Keyed on her chat closing, never mid-scene, and repeats none of her lines. PASS 5 r1: no longer requires the decode unread, because the decode no longer sets projection_revised.",
@@ -901,7 +906,7 @@ scada_password = "CascadeWindow19"
               "condition": "globalVars.projection_revised === true && !globalVars.verdict_sent && !globalVars.team_redirected && globalVars.team_assignment !== 'trojan_horse' && !globalVars.redirect_window_closed && globalVars.team_assigned === true",
               "onceOnly": true,
               "setGlobal": { "verdict_sent": true, "verdict_from_elena": true },
-              "sendTimedMessage": { "delay": 1500, "message": "One frightened engineer, but it fits. Their share will have it in writing. If the team's in the wrong place, call me before you log in on their host." }
+              "sendTimedMessage": { "delay": 1500, "message": "One frightened engineer, but it fits. Their share will have it in writing. If the team's in the wrong place, tell me before you log in on their host." }
             },
             {
               "_comment": "PASS 5 alignment r2 (m8): the team isn't committed yet, so there is no wrong place for it to be in.",
@@ -1569,18 +1574,24 @@ scada_password = "CascadeWindow19"
           "currentKnot": "start",
           "eventMappings": [
             {
-              "_comment": "T-30 equivalent: first contact once the player is inside. A bark, not an auto-opened call, so it never tears down a conversation or a terminal (lesson 20). PASS 5 scenario design r1 (m4): skipped when T-20 has already played, because T-20 was then the first contact and this bark would open on dead air.",
+              "_comment": "T-30 equivalent: first contact once the player is inside. A withheld voiced call (No caller ID, his terminal look), not an auto-opened one, so the ringer waits for any open conversation or terminal before it rings (lesson 20). Declined or missed, it leaves taunt_t30_vm. PASS 5 scenario design r1 (m4): skipped when T-20 has already played, because T-20 was then the first contact and this call would ring on dead air.",
               "eventPattern": "room_entered:operations_floor",
               "condition": "!globalVars.architect_t20_played",
               "onceOnly": true,
               "setGlobal": { "architect_contact": true },
-              "sendTimedMessage": { "delay": 5000, "message": "Agent 0x00.", "targetKnot": "start" }
+              "delayMs": 5000,
+              "conversationMode": "phone-chat",
+              "targetKnot": "taunt_t30",
+              "ring": { "withheld": true, "onMissed": "voicemail", "voicemailKnot": "taunt_t30_vm" }
             },
             {
               "eventPattern": "global_variable_changed:architect_t20_played",
               "condition": "value === true && !globalVars.grid_saved",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 500, "message": "A word, Agent 0x00.", "targetKnot": "start" }
+              "delayMs": 500,
+              "conversationMode": "phone-chat",
+              "targetKnot": "taunt_t20",
+              "ring": { "withheld": true, "onMissed": "voicemail", "voicemailKnot": "taunt_t20_vm" }
             },
             <%# PASS 5 alignment r1 (M4): T-10 fires 30 minutes after the commit,
                 ten before the redirect window shuts. "Ten minutes left" named no clock
@@ -1594,31 +1605,46 @@ scada_password = "CascadeWindow19"
               "eventPattern": "global_variable_changed:architect_t10_played",
               "condition": "value === true && !globalVars.grid_saved && !globalVars.architect_t5_played && !globalVars.redirect_window_closed && !globalVars.cascade_armed && globalVars.team_assignment !== 'trojan_horse'",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 500, "message": "Ten minutes before your team is too committed to move, Agent 0x00.", "targetKnot": "start" }
+              "delayMs": 500,
+              "conversationMode": "phone-chat",
+              "targetKnot": "taunt_t10",
+              "ring": { "withheld": true, "onMissed": "voicemail", "voicemailKnot": "taunt_t10_vm" }
             },
             {
               "eventPattern": "global_variable_changed:architect_t10_played",
               "condition": "value === true && !globalVars.grid_saved && !globalVars.architect_t5_played && !globalVars.redirect_window_closed && !globalVars.cascade_armed && globalVars.team_assignment === 'trojan_horse'",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 500, "message": "A word about Austin, Agent 0x00.", "targetKnot": "start" }
+              "delayMs": 500,
+              "conversationMode": "phone-chat",
+              "targetKnot": "taunt_t10",
+              "ring": { "withheld": true, "onMissed": "voicemail", "voicemailKnot": "taunt_t10_vm" }
             },
             {
               "eventPattern": "global_variable_changed:architect_t10_played",
               "condition": "value === true && !globalVars.grid_saved && !globalVars.architect_t5_played && globalVars.cascade_armed === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 500, "message": "A word about doors, Agent 0x00.", "targetKnot": "start" }
+              "delayMs": 500,
+              "conversationMode": "phone-chat",
+              "targetKnot": "taunt_t10",
+              "ring": { "withheld": true, "onMissed": "voicemail", "voicemailKnot": "taunt_t10_vm" }
             },
             {
               "eventPattern": "global_variable_changed:architect_t5_played",
               "condition": "value === true && !globalVars.grid_saved",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 500, "message": "Five minutes, Agent 0x00.", "targetKnot": "start" }
+              "delayMs": 500,
+              "conversationMode": "phone-chat",
+              "targetKnot": "taunt_t5",
+              "ring": { "withheld": true, "onMissed": "voicemail", "voicemailKnot": "taunt_t5_vm" }
             },
             {
               "eventPattern": "global_variable_changed:architect_t1_played",
               "condition": "value === true && !globalVars.grid_saved",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 500, "message": "One minute, Agent 0x00.", "targetKnot": "start" }
+              "delayMs": 500,
+              "conversationMode": "phone-chat",
+              "targetKnot": "taunt_t1",
+              "ring": { "withheld": true, "onMissed": "voicemail", "voicemailKnot": "taunt_t1_vm" }
             },
             <%# The sign-off: the grid is saved at the console, whose container is
                 open at that moment. When it closes (minigame_completed, or
@@ -1633,15 +1659,20 @@ scada_password = "CascadeWindow19"
               "onceOnly": true,
               "setGlobal": { "architect_signoff_started": true },
               "conversationMode": "phone-chat",
-              "targetKnot": "sign_off"
+              "targetKnot": "sign_off",
+              "ring": { "withheld": true },
+              "disableClose": true
             },
 <% end %>
             {
-              "_comment": "Pressure only: the step-one consequence is authored in the debrief and credits.",
+              "_comment": "Post-countdown: step one has run. A withheld voiced call (seattle_call); the step-one consequence is also authored in the debrief and credits. Declined or missed, it leaves seattle_call_vm.",
               "eventPattern": "global_variable_changed:countdown_expired",
               "condition": "value === true && !globalVars.grid_saved",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 500, "message": "Seattle first. As scheduled.", "targetKnot": "start" }
+              "delayMs": 500,
+              "conversationMode": "phone-chat",
+              "targetKnot": "seattle_call",
+              "ring": { "withheld": true, "onMissed": "voicemail", "voicemailKnot": "seattle_call_vm" }
             }
           ]
         },

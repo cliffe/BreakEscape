@@ -1,0 +1,11 @@
+game 2379 (m03_answer)
+waiting for the 120 s revelation ring
+banner: "Agent HaX / SAFETYNET secure line / Incoming call / Answer / Decline"
+shot m03_answer_banner
+"answered"
+shot m03_answer_answer_first
+shot taken by 1302 ms after Answer (incl. this query)
+frames: [{"frame":1,"k":"SAFETYNET secure line","t":"121.865"},{"frame":2,"k":"SAFETYNET secure line","t":"121.891"},{"frame":3,"k":"SAFETYNET secure line","t":"121.940"}]
+mutations: []
+shot m03_answer_answer_2s
+frames at +2 s: [{"frame":1,"k":"SAFETYNET secure line","t":"121.865"},{"frame":2,"k":"SAFETYNET secure line","t":"121.891"},{"frame":3,"k":"SAFETYNET secure line","t":"121.940"}]

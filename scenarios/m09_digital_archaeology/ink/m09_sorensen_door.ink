@@ -41,12 +41,12 @@ Narrator: Sorensen looks up from the feed table as the gate swings open.
     Margaret Sorensen: Your first days aren't in your file. Somebody in your outfit is careful with you.
 }
 Margaret Sorensen: You came in by the maintenance code, not my hatch. You're the one the Architect writes about.
-Agent HaX: ...She's got a file on you.
-Agent HaX: One bin is Derek Lawson's file, and it isn't Derek's handwriting on it. It's the only place anyone wrote down why he did what he did.
+agent_0x99: ...She's got a file on you.
+agent_0x99: One bin is Derek Lawson's file, and it isn't Derek's handwriting on it. It's the only place anyone wrote down why he did what he did.
 {m08_nightshade_tidied:
-    Agent HaX: The other's what Nightshade cleared from his locker. His own words on what he took. One of them's ash in a minute.
+    agent_0x99: The other's what Nightshade cleared from his locker. His own words on what he took. One of them's ash in a minute.
 - else:
-    Agent HaX: The other's the Social Fabric letters. Last one's about a union rep in Butte they're about to bury. One of them's ash in a minute.
+    agent_0x99: The other's the Social Fabric letters. Last one's about a union rep in Butte they're about to bury. One of them's ash in a minute.
 }
 + [Take Derek's file.]
     #give_item:notes:derek_file
@@ -62,9 +62,9 @@ Agent HaX: One bin is Derek Lawson's file, and it isn't Derek's handwriting on i
     #set_global:bin_chosen:true
     Margaret Sorensen: The letters. You'd rather save someone who's still walking around.
     Narrator: She tips Derek Lawson's file into the feed.
-    Agent HaX: Arakawa's ringing Butte. She'll hear it from us first.
+    agent_0x99: Arakawa's ringing Butte. She'll hear it from us first.
     {m01_maya_ko:
-        Agent HaX: That's the warning we didn't have.
+        agent_0x99: That's the warning we didn't have.
     }
     #exit_conversation
     -> DONE
@@ -74,7 +74,7 @@ Agent HaX: One bin is Derek Lawson's file, and it isn't Derek's handwriting on i
     #set_global:bin_chosen:true
     Margaret Sorensen: His own words. He always did write a careful note.
     Narrator: She tips Derek Lawson's file into the feed.
-    Agent HaX: So that's what he had time to clear.
+    agent_0x99: So that's what he had time to clear.
     #exit_conversation
     -> DONE
 + [Walk past her.]

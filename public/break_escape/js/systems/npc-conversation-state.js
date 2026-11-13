@@ -9,6 +9,8 @@
 
 // Ink VAR prefixes that live for one run only and are never saved (00 S7)
 const RUN_SCOPED_PREFIXES = ['email_'];
+// Engine-written call variables (phone calls plan 2.11): an exact list, not a `call_` prefix
+const RUN_SCOPED_NAMES = ['call_answer_seconds', 'call_is_callback'];
 
 // Cap on an NPC id and an ink variable name (game.rb MAX_NPC_INK_NAME_CHARS),
 // in code points; the export mirrors it so the seed matches (SYNC_DELTAS_PLAN 2.1).
@@ -182,7 +184,8 @@ class NPCConversationStateManager {
      * @returns {boolean}
      */
     isRunScopedVariable(name) {
-        return typeof name === 'string' && RUN_SCOPED_PREFIXES.some(prefix => name.startsWith(prefix));
+        return typeof name === 'string'
+            && (RUN_SCOPED_NAMES.includes(name) || RUN_SCOPED_PREFIXES.some(prefix => name.startsWith(prefix)));
     }
 
     /**

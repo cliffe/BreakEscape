@@ -1,0 +1,14 @@
+{
+  "key": "3f2e5423562f86683a25ccfb38791d60",
+  "npc": "recruiter",
+  "text": "Then I'll tidy my own desk. Gone. Goodnight, agent.",
+  "delivery": "a beat's pause after the first sentence",
+  "voice": "Gacrux",
+  "style": "ENTROPY's recruiter, a former intelligence-agency talent spotter in her fifties, calling from somewhere comfortable. Speak with a consistent educated American (Washington DC, Mid-Atlantic) accent throughout — do not shift to any other accent. Low, warm pitch; slow, patient pace, never raised. Charming and empathetic on the surface, utterly ruthless underneath; talks about people as placements.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-13",
+  "recorded_at": "2026-11-13T00:22:13Z"
+}

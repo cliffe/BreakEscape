@@ -1,0 +1,14 @@
+{
+  "key": "1332f92da391b7787a1d1dd5ef6856d7",
+  "npc": "ghost_phone",
+  "text": "No. I'd rather not leave on that.",
+  "delivery": "a pause after the no",
+  "voice": "Iapetus",
+  "style": "ENTROPY field operative. Deliberately unplaceable -- an educated English base with every regional marker sanded off, the way someone sounds when they have consciously trained their own accent out. Unhurried, precise, never raises the pitch. Speaks as though reading a conclusion they reached months ago and have no further doubts about.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-13",
+  "recorded_at": "2026-11-13T00:32:29Z"
+}

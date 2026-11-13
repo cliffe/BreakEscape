@@ -1,0 +1,19 @@
+game 2234 (readout_reload)
+  flag1_submitted=true (terminal still open: "FlagStationMinigame")
+after flag1: "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=false"
+walk into the stacks and open HaX's read-out:
+  room: "restricted_stacks"
+  WARN read-out toast never appeared
+play past the card line (thread stays open at [Got it]):
+  WARN choice /Ledger or stacks/ never showed
+  WARN choice /Got it/ never showed
+  after the card line: "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=false"  (flag1_read_done expected true, nightshade_rang still false)
+shot readout_reload_readout_played
+persist state, then close + reload with a millisecond gap (inside the 3 s ring delay):
+  after reload: "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=false"  (the close mapping's +3 s timer died with the page)
+shot readout_reload_after_reload
+the room_entered backstop rings on resume or the next room move (one ring):
+  not ringing on resume; walk to trigger the backstop:
+  room: "reading_room"
+GATE FAILED: wait_ring nightshade_phone 20
+{"ringer":null,"queue":0,"callActive":false,"closed":false,"banner":null,"bannerImg":null,"mg":null,"globals":{}}

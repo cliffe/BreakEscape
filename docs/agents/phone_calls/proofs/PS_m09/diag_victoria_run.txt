@@ -1,0 +1,26 @@
+game 2267 (diag_victoria)
+  flag1_submitted=true (terminal still open: "FlagStationMinigame")
++1s {"room":"reading_room","vis":[],"h":["npc:That noise is a cross-cut shre","npc:Shutter's his round. The offic","npc:Night guard. Twenty-four. Not "]}
++2s {"room":"reading_room","vis":[],"h":["npc:That noise is a cross-cut shre","npc:Shutter's his round. The offic","npc:Night guard. Twenty-four. Not "]}
++12s {"room":"restricted_stacks","vis":["npc-bark:Agent HaX: I've a field guide for the le","npc-bark-text:Agent HaX: I've a field guide for the le"],"h":["npc:First box is in. It came with ","npc:First time we've used Victoria","npc:I've a field guide for the led"]}
++13s {"room":"restricted_stacks","vis":["npc-bark:Agent HaX: I've a field guide for the le","npc-bark-text:Agent HaX: I've a field guide for the le"],"h":["npc:First box is in. It came with ","npc:First time we've used Victoria","npc:I've a field guide for the led"]}
++15s {"room":"restricted_stacks","vis":["npc-bark:Agent HaX: I've a field guide for the le","npc-bark-text:Agent HaX: I've a field guide for the le"],"h":["npc:First box is in. It came with ","npc:First time we've used Victoria","npc:I've a field guide for the led"]}
++16s {"room":"restricted_stacks","vis":["npc-bark:Agent HaX: I've a field guide for the le","npc-bark-text:Agent HaX: I've a field guide for the le"],"h":["npc:First box is in. It came with ","npc:First time we've used Victoria","npc:I've a field guide for the led"]}
++17s {"room":"restricted_stacks","vis":["npc-bark:Agent HaX: I've a field guide for the le","npc-bark-text:Agent HaX: I've a field guide for the le"],"h":["npc:First box is in. It came with ","npc:First time we've used Victoria","npc:I've a field guide for the led"]}
++18s {"room":"restricted_stacks","vis":["npc-bark:Agent HaX: I've a field guide for the le","npc-bark-text:Agent HaX: I've a field guide for the le"],"h":["npc:First box is in. It came with ","npc:First time we've used Victoria","npc:I've a field guide for the led"]}
++20s {"room":"restricted_stacks","vis":[],"h":["npc:First box is in. It came with ","npc:First time we've used Victoria","npc:I've a field guide for the led"]}
++21s {"room":"restricted_stacks","vis":[],"h":["npc:First box is in. It came with ","npc:First time we've used Victoria","npc:I've a field guide for the led"]}
++22s {"room":"restricted_stacks","vis":[],"h":["npc:First box is in. It came with ","npc:First time we've used Victoria","npc:I've a field guide for the led"]}
++23s {"room":"restricted_stacks","vis":[],"h":["npc:First box is in. It came with ","npc:First time we've used Victoria","npc:I've a field guide for the led"]}
++25s {"room":"restricted_stacks","vis":[],"h":["npc:First box is in. It came with ","npc:First time we've used Victoria","npc:I've a field guide for the led"]}
++26s {"room":"restricted_stacks","vis":[],"h":["npc:First box is in. It came with ","npc:First time we've used Victoria","npc:I've a field guide for the led"]}
++27s {"room":"restricted_stacks","vis":[],"h":["npc:First box is in. It came with ","npc:First time we've used Victoria","npc:I've a field guide for the led"]}
++28s {"room":"restricted_stacks","vis":[],"h":["npc:First box is in. It came with ","npc:First time we've used Victoria","npc:I've a field guide for the led"]}
++30s {"room":"restricted_stacks","vis":[],"h":["npc:First box is in. It came with ","npc:First time we've used Victoria","npc:I've a field guide for the led"]}
++31s {"room":"restricted_stacks","vis":[],"h":["npc:First box is in. It came with ","npc:First time we've used Victoria","npc:I've a field guide for the led"]}
++32s {"room":"restricted_stacks","vis":[],"h":["npc:First box is in. It came with ","npc:First time we've used Victoria","npc:I've a field guide for the led"]}
++33s {"room":"restricted_stacks","vis":[],"h":["npc:First box is in. It came with ","npc:First time we've used Victoria","npc:I've a field guide for the led"]}
++35s {"room":"restricted_stacks","vis":[],"h":["npc:First box is in. It came with ","npc:First time we've used Victoria","npc:I've a field guide for the led"]}
++36s {"room":"restricted_stacks","vis":[],"h":["npc:First box is in. It came with ","npc:First time we've used Victoria","npc:I've a field guide for the led"]}
++37s {"room":"restricted_stacks","vis":[],"h":["npc:First box is in. It came with ","npc:First time we've used Victoria","npc:I've a field guide for the led"]}
++38s {"room":"restricted_stacks","vis":[],"h":["npc:First box is in. It came with ","npc:First time we've used Victoria","npc:I've a field guide for the led"]}

@@ -490,6 +490,8 @@ end
 rp = 'Consistent British Received Pronunciation accent throughout -- do not shift to any other accent.'
 voices = {
   hax_phone: { 'name' => 'Aoede', 'style' => 'Intelligence handler speaking over a secure phone line. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.', 'language' => 'en-GB' },
+  hax_briefing: { 'name' => 'Aoede', 'style' => 'Professional intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.', 'language' => 'en-GB' },
+  hax_debrief: { 'name' => 'Aoede', 'style' => 'Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.', 'language' => 'en-GB' },
   netherton: { 'name' => 'Charon', 'style' => "Cinematic thriller. #{rp} Low, deliberate, unhurried. SAFETYNET's director, running a raid from a folding table in the Montana cold; he does not raise his voice and he does not soften anything, and under the control this one is personal.", 'language' => 'en-GB' },
   nightshade: { 'name' => 'Enceladus', 'style' => "SAFETYNET's cryptographic-hardware analyst. #{rp} Calm, precise, technically fluent; a colleague you trust. Tonight he is caught, cooperating or not, watching the agent he once taught walk into his old master's house.", 'language' => 'en-GB' },
   tesseract: { 'name' => 'Sadaltager', 'style' => 'ENTROPY\'s planner, a man in his sixties, in person at his own console. Deliberately unplaceable -- an educated, faintly mid-Atlantic English with every regional marker sanded off, which could be Western European or North American; keep it consistent throughout. Low pitch that never lifts; quiet, slow, deliberate pace with a lecturer\'s precision. Faintly amused and courteous to the end. Nothing that happens tonight surprises him, including losing.', 'language' => 'en-GB' },
@@ -1607,8 +1609,8 @@ end
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m10_full_disclosure/ink/m10_hax_post.json",
           "currentKnot": "start",
-          <%# One HaX voice block for both her records: a line prefixed "Agent HaX:" in anyone's conversation resolves to either record, so they must sound the same. %>
-          "voice": <%= voice.(:hax_phone) %>,
+          <%# In-person HaX has her own style (hax_briefing). Co-speaker lines in other people's conversations name "agent_0x99:", the phone record, which keeps the phone style. %>
+          "voice": <%= voice.(:hax_briefing) %>,
           "koImmune": true,
           "observations": "HaX at the van end with a headset round her neck and three screens on the bench behind her."
         },
@@ -1619,6 +1621,9 @@ end
           "npcType": "phone",
           "phoneId": "player_phone",
           "avatar": "assets/characters/agent_hax_v2_headshot.png",
+          "spriteTalk": "assets/characters/agent_hax_talk.png",
+          "spriteVisemes": "assets/characters/agent_hax_visemes.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m10_full_disclosure/ink/m10_phone_agent0x99.json",
           "currentKnot": "start",
           "voice": <%= voice.(:hax_phone) %>,
@@ -2483,7 +2488,7 @@ end
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m10_full_disclosure/ink/m10_hearing.json",
           "currentKnot": "start",
-          "voice": <%= voice.(:hax_phone) %>,
+          "voice": <%= voice.(:hax_debrief) %>,
           "koImmune": true,
           "behavior": { "initiallyHidden": true },
           "eventMappings": [

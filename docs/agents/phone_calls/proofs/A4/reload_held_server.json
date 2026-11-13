@@ -1,0 +1,33 @@
+{
+  "caller_hold": {
+    "history": [
+      {
+        "read": false,
+        "text": "Caller hold here.",
+        "type": "npc",
+        "gameTime": -3598835,
+        "preloaded": true,
+        "timestamp": 1794492892949
+      }
+    ],
+    "storyPath": "scenarios/test_phone_calls/ink/caller_hold.json",
+    "storyState": "{\"flows\":{\"DEFAULT_FLOW\":{\"callstack\":{\"threads\":[{\"callstack\":[{\"exp\":false,\"type\":0}],\"threadIndex\":0,\"previousContentObject\":\"start.0.7\"}],\"threadCounter\":1},\"outputStream\":[\"^Caller hold here.\",\"\\n\"],\"choiceThreads\":{\"1\":{\"callstack\":[{\"cPath\":\"start.0\",\"idx\":7,\"exp\":false,\"type\":0}],\"threadIndex\":1,\"previousContentObject\":\"start.0.6\"}},\"currentChoices\":[{\"text\":\"Anything new?\",\"index\":0,\"originalChoicePath\":\"start.0.7\",\"originalThreadIndex\":1,\"targetPath\":\"start.0.c-0\",\"tags\":[]}]}},\"currentFlowName\":\"DEFAULT_FLOW\",\"variablesState\":{},\"evalStack\":[],\"visitCounts\":{},\"turnIndices\":{},\"turnIdx\":0,\"storySeed\":89,\"previousRandom\":0,\"inkSaveVersion\":10,\"inkFormatVersion\":21}",
+    "currentKnot": "start",
+    "pendingCall": {
+      "live": {
+        "knot": "ring_call",
+        "state": "held",
+        "resume": false,
+        "opening": false,
+        "onMissed": "callback",
+        "withheld": false,
+        "callLabel": "Hold",
+        "disableClose": false,
+        "answerSeconds": 0,
+        "untilAnswered": false
+      }
+    },
+    "preloadedKnot": "start",
+    "lastEnteredKnot": "start"
+  }
+}

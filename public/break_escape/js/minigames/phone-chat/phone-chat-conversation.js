@@ -7,7 +7,7 @@
  * @module phone-chat-conversation
  */
 
-import { phoneStepLines, callStartKnots } from './phone-chat-speaker.js';
+import { phoneStepLines, callStartKnots, classifyPhoneLine } from './phone-chat-speaker.js';
 
 // A preload in progress, per NPC entry. The inventory (on pickup) and the phone-chat
 // minigame (on open) both preload; a second caller waits for the first instead of
@@ -662,9 +662,24 @@ export default class PhoneChatConversation {
         const fresh = steps.slice(replayed);
         const messages = [];
         const tags = [];
+        const messageTags = [];     // parallel to messages: the tags whose #delivery: note a line carries
+        // Tags of steps that printed nothing go to the next visible line (InkEngine.continue).
+        // The run starts with the empty steps that end the replayed part: a tag there is
+        // already seen, but its note still belongs to the first fresh line.
+        let carried = [];
+        for (let i = replayed - 1; i >= 0 && phoneStepLines(steps[i].text, steps[i].tags).length === 0; i--) {
+            carried.unshift(...steps[i].tags);
+        }
         fresh.forEach(step => {
             tags.push(...step.tags);
-            messages.push(...phoneStepLines(step.text, step.tags));
+            const stepLines = phoneStepLines(step.text, step.tags);
+            messages.push(...stepLines);
+            if (stepLines.length) {
+                messageTags.push(...PhoneChatConversation.lastLineTags(stepLines.length, [...carried, ...step.tags]));
+                carried = [];
+            } else {
+                carried.push(...step.tags);
+            }
             this._noteCallStep(step.text, step.tags, step.knot);
         });
         if (tags.length > 0) this.processTags(tags);
@@ -677,6 +692,7 @@ export default class PhoneChatConversation {
             renavigated: true,
             knot,
             messages,
+            messageTags,
             tags,
             replayedSteps: replayed,
             result: { text: '', choices, tags, canContinue: false, hasEnded }
@@ -844,7 +860,7 @@ export default class PhoneChatConversation {
     }
 
     static async _preloadOpeningOnce(npc, npcManager, inkEngine) {
-        if (npcManager.getConversationHistory(npc.id).length > 0) return 0;
+        if (npcManager.getConversationHistory(npc.id).filter(m => m.type !== 'call').length > 0) return 0;
         if (!npc.storyPath && !npc.storyJSON) return 0;
 
         const tempConversation = new PhoneChatConversation(npc.id, npcManager, inkEngine);
@@ -874,9 +890,12 @@ export default class PhoneChatConversation {
         // Accumulate all intro messages and game action tags until we hit choices or end
         const allMessages = [];
         const allTags = [];
+        const allNoteTags = [];     // parallel to allMessages: the step's tags on its last line (A1 R1 M1)
         for (let guard = 0; guard < 500; guard++) {
             const result = tempConversation.continue();
-            allMessages.push(...phoneStepLines(result.text, result.tags));
+            const stepLines = phoneStepLines(result.text, result.tags);
+            allMessages.push(...stepLines);
+            allNoteTags.push(...PhoneChatConversation.lastLineTags(stepLines.length, result.tags));
             if (result.tags && result.tags.length > 0) {
                 allTags.push(...result.tags);
                 // The game applies these on first open, but a later line of this dry run
@@ -888,7 +907,7 @@ export default class PhoneChatConversation {
         if (allMessages.length === 0) return 0;
         // The story loaded asynchronously; if the thread gained lines meanwhile (the
         // player opened it), that run already showed the opening
-        if (npcManager.getConversationHistory(npc.id).length > 0) return 0;
+        if (npcManager.getConversationHistory(npc.id).filter(m => m.type !== 'call').length > 0) return 0;
 
         // Without an in-game clock the intro reads as sent an hour ago (wall time).
         // With one, it is stamped now: an hour back put the first texts before the
@@ -897,9 +916,13 @@ export default class PhoneChatConversation {
         const preloadStamp = clock?.configured
             ? { timestamp: Date.now(), gameTime: clock.elapsedMs() }
             : { timestamp: Date.now() - 3600000 };
-        allMessages.forEach(message => {
+        allMessages.forEach((message, i) => {
+            // The line's #delivery: tag(s), kept so a voiced call speaks the opening with its
+            // note (phone-chat-minigame.js _speakPreloadedOpening). Never shown.
+            const noteTags = (allNoteTags[i] || []).filter(PhoneChatConversation.isDeliveryTag);
             npcManager.addMessage(npc.id, 'npc', message.trim(), {
                 preloaded: true,
+                ...(noteTags.length ? { deliveryTags: noteTags } : {}),
                 ...preloadStamp
             });
         });
@@ -936,6 +959,130 @@ export default class PhoneChatConversation {
 
         console.log(`📝 Preloaded ${allMessages.length} intro message(s) for ${npc.id}`);
         return allMessages.length;
+    }
+
+    /**
+     * A voicemail (phone calls plan 2.6): the contact's `voicemailKnot` run silently into its thread,
+     * like a preload. Restores the contact's saved story (so ink-local VARs and visit counts carry
+     * over), goes to the voicemail knot, continues to its end, collects its lines and tags, adds the
+     * lines to the thread, then, on the same loaded story, moves the position to the home knot with
+     * goToKnot and saves it once. Until that single save `npc.storyState` still holds the position
+     * from before the call, so a thread opened while this loads shows the old state, never a
+     * half-run voicemail knot. The global observer is on: a voicemail is a real event, so what it
+     * sets (`~ x = true` on a synced global, `#set_global`) is applied now.
+     *
+     * @param {Object} npc - the NPC entry
+     * @param {Object} npcManager
+     * @param {Object} inkEngine - an InkEngine to run it in (its story is replaced)
+     * @param {string} knot - the voicemail knot
+     * @param {Object} [opts]
+     * @param {(tags: string[], conversation: PhoneChatConversation) => void} [opts.applyTags] - runs the
+     *   knot's game-action tags (`#set_global:` and the like); the caller owns that module
+     * @param {boolean} [opts.withheld] - the caller's number was withheld (the row text)
+     * @param {() => boolean} [opts.isBlocked] - asked once the story has loaded, just before anything is
+     *   written: true when the contact's thread was opened meanwhile (its story would overwrite this
+     *   save), so nothing is run or written and the result says `blocked` (A6 R1 M1)
+     * @returns {Promise<{ran: boolean, blocked?: boolean, lines: string[], tags: string[]}>}
+     */
+    static async runVoicemail(npc, npcManager, inkEngine, knot, opts = {}) {
+        const none = { ran: false, lines: [], tags: [] };
+        if (!npc || !npcManager || !knot || (!npc.storyPath && !npc.storyJSON)) return none;
+        const conversation = new PhoneChatConversation(npc.id, npcManager, inkEngine);
+        try {
+            let storySource = npc.storyJSON;
+            if (!storySource && npc.storyPath) {
+                const gameId = window.breakEscapeConfig?.gameId;
+                if (gameId) storySource = `/break_escape/games/${gameId}/ink?npc=${encodeURIComponent(npc.id)}`;
+            }
+            if (!storySource || !(await conversation.loadStory(storySource))) return none;
+            // Checked again here, after the load: from now to the save everything is synchronous
+            if (typeof opts.isBlocked === 'function' && opts.isBlocked()) return { ...none, blocked: true };
+            const story = conversation.engine?.story;
+            const manager = window.npcConversationStateManager;
+            manager?.applySavedInkVariables?.(npc.id, story);
+            // The saved story, if there is one: its ink-local VARs and visit counts carry over
+            if (npc.storyState && conversation.restoreState(npc.storyState)) {
+                manager?.syncGlobalVariablesToStory?.(story);
+            }
+            // The knot reads call_is_callback, call_answer_seconds: the defaults, as for any preload
+            manager?.applyEngineVariables?.(npc.id, story, { channel: 'phone-preload' });
+
+            // goToKnot moves the contact's currentKnot; it goes back below
+            const home = String(npc.homeKnot || npc.currentKnot || 'start').split('.')[0];
+            const previousKnot = npc.currentKnot;
+            const previousEntered = npc.lastEnteredKnot;
+            if (!conversation.goToKnot(knot)) return none;
+
+            const lines = [];
+            const tags = [];
+            for (let guard = 0; guard < 500; guard++) {
+                const result = conversation.continue();
+                lines.push(...phoneStepLines(result.text, result.tags));
+                if (result.tags && result.tags.length > 0) {
+                    tags.push(...result.tags);
+                    PhoneChatConversation.mirrorSetGlobalTags(story, result.tags);
+                }
+                if (result.hasEnded || !result.canContinue) break;
+            }
+            if (typeof opts.applyTags === 'function' && tags.length > 0) {
+                try { opts.applyTags(tags, conversation); } catch (e) { console.error('voicemail: applying tags failed', e); }
+            }
+            // The row that introduces the message, then its lines, unread
+            npcManager.addCallRow?.(npc.id, 'voicemail', { withheld: opts.withheld === true });
+            lines.forEach((line) => {
+                if (line && line.trim()) npcManager.addMessage(npc.id, 'npc', line.trim());
+            });
+
+            // The thread opens on the home knot; ink-local VARs the knot set persist in this one save
+            conversation.goToKnot(home);
+            npc.currentKnot = previousKnot;
+            npc.lastEnteredKnot = previousEntered;
+            npc.storyState = conversation.saveState();
+            manager?.recordInkVariables?.(npc.id, story);
+            if (typeof window !== 'undefined' && window.updatePhoneBadge && npc.phoneId) {
+                try { window.updatePhoneBadge(npc.phoneId); } catch (e) { /* inventory not ready yet */ }
+            }
+            return { ran: true, lines, tags };
+        } finally {
+            try { conversation.cleanup(); } catch (e) { /* nothing to clean */ }
+        }
+    }
+
+    /**
+     * A reload found the thread's saved story inside a ringer call (A5 R1 M1): its position is on the
+     * call's choices, which would show as silent text. Restore it, move it to the home knot as
+     * `_resetAfterRingerCall` does at End, put the contact's knots back there and save it once.
+     * @param {Object} npc
+     * @param {Object} npcManager
+     * @param {Object} inkEngine - an InkEngine to run it in (its story is replaced)
+     * @returns {Promise<boolean>} true when the story was moved
+     */
+    static async resetToHome(npc, npcManager, inkEngine) {
+        if (!npc || !npcManager || typeof npc.storyState !== 'string' || !npc.storyState) return false;
+        if (!npc.storyPath && !npc.storyJSON) return false;
+        const saved = npc.storyState;   // as it was when the reset was asked for
+        const conversation = new PhoneChatConversation(npc.id, npcManager, inkEngine);
+        conversation.observeGlobals = false;
+        try {
+            let storySource = npc.storyJSON;
+            if (!storySource && npc.storyPath) {
+                const gameId = window.breakEscapeConfig?.gameId;
+                if (gameId) storySource = `/break_escape/games/${gameId}/ink?npc=${encodeURIComponent(npc.id)}`;
+            }
+            if (!storySource || !(await conversation.loadStory(storySource))) return false;
+            if (!conversation.restoreState(saved)) return false;
+            // A thread that moved on while the story loaded is no longer ours to reset
+            if (npc.storyState !== saved) return false;
+            const home = String(npc.homeKnot || 'start').split('.')[0];
+            if (!conversation.goToKnot(home)) return false;
+            npc.currentKnot = home;
+            npc.lastEnteredKnot = home;
+            npc.storyState = conversation.saveState();
+            window.npcConversationStateManager?.recordInkVariables?.(npc.id, conversation.engine?.story);
+            return true;
+        } finally {
+            try { conversation.cleanup(); } catch (e) { /* nothing to clean */ }
+        }
     }
 
     /**
@@ -983,6 +1130,70 @@ export default class PhoneChatConversation {
             out.applied.push(name);
         }
         return out;
+    }
+
+    /**
+     * Tags for each of a step's printed lines: the step's tags belong to its last line (the line
+     * the tag ends), the others get none. Parallel to the lines; stepDeliveries does the same
+     * for notes, but this module takes no imports.
+     * @param {number} lineCount
+     * @param {string[]} tags
+     * @returns {string[][]}
+     */
+    static lastLineTags(lineCount, tags) {
+        const out = Array.from({ length: Math.max(0, lineCount) }, () => []);
+        if (out.length && Array.isArray(tags)) out[out.length - 1] = tags.slice();
+        return out;
+    }
+
+    /** True for a `#delivery:` tag (tts-delivery.js reads the note from it). */
+    static isDeliveryTag(tag) {
+        return typeof tag === 'string' && /^\s*delivery\s*:/i.test(tag);
+    }
+
+    /**
+     * Run the story, silently, from where it is to its next choices, when the thread already shows
+     * everything that run prints (A3 R1 m1). A ringer call's reset moves the story to the contact's
+     * home knot without continuing; the thread's next open would then continue the knot and print its
+     * first line a second time (the player has it in the thread already, preloaded or read). This
+     * reads the knot out now instead, so the next open finds the story resting on its choices and
+     * shows them, with no new line.
+     *
+     * Nothing is written: the global observer is off, no tag runs, nothing goes to the thread. The
+     * run is undone, leaving the story where it was, when
+     *   - a printed line is not already in the thread (the knot has never been shown, or prints
+     *     something new now), so a first open still shows it;
+     *   - a step came from one of the call's own knots (a home router that diverts into a call knot
+     *     would leave that call's choices on the thread as texts);
+     *   - it does not end on choices, or throws.
+     * @param {Array<{type?: string, text?: string}>} history - the thread's messages
+     * @returns {boolean} true when the story was settled on the home knot's choices
+     */
+    settleOnSeenLines(history) {
+        const story = this.engine?.story;
+        if (!this.storyLoaded || !story || !story.canContinue) return false;
+        const seen = new Set();
+        for (const m of Array.isArray(history) ? history : []) {
+            if (m && typeof m.text === 'string' && m.text.trim()) seen.add(m.text.trim());
+        }
+        const before = story.state.ToJson();
+        const observer = story.variablesState.variableChangedEvent;
+        story.variablesState.variableChangedEvent = null;
+        let ok = false;
+        try {
+            const steps = PhoneChatConversation.collectSteps(story);
+            const lines = steps.flatMap(step => phoneStepLines(step.text, step.tags));
+            const inCall = steps.some(step => step.knot && this.callKnots?.has(step.knot));
+            const shown = line => seen.has(line) || seen.has(classifyPhoneLine('npc', line).text);
+            ok = !inCall && (story.currentChoices?.length || 0) > 0 && lines.every(shown);
+        } catch (e) {
+            console.warn('⚠️ Could not read the home knot ahead; leaving the story on it:', e.message);
+        }
+        if (!ok) {
+            try { story.state.LoadJson(before); } catch (e) { console.warn('⚠️ Could not restore the story after a read-ahead:', e.message); }
+        }
+        story.variablesState.variableChangedEvent = observer;
+        return ok;
     }
 
     /**

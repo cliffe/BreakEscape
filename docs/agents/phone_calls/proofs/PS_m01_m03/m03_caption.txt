@@ -1,0 +1,13 @@
+game 2232 (cap_topic)
+"opened agent_0x99"
+"chose distcc logs"
+dialling: {"caption":"SAFETYNET secure line","bar":"CALLING"}
+shot cap_topic_calling
+topic call: {"caption":"SAFETYNET secure line","bar":"ON CALL\n0:01"}
+shot cap_topic_call
+game 2240 (cap_bring)
+"opened agent_0x99"
+"chose Bring me in"
+dialling: {"caption":"SAFETYNET secure line","bar":"CALLING"}
+bring-in call: {"caption":"SAFETYNET secure line","bar":"ON CALL\n0:01"}
+shot cap_bring_call

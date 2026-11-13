@@ -1,0 +1,167 @@
+{"t":1794509487927,"npc_id":"narrator","text":"A SAFETYNET briefing room. Netherton by the screen, HaX with the file open, and a man in a lab coat half-buried in a laptop he built himself.","delivery":null,"status":200}
+{"t":1794509488480,"npc_id":"director_netherton","text":"Agent 0x00. This is Operation Cyber Arsenal.","delivery":null,"status":200}
+{"t":1794509489212,"npc_id":"director_netherton","text":"Zero Day Syndicate used to sell exploits to whoever paid. Now they choose the targets first.","delivery":null,"status":200}
+{"t":1794509489559,"npc_id":"director_netherton","text":"That is a line I do not let anyone cross. You are going in.","delivery":null,"status":200}
+{"t":1794509489751,"npc_id":"director_netherton","text":"HaX runs you, Nightshade the technical side. Listen to both.","delivery":null,"status":200}
+{"t":1794509490083,"npc_id":"agent_nightshade","text":"Morning. Whatever they've built, I'll take it apart from here. You just get me close to it.","delivery":null,"status":200}
+{"t":1794509490300,"npc_id":"director_netherton","text":"HaX. The floor's yours.","delivery":null,"status":200}
+{"t":1794509490632,"npc_id":"briefing_cutscene","text":"Right. Zero Day Syndicate. You heard of them?","delivery":null,"status":200}
+{"t":1794509491646,"npc_id":"briefing_cutscene","text":"Zero Day runs behind a real pentest firm -- WhiteHat Security Services. Legitimate audits by day. An exploit marketplace in the back rooms.","delivery":null,"status":200}
+{"t":1794509491845,"npc_id":"briefing_cutscene","text":"They don't run the attacks. They arm the cells that do.","delivery":null,"status":200}
+{"t":1794509492668,"npc_id":"briefing_cutscene","text":"Ransomware Incorporated. Critical Mass. Others we haven't confirmed. Zero Day is their common supplier.","delivery":null,"status":200}
+{"t":1794509492989,"npc_id":"briefing_cutscene","text":"You worked St. Catherine's last month. The hospital that went dark.","delivery":null,"status":200}
+{"t":1794509493352,"npc_id":"briefing_cutscene","text":"The ransomware ran on a ProFTPD backdoor. That exploit didn't come from the crew who deployed it.","delivery":null,"status":200}
+{"t":1794509494188,"npc_id":"briefing_cutscene","text":"They did. An invoice turned up at St. Catherine's with Zero Day's name on the sale. Now we want their side of it.","delivery":null,"status":200}
+{"t":1794509494421,"npc_id":"briefing_cutscene","text":"They sold it as a product. Twenty-five thousand on the invoice, healthcare premium already built into the price.","delivery":null,"status":200}
+{"t":1794509495152,"npc_id":"briefing_cutscene","text":"They knew, and they billed for knowing. That's the case we're building. And there's a Phase 2 behind it.","delivery":null,"status":200}
+{"t":1794509495420,"npc_id":"briefing_cutscene","text":"Three things, then. One: get inside and clone Victoria Sterling's executive keycard. She's the front's CEO, and she runs this end of the cell for 0day.","delivery":null,"status":200}
+{"t":1794509495665,"npc_id":"briefing_cutscene","text":"Two: after hours, get onto their training network and pull the flags. Recon, the services, and the legacy distcc box where their records sit.","delivery":null,"status":200}
+{"t":1794509495905,"npc_id":"briefing_cutscene","text":"Three: the physical paper trail. Client roster, the catalogue, anything naming St. Catherine's or Phase 2.","delivery":null,"status":200}
+{"t":1794509496148,"npc_id":"briefing_cutscene","text":"Ask me whatever you need before you go in.","delivery":null,"status":200}
+{"t":1794509496944,"npc_id":"briefing_cutscene","text":"Victoria Sterling. Founded WhiteHat in 2010, former conference speaker, respected researcher on the record.","delivery":null,"status":200}
+{"t":1794509497215,"npc_id":"briefing_cutscene","text":"On our side of the record she runs the front and answers to 0day and the Architect. Her sign-off name is Sable.","delivery":null,"status":200}
+{"t":1794509498046,"npc_id":"briefing_cutscene","text":"No. She runs the shop floor. 0day leads the cell, the Architect coordinates the network.","delivery":null,"status":200}
+{"t":1794509498404,"npc_id":"briefing_cutscene","text":"Her name's on the invoices. That's why she's the one you can reach.","delivery":null,"status":200}
+{"t":1794509499248,"npc_id":"briefing_cutscene","text":"Two stages. Reception first. The receptionist's badge opens the conference area. Weak defaults, so it cracks in seconds. Talk to her and lean in by her lanyard.","delivery":null,"status":200}
+{"t":1794509499465,"npc_id":"briefing_cutscene","text":"Then Sterling's executive card in the meeting. Custom keys, so it's Darkside -- about half a minute.","delivery":null,"status":200}
+{"t":1794509499701,"npc_id":"briefing_cutscene","text":"Your moment's at the whiteboard. Stand close and keep her talking while it reads.","delivery":null,"status":200}
+{"t":1794509499916,"npc_id":"agent_nightshade","text":"Capture and replay. Her card broadcasts, we copy it, we wear it. Same trick they use on us.","delivery":null,"status":200}
+{"t":1794509500170,"npc_id":"agent_nightshade","text":"One day it'll be our badge somebody clones. Remember how easy it was.","delivery":null,"status":200}
+{"t":1794509500400,"npc_id":"agent_nightshade","text":"Last time, a card meant getting it off somebody. This time you just stand next to it.","delivery":null,"status":200}
+{"t":1794509500614,"npc_id":"briefing_cutscene","text":"Picks for anything keyed, the cloner for anything carded. No PIN cracker this time. Nightshade still has ours in pieces from St. Catherine's.","delivery":null,"status":200}
+{"t":1794509501354,"npc_id":"briefing_cutscene","text":"Play the curious recruit. She loves talking about the work. The cloner is passive until you trigger it.","delivery":null,"status":200}
+{"t":1794509502082,"npc_id":"briefing_cutscene","text":"In the server room you'll find their training lab: an isolated VM network, reachable only from a terminal in that room. It's where they rehearse exploits before they sell them.","delivery":null,"status":200}
+{"t":1794509502322,"npc_id":"briefing_cutscene","text":"Map it, work the services, and get to the legacy distcc box. That's where the operational logs live.","delivery":null,"status":200}
+{"t":1794509503106,"npc_id":"briefing_cutscene","text":"Recon, FTP, the web host's price list, then distcc for the logs. The distcc one is the case.","delivery":null,"status":200}
+{"t":1794509503423,"npc_id":"briefing_cutscene","text":"Four flags. Submit each at the drop-site terminal in the server room -- it sends them to me.","delivery":null,"status":200}
+{"t":1794509504248,"npc_id":"briefing_cutscene","text":"You're a freelance pentester Sterling's looking at as a recruit. Small firms, drawn to the grey-market side. That's the profile that gets you a meeting.","delivery":null,"status":200}
+{"t":1794509504480,"npc_id":"briefing_cutscene","text":"Entry is a conference-room meeting this afternoon. After that the building empties and you come back for the real work.","delivery":null,"status":200}
+{"t":1794509505203,"npc_id":"briefing_cutscene","text":"After dark. Most staff gone, a guard on patrol in the executive wing. That's your window.","delivery":null,"status":200}
+{"t":1794509505914,"npc_id":"briefing_cutscene","text":"Before you go in -- how do you want to play it?","delivery":null,"status":200}
+{"t":1794509506148,"npc_id":"briefing_cutscene","text":"Your call.","delivery":null,"status":200}
+{"t":1794509506836,"npc_id":"briefing_cutscene","text":"Good. Zero Day invoices everything, so somewhere in that building St. Catherine's is on paper. Bring me the paper.","delivery":null,"status":200}
+{"t":1794509507073,"npc_id":"briefing_cutscene","text":"Thorough takes time, though, and there's a guard on nights. Don't let him find you reading.","delivery":null,"status":200}
+{"t":1794509507311,"npc_id":"briefing_cutscene","text":"Listen. Every life St. Catherine's lost, it lost to something Zero Day sold.","delivery":null,"status":200}
+{"t":1794509508073,"npc_id":"briefing_cutscene","text":"Good. Keep your head down in there.","delivery":null,"status":200}
+{"t":1794509508390,"npc_id":"briefing_cutscene","text":"WhiteHat Security, Callaghan Square, Cardiff. I'm on comms the whole time. The drop-site terminal in the server room takes your flags and sends them straight to me.","delivery":null,"status":200}
+{"t":1794509508672,"npc_id":"briefing_cutscene","text":"And one more thing. Come back in one piece.","delivery":null,"status":200}
+{"t":1794509508939,"npc_id":"briefing_cutscene","text":"Meet Sterling, clone her card, then come back after dark. Go.","delivery":null,"status":200}
+{"t":1794509595058,"npc_id":"agent_0x99","text":"Last look. Once you're out, the search team has that building.","delivery":null,"status":503}
+{"t":1794509596476,"npc_id":"agent_0x99","text":"The server room safe's still shut, for one.","delivery":null,"status":503}
+{"t":1794509601591,"npc_id":"agent_0x99","text":"Go on, then. She's not leaving her desk tonight.","delivery":null,"status":503}
+{"t":1794509614450,"npc_id":"agent_0x99","text":"Still in there. That search team's getting restless.","delivery":null,"status":503}
+{"t":1794509615906,"npc_id":"agent_0x99","text":"The server room safe's still shut, for one.","delivery":null,"status":503}
+{"t":1794509620926,"npc_id":"agent_0x99","text":"Side door, two minutes. Don't use the lobby.","delivery":null,"status":503}
+{"t":1794509622928,"npc_id":"agent_0x99","text":"Leave her to us.","delivery":null,"status":503}
+{"t":1794509624132,"npc_id":"narrator","text":"SAFETYNET headquarters. The morning after WhiteHat Security.","delivery":null,"status":200}
+{"t":1794509630082,"npc_id":"closing_debrief","text":"There you are. Sit down before you fall down.","delivery":null,"status":200}
+{"t":1794509633807,"npc_id":"closing_debrief","text":"The network first. All four flags, and the distcc logs are the case.","delivery":null,"status":200}
+{"t":1794509687188,"npc_id":"narrator","text":"A SAFETYNET briefing room. Netherton by the screen, HaX with the file open, and a man in a lab coat half-buried in a laptop he built himself.","delivery":null,"status":200}
+{"t":1794509687576,"npc_id":"director_netherton","text":"Agent 0x00. This is Operation Cyber Arsenal.","delivery":null,"status":200}
+{"t":1794509687881,"npc_id":"director_netherton","text":"Zero Day Syndicate used to sell exploits to whoever paid. Now they choose the targets first.","delivery":null,"status":200}
+{"t":1794509688234,"npc_id":"director_netherton","text":"That is a line I do not let anyone cross. You are going in.","delivery":null,"status":200}
+{"t":1794509688603,"npc_id":"director_netherton","text":"HaX runs you, Nightshade the technical side. Listen to both.","delivery":null,"status":200}
+{"t":1794509688930,"npc_id":"agent_nightshade","text":"Morning. Whatever they've built, I'll take it apart from here. You just get me close to it.","delivery":null,"status":200}
+{"t":1794509689219,"npc_id":"director_netherton","text":"HaX. The floor's yours.","delivery":null,"status":200}
+{"t":1794509689573,"npc_id":"briefing_cutscene","text":"Right. Zero Day Syndicate. You heard of them?","delivery":null,"status":200}
+{"t":1794509690770,"npc_id":"briefing_cutscene","text":"Zero Day runs behind a real pentest firm -- WhiteHat Security Services. Legitimate audits by day. An exploit marketplace in the back rooms.","delivery":null,"status":200}
+{"t":1794509691590,"npc_id":"briefing_cutscene","text":"They don't run the attacks. They arm the cells that do.","delivery":null,"status":200}
+{"t":1794509692633,"npc_id":"briefing_cutscene","text":"Ransomware Incorporated. Critical Mass. Others we haven't confirmed. Zero Day is their common supplier.","delivery":null,"status":200}
+{"t":1794509692867,"npc_id":"briefing_cutscene","text":"You worked St. Catherine's last month. The hospital that went dark.","delivery":null,"status":200}
+{"t":1794509693078,"npc_id":"briefing_cutscene","text":"The ransomware ran on a ProFTPD backdoor. That exploit didn't come from the crew who deployed it.","delivery":null,"status":200}
+{"t":1794509693901,"npc_id":"briefing_cutscene","text":"They did. An invoice turned up at St. Catherine's with Zero Day's name on the sale. Now we want their side of it.","delivery":null,"status":200}
+{"t":1794509694150,"npc_id":"briefing_cutscene","text":"They sold it as a product. Twenty-five thousand on the invoice, healthcare premium already built into the price.","delivery":null,"status":200}
+{"t":1794509695096,"npc_id":"briefing_cutscene","text":"They knew, and they billed for knowing. That's the case we're building. And there's a Phase 2 behind it.","delivery":null,"status":200}
+{"t":1794509695417,"npc_id":"briefing_cutscene","text":"Three things, then. One: get inside and clone Victoria Sterling's executive keycard. She's the front's CEO, and she runs this end of the cell for 0day.","delivery":null,"status":200}
+{"t":1794509695717,"npc_id":"briefing_cutscene","text":"Two: after hours, get onto their training network and pull the flags. Recon, the services, and the legacy distcc box where their records sit.","delivery":null,"status":200}
+{"t":1794509696064,"npc_id":"briefing_cutscene","text":"Three: the physical paper trail. Client roster, the catalogue, anything naming St. Catherine's or Phase 2.","delivery":null,"status":200}
+{"t":1794509696348,"npc_id":"briefing_cutscene","text":"Ask me whatever you need before you go in.","delivery":null,"status":200}
+{"t":1794509697195,"npc_id":"briefing_cutscene","text":"Victoria Sterling. Founded WhiteHat in 2010, former conference speaker, respected researcher on the record.","delivery":null,"status":200}
+{"t":1794509697454,"npc_id":"briefing_cutscene","text":"On our side of the record she runs the front and answers to 0day and the Architect. Her sign-off name is Sable.","delivery":null,"status":200}
+{"t":1794509698313,"npc_id":"briefing_cutscene","text":"No. She runs the shop floor. 0day leads the cell, the Architect coordinates the network.","delivery":null,"status":200}
+{"t":1794509698596,"npc_id":"briefing_cutscene","text":"Her name's on the invoices. That's why she's the one you can reach.","delivery":null,"status":200}
+{"t":1794509699444,"npc_id":"briefing_cutscene","text":"Two stages. Reception first. The receptionist's badge opens the conference area. Weak defaults, so it cracks in seconds. Talk to her and lean in by her lanyard.","delivery":null,"status":200}
+{"t":1794509699725,"npc_id":"briefing_cutscene","text":"Then Sterling's executive card in the meeting. Custom keys, so it's Darkside -- about half a minute.","delivery":null,"status":200}
+{"t":1794509699992,"npc_id":"briefing_cutscene","text":"Your moment's at the whiteboard. Stand close and keep her talking while it reads.","delivery":null,"status":200}
+{"t":1794509700328,"npc_id":"agent_nightshade","text":"Capture and replay. Her card broadcasts, we copy it, we wear it. Same trick they use on us.","delivery":null,"status":200}
+{"t":1794509700688,"npc_id":"agent_nightshade","text":"One day it'll be our badge somebody clones. Remember how easy it was.","delivery":null,"status":200}
+{"t":1794509701025,"npc_id":"agent_nightshade","text":"Last time, a card meant getting it off somebody. This time you just stand next to it.","delivery":null,"status":200}
+{"t":1794509701262,"npc_id":"briefing_cutscene","text":"Picks for anything keyed, the cloner for anything carded. No PIN cracker this time. Nightshade still has ours in pieces from St. Catherine's.","delivery":null,"status":200}
+{"t":1794509702112,"npc_id":"briefing_cutscene","text":"Play the curious recruit. She loves talking about the work. The cloner is passive until you trigger it.","delivery":null,"status":200}
+{"t":1794509702955,"npc_id":"briefing_cutscene","text":"In the server room you'll find their training lab: an isolated VM network, reachable only from a terminal in that room. It's where they rehearse exploits before they sell them.","delivery":null,"status":200}
+{"t":1794509703229,"npc_id":"briefing_cutscene","text":"Map it, work the services, and get to the legacy distcc box. That's where the operational logs live.","delivery":null,"status":200}
+{"t":1794509704083,"npc_id":"briefing_cutscene","text":"Recon, FTP, the web host's price list, then distcc for the logs. The distcc one is the case.","delivery":null,"status":200}
+{"t":1794509704366,"npc_id":"briefing_cutscene","text":"Four flags. Submit each at the drop-site terminal in the server room -- it sends them to me.","delivery":null,"status":200}
+{"t":1794509705167,"npc_id":"briefing_cutscene","text":"You're a freelance pentester Sterling's looking at as a recruit. Small firms, drawn to the grey-market side. That's the profile that gets you a meeting.","delivery":null,"status":200}
+{"t":1794509705506,"npc_id":"briefing_cutscene","text":"Entry is a conference-room meeting this afternoon. After that the building empties and you come back for the real work.","delivery":null,"status":200}
+{"t":1794509706437,"npc_id":"briefing_cutscene","text":"After dark. Most staff gone, a guard on patrol in the executive wing. That's your window.","delivery":null,"status":200}
+{"t":1794509707254,"npc_id":"briefing_cutscene","text":"Before you go in -- how do you want to play it?","delivery":null,"status":200}
+{"t":1794509707536,"npc_id":"briefing_cutscene","text":"Your call.","delivery":null,"status":200}
+{"t":1794509708350,"npc_id":"briefing_cutscene","text":"Good. Zero Day invoices everything, so somewhere in that building St. Catherine's is on paper. Bring me the paper.","delivery":null,"status":200}
+{"t":1794509708670,"npc_id":"briefing_cutscene","text":"Thorough takes time, though, and there's a guard on nights. Don't let him find you reading.","delivery":null,"status":200}
+{"t":1794509708953,"npc_id":"briefing_cutscene","text":"Listen. Every life St. Catherine's lost, it lost to something Zero Day sold.","delivery":null,"status":200}
+{"t":1794509709760,"npc_id":"briefing_cutscene","text":"Good. Keep your head down in there.","delivery":null,"status":200}
+{"t":1794509710095,"npc_id":"briefing_cutscene","text":"WhiteHat Security, Callaghan Square, Cardiff. I'm on comms the whole time. The drop-site terminal in the server room takes your flags and sends them straight to me.","delivery":null,"status":200}
+{"t":1794509710443,"npc_id":"briefing_cutscene","text":"And one more thing. Come back in one piece.","delivery":null,"status":200}
+{"t":1794509710804,"npc_id":"briefing_cutscene","text":"Meet Sterling, clone her card, then come back after dark. Go.","delivery":null,"status":200}
+{"t":1794509777219,"npc_id":"ffion_rees","text":"Charger, charger... I know I left it here somewhere.","delivery":null,"status":503}
+{"t":1794509780999,"npc_id":"narrator","text":"SAFETYNET headquarters. The morning after WhiteHat Security.","delivery":null,"status":200}
+{"t":1794510031331,"npc_id":"narrator","text":"A SAFETYNET briefing room. Netherton by the screen, HaX with the file open, and a man in a lab coat half-buried in a laptop he built himself.","delivery":null,"status":200}
+{"t":1794510032431,"npc_id":"director_netherton","text":"Agent 0x00. This is Operation Cyber Arsenal.","delivery":null,"status":200}
+{"t":1794510033261,"npc_id":"director_netherton","text":"Zero Day Syndicate used to sell exploits to whoever paid. Now they choose the targets first.","delivery":null,"status":200}
+{"t":1794510033956,"npc_id":"director_netherton","text":"That is a line I do not let anyone cross. You are going in.","delivery":null,"status":200}
+{"t":1794510034691,"npc_id":"director_netherton","text":"HaX runs you, Nightshade the technical side. Listen to both.","delivery":null,"status":200}
+{"t":1794510035567,"npc_id":"agent_nightshade","text":"Morning. Whatever they've built, I'll take it apart from here. You just get me close to it.","delivery":null,"status":200}
+{"t":1794510045956,"npc_id":"director_netherton","text":"HaX. The floor's yours.","delivery":null,"status":200}
+{"t":1794510046294,"npc_id":"briefing_cutscene","text":"Right. Zero Day Syndicate. You heard of them?","delivery":null,"status":200}
+{"t":1794510047471,"npc_id":"briefing_cutscene","text":"Zero Day runs behind a real pentest firm -- WhiteHat Security Services. Legitimate audits by day. An exploit marketplace in the back rooms.","delivery":null,"status":200}
+{"t":1794510047837,"npc_id":"briefing_cutscene","text":"They don't run the attacks. They arm the cells that do.","delivery":null,"status":200}
+{"t":1794510048845,"npc_id":"briefing_cutscene","text":"Ransomware Incorporated. Critical Mass. Others we haven't confirmed. Zero Day is their common supplier.","delivery":null,"status":200}
+{"t":1794510049152,"npc_id":"briefing_cutscene","text":"You worked St. Catherine's last month. The hospital that went dark.","delivery":null,"status":200}
+{"t":1794510049467,"npc_id":"briefing_cutscene","text":"The ransomware ran on a ProFTPD backdoor. That exploit didn't come from the crew who deployed it.","delivery":null,"status":200}
+{"t":1794510050415,"npc_id":"briefing_cutscene","text":"They did. An invoice turned up at St. Catherine's with Zero Day's name on the sale. Now we want their side of it.","delivery":null,"status":200}
+{"t":1794510050718,"npc_id":"briefing_cutscene","text":"They sold it as a product. Twenty-five thousand on the invoice, healthcare premium already built into the price.","delivery":null,"status":200}
+{"t":1794510051624,"npc_id":"briefing_cutscene","text":"They knew, and they billed for knowing. That's the case we're building. And there's a Phase 2 behind it.","delivery":null,"status":200}
+{"t":1794510051993,"npc_id":"briefing_cutscene","text":"Three things, then. One: get inside and clone Victoria Sterling's executive keycard. She's the front's CEO, and she runs this end of the cell for 0day.","delivery":null,"status":200}
+{"t":1794510052354,"npc_id":"briefing_cutscene","text":"Two: after hours, get onto their training network and pull the flags. Recon, the services, and the legacy distcc box where their records sit.","delivery":null,"status":200}
+{"t":1794510052650,"npc_id":"briefing_cutscene","text":"Three: the physical paper trail. Client roster, the catalogue, anything naming St. Catherine's or Phase 2.","delivery":null,"status":200}
+{"t":1794510052941,"npc_id":"briefing_cutscene","text":"Ask me whatever you need before you go in.","delivery":null,"status":200}
+{"t":1794510053842,"npc_id":"briefing_cutscene","text":"Victoria Sterling. Founded WhiteHat in 2010, former conference speaker, respected researcher on the record.","delivery":null,"status":200}
+{"t":1794510054136,"npc_id":"briefing_cutscene","text":"On our side of the record she runs the front and answers to 0day and the Architect. Her sign-off name is Sable.","delivery":null,"status":200}
+{"t":1794510055036,"npc_id":"briefing_cutscene","text":"No. She runs the shop floor. 0day leads the cell, the Architect coordinates the network.","delivery":null,"status":200}
+{"t":1794510055343,"npc_id":"briefing_cutscene","text":"Her name's on the invoices. That's why she's the one you can reach.","delivery":null,"status":200}
+{"t":1794510056239,"npc_id":"briefing_cutscene","text":"Two stages. Reception first. The receptionist's badge opens the conference area. Weak defaults, so it cracks in seconds. Talk to her and lean in by her lanyard.","delivery":null,"status":200}
+{"t":1794510056602,"npc_id":"briefing_cutscene","text":"Then Sterling's executive card in the meeting. Custom keys, so it's Darkside -- about half a minute.","delivery":null,"status":200}
+{"t":1794510056953,"npc_id":"briefing_cutscene","text":"Your moment's at the whiteboard. Stand close and keep her talking while it reads.","delivery":null,"status":200}
+{"t":1794510057330,"npc_id":"agent_nightshade","text":"Capture and replay. Her card broadcasts, we copy it, we wear it. Same trick they use on us.","delivery":null,"status":200}
+{"t":1794510057625,"npc_id":"agent_nightshade","text":"One day it'll be our badge somebody clones. Remember how easy it was.","delivery":null,"status":200}
+{"t":1794510057965,"npc_id":"agent_nightshade","text":"Last time, a card meant getting it off somebody. This time you just stand next to it.","delivery":null,"status":200}
+{"t":1794510058320,"npc_id":"briefing_cutscene","text":"Picks for anything keyed, the cloner for anything carded. No PIN cracker this time. Nightshade still has ours in pieces from St. Catherine's.","delivery":null,"status":200}
+{"t":1794510059172,"npc_id":"briefing_cutscene","text":"Play the curious recruit. She loves talking about the work. The cloner is passive until you trigger it.","delivery":null,"status":200}
+{"t":1794510060075,"npc_id":"briefing_cutscene","text":"In the server room you'll find their training lab: an isolated VM network, reachable only from a terminal in that room. It's where they rehearse exploits before they sell them.","delivery":null,"status":200}
+{"t":1794510060387,"npc_id":"briefing_cutscene","text":"Map it, work the services, and get to the legacy distcc box. That's where the operational logs live.","delivery":null,"status":200}
+{"t":1794510061207,"npc_id":"briefing_cutscene","text":"Recon, FTP, the web host's price list, then distcc for the logs. The distcc one is the case.","delivery":null,"status":200}
+{"t":1794510061547,"npc_id":"briefing_cutscene","text":"Four flags. Submit each at the drop-site terminal in the server room -- it sends them to me.","delivery":null,"status":200}
+{"t":1794510062617,"npc_id":"briefing_cutscene","text":"You're a freelance pentester Sterling's looking at as a recruit. Small firms, drawn to the grey-market side. That's the profile that gets you a meeting.","delivery":null,"status":200}
+{"t":1794510062922,"npc_id":"briefing_cutscene","text":"Entry is a conference-room meeting this afternoon. After that the building empties and you come back for the real work.","delivery":null,"status":200}
+{"t":1794510063801,"npc_id":"briefing_cutscene","text":"After dark. Most staff gone, a guard on patrol in the executive wing. That's your window.","delivery":null,"status":200}
+{"t":1794510064722,"npc_id":"briefing_cutscene","text":"Before you go in -- how do you want to play it?","delivery":null,"status":200}
+{"t":1794510065021,"npc_id":"briefing_cutscene","text":"Your call.","delivery":null,"status":200}
+{"t":1794510065990,"npc_id":"briefing_cutscene","text":"Good. Zero Day invoices everything, so somewhere in that building St. Catherine's is on paper. Bring me the paper.","delivery":null,"status":200}
+{"t":1794510066302,"npc_id":"briefing_cutscene","text":"Thorough takes time, though, and there's a guard on nights. Don't let him find you reading.","delivery":null,"status":200}
+{"t":1794510066694,"npc_id":"briefing_cutscene","text":"Listen. Every life St. Catherine's lost, it lost to something Zero Day sold.","delivery":null,"status":200}
+{"t":1794510067734,"npc_id":"briefing_cutscene","text":"Good. Keep your head down in there.","delivery":null,"status":200}
+{"t":1794510068037,"npc_id":"briefing_cutscene","text":"WhiteHat Security, Callaghan Square, Cardiff. I'm on comms the whole time. The drop-site terminal in the server room takes your flags and sends them straight to me.","delivery":null,"status":200}
+{"t":1794510068335,"npc_id":"briefing_cutscene","text":"And one more thing. Come back in one piece.","delivery":null,"status":200}
+{"t":1794510068682,"npc_id":"briefing_cutscene","text":"Meet Sterling, clone her card, then come back after dark. Go.","delivery":null,"status":200}
+{"t":1794510121595,"npc_id":"ffion_rees","text":"Charger, charger... I know I left it here somewhere.","delivery":null,"status":503}
+{"t":1794510139113,"npc_id":"agent_0x99","text":"Last look. Once you're out, the search team has that building.","delivery":null,"status":503}
+{"t":1794510140567,"npc_id":"agent_0x99","text":"The server room safe's still shut, for one.","delivery":null,"status":503}
+{"t":1794510146430,"npc_id":"agent_0x99","text":"Go on, then. She's not leaving her desk tonight.","delivery":null,"status":503}
+{"t":1794510166866,"npc_id":"agent_0x99","text":"Still in there. That search team's getting restless.","delivery":null,"status":503}
+{"t":1794510168349,"npc_id":"agent_0x99","text":"The server room safe's still shut, for one.","delivery":null,"status":503}
+{"t":1794510173508,"npc_id":"agent_0x99","text":"Side door, two minutes. Don't use the lobby.","delivery":null,"status":503}
+{"t":1794510175761,"npc_id":"agent_0x99","text":"Leave her to us.","delivery":null,"status":503}
+{"t":1794510177076,"npc_id":"narrator","text":"SAFETYNET headquarters. The morning after WhiteHat Security.","delivery":null,"status":200}
+{"t":1794510183384,"npc_id":"closing_debrief","text":"There you are. Sit down before you fall down.","delivery":null,"status":200}
+{"t":1794510187207,"npc_id":"closing_debrief","text":"The network first. All four flags, and the distcc logs are the case.","delivery":null,"status":200}

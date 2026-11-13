@@ -82,7 +82,7 @@ export function containerReturnBlocked(arm, ownClose = true) {
     if (!ownClose) return 'not_own_close';
     try { if (w.playerIsKnockedOut?.()) return 'knocked_out'; } catch (e) { /* no health system */ }
     if (w.minigameClosedByDamage?.()) return 'hit';
-    const hitAt = w.lastPlayerHitAt?.();
+    const hitAt = w.lastPlayerHitAtWall?.();
     if (arm && Number.isFinite(hitAt) && hitAt >= arm.at) return 'hit';
     if (w.MinigameFramework?.currentMinigame) return 'busy';
     if (arm && (w.currentPlayerRoom || '') !== arm.room) return 'room_changed';

@@ -1,0 +1,17 @@
+game 2309 (vance_ally)
+"opened robert_vance_phone"
+thread: {"choices":["1. (Close.)"],"header":"☎\nCall","thread":""}
+shot vance_ally_thread
+dialling: {"bar":"CALLING","thread":""}
+shot vance_ally_calling
+call: {"bar":"ON CALL | 0:01","subs":["ROBERT VANCE (OPS DESK): Vance. What do you need?"],"choices":["1. How do the charge controls work?","2. How do I shut this down safely?","3. What should I be doing right now?","4. How bad is it?","5. That's everything for now."]}
+shot vance_ally_call
+mid: {"subs":["Robert Vance (ops desk): Vance. What do you need?","You: How do the charge controls work?","ROBERT VANCE (OPS DESK): Three rack banks, A, B and C, and each one's got its own management unit and its own cooling loop.","ROBERT VANCE (OPS DESK): SCADA's theirs, so the only thing that works is the hardwired shutdown in the plant room."],"choices":["1. How do I shut this down safely?","2. What should I be doing right now?","3. How bad is it?","4. That's everything for now."]}
+after End: mg="PhoneChatMinigame phone-chat" rows=["Outgoing call, 0:11"]
+"no contact robert_vance_phone"
+thread after: {"choices":["1. (Close.)"],"header":"☎\nCall","thread":"Vance. What do you need? | 04:05 | How do the charge controls work? | 04:05 | Three rack banks, A, B and C, and each one's got its own management unit and its own cooling loop. | 04:05 | SCADA's theirs, so the only thing that works is the hardwired shutdown in the plant room. | 04:05 | ☎ | Outgoing call, 0:11"}
+shot vance_ally_thread_after
+second call: {"bar":"ON CALL | 0:01","subs":["ROBERT VANCE (OPS DESK): Vance."],"choices":["1. How do I shut this down safely?","2. What should I be doing right now?","3. How bad is it?","4. That's everything for now."]}
+shot vance_ally_call2
+/tts requests: ["narrator","A SAFETYNET operations room. Director Netherton is already on his feet; Agent HaX is patching in the technical desk."] ["director_netherton","Agent 0x00. ENTROPY used to steal. Now they break the things people can't live without."] ["director_netherton","I want my best in the room and my best on the wire. Nightshade has read the control systems. HaX has the rest."] ["ag
+["conversation_closed:robert_vance_phone@65.6","conversation_closed:robert_vance_phone@80"]

@@ -1,0 +1,42 @@
+{
+  "caller_forced": {
+    "history": [
+      {
+        "read": true,
+        "text": "Caller forced here.",
+        "type": "npc",
+        "gameTime": -3599194,
+        "preloaded": true,
+        "timestamp": 1794501421372
+      },
+      {
+        "read": true,
+        "text": "This is the forced caller. You can hear me now.",
+        "type": "npc",
+        "gameTime": 18887,
+        "timestamp": 1794505039453
+      }
+    ],
+    "storyPath": "scenarios/test_phone_calls/ink/caller_forced.json",
+    "storyState": "{\"flows\":{\"DEFAULT_FLOW\":{\"callstack\":{\"threads\":[{\"callstack\":[{\"exp\":false,\"type\":0}],\"threadIndex\":0,\"previousContentObject\":\"ring_call.0.7\"}],\"threadCounter\":2},\"outputStream\":[\"^This is the forced caller. You can hear me now.\",\"\\n\"],\"choiceThreads\":{\"2\":{\"callstack\":[{\"cPath\":\"ring_call.0\",\"idx\":7,\"exp\":false,\"type\":0}],\"threadIndex\":2,\"previousContentObject\":\"ring_call.0.6\"}},\"currentChoices\":[{\"text\":\"Goodbye.\",\"index\":0,\"originalChoicePath\":\"ring_call.0.7\",\"originalThreadIndex\":2,\"targetPath\":\"ring_call.0.c-0\",\"tags\":[]}]}},\"currentFlowName\":\"DEFAULT_FLOW\",\"variablesState\":{\"call_answer_seconds\":6},\"evalStack\":[],\"visitCounts\":{},\"turnIndices\":{},\"turnIdx\":1,\"storySeed\":98,\"previousRandom\":0,\"inkSaveVersion\":10,\"inkFormatVersion\":21}",
+    "currentKnot": "ring_call",
+    "pendingCall": {
+      "forced": [
+        {
+          "knot": "ring_call",
+          "state": "connected",
+          "resume": false,
+          "opening": false,
+          "onMissed": "callback",
+          "withheld": false,
+          "callLabel": "Forced",
+          "disableClose": true,
+          "answerSeconds": 6,
+          "untilAnswered": false
+        }
+      ]
+    },
+    "preloadedKnot": "start",
+    "lastEnteredKnot": "ring_call"
+  }
+}

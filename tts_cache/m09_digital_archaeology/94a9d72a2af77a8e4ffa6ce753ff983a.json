@@ -1,0 +1,13 @@
+{
+  "key": "94a9d72a2af77a8e4ffa6ce753ff983a",
+  "npc": "nightshade_phone",
+  "text": "Every lock is a promise somebody made years ago. Most of them forget they made it. Goodnight, 0x00.",
+  "voice": "Enceladus",
+  "style": "SAFETYNET's cryptographic-hardware analyst, now a triple agent. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, precise, collegial; serene and a little tired.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-13",
+  "recorded_at": "2026-11-13T00:22:55Z"
+}

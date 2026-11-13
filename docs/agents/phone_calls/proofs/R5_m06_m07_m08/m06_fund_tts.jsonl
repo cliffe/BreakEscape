@@ -1,0 +1,46 @@
+{"t":1794525646734,"npc_id":"narrator","text":"A SAFETYNET briefing room. Netherton drops a financial dossier on the table. Nightshade already has the transaction graph open.","delivery":null,"status":200}
+{"t":1794525647037,"npc_id":"director_netherton","text":"Agent 0x00. Every cell we have hit is being paid by someone. Tonight we chase the money. HaX.","delivery":null,"status":200}
+{"t":1794525647269,"npc_id":"agent_nightshade","text":"Money's just another protocol, and this one leaks. Follow enough hops and the mixers stop hiding people and start revealing them.","delivery":null,"status":200}
+{"t":1794525647511,"npc_id":"opening_briefing_npc","text":"Two payments we've traced so far. One came in, one went out, and both went through the same exchange.","delivery":null,"status":200}
+{"t":1794525648555,"npc_id":"opening_briefing_npc","text":"In: Ransomware Incorporated's wallet. $2.4 million in one payment this summer, hospital ransoms pooled.","delivery":null,"status":200}
+{"t":1794525648959,"npc_id":"opening_briefing_npc","text":"Out: $847,000 to the Insider Threat Initiative for the Quantum Dynamics job, through TalentStack's wallet.","delivery":null,"status":200}
+{"t":1794525649252,"npc_id":"opening_briefing_npc","text":"Somebody is keeping the books for all of them.","delivery":null,"status":200}
+{"t":1794525649515,"npc_id":"opening_briefing_npc","text":"HashChain Exchange. A trading platform on paper. In practice, the bank for every ENTROPY cell we know. The Crypto Anarchists run it.","delivery":null,"status":200}
+{"t":1794525649730,"npc_id":"opening_briefing_npc","text":"Their mixer takes Bitcoin in, runs it through Monero, and pays it into one of their own cold wallets.","delivery":null,"status":200}
+{"t":1794525649948,"npc_id":"opening_briefing_npc","text":"From outside, the trail stops there. Their own records pick it up again.","delivery":null,"status":200}
+{"t":1794525650305,"npc_id":"opening_briefing_npc","text":"Two people matter. The CEO calls himself \"Satoshi Nakamoto the Second\". True believer. Nobody turns him.","delivery":null,"status":200}
+{"t":1794525650634,"npc_id":"opening_briefing_npc","text":"The CTO, Dr Irina Volkova, built the mixer. She might turn.","delivery":null,"status":200}
+{"t":1794525651345,"npc_id":"opening_briefing_npc","text":"Thirty-seven papers in cryptography. She built their privacy systems for \"financial freedom\". Now they wash ransoms.","delivery":null,"status":200}
+{"t":1794525651602,"npc_id":"opening_briefing_npc","text":"Our profile says that sits badly with her.","delivery":null,"status":200}
+{"t":1794525651935,"npc_id":"opening_briefing_npc","text":"Show her what her work is paying for. If she turns, she opens the mixer up for us.","delivery":null,"status":200}
+{"t":1794525652168,"npc_id":"opening_briefing_npc","text":"If she won't, you detain her and hand her to the police with the evidence.","delivery":null,"status":200}
+{"t":1794525652414,"npc_id":"opening_briefing_npc","text":"You go in as the FCA, the Financial Conduct Authority, on a routine supervisory visit.","delivery":null,"status":200}
+{"t":1794525652683,"npc_id":"opening_briefing_npc","text":"Regulators ask to see everything, so nobody minds when you do.","delivery":null,"status":200}
+{"t":1794525652952,"npc_id":"opening_briefing_npc","text":"The paperwork gets you past reception. It won't survive a phone call to the FCA, so don't give anyone a reason to make one.","delivery":null,"status":200}
+{"t":1794525653270,"npc_id":"opening_briefing_npc","text":"Your usual kit: picks, the RFID cloner and the print kit. No PIN cracker this time; R&D still have it on the bench.","delivery":null,"status":200}
+{"t":1794525654063,"npc_id":"opening_briefing_npc","text":"Their backend first. Crack the accounts from the terminal in their server room and bring the flags to our drop-site.","delivery":null,"status":200}
+{"t":1794525654367,"npc_id":"opening_briefing_npc","text":"Then their records. Somewhere in there is a wallet every cell draws on.","delivery":null,"status":200}
+{"t":1794525654597,"npc_id":"opening_briefing_npc","text":"And there's a clock. The wallets we watch have gone quiet, the way they do before a big payout.","delivery":null,"status":200}
+{"t":1794525654862,"npc_id":"opening_briefing_npc","text":"Find the fund. Then you'll have two calls to make: what happens to the money, and what happens to Volkova.","delivery":null,"status":200}
+{"t":1794525655153,"npc_id":"opening_briefing_npc","text":"Volkova's on the trading floor, through the checkpoint. Start with her.","delivery":null,"status":200}
+{"t":1794525669379,"npc_id":"agent_0x99_handler","text":"I've got it in front of me.","delivery":null,"status":503}
+{"t":1794525670801,"npc_id":"agent_0x99_handler","text":"$12.8 million still in the wallet, pending for six cells. The advances have already gone.","delivery":null,"status":503}
+{"t":1794525672258,"npc_id":"agent_0x99_handler","text":"Look who signed it. Satoshi's Ghost. The Crypto Anarchists' leader, and the man in the corner office upstairs.","delivery":null,"status":503}
+{"t":1794525673739,"npc_id":"agent_0x99_handler","text":"Not Ghost Protocol, the other name on that page. They're one of the cells being paid.","delivery":null,"status":503}
+{"t":1794525679296,"npc_id":"agent_0x99_handler","text":"Advances first, balances in seventy-two hours. The first stage is already paid for.","delivery":null,"status":503}
+{"t":1794525680761,"npc_id":"agent_0x99_handler","text":"Whatever we do with the wallet only touches what hasn't left.","delivery":null,"status":503}
+{"t":1794525682178,"npc_id":"agent_0x99_handler","text":"Which leaves you a choice.","delivery":null,"status":503}
+{"t":1794525691564,"npc_id":"agent_0x99_handler","text":"I've got it in front of me.","delivery":null,"status":503}
+{"t":1794525692981,"npc_id":"agent_0x99_handler","text":"$12.8 million still in the wallet, pending for six cells. The advances have already gone.","delivery":null,"status":503}
+{"t":1794525694431,"npc_id":"agent_0x99_handler","text":"Look who signed it. Satoshi's Ghost. The Crypto Anarchists' leader, and the man in the corner office upstairs.","delivery":null,"status":503}
+{"t":1794525695845,"npc_id":"agent_0x99_handler","text":"Not Ghost Protocol, the other name on that page. They're one of the cells being paid.","delivery":null,"status":503}
+{"t":1794525701240,"npc_id":"agent_0x99_handler","text":"Their own estimate, across every operation on that page.","delivery":null,"status":503}
+{"t":1794525702714,"npc_id":"agent_0x99_handler","text":"And they've called it \"The Architect's Masterpiece\".","delivery":null,"status":503}
+{"t":1794525704128,"npc_id":"agent_0x99_handler","text":"Which leaves you a choice.","delivery":null,"status":503}
+{"t":1794525705548,"npc_id":"agent_0x99_handler","text":"Freeze it, and the balances stop tonight. They'll know we were here the moment we do.","delivery":null,"status":503}
+{"t":1794525706991,"npc_id":"agent_0x99_handler","text":"Or watch it. We map every cell that draws on it, and the money reaches them.","delivery":null,"status":503}
+{"t":1794525712096,"npc_id":"agent_0x99_handler","text":"I'll give you the cost of each. The call's yours.","delivery":null,"status":503}
+{"t":1794525713526,"npc_id":"agent_0x99_handler","text":"If you freeze it, the balances never reach the cells, and ENTROPY knows its bank is burned.","delivery":null,"status":503}
+{"t":1794525714973,"npc_id":"agent_0x99_handler","text":"If you watch it, the balances pay for what's on that page, and we get the map.","delivery":null,"status":503}
+{"t":1794525716403,"npc_id":"agent_0x99_handler","text":"Watching still works if we detain him. The payout's pre-signed; we keep it quiet until it's gone.","delivery":null,"status":503}
+{"t":1794525717842,"npc_id":"agent_0x99_handler","text":"The advances are gone either way.","delivery":null,"status":503}

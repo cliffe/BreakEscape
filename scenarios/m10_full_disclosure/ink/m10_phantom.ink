@@ -63,7 +63,7 @@ VAR pha_list_heard = false
     -> post
 }
 // Playtest R1 m-1: a condition, not a verdict, for the right officer too.
-Agent HaX: If that's wrong, Netherton loses Phantom till you can clear him. Sure?
+agent_0x99: If that's wrong, Netherton loses Phantom till you can clear him. Sure?
 + [I'm sure.]
     ~ officer_out = "phantom"
     ~ wrong_accusation = true

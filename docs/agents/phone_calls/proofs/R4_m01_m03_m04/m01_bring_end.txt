@@ -1,0 +1,21 @@
+game 2298 (bring_end)
+optional open: ["collect_office_intel"]
+"opened agent_0x99"
+hub: {"choices":["1. Operation Shatter resolved — I'm ready for debrief","2. I discovered what ENTROPY is planning - Operation Shatter","3. Got any general advice?","4. I'm good for now"],"header":null}
+shot bring_end_hub
+dialling: {"bar":"CALLING"}
+shot bring_end_calling
+call: {"bar":"ON CALL | 0:02","subs":["AGENT HAX: It went through. Not on an open line. Come back to HQ."],"choices":["1. On my way."]}
+shot bring_end_call
+overlay: "BEFORE THE MISSION ENDS | You have done what the mission needs. 1 optional objective is still open: | Collect pieces of office intelligence | End the mission now, or keep going? | Keep going | End the mission now"
+shot bring_end_overlay
+after End: call-open=false subs=[] debrief=true
+shot bring_end_last_line
+after call: mg="PersonChatMinigame person-chat" debrief=true phone-reopen=false
+shot bring_end_debrief
+later: mg="PersonChatMinigame person-chat"
+shot bring_end_debrief2
+handler /tts:
+"It went through. Not on an open line. Come back to HQ."
+"Walk out the way you came in. As far as Viral Dynamics knows, you were never here."
+["global_variable_changed:start_debrief_cutscene@47.2","conversation_closed:agent_0x99@49.1"]

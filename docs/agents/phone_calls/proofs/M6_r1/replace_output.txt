@@ -1,0 +1,10 @@
+game 2191 (replace)
+open ray_hollis person-chat to hold the ringer
+person-chat open: "PersonChatMinigame person-chat"
+fire T-5 then T-1 while the person-chat is open
+ringer while held (T-1 should have replaced the queued T-5): {"cur":null,"q":1,"banner":null,"bimg":null}
+ringing after close (should be taunt_t1): {"cur":{"npc":"the_architect","state":"ringing","knot":"taunt_t1","opened":false},"q":0,"banner":"☎ | No caller ID | Incoming call | Answer | Decline","bimg":null}
+shot replace_ringing_after_close
+opened call knot: {"cur":{"npc":"the_architect","state":"connected","knot":"taunt_t1","opened":true},"q":0,"banner":null,"bimg":null} call={"lines":[],"choices":[]}
+shot replace_opened
+thread rows after (one Call only): ["Call: No caller ID"]

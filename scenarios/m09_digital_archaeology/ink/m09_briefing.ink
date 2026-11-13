@@ -70,11 +70,11 @@ Director Magnus Netherton: The label named the building. Mountain States Records
 // Beat 4: HaX's first line (two fixed forms; C-3 the plain one).
 {
 - m08_hax_ko:
-    Agent HaX: You put me on the floor at the Citadel. I'm still running you.
+    hax_voice: You put me on the floor at the Citadel. I'm still running you.
 - m08_completed and not m08_nightshade_ko_before_fate:
-    Agent HaX: Keep not asking. By morning you won't need to.
+    hax_voice: Keep not asking. By morning you won't need to.
 - else:
-    Agent HaX: Sorry about the leave. This is why.
+    hax_voice: Sorry about the leave. This is why.
 }
 Director Magnus Netherton: HaX. The wall.
 -> the_wall
@@ -111,53 +111,53 @@ Director Magnus Netherton: HaX. The wall.
 }
 ~ temp shorten = unplayed >= 5
 // Stage 8 SC 3: "this year" dropped (m01-m03 ran in 2024).
-Agent HaX: One card for every operation against ENTROPY. The short version.
+hax_voice: One card for every operation against ENTROPY. The short version.
 
 // m01 Viral Dynamics. "" with m01_completed is Derek knocked out before he chose (an arrest).
 {
 - m01_completed and m01_final_choice == "fight":
-    Agent HaX: Viral Dynamics. Derek Lawson. You put him on the floor. He hasn't said a word since.
+    hax_voice: Viral Dynamics. Derek Lawson. You put him on the floor. He hasn't said a word since.
 - m01_completed and m01_final_choice == "recruit":
-    Agent HaX: Viral Dynamics. You offered Derek Lawson a deal. He chose to be a martyr.
+    hax_voice: Viral Dynamics. You offered Derek Lawson a deal. He chose to be a martyr.
 - m01_completed and m01_final_choice == "expose":
-    Agent HaX: Viral Dynamics. You put Derek Lawson's projections on every front page.
+    hax_voice: Viral Dynamics. You put Derek Lawson's projections on every front page.
 - m01_completed and m01_final_choice == "surrender":
-    Agent HaX: Viral Dynamics. Derek Lawson put the device down. He still hasn't said why.
+    hax_voice: Viral Dynamics. Derek Lawson put the device down. He still hasn't said why.
 - m01_completed or not shorten:
     // SE R1 C-08: the arrest (or "") shares the canon line.
-    Agent HaX: Viral Dynamics. Derek Lawson's cell planned a panic that would kill people. Arrested. He hasn't said a word since.
+    hax_voice: Viral Dynamics. Derek Lawson's cell planned a panic that would kill people. Arrested. He hasn't said a word since.
 }
 
 // m02 St. Catherine's. Ghost walked on every branch.
 {
 - m02_completed and m02_exposed_hospital and m02_ghost_deal_accepted:
-    Agent HaX: St. Catherine's. You published the board's cover-up, and you made a deal with Ghost. Ghost walked.
+    hax_voice: St. Catherine's. You published the board's cover-up, and you made a deal with Ghost. Ghost walked.
 - m02_completed and m02_exposed_hospital:
-    Agent HaX: St. Catherine's. You published the board's cover-up. Ghost walked.
+    hax_voice: St. Catherine's. You published the board's cover-up. Ghost walked.
 - m02_completed and m02_ghost_deal_accepted:
-    Agent HaX: St. Catherine's. You made a deal with Ghost to get the hospital back. Ghost walked.
+    hax_voice: St. Catherine's. You made a deal with Ghost to get the hospital back. Ghost walked.
 - m02_completed:
-    Agent HaX: St. Catherine's. The hospital came back, the board kept its secret, and Ghost walked.
+    hax_voice: St. Catherine's. The hospital came back, the board kept its secret, and Ghost walked.
 - not shorten:
-    Agent HaX: St. Catherine's, a hospital held to ransom. It recovered. Ghost, who did it, was never caught.
+    hax_voice: St. Catherine's, a hospital held to ransom. It recovered. Ghost, who did it, was never caught.
 }
 
 // m03 Zero Day. A finished run with no fate recorded reads as the canon.
 {
 - m03_completed and m03_victoria_fate == "recruited":
-    Agent HaX: Zero Day. Victoria Sterling turned. We've never used her.
+    hax_voice: Zero Day. Victoria Sterling turned. We've never used her.
 - m03_completed and m03_victoria_fate == "arrested":
-    Agent HaX: Zero Day. Victoria Sterling is in custody, and the CPS has a case.
+    hax_voice: Zero Day. Victoria Sterling is in custody, and the CPS has a case.
 - m03_completed and m03_victoria_fate == "escaped":
-    Agent HaX: Zero Day. Victoria Sterling got out. Gone.
+    hax_voice: Zero Day. Victoria Sterling got out. Gone.
 - m03_completed and m03_victoria_fate == "ko":
-    Agent HaX: Zero Day. You put Victoria Sterling down. She's in custody, and silent.
+    hax_voice: Zero Day. You put Victoria Sterling down. She's in custody, and silent.
 // Stage 8 BP F-07: every finished m03 run ends at Sterling's choice, so a
 // finished run with no fate recorded still names her.
 - m03_completed:
-    Agent HaX: Zero Day. Victoria Sterling, their Cardiff broker. You dealt with her.
+    hax_voice: Zero Day. Victoria Sterling, their Cardiff broker. You dealt with her.
 - not shorten:
-    Agent HaX: Zero Day, ENTROPY's exploit shop. Their Cardiff broker was never identified, and they kept trading.
+    hax_voice: Zero Day, ENTROPY's exploit shop. Their Cardiff broker was never identified, and they kept trading.
 }
 
 // m04 Albion (always kept). Two lines when played (SE R1 C-08): Voltage taken
@@ -165,58 +165,58 @@ Agent HaX: One card for every operation against ENTROPY. The short version.
 {
 - m04_completed:
     { m04_voltage_captured:
-        Agent HaX: Albion. Voltage is in custody.
+        hax_voice: Albion. Voltage is in custody.
     - else:
-        Agent HaX: Albion. Voltage got away.
+        hax_voice: Albion. Voltage got away.
     }
     {
     - m04_disclosure_choice == "full":
-        Agent HaX: You told the inquiry everything about how Critical Mass got in.
+        hax_voice: You told the inquiry everything about how Critical Mass got in.
     // Stage 8 SC 6 / BP F-06: m04's inquest exists only when crew were
     // lost, and nine deaths were never filed as a maintenance fault.
     - m04_disclosure_choice == "partial" and m04_crew_lost:
-        Agent HaX: You told the inquiry half of how Critical Mass got in.
+        hax_voice: You told the inquiry half of how Critical Mass got in.
     - m04_disclosure_choice == "partial":
-        Agent HaX: You told the public half of how Critical Mass got in.
+        hax_voice: You told the public half of how Critical Mass got in.
     - m04_crew_lost:
-        Agent HaX: The report said industrial accident, cause under investigation, and you let it.
+        hax_voice: The report said industrial accident, cause under investigation, and you let it.
     - else:
-        Agent HaX: The report said maintenance fault, and you let it.
+        hax_voice: The report said maintenance fault, and you let it.
     }
 - else:
-    Agent HaX: Albion, a grid battery site. Critical Mass got in. Voltage, who led it, disappeared after.
+    hax_voice: Albion, a grid battery site. Critical Mass got in. Voltage, who led it, disappeared after.
 }
 Narrator: She walks the wall fast, like someone who has rehearsed it.
 
 // m05 Quantum Dynamics (always kept).
 {
 - m05_completed and m05_final_choice == "public_exposure":
-    Agent HaX: Quantum Dynamics. You put David Torres in the papers, and the Recruiter's placements with him.
+    hax_voice: Quantum Dynamics. You put David Torres in the papers, and the Recruiter's placements with him.
 - m05_completed and m05_final_choice == "turn_double_agent":
-    Agent HaX: Quantum Dynamics. David Torres works for us now, from inside the Recruiter's network.
+    hax_voice: Quantum Dynamics. David Torres works for us now, from inside the Recruiter's network.
 - m05_completed and m05_final_choice == "combat_lethal":
-    Agent HaX: Quantum Dynamics. David Torres died in that building.
+    hax_voice: Quantum Dynamics. David Torres died in that building.
 - m05_completed and m05_final_choice == "combat_nonlethal":
-    Agent HaX: Quantum Dynamics. You put David Torres down and handed him over.
+    hax_voice: Quantum Dynamics. You put David Torres down and handed him over.
 // Playtest phase 5 m-5: a turned Torres (he rings tonight as a live placement).
 - m05_torres_turned:
-    Agent HaX: Quantum Dynamics. David Torres works for us now, from inside the Recruiter's network.
+    hax_voice: Quantum Dynamics. David Torres works for us now, from inside the Recruiter's network.
 - else:
     // SE R1 C-08: arrest and the canon share one line.
-    Agent HaX: Quantum Dynamics. David Torres stole for the Recruiter to pay for his wife's treatment. Arrested.
+    hax_voice: Quantum Dynamics. David Torres stole for the Recruiter to pay for his wife's treatment. Arrested.
 }
 
 // m06 the fund.
 {
 - m06_completed and m06_monitoring_enabled:
-    Agent HaX: ENTROPY's fund. You tagged its wallets, and we've watched it pay people ever since.
+    hax_voice: ENTROPY's fund. You tagged its wallets, and we've watched it pay people ever since.
 // Stage 8 BP F-03 / SC 7: the seized branch froze the fund (m06's debrief).
 - m06_completed and m06_assets_seized:
-    Agent HaX: ENTROPY's fund. You froze it before it paid out. Twelve point eight million, in evidence.
+    hax_voice: ENTROPY's fund. You froze it before it paid out. Twelve point eight million, in evidence.
 - m06_completed:
-    Agent HaX: ENTROPY's fund. You found it, and it was gone by the next day.
+    hax_voice: ENTROPY's fund. You found it, and it was gone by the next day.
 - not shorten:
-    Agent HaX: ENTROPY's fund. Found, then lost.
+    hax_voice: ENTROPY's fund. Found, then lost.
 }
 
 // m07 Portland (always kept). Austin covered = trojan_horse (the redirect sets
@@ -224,27 +224,27 @@ Narrator: She walks the wall fast, like someone who has rehearsed it.
 // uncovered gets "Day eleven. Eleven counties." in the stakes beat instead.
 {
 - m07_completed and m07_team_assignment == "trojan_horse":
-    Agent HaX: Portland. You sent the team to Austin, and dispatch is still answering. The hospitals are still rebooking operations.
+    hax_voice: Portland. You sent the team to Austin, and dispatch is still answering. The hospitals are still rebooking operations.
 - m07_completed and m07_team_assignment == "fracture":
-    Agent HaX: Portland. You sent the team to Washington, and the election will run. The hospitals are still rebooking operations.
+    hax_voice: Portland. You sent the team to Washington, and the election will run. The hospitals are still rebooking operations.
 - m07_completed and m07_team_assignment == "meltdown":
-    Agent HaX: Portland. You sent the team to the hospitals, and four thousand of them had an ordinary night. Austin didn't.
+    hax_voice: Portland. You sent the team to the hospitals, and four thousand of them had an ordinary night. Austin didn't.
 - m07_completed:
-    Agent HaX: Portland. The team circled Denver all night and reached nobody. The hospitals are still rebooking operations.
+    hax_voice: Portland. The team circled Denver all night and reached nobody. The hospitals are still rebooking operations.
 - else:
-    Agent HaX: Portland. One team, four sites. Austin was reached in time. Two of ours died at the others.
+    hax_voice: Portland. One team, four sites. Austin was reached in time. Two of ours died at the others.
 }
 
 // m08 The Mole (always kept). Every form carries the database, for the stakes.
 {
 - m08_completed and m08_nightshade_triple_agent:
-    Agent HaX: The Mole. Nightshade sent the threat database to Montana. You kept him in play anyway, at his desk and ours.
+    hax_voice: The Mole. Nightshade sent the threat database to Montana. You kept him in play anyway, at his desk and ours.
 - m08_completed and m08_nightshade_ko_before_fate:
-    Agent HaX: The Mole. Nightshade sent the threat database to Montana. You put him down before he chose, and we handed him over.
+    hax_voice: The Mole. Nightshade sent the threat database to Montana. You put him down before he chose, and we handed him over.
 - m08_completed:
-    Agent HaX: The Mole. Nightshade, fifteen years one of ours, sent the threat database to Montana. He's in custody.
+    hax_voice: The Mole. Nightshade, fifteen years one of ours, sent the threat database to Montana. He's in custody.
 - else:
-    Agent HaX: Nightshade, fifteen years one of ours, sent the threat database to Montana. He's in custody and saying nothing.
+    hax_voice: Nightshade, fifteen years one of ours, sent the threat database to Montana. He's in custody and saying nothing.
 }
 // Row 107: Netherton's visit, on an arrest that wasn't a knock-out. Stage 8
 // ruling 10 (VT 1): not on never played, where HaX's card says "saying nothing".
@@ -252,7 +252,7 @@ Narrator: She walks the wall fast, like someone who has rehearsed it.
     Director Magnus Netherton: He said you'd know where to find him. He meant the door.
 }
 { shorten:
-    Agent HaX: The rest are files you can read on the plane.
+    hax_voice: The rest are files you can read on the plane.
 }
 // The two names: HaX doesn't read them (row 100).
 Narrator: The last two cards have a photograph each and nothing written under them. HaX stops in front of them.
@@ -269,16 +269,16 @@ Director Magnus Netherton: ENTROPY's planner. Every card on this wall has his in
 Director Magnus Netherton: They call him the Architect. We have a suspect.
 Director Magnus Netherton: I will not say the name in this room until we can prove it.
 { m06_architect_identity_found:
-    Agent HaX: You heard me say it after HashChain. I called it Satoshi's guess.
+    hax_voice: You heard me say it after HashChain. I called it Satoshi's guess.
 }
 // Beat 7: the stakes, HaX, fact first.
-Agent HaX: Whatever the Publication is, he's building it from that database. Every weakness we've ever catalogued.
-Agent HaX: One entry, for scale. A flaw in the infusion pumps of a hundred and forty hospitals.
-Agent HaX: Analysis says hundreds dead in the first month if the cells get it. They're guessing. I'd like to find out they guessed high.
+hax_voice: Whatever the Publication is, he's building it from that database. Every weakness we've ever catalogued.
+hax_voice: One entry, for scale. A flaw in the infusion pumps of a hundred and forty hospitals.
+hax_voice: Analysis says hundreds dead in the first month if the cells get it. They're guessing. I'd like to find out they guessed high.
 // C-2: Austin uncovered = a finished m07 whose team didn't go to Austin
 // (fracture, meltdown, or no tasking). The redirect also reads trojan_horse.
 { m07_completed and m07_team_assignment != "trojan_horse":
-    Agent HaX: Day eleven. Eleven counties.
+    hax_voice: Day eleven. Eleven counties.
 }
 -> questions
 
@@ -289,17 +289,17 @@ Agent HaX: Analysis says hundreds dead in the first month if the cells get it. T
 }
 + { not asked_publication } [What's the Publication?]
     ~ asked_publication = true
-    Agent HaX: We don't know. That's what tonight is for.
+    hax_voice: We don't know. That's what tonight is for.
     Director Magnus Netherton: He chose the word. Whatever it is, he means everyone to read it.
     -> questions
 + { not asked_schedule } [Schedule attached. Of what?]
     ~ asked_schedule = true
     Director Magnus Netherton: Destruction. Series numbers from the archive's catalogue, and nothing else.
-    Agent HaX: Every box on that list is ash by the time the team lands. Be in the building first.
+    hax_voice: Every box on that list is ash by the time the team lands. Be in the building first.
     -> questions
 + { not asked_directly } [When do we go at the Architect directly?]
     ~ asked_directly = true
-    Agent HaX: Somebody always asks me that. This time it's now.
+    hax_voice: Somebody always asks me that. This time it's now.
     -> questions
 + [Let's go.]
     -> the_team
@@ -314,13 +314,13 @@ Director Magnus Netherton: This one didn't, Quintero. Noted.
 // C-7: Malhotra's hidden re-vetting (m10) shows nothing here. He asks, is
 // refused, and drops it at once, keen to be seen to be useful.
 Officer Dev Malhotra: If something goes wrong in there, I'd like to hear it go wrong.
-Agent HaX: I run 0x00.
+hax_voice: I run 0x00.
 Officer Dev Malhotra: Of course. I'll keep the spare channel warm.
 Officer Kenji Arakawa: I've asked Helena PD to keep their cars off that side of town tonight. Nobody asked who for. Nobody will.
 // Beat 10: the cracker. Her one double-edged line is this one.
 Narrator: Kowalczyk crosses the room and puts a PIN cracker in your hand.
 Agent 0x5E 'Lantern': Stores froze everything Nightshade ever signed for. This one's mine. Never been through stores, never been near him.
-Agent HaX: The long way is over.
+hax_voice: The long way is over.
 Agent 0x5E 'Lantern': The long way's for people who get paid by the hour.
 -> the_answer
 
@@ -343,6 +343,6 @@ Agent 0x5E 'Lantern': The long way's for people who get paid by the hour.
 // Beat 12 (fixed).
 Director Magnus Netherton: The plane leaves in ninety minutes. The team follows tonight.
 Director Magnus Netherton: Bring me a name I can say in court.
-Agent HaX: Line's open from wheels down.
+hax_voice: Line's open from wheels down.
 #exit_conversation
 -> DONE

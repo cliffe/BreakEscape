@@ -1,0 +1,19 @@
+game 2364 (ring_esd)
+dial read: anomaly_detected=true esd=false
+ringing: {"npc":"agent_0x99","state":"ringing"} banner="Agent HaX | SAFETYNET secure line | Incoming call | Answer | Decline"
+shot ring_esd_ringing
+voltage down: esd_authorized=true
+t+~1: ringer=null banner=null
+t+~2: ringer=null banner=null
+t+~3: ringer=null banner=null
+t+~4: ringer=null banner=null
+t+~6: ringer=null banner=null
+t+~10: ringer=null banner=null
+t+~25: ringer=null banner=null
+shot ring_esd_after_esd
+"opened agent_0x99"
+thread: {"header":null,"thread":"Agent, status check. Are you inside the facility? | 04:05 | The workshop wants a Level 2 card. Vance hasn't got one. Relay has, and it's old prox, like his. She walks the inverter room. | 04:05 | He's out of the way, the sixty-one degrees in Hall 1 is on record, and so is the attack. Grid control's standing by. The ESD is live. Press it. | 04:05"}
+rows=[]
+shot ring_esd_thread
+["global_variable_changed:esd_authorized@22.9"]
+exit=0

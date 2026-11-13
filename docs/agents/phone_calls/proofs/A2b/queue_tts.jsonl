@@ -1,0 +1,9 @@
+{"t":1794477341249,"npc_id":"debrief_host","text":"Welcome. This is the opening briefing. Close it when you are done.","delivery":null,"status":503}
+{"t":1794477341892,"npc_id":"debrief_host","text":"Good. A call will come in shortly.","delivery":null,"status":503}
+{"t":1794477363208,"npc_id":"caller_queue","text":"First caller on the line.","delivery":null,"status":503}
+{"t":1794477473010,"npc_id":"caller_queue","text":"Goodbye.","delivery":null,"status":503}
+{"t":1794477478385,"npc_id":"caller_queue_b","text":"Second caller, after the first.","delivery":null,"status":503}
+{"t":1794477481291,"npc_id":"caller_queue_b","text":"Goodbye.","delivery":null,"status":503}
+{"t":1794477521888,"npc_id":"legacy_voiced","text":"This is a legacy voiced call with no ring. It opens at once.","delivery":null,"status":503}
+{"t":1794477551971,"npc_id":"caller_replace","text":"This is the newer call, the only one that should ring.","delivery":null,"status":503}
+{"t":1794477555153,"npc_id":"caller_replace","text":"Goodbye.","delivery":null,"status":503}

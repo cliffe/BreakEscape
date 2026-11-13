@@ -5,6 +5,9 @@ EXTERNAL player_name()
 // globalVariables (declared below), exactly as m02's handler does.
 
 // ---- Progress globals (synced from globalVars) ----
+// Engine-written call variables (phone calls plan 2.11); the revelation call reads them.
+VAR call_answer_seconds = 0
+VAR call_is_callback = false
 VAR briefing_played = false
 VAR night_confrontation_ready = false
 VAR guard_detection_count = 0
@@ -96,7 +99,7 @@ VAR hint_guard_hostile_given = false
 // D2-14: once only. The exit ends on DONE, so every reopen restarts here.
 { not greeted:
     ~ greeted = true
-    On the line, {player_name()}.
+    Here, {player_name()}.
 }
 -> hub
 
@@ -110,11 +113,13 @@ VAR hint_guard_hostile_given = false
 // mission at once. With the case made, the player sweeps the building and calls in
 // here when ready to leave. First in the hub: it is the way out.
 + {victoria_ko and night_confrontation_ready and not victoria_choice_made} [I'm done in here. Bring me in.]
-    -> extract_offer
+    #place_call:extract_call
+    -> DONE
 // Pass 5 (P3-19): the four calls now arrive as texts the player clicks; a missed or
 // dismissed text would lose the call for good, so the hub offers it again (m02 pattern).
 + {flag_distcc_submitted and not revelation_heard} [You wanted to talk about the distcc logs.]
-    -> m2_revelation_call
+    #place_call:m2_revelation_call
+    -> DONE
 + {catalogue_seen and not catalogue_call_heard} [About that catalogue from the safe.]
     -> on_exploit_catalog_found
 + {pc_call_done and not pc_call_heard} [I'm on Sterling's machine. What am I looking for?]
@@ -150,7 +155,7 @@ VAR hint_guard_hostile_given = false
 + [Where do I stand?]
     -> report_progress
 + [Nothing right now]
-    Copy. Call anytime, {player_name()}.
+    Copy. Go carefully, {player_name()}.
     #exit_conversation
     -> DONE
 
@@ -441,7 +446,7 @@ distcc is the one that matters -- that's where the operational logs sit. Submit 
 
 === report_end ===
 + [Thanks.]
-    Call if you need me.
+    Good. Back to it.
     -> hub
 
 === on_victoria_computer_accessed ===
@@ -460,11 +465,17 @@ Client roster, transaction records, anything to the Architect.
 -> hub
 
 === m2_revelation_call ===
+// lint: call-knot
 #speaker:agent_0x99
 { revelation_heard:
-    -> hub
+    #exit_conversation
+    -> DONE
 }
-{player_name()}, your distcc flag just landed -- the whole transaction log came through with it. Open your copy and read along.
+{
+    - call_is_callback: Knew you'd get back to me. Open your copy and read along.
+    - call_answer_seconds > 10: Thought I'd lost you. Open your copy and read along.
+    - else: Logs are up on my side. Open your copy and read along.
+}
 There it is. The ProFTPD backdoor, line item on invoice ZDS-2024-0847. Twenty-five thousand, part of a package to Ghost.
 And a line under it: "Target Selection Consultation", ten thousand. They chose the hospital for Ghost.
 Target line: St. Catherine's Regional. Sable's sign-off on the approval.
@@ -476,21 +487,23 @@ St. Catherine's gave us the buyer's invoice. This is the seller's own ledger, sa
 // replays its text (phone-chat-minigame.js restore), which duplicated this call
 // in the history. A choices-only knot replays nothing.
 === m2_revelation_choices ===
-* [Direct chain. Zero Day to Ghost to St. Catherine's. That stands up.]
+// lint: call-knot
++ [Direct chain. Zero Day to Ghost to St. Catherine's. That stands up.]
     It does. One ENTROPY cell invoicing another. I may have it framed.
     -> m2_revelation_impact
-* [They charged extra to hit a hospital. That's intent, on an invoice.]
++ [They charged extra to hit a hospital. That's intent, on an invoice.]
     That's the line a jury remembers. Keep it.
     -> m2_revelation_impact
-* [If they invoice one cell like this, they invoice all of them.]
++ [If they invoice one cell like this, they invoice all of them.]
     Which is the whole reason you're in there. Finish it.
     -> m2_revelation_impact
 
 === m2_revelation_impact ===
+// lint: call-knot
 #speaker:agent_0x99
 { not (usb_seen or lore_directive_found):
     Pull the rest while you're standing in it. The catalogue, the roster, the drive in her desk.
-    And {player_name()} -- the logs point at a Phase 2. Find the directive and we get ahead of it for once.
+    And listen -- the logs point at a Phase 2. Find the directive and we get ahead of it for once.
 - else:
     { directive_decoded:
         And it lines up with the directive you read me. Phase 2 has a supplier, and now a ledger.
@@ -501,20 +514,23 @@ St. Catherine's gave us the buyer's invoice. This is the seller's own ledger, sa
 -> m2_revelation_impact_choices
 
 === m2_revelation_impact_choices ===
-* [I'll get everything]
+// lint: call-knot
++ [I'll get everything]
     -> m2_revelation_end
-* [We take the whole network down]
++ [We take the whole network down]
     One page at a time. Starting tonight.
     -> m2_revelation_end
 
 === m2_revelation_end ===
+// lint: call-knot
 #speaker:agent_0x99
 // Pass 4 round 2: marks the end of the revelation call, so the all-flags message
 // (erb, revelation_heard mappings) waits until the call has played out.
 #set_global:revelation_heard:true
 ~ revelation_heard = true
 Finish up, then Sterling. And be careful. Reasonable as she sounds, she signed that invoice.
--> hub
+#exit_conversation
+-> DONE
 
 === on_exploit_catalog_found ===
 #speaker:agent_0x99
@@ -561,7 +577,7 @@ That's not what's on there. I'm logging that one as a guess. Run it again.
 
 === directive_later ===
 #speaker:agent_0x99
-Base64 first, then whatever's under it. Call me when it reads.
+Base64 first, then whatever's under it. Message me when it reads.
 -> hub
 
 === directive_right ===
@@ -592,30 +608,40 @@ Step out into the main hallway before anyone finds her. That ends the day; come 
 // Text first, choices in a text-free knot (phone reopen rule, E13). Leaving sets
 // victoria_choice_made, which opens the debrief (closing_debrief mapping); the
 // call-in task completes in the same batch.
-=== extract_offer ===
+=== extract_call ===
+// lint: call-knot
 #speaker:agent_0x99
-Once you're out, you don't go back in. Anything you haven't read stays for the search team.
+{ extract_choices > 0:
+    Still in there. That search team's getting restless.
+- else:
+    Last look. Once you're out, the search team has that building.
+}
 { not catalogue_seen:
     The server room safe's still shut, for one.
 }
 -> extract_choices
 
 === extract_choices ===
+// lint: call-knot
 + [Bring me in.]
-    Car's at the side door. Two minutes.
+    Side door, two minutes. Don't use the lobby.
+    #complete_task:call_in_after_sweep
     -> extract_confirm
 + [Not yet. I'm still looking.]
-    Take your time. She isn't going anywhere.
-    -> hub
+    Go on, then. She's not leaving her desk tonight.
+    #exit_conversation
+    -> DONE
 
 === extract_confirm ===
-+ [On my way.]
+// lint: call-knot
++ [On my way. #ending_check]
     -> extract_go
 
 === extract_go ===
+// lint: call-knot
 #speaker:agent_0x99
-#complete_task:call_in_after_sweep
 #set_global:victoria_choice_made:true
 ~ victoria_choice_made = true
-See you at HQ.
--> hub
+Leave her to us.
+#exit_conversation
+-> DONE

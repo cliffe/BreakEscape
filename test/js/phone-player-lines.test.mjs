@@ -190,7 +190,7 @@ test('a reopen that re-runs the knot returns its new player line as the player\'
 
 test('the phone minigame types every story line through the speaker check, with no NPC typing for player lines', () => {
     const src = readFileSync(join(js, 'minigames/phone-chat/phone-chat-minigame.js'), 'utf8');
-    assert.equal((src.match(/this\._showStoryLine\(message, TYPING_DELAY_MS\)/g) || []).length, 2,
+    assert.equal((src.match(/this\._showStoryLine\(message, TYPING_DELAY_MS, (?:deliveries\?\.\[i\]|accumulatedDeliveries\[i\]) \|\| null\)/g) || []).length, 2,
         'both the continue and the choice paths');
     assert.equal((src.match(/phoneStepLines\(/g) || []).length, 3, 'every place story text is collected');
     assert.doesNotMatch(src, /addMessage\('npc', message/, 'no story line is added as the NPC\'s unchecked');
@@ -287,6 +287,22 @@ test('the phone UI, the notepad copy and the text export all render lines throug
     assert.match(mg, /displayPhoneLine\(original\.type, original\.text, npc\)/);
     const hist = readFileSync(join(js, 'minigames/phone-chat/phone-chat-history.js'), 'utf8');
     assert.match(hist, /displayPhoneLine\(original\.type, original\.text, npc\)/);
+});
+
+// --------------------------------------------- a wholly-parenthesised "(Close.)" stub posts no bubble
+
+test('sweep item 2 / M1 m4: a choice whose whole text is one pair of parentheses posts no sent bubble or sound', () => {
+    const src = readFileSync(join(js, 'minigames/phone-chat/phone-chat-minigame.js'), 'utf8');
+    const hc = src.slice(src.indexOf('async handleChoice('), src.indexOf('saveStoryState() {'));
+    assert.match(hc, /const silentChoice = \/\^\\s\*\\\(\[\^\(\)\]\*\\\)\\s\*\$\/\.test/, 'the stub is detected by its text');
+    const guard = hc.indexOf('if (!silentChoice)');
+    assert.ok(guard > 0, 'the player bubble is guarded');
+    assert.ok(guard < hc.indexOf("this.ui.addMessage('player', choiceText)"), 'no sent bubble for a silent choice');
+    assert.ok(guard < hc.indexOf("this.history.addMessage('player', choiceText"), 'nothing stored in the thread either');
+    assert.ok(guard < hc.indexOf('this.playMessageSent'), 'and no sent sound');
+    // The choice is still taken: clearChoices and makeChoice sit outside the guard.
+    assert.ok(hc.indexOf('this.ui.clearChoices()') > guard, 'the choice is still cleared');
+    assert.match(hc, /conversation\.makeChoice\(choiceIndex\)/, 'and still made in the story');
 });
 
 // ---------------------------------------------------------------- closing mid-typeout after a choice

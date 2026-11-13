@@ -1,0 +1,16 @@
+game 2254 (gary_hold)
+keypad: "PasswordMinigame"
+shot gary_hold_ring_over_keypad
+{"t":22.1,"ringer":"gary_phone:ringing","mg":"PasswordMinigame:password","layer":"Gary Whitlock | Incoming call · Answer puts them on hold until you close this | Answer | Decline","laptop":"none"}
+"answered"
+shot gary_hold_hold_pill
+on hold: {"t":24.5,"ringer":"gary_phone:held","mg":"PasswordMinigame:password","layer":"Gary Whitlock · on hold · close this to talk | Hang up","laptop":"none"}
+keypad still open: "PasswordMinigame"
+shot gary_hold_call_opened
+after closing keypad: {"t":27.2,"ringer":"gary_phone:connected","mg":"PhoneChatMinigame:phone-chat","layer":"","laptop":"none"}
+{"bar":"ON CALL 0:01","subs":["GARY WHITLOCK: It's Gary. Whitlock, from St. Catherine's. HaX says you're stood at a keypad in a tape library."],"choices":[],"end":true}
+chose: "1. How's the new job?"
+shot gary_hold_call_end
+end: {"t":67.1,"ringer":null,"mg":null,"layer":"","laptop":"none"}
+after End: {"t":70.6,"ringer":null,"mg":null,"layer":"","laptop":"none"}
+/tts requests: ["gary_phone","It's Gary. Whitlock, from St. Catherine's. HaX says you're s"] ["gary_phone","Seen codes like that. Archives key them to the shelf scheme."] ["gary_phone","Read it like a shelf mark, not a number. Vigenère. Every let"] ["gary_phone","There'll be a chart near the keypad."] ["gary_phone","Director of Cyber Security, me. They gave me a lanyard with "] 

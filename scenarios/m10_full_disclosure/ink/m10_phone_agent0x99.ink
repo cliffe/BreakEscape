@@ -746,6 +746,7 @@ Stair's open. Workshop floor's below you.
 // re-open replays it. The warnings she owes, then the sweep line and the next
 // door, unless Malhotra's relay is gone: then static after the warnings.
 === gallery_open_call ===
+// lint: call-knot
 {head_start_killed == "" and head_start_out == "":
     Fifteen minutes to their head start. That console's your last chance at it.
 }

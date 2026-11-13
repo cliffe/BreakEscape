@@ -249,16 +249,16 @@ test('an ordinary phone conversation is not voiced', async () => {
 
 test('wiring: lines redrawn on a reopen are not voiced; close stops and teardown destroys the voice', () => {
     // Only _showStoryLine voices; the history redraw (addMessages) does not go through it
-    assert.match(mgSrc, /this\.history\.addMessage\(line\.type, line\.text, \{ read: true \}\);\n[\s\S]{0,200}if \(line\.type === 'npc' && isVoicedCall\(this\.params\)\) await this\._speakCallLine\(line, raw\);\n\s+return true;/);
+    assert.match(mgSrc, /this\.history\.addMessage\(line\.type, line\.text, \{ read: true \}\);\n[\s\S]{0,200}if \(line\.type === 'npc' && isVoicedCall\(this\.params\)\) await this\._speakCallLine\(line, raw, \{ delivery \}\);\n\s+return true;/);
     assert.match(mgSrc, /closeConversation\(\) \{[\s\S]{0,120}this\._flushPendingMessages\(\);\n\s+this\._callVoice\?\.stop\(\);/);
     assert.match(mgSrc, /cleanup\(\) \{[\s\S]{0,400}this\._callVoice\?\.destroy\(\);\n\s+this\._callVoice = null;/);
     assert.equal((mgSrc.match(/_speakCallLine\(/g) || []).length, 3, 'one definition, the typeout call and the preloaded opening');
     // The one redraw that is voiced: a voiced contact's first call, whose opening the phone preloaded
     assert.match(mgSrc, /if \(onlyPreloaded && npc\.voiced === true && isVoicedCall\(this\.params\) && !this\._pretext\?\.resuming\) \{\n\s+this\._speakPreloadedOpening\(conversationHistory\);/);
     // Same request as person-chat: TTSManager.play → ApiClient.getTTS(npc_id, text) → POST /tts.
-    // A call sends no #delivery: note (delivery stays null), as TtsLineExtractor expects.
+    // A call line sends its #delivery: note only when it has one (A1); with none the request is play(speakerId, text).
     assert.match(read('systems/tts-manager.js'), /blob = await ApiClient\.getTTS\(npcId, text, delivery\);/);
-    assert.match(read('minigames/phone-chat/phone-call-voice.js'), /duration = await this\.tts\.play\(speakerId, text\);/);
+    assert.match(read('minigames/phone-chat/phone-call-voice.js'), /duration = await this\.tts\.play\(speakerId, text, delivery \? \{ delivery \} : undefined\);/);
 });
 
 // ---- F20: a voiced call voices only its own knots, up to the contact's home knot ----

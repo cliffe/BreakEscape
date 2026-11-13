@@ -1,0 +1,11 @@
+M4 R3 live runs, :3024, HEAD ff4f929ee. Key lines from m04_live.sh and the scratch ps_m04.sh cases (route output, trimmed).
+
+vance_before (2203): thread choices ["(Close.)"] header Call; CALLING; after ring out thread "No answer" rows=["No answer"] conn=false
+vance_ko (2207): same as vance_before
+vance_ally (2210): call "ROBERT VANCE (OPS DESK): Vance. What do you need?" 5 choices; charge controls plays; after End rows=["Outgoing call, 0:11"]; second call "Vance." 4 choices; events conversation_closed:robert_vance_phone x2 (one per call)
+dial_decline (2215): banner "Agent HaX | Incoming call | Answer | Decline" (no callLabel caption); after decline header "Call back", thread "Missed call | Call back | Got your reading. Ring me back."; callback "You rang. Good. Straight to it."; after rows=["Missed call","Outgoing call, 0:12"] hub dial choice=[] header=null; events anomaly_detected, declined, answered callback, conversation_closed:agent_0x99 x1
+ps_decline_esd (2221): after decline header "Call back" rows=["Missed call"]; voltage_neutralised emitted -> esd_authorized=true (real mapping); thread header=null, "The ESD is live. Press it." below the missed row; contact-row call btn 0; "no call button"; ringer=null incall=false
+ps_ring_esd (2225): ringing; esd_authorized=true at +1 s; ringer state "ringing" at t+2..t+20 s; t+25 s ringer=null; thread "...The ESD is live. Press it. | Missed call | Got your reading. Ring me back." rows=["Missed call"], header=null; events phone_call_missed:agent_0x99
+  in page: _ringRecheckCondition('value === true && globalVars.esd_authorized !== true', null) = same string; ringConditionHolds(...) = true (esd_authorized already true)
+bring_blocked (2233): "Not with Relay still on you. Lose her or put her down, then call." choices [I'm well clear of them. Bring me in.] [Understood.]; after Understood mission_complete=false task=active rows=["Outgoing call, 0:07"]; once clear: optional-items lines, [Bring me in.] [Not yet. I'm still looking.]
+bring_clear (2238): calling caption "SAFETYNET secure line" (bring_clear_calling.png); [Bring me in.] task completed; "Loading dock. The van with no livery."; [On my way.] overlay null; mission_complete=true, PersonChatMinigame debrief, phone-open=false 6 s later; conversation_closed:agent_0x99 x1

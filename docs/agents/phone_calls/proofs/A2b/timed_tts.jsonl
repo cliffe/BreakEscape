@@ -1,0 +1,13 @@
+{"t":1794477647409,"npc_id":"debrief_host","text":"Welcome. This is the opening briefing. Close it when you are done.","delivery":null,"status":503}
+{"t":1794477648007,"npc_id":"debrief_host","text":"Good. A call will come in shortly.","delivery":null,"status":503}
+{"t":1794477733973,"npc_id":"debrief_host","text":"Welcome. This is the opening briefing. Close it when you are done.","delivery":null,"status":503}
+{"t":1794477747041,"npc_id":"debrief_host","text":"Good. A call will come in shortly.","delivery":null,"status":503}
+{"t":1794477778643,"npc_id":"timed_caller","text":"This call came in on a timer, before you did anything.","delivery":null,"status":503}
+{"t":1794477796064,"npc_id":"timed_caller","text":"Goodbye.","delivery":null,"status":503}
+{"t":1794477911918,"npc_id":"caller_basic","text":"Good, you're there.","delivery":null,"status":503}
+{"t":1794477913371,"npc_id":"caller_basic","text":"I only wanted to check the line works.","delivery":null,"status":503}
+{"t":1794477918084,"npc_id":"caller_basic","text":"Then listen carefully. This is the middle of the call.","delivery":null,"status":503}
+{"t":1794477919503,"npc_id":"caller_basic","text":"Nothing else to add.","delivery":null,"status":503}
+{"t":1794477934027,"npc_id":"caller_basic","text":"Anytime.","delivery":null,"status":503}
+{"t":1794478026664,"npc_id":"caller_basic","text":"Good, you're there.","delivery":null,"status":503}
+{"t":1794478028073,"npc_id":"caller_basic","text":"I only wanted to check the line works.","delivery":null,"status":503}

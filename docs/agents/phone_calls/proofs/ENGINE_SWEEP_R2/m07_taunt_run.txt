@@ -1,0 +1,16 @@
+game 2331 (m07_taunt)
+T-30 banner: {"cur":{"npc":"the_architect","state":"ringing","knot":"taunt_t30","opened":false},"q":0,"banner":"☎ | No caller ID | Incoming call | Answer | Decline","bimg":null}
+T-30 call: {"lines":["Don'"],"choices":[]}
+beat started: {"beatAt":61091,"clipPlayingAtBeat":false,"lastLineAtBeat":"Let it hurt afterwards, not during. I expect you've been told that."}
+shot m07_taunt_during_beat
+1 s into beat: mg="PhoneChatMinigame phone-chat" last="Let it hurt afterwards, not during. I expect you've been told that."
+T-20 offered during the beat: {"cur":null,"q":0,"banner":null,"bimg":null}
+closed: mg=null
+T-20 banner after close: {"cur":{"npc":"the_architect","state":"ringing","knot":"taunt_t20","opened":false},"q":0,"banner":"☎ | No caller ID | Incoming call | Answer | Decline","bimg":null}
+records: [{"npc":"the_architect","theme":"terminal","forced":false,"openedAt":25848,"lines":[{"t":27569,"text":"D"},{"t":27629,"text":"Do"},{"t":27701,"text":"Don"},{"t":27854,"text":"Don't"},{"t":27974,"text":"Don't l"},{"t":28097,"text":"Don't lo"},{"t":28169,"text":"Don't loo"},{"t":28228,"text":"Don't look"},{"t":28267,"text":"Don't look f"},{"t":28338,"text":"Don't look fo"},{"t":28417,"text":"Don't look for"},{"t":28535,"text":"Don't look for t"},{"t":28597,"text":"Don't look for th"},{"t"
+architect /tts: "Don't look for the trace. It isn't there." "I've read your file. Files are written by people who need you to be a particular shape. I prefer to watch." "Someone with a little of your attention tonight and no interest in wasting it." "There is a decision in front of you tonight. Make it however you like. I only want to see it made." "Let it hurt afterwards, not during. I expect you've been told that." 
+{"status":503,"text":"Don't look for the trace. It isn't there."}
+{"status":503,"text":"I've read your file. Files are written by people w"}
+{"status":503,"text":"Someone with a little of your attention tonight an"}
+{"status":503,"text":"There is a decision in front of you tonight. Make "}
+{"status":503,"text":"Let it hurt afterwards, not during. I expect you'v"}

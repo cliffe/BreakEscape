@@ -1,0 +1,33 @@
+game 2334 (bring_keep)
+optional open: ["meet_robert_vance","call_in_after_sweep"] call_in_after_sweep=["active"]
+"opened agent_0x99"
+hub: {"choices":["1. I'm done here. Bring me in.","2. How do I prove the screens are lying?","3. How do I get through the card readers?","4. Where do I stand?","5. Nothing right now."],"header":null}
+shot bring_keep_hub
+dialling: {"bar":"CALLING"}
+shot bring_keep_calling
+call: {"bar":"ON CALL | 0:05","subs":["Agent HaX: Past the gate it's forensics' site, not ours. Anything you want, take it now.","AGENT HAX: Voltage's operation log is still on the plant-room bench, for one.","AGENT HAX: And there's a go-bag at the dock nobody's opened."],"choices":["1. Bring me in.","2. Not yet. I'm still looking."]}
+shot bring_keep_call
+after Not yet: mg="PhoneChatMinigame phone-chat" mission_complete=false task=["active"]
+shot bring_keep_not_yet
+"no contact agent_0x99"
+hub again: {"choices":["1. I'm done here. Bring me in.","2. How do I prove the screens are lying?","3. How do I get through the card readers?","4. Where do I stand?","5. Nothing right now."]}
+redial: {"subs":["Agent HaX: Forensics are almost on-site. Last chance.","AGENT HAX: Voltage's operation log is still on the plant-room bench, for one.","AGENT HAX: And there's a go-bag at the dock nobody's opened."],"choices":["1. Bring me in.","2. Not yet. I'm still looking."]}
+shot bring_keep_redial
+confirm: {"subs":["Agent HaX: Forensics are almost on-site. Last chance.","Agent HaX: Voltage's operation log is still on the plant-room bench, for one.","Agent HaX: And there's a go-bag at the dock nobody's opened.","YOU: Bring me in.","AGENT HAX: Loading dock. The van with no livery."],"choices":["1. On my way."]} task=["completed"]
+shot bring_keep_confirm
+overlay: "BEFORE THE MISSION ENDS | You have done what the mission needs. 1 optional objective is still open: | Find the OT engineer on shift | End the mission now, or keep going? | Keep going | End the mission now"
+shot bring_keep_after_on_my_way
+after Keep going: call-open=true screen={"subs":["Agent HaX: Forensics are almost on-site. Last chance.","Agent HaX: Voltage's operation log is still on the plant-room bench, for one.","Agent HaX: And there's a go-bag at the dock nobody's opened.","YOU: Bring me in.","AGENT HAX: Loading dock. The van with no livery."],"choices":["1. On my way."]} mission_complete=false
+shot bring_keep_kept_going
+tts so far (agent_0x99): "It went through. Not on an open line. Come back to HQ." "Past the gate it's forensics' site, not ours. Anything you want, take it now." "Voltage's operation log is still on the plant-room bench, for one." "And there's a go-bag at the dock nobody's opened." "Fine. The banks will keep." "Forensics are almost on-site. Last chance." "Voltage's operation log is still on the plant-room bench, for one." "And there's a go-bag at the dock nobody's opened." "Loading dock. The van with no livery." 
+after End: mg="PhoneChatMinigame phone-chat" mission_complete=false
+thread: {"choices":["1. I'm done here. Bring me in.","2. How do I prove the screens are lying?","3. How do I get through the card readers?","4. Where do I stand?","5. Nothing right now."]}
+shot bring_keep_after_end
+"no contact agent_0x99"
+overlay again: "BEFORE THE MISSION ENDS | You have done what the mission needs. 1 optional objective is still open: | Find the OT engineer on shift | End the mission now, or keep going? | Keep going | End the mission now"
+shot bring_keep_overlay_again
+after End now: mission_complete=true mg="PersonChatMinigame person-chat"
+shot bring_keep_debrief_after_again
+/tts requests: ["briefing_cutscene","Agent, thanks for getting here on short notice."] ["briefing_cu
+HaX /tts: "It went through. Not on an open line. Come back to HQ." "Past the gate it's forensics' site, not ours. Anything you want, take it now." "Voltage's operation log is still on the plant-room bench, for one." "And there's a go-bag at the dock nobody's opened." "Fine. The banks will keep." "Forensics are almost on-site. Last chance." "Voltage's operation log is still on the plant-room bench, for one." "And there's a go-bag at the dock nobody's opened." "Loading dock. The van with no livery." "Forensics are almost on-site. Last chance." "Voltage's operation log is still on the plant-room bench, for one." "And there's a go-bag at the dock nobody's opened." "Loading dock. The van with no livery." "Albion's grid is someone else's problem now." 
+["conversation_closed:agent_0x99@70.1","objective_task_completed:call_in_after_sweep@89.6","conversation_closed:agent_0x99@97.8","global_variable_changed:mission_complete@122.6","global_variable_changed:mission_complete@122.6","conversation_closed:agent_0x99@124.7"]

@@ -187,7 +187,7 @@ Agent 0x5E 'Lantern': I liked you. I'd still have pressed it.
 - kowalczyk_answer == "bench":
     Agent 0x5E 'Lantern': The paperwork. It's always the paperwork.
     // Educational R1 E-m8: the supply-chain lesson, named once.
-    Agent HaX: Everything we carry comes through stores for a reason. Hers came off his bench.
+    agent_0x99: Everything we carry comes through stores for a reason. Hers came off his bench.
 - kowalczyk_answer == "briefing":
     Agent 0x5E 'Lantern': No, you didn't. But thank you. #delivery: almost laughing, then the thanks meant
 - kowalczyk_answer == "worked_out":
@@ -360,9 +360,9 @@ Narrator: Netherton comes down the line of vans with a tablet under his arm.
     Director Magnus Netherton: We followed Zero Day's share. Four buyers, and one of them was careless.
 }
 // R36 (VM weave): HaX names the night's own technical arc once, for every ending that hears the numbers.
-Agent HaX: Our half of it, for the record. Their own monitoring software had a hole; we walked in through it and their cameras were ours.
-Agent HaX: The staging copy sat behind its own sign-in on that same box, and we were already on it.
-Agent HaX: Then out of the release container onto its host, and out of his own wall onto his box. Three hosts. Foothold, climb, his notice in the clear.
+agent_0x99: Our half of it, for the record. Their own monitoring software had a hole; we walked in through it and their cameras were ours.
+agent_0x99: The staging copy sat behind its own sign-in on that same box, and we were already on it.
+agent_0x99: Then out of the release container onto its host, and out of his own wall onto his box. Three hosts. Foothold, climb, his notice in the clear.
 ->->
 
 // The story, our own people, the tap, the $12.8M. (SCRIPT_EDIT_R2 A2-01: the
@@ -393,18 +393,18 @@ Agent HaX: Then out of the release container onto its host, and out of his own w
 - database_outcome == "secured":
     Director Magnus Netherton: His copy goes into the vault tonight, beside ours.
     { ending != "executed":
-        Agent HaX: Two maps now.
+        agent_0x99: Two maps now.
     }
     -> secured_cell ->
 - database_outcome == "disclosed":
     { ending != "executed":
-        Agent HaX: Forty vendors have acknowledged. Patch windows, ninety days. It'll be a year before most of them are fitted.
+        agent_0x99: Forty vendors have acknowledged. Patch windows, ninety days. It'll be a year before most of them are fitted.
     }
     -> dark_ops ->
     { ending == "executed":
         Director Magnus Netherton: Three water utilities went to manual at five. There is no patch for their old controllers. They will turn the valves by hand till spring.
     - else:
-        Agent HaX: Three water utilities went to manual at five. There's no patch for their old controllers. They'll turn the valves by hand till spring.
+        agent_0x99: Three water utilities went to manual at five. There's no patch for their old controllers. They'll turn the valves by hand till spring.
     }
 - database_outcome == "both_wiped":
     -> scorched_close
@@ -473,7 +473,7 @@ Agent HaX: Then out of the release container onto its host, and out of his own w
 Narrator: A police van idles by the gate. Tesseract sits in the back, his hands in his lap.
 { ending == "arrest":
     Narrator: He nods to HaX through the window.
-    Agent HaX: You'll want a lawyer, Adrian. Get a good one. I'm testifying.
+    agent_0x99: You'll want a lawyer, Adrian. Get a good one. I'm testifying.
 - else:
     Narrator: HaX climbs into the back of the van and sits with him for a minute. Nobody hears what they say.
 }
@@ -502,39 +502,39 @@ Director Magnus Netherton: I know. I kept it to one page.
 -> season ->
 {
 - wren_at_core and not sleeper_caught and not six_k:
-    Agent HaX: Kowalczyk came through his door for the key. Nobody named her before she did it herself.
+    agent_0x99: Kowalczyk came through his door for the key. Nobody named her before she did it herself.
 - kowalczyk_ko and not sleeper_caught:
-    Agent HaX: Kowalczyk's awake in the second van. She hasn't asked who put her there.
+    agent_0x99: Kowalczyk's awake in the second van. She hasn't asked who put her there.
 }
 -> fortyseven ->
 { ending == "arrest":
     Narrator: The van pulls out through the gate.
-    Agent HaX: It's afterwards.
+    agent_0x99: It's afterwards.
 }
 + { m09_completed or hax_rest_promised } [You said you'd tell me the rest.]
 + [(Stand with her.)]
 -
 // R2-M4: m09's Reading, shown to her in Helena.
 { m09_completed and m09_reading_told_hax:
-    Agent HaX: You showed me what he wrote about you in Helena. So you get this.
+    agent_0x99: You showed me what he wrote about you in Helena. So you get this.
 }
-Agent HaX: The night he left, he asked me to go with him.
+agent_0x99: The night he left, he asked me to go with him.
 Narrator: On the table, the screen turns over to six. Nothing happens.
 {
 - ending == "arrest":
     #set_global:six_done:true
     #set_global:closing_done:true
-    Agent HaX: I said no. It took me till morning.
+    agent_0x99: I said no. It took me till morning.
 - ending == "surrender":
-    Agent HaX: I said no. It took me till morning.
+    agent_0x99: I said no. It took me till morning.
     #set_global:six_done:true
     #set_global:closing_done:true
-    Agent HaX: He asked who taught you. I said I did.
+    agent_0x99: He asked who taught you. I said I did.
 - else:
-    Agent HaX: I said no. It took me till morning.
+    agent_0x99: I said no. It took me till morning.
     #set_global:six_done:true
     #set_global:closing_done:true
-    Agent HaX: There'll be a board. I'll be sitting next to you.
+    agent_0x99: There'll be a board. I'll be sitting next to you.
 }
 ~ six_quiet = true
 #exit_conversation
@@ -551,16 +551,16 @@ Narrator: On the table, the screen turns over to six. Nothing happens.
 ->->
 
 === fortyseven_kept ===
-Agent HaX: Now. The forty-seven. Tell me properly, and then it's done.
+agent_0x99: Now. The forty-seven. Tell me properly, and then it's done.
 + [(Tell her properly.)]
     Narrator: You tell her all of it. She doesn't interrupt.
     ->->
 
 === fortyseven_denied ===
-Agent HaX: The forty-seven. You told me she was fishing. Now tell me what she actually said.
+agent_0x99: The forty-seven. You told me she was fishing. Now tell me what she actually said.
 + [(Tell her the truth.)]
     Narrator: You tell her. She doesn't look at you until you've finished.
-    Agent HaX: Don't do that to me again.
+    agent_0x99: Don't do that to me again.
     ->->
 
 // Scorched Earth: the suspension and the wipe's gain end this scene; the

@@ -1,0 +1,30 @@
+{
+  "dev_service_desk": {
+    "count": 8,
+    "types": [
+      "npc",
+      "player"
+    ],
+    "callRows": 0,
+    "texts": [
+      "npc: Service desk, Dev speaking. What can I d",
+      "player: I'm helping , your new starter in .",
+      "npc: Look, I'm not doing anything else on thi",
+      "player: What's the payslip portal called, and wh",
+      "npc: Ah, I can't give that out over the phone",
+      "player: And when do payslips actually go out thi",
+      "npc: Ah, I can't give that out over the phone",
+      "npc: Sorry, I'm going to stop you there. I'll"
+    ]
+  },
+  "ruth_phone": {
+    "count": 1,
+    "types": [
+      "npc"
+    ],
+    "callRows": 0,
+    "texts": [
+      "npc: On the sheet still?"
+    ]
+  }
+}

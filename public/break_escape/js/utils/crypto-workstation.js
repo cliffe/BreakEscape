@@ -49,6 +49,8 @@ export function closeLaptop() {
 
     // Barks held while the popup was open (npc-barks.js _shouldDefer)
     window.barkSystem?.drainDeferredBarks?.();
+    // A held or queued call can ring or open now (phone calls plan 2.9)
+    window.phoneRinger?.onPopupClosed?.();
 }
 
 // Open the crypto workstation iframe in a new tab. CyberChef keeps the recipe

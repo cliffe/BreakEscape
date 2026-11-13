@@ -1,7 +1,8 @@
 // ================================================
 // Mission 9: Digital Archaeology - Gary Whitlock's call (C5)
-// Host: gary_phone (phone contact, loading_dock), unvoiced, opened only by its
-// mapping on the first attempt at the salvage cage's keypad (m02_gary_protected).
+// Host: gary_phone (phone contact, loading_dock). Voiced incoming call (ring:
+// answer, decline or call back when missed), rung on the first attempt at the
+// salvage cage's keypad (m02_gary_protected).
 // His own lines take no prefix. Birmingham and the Black Country: flat, a
 // bitter joke, slightly less bitter now. UK English. He can't see the room:
 // no Montana, no "your wall". The hint is fixed (S6 §2.3), split for the
@@ -13,13 +14,15 @@ VAR gary_called = false
 VAR salvage_opened = false   // Synced scenario global (puzzle chains R1 P5)
 
 === start ===
-// Home stub: not reached by the call; shows only if the player opens his thread after it.
-+ [Ring back.]
-    Narrator: The number rings out.
+// Home stub (lesson 21): not reached by the call. A finished call rests the thread here and shows
+// the transcript; the Close choice keeps the story live, so no "Conversation ended" notice shows next to
+// a missed call's Call back button. A missed call still leaves the engine's Call back (no fake ring-back).
++ [(Close.)]
     #exit_conversation
-    -> DONE
+    -> start
 
 === call ===
+// lint: call-knot
 #set_global:gary_called:true
 // Puzzle chains R1 P5: a player who opened the door at the first try.
 {salvage_opened:

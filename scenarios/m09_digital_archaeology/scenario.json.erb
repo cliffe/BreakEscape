@@ -120,7 +120,7 @@ def text_map(event, cond, msg, once: true, delay: nil, msg_delay: 0, set: nil, e
   h.merge(extra)
 end
 
-def call_map(event, cond, knot, delay: nil, voiced: false, forced: true, once: false, resume: false, cooldown0: false, comment: nil)
+def call_map(event, cond, knot, delay: nil, voiced: false, forced: true, once: false, resume: false, cooldown0: false, comment: nil, ring: nil, set: nil)
   h = {}
   h["_comment"] = comment if comment
   h["eventPattern"] = event
@@ -130,9 +130,36 @@ def call_map(event, cond, knot, delay: nil, voiced: false, forced: true, once: f
   h["resume"] = true if resume
   h["disableClose"] = true if forced
   h["voiced"] = true if voiced
+  h["ring"] = ring unless ring.nil?
+  # A ring latch set at offer time (plan 3.1: setGlobal runs when the mapping
+  # fires, i.e. when the ring is offered), so a declined or missed ring still
+  # stops a second mapping ringing the same caller again.
+  h["setGlobal"] = set if set
   h["delayMs"] = delay if delay
   h["onceOnly"] = true if once
   h["cooldown"] = 0 if cooldown0
+  h
+end
+
+# Phone calls M3: HaX's read-outs are texts, not calls. The toast carries
+# targetKnot (m03's form), so tapping it or opening her thread plays the knot;
+# the phone is never forced open. `latch` (where given) is set when the mapping fires
+# (the text is then scheduled) so a second event or a backstop doesn't send it twice. The text itself
+# comes 5 s after the event, so it never stacks with HaX's other texts.
+# `skip` is a global that, once true, cancels the text and its toast at delivery
+# (sendTimedMessage skipIfGlobal), so a read-out heard by opening her thread first
+# is not followed by its own text. The read-out knots also divert to the hub if
+# heard, so a stale toast tap can't replay one.
+def read_text(event, cond, knot, msg, latch, skip: nil, delay: nil, once: false, comment: nil, msg_delay: 5000)
+  h = {}
+  h["_comment"] = comment if comment
+  h["eventPattern"] = event
+  h["condition"] = cond if cond
+  h["onceOnly"] = true if once
+  h["delayMs"] = delay if delay
+  h["setGlobal"] = { latch => true } if latch
+  h["sendTimedMessage"] = { "delay" => msg_delay, "targetKnot" => knot, "message" => msg }
+  h["sendTimedMessage"]["skipIfGlobal"] = skip if skip
   h
 end
 
@@ -204,12 +231,15 @@ hax_maps << { "eventPattern" => "global_variable_changed:flag1_submitted", "cond
 hax_maps << { "eventPattern" => "global_variable_changed:flag1_submitted", "condition" => "value === true", "onceOnly" => true, "completeTask" => "set_up_drop_terminal" }
 hax_maps << { "eventPattern" => "door_unlock_attempt", "condition" => "data.connectedRoom === 'restricted_stacks' && globalVars.flag1_submitted", "unlockDoor" => "restricted_stacks", "cooldown" => 0 }
 hax_maps << { "eventPattern" => "game_loaded", "condition" => "globalVars.flag1_submitted && !globalVars.stacks_entered", "unlockDoor" => "restricted_stacks" }
-hax_maps << call_map("global_variable_changed:flag1_submitted", "value === true", "flag1_read", delay: 2500, forced: false, once: true)
+hax_maps << read_text("global_variable_changed:flag1_submitted", "value === true && !globalVars.flag1_read_heard", "flag1_read", "First box is in. It came with a list.", "flag1_texted", skip: "flag1_read_heard", delay: 2500, once: true)
+# Reload backstop: the mapping waits for the drop terminal to close, so a reload
+# before then lost the text. The latch is set when the mapping fires.
+hax_maps << read_text("game_loaded", "globalVars.flag1_submitted && !globalVars.flag1_texted && !globalVars.flag1_read_heard", "flag1_read", "First box is in. It came with a list.", "flag1_texted", skip: "flag1_read_heard", msg_delay: 5000)
 hax_maps << text_map("global_variable_changed:flag1_submitted", "value === true", "I've a field guide for the ledger, if you want it. Ask me.",
                      delay: 15000, set: { "ledger_guide_offered" => true })
 hax_maps << text_map("conversation_closed:agent_0x99",
                      "globalVars.flag1_submitted && globalVars.m01_maya_ko && !globalVars.old_coyote_told && !globalVars.old_coyote_ko && globalVars.tran_outcome === 'left'",
-                     "Tran's just sent the guard to your door.", delay: 3000)
+                     "Tran's just sent the guard to your door.", delay: 1000)
 hax_maps << { "eventPattern" => "room_entered:restricted_stacks", "onceOnly" => true, "setGlobal" => { "stacks_entered" => true } }
 # Scenario design R1 m1: Victoria's m03 payoff announces itself (A3-36).
 hax_maps << text_map("room_entered:restricted_stacks", "globalVars.m03_victoria_fate === 'recruited' && !globalVars.cage_opened && !globalVars.maintenance_code_used",
@@ -280,9 +310,13 @@ hax_maps << { "eventPattern" => "global_variable_changed:tran_outcome", "conditi
 hax_maps << { "eventPattern" => "global_variable_changed:flag1_submitted", "condition" => "value === true && globalVars.tran_outcome !== 'left'", "onceOnly" => true, "completeTask" => "stop_the_tape_wipe" }
 
 # Flag 2 and the ledger (S4 §6.6, §5; S6 C-06).
-hax_maps << call_map("global_variable_changed:flag2_submitted", "value === true && !globalVars.ledger_read_heard", "ledger_read", delay: 2500, forced: false, once: true)
-hax_maps << call_map("room_entered", "globalVars.flag2_submitted && !globalVars.ledger_read_heard", "ledger_read", forced: false,
-                     comment: "Backstop: the ledger read on the next room entry (also fires on load).")
+hax_maps << read_text("global_variable_changed:flag2_submitted", "value === true && !globalVars.ledger_read_heard", "ledger_read", "Their ledger's open on my screen. There's an entry you need to see.", "ledger_texted", skip: "ledger_read_heard", delay: 2500, once: true)
+hax_maps << read_text("game_loaded", "globalVars.flag2_submitted && !globalVars.ledger_texted && !globalVars.ledger_read_heard", "ledger_read", "Their ledger's open on my screen. There's an entry you need to see.", "ledger_texted", skip: "ledger_read_heard", msg_delay: 10000)
+# The game_loaded backstop sends a read-out text only if its latch (*_texted, set when the
+# mapping fires, i.e. when the text is scheduled) is still false and the read-out wasn't
+# heard. A pending text survives a reload (E12) and a delivered one is in the thread; both
+# have the latch set, so nothing is sent twice. msg_delay is staggered so the four
+# backstops, which share one event, never stack toasts.
 hax_maps << { "eventPattern" => "global_variable_changed:flag2_submitted", "condition" => "value === true", "onceOnly" => true, "unlockTask" => "cross_reference_wren" }
 hax_maps << { "eventPattern" => "global_variable_changed:sleeper_shortlist", "condition" => "value === true", "onceOnly" => true, "completeTask" => "cross_reference_wren" }
 hax_maps << { "eventPattern" => "global_variable_changed:sleeper_named", "condition" => "value === true", "onceOnly" => true, "completeTask" => "cross_reference_wren" }
@@ -299,7 +333,8 @@ hax_maps << { "eventPattern" => "game_loaded", "setGlobal" => { "in_cage" => fal
 hax_maps << { "eventPattern" => "global_variable_changed:deck_choice_made", "condition" => "value === true", "onceOnly" => true, "unlockDoor" => "sorensen_office" }
 hax_maps << { "eventPattern" => "door_unlock_attempt", "condition" => "data.connectedRoom === 'sorensen_office' && globalVars.deck_choice_made", "unlockDoor" => "sorensen_office", "cooldown" => 0 }
 hax_maps << { "eventPattern" => "game_loaded", "condition" => "globalVars.deck_choice_made && !globalVars.office_entered", "unlockDoor" => "sorensen_office" }
-hax_maps << call_map("global_variable_changed:deck_choice_made", "value === true && !globalVars.afterwards_heard", "afterwards", delay: 2500, forced: false, once: true)
+hax_maps << read_text("global_variable_changed:deck_choice_made", "value === true && !globalVars.afterwards_heard", "afterwards", "That's done. A word when you can.", "afterwards_texted", skip: "afterwards_heard", delay: 2500, once: true)
+hax_maps << read_text("game_loaded", "globalVars.deck_choice_made && !globalVars.afterwards_texted && !globalVars.afterwards_heard", "afterwards", "That's done. A word when you can.", "afterwards_texted", skip: "afterwards_heard", msg_delay: 15000)
 hax_maps << { "eventPattern" => "room_entered:sorensen_office", "onceOnly" => true, "setGlobal" => { "office_entered" => true } }
 hax_maps << text_map("room_entered:sorensen_office", "globalVars.sleeper_named", "Her cracker. Use it anyway.")
 # Educational R1 E-m9: credit the lease-date deduction when the ledger was read.
@@ -338,18 +373,18 @@ hax_maps.concat(hax_rerings("globalVars.identity_scene_started && !globalVars.id
 hax_maps << call_map("global_variable_changed:flag4_submitted", "value === true && globalVars.identity_scene_started && !globalVars.identity_scene_done", "identity_resume", delay: 1500, voiced: true, cooldown0: true)
 
 # Flag 4 and the read (S4 §4 row 10, §6.3). Text, not voiced.
-hax_maps << call_map("global_variable_changed:flag4_submitted", "value === true && globalVars.identity_scene_done && !globalVars.hour_read_started", "hour_read", delay: 1500)
-hax_maps << call_map("global_variable_changed:identity_scene_done", "value === true && globalVars.flag4_submitted && !globalVars.hour_read_started", "hour_read", delay: 3000)
+hax_maps << read_text("global_variable_changed:flag4_submitted", "value === true && globalVars.identity_scene_done && !globalVars.hour_read_started && !globalVars.hour_read_texted", "hour_read", "The job on his box has a clock on it.", "hour_read_texted", skip: "hour_read_started", delay: 1500)
+hax_maps << read_text("global_variable_changed:identity_scene_done", "value === true && globalVars.flag4_submitted && !globalVars.hour_read_started && !globalVars.hour_read_texted", "hour_read", "The job on his box has a clock on it.", "hour_read_texted", skip: "hour_read_started", delay: 3000)
+hax_maps << read_text("game_loaded", "globalVars.flag4_submitted && globalVars.identity_scene_done && !globalVars.hour_read_started && !globalVars.hour_read_texted", "hour_read", "The job on his box has a clock on it.", "hour_read_texted", skip: "hour_read_started", msg_delay: 20000)
 hax_maps << text_map("global_variable_changed:flag4_submitted", "value === true && !globalVars.identity_scene_started && !globalVars.nightshade_file_held",
                      "Nightshade's file first. Then the rest of the box.", once: false, delay: 1500)
 hax_maps << text_map("global_variable_changed:flag4_submitted", "value === true && !globalVars.identity_scene_started && globalVars.nightshade_file_held && !globalVars.flag3_submitted",
                      "Owner first. Get me flag three, then we read the rest of his box.", once: false, delay: 1500)
 hax_maps << text_map("global_variable_changed:flag4_submitted", "value === true && !globalVars.identity_scene_started && globalVars.hand_before_name",
                      "His hand first. Put his file beside my notebook scan and tell me. Then the name.", once: false, delay: 1500)
-hax_maps << call_map("room_entered", "globalVars.flag4_submitted && globalVars.identity_scene_done && !globalVars.hour_read_started", "hour_read",
-                     comment: "First-ring backstop (S4 §5).")
 hax_maps.concat(hax_rerings("globalVars.hour_read_started && !globalVars.hour_read_done && globalVars.schedule_read", "hour_read_resume", voiced: false))
-hax_maps.concat(hax_rerings("globalVars.hour_read_started && !globalVars.hour_read_done && !globalVars.schedule_read", "hour_read", voiced: false))
+# hour_read_resume enters body directly (hour_read itself diverts to the hub once started).
+hax_maps.concat(hax_rerings("globalVars.hour_read_started && !globalVars.hour_read_done && !globalVars.schedule_read", "hour_read_resume", voiced: false))
 
 # Tesseract's call (S4 §4 rows 11-12, §6.4). Voiced; restarts from the top.
 hax_maps << call_map("global_variable_changed:hour_read_done", "value === true && !globalVars.tesseract_call_started", "tesseract_call", delay: 4000, voiced: true)
@@ -840,7 +875,11 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "npcType": "phone",
           "phoneId": "player_phone",
           "avatar": "assets/characters/agent_hax_v2_headshot.png",
+          "spriteTalk": "assets/characters/agent_hax_talk.png",
+          "spriteVisemes": "assets/characters/agent_hax_visemes.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m09_digital_archaeology/ink/m09_phone_agent0x99.json",
+          "callLabel": "SAFETYNET secure line",
           "voice": {
             "name": "Aoede",
             "style": "Intelligence handler speaking over a secure phone line. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
@@ -915,7 +954,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           ]
         },
         {
-          "_comment": "Nightshade (triple-agent branch only): rings after HaX's flag-1 call. Unvoiced. Outside npcIds (stage 8 m-12).",
+          "_comment": "Nightshade (triple-agent branch only): rings once HaX's flag-1 read-out has reached its card line (flag1_read_done), on closing her thread, as a voiced incoming call (ring: the player can answer, decline or call back), so his help follows HaX's print-and-card line rather than pre-empting it. A door_unlock_attempt fallback at the restricted cage's gate covers a player who never opens the read-out text (his advice fits there); a room_entered backstop covers a reload between the read-out and the ring. All three latch nightshade_rang at offer time so he rings once. Outside npcIds (stage 8 m-12).",
           "id": "nightshade_phone",
           "displayName": "Agent 0x47 'Nightshade'",
           "npcType": "phone",
@@ -930,7 +969,23 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "currentKnot": "start",
           "eventMappings": [
 <%= jgen([
-  call_map("global_variable_changed:flag1_submitted", "value === true && globalVars.m08_nightshade_triple_agent", "call", delay: 7000, forced: false, once: true),
+  # M1 R2: ring after HaX's flag-1 read-out has reached its card line (flag1_read_done,
+  # set once "Her card's on a reel at her hip" has played), on closing her thread; delay 3 s
+  # so the ring follows the read-out, not the toast. m1 R2: keyed on flag1_read_done, not
+  # flag1_read_heard (set on the read-out's first line), so a player who closes at the first
+  # choice doesn't get Nightshade before the card line; the room_entered backstop covers them.
+  call_map("conversation_closed:agent_0x99", "globalVars.flag1_read_done && globalVars.m08_nightshade_triple_agent && !globalVars.nightshade_rang", "call", delay: 3000, forced: false, once: true, voiced: true, ring: true, set: { "nightshade_rang" => true }),
+  # Fallback for a player who never opens the read-out text: ring at the first try on the
+  # restricted cage's gate (door_unlock_attempt), where his "crack the keys first" advice
+  # lands. M1 R2: moved off room_entered:restricted_stacks, which rang before the read-out on
+  # the direct path (the drop terminal is one room south of the stacks). Same latch.
+  call_map("door_unlock_attempt", "data.connectedRoom === 'restricted_cage' && globalVars.flag1_submitted && !globalVars.flag1_read_heard && globalVars.m08_nightshade_triple_agent && !globalVars.nightshade_rang", "call", delay: 10000, forced: false, once: true, voiced: true, ring: true, set: { "nightshade_rang" => true }),
+  # Reload backstop: a reload between the read-out closing and the 3 s ring loses the close
+  # mapping's timer. Ring on entering any room once the read-out has been heard (flag1_read_heard).
+  # Same latch, and the pending offers re-check !nightshade_rang at fire time, so still one ring.
+  call_map("room_entered", "globalVars.flag1_read_heard && globalVars.m08_nightshade_triple_agent && !globalVars.nightshade_rang", "call", delay: 3000, forced: false, once: true, voiced: true, ring: true, set: { "nightshade_rang" => true }),
+  # (M1 R4 n1: a cage_opened ring was tried here and removed. HaX's hub always plays the flag-1
+  # read-out before Victoria's topic, so flag1_read_heard is already set and it could never fire.)
   text_map("global_variable_changed:nightshade_shown_file", "value === true && globalVars.cage_bin === 'nightshade_copy'",
            "You found what I cleared, too. Then you know I kept his notes. I'd have burned anything else.", delay: 4000),
   text_map("global_variable_changed:nightshade_shown_file", "value === true && globalVars.cage_bin !== 'nightshade_copy'",
@@ -939,7 +994,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           ]
         },
         {
-          "_comment": "David Torres (turned branch only): rings at the Harwick & Lowe boxes after flag 2, or after the safe. Unvoiced. Voice copied from m05.",
+          "_comment": "David Torres (turned branch only): rings at the Harwick & Lowe boxes after flag 2, or after the safe, as a voiced incoming call (ring: it rings over the box container and holds if answered there). Voice copied from m05.",
           "id": "torres_phone",
           "displayName": "David Torres",
           "npcType": "phone",
@@ -954,20 +1009,23 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "currentKnot": "start",
           "eventMappings": [
 <%= jgen([
-  # Puzzle chains R1 P2 (F2): the box ring skips once the lid has opened
-  # (hl_box_opened, set synchronously on item_unlocked), so a retry in the
-  # 500 ms keypad-to-container gap can't shut the opened box; a second ring
-  # waits for the open container and plays after the sheet is read.
-  call_map("object_interacted", "data.objectName === 'Harwick & Lowe, Dead Files' && globalVars.flag2_submitted && globalVars.m05_torres_turned && !globalVars.torres_called && !globalVars.hl_box_opened", "call", delay: 1500, forced: false, once: true),
-  call_map("item_unlocked", "data.itemId === 'hl_box' && globalVars.flag2_submitted && globalVars.m05_torres_turned && !globalVars.torres_called", "call", delay: 1500, forced: false, once: true),
+  # m1: one ring at the box. All three mappings latch torres_rang at offer time
+  # and check !torres_rang, so a declined or missed ring leaves only the
+  # callback (it already plays the right branch by hl_box_opened/sleeper_shortlist)
+  # and he never rings a second time at the lid or on leaving the office. The
+  # pre-existing !torres_called guard stays (set on the call knot when answered).
+  # Puzzle chains R1 P2 (F2): the lid ring over the shut box (!hl_box_opened).
+  call_map("object_interacted", "data.objectName === 'Harwick & Lowe, Dead Files' && globalVars.flag2_submitted && globalVars.m05_torres_turned && !globalVars.torres_called && !globalVars.torres_rang && !globalVars.hl_box_opened", "call", delay: 1500, forced: false, once: true, voiced: true, ring: true, set: { "torres_rang" => true }),
+  # Covers the rare player who opens the lid in the gap before the first ring's delay.
+  call_map("item_unlocked", "data.itemId === 'hl_box' && globalVars.flag2_submitted && globalVars.m05_torres_turned && !globalVars.torres_called && !globalVars.torres_rang", "call", delay: 1500, forced: false, once: true, voiced: true, ring: true, set: { "torres_rang" => true }),
   # P7 (F7): the fallback rings on leaving the office (was 8 s after
   # reading_found, which could shut the safe between page reads).
-  call_map("room_exited", "data.roomId === 'sorensen_office' && globalVars.reading_found && globalVars.m05_torres_turned && !globalVars.torres_called", "call", delay: 1500, forced: false, once: true)
+  call_map("room_exited", "data.roomId === 'sorensen_office' && globalVars.reading_found && globalVars.m05_torres_turned && !globalVars.torres_called && !globalVars.torres_rang", "call", delay: 1500, forced: false, once: true, voiced: true, ring: true, set: { "torres_rang" => true })
 ]) %>
           ]
         },
         {
-          "_comment": "Gary Whitlock (protected branch only): rings at the first try of the salvage keypad. Unvoiced. Voice copied from m02 (Charon, the same as Netherton; harmless, his call is a text thread).",
+          "_comment": "Gary Whitlock (protected branch only): rings at the first try of the salvage keypad as a voiced incoming call. Charon voice, copied from m02 and shared with m10's gary (where it already runs alongside a Charon Netherton); the audio step checks for a Netherton clash and logs it for the user if there is one.",
           "id": "gary_phone",
           "displayName": "Gary Whitlock",
           "npcType": "phone",
@@ -982,7 +1040,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "currentKnot": "start",
           "eventMappings": [
 <%= jgen([
-  call_map("door_unlock_attempt", "data.connectedRoom === 'salvage_cage' && globalVars.m02_gary_protected", "call", delay: 1500, forced: false, once: true)
+  call_map("door_unlock_attempt", "data.connectedRoom === 'salvage_cage' && globalVars.m02_gary_protected", "call", delay: 1500, forced: false, once: true, voiced: true, ring: true)
 ]) %>
           ]
         },
@@ -1007,7 +1065,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "koImmune": true
         },
         {
-          "_comment": "HaX as a person-chat speaker (the Alpha clip, the debrief). Same voice block as agent_0x99, so one clip serves either. S5 §3.1, M9-24: stage 9 browser check whether the phone contact alone resolves; drop this record if so.",
+          "_comment": "HaX in person: the Task Force Null briefing (m09_briefing.ink, prefix hax_voice:), in the m01 briefing style. Scenes where she is on the line (Sorensen door and hatch, Noor, the Alpha recording, the debrief) keep the Agent HaX: prefix, which resolves to the phone record agent_0x99 and its phone style; agent_0x99 carries the same talk and viseme art, so those scenes draw her portrait.",
           "id": "hax_voice",
           "displayName": "Agent HaX",
           "npcType": "person",
@@ -1020,7 +1078,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "voice": {
             "name": "Aoede",
-            "style": "Intelligence handler speaking over a secure phone line. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+            "style": "Professional intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
             "language": "en-GB"
           },
           "behavior": { "initiallyHidden": true },
@@ -2619,6 +2677,12 @@ rows = imports.map { |m, v, d| %Q(    { "from": "#{m}", "var": "#{v}", "default"
     "hand_matched": false,
     "hand_before_name": false,
     "ledger_read_heard": false,
+    "hour_read_texted": false,
+    "flag1_read_heard": false,
+    "flag1_read_done": false,
+    "flag1_texted": false,
+    "ledger_texted": false,
+    "afterwards_texted": false,
     "recruiter_call_started": false,
     "recruiter_said_yes": false,
     "recruiter_gone": false,
@@ -2626,6 +2690,8 @@ rows = imports.map { |m, v, d| %Q(    { "from": "#{m}", "var": "#{v}", "default"
     "afterwards_heard": false,
     "torres_called": false,
     "gary_called": false,
+    "nightshade_rang": false,
+    "torres_rang": false,
 
     "identity_scene_started": false,
     "identity_scene_done": false,
