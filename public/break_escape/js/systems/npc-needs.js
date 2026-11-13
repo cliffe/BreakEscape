@@ -663,7 +663,7 @@ export class NPCNeedsSystem {
         if (typeof name !== 'string') return;
         // Access 9.2 A (plan 5.2): a failed park whose wakeOn names this global, and whose causes
         // would all pass now, retries soon. Before the early return: a scenario whose only outages
-        // are resource downIfs has no offWhen object at all.
+        // are resource offWhen conditions has no object-level offWhen at all.
         this._wakeFailedFor(name);
         if (!this._offSeen.size) return;
         let woke = false;
@@ -687,6 +687,8 @@ export class NPCNeedsSystem {
     _isOff(o) {
         const cond = o?.offWhen;
         if (cond === undefined || cond === null || cond === false || cond === '') return false;
+        // An empty object is "no condition" (matches Ruby off_when_present?), so it never holds.
+        if (typeof cond === 'object' && Object.keys(cond).length === 0) return false;
         const off = this._globalHolds(cond);
         this._offSeen.set(o.id, { cond, off });
         return off;

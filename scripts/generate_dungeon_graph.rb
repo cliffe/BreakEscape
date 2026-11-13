@@ -1066,7 +1066,7 @@ end
 # Workarounds (ACCESS_MODEL_SLICE_9_2_PLAN.md, section 10). Each workaround is an action node
 # ("Jake: writes it down, at 50") with an edge to what it opens: the account's sign-in node
 # for writes_down and share_login, the PC for borrow_session, the door for prop_door. An
-# outage global (a resource's downIf in the NPC's work list, or its station's offWhen) is a
+# outage global (a resource's offWhen in the NPC's work list, or its station's offWhen) is a
 # gate node with an edge to each workaround of each NPC it can frustrate, so a chain reads
 # outage, person and workaround, then the thing opened. Read through BreakEscape::AccessWork,
 # the server's resolver.

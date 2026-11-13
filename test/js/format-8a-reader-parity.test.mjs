@@ -1,18 +1,19 @@
 // Step 8a (format 1): JS reader parity for the outage rename, the plan's node-test counterpart to
-// the Ruby corpus/parity run (SCENARIO_FORMAT_HARDENING_PLAN.md, "Reader parity": the JS readers
-// get the same check, loading the old module text from `git show <base>:<path>`). The object outage
-// read moved from `obj.affordance.offWhen` to `obj.offWhen`; this loads the old and the new
-// `pcSwitchedOff` (the exported pure evaluator every object-off reader shares) and shows that, over
-// every object in the four rewritten scenarios and a sweep of the outage globals, the old reader on
-// the old render and the new reader on the new render give the same verdict. It also checks the
-// needs-target membership the step must not change: every object keeps a truthy affordance (an
-// emptied one stays `{}`), so none drops out of the candidate lists, and bench_pc is the one
-// emptied affordance.
+// the Ruby corpus/parity run (SCENARIO_FORMAT_HARDENING_PLAN.md, "Reader parity"). The object outage
+// read moved from `obj.affordance.offWhen` to `obj.offWhen`; this reproduces the pre-8a
+// `pcSwitchedOff` inline and extracts the live one from unlock-system.js (the exported pure
+// evaluator every object-off reader shares), then shows that, over every object in the four
+// rewritten scenarios and a sweep of the outage globals, the old reader on the old render and the
+// new reader on the new render give the same verdict. The old render is a vendored fixture under
+// test/fixtures/format_8a/<scenario>.old.json (see that folder's README); nothing is read through
+// git, so the parity stays meaningful once 8a is on main and the test runs in a gitless checkout. It
+// also checks the needs-target membership the step must not change: every object keeps a truthy
+// affordance (an emptied one stays `{}`), so none drops out of the candidate lists, and bench_pc is
+// the one emptied affordance.
 //
 // Run with: bin/test-js test/js/format-8a-reader-parity.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -22,15 +23,7 @@ const repo = join(here, '..', '..');
 
 const SCENARIOS = ['test_access_networks', 'test_access_social', 'test_access_work', 'test_needs_sims'];
 const UNLOCK = 'public/break_escape/js/systems/unlock-system.js';
-
-function git(...args) {
-    const r = spawnSync('git', args, { cwd: repo, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
-    if (r.status !== 0) throw new Error(`git ${args.join(' ')} failed: ${r.stderr}`);
-    return r.stdout;
-}
-
-const base = git('merge-base', 'main', 'HEAD').trim();
-assert.ok(base, 'merge base of main and HEAD');
+const FIXTURE_DIR = join(repo, 'test', 'fixtures', 'format_8a');
 
 // Pull one `export function NAME(...) { ... }` out of module text and build it as a callable. The
 // evaluator functions end with a `}` at column 0, so the first such line closes the block.
@@ -46,15 +39,25 @@ function extractFn(src, name) {
     return (0, eval)(`(${body})`);
 }
 
-const oldUnlock = git('show', `${base}:${UNLOCK}`);
+// The pre-8a pcSwitchedOff (unlock-system.js at the merge base), reproduced inline. The only
+// difference from the live reader is that it read the outage condition from `data.affordance.offWhen`
+// rather than `data.offWhen`.
+function pcSwitchedOffOld(data, globals) {
+    const cond = data && data.affordance ? data.affordance.offWhen : undefined;
+    if (cond === undefined || cond === null || cond === false || cond === '') return false;
+    const g = globals || {};
+    if (typeof cond === 'string') return !!g[cond];
+    if (typeof cond === 'object') return Object.entries(cond).every(([name, value]) => g[name] === value);
+    return false;
+}
+
 const newUnlock = readFileSync(join(repo, UNLOCK), 'utf8');
-const pcSwitchedOffOld = extractFn(oldUnlock, 'pcSwitchedOff');
 const pcSwitchedOffNew = extractFn(newUnlock, 'pcSwitchedOff');
 
 function readScenario(name, old) {
+    if (old) return JSON.parse(readFileSync(join(FIXTURE_DIR, `${name}.old.json`), 'utf8'));
     const path = `scenarios/${name}/scenario.json.erb`; // no ERB in these four, so a plain parse
-    const text = old ? git('show', `${base}:${path}`) : readFileSync(join(repo, path), 'utf8');
-    return JSON.parse(text);
+    return JSON.parse(readFileSync(join(repo, path), 'utf8'));
 }
 
 function objectsOf(data) {

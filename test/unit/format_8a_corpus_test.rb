@@ -4,9 +4,11 @@ require 'test_helper'
 # (SCENARIO_FORMAT_HARDENING_PLAN.md, "The corpus equivalence check" and "Reader parity"). It is a
 # committed test rather than a one-off script so the equivalence is re-checked on every run.
 #
-# For each of the four scenarios the step rewrites, the template is rendered from the merge base
-# (old field names, read with `git show <base>:<path>`) and from the branch (new names), each with
-# srand(1). The test shows:
+# For each of the four scenarios the step rewrites, the old render (old field names) is a vendored
+# fixture under test/fixtures/format_8a/<scenario>.old.json (captured from the pre-8a template at the
+# merge base; see that folder's README) and the new render (new names) is the current template,
+# rendered with srand(1). Reading the old side from a fixture, not through git, keeps the equivalence
+# meaningful once 8a is on main and lets the test run in a gitless checkout. The test shows:
 #   - the step's `scenario` transform applied to the old render equals the new render;
 #   - the transform leaves the new render unchanged (a no-op on format-1 data);
 #   - `retired_keys_in` finds nothing in the new render;
@@ -14,12 +16,11 @@ require 'test_helper'
 #     way: the transform applied to the prepared old data equals the prepared new data. This also
 #     exercises the transform on prepared data (plan step 8a, "the step on prepared data").
 #
-# Reader parity: the old object outage reader is loaded from the merge base under
-# BreakEscape::AccessWorkOld and run on the old render; the new reader on the new render. The
-# derived outage condition of every object must match, and the up/down verdict of every network,
-# resource and object must match across a sweep of the outage globals. A network's and a resource's
-# old reader is a bare field read (`downIf`), so the old side reads that field on the old render
-# directly; nothing is derived there that a re-read could get wrong.
+# Reader parity: the pre-8a outage readers are reproduced inline here (the old object reader read
+# `affordance.offWhen`; networks and resources read a bare `downIf`), and run on the old render; the
+# live readers run on the new render. The derived outage condition of every object must match, and
+# the up/down verdict of every network, resource and object must match across a sweep of the outage
+# globals.
 module BreakEscape
   class Format8aCorpusTest < ActiveSupport::TestCase
     FU = BreakEscape::FormatUpgrade
@@ -27,15 +28,7 @@ module BreakEscape
     NM = BreakEscape::NetworkModel
 
     SCENARIOS = %w[test_access_networks test_access_social test_access_work test_needs_sims].freeze
-
-    def base
-      @base ||= begin
-        sha = `git merge-base main HEAD`.strip
-        raise 'could not find the merge base of main and HEAD' if sha.empty?
-
-        sha
-      end
-    end
+    FIXTURE_DIR = File.expand_path('../fixtures/format_8a', __dir__)
 
     def template_path(name)
       "scenarios/#{name}/scenario.json.erb"
@@ -51,7 +44,7 @@ module BreakEscape
     end
 
     def old_render(name)
-      render(`git show #{base}:#{template_path(name)}`)
+      JSON.parse(File.read(File.join(FIXTURE_DIR, "#{name}.old.json")))
     end
 
     def new_render(name)
@@ -77,19 +70,23 @@ module BreakEscape
       game.scenario_data
     end
 
-    # The old object outage reader, loaded from the merge base under BreakEscape::AccessWorkOld.
-    # require lines are dropped (the constants are already loaded in the test env) and the module is
-    # renamed so it sits beside the live AccessWork.
-    def access_work_old
-      return ::BreakEscape::AccessWorkOld if defined?(::BreakEscape::AccessWorkOld)
+    # The pre-8a object outage reader, reproduced inline: an object's outage condition was the
+    # `offWhen` inside its own affordance Hash (AccessWork#affordance at the merge base; the preset
+    # merge is not reproduced because no office preset defines offWhen, so the own-affordance read is
+    # the whole answer on this corpus).
+    def object_off_when_old(obj)
+      aff = obj.is_a?(Hash) && obj['affordance'].is_a?(Hash) ? obj['affordance'] : nil
+      aff&.dig('offWhen')
+    end
 
-      src = `git show #{base}:lib/break_escape/access_work.rb`
-      src = src.gsub(/^\s*require.*$/, '')
-      src = src.sub(/\bmodule AccessWork\b/, 'module AccessWorkOld')
-      # At the top-level binding so the module lands at ::BreakEscape::AccessWorkOld, not nested
-      # inside this test's namespace.
-      eval(src, TOPLEVEL_BINDING) # rubocop:disable Security/Eval -- trusted repo source at a known commit
-      ::BreakEscape::AccessWorkOld
+    # The pre-8a AccessWork#globals_hold?, reproduced inline. truthy_global? was NetworkModel.truthy?.
+    def globals_hold_old?(cond, globals)
+      globals = {} unless globals.is_a?(Hash)
+      case cond
+      when String then NM.truthy?(globals[cond])
+      when Hash then cond.all? { |k, v| globals[k.to_s] == v }
+      else false
+      end
     end
 
     # Every room object in a render, in order, each with its id.
@@ -160,7 +157,7 @@ module BreakEscape
         checked = 0
         new_by_id.each do |id, new_obj|
           old_obj = old_by_id[id]
-          old_cond = access_work_old.affordance(old, old_obj)&.dig('offWhen')
+          old_cond = object_off_when_old(old_obj)
           new_cond = AW.object_off_when(new_obj)
           assert new_cond == old_cond,
                  "#{name}/#{id}: the derived object outage condition must match " \
@@ -234,7 +231,7 @@ module BreakEscape
     def object_off_old(cond, globals)
       return false if cond.nil? || cond == false || cond == ''
 
-      access_work_old.globals_hold?(cond, globals)
+      globals_hold_old?(cond, globals)
     end
 
     def object_off_new(cond, globals)

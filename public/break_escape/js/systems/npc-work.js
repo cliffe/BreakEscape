@@ -25,7 +25,7 @@ function lookup(globals) {
 
 /**
  * Format 1 (hardening step 8a): a resource's outage condition is `offWhen` in the requireGlobal
- * form (was `offWhen`, a bare name). `offWhenHolds` is the needs system's requiredGlobalsHold,
+ * form (was `downIf`, a bare name). `offWhenHolds` is the needs system's requiredGlobalsHold,
  * copied here because this module stays import-free (node tests load it directly). A bare name is
  * truthy; { name: value } matches every pair. `offWhenNames` is the globals it reads, for the wake
  * set and the outage kick.
@@ -33,7 +33,11 @@ function lookup(globals) {
 function offWhenHolds(cond, get) {
     if (cond === undefined || cond === null) return false;
     if (typeof cond === "string") return cond !== "" && truthy(get(cond));
-    if (typeof cond === "object") return Object.entries(cond).every(([name, value]) => get(name) === value);
+    if (typeof cond === "object") {
+        // An empty object is "no condition" (matches Ruby off_when_present?), so it never holds.
+        const pairs = Object.entries(cond);
+        return pairs.length > 0 && pairs.every(([name, value]) => get(name) === value);
+    }
     return false;
 }
 

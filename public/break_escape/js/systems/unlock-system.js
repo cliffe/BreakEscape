@@ -367,7 +367,11 @@ export function pcSwitchedOff(data, globals = (typeof window !== 'undefined' && 
     if (cond === undefined || cond === null || cond === false || cond === '') return false;
     const g = globals || {};
     if (typeof cond === 'string') return !!g[cond];
-    if (typeof cond === 'object') return Object.entries(cond).every(([name, value]) => g[name] === value);
+    if (typeof cond === 'object') {
+        // An empty object is "no condition" (matches Ruby off_when_present?), so it never holds.
+        const pairs = Object.entries(cond);
+        return pairs.length > 0 && pairs.every(([name, value]) => g[name] === value);
+    }
     return false;
 }
 

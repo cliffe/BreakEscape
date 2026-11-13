@@ -1323,3 +1323,47 @@ anticipated.
 
 **Commits:** `4c9b2a552` (corpus equivalence and reader-parity tests), `d14afa363` (format-version
 test migration), and the commit holding this log.
+
+## Step 8a review R1 fixes (2026-11-13)
+
+Addressing `SCENARIO_FORMAT_HARDENING_STEP8A_REVIEW_R1.md` (0 blockers, 1 major, 1 minor, 4 nits).
+
+**maj1: the corpus and parity tests no longer read through git.** Both tests derived the "old" side
+from `git merge-base main HEAD`, so they would go vacuous or fail once 8a lands on main (the merge
+base then points at the new code) and error in a gitless checkout. The four old renders are now
+vendored as fixtures under `test/fixtures/format_8a/<scenario>.old.json` (captured from the base
+`8b6cf6a0d`, each base template rendered with `srand(1)`; the folder's README records how). The old
+readers are reproduced inline: in the Rails test `object_off_when_old` reads an object's own
+`affordance.offWhen` (no preset merge is needed, because no office preset defines `offWhen`, so the
+own-affordance read is the whole answer on this corpus) and `globals_hold_old?` is the pre-8a
+evaluator; the networks and resources still read a bare `downIf` on the fixture. In the node test
+`pcSwitchedOffOld` is the pre-8a `data.affordance.offWhen` reader, inline, while the live
+`pcSwitchedOff` is still pulled from the working-tree module so the parity stays bound to real code.
+Every `git show`, `merge-base` and the AccessWorkOld eval are gone. Proof it still bites: breaking
+the scenario transform locally (prefixing the renamed value) turns the corpus test red (6 failures),
+and reverting restores green.
+
+**min1:** `scenarios/test_access_networks/PLAYTEST.md` now names the fields in their current shape:
+the network and resource outage conditions as `offWhen`, and the host one as object-level `offWhen`
+rather than `affordance.offWhen`.
+
+**nit1:** the `npc-work.js` `offWhenHolds` docstring now reads "(was `downIf`, a bare name)".
+
+**nit3:** the JS outage helpers (`offWhenHolds` in `npc-work.js` and `container-minigame.js`,
+`pcSwitchedOff` in `unlock-system.js`, `_isOff` in `npc-needs.js`) now treat an empty-object
+`offWhen` as "no condition" (never off), matching Ruby `AccessWork.off_when_present?`. New test
+`test/js/outage-empty-hash-guard.test.mjs` extracts each live helper and checks the empty-object
+edge both ways.
+
+**nit4:** the stale `downIf` comments at `generate_dungeon_graph.rb:1069`, `npc-needs.js` (the
+early-return note) and `npc-reports.js` now say `offWhen`.
+
+**nit2 (not applied, needs a decision).** The outdented `else`/`elsif`/`end` in
+`generate_dungeon_graph.rb`, `validate_access_work.rb` and `validate_npc_needs.rb` are not stray
+editor noise: `rubocop-rails-omakase` (the repo's inherited config) flags main's deeper
+(keyword-aligned) `else`/`end` on these assignment-position conditionals as `Layout/ElseAlignment`
+and `Layout/EndAlignment` offences and autocorrects them to column 4. The mandatory post-edit and
+pre-commit rubocop hooks both re-outdent the lines and the pre-commit hook blocks any commit that
+still carries the deeper alignment, so main's indentation cannot be restored without an inline
+`rubocop:disable` (itself new noise) or a config change. Left as the branch (and rubocop) has it.
+
