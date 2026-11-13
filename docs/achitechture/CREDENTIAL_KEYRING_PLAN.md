@@ -1,6 +1,6 @@
 # Credential keyring: build plan for phases 0 and 1
 
-Status: plan. Decided by the user on 2026-11-13 (q92, option 3: "remote sign-in model: credential keyring, option 3"). Engine paths are under `public/break_escape/js/`. Line numbers are on main f956f5355 unless `2b0:` marks branch `build/ux-slice2b0` (tip c0c274522).
+Status: plan. Decided by the user on 2026-11-13 (q92, option 3: "remote sign-in model: credential keyring, option 3"). Engine paths are under `public/break_escape/js/`. Line numbers are on main 1ce7486c7, which contains UX slice 2b0 (remote sign-in captured tiles), the conclude-race fix and the rfid server-trust fix.
 
 ## 1. What this builds
 
@@ -13,7 +13,7 @@ A **credential** is anything the player holds that a PC accepts as proof that th
 | 2 | `token` | sketch, section 10 | M |
 | 3 | `hash`, `acceptedOn`, machine accounts | sketch, section 11 | M |
 
-Each slice is one branch, built, reviewed and live-proved on its own, and merged before the next starts. Main stays playable and safe between slices: K1 changes no sign-in behaviour, K2 adds a server branch that nothing in the client calls until K3a, and K3a works through footholds alone.
+Each slice is one branch, built, reviewed and live-proved on its own, and merged before the next starts. K0 also waits for decision D1 before it merges, since it changes a shipped lab's screens. Main stays playable and safe between slices: K1 changes no sign-in behaviour, K2 adds a server branch that nothing in the client calls until K3a, and K3a works through footholds alone.
 
 Out of scope: tokens and hashes; converting the labs' hand-written granted sessions (decision D5); the inline item shape; any field tidy that would need a format step (section 12).
 
@@ -23,46 +23,54 @@ Each is shown on the picks page. The ones marked "default" are behaviour the pla
 
 | Change | Reason |
 |---|---|
-| The "Use from keyring" button and its list panel become per-kind tags on each account tile ("Captured", "Found in a file", "Saved connection", "Remote assist") and, on the chosen account's line, one button per credential ("Connect with HB-FIN-02.rdp") | One action per way in, no one-item menu; one verb, Connect, on the screen, the tray and the desktop |
+| The "Use from keyring" button and its list panel become short per-kind tags on each account tile ("Captured", "In file", "Saved", "Assist") and, on the chosen account's line, one button per usable credential ("Connect with HB-FIN-02.rdp") | One action per way in, no one-item menu; one verb, Connect, on the screen, the tray and the desktop. The tags fit a tile whole |
 | Default: a password found in a file is never filled in. The tile is tagged and the player types it from the file | The server never sends a password it did not capture; reading the file is the lesson |
-| Default: the "Found in a file" tag and its toast wait until the player has opened the file (the explainer listed the account as soon as the proof held) | The tag would give the find away |
+| Default: the "In file" tag and its toast wait until the player has opened the file (the explainer listed the account as soon as the proof held) | The tag would give the find away |
+| Under `remoteScreen: "typed"` the screen still shows the player's own captured sign-ins, tagged (the explainer's typed screen "asks first and shows nothing") | The captures are the player's own notes, not the PC's list; the screen says the PC lists none |
+| A refused credential gets a specific answer (wrong PC, policy, lockout, ended) once its proof holds; the explainer refused every failed check as an unknown credential | The proof check runs first, so the browser still cannot probe the registry, and honest play learns why |
+| Machine accounts, if built, live in a top-level `machineAccounts` block, not `accounts` (D3) | `accounts` already names `social.mail.accounts` and a `loginPicker` value |
+| The invite can also end on a timer about 40 seconds after the relay desktop first opens, as well as through Jake's later ink | Teaches that an invite is short-lived; the ink ending alone may never be reached |
 | The keyring reaches the client by GET /keyring with a `rev` digest, asked after the events that can change it, not as deltas inside other answers | One reader, no change to every answer that could earn a credential; a repeat costs a few bytes |
-| A relay session (assist invite) gives no network reach, is not listed in the network view and ends on reload (the explainer said every route after sign-in is unchanged) | The invite is Jake's own session shared through his vendor's relay, not a foothold on his network |
+| A relay session (assist invite) gives no network reach, maps no shares, is no source for a desktop sign-in, is not listed in the network view, is not offered at the holder's keyboard and ends on reload (the explainer said every route after sign-in is unchanged) | The invite is Jake's own screen shared through his vendor's relay, not a foothold on his network |
 | The assist code comes from Jake through an ink gift (`#give_item` from his `itemsHeld`), not a declared grant | A declared grant can be claimed from the first second, skipping the conversation |
-| The policy refusal reads "This PC always asks for the password, so a saved one is ignored. That setting is the fix." in place of "This PC does not allow saved passwords" | Names the control; final wording is D7 |
+| An assist invite is used only by Connect, never from a sign-in screen; a refusal is a toast | Its one route is the relay, which no sign-in screen draws |
+| The policy refusal reads "{host} always asks for the password, so a saved one is ignored. That setting is the fix." in place of "This PC does not allow saved passwords" | Names the control; final wording is D7 |
 | Default: a lockout refuses a saved connection too | A saved connection presents the password, so the lockout applies; an assist invite (the person's own session) is not refused |
 | Default: keyboard screens show password entries only | Connecting kinds are used from somewhere else (section 3.7) |
 | The keyring view ("the capture log grown") is not in phase 1 (D4, recommended (c)) | The capture log is carried by one test scenario; the sign-in screens and Connect are where credentials are used |
-| Item type `remote_access` becomes existing types with a tray slot (`text_file`) | No new art or item type; a small connection icon is logged in the backlog |
+| Item type `remote_access` becomes an existing type with a tray slot (`text_file`) | No new art or item type; a small connection icon is logged in the backlog |
 | `token` leaves the phase 1 default `accepts` | Tokens are phase 2 (D2) |
 | The inline item shape (a credential described inside the item) is not accepted | No content uses it; a second shape is a second thing to test |
 | New-game conversion of the labs' items moves out of phase 1 (D5) | The honest kind for them is `token` |
 | The desktop pivot ("open the .rdp from Sam's desktop") is slice K4 (D6) | It needs its own route and session reader changes |
-| Connect signs in directly when the server accepts; the sign-in screen opens only to show a refusal | One meaningful action acts directly |
+| Connect signs in directly when the server accepts; a saved connection's sign-in screen opens only to show a policy or lockout refusal | One meaningful action acts directly |
 | The relay desktop says whose session it is and has Disconnect, not Switch user and Sign out | The player did not sign in; they were let in |
 | The explainer's later kinds (an RFID card as a credential, a one-time code, a key file) are not planned | Logged in `docs/IDEAS_BACKLOG.md` in K1 |
 
 ## 2. What exists today
 
-- **POST /login** (`games_controller.rb:1320`, `Game#attempt_login!` at `game.rb:2141`): a username and password, or a claim, under `with_game_lock`. With `foothold`, the host must be reachable through it (`host_reachable_through?`, `network_access.rb:1171`), on, and not `remote: "blocked"`. Failures count per PC and normalised username (`record_login_failure!`, `game.rb:2836`) up to `maxAttempts`. `start_login_session!` (`game.rb:2883`) writes `sessions[pcId] = { id, via, foothold? }`, one slot per PC, and adds the PC to `signedInPcs`.
-- **GET /login_accounts** (`games_controller.rb:1363`): the PC's tiles (`login_account_tiles`, `game.rb:2408`, by `loginPicker`: `accounts`, `known` or `false`) and the sticky note. It judges reach at the keyboard only and answers 403 for a headless PC; a request carrying `foothold` gets no note but is otherwise judged as if the player stood at the PC.
-- **The remote sign-in screen** (`systems/unlock-system.js:627`, `openRemoteSignInScreen`) passes `picker: false` and `tiles: []`, never calls GET /login_accounts, and fills the captured sign-ins from GET /capture_secrets. The keyboard screen (`unlock-system.js:553-620`) opens after GET /login_accounts answers and shows no captures.
-- **Headless hosts** (no screen: `door_box`, HB-DOOR-01, in `test_access_networks`; LW-DOOR01 in `lab_physical_pentest`, `scenario.json.erb:2304`) are signed in to only over the network, through the remote screen with no tiles.
-- **GET /capture_secrets** (`games_controller.rb:1568`): `secrets` (`capture_secrets_for_client`, `game.rb:1415`) and, in a networks scenario, `accounts` (`account_capture_usernames`, `network_access.rb:1385`). Capture proofs (`capture_proofs.rb:58`; `planted`, `dropped`, `session`) gate when an account's password is served.
+- **POST /login** (`games_controller.rb:1320`, `Game#attempt_login!` at `game.rb:2141`): a username and password, or a claim, under `with_game_lock`. With `foothold`, the host must be reachable through it (`host_reachable_through?`, `network_access.rb:1171`), on, and not `remote: "blocked"` (`remote_blocked?`, `network_access.rb:856`; refusal text `REMOTE_BLOCKED`, `network_access.rb:951`). Failures count per PC and normalised username (`record_login_failure!`, `game.rb:2867`) up to `maxAttempts`. `start_login_session!` (`game.rb:2914`) writes `sessions[pcId] = { id, via, foothold? }`, one slot per PC, and adds the PC to the grow-only `signedInPcs`.
+- **GET /login_accounts** (`games_controller.rb:1363`): the PC's tiles (`login_account_tiles`, `game.rb:2416`, by `loginPicker`: `accounts` (the default), `known` or `false`; each tile `{ username, displayName, portrait, avatar }`, no NPC id) and the sticky note. It judges reach at the keyboard only and answers 403 for a headless PC; a request carrying `foothold` gets no note but is otherwise judged as if the player stood at the PC.
+- **The remote sign-in screen** (`systems/unlock-system.js:633`, `openRemoteSignInScreen`) is built from `remoteLockable` (`unlock-system.js:302`), which hard-codes `loginPicker: false` and drops the row's `headless`; it never calls GET /login_accounts and fills the captured sign-ins from GET /capture_secrets. The keyboard screen (`openLoginPc`, `unlock-system.js:260`) opens the desktop at once when the client holds a session at that PC, else after GET /login_accounts answers, and shows no captures.
+- **Headless hosts** (no screen: `door_box`, HB-DOOR-01, in `test_access_networks`; LW-DOOR01 in `lab_physical_pentest`, `loginPicker: false` at `scenario.json.erb:2311`) are signed in to only over the network, through the remote screen with no tiles.
+- **GET /capture_secrets** (`games_controller.rb:1568`): `secrets` (`capture_secrets_for_client`, `game.rb:1415`) and, in a networks scenario, `accounts` (`account_capture_usernames`, `network_access.rb:1385`). Capture proofs (`capture_proofs.rb`; `planted`, `dropped`, `session`) gate when an account's password is served (`account_capture_served?`, `capture_proofs.rb:104`).
 - **Session lock flag.** UI slice 6 (PC start panel, q93 option C) adds a server-side boolean `locked` to the held-session record, sent in the sessions answer as a delta, unlocked only through the PC's normal server password check with `maxAttempts` counting as for sign-in, and written as one predicate. This plan builds on that flag and does not reshape the record.
-- **Session readers.** `session_route_up?` (`network_access.rb:1015`) returns true at once for a session with no foothold (line 1023). `prune_unreachable_sessions!` (`network_access.rb:1150`) skips sessions with no foothold and ignores outages. `reach_session_hosts` (`network_access.rb:1115`) counts every session as a pivot host in the reach walk. `host_row` (`network_access.rb:911-936`) offers only `via == "password"` sessions with `remote` from the foothold. `desktop_request_allowed?` (`network_access.rb:1183`) judges a foothold request by reach and a request without one by the keyboard. `session_for_client` (`game.rb:2392`) answers through `login_session_answer` with the session's foothold only. `render_login_desktop` (`games_controller.rb:2440-2450`) judges a desktop request through `desktop_refusal(info, foothold)` and, with no foothold, calls `settle_session_at_keyboard!`, which strips the session's foothold. `end_claimed_sessions!` (`game.rb:2362`) ends claims on reload. `screen-states.js:83` paints the locked screen when the PC is locked and the player's session there is not `via === 'password'`.
-- **Sync.** PUT /sync_state loads `SYNC_STATE_COLUMNS` only, without `scenario_data` (`games_controller.rb:2022`); `merge_global_variables!` (`game.rb:332`) runs there. `prepare_bootstrap_state!` (`game.rb:214`) runs the bootstrap writers (`run_bootstrap_writers!`, `game.rb:839`) with `scenario_data` loaded, but only when `bootstrap_state_needs_write?` (`game.rb:831`) is true. A dropped link reaches the client as `endedPcIds`, which `pc-sessions.js` `linkDropped` (line 460) handles.
-- **Inventory.** Items enter only through `/inventory` and `canonical_inventory_item` (`games_controller.rb:2544`). An always-allowed type (`notepad`, `games_controller.rb:2507`) has no server source and keeps the client's fields except `CLIENT_ITEM_FORBIDDEN_FIELDS`, built from `ItemIdentity::FORGEABLE_ITEM_FIELDS` (`item_identity.rb:28`). `ItemIdentity.same_item?` (`item_identity.rb:63`) falls back to a shared name when ids differ. `ItemIdentity.client_forged?` (`item_identity.rb:40`) catches only room adds with no source.
-- **Notes items never take a tray slot**: `notes`-family types go to the Notepad (`systems/inventory.js:946`, `systems/interactions.js:1910`).
-- **Inventory menu.** `inventoryMenuFor` (`systems/inventory-menu.js:87`) gives an item with more than one thing to do a small menu (an action plus Examine, plus Drop here).
-- **NPC gifts.** An ink choice gives an item with the `#give_item:<type>:<id>` tag from the speaking NPC's `itemsHeld`; the server checks the NPC holds it. A declared grant is a separate server-run action with no trigger check.
+- **Session readers.** `session_route_up?` (`network_access.rb:1015`) returns true at once for a session with no foothold. `prune_unreachable_sessions!` (`network_access.rb:1150`) skips sessions with no foothold and ignores outages. `reach_session_hosts` (`network_access.rb:1115`) counts every session as a pivot host. `resource_admits_player?` (`network_access.rb:1218`) admits a share through any session whose route is up, across the link walk for an access-listed share. `mapped_shares` (`network_access.rb:1265`) maps every admitted share on networks reachable from the PC, with no test of the session's kind; `find_login_item` (`game.rb:2051`) also searches those mapped shares. `host_row` (`network_access.rb:911`) offers only `via == "password"` sessions with `remote` from the foothold. `desktop_request_allowed?` (`network_access.rb:1183`) judges a foothold request by reach and a request without one by the keyboard. `unlock_session_refusal` (`game.rb:2758`) picks "not responding" or "off" by whether the session has a foothold. `session_for_client` (`game.rb:2400`) answers with the session's foothold only. `render_login_desktop` (`games_controller.rb:2447`) judges a desktop request by foothold and, with none, calls `settle_session_at_keyboard!` (`network_access.rb:1197`), which strips the session's foothold. `end_claimed_sessions!` (`game.rb:2370`) ends claims on reload (`claimed_session_ids`, `game.rb:2385`).
+- **Screen look.** `systems/screen-states.js:83` sets only the world sprite's locked look: locked when the workstation is locked and the player's session there is not `via === 'password'`. It does not decide what opens on a click.
+- **Sync.** PUT /sync_state (`games_controller.rb:811`) loads `SYNC_STATE_COLUMNS` only, without `scenario_data` (`games_controller.rb:2027`); `merge_global_variables!` (`game.rb:332`) runs there. `prepare_bootstrap_state!` (`game.rb:214`) runs the bootstrap writers (`run_bootstrap_writers!`, `game.rb:839`) with `scenario_data` loaded, but only when `bootstrap_state_needs_write?` (`game.rb:831`) is true. A dropped link reaches the client as `endedPcIds`, which `pc-sessions.js` `linkDropped` handles.
+- **Inventory.** Items enter only through `/inventory` and `canonical_inventory_item` (`games_controller.rb:2560`), which stores the server's own copy for a type that is not always-allowed. An always-allowed type (`notepad`, `ALWAYS_ALLOWED_ITEMS`, `games_controller.rb:2523`) has no server source and keeps the client's fields except `CLIENT_ITEM_FORBIDDEN_FIELDS`, built from `ItemIdentity::FORGEABLE_ITEM_FIELDS`. `ItemIdentity.same_item?` falls back to a shared name when ids differ. `ItemIdentity.client_forged?` catches only room adds with no source.
+- **Declared grants** (`DeclaredGrants.for`, `lib/break_escape/declared_grants.rb:60`; `Game#declared_grants`, `game.rb:3443`) are server-run actions that put an item in the inventory with no trigger check.
+- **Notes items never take a tray slot**: `notes`-family types go to the Notepad (`systems/inventory.js`, `systems/interactions.js`).
+- **Inventory menu.** `inventoryMenuFor` (`systems/inventory-menu.js:87`) gives an item with more than one thing to do a small menu. The tray is covered while a minigame or chat is open, and `openInventoryItemMenu` returns without a menu in that state (`inventory-menu.js:171-174`).
+- **NPC gifts.** An ink choice gives an item with the `#give_item:<type>:<id>` tag from the speaking NPC's `itemsHeld`; the server checks the NPC holds it.
+- **Timers and barks.** Scenario `timers` are a top-level array (`scenario-schema.json:785`), armed by `startOnGlobal`, run in real time, and restart on reload while their start global is true (`README_scenario_design.md:2753`). Barks come from event mappings (for example on `global_variable_changed:<name>`), not from timer actions, and wait behind an open minigame. `pc_desktop_opened` carries `{ pcId, npcId, via, restored, remote, footholdId }` (`pc-sessions.js:49, 545`).
 - **Displacement.** When an NPC sits down at a PC, `pc-sessions.js` ends any player session there (`displaced`).
-- **Policies** ship in the bootstrap. The schema closes each policy (`scenario-schema.json:195-209`).
-- **UX slice 2b phase 0** (2b0, clean after review, going into merge train 32): captured sign-ins as the shared `.signin-tile` tiles with headshots, under a "Captured sign-ins" heading, above the form, in the PC monitor frame, with a loading state that shows neither form nor tiles until the list arrives.
-- **Networks scenarios with sign-in hosts**: `test_access_networks` and `lab_physical_pentest` (LW-OPEN-07 `staff_pc_2`, `access: { people: ["pierce"] }`, the hot desk `hot_desk_pc`, and LW-DOOR01, all on `office_lan`; `revealSecret: true`; no policies block). They are the only scenarios with jacks, access points or implants. m01 to m10, `lab_social_engineering` and the other test scenarios have no foothold, so no remote screen. The `ca20` scenarios' `networks` keys are phone Wi-Fi lists, not this model.
-- **Remote screen wording today** (2b0): "Checking..." while loading, a 3 s cap (`REMOTE_CAPTURES_WAIT_MS`, `unlock-system.js:369`) after which the form shows with a "still checking" line that the late answer replaces in place without moving focus; lines "Captured sign-ins: still checking.", "Captured sign-ins could not be loaded.", "Captured sign-ins: none yet." (`password-minigame.js:1712-1720`). The view's strings: `unreachableMessage(host)` "<host> can't be reached over this link.", `notRespondingMessage(host)` "<host> is not responding." (an off host over the network, on purpose), `REMOTE_OFF_TEXT` "Remote sign-in off" (`network-links.js:59-68`).
-- **Monitor frame.** The PC screen draws on a 560x350 base at a whole scale: x2 at 1400x1000, where nothing scrolls (`utils/pc-monitor.js:15-37`, `password-minigame.css:1270-1279`). Tiles are 104px wide, 84px compact.
-- **Accounts are room NPCs.** `account_npcs` reads only `rooms.*.npcs` (`game.rb:1594-1600, 1896`).
+- **Policies** ship in the bootstrap. The schema closes each policy. The schema has no cross-reference keyword (only `x-id-map`); references are checked by the validator.
+- **The 2b0 remote screen**: captured sign-ins as the shared `.signin-tile` tiles with headshots, under a "Captured sign-ins" heading, above the form, in the PC monitor frame, with a loading state that shows neither form nor tiles until the list arrives. Every captured account with a served password is shown and filled, whatever the PC admits. At 1400x1000 the Other user form plus a refusal line is 14px taller than `.pc-monitor-area` (scrollHeight 364 against clientHeight 350), so a scroller appears inside the monitor.
+- **Remote screen wording today**: "Checking..." while loading, a 3 s cap (`REMOTE_CAPTURES_WAIT_MS`, `unlock-system.js:369`) after which the form shows with a "still checking" line that the late answer replaces in place without moving focus; lines "Captured sign-ins: still checking.", "Captured sign-ins could not be loaded.", "Captured sign-ins: none yet.". `signInErrorMessage` (`password-minigame.js:358`) says "This PC is off.", "This PC is not responding.", "This PC can't be reached.". The view's helpers `unreachableMessage(host)` "<host> can't be reached over this link." and `notRespondingMessage(host)` "<host> is not responding." are in `systems/network-links.js:66-68`; `REMOTE_OFF_TEXT` "Remote sign-in off" is in `minigames/network-view/network-view-minigame.js:59`.
+- **Monitor frame.** The PC screen draws on a 560x350 base at a whole scale: x2 at 1400x1000 (`utils/pc-monitor.js`, `password-minigame.css`). Tiles are 104px wide with 4px padding and a 2px border (`password-minigame.css:779`), about 11 Press Start 2P glyphs at 8px inside; 84px compact (`css:1067`), about 9.
+- **Accounts are room NPCs.** `account_npcs` (`game.rb:1896`) reads only `rooms.*.npcs`.
+- **Networks scenarios with sign-in hosts**: `test_access_networks` and `lab_physical_pentest`. In the lab, all on `office_lan` with `revealSecret: true` (`scenario.json.erb:78`) and no policies block: LW-OPEN-07 `staff_pc_2` (default picker, `access: { people: ["pierce"] }`, line 1893), the hot desk LW-HOT-01 `hot_desk_pc` (default picker, `access: { people: ["hampshire", "lord", "pierce"] }`, line 1937) and LW-DOOR01. The lab captures Hampshire, Lord and Pierce (Pierce's proof is `session: staff_pc_2`, line 1698). Its scope text says Pierce's password "may be used at the hot desk" (line 187). m01 to m10, `lab_social_engineering` and the other test scenarios have no foothold, so no remote screen. The `ca20` scenarios' `networks` keys are phone Wi-Fi lists, not this model.
 - **Granted remote sessions** are hand-written `pc` items: `lab_social_engineering/scenario.json.erb:170-200` (`sofia_remote`) and `lab_physical_pentest/scenario.json.erb:586`.
 - **The capture log** (`minigames/capture-log/`, sections Captures, Sessions, Findings) is carried only by `test_capture_log`.
 
@@ -85,7 +93,7 @@ Two optional fields, shipped in the bootstrap (not secret):
 }
 ```
 
-- `remoteScreen`: `"tiles"` shows the PC's own account tiles (by its `loginPicker`) over the network; `"typed"` shows none until a password is right, as Network Level Authentication does. Default: decision D1 (recommended `"tiles"`). Never affects the keyboard screen. A headless host always answers as `"typed"` with no tiles.
+- `remoteScreen`: `"tiles"` shows the PC's own account tiles (by its `loginPicker`) over the network; `"typed"` shows none of the PC's accounts until a password is right, as Network Level Authentication does. Default: decision D1 (recommended `"tiles"`). Never affects the keyboard screen. A headless host shows no PC tiles under either value.
 - `accepts`: the kinds the PC takes. Absent: `CredentialModel::DEFAULT_ACCEPTS` (phase 1: `password`, `saved_connection`, `assist_invite`; never `hash`). `password` is always accepted (a PC that refused typed passwords would be unusable); a list without it draws a validator warning.
 - `maxAttempts` keeps its meaning. Only typed passwords count.
 
@@ -114,7 +122,7 @@ A top-level `credentials` map, server-only: the bootstrap strips it and no answe
 | `foundIn` | `password` only, optional: the item whose text holds the password |
 | `endsOnGlobal` | `assist_invite` only, optional: a declared global; once true, the invite is over for the game |
 
-At most 64 entries; the server reads the first 64 by sorted id.
+At most 64 entries; the server reads the first 64 by sorted id. References are checked by the validator (section 6.3); the schema only closes the entry's shape.
 
 ### 3.4 Items that carry a credential
 
@@ -140,12 +148,14 @@ All read from state the server already writes:
 
 | Proof | Holds when | Server state read |
 |---|---|---|
-| `session: pcId` | The player has ever held a session at that PC | `signedInPcs` |
+| `session: pcId` | The player has ever held a non-relay session at that PC | `signedInPcs` |
 | `planted`, `dropped` | As capture proofs today (`capture_proof_holds?`) | `plantedItems`, `gainedFootholds`, `droppedItems` |
-| `held: itemId` | An inventory entry whose own stored `credential` equals the credential's id, whose type equals the definition's, whose identity (id) matches the definition's id with no name fallback, and that is not `client_forged?`. The definition is found where `find_login_item` (`game.rb:2051`) looks (a PC's contents, its account profiles' contents, mapped shares) plus room objects, container contents, NPC `itemsHeld` and `startItemsInInventory` | `inventory` |
+| `held: itemId` | An inventory entry whose own stored `credential` equals the credential's id, whose type equals the definition's, whose id equals the definition's id with no name fallback, and that is not `client_forged?`. The definition is found by `CredentialModel.item_definition`: where `find_login_item` (`game.rb:2051`) looks (a PC's contents, its account profiles' contents, mapped shares) plus room objects, container contents, NPC `itemsHeld`, `startItemsInInventory` and declared-grant items (`DeclaredGrants.for`) | `inventory` |
 | `foothold: footholdId` | The foothold is held now | `footholds` |
 
 The `held` match is identity-strict: `same_item?`'s name fallback is not used. `held` and `foothold` stop holding when the item leaves the inventory or the foothold is lost, and the entry leaves the keyring. A session already opened is ended by its own route rules (section 3.8), not by that.
+
+A relay sign-in does not add its PC to `signedInPcs` (section 3.8), so a transient invite never satisfies a `session` proof or `account_capture_served?` for good.
 
 ### 3.6 The kind catalogue
 
@@ -169,73 +179,82 @@ PROOF_KINDS     = %w[session planted dropped held foothold]
 
 A connecting credential signs in only at its `connectsTo` PC, and never at that PC's own keyboard: a saved connection and an assist invite are used from somewhere else, and the game teaches that.
 
-| Route | Kinds | Check | Session record | Pivots in the reach walk |
+| Route | Kinds | Check | Session record | Reach from the session |
 |---|---|---|---|---|
-| `foothold` | `saved_connection` | `host_reachable_through?(foothold, pc)`, not `remote: "blocked"` | `foothold` | yes, as a password session |
-| `from: pcId` (K4) | `saved_connection` | the player holds a session at `pcId` whose route is up, `pcId` is on, not `remote: "blocked"`, and the target's network is in `networks_reachable_from(network of pcId)` | `from` | yes: the target was already reachable from the source |
-| `relay` | `assist_invite` | none for reach: the account holder's own vendor relay. The PC must be on; `remote: "blocked"` does not apply | `relay: true` | no |
+| `foothold` | `saved_connection` | `host_reachable_through?(foothold, pc)`, not `remote: "blocked"` | `foothold` | as a password session: pivots, shares, `from` source |
+| `from: pcId` (K4) | `saved_connection` | the player holds a session at `pcId` that carries no `relay` and whose route is up, `pcId` is on, not `remote: "blocked"`, and the target's network is in `networks_reachable_from(network of pcId)` | `from` | as a password session |
+| `relay` | `assist_invite` | none for reach: the account holder's own vendor relay. The PC must be on; `remote: "blocked"` does not apply | `relay: true` | none |
 
-A relay session never extends reach: `reach_session_hosts` skips any session whose record has `relay`, so the walk never pivots from it. A relay session is reached again only by Connect, never from the network view.
+**The relay invariant.** A relay session is a sink: it is reached only by Connect, and it is never a pivot in the reach walk, never a share source, maps no shares on its desktop, is never the source of a `from` route, is never offered at the holder's keyboard and is not listed in the network view. Section 3.8 names every reader that enforces it.
 
 ### 3.8 The session record and its readers
 
-`sessions[pcId] = { id: npcId, via: "credential", credential: credId, foothold? | from? | relay?, locked? }`, one slot per PC, replaced by the next sign-in. `signedInPcs` gains the PC.
+`sessions[pcId] = { id: npcId, via: "credential", credential: credId, foothold? | from? | relay?, locked? }`, one slot per PC, replaced by the next sign-in. A `foothold` or `from` sign-in adds the PC to `signedInPcs`; a relay sign-in does not.
 
-The record is today's held-session record with three added fields; nothing is reshaped. `locked` is UI slice 6's flag, unchanged: a credential session starts unlocked, locks and unlocks through slice 6's one predicate, and unlocking is the PC's normal server password check for the session's account, counted against `maxAttempts`. Phase 1 adds no credential-based unlock (a saved connection does not unlock a locked screen); if one is wanted later it goes into that same predicate. The `locked` delta in the sessions answer covers credential sessions as it covers password sessions.
+The record is today's held-session record with three added fields; nothing is reshaped. `locked` is UI slice 6's flag, unchanged: a credential session starts unlocked, locks and unlocks through slice 6's one predicate, and unlocking is the PC's normal server password check for the session's account, counted against `maxAttempts`. Phase 1 adds no credential-based unlock. The `locked` delta in the sessions answer covers credential sessions as it covers password sessions.
 
 Server readers changed in K2 (and K4 for `from`):
-- `session_route_up?`: before the blank-foothold return, a relay session is up while its credential is not in `endedCredentials` and the PC is on; a `from` session is up while the source session exists, the source's own `session_route_up?` holds, the source PC is on, and the target network is in `networks_reachable_from(source network)`. Otherwise the existing foothold logic. Every scoped reader (`session_admits?`, `resource_admits_player?`, the profile checks) goes through it.
+- `session_route_up?`: before the blank-foothold return, a relay session is up while its credential is not in `endedCredentials` and the PC is on; a `from` session is up while the source session exists, carries no `relay`, the source's own `session_route_up?` holds, the source PC is on, and the target network is in `networks_reachable_from(source network)`. Otherwise the existing foothold logic. Every scoped reader (`session_admits?`, the profile checks) goes through it.
 - `reach_session_hosts`: skip a session with `relay`.
+- `resource_admits_player?`: the session loop skips a session with `relay`.
+- `mapped_shares(pc, npc)`: returns `[]` when the session at that PC carries `relay`, so the relay desktop maps nothing and `find_login_item`'s mapped-share search finds nothing through it.
 - `prune_unreachable_sessions!`: iterate to a fixed point; also end a `from` session whose source session is gone (K4). Outages still never prune; `session_route_up?` refuses while the source is off and allows again when it is back.
 - `host_row`: offer any session that is neither a claim nor a relay; the held entry's `via` comes from the session, `remote` is true when it has `foothold` or `from`, and a `from` session carries `route: { from: pcId }` so the view opens it by that route.
-- `desktop_request_allowed?`, `desktop_refusal` and `render_login_desktop`: all three take a route argument (`{ foothold: } | { from: } | { relay: true } | nil`) in place of the bare foothold. Two new branches run before the keyboard rule, keyed on the request's `relay=1` or `from=` param and checked against the server's own record: the session at that PC must carry that same route field, and `session_route_up?` must hold. A param the record does not carry is refused; it never falls through to the keyboard rule.
+- `desktop_request_allowed?`, `desktop_refusal` and `render_login_desktop`: all three take a route argument (`{ foothold: } | { from: } | { relay: true } | nil`) in place of the bare foothold. Two new branches run before the keyboard rule, keyed on the request's `relay=1` or `from=` param and checked against the server's own record: the session at that PC must carry that same route field, and `session_route_up?` must hold. A param the record does not carry is refused; it never falls through to the keyboard rule. A request with no route param at a PC whose session carries `relay` is refused (the holder's keyboard never opens the shared session).
+- `unlock_session_refusal`: picks `not_responding` when the session carries any remote route field (`foothold`, `from` or `relay`), `off` otherwise.
 - `settle_session_at_keyboard!`: leaves a `via: "credential"` session unchanged, so a saved-connection session opened over a foothold stays remote (and still ends on unplug) when the player later opens it at the target's keyboard.
 - `session_for_client` and `login_session_answer`: pass the session's route field (`foothold`, `from` or `relay`), `kind` and `label`, so a credential session is reported as remote with its route after a reload.
+- `start_login_session!`: takes `credential:` and the route; skips `signedInPcs` for a relay.
 - Reload: `end_claimed_sessions!` uses a new `reload_ended_session_ids` (claims plus relay sessions); `claimed_session_ids` keeps meaning claims only.
 - Typed passwords: POST /login with `relay` is refused (a relay is never a typed sign-in).
 
-Client readers: `systems/screen-states.js:83` keeps the screen open for a password session (`via !== 'password'` paints it locked); it changes to paint locked only when `via` is neither `password` nor `credential`, so claims behave as today and a credential session shows its desktop. The others already test for `claim` (`pc-sessions.js:179/353/360`, `container-minigame.js:24/951`, `network-links.js:660`, `network-view-minigame.js:164`, `workstation-state.js:223`, `unlock-system.js:658/667`). K2's build log lists a fresh grep for `via`.
+Client readers (each in the slice named):
+- K3a: `systems/screen-states.js:83` paints the sprite locked when the PC is locked and the session's `via` is neither `password` nor `credential`, so a foothold credential session looks like a password session. K3c: a session with `relay` paints locked too (the person's screen is shared, not unlocked at the desk).
+- K3c: `openLoginPc` (`unlock-system.js:260`) treats a relay record as no session, so a click at the holder's keyboard opens the sign-in screen by the desk rules.
+- The others already test for `claim` (`pc-sessions.js`, `container-minigame.js`, `network-links.js`, `network-view-minigame.js`, `workstation-state.js`, `unlock-system.js`). K2's build log lists a fresh grep for `via` and `foothold` on the client.
 
 ## 4. What every slice must keep
 
 - **GET /capture_secrets answers stay identical.** No slice edits `capture_secrets_for_client`, `account_capture_usernames` or `account_capture_served?`. K1 adds a golden test of the answer for every fixture game in `test/fixtures/files/access_leak/responses.jsonl` and the test scenarios with captures.
-- **Shipped scenarios.** K0 changes the remote screens of the two networks scenarios (section 9.2), `lab_physical_pentest` among them, which gets its own answer in D1. From K1 on, every new screen element appears only in a scenario that declares `credentials`.
+- **Shipped scenarios.** K0 changes the remote screens of the two networks scenarios (section 9.2), `lab_physical_pentest` among them, so K0 merges only after D1 is picked. From K1 on, every new screen element appears only in a scenario that declares `credentials`.
 - **No format step** (section 12).
 - **Pixel-art rule and UI language:** 2px borders or the theme skin, pixel fonts only, authored headshots for every account, X closes, one look per concept, the frame wraps all content at 1400x1000, 390x844, 915x412 and 800x600, scrollers keep the frame whole with the pixel scrollbar and a "More below" cue.
+- **One phrasing per state.** On a remote screen, the tray and the view, the off, unreachable and remote-off states use one helper each (section 8.5). The keyboard screen keeps "This PC ..." for the PC in front of the player.
 - **Sync size:** each slice states what it stores and what each request sends.
 - **Process:** commit before testing, explicit paths, no attribution lines; new static imports in engine JS go on each JS test harness copy list.
 - **Live proof:** a keyless server on the builder's own port, a headless browser through the real routes, shots at the four sizes with scrollbars shown, `tools/playtest/verify-run.rb` showing progress on the server, and tampered-client checks sent with `fetch` from the page.
 
 ## 5. Slice K0: phase 0, the target's own tiles over the network
 
-Base: `build/ux-slice2b0` (c0c274522), or main once merge train 32 lands it. Size: M.
+Base: main. Size: M. Merges after D1 is picked (the picks page sits between K0's live proof and its merge).
 
 ### 5.1 Server
 
 - `scenario-schema.json`: policy `remoteScreen` (`enum: ["tiles", "typed"]`).
-- `Game#remote_screen(pc)` (`network_access.rb`, beside `remote_blocked?`): `"typed"` for a headless host; else the policy's value, else `DEFAULT_REMOTE_SCREEN` (D1).
+- `Game#remote_screen(pc)` (`network_access.rb`, beside `remote_blocked?`): the policy's value, else `DEFAULT_REMOTE_SCREEN` (D1).
 - `GamesController#login_accounts` with `foothold` takes a new branch, `Game#remote_login_accounts(info, foothold)`:
   1. A `foothold` that is not an id string of at most 64 characters: 400 (it never falls through to the keyboard branch).
   2. Not held or not reaching the host: 403 `PC not reachable`.
   3. `remote_blocked?`: 422 `{ remoteBlocked: true }`.
   4. `host_service_off?`: 403 `{ reason: "not_responding" }`.
-  5. Answer `{ pc_id, remoteScreen, loginAccounts }`: `login_account_tiles(pc)` under `tiles` (`known` reads `encounteredNPCs`), `[]` under `typed` and for a headless host (200, never 403). Never `postitNote`.
+  5. Answer `{ pc_id, host, headless, loginPicker, remoteScreen, loginAccounts }`: `headless` from `NetworkModel.headless?`; `loginPicker` the PC's value or `"accounts"`; `loginAccounts` is `login_account_tiles(pc)` under `tiles` (`known` reads `encounteredNPCs`), `[]` under `typed` and for a headless host (200, never 403). Never `postitNote`.
   Without `foothold` the action is unchanged (a headless host stays 403 at the keyboard); `Cache-Control: no-store` stays.
 
 ### 5.2 Client
 
 - `api-client.js`: `loginAccounts(pcId, { foothold } = {})`.
-- `unlock-system.js` `openRemoteSignInScreen`: fetch `/login_accounts?foothold=` and `/capture_secrets` together, under one 3 s cap for the pair (2b0's `REMOTE_CAPTURES_WAIT_MS`). Until both answer or the cap passes, the screen shows "Checking..." with no form and no focus. If both answer in time, `scene.setRemoteAccounts({ picker, tiles, captured, remoteScreen })` lays it out once. After the cap, the form shows with Other user and a "Still checking for accounts..." line; each late answer redraws the row in place (2b0's quiet redraw), without moving focus or clearing typed text. A 403 or 422 closes the screen with the view's own strings (`unreachableMessage(host)`, `notRespondingMessage(host)`, and the remote-off sentence of 8.5); the view already hides sign-in on a blocked row and an off host, so this covers only a race.
-- `minigames/password/password-minigame.js`: one tile row, and one look for a captured account on every remote screen: the account's tile with a "Captured" tag under the name, which fills the password when served. The "Captured sign-ins" heading and its three heading lines go.
+- `unlock-system.js` `openRemoteSignInScreen`: fetch `/login_accounts?foothold=` and `/capture_secrets` together, under one 3 s cap for the pair (`REMOTE_CAPTURES_WAIT_MS`). Until both answer or the cap passes, the screen shows "Checking..." with no form and no focus. If both answer in time, `scene.setRemoteAccounts({ picker, headless, tiles, captured, remoteScreen })` lays it out once, reading `picker` and `headless` from the answer only, never from the lockable. After the cap, the form shows with Other user and a "Still checking for accounts..." line; each late answer redraws the row in place, without moving focus or clearing typed text. A 403 or 422 closes the screen with the shared remote strings of section 8.5; the view already hides sign-in on a blocked row and an off host, so this covers only a race. Switch user on a remote desktop goes through the same fetch, so it gets the same fields.
+- `minigames/password/password-minigame.js`: one tile row, and one look for a captured account on every remote screen: the account's tile with a "Captured" tag under the name, which fills the password when served. A captured account is matched to a PC tile by `username`. Each tile carries `data-username`. The "Captured sign-ins" heading and its three heading lines go.
   - Under `tiles` with picker `accounts`: the PC's accounts, a listed captured account tagged, then Other user. Captured accounts the PC does not list are left out (the PC does not admit them; Other user still lets the player type any name).
   - Under `tiles` with picker `known` or `false`: the PC's tiles (if any), then captured accounts the PC does not list, tagged, then Other user.
-  - Under `typed` (explicit policy only): the captured tiles, tagged, then Other user.
+  - Under `typed`: the captured tiles, tagged, then Other user.
   - A headless host: the captured tiles, tagged, then Other user. No NLA line: it is a device's web sign-in, not a PC with that control.
-  - Lines, one string per state, in the message line under the form (section 8.5 has the table): loading "Checking..."; late "Still checking for accounts..."; a `tiles` screen with no captures, none; `typed` with captures, "<host> lists no accounts until you sign in. Your captured sign-ins are above."; `typed` with none, "<host> lists no accounts until you sign in."; a headless host, "Type the account's name and password."; `/login_accounts` failed, "<host>'s account list could not be loaded. Choose Other user to type a name."; `/capture_secrets` failed, "Your captured sign-ins could not be loaded." The host is the PC's `host` label, never "This PC".
-  - Tags: Press Start 2P at its 8px grid size, one line each, at most two per tile and then "+1"; text cut to the tile width with an ellipsis, the full text in the tile's title and on the chosen line.
+  - Lines, one string per state, in the message line under the form (section 8.5 has the table): loading "Checking..."; late "Still checking for accounts..."; a `tiles` screen with no captures, none; `typed`, "{host} asks for a password before it shows any accounts (Network Level Authentication)."; a headless host, "Type the account's name and password."; `/login_accounts` failed, "{host}'s account list could not be loaded. Choose Other user to type a name."; `/capture_secrets` failed, "Your captured sign-ins could not be loaded."; both failed (and, from K3a, any two lists), "{host}'s sign-in details could not all be loaded. Choose Other user to type a name." The host is the answer's `host`, never "This PC".
+  - Tags: Press Start 2P at its 8px grid size, one line each, at most two per tile and then "+N"; text that does not fit is cut with an ellipsis, the full kind name in the tile's title and on the chosen line. Every phase 1 tag fits a compact tile whole (section 8.5).
   - Short window (915x412, where the username line is hidden): tags become one 12x12 CSS px corner badge (an 8x8 pixel glyph inside a 2px border), one glyph per group: a key for a password kind, a plug for a connecting kind; tested at DPR 3.
+  - **Fit at x2.** The tile row holds at most two rows of tiles; beyond that it scrolls inside its own box with the pixel scrollbar and a "More below" cue, at every scale, and the form below it never scrolls. The message line takes a fixed one-line slot under the form, so the Other user form plus a refusal line fits `.pc-monitor-area` at 1400x1000 (today it overflows by 14px); `pc-monitor-frame.test.mjs` asserts `scrollHeight <= clientHeight` for that state at x1 and x2.
   - The chosen line, Change and the fold rules are the keyboard's.
-- Keyboard screens are unchanged: they show no captures. In a scenario that declares `credentials` (K3a on), keyboard screens show password entries with their tags, so captured tags appear at the keyboard only in a scenario that opts in; the README says so.
+- Keyboard screens are unchanged: they show no captures. From K3a, in a scenario that declares `credentials`, keyboard screens show password entries with their tags; the README says so.
 - `pc-sessions.js` `screenShown(pcId, tiles, ...)` gets the PC tiles shown.
 
 ### 5.3 Validator and docs
@@ -246,18 +265,20 @@ Base: `build/ux-slice2b0` (c0c274522), or main once merge train 32 lands it. Siz
 
 ### 5.4 Tests
 
-- Rails `test/controllers/break_escape/network_remote_tiles_test.rb`: steps 1 to 5; `known` over the network; `typed` gives `[]`; a headless host over a reaching foothold gives 200 `typed` with `[]`; no `postitNote` through a foothold even when the owner writes it down; the keyboard answer byte-identical to the base.
-- JS `test/js/password-signin-mode.test.mjs`: one row; the Captured tag, the two-tag limit with "+1", a 32-character tag cut with an ellipsis, and the short-window badge per group; under picker `accounts` no unlisted captured tile; under `known` the unlisted captured tile; no second Other user; every line of 5.2 in its state; the pair cap and the in-place late redraw keeping focus and typed text; a failed `/login_accounts`; a failed `/capture_secrets`. `test/js/access-remote-signin.test.mjs`: "no /login_accounts request" becomes "one with the foothold, and never a post-it"; a headless host opens with the headless line. `test/js/pc-monitor-frame.test.mjs`: the row inside the screen at x1 and x2, with a 32-character tag.
-- Scenario `test_access_networks` (on the base):
+- Rails `test/controllers/break_escape/network_remote_tiles_test.rb`: steps 1 to 5; `headless` and `loginPicker` in the answer (default `"accounts"`); `known` over the network; `typed` gives `[]`; a headless host over a reaching foothold gives 200 with `headless: true` and `[]`; no `postitNote` through a foothold even when the owner writes it down; the keyboard answer byte-identical to the base.
+- JS `test/js/password-signin-mode.test.mjs`: one row; the Captured tag; a 32-character label cut with an ellipsis; the short-window badge per group; under picker `accounts` no unlisted captured tile; under `known` the unlisted captured tile; a headless answer gives the headless line and an NLA answer the NLA line, whatever the lockable says; matching by `username` with no duplicate tile; no second Other user; every line of 5.2 in its state, including both lists failing; the pair cap and the in-place late redraw keeping focus and typed text. `test/js/access-remote-signin.test.mjs`: "no /login_accounts request" becomes "one with the foothold, and never a post-it"; Switch user on a remote desktop sends the foothold too. `test/js/pc-monitor-frame.test.mjs`: the row inside the screen at x1 and x2; the Other user form with a refusal line fits with no scroller at x2; the tile row's own scroller with seven tiles.
+- Scenario `test_access_networks`:
   - Add policy `"nla": { "remote": "allowed", "remoteScreen": "typed" }`.
   - Add two PCs to `desk_room` on `office_lan`, picker `accounts`: `it_pc` (`HB-IT-01`, `access: { roles: ["it"] }`, default policy, so Ian's captured tile shows as his tagged PC tile) and `ops_pc` (`HB-OPS-02`, `access: { roles: ["staff"] }`, policy `nla`). Positions clear of Sam's desk and the dock, checked in a render.
   - `p3_see`'s condition becomes the six-host list `'door_box,it_pc,kiosk_pc,lena_pc,ops_pc,sam_pc'`.
-  - PLAYTEST.md: P3 "all six hosts"; Run 0 step 5's host list (six, in order); the expected validator output (identity reach and "Reachable without a foothold" gain the two desk-room PCs); the captured-tile selector at line 59 becomes `.signin-tile[data-npc-id="lena"] .signin-tag`; the harness note becomes "on a tiles screen, `clickText('Other user')` before typing into field 0"; P5, P8 and the P3 script updated.
+  - The capture card at `scenario.json.erb:295` reads "Her tile is then tagged Captured on a remote sign-in screen." in place of the "Captured sign-ins" sentence.
+  - PLAYTEST.md: P3 "all six hosts"; Run 0 step 5's host list (six, in order); the expected validator output (identity reach and "Reachable without a foothold" gain the two desk-room PCs); the captured-tile selector becomes `.signin-tile[data-username="lfox"] .signin-tag`; the harness note becomes "on a tiles screen, `clickText('Other user')` before typing into field 0"; P5, P6 (the remote screen now lists the PC's tiles), P8, N14 (`bench_pc` gains its PC tiles over the network) and the P3 script updated.
   - New beats: P5b (in Run B, where Sam's PC has not been opened at the keyboard: Sam's PC over the network lists Sam, Lena and Ian, as every account holder has the `staff` role; untagged before the lobby capture cards, Lena and Ian tagged after), P5c (HB-IT-01 after Ian's card: one tagged Ian tile, no duplicate), P5d (HB-OPS-02: typed, the NLA line, captured tiles only).
+- `lab_physical_pentest/PLAYTEST.md:1028, 1033`: the **Captured sign-ins** wording becomes the tagged tiles under D1's lab answer.
 
 ### 5.5 Live proof
 
-New games of `test_access_networks`: plant the drop box; Sam's PC from the view (tiles, headshots, Other user), before and after the cards; HB-OPS-02 (typed, the NLA line); read Ian's card, open HB-IT-01 (tagged tile, no duplicate); HB-DOOR-01 from the view (the headless line, signs in as P8 does today); P3 completes on six hosts. Re-run P5 and P8. On `lab_physical_pentest`, with the drop box planted: LW-OPEN-07, the hot desk and LW-DOOR01 from the view, before K0 and under each D1 lab answer. Shots at the four sizes, including the loading state with `/login_accounts` held back by a route delay, and the late redraw after the cap. Tampered client: a foothold not held (403), a malformed one (400).
+New games of `test_access_networks`: plant the drop box; Sam's PC from the view (tiles, headshots, Other user), before and after the cards; HB-OPS-02 (typed, the NLA line); read Ian's card, open HB-IT-01 (tagged tile, no duplicate); HB-DOOR-01 from the view (the headless line, signs in as P8 does today); Switch user on a remote desktop of HB-DOOR-01 (the headless line again); P3 completes on six hosts. Re-run P5, P6, P8 and N14. On `lab_physical_pentest`, with the drop box planted and all three captures read: LW-OPEN-07, the hot desk and LW-DOOR01 from the view, on main today and under each D1 lab answer. Shots at the four sizes, including the loading state with `/login_accounts` held back by a route delay, the late redraw after the cap, and the Other user form with a refusal line at 1400x1000 (no scroller). Tampered client: a foothold not held (403), a malformed one (400).
 
 ### 5.6 Sync size
 
@@ -273,19 +294,19 @@ Base: main after K0. Size: M. No sign-in behaviour changes.
 
 ### 6.1 Files and functions
 
-- `lib/break_escape/credential_model.rb` (new): section 3.6, plus `registry(scenario)`, `accepts(policy)`, `pcs_accepting(scenario, id)`, `end_globals(scenario)` (`{ global => [credId] }`), `item_definition(scenario, itemId)` (the scope of section 3.5's `held` row).
+- `lib/break_escape/credential_model.rb` (new): section 3.6, plus `registry(scenario)`, `accepts(policy)`, `pcs_accepting(scenario, id)`, `end_globals(scenario)` (`{ global => [credId] }`), `item_definition(scenario, itemId)` (the scope of section 3.5's `held` row, declared grants included).
 - `app/models/break_escape/credential_keyring.rb` (new concern in `Game`):
   - `credential_proof_holds?(credential)`: `session`, `planted`, `dropped` through `capture_proof_holds?`; `held` and `foothold` as section 3.5.
   - `keyring_entries(pc: nil, route: nil)`: implicit password entries built by calling `account_capture_usernames` and `capture_secrets_for_client`, plus registry entries of built kinds whose proof holds.
   - `keyring_for_client(...)`: section 6.2.
 - `lib/break_escape/item_identity.rb`: `credential` in `FORGEABLE_ITEM_FIELDS`.
-- `scenario-schema.json`: top-level `credentials` (closed entry; `x-ref` on `account`, `connectsTo`, `foundIn`, `proof.session`, `proof.held`, `endsOnGlobal`), policy `accepts` (unique strings), item `credential` (`x-ref: credential`).
+- `scenario-schema.json`: top-level `credentials` (closed entry, field types and patterns only), policy `accepts` (unique strings), item `credential` (string). Cross-references are enforced only by `check_credentials`.
 - `Game#filtered_scenario_for_bootstrap` (`game.rb:1280`): `filtered.delete('credentials')`.
 - `tools/playtest/lib/access_leak_scanner.rb`: flag any response with a `credentials` key, a keyring entry whose proof does not hold in the recorded state, or a registry password entry carrying `password`.
 - `scripts/validate_scenario.rb`: `credentials` in `known_top_level`, `credential` in `known_item_fields`, new `check_credentials` (6.3).
 - Dungeon graph: edges proof source (item, PC, foothold) to a credential node, and credential node to each PC that accepts it.
-- `README_scenario_design.md`: a credentials section (registry, kinds, proofs, policy `accepts`, item `credential`, the item type rule, the ink gift path for an invite).
-- `docs/IDEAS_BACKLOG.md`: the connection icon; the later kinds (RFID card as a credential, one-time code, key file).
+- `README_scenario_design.md`: a credentials section (registry, kinds, proofs, policy `accepts`, item `credential`, the item type rule, where a credential item may be placed, the ink gift path for an invite, the relay invariant).
+- `docs/IDEAS_BACKLOG.md`: the connection icon; the later kinds (RFID card as a credential, one-time code, key file); an optional per-entry teaching line for scenario-specific wording.
 
 ### 6.2 GET /keyring
 
@@ -313,7 +334,7 @@ Base: main after K0. Size: M. No sign-in behaviour changes.
 
 - `password` appears only on an implicit (captured) entry, by today's rules (`revealSecret` and the capture proofs), through the same readers as GET /capture_secrets. A registry password entry never carries a value: the player reads the file.
 - Connecting kinds carry:
-  - `routes`: held footholds that reach `connectsTo` now (by seq), then (K4) sessions it can be reached from, then `{ relay: true }` for relay kinds. Empty when nothing reaches it. Power and `remote: "blocked"` are not judged here; they are separate fields.
+  - `routes`: held footholds that reach `connectsTo` now (by seq), then (K4) sessions it can be reached from (never a relay session), then `{ relay: true }` for relay kinds. Empty when nothing reaches it. Power and `remote: "blocked"` are not judged here; they are separate fields.
   - `sessionHeld`: the server holds a session at `connectsTo` opened with this credential.
   - `targetOff`: the target's service is off. `remoteBlocked`: its policy blocks remote sign-in (always false for a relay kind).
 - `foothold`, `from` and `relay` name the screen the client is drawing, so the server can decide whether `pc_id` is a screen the player can open; they never assert reach. `routes`, `sessionHeld` and every other field are computed from server-held footholds and sessions only.
@@ -327,7 +348,7 @@ Base: main after K0. Size: M. No sign-in behaviour changes.
 Errors:
 - unknown kind; a kind not built yet ("not supported until phase 2/3"); `accepts` naming an unknown kind;
 - `account` not an account holder; `connectsTo` not a sign-in PC, missing on a connecting kind, or present on `password`; `connectsTo` a headless PC for `assist_invite` (no screen to share);
-- `proof` not exactly one known kind; `session` naming no sign-in PC; `held` naming no scenario item; `foothold` naming no foothold id any jack, access point or implant action can create;
+- `proof` not exactly one known kind; `session` naming no sign-in PC; `held` naming no item in `item_definition`'s scope; `foothold` naming no foothold id any jack, access point or implant action can create;
 - a proof that can never hold: a `held` item that is not takeable and is in no declared grant, NPC `itemsHeld` or start inventory; a `session` PC no account is admitted at and no claim opens; a `planted` or `dropped` proof `CaptureModel` already finds unreachable;
 - an item with `credential` whose type is `notes`-family or always-allowed;
 - an item `credential` naming no registry id; `endsOnGlobal` naming an undeclared global;
@@ -339,22 +360,23 @@ Warnings:
 - a `saved_connection` whose `connectsTo` no foothold, access point or (K4) linked sign-in PC can reach;
 - a `held` item without the matching `credential`, or an item `credential` whose entry's proof is not `held` on that item;
 - a `held` item for an `assist_invite` given by a declared grant (claimable at once; use the NPC's `itemsHeld` and the ink gift);
+- a `session` proof on an `assist_invite`'s own `connectsTo` (a relay sign-in never satisfies it);
 - a `foundIn` item whose text does not contain the account's password (a substring check, never quoted; stays a warning), or that is not inside the proof's session PC (its contents, mapped shares or profiles);
 - `accepts` without `password`; `accepts` on a policy no PC uses.
 
 ### 6.4 Tests
 
-- `test/unit/credential_model_test.rb`: kinds, default accepts, proof kinds (exactly one key), registry cap and order, `end_globals`, `item_definition` from `itemsHeld`.
-- `test/models/break_escape/credential_keyring_test.rb`: each proof holds and stops holding; an always-allowed notepad posted with the .rdp's id, name and `credential` does not prove `held` (the field is stripped, and the type differs); a `text_file` with the .rdp's name but another id does not (no name fallback); a room add with that id does not; implicit entries equal GET /capture_secrets; registry password entries never carry `password`.
+- `test/unit/credential_model_test.rb`: kinds, default accepts, proof kinds (exactly one key), registry cap and order, `end_globals`, `item_definition` from `itemsHeld` and from a declared grant.
+- `test/models/break_escape/credential_keyring_test.rb`: each proof holds and stops holding, `session: lena_pc` included (a sign-in written through `start_login_session!`); a credential item delivered by a declared grant proves `held`; an always-allowed notepad posted with the .rdp's id, name and `credential` does not prove `held`; a `text_file` with the .rdp's name but another id does not (no name fallback); a room add with that id does not; implicit entries equal GET /capture_secrets; registry password entries never carry `password`.
 - `test/controllers/break_escape/keyring_route_test.rb`: answers, `rev` and `unchanged`, routes, `sessionHeld`, `targetOff`, `remoteBlocked`, `forThisPc` and `accepted`, `ended`, an unreachable `pc_id` ignored.
 - `test/controllers/break_escape/capture_secrets_unchanged_test.rb`: the golden check.
 - `test/controllers/break_escape/sync_payload_size_test.rb`: bootstrap without `credentials`; GET /keyring at 64 entries under 16 KB.
-- `test/js/validator-credentials.test.mjs`: one fixture per error and warning, through the real validator.
-- Scenario `test_access_keyring` (section 9.1), created here and validator-clean, with its dungeon graph.
+- `test/js/validator-credentials.test.mjs`: one fixture per error and warning, through the real validator, including a grant-placed credential item (valid) and a `session` proof on an invite's own PC (warning).
+- Scenario `test_access_keyring` (section 9.1), created here with no validator errors and the expected warnings listed in its PLAYTEST.md (`ops_rdp`: no machine accepts it, by design), with its dungeon graph.
 
 ### 6.5 Live proof
 
-GET /keyring from the page on a new game of `test_access_keyring`, before and after each proof (sign in at Sam's PC and take the .rdp, sign in at Lena's PC, plant the drop box); the bootstrap has no `credentials` key; the notepad forgery from the page leaves the keyring unchanged.
+GET /keyring from the page on a new game of `test_access_keyring`, before and after each proof an honest K1 game can reach: sign in at Sam's PC by its sticky note and take HB-FIN-02.rdp (`held`), read Ian's card and plant the drop box (Ian's implicit captured entry). The `session: lena_pc` proof is shown by the model test in K1 and live in K2, after the .rdp sign-in from the page. The bootstrap has no `credentials` key; the notepad forgery from the page leaves the keyring unchanged.
 
 ### 6.6 Sync size
 
@@ -373,40 +395,40 @@ Base: main after K1. Size: M. Nothing in the client calls it yet.
 1. The PC exists (404 as today).
 2. `credential` matches the id pattern, names a registry entry of a built connecting kind, and its proof holds. Otherwise the generic refusal `{ success: false, message: "Incorrect username or password" }`, the same body for an undeclared id, a declared but unproven id, an implicit or registry `password` id (passwords are typed) and a malformed id. Nothing is counted.
 3. `connectsTo` is this PC, else 422 `{ message: "This connection is for another PC", wrongPc: true }`.
-4. The route is one the kind allows (section 3.7), else the generic refusal; no route at all (the keyboard) is the generic refusal too. Then the route is judged as POST /login judges a foothold today: 403 unreachable, 403 not_responding (off, for every route), 422 remoteBlocked (`foothold` and `from` only; the relay is the holder's own tool).
+4. The route is one the kind allows (section 3.7), else the generic refusal; no route at all (the keyboard) is the generic refusal too; a `from` whose source session carries `relay` is the generic refusal. Then the route is judged as POST /login judges a foothold today: 403 unreachable, 403 not_responding (off, for every route), 422 `remoteBlocked` (`foothold` and `from` only; the relay is the holder's own tool).
 5. The policy accepts the kind, else 422 `{ kindRefused: "<kind>" }`.
 6. The access list admits the account, else 422 `LOGIN_NOT_PERMITTED`.
-7. A kind with `honours_lockout` is refused while the account is locked out at this PC (`account_locked_out_at?`), with `LOGIN_LOCKED_OUT` and `lockout: true`.
+7. A kind with `honours_lockout` is refused while the account is locked out at this PC (`account_locked_out_at?`, `game.rb:2257`), with `LOGIN_LOCKED_OUT` and `lockout: true`.
 8. An `assist_invite` in `endedCredentials`: 422 `{ ended: true }`.
 9. `start_login_session!(pc, npc, 'credential', credential:, route)` writes section 3.8's record; the answer is `login_session_answer` plus `{ kind, label, route }`.
 
-Steps 3 and 5 to 8 answer only for a held, proven credential, so the browser cannot probe the registry. The client turns `kindRefused`, `wrongPc`, `lockout` and `ended` into the text of section 8.5.
+Steps 3 and 5 to 8 answer only for a held, proven credential, so the browser cannot probe the registry. The client turns each answer into the text of section 8.5.
 
 The typed branch (`username` and `password`) refuses a body carrying `relay` with the generic refusal, uncounted.
 
 ### 7.1 Ending an invite
 
 - `credentialEndGlobals`, the bounded map `CredentialModel.end_globals` (at most 64 entries), is written by a new bootstrap writer `record_credential_end_globals!` in `run_bootstrap_writers!` (`prepare_bootstrap_state!`, where `scenario_data` is loaded). `bootstrap_state_needs_write?` gains a term `credential_end_globals_stale?`: true when the scenario declares any `endsOnGlobal` and the stored map is missing or its digest differs from the scenario's. Without that term the writer would never run on a game with no other bootstrap work. The writer then runs the end check below once, so a global that turned true before the cache existed is caught on the next bootstrap. A scenario with no `endsOnGlobal` never writes the key.
-- In the sync merge, after globals are applied, the server checks only that cached map: for each listed global now true, it adds the credential ids to `player_state['endedCredentials']` (grow-only, at most 64) and deletes relay sessions whose `credential` is one of them. No scenario load on sync. If the cache is missing (a sync before any bootstrap), the merge does nothing for credentials; the global stays true and the next bootstrap ends the invite.
+- In the sync merge, after globals are applied, the server checks only that cached map: for each listed global now true, it adds the credential ids to `player_state['endedCredentials']` (grow-only, at most 64) and deletes relay sessions whose `credential` is one of them. A relay session is never a `from` source, so no session chains off it and no pruning is needed. No scenario load on sync. If the cache is missing (a sync before any bootstrap), the merge does nothing for credentials; the global stays true and the next bootstrap ends the invite.
 - The sync answer carries `endedRelayPcIds`, the PCs whose relay session this merge ended, only when non-empty (at most 64; each credential ends once per game, since `endedCredentials` is grow-only, so each (PC, credential) pair is sent at most once; the client applies it idempotently).
-- A client that clears the global later cannot revive the invite. A client that never lets the NPC end it keeps the invite, which honest play can also reach (the NPC may never become suspicious).
+- A client that clears the global later cannot revive the invite. A client that never lets the NPC end it keeps the invite, which honest play can also reach for a while (the timer of 9.1 is client-run).
 - On reload the relay session ends (`reload_ended_session_ids`), but the invite is still held and not ended, so Connect works again until the NPC ends it.
 - Both keys go in `ACCESS_STATE_DEFAULTS`, are written only by the server and are never read from a client body or sent to the client.
 
 ### 7.2 Other server changes
 
-Section 3.8's readers (`session_route_up?`, `reach_session_hosts`, `host_row`, `desktop_request_allowed?` with `desktop_refusal` and `render_login_desktop` threading the route, `settle_session_at_keyboard!`, `session_for_client`, reload); `start_login_session!` takes the credential fields; `login_session_answer` adds `kind`, `label` and the route; GET /container passes `relay=1` (and in K4 `from=`) through; POST /logout ends a relay session as any other. `displaced` (client) and its server counterpart skip a relay session when the NPC sitting down is the account holder: it is his own session.
+Section 3.8's server readers (`session_route_up?`, `reach_session_hosts`, `resource_admits_player?`, `mapped_shares`, `host_row`, `desktop_request_allowed?` with `desktop_refusal` and `render_login_desktop` threading the route and refusing a no-route request at a relay session, `unlock_session_refusal`, `settle_session_at_keyboard!`, `session_for_client`, reload); `start_login_session!` takes the credential fields and skips `signedInPcs` for a relay; `login_session_answer` adds `kind`, `label` and the route; GET /container passes `relay=1` (and in K4 `from=`) through; POST /logout ends a relay session as any other. The server counterpart of `displaced` skips a relay session when the NPC sitting down is the account holder: it is his own session.
 
 ### 7.3 Tests
 
-- `test/controllers/break_escape/credential_login_test.rb`: each step's refusal; the generic body byte-identical across undeclared, unproven, password and malformed ids; nothing counted; no route (the keyboard) refused; a relay param on a saved connection refused; `relay` on the typed branch refused, uncounted; a lockout refuses `saved_connection` (with `lockout: true`) but not `assist_invite`; relay with no reach succeeds and fails on an off PC; the ended invite stays ended after the global is cleared; reload ends a relay session and Connect works again; `host_row` lists a foothold credential session with its own `via` and `remote: true`, and never a relay session; `session_for_client` after reload reports a credential session's route.
-- `test/models/break_escape/credential_sessions_test.rb`: `session_route_up?` for relay (ended, off) and foothold credential sessions; a relay session at a host on a reached network does not pivot across its links; pruning on unplug as for password sessions; `reload_ended_session_ids` versus `claimed_session_ids`; `desktop_request_allowed?` refuses `relay=1` when the record has no `relay`, and never falls to the keyboard rule; GET /container with `relay=1` reaches the relay branch through `render_login_desktop` and `desktop_refusal`; a saved-connection session opened at the target's keyboard keeps its foothold and ends on unplug; a credential session locks and unlocks through slice 6's predicate with the account's password, counted.
+- `test/controllers/break_escape/credential_login_test.rb`: each step's refusal; the generic body byte-identical across undeclared, unproven, password and malformed ids; nothing counted; no route (the keyboard) refused; a relay param on a saved connection refused; `relay` on the typed branch refused, uncounted; a lockout refuses `saved_connection` (with `lockout: true`) but not `assist_invite`; relay with no reach succeeds and fails on an off PC; a relay sign-in leaves `signedInPcs` unchanged; the ended invite stays ended after the global is cleared; reload ends a relay session and Connect works again; `host_row` lists a foothold credential session with its own `via` and `remote: true`, and never a relay session; `session_for_client` after reload reports a credential session's route.
+- `test/models/break_escape/credential_sessions_test.rb`: `session_route_up?` for relay (ended, off) and foothold credential sessions; the relay invariant with Jake's relay open at `jake_pc` on `office_lan`: it does not pivot to `server_lan`, `resource_admits_player?` refuses `finance_share`, `mapped_shares` is empty, and (from K4) a `from: jake_pc` sign-in to `ops_pc` is refused; pruning on unplug as for password sessions; `reload_ended_session_ids` versus `claimed_session_ids`; `desktop_request_allowed?` refuses `relay=1` when the record has no `relay`, refuses a no-route request at a relay session, and never falls to the keyboard rule; GET /container with `relay=1` reaches the relay branch through `render_login_desktop` and `desktop_refusal`; `unlock_session_refusal` answers `not_responding` for an off host under a relay or `from` session; a saved-connection session opened at the target's keyboard keeps its foothold and ends on unplug; a credential session locks and unlocks through slice 6's predicate with the account's password, counted.
 - `test/models/break_escape/bootstrap_writers_test.rb`: a fresh game of a scenario with `endsOnGlobal` and no other bootstrap work writes `credentialEndGlobals`; a scenario without one never does.
 - `test/controllers/break_escape/sync_end_globals_test.rb`: the sync merge records an end with no `scenario_data` query (assert the narrow load); the answer carries `endedRelayPcIds` once; a sync before any bootstrap records nothing and the next bootstrap ends the invite.
 
 ### 7.4 Live proof
 
-Tampered-client calls from the page against `test_access_keyring`: an undeclared id, an unheld .rdp, a notepad posted with the .rdp's id and `credential`, the .rdp at its own keyboard, a relay param on the .rdp, `relay` with a typed password, the .rdp at another PC, the ops .rdp at a policy that refuses it, the pivot check (sign out at HB-DESK-01 and HB-FIN-02, check the drop box view lists `office_lan` only, open the relay at Jake's PC, check it still lists `office_lan` only, and that a scoped request to `server_lan` is refused), and, after Jake ends the invite, the global cleared by sync and a retry.
+On `test_access_keyring`, from the page: with the drop box planted and the .rdp held, POST /login `{ pc_id: lena_pc, credential: lena_rdp, foothold }` signs in, and GET /keyring then lists `jake_pw_note` (the `session: lena_pc` proof, shown live here). Tampered-client calls: an undeclared id, an unheld .rdp, a notepad posted with the .rdp's id and `credential`, the .rdp at its own keyboard, a relay param on the .rdp, `relay` with a typed password, the .rdp at another PC, the ops .rdp at a policy that refuses it, the relay checks (sign out at HB-DESK-01 and HB-FIN-02, open the relay at Jake's PC from the page, check the drop box view still lists `office_lan` only, a GET /container of `finance_share` is refused, and a no-route GET /container at `jake_pc` is refused), and, after the end global is set, the global cleared by sync and a retry.
 
 ### 7.5 Sync size
 
@@ -425,11 +447,12 @@ Saved connections are secret-class and hard-enforced: one opens an account witho
 | Use it at another PC | "for another PC" (needs a valid proof) |
 | A relay route on a saved connection, or a relay on a typed password | generic refusal |
 | A foothold not held, or not reaching | 403 as today |
-| Pivot onward from a relay session | the reach walk skips relay sessions |
-| Open a desktop with `relay=1` without a relay session | refused by the record check |
+| Pivot onward from a relay session: the reach walk, a share, a mapped drive or a `from` sign-in | skipped or refused by each reader of 3.8 |
+| Open a desktop with `relay=1` without a relay session, or the relay session from the holder's keyboard | refused by the record check |
 | A kind the policy refuses | `kindRefused` |
 | Revive an ended invite by clearing its global | `endedCredentials` is grow-only on the server |
 | Skip a lockout with a saved connection | refused while locked out |
+| Keep a `session` proof from a transient relay | a relay sign-in is not recorded in `signedInPcs` |
 | Read a token or hash value | no value exists in any answer |
 
 ## 8. Slices K3a, K3b and K3c: the keyring on screen (client)
@@ -440,22 +463,25 @@ Base: main after K2. Size: M.
 
 Only in a scenario that declares `credentials` (shipped scenarios are unchanged). On the remote screen, and on the keyboard screen for password entries only:
 
-- **One tile per account, never per entry.** Order and inclusion as K0 (section 5.2), with keyring accounts in place of captured ones. Tags by kind, one casing, with K0's tag rules (two per tile then "+1", ellipsis, badge in the short window): "Captured", "Found in a file", "Saved connection", "Remote assist".
-- **A "Found in a file" tag waits** until the client has opened that item in this page. The keyring module keeps the set of opened `foundIn` item ids for the page's life. After a reload the tag shows at once and its toast is skipped: an accepted gap, since the server keeps no record of a file being read.
-- **Choosing an account** shows its ways in on the chosen line, in this order: one button per keyring credential for this PC ("Connect with HB-FIN-02.rdp"); for a found password, the line "Password in passwords.txt: type it from the file."; the Password field (filled only for a captured password the server served) and Sign in, always shown, since `password` is always accepted. A credential refused by this PC's policy shows as a greyed button with its refused reason under it and does nothing.
+- **One tile per account, never per entry.** Order and inclusion as K0 (section 5.2), with keyring accounts in place of captured ones, matched by username. Tags by kind with K0's tag rules ("+N", ellipsis, badge in the short window): "Captured", "In file", "Saved", "Assist".
+- **Only usable kinds show.** A screen shows a tag and a button only for a credential whose kind allows that screen's route: `password` everywhere; `saved_connection` on a `foothold` or (K4) `from` screen. An `assist_invite` never shows on a sign-in screen; it is used by Connect alone (8.2).
+- **An "In file" tag waits** until the client has opened that item in this page. The keyring module keeps the set of opened `foundIn` item ids for the page's life. After a reload the tag shows at once and its toast is skipped: an accepted gap, since the server keeps no record of a file being read.
+- **Choosing an account** shows its ways in on the chosen line, in this order: one button per usable credential for this PC ("Connect with HB-FIN-02.rdp"), each with its full kind name; for a found password, the line "Password in passwords.txt: type it from the file."; the Password field (filled only for a captured password the server served) and Sign in, always shown, since `password` is always accepted. A saved connection refused by this PC's policy shows as a greyed button with its refused reason under it and does nothing.
 - **The teaching line** under a credential button, from the text table (8.5), and the same line once as a toast after the first successful use of each kind. In the short window the teaching line is not shown on the screen and the toast carries it; a refused reason always shows (it takes the teaching line's place).
 - **Sign in** with a credential posts `credential` with the screen's route; refusals show in the screen's error line with 8.5's text, except a policy refusal already shown under its greyed button, where the error line stays empty.
-- **Loading:** the remote screen waits for `/login_accounts`, `/capture_secrets` and `/keyring?pc_id=&<route>` together, under K0's pair cap (now three requests) and late redraw; the keyboard screen, in a scenario with `credentials`, waits for `/login_accounts` and `/keyring`. A failed `/keyring` shows the screen without keyring entries and the line "Your saved connections could not be loaded."
+- **Remote error lines.** On a remote screen, `signInErrorMessage` and `signInRefusalMessage` use the shared remote strings of 8.5 (`notRespondingMessage(host)`, the remote screen's unreachable line, the remote-off sentence for a `remoteBlocked` answer), in place of "This PC ..." and the server's `REMOTE_BLOCKED` text. The keyboard keeps its own.
+- **Loading:** the remote screen waits for `/login_accounts`, `/capture_secrets` and `/keyring?pc_id=&<route>` together, under K0's 3 s cap and late redraw; the keyboard screen, in a scenario with `credentials`, waits for `/login_accounts` and `/keyring` under the same cap and redraw. A failed `/keyring` shows the screen without keyring entries and the line "Your keyring could not be loaded."; two or more failed lists give K0's single combined line.
 - **Worst cases to prove, at all four sizes:**
-  - the tile row: six admitted accounts, three with keyring entries (one with two tags and a 32-character file name), with the pixel scrollbar and "More below" cue where the row scrolls;
-  - the chosen line: Lena with a captured password, the .rdp and a refused kind, with the first credential button and Sign in in view without scrolling. At 1400x1000 the screen is the x2 560x350 layout where nothing scrolls, so the line must fit there as drawn.
-- **Desktop:** the account bar keeps "Signed in as Lena Fox (lfox)" and adds a second line, "with the saved connection HB-FIN-02.rdp" (`container-minigame.js:949-951`); the bezel keeps the PC name. Switch user reuses the session's own route.
+  - the tile row: seven admitted accounts, three with keyring entries (one with two tags and a 32-character file name), using K0's two-row cap and the row's own scroller and "More below" cue;
+  - the chosen line: Lena with a captured password, the .rdp and a refused kind, with the first credential button and Sign in in view without scrolling, at x1 and at the x2 560x350 layout.
+- **Desktop:** the account bar keeps "Signed in as Lena Fox (lfox)" and adds a second line, "with the saved connection HB-FIN-02.rdp" (`container-minigame.js`); the bezel keeps the PC name. Switch user reuses the session's own route.
+- **Screen look:** `systems/screen-states.js:83` as section 3.8.
 
 K3a uses the foothold route only. After K3a, a player with a planted drop box opens HB-FIN-02 from the network view and signs in with the .rdp.
 
-Files: `minigames/password/password-minigame.js`, `css/password-minigame.css`, `systems/unlock-system.js` (the fetches), `api-client.js` (`keyring`, `loginWithCredential`), `systems/keyring.js` (new: the cache, `rev` and the opened `foundIn` set), `systems/screen-states.js:83`, `minigames/container/container-minigame.js` (account bar line), `systems/pc-sessions.js` (credential sessions).
+Files: `minigames/password/password-minigame.js`, `css/password-minigame.css`, `systems/unlock-system.js` (the fetches), `api-client.js` (`keyring`, `loginWithCredential`), `systems/keyring.js` (new: the cache, `rev` and the opened `foundIn` set), `systems/screen-states.js`, `minigames/container/container-minigame.js` (account bar line), `systems/pc-sessions.js` (credential sessions).
 
-Tests: `test/js/keyring-signin.test.mjs` (one tile per account, tags by kind, the `foundIn` wait and the reload case, buttons above an always-present Password field, the found-password line, greyed refused credential with its reason in the short window and an empty error line, password-only at the keyboard, error texts including the lockout line, loading, the cap and failure, nothing new in a scenario without `credentials`); `test/js/pc-monitor-frame.test.mjs` (both worst cases inside the screen at x1 and x2); `test/js/screen-states.test.mjs` (a password and a credential session show the desktop, a claim paints locked); harness copy lists for `systems/keyring.js`.
+Tests: `test/js/keyring-signin.test.mjs` (one tile per account, tags by kind, the two-tag limit with "+N", the `foundIn` wait and the reload case, buttons above an always-present Password field, the found-password line, no invite tag or button on a foothold screen of HB-FIN-03, greyed refused credential with its reason in the short window and an empty error line, password-only at the keyboard, error texts including the lockout line and the remote strings, loading, the cap and failure at both screens, nothing new in a scenario without `credentials`); `test/js/pc-monitor-frame.test.mjs` (both worst cases inside the screen at x1 and x2); `test/js/screen-states.test.mjs` (a password and a credential session show the desktop look, a claim paints locked); harness copy lists for `systems/keyring.js`.
 
 Live proof: beats R2, R4 and R5a of section 9.1 with the drop box planted, shots of every state at the four sizes with scrollbars shown, both worst-case fixture screens, `verify-run.rb`.
 
@@ -465,14 +491,15 @@ Sync: nothing stored; one GET /keyring per screen open, usually `unchanged`.
 
 Base: main after K3a. Size: M.
 
-- **Connect from the tray.** `inventoryMenuFor` (`systems/inventory-menu.js:87`): a held item with a connecting `credential` gets `[Connect, Examine]` (plus Drop here when droppable); with no observations, the click is Connect directly. The tray offers Connect only when no minigame is open, as the menu already checks (`inventory-menu.js:184`); otherwise the entry is greyed with "Close this screen first." Connect first flushes any pending sync, then asks GET /keyring and reads the entry, in this order:
-  1. the entry is missing: toast "HB-FIN-02.rdp no longer works.";
-  2. `ended`: toast "Jake Brooks ended the remote assist.";
-  3. `targetOff`: toast `notRespondingMessage(host)` ("HB-FIN-03 is not responding."), as the view says over the network;
-  4. `sessionHeld`: open its desktop by the session's route;
-  5. `remoteBlocked`: toast the remote-off sentence ("Remote sign-in is off on HB-FIN-02.");
-  6. no route: toast `unreachableMessage(host)` with the teaching half (8.5);
-  7. a route (K4's `from` first, then footholds, then relay): POST /login with the credential and that route. On success, open the desktop and show the teaching toast the first time for the kind. On a refusal (`kindRefused`, `LOGIN_NOT_PERMITTED`, lockout, `wrongPc`), open the target's remote sign-in screen with the account and credential chosen and the refusal shown as 8.1 says.
+- **Connect from the tray.** `inventoryMenuFor` (`systems/inventory-menu.js:87`): a held item with a connecting `credential` gets `[Connect, Examine]` (plus Drop here when droppable); with no observations, the click is Connect directly. Connect opens only from an uncovered tray, as the existing guard already ensures. While a Connect is running the entry is disabled and further clicks do nothing. Connect first flushes any pending sync, then asks GET /keyring and reads the entry, in this order:
+  1. GET /keyring fails: toast "Connect could not reach the game server. Try again.";
+  2. the entry is missing: toast "{label} no longer works.";
+  3. `ended`: toast "{displayName} ended the remote assist.";
+  4. `targetOff`: toast `notRespondingMessage(host)`;
+  5. `sessionHeld`: open its desktop by the session's route;
+  6. `remoteBlocked`: toast the remote-off sentence;
+  7. no route: toast "{host} can't be reached from here. You need a way onto its network.";
+  8. a route (K4's `from` first, then footholds, then relay): POST /login with the credential and that route. On success, open the desktop and show the teaching toast the first time for the kind. On a network failure, the toast of step 1. On a refusal: for a saved connection's `kindRefused` or lockout, open the target's remote sign-in screen with the account and credential chosen and the refusal shown as 8.1 says; for `LOGIN_NOT_PERMITTED`, toast "{displayName} can't sign in on {host}."; for an assist invite's `kindRefused` or `ended`, the toast of 8.5. (`wrongPc` cannot occur: Connect always posts to `connectsTo`.)
   Connect starts no network-view trip, so closing the screen or desktop returns to the world, or to the opener given as `returnTo` (K4: the desktop it was started from).
 - **Find toasts.** `systems/keyring.js` fetches a baseline after bootstrap, then asks with `rev` after a successful sign-in (once the desktop has opened), an inventory add or removal of an item with `credential`, a plant, implant or Wi-Fi join, and the opening of a `foundIn` item. Registry entries new since the last answer give one toast, worded by use under D4 (c), with names, hosts and labels from the entry:
   - saved connection: "Saved connection found: {label} signs in as {displayName} on {host}.";
@@ -483,9 +510,9 @@ Base: main after K3a. Size: M.
 - **The keyring view** follows D4 (recommended: none in phase 1).
 - **Backlog:** the NPC gift toast's emoji (`chat-helpers.js:141`) breaks the pixel-font rule; logged in `docs/IDEAS_BACKLOG.md`.
 
-Files: `systems/inventory-menu.js`, `systems/unlock-system.js`, `systems/keyring.js`, `systems/pc-sessions.js`, `systems/network-links.js` (no trip for Connect; the helpers reused).
+Files: `systems/inventory-menu.js`, `systems/unlock-system.js`, `systems/keyring.js`, `systems/pc-sessions.js`, `systems/network-links.js` (no trip for Connect; the helpers reused, unchanged).
 
-Tests: `test/js/keyring-client.test.mjs` (baseline at load, `rev` reuse, toast wording per kind and grouping, silence for captures, `foundIn` wait, Connect's seven outcomes in order, the flush before the GET, direct sign-in and the screen only on a refusal, `returnTo`, Connect greyed while a minigame is open); the inventory-menu test file (`[Connect, Examine]`, direct Connect without observations, the assist code's tray slot).
+Tests: `test/js/keyring-client.test.mjs` (baseline at load, `rev` reuse, toast wording per kind and grouping, silence for captures, `foundIn` wait, Connect's outcomes in order including both failures and the no-route text, the in-flight guard against a double click, the flush before the GET, direct sign-in and the screen only on a saved connection's policy or lockout refusal, the `LOGIN_NOT_PERMITTED` toast, `returnTo`); the inventory-menu test file (`[Connect, Examine]`, direct Connect without observations, the assist code's tray slot).
 
 Live proof: beats R1, R3 and R5b on new games of `test_access_keyring`, shots at the four sizes, `verify-run.rb`.
 
@@ -495,15 +522,16 @@ Sync: nothing stored; one GET per trigger, usually `unchanged`.
 
 Base: main after K3b. Size: M.
 
-- **Relay mode.** The lockable's `remote` is `{ relay: true }` beside today's `{ footholdId }`. Connect on an accepted invite signs in and opens the desktop directly (8.2 step 7); the relay sign-in screen opens only to show a refusal, with header "Remote assist ({displayName})", the holder's tile chosen and no Other user, Switch user or Password field.
-- **The relay desktop.** The account bar reads "Using {displayName}'s session (remote assist)", with one Disconnect in place of Switch user and Sign out, and no link line; the header reads "Remote assist session". Disconnect is POST /logout. Request params carry `relay=1`. Readers that branch on `remote`: `openLoginSignIn`, `openRemoteSignInScreen`, the sign-in post, `pc-sessions.js` remote fields, the container's header and params. The relay session carries slice 6's `locked` flag like any session and uses its lock and unlock predicate unchanged; the relay adds no unlock of its own.
-- **Re-entry.** An open relay session is reached again only by Connect (8.2 step 4); the network view does not list it. At the holder's own keyboard during a relay session the desk rules apply and the relay session is not offered there.
+- **Relay mode.** The lockable's `remote` is `{ relay: true }` beside today's `{ footholdId }`. Connect on an accepted invite signs in and opens the desktop directly (8.2 step 8). There is no relay sign-in screen: a refusal is a toast where Connect ran.
+- **The relay desktop.** The account bar reads "Using {displayName}'s session (remote assist)", with one Disconnect in place of Switch user and Sign out, and no link line; the header reads "Remote assist session". No share folders show (the server maps none). Disconnect is POST /logout. Request params carry `relay=1`. Readers that branch on `remote`: `openLoginSignIn`, `pc-sessions.js` remote fields, the container's header and params. The relay session carries slice 6's `locked` flag like any session and uses its lock and unlock predicate unchanged.
+- **Events.** `pc-sessions.js` adds `relay: true` and `kind` to `pc_signed_in` and `pc_desktop_opened` for a relay session, so a mapping can tell a relay from a remote foothold session.
+- **Re-entry.** An open relay session is reached again only by Connect (8.2 step 5); the network view does not list it. At the holder's own keyboard, `openLoginPc` treats the relay record as no session and opens the sign-in screen by the desk rules, and the sprite paints locked (section 3.8); the server refuses a no-route desktop request there.
 - **Ending.** `pc-sessions.js` handles the sync answer's `endedRelayPcIds` as `linkDropped` handles `endedPcIds`: the mirror drops the session and an open relay desktop closes with "{displayName} ended the remote assist.".
 - **Displacement.** The holder sitting down at his own PC does not end the relay session (unit test only; the test scenario's Jake never sits).
 
-Files: `systems/unlock-system.js`, `systems/pc-sessions.js`, `minigames/container/container-minigame.js`, `minigames/password/password-minigame.js` (relay screen), `api-client.js` (sync answer handling).
+Files: `systems/unlock-system.js`, `systems/pc-sessions.js`, `systems/screen-states.js`, `minigames/container/container-minigame.js`, `api-client.js` (sync answer handling).
 
-Tests: `test/js/access-remote-signin.test.mjs` (relay headers and params, the refusal-only screen, re-entry by Connect); `test/js/keyring-client.test.mjs` (`endedRelayPcIds` closes the desktop with the text); `test/js/pc-sessions.test.mjs` (no displacement by the holder).
+Tests: `test/js/access-remote-signin.test.mjs` (relay headers and params, re-entry by Connect, the holder's keyboard opens the sign-in screen); `test/js/keyring-client.test.mjs` (`endedRelayPcIds` closes the desktop with the text; refusal toasts for an invite); `test/js/pc-sessions.test.mjs` (no displacement by the holder; `relay` and `kind` on both events); `test/js/screen-states.test.mjs` (a relay session paints locked).
 
 Live proof: beats R6 to R9 and R11 on new games of `test_access_keyring`, shots of the relay desktop at the four sizes, `verify-run.rb`.
 
@@ -515,39 +543,58 @@ Display only. Every sign-in goes through section 7's checks; the client never ho
 
 ### 8.5 Player-facing text (decision D7)
 
-On-screen text only, not spoken, so it lives in the engine's text table keyed by kind and state. Every name, host and label is a template field filled from the entry or the PC (`{displayName}`, `{host}`, `{label}`), never free text; the examples use the test scenario's names. States the view already names reuse its helpers (`unreachableMessage`, `notRespondingMessage`, `REMOTE_OFF_TEXT`), so one state has one phrasing everywhere.
+On-screen text only, not spoken, so it lives in the engine's text table keyed by kind and state. Every name, host and label is a template field filled from the entry or the PC (`{displayName}`, `{host}`, `{label}`), never free text, and the engine text uses no pronoun for the account holder. The examples use the test scenario's names.
+
+Shared remote strings (one per state, used by the remote sign-in screen, the tray and the view):
+
+| State | Text | Source |
+|---|---|---|
+| off over the network | "{host} is not responding." | `notRespondingMessage`, unchanged |
+| unreachable on the view or a remote screen | "{host} can't be reached over this link." | `unreachableMessage`, unchanged |
+| unreachable from the tray (no link in play) | "{host} can't be reached from here. You need a way onto its network." | new, Connect only |
+| remote blocked (sign-in, K0 race close, Connect) | "Remote sign-in is off on {host}." | new sentence beside `REMOTE_OFF_TEXT` (the view's row label stays "Remote sign-in off") |
+
+Tags (one line, at most 9 glyphs) and full names (title and chosen line):
+
+| Kind | Tag | Full name |
+|---|---|---|
+| captured password | "Captured" | "Captured password" |
+| password in a file | "In file" | "Password in a file" |
+| saved_connection | "Saved" | "Saved connection" |
+| assist_invite | "Assist" | "Remote assist" (Connect only) |
+
+Lines:
 
 | Key | Text | Alternative for D7 |
 |---|---|---|
-| password in a file teach | "People save passwords in files. Anyone who reaches the file has the account." | "A password in a file is a password anyone can read." |
-| saved_connection teach | "The password is saved inside this file, so opening it signs you in as {displayName}." | "This file remembers {displayName}'s password. Whoever holds it is {displayName}." |
-| assist_invite teach | "{displayName} let you into his session because you said you were the helpdesk. Check who is asking before you share access." | "{displayName} let you into his session. Nobody checked who was asking." |
-| saved_connection refused | "This PC always asks for the password, so a saved one is ignored. That setting is the fix." | "{host} does not accept saved passwords. That setting stops this attack." |
+| password in a file teach | "People save passwords in files. Anyone who reaches the file has the account. Keep passwords in a password manager, not a file." | "A password in a file is a password anyone can read." |
+| saved_connection teach | "The password is saved inside this file, so opening it signs you in as {displayName}. A policy that always asks for the password stops it." | "This file remembers {displayName}'s password. Whoever holds it is {displayName}." |
+| assist_invite teach | "{displayName} let you into their session. Check who is asking before you share access." | "{displayName} let you into their session. Nobody checked who was asking." |
+| saved_connection refused | "{host} always asks for the password, so a saved one is ignored. That setting is the fix." | "{host} does not accept saved passwords. That setting stops this attack." |
 | assist_invite refused | "{host} does not allow remote assistance." | "Remote assistance is turned off on {host}." |
 | saved_connection locked out | "This account is locked on {host}, so the saved password is refused too." | |
-| wrong PC | "This connection is for another PC." | |
+| not permitted (Connect) | "{displayName} can't sign in on {host}." | |
+| wrong PC (sign-in screen) | "This connection is for another PC." | |
 | ended | "{displayName} ended the remote assist." | |
-| off (any remote route) | `notRespondingMessage`: "{host} is not responding." | |
-| remote blocked | "Remote sign-in is off on {host}." (built on `REMOTE_OFF_TEXT`, also used by K0's race close) | |
-| no route | `unreachableMessage` plus "You need a way onto its network.": "{host} can't be reached over this link. You need a way onto its network." (the helper gains the second sentence, so the view says it too) | |
 | no longer works | "{label} no longer works." | |
+| Connect failed | "Connect could not reach the game server. Try again." | |
+| keyring failed | "Your keyring could not be loaded." | |
 | K0 lines | as section 5.2 | |
 | found password on the chosen line | "Password in {label}: type it from the file." | |
 | find toasts | as 8.2 | under D4 |
 | relay desktop | "Using {displayName}'s session (remote assist)" | "{displayName}'s screen, shared with you" |
-| tray Connect greyed | "Close this screen first." | |
 
 ## 9. Slice K4: signing in from a desktop
 
 Base: main after K3c. Size: M. Decision D6 says whether it is in phase 1 (recommended: yes).
 
-- Route `from: pcId` (section 3.7) in POST /login, GET /keyring `routes`, `desktop_request_allowed?` (with `desktop_refusal` and `render_login_desktop`), `session_route_up?` and `host_row` (section 3.8).
+- Route `from: pcId` (section 3.7) in POST /login, GET /keyring `routes`, `desktop_request_allowed?` (with `desktop_refusal` and `render_login_desktop`), `session_route_up?` and `host_row` (section 3.8). A source session carrying `relay` is never a `from` source, in every one of them.
 - `prune_unreachable_sessions!` ends a `from` session whose source session is gone; `logout_session!` and `end_claimed_sessions!` already call it.
 - Client: Connect prefers a `from` route whose source is the desktop the player has open; the remote screen header reads "Remote sign-in from HB-DESK-01". On the desktop where the file sits, the file's click offers Connect beside Take (no need to take it first), and `returnTo` is that desktop, so the X on the target's desktop goes back to it. Switch user on a `from` desktop reuses the `from` route; the view's Open on a `from` session opens it with `from=`.
-- Tests: `test/controllers/break_escape/credential_from_route_test.rb` (route checks; source logged out ends the session; source PC switched off refuses the desktop and scoped requests, and allows them when it is back; a claimed source ends on reload and the chain with it; no `from` for a relay kind; a `from` session survives reload and `session_for_client` reports it as remote); JS route choice, the desktop Connect, `returnTo`, Switch user and the view's Open.
-- Live proof: beat R10, from Sam's keyboard with no drop box.
+- Tests: `test/controllers/break_escape/credential_from_route_test.rb` (route checks; source logged out ends the session; source PC switched off refuses the desktop and scoped requests, and allows them when it is back; a claimed source ends on reload and the chain with it; no `from` for a relay kind; a relay source refused, as `ops_rdp` with `from: jake_pc` during Jake's relay; a `from` session survives reload and `session_for_client` reports it as remote); JS route choice, the desktop Connect, `returnTo`, Switch user and the view's Open.
+- Live proof: beat R10, from Sam's keyboard with no drop box, and the relay-source refusal from the page.
 - Sync: one route field in the session record.
-- Cheat: `from` names a session the server holds; reach is the walk mapped shares already use.
+- Cheat: `from` names a session the server holds and never a relay; reach is the walk mapped shares already use.
 
 ### 9.1 Test scenario `test_access_keyring`
 
@@ -557,13 +604,15 @@ Browser-only, no VM, built in K1 and grown through K4. `social.captures.revealSe
 
 **Policies:** `finance` and `pw_only` as section 3.2.
 
+**Resources:** `finance_share`, a `file_share` on `server_lan`, `access: { people: ["jake"] }`, holding `q3_payroll.txt`. Honest play maps it from Jake's own sign-in on HB-FIN-02 (R4); the relay never maps it (R6).
+
 **Rooms:**
 
 | Room | Door from | Lock | Holds |
 |---|---|---|---|
 | Lobby (start) | | none | signs for the beats; Lena Fox standing at reception (away from her desk, so her PC is free); a capture card for Ian (as `test_access_networks`: reading it fires `addCapture`; Ian's proof is `planted: drop box on comms_port`) |
 | Office | Lobby, north | none | Sam's PC `sam_pc` (`HB-DESK-01`, `office_lan`, access `{ people: ["sam"] }`, picker `accounts`, sticky note with Sam's password); Sam's desktop holds `HB-FIN-02.rdp` (`lena_rdp_file`, takeable); Sam Okafor standing by the window, never sitting |
-| Comms | Office, east | none | jack `comms_port` on `office_lan`; `SV-OPS-01` `ops_pc` in a rack (`server_lan`, policy `pw_only`, access `{ roles: ["it"] }`); Ian Shaw standing |
+| Comms | Office, east | none | jack `comms_port` on `office_lan`; `SV-OPS-01` `ops_pc` in a rack (`server_lan`, policy `pw_only`, access `{ roles: ["it"] }`; its keyboard also works with Ian's captured password, which the beats do not need); Ian Shaw standing |
 | Finance | Office, north | PIN; the code is in `door_code.txt` on Lena's desktop, so the room opens only after R2 | Lena's PC `lena_pc` (`HB-FIN-02`, `office_lan`, policy `finance`, access `{ people: ["lena", "jake"] }`, picker `accounts`); her desktop holds `passwords.txt` (`lena_passwords_txt`, not takeable), `door_code.txt` and `SV-OPS-01.rdp` (`ops_rdp_file`, takeable); Jake's PC `jake_pc` (`HB-FIN-03`, `office_lan`, policy `finance`, access `{ people: ["jake"] }`, picker `accounts`); Jake Brooks standing by his desk, never sitting |
 
 **Cast:**
@@ -577,9 +626,10 @@ Browser-only, no VM, built in K1 and grown through K4. `social.captures.revealSe
 
 **Registry:** `lena_rdp` (saved connection, `held: lena_rdp_file`); `ops_rdp` (saved connection for Ian, `connectsTo: ops_pc`, `held: ops_rdp_file`); `jake_pw_note` (`session: lena_pc`, `foundIn: lena_passwords_txt`); `jake_assist` (`held: jake_assist_code`, `endsOnGlobal: jake_ended_assist`).
 
-**Jake:** `jake_assist_code` (type `text_file`) is in Jake's `itemsHeld`. Posing as the helpdesk, one ink choice gives it with `#give_item:text_file:jake_assist_code`, shown once (gated on a global set by the item's `onPickup`). Two ways end the invite:
-- an `eventMappings` entry on Jake for the relay desktop opening at `jake_pc` (`pc_desktop_opened`, condition on the relay route) arms an NPC `timers` entry (as implants use) that, about 40 game seconds later, sets `jake_ended_assist` and plays a bark from Jake's NPC JSON ("Hang on. The helpdesk never calls me back. I'm ending this.");
-- a later conversation, after the player has used the invite, lets him grow suspicious and sets the same global.
+**Jake.** `jake_assist_code` (type `text_file`) is in Jake's `itemsHeld`. Posing as the helpdesk, one ink choice gives it with `#give_item:text_file:jake_assist_code`, shown once (gated on a global set by the item's `onPickup`). Two ways end the invite, both setting `jake_ended_assist`:
+- the timer: a mapping on Jake for `pc_desktop_opened` with condition `data.relay === true && data.pcId === 'jake_pc' && !globalVars.jake_ended_assist`, `onceOnly`, sets `jake_assist_armed`; a top-level `timers` entry with `startOnGlobal: jake_assist_armed`, `delayMs: 40000`, condition `!globalVars.jake_ended_assist`, sets `jake_ended_assist`. A reload restarts the timer while `jake_assist_armed` is true, so after a reload the invite ends about 40 seconds later whether or not the player reconnects;
+- the ink: a later conversation, after the player has used the invite, lets him grow suspicious and sets the same global.
+The bark is on a Jake mapping for `global_variable_changed:jake_ended_assist`, in his NPC JSON, in the past tense: "I've ended that session. The helpdesk never calls me back." It waits behind the relay desktop, which the sync answer closes first, so the player reads the end line, then hears Jake.
 
 **Earned secrets:**
 
@@ -588,35 +638,37 @@ Browser-only, no VM, built in K1 and grown through K4. `social.captures.revealSe
 | Sam's password | sticky note on HB-DESK-01 | Sam's desktop (R1, R10 source) |
 | HB-FIN-02.rdp | Sam's desktop | Lena's PC over the drop box (R2) |
 | Finance PIN | `door_code.txt` on Lena's desktop | Finance room (R6) |
+| SV-OPS-01.rdp | Lena's desktop | refused by `pw_only` (R5a) |
 | Jake's password | `passwords.txt` on Lena's desktop | Switch user to Jake on HB-FIN-02 (R4) |
-| SV-OPS-01.rdp | Lena's desktop | refused by `pw_only` (R5) |
-| Ian's password | capture card plus drop box, served under `revealSecret` | SV-OPS-01 over the network (R5) |
+| Ian's password | capture card plus drop box, served under `revealSecret` | SV-OPS-01 over the network (R5a) |
 | Jake's assist code | Jake's ink | HB-FIN-03 by relay (R6) |
+
+**Runs.** Run A is R1 to R7a in order, on one game. Run B starts a new game, plays R1, R2 and R6 up to the relay desktop, then reloads (R8). Run C plays R1, R2, plants nothing else and unplugs (R9). Run D (K4) starts a new game with no drop box (R10). R7b and R11 follow Run A.
 
 | Beat | What it proves | Slice |
 |---|---|---|
 | R1 | At Sam's keyboard (sticky note), take HB-FIN-02.rdp; toast "Saved connection found" | K1, K3b |
-| R2 | Plant the drop box; HB-FIN-02 from the network view; Lena's tile tagged "Saved connection"; "Connect with HB-FIN-02.rdp" signs in; account bar line | K2, K3a |
-| R3 | Open passwords.txt; Jake's toast and "Found in a file" tag appear only after it is opened | K1, K3a, K3b |
-| R4 | The explainer's pivot: Switch user on HB-FIN-02 (through the drop box): Jake's tile tagged "Found in a file", the chosen line names passwords.txt, the password typed from the file signs in; Jake's shares map; a wrong password counts | K3a |
-| R5a | Take SV-OPS-01.rdp; read Ian's card; open SV-OPS-01 from the view: Ian's tile tagged "Captured" and "Saved connection", the greyed "Connect with SV-OPS-01.rdp" with the policy reason, the password filled; Sign in works | K2, K3a |
+| R2 | Plant the drop box; HB-FIN-02 from the network view; Lena's tile tagged "Saved"; "Connect with HB-FIN-02.rdp" signs in; account bar line | K2, K3a |
+| R3 | On Lena's desktop open passwords.txt; Jake's toast and "In file" tag appear only after it is opened; read door_code.txt | K1, K3a, K3b |
+| R5a | Still on Lena's desktop, take SV-OPS-01.rdp; read Ian's card; open SV-OPS-01 from the view: Ian's tile tagged "Captured" and "Saved", the greyed "Connect with SV-OPS-01.rdp" with the policy reason, the password filled; Sign in works | K2, K3a |
 | R5b | Connect the SV-OPS-01.rdp from the tray: the screen opens with the refusal under the greyed button | K3b |
-| R6 | Read door_code.txt, open Finance, talk Jake into the code. Sign out at HB-DESK-01 and HB-FIN-02; the drop box view lists `office_lan` only. Connect the code: his desktop opens directly; "Using Jake Brooks's session"; the teaching toast; the view still lists `office_lan` only | K2, K3c |
-| R7a | With the relay desktop open, Jake's timer ends the invite: the desktop closes with "Jake Brooks ended the remote assist." | K2, K3c |
+| R4 | The explainer's pivot: Switch user on HB-FIN-02 (through the drop box): Jake's tile tagged "In file", the chosen line names passwords.txt, a wrong password counts, the password typed from the file signs in; Jake's desktop maps `finance_share` with `q3_payroll.txt`, and the view lists `server_lan` | K3a |
+| R6 | Open Finance with the PIN, talk Jake into the code. Sign out at HB-DESK-01 and HB-FIN-02; the drop box view lists `office_lan` only. Connect the code: his desktop opens directly; "Using Jake Brooks's session"; no share folder; the teaching toast; the view still lists `office_lan` only; clicking HB-FIN-03 at its keyboard opens the sign-in screen, not his desktop | K2, K3c |
+| R7a | With the relay desktop open, the timer ends the invite: the desktop closes with "Jake Brooks ended the remote assist.", then Jake's bark | K2, K3c |
 | R7b | Connect again: toast "Jake Brooks ended the remote assist." (and, on a game where the timer was not reached, the ink end gives the same) | K2, K3c |
-| R8 | Reload before R7a: the relay session is gone, Connect works again; the .rdp session through the drop box is kept | K2, K3c |
+| R8 | Reload with the relay desktop open: the relay session is gone, the .rdp session through the drop box is kept, Connect works again, and about 40 seconds after the reload the restarted timer ends the invite | K2, K3c |
 | R9 | Unplug the drop box: the .rdp session ends as a password session would | K2 |
 | R10 | No drop box: from Sam's keyboard session, Connect on the .rdp signs in from HB-DESK-01 | K4 |
-| R11 | Tampered-client checks of section 7.4 | K2 |
+| R11 | Tampered-client checks of sections 7.4 and 9 | K2, K4 |
 
 ### 9.2 What each slice changes in existing scenarios
 
 | Slice | Changes |
 |---|---|
-| K0 | Remote screens in the two networks scenarios with sign-in hosts. Every remote screen in both loses the "Captured sign-ins" heading and gains tagged captured tiles and K0's lines. `test_access_networks`: tiles under the default, two new PCs, the `nla` policy, P3's host list and PLAYTEST updates (section 5.4). `lab_physical_pentest`: under D1 lab answer (i), LW-OPEN-07 shows Melanie Pierce's tile with her captured password filled, and the hot desk its three tiles; under (ii), a policy `{ "remote": "allowed", "remoteScreen": "typed" }` on those two PCs keeps them free of PC tiles, with the NLA line; LW-DOOR01 (headless) shows its captured tiles tagged and the headless line under either answer. The build log has before and after shots of all three |
+| K0 | Remote screens in the two networks scenarios with sign-in hosts. Every remote screen in both loses the "Captured sign-ins" heading and gains tagged captured tiles and K0's lines. `test_access_networks`: tiles under the default, two new PCs, the `nla` policy, the capture card's text, P3's host list and PLAYTEST updates (section 5.4). `lab_physical_pentest`: section D1's lab answer; LW-DOOR01 (headless) shows its captured tiles tagged and the headless line under any answer; PLAYTEST lines 1028 and 1033. The build log has before and after shots of all three hosts |
 | K0 | No change in m01 to m10, `lab_social_engineering` or the other test scenarios: none has a foothold, so none opens a remote screen |
 | K1 | None (validator checks apply only where `credentials` or `accepts` is authored) |
-| K2 | None (no client calls the branch); `host_row`, `reach_session_hosts`, `settle_session_at_keyboard!` and `screen-states.js` change behaviour only for credential sessions |
+| K2 | None (no client calls the branch); the session readers change behaviour only for credential sessions |
 | K3a to K4 | Only scenarios that declare `credentials` (`test_access_keyring`) |
 
 ## 10. Phase 2 sketch: tokens
@@ -640,21 +692,29 @@ Phases 0 to 3 add optional fields only (`remoteScreen`, `accepts`, `credentials`
 
 ## 13. Decisions for the user
 
-Each decision goes on the picks page with its evidence, before K1 starts. K0's shots are real (from its live proof). Every shot of a K3a to K4 state is a static mock: one HTML file per state, built from the K0 screen's real CSS and the monitor frame, captured at the named sizes, and labelled "mock". Diagrams that need K1's dungeon graph are hand-drawn Mermaid until K1 exists. Sizes are 1400x1000 and 390x844 unless named.
+Each decision goes on the picks page with its evidence. D1 is picked after K0's live proof and before K0 merges; D2 to D7 before K1 starts. K0's shots are real (from its live proof). Every shot of a K3a to K4 state is a static mock: one HTML file per state, built from the K0 screen's real CSS and the monitor frame, captured at the named sizes, and labelled "mock". Diagrams that need K1's dungeon graph are hand-drawn Mermaid until K1 exists. Sizes are 1400x1000 and 390x844 unless named.
 
-Mocks to build: (m1) the chosen line with each kind's tag and button; (m2) the greyed refused credential with its reason; (m3) the tray's `[Connect, Examine]` menu; (m4) the relay desktop's bar with Disconnect; (m5) R10's "Remote sign-in from HB-DESK-01" header; (m6) a desktop file offering Connect beside Take; (m7) the capture log's Captures section as one Keyring list with kind tags (D4 (d)).
+Mocks to build: (m1) the chosen line with each sign-in kind's tag and button; (m2) the greyed refused saved connection with its reason; (m3) the tray's `[Connect, Examine]` menu; (m4) the relay desktop's bar with Disconnect; (m5) R10's "Remote sign-in from HB-DESK-01" header; (m6) a desktop file offering Connect beside Take; (m7) the capture log's Captures section as one Keyring list with kind tags (D4 (d)); (m8) a Keyring item in the tray with its toast (D4 (b)); (m9) one sheet of every toast (find, teaching, Connect's outcomes, ended) as `gameAlert` draws them at 1400x1000 and 390x844, each with its D7 alternative beside it.
 
 ### D1. The default remote screen: tiles or typed
 
 - (a) `"tiles"` by default, missions opt into `"typed"` on hardened PCs. (b) `"typed"` by default, tiles only where a scenario opts in.
-- Lab sub-question, `lab_physical_pentest`: (i) take the default; (ii) a `typed` policy on LW-OPEN-07 and the hot desk.
-- Trade-off: tiles teach account enumeration on every exposed screen and make typed-username puzzles easier; typed teaches the control but hides the lesson unless a scenario opts in. In the lab under (i), the drop box view offers Melanie Pierce's own tile on LW-OPEN-07 with her captured password filled: a one-click remote sign-in to her PC, which the lab's scope text points away from (her password is for the hot desk, `scenario.json.erb:187, 1905-1908`).
-- Recommendation: (a), matching the q92 pick and the keyboard screen; a hardened policy is one line. For the lab, (ii): it is played on Hacktivity and was designed around her password being used at the hot desk; taking the tiles there is a lab design change for its own pass. Under either answer the lab's remote screens change look (tagged captured tiles, no heading, K0's lines).
-- Blocks: K0 (one constant; K0 builds with (a) and can flip).
+- Lab sub-question, `lab_physical_pentest` (all three captures read, `revealSecret: true`):
+
+  | Answer | LW-OPEN-07 over the drop box | Hot desk over the drop box |
+  |---|---|---|
+  | Main today | Hampshire, Lord and Pierce as captured tiles, all filled | the same three captured tiles, all filled |
+  | (i) take the default (`tiles` under (a)) | Pierce's PC tile, tagged, filled; Hampshire and Lord gone (the PC does not admit them) | its three PC tiles, each tagged and filled |
+  | (ii) a `typed` policy on both PCs | the three captured tiles, filled, and the NLA line | the same, and the NLA line |
+  | (iii) as (i), plus `remote: "blocked"` on LW-OPEN-07 | no remote sign-in (the row reads "Remote sign-in off") | as (i) |
+
+- Trade-off: tiles teach account enumeration on every exposed screen and make typed-username puzzles easier; typed teaches the control but hides the lesson unless a scenario opts in. In the lab, Pierce's filled one-click tile on LW-OPEN-07 exists on main today and stays under (i) and (ii); only (iii) removes it, and that is a lab design change (her PC can no longer be reached over the network at all), whereas the lab's scope text points her password at the hot desk (`scenario.json.erb:187`). (i) changes the least: the same accounts reach the same PCs, minus two tiles LW-OPEN-07 would refuse anyway.
+- Recommendation: (a), matching the q92 pick and the keyboard screen; a hardened policy is one line. For the lab, (i): it removes only accounts the PC refuses and needs no lab design change; (iii) belongs to a lab pass if the one-click on LW-OPEN-07 is unwanted. Under any answer the lab's remote screens change look (tagged tiles, no heading, K0's lines).
+- Blocks: K0's merge (one constant and, under (ii) or (iii), one policy in the lab).
 - Evidence:
-  - shots (real, K0): Sam's PC over the network before and after the capture cards; HB-OPS-02 (typed, the NLA line); HB-IT-01 (tagged Ian, no duplicate); HB-DOOR-01 (headless line); the 2b0 remote screen of Sam's PC today, for comparison; the short-window badge at 915x412;
-  - lab shots: LW-OPEN-07, the hot desk and LW-DOOR01 over the drop box today, under (i) and under (ii);
-  - JSON: the `finance` and `nla` policy snippets; the lab's two-PC policy under (ii); a GET /login_accounts answer over a foothold under `tiles`, under `typed` and for a headless host;
+  - shots (real, K0): Sam's PC over the network before and after the capture cards; HB-OPS-02 (typed, the NLA line); HB-IT-01 (tagged Ian, no duplicate); HB-DOOR-01 (headless line); the main remote screen of Sam's PC today, for comparison; the short-window badge at 915x412;
+  - lab shots: LW-OPEN-07, the hot desk and LW-DOOR01 over the drop box with all three captures read, on main today and under (i), (ii) and (iii);
+  - JSON: the `finance` and `nla` policy snippets; the lab's policy under (ii) and under (iii); a GET /login_accounts answer over a foothold under `tiles`, under `typed` and for a headless host;
   - list: the two networks scenarios with sign-in hosts and the PCs on each whose remote screen changes under (a) and (b); the scenarios K0 leaves alone.
 
 ### D2. The phase 1 kinds
@@ -665,7 +725,7 @@ Mocks to build: (m1) the chosen line with each kind's tag and button; (m2) the g
 - Evidence:
   - JSON: the `sofia_remote` item (`lab_social_engineering/scenario.json.erb:170-200`); the four registry entries of `test_access_keyring` (9.1); the inline item shape that is not accepted, beside the registry form, with the reason;
   - tables: the kind catalogue (3.6) and the route table (3.7); K2's check list with and without the token rules;
-  - mocks: m1 (each kind's tag and button) and m4 (relay desktop).
+  - mocks: m1 (each sign-in kind's tag and button) and m4 (relay desktop).
 
 ### D3. Machine accounts
 
@@ -674,7 +734,7 @@ Mocks to build: (m1) the chosen line with each kind's tag and button; (m2) the g
 - Blocks: phase 3 only.
 - Evidence:
   - JSON: both shapes for one service account and one hash;
-  - list: the server readers that assume a session id is an NPC (`session_identity`, `session_for_client`, `host_row`, `login_session_answer`, `account_npcs`, the profile and share access checks), with line numbers.
+  - list: the server readers that assume a session id is an NPC (`session_identity`, `session_for_client` `game.rb:2400`, `host_row` `network_access.rb:911`, `login_session_answer`, `account_npcs` `game.rb:1896`, `resource_admits_player?` `network_access.rb:1218`, the profile checks), with line numbers.
 
 ### D4. A keyring view beyond the sign-in screens
 
@@ -687,7 +747,7 @@ Mocks to build: (m1) the chosen line with each kind's tag and button; (m2) the g
   - under (b): "New on your keyring: HB-FIN-02.rdp (saved connection for Lena Fox). Open the Keyring in your inventory.".
 - Evidence:
   - shots: `test_capture_log`'s log with a captured password (real);
-  - mocks: m1, m3, m7;
+  - mocks: m1, m3, m7, m8, m9;
   - text: the toasts above;
   - list: the scenarios that carry a capture log.
 
@@ -697,7 +757,7 @@ Mocks to build: (m1) the chosen line with each kind's tag and button; (m2) the g
 - Recommendation: (a) for both. The honest kind for a phished foothold is a token, the social lab is played on Hacktivity, and saved games keep their stored scenario data either way.
 - Blocks: nothing in phase 1.
 - Evidence:
-  - JSON: both items with line numbers; each item now and as a token credential, side by side;
+  - JSON: both items with line numbers (`lab_social_engineering/scenario.json.erb:170-200`, `lab_physical_pentest/scenario.json.erb:586`); each item now and as a token credential, side by side;
   - diagrams: their dungeon graph nodes today (real) and as credential nodes (Mermaid).
 
 ### D6. Signing in from a desktop (K4)
@@ -707,55 +767,42 @@ Mocks to build: (m1) the chosen line with each kind's tag and button; (m2) the g
 - Blocks: K4.
 - Evidence:
   - diagrams (Mermaid): the explainer's pivot sequence (Sam's desktop, the .rdp, Lena's PC, Switch user to Jake) beside the K3-only flow (find, plant, return); the `test_access_keyring` beats R1 to R4 and R10 as a graph with and without the `from` edge;
-  - table: the `from` row of the route table (3.7);
+  - table: the `from` row of the route table (3.7), with the relay-source exclusion;
   - mocks: m5 and m6.
 
 ### D7. The on-screen text
 
-- (a) approve section 8.5's table and 8.2's toasts as written; (b) take the alternative column where given; (c) reword named lines.
-- Recommendation: (a). The teaching lines name the control as well as the risk, and the assist line fits the in-person pretext of the test scenario.
-- Blocks: K3a (sign-in lines), K3b (toasts), K3c (relay lines); the K0 lines are part of D1. Placeholders until approved.
-- Evidence: the table with both columns; mocks m1, m2 and m4 carrying the lines in place; the K0 shots for the K0 lines.
+- (a) approve section 8.5's tables and 8.2's toasts as written; (b) take the alternative column where given; (c) reword named lines.
+- Recommendation: (a). Each teaching line names the control as well as the risk, the tags fit a tile whole, and the engine text is neutral about who the account holder is.
+- Blocks: K3a (tags and sign-in lines), K3b (toasts), K3c (relay lines); the K0 lines are part of D1. Placeholders until approved.
+- Evidence: the tables with both columns; mocks m1, m2, m4 and m9 carrying the lines in place; the K0 shots for the K0 lines and the "Captured" tag.
 
 ## 14. Defaults settled in this plan
 
 - The keyring appears only in scenarios that declare `credentials`; keyboard screens show password entries only, and captured tags appear at a keyboard only in such a scenario.
-- One look for a captured account on every remote screen: its tile with a "Captured" tag; tags by kind, at most two per tile.
+- One look for a captured account on every remote screen: its tile with a "Captured" tag; tags by kind, at most two per tile, each short enough to fit whole.
 - Under picker `accounts`, captured accounts the PC does not admit are not listed.
-- A headless host answers its remote screen with no tiles and the headless line, never the NLA line.
-- One phrasing per state, through the view's helpers; names and hosts are template fields.
-- Connecting kinds never sign in at the target's own keyboard.
+- A headless host answers its remote screen with no PC tiles and the headless line, never the NLA line; the client reads `headless` and the picker from the answer.
+- One phrasing per state on remote screens, the tray and the view; names and hosts are template fields; the engine text uses no pronoun for the account holder.
+- Connecting kinds never sign in at the target's own keyboard; a sign-in screen shows only the kinds its route allows.
 - `password` is always accepted, and the Password field is always on the chosen line; a list without `password` only warns.
 - Admission is not pre-judged; the sign-in teaches it.
-- A credential the policy refuses is shown greyed with its reason, so honest play meets the refusal.
+- A saved connection the policy refuses is shown greyed with its reason, so honest play meets the refusal.
 - Registry password entries never carry the value: the player reads the file, and the tag waits until the file is opened in this page.
 - A lockout refuses a saved connection (it presents the password), not an assist invite (the person's own session).
-- A relay session does not extend reach, is not in the network view, ends on reload, and is not displaced by its own account holder; the invite stays usable until the NPC ends it.
+- A relay session is a sink: no pivot, no shares, no `from` source, not in the network view, not offered at the holder's keyboard, not recorded in `signedInPcs`; it ends on reload and is not displaced by its own account holder; the invite stays usable until the NPC ends it.
 - Credential sessions keep UI slice 6's `locked` flag and its one lock and unlock predicate; no credential-based unlock in phase 1.
-- Credential items use an existing type with a tray slot (`text_file`), never a notes or always-allowed type, and `credential` is a server-only item field.
-- Connect signs in directly when accepted; the screen opens only for a refusal. The tray offers Connect only with no screen open.
+- Credential items use an existing type with a tray slot (`text_file`), never a notes or always-allowed type; `credential` is a server-only item field; a credential item may be placed anywhere the `held` scope covers, declared grants included.
+- Connect signs in directly when accepted; a saved connection's screen opens only for a policy or lockout refusal; Connect opens only from an uncovered tray and ignores clicks while running.
 - The inline item shape is not accepted.
 
-## Appendix A. Handover (2026-11-13, after review round 4 written)
+## Appendix A. Handover (2026-11-13, round 4 applied)
 
 For the next agent continuing the plan's review loop. Remove this appendix when the loop ends.
 
-- **Done.** Round 0 draft (8585b394b). Round 1: server B1 M2 m2 n2, UX B1 M11 m12 n5 (60159ca52). Round 2: server B0 M2 m4 n3, UX B2 M8 m12 n5; rewrite 71323e381. Round 3: server B1 M2 m3 n1 (d18976c43), UX B2 M8 m13 n3 (e0b6e123b); rewrite 66b998cf5, which also builds on UI slice 6's session `locked` flag (sections 2, 3.8, 8.3, 14). Round 4 reviews written: server B1 M1 m2 n2 (4c212e31c), UX B1 M10 m14 n3 (c808caa3b). The plan text above is the round 3 rewrite: no round 4 finding is applied yet.
-- **Next step.** Read both round 4 review files, check each finding in code, rewrite the plan as a standalone document with no references to reviews, commit. Then round 5 (fresh server reviewer on the opus48 agent type, fresh UX reviewer on opus55, same briefs as round 4). Round 5 is the last: fold in any remaining M and say so.
-- **Round 4 points to settle** (evidence in the review files):
-  - Server B1: a relay session must be a reach sink everywhere, not only in `reach_session_hosts`: also `resource_admits_player?` (`network_access.rb:1218, 1251`), `mapped_shares` (`:1265`) and the K4 `from` route (a `from` whose source is a relay session is refused). Test: POST /login `ops_rdp` with `from: jake_pc` during a relay is refused.
-  - Server M1: `held` item-definition scope must include declared-grant contents, or the validator must error on grant-only placement.
-  - Server minors: a relay sign-in adds the PC to grow-only `signedInPcs`, so a `session` proof keyed on it holds forever (exclude relay sign-ins, or forbid `session` proofs on relay targets); `unlock_session_refusal` (`game.rb:2727, 2752`) picks its text by foothold presence and needs the route; the schema `x-ref` the plan names has no mechanism (only `x-id-map`); `screen-states.js:83` is listed in both K2 and K3a.
-  - UX B1: K1's live proof cannot sign in at Lena's PC before K2 (no password source, and Finance's PIN is on her desktop); prove `session: lena_pc` by a model test or give the proof another route in K1.
-  - UX M1: K0's remote `/login_accounts` answer must carry `loginPicker` and `headless` (`remoteLockable` hard-codes `loginPicker: false`).
-  - UX M2: during a relay, clicking Jake's PC at its keyboard opens his desktop (`openLoginPc` `sessions.has`, the keyboard rule, `settle_session_at_keyboard!`); define and enforce "not offered there"; `screen-states.js:83` only sets the sprite look, so correct its description.
-  - UX M3: on a foothold screen of HB-FIN-03 the assist code must not get a Connect button (route not allowed for the kind); filter credential buttons by the screen's route.
-  - UX M4: NPC timers do not exist: timers are top-level, real time, no barks; `pc_desktop_opened` has no relay field; a reload restarts the timer. Redesign R7a's end (for example a top-level timer armed by a global set on relay sign-in, with the bark spoken through an existing NPC bark path before the end) and fix R8.
-  - UX M5: R4's "Jake's shares map" needs a declared resource in `test_access_keyring`, or drop the claim.
-  - UX M6: D1's lab argument is backwards: under (ii) LW-OPEN-07 still shows Pierce's captured tile filled (plus two more); under (i) only Pierce. Redo the trade-off and recommendation.
-  - UX M7 and M8: one phrasing per state is not met (`signInErrorMessage`, server `REMOTE_BLOCKED`, "This PC" in the refused line); Connect's no-route toast must not say "over this link", and the view's helper must not gain a second sentence.
-  - UX M9: Connect needs text for a failed GET /keyring, a failed POST /login and a second click while one is in flight.
-  - UX M10: kind tags do not fit a 104px tile in Press Start 2P (about 11 glyphs); shorter tags ("Saved", "In file", "Assist") or a smaller pixel font.
-  - UX minors (14) and nits (3): see the review file; the tray's "Close this screen first." state may be unreachable given the existing guard in `inventory-menu.js`.
+- **Done.** Round 0 draft (8585b394b). Round 1: server B1 M2 m2 n2, UX B1 M11 m12 n5. Round 2: server B0 M2 m4 n3, UX B2 M8 m12 n5. Round 3: server B1 M2 m3 n1, UX B2 M8 m13 n3. Round 4: server B1 M1 m2 n2 (4c212e31c), UX B1 M10 m14 n3 (c808caa3b). Main 1ce7486c7 merged into `plan/keyring`; round 4 applied in this rewrite.
+- **Round 4 re-check on the merged code.** Every finding held; none rejected. Evidence re-read: `network_access.rb:1115` (reach walk), `:1218-1256` (share admission through any up session, across links), `:1265-1285` (`mapped_shares` with no session test), `:1183-1194` (keyboard rule), `game.rb:2051` (`find_login_item` scope, no grants), `:2758-2782` (`unlock_session_refusal` by foothold), `:2914-2924` (`signedInPcs` for every `via`), `:2416-2430` (tiles carry no NPC id); `unlock-system.js:302-307` (`loginPicker: false` hard-coded), `:260` (`openLoginPc`); `password-minigame.js:358-363` (`signInErrorMessage` "This PC ..."); `network-links.js:66-68`, `network-view-minigame.js:59`; `screen-states.js:83` (sprite look only); `pc-sessions.js:49, 545` (no relay field); `README_scenario_design.md:298, 2753, 2755` (timers real time, reload restart, no toast from a mapping); `scenario-schema.json:785`; `inventory-menu.js:171-174`; `password-minigame.css:779, 1067`; lab `scenario.json.erb:78, 187, 1698, 1893-1950`; `test_access_networks/scenario.json.erb:295`; lab `PLAYTEST.md:1028, 1033`; no `x-ref` in the schema code.
+- **Choices made applying round 4.** Server M1: the `held` scope gains declared grants (not a validator ban). UX m3: no relay sign-in screen; invite refusals are toasts. UX m10: neutral engine text; a per-entry teaching override goes to the backlog. UX m12: a two-row cap with the row's own scroller. Known minor folded into K0: the 14px overflow of the Other user form with a refusal line at 1400x1000.
+- **Next step.** Round 5 with fresh reviewers (server and security; UX and game design), same briefs as round 4. Apply, and continue while B+M falls; stop at the first round with 0 B and 0 M from both. If a round is no better than the one before, stop and propose a scope cut (phase 1a: K0, K1, K2 and K3a; phase 1b: K3b, K3c, K4 with their own plan).
 - **Files touched:** `docs/achitechture/CREDENTIAL_KEYRING_PLAN.md` and the review files beside it. Branch `plan/keyring` in worktree `.claude/worktrees/p-keyring-plan`.
-- **Gotchas:** HB-DOOR-01 and LW-DOOR01 are headless; the capture log is carried only by `test_capture_log`; PUT /sync_state loads no `scenario_data`; bootstrap writers run only when `bootstrap_state_needs_write?`; `notes` items never take a tray slot; accounts must be room NPCs; commit with explicit paths, UK English, no em or en dashes, no model names in repo files.
+- **Gotchas:** HB-DOOR-01 and LW-DOOR01 are headless; the capture log is carried only by `test_capture_log`; PUT /sync_state loads no `scenario_data`; bootstrap writers run only when `bootstrap_state_needs_write?`; `notes` items never take a tray slot; accounts must be room NPCs; timers run in real time and restart on reload; commit with explicit paths, UK English, no em or en dashes, no model names in repo files.
