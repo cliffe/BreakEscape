@@ -228,6 +228,30 @@ const TRANSFER_LABELS = {
     cancel: 'Cancel'
 };
 
+/**
+ * A share's file names are as wide as their text and centred under the file by -50%, so an
+ * odd width puts the text on a half pixel (UX slice 2c R1 live check at x1). Round each
+ * name's width up to an even number of pixels once it is laid out, and again when the
+ * pixel font arrives.
+ */
+export function evenShareLabels(grid) {
+    if (!grid?.querySelectorAll) return;
+    const even = () => {
+        for (const label of grid.querySelectorAll('.container-content-label')) {
+            label.style.width = '';
+            const w = label.getBoundingClientRect?.().width || 0;
+            const z = Number(label.currentCSSZoom) > 0 ? Number(label.currentCSSZoom) : 1;
+            const local = w / z;
+            if (!(local > 0)) continue;
+            const target = Math.ceil(local - 1e-6) + (Math.ceil(local - 1e-6) % 2);
+            if (Math.abs(target - local) > 1e-6) label.style.width = `${target}px`;
+        }
+    };
+    even();
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(even);
+    if (typeof document !== 'undefined') document.fonts?.ready?.then?.(even);
+}
+
 export class ContainerMinigame extends MinigameScene {
     // The X sits inside the frame (MinigameScene.closeInsideFrame)
     static closeInsideFrame = true;
@@ -1058,6 +1082,7 @@ export class ContainerMinigame extends MinigameScene {
             slot.appendChild(label);
             contentsGrid.appendChild(slot);
         });
+        if (this.shareFolder) evenShareLabels(contentsGrid);
     }
     
     populateDesktopIcons() {

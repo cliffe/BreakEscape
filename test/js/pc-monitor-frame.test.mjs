@@ -361,6 +361,20 @@ test('the desktop\'s account bar shows the signed-in NPC\'s headshot', async () 
     }
 });
 
+test('R1 live check: a share\'s file names get an even width, so centring them lands on whole pixels', async () => {
+    const { evenShareLabels } = await imp('minigames/container/container-minigame.js');
+    const grid = document.createElement('div');
+    const widths = [37, 40, 41.3];
+    for (const w of widths) {
+        const label = document.createElement('div');
+        label.className = 'container-content-label';
+        label.getBoundingClientRect = () => ({ width: label.style.width ? parseFloat(label.style.width) : w });
+        grid.appendChild(label);
+    }
+    evenShareLabels(grid);
+    assert.deepEqual([...grid.children].map(l => l.style.width), ['38px', '', '42px']);
+});
+
 // ── R1: the note's height, the content scale, listeners, drag, the description ──
 
 function stubNoteHeight(px) {
