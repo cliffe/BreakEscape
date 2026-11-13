@@ -322,8 +322,10 @@ test('9.3a / UX 2b0: the remote screen has no tiles of its own, says how it is r
     assert.deepEqual(tiles.map(b => [b.querySelector('.signin-name').textContent, b.querySelector('.signin-username').textContent]),
         [['Finance (Lena)', 'lfox'], ['ishaw', 'ishaw']], 'with no NPC record, the capture\'s label names the tile');
     assert.ok(q('#signin-captured .signin-other'), 'an Other user tile for typing');
-    assert.ok(q('#signin-captured .signin-other').classList.contains('selected'), 'the typed form is the starting choice');
-    assert.ok(visible(q('#signin-username-row')), 'the Username field is there for typing');
+    assert.equal(mg.signInState.other, false, 'with captures, the tiles come first, as at the keyboard');
+    assert.equal(visible(q('#signin-form')), false, 'no form until an account is chosen');
+    assert.equal(messageText(), 'Choose an account.');
+    assert.ok(q('#signin-captured').compareDocumentPosition(q('#signin-form')) & 4, 'the tiles sit above the form');
     tiles[1].click();
     assert.equal(mg.signInState.selected, 'ishaw');
     assert.equal(visible(q('#signin-username-row')), false, 'a tile chooses the account: no Username field');
@@ -333,18 +335,19 @@ test('9.3a / UX 2b0: the remote screen has no tiles of its own, says how it is r
     tiles[0].click();
     assert.equal(mg.signInState.selected, 'lfox');
     assert.equal(q('#password-field').value, 'Ledger-Lena-9');
-    assert.ok(q('.signin-mode').classList.contains('signin-chosen'), 'a captured account folds the row in a short window');
+    assert.ok(q('.signin-mode').classList.contains('signin-chosen'), 'a chosen account folds the row in a short window');
     assert.deepEqual(mg.getTestState().signIn.captured.map(c => [c.username, c.fillsPassword]), [['lfox', true], ['ishaw', false]]);
     assert.deepEqual(mg.getTestState().signIn.tiles, [], 'the PC\'s own tiles stay empty in the test state');
     assert.equal(JSON.stringify(mg.getTestState()).includes('Ledger-Lena-9'), false, 'the test state carries no password');
     q('#signin-captured .signin-other').click();
     assert.equal(mg.signInState.other, true);
-    assert.ok(visible(q('#signin-username-row')), 'Other user brings the typed form back');
-    assert.equal(q('.signin-mode').classList.contains('signin-chosen'), false, 'typing keeps the captured tiles in view');
+    assert.ok(visible(q('#signin-username-row')), 'Other user shows the typed form');
+    assert.ok(q('#signin-captured .signin-other').classList.contains('selected'));
     tiles[0].click();
     q('#signin-change').click();
-    assert.equal(mg.signInState.other, true, 'Change goes back to the typed form and the tiles');
+    assert.equal(mg.signInState.other, false, 'Change goes back to the tiles');
     assert.equal(mg.signInState.selected, null);
+    assert.equal(visible(q('#signin-form')), false);
 });
 
 test('UX 2b0: a captured tile is named and pictured from the NPC record the client holds', async () => {
@@ -407,10 +410,22 @@ test('9.3a: the captured list fills in after the screen has opened (review R1 mi
     mg.setCapturedSignIns(capturedSignIns(CAPTURES, { lena: 'lfox' }, { lena: 'Ledger-Lena-9' }));
     const tiles = [...document.querySelectorAll('.signin-captured-tile')];
     assert.deepEqual(tiles.map(b => b.querySelector('.signin-username').textContent), ['lfox']);
-    assert.ok(q('#signin-captured .signin-other').classList.contains('selected'), 'the late tiles show the typed form still chosen');
+    assert.equal(mg.signInState.other, false, 'late tiles with nothing typed: the tiles come first');
+    assert.equal(visible(q('#signin-form')), false);
     tiles[0].click();
     assert.equal(q('#password-field').value, 'Ledger-Lena-9');
     assert.equal(mg.getTestState().signIn.capturedLoading, false);
+});
+
+test('UX 2b0: a player already typing when the captures arrive keeps the typed form', () => {
+    const mg = openRemote([]);
+    assert.equal(mg.signInState.other, true, 'no captures yet: the typed form');
+    q('#signin-username').value = 'lf';
+    mg.setCapturedSignIns(capturedSignIns(CAPTURES, { lena: 'lfox' }, {}));
+    assert.equal(mg.signInState.other, true);
+    assert.ok(visible(q('#signin-username-row')));
+    assert.equal(q('#signin-username').value, 'lf');
+    assert.ok(q('#signin-captured .signin-other').classList.contains('selected'));
 });
 
 test('9.3a: a remote sign-in sends the foothold through pc-sessions', async () => {

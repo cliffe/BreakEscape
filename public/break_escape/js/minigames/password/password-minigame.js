@@ -425,7 +425,9 @@ export class PasswordMinigame extends MinigameScene {
                 tiles,
                 // null: no account chosen yet; '' with other: true: typing a username
                 selected: null,
-                other: picker === false,
+                // A remote screen with captures starts on its tiles as the keyboard does; with
+                // none (or while they load) on the typed form (UX slice 2b0)
+                other: picker === false && !(this.signIn.remote && Array.isArray(this.signIn.captured) && this.signIn.captured.length > 0),
                 message: ''
             };
         }
@@ -1433,7 +1435,7 @@ export class PasswordMinigame extends MinigameScene {
                         <div class="signin-title">${escapeHtml(displayDashes(s.pcName))}</div>
                         ${remoteLine}
                         ${current}
-                        ${tiles}
+                        ${tiles}${capturedHtml}
                         <div class="signin-form" id="signin-form">
                             <div class="signin-selected-row">${inMonitor ? `
                                 <span class="signin-selected-headshot" aria-hidden="true" hidden></span>` : ''}
@@ -1456,7 +1458,7 @@ export class PasswordMinigame extends MinigameScene {
                             <div class="hint-controls">
                                 <button type="button" class="submit-btn${inMonitor ? ' pc-os-btn' : ''}" id="submit-password">Sign in</button>
                             </div>
-                        </div>${capturedHtml}
+                        </div>
                         <div class="signin-message" id="signin-message" aria-live="polite"></div>
                     </div>
                 </div>
@@ -1543,8 +1545,8 @@ export class PasswordMinigame extends MinigameScene {
         const remote = !!this.signIn?.remote;
         if (!remote && this.signIn?.picker === false) return;
         st.selected = null;
-        // A remote screen goes back to its typed form, the captured tiles in view again
-        st.other = remote;
+        // A remote screen goes back to its captured tiles, or to the typed form with none
+        st.other = remote && !this.signInTilesOffered();
         this.passwordField.value = '';
         this.gameData.password = '';
         this.setSignInMessage('');
@@ -1596,10 +1598,7 @@ export class PasswordMinigame extends MinigameScene {
         // Submit, the message line and the post-it fit together (UX slice 2a R3 m4); the
         // chosen account's line holds a Change button back to the tiles.
         const area = this.gameContainer.querySelector('.signin-mode');
-        // A remote screen starts on the typed form (Other user), so only a captured account
-        // folds its tiles away
-        area?.classList.toggle('signin-chosen', this.signIn.remote ? st.selected !== null && !st.other
-            : chosen && this.signIn.picker !== false);
+        area?.classList.toggle('signin-chosen', chosen && this.signInTilesOffered());
         const selectedEl = this.gameContainer.querySelector('#signin-selected');
         const tile = st.other ? null : this.signInTileFor(st.selected);
         if (selectedEl) {
@@ -1703,6 +1702,11 @@ export class PasswordMinigame extends MinigameScene {
         if (!block) return false;
         block.innerHTML = this.capturedListHtml();
         this.bindCapturedSignIns();
+        // Captures to choose from and nothing typed yet: the screen shows its tiles, as at
+        // the keyboard; a player already typing keeps the form
+        const st = this.signInState;
+        const typed = !!(this.usernameField?.value || this.passwordField?.value);
+        if (this.signIn.captured.length > 0 && st.selected === null && !typed) st.other = false;
         this.renderSignInForm();
         return true;
     }
