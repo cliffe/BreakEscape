@@ -2240,3 +2240,172 @@ Two coverage/wording nits from `SCENARIO_FORMAT_HARDENING_STEP8B_REVIEW_R1.md`, 
   51 runs, 594 assertions, 0 failures. (`engine.rb` is the only other requirer of `format_upgrade.rb`;
   the deployed-noop test exercises its load path.)
 - JS: `validator-retired-keys.test.mjs` 24/24 (was 22; two new 8b owner-warning cases).
+
+## Step 8c build plan (re-anchored 2026-11-13, anchor a693650b9)
+
+Step 8c (habits in one block, format 3) is re-anchored in the plan against `a693650b9` (the finished
+8b branch tip; formats 0 to 2 live, `FormatUpgrade.current` 2); see
+`SCENARIO_FORMAT_HARDENING_STEP8C_REANCHOR.md` (verdict: mechanical). Built on branch `build/hard-8c`
+from a main that holds steps 2, 2b, 7, 8a and 8b. Seven chunks, each a fresh agent under about 150k
+tokens; each commits its own files with explicit paths. The 8c test surface is larger than 8b's (26
+test files name the three keys, plus the USB subsystem), so the test ownership below is exhaustive and
+the integrator does not re-run the full suites until chunk 7.
+
+Standing rules for every chunk: no `db:` task on the shared DB; the validator runs with
+`LANG=C.UTF-8 /usr/bin/ruby3.2 scripts/validate_scenario.rb <file> --no-graph`; a new static JS import
+goes on each test-harness copy list; count every `❌` line as a failure. **Do not edit**
+`test/fixtures/format_8a/*` or `test/fixtures/format_8b/*`: they are frozen historical renders that
+still carry habit keys and would break the 8a/8b corpus tests if touched.
+
+The three keys fold as: `screenHabit` -> `habits.screen`, `printHabit` -> `habits.print`,
+`usbHabit` -> `habits.usb`, each keeping its own keys and staying a closed block with `^_` allowed.
+
+### Chunk 1 — schema, transform, validate_scenario.rb, format upgrade (first; others build on it)
+
+- **Scope.** `scripts/scenario-schema.json`: add `screen`, `print`, `usb` sub-objects inside the closed
+  `habits` block (4275-4290), each carrying the keys and descriptions moved from the top-level
+  `screenHabit`/`printHabit`/`usbHabit` definitions (:4781-:4783), then remove those three top-level
+  keys, all in one commit. `lib/break_escape/format_upgrade.rb`: `STEP_8C` (version 3,
+  `habits_in_one_block`), `current` now 3; the `scenario` transform moves each top-level habit key into
+  `habits.<screen|print|usb>` (creating `habits` if absent), idempotent, skips notes and free data,
+  no-op on format-3 data. NPC records are not stored in player_state, so the `player_state` transform
+  is a no-op (confirm by grep and assert it). `retired`: NPC `screenHabit`, `printHabit`, `usbHabit`.
+  `scripts/validate_scenario.rb`: `known_npc_fields` (:807-:822) loses `screenHabit printHabit usbHabit`;
+  the `screen_habits` map (:1297-:1302) reads `habits.screen`; the ship note at :7092; the retired-key
+  dedup so a reintroduced top-level key prints only the one rename line (as 8a/8b do).
+- **Files.** `scripts/scenario-schema.json`, `lib/break_escape/format_upgrade.rb`,
+  `scripts/validate_scenario.rb`, `test/unit/format_upgrade_test.rb`,
+  `test/js/validator-retired-keys.test.mjs`.
+- **Tests.** `format_upgrade_test.rb` (the 8c transform on raw data and on prepared data with an
+  authored and with a loader-filled habit; player_state no-op; idempotence; no-op on format-3);
+  `validator-retired-keys.test.mjs` (each of the three retired keys one rename line; `habits.screen`/
+  `.print`/`.usb` print no unknown-field warning). Also add a `format_8c_deployed_noop_test.rb`
+  asserting the four deployed scenarios (m01_first_contact, sis01_healthcare, sis02_energy,
+  lab_social_engineering) upgrade to format 3 with no habit change, since none authors the keys and
+  none has `awareness`/`habits.locksScreen`.
+- **Done when.** Those test files pass alone; `FormatUpgrade.current` is 3; the three authored-habit
+  scenarios still await the rewrite (chunk 5) so they do not validate clean yet.
+
+### Chunk 2 — Ruby runtime readers and the ship filter
+
+- **Scope.** Move every Ruby runtime habit reader to the folded paths, reading only the new names:
+  `NpcHabits.fill_screen_habit!` (npc_habits.rb:179) and `expand!` (:116/:146) write/read
+  `habits.screen`; `AccessIdentities` screen read (access_identities.rb:186/:196); `OwnerClaim`
+  (`printHabit` owner_claim.rb:157/:254/:260, `screenHabit` :226/:235); `AccessWork.usb_habit`
+  (access_work.rb:1211) and the `work.usb` build (:1165-:1170); `NpcFrustration` (its `AccessWork.usb_habit`
+  call at :439 follows for free; update the comment at :276); `Game` the filter
+  (`WITHHELD_NPC_KEYS`/`WITHHELD_WORK_NPC_KEYS` game.rb:5620/:5624, applied :5656-:5657) becomes an
+  allow list that keeps `habits.screen` and `habits.print` and deletes the rest of `habits`
+  (`locksScreen`, `writesDown`, `password`, `passwordPattern`, `holdsDoors`, `usb`, and any later key);
+  `work.usb` stays built from `habits.usb`; the `screenHabit` precedence note beside `pc_always_locks?`
+  (:2094-:2096) and the `habits`-block reads `npc_habit`/`written_down?` (:2101-:2113).
+- **Files.** `lib/break_escape/npc_habits.rb`, `access_identities.rb`, `owner_claim.rb`, `access_work.rb`;
+  `app/models/break_escape/npc_frustration.rb`, `game.rb`; `test/support/access_model_scenario.rb`;
+  the Rails/unit tests: `npc_habits_test.rb`, `npc_habits_loader_test.rb`,
+  `access_identities_screen_test.rb`, `pc_screen_lock_precedence_test.rb`, `owner_claim_test.rb`,
+  `owner_claim_enforce_test.rb`, `npc_frustration_test.rb`, `npc_lockout_l_test.rb`,
+  `npc_workaround_h_test.rb`, `access_model_withholding_test.rb`, `access_leak_scanner_test.rb`,
+  `lab_physical_pentest_secrets_test.rb`, `usb_habit_test.rb`, `access_work_usb_habit_test.rb`.
+- **Tests.** Each touched Rails/unit file alone (RBENV_VERSION=2.7.8): the readers read `habits.screen`/
+  `.print`/`.usb` only; the loader fills `habits.screen` with the same values and report entries as
+  before; the Rails what-ships test shows a room NPC carrying every `habits` key arriving in the
+  bootstrap and room payload with `habits` holding exactly `screen` and `print` (`writesDown`,
+  `password`, `holdsDoors` never ship), and `work.usb` still built for a USB habit.
+- **Done when.** Every touched Ruby file passes alone; no runtime reader reads a retired name (grep of
+  app/lib leaves only comments, the schema and the retired list).
+
+### Chunk 3 — JS readers and node reader tests
+
+- **Scope.** `public/break_escape/js/systems/workstation-state.js` reads `npc.habits.screen` (:124);
+  `npc-needs.js` reads `rec.habits.print` (:973/:3351) and keeps reading `work.usb` (:508/:3413/:3439,
+  unchanged, since usb ships in the work plan). Grep the rest of the engine for any other
+  `screenHabit`/`printHabit` read (none expected).
+- **Files.** `workstation-state.js`, `npc-needs.js`; the node tests `workstation-state.test.mjs`,
+  `npc-office-visuals.test.mjs`, `npc-print-forget.test.mjs`, `npc-printer-power.test.mjs`; each
+  harness copy list if a new import appears.
+- **Tests.** Each touched node file alone (`bin/test-js` runs plain node): `decideLocked` reads the
+  owner's `habits.screen`; the print errand reads `habits.print`; the office visuals and printer-power
+  cases pass on the folded fixtures.
+- **Done when.** Every touched node file passes alone; no JS reader reads a retired name.
+
+### Chunk 4 — the Ruby validators, verify-run, the leak scanner, and their node tests
+
+- **Scope.** Move the validator derivers to the folded paths: `validate_npc_habits.rb`
+  (:158/:333/:354/:521/:527, including the effective-rule printout source labels), `validate_npc_needs.rb`
+  (screen :497/:526-:529/:566, print :335/:394-:418), `validate_access_work.rb` (the careful-guest
+  screen warning :1164-:1169, usb :357/:508/:577-:615/:680-:699/:750). `tools/playtest/verify-run.rb`
+  (:165-:166 reads `habits.screen`). `tools/playtest/lib/access_leak_scanner.rb` (the withheld-key set
+  :147/:320). Keep all `validate_scenario.rb` edits in chunk 1; this chunk does not touch it.
+- **Files.** The five files above; the node tests `validator-npc-habits.test.mjs`,
+  `validator-access-work.test.mjs`, `validator-usb-habit.test.mjs`, `validator-strict-keys.test.mjs`,
+  `validator-access-model.test.mjs`, `playtest-verify-run-access.test.mjs`.
+- **Tests.** Each touched node file alone: each retired key one error; the effective-rule printout for
+  a PC with its own field, an owner with an authored `habits.screen`, an owner with a preset, and a hot
+  desk guest; `verify-run --access` prints the per-PC lines on the folded fixtures.
+- **Done when.** Every touched node file passes alone; no validator or tool reads a retired name.
+
+### Chunk 5 — template rewrite, README, corpus equivalence, reader parity
+
+- **Scope.** `tools/format/rewrite_templates.rb --step 3` rewrites the three templates that author a
+  habit key: test_access_social (5 `screenHabit`, 1 `usbHabit`), test_access_work (3 `screenHabit`),
+  test_needs_sims (2 `screenHabit`, 1 `printHabit`). test_access_habits and lab_physical_pentest author
+  none (lab_physical_pentest's two `screenHabit` mentions are `<%# %>` comments; update their wording by
+  hand), so they get no key move but are re-validated. Update `README_scenario_design.md`: the habit
+  teaching (the closed-blocks list at :56 and the sections at :1077, :1150, :1177, :1187) moves to
+  `habits.screen`/`.print`/`.usb`; in the same commit clear the `downIf`->`offWhen` wording step 8a
+  left in that file (:931, :945, :964, :966, :990, :992, :1090, :1100, :1104, :1191, :1193, :1195).
+  Freeze both sides as fixtures (`test/fixtures/format_8c/<scenario>.old.json` [format-2 render, still
+  `screenHabit`] and `.new.json` [folded], captured with `srand(1)` and SecureRandom stubbed), never
+  read through `git merge-base`; add an edit-proof live guard that renders the live templates and
+  asserts no retired habit key has returned.
+- **Files.** The three `scenarios/*/scenario.json.erb` plus lab_physical_pentest's comment wording;
+  `README_scenario_design.md`; `tools/format/rewrite_templates.rb` (if the 8c case needs support);
+  `test/fixtures/format_8c/*`; `test/unit/format_8c_corpus_test.rb`;
+  `test/js/format-8c-reader-parity.test.mjs`.
+- **Tests.** Corpus equivalence: the 8c transform on each old render equals the new render (parsed
+  JSON, key order ignored); `prepare_scenario_data!` agrees across the fold (the loader finds
+  `habits.screen` present and fills nothing, matching the old filled `screenHabit` field for field);
+  `retired_keys_in` finds nothing in any new render. Reader parity: for every workstation and every NPC
+  that can borrow one, the effective lock rule is the same under the old reader on the old render and
+  the new reader on the new render; the five fixtures (priya_pc test_access_habits, omar_pc
+  test_access_social, rosa_pc/ian_pc/jake_pc test_access_work) are named. Prove both tests bite
+  (prefix a renamed value -> red).
+- **Done when.** All five authored/awareness scenarios validate with 0 errors (`--no-graph`); the
+  corpus and parity tests pass and bite; moved keys per scenario are logged with counts matching the
+  re-anchor.
+
+### Chunk 6 — live proofs (including the old-game proof)
+
+- **Scope.** Two keyless servers sharing the dev DB, `setFPS(20)` with fixed steps on, headless, on the
+  builder's assigned ports (not :3000/:3001/:3002). Branch server on one port; base server on a
+  hand-made base worktree at `git merge-base main build/hard-8c`. Prove, per plan step 8c Live proof:
+  test_access_work the hot desk beats H1 to H3 (the guest's `habits.screen` decides) and Rosa's own PC
+  locking when she leaves; test_needs_sims a print fetched; test_access_social the USB refusal; and the
+  stored-game proof — a real old game on test_access_habits made on the base (section 2 one-off runner,
+  or `swap-scenario-game.rb` if the brief directs, recording which), whose game holds a `screenHabit`
+  the old loader filled from awareness, loaded on the branch, upgrading to format 3 on first load (old
+  top-level keys gone, the value now at `habits.screen`, read with `bin/rails runner`), then the beat
+  that habit drives (priya_pc locking when she leaves), an old tab's sync refused with 409 and the
+  header, `verify-run.rb` showing progress. Keep both dumps (before and after the load). Stop both
+  servers by PID.
+- **Files.** Drivers and the read-only row reader in the session scratchpad only; nothing added to the
+  repo except this log's proof section.
+- **Done when.** Each beat passes; the stored game shows format 3 with `habits.screen`; the old-tab
+  refusal shows 409 + header; both servers confirmed down.
+
+### Chunk 7 — full suites under the shared lock, test-only fallout, before review
+
+- **Scope.** Run the full Rails and JS suites once on the branch tip under the shared lock
+  (`flock /tmp/claude-1000/.../tests.lock bin/rails test` and the same for `bin/test-js -j 3`). Fix
+  only test-only fallout: any remaining test file with an inline habit fixture or assertion still on a
+  retired name that the owning chunk missed (the 8b lesson: the full suites found ten such late). For
+  each failure, confirm the production reader already reads the folded path (quote the reader line) and
+  that only the fixture was stale; never weaken a reader to make a test pass. Known timing flakes
+  (fingerprint-generator, client-purchase, password-signin-mode) count green only if they pass rerun
+  alone. Truncate `test/dummy/log/test.log` if it grows large.
+- **Files.** Whatever test/support/fixture files the run reveals; log the grep sweep of the whole tree
+  for `screenHabit`/`printHabit`/`usbHabit` showing every remaining hit is legitimate (comments, the
+  schema, the retired list, the frozen `format_8a`/`format_8b`/`format_8c` fixtures, the upgrade
+  transform).
+- **Done when.** Both full suites green on one tip (flakes reruns aside); the grep sweep is clean; the
+  branch is ready for code review.
