@@ -77,3 +77,29 @@ test('an unknown key inside desktopUser is reported once, by the schema', { skip
     const errs = JSON.parse(r.stdout.trim().split('\n').pop()).filter((e) => /desktopUser/.test(e) && /rank/.test(e));
     assert.equal(errs.length, 1, errs.join('\n'));
 });
+
+test('desktopUser on an NPC itemsHeld object is checked', { skip }, () => {
+    const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
+      puts JSON.generate(check_desktop_users(JSON.parse(STDIN.read)))`;
+    const scen = {
+        rooms: { office: { objects: [], npcs: [{ id: 'npc_a', itemsHeld: [pc({ desktopUser: 'Sam Lee' })] }] } },
+        npcs: [{ id: 'npc_b', itemsHeld: [pc({ desktopUser: { name: '' } })] }]
+    };
+    const r = spawnSync('ruby', ['-e', script], { input: JSON.stringify(scen), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' } });
+    assert.equal(r.status, 0, r.stderr);
+    const out = JSON.parse(r.stdout.trim().split('\n').pop());
+    assert.equal(out.length, 2);
+    assert.match(out[0], /npc_a.*itemsHeld\[0\].*must be an object/);
+    assert.match(out[1], /npc_b.*itemsHeld\[0\].*'name'/);
+});
+
+test('desktopUser on a lockType login PC warns once', { skip }, () => {
+    const login = check([pc({ lockType: 'login', desktopUser: { name: 'Sam Lee' } })]);
+    assert.equal(login.length, 1);
+    assert.match(login[0], /^⚠️ WARNING: .*sign-in PC/);
+    assert.deepEqual(check([pc({ lockType: 'login' })]), []);
+});
+
+test('an rfid-locked PC with an access list and a desktopUser gets no sign-in warning', { skip }, () => {
+    assert.deepEqual(check([pc({ lockType: 'rfid', access: { roles: ['staff'] }, desktopUser: { name: 'Sam Lee' } })]), []);
+});
