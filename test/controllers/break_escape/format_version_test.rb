@@ -49,9 +49,20 @@ module BreakEscape
 
     # --- stamping at creation ---
 
-    test 'creation stamps current (0 in step 7)' do
+    # At current 0 the subsystem is inert, so creation writes no formatVersion: version_of reads a
+    # missing key as 0, so stamping 0 would only mutate otherwise-untouched hand-set scenario_data
+    # (access_model_loader_test and npc_habits_loader_test pin that hand-set data is left byte for
+    # byte). The game still ships version 0.
+    test 'creation at current 0 writes no formatVersion and the version reads as 0' do
       game = make_game
-      assert_equal 0, game.scenario_data['formatVersion']
+      assert_nil game.scenario_data['formatVersion'], 'nothing stamped at current 0'
+      assert_equal 0, FU.version_of(game.scenario_data)
+    end
+
+    test 'creation stamps current once current is non-zero' do
+      game = nil
+      FU.stub(:steps, noop_steps) { game = make_game }
+      assert_equal 1, game.scenario_data['formatVersion'], 'stamped to current at creation'
     end
 
     test 'supplied data with formatVersion 0 keeps 0' do
@@ -131,35 +142,54 @@ module BreakEscape
 
     # --- sync_state refusal ---
 
-    test 'sync_state refuses a too-new game with 409 and writes nothing' do
+    # Under a non-zero current (a format step has landed): a too-new game is refused on sync. At
+    # current 0 the sync check is inert and reads no scenario_data (see the inert test below), so this
+    # runs under the fixture step list (current 1).
+    test 'sync_state refuses a too-new game with 409 and writes nothing when current is non-zero' do
       game = make_game
       game.update_column(:scenario_data, scenario('formatVersion' => 5))
       state_before = game.reload.player_state
       updated_before = game.updated_at
 
-      put sync_state_game_url(game), params: { globalVariables: { 'g' => 1 }, clientTs: 1 }, as: :json
+      FU.stub(:steps, noop_steps) do
+        put sync_state_game_url(game), params: { globalVariables: { 'g' => 1 }, clientTs: 1 }, as: :json
+      end
       assert_response :conflict
       assert_equal 'format', response.parsed_body['error']
-      assert_equal '0', response.headers[HEADER]
+      assert_equal '1', response.headers[HEADER]
 
       game.reload
       assert_equal state_before, game.player_state
       assert_equal updated_before.to_i, game.updated_at.to_i
     end
 
+    # At current 0 the sync format check is inert: it returns at once and reads no scenario_data (the
+    # sync-deltas rule, pinned by capture_proofs_test's query counter). A hand-crafted too-new game
+    # can only reach a sync by skipping the load, since set_game refuses it at load time; so syncing
+    # one at current 0 is accepted rather than refused, by design.
+    test 'sync_state does not refuse a too-new game at current 0 (the check is inert)' do
+      game = make_game
+      game.update_column(:scenario_data, scenario('formatVersion' => 5))
+      put sync_state_game_url(game), params: { globalVariables: { 'g' => 1 }, clientTs: 1 }, as: :json
+      assert_response :success
+    end
+
     test 'sync_state refuses a game whose formatVersion is a JSON string scalar, as set_game does' do
       game = make_game
       # A stored JSON string scalar "1": set_game refuses it as unreadable (see the GET scenario test
       # above). sync_format_refusal must agree, reading the value the same way regardless of adapter.
+      # Run under a non-zero current, since the sync check is inert at current 0.
       game.update_column(:scenario_data, scenario('formatVersion' => '1'))
       state_before = game.reload.player_state
       updated_before = game.updated_at
 
-      put sync_state_game_url(game), params: { globalVariables: { 'g' => 1 }, clientTs: 1 }, as: :json
+      FU.stub(:steps, noop_steps) do
+        put sync_state_game_url(game), params: { globalVariables: { 'g' => 1 }, clientTs: 1 }, as: :json
+      end
       assert_response :conflict
       assert_equal 'format', response.parsed_body['error']
       assert_match(/cannot be read/, response.parsed_body['message'])
-      assert_equal '0', response.headers[HEADER]
+      assert_equal '1', response.headers[HEADER]
 
       game.reload
       assert_equal state_before, game.player_state

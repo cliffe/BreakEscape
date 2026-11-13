@@ -987,6 +987,23 @@ Also corrected the phase-3 handover's open-tab wording: the reloaded page is its
 full HTML refusal page, not a `#loading` message. Node lints green (5 + 9); the Rails format tests run
 below.
 
+**Merge batch 17 fixes (build/harden-7, 2026-11-13, after merging main de63f5900).** Three meeting
+tests outside this builder's own runs failed against step 7. Resolution: make the format subsystem
+inert at current 0 (production during step 7), the principled dual of not stamping an inert 0.
+(1, 2) `before_create :stamp_format_version` now writes nothing while current is 0, so a game created
+with hand-set `scenario_data` is left byte for byte (fixes `access_model_loader_test` and
+`npc_habits_loader_test`; `version_of` already reads a missing key as 0). (3) `sync_format_refusal`
+returns at once when current is 0, reading no `scenario_data`, so a plain sync stays off the column
+(the sync-deltas rule pinned by `capture_proofs_test`'s query counter and `reload_persistence_test`);
+a hand-crafted too-new or unreadable game is already refused at load by `set_game`, so its client never
+reaches a sync. Once a format step lands (current > 0) the sync check runs its one jsonb-scalar pluck
+and refuses as before. Updated this builder's own step-7 tests to match: creation-stamping and the two
+sync-refusal cases now run under the fixture step list (current 1), plus a new inert-at-0 sync test and
+a current-0 creation test; `reload_persistence_test`'s save-query count drops from 2 to 1 at current 0.
+NOTE for the orchestrator: once real format steps exist, the sync gate will again add one cheap
+jsonb-scalar pluck per sync (one scalar, never the materialised blob); there is no dedicated column and
+a migration was out of scope, so flag if a format-version column is wanted before step 8 lands a step.
+
 - **Done:** (1) schema resolver and notes helper + unit tests (732f41433); (2) **phase A** (afe5b6ca3): schema marks, eager enumerator, schema-walk test; (3) **phase A continued:** validator migration, `_`-skip audit, action-in-a-note warning, README line; (4) **phase B1:** every granting/deriving walker skips notes and visits free data, `CaptureModel.each_capture_writer`'s `notes:` keyword, schema-walk parts 3 and 6, the corpus before/after proof (identical), and the implant/plant Rails route tests with a revert proof (see "Phase B1"); (5) **phase B2, this session:** `strip_notes!` at every client payload builder, the route audit, the boot initializer, the Rails note/capture/boot tests (each with a revert proof), the part-6 ruling recorded, README item 8, and the live proof on port 3270. See "Phase B2" above. **Step 2b is complete.**
 - **In progress:** none.
 - **Open:** none for step 2b. The orchestrator still runs the full Rails and `MERGE_BATCH=1 bin/test-js -j 3` suites and the validator over every touched scenario at the merge batch (the congestion rule kept this builder to targeted files).

@@ -2019,15 +2019,26 @@ module BreakEscape
     # sync from the new page stale until it passed the old value.
     SYNC_STALE_RESET_MS = 10.minutes.in_milliseconds
 
-    # Step 7. Pluck the stored formatVersion under the sync row lock and judge it. Returns a
-    # FormatUpgrade::TooNew (stored above current) or Unreadable (a bad value) to refuse the sync, or
-    # nil to proceed. The narrow sync load has no scenario_data, so the value is read with
-    # jsonb_typeof plus ->> rather than the whole column. This rebuilds the Ruby value exactly as
+    # Step 7. Judge the stored formatVersion under the sync row lock. Returns a FormatUpgrade::TooNew
+    # (stored above current) or Unreadable (a bad value) to refuse the sync, or nil to proceed.
+    #
+    # At current 0 (step 7) the subsystem is inert and this returns at once, reading no scenario_data:
+    # with no format steps, a real game's stored version is only ever 0 (nothing is stamped), so none
+    # can be too-new, and a hand-crafted too-new or unreadable game is already refused at load time by
+    # set_game (ensure_current_format!), so its client never reaches a sync. This also keeps a plain
+    # sync off scenario_data entirely (the sync-deltas rule: the narrow sync load carries no
+    # scenario_data), which capture_proofs_test's query counter pins.
+    #
+    # Once current is non-zero the value is read with jsonb_typeof plus ->> rather than the whole
+    # column (one scalar, not the materialised scenario_data). This rebuilds the Ruby value exactly as
     # set_game sees it once the adapter decodes the full jsonb column, no matter how a given adapter
     # maps a bare jsonb expression. A JSON string scalar (for example "1") stays a Ruby String here,
     # so version_of refuses it as Unreadable on this path just as set_game does; a JSON integer
     # becomes an Integer, a fractional number a Float (Unreadable), JSON null or a missing key is 0.
     def sync_format_refusal
+      current = BreakEscape::FormatUpgrade.current
+      return nil if current.zero?
+
       type, text = Game.where(id: @game.id).pick(
         Arel.sql("jsonb_typeof(scenario_data -> 'formatVersion')"),
         Arel.sql("scenario_data ->> 'formatVersion'")
@@ -2042,7 +2053,6 @@ module BreakEscape
         else type # object / array: a non-Integer, so version_of raises Unreadable
         end
       stored = BreakEscape::FormatUpgrade.version_of({ 'formatVersion' => value })
-      current = BreakEscape::FormatUpgrade.current
       return BreakEscape::FormatUpgrade::TooNew.new(stored, current) if stored > current
 
       nil

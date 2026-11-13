@@ -1209,11 +1209,17 @@ module BreakEscape
     # Step 7. Stamp the current format number onto data that carries none, at creation. A caller
     # that supplied scenario_data with formatVersion: 0 (an upgrader test wanting an old game)
     # keeps 0, because 0 is truthy in Ruby. Generated data (no formatVersion) is stamped with
-    # current, which is 0 in step 7 and only non-zero once a rename step lands.
+    # current, but only once current is non-zero (a rename step has landed). At current 0 (step 7)
+    # the whole subsystem is inert: version_of reads a missing key as 0, so stamping 0 would only
+    # mutate otherwise-untouched hand-set scenario_data for no behavioural gain. So nothing is
+    # written at current 0 and a game created without a formatVersion keeps its data byte for byte.
     def stamp_format_version
       return unless scenario_data.is_a?(Hash)
 
-      scenario_data['formatVersion'] ||= BreakEscape::FormatUpgrade.current
+      cur = BreakEscape::FormatUpgrade.current
+      return if cur.zero?
+
+      scenario_data['formatVersion'] ||= cur
     end
 
     # Step 7. Bring a stored game up to the current format at load time, under the row lock. Called
