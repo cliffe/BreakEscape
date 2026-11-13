@@ -17,11 +17,14 @@
  *   - A bark bubble also needs the NPC's head on camera (cameras.main.worldView, inset by
  *     CAMERA_MARGIN): a bark from an NPC off screen is a toast, and a bark bubble whose NPC
  *     leaves the camera hands the rest of its line to the toast (slice 5 R1 M1).
- *   - Bubbles never cover each other or the player's head: each is placed in turn (barks first,
- *     nearest first) centred, then slid left or right of its NPC (the tail stays over the head),
- *     then lifted above what it would cover, with a 2 px stem down to the head (R1 n4). A bubble
- *     stays inside the camera's view: over an NPC at the top of the view it sits beside the head,
- *     with no tail (R1 M1, the clipped top).
+ *   - Bubbles never cover each other or the HUD panels (Objectives, inventory tray, buttons:
+ *     R2 m2), and keep off the player's head and other speakers' heads where they can: each is
+ *     placed in turn (barks first, nearest first) centred, then slid left or right of its NPC (the
+ *     tail stays over the head), then lifted by at most MAX_LIFT with a 2 px stem down to the head
+ *     (R1 n4, R2 n3), then beside the head with a short stepped pointer at head height, so the
+ *     speaker stays clear (R2 m1). A bubble stays inside the camera's view (R1 M1). A bark with no
+ *     such place goes to the toast from the page on screen.
+ *   - Placed in the camera's preRender, once this frame's view is known (R2 n2).
  *   - A bark whose stillValid() stops holding closes, with no remainder (R1 n5).
  *   - Hidden while any minigame is open (a person-chat, a PC, a lock).
  *   - One bubble per NPC (a bark wins over that NPC's chatter), at most MAX_BUBBLES on screen:
@@ -66,6 +69,11 @@ const HEAD_HALF_W = 10;             // px: the player's head box, either side of
 const HEAD_H = 22;                  // px: the player's head box, down from the anchor
 const TAIL_HALF = 6;                // px: tail half width plus border; the body must cover it
 const TAIL = 4;           // px: the stepped pointer under the bubble, towards the head
+const HUD_EVERY_MS = 200;          // how often the HUD panels' screen rects are read again
+const HUD_GAP = 2;                  // px: kept between a bubble and a HUD panel
+export const HUD_SELECTORS = ['.objectives-panel', '#inventory-container', '#health-ui-container', '#hud-info-label',
+    '#scenario-timer-display', '#music-widget-btn-anchor', '#toggle-buttons-container', '#combat-buttons',
+    '.phone-access-button', '.tutorial-panel'].join(', ');
 const FILL = 0xffffff;
 const LINE = 0x1b2a41;
 
@@ -109,62 +117,88 @@ export function onCamera(at, view, margin = CAMERA_MARGIN) {
 const overlaps = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 
 /**
- * Pure: where a bubble of `w` by `h` (body, not counting the tail) sits over the head anchor
- * `at` so it covers none of `taken` (rects { x, y, w, h } of bubbles already placed and the
- * player's head) and stays inside `view` (the camera's world view, when given). Tries centred,
- * then slid left, then slid right (the tail stays over the head), then lifts above the lowest
- * thing in the way and tries again. When nothing above the head fits in the view (an NPC at the
- * top of the screen), the body sits beside the head, lowered into the view, with no tail
- * (`beside: true`). `prefer` (last frame's choice) is tried first, so a bubble does not flip
- * sides from frame to frame.
- * Returns { dx, lift, rect, beside }: dx shifts the body sideways, lift raises body and tail
- * (negative: lowered beside the head).
+ * Pure: where a bubble of `w` by `h` (body, not counting the tail) sits for the head anchor `at`
+ * so it covers none of `taken` and stays inside `view` (the camera's world view, when given).
+ * `taken` items are rects { x, y, w, h }: bubbles already placed and HUD panels are hard (never
+ * covered); ones with `soft: true` (the player's head, other speakers' heads) are kept clear when
+ * possible and covered only when nothing else fits.
+ * Order tried:
+ *   1. Above the head: centred, slid left, slid right (the tail stays over the head), then
+ *      lifted clear of the lowest thing in the way, but by MAX_LIFT at most (R2 n3: a long stem
+ *      ran past the player's shoulder; a sideways move reads better than a tall lift).
+ *   2. Beside the head, either side, with a short stepped pointer at head height, so the speaker
+ *      stays clear when bubbles sit close (R2 m1). The body may move up or down while it still
+ *      spans the pointer, to clear what is in the way.
+ *   3. The same places again, now allowed over a soft rect.
+ * Nothing that avoids every hard rect: null (the caller hands a bark to the toast).
+ * `prefer` (last frame's choice) is tried first, so a bubble does not flip from frame to frame.
+ * Returns { dx, lift, rect, beside, side, pointY }: dx shifts the body sideways, lift raises body
+ * and tail (the body's top is at at.y - lift - tail - h); beside: side is -1 (body left of the
+ * head) or 1, and pointY the pointer's centre row, relative to the anchor.
  */
-export function placeBubble(at, w, h, taken, { prefer = null, view = null, tail = TAIL, maxLifts = 3 } = {}) {
+export const MAX_LIFT = 16;
+export const HEAD_POINT_DY = 10;    // px: the beside pointer's row, below the anchor (mid head)
+export function placeBubble(at, w, h, taken, { prefer = null, view = null, tail = TAIL, maxLift = MAX_LIFT } = {}) {
     const slide = Math.max(0, Math.floor(w / 2) - TAIL_HALF);
     let order = [0, -slide, slide];
     if (prefer && !prefer.beside && order.includes(prefer.dx)) order = [prefer.dx, ...order.filter(d => d !== prefer.dx)];
     const rectFor = (dx, lift) => ({ x: at.x + dx - w / 2, y: at.y - lift - tail - h, w, h: h + tail });
     const inside = (r) => !view || (r.x >= view.x && r.x + r.w <= view.x + view.width
         && r.y >= view.y && r.y + r.h <= view.y + view.height);
+    const hard = taken.filter(t => !t.soft);
     const free = (r) => !taken.some(t => overlaps(r, t));
+    const hardFree = (r) => !hard.some(t => overlaps(r, t));
+    const cands = [];
+    // 1. above, lifting at most maxLift
     let lift = 0;
-    let last = null;
-    for (let i = 0; i <= maxLifts; i++) {
+    for (let i = 0; i < 6 && lift <= maxLift; i++) {
         let lowestTop = null;
-        let anyInside = false;
         for (const dx of order) {
             const rect = rectFor(dx, lift);
             if (!inside(rect)) continue;
-            anyInside = true;
-            if (free(rect)) return { dx, lift, rect, beside: false };
+            cands.push({ dx, lift, rect, beside: false, side: 0, pointY: 0 });
             for (const t of taken) if (overlaps(rect, t)) lowestTop = lowestTop === null ? t.y : Math.max(lowestTop, t.y);
-            if (!last) last = { dx, lift, rect, beside: false };
         }
-        if (!anyInside || lowestTop === null) break;   // lifting higher only leaves the view
+        if (lowestTop === null) break;
         // Lift so the bottom (tail tip) clears the top of the lowest thing hit
-        lift = Math.max(lift + 2, at.y - lowestTop + 2);
-        if (lift % 2) lift += 1;
+        let next = Math.max(lift + 2, at.y - lowestTop + 2);
+        if (next % 2) next += 1;
+        lift = next;
     }
-    if (view) {
-        // Beside the head, inside the view: the side with more room first
-        const gap = HEAD_HALF_W + 2;
-        const sides = (at.x - view.x) >= (view.x + view.width - at.x) ? [-1, 1] : [1, -1];
-        if (prefer?.beside && Math.sign(prefer.dx) === sides[1]) sides.reverse();
-        const top = Math.ceil(view.y) + 2;
-        let fallback = null;
-        for (const side of sides) {
-            const dx = side * (Math.floor(w / 2) + gap);
-            const lift = at.y - tail - h - top;         // body top on the view's top edge (plus 2)
-            const rect = rectFor(dx, lift);
-            const r = { ...rect, h };                  // no tail beside the head
-            if (!inside(r)) continue;
-            if (free(r)) return { dx, lift, rect: r, beside: true };
-            if (!fallback) fallback = { dx, lift, rect: r, beside: true };
+    // 2. beside the head, with a pointer at head height
+    const gap = HEAD_HALF_W + 2 + tail;   // body edge to head centre; the pointer's tip stops 12 px short
+    let sides = view && (at.x - view.x) < (view.x + view.width - at.x) ? [1, -1] : [-1, 1];
+    if (prefer?.beside && prefer.side === sides[1]) sides = [sides[1], sides[0]];
+    const py = at.y + HEAD_POINT_DY;
+    // The body must span the pointer (its 8 px plus the stepped corners): top in [py - h + 8, py - 8]
+    const topMin = py - h + 2 * BORDER_PX + 6, topMax = py - 2 * BORDER_PX - 6;
+    const viewTop = view ? Math.ceil(view.y) + 2 : -Infinity;
+    const viewBottom = view ? Math.floor(view.y + view.height) - 2 : Infinity;
+    for (const side of sides) {
+        const dx = side * (Math.floor(w / 2) + gap);
+        const bodyX = at.x + dx - w / 2;
+        // Tops to try: centred on the pointer, last frame's, then clear of each rect in the way
+        const tops = [];
+        if (prefer?.beside && prefer.side === side) tops.push(at.y - prefer.lift - tail - h);
+        tops.push(Math.round(py - h / 2));
+        for (const t of taken) { tops.push(t.y + t.h + 2); tops.push(t.y - h - 2); }
+        const seen = new Set();
+        for (let top of tops) {
+            top = Math.max(topMin, Math.min(topMax, top));
+            top = Math.max(top, viewTop);
+            if (top + h > viewBottom) top = viewBottom - h;
+            if (top < topMin || top > topMax) continue;   // the view leaves no room that spans the head
+            if (seen.has(top)) continue;
+            seen.add(top);
+            const body = { x: bodyX, y: top, w, h };
+            if (!inside(body)) continue;
+            // The pointer reaches TAIL px towards the head: count it in the rect
+            const rect = side < 0 ? { ...body, w: w + TAIL } : { ...body, x: bodyX - TAIL, w: w + TAIL };
+            if (!inside(rect)) continue;
+            cands.push({ dx, lift: at.y - tail - h - top, rect, beside: true, side, pointY: HEAD_POINT_DY });
         }
-        if (fallback && !last) return fallback;
     }
-    return last || { dx: 0, lift: 0, rect: rectFor(0, 0), beside: false };
+    return cands.find(c => free(c.rect)) || cands.find(c => hardFree(c.rect)) || null;
 }
 
 /**
@@ -249,6 +283,11 @@ export function pageTimes(pages, totalMs, minMs = PAGE_MIN_MS) {
     return counts.map(n => Math.max(minMs, Math.round(totalMs * n / all)));
 }
 
+/** Pure: follow-up pages (not voiced): each its own reading time, at least PAGE_MIN_MS. */
+export function followUpTimes(pages) {
+    return pages.map(p => Math.max(PAGE_MIN_MS, Math.min(8000, 1500 + wordsIn(p) * 300)));
+}
+
 /** Pure: the whole line's time: the audio's length plus AUDIO_TAIL_MS, else the reading time. */
 export function lineTotalMs({ audioMs = null, readingMs }) {
     return audioMs > 0 ? audioMs + AUDIO_TAIL_MS : readingMs;
@@ -326,9 +365,10 @@ export class NpcWorldBubbles {
     /**
      * Draw the frame: 2 px border, stepped corners, stepped tail; whole pixels only. `dx` slides
      * the body sideways (the tail stays at x 0, over the head); `lift` raises body and tail, with a
-     * 2 px stem down to the head.
+     * 2 px stem down to the head. Beside the head (`side` -1: body on the left) the tail is a
+     * short stepped pointer out of the body's near edge at `pointY` (R2 m1).
      */
-    _drawFrame(g, w, h, dx = 0, lift = 0, beside = false) {
+    _drawFrame(g, w, h, dx = 0, lift = 0, beside = false, side = 0, pointY = 0) {
         const x = dx - w / 2, y = -lift - TAIL - h, b = BORDER_PX;
         g.clear();
         // Fill, inset so the corner notches stay clear
@@ -340,7 +380,25 @@ export class NpcWorldBubbles {
         g.fillRect(x + b, y + h - b, w - 2 * b, b);      // bottom
         g.fillRect(x, y + b, b, h - 2 * b);              // left
         g.fillRect(x + w - b, y + b, b, h - 2 * b);      // right
-        if (beside) return;                              // beside the head: no tail
+        if (beside) {
+            // The bottom tail turned on its side: u runs out of the edge towards the head, v
+            // across it, centred on the pointer row
+            const edge = side < 0 ? x + w : x;           // the body's edge on the head side
+            const py = Math.round(pointY);
+            const r = (u0, u1, v0, v1) => (side < 0
+                ? g.fillRect(edge + u0, py + v0, u1 - u0, v1 - v0)
+                : g.fillRect(edge - u1, py + v0, u1 - u0, v1 - v0));
+            g.fillStyle(FILL, 1);
+            r(-b, 0, -2, 2);                             // gap in the edge
+            g.fillStyle(LINE, 1);
+            r(-b, 0, -4, -2); r(-b, 0, 2, 4);
+            r(0, 2, -4, -2); r(0, 2, 2, 4);
+            g.fillStyle(FILL, 1);
+            r(0, 2, -2, 2);
+            g.fillStyle(LINE, 1);
+            r(2, 4, -2, 2);                              // tip
+            return;
+        }
         // Tail: two 2 px steps narrowing to the tip, opened into the box
         const by = -lift - TAIL;                         // box bottom edge
         g.fillStyle(FILL, 1);
@@ -384,15 +442,16 @@ export class NpcWorldBubbles {
     }
 
     /** Draw the frame and place the text for this layout ({ dx, lift }); only when it changes. */
-    _layout(bb, { dx = 0, lift = 0, beside = false } = {}) {
-        if (bb.layout && bb.layout.dx === dx && bb.layout.lift === lift && bb.layout.beside === beside) return;
-        bb.layout = { dx, lift, beside };
+    _layout(bb, { dx = 0, lift = 0, beside = false, side = 0, pointY = 0 } = {}) {
+        const l = bb.layout;
+        if (l && l.dx === dx && l.lift === lift && l.beside === beside && l.side === side && l.pointY === pointY) return;
+        bb.layout = { dx, lift, beside, side, pointY };
         const { w, h } = bb;
         const left = dx - w / 2 + BORDER_PX + PAD_X - (bb.inkLeft || 0);
         const top = -lift - TAIL - h + BORDER_PX + PAD_Y;
         bb.text.setPosition(left, top);
         bb.img.setPosition(Math.round(dx - PICTURE_PX / 2), top);
-        this._drawFrame(bb.g, w, h, dx, lift, beside);
+        this._drawFrame(bb.g, w, h, dx, lift, beside, side, pointY);
     }
 
     /** The player's head as a rect bubbles keep off. */
@@ -459,6 +518,20 @@ export class NpcWorldBubbles {
     /** Is a bark bubble up for this NPC now? (npc-action-icons.js hides its icons meanwhile.) */
     hasLine(npcId) { return this.says.has(npcId); }
 
+    /**
+     * Close every bark bubble answering `tag` (an event pattern), with no remainder: a newer
+     * answer (the door's own notification for a refusal in the guard's cooldown) replaces it
+     * (R2 n1). Returns the NPCs closed.
+     */
+    closeTagged(tag) {
+        const closed = [];
+        if (!tag) return closed;
+        for (const st of [...this.says.values()]) {
+            if (st.tag === tag) { this._end(st.npcId, 'superseded'); closed.push(st.npcId); }
+        }
+        return closed;
+    }
+
     // ---- barks ----
 
     /**
@@ -470,10 +543,15 @@ export class NpcWorldBubbles {
      * @param {(rest:string)=>void} [o.onRemainder]  the rest of the line, when it leaves view
      * @param {()=>void} [o.onDone]
      * @param {()=>boolean} [o.stillValid]  the bark's conditions; false closes it, no remainder
+     * @param {string|null} [o.followUp]  pages shown after the line, timed for reading (not to the
+     *   voice): a gate's lockedHint after the guard's refusal (R2 m3)
+     * @param {string|null} [o.tag]  what the line answers (the event pattern), for closeTagged()
      */
-    say(npcId, line, { audioMs = null, onRemainder = null, onDone = null, stillValid = null } = {}) {
-        const pages = pageLine(line);
-        if (!npcId || pages.length === 0) return null;
+    say(npcId, line, { audioMs = null, onRemainder = null, onDone = null, stillValid = null, followUp = null, tag = null } = {}) {
+        const linePages = pageLine(line);
+        const extra = followUp ? pageLine(followUp) : [];
+        const pages = [...linePages, ...extra];
+        if (!npcId || linePages.length === 0) return null;
         if (!this._inView(npcId)) return null;
         const { sprite } = this._spriteAndRoom(npcId);
         const distance = this._distance(sprite);
@@ -485,9 +563,9 @@ export class NpcWorldBubbles {
         if (cap.evict) this._leave(cap.evict, 'pushed');
         const reading = readingMs(line);
         const st = {
-            npcId, line, pages, page: 0, started: this.now(), pageStarted: this.now(),
-            times: pageTimes(pages, lineTotalMs({ audioMs, readingMs: reading })),
-            audioMs: audioMs > 0 ? audioMs : null, onRemainder, onDone,
+            npcId, line, pages, linePages: linePages.length, page: 0, started: this.now(), pageStarted: this.now(),
+            times: [...pageTimes(linePages, lineTotalMs({ audioMs, readingMs: reading })), ...followUpTimes(extra)],
+            audioMs: audioMs > 0 ? audioMs : null, onRemainder, onDone, tag: tag || null,
             stillValid: typeof stillValid === 'function' ? stillValid : null, validAt: this.now()
         };
         this.says.set(npcId, st);
@@ -504,8 +582,10 @@ export class NpcWorldBubbles {
     _retime(st, ms) {
         if (!(ms > 0) || this.says.get(st.npcId) !== st) return;
         st.audioMs = ms;
-        const times = pageTimes(st.pages, lineTotalMs({ audioMs: ms, readingMs: 0 }));
-        for (let i = st.page + 1; i < st.pages.length; i++) st.times[i] = times[i];
+        // The voice covers the line's own pages; follow-up pages keep their reading time
+        const n = st.linePages ?? st.pages.length;
+        const times = pageTimes(st.pages.slice(0, n), lineTotalMs({ audioMs: ms, readingMs: 0 }));
+        for (let i = st.page + 1; i < n; i++) st.times[i] = times[i];
         this._note(st.npcId, 'audio', { ms });
     }
 
@@ -590,17 +670,38 @@ export class NpcWorldBubbles {
             if (!shown.has(id)) bb.box.setVisible(false);
         }
         if (shown.size && !this._ensureFonts()) return;   // first frames only: VT323 still loading
+        // What bubbles keep off: the HUD panels (hard), the player's head and every speaker's head
+        // (soft), then each bubble as it is placed (hard)
+        const first = order.length ? info.get(order[0]).sprite : null;
+        const cam = first?.scene?.cameras?.main || null;
+        const view = cam?.worldView || null;
         const head = this._playerHead();
-        const taken = head ? [head] : [];
+        const heads = new Map();
+        for (const id of order) {
+            try {
+                const a = npcIconAnchor(info.get(id).sprite);
+                heads.set(id, { x: a.x - HEAD_HALF_W, y: a.y, w: HEAD_HALF_W * 2, h: HEAD_H, soft: true });
+            } catch (e) { /* no anchor: nothing to keep clear */ }
+        }
+        const taken = [...this._hudRects(view), ...(head ? [{ ...head, soft: true }] : [])];
         for (const id of order) {
             const { sprite, line, picture, partnerId, bark } = info.get(id);
             let bb = this.bubbles.get(id);
             if (!bb || !bb.box.scene) { bb = this._make(sprite.scene); this.bubbles.set(id, bb); }
             this._render(bb, line, picture);
             const pos = speechPosition(npcIconAnchor(sprite));
-            const view = sprite.scene?.cameras?.main?.worldView || null;
-            const place = placeBubble(pos, bb.w, bb.h, taken, { prefer: bb.layout, view });
+            const others = [...heads].filter(([k]) => k !== id).map(([, r]) => r);
+            const place = placeBubble(pos, bb.w, bb.h, [...taken, ...others],
+                { prefer: bb.layout, view: sprite.scene?.cameras?.main?.worldView || view });
+            if (!place) {
+                // No place that covers no other bubble or HUD panel: a bark goes to the toast
+                // (from the page on screen), chatter waits for room (R2 m1, m2)
+                bb.box.setVisible(false);
+                if (bark) this._leave(id, 'no-room');
+                continue;
+            }
             taken.push(place.rect);
+            bb.rect = place.rect;
             this._layout(bb, place);
             bb.box.setPosition(pos.x, pos.y).setVisible(true);
             bb.box.setData('line', line);
@@ -608,6 +709,40 @@ export class NpcWorldBubbles {
             bb.box.setData('partner', partnerId);
             bb.box.setData('bark', bark);
         }
+    }
+
+    /**
+     * The fixed HUD panels on screen, as world rects (hard, for placeBubble): the Objectives
+     * panel, the inventory tray, the health and info labels, the music and toggle buttons, the
+     * combat buttons, the phone button, the tutorial panel. Read from the DOM at most every
+     * HUD_EVERY_MS (getBoundingClientRect forces layout) and mapped through the canvas and the
+     * camera's view each frame. Anything hidden, empty or covering most of the screen (a full
+     * screen layer) is left out. None without a DOM, a canvas or a view (node tests). R2 m2.
+     */
+    _hudRects(view) {
+        if (!view || typeof document === 'undefined') return [];
+        const canvas = win().game?.canvas;
+        if (!canvas?.getBoundingClientRect) return [];
+        const t = this.now();
+        if (!this._hud || t - this._hud.at >= HUD_EVERY_MS || t < this._hud.at) {
+            const rects = [];
+            const c = canvas.getBoundingClientRect();
+            for (const el of document.querySelectorAll(HUD_SELECTORS)) {
+                const r = el.getBoundingClientRect?.();
+                if (!r || !(r.width > 0) || !(r.height > 0)) continue;
+                let cs = null;
+                try { cs = win().getComputedStyle?.(el); } catch (e) { cs = null; }
+                if (cs && (cs.display === 'none' || cs.visibility === 'hidden' || Number(cs.opacity) === 0)) continue;
+                if (r.width * r.height > 0.5 * c.width * c.height) continue;
+                rects.push({ left: r.left - c.left, top: r.top - c.top, width: r.width, height: r.height });
+            }
+            this._hud = { at: t, rects, cw: c.width, ch: c.height };
+        }
+        const { rects, cw, ch } = this._hud;
+        if (!(cw > 0) || !(ch > 0)) return [];
+        const kx = view.width / cw, ky = view.height / ch;
+        return rects.map(r => ({ x: view.x + r.left * kx - HUD_GAP, y: view.y + r.top * ky - HUD_GAP,
+            w: r.width * kx + 2 * HUD_GAP, h: r.height * ky + 2 * HUD_GAP, hud: true }));
     }
 
     /**
@@ -624,14 +759,46 @@ export class NpcWorldBubbles {
     }
 }
 
+/**
+ * Run the layer once a frame, after the camera has moved (R2 n2). The bubbles are clamped to the
+ * camera's worldView, which the camera only works out in its preRender (follow, lerp, bounds),
+ * after postupdate: placed on postupdate, a bubble at an edge sat against last frame's view and
+ * showed a few pixels outside it during a pan. So postupdate marks the frame due, and the main
+ * camera's preRender runs the pass straight after its own work, before anything is drawn. A
+ * paused scene has no postupdate, so its bubbles hold still as before. With no camera to wrap
+ * (tests), postupdate runs the pass itself.
+ */
+export function hookCameraPass(inst, cam) {
+    if (!cam || typeof cam.preRender !== 'function') return false;
+    if (cam.__bubblePass === inst) return true;
+    const orig = cam.__bubbleOrigPreRender || cam.preRender;
+    cam.__bubbleOrigPreRender = orig;
+    cam.__bubblePass = inst;
+    cam.preRender = function (...args) {
+        const out = orig.apply(this, args);
+        if (inst._due) {
+            inst._due = false;
+            try { inst.update(); } catch (e) { /* never break a frame */ }
+        }
+        return out;
+    };
+    return true;
+}
+
 export function installNpcWorldBubbles(scene) {
     const w = win();
     if (!w.npcWorldBubbles) w.npcWorldBubbles = new NpcWorldBubbles();
     const inst = w.npcWorldBubbles;
     if (scene?.events && inst.sceneHooked !== scene) {
         inst.sceneHooked = scene;
-        // postupdate: after the scene's update() (checkObjectInteractions shows the talk icon there)
-        scene.events.on('postupdate', () => { try { inst.update(); } catch (e) { /* never break a frame */ } });
+        // postupdate: after the scene's update() (checkObjectInteractions shows the talk icon
+        // there); the pass itself runs in the camera's preRender, once the view is known
+        scene.events.on('postupdate', () => {
+            let hooked = false;
+            try { hooked = hookCameraPass(inst, scene.cameras?.main); } catch (e) { hooked = false; }
+            if (hooked) { inst._due = true; return; }
+            try { inst.update(); } catch (e) { /* never break a frame */ }
+        });
     }
     return inst;
 }

@@ -313,6 +313,7 @@ export default class NPCBarkSystem {
       return null;
     }
     const playSound = payload.playSound !== false; // Default true
+    const followUp = typeof payload.followUp === 'string' && payload.followUp.trim() ? payload.followUp.trim() : null;
 
     // A person NPC in view says it in a speech bubble over their head, in place of the toast
     // (slice 5). The rest of a line cut short by leaving view comes back here as a toast.
@@ -322,7 +323,10 @@ export default class NPCBarkSystem {
     if (!payload.forceToast && this._routeFor(payload, contact) === 'bubble') {
       handle = window.npcWorldBubbles?.say?.(npcId, displayDashes(text), {
         onRemainder: (rest) => this._toastRemainder(payload, rest),
-        stillValid: typeof payload.stillValid === 'function' ? payload.stillValid : null
+        stillValid: typeof payload.stillValid === 'function' ? payload.stillValid : null,
+        // A gate's lockedHint after the guard's refusal, in her bubble (R2 m3); never voiced
+        followUp: followUp ? displayDashes(followUp) : null,
+        tag: payload.eventPattern || null
       }) || null;
     }
 
@@ -368,7 +372,8 @@ export default class NPCBarkSystem {
     const textSpan = document.createElement('span');
     textSpan.className = 'npc-bark-text';
     const displayName = npcName || npcId || 'NPC';
-    textSpan.textContent = `${displayName}: ${displayDashes(text)}`;
+    // A follow-up (a gate's lockedHint) that could not go in a bubble rides on the toast
+    textSpan.textContent = `${displayName}: ${displayDashes(followUp ? `${text} ${followUp}` : text)}`;
     el.appendChild(textSpan);
 
     // Dismiss (×) button
@@ -420,6 +425,9 @@ export default class NPCBarkSystem {
    * it (a gate refusal drops its own notification then: doors.js refuseAtGate, R1 M2).
    */
   answersInView(npcId) {
+    // A bark held now (a call opening, a panel) shows later, maybe in a toast: not an answer
+    // in view (R2 n4)
+    if (this._shouldDefer({ npcId }) || this.isDrainingDeferred || this.deferredBarkQueue.length > 0) return false;
     return this._routeFor({ npcId }, null) === 'bubble';
   }
 
@@ -442,7 +450,8 @@ export default class NPCBarkSystem {
    */
   _toastRemainder(payload, rest) {
     if (!rest) return;
-    this.showBark({ ...payload, message: rest, text: undefined, playSound: false, useTTS: false, forceToast: true });
+    // The rest already holds any follow-up pages still to come
+    this.showBark({ ...payload, message: rest, text: undefined, followUp: null, playSound: false, useTTS: false, forceToast: true });
   }
 
   _startAutoClose(el, ms) {

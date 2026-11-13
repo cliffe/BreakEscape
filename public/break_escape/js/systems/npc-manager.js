@@ -1206,16 +1206,25 @@ export default class NPCManager {
    * an NPC in view (npc-barks.js answersInView: same room, lit, on camera, no minigame), mark the
    * event's data, so the sender can tell straight after its emit. doors.js refuseAtGate reads
    * `answeredInView` and drops its own refusal notification, which covered the guard's bubble
-   * (UX slice 5 R1 M2). Decided here, where the cooldown and condition have just passed: the
-   * bark itself can reach the bubble later (a knot bark loads its ink first, the queue waits).
+   * (UX slice 5 R1 M2). Only for a bark that has text now (R2 m4): a plain bark's text, or a
+   * knot bark once its ink has given a line, which is known in time only when the story is
+   * already loaded (_showBarkFromKnot runs to the end without waiting then). A knot that gives
+   * nothing, or ink still loading, leaves the event unmarked, so the refusal keeps its
+   * notification and is never silent.
+   * Returns the extras the bark carries when marked: the sender's `answerFollowUp` (a gate's
+   * lockedHint, shown in the bubble after the line: R2 m3), else null.
    */
   _markAnsweredInView(npcId, eventData) {
-    if (!eventData || typeof eventData !== 'object' || Object.isFrozen(eventData)) return;
+    if (!eventData || typeof eventData !== 'object' || Object.isFrozen(eventData)) return null;
     let inView = false;
     try { inView = !!this.barkSystem?.answersInView?.(npcId); } catch (e) { inView = false; }
-    if (!inView) return;
+    if (!inView) return null;
     eventData.answeredInView = true;
     eventData.answeredBy = npcId;
+    // One NPC carries the follow-up: the first to answer
+    const followUp = eventData.answerFollowUpTaken ? null : (eventData.answerFollowUp || null);
+    if (followUp) eventData.answerFollowUpTaken = npcId;
+    return { followUp };
   }
 
   // Handle when a mapped event fires
@@ -1815,7 +1824,8 @@ export default class NPCManager {
     if (this.barkSystem && (config.bark || config.message)) {
       const barkText = config.bark || config.message;
       const barkDelay = config.barkDelay || 0;
-      if (!(barkDelay > 0)) this._markAnsweredInView(npcId, eventData);
+      const hasText = typeof barkText === 'string' && barkText.trim() !== '';
+      const answered = (!(barkDelay > 0) && hasText) ? this._markAnsweredInView(npcId, eventData) : null;
 
       const fireBark = () => {
         // Add bark message to conversation history (marked as bark)
@@ -1836,7 +1846,9 @@ export default class NPCManager {
           startKnot: config.knot || null,   // none: a click reopens the thread (npc-barks.js)
           phoneId: npc.phoneId,
           useTTS: npc.npcType === 'person' && !!npc.voice,
-          stillValid: this._barkStillValid(npcId, config, eventData)
+          stillValid: this._barkStillValid(npcId, config, eventData),
+          eventPattern,
+          followUp: answered?.followUp || null
         });
       };
 
@@ -1850,16 +1862,20 @@ export default class NPCManager {
     else if (this.barkSystem && config.knot && npc.storyPath) {
       console.log(`📖 Loading Ink story from knot: ${config.knot}`);
 
-      // Load the Ink story and navigate to the knot
-      this._markAnsweredInView(npcId, eventData);
-      this._showBarkFromKnot(npcId, npc, config.knot, eventPattern, this._barkStillValid(npcId, config, eventData));
+      // Load the Ink story and navigate to the knot. The event is marked answered only once the
+      // knot has given text, and only while this call has not yet returned (story already
+      // loaded): marked any later, the sender has already shown its own notification (R2 m4)
+      let inTime = true;
+      const onText = () => (inTime ? this._markAnsweredInView(npcId, eventData) : null);
+      this._showBarkFromKnot(npcId, npc, config.knot, eventPattern, this._barkStillValid(npcId, config, eventData), onText);
+      inTime = false;
     }
     
     console.log(`[NPCManager] Event '${eventPattern}' triggered for NPC '${npcId}' → knot '${config.knot}'`);
   }
   
   // Load Ink story, navigate to knot, and show the text as a bark
-  async _showBarkFromKnot(npcId, npc, knotName, eventPattern, stillValid) {
+  async _showBarkFromKnot(npcId, npc, knotName, eventPattern, stillValid, onText = null) {
     try {
       // OPTIMIZATION: Fetch story from cache or network
       let storyJson = this.storyCache.get(npc.storyPath);
@@ -1906,8 +1922,10 @@ export default class NPCManager {
         result = inkEngine.continue();
       }
       
-      if (result.text) {
-        
+      if (result.text && result.text.trim()) {
+        let answered = null;
+        try { answered = onText?.(result.text) || null; } catch (e) { answered = null; }
+
         // Add to conversation history (marked as bark)
         this.addMessage(npcId, 'npc', result.text, { 
           eventPattern,
@@ -1925,7 +1943,9 @@ export default class NPCManager {
           startKnot: knotName,
           phoneId: npc.phoneId,
           useTTS: npc.npcType === 'person' && !!npc.voice,
-          stillValid
+          stillValid,
+          eventPattern,
+          followUp: answered?.followUp || null
         });
       } else {
         console.warn(`⚠️ No text found in knot: ${knotName}`);
