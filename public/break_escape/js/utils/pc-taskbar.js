@@ -341,7 +341,6 @@ export function mountPcTaskbar(root, model, { windowTitle = '', takeable = false
     const refreshCue = () => updatePlacesCue(placesList, placesMore);
     placesList?.addEventListener?.('scroll', refreshCue);
     const win = doc.defaultView;
-    win?.addEventListener?.('resize', refreshCue);
     doc.fonts?.ready?.then?.(refreshCue);
     const items = () => [...panel.querySelectorAll('[role="menuitem"]')];
     let open = false;
@@ -372,18 +371,29 @@ export function mountPcTaskbar(root, model, { windowTitle = '', takeable = false
         if (panel.contains(t) || start.contains(t)) return;
         close();
     };
-    function show() {
-        if (open) return;
-        open = true;
+    // Decide compact (x1 picture, no PC name line) from what fits now: Places cramped by the x2
+    // picture and the PC's name line drops to the x1 picture. Run on open and on every resize.
+    const refit = () => {
         panel.classList?.remove?.('pc-start-compact');
         panelPicture();
-        panel.hidden = false;
-        // Places cramped by the x2 picture and the PC's name line: drop to the x1 picture
         if (placesNeedRoom(placesList)) {
             panel.classList?.add?.('pc-start-compact');
             panelPicture();
         }
         refreshCue();
+    };
+    // The frame's own resize handler sets data-short; measure again once it has run
+    const onResize = () => {
+        if (!open) { refreshCue(); return; }
+        refit();
+        win?.requestAnimationFrame?.(() => { if (open) refit(); });
+    };
+    win?.addEventListener?.('resize', onResize);
+    function show() {
+        if (open) return;
+        open = true;
+        panel.hidden = false;
+        refit();
         start.setAttribute('aria-expanded', 'true');
         start.classList.add('pc-start-open');
         doc.addEventListener('keydown', onKey, true);
@@ -448,6 +458,6 @@ export function mountPcTaskbar(root, model, { windowTitle = '', takeable = false
         open: show,
         close,
         isOpen: () => open,
-        destroy: () => { close(); clearTimeout(noticeTimer); win?.removeEventListener?.('resize', refreshCue); }
+        destroy: () => { close(); clearTimeout(noticeTimer); win?.removeEventListener?.('resize', onResize); }
     };
 }

@@ -603,3 +603,47 @@ test('R3 M1: opening the panel measures the list; compact is set and cleared by 
     bar.destroy();
     root.remove();
 });
+
+// UI slice 6 review R4: Places must not hang out over the actions, and compact is decided again
+// whenever the window resizes while the panel is open.
+test('R4 M1: the Places section keeps its heading and a row of list, so the list cannot cover the actions', () => {
+    const section = R3_CSS.match(/\.pc-monitor \.pc-start-section\.pc-start-places \{[^}]*\}/)[0];
+    assert.doesNotMatch(section, /min-height:\s*0\b/, 'the section may not shrink to nothing');
+    assert.match(section, /min-height:\s*min-content/);
+    const list = R3_CSS.match(/\.pc-monitor \.pc-start-places-list \{[^}]*\}/)[0];
+    assert.match(list, /min-height:\s*24px/, 'one row');
+});
+
+test('R4 N1: a resize while the panel is open re-decides compact and the picture', () => {
+    const model = pcTaskbarModel({ pcData: { lockType: 'login', name: 'Door controller', host: 'HB-DOOR-01' },
+        session: { username: 'ishaw', displayName: 'Ian Shaw', via: 'password', remote: true }, lockSupported: true });
+    const root = document.createElement('div');
+    document.body.appendChild(root);
+    const bar = taskbarMod.mountPcTaskbar(root, model);
+    const list = bar.panel.querySelector('.pc-start-places-list');
+    const more = bar.panel.querySelector('.pc-start-more');
+    const size = (sh, ch) => { Object.defineProperty(list, 'scrollHeight', { value: sh, configurable: true }); Object.defineProperty(list, 'clientHeight', { value: ch, configurable: true }); };
+    const resize = () => window.dispatchEvent(new window.Event('resize'));
+    const scale = () => bar.panel.querySelector('.pc-start-headshot')?.dataset.scale;
+    size(72, 72);
+    bar.open();
+    assert.ok(!bar.panel.classList.contains('pc-start-compact'));
+    assert.equal(scale(), '2');
+    size(72, 40);
+    resize();
+    assert.ok(bar.panel.classList.contains('pc-start-compact'), 'shrunk: compact');
+    assert.equal(scale(), '1', 'and the x1 picture');
+    assert.equal(more.hidden, false, 'the cue follows');
+    size(72, 72);
+    resize();
+    assert.ok(!bar.panel.classList.contains('pc-start-compact'), 'enlarged: back to the full picture');
+    assert.equal(scale(), '2');
+    // A closed panel is left alone
+    bar.close();
+    size(72, 40);
+    resize();
+    assert.ok(!bar.panel.classList.contains('pc-start-compact'), 'closed: no decision');
+    bar.destroy();
+    size(72, 72);
+    root.remove();
+});
