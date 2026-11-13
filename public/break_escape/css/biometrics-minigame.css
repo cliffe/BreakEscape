@@ -59,6 +59,33 @@
     max-height: 70vh !important;
 }
 
+/* As the Bluetooth scanner (slice 7 R2 m4, R4 m2, m3): the panel stacks its sections in a
+   column, and the game area scrolls inside the frame (with the local pixel-art scrollbar in
+   minigames-framework.css) when they do not fit, so the expanded kit's Instructions are
+   always reachable (slice 7 R5 m4) */
+.biometrics-minigame-container {
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.biometrics-minigame-container > .biometrics-minigame-game-container {
+    flex: 1 1 auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+}
+
+.biometrics-minigame-game-container > * {
+    flex-shrink: 0;
+}
+
+@media (max-height: 720px) {
+    .biometrics-minigame-container,
+    .biometrics-minigame-container.expanded {
+        max-height: calc(95vh - 8px) !important;
+    }
+}
+
 .biometrics-minigame-game-container {
     width: 100% !important;
     height: 100% !important;
@@ -639,10 +666,12 @@
     text-shadow: none;
 }
 
+/* Press Start 2P on its 8px grid: one font pixel per eighth of the size (slice 7 R5 M2).
+   The tag inside inherits it. */
 .fpr-sign {
     font-family: 'Press Start 2P', monospace;
-    font-size: 11px;
-    line-height: 1.5;
+    font-size: 8px;
+    line-height: 16px;
     text-align: center;
     color: #0a0f0c;
     background: #00ff41;
@@ -896,7 +925,8 @@
 
 .fpr-result-title {
     font-family: 'Press Start 2P', monospace;
-    font-size: 13px;
+    font-size: 16px;   /* on its 8px grid (slice 7 R5 M2) */
+    line-height: 24px;
     margin-bottom: 6px;
 }
 .fpr-result-body { text-align: left; }

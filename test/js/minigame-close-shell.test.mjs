@@ -320,5 +320,57 @@ test('closing any minigame releases main-game touch pointers still held down', a
     assert.equal(mouse.isDown, true, 'the mouse pointer is left alone');
     assert.equal(fw.releaseHeldTouchPointers(), 0, 'nothing left to release');
     fw.mainGameScene = null;
-    assert.equal(fw.releaseHeldTouchPointers(), 0, 'no main scene: no error');
+    const savedGame = window.game;
+    window.game = undefined;
+    try {
+        assert.equal(fw.releaseHeldTouchPointers(), 0, 'no main scene: no error');
+    } finally {
+        window.game = savedGame;
+    }
+});
+
+// Slice 7 R5 m2: nothing called MinigameFramework.init before person-chat from an NPC, so
+// mainGameScene was null and the release did nothing
+test('with no main scene set, closing a minigame releases the held pointers of window.game', async () => {
+    const { MinigameFramework } = await imp('minigames/framework/minigame-manager.js');
+    const mouse = { isDown: false, active: false };
+    const held = () => ({ isDown: true, active: true, buttons: 1, identifier: 3, pointerId: 3 });
+    const savedGame = window.game;
+    try {
+        for (const shape of ['scene', 'phaser-game']) {
+            const pointers = [mouse, held(), held()];
+            const manager = { pointers, mousePointer: mouse };
+            // window.game is the main scene once create() ran, the Phaser.Game before then
+            window.game = shape === 'scene' ? { input: { manager } } : { input: manager };
+            const fw = Object.create(MinigameFramework);
+            fw.mainGameScene = null;
+            fw.gameInputDisabled = false;
+            fw.registeredScenes = {};
+            fw._updateBarkLayer = () => {};
+            window.resumeKeyboardInput = () => {};
+            fw.currentMinigame = { cleanup() {}, params: {}, container: null };
+            fw.endMinigame(false, null);
+            assert.deepEqual(pointers.slice(1).filter((p) => p.isDown || p.active), [], `${shape}: both held pointers released`);
+        }
+    } finally {
+        window.game = savedGame;
+    }
+});
+
+// Slice 7 R5 m1: a real mouse click right after a tap is no longer dropped
+test('the pump stops only compatibility mouse events: sourceCapabilities first, then time and nearness', () => {
+    const near = { x: 100, y: 100 };
+    const ev = (extra) => ({ clientX: 100, clientY: 100, ...extra });
+    assert.equal(InfusionPumpMinigame.isCompatMouse(200, 100, ev({ sourceCapabilities: { firesTouchEvents: false } }), near), false,
+        'a real mouse click 100ms after a touch gets through');
+    assert.equal(InfusionPumpMinigame.isCompatMouse(200, 100, ev({ sourceCapabilities: { firesTouchEvents: true } }), near), true,
+        "the browser's echo of the touch is stopped");
+    assert.equal(InfusionPumpMinigame.isCompatMouse(5000, 100, ev({ sourceCapabilities: { firesTouchEvents: true } }), near), true,
+        'an echo is stopped whatever the time');
+    assert.equal(InfusionPumpMinigame.isCompatMouse(200, 100, ev({ clientX: 140 }), near), false,
+        'no sourceCapabilities: a click 40px from the touch gets through');
+    assert.equal(InfusionPumpMinigame.isCompatMouse(200, 100, ev({ clientX: 110 }), near), true,
+        'no sourceCapabilities: a mouse event 10px from the touch within 800ms is its echo');
+    assert.equal(InfusionPumpMinigame.isCompatMouse(1000, 100, ev({ clientX: 100 }), near), false,
+        'no sourceCapabilities: after 800ms it is a real click');
 });

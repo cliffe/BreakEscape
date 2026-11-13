@@ -407,7 +407,10 @@ export const MinigameFramework = {
      * pointer is left alone. Returns how many pointers were released.
      */
     releaseHeldTouchPointers() {
-        const manager = this.mainGameScene?.input?.manager;
+        // The main scene, or failing that window.game: the main scene once its create() ran,
+        // or the Phaser.Game before then, whose `input` is the manager itself (slice 7 R5 m2)
+        const src = this.mainGameScene || (typeof window !== 'undefined' ? window.game : null);
+        const manager = src?.input?.manager || (Array.isArray(src?.input?.pointers) ? src.input : null);
         const pointers = Array.isArray(manager?.pointers) ? manager.pointers : [];
         let released = 0;
         for (const p of pointers) {

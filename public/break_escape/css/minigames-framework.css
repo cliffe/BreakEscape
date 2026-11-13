@@ -16,6 +16,87 @@
     color: white;
     box-shadow: none;   /* pixel-art UI: no soft shadow (slice 7) */
     font-size: 18px;
+    /* GNF, VT323 and Press Start 2P ship one weight each, so the browser would smear a
+       synthetic bold over any weight of 600 or more (slice 7 R5 M1). font-synthesis is
+       inherited, so this one rule covers every minigame. */
+    font-synthesis: none;
+    font-weight: 400;
+}
+
+/* Every pixel face in a minigame draws at its only weight. !important so the scene sheets'
+   old `font-weight: bold` and the browser's bold headings, <th>, <b> and <strong> all
+   resolve to 400 (the audit's faux-bold check reads the computed weight). Diegetic pages
+   (an email body, a web page) keep their own weights. */
+.minigame-container *:not([data-diegetic], [data-diegetic] *) {
+    font-weight: 400 !important;
+}
+
+/* Emphasis that used to be bold (<strong>, <b>: "Instructions:", the changed row and field in
+   the drug library, the patient outcome) is a 2px pixel underline instead. */
+.minigame-container :is(strong, b):not([data-diegetic] *) {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+    text-decoration-skip-ink: none;
+}
+
+/* Local copy of the shared `.pixel-scroll` scrollbar (css/utilities.css on build/ux-net,
+   slice 1), as in infusion-pump-minigame.css's .ip-pixel-scroll, for the slice 7 panes that
+   scroll: the fingerprint reader panel, the network architecture diagram and detail pane,
+   the SIEM alert and queue lists, and the biometrics game area (slice 7 R5 m3, m4). When
+   `.pixel-scroll` lands, give these elements that class and drop this copy. Square track
+   and thumb, 2px edges, no arrow buttons. Chrome 121+ ignores the ::-webkit-scrollbar rules
+   once scrollbar-color or scrollbar-width is set, so both stay auto. */
+.mg-pixel-scroll,
+.fpr-panel,
+.nad-svg-wrap,
+.nad-detail,
+.siem-alert-list,
+.siem-queue-list,
+.siem-panel,
+.biometrics-minigame-game-container {
+    scrollbar-color: auto;
+    scrollbar-width: auto;
+    --pixel-scroll-track: #10161c;
+    --pixel-scroll-thumb: #2d3a44;
+    --pixel-scroll-edge: #6f8a9c;
+    --pixel-scroll-hover: #9ee6ff;
+}
+
+:is(.mg-pixel-scroll, .fpr-panel, .nad-svg-wrap, .nad-detail, .siem-alert-list, .siem-queue-list, .siem-panel, .biometrics-minigame-game-container)::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+:is(.mg-pixel-scroll, .fpr-panel, .nad-svg-wrap, .nad-detail, .siem-alert-list, .siem-queue-list, .siem-panel, .biometrics-minigame-game-container)::-webkit-scrollbar-track {
+    background: var(--pixel-scroll-track);
+    border-radius: 0;
+}
+
+:is(.mg-pixel-scroll, .fpr-panel, .nad-svg-wrap, .nad-detail, .siem-alert-list, .siem-queue-list, .siem-panel, .biometrics-minigame-game-container)::-webkit-scrollbar-thumb {
+    background: var(--pixel-scroll-thumb);
+    border: 2px solid var(--pixel-scroll-edge);
+    border-radius: 0;
+}
+
+:is(.mg-pixel-scroll, .fpr-panel, .nad-svg-wrap, .nad-detail, .siem-alert-list, .siem-queue-list, .siem-panel, .biometrics-minigame-game-container)::-webkit-scrollbar-thumb:hover {
+    border-color: var(--pixel-scroll-hover);
+}
+
+:is(.mg-pixel-scroll, .fpr-panel, .nad-svg-wrap, .nad-detail, .siem-alert-list, .siem-queue-list, .siem-panel, .biometrics-minigame-game-container)::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+:is(.mg-pixel-scroll, .fpr-panel, .nad-svg-wrap, .nad-detail, .siem-alert-list, .siem-queue-list, .siem-panel, .biometrics-minigame-game-container)::-webkit-scrollbar-corner {
+    background: var(--pixel-scroll-track);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+    .mg-pixel-scroll, .fpr-panel, .nad-svg-wrap, .nad-detail, .siem-alert-list, .siem-queue-list, .siem-panel, .biometrics-minigame-game-container {
+        scrollbar-color: var(--pixel-scroll-edge) var(--pixel-scroll-track);
+    }
 }
 
 .minigame-container input, .minigame-container select, .minigame-container textarea, .minigame-container button, .minigame-game-container pre {
@@ -38,7 +119,8 @@
 
 .minigame-header h3 {
     font-family: 'Press Start 2P', monospace;
-    font-size: 18px;
+    font-size: 16px;   /* on its 8px grid (slice 7 R5 M2) */
+    line-height: 24px;
     margin: 0 0 10px 0;
 }
 
@@ -247,7 +329,7 @@
     border: 4px solid #2980b9;
     cursor: pointer;
     font-family: 'Press Start 2P', monospace !important;
-    font-size: 18px;
+    font-size: 16px;   /* on its 8px grid (slice 7 R5 M2) */
     z-index: 10000;
     display: flex;
     align-items: center;

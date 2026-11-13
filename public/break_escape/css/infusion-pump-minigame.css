@@ -116,7 +116,7 @@
     border-bottom: 3px solid #6a7178;
     color: #1a1a1a;
     font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
+    font-size: 8px;   /* on its 8px grid (slice 7 R5 M2) */
     padding: 10px 4px;
     cursor: pointer;
     border-radius: 0;
@@ -165,7 +165,7 @@
     border: 2px solid #00c853;
     padding: 14px 8px;
     font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
+    font-size: 8px;   /* on its 8px grid (slice 7 R5 M2) */
     cursor: pointer;
     border-radius: 0;
     letter-spacing: 1px;

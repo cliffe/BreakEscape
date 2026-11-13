@@ -32,8 +32,8 @@
     height: 56px;
     display: block;
     font-family: 'Press Start 2P', monospace;
-    font-size: 12px;
-    letter-spacing: 1px;
+    font-size: 16px;
+    letter-spacing: 0;
     color: #ffffff;
     transition: top 0.25s ease;
     padding: 0 72px 0 16px;
@@ -68,11 +68,14 @@
     background: #11192b;
 }
 
+/* Press Start 2P sizes in this sheet are 8px (labels) or 16px (titles): one font pixel per
+   eighth of the size, so anything else smears (slice 7 R5 M2). Letter spacing stays whole. */
 .siem-title {
     font-family: 'Press Start 2P', monospace;
-    font-size: 12px;
+    font-size: 16px;
+    line-height: 24px;
     color: #c8d8ff;
-    letter-spacing: 1px;
+    letter-spacing: 0;
 }
 
 .siem-clock {
@@ -104,7 +107,8 @@
     padding: 10px;
     border-bottom: 2px solid #2e3957;
     font-family: 'Press Start 2P', monospace;
-    font-size: 11px;
+    font-size: 8px;
+    line-height: 16px;
     color: #9ac1ff;
     background: #0f1730;
 }
@@ -148,7 +152,7 @@
     justify-content: center;
     height: 32px;
     font-family: 'Press Start 2P', monospace;
-    font-size: 11px;
+    font-size: 8px;
     color: #ffffff;
     border: 2px solid rgba(255, 255, 255, 0.2);
 }
@@ -265,7 +269,7 @@
     height: 28px;
     border: 2px solid rgba(255, 255, 255, 0.2);
     font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
+    font-size: 8px;
     color: #ffffff;
 }
 
@@ -329,10 +333,13 @@
 .siem-queue-section-title {
     padding: 10px 8px 6px;
     font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
+    font-size: 8px;
+    /* Its own 16px line box, so a wrapped title stacks cleanly instead of overlapping
+       (slice 7 R5 M3) */
+    line-height: 16px;
     color: #ffd700;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0;
     border-top: 2px solid #2e3957;
     background: #0f1730;
     margin-top: 8px;
@@ -389,7 +396,8 @@
     align-items: center;
     gap: 6px;
     font-family: 'Press Start 2P', monospace;
-    font-size: 9px;
+    font-size: 8px;
+    line-height: 16px;
     color: #d2e0ff;
 }
 
@@ -419,7 +427,7 @@
 .siem-severity-item-count {
     margin-left: auto;
     color: #a8b8d8;
-    font-size: 10px;
+    font-size: 8px;
 }
 
 .siem-alert-score-box {
@@ -432,10 +440,11 @@
 
 .siem-alert-score-label {
     font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
+    font-size: 8px;
+    line-height: 16px;
     color: #00ffff;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0;
     margin-bottom: 4px;
     display: block;
 }
@@ -480,7 +489,7 @@
 
 .siem-source-name {
     font-family: 'Press Start 2P', monospace;
-    font-size: 9px;
+    font-size: 8px;
     color: #d2e0ff;
     white-space: nowrap;
     overflow: hidden;
@@ -506,6 +515,45 @@
     color: #00ffff;
     text-align: right;
     min-width: 28px;
+}
+
+/* Short screens (915x412 and the like): the console drops its 520px minimum and fills the
+   frame, and the two panes scroll inside it, so the bottom border and the status bar stay
+   on screen (slice 7 R5 M3) */
+@media (max-height: 560px) {
+    .siem-minigame-game-container {
+        overflow: hidden;
+        padding: 8px 14px;
+    }
+
+    .siem-panel {
+        min-height: 0;
+        height: 100%;
+    }
+
+    .siem-header {
+        padding: 4px 12px;
+    }
+
+    .siem-clock {
+        font-size: 24px;
+    }
+
+    .siem-body {
+        padding: 6px;
+        gap: 6px;
+    }
+
+    .siem-alert-row {
+        min-height: 48px;
+        padding: 4px 8px;
+    }
+
+    .siem-status-bar {
+        min-height: 32px;
+        padding: 4px 12px;
+        font-size: 18px;
+    }
 }
 
 @media (max-width: 1100px) {

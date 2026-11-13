@@ -32,6 +32,8 @@ const CONF_H  = 54;
 const TAP_SLOP = 12;
 // Mouse events this soon after a touch are the browser's compatibility echo of that touch
 export const MOUSE_AFTER_TOUCH_MS = 800;
+// ...and land this close (CSS pixels) to it, when the browser cannot say (no sourceCapabilities)
+export const MOUSE_NEAR_TOUCH_PX = 16;
 
 export class InfusionPumpMinigame extends MinigameScene {
     // The X sits inside the frame (MinigameScene.closeInsideFrame)
@@ -195,16 +197,33 @@ export class InfusionPumpMinigame extends MinigameScene {
         fit();
     }
 
-    // True when a mouse event at `now` is the browser's echo of a touch at `lastTouch`
-    static isCompatMouse(now, lastTouch) {
-        return Number.isFinite(lastTouch) && now - lastTouch >= 0 && now - lastTouch < MOUSE_AFTER_TOUCH_MS;
+    // True when a mouse event at `now` is the browser's echo of a touch at `lastTouch`.
+    // Chrome says so outright: its compatibility mouse events carry
+    // sourceCapabilities.firesTouchEvents === true and a real mouse's carry false, so a real
+    // click right after a tap still gets through (slice 7 R5 m1). Without sourceCapabilities
+    // (Firefox, Safari) it falls back to the timer, and then, when both points are known,
+    // only an event within MOUSE_NEAR_TOUCH_PX of the touch counts as its echo.
+    static isCompatMouse(now, lastTouch, e = null, touchPoint = null) {
+        const caps = e?.sourceCapabilities;
+        if (caps && typeof caps.firesTouchEvents === 'boolean') return caps.firesTouchEvents;
+        const soon = Number.isFinite(lastTouch) && now - lastTouch >= 0 && now - lastTouch < MOUSE_AFTER_TOUCH_MS;
+        if (!soon) return false;
+        if (touchPoint && Number.isFinite(e?.clientX) && Number.isFinite(e?.clientY)) {
+            return Math.hypot(e.clientX - touchPoint.x, e.clientY - touchPoint.y) <= MOUSE_NEAR_TOUCH_PX;
+        }
+        return true;
     }
 
     _watchCompatMouse(box) {
         const clock = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
         let lastTouch = -Infinity;
-        const onTouch = () => { lastTouch = clock(); };
-        const onMouse = (e) => { if (InfusionPumpMinigame.isCompatMouse(clock(), lastTouch)) e.stopPropagation(); };
+        let touchPoint = null;
+        const onTouch = (e) => {
+            lastTouch = clock();
+            const t = e?.changedTouches?.[0];
+            touchPoint = t && Number.isFinite(t.clientX) ? { x: t.clientX, y: t.clientY } : null;
+        };
+        const onMouse = (e) => { if (InfusionPumpMinigame.isCompatMouse(clock(), lastTouch, e, touchPoint)) e.stopPropagation(); };
         const listeners = [
             ['touchstart', onTouch, { capture: true, passive: true }],
             ['touchend', onTouch, { capture: true, passive: true }],

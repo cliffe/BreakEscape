@@ -10,12 +10,12 @@
     font-family: 'GNF', monospace;
     font-size: 20px;
     text-align: center;
-    border: 1px solid #00ff00;
     min-height: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+    /* 2px border above, no glow (pixel-art UI rule, slice 7 R5 m5) */
+    box-shadow: none;
     position: relative;
     z-index: 1000;
     width: 100%;

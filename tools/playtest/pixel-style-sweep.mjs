@@ -8,11 +8,16 @@
 //   shadow     a box-shadow, text-shadow or drop-shadow filter with a blur radius
 //   gradient   a CSS gradient in background-image or border-image
 //   font       a text element whose first font family is not GNF, Press Start 2P or VT323
-//   size       pixel-font text at a fractional size, or VT323 under 16px (its legible minimum)
+//   size       pixel-font text at a fractional size, VT323 under 16px (its legible minimum),
+//              or Press Start 2P off its 8px grid (8, 16, 24 and so on)
+//   faux-bold  a pixel face at weight 600 or more: each ships one weight, so the browser
+//              smears a synthetic bold (canvas text: a bold fontStyle)
 //   cancel     a Cancel button beside the X (the X closes a minigame; only the password
 //              screen keeps its own, owned by slice 2a)
 //   canvas     a Phaser canvas scene drawn smoothed, or canvas text in a non-pixel font, at a
-//              fractional size, or VT323 under 16px
+//              fractional size, VT323 under 16px or Press Start 2P off its grid
+// Every check runs at every --sizes entry (media rules change sizes); each breach lists the
+// sizes it was seen at.
 // Once per run it also checks that VT323 really loaded from the self-hosted file (a font
 // name in the computed style says nothing about the face that was drawn): fontsLoaded.
 // Diegetic pages (an email body, a web page inside a browser) may mark their root with
@@ -246,7 +251,10 @@ async function checkCanvas(page) {
                     const size = parseFloat(o.style.fontSize);
                     const where = `text "${String(o.text).slice(0, 24)}"`;
                     if (!ALLOWED.includes(fam)) breaches.push({ kind: 'canvas', where, detail: `font ${o.style.fontFamily}` });
-                    else if (!Number.isInteger(size) || (fam === 'vt323' && size < 16)) breaches.push({ kind: 'canvas', where, detail: `${fam} ${o.style.fontSize}` });
+                    else if (!Number.isInteger(size) || (fam === 'vt323' && size < 16) || (fam === 'press start 2p' && size % 8 !== 0)) breaches.push({ kind: 'canvas', where, detail: `${fam} ${o.style.fontSize}` });
+                    // Phaser takes bold from fontStyle (a fontWeight key is ignored); a canvas has
+                    // no font-synthesis switch, so a bold pixel face is always smeared
+                    if (/bold|[6-9]00/.test(o.style.fontStyle || '')) breaches.push({ kind: 'faux-bold', where, detail: `${fam} fontStyle ${o.style.fontStyle}` });
                 }
             };
             walk(sc.children.list);
@@ -323,6 +331,11 @@ async function checkScene(page, scene) {
                     const size = parseFloat(cs.fontSize);
                     if (!Number.isInteger(size)) breaches.push({ kind: 'size', where, detail: `${first} ${cs.fontSize}` });
                     else if (first === 'vt323' && size < 16) breaches.push({ kind: 'size', where, detail: `vt323 ${cs.fontSize}` });
+                    // Press Start 2P draws one font pixel per eighth of its size: off the 8px
+                    // grid a font pixel smears over two screen pixels (slice 7 R5 M2)
+                    else if (first === 'press start 2p' && size % 8 !== 0) breaches.push({ kind: 'size', where, detail: `press start 2p ${cs.fontSize} (grid is 8px)` });
+                    // Each pixel face ships one weight: 600 or more is a synthetic bold (R5 M1)
+                    if (+cs.fontWeight >= 600) breaches.push({ kind: 'faux-bold', where, detail: `${first} weight ${cs.fontWeight}${cs.fontSynthesisWeight === 'none' ? ' (synthesis off)' : ''}` });
                 }
             }
         };
@@ -391,11 +404,20 @@ async function main() {
         for (const [w, h] of SIZES) {
             await page.setViewportSize({ width: w, height: h });
             const st = await startScene(page, scene, params);
-            if (!res) {
-                const chk = await checkScene(page, scene);
-                const cv = await checkCanvas(page);
-                res = { ...st, ...chk, canvasTexts: cv?.texts ?? null };
-                if (cv) res.breaches.push(...cv.breaches);
+            // Checked at every size: short-screen media rules change sizes and weights
+            // (R5 M2: the notes title is 13px only under 560px high). A breach found at more
+            // than one size is listed once, with the sizes it was seen at.
+            const chk = await checkScene(page, scene);
+            const cv = await checkCanvas(page);
+            const found = [...chk.breaches, ...(cv?.breaches || [])];
+            if (!res) res = { ...st, errors: [...(st.errors || [])], elements: chk.elements, canvasTexts: cv?.texts ?? null, breaches: [], seen: new Map() };
+            else for (const e of st.errors || []) if (!res.errors.includes(e)) res.errors.push(e);
+            if (!st.open) res.open = false;
+            for (const b of found) {
+                const key = `${b.kind}|${b.where}|${b.detail}`;
+                const had = res.seen.get(key);
+                if (had) had.sizes.push(`${w}x${h}`);
+                else { const nb = { ...b, sizes: [`${w}x${h}`] }; res.seen.set(key, nb); res.breaches.push(nb); }
             }
             if (SHOTS) {
                 const id = REVIEW_IDS[`${scene} ${w}x${h}`] || REVIEW_SCENE_IDS[scene];

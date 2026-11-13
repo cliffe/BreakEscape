@@ -132,8 +132,11 @@
 .notes-minigame-title {
     margin: 0 6% 3% 10%;
     font-family: 'Press Start 2P', monospace;
-    font-size: 20px;
-    font-weight: bold;
+    /* On its 8px grid at normal weight: Press Start 2P has one weight and one font pixel per
+       eighth of its size (slice 7 R5 M1, M2). The blue underline marks it as the title. */
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: normal;
     color: #2c3e50;
     text-decoration: underline;
     text-decoration-color: #3498db;
@@ -409,7 +412,7 @@
     .notes-minigame-content-area { padding: 3% 9% 9% 17%; font-size: 14px; line-height: 1.3; height: 94%; }
     .notes-minigame-text-box { margin: 2% 0 4% 4%; padding: 8px; }
     .notes-minigame-text { margin-left: 0; }
-    .notes-minigame-title { font-size: 13px; margin: 0 0 2% 4%; }
+    .notes-minigame-title { font-size: 8px; line-height: 16px; margin: 0 0 2% 4%; }
     .notes-minigame-observation-container { margin: 2% 0 4% 4%; }
     .notes-minigame-observation { font-size: 14px; min-height: 24px; padding: 6px; }
     /* Continue stays beside the notepad here, out of the flow (the framework

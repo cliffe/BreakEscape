@@ -267,4 +267,32 @@ test('framework buttons glow with a hard 2px ring on hover, not a blurred glow',
     for (const r of rules) for (const [p, v] of r.decls) if (p === 'box-shadow') assert.ok(blurs(v).every(b => b === 0), `${r.selector} box-shadow ${v}`);
 });
 
+// Slice 7 R5 M1: no pixel face is ever faux-bolded (each ships one weight)
+test('every minigame turns off synthetic bold and draws pixel faces at weight 400', () => {
+    const fw = cssRules(read('css/minigames-framework.css'));
+    const shell = fw.find(r => r.selector.trim() === '.minigame-container');
+    assert.ok(shell, 'no .minigame-container rule');
+    assert.ok(shell.decls.some(([p, v]) => p === 'font-synthesis' && v.trim() === 'none'), '.minigame-container has no font-synthesis: none');
+    const all = fw.find(r => /\.minigame-container \*/.test(r.selector) && r.decls.some(([p]) => p === 'font-weight'));
+    assert.ok(all, 'no rule sets every element in a minigame to weight 400');
+    // cssRules drops !important, so read it from the source
+    assert.equal(all.decls.find(([p]) => p === 'font-weight')[1], '400');
+    assert.match(read('css/minigames-framework.css'), /\.minigame-container \*[^{]*\{\s*font-weight: 400 !important;/);
+});
+
+// Slice 7 R5 M2: Press Start 2P draws one font pixel per eighth of its size
+test('Press Start 2P sizes in the slice sheets sit on the 8px grid', () => {
+    const off = [];
+    for (const rel of [...CSS_FILES, 'css/container-minigame.css']) {
+        for (const r of cssRules(read(rel))) {
+            const fam = r.decls.find(([p]) => p === 'font-family');
+            const size = r.decls.find(([p]) => p === 'font-size');
+            if (!fam || !size || !/press start 2p/i.test(fam[1])) continue;
+            const m = size[1].match(/^(\d+(?:\.\d+)?)px/);
+            if (m && Number(m[1]) % 8 !== 0) off.push(`${rel} ${r.selector.trim()} ${size[1]}`);
+        }
+    }
+    assert.deepEqual(off, []);
+});
+
 export { cssBreaches, jsBreaches, gradientIsHard, blurs, fontOk };
