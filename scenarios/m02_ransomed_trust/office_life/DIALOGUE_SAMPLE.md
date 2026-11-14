@@ -35,7 +35,7 @@ Trigger: the first shared break the player hears, usually on the first visit to 
 
 ## The other two exchanges, for context
 
-`night_watch_burned` (after the keycard conversation with Gary, when security put out word that a visitor is not on the list, and only if neither Gary nor Dr Kim has been knocked out; 3 lines): Hodan "Radio says security want a visitor." (35) / Ernesto "Not our list, love. Not our problem." (36) / Hodan "Good. I clean floors. I don't do lists." (39).
+`night_watch_burned` (after the keycard conversation with Gary, when security put out word that a visitor is not on the list, and only if neither Gary nor Dr Kim has been knocked out and Bed 4 has not died; 3 lines): Hodan "Radio says security want a visitor." (35) / Ernesto "Not our list, love. Not our problem." (36) / Hodan "Good. I clean floors. I don't do lists." (39).
 
 `night_watch_cleared` (after Val clears the player, and only if the burn exchange was heard, Val was not attacked and neither Gary nor Dr Kim has been knocked out, and Bed 4 has not died; 3 lines): Hodan "Radio again. That visitor checks out." (37) / Ernesto "There you go. Fuss over nothing." (32) / Hodan "Checks out with who, though?" (28).
 

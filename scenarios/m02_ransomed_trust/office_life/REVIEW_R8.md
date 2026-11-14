@@ -36,4 +36,4 @@ Hodan's id, ink file and KO global are now `hodan_warsame` (`m02_npc_hodan_warsa
 
 **m5 (open, wording for the dialogue review).** "NIGHT STAFF, HANDOVER ROOM: Struck on shift" puts a room where every other PERSONNEL line puts a name or role, and m02's attack-short-of-KO lines name the actor ("Attacked by the agent", "struck by the agent"). A closer fit: "NIGHT STAFF: Porter or domestic struck by the agent". The condition also drops the line whenever either was knocked out, so a punched Ernesto plus a knocked-out Hodan credits only Hodan; the plan states this, and it is acceptable.
 
-- Integrator, after R8: m4 applied (night_watch_cleared also requires patient_bed4_deceased false; no line changed); m5 applied (attack credits line now "NIGHT STAFF: Porter or domestic struck by the agent", matching m02 partial-attack lines).
+- Integrator, after R8: m4 applied to both later exchanges (night_watch_burned and night_watch_cleared also require patient_bed4_deceased false; no line changed); m5 applied (attack credits line now "NIGHT STAFF: Porter or domestic struck by the agent", matching m02 partial-attack lines).

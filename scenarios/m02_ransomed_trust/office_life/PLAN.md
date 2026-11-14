@@ -317,7 +317,7 @@ All new; NPC-own pools only; no printed variables; 40 characters at most for poo
 
 | Order | Knot | Gate | Speaker | Line | Chars |
 |---|---|---|---|---|---|
-| 1 | `night_watch_burned` | `requireGlobal: { "cover_burned": true, "night_staff_attacked": false, "gary_ko": false, "dr_kim_ko": false }` | Domestic | Radio says security want a visitor. | 35 |
+| 1 | `night_watch_burned` | `requireGlobal: { "cover_burned": true, "night_staff_attacked": false, "gary_ko": false, "dr_kim_ko": false, "patient_bed4_deceased": false }` | Domestic | Radio says security want a visitor. | 35 |
 | | | | Porter | Not our list, love. Not our problem. | 36 |
 | | | | Domestic | Good. I clean floors. I don't do lists. | 39 |
 | 2 | `night_watch_cleared` | `requireGlobal: { "cover_restored": true, "heard_night_watch_burned": true, "attacked_guard": false, "guard_knocked_out": false, "night_staff_attacked": false, "gary_ko": false, "dr_kim_ko": false, "patient_bed4_deceased": false }` | Domestic | Radio again. That visitor checks out. | 37 |
