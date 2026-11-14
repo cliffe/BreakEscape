@@ -234,7 +234,10 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
             sever.hidden = true;
         }
         const cont = this.container.querySelector('#nsm-continue-btn');
-        if (cont) cont.hidden = false;
+        if (cont) {
+            cont.hidden = false;
+            cont.closest('.nsm-sever-group')?.classList.add('nsm-sever-group-severed');
+        }
     }
 
     cleanup() {
