@@ -49,6 +49,46 @@ This scenario turns on the needs debug overlay (`"needsDebugOverlay": true`, `sy
 
 Turn it off or on from the console with `window.__test.needs.overlay(false)` / `overlay(true)`; `overlay(null)` goes back to the scenario flag. Any other scenario can switch it on the same way, or with the flag.
 
+## The IT room and Neil (SIMS-3)
+
+A north door off the office opens onto the **IT room** (`room_it`), private to Neil, and a west door off IT onto an empty **Manager's Office** (`room_ceo`) the player only passes through (it fills up in SIMS-9). Neil Robson is IT support: he stands at the east end of the south benches by his own cold mug and never leaves it. He is m02's Gary pattern in neutral form, the still NPC whose only job is at its own post.
+
+What to watch, in order (no lever needed; times are needs-clock minutes after the north door first opens):
+
+| Where | Do | What should happen |
+|---|---|---|
+| office, then north | **open the north door** | IT: Neil standing at the south bench. About 2:30 after the door opens his caffeine runs low and he sips from his mug without a step (cup icon, a gulp sound); `see_neil_sip` ticks. He sips again about 7:30. |
+| IT | **talk to Neil, ask him to print the change log**, close the chat | about 6 s later the IT copier runs and one page lands on its tray; Neil never moves; the page landing ticks `see_neils_page`. Take it if you like. A conversation where you do not ask prints nothing. |
+
+The three desk cups in IT are the two on the desks plus Neil's mug; the two desk cups are player drinkables (`consumables.js`), and nobody reacts if you drink them. Neil's mug is declared and not takeable.
+
+If the player reloads during the 6 s print delay the auto-print is lost (the pending delayed mapping goes with the page), and nothing reprints after that reload unless the ask reached the server first; this is expected and recorded in the live proof.
+
+**Annotated example.** Neil's only need is met by a declared mug that is his own post object, so every sip is an at-post job that never moves him:
+
+```jsonc
+// neil_mug: a declared cup that claims the drawn office-misc-cup on the east bench.
+// No position: it claims the first drawn cup in pool order. private + owner: only Neil
+// uses it. seat "stand": he sips standing. useFrom aims the approach cell under his body,
+// so a suspend/resume leaves him on his spawn (within HOME_EPS) and he never walks home.
+{ "type": "office-misc-cup", "id": "neil_mug", "private": true, "owner": ["neil"],
+  "affordance": { "satisfies": "caffeine", "restores": 30, "useSeconds": 4, "capacity": 1,
+    "useSound": "drink_gulp", "seat": "stand", "useFrom": { "dx": 0, "dy": -1 } } }
+
+// Neil: one need, leashed to the IT room, swivel off, KO global. The print mapping puts one
+// page on the IT copier about 6 s after his conversation closes, if the player asked and he
+// is not knocked out; forget: true schedules no fetch errand (the page just waits on the tray).
+{ "id": "neil", "needsHome": "neil_mug", "needsRooms": ["it_room"], "swivel": false,
+  "globalVarOnKO": "neil_ko",
+  "needs": { "caffeine": { "decayPerMin": 6, "urgentAt": 45, "initial": 60 } },
+  "eventMappings": [ { "eventPattern": "conversation_closed:neil",
+    "condition": "globalVars.neil_print_asked === true && globalVars.neil_ko !== true",
+    "onceOnly": true, "delayMs": 6000,
+    "needs": { "print": { "producer": "it_copier", "forget": true } } } ] }
+```
+
+`neil_print_asked` is set in `neil.ink` when the player picks the "print the change log" choice (`#set_global:neil_print_asked:true`), standing in for m02's `cover_burned`. It is the only new preset object in IT: `it_copier` (type `photocopier1`) takes the copier preset; the mug's affordance is wholly authored.
+
 ## Live proof (2026-11-05, keyless :3001, headless, load average ~80)
 
 Game 499 (session log `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/c84d7b68-c29e-4285-9c19-4612b082eed3/scratchpad/lpp-sims/session-499.jsonl`), confirmation game 501. `verify-run.rb 499`: 8/8 tasks completed, 2 rooms beyond the first. Log ticks are 250 ms.
@@ -788,6 +828,22 @@ Notes (review R1):
 - The stub reproduces the symptom (`using lounge_sofa` far from the cell) but the exact cause of
   baseline 3537 is still unproven; the fix catches either a short path or a stale/foreign arrival
   (Design m4).
+
+### SIMS-3 live proof: the IT room and Neil, the still NPC who prints by command (2026-11-14, keyless :3093, headless, worktree p-ol-sims)
+
+Tool `tools/playtest/needs-sims-neil.mjs`, on test_needs_sims games from `new-game.rb`; every
+conversation is opened and closed through its own UI (never a synthetic emit). Scratchpad
+`officelife-sims/s3/`.
+
+| Beat | Result | Evidence |
+|---|---|---|
+| Step 1 placement | PASS | Game 4289: `neil_mug` claims the drawn `office-misc-cup` on the east bench (x 214 = tile 6.69); Neil spawns on the mug's approach cell (home distance 7 px, within HOME_EPS 12); the IT copier and its six slots clear of his cell; both IT and the manager office load and their doors align. `it-room-4289.png`, `manager-4289.png` |
+| Neil is still for 10 min; sips at 2:30 and 7:30 | _to fill_ | |
+| Suspend/resume leaves him on his spawn | _to fill_ | |
+| Ask Neil, close: the copier runs ~6 s later, one slot revealed, no fetch | _to fill_ | |
+| Leave IT within 6 s of the close: the page is still there on return | _to fill_ | |
+| Reload after the page lands: tray empty, nothing reprints | _to fill_ | |
+| Reload within the 6 s delay: no page, nothing reprints (expected) | _to fill_ | |
 
 ## Engine findings
 

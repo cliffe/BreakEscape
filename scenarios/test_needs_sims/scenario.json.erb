@@ -47,7 +47,15 @@
     "kitchen_copier_off": false,
     "kitchen_out_a_shown": false,
     "kitchen_out_b_shown": false,
-    "cake_servings": 2
+    "cake_servings": 2,
+    "it_out_a_shown": false,
+    "it_out_b_shown": false,
+    "it_out_c_shown": false,
+    "it_out_d_shown": false,
+    "it_out_e_shown": false,
+    "it_out_f_shown": false,
+    "neil_print_asked": false,
+    "neil_ko": false
   },
 
   "startItemsInInventory": [
@@ -131,6 +139,17 @@
         { "taskId": "see_call_missed", "title": "Let a call ring out (ring Tom while he is away and Amara is busy, or while you are talking to him)", "type": "custom", "status": "active" },
         { "taskId": "hear_office", "title": "Hear the office at work (each room has its own quiet bed: air handling in the office, a fridge hum in the kitchen, near silence in the lounge; keyboards while people type, the copier when it prints, the kettle and coffee machine when someone makes a drink)", "type": "custom", "status": "active" }
       ]
+    },
+    {
+      "aimId": "watch_it",
+      "title": "Watch the IT room",
+      "description": "Nothing to solve. Open the north door to the IT room and watch Neil, who never leaves his bench.",
+      "status": "active",
+      "order": 1,
+      "tasks": [
+        { "taskId": "see_neil_sip", "title": "Neil sips from his mug without a step (he is standing by the south bench; about two and a half minutes after the door opens his caffeine runs low and he drinks where he stands)", "type": "custom", "status": "active" },
+        { "taskId": "see_neils_page", "title": "Ask Neil for the change log and his page lands on the IT copier (talk to him, ask him to print it, close the chat: about six seconds later the copier runs and a page appears on the tray)", "type": "custom", "status": "active" }
+      ]
     }
   ],
 
@@ -138,7 +157,7 @@
     "office": {
       "type": "room_office",
       "door_sign": "Office",
-      "connections": { "west": "kitchen", "east": "lounge" },
+      "connections": { "west": "kitchen", "east": "lounge", "north": "it_room" },
       "objects": [
         {
           "type": "pc",
@@ -562,7 +581,9 @@
             { "eventPattern": "workstation_lock_heard:amara_pc", "condition": "data.how === 'leave'", "onceOnly": true, "cooldown": 0, "completeTask": "hear_screen_lock" },
             { "eventPattern": "workstation_screen_changed:sanjay_pc", "condition": "data.how === 'auto'", "onceOnly": true, "cooldown": 0, "completeTask": "see_auto_lock" },
             { "eventPattern": "workstation_accessed:sanjay_pc", "onceOnly": true, "cooldown": 0, "completeTask": "use_open_screen" },
-            { "eventPattern": "item_dropped:player_mugs", "onceOnly": true, "cooldown": 0, "setGlobal": { "mugs_dropped": true } }
+            { "eventPattern": "item_dropped:player_mugs", "onceOnly": true, "cooldown": 0, "setGlobal": { "mugs_dropped": true } },
+            { "eventPattern": "npc_used:neil_mug", "onceOnly": true, "cooldown": 0, "completeTask": "see_neil_sip" },
+            { "eventPattern": "object_revealed:*", "condition": "data.producerId === 'it_copier' && data.npcId === 'neil'", "onceOnly": true, "cooldown": 0, "completeTask": "see_neils_page" }
           ]
         },
         {
@@ -875,6 +896,160 @@
           ]
         }
       ]
+    },
+
+    "it_room": {
+      "type": "room_it",
+      "door_sign": "IT",
+      "needsPrivateTo": ["neil"],
+      "connections": { "south": "office", "west": "manager_office" },
+      "objects": [
+        {
+          "type": "office-misc-cup",
+          "id": "neil_mug",
+          "name": "Neil's Mug",
+          "takeable": false,
+          "private": true,
+          "owner": ["neil"],
+          "observations": "Cold. Nobody has drunk from it since lunch.",
+          "affordance": { "satisfies": "caffeine", "restores": 30, "useSeconds": 4, "capacity": 1, "useSound": "drink_gulp", "seat": "stand", "useFrom": { "dx": 0, "dy": -1 } }
+        },
+        {
+          "type": "photocopier1",
+          "id": "it_copier",
+          "name": "IT Copier",
+          "position": { "x": 8.5, "y": 7.1 },
+          "takeable": false,
+          "observations": "The IT copier. Neil's change log prints here.",
+          "affordance": { "uncollectedAfterSeconds": 180, "useFrom": { "dx": -1, "dy": 0 } },
+          "_comment": "SIMS-3: Neil's print lands here about 6 s after his conversation closes, if the player asked for the change log. useFrom dx -1: the default cell below it is the south wall row. The photocopier1 preset gives the rest of the affordance (outputSound copier_run); nobody satisfies a need here."
+        },
+        {
+          "type": "notes1",
+          "id": "it_out_a",
+          "name": "Printout",
+          "position": { "x": 8.2, "y": 7.7 },
+          "takeable": true,
+          "readable": true,
+          "addToNotes": false,
+          "text": "CHANGE LOG\n\nFloor 2 switch firmware updated overnight. No user action needed.",
+          "observations": "A printout on the IT copier tray.",
+          "outputOf": "it_copier",
+          "revealOnGlobal": "it_out_a_shown",
+          "needsTag": "printout",
+          "_comment": "The change log Neil prints on command (his mapping reveals the first free slot, a first). Takeable: the auto-print and the paper leak."
+        },
+        {
+          "type": "notes1",
+          "id": "it_out_b",
+          "name": "Printout",
+          "position": { "x": 8.2, "y": 7.7 },
+          "takeable": true,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "TONER ORDER\n\nTwo black cartridges for the IT copier. Due Thursday.",
+          "observations": "A printout on the IT copier tray.",
+          "outputOf": "it_copier",
+          "revealOnGlobal": "it_out_b_shown",
+          "needsTag": "printout"
+        },
+        {
+          "type": "notes1",
+          "id": "it_out_c",
+          "name": "Printout",
+          "position": { "x": 8.2, "y": 7.7 },
+          "takeable": true,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "PATCH NOTE\n\nLaptops reboot for updates at 6pm. Save your work first.",
+          "observations": "A printout on the IT copier tray.",
+          "outputOf": "it_copier",
+          "revealOnGlobal": "it_out_c_shown",
+          "needsTag": "printout"
+        },
+        {
+          "type": "notes1",
+          "id": "it_out_d",
+          "name": "Printout",
+          "position": { "x": 8.2, "y": 7.7 },
+          "takeable": true,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "DESK MOVES\n\nSales move to the east bank on Monday. Labels are on the desks.",
+          "observations": "A printout on the IT copier tray.",
+          "outputOf": "it_copier",
+          "revealOnGlobal": "it_out_d_shown",
+          "needsTag": "printout"
+        },
+        {
+          "type": "notes1",
+          "id": "it_out_e",
+          "name": "Printout",
+          "position": { "x": 8.2, "y": 7.7 },
+          "takeable": true,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "TRAINING REMINDER\n\nAnnual security refresher due this month. Fifteen minutes online.",
+          "observations": "A printout on the IT copier tray.",
+          "outputOf": "it_copier",
+          "revealOnGlobal": "it_out_e_shown",
+          "needsTag": "printout"
+        },
+        {
+          "type": "notes1",
+          "id": "it_out_f",
+          "name": "Printout",
+          "position": { "x": 8.2, "y": 7.7 },
+          "takeable": true,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "CABLE AUDIT\n\nUnder-desk cables to be tidied and tagged next week.",
+          "observations": "A printout on the IT copier tray.",
+          "outputOf": "it_copier",
+          "revealOnGlobal": "it_out_f_shown",
+          "needsTag": "printout"
+        }
+      ],
+      "npcs": [
+        {
+          "id": "neil",
+          "displayName": "Neil Robson",
+          "npcType": "person",
+          "position": { "x": 6.9, "y": 7.6 },
+          "spriteSheet": "offduty_agent",
+          "spriteTalk": "assets/characters/offduty_agent_talk.png",
+          "spriteVisemes": "assets/characters/offduty_agent_visemes.png",
+          "storyPath": "scenarios/test_needs_sims/ink/neil.json",
+          "currentKnot": "start",
+          "voice": { "name": "Charon", "style": "IT support engineer, mid forties, white British, Geordie accent. Dry, settled, unhurried.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "needsHome": "neil_mug",
+          "needsRooms": ["it_room"],
+          "needsSpeed": 80,
+          "swivel": false,
+          "globalVarOnKO": "neil_ko",
+          "needs": {
+            "caffeine": { "decayPerMin": 6, "urgentAt": 45, "initial": 60 }
+          },
+          "_comment": "SIMS-3 (m02 Gary pattern): Neil's only need is caffeine, met by his own declared mug (neil_mug, seat stand), so every sip is an at-post job that never moves him. swivel false. The aimed useFrom holds his spawn on the mug's approach cell through a suspend and resume.",
+          "eventMappings": [
+            { "eventPattern": "conversation_closed:neil", "condition": "globalVars.neil_print_asked === true && globalVars.neil_ko !== true", "onceOnly": true, "delayMs": 6000, "needs": { "print": { "producer": "it_copier", "forget": true } } }
+          ]
+        }
+      ]
+    },
+
+    "manager_office": {
+      "type": "room_ceo",
+      "door_sign": "Manager's Office",
+      "connections": { "east": "it_room" },
+      "objects": [],
+      "npcs": []
     }
   }
 }

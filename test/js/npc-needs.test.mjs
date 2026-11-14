@@ -8,6 +8,7 @@ import { readFileSync } from 'node:fs';
 import { NPCNeedsSystem, needTiming, NEEDS_TICK_MS, RETURN_YIELD_MS, createEngineWorld } from '../../public/break_escape/js/systems/npc-needs.js';
 
 import { makeWorld } from './fixtures/needs-stub-world.mjs';
+import { makeSimsWorld, addCopierBeat, SIMS_SEED } from './fixtures/needs-sims-world.mjs';
 
 const TILE = 32;
 
@@ -1565,4 +1566,74 @@ test('SIMS-2 (m1): an unreachable home logs arrival_far once per return; _watchR
     sys.onArrived('clerk', 'needs', { x: home.x, y: home.y, moveId: id });
     sys.step(NEEDS_TICK_MS);
     assert.equal(sys.getState('clerk').atPost, true, 'a near arrival home sets atPost');
+});
+
+// ── SIMS-3 (OFFICE_LIFE_SIMS_BUILD_PLAN 5.3): the still NPC (Neil) and the print command ──
+
+/** A Neil: one need (caffeine) met only by its own declared mug (seat stand), nothing else. */
+function stillMugCfg() {
+    const cfg = office({ objects: [
+        { id: 'own_mug', x: 100, y: 68, affordance: { satisfies: 'caffeine', restores: 30, useSeconds: 4, capacity: 1, seat: 'stand' } }
+    ] });
+    cfg.npcs.clerk.rec.needsHome = 'own_mug';
+    cfg.npcs.clerk.rec.swivel = false;
+    cfg.npcs.clerk.rec.needs = { caffeine: { decayPerMin: 6, urgentAt: 45, initial: 60, jitterPct: 0 } };
+    cfg.objects = cfg.objects.filter(o => o.id !== 'clerk_pc' && o.id !== 'coffee_machine');
+    return cfg;
+}
+
+test('an NPC whose only need target is its own post object never issues a move over 30 minutes', () => {
+    const w = makeWorld(stillMugCfg());
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    sys.step(30 * 60000);
+    const names = w.calls.emits.map(e => e.name);
+    const sips = sys.getLog().filter(e => e.npc === 'clerk' && e.ev === 'used' && e.target === 'own_mug');
+    assert.ok(sips.length >= 5, `sipped at the mug across 30 min (${sips.length})`);
+    assert.equal(w.calls.moves.filter(m => m.id === 'clerk').length, 0, 'no move was ever issued for the still NPC');
+    assert.ok(!names.includes('npc_left_post:clerk'), 'never leaves its post');
+    assert.ok(!names.includes('npc_returned_post:clerk'), 'never returns (it never left)');
+    assert.equal(sys.getState('clerk').atPost, true, 'stays at its post');
+});
+
+/** The sims stub with the copier beat and a quiet Tom, so the print command is the only event. */
+function printCmdWorld() {
+    const w = makeSimsWorld();
+    addCopierBeat(w);
+    w.cfgNpcs.tom.rec.needs = { work: { decayPerMin: 0.1, urgentAt: 50, initial: 99 } };
+    w.cfgNpcs.tom.rec.onUse = {};
+    delete w.cfgNpcs.amara.rec.interests.printout;   // nobody files the forgotten slot
+    const sys = new NPCNeedsSystem(w.world, { seed: SIMS_SEED, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    sys.tick();
+    const evs = (ev, npc) => sys.getLog().filter(e => e.ev === ev && (!npc || e.npc === npc));
+    const print = opts => sys.control('tom', { print: { producer: 'office_copier', ...opts } });
+    const ticks = n => { for (let i = 0; i < n; i++) sys.tick(); };
+    return { w, sys, evs, print, ticks };
+}
+
+test('the print command with forget:true reveals a slot and schedules no fetch', () => {
+    const p = printCmdWorld();
+    assert.equal(p.print({ forget: true }), true);
+    p.ticks(5 * 60 * 4);   // five needs-clock minutes
+    assert.equal(p.w.globals.copier_out_a_shown, true, 'the page is on the tray');
+    const res = p.evs('print_reserved', 'tom');
+    assert.equal(res.length, 1);
+    assert.equal(res[0].item, 'copier_out_a');
+    assert.equal(res[0].forgotten, true, 'forget:true marks it forgotten');
+    assert.equal(p.evs('print_fetched', 'tom').length, 0, 'no fetch errand is scheduled');
+    assert.ok(!p.sys.getLog().some(e => e.npc === 'tom' && e.ev === 'job_start' && e.item === 'copier_out_a'), 'nobody walks to fetch it');
+    assert.ok(p.sys._prints.has('copier_out_a'), 'the slot is owned (reserved), so Amara leaves it');
+});
+
+test('a forgotten command print is the oldest recyclable slot once the tray fills', () => {
+    const p = printCmdWorld();
+    for (let i = 0; i < 3; i++) { p.print({ forget: true }); p.ticks(2); }
+    assert.deepEqual([...p.sys._prints.keys()].sort(), ['copier_out_a', 'copier_out_b', 'copier_out_c'], 'the three slots are full and forgotten');
+    p.print({ forget: true });   // the tray is full: the next command recycles the oldest read-in-place slot
+    const rec = p.evs('recycled', 'tom');
+    assert.deepEqual(rec.map(e => e.item), ['copier_out_b'], 'the oldest read-in-place forgotten slot is reused, the takeable a is kept');
+    assert.equal(p.w.globals.copier_out_a_shown, true, 'the takeable forgotten printout still waits on the tray');
 });

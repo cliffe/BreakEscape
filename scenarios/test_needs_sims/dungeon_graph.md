@@ -10,14 +10,14 @@ A demo of the NPC needs system. Nothing to solve. Five staff get thirsty, hungry
 
 | Metric | Value |
 |---|---|
-| Story aims | 1 |
-| Total tasks | 38 (0 optional) |
+| Story aims | 2 |
+| Total tasks | 40 (0 optional) |
 | VM flag challenges | 0 |
 | Physical locks | 0 |
 | AND-gate convergences | 0 |
-| Rooms | 3 |
-| Puzzle graph nodes / edges | 3 / 2 |
-| Story graph nodes / edges | 1 / 0 |
+| Rooms | 5 |
+| Puzzle graph nodes / edges | 5 / 4 |
+| Story graph nodes / edges | 2 / 0 |
 
 ## Critical Path
 
@@ -74,11 +74,15 @@ flowchart TD
   office("Office")
   kitchen("Kitchen")
   lounge("Lounge")
+  it_room("IT")
+  manager_office("Manager's Office")
 
   office --> kitchen
   office --> lounge
+  office --> it_room
+  it_room --> manager_office
 
-  class office,kitchen,lounge room
+  class office,kitchen,lounge,it_room,manager_office room
   class node_start start
 ```
 
@@ -105,9 +109,10 @@ flowchart TD
   classDef start     fill:#003322,stroke:#00ffaa,color:#00ffaa
 
   aim_watch_the_office{{"Watch the office"}}
+  aim_watch_it{{"Watch the IT room"}}
 
 
-  class aim_watch_the_office aim
+  class aim_watch_the_office,aim_watch_it aim
 ```
 
 ## Story + Puzzle (Integrated)
@@ -138,13 +143,18 @@ flowchart TD
   office("Office")
   kitchen("Kitchen")
   lounge("Lounge")
+  it_room("IT")
+  manager_office("Manager's Office")
   aim_watch_the_office{{"Watch the office"}}
+  aim_watch_it{{"Watch the IT room"}}
 
   office --> kitchen
   office --> lounge
+  office --> it_room
+  it_room --> manager_office
 
-  class office,kitchen,lounge room
-  class aim_watch_the_office aim
+  class office,kitchen,lounge,it_room,manager_office room
+  class aim_watch_the_office,aim_watch_it aim
   class node_start start
 ```
 
@@ -176,11 +186,15 @@ flowchart TD
   office("Office")
   kitchen("Kitchen")
   lounge("Lounge")
+  it_room("IT")
+  manager_office("Manager's Office")
 
   office --> kitchen
   office --> lounge
+  office --> it_room
+  it_room --> manager_office
 
-  class office,kitchen,lounge room
+  class office,kitchen,lounge,it_room,manager_office room
   class node_start start
 ```
 
@@ -212,6 +226,8 @@ flowchart TD
   office("Office")
   kitchen("Kitchen")
   lounge("Lounge")
+  it_room("IT")
+  manager_office("Manager's Office")
   rc_amara_pc_1{"Amara's PC"}
   rc_tom_pc_2{"Tom's PC"}
   rc_tom_badge_3{"Tom's ID badge"}
@@ -252,9 +268,20 @@ flowchart TD
   rc_lounge_sofa_38{"Lounge Sofa"}
   rc_lounge_kettle_39{"Rosa's Kettle"}
   rc_npc_rosa_delgado_40("Rosa Delgado")
+  rc_neil_mug_41{"Neil's Mug"}
+  rc_it_copier_42{"IT Copier"}
+  rc_it_out_a_43{"Printout"}
+  rc_it_out_b_44{"Printout"}
+  rc_it_out_c_45{"Printout"}
+  rc_it_out_d_46{"Printout"}
+  rc_it_out_e_47{"Printout"}
+  rc_it_out_f_48{"Printout"}
+  rc_npc_neil_robson_49("Neil Robson")
 
   office --> kitchen
   office --> lounge
+  office --> it_room
+  it_room --> manager_office
   office --> rc_amara_pc_1
   office --> rc_tom_pc_2
   office --> rc_tom_badge_3
@@ -295,9 +322,18 @@ flowchart TD
   lounge --> rc_lounge_sofa_38
   lounge --> rc_lounge_kettle_39
   lounge --> rc_npc_rosa_delgado_40
+  it_room --> rc_neil_mug_41
+  it_room --> rc_it_copier_42
+  it_room --> rc_it_out_a_43
+  it_room --> rc_it_out_b_44
+  it_room --> rc_it_out_c_45
+  it_room --> rc_it_out_d_46
+  it_room --> rc_it_out_e_47
+  it_room --> rc_it_out_f_48
+  it_room --> rc_npc_neil_robson_49
 
-  class office,kitchen,lounge room
-  class rc_amara_pc_1,rc_tom_pc_2,rc_tom_badge_3,rc_tom_phone_4,rc_spare_phone_5,rc_sanjay_pc_6,rc_grace_laptop_7,rc_office_coffee_8,rc_office_coffee_socket_9,rc_office_mugs_10,rc_activity_board_11,rc_office_copier_12,rc_office_copier_socket_13,rc_copier_out_a_14,rc_copier_out_b_15,rc_copier_out_c_16,rc_copier_out_d_17,rc_copier_out_e_18,rc_print_queue_note_19,rc_deadline_memo_20,rc_kitchen_rota_21,rc_coffee_notice_22,rc_fridge_28,rc_microwave_29,rc_kitchen_coffee_30,rc_water_cooler_31,rc_washing_up_tray_32,rc_kitchen_copier_33,rc_kitchen_copier_socket_34,rc_kitchen_out_a_35,rc_kitchen_out_b_36,rc_rosa_laptop_37,rc_lounge_sofa_38,rc_lounge_kettle_39 item
-  class rc_npc_amara_okoye_23,rc_npc_tom_fletcher_24,rc_npc_grace_lindqvist_25,rc_npc_sanjay_mehta_26,rc_npc_marek_nowak_27,rc_npc_rosa_delgado_40 npc
+  class office,kitchen,lounge,it_room,manager_office room
+  class rc_amara_pc_1,rc_tom_pc_2,rc_tom_badge_3,rc_tom_phone_4,rc_spare_phone_5,rc_sanjay_pc_6,rc_grace_laptop_7,rc_office_coffee_8,rc_office_coffee_socket_9,rc_office_mugs_10,rc_activity_board_11,rc_office_copier_12,rc_office_copier_socket_13,rc_copier_out_a_14,rc_copier_out_b_15,rc_copier_out_c_16,rc_copier_out_d_17,rc_copier_out_e_18,rc_print_queue_note_19,rc_deadline_memo_20,rc_kitchen_rota_21,rc_coffee_notice_22,rc_fridge_28,rc_microwave_29,rc_kitchen_coffee_30,rc_water_cooler_31,rc_washing_up_tray_32,rc_kitchen_copier_33,rc_kitchen_copier_socket_34,rc_kitchen_out_a_35,rc_kitchen_out_b_36,rc_rosa_laptop_37,rc_lounge_sofa_38,rc_lounge_kettle_39,rc_neil_mug_41,rc_it_copier_42,rc_it_out_a_43,rc_it_out_b_44,rc_it_out_c_45,rc_it_out_d_46,rc_it_out_e_47,rc_it_out_f_48 item
+  class rc_npc_amara_okoye_23,rc_npc_tom_fletcher_24,rc_npc_grace_lindqvist_25,rc_npc_sanjay_mehta_26,rc_npc_marek_nowak_27,rc_npc_rosa_delgado_40,rc_npc_neil_robson_49 npc
   class node_start start
 ```
