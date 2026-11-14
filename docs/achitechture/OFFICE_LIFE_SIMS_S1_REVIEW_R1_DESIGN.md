@@ -221,3 +221,14 @@ quietly.
   accepts the tag (`npc-needs.js:2809-2811`), so `affordance: {}` makes the tray the only target.
   Live runs confirm `job_start washing_up_tray`. Pin it in the test (m9).
 - **README accuracy:** M1, M3, M4, M5, M6 and M7 overstate the table. The detail is in m8.
+
+---
+
+## Round-1 fix notes (builder)
+
+- All majors (M1-M7) and minors (m1-m9, and the three server findings) are addressed: M1/M2/M7 as
+  recorded owner engine/server items with file:line (build log + README), the rest by probe,
+  scenario, node-test, README and plan edits. Beats re-run fresh, README live-proof table updated.
+- Declined (engine visual, not mission-local): m1's "a KO'd Fran still shows a pressing-need water
+  bubble". A knocked-out NPC should not render a need bubble; that is an engine visual change, raised
+  for the owner, not fixable in the scenario or probe. Recorded here rather than acted on.

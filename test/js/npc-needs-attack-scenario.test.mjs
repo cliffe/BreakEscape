@@ -54,6 +54,21 @@ test("Ben's cooler and Ava's tray are outside their post rooms", () => {
     assert.ok(ava.interests && ava.interests.dirty_mugs, 'ava has the dirty_mugs interest');
 });
 
+test('no office object accepts dirty_mugs (the ava_pc carry-candidate fix is pinned)', () => {
+    // _carryCandidate prefers the home object when it accepts the tag, so if any
+    // office object (ava_pc above all) accepted dirty_mugs, Ava would deliver to it
+    // and never leave the office. The kitchen tray must be the only accept target.
+    const accepts = tag => o => {
+        const a = o.affordance;
+        const list = a && a.accepts;
+        return Array.isArray(list) && list.includes(tag);
+    };
+    const officeAccepts = (scenario.rooms.office.objects || []).filter(accepts('dirty_mugs')).map(o => o.id);
+    assert.deepEqual(officeAccepts, [], `no office object may accept dirty_mugs, found: ${officeAccepts.join(', ')}`);
+    const kitchenAccepts = (scenario.rooms.kitchen.objects || []).filter(accepts('dirty_mugs')).map(o => o.id);
+    assert.deepEqual(kitchenAccepts, ['washing_up_tray'], 'the kitchen tray is the only dirty_mugs accept target');
+});
+
 test("Eli's only need target is his own post object", () => {
     const eli = npc('eli');
     assert.equal(eli.needsHome, 'eli_mug');

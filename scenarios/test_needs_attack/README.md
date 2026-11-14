@@ -38,44 +38,63 @@ to 10 so they break at once.
     "condition": "globalVars.eli_asked === true && globalVars.eli_ko !== true",
     "onceOnly": true, "delayMs": 6000,
     "needs": { "print": { "producer": "office_copier", "forget": true } } },
-  { "eventPattern": "object_revealed:*",
-    "condition": "data.objectId === 'eli_page'",
+  { "eventPattern": "object_revealed:eli_page",
     "onceOnly": true, "completeTask": "check_eli_page" }
 ]
 ```
 
-`eli_asked` is set in `eli.ink` when the player asks for the handover notes. The condition is only
+The reveal mapping uses the scoped `object_revealed:eli_page` pattern (no condition), which is why
+the plan's `object_revealed:*` + `data.objectId === 'eli_page'` form is equivalent and the plan text
+has been aligned to the scoped form. `eli_asked` is set in `eli.ink` when the player asks for the
+handover notes. The print condition is only
 `globalVars.` terms joined by `&&`, which `safeEvaluateCondition` (npc-manager.js:25) supports; it is
 checked at the close and again when the 6 s delay ends, so a knock-out inside the delay cancels the
 print (`eli_ko !== true`).
 
 ## Behaviour under test
 
-- **(a)** Ava attacked mid-carry turns hostile, the needs system blocks her, the carry aborts; she
-  calms and on `unblocked` walks home and resumes.
+- **(a)** Ava attacked mid-carry (through the real `window.playerCombat.attack` punch path, which
+  converts her to hostile and emits `npc_attacked:ava`): the needs system blocks her and the carry
+  aborts, dropping the mugs. There is no in-play route back to calm in this scenario (no influence
+  threshold, no ink hostile tag), so the probe forces the calm through `npcHostileSystem` and only
+  the needs side (`unblocked` leading to resume/`_goHome`) is under test there.
 - **(b)** Ava knocked out mid-carry: `ava_ko` and `check_ko_drop` fire once; `ava_folder` drops once
-  where she fell. The carried mugs are a world object, not in `itemsHeld`, so the server's KO drop
-  gate refuses them; after a reload the folder is there once and the mugs are gone. Expected.
-- **(c)** Ben knocked out at the kitchen cooler: `ben_notebook` drops once; after a reload he stays
-  down and the notebook is there once.
+  where she fell (the kitchen). The carried mugs are a world object, not in `itemsHeld`, so the
+  server's KO drop gate refuses them. After a reload the folder is still in the kitchen once, but
+  the **mugs come back on the office floor** (the authored object is rebuilt; a needs carry records
+  no `objects_removed`) and **Ava's body is restored at her office spawn** while its drop stays in
+  the kitchen (the server saves `isKO`/`currentHP`, no position). Both are recorded engine faults,
+  not a probe pass/fail; see "Engine faults".
+- **(c)** Ben knocked out at the kitchen cooler (in phase `using`): `ben_notebook` drops once where
+  he fell. After a reload the notebook is still in the kitchen once, but Ben's body is restored at
+  his office spawn (same KO-position fault as (b)).
 - **(d)** Ben recalled by the Meeting Note: the patrol override walks him home and suspends needs;
   Meeting Over resumes them. `check_called_home` ticks.
 - **(e)** Cal never starts a job: registered, blocked from the first tick, `blocked` logged once.
-- **(f)** Dee walking to the coffee when the player picks `dee_drawer`: the catch fires, her
-  conversation opens, `check_caught_walking` ticks; she then finishes/restarts her coffee.
+- **(f)** Dee **walking** to the coffee (phase `goto_target`, real velocity) when the player picks
+  `dee_drawer` with a real Lock Pick Set taken from the office floor: the catch fires, her
+  conversation opens, `check_caught_walking` ticks; she then resumes. After the close and a reload,
+  picking the drawer again does not reopen the catch (the mapping's `onceOnly` key is saved).
 - **(g)** Fran knocked out mid-walk to the cooler: `fran_ko` once, nothing drops; Gil's next coupled
-  break goes ahead alone (`check_solo_break`). Reload: she stays down.
+  break goes ahead alone: Gil enters `using` at the kettle, no coupling/`paired` line forms, Fran's
+  state stays `blocked`, and `check_solo_break` ticks. Reload: she stays down.
 - **(h)** Eli knocked out before the player talks to him: no conversation closes, `eli_page` is never
   revealed, a reload reveals nothing.
+- **(h2)** Eli knocked out **inside** the 6 s print delay after a real close: the mapping re-checks
+  `eli_ko !== true` when the delay ends, so no page lands, nothing ticks, and a reload keeps it empty.
 - **(i)** Eli asked, conversation closed: the page lands ~6 s later (`check_eli_page`). A reload
-  before taking it leaves the tray empty afterwards and nothing prints again (the mapping is
-  `onceOnly` and saved). In a second game, a reload within the 6 s loses the pending delayed mapping
-  and its `onceOnly` key is saved only when it fires, so no page and no reveal global. Expected.
+  **after** the page has landed re-files the revealed slot, `eli_page_shown` persists, and a second
+  real conversation and close prints nothing again (the mapping is `onceOnly` and saved server-side).
+- **(i2)** A reload within the 6 s delay (measured 2-3 s after the schedule fires, before the delay
+  ends) loses the pending delayed mapping; its `onceOnly` key is saved only when it fires, so no
+  page and no reveal global. Expected.
 
 ## Validation
 
-`ruby scripts/validate_scenario.rb scenarios/test_needs_attack/scenario.json.erb` — **0 errors.** Four
-warnings, all intended:
+`ruby scripts/validate_scenario.rb scenarios/test_needs_attack/scenario.json.erb` — **0 errors.** The
+full run (with ink) gives **5 warnings**: the four intended ones below plus the dialogue lint's
+8-finding summary on the ink. The `--skip-ink --no-graph` run the node test uses gives the four
+intended warnings only:
 
 - `ava` interest accepting object `washing_up_tray`, and `ben` thirst target `water_cooler`, are in
   the kitchen, not their home room (office). This is the whole point of the probe: an errand and a
@@ -83,6 +102,8 @@ warnings, all intended:
 - `eli` and `fran` have no `*_talk.png` for their chosen free sprite sheets
   (`male_security_guard_v2`, `female_telecom_v2`), so person-chat shows no portrait. The sprites are
   fixed by the build plan and no image generation is in scope for SIMS-1; the conversations still play.
+
+The `office_lockpick` carries `puzzle_graph_unlocks: "dee_drawer"` so it adds no graph warning.
 
 Suggestions that `ava_ko`, `ben_ko` and `gil_ko` are set but unread are expected: they are the KO
 records the probe and `verify-run.rb` read from the server, not gates on anything in the scenario.
@@ -101,21 +122,22 @@ Run: `bin/test-js test/js/npc-needs.test.mjs test/js/npc-needs-attack-scenario.t
 
 ```
 env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true PLAYTEST_PORT=3093 \
-  bundle exec rails runner tools/playtest/new-game.rb test_needs_attack   # prints GAME_ID=
+  bundle exec rails runner tools/playtest/swap-scenario-game.rb test_needs_sims test_needs_attack --unlock-all   # prints GAME_ID=
 node tools/playtest/needs-attack-probe.mjs <GAME_ID> 3093 <beat>
 tools/playtest/verify-run.rb <GAME_ID>     # server KO records, npcHostility, objects_added
 ```
 
-The KO and reload beats (`a b c g`, and the within-6 s `i` case) are cleanest each in their own fresh
-game, because a KO is saved to the server. `beat=all` runs the non-destructive beats (`d e h`, and the
-print half of `i`) in one game.
+(`new-game.rb test_needs_attack` cannot make a game here: this folder has no Mission row, so games
+come from `swap-scenario-game.rb`.) The KO and reload beats (`a b c f g h h2 i i2`) are cleanest each
+in their own fresh game, because a KO is saved to the server. `beat=all` runs only the
+non-destructive beats (`e d i`) in one game.
 
 Run on a keyless server built from this worktree (format 3) on **:3093**, started from the worktree
 root; games made with `swap-scenario-game.rb` (host `test_needs_sims`), not `new-game.rb`, because
 there is no Mission row for this folder yet. A fresh game per KO or reload beat. Each task is ticked
 by the real interaction (a real Meeting Note read, Eli's conversation opened and closed in its UI);
 KO and reload drops are checked against the server's `room_states.<room>.objects_added`. Screenshots
-and `report-<beat>-<game>.json` are in the session scratchpad `officelife-sims/s1/`.
+and `report-<beat>-<game>.json` are in the session scratchpad `officelife-sims/s1-fix-r1/`.
 
 | beat | game id | result |
 |------|---------|--------|
@@ -136,7 +158,7 @@ and `report-<beat>-<game>.json` are in the session scratchpad `officelife-sims/s
 |------|-------|----|--------|
 | 1 | office | watch | Ava gets up to carry the abandoned mugs to the kitchen; Dee gets up for a coffee |
 | 2 | office → kitchen | attack Ava mid-carry, then stop | she turns hostile, drops the mugs, then calms and walks home |
-| 3 | office → kitchen | knock Ava out mid-carry | her folder drops where she fell; reload: the folder is there once, the mugs are gone |
+| 3 | office → kitchen | knock Ava out mid-carry | her folder drops where she fell; reload: the folder stays in the kitchen, the mugs come back on the office floor and her body is restored at her office spawn (recorded engine faults) |
 | 4 | kitchen | knock Ben out at the cooler | his notebook drops; reload: he stays down, the notebook is there once |
 | 5 | office | read the Meeting Note, then Meeting Over | Ben walks home and freezes, then resumes |
 | 6 | back_room | step in | Cal is hostile at once and never runs a need |
@@ -146,24 +168,55 @@ and `report-<beat>-<game>.json` are in the session scratchpad `officelife-sims/s
 
 ## Engine faults
 
-**(E-carry) Cross-room carry is unreliable (npc-needs.js).** With the scenario corrected so the only
-`dirty_mugs` accept target is the kitchen `washing_up_tray` (see "Scenario fix" below), Ava's carry
-job targets the tray but on some game seeds fails before she picks up the mugs: she takes the job
-(`job_start washing_up_tray`), never leaves her post, and `_failJob` fires `timeout` after the
-20 s minimum deadline (`npc-needs.js:3490`; the goto-item move is set up in `_moveForPhase`,
-`npc-needs.js:3076-3112`, whose own-post arrival short-circuit at line 3110 is the suspect). On other
-seeds the same carry runs cleanly office→kitchen and delivers to the tray (games 4144, 4145). So the
-behaviours under test (attack and KO mid-carry outside the office) are provable, but the carry needs
-retries. This is the cross-room-need limitation the plan anticipated ("until it is fixed, missions
-keep needs NPCs inside their own post room"); raise it as its own engine slice. `_abortJob`
-(npc-needs.js:3696) and the world's `dropHeld` behaved correctly on the clean runs.
+These are owner engine/server items, raised with a file:line. None is fixed here; the probe measures
+each rather than asserting it away.
 
-## Scenario fix applied
+**(E-carry) A needs move re-paths through a seated NPC's body; stuck recovery does not route round NPC
+bodies (`npc-behavior.js`).** The earlier "intermittent cross-room carry, blame `_moveForPhase`
+line 3110" was wrong. `_moveForPhase`'s own-post short-circuit (`npc-needs.js:3110`) only fires for a
+`use`/`visit` of the own post object, never a `carry`, and a short-circuit would give an arrival, not
+a timeout. The real cause is a **path collision inside the office**: with the mugs on Ben's row (the
+old `(5,7)`), Ava's straight path along row 7 ran through Ben's seat at `(4,7)`. When Ben sat down
+just as Ava set out, her body overlapped his immovable body and chair; she pushed with no progress
+until the 20 s deadline and `_advanceJob` (`npc-needs.js:3149`) called `_failJob` (`npc-needs.js:3490`)
+with `timeout`. The stuck watch (`npc-behavior.js` `_checkPathStuck`/`_recoverFromStuck`, ~1305-1335)
+re-paths to the same target through the same cells, because seated NPCs and their chairs are not in
+the walk grid. It is timing, not seeds (`npcNeedsSeed` is fixed, `scenario.json.erb:6`), and the OLMP
+in-room fallback would not help because the collision is inside the office. **Mission-local fix
+applied:** `office_mugs` moved off Ben's row to `(5,4)`, so beats (a) and (b) are now deterministic.
+The engine item for the owner is the stuck-recovery routing round NPC bodies.
 
-`ava_pc` had `affordance: { "accepts": ["dirty_mugs"] }`, so — being Ava's home object — the carry
-candidate preferred delivering the mugs to her own desk (`_carryCandidate`, npc-needs.js:2809-2811)
-and she never left the office. Set to `affordance: {}` so the kitchen `washing_up_tray` is the only
-accept target, per the plan's intent. The node test and validator still pass.
+**(E-reload-mugs) A carried world object comes back on its authored tile after a reload
+(`app/models/break_escape/game.rb:2108-2111`).** When an NPC picks a world object up for a needs
+carry, the server records no `objects_removed` for it, so on reload `apply_room_state_changes!`
+leaves the authored object in `room['objects']` and the client rebuilds it at its authored tile.
+After beat (b) the dirty mugs are back at the office mugs tile, not lost and not duplicated. This is
+the expected behaviour for a carried world object today; the owner item (if "gone" is wanted) is to
+persist a needs pickup as `objects_removed`. Until then it is as designed.
+
+**(E-reload-ko-pos) A knocked-out NPC that fell outside its scenario room is restored at its spawn on
+reload while its drop stays where it fell (`app/models/break_escape/game.rb`).** The server saves a
+KO as `isKO`/`currentHP` only, keyed to the NPC's scenario room and with no position
+(`update_npc_state!`, `:1176-1177`; the in-room KO self-record, `:974`). On reload the overlay is
+merged over the authored NPC in its authored room (`apply_room_state_changes!`, `:2145-2151`), so the
+body renders at its office spawn, while the dropped folder/notebook stays in the kitchen (an
+`objects_added` record, `:2108`-`:2121`). After beats (b) and (c) the player sees a body in one room
+and its item in another. This is the cross-room KO case E1 exists to flag. The owner item is to
+persist the KO position and the room it fell in. Until then, missions keep KO-able needs NPCs inside
+their own post room (the OLMP in-room fallback). `_abortJob` (`npc-needs.js:3696`) and the world's
+`dropHeld` behaved correctly on every run.
+
+## Scenario fixes applied
+
+- `ava_pc` had `affordance: { "accepts": ["dirty_mugs"] }`, so — being Ava's home object — the carry
+  candidate preferred delivering the mugs to her own desk (`_carryCandidate`, npc-needs.js:2809-2811)
+  and she never left the office. Set to `affordance: {}` so the kitchen `washing_up_tray` is the only
+  accept target, per the plan's intent. The node test now pins this (no office object accepts
+  `dirty_mugs`).
+- `office_mugs` moved from `(5,7)` (Ben's row) to `(5,4)`, so Ava's carry path no longer collides
+  with Ben's seat and beats (a)/(b) are deterministic (E-carry above).
+- A real `office_lockpick` (`type: lockpick`) added to the office floor at `(1,4)`, so beat (f) picks
+  the Lock Pick Set up through the normal item path instead of injecting it into the inventory.
 
 ## completeTask: settled (not an engine fault)
 
@@ -182,11 +235,11 @@ on both the real and the armed paths (games 4128, 4070). Not an engine fault.
 ## Handover
 
 Status: scenario, ink (7 files), both node tests and the probe are written and committed; the
-validator is clean (0 errors) and both test files pass. **All ten beats proved live** on a worktree
-server on :3093 (see the live-proof table): a 4145, b 4144, c 4120, d 4131, e 4126, f 4121, g 4122,
-h 4123, i 4128, i2 4124. One scenario fix applied (`ava_pc` no longer accepts `dirty_mugs`). One
-engine fault recorded (E-carry: intermittent cross-room carry); the `completeTask` question is
-settled (a real interaction ticks it; the old miss was a probe timing artifact).
+validator is clean (0 errors) and both test files pass. The beats are proved live on a worktree
+server on :3093 (see the live-proof table). Three scenario fixes applied (see above). Three
+engine/server faults recorded for the owner (E-carry stuck-recovery routing, E-reload-mugs,
+E-reload-ko-pos); the `completeTask` question is settled (a real interaction ticks it; the old miss
+was a probe timing artifact).
 
 To re-run any beat:
 1. Start a keyless server from this worktree root:
@@ -196,8 +249,7 @@ To re-run any beat:
    `env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true PLAYTEST_PORT=3093 bundle exec rails runner
    tools/playtest/swap-scenario-game.rb test_needs_sims test_needs_attack --unlock-all` → GAME_ID,
    then `node tools/playtest/needs-attack-probe.mjs <GAME_ID> 3093 <beat>`.
-3. For (a)/(b), the cross-room carry is intermittent — retry on fresh games until the probe reports
-   `carrying_at_attack`/`carrying_at_ko` true (E-carry).
+3. The mugs are off Ben's row now, so (a)/(b) no longer need carry retries.
 4. Check KO drops server-side: `room_states.<room>.objects_added` in the game's player_state.
 
-Probe report JSON and screenshots: session scratchpad `officelife-sims/s1/`.
+Probe report JSON and screenshots: session scratchpad `officelife-sims/s1-fix-r1/`.
