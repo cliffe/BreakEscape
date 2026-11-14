@@ -68,7 +68,7 @@ export class ScreenStates {
         const ws = win().workstationState;
         if (!ws || !isWorkstation(data)) return false;
         if (Array.isArray(data.spriteVariants) && data.spriteVariants.length) return false;
-        return !!ownerOf(data, ws.env.npcs());
+        return !!ownerOf(data);
     }
 
     /**
