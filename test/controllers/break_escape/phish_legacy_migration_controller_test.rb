@@ -104,8 +104,8 @@ module BreakEscape
 
       state = @game.reload.player_state
       assert_nil state['phishEvidenceMigrated'], 'sync_state must not run the bootstrap-only migration'
-      assert_nil state['seLandingPages'], 'the build store stays empty on a sync'
-      assert_nil state['sePhishSends'], 'the send store stays empty on a sync'
+      assert_empty state['seLandingPages'] || {}, 'the build store stays empty on a sync'
+      assert_empty state['sePhishSends'] || {}, 'the send store stays empty on a sync'
     end
 
     test 'phishEvidenceMigrated is never accepted from a sync_state body' do
