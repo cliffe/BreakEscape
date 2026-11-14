@@ -862,6 +862,63 @@ module BreakEscape
       effective_policy(pc)['remote'] == 'blocked'
     end
 
+    # The default remote sign-in screen when a policy names no remoteScreen (credential
+    # keyring D1 (a)): the PC's own account tiles are shown over the network.
+    DEFAULT_REMOTE_SCREEN = 'tiles'.freeze
+
+    # The policy's remoteScreen (credential keyring K0, section 5.1): "tiles" shows the PC's
+    # own account tiles over the network (by its loginPicker), "typed" shows none of the PC's
+    # accounts until a password is right, as Network Level Authentication does. Default
+    # "tiles" (D1 (a)). Never affects the keyboard screen; a headless host shows no PC tiles
+    # under either value.
+    def remote_screen(pc)
+      value = effective_policy(pc)['remoteScreen']
+      %w[tiles typed].include?(value) ? value : DEFAULT_REMOTE_SCREEN
+    end
+
+    # The remote sign-in screen's account tiles (credential keyring K0, section 5.1): a GET
+    # /login_accounts request that carries a foothold is judged as if the player stood at the
+    # PC, reached through the foothold, and never gets the sticky note. Returns { status:, body: }.
+    #
+    # The player's own captured sign-ins come from GET /capture_secrets, not from here: this
+    # answer holds only the PC's own tiles, so it names no password, note or capture state.
+    def remote_login_accounts(info, foothold)
+      pc = info[:object]
+      # 1. A foothold that is not a short id string never falls through to the keyboard branch.
+      unless foothold.is_a?(String) && !foothold.empty? && foothold.length <= 64
+        return { status: :bad_request, body: { error: 'Invalid foothold' } }
+      end
+      # 2. The foothold must be held and reach the host (host_reachable_through? reads
+      #    network_footholds and the player's reach).
+      unless host_reachable_through?(foothold, pc)
+        return { status: :forbidden, body: { error: "PC not reachable: #{pc['id']}" } }
+      end
+      # 3. The PC's policy turns remote sign-in off.
+      return { status: :unprocessable_entity, body: { remoteBlocked: true } } if remote_blocked?(pc)
+      # 4. The host's own office-life service is off.
+      if host_service_off?(pc)
+        return { status: :forbidden, body: { error: PC_NOT_RESPONDING_MESSAGE, reason: 'not_responding' } }
+      end
+
+      headless = NetworkModel.headless?(pc)
+      picker = pc.key?('loginPicker') ? pc['loginPicker'] : 'accounts'
+      screen = remote_screen(pc)
+      # Tiles only under "tiles" and never for a headless host; "typed" and a headless host
+      # answer 200 with an empty list, never 403.
+      tiles = (!headless && screen == 'tiles') ? login_account_tiles(pc) : []
+      {
+        status: :ok,
+        body: {
+          pc_id: pc['id'],
+          host: host_label(pc),
+          headless: headless,
+          loginPicker: picker,
+          remoteScreen: screen,
+          loginAccounts: tiles
+        }
+      }
+    end
+
     # A sign-in host whose own office-life service is off (9.3b plan 5.2): its
     # `affordance.offWhen` (9.2's field) holds on the server's copy of the globals, read the way
     # the NPC frustration path reads them. Its row answers "not responding", and a remote
