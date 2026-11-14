@@ -160,11 +160,16 @@ module BreakEscape
 
       sync(clientTs: 300_000, globalVariables: { 'b' => 1 }) # 700 s below: the reset branch
       assert_response :success
-      assert_equal [], ps['syncWrites'], 'the reset clears the ring'
+      stamps = ps['syncWrites'].map { |e| e['ts'] }
+      refute_includes stamps, 1_000_000, 'the reset drops the lingering pre-reset entry'
+      assert_equal [300_000], stamps, 'only the reset request own (fresh) entry remains'
       assert_equal 300_000, ps['lastSyncClientTs']
       assert_equal 1, globals['b'], 'the reset request is treated as fresh'
 
-      sync(clientTs: 299_999, globalVariables: { 'd' => 1 }) # stale-but-recent on the new timeline, empty ring
+      # Stale-but-recent on the new, low timeline: ts at the post-reset entry, so
+      # the guard holds. Pre-reset this request would have failed the guard
+      # forever against the lingering ts 1_000_000 entry.
+      sync(clientTs: 300_000, globalVariables: { 'd' => 1 })
       assert_response :success
       assert_equal 1, globals['d'], 'the merge re-engages rather than failing forever on pre-reset entries'
       assert_equal 300_000, ps['lastSyncClientTs']

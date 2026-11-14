@@ -120,16 +120,92 @@ the request's ring entry is recorded at its own (lower) ts.
 
 ### Drift (chunk 2)
 
-- None material. currentRoom is stripped by gating its inline block on
-  `skip.nil?` (so a stale-but-recent request never reaches it), matching the
-  plan's "stripped from the params it sees" for chunk 2; chunk 3 replaces this.
+- D3 (currentRoom strip, not material). currentRoom is stripped by gating its
+  inline block on `skip.nil?` (so a stale-but-recent request never reaches it),
+  matching the plan's "stripped from the params it sees" for chunk 2; chunk 3
+  replaces this.
 
-Tests (chunk 2): PENDING FIRST RUN.
+- D4 (MATERIAL, STOPPED HERE). The plan (section 11.2) says a stale-but-recent
+  request keeps the phish proof mail and that "capture proof stamping is deferred
+  to the next fresh sync, exactly as today". The ring does keep the mail: on the
+  stale-but-recent path mailState is a pre-filtered last-write-wins section, so it
+  is merged (the intended gap-1 recovery). But the capture *serving* endpoint
+  does not depend on the proven stamp: `CaptureProofs#capture_revealable?`
+  (capture_proofs.rb:420) returns true when `capture_evidence_holds?` now, even
+  for an entry still `proven: false`. So once the mail is kept, the live evidence
+  holds and GET /capture_secrets reveals the real credential on the
+  stale-but-recent request, where before chunk 2 (fully-stale whole-skip) the mail
+  was not merged, the evidence did not hold, and serving was deferred to the next
+  fresh sync.
+
+  Effect on tests: `capture_proofs_test.rb` test "6b: a stale request records but
+  does not serve a phish credential" (line ~481) now fails its
+  `assert_equal({}, secrets, 'a stale request does not serve the secret')`: the
+  secret `{ 'phished' => 'Land-Secret-1' }` is served on the stale-but-recent
+  clientTs:5 request. Every other assigned neighbour passes.
+
+  Why this is not a cheat/safety regression: the credential is only revealed when
+  the server-validated live evidence holds (the landing page meetsThreshold plus
+  the sent phish message carrying the link kit). The stale-but-recent path runs
+  the same `merge_mail_state!` and the same evidence check a fresh sync runs;
+  every secret field comes from the scenario, not the client. Nothing is forged
+  and no newer write is undone. The old deferral was an artifact of the all-or-
+  nothing stale whole-skip, which is exactly what the ring removes. So the
+  behaviour is defensible, but it changes a capture-proof security test, which is
+  a judgement call outside a builder's remit.
+
+  Decision needed from the orchestrator/user (do NOT let a builder weaken a
+  security test unilaterally):
+  - Option A: accept it. Update capture_proofs_test 6b to expect the secret
+    served on the stale-but-recent request (the honest evidence genuinely holds),
+    and add the plan's chunk-2 capture test as "mail kept, served once evidence
+    holds".
+  - Option B: preserve deferral. Keep a stale-but-recent request from advancing
+    capture serving, e.g. exclude mailState (and se_landing_pages) from the
+    stale-but-recent merge, or gate `capture_revealable?` on the stamp. Excluding
+    mailState forgoes the plan's gap-1 recovery for mail, so this needs a plan
+    amendment.
+
+  Per the brief ("If the drift is material, stop and report it"), the build
+  stopped at the end of chunk 2. Chunk 3 (currentRoom under the stale-but-recent
+  path) is NOT built, to avoid compounding work on an unresolved decision.
+
+Tests (chunk 2): `sync_stale_ring_merge_test.rb` 8 runs, green. Neighbours:
+`games_controller_test` 63, `game_state_locking_test` 6,
+`reload_persistence_test`, `captures_sync_test`, `mail_state_sync_test`,
+`current_room_guard_refusal_test`, `saved_current_room_test` all green;
+`capture_proofs_test` 1 failure (6b), see D4 above.
 
 ## Chunk 3: currentRoom under the stale-but-recent path
 
-PENDING.
+NOT BUILT. Blocked on the D4 decision (see chunk 2 drift). When unblocked, chunk
+3 replaces the `skip.nil?` gate on the currentRoom block in
+`merge_last_write_wins_sections` with skip-aware handling: skip currentRoom when a
+newer ring entry claimed it (`ring_whole_claimed?('currentRoom', skip)`),
+otherwise run the normal `may_sync_current_room?` acceptance, viaPass credit and
+notSaved contract on the unclaimed room. Recorder already records currentRoom as a
+whole-section claim, so no recorder change is needed. Test: an older room on a
+stale-but-recent request is skipped when newer; a legitimate unclaimed room still
+applies and a refused room still goes to notSaved.
 
 ## Handover
 
-(To be filled if the context limit is reached mid-build.)
+- Done and committed: chunk 1 (ring storage, helpers, record-only, bound,
+  never-sent, burst) and chunk 2 (stale-but-recent band, guard, pre-filter,
+  reset-clearing, currentRoom whole-strip). Chunk 1 and chunk 2 own tests green.
+- Open / blocked: chunk 3 (currentRoom under stale-but-recent) not started,
+  blocked on D4. capture_proofs_test 6b fails because of D4 (a plan-vs-code
+  material drift on capture serving), awaiting an orchestrator decision.
+- In progress: none.
+- Files touched: `app/models/break_escape/sync_ring.rb` (new),
+  `app/controllers/break_escape/games_controller.rb`,
+  `test/models/break_escape/sync_ring_test.rb` (new),
+  `test/controllers/break_escape/sync_stale_ring_test.rb` (new),
+  `test/controllers/break_escape/sync_stale_ring_merge_test.rb` (new),
+  `docs/achitechture/SYNC_STALE_RING_BUILD_LOG.md` (new).
+- Commits: chunk 1 `147fa3c33` (+ test fix `follow-up`), chunk 2 `8e591bc11`
+  (+ test fix follow-up). See `git log`.
+- Gotchas: capture serving reads live evidence, not the proven stamp (D4);
+  the ring entry for a stale-but-recent request is recorded at its own lower ts;
+  the reset request clears the pre-reset ring then records its own fresh entry
+  (so the ring is not empty after a reset, only free of pre-reset stamps).
