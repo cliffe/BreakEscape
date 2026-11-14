@@ -10,6 +10,8 @@
  *     (setAudioMs on the handle). If the NPC leaves view mid-line (the player changes room, the
  *     room goes dark, a minigame opens), the bubble closes and the rest of the line, from the
  *     page being shown onwards, goes to onRemainder (npc-barks.js shows it as a toast).
+ *     A bubble whose voice is still playing when its last line page is due keeps that page up
+ *     until the voice ends (say() voiceLive), so a late or unmeasured voice never outlasts it.
  *
  * Rules:
  *   - Only for NPCs in the player's current room, and not while that room is dark (the action
@@ -69,6 +71,9 @@ export const WRAP_VIEW_SHARE = 0.45;
 export const PAGE_LINES = 3;        // lines a page shows at most
 export const PAGE_MIN_MS = 1200;    // no page shows for less than this
 export const AUDIO_TAIL_MS = 800;   // added to the voiced audio's length
+// A bark's last line page stays up while its voice still plays (say() voiceLive), for at most
+// this long from the start of the line: the release policy's cap on one voice
+export const VOICE_HOLD_CAP_MS = 30000;
 export const BORDER_PX = 2;
 const PAD_X = 4;
 const PAD_Y = 2;
@@ -851,7 +856,10 @@ export class NpcWorldBubbles {
      * the caller then shows a toast.
      * @param {object} o
      * @param {number|null} [o.audioMs]   the voiced audio's length, when already known
-     * @param {(rest:string)=>void} [o.onRemainder]  the rest of the line, when it leaves view
+     * @param {(rest:string, info:{why:string, page:number})=>void} [o.onRemainder]  the rest of
+     *   the line, when it leaves view; `why` is 'left-view', 'no-room' or 'pushed'
+     * @param {()=>boolean} [o.voiceLive]  true while the line's voice is still to come or playing:
+     *   the last line page stays up until it ends (at most VOICE_HOLD_CAP_MS from the start)
      * @param {()=>void} [o.onDone]
      * @param {()=>boolean} [o.stillValid]  the bark's conditions; false closes it, no remainder
      * @param {string|null} [o.followUp]  pages shown after the line, timed for reading (not to the
@@ -861,7 +869,7 @@ export class NpcWorldBubbles {
      *   bubble ends early (stillValid, close(), closeTagged with another hint): npc-barks.js shows
      *   them as a toast of their own, so a lockedHint is never lost (R3 m1)
      */
-    say(npcId, line, { audioMs = null, onRemainder = null, onDone = null, stillValid = null, followUp = null, tag = null, onFollowUpLost = null } = {}) {
+    say(npcId, line, { audioMs = null, onRemainder = null, onDone = null, stillValid = null, followUp = null, tag = null, onFollowUpLost = null, voiceLive = null } = {}) {
         const wrap = npcId ? this._wrap(this._spriteAndRoom(npcId)?.sprite?.scene) : null;
         const linePages = pageLine(line, { wrap });
         if (!npcId || linePages.length === 0) return null;
@@ -896,7 +904,8 @@ export class NpcWorldBubbles {
             npcId, line, pages, hints, linePages: linePages.length, page: 0, started: this.now(), pageStarted: this.now(),
             times: [...pageTimes(linePages, lineTotalMs({ audioMs, readingMs: reading })), ...followUpTimes(extra)],
             audioMs: audioMs > 0 ? audioMs : null, onRemainder, onDone, tag: tag || null, onFollowUpLost: lost,
-            stillValid: typeof stillValid === 'function' ? stillValid : null, validAt: this.now()
+            stillValid: typeof stillValid === 'function' ? stillValid : null, validAt: this.now(),
+            voiceLive: typeof voiceLive === 'function' ? voiceLive : null
         };
         this.says.set(npcId, st);
         this._note(npcId, 'say', { page: 0, text: pages[0], pages: pages.length });
@@ -950,7 +959,21 @@ export class NpcWorldBubbles {
         const rest = pagesText(st.pages.slice(st.page < n ? st.page : n));
         this._end(npcId, why, { handOn: false });
         this._note(npcId, 'remainder', { page: st.page, text: rest });
-        if (rest) { try { st.onRemainder?.(rest); } catch (e) { /* never break a frame */ } }
+        if (rest) { try { st.onRemainder?.(rest, { why, page: st.page }); } catch (e) { /* never break a frame */ } }
+    }
+
+    /**
+     * Is this bark's last line page due to end while its voice is still to come or playing?
+     * Then it stays up (follow-up pages wait too), at most VOICE_HOLD_CAP_MS from the start.
+     */
+    _voiceHolds(st, t) {
+        if (!st.voiceLive) return false;
+        const n = st.linePages ?? st.pages.length;
+        if (st.page !== n - 1 || t - st.started >= VOICE_HOLD_CAP_MS) return false;
+        let live = false;
+        try { live = st.voiceLive() === true; } catch (e) { live = false; }
+        if (live && !st.voiceHeld) { st.voiceHeld = true; this._note(st.npcId, 'voice-hold', { page: st.page }); }
+        return live;
     }
 
     /** Advance pages, close finished lines and ones out of view. */
@@ -965,6 +988,9 @@ export class NpcWorldBubbles {
             }
             if (!this._inView(st.npcId)) { this._leave(st.npcId, 'left-view'); continue; }
             while (st.page < st.pages.length && t - st.pageStarted >= st.times[st.page]) {
+                // The voice outlasts the line's pages (it started late, or its length is
+                // unknown): the last line page waits for it, so the bubble never ends mid-voice
+                if (this._voiceHolds(st, t)) break;
                 st.pageStarted += st.times[st.page];
                 st.page++;
                 if (st.page < st.pages.length) this._note(st.npcId, 'page', { page: st.page, text: st.pages[st.page] });

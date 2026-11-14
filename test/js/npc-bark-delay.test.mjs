@@ -21,7 +21,7 @@ writeFileSync(join(dir, 'npc-manager.mjs'),
 
 // npc-barks.js with its imports stubbed, for _dropStaleVisibleBarks only.
 writeFileSync(join(dir, 'npc-barks.mjs'), `
-const ASSETS_PATH = '', overlayDepth = () => 0, displayDashes = (s) => s, releaseHeldBarks = () => {};
+const ASSETS_PATH = '', overlayDepth = () => 0, displayDashes = (s) => s, releaseHeldBarks = () => {}, HELD_BARK_VOICE_CAP_MS = 30000;
 const workstationPopupOpen = () => false, phoneThreadOpenFor = () => false, openPhoneThread = () => null, threadTextKey = () => '';
 const barkLifetimeMs = () => 0, barksToTrim = () => 0, BARK_RESUME_MIN_MS = 0, inventoryBlockedByForcedMinigame = () => false;
 const phoneBarkText = (s) => s;

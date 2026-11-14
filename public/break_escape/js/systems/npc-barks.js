@@ -6,7 +6,7 @@ import { ASSETS_PATH } from '../config.js';
 import TTSManager from './tts-manager.js';
 import { phoneBarkText } from '../minigames/phone-chat/phone-chat-speaker.js';
 import { displayDashes } from '../utils/display-dashes.js';
-import { releaseHeldBarks } from './bark-release-policy.js';
+import { releaseHeldBarks, HELD_BARK_VOICE_CAP_MS } from './bark-release-policy.js';
 import { workstationPopupOpen, phoneThreadOpenFor, openPhoneThread, threadTextKey } from '../utils/overlay-open.js';
 import { barkLifetimeMs, barksToTrim, BARK_RESUME_MIN_MS } from './bark-lifetime.js';
 import { inventoryBlockedByForcedMinigame } from './forced-minigame-guard.js';
@@ -145,11 +145,48 @@ export default class NPCBarkSystem {
     }
     const mgr = this.ttsManagers.get(npcId);
     const duration = await mgr.play(npcId, text);
+    // A clip whose length reads NaN (no duration in its metadata) is still playing: Infinity
+    // means "playing, length unknown", so the hold waits for its ended/pause/error event
+    // (capped by the release policy) instead of counting it as silent
+    if (!(duration > 0) && this._voicePlaying(mgr)) return Infinity;
     if (!duration && beep) {
       // TTS unavailable — fall back to the standard notification sound
       this.playBarkSound();
     }
     return duration || null;
+  }
+
+  /** Is this TTS manager's audio playing now (started, not paused, ended or failed)? */
+  _voicePlaying(mgr) {
+    const a = mgr && mgr.audio;
+    return !!(a && mgr.playing !== false && !a.paused && !a.ended);
+  }
+
+  /**
+   * Track one bark's voice: live() is true while it is still loading or playing; cancel() stops it
+   * now, or as soon as it starts if it is still loading.
+   */
+  _voiceTracker(npcId, ttsPromise, text) {
+    const mgrOf = () => this.ttsManagers.get(npcId);
+    const stopIfOurs = () => { const m = mgrOf(); if (m && m.currentText === text) m.stop(); };
+    const v = {
+      state: ttsPromise ? 'pending' : 'none', cancelled: false,
+      live: () => {
+        if (v.cancelled) return false;
+        if (v.state === 'pending') return true;
+        if (v.state !== 'playing') return false;
+        const m = mgrOf();
+        return !!(m && m.currentText === text && this._voicePlaying(m));
+      },
+      cancel: () => { v.cancelled = true; stopIfOurs(); }
+    };
+    if (ttsPromise) {
+      ttsPromise.then(ms => {
+        if (v.cancelled) { stopIfOurs(); v.state = 'none'; return; }
+        v.state = ms ? 'playing' : 'none';
+      }, () => { v.state = 'none'; });
+    }
+    return v;
   }
 
   /**
@@ -175,7 +212,11 @@ export default class NPCBarkSystem {
     // A bark arriving mid-release joins the end of the line, so it can't jump the queue.
     // The release lasts until the last held bark's voice ends (isDrainingDeferred), so a
     // bark due while that voice plays waits for it (and 0.3 s more) instead of talking over it.
-    if (this._shouldDefer(payload) || this.isDrainingDeferred || this.deferredBarkQueue.length > 0) {
+    // A continuation (the rest of a bubble that lost its place, or its unread hint) belongs to
+    // the line on screen now: only an open panel holds it, never the line it continues
+    // (it was queued behind that line's own voice and showed after it ended).
+    const queueHolds = !payload.continuation && (this.isDrainingDeferred || this.deferredBarkQueue.length > 0);
+    if (this._shouldDefer(payload) || queueHolds) {
       console.log('💬 conversation/minigame open — deferring bark:', payload.text || payload.message);
       this.deferredBarkQueue.push(payload);
       if (!this._shouldDefer()) this.drainDeferredBarks();
@@ -354,9 +395,13 @@ export default class NPCBarkSystem {
     // The bubble shows the line with authored " -- " as a dash, as the toast does; the voice
     // gets the raw text, so cached audio still matches (R1 m1).
     let handle = null;
+    let voice = null;
+    const voiced = !!(playSound && payload.useTTS && npcId && text);
     if (!payload.forceToast && this._routeFor(payload, contact) === 'bubble') {
       handle = window.npcWorldBubbles?.say?.(npcId, displayDashes(text), {
-        onRemainder: (rest) => this._toastRemainder(payload, rest),
+        onRemainder: (rest, info) => this._bubbleLeft(payload, rest, info, voice),
+        // The last page stays up while the voice plays (a late start, or a length read as NaN)
+        voiceLive: () => !!(voice && voice.live()),
         stillValid: typeof payload.stillValid === 'function' ? payload.stillValid : null,
         // A gate's lockedHint after the guard's refusal, in her bubble (R2 m3); never voiced
         followUp: followUp ? displayDashes(followUp) : null,
@@ -370,15 +415,17 @@ export default class NPCBarkSystem {
     // Person NPCs with a voice config speak their bark via TTS; a toast without one gets the
     // phone's sound. A speech bubble never does: that sound belongs to phone contacts (R1 m3).
     let ttsPromise = null;
-    if (playSound && payload.useTTS && npcId && text) {
+    if (voiced) {
       ttsPromise = this._speakBark(npcId, text, { beep: !handle });
     } else if (playSound && !handle) {
       this.playBarkSound();
     }
+    if (handle) voice = this._voiceTracker(npcId, ttsPromise, text);
 
     if (handle) {
       this.lastRoute = { npcId, route: 'bubble' };
-      if (ttsPromise) ttsPromise.then(ms => { if (ms) handle.setAudioMs(ms); }, () => {});
+      // An unknown length (Infinity) leaves the reading times; voiceLive holds the last page
+      if (ttsPromise) ttsPromise.then(ms => { if (Number.isFinite(ms) && ms > 0) handle.setAudioMs(ms); }, () => {});
       return ttsPromise;
     }
     this.lastRoute = { npcId, route: 'toast' };
@@ -435,7 +482,13 @@ export default class NPCBarkSystem {
     this._updateClearAllButton();
     this._trimBarkStackToFit();
 
+    el._shownAt = Date.now();
     this._startAutoClose(el, barkLifetimeMs(textSpan.textContent));
+    el._lifetime = el._autoCloseRemaining;
+    // The toast stays while the voice it carries plays: its own, or (a continuation) the voice
+    // of the bubble it took over from
+    if (payload.continuation) this._holdToastForVoice(el, npcId);
+    else if (ttsPromise) ttsPromise.then(ms => { if (ms) this._holdToastForVoice(el, npcId); }, () => {});
     el.addEventListener('mouseenter', () => this._pauseAutoClose(el));
     el.addEventListener('mouseleave', () => this._resumeAutoClose(el));
 
@@ -488,7 +541,51 @@ export default class NPCBarkSystem {
   _toastRemainder(payload, rest) {
     if (!rest) return;
     // The rest already holds any follow-up pages still to come
-    this.showBark({ ...payload, message: rest, text: undefined, followUp: null, playSound: false, useTTS: false, forceToast: true });
+    this.showBark({ ...payload, message: rest, text: undefined, followUp: null, playSound: false, useTTS: false, forceToast: true,
+      continuation: true });
+  }
+
+  /**
+   * A bubble lost its place (onRemainder). A panel opening over it while its voice is still to
+   * come or playing: the voice stops and the whole line is held, first in line, so it plays
+   * with its voice when the panel closes (the hold policy). Otherwise the rest goes to a toast
+   * at once, which stays until the voice ends.
+   */
+  _bubbleLeft(payload, rest, info, voice) {
+    if (voice && voice.live() && this._shouldDefer(payload)) {
+      voice.cancel();
+      console.debug('[barks] panel opened over a speaking bubble; line held with its voice:', payload.text || payload.message);
+      this.deferredBarkQueue.unshift(payload);
+      return;
+    }
+    this._toastRemainder(payload, rest);
+  }
+
+  /**
+   * Keep a toast up while this NPC's voice plays: no auto-close until the audio ends (or pauses,
+   * fails, or HELD_BARK_VOICE_CAP_MS passes), then what is left of its reading time, at least
+   * BARK_RESUME_MIN_MS. Returns true if it is holding.
+   */
+  _holdToastForVoice(el, npcId) {
+    const mgr = npcId && this.ttsManagers.get(npcId);
+    if (!el || el._removing || !this._voicePlaying(mgr)) return false;
+    const audio = mgr.audio;
+    const events = ['ended', 'pause', 'error', 'emptied'];
+    let cap = null;
+    const release = () => {
+      clearTimeout(cap);
+      for (const ev of events) audio.removeEventListener?.(ev, release);
+      if (!el._voiceHold) return;
+      el._voiceHold = false;
+      if (el._removing || el._autoClosePaused) return;
+      const left = (el._lifetime || 0) - (Date.now() - (el._shownAt || Date.now()));
+      this._startAutoClose(el, Math.max(BARK_RESUME_MIN_MS, left));
+    };
+    el._voiceHold = true;
+    clearTimeout(el._autoCloseTimer);
+    for (const ev of events) audio.addEventListener?.(ev, release);
+    cap = setTimeout(release, HELD_BARK_VOICE_CAP_MS);
+    return true;
   }
 
   /**
@@ -499,13 +596,15 @@ export default class NPCBarkSystem {
   _toastFollowUp(payload, hint) {
     if (!hint) return;
     this.showBark({ ...payload, message: hint, text: undefined, followUp: null, playSound: false, useTTS: false,
-      forceToast: true, stillValid: undefined });
+      forceToast: true, stillValid: undefined, continuation: true });
   }
 
   _startAutoClose(el, ms) {
     clearTimeout(el._autoCloseTimer);
     el._autoCloseRemaining = ms;
     el._autoCloseStarted = Date.now();
+    // Held for a voice (_holdToastForVoice): the timer starts when the voice ends
+    if (el._voiceHold) return;
     el._autoCloseTimer = setTimeout(() => this._removeBark(el), ms);
   }
 
