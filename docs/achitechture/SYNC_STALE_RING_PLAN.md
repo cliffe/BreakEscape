@@ -265,10 +265,19 @@ For a numeric clientTs with a stored `lastSyncClientTs`:
 - `0 <= stored - client_ts <= SYNC_STALE_RESET_MS` and the completeness guard
   below holds: stale but recent, the new path. Build the skip set from the ring
   and apply last-write-wins sections key by key. Do not move `lastSyncClientTs`.
-  Record a ring entry for what this request actually changed.
+  Record a ring entry for what this request actually changed. The request does
+  not stamp a capture proof itself (it still passes `stale: true` to the capture
+  step), but because it now merges its pre-filtered `mailState` and landing-page
+  globals, the server-validated live evidence can hold on this request, so a
+  capture whose evidence holds is served on it (decision D4, option A): the
+  evidence is exactly what a fresh request would carry and every secret field
+  comes from the scenario, so a client gains nothing it could not get from a fresh
+  request, and nothing is forged.
 - `0 <= stored - client_ts <= SYNC_STALE_RESET_MS` and the completeness guard
   does not hold: fully stale, exactly today's behaviour. Skip all last-write-wins
   sections, run grow-only and capture, do not move the stamp, record nothing.
+  Capture serving stays deferred (the mail is not merged, so the evidence does
+  not hold until the next fresh sync).
 
 ### Clearing the ring on a reset
 
@@ -754,13 +763,26 @@ suite. The integrator runs the full suites once per batch.
    protects, never later. Until chunk 3 lands, the stale-but-recent merge
    strips `currentRoom` from the params it sees, so currentRoom keeps today's
    whole-skip on any stale request (it is handled inline in `sync_state`, not by a
-   `merge_*!` call the pre-filter covers). The band also passes `stale: true` to
-   `apply_capture_sync_step`, so capture proof stamping is deferred to the next
-   fresh sync, exactly as today: the stale answer makes the client resend the
-   mail, and that fresh request stamps it. Tests: an older room on a
-   stale-but-recent request leaves the newer stored room in place, and phish
-   proof mail on a stale-but-recent request is kept and stamped on the next fresh
-   sync. Commit.
+   `merge_*!` call the pre-filter covers).
+
+   Capture serving on the stale-but-recent band (decision D4, option A). The band
+   still passes `stale: true` to `apply_capture_sync_step`, so the request never
+   *stamps* a capture proof itself. But a stale-but-recent request now merges its
+   pre-filtered `mailState` and landing-page globals (the gap-1 recovery), and
+   capture serving (`CaptureProofs#capture_revealable?`) reads live evidence, not
+   the proven stamp. So once the mail is merged, the server-validated evidence
+   holds and the credential is served on that request. This is acceptable and is
+   the gap recovery the plan intends: the evidence is exactly what a fresh request
+   would carry, every secret field comes from the scenario rather than the client,
+   and nothing is forged and no newer write is undone. The pre-chunk-2 deferral was
+   an artefact of the all-or-nothing whole-skip, which the ring removes. Only a
+   *fully* stale request (the completeness guard fails, or it is outside the 60 s
+   window) still whole-skips its mail, so its evidence does not hold and serving
+   defers to the next fresh sync, exactly as today. Tests: an older room on a
+   stale-but-recent request leaves the newer stored room in place; a
+   stale-but-recent request carrying the evidence records and serves the phish
+   credential; and a fully stale request records but does not serve, the next fresh
+   sync serving it. Commit.
 3. currentRoom under the stale-but-recent path (skip when newer, else the normal
    acceptance and notSaved contract). currentRoom test. Commit.
 4. Client re-stamp of the reduced flush body above the in-flight flushes, remove

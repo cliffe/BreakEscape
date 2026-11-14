@@ -475,12 +475,16 @@ module BreakEscape
       assert_equal({ 'phished' => 'Land-Secret-1' }, secrets)
     end
 
-    # 6b: the capture and its evidence sent together on a stale request record the capture but do
-    # not serve it (a stale request's mail is not merged); the next non-stale sync carrying the
-    # same evidence serves it.
-    test '6b: a stale request records but does not serve a phish credential' do
+    # 6b (sync stale-but-recent ring, decision D4 option A): the capture and its evidence sent
+    # together on a stale-but-recent request record the capture AND serve it. The stale-but-recent
+    # path merges the pre-filtered mailState (the gap-1 recovery the ring intends), so the
+    # server-validated live evidence holds on this request, and capture serving reads live evidence.
+    # A client gains nothing it could not get from a fresh request carrying the same evidence: every
+    # secret field comes from the scenario, not the client, so this is honest evidence, not a forge.
+    test '6b: a stale-but-recent request carrying the evidence records and serves a phish credential' do
       build_game(phish_scenario)
-      # Prime the stored clientTs so a lower one is stale.
+      # Prime the stored clientTs so a lower one is stale; the ring is empty (no last-write-wins
+      # change), so clientTs 5 takes the empty-ring branch and is stale-but-recent, not fully stale.
       put game_path('sync_state'), params: { clientTs: 10 }, as: :json
       put game_path('sync_state'), params: {
         clientTs: 5,
@@ -490,16 +494,41 @@ module BreakEscape
         },
         mailState: { 'mailboxes.inbox.m1' => { 'id' => 'm1', 'folder' => 'sent', 'landed' => true, 'targetId' => 'phished', 'link' => { 'kitId' => 'kit_portal' } } }
       }, as: :json
-      assert_equal true, JSON.parse(response.body)['stale'], 'the request is stale'
+      assert_equal true, JSON.parse(response.body)['stale'], 'the request is stale-but-recent'
       assert @game.reload.player_state.dig('seCaptures', 'phished'), 'the capture is recorded'
-      assert_equal({}, secrets, 'a stale request does not serve the secret')
+      assert_equal({ 'phished' => 'Land-Secret-1' }, secrets,
+                   'the merged evidence holds, so the secret is served on the stale-but-recent request')
+    end
+
+    # 6b (decision D4 option A): a FULLY stale request (the completeness guard fails, so the
+    # last-write-wins sections are whole-skipped) records the capture but does not serve it: its
+    # mailState and landing page are not merged, so the live evidence does not hold yet. The next
+    # fresh sync carrying the same evidence serves it. This keeps the original deferral intent for
+    # the fully-stale band.
+    test '6b: a fully stale request records but does not serve a phish credential; the next fresh sync serves' do
+      build_game(phish_scenario)
+      # Put a ring entry above the stale request so the guard fails (the request's ts is below the
+      # oldest retained ring entry): a last-write-wins change stamped at clientTs 100.
+      put game_path('sync_state'), params: { clientTs: 100, globalVariables: { 'anchor' => 1 } }, as: :json
 
       put game_path('sync_state'), params: {
-        clientTs: 11,
+        clientTs: 50,
+        globalVariables: {
+          'se_captures' => { 'phished' => { 'targetId' => 'phished', 'kind' => 'credential', 'at' => 1 } },
+          'se_landing_pages' => { 'portal' => { 'built' => true, 'meetsThreshold' => true, 'victim' => { 'submitted' => true } } }
+        },
+        mailState: { 'mailboxes.inbox.m1' => { 'id' => 'm1', 'folder' => 'sent', 'landed' => true, 'targetId' => 'phished', 'link' => { 'kitId' => 'kit_portal' } } }
+      }, as: :json
+      assert_equal true, JSON.parse(response.body)['stale'], 'the request is stale'
+      assert @game.reload.player_state.dig('seCaptures', 'phished'), 'the capture is recorded'
+      assert_equal({}, secrets, 'a fully stale request whole-skips its mail, so the secret is not served')
+
+      put game_path('sync_state'), params: {
+        clientTs: 101,
         globalVariables: { 'se_landing_pages' => { 'portal' => { 'built' => true, 'meetsThreshold' => true, 'victim' => { 'submitted' => true } } } },
         mailState: { 'mailboxes.inbox.m1' => { 'id' => 'm1', 'folder' => 'sent', 'landed' => true, 'targetId' => 'phished', 'link' => { 'kitId' => 'kit_portal' } } }
       }, as: :json
-      assert_equal({ 'phished' => 'Land-Secret-1' }, secrets, 'the next non-stale sync serves it')
+      assert_equal({ 'phished' => 'Land-Secret-1' }, secrets, 'the next fresh sync serves it')
     end
 
     # m4 (code review R1): phishTargets as a map, and a page with no capture block.

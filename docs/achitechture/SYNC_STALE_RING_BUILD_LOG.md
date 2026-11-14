@@ -170,6 +170,20 @@ the request's ring entry is recorded at its own (lower) ts.
   stopped at the end of chunk 2. Chunk 3 (currentRoom under the stale-but-recent
   path) is NOT built, to avoid compounding work on an unresolved decision.
 
+  DECISION (orchestrator, 2026-11-14): option A. A stale-but-recent request now
+  merges its pre-filtered mailState, capture serving reads live evidence, so a
+  phish credential can be served on that request. Reason: the evidence is exactly
+  what a fresh request would carry, so a client gains nothing it could not get
+  with a fresh request, and it is the gap recovery the plan intends. Every secret
+  field still comes from the scenario, not the client; nothing is forged and no
+  newer write is undone. The old deferral was an artefact of the all-or-nothing
+  whole-skip the ring removes. `capture_proofs_test.rb` 6b was split into two
+  cases to match: (a) a stale-but-recent request carrying the evidence records AND
+  serves it; (b) a FULLY stale request (guard fails, or outside the 60 s window)
+  records but does not serve, and the next fresh sync serves. The plan's section 5
+  and section 11 (chunk 2) were amended to state the stale-but-recent capture
+  behaviour accurately. No other assertion weakened.
+
 Tests (chunk 2): `sync_stale_ring_merge_test.rb` 8 runs, green. Neighbours:
 `games_controller_test` 63, `game_state_locking_test` 6,
 `reload_persistence_test`, `captures_sync_test`, `mail_state_sync_test`,
@@ -178,24 +192,44 @@ Tests (chunk 2): `sync_stale_ring_merge_test.rb` 8 runs, green. Neighbours:
 
 ## Chunk 3: currentRoom under the stale-but-recent path
 
-NOT BUILT. Blocked on the D4 decision (see chunk 2 drift). When unblocked, chunk
-3 replaces the `skip.nil?` gate on the currentRoom block in
-`merge_last_write_wins_sections` with skip-aware handling: skip currentRoom when a
-newer ring entry claimed it (`ring_whole_claimed?('currentRoom', skip)`),
-otherwise run the normal `may_sync_current_room?` acceptance, viaPass credit and
-notSaved contract on the unclaimed room. Recorder already records currentRoom as a
-whole-section claim, so no recorder change is needed. Test: an older room on a
-stale-but-recent request is skipped when newer; a legitimate unclaimed room still
-applies and a refused room still goes to notSaved.
+Built. The `skip.nil?` gate on the inline currentRoom block in
+`merge_last_write_wins_sections` is replaced with
+`!ring_whole_claimed?('currentRoom', skip)`:
+
+- A fresh request has `skip` nil, so `ring_whole_claimed?` is false and the block
+  runs exactly as before (unchanged behaviour).
+- A stale-but-recent request whose currentRoom a newer ring entry claimed (the
+  recorder records currentRoom as a whole-section `true`) skips the block whole,
+  so the newer stored room stands and no viaPass credit runs for the skipped room.
+- A stale-but-recent request with an unclaimed currentRoom runs the normal
+  `may_sync_current_room?` acceptance, the `credit_via_pass_on_sync!` viaPass
+  credit and the notSaved contract exactly as an accepted room does.
+
+No recorder change was needed (currentRoom was already recorded as a whole-section
+claim in chunk 1). The only change is the one gate condition and its comment.
+
+Files:
+
+- `app/controllers/break_escape/games_controller.rb`: the gate swap and comment in
+  `merge_last_write_wins_sections`.
+- `test/controllers/break_escape/sync_stale_ring_merge_test.rb`: the chunk 3
+  currentRoom cases (older claimed room skipped with no credit; unclaimed room
+  accepted; forged room notSaved with no credit, rest of the batch commits). The
+  chunk 2 "whole-stripped until chunk 3" currentRoom test was retargeted to the
+  claimed-room case; its section header and the file header comment were updated.
+
+Tests (chunk 3): `sync_stale_ring_merge_test.rb` 10 runs, green.
 
 ## Handover
 
 - Done and committed: chunk 1 (ring storage, helpers, record-only, bound,
-  never-sent, burst) and chunk 2 (stale-but-recent band, guard, pre-filter,
-  reset-clearing, currentRoom whole-strip). Chunk 1 and chunk 2 own tests green.
-- Open / blocked: chunk 3 (currentRoom under stale-but-recent) not started,
-  blocked on D4. capture_proofs_test 6b fails because of D4 (a plan-vs-code
-  material drift on capture serving), awaiting an orchestrator decision.
+  never-sent, burst), chunk 2 (stale-but-recent band, guard, pre-filter,
+  reset-clearing, currentRoom whole-strip) and chunk 3 (currentRoom under the
+  stale-but-recent path). D4 decided (option A): capture_proofs_test 6b split into
+  a stale-but-recent serve case and a fully-stale defer case; plan sections 5 and
+  11 amended. Chunk 1, 2 and 3 own tests green.
+- Open / blocked: chunk 4 (client re-stamp) and later are out of this builder's
+  scope, not started.
 - In progress: none.
 - Files touched: `app/models/break_escape/sync_ring.rb` (new),
   `app/controllers/break_escape/games_controller.rb`,

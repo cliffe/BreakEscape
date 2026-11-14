@@ -6,7 +6,7 @@ module BreakEscape
   # clearing the ring on a ten-minute reset, and the key-by-key pre-filter. A
   # stale-but-recent request applies only the keys no newer recorded request
   # wrote, never moves lastSyncClientTs, and still runs the grow-only and capture
-  # steps. currentRoom is whole-stripped until chunk 3.
+  # steps. (currentRoom under this path is covered by the chunk 3 cases below.)
   class SyncStaleRingMergeTest < ActionDispatch::IntegrationTest
     include Engine.routes.url_helpers
 
@@ -139,17 +139,48 @@ module BreakEscape
       assert_equal %w[Bob], ps.dig('phoneState', 'bob', 'history').map { |m| m['text'] }, 'bob is applied'
     end
 
-    # ---- currentRoom whole-stripped until chunk 3 ------------------------
+    # ---- chunk 3: currentRoom under the stale-but-recent path ------------
 
-    test 'an older room on a stale-but-recent request leaves the newer stored room in place' do
+    # A newer ring entry claimed currentRoom (recorded as a whole-section claim), so an older room
+    # on a later stale-but-recent request is skipped: the newer stored room stands, and no viaPass
+    # credit runs for the skipped room.
+    test 'an older room claimed by a newer entry leaves the newer stored room and gives no credit' do
       sync(clientTs: 3998, globalVariables: { 'base' => 1 })  # baseline below the request
-      sync(clientTs: 4000, currentRoom: 'office')             # newer room stored
+      sync(clientTs: 4000, currentRoom: 'office')             # newer room stored, claims currentRoom
       assert_equal 'office', ps['currentRoom']
 
       sync(clientTs: 3999, currentRoom: 'lobby', globalVariables: { 'x' => 1 })
       assert_response :success
-      assert_equal 'office', ps['currentRoom'], 'currentRoom is whole-stripped on a stale-but-recent request'
+      assert_equal 'office', ps['currentRoom'], 'the claimed currentRoom is skipped, newer room stands'
+      assert_equal %w[lobby office], ps['unlockedRooms'], 'the skipped room path promotes nothing (no credit)'
       assert_equal 1, globals['x'], 'other sections still merge key by key'
+    end
+
+    # An unclaimed currentRoom on a stale-but-recent request (no newer entry claimed it) goes through
+    # the normal may_sync_current_room? acceptance, exactly as a fresh room does.
+    test 'an unclaimed room on a stale-but-recent request goes through normal acceptance' do
+      sync(clientTs: 3998, globalVariables: { 'base' => 1 })  # baseline below the request
+      sync(clientTs: 4000, globalVariables: { 'g' => 1 })     # newer entry, does not claim currentRoom
+      assert_equal 'lobby', ps['currentRoom']
+
+      sync(clientTs: 3999, currentRoom: 'office', globalVariables: { 'x' => 1 })
+      assert_response :success
+      assert_equal 'office', ps['currentRoom'], 'an unclaimed room is accepted on the stale-but-recent path'
+      assert_equal 1, globals['x']
+    end
+
+    # A forged room (outside the acceptance set) on the stale-but-recent path still returns 200 with
+    # currentRoom in notSaved, stores no room and credits nothing; the rest of the batch commits.
+    test 'a forged room on a stale-but-recent request is notSaved with no credit, rest commits' do
+      sync(clientTs: 3998, globalVariables: { 'base' => 1 })  # baseline below the request
+      sync(clientTs: 4000, globalVariables: { 'g' => 1 })     # newer entry, does not claim currentRoom
+
+      sync(clientTs: 3999, currentRoom: 'vault', globalVariables: { 'x' => 1 })
+      assert_response :success
+      assert_includes JSON.parse(response.body)['notSaved'] || [], 'currentRoom', 'the forged room is notSaved'
+      assert_equal 'lobby', ps['currentRoom'], 'the forged room is not stored'
+      refute_includes ps['unlockedRooms'], 'vault', 'the forged room path promotes nothing (no credit)'
+      assert_equal 1, globals['x'], 'the rest of the batch still commits'
     end
 
     # ---- the ten-minute reset clears the ring ----------------------------

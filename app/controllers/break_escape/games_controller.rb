@@ -2398,11 +2398,13 @@ module BreakEscape
     #
     # On a stale-but-recent request `skip` is the ring skip set (section 5): each
     # section is pre-filtered to drop the keys a newer recorded request already
-    # wrote. currentRoom is handled inline rather than by a merge_*! call, so
-    # until chunk 3 it is stripped whole on any stale request (skip present): it
-    # keeps today's whole-skip.
+    # wrote. currentRoom is handled inline rather than by a merge_*! call, and is
+    # recorded as a whole-section claim, so it is skipped only when a newer ring
+    # entry claimed it (`ring_whole_claimed?`); an unclaimed room on a
+    # stale-but-recent request goes through the normal acceptance below, exactly as
+    # a fresh room does (skip nil makes `ring_whole_claimed?` false). Chunk 3.
     def merge_last_write_wins_sections(skip: nil)
-      if params[:currentRoom] && skip.nil?
+      if params[:currentRoom] && !ring_whole_claimed?('currentRoom', skip)
         room = params[:currentRoom]
         # Accept currentRoom for a gated route room the player is slipping into (GATED_DOOR
         # §3.3a), so the avatar and the saved room agree (no snap-back) and the no-vest slip-in
