@@ -3148,8 +3148,11 @@ server-only, deleted by the allow-list filter (`game.rb:6276-6282`, `SHIPPED_HAB
 | `usb` | server-only in `habits` | reships only inside the resolved work plan as `work.usb` (`lib/break_escape/access_work.rb:1213`, via `compile_npc_plan!`, `game.rb:6247-6258`); the raw `habits.usb` is withheld (`game.rb:6276-6282`) |
 
 Server-only note: these habits are not literal section-2 secret values; they are server-side access
-logic that reveals or drives a sign-in secret, and the 6a-1 mark makes the `habits` block
-`x-serverOnly` except `screen` and `print` (which carry `x-servedBy` through the shipped payload).
+logic that reveals or drives a sign-in secret. The 6a-1 marks mark the six non-shipping habit
+leaves (`locksScreen`, `writesDown`, `password`, `passwordPattern`, `holdsDoors`, `usb`) each
+`x-serverOnly` and leave `screen` and `print` unmarked, so they ship as class 3. (Per-leaf, not a
+whole-block mark: a whole-block `x-serverOnly` with `x-servedBy` for the shipping route would also
+let the other unmarked habit leaves pass on that route, which must not happen.)
 The broader needs-system fields outside this grouping (`interests`, `needsCompany`, `phoneCalls`,
 `onUse`, `chattiness`, `swivel`, and so on) are client-visible too; `role`, `creds`, `awareness`,
 `workNeeds`, `frustration`, `workarounds` and `feed` are the NPC fields withheld alongside the
