@@ -194,3 +194,16 @@ test('n2 the shared .se-notice is applied to the listed scene notices', () => {
         assert.match(readFileSync(join(js, rel), 'utf8'), re, `${rel}: notice carries .se-notice`);
     }
 });
+
+test('C-X9 the awareness primary button is square, 2px and not faux-bold, like .epr-button', () => {
+    const aw = readFileSync(join(css, 'awareness-skin.css'), 'utf8');
+    const btn = aw.match(/\.aw-button\s*\{[^}]*\}/)[0];
+    assert.match(btn, /border:\s*2px solid/, 'the awareness button has a 2px border');
+    assert.match(btn, /border-radius:\s*0/, 'no rounded corners');
+    assert.doesNotMatch(btn, /font-weight:\s*(700|bold)/, 'no faux-bold on the pixel/skin button');
+    // The episode runner and password guesser share the same square 2px primary look.
+    const epr = readFileSync(join(css, 'episode-runner.css'), 'utf8');
+    const eprBtn = epr.match(/\.epr-button\s*\{[^}]*border:\s*2px solid[^}]*\}/)[0];
+    assert.match(eprBtn, /border:\s*2px solid/, '.epr-button is a 2px square button');
+    assert.match(eprBtn, /border-radius:\s*0/, '.epr-button has no rounded corners');
+});

@@ -64,7 +64,11 @@
    (older engines fall back to the raw accent, which still meets AA on the default skin). */
 .aw-heading { margin: 0 0 8px; font-size: 22px; color: var(--aw-accent); color: color-mix(in srgb, var(--aw-accent) 80%, #000); }
 .aw-lead, .aw-summary { margin: 0 0 12px; font-size: 16px; }
-.aw-button { margin-top: 14px; padding: 8px 18px; font: inherit; font-weight: 700; color: #fff; background: var(--aw-accent); border: 0; border-radius: 4px; cursor: pointer; }
+/* C-X9: one awareness primary button, square with a 2px border, matching .epr-button and the
+   password-guesser's action button so every action in the awareness windows reads the same.
+   No radius or faux-bold (pixel-art UI). A secondary variant keeps the border and drops the fill. */
+.aw-button { margin-top: 14px; padding: 8px 18px; font: inherit; font-weight: normal; color: #fff; background: var(--aw-accent); border: 2px solid var(--aw-accent); border-radius: 0; cursor: pointer; }
+.aw-button-secondary { color: var(--aw-ink); background: #fff; border-color: var(--aw-line); }
 .aw-button:focus-visible { outline: 3px solid var(--aw-ink); outline-offset: 2px; }
 
 /* flip: a built page (E5) and a pretext call (E3) as well as a sent email */
