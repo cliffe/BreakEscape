@@ -50,7 +50,7 @@ test('sessions() is empty without pc-sessions.js, and reads its list() or sessio
 });
 
 test('workstation() reports owner, presence, the away record and the screen', () => {
-  const pc = { id: 'jake_pc', lockChance: 0.5 };
+  const pc = { id: 'jake_pc', lockChance: 0.5, owner: 'jake' };
   const { ws } = installWorkstations([pc, { id: 'lamp' }], [{ id: 'jake', needsHome: 'jake_pc' }]);
   let r = accessBridge.workstation('jake_pc');
   assert.deepEqual(r, { ok: true, id: 'jake_pc', workstation: true, owner: 'jake', present: true,
@@ -76,7 +76,7 @@ test('workstation() reports owner, presence, the away record and the screen', ()
 });
 
 test('workstation() uses ownerPresent and lockAt when the module has them, and copies, never shares', () => {
-  const pc = { id: 'jake_pc', locksScreenOnLeave: false, lockAt: 300000 };
+  const pc = { id: 'jake_pc', locksScreenOnLeave: false, lockAt: 300000, owner: 'jake' };
   const { ws } = installWorkstations([pc], [{ id: 'jake', needsHome: 'jake_pc' }], { ownerPresent: () => false });
   const r = accessBridge.workstation('jake_pc');
   assert.equal(r.present, false, 'ownerPresent wins over the away map');
@@ -104,7 +104,7 @@ test('savedCards() lists the copier\'s card ids', () => {
 });
 
 test('workstation() reports the live sprite\'s texture, display size and locked look; screenTransitions() copies the module\'s record', () => {
-  const pc = { id: 'jake_pc', workstation: true };
+  const pc = { id: 'jake_pc', workstation: true, owner: 'jake' };
   installWorkstations([pc], [{ id: 'jake', needsHome: 'jake_pc' }]);
   const sprite = { scenarioData: pc, texture: { key: 'pc_desktop' }, displayWidth: 36, displayHeight: 24 };
   window.rooms = { office: { objects: { o1: sprite } } };

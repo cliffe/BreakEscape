@@ -11,8 +11,8 @@ module BreakEscape
 
     FLOOR = (0.9 * 60) - 3
     DOWN = { 'global' => 'drive_down' }.freeze
-    IVY_PHONE = { 'type' => 'phone_friendface', 'id' => 'ivy_phone', 'name' => "Ivy's phone", 'takeable' => true, 'phoneOf' => 'ivy' }.freeze
-    TOM_PHONE = { 'type' => 'phone_friendface', 'id' => 'tom_phone', 'name' => "Tomasz's phone", 'takeable' => true, 'phoneOf' => 'tomasz' }.freeze
+    IVY_PHONE = { 'type' => 'phone_friendface', 'id' => 'ivy_phone', 'name' => "Ivy's phone", 'takeable' => true, 'owner' => 'ivy' }.freeze
+    TOM_PHONE = { 'type' => 'phone_friendface', 'id' => 'tom_phone', 'name' => "Tomasz's phone", 'takeable' => true, 'owner' => 'tomasz' }.freeze
     OWN_PHONE = { 'type' => 'phone_friendface', 'id' => 'my_phone', 'name' => 'Your phone', 'takeable' => true }.freeze
 
     def post_(id, text, extra = {})

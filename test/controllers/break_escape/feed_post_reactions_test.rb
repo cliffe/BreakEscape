@@ -13,7 +13,7 @@ module BreakEscape
 
     FLOOR = (0.9 * 60) - 3
     DOWN = { 'global' => 'drive_down' }.freeze
-    IVY_PHONE = { 'type' => 'phone_friendface', 'id' => 'ivy_phone', 'name' => "Ivy's phone", 'takeable' => true, 'phoneOf' => 'ivy' }.freeze
+    IVY_PHONE = { 'type' => 'phone_friendface', 'id' => 'ivy_phone', 'name' => "Ivy's phone", 'takeable' => true, 'owner' => 'ivy' }.freeze
 
     IVY_REACTS = [{ 'to' => 'tom_re_ivy', 'key' => 'like' }, { 'to' => 'tom_again', 'key' => 'laugh' }].freeze
     TOM_REACTS = [{ 'to' => 'ivy_answer', 'key' => 'sad', 'alongside' => 'tom_again' }].freeze

@@ -142,9 +142,13 @@ class AccessLeakScanner
   Finding = Struct.new(:rule, :owner, :route, :source, :line, :cmd_seq, :json_path, keyword_init: true)
 
   # Keys an NPC record never takes to the browser (Game::WITHHELD_NPC_KEYS).
-  WITHHELD_KEYS = %w[creds role awareness habits workarounds].freeze
+  WITHHELD_KEYS = %w[creds role awareness workarounds].freeze
   # Slice 9.2 (9.2): the NPC keys the server withholds beside them (Game::WITHHELD_WORK_NPC_KEYS)
-  WITHHELD_WORK_KEYS = %w[workNeeds frustration feed usbHabit].freeze
+  WITHHELD_WORK_KEYS = %w[workNeeds frustration feed].freeze
+  # Step 8c: the `habits` block ships only its allow-listed keys (Game::SHIPPED_HABIT_KEYS); any
+  # other key in a shipped `habits` (locksScreen, writesDown, password, passwordPattern, holdsDoors,
+  # the USB habit `usb`, or a key added later) is server-only, so it is a leak if it ships.
+  SHIPPED_HABIT_KEYS = %w[screen print].freeze
   # Feed texts shorter than this are not searched for (the validator warns about them, 9.2)
   MIN_FEED_TEXT = 12
 
@@ -317,7 +321,7 @@ class AccessLeakScanner
     'share_content' => 'file share content outside a container response for that share',
     'network_string' => 'a network or resource name, host or observations outside the network routes',
     'wifi_secret' => 'a Wi-Fi SSID or pre-shared key in any response (the key is compared on the server, never served)',
-    'withheld_key' => 'a withheld key (creds, role, awareness, habits, workarounds, workNeeds, frustration, feed, usbHabit) on an NPC record',
+    'withheld_key' => 'a withheld key (creds, role, awareness, workarounds, workNeeds, frustration, feed, or a habits key other than screen and print such as locksScreen, writesDown, password, holdsDoors or usb) on an NPC record',
     'workaround' => 'a workaround (its kind beside its target) outside a hand-over',
     'feed_text' => "a feed post's or feed fact's whole text before the server served it",
     'feed_fact_key' => 'an object keyed by a feed fact id with a text key before its post was served, or a bootstrap social.intelFacts that is not an object',
@@ -1220,6 +1224,15 @@ class AccessLeakScanner
         next unless record.key?(key)
 
         add.call('withheld_key', "npc:#{record['id']}/#{key}", safe_path("#{json_path}.#{key}"))
+      end
+      # Step 8c: the habits block ships only screen and print; any other habits key is server-only.
+      habits = record['habits']
+      next unless habits.is_a?(Hash)
+
+      habits.each_key do |hk|
+        next if SHIPPED_HABIT_KEYS.include?(hk)
+
+        add.call('withheld_key', "npc:#{record['id']}/habits.#{hk}", safe_path("#{json_path}.habits.#{hk}"))
       end
     end
   end
