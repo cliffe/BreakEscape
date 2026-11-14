@@ -269,11 +269,21 @@
     /* A 2px square outline, one GNF pixel at this size (pixel-art UI rule) */
     text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000,
         2px 0 0 #000, -2px 0 0 #000, 0 2px 0 #000, 0 -2px 0 #000;
-    /* Words wrap at spaces only; a name too long for the line breaks only as a last resort
-       ("Staff handbook.txt" broke as "handbook.t / xt" at 80px). */
-    overflow-wrap: anywhere;
+    /* Words wrap at spaces only, never inside a word ("CONTINGENCY" broke as "CONTINGENC / Y").
+       A word wider than the box ends in an ellipsis at the same 16px size, the full
+       name in the title (fitIconLabel, container-minigame.js). */
+    overflow-wrap: normal;
     word-break: normal;
     max-width: 112px;
+}
+
+.desktop-icon-label .desktop-icon-word {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: top;
 }
 
 .desktop-taskbar {
@@ -1007,22 +1017,6 @@
     min-height: 0;
     padding: 4px 8px;
     gap: 8px;
-}
-
-/* The PC's description (its observations, which can carry clues): wrapped, up to three lines,
-   then it scrolls; never cut off (R1 M3) */
-.desktop-taskbar-note {
-    display: block;
-    font-size: 16px;
-    line-height: 18px;
-    color: #cfd6dc;
-    white-space: normal;
-    overflow-wrap: anywhere;
-    max-height: 54px;
-    overflow-x: hidden;
-    overflow-y: auto;
-    min-width: 0;
-    flex: 1 1 auto;
 }
 
 .pc-monitor[data-compact] .container-minigame.desktop-mode.pc-desktop .desktop-icons {

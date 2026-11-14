@@ -25,7 +25,7 @@ module BreakEscape
     end
 
     before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :capture_secrets, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :conclude_mission,
-                                        :login, :logout, :login_accounts, :clone_card, :network, :network_plant, :network_unplug, :network_implant, :network_join,
+                                        :login, :logout, :lock_session, :login_accounts, :clone_card, :network, :network_plant, :network_unplug, :network_implant, :network_join,
                                         :npc_frustration, :npc_workaround, :feed_post, :friendface_phone, :wear]
     # A host may also route the game page under its own address (Hacktivity: /hacktivities/:event_id/play/mission/:id,
     # inside a Game event's web app scope). The game must belong to that event: any other pair is a 404.
@@ -95,7 +95,7 @@ module BreakEscape
     # (access model, section 6), so they take the lock like unlock. network_plant and
     # network_unplug write footholds, the inventory and sessions (slice 9.3a, section 5).
     around_action :with_game_lock, only: [:container, :update_room, :unlock, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :reset, :new_session, :inventory, :room,
-                                          :login, :logout, :clone_card, :network_plant, :network_unplug, :network_implant, :network_join,
+                                          :login, :logout, :lock_session, :clone_card, :network_plant, :network_unplug, :network_implant, :network_join,
                                           :npc_frustration, :npc_workaround, :feed_post, :wear]
 
     # GET /games/new?mission_id=:id
@@ -424,6 +424,10 @@ module BreakEscape
         # the client's POST /logout.
         filtered['sessions'] = @game.sessions_for_client
         filtered['signedInPcs'] = @game.signed_in_pcs
+        # UI slice 6: the server supports locking a held session, so the UI may show the Lock
+        # button, but only when the scenario has at least one sign-in PC (R1 minor 2). A
+        # capability flag, not per-session state; the client never sends it back.
+        filtered['sessionLockingSupported'] = @game.scenario_has_login_pc?
         # Footholds held and every jack one was gained from (slice 9.3a, section 6)
         filtered['footholds'] = @game.footholds_for_client
         filtered['gainedFootholds'] = @game.gained_footholds
@@ -1355,6 +1359,21 @@ module BreakEscape
       # their ids (networks slice 9.3b, 5.1) for pc-sessions.js.
       ended = @game.logout_session!(pc_id)
       render json: { success: true, endedPcIds: Array(ended) }
+    end
+
+    # POST /games/:id/lock_session
+    # Lock the held session at a sign-in PC (pc_id): it stays held, but the player must sign
+    # in again (POST /login, the same password check, no unlock route) to use it. Only the
+    # holder can lock; a PC with no held session is refused 422. The answer is the delta
+    # { success, pcId, locked }, so the sessions map is never re-sent whole.
+    def lock_session
+      authorize @game if defined?(Pundit)
+
+      pc_id = params[:pc_id].to_s
+      return render json: { success: false, message: 'Missing pc_id' }, status: :bad_request if pc_id.empty?
+
+      result = @game.lock_session!(pc_id)
+      render json: result[:body], status: result[:status]
     end
 
     # GET /games/:id/login_accounts?pc_id=

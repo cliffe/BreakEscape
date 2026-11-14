@@ -205,6 +205,14 @@ export class ApiClient {
     return this.post('/logout', { pc_id: pcId });
   }
 
+  // Lock the held session at a sign-in PC (UI slice 6): it stays held, but a sign-in (the same
+  // password check) is needed to use it again. Only the holder can lock; a PC with no held
+  // session throws (422). Answers the delta { success: true, pcId, locked: true }; `locked` is
+  // never sent back as state.
+  static async lockSession(pcId) {
+    return this.post('/lock_session', { pc_id: pcId });
+  }
+
   // The account tiles for a sign-in PC's loginPicker, refreshed each time its sign-in
   // screen opens: { pc_id, loginAccounts: [{ username, displayName, portrait, avatar }] },
   // plus postitNote ("<username> / <password>") when the owner writes the password down

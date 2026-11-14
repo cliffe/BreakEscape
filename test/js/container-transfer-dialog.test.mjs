@@ -29,6 +29,7 @@ copy('utils/more-below.js');
 copy('utils/computer-keywords.js');
 copy('utils/pc-monitor.js');
 copy('utils/npc-headshot.js');
+copy('utils/pc-taskbar.js');
 copy('utils/author-html.js');
 put('utils/conditional-text.js', 'export function resolveObjectField(o, f, d) { return (o && o[f] != null) ? o[f] : d; }\n');
 put('systems/inventory.js',
@@ -90,6 +91,8 @@ const icon = (name) => [...document.querySelectorAll('.desktop-icon')].find(el =
 const dialogLabels = () => [...document.querySelectorAll('.desktop-transfer-dialog [data-choice]')].map(b => b.textContent);
 const choose = (label) => [...document.querySelectorAll('.desktop-transfer-dialog [data-choice]')].find(b => b.textContent === label).click();
 const settle = (ms = 0) => new Promise(r => setTimeout(r, ms));
+// UX slice 6: Switch user and Sign out are in the start panel
+const startAction = (id) => { document.querySelector('.pc-start-btn').click(); document.getElementById(`pc-start-${id}`).click(); };
 
 test('transferChoices: both by default, Copy or Move only when restricted, only Open once held', () => {
     assert.deepEqual(transferChoices({}, false), ['open', 'copy', 'move', 'cancel']);
@@ -119,16 +122,18 @@ test('the desktop loads from container for the session and names the account, wi
     const mg = await openDesktop();
     assert.deepEqual(apiCalls, [['fetch', '/break_escape/games/7/container/hot_desk']]);
     assert.equal(mg.desktopMode, true);
-    assert.match(document.querySelector('.desktop-account-bar').textContent.replace(/\s+/g, ' '), /Signed in as Ian Shaw \(ishaw\)/);
-    assert.ok(document.getElementById('desktop-switch-user'));
-    assert.ok(document.getElementById('desktop-sign-out'));
-    // the account bar sits above the observations: in the PC monitor (UX slice 2c) the bar
-    // is the screen's top bar and the observations are in the taskbar under the icons
-    const bar = document.querySelector('.pc-desktop-topbar .desktop-account-bar');
-    const note = document.querySelector('.desktop-taskbar .desktop-taskbar-note');
-    assert.ok(bar && note, 'top bar and taskbar note');
-    assert.ok(bar.compareDocumentPosition(note) & window.Node.DOCUMENT_POSITION_FOLLOWING);
-    assert.ok(document.querySelector('.pc-monitor .pc-monitor-screen .desktop-account-bar'), 'the bar is on the monitor screen');
+    // UX slice 6: the account is on the taskbar at the bottom of the screen, Switch user
+    // and Sign out in the start panel; the description sits above the taskbar
+    assert.equal(document.querySelector('.desktop-account-bar'), null, 'no top account bar in the monitor');
+    const bar = document.querySelector('.pc-monitor .pc-monitor-screen .pc-taskbar');
+    assert.ok(bar, 'the taskbar is on the monitor screen');
+    assert.equal(bar.querySelector('.pc-taskbar-name').textContent, 'Ian Shaw');
+    document.querySelector('.pc-start-btn').click();
+    assert.ok(document.getElementById('pc-start-switch'));
+    assert.ok(document.getElementById('pc-start-signout'));
+    assert.equal(document.getElementById('pc-start-lock'), null, 'no Lock until the server supports it');
+    assert.equal(document.querySelector('.pc-start-username').textContent, 'ishaw');
+    assert.equal(document.querySelector('.pc-desktop-status, .desktop-taskbar-note'), null, 'the PC\'s observations are not repeated on its desktop');
     assert.equal(document.querySelector('.pc-monitor-name').textContent, mg.containerItem.scenarioData.name, 'the PC name on the bezel');
     assert.deepEqual(events.filter(([n]) => n === 'pc_desktop_opened').map(([, d]) => d),
         [{ pcId: 'hot_desk', npcId: 'ian', via: 'password', restored: false }]);
@@ -233,7 +238,7 @@ test('a folder from a sign-in desktop that closes first leaves nothing registere
 
 test('Sign out: POST /logout, one pc_signed_out, and the desktop closes with "Signed out"', async () => {
     await openDesktop();
-    document.getElementById('desktop-sign-out').click();
+    startAction('signout');
     await settle();
     assert.deepEqual(apiCalls.filter(c => c[0] === 'logout'), [['logout', 'hot_desk']]);
     assert.deepEqual(events.filter(([n]) => n === 'pc_signed_out').map(([, d]) => d), [{ pcId: 'hot_desk', npcId: 'ian', reason: 'sign_out' }]);
@@ -244,7 +249,7 @@ test('Sign out: POST /logout, one pc_signed_out, and the desktop closes with "Si
 
 test('Switch user opens the sign-in screen over the desktop and leaves the session alone', async () => {
     const mg = await openDesktop();
-    document.getElementById('desktop-switch-user').click();
+    startAction('switch');
     assert.equal(signInScreens.length, 1);
     assert.equal(signInScreens[0][0], mg.containerItem);
     assert.deepEqual(signInScreens[0][1], { switching: true });

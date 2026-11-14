@@ -1943,6 +1943,16 @@ module BreakEscape
       info
     end
 
+    # Whether the scenario declares at least one sign-in PC (UI slice 6, R1 minor 2): the Lock
+    # capability is offered only then, so it never surfaces in a mission with no sign-in PC.
+    def scenario_has_login_pc?
+      return false unless scenario_data.is_a?(Hash)
+
+      Array(scenario_data['rooms']).any? do |_room_id, room|
+        room.is_a?(Hash) && Array(room['objects']).any? { |obj| self.class.login_pc?(obj) }
+      end
+    end
+
     # "PC reachable" (section 6): its room is unlocked or never locked, and nothing it
     # sits in is still locked.
     def login_pc_reachable?(info)
@@ -1954,10 +1964,26 @@ module BreakEscape
       sessions.is_a?(Hash) ? sessions : {}
     end
 
-    # The NPC signed in at a sign-in PC right now, or nil.
+    # The NPC actively signed in at a sign-in PC right now, or nil. UI slice 6: a locked
+    # session admits nothing until the password is entered again, so it has no live identity
+    # here. This is the one shared predicate every read path (the desktop, a desktop folder,
+    # a profile, a share mapped on the desktop, a copy, the remote/foothold desktop) runs
+    # through, so a locked PC is refused exactly as a signed-out one and future routes inherit
+    # the gate. The session record itself stays held (session_for_client still reads it raw,
+    # so a reload keeps `locked`).
     def session_identity(pc_id)
       session = access_sessions[pc_id.to_s]
-      session.is_a?(Hash) ? scenario_room_npc(session['id']) : nil
+      return nil unless session.is_a?(Hash)
+      return nil if session_locked?(session)
+
+      scenario_room_npc(session['id'])
+    end
+
+    # Whether the held session at a PC is locked (UI slice 6), read from the server's own
+    # record. Used by the admit predicates that test for a held session Hash directly rather
+    # than through session_identity (the login_pc scope, a mapped share).
+    def session_locked_at?(pc_id)
+      session_locked?(access_sessions[pc_id.to_s])
     end
 
     # section 5.1: a sign-in PC scope needs a current session there; a profile scope a
@@ -1969,7 +1995,9 @@ module BreakEscape
       when 'login_pc'
         # Slice 9.3b O (5.2): a scoped request under a remote session whose route is no longer
         # reached is refused, read from the server's own session record (session_route_up?).
-        access_sessions[scope[:id].to_s].is_a?(Hash) && session_route_up?(scope[:id])
+        # UI slice 6: a locked session admits nothing until re-auth.
+        access_sessions[scope[:id].to_s].is_a?(Hash) && !session_locked_at?(scope[:id]) &&
+          session_route_up?(scope[:id])
       when 'profile'
         profile = account_profiles[scope[:id]]
         return false unless profile
@@ -2396,13 +2424,67 @@ module BreakEscape
       end
     end
 
-    # One PC's entry of sessions_for_client, or nil.
+    # One PC's entry of sessions_for_client, or nil. A locked session (UI slice 6) carries
+    # `locked` so a reload keeps the lock; an unlocked one carries nothing (the absent key is
+    # "false"), so the answer never grows for the common case.
     def session_for_client(pc_id)
       session = access_sessions[pc_id.to_s]
       npc = session.is_a?(Hash) ? scenario_room_npc(session['id']) : nil
       return nil unless npc && self.class.account_holder?(npc)
 
-      login_session_answer(npc, session['via'], pc_id: pc_id.to_s, foothold: session['foothold'])
+      answer = login_session_answer(npc, session['via'], pc_id: pc_id.to_s, foothold: session['foothold'])
+      answer['locked'] = true if session_locked?(session)
+      answer
+    end
+
+    # A held session can be locked (UI slice 6): it stays held and signed in, but the player
+    # must re-enter the account's password (an ordinary POST /login, counted the same way) to
+    # use it again. The boolean lives on the existing session record, one per sign-in PC, so
+    # the synced state never grows past the number of sign-in PCs. One predicate and one
+    # setter serve every session kind (password, claim, a future keyring grant), so the same
+    # function locks and unlocks them all.
+    def session_locked?(session)
+      session.is_a?(Hash) && session['locked'] == true
+    end
+
+    # Lock or unlock a session record in place. Unlock (locked false) is reached only through
+    # a fresh sign-in, which start_login_session! builds with no `locked`; it is written here
+    # so a granted session can be reopened through the same function with no separate store.
+    def set_session_locked!(session, locked)
+      return unless session.is_a?(Hash)
+
+      if locked
+        session['locked'] = true
+      else
+        # No caller passes false yet: unlock happens by start_login_session! rebuilding a
+        # fresh record. Kept for a future keyring grant that reopens a session in place.
+        session.delete('locked')
+      end
+    end
+
+    # Lock the held session at a sign-in PC (UI slice 6). Only the session's holder can lock
+    # it: a PC with no held session is refused (:unprocessable_entity), which also covers a
+    # forged request for a PC the player does not hold. The session stays held and signedInPcs
+    # is untouched; the answer is the delta { pcId, locked }, never the whole sessions map.
+    def lock_session!(pc_id)
+      info = find_login_pc(pc_id)
+      key = info ? info[:object]['id'].to_s : pc_id.to_s
+      session = access_sessions[key]
+      unless session.is_a?(Hash)
+        return { status: :unprocessable_entity, body: { success: false, message: 'No session is held at this PC' } }
+      end
+      # Only a password sign-in can be locked (owner decision, UI slice 6): a claim or guest
+      # session was entered without a password, so the password re-auth that is the only way
+      # back in could never clear it and the player would be stranded. Refused with the same
+      # 422 as an unheld PC.
+      unless session['via'] == 'password'
+        return { status: :unprocessable_entity, body: { success: false, message: 'Only a signed-in session can be locked' } }
+      end
+
+      player_state['sessions'] = access_sessions
+      set_session_locked!(player_state['sessions'][key], true)
+      save!
+      { status: :ok, body: { success: true, pcId: key, locked: true } }
     end
 
     def signed_in_pcs
