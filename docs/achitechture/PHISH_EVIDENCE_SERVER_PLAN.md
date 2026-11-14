@@ -511,7 +511,7 @@ The migration, `migrate_legacy_phish_evidence!(scenario:)`, mirroring `migrate_l
   was served the secret in the old save), the migration leaves it; part-2 evidence only ever withholds,
   never retracts (the proof lists are monotonic), so a player who finished the phish keeps the result.
 - **No format bump, no `db:migrate`.** The two stores default to `{}` via `ACCESS_STATE_DEFAULTS`
-  (`game.rb:5926` seeds missing keys), and the migration is a data move inside `player_state`. The old
+  (`game.rb:5943` seeds missing keys), and the migration is a data move inside `player_state`. The old
   `se_landing_pages` global is left in place for the UI (or deleted if Q3 makes it server-owned); the old
   `mailState` is untouched (the mail UI still needs it).
 
@@ -523,6 +523,11 @@ so it belongs in the locked bootstrap that already holds `scenario_data`: `prepa
 wired to `sync_state`, which loads the narrow `SYNC_STATE_COLUMNS` (`games_controller.rb:2046`, no
 `scenario_data`) and is often the first request after deploy, the same discipline the capture migration
 follows.
+
+The migration is a standalone bootstrap writer, not a `FormatUpgrade` step. `ensure_current_format!` runs in
+`set_game` before `prepare_bootstrap_state!`, so the migration always reads format-3 scenario data. No format
+transform touches `se_landing_pages`, `mailState`, `globalVariables` or the scenario's `social.landingPages`
+and `phishTargets`, so the legacy evidence it reads arrives intact.
 
 It is added as a **genuinely separate guarded step**, not folded silently next to the capture migration,
 because `bootstrap_state_needs_write?` (`game.rb:831`) is a cheap OR of predicates that decides whether
@@ -682,7 +687,7 @@ writes the server stores while the old reader still reads client globals, which 
 reader flips. Order:
 
 1. **Stores and defaults.** Add `seLandingPages` and `sePhishSends` to `ACCESS_STATE_DEFAULTS`
-   (`game.rb:1773`) and confirm the seed (`:5926`). No behaviour change yet: nothing reads or writes them.
+   (`game.rb:1773`) and confirm the seed (`:5943`). No behaviour change yet: nothing reads or writes them.
    The game runs exactly as before. Commit.
 2. **`PhishScore` port and its parity test.** Add `lib/break_escape/phish_score.rb` and
    `phish_score_parity_test.rb` with the node side asserting the recorded JS results. Pure, unused by any
