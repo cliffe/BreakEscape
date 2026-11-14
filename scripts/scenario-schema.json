@@ -5221,6 +5221,18 @@
           "type": "string",
           "description": "Player-facing text for the launch confirmation dialog on launch-device"
         },
+        "operationName": {
+          "type": "string",
+          "description": "launch-device: the operation named in the panel headings (e.g. OPERATION SHATTER). Defaults to the device's name"
+        },
+        "abortedText": {
+          "type": "string",
+          "description": "launch-device: the status line shown after the player aborts (plain words: what will not happen). A neutral default is used when absent"
+        },
+        "launchedText": {
+          "type": "string",
+          "description": "launch-device: the status line shown after the player launches (plain words: what is now happening). A neutral default is used when absent"
+        },
         "itemsHeld": {
           "type": "array",
           "items": { "$ref": "#/definitions/item" }
