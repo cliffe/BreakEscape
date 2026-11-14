@@ -7,6 +7,7 @@
 
 import { INTERACTION_RANGE, INTERACTION_RANGE_SQ } from '../utils/constants.js';
 import { resolveObjectField } from '../utils/conditional-text.js';
+import { worldObservations } from '../utils/pc-observations.js';
 import { displayDashes } from '../utils/display-dashes.js';
 import { interactionLineClear } from '../systems/interaction-walls.js';
 import { reachX, aimX } from '../systems/interaction-reach.js';
@@ -154,6 +155,10 @@ export function updateInfoLabel() {
                     'observations',
                     obj.observations || obj.scenarioData?.name || obj.name || null
                 );
+                // An unlocked PC stops repeating its "password locked" line: its name instead
+                if (worldObservations(obj.scenarioData, text, window.pcSessions) === null) {
+                    text = obj.scenarioData?.name || obj.name || null;
+                }
                 // A sign-in PC with a sticky note picture says so (slice 9.2 B)
                 if (window.postitMarks?.label) text = window.postitMarks.label(obj.scenarioData?.id, text);
                 consider(reachX(obj, px), obj.y, text, INTERACTION_RANGE_SQ, obj, aimX(obj));

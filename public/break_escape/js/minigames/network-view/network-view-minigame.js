@@ -56,6 +56,28 @@ import { MORE_BELOW_TEXT } from '../../utils/more-below.js';
 
 // The down-state words (UX feedback slice 1): one set for every kind of row, block and link.
 // NOT_RESPONDING_TEXT is the powered-down state's name; its row shows only the tag.
+/**
+ * Escaped text with each space-separated word in a nowrap span, so a name can wrap at its
+ * spaces but never at a hyphen ("Ledger-Archive", "sign-in"). The text reads the same.
+ */
+// A word longer than this is left out of the nowrap span, so one very long name can still
+// break instead of pushing the list sideways on a phone (PC polish R2 m2)
+export const NOWRAP_WORD_MAX = 20;
+
+export function wordsHtml(text) {
+    return String(text ?? '').split(/(\s+)/).map((part) => {
+        if (!part || /^\s+$/.test(part)) return part;
+        if (part.length > NOWRAP_WORD_MAX) return escapeHtml(part);
+        return `<span class="network-row-word">${escapeHtml(part)}</span>`;
+    }).join('');
+}
+
+// A host label stays on one line (no break at its hyphen) unless it is too long to fit a phone
+// row at all; then it may break like any other very long word (PC polish R2 proof)
+export function hostnameClass(name) {
+    return String(name ?? '').length > NOWRAP_WORD_MAX ? 'network-row-hostname-long' : 'network-row-hostname';
+}
+
 export const REMOTE_OFF_TEXT = 'Remote sign-in off';
 export const NOT_RESPONDING_TEXT = 'Powered down';
 export const NO_ROUTE_TEXT = 'No route';
@@ -70,6 +92,22 @@ export { MORE_BELOW_TEXT };
 export const STALE_TEXT = 'Still updating, so this may be out of date.';
 // An implant whose own PC is off (review R3 M1): the link is listed and reaches nothing
 export const linkOffText = (host) => `This link is not responding: ${host || 'its PC'} is off.`;
+// Two different reasons for a padlock badge, so two plain words: a held session that was locked
+// (its owner returns with the password), and a share that needs an account the player has not
+// signed in with. Both keep the same badge look.
+export const HOST_LOCKED_LABEL = 'Locked';
+export const SHARE_LOCKED_LABEL = 'Needs account';
+
+/** The padlock badge's label for a row: a locked session ('host') or a share needing an account. */
+export function lockBadgeLabel(kind) {
+    return kind === 'share' ? SHARE_LOCKED_LABEL : HOST_LOCKED_LABEL;
+}
+
+/** The padlock badge, the same look for either label. */
+function lockBadgeHtml(kind) {
+    return `<span class="network-row-locked"><img class="network-row-padlock" src="/break_escape/assets/icons/padlock_32.png" alt=""> ${lockBadgeLabel(kind)}</span>`;
+}
+
 export const SHARE_LOCKED_TEXT = "Needs an account with access. It opens from that account's desktop.";
 const KIND_LABELS = { file_share: 'File share', printer: 'Printer', pc: 'Computer' };
 const WIFI_ICON = '/break_escape/assets/icons/wifi.png';
@@ -161,7 +199,9 @@ export function joinedStatus(n) {
 export function hostAction(row) {
     if (row?.responding === false) return 'not_responding';
     if (row?.remoteSignIn === false) return 'off';
-    if (row?.session && row.session.via !== 'claim') return 'open';
+    // UI slice 6: a held-but-locked session is shown Locked, not Open: opening it is refused
+    // by the server until the account's password is entered again.
+    if (row?.session && row.session.via !== 'claim') return row.session.locked ? 'locked' : 'open';
     return 'sign-in';
 }
 
@@ -358,7 +398,12 @@ export class NetworkViewMinigame extends MinigameScene {
 
     /** One further-network block (up: live controls; down: greyed "No route" rows). */
     blockSectionHtml(block) {
-        const via = block.via ? `, through ${escapeHtml(block.via.host || block.via.hostId || '')}` : '';
+        // UI slice 6: a locked pivot still bridges structurally (the view draws structural
+        // reach), so the "through <host>" label stays but is marked Locked, matching that the
+        // far network's rows will not open until the password is re-entered.
+        const via = block.via
+            ? `, through ${escapeHtml(block.via.host || block.via.hostId || '')}${block.via.locked ? ' (Locked)' : ''}`
+            : '';
         if (block.route === 'down') {
             // Each row drawn as its own kind, under the same group headings as an up block
             // (code review R1 n3: every row was drawn as a PC, so a share sorted after the
@@ -401,14 +446,14 @@ export class NetworkViewMinigame extends MinigameScene {
 
     /** A row's label: its name, the down tag after it, and the line under it. */
     labelHtml(title, sub, ds) {
-        return `<span class="network-row-label"><span class="network-row-title"><strong class="network-row-hostname">${escapeHtml(title)}</strong>${ds?.tag ? ` ${this.tagHtml(ds)}` : ''}</span>
+        return `<span class="network-row-label"><span class="network-row-title"><strong class="${hostnameClass(title)}">${escapeHtml(title)}</strong>${ds?.tag ? ` ${this.tagHtml(ds)}` : ''}</span>
                         <span class="network-row-name">${escapeHtml(sub)}</span></span>`;
     }
 
     /** The reason where a control would be, and the held session it keeps. */
     downControlHtml(ds) {
         const kept = ds?.kept ? `<span class="network-row-kept">${escapeHtml(sessionKeptText(ds.kept))}</span>` : '';
-        return `<span class="network-row-control">${ds?.reason ? `<span class="network-row-off">${escapeHtml(ds.reason)}</span>` : ''}${kept}</span>`;
+        return `<span class="network-row-control">${ds?.reason ? `<span class="network-row-off">${wordsHtml(ds.reason)}</span>` : ''}${kept}</span>`;
     }
 
     rowHtml(row) {
@@ -418,6 +463,13 @@ export class NetworkViewMinigame extends MinigameScene {
             let control;
             if (action === 'not_responding' || action === 'off') {
                 control = null;
+            } else if (action === 'locked') {
+                // UI slice 6: the same padlock "Locked" badge a locked share shows, in place of
+                // the Open button; the server refuses the open until the password is re-entered.
+                // The row also offers Sign in (the remote sign-in screen with the held account
+                // pre-chosen), so a locked remote session is never stranded (review R2 blocker 1).
+                control = lockBadgeHtml('host')
+                    + '<button type="button" class="minigame-button network-row-action" data-action="sign-in">Sign in</button>';
             } else if (action === 'open') {
                 const who = row.session.displayName || row.session.username || 'session';
                 control = `<button type="button" class="minigame-button network-row-action" data-action="open">Open <span class="network-row-who">(${escapeHtml(who)})</span></button>`;
@@ -430,7 +482,7 @@ export class NetworkViewMinigame extends MinigameScene {
                 <li class="network-row network-row-host${down}" data-host-id="${escapeHtml(row.id)}" data-kind="pc">
                     <img class="network-row-icon" src="${KIND_ICONS.pc}" alt="">
                     ${this.labelHtml(row.host || row.id, row.name || '', ds)}
-                    ${control === null ? this.downControlHtml(ds) : `<span class="network-row-control">${control}</span>`}
+                    ${control === null ? this.downControlHtml(ds) : `<span class="network-row-control${action === 'locked' ? ' network-row-control-locked' : ''}">${control}</span>`}
                 </li>`;
         }
         const icon = KIND_ICONS[row.kind] || KIND_ICONS.file_share;
@@ -441,7 +493,7 @@ export class NetworkViewMinigame extends MinigameScene {
             // A locked share: a padlock badge where other rows have a button, and the reason
             // under the share's name as a plain line (not three lines of italics)
             control = action === 'locked'
-                ? '<span class="network-row-locked"><img class="network-row-padlock" src="/break_escape/assets/icons/padlock_32.png" alt=""> Locked</span>'
+                ? lockBadgeHtml('share')
                 : '<button type="button" class="minigame-button network-row-action" data-action="open">Open</button>';
         } else {
             control = '<button type="button" class="minigame-button network-row-action" data-action="observe">Look</button>';
@@ -449,8 +501,8 @@ export class NetworkViewMinigame extends MinigameScene {
         return `
                 <li class="network-row network-row-resource${action === 'locked' ? ' network-row-wide' : ''}" data-resource-id="${escapeHtml(row.id)}" data-kind="${escapeHtml(row.kind || '')}">
                     <img class="network-row-icon" src="${icon}" alt="">
-                    <span class="network-row-label"><strong>${escapeHtml(row.name || row.id)}</strong>
-                        <span class="network-row-name">${escapeHtml(kindLabel)}${row.host ? ` on <span class="network-row-hostname">${escapeHtml(row.host)}</span>` : ''}</span>${action === 'locked' ? `
+                    <span class="network-row-label"><strong>${wordsHtml(row.name || row.id)}</strong>
+                        <span class="network-row-name">${escapeHtml(kindLabel)}${row.host ? ` on <span class="${hostnameClass(row.host)}">${escapeHtml(row.host)}</span>` : ''}</span>${action === 'locked' ? `
                         <span class="network-row-note">${SHARE_LOCKED_TEXT}</span>` : ''}</span>
                     <span class="network-row-control">${control}</span>
                 </li>`;
