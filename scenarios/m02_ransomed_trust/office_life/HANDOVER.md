@@ -8,7 +8,7 @@ Branch `build/ol-m02`, worktree `.claude/worktrees/p-ol-m02`. Base commit `9fe56
 - Stage 1: `ANALYSIS.md`. Differences from missions plan section 6: scenario line numbers moved by about 27; `cover_burned` comes from `talk_to_gary` completing; Gary's observation says "Four dead terminals" against the ink's "Two" (predates office life); Val's burn bark sits closest to the burn exchange; Doyle holds a second lanyard.
 - Stage 2: `PLAN.md` draft 8, seven review rounds (below). The exit rule is met at round 7 (0 B, 0 M).
 - `DIALOGUE_SAMPLE.md` for the user.
-- Concepts: 3 each for `night_porter` and `night_domestic` in `public/break_escape/assets/characters/wip/` (git-ignored, not committed). `night_domestic_concept_3` did not reframe (gradient background, legs cut); re-roll it if picked.
+- Concepts: 3 each for `night_porter` and `night_domestic` (file-name prefixes, kept) in `public/break_escape/assets/characters/wip/` (git-ignored, not committed). `night_domestic_concept_3` did not reframe (gradient background, legs cut); re-roll it if picked.
 
 ## Review rounds (plan)
 
@@ -22,7 +22,7 @@ Branch `build/ol-m02`, worktree `.claude/worktrees/p-ol-m02`. Base commit `9fe56
 | 6 | 0/1/10 (one reviewer, both views) | | 0/1/10 | `offWhen` moved to object level (format step 8a retired `affordance.offWhen`); `dr_kim_ko` gates; fresh game per probe step and a mid-exchange attack; sync budget counts item 3 |
 | 7 | 0/0/8 (one reviewer, both views) | | 0/0/8 | **exit rule met.** Minors folded in draft 8: male voice `Algieba`; "handover room" in HaX texts; paper exchange gated on `patient_bed4_deceased`; partner already using finishes its use; `npcInkVariables` in the budget; reveal-global readers; citations re-read after the merge; seated drink check |
 
-Draft 8 also applies the user's picks (2026-11-14): the porter is Ernesto Bautista everywhere (id, sprite key and ink file `ernesto_bautista`, KO global `ernesto_bautista_ko`, lines and credits); concept 1 for each; the full PixelLab pipeline approved for both, run separately; dialogue sample approved with all three exchanges; debrief unchanged; both attackable; one HaX text and one credits line for an attack short of a knock-out, text only. Draft 8 has not had a fresh review; its changes are the rename, the decided items and the round 7 minors.
+Draft 8 also applies the user's picks (2026-11-14): the porter is Ernesto Bautista everywhere (id, sprite key and ink file `ernesto_bautista`, KO global `ernesto_bautista_ko`, lines and credits); concept 1 for each; the full PixelLab pipeline approved for both, run separately; dialogue sample approved with all three exchanges; debrief unchanged; both attackable; one HaX text and one credits line for an attack short of a knock-out, text only. After that, the integrator renamed Hodan the same way (id, ink file and KO global `hodan_warsame`, matching her sprite key). Draft 8 has not had a fresh review; its changes are the rename, the decided items and the round 7 minors.
 
 ## For the user
 
@@ -36,4 +36,4 @@ All section 9 items are decided except the voicing spend (about 53 clips, V6 at 
 
 ## Next
 
-Stage 4 once V1 to V10 are on main and main is merged. Art runs separately for `ernesto_bautista` and `night_domestic`.
+Stage 4 once V1 to V10 are on main and main is merged. Art runs separately for `ernesto_bautista` and `hodan_warsame`.
