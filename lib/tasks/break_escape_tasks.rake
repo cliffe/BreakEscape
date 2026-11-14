@@ -96,13 +96,14 @@ namespace :break_escape do
     desc <<~DESC
       List every office-life clip of a scenario per voice, cached or not (V6; read only, keyless).
 
-      Chatter pool lines and the lines of exchange and phone-call knots, as
-      TtsLineExtractor yields them with chatter on, reduced to distinct cache
+      Chatter pool lines and the lines of exchange and phone-call knots, keyed
+      as the client requests them (no delivery note), reduced to distinct cache
       keys (voice and text) and grouped by voice. Each clip is marked cached or
-      uncached under the current cache key; totals give characters and clips.
-      EventMapping barks are outside the extractor and not listed. Generates
-      nothing and writes nothing. STRICT=1 exits 1 when any clip is uncached
-      (the merge gate's "0 uncached office-life clips").
+      uncached under the current cache key, and "shared" when a person-chat
+      line holds the same key; totals give characters and clips. EventMapping
+      barks are not listed. Generates nothing and writes nothing. STRICT=1 exits
+      1 when any clip is uncached (the merge gate's "0 uncached office-life
+      clips"). TTS_CACHE_DIR reads another cache directory (tests).
         bin/rails "app:break_escape:tts:office_lines[m02_ransomed_trust]"
     DESC
     task :office_lines, [:scenario] => :environment do |_task, args|
@@ -112,7 +113,8 @@ namespace :break_escape do
         abort "#{scenario}: no scenarios/#{scenario}/scenario.json.erb"
       end
 
-      report = BreakEscape::TtsOfficeLines.for_scenario(scenario)
+      cache_dir = ENV['TTS_CACHE_DIR'].presence || BreakEscape::TtsService::CACHE_DIR
+      report = BreakEscape::TtsOfficeLines.for_scenario(scenario, cache_dir: cache_dir)
       puts "#{scenario}: office-life clips per voice (distinct cache keys)"
       report.voices.each do |voice|
         puts ""
@@ -120,7 +122,7 @@ namespace :break_escape do
              "#{voice.uncached.size} uncached, #{voice.characters} characters"
         voice.clips.each do |clip|
           where = clip.knot ? "#{clip.kind} #{clip.knot}" : clip.kind
-          puts "  #{clip.cached ? 'cached  ' : 'UNCACHED'} #{clip.npc_id} (#{where}): #{clip.text}"
+          puts "  #{clip.cached ? 'cached  ' : 'UNCACHED'} #{clip.npc_id} (#{where}#{clip.shared ? ', shared with person-chat' : ''}): #{clip.text}"
         end
       end
       puts ""
