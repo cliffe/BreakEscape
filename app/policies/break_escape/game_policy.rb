@@ -129,6 +129,12 @@ module BreakEscape
       show?
     end
 
+    # Phish evidence Route 2 (docs/achitechture/PHISH_EVIDENCE_SERVER_PLAN.md): record a phish
+    # send. Same access as viewing the game.
+    def se_phish_send?
+      show?
+    end
+
     # Networks (slice 9.3a, section 5)
     def network?
       show?

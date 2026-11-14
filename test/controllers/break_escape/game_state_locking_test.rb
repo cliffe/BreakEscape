@@ -49,6 +49,7 @@ module BreakEscape
       unplug_device!
       settle_session_at_keyboard!
       build_landing_page!
+      send_phish!
     ].freeze
 
     # create builds a brand new record that nothing else can hold a reference
@@ -168,6 +169,16 @@ module BreakEscape
       assert_includes locked_actions, 'se_landing_page',
                       'se_landing_page save!s player_state and the client POSTs it alongside the ' \
                       'attach sync; without the lock the sync\'s built flag is silently reverted.'
+    end
+
+    # Phish evidence Route 2 (se_phish_send) records the send with send_phish!, which save!s the
+    # whole player_state and re-stamps captures. The client POSTs it right after committing the
+    # sent record, so it races performSend's mailState sync on the same row; unlocked, the stale
+    # copy could revert a just-synced change. It must hold the lock so it reloads under it.
+    test 'se_phish_send is locked' do
+      assert_includes locked_actions, 'se_phish_send',
+                      'se_phish_send save!s player_state and re-stamps captures; without the lock a ' \
+                      'concurrent mailState sync on the same row can be silently reverted.'
     end
 
     test 'a write in a private helper counts as its action writing' do
