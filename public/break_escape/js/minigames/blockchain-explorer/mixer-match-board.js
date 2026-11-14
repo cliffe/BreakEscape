@@ -215,8 +215,7 @@ export class MixerMatchBoard {
                         </span>
                     </div>
                     <div class="bce-mx-footer-btns">
-                        ${hasFiles ? `<button class="bce-close-btn bce-mx-files-btn" id="bce-mx-files" type="button">${esc(this.filesLabel)}</button>` : ''}
-                        <button class="bce-close-btn" id="bce-close-btn" type="button">Close</button>
+                        ${hasFiles ? `<button class="bce-mx-files-btn" id="bce-mx-files" type="button">${esc(this.filesLabel)}</button>` : ''}
                     </div>
                 </div>
             </div>`;
@@ -346,7 +345,6 @@ export class MixerMatchBoard {
         root.querySelectorAll('[data-slot]').forEach(el => on(el, () => this.nameSlot(el.dataset.slot)));
         on(root.querySelector('#bce-mx-help'), () => { this.showHelp = !this.showHelp; this.render(); });
         on(root.querySelector('#bce-mx-work'), () => { if (this.selected) this.working.add(this.selected); this.render(); });
-        on(root.querySelector('#bce-close-btn'), () => this.close());
         on(root.querySelector('#bce-mx-files'), () => this.openFiles());
     }
 

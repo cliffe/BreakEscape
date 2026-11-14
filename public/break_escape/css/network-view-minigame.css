@@ -13,53 +13,12 @@
     font-synthesis: none;
 }
 
-/* The panel's frame (code review R1 m2, m4; R2 m2): one 2px border round a column of the
-   header (holding the X), the scrolling list and the "More below" strip. It is as tall as its
-   rows (main3-02: no tall empty panel) and never taller than the screen, so its bottom border
-   always shows; a long list scrolls inside, and its scrollbar starts under the header. */
-.network-view-frame {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    box-sizing: border-box;
-    width: calc(100% - 24px);
-    max-width: 1000px;
-    max-height: calc(100% - 24px);
-    min-height: 0;
-    background: #10161c;
-    border: 2px solid #6b7f8f;
-    color: #e8eef2;
-    /* Pixel fonts have no italic or bold cut: never let the browser fake one */
-    font-style: normal;
-    font-synthesis: none;
-}
-
-/* The scrollbar's colours on this frame (the shape is .pixel-scroll in utilities.css) */
-.network-view-frame .pixel-scroll {
+/* The scrollbar's colours in this window (the shape is .pixel-scroll in utilities.css) */
+.network-view-minigame .pixel-scroll {
     --pixel-scroll-track: #10161c;
     --pixel-scroll-thumb: #2d3a44;
     --pixel-scroll-edge: #6f8a9c;
     --pixel-scroll-hover: #9ee6ff;
-}
-
-.network-view-minigame .network-view-frame .minigame-game-container {
-    flex: 1 1 auto;
-    width: 100%;
-    height: auto;
-    max-height: none;
-    min-height: 0;
-    margin: 0;
-    overflow-y: auto;
-    background: transparent;
-    box-shadow: none;
-}
-
-/* The X inside the header's top-right corner, clear of the frame's 2px border, at every size */
-.network-view-minigame .network-view-frame .minigame-close-button {
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    z-index: 2;
 }
 
 /* "More below": pinned to the frame's bottom edge while the list runs on, hidden at the end */
@@ -93,24 +52,17 @@
     font-style: normal;
 }
 
-/* The header heads the frame, outside the scroll area (code review R2 m2): the list and its
-   scrollbar run only under it, so neither meets the X in the header's reserved corner */
+/* The status strip sits above the list, outside the scroll area */
 .network-view-header {
-    position: relative;
     flex: 0 0 auto;
-    padding: 10px 48px 6px 10px;
+    padding: 6px 10px;
     background: #10161c;
     border-bottom: 2px solid #2d3a44;
     font-size: 18px;
 }
 
-.network-view-title {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 0 0 4px 0;
-    font-size: 22px;
-    color: #9ee6ff;
+.network-view-header[hidden] {
+    display: none;
 }
 
 /* wifi.png 11 x 8, x2 */
@@ -121,17 +73,10 @@
     image-rendering: pixelated;
 }
 
-.network-view-title .network-row-tag {
-    color: #c8a0a0;
-}
-
-.network-view-subtitle {
-    margin: 0 0 4px 0;
-    color: #b8c4cc;
-    font-size: 16px;
-}
-
 .network-view-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     margin: 4px 0 0 0;
     color: #a8f0b0;
 }

@@ -26,7 +26,8 @@ const SCENES = {
     'warranty-checklist': 'warranty-checklist/warranty-checklist-minigame.js',
     'blockchain-explorer': 'blockchain-explorer/blockchain-explorer-minigame.js',
     'log-filter': 'log-filter/log-filter-minigame.js',
-    'capture-log': 'capture-log/capture-log-minigame.js'
+    'capture-log': 'capture-log/capture-log-minigame.js',
+    'mixer-match-board': 'blockchain-explorer/mixer-match-board.js'
 };
 
 test('no scene draws its own Close / Close Terminal / [CLOSE] button beside the X (X5)', () => {
@@ -84,7 +85,8 @@ const CONSOLE_SCENES = {
     'sis-config-threshold': 'sis-config-threshold/sis-config-threshold-minigame.js',
     'ransomware-display': 'ransomware-display/ransomware-display-minigame.js',
     'siem': 'siem/siem-dashboard-minigame.js',
-    'network-segmentation-map': 'network-segmentation-map/network-segmentation-map-minigame.js'
+    'network-segmentation-map': 'network-segmentation-map/network-segmentation-map-minigame.js',
+    'network-view': 'network-view/network-view-minigame.js'
 };
 const DEVICE_SCENES = {
     'esd-pushbutton': ['esd-pushbutton/esd-pushbutton-minigame.js', '.esd-panel'],
