@@ -63,4 +63,4 @@ V1 NPC counts for the stage 0 summaries: m01 7, m02 17, m03 10, m04 12, m05 12, 
 
 ## Suites
 
-See the commit after this log for the full `bin/test-js` and `bin/rails test` results.
+On f9dcfa4d7: `bin/test-js -j 3` 656 files passed, 0 failed; `bin/rails test` 2747 runs, 0 failures, 0 errors, 1 skip.
