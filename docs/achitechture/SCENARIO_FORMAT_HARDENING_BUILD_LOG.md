@@ -3072,6 +3072,293 @@ No change. Chunk 7 touches docs, a schema description string and test fixtures o
 Both full suites green on one tip (`0305bd1ad`), the grep sweep clean of stray live mentions, the three
 cross-chunk node files passing against the committed validator. Step 8c is ready for code review.
 
+## Step 6a-1. Server-only marks, the declared top level and the fresh-state payload scan
+
+Date: 2026-11-14. Branch `build/hard-6a1`, from main cb259dbdf. Plan: section 1 (cheat policy),
+section 2 (secret list), step 6a-1 (around plan line 420), build order (plan line 823). 8b and 8c
+have landed, so the field names are current: `habits.screen` and `habits.print` are client-visible,
+the rest of `habits` is server-only.
+
+### Client-visible: NPC needs, chatter and exchanges
+
+The m02 office-life pilot asked which of the needs, chatter, barks and exchanges fields reach the
+browser. Every verdict below is read from `scripts/scenario-schema.json` and from the engine JS that
+reads the shipped scenario (the office-life needs system runs client-side: `systems/npc-needs.js`
+builds each NPC's record straight from `window.gameScenario` and reads these fields from it). Line
+numbers are anchored to main cb259dbdf and re-anchored later if they move.
+
+**The whole group is client-visible.** None of NPC `needs`, `needsHome`, `chatter`, the eventMapping
+`bark` family, or `exchanges` is a secret under section 2, and none carries a grant's contents, so
+none is withheld. The only server-only fields in reach sit inside `habits`, where the ship filter
+keeps a two-key allow list (`withhold_npc_secrets!`, `app/models/break_escape/game.rb:6276-6282`,
+`SHIPPED_HABIT_KEYS` at `game.rb:6239`). The filter's deny-by-default shape means `needs`, `chatter`
+and `exchanges` are never touched by it.
+
+NPC `needs` (a map; `npc-needs.js:447-449` normalises each entry, read at `:1476`, `:1751` and the
+scoring loops). Every sub-property is client-visible:
+
+| Property | Verdict |
+|---|---|
+| `decayPerMin` | client-visible |
+| `urgentAt` | client-visible (`npc-needs.js:1476`) |
+| `initial` | client-visible |
+| `weight` | client-visible |
+| `maxUnmetMin` | client-visible |
+| `deferrable` | client-visible (`npc-needs.js:1751`) |
+| `jitterPct` | client-visible |
+| `_comment` | an author note, stripped from every client payload (step 2b); not shipped |
+
+`needsHome` (a string object id or a `{ room, x, y }` tile) is client-visible: the needs system
+resolves the home from the shipped record (`npc-needs.js:1186`, `:2109`). Its sub-keys `room`, `x`,
+`y` are client-visible.
+
+NPC `chatter` (a map of topic name to an array of lines or `{ lines, hush, overhearRadius }`) is
+client-visible: the lines are voiced client-side, drawn through `chatterPool` from the shipped record
+(`npc-needs.js:1993`, `:2186`). Sub-properties `lines`, `hush`, `overhearRadius` are all
+client-visible; `_comment` is an author note (not shipped).
+
+Barks (the eventMapping speech fields, `scenario-schema.json:4863-4875`): `bark`, `message` (its
+legacy alias) and `barkDelay` are client-visible. The engine shows the speech bubble and plays TTS
+client-side from the mapping in the shipped scenario; the text is authored dialogue, not a secret.
+
+NPC `exchanges` (an array; each entry read at `npc-needs.js:2705`, and the NPC's ink story is loaded
+when it declares `exchanges`, `npc-needs-chatter.js:149`) is client-visible:
+
+| Property | Verdict |
+|---|---|
+| `with` | client-visible |
+| `knot` | client-visible |
+| `requireGlobal` | client-visible (a global-name gate the client evaluates, `npc-needs.js:2710`; not a secret value) |
+| `_comment` | an author note (not shipped) |
+
+### Habits (step 8c field names)
+
+`habits.screen` and `habits.print` are the only two habits that ship; everything else in the block is
+server-only, deleted by the allow-list filter (`game.rb:6276-6282`, `SHIPPED_HABIT_KEYS` at `:6239`).
+
+| Property | Verdict | Server reader (server-only cite) |
+|---|---|---|
+| `screen` | client-visible | shipped (`game.rb:6239`, `:6278`); read client-side at `public/break_escape/js/systems/workstation-state.js:124` |
+| `print` | client-visible | shipped (`game.rb:6239`, `:6278`); read client-side at `npc-needs.js:973`, `:3387` |
+| `locksScreen` | server-only | folded into the screen/door habits server-side (`lib/break_escape/npc_habits.rb:33-35`, `:84-87`); withheld (`game.rb:6276-6282`) |
+| `writesDown` | server-only | drives the constructed sign-in sticky note (`written_down?`, `game.rb:2619-2620`), a route-built access clue; the habit itself is withheld (`game.rb:6276-6282`) |
+| `password` | server-only | a validator-only claim (no run-time effect); withheld (`game.rb:6276-6282`) |
+| `passwordPattern` | server-only | read by the guessable-password clue check (`lib/break_escape/npc_habits/clues.rb:487`); withheld (`game.rb:6276-6282`) |
+| `holdsDoors` | server-only | folded into the gate `noHold` list server-side (`lib/break_escape/npc_habits.rb:148`); withheld (`game.rb:6276-6282`) |
+| `usb` | server-only in `habits` | reships only inside the resolved work plan as `work.usb` (`lib/break_escape/access_work.rb:1213`, via `compile_npc_plan!`, `game.rb:6247-6258`); the raw `habits.usb` is withheld (`game.rb:6276-6282`) |
+
+Server-only note: these habits are not literal section-2 secret values; they are server-side access
+logic that reveals or drives a sign-in secret. The 6a-1 marks mark the six non-shipping habit
+leaves (`locksScreen`, `writesDown`, `password`, `passwordPattern`, `holdsDoors`, `usb`) each
+`x-serverOnly` and leave `screen` and `print` unmarked, so they ship as class 3. (Per-leaf, not a
+whole-block mark: a whole-block `x-serverOnly` with `x-servedBy` for the shipping route would also
+let the other unmarked habit leaves pass on that route, which must not happen.)
+The broader needs-system fields outside this grouping (`interests`, `needsCompany`, `phoneCalls`,
+`onUse`, `chattiness`, `swivel`, and so on) are client-visible too; `role`, `creds`, `awareness`,
+`workNeeds`, `frustration`, `workarounds` and `feed` are the NPC fields withheld alongside the
+non-shipped habits (`WITHHELD_NPC_KEYS` `game.rb:6227`, `WITHHELD_WORK_NPC_KEYS` `game.rb:6231`).
+
+### What changed (6a-1, step-3-independent parts)
+
+Built on main cb259dbdf. Steps 3, 4 and 5 of this plan are not merged on this branch (verified: no
+`build/harden-step3/4/5`, `acknowledgedClues` absent everywhere in `app/`, `lib/`, `scripts/`, no
+step-4 `x-ref` schema annotations). Present and used: the ScenarioSchema resolver (step 2b),
+AuthorNotes, FormatUpgrade (step 7), `Game.strip_lock_answers!` (which still strips both `combination`
+when `lockType` is combination and `cryptexConfig.answer`, game.rb), and `CaptureModel`
+(`hard_access_values`, `lock_codes`, `lock_answer_matches?`). The user held the full fresh-state
+scan until step 3; everything below is committed now.
+
+**Schema marks and declarations (`scripts/scenario-schema.json`).**
+- The nine previously-undeclared top-level keys are declared: `scenario_id`, `scenario_name`, `name`,
+  `description` (string); `exportGlobals`, `validSprites` (array of string); `importGlobals`,
+  `timedMessages` (array of an `x-free-data` object); `showTitleScreen` (boolean). Each description
+  names its readers on main. `formatVersion` was already declared (step 7). `acknowledgedClues` is
+  step 3's and stays undeclared until then.
+- Whole-record top-level marks: `flags` and `roles` `x-serverOnly` (served by no route);
+  `accountProfiles` `x-servedBy "GET /container"`; `networks`, `networkLinks`, `resources`
+  `x-servedBy ["GET /network", "GET /container"]`.
+- Lock-answer declarations and marks on both `#/definitions/room` and `#/definitions/item`:
+  `requires` gets `x-serverOnly: { unlessLockType: ["biometric", "bluetooth", "rfid"] }`; a new
+  `combination` property gets `x-serverOnly: { whenLockType: ["combination"] }`; `cryptexConfig`
+  keeps `x-free-data: true` but gains a declared `answer` property (`type: string`) marked
+  `x-serverOnly: true`. The door-entry definition gets `"lockTypeFrom": "connectedRoom"` for the
+  scan's lock-type resolution.
+- NPC-definition whole-record marks: `role`, `creds`, `awareness`, `workNeeds`, `frustration`,
+  `workarounds`, `feed` `x-serverOnly`. `creds.password` carries
+  `x-servedBy: [{ route: "GET /login_accounts", key: "postitNote" }, "GET /capture_secrets"]` (R1
+  MI1: `GET /capture_secrets` serves the account password once a capture proof holds, `captureProof`;
+  `served_routes` flattens the hash entry to its route). The six feed `POST_KEYS` (`id`, `text`,
+  `fact`, `date`, `note`, `replyTo`) carry `x-servedBy "feedPosts"`.
+- Capture secrets (R1 MA1, section-2 "capture secret"): `social.landingPages[].capture.secret`,
+  `usePayload.secret` and `addCapture.secret` (the three `CAPTURE_SECRET_KEYS` that
+  `Game.strip_capture_secrets!` strips, `game.rb:6094`/`6100`) each gain `x-serverOnly: true` and
+  `x-servedBy "GET /capture_secrets"`. `usePayload` keeps `x-free-data: true` and gains a declared
+  `secret` (the resolver's declared-property rule reaches it, the rest stays free); `addCapture` gains
+  a declared `secret` beside `targetId`/`proof`. The mark is unconditional: the bootstrap filter
+  strips every capture secret regardless of `social.captures.revealSecret`, so the secret never ships
+  there; `revealSecret` only governs whether `GET /capture_secrets` serves it (a route-served reveal,
+  not a bootstrap ship), so no conditional form is needed. See Encoding decisions.
+- Habits: the six non-shipping leaves (`locksScreen`, `writesDown`, `password`, `passwordPattern`,
+  `holdsDoors`, `usb`) are each `x-serverOnly`; `screen` and `print` are left unmarked so they ship.
+
+**Tests and the exceptions file.**
+- `test/js/validator-declared-top-level.test.mjs` (new): every top-level key the rendered corpus
+  uses is declared; the nine keys are declared and typed; `cryptexConfig` and `combination` are
+  declared on both room and item; the answer copies, `requires`, the top-level secret blocks, the
+  NPC records and the per-leaf habit marks all carry the right marks.
+- `test/fixtures/files/payload_scan_exceptions.json` (new): an empty array. Its list-test wiring
+  lives in `test/js/validator-known-failures.test.mjs` (the shared decisions reader): a new
+  `checkPayloadScanExceptions` checks each entry's fields (`scenario`, `route`, `paths`, `reason`,
+  dates), its `approved` heading and json block (`scenario`, `route`, `paths`), a passed `reviewBy`
+  (warns, fails under `MERGE_BATCH=1`), and no heading backing two entries across the three lists.
+  `AGENTS.md` (line 186) and `VALIDATOR_DECISIONS.md` already name the file; no edit needed there.
+- `test/models/break_escape/payload_scan_fresh_state_test.rb` (new): the leaf classifier
+  (`PayloadLeafClassifier`) is live and unit-tested (classes 1, 3, 4, the conditional `requires` and
+  `combination` marks, the three capture-secret nodes (R1 MA1: each class 1 off its route, class 3 on
+  `GET /capture_secrets`), `creds.password`'s two routes (R1 MI1), and the class-2 rule that reads
+  `acknowledgedClues` when the key is present). The full corpus scan over real routes is a single
+  test behind `skip SCAN_PENDING`; the skip is now tied to the schema declaring `acknowledgedClues`
+  (R1 MI2), so once step 3 lands the skip lifts and the empty-body test fails until the scan is built.
+
+### Encoding decisions
+
+- **Habits are marked per leaf, not whole-record.** A whole-record `x-serverOnly` on `habits` with an
+  `x-servedBy` for the shipping route would, under the scan's precedence rule, also let the other
+  unmarked habit leaves pass on that route. Marking the six non-shipping leaves and leaving
+  `screen`/`print` unmarked is the only encoding the scan reads correctly. (This corrects a sentence
+  in the client-visible section above, now reworded.)
+- **cryptexConfig keeps `x-free-data` and gains a declared `answer`.** The plan's anchor (e937b75f8)
+  had `cryptexConfig` as `{ wheelCount, answer }`; on this branch it was changed to `x-free-data`
+  with the answer moved into `requires`. Rather than reverse that, the resolver's rule 1 (a declared
+  property wins over a free-data branch) lets `answer` be a class-1 property while the rest of
+  `cryptexConfig` stays free. `open_kinds` is empty for a property-bearing node, so the one-mark walk
+  test skips it. `answer` needs `type: string`, or it is "bare" and the one-mark test flags it.
+- **`combination` is a new declared property.** No corpus scenario carries a top-level or nested
+  `combination`, so declaring it on room and item rejects nothing; it exists so an authored copy
+  fails the scan on its path under a combination lock.
+- **Capture secrets are marked unconditionally, not with a conditional like `requires` (R1 MA1).**
+  `requires` and `combination` need `unlessLockType`/`whenLockType` because they legitimately ship
+  under some lock types. A capture secret does not: `Game.strip_capture_secrets!` deletes it from the
+  bootstrap on every path, regardless of `social.captures.revealSecret`. When `revealSecret` is true
+  the secret is served by `GET /capture_secrets`, which `x-servedBy` already names, so a plain
+  `x-serverOnly: true` is exact. `usePayload` keeps `x-free-data` and gains a declared `secret` the
+  same way `cryptexConfig` gained `answer`: the resolver's rule 1 reaches the declared leaf and the
+  rest of the payload stays free. No corpus `usePayload` carries a `secret`; `addCapture.secret`
+  appears once (lab_physical_pentest, a string), and `type: string` accepts it.
+
+### Verification
+
+- `test/unit/scenario_schema_test.rb` + `test/unit/scenario_schema_boot_test.rb`: 14 runs, 12780
+  assertions, 0 failures (the one-mark walk test passes with the new `cryptexConfig.answer`, the
+  `x-free-data` array items and the three capture-secret nodes; R1 added four assertions).
+- `test/js/validator-strict-keys.test.mjs`: 15 pass (corpus has no unknown key in any closed block).
+- `test/js/validator-known-failures.test.mjs`: 21 pass (15 existing plus 6 new exceptions-list
+  tests).
+- `test/js/validator-declared-top-level.test.mjs`: 7 pass (R1 added the capture-secret marks test).
+- `test/models/break_escape/payload_scan_fresh_state_test.rb`: 11 runs, 32 assertions, 1 skip (the
+  held scan); R1 added three capture-secret classifier tests.
+- Validator `--no-graph --skip-ink` over lab_social_engineering, test_social_slice,
+  ca05_signin_pages and m01_first_contact: 0 errors each (R1 re-check of the capture-secret marks).
+- Validator `--no-graph --skip-ink` over the whole corpus: 0 scenarios print a schema error naming
+  any new declaration (`scenario_id`, `scenario_name`, `name`, `description`, `exportGlobals`,
+  `importGlobals`, `validSprites`, `timedMessages`, `showTitleScreen`, `combination`,
+  `cryptexConfig`, `formatVersion`). The eight representative scenarios (title-screen-demo,
+  test_dm_social, ca_post_helpdesk_ba, ca_pre_helpdesk_ab, m07, m01, lab_tesseract_trials,
+  timed_messages_example) each print 0 errors.
+
+### Sync size
+
+No runtime change. 6a-1 adds schema marks (read by the held scan), four test files and one empty
+fixture; no `app/` or `lib/` code, no payload, no player_state.
+
+### Files touched (6a-1)
+
+`scripts/scenario-schema.json`, `test/js/validator-declared-top-level.test.mjs`,
+`test/js/validator-known-failures.test.mjs`, `test/fixtures/files/payload_scan_exceptions.json`,
+`test/models/break_escape/payload_scan_fresh_state_test.rb`,
+`docs/achitechture/SCENARIO_FORMAT_HARDENING_BUILD_LOG.md`.
+
+### Left for after step 3
+
+6a-1's fresh-state scan is held because class 2 (a leaf under `globalVariables`, `minigameData` or
+`scenarioData`) follows step 3's leak rule with acknowledged clues, and step 3's `acknowledgedClues`
+marker is not on this branch. When step 3 lands:
+1. In `payload_scan_fresh_state_test.rb`, remove `skip SCAN_PENDING` and build the scan body: for
+   each scenario create a standalone game (`srand(1)` around creation, `srand(Random.new_seed)`
+   after), fetch `GET scenario`, `GET room/:id` per room, `GET container/:id` per container,
+   `GET login_accounts` per sign-in PC and `GET network` with no foothold, walk every response leaf
+   with the ScenarioSchema walker carrying the server-only ancestor state (the precedence rule), and
+   class each leaf with `PayloadLeafClassifier.classify` and `class2_reports?`. Fail on every class 1
+   leaf, every class 2 leaf `class2_reports?` returns true for, and every class 4 value match with no
+   serving field. Read exceptions from `payload_scan_exceptions.json` (a listed path that no longer
+   fails is stale and fails). Name the routes left out with a reason (the plan's list): `scenario_map`,
+   `objectives`, `capture_secrets`, `ink`, and the POST routes.
+2. The class-2 path already reads `acknowledgedClues` when present (`class2_reports?` /
+   `clue_covers?`). Step 3 owns the real `acknowledgedClues` entry shape; align `clue_covers?` with
+   it. m08_the_mole's `suite_code` global then passes once m08's `global:` marker is in; the
+   ceo_exfil and crypto1 to crypto4 legacy-PC `requires` findings get exceptions entries once step 3
+   warns about the inert field (per the user's decision, not temporary entries now).
+3. `social.intelFacts` is not marked. The `socialIntelFact` definition is shared with the
+   client-visible OSINT browser, intel fact text is class 3 (not a section-2 secret), and
+   `x-servedBy "feedPosts"` there only matters to the scan's feed handling. Decide its mark when the
+   scan is built, with the feed-post fetch in front of it.
+4. The class fixtures the plan lists (6a-1 Tests) and the corpus fixtures (m01's postitNote and the
+   other plain-text clues as class 3, test_access_habits' written-down password as class 4) are
+   added with the scan body. 6a-2 then adds the opened-state scan, the identity check and the
+   mutation tests.
+5. (R1 MI3) Wire `acknowledgedClues` as the third list into the node test's `otherApproved` readers
+   in `test/js/validator-known-failures.test.mjs:130-138`. `otherApproved` currently reads only the
+   payload-scan exceptions file; the comment there already flags the acknowledgedClues list as "once
+   it exists". Step 3 reads its markers from the scenario templates' raw text (they never ship), so
+   add each `acknowledgedClues` heading as an `[label, heading]` pair, and the plan's shared-heading
+   rule then covers a collision between an acknowledgedClues heading and an exceptions or
+   known-failure heading.
+
+### Review R1 fixes (6a-1)
+
+Date: 2026-11-14. Branch `build/hard-6a1`. Resolving `SCENARIO_FORMAT_STEP6A1_REVIEW_R1.md`
+(0 blockers, 1 major, 4 minors).
+
+- **MA1 (major), capture secrets now marked.** `social.landingPages[].capture.secret`,
+  `usePayload.secret` and `addCapture.secret` carry `x-serverOnly: true` and
+  `x-servedBy "GET /capture_secrets"`. Decision recorded under Encoding decisions: the mark is
+  unconditional because `Game.strip_capture_secrets!` strips the bootstrap on every path; `revealSecret`
+  is a route-served reveal, not a bootstrap ship, so no `whenLockType`-style conditional is needed.
+  No corpus scenario ships a capture secret in its bootstrap, so this adds no false positive.
+  Three classifier unit tests added (each node class 1 off its route, class 3 on `GET /capture_secrets`).
+- **MI1, `creds.password` second route.** `x-servedBy` is now the array
+  `[{ route: "GET /login_accounts", key: "postitNote" }, "GET /capture_secrets"]`;
+  `PayloadLeafClassifier.served_routes` flattens a hash entry inside an array to its `route`, and its
+  unit test now asserts both routes.
+- **MI2, the held scan self-activates.** `payload_scan_fresh_state_test.rb` skips the corpus scan
+  only while the schema does not declare `acknowledgedClues` (a new `schema_declares_acknowledged_clues?`
+  helper walks the schema for a declared property of that name). Once step 3 lands the skip lifts and
+  the empty-body test `flunk`s (`SCAN_READY`), so the scan cannot be forgotten.
+- **MI3, handover.** Added item 5 to "Left for after step 3": wire `acknowledgedClues` as the third
+  list into the node test's `otherApproved` readers.
+- **MI4 (merge risk with steps 4 and 5), left as-is** per the review; the orchestrator owns merge
+  order, and the plan already says the later branch re-applies its hunks.
+
+#### Review R2 fix (6a-1)
+
+`definitions/task.targetFlags` is now `x-serverOnly: true`, served by no route. It holds the expected flag
+answers, which `Game#filter_target_flags` strips from every task in the bootstrap, so it is a section-2 flag
+answer that the plan's 6a-1 list left out. The client reads it only defensively (objectives-manager.js:94,
+falling back when the server supplies `targetCount`). The node declared-top-level test asserts the mark.
+
+#### Review R3 fixes (6a-1)
+
+A server-side sweep (every strip, filter, WITHHELD list and delete) found more stripped fields with no mark. Now
+`x-serverOnly: true`, served by no route:
+- `item.flags`: a flag station's accepted flags, references or literal answers, replaced by `flagCount` in
+  every payload (`filter_requires_and_contents_recursive`).
+- `item.hintOnlyFlags`: flag references and hint text, stripped there too.
+- `item.network`, `item.linkName`, `item.linkStoreIn` (`NetworkAccess::WITHHELD_OBJECT_FIELDS`) and
+  `room.network` (deleted from every room payload). These are not section-2 secrets, but they are withheld
+  today, so the scan fails closed on them.
+The node declared-top-level test asserts every mark. The validator exits 0 on m01, m02, lab_physical_pentest
+and test_access_networks.
+
 ## Step 5. One ScenarioBinding in lib/ for every renderer, and a JSON-safe ERB helper (build/hard-step5)
 
 Built on main at `cb259dbdf`. phone-calls is merged into main; **build/phone-calls-writing is still
