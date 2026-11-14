@@ -140,8 +140,11 @@ if (beat === 'still_ask') {
             move_events: moves, sip_count: sipTicks.length,
             sip_clock_min: sipTicks.map(tk => +(tk * 250 / 60000).toFixed(2)),
             gulp_sounds: play.map(e => ({ played: e.played, volume: e.volume, room: e.room })),
-            opens: chats.map(c => ({ at_ms: c.at, mid_sip: !!c.midSip, chat_up_ms: c.chatUp, closed: c.closed })),
-            opens_count: chats.length, mid_sip_open: chats.some(c => c.midSip),
+            opens: chats.map(c => ({ at_ms: c.at, mid_sip: !!c.midSip, mode_at_open: c.modeAtOpen, chat_up_ms: c.chatUp, closed: c.closed })),
+            opens_count: chats.length,
+            // m7: the mid-sip open counts only when the mode at open really was a sip (job/using),
+            // not merely that the sampler flagged it before talk() walked over and the sip ended.
+            mid_sip_open: chats.some(c => c.midSip && /job|using/.test(String(c.modeAtOpen))),
             see_neil_sip: (await tasks()).includes('see_neil_sip')
         };
     })();
