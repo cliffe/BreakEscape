@@ -391,6 +391,22 @@
     cursor: default !important;
 }
 
+/* After SEVER: CONTINUE takes SEVER's place. The border and fill come from the
+   theme's button skin (.minigame-button in ui-themes.css); only the type is set here. */
+.nsm-continue-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 13px;
+    padding: 12px 18px;
+    letter-spacing: 1px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.nsm-sever-btn[hidden],
+.nsm-continue-btn[hidden] {
+    display: none;
+}
+
 /* ── Confirmation modal ─────────────────────────────────────────────────────── */
 
 .nsm-modal-overlay {

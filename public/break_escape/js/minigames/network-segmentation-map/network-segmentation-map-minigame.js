@@ -31,6 +31,12 @@ import { escapeHtml as escapeTitle } from '../../utils/escape-html.js';
  * Each rule's dashed line, its ! marker and its label all open that rule, and the
  * line brightens on hover; unreviewed lines pulse until the first one is opened
  * (sis01 blind playtest S2: players could not tell the lines were clickable).
+ *
+ * After SEVER the map stays open on the severed state, with CONTINUE in SEVER's place,
+ * so the consequence panel can be read; the map closes only when the player closes it.
+ * Once severed, CONTINUE, the X and Esc all end with complete(true); before SEVER the
+ * X and Esc end with complete(false). Reopening after SEVER shows the same severed
+ * state with CONTINUE (severed is read from severVar on init).
  */
 export class NetworkSegmentationMapMinigame extends MinigameScene {
     constructor(container, params) {
@@ -87,6 +93,9 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
                         <div class="nsm-sever-hint" id="nsm-sever-hint"></div>
                         <button type="button" class="nsm-sever-btn" id="nsm-sever-btn" disabled>
                             ${escapeTitle(displayDashes(severLabel))}
+                        </button>
+                        <button type="button" class="minigame-button nsm-continue-btn" id="nsm-continue-btn" hidden>
+                            CONTINUE
                         </button>
                     </div>
                 </div>
@@ -170,7 +179,14 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
             (event) => {
                 event.preventDefault();
                 event.stopPropagation();
-                this.complete(false);
+                this.closedByPlayer = true;
+                this.complete(this.severed);
+            });
+        this.addEventListener(this.container.querySelector('#nsm-continue-btn'), 'click',
+            (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                if (this.severed) this.complete(true);
             });
         this.addEventListener(this.container.querySelector('#nsm-sever-btn'), 'click',
             (event) => {
@@ -191,19 +207,29 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
                 this._closeModal();
             });
 
-        if (this.severed) {
-            const btn = this.container.querySelector('#nsm-sever-btn');
-            if (btn) {
-                btn.disabled = true;
-                btn.textContent = 'LINK ALREADY SEVERED';
-                btn.classList.add('nsm-sever-btn-done');
-            }
-        }
+        if (this.severed) this._showContinue();
 
         this._resizeHandler = () => this._drawConnections();
         window.addEventListener('resize', this._resizeHandler);
 
         requestAnimationFrame(() => this._drawConnections());
+    }
+
+    /** Esc: once the link is severed the player's close is a completion, as CONTINUE is. */
+    closeByPlayer() {
+        this.closedByPlayer = true;
+        this.complete(this.severed);
+    }
+
+    /** Severed: SEVER gives way to CONTINUE, which closes the map. */
+    _showContinue() {
+        const sever = this.container.querySelector('#nsm-sever-btn');
+        if (sever) {
+            sever.disabled = true;
+            sever.hidden = true;
+        }
+        const cont = this.container.querySelector('#nsm-continue-btn');
+        if (cont) cont.hidden = false;
     }
 
     cleanup() {
@@ -283,17 +309,13 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
         this._drawConnections();
         this._updateConsequencePanel();
 
-        const btn = this.container.querySelector('#nsm-sever-btn');
-        if (btn) {
-            btn.disabled = true;
-            btn.textContent = 'LINK SEVERED';
-            btn.classList.add('nsm-sever-btn-done');
-        }
+        this._showContinue();
 
         this._updateSeverHint();
         if (window.playUISound) window.playUISound('confirm');
-
-        setTimeout(() => this.complete(true), 2000);
+        // No self-close: the map stays on the severed state until the player presses
+        // CONTINUE or the X (both complete(true) now), so the consequence panel can be read.
+        // Barks on severVar wait behind the open map (bark release policy) and play on close.
     }
 
     // ─────────────────────────────────────────────────────────────────────────
