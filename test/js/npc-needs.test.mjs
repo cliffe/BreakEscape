@@ -1396,6 +1396,32 @@ test('SIMS-2: an arrival with no id counts when near (transitional) and is re-is
     assert.notEqual(sys.states.get('clerk').job.moveId, id0, 're-issued with a fresh id');
 });
 
+// Review R1 Design M1 (gap in minor 3): a no-id arrival during `using` (seating's chair fetch,
+// which walks with goToAndStay and carries no move id) is dropped silently — no `arrival_far`, no
+// re-issued move — so a fetch at a non-own work object is never cut short mid-use.
+function driveToUsing() {
+    const { sys, w } = driveToGoto();
+    const dest = { ...sys.states.get('clerk').job.dest }, id = sys.states.get('clerk').job.moveId;
+    w.pos.clerk.x = dest.x; w.pos.clerk.y = dest.y;
+    sys.onArrived('clerk', 'needs', { x: dest.x, y: dest.y, moveId: id });
+    sys.step(NEEDS_TICK_MS);
+    return { sys, w, dest };
+}
+
+test('SIMS-2 M1: a far no-id arrival during `using` is dropped, not logged far, and issues no move', () => {
+    const { sys, w, dest } = driveToUsing();
+    assert.equal(sys.states.get('clerk').job?.phase, 'using', 'in a use to start with');
+    const movesBefore = w.calls.moves.filter(m => m.id === 'clerk').length;
+    const logBefore = sys.getLog().length;
+    // Seating fetch: goToAndStay owner needs, no move id, ending 120 px from the use cell.
+    w.pos.clerk.x = dest.x - 120; w.pos.clerk.y = dest.y;
+    sys.onArrived('clerk', 'needs', { x: dest.x - 120, y: dest.y });
+    sys.step(NEEDS_TICK_MS);
+    assert.equal(sys.states.get('clerk').job?.phase, 'using', 'still using, not cut short');
+    assert.ok(!sys.getLog().slice(logBefore).some(e => e.ev === 'arrival_far' || e.ev === 'arrival_ignored'), 'no arrival_far/arrival_ignored during using');
+    assert.equal(w.calls.moves.filter(m => m.id === 'clerk').length, movesBefore, 'no move was issued');
+});
+
 test('SIMS-2: an early arrival while returning never sets atPost; re-issued once, then left to _watchReturn', () => {
     const { sys, w } = driveToGoto();
     let dest = { ...sys.states.get('clerk').job.dest };
