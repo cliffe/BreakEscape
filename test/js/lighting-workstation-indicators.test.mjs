@@ -85,12 +85,12 @@ test('UX slice 15 R1 (m1): the dot sits on the screen of each listed PC picture,
   assert.deepEqual(screenAnchor('laptop1', { width: 24, height: 18 }), { offsetX: 0, offsetY: 0 });
   assert.deepEqual(screenAnchor(undefined), { offsetX: 0, offsetY: 0 });
   // workstationIndicators reads it from size.key
-  const v = workstationIndicators({ id: 'tom_pc', lockChance: 0.5 }, NPCS, { key: 'pc6', width: 32, height: 30, sourceWidth: 32, sourceHeight: 30 });
+  const v = workstationIndicators({ id: 'tom_pc', owner: 'tom', lockChance: 0.5 }, NPCS, { key: 'pc6', width: 32, height: 30, sourceWidth: 32, sourceHeight: 30 });
   assert.ok(v.every(d => d.offsetX === -2.5 && d.offsetY === -6));
 });
 
 test('UX slice 15 R1 (m2): the dot is a crisp whole-pixel mark, 4 px locked and 6 px open', () => {
-  const [locked, open] = workstationIndicators({ id: 'tom_pc', lockChance: 0.5 }, NPCS);
+  const [locked, open] = workstationIndicators({ id: 'tom_pc', owner: 'tom', lockChance: 0.5 }, NPCS);
   assert.equal(indicatorDotPx(locked), 4);
   assert.equal(indicatorDotPx(open), 6);
   assert.equal(indicatorDotPx({ radius: 10 }), 4, 'an authored indicator with no dotPx sizes from its radius');
@@ -146,13 +146,13 @@ test('UX slice 15 R2 (m1): each mark has a 1 px dark ring, and the open mark bre
 });
 
 test('workstationIndicators: locked first, then open; both above, centred on the PC sprite', () => {
-  const v = workstationIndicators({ id: 'tom_pc', lockChance: 0.5 }, NPCS, { width: 32, height: 40 });
+  const v = workstationIndicators({ id: 'tom_pc', owner: 'tom', lockChance: 0.5 }, NPCS, { width: 32, height: 40 });
   assert.equal(v.length, 2);
   assert.equal(v[0].condition, 'globalVars.tom_pc_screen_locked');
   assert.equal(v[1].condition, 'globalVars.tom_pc_owner_away');
   assert.ok(v.every(d => d.above === true));
   assert.ok(v.every(d => d.offsetX === 0 && d.offsetY === 0), 'no known picture: centred on the sprite (main3-21, Q11)');
-  const wide = workstationIndicators({ id: 'tom_pc', lockChance: 0.5 }, NPCS, { width: 96, height: 20 });
+  const wide = workstationIndicators({ id: 'tom_pc', owner: 'tom', lockChance: 0.5 }, NPCS, { width: 96, height: 20 });
   assert.ok(wide.every(d => d.offsetX === 0 && d.offsetY === 0), 'centred whatever the display size');
   assert.equal(v[0].effect, null, 'locked is steady');
   assert.equal(v[1].effect, 'breathe', 'open breathes');
@@ -160,13 +160,13 @@ test('workstationIndicators: locked first, then open; both above, centred on the
   assert.notEqual(v[0].color, v[1].color);
 });
 
-test('screenOwner names the owner without needsHome', () => {
-  assert.equal(workstationIndicators({ id: 'hot_desk', workstation: true, screenOwner: 'amara' }, NPCS).length, 2);
+test('owner names the workstation owner', () => {
+  assert.equal(workstationIndicators({ id: 'hot_desk', workstation: true, owner: 'amara' }, NPCS).length, 2);
 });
 
 test('a workstation with an owner gets a second, indicator record after its screen record', () => {
   const { sys, state } = stateWith();
-  sys.buildEmitters(state, [obj({ id: 'tom_pc', lockChance: 0.5 }, 'pc3'), obj({ id: 'decor_pc' }, 'pc', 200, 100)]);
+  sys.buildEmitters(state, [obj({ id: 'tom_pc', owner: 'tom', lockChance: 0.5 }, 'pc3'), obj({ id: 'decor_pc' }, 'pc', 200, 100)]);
   assert.equal(state.emitters.length, 3);
   const [screen, ind, decor] = state.emitters;
   assert.equal(screen.obj.objectId, 'tom_pc');
@@ -179,7 +179,7 @@ test('a workstation with an owner gets a second, indicator record after its scre
 
 test('the indicator follows the globals; the screen record resolves the same in all three states', () => {
   const { sys, state } = stateWith();
-  sys.buildEmitters(state, [obj({ id: 'tom_pc', lockChance: 0.5 }, 'pc3')]);
+  sys.buildEmitters(state, [obj({ id: 'tom_pc', owner: 'tom', lockChance: 0.5 }, 'pc3')]);
   const [screen, ind] = state.emitters;
   const seen = [];
 
@@ -233,7 +233,7 @@ test('UX slice 15 R3 (m1): an indicator mark draws above every glow, dark room o
 
 test('UX slice 15 R2 final (m1): the locked mark is filled a lighter blue than the light it casts', () => {
   const { sys, state } = stateWith();
-  sys.buildEmitters(state, [obj({ id: 'tom_pc', lockChance: 0.5 }, 'pc5')]);
+  sys.buildEmitters(state, [obj({ id: 'tom_pc', owner: 'tom', lockChance: 0.5 }, 'pc5')]);
   const ind = state.emitters[1];
   const tints = [];
   const orig = ind.glow.setTint;
@@ -250,7 +250,7 @@ test('UX slice 15 R2 final (m1): the locked mark is filled a lighter blue than t
 
 test('clusterEmitters does not damp an indicator; neighbouring screens still share a glow', () => {
   const { sys, state } = stateWith();
-  sys.buildEmitters(state, [obj({ id: 'tom_pc', lockChance: 0.5 }, 'pc3', 100, 100), obj({ id: 'amara_pc', workstation: true }, 'pc3', 120, 100)]);
+  sys.buildEmitters(state, [obj({ id: 'tom_pc', owner: 'tom', lockChance: 0.5 }, 'pc3', 100, 100), obj({ id: 'amara_pc', owner: 'amara', workstation: true }, 'pc3', 120, 100)]);
   setGlobals({ tom_pc_owner_away: true, tom_pc_screen_locked: false, amara_pc_owner_away: true, amara_pc_screen_locked: true });
   sys.resolveEmitters(state);
   const screens = state.emitters.filter(e => !e.indicator);
@@ -262,7 +262,7 @@ test('clusterEmitters does not damp an indicator; neighbouring screens still sha
 
 test('a room emitters entry with indicators replaces the built-ins; [] turns them off', () => {
   let { sys, state } = stateWith({ tom_pc: { indicators: [{ condition: 'globalVars.tom_pc_owner_away', color: '#ff00ff', radius: 6, above: true }] } });
-  sys.buildEmitters(state, [obj({ id: 'tom_pc', lockChance: 0.5 }, 'pc3')]);
+  sys.buildEmitters(state, [obj({ id: 'tom_pc', owner: 'tom', lockChance: 0.5 }, 'pc3')]);
   const ind = state.emitters.find(e => e.indicator);
   assert.equal(ind.variants.length, 1);
   assert.equal(ind.variants[0].color, 0xff00ff, 'colour parsed');
@@ -273,7 +273,7 @@ test('a room emitters entry with indicators replaces the built-ins; [] turns the
   assert.equal(ind.def.radius, 6);
 
   ({ sys, state } = stateWith({ tom_pc: { indicators: [] } }));
-  sys.buildEmitters(state, [obj({ id: 'tom_pc', lockChance: 0.5 }, 'pc3')]);
+  sys.buildEmitters(state, [obj({ id: 'tom_pc', owner: 'tom', lockChance: 0.5 }, 'pc3')]);
   assert.equal(state.emitters.filter(e => e.indicator).length, 0);
   assert.equal(state.emitters.length, 1, 'the screen glow stays');
 });
@@ -283,7 +283,7 @@ test('an entry can carry a glow variant and indicators together; other objects c
     tom_pc: { color: '#ffffff', radius: 30, indicators: [{ color: '#00ff00', radius: 5, above: true }] },
     printer_1: { indicators: [{ condition: 'globalVars.paper_jam', color: '#ffb000', radius: 6, above: true, effect: 'blink' }] },
   });
-  sys.buildEmitters(state, [obj({ id: 'tom_pc', lockChance: 0.5 }, 'pc3'), obj({ id: 'printer_1' }, 'printer', 200, 100)]);
+  sys.buildEmitters(state, [obj({ id: 'tom_pc', owner: 'tom', lockChance: 0.5 }, 'pc3'), obj({ id: 'printer_1' }, 'printer', 200, 100)]);
   const screen = state.emitters.find(e => e.obj.objectId === 'tom_pc' && !e.indicator);
   assert.equal(screen.variants.length, 1);
   assert.equal(screen.variants[0].radius, 30);
@@ -298,7 +298,7 @@ test('an entry can carry a glow variant and indicators together; other objects c
 
 test('a workstation whose art has no glow still gets its dot', () => {
   const { sys, state } = stateWith();
-  sys.buildEmitters(state, [obj({ id: 'amara_pc', workstation: true }, 'desk_plain')]);
+  sys.buildEmitters(state, [obj({ id: 'amara_pc', owner: 'amara', workstation: true }, 'desk_plain')]);
   assert.equal(state.emitters.length, 1);
   assert.equal(state.emitters[0].indicator, true);
 });
@@ -325,7 +325,7 @@ function flashRig(reduced = false) {
   sys.reducedMotion = reduced;
   const state = { roomId: 'office', emitters: [], level: 1 };
   sys.configureRoom(state, { map: { widthInPixels: 320, heightInPixels: 256 }, position: { x: 0, y: 0 } }, { panels: false });
-  sys.buildEmitters(state, [obj({ id: 'tom_pc', lockChance: 0.5 }, 'pc3')]);
+  sys.buildEmitters(state, [obj({ id: 'tom_pc', owner: 'tom', lockChance: 0.5 }, 'pc3')]);
   return { sys, state, images };
 }
 const stamps = () => { const out = []; return { out, rt: { stamp: (...a) => out.push(a) } }; };
@@ -376,7 +376,7 @@ test('flash: survives an emitter rebuild (side map keyed by object id)', () => {
   const { sys, state } = flashRig();
   sys.flash('tom_pc', 'unlock');
   sys.drawFlashes(state, 0, null, null, 0, 0);
-  sys.buildEmitters(state, [obj({ id: 'tom_pc', lockChance: 0.5 }, 'pc3')]);   // a texture-signature rebuild
+  sys.buildEmitters(state, [obj({ id: 'tom_pc', owner: 'tom', lockChance: 0.5 }, 'pc3')]);   // a texture-signature rebuild
   assert.equal(sys.flashes.size, 1);
   sys.drawFlashes(state, 200, null, null, 0, 0);
   assert.equal(sys.flashes.get('tom_pc').img.visible, true, 'still drawn against the new indicator record');
@@ -419,7 +419,7 @@ test('flash: an object with behindWallK = 0.5 draws its flash at half shape.alph
 // Code review R1 m5: the locked-screen swap (screen-states.js) is not an emitter change.
 test('a locked-look swap keeps the room\'s emitters and their phases; a real texture change still rebuilds', () => {
   const { sys, state } = stateWith();
-  const pc = obj({ id: 'tom_pc', lockChance: 0.5 }, 'pc_desktop');
+  const pc = obj({ id: 'tom_pc', owner: 'tom', lockChance: 0.5 }, 'pc_desktop');
   const rack = obj({ id: 'rack_1' }, 'server1', 200, 100);
   window.rooms = { office: { objects: { a: pc, b: rack } } };
   state.objectSig = ''; state.lastResolve = -Infinity; state.emitterObjCount = 0;

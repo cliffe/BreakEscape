@@ -39,7 +39,7 @@ function scenario(rooms, extra = {}) {
 const room = (objects, npcs, extra = {}) => ({ type: 'room_office', connections: {}, objects, npcs, ...extra });
 
 test('writesDown: a sticky note edge from the PC room to the account, none from the PC itself', () => {
-    const g = graph(scenario({ office: room([loginPc('omar_pc')], [person('omar', { needsHome: 'omar_pc', habits: { writesDown: true } })]) }));
+    const g = graph(scenario({ office: room([loginPc('omar_pc', { owner: 'omar' })], [person('omar', { needsHome: 'omar_pc', habits: { writesDown: true } })]) }));
     assert.ok(edge(g, 'office', 'signin_omar', 'sticky note at omar_pc'), JSON.stringify(g.edges));
     assert.ok(!g.edges.some(e => e.from === 'lock_omar_pc' && e.to === 'signin_omar'));
 });
@@ -47,8 +47,8 @@ test('writesDown: a sticky note edge from the PC room to the account, none from 
 test('locksScreen: unlocked screen at never, (roll) at sometimes, none where the screen always locks or no claim', () => {
     const g = graph(scenario({
         office: room([
-            loginPc('dana_pc'), loginPc('lena_pc'), loginPc('ian_pc'), loginPc('kai_pc', { policy: 'instant' }),
-            loginPc('priya_pc', { locksScreenOnLeave: true }), loginPc('tom_pc')
+            loginPc('dana_pc', { owner: 'dana' }), loginPc('lena_pc', { owner: 'lena' }), loginPc('ian_pc', { owner: 'ian' }), loginPc('kai_pc', { owner: 'kai', policy: 'instant' }),
+            loginPc('priya_pc', { owner: 'priya', locksScreenOnLeave: true }), loginPc('tom_pc', { owner: 'tom' })
         ], [
             person('dana', { needsHome: 'dana_pc', awareness: 'low' }),
             person('lena', { needsHome: 'lena_pc', awareness: 'medium' }),

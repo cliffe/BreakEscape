@@ -42,7 +42,7 @@ module BreakEscape
         'objects' => [AccessWorkScenario.pc('una_pc')],
         'npcs' => [rota_staff('una', 'uwalsh', UNA_PASSWORD)]
       }
-      data
+      AccessWorkScenario.assign_owners!(data)
     end
 
     def build(data: scenario, globals: {}, player_state: {})

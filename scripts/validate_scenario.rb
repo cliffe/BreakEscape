@@ -621,6 +621,56 @@ def check_retired_keys(json_data)
   issues
 end
 
+# Step 8b (format 2). The merged `owner` field: a single-owner kind (a workstation, a desk phone,
+# a Friendface phone, a left-behind item) carries one NPC id, never a list; a private object may
+# list several. Warn where a workstation or private object has no owner of its own but an NPC's
+# needsHome names it (needsHome no longer sets an owner). Report the pre-rename two-field conflict
+# (`screenOwner` against `affordance.owners` naming different owners); none is expected.
+def check_owner_fields(json_data)
+  ai = BreakEscape::AccessIdentities
+  issues = []
+  home_npc = {}
+  ai.room_npcs(json_data).each do |e|
+    h = e[:npc]['needsHome']
+    next unless h.is_a?(String) && !h.empty?
+    next unless e[:npc]['id'].is_a?(String) && !e[:npc]['id'].empty?
+
+    home_npc[h] ||= e[:npc]['id']
+  end
+
+  ai.room_objects(json_data).each do |e|
+    obj = e[:object]
+    where = "object '#{obj['id'] || e[:path]}'"
+    owner = obj['owner']
+    owner_set = (owner.is_a?(String) && !owner.empty?) || (owner.is_a?(Array) && !owner.empty?)
+
+    single_kind = if ai.workstation?(obj) then 'a workstation'
+    elsif obj['deskPhone'] == true then 'a desk phone'
+    elsif obj['type'] == 'phone_friendface' then 'a Friendface phone'
+    elsif obj.key?('leftBehindChance') then 'a left-behind item'
+    end
+    if owner.is_a?(Array) && single_kind
+      issues << "❌ ERROR: #{where}: #{single_kind} has one owner; owner must be a single NPC id (not a list)."
+    end
+
+    # The pre-rename conflict: an object that still names an owner two ways, differently.
+    aff = obj['affordance']
+    if obj.key?('screenOwner') && aff.is_a?(Hash) && aff.key?('owners') &&
+       Array(aff['owners']).map(&:to_s) != [obj['screenOwner'].to_s]
+      issues << "❌ ERROR: #{where}: names an owner both as screenOwner and affordance.owners, and they differ; set a single owner."
+    end
+
+    # needsHome no longer sets an owner: warn where the owner would have been derived from it.
+    old_explicit = obj.key?('screenOwner') || obj.key?('phoneOwner') ||
+                   (aff.is_a?(Hash) && aff.key?('owners'))
+    private_obj = obj['private'] == true || (aff.is_a?(Hash) && aff['private'] == true)
+    if !owner_set && !old_explicit && (ai.workstation?(obj) || private_obj) && home_npc[obj['id'].to_s]
+      issues << "⚠️ WARNING: #{where}: needsHome no longer sets an owner; add owner: '#{home_npc[obj['id'].to_s]}' if this is theirs."
+    end
+  end
+  issues
+end
+
 def check_notes_hold_no_actions(json_data)
   warnings = []
   holds_action = lambda do |val|
@@ -761,11 +811,11 @@ def check_unknown_fields(json_data)
     timedMessages timedConversation eventMappings itemsHeld puzzle_graph_actions
     needs interests needsHome needsSpeed needsRooms needsAvoidRooms needsCompany chatter chattiness usePayload onUse
     captureProof
-    maxQueue needsDeferMin exchanges chatterCooldownMin swivel swivelChance screenHabit printHabit
+    maxQueue needsDeferMin exchanges chatterCooldownMin swivel swivelChance
     answersPhones phoneCalls call
     role creds staff cloneable
     awareness habits
-    workNeeds frustration workarounds phone socialUse feed usbHabit
+    workNeeds frustration workarounds phone socialUse feed
     observations disableClose los rfidCard chatBackground spriteStyle gender portraitVariants _comment
   ]
 
@@ -855,11 +905,11 @@ def check_unknown_fields(json_data)
     hasFingerprint fingerprintOwner fingerprintDifficulty fingerprintQuality
     fingerprintOwnerName fingerprintPattern fingerprintSurface fingerprintCandidates biometricMatchThreshold
     mac canScanBluetooth phoneId npcIds app
-    phoneOf site
+    site owner private deskPhone
     hacktivityMode vm acceptsVms flags flagRewards
     mode onAbort onLaunch abortConfirmText launchConfirmText
     itemsHeld contents hasContents triggerOnInteract
-    requiresItem requiresItemHint requiresItemHintVariants consumesItem revealOnGlobal outputOf leftBehindBy leftBehindChance
+    requiresItem requiresItemHint requiresItemHintVariants consumesItem revealOnGlobal outputOf leftBehindChance
     minigameData interactionType
     holds storeIn
     gateVar sealedMessage openableReadyMessage
@@ -870,8 +920,8 @@ def check_unknown_fields(json_data)
     puzzle_graph_links hintOnlyFlags acceptsVmLabels
     affordance offWhen needsTag droppable officeType wearable
     usbClass
-    workstation locksScreenOnLeave lockChance screenOwner screenLocked autoLockSeconds
-    phoneOwner rings
+    workstation locksScreenOnLeave lockChance screenLocked autoLockSeconds
+    rings
     actions onOwnerNoticesMissing interactionWarning saved_cards rfid_protocol
     access acceptsUIDOnly loginPicker policy transfer cloneable identity
     network host desktopUser headless networkJack jackConfirm plantedSprite linkName linkStoreIn rogueDevice
@@ -879,11 +929,15 @@ def check_unknown_fields(json_data)
     _comment
   ]
 
+  # A retired item/object key (renamed by a FormatUpgrade step: screenOwner, phoneOwner, phoneOf,
+  # leftBehindBy) reaches here as an unknown field, but check_retired_keys already prints its rename
+  # line, so the redundant unknown-field warning is suppressed (one slip, one line).
+  retired_item_keys = BreakEscape::FormatUpgrade.retired_entries.map { |e| e[:key] }.to_set
   check_item_fields = lambda do |item, path|
     next unless item.is_a?(Hash)
     warnings << "⚠️ WARNING: '#{path}' sets fingerprintQuality, which is ignored: lift quality now comes from the dusting minigame." if item.key?('fingerprintQuality')
     item.each_key do |key|
-      unless known_item_fields.include?(key)
+      unless known_item_fields.include?(key) || retired_item_keys.include?(key)
         warnings << "⚠️ WARNING: '#{path}' has unknown field '#{key}'#{unknown_key_hint(key, known_item_fields)} — if this is minigame-specific configuration data, nest it under 'minigameData' instead."
       end
     end
@@ -944,7 +998,10 @@ def check_unknown_fields(json_data)
         next unless npc.is_a?(Hash)
         npc_path = "rooms/#{room_id}/npcs[#{idx}](#{npc['id'] || '?'})"
         npc.each_key do |key|
-          unless known_npc_fields.include?(key)
+          # A retired NPC key (renamed by a FormatUpgrade step: screenHabit, printHabit, usbHabit)
+          # reaches here as an unknown field, but check_retired_keys already prints its rename line;
+          # suppress the redundant unknown-field warning so a reintroduced key prints only that line.
+          unless known_npc_fields.include?(key) || retired_item_keys.include?(key)
             warnings << "⚠️ WARNING: '#{npc_path}' has unknown field '#{key}'#{unknown_key_hint(key, known_npc_fields)} — this field will be ignored by the game engine."
           end
         end
@@ -1240,12 +1297,13 @@ def headless_npc_records(json_data)
   end
 end
 
-# { npc id => screenHabit } for every room NPC with one in the expanded copy (slice 9.1):
+# { npc id => habits.screen } for every room NPC with one in the expanded copy (slice 9.1):
 # authored and filled alike, for ValidateNpcNeeds.check's screen_habits: keyword.
 def npc_screen_habits(expanded)
   BreakEscape::AccessIdentities.room_npcs(expanded).each_with_object({}) do |entry, out|
     npc = entry[:npc]
-    out[npc['id']] = npc['screenHabit'] if npc.key?('screenHabit') && npc['id']
+    habits = npc['habits']
+    out[npc['id']] = habits['screen'] if habits.is_a?(Hash) && habits.key?('screen') && npc['id']
   end
 end
 
@@ -7035,7 +7093,7 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
   end
   find_rewards.call(json_data)
   # Owner claim q78, judged as the server judges it: on the data as prepared at game creation
-  # (habits expanded, so screenHabit is filled; object ids stamped), and only where check 10 is
+  # (habits expanded, so habits.screen is filled; object ids stamped), and only where check 10 is
   # the reason the claim is refused. An owner with no account or not on the PC's access list, a
   # screen that always locks and a policy with autoLockMin 0 are refused by an earlier check.
   claim_data = nil
@@ -7074,7 +7132,7 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
     if owner_id
       owner = npc_by_id[owner_id.to_s]
       if owner.nil?
-        err.call("#{where} screenOwner '#{owner_id}' names unknown person (it must be a room NPC id).")
+        err.call("#{where} owner '#{owner_id}' names unknown person (it must be a room NPC id).")
       else
         lock_chance = pc['lockChance']
         if lock_chance.is_a?(Numeric) && lock_chance.positive? && lock_chance < 1
@@ -7125,7 +7183,7 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
     owner_pairs << [e, home] if home.is_a?(String) && ws_room.key?(home)
   end
   workstations.each do |w|
-    owner = w[:object]['screenOwner']
+    owner = w[:object]['owner']
     owner_pairs << [npc_by_id[owner], w[:object]['id']] if owner.is_a?(String) && npc_by_id[owner]
   end
   owner_pairs.each do |e, ws_id|
@@ -7598,6 +7656,7 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
   run.call('check_vm_flags_load_bearing') { check_vm_flags_load_bearing(json_data) }
   run.call('check_recurring_bugs') { check_recurring_bugs(json_data, repo_root) }
   run.call('check_retired_keys') { check_retired_keys(json_data) }
+  run.call('check_owner_fields') { check_owner_fields(json_data) }
   run.call('check_unheard_room_triggers') { check_unheard_room_triggers(json_data, repo_root) }
   habits_copy = nil
   habits_report = nil

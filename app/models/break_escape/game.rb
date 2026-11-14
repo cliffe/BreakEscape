@@ -1736,7 +1736,7 @@ module BreakEscape
           out = npc.merge('phone' => false)
           if npc['itemsHeld'].is_a?(Array)
             out['itemsHeld'] = npc['itemsHeld'].reject do |i|
-              i.is_a?(Hash) && i['type'] == SocialFeed::FRIENDFACE_PHONE && i['phoneOf'] == npc['id']
+              i.is_a?(Hash) && i['type'] == SocialFeed::FRIENDFACE_PHONE && i['owner'] == npc['id']
             end
           end
           out
@@ -2110,17 +2110,17 @@ module BreakEscape
       self.class.acl_admits?(pc['access'], npc)
     end
 
-    # The PC's owner (screenOwner, else the room NPC whose needsHome is the PC), or nil,
-    # as ownerOf does on the client (workstation-state.js:52-58).
+    # The PC's owner (its explicit owner, a single NPC id), or nil, as ownerOf does on the
+    # client (workstation-state.js). needsHome no longer sets an owner.
     def login_pc_owner(pc)
-      owner_id = pc['screenOwner']
+      owner_id = pc['owner']
       return scenario_room_npc(owner_id) if owner_id.is_a?(String) && !owner_id.empty?
 
-      self.class.scenario_room_npcs(scenario_data).find { |npc| npc['needsHome'] == pc['id'] }
+      nil
     end
 
     # A screen that locks on every leave, in decideLocked's order without the policy: the
-    # PC's lockChance, else its locksScreenOnLeave, else the owner's screenHabit, authored or
+    # PC's lockChance, else its locksScreenOnLeave, else the owner's habits.screen, authored or
     # filled by a locksScreen habit (slice 9.1, 5.2).
     def pc_always_locks?(pc, owner = login_pc_owner(pc))
       BreakEscape::AccessIdentities.screen_always_locks?(pc, owner)
@@ -5699,11 +5699,19 @@ module BreakEscape
     # (copying it is the game): rfidCard is set from creds.card, as authored, so
     # clone_keycard and the RFID minigame keep working; an NPC with no creds.card
     # keeps any rfidCard it already has.
-    WITHHELD_NPC_KEYS = %w[creds awareness habits role workarounds].freeze
+    WITHHELD_NPC_KEYS = %w[creds awareness role workarounds].freeze
     # Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 9.2): work needs, frustration settings and the
     # feed never ship; the NPC's resolved plan goes instead, as `work` (compile_npc_plan!).
-    # The USB habit (q39) ships inside that plan as `work.usb`.
-    WITHHELD_WORK_NPC_KEYS = %w[workNeeds frustration feed usbHabit].freeze
+    # The USB habit (q39) ships inside that plan as `work.usb` (now habits.usb; filtered below).
+    WITHHELD_WORK_NPC_KEYS = %w[workNeeds frustration feed].freeze
+    # Step 8c: habits fold into one block. The office-life habits `screen` and `print` ship (the
+    # client reads npc.habits.screen/print); everything else in `habits` is server-only. The
+    # filter keeps an allow list of these two keys and deletes the rest of `habits` (the awareness
+    # habits locksScreen, writesDown, password, passwordPattern, holdsDoors, the USB habit `usb`,
+    # and any key added later), never a deny list, so a habit that hints at a password never
+    # ships. `usb` ships only inside the resolved plan as `work.usb` (compile_npc_plan! runs
+    # first). A `habits` that is not an object is dropped, as the old whole-block delete did.
+    SHIPPED_HABIT_KEYS = %w[screen print].freeze
 
     # Slice 9.2 (5.2): a room NPC with a `work` plan (a work need and a non-empty resolved work
     # list) gains `work`: resource ids, kinds, `admitted`, `offWhen` values, `object`, `routes`
@@ -5738,6 +5746,15 @@ module BreakEscape
       WITHHELD_NPC_KEYS.each { |key| npc.delete(key) }
       WITHHELD_WORK_NPC_KEYS.each { |key| npc.delete(key) }
       npc['rfidCard'] = card if card.is_a?(Hash)
+
+      # Step 8c: keep only the allow-listed habits (screen, print); drop the rest of the block.
+      habits = npc['habits']
+      if habits.is_a?(Hash)
+        kept = habits.slice(*SHIPPED_HABIT_KEYS)
+        kept.empty? ? npc.delete('habits') : npc['habits'] = kept
+      else
+        npc.delete('habits')
+      end
 
       # Every NPC, account or not (an account's secret is its password; another's is a PIN
       # read at a keypad or any code a capture records): GET /capture_secrets serves it once
