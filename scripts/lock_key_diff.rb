@@ -16,8 +16,10 @@
 # then reads the lock nodes, key nodes, edges and `optional` flags the graph writes. From the
 # rendered scenario it adds a hash of each lock's requirement (never the secret itself), every
 # `gate`, `access` list and `wearable`, every task with its trigger, the aim chain and
-# concludeRequires. The diff names what changed and flags any new lock node or gate whose far side
-# holds a required task or a critical-path (non-optional) lock.
+# concludeRequires, and the rooms that hold required content (requiredContent, see
+# required_content). The diff names what changed and flags any new lock node or gate whose far
+# side holds required content or a critical-path (non-optional) lock: a door gate's far side is its
+# connectedRoom, an object gate's is the object's lock node and the object itself.
 #
 # V9 consumes the graph's output and shares none of its code, so a change to the graph's JSON
 # format needs a matching change here; test/js/lock-key-diff.test.mjs pins the fields read:
@@ -31,12 +33,13 @@
 require 'json'
 require 'digest'
 require 'optparse'
+require 'set'
 require 'rbconfig'
 require_relative '../lib/break_escape/scenario_binding'
 
 module LockKeyDiff
   TOOL = 'scripts/lock_key_diff.rb (V9)'
-  FORMAT = 1
+  FORMAT = 2
   REQ_KEYS = %w[lockType requires keyPins key_id targetFlags difficulty requiresGlobal requireGlobal].freeze
   GATE_KEYS = %w[gate access wearable].freeze
   TASK_DROP = %w[title description _comment status currentCount showProgress].freeze
@@ -57,8 +60,24 @@ module LockKeyDiff
     Digest::SHA256.hexdigest(JSON.generate(obj))[0, 16]
   end
 
+  RENDER_SEED = 0x5EED
+
+  # Kernel#rand is seeded around each render, so a template that calls rand itself also hashes
+  # alike. Anything unseeded (SecureRandom in the template) is caught by rendering twice.
   def render(erb_path)
-    JSON.parse(StableBinding.render(File.read(erb_path)))
+    text = File.read(erb_path)
+    once = lambda do
+      srand(RENDER_SEED)
+      StableBinding.render(text)
+    end
+    first = once.call
+    second = once.call
+    srand
+    unless first == second
+      raise "#{erb_path} renders differently each time (a random value outside random_password/random_pin/random_code " \
+            'or Kernel#rand, such as SecureRandom): the requirement hashes would not be stable'
+    end
+    JSON.parse(first)
   end
 
   def run_graph(erb_path)
@@ -83,8 +102,8 @@ module LockKeyDiff
     g
   end
 
-  # Walk the rendered scenario. Array members are keyed by id where they have one, so a new object
-  # declared before an existing one does not shift the existing paths.
+  # Walk the rendered scenario. Array members are keyed by id (doors by connectedRoom) where they
+  # have one, so a new object or door declared before an existing one does not shift the paths.
   def walk(node, path, &blk)
     case node
     when Hash
@@ -92,7 +111,7 @@ module LockKeyDiff
       node.each { |k, v| walk(v, "#{path}/#{k}", &blk) }
     when Array
       node.each_with_index do |v, i|
-        key = v.is_a?(Hash) && (v['id'] || v['taskId'] || v['aimId'])
+        key = v.is_a?(Hash) && (v['id'] || v['taskId'] || v['aimId'] || v['connectedRoom'])
         walk(v, key ? "#{path}[#{key}]" : "#{path}[#{i}]", &blk)
       end
     end
@@ -108,7 +127,7 @@ module LockKeyDiff
         locks << { 'path' => path, 'id' => o['id'] || o['name'], 'lockType' => o['lockType'],
                    'locked' => o['locked'], 'requirementHash' => h(o.slice(*REQ_KEYS)) }
       end
-      GATE_KEYS.each { |k| gates << { 'path' => path, 'field' => k, 'valueHash' => h(o[k]) } if o.key?(k) }
+      GATE_KEYS.each { |k| gates << { 'path' => path, 'field' => k, 'valueHash' => h(o[k]), 'on' => gate_on(o, path) } if o.key?(k) }
       conclude << { 'path' => path, 'concludeRequires' => o['concludeRequires'] } if o.key?('concludeRequires')
     end
     aims = Array(scenario['objectives']).select { |a| a.is_a?(Hash) }.map do |aim|
@@ -136,28 +155,100 @@ module LockKeyDiff
       'gates' => gates.sort_by { |g| [g['path'], g['field']] },
       'aims' => aims,
       'concludeRequires' => conclude.sort_by { |c| c['path'] },
-      'placement' => placement.sort.to_h
+      'placement' => placement.sort.to_h,
+      'requiredContent' => required_content(scenario, placement, erb_path)
     }
+  end
+
+  # What a gate sits on: a door (its far side, connectedRoom), a room, or an object.
+  def gate_on(o, path)
+    return { 'door' => o['connectedRoom'] } if path =~ %r{/doors\[[^\]]+\]\z} && o['connectedRoom'].is_a?(String)
+    return { 'room' => path[%r{\A/rooms/([^/\[]+)\z}, 1] } if path =~ %r{\A/rooms/[^/\[]+\z}
+
+    { 'object' => o['id'].is_a?(String) ? o['id'] : nil, 'lock' => o.key?('lockType') || o['locked'] == true }
+  end
+
+  def required_task_ids(scenario)
+    Array(scenario['objectives']).select { |a| a.is_a?(Hash) && a['optional'] != true }.flat_map do |aim|
+      Array(aim['tasks']).select { |t| t.is_a?(Hash) && t['optional'] != true && t['taskId'] }
+    end
+  end
+
+  # The story text an NPC loads: the .ink beside its compiled storyPath, else the compiled JSON.
+  def story_text(npc, base_dir)
+    p = npc['storyPath']
+    return '' unless p.is_a?(String) && !p.empty?
+
+    [p.sub(/\.json\z/, '.ink'), p].each do |c|
+      [File.expand_path(c, File.expand_path('..', __dir__)), File.expand_path(c, base_dir)].each do |f|
+        return File.read(f, encoding: 'UTF-8') if File.file?(f)
+      end
+    end
+    ''
+  rescue StandardError
+    ''
+  end
+
+  # [[room, why, id]] for every room holding required content (id: the object or NPC, when one). A required task's own refs (targetRoom,
+  # targetObject, targetNPC, targetItemIds, targetItems by type); the room of each NPC whose story
+  # sets it with #complete_task; and for each mapping that completes it, the room of the object,
+  # NPC or room its eventPattern names (else of the NPC holding the mapping); for submit_flags,
+  # every flag station and VM launcher. That covers manual, custom, collect_items and flag tasks,
+  # which have no target of their own.
+  def required_content(scenario, placement, erb_path)
+    out = []
+    tasks = required_task_ids(scenario)
+    ids = tasks.map { |t| t['taskId'].to_s }
+    rooms = scenario['rooms'].is_a?(Hash) ? scenario['rooms'] : {}
+    by_type = Hash.new { |hh, k| hh[k] = [] }
+    rooms.each do |rid, room|
+      walk(room, '') { |o, pa| by_type[o['type']] << [rid, o['id']] if pa != '' && o['type'].is_a?(String) } if room.is_a?(Hash)
+    end
+    tasks.each do |t|
+      tid = t['taskId']
+      out << [t['targetRoom'], "task #{tid}", nil] if t['targetRoom'].is_a?(String)
+      ([t['targetObject'], t['targetNPC']] + Array(t['targetItemIds'])).each do |id|
+        out << [placement[id], "task #{tid}", id] if id.is_a?(String) && placement[id]
+      end
+      Array(t['targetItems']).each { |ty| by_type[ty.to_s].uniq.each { |r, id| out << [r, "task #{tid}", id] } }
+      # flags are submitted at a flag station after launching the VM; every station counts
+      next unless t['type'] == 'submit_flags'
+
+      (by_type['flag-station'] + by_type['vm-launcher']).uniq.each { |r, id| out << [r, "task #{tid} (flag station)", id] }
+    end
+    base_dir = File.dirname(File.expand_path(erb_path))
+    mappings = Array(scenario['eventMappings']).map { |m| [m, nil] }
+    rooms.each do |rid, room|
+      next unless room.is_a?(Hash)
+
+      Array(room['npcs']).each do |n|
+        next unless n.is_a?(Hash)
+
+        Array(n['eventMappings']).each { |m| mappings << [m, rid] }
+        story_text(n, base_dir).scan(/complete_task\s*:\s*([A-Za-z0-9_\-]+)/).flatten.uniq.each do |tid|
+          out << [rid, "task #{tid} (ink of '#{n['id']}')", n['id']] if ids.include?(tid)
+        end
+      end
+    end
+    mappings.each do |m, holder_room|
+      next unless m.is_a?(Hash)
+
+      done = (m['completeTask'].is_a?(Array) ? m['completeTask'] : [m['completeTask']]).map(&:to_s) & ids
+      next if done.empty?
+
+      tgt = m['eventPattern'].to_s.split(':', 2)[1]
+      room = (tgt && (placement[tgt] || (rooms.key?(tgt) ? tgt : nil))) || holder_room
+      id = tgt && placement[tgt] ? tgt : nil
+      done.each { |tid| out << [room, "task #{tid} (mapping '#{m['eventPattern']}')", id] } if room
+    end
+    out.uniq.sort_by { |r| r.map(&:to_s) }
   end
 
   SECTIONS = %w[graph locks gates aims concludeRequires].freeze
 
-  # Rooms that hold required content: a required task's targetRoom, or the room of its
-  # targetObject / targetNPC (the snapshot's id-to-room placement).
+  # Rooms that hold required content (the snapshot's requiredContent).
   def required_rooms(snap)
-    rooms = []
-    room_of = ->(id) { snap['placement'][id] }
-    snap['aims'].each do |aim|
-      next if aim['optional']
-
-      aim['tasks'].each do |t|
-        next if t['optional'] == true
-
-        rooms << t['targetRoom'] if t['targetRoom'].is_a?(String)
-        [t['targetObject'], t['targetNPC']].each { |id| (r = room_of.call(id)) && rooms << r if id.is_a?(String) }
-      end
-    end
-    rooms.uniq
+    Array(snap['requiredContent']).map(&:first).uniq
   end
 
   # Nodes reachable downstream from a start over the graph's edges.
@@ -182,9 +273,40 @@ module LockKeyDiff
     critical = snap['graph']['lockNodes'].reject { |n| n['optional'] }.map { |n| n['id'] }
     req_rooms = required_rooms(snap)
     reach = downstream(snap, start) + [start]
-    hits = reach.select { |n| req_rooms.include?(n) }.map { |r| "room '#{r}' (required task)" }
+    hits = reach.select { |n| req_rooms.include?(n) }.map { |r| "room '#{r}' (required content)" }
     hits += (reach - [start]).select { |n| critical.include?(n) }.map { |l| "critical-path lock '#{l}'" }
     hits.uniq
+  end
+
+  def graph_nid(s)
+    s.to_s.downcase.gsub(/[^a-z0-9]/, '_').gsub(/_+/, '_').sub(/\A_+/, '').sub(/_+\z/, '')
+  end
+
+  # Where a new gate's far side starts in the graph, and what it guards. A door gate starts at
+  # door_<connectedRoom> (or the room itself); a room gate at door_<room>; an object gate at its
+  # lock node lock_<id>, else its own node. An object gate also guards the object when a required
+  # task names it or it is a lock.
+  def gate_guards(snap, gt)
+    nodes = (snap['graph']['lockNodes'].map { |n| n['id'] } + snap['graph']['keyNodes'].map { |n| n['id'] } +
+             snap['graph']['roomNodes']).to_set
+    edge_nodes = snap['graph']['edges'].flat_map { |f, t, _| [f, t] }.to_set
+    known = ->(n) { nodes.include?(n) || edge_nodes.include?(n) }
+    on = gt['on'] || {}
+    if (room = on['door'] || on['room'])
+      start = known.call("door_#{room}") ? "door_#{room}" : room
+      g = guards(snap, start)
+      g |= ["room '#{room}' (required content)"] if required_rooms(snap).include?(room)
+      return g
+    end
+    id = on['object']
+    return [] unless id
+
+    start = ["lock_#{graph_nid(id)}", id].find { |n| known.call(n) }
+    g = start ? guards(snap, start) : []
+    why = Array(snap['requiredContent']).select { |_r, _w, x| x == id }.map { |_r, w, _x| w }.uniq
+    g |= ["object '#{id}' (#{why.join('; ')})"] unless why.empty?
+    g |= ["object '#{id}' (critical-path lock)"] if on['lock'] && !(start && snap['graph']['lockNodes'].any? { |n| n['id'] == start && n['optional'] })
+    g
   end
 
   def lines_of(obj)
@@ -215,13 +337,7 @@ module LockKeyDiff
     cur['gates'].each do |gt|
       next if old_gates.include?([gt['path'], gt['field']])
 
-      room = gt['path'][%r{\A/rooms/([^/\[]+)}, 1]
-      id = gt['path'][/\[([^\]]+)\]\z/, 1] || gt['path'][%r{/([^/\[]+)\z}, 1]
-      start = cur['graph']['lockNodes'].any? { |n| n['id'] == id } ? id : room
-      next unless start
-
-      g = guards(cur, start)
-      g |= ["room '#{room}' (required task)"] if room && required_rooms(cur).include?(room)
+      g = gate_guards(cur, gt)
       flagged << "new #{gt['field']} at #{gt['path']} guards #{g.join(', ')}" unless g.empty?
     end
     { 'changes' => changes, 'flagged' => flagged }
