@@ -21,6 +21,13 @@ Slice status (B/M/m open after the last round):
   with `python3 <scratchpad>/officelife-sims/s4/finish/aggregate.py` and the two report-sr-*.json files
   (see `OFFICE_LIFE_SIMS_HANDOVER_SIMS4.md` on build/ol-sims-2), update README and build log, then
   two review rounds (design with live proof; server/sync).
+  Collected by the lead after the runs finished: step 1 first visit 5/5; step 2 job beat 5/5
+  (games 4376-4383); step 3 boiler crossings pair 10/10, line heard 10/10, overlap 27.5 s (games
+  4384-4401); step 4 cooler crossings pair 10/10, line heard 10/10, overlap 21.2 s (games 4402-4428);
+  both returned and sat after every break; 0 setup failures. Speech lock (game 4369, 15 min): 0 of 6
+  office chat turns blocked by an unheard staff-room line (small sample), 13 of 13 staff pool lines
+  spent unheard (E7). Schedule run (game 4360): use starts recorded, not yet compared with the README's
+  computed times. Still to do: that comparison, the README and build-log rows, then the reviews.
 - SIMS-5 (validator V10): not started.
 
 Next, in order: collect SIMS-4's results and fix anything they show; merge build/ol-sims-2 into
