@@ -916,6 +916,14 @@ module BreakEscape
         render json: { success: false, message: refusal }, status: :forbidden
       elsif stale
         body = { success: true, stale: true }
+        # A stale-but-recent request now merges its pre-filtered last-write-wins
+        # sections (chunk 2 and 3), so it can refuse a section the same way a fresh
+        # request does: a forged currentRoom, a capped phone or mail update. Surface
+        # notSaved and mailTrimmed on the stale answer too, so the notSaved contract
+        # holds on this path (the client marks the refused section confirmed rather
+        # than nothing). A fully-stale whole-skip merges nothing, so neither is set.
+        body[:notSaved] = @not_saved if @not_saved.any?
+        body[:mailTrimmed] = @mail_trimmed if @mail_trimmed.present?
         add_capture_answer_fields(body)
         render json: body
       else
