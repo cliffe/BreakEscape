@@ -3177,3 +3177,160 @@ The validator (`--no-graph --skip-ink`) was run on every m01 to m10 template on 
 cb259dbdf, counting lines that mention flags (the check_vm_flags_load_bearing warnings among them). Counts are
 identical on both sides and every run exits 0: m01 7, m02 3, m03 1, m04 4, m05 4, m06 0, m07 3, m08 0, m09 3,
 m10 0. The array to Hash change in the validator's flags hides no flag-station or flag-lock warning.
+
+## Step 3. Secret-leak check, acknowledged clues, extended answer sets
+
+Date: 2026-11-14. Branch `build/hard-step3`, from the step 5 tip `896ec3cd8` (ports 3678/3679).
+Line numbers in the plan were taken on `406fa7791`; this branch re-anchors them (below).
+
+### Re-anchoring from the plan
+
+The plan (section 4, step 3) referenced `lock_codes` call sites in `validate_scenario.rb`
+(6563/6568/6587) and said the capture-proof warning read `lock_codes`. On this branch that warning
+was already reworked (usePayload/capture review R1) to read `hard_access_values`
+(`validate_scenario.rb:7160`, used at 7165/7185/7235), and `validate_scenario.rb` no longer calls
+`lock_codes` at all. `lock_codes` is now called only by `scripts/validate_capture_log.rb:124`. Two
+newer consumers of `hard_access_values` also had to move to the keyed form: the capture-proof
+warning's three `hard_access.include?` sites, and `validate_capture_log.rb`'s note-leak check
+(`:46`, review 6a-server M1), which needs raw strings for a substring search and so now reads a new
+`hard_access_raw_values`.
+
+### Part A (commit `ffacbe4963`): one comparator normaliser, two keyed answer sets
+
+`lib/break_escape/capture_model.rb`:
+- `answer_key(lock_type, value)` — the one normaliser. combination: `"combination:"` + integers
+  joined by `-`; cryptex: `"cryptex:"` + `strip.downcase(:fold)`; every other kind: `"<kind>:"` +
+  `to_s`, exact. `combination_numbers` holds the lambda moved verbatim from
+  `Game.lock_answer_matches?`.
+- `each_lock_answer(data) { |lock_type, requires, path| }` — the whole-tree walk, yielding every
+  String-`lockType` hash plus each `rooms.*.doors[]` entry the client reads, resolved from the
+  connected room (entry's own `lockType`/`requires`, else the connected room's). Only entries
+  `NpcHabits.doorway_problem` clears are resolved; door entries are skipped by the generic walk.
+- `lock_answer?(keys, value)` — the probe. Builds `pin:/password:/rfid:/biometric:/flag:<s>` plus
+  the cryptex and combination keys, tests each with `include?`. Never matches nil or a blank value.
+- `hard_access_values` and `lock_answer_keys` (renamed from `lock_codes`) now hold canonical
+  answer keys (pin/password/combination/cryptex via `answer_key`, rfid/biometric per element,
+  PSKs as `password:<psk>`, flags as `flag:<v>`). A stray `"5"` beside a combination `[12, 30, 5]`
+  gives `"combination:5"`, which is in neither set, so it is still served.
+- `hard_access_raw_values` — the raw (unkeyed) opening strings, for the note-leak substring check.
+- `password_opens_lock?` goes through the probe.
+- `require_relative 'npc_habits'` (guarded) added for `NpcHabits.doorway_problem`.
+
+`app/models/break_escape/game.rb`:
+- `Game.lock_answer_matches?` is now `answer_key(secret) == answer_key(attempt)` for combination
+  and cryptex, `else false`. No more `.present?` (ActiveSupport) in the moved lambda. The four
+  blank/nil refusals in `combination_cryptex_unlock_test.rb` (lines 200, 201, 206, 207) and the
+  non-String cryptex refusal (208) stay green.
+- `Game#hard_access_capture_value?` is `CaptureModel.lock_answer?(@memo ||= hard_access_values, secret)`.
+
+`scripts/validate_scenario.rb`: the three capture-proof-warning `hard_access.include?` sites become
+`CaptureModel.lock_answer?(hard_access, …)`.
+
+`scripts/validate_capture_log.rb`: `lock_codes` -> `lock_answer_keys`; note-leak check reads
+`hard_access_raw_values`; `capture_log_secret_strings` rewritten over `each_lock_answer` so it also
+learns combination, cryptex and door-entry answers.
+
+Tests run (builder, no lock):
+- `test/controllers/break_escape/combination_cryptex_unlock_test.rb`: 14 runs, 118 assertions, 0 failures.
+- `capture_proofs_test.rb`, `capture_secret_test.rb`, `capture_payload_secret_test.rb`,
+  `capture_record_test.rb`: 68 runs, 469 assertions, 0 failures.
+- Node: `validator-capture-log` 17/0, `validator-phish-evidence-secret` 10/0,
+  `validator-access-model` 41/0.
+- A standalone functional check of `answer_key`/`hard_access_values`/`lock_answer_keys`/`lock_answer?`
+  against the plan's named cases (combination array and string forms, cryptex Unicode folding of
+  `école`/`ÉCOLE`, the stray-`5` non-match, PSK and flag keys).
+
+### Part B (commit `5496210a47`): the validator check, schema, markers
+
+`scripts/validate_secret_leaks.rb` (new), registered after `check_capture_log`:
+- Collects answers (lock answers with their lock id, resolved door entries, top-level `flags`,
+  `targetFlags`, flag-station `flags`, `creds.password`, PSKs, capture secrets) and leaves (every
+  scalar under `globalVariables`, `minigameData`, `scenarioData` with its container id or
+  `global:<name>`).
+- Matches with the plan's text forms (number == string; a combination array or a common string
+  form; cryptex and password case-insensitive; a whole word for answers of 6+ characters).
+- Double render: `render_seeded(erb_path, 1)` and `(…, 2)`, intersecting the match keys so a
+  coincidental collision under one seed is dropped; `srand(Random.new_seed)` restored after.
+- A copy is `❌ ERROR: secret leak` unless an `acknowledgedClues` entry covers (lock id, container):
+  then `ℹ️ acknowledged clue` (minigameData/scenarioData) or, for a `global:` container,
+  `⚠️ WARNING` (the `GLOBAL_CLUES_ALLOWED` form, q85). A marker naming the lock itself or a
+  contents object errors; an unmatched marker warns (stale).
+- Item 4 lock-type rules: a `requires` with no `lockType` errors when `locked`, warns ("inert") when
+  not. Item 6: a non-account `usePayload.secret` with no `targetId` and no `addCapture` mapping warns.
+
+`scripts/scenario-schema.json`: `acknowledgedClues` declared (array of closed objects; `lock`, `in`,
+`reason`, `approved` all required strings). Added to the validator's known top-level list.
+
+`app/models/break_escape/game.rb`: `filtered.delete('acknowledgedClues')` in
+`filtered_scenario_for_bootstrap`, so no `reason` ships.
+
+`scripts/validator_report.rb`: counts `ℹ️ acknowledged clue:` lines and appends
+`, <c> acknowledged clues` to the `Result:` line when any.
+
+Markers: m06 `{lock: cold_storage_console, in: transaction_server}` (3 slot matches ->
+3 acknowledged clues, 0 errors); m08 `{lock: interrogation_room, in: global:suite_code}` (1 ->
+1 global-clue warning, 0 errors). Both carry an `approved` heading in
+`docs/agents/VALIDATOR_DECISIONS.md` (dated 2026-11-14).
+
+### Verification (no lock, `--no-graph --skip-ink` unless noted)
+
+- m01 to m10 all exit 0, no `secret leak` error. m06 Result: 0 errors, 26 warnings, 3 acknowledged
+  clues. m08 Result: 0 errors, 5 warnings (the global clue warning).
+- Sweep over every `test_*`, `lab_*`, `ca*`, `sis*` template: 0 new `secret leak` errors, 0
+  `check_secret_leaks could not run`.
+- Legacy PCs (unlocked `"requires": "password"`) get the intended inert warning, no error
+  (ceo_exfil 1, crypto1 2, crypto2 5, crypto3 2).
+- **Predicate diff (old vs new serving), the plan's corpus safeguard.** A one-off harness loaded the
+  old `capture_model.rb` (at `896ec3cd8`) under a second module name and, over 179 rendered
+  templates (srand(1)), compared old vs new for every capture writer with an authored secret and no
+  proof (old `hard_access_values(data).include?(secret)` vs new
+  `lock_answer?(hard_access_values(data), secret)`) and every account holder in a proof-declaring
+  scenario (old vs new `password_opens_lock?`). Result: **DIFF EMPTY** — no capture or account
+  changes serving state. The empty corpus diff is meaningful because the harness distinguishes the
+  two predicates per writer.
+
+### Outstanding (handover)
+
+Not done on this run; see "Step 3 remaining" below.
+
+### Step 3 remaining (handover, 2026-11-14)
+
+Core server change (Part A) and the validator check, schema, bootstrap and markers (Part B) are in
+and committed. The predicate diff is empty over the corpus, the unlock/capture Rails tests and the
+touched node tests are green, and no corpus scenario gains a secret-leak error. Left to do:
+
+1. **Rails tests for the new withholding and the bootstrap** (plan step 3 "Rails"): `authored_capture_secret`
+   withholds a secret equal to an untyped door-entry PIN, a `"12-30-5"` beside a combination
+   `[12, 30, 5]` and a `"WOLF"` beside a cryptex `wolf` until the proof holds; still serves `"5"`
+   beside `[12, 30, 5]` and a password `"Satchel42"` beside a password lock `satchel42`; an account
+   whose password equals a combination answer is withheld in a proof-declaring scenario, served
+   with no proofs; `answer_key`/`lock_answer?` unit cases incl. `answer_key('combination',
+   'Summer2024') == 'combination:2024'`; the `GET /games/:id/scenario` route does not carry
+   `acknowledgedClues`.
+2. **Node tests**: `test/js/validator-secret-leaks.test.mjs` (the plan's leak/lock-type/clue
+   fixtures) and `test/js/validator-acknowledged-clues.test.mjs` (every marker's `approved` heading
+   and `json` block, shared-heading rule across the three lists, using the same reader as
+   `validator-known-failures.test.mjs`). 6a-1 handover item 5: wire `acknowledgedClues` as the
+   third list into `validator-known-failures.test.mjs` `otherApproved` (that file is on 6a-1).
+3. **Playtest leak scanner**: teach `tools/playtest/lib/access_leak_scanner.rb` the non-account
+   capture secrets, with a fixture.
+4. **`scenarios/test_secret_leaks/`** (new test scenario, "collection":"testing", no Mission row):
+   an NPC `usePayload` secret equal to a combination padlock answer with a `proof`, plus the
+   account and door-entry cases the plan names. Needed for the live proof and to prove the predicate
+   harness sees a change (add its intended rows to the diff then).
+5. **Live proof** (the riskiest-step safeguard, not yet run): keyless server on 3678
+   (`env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true RBENV_VERSION=2.7.8 nohup bin/rails server
+   -b 127.0.0.1 -p 3678 -P tmp/pids/server-3678.pid > tmp/keyless-3678.log 2>&1 &`), headless,
+   setFPS(20), fixed steps on; prove the comparator through the real POST unlock route for
+   combination and cryptex (right, wrong, blank, malformed; different-case cryptex opens as
+   `casecmp?` allows) via `apiClient.unlock(...)` against test_unlock_gaps (read only); m01 PIN door
+   as no-regression; `window.gameScenario.acknowledgedClues` undefined after load and reload on m06;
+   the test_secret_leaks withholding (secret absent before the proof, present after, padlock opens);
+   lab_physical_pentest shoulder-surf no-regression; `tools/playtest/verify-run.rb` in each. Kill by
+   the logged PID, confirm the port is down.
+6. **Validator corpus line diff** vs `896ec3cd8` (ink on) for the merge-batch record. m01-m10 and
+   the test/lab sweep above show no new errors; the full before/after table per scenario is still to
+   be captured (make a base worktree by hand at the merge base, do not use an isolation worktree).
+
+No new gems/npm packages were added. `git -C <main> status --short` showed only
+`docs/agents/UI_PASS_RESUME.md` untracked throughout.
