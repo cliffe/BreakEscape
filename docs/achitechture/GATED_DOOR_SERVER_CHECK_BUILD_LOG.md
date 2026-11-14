@@ -944,3 +944,35 @@ refused task), and play continued. After: `player_state.currentRoom = "maya_offi
   currentRoom, no error toast.
 - sis01_healthcare game 3505 (start it_security_office): three rooms (it_security_office,
   major_incident_room, ward_7) through two doors; all syncs 200, 0x403, no error toast.
+
+## R4 minors (currentRoom refusal no longer rolls back the batch)
+
+Folded the two latent minors from GATED_DOOR_BUILD_REVIEW_R4.md.
+
+- MINOR 1: `merge_last_write_wins_sections` (`games_controller.rb`) no longer returns a refusal for a
+  currentRoom the guard rejects. It skips only the currentRoom update and its viaPass credit (a refused
+  room is still never saved and never credited) and pushes `currentRoom` onto `@not_saved`, so the rest
+  of the sync batch (globals, notes, captures, health, ...) commits instead of being rolled back and
+  403'd. The response reports `notSaved: ['currentRoom']` on the success path. On the client
+  (`state-sync.js`) `confirm` already records currentRoom from the ack even when it is in notSaved, so a
+  refused room is not re-sent on every sync forever (SYNC SIZE); a room is sent again only when it
+  changes. Guard semantics (`may_sync_current_room?`), the Chunk F enter_room validation and the viaPass
+  credit are unchanged for accepted rooms.
+- MINOR 2: extended the `Api::GamesController` header comment (`api/games_controller.rb`) to record that
+  currentRoom now feeds `player_reached_room?` (enter_room validation) and the viaPass credit, so routing
+  the unguarded action would forge the soft enter_room signal and credit an unearned room. It must stay
+  unrouted.
+
+Tests updated to the new contract (refused room -> 200, `notSaved` names currentRoom, saved room
+unchanged, rest of batch saved, no forever re-send): `current_room_guard_refusal_test` (added a repeat-
+refusal no-loop test), `games_controller_test` ("rejects teleport"), `gated_route_room_controller_test`
+(locked non-route room), `reload_persistence_test` (forged 'nowhere'). Added a client-side node test in
+`state-sync.test.mjs`.
+
+Tests run (no full suites): Rails controllers `current_room_guard_refusal_test`, `reload_persistence_test`,
+`games_controller_test`, `gated_door_credit_controller_test`, `gated_route_room_controller_test`,
+`gated_server_completed_task_controller_test`, `lab_gated_door_test` (166 runs, 649 assertions, 0
+failures); Rails models `gated_door_credit_test`, `gated_route_room_test`, `gated_server_completed_task_test`,
+`enter_room_validation_test`, `lab_gated_migration_test` (39 runs, 143 assertions, 0 failures);
+`api_games_controller_test`, `saved_current_room_test` (3 runs, 7 assertions, 0 failures); node
+`state-sync`, `sync-request-sizes`, `sync-delta-proof`, `enter-room-completion` (55 subtests, all pass).

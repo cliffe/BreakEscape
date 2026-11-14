@@ -922,8 +922,12 @@ module BreakEscape
       assert_equal 1000, state['lastSyncClientTs']
       assert_equal({ 'met' => true }, state.dig('npcInkVariables', 'hax'))
 
+      # R4 MINOR 1: a refused currentRoom is skipped (reported in notSaved), not rolled back;
+      # the saved room stays at the last accepted one (vault).
       put sync_state_game_url(game), params: { currentRoom: 'nowhere' }, as: :json
-      assert_response :forbidden
+      assert_response :success
+      assert_includes Array(response.parsed_body['notSaved']), 'currentRoom'
+      assert_equal 'vault', game.reload.player_state['currentRoom']
     end
 
     test 'a partial sync leaves the sections it does not carry alone' do

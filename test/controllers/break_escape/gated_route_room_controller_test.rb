@@ -81,8 +81,14 @@ module BreakEscape
 
     test 'sync still refuses currentRoom for a locked room that is not a route room' do
       game = build
+      # R4 MINOR 1: refused means skipped and reported in notSaved, not a batch rollback. The
+      # room is still not saved and not promoted.
       put sync_state_game_url(game), params: { currentRoom: 'secure_area' }, as: :json
-      assert_response :forbidden
+      assert_response :success
+      assert_includes Array(response.parsed_body['notSaved']), 'currentRoom'
+      state = game.reload.player_state
+      assert_equal 'lobby', state['currentRoom'], 'the refused room is not saved'
+      refute_includes Array(state['unlockedRooms']), 'secure_area', 'and not promoted'
     end
 
     # Test 11a: a route-room object unlock is refused even with the right key held.

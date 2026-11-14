@@ -553,6 +553,14 @@ export class StateSync {
    * Record what the server now holds, after a 2xx answer that wasn't stale.
    * Sections in notSaved (the server refused them over a cap and kept its
    * previous copy) are not confirmed, so they are sent again (00 §13).
+   *
+   * currentRoom is the exception: when the server refuses a currentRoom
+   * (may_sync_current_room? rejected it, R4 MINOR 1) it names it in notSaved
+   * too, but the room is still confirmed below. Re-sending the same refused
+   * room on every sync is exactly the forever loop (SYNC SIZE) the server fix
+   * avoids, so for currentRoom a notSaved means "the server kept its own room;
+   * do not re-send this one" -- a new room is sent only when currentRoom
+   * actually changes (buildChanges compares against this.confirmed.currentRoom).
    */
   confirm({ body, ack }, now = Date.now(), notSaved = []) {
     const refused = new Set(Array.isArray(notSaved) ? notSaved : []);
@@ -564,6 +572,8 @@ export class StateSync {
       }
       this.confirmed[section] = kept;
     }
+    // currentRoom is confirmed even when refused (see the note above): a refusal
+    // must not make the client re-send the same room forever.
     for (const key of [...WHOLE_SECTIONS, 'currentRoom', 'scenarioBriefShown', 'timedMessagesKey', 'clockKey', 'clockElapsedMs']) {
       if (ack[key] !== undefined) this.confirmed[key] = ack[key];
     }

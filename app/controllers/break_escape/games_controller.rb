@@ -2153,18 +2153,26 @@ module BreakEscape
         # route room, the start room, or the awareness world room. The last admits an awareness
         # episode's world room (e.g. ca12's "lobby"), which enterWorld places the player in without a
         # door unlock so it is never in unlockedRooms; without it, enabling the currentRoom sync
-        # would 403 every sync while the learner stood in that room. A room outside the set is still
-        # a forge and refused (the sync rolls back), as before.
-        unless @game.may_sync_current_room?(room)
-          return "Cannot enter locked room: #{room}"
+        # would refuse every sync while the learner stood in that room.
+        if @game.may_sync_current_room?(room)
+          @game.player_state['currentRoom'] = room
+          # viaPass credit (GATED_DOOR §3.3a): if this room is a served-but-unearned route room and
+          # the gate's server-owned pass global is true, promote it and apply the viaPass credit. A
+          # no-op (and no scenario read) on an ordinary room; the honest no-vest slip-in fails the
+          # pass check and stays a route room. Runs inside the sync_state row-lock transaction.
+          @game.credit_via_pass_on_sync!(room)
+        else
+          # R4 MINOR 1: a room outside the acceptance set is a forge (or a future bespoke placement
+          # the room-load invariant does not cover). Skip ONLY the currentRoom update and its viaPass
+          # credit -- never save or credit a refused room -- and report it in notSaved so the rest of
+          # this batch (globalVariables, notes, captures, health and the rest) still commits. The old
+          # behaviour returned a refusal, which rolled the whole batch back and 403'd it; with
+          # currentRoom now a live sync field, a persistent refusal would re-send the whole batch on
+          # every sync forever (SYNC SIZE) and never advance any saved section. The client confirms
+          # currentRoom on a notSaved (so it does not re-send the same refused room) and sends a room
+          # again only when it changes. Globals and every other section keep their own guards.
+          @not_saved << 'currentRoom'
         end
-
-        @game.player_state['currentRoom'] = room
-        # viaPass credit (GATED_DOOR §3.3a): if this room is a served-but-unearned route room and
-        # the gate's server-owned pass global is true, promote it and apply the viaPass credit. A
-        # no-op (and no scenario read) on an ordinary room; the honest no-vest slip-in fails the
-        # pass check and stays a route room. Runs inside the sync_state row-lock transaction.
-        @game.credit_via_pass_on_sync!(room)
       end
 
       if params[:globalVariables].respond_to?(:to_unsafe_h)

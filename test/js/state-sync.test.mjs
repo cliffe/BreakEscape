@@ -200,6 +200,36 @@ test('a stale answer confirms nothing', async () => {
   assert.ok(requests[1].body.phoneState.hax);
 });
 
+// R4 MINOR 1: the server now skips (not rolls back) a currentRoom it refuses and
+// reports it in notSaved while the rest of the batch commits. The client must confirm
+// the rest of the batch, not loop re-sending the refused room, and send a room again
+// only when the room changes.
+test('a notSaved currentRoom does not loop: the rest of the batch is confirmed and the room is resent only when it changes', async () => {
+  const sync = resetGame();
+  await sync.sync(); // full snapshot, all accepted
+
+  // Move to a room the server refuses; a global changes in the same batch.
+  window.currentPlayerRoom = 'secure_area';
+  window.gameState.globalVariables.a = 2;
+  reply = () => ({ ok: true, json: { success: true, notSaved: ['currentRoom'] } });
+  await sync.sync();
+  const refusedBody = requests[1].body;
+  assert.equal(refusedBody.currentRoom, 'secure_area', 'the room was sent');
+  assert.deepEqual(refusedBody.globalVariables, { a: 2 }, 'the global rode along');
+
+  // The rest of the batch is confirmed (not resent) and the refused room is not resent.
+  reply = () => ({ ok: true, json: { success: true } });
+  await sync.sync();
+  assert.equal(requests.length, 2, 'nothing is resent: the global is confirmed and the refused room is not looped');
+
+  // The room is sent again only when it actually changes.
+  window.currentPlayerRoom = 'vault';
+  await sync.sync();
+  assert.equal(requests.length, 3);
+  assert.equal(requests[2].body.currentRoom, 'vault', 'a new room is sent');
+  assert.equal(requests[2].body.globalVariables, undefined, 'only the changed room, not the confirmed global');
+});
+
 test('one sync in flight: calls meanwhile share one run straight after it', async () => {
   const sync = resetGame();
   let release;
