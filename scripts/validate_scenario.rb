@@ -40,6 +40,7 @@ require_relative 'validate_npc_habits'
 require_relative '../lib/break_escape/access_work'
 require_relative '../lib/break_escape/owner_claim'
 require_relative 'validate_access_work'
+require_relative 'validate_office_life'
 
 # Try to load json-schema gem, provide helpful error if missing
 begin
@@ -8169,6 +8170,7 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
   run.call('check_wearables') { check_wearables(json_data, scenario_dir) }
   run.call('check_phone_calls') { check_phone_calls(json_data, repo_root) }
   run.call('ValidateAccessWork') { ValidateAccessWork.check(json_data) }
+  run.call('ValidateOfficeLife') { ValidateOfficeLife.check(json_data) }
   run.call('ValidateNpcHabits') do
     ValidateNpcHabits.check(json_data, expanded: habits_copy, report: habits_report, scenario_dir: scenario_dir)
   end

@@ -142,6 +142,8 @@ The boiler, cooler and microwave each claim a drawn sprite by base type (the ket
 
 A player should expect a voiced line or two on a crossing and picture chat for the rest, because lines spoken before they are in earshot are spent (E7).
 
+**Why the pair name their own topics (V10, SIMS-5).** A scenario-level pool joins every NPC's own pool of the same topic (`chatterPool`, `npc-needs.js:242`): when two NPCs chat at an object, the speaker draws from the scenario pool for that topic plus its own pool for that topic. So if Keith and Jodie used the scenario `coffee`/`cooler` topics, the office's small talk would come out at the boiler. They use `staff_tea` and `staff_water` instead, so their bags hold only their own lines. The `scripts/validate_office_life.rb` V10 check warns about a chatter pool, exchange or desk-phone call nothing in the scenario can trigger: a lone NPC at a chatter object says nothing, so an untriggerable pool is voiced and paid for and never heard. V10 does not judge whether a merged pool suits the NPC; that stays the author's call.
+
 **On reload.** The globals and the five task keys survive, so no task re-ticks. Two cosmetic beats can replay and are harmless (server review R1 m1/m2): the three `heard_exchange_*` markers persist only on the next periodic or page-hide sync, not the moment the exchange plays, so a reload within about 30 seconds of a first overhear and with no page-hide can replay that optional exchange (three to five lines, the task stays ticked); and `firstVisit` is per-load (the engine clears `discoveredRooms` on load), so the first staff-room entry after any reload re-arms the opening tea break. Neither double-ticks a task.
 
 ## Live proof (2026-11-05, keyless :3001, headless, load average ~80)

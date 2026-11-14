@@ -285,10 +285,49 @@ Round-1 design/engine review: 1 blocker, 3 major, 5 minor; server review: 0 bloc
 
 New or changed spoken lines (SIMS-4 R1 fixes): one changed exchange line, `Keith: Someone'll be up soon, Jodie.` (was `Jodie: Someone'll be up to fix it soon.`). No other new voiced lines; the two conversation exits keep their existing farewell text.
 
+## SIMS-5: V10, pools, exchanges and calls nothing can trigger (2026-11-14, build/ol-sims)
+
+New files: `scripts/validate_office_life.rb` (V10 only; the missions tooling adds V1 to V9 here
+later) and `test/js/validator-office-life-v10.test.mjs`. One line wires it into
+`scripts/validate_scenario.rb` (`run.call('ValidateOfficeLife') { ValidateOfficeLife.check(json_data) }`,
+beside `ValidateAccessWork`). V10 is a warning-only static check; it adds no engine or server line
+and nothing at runtime. It reuses `ValidateNpcNeeds`'s object/preset/leash/privacy helpers
+(`collect`, `expand_presets`, `use_rule`, `leash_reach`, `owners_of`, `pool_lines`) so its reasoning
+matches the needs engine (`npc-needs.js` `_pickBark` 2740 and its call sites: `_maybePair`,
+`_tickQueueChats`, `_tickChats`, `_grumbleTopic`, `_failTopic`, `_chooseCall`, `_tickNews`). The set
+of topics the engine speaks is read from `PICTURE_CHATTER` in `npc-needs.js`, so the list cannot
+drift; V10 judges triggerability for the office-life kinds it owns (chatter-object topics, the
+grumble family, phone topics, magnet announce pools, exchanges, phoneCalls) and leaves work-failure
+and access/workaround topics (spoken by other subsystems) to their own checks.
+
+**Step 1 (reproduce), the warnings V10 flags on the scenarios this branch owns:**
+
+- `test_needs_sims`: three per-NPC `cooler` pools that never play, `amara.cooler`, `tom.cooler`,
+  `marek.cooler`. Amara and Tom have own `cooler` pools but no `thirst` or `social` need, so they
+  never use the kitchen cooler (which satisfies `thirst`, `social`); their lines come only from the
+  scenario `cooler` pool. Marek needs `thirst` but avoids everyone (`avoids: ["*"]`), so he never
+  pairs. The scenario `cooler` pool is fine (Grace/Sanjay/Rosa can pair), as are every other pool,
+  the two exchanges and the two calls. These three are a content slip (the own pools read like they
+  were meant as `coffee` pools); they are left in place and pinned, not edited, because the showcase
+  scenario is shared and the lines are dead rather than wrong. Recommend the owner re-key or drop
+  them.
+- `test_needs_attack`: none.
+
+**Scenarios owned by other work (no error; warnings listed, not pinned):** `test_needs_leash` none,
+`test_access_work` none (its work-failure and workaround pools are spoken by other subsystems and
+are out of V10's scope), `lab_physical_pentest` none. V10 was run across the whole scenario corpus
+(every ERB-free scenario directly; every ERB scenario rendered through the validator, m01 to m10,
+the labs, sis01 to sis03 included): no crash, no error, and no warning anywhere except the three
+`test_needs_sims` cooler pools. m02 (the pilot) is clean.
+
+Tests: the standard node set (25 files incl. the new V10 test) PASS; the three Ruby format corpus
+tests (8a/8b/8c) 0 failures. Live proof: see the README SIMS-5 live-proof rows. No new spoken lines.
+
 ## Engine and server changes (every slice)
 
 | Slice | File | Function | Change | Why | Branch |
 |---|---|---|---|---|---|
+| SIMS-5 | scripts/validate_office_life.rb (new), scripts/validate_scenario.rb (one line), test/js/validator-office-life-v10.test.mjs (new) | `ValidateOfficeLife.check` | new office-life validator, V10 only; warning-only static check, no runtime engine or server change | OLMP V10: a chatter pool, exchange or call nothing in the scenario can trigger is voiced and paid for and never heard | build/ol-sims |
 | SIMS-1 | none applied | | | | |
 | SIMS-3 | none applied | | the Gary pattern is all scenario data (declared mug, print command, `forget`, reveal slots, `delayMs`) | nothing in the engine needed changing | build/ol-sims |
 | SIMS-4 | none applied | | the pilot staff-room pattern is all scenario data (claimed decor, couplings on the use start, first-visit/close/private-office break starts, hand-written cooler cell, gated exchanges, roomToneTypes) | the plan builds SIMS-4 to work around E7/E8/E9 without touching the chatter engine | build/ol-sims-2 |
