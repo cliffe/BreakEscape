@@ -73,7 +73,7 @@ test('with nothing found: unnamed cards, empty slots, every checklist line missi
     assert.equal(pierce.querySelectorAll('.ib-slot.missing').length, 3);
     assert.equal(pierce.querySelectorAll('.ib-slot.done').length, 0);
     assert.match(pierce.textContent, /Missing:\s*You still don't know what Melanie does here\./);
-    assert.match(pierce.textContent, /Who she is: \?\?\?/);
+    assert.doesNotMatch(pierce.textContent, /\?\?\?/, 'C04: unknown facts show once in the checklist, no duplicate ??? rows');
     assert.match(pierce.textContent, /Not ready/);
     assert.doesNotMatch(pierce.textContent, /Ready to approach/);
     assert.match(text(s), /Stay inside the agreed scope/);          // scope note banner
@@ -153,7 +153,6 @@ test('marks are paired with words and the pushpin and card art are wired', () =>
     const srcs = [...s.container.querySelectorAll('.ib-icon')].map((i) => i.getAttribute('src'));
     assert.ok(srcs.includes('/break_escape/assets/icons/board-ready.png'));
     assert.ok(srcs.includes('/break_escape/assets/icons/board-not-ready.png'));
-    assert.ok(srcs.includes('/break_escape/assets/icons/board-slot-empty.png'));
     const css = readFileSync(join(here, '../../public/break_escape/css/intel-board-minigame.css'), 'utf8');
     assert.match(css, /ui\/social\/board-cork\.png/);
     assert.match(css, /ui\/social\/board-card\.png/);

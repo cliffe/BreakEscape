@@ -620,18 +620,19 @@ export class IntelBoardMinigame extends SocialOverlayScene {
             card.appendChild(h('div', { class: 'ib-influence', 'data-person': t.id }, bar.el));
         }
 
-        const found = h('ul', { class: 'ib-facts', 'aria-label': `Found about ${t.name}` });
-        for (const f of t.facts) {
-            found.appendChild(h('li', { class: 'ib-fact', 'data-fact': f.id },
-                icon('mark-tick'), h('span', { class: 'ib-fact-text', text: f.text })));
+        // C04: list each fact once. The "??? Not yet found" empty-slot rows duplicated the
+        // readiness checklist below (board-model emptySlots is slots.filter(!done).map(label)),
+        // so only the found facts go here; the missing ones show once, in the checklist, with
+        // their plain-English hint and the Stuck? link. Display only; the facts and how they
+        // unlock are unchanged.
+        if (t.facts.length) {
+            const found = h('ul', { class: 'ib-facts', 'aria-label': `Found about ${t.name}` });
+            for (const f of t.facts) {
+                found.appendChild(h('li', { class: 'ib-fact', 'data-fact': f.id },
+                    icon('mark-tick'), h('span', { class: 'ib-fact-text', text: f.text })));
+            }
+            card.appendChild(found);
         }
-        for (const label of t.emptySlots) {
-            found.appendChild(h('li', { class: 'ib-fact is-empty' },
-                icon('board-slot-empty'),
-                h('span', { class: 'ib-fact-text', text: `${label}: ???` }),
-                h('span', { class: 'ib-word', text: 'Not yet found' })));
-        }
-        card.appendChild(found);
 
         if (t.fromCall && t.fromCall.length) {
             card.appendChild(h('h4', { class: 'ib-subh', text: 'From the call' }));
