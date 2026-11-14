@@ -671,12 +671,12 @@ test('R2 m1: the hidden flush landing first, then the re-stamped pagehide body l
   assert.equal(server.globals.late, 1, 'the re-stamp carries the later change above the flush, so it is saved (no residual loss)');
 });
 
-// R1 minor 2 (the loss direction), mirroring the Ruby controller test of the same name: when
+// R1 minor 2 (the loss direction), the JS counterpart of the Ruby controller test for R1 m2: when
 // the re-stamped pagehide body D lands first and the hidden flush H then arrives stale with
 // NO qualifying ring entry at or below it, the completeness guard fails and H whole-skips, so
 // H's unique section is dropped. This is the documented, intended R2 cost. Without seeding, the
 // only ring entry is D's, above H.
-test('R1 m1: D first, then H stale with no qualifying ring entry: H whole-skipped, its unique key dropped (the R2 cost)', async () => {
+test('R1 m2: D first, then H stale with no qualifying ring entry: H whole-skipped, its unique key dropped (the R2 cost)', async () => {
   const { server, pending, deliver } = await bigHiddenThenLateChange();
   assert.equal(pending.length, 2);
   deliver(1);                               // D (late, re-stamped above) lands first, fresh

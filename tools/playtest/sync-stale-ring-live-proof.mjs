@@ -188,11 +188,11 @@ async function run() {
   try {
     for (const order of ['Dfirst', 'Hfirst']) {
       const g2 = await driveGap(browser, baseUrl, opts.mission, opts.port, { kind: 'health', order });
-      record(`gap2 health, ${order}`, g2.result === 70 && g2.tsD > g2.tsH,
+      record(`gap2 health, ${order}`, g2.result === 70 && g2.tsD > g2.tsH && g2.blobPresent,
         `game ${g2.gameId} tsH=${g2.tsH} tsD=${g2.tsD} (D>H ${g2.tsD > g2.tsH}) health=${g2.result} blob=${g2.blobPresent}`);
 
       const g3 = await driveGap(browser, baseUrl, opts.mission, opts.port, { kind: 'global', order });
-      record(`gap3 global g, ${order}`, g3.result === 7 && g3.tsD > g3.tsH,
+      record(`gap3 global g, ${order}`, g3.result === 7 && g3.tsD > g3.tsH && g3.blobPresent,
         `game ${g3.gameId} tsH=${g3.tsH} tsD=${g3.tsD} (D>H ${g3.tsD > g3.tsH}) g=${g3.result} blob=${g3.blobPresent}`);
     }
     const rl = await driveReload(browser, baseUrl, opts.mission, opts.port);
