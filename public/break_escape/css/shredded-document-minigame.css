@@ -54,13 +54,13 @@
 /* ── Document title ──────────────────────────────────────── */
 
 .sdm-doc-title {
-    font-size: 7px;
+    font-size: 8px;   /* C-SD1: on the Press Start 2P 8px grid, not a blurry 7px */
     color: #4a6090;
     letter-spacing: 1px;
     text-align: center;
     margin-bottom: 12px;
     padding-bottom: 8px;
-    border-bottom: 1px solid #2a3a5a;
+    border-bottom: 2px solid #2a3a5a;
 }
 
 /* ── Strip list ──────────────────────────────────────────── */
@@ -76,6 +76,8 @@
 
 /* ── Individual strip tile ───────────────────────────────── */
 
+/* C-SD3: no small-angle tilt (it anti-aliases the pixel text), a hard 2px offset shadow (no
+   blur), and 2px edges. The torn look stays in the dashed top and bottom edges. */
 .sdm-strip {
     position: relative;
     display: flex;
@@ -83,15 +85,14 @@
     gap: 8px;
     padding: 7px 10px;
     background: #f5f0e8;
-    border-top: 1px dashed #b0a090;
-    border-bottom: 1px dashed #b0a090;
-    border-left: 3px solid #8a7a6a;
-    border-right: 3px solid #8a7a6a;
+    border-top: 2px dashed #b0a090;
+    border-bottom: 2px dashed #b0a090;
+    border-left: 2px solid #8a7a6a;
+    border-right: 2px solid #8a7a6a;
     cursor: grab;
     user-select: none;
     overflow: hidden;
-    transform: rotate(var(--tilt, 0deg));
-    box-shadow: 2px 3px 6px rgba(0, 0, 0, 0.22);
+    box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.35);
     transition: opacity 0.1s;
     min-height: 34px;
 }
@@ -113,9 +114,8 @@
     position: absolute;
     left: 0;
     right: 0;
-    height: 3px;
+    height: 4px;
     background: #4a90d9;
-    border-radius: 2px;
     z-index: 2;
 }
 
@@ -170,23 +170,55 @@
     color: #2a3a1a;
 }
 
-/* ── Flip button ─────────────────────────────────────────── */
+/* ── Strip controls (reorder + flip) ─────────────────────── */
 
+.sdm-strip-controls {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* C-SD1/SD2: named word buttons (no stray glyph), 2px pixel borders, legible 8px Press Start 2P. */
+.sdm-move-btn,
 .sdm-flip-btn {
+    position: relative;
     font-family: 'Press Start 2P', monospace;
-    font-size: 9px;
+    font-size: 8px;
+    line-height: 1;
     background: #e8e0d0;
     color: #5a4a3a;
     border: 2px solid #b0a090;
-    padding: 3px 6px;
+    padding: 6px 7px;
     cursor: pointer;
     flex-shrink: 0;
-    line-height: 1;
 }
 
+.sdm-move-btn:hover,
 .sdm-flip-btn:hover {
     background: #d8cfc0;
     border-color: #8a7a6a;
+}
+
+.sdm-move-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.sdm-move-btn:focus-visible,
+.sdm-flip-btn:focus-visible {
+    outline: 3px solid #4a90d9;
+    outline-offset: 2px;
+}
+
+/* C-SD2: a 44px touch target on small or touch screens, without changing the drawn size. */
+@media (max-width: 600px), (pointer: coarse) {
+    .sdm-move-btn::after,
+    .sdm-flip-btn::after {
+        content: '';
+        position: absolute;
+        inset: -11px;
+    }
 }
 
 /* ── Completed state ─────────────────────────────────────── */
@@ -196,7 +228,7 @@
     background: #062010;
     border-bottom: 2px solid #00c853;
     color: #00c853;
-    font-size: 7px;
+    font-size: 8px;
     letter-spacing: 1px;
     flex-shrink: 0;
 }

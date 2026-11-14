@@ -180,22 +180,31 @@ export class ShreddedDocumentMinigame extends MinigameScene {
             ? `<div class="sdm-doc-title">${escapeText(this.documentTitle)}</div>`
             : '';
 
+        // C-SD1: no stray glyph the font lacks - name the Flip button in words. C-SD2: say that
+        // the strips reorder by drag or the Up/Down buttons, so there is a keyboard and touch route.
         const instructionText = this.allowRotation
-            ? 'Drag the strips into the correct reading order. Flip any upside-down strips using ↕.'
-            : 'Drag the strips into the correct reading order.';
+            ? 'Put the strips in the correct reading order by dragging them or using the Up and Down buttons. Flip any upside-down strip with its Flip button.'
+            : 'Put the strips in the correct reading order by dragging them or using the Up and Down buttons.';
 
+        const last = this.currentOrder.length - 1;
         const stripsHtml = this.currentOrder.map((strip, i) => {
             const rotatedClass = strip.rotated ? ' sdm-strip-rotated' : '';
+            // C-SD2: an Up/Down move route beside drag (keyboard- and touch-usable), and the flip
+            // control named 'Flip'. These sit outside .sdm-strip-content so they stay upright when
+            // the strip is flipped.
+            const moveBtns =
+                `<button class="sdm-move-btn" data-move="up" data-index="${i}" type="button"${i === 0 ? ' disabled' : ''} aria-label="Move strip up">Up</button>` +
+                `<button class="sdm-move-btn" data-move="down" data-index="${i}" type="button"${i === last ? ' disabled' : ''} aria-label="Move strip down">Down</button>`;
             const flipBtn = this.allowRotation
-                ? `<button class="sdm-flip-btn" data-index="${i}" type="button" title="Flip strip">↕</button>`
+                ? `<button class="sdm-flip-btn" data-index="${i}" type="button" aria-label="Flip strip">Flip</button>`
                 : '';
             return `
                 <div class="sdm-strip${rotatedClass}" draggable="true" data-index="${i}" style="--tilt: ${strip.tilt}deg">
                     <div class="sdm-strip-content">
-                        <span class="sdm-drag-handle" aria-hidden="true">⠿</span>
+                        <span class="sdm-drag-handle" aria-hidden="true">::</span>
                         <span class="sdm-strip-text">${escapeText(strip.text)}</span>
                     </div>
-                    ${flipBtn}
+                    <div class="sdm-strip-controls">${moveBtns}${flipBtn}</div>
                 </div>
             `;
         }).join('');
@@ -226,6 +235,16 @@ export class ShreddedDocumentMinigame extends MinigameScene {
             this.addEventListener(el, 'dragend',   ()  => this._handleDragEnd());
         });
 
+        // C-SD2: the Up/Down move route, usable by keyboard and touch alongside drag.
+        this.gameContainer.querySelectorAll('.sdm-move-btn').forEach(btn => {
+            const index = parseInt(btn.getAttribute('data-index'), 10);
+            const dir = btn.getAttribute('data-move');
+            this.addEventListener(btn, 'click', (e) => {
+                e.stopPropagation();
+                this._move(index, dir);
+            });
+        });
+
         if (this.allowRotation) {
             const flipBtns = this.gameContainer.querySelectorAll('.sdm-flip-btn');
             flipBtns.forEach(btn => {
@@ -236,6 +255,23 @@ export class ShreddedDocumentMinigame extends MinigameScene {
                 });
             });
         }
+    }
+
+    /**
+     * C-SD2: move the strip at `index` one place up or down. The keyboard and touch route for
+     * reordering, equivalent to a drag by one position. Keeps focus on the moved strip's button
+     * so repeated presses walk a strip to its place.
+     */
+    _move(index, dir) {
+        const target = dir === 'up' ? index - 1 : index + 1;
+        if (target < 0 || target >= this.currentOrder.length) return;
+        const item = this.currentOrder.splice(index, 1)[0];
+        this.currentOrder.splice(target, 0, item);
+        this.render();
+        this._checkCompletion();
+        const btn = this.gameContainer.querySelector(
+            `.sdm-strip[data-index="${target}"] .sdm-move-btn[data-move="${dir}"]`);
+        if (btn && !btn.disabled) btn.focus?.();
     }
 
     _handleDragStart(e, index) {
