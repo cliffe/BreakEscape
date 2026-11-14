@@ -483,11 +483,14 @@ module BreakEscape
     # secret field comes from the scenario, not the client, so this is honest evidence, not a forge.
     test '6b: a stale-but-recent request carrying the evidence records and serves a phish credential' do
       build_game(phish_scenario)
-      # Prime the stored clientTs so a lower one is stale; the ring is empty (no last-write-wins
-      # change), so clientTs 5 takes the empty-ring branch and is stale-but-recent, not fully stale.
-      put game_path('sync_state'), params: { clientTs: 10 }, as: :json
+      # Prime a non-empty ring and a stamp so clientTs 25 is stale-but-recent and the completeness
+      # guard holds (25 is at or above the oldest retained entry, 20). An empty ring now falls back to
+      # whole-skip (build review R2, Major 1), so the serve case needs a live ring. Neither primed key
+      # (anchor, anchor2) is claimed by this request, so its own evidence merges.
+      put game_path('sync_state'), params: { clientTs: 20, globalVariables: { 'anchor' => 1 } }, as: :json
+      put game_path('sync_state'), params: { clientTs: 30, globalVariables: { 'anchor2' => 1 } }, as: :json
       put game_path('sync_state'), params: {
-        clientTs: 5,
+        clientTs: 25,
         globalVariables: {
           'se_captures' => { 'phished' => { 'targetId' => 'phished', 'kind' => 'credential', 'at' => 1 } },
           'se_landing_pages' => { 'portal' => { 'built' => true, 'meetsThreshold' => true, 'victim' => { 'submitted' => true } } }

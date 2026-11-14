@@ -31,6 +31,22 @@ module BreakEscape
       assert_operator SR.entry_key_count(out['w']), :<=, CAP
     end
 
+    test 'a section holding an over-long key name collapses to a whole claim (byte bound, Minor 2)' do
+      long = 'x' * (SR::MAX_KEY_BYTES + 1)
+      w = { 'globalVariables' => [long, 'short'], 'npcVisibility' => %w[a b] }
+      out = normalise([entry(1000, w)]).first
+
+      assert_equal true, out['w']['globalVariables'], 'the long key name collapses its section whole'
+      assert_equal %w[a b], out['w']['npcVisibility'], 'a section with only short keys stays per key'
+    end
+
+    test 'a section whose keys are all within the byte cap stays per key' do
+      ok = 'y' * SR::MAX_KEY_BYTES
+      out = normalise([entry(1000, { 'globalVariables' => [ok] })]).first
+
+      assert_equal [ok], out['w']['globalVariables'], 'a key at exactly the cap is kept per key'
+    end
+
     test 'collapse stops once within the cap and leaves a small section per key' do
       w = { 'globalVariables' => (1..30).map { |i| "g#{i}" },
             'npcVisibility' => %w[a b c] }

@@ -54,9 +54,9 @@ module BreakEscape
         'tells' => [], 'landed' => nil, 'time' => '09:00', 'gameTime' => 1, 'read' => read }
     end
 
-    # ---- empty-ring branch ------------------------------------------------
+    # ---- empty ring is a guard failure (build review R2, Major 1) ---------
 
-    test 'a stale-but-recent request against an empty ring merges every key' do
+    test 'a stale-but-recent request against an empty ring falls back to whole-skip' do
       sync(clientTs: 1000, scenarioBriefShown: true) # fresh, moves the stamp, writes no ring entry
       assert_equal [], ps['syncWrites'] || []
       assert_equal 1000, ps['lastSyncClientTs']
@@ -64,8 +64,51 @@ module BreakEscape
       sync(clientTs: 500, globalVariables: { 'a' => 1 })
       assert_response :success
       assert_equal true, JSON.parse(response.body)['stale'], 'the answer is still stale'
-      assert_equal 1, globals['a'], 'the empty-ring branch merges the key'
+      assert_nil globals['a'], 'an empty ring is a guard failure, so the key is whole-skipped'
       assert_equal 1000, ps['lastSyncClientTs'], 'the stamp is not moved'
+    end
+
+    test 'a seeded pre-deploy game (stamp, no ring) does not let a stale-but-recent request overwrite a newer value' do
+      # An existing production game: a stamp shipped before the ring, a last-write-
+      # wins value saved behind it, and no syncWrites key at all. The old empty-ring
+      # merge would overwrite doorOpen with the stale false; the guard failure stands.
+      @game.update!(player_state: @game.player_state.merge(
+        'lastSyncClientTs' => 5000,
+        'globalVariables' => { 'doorOpen' => true }
+      ))
+      refute ps.key?('syncWrites'), 'the seeded game has no ring'
+
+      sync(clientTs: 4000, globalVariables: { 'doorOpen' => false }) # a lingering old tab, within the window
+      assert_response :success
+      assert_equal true, JSON.parse(response.body)['stale'], 'stale-but-recent'
+      assert_equal true, globals['doorOpen'], 'the newer saved value stands; the stale false is whole-skipped'
+      assert_equal 5000, ps['lastSyncClientTs'], 'the stamp is not moved'
+    end
+
+    test 'an empty (expired or cleared) ring array is a guard failure, not a merge' do
+      @game.update!(player_state: @game.player_state.merge(
+        'lastSyncClientTs' => 5000,
+        'globalVariables' => { 'doorOpen' => true },
+        'syncWrites' => []
+      ))
+      sync(clientTs: 4000, globalVariables: { 'doorOpen' => false })
+      assert_response :success
+      assert_equal true, JSON.parse(response.body)['stale']
+      assert_equal true, globals['doorOpen'], 'an empty ring array whole-skips, so the newer value stands'
+    end
+
+    test 'after a reset the empty ring makes a stale-but-recent request fall back, not overwrite' do
+      sync(clientTs: 1_000_000, globalVariables: { 'g' => 1 })
+      assert ps['syncWrites'].any?, 'the ring holds a pre-reset entry'
+
+      sync(clientTs: 100, scenarioBriefShown: true) # clock set back > 10 min: reset, grow-only, no new ring entry
+      assert_equal [], ps['syncWrites'], 'the reset cleared the ring and the grow-only request recorded none'
+      assert_equal 100, ps['lastSyncClientTs'], 'the reset lowered the stamp'
+
+      sync(clientTs: 50, globalVariables: { 'g' => 2 })
+      assert_response :success
+      assert_equal true, JSON.parse(response.body)['stale'], 'stale-but-recent against the post-reset empty ring'
+      assert_equal 1, globals['g'], 'the empty ring whole-skips, so the newer value stands'
     end
 
     # ---- the completeness guard ------------------------------------------

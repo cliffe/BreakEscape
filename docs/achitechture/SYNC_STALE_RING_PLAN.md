@@ -218,17 +218,21 @@ whole-update cap rejection). A request whose merges changed nothing appends
 nothing, so a no-op resend neither grows the ring nor forces a save (the
 `@game.changed?` guard at games_controller.rb:880 still holds). Then normalise:
 
-1. If one entry's recorded keys exceed `SYNC_RING_KEYS_PER_ENTRY`, collapse its
-   largest sections to `true` until it is within the cap. A first-after-load
-   full snapshot therefore records as a handful of `true` section claims, not
-   hundreds of keys.
+1. If a per-key section holds a claim key name longer than
+   `SyncRing::MAX_KEY_BYTES` (128 bytes), collapse that section to `true`, so an
+   uncapped `globalVariables` key name cannot grow the ring's bytes (build review
+   R2, Minor 2). Then, if one entry's recorded keys exceed
+   `SYNC_RING_KEYS_PER_ENTRY`, collapse its largest sections to `true` until it is
+   within the cap. A first-after-load full snapshot therefore records as a handful
+   of `true` section claims, not hundreds of keys.
 2. Drop every entry whose `ts` is more than `SYNC_RING_WINDOW_MS` below the
    largest `ts` present.
 3. Keep the newest `SYNC_RING_MAX` entries by `ts`.
 
-Size ceiling: at most 8 entries, each at most 32 short strings plus a few
-section names and a ts, so the ring is bounded above by roughly 8 KB of jsonb
-regardless of session length or how many syncs run. It never accumulates: step
+Size ceiling: at most 8 entries, each at most 32 claim keys of at most 128 bytes
+(the byte bound in step 1) plus a few section names and a ts, so the ring is
+bounded above in both key count and bytes, roughly 33 KB of jsonb in the worst
+case and far less in practice, regardless of session length or how many syncs run. It never accumulates: step
 2 and step 3 run on every append, and nothing else writes it. A test asserts the
 serialised ring stays under a fixed byte cap after a long run of syncs.
 
@@ -297,8 +301,11 @@ reset.
 
 So when the reset branch fires, clear `syncWrites` (set it empty, the same write
 that stores the lower `lastSyncClientTs`). The ring then rebuilds from the
-post-reset writes on the new, lower timeline, and the next reduced body that
-chases a post-reset flush recovers through the empty-ring branch above. Clearing
+post-reset writes on the new, lower timeline. While the ring is still empty a
+stale-but-recent reduced body falls back to whole-skip (the empty-ring guard
+failure above, build review R2 Major 1); key-by-key recovery resumes once the
+post-reset last-write-wins writes have recorded ring entries to skip against.
+Clearing
 the whole ring is chosen over dropping only entries with `ts > client_ts` because
 the reset establishes a fresh stamp timeline and the pre-reset entries can never
 again match a legitimate stale-but-recent request's `ts >=` test. A test drives a
@@ -318,18 +325,23 @@ by expiry step 2 and step 3 having kept them, so the skip set is complete.
 Otherwise some newer write may have been evicted, and the request falls back to
 fully stale and skips all last-write-wins sections.
 
-Empty ring. When the ring holds no entries there is no oldest entry, so the
-guard expression has no value to compare against and the implementer must pick a
-branch. The chosen behaviour is to treat the skip set as empty and merge every
-key, not to fall back. This is safe and is the better of the two safe choices.
-An empty ring can only occur before the first last-write-wins write is recorded
-(append normalisation never drops the just-appended entry, and eviction always
-leaves at least one entry once anything is recorded), so there is no unrecorded
-newer write to protect, and merging against an empty skip set cannot put an
-older value over a newer one. Falling back would also be safe but would forgo
-gap 1 recovery for a reduced body that chases the very first flush, so the merge
-branch is specified explicitly to stop an implementer picking the fall-back by
-reflex and quietly losing that first-flush recovery.
+Empty ring. When the ring holds no entries there is no oldest entry to compare
+against, so the guard must pick a branch. An earlier draft treated an empty ring
+as "nothing newer recorded" and merged every key. That is wrong for a game that
+already exists. The guard runs only when `lastSyncClientTs` is set, and a stamp
+can sit ahead of an absent or empty ring in three ways: an existing game on its
+first sync after this ships (the stamp shipped before `syncWrites` existed), a
+ring that has fully expired, or a ring the ten-minute reset cleared. In each of
+those a newer last-write-wins write may sit behind the stamp with no ring entry
+to skip it, so merging key by key could put an older value over that newer one
+and reintroduce the save-loss the ring exists to prevent (build review R2, Major
+1). So an absent or empty ring is a guard failure: the request falls back to
+today's whole-skip, which writes no last-write-wins key, so no older value lands.
+The one recovery this forgoes is gap 1 for the very first reduced body before any
+last-write-wins ring entry exists; it self-heals on the first recorded
+last-write-wins write, the same first-flush residue gap 1 already carries. The
+merge-every-key branch is dropped rather than kept for a "brand-new game, no
+stamp": the guard never runs without a stamp, so that case is unreachable here.
 
 The guard never weakens gaps 2 and 3. Both of those gaps are about not letting H
 overwrite a key D already wrote with a newer value. On the fall-back path H is
@@ -680,9 +692,12 @@ model test if the ring helpers live in Game):
   the dotted params key, gives the wrong answer (m1 lost, or older m2 applied
   over the newer one); only the canonical dotted-key filter passes. A phoneState
   claim by npc id skips only that contact's entry.
-- empty-ring branch: the first reduced body that chases the very first flush,
-  with no ring entries yet, merges all its keys (empty skip set) rather than
-  falling back.
+- empty-ring guard failure (build review R2 Major 1): a stale-but-recent request
+  against an absent or empty ring, on a game whose `lastSyncClientTs` is set,
+  falls back to whole-skip rather than merging, so a seeded pre-ring game, an
+  expired ring and a reset-cleared ring never let a stale value overwrite a newer
+  one. The first-flush gap 1 recovery is forgone until a last-write-wins ring
+  entry exists.
 - skip-set build: union of writes of entries with ts at or above a given ts
   (equal ts included), with `true` dominating.
 - completeness guard: a burst of more than eight last-write-wins writes lands;
@@ -753,7 +768,8 @@ suite. The integrator runs the full suites once per batch.
    `reload_persistence_test` carries and already touches the save path, so its
    tests land here, not later. Commit.
 2. Stale-but-recent band in `stale_sync_request?` (including the empty-ring
-   branch and clearing `syncWrites` when the ten-minute reset fires), the
+   guard failure, build review R2 Major 1, and clearing `syncWrites` when the
+   ten-minute reset fires), the
    completeness guard, and the key-by-key pre-filter in `sync_state`, for the
    keyed sections, the compound-key sections (mailState and phoneState, with the
    canonical dotted-key mapping), the whole-section claims (playerHealth,

@@ -2250,13 +2250,23 @@ module BreakEscape
     # The completeness guard (section 5): the key-by-key merge is correct only if
     # the ring holds every accepted write with ts >= the request's ts. The ring
     # keeps the newest entries within a 60 s window, so the guard holds when the
-    # request's ts is at or above the oldest retained entry's ts. An empty ring
-    # means nothing newer has been recorded yet, so the skip set is empty and the
-    # merge runs against it (the explicit empty-ring branch, not a fall-back): it
-    # recovers a reduced body that chases the very first flush.
+    # request's ts is at or above the oldest retained entry's ts.
+    #
+    # An absent or empty ring is a guard failure (fall back to today's whole-skip),
+    # not a merge. This method runs only from stale_sync_request?'s stale-but-recent
+    # branch, which is reached only when lastSyncClientTs is already set, so an empty
+    # ring here never means a brand-new game: it means a game whose stamp predates
+    # the ring (an existing game on its first sync after this deploys), a ring that
+    # has fully expired, or a ring the ten-minute reset cleared. In each of those a
+    # newer last-write-wins write may sit behind the stamp with no ring entry to skip
+    # it, so merging key by key could put an older value over that newer one (build
+    # review R2, Major 1). Falling back whole-skips every last-write-wins section, so
+    # no older value lands. The only recovery this forgoes is gap 1 for the very
+    # first reduced body before any last-write-wins ring entry exists; it self-heals
+    # on the first recorded last-write-wins write.
     def stale_recent_guard_holds?(ts)
       ring = @game.player_state['syncWrites']
-      return true unless ring.is_a?(Array) && ring.any?
+      return false unless ring.is_a?(Array) && ring.any?
 
       ts >= ring.map { |entry| entry['ts'] }.min
     end
@@ -2267,10 +2277,34 @@ module BreakEscape
     def ring_before_snapshot
       ps = @game.player_state
       snap = {}
-      (RING_KEYED_SECTIONS + RING_WHOLE_SECTIONS + %w[mailState notes]).each do |section|
+      (RING_KEYED_SECTIONS + RING_WHOLE_SECTIONS + %w[notes]).each do |section|
         snap[section] = ps[section].deep_dup
       end
+      # mailState is capped at 1 MB, so a whole-section deep_dup here is the most
+      # expensive part of the snapshot (about 5.7 ms at the cap on Ruby 2.7.8). The
+      # mail diff (changed_mail_keys) only reads the request's own incoming claim
+      # keys, so snapshot just those before-values rather than the whole mailbox
+      # (build review R2, Minor 1). Deletion and changed-key detection stay exact:
+      # changed_mail_keys already inspects only incoming keys, so no mail change
+      # outside the incoming set was ever recorded.
+      snap['mailState'] = mail_before_snapshot(ps['mailState'])
       snap['currentRoom'] = ps['currentRoom']
+      snap
+    end
+
+    # The before-values for just this request's incoming mailState claim keys, deep
+    # copied so the merge cannot mutate them, keyed by the dotted claim key.
+    # changed_mail_keys reads it by key rather than by navigating a mailState, so it
+    # holds only the few values this request touches, never the whole 1 MB section.
+    def mail_before_snapshot(mail)
+      incoming = params[:mailState]
+      snap = {}
+      return snap unless incoming.respond_to?(:keys)
+
+      incoming.keys.each do |k|
+        ks = k.to_s
+        snap[ks] = mail_value_at(mail, ks).deep_dup
+      end
       snap
     end
 
@@ -2337,17 +2371,19 @@ module BreakEscape
       idx
     end
 
-    # The mailState claim keys this request changed. The claim key is the dotted
-    # string the client sent as a top-level params key (mailboxes.<box>.<msgId>,
-    # threads.<key>, jobs/drafts/metrics), which is also the string the pre-filter
-    # compares, so the map is identity on the dotted form. A key is recorded only
-    # when its stored value actually changed, so a notSaved (refused) or no-op
-    # mailState records nothing.
+    # The mailState claim keys this request changed. `before` is the dotted before-
+    # value map from mail_before_snapshot (keyed by the dotted claim key); `after` is
+    # the live mailState. The claim key is the dotted string the client sent as a
+    # top-level params key (mailboxes.<box>.<msgId>, threads.<key>, jobs/drafts/
+    # metrics), which is also the string the pre-filter compares, so the map is
+    # identity on the dotted form. A key is recorded only when its stored value
+    # actually changed, so a notSaved (refused) or no-op mailState records nothing.
     def changed_mail_keys(before, after)
       incoming = params[:mailState]
       return [] unless incoming.respond_to?(:keys)
 
-      incoming.keys.map(&:to_s).select { |k| mail_value_at(before, k) != mail_value_at(after, k) }
+      before = before.is_a?(Hash) ? before : {}
+      incoming.keys.map(&:to_s).select { |k| before[k] != mail_value_at(after, k) }
     end
 
     # The stored value a dotted mailState claim key points at, so before and
