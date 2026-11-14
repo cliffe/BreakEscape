@@ -28,10 +28,9 @@
     border: 2px solid #2a3a5a;
     width: 100%;
     max-width: 324px;
-    /* Text is never scaled: the labels are 8px pixel text drawn in the SVG. On a phone the
-       panel takes the screen's width instead of keeping 460px, and the SVG (1:1,
-       preserveAspectRatio slice) loses only its empty right-hand end, so nothing scrolls
-       sideways (UI shell reviews M5, R2 M2) */
+    /* Text is never scaled: the labels are 8px pixel text drawn in the SVG, which is always its
+       320px viewBox width, and the panel is that plus its borders, or the screen's width on a
+       narrower phone (UI shell reviews M5, R2 M2; UI backlog item 1) */
     flex: 0 0 auto;
     box-sizing: border-box;
     display: flex;
