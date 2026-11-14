@@ -1433,6 +1433,9 @@ export function handleObjectInteraction(sprite) {
                 onLaunch:          sprite.scenarioData.onLaunch || null,
                 abortConfirmText:  sprite.scenarioData.abortConfirmText  || null,
                 launchConfirmText: sprite.scenarioData.launchConfirmText || null,
+                operationName:     sprite.scenarioData.operationName || null,
+                abortedText:       sprite.scenarioData.abortedText  || null,
+                launchedText:      sprite.scenarioData.launchedText || null,
                 flagsAllSubmitted: sprite.scenarioData.flagsAllSubmitted === true,
                 flagRewards:       Array.isArray(sprite.scenarioData.flagRewards) ? sprite.scenarioData.flagRewards : [],
                 // This station's own submitted flags, from the server (never the game-wide list)
