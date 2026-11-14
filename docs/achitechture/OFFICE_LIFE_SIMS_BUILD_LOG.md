@@ -162,6 +162,15 @@ Raised with file:line for the owner. No edit applied; the probe measures each.
 | E-reload-ko-pos | `app/models/break_escape/game.rb:1176-1177` and `:974` (save), `:2145-2151` (restore) | A KO saves only `isKO`/`currentHP`, keyed to the NPC's scenario room, with no position; on reload the body is restored at its authored spawn while its drop stays where it fell (an `objects_added` record at `:2108`). A cross-room KO leaves body and item in different rooms. | Persist the KO position and the room the NPC fell in. |
 | KO need bubble | `public/break_escape/js/systems/npc-action-icons.js` `thoughtBubble` `:218-222`, drawn from `update` `:563` | A knocked-out NPC still shows its pressing-need thought bubble: `thoughtBubble` checks `avoiding`/pressing/parked but not `isKO` or `blocked`, so a felled needs NPC keeps a need bubble over its body (`s1-fix-r1/c-c-down-4208.png`). | Guard `thoughtBubble` on `isKO`/`blocked`. |
 
+### SIMS-3 owner items (engine/server faults, not fixed here)
+
+Raised with file:line for the owner. No edit applied; the docs and proof are reconciled to the real behaviour (R1 server review).
+
+| Item | File:line | What | Owner fix |
+|---|---|---|---|
+| Print-reveal global not synced | `public/break_escape/js/systems/npc-needs.js:5312` (`revealOutput` → `setGlobal` at `:5090`) | The print-reveal path mutates `gameState.globalVariables[name]` directly without calling `_worldChanged()`, so an `it_out_*_shown` slot global is set in the client runtime but never synced; the eventMapping `setGlobal` path (`:3450`) does call `_worldChanged()` and syncs. Harmless and conservative here (the tray files empty on reload by design), but the plan's 6.5/5.3 sync lines and the README are reconciled to say a print-revealed slot is client-transient. | If a printed page must survive a reload, call `_worldChanged()` from `revealOutput`'s `setGlobal`, or set the reveal global through an eventMapping `setGlobal`. |
+| Pickup not reveal-gated on the server | `app/controllers/break_escape/games_controller.rb:3245` (`find_accessible_item`), `:2981` (`validate_item_collectible`) | Neither method consults `revealOnGlobal`, so a crafted `POST /inventory` for a takeable IT slot in the unlocked room is accepted before any reveal. Within cheat policy here (the pages carry no account, address, password or code; the slots tick only the optional `see_neils_page`). Recorded in the README. | Never place a gated or secret-bearing page on a `revealOnGlobal` slot expecting the server to withhold it; gate server-side if a future mission needs it. |
+
 ## Prototypes not merged
 
 E7, E8 and E9 (missions plan section 9) are approval items. Any prototype lives on its own branch
