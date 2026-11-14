@@ -1,11 +1,11 @@
 // Office life slice 17 (OFFICE_LIFE_PLAN 12.3): print and forget, and the print-job lever.
 // Only a need use prints (never a delivery); a hook's `chance` is rolled at job start and the
-// printing icon follows the roll and the slot check; a print by an NPC with a printHabit (or from a
+// printing icon follows the roll and the slot check; a print by an NPC with a habits.print (or from a
 // `print` command) is owned: reserved from other NPCs' interests, fetched after a seeded due time or
 // forgotten; the fetch errand runs from idle (the wider _select guard: Tom has no interests),
 // completes on arrival without `using`, and its leg back is the return (guarded caught check); a full
 // pool recycles the oldest forgotten slot (read-in-place first); uncollected, gone and fetched events;
-// the validator's printHabit checks. Most run with the tick cache on and off.
+// the validator's habits.print checks. Most run with the tick cache on and off.
 // Run with: bin/test-js test/js/npc-print-forget.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -31,7 +31,7 @@ function printWorld({ tickCache = true, habit = null, chance, sanjayPrints = fal
     const tom = w.cfgNpcs.tom.rec;
     tom.needs = { caffeine: { decayPerMin: 0.1, urgentAt: 40, initial: 99 }, hunger: { decayPerMin: 0.1, urgentAt: 40, initial: 99 }, work: { decayPerMin: 0.1, urgentAt: 50, initial: 99 } };
     tom.onUse = { ...tom.onUse, tom_pc: { revealOutput: 'office_copier', ...(chance !== undefined ? { chance } : {}) } };
-    if (habit) tom.printHabit = habit;
+    if (habit) tom.habits = { ...(tom.habits || {}), print: habit };
     if (!sanjayPrints) w.cfgNpcs.sanjay.rec.onUse = {};
     if (!amaraInterest) delete w.cfgNpcs.amara.rec.interests.printout;
     w.player = { distance: null, inMinigame: false };
@@ -77,7 +77,7 @@ test('chance: about the authored share of 200 need uses print, the same for a se
     const a = run();
     assert.ok(a.printed >= 60 && a.printed <= 100, `share near 0.4 of 200 (${a.printed})`);
     assert.equal(a.jobs.filter(j => j.printTo).length, a.printed, 'every rolled print printed, and nothing else did');
-    // No printHabit: nothing is reserved, Amara files Tom's prints, so a slot is always free or the
+    // No habits.print: nothing is reserved, Amara files Tom's prints, so a slot is always free or the
     // icon is honest about a full pool. A job that will not print never shows the icon.
     assert.ok(a.jobs.every(j => j.printTo || !j.icon), 'no icon for a job whose roll said no');
     assert.ok(a.jobs.some(j => j.printTo && j.icon));
@@ -156,7 +156,7 @@ test('Amara takes an unowned print and skips a reserved one; shareAfterSeconds r
         assert.ok(used, `Amara delivered Sanjay's print (cache ${tickCache})`);
         assert.notEqual(used.item, 'copier_out_a');
         assert.ok(!p.log().some(e => e.npc === 'amara' && e.ev === 'job_start' && e.item === 'copier_out_a'));
-        // Sanjay has no printHabit: his prints are never reserved
+        // Sanjay has no habits.print: his prints are never reserved
         assert.ok(!p.evs('print_reserved', 'sanjay').length);
 
         const q = printWorld({ tickCache, habit: { forgetChance: 1, shareAfterSeconds: 30 } });
@@ -186,7 +186,7 @@ test('taken before the due time: npc_print_gone at the due time and no walk', ()
     }
 });
 
-test('a print by an NPC with no printHabit stays unowned; a hook print by one with a habit is owned and fetched', () => {
+test('a print by an NPC with no habits.print stays unowned; a hook print by one with a habit is owned and fetched', () => {
     const p = printWorld({ habit: { fetchAfterSeconds: [1, 2] } });
     p.sys.control('tom', { set: { work: 0 } });
     p.until(() => p.evs('print_fetched', 'tom').length, 4000);
@@ -356,17 +356,17 @@ function validate(npcPatch, { copier = {}, mappings = [] } = {}) {
     return r.stdout;
 }
 
-test('validator: printHabit, chance, uncollectedAfterSeconds and the print command', () => {
-    const ok = validate({ onUse: { tom_pc: { revealOutput: 'office_copier', chance: 0.4 } }, printHabit: { fetchAfterSeconds: [30, 120], forgetChance: 0.5 } },
+test('validator: habits.print, chance, uncollectedAfterSeconds and the print command', () => {
+    const ok = validate({ onUse: { tom_pc: { revealOutput: 'office_copier', chance: 0.4 } }, habits: { print: { fetchAfterSeconds: [30, 120], forgetChance: 0.5 } } },
         { copier: { affordance: { uncollectedAfterSeconds: 150 } } });
     assert.ok(!/ERROR|WARNING/.test(ok.split('\n').filter(l => /print|chance|uncollected/i.test(l)).join('\n')), ok);
     assert.match(ok, /Printing NPCs for 'office_copier': 1 \(tom\)/);
     assert.match(validate({ onUse: { tom_pc: { revealOutput: 'office_copier', chance: 1.5 } } }), /ERROR.*chance/);
-    assert.match(validate({ printHabit: { fetchAfterSeconds: [60, 30] } }), /ERROR.*fetchAfterSeconds/);
-    assert.match(validate({ printHabit: { forgetChance: 2 } }), /ERROR.*forgetChance/);
-    assert.match(validate({ printHabit: { forgetChance: 0.5 } }), /WARNING.*printHabit.*no revealOutput hook/);
-    assert.doesNotMatch(validate({ printHabit: { forgetChance: 0.5 } }, { mappings: [{ eventPattern: 'x', needs: { print: 'office_copier' } }] }), /WARNING.*printHabit/);
-    assert.match(validate({ needsHome: undefined, printHabit: {}, onUse: { tom_pc: { revealOutput: 'office_copier' } } }), /ERROR.*printHabit.*needsHome/);
+    assert.match(validate({ habits: { print: { fetchAfterSeconds: [60, 30] } } }), /ERROR.*fetchAfterSeconds/);
+    assert.match(validate({ habits: { print: { forgetChance: 2 } } }), /ERROR.*forgetChance/);
+    assert.match(validate({ habits: { print: { forgetChance: 0.5 } } }), /WARNING.*habits\.print.*no revealOutput hook/);
+    assert.doesNotMatch(validate({ habits: { print: { forgetChance: 0.5 } } }, { mappings: [{ eventPattern: 'x', needs: { print: 'office_copier' } }] }), /WARNING.*habits\.print/);
+    assert.match(validate({ needsHome: undefined, habits: { print: {} }, onUse: { tom_pc: { revealOutput: 'office_copier' } } }), /ERROR.*habits\.print.*needsHome/);
     assert.match(validate({}, { mappings: [{ eventPattern: 'x', needs: { print: { producer: 'nope' } } }] }), /ERROR.*print.*nope/);
     assert.match(validate({}, { mappings: [{ eventPattern: 'x', needs: { print: { producer: 'office_copier', fetchAfterSeconds: [5] } } }] }), /ERROR.*fetchAfterSeconds/);
     assert.match(validate({}, { copier: { affordance: { uncollectedAfterSeconds: -1 } } }), /ERROR.*uncollectedAfterSeconds/);

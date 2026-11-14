@@ -56,7 +56,62 @@ module BreakEscape
       ]
     }.freeze
 
-    STEPS = [STEP_8A]
+    # Step 8b (format 2), one owner field: `owner` on objects and items, with `private` and
+    # `deskPhone` as object marks. Five old ways of naming an owner become one:
+    #   - object `screenOwner` (a workstation) becomes `owner`;
+    #   - object `phoneOwner` (a desk phone) becomes `owner`, and the object is marked
+    #     `deskPhone: true` (today the presence of `phoneOwner` was the only marker);
+    #   - object `affordance.owners` (a private object) moves up as object `owner` (a list);
+    #   - object `affordance.private` moves up as object `private`; an affordance emptied by the
+    #     two moves stays `{}` (step 8, "An emptied affordance");
+    #   - item `phoneOf` (a Friendface phone) becomes `owner`;
+    #   - item `leftBehindBy` (a left-behind item) becomes `owner`, and `leftBehindChance: 0` is
+    #     written where absent (today's default), so the chance is the left-behind marker.
+    # Where no owner was written, the old readers derived one from `needsHome`: a workstation's
+    # owner (`AccessIdentities.owner_id`, `ownerOf`) and a private object's owners (`owners_of`)
+    # fell back to the first room NPC whose `needsHome` named the object. That fallback is removed,
+    # so the transform writes the derived owner explicitly: a String on a workstation (single
+    # owner), a one-element list on a private object. Both transforms walk only live data through
+    # the resolver (free: :skip); a note that names an old key is left as written.
+    STEP_8B = {
+      version: 2,
+      name: 'one_owner_field',
+      scenario: ->(data) { BreakEscape::FormatUpgrade.one_owner_field!(data) },
+      player_state: ->(state) { BreakEscape::FormatUpgrade.one_owner_field_in_player_state!(state) },
+      retired: [
+        { path: nil, key: 'screenOwner', now: 'owner' },
+        { path: nil, key: 'phoneOwner', now: 'owner' },
+        { path: nil, key: 'phoneOf', now: 'owner' },
+        { path: nil, key: 'leftBehindBy', now: 'owner' },
+        { path: '(\A|/)affordance\z', key: 'owners', now: 'owner (moved up to the object)' },
+        { path: '(\A|/)affordance\z', key: 'private', now: 'private (moved up to the object)' }
+      ]
+    }.freeze
+
+    # Step 8c (format 3), habits in one block: the three top-level office-life habit keys fold into
+    # the NPC's closed `habits` block (today the home of the awareness habits), so one block holds a
+    # person's habits:
+    #   - `screenHabit` becomes `habits.screen` (lockChance, lockIfAwayOverSeconds);
+    #   - `printHabit` becomes `habits.print`;
+    #   - `usbHabit` becomes `habits.usb`.
+    # Each keeps its own keys. The scenario transform walks every live Hash (free: :skip) and moves
+    # the three keys into `habits`, creating `habits` where absent; a key already folded wins, so a
+    # second run or format-3 data is a no-op. NPC records are not stored in player_state (no sync
+    # path stores an NPC hash), so the `player_state` transform is a no-op that returns the state
+    # unchanged. Both walks skip notes and free data, so an old key in a note is left as written.
+    STEP_8C = {
+      version: 3,
+      name: 'habits_in_one_block',
+      scenario: ->(data) { BreakEscape::FormatUpgrade.habits_in_one_block!(data) },
+      player_state: ->(state) { state },
+      retired: [
+        { path: nil, key: 'screenHabit', now: 'habits.screen' },
+        { path: nil, key: 'printHabit', now: 'habits.print' },
+        { path: nil, key: 'usbHabit', now: 'habits.usb' }
+      ]
+    }.freeze
+
+    STEPS = [STEP_8A, STEP_8B, STEP_8C]
 
     # Old keys a deployed scenario still uses, each with the step that retired it. Empty
     # (section 1 of the plan: none of the four deployed scenarios uses any retired key). The place
@@ -250,6 +305,199 @@ module BreakEscape
       if aff.is_a?(Hash) && aff.key?('offWhen')
         moved = aff.delete('offWhen')
         value['offWhen'] = moved unless value.key?('offWhen')
+      end
+    end
+
+    # Step 8b. The scenario transform: rename every owner field on every live Hash, then write an
+    # explicit `owner` wherever the old `needsHome` rule derived one (a workstation or a private
+    # object with no owner of its own but a room NPC whose `needsHome` names it). Phase A renames do
+    # not touch `needsHome`, so phase B reads the same homes the old readers did. Idempotent: on
+    # data already carrying the new names it renames nothing, and a derived owner is written only
+    # where none is present.
+    def one_owner_field!(data)
+      BreakEscape::AuthorNotes.each_live(data, BreakEscape::ScenarioSchema.root, free: :skip) do |value, _n, _keys|
+        rename_one_hash_owner_fields!(value) if value.is_a?(Hash)
+      end
+
+      home = needs_home_npc_map(data)
+      each_room_object(data) do |obj|
+        id = obj['id']
+        next unless id.is_a?(String) && !id.empty?
+        next if owner_present?(obj)
+
+        npc = home[id]
+        next unless npc
+
+        if owner_workstation?(obj)
+          obj['owner'] = npc
+        elsif obj['private'] == true
+          obj['owner'] = [npc]
+        end
+      end
+      data
+    end
+
+    # The player_state transform: every item copy the server stored (inventory, objects added to a
+    # room, and the dropped / copied / cloned lists) has its owner fields renamed in place. Item
+    # copies carry no room structure, so no owner is derived; only the renames apply, and
+    # `write_markers: false` so a stored copy is renamed in place and gains at most the one `owner`
+    # key (no `deskPhone: true` or `leftBehindChance: 0` second key). The scenario path keeps the
+    # markers; the player_state path never needs them (a copy's left-behind or desk-phone behaviour
+    # is already settled on its scenario source).
+    def one_owner_field_in_player_state!(state)
+      return state unless state.is_a?(Hash)
+
+      item_node = BreakEscape::ScenarioSchema.at('#/definitions/item')
+      player_state_item_lists(state).each do |list|
+        next unless list.is_a?(Array)
+
+        list.each do |item|
+          BreakEscape::AuthorNotes.each_live(item, item_node, free: :skip) do |value, _n, _keys|
+            rename_one_hash_owner_fields!(value, write_markers: false) if value.is_a?(Hash)
+          end
+        end
+      end
+      state
+    end
+
+    # Rename the owner fields of one Hash in place (shared by the scenario and player_state walks).
+    # Each move is guarded by `unless value.key?('owner')` so a second run, format-2 data, or the
+    # unexpected two-field conflict is a no-op on the destination (the first field read wins), and
+    # an affordance emptied by the two moves keeps `{}`. The scenario walk passes `write_markers:
+    # true` (the default) so `phoneOwner` marks `deskPhone: true` and a left-behind item gets the
+    # default `leftBehindChance: 0`; the player_state walk passes `false` so a renamed stored copy
+    # gains at most the one `owner` key and no marker.
+    def rename_one_hash_owner_fields!(value, write_markers: true)
+      if value.key?('screenOwner')
+        so = value.delete('screenOwner')
+        value['owner'] = so unless value.key?('owner')
+      end
+      if value.key?('phoneOwner')
+        po = value.delete('phoneOwner')
+        value['owner'] = po unless value.key?('owner')
+        value['deskPhone'] = true if write_markers && !value.key?('deskPhone')
+      end
+      if value.key?('phoneOf')
+        pf = value.delete('phoneOf')
+        value['owner'] = pf unless value.key?('owner')
+      end
+      if value.key?('leftBehindBy')
+        lb = value.delete('leftBehindBy')
+        value['owner'] = lb unless value.key?('owner')
+        value['leftBehindChance'] = 0 if write_markers && !value.key?('leftBehindChance')
+      end
+
+      aff = value['affordance']
+      return unless aff.is_a?(Hash)
+
+      if aff.key?('owners')
+        ow = aff.delete('owners')
+        value['owner'] = ow unless value.key?('owner')
+      end
+      return unless aff.key?('private')
+
+      pv = aff.delete('private')
+      value['private'] = pv unless value.key?('private')
+    end
+
+    # An object already names an owner when `owner` is a non-empty String or a non-empty Array, the
+    # same non-empty test the old `owner_id` reader applied to `screenOwner`.
+    def owner_present?(obj)
+      o = obj['owner']
+      (o.is_a?(String) && !o.empty?) || (o.is_a?(Array) && !o.empty?)
+    end
+
+    # The workstation-state.js isWorkstation rule (AccessIdentities.workstation?), inlined so the
+    # transform stays fixed as later steps edit the readers.
+    def owner_workstation?(obj)
+      return false unless obj.is_a?(Hash) && obj['id'].is_a?(String) && !obj['id'].empty?
+
+      obj['lockType'] == 'login' || obj['workstation'] == true ||
+        obj.key?('locksScreenOnLeave') || obj.key?('lockChance')
+    end
+
+    # { needsHome object id => first room NPC id (scenario order) }, the first-match rule the old
+    # owner readers used. The re-anchor confirms no corpus object is two NPCs' needsHome, so the
+    # first match is unambiguous.
+    def needs_home_npc_map(data)
+      map = {}
+      rooms = data.is_a?(Hash) ? data['rooms'] : nil
+      return map unless rooms.is_a?(Hash)
+
+      rooms.each_value do |room|
+        next unless room.is_a?(Hash) && room['npcs'].is_a?(Array)
+
+        room['npcs'].each do |npc|
+          next unless npc.is_a?(Hash)
+
+          h = npc['needsHome']
+          next unless h.is_a?(String) && !h.empty?
+          next unless npc['id'].is_a?(String) && !npc['id'].empty?
+
+          map[h] ||= npc['id']
+        end
+      end
+      map
+    end
+
+    # Every object under rooms.<id>.objects (recursing into contents) and every item an NPC holds
+    # (rooms.<id>.npcs[].itemsHeld, recursing likewise): the domain AccessIdentities.room_objects
+    # covers, inlined for the same permanence reason.
+    def each_room_object(data)
+      rooms = data.is_a?(Hash) ? data['rooms'] : nil
+      return unless rooms.is_a?(Hash)
+
+      walk = lambda do |list|
+        next unless list.is_a?(Array)
+
+        list.each do |obj|
+          next unless obj.is_a?(Hash)
+
+          yield obj
+          walk.call(obj['contents'])
+        end
+      end
+      rooms.each_value do |room|
+        next unless room.is_a?(Hash)
+
+        walk.call(room['objects'])
+        next unless room['npcs'].is_a?(Array)
+
+        room['npcs'].each { |npc| walk.call(npc['itemsHeld']) if npc.is_a?(Hash) }
+      end
+    end
+
+    # The three top-level office-life habit keys, each paired with its folded key inside `habits`.
+    HABIT_FOLD = { 'screenHabit' => 'screen', 'printHabit' => 'print', 'usbHabit' => 'usb' }.freeze
+
+    # Step 8c. The scenario transform: walk every live Hash (free: :skip) and fold the three
+    # top-level habit keys into the NPC's `habits` block. Notes and free data are skipped, so an old
+    # key in a note is left as written. Idempotent: on data already folded (no top-level habit key)
+    # it does nothing, and a key already present under `habits` wins.
+    def habits_in_one_block!(data)
+      BreakEscape::AuthorNotes.each_live(data, BreakEscape::ScenarioSchema.root, free: :skip) do |value, _n, _keys|
+        fold_one_hash_habit_fields!(value) if value.is_a?(Hash)
+      end
+      data
+    end
+
+    # Move the top-level `screenHabit`/`printHabit`/`usbHabit` of one Hash into its `habits` block
+    # as `screen`/`print`/`usb`. `habits` is created only when at least one key is present, so a Hash
+    # with none is untouched. Each move is guarded by `unless habits.key?(new)` so a second run or an
+    # already-folded value is a no-op (the folded value wins); the top-level key is always removed.
+    def fold_one_hash_habit_fields!(value)
+      return unless HABIT_FOLD.keys.any? { |k| value.key?(k) }
+
+      habits = value['habits']
+      unless habits.is_a?(Hash)
+        habits = {}
+        value['habits'] = habits
+      end
+      HABIT_FOLD.each do |old_key, new_key|
+        next unless value.key?(old_key)
+
+        moved = value.delete(old_key)
+        habits[new_key] = moved unless habits.key?(new_key)
       end
     end
 
