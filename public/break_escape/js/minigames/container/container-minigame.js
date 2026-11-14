@@ -8,7 +8,7 @@ import { resolveObjectField } from '../../utils/conditional-text.js';
 import { escapeHtml } from '../../utils/escape-html.js';
 import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { mentionsComputer } from '../../utils/computer-keywords.js';
-import { mountPcMonitor, cssZoomOf, postitNotebookEntry, pcPostitButtonHtml } from '../../utils/pc-monitor.js';
+import { mountPcMonitor, bindPcWindowCloses, cssZoomOf, postitNotebookEntry, pcPostitButtonHtml } from '../../utils/pc-monitor.js';
 import { MORE_BELOW_TEXT } from '../../utils/more-below.js';
 import { mountPcTaskbar, pcTaskbarModel, lockSupported, lockPcSession, rememberDesktop, rememberedDesktop, findPcData } from '../../utils/pc-taskbar.js';
 
@@ -111,6 +111,9 @@ export function networkScreenKind(item) {
     const pcId = item.sourcePcId;
     return pcId && typeof window !== 'undefined' && window.pcSessions?.get?.(pcId)?.remote === true ? 'desktop' : null;
 }
+// The text-file reader's bezel X (UI PC 2, E08) lands a network trip with this, without
+// importing this module
+if (typeof window !== 'undefined') window.networkScreenKind = networkScreenKind;
 
 // The keyboard refusal at a switched-off PC (user decision q72), if the server sends no text
 export const PC_OFF_TEXT = 'This PC is off.';
@@ -702,6 +705,12 @@ export class ContainerMinigame extends MinigameScene {
         this.reportNetworkExit();
     }
 
+    /** The bezel X on a share window: the player's own close of the whole PC (UI PC 2, E08). */
+    closePc() {
+        this.closeWholePc = true;
+        this.closeByPlayer();
+    }
+
     /** The PC this screen works through (the desktop's own, or the session a folder came from). */
     networkDetail() {
         const pcId = this.loginPcId || this.sourcePcId || null;
@@ -728,7 +737,11 @@ export class ContainerMinigame extends MinigameScene {
             && window.MinigameFramework.currentMinigame !== this;
         if (this.parentLockable) {
             const parent = this.parentLockable;
-            if (reason === 'close') {
+            if (reason === 'close' && this.closeWholePc === true) {
+                // The bezel X: the PC closes with nothing reopened; a remote desktop's trip lands as its own close would
+                const kind = networkScreenKind(parent);
+                if (kind) links?.landed?.(kind, 'close', kind === 'desktop' ? this.networkDetail() : {});
+            } else if (reason === 'close') {
                 setTimeout(() => {
                     if (!minigameOpen() && typeof window.startContainerMinigame === 'function') {
                         window.startContainerMinigame(parent, null, false, true);
@@ -751,7 +764,7 @@ export class ContainerMinigame extends MinigameScene {
         const session = this.sourcePcId ? window.pcSessions?.get?.(this.sourcePcId) : null;
         if (session?.remote === true) {
             // A folder opened from a remote desktop: closed, the desktop again
-            if (reason === 'close' && typeof window.openRemoteDesktop === 'function') {
+            if (reason === 'close' && this.closeWholePc !== true && typeof window.openRemoteDesktop === 'function') {
                 const pcId = this.sourcePcId;
                 setTimeout(() => { if (!minigameOpen()) window.openRemoteDesktop(pcId, session.footholdId); }, 0);
                 return;
@@ -954,6 +967,7 @@ export class ContainerMinigame extends MinigameScene {
                     <div class="desktop-window-titlebar share-folder-titlebar">
                         <img class="share-folder-icon" src="${escapeHtml(data.iconImage || SHARE_ICON)}" alt="">
                         <span class="share-folder-path">${escapeHtml(unc || name)}</span>
+                        <button type="button" class="pc-window-close" id="pc-share-close" aria-label="Close folder" title="Close folder"></button>
                     </div>
                     <div class="container-contents-grid share-folder-files pixel-scroll" id="container-contents-grid">
                         <!-- Files will be populated here -->
@@ -964,6 +978,8 @@ export class ContainerMinigame extends MinigameScene {
             </div>
         `;
             this.mountTaskbar(this.gameContainer.querySelector('.share-folder-layout.pc-share'), { windowTitle: name });
+            // The window's X closes the folder, back to where it came from; the bezel X closes the PC
+            bindPcWindowCloses(this);
             return;
         }
         this.gameContainer.innerHTML = `

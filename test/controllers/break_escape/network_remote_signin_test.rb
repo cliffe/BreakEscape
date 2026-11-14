@@ -46,6 +46,22 @@ module BreakEscape
                      'remote' => true, 'footholdId' => OFFICE, 'host' => 'HB-FIN-02' }, response.parsed_body['sessions']['lena_pc'])
     end
 
+    test 'a remote sign-in success carries the account picture source and stores none of it' do
+      data = NS.scenario
+      lena = data['rooms'].values.flat_map { |r| r['npcs'] || [] }.find { |n| n['id'] == 'lena' }
+      lena.merge!('spriteSheet' => 'female_office_worker', 'avatar' => 'assets/characters/female_office_worker_headshot.png')
+      build_network_game({}, data)
+      take_drop_box
+      plant('comms_port')
+      assert_response :success, response.body
+      body = sign_in('lena_pc', 'lfox', NS::LENA_PASSWORD, foothold: OFFICE)
+      assert_response :success, body.inspect
+      assert_equal 'assets/characters/female_office_worker_talk.png', body['portrait']
+      assert_equal 'assets/characters/female_office_worker_headshot.png', body['avatar']
+      assert_equal true, body['remote']
+      assert_equal({ 'id' => 'lena', 'via' => 'password', 'foothold' => OFFICE }, state['sessions']['lena_pc'])
+    end
+
     test 'an unlock_object task on a sign-in host is met by a remote sign-in' do
       with_office_foothold
       sign_in('lena_pc', 'lfox', NS::LENA_PASSWORD, foothold: OFFICE)

@@ -25,13 +25,24 @@ import { escapeHtml as escapeTitle } from '../../utils/escape-html.js';
  *   modalConsequences[] — strings for the clinical-consequences bullet list in the confirm modal
  *
  * Optional params:
- *   severLockedHint    — shown beside SEVER while it is locked (why, and how to unlock it)
- *   severReadyHint     — shown once the risk paths have been reviewed
+ *   severLockedHint:   shown beside SEVER while it is locked (why, and how to unlock it)
+ *   severReadyHint:    shown once the risk paths have been reviewed
+ *   severedHint:       shown beside CONTINUE once the link is severed (UI text, not voiced;
+ *                      a neutral default is used when it is not set)
  *
  * Each rule's dashed line, its ! marker and its label all open that rule, and the
  * line brightens on hover; unreviewed lines pulse until the first one is opened
  * (sis01 blind playtest S2: players could not tell the lines were clickable).
+ *
+ * After SEVER the map stays open on the severed state, with CONTINUE in SEVER's place,
+ * so the consequence panel can be read; the map closes only when the player closes it.
+ * Once severed, CONTINUE, the X and Esc all end with complete(true); before SEVER the
+ * X and Esc end with complete(false). Reopening after SEVER shows the same severed
+ * state with CONTINUE (severed is read from severVar on init).
  */
+/** Beside CONTINUE after SEVER, unless the scenario sets severedHint (UI text, never voiced). */
+const DEFAULT_SEVERED_HINT = 'Link severed. Read the results, then press CONTINUE to carry on.';
+
 export class NetworkSegmentationMapMinigame extends MinigameScene {
     // Draws in the shared console window (UI decision X8): title bar and X come from there
     static consoleWindow = true;
@@ -93,6 +104,9 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
                         <button type="button" class="nsm-sever-btn" id="nsm-sever-btn" disabled>
                             ${escapeTitle(displayDashes(severLabel))}
                         </button>
+                        <button type="button" class="minigame-button nsm-continue-btn" id="nsm-continue-btn" hidden>
+                            CONTINUE
+                        </button>
                     </div>
                 </div>
             </div>
@@ -122,7 +136,7 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
         if (!hintEl) return;
         let text = '';
         if (this.severed) {
-            text = '';
+            text = this.params.severedHint || DEFAULT_SEVERED_HINT;
         } else if (!this.rulesReviewedSet) {
             text = this.params.severLockedHint
                 || 'SEVER is locked until you review the risk paths: click an orange dashed line or its ! marker.';
@@ -172,6 +186,12 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
         super.start();
 
         // The X is the shared one in the console bar (wired by the base class)
+        this.addEventListener(this.container.querySelector('#nsm-continue-btn'), 'click',
+            (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                if (this.severed) this.complete(true);
+            });
         this.addEventListener(this.container.querySelector('#nsm-sever-btn'), 'click',
             (event) => {
                 event.preventDefault();
@@ -191,19 +211,32 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
                 this._closeModal();
             });
 
-        if (this.severed) {
-            const btn = this.container.querySelector('#nsm-sever-btn');
-            if (btn) {
-                btn.disabled = true;
-                btn.textContent = 'LINK ALREADY SEVERED';
-                btn.classList.add('nsm-sever-btn-done');
-            }
-        }
+        if (this.severed) this._showContinue();
 
         this._resizeHandler = () => this._drawConnections();
         window.addEventListener('resize', this._resizeHandler);
 
         requestAnimationFrame(() => this._drawConnections());
+    }
+
+    /** Esc: once the link is severed the player's close is a completion, as CONTINUE is. */
+    closeByPlayer() {
+        this.closedByPlayer = true;
+        this.complete(this.severed);
+    }
+
+    /** Severed: SEVER gives way to CONTINUE, which closes the map. */
+    _showContinue() {
+        const sever = this.container.querySelector('#nsm-sever-btn');
+        if (sever) {
+            sever.disabled = true;
+            sever.hidden = true;
+        }
+        const cont = this.container.querySelector('#nsm-continue-btn');
+        if (cont) {
+            cont.hidden = false;
+            cont.closest('.nsm-sever-group')?.classList.add('nsm-sever-group-severed');
+        }
     }
 
     cleanup() {
@@ -299,17 +332,13 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
         this._drawConnections();
         this._updateConsequencePanel();
 
-        const btn = this.container.querySelector('#nsm-sever-btn');
-        if (btn) {
-            btn.disabled = true;
-            btn.textContent = 'LINK SEVERED';
-            btn.classList.add('nsm-sever-btn-done');
-        }
+        this._showContinue();
 
         this._updateSeverHint();
         if (window.playUISound) window.playUISound('confirm');
-
-        setTimeout(() => this.complete(true), 2000);
+        // No self-close: the map stays on the severed state until the player presses
+        // CONTINUE or the X (both complete(true) now), so the consequence panel can be read.
+        // Barks on severVar wait behind the open map (bark release policy) and play on close.
     }
 
     // ─────────────────────────────────────────────────────────────────────────

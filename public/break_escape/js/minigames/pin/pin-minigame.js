@@ -1,5 +1,5 @@
 import { MinigameScene } from '../framework/base-minigame.js';
-import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } from '../../utils/lock-scope-refusal.js';
+import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal, unlockWithRouteRoomRetry } from '../../utils/lock-scope-refusal.js';
 
 // Attempts allowed per opening of the pad when the scenario doesn't set
 // maxAttempts and the player has no PIN cracker. With a cracker there is no
@@ -444,9 +444,9 @@ export class PinMinigame extends MinigameScene {
 
             console.log('Validating PIN with server:', { targetType, targetId, attempt: enteredPin });
 
-            // Call server API for validation (use ApiClient with correct casing)
-            const apiClient = window.ApiClient || window.APIClient;
-            const response = await apiClient.unlock(targetType, targetId, enteredPin, 'pin');
+            // Call server API for validation, through the shared object-unlock retry so a correct
+            // code on a route-room object is not refused during the pre-promotion window (§3.6).
+            const response = await unlockWithRouteRoomRetry(targetType, targetId, enteredPin, 'pin');
 
             // If server returned container contents, populate the lockable object
             if (response.success && response.hasContents && response.contents && lockable.scenarioData) {

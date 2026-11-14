@@ -550,3 +550,46 @@ test('final pass: phones show the console name, short windows hide a subtitle wi
     const cb = src('command-board/command-board-minigame.js');
     assert.ok(cb.indexOf('id="cb-header"') > cb.indexOf('cb-status-col'), 'the command board clock sits in the status column heading, not a bar of its own');
 });
+
+test('review round 4: a second ANNOTATE press does not stack a second SCADA report, and one Cancel clears it (M1, m1)', async () => {
+    assert.match(css('scada-historian-minigame.css'), /\.sh-modal-overlay \{[^}]*overscroll-behavior: contain/);
+    const dir = mkdtempSync(join(tmpdir(), 'scada-annotate-'));
+    try {
+        writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
+        for (const rel of ['minigames/framework/base-minigame.js', 'utils/display-dashes.js', 'utils/escape-html.js',
+            'minigames/scada-historian/scada-historian-data.js', 'minigames/scada-historian/scada-historian-minigame.js']) {
+            mkdirSync(dirname(join(dir, rel)), { recursive: true });
+            writeFileSync(join(dir, rel), readFileSync(join(root, 'js', rel), 'utf8'));
+        }
+        const el = () => {
+            const node = { children: [], style: {}, className: '', textContent: '', parent: null,
+                appendChild(c) { c.parent = node; node.children.push(c); return c; },
+                addEventListener() {},
+                remove() { if (node.parent) node.parent.children.splice(node.parent.children.indexOf(node), 1); } };
+            return node;
+        };
+        const charts = el();
+        const savedDoc = globalThis.document, savedWin = globalThis.window;
+        globalThis.document = { createElement: el, querySelector: (q) => (q === '.sh-charts' ? charts : null),
+            addEventListener() {}, removeEventListener() {}, getElementById: () => null };
+        globalThis.window = globalThis;
+        try {
+            const mod = await import(pathToFileURL(join(dir, 'minigames/scada-historian/scada-historian-minigame.js')).href);
+            const Scene = Object.values(mod).find(v => typeof v === 'function' && v.prototype?._openAnnotateModal);
+            assert.ok(Scene, 'the module exports the historian scene');
+            const fake = Object.assign(Object.create(Scene.prototype), {
+                _annotateOverlay: null, container: null, _cfg: { racks: [{ id: 'A1' }] }, _sd: {},
+                _racksConfig: [{ id: 'A1', label: 'Rack A1' }], _focusRackId: 'A1', _anomalyFor: () => null,
+            });
+            fake._openAnnotateModal();
+            fake._openAnnotateModal();
+            assert.equal(charts.children.length, 1, 'double press: one report');
+            fake._closeAnnotateModal();
+            assert.equal(charts.children.length, 0, 'one Cancel clears it');
+        } finally { globalThis.document = savedDoc; globalThis.window = savedWin; }
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('final proof: segmentation map labels let taps through to the rule lines under them', () => {
+    assert.match(css('network-segmentation-map-minigame.css'), /\.nsm-svg text \{\s*pointer-events: none;/);
+});
