@@ -743,7 +743,7 @@ Done and committed on `build/hard-phish-b` (merge of `build/hard-phish-mig`):
 7. Chunk A minor 5: `headerFrom` validation and free-text length caps in `valid_send_message?`.
 
 Verification run green (no lock, in the worktree):
-- Ruby (224 runs, 914 assertions, 0 failures): se_phish_send (25), game_state_locking,
+- Ruby (224 runs, 914 assertions, 0 failures): se_phish_send (21), game_state_locking,
   se_landing_page_build, capture_proofs (controller), captures_sync, capture_record,
   phish_score_parity, phish_legacy_migration (model + controller), phish_superset (4),
   reload_persistence, format_version.
