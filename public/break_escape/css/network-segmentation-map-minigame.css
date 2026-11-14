@@ -384,15 +384,10 @@
     color: #7b7b90;
 }
 
-.nsm-sever-btn-done {
-    background: #1c1c2a !important;
-    border-color: #3a3a55 !important;
-    color: #55556a !important;
-    cursor: default !important;
-}
-
-/* After SEVER: CONTINUE takes SEVER's place. The border and fill come from the
-   theme's button skin (.minigame-button in ui-themes.css); only the type is set here. */
+/* After SEVER: CONTINUE takes SEVER's place and is the only way on, so it reads as the
+   primary action: the theme's button skin (.minigame-button in ui-themes.css) for border
+   and fill, the theme's accent colour for its label (as other primary actions), and the
+   hint beside it (severedHint) says what it does. */
 .nsm-continue-btn {
     font-family: 'Press Start 2P', monospace;
     font-size: 13px;
@@ -400,6 +395,11 @@
     letter-spacing: 1px;
     white-space: nowrap;
     flex-shrink: 0;
+}
+
+[data-ui-theme] .minigame-button.nsm-continue-btn,
+[data-ui-theme] .minigame-button.nsm-continue-btn:hover {
+    color: var(--ui-accent);
 }
 
 .nsm-sever-btn[hidden],

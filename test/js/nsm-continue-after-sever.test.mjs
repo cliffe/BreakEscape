@@ -41,7 +41,7 @@ const PARAMS = {
 
 let ends;
 let events;
-function setup(globals = {}) {
+function setup(globals = {}, extra = {}) {
     ends = [];
     events = [];
     window.gameState = { globalVariables: { network_isolated: false, ...globals } };
@@ -49,7 +49,7 @@ function setup(globals = {}) {
     window.npcManager = undefined;
     window.playUISound = undefined;
     document.body.innerHTML = '<div id="mg"></div>';
-    const mg = new NetworkSegmentationMapMinigame(document.getElementById('mg'), { ...PARAMS });
+    const mg = new NetworkSegmentationMapMinigame(document.getElementById('mg'), { ...PARAMS, ...extra });
     window.MinigameFramework = {
         currentMinigame: mg,
         endMinigame: (success) => { ends.push(success); window.MinigameFramework.currentMinigame = null; }
@@ -144,4 +144,19 @@ test('reopen after SEVER: severed state with CONTINUE, which (and the X) give co
     assert.deepEqual(ends, [true]);
     t.mock.timers.tick(10000);
     assert.deepEqual(ends, [true], 'nothing else closes it');
+});
+
+// Review R1 n1: CONTINUE is the only way on, so a hint beside it (nsm-sever-hint) says what it does
+test('after SEVER the hint beside CONTINUE says to press it (neutral default; severedHint overrides)', (t) => {
+    t.mock.timers.enable({ apis: ['setTimeout'] });
+    let mg = setup();
+    sever(mg);
+    const hint = q('#nsm-sever-hint');
+    assert.match(hint.textContent, /CONTINUE/, 'default hint names CONTINUE');
+    assert.ok(!hint.classList.contains('nsm-sever-hint-locked'), 'not in the locked colour');
+    mg = setup({}, { severedHint: 'Link cut. Press CONTINUE when ready.' });
+    sever(mg);
+    assert.equal(q('#nsm-sever-hint').textContent, 'Link cut. Press CONTINUE when ready.');
+    setup({ network_isolated: true });
+    assert.match(q('#nsm-sever-hint').textContent, /CONTINUE/, 'the hint is there on a reopen too');
 });

@@ -27,6 +27,8 @@ import { escapeHtml as escapeTitle } from '../../utils/escape-html.js';
  * Optional params:
  *   severLockedHint    — shown beside SEVER while it is locked (why, and how to unlock it)
  *   severReadyHint     — shown once the risk paths have been reviewed
+ *   severedHint        — shown beside CONTINUE once the link is severed (UI text, not voiced;
+ *                        a neutral default is used when it is not set)
  *
  * Each rule's dashed line, its ! marker and its label all open that rule, and the
  * line brightens on hover; unreviewed lines pulse until the first one is opened
@@ -38,6 +40,9 @@ import { escapeHtml as escapeTitle } from '../../utils/escape-html.js';
  * X and Esc end with complete(false). Reopening after SEVER shows the same severed
  * state with CONTINUE (severed is read from severVar on init).
  */
+/** Beside CONTINUE after SEVER, unless the scenario sets severedHint (UI text, never voiced). */
+const DEFAULT_SEVERED_HINT = 'Link severed. Read the results, then press CONTINUE to carry on.';
+
 export class NetworkSegmentationMapMinigame extends MinigameScene {
     constructor(container, params) {
         params = params || {};
@@ -126,7 +131,7 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
         if (!hintEl) return;
         let text = '';
         if (this.severed) {
-            text = '';
+            text = this.params.severedHint || DEFAULT_SEVERED_HINT;
         } else if (!this.rulesReviewedSet) {
             text = this.params.severLockedHint
                 || 'SEVER is locked until you review the risk paths: click an orange dashed line or its ! marker.';

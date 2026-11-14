@@ -24,6 +24,7 @@ class TTSManager {
         this.playing = false;
         this._hasSrc = false; // Whether audio.src has been set to a real URL
         this.currentText = null; // Line now playing — read by portraits for lip-sync
+        this.playSeq = 0;        // Bumped by every play() call: a token for "this play, not a later one of the same line"
         this.lipSync = null;     // { text, timeline } fitted to the line's audio (see _alignLipSync)
 
         // Web Audio: one MediaElementSource per <audio> element, shared context
@@ -60,6 +61,7 @@ class TTSManager {
      * @returns {Promise<number|null>} Audio duration in ms, or null if unavailable
      */
     async play(npcId, text, { delivery = null } = {}) {
+        this.playSeq++;
         if (!this.enabled || !text || !text.trim()) return null;
 
         // Stop any current playback

@@ -165,10 +165,15 @@ export default class NPCBarkSystem {
   /**
    * Track one bark's voice: live() is true while it is still loading or playing; cancel() stops it
    * now, or as soon as it starts if it is still loading.
+   * "Ours" is this play() call (the manager's playSeq when the tracker is made, just after
+   * _speakBark called play()), not the text: a requeued line replays the same text on the same
+   * manager, and a cancelled tracker must not stop the replay's voice (review R1 m2).
    */
   _voiceTracker(npcId, ttsPromise, text) {
     const mgrOf = () => this.ttsManagers.get(npcId);
-    const stopIfOurs = () => { const m = mgrOf(); if (m && m.currentText === text) m.stop(); };
+    const token = ttsPromise ? mgrOf()?.playSeq : undefined;
+    const ours = (m) => !!(m && m.currentText === text && m.playSeq === token);
+    const stopIfOurs = () => { const m = mgrOf(); if (ours(m)) m.stop(); };
     const v = {
       state: ttsPromise ? 'pending' : 'none', cancelled: false, started: ttsPromise || null,
       live: () => {
@@ -176,7 +181,7 @@ export default class NPCBarkSystem {
         if (v.state === 'pending') return true;
         if (v.state !== 'playing') return false;
         const m = mgrOf();
-        return !!(m && m.currentText === text && this._voicePlaying(m));
+        return ours(m) && this._voicePlaying(m);
       },
       cancel: () => { v.cancelled = true; stopIfOurs(); }
     };

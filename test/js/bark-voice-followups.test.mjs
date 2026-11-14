@@ -382,3 +382,68 @@ test('onRemainder is told why the bubble ended (left-view, no-room, pushed)', ()
     assert.deepEqual(got, [{ why: 'left-view', page: 0 }]);
     assert.equal(pagesText(['a']), 'a');
 });
+
+// ---- review R1 m2: the voice tracker matches its own play() call, not the text ----
+
+test('R1 m2: a cancelled tracker does not stop a replay of the same line on the same manager', async () => {
+    const sys = barkSystem();
+    const audio = new EventTarget();
+    audio.paused = true; audio.ended = false;
+    let land1;
+    const m = {
+        audio, playing: false, currentText: null, playSeq: 0, stops: 0,
+        play(id, text) {
+            m.playSeq++;
+            const seq = m.playSeq;
+            if (seq === 1) return new Promise((r) => { land1 = () => { m.currentText = text; m.playing = true; audio.paused = false; r(6000); }; });
+            m.currentText = text; m.playing = true; audio.paused = false;
+            return Promise.resolve(6000);
+        },
+        stop() { m.stops++; m.currentText = null; if (m.playing) { m.playing = false; audio.paused = true; } }
+    };
+    sys.ttsManagers.set('ravi', m);
+    const line = 'The corporate link is down. Clinical is on its own now.';
+
+    // First play: still fetching (uncached line) when the panel opens and cancels it
+    const p1 = sys._speakBark('ravi', line);
+    const t1 = sys._voiceTracker('ravi', p1, line);
+    t1.cancel();
+    const stopsAfterCancel = m.stops;
+
+    // The panel closes; the requeued line replays (same text, same manager) and starts playing
+    const p2 = sys._speakBark('ravi', line);
+    const t2 = sys._voiceTracker('ravi', p2, line);
+    await p2; await tick();
+    assert.equal(m.playing, true, 'the replay is playing');
+
+    // The first fetch lands late; the cancelled tracker's handler must leave the replay alone
+    land1();
+    await p1; await tick(); await tick();
+    assert.equal(m.stops, stopsAfterCancel, 'the stale tracker did not call stop() on the replay');
+    assert.equal(m.playing, true, "the replay's voice plays on");
+    assert.equal(t1.live(), false, 'the cancelled tracker is not live');
+    assert.equal(t2.live(), true, "the replay's tracker counts its own voice as live");
+
+    // A cancel of the replay's own tracker still stops it
+    t2.cancel();
+    assert.equal(m.playing, false);
+});
+
+test('R1 m2: a cancelled tracker still stops its own late-starting voice when nothing replaced it', async () => {
+    const sys = barkSystem();
+    const audio = new EventTarget();
+    audio.paused = true; audio.ended = false;
+    let land;
+    const m = {
+        audio, playing: false, currentText: null, playSeq: 0, stops: 0,
+        play(id, text) { m.playSeq++; return new Promise((r) => { land = () => { m.currentText = text; m.playing = true; audio.paused = false; r(6000); }; }); },
+        stop() { m.stops++; m.currentText = null; if (m.playing) { m.playing = false; audio.paused = true; } }
+    };
+    sys.ttsManagers.set('ravi', m);
+    const p = sys._speakBark('ravi', 'Isolated.');
+    const t = sys._voiceTracker('ravi', p, 'Isolated.');
+    t.cancel();
+    land();
+    await p; await tick(); await tick();
+    assert.equal(m.playing, false, 'stopped as soon as it started');
+});
