@@ -102,3 +102,54 @@ Audit on the merged fixed tip (`--all --strict --skip person-chat,network-view`,
 window-offscreen 0, frame-offscreen 1, clipped 0, x-on-frame 0, overflow 3, the baseline
 (log scratchpad ui-mg2/audit-fixed.log). Server :3465 stopped by PID. The 19 node test files
 listed under Proof pass on the merged tip.
+
+## Fix round 1 (review R1: 0 B, 0 M, 4 m, 4 n)
+
+Changes (commit 5aae68eff):
+
+- m1 S7-notes: tape strips are inset (left 6px, right 44px so the right one clears the pencil
+  button) and stay on the page at every size. The pinned slip is set 4px right and 4px up (was
+  12px right and 6px down) with a 3px shade; at 915x412 the shade ends 2px above the pencil.
+  All three variants fixed. Measured at 915x412: strips 367-419 and 494-546 inside the page
+  297-618.
+- m2 A22: the Bluetooth frame fallback border, scrollbar thumbs, device hover, expanded and
+  hover-preserved rows use `--scan-accent`, `--scan-accent-dim` and `--scan-accent-mid`
+  (blue fallbacks). The row lift (`translateY(-2px)`, 4px lift shade) and `transition: all`
+  on `.bluetooth-device` are gone.
+- m3 A35: decided that build/ui-pc2 owns the PC reader's title-bar X. This branch adds no
+  PC-reader X or button styling (checked: no `window-close` rule in this branch's diff against
+  main); it keeps the reader's page colours (css/notepad-window.css) and the world viewer.
+  Nothing to remove.
+- m4 S01: `stackOverlayBoxes(boxes, gap, stable)`; the overlay now passes `stable = true`, so the
+  panels are processed in id order and two NPCs passing each other never swap panels. New test
+  in test/js/npc-needs-debug.test.mjs (13 pass).
+- n2 A38: the 160x120 vignette is scaled by a whole number to cover the screen and centred
+  (`--vignette-size`, set by the title screen from its box, refreshed on resize). Measured:
+  1400x1000 at 9x, 667x375 at 5x, 390x844 at 8x. No stretching.
+- n3: the title art's two contrast gradients are now stepped bands with hard edges (7 bands up
+  the bottom, 10 along the right), and the text shadow is a flat 2px offset (`2px 2px 0 #000`).
+  Before and after shots: scratchpad ui-mg2/for-user/N3-title-art-{before,after}__*.png.
+- n4: comment in css/scanner-panel.css corrected (square corners, no clip-path).
+
+Live checks (reviewer's live.mjs, one part at a time, games 3697, 3698, 3699, :3465):
+
+| Part | Result |
+|---|---|
+| a05 | pass: Continue on the start brief and on the reload reopen (after Resume), none from the Notepad tray |
+| a22 | pass: all three scanners, Bluetooth opened from its tray slot, accent per panel |
+| a45 | pass: all windows clean at 1400x1000, 915x412, 390x844 |
+| vm | pass: flag station and VM launcher clean |
+| a38 | pass: soft list empty, whole-number scales |
+| a35 | pass for the viewers; the PC reader's "clipped" note at 1400x1000 is still reported by the audit though the shot shows nothing cut (n1, not changed) |
+| s7 | pass: strips and slip inside the page; pencil gap 2px at 915x412 |
+| s01 | pass: five panels, no overlaps |
+
+The script needed two changes of its own (title screen click-through at game start; Resume
+click on reload). Live.mjs is in the scratchpad, not the repo.
+
+Gates after fix round 1 (tip below, game 3697, :3465): strict audit (`--all --strict --skip
+person-chat,network-view`, four sizes) window-offscreen 0, frame-offscreen 1, clipped 0,
+x-on-frame 0, overflow 3 (same as baseline, alarm-panel 915x412 and network-architecture
+390x844; the siem-dashboard cancel-beside-x, shredded-document and examine font-size lines are
+unchanged from before the round). shell-x-check 168 checked, 0 failed. The 19 named node tests
+pass one at a time (npc-needs-debug now 13).
