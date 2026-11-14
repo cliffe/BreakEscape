@@ -2483,6 +2483,8 @@ export default class NPCManager {
         inkStoryPath: npc.storyPath,
         startKnot: message.targetKnot || null,   // none: a click reopens the thread (npc-barks.js)
         phoneId: message.phoneId,
+        // A timed message is a text in the phone whoever sends it (B2: the phone notification)
+        channel: 'phone',
         useTTS: npc.npcType === 'person' && !!npc.voice,
         // Same guard as at delivery: if the global is set by the time it's released, drop it
         stillValid: message.skipIfGlobal
