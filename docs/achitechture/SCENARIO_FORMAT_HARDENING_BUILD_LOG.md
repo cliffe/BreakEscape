@@ -3334,3 +3334,63 @@ touched node tests are green, and no corpus scenario gains a secret-leak error. 
 
 No new gems/npm packages were added. `git -C <main> status --short` showed only
 `docs/agents/UI_PASS_RESUME.md` untracked throughout.
+
+### Step 3 completion (2026-11-15)
+
+The remaining items were finished on a second run, each committed. Decisions sign-off: the m06 and
+m08 `acknowledgedClues` headings in `docs/agents/VALIDATOR_DECISIONS.md` each gained a line
+"Signed off by the hardening orchestrator, 2026-11-15." under their `json` block (orchestrator
+decision). The markers themselves stay in.
+
+**Item 1, Rails tests** (`test/controllers/break_escape/secret_leak_withholding_test.rb`, 14 runs,
+47 assertions, 0 failures). `authored_capture_secret` withholds a secret equal to a resolved
+door-entry PIN, a `"12-30-5"`/`"12-30-05"`/`"12 30 5"` beside a combination `[12, 30, 5]` and a
+`wolf`/`WOLF` beside a cryptex `wolf`; still serves `"5"` and `"30-12-5"` beside `[12, 30, 5]` and
+`Satchel42` beside a password lock `satchel42` (exact). The proof branch is shown both ways with a
+`capture_proof_holds?` stub. `account_password_opens_something?` is true for a combination-answer
+password; `account_capture_served?` is false in a proof-declaring scenario with no held proof and
+true with no proofs declared, and an account whose password opens nothing is served either way.
+`answer_key` and `lock_answer?` unit cases, including `answer_key('combination', 'Summer2024') ==
+'combination:2024'`, the blank/malformed nils and the non-String cryptex nil. The bootstrap route
+test asserts `GET /games/:id/scenario` carries neither the `acknowledgedClues` key nor a marker's
+reason prose (a unique sentinel string).
+
+**Item 2, node tests.** `test/js/validator-secret-leaks.test.mjs` (18 subtests): PIN into a global
+(string and number) and into minigameData; a password as a whole word in a longer minigameData
+string, and a short (<6 char) password not matched as a substring; a flag answer in a global; a
+combination common string form in a global (and a stray number not firing); a cryptex answer in a
+different case; an answer reached inside a timer's `give_item` still collected; the
+`requires`-with-no-`lockType` locked error and unlocked warning; a door entry whose connected room
+is rfid raising nothing; a resolved door-entry PIN copied into a global flagged; a `requires` in
+`social` and a PIN on a plain note `text` raising nothing; a valid acknowledged clue turning the
+leak into an info line; a stale marker warning that does not silence the real leak; a marker naming
+the lock itself or an object in its contents erroring; the `global:` clue form as a warning, and an
+error when `GLOBAL_CLUES_ALLOWED` is flipped off (the test redefines the one constant in the ruby
+`-e` wrapper); and the can-never-be-served `usePayload` warning with its passing shape.
+
+Note on fixture coverage: the array-form combination leak (a `[12, 30, 5]` array value under
+`minigameData`) is not flagged, because `SecretLeaks.collect_leaves`/`collect_scalars` flattens an
+array into its scalar leaves before matching, so an array leaf never reaches
+`answer_matches_leaf?`'s array branch. Only the common string forms (`12-30-5`, `12 30 5`, etc.)
+are caught. The string forms are the realistic leak (a hint typed into a global), so this is
+recorded rather than changed; the double-render drop for random values needs a real `.erb`
+template, so it is proved by the Ruby corpus run, not these static fixtures.
+
+`test/js/validator-acknowledged-clues.test.mjs` (10 subtests) checks the real m06 and m08 markers
+against `VALIDATOR_DECISIONS.md` with the shared `validator-decisions-reader.mjs`
+(`signOffProblems`, `sharedHeadings`), then the checker against broken input (missing `approved`, a
+block naming another lock, an empty field, two markers on one heading, a marker sharing a heading
+with another list). The shared-heading rule runs across the lists that exist on this branch: the
+known-failures list and the acknowledgedClues markers (the payload-scan-exception list is joined
+automatically if `test/fixtures/files/payload_scan_exceptions.json` is present, which it is not
+here).
+
+**Reader wiring for the 6a-1 merge.** The marker reader is a non-test module,
+`test/js/validator-acknowledged-clues-reader.mjs`, mirroring `validator-decisions-reader.mjs`. It
+exports `readAcknowledgedClues(root)` (every marker across `scenarios/*/scenario.json.erb`, read
+from the raw template text by bracket-matching the `acknowledgedClues` array, since the key never
+ships), `acknowledgedApproved(root)` (the `[label, heading]` pairs for the shared-heading rule) and
+`markersInText(text)`. When build/hard-6a1 merges, 6a-1 handover item 5 is satisfied by importing
+`acknowledgedApproved` from this module into `validator-known-failures.test.mjs` and concatenating
+it into that file's `otherApproved()` (the third list beside the known failures and the payload
+scan exceptions); no change to this branch's files is needed for that.
