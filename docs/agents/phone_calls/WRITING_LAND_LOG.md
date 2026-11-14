@@ -44,3 +44,15 @@ No audio generated. Counts from `bin/rails "app:break_escape:tts:wasted[<scenari
 | m10 | 1 | 1 | 1 | `hax_post` (Aoede, in person): new "From here I'm on your phone. Message me." needs a clip; `tts_cache/m10_full_disclosure/e8817b27926b470b490d8ff2c36c89b7.mp3` ("I'm on your phone now. Ring me.") is now unrequested. Not pruned. |
 
 Total: 1 clip to generate (m10), 1 orphan to prune after it.
+
+## R1 outcomes
+
+Review: `WRITING_LAND_REVIEW_R1.md` (REVISE, 1 major, 1 minor, 3 nits).
+
+- **M1** (dcc249934): every em and en dash is out of the seven copied docs. Dash-only table cells became `(new)` in old-text columns of `WRITER_HAX_CALLS.md` and `n/a` elsewhere (including rows whose new text is "unchanged"); headings and bold labels take a colon; prose asides take a comma, colon or parentheses; the six ranges read "X to Y"; quoted superseded ink takes a comma. `WRITER_CALLERS.md:253` now says "the VM-track agent". The table row above now says the docs were "carried with only dash and model-name edits".
+- **m1** (dcc249934): `WRITER_CALLERS.md:306` "Judgement". The quoted validator text and old ink spellings are unchanged.
+- **n2** (dcc249934): the 23 U+2212 minus signs are now ASCII `-`.
+- **n1**: overtaken. The one m10 clip was voiced on its own (57ae308a7, coordinator's call with the user's approval): `tts_cache/m10_full_disclosure/237841eb748a3037039fb6eadb0c0568.mp3` (2.8 s, Aoede, `hax_post`), generated through `TtsService#generate` for that single extractor entry only. The old "Ring me." clip `e8817b27...` moved to `tmp/delete/`. `tts:wasted[m10_full_disclosure]`: 0 of 117 current-model clips unrequested. The rest of m10's unvoiced backlog is untouched.
+- **n3**: no change, as the review advised.
+
+Check: `grep -nP "[\x{2013}\x{2014}\x{2212}]"` and `grep -niE "opus|sonnet|haiku"` over the 16 carried docs and this log find nothing. Across the whole `docs/agents/phone_calls/` folder both still hit files that were already on main before this branch (handovers, engine-sweep and mission reviews) and the R1 review, which quotes the dashes; those are outside this land.
