@@ -701,7 +701,10 @@ reader flips. Order:
    evidence still drives the reader and honest play is unaffected. The build store starts filling. Commit.
 4. **`PhishJudge` port (account resolution, factor bias, judge) and its parity test.** Add
    `lib/break_escape/phish_judge.rb` and `phish_judge_parity_test.rb`, including the honest-solve fixture.
-   Pure, unused by any route yet. The game is unchanged. Commit.
+   Pure, unused by any route yet. The game is unchanged. Also extend the chunk 8 validator rule
+   (`scripts/validate_scenario.rb`, the phish evidence secret check) with the "a message can land" check
+   on `PhishJudge`, make its buildability search honour the page's `profile`, and add a fake-check node case.
+   Commit.
 5. **Route 2 (send) and its store write.** Add `record_phish_send!`, the route, the client POST (awaiting
    the build POST, section 10) and the retry/offline-queue wiring, with the route under `with_game_lock` and
    in the locking guard test (3.3). It writes `sePhishSends`; the reader
