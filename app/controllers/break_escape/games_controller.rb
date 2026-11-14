@@ -945,7 +945,7 @@ module BreakEscape
       # the two gated routes, each of which re-stamps the capture itself. So the sync step runs only
       # when it has a capture to record or a legacy se_captures global to migrate; it no longer
       # fingerprints the mailbox or forwards the request's own sent messages.
-      return if incoming.empty? && !@game.legacy_captures? && !needs_stamp
+      return if incoming.empty? && !@game.legacy_captures?
 
       scenario = @game.stored_scenario_data
       @game.migrate_legacy_captures!(scenario: scenario) if @game.legacy_captures?
