@@ -17,8 +17,8 @@
 //              E8_BLOCK_ABOVE=1 when the copy blocks the above cell too (expects no_beside_cell)
 //
 //   e7 options (R1 rerun): COUPLED_ONLY=1 sends Rosa only and lets the scenario's coupling send
-//   Sanjay; LATE_MS=n walks the player in (placed beside the pair) once n ms or less of the overlap
-//   is left; SECOND_BREAK=1 runs a second coupled break with the player kept in the office and
+//   Sanjay; LATE_MS=n places the player beside the pair for a turn with n ms of the overlap
+//   is left (both uses trimmed in the page so a turn falls exactly there); SECOND_BREAK=1 runs a second coupled break with the player kept in the office and
 //   compares both bags before and after it.
 //
 // Every bag draw (_bagNext) is logged with the needs clock, and every chat line with its bubble's
@@ -259,18 +259,22 @@ async function main() {
         const met = await waitFor(page, both, 60000);
         out.metAt = met && { t: met.t, sanjay: met.sanjay.pos, rosa: met.rosa.pos, player: met.player, room: met.room };
         if (mode === 'e7' && process.env.LATE_MS) {
-            // Out of earshot until LATE_MS or less of the overlap is left, then placed beside the pair
+            // The heard turn falls LATE_MS before the overlap ends: once the pair have had a few unheard
+            // turns, while a picture shows, both uses are trimmed to end LATE_MS after the next turn,
+            // and the player is placed beside the pair just before that turn
             const late = Number(process.env.LATE_MS);
-            out.harness.push(`player placed beside the pair once ${late} ms or less of the overlap is left`);
-            const left = () => page.evaluate(() => { const sys = window.npcNeedsSystem; const a = sys.states.get('sanjay')?.job, b = sys.states.get('rosa')?.job; return a && b ? Math.min(a.useUntil, b.useUntil) - sys.clockMs : null; });
-            // The kitchen is entered ~1.5 s early (enterRoom takes a moment), with the player put back
-            // in the office spot's distance until the placement
-            for (let i = 0; i < 2400; i++) { const l = await left(); if (l !== null && l <= late + 1500) break; await sleep(50); }
-            out.enterLeft = await left();
+            out.harness.push(`both cooler uses trimmed to end ${late} ms after a turn; player placed beside the pair just before it`);
+            const st = () => page.evaluate(() => { const sys = window.npcNeedsSystem, c = sys._chats.get('water_cooler'); return c ? { t: sys.clockMs, n: c.n, current: !!c.current, nextAt: c.nextAt } : null; });
+            for (let i = 0; i < 2400; i++) { const x = await st(); if (x && x.n >= 3 && x.current) break; await sleep(50); }
+            out.trim = await page.evaluate(late => {
+                const sys = window.npcNeedsSystem, c = sys._chats.get('water_cooler');
+                const end = c.nextAt + late;
+                for (const id of [c.a, c.b]) { const j = sys.states.get(id).job; j.useUntil = Math.min(j.useUntil, end); }
+                return { t: sys.clockMs, nextAt: c.nextAt, overlapEnd: end, speaker: c.speaker };
+            }, late);
             await page.evaluate(() => window.__test.enterRoom('kitchen'));
-            const far = await page.evaluate(() => { const p = window.player, x = -100, y = 120; p.setPosition(x, y); p.body?.reset?.(x, y); return window.currentPlayerRoom; });
-            out.enterRoomNow = far;
-            for (let i = 0; i < 2400; i++) { const l = await left(); if (l !== null && l <= late) break; await sleep(20); }
+            await page.evaluate(() => { const p = window.player, x = -100, y = 120; p.setPosition(x, y); p.body?.reset?.(x, y); });
+            for (let i = 0; i < 2400; i++) { const x = await st(); if (!x || x.nextAt - x.t <= 300) break; await sleep(20); }
             out.lateAt = await page.evaluate(() => {
                 const sys = window.npcNeedsSystem;
                 const s = sys.world.npcPos('sanjay'), r = sys.world.npcPos('rosa');
@@ -279,6 +283,8 @@ async function main() {
                 const a = sys.states.get('sanjay').job, b = sys.states.get('rosa').job;
                 return { t: sys.clockMs, left: Math.min(a.useUntil, b.useUntil) - sys.clockMs, player: { x: Math.round(x), y: Math.round(y) }, room: window.currentPlayerRoom, hears: { sanjay: sys.world.playerHears('sanjay', 160), rosa: sys.world.playerHears('rosa', 160) } };
             });
+            out.bagsAtPlacement = (await snap(page)).bags;
+            out.quietAtPlacement = await page.evaluate(() => Object.fromEntries(['sanjay', 'rosa'].map(id => [id, window.npcNeedsSystem.states.get(id).chatterQuietUntil ?? null])));
             await waitFor(page, x => !both(x), 15000, 150);
             await sleep(1000);
             await page.screenshot({ path: `${SHOTS}/e7late-g${id}.png` });
@@ -336,6 +342,8 @@ async function main() {
         out.failed = ev.filter(e => e.n.startsWith('npc_job_failed')).map(e => e.d);
         out.log = await exLog(page);
         out.drawCheck = await drawCheck(page);
+        out.bagsAtEnd = (await snap(page)).bags;
+        out.quietAtEnd = await page.evaluate(() => Object.fromEntries(['sanjay', 'rosa'].map(id => [id, window.npcNeedsSystem.states.get(id).chatterQuietUntil ?? null])));
         out.leftAt = await page.evaluate(() => window.__leftAt ?? null);
     } finally {
         out.consoleErrors = consoleErrors;
