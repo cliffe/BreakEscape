@@ -662,3 +662,98 @@ round. RBENV_VERSION=2.7.8;
 PLAYWRIGHT_CHROMIUM_EXECUTABLE=$HOME/.cache/ms-playwright/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell.
 Resume: start the server by hand on :3490 (copy start-keyless-server.sh's bundle exec line to the
 worktree root and port), create a fresh game with new-game.rb, run the audit back-to-back.
+
+## Fix round 2 part D (build/ui-se, from tip 2be575f14; main 3a083f167 merged)
+
+Scope: UI styling only for the social engineering awareness lab; no attack content. Ports 3490-3492.
+First merged main (train/45 tip 3a083f167 - consoles, PC 2, HUD-adjacent work) into build/ui-se:
+clean merge, no conflicts (merge commit 72f55dbc2, both parents 2be575f14 + 3a083f167).
+
+### Phone scenes (C-AU1, C-PH1, C-PH2, C-PH3, C-PH4)
+
+- **C-AU1** (authenticator phone shell) - the authenticator now reuses the shared in-game phone
+  shell: a grey shell with the stepped (pixel-art) clip-path corner, an inner dark screen, and a
+  status bar with signal bars and a battery reading, matching phone-chat. The old rounded navy
+  rectangle with a speaker slot is gone. css/authenticator-minigame.css (.auth-phone,
+  .auth-phone-screen, .auth-phone-status, .auth-signal-bar, .auth-battery);
+  js/minigames/authenticator/authenticator-minigame.js (status-bar markup replaces the speaker slot).
+- **C-PH1** (phone error as raw text) - showNotification now hosts the toast inside the phone
+  screen (`.phone-screen` || container) and css/phone-chat-minigame.css styles `.phone-notification`
+  as a pixel toast (2px square border, GNF, opacity-only fade). No more white text on the backdrop.
+- **C-PH2** (Add to Notepad over the HUD) - the notepad action moves onto the phone: a
+  `.phone-notepad-btn` anchored on the phone status bar (then contact-list header, then the screen),
+  no longer the framework controls row that overlapped the inventory/health bar. A ringer call still
+  gets none. phone-chat-minigame.js init; css `.phone-notepad-btn` (44px touch target under coarse).
+- **C-PH3** (X on the phone bezel at 390) - on screens under 500px the phone drops 44px below the
+  fixed close X so the X sits in the clear band above the device, clear of the battery/top corner.
+  css/phone-chat-minigame.css `@media (max-width: 500px)`.
+- **C-PH4** (empty state / blank green) - a missing contact now falls back to the contact list
+  (showContactList) instead of leaving a blank screen behind the toast, and the empty list's
+  `.no-contacts` reads in solid dark ink on the green LCD rather than a faded 50% grey. (The 20px
+  glow was already removed in part B.)
+
+### Layout minors (C-LP2, C-PC2)
+
+- **C-LP2** (landing-page-builder empty preview) - driven through the real builder flow
+  (landingPageId `payroll_login`). The renderer adds an empty-state hint ("Pick a service to start
+  the page") in the preview before any choice (build mode, nothing chosen only; a blocked look-alike
+  keeps the bare placeholder). The narrow layout caps the preview to a short strip (max-height 38vh)
+  so it no longer takes the larger half, and the choice panel is the only pane that scrolls.
+  js/minigames/landing-page-builder/landing-page-render.js; css/landing-page-builder-minigame.css.
+- **C-PC2** (person-chat ~200px black at 390) - at narrow width the portrait grows to fill the
+  spare height (object-fit cover so it fills rather than letterboxing a 4:3 strip) and the dialogue
+  band hugs its content at the foot; the ~250px black gap under the dialogue is gone. Long lines
+  keep a cap and scroll. Desktop layout unchanged (scoped to max-width 600px).
+  css/person-chat-minigame.css narrow media query.
+
+NOT changed (with the user): C-PP3, C-PV1 - captured in part C (scratchpad se-user/), untouched.
+
+### Live proof (shots looked at, at 1400x1000, 800x600, 667x375, 390x844, 360x740)
+
+- authenticator (attacker mode with a push card, and decision mode): the shared phone shell and
+  status bar read at every size. Shots scratchpad se-d/phone (and phone2).
+- phone-chat (contact-not-found path): the styled toast inside the screen (C-PH1), the Notepad on
+  the status bar clear of the HUD (C-PH2), the X above the phone at 390/360 (C-PH3), and the
+  fallback contact list / empty state (C-PH4). Shots scratchpad se-d/phone2.
+- landing-page-builder (empty and after a service pick): the empty hint at every size, the capped
+  preview strip and single-pane scroll at 390/360, desktop two-pane intact. Shots scratchpad se-d/lpb.
+- person-chat (real NPC conversation): the portrait fills and the dialogue hugs the foot at 390/360;
+  desktop unchanged. Before/after shots scratchpad se-d/pc-before, pc-after2.
+
+### Tests (plain `node --test`, one file at a time, no lock)
+
+- New: social-phone-ui-partd 3/3 (C-AU1/C-PH1/C-PH2 source), social-person-chat-narrow-partd 2/2
+  (C-PC2 narrow rules); social-landing-page-render +1 (14/14, C-LP2 empty hint); phone-outgoing-call
+  updated wiring + a C-PH4 fallback behaviour test (51/51).
+- Regression: minigame-se-close 13, social-authenticator 9, social-authenticator-decision 10,
+  social-reuse-authenticator 13, minigame-controls-layout 11, phone-chat-close-race 3,
+  phone-call-terminal-beat 8, minigame-close-shell 19, minigame-pixel-art 48,
+  social-landing-page-builder 19, social-landing-page-inspect 14, social-landing-page-guard 4,
+  social-gap-landing-page-builder 22, person-chat-pixel-art 3, person-chat-background 18,
+  person-chat-camera 8, person-chat-reopen 4, person-chat-pending-reply 17. All 0 fail.
+- Full social-*.test.mjs swept one file at a time: 155 files clean, 2351 assertions. One failure:
+  social-gap-episode-runner test 16 ("a finished episode reopened and closed again leaves the state
+  exactly as it was"). Pre-existing and out of part-D scope: episode-runner source/test/css are
+  byte-identical between the pre-part-D tip (2be575f14) and HEAD, and none of part D's 12 changed
+  files touch episode-runner. Flagged for the orchestrator.
+
+### Strict audit (end of round)
+
+Fresh lab_social_engineering game (id 4060), strict audit over the 15 SE lab scenes at 1400x1000,
+800x600, 667x375, 390x844, 360x740. EXIT 0. The JSON was scanned for EVERY breach kind (not just
+the fit kinds --strict exits on): zero breaches across every scene and size, and nothing unopened or
+erroring. The C-AU1 authenticator shell and the C-LP2 landing-page-builder changes land with the SE
+lab still at all zeros. Log/json: scratchpad se-d/audit-final (audit.log, audit.json, shots/).
+
+### Handover (2026-11-14, part D)
+
+All part-D items done and committed with explicit paths. Commits: 631f0ae8c (phone scenes),
+0e3df1d45 (C-LP2), f647c170e (C-PC2), on top of merge 72f55dbc2. Changed files: css/
+authenticator-minigame.css, css/phone-chat-minigame.css, css/landing-page-builder-minigame.css,
+css/person-chat-minigame.css, js/minigames/authenticator/authenticator-minigame.js,
+js/minigames/phone-chat/phone-chat-minigame.js, js/minigames/phone-chat/phone-chat-ui.js,
+js/minigames/landing-page-builder/landing-page-render.js, test/js/phone-outgoing-call.test.mjs,
+test/js/social-landing-page-render.test.mjs, test/js/social-phone-ui-partd.test.mjs,
+test/js/social-person-chat-narrow-partd.test.mjs, docs/achitechture/UI_SE_BUILD_LOG.md.
+Open for a later round: C-X7 single stepper render-module merge (look already unified). Env: keyless
+server on :3490 (worktree; PID file tmp/pids/server-3490.pid), stopped by PID at the end of the round.
