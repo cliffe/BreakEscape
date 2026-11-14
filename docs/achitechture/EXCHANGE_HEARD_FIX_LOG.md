@@ -57,6 +57,8 @@ exchange was never marked heard, however much of it the player had heard.
 
 ## The rule chosen
 
+**Superseded by E9 (2026-11-14, `OFFICE_LIFE_MISSIONS_PLAN.md` 9.1).** An exchange now counts as heard only when the player overheard at least one of its lines, whether it played to the end or was cut, and it starts only with its first speaker in earshot. See `NPC_NEEDS_SYSTEM.md` 5.6a. The rule below is kept as the record of the earlier fix.
+
 An exchange counts as heard when it plays to the end, or when it is cut after the player overheard
 at least one of its lines (`playerHears(...).overheard` when the line started). Cut before any line
 reached the player: unplayed.

@@ -756,6 +756,20 @@ Notes:
   keys and reverses them when `currentPlayerRoom` changes.
 - The first run of the typing check missed the effect because a worker types for under ten seconds; sampling every 100 ms found it.
 
+### E7 to E9: chatter spent only when heard (2026-11-14, keyless :3088, headless)
+
+Sanjay and Rosa are a coupled cooler pair (`chatterCooldownMin: 2`, `npc_use_started:water_cooler` both ways). Driver `tools/playtest/e7e9-live-proof.mjs`. The cooler's `useSeconds` is 40 in the scenario since review round 1 (m1); the first runs below set it in the page and sent Sanjay once Rosa reached the kitchen. The round 1 rerun (games 4516 to 4541) sets neither: Rosa is sent, the coupling sends Sanjay, and the pair had 26 to 33 s together.
+
+| Feature | Result | Evidence |
+|---|---|---|
+| Nothing spent out of earshot (E7) | PASS, 3 of 3 | games 4445, 4449, 4450: 2 `picture:` turns each with the player out of earshot, `sanjay|cooler` and `rosa|cooler` bags unchanged (null) |
+| First heard turn takes the next line (E7) | PASS, 3 of 3 | Sanjay `cooler:9`, `overheard: true` at 42 to 155 px; bubble in `e7-g4445-heard.png` |
+| Both use the cooler at once | PASS, 7 of 7 | no `timeout` or `no_beside_cell` with the player off the doorway |
+| Exchange starts with its first speaker heard (E9) | PASS, 2 of 2 | games 4452, 4455: `exchange_started exchange_rosa_rota`, lines 0 and 1 heard |
+| No exchange with only the second speaker heard (E9) | PASS (game 4461) | see the build log; the first attempts put the second speaker against the wall |
+| R1 rerun: no line drawn unheard or past the overlap | PASS, 5 of 5 | games 4516, 4517 (coupling only, 2 draws each, both heard and said inside the overlap), 4539 (heard turn with 3.2 s left: a picture, nothing drawn), 4541 (4.5 s left: the line said, ending 1 s before the overlap); on the round 1 engine, game 4540 drew Rosa's `cooler:1` and never said it |
+| R1 rerun: an existing bag survives an unheard break | PASS, 2 of 2 | games 4516, 4517: after a heard break, a second break with the player in the office (4517 with both cooldowns cleared): 6 `picture:` turns, both bags' `order` and `last` unchanged |
+
 ## Engine findings
 
 1. **Fixed 2026-11-05.** The home is now provisional until the `needsHome` object exists and is re-resolved once a second; and an NPC standing on its own desk's approach cell now counts as able to reach it (EasyStar gave no path for start == end, which is why Sanjay chose `tom_pc` in game 501). Original finding: **Needs homes in the start room resolve to the spawn point and stay there.** `npc-needs.js:301` resolves `s.home` on the first tick that has a sprite position and caches it; `_resolveHome` (`npc-needs.js:628-640`) falls back to the spawn point with `objectId: null` when `getObject`/`approachCell` fail. For the start room the NPCs are registered (`core/game.js:2004-2006`) before the room's objects or pathfinding are ready, so every start-room needs NPC gets the fallback and the home-object preference in `_useCandidate` (`npc-needs.js:475`) never applies. NPCs in rooms loaded later (Rosa, lounge) resolve correctly. Repro: load this scenario, then `[...npcNeedsSystem.states].map(([k,s]) => [k, s.home.objectId])` gives null for amara, tom, grace and sanjay, `rosa_laptop` for rosa. Suggested fix: don't cache a fallback home while `needsHome` names an object that isn't found yet (retry each tick until the object exists, or for a few seconds). `test_npc_needs` and `lab_physical_pentest` start-room NPCs are likely affected too, but hidden because each spawns at its own desk. Workaround here: each NPC spawns beside its own desk, and the work task reads "Someone works at a desk". Even so, game 501 had Sanjay choose `tom_pc` over his own adjacent PC (nearest-reachable from his seated position), so the workaround isn't reliable.

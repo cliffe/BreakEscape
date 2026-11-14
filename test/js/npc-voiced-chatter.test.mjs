@@ -30,8 +30,13 @@ const LINES = [
     { speakerId: 'ann', text: 'Fridge duty again.' }
 ];
 
-/** NPCs at coolers. `npcs`: { id: rec }. Moves arrive at once. */
-function office(npcs, { objects = [cooler()], seed = 1, globals = {}, hears = true, chatter = POOL, lines = LINES, spacing = 64 } = {}) {
+/**
+ * NPCs at coolers. `npcs`: { id: rec }. Moves arrive at once. Hearing: `hears` is a boolean, a
+ * no-argument function, or hears(id, radius) giving a boolean or { overheard, distance };
+ * `distances` ({ npcId: px }, E7) makes playerHears(id, radius) id- and radius-aware: heard when
+ * that NPC's distance is within the radius, never for an NPC it does not list.
+ */
+function office(npcs, { objects = [cooler()], seed = 1, globals = {}, hears = true, distances = null, chatter = POOL, lines = LINES, spacing = 64 } = {}) {
     const cfg = { npcs: {}, objects };
     let x = 100;
     for (const [id, rec] of Object.entries(npcs)) {
@@ -42,7 +47,14 @@ function office(npcs, { objects = [cooler()], seed = 1, globals = {}, hears = tr
     const spoken = [];
     const exCalls = [];
     w.world.globalHolds = cond => requiredGlobalsHold(cond, globals);
-    w.world.playerHears = () => ({ overheard: typeof hears === 'function' ? hears() : hears, distance: 50 });
+    w.world.playerHears = (id, radius) => {
+        if (distances) {
+            const d = distances[id];
+            return Number.isFinite(d) ? { overheard: d <= radius, distance: d } : { overheard: false, distance: null };
+        }
+        const v = typeof hears === 'function' ? hears(id, radius) : hears;
+        return v && typeof v === 'object' ? v : { overheard: v, distance: 50 };
+    };
     w.world.playerProximity = () => ({ nearby: false, distance: null });
     w.world.chatterConfig = () => chatter;
     w.world.speak = (id, line, info) => spoken.push({ id, line, at: sys.clockMs, until: sys.clockMs + info.ms, knot: info.knot || null });
@@ -124,6 +136,170 @@ test('picture chat once nothing is left; "chatter": false is silent; no built-in
     const off = office({ ann: {}, bob: {} }, { chatter: false, lines: null });
     off.sys.step(20000);
     assert.equal(off.emitted('npc_chatted:').length, 0);
+});
+
+// ── E7: a pool line is spent only when heard (OFFICE_LIFE_MISSIONS_PLAN 9.1) ──
+
+const bagState = (sys, id, topic = 'cooler') => JSON.stringify(sys._bags.get(`${id}|${topic}`) || null);
+
+test('E7: an unheard turn is a picture, spends no bag line, starts no cooldown; the first heard turn takes the next line', () => {
+    let hearing = false;
+    const o = office({ ann: {}, bob: {} }, { hears: () => hearing, lines: null, objects: [cooler('cooler', 300)] });
+    o.w.world.getObject('cooler').affordance.useSeconds = 60;
+    o.sys.step(8000);
+    const unheard = o.emitted('npc_chatted:');
+    assert.ok(unheard.length >= 2, `turns while nobody hears: ${unheard.length}`);
+    assert.ok(unheard.every(e => e.data.line === null && e.data.lineId.startsWith('picture:') && e.data.overheard === false));
+    assert.equal(o.spoken.length, 0, 'no speak');
+    assert.equal(bagState(o.sys, 'ann'), 'null');
+    assert.equal(bagState(o.sys, 'bob'), 'null');
+    for (const id of ['ann', 'bob']) assert.ok(!(o.sys.states.get(id).chatterQuietUntil > 0), `${id}: no cooldown started`);
+    // The same draw on a twin with the same seed: the line the first heard turn must take
+    const twin = office({ ann: {}, bob: {} });
+    hearing = true;
+    const before = o.emitted('npc_chatted:').length;
+    o.sys.step(3000);
+    const first = o.emitted('npc_chatted:').slice(before).find(e => e.data.line);
+    assert.ok(first, 'a line once heard');
+    const sp = first.data.speakerId;
+    assert.equal(first.data.lineId, `cooler:${twin.sys._bagNext(sp, 'cooler', POOL.cooler)}`, 'the bag\'s next line');
+    assert.equal(first.data.overheard, true);
+    assert.ok(o.sys.states.get(sp).chatterQuietUntil > o.sys.clockMs, 'the cooldown started');
+    assert.equal(o.spoken.length, 1);
+});
+
+test('E7: chatterCooldownMin 2 over a 28 s overlap heard throughout: one line each, then pictures', () => {
+    const o = office({ ann: { chatterCooldownMin: 2 }, bob: { chatterCooldownMin: 2 } }, { lines: null });
+    o.w.world.getObject('cooler').affordance.useSeconds = 28;
+    o.sys.step(40000);
+    const turns = o.emitted('npc_chatted:');
+    for (const id of ['ann', 'bob']) {
+        const mine = turns.filter(e => e.data.speakerId === id);
+        assert.equal(mine.filter(e => e.data.line).length, 1, `${id}: exactly one line`);
+        assert.ok(mine.filter(e => e.data.picture).length >= 2, `${id}: then pictures`);
+        assert.ok(mine.findIndex(e => e.data.line) < mine.findIndex(e => e.data.picture), `${id}: the line comes first`);
+    }
+});
+
+test('E7: a pair nobody hears does not take the speech lock from a pair the player hears', () => {
+    const run = (distances) => {
+        const o = office({ ann: {}, bob: {}, cat: {}, dan: {} }, { objects: [cooler('c1', 300), cooler('c2', 500)], lines: null, spacing: 200, distances });
+        const startedAt = {};
+        for (let t = 0; t < 40; t++) {
+            o.sys.step(NEEDS_TICK_MS);
+            for (const k of o.sys._chats.keys()) if (startedAt[k] === undefined) startedAt[k] = o.sys.clockMs;
+        }
+        return { o, startedAt };
+    };
+    const probe = run({});
+    const pairs = Object.fromEntries([...probe.o.sys._chats.entries()].map(([k, c]) => [k, [c.a, c.b]]));
+    assert.deepEqual(Object.keys(pairs).sort(), ['c1', 'c2']);
+    // Each pair speaks first on its own in turn: hear only the pair that would otherwise wait
+    for (const heardObj of ['c1', 'c2']) {
+        const distances = {};
+        for (const id of pairs[heardObj]) distances[id] = 50;
+        const { o, startedAt } = run(distances);
+        const turns = o.emitted('npc_chatted:');
+        const heardFirst = turns.find(e => e.data.objectId === heardObj);
+        assert.ok(heardFirst?.data.line, `${heardObj}: its first turn is a line`);
+        const firstSpoken = o.spoken[0];
+        assert.ok(pairs[heardObj].includes(firstSpoken.id), 'the first voiced line is the heard pair\'s');
+        assert.ok(firstSpoken.at - startedAt[heardObj] <= NEEDS_TICK_MS, `${heardObj}: spoken on its first turn, not queued`);
+        const other = heardObj === 'c1' ? 'c2' : 'c1';
+        assert.ok(turns.filter(e => e.data.objectId === other).every(e => e.data.picture), `${other}: pictures only`);
+        assert.ok(o.spoken.every(s => pairs[heardObj].includes(s.id)), 'the unheard pair speaks nothing');
+    }
+});
+
+test('E7: an object overhearRadius of 224 makes a speaker 200 px away heard; without it, a picture', () => {
+    const wide = office({ ann: {}, bob: {} }, { objects: [{ ...cooler(), affordance: { ...cooler().affordance, overhearRadius: 224 } }], lines: null, distances: { ann: 200, bob: 200 } });
+    wide.sys.step(2000);
+    const w1 = wide.emitted('npc_chatted:')[0];
+    assert.ok(w1.data.line, 'a bag line');
+    assert.equal(w1.data.overheard, true);
+    assert.equal(w1.data.playerDistance, 200);
+    const tight = office({ ann: {}, bob: {} }, { lines: null, distances: { ann: 200, bob: 200 } });
+    tight.sys.step(2000);
+    const t1 = tight.emitted('npc_chatted:')[0];
+    assert.equal(t1.data.line, null);
+    assert.ok(t1.data.picture);
+    assert.equal(bagState(tight.sys, t1.data.speakerId), 'null', 'nothing spent');
+});
+
+test('E7: pictures false, 60 unheard turns leave the chat in place; the first heard turn speaks', () => {
+    let hearing = false;
+    const o = office({ ann: { chatter: { cooler: ['Mine.'] } }, bob: { chatter: { cooler: ['Yours.'] } } }, { chatter: false, lines: null, hears: () => hearing });
+    o.w.world.getObject('cooler').affordance.useSeconds = 120;
+    o.sys.step(36000);   // a turn every CHAT_GAP_MS: more than 60 turns
+    assert.ok(o.sys._chats.has('cooler'), 'the meeting is still on');
+    assert.equal(o.emitted('npc_chatted:').length, 0, 'nothing to show, nothing shown');
+    assert.ok(o.sys._chats.get('cooler').n <= 40, 'unheard turns are not silent turns');
+    hearing = true;
+    o.sys.step(1000);
+    const said = o.emitted('npc_chatted:');
+    assert.equal(said.length, 1);
+    assert.ok(['Mine.', 'Yours.'].includes(said[0].data.line));
+});
+
+test('bag peek: always the index the next draw gives, across rounds, and it changes nothing', () => {
+    const o = office({ ann: {}, bob: {} });
+    for (let k = 0; k < 10; k++) {
+        const before = bagState(o.sys, 'ann');
+        const peek = o.sys._bagPeek('ann', 'cooler', POOL.cooler);
+        assert.equal(bagState(o.sys, 'ann'), before, 'peek leaves the bag as it was');
+        assert.equal(o.sys._bagNext('ann', 'cooler', POOL.cooler), peek, `draw ${k}`);
+    }
+});
+
+// R1 m4: the stronger form of the E7 bag check, on a bag that already exists after a heard meeting
+test('E7: after a heard meeting, a whole unheard meeting leaves each bag\'s order and last as they were', () => {
+    let hearing = true;
+    const o = office({ ann: { chatterCooldownMin: 0 }, bob: { chatterCooldownMin: 0 } }, { hears: () => hearing, lines: null });
+    o.sys.step(20000);
+    const bags = () => ['ann', 'bob'].map(id => o.sys._bags.get(`${id}|cooler`));
+    assert.ok(bags().every(b => b && b.last >= 0), 'both bags drawn from while heard');
+    const before = bags().map(b => JSON.stringify({ order: b.order, last: b.last, round: b.round }));
+    hearing = false;
+    for (const id of ['ann', 'bob']) o.sys.states.get(id).levels.thirst = 10;
+    const n0 = o.emitted('npc_chatted:').length;
+    o.sys.step(60000);
+    const unheard = o.emitted('npc_chatted:').slice(n0);
+    assert.ok(unheard.length >= 2, `a second meeting, unheard: ${unheard.length} turns`);
+    assert.ok(unheard.every(e => e.data.picture && !e.data.line));
+    assert.deepEqual(bags().map(b => JSON.stringify({ order: b.order, last: b.last, round: b.round })), before, 'order, last and round unchanged');
+});
+
+// R1 M1: a heard turn takes a bag line only when the line can be said inside the overlap left
+test('E7: a heard turn with 3 s of overlap left takes no line (bag and cooldown unchanged); with 5 s it takes one', () => {
+    const LONG = 'Has anyone seen the stapler?';   // bubbleMs 3.9 s: longer than 3 s, shorter than 5 s
+    const run = (leftMs) => {
+        let hearing = false;
+        const o = office({ ann: {}, bob: {} }, { hears: () => hearing, lines: null, chatter: { cooler: [LONG] } });
+        o.w.world.getObject('cooler').affordance.useSeconds = 60;
+        o.sys.step(2000);
+        const c = o.sys._chats.get('cooler');
+        assert.ok(c, 'the pair is chatting');
+        while (c.current) o.sys.step(NEEDS_TICK_MS);   // between turns, so the next tick is a turn
+        const before = { ann: bagState(o.sys, 'ann'), bob: bagState(o.sys, 'bob') };
+        const quiet = { ann: o.sys.states.get('ann').chatterQuietUntil, bob: o.sys.states.get('bob').chatterQuietUntil };
+        for (const id of ['ann', 'bob']) o.sys.states.get(id).job.useUntil = o.sys.clockMs + NEEDS_TICK_MS + leftMs;
+        c.nextAt = 0;
+        hearing = true;
+        const n0 = o.emitted('npc_chatted:').length;
+        o.sys.step(NEEDS_TICK_MS);
+        return { o, c, before, quiet, turn: o.emitted('npc_chatted:').slice(n0)[0] };
+    };
+    const short = run(3000);
+    assert.equal(short.o.spoken.length, 0, '3 s: nothing voiced');
+    assert.ok(!short.turn || short.turn.data.line === null, '3 s: no line shown');
+    for (const id of ['ann', 'bob']) {
+        assert.equal(bagState(short.o.sys, id), short.before[id], `3 s: ${id}'s bag unchanged`);
+        assert.equal(short.o.sys.states.get(id).chatterQuietUntil, short.quiet[id], `3 s: ${id}'s cooldown unchanged`);
+    }
+    const long = run(5000);
+    assert.equal(long.turn?.data.line, LONG, '5 s: the line is said');
+    assert.equal(long.o.spoken.length, 1);
+    assert.ok(long.o.sys.states.get(long.turn.data.speakerId).chatterQuietUntil > long.o.sys.clockMs, '5 s: the cooldown started');
 });
 
 // ── speech lock ────────────────────────────────────────────────────────────

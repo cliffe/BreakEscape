@@ -15,6 +15,9 @@ import { makeSimsWorld, SIMS_SEED } from './fixtures/needs-sims-world.mjs';
 
 const thirsty = (initial = 20) => ({ thirst: { decayPerMin: 1, urgentAt: 50, initial, jitterPct: 0 } });
 const cooler = (extra = {}) => ({ id: 'cooler', x: 300, y: 100, affordance: { satisfies: 'thirst', restores: 70, useSeconds: 15, capacity: 2, chatter: 'cooler', ...extra } });
+// E7 (OFFICE_LIFE_MISSIONS_PLAN 9.1): a pool line is spent only on a turn the player hears, so a
+// test about spoken lines gives the pair an audience; the default world hears nothing.
+const HEARD = () => ({ overheard: true, distance: 50 });
 
 /** Two (or more) NPCs and a cooler. `npcs`: { id: { needs, ...rec } }. Moves arrive at once. */
 function office(npcs, { objects = [cooler()], seed = 1, globals = {}, hears = null, near = null, chatter } = {}) {
@@ -68,7 +71,7 @@ test('requiredGlobalsHold: a name (truthy) or { name: value }, all must match', 
 
 test('pairing: two at a chatter cooler take turns; lines fit the overlap; same seed, same partner and lines', () => {
     const run = (seed) => {
-        const o = office({ ann: { needs: thirsty() }, bob: { needs: thirsty() } }, { seed, chatter: { cooler: ['Busy day?', 'Not bad, you?', 'Rain again.'] } });
+        const o = office({ ann: { needs: thirsty() }, bob: { needs: thirsty() } }, { seed, hears: HEARD, chatter: { cooler: ['Busy day?', 'Not bad, you?', 'Rain again.'] } });
         o.sys.step(20000);
         return o.emitted('npc_chatted:').map(e => ({ s: e.data.speakerId, p: e.data.partnerId, l: e.data.lineId }));
     };
@@ -106,7 +109,7 @@ test('pairing: no chat for a lone use, at a capacity-1 object, or at an object w
 });
 
 test('pairing: a short overlap gives fewer lines; the dwell is not stretched', () => {
-    const o = office({ ann: { needs: thirsty() }, bob: { needs: thirsty() } }, { objects: [cooler({ useSeconds: 4 })] });
+    const o = office({ ann: { needs: thirsty() }, bob: { needs: thirsty() } }, { objects: [cooler({ useSeconds: 4 })], hears: HEARD });
     o.sys.step(10000);
     assert.equal(o.emitted('npc_chatted:').length, 1, 'one 2.5-4 s line fits a 4 s overlap');
     const used = o.sys.getLog().filter(e => e.ev === 'used');
@@ -166,7 +169,7 @@ test('adapter playerHears: 150 px heard, 170 px not, through a wall not, other r
 test('hush: a hush pool stops after the current line once the player is near', () => {
     let near = false;
     const o = office({ ann: { needs: thirsty() }, bob: { needs: thirsty() } }, {
-        chatter: { cooler: { lines: ['Did you hear?', 'No, what?'], hush: true } },
+        hears: HEARD, chatter: { cooler: { lines: ['Did you hear?', 'No, what?'], hush: true } },
         near: () => ({ nearby: near, distance: near ? 40 : 400 })
     });
     o.sys.step(NEEDS_TICK_MS * 2);
@@ -176,14 +179,14 @@ test('hush: a hush pool stops after the current line once the player is near', (
     assert.equal(o.emitted('npc_chatted:').length, 1, 'stopped after the line in progress');
     // Without hush the same pool carries on with the player close
     const loud = office({ ann: { needs: thirsty() }, bob: { needs: thirsty() } }, {
-        chatter: { cooler: ['Did you hear?', 'No, what?'] }, near: () => ({ nearby: true, distance: 40 })
+        hears: HEARD, chatter: { cooler: ['Did you hear?', 'No, what?'] }, near: () => ({ nearby: true, distance: 40 })
     });
     loud.sys.step(20000);
     assert.ok(loud.emitted('npc_chatted:').length >= 2);
 });
 
 test('chattiness 0: that NPC only listens; NPC lines add to the pool', () => {
-    const o = office({ ann: { needs: thirsty(), chattiness: 0 }, bob: { needs: thirsty(), chatter: { cooler: ['Bob here.'] } } }, { chatter: { cooler: ['Hi.'] } });
+    const o = office({ ann: { needs: thirsty(), chattiness: 0 }, bob: { needs: thirsty(), chatter: { cooler: ['Bob here.'] } } }, { hears: HEARD, chatter: { cooler: ['Hi.'] } });
     o.sys.step(20000);
     const lines = o.emitted('npc_chatted:');
     assert.ok(lines.length >= 1);
@@ -195,7 +198,7 @@ test('chattiness 0: that NPC only listens; NPC lines add to the pool', () => {
 // ── compatibility ────────────────────────────────────────────────────────
 
 test('groups: the same group chats; different groups share the cooler in silence', () => {
-    const same = office({ ann: { needs: thirsty(), needsCompany: { groups: ['research'] } }, bob: { needs: thirsty(), needsCompany: { groups: ['research', 'x'] } } });
+    const same = office({ ann: { needs: thirsty(), needsCompany: { groups: ['research'] } }, bob: { needs: thirsty(), needsCompany: { groups: ['research', 'x'] } } }, { hears: HEARD });
     same.sys.step(20000);
     assert.ok(same.emitted('npc_chatted:').length >= 2);
     const diff = office({ ann: { needs: thirsty(), needsCompany: { groups: ['research'] } }, bob: { needs: thirsty(), needsCompany: { groups: ['sales'] } } });
@@ -206,7 +209,7 @@ test('groups: the same group chats; different groups share the cooler in silence
     assert.equal(diff.emitted('npc_chatted:').length, 0);
     assert.equal(diff.emitted('npc_avoided:').length, 0);
     // One side with no groups: the group test passes
-    const open = office({ ann: { needs: thirsty(), needsCompany: { groups: ['research'] } }, bob: { needs: thirsty() } });
+    const open = office({ ann: { needs: thirsty(), needsCompany: { groups: ['research'] } }, bob: { needs: thirsty() } }, { hears: HEARD });
     open.sys.step(20000);
     assert.ok(open.emitted('npc_chatted:').length >= 1);
 });
@@ -287,6 +290,54 @@ test('the decision log is unchanged by chatter at the cooler (sims day, no needs
     assert.deepEqual(chatty.log, quiet.log);
     assert.equal(quiet.chats, 0);
     assert.ok(!quiet.log.some(e => e.ev === 'avoided'));
+});
+
+// ── E8: the second user's cell must be reachable (OFFICE_LIFE_MISSIONS_PLAN 9.1) ──
+
+test('E8: no reachable beside cell for the second user: npc_job_failed no_beside_cell after its npc_left_post, home, fail cooldown', () => {
+    const o = office({ ann: { needs: thirsty(10) }, bob: { needs: thirsty(20) } });
+    const asked = [];
+    o.w.world.besideCell = (cell, taken, opts) => { asked.push({ cell, taken, opts }); return null; };
+    let failedAt = null;
+    for (let t = 0; t < 8 && failedAt === null; t++) {
+        o.sys.step(NEEDS_TICK_MS);
+        if (o.emitted('npc_job_failed:').length) failedAt = o.sys.tickCount;
+    }
+    const failed = o.emitted('npc_job_failed:');
+    assert.equal(failed.length, 1);
+    const who = failed[0].data.npcId;
+    const first = who === 'ann' ? 'bob' : 'ann';
+    assert.equal(failed[0].data.reason, 'no_beside_cell');
+    assert.equal(failed[0].data.targetId, 'cooler');
+    assert.ok(asked.length >= 1 && asked[0].opts.from, 'asked with the partner\'s position');
+    assert.ok(Array.isArray(asked[0].opts.avoidRooms));
+    const names = o.w.calls.emits.map(e => e.name);
+    const left = names.indexOf(`npc_left_post:${who}`);
+    assert.ok(left >= 0 && left < names.indexOf(`npc_job_failed:${who}`), 'npc_left_post comes first');
+    const log = o.sys.getLog();
+    const start = log.find(e => e.npc === who && e.ev === 'job_start');
+    const fail = log.find(e => e.npc === who && e.ev === 'job_failed');
+    assert.equal(fail.reason, 'no_beside_cell');
+    assert.equal(fail.t, start.t, 'on the tick the job started');
+    const st = o.sys.states.get(who);
+    assert.ok(st.cooldowns.cooler > o.sys.clockMs + 50000, 'the object is on the fail cooldown');
+    o.sys.step(NEEDS_TICK_MS * 2);
+    assert.ok(o.sys.getLog().some(e => e.npc === who && e.ev === 'returned_post'), 'it went home');
+    assert.equal(o.sys.getState(first).job?.phase, 'using', 'the first user carries on');
+    // It goes home, and does not try the cooler again while the cooldown runs
+    o.sys.step(40000);
+    assert.ok(!o.sys.getLog().some(e => e.npc === who && e.ev === 'used' && e.target === 'cooler'), 'skipped for FAIL_COOLDOWN_MS');
+    assert.equal(o.emitted('npc_chatted:').length, 0, 'no pairing');
+});
+
+test('E8: with a reachable side the two pair as before', () => {
+    const o = office({ ann: { needs: thirsty(10) }, bob: { needs: thirsty(20) } });
+    o.w.world.besideCell = (cell) => ({ x: cell.x + 32, y: cell.y });
+    o.sys.step(NEEDS_TICK_MS * 4);
+    assert.equal(o.emitted('npc_job_failed:').length, 0);
+    assert.equal(o.sys.getState('ann').job?.phase, 'using');
+    assert.equal(o.sys.getState('bob').job?.phase, 'using');
+    assert.ok(o.sys._chats.has('cooler'), 'paired');
 });
 
 // ── bubbles ──────────────────────────────────────────────────────────────

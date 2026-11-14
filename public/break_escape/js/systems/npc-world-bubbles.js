@@ -545,8 +545,9 @@ export class NpcWorldBubbles {
     /**
      * An exchange or call line (npc-needs.js world.speak: info.knot or info.call). It is voiced at
      * once, not deferred, and is never skipped for want of room: with no bubble to fit it goes to
-     * a silent toast, once. The exchange counts as heard (heard_<knot>), so the player must get
-     * every line (R5 m2). At most one entry per NPC, dropped when the line ends.
+     * a silent toast, once. The exchange counts as heard (heard_<knot>) once the player overhears
+     * any one of its lines (E9, NPC_NEEDS_SYSTEM.md 5.6a), so the player must get every line (R5 m2).
+     * At most one entry per NPC, dropped when the line ends.
      */
     mustShowChatter(npcId, line) {
         if (!npcId || !line) return;
