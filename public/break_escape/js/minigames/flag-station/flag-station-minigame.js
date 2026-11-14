@@ -708,13 +708,14 @@ export class FlagStationMinigame extends MinigameScene {
     }
 
     /** Header lines of the launch device (textContent: plain text only). `icon: false`
-     *  hides the warning icon, which only fits while the device is armed. */
-    setLaunchHeader({ heading, status }, { icon = true } = {}) {
+     *  hides the warning icon, which only fits while the device is armed; `color`
+     *  recolours the heading to match an outcome. */
+    setLaunchHeader({ heading, status }, { icon = true, color = null } = {}) {
         const q = (sel) => this.gameContainer.querySelector(sel);
         const h = q('.launch-abort-heading');
         const s = q('.launch-abort-status');
         const i = q('.launch-abort-icon');
-        if (h) h.textContent = heading;
+        if (h) { h.textContent = heading; if (color) h.style.color = color; }
         if (s) s.textContent = status;
         if (i) i.style.display = icon ? '' : 'none';
     }
@@ -726,7 +727,7 @@ export class FlagStationMinigame extends MinigameScene {
         const o = FlagStationMinigame.LAUNCH_OUTCOMES[outcome];
         const inputContainer = this.gameContainer.querySelector('.flag-input-container');
         if (!o || !inputContainer) return;
-        this.setLaunchHeader(FlagStationMinigame.LAUNCH_HEADER[outcome], { icon: false });
+        this.setLaunchHeader(FlagStationMinigame.LAUNCH_HEADER[outcome], { icon: false, color: o.color });
         for (const sel of ['#flag-result', '#reward-notification']) {
             const el = this.gameContainer.querySelector(sel);
             if (el) { el.innerHTML = ''; el.className = el.id === 'flag-result' ? 'flag-result' : 'reward-notification'; el.style.display = 'none'; }

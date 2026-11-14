@@ -70,6 +70,8 @@ for (const [branch, btn, word, global] of [
         assert.ok(!shown(q('#reward-notification')), 'reward box hidden');
         assert.ok(!shown(q('#flag-result')), 'submit result hidden');
         assert.equal(q('.launch-abort-icon').style.display, 'none', 'warning icon hidden');
+        const want = branch === 'abort' ? 'rgb(0, 255, 0)' : 'rgb(255, 68, 68)';
+        assert.equal(q('.launch-abort-heading').style.color, want, 'heading colour matches the outcome');
         assert.equal(q('.launch-abort-final')?.dataset.outcome, branch === 'abort' ? 'aborted' : 'launched');
     });
 
