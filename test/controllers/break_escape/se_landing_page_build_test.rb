@@ -21,6 +21,18 @@ module BreakEscape
       File.read(File.expand_path('../../fixtures/files/phish_score_parity/fixtures.json', __dir__))
     )['pages']['signin'].freeze
 
+    # The authored fake-check page from the same parity fixture (page id e10_check, target
+    # visitor), its own host/pretext/steps/urgency menus. ca10_downloads_and_fake_checks ships a
+    # pageType: 'fakeCheck' page, so the route's valid_check_choices? / recompute branch is live.
+    FAKECHECK = JSON.parse(
+      File.read(File.expand_path('../../fixtures/files/phish_score_parity/fixtures.json', __dir__))
+    )['pages']['fakecheck'].freeze
+
+    # All four persuasion factors full (genuine host, matching pretext, smooth steps, calm
+    # urgency): credibility 100, over the visitor threshold of 70.
+    CHECK_CONVINCING = { 'check' => { 'hostId' => 'genuine', 'pretextId' => 'fits',
+                                      'stepsId' => 'smooth', 'urgencyId' => 'calm' } }.freeze
+
     CONVINCING = { 'brand' => 'ledgerwell', 'purpose' => 'payslip', 'domainId' => 'd_word',
                    'logo' => 'crisp', 'wording' => 'w_formal', 'fields' => %w[email password],
                    'padlock' => true }.freeze
@@ -33,6 +45,14 @@ module BreakEscape
       scenario['social'] ||= {}
       scenario['social']['landingPages'] = [PAGE.deep_dup]
       scenario['social']['phishTargets'] = [{ 'id' => 'lord' }]
+      scenario
+    end
+
+    def fakecheck_scenario
+      scenario = CP.scenario
+      scenario['social'] ||= {}
+      scenario['social']['landingPages'] = [FAKECHECK.deep_dup]
+      scenario['social']['phishTargets'] = [{ 'id' => 'visitor' }]
       scenario
     end
 
@@ -138,6 +158,32 @@ module BreakEscape
       assert_equal true, entry['meetsThreshold']
       assert_equal 87, entry['credibility']
       assert_equal 1, store.size, 'the rebuild replaces the entry, it does not add a row'
+    end
+
+    test 'a convincing fakeCheck build records the server verdict from the check choices' do
+      build_game(fakecheck_scenario)
+      post_build(page_id: 'e10_check', target_id: 'visitor', choices: CHECK_CONVINCING)
+      assert_response :success, response.body
+      assert_equal true, response.parsed_body['success']
+
+      entry = store['e10_check']
+      assert entry, 'the fake-check build is stored under its page id'
+      assert_equal true, entry['built']
+      assert_equal true, entry['meetsThreshold']
+      assert_equal 100, entry['credibility']
+      assert_equal 'visitor', entry['targetId']
+      # normalise_build_choices keeps the four-key check only, server-verified, off the body score.
+      assert_equal({ 'hostId' => 'genuine', 'pretextId' => 'fits', 'urgencyId' => 'calm',
+                     'stepsId' => 'smooth' }, entry['choices']['check'])
+    end
+
+    test 'an off-menu fakeCheck host id is refused and nothing is stored' do
+      build_game(fakecheck_scenario)
+      post_build(page_id: 'e10_check', target_id: 'visitor',
+                 choices: { 'check' => CHECK_CONVINCING['check'].merge('hostId' => 'evil_host') })
+      assert_response :unprocessable_entity
+      assert_equal 'invalid', response.parsed_body['reason']
+      assert_empty store
     end
   end
 end

@@ -268,8 +268,20 @@ module BreakEscape
       v.is_a?(String) && !v.empty?
     end
 
-    # Mirror of JS Number() + Number.isFinite: a finite numeric value, or nil for anything
-    # else (NaN/Infinity/non-numeric), which the gate reads as "no threshold".
+    # A finite numeric value, or nil for anything else (NaN/Infinity/non-numeric), which the gate
+    # reads as "no threshold" (meets_threshold false) and "no tier gate" (the careful-reader gate
+    # is skipped). It mirrors JS Number() + Number.isFinite for the inputs that actually occur: an
+    # integer, a float or a numeric string.
+    #
+    # It deliberately does NOT mirror Number() for a boolean or an array, the two non-numeric cases
+    # the review raised (R1 Minor 4). JS would coerce Number(true) to 1, Number(false)/Number([]) to
+    # 0 and Number([n]) to n, but to_number returns nil for all of these. This is used for two gate
+    # fields only, linkThreshold and minDomainTier, and both are always authored as numbers, so there
+    # is no honest divergence to catch. Were a malformed value ever to reach here, nil is the safe
+    # reading: a boolean or empty-array linkThreshold coerced to 0 or 1 would let a weak page clear
+    # the gate, whereas nil withholds; the port is stricter than Number() in exactly the direction
+    # that never over-serves a secret. Replicating JS array-to-primitive coercion would add fragile
+    # code for input that cannot occur and would weaken that guarantee, so the gap is left closed.
     def to_number(v)
       case v
       when Integer then v
