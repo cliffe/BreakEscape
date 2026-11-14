@@ -457,14 +457,16 @@
      .note-style-pinned             a yellow slip placed a little off the ruled lines, pinned
    All flat colours and square steps: no rotation, gradients or soft shadows. */
 
-/* The title is always one line: a long one ends in an ellipsis */
-.notes-minigame-title {
-    display: block;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+/* On short screens the title is one line: a long one ends in an ellipsis. Elsewhere it wraps. */
+@media (orientation: landscape) and (max-height: 640px) {
+    .notes-minigame-title {
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .notes-minigame-title .notes-minigame-star { vertical-align: middle; margin-right: 8px; }
 }
-.notes-minigame-title .notes-minigame-star { vertical-align: middle; margin-right: 8px; }
 
 .notes-minigame-text-box {
     background: #fffdf2;
@@ -479,20 +481,22 @@
     content: '';
     position: absolute;
     top: -8px;
-    width: 40px;
+    width: 52px;
     height: 16px;
-    background: #efe3a8;
-    opacity: 0.9;
+    background: #e9d488;
+    opacity: 0.92;
     pointer-events: none;
     z-index: 1;
     clip-path: polygon(0 0, 100% 0, 100% 4px, calc(100% - 2px) 4px, calc(100% - 2px) 8px, 100% 8px, 100% 12px,
         calc(100% - 2px) 12px, calc(100% - 2px) 100%, 2px 100%, 2px 12px, 0 12px, 0 8px, 2px 8px, 2px 4px, 0 4px);
 }
-.notes-minigame-text-box::before { left: -14px; }
-.notes-minigame-text-box::after { right: -14px; }
+.notes-minigame-text-box::before { left: -18px; }
+.notes-minigame-text-box::after { right: -18px; }
 
 /* Torn: the bottom edge torn in uneven square steps; one strip of tape at the top centre */
 .note-style-torn .notes-minigame-text-box {
+    background: #fff6d6;
+    border-color: #d9c98e;
     border-bottom: 0;
     padding-bottom: 20px;
     clip-path: polygon(-20px -20px, calc(100% + 20px) -20px, calc(100% + 20px) calc(100% - 6px),

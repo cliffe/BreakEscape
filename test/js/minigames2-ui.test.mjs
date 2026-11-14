@@ -48,7 +48,7 @@ test('A22: one accent per scanner, all different, and the shared parts use the a
     assert.ok(accents.every(Boolean), 'every scanner sets --scan-accent');
     assert.equal(new Set(accents).size, 3, 'three different accents');
     assert.equal(block(c, '.scanner-panel .scan-header').border, '2px solid var(--scan-accent)');
-    assert.equal(block(c, '.scanner-panel .scan-search').border, '2px solid var(--scan-accent)');
+    assert.equal(block(c, '.scanner-panel :is(#ble-search, #bluetooth-search, #biometrics-search, .scan-search).scan-search').border, '2px solid var(--scan-accent)');
     assert.equal(block(c, '.scanner-panel .scan-chips')['flex-wrap'], 'wrap');
     const frame = block(c, '.minigame-container.scanner-panel');
     assert.equal(frame.left, '2vw !important', 'the panel stays on the left, 2vw in');

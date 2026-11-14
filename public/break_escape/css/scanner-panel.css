@@ -123,12 +123,13 @@
     color: #4caf50;
 }
 
-/* Search box and filter chips */
+/* Search box and filter chips. The ids lift the search box over the old side panels' id
+   rules in css/panels.css (#bluetooth-search { border: none } and a soft focus ring). */
 .scanner-panel .scan-controls {
     margin-bottom: 10px;
 }
 
-.scanner-panel .scan-search {
+.scanner-panel :is(#ble-search, #bluetooth-search, #biometrics-search, .scan-search).scan-search {
     width: 100%;
     box-sizing: border-box;
     margin-bottom: 8px;
@@ -142,12 +143,13 @@
     transition: none;
 }
 
-.scanner-panel .scan-search:focus {
+.scanner-panel :is(#ble-search, #bluetooth-search, #biometrics-search, .scan-search).scan-search:focus {
     outline: none;
     border-color: #4caf50;
+    box-shadow: none;
 }
 
-.scanner-panel .scan-search::placeholder { color: #888; }
+.scanner-panel :is(#ble-search, #bluetooth-search, #biometrics-search, .scan-search).scan-search::placeholder { color: #888; }
 
 .scanner-panel .scan-chips {
     display: flex;
