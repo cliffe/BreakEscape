@@ -111,6 +111,9 @@ export function networkScreenKind(item) {
     const pcId = item.sourcePcId;
     return pcId && typeof window !== 'undefined' && window.pcSessions?.get?.(pcId)?.remote === true ? 'desktop' : null;
 }
+// The text-file reader's bezel X (UI PC 2, E08) lands a network trip with this, without
+// importing this module
+if (typeof window !== 'undefined') window.networkScreenKind = networkScreenKind;
 
 // The keyboard refusal at a switched-off PC (user decision q72), if the server sends no text
 export const PC_OFF_TEXT = 'This PC is off.';

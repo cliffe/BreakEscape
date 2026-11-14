@@ -1154,6 +1154,97 @@ test('R4 m1: back from the Notepad, a file read from a desktop reopens in its fr
     }
 });
 
+test('UI PC 2 (E08): the window X in the title bar closes the file only; Esc too; the bezel X closes the PC', async () => {
+    const restore = sizeWindow(1400, 1000);
+    const was = { MinigameFramework: window.MinigameFramework, networkLinks: window.networkLinks };
+    try {
+        const a = await desktop();
+        const pcScreen = a.pcScreenExtras().pcScreen;
+        const back = { containerItem: a.containerItem, contents: [{ id: 'staff_mail', name: 'Mail export.txt', type: 'text_file' }], isTakeable: false };
+        a.cleanup?.();
+        window.MinigameFramework = { currentMinigame: null, registeredScenes: {}, endMinigame: () => {}, startMinigame: () => {} };
+        let containerReturns = 0;
+        window.returnToContainerAfterNotes = () => { containerReturns++; window.pendingContainerReturn = null; };
+        const landed = [];
+        window.networkLinks = { landed: (...args) => { landed.push(args); return {}; } };
+        const open = () => {
+            document.body.innerHTML = '<div id="mg"></div>';
+            const mg = new TextFileMinigame(document.getElementById('mg'), { fileName: 'Mail export.txt', itemId: 'staff_mail', fileContent: 'Line one', lockable: { scenarioData: { type: 'text_file' }, pcScreen } });
+            window.MinigameFramework.currentMinigame = mg;
+            mg.init();
+            mg.start();
+            return mg;
+        };
+
+        // The window X: in the navy title bar, after the file name, a button with a name
+        let mg = open();
+        const winX = document.querySelector('.pc-file-window .share-folder-titlebar > .pc-window-close');
+        assert.ok(winX, 'the window X is in the title bar');
+        assert.equal(winX.getAttribute('aria-label'), 'Close file');
+        assert.equal(winX.previousElementSibling.className, 'share-folder-path', 'after the file name');
+        assert.ok(document.querySelector('.pc-monitor-bezel > #minigame-close'), 'the bezel X stays');
+        window.pendingContainerReturn = back;
+        winX.click();
+        assert.equal(mg.closedByPlayer, true);
+        assert.notEqual(mg.closeWholePc, true);
+        mg.cleanup();
+        window.MinigameFramework.currentMinigame = null;
+        await settle(150);
+        assert.equal(containerReturns, 1, 'the window X goes back to the desktop');
+
+        // Esc: the same as the window X
+        mg = open();
+        window.pendingContainerReturn = back;
+        document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        assert.equal(mg.closedByPlayer, true);
+        assert.notEqual(mg.closeWholePc, true);
+        mg.cleanup();
+        window.MinigameFramework.currentMinigame = null;
+        await settle(150);
+        assert.equal(containerReturns, 2, 'Esc goes back to the desktop');
+
+        // The bezel X: the whole PC, so no return to the desktop
+        mg = open();
+        window.pendingContainerReturn = back;
+        document.querySelector('.pc-monitor-bezel > #minigame-close').click();
+        assert.equal(mg.closedByPlayer, true, 'still the player\'s own close');
+        assert.equal(mg.closeWholePc, true);
+        mg.cleanup();
+        window.MinigameFramework.currentMinigame = null;
+        await settle(150);
+        assert.equal(containerReturns, 2, 'no return to the desktop');
+        assert.equal(window.pendingContainerReturn, null);
+        assert.deepEqual(landed, [], 'a local PC lands no network trip');
+
+        // The bezel X on a remote desktop's file: the trip lands as the desktop's own close
+        mg = open();
+        window.pendingContainerReturn = { ...back, containerItem: { scenarioData: { type: 'pc', remote: { footholdId: 'jack_comms_port' } } } };
+        document.querySelector('.pc-monitor-bezel > #minigame-close').click();
+        mg.cleanup();
+        window.MinigameFramework.currentMinigame = null;
+        await settle(150);
+        assert.equal(containerReturns, 2);
+        assert.deepEqual(landed, [['desktop', 'close', { pcId: 'hot_desk' }]]);
+    } finally {
+        window.MinigameFramework = was.MinigameFramework;
+        window.networkLinks = was.networkLinks;
+        window.pendingContainerReturn = null;
+        restore();
+    }
+});
+
+test('UI PC 2 (E08): the window X is pixel art: a 2px bevel, square corners, the cross at x2, a 44px touch target', () => {
+    const t = css('text-file-minigame.css');
+    const rule = t.match(/\.pc-monitor button\.pc-window-close \{[^}]*\}/)[0];
+    assert.match(rule, /border: 2px solid;/);
+    assert.doesNotMatch(rule, /border-radius/, 'square corners (no radius anywhere in the monitor section)');
+    assert.match(rule, /background-size: 16px 14px;/, 'the 8x7 cross at x2');
+    assert.match(rule, /image-rendering: pixelated;/);
+    assert.match(rule, /width: 28px;[\s\S]*height: 24px;/);
+    assert.doesNotMatch(rule, /rgba\(|gradient|box-shadow: [^n]/);
+    assert.match(t, /\.pc-monitor button\.pc-window-close::after \{[^}]*inset: -12px -10px;/, '24x20 inside the border, 44x44 to touch');
+});
+
 test('R4 m1: a note taken from a container still goes through the container\'s return first', async () => {
     const was = window.MinigameFramework;
     try {
