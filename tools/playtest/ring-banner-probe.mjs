@@ -1,4 +1,4 @@
-// Live probe for the incoming-call banner over an open minigame (UI backlog 5d, review R1 M1/m1/m2).
+// Live probe for the incoming-call banner over an open minigame (UI backlog 5d, review R1 M1/m2, R2 m3).
 // Opens a scene, rings a call, and MEASURES boxes: which spot the banner took, and whether it
 // overlaps any control (button, input, key, PIN display, anything with a pointer cursor), title or X
 // in the scene, or a toast. Also raises a warning toast with no banner and notes whether it covers a
@@ -76,7 +76,14 @@ else {
   if (m.spot !== 'default') {
     if (report.overlapControls.length) report.failures.push(`banner (${m.spot}) overlaps ${report.overlapControls.length} control(s)`);
     if (report.overlapTitles.length) report.failures.push(`banner (${m.spot}) overlaps a title or the X`);
-  } else report.note = 'no clear spot: top centre fallback (a title may be covered)';
+  } else {
+    report.note = 'no clear spot: top centre fallback (a title may be covered)';
+    const cov = [...report.overlapControls, ...report.overlapTitles].map(c => c.name || c.t || '?');
+    if (cov.length) {
+      report.fallbackCovers = cov;
+      console.log(`NOTE: fallback banner covers ${cov.length} control(s) or title(s): ${cov.join(', ')}`);
+    }
+  }
   if (!report.inViewport) report.failures.push('banner leaves the viewport');
 }
 await p.screenshot({ path: `${out}/${tag}-ring.png` });
@@ -88,10 +95,13 @@ m = await boxes();
 report.bannerAfterWarnSpot = m.spot;
 report.toastVsBanner = m.banner ? m.toasts.filter(t => hit(m.banner, t)).length : null;
 if (report.toastVsBanner && m.spot !== 'default') report.failures.push('banner overlaps a toast');
-else if (report.toastVsBanner) report.note2 = 'no clear spot: top centre fallback overlaps the toast';
+else if (report.toastVsBanner) {
+  report.note2 = 'no clear spot: top centre fallback overlaps the toast';
+  console.log('NOTE: fallback banner overlaps a toast');
+}
 await p.screenshot({ path: `${out}/${tag}-ring-warn.png` });
 
-// 3. the warning with no banner: the lane starts below the titles
+// 3. the warning with no banner: where the toast lands (it may cover a title, as on main)
 await p.evaluate(() => { document.querySelectorAll('#phone-ring-layer .incoming-call-decline').forEach(x => x.click()); });
 await p.waitForTimeout(900);
 m = await boxes();

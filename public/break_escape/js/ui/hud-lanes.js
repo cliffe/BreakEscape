@@ -206,13 +206,14 @@ export function stackMembers(heights, laneMax, gap = LANE_GAP) {
  *   1. bottom   then the bottom right
  *   2. below    just under the minigame's frame (`frame`), kept inside the viewport
  *   3. lane     the right-hand end of the notify lane
+ *   4. lane-below  the same spot moved under the lowest toast showing, if that is clear and on screen
  * With none clear, the top centre where it always sat: a covered title costs less than a covered key.
  * With no minigame boxes at all it stays top centre. Boxes are grown by `margin` (default 4px).
  * @param {{vw:number, vh:number, size:{width:number,height:number},
  *          titles?:Array<{left,top,right,bottom}>, controls?:Array<{left,top,right,bottom}>,
  *          toasts?:Array<{left,top,right,bottom}>, frame?:{left,top,right,bottom}|null,
  *          lane?:{top:number,left:number,width:number}, top?:number, edge?:number, margin?:number}} a
- * @returns {{name:'default'|'bottom'|'below'|'lane', top:number, left:number}}
+ * @returns {{name:'default'|'bottom'|'below'|'lane'|'lane-below', top:number, left:number}}
  */
 export function ringLayerSpot({ vw, vh = 0, size, titles = [], controls = [], toasts = [], frame = null, lane,
   top = 12, edge = SIDE_GUTTER, margin = 4 } = {}) {
@@ -229,7 +230,13 @@ export function ringLayerSpot({ vw, vh = 0, size, titles = [], controls = [], to
   const right = Math.round(Math.max(0, vw - w - edge));
   const spots = [tryAt('bottom', centre, bottom), tryAt('bottom', right, bottom)];
   if (frame) spots.push(tryAt('below', centre, fit(frame.bottom + margin + 4)));
-  if (lane) spots.push(tryAt('lane', Math.round(Math.max(lane.left, lane.left + lane.width - w)), lane.top));
+  if (lane) {
+    const laneLeft = Math.round(Math.max(lane.left, lane.left + lane.width - w));
+    spots.push(tryAt('lane', laneLeft, lane.top));
+    // A toast in the lane: try just under the lowest one before giving up and covering a title
+    const under = toasts.length ? Math.round(Math.max(...toasts.map(r => r.bottom)) + LANE_GAP) : null;
+    if (under !== null && (vh <= 0 || under + h <= vh - edge)) spots.push(tryAt('lane-below', laneLeft, under));
+  }
   return spots.find(Boolean) || { name: 'default', top, left: centre };
 }
 
@@ -608,9 +615,25 @@ export function startHudLanes(doc = document, win = window) {
   const relayout = () => {
     if (queued) return;
     queued = true;
-    win.requestAnimationFrame(() => { queued = false; try { applyLanes(doc, win); } catch (e) { console.debug('[hud-lanes]', e); } });
+    win.requestAnimationFrame(() => { queued = false; try { applyLanes(doc, win); syncMinigameWatch(); } catch (e) { console.debug('[hud-lanes]', e); } });
   };
   win.addEventListener('resize', relayout);
+  // While the banner is placed over an open minigame, a control added inside it (a view switch,
+  // a confirm step) re-places the banner; the observer is dropped when either goes (review R2 m2)
+  let mgObs = null;
+  let mgTarget = null;
+  const syncMinigameWatch = () => {
+    const shown = !!doc.querySelector('#phone-ring-layer .incoming-call');
+    const mg = shown ? doc.querySelector('.minigame-container') : null;
+    if (mg === mgTarget) return;
+    mgObs?.disconnect();
+    mgObs = null;
+    mgTarget = mg;
+    if (mg && typeof win.MutationObserver === 'function') {
+      mgObs = new win.MutationObserver(() => relayout());
+      mgObs.observe(mg, { childList: true, subtree: true });
+    }
+  };
   const ro = typeof win.ResizeObserver === 'function' ? new win.ResizeObserver(relayout) : null;
   const watched = new Set();
   const watch = () => {
@@ -637,7 +660,7 @@ export function startHudLanes(doc = document, win = window) {
   watch();
   attach();
   relayout();
-  win.__hudLanesStarted = { relayout, stop: () => { ro?.disconnect(); mo.disconnect(); win.removeEventListener('resize', relayout); win.__hudLanesStarted = null; } };
+  win.__hudLanesStarted = { relayout, stop: () => { ro?.disconnect(); mo.disconnect(); mgObs?.disconnect(); mgObs = null; mgTarget = null; win.removeEventListener('resize', relayout); win.__hudLanesStarted = null; } };
   win.hudLanesRelayout = relayout;
   return win.__hudLanesStarted;
 }
