@@ -299,8 +299,10 @@ async function main() {
                 const b0 = await snap(page);
                 out.secondBefore = { t: b0.t, bags: b0.bags, room: b0.room };
                 const n0 = (await events(page)).length;
+                // Cooldowns cleared, so without E7 each speaker would draw a line on its first turn
+                await page.evaluate(() => { for (const id of ['sanjay', 'rosa']) window.npcNeedsSystem.states.get(id).chatterQuietUntil = 0; });
                 await page.evaluate(() => window.__test.needs.set('rosa', 'social', 10));
-                out.harness.push('second break: rosa social 10, player held in the office');
+                out.harness.push('second break: both chatter cooldowns cleared, rosa social 10, player held in the office');
                 out.secondMet = !!(await waitFor(page, both, 90000, 300));
                 await waitFor(page, x => !both(x), 60000, 300);
                 const b1 = await snap(page);
