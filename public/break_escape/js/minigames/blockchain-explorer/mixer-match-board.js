@@ -186,13 +186,7 @@ export class MixerMatchBoard {
 
         root.innerHTML = `
             <div class="bce-panel bce-mx">
-                <div class="bce-header">
-                    <div class="bce-title-group">
-                        <span class="bce-title-icon">⛓</span>
-                        <span class="bce-title">${esc(this.title)}</span>
-                    </div>
-                    ${this.caseRef ? `<span class="bce-case-ref">${esc(this.caseRef)}</span>` : ''}
-                </div>
+                ${this.caseRef ? `<div class="bce-header"><span class="bce-case-ref">${esc(this.caseRef)}</span></div>` : ''}
                 ${this.renderRules()}
                 ${this.showHelp ? this.renderHelp() : ''}
                 <div class="bce-mx-body">

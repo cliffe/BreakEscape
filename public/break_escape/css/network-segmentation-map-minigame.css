@@ -14,6 +14,9 @@
     position: relative;
 }
 
+/* The confirm overlay covers the scene's own area */
+.nsm-game-container { position: relative; }
+
 /* ── Header bar ─────────────────────────────────────────────────────────────── */
 
 .nsm-header-bar {
@@ -21,18 +24,10 @@
     justify-content: flex-start;
     align-items: center;
     gap: 20px;
-    padding: 10px 60px 10px 20px; /* right padding clears the × close button */
+    padding: 10px 20px;
     background: #111122;
     border-bottom: 2px solid #2a2a4a;
     flex-shrink: 0;
-}
-
-.nsm-title-text {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 8px;
-    line-height: 16px;
-    color: #8888cc;
-    letter-spacing: 1px;
 }
 
 .nsm-status-badge {

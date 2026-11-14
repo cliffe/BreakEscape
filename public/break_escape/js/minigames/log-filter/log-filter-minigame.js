@@ -31,11 +31,12 @@ import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 
 export class LogFilterMinigame extends MinigameScene {
-    // The X sits inside the console frame, in the padded header bar
-    static closeInsideFrame = true;
+    // Draws in the shared console window (UI decision X8): title bar and X come from there
+    static consoleWindow = true;
+    static consoleWindowFill = true;
 
-    closeAnchor() {
-        return this._dom?.wrap || this.gameContainer;
+    consoleTitle() {
+        return this._title;
     }
 
 
@@ -277,8 +278,7 @@ export class LogFilterMinigame extends MinigameScene {
     // ── Top-level layout ───────────────────────────────────────────────────
 
     _renderLayout() {
-        // The scene draws inside the framework's game area, so the shell's X stays (critique B
-        // LF1, X5): the header holds only the title, the X closes
+        // The scene draws inside the framework's game area; the title is in the shared console bar
         if (this.headerElement) this.headerElement.style.display = 'none';
         this.container.classList.add('lf-minigame-container');
         const c = this.gameContainer;
@@ -289,13 +289,6 @@ export class LogFilterMinigame extends MinigameScene {
         const wrap = this._el('div', 'lf-wrapper');
         c.appendChild(wrap);
         this._dom.wrap = wrap;
-
-        // Header
-        const header = this._el('div', 'lf-header');
-        const titleEl = this._el('div', 'lf-header-title');
-        titleEl.textContent = displayDashes(this._title);
-        header.appendChild(titleEl);
-        wrap.appendChild(header);
 
         // Tab bar
         const tabBar = this._el('div', 'lf-tab-bar');

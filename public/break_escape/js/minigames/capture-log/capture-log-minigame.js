@@ -161,23 +161,25 @@ function el(tag, cls, text) {
 }
 
 export class CaptureLogMinigame extends MinigameScene {
-    // The log is a framed window with its title bar inside the frame and the X in the bar
-    // (critique B CL1, X4)
-    static closeInsideFrame = true;
+    // Draws in the shared console window (UI decision X8): a short list, so it wraps its content
+    static consoleWindow = true;
 
     constructor(container, params) {
-        super(container, { title: 'Capture log', cancelText: 'Close', headerElement: true, ...params });
+        super(container, { title: 'Capture log', cancelText: 'Close', ...params });
         this.holderId = params?.holderId || null;
         this.secrets = null;
         this.secretRows = [];
         this.lastKeys = [];
     }
 
+    consoleTitle() {
+        return this.params?.title || 'Capture log';
+    }
+
     init() {
         super.init();
         this.container.classList?.add('capture-log-minigame');
         this.gameContainer.classList?.add('capture-log-frame');
-        if (this.headerElement) this.gameContainer.prepend(this.headerElement);
         this.root = el('div', 'capture-log pixel-scroll');
         this.gameContainer.appendChild(this.root);
         this.redraw();

@@ -25,29 +25,9 @@
     color: #d0d0e0;
     overflow: hidden;
     box-sizing: border-box;
-    border: 2px solid #ffffff;
 }
 
 /* ── Header ─────────────────────────────────────────────── */
-.lf-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: #0d0d1a;
-    border-bottom: 2px solid #ffffff;
-    padding: 6px 52px 6px 10px;
-    min-height: 46px;
-    box-sizing: border-box;
-    flex-shrink: 0;
-}
-
-.lf-header-title {
-    font-size: 20px;
-    color: #ffffff;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-}
-
 /* ── Tab bar ─────────────────────────────────────────────── */
 .lf-tab-bar {
     display: flex;

@@ -289,8 +289,8 @@ test('review round 2: every scene with a pop-up or confirm handles Esc and hides
         assert.match(code, /_hideSceneX\(true\)/, `${name} hides the scene X on open`);
         assert.match(code, /_hideSceneX\(false\)/, `${name} shows the scene X on close`);
     }
-    // the segmentation map owns its X (#nsm-close), the others use the shell's
-    assert.match(src(more['network-segmentation-map']), /_hideSceneX\(hidden\) \{\s*const x = this\.container\?\.querySelector\?\.\('#nsm-close'\)/);
+    // the segmentation map now uses the shared console X too (X8): every scene hides #minigame-close
+    assert.match(src(more['network-segmentation-map']), /_hideSceneX\(hidden\) \{\s*const x = this\.container\?\.querySelector\?\.\('#minigame-close'\)/);
     // the source pop-up is not a confirm: it carries the shared X in its header
     assert.match(src(SCENES['drug-library-integrity']), /minigame-close-button dli-modal-close/);
 });
@@ -366,7 +366,8 @@ test('review round 1: segmentation map keeps its panel in view (M1), SIS title w
     assert.match(nsm, /\.nsm-topology-area \{\s*flex: 0 0 auto;\s*(\/\*[\s\S]*?\*\/\s*)?min-height: 480px/, 'stacked map tall enough for every device');
     assert.match(css('scada-historian-minigame.css'), /\.sh-charts \{ overflow-y: auto/);
     assert.match(css('sis-config-threshold-minigame.css'), /\.sis-modal h4 \{\s*overflow-wrap: anywhere/);
-    assert.match(css('warranty-checklist-minigame.css'), /\.wcc-letterhead \{[^}]*min-height: 62px/);
+    // The X is in the shared bar now (X8), so the letterhead needs no band or right padding for it
+    assert.doesNotMatch(css('warranty-checklist-minigame.css'), /\.wcc-letterhead \{[^}]*(min-height: 62px|52px)/);
     assert.match(css('sis-config-threshold-minigame.css'), /\.sis-threshold-header \{\s*margin-top: 28px/);
     assert.match(src(SCENES['blockchain-explorer']), /class="bce-graph-pane pixel-scroll"/);
     assert.match(css('claims-management-system-minigame.css'), /\.cms-nav-label \{[^}]*overflow-wrap: anywhere/);

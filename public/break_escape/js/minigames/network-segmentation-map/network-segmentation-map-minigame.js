@@ -33,6 +33,10 @@ import { escapeHtml as escapeTitle } from '../../utils/escape-html.js';
  * (sis01 blind playtest S2: players could not tell the lines were clickable).
  */
 export class NetworkSegmentationMapMinigame extends MinigameScene {
+    // Draws in the shared console window (UI decision X8): title bar and X come from there
+    static consoleWindow = true;
+    static consoleWindowFill = true;
+
     constructor(container, params) {
         params = params || {};
         super(container, params);
@@ -43,20 +47,23 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
         this._resizeHandler = null;
     }
 
+    consoleTitle() {
+        return this.params.title || 'NETWORK SEGMENTATION MAP';
+    }
+
     init() {
+        super.init();
         const severVar = this.params.severVar || 'network_isolated';
         if (window.gameState?.globalVariables?.[severVar] === true) {
             this.severed = true;
         }
 
-        const title = this.params.title || 'NETWORK SEGMENTATION MAP';
         const severLabel = this.params.severButtonLabel || 'SEVER LINK';
 
-        this.container.innerHTML = `
-            <button type="button" class="minigame-close-button" id="nsm-close">&times;</button>
+        this.gameContainer.classList.add('nsm-game-container');
+        this.gameContainer.innerHTML = `
             <div class="nsm-wrapper pixel-scroll">
                 <div class="nsm-header-bar">
-                    <span class="nsm-title-text">${escapeTitle(displayDashes(title))}</span>
                     <span class="nsm-status-badge">ACTIVE INCIDENT</span>
                 </div>
                 <div class="nsm-body pixel-scroll">
@@ -166,12 +173,7 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
     start() {
         super.start();
 
-        this.addEventListener(this.container.querySelector('#nsm-close'), 'click',
-            (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                this.complete(false);
-            });
+        // The X is the shared one in the console bar (wired by the base class)
         this.addEventListener(this.container.querySelector('#nsm-sever-btn'), 'click',
             (event) => {
                 event.preventDefault();
@@ -252,7 +254,7 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
 
     // The confirm has two named buttons and no X, so the scene X hides while it is open
     _hideSceneX(hidden) {
-        const x = this.container?.querySelector?.('#nsm-close');
+        const x = this.container?.querySelector?.('#minigame-close');
         if (x) x.style.visibility = hidden ? 'hidden' : '';
     }
 

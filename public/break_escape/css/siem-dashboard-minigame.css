@@ -1,12 +1,6 @@
-.siem-minigame-container {
-    background: #0d1324;
-    border: 2px solid #2f3a59;
-}
-
 .siem-minigame-game-container {
-    padding: 14px;
+    padding: 0;
     box-sizing: border-box;
-    overflow: visible;
 }
 
 .siem-panel {
@@ -17,9 +11,7 @@
     height: 100%;
     margin: 0;
     box-sizing: border-box;
-    min-height: 520px;
     background: #1a1a2e;
-    border: 2px solid #3a4a6d;
     overflow: hidden;
 }
 
@@ -62,27 +54,18 @@
 .siem-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
     padding: 12px;
     border-bottom: 2px solid #364261;
     background: #11192b;
 }
 
-/* Press Start 2P sizes in this sheet are 8px (labels) or 16px (titles): one font pixel per
-   eighth of the size, so anything else smears (slice 7 R5 M2). Letter spacing stays whole. */
-.siem-title {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 16px;
-    line-height: 24px;
-    color: #c8d8ff;
-    letter-spacing: 0;
-}
-
+/* Press Start 2P sizes in this sheet are 8px (labels): one font pixel per eighth of the size,
+   so anything else smears (slice 7 R5 M2). Letter spacing stays whole. */
 .siem-clock {
     font-family: 'GNF', monospace;
     font-size: 32px;
     color: #ffd27f;
-    margin-right: 64px;
 }
 
 .siem-body {
@@ -528,19 +511,7 @@
    frame, and the two panes scroll inside it, so the bottom border and the status bar stay
    on screen (slice 7 R5 M3) */
 @media (max-height: 560px) {
-    .siem-minigame-game-container {
-        overflow: hidden;
-        padding: 8px 14px;
-    }
-
-    .siem-panel {
-        min-height: 0;
-        height: 100%;
-    }
-
-    /* tall enough for the X, which sits in this row (n1) */
     .siem-header {
-        min-height: 40px;
         box-sizing: border-box;
         padding: 4px 12px;
     }
@@ -631,9 +602,5 @@
 
     .siem-pane-title {
         overflow-wrap: anywhere;
-    }
-
-    .siem-clock {
-        margin-right: 48px;
     }
 }

@@ -14,28 +14,6 @@
     overflow: hidden;
 }
 
-/* ── Header ──────────────────────────────────────────────── */
-.sh-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: #1a233a;
-    padding: 8px 52px 8px 12px;
-    border-bottom: 2px solid #334466;
-    flex-shrink: 0;
-}
-.sh-header-title {
-    font-size: 22px;
-    color: #ffffff;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-}
-.sh-header-subtitle {
-    font-size: 18px;
-    color: #8899cc;
-    margin-left: 16px;
-    letter-spacing: 0.03em;
-}
 .sh-close-btn {
     background: #1e2a44;
     border: 2px solid #ffffff;
@@ -364,14 +342,6 @@
 /* Phones: channel list above the chart, the progress bar under the hint, the range
    buttons wrap (critique B SH1) */
 @media (max-width: 600px) {
-    .sh-header {
-        flex-wrap: wrap;
-    }
-
-    .sh-header-subtitle {
-        margin-left: 0;
-    }
-
     .sh-body {
         flex-direction: column;
         overflow-y: auto;
