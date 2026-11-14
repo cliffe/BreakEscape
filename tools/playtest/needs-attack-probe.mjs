@@ -89,6 +89,60 @@ async function recordBeat(name, fn) {
     catch (e) { report.beats[name] = { error: String(e).slice(0, 300) }; }
 }
 
+// One NPC's needs state plus its current room (npcPos), for the mid-job polling below.
+const njob = (id) => page.evaluate(i => {
+    const s = window.__test.needs.state(i);
+    const p = window.npcNeedsSystem && window.npcNeedsSystem.world.npcPos(i);
+    if (!s) return { reg: false, room: p && p.roomId };
+    return { reg: true, mode: s.mode, atPost: s.atPost, scriptSuspended: s.scriptSuspended,
+        job: s.job ? { kind: s.job.kind, phase: s.job.phase, targetId: s.job.targetId, carrying: s.job.carrying } : null,
+        room: p && p.roomId, parked: (s.parked || []).map(x => x.reason) };
+}, id);
+
+// Poll fn() every stepMs until it returns truthy, or timeoutMs elapses (returns the value or null).
+async function waitUntil(fn, timeoutMs = 40000, stepMs = 500) {
+    const end = Date.now() + timeoutMs;
+    while (Date.now() < end) { const v = await fn(); if (v) return v; await t(stepMs); }
+    return null;
+}
+
+// Walk the player into the kitchen so its objects (the cooler, the tray, the kettle) load and
+// the kitchen NPCs register; both rooms then stay loaded, so an office NPC can route to a kitchen
+// source. A cross-room need parks as `no_source` until the source room is loaded.
+async function loadKitchen() {
+    const a = await page.evaluate(() => window.__test.enterRoom('kitchen', { timeoutMs: 25000 })).catch(e => ({ ok: false, err: String(e).slice(0, 80) }));
+    await t(1200);
+    return { kitchen_ok: a && a.ok, rooms: await page.evaluate(() => Object.keys(window.rooms || {})) };
+}
+
+// Real conversation with Eli through the person-chat UI: approach (moveToNear), interact to open
+// the chat, pick the handover choice (#set_global eli_asked), then the exit choice
+// (#exit_conversation, which emits conversation_closed:eli). Falls back to arming the print only
+// if the chat genuinely will not open.
+async function eliConversation() {
+    const room = await page.evaluate(() => window.currentPlayerRoom);
+    if (room && room !== 'office') { await page.evaluate(() => window.__test.enterRoom('office')).catch(() => {}); await t(1200); }
+    let path = 'real';
+    await page.evaluate(() => window.__test.moveToNear('eli', { timeoutMs: 20000 })).catch(() => {});
+    await t(600);
+    const opened = await page.evaluate(() => window.__test.interact('eli'));
+    await t(1600);
+    const chatUp = await page.evaluate(() => { try { return !!window.__test.minigame.getState(); } catch (e) { return false; } });
+    let chA = null, chB = null;
+    if (opened && opened.ok && chatUp) {
+        chA = await page.evaluate(() => window.__test.minigame.choose('handover'));
+        await t(1200);
+        chB = await page.evaluate(() => window.__test.minigame.choose('leave you be'));
+        await t(1400);
+        await page.evaluate(() => window.__test.dismissBlockingUi && window.__test.dismissBlockingUi()).catch(() => {});
+    } else {
+        path = 'armed-fallback';
+        await page.evaluate(() => window.gameState.globalVariables && (window.gameState.globalVariables.eli_asked = true));
+        await page.evaluate(() => window.eventDispatcher && window.eventDispatcher.emit('conversation_closed:eli', { npcId: 'eli' }));
+    }
+    return { path, interact_ok: opened && opened.ok, chat_up: chatUp, choose_handover: chA && chA.ok, choose_exit: chB && chB.ok };
+}
+
 await load();
 await snap().then(s => { report.start = s; });
 await shot('00-start');
@@ -107,143 +161,161 @@ if (beat === 'all' || beat === 'e') await recordBeat('e_hostile_from_start', asy
 });
 
 // (i-print) Eli: ask for the handover, close, page lands ~6s later; check_eli_page ticks.
-// Driven through the REAL UI path: interact to open the person-chat, pick the handover choice
-// (sets eli_asked via #set_global), pick the exit choice (#exit_conversation closes the chat and
-// emits conversation_closed:eli), then wait for the 6 s print and the object_revealed mapping.
+// Real UI path (eliConversation): approach, open the person-chat, pick the handover choice
+// (sets eli_asked via #set_global), pick the exit choice (#exit_conversation emits
+// conversation_closed:eli). The completeTask under test (check_eli_page) fires on the real
+// object_revealed:eli_page event ~6 s later.
 if (beat === 'all' || beat === 'i') await recordBeat('i_eli_print', async () => {
-    // Try the real UI: interact, pick the handover choice, pick the exit choice (closes the
-    // chat and emits conversation_closed:eli). Eli is boxed in by tables, so headless
-    // pathfinding may not reach his post; when the chat does not open, fall back to arming the
-    // print directly (eli_asked + conversation_closed:eli). Either way the completeTask under
-    // test (check_eli_page) fires on object_revealed:eli_page, a real needs-system event.
-    let path = 'real';
-    const opened = await page.evaluate(() => window.__test.interact('eli'));
-    await t(1500);
-    const chatUp = await page.evaluate(() => { try { const s = window.__test.minigame.getState(); return !!(s && s.dialogue); } catch (e) { return false; } });
-    let chA = null, chB = null;
-    if (opened && opened.ok && chatUp) {
-        chA = await page.evaluate(() => window.__test.minigame.choose('handover'));
-        await t(1000);
-        chB = await page.evaluate(() => window.__test.minigame.choose('leave you be'));
-        await t(1200);
-        await page.evaluate(() => window.__test.dismissBlockingUi && window.__test.dismissBlockingUi()).catch(() => {});
-    } else {
-        path = 'armed-fallback';
-        await page.evaluate(() => window.gameState.globalVariables && (window.gameState.globalVariables.eli_asked = true));
-        await page.evaluate(() => window.eventDispatcher && window.eventDispatcher.emit('conversation_closed:eli', { npcId: 'eli' }));
-    }
+    const conv = await eliConversation();
     const closed = await snap();
     await t(9000);
     const after = await snap();
     await shot('i-eli-page');
-    return { path, interact_ok: opened && opened.ok, chat_up: chatUp, choose_handover: chA && chA.ok, choose_exit: chB && chB.ok, eli_asked_after_close: closed.globals.eli_asked, eli_page_shown: after.globals.eli_page_shown, revealed: after.revealed, check_eli_page: after.tasks.includes('check_eli_page') };
+    return { ...conv, eli_asked_after_close: closed.globals.eli_asked, eli_page_shown: after.globals.eli_page_shown, revealed: after.revealed, check_eli_page: after.tasks.includes('check_eli_page') };
 });
 
-// (d) Ben recalled by the Meeting Note: patrol override walks him home and suspends needs;
-//     Meeting Over resumes them. Driven through the REAL UI path: interact with the note objects
-//     in the office, which emit object_interacted with objectName from scenarioData.name.
+// (d) Ben recalled by the Meeting Note (real reads). Load the kitchen so his thirst can send him
+//     to the cooler, walk back to the office, set thirst, let him leave post, then read the notes
+//     (moveToNear + interact). Meeting Note suspends his needs and walks him home; Meeting Over
+//     resumes them. scriptSuspended is the suspend/resume signal (mode stays idle either way).
 if (beat === 'all' || beat === 'd') await recordBeat('d_ben_recalled', async () => {
+    await loadKitchen();
+    await page.evaluate(() => window.__test.enterRoom('office')).catch(() => {});
+    await t(1200);
     await page.evaluate(() => window.__test.needs.set('ben', 'thirst', 10));
-    await t(2000);
+    const left = await waitUntil(async () => { const s = await njob('ben'); return (s.reg && s.atPost === false) ? s : null; }, 20000);
+    await page.evaluate(() => window.__test.moveToNear('meeting_note', { timeoutMs: 20000 })).catch(() => {});
     const readNote = await page.evaluate(() => window.__test.interact('meeting_note'));
     await t(800);
     await page.evaluate(() => window.__test.dismissBlockingUi && window.__test.dismissBlockingUi()).catch(() => {});
-    await t(2500);
+    await t(2800);
     const recalled = await snap();
+    const benAfterNote = await njob('ben');
     await shot('d-recalled');
+    await page.evaluate(() => window.__test.moveToNear('meeting_over', { timeoutMs: 20000 })).catch(() => {});
     const readOver = await page.evaluate(() => window.__test.interact('meeting_over'));
     await t(800);
     await page.evaluate(() => window.__test.dismissBlockingUi && window.__test.dismissBlockingUi()).catch(() => {});
-    await t(2000);
-    const resumed = await snap();
+    await t(2500);
+    const benAfterOver = await njob('ben');
+    await shot('d-resumed');
     return {
         read_note_ok: readNote && readNote.ok, read_over_ok: readOver && readOver.ok,
+        ben_left_post_before_recall: !!left,
         check_called_home: recalled.tasks.includes('check_called_home'),
-        ben_suspended_mode: (recalled.states.find(s => s.id === 'ben') || {}).mode,
-        ben_resumed_mode: (resumed.states.find(s => s.id === 'ben') || {}).mode
+        ben_suspended_after_note: benAfterNote.scriptSuspended,
+        ben_resumed_after_over: benAfterOver.scriptSuspended
     };
 });
 
-// (a) Ava attacked mid-carry: turns hostile, job aborts, then calms and resumes.
+// (a) Ava attacked mid-carry: turns hostile, the carry aborts, then she calms and resumes.
+//     The kitchen must be loaded so her interest can deliver office_mugs to the kitchen tray;
+//     catch her carrying in the kitchen, then flip her hostile and back.
 if (beat === 'a') await recordBeat('a_ava_attacked', async () => {
-    await page.evaluate(() => window.gameState.globalVariables && (window.__test.needs.set('ava', 'caffeine', 10)));
-    // Give her the carry job by dropping the mugs in her notice, then set hostile mid-walk.
-    await t(4000);
+    await loadKitchen();
+    const atCarry = await waitUntil(async () => {
+        const s = await njob('ava');
+        return (s.job && s.job.kind === 'carry' && s.job.carrying && s.room === 'kitchen') ? s : null;
+    }, 45000) || await waitUntil(async () => {
+        const s = await njob('ava'); return (s.job && s.job.kind === 'carry' && s.job.carrying) ? s : null;
+    }, 8000);
     await page.evaluate(() => window.npcHostileSystem && window.npcHostileSystem.setNPCHostile('ava', true));
     await t(1500);
     const hostile = await snap(); await shot('a-hostile');
     await page.evaluate(() => window.npcHostileSystem && window.npcHostileSystem.setNPCHostile('ava', false));
-    await t(6000);
+    await t(8000);
     const calm = await snap(); await shot('a-after');
-    return { hostile_mid: hostile.hostility.ava, ava_mode_after: (calm.states.find(s => s.id === 'ava') || {}).mode, ava_log: calm.log.filter(l => l.includes('ava')) };
+    const avaLog = calm.log.filter(l => l.includes('ava'));
+    return {
+        carrying_at_attack: !!atCarry, carry_room_at_attack: atCarry && atCarry.room,
+        hostile_mid: hostile.hostility.ava,
+        aborted: avaLog.some(l => l.includes('job_aborted')),
+        blocked: avaLog.some(l => / blocked/.test(l)),
+        unblocked: avaLog.some(l => l.includes('unblocked')),
+        ava_mode_after: (calm.states.find(s => s.id === 'ava') || {}).mode, ava_log: avaLog
+    };
 });
 
-// (b) Ava knocked out: ava_ko + check_ko_drop fire once; folder drops; survives reload.
+// (b) Ava knocked out mid-carry in the kitchen: ava_ko + check_ko_drop fire once; the folder drops
+//     where she fell (the kitchen), the carried mugs are refused. Verify via the server's
+//     room_states.<room>.objects_added (tools/playtest, a rails runner) after this run.
 if (beat === 'b') await recordBeat('b_ava_ko', async () => {
-    await page.evaluate(() => window.__test.needs.set('ava', 'caffeine', 10));
-    await t(4000);
+    await loadKitchen();
+    const atCarry = await waitUntil(async () => {
+        const s = await njob('ava');
+        return (s.job && s.job.kind === 'carry' && s.job.carrying && s.room === 'kitchen') ? s : null;
+    }, 45000) || await waitUntil(async () => {
+        const s = await njob('ava'); return (s.job && s.job.kind === 'carry' && s.job.carrying) ? s : null;
+    }, 8000);
     const r = await page.evaluate(() => window.__test.debugKO('ava'));
     await t(2000);
     const down = await snap(); await shot('b-down');
-    const officeBefore = await roomItems('office');
+    const officeBefore = await roomItems('office'); const kitchenBefore = await roomItems('kitchen');
     await load();
     const after = await snap(); await shot('b-reload');
-    const officeAfter = await roomItems('office');
-    return { ko_ok: r.ok, ava_ko: after.globals.ava_ko, check_ko_drop: down.tasks.includes('check_ko_drop'), still_ko_after_reload: after.ko.ava, office_takeables_before: officeBefore, office_takeables_after: officeAfter };
+    return { ko_room: atCarry && atCarry.room, carrying_at_ko: !!atCarry, ko_ok: r.ok, ava_ko: after.globals.ava_ko, check_ko_drop: down.tasks.includes('check_ko_drop'), still_ko_after_reload: after.ko.ava, office_takeables_before: officeBefore, kitchen_takeables_before: kitchenBefore };
 });
 
-// (c) Ben knocked out at the kitchen cooler: notebook drops; survives reload.
+// (c) Ben knocked out at the kitchen cooler: notebook drops; survives reload. Load the kitchen so
+//     his thirst can route there, wait until he reaches the cooler, then knock him out.
 if (beat === 'c') await recordBeat('c_ben_ko', async () => {
+    await loadKitchen();
     await page.evaluate(() => window.__test.needs.set('ben', 'thirst', 10));
-    // let him walk to the kitchen cooler
-    await t(9000);
-    const walking = await snap();
+    const atCooler = await waitUntil(async () => {
+        const s = await njob('ben');
+        return (s.room === 'kitchen' && s.job && s.job.targetId === 'water_cooler') ? s : null;
+    }, 30000);
+    const benWhen = atCooler || await njob('ben');
     const r = await page.evaluate(() => window.__test.debugKO('ben'));
     await t(2000);
     const down = await snap(); await shot('c-down');
     const kitchenBefore = await roomItems('kitchen');
     await load();
     const after = await snap(); await shot('c-reload');
-    const kitchenAfter = await roomItems('kitchen');
-    return { ben_room_when_ko: walking.states.find(s => s.id === 'ben'), ko_ok: r.ok, ben_ko: after.globals.ben_ko, check_held_drop: down.tasks.includes('check_held_drop'), still_ko_after_reload: after.ko.ben, kitchen_takeables_before: kitchenBefore, kitchen_takeables_after: kitchenAfter };
+    return { ben_room_when_ko: benWhen.room, ben_phase_when_ko: benWhen.job && benWhen.job.phase, ko_ok: r.ok, ben_ko: after.globals.ben_ko, check_held_drop: down.tasks.includes('check_held_drop'), still_ko_after_reload: after.ko.ben, kitchen_takeables_before: kitchenBefore };
 });
 
-// (g) Fran knocked out mid-walk to the cooler; Gil's next coupled break goes alone.
+// (g) Fran knocked out mid-walk to the cooler; Gil's next break goes alone. Load the kitchen so
+//     fran and gil register and their sources load; set fran's thirst so she walks, knock her out
+//     mid-walk, then send Gil on his break with a need level (allowed beat-start, not the synthetic
+//     Break Time emit). check_solo_break ticks on npc_left_post:gil while fran_ko is true.
 if (beat === 'g') await recordBeat('g_fran_ko_gil_solo', async () => {
+    await loadKitchen();
     await page.evaluate(() => window.__test.needs.set('fran', 'thirst', 10));
-    await t(3000);
+    const franWalking = await waitUntil(async () => { const s = await njob('fran'); return (s.reg && s.atPost === false && s.job) ? s : null; }, 20000);
     const r = await page.evaluate(() => window.__test.debugKO('fran'));
-    await t(2000);
-    // Send Gil on his break (the Break Time lever).
-    await page.evaluate(() => window.eventDispatcher && window.eventDispatcher.emit('object_interacted', { objectName: 'Break Time', objectId: 'break_time' }));
+    await t(1500);
+    await page.evaluate(() => window.__test.needs.set('gil', 'caffeine', 10));
     await t(10000);
     const after = await snap(); await shot('g-gil-alone');
+    const gil = await njob('gil');
     await load();
     const reloaded = await snap();
-    return { ko_ok: r.ok, fran_ko: after.globals.fran_ko, check_solo_break: after.tasks.includes('check_solo_break'), gil_mode: (after.states.find(s => s.id === 'gil') || {}).mode, fran_still_ko_after_reload: reloaded.ko.fran };
+    return { fran_walking_before_ko: !!franWalking, ko_ok: r.ok, fran_ko: after.globals.fran_ko, check_solo_break: after.tasks.includes('check_solo_break'), gil_mode: gil.mode, gil_room: gil.room, fran_still_ko_after_reload: reloaded.ko.fran };
 });
 
 // (h) Eli knocked out before any conversation: no page is ever revealed, reload reveals nothing.
 if (beat === 'h') await recordBeat('h_eli_ko_no_page', async () => {
     const r = await page.evaluate(() => window.__test.debugKO('eli'));
     await t(3000);
-    const down = await snap();
+    const down = await snap(); await shot('h-down');
     await load();
-    const after = await snap();
+    const after = await snap(); await shot('h-reload');
     return { ko_ok: r.ok, eli_ko: after.globals.eli_ko, eli_page_shown: after.globals.eli_page_shown, revealed_after_reload: after.revealed, check_eli_page_fired: after.tasks.includes('check_eli_page') };
 });
 
-// (f) Dee sees the player pick dee_drawer: the lockpick catch opens her conversation and
-//     check_caught_walking ticks. The scenario grants no lockpick, so one is injected into the
-//     inventory first (the catch itself checks line of sight, not possession); the key-mode
-//     lockpicking minigame then exposes "Switch to Lockpicking", whose gate runs the catch.
+// (f) Dee sees the player pick dee_drawer while she is off her post: the lockpick catch opens her
+//     conversation and check_caught_walking ticks. Her caffeine is set low first so she leaves her
+//     post for the office coffee (the catch then lands on a moving NPC). A lockpick is injected
+//     (the catch checks line of sight, not possession); "Switch to Lockpicking" runs the catch gate.
 if (beat === 'f') await recordBeat('f_dee_catch', async () => {
     await page.evaluate(() => {
         if (window.inventory && Array.isArray(window.inventory.items)) {
             window.inventory.items.push({ scenarioData: { id: 'probe_lockpick', type: 'lockpick', name: 'Lockpick Kit' } });
         }
     });
-    const dee0 = await snap();
+    await page.evaluate(() => window.__test.needs.set('dee', 'caffeine', 10));
+    const walking = await waitUntil(async () => { const s = await njob('dee'); return (s.reg && s.atPost === false) ? s : null; }, 15000);
     const open = await page.evaluate(() => window.__test.interact('dee_drawer'));
     await t(1500);
     const mgState = await page.evaluate(() => { try { return window.__test.minigame.getState(); } catch (e) { return { err: String(e).slice(0, 120) }; } });
@@ -259,6 +331,7 @@ if (beat === 'f') await recordBeat('f_dee_catch', async () => {
     await shot('f-caught');
     const after = await snap();
     return {
+        dee_off_post_at_pick: !!walking, dee_mode_at_pick: walking && walking.mode,
         lockpick_injected: true, interact_ok: open && open.ok, mg_id: mgState && mgState.id,
         switch_attempt: sw,
         caught_log: after.log.filter(l => l.includes('dee')),
@@ -270,23 +343,8 @@ if (beat === 'f') await recordBeat('f_dee_catch', async () => {
 // (i2) Reload within the 6 s print delay: the pending delayed mapping is lost, so no page and no
 //      reveal global. Expected and recorded as such. Real UI path to arm the print, then reload fast.
 if (beat === 'i2') await recordBeat('i2_reload_within_delay', async () => {
-    let path = 'real';
-    const opened = await page.evaluate(() => window.__test.interact('eli'));
-    await t(1500);
-    const chatUp = await page.evaluate(() => { try { const s = window.__test.minigame.getState(); return !!(s && s.dialogue); } catch (e) { return false; } });
-    if (opened && opened.ok && chatUp) {
-        await page.evaluate(() => window.__test.minigame.choose('handover'));
-        await t(1000);
-        await page.evaluate(() => window.__test.minigame.choose('leave you be'));
-        await t(1000);
-        await page.evaluate(() => window.__test.dismissBlockingUi && window.__test.dismissBlockingUi()).catch(() => {});
-    } else {
-        path = 'armed-fallback';
-        await page.evaluate(() => window.gameState.globalVariables && (window.gameState.globalVariables.eli_asked = true));
-        await page.evaluate(() => window.eventDispatcher && window.eventDispatcher.emit('conversation_closed:eli', { npcId: 'eli' }));
-    }
+    const conv = await eliConversation();
     const armed = await snap();
-    armed.path = path;
     // Reload well inside the 6 s delay.
     await t(2000);
     await load();
@@ -294,7 +352,7 @@ if (beat === 'i2') await recordBeat('i2_reload_within_delay', async () => {
     const after = await snap();
     await shot('i2-after-reload');
     return {
-        path, interact_ok: opened && opened.ok, eli_asked_before_reload: armed.globals.eli_asked,
+        ...conv, eli_asked_before_reload: armed.globals.eli_asked,
         eli_page_shown_after_reload: after.globals.eli_page_shown, revealed_after_reload: after.revealed,
         check_eli_page_after_reload: after.tasks.includes('check_eli_page')
     };
