@@ -1056,6 +1056,7 @@
           "spriteVisemes": "assets/characters/offduty_agent_visemes.png",
           "storyPath": "scenarios/test_needs_sims/ink/neil.json",
           "currentKnot": "start",
+          "reopenRefreshesHub": true,
           "voice": { "name": "Charon", "style": "IT support engineer, mid forties, white British, Geordie accent. Dry, settled, unhurried.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "needsHome": "neil_mug",
@@ -1066,7 +1067,7 @@
           "needs": {
             "caffeine": { "decayPerMin": 6, "urgentAt": 45, "initial": 60 }
           },
-          "_comment": "SIMS-3 (m02 Gary pattern): Neil's only need is caffeine, met by his own declared mug (neil_mug, seat stand), so every sip is an at-post job that never moves him. swivel false. The aimed useFrom holds his spawn on the mug's approach cell through a suspend and resume.",
+          "_comment": "SIMS-3 (m02 Gary pattern): Neil's only need is caffeine, met by his own declared mug (neil_mug, seat stand), so every sip is an at-post job that never moves him. swivel false. The aimed useFrom holds his spawn on the mug's approach cell through a suspend and resume. reopenRefreshesHub true (R3 m3): an X close mid-reply saves the story mid-knot, and this makes the silent reopen re-enter the hub so neil.ink's re-entry line shows instead of the stale last reply.",
           "eventMappings": [
             { "eventPattern": "conversation_closed:neil", "condition": "globalVars.neil_print_asked === true && globalVars.neil_ko !== true", "onceOnly": true, "delayMs": 6000, "needs": { "print": { "producer": "it_copier", "forget": true } } }
           ]

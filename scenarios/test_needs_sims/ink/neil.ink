@@ -17,11 +17,13 @@ VAR job_called = false
 // choice is only offered once the player has been in the staff room and could have seen it (R3 m4).
 VAR staff_room_seen = false
 // asked_now is ink-only (not a scenario global): it marks that the print was asked for in this same
-// chat, where nothing can have printed yet, so the "ready" line reads clumsily. It is reset whenever
-// the exit ends the story and a fresh chat restarts (R3 m2).
+// chat, where nothing can have printed yet, so the "ready" line reads clumsily. The ended-story
+// restart saves and restores ink variables, so it is reset in the start knot below, which the restart
+// runs, rather than relying on the story ending (R3 m2).
 VAR asked_now = false
 
 === start ===
+~ asked_now = false
 # speaker:npc
 Alright? Neil, IT support. I'm parked here by me mug, so give us a shout.
 -> hub.choices
