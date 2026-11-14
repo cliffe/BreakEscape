@@ -397,3 +397,18 @@
     text-align: center;
     letter-spacing: 0.03em;
 }
+
+/* Short windows (phones in landscape): tabs and footer take most of the height, so the whole
+   console scrolls in the window's body instead of clipping the Confirm strip */
+@media (max-height: 500px) {
+    .fdp-wrap {
+        flex: none;
+        overflow: visible;
+    }
+
+    .fdp-panel {
+        flex: none;
+        overflow: visible;
+        min-height: 160px;
+    }
+}

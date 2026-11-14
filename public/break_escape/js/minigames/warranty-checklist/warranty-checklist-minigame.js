@@ -1,7 +1,8 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 
-const DEFAULT_TITLE = 'Warranty Compliance Checklist — MC-2023-ALBE-007';
+// The case reference stays in the letterhead (page content), so the bar carries the name only
+const DEFAULT_TITLE = 'Warranty Compliance Checklist';
 
 const VERDICT_LABELS = {
     compliant: 'Compliant',
