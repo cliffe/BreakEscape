@@ -542,3 +542,54 @@ a send lands exactly when its kit's `seLandingPages` entry has `built == true` a
 the two paths must share this one method. Chunk A defines its send route separately; at merge, the
 orchestrator should point Route 2's `landed` computation at this helper (or reconcile a duplicate).
 `migrated_build_entry` and `migrated_at` are chunk-B-only helpers.
+
+### Tests (chunk B)
+
+- `test/models/break_escape/phish_legacy_migration_test.rb`: 9 tests, 44 assertions. Covers
+  `legacy_phish_evidence?`, an honest old save with no surviving sent mail (server verdict +
+  imported landed send), a forged junk-choice save (meetsThreshold false, landed false), off-menu
+  choices migrating as not built, a built-but-unsent page, an already-proven capture left untouched
+  while the stores populate, runs-once (second call a no-op after `se_landing_pages` is edited),
+  first-wins on `landed: true`, and the empty-global flag set.
+- `test/controllers/break_escape/phish_legacy_migration_controller_test.rb`: 4 tests, 23 assertions.
+  The `scenario` bootstrap on a legacy save takes the lock, migrates the two stores and stamps the
+  capture in one pass; the two stores and the flag never ride the bootstrap back to the client
+  (`savedGlobalVariables.se_landing_pages` still ships); `sync_state` does not run the migration;
+  `phishEvidenceMigrated` is never accepted from a `sync_state` body.
+- Touched-file neighbours (no lock, chunk B tip): `capture_record_test`, `captures_sync_test`,
+  `reload_persistence_test`, `format_version_test`, `se_landing_page_build_test`,
+  `capture_payload_secret_test`, `capture_proofs_test`, `capture_secret_endpoint_test`,
+  `capture_secret_test`, `phish_score_parity_test` all green (201 + 62 runs, 0 failures). No JS was
+  touched, so no node run.
+
+### Live browser proof (chunk B)
+
+Keyless server on port 3665 (`env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true RBENV_VERSION=2.7.8
+bundle exec rails server -b 127.0.0.1 -p 3665`), started by hand, GEMINI warning confirmed in the
+boot log. Three `lab_social_engineering` games created through `tools/playtest/new-game.rb`, each
+seeded as a legacy save by rewriting its `player_state` JSON through `rails runner` (no migrations or
+schema commands): `globalVariables.se_landing_pages.payroll_login` with a `victim.submitted` marker,
+an unproven `seCaptures.lord`, and the two server stores and the flag cleared. Each game was loaded
+headless in Chromium (Playwright, `setFPS(20)`, fixed stepping on), which fires the real GET
+`/scenario` bootstrap. Server state read back read-only through `rails runner`. Server then killed by
+PID; port 3665 confirmed down.
+
+- **Game 4467 — honest, no surviving sent mail.** After the bootstrap: `phishEvidenceMigrated =
+  true`, `seLandingPages.payroll_login.meetsThreshold = true` (re-derived, credibility 87, not the
+  seeded forged 99), `sePhishSends["lord/kit_payroll_page"].landed = true` (imported off the
+  `victim.submitted` marker with no sent mail in `mailState`). The legacy `se_landing_pages` global
+  is left in place. Under chunk B's old client-evidence reader with no sent mail the capture stays
+  unproven; a direct simulation of chunk C's store-based reader against the migrated stores lands,
+  so the secret is servable the moment the reader flips. The store import is mail-independent, as
+  designed.
+- **Game 4468 — honest, full client evidence (stamp path).** Same legacy save plus a landed `sent`
+  mail record. After the bootstrap the migration ran before the stamp in one locked pass and
+  `seCaptures.lord.proven = true`, with both stores populated and the flag set. This is the literal
+  "takes the lock, migrates and stamps" case.
+- **Game 4469 — forged, weak choices under a submitted marker.** After the bootstrap
+  `seLandingPages.payroll_login.meetsThreshold = false` (re-derived from the weak choices, credibility
+  34, not the seeded forged `meetsThreshold: true`), `sePhishSends["lord/kit_payroll_page"].landed =
+  false`, the capture is not proven and chunk C's reader does not land, so the secret is withheld. A
+  forged old marker is not laundered into a server fact.
+
+Game ids: 4467, 4468, 4469. Server stopped by PID; port 3665 down.
