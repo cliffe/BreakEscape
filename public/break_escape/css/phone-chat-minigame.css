@@ -229,12 +229,14 @@
     font-weight: bold;
 }
 
+/* C-PH4: an empty list must read as "nothing here yet", not a blank green screen. Solid dark
+   ink on the green LCD, not a faded 50% grey. */
 .no-contacts {
     flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: rgba(0, 0, 0, 0.5);
+    color: #10331a;
     font-family: 'GNF', monospace;
     font-size: 16px;
     padding: 20px;
@@ -1521,4 +1523,66 @@
     .phone-call-mode .call-status-bar.call-dialling .call-status-label {
         animation: none;
     }
+}
+
+/* Phone toast (C-PH1): a short message inside the phone screen (contact not found, conversation
+   ended), not raw text dropped on the backdrop under the phone. Pixel art: 2px square border,
+   GNF, no blur. It sits over the screen and fades on opacity only. */
+.phone-notification {
+    position: absolute;
+    left: 50%;
+    bottom: 16px;
+    transform: translateX(-50%);
+    max-width: calc(100% - 24px);
+    padding: 8px 12px;
+    background: #14233a;
+    color: #eef1f8;
+    border: 2px solid #eef1f8;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    text-align: center;
+    z-index: 20;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+.phone-notification.fade-out { opacity: 0; }
+.phone-notification.error { border-color: #e4a0a0; color: #ffd9d9; }
+.phone-notification.success { border-color: #8fd8a3; color: #d9ffe4; }
+
+/* C-PH2: the Add-to-Notepad action lives on the phone's status bar, clear of the HUD. Signal
+   bars stay left (auto margin eats the free space) and the battery and this button group right. */
+.phone-header .signal-bars { margin-right: auto; }
+.phone-notepad-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    background: rgba(0, 0, 0, 0.08);
+    color: #000;
+    border: 2px solid #333;
+    font-family: 'GNF', monospace;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    position: relative;
+}
+.phone-notepad-btn .notepad-btn-icon { width: 14px; height: 14px; image-rendering: pixelated; }
+.phone-notepad-btn:hover { background: rgba(0, 0, 0, 0.16); }
+/* 44px touch target without changing the drawn size (as the close button does) */
+@media (max-width: 600px), (pointer: coarse) {
+    .phone-notepad-btn::after { content: ''; position: absolute; inset: -10px; }
+}
+/* When the phone has no status bar (app chrome), the button falls into the contact-list header;
+   keep that header a row so the title and the button share it. */
+.contact-list-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.phone-social-theme .phone-header .phone-notepad-btn { color: var(--dm-ink); border-color: var(--dm-ink); }
+.phone-terminal-theme .phone-header .phone-notepad-btn { color: #00ff41; border-color: rgba(0, 255, 65, 0.6); background: transparent; }
+
+/* C-PH3: on a narrow screen the phone fills the width, so the framework close X (fixed at the
+   viewport's top-right) landed on the phone's top-right corner and its battery reading. Push the
+   phone down below the X so the X sits in the clear band above the device. Only where the X would
+   otherwise meet the phone (centred 400px shell vs a 15px-inset X: viewport under ~490px). */
+@media (max-width: 500px) {
+    [data-minigame="phone-chat"] .phone-messages-container { margin-top: 44px; }
 }

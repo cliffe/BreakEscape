@@ -1329,8 +1329,10 @@ export default class PhoneChatUI {
         const notification = document.createElement('div');
         notification.className = `phone-notification ${type}`;
         notification.textContent = message;
-        
-        this.container.appendChild(notification);
+        // C-PH1: show the toast inside the phone screen, not as raw text on the backdrop below
+        // the phone. Fall back to the container only if the screen is not rendered yet.
+        const host = this.container.querySelector('.phone-screen') || this.container;
+        host.appendChild(notification);
         
         setTimeout(() => {
             notification.classList.add('fade-out');

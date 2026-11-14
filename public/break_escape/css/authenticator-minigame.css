@@ -58,14 +58,32 @@
 /* the last line is always the defender's control (defenderNote) */
 .auth-outcome-line:last-child { margin-bottom: 0; font-weight: 600; color: var(--auth-ok); }
 
-/* phone shell */
+/* phone shell (C-AU1): the same device as phone-chat and inbox-triage — a grey shell with a
+   stepped (pixel-art) clip-path corner and an inner screen, so every in-game phone reads alike.
+   The clip-path polygon is the shared phone-shell step (phone-chat-minigame.css). */
 .auth-phone {
-    border: 6px solid #1c2440; border-radius: 0; background: #0f1530;
-    padding: 10px 10px 16px; max-width: 320px; margin: 0 auto;
+    background: #a0a0ad; padding: 10px; max-width: 320px; margin: 0 auto;
+    clip-path: polygon(0px calc(100% - 10px), 2px calc(100% - 10px), 2px calc(100% - 6px), 4px calc(100% - 6px), 4px calc(100% - 4px), 6px calc(100% - 4px), 6px calc(100% - 2px), 10px calc(100% - 2px), 10px 100%, calc(100% - 10px) 100%, calc(100% - 10px) calc(100% - 2px), calc(100% - 6px) calc(100% - 2px), calc(100% - 6px) calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) calc(100% - 6px), calc(100% - 2px) calc(100% - 6px), calc(100% - 2px) calc(100% - 10px), 100% calc(100% - 10px), 100% 10px, calc(100% - 2px) 10px, calc(100% - 2px) 6px, calc(100% - 4px) 6px, calc(100% - 4px) 4px, calc(100% - 6px) 4px, calc(100% - 6px) 2px, calc(100% - 10px) 2px, calc(100% - 10px) 0px, 10px 0px, 10px 2px, 6px 2px, 6px 4px, 4px 4px, 4px 6px, 2px 6px, 2px 10px, 0px 10px);
 }
-.auth-phone-top { display: flex; justify-content: center; padding-bottom: 8px; }
-.auth-phone-speaker { display: block; width: 48px; height: 6px; border-radius: 0; background: #2b3660; }
-.auth-feed { display: flex; flex-direction: column; gap: 10px; min-height: 60px; }
+/* the inner screen holds the status bar and the prompt feed */
+.auth-phone-screen {
+    background: #0f1530; display: flex; flex-direction: column;
+    clip-path: polygon(0px calc(100% - 10px), 2px calc(100% - 10px), 2px calc(100% - 6px), 4px calc(100% - 6px), 4px calc(100% - 4px), 6px calc(100% - 4px), 6px calc(100% - 2px), 10px calc(100% - 2px), 10px 100%, calc(100% - 10px) 100%, calc(100% - 10px) calc(100% - 2px), calc(100% - 6px) calc(100% - 2px), calc(100% - 6px) calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) calc(100% - 6px), calc(100% - 2px) calc(100% - 6px), calc(100% - 2px) calc(100% - 10px), 100% calc(100% - 10px), 100% 10px, calc(100% - 2px) 10px, calc(100% - 2px) 6px, calc(100% - 4px) 6px, calc(100% - 4px) 4px, calc(100% - 6px) 4px, calc(100% - 6px) 2px, calc(100% - 10px) 2px, calc(100% - 10px) 0px, 10px 0px, 10px 2px, 6px 2px, 6px 4px, 4px 4px, 4px 6px, 2px 6px, 2px 10px, 0px 10px);
+}
+/* status bar: signal bars (left) and battery (right), the phone-chat header look */
+.auth-phone-status {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px; background: rgba(255, 255, 255, 0.08); border-bottom: 2px solid #2b3660;
+    color: #d7dde6;
+}
+.auth-signal-bars { display: flex; gap: 2px; align-items: flex-end; }
+.auth-signal-bar { width: 3px; background: #d7dde6; }
+.auth-signal-bar:nth-child(1) { height: 4px; }
+.auth-signal-bar:nth-child(2) { height: 6px; }
+.auth-signal-bar:nth-child(3) { height: 8px; }
+.auth-signal-bar:nth-child(4) { height: 10px; }
+.auth-battery { font-size: 13px; color: #d7dde6; }
+.auth-feed { display: flex; flex-direction: column; gap: 10px; min-height: 60px; padding: 10px; }
 
 /* a push prompt card */
 .auth-card {
