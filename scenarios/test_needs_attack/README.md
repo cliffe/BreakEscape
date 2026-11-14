@@ -110,22 +110,25 @@ The KO and reload beats (`a b c g`, and the within-6 s `i` case) are cleanest ea
 game, because a KO is saved to the server. `beat=all` runs the non-destructive beats (`d e h`, and the
 print half of `i`) in one game.
 
-Run on a keyless server built from this worktree (format 3). The :3093 server in this
-environment runs an older worktree (reads format up to 1) and refuses format-3 games, so the
-proof was run on a worktree server on :3094; games made with `swap-scenario-game.rb` (host
-`test_needs_sims`), not `new-game.rb`, because there is no Mission row for this folder yet.
+Run on a keyless server built from this worktree (format 3) on **:3093**, started from the worktree
+root; games made with `swap-scenario-game.rb` (host `test_needs_sims`), not `new-game.rb`, because
+there is no Mission row for this folder yet. A fresh game per KO or reload beat. Each task is ticked
+by the real interaction (a real Meeting Note read, Eli's conversation opened and closed in its UI);
+KO and reload drops are checked against the server's `room_states.<room>.objects_added`. Screenshots
+and `report-<beat>-<game>.json` are in the session scratchpad `officelife-sims/s1/`.
 
 | beat | game id | result |
 |------|---------|--------|
-| (a) attacked mid-carry | | _pending live run_ |
-| (b) KO mid-carry, folder drops, reload | | _pending live run_ |
-| (c) KO at cooler, notebook drops, reload | | _pending live run_ |
-| (d) recalled by Meeting Note, resumed | 4014 | PARTIAL: patrolOverride walk-home + needs suspend/resume confirmed (mode idle→returning); `check_called_home` did not tick from the probe's synthetic `object_interacted` emit — confirm with a real note interaction or a code check next session |
-| (e) hostile from start, never acts | 4014 | PASS: cal hostile from tick 0, `blocked` logged once, no `job_start`, mode idle |
-| (f) sight catch on a walking NPC | | _pending live run_ |
-| (g) partner down, Gil breaks alone | | _pending live run_ |
-| (h) KO before any talk, no reveal | | _pending live run_ |
-| (i) print ~6 s after close | 4014 | PARTIAL: `eli_asked`, the 6 s print, `eli_page_shown` and the revealed `office:eli_page` slot all confirmed; `check_eli_page` did not tick from the synthetic `conversation_closed:eli` emit — confirm the `object_revealed:eli_page` completeTask with a real conversation close next session |
+| (a) attacked mid-carry | 4145 | PASS: attacked carrying `office_mugs` in the **kitchen** — turns hostile, `job_aborted` (mugs dropped), `blocked`, then calms, `unblocked`, resumes the carry and delivers to `washing_up_tray`. (The cross-room carry is intermittent — see Engine faults; a clean carry run was needed.) `a-a-hostile-4145.png`, `a-a-after-4145.png` |
+| (b) KO mid-carry, folder drops, reload | 4144 | PASS: KO'd carrying in the **kitchen**; `ava_ko` + `check_ko_drop` fire once; server `room_states.kitchen.objects_added` = `ava_folder` (dropped where she fell); the carried mugs are refused (not in `objects_added`); still KO after reload. `b-b-down-4144.png`, `b-b-reload-4144.png` |
+| (c) KO at cooler, notebook drops, reload | 4120 | PASS: Ben walks to the kitchen `water_cooler` (`goto_target`), KO'd there; `ben_ko` + `check_held_drop` once; server `room_states.kitchen.objects_added` = `ben_notebook`; still KO after reload. `c-c-down-4120.png`, `c-c-reload-4120.png` |
+| (d) recalled by Meeting Note, resumed | 4131 | PASS (real reads): Ben leaves post for the cooler; Meeting Note read → `check_called_home` ticks and `scriptSuspended` true; Meeting Over read → `scriptSuspended` false (resumed). `d-d-recalled-4131.png`, `d-d-resumed-4131.png` |
+| (e) hostile from start, never acts | 4126 | PASS: cal hostile from tick 0, `blocked` logged once, no `job_start`, mode idle. `e-00-start-4126.png` |
+| (f) sight catch on a walking NPC | 4121 | PASS: Dee set caffeine-urgent, leaves post for `office_coffee` (mode job, `atPost` false); picking `dee_drawer` in view catches her (`frozen`); `check_caught_walking` ticks. `f-f-caught-4121.png` |
+| (g) partner down, Gil breaks alone | 4122 | PASS: Fran KO'd mid-walk to the cooler (`fran_ko`, nothing drops); Gil sent on his break (needs level) leaves post alone → `check_solo_break` ticks; Gil `mode: job` in the kitchen; Fran stays KO after reload. `g-g-gil-alone-4122.png` |
+| (h) KO before any talk, no reveal | 4123 | PASS: eli KO'd first; no conversation, `eli_page_shown` false, nothing revealed after reload, `check_eli_page` never fires. `h-h-down-4123.png`, `h-h-reload-4123.png` |
+| (i) print ~6 s after close | 4128 | PASS (real conversation): open Eli's chat, choose the handover (`eli_asked`), choose exit (`conversation_closed:eli`); ~6 s later `eli_page_shown` and the revealed `office:eli_page` slot, and the real `object_revealed:eli_page` mapping ticks `check_eli_page`. `i-i-eli-page-4128.png` |
+| (i2) reload within the 6 s delay | 4124 | PASS (real conversation, expected-empty): arm the print through the UI, reload inside the 6 s delay — no page, no reveal global, `check_eli_page` never fires (the pending delayed mapping is lost). `i2-i2-after-reload-4124.png` |
 
 ## What to watch for (tour)
 
@@ -143,39 +146,58 @@ proof was run on a worktree server on :3094; games made with `swap-scenario-game
 
 ## Engine faults
 
-None confirmed yet. A failing beat is an engine fault, not a scenario fix: record it here with
-file:line, the game id and the log lines, and raise it as its own slice. Likely suspects are
-`_abortJob` (npc-needs.js:3696) on a knock-out mid-carry and the world's `dropHeld`.
+**(E-carry) Cross-room carry is unreliable (npc-needs.js).** With the scenario corrected so the only
+`dirty_mugs` accept target is the kitchen `washing_up_tray` (see "Scenario fix" below), Ava's carry
+job targets the tray but on some game seeds fails before she picks up the mugs: she takes the job
+(`job_start washing_up_tray`), never leaves her post, and `_failJob` fires `timeout` after the
+20 s minimum deadline (`npc-needs.js:3490`; the goto-item move is set up in `_moveForPhase`,
+`npc-needs.js:3076-3112`, whose own-post arrival short-circuit at line 3110 is the suspect). On other
+seeds the same carry runs cleanly office→kitchen and delivers to the tray (games 4144, 4145). So the
+behaviours under test (attack and KO mid-carry outside the office) are provable, but the carry needs
+retries. This is the cross-room-need limitation the plan anticipated ("until it is fixed, missions
+keep needs NPCs inside their own post room"); raise it as its own engine slice. `_abortJob`
+(npc-needs.js:3696) and the world's `dropHeld` behaved correctly on the clean runs.
 
-Open question (not yet an engine fault): in game 4014 the `completeTask` on the Eli print mapping
-(`object_revealed:eli_page` → `check_eli_page`) and on Ben's recall mapping
-(`object_interacted` Meeting Note → `check_called_home`) did not tick the task when the triggering
-event was emitted synthetically through `window.eventDispatcher` from the probe, even though the
-side effects fired (the page revealed; Ben walked home and suspended). `completeTask` is applied at
-npc-manager.js:1462 via `window.objectivesManager.completeTask`. Confirm next session whether a real
-in-game interaction (reading the note; closing Eli's conversation) ticks the task — if it does, this
-is a probe/synthetic-event artifact; if a real interaction also fails to tick, it is an engine fault
-to raise as its own slice.
+## Scenario fix applied
+
+`ava_pc` had `affordance: { "accepts": ["dirty_mugs"] }`, so — being Ava's home object — the carry
+candidate preferred delivering the mugs to her own desk (`_carryCandidate`, npc-needs.js:2809-2811)
+and she never left the office. Set to `affordance: {}` so the kitchen `washing_up_tray` is the only
+accept target, per the plan's intent. The node test and validator still pass.
+
+## completeTask: settled (not an engine fault)
+
+A real interaction ticks a mapping's `completeTask`. Confirmed live: `check_called_home` ticks from a
+real Meeting Note read (game 4131); `check_eli_page` ticks from the real `object_revealed:eli_page`
+after a real conversation close (game 4128). The mapping handler applies `completeTask` at
+`npc-manager.js:1462-1472` as a fire-and-forget `async` call to `window.objectivesManager.completeTask`
+(`objectives-manager.js:655`), which awaits a server round-trip (`serverCompleteTaskWithRetry` →
+`games_controller#complete_task` → `Game#complete_task!`, `app/models/break_escape/game.rb:3757`);
+these are `custom`-type tasks, for which the server does no validation (game.rb:3834) and records the
+completion. The earlier game-4014 "miss" was a probe artifact: the synthetic `eventDispatcher` emits
+ran the mapping's **synchronous** side effects (setGlobal, patrolOverride, needs) but the probe
+sampled task state before that async round-trip had resolved. With a sufficient wait the tick lands
+on both the real and the armed paths (games 4128, 4070). Not an engine fault.
 
 ## Handover
 
 Status: scenario, ink (7 files), both node tests and the probe are written and committed; the
-validator is clean (0 errors) and both test files pass.
+validator is clean (0 errors) and both test files pass. **All ten beats proved live** on a worktree
+server on :3093 (see the live-proof table): a 4145, b 4144, c 4120, d 4131, e 4126, f 4121, g 4122,
+h 4123, i 4128, i2 4124. One scenario fix applied (`ava_pc` no longer accepts `dirty_mugs`). One
+engine fault recorded (E-carry: intermittent cross-room carry); the `completeTask` question is
+settled (a real interaction ticks it; the old miss was a probe timing artifact).
 
-Live proof: run on a worktree server on :3094 (the environment's :3093 is a stale worktree that
-refuses format-3 games). Beats confirmed so far (game 4014): (e) PASS; (d) and (i) PARTIAL (core
-side effects confirmed, the `completeTask` task-tick open — see Engine faults). Beats (a), (b), (c),
-(f), (g), (h) are **not yet run live**; each KO/reload beat wants its own fresh swapped game.
-
-Next session, to finish SIMS-1:
-1. Start a keyless server from this worktree: `env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true
-   bundle exec rails server -b 127.0.0.1 -p 3094` (3093 is the wrong build here).
-2. For each destructive beat make a fresh game:
-   `... PLAYTEST_PORT=3094 bundle exec rails runner tools/playtest/swap-scenario-game.rb
-   test_needs_sims test_needs_attack --unlock-all` → GAME_ID, then
-   `node tools/playtest/needs-attack-probe.mjs <GAME_ID> 3094 <beat>`.
-3. Resolve the `completeTask` open question with a real interaction (read the Meeting Note in-game;
-   close Eli's conversation), then fill in this README's live-proof table and the probe screenshots.
-4. Run the full standard node set (3.3) and the standard live set (5.1) before the slice is closed.
+To re-run any beat:
+1. Start a keyless server from this worktree root:
+   `env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true nohup bundle exec rails server -b 127.0.0.1
+   -p 3093 -P tmp/pids/server-3093.pid > tmp/keyless-3093.log 2>&1 &`
+2. Fresh game per KO/reload beat:
+   `env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true PLAYTEST_PORT=3093 bundle exec rails runner
+   tools/playtest/swap-scenario-game.rb test_needs_sims test_needs_attack --unlock-all` → GAME_ID,
+   then `node tools/playtest/needs-attack-probe.mjs <GAME_ID> 3093 <beat>`.
+3. For (a)/(b), the cross-room carry is intermittent — retry on fresh games until the probe reports
+   `carrying_at_attack`/`carrying_at_ko` true (E-carry).
+4. Check KO drops server-side: `room_states.<room>.objects_added` in the game's player_state.
 
 Probe report JSON and screenshots: session scratchpad `officelife-sims/s1/`.

@@ -23,31 +23,34 @@ Round 5's findings are folded in (6df5b29bb) and have not yet been reviewed. Rou
 scope, so its counts rose; rounds 4 and 5 found only faults that would break a proof, none that
 would break the build.
 
-## Slice SIMS-1 (test_needs_attack, attack and knockout probe): built, live proof incomplete
+## Slice SIMS-1 (test_needs_attack, attack and knockout probe): live proof complete
 
-Commits 782381513, e93a7a70e, d01a0b218, fa140496e. No engine change. Validator clean (0 errors,
-4 intended warnings); `test/js/npc-needs-attack-scenario.test.mjs` and the needs test subset pass.
-Games are made with `new-game.rb test_needs_sims` and then `swap-scenario-game.rb` onto
-`test_needs_attack`, because the folder has no Mission row (db seeding is not allowed).
+No engine change. Validator clean (0 errors, 4 intended structural warnings);
+`test/js/npc-needs-attack-scenario.test.mjs` and `test/js/npc-needs.test.mjs` pass. Games are made
+with `swap-scenario-game.rb test_needs_sims test_needs_attack --unlock-all` (no Mission row for the
+folder; db seeding is not allowed), a fresh game per KO/reload beat, on a worktree keyless server on
+:3093.
 
-The second builder ran every beat but hit a usage limit before it could update the README. Raw
-probe reports, which nobody has interpreted yet, are in the session scratchpad
-`officelife-sims/s1/report-<beat>-<game>.json`: a 4073, b 4075, c 4078, f 4071, g 4079, h 4080,
-i 4057 and 4070, i2 4081. First reading, not settled:
+**All ten beats proved live** (see `scenarios/test_needs_attack/README.md` live-proof table):
+a 4145, b 4144, c 4120, d 4131, e 4126, f 4121, g 4122, h 4123, i 4128, i2 4124. KO drops checked
+against the server's `room_states.<room>.objects_added` (b: `ava_folder@kitchen`; c:
+`ben_notebook@kitchen`). Tasks ticked by real interactions (real Meeting Note read, Eli's chat opened
+and closed in its UI). Screenshots and `report-<beat>-<game>.json` in scratchpad `officelife-sims/s1/`.
 
-- (a) attacked mid-carry, game 4073: turned hostile, job aborted, `blocked`, then `unblocked` and the
-  job resumed. This looks like a pass.
-- (g) game 4079: `ko_ok false`. The probe did not achieve the knockout, so this is probably the
-  probe, not the engine.
-- (i2) reload inside the 6 s print delay, game 4081: no page after the reload. That is the result the
-  plan expects.
-- (e) game 4014: PASS. (d) and (i): the side effects fired. Whether a real interaction ticks the
-  `completeTask` on a mapping (npc-manager.js around 1462) is still open; synthetic eventDispatcher
-  emits did not tick it.
+- **Scenario fix:** `ava_pc` had `affordance.accepts: ["dirty_mugs"]`, so (being Ava's home object)
+  the carry preferred her own desk and she never left the office. Set to `affordance: {}` so the
+  kitchen tray is the only accept target, per plan intent.
+- **Engine fault (E-carry):** cross-room carry is intermittent — on some seeds Ava's carry fails in
+  `goto_item`/`_failJob` (npc-needs.js:3490; `_moveForPhase` 3076-3112, own-post short-circuit 3110)
+  and she never leaves her post; on others it runs cleanly (4144, 4145). Behaviours still provable
+  with retries. Raise as its own engine slice (the OLMP in-room fallback until fixed).
+- **completeTask settled (not an engine fault):** a real interaction ticks it (check_called_home
+  4131; check_eli_page 4128). The game-4014 miss was a probe artifact — the synthetic emits ran the
+  mapping's synchronous side effects but the probe sampled before the fire-and-forget async
+  `completeTask` (npc-manager.js:1462-1472 → objectives-manager.js:655 → server complete_task!
+  game.rb:3757; `custom` tasks need no server validation) had resolved.
 
-**Next:** read the reports, rerun any beat that failed for a probe reason, update the README's
-live-proof table, engine-faults list and handover, then run two review rounds on the slice with
-live proof.
+**Next:** two review rounds on the slice with live proof.
 
 ## Next slices (plan order)
 
