@@ -3295,6 +3295,10 @@ Not done on this run; see "Step 3 remaining" below.
 
 ### Step 3 remaining (handover, 2026-11-14)
 
+> Second-run status (2026-11-15): items 1 to 5 of this list are done and committed (see "Step 3
+> completion" below); only item 6, the live proof, is still outstanding. The handover for it is
+> under "Item 6 handover" at the end of "Step 3 completion".
+
 Core server change (Part A) and the validator check, schema, bootstrap and markers (Part B) are in
 and committed. The predicate diff is empty over the corpus, the unlock/capture Rails tests and the
 touched node tests are green, and no corpus scenario gains a secret-leak error. Left to do:
@@ -3435,3 +3439,50 @@ ships), `acknowledgedApproved(root)` (the `[label, heading]` pairs for the share
 `acknowledgedApproved` from this module into `validator-known-failures.test.mjs` and concatenating
 it into that file's `otherApproved()` (the third list beside the known failures and the payload
 scan exceptions); no change to this branch's files is needed for that.
+
+### Item 6 handover: the live proof (not yet run)
+
+Items 1 to 5 are complete and committed; the verification suite is green (Rails 164 runs / 833
+assertions over `secret_leak_withholding_test`, `combination_cryptex_unlock_test`,
+`capture_proofs_test`, `capture_secret_endpoint_test`, `capture_payload_secret_routes_test`,
+`access_leak_scanner_test`, `access_leak_scanner_feed_test`; node `validator-secret-leaks` 18,
+`validator-acknowledged-clues` 10, `validator-known-failures` 15, `validator-capture-log` 17). The
+second run stopped at the tool-budget boundary before the live proof, rather than start a headless
+browser run it could not finish and leave a server up.
+
+The live proof is the mandatory riskiest-step safeguard and is the only remaining item. Recipe, to
+run on a fresh agent:
+
+- Keyless server on 3678, started by hand (never touch :3000):
+  `env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true RBENV_VERSION=2.7.8 nohup bin/rails server -b
+  127.0.0.1 -p 3678 -P tmp/pids/server-3678.pid > tmp/keyless-3678.log 2>&1 &`
+- Headless browser, `setFPS(20)` and fixed steps on. Create games only with
+  `tools/playtest/new-game.rb`; play `test_secret_leaks` (no Mission row) with
+  `tools/playtest/swap-scenario-game.rb` against a host test mission (e.g. test_seating), as the plan
+  (section 4, step 3) and the m08/m06 handover note say. Kill the server by its logged PID and
+  confirm the port is down afterwards.
+- Cases (the plan's live-proof list):
+  1. The comparator through the real POST unlock route (`apiClient.unlock(...)`), for combination and
+     cryptex on `test_unlock_gaps` (read only, never edit its files): right, wrong, blank and
+     malformed answers, and a different-case cryptex answer (opens, as `casecmp?` allows). After a
+     reload every refused lock is still shut.
+  2. No regression on the m01 PIN door.
+  3. On m06, `window.gameScenario.acknowledgedClues` is undefined after load and after reload (the
+     bootstrap strip; a Rails route test already proves the key and the reason prose never ship, in
+     `secret_leak_withholding_test`).
+  4. `test_secret_leaks` withholds as intended: Mara's combination capture secret `12-30-5` is absent
+     from every payload and from `/capture_secrets` before her dropped proof, present from
+     `/capture_secrets` after dropping `evidence_usb`, and the strongbox padlock opens with it. The
+     account (Rhea, password `WOLF` = the cryptex answer) and the door-entry secret (Tess's usePayload
+     `4821`) are the other two withholding cases.
+  5. No regression on the lab_physical_pentest shoulder-surf.
+  6. `tools/playtest/verify-run.rb` on each; record the game ids and results here.
+
+The `test_secret_leaks` scenario (scenarios/test_secret_leaks/, collection testing, no Mission row)
+validates clean (0 errors, 0 warnings, ink on). It is built so each of the three withholding cases
+is gated by a dropped-USB proof (`evidence_usb`), so the live proof can show "absent before, present
+after". It is also the scenario whose rows the predicate-diff harness should list as changed when the
+harness is re-run with it included (the combination capture secret, Rhea's account password and
+Tess's door-entry secret: old predicates served them, new predicates withhold them); that run was not
+repeated on the second pass (the corpus predicate diff was already empty on the first pass; this
+scenario only demonstrates the harness can see a change).
