@@ -657,7 +657,8 @@
             "satisfies": "work",
             "useSeconds": 5
           },
-          "observations": "Jake's PC, under a policy that blocks social media."
+          "observations": "Jake's PC, under a policy that blocks social media.",
+          "owner": "jake"
         }
       ],
       "npcs": [
@@ -750,8 +751,8 @@
               "id": "jake_phone",
               "name": "Jake's phone",
               "takeable": true,
-              "phoneOf": "jake",
-              "observations": "Jake's mobile, open on Friendface."
+              "observations": "Jake's mobile, open on Friendface.",
+              "owner": "jake"
             }
           ]
         }
@@ -796,7 +797,8 @@
             "satisfies": "work",
             "useSeconds": 5
           },
-          "observations": "Lena's PC, under the lax policy: social media is allowed."
+          "observations": "Lena's PC, under the lax policy: social media is allowed.",
+          "owner": "lena"
         }
       ],
       "npcs": [
@@ -851,8 +853,8 @@
               "id": "lena_phone",
               "name": "Lena's phone",
               "takeable": true,
-              "phoneOf": "lena",
-              "observations": "Lena's mobile, open on Friendface."
+              "observations": "Lena's mobile, open on Friendface.",
+              "owner": "lena"
             }
           ]
         }
@@ -897,7 +899,8 @@
             "satisfies": "work",
             "useSeconds": 5
           },
-          "observations": "Omar's PC, under a policy that blocks social media."
+          "observations": "Omar's PC, under a policy that blocks social media.",
+          "owner": "omar"
         }
       ],
       "npcs": [
@@ -1088,7 +1091,8 @@
             "satisfies": "work",
             "useSeconds": 5
           },
-          "observations": "Priya's PC: social media is allowed, and three wrong passwords lock an account out."
+          "observations": "Priya's PC: social media is allowed, and three wrong passwords lock an account out.",
+          "owner": "priya"
         },
         {
           "type": "qdc_fridge1",
@@ -1178,8 +1182,8 @@
               "id": "priya_phone",
               "name": "Priya's phone",
               "takeable": true,
-              "phoneOf": "priya",
-              "observations": "Priya's mobile, open on Friendface."
+              "observations": "Priya's mobile, open on Friendface.",
+              "owner": "priya"
             }
           ]
         }
@@ -1225,7 +1229,8 @@
             "useSeconds": 5,
             "restores": 10
           },
-          "observations": "Nadia's PC, under the lax policy: social media is allowed and her work runs here."
+          "observations": "Nadia's PC, under the lax policy: social media is allowed and her work runs here.",
+          "owner": "nadia"
         },
         {
           "type": "aes_elec_cabinet1",
@@ -1343,8 +1348,8 @@
               "id": "nadia_phone",
               "name": "Nadia's phone",
               "takeable": true,
-              "phoneOf": "nadia",
-              "observations": "Nadia's mobile, open on Friendface."
+              "observations": "Nadia's mobile, open on Friendface.",
+              "owner": "nadia"
             }
           ]
         }
@@ -1389,7 +1394,8 @@
             "satisfies": "work",
             "useSeconds": 5
           },
-          "observations": "Theo's PC, under a policy that blocks social media."
+          "observations": "Theo's PC, under a policy that blocks social media.",
+          "owner": "theo"
         },
         {
           "type": "pc3",
@@ -1536,7 +1542,8 @@
             "restores": 10,
             "offWhen": "f12_pc_unplugged"
           },
-          "observations": "Greg's PC, under the lax policy. The socket can cut its power."
+          "observations": "Greg's PC, under the lax policy. The socket can cut its power.",
+          "owner": "greg"
         },
         {
           "type": "aes_elec_cabinet1",
@@ -1690,8 +1697,8 @@
               "id": "greg_phone",
               "name": "Greg's phone",
               "takeable": true,
-              "phoneOf": "greg",
-              "observations": "Greg's mobile, open on Friendface."
+              "observations": "Greg's mobile, open on Friendface.",
+              "owner": "greg"
             }
           ]
         }
@@ -1736,7 +1743,8 @@
             "satisfies": "work",
             "useSeconds": 5
           },
-          "observations": "Ruth's PC, under a policy that blocks social media."
+          "observations": "Ruth's PC, under a policy that blocks social media.",
+          "owner": "ruth"
         },
         {
           "type": "pc3",
@@ -1884,7 +1892,8 @@
             "satisfies": "work",
             "useSeconds": 5
           },
-          "observations": "Sade's PC, under a policy that blocks social media."
+          "observations": "Sade's PC, under a policy that blocks social media.",
+          "owner": "sade"
         },
         {
           "type": "pc3",
@@ -2023,7 +2032,8 @@
             "restores": 10,
             "offWhen": "l2_pc_off"
           },
-          "observations": "Hamid's PC. It has not worked all morning."
+          "observations": "Hamid's PC. It has not worked all morning.",
+          "owner": "hamid"
         },
         {
           "type": "pc3",
@@ -2189,7 +2199,8 @@
             "useSeconds": 5,
             "restores": 10
           },
-          "observations": "Kim's PC, under a policy that blocks USB storage."
+          "observations": "Kim's PC, under a policy that blocks USB storage.",
+          "owner": "kim"
         }
       ],
       "npcs": [
@@ -2230,8 +2241,8 @@
               "id": "kim_phone",
               "name": "Kim's phone",
               "takeable": true,
-              "phoneOf": "kim",
-              "observations": "Kim's mobile, open on Friendface."
+              "observations": "Kim's mobile, open on Friendface.",
+              "owner": "kim"
             }
           ],
           "needsHome": "kim_pc",
@@ -2338,7 +2349,8 @@
             "useSeconds": 5,
             "restores": 10
           },
-          "observations": "Asha's PC, on the project drive."
+          "observations": "Asha's PC, on the project drive.",
+          "owner": "asha"
         },
         {
           "type": "pc",
@@ -2357,7 +2369,8 @@
             "useSeconds": 5,
             "restores": 10
           },
-          "observations": "Kofi's PC, on the project drive."
+          "observations": "Kofi's PC, on the project drive.",
+          "owner": "kofi"
         },
         {
           "type": "pc",
@@ -2376,7 +2389,8 @@
             "useSeconds": 5,
             "restores": 10
           },
-          "observations": "Mei's PC, on the project drive."
+          "observations": "Mei's PC, on the project drive.",
+          "owner": "mei"
         }
       ],
       "npcs": [
@@ -2450,8 +2464,8 @@
               "id": "asha_phone",
               "name": "Asha's phone",
               "takeable": true,
-              "phoneOf": "asha",
-              "observations": "Asha's mobile, open on Friendface."
+              "observations": "Asha's mobile, open on Friendface.",
+              "owner": "asha"
             }
           ]
         },
@@ -2530,8 +2544,8 @@
               "id": "kofi_phone",
               "name": "Kofi's phone",
               "takeable": true,
-              "phoneOf": "kofi",
-              "observations": "Kofi's mobile, open on Friendface."
+              "observations": "Kofi's mobile, open on Friendface.",
+              "owner": "kofi"
             }
           ]
         },
@@ -2610,8 +2624,8 @@
               "id": "mei_phone",
               "name": "Mei's phone",
               "takeable": true,
-              "phoneOf": "mei",
-              "observations": "Mei's mobile, open on Friendface."
+              "observations": "Mei's mobile, open on Friendface.",
+              "owner": "mei"
             }
           ]
         }
@@ -2656,7 +2670,8 @@
             "useSeconds": 5,
             "restores": 10
           },
-          "observations": "Tomasz's PC, on the shared drive."
+          "observations": "Tomasz's PC, on the shared drive.",
+          "owner": "tomasz"
         },
         {
           "type": "pc",
@@ -2675,7 +2690,8 @@
             "useSeconds": 5,
             "restores": 10
           },
-          "observations": "Ivy's PC, on the shared drive."
+          "observations": "Ivy's PC, on the shared drive.",
+          "owner": "ivy"
         }
       ],
       "npcs": [
@@ -2777,8 +2793,8 @@
               "id": "tomasz_phone",
               "name": "Tomasz's phone",
               "takeable": true,
-              "phoneOf": "tomasz",
-              "observations": "Tomasz's mobile, open on Friendface."
+              "observations": "Tomasz's mobile, open on Friendface.",
+              "owner": "tomasz"
             }
           ]
         },
@@ -2874,8 +2890,8 @@
               "id": "ivy_phone",
               "name": "Ivy's phone",
               "takeable": true,
-              "phoneOf": "ivy",
-              "observations": "Ivy's mobile, open on Friendface."
+              "observations": "Ivy's mobile, open on Friendface.",
+              "owner": "ivy"
             }
           ]
         }
