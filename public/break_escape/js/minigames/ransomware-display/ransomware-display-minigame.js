@@ -38,6 +38,11 @@ function formatCountdown(remainingMs) {
 }
 
 export class RansomwareDisplayMinigame extends MinigameScene {
+    // Draws in the shared console window (UI decision X8): the window title is neutral (the
+    // params title); the red ransom notice is the screen's own content and stays inside it
+    static consoleWindow = true;
+    static consoleWindowFill = true;
+
     constructor(container, params) {
         params = params || {};
         params.title = params.title || 'Ransomware Impact Display';
