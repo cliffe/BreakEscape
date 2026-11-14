@@ -57,7 +57,7 @@ Validator (`ruby scripts/validate_scenario.rb`): test_needs_sims 0 errors (32 wa
 
 ## Live proof
 
-Keyless server from this worktree on :3088 (`env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true`), headless Chromium, `setFPS(20)` with fixed steps on, games made with `tools/playtest/new-game.rb test_needs_sims`, `?skip_resume=1` and `tutorial_declined` (the bootstrap's `decline`/`new`). Driver: `tmp/e7e9-live-proof.mjs` in the worktree (not committed). The page wraps `npcNeedsSystem._emit` to record `npc_chatted`, `npc_overheard`, `npc_exchange_heard`, `npc_job_failed` and the use events with the needs clock and the player's room.
+Keyless server from this worktree on :3088 (`env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true`), headless Chromium, `setFPS(20)` with fixed steps on, games made with `tools/playtest/new-game.rb test_needs_sims`, `?skip_resume=1` and `tutorial_declined` (the bootstrap's `decline`/`new`). Driver: `tmp/e7e9-live-proof.mjs` in session 1, committed in session 2 as `tools/playtest/e7e9-live-proof.mjs`. The page wraps `npcNeedsSystem._emit` to record `npc_chatted`, `npc_overheard`, `npc_exchange_heard`, `npc_job_failed` and the use events with the needs clock and the player's room.
 
 Two harness settings, both in the page only: the kitchen cooler's `useSeconds` is raised to 40 on the live object, and Sanjay's `social` is set to 10 once Rosa (sent first, from the lounge) is in the kitchen. Without them the preset's 15 s use, less the partner's walk, left 3 to 7 s of overlap: in game 4442 the pair had one picture turn together, and in game 4444 Sanjay's heard turn took a bag line whose bubble would have outlasted the overlap, so the chat ended with the line spent and not said (finding 2 below).
 
@@ -75,17 +75,60 @@ Unheard lines spent per break: 0 in all three (on main's engine every pairing tu
 
 ### E9
 
-Positive, player placed by the first speaker (Sanjay, beside cell (-244, 276)) before the pair meet: games 4452 and 4455. In both the first turn was a heard Sanjay bark (`cooler:9`, the exchange story still loading), then `exchange_started exchange_rosa_rota` with line 0 heard at 51 px and line 1 (Rosa) heard at 80 px, so `heardLines` was at least 2. The runs stopped 9 s after the meeting, before the five-line exchange ended, so `heard_exchange_rosa_rota` and the `hear_rota_exchange` task were not yet set at the snapshot: the end of a heard exchange is covered by the node tests, not by these two runs.
+Positive, player placed by the first speaker (Sanjay, beside cell (-244, 276)) before the pair meet: games 4452 and 4455. In both the first turn was a heard Sanjay bark (`cooler:9`, the exchange story still loading), then `exchange_started exchange_rosa_rota` with line 0 heard at 51 px and line 1 (Rosa) heard at 80 px, so `heardLines` was at least 2. The runs stopped 9 s after the meeting, before the five-line exchange ended, so `heard_exchange_rosa_rota` and the `hear_rota_exchange` task were not yet set at the snapshot: the end of a heard exchange was not reached in these two runs (session 2's game 4462 below reaches it).
 
-Negative (player in earshot of the second speaker only): not achieved. In games 4451 and 4454 Rosa reached the approach cell first and Sanjay, the exchange's first speaker, took the beside cell to the east, so the only place out of his earshot and in Rosa's is west of her, against the kitchen wall. The move was refused there and the player stopped at about (-276, 240), in earshot of both, and the exchange started, correctly. A rerun needs Sanjay sent first (so Rosa stands east) and the player at about Rosa's cell plus 140 px east.
+Negative, first attempt (games 4451 and 4454): not achieved. Rosa reached the approach cell first and Sanjay, the exchange's first speaker, took the beside cell to the east, so the only place out of his earshot and in Rosa's was against the kitchen's west wall; the player stopped in earshot of both and the exchange started, correctly.
 
-`exchange_tom_parcel` (`hear_parcel_exchange`) was not run live.
+The rest of this section and the E8 and regression sections below were run in a second session, on the same server set-up, with the driver committed as `tools/playtest/e7e9-live-proof.mjs` (modes `probe`, `e7`, `e9neg`, `e9pos`, `e9unheard`, `parcel`, `e8`, `regress`; `ENGINE=<rev>` serves that revision's `npc-needs.js` to the page by request interception, for before cases, with no file change). Screenshots: `shots/<mode>-g<id>.png` in that session's scratchpad. Every page-only harness setting is listed in the run's JSON (`harness`).
 
-Exchanges marked heard with 0 lines: none seen; the node test for the empty-room case covers `exchange_unheard`.
+| Proof | Game | Set-up | Result |
+|---|---|---|---|
+| E9 negative | 4461 | Sanjay sent first, so he took the approach cell (-276, 276) and Rosa, by the coupling, the open east side (-244, 276); player at (-94, 276), 150 px east of Rosa | PASS. 9 turns over 25 s of meeting: Rosa heard on every turn (151 px; `cooler:1`, then pictures under her 2-minute cooldown), Sanjay never (183 px, pictures only). No `exchange_started`; Sanjay's `cooler` bag untouched (null); `heard_exchange_rosa_rota` false, `hear_rota_exchange` active |
+| E9 positive, to the end | 4462 | Rosa first, player at Sanjay's cell + (40, 36) | PASS. `exchange_started`, all 5 lines `overheard: true` (50 and 77 px), `exchange_heard { complete: true }` at t 56500, `heard_exchange_rosa_rota` true, `hear_rota_exchange` completed |
+| E9 played to the end unheard | 4465 | as 4462; the page moves the player to the office (90, 220) on the tick `_startExchange` runs, then holds them there | PASS. `exchange_started`, then lines 0 to 4 all `overheard: false` (314 to 367 px), `exchange_unheard { of: 5 }`, no `npc_exchange_heard`; `heard_exchange_rosa_rota` false, `hear_rota_exchange` still active. (Run 4463 is void: the hook was installed after the exchange had started during the player's walk.) |
+| `exchange_tom_parcel` | 4466 | office only loaded; `amara_opened_parcel` set in the page; Amara sent to the office coffee, then Tom, who queues; player 40 px above Tom | PASS. Tom (first speaker) heard at 42 px, the exchange started, 4 lines heard (40 and 42 px), `exchange_heard { complete: true }`, `heard_exchange_tom_parcel` true, `hear_parcel_exchange` completed |
+
+Console errors in the E9 runs: only `/tts` 503s from the keyless server, one per voiced exchange line (0 in 4461, where no exchange played).
 
 ### E8
 
-Not run live in this session (handover below). The node proofs above cover the cooler layout with the live adapter's `besideCell` and stubbed pathfinding.
+Copies of `test_needs_sims` in `tmp/e8_right` and `tmp/e8_both` (not committed). A scenario object does not get a body unless it is a table, so each blocker is a dynamic table (`type: "table"` with `sprite`, `position` and `tableItems: []`), which `rooms.js` gives a static body: the bottom quarter of the sprite, inset 10 px. Diff of the first copy:
+
+```diff
+@@ -733,6 +733,14 @@ (kitchen objects, after water_cooler)
+         {
++          "type": "table",
++          "sprite": "coat_stand1",
++          "id": "e8_block_right",
++          "name": "Coat Stand",
++          "position": { "x": 2.047, "y": 7.41 },
++          "tableItems": [],
++          "takeable": false,
++          "observations": "E8 live proof only: a dynamic table (static body) on the water cooler's right side cell (-244, 276)."
++        },
++        {
+```
+
+The second copy adds the same object again with `"id": "e8_block_above"` and `"position": { "x": 1.047, "y": 6.41 }`, on the above cell (-276, 244). Load either with `tools/playtest/swap-scenario-game.rb test_needs_sims tmp/e8_right`. (A `wet_floor_sign1` object at the right cell, tried first, gets no body and leaves the cell walkable.)
+
+Set-up check (`probe`, game 4475, first copy): the coat stand's body is 1 x 11 px at (-244, 271); the right cell is not walkable (`findNearestWalkableWorldCell(-244, 276, 0)` null); the left cell (-308, 276) is walkable, behind the kitchen's west wall line, with `routeLength` `{ length: null, known: true }` from both Sanjay's and Rosa's posts; below (-276, 308) is not walkable; the approach cell (-276, 276) and the above cell (-276, 244) are routed from both posts (506 and 474 px from Sanjay's, 932 and 900 from Rosa's). The same probe on the plain scenario (game 4459) gives the right cell walkable and the rest the same.
+
+| Proof | Game | Result |
+|---|---|---|
+| Five coupled breaks, right cell blocked | 4476 | PASS. Rosa (sent first) on the approach cell each time; Sanjay's `dest` (-276, 244), the above cell, in all 5; both `using` the cooler at once in all 5; no `timeout` or `no_beside_cell` for either. Screenshots `e8-g4476-break0..4.png`. One unrelated `job_failed` in the run: Grace, `rest` at `lounge_sofa`, `timeout` |
+| Before case, same copy, main's engine (`ENGINE=d69c29089`) | 4487 | As 9.1 predicts: Sanjay left his post at t 20250 for the cooler and failed with `timeout` at t 40250, 20 s later, never using it |
+| Above cell blocked too | 4485 | PASS. Probe: right and above both not walkable. Sanjay's `npc_left_post` (target `water_cooler`) and `npc_job_failed { reason: "no_beside_cell" }` on the same needs tick (t 20750); he never left the office and was idle at his post (92, 123) 0.75 s and 6.75 s later. Screenshot `e8above-g4485-walkhome.png`. The walk home is zero-length here: the failure lands before his first step |
+
+### Regressions
+
+`regress` mode: open the listed rooms with `enterRoom`, then watch for a fixed wall-clock window, recording the needs log counted by NPC and event, each needs NPC's room trail, completed tasks and console errors; once on this engine and once on main's (`ENGINE=d69c29089`).
+
+| Scenario | Games (this engine, main's) | Window | Result |
+|---|---|---|---|
+| `test_needs_leash` (rooms maya_office, store, west_corridor, ravi_office) | 4478, 4481 | 150 s | PASS. Same on both: Ravi urgent, `job_start`, `using`, `used`, `return_resumed`, `returned_post`, trail ravi_office, west_corridor, store, west_corridor, ravi_office (never Maya's office), `see_long_way` completed. 0 console errors on both |
+| `lab_physical_pentest` (rooms reception, hall, open_plan; Kieran, Hampshire, Lord, Pierce) | 4486, 4497 | 240 s | PASS. Event counts identical for all four NPCs except one `hampshire:private_skipped` on main's engine only, and the same room trails. That is an object-choice log line, outside the code E7 to E9 changed; It was not traced, so it is read as a timing difference until shown otherwise. No exchange started in either run. Console errors: 0 on this engine; 1 on main's, a `/tts` 503, consistent with main voicing a pool line that nobody heard (the E7 bug) |
+
+The lab's `IMPROVEMENT_LOOP_LOG.md` was not updated and no `verify-run.rb` critical-path replay was run: the orchestrator's brief for this session asked for the needs NPCs only.
 
 ## Findings
 
@@ -95,11 +138,10 @@ Not run live in this session (handover below). The node proofs above cover the c
 
 ## Handover
 
-Stopped at the tool-call budget. Done: engine (b82e3e30c), showcase (0ba423c38), docs and this log (next commit), full `bin/test-js`, validators. Open, in order:
+Session 1 stopped at the tool-call budget with live proofs open; session 2 ran them (tables above). Still open:
 
-1. E9 live negative: Sanjay sent first, player about 140 px east of Rosa's cell; expect no `exchange_started` and Rosa's turns heard as barks. Then a positive run left to finish, checking `heard_exchange_rosa_rota` and the `hear_rota_exchange` task; and `exchange_tom_parcel` once (set `amara_opened_parcel`, send Amara and Tom to the office coffee with the player beside the first speaker, Tom).
-2. E8 live: a throwaway copy of `test_needs_sims` (none was found from the prototype; `p-ol-e7e9` has no uncommitted copy) with a solid prop on the kitchen cooler's right side cell (-244, 276). First confirm in that copy that `pathfindingManager.findNearestWalkableWorldCell(-244, 276, 0)` is null, the left cell (-308, 276) is still walkable with `routeLength` null from both posts, and above (-276, 244) is routed. Load it with `tools/playtest/swap-scenario-game.rb test_needs_sims <dir>`. Five coupled breaks (expect the partner on the above cell, both `using`, no timeout), the before case once on main's engine, then a copy with above blocked too (expect `no_beside_cell` within a tick of `npc_left_post`, and the walk home). Save the copy's diff here.
-3. Regressions on the keyless server: `test_needs_leash` live, and `lab_physical_pentest` `verify-run.rb` 100, with a line in the lab's `IMPROVEMENT_LOOP_LOG.md`.
-4. Findings 1 and 2 above go to the orchestrator: neither is in 9.1.
+1. Findings 1 and 2 above go to the orchestrator: neither is in 9.1.
+2. Not run: a full `lab_physical_pentest` critical-path replay with `verify-run.rb --tasks` (score 100) and its `IMPROVEMENT_LOOP_LOG.md` line; this session's brief covered the needs NPCs only.
+3. Seen in passing, not investigated: Grace's `job_failed ... timeout` (dirty mugs at `washing_up_tray` in 4462, `rest` at `lounge_sofa` in 4476) and Tom's `caffeine` timeout at `kitchen_coffee` in 4487 (main's engine). None involves a chatter pair or a second user's cell.
 
-Driver: `tmp/e7e9-live-proof.mjs` (modes `e7`, `e9neg`, `e9pos`; server on :3088 started from this worktree, PID in `test/dummy/tmp/pids/server-3088.pid`).
+Server: keyless, `env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true bundle exec rails server -b 127.0.0.1 -p 3088 -P tmp/pids/server-3088.pid` from this worktree, stopped by its PID after the runs.
