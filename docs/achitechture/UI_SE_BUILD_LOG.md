@@ -211,3 +211,74 @@ person-chat,network-view --sizes 1400x1000,800x600,915x412,390x844`.
   surface) and C-X3's final look may want the inner card restyled.
 - `&times;` in the close button is innerHTML, not textContent, so a fake-DOM test reading
   textContent sees '' — check the class instead.
+
+## Fix round 1 (build/ui-se merged with main 372600713 -> format 3)
+
+Merged main (372600713, format hardening 8b/8c) into build/ui-se first: the shared dev DB holds
+format-3 games now, and a format-1 server answers 409 on them, so every live proof here runs on a
+fresh `lab_social_engineering` game made by new-game.rb after the merge (recipe: keyless server on
+:3490, `PLAYTEST_PORT=3490 ... new-game.rb lab_social_engineering`). The demo sprite churns on the
+shared DB; new-game.rb switches it to a valid base sprite at creation, so each proof uses a
+just-created game (ids seen: 3629, 3709).
+
+### 1. M1 / M2 fit at 667x375 (and 360x740)
+- M1 osint-browser: `osint-browser-minigame.css` the window now wraps its content and scrolls
+  inside the frame (`max-height: min(92vh,860px)`, `overflow-y: auto`, `.ob-root min-height:100%`)
+  instead of a fixed height with `overflow:hidden`, so the site tab strip and page nav are
+  reachable at short heights.
+- M2 pretext-prep: `pretext-prep-minigame.css` `.pretext-prep` margin 0 and
+  `max-height: calc(100% - 40px)` (the default rule and the <=600px media query), so the frame's
+  own margin plus the framework container's 20px margins stay within the viewport; bottom border
+  no longer cut.
+
+### 2. C-ER1 kiosk bezel (pick B)
+- `episode-runner-minigame.js` init builds a diegetic CSS kiosk in normal play (`.epr-kiosk` on the
+  container, replacing the generic `.minigame-framed`): a bezel in the PC-monitor look (flat case,
+  2px outline, 2px inner edge, corners cut in 2px steps, no image art) with the X in its top strip,
+  a screen that wraps the step strip + body and scrolls inside rather than fixing an aspect.
+  Facilitated runs skip `.epr-kiosk` and stay full-bleed. CSS in `episode-runner.css`
+  (`.epr-kiosk-bezel/.epr-kiosk-top/.epr-kiosk-cap/.epr-kiosk-screen`).
+
+### 3. m3 / m4 / m5 / m2
+- m3 shredded-document: dropped the dead `showCancel/cancelText:'Close'` (keepsCancelButton was
+  false, so no text Close actually rendered) and tagged the framework close button with the shared
+  `.se-overlay-close` class (`shredded-document-minigame.js`).
+- m4 radius/soft-shadow/hairline on the wide windows set to 0 radius / 2px / no soft shadow:
+  `assistant-chat-minigame.css` (`.ac-reply/.ac-hidden-text/.ac-paste-line/.ac-document` radius->0,
+  1px->2px; `.ac-class-tag` 999px pill->0; fractional rems .ac-disclaimer/.ac-document-title->whole
+  px; faux-bold .ac-empathy/.ac-paste-warning/.ac-exchange-prompt/.ac-done-badge->normal),
+  `landing-page-builder-minigame.css` (all small radii->0, 1px->2px, the preview card soft shadow
+  removed), `pretext-prep-minigame.css` debrief card (1px->2px, radius 10px->0, soft shadow gone;
+  `.pretext-gap` 1px->2px), `episode-runner.css` (`.epr-facilitator` radius->0, `.epr-sbx-option`
+  1px->2px radius->0).
+- m5 mail-client 1px hairlines -> 2px (`mail-client-minigame.css`, five borders).
+- m2 light card inside the dark frame: decision - keep the inner surfaces LIGHT because they are
+  diegetic (the AI-assistant app screen's section/reply/document panels; the password-guesser
+  worksheet "paper"), and give them a crisp 2px edge so they read as deliberate panels rather than
+  cards floating on the frame. assistant-chat's panels already carry 2px borders (now squared);
+  password-guesser's `.epr-gs-root` gets a 2px border and its rows are squared/2px.
+
+### 4. C-X8 (pick: GNF everywhere, no font edit)
+- `fonts.css` `--se-font-address` now 'GNF' first (Source Sans 3 kept only as a fallback for glyphs
+  GNF lacks). Every address element raised to >=16px: osint `.ob-site-url/.ob-handle`, lpb
+  `.lpb-address-text/.lpb-address-alt/.lpb-locked-domain`, mail
+  `.mail-account-label/.mail-row-address/.mail-link-status`.
+- The cross glyph replaced with a plain x in `landing-page-model.js` (11 fail lines).
+  `mail-bridge.js` was NOT changed: its only cross glyph is in a defensive strip-regex (removing an
+  authored leading mark so the PNG mark art is not doubled) and a comment; it renders no cross
+  glyph, and the regex must keep stripping it. Noted for the user.
+
+### 5. n2 shared .se-notice
+- Applied `.se-notice` to the listed notices: episode-runner scope + reload, password-guesser
+  safety + reload, assistant-chat reload, sort-drill reload, pretext-prep scope, engagement-report
+  notes, landing-page-builder "No captures yet". The shared rule uses dark-theme `--ui-*` colours,
+  which suit the dark SE windows; for the light awareness/paper surfaces a scoped override maps the
+  notice colours to the scene tokens (`.epr-root/.epr-gs-root .se-notice` -> aw tokens, `.sd-root
+  .se-notice` -> drill tokens, `.er-section .se-notice` -> report ink), so the text stays legible.
+
+### Still open / not done
+- The cross glyph remains in non-SE scenes (flag-wording, combination, cryptex) and the tick glyph
+  stays in landing-page-model pass lines - out of this brief's scope (brief named the cross glyph in
+  landing-page-model.js and mail-bridge.js only).
+- Deferred phone scenes, C-X7 stepper, C-X9 one-button, remaining per-scene minors from R1 are
+  still open (unchanged by this round).

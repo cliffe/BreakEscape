@@ -289,3 +289,6 @@
         scroll-behavior: auto;
     }
 }
+
+/* C-X4 (n2): the shared notice sits on the report's white sections, so dark ink and a light line. */
+.er-section .se-notice { color: #4a4e59; border-color: #c9d3e0; }

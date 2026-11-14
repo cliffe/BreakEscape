@@ -38,9 +38,9 @@ export class ShreddedDocumentMinigame extends MinigameScene {
     constructor(container, params) {
         super(container, {
             ...params,
-            title: params.title || 'Document Reconstruction',
-            showCancel: true,
-            cancelText: params.cancelText || 'Close'
+            title: params.title || 'Document Reconstruction'
+            // C-X1 (m3): no text 'Close' cancel button. The scene closes through the shared pixel
+            // × (tagged .se-overlay-close in init) and Esc, one close look across the SE windows.
         });
 
         const minigameData = params.lockable?.scenarioData?.minigameData || {};
@@ -68,6 +68,8 @@ export class ShreddedDocumentMinigame extends MinigameScene {
         super.init();
         this.container.classList.add('sdm-container');
         this.gameContainer.classList.add('sdm-game-container');
+        // C-X1 (m3): the framework close button wears the shared SE pixel × look.
+        this.container.querySelector('#minigame-close')?.classList.add('se-overlay-close');
         if (this.headerElement) this.headerElement.style.display = 'none';
 
         this.completed = this._isAlreadyCompleted();

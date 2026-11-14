@@ -55,7 +55,7 @@
 }
 .mail-account { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 0 1 auto; margin-right: 8px; }
 /* The label shrinks and ellipses so the whole toolbar, Close included, stays on one row. */
-.mail-account-label { font-family: var(--se-font-address); font-size: 15px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mail-account-label { font-family: var(--se-font-address); font-size: 16px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mail-folders { display: flex; gap: 4px; flex: none; }
 /* Toolbar buttons size to their label and never shrink, so Contacts, Compose and
    Close keep their whole label on one row; only the account label (min-width:0,
@@ -143,7 +143,7 @@
 .mail-row-body { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 .mail-row-top { display: flex; justify-content: space-between; gap: 8px; }
 .mail-row-who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mail-row-who.mail-row-address { font-family: var(--se-font-address); font-size: 15px; }
+.mail-row-who.mail-row-address { font-family: var(--se-font-address); font-size: 16px; }
 .mail-row[data-unread='true'] .mail-row-who,
 .mail-row[data-unread='true'] .mail-row-subject { font-weight: 700; }
 .mail-row-time { flex: none; color: var(--ui-text-dim, #a8b2c8); font-size: 14px; }
@@ -196,7 +196,7 @@
     background-color: var(--ui-slot-bg, rgba(66, 80, 118, 0.88));
 }
 .mail-chip-link { cursor: pointer; min-height: 44px; vertical-align: middle; text-decoration: underline; }
-.mail-link-status { min-height: 1.4em; margin: 4px 0; color: var(--ui-accent, #ffcc44); font-family: var(--se-font-address); font-size: 15px; overflow-wrap: anywhere; }
+.mail-link-status { min-height: 1.4em; margin: 4px 0; color: var(--ui-accent, #ffcc44); font-family: var(--se-font-address); font-size: 16px; overflow-wrap: anywhere; }
 
 .mail-judged { display: flex; align-items: center; gap: 6px; margin: 8px 0 0; font-family: var(--se-font-readable); font-size: 16px; }
 .mail-judged.landed { color: var(--ui-success, #6ee08f); }
@@ -268,7 +268,7 @@
     flex-wrap: wrap;
     gap: 4px 10px;
     padding: 8px 4px;
-    border-bottom: 1px solid var(--ui-line, #4c5b80);
+    border-bottom: 2px solid var(--ui-line, #4c5b80);
     font-family: var(--se-font-readable);
     font-size: 16px;
 }
@@ -337,7 +337,7 @@
     padding: 6px;
     background: var(--ui-surface-2, rgba(16, 22, 38, 0.9));
     color: var(--ui-text, #eef1f8);
-    border: 1px solid var(--ui-line, #4c5b80);
+    border: 2px solid var(--ui-line, #4c5b80);
 }
 .mail-compose-blanks { display: flex; flex-wrap: wrap; gap: 8px; margin-left: 94px; }
 /* line-height set here: dusting.css has a global [data-slot] { line-height: 0 } that reached
@@ -551,7 +551,7 @@
     padding: 6px;
     background: var(--ui-surface-2, rgba(16, 22, 38, 0.9));
     color: var(--ui-text, #eef1f8);
-    border: 1px solid var(--ui-line, #4c5b80);
+    border: 2px solid var(--ui-line, #4c5b80);
 }
 .mail-account-select { flex: 0 1 auto; }
 .mail-account-select[hidden], .mail-account-label[hidden] { display: none; }
@@ -578,7 +578,7 @@
     gap: 4px 8px;
     min-height: 44px;
     padding: 6px 8px;
-    border: 1px solid var(--ui-line, #4c5b80);
+    border: 2px solid var(--ui-line, #4c5b80);
     font-family: var(--se-font-readable);
     font-size: 16px;
     cursor: pointer;
@@ -679,7 +679,7 @@
     font-size: 16px;
     line-height: 1.45;
     color: inherit;
-    border: 1px solid var(--ui-border, rgba(168, 178, 200, 0.4));
+    border: 2px solid var(--ui-border, rgba(168, 178, 200, 0.4));
     background: var(--ui-slot-bg, rgba(66, 80, 118, 0.4));
     overflow-wrap: anywhere;
 }

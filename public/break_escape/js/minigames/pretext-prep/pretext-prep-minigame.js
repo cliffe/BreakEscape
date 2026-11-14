@@ -184,7 +184,7 @@ export class PretextPrepMinigame extends SocialOverlayScene {
 
     _briefBlock(brief, held, words) {
         const block = h('section', { class: 'pretext-brief', 'aria-label': 'Brief' });
-        if (brief.scope) block.appendChild(h('p', { class: 'pretext-scope', text: brief.scope }));
+        if (brief.scope) block.appendChild(h('p', { class: 'pretext-scope se-notice', text: brief.scope }));
         block.appendChild(h('p', { class: 'pretext-ethics', text: brief.ethics }));
         if (brief.objectives.length) {
             const list = h('ul', { class: 'pretext-objectives' });

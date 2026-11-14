@@ -10,13 +10,17 @@
 
 .osint-browser-game-container {
     width: min(1100px, 96vw);
-    height: min(92vh, 860px);
+    /* M1 fit: the frame wraps its content and scrolls inside rather than clipping. At short
+       heights (667x375) the fixed-height + overflow:hidden window cut the site tab strip and
+       page nav with no way to reach them; the frame now caps its height and scrolls. */
+    max-height: min(92vh, 860px);
     margin: 0 auto;
     padding: 0;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     background: var(--ui-surface, rgba(24, 30, 48, 0.94));
     border: 16px solid transparent;
     border-image: var(--se-frame-image, url('/break_escape/assets/ui/social/mail-frame.png')) 8 / 16px stretch;
@@ -25,8 +29,7 @@
 .ob-root {
     display: flex;
     flex-direction: column;
-    min-height: 0;
-    height: 100%;
+    min-height: 100%;
     font-family: var(--se-font-readable, 'GNF', 'Source Sans 3', sans-serif);
     font-size: 16px;
     color: var(--ui-text, #eef1f8);
@@ -125,7 +128,7 @@
 
 .ob-site.is-current { border-color: var(--ui-accent, #ffcc44); }
 .ob-site-name { font-weight: 700; }
-.ob-site-url { font-size: 14px; color: var(--ui-text-dim, #a8b2c8); }
+.ob-site-url { font-size: 16px; color: var(--ui-text-dim, #a8b2c8); }
 
 .ob-head button:focus-visible,
 .ob-site:focus-visible,
@@ -291,7 +294,7 @@
 .ob-profiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
 .ob-profile-link { gap: 10px; padding: 6px 8px; border: 2px solid #c9c2b2; text-decoration: none; width: 100%; box-sizing: border-box; }
 .ob-profile-name { font-weight: 700; text-decoration: underline; }
-.ob-handle { color: #4a4f5c; font-size: 15px; }
+.ob-handle { color: #4a4f5c; font-size: 16px; }
 .ob-headshot { width: 64px; height: 64px; image-rendering: pixelated; background: #d8d2c2; flex: 0 0 auto; }
 .ob-profile-head { display: flex; align-items: center; gap: 14px; }
 .ob-profile-who { display: flex; flex-direction: column; gap: 2px; }

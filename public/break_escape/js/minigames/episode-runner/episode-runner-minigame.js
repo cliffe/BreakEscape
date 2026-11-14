@@ -317,21 +317,40 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         root.setAttribute('role', 'region');
         root.setAttribute('aria-label', 'Exercise');
         applyBrand(root, this.episode.brand);
+        const kiosk = !this.facilitated;
         if (this.facilitated) root.classList.add('epr-facilitated');
-        // C-ER1: in normal play the kiosk episode is a framed window that sits with the other
-        // SE windows; only a facilitated (shared-screen) run stays full-bleed for projection.
-        this.container?.classList?.toggle?.('minigame-framed', !this.facilitated);
+        // C-ER1 (user pick B): in normal play the episode is a diegetic awareness kiosk - a
+        // CSS-drawn bezel (the PC monitor's look: flat case, 2px borders, stepped corners) with
+        // the X in its top strip. The screen wraps the content and scrolls inside, so the step
+        // strip is never squeezed to a fixed aspect. A facilitated (shared-screen) run skips the
+        // bezel and stays full-bleed for projection.
+        this.container?.classList?.toggle?.('epr-kiosk', kiosk);
         this.root = root;
 
         const bar = el('div', 'epr-bar');
         this.stripHost = el('div', 'epr-strip');
         bar.appendChild(this.stripHost);
-        this.mountCloseControl(bar, 'Close');
         root.appendChild(bar);
 
         this.body = el('div', 'epr-body');
         root.appendChild(this.body);
-        this.gameContainer.appendChild(root);
+
+        if (kiosk) {
+            const bezel = el('div', 'epr-kiosk-bezel');
+            const top = el('div', 'epr-kiosk-top');
+            const cap = el('div', 'epr-kiosk-cap');
+            cap.textContent = 'Security Awareness';
+            top.appendChild(cap);
+            this.mountCloseControl(top, 'Close');
+            const screen = el('div', 'epr-kiosk-screen');
+            screen.appendChild(root);
+            bezel.appendChild(top);
+            bezel.appendChild(screen);
+            this.gameContainer.appendChild(bezel);
+        } else {
+            this.mountCloseControl(bar, 'Close');
+            this.gameContainer.appendChild(root);
+        }
 
         this.state = this._readState();
         this.alreadySeen = this._seenAlready();
@@ -454,7 +473,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         for (const para of card.text.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean)) {
             panel.appendChild(el('p', 'epr-text', para));
         }
-        if (index === 0 && isStr(ep.scopeNote)) panel.appendChild(el('p', 'epr-scope', ep.scopeNote));
+        if (index === 0 && isStr(ep.scopeNote)) panel.appendChild(el('p', 'epr-scope se-notice', ep.scopeNote));
         const count = el('p', 'epr-card-count', `Card ${index + 1} of ${cards.length}`);
         count.setAttribute('aria-live', 'polite');
         panel.appendChild(count);
@@ -475,7 +494,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         const cards = this._briefCards();
         if (cards.length) return this._renderBriefCards(cards);
         const panel = this._panel(ep.brand?.name || this.params.title || 'Brief', this.strings.brief);
-        if (isStr(ep.scopeNote)) panel.appendChild(el('p', 'epr-scope', ep.scopeNote));
+        if (isStr(ep.scopeNote)) panel.appendChild(el('p', 'epr-scope se-notice', ep.scopeNote));
         const prompt = this._groupPrompt(panel, 'brief');
         if (prompt) panel.appendChild(prompt);
         this._button(panel, 'Start', () => this._complete('brief'), 'epr-start');
@@ -523,7 +542,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             const note = this.strings.writeReloadNote === '' ? ''
                 : (isStr(this.strings.writeReloadNote) ? this.strings.writeReloadNote
                     : 'If you close or reload before you send, your draft starts again.');
-            if (note) panel.appendChild(el('p', 'epr-reload-note', note));
+            if (note) panel.appendChild(el('p', 'epr-reload-note se-notice', note));
         }
         this._button(panel, copy.button, () => this._launch(stage), 'epr-launch');
         // From the write stage, always offer a way back to research. A learner who closed the

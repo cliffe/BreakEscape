@@ -101,7 +101,7 @@
     gap: 6px;
     padding: 4px 10px;
     border: 2px solid var(--ui-line, #4c5b80);
-    border-radius: 2px;
+    border-radius: 0;
     color: var(--ui-text-dim, #a8b2c8);
     font-size: 13px;
 }
@@ -146,7 +146,7 @@
     background: #f4f5f8;
     color: #1b2030;
     border: 2px solid var(--ui-line, #4c5b80);
-    border-radius: 4px;
+    border-radius: 0;
     overflow: hidden;
     min-height: 220px;
 }
@@ -157,7 +157,7 @@
     gap: 8px;
     padding: 8px 10px;
     background: #d7dae3;
-    border-bottom: 1px solid #b4b9c7;
+    border-bottom: 2px solid #b4b9c7;
 }
 
 .lpb-padlock { display: inline-flex; align-items: center; }
@@ -176,8 +176,8 @@
     font-weight: 700;
     color: #7a1414;
     background: #f3d2d2;
-    border: 1px solid #c77;
-    border-radius: 2px;
+    border: 2px solid #c77;
+    border-radius: 0;
 }
 
 .lpb-address {
@@ -186,12 +186,12 @@
     flex-direction: column;
     padding: 4px 8px;
     background: #fff;
-    border: 1px solid #b4b9c7;
-    border-radius: 2px;
+    border: 2px solid #b4b9c7;
+    border-radius: 0;
 }
 
-.lpb-address-text { font-size: 15px; word-break: break-all; }
-.lpb-address-alt { font-size: 12px; color: #596; }
+.lpb-address-text { font-size: 16px; word-break: break-all; }
+.lpb-address-alt { font-size: 16px; color: #596; }
 
 .lpb-preview.is-blocked .lpb-address-text { color: #7a1414; font-weight: 700; }
 
@@ -239,8 +239,8 @@
 .lpb-field-input {
     height: 30px;
     background: #fff;
-    border: 1px solid #9aa2b4;
-    border-radius: 2px;
+    border: 2px solid #9aa2b4;
+    border-radius: 0;
 }
 
 .lpb-submit {
@@ -249,7 +249,7 @@
     padding: 8px 18px;
     background: #2f6db0;
     color: #fff;
-    border-radius: 3px;
+    border-radius: 0;
     font-weight: 700;
 }
 
@@ -282,10 +282,10 @@
     padding: 18px 18px 16px;
     background: #ffffff;
     color: #1b2030;
-    border: 1px solid #c3c9d8;
+    border: 2px solid #c3c9d8;
     border-top: 4px solid #2f6db0;
-    border-radius: 6px;
-    box-shadow: 0 8px 28px rgba(12, 18, 36, 0.28);
+    border-radius: 0;
+    box-shadow: none;
 }
 
 .lpb-fakecheck-heading { margin: 0 0 10px; font-size: 18px; }
@@ -298,8 +298,8 @@
     font-size: 14px;
     color: #1b2030;
     background: #eef1f6;
-    border: 1px solid #b4b9c7;
-    border-radius: 3px;
+    border: 2px solid #b4b9c7;
+    border-radius: 0;
     cursor: pointer;
 }
 .lpb-fakecheck-reveal-btn:focus-visible { outline: 3px solid var(--ui-accent, #ffcc44); outline-offset: 2px; }
@@ -309,13 +309,13 @@
     font-size: 14px;
     color: #1b2030;
     background: #fff4d6;
-    border: 1px solid #d8b24a;
+    border: 2px solid #d8b24a;
     border-left: 5px solid #d8b24a;
-    border-radius: 3px;
+    border-radius: 0;
 }
 
 /* In step 6 the steps line is the one hot-spot; the shared .lpb-hotspot rules give focus/found. */
-.lpb-fakecheck .lpb-fakecheck-steps.lpb-hotspot { padding: 4px 6px; margin: -4px -6px 10px; border-radius: 3px; }
+.lpb-fakecheck .lpb-fakecheck-steps.lpb-hotspot { padding: 4px 6px; margin: -4px -6px 10px; border-radius: 0; }
 
 /* step-6 hot-spots (role=button divs) and the inspect panel (P5-E) */
 .lpb-hotspot {
@@ -347,7 +347,7 @@
     font-size: 14px;
     background: var(--ui-surface, rgba(24, 30, 48, 0.94));
     border-left: 3px solid var(--ui-line, #4c5b80);
-    border-radius: 2px;
+    border-radius: 0;
 }
 .lpb-decoy-line { border-left-color: var(--ui-accent, #ffcc44); }
 
@@ -364,7 +364,7 @@
     padding: 10px 12px;
     background: var(--ui-surface-raised, rgba(38, 48, 74, 0.96));
     border: 2px solid var(--ui-line, #4c5b80);
-    border-radius: 3px;
+    border-radius: 0;
 }
 
 .lpb-pretext-title { margin: 0 0 8px; font-size: 15px; font-family: 'GNF', 'Courier New', monospace; }
@@ -376,7 +376,7 @@
 
 .lpb-row {
     padding-bottom: 12px;
-    border-bottom: 1px solid var(--ui-line, #4c5b80);
+    border-bottom: 2px solid var(--ui-line, #4c5b80);
 }
 
 .lpb-row-label { margin: 0 0 8px; font-size: 14px; font-family: 'GNF', 'Courier New', monospace; }
@@ -391,7 +391,7 @@
     background: var(--ui-surface, rgba(24, 30, 48, 0.94));
     color: var(--ui-text, #eef1f8);
     border: 2px solid var(--ui-line, #4c5b80);
-    border-radius: 2px;
+    border-radius: 0;
     display: inline-flex;
     flex-direction: column;
     gap: 2px;
@@ -413,11 +413,11 @@
     margin-top: 8px;
     padding: 6px 10px;
     border: 2px dashed var(--ui-text-faint, #6f7a94);
-    border-radius: 2px;
+    border-radius: 0;
     opacity: 0.8;
 }
 
-.lpb-locked-domain { display: block; font-size: 14px; }
+.lpb-locked-domain { display: block; font-size: 16px; }
 .lpb-locked-note { display: block; font-size: 14px; color: var(--ui-text-dim, #a8b2c8); }
 
 .lpb-note { margin: 8px 0 0; font-size: 13px; color: var(--ui-text-dim, #a8b2c8); }
@@ -430,7 +430,7 @@
     padding: 12px;
     background: var(--ui-surface-raised, rgba(38, 48, 74, 0.96));
     border: 2px solid var(--ui-line, #4c5b80);
-    border-radius: 3px;
+    border-radius: 0;
 }
 
 .lpb-score.is-stale { opacity: 0.55; }
@@ -443,8 +443,8 @@
     height: 16px;
     margin-bottom: 8px;
     background: var(--ui-bar-track, #1b253e);
-    border: 1px solid var(--ui-bar-frame, #6d7c8e);
-    border-radius: 2px;
+    border: 2px solid var(--ui-bar-frame, #6d7c8e);
+    border-radius: 0;
     overflow: hidden;
 }
 
@@ -504,8 +504,8 @@
     background: var(--ui-surface, rgba(24, 30, 48, 0.94));
     /* The OSINT browser's .cc-panel sets dark text for its cream card; set ours for the dark one. */
     color: var(--ui-text, #eef1f8);
-    border: 1px solid var(--ui-line, #4c5b80);
-    border-radius: 2px;
+    border: 2px solid var(--ui-line, #4c5b80);
+    border-radius: 0;
 }
 
 .lpb-root .cc-title { margin: 0 0 6px; font-size: 13px; }
@@ -521,13 +521,13 @@
     color: var(--ui-text, #eef1f8); background: var(--ui-surface, #1c2438); border: 2px solid var(--ui-line, #4c5b80); }
 .lpb-captures-list { list-style: none; margin: 0; padding: 0; flex: 1 1 auto; min-height: 0; overflow-y: auto;
     display: flex; flex-direction: column; gap: 8px; }
-.lpb-captures-row { padding: 10px 12px; background: var(--ui-surface, #1c2438); border: 1px solid var(--ui-line, #4c5b80);
+.lpb-captures-row { padding: 10px 12px; background: var(--ui-surface, #1c2438); border: 2px solid var(--ui-line, #4c5b80);
     color: var(--ui-text, #eef1f8); display: flex; flex-direction: column; gap: 4px; overflow-wrap: anywhere; }
 .lpb-captures-role { font-weight: bold; font-size: 14px; }
 .lpb-captures-address { font-size: 13px; font-family: monospace; }
 .lpb-captures-secret { font-size: 13px; font-family: monospace; letter-spacing: 1px; }
 .lpb-captures-foothold { font-size: 13px; }
-.lpb-captures-empty { padding: 16px 12px; color: var(--ui-text, #eef1f8); border: 1px dashed var(--ui-line, #4c5b80); }
+.lpb-captures-empty { padding: 16px 12px; color: var(--ui-text, #eef1f8); border: 2px dashed var(--ui-line, #4c5b80); }
 @media (max-width: 700px) { .lpb-captures { padding: 8px; } }
 
 /* ── narrow layout: stack the panes below ~700px (07 §8a) ── */

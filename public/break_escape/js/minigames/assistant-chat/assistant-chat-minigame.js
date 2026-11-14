@@ -105,7 +105,7 @@ export class AssistantChatMinigame extends SocialOverlayScene {
         const reloadNote = this.config.reloadNote === '' ? ''
             : (isStr(this.config.reloadNote) ? this.config.reloadNote
                 : 'If you close or reload this window, these tasks start again.');
-        if (reloadNote) this.body.appendChild(h('p', { class: 'ac-reload-note', text: reloadNote }));
+        if (reloadNote) this.body.appendChild(h('p', { class: 'ac-reload-note se-notice', text: reloadNote }));
 
         // Fixed section order; only the authored sections appear.
         if (isObj(this.config.summarise)) this._buildSummarise(this.config.summarise);

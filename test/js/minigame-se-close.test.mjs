@@ -101,9 +101,21 @@ test('C-X3 the wide SE windows take the shared 9-slice frame, no ring or line', 
     }
 });
 
-test('C-ER1 the episode runner frames itself in normal play, full-bleed only when facilitated', () => {
+test('C-ER1 the episode runner draws a kiosk bezel in normal play, full-bleed only when facilitated', () => {
     const src = readFileSync(join(js, 'minigames/episode-runner/episode-runner-minigame.js'), 'utf8');
-    assert.match(src, /classList[^\n]*toggle[^\n]*minigame-framed[^\n]*!this\.facilitated/, 'framed when not facilitated');
+    // The kiosk flag is "not facilitated" and toggles .epr-kiosk on the container (pick B).
+    assert.match(src, /const\s+kiosk\s*=\s*!this\.facilitated/, 'kiosk = not facilitated');
+    assert.match(src, /classList[^\n]*toggle[^\n]*epr-kiosk[^\n]*kiosk/, 'toggles .epr-kiosk for kiosk play');
+    // In kiosk play it builds the bezel and mounts the close X in the bezel top strip.
+    assert.match(src, /epr-kiosk-bezel/, 'builds the kiosk bezel');
+    assert.match(src, /mountCloseControl\(top,/, 'the X sits in the bezel top strip');
+    assert.ok(!/minigame-framed/.test(src), 'no longer uses the generic 9-slice frame');
+    // The bezel is CSS-drawn in the PC monitor look: 2px borders, stepped corners, no image art.
+    const er = readFileSync(join(css, 'episode-runner.css'), 'utf8');
+    const bezel = er.match(/\.epr-kiosk-bezel\s*\{[^}]*\}/)[0];
+    assert.match(bezel, /border:\s*2px solid/, 'the bezel has a 2px outline');
+    assert.match(bezel, /clip-path:\s*polygon/, 'the bezel corners are cut in steps');
+    assert.ok(!/url\(/.test(bezel), 'no image art in the bezel');
 });
 
 test('C-X1 hand-rolled text Close buttons are gone from the SE scenes', () => {
@@ -117,5 +129,48 @@ test('C-X1 hand-rolled text Close buttons are gone from the SE scenes', () => {
     ]) {
         const src = readFileSync(join(js, rel), 'utf8');
         assert.doesNotMatch(src, /se-overlay-close minigame-button/, `${rel}: no text Close skin button`);
+    }
+});
+
+test('m3 shredded-document closes by the shared pixel X, no text Close', () => {
+    const src = readFileSync(join(js, 'minigames/shredded-document/shredded-document-minigame.js'), 'utf8');
+    assert.ok(!/cancelText:/.test(src), 'no text Close cancel button left');
+    assert.ok(!/showCancel:\s*true/.test(src), 'the text cancel row is not requested');
+    assert.match(src, /#minigame-close[^\n]*classList[^\n]*add\('se-overlay-close'\)/, 'the close X wears the shared SE pixel look');
+});
+
+test('C-X8 the address font points at GNF, addresses stay at 16px or larger', () => {
+    const fonts = readFileSync(join(css, 'fonts.css'), 'utf8');
+    const addr = fonts.match(/--se-font-address:\s*[^;]+;/)[0];
+    assert.match(addr, /--se-font-address:\s*'GNF'/, 'address font is GNF first');
+    // No address element in these windows is set below 16px (rn/m merge below 14px).
+    for (const rel of ['osint-browser-minigame.css', 'mail-client-minigame.css', 'landing-page-builder-minigame.css']) {
+        const sheet = readFileSync(join(css, rel), 'utf8');
+        const re = /font-size:\s*(\d+)px[^;]*;[^}]*se-font-address|se-font-address[^}]*font-size:\s*(\d+)px/g;
+        let m;
+        while ((m = re.exec(sheet))) {
+            const px = Number(m[1] || m[2]);
+            assert.ok(px >= 16, `${rel}: an address at ${px}px is below 16px`);
+        }
+    }
+});
+
+test('C-X8 the plain x replaces the cross glyph in the authored landing-page copy', () => {
+    const src = readFileSync(join(js, 'minigames/landing-page-builder/landing-page-model.js'), 'utf8');
+    assert.ok(!src.includes('✗'), 'no cross glyph in landing-page-model.js');
+});
+
+test('n2 the shared .se-notice is applied to the listed scene notices', () => {
+    const cases = [
+        ['minigames/episode-runner/episode-runner-minigame.js', /epr-scope se-notice|epr-reload-note se-notice/],
+        ['minigames/password-guesser/password-guesser-minigame.js', /epr-gs-note se-notice|epr-gs-reload-note se-notice/],
+        ['minigames/assistant-chat/assistant-chat-minigame.js', /ac-reload-note se-notice/],
+        ['minigames/sort-drill/sort-drill-minigame.js', /sd-reload-note se-notice/],
+        ['minigames/pretext-prep/pretext-prep-minigame.js', /pretext-scope se-notice/],
+        ['minigames/engagement-report/engagement-report-minigame.js', /er-note[^']*se-notice/],
+        ['minigames/landing-page-builder/landing-page-builder-minigame.js', /lpb-captures-empty se-notice/]
+    ];
+    for (const [rel, re] of cases) {
+        assert.match(readFileSync(join(js, rel), 'utf8'), re, `${rel}: notice carries .se-notice`);
     }
 });

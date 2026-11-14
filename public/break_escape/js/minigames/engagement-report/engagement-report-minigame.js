@@ -171,7 +171,7 @@ export class EngagementReportMinigame extends SocialOverlayScene {
             table.appendChild(tbody);
             sec.appendChild(table);
             if (r.mail.some((row) => row.failed > 0)) {
-                sec.appendChild(h('p', { class: 'er-note er-fail-note',
+                sec.appendChild(h('p', { class: 'er-note er-fail-note se-notice',
                     text: m.strings.failedSendNote }));
             }
         } else {
@@ -230,7 +230,7 @@ export class EngagementReportMinigame extends SocialOverlayScene {
             sec.appendChild(callPanel);
         }
 
-        sec.appendChild(h('p', { class: 'er-note er-unseen', text: r.unseenNote }));
+        sec.appendChild(h('p', { class: 'er-note er-unseen se-notice', text: r.unseenNote }));
 
         // Results-step items: confirm buttons and (opt-in) questions about the results
         for (const item of m.items) {
@@ -297,7 +297,7 @@ export class EngagementReportMinigame extends SocialOverlayScene {
             sec.appendChild(h('p', { class: 'er-empty', text: 'No findings to write up.' }));
             return sec;
         }
-        sec.appendChild(h('p', { class: 'er-note',
+        sec.appendChild(h('p', { class: 'er-note se-notice',
             text: m.strings.findingsHint }));
         const list = h('ol', { class: 'er-finding-list' });
         for (const f of m.findings) list.appendChild(this._findingCard(f));
