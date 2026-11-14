@@ -149,14 +149,11 @@
     opacity: 0.8; /* dimmed so the title stays the brightest thing on screen */
 }
 
-.title-screen-art::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background:
-        /* flat bands with hard edges, no soft ramps (pixel-art UI rule) */
-        linear-gradient(to top, rgba(0, 0, 0, 0.7) 0 6%, rgba(0, 0, 0, 0.6) 6% 12%, rgba(0, 0, 0, 0.5) 12% 18%, rgba(0, 0, 0, 0.4) 18% 24%, rgba(0, 0, 0, 0.3) 24% 30%, rgba(0, 0, 0, 0.2) 30% 36%, rgba(0, 0, 0, 0.1) 36% 40%, rgba(0, 0, 0, 0) 40%),
-        linear-gradient(to left, rgba(0, 0, 0, 0.88) 0 6%, rgba(0, 0, 0, 0.84) 6% 14%, rgba(0, 0, 0, 0.79) 14% 22%, rgba(0, 0, 0, 0.7) 22% 38%, rgba(0, 0, 0, 0.6) 38% 44%, rgba(0, 0, 0, 0.5) 44% 50%, rgba(0, 0, 0, 0.4) 50% 56%, rgba(0, 0, 0, 0.3) 56% 62%, rgba(0, 0, 0, 0.2) 62% 68%, rgba(0, 0, 0, 0.1) 68% 74%, rgba(0, 0, 0, 0) 74%);
+/* With art, the vignette image is the art variant (tools/make_title_vignette.py --art): the
+   oval plus a darker zone to the right and along the bottom for the text, as the same square
+   blocks with curved steps. No bands are drawn over the picture. */
+.title-screen-container.has-art::after {
+    background-image: url('../assets/ui/title-vignette-art.png');
 }
 
 /* The logo stays centred while the text moves into the calm right-hand strip. */

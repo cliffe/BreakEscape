@@ -145,7 +145,7 @@
 
 .scanner-panel :is(#ble-search, #bluetooth-search, #biometrics-search, .scan-search).scan-search:focus {
     outline: none;
-    border-color: #4caf50;
+    border-color: var(--scan-accent, #4f8dff);
     box-shadow: none;
 }
 

@@ -182,6 +182,9 @@ export class BiometricsMinigame extends MinigameScene {
         const biometricsSearch = document.getElementById('biometrics-search');
         if (biometricsSearch) {
             this.addEventListener(biometricsSearch, 'input', () => this.updateBiometricsPanel());
+            // keep typed letters away from the game's key handler (as the BLE panel does)
+            this.addEventListener(biometricsSearch, 'keydown', (e) => e.stopPropagation());
+            this.addEventListener(biometricsSearch, 'keyup', (e) => e.stopPropagation());
         }
         
         // Category filters

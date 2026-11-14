@@ -777,3 +777,5 @@
 .fpr-result-title span { font-family: 'VT323', monospace; font-size: 24px; vertical-align: -2px; }
 
 .biometrics-minigame-game-container { padding-bottom: 56px; }
+/* A right gutter for the shell's X, so a scrolled panel never slides its search field under it */
+.biometrics-minigame-game-container { padding-right: 40px; }

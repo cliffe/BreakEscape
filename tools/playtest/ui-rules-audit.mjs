@@ -108,7 +108,9 @@ export function audit({ rootSel }) {
                 const ab = a.getBoundingClientRect();
                 const ox = acs.overflowX, oy = acs.overflowY;
                 const t = ab.top + px(acs.borderTopWidth), l = ab.left + px(acs.borderLeftWidth);
-                const bt = t + a.clientHeight, rt = l + a.clientWidth;
+                // `zoom` scales the rect but not clientWidth/clientHeight: bring them to the same scale
+                const zx = a.offsetWidth ? ab.width / a.offsetWidth : 1, zy = a.offsetHeight ? ab.height / a.offsetHeight : 1;
+                const bt = t + a.clientHeight * zy, rt = l + a.clientWidth * zx;
                 const hide = (o) => o === 'hidden' || o === 'clip';
                 const scroll = (o) => o === 'auto' || o === 'scroll';
                 let cut = null;

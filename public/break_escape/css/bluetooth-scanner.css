@@ -246,7 +246,7 @@
 }
 
 .bluetooth-device-list::-webkit-scrollbar-thumb:hover {
-    background: #4caf50;
+    background: var(--scan-accent, #4f8dff);
 }
 
 /* Device Items */

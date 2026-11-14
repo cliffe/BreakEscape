@@ -449,6 +449,15 @@
 }
 
 
+/* Short landscape phones up to 768px wide: the frame is 90% of the height with padding, so the
+   page is a little shorter than on wider short screens and its top stays inside the frame */
+@media (orientation: landscape) and (max-height: 640px) and (max-width: 768px) {
+    .notes-minigame-notepad {
+        height: calc(90vh - 12px);
+        width: calc((90vh - 12px) * 165 / 205);
+    }
+}
+
 /* ── The note slip, stuck on the page (S7-notes) ─────────────────────────────────────
    The text box is a slip of paper fixed to the notepad page. Three looks for the user's
    review; the default is "tape". The others are chosen by a class on the notepad:
@@ -490,8 +499,8 @@
     clip-path: polygon(0 0, 100% 0, 100% 4px, calc(100% - 2px) 4px, calc(100% - 2px) 8px, 100% 8px, 100% 12px,
         calc(100% - 2px) 12px, calc(100% - 2px) 100%, 2px 100%, 2px 12px, 0 12px, 0 8px, 2px 8px, 2px 4px, 0 4px);
 }
-/* inset so they stay on the page at every size; the right one clears the pencil button */
-.notes-minigame-text-box::before { left: 6px; }
+/* inset evenly (44px each side) so they stay on the page at every size and the right one clears the pencil button */
+.notes-minigame-text-box::before { left: 44px; }
 .notes-minigame-text-box::after { right: 44px; }
 
 /* Torn: the bottom edge torn in uneven square steps; one strip of tape at the top centre */
@@ -520,7 +529,7 @@
 .note-style-pinned .notes-minigame-text-box::after { display: none; }
 .note-style-pinned .notes-minigame-text-box::before {
     left: calc(50% - 6px);
-    top: -6px;
+    top: -14px;   /* above the title's underline */
     width: 8px;
     height: 8px;
     background: #d63031;

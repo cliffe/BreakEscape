@@ -123,9 +123,11 @@ export function npcLabelName(id, w = win()) {
  * Pure: move overlapping overlay blocks apart (critique S01: panels sat over each other and
  * over heads). `boxes` = [{ id, x, y, w, h }] in world px, y the top. The block lowest on
  * screen keeps its place (or, with `stable`, the first by id); each one above it that overlaps a placed block goes up until it
- * clears it by `gap`. Returns { id: dy } (0 or negative).
+ * clears it by `gap`. Returns { id: dy } (0 or negative, or positive when a block is put below).
+ * `minTop` (optional, world y of the camera's top edge): a block that would climb above it
+ * goes below the blocks it overlaps instead, so no panel leaves the view.
  */
-export function stackOverlayBoxes(boxes, gap = 2, stable = false) {
+export function stackOverlayBoxes(boxes, gap = 2, stable = false, minTop = null) {
     // stable: a fixed order by id, so two NPCs walking past each other never swap panels
     const order = stable
         ? [...boxes].sort((a, b) => (String(a.id) < String(b.id) ? -1 : String(a.id) > String(b.id) ? 1 : 0))
@@ -141,6 +143,19 @@ export function stackOverlayBoxes(boxes, gap = 2, stable = false) {
                 const xOverlap = b.x < p.x + p.w && p.x < b.x + b.w;
                 const yOverlap = top < p.y + p.h + gap && p.y < top + b.h + gap;
                 if (xOverlap && yOverlap) { top = p.y - gap - b.h; moved = true; }
+            }
+        }
+        if (minTop !== null && top < minTop && b.y >= minTop) {
+            // Off the top of the view: try below the placed blocks instead
+            top = b.y;
+            moved = true;
+            while (moved) {
+                moved = false;
+                for (const p of placed) {
+                    const xOverlap = b.x < p.x + p.w && p.x < b.x + b.w;
+                    const yOverlap = top < p.y + p.h + gap && p.y < top + b.h + gap;
+                    if (xOverlap && yOverlap) { top = p.y + p.h + gap; moved = true; }
+                }
             }
         }
         placed.push({ ...b, y: top });
@@ -261,7 +276,10 @@ export class NpcNeedsDebug {
             if (vis) shown.push([id, p, this._box(p)]);
         }
         // Panels that would overlap are stacked upwards, clear of each other (critique S01)
-        const dy = stackOverlayBoxes(shown.map(([id, , b]) => ({ id, x: b.x, y: b.y, w: b.w, h: b.h })), 2, true);
+        // ...but never above the top of the camera's view (a panel climbing off screen is cut)
+        const cam = shown.length ? shown[0][1].sprite?.scene?.cameras?.main : null;
+        const viewTop = cam?.worldView && Number.isFinite(cam.worldView.y) ? Math.ceil(cam.worldView.y) : null;
+        const dy = stackOverlayBoxes(shown.map(([id, , b]) => ({ id, x: b.x, y: b.y, w: b.w, h: b.h })), 2, true, viewTop);
         for (const [id, p, b] of shown) this._place(p, b, dy[id] || 0);
     }
 }

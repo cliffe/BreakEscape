@@ -102,7 +102,7 @@
     padding: 10px;
     margin-bottom: 8px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: none;
 }
 
 .bluetooth-device:hover {

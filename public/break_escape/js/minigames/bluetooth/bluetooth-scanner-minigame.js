@@ -138,6 +138,9 @@ export class BluetoothScannerMinigame extends MinigameScene {
         const bluetoothSearch = document.getElementById('bluetooth-search');
         if (bluetoothSearch) {
             this.addEventListener(bluetoothSearch, 'input', () => this.updateBluetoothPanel());
+            // keep typed letters away from the game's key handler (as the BLE panel does)
+            this.addEventListener(bluetoothSearch, 'keydown', (e) => e.stopPropagation());
+            this.addEventListener(bluetoothSearch, 'keyup', (e) => e.stopPropagation());
         }
         
         // Category filters

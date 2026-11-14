@@ -139,3 +139,21 @@ test('the overlay draws with the GNF bitmap font helper, not VT323 canvas text',
     assert.doesNotMatch(src, /VT323/);
     assert.doesNotMatch(src, /scene\.add\.text\(/);
 });
+
+test('stackOverlayBoxes minTop: a block that would climb out of the view goes below instead', async () => {
+    const { stackOverlayBoxes } = await import('../../public/break_escape/js/systems/npc-needs-debug.js');
+    const boxes = [
+        { id: 'a', x: 0, y: 40, w: 40, h: 30 },
+        { id: 'b', x: 5, y: 38, w: 40, h: 30 },
+        { id: 'c', x: 2, y: 36, w: 40, h: 30 }
+    ];
+    const free = stackOverlayBoxes(boxes, 2, true);
+    assert.ok(36 + free.c < 0, 'without a limit the third panel leaves the top of the view');
+    const dy = stackOverlayBoxes(boxes, 2, true, 0);
+    for (const b of boxes) assert.ok(b.y + dy[b.id] >= 0, `${b.id} stays inside the view`);
+    const placed = boxes.map((b) => ({ ...b, y: b.y + dy[b.id] }));
+    for (let i = 0; i < placed.length; i++) for (let j = i + 1; j < placed.length; j++) {
+        const p = placed[i], q = placed[j];
+        assert.ok(p.y + p.h <= q.y || q.y + q.h <= p.y, `${p.id} and ${q.id} do not overlap`);
+    }
+});
