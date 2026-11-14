@@ -486,13 +486,16 @@ if (beat === 'f') await recordBeat('f_dee_catch', async () => {
     const mgAtCatch = await page.evaluate(() => { try { return window.MinigameFramework.currentMinigame && window.MinigameFramework.currentMinigame.constructor.name; } catch (e) { return null; } });
     const after = await snap();
     const caught = after.tasks.includes('check_caught_walking') || after.tasksCompleting.includes('check_caught_walking');
-    // Close the catch conversation, let Dee finish her coffee and walk back; wait for `returned_post`
-    // in her log (F8) rather than any job/idle state, with a long bound (her coffee use + walk home).
-    for (let i = 0; i < 4; i++) { await page.keyboard.press('Escape'); await t(400); await page.evaluate(() => window.__test.dismissBlockingUi && window.__test.dismissBlockingUi()).catch(() => {}); await t(300); }
+    // Close the catch person-chat with a SINGLE Escape, then clear any pause overlay that a second
+    // Escape would open (that overlay pauses the needs clock and would stall her resume); no more
+    // Escapes. Then wait for `returned_post` in her log (F8), not any job/idle state: she resumes the
+    // interrupted coffee, drinks it and walks back to her post (about 15 s under the throttle).
+    await page.keyboard.press('Escape'); await t(700);
+    for (let i = 0; i < 6; i++) { const busy = await page.evaluate(() => { const s = window.__test.getState(); return !!(s.activeMinigame || s.blockingUi); }); if (!busy) break; await page.evaluate(() => window.__test.dismissBlockingUi && window.__test.dismissBlockingUi()).catch(() => {}); await t(400); }
     const resumed = await waitUntil(async () => {
         const r = await page.evaluate(() => { const s = window.__test.needs.state('dee') || {}; const log = window.__test.needs.log().filter(e => e.npc === 'dee').map(e => e.ev); return { returned: log.includes('returned_post'), atPost: s.atPost === true }; });
         return r.returned ? r : null;
-    }, 60000, 1000);
+    }, 45000, 1000);
     const deeState = await njob('dee');
     // onceOnly persistence: reload, then pick the drawer again — no second person-chat catch.
     await load();
