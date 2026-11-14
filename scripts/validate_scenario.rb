@@ -778,7 +778,7 @@ def check_unknown_fields(json_data)
 
   # Known top-level fields
   known_top_level = %w[
-    scenario_id scenario_name scenario_brief endGoal version startRoom startPosition resumeSpawn titleScreenName pcWallpaper
+    scenario_id scenario_name scenario_brief endGoal version startRoom startPosition resumeSpawn titleScreenName pcWallpaper pcWallpaperFocus
     show_scenario_brief disableAttacks creditsTheme creditsOverlay gameClock flags music startItemsInInventory globalVariables
     player objectives rooms npcs phoneNPCs narrator timers _comment mutuallyExclusiveGlobals lighting
     importGlobals exportGlobals social npcNeedsSeed disguises actionIcons officeVisuals npcWindupMs showPressingNeeds showNpcIntentBubbles needsDebugOverlay officePresets chatter lockCues roomTone roomToneTypes
@@ -4957,6 +4957,19 @@ def check_recurring_bugs(json_data, repo_root)
   if player_sheet.is_a?(String) && !player_sheet.empty? && !sheet_loadable.call(player_sheet)
     issues << "❌ ERROR: 'player' uses spriteSheet '#{player_sheet}', but #{unloadable_sheet.call(player_sheet)}. " \
               "In standalone mode (and Rails games with no saved sprite) the player has no texture."
+  end
+
+  # Top-level pcWallpaper (utils/pc-monitor.js): a missing file falls back to the shared wallpaper
+  # in game, so say so here. pcWallpaperFocus is [x, y], shares of the picture (0 to 1).
+  if json_data.key?('pcWallpaper') && json_data['pcWallpaper'].is_a?(String) && !asset_exists.call(json_data['pcWallpaper'])
+    issues << "⚠️ WARNING: pcWallpaper '#{json_data['pcWallpaper']}' does not exist under public/break_escape/. " \
+              "Every PC screen shows the shared wallpaper instead."
+  end
+  if json_data.key?('pcWallpaperFocus')
+    pf = json_data['pcWallpaperFocus']
+    unless pf.is_a?(Array) && pf.size == 2 && pf.all? { |n| n.is_a?(Numeric) && n >= 0 && n <= 1 }
+      issues << "⚠️ WARNING: pcWallpaperFocus should be [x, y], shares of the wallpaper's width and height between 0 and 1. The centre is used."
+    end
   end
 
   # Room chatBackground: person-chat's fallback background (person-chat-background.js). A missing

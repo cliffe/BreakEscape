@@ -22,7 +22,7 @@ const POOLS = Object.freeze({
 // Characters whose walk art is a byte-identical copy of a stock sprite (tools/pixellab_characters.json
 // `copied_from`). A copy and its original are one look, so a player wearing either meets the other
 // as a twin. Add a line here for every new copy; the comparison and the pool follow from it.
-const SAME_ART = Object.freeze({
+export const SAME_ART = Object.freeze({
     kevin_park: 'male_nerd_v2',
     derek_lawson: 'male_office_worker_v2'
 });
@@ -45,10 +45,15 @@ function poolOf(key) {
     return null;
 }
 
-/** "female_blowse" for female_blowse_v2, assets/characters/female_blowse_talk.png and _visemes.png. */
+/**
+ * "female_blowse" for female_blowse_v2, assets/characters/female_blowse_talk.png and _visemes.png.
+ * A copied character's files count as its original's (R2 M1): kevin_park_talk.png is
+ * male_nerd_talk.png, so Kevin's portrait follows his swap.
+ */
 function stemOf(pathOrKey) {
-    return (String(pathOrKey).split('/').pop() || '')
-        .replace(/\.\w+$/, '').replace(/[_-](talk|visemes|headshot)$/, '').replace(/_v2$/, '');
+    const raw = (String(pathOrKey).split('/').pop() || '')
+        .replace(/\.\w+$/, '').replace(/[_-](talk|visemes|headshot)$/, '');
+    return (SAME_ART[raw] || raw).replace(/_v2$/, '');
 }
 
 /**
