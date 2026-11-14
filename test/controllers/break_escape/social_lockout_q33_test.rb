@@ -285,7 +285,7 @@ module BreakEscape
 
     test 'R2 m4: a lockout at a station someone else owns does not stall the feed (no check can learn it)' do
       data = scenario
-      data['rooms']['office']['objects'].find { |o| o['id'] == 'tara_pc' }['screenOwner'] = 'lena'
+      data['rooms']['office']['objects'].find { |o| o['id'] == 'tara_pc' }['owner'] = 'lena'
       build(data: data)
       lock_out!('tara_pc', 'tnair')
       assert report(check('tara', 'tara_pc')).first['refused'], 'no check is answered there'

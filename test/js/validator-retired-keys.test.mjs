@@ -102,3 +102,120 @@ test('8a: a genuine unknown key in a closed block still prints its schema line',
     assert.equal(out.length, 1);
     assert.match(out[0], /unknown key 'bogus'/);
 });
+
+// ---- Step 8b (format 2): the owner retired keys and the owner-field checks ----
+
+function owner(scenario) {
+    const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
+      puts JSON.generate(check_owner_fields(JSON.parse(STDIN.read)))`;
+    const r = spawnSync('ruby', ['-e', script], {
+        input: JSON.stringify(scenario), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' }
+    });
+    assert.equal(r.status, 0, r.stderr);
+    return JSON.parse(r.stdout.trim().split('\n').pop());
+}
+
+function unknownWarnings(scenario) {
+    const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
+      puts JSON.generate(check_unknown_fields(JSON.parse(STDIN.read)))`;
+    const r = spawnSync('ruby', ['-e', script], {
+        input: JSON.stringify(scenario), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' }
+    });
+    assert.equal(r.status, 0, r.stderr);
+    return JSON.parse(r.stdout.trim().split('\n').pop());
+}
+
+for (const [key, where, now] of [
+    ['screenOwner', { rooms: { r: { objects: [{ id: 'pc', screenOwner: 'a' }] } } }, 'owner'],
+    ['phoneOwner', { rooms: { r: { objects: [{ id: 'ph', phoneOwner: 'a' }] } } }, 'owner'],
+    ['phoneOf', { rooms: { r: { objects: [{ id: 'fp', phoneOf: 'a' }] } } }, 'owner'],
+    ['leftBehindBy', { rooms: { r: { objects: [{ id: 'm', leftBehindBy: 'a' }] } } }, 'owner'],
+]) {
+    test(`8b: a retired ${key} is one rename error to ${now}`, { skip }, () => {
+        const out = issues(where);
+        assert.equal(out.length, 1, JSON.stringify(out));
+        assert.match(out[0], new RegExp(`ERROR:.*${key}.*renamed to '${now}' in format 2`));
+    });
+}
+
+test('8b: affordance.owners and affordance.private are moved-up rename errors', { skip }, () => {
+    const out = issues({ rooms: { r: { objects: [{ id: 'p', affordance: { owners: ['a'], private: true } }] } } });
+    assert.equal(out.length, 2, JSON.stringify(out));
+    assert.ok(out.some(l => /affordance\/owners.*renamed to 'owner \(moved up to the object\)' in format 2/.test(l)));
+    assert.ok(out.some(l => /affordance\/private.*renamed to 'private \(moved up to the object\)' in format 2/.test(l)));
+});
+
+test('8b: a reintroduced affordance.private prints no schema unknown-key line', { skip }, () => {
+    const msg = "The property '#/rooms/r/objects/0/affordance' contains additional properties [\"private\"] outside of the schema when none are allowed";
+    const out = schemaErrors({ rooms: { r: { objects: [{ id: 'p', affordance: { private: true } }] } } }, [msg]);
+    assert.deepEqual(out, []);
+});
+
+for (const [kind, obj] of [
+    ['a workstation', { id: 'pc', workstation: true, owner: ['a', 'b'] }],
+    ['a desk phone', { id: 'ph', deskPhone: true, owner: ['a', 'b'] }],
+    ['a Friendface phone', { id: 'fp', type: 'phone_friendface', owner: ['a', 'b'] }],
+    ['a left-behind item', { id: 'm', leftBehindChance: 0.5, owner: ['a', 'b'] }],
+]) {
+    test(`8b: a list owner on ${kind} is one error`, { skip }, () => {
+        const out = owner({ rooms: { r: { objects: [obj] } } });
+        const errs = out.filter(l => l.includes('❌'));
+        assert.equal(errs.length, 1, JSON.stringify(out));
+        assert.match(errs[0], /owner must be a single NPC id/);
+    });
+}
+
+test('8b: a list owner on a private object is allowed (no error)', { skip }, () => {
+    const out = owner({ rooms: { r: { objects: [{ id: 'p', private: true, owner: ['a', 'b'] }] } } });
+    assert.deepEqual(out.filter(l => l.includes('❌')), []);
+});
+
+test('8b: a workstation that is an NPC needsHome with no owner warns needsHome no longer sets one', { skip }, () => {
+    const out = owner({ rooms: { r: {
+        npcs: [{ id: 'rosa', needsHome: 'rosa_pc' }],
+        objects: [{ id: 'rosa_pc', workstation: true }]
+    } } });
+    const warns = out.filter(l => l.includes('⚠️'));
+    assert.equal(warns.length, 1, JSON.stringify(out));
+    assert.match(warns[0], /needsHome no longer sets an owner.*owner: 'rosa'/);
+});
+
+test('8b: the same workstation with an explicit owner fires no such warning', { skip }, () => {
+    const out = owner({ rooms: { r: {
+        npcs: [{ id: 'rosa', needsHome: 'rosa_pc' }],
+        objects: [{ id: 'rosa_pc', workstation: true, owner: 'rosa' }]
+    } } });
+    assert.deepEqual(out, []);
+});
+
+test('8b: owner, private and deskPhone print no unknown-field warning', { skip }, () => {
+    const out = unknownWarnings({ rooms: { r: { objects: [{ id: 'pc', type: 'pc', name: 'PC', owner: 'a', private: true, deskPhone: true }] } } });
+    assert.deepEqual(out.filter(l => /'(owner|private|deskPhone)'/.test(l)), []);
+});
+
+// ---- Step 8c (format 3): the three NPC habit keys fold into the habits block ----
+
+for (const [key, now] of [
+    ['screenHabit', 'habits.screen'],
+    ['printHabit', 'habits.print'],
+    ['usbHabit', 'habits.usb'],
+]) {
+    test(`8c: a retired NPC ${key} is one rename error to ${now}`, { skip }, () => {
+        const out = issues({ rooms: { r: { npcs: [{ id: 'rosa', [key]: { foo: 1 } }] } } });
+        assert.equal(out.length, 1, JSON.stringify(out));
+        assert.match(out[0], new RegExp(`ERROR:.*npcs/0/${key}.*renamed to '${now.replace('.', '\\.')}' in format 3`));
+    });
+}
+
+test('8c: folded habits.screen/.print/.usb print no unknown-field warning', { skip }, () => {
+    const out = unknownWarnings({ rooms: { r: { npcs: [{ id: 'rosa',
+        habits: { screen: { lockChance: 0 }, print: { forgetChance: 0.5 }, usb: { every: 2 } } }] } } });
+    assert.deepEqual(out.filter(l => /unknown field/.test(l)), []);
+});
+
+test('8c: a reintroduced top-level screenHabit on an NPC prints no unknown-field warning', { skip }, () => {
+    // check_retired_keys prints the rename error; check_unknown_fields suppresses the redundant
+    // unknown-field warning for a retired NPC key, so one slip prints one line.
+    const out = unknownWarnings({ rooms: { r: { npcs: [{ id: 'rosa', screenHabit: { lockChance: 0 } }] } } });
+    assert.deepEqual(out.filter(l => /'screenHabit'/.test(l)), []);
+});

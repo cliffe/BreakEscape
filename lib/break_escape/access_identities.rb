@@ -183,7 +183,7 @@ module BreakEscape
     # neither lockChance nor locksScreenOnLeave (test/unit/pc_screen_lock_precedence_test.rb).
     # Does every leave lock this screen? decideLocked's order (workstation-state.js) without
     # the policy: the PC's numeric lockChance, else its locksScreenOnLeave key, else the
-    # owner's screenHabit (slice 9.1, 5.2). A habit that is not an object, or no habit, locks;
+    # owner's habits.screen (slice 9.1, 5.2). A habit that is not an object, or no habit, locks;
     # a habit with a numeric lockIfAwayOverSeconds can leave it open on a short trip; else the
     # habit's numeric lockChance must be 1 or more; a habit with neither locks. The rule of
     # ValidateNpcNeeds.habit_leaves_open?, negated, wherever the PC sets no field.
@@ -193,7 +193,7 @@ module BreakEscape
       return chance >= 1 if chance.is_a?(Numeric)
       return pc['locksScreenOnLeave'] != false if pc.key?('locksScreenOnLeave')
 
-      habit = owner.is_a?(Hash) ? owner['screenHabit'] : nil
+      habit = owner.is_a?(Hash) && owner['habits'].is_a?(Hash) ? owner['habits']['screen'] : nil
       return true unless habit.is_a?(Hash)
       # decideLocked: a trip expected to last at most lockIfAwayOverSeconds stays open, the value
       # read with Number() (so "20" counts). Owner claim q78: a negative threshold can never be
@@ -226,12 +226,11 @@ module BreakEscape
       room_objects(scenario).select { |entry| login_pc?(entry[:object]) }
     end
 
-    # A workstation's owner id: screenOwner, else the room NPC whose needsHome names it.
-    def owner_id(obj, scenario)
-      return obj['screenOwner'] if obj['screenOwner'].is_a?(String) && !obj['screenOwner'].empty?
+    # A workstation's owner id: its explicit owner (a single NPC id). needsHome no longer sets one.
+    def owner_id(obj, _scenario = nil)
+      return obj['owner'] if obj['owner'].is_a?(String) && !obj['owner'].empty?
 
-      found = room_npcs(scenario).find { |entry| entry[:npc]['needsHome'] == obj['id'] }
-      found && found[:npc]['id']
+      nil
     end
 
     # Every rfid lock and sign-in PC: [{ kind: 'door' | 'object' | 'login', id:, room:,

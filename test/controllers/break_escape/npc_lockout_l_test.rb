@@ -28,11 +28,11 @@ module BreakEscape
       office['objects'] += [
         AccessWorkScenario.pc('jake_pc', 'policy' => 'strict', 'lockChance' => 1),
         AccessWorkScenario.pc('leo_pc', 'policy' => 'strict', 'lockChance' => 0),
-        AccessWorkScenario.pc('shared_pc', 'policy' => 'strict', 'screenOwner' => 'amy')
+        AccessWorkScenario.pc('shared_pc', 'policy' => 'strict', 'owner' => 'amy')
       ]
       office['npcs'] += [
         AccessWorkScenario.staff('jake', 'jbrooks', JAKE_PASSWORD, 'displayName' => 'Jake Brooks',
-                                                                  'screenHabit' => { 'lockChance' => 0 },
+                                                                  'habits' => { 'screen' => { 'lockChance' => 0 } },
                                                                   'workarounds' => [{ 'at' => 40, 'do' => 'borrow_session', 'pc' => 'hot_desk' }]),
         AccessWorkScenario.staff('leo', 'lmarsh', LEO_PASSWORD, 'displayName' => 'Leo Marsh'),
         # Pip's own station names another owner: no lockout station for Pip
@@ -43,7 +43,7 @@ module BreakEscape
         'objects' => [AccessWorkScenario.pc('vic_pc', 'policy' => 'strict')],
         'npcs' => [AccessWorkScenario.staff('vic', 'vgrant', 'Vic-Vole-55')]
       }
-      data
+      AccessWorkScenario.assign_owners!(data)
     end
 
     def build(data: scenario, player_state: {})
@@ -97,7 +97,7 @@ module BreakEscape
       assert AccessWork.can_fail?(data, npc_in(data, 'jake'), 'work'), 'Jake: his own PC under strict'
       assert AccessWork.can_fail?(data, npc_in(data, 'leo'), 'work')
       refute AccessWork.can_fail?(data, npc_in(data, 'amy'), 'work'), 'Amy: managed has no maxAttempts'
-      refute AccessWork.can_fail?(data, npc_in(data, 'pip'), 'work'), "Pip: his station is Amy's (screenOwner)"
+      refute AccessWork.can_fail?(data, npc_in(data, 'pip'), 'work'), "Pip: his station is Amy's (owner)"
       no_creds = npc_in(data, 'jake').merge('creds' => nil)
       refute AccessWork.lockout_station?(data, no_creds), 'an NPC with no account is never locked out'
     end
