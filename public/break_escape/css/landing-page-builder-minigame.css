@@ -102,7 +102,8 @@
     border: 2px solid var(--ui-line, #4c5b80);
     border-radius: 0;
     color: var(--ui-text-dim, #a8b2c8);
-    font-size: 13px;
+    /* C-X7: the stepper boxes read at the same 14px as the inbox-triage stepper. */
+    font-size: 14px;
 }
 
 .lpb-step::before { content: counter(lpb-step); font-weight: normal; }
@@ -111,6 +112,12 @@
     color: var(--ui-text, #eef1f8);
     border-color: var(--ui-accent, #ffcc44);
     background: var(--ui-surface-raised, rgba(38, 48, 74, 0.96));
+}
+
+/* C-X7: at narrow widths the stepper is one sideways-scrolling row, not a wrapped block. */
+@media (max-width: 767px) {
+    .lpb-steps { flex-wrap: nowrap; overflow-x: auto; }
+    .lpb-step { flex: 0 0 auto; }
 }
 
 /* ── body: two panes ── */

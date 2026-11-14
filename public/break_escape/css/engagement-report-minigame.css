@@ -226,6 +226,10 @@
     gap: 6px;
 }
 
+/* C-RP1: options read as a quiz list, each one full-width and left-aligned, so the list does
+   not zig-zag to each label's width. */
+.er-option { display: block; width: 100%; text-align: left; }
+
 .er-option.is-chosen {
     outline: 2px solid var(--ui-accent, #3a6ea5);
 }

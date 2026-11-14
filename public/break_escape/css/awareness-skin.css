@@ -57,6 +57,12 @@
 .aw-step-skipped .aw-step-label { text-decoration: line-through; }
 .aw-step-skipped .aw-step-num { background: var(--aw-line); color: #6b7680; opacity: 0.6; }
 .aw-step-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* C-X7 / C-ER2: at narrow widths the stepper stays one sideways-scrolling row rather than
+   wrapping to two or three, matching the inbox-triage and landing-page-builder steppers. */
+@media (max-width: 767px) {
+    .aw-steps { flex-wrap: nowrap; overflow-x: auto; }
+    .aw-step { flex: 0 0 auto; }
+}
 
 /* shared text */
 /* F13: the accent at heading size sits near the AA floor on the light surface; darken it a

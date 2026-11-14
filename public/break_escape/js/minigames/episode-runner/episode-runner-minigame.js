@@ -500,7 +500,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             this._render();
             this._focus();
         };
-        if (index > 0) this._button(panel, BRIEF_COPY.back, () => go(index - 1), 'epr-back');
+        if (index > 0) this._button(panel, BRIEF_COPY.back, () => go(index - 1), 'epr-back aw-button-secondary');
         if (index < last) this._button(panel, BRIEF_COPY.next, () => go(index + 1), 'epr-next');
         else this._button(panel, isStr(this.strings.briefDone) ? this.strings.briefDone : BRIEF_COPY.done, () => this._complete('brief'), 'epr-start epr-done');
     }

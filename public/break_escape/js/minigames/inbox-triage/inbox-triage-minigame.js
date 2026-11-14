@@ -1672,7 +1672,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
 
         // The text scrolls in its own body and the action bar sits below it, so the skill breakdown
         // is never underneath Finish (E8 F5).
-        const body = el('div', 'tri-result-body');
+        const body = el('div', 'tri-result-body pixel-scroll');
         while (p.firstChild) body.appendChild(p.firstChild);
         p.appendChild(body);
 

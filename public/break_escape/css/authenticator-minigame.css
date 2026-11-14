@@ -53,7 +53,7 @@
 .auth-feed-more { margin: 2px 0 0; text-align: center; font-size: 13px; font-style: italic; color: #c3ccd6; }
 
 /* why it worked, and the defender's control */
-.auth-outcome { margin: 12px 0 0; padding: 10px 12px; border-radius: 8px; background: var(--auth-surface); border: 1px solid var(--auth-line); }
+.auth-outcome { margin: 12px 0 0; padding: 10px 12px; border-radius: 0; background: var(--auth-surface); border: 2px solid var(--auth-line); }
 .auth-outcome-line { margin: 0 0 8px; font-size: 14px; line-height: 1.45; color: var(--auth-ink); }
 /* the last line is always the defender's control (defenderNote) */
 .auth-outcome-line:last-child { margin-bottom: 0; font-weight: 600; color: var(--auth-ok); }
@@ -69,7 +69,7 @@
 
 /* a push prompt card */
 .auth-card {
-    background: var(--auth-surface); border: 1px solid var(--auth-line); border-radius: 10px;
+    background: var(--auth-surface); border: 2px solid var(--auth-line); border-radius: 0;
     padding: 10px 12px; animation: auth-card-in 180ms ease-out;
 }
 .auth-card-manual { border-style: dashed; }
@@ -79,13 +79,13 @@
 .auth-card-details dt { color: var(--auth-dim); }
 .auth-card-details dd { margin: 0; }
 .auth-card-actions { display: flex; gap: 8px; }
-.auth-card-action { flex: 1; text-align: center; padding: 6px 0; border-radius: 6px; font-size: 13px; font-weight: 700; opacity: 0.55; }
+.auth-card-action { flex: 1; text-align: center; padding: 6px 0; border-radius: 0; font-size: 13px; font-weight: 700; opacity: 0.55; }
 .auth-card-approve { background: var(--auth-ok); color: #fff; }
-.auth-card-deny { background: #e4e9e7; color: var(--auth-dim); border: 1px solid var(--auth-line); }
+.auth-card-deny { background: #e4e9e7; color: var(--auth-dim); border: 2px solid var(--auth-line); }
 
 .auth-banner {
-    margin: 12px 0 0; padding: 10px 12px; border-radius: 8px; font-size: 15px; font-weight: 700;
-    background: #fbe8e8; color: var(--auth-danger); border: 1px solid #e3b4b4;
+    margin: 12px 0 0; padding: 10px 12px; border-radius: 0; font-size: 16px; font-weight: normal;
+    background: #fbe8e8; color: var(--auth-danger); border: 2px solid #e3b4b4;
 }
 .auth-approved .auth-phone { outline: 3px solid var(--auth-danger); }
 

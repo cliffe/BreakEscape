@@ -160,13 +160,11 @@
 .epr-text { margin: 0 0 12px; font-size: 16px; max-width: 60ch; }
 /* batch 13: the send-off under the Episode finished panel */
 .epr-send-off { margin: 0 0 12px; padding: 10px 12px; font-size: 16px; max-width: 60ch; border-left: 4px solid var(--aw-accent, #2f6f8f); }
+/* C-ER3: the scope note carries .se-notice (dashed box) in markup, so .epr-scope only sets its
+   flow; the left-bar quote box is gone in favour of the shared notice look. */
 .epr-scope {
     margin: 0 0 12px;
-    padding: 8px 12px;
     max-width: 60ch;
-    font-size: 15px;
-    background: #fff;
-    border-left: 4px solid var(--aw-accent);
 }
 .epr-card-count { margin: 12px 0 0; font-size: 14px; }
 .epr-brief-card .epr-button + .epr-button { margin-left: 8px; }
@@ -186,6 +184,10 @@
     border-radius: 0;
     cursor: pointer;
 }
+/* C-X9 secondary action (e.g. brief-card Back): the awareness secondary look, square 2px line,
+   no fill. Two-class selector so it beats the single-class .epr-button fill regardless of load
+   order. */
+.epr-button.aw-button-secondary { color: var(--aw-ink); background: #fff; border-color: var(--aw-line); }
 .epr-button:focus-visible { outline: 3px solid var(--aw-ink); outline-offset: 2px; }
 
 /* Facilitated mode (11 N5, P7-I): the group prompt and the pause between stages. Large
