@@ -507,3 +507,30 @@ test('fix round 1: the backup consequence panel has no scroller of its own (m2)'
     const i = br.indexOf('.backup-recovery-panel {');
     assert.match(br.slice(i, br.indexOf('}', i)), /overflow: visible/);
 });
+
+test('fix round 2: only the network view marks its subtitle essential; the rule keeps it on phones (second line)', () => {
+    const base = src('framework/base-minigame.js');
+    assert.match(base, /consoleSubtitleEssential === true \? ' console-subtitle-essential'/);
+    assert.match(src('network-view/network-view-minigame.js'), /static consoleSubtitleEssential = true/);
+    const flagged = [];
+    const walk = (d) => {
+        for (const e of readdirSync(join(root, 'js', 'minigames', d), { withFileTypes: true })) {
+            if (e.isDirectory()) walk(join(d, e.name));
+            else if (e.name.endsWith('.js') && /consoleSubtitleEssential\s*=\s*true/.test(readFileSync(join(root, 'js', 'minigames', d, e.name), 'utf8'))) flagged.push(e.name);
+        }
+    };
+    walk('.');
+    assert.deepEqual(flagged.filter((n) => n !== 'base-minigame.js'), ['network-view-minigame.js']);
+    const fw = readFileSync(join(root, 'css', 'minigames-framework.css'), 'utf8');
+    const phone = fw.slice(fw.lastIndexOf('@media (max-width: 600px) {'));
+    assert.match(phone, /\.console-subtitle-essential \.console-subtitle:not\(\[hidden\]\) \{\s*display: block/);
+    assert.match(phone, /\.console-subtitle-essential \.console-titles \{\s*display: contents/);
+    assert.match(phone, /\.console-subtitle-essential \.console-subtitle \{\s*order: 3;\s*flex: 0 0 100%/);
+});
+
+test('fix round 2: the claims subtitle comes from the scenario data, none when absent', () => {
+    const cms = src('claims-management-system/claims-management-system-minigame.js');
+    assert.doesNotMatch(cms, /ALBE-007/);
+    assert.match(cms, /minigameData\.subtitle/);
+    assert.match(cms, /return this\.subtitleText \|\| ''/);
+});

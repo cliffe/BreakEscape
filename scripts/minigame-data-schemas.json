@@ -243,7 +243,8 @@
     "optional": [
       "stateWrites",
       "printEnabled",
-      "title"
+      "title",
+      "subtitle"
     ]
   },
   "forensic_data_platform": {

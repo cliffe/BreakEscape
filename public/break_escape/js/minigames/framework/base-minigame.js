@@ -59,7 +59,7 @@ export class MinigameScene {
         if (isConsole) {
             const sub = this.consoleSubtitle();
             this.container.innerHTML = `
-            <div class="console-window${this.constructor.consoleWindowFill === true ? ' console-window-fill' : ''}" data-console-window>
+            <div class="console-window${this.constructor.consoleWindowFill === true ? ' console-window-fill' : ''}${this.constructor.consoleSubtitleEssential === true ? ' console-subtitle-essential' : ''}" data-console-window>
                 <div class="console-titlebar">
                     <div class="console-titles">
                         <h2 class="console-title">${escapeHtml(displayDashes(this.consoleTitle()))}</h2>
@@ -181,6 +181,10 @@ export class MinigameScene {
         }
         this.syncConsoleTitleTip();
     }
+
+    // A scene whose subtitle carries something the player needs sets
+    // `static consoleSubtitleEssential = true`: on phones under 600px wide the subtitle then
+    // stays, on a second line of the bar (css/minigames-framework.css)
 
     // The title is one line with an ellipsis, and on short or narrow windows the subtitle
     // shares that line or is hidden, so the bar's title attribute carries the full text

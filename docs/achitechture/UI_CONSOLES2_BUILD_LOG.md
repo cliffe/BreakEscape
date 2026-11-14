@@ -227,6 +227,35 @@ Open for the orchestrator: on narrow phones the network view's subtitle (which n
 port) is only in the title attribute, which touch players cannot see; the claims subtitle
 hard-codes sis03's case reference in engine code (claims-management-system-minigame.js).
 
+### Fix round 1b (two small fixes)
+
+**Essential subtitle.** A scene sets `static consoleSubtitleEssential = true` and the shared
+window gets the class `console-subtitle-essential`; under 600px wide its subtitle then stays,
+on a second line of the bar, one line with an ellipsis (the title and X keep the first line,
+the subtitle spans the bar's full width under both). Only the network view sets it (network
+and port). No other scene changes: a test walks every scene file for the flag and finds only
+the network view; the claims scene at 390x844 still hides its subtitle (title attribute only).
+Live, fresh test_access_networks game 3818 (`--start-room comms_room --unlock lobby --give
+kit_dropbox`, `interact('comms_port')`, `dismissBlockingUi('Plug it in')`), server :3480:
+390x844 bar 78px (was 50), subtitle "On Harbour office LAN, at Spare wall port" whole on one
+line (326px wide, no ellipsis); 360x740 bar 78px, same text ends in an ellipsis at 296px; the
+X is unmoved at the top right; no page overflow; at 1400x1000 unchanged (74px bar). Esc closes.
+
+**Claims subtitle.** The scene reads `minigameData.subtitle` (or a `subtitle` param) and shows
+none when it is absent; the case reference is no longer in engine code. sis03's claims terminal
+carries `"subtitle": "MC-2023-ALBE-007 | Coverage Analysis Workspace"` in its minigameData
+(also added to `scripts/minigame-data-schemas.json`), so it looks the same. Validator on sis03:
+0 errors. Live (fresh sis03 game 3817): with the data the 1400x1000 bar shows the same
+subtitle as before; with the subtitle deleted from the data the bar is the title alone (58px)
+and the tip is the title only; 390x844 hides it either way.
+
+Tests (plain `node`, one at a time): minigame-consoles-fit 29 pass (2 new), minigame-shell-fit
+30, minigame-close-shell 19, network-view 51, engine-fixes-pass4b (names the claims scene) 10;
+0 fail.
+
+Shots: scratchpad ui-consoles2-r2/ (network-view__390x844, __360x740, __1400x1000;
+claims-with__ and claims-without__ at 1400x1000 and 390x844; proof.json).
+
 ## Handover (context limit, 2026-11-14)
 
 Fix round 1 (section 5) closed open items 1, 3 and 4 below and the review's M1 to M3 and m1 to m5;

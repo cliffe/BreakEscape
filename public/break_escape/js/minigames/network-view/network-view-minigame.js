@@ -234,6 +234,7 @@ export class NetworkViewMinigame extends MinigameScene {
     // Draws in the shared console window (UI decision X8): the link's name is the title, the
     // subtitle line is the bar's subtitle, the X is the shared one. The list wraps its rows.
     static consoleWindow = true;
+    static consoleSubtitleEssential = true;
 
     consoleTitle() {
         return this.params?.title || 'Network link';

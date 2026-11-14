@@ -154,6 +154,8 @@ export class ClaimsManagementSystemMinigame extends MinigameScene {
         this.sections = normalizeSections(params.sections || minigameData.sections);
         this.stateWrites = normalizeStateWrites(params.stateWrites || minigameData.stateWrites);
         this.minigameKey = String(params.lockable?.id || params.id || 'claims_management_system');
+        // The bar's subtitle comes from the scenario's minigameData; none when absent
+        this.subtitleText = String(params.subtitle || minigameData.subtitle || '');
         this.printEnabled = params.printEnabled !== false && minigameData.printEnabled !== false;
         this.activeSectionId = this.sections[0]?.id || null;
         this.viewedSections = new Set();
@@ -164,7 +166,7 @@ export class ClaimsManagementSystemMinigame extends MinigameScene {
     }
 
     consoleSubtitle() {
-        return 'MC-2023-ALBE-007 | Coverage Analysis Workspace';
+        return this.subtitleText || '';
     }
 
     getViewedSectionStore() {
