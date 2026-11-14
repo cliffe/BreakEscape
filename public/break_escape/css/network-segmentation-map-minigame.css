@@ -146,6 +146,12 @@
     overflow: visible;
 }
 
+/* Labels never take a tap: a rule line under its label stays tappable along its whole length,
+   and a "!" marker's triangle takes the tap for its group (consoles final proof, sis01 at 400px) */
+.nsm-svg text {
+    pointer-events: none;
+}
+
 /* ── Consequence panel ──────────────────────────────────────────────────────── */
 
 .nsm-consequence-panel {

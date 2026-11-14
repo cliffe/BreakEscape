@@ -352,3 +352,7 @@ test('review round 4: a second ANNOTATE press does not stack a second SCADA repo
         } finally { globalThis.document = savedDoc; globalThis.window = savedWin; }
     } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+test('final proof: segmentation map labels let taps through to the rule lines under them', () => {
+    assert.match(css('network-segmentation-map-minigame.css'), /\.nsm-svg text \{\s*pointer-events: none;/);
+});
