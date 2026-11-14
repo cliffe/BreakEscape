@@ -156,13 +156,8 @@ test('two NPCs sharing a phoneCalls knot name warn', { skip }, () => {
 });
 
 // ── 12: the scenarios this branch owns, pinned (step 1 of SIMS-5) ──
-test('test_needs_sims: exactly the three untriggerable per-NPC cooler pools (amara, tom, marek)', { skip }, () => {
-    const i = checkFile('scenarios/test_needs_sims/scenario.json.erb');
-    const pools = i.filter(s => s.includes('chatter pool')).sort();
-    assert.deepEqual(pools.map(s => s.match(/NPC '(\w+)' chatter pool '(\w+)'/)?.slice(1).join('.')).sort(),
-        ['amara.cooler', 'marek.cooler', 'tom.cooler']);
-    assert.equal(i.length, 3, 'no other V10 warning: ' + i.join('\n'));
-    assert.ok(!i.some(s => s.startsWith('❌')), 'V10 is warnings only');
+test('test_needs_sims: no V10 warning (the cooler pools were re-keyed to coffee or dropped)', { skip }, () => {
+    assert.deepEqual(checkFile('scenarios/test_needs_sims/scenario.json.erb'), []);
 });
 
 test('test_needs_attack: no V10 warning', { skip }, () => {
