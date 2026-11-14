@@ -669,7 +669,8 @@
     position: fixed;
     left: 8px;
     top: auto;
-    bottom: calc(108px + var(--tray-scrollbar, 0px));
+    /* hud-lanes.js sets --hearts-lift when Block/Punch would meet them */
+    bottom: calc(108px + var(--tray-scrollbar, 0px) + var(--hearts-lift, 0px));
   }
 }
 

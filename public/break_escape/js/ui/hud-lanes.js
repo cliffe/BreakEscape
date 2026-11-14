@@ -288,8 +288,36 @@ function outerHeightOf(el) {
   return h + (Number.isFinite(mb) ? mb * zoomOf(el) : 0);
 }
 
+/**
+ * How far (screen px) to lift the hearts so they never meet Block/Punch. Both are boxes
+ * {left, top, right, bottom}; the lift is zero unless they overlap or sit closer than gap on
+ * both axes, and then the hearts' bottom ends gap above the buttons' top.
+ */
+export function heartsLift(hearts, combat, gap = LANE_GAP) {
+  if (!hearts || !combat) return 0;
+  const near = hearts.left < combat.right + gap && combat.left < hearts.right + gap
+    && hearts.top < combat.bottom + gap && combat.top < hearts.bottom + gap;
+  return near ? Math.max(0, Math.round(hearts.bottom - (combat.top - gap))) : 0;
+}
+
+// On a narrow phone the hearts (fixed at the left, above the avatar) and Block/Punch (fixed at the
+// right, above the strip) can reach each other (360 px wide: 4 px, 320 px: 44 px). The hearts rise
+// above the buttons; CSS reads --hearts-lift only in its narrow-phone rule. Measured with the lift
+// cleared so the answer does not depend on the last one.
+function placeHearts(doc) {
+  const el = doc.getElementById('health-ui-container');
+  if (!el) return;
+  const prev = el.style.getPropertyValue('--hearts-lift');
+  if (prev) el.style.removeProperty('--hearts-lift');
+  const h = shownRect(el);
+  const c = shownRect(doc.getElementById('combat-buttons'));
+  const lift = h && c ? heartsLift(h, c) : 0;
+  if (lift > 0) el.style.setProperty('--hearts-lift', `${Math.round(lift / zoomOf(el))}px`);
+}
+
 /** Place the lane members for one measurement. Exposed for tests and the proof scripts. */
 export function applyLanes(doc = document, win = window) {
+  placeHearts(doc);
   const m = measureHud(doc, win);
   const toastsEl = doc.getElementById('notification-container');
   const phoneEl = doc.getElementById('npc-bark-container');
