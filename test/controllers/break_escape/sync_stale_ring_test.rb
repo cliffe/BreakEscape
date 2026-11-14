@@ -198,6 +198,40 @@ module BreakEscape
       assert stored.all? { |e| newest - e['ts'] <= 60_000 }, 'every kept entry is within the 60 s window'
     end
 
+    # Chunk 5 size bound: a hostile flood mixing over-cap key counts, an over-length key name
+    # and deletions must leave the ring within every bound (8 entries, 32 recorded keys per
+    # entry, 128 bytes per kept claim key), and the ring must never reach the client.
+    test 'a hostile flood keeps the ring within every bound and never ships it' do
+      base = 2_000_000
+      long_key = 'k' * 200   # over the 128-byte cap: its section collapses to a whole claim
+      50.times do |i|
+        gv =
+          case i % 3
+          when 0 then (1..40).each_with_object({}) { |k, h| h["flood#{i}_#{k}"] = k } # over the 32-key cap
+          when 1 then { long_key => i, "set#{i}" => i }                               # a 200-byte key name
+          else        { "set#{i - 1}" => nil, "d#{i}" => i }                          # a deletion plus a set
+          end
+        sync(clientTs: base + i, globalVariables: gv)
+        assert_response :success
+      end
+
+      stored = ring
+      assert_operator stored.size, :<=, 8, 'at most 8 entries'
+      stored.each do |entry|
+        count = entry['w'].sum { |_, claim| claim == true ? 1 : claim.size }
+        assert_operator count, :<=, 32, "entry #{entry['ts']} stays within 32 recorded keys"
+        entry['w'].each_value do |claim|
+          next unless claim.is_a?(Array)
+
+          claim.each { |k| assert_operator k.to_s.bytesize, :<=, 128, 'every kept claim key is within 128 bytes' }
+        end
+      end
+
+      get scenario_game_url(@game)
+      assert_response :success
+      refute_includes response.body, 'syncWrites', 'the ring never appears in the bootstrap JSON'
+    end
+
     test 'an entry more than 60 s below a newer write is expired' do
       sync(clientTs: 1_000_000, globalVariables: { 'old' => 1 })
       assert_equal 1, ring.size
@@ -348,6 +382,41 @@ module BreakEscape
       sync(clientTs: 4003, currentRoom: 'office')             # a later legitimate room
       assert_response :success
       assert_equal 'office', ps['currentRoom'], 'the refusal did not block the later room'
+    end
+
+    # Chunk 4 review R1, minor 2: the one D-first order the re-stamp does not fully close.
+    # When there is no qualifying ring entry at or below H's stamp (an existing game past the
+    # deploy, an expired ring, or a reset-cleared ring), H lands stale-but-recent, the
+    # completeness guard fails, and H whole-skips, so H's unique last-write-wins section is
+    # dropped on that page-unload race. This is the documented, intended R2 cost (plan
+    # section 5 "empty-ring guard failure" and section 10). It self-heals on the next fresh
+    # sync. Pinning it keeps a later change that widened the empty-ring window from silently
+    # dropping a hidden flush's unique content while every gap test still passed.
+    test 'R1 m2: D first then H stale against no qualifying ring entry drops H unique section, next fresh sync writes normally' do
+      # An existing game past the deploy: a stored lastSyncClientTs, a clean (empty) ring, so
+      # no ring entry sits at or below H's stamp.
+      @game.update!(player_state: @game.player_state.merge('lastSyncClientTs' => 900, 'syncWrites' => []))
+
+      # D (the newer-content body, stamped above H) lands first and is fresh.
+      sync(clientTs: 1002, globalVariables: { 'late' => 1 })        # D
+      assert_response :success
+      refute JSON.parse(response.body)['stale'], 'D is fresh'
+      assert_equal 1, globals['late'], 'D applies'
+
+      # H (the older hidden flush carrying its own unique key blob) arrives stale. The only
+      # ring entry is D's at 1002, above H, so the guard fails and H whole-skips.
+      sync(clientTs: 1001, globalVariables: { 'blob' => 1 })        # H stale, guard fails
+      assert_response :success
+      assert_equal 200, response.status
+      assert_equal true, JSON.parse(response.body)['stale'], 'H answers 200 with stale:true'
+      assert_nil globals['blob'], "H's unique section is dropped (guard fails, whole-skip): the R2 cost"
+      assert_equal 1002, ps['lastSyncClientTs'], 'H does not move the stamp'
+
+      # The loss is only for the mis-ordered body: the next fresh sync writes normally.
+      sync(clientTs: 1003, globalVariables: { 'blob' => 1 })
+      assert_response :success
+      refute JSON.parse(response.body)['stale'], 'the next sync is fresh'
+      assert_equal 1, globals['blob'], 'a fresh sync writes the content normally again'
     end
   end
 end

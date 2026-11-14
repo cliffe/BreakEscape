@@ -7371,6 +7371,41 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
     err.call("'#{e[:path]}' policy '#{e[:object]['policy']}' names no entry in 'policies'.")
   end
 
+  # remoteScreen (credential keyring K0, section 5.3): a policy with remoteScreen on a
+  # remote: "blocked" policy warns (no remote screen opens); remoteScreen: "tiles" on a
+  # policy only PCs with loginPicker:false or headless PCs use draws an info line (no PC
+  # tiles ever show through it).
+  # The sign-in PCs whose effective policy is the named one. The policy name is resolved
+  # without ActiveSupport (the validator never requires it; .presence would crash, R1 B1),
+  # matching the idiom used for defaultPolicy above.
+  pcs_under = lambda do |policy_name|
+    pcs.select do |e|
+      p = e[:object]['policy']
+      used = (p.is_a?(String) && !p.empty? ? p : json_data['defaultPolicy']).to_s
+      used == policy_name
+    end
+  end
+  tiles_capable = lambda do |pc|
+    picker = pc.key?('loginPicker') ? pc['loginPicker'] : 'accounts'
+    !(picker == false) && !(pc['headless'] == true)
+  end
+  policies.each do |policy_name, policy|
+    next unless policy.is_a?(Hash) && policy.key?('remoteScreen')
+
+    if policy['remote'] == 'blocked'
+      warn.call("policy '#{policy_name}' sets remoteScreen but remote is 'blocked', so no remote sign-in screen opens under it.")
+      # The warning already says no screen opens under a blocked policy; the info line below
+      # would double the noise for the same condition (R1 m2), so stop here.
+      next
+    end
+    # Only when PCs are actually under the policy and none could ever tile: a policy no PC
+    # uses is odd on its own but does not mean "no PC tiles show" (R1 m1).
+    under = pcs_under.call(policy_name.to_s)
+    if policy['remoteScreen'] == 'tiles' && under.any? && under.none? { |e| tiles_capable.call(e[:object]) }
+      issues << "ℹ️ access model: policy '#{policy_name}' has remoteScreen 'tiles' but every PC under it has loginPicker false or is headless, so no PC tiles show over the network."
+    end
+  end
+
   # Profile item ids: unique across profiles and room objects (section 5.1)
   room_ids = objects.map { |e| e[:object]['id'] }.compact.map(&:to_s).to_set
   profile_items = []

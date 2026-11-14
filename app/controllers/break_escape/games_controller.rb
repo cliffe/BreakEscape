@@ -1469,21 +1469,32 @@ module BreakEscape
 
       info = @game.find_login_pc(params[:pc_id].to_s)
       return render_error("Sign-in PC not found: #{params[:pc_id]}", :not_found) unless info
+
+      # A request that carries a foothold is the remote sign-in screen (credential keyring K0,
+      # section 5.1): judged by reach through the foothold, never at the keyboard, and never
+      # given a post-it. A malformed foothold is refused here (400), never falling through to
+      # the keyboard branch.
+      if params[:foothold].present?
+        result = @game.remote_login_accounts(info, params[:foothold].to_s)
+        return render json: result[:body], status: result[:status]
+      end
+
       # A headless host has no screen and no tiles (networks slice 9.3a, section 5)
       unless @game.login_pc_reachable?(info) && !BreakEscape::NetworkModel.headless?(info[:object])
         return render_error("PC not reachable: #{params[:pc_id]}", :forbidden)
       end
-      # The sign-in screen at a switched-off PC's keyboard is not shown (q72). The route is
-      # judged at the keyboard whatever foothold value it carries (review R3 nit 3): the PC is
-      # physically reachable here, so saying it is off tells nothing new.
+      # The sign-in screen at a switched-off PC's keyboard is not shown (q72). This keyboard
+      # off-branch runs only for a request with no foothold: a foothold request is intercepted
+      # above and judged by reach (K0 section 5.1), never here. The PC is physically reachable,
+      # so saying it is off tells nothing new.
       if @game.host_service_off?(info[:object])
         return render json: { error: BreakEscape::NetworkAccess::PC_OFF_MESSAGE, reason: 'off' }, status: :forbidden
       end
 
       answer = { pc_id: info[:object]['id'], loginAccounts: @game.login_account_tiles(info[:object]) }
-      # A written-down note is seen at the PC's own keyboard only: a request that names a
-      # foothold (a remote sign-in, slice 9.3a 4.4 and 13.1) never gets it
-      note = params[:foothold].present? ? nil : @game.login_postit_for(info[:object])
+      # A written-down note is seen at the PC's own keyboard only. A foothold request never
+      # reaches here (the remote branch above handles it), so this keyboard answer carries the note.
+      note = @game.login_postit_for(info[:object])
       answer[:postitNote] = note if note
       render json: answer
     end

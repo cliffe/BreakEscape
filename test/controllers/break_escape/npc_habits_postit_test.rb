@@ -164,7 +164,9 @@ module BreakEscape
     test 'a request that names a foothold never gets the note (a remote sign-in, slice 9.3a)' do
       build
       get login_accounts_game_url(@game), params: { pc_id: 'omar_pc', foothold: 'jack_any' }
-      assert_response :success
+      # An unheld foothold cannot reach the PC (keyring K0): a 403 reach refusal, never the
+      # keyboard screen, so no note and no password can leak through a foothold-named request.
+      assert_response :forbidden
       assert_no_store
       refute response.parsed_body.key?('postitNote')
       refute_includes response.body, OMAR_PASSWORD
