@@ -52,7 +52,7 @@ JSON_FILE     = File.join(File.dirname(SCENARIO_FILE), 'dungeon_graph.json')
 SCENARIO_ID   = File.basename(File.dirname(SCENARIO_FILE))
 
 # ---------------------------------------------------------------------------
-# Parse — one ERB binding for every renderer (plan step 5). The generator's old copy had its
+# Parse: one ERB binding for every renderer (plan step 5). The generator's old copy had its
 # own vm_flags_json returning the fallback array; it now renders through the server's
 # BreakEscape::ScenarioBinding, so the top-level `flags` block is the Hash the server builds.
 # ---------------------------------------------------------------------------

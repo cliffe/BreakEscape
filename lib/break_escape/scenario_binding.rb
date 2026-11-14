@@ -84,7 +84,7 @@ module BreakEscape
     end
 
     # Generate a top-level flags object for a VM: { "flag_1": "actual_value", ... }
-    # Used in the scenario's top-level "flags" section — stays server-side only.
+    # Used in the scenario's top-level "flags" section; it stays server-side only.
     # Usage in ERB:
     #   "intro_to_linux_security_lab": <%= vm_flags_json('intro_to_linux_security_lab') %>
     def vm_flags_json(vm_name, fallback = [])

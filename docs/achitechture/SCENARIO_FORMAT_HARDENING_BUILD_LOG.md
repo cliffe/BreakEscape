@@ -3084,10 +3084,10 @@ deleted the inline `ScenarioBinding` class, which step 5 also touches).
 - **New `lib/break_escape/scenario_binding.rb`** (`BreakEscape::ScenarioBinding`), plain Ruby. It carries
   the server's binding behaviour as the truth (`vm_object`, `flags_for_vm`, `flags_for_vm_slice`,
   `vm_flags_json` returning the `{ "flag_1": … }` Hash with the `'{}'`-on-missing rule), plus:
-  - `self.render(template_text, vm_context = {})` — builds a fresh binding inside the call (so a seed set
+  - `self.render(template_text, vm_context = {})`: builds a fresh binding inside the call (so a seed set
     immediately before is honoured for the `@random_pin` draw) and returns the rendered JSON **string**;
     callers `JSON.parse` it themselves. Uses the server's ERB options (no trim mode).
-  - `json(value)` — `value.to_json`, for `"title": <%= json(title) %>`.
+  - `json(value)`: `value.to_json`, for `"title": <%= json(title) %>`.
   - Requires `securerandom`, `json`, `erb` **and `base64`**. The plan listed the first three; `base64` is
     added because several templates (m01, m03, m04) define an inline `base64_encode` that calls
     `Base64.strict_encode64` and rely on the host having loaded `base64` (the server through Rails; each old
@@ -3115,14 +3115,14 @@ deleted the inline `ScenarioBinding` class, which step 5 also touches).
 
 ### Render equivalence
 
-Method: a one-off diff (`scratchpad/equiv.rb`) renders every `scenarios/*/scenario.json.erb` twice — once with
+Method: a one-off diff (`scratchpad/equiv.rb`) renders every `scenarios/*/scenario.json.erb` twice: once with
 the validator's **former** binding (`vm_flags_json` -> plain array) and once with the new
-`BreakEscape::ScenarioBinding` — with `SecureRandom.alphanumeric`/`hex` stubbed to constants and `srand(4242)`
+`BreakEscape::ScenarioBinding`, with `SecureRandom.alphanumeric`/`hex` stubbed to constants and `srand(4242)`
 set before each render, so both are deterministic and drawn from the same sequence. Parsed JSON compared with `==`.
 
 Result over 179 templates:
 - **167 identical.**
-- **11 differ only in the top-level `flags` value** — exactly the `vm_flags_json` users (m01-m10 and
+- **11 differ only in the top-level `flags` value**: exactly the `vm_flags_json` users (m01-m10 and
   test_simple_vm_flag). Old rendered the inner VM flag value as a JSON array; new renders it as the server's
   `{ "flag_1": … }` Hash. This is the intended fix (the validator now matches the server), the one documented
   exception.
