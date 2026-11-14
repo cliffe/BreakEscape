@@ -255,8 +255,13 @@ test('alarm panel: scrolls on a short window, stepped lamps, 8px labels, X in th
     // R2 M2: the panel takes a phone's width at 1:1 instead of scrolling sideways; the SVG keeps
     // its scale (slice from the top left) and only loses empty space on the right
     assert.equal(rule(c, '.ap-panel-wrap').width, '100%');
-    assert.equal(rule(c, '.ap-panel-wrap')['max-width'], '460px');
-    assert.equal(rule(c, '.ap-svg')['max-width'], '420px');
+    assert.equal(rule(c, '.ap-panel-wrap')['max-width'], '324px');
+    // UI backlog 1: the SVG is always its 320px viewBox width and the panel is 324px at most (320 plus
+    // the two 2px borders), so the SVG is never scaled (a scaled box makes the browser report
+    // 6.74px / 13.49px text on a phone)
+    assert.equal(rule(c, '.ap-svg').width, '320px');
+    assert.equal(rule(c, '.ap-svg')['max-width'], 'none');
+    assert.match(src('minigames/alarm-panel/alarm-panel-minigame.js'), /const SVG_W = 320;/);
     assert.match(src('minigames/alarm-panel/alarm-panel-minigame.js'), /preserveAspectRatio="xMinYMin slice"/);
     assert.match(src('minigames/alarm-panel/alarm-panel-minigame.js'), /<svg class="ap-svg" width="\$\{SVG_W\}" height="\$\{SVG_H\}"/);
     assert.equal(rule(c, '.ap-label')['font-size'], '8px');
