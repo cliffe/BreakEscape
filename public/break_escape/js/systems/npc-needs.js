@@ -4773,6 +4773,11 @@ export function createEngineWorld() {
             pickable: sp.visible !== false && sp.active !== false && !sp._npcCarried && !sp._npcPlacedBy && !sp.destroyed,
             _sprite: sp
         };
+        // Slice 18a outage: the object-level offWhen (format 8a moved it off the affordance; the
+        // format upgrade guarantees object-level, so no affordance.offWhen path is left to read).
+        // _isOff and the pick paths read out.offWhen, so without this the live world never switches
+        // a source off (the stub world in the node tests supplies offWhen directly).
+        if (sd.offWhen !== undefined) out.offWhen = sd.offWhen;
         if (isSlot(sp)) { out.slot = true; out.takeable = sd.takeable === true; }
         // Slice 19: a desk phone (deskPhone flag and ring count; its owner is on out.owner)
         if (sd.deskPhone === true) { out.deskPhone = true; if (sd.rings !== undefined) out.rings = sd.rings; }
