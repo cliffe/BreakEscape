@@ -528,8 +528,8 @@
 }
 .note-style-pinned .notes-minigame-text-box::after { display: none; }
 .note-style-pinned .notes-minigame-text-box::before {
-    left: calc(50% - 6px);
-    top: -14px;   /* above the title's underline */
+    left: calc(100% - 28px);
+    top: 3px;   /* inside the slip's top-right corner: clear of the title and its underline */
     width: 8px;
     height: 8px;
     background: #d63031;

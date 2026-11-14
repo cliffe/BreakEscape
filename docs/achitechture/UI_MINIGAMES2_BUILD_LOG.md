@@ -153,3 +153,32 @@ x-on-frame 0, overflow 3 (same as baseline, alarm-panel 915x412 and network-arch
 390x844; the siem-dashboard cancel-beside-x, shredded-document and examine font-size lines are
 unchanged from before the round). shell-x-check 168 checked, 0 failed. The 19 named node tests
 pass one at a time (npc-needs-debug now 13).
+
+## Final pass (review R2: 0 B, 0 M, 4 m, 7 n)
+
+Merged train/47 (it contains main 5edb17541 and the earlier trains) into the branch, then fixed
+every R2 item. Live runs on a keyless server on :3465, one browser at a time, a fresh game made
+right before each run.
+
+- m1: Bluetooth and biometrics search fields now stop keydown and keyup from reaching the game
+  (as the BLE panel does). Typing "Head" and "Alice" gives the full word at 1400x1000 and 390x844.
+- m2: `.flag-input` has `min-width: 0` and the row may wrap. Flag station at 390x844 and 360x740:
+  no scrolling box inside, page scrollWidth equals the viewport, the button is inside the window.
+- m3: `stackOverlayBoxes` takes the camera's top edge; a panel that would climb above it is placed
+  below the panels it overlaps. Unit test added (npc-needs-debug now 14). S01 swap probe over 160
+  samples: 1400x1000 swaps 0, jumps over 20 px 2, panels above the view none; 390x844 swaps 0,
+  jumps 5, above the view none.
+- m4: the stepped bands over the title art are gone. `tools/make_title_vignette.py --art` makes
+  `assets/ui/title-vignette-art.png`: the oval vignette plus a darker zone to the right and along
+  the bottom, as the same 160x120 whole-number blocks with curved steps. Only screens with art
+  use it (`.has-art::after`), so screens without art keep the plain vignette. Flat 2px text
+  shadow kept. Shots from ca01_invoice_fraud at 1400x1000 and 390x844.
+- Nits: Bluetooth row `transition: none` and the list thumb hover uses the panel accent; search
+  focus border uses `--scan-accent`; biometrics panel has a 40 px right gutter so the X never sits
+  over the search field (search right edge 412, X left edge 418 at 915x412 scrolled to the end);
+  notepad top is 8 px at 667x375 (was -11) and 6 px at 915x412; tape strips both inset 44 px;
+  the pinned slip's pin sits in the slip's top-right corner, clear of the title and its underline;
+  `ui-rules-audit.mjs` scales clientWidth and clientHeight by the zoom ratio.
+- Gates: strict audit window-offscreen 0, frame-offscreen 1, clipped 0, x-on-frame 0, overflow 3
+  (known baseline); shell-x-check 168 checked, 0 failed. The 19 named node tests pass one at a
+  time (358 tests).

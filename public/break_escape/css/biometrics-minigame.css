@@ -778,4 +778,4 @@
 
 .biometrics-minigame-game-container { padding-bottom: 56px; }
 /* A right gutter for the shell's X, so a scrolled panel never slides its search field under it */
-.biometrics-minigame-game-container { padding-right: 40px; }
+.biometrics-minigame-game-container { padding-right: 40px !important; }
