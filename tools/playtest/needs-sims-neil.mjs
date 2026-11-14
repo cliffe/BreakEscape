@@ -171,7 +171,9 @@ if (beat === 'still_ask') {
         const printed = await snap();
         const posAfter = await neilPos();
         const drift = (posBefore && posAfter) ? Math.round(Math.hypot(posBefore.x - posAfter.x, posBefore.y - posAfter.y)) : null;
-        const fetch = await page.evaluate(() => window.__test.needs.log().filter(e => e.npc === 'neil' && /print_fetched|job_start/.test(e.ev)).length);
+        // Only a fetch errand counts here (a still NPC's own sips also log job_start, which is not a
+        // fetch; a forget:true print is reserved but never fetched).
+        const fetch = await page.evaluate(() => window.__test.needs.log().filter(e => e.npc === 'neil' && e.ev === 'print_fetched').length);
         await shot('02-page-on-tray');
         const closeToReveal = printed.clockMs;
         return { conv_ask_ok: conv.choose_ask, neil_print_asked: asked.globals.neil_print_asked, page_landed: !!ticked, it_out_a_shown: printed.globals.it_out_a_shown, revealed: printed.revealed, see_neils_page: printed.tasks.includes('see_neils_page') || printed.tasksCompleting.includes('see_neils_page'), neil_drift_px: drift, neil_still_ok: drift != null && drift <= 2, fetch_events: fetch };

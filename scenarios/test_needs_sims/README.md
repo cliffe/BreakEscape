@@ -838,12 +838,13 @@ conversation is opened and closed through its own UI (never a synthetic emit). S
 | Beat | Result | Evidence |
 |---|---|---|
 | Step 1 placement | PASS | Game 4289: `neil_mug` claims the drawn `office-misc-cup` on the east bench (x 214 = tile 6.69); Neil spawns on the mug's approach cell (home distance 7 px, within HOME_EPS 12); the IT copier and its six slots clear of his cell; both IT and the manager office load and their doors align. `it-room-4289.png`, `manager-4289.png` |
-| Neil is still for 10 min; sips at 2:30 and 7:30 | _to fill_ | |
-| Suspend/resume leaves him on his spawn | _to fill_ | |
-| Ask Neil, close: the copier runs ~6 s later, one slot revealed, no fetch | _to fill_ | |
-| Leave IT within 6 s of the close: the page is still there on return | _to fill_ | |
-| Reload after the page lands: tray empty, nothing reprints | _to fill_ | |
-| Reload within the 6 s delay: no page, nothing reprints (expected) | _to fill_ | |
+| Neil is still for 10 min; sips at ~2:30 and ~7:30 | PASS | Game 4299 (manual needs clock to 10:00): max sprite drift 2 px, 0 `left_post`/`goto`/`returning` events; two sips at 2.70 and 7.76 needs-clock min (urgent at 45, restores 30), both at post with the cup icon; `see_neil_sip` ticks. `neil-still_ask-01-sipping-4299.png` |
+| Suspend/resume leaves him on his spawn | PASS | Game 4299: `control('neil','suspend')` then `resume` (resume walks home unless within HOME_EPS); drift 0 px, he stays on his spawn, because the aimed `useFrom` puts his home on the spawn cell |
+| Ask Neil, close: the copier runs ~6 s later, one slot revealed, no fetch; a no-ask conversation prints nothing | PASS | Game 4299: an unasked conversation leaves `it_out_a_shown` false; after the asked conversation `neil_print_asked` is true, `it_room:it_out_a` is revealed, `see_neils_page` ticks, Neil's drift is 0 px and no `print_fetched` errand runs (`forget: true`). `neil-still_ask-02-page-on-tray-4299.png` |
+| Leave IT within 6 s of the close: the page is still there on return | PASS | Game 4299: step out to the office and back; `it_out_a_shown` still true, `it_room:it_out_a` still on the tray (the run sound plays only in the player's room) |
+| Reload after the page lands: tray filed empty, a second ask reprints nothing | PASS | Game 4300: page lands, then reload; `it_out_a_shown` false and no IT slot revealed (a reload files every held-by-nobody slot); a second real ask-and-close reprints nothing (the mapping is `onceOnly` and saved) |
+| Reload within the 6 s delay: no page, nothing reprints (expected) | PASS (expected) | Game 4301: reload 2.5 s after the close, inside the 6 s delay; after the reload `it_out_a_shown` is false and nothing is revealed, because the pending delayed mapping is lost with the page and the `onceOnly` key is saved only when it fires |
+| Office beats keep their outcomes with every door open | PASS | Games 4302/4304: with the kitchen, lounge and new IT door all open, the six core office tasks still tick (`see_coffee`, `see_work`, `see_back_at_desk`, `see_meal`, `see_drink`, and `see_rest` once Grace's lounge-sofa walk completes); no office NPC ever enters IT (leash + room privacy hold with the door open) |
 
 ## Engine findings
 

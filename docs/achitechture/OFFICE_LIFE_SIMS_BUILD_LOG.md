@@ -71,11 +71,58 @@ path-planning failure (the goto-item move to the kitchen plans no usable path, s
 layer emits no `npc_arrived` and `_advanceJob`'s `goto_item` branch, npc-needs.js ~3225, hits its
 `job.deadline` and `_failJob('timeout')`); left for its own slice, as the plan directs.
 
+## SIMS-3: the IT room and Neil, the still NPC who prints by command (m02's Gary)
+
+Branch `build/ol-sims` (from 32c87a72f, which carries SIMS-2's arrival check). Commit ebf7b1987
+(data, ink, node tests, README annotated example + tour rows + proof tool), then the live-proof
+rows and this log entry as a follow-up. No engine or server change (the Gary pattern is all data;
+the print command, `forget`, the reveal slots and `delayMs` all already exist).
+
+Built: `it_room` (`room_it`, private to Neil) off the office's new north door, and an empty
+`manager_office` (`room_ceo`) passthrough off IT's west door (Siân fills it in SIMS-9). `neil_mug`
+is a declared `office-misc-cup` that claims the drawn cup on the east bench (seat `stand`, own post,
+`useFrom` aimed under Neil's body so a suspend/resume keeps him on his spawn). `it_copier`
+(`photocopier1`, the copier preset by type) with six takeable `notes1` slots (`it_out_a` to `f`,
+neutral IT text, no account/address/password/code). Neil: one caffeine need (60/6/45) met only by
+his mug, leashed to `it_room`, `swivel: false`, `globalVarOnKO: neil_ko`, and a
+`conversation_closed:neil` mapping (`onceOnly`, `delayMs: 6000`, `forget`) that reveals the change
+log on `it_copier` when `neil_print_asked` holds and he is not KO. `neil.ink` is a Geordie hub whose
+change-log choice sets `neil_print_asked` with `#set_global`. Aim `watch_it` (`see_neil_sip`,
+`see_neils_page`) is wired on Amara's event mappings.
+
+Validator: 0 errors (32 warnings, all pre-existing cross-room-source and habits notes; line 79
+reports Neil's T1 2:30 / P 5:00 via `neil_mug`, line 82 `it_copier` with 1 printing NPC). Node: the
+full standard set passes (25 files), plus `test/js/npc-needs-sims-validator.test.mjs` (new, 7 tests)
+and three new `npc-needs.test.mjs` cases (a still own-post NPC never moves over 30 min; a `forget`
+command print reveals a slot and schedules no fetch; a forgotten command print recycles the oldest
+read-in-place slot once the tray is full). `validator-office-presets.test.mjs` gains `it_copier`.
+`ruby` format corpus 8a/8b/8c pass.
+
+Live proof (keyless :3093, headless, worktree p-ol-sims, `tools/playtest/needs-sims-neil.mjs`,
+games from `new-game.rb`; scratchpad `officelife-sims/s3/`): every beat PASS, see the README's
+SIMS-3 live-proof table. Step 1 placement (game 4289): the mug claim, Neil within HOME_EPS (7 px),
+copier cells clear, both rooms load, doors align. still_ask (game 4299): 10 min on the manual needs
+clock with 2 px max drift and 0 move events; natural sips at 2.70 and 7.76 needs-clock min;
+suspend/resume drift 0; a no-ask conversation prints nothing; the asked conversation reveals
+`it_room:it_out_a`, ticks `see_neils_page`, Neil's drift 0, no `print_fetched`; the page persists
+over a room change. reload_after (game 4300): the tray files empty on reload and a second ask
+reprints nothing (`onceOnly` saved). reload_during (game 4301): a reload 2.5 s after the close, in
+the 6 s delay, loses the pending print and reveals nothing (expected). Standard live set regression
+(office beats with every door open, incl. the new north door): all six core beats still tick
+(`see_coffee`, `see_work`, `see_back_at_desk`, `see_meal`, `see_drink` on game 4302; `see_rest` on
+game 4304, once Grace's full walk to the lounge sofa completes, `used lounge_sofa` with no
+`arrival_far`), and **no office NPC enters IT** (`it_intruders: []`): the leash and room privacy hold
+with the door open, so the office outcomes are unchanged.
+
+New spoken lines: Neil's `neil.ink` conversation, 5 single-speaker NPC lines (greeting + four
+choice replies). No pools (Neil is alone in IT in this slice, so a pool would never play).
+
 ## Engine and server changes (every slice)
 
 | Slice | File | Function | Change | Why | Branch |
 |---|---|---|---|---|---|
 | SIMS-1 | none applied | | | | |
+| SIMS-3 | none applied | | the Gary pattern is all scenario data (declared mug, print command, `forget`, reveal slots, `delayMs`) | nothing in the engine needed changing | build/ol-sims |
 | SIMS-2 | public/break_escape/js/systems/npc-needs.js | `onArrived` | now takes the arrival payload; logs `arrival {pathLeft,dist}` for a real behaviour-layer arrival; stores `{x,y,moveId,pathLeft}` in the `_arrivals` Map | step 1 diagnostic + carry the position/id the tick needs | build/ol-sims-2 |
 | SIMS-2 | npc-needs.js | `_phaseDest`, `_nextMoveId`, `_acceptArrival` (new) | distance-first + move-id check; a far arrival re-issues once then fails the job (returning re-issues once, never fails); synthetic own-post/home arrivals bypass | the fix: an arrival counts only within 48 px of the move's cell, and only for the current move | build/ol-sims-2 |
 | SIMS-2 | npc-needs.js | `_tickNpc` | consumes the stored arrival through `_acceptArrival` instead of a boolean Set membership | route every arrival through the distance/id guard | build/ol-sims-2 |
