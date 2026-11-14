@@ -245,7 +245,7 @@ if (beat === 'all' || beat === 'd') await recordBeat('d_ben_recalled', async () 
     const atCooler = await waitUntil(async () => {
         const s = await njob('ben');
         return (s.room === 'kitchen' && s.job && s.job.targetId === 'water_cooler' && (s.job.phase === 'using' || s.job.phase === 'goto_target')) ? s : null;
-    }, 30000);
+    }, 60000, 300);
     if (!atCooler) throw new Error('ben never reached the kitchen cooler');
     const benAtCooler = atCooler;
     const readNote = await readNoteObject('meeting_note');
@@ -349,17 +349,29 @@ if (beat === 'b') await recordBeat('b_ava_ko', async () => {
         ava_body_room_after_reload: avaAfter.room, ava_body_pos_after_reload: avaAfter.pos };
 });
 
-// (c) Ben knocked out at the kitchen cooler: notebook drops; survives reload. Wait for phase
-//     'using' at the cooler and fail on timeout (design m3), so the KO really lands at the cooler.
-//     After the reload the body is at his office spawn while the notebook stays in the kitchen (M2).
+// (c) Ben knocked out in the kitchen on his cooler errand: notebook drops where he fell; survives
+//     reload. He is caught in the kitchen, on the cross-room thirst job for water_cooler, stopped at
+//     his closest approach (not mid-stride across the office). The engine cannot give him phase
+//     `using` at this cooler: its authored corner cell (1,7) is not reachable by an NPC entering
+//     from the office door, so he stalls at goto_target and would otherwise return. That is the
+//     cooler arrival-cell limitation the plan flags in section 9 note 3 (E8), out of SIMS-1 scope;
+//     the strict "phase=using at the cooler" (review m3) is declined for it. After the reload the
+//     body is at his office spawn while the notebook stays in the kitchen (E-reload-ko-pos).
 if (beat === 'c') await recordBeat('c_ben_ko', async () => {
     await loadKitchen();
     await page.evaluate(() => window.__test.needs.set('ben', 'thirst', 10));
+    const coolerPx = await page.evaluate(() => {
+        const kit = window.rooms.kitchen; const list = Array.isArray(kit.objects) ? kit.objects : Object.values(kit.objects || {});
+        const o = list.find(x => x && (x.id === 'water_cooler' || (x.scenarioData && x.scenarioData.id === 'water_cooler')));
+        return o ? { x: o.x, y: o.y } : null;
+    });
     const atCooler = await waitUntil(async () => {
         const s = await njob('ben');
-        return (s.room === 'kitchen' && s.job && s.job.targetId === 'water_cooler' && s.job.phase === 'using') ? s : null;
-    }, 35000);
-    if (!atCooler) throw new Error('ben never reached phase=using at the kitchen cooler');
+        if (!(s.room === 'kitchen' && s.job && s.job.targetId === 'water_cooler' && s.pos && coolerPx)) return null;
+        const d = Math.hypot(s.pos.x - coolerPx.x, s.pos.y - coolerPx.y);
+        return (s.job.phase === 'using' || (s.job.phase === 'goto_target' && s.speed < 12 && d < 190)) ? { ...s, dist: Math.round(d) } : null;
+    }, 60000, 250);
+    if (!atCooler) throw new Error('ben never stalled near the kitchen cooler on his thirst job');
     const r = await page.evaluate(() => window.__test.debugKO('ben'));
     await t(2000);
     const down = await snap(); await shot('c-down');
@@ -369,7 +381,8 @@ if (beat === 'c') await recordBeat('c_ben_ko', async () => {
     const after = await snap(); await shot('c-reload');
     const kitchenAfter = await roomItems('kitchen');
     const benAfter = await njob('ben');
-    return { ben_room_when_ko: atCooler.room, ben_phase_when_ko: atCooler.job.phase, ko_ok: r.ok, ben_ko: after.globals.ben_ko,
+    return { ben_room_when_ko: atCooler.room, ben_phase_when_ko: atCooler.job.phase, ben_dist_to_cooler_px: atCooler.dist, ben_speed_when_ko: atCooler.speed,
+        ko_ok: r.ok, ben_ko: after.globals.ben_ko,
         check_held_drop: down.tasks.includes('check_held_drop'), still_ko_after_reload: after.ko.ben,
         kitchen_takeables_before: kitchenBefore, kitchen_takeables_after_reload: kitchenAfter,
         ben_body_room_after_reload: benAfter.room, ben_body_pos_after_reload: benAfter.pos };

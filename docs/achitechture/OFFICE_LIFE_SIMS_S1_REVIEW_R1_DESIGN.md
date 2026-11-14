@@ -232,3 +232,9 @@ quietly.
 - Declined (engine visual, not mission-local): m1's "a KO'd Fran still shows a pressing-need water
   bubble". A knocked-out NPC should not render a need bubble; that is an engine visual change, raised
   for the owner, not fixable in the scenario or probe. Recorded here rather than acted on.
+- Partly declined (engine/layout, out of scope): m3's strict "phase=using at the cooler" for beat (c).
+  The cooler's authored corner cell (1,7) is not reachable by an NPC entering from the office door
+  (the E8 arrival-cell limitation the plan flags in section 9 note 3), so `using` is unreachable
+  there. Beat (c) now catches Ben on the cooler job at his closest kitchen approach (goto_target,
+  speed 0), which still proves the cross-room KO drop. Beats (a)/(b) second waitUntil now require the
+  carry in the kitchen; (c)/(d) poll real state. The "at the cooler" refinement waits on SIMS-2/E8.

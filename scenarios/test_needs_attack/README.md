@@ -139,18 +139,22 @@ by the real interaction (a real Meeting Note read, Eli's conversation opened and
 KO and reload drops are checked against the server's `room_states.<room>.objects_added`. Screenshots
 and `report-<beat>-<game>.json` are in the session scratchpad `officelife-sims/s1-fix-r1/`.
 
+Re-run on the round-1 fixes, a fresh game per beat, screenshots and `report-<beat>-<game>.json` in
+`officelife-sims/s1-fix-r1/`. Server keys dumped with a `rails runner` reading `player_state`.
+
 | beat | game id | result |
 |------|---------|--------|
-| (a) attacked mid-carry | 4145 | PASS: attacked carrying `office_mugs` in the **kitchen** — turns hostile, `job_aborted` (mugs dropped), `blocked`, then calms, `unblocked`, resumes the carry and delivers to `washing_up_tray`. (The cross-room carry is intermittent — see Engine faults; a clean carry run was needed.) `a-a-hostile-4145.png`, `a-a-after-4145.png` |
-| (b) KO mid-carry, folder drops, reload | 4144 | PASS: KO'd carrying in the **kitchen**; `ava_ko` + `check_ko_drop` fire once; server `room_states.kitchen.objects_added` = `ava_folder` (dropped where she fell); the carried mugs are refused (not in `objects_added`); still KO after reload. `b-b-down-4144.png`, `b-b-reload-4144.png` |
-| (c) KO at cooler, notebook drops, reload | 4120 | PASS: Ben walks to the kitchen `water_cooler` (`goto_target`), KO'd there; `ben_ko` + `check_held_drop` once; server `room_states.kitchen.objects_added` = `ben_notebook`; still KO after reload. `c-c-down-4120.png`, `c-c-reload-4120.png` |
-| (d) recalled by Meeting Note, resumed | 4131 | PASS (real reads): Ben leaves post for the cooler; Meeting Note read → `check_called_home` ticks and `scriptSuspended` true; Meeting Over read → `scriptSuspended` false (resumed). `d-d-recalled-4131.png`, `d-d-resumed-4131.png` |
-| (e) hostile from start, never acts | 4126 | PASS: cal hostile from tick 0, `blocked` logged once, no `job_start`, mode idle. `e-00-start-4126.png` |
-| (f) sight catch on a walking NPC | 4121 | PASS: Dee set caffeine-urgent, leaves post for `office_coffee` (mode job, `atPost` false); picking `dee_drawer` in view catches her (`frozen`); `check_caught_walking` ticks. `f-f-caught-4121.png` |
-| (g) partner down, Gil breaks alone | 4122 | PASS: Fran KO'd mid-walk to the cooler (`fran_ko`, nothing drops); Gil sent on his break (needs level) leaves post alone → `check_solo_break` ticks; Gil `mode: job` in the kitchen; Fran stays KO after reload. `g-g-gil-alone-4122.png` |
-| (h) KO before any talk, no reveal | 4123 | PASS: eli KO'd first; no conversation, `eli_page_shown` false, nothing revealed after reload, `check_eli_page` never fires. `h-h-down-4123.png`, `h-h-reload-4123.png` |
-| (i) print ~6 s after close | 4128 | PASS (real conversation): open Eli's chat, choose the handover (`eli_asked`), choose exit (`conversation_closed:eli`); ~6 s later `eli_page_shown` and the revealed `office:eli_page` slot, and the real `object_revealed:eli_page` mapping ticks `check_eli_page`. `i-i-eli-page-4128.png` |
-| (i2) reload within the 6 s delay | 4124 | PASS (real conversation, expected-empty): arm the print through the UI, reload inside the 6 s delay — no page, no reveal global, `check_eli_page` never fires (the pending delayed mapping is lost). `i2-i2-after-reload-4124.png` |
+| (a) attacked mid-carry | 4183 | PASS: carrying `office_mugs` in the **kitchen**, attacked through the real `window.playerCombat.attack` punch path (`punch_path`, `hostile_mid`; health bar and Block/Punch UI in the shot); `job_aborted` (mugs dropped), `blocked`; calm forced through `npcHostileSystem` (no in-play route), then `unblocked`, resumes the carry and `using washing_up_tray`. `a-a-hostile-4183.png`, `a-a-after-4183.png` |
+| (b) KO mid-carry, folder drops, reload | 4184 | PASS: KO'd carrying in the **kitchen**; `ava_ko` + `check_ko_drop` once; server `kitchen.objects_added` = `ava_folder` (where she fell), `office.objects_removed` = `[]` (mugs not recorded removed). After reload: `office` takeables include `office_mugs` again (E-reload-mugs) and Ava's body is in `office` (E-reload-ko-pos; `office.npc_states.ava` = `{isKO, currentHP:0}`, no position). `b-b-down-4184.png`, `b-b-reload-4184.png` |
+| (c) KO on the cooler errand, reload | 4208 | PASS: Ben on the cross-room thirst job for `water_cooler`, caught in the **kitchen** at his closest approach (`goto_target`, speed 0; the cooler corner is unreachable, E8); `ben_ko` + `check_held_drop` once; server `kitchen.objects_added` = `ben_notebook` (where he fell). After reload body in `office` (E-reload-ko-pos). `c-c-down-4208.png`, `c-c-reload-4208.png` |
+| (d) recalled from the cooler, resumed | 4211 | PASS (real reads): Ben caught in the **kitchen** on the cooler job (`goto_target`) when the Meeting Note is read; `check_called_home` ticks; the patrol override walks him back to the office post `(4,7)` and `scriptSuspended` is true there; Meeting Over resumes him. `d-d-recalled-4211.png`, `d-d-resumed-4211.png` |
+| (e) hostile from start, never acts | 4221 | PASS: cal hostile from tick 0, `blocked` logged once, no `job_start`, mode idle. `e-00-start-4221.png` |
+| (f) sight catch on a **walking** NPC | 4212 | PASS: real `office_lockpick` picked up (server `office.objects_removed` = `[office_lockpick]`); Dee caught walking (`goto_target`, speed 85); `check_caught_walking` ticks ("Oi. That's a locked cabinet..."); after close + reload, picking the drawer again does not reopen the catch; server `triggeredEvents` keeps `dee:lockpick_used_in_view:0`. `f-f-caught-4212.png`, `f-f-after-reload-4212.png` |
+| (g) partner down, Gil breaks alone | 4214 | PASS: Fran KO'd mid-walk (`fran_ko`, nothing drops); Gil enters `using` at `kitchen_kettle`, no `paired` line, Fran stays `blocked`; `check_solo_break` ticks (server `triggeredEvents` = `gil:npc_left_post:gil:2`); Fran stays KO after reload. `g-g-gil-alone-4214.png` |
+| (h) KO before any talk, no reveal | 4222 | PASS: eli KO'd first; no conversation, `eli_page_shown` false, nothing revealed after reload, `check_eli_page` never fires. `h-h-down-4222.png`, `h-h-reload-4222.png` |
+| (h2) KO inside the 6 s delay | 4215 | PASS: real close confirmed, eli KO'd 84 ms after it; no page, `check_eli_page` never fires, `triggeredEvents` empty; reload stays empty. Server `office.npc_states.eli` = `{isKO, currentHP:0}`. `h2-h2-after-delay-4215.png`, `h2-h2-reload-4215.png` |
+| (i) print ~6 s after close, reload, no reprint | 4217 | PASS (real conversation): page lands, `check_eli_page` ticks; server `triggeredEvents` = `eli:conversation_closed:eli:0` + `eli:object_revealed:eli_page:1` (both saved once). Reload re-files the slot (`eli_page_shown` false, tray empty), and a second real conversation + close prints nothing (the saved `onceOnly` key). `i-i-eli-page-4217.png`, `i-i-reloaded-4217.png`, `i-i-second-4217.png` |
+| (i2) reload within the 6 s delay | 4220 | PASS (expected-empty): real close confirmed and the `fires in` schedule seen; reload 2.6 s after the schedule (inside 6 s); no page, no reveal global, server `triggeredEvents` empty (the pending delayed mapping is lost; the key is saved only when it fires). `i2-i2-after-reload-4220.png` |
 
 ## What to watch for (tour)
 
@@ -186,13 +190,15 @@ in-room fallback would not help because the collision is inside the office. **Mi
 applied:** `office_mugs` moved off Ben's row to `(5,4)`, so beats (a) and (b) are now deterministic.
 The engine item for the owner is the stuck-recovery routing round NPC bodies.
 
-**(E-reload-mugs) A carried world object comes back on its authored tile after a reload
-(`app/models/break_escape/game.rb:2108-2111`).** When an NPC picks a world object up for a needs
-carry, the server records no `objects_removed` for it, so on reload `apply_room_state_changes!`
-leaves the authored object in `room['objects']` and the client rebuilds it at its authored tile.
-After beat (b) the dirty mugs are back at the office mugs tile, not lost and not duplicated. This is
-the expected behaviour for a carried world object today; the owner item (if "gone" is wanted) is to
-persist a needs pickup as `objects_removed`. Until then it is as designed.
+**(E-reload-mugs) A world object an NPC was carrying when knocked out comes back on its authored tile
+after a reload (`app/models/break_escape/game.rb:2108-2111`).** The removal of a carried world object
+is recorded only on delivery: a completed carry writes `objects_removed` (game 4208, beat c: Ava
+delivers and `office.objects_removed` = `[office_mugs]`), but a KO mid-carry never delivers, so no
+removal is recorded (game 4184, beat b: `office.objects_removed` = `[]`). On reload
+`apply_room_state_changes!` then leaves the authored mugs in `room['objects']` and the client rebuilds
+them at the office mugs tile. Not lost, not duplicated. The owner item (if "gone" is wanted after a
+KO mid-carry) is to persist the pickup, or the drop refusal, as `objects_removed`. Until then it is
+as designed.
 
 **(E-reload-ko-pos) A knocked-out NPC that fell outside its scenario room is restored at its spawn on
 reload while its drop stays where it fell (`app/models/break_escape/game.rb`).** The server saves a

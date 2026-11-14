@@ -13,8 +13,9 @@ path for (a), walking/using state for (d)/(f)/(c), real close for (i)/(i2)/(h2),
 and KO-in-delay beats, kitchen-load and `completing` reporting), node-test pin, doc corrections. No
 engine or server change.
 
-Status: **live proof re-run on round-1 fixes** (fresh game per beat — see the README live-proof
-table for ids and screenshots). `test/js/npc-needs.test.mjs` and
+Status: **live proof re-run on round-1 fixes**, a fresh game per beat (a 4183, b 4184, c 4208,
+d 4211, e 4221, f 4212, g 4214, h 4222, h2 4215, i 4217, i2 4220), server keys dumped from
+`player_state` (see the README live-proof table). `test/js/npc-needs.test.mjs` and
 `test/js/npc-needs-attack-scenario.test.mjs` pass; validator 0 errors, 4 intended warnings
 (`--skip-ink --no-graph`; 5 with ink, the extra being the dialogue lint). The `completeTask` question
 stays settled (a probe timing artifact, not an engine fault).
@@ -40,7 +41,7 @@ Raised with file:line for the owner. No edit applied; the probe measures each.
 | Item | File:line | What | Owner fix |
 |---|---|---|---|
 | E-carry | `public/break_escape/js/systems/npc-behavior.js` `_checkPathStuck`/`_recoverFromStuck` (~1305-1335); surfaces as the timeout in `npc-needs.js:3149` → `_failJob` 3490 | A needs move re-paths through a seated NPC's immovable body/chair (not in the walk grid); stuck recovery re-paths to the same cells and never routes round the body. The probe sidesteps it by moving the mugs off Ben's row; not a `_moveForPhase` 3110 short-circuit (that only fires for a use/visit of the own post, never a carry). | Route stuck recovery round NPC bodies / add seated bodies to the grid. |
-| E-reload-mugs | `app/models/break_escape/game.rb:2108-2111` (`apply_room_state_changes!`) | A world object an NPC picked up for a needs carry is rebuilt on its authored tile after a reload, because the carry records no `objects_removed`. Not lost, not duplicated. | Persist a needs carry pickup as `objects_removed` if "gone" is wanted. |
+| E-reload-mugs | `app/models/break_escape/game.rb:2108-2111` (`apply_room_state_changes!`) | A world object an NPC was carrying when KO'd is rebuilt on its authored tile after a reload. Removal is recorded only on delivery (completed carry writes `objects_removed`, game 4208); a KO mid-carry never delivers (game 4184: office `objects_removed` empty, mugs back). Not lost, not duplicated. | Persist the pickup / drop refusal as `objects_removed` if "gone" is wanted after a KO mid-carry. |
 | E-reload-ko-pos | `app/models/break_escape/game.rb:1176-1177` and `:974` (save), `:2145-2151` (restore) | A KO saves only `isKO`/`currentHP`, keyed to the NPC's scenario room, with no position; on reload the body is restored at its authored spawn while its drop stays where it fell (an `objects_added` record at `:2108`). A cross-room KO leaves body and item in different rooms. | Persist the KO position and the room the NPC fell in. |
 
 ## Prototypes not merged
