@@ -458,13 +458,10 @@
     }
 }
 
-/* ── The note slip, stuck on the page (S7-notes) ─────────────────────────────────────
-   The text box is a slip of paper fixed to the notepad page. Three looks for the user's
-   review; the default is "tape". The others are chosen by a class on the notepad:
-     (default) / .note-style-tape   tape strips across both top corners
-     .note-style-torn               a slip torn off at the bottom, one strip of tape on top
-     .note-style-pinned             a yellow slip placed a little off the ruled lines, pinned
-   All flat colours and square steps: no rotation, gradients or soft shadows. */
+/* ── The note slip, stuck on the page (S7-notes, user pick 2026-11-15: torn) ────────────
+   The text box is a slip of paper fixed to the notepad page: its bottom edge torn in square
+   steps, one strip of tape across the top centre. All flat colours and square steps: no
+   rotation, gradients or soft shadows. */
 
 /* On short screens the title is one line: a long one ends in an ellipsis. Elsewhere it wraps. */
 @media (orientation: landscape) and (max-height: 640px) {
@@ -477,20 +474,14 @@
     .notes-minigame-title .notes-minigame-star { vertical-align: middle; margin-right: 8px; }
 }
 
-.notes-minigame-text-box {
-    background: #fffdf2;
-    border: 2px solid #d9d0ae;
-    box-shadow: none;
-}
-
-/* Default (tape): two strips of yellowed tape over the top corners, ends cut in 2px teeth */
 .notes-minigame-text-box .notes-minigame-celotape { display: none; }
-.notes-minigame-text-box::before,
-.notes-minigame-text-box::after {
+/* One strip of yellowed tape at the top centre, ends cut in 2px teeth */
+.notes-minigame-text-box::before {
     content: '';
     position: absolute;
     top: -8px;
-    width: 52px;
+    left: calc(50% - 24px);
+    width: 48px;
     height: 16px;
     background: #e9d488;
     opacity: 0.92;
@@ -499,14 +490,12 @@
     clip-path: polygon(0 0, 100% 0, 100% 4px, calc(100% - 2px) 4px, calc(100% - 2px) 8px, 100% 8px, 100% 12px,
         calc(100% - 2px) 12px, calc(100% - 2px) 100%, 2px 100%, 2px 12px, 0 12px, 0 8px, 2px 8px, 2px 4px, 0 4px);
 }
-/* inset evenly (44px each side) so they stay on the page at every size and the right one clears the pencil button */
-.notes-minigame-text-box::before { left: 44px; }
-.notes-minigame-text-box::after { right: 44px; }
 
-/* Torn: the bottom edge torn in uneven square steps; one strip of tape at the top centre */
-.note-style-torn .notes-minigame-text-box {
+/* The slip: bottom edge torn in uneven square steps */
+.notes-minigame-text-box {
     background: #fff6d6;
-    border-color: #d9c98e;
+    border: 2px solid #d9c98e;
+    box-shadow: none;
     border-bottom: 0;
     padding-bottom: 20px;
     clip-path: polygon(-20px -20px, calc(100% + 20px) -20px, calc(100% + 20px) calc(100% - 6px),
@@ -515,25 +504,4 @@
         49% 100%, 49% calc(100% - 6px), 41% calc(100% - 6px), 41% calc(100% - 2px), 30% calc(100% - 2px),
         30% calc(100% - 8px), 21% calc(100% - 8px), 21% calc(100% - 4px), 12% calc(100% - 4px), 12% 100%,
         5% 100%, 5% calc(100% - 6px), -20px calc(100% - 6px));
-}
-.note-style-torn .notes-minigame-text-box::after { display: none; }
-.note-style-torn .notes-minigame-text-box::before { left: calc(50% - 24px); width: 48px; }
-
-/* Pinned: a yellow slip set 4px right and 4px up, off the page's lines, with a pixel pin */
-.note-style-pinned .notes-minigame-text-box {
-    background: #fff4a3;
-    border-color: #ddd07a;
-    transform: translate(4px, -4px);
-    box-shadow: 3px 3px 0 #c9c2a0;
-}
-.note-style-pinned .notes-minigame-text-box::after { display: none; }
-.note-style-pinned .notes-minigame-text-box::before {
-    left: calc(100% - 28px);
-    top: 3px;   /* inside the slip's top-right corner: clear of the title and its underline */
-    width: 8px;
-    height: 8px;
-    background: #d63031;
-    border: 2px solid #7a1414;
-    opacity: 1;
-    clip-path: none;
 }

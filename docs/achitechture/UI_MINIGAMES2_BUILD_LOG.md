@@ -182,3 +182,14 @@ right before each run.
 - Gates: strict audit window-offscreen 0, frame-offscreen 1, clipped 0, x-on-frame 0, overflow 3
   (known baseline); shell-x-check 168 checked, 0 failed. The 19 named node tests pass one at a
   time (358 tests).
+
+## User picks (2026-11-15)
+
+- S7-notes: torn. The short note is now the torn slip with one tape strip at the top centre, as
+  the only look. Removed: the tape variant (two corner strips and their `::after`), the pinned
+  variant (offset yellow slip, shade and pin), the `.note-style-*` selectors and the comment
+  naming three looks. Nothing in JS or assets used the classes. `.notes-minigame-celotape`
+  stays (hidden, still built by the JS and covered by an existing test). New test in
+  `test/js/minigame-shell-fit.test.mjs` pins the single look.
+- A35 (text viewer, notepad look): approved as built, no change.
+- A38 (title-screen vignette): not decided; untouched.

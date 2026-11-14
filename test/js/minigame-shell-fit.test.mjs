@@ -237,6 +237,18 @@ test('notes: the notepad fits a phone and the nav row is in the flow under it (A
     assert.match(js, /notes-minigame-content-area pixel-scroll/);
 });
 
+test('notes: the short note has one look, a torn slip with one tape strip (S7-notes pick)', () => {
+    const notes = css('notes.css');
+    assert.doesNotMatch(notes, /note-style/, 'no tape or pinned variants left');
+    const slip = rule(notes, '.notes-minigame-text-box');
+    assert.match(slip['clip-path'], /calc\(100% - 8px\)/, 'bottom edge torn in square steps');
+    assert.equal(slip['border-bottom'], '0');
+    const tape = rule(notes, '.notes-minigame-text-box::before');
+    assert.equal(tape.left, 'calc(50% - 24px)', 'one strip, top centre, clear of the pencil');
+    assert.equal(tape.width, '48px');
+    assert.equal(rules(notes, '.notes-minigame-text-box::after').length, 0, 'no second strip');
+});
+
 test('PIN: a wrong code is reported on the keypad\'s own line, not over the keys (A10, A11)', () => {
     const js = src('minigames/pin/pin-minigame.js');
     assert.match(js, /className = 'pin-minigame-message'/);
