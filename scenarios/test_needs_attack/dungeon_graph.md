@@ -16,7 +16,7 @@ A probe, not a mission. Seven office staff run their needs while the player atta
 | Physical locks | 1 |
 | AND-gate convergences | 0 |
 | Rooms | 3 |
-| Puzzle graph nodes / edges | 4 / 3 |
+| Puzzle graph nodes / edges | 5 / 5 |
 | Story graph nodes / edges | 1 / 0 |
 
 ## Critical Path
@@ -71,17 +71,21 @@ flowchart TD
   node_start(("▶"))
   node_start --> office
 
-  lock_dee_drawer["Filing Cabinet<br/>Key lock"]
   office("Office")
+  lock_dee_drawer["Filing Cabinet<br/>Key lock"]
+  lock_pick_set{"Lock Pick Set"}
   kitchen("Kitchen")
   back_room("Back Room")
 
   office --> lock_dee_drawer
+  office --> lock_pick_set
+  lock_pick_set --> lock_dee_drawer
   office --> kitchen
   office --> back_room
 
-  class lock_dee_drawer lock
   class office,kitchen,back_room room
+  class lock_dee_drawer lock
+  class lock_pick_set key
   class node_start start
 ```
 
@@ -138,18 +142,22 @@ flowchart TD
   node_start(("▶"))
   node_start --> office
 
-  lock_dee_drawer["Filing Cabinet<br/>Key lock"]
   office("Office")
+  lock_dee_drawer["Filing Cabinet<br/>Key lock"]
+  lock_pick_set{"Lock Pick Set"}
   kitchen("Kitchen")
   back_room("Back Room")
   aim_checks{{"Checks under attack"}}
 
   office --> lock_dee_drawer
+  office --> lock_pick_set
+  lock_pick_set --> lock_dee_drawer
   office --> kitchen
   office --> back_room
 
-  class lock_dee_drawer lock
   class office,kitchen,back_room room
+  class lock_dee_drawer lock
+  class lock_pick_set key
   class aim_checks aim
   class node_start start
 ```

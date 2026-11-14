@@ -3,15 +3,21 @@
   "start_room": "office",
   "nodes": [
     {
+      "id": "office",
+      "label": "Office",
+      "kind": "room",
+      "optional": false
+    },
+    {
       "id": "lock_dee_drawer",
       "label": "Filing Cabinet<br/>Key lock",
       "kind": "lock",
       "optional": false
     },
     {
-      "id": "office",
-      "label": "Office",
-      "kind": "room",
+      "id": "lock_pick_set",
+      "label": "Lock Pick Set",
+      "kind": "key",
       "optional": false
     },
     {
@@ -30,6 +36,16 @@
   "edges": [
     {
       "from": "office",
+      "to": "lock_dee_drawer",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "lock_pick_set",
+      "soft": false
+    },
+    {
+      "from": "lock_pick_set",
       "to": "lock_dee_drawer",
       "soft": false
     },
