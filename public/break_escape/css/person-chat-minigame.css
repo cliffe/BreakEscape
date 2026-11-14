@@ -337,18 +337,27 @@
         justify-content: flex-start;
     }
 
+    /* C-PC2: the portrait grows to fill the spare height instead of being pinned to a 4:3 strip
+       that left a tall black gap under the dialogue. */
     .person-chat-portrait-section {
         position: relative;
-        flex: 0 0 auto;
+        flex: 1 1 auto;
         height: auto;
-        aspect-ratio: 4 / 3;
-        max-height: 50%;
+        min-height: 40%;
+        max-height: none;
     }
 
+    /* The grown portrait would otherwise letterbox a 4:3 scene with black bars; on a narrow phone
+       fill the section instead (the character stays centred, the sides crop), so no black gap. */
+    .person-chat-portrait-canvas-container canvas { object-fit: cover; }
+
+    /* The dialogue band hugs its content and sits at the foot of the screen (the portrait above
+       takes the rest). A long line is capped and scrolls rather than pushing the portrait away. */
     .person-chat-caption-area {
         position: relative;
-        flex: 1 1 auto;
+        flex: 0 1 auto;
         min-height: 0;
+        max-height: 60%;
         overflow-y: auto;
         align-items: flex-start;
         padding: 16px;
