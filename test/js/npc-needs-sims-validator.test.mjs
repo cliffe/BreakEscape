@@ -11,11 +11,13 @@ import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { presetIdFor, setOfficePresetTable } from '../../public/break_escape/js/systems/office-presets.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '../..');
 const scenarioPath = join(root, 'scenarios/test_needs_sims/scenario.json.erb');
 const scenario = JSON.parse(readFileSync(scenarioPath, 'utf8'));
+setOfficePresetTable(JSON.parse(readFileSync(join(root, 'public/break_escape/js/data/office-presets.json'), 'utf8')));
 
 function objectRoom(objectId) {
     for (const [roomId, room] of Object.entries(scenario.rooms)) {
@@ -77,6 +79,10 @@ test('it_copier is the only preset-bearing new object, with six tray slots', () 
     const cop = scenario.rooms.it_room.objects.find(o => o.id === 'it_copier');
     assert.equal(cop.type, 'photocopier1', 'it_copier gets the copier preset by type');
     assert.equal(cop.affordance.uncollectedAfterSeconds, 180);
+    // Run the real preset resolver over every IT object: only it_copier claims a preset.
+    assert.ok(presetIdFor(cop), 'it_copier resolves to a preset');
+    const presetBearing = scenario.rooms.it_room.objects.filter(o => presetIdFor(o)).map(o => o.id);
+    assert.deepEqual(presetBearing, ['it_copier'], 'it_copier is the only preset-bearing object in IT (the mug and the takeable slots claim none)');
     const slots = scenario.rooms.it_room.objects.filter(o => o.outputOf === 'it_copier');
     assert.equal(slots.length, 6, 'six reveal slots feed it_copier');
     assert.ok(slots.every(o => o.takeable === true), 'every IT slot is takeable');
@@ -122,7 +128,11 @@ function fires(condition, eventData) {
     } finally { console.error = err; }
 }
 
-// Every mapping condition declared anywhere in test_needs_sims evaluates cleanly.
+// Every mapping condition declared anywhere in test_needs_sims is satisfiable and is checked for
+// the true/false the engine would see, not merely that it returns a boolean. safeEvaluateCondition
+// returns false on anything it cannot parse, so asserting typeof boolean never fails (m7 R1); here a
+// payload is built to satisfy each condition (must fire) and then its first term is broken (must not
+// fire). A malformed condition cannot be satisfied, so the "must fire" case catches it.
 const conditions = [];
 for (const room of Object.values(scenario.rooms)) {
     for (const n of room.npcs || []) {
@@ -132,15 +142,44 @@ for (const room of Object.values(scenario.rooms)) {
     }
 }
 
-test('every mapping condition evaluates through safeEvaluateCondition without throwing', () => {
+// Set data.<name> or globalVars.<name> so that one atom of a condition holds (want) or fails (!want).
+function setRef(ns, name, val, data, globals) {
+    if (ns === 'data') data[name] = val; else globals[name] = val;
+}
+function assignAtom(atom, data, globals, want) {
+    atom = atom.trim();
+    if (/^!(?!=)/.test(atom)) { atom = atom.slice(1).trim(); want = !want; } // !globalVars.x / !data.x
+    let m;
+    if ((m = atom.match(/^(globalVars|data)\.([A-Za-z0-9_]+)\s*(===|!==)\s*(.+)$/))) {
+        const ns = m[1], name = m[2], op = m[3], rhsRaw = m[4].trim();
+        const val = rhsRaw === 'true' ? true : rhsRaw === 'false' ? false : rhsRaw.replace(/^['"]|['"]$/g, '');
+        const other = val === true ? false : (val === false ? true : '__other__');
+        let lhs;
+        if (op === '===') lhs = want ? val : other;
+        else lhs = want ? other : val; // !==
+        setRef(ns, name, lhs, data, globals);
+    } else if ((m = atom.match(/^(globalVars|data)\.([A-Za-z0-9_]+)$/))) {
+        setRef(m[1], m[2], !!want, data, globals);
+    } else {
+        throw new Error(`unhandled condition atom (teach assignAtom): ${atom}`);
+    }
+}
+
+test('every mapping condition fires when satisfied and not when its first term is broken', () => {
     assert.ok(conditions.length >= 10, `expected the showcase's conditions, got ${conditions.length}`);
-    const sample = {
-        objectName: 'Activity Board', objectId: 'it_out_a', npcId: 'neil',
-        producerId: 'it_copier', tag: 'printout', need: 'work', avoidedId: 'marek',
-        reason: 'off', key: 'drink_gulp', how: 'leave', answeredBy: 'amara', targetId: 'office_coffee'
-    };
     for (const c of conditions) {
-        assert.equal(typeof fires(c, sample), 'boolean', `condition did not evaluate cleanly: ${c}`);
+        const atoms = c.split('&&').map(s => s.trim());
+        // Satisfy every atom: the condition must fire.
+        const d1 = {}, g1 = {};
+        for (const a of atoms) assignAtom(a, d1, g1, true);
+        globalThis.window.gameState.globalVariables = { ...scenario.globalVariables, ...g1 };
+        assert.equal(fires(c, d1), true, `condition should fire when satisfied: ${c}`);
+        // Break the first atom: a conjunction (or a single atom) must not fire.
+        const d2 = {}, g2 = {};
+        for (const a of atoms) assignAtom(a, d2, g2, true);
+        assignAtom(atoms[0], d2, g2, false);
+        globalThis.window.gameState.globalVariables = { ...scenario.globalVariables, ...g2 };
+        assert.equal(fires(c, d2), false, `condition should not fire when its first term is broken: ${c}`);
     }
 });
 
@@ -154,11 +193,11 @@ test("the new SIMS-3 conditions hold on the payloads the engine sends them", () 
     globalThis.window.gameState.globalVariables.neil_ko = false;
     globalThis.window.gameState.globalVariables.neil_print_asked = false;
     assert.equal(fires('globalVars.neil_print_asked === true && globalVars.neil_ko !== true', {}), false);
-    // see_neils_page: the reveal must come from the IT copier and be produced by Neil.
-    assert.equal(fires("data.producerId === 'it_copier' && data.npcId === 'neil'",
-        { producerId: 'it_copier', npcId: 'neil' }), true);
-    assert.equal(fires("data.producerId === 'it_copier' && data.npcId === 'neil'",
-        { producerId: 'office_copier', npcId: 'neil' }), false);
-    assert.equal(fires("data.producerId === 'it_copier' && data.npcId === 'neil'",
-        { producerId: 'it_copier', npcId: 'sanjay' }), false);
+    // see_neils_page: the reveal must come from the IT copier, be produced by Neil, and not be a
+    // cosmetic full-tray copy (server m3).
+    const seePage = "data.producerId === 'it_copier' && data.npcId === 'neil' && !data.cosmetic";
+    assert.equal(fires(seePage, { producerId: 'it_copier', npcId: 'neil' }), true);
+    assert.equal(fires(seePage, { producerId: 'office_copier', npcId: 'neil' }), false);
+    assert.equal(fires(seePage, { producerId: 'it_copier', npcId: 'sanjay' }), false);
+    assert.equal(fires(seePage, { producerId: 'it_copier', npcId: 'neil', cosmetic: true }), false);
 });

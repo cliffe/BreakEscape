@@ -51,29 +51,33 @@ Turn it off or on from the console with `window.__test.needs.overlay(false)` / `
 
 ## The IT room and Neil (SIMS-3)
 
-A north door off the office opens onto the **IT room** (`room_it`), private to Neil, and a west door off IT onto an empty **Manager's Office** (`room_ceo`) the player only passes through (it fills up in SIMS-9). Neil Robson is IT support: he stands at the east end of the south benches by his own cold mug and never leaves it. He is m02's Gary pattern in neutral form, the still NPC whose only job is at its own post.
+A north door off the office opens onto the **IT room** (`room_it`), private to Neil, and a west door off IT onto an empty **Manager's Office** (`room_ceo`) the player only passes through (it fills up in SIMS-9). Neil Robson is IT support: he stands at the IT desk by his own mug and never leaves it. He is m02's Gary pattern in neutral form, the still NPC whose only job is at its own post.
 
 What to watch, in order (no lever needed; times are needs-clock minutes after the north door first opens):
 
 | Where | Do | What should happen |
 |---|---|---|
-| office, then north | **open the north door** | IT: Neil standing at the south bench. About 2:30 after the door opens his caffeine runs low and he sips from his mug without a step (cup icon, a gulp sound); `see_neil_sip` ticks. He sips again about 7:30. |
+| office, then north | **open the north door** | IT: Neil standing at the IT desk. About 2:30 after the door opens his caffeine runs low and he sips from his mug without a step (cup icon, a gulp sound); `see_neil_sip` ticks. He sips again about 7:30. |
 | IT | **talk to Neil, ask him to print the change log**, close the chat | about 6 s later the IT copier runs and one page lands on its tray; Neil never moves; the page landing ticks `see_neils_page`. Take it if you like. A conversation where you do not ask prints nothing. |
 
-The three desk cups in IT are the two on the desks plus Neil's mug; the two desk cups are player drinkables (`consumables.js`), and nobody reacts if you drink them. Neil's mug is declared and not takeable.
+Neil's mug is declared and not takeable.
 
-If the player reloads during the 6 s print delay the auto-print is lost (the pending delayed mapping goes with the page), and nothing reprints after that reload unless the ask reached the server first; this is expected and recorded in the live proof.
+If the player reloads during the 6 s print delay the auto-print is lost (the pending delayed mapping goes with the page). But the ask itself is saved: `neil_print_asked` is set when the conversation closes, before the delay, so the next time the player closes a chat with Neil the page prints (the change-log choice is gone by then, so a plain goodbye is enough). A print-revealed slot is client-side only: its `revealOnGlobal` is set in the browser and never synced, so on reload the tray is filed empty. Both behaviours are recorded in the live proof.
+
+The reveal is a client gate, not a server one: the slots are takeable objects in an unlocked room, so a crafted request could take one before its reveal. That is within policy here because the pages carry no account, address, password or code; never place a gated or secret-bearing page on a reveal slot expecting the server to withhold it.
 
 **Annotated example.** Neil's only need is met by a declared mug that is his own post object, so every sip is an at-post job that never moves him:
 
 ```jsonc
-// neil_mug: a declared cup that claims the drawn office-misc-cup on the east bench.
-// No position: it claims the first drawn cup in pool order. private + owner: only Neil
-// uses it. seat "stand": he sips standing. useFrom aims the approach cell under his body,
-// so a suspend/resume leaves him on his spawn (within HOME_EPS) and he never walks home.
+// neil_mug: a declared cup on the east end of the lower IT desk (elevation 24, a visible
+// surface above the office's back wall; the south benches draw under that wall). private +
+// owner: only Neil uses it. seat "stand": he sips standing. useFrom aims the approach cell on
+// the open floor just south of the desk, under his body, so a suspend/resume leaves him on his
+// spawn (within HOME_EPS) and he never walks home.
 { "type": "office-misc-cup", "id": "neil_mug", "private": true, "owner": ["neil"],
+  "position": { "x": 6.2, "y": 6.0, "elevation": 24 },
   "affordance": { "satisfies": "caffeine", "restores": 30, "useSeconds": 4, "capacity": 1,
-    "useSound": "drink_gulp", "seat": "stand", "useFrom": { "dx": 0, "dy": -1 } } }
+    "useSound": "drink_gulp", "seat": "stand", "useFrom": { "dx": -0.4, "dy": 1 } } }
 
 // Neil: one need, leashed to the IT room, swivel off, KO global. The print mapping puts one
 // page on the IT copier about 6 s after his conversation closes, if the player asked and he
