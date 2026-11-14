@@ -1426,7 +1426,8 @@ export class PasswordMinigame extends MinigameScene {
                         <div class="signin-title">${escapeHtml(displayDashes(s.pcName))}</div>
                         ${remoteLine}
                         ${current}
-                        ${tiles}${capturedHtml}
+                        ${tiles}${capturedHtml}${inMonitor ? `
+                        <div class="signin-card" id="signin-card">` : ''}
                         <div class="signin-form" id="signin-form">
                             <div class="signin-selected-row">${inMonitor ? `
                                 <span class="signin-selected-headshot" aria-hidden="true" hidden></span>` : ''}
@@ -1450,7 +1451,8 @@ export class PasswordMinigame extends MinigameScene {
                                 <button type="button" class="submit-btn${inMonitor ? ' pc-os-btn' : ''}" id="submit-password">Sign in</button>
                             </div>
                         </div>
-                        <div class="signin-message" id="signin-message" aria-live="polite"></div>
+                        <div class="signin-message" id="signin-message" aria-live="polite"></div>${inMonitor ? `
+                        </div>` : ''}
                     </div>
                 </div>
                 ${this.gameData.showPostit && this.gameData.postitNote && !inMonitor ? `
@@ -1580,7 +1582,9 @@ export class PasswordMinigame extends MinigameScene {
      */
     placeCapturedBlock() {
         const block = this.gameContainer?.querySelector?.('#signin-captured');
-        const form = this.gameContainer?.querySelector?.('#signin-form');
+        // In the monitor the form and its message are one card (UI PC 2, E06): the block goes
+        // above or below the card, never inside it
+        const form = this.gameContainer?.querySelector?.('#signin-card') || this.gameContainer?.querySelector?.('#signin-form');
         if (!block || !form) return;
         const state = this.signInLoading() ? 'loading' : (this.capturedTiles().length ? 'tiles' : 'none');
         block.dataset.state = state;
@@ -1631,6 +1635,7 @@ export class PasswordMinigame extends MinigameScene {
         const show = (el, on) => { if (el) el.style.display = on ? '' : 'none'; };
         show(this.gameContainer.querySelector('#signin-form'), chosen);
         show(this.gameContainer.querySelector('#signin-username-row'), st.other);
+        this.syncSignInCard();
         // In a short window the tile row folds away once an account is chosen, so the field,
         // Submit, the message line and the post-it fit together (UX slice 2a R3 m4); the
         // chosen account's line holds a Change button back to the tiles.
@@ -1786,11 +1791,24 @@ export class PasswordMinigame extends MinigameScene {
         return true;
     }
 
+    /**
+     * The sign-in card (in the monitor, UI PC 2 E06) is shown while it has something in it:
+     * the form once an account is chosen, or a message line. No empty frame on the tiles.
+     */
+    syncSignInCard() {
+        const card = this.gameContainer?.querySelector?.('#signin-card');
+        if (!card) return;
+        const form = this.gameContainer.querySelector('#signin-form');
+        const formShown = !!form && form.style.display !== 'none';
+        card.hidden = !formShown && !this.signInMessageEl?.textContent;
+    }
+
     setSignInMessage(text, kind = 'info') {
         this.signInState.message = text;
         if (!this.signInMessageEl) return;
         this.signInMessageEl.textContent = text;
         this.signInMessageEl.dataset.kind = kind;
+        this.syncSignInCard();
         // A result (a wrong password and the attempts left, a lockout) is always on screen,
         // even in a short window where the frame scrolls (UX slice 2a R2 M2)
         // The post-it holds the details the player is about to retype, so it comes into view

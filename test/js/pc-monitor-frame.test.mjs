@@ -501,6 +501,45 @@ async function signInScreen() {
     return mg;
 }
 
+test('UI PC 2 (E06): the chosen account, the fields, Sign in and the message are one card; no card on the tiles alone', async () => {
+    const mg = await signInScreen();
+    mg.start?.();
+    const card = document.querySelector('.pc-screen-area #signin-card.signin-card');
+    assert.ok(card, 'one card on the PC screen');
+    // Before an account is chosen: the tiles, and the card holds only the prompt line
+    assert.equal(card.hidden, false, 'the prompt line is in the card');
+    assert.equal(document.getElementById('signin-message').textContent, 'Choose an account.');
+    assert.ok(!card.contains(document.querySelector('#signin-tiles')), 'the tiles are outside the card');
+    document.querySelector('.signin-tile[data-tile-index="0"]').click();
+    for (const sel of ['.signin-selected-headshot', '#signin-selected', '#signin-change', '#password-field', '#toggle-password', '#submit-password', '#signin-message']) {
+        assert.ok(card.contains(document.querySelector(sel)), `${sel} is in the card`);
+    }
+    assert.equal(card.hidden, false);
+    // Nothing to show: no empty frame
+    mg.setSignInMessage('');
+    mg.signInState.selected = null;
+    mg.signInState.other = false;
+    mg.renderSignInForm({ quiet: true });
+    mg.setSignInMessage('');
+    assert.equal(card.hidden, true, 'an empty card is hidden');
+    mg.cleanup?.();
+});
+
+test('UI PC 2 (E06): the card CSS: one 2px frame, no chips inside it, the plain password panel the same', () => {
+    const t = css('password-minigame.css');
+    const sec = t.slice(t.indexOf('/* ── One sign-in card (UI PC 2'));
+    assert.ok(sec.length > 100);
+    const card = sec.match(/\.pc-screen-area \.signin-card,\s*\.pc-screen-area \.pc-lock-panel \{[^}]*\}/)[0];
+    assert.match(card, /border: 2px solid #2a3a48;/);
+    assert.match(card, /background: #101820;/);
+    const noChip = (re) => { const r = sec.match(re)[0]; assert.match(r, /background: none;/); assert.match(r, /border: 0;/); };
+    noChip(/\.pc-screen-area \.signin-card \.signin-selected:not\(:empty\) \{[^}]*\}/);
+    noChip(/\.pc-screen-area \.signin-card \.signin-field-row label,\s*\.pc-screen-area \.pc-lock-panel \.password-input-container label \{[^}]*\}/);
+    noChip(/\.pc-screen-area \.signin-card \.signin-message,\s*\.pc-screen-area \.pc-lock-panel \.password-message \{[^}]*\}/);
+    noChip(/\.pc-screen-area \.pc-lock-panel \.pc-screen-note \{[^}]*\}/);
+    assert.doesNotMatch(sec, /border-radius|box-shadow|gradient|rgba\(/);
+});
+
 async function desktop({ showPostit = true, observations = 'A hot desk.', contents = null } = {}) {
     document.body.innerHTML = '<div id="mg"></div>';
     window.inventory = { items: [] };
@@ -997,8 +1036,12 @@ test('R3 M1 / UX 2b0: a remote sign-in\'s Captured sign-ins is a solid note with
             assert.equal(cs.borderTopWidth, '2px');
             const tile = window.getComputedStyle(document.querySelector('.signin-captured-tile'));
             assert.equal(tile.borderTopWidth, '2px', 'the tile\'s 2px edge, as at the keyboard');
+            // UI PC 2 (E06): the labels sit inside the one sign-in card, with no slab of their own
             const label = window.getComputedStyle(document.querySelector('.signin-field-row label'));
-            assert.equal(label.borderTopWidth, '2px', 'the labels are bordered as the other slabs');
+            assert.equal(label.borderTopWidth, '0px', 'no slab round a label inside the card');
+            assert.ok(document.querySelector('.signin-card .signin-field-row label'));
+            assert.equal(window.getComputedStyle(document.querySelector('.signin-card')).borderTopWidth, '2px', 'the card has the 2px frame');
+            assert.ok(!document.querySelector('.signin-card .signin-captured'), 'the captures stay outside the card');
         } finally {
             unsheet();
         }
