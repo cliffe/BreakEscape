@@ -18,7 +18,8 @@
     flex-direction: column;
     overflow: hidden;
     background: var(--ui-surface, rgba(24, 30, 48, 0.94));
-    border: 4px solid var(--ui-line, #4c5b80);
+    border: 16px solid transparent;
+    border-image: var(--se-frame-image, url('/break_escape/assets/ui/social/mail-frame.png')) 8 / 16px stretch;
 }
 
 .ob-root {

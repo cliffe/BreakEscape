@@ -17,8 +17,8 @@
     flex-direction: column;
     overflow: hidden;
     background: var(--ui-panel, #f4f1ea);
-    border: 4px solid var(--ui-line, #4c5b80);
-    box-shadow: 0 0 0 2px var(--ui-line, #4c5b80);
+    border: 16px solid transparent;
+    border-image: var(--se-frame-image, url('/break_escape/assets/ui/social/mail-frame.png')) 8 / 16px stretch;
 }
 
 .er-root {

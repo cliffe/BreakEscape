@@ -18,8 +18,8 @@
     overflow: hidden;
     background: #aa7446 url('/break_escape/assets/ui/social/board-cork.png') 0 0 / 124px 124px repeat;
     image-rendering: pixelated;
-    border: 4px solid #4a3220;
-    box-shadow: 0 0 0 2px var(--ui-line, #4c5b80);
+    border: 16px solid transparent;
+    border-image: var(--se-frame-image, url('/break_escape/assets/ui/social/mail-frame.png')) 8 / 16px stretch;
 }
 
 .ib-root {
