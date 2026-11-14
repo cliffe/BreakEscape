@@ -247,7 +247,47 @@ registering the nested change). This is pre-existing: chunk 3 did not touch `_wr
 confirming whether the honest lab send path (`performSend` re-writing `se_landing_pages[pageId]` with
 `victim.submitted`, mail-bridge `:407-420`) re-asserts `built: true`; item 4 set it explicitly and
 revealed the secret, so the reveal pipeline itself is sound. It does not affect the chunk 1 to 3
-server-store deliverables. Flagged for the reviewer, left unfixed.
+server-store deliverables. Diagnosed and fixed below.
+
+### Bug diagnosis and fix: the build POST reverted the client built flag (branch only)
+
+Cause: a lost update between two concurrent writers of the same game row. On `attach()` the client
+writes `se_landing_pages[pageId].built = true` and syncs it (`landing-page-builder-minigame.js`
+`_writeRecord` / `state-sync.js`), then immediately fires the fire-and-forget build POST
+(`_recordBuildOnServer`, `landing-page-builder-minigame.js:1035`). The POST route `se_landing_page`
+(`games_controller.rb:1604`) was not in the `around_action :with_game_lock` list
+(`games_controller.rb:103`), so it ran unlocked: `build_landing_page!`
+(`capture_proofs.rb` Route 1) `save!`s the whole `player_state`. Its `@game` was loaded by
+`set_game` before the attach sync committed, so its in-memory `globalVariables.se_landing_pages`
+still held `built: false` (the pre-attach Score write). When the POST's `save!` committed after the
+sync's, it wrote that stale copy back, reverting the synced `built` to false while correctly adding
+its own `seLandingPages` store. `sync_state` takes a row lock (`Game.lock.select(...)` in a
+transaction); the POST did not, so nothing serialised the two. This is the exact class of race the
+`with_game_lock` comment documents (game 1022).
+
+Repro (keyless servers, headless, honest build+attach through the real `page_builder` UI, then
+`syncConfirmed`):
+- Main 372600713 (`.claude/worktrees/p-hard-phish-base`, served on 3661, no POST route): the client
+  global `se_landing_pages.payroll_login.built` persists `true`. Games 3783, 3797. Main is NOT
+  affected: it has no concurrent full-row writer for this key.
+- Branch before the fix (served on 3660): the client global persists `built: false` while the
+  server store `seLandingPages` holds `built: true`, reproducing the observation above even after
+  `syncConfirmed` reports the server acknowledged `built: true`. Games 3788, 3798.
+- Branch after the fix: `built` persists `true` on both. Games 3801, 3804. An honest build+attach
+  that relies on the persisted flag (no client injection of `built`) then drives the old
+  client-evidence reveal to `GET capture_secrets` -> `{"lord":"Sofia2026!"}`, with
+  `seCaptures.lord.proven == true`. Game 3806.
+
+So the honest lab reveal was at risk on this branch only (the old reader keys on the client record's
+`built`, `capture_proofs.rb:619` `phish_page_evidence_holds?`), not on main. Build-log item 4 passed
+earlier only because it injected `built: true` after the attach, masking the revert.
+
+Fix (this branch): add `:se_landing_page` to `around_action :with_game_lock`
+(`games_controller.rb:103`), so the route reloads `player_state` under the row lock before its write
+and serialises with `sync_state`. The locking guard test
+(`test/controllers/break_escape/game_state_locking_test.rb`) gained `build_landing_page!` as a
+recognised state writer and a specific `se_landing_page is locked` case; both fail with the lock
+removed and pass with it.
 
 ### Shared-state note
 
