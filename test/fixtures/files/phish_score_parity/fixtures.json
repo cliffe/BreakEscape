@@ -1,0 +1,177 @@
+{
+  "_comment": "Shared parity fixtures for the landing-page scorer. The JS half (test/js/social-phish-score-parity.test.mjs) asserts scorePage/scoreFakeCheck in landing-page-model.js produce each case's recorded `expected`; the Ruby half (test/models/break_escape/phish_score_parity_test.rb) asserts BreakEscape::PhishScore.score produces the same. A change to either scorer that is not mirrored fails a red test. Cases cover each factor's full/partial/zero band, both gates, the brand-gate-off awareness case, the off-menu and bad-suffix blocked cases and the fake-check variant.",
+  "pages": {
+    "signin": {
+      "id": "payroll_login",
+      "linkText": "ledgerwell.example/payroll",
+      "pretext": { "brandId": "ledgerwell", "purposeId": "payslip", "tone": "formal", "story": "first payslip ready" },
+      "brands": [
+        {
+          "id": "ledgerwell", "name": "Ledgerwell", "look": "generic", "realDomain": "ledgerwell.example",
+          "realFields": ["email", "password"],
+          "decoyWords": ["payroll-online", "account-help", "login"],
+          "domains": [
+            { "id": "d_unrelated", "domain": "payroll-online.example", "trick": "unrelated", "tier": 0 },
+            { "id": "d_letter", "domain": "ledgerwall.example", "trick": "wrong-letter", "tier": 1 },
+            { "id": "d_word", "domain": "ledgerwell-hr.example", "trick": "extra-word", "tier": 2 },
+            { "id": "d_sub", "domain": "login.ledgerwell.account-help.example", "trick": "subdomain", "tier": 2 },
+            { "id": "d_vv", "domain": "ledgervvell.example", "trick": "typo-squat", "tier": 3 }
+          ]
+        },
+        {
+          "id": "cloudboxy", "name": "CloudBoxy", "look": "parody", "realDomain": "cloudboxy.example",
+          "realFields": ["email", "password"],
+          "domains": [{ "id": "c_letter", "domain": "cloudb0xy.example", "trick": "wrong-letter", "tier": 1 }]
+        }
+      ],
+      "purposes": [{ "id": "signin" }, { "id": "expired" }, { "id": "payslip" }],
+      "logos": [{ "id": "crisp" }, { "id": "blurry" }, { "id": "stretched" }, { "id": "none" }],
+      "wordings": [
+        { "id": "w_formal", "match": true },
+        { "id": "w_generic", "match": false },
+        { "id": "w_slips", "match": false, "slips": true }
+      ],
+      "fields": ["email", "password", "one_time_code", "card_number", "ni_number"],
+      "extraSensitiveFields": ["card_number", "ni_number"],
+      "targets": { "lord": { "linkThreshold": 70, "minDomainTier": 2 }, "open": { "linkThreshold": 55, "brandGate": false } }
+    },
+    "badSuffix": {
+      "id": "bad_suffix_page",
+      "pretext": { "brandId": "acme", "purposeId": "signin" },
+      "brands": [
+        {
+          "id": "acme", "name": "Acme", "realDomain": "acme.example", "realFields": ["email", "password"],
+          "domains": [{ "id": "d_dotcom", "domain": "acme.com", "trick": "wrong-tld", "tier": 3 }]
+        }
+      ],
+      "wordings": [{ "id": "w_match", "match": true }],
+      "targets": { "lord": { "linkThreshold": 50 } }
+    },
+    "fakecheck": {
+      "id": "e10_check",
+      "pageType": "fakeCheck",
+      "targets": { "visitor": { "linkThreshold": 70 } },
+      "check": {
+        "host": "orders.fernside.example",
+        "hosts": [
+          { "id": "genuine", "trust": "genuine" },
+          { "id": "lookalike", "trust": "lookalike" },
+          { "id": "random", "trust": "unrelated" }
+        ],
+        "pretexts": [
+          { "id": "fits", "match": true },
+          { "id": "generic" },
+          { "id": "off", "slips": true }
+        ],
+        "urgencies": [
+          { "id": "calm", "match": true },
+          { "id": "pushy" }
+        ],
+        "steps": [
+          { "id": "smooth", "match": true },
+          { "id": "clumsy" }
+        ]
+      }
+    }
+  },
+  "cases": [
+    {
+      "name": "signin attempt 1 rushes: purpose partial, domain tier 1, logo partial, wording slips, sensitive-field form fail",
+      "page": "signin",
+      "target": { "id": "lord", "firstName": "Sofia" },
+      "choices": { "brand": "ledgerwell", "purpose": "signin", "domainId": "d_letter", "logo": "blurry", "wording": "w_slips", "fields": ["email", "password", "card_number"], "padlock": false },
+      "expected": { "credibility": 34, "gatesPassed": false, "meetsThreshold": false, "blocked": false }
+    },
+    {
+      "name": "signin attempt 2 convincing: every factor full, both gates pass, over threshold",
+      "page": "signin",
+      "target": { "id": "lord", "firstName": "Sofia" },
+      "choices": { "brand": "ledgerwell", "purpose": "payslip", "domainId": "d_word", "logo": "crisp", "wording": "w_formal", "fields": ["email", "password"], "padlock": true },
+      "expected": { "credibility": 87, "gatesPassed": true, "meetsThreshold": true, "blocked": false }
+    },
+    {
+      "name": "signin d_letter perfect otherwise: careful-reader gate fails on tier 1",
+      "page": "signin",
+      "target": { "id": "lord", "firstName": "Sofia" },
+      "choices": { "brand": "ledgerwell", "purpose": "payslip", "domainId": "d_letter", "logo": "crisp", "wording": "w_formal", "fields": ["email", "password"], "padlock": true },
+      "expected": { "credibility": 75, "gatesPassed": false, "meetsThreshold": false, "blocked": false }
+    },
+    {
+      "name": "signin d_vv tier 3 perfect: 100, both gates pass",
+      "page": "signin",
+      "target": { "id": "lord", "firstName": "Sofia" },
+      "choices": { "brand": "ledgerwell", "purpose": "payslip", "domainId": "d_vv", "logo": "crisp", "wording": "w_formal", "fields": ["email", "password"], "padlock": true },
+      "expected": { "credibility": 100, "gatesPassed": true, "meetsThreshold": true, "blocked": false }
+    },
+    {
+      "name": "signin wrong brand: brand factor zero and brand gate fails",
+      "page": "signin",
+      "target": { "id": "lord", "firstName": "Sofia" },
+      "choices": { "brand": "cloudboxy", "purpose": "payslip", "domainId": "c_letter", "logo": "crisp", "wording": "w_formal", "fields": ["email", "password"], "padlock": true },
+      "expected": { "credibility": 60, "gatesPassed": false, "meetsThreshold": false, "blocked": false }
+    },
+    {
+      "name": "signin form extra non-sensitive field: partial 5",
+      "page": "signin",
+      "target": { "id": "lord", "firstName": "Sofia" },
+      "choices": { "brand": "ledgerwell", "purpose": "payslip", "domainId": "d_word", "logo": "crisp", "wording": "w_formal", "fields": ["email", "password", "one_time_code"], "padlock": true },
+      "expected": { "credibility": 82, "gatesPassed": true, "meetsThreshold": true, "blocked": false }
+    },
+    {
+      "name": "signin form extra field with a real field missing: partial 4",
+      "page": "signin",
+      "target": { "id": "lord", "firstName": "Sofia" },
+      "choices": { "brand": "ledgerwell", "purpose": "payslip", "domainId": "d_word", "logo": "crisp", "wording": "w_formal", "fields": ["email", "one_time_code"], "padlock": true },
+      "expected": { "credibility": 81, "gatesPassed": true, "meetsThreshold": true, "blocked": false }
+    },
+    {
+      "name": "signin no brand picked reads as unset, not wrong, and the brand gate fails",
+      "page": "signin",
+      "target": { "id": "lord", "firstName": "Sofia" },
+      "choices": { "purpose": "payslip", "domainId": "d_word", "logo": "crisp", "wording": "w_formal", "fields": ["email", "password"], "padlock": true },
+      "expected": { "credibility": 67, "gatesPassed": false, "meetsThreshold": false, "blocked": false }
+    },
+    {
+      "name": "signin brand gate off (awareness open target): over threshold with the brand row failing",
+      "page": "signin",
+      "target": { "id": "open", "firstName": "Hana" },
+      "choices": { "brand": "cloudboxy", "purpose": "payslip", "domainId": "c_letter", "logo": "crisp", "wording": "w_formal", "fields": ["email", "password"], "padlock": true },
+      "expected": { "credibility": 60, "gatesPassed": true, "meetsThreshold": true, "blocked": false }
+    },
+    {
+      "name": "signin off-menu domain is blocked",
+      "page": "signin",
+      "target": { "id": "lord", "firstName": "Sofia" },
+      "choices": { "brand": "ledgerwell", "purpose": "payslip", "domainId": "d_nonexistent", "logo": "crisp", "wording": "w_formal", "fields": ["email", "password"], "padlock": true },
+      "expected": { "blocked": true }
+    },
+    {
+      "name": "domain whose host does not end .example is blocked",
+      "page": "badSuffix",
+      "target": { "id": "lord", "firstName": "Sofia" },
+      "choices": { "brand": "acme", "purpose": "signin", "domainId": "d_dotcom", "logo": "crisp", "wording": "w_match", "fields": ["email", "password"], "padlock": true },
+      "expected": { "blocked": true }
+    },
+    {
+      "name": "fake-check best: all four persuasion factors full, over threshold",
+      "page": "fakecheck",
+      "target": { "id": "visitor", "firstName": "Priya" },
+      "choices": { "check": { "hostId": "genuine", "pretextId": "fits", "urgencyId": "calm", "stepsId": "smooth" } },
+      "expected": { "credibility": 100, "gatesPassed": true, "meetsThreshold": true, "blocked": false }
+    },
+    {
+      "name": "fake-check look-alike host, generic pretext, clumsy steps, pushy urgency: partials and a zero",
+      "page": "fakecheck",
+      "target": { "id": "visitor", "firstName": "Priya" },
+      "choices": { "check": { "hostId": "lookalike", "pretextId": "generic", "urgencyId": "pushy", "stepsId": "clumsy" } },
+      "expected": { "credibility": 39, "gatesPassed": true, "meetsThreshold": false, "blocked": false }
+    },
+    {
+      "name": "fake-check unrelated host and off-topic (slips) pretext: both zero",
+      "page": "fakecheck",
+      "target": { "id": "visitor", "firstName": "Priya" },
+      "choices": { "check": { "hostId": "random", "pretextId": "off", "urgencyId": "calm", "stepsId": "smooth" } },
+      "expected": { "credibility": 40, "gatesPassed": true, "meetsThreshold": false, "blocked": false }
+    }
+  ]
+}

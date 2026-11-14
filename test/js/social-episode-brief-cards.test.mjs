@@ -146,6 +146,20 @@ test('three cards: Next and Back move between them, the last button is Got it an
     assert.deepEqual(errors, []);
 });
 
+test('the brief-card Back button is the awareness secondary look (C-X9 / aw-button-secondary)', () => {
+    const ep = briefEpisode();
+    setup(ep);
+    open(ep);
+    click('.epr-next');
+    const back = cur().container.querySelector('.epr-back');
+    assert.ok(back, 'Back shows on a later card');
+    assert.ok(back.classList.contains('aw-button-secondary'), 'Back carries the secondary variant');
+    assert.ok(back.classList.contains('aw-button') && back.classList.contains('epr-button'),
+        'Back stays part of the shared button family');
+    const next = cur().container.querySelector('.epr-next');
+    assert.ok(next && !next.classList.contains('aw-button-secondary'), 'the primary Next is not secondary');
+});
+
 test('the last card button label is strings.briefDone, default Got it', () => {
     const ep = briefEpisode();
     delete ep.strings.briefDone;

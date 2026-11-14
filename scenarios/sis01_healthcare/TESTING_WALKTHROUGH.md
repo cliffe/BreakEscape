@@ -247,7 +247,7 @@ There is no `major_incident` global: the Major Incident was declared at 22:38 on
 - [ ] The consequence panel opens with a "3 legacy exception rules" intro that disappears when the first rule is opened, so the layout shifts by a few pixels on the first click. Click the line, the ! marker or the label (all three work); a second click closes that rule again
 - [ ] First rule opened: `network_rules_reviewed` -> `true`; SEVER unlocks; the hint changes to the "Risk paths reviewed" text naming both signed forms
 - [ ] SEVER button text: "SEVER ENTERPRISE" then an arrow, then "CLINICAL LINK". Pressing it opens CONFIRM NETWORK ISOLATION, listing the clinical consequences and the DUAL AUTHORISATION STATUS: a tick or a "not received" line for each of IT Security (Ravi Anand) and Clinical Engineering (David Osei), and a warning citing CLAIM-HC-007 if either is missing. Buttons: **YES** (then a dash and SEVER LINK) and **NO** (then a dash and CANCEL)
-- [ ] Confirming with both forms: `network_isolation_authorised` -> `true` and `network_isolated` -> `true`; the map shows LINK SEVERED and the minigame closes after 2 s. Without both forms only `network_isolated` is set (see Phase 3)
+- [ ] Confirming with both forms: `network_isolation_authorised` -> `true` and `network_isolated` -> `true`; the map shows LINK SEVERED and stays open on the severed state: SEVER gives way to CONTINUE; CONTINUE, the X or Esc close it (complete(true)). The radio chatter (Ravi, Helen, Sarah, David) plays after it closes. Without both forms only `network_isolated` is set (see Phase 3)
 
 ---
 

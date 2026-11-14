@@ -189,7 +189,7 @@ test('the view lists each row with its action and the row attributes, from GET /
     links.open('jack_comms_port');
     await settle();
     assert.deepEqual(requests, [['network', 'jack_comms_port']]);
-    const text = document.querySelector('.network-view-title').textContent;
+    const text = document.querySelector('.console-title').textContent;
     assert.equal(text, 'Drop box: comms room');
     // The subtitle names the network, so the own block is headed "Reachable" (code review R2 m1)
     assert.equal(document.querySelector('.network-block-own .network-block-title').textContent, OWN_HEADING);
@@ -626,7 +626,7 @@ test('a link whose PC is off carries "(down)" on its title', async () => {
     answer.footholds[0].sourceHost = 'HB-DESK-01';
     links.open('jack_comms_port');
     await settle();
-    assert.match(document.querySelector('.network-view-title').textContent, /Drop box: comms room \(down\)/);
+    assert.match(document.querySelector('.console-title').textContent, /Drop box: comms room \(down\)/);
 });
 
 test('no reason or tag is in italics: no markup and no italic style', async () => {
@@ -644,8 +644,8 @@ test('rows have no border, and the outer frame border is 2px', () => {
     assert.doesNotMatch(rowRule, /border/, 'a row has no border');
     assert.match(rowRule, /background:/, 'a row has its own fill');
     assert.doesNotMatch(ruleBody('.network-row-down') || '', /border/);
-    assert.match(ruleBody('.network-view-frame') || '', /border:\s*2px solid/);
-    assert.doesNotMatch(ruleBody('.network-view-frame') || '', /min-height:\s*[1-9]/, 'the panel is as tall as its rows');
+    // the outer frame is the shared console window's 9-slice (X8): the sheet draws none
+    assert.equal(ruleBody('.network-view-frame'), null, 'no frame of its own');
     assert.match(ruleBody('.network-view-rows') || '', /gap:\s*4px/);
     assert.match(ruleBody('.network-block') || '', /border:\s*2px solid/, 'the block keeps its 2px frame');
     assert.doesNotMatch(cssText.replace(/\/\*[\s\S]*?\*\//g, ''), /border[^;]*\b[134]px/, 'no border that is not 2px');
@@ -695,12 +695,12 @@ test('title and subtitle never both name the source', () => {
     }
 });
 
-test('the header shows the subtitle under the title', async () => {
+test('the shared bar shows the subtitle under the title', async () => {
     setup();
     answer.footholds[0].source = { name: 'Spare wall port', room: 'Comms room' };
     links.open('jack_comms_port');
     await settle();
-    assert.equal(document.querySelector('.network-view-subtitle').textContent, 'On Harbour office LAN, at Spare wall port');
+    assert.equal(document.querySelector('.console-subtitle').textContent, 'On Harbour office LAN, at Spare wall port');
     assert.equal(view().getTestState().subtitle, 'On Harbour office LAN, at Spare wall port');
     assert.equal(document.querySelector('.network-view-status'), null, 'a jack link has no joined line');
 });
@@ -716,11 +716,11 @@ test('a joined Wi-Fi view: icon by the title, "Joined. Reaches <n> hosts." and n
         hosts: [{ id: 'guest_notice', kind: 'file_share', name: 'Guest-Notice', host: 'HB-GUEST-01', open: true }] }] };
     links.open('wifi_guest_wifi');
     await settle();
-    assert.ok(document.querySelector('.network-view-title .network-view-title-icon'), 'the Wi-Fi icon is by the title');
+    assert.ok(document.querySelector('.network-view-status .network-view-title-icon'), 'the Wi-Fi icon is by the status line');
     assert.equal(document.querySelector('.network-view-status').textContent, 'Joined. Reaches 1 host.');
     assert.equal(document.querySelector('.network-view-observations'), null, 'the observations line is replaced');
     assert.doesNotMatch(document.querySelector('.network-view').textContent, /Open it to see what it reaches/);
-    assert.equal(document.querySelector('.network-view-subtitle').textContent, 'Access point: Guest access point, Lobby');
+    assert.equal(document.querySelector('.console-subtitle').textContent, 'Access point: Guest access point, Lobby');
     assert.deepEqual([...document.querySelectorAll('.network-row-group')].map(el => el.textContent), ['File shares'],
         'the same group headings as the jack view, even for one kind');
     // The title names the network, so the own block does not again (R1 n2)
@@ -735,7 +735,7 @@ test('a joined Wi-Fi view: icon by the title, "Joined. Reaches <n> hosts." and n
 
 // ---- Code review R1 fixes ----
 
-const headerLines = () => [...document.querySelectorAll('.network-view-header-body > *')].map(el => el.textContent.trim()).filter(Boolean);
+const headerLines = () => [...document.querySelectorAll('.console-title, .console-subtitle:not([hidden]), .network-view-header-body > *')].map(el => el.textContent.trim()).filter(Boolean);
 
 test('no header line repeats another, for the jack and both implant views (R1 m1)', async () => {
     for (const [via, name, sourceName] of [['jack', 'Drop box: comms room', 'Spare wall port'],
@@ -762,36 +762,31 @@ test('no header line repeats another, for the jack and both implant views (R1 m1
     }
 });
 
-test('the view closes with the X or Esc only: no Close button, the X inside the frame (R1 m4)', async () => {
+test('the view closes with the X or Esc only: no Close button, the X in the shared bar (R1 m4)', async () => {
     setup();
     links.open('jack_comms_port');
     await settle();
     assert.equal(document.querySelector('#minigame-cancel'), null, 'no framework Close button');
     // The shared shell may keep an empty controls row (slice 7); it must hold no button
     assert.equal(document.querySelectorAll('.minigame-controls button').length, 0, 'no button in the controls row');
-    const frame = document.querySelector('.network-view-frame');
-    assert.ok(frame, 'the frame exists');
+    const win = document.querySelector('.console-window');
+    assert.ok(win, 'the shared console window exists');
     const x = document.querySelector('#minigame-close');
-    // The X is in the header, and the header is outside the scroll area, so the list's
-    // scrollbar never runs under the X (code review R2 m2)
-    const header = document.querySelector('.network-view-header');
-    assert.equal(x.parentNode, header, 'the X is in the header');
-    assert.equal(header.parentNode, frame, 'the header is inside the frame');
+    // The X is in the shared title bar, outside the scroll area (X8)
+    const bar = document.querySelector('.console-titlebar');
+    assert.equal(x.parentNode, bar, 'the X is in the shared title bar');
+    assert.equal(bar.parentNode, win);
     const list = view().gameContainer;
-    assert.equal(list.parentNode, frame);
-    assert.ok(!list.contains(header) && !list.contains(x), 'neither the header nor the X is in the scroll area');
-    assert.deepEqual([...frame.children].map(el => el.className.split(' ')[0]),
-        ['network-view-header', list.className.split(' ')[0], 'network-view-more'], 'header, list, More below');
+    assert.equal(list.parentNode, win);
+    assert.ok(!list.contains(bar) && !list.contains(x), 'neither the bar nor the X is in the scroll area');
+    const header = document.querySelector('.network-view-header');
+    assert.deepEqual([...win.children].map(el => el.className.split(' ')[0]).filter(c => c !== 'minigame-header' && c !== 'minigame-message-container'),
+        ['console-titlebar', 'network-view-header', list.className.split(' ')[0], 'network-view-more'], 'bar, status strip, list, More below');
     assert.ok(list.classList.contains('pixel-scroll'), 'the list scrolls with the pixel-art scrollbar');
-    assert.ok(header.querySelector('.network-view-title'), 'the title is in the header');
-    assert.ok(frame.contains(document.querySelector('.network-view')), 'the frame wraps the list');
+    assert.ok(document.querySelector('.console-title').textContent.trim(), 'the title is in the shared bar');
+    assert.ok(win.contains(document.querySelector('.network-view')), 'the window wraps the list');
     assert.doesNotMatch(ruleBody('.network-view-header') || '', /sticky|margin:\s*-/, 'no sticky header, no negative margin');
-    const xRule = ruleBody('.network-view-minigame .network-view-frame .minigame-close-button') || '';
-    assert.match(xRule, /position:\s*absolute/);
-    assert.match(xRule, /top:\s*[2-9]px/, 'clear of the 2px border at the top');
-    assert.match(xRule, /right:\s*[2-9]px/, 'and at the right');
-    assert.match(ruleBody('.network-view-frame') || '', /position:\s*relative/, 'placed against the frame, at every size');
-    assert.match(ruleBody('.network-view-frame') || '', /max-height:\s*calc\(100% - /, 'never taller than the screen');
+    assert.equal(ruleBody('.network-view-minigame .network-view-frame .minigame-close-button'), null, 'the sheet places no X');
     document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape' }));
     await settle();
     assert.deepEqual(named('network_view_closed'), [{ footholdId: 'jack_comms_port', reason: 'closed' }], 'Esc still closes');
@@ -803,7 +798,7 @@ test('"More below" shows while the list overflows the frame and hides at the end
     await settle();
     const m = view();
     const game = m.gameContainer;
-    const more = document.querySelector('.network-view-frame > .network-view-more');
+    const more = document.querySelector('.console-window > .network-view-more');
     assert.ok(more, 'the cue is in the frame, outside the scrolling list');
     assert.equal(more.textContent.trim(), MORE_BELOW_TEXT);
     assert.ok(more.querySelector('.network-view-more-arrow'), 'with the stepped arrow');
@@ -840,6 +835,10 @@ test('rows lay out in two columns when there is room; headings and locked shares
     assert.equal(row('data-host-id', 'lena_pc').querySelector('.network-row-title strong').textContent, 'HB-FIN-02');
     assert.match(ruleBody('.network-row-hostname') || '', /white-space:\s*nowrap/);
     assert.match(ruleBody('.network-row-host .network-row-label') || '', /min-width:\s*min-content/);
+    // A locked share's label keeps the resource rule's min-content floor; a wide-row min-width: 0
+    // overrode it after a merge and squeezed the label to a letter per line at 375-480px (consoles R5 M1)
+    assert.match(ruleBody('.network-row-resource .network-row-label') || '', /min-width:\s*min-content/);
+    assert.equal(ruleBody('.network-row-wide > .network-row-label'), null, 'no wide-row rule overrides the label floor');
     assert.match(ruleBody('.network-row-control') || '', /flex:\s*0 1 auto/);
     // The open button breaks before the bracket, never inside the name (code review R3 n1)
     const open = row('data-host-id', 'lena_pc').querySelector('[data-action="open"]');
@@ -882,9 +881,12 @@ test('the shared .pixel-scroll rule draws a pixel-art scrollbar', () => {
     assert.match(utilRule('.pixel-scroll::-webkit-scrollbar-button') || '', /display:\s*none/);
     const ff = util.slice(util.indexOf('@supports not selector(::-webkit-scrollbar)'));
     assert.match(ff, /\.pixel-scroll\s*\{[^}]*scrollbar-color:[^}]*scrollbar-width:|\.pixel-scroll\s*\{[^}]*scrollbar-width:[^}]*scrollbar-color:/);
-    const block = util.slice(util.indexOf('.pixel-scroll {'));
+    // Only the .pixel-scroll rules themselves (other shared rules later in the file may reset
+    // box-shadow: none, which is not a shadow)
+    const block = (util.replace(/\/\*[\s\S]*?\*\//g, '').match(/[^{}]*\.pixel-scroll[^{}]*\{[^}]*\}/g) || []).join('\n');
+    assert.ok(block.length > 0, 'pixel-scroll rules found');
     assert.doesNotMatch(block, /border-radius:\s*[1-9]/, 'no radius');
-    assert.doesNotMatch(block.replace(/\/\*[\s\S]*?\*\//g, ''), /gradient|box-shadow/);
+    assert.doesNotMatch(block, /gradient|box-shadow:\s*(?!none)/);
     // The class resets the inherited Firefox properties, so Chrome keeps the art under a parent
     // that sets them (code review R3 n2); the guarded block after it still wins in Firefox
     const base = utilRule('.pixel-scroll') || '';
@@ -947,4 +949,117 @@ test('wordsHtml leaves a very long word out of the nowrap span, still escaped (P
     assert.equal(wordsHtml(`Old ${long}`), '<span class="network-row-word">Old</span> Quarterly-Reconciliation-Archive-&lt;2026&gt;');
     const edge = 'x'.repeat(NOWRAP_WORD_MAX);
     assert.equal(wordsHtml(edge), `<span class="network-row-word">${edge}</span>`);
+});
+
+// ---------------------------------------------------------------- UI PC 2 (critique N05)
+
+const realView = await imp('minigames/network-view/network-view-minigame.js');
+function plantedJackSprite() {
+    return { texture: { key: 'network_rack1' }, setTexture(k) { this.texture = { key: k }; },
+        scenarioData: { id: 'comms_port', type: 'pc', name: 'Spare wall port', networkJack: true } };
+}
+function setupUnplug(unplug) {
+    setup();
+    window.startNetworkViewMinigame = realView.startNetworkViewMinigame;
+    window.applyInventoryDelta = () => {};
+    window.gameConfirm = async () => { throw new Error('no prompt at a planted jack'); };
+    window.gameState = { globalVariables: {} };
+    window.ApiClient.networkUnplug = unplug || (async (jackId) => {
+        requests.push(['unplug', jackId]);
+        return { success: true, added: [], removed: ['netlink_jack_comms_port'], endedPcIds: [] };
+    });
+}
+
+test('UI PC 2 (N05): a click on the planted jack opens the view with Unplug in its header', async () => {
+    setupUnplug();
+    const out = await links.interactJack(plantedJackSprite());
+    await settle(6);
+    assert.equal(out.action, 'opened');
+    assert.ok(view() instanceof NetworkViewMinigame);
+    const btn = document.querySelector('.network-view-header [data-unplug]');
+    assert.ok(btn, 'Unplug sits in the header, outside the scrolling list');
+    assert.equal(btn.textContent, realView.UNPLUG_TEXT);
+    assert.equal(btn.disabled, false);
+    assert.deepEqual(view().getTestState().unplug, { jackId: 'comms_port', selector: '[data-unplug]' });
+    assert.ok(document.querySelector('[data-host-id="door_box"]'), 'the rows load as usual');
+});
+
+test('UI PC 2 (N05): Unplug takes the box out and the view closes to the world', async () => {
+    setupUnplug();
+    await links.interactJack(plantedJackSprite());
+    await settle(6);
+    document.querySelector('[data-unplug]').click();
+    await settle(8);
+    assert.deepEqual(requests.filter(r => r[0] === 'unplug'), [['unplug', 'comms_port']]);
+    assert.equal(window.MinigameFramework.currentMinigame, null, 'the view closed');
+    assert.deepEqual(events.filter(e => e[0] === 'network_view_closed').map(e => e[1].reason), ['unplugged']);
+    assert.deepEqual(links.list(), []);
+});
+
+test('UI PC 2 (N05): a refused Unplug keeps the view open with the button back', async () => {
+    setupUnplug(async (jackId) => { requests.push(['unplug', jackId]); throw Object.assign(new Error('no'), { status: 403 }); });
+    const toasts = [];
+    window.gameAlert = (msg) => { toasts.push(msg); };
+    await links.interactJack(plantedJackSprite());
+    await settle(6);
+    const before = view();
+    document.querySelector('[data-unplug]').click();
+    assert.equal(document.querySelector('[data-unplug]').disabled, true, 'disabled while it runs');
+    assert.equal(document.querySelector('[data-unplug]').textContent, realView.UNPLUGGING_TEXT);
+    await settle(8);
+    assert.equal(view(), before, 'still open');
+    assert.equal(document.querySelector('[data-unplug]').disabled, false);
+    assert.equal(document.querySelector('[data-unplug]').textContent, realView.UNPLUG_TEXT);
+    assert.equal(links.list().length, 1, 'the box is still in');
+    // Fix round 1 (m2): the reason is on the view by the button, not a toast over the header
+    const note = document.querySelector('.network-view-header .network-view-unplug-notice');
+    assert.equal(note.hidden, false);
+    assert.equal(note.textContent, "You can't reach that port from here.");
+    assert.ok(note.previousElementSibling.querySelector('[data-unplug]'), 'right after the button\'s row');
+    assert.deepEqual(toasts, [], 'no toast');
+});
+
+test('UI PC 2 (N05): the view opened from the inventory has no Unplug', async () => {
+    setupUnplug();
+    links.open('jack_comms_port');
+    await settle(6);
+    assert.ok(view() instanceof NetworkViewMinigame);
+    assert.equal(document.querySelector('[data-unplug]'), null);
+    assert.equal(view().getTestState().unplug, null);
+    // Fix round 1 (nit): a line says where the box can be unplugged, naming the room and port
+    const hint = document.querySelector('.network-view-hint');
+    assert.ok(hint, 'a hint line');
+    assert.match(hint.textContent, /^You can unplug the box at its port \(.+\)\.$/);
+    assert.match(hint.textContent, new RegExp(links.get('jack_comms_port').name.split(': ').slice(1).join(': ').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+});
+
+test('UI PC 2 fix round 1 (m1, nit): the view at the jack has Unplug and no hint', async () => {
+    setupUnplug();
+    await links.interactJack(plantedJackSprite());
+    await settle(6);
+    assert.ok(document.querySelector('[data-unplug]'));
+    assert.equal(document.querySelector('.network-view-hint'), null);
+});
+
+test('UI PC 2 fix round 1 (m3): short landscape puts Unplug on the title row, left of the X', () => {
+    const t = cssText;
+    const m = t.match(/@media \(orientation: landscape\) and \(max-height: 460px\) \{([\s\S]*?)\n\}\n/);
+    assert.ok(m, 'a short-landscape rule');
+    assert.match(m[1], /\.network-view-header-body \.network-view-actions \{[^}]*position: absolute;[^}]*top: 0;[^}]*right: 0;/);
+    assert.match(m[1], /\.network-view-header-body \{[^}]*padding-right: 100px;/);
+});
+
+test('UI PC 2 (N05): Unplug shows even when the link did not answer', async () => {
+    setupUnplug();
+    window.ApiClient.network = async () => { throw Object.assign(new Error('down'), { status: 500 }); };
+    await links.interactJack(plantedJackSprite());
+    await settle(6);
+    assert.ok(document.querySelector('.network-view-error'));
+    assert.ok(document.querySelector('.network-view-header [data-unplug]'));
+});
+
+test('UI PC 2 (N05): the Unplug button CSS is pixel art (no radius, no shadow)', () => {
+    const body = ruleBody('.network-view .network-view-unplug,\n.network-view-header .network-view-unplug') || '';
+    assert.match(body, /padding:\s*4px 12px/);
+    assert.doesNotMatch(body, /border-radius|box-shadow/);
 });

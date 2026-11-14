@@ -362,6 +362,36 @@ function watchPostitDrag(postit, place) {
  * { root, bezel, screen, chin, controls, postit, metrics, update(), destroy() };
  * `controls` is the host for the scene's footer row.
  */
+/**
+ * Two Xs on a PC's window (UI PC 2, critique E08; the share window too, fix round 1 m5): the
+ * window's own X (`.pc-window-close`) closes that window only, back to where it came from, as
+ * Esc does; the bezel X closes the whole PC. The framework bound the bezel X to closeByPlayer;
+ * that binding is swapped for `scene.closePc()`.
+ */
+export function bindPcWindowCloses(scene) {
+    const bezelX = scene?.container?.querySelector?.('#minigame-close');
+    if (bezelX) {
+        scene._eventListeners = (scene._eventListeners || []).filter((l) => {
+            if (l.element !== bezelX || l.eventType !== 'click') return true;
+            bezelX.removeEventListener('click', l.handler, l.options);
+            return false;
+        });
+        scene.addEventListener(bezelX, 'click', (e) => {
+            e.preventDefault?.();
+            e.stopPropagation?.();
+            scene.closePc();
+        });
+    }
+    const windowX = scene?.gameContainer?.querySelector?.('.pc-window-close');
+    if (windowX) {
+        scene.addEventListener(windowX, 'click', (e) => {
+            e.preventDefault?.();
+            e.stopPropagation?.();
+            scene.closeByPlayer();
+        });
+    }
+}
+
 export function mountPcMonitor(scene, { name = '', postitHtml = '', pcId = null, view = (typeof window !== 'undefined' ? window : null) } = {}) {
     const container = scene?.container;
     const area = scene?.gameContainer;

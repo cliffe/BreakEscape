@@ -218,7 +218,29 @@ function startCountdown(notification, duration) {
         progress.style.transition = `width ${duration}ms linear`;
         setTimeout(() => { progress.style.width = '0%'; }, 10);
     }
+    notification._countdownAt = Date.now();
+    notification._countdownMs = duration;
     notification._hideTimer = setTimeout(() => removeNotification(notification), duration);
+}
+
+// A toast that steps aside for a finished-task line (ui/hud-lanes.js, review R2 M4) keeps the
+// time it had left and gets it back when it shows again (at least TOAST_RESUME_MIN_MS).
+export const TOAST_RESUME_MIN_MS = 1500;
+function laneYieldHandler(notification) {
+    return (hidden) => {
+        const t = notification._toast;
+        if (!t || t.closing || !(t.duration > 0)) return;
+        if (hidden) {
+            if (notification._yieldLeft != null) return;
+            clearTimeout(notification._hideTimer);
+            const used = Date.now() - (notification._countdownAt || Date.now());
+            notification._yieldLeft = Math.max(0, (notification._countdownMs || t.duration) - used);
+        } else if (notification._yieldLeft != null) {
+            const left = Math.max(TOAST_RESUME_MIN_MS, notification._yieldLeft);
+            notification._yieldLeft = null;
+            startCountdown(notification, left);
+        }
+    };
 }
 
 // Plain text into an element: textContent per line, a <br> element between lines.
@@ -231,6 +253,13 @@ function setPlainLines(el, text) {
 
 // Toasts on screen at once; info and success toasts past this wait (renderNotification).
 export const MAX_SHOWN_TOASTS = 2;
+// On a phone the toast lane holds one toast at a time (UI decision H1 option A); the rest queue.
+// ui/hud-lanes.js marks the phone layout with body.hud-compact.
+export const MAX_SHOWN_TOASTS_COMPACT = 1;
+export function maxShownToasts(doc = (typeof document === 'undefined' ? null : document)) {
+    const cl = doc?.body?.classList;
+    return typeof cl?.contains === 'function' && cl.contains('hud-compact') ? MAX_SHOWN_TOASTS_COMPACT : MAX_SHOWN_TOASTS;
+}
 // The head of the waiting line shows after this long even if both places are still taken
 // (going over the limit by one for a moment), so it never lands long after the event it is
 // about. The rest follow it a TOAST_STAGGER_MS apart.
@@ -281,12 +310,12 @@ function headDue() {
     head.waitTimer = null;
     const container = typeof document === 'undefined' ? null : document.getElementById('notification-container');
     const shown = shownToasts(container).length;
-    if (shown > MAX_SHOWN_TOASTS) {
+    if (shown > maxShownToasts()) {
         head.waitTimer = setTimeout(headDue, TOAST_STAGGER_MS);
         return;
     }
     waitingToasts.shift();
-    if (shown >= MAX_SHOWN_TOASTS) lastOverLimitAt = Date.now();
+    if (shown >= maxShownToasts()) lastOverLimitAt = Date.now();
     showWaitingToast(head, true);
     armHead();
 }
@@ -325,7 +354,7 @@ function holdForPanel(list) {
 function showNextWaiting() {
     if (typeof document === 'undefined') return;
     const container = document.getElementById('notification-container');
-    while (waitingToasts.length && shownToasts(container).length < MAX_SHOWN_TOASTS) {
+    while (waitingToasts.length && shownToasts(container).length < maxShownToasts()) {
         if (!showWaitingToast(waitingToasts.shift(), false)) break;
     }
     armHead();
@@ -344,7 +373,12 @@ function renderNotification(message, type, title, duration, seen = false, option
         same._toast.shownAt = Date.now();
         if (duration > 0) {
             same._toast.duration = duration;
-            startCountdown(same, duration);
+            if (same._yieldLeft != null) {
+                // Stepped aside for a finished-task line: the fresh time waits with it (review R3 m3)
+                same._yieldLeft = duration;
+            } else {
+                startCountdown(same, duration);
+            }
         }
         return same;
     }
@@ -353,8 +387,10 @@ function renderNotification(message, type, title, duration, seen = false, option
     // success toast waits its turn and shows as one goes; warnings and errors answer
     // what the player just did, so they still show at once.
     // A toast that stays until closed takes no place and never waits for one.
-    if (!overLimit && HOLDABLE_TYPES.has(type) && duration > 0
-        && shownToasts(notificationContainer).length >= MAX_SHOWN_TOASTS) {
+    // A finished task or aim (options.brief) does not wait: the pill blinks now, and the lanes
+    // step the other toasts aside for it (review R2 M4)
+    if (!overLimit && HOLDABLE_TYPES.has(type) && duration > 0 && options?.brief !== true
+        && shownToasts(notificationContainer).length >= maxShownToasts()) {
         if (!isQueuedDuplicate(waitingToasts, message, type, title, options)) {
             addWaiting([message, type, title, duration, seen, options]);
         }
@@ -386,8 +422,14 @@ function renderNotification(message, type, title, duration, seen = false, option
         setPlainLines(notification.querySelector('.notification-message'), verbatim ? message : displayDashes(message));
         // review R2 n1: a password's doubled, leading or trailing spaces are kept on screen
         if (verbatim) notification.querySelector('.notification-message').style.whiteSpace = 'pre-wrap';
+        // Never cut short on a phone (the two-line limit, css/notifications.css): it is copied
+        if (verbatim) notification.classList.add('verbatim');
     }
+    // A short line with no title (a finished task on a phone, objectives-manager.js): its text
+    // is never cut, so the task's name can always be read (review R1 M2)
+    if (options?.brief === true) notification.classList.add('brief');
     notification._toast = { message, type, title, duration, shownAt: Date.now(), seen, html: !plainText, verbatim };
+    notification._onLaneYield = laneYieldHandler(notification);
     
     // Add to container
     notificationContainer.appendChild(notification);

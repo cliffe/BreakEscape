@@ -50,7 +50,7 @@ const dom = new JSDOM('<!doctype html><div id="inventory-container"></div>');
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const inventory = await import(inventoryUrl);
-const { NetworkLinks, NO_DEVICE_HINT, LINK_GONE_MESSAGE, UNPLUG_LABEL, LEAVE_LABEL } = await import(linksUrl);
+const { NetworkLinks, NO_DEVICE_HINT, LINK_GONE_MESSAGE, UNPLUG_LABEL } = await import(linksUrl);
 
 const settle = async (n = 3) => { for (let i = 0; i < n; i++) await new Promise(r => setTimeout(r, 0)); };
 
@@ -246,7 +246,7 @@ test('a plant: link item in with no request, box out, global, events once each, 
     assert.equal(named('network_foothold_gained:comms_port').length, 1);
     assert.equal(sprite.texture.key, 'pi_cluster1', 'the jack shows its plantedSprite');
     assert.equal(sprite.scenarioData.jackPlanted, true);
-    assert.deepEqual(views, [{ footholdId: 'jack_comms_port', message: null }], 'the view opened by itself');
+    assert.deepEqual(views, [{ footholdId: 'jack_comms_port', message: null, unplugJack: 'comms_port' }], 'the view opened by itself, with Unplug (the player is at the jack)');
     assert.deepEqual(links.list(), [foothold]);
     assert.equal(links.wasGained('comms_port'), true);
 });
@@ -316,25 +316,54 @@ test('a port-security refusal with no server message shows the fallback line (re
     assert.ok(toasts.includes('That port only takes known machines.'), 'the generic fallback is shown when b.error is absent');
 });
 
-test('a planted jack asks "Unplug it" / "Leave it"; "Leave it" and Esc send nothing', async () => {
+test('UI PC 2 (N05): a planted jack opens its box\'s view with Unplug; no prompt, no request', async () => {
     await reset({ planted: true });
-    confirmAnswer = false; // "Leave it", Esc and the close cross all resolve false
-    const out = await links.interactJack(jackSprite());
-    assert.equal(out.action, 'left');
-    assert.equal(confirms[0].message, 'Your Network drop box is plugged in here. Open it from your inventory.');
-    assert.equal(confirms[0].ok, UNPLUG_LABEL);
-    assert.equal(confirms[0].cancel, LEAVE_LABEL);
+    withStarters();
+    const sprite = jackSprite();
+    const out = await links.interactJack(sprite);
+    assert.deepEqual(out, { action: 'opened', footholdId: 'jack_comms_port' });
+    assert.deepEqual(confirms, [], 'no "Open it from your inventory" prompt any more');
     assert.deepEqual(calls, []);
-    assert.equal(held(linkItem.id).length, 1);
+    assert.deepEqual(views, [{ footholdId: 'jack_comms_port', message: null, unplugJack: 'comms_port' }]);
+    assert.equal(links.trip?.atJack, 'comms_port');
+    assert.equal(held(linkItem.id).length, 1, 'nothing changes until Unplug');
+    assert.equal(UNPLUG_LABEL, 'Unplug');
 });
 
-test('"Unplug it" restores the tray, ends the foothold and emits network_device_unplugged with endedPcIds', async () => {
+test('UI PC 2 (N05): closing that view with the X leaves the box in; a reopen on the same trip keeps Unplug', async () => {
     await reset({ planted: true });
+    withStarters();
+    await links.interactJack(jackSprite());
+    // A sign-in closed with no session reopens the view on the same trip: Unplug is still there
+    links.landed('signin', 'close', { pcId: 'door_box' });
+    await settle(4);
+    assert.equal(views.length, 2);
+    assert.equal(views[1].unplugJack, 'comms_port');
+    links.landed('view', 'close');
+    await settle(4);
+    assert.deepEqual(calls, []);
+    assert.equal(held(linkItem.id).length, 1);
+    assert.equal(links.trip, null);
+});
+
+test('UI PC 2 (N05): the view opened from the inventory has no Unplug, and unplugFromView refuses there', async () => {
+    await reset({ planted: true });
+    withStarters();
+    links.open('jack_comms_port');
+    assert.deepEqual(views, [{ footholdId: 'jack_comms_port', message: null }]);
+    assert.deepEqual(await links.unplugFromView('comms_port'), { action: 'none' });
+    assert.deepEqual(calls, []);
+});
+
+test('UI PC 2 (N05): Unplug in the view restores the tray, ends the foothold, emits network_device_unplugged, and lands in the world', async () => {
+    await reset({ planted: true });
+    withStarters();
     const sprite = jackSprite();
     window.rooms = { comms_room: { objects: { comms_port: sprite } } };
     links.syncRoom('comms_room');
     assert.equal(sprite.texture.key, 'pi_cluster1');
-    const out = await links.interactJack(sprite);
+    await links.interactJack(sprite);
+    const out = await links.unplugFromView('comms_port');
     assert.equal(out.action, 'unplugged');
     assert.deepEqual(calls, [['unplug', 'comms_port']]);
     assert.equal(requests.length, 0, 'no inventory request');
@@ -346,6 +375,35 @@ test('"Unplug it" restores the tray, ends the foothold and emits network_device_
     assert.equal(sprite.texture.key, 'network_rack1', 'the jack is back to its own look');
     assert.deepEqual(links.list(), []);
     assert.equal(links.wasGained('comms_port'), true, 'gained stays');
+    // The view closes itself with 'unplugged': the trip ends in the world, with no toast
+    const landing = links.landed('view', 'unplugged');
+    assert.deepEqual(landing, { landing: 'world', reason: 'unplugged' });
+    await settle(4);
+    assert.deepEqual(named('network_view_closed').map(e => e.data.reason), ['unplugged']);
+    assert.deepEqual(toasts, []);
+});
+
+test('UI PC 2 fix round 1 (m2): a refused Unplug from the view comes back as a message and shows no toast', async () => {
+    await reset({ planted: true });
+    withStarters();
+    links.open('jack_comms_port', { atJack: 'comms_port' });
+    window.ApiClient.networkUnplug = async () => { const e = new Error('no'); e.status = 403; throw e; };
+    const out = await links.unplugFromView('comms_port');
+    assert.equal(out.action, 'error');
+    assert.equal(out.message, "You can't reach that port from here.");
+    assert.deepEqual(toasts, [], 'the view says it by the button, not as a toast over the header');
+    // The jack's own (non-view) path still toasts
+    await links.unplug('comms_port');
+    assert.deepEqual(toasts, ["You can't reach that port from here."]);
+});
+
+test('UI PC 2 (N05): unplugFromView names only the trip\'s own jack', async () => {
+    await reset({ planted: true });
+    withStarters();
+    await links.interactJack(jackSprite());
+    assert.deepEqual(await links.unplugFromView('bench_port'), { action: 'none' });
+    assert.deepEqual(await links.unplugFromView(null), { action: 'none' });
+    assert.deepEqual(calls, []);
 });
 
 // ---------------------------------------------------------------- load

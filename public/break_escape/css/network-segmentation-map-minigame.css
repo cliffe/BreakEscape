@@ -14,6 +14,9 @@
     position: relative;
 }
 
+/* The confirm overlay covers the scene's own area */
+.nsm-game-container { position: relative; }
+
 /* ── Header bar ─────────────────────────────────────────────────────────────── */
 
 .nsm-header-bar {
@@ -21,24 +24,17 @@
     justify-content: flex-start;
     align-items: center;
     gap: 20px;
-    padding: 10px 60px 10px 20px; /* right padding clears the × close button */
+    padding: 10px 20px;
     background: #111122;
     border-bottom: 2px solid #2a2a4a;
     flex-shrink: 0;
-}
-
-.nsm-title-text {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 11px;
-    color: #8888cc;
-    letter-spacing: 1px;
 }
 
 .nsm-status-badge {
     font-family: 'GNF', monospace;
     font-size: 18px;
     color: #ff4444;
-    border: 1px solid #ff4444;
+    border: 2px solid #ff4444;
     padding: 2px 10px;
     animation: nsm-status-blink 1.5s infinite;
 }
@@ -53,18 +49,23 @@
 .nsm-body {
     display: flex;
     flex: 1;
-    overflow: hidden;
+    overflow: auto;
     min-height: 0;
 }
 
 /* ── Topology area ───────────────────────────────────────────────────────────── */
 
 .nsm-topology-area {
-    flex: 1;
+    flex: 1 0 auto;
     position: relative;
     padding: 44px 14px 16px;
     overflow: hidden;
-    min-width: 0;
+    /* Four 144px zones and gaps wide enough for the 16px rule labels: past this the body scrolls, so
+       every zone and dashed rule stays reachable (critique B NSM1) */
+    min-width: 840px;
+    /* Tall enough for the clinical zone's six devices at the 16px label size (915x412) */
+    min-height: 384px;
+    box-sizing: border-box;
 }
 
 .nsm-zones {
@@ -88,10 +89,10 @@
     position: relative;
 }
 
-.nsm-zone-external  { border-color: #3366cc; box-shadow: 0 0 12px rgba(51,102,204,0.3), inset 0 0 20px rgba(51,102,204,0.05); }
-.nsm-zone-enterprise { border-color: #33aa44; box-shadow: 0 0 12px rgba(51,170,68,0.3),  inset 0 0 20px rgba(51,170,68,0.05);  }
-.nsm-zone-clinical  { border-color: #22aaaa; box-shadow: 0 0 12px rgba(34,170,170,0.3), inset 0 0 20px rgba(34,170,170,0.05); }
-.nsm-zone-legacy    { border-color: #aa2222; box-shadow: 0 0 12px rgba(170,34,34,0.3),   inset 0 0 20px rgba(170,34,34,0.05);   }
+.nsm-zone-external  { border-color: #3366cc; }
+.nsm-zone-enterprise { border-color: #33aa44; }
+.nsm-zone-clinical  { border-color: #22aaaa; }
+.nsm-zone-legacy    { border-color: #aa2222; }
 
 .nsm-zone-label {
     font-family: 'Press Start 2P', monospace;
@@ -99,8 +100,8 @@
     text-align: center;
     margin-bottom: 10px;
     padding-bottom: 6px;
-    border-bottom: 1px solid rgba(255,255,255,0.12);
-    line-height: 1.35;
+    border-bottom: 2px solid rgba(255,255,255,0.12);
+    line-height: 16px;
 }
 
 .nsm-zone-external  .nsm-zone-label { color: #6699ff; }
@@ -118,10 +119,10 @@
 
 .nsm-device {
     font-family: 'GNF', monospace;
-    font-size: 15px;
+    font-size: 16px;
     color: #cccccc;
     background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.12);
+    border: 2px solid rgba(255,255,255,0.12);
     padding: 2px 5px;
     text-align: center;
 }
@@ -140,6 +141,12 @@
     overflow: visible;
 }
 
+/* Labels never take a tap: a rule line under its label stays tappable along its whole length,
+   and a "!" marker's triangle takes the tap for its group (consoles final proof, sis01 at 400px) */
+.nsm-svg text {
+    pointer-events: none;
+}
+
 /* ── Consequence panel ──────────────────────────────────────────────────────── */
 
 .nsm-consequence-panel {
@@ -156,10 +163,11 @@
 
 .nsm-panel-title {
     font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
+    font-size: 8px;
+    line-height: 16px;
     color: #888899;
     padding: 14px 16px 10px;
-    border-bottom: 1px solid #2a2a4a;
+    border-bottom: 2px solid #2a2a4a;
     letter-spacing: 1px;
 }
 
@@ -184,6 +192,7 @@
 .nsm-cons-section {
     font-family: 'Press Start 2P', monospace;
     font-size: 8px;
+    line-height: 16px;
     color: #666688;
     margin: 10px 0 6px;
     letter-spacing: 1px;
@@ -219,7 +228,8 @@
 
 .nsm-cons-severed {
     font-family: 'Press Start 2P', monospace;
-    font-size: 13px;
+    font-size: 16px;
+    line-height: 24px;
     color: #ff2200;
     text-align: center;
     padding: 14px 8px;
@@ -238,7 +248,8 @@
 
 .nsm-cons-rule-title {
     font-family: 'Press Start 2P', monospace;
-    font-size: 9px;
+    font-size: 8px;
+    line-height: 16px;
     color: #ffaa88;
     margin-bottom: 8px;
     letter-spacing: 0.5px;
@@ -248,7 +259,6 @@
     background: rgba(51, 17, 0, 0.4);
     border-left-color: #ff2200;
     color: #ff8855 !important;
-    font-weight: bold;
 }
 
 /* ── Action bar ─────────────────────────────────────────────────────────────── */
@@ -267,7 +277,8 @@
 
 .nsm-legend {
     display: flex;
-    gap: 22px;
+    align-items: center;
+    gap: 8px 22px;
     flex-wrap: wrap;
 }
 
@@ -308,7 +319,6 @@
 .nsm-svg .nsm-rule-line.nsm-rule-hover {
     opacity: 1 !important;
     stroke-width: 4px;
-    filter: drop-shadow(0 0 3px #ff7700);
 }
 
 .nsm-svg .nsm-rule-line.nsm-rule-unreviewed:not(.nsm-rule-hover) {
@@ -326,8 +336,24 @@
     display: flex;
     align-items: center;
     gap: 14px;
-    flex-wrap: wrap;
+    /* The hint sits beside the button (Fix round 1 M2): stacked, it took four rows of the
+       map's height at 800x600; phones still wrap (below) */
+    flex: 1 1 auto;
+    flex-wrap: nowrap;
     justify-content: flex-end;
+}
+
+/* Severed: the group shares the legend's row (the hint narrows) and takes a row of its own
+   only when there is less than 320 px left, as on a phone. */
+.nsm-sever-group.nsm-sever-group-severed {
+    flex: 1 1 0;
+    min-width: min(100%, 320px);
+}
+
+.nsm-sever-group-severed .nsm-sever-hint {
+    flex: 1 1 0;
+    min-width: 0;
+    text-align: right;
 }
 
 .nsm-sever-hint {
@@ -335,7 +361,8 @@
     font-size: 18px;
     line-height: 1.15;
     color: #9aa0b8;
-    max-width: 420px;
+    flex: 0 1 560px;
+    min-width: 0;
 }
 
 .nsm-sever-hint:empty {
@@ -347,8 +374,9 @@
 }
 
 .nsm-sever-btn {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 13px;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 24px;
     color: #ffffff;
     background: #880000;
     border: 3px solid #cc0000;
@@ -384,11 +412,31 @@
     color: #7b7b90;
 }
 
-.nsm-sever-btn-done {
-    background: #1c1c2a !important;
-    border-color: #3a3a55 !important;
-    color: #55556a !important;
-    cursor: default !important;
+/* After SEVER: CONTINUE takes SEVER's place and is the only way on, so it reads as the
+   primary action: the theme's button skin (.minigame-button in ui-themes.css) for border
+   and fill, the theme's accent colour for its label (as other primary actions), and the
+   hint beside it (severedHint) says what it does. Two classes, so the shared
+   .minigame-button type (minigames-framework.css) cannot shrink it. */
+.minigame-button.nsm-continue-btn {
+    /* GNF 16 like SEVER, whose place it takes (console buttons are GNF 16; Press Start stays on
+       its 8px grid, consoles review R2 m4) */
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 24px;
+    padding: 12px 18px;
+    letter-spacing: 1px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+[data-ui-theme] .minigame-button.nsm-continue-btn,
+[data-ui-theme] .minigame-button.nsm-continue-btn:hover {
+    color: var(--ui-accent);
+}
+
+.nsm-sever-btn[hidden],
+.nsm-continue-btn[hidden] {
+    display: none;
 }
 
 /* ── Confirmation modal ─────────────────────────────────────────────────────── */
@@ -399,7 +447,8 @@
     inset: 0;
     background: rgba(0, 0, 0, 0.88);
     justify-content: center;
-    align-items: center;
+    align-items: safe center;   /* a tall modal starts at the top instead of above it (consoles R3 m1) */
+    overflow-y: auto;
     z-index: 100;
 }
 
@@ -414,7 +463,6 @@
     max-width: 520px;
     width: 90%;
     text-align: center;
-    box-shadow: 0 0 50px rgba(204, 34, 0, 0.35);
 }
 
 .nsm-modal-icon {
@@ -425,10 +473,10 @@
 
 .nsm-modal-title {
     font-family: 'Press Start 2P', monospace;
-    font-size: 12px;
+    font-size: 16px;
     color: #ff4444;
     margin-bottom: 20px;
-    line-height: 1.5;
+    line-height: 24px;
 }
 
 .nsm-modal-body {
@@ -446,8 +494,9 @@
 }
 
 .nsm-modal-btn {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 14px;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 24px;
     padding: 14px 24px;
     cursor: pointer;
     border: 2px solid;
@@ -472,4 +521,97 @@
 .nsm-modal-yes:hover {
     background: #770000;
     border-color: #ff4400;
+}
+
+/* Windows under 1180px (map 840px + panel up to 320px): the consequence panel goes under the map; the map keeps its width and
+   scrolls sideways inside the body (critique B NSM1) */
+@media (max-width: 1180px) {
+    .nsm-body {
+        flex-direction: column;
+    }
+
+    .nsm-topology-area {
+        flex: 0 0 auto;
+        /* Stacked, the map no longer gets the panel's row height: tall enough for the clinical
+           zone's six devices at 16px (the zones are 84% of this less its padding) */
+        min-height: 480px;
+    }
+
+    .nsm-consequence-panel {
+        width: 100%;
+        max-width: none;
+        min-width: 0;
+        border-left: 0;
+        border-top: 2px solid #2a2a4a;
+        flex: 0 0 auto;
+        overflow: visible;
+    }
+
+    .nsm-consequence-body {
+        overflow: visible;
+    }
+
+    .nsm-header-bar {
+        flex-wrap: wrap;
+        gap: 8px 20px;
+    }
+}
+
+/* Phones: the action bar and SEVER button wrap inside the window (360px) */
+@media (max-width: 600px) {
+    .nsm-action-bar {
+        padding: 12px 10px;
+    }
+
+    .nsm-sever-group {
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .nsm-sever-btn {
+        flex: 0 1 auto;
+    }
+
+    .nsm-sever-hint {
+        max-width: 100%;
+    }
+
+    .nsm-sever-btn {
+        white-space: normal;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+}
+
+/* Phones held sideways: the pinned action bar (257px) left the map 29px. The whole scene scrolls
+   as one column instead (header, map, panel, action bar, SEVER) and the map keeps a usable
+   height; a map wider than the window still scrolls sideways inside the body */
+@media (max-height: 500px) {
+    .nsm-wrapper {
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+
+    .nsm-body {
+        flex: none;
+        overflow-x: auto;
+        overflow-y: hidden;
+    }
+}
+
+/* Windows up to 700px tall (800x600): the SEVER button may wrap to two lines so the hint
+   beside it needs fewer, and the strip's padding is trimmed; the map keeps the height */
+@media (max-height: 700px) and (min-width: 601px) {
+    .nsm-action-bar {
+        padding: 8px 20px;
+        gap: 8px 16px;
+    }
+
+    .nsm-sever-btn {
+        white-space: normal;
+        max-width: 260px;
+        padding: 8px 14px;
+    }
 }

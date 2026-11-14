@@ -1,7 +1,8 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 
-const DEFAULT_TITLE = 'Warranty Compliance Checklist — MC-2023-ALBE-007';
+// The case reference stays in the letterhead (page content), so the bar carries the name only
+const DEFAULT_TITLE = 'Warranty Compliance Checklist';
 
 const VERDICT_LABELS = {
     compliant: 'Compliant',
@@ -59,6 +60,9 @@ function setGlobalAndNotify(varName, value) {
 }
 
 export class WarrantyChecklistMinigame extends MinigameScene {
+    // Draws in the shared console window (UI decision X8): title bar and X come from there
+    static consoleWindow = true;
+
     constructor(container, params = {}) {
         super(container, {
             ...params,
@@ -73,8 +77,14 @@ export class WarrantyChecklistMinigame extends MinigameScene {
             ? (params.warranties || minigameData.warranties)
             : [];
 
+        this.caseRef = String(params.caseRef || minigameData.caseRef || '');
+
         this.verdicts = {};
         this.submitted = false;
+    }
+
+    consoleTitle() {
+        return this.params.title || DEFAULT_TITLE;
     }
 
     init() {
@@ -221,16 +231,21 @@ export class WarrantyChecklistMinigame extends MinigameScene {
 
         const prevScrollTop = this.gameContainer.querySelector('.wcc-doc-body')?.scrollTop || 0;
 
+        // The shared title bar carries the document's name: the paper repeats it only when the
+        // bar says something else (one look per concept)
+        const sameName = String(this.consoleTitle() || '').trim().toLowerCase() === DEFAULT_TITLE.toLowerCase();
+        const docTitle = sameName ? '' : `<div class="wcc-doc-title">${escapeText(DEFAULT_TITLE)}</div>`;
+
         this.gameContainer.innerHTML = `
             <div class="wcc-panel">
                 <div class="wcc-desk">
                     <div class="wcc-paper">
                         <div class="wcc-letterhead">
                             <h2 class="wcc-letterhead-title">Meridian Cyber Insurance</h2>
-                            <span class="wcc-letterhead-ref">MC-2023-ALBE-007</span>
+                            ${this.caseRef ? `<span class="wcc-letterhead-ref">${escapeText(this.caseRef)}</span>` : ''}
                         </div>
                         <div class="wcc-doc-header">
-                            <div class="wcc-doc-title">Warranty Compliance Checklist</div>
+                            ${docTitle}
                             <div class="wcc-doc-meta">
                                 <span>Albion Energy Storage Ltd</span>
                                 <span class="wcc-doc-status wcc-status-${escapeText(statusInfo.className)}">${escapeText(statusInfo.text)}</span>
@@ -240,14 +255,11 @@ export class WarrantyChecklistMinigame extends MinigameScene {
                                 <button id="wcc-submit-btn" class="wcc-header-btn wcc-header-btn-submit" type="button" ${submitDisabled}>${escapeText(submitLabel)}</button>
                             </div>
                         </div>
-                        <div class="wcc-doc-body">
+                        <div class="wcc-doc-body pixel-scroll">
                             ${emptyState}
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="wcc-footer">
-                <button id="wcc-close-btn" class="wcc-footer-btn" type="button">Close</button>
             </div>
         `;
 
@@ -260,11 +272,6 @@ export class WarrantyChecklistMinigame extends MinigameScene {
     }
 
     bindEvents() {
-        const closeBtn = this.gameContainer.querySelector('#wcc-close-btn');
-        if (closeBtn) {
-            this.addEventListener(closeBtn, 'click', () => this.complete(false));
-        }
-
         const submitBtn = this.gameContainer.querySelector('#wcc-submit-btn');
         if (submitBtn) {
             this.addEventListener(submitBtn, 'click', () => this.handleSubmit());

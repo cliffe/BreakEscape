@@ -140,6 +140,27 @@
     }
 }
 
+/* Short landscape windows (915x412): a compact item strip, the picture at its own 1x size
+   (48x96 for a door) in a row with the name, so the lock gets about 110px more of the window
+   (coordinator 5c) */
+@media (max-height: 560px) and (min-width: 769px) {
+    .lockpicking-item-section {
+        padding: 8px 16px;
+        margin-bottom: 4px;
+        gap: 16px;
+    }
+
+    .lockpicking-item-image {
+        min-width: 0;
+        min-height: 0;
+        max-height: 96px;
+    }
+
+    .lockpicking-item-info h4 {
+        margin-bottom: 8px;
+    }
+}
+
 /* Phones: the box is the canvas's own shape (580 x 340), so the instructions strip sits right
    under the lock, not under a box as tall as the game area (UI shell review M4). */
 @media (max-width: 768px) {

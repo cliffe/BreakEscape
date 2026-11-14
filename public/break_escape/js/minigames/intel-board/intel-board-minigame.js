@@ -150,14 +150,7 @@ export class IntelBoardMinigame extends SocialOverlayScene {
             : '';
         live.textContent = this._liveText;
 
-        const close = h('button', { type: 'button', class: 'se-overlay-close minigame-button ib-close',
-            'aria-label': 'Close', text: 'Close' });
-        this.addEventListener(close, 'click', (e) => {
-            e.preventDefault?.();
-            e.stopPropagation?.();
-            this.requestClose();
-        });
-        this.closeButton = close;
+        const close = this.buildCloseControl();
 
         const progress = m.labels.progress.replace('{n}', m.ready.length).replace('{total}', m.total);
         const head = h('header', { class: 'ib-head' },
@@ -190,14 +183,7 @@ export class IntelBoardMinigame extends SocialOverlayScene {
         live.textContent = this._liveText;
         this._liveEl = live;
 
-        const close = h('button', { type: 'button', class: 'se-overlay-close minigame-button ib-close',
-            'aria-label': 'Close', text: 'Close' });
-        this.addEventListener(close, 'click', (e) => {
-            e.preventDefault?.();
-            e.stopPropagation?.();
-            this.requestClose();
-        });
-        this.closeButton = close;
+        const close = this.buildCloseControl();
 
         const progress = d.complete
             ? `Exposure review complete. ${d.doneCount} of ${d.total} reduced.`
@@ -376,14 +362,7 @@ export class IntelBoardMinigame extends SocialOverlayScene {
         live.textContent = this._liveText;
         this._liveEl = live;
 
-        const close = h('button', { type: 'button', class: 'se-overlay-close minigame-button ib-close',
-            'aria-label': 'Close', text: 'Close' });
-        this.addEventListener(close, 'click', (ev) => {
-            ev.preventDefault?.();
-            ev.stopPropagation?.();
-            this.requestClose();
-        });
-        this.closeButton = close;
+        const close = this.buildCloseControl();
 
         const progress = e.complete
             ? `${e.title} complete.`
@@ -641,18 +620,19 @@ export class IntelBoardMinigame extends SocialOverlayScene {
             card.appendChild(h('div', { class: 'ib-influence', 'data-person': t.id }, bar.el));
         }
 
-        const found = h('ul', { class: 'ib-facts', 'aria-label': `Found about ${t.name}` });
-        for (const f of t.facts) {
-            found.appendChild(h('li', { class: 'ib-fact', 'data-fact': f.id },
-                icon('mark-tick'), h('span', { class: 'ib-fact-text', text: f.text })));
+        // C04: list each fact once. The "??? Not yet found" empty-slot rows duplicated the
+        // readiness checklist below (board-model emptySlots is slots.filter(!done).map(label)),
+        // so only the found facts go here; the missing ones show once, in the checklist, with
+        // their plain-English hint and the Stuck? link. Display only; the facts and how they
+        // unlock are unchanged.
+        if (t.facts.length) {
+            const found = h('ul', { class: 'ib-facts', 'aria-label': `Found about ${t.name}` });
+            for (const f of t.facts) {
+                found.appendChild(h('li', { class: 'ib-fact', 'data-fact': f.id },
+                    icon('mark-tick'), h('span', { class: 'ib-fact-text', text: f.text })));
+            }
+            card.appendChild(found);
         }
-        for (const label of t.emptySlots) {
-            found.appendChild(h('li', { class: 'ib-fact is-empty' },
-                icon('board-slot-empty'),
-                h('span', { class: 'ib-fact-text', text: `${label}: ???` }),
-                h('span', { class: 'ib-word', text: 'Not yet found' })));
-        }
-        card.appendChild(found);
 
         if (t.fromCall && t.fromCall.length) {
             card.appendChild(h('h4', { class: 'ib-subh', text: 'From the call' }));

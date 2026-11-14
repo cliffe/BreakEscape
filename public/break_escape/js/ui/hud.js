@@ -322,6 +322,12 @@ export function createPlayerHUD(scene) {
   
   // Store reference globally for easy access
   window.playerHUD = hud;
-  
+
+  // One lane per HUD message type (UI decision H1): placed from the start, not from the first
+  // bark. Loaded on demand so modules that import this one need no new file.
+  import('./hud-lanes.js').then(m => {
+    if (!window.__hudLanesDisabled && typeof window.MutationObserver === 'function') m.startHudLanes(document, window);
+  }).catch(e => console.debug('[hud-lanes] not started:', e));
+
   return hud;
 }

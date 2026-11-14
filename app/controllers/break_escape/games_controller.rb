@@ -26,7 +26,7 @@ module BreakEscape
 
     before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :capture_secrets, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :conclude_mission,
                                         :login, :logout, :lock_session, :login_accounts, :clone_card, :network, :network_plant, :network_unplug, :network_implant, :network_join,
-                                        :npc_frustration, :npc_workaround, :feed_post, :friendface_phone, :wear]
+                                        :npc_frustration, :npc_workaround, :feed_post, :friendface_phone, :wear, :se_landing_page]
     # A host may also route the game page under its own address (Hacktivity: /hacktivities/:event_id/play/mission/:id,
     # inside a Game event's web app scope). The game must belong to that event: any other pair is a 404.
     before_action :require_game_in_host_event, only: [:show]
@@ -94,9 +94,15 @@ module BreakEscape
     # login, logout and clone_card write sessions, sign-in failures and card copies
     # (access model, section 6), so they take the lock like unlock. network_plant and
     # network_unplug write footholds, the inventory and sessions (slice 9.3a, section 5).
+    # se_landing_page (phish evidence Route 1) records the build into seLandingPages and
+    # save!s the whole player_state. The client fires its POST right after the attach sync,
+    # so the two race: the unlocked POST read player_state before the sync committed, added
+    # its own key and saved its stale copy back, reverting the sync's globalVariables
+    # se_landing_pages.built to false (observed on the branch; main has no such route). It
+    # takes the lock so it reloads under it, like the others.
     around_action :with_game_lock, only: [:container, :update_room, :unlock, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :reset, :new_session, :inventory, :room,
                                           :login, :logout, :lock_session, :clone_card, :network_plant, :network_unplug, :network_implant, :network_join,
-                                          :npc_frustration, :npc_workaround, :feed_post, :wear]
+                                          :npc_frustration, :npc_workaround, :feed_post, :wear, :se_landing_page]
 
     # GET /games/new?mission_id=:id
     # Show VM set selection page for VM-required missions
@@ -193,6 +199,13 @@ module BreakEscape
     def show
       authorize @game if defined?(Pundit)
       @mission = @game.mission
+
+      # Stored-game soft-lock migration (GATED_DOOR_SERVER_CHECK_PLAN.md §10). show is room-agnostic
+      # and holds the full row, so this sees every split gated room in one pass before any room GET or
+      # currentRoom sync, and before this request's auto-unlock. It is read-only (no lock) for every
+      # game with nothing stuck, and takes its own row lock only for the one-time demotion of a stored
+      # soft-locked game, so show keeps its lock-free read-only cost in the common case.
+      @game.migrate_soft_locked_route_rooms!
 
       # Load player preference data for the in-game modal
       @player_preference = current_player_preference || create_default_preference
@@ -534,13 +547,18 @@ module BreakEscape
         # from scenario_data on every request.
         is_world_room = @game.awareness_world_room?(room_id)
 
-        unless is_start_room || is_unlocked || is_world_room
+        # A gated route room the player is slipping into (GATED_DOOR §3.2): served so the
+        # avatar and NPCs load, but not promoted to unlockedRooms, so its contents stay gated.
+        is_route_room = @game.in_npc_route_room?(room_id)
+
+        unless is_start_room || is_unlocked || is_world_room || is_route_room
           return render_error("Room not accessible: #{room_id}", :forbidden)
         end
 
         # Auto-add room to unlockedRooms when accessed
         # This ensures items in the room can be collected
-        if !is_unlocked
+        # A route room is deliberately NOT auto-unlocked (§3.2): promotion is earned, not a GET.
+        if !is_unlocked && !is_route_room
           @game.player_state['unlockedRooms'] ||= []
           @game.player_state['unlockedRooms'] << room_id unless @game.player_state['unlockedRooms'].include?(room_id)
           @game.save!
@@ -1137,10 +1155,39 @@ module BreakEscape
       # id, a copy only as viaCopy (UX devices R1)
       rfid_card_answer = method == 'rfid' && card_ids && !already_open ? @game.rfid_unlock_card_answer(target_type, target_id, card_ids) : nil
 
+      # Object-action gate (GATED_DOOR §3.6): an object in a served-but-unearned route room is
+      # refused before any write, so a locked container, its contents and its unlock credit stay
+      # gated until the room is promoted. The refusal is retryable: an honest player who just
+      # earned the pass (viaPass) may be one sync behind, so the client flushes a sync and re-posts
+      # (the object-path retry in unlock-system.js). It surfaces only if the room never promotes.
+      # Keyed on target_type so no door is ever gated here (a door into a route room is the split
+      # itself, §3.5). Placed before the transaction so the refusal writes nothing.
+      if target_type != 'door' && @game.object_in_unpromoted_route_room?(target_id)
+        return render json: { success: false, reason: 'room_not_reachable', retryable: true },
+                      status: :forbidden
+      end
+
       # Use transaction to ensure atomic update
       ActiveRecord::Base.transaction do
         if target_type == 'door'
-          room_data = serve_opened_room(target_id)
+          if @game.gated_route_room?(attempt, target_id) && !@game.room_unlocked?(target_id)
+            # Gated route-room split (§3.5): the NPC route opened the door for the player's
+            # slip-in, but the room is not yet earned. Record it in npcRouteRooms rather than
+            # unlockedRooms and serve it without unlock_room!, so its contents stay gated (§3.6).
+            # Still compose filtered_room_data and track_npc_encounters, or route-room NPCs go
+            # untracked until promotion.
+            @game.record_npc_route_room!(target_id)
+            room_data = @game.filtered_room_data(target_id)
+            track_npc_encounters(target_id, room_data)
+          else
+            # Credential path (GATED_DOOR §3.3b): capture "not yet earned" before serve_opened_room's
+            # unlock_room! adds the room, then credit viaCredential on the server possession result
+            # (never a client boolean). This also deletes the room from npcRouteRooms, closing the
+            # Chunk A interim where a credential unlock left the room in both lists.
+            credit_credential = @game.split_gated_door?(target_id) && !@game.room_unlocked?(target_id)
+            room_data = serve_opened_room(target_id)
+            @game.credit_via_credential!(target_id, method, card_ids) if credit_credential
+          end
 
           door_answer = {
             success: true,
@@ -1189,7 +1236,9 @@ module BreakEscape
               # Use the flag ref directly ("vm:flag_N") as the submitted identifier —
               # avoids collision with station-position-based flag_ids ("vm-flagN").
               flag_ref    = object_data['requires'] || ''
-              task_result = @game.complete_task!(task_id, { submittedFlags: [flag_ref] })
+              # trusted: false (a client-driven completion); the explicit keyword also keeps the
+              # positional validation_data hash unambiguous under Ruby 2.7 keyword separation.
+              task_result = @game.complete_task!(task_id, { submittedFlags: [flag_ref] }, trusted: false)
               completed_tasks << task_id if task_result[:success]
             end
             response[:completedTasks] = completed_tasks
@@ -1595,6 +1644,23 @@ module BreakEscape
       render json: body
     end
 
+    # POST /games/:id/se/landing_page
+    # Record a landing-page build server-side (phish evidence plan, Route 1). Body:
+    # { pageId, targetId, choices }. The server validates choices against the page's authored
+    # menus and recomputes the verdict itself (BreakEscape::PhishScore); the body carries no
+    # score. Nothing reads the store for the gate yet (plan build order, chunk 3). The raw
+    # params are passed through so the model's own type and menu checks bite a hostile body.
+    def se_landing_page
+      authorize @game if defined?(Pundit)
+
+      choices = params[:choices]
+      choices = choices.to_unsafe_h if choices.respond_to?(:to_unsafe_h)
+      input = { 'pageId' => params[:pageId], 'targetId' => params[:targetId], 'choices' => choices }
+
+      result = @game.build_landing_page!(input)
+      render json: result[:body], status: result[:status]
+    end
+
     # POST /games/:id/objectives/unlock
     # Record an aim or task the client unlocked from an ink tag or an
     # eventMapping (params: kind = 'aim' | 'task', objective_id). Only reveals; never
@@ -1642,7 +1708,11 @@ module BreakEscape
         validation_data[:currentCount] = params[:currentCount].to_i
       end
 
-      result = @game.complete_task!(task_id, validation_data)
+      # trusted: false — this is the client route; a server-completed-only task (a gate's
+      # creditOnPass completeTask) is refused here and completes only through the server's own
+      # credit path. The explicit keyword also keeps validation_data unambiguously positional
+      # under Ruby 2.7 keyword separation.
+      result = @game.complete_task!(task_id, validation_data, trusted: false)
 
       if result[:success]
         Rails.logger.info "[BreakEscape] Task completed: #{task_id}"
@@ -2117,12 +2187,34 @@ module BreakEscape
     def merge_last_write_wins_sections
       if params[:currentRoom]
         room = params[:currentRoom]
-        unless Array(@game.player_state['unlockedRooms']).include?(room) ||
-               Game.where(id: @game.id).pick(Arel.sql("scenario_data->>'startRoom'")) == room
-          return "Cannot enter locked room: #{room}"
+        # Accept currentRoom for a gated route room the player is slipping into (GATED_DOOR
+        # §3.3a), so the avatar and the saved room agree (no snap-back) and the no-vest slip-in
+        # works. Acceptance is never promotion: the viaPass credit below runs only when the
+        # gate's server-owned playerMayPassIf is true.
+        # Acceptance mirrors player_reached_room? (Game#may_sync_current_room?): unlockedRooms, a
+        # route room, the start room, or the awareness world room. The last admits an awareness
+        # episode's world room (e.g. ca12's "lobby"), which enterWorld places the player in without a
+        # door unlock so it is never in unlockedRooms; without it, enabling the currentRoom sync
+        # would refuse every sync while the learner stood in that room.
+        if @game.may_sync_current_room?(room)
+          @game.player_state['currentRoom'] = room
+          # viaPass credit (GATED_DOOR §3.3a): if this room is a served-but-unearned route room and
+          # the gate's server-owned pass global is true, promote it and apply the viaPass credit. A
+          # no-op (and no scenario read) on an ordinary room; the honest no-vest slip-in fails the
+          # pass check and stays a route room. Runs inside the sync_state row-lock transaction.
+          @game.credit_via_pass_on_sync!(room)
+        else
+          # R4 MINOR 1: a room outside the acceptance set is a forge (or a future bespoke placement
+          # the room-load invariant does not cover). Skip ONLY the currentRoom update and its viaPass
+          # credit -- never save or credit a refused room -- and report it in notSaved so the rest of
+          # this batch (globalVariables, notes, captures, health and the rest) still commits. The old
+          # behaviour returned a refusal, which rolled the whole batch back and 403'd it; with
+          # currentRoom now a live sync field, a persistent refusal would re-send the whole batch on
+          # every sync forever (SYNC SIZE) and never advance any saved section. The client confirms
+          # currentRoom on a notSaved (so it does not re-send the same refused room) and sends a room
+          # again only when it changes. Globals and every other section keep their own guards.
+          @not_saved << 'currentRoom'
         end
-
-        @game.player_state['currentRoom'] = room
       end
 
       if params[:globalVariables].respond_to?(:to_unsafe_h)

@@ -669,7 +669,8 @@
     position: fixed;
     left: 8px;
     top: auto;
-    bottom: calc(108px + var(--tray-scrollbar, 0px));
+    /* hud-lanes.js sets --hearts-lift when Block/Punch would meet them */
+    bottom: calc(108px + var(--tray-scrollbar, 0px) + var(--hearts-lift, 0px));
   }
 }
 
@@ -1031,6 +1032,31 @@
   filter: brightness(1.3) var(--ui-glow-filter);
 }
 
+/* R2 m1: the shredded-document close reuses the framework .minigame-close-button
+   but carries the shared .se-overlay-close class so it must draw the flat red SE X,
+   the same look as the 14 social overlays, not the themed steel skin. The two-class
+   selector (0,3,0) beats the themed rule above (0,2,0); only an element with both
+   classes (the SE scenes) is affected, so the themed X is unchanged elsewhere. */
+[data-ui-theme] .minigame-close-button.se-overlay-close {
+  border-style: solid;
+  border-width: 4px;
+  border-image: none;
+  border-color: #c0392b;
+  background: #e74c3c;
+  color: #fff;
+  filter: none;
+}
+[data-ui-theme] .minigame-close-button.se-overlay-close:hover {
+  background: #c0392b;
+  color: #fff;
+  filter: none;
+}
+[data-ui-theme] .minigame-close-button.se-overlay-close:active {
+  background: #a93226;
+  color: #fff;
+  filter: none;
+}
+
 /* Dark theme surface under the coloured text: the base style's bright green
    or red fill made the themed text unreadable */
 [data-ui-theme] .minigame-success-message,
@@ -1058,6 +1084,26 @@
 
 [data-ui-theme] .objectives-panel.collapsed {
   max-height: calc(40px + 2 * var(--ui-frame-px));
+}
+
+/* Phones: the one-line pill takes the small square frame, not the 18px panel frame, so the
+   aim's text has the room (review R1 M2). Same test as ui/hud-lanes.js isCompactViewport. */
+@media (max-width: 899.98px), (max-height: 500px) {
+  [data-ui-theme] .objectives-panel.collapsed {
+    border-width: var(--ui-square-px);
+    border-image-source: var(--ui-square-image);
+    border-image-slice: var(--ui-square-slice) fill;
+    border-image-width: var(--ui-square-px);
+    max-height: calc(40px + 2 * var(--ui-square-px));
+  }
+}
+
+/* Phones held upright: the pill's aim may take two lines, so the panel is sized from its content
+   instead of the one-line cap above (review R3 m2; the same test as objectives.css) */
+@media (max-width: 899.98px) and (min-height: 501px) and (orientation: portrait) {
+  [data-ui-theme] .objectives-panel.collapsed {
+    max-height: none;
+  }
 }
 
 [data-ui-theme] .objectives-header {
@@ -1295,6 +1341,43 @@
 [data-ui-theme] .notification.error   { box-shadow: inset 4px 0 0 var(--ui-danger); }
 [data-ui-theme] .notification-title { color: var(--ui-accent); font-family: var(--ui-heading-font); }
 [data-ui-theme] .notification-close { color: var(--ui-text-dim); }
+
+/* --- Bark toasts (UI decision B2 option A): a phone text takes the toasts' small frame with
+       its green stripe; speech in the building takes the caption's frame, as they share the
+       message lane --- */
+[data-ui-theme] .npc-bark--phone {
+  border-style: solid;
+  border-width: var(--ui-square-px);
+  border-image-source: var(--ui-square-image);
+  border-image-slice: var(--ui-square-slice) fill;
+  border-image-width: var(--ui-square-px);
+  background: none;
+  color: var(--ui-text);
+  image-rendering: pixelated;
+}
+[data-ui-theme] .npc-bark--phone:hover { background: none; filter: brightness(1.15); }
+[data-ui-theme] .npc-bark--speech {
+  border-style: solid;
+  border-width: var(--ui-frame-px);
+  border-image-source: var(--ui-frame-image);
+  border-image-slice: var(--ui-frame-slice);
+  border-image-width: var(--ui-frame-px);
+  border-image-repeat: var(--ui-frame-repeat, stretch);
+  background: var(--ui-surface);
+  background-clip: padding-box;
+  color: var(--ui-text);
+  image-rendering: pixelated;
+}
+[data-ui-theme] .npc-bark-dismiss { color: var(--ui-text-dim); }
+[data-ui-theme] .npc-bark-clear-all {
+  border-style: solid;
+  border-width: var(--ui-square-px);
+  border-image-source: var(--ui-square-image);
+  border-image-slice: var(--ui-square-slice) fill;
+  border-image-width: var(--ui-square-px);
+  background: none;
+  color: var(--ui-text);
+}
 
 /* --- Interaction choice menu (several things under the pointer); its own
        styles are injected at run time, hence the id in each selector --- */

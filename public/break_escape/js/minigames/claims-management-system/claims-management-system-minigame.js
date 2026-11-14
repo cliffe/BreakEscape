@@ -135,6 +135,11 @@ function normalizeStateWrites(rawStateWrites) {
 }
 
 export class ClaimsManagementSystemMinigame extends MinigameScene {
+    // Draws in the shared console window (UI decision X8): title bar and X come from there.
+    // Its nav, content and relevance panes scroll, so the window takes its full size.
+    static consoleWindow = true;
+    static consoleWindowFill = true;
+
     constructor(container, params = {}) {
         super(container, {
             ...params,
@@ -149,9 +154,19 @@ export class ClaimsManagementSystemMinigame extends MinigameScene {
         this.sections = normalizeSections(params.sections || minigameData.sections);
         this.stateWrites = normalizeStateWrites(params.stateWrites || minigameData.stateWrites);
         this.minigameKey = String(params.lockable?.id || params.id || 'claims_management_system');
+        // The bar's subtitle comes from the scenario's minigameData; none when absent
+        this.subtitleText = String(params.subtitle || minigameData.subtitle || '');
         this.printEnabled = params.printEnabled !== false && minigameData.printEnabled !== false;
         this.activeSectionId = this.sections[0]?.id || null;
         this.viewedSections = new Set();
+    }
+
+    consoleTitle() {
+        return this.params.title || DEFAULT_TITLE;
+    }
+
+    consoleSubtitle() {
+        return this.subtitleText || '';
     }
 
     getViewedSectionStore() {
@@ -382,13 +397,6 @@ export class ClaimsManagementSystemMinigame extends MinigameScene {
             });
         });
 
-        const closeButton = this.gameContainer.querySelector('#cms-close-button');
-        if (closeButton) {
-            this.addEventListener(closeButton, 'click', () => {
-                this.complete(false);
-            });
-        }
-
         const printButton = this.gameContainer.querySelector('#cms-print-button');
         if (printButton) {
             this.addEventListener(printButton, 'click', () => {
@@ -412,11 +420,9 @@ export class ClaimsManagementSystemMinigame extends MinigameScene {
         const headerStatus = this.getHeaderStatus(reviewedCount, totalCount);
 
         this.gameContainer.innerHTML = `
-            <div class="cms-panel">
+            <div class="cms-panel pixel-scroll">
                 <div class="cms-header">
                     <div class="cms-header-left">
-                        <h2 class="cms-title">${escapeText(this.params.title || DEFAULT_TITLE)}</h2>
-                        <div class="cms-subtitle">MC-2023-ALBE-007 | Coverage Analysis Workspace</div>
                         <div class="cms-progress-wrap">
                             <div class="cms-progress-label">Review Progress: ${reviewedCount}/${totalCount} sections</div>
                             <div class="cms-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progressPercent}">
@@ -428,11 +434,11 @@ export class ClaimsManagementSystemMinigame extends MinigameScene {
                 </div>
 
                 <div class="cms-body">
-                    <nav class="cms-nav">
+                    <nav class="cms-nav pixel-scroll">
                         ${this.sections.map((section) => this.renderNav(section)).join('')}
                     </nav>
 
-                    <main class="cms-content">
+                    <main class="cms-content pixel-scroll">
                         ${this.renderSummaryStrip(activeSection)}
                         ${this.renderSectionBody(activeSection)}
                     </main>
@@ -441,8 +447,7 @@ export class ClaimsManagementSystemMinigame extends MinigameScene {
                 </div>
 
                 <div class="cms-footer">
-                    <button id="cms-close-button" class="cms-button cms-button-secondary" type="button">Close</button>
-                    <button id="cms-print-button" class="cms-button cms-button-primary" type="button" ${this.printEnabled ? '' : 'disabled'}>Print Excerpt</button>
+                    <button id="cms-print-button" class="minigame-button cms-print-button" type="button" ${this.printEnabled ? '' : 'disabled'}>Print Excerpt</button>
                 </div>
             </div>
         `;

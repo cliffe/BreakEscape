@@ -501,6 +501,58 @@ async function signInScreen() {
     return mg;
 }
 
+test('UI PC 2 (E06): the chosen account, the fields, Sign in and the message are one card; the tiles alone show a plain prompt line and no card', async () => {
+    const mg = await signInScreen();
+    mg.start?.();
+    const card = document.querySelector('.pc-screen-area #signin-card.signin-card');
+    assert.ok(card, 'one card on the PC screen');
+    // Before an account is chosen: the tiles and a plain prompt line; the card is not shown
+    assert.equal(card.hidden, true, 'no card (empty frame) on the tiles alone');
+    const prompt = document.getElementById('signin-prompt');
+    assert.equal(prompt.hidden, false);
+    assert.equal(prompt.textContent, 'Choose an account.');
+    assert.ok(!card.contains(prompt), 'the prompt sits outside the card');
+    assert.ok(!card.contains(document.querySelector('#signin-tiles')), 'the tiles are outside the card');
+    document.querySelector('.signin-tile[data-tile-index="0"]').click();
+    for (const sel of ['.signin-selected-headshot', '#signin-selected', '#signin-change', '#password-field', '#toggle-password', '#submit-password', '#signin-message']) {
+        assert.ok(card.contains(document.querySelector(sel)), `${sel} is in the card`);
+    }
+    assert.equal(card.hidden, false);
+    assert.equal(prompt.hidden, true, 'the prompt line goes once an account is chosen');
+    // A result message on the tiles (a lockout) shows in the card, not as the prompt
+    mg.signInState.selected = null;
+    mg.renderSignInForm({ quiet: true });
+    mg.setSignInMessage('Too many attempts.', 'error');
+    assert.equal(card.hidden, false, 'a result message is shown in the card');
+    assert.equal(prompt.hidden, true);
+    // Nothing to show: no empty frame
+    mg.setSignInMessage('');
+    mg.signInState.selected = null;
+    mg.signInState.other = false;
+    mg.renderSignInForm({ quiet: true });
+    mg.setSignInMessage('');
+    assert.equal(card.hidden, true, 'an empty card is hidden');
+    mg.cleanup?.();
+});
+
+test('UI PC 2 (E06): the card CSS: one 2px frame, no chips inside it, the plain password panel the same', () => {
+    const t = css('password-minigame.css');
+    const sec = t.slice(t.indexOf('/* ── One sign-in card (UI PC 2'));
+    assert.ok(sec.length > 100);
+    const card = sec.match(/\.pc-screen-area \.signin-card,\s*\.pc-screen-area \.pc-lock-panel \{[^}]*\}/)[0];
+    assert.match(card, /border: 2px solid #2a3a48;/);
+    assert.match(card, /background: #101820;/);
+    const noChip = (re) => { const r = sec.match(re)[0]; assert.match(r, /background: none;/); assert.match(r, /border: 0;/); };
+    noChip(/\.pc-screen-area \.signin-card \.signin-selected:not\(:empty\) \{[^}]*\}/);
+    noChip(/\.pc-screen-area \.signin-card \.signin-field-row label,\s*\.pc-screen-area \.pc-lock-panel \.password-input-container label \{[^}]*\}/);
+    noChip(/\.pc-screen-area \.signin-card \.signin-message,\s*\.pc-screen-area \.pc-lock-panel \.password-message \{[^}]*\}/);
+    noChip(/\.pc-screen-area \.pc-lock-panel \.pc-screen-note \{[^}]*\}/);
+    const prompt = sec.match(/\.pc-screen-area \.signin-prompt \{[^}]*\}/)[0];
+    assert.match(prompt, /border: 0;/, 'the prompt has no frame');
+    assert.match(prompt, /background: #101820;/, 'a flat plate so it reads over the wallpaper');
+    assert.doesNotMatch(sec, /border-radius|box-shadow|gradient|rgba\(/);
+});
+
 async function desktop({ showPostit = true, observations = 'A hot desk.', contents = null } = {}) {
     document.body.innerHTML = '<div id="mg"></div>';
     window.inventory = { items: [] };
@@ -556,8 +608,13 @@ test('UX slice 6: a locked session\'s sign-in screen says it is locked; an open 
         window.MinigameFramework.currentMinigame = mg;
         mg.init();
         assert.equal(document.querySelector('.signin-current').textContent.trim(), want);
+        // Fix round 1 (m4): a locked screen marks itself, so a narrow phone folds the tiles
+        assert.equal(document.querySelector('.signin-mode').classList.contains('signin-locked'), locked);
         mg.cleanup?.();
     }
+    const t = css('password-minigame.css');
+    assert.match(t, /\.pc-monitor\[data-compact\] \.signin-mode\.signin-chosen\.signin-locked \.signin-tiles,\s*\.pc-monitor\[data-compact\] \.signin-mode\.signin-chosen\.signin-locked \.signin-captured \{\s*display: none;/);
+    assert.match(t, /\.signin-chosen\.signin-locked \.signin-change \{\s*display: inline-block;/);
 });
 
 test('the desktop\'s taskbar shows the signed-in NPC\'s headshot (x1), the start panel at x2 (UX slice 6)', async () => {
@@ -997,8 +1054,12 @@ test('R3 M1 / UX 2b0: a remote sign-in\'s Captured sign-ins is a solid note with
             assert.equal(cs.borderTopWidth, '2px');
             const tile = window.getComputedStyle(document.querySelector('.signin-captured-tile'));
             assert.equal(tile.borderTopWidth, '2px', 'the tile\'s 2px edge, as at the keyboard');
+            // UI PC 2 (E06): the labels sit inside the one sign-in card, with no slab of their own
             const label = window.getComputedStyle(document.querySelector('.signin-field-row label'));
-            assert.equal(label.borderTopWidth, '2px', 'the labels are bordered as the other slabs');
+            assert.equal(label.borderTopWidth, '0px', 'no slab round a label inside the card');
+            assert.ok(document.querySelector('.signin-card .signin-field-row label'));
+            assert.equal(window.getComputedStyle(document.querySelector('.signin-card')).borderTopWidth, '2px', 'the card has the 2px frame');
+            assert.ok(!document.querySelector('.signin-card .signin-captured'), 'the captures stay outside the card');
         } finally {
             unsheet();
         }
@@ -1152,6 +1213,97 @@ test('R4 m1: back from the Notepad, a file read from a desktop reopens in its fr
         window.pendingTextFileReturn = null;
         restore();
     }
+});
+
+test('UI PC 2 (E08): the window X in the title bar closes the file only; Esc too; the bezel X closes the PC', async () => {
+    const restore = sizeWindow(1400, 1000);
+    const was = { MinigameFramework: window.MinigameFramework, networkLinks: window.networkLinks };
+    try {
+        const a = await desktop();
+        const pcScreen = a.pcScreenExtras().pcScreen;
+        const back = { containerItem: a.containerItem, contents: [{ id: 'staff_mail', name: 'Mail export.txt', type: 'text_file' }], isTakeable: false };
+        a.cleanup?.();
+        window.MinigameFramework = { currentMinigame: null, registeredScenes: {}, endMinigame: () => {}, startMinigame: () => {} };
+        let containerReturns = 0;
+        window.returnToContainerAfterNotes = () => { containerReturns++; window.pendingContainerReturn = null; };
+        const landed = [];
+        window.networkLinks = { landed: (...args) => { landed.push(args); return {}; } };
+        const open = () => {
+            document.body.innerHTML = '<div id="mg"></div>';
+            const mg = new TextFileMinigame(document.getElementById('mg'), { fileName: 'Mail export.txt', itemId: 'staff_mail', fileContent: 'Line one', lockable: { scenarioData: { type: 'text_file' }, pcScreen } });
+            window.MinigameFramework.currentMinigame = mg;
+            mg.init();
+            mg.start();
+            return mg;
+        };
+
+        // The window X: in the navy title bar, after the file name, a button with a name
+        let mg = open();
+        const winX = document.querySelector('.pc-file-window .share-folder-titlebar > .pc-window-close');
+        assert.ok(winX, 'the window X is in the title bar');
+        assert.equal(winX.getAttribute('aria-label'), 'Close file');
+        assert.equal(winX.previousElementSibling.className, 'share-folder-path', 'after the file name');
+        assert.ok(document.querySelector('.pc-monitor-bezel > #minigame-close'), 'the bezel X stays');
+        window.pendingContainerReturn = back;
+        winX.click();
+        assert.equal(mg.closedByPlayer, true);
+        assert.notEqual(mg.closeWholePc, true);
+        mg.cleanup();
+        window.MinigameFramework.currentMinigame = null;
+        await settle(150);
+        assert.equal(containerReturns, 1, 'the window X goes back to the desktop');
+
+        // Esc: the same as the window X
+        mg = open();
+        window.pendingContainerReturn = back;
+        document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        assert.equal(mg.closedByPlayer, true);
+        assert.notEqual(mg.closeWholePc, true);
+        mg.cleanup();
+        window.MinigameFramework.currentMinigame = null;
+        await settle(150);
+        assert.equal(containerReturns, 2, 'Esc goes back to the desktop');
+
+        // The bezel X: the whole PC, so no return to the desktop
+        mg = open();
+        window.pendingContainerReturn = back;
+        document.querySelector('.pc-monitor-bezel > #minigame-close').click();
+        assert.equal(mg.closedByPlayer, true, 'still the player\'s own close');
+        assert.equal(mg.closeWholePc, true);
+        mg.cleanup();
+        window.MinigameFramework.currentMinigame = null;
+        await settle(150);
+        assert.equal(containerReturns, 2, 'no return to the desktop');
+        assert.equal(window.pendingContainerReturn, null);
+        assert.deepEqual(landed, [], 'a local PC lands no network trip');
+
+        // The bezel X on a remote desktop's file: the trip lands as the desktop's own close
+        mg = open();
+        window.pendingContainerReturn = { ...back, containerItem: { scenarioData: { type: 'pc', remote: { footholdId: 'jack_comms_port' } } } };
+        document.querySelector('.pc-monitor-bezel > #minigame-close').click();
+        mg.cleanup();
+        window.MinigameFramework.currentMinigame = null;
+        await settle(150);
+        assert.equal(containerReturns, 2);
+        assert.deepEqual(landed, [['desktop', 'close', { pcId: 'hot_desk' }]]);
+    } finally {
+        window.MinigameFramework = was.MinigameFramework;
+        window.networkLinks = was.networkLinks;
+        window.pendingContainerReturn = null;
+        restore();
+    }
+});
+
+test('UI PC 2 (E08): the window X is pixel art: a 2px bevel, square corners, the cross at x2, a 44px touch target', () => {
+    const t = css('text-file-minigame.css');
+    const rule = t.match(/\.pc-monitor button\.pc-window-close \{[^}]*\}/)[0];
+    assert.match(rule, /border: 2px solid;/);
+    assert.doesNotMatch(rule, /border-radius/, 'square corners (no radius anywhere in the monitor section)');
+    assert.match(rule, /background-size: 16px 14px;/, 'the 8x7 cross at x2');
+    assert.match(rule, /image-rendering: pixelated;/);
+    assert.match(rule, /width: 28px;[\s\S]*height: 24px;/);
+    assert.doesNotMatch(rule, /rgba\(|gradient|box-shadow: [^n]/);
+    assert.match(t, /\.pc-monitor button\.pc-window-close::after \{[^}]*inset: -8px -10px -12px -10px;/, '44x44 to touch, 8px short at the top to clear the bezel X (final n1)');
 });
 
 test('R4 m1: a note taken from a container still goes through the container\'s return first', async () => {
@@ -1346,4 +1498,16 @@ test('R2 m1: a panel entry is an 18 px icon box with 1 px vertical padding', () 
     const item = sheet.match(/\.pc-monitor button\.pc-start-item \{[^}]*\}/)[0];
     assert.match(item, /padding:\s*1px 6px/);
     assert.match(sheet.match(/\.pc-start-item-icon \{\s*width: 26px;[^}]*\}/)[0], /height:\s*18px/);
+});
+
+test('final n1: the window X touch area stays 44px tall but leaves a gap to the bezel X above it', () => {
+    const sheet = css('text-file-minigame.css');
+    const m = sheet.match(/\.pc-monitor button\.pc-window-close::after\s*\{[^}]*inset:\s*([^;]+);/);
+    assert.ok(m, 'the hit area rule is there');
+    const [top, right, bottom, left] = m[1].trim().split(/\s+/).map((v) => Math.abs(parseFloat(v)));
+    assert.ok(top + 24 + bottom >= 44, 'the target is at least 44px tall');
+    assert.ok(right + 28 + left >= 44, 'and at least 44px wide');
+    // Measured at 390x844, 360x640, 667x375, 844x390 and 1400x900: the bezel X's bottom edge is
+    // at least 12px above the window X's top edge. The hit area may use up to 8 of them.
+    assert.ok(top <= 8, 'the target leaves at least 4px to the bezel X');
 });
