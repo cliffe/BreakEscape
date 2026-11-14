@@ -212,13 +212,6 @@ export function textParts(text, factIds, labelFor) {
     return parts;
 }
 
-/** Blanks that have no held option. Names the blank, not a value. */
-export function readinessLines(facts, optionsByFact) {
-    return facts
-        .filter((fact) => (optionsByFact[fact.factId] || []).length === 0)
-        .map((fact) => `${factLabel(fact.factId, fact.label)}: nothing held yet`);
-}
-
 /**
  * The call can start once every blank that has options is filled. A blank with
  * nothing held does not block: that line cannot be filled, and the call still
