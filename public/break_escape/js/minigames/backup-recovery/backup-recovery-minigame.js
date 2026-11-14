@@ -77,14 +77,11 @@ function escapeText(value) {
 }
 
 export class BackupRecoveryMinigame extends MinigameScene {
-    // Its frame keeps a bar at the bottom for Cancel (minigames-framework.css)
-    static controlsOverlay = true;
+    // Draws in the shared console window (UI decision X8): title bar and X come from there
+    static consoleWindow = true;
 
-    // The X sits inside the console frame, beside the header (critique B X4)
-    static closeInsideFrame = true;
-
-    closeAnchor() {
-        return this.gameContainer?.querySelector?.('.backup-recovery-shell') || this.gameContainer;
+    consoleTitle() {
+        return this.getMinigameData().consoleTitle || 'NORTHGATE TRUST // BACKUP RECOVERY CONSOLE';
     }
 
     constructor(container, params) {
@@ -588,7 +585,6 @@ export class BackupRecoveryMinigame extends MinigameScene {
             `;
         }).join('');
 
-        const consoleTitle = this.getMinigameData().consoleTitle || 'NORTHGATE TRUST // BACKUP RECOVERY CONSOLE';
         const slots = this.getKeySlots();
         const slotsMarkup = slots.length === 0 ? '' : `
                     <ul class="backup-recovery-slots">
@@ -608,7 +604,7 @@ export class BackupRecoveryMinigame extends MinigameScene {
 
         this.gameContainer.innerHTML = `
             <div class="backup-recovery-shell pixel-scroll">
-                <div class="backup-recovery-header">${escapeText(consoleTitle)}${slotsMarkup}</div>
+                ${slotsMarkup ? `<div class="backup-recovery-header">${slotsMarkup}</div>` : ''}
 
                 <div class="backup-recovery-tiles" role="list">
                     ${tiles}

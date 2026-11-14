@@ -45,6 +45,13 @@ body:has([data-minigame="phone-chat"]) #notification-container {
     transform: translateY(0);
 }
 
+/* Stepped aside while a finished-task line needs the toast lane (ui/hud-lanes.js, review R2 M4);
+   its countdown waits and it comes back after. Important: utilities.css .show is display block
+   !important. */
+.notification.hud-lane-yield {
+    display: none !important;
+}
+
 .notification.info {
     border-left: 4px solid #3498db;
 }
@@ -94,6 +101,45 @@ body:has([data-minigame="phone-chat"]) #notification-container {
     height: 4px;   /* two UI pixels */
     background-color: rgba(255, 255, 255, 0.5);
     width: 100%;
+}
+
+/* Phones (UI decision H1 option A): the toast lane shows one toast at a time (notifications.js
+   maxShownToasts), two lines of message at most so it never covers the room. A warning or an
+   error explains a refusal and may take three; a verbatim toast (a password to copy) is never
+   cut. ui/hud-lanes.js sets body.hud-compact. */
+body.hud-compact .notification {
+    padding: 10px 40px 10px 14px;
+    margin-bottom: 8px;
+}
+body.hud-compact .notification-title {
+    font-size: 16px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+body.hud-compact .notification:not(.verbatim) .notification-message {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+}
+body.hud-compact .notification.warning:not(.verbatim) .notification-message,
+body.hud-compact .notification.error:not(.verbatim) .notification-message {
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+}
+
+/* A short line with no title: a finished task or aim on a phone (objectives-manager.js). The
+   whole text shows, wrapping (two lines for most task names), so it is never cut (R1 M2). */
+body.hud-compact .notification.brief {
+    padding: 8px 40px 8px 14px;
+}
+body.hud-compact .notification.brief .notification-message {
+    display: block;
+    -webkit-line-clamp: none;
+    line-clamp: none;
+    overflow: visible;
 }
 
 /* Confirmation dialog */

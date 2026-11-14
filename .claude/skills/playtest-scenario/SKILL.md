@@ -443,6 +443,22 @@ How it is decided (changed October 2026): the bridge records which object, NPC o
 
 Two limits. A door's own click zone calls its handler directly, so a door opened that way leaves no record; for a door whose lock minigame opened, the bridge reads the minigame's door instead. When neither source exists the reply carries **`targetUnverified:true`**: a minigame, overlay or event confirmed the click but nothing proves it is the target you asked for, so check what opened yourself. Overlays: see the `gameDisplay`/`gameConfirm` rule below under the command loop; a tutorial or session prompt, or a message that appears on a timer, comes back `ok:false, reason:"unrelated-overlay"`. A minigame that opens during the approach walk with no recorded target is accepted when it is the target door's own lock, and otherwise is `ok:false, reason:"unrelated-minigame"` (a timed or forced event, or an earlier interaction's delayed open). `enter` passes that reason through. Door overlays (`gameAlert`) never count as a click's effect.
 
+### Where the click lands, and what a move can report (November 2026)
+
+`interact(id)` clicks a point inside the target's own hit area that no other interactable claims (it used to click the object's top-left corner, which could sit inside a neighbour: sis02's HMI-OPS-01 opened the status board that way). Read these fields on every reply:
+
+- **`picked`** is what the engine's handler actually got. **`picked.matches:false` is a failed step**, whatever opened. `matches:null` means the engine's target had no id: check what opened before recording a pass, as with `targetUnverified`.
+- **`aim.clean:false`** means the target shares every point with `aim.sharedWith`. A menu may appear, and `interact` answers it by name.
+
+Use `moveToNear`, not `moveTo`, to get beside a target: it walks without sending any click. A move can come back `ok:false` for these reasons:
+
+- **`move-triggered-interaction`**: a click the harness sent to walk landed on something and opened it. That is a harness fault, not a finding: close what opened and reposition with `moveToNear`.
+- **`move-interrupted-by-game-event`**: the game started something on the way (a conversation, a call, a sight challenge, a timed event). Any player gets that, so it is not a failed step: deal with it, since it may be the mission's next beat, then repeat the move. Any range or contest warning the move had reached is kept in `arrival`.
+- **`blocking-ui`** names what is in the way (`blockingUi.kind`): an interaction menu to choose from or close, or an overlay to dismiss.
+- **`movement-prevented`**: a script has switched movement off. Finish whatever holds the player.
+
+To test that progress survives closing the tab, close with `page.close({runBeforeUnload:true})`. Playwright's `browser.close()` skips pagehide, so it behaves like a crash and loses the last few seconds by design.
+
 ### Inventory items: `openInventoryItem`
 
 `{"cmd":"openInventoryItem","item":"phone"}` clicks the item in the inventory tray the way a player does. `item` is a tray index, an item id, a type (`phone`, `workstation`, `notepad`) or a name (exact, then substring); `{"cmd":"inventory"}` lists the tray with those fields. Matching goes index, id, exact name, type, then name substring; a tier that hits more than one item fails with `ambiguous-item` and the candidates (use the id or index). The reply names what opened (`opened:{id,title}`) and `matchedBy`. If another element covers the item the reply is `item-obscured`. Keys on a key ring are not separate tray items; open the ring. Notes you pick up are not tray items: they go into the Notepad, so open `notepad` and read them there. A forced conversation (briefing, debrief) blocks the tray, and the reply says `blocking-ui` or `minigame-active`. A droppable item (the lab's kit devices, the parcel) opens a menu, "Drop here" and "Examine": `openInventoryItem` then replies `menu:{title,items}` and leaves it open, and `{"cmd":"inventoryAct","item":"kit_deviceB","entry":"Drop here"}` clicks the item and the entry in one step (`menu-entry-disabled` with a reason in a doorway or between rooms). `inventoryAct` reports a confirm overlay as confirmed without clicking Confirm; follow it with `dismiss` "Confirm".

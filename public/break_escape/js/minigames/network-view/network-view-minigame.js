@@ -240,6 +240,15 @@ export function shareLockable(row, footholdId) {
 }
 
 export class NetworkViewMinigame extends MinigameScene {
+    // Draws in the shared console window (UI decision X8): the link's name is the title, the
+    // subtitle line is the bar's subtitle, the X is the shared one. The list wraps its rows.
+    static consoleWindow = true;
+    static consoleSubtitleEssential = true;
+
+    consoleTitle() {
+        return this.params?.title || 'Network link';
+    }
+
     constructor(container, params) {
         // The X and Esc close the view; no Close button under it (code review R1 m4)
         super(container, { ...params, showCancel: false });
@@ -287,27 +296,25 @@ export class NetworkViewMinigame extends MinigameScene {
      */
     buildFrame() {
         const game = this.gameContainer;
-        if (!game?.parentNode || typeof document === 'undefined') return;
-        const frame = document.createElement('div');
-        frame.className = 'network-view-frame';
-        game.parentNode.insertBefore(frame, game);
+        const win = game?.parentNode;
+        if (!win || typeof document === 'undefined') return;
+        // Status lines (joined, message, stale) sit in a strip above the scrolling list
         const header = document.createElement('div');
         header.className = 'network-view-header';
+        header.hidden = true;
         const headerBody = document.createElement('div');
         headerBody.className = 'network-view-header-body';
         header.appendChild(headerBody);
-        const close = this.container.querySelector('.minigame-close-button');
-        if (close) header.appendChild(close);
-        frame.appendChild(header);
+        win.insertBefore(header, game);
         game.classList?.add('pixel-scroll');
-        frame.appendChild(game);
         const more = document.createElement('div');
         more.className = 'network-view-more';
         more.hidden = true;
         more.setAttribute('aria-hidden', 'true');
         more.innerHTML = `<span class="network-view-more-arrow"></span><span>${MORE_BELOW_TEXT}</span>`;
-        frame.appendChild(more);
-        this.frameElement = frame;
+        game.after(more);
+        this.frameElement = win;
+        this.headerStrip = header;
         this.headerElement = headerBody;
         this.moreElement = more;
         this.addEventListener(game, 'scroll', () => this.updateScrollCue());
@@ -533,14 +540,13 @@ export class NetworkViewMinigame extends MinigameScene {
         const status = this.statusLine();
         const rows = this.rows();
         const icon = v.via === 'wifi' ? `<img class="network-view-title-icon" src="${WIFI_ICON}" alt="">` : '';
+        // The name (with its down tag) and the subtitle are the shared bar's title and subtitle
+        this.setConsoleTitle(`${title}${linkDown.tag ? ` ${linkDown.tag}` : ''}`, subtitle || '');
         const headerHtml = `
-                    <h4 class="network-view-title">${icon}<span>${escapeHtml(title)}</span>${linkDown.tag ? ` ${this.tagHtml(linkDown)}` : ''}</h4>
-                    ${subtitle ? `<p class="network-view-subtitle">${escapeHtml(subtitle)}</p>` : ''}
-                    ${status ? `<p class="network-view-status">${escapeHtml(status)}</p>` : ''}
+                    ${status ? `<p class="network-view-status">${icon}<span>${escapeHtml(status)}</span></p>` : ''}
                     ${this.message ? `<p class="network-view-message">${escapeHtml(this.message)}</p>` : ''}
                     ${this.stale ? `<p class="network-view-stale">${STALE_TEXT}</p>` : ''}${this.unplugHintHtml()}`;
-        // The header sits above the scroll area (R2 m2); with no frame (no DOM parent) it
-        // heads the list as before
+        // The strip sits above the scroll area; with no strip (no DOM parent) it heads the list
         const inList = !this.headerElement;
         if (!inList) this.showHeader(headerHtml);
         this.gameContainer.innerHTML = `
@@ -591,7 +597,9 @@ export class NetworkViewMinigame extends MinigameScene {
     /** The header's text (title, subtitle, lines) with the Unplug button after it, when offered. */
     showHeader(html) {
         if (!this.headerElement) return;
-        this.headerElement.innerHTML = `${html}${this.unplugHtml()}`;
+        const full = `${html}${this.unplugHtml()}`;
+        this.headerElement.innerHTML = full;
+        if (this.headerStrip) this.headerStrip.hidden = !full.trim();
         this.bindUnplug(this.headerElement);
     }
 

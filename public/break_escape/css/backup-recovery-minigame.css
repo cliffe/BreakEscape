@@ -1,21 +1,5 @@
-.backup-recovery-minigame-container {
-    padding: 16px;
-}
-
-.backup-recovery-game-container {
-    width: 80vw;
-    max-width: 1600px;
-    height: auto;
-    max-height: 100%;
-    padding: 0;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    background: transparent;
-    box-shadow: none;
-    box-sizing: border-box;
-}
-
+/* The shared console window (css/minigames-framework.css) is the frame and the title bar;
+   the scene root fills its body. */
 .backup-recovery-shell {
     --mg07-bg: #1a1f22;
     --mg07-panel-bg: #232b2f;
@@ -27,16 +11,14 @@
     --mg07-muted: #a8b4bb;
 
     background: var(--mg07-bg);
-    border: 2px solid var(--mg07-border);
     color: var(--mg07-text);
-    height: auto;
-    max-height: 100%;
     min-height: 0;
     padding: 16px;
     box-sizing: border-box;
     overflow: auto;
     display: grid;
-    grid-template-rows: auto auto auto auto;
+    grid-auto-rows: auto;
+    align-content: start;
     gap: 10px;
 }
 
@@ -44,17 +26,13 @@
     border: 2px solid var(--mg07-border);
     background: #111518;
     color: var(--mg07-text);
-    font-family: 'Press Start 2P', monospace;
-    font-size: 16px;
-    line-height: 24px;
     padding: 12px;
-    margin-right: 44px;
 }
 
 /* Key slots: what material the console currently holds (scenarioData `keySlots`). */
 .backup-recovery-slots {
     list-style: none;
-    margin: 10px 0 0 0;
+    margin: 0;
     padding: 0;
     display: grid;
     gap: 2px;
@@ -216,7 +194,9 @@
     display: grid;
     gap: 10px;
     align-content: start;
-    overflow: auto;
+    /* No scroller of its own: the scene root scrolls as one (Fix round 1 m2; an overflow:auto
+       grid item may shrink to a 24px slot under the shared body) */
+    overflow: visible;
 }
 
 .backup-recovery-panel-header {
@@ -297,19 +277,11 @@
 }
 
 @media (max-width: 860px) {
-    .backup-recovery-minigame-container {
-        padding: 8px;
-    }
-
-    .backup-recovery-game-container {
-        width: 100%;
-    }
-
     .backup-recovery-shell {
         padding: 12px;
     }
 
-    .backup-recovery-header {
+    .backup-recovery-shell--outcome .backup-recovery-header {
         font-size: 8px;
         line-height: 16px;
     }
@@ -340,6 +312,13 @@
 
 .backup-recovery-shell--outcome {
     grid-template-rows: auto auto;
+}
+
+/* The outcome heading is page content (what happened), not the window title */
+.backup-recovery-shell--outcome .backup-recovery-header {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 16px;
+    line-height: 24px;
 }
 
 .backup-recovery-outcome-panel {

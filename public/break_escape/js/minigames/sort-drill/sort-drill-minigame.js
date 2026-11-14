@@ -39,6 +39,9 @@ function el(tag, className, text) {
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 
 export class SortDrillMinigame extends SocialOverlayScene {
+    // C-X2: take the shared SE window frame
+    static framed = true;
+
     constructor(container, params) {
         super(container, params);
         this.config = null;
@@ -147,7 +150,7 @@ export class SortDrillMinigame extends SocialOverlayScene {
         // design); say so once so the learner is not surprised by a fresh card set (E17-m5). An
         // explicit empty override (strings.reloadNote: '') suppresses the line.
         const reload = this.config.strings?.reloadNote === '' ? '' : this.text('reloadNote');
-        if (reload) p.appendChild(el('p', 'sd-reload-note', reload));
+        if (reload) p.appendChild(el('p', 'sd-reload-note se-notice', reload));
         const start = el('button', 'sd-start sd-button minigame-button', this.text('start'));
         start.type = 'button';
         this.addEventListener(start, 'click', () => this._showStep('sort'));

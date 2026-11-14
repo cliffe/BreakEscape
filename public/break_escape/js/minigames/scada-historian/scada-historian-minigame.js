@@ -41,8 +41,9 @@ const Y_MAX = 42;
 const INSPECT_MS = 3000;
 
 export class ScadaHistorianMinigame extends MinigameScene {
-    // The X sits inside the frame (MinigameScene.closeInsideFrame)
-    static closeInsideFrame = true;
+    // Draws in the shared console window (UI decision X8): title bar and X come from there
+    static consoleWindow = true;
+    static consoleWindowFill = true;
 
     constructor(container, params = {}) {
         const sd = params.sprite?.scenarioData?.minigameData || {};
@@ -120,6 +121,9 @@ export class ScadaHistorianMinigame extends MinigameScene {
         return points ? findAnomaly(points, this._cfg) : null;
     }
 
+    consoleTitle() { return this._title; }
+    consoleSubtitle() { return this._subtitle; }
+
     // ── Layout ─────────────────────────────────────────────────────────────
 
     _renderLayout() {
@@ -129,23 +133,8 @@ export class ScadaHistorianMinigame extends MinigameScene {
 
         const wrap = this._el('div', 'sh-wrapper');
 
-        // Header
-        const header = this._el('div', 'sh-header');
-        const titleGroup = this._el('div', '');
-        titleGroup.style.display = 'flex';
-        titleGroup.style.alignItems = 'baseline';
-        titleGroup.style.gap = '0';
-        titleGroup.style.flexWrap = 'wrap';
-        const titleEl = this._el('span', 'sh-header-title');
-        titleEl.textContent = displayDashes(this._title);
-        const subtitleEl = this._el('span', 'sh-header-subtitle');
-        subtitleEl.textContent = displayDashes(this._subtitle);
-        titleGroup.appendChild(titleEl);
-        titleGroup.appendChild(subtitleEl);
-        // No [CLOSE] of its own: the framework X (inside the frame) and Esc close the
-        // console; a second close beside the X sat under it (slice 7 R1)
-        header.appendChild(titleGroup);
-        wrap.appendChild(header);
+        // The title and subtitle are in the shared console bar (consoleTitle / consoleSubtitle);
+        // no [CLOSE] of its own: the shared X and Esc close the console
 
         // Body
         const body = this._el('div', 'sh-body');

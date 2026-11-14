@@ -198,14 +198,13 @@ function _renderBlocks(blocks, globals) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export class ForensicDataPlatformMinigame extends MinigameScene {
-    // The X sits inside the frame (MinigameScene.closeInsideFrame)
-    static closeInsideFrame = true;
+    // Draws in the shared console window (UI decision X8): title bar and X come from there.
+    // Its tabs and evidence panel scroll, so the window takes its full size.
+    static consoleWindow = true;
+    static consoleWindowFill = true;
+
     constructor(container, params = {}) {
-        super(container, {
-            ...params,
-            showCancel: true,
-            cancelText: params.cancelText || 'Close Terminal'
-        });
+        super(container, { ...params });
         this._tabsSeen  = new Set();
         this._confirmed = false;
 
@@ -220,6 +219,15 @@ export class ForensicDataPlatformMinigame extends MinigameScene {
             console.warn(`[FDP] Unknown tabSet "${tabSetKey}" and no tabs in minigameData: no tabs will render.`);
         }
         return tabSetKey ? (TAB_SETS[tabSetKey]?.tabs || []) : [];
+    }
+
+    // The platform's name and the case reference are the shared bar's title and subtitle
+    consoleTitle() {
+        return this.params.title || 'Forensic Data Platform';
+    }
+
+    consoleSubtitle() {
+        return this.params.caseRef || '';
     }
 
     // ── Lifecycle ────────────────────────────────────────────────────────────
@@ -253,8 +261,6 @@ export class ForensicDataPlatformMinigame extends MinigameScene {
     // ── Layout ───────────────────────────────────────────────────────────────
 
     _renderLayout() {
-        const title        = this.params.title        || 'Forensic Data Platform';
-        const caseRef      = this.params.caseRef      || '';
         const confirmLabel = this.params.confirmLabel || 'CONFIRM CAUSAL CHAIN';
         const confirmHint  = this.params.confirmHint  || 'Review all evidence before confirming.';
 
@@ -264,14 +270,10 @@ export class ForensicDataPlatformMinigame extends MinigameScene {
 
         this.gameContainer.innerHTML = `
 <div class="fdp-wrap">
-  <div class="fdp-header">
-    <span class="fdp-title">${escapeTitle(displayDashes(title))}</span>
-    <span class="fdp-case">${plain(caseRef)}</span>
-  </div>
   <div class="fdp-tab-bar" id="fdp-tab-bar">
     ${tabButtons}
   </div>
-  <div class="fdp-panel" id="fdp-panel"></div>
+  <div class="fdp-panel pixel-scroll" id="fdp-panel"></div>
   <div class="fdp-footer">
     <button class="fdp-confirm-btn" id="fdp-confirm-btn" disabled>
       ${plain(confirmLabel)}
@@ -395,7 +397,6 @@ export function startForensicDataPlatformMinigame(scenarioData = {}, extraParams
         return;
     }
     window.MinigameFramework.startMinigame('forensic-data-platform', null, {
-        showCancel: true,
         ...scenarioData,
         ...extraParams,
         onComplete: (success, result) => {

@@ -4,42 +4,16 @@
    Font: VT323 (a typed form in a pixel face). Palette aligned to CDF/FDP.
    ═══════════════════════════════════════════════════════════ */
 
-/* ── Outer containers (full-screen, matching FDP/CDF pattern) ── */
-
-.wcc-minigame-container {
-    background: #0d1117;
-    color: #c9d1d9;
-    font-family: 'VT323', monospace;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    overflow: hidden;
-}
-
-.wcc-minigame-game-container {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    overflow: hidden;
-    padding: 0;
-}
-
-/* Framework game container override for correct flex behaviour */
-.wcc-minigame-container .minigame-game-container {
-    flex: 1;
-    min-height: 0;
-    height: auto;
-    margin: 0;
-}
-
 /* ── Panel ────────────────────────────────────────────────── */
 
 .wcc-panel {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    flex: 1 1 auto;
     min-height: 0;
-    background: transparent;
+    background: #0d1117;
+    color: #c9d1d9;
+    font-family: 'VT323', monospace;
     box-sizing: border-box;
 }
 
@@ -67,9 +41,7 @@
 
 .wcc-letterhead {
     background: #1a233a;
-    padding: 9px 52px 9px 20px;
-    /* Tall enough that the shell X (15px from the top, 30px high) sits wholly inside the bar */
-    min-height: 62px;
+    padding: 9px 20px;
     box-sizing: border-box;
     display: flex;
     flex-wrap: wrap;
@@ -397,4 +369,16 @@
     color: #555;
     font-family: 'VT323', monospace;
     font-size: 20px;
+}
+
+/* Short windows and phones (Fix round 1 M2): the letterhead, status and gate note left the
+   rows 20 to 84px, so the paper scrolls as one column in the console body instead */
+@media (max-height: 500px), (max-width: 600px) {
+    .wcc-panel,
+    .wcc-desk,
+    .wcc-paper,
+    .wcc-doc-body {
+        flex: none;
+        overflow: visible;
+    }
 }

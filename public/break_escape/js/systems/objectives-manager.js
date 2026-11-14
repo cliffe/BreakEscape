@@ -1434,12 +1434,20 @@ export class ObjectivesManager {
     if (window.playUISound) {
       window.playUISound('objective_complete');
     }
+    // A phone: the pill blinks and the task's full text shows as a short line in the notify lane,
+    // wrapping as it needs, with no title over it (review R1 M2)
+    if (window.objectivesPanel?.foldToast?.('Done', task.title)) {
+      window.gameAlert?.(`✓ ${task.title}`, 'success', '', 5000, { brief: true });
+      return;
+    }
     if (window.gameAlert) {
       window.gameAlert(`✓ ${task.title}`, 'success', 'Task Complete');
     }
   }
   
   showTaskUnlockedNotification(task) {
+    // A phone: the pill blinks and its count and sheet show the new task (H1 option A)
+    if (window.objectivesPanel?.foldToast?.('New task', task.title)) return;
     if (window.gameAlert) {
       window.gameAlert(`New Task: ${task.title}`, 'info', 'Objective Updated');
     }
@@ -1449,12 +1457,19 @@ export class ObjectivesManager {
     if (window.playUISound) {
       window.playUISound('objective_complete');
     }
+    // A phone: as for a task, a short line (the pill moves on to the next aim)
+    if (window.objectivesPanel?.foldToast?.('Aim complete', aim.title)) {
+      window.gameAlert?.(`🏆 ${aim.title}`, 'success', '', 5000, { brief: true });
+      return;
+    }
     if (window.gameAlert) {
       window.gameAlert(`🏆 ${aim.title}`, 'success', 'Objective Complete!');
     }
   }
   
   showAimUnlockedNotification(aim) {
+    // A phone: the pill blinks and its line shows the new aim (H1 option A)
+    if (window.objectivesPanel?.foldToast?.('New aim', aim.title)) return;
     if (window.gameAlert) {
       window.gameAlert(`New Objective: ${aim.title}`, 'info', 'Mission Updated');
     }

@@ -182,7 +182,14 @@ export function audit({ rootSel }) {
             if (!isText) continue;
             const first = (cs.fontFamily.split(',')[0] || '').replace(/["']/g, '').trim().toLowerCase();
             if (!ALLOWED.includes(first)) { out.push({ kind: 'font', where: path(el), detail: cs.fontFamily.slice(0, 40) }); continue; }
-            const size = px(cs.fontSize);
+            // SVG text is sized in viewBox units: the size on screen is that times the SVG's
+            // own scale (the network architecture diagram draws at 2x, NAD1)
+            let size = px(cs.fontSize);
+            const svg = el.ownerSVGElement;
+            if (svg?.viewBox?.baseVal?.width) {
+                const k = svg.getBoundingClientRect().width / svg.viewBox.baseVal.width;
+                if (k > 0) size = Math.round(size * k * 100) / 100;
+            }
             fontSizes[`${first} ${size}`] = (fontSizes[`${first} ${size}`] || 0) + 1;
             if (PIXEL.includes(first)) {
                 if (Math.abs(size - Math.round(size)) > 0.01) out.push({ kind: 'font-size', where: path(el), detail: `${first} ${size}px fractional` });

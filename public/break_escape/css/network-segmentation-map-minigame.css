@@ -14,6 +14,9 @@
     position: relative;
 }
 
+/* The confirm overlay covers the scene's own area */
+.nsm-game-container { position: relative; }
+
 /* ── Header bar ─────────────────────────────────────────────────────────────── */
 
 .nsm-header-bar {
@@ -21,18 +24,10 @@
     justify-content: flex-start;
     align-items: center;
     gap: 20px;
-    padding: 10px 60px 10px 20px; /* right padding clears the × close button */
+    padding: 10px 20px;
     background: #111122;
     border-bottom: 2px solid #2a2a4a;
     flex-shrink: 0;
-}
-
-.nsm-title-text {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 8px;
-    line-height: 16px;
-    color: #8888cc;
-    letter-spacing: 1px;
 }
 
 .nsm-status-badge {
@@ -282,7 +277,8 @@
 
 .nsm-legend {
     display: flex;
-    gap: 22px;
+    align-items: center;
+    gap: 8px 22px;
     flex-wrap: wrap;
 }
 
@@ -340,7 +336,10 @@
     display: flex;
     align-items: center;
     gap: 14px;
-    flex-wrap: wrap;
+    /* The hint sits beside the button (Fix round 1 M2): stacked, it took four rows of the
+       map's height at 800x600; phones still wrap (below) */
+    flex: 1 1 auto;
+    flex-wrap: nowrap;
     justify-content: flex-end;
 }
 
@@ -362,7 +361,8 @@
     font-size: 18px;
     line-height: 1.15;
     color: #9aa0b8;
-    max-width: 420px;
+    flex: 0 1 560px;
+    min-width: 0;
 }
 
 .nsm-sever-hint:empty {
@@ -565,8 +565,13 @@
 
     .nsm-sever-group {
         justify-content: flex-start;
+        flex-wrap: wrap;
         min-width: 0;
         max-width: 100%;
+    }
+
+    .nsm-sever-btn {
+        flex: 0 1 auto;
     }
 
     .nsm-sever-hint {
@@ -593,5 +598,20 @@
         flex: none;
         overflow-x: auto;
         overflow-y: hidden;
+    }
+}
+
+/* Windows up to 700px tall (800x600): the SEVER button may wrap to two lines so the hint
+   beside it needs fewer, and the strip's padding is trimmed; the map keeps the height */
+@media (max-height: 700px) and (min-width: 601px) {
+    .nsm-action-bar {
+        padding: 8px 20px;
+        gap: 8px 16px;
+    }
+
+    .nsm-sever-btn {
+        white-space: normal;
+        max-width: 260px;
+        padding: 8px 14px;
     }
 }

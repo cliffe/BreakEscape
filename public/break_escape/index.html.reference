@@ -103,9 +103,6 @@
         </div>
     </div>
 
-    <!-- Popup Overlay -->
-    <div class="popup-overlay"></div>
-
     <!-- Main Game JavaScript Module -->
     <script type="module" src="js/main.js?v=47"></script>
     

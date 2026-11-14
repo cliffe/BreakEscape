@@ -82,7 +82,9 @@
      at these sizes. GNF lacks Cyrillic ј and ѕ, which fall back to Source Sans 3. */
   --se-font-pixel: 'GNF', 'Source Sans 3', 'Segoe UI', Arial, sans-serif;
   --se-font-readable: var(--se-font-pixel);
-  /* URLs, domains, email addresses and handles stay Source Sans 3, so look-alike letters
-     (Cyrillic е, rn for m) can be read the way a real browser or mail client shows them. */
-  --se-font-address: 'Source Sans 3', 'Segoe UI', Arial, sans-serif;
+  /* C-X8 (user pick, 2026-11-14): GNF everywhere, so URLs, domains, email addresses and handles
+     use the same pixel face as the rest of the SE text. Source Sans 3 stays as a fallback for the
+     few glyphs GNF lacks. Every address is kept at 16px or larger, so look-alike pairs (rn for m)
+     stay legible and do not merge the way they would below 14px. */
+  --se-font-address: 'GNF', 'Source Sans 3', 'Segoe UI', Arial, sans-serif;
 }

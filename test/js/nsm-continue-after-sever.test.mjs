@@ -96,7 +96,7 @@ test('after SEVER, the X ends with complete(true)', (t) => {
     t.mock.timers.enable({ apis: ['setTimeout'] });
     const mg = setup();
     sever(mg);
-    q('#nsm-close').click();
+    q('#minigame-close').click();
     assert.deepEqual(ends, [true]);
     assert.ok(!events.some(e => e.name === 'minigame_failed'), 'no minigame_failed after SEVER');
 });
@@ -112,7 +112,7 @@ test('after SEVER, Esc ends with complete(true)', (t) => {
 test('before SEVER, the X and Esc end with complete(false)', (t) => {
     t.mock.timers.enable({ apis: ['setTimeout'] });
     setup();
-    q('#nsm-close').click();
+    q('#minigame-close').click();
     assert.deepEqual(ends, [false]);
     assert.equal(events.at(-1).name, 'minigame_failed');
     setup();
@@ -140,7 +140,7 @@ test('reopen after SEVER: severed state with CONTINUE, which (and the X) give co
     q('#nsm-continue-btn').click();
     assert.deepEqual(ends, [true]);
     setup({ network_isolated: true });
-    q('#nsm-close').click();
+    q('#minigame-close').click();
     assert.deepEqual(ends, [true]);
     t.mock.timers.tick(10000);
     assert.deepEqual(ends, [true], 'nothing else closes it');
