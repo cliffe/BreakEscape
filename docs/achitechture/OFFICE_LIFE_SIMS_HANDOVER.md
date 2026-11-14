@@ -1,6 +1,69 @@
 # Office life sims showcase: handover
 
-## Lead's state, 2026-11-14, second lead (read this first)
+## Lead's state, 2026-11-14, third lead (read this first)
+
+Branch `build/ol-sims`, worktree `p-ol-sims`, tip after 78b0b8fc5. Main merged up to 896ec3cd8
+(E7 to E9 chatter, phish A to C, ScenarioBinding); **main e1303fc0c (format step 6a-1 part 1, schema
+marks in `scripts/scenario-schema.json` plus tests) is not yet merged**; expect at most a schema
+conflict. No sub-agent is running. No server is listening on 3093 to 3095. Worktrees: `p-ol-sims`
+(the branch); `p-ol-sims5` (detached at ed0a5cd1f, a clean copy used only for SIMS-5 live runs so they
+did not see another agent's uncommitted edits; move it to the tip or remove it); `p-ol-sims2` (fully
+contained, no further work).
+
+Integrator decision applied (3f4068967): the three dead `cooler` pools on test_needs_sims became
+Amara's and Tom's own `coffee` pools; Marek's was dropped; Amara's "Lovely and cold, this." became
+"Lovely and hot, this." to fit coffee. The V10 test pins `[]` for test_needs_sims.
+
+Slice status (B/M/m per round, all fixed unless said):
+- SIMS-1, SIMS-2: done, 0/0/0.
+- SIMS-3: R4 (light, design and server) 0/1/1 (`asked_now` reset in `hub`; the bare-setGlobal sync
+  wording); R5 (inside the SIMS-4 R3 design review) 0/0/0. **Closed.**
+- SIMS-4: R2 design 0/2/4 (crossing counts measured the first-visit exchange; the job-cleared beat
+  contradicted what is seen; m3, the faint flicker, withdrawn as an owner call), server 0/0/1. M2 fix:
+  Jodie gains an `upkeep` need met only by new staff lockers; once `exchange_job_called` is heard she
+  walks there after her break, and finishing sets `job_cleared`, ticks `see_light_fixed` and steadies
+  the light. R3 design 0/0/5, server 0/0/1, fixed in 248293e6e. **Closed.** Proof-tool fixes: the 4570
+  miss was a probe race (`talkNeil` fell back to a clock when no `conversation_closed:neil` arrived);
+  it now needs the real event, retries once, else exits 3 as a setup failure.
+  Counts with E7 to E9 in (games in the build log): job beat 5/5; boiler crossing 5/5, 3 staff lines
+  heard each; cooler crossing 5/5, 2 heard each; none spent unheard. The speech-lock beat is
+  re-scoped (E7 removed what it measured): game 4932, 66 office turns, 0 blocked, 0 staff lines
+  spent. The original 16-minute rerun (4604, 4644) only reached 2 office turns, hence the re-scope.
+- SIMS-5 (V10): R1 code review 1/3/5 (grumble rule did not mirror the engine; office topics with no
+  object or magnet passed; colleague-phone rules; announce rule), all fixed in 248293e6e, **not yet
+  re-reviewed**. V10 then flagged five dead own `grumble` pools (amara, tom, grace, rosa, marek);
+  all five removed. Corpus run, 180 files: no error, no V10 warning. Node set 658/658.
+  **Live proof, partial:** office beats in games 4646, 4687, 4702, 4705, 4935: spoken and heard were
+  scenario coffee and cooler, grumble, news_cake, cake, Tom's phone pool, `grumble_off` (4935),
+  exchanges tom_parcel and rosa_rota, calls supplier and take_message. Fixtures (scratch folders, now
+  in tmp/delete/) 4668 to 4674: all seven warned pools stayed silent for 10 minutes while each control
+  pool spoke. Still open: `grumble_gone`, `grumble_printer_off`, `phone_message`, Amara's own coffee
+  line seen as hers, the 20-minute staff-room count in earshot and 10 minutes out of earshot. The
+  fixtures predate the 248293e6e rule changes; rerun any whose warning changed.
+  Gotcha: the coffee and copier sockets open a confirm dialog; click "Switch off". Escape cancels it,
+  and the global does not change (the first SIMS-5 runs fell into this). Scripts and notes:
+  scratchpad `officelife-sims/s5-full/` and `s5-full2/` (HANDOVER.md in each, lib.mjs has the toggle
+  helper).
+
+Owner items (build log tables): E-carry-422 (game 4558, `remove_object office_mugs` 422 in the
+kitchen); Neil's page click hitting the copier (SIMS-3 pick overlap); E-reload-ko-pos (a KO saves only
+`isKO`/`currentHP`, not position); the faint staff-room flicker (a 90 ms dip on one panel, hard to see
+at game zoom). Art: a stepladder or tube-swap pose for Jodie; a tube or toolbox icon for `upkeep`
+(stand-in `icon:npc-work`); the earlier list below stands.
+
+Spoken lines this session (no audio exists for the showcase yet): Amara 1 changed; Marek 1 cooler line
+removed; five own grumble lines removed (one each: Amara, Tom, Grace, Rosa, Marek); Jodie 3 new then
+2 reworded at R3; Keith 2 changed. The build log sections "SIMS-4 R2 and SIMS-3 R4 review fixes" and
+"SIMS-5 R1 and SIMS-4 R3 review fixes" list the text.
+
+Next, in order:
+1. Merge main e1303fc0c; rerun `bin/test-js` and the validator on test_needs_sims.
+2. Finish the SIMS-5 live proof above (port 3095, keyless), from a worktree at the tip.
+3. SIMS-5 R2: a code reviewer and a design reviewer with live proof; fix; a third round only if R2
+   has a blocker or major (stop rule: at least two rounds, stop once one is clean of both).
+4. README SIMS-5 rows, build log and this handover.
+
+## Second lead's state, 2026-11-14 (superseded above)
 
 Branch `build/ol-sims` (worktree `p-ol-sims`, tip after 1d7025a5d): SIMS-1 to SIMS-5, with
 build/ol-sims-2 (SIMS-4) merged in at 5118f584d and main 768f8d09c merged at bf6d89338.
