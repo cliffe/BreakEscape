@@ -1313,3 +1313,149 @@ test('a coupled partner of a knocked-out NPC takes its break alone', () => {
     assert.ok(log.some(e => e.npc === 'gil' && e.ev === 'used'), 'gil used the kettle');
     assert.equal(log.some(e => e.ev === 'exchange_started'), false, 'no pairing with the downed partner');
 });
+
+
+// ── SIMS-2 (OLMP E6): an arrival counts only where the NPC is ───────────────────
+// A needs arrival counts for a job phase or a walk home only when the NPC is within
+// ARRIVAL_NEAR_PX (48) of that move's destination and echoes the move's id. A short path
+// that ends before the cell (an async path answer, a path stopped at a door) is logged
+// `arrival_far` and re-issued, not taken as "using the object from the doorway". These tests
+// read the raw state (sys.states.get) because getState() strips job.dest and job.moveId.
+
+// Drive the office clerk to a coffee goto_target on an arrive:false world (no auto-arrival).
+function driveToGoto() {
+    const cfg = office();
+    cfg.npcs.clerk.rec.needs.caffeine.jitterPct = 0;
+    const w = makeWorld({ ...cfg, arrive: false });
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    let guard = 0;
+    while (sys.states.get('clerk').job?.phase !== 'goto_target' && guard++ < 4000) sys.step(NEEDS_TICK_MS);
+    return { sys, w };
+}
+
+test('SIMS-2: a matching arrival 200 px off is re-issued, then counts when near', () => {
+    const { sys, w } = driveToGoto();
+    const job = sys.states.get('clerk').job;
+    const dest = { ...job.dest }, id0 = job.moveId;
+    const movesBefore = w.calls.moves.filter(m => m.id === 'clerk').length;
+    w.pos.clerk.x = dest.x - 200; w.pos.clerk.y = dest.y;
+    sys.onArrived('clerk', 'needs', { x: dest.x - 200, y: dest.y, moveId: id0 });
+    sys.step(NEEDS_TICK_MS);
+    assert.ok(sys.getLog().some(e => e.ev === 'arrival_far' && e.phase === 'goto_target'), 'far arrival logged');
+    assert.equal(sys.states.get('clerk').job?.phase, 'goto_target', 'still heading there, not using');
+    const id1 = sys.states.get('clerk').job.moveId;
+    assert.notEqual(id1, id0, 'the move was re-issued with a fresh id');
+    assert.ok(w.calls.moves.filter(m => m.id === 'clerk').length > movesBefore, 'a new move was issued');
+    w.pos.clerk.x = dest.x; w.pos.clerk.y = dest.y;
+    sys.onArrived('clerk', 'needs', { x: dest.x, y: dest.y, moveId: id1 });
+    sys.step(NEEDS_TICK_MS);
+    assert.equal(sys.states.get('clerk').job?.phase, 'using', 'counts when near');
+});
+
+test('SIMS-2: two far arrivals in one phase fail the job and walk it home', () => {
+    const { sys, w } = driveToGoto();
+    const dest = { ...sys.states.get('clerk').job.dest };
+    const far = () => { const id = sys.states.get('clerk').job.moveId; w.pos.clerk.x = dest.x - 300; w.pos.clerk.y = dest.y; sys.onArrived('clerk', 'needs', { x: dest.x - 300, y: dest.y, moveId: id }); sys.step(NEEDS_TICK_MS); };
+    far();
+    assert.equal(sys.getState('clerk').mode, 'job', 'still on the job after one far arrival');
+    far();
+    assert.equal(sys.getLog().filter(e => e.ev === 'arrival_far').length, 2, 'two far arrivals');
+    assert.ok(w.calls.emits.some(e => e.name === 'npc_job_failed:clerk' && e.data.reason === 'arrival_far'), 'job failed with arrival_far');
+    assert.equal(sys.getState('clerk').mode, 'returning', 'walks home');
+});
+
+test('SIMS-2: an arrival echoing another move\'s id is ignored and dropped', () => {
+    const { sys, w } = driveToGoto();
+    const job = sys.states.get('clerk').job;
+    const dest = { ...job.dest }, id0 = job.moveId;
+    const movesBefore = w.calls.moves.filter(m => m.id === 'clerk').length;
+    w.pos.clerk.x = dest.x; w.pos.clerk.y = dest.y;
+    sys.onArrived('clerk', 'needs', { x: dest.x, y: dest.y, moveId: id0 + 999 });
+    sys.step(NEEDS_TICK_MS);
+    assert.ok(sys.getLog().some(e => e.ev === 'arrival_ignored' && e.moveId === id0 + 999 && e.want === id0), 'logged arrival_ignored');
+    assert.equal(sys.states.get('clerk').job?.phase, 'goto_target', 'not taken as arrived');
+    assert.equal(w.calls.moves.filter(m => m.id === 'clerk').length, movesBefore, 'no re-issue for a stale id');
+});
+
+test('SIMS-2: an arrival with no id counts when near (transitional) and is re-issued when far', () => {
+    let { sys, w } = driveToGoto();
+    let dest = { ...sys.states.get('clerk').job.dest };
+    w.pos.clerk.x = dest.x; w.pos.clerk.y = dest.y;
+    sys.onArrived('clerk', 'needs');
+    sys.step(NEEDS_TICK_MS);
+    assert.equal(sys.states.get('clerk').job?.phase, 'using', 'no-id arrival near the cell counts');
+    ({ sys, w } = driveToGoto());
+    dest = { ...sys.states.get('clerk').job.dest };
+    const id0 = sys.states.get('clerk').job.moveId;
+    w.pos.clerk.x = dest.x - 200; w.pos.clerk.y = dest.y;
+    sys.onArrived('clerk', 'needs');
+    sys.step(NEEDS_TICK_MS);
+    assert.ok(sys.getLog().some(e => e.ev === 'arrival_far'), 'no-id arrival far the cell is re-issued');
+    assert.notEqual(sys.states.get('clerk').job.moveId, id0, 're-issued with a fresh id');
+});
+
+test('SIMS-2: an early arrival while returning never sets atPost; re-issued once, then left to _watchReturn', () => {
+    const { sys, w } = driveToGoto();
+    let dest = { ...sys.states.get('clerk').job.dest };
+    w.pos.clerk.x = dest.x; w.pos.clerk.y = dest.y;
+    sys.onArrived('clerk', 'needs', { x: dest.x, y: dest.y, moveId: sys.states.get('clerk').job.moveId });
+    sys.step(41000);
+    assert.equal(sys.getState('clerk').mode, 'returning', 'walking home');
+    const home = sys.states.get('clerk').home;
+    const homeMoves = () => w.calls.moves.filter(m => m.id === 'clerk' && Math.round(m.x) === Math.round(home.x) && Math.round(m.y) === Math.round(home.y)).length;
+    const issued0 = homeMoves();
+    const far = () => { const id = sys.states.get('clerk').returnMoveId; w.pos.clerk.x = home.x + 300; w.pos.clerk.y = home.y; sys.onArrived('clerk', 'needs', { x: home.x + 300, y: home.y, moveId: id }); sys.step(NEEDS_TICK_MS); };
+    far();
+    assert.ok(sys.getLog().some(e => e.ev === 'arrival_far' && e.phase === 'returning'), 'far while returning logged');
+    assert.equal(sys.getState('clerk').atPost, false, 'an early arrival does not set atPost');
+    assert.equal(sys.getState('clerk').mode, 'returning', 'still returning');
+    assert.equal(homeMoves(), issued0 + 1, 'the walk home is re-issued once');
+    far();
+    assert.equal(homeMoves(), issued0 + 1, 'a second far arrival is left to _watchReturn, not re-issued again');
+    assert.equal(sys.getState('clerk').mode, 'returning', 'and the NPC never fails while returning');
+});
+
+test('SIMS-2: a seated own-desk work job still starts at once (own-post shortcut unchanged)', () => {
+    const w = makeWorld(ownDeskCfg());
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    sys.step(NEEDS_TICK_MS);
+    w.pos.clerk.x = 120; w.pos.clerk.y = 122;
+    let guard = 0;
+    while (sys.states.get('clerk').job?.phase !== 'using' && guard++ < 400) sys.step(NEEDS_TICK_MS);
+    assert.equal(sys.states.get('clerk').job?.phase, 'using', 'own-desk work reaches using with no walk');
+    assert.equal(w.calls.moves.filter(m => m.id === 'clerk').length, 0, 'no move issued for an own-post job');
+    assert.equal(sys.getLog().some(e => e.npc === 'clerk' && e.ev === 'arrival_far'), false, 'and no far arrival');
+});
+
+test('SIMS-2: a use cell with no route (a capacity-2 besideCell, OLMP E8) fails with arrival_far', () => {
+    // besideCell (live adapter only) can hand back a cell with no path (OLMP E8 has no route check):
+    // the path ends short of that cell, so the arrival lands far from it, and _moveForPhase keeps
+    // returning that same unreachable cell on every re-issue. Two far arrivals re-issue once then
+    // fail the job, where today it would use the object from wherever the path ended.
+    const cfg = office();
+    cfg.objects = cfg.objects.filter(o => o.id !== 'coffee_machine');
+    cfg.objects.push({ id: 'kettle', x: 300, y: 300, affordance: { satisfies: 'caffeine', restores: 70, useSeconds: 30, capacity: 2 } });
+    cfg.npcs.clerk.rec.needs.caffeine.jitterPct = 0;
+    const w = makeWorld({ ...cfg, arrive: false });
+    w.world.besideCell = () => ({ x: 900, y: 900 });   // unreachable, no path check (E8)
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    let guard = 0;
+    while (sys.states.get('clerk').job?.phase !== 'goto_target' && guard++ < 4000) sys.step(NEEDS_TICK_MS);
+    // A second NPC already headed for the kettle cell, so the clerk is routed to the besideCell.
+    sys.states.set('mate', { npcId: 'mate', job: { targetId: 'kettle', dest: { x: 300, y: 332 }, phase: 'goto_target' } });
+    sys._moveForPhase(sys.states.get('clerk'));          // re-plan: now bound for the besideCell
+    assert.deepEqual(sys.states.get('clerk').job.dest, { x: 900, y: 900 }, 'routed to the besideCell');
+    const far = () => { const id = sys.states.get('clerk').job?.moveId; w.pos.clerk.x = 300; w.pos.clerk.y = 332; sys.onArrived('clerk', 'needs', { x: 300, y: 332, moveId: id }); sys.step(NEEDS_TICK_MS); };
+    far();
+    assert.equal(sys.getState('clerk').mode, 'job', 'one far arrival only re-issues');
+    far();
+    assert.equal(sys.getLog().filter(e => e.ev === 'arrival_far' && e.npc === 'clerk').length, 2, 'two far arrivals');
+    assert.ok(w.calls.emits.some(e => e.name === 'npc_job_failed:clerk' && e.data.reason === 'arrival_far'), 'the job fails with arrival_far');
+    assert.equal(sys.getState('clerk').mode, 'returning', 'and walks home');
+});
