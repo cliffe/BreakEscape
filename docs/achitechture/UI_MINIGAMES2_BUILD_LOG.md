@@ -83,3 +83,18 @@ Open:
 Servers: :3465 (this worktree, test/dummy/tmp/pids/server-3465.pid) and :3466 (the base
 worktree in scratchpad ui-mg2/base, detached at 30ed762d3) were stopped at handover. The base
 worktree is still registered with git; remove it once the before shots are no longer needed.
+
+## Fix round (A45 regression closed)
+
+Cause: in shell-x-check the container scene is opened without its content being drawn (the
+game area was empty), and the A45 cap rule's `height: auto` let that empty frame collapse to its
+padding (36px), so the X sat outside it. With content drawn (probed live) the window wraps it
+(480x460 at 800x600) and centres. Fix: the cap rule gains `min-height: min(160px, 100%)`
+(css/minigames-framework.css), a floor that holds the X and a line of content; the cap, wrap and
+centring are unchanged for flag station, VM launcher, container, combination, cryptex and text
+file. test/js/minigames2-ui.test.mjs (A45 test) now asserts the floor.
+
+Merged main 372600713 (format hardening 8b and 8c) into the branch (f9ffc9a8e). On the merged
+tip, game 3513, :3465: shell-x-check 168 checked, 0 failed (log scratchpad ui-mg2/shellx-fixed.log).
+Shots on the fixed tip: scratchpad ui-mg2/for-user/A35-after-pc__ and container-after__ at
+1400x1000, 800x600, 915x412, 390x844, 360x740.
