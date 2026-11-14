@@ -29,6 +29,11 @@ writeFileSync(join(dir, 'flag-station', 'flag-station-minigame.js'), readFileSyn
 globalThis.window = {};
 globalThis.document = { querySelector: () => null };
 const { FlagStationMinigame } = await import(pathToFileURL(join(dir, 'flag-station', 'flag-station-minigame.js')).href);
+// The real StateSync, its two imports stubbed, for its syncConfirmed back-off.
+writeFileSync(join(root, 'api-client.js'), 'export const ApiClient = {};\n');
+writeFileSync(join(root, 'config.js'), 'export function getApiBase() { return ""; } export function getCsrfToken() { return ""; }\n');
+writeFileSync(join(root, 'state-sync.js'), readFileSync(join(here, '../../public/break_escape/js/state-sync.js'), 'utf8'));
+const { StateSync } = await import(pathToFileURL(join(root, 'state-sync.js')).href);
 
 const ABORT = { setGlobal: { player_aborted_attack: true, ready_for_debrief: true }, emitEvent: 'attack_aborted' };
 const LAUNCH = { setGlobal: { player_launched_attack: true, ready_for_debrief: true }, emitEvent: 'attack_launched' };
@@ -108,4 +113,41 @@ test('a sync that throws synchronously, or no stateSync at all, is harmless', ()
     delete window.stateSync;
     assert.doesNotThrow(() => r.s.handleAbort());
     assert.equal(window.gameState.globalVariables.player_aborted_attack, true);
+});
+
+test('with syncConfirmed available, the choice uses it with a small bound, not sync()', () => {
+    const { s, calls } = setup();
+    window.stateSync.syncConfirmed = (opts) => { calls.push('confirmed:' + JSON.stringify(opts)); return Promise.resolve(true); };
+    s.handleAbort();
+    assert.deepEqual(calls.filter(c => c.startsWith('sync:') || c.startsWith('confirmed:')), ['confirmed:{"attempts":4}']);
+});
+
+test('a failed choice sync is tried again within about a second, then stops', async () => {
+    const { s } = setup();
+    const runs = [];
+    // The real syncConfirmed over a fake run: the first request fails, the second lands.
+    const answers = [{ ok: false, error: new Error('offline') }, { ok: true, error: null }];
+    const fake = { _tracked: new Set(), _syncRun: () => { runs.push(Date.now()); return Promise.resolve(answers.shift() || { ok: true, error: null }); } };
+    window.stateSync = { syncConfirmed: (o) => StateSync.prototype.syncConfirmed.call(fake, o), sync: () => { throw new Error('not used'); } };
+    s.handleLaunch();
+    await new Promise(r => setTimeout(r, 400));
+    assert.equal(runs.length, 2, 'one retry after the failure');
+    assert.ok(runs[1] - runs[0] < 1000, 'retried well before the 30 s timer');
+});
+
+test('a choice sync that keeps failing stops after four tries; a 403 stops at once', async () => {
+    let { s } = setup();
+    let runs = 0;
+    const fail = { _tracked: new Set(), _syncRun: () => { runs++; return Promise.resolve({ ok: false, error: new Error('offline') }); } };
+    window.stateSync = { syncConfirmed: (o) => StateSync.prototype.syncConfirmed.call(fail, o) };
+    s.handleAbort();
+    await new Promise(r => setTimeout(r, 1900));
+    assert.equal(runs, 4);
+    ({ s } = setup());
+    runs = 0;
+    const refused = { _tracked: new Set(), _syncRun: () => { runs++; return Promise.resolve({ ok: false, error: Object.assign(new Error('no'), { status: 403 }) }); } };
+    window.stateSync = { syncConfirmed: (o) => StateSync.prototype.syncConfirmed.call(refused, o) };
+    s.handleAbort();
+    await new Promise(r => setTimeout(r, 400));
+    assert.equal(runs, 1);
 });

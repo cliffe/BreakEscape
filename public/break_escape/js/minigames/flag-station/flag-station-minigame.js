@@ -701,9 +701,17 @@ export class FlagStationMinigame extends MinigameScene {
         }
         // Save the choice now rather than on the 30 s timer or pagehide, so a crash or a
         // hard close straight after it keeps the outcome. The sync sends only what changed
-        // (the choice's globals, plus anything else already pending).
+        // (the choice's globals, plus anything else already pending). A failed request is
+        // tried again a few times at 250, 500 and 1000 ms (syncConfirmed: bounded, stops on
+        // a 403) rather than waiting for the timer; each retry resends the same delta.
         if (config.setGlobal) {
-            try { Promise.resolve(window.stateSync?.sync?.()).catch(() => {}); } catch (e) { /* the timer retries */ }
+            const sync = window.stateSync;
+            try {
+                const run = typeof sync?.syncConfirmed === 'function'
+                    ? sync.syncConfirmed({ attempts: 4 })
+                    : sync?.sync?.();
+                Promise.resolve(run).catch(() => {});
+            } catch (e) { /* the timer retries */ }
         }
     }
 
