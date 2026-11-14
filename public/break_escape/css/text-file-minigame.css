@@ -496,13 +496,66 @@
    A file opened from a PC's desktop or a share opens in that PC's monitor frame, as a
    maximised window in the share window's look (css/container-minigame.css .pc-share):
    the file name in the title bar, the PC's buttons (.pc-os-btn), the text in GNF at 16px
-   on the dark pane, the observations in the status bar. No window buttons: the X is on
-   the bezel. */
+   on the dark pane, the observations in the status bar. The window's own X in the title
+   bar closes the file; the bezel's X closes the PC (UI PC 2, critique E08). */
 .pc-monitor .pc-file-icon {
     width: 16px;
     height: 16px;
     image-rendering: pixelated;
     flex: 0 0 auto;
+}
+
+/* The window's X (UI PC 2, E08): a raised grey square at the title bar's right end, as on the
+   desktop OS's own windows, with an 8x7 pixel cross drawn at x2. 2px bevel borders, square
+   corners. The drawn box is 28x24; on a phone or a touch screen the hit area is at least
+   44px (nothing more is drawn). */
+.pc-monitor .pc-share .share-folder-path {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.pc-monitor button.pc-window-close {
+    position: relative;
+    flex: 0 0 auto;
+    align-self: center;
+    width: 28px;
+    height: 24px;
+    margin: 0 0 0 auto;
+    padding: 0;
+    box-sizing: border-box;
+    background-color: #c0c0c0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='7' shape-rendering='crispEdges'%3E%3Cpath fill='%23000' d='M0 0h2v1H0zM6 0h2v1H6zM1 1h2v1H1zM5 1h2v1H5zM2 2h4v1H2zM3 3h2v1H3zM2 4h4v1H2zM1 5h2v1H1zM5 5h2v1H5zM0 6h2v1H0zM6 6h2v1H6z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-size: 16px 14px;
+    background-position: 4px 3px;
+    image-rendering: pixelated;
+    border: 2px solid;
+    border-color: #ffffff #404040 #404040 #ffffff;
+    box-shadow: none;
+    cursor: pointer;
+}
+
+.pc-monitor button.pc-window-close:hover,
+.pc-monitor button.pc-window-close:focus-visible {
+    background-color: #d8d8d8;
+    outline: none;
+}
+
+/* Pressed: the bevel turns over and the cross moves down and right by 2px */
+.pc-monitor button.pc-window-close:active {
+    border-color: #404040 #ffffff #ffffff #404040;
+    background-position: 6px 5px;
+}
+
+/* A 44px target on a phone. The top edge reaches only 8px above the button: the bezel's X
+   sits above the window's title bar with 12px between the two buttons, and the targets must
+   leave a gap (4px) rather than touch, at every size. */
+@media (max-width: 600px), (pointer: coarse) {
+    .pc-monitor button.pc-window-close::after {
+        content: '';
+        position: absolute;
+        inset: -8px -10px -12px -10px;
+    }
 }
 
 .pc-monitor .pc-file-toolbar {

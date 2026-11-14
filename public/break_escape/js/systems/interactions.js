@@ -1110,16 +1110,28 @@ export function handleObjectInteraction(sprite) {
         // The tool opens a second later: the pickup toast waits for it and shows once it
         // closes, not a glimpse that is pulled back and shown again (review m1, F13/F24)
         window.expectPanelWithin?.(1500);
-        Promise.resolve(addToInventory(sprite)).then(res => window.announcePickup?.(sprite, res));
-        setTimeout(() => {
-            // A pickup mapping may already have opened this phone's thread (m02 Ghost terminal:
-            // item_picked_up:phone -> phone-chat at knot start). Opening the contact list over it
-            // 1 s later threw the typing opening away, so leave a thread that is already open.
-            const open = window.MinigameFramework?.currentMinigame;
-            if (sprite.scenarioData.type === 'phone' && open && open.gameState?.isActive && open.phoneId &&
-                open.phoneId === sprite.scenarioData.phoneId) return;
-            handleObjectInteraction(sprite);
-        }, 1000);
+        // Open it only once the pickup has answered (review R1 M1). A refusal or a network
+        // failure leaves the floor copy takeable, so reopening it re-entered this branch:
+        // a POST, a sound and an error alert every second. A duplicate opens the copy the
+        // player already holds instead of the floor copy, which would loop the same way.
+        const pickedAt = Date.now();
+        Promise.resolve(addToInventory(sprite)).then(res => {
+            window.announcePickup?.(sprite, res);
+            let target = null;
+            if (res?.ok === true && res.reason === 'added') target = sprite;
+            else if (res?.ok === true && res.reason === 'already' && res.item && res.item !== sprite &&
+                     res.item.scenarioData?.takeable !== true) target = res.item;
+            if (!target) return;
+            setTimeout(() => {
+                // A pickup mapping may already have opened this phone's thread (m02 Ghost terminal:
+                // item_picked_up:phone -> phone-chat at knot start). Opening the contact list over it
+                // 1 s later threw the typing opening away, so leave a thread that is already open.
+                const open = window.MinigameFramework?.currentMinigame;
+                if (sprite.scenarioData.type === 'phone' && open && open.gameState?.isActive && open.phoneId &&
+                    open.phoneId === sprite.scenarioData.phoneId) return;
+                handleObjectInteraction(target);
+            }, Math.max(0, 1000 - (Date.now() - pickedAt)));
+        });
         return;
     }
 

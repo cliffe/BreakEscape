@@ -40,6 +40,9 @@ function el(tag, className, text) {
 }
 
 export class PasswordGuesserMinigame extends SocialOverlayScene {
+    // C-X2: take the shared SE window frame
+    static framed = true;
+
     constructor(container, params) {
         super(container, { title: DEFAULT_TEXT.heading, ...(params || {}) });
         this.config = isObj(this.params.config) ? this.params.config : {};
@@ -103,10 +106,10 @@ export class PasswordGuesserMinigame extends SocialOverlayScene {
             return;
         }
         // The on-screen "nothing real here" line (strings.guessNote, else the block's note, else the default).
-        card.appendChild(el('p', 'epr-gs-note', this.built.note));
+        card.appendChild(el('p', 'epr-gs-note se-notice', this.built.note));
         // E9 F1: a reload restarts the guess list, as the other stages warn for their rounds.
         const reload = this._text('reloadNote');
-        if (isStr(reload)) card.appendChild(el('p', 'epr-gs-reload-note', reload));
+        if (isStr(reload)) card.appendChild(el('p', 'epr-gs-reload-note se-notice', reload));
 
         this.rowNodes = [];
         for (const panel of this.built.panels) {

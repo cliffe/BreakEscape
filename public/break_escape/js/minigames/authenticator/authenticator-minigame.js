@@ -63,6 +63,9 @@ function el(tag, className, text) {
 const win = () => (typeof window !== 'undefined' ? window : {});
 
 export class AuthenticatorMinigame extends SocialOverlayScene {
+    // C-X2: take the shared SE window frame
+    static framed = true;
+
     constructor(container, params) {
         super(container, { title: 'Authenticator', ...(params || {}) });
         const deps = isObj(this.params.deps) ? this.params.deps : {};
@@ -126,15 +129,23 @@ export class AuthenticatorMinigame extends SocialOverlayScene {
         const phone = el('div', 'auth-phone');
         if (this.choice) phone.hidden = true;
         this.phoneEl = phone;
-        const top = el('div', 'auth-phone-top');
-        top.appendChild(el('span', 'auth-phone-speaker'));
-        phone.appendChild(top);
+        // C-AU1: the shared in-game phone shell — an inner screen with a status bar (signal bars
+        // and battery), as phone-chat draws, so every phone in the game is the same device.
+        const screen = el('div', 'auth-phone-screen');
+        const statusBar = el('div', 'auth-phone-status');
+        const bars = el('div', 'auth-signal-bars');
+        bars.setAttribute('aria-hidden', 'true');
+        for (let i = 0; i < 4; i++) bars.appendChild(el('span', 'auth-signal-bar'));
+        statusBar.appendChild(bars);
+        statusBar.appendChild(el('span', 'auth-battery', '85%'));
+        screen.appendChild(statusBar);
 
         this.feed = el('div', 'auth-feed');
         this.feed.setAttribute('role', 'log');
         this.feed.setAttribute('aria-live', 'polite');
         this.feed.setAttribute('aria-label', 'Sign-in prompts');
-        phone.appendChild(this.feed);
+        screen.appendChild(this.feed);
+        phone.appendChild(screen);
         root.appendChild(phone);
 
         this.banner = el('p', 'auth-banner');
