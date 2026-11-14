@@ -78,5 +78,4 @@ test('the lanes module places #phone-ring-layer after the other lanes and watche
   assert.match(src, /getElementById\('phone-ring-layer'\)/);
   assert.match(src, /mo\.observe\(ring, \{ childList: true/);
   assert.match(src, /MINIGAME_TITLES = \[[^\n]*console-titlebar[^\n]*minigame-close-button/);
-  assert.match(src, /notifyTopMin: Math\.max\(compact \? 0 : 78 \* z, titlesBottom\)/);
 });

@@ -19,8 +19,7 @@
  * PIN entry display, a title or the close X): ringLayerSpot tries the bottom of the screen, the
  * spot below the minigame's frame, the right-hand end of the notify lane, and only when none is
  * clear the top centre (a covered title costs less than a covered key). It also keeps off the
- * toasts showing in the notify lane (UI backlog item 5d, review R1 M1 and m2). The notify lane
- * itself starts below an open minigame's headings, so a warning toast clears the title (R1 m1).
+ * toasts showing in the notify lane (UI backlog item 5d, review R1 M1 and m2).
  *
  * Pure parts (computeLanes, stackMembers, ringLayerSpot, barkSource, arrowDirection, isCompactViewport) are
  * unit tested; startHudLanes() measures and applies them in the browser.
@@ -311,12 +310,8 @@ export function measureHud(doc = document, win = window) {
   // The notify lane starts where it always did on a wide screen (86 px below the top, zoomed),
   // under the music and VM buttons even before they draw
   const z = parseFloat(gcs(doc.documentElement).getPropertyValue('--hud-zoom')) || 1;
-  // An open minigame's headings and close X: the notify lane starts below them, so a warning or
-  // error toast (shown at once over a minigame) does not cover the title (review R1 m1)
-  let titlesBottom = 0;
-  for (const t of measureMinigame(doc, win, false).titles) if (t.top < vh * 0.6) titlesBottom = Math.max(titlesBottom, t.bottom);
   return { vw, vh, compact, topBarBottom, dockTop, leftPanelRight, notifyWidth: 600 * z, messageWidth: 720 * z,
-    notifyTopMin: Math.max(compact ? 0 : 78 * z, titlesBottom), menuLeft };
+    notifyTopMin: compact ? 0 : 78 * z, menuLeft };
 }
 
 function setPx(el, prop, screenPx) {
@@ -378,7 +373,7 @@ function boxOf(r) { return { left: r.left, top: r.top, right: r.right, bottom: r
  * pointer cursor), and the frame to place a banner under. Shown elements only; an element over
  * half the screen (a clickable backdrop) is no control.
  */
-export function measureMinigame(doc, win, withControls = true) {
+export function measureMinigame(doc, win) {
   const titles = [];
   const controls = [];
   let frame = null;
@@ -391,7 +386,6 @@ export function measureMinigame(doc, win, withControls = true) {
         if (r) titles.push(boxOf(r));
       }
     }
-    if (!withControls) continue;
     const seen = new Set();
     const add = (el) => {
       if (seen.has(el) || el.closest?.('#phone-ring-layer')) return;
