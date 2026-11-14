@@ -43,7 +43,7 @@ module BreakEscape
         s = b.is_a?(Hash) ? b['x-servedBy'] : nil
         case s
         when String then [s]
-        when Array then s
+        when Array then s.flat_map { |e| e.is_a?(Hash) ? [e['route']].compact : [e] }
         when Hash then [s['route']].compact
         else []
         end
@@ -94,9 +94,38 @@ module BreakEscape
   class PayloadScanFreshStateTest < ActiveSupport::TestCase
     SCAN_PENDING = 'payload scan held until hardening step 3 (acknowledgedClues) lands; ' \
                    'see SCENARIO_FORMAT_HARDENING_BUILD_LOG "Step 6a-1 ... left for after step 3"'.freeze
+    # When step 3 lands it declares acknowledgedClues in the schema, and this guard makes the held
+    # scan self-activate: the skip lifts and the empty-body test fails until the scan is built.
+    SCAN_READY = 'step 3 has landed (acknowledgedClues is declared in the schema): remove this guard ' \
+                 'and build the fresh-state corpus scan body here (see the comment above and the ' \
+                 'build log "Left for after step 3").'.freeze
 
     SS = BreakEscape::ScenarioSchema
     C = BreakEscape::PayloadLeafClassifier
+
+    # Does the schema declare step 3's acknowledgedClues marker yet? True once step 3 adds it as a
+    # declared property anywhere in scripts/scenario-schema.json (a mention in a description does not
+    # count). Until then the full corpus scan stays skipped.
+    def self.schema_declares_acknowledged_clues?
+      schema = JSON.parse(File.read(SS::DEFAULT_PATH))
+      found = false
+      walk = lambda do |node|
+        return if found
+
+        case node
+        when Hash
+          if node['properties'].is_a?(Hash) && node['properties'].key?('acknowledgedClues')
+            found = true
+            return
+          end
+          node.each_value { |v| walk.call(v) }
+        when Array
+          node.each { |v| walk.call(v) }
+        end
+      end
+      walk.call(schema)
+      found
+    end
 
     # ── classifier unit tests (live now; they prove the 6a-1 marks resolve to the right class) ──
 
@@ -104,14 +133,45 @@ module BreakEscape
       SS.item(SS.child(SS.at('#/definitions/room'), 'npcs'))
     end
 
-    test 'the server-only creds record is class 1, and its password names the login_accounts route' do
+    test 'the server-only creds record is class 1, and its password names both serving routes' do
       creds = SS.child(npc_node, 'creds')
       # creds is a whole-record server-only mark, so the record (and, by the scan's precedence rule,
       # every leaf under it that no x-servedBy exempts) is class 1 on GET scenario.
       assert_equal :class1, C.classify(creds, route: 'GET scenario')
-      # creds.password is served only on GET /login_accounts (its postitNote key).
+      # creds.password is served on GET /login_accounts (its postitNote key) and, once a capture
+      # proof holds, on GET /capture_secrets. served_routes flattens the hash entry to its route.
       password = SS.child(creds, 'password')
-      assert_equal ['GET /login_accounts'], C.served_routes(password)
+      assert_equal ['GET /login_accounts', 'GET /capture_secrets'], C.served_routes(password)
+    end
+
+    # Capture secrets (section 2): social.landingPages[].capture.secret, usePayload.secret and
+    # addCapture.secret. Each is x-serverOnly and served by GET /capture_secrets, so each is class 1
+    # on a bootstrap route (GET scenario / GET room) and class 3 on GET /capture_secrets.
+    test 'a landing page capture secret is class 1 off its route and served by GET /capture_secrets' do
+      social = SS.child(SS.root, 'social')
+      capture = SS.child(SS.item(SS.child(social, 'landingPages')), 'capture')
+      secret = SS.child(capture, 'secret')
+      assert_equal :class1, C.classify(secret, route: 'GET scenario')
+      assert_equal :class1, C.classify(secret, route: 'GET room/:id')
+      assert_equal ['GET /capture_secrets'], C.served_routes(secret)
+      assert_equal :class3, C.classify(secret, route: 'GET /capture_secrets')
+    end
+
+    test "an NPC usePayload secret is class 1 off its route, reached as a declared property under x-free-data" do
+      secret = SS.child(SS.child(npc_node, 'usePayload'), 'secret')
+      assert_equal :class1, C.classify(secret, route: 'GET scenario')
+      assert_equal ['GET /capture_secrets'], C.served_routes(secret)
+      assert_equal :class3, C.classify(secret, route: 'GET /capture_secrets')
+      # the rest of usePayload stays free data (an arbitrary key resolves to FREE, class 4).
+      assert_equal :class4, C.classify(SS.child(SS.child(npc_node, 'usePayload'), 'host'), route: 'GET scenario')
+    end
+
+    test 'an eventMapping addCapture secret is class 1 off its route and served by GET /capture_secrets' do
+      mapping = SS.item(SS.child(npc_node, 'eventMappings'))
+      secret = SS.child(SS.child(mapping, 'addCapture'), 'secret')
+      assert_equal :class1, C.classify(secret, route: 'GET scenario')
+      assert_equal ['GET /capture_secrets'], C.served_routes(secret)
+      assert_equal :class3, C.classify(secret, route: 'GET /capture_secrets')
     end
 
     test 'accountProfiles is class 1 off its serving route and class 3 on it' do
@@ -170,8 +230,12 @@ module BreakEscape
     # test/fixtures/files/payload_scan_exceptions.json (a listed path that no longer fails is stale).
     # Routes left out, each with a reason, per the plan: GET scenario_map, GET objectives,
     # GET capture_secrets, GET ink, and the POST routes that answer with a body.
-    test 'fresh-state corpus scan over every route (held for step 3)' do
-      skip SCAN_PENDING
+    test 'fresh-state corpus scan over every route (held until step 3 declares acknowledgedClues)' do
+      skip SCAN_PENDING unless self.class.schema_declares_acknowledged_clues?
+
+      # Step 3 has landed. The skip no longer fires, so this test now fails until its body is built,
+      # which is the point: it cannot be forgotten once acknowledgedClues is in the schema.
+      flunk SCAN_READY
     end
   end
 end

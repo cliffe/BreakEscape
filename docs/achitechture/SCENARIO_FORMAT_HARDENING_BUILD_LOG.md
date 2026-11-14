@@ -3185,8 +3185,19 @@ scan until step 3; everything below is committed now.
   scan's lock-type resolution.
 - NPC-definition whole-record marks: `role`, `creds`, `awareness`, `workNeeds`, `frustration`,
   `workarounds`, `feed` `x-serverOnly`. `creds.password` carries
-  `x-servedBy: { route: "GET /login_accounts", key: "postitNote" }`. The six feed `POST_KEYS` (`id`,
-  `text`, `fact`, `date`, `note`, `replyTo`) carry `x-servedBy "feedPosts"`.
+  `x-servedBy: [{ route: "GET /login_accounts", key: "postitNote" }, "GET /capture_secrets"]` (R1
+  MI1: `GET /capture_secrets` serves the account password once a capture proof holds, `captureProof`;
+  `served_routes` flattens the hash entry to its route). The six feed `POST_KEYS` (`id`, `text`,
+  `fact`, `date`, `note`, `replyTo`) carry `x-servedBy "feedPosts"`.
+- Capture secrets (R1 MA1, section-2 "capture secret"): `social.landingPages[].capture.secret`,
+  `usePayload.secret` and `addCapture.secret` (the three `CAPTURE_SECRET_KEYS` that
+  `Game.strip_capture_secrets!` strips, `game.rb:6094`/`6100`) each gain `x-serverOnly: true` and
+  `x-servedBy "GET /capture_secrets"`. `usePayload` keeps `x-free-data: true` and gains a declared
+  `secret` (the resolver's declared-property rule reaches it, the rest stays free); `addCapture` gains
+  a declared `secret` beside `targetId`/`proof`. The mark is unconditional: the bootstrap filter
+  strips every capture secret regardless of `social.captures.revealSecret`, so the secret never ships
+  there; `revealSecret` only governs whether `GET /capture_secrets` serves it (a route-served reveal,
+  not a bootstrap ship), so no conditional form is needed. See Encoding decisions.
 - Habits: the six non-shipping leaves (`locksScreen`, `writesDown`, `password`, `passwordPattern`,
   `holdsDoors`, `usb`) are each `x-serverOnly`; `screen` and `print` are left unmarked so they ship.
 
@@ -3203,8 +3214,11 @@ scan until step 3; everything below is committed now.
   `AGENTS.md` (line 186) and `VALIDATOR_DECISIONS.md` already name the file; no edit needed there.
 - `test/models/break_escape/payload_scan_fresh_state_test.rb` (new): the leaf classifier
   (`PayloadLeafClassifier`) is live and unit-tested (classes 1, 3, 4, the conditional `requires` and
-  `combination` marks, and the class-2 rule that reads `acknowledgedClues` when the key is present).
-  The full corpus scan over real routes is a single test behind `skip SCAN_PENDING` until step 3.
+  `combination` marks, the three capture-secret nodes (R1 MA1: each class 1 off its route, class 3 on
+  `GET /capture_secrets`), `creds.password`'s two routes (R1 MI1), and the class-2 rule that reads
+  `acknowledgedClues` when the key is present). The full corpus scan over real routes is a single
+  test behind `skip SCAN_PENDING`; the skip is now tied to the schema declaring `acknowledgedClues`
+  (R1 MI2), so once step 3 lands the skip lifts and the empty-body test fails until the scan is built.
 
 ### Encoding decisions
 
@@ -3222,18 +3236,29 @@ scan until step 3; everything below is committed now.
 - **`combination` is a new declared property.** No corpus scenario carries a top-level or nested
   `combination`, so declaring it on room and item rejects nothing; it exists so an authored copy
   fails the scan on its path under a combination lock.
+- **Capture secrets are marked unconditionally, not with a conditional like `requires` (R1 MA1).**
+  `requires` and `combination` need `unlessLockType`/`whenLockType` because they legitimately ship
+  under some lock types. A capture secret does not: `Game.strip_capture_secrets!` deletes it from the
+  bootstrap on every path, regardless of `social.captures.revealSecret`. When `revealSecret` is true
+  the secret is served by `GET /capture_secrets`, which `x-servedBy` already names, so a plain
+  `x-serverOnly: true` is exact. `usePayload` keeps `x-free-data` and gains a declared `secret` the
+  same way `cryptexConfig` gained `answer`: the resolver's rule 1 reaches the declared leaf and the
+  rest of the payload stays free. No corpus `usePayload` carries a `secret`; `addCapture.secret`
+  appears once (lab_physical_pentest, a string), and `type: string` accepts it.
 
 ### Verification
 
-- `test/unit/scenario_schema_test.rb` + `test/unit/scenario_schema_boot_test.rb`: 14 runs, 12776
-  assertions, 0 failures (the one-mark walk test passes with the new `cryptexConfig.answer` and the
-  `x-free-data` array items).
+- `test/unit/scenario_schema_test.rb` + `test/unit/scenario_schema_boot_test.rb`: 14 runs, 12780
+  assertions, 0 failures (the one-mark walk test passes with the new `cryptexConfig.answer`, the
+  `x-free-data` array items and the three capture-secret nodes; R1 added four assertions).
 - `test/js/validator-strict-keys.test.mjs`: 15 pass (corpus has no unknown key in any closed block).
 - `test/js/validator-known-failures.test.mjs`: 21 pass (15 existing plus 6 new exceptions-list
   tests).
-- `test/js/validator-declared-top-level.test.mjs`: 6 pass.
-- `test/models/break_escape/payload_scan_fresh_state_test.rb`: 8 runs, 7 pass, 1 skip (the held
-  scan).
+- `test/js/validator-declared-top-level.test.mjs`: 7 pass (R1 added the capture-secret marks test).
+- `test/models/break_escape/payload_scan_fresh_state_test.rb`: 11 runs, 32 assertions, 1 skip (the
+  held scan); R1 added three capture-secret classifier tests.
+- Validator `--no-graph --skip-ink` over lab_social_engineering, test_social_slice,
+  ca05_signin_pages and m01_first_contact: 0 errors each (R1 re-check of the capture-secret marks).
 - Validator `--no-graph --skip-ink` over the whole corpus: 0 scenarios print a schema error naming
   any new declaration (`scenario_id`, `scenario_name`, `name`, `description`, `exportGlobals`,
   `importGlobals`, `validSprites`, `timedMessages`, `showTitleScreen`, `combination`,
@@ -3281,3 +3306,35 @@ marker is not on this branch. When step 3 lands:
    other plain-text clues as class 3, test_access_habits' written-down password as class 4) are
    added with the scan body. 6a-2 then adds the opened-state scan, the identity check and the
    mutation tests.
+5. (R1 MI3) Wire `acknowledgedClues` as the third list into the node test's `otherApproved` readers
+   in `test/js/validator-known-failures.test.mjs:130-138`. `otherApproved` currently reads only the
+   payload-scan exceptions file; the comment there already flags the acknowledgedClues list as "once
+   it exists". Step 3 reads its markers from the scenario templates' raw text (they never ship), so
+   add each `acknowledgedClues` heading as an `[label, heading]` pair, and the plan's shared-heading
+   rule then covers a collision between an acknowledgedClues heading and an exceptions or
+   known-failure heading.
+
+### Review R1 fixes (6a-1)
+
+Date: 2026-11-14. Branch `build/hard-6a1`. Resolving `SCENARIO_FORMAT_STEP6A1_REVIEW_R1.md`
+(0 blockers, 1 major, 4 minors).
+
+- **MA1 (major), capture secrets now marked.** `social.landingPages[].capture.secret`,
+  `usePayload.secret` and `addCapture.secret` carry `x-serverOnly: true` and
+  `x-servedBy "GET /capture_secrets"`. Decision recorded under Encoding decisions: the mark is
+  unconditional because `Game.strip_capture_secrets!` strips the bootstrap on every path; `revealSecret`
+  is a route-served reveal, not a bootstrap ship, so no `whenLockType`-style conditional is needed.
+  No corpus scenario ships a capture secret in its bootstrap, so this adds no false positive.
+  Three classifier unit tests added (each node class 1 off its route, class 3 on `GET /capture_secrets`).
+- **MI1, `creds.password` second route.** `x-servedBy` is now the array
+  `[{ route: "GET /login_accounts", key: "postitNote" }, "GET /capture_secrets"]`;
+  `PayloadLeafClassifier.served_routes` flattens a hash entry inside an array to its `route`, and its
+  unit test now asserts both routes.
+- **MI2, the held scan self-activates.** `payload_scan_fresh_state_test.rb` skips the corpus scan
+  only while the schema does not declare `acknowledgedClues` (a new `schema_declares_acknowledged_clues?`
+  helper walks the schema for a declared property of that name). Once step 3 lands the skip lifts and
+  the empty-body test `flunk`s (`SCAN_READY`), so the scan cannot be forgotten.
+- **MI3, handover.** Added item 5 to "Left for after step 3": wire `acknowledgedClues` as the third
+  list into the node test's `otherApproved` readers.
+- **MI4 (merge risk with steps 4 and 5), left as-is** per the review; the orchestrator owns merge
+  order, and the plan already says the later branch re-applies its hunks.

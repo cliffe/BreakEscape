@@ -102,7 +102,7 @@ test('NPC server-only records are marked, and the six non-shipping habits are ma
     assert.equal(npc[k]['x-serverOnly'], true, `npc.${k} not x-serverOnly`);
   }
   assert.deepEqual(npc.creds.properties.password['x-servedBy'],
-    { route: 'GET /login_accounts', key: 'postitNote' });
+    [{ route: 'GET /login_accounts', key: 'postitNote' }, 'GET /capture_secrets']);
   const h = npc.habits.properties;
   for (const k of ['locksScreen', 'writesDown', 'password', 'passwordPattern', 'holdsDoors', 'usb']) {
     assert.equal(h[k]['x-serverOnly'], true, `habits.${k} not x-serverOnly`);
@@ -110,4 +110,18 @@ test('NPC server-only records are marked, and the six non-shipping habits are ma
   // screen and print ship: they must NOT be server-only.
   assert.ok(!h.screen['x-serverOnly'], 'habits.screen must ship');
   assert.ok(!h.print['x-serverOnly'], 'habits.print must ship');
+});
+
+test('the three capture secrets carry x-serverOnly and GET /capture_secrets', () => {
+  const capture = schema.properties.social.properties.landingPages.items.properties.capture.properties.secret;
+  assert.equal(capture['x-serverOnly'], true, 'landingPages[].capture.secret not x-serverOnly');
+  assert.equal(capture['x-servedBy'], 'GET /capture_secrets', 'capture.secret servedBy');
+  const npc = schema.definitions.npc.properties;
+  const usePayload = npc.usePayload.properties.secret;
+  assert.equal(npc.usePayload['x-free-data'], true, 'usePayload stays free data');
+  assert.equal(usePayload['x-serverOnly'], true, 'usePayload.secret not x-serverOnly');
+  assert.equal(usePayload['x-servedBy'], 'GET /capture_secrets', 'usePayload.secret servedBy');
+  const addCapture = schema.definitions.eventMapping.properties.addCapture.properties.secret;
+  assert.equal(addCapture['x-serverOnly'], true, 'addCapture.secret not x-serverOnly');
+  assert.equal(addCapture['x-servedBy'], 'GET /capture_secrets', 'addCapture.secret servedBy');
 });
