@@ -142,6 +142,9 @@ module SecretLeaks
     when Hash
       node.each { |k, v| collect_scalars(v, "#{path}/#{k}", &block) }
     when Array
+      # Yield the array whole so a combination answer can match an equal array (the array branch
+      # of answer_matches_leaf?), then descend into its elements as scalars for every other kind.
+      yield node, path
       node.each_with_index { |v, i| collect_scalars(v, "#{path}[#{i}]", &block) }
     else
       yield node, path if scalar?(node)
@@ -329,6 +332,49 @@ module SecretLeaks
       end
     end
     walk.call(data, '', false)
+    issues + door_entry_issues(rooms)
+  end
+
+  # Item 4, door entries. The server strips `requires` only from a node that carries its own
+  # lockType (GamesController#filter_requires_recursive, Game#filter_inventory_for_client!), so a
+  # bare door entry's `requires` ships in the room payload. Two findings:
+  #   error: a bare entry (no own lockType) whose connected room has a secret lock type (pin,
+  #     password, combination, cryptex); its `requires` ships and, if it equals the room answer,
+  #     reads the room code off the door. An rfid/biometric/bluetooth card id is not a secret, so
+  #     it is not flagged;
+  #   warning: an entry whose own lock type or `requires` differs from its connected room's; the
+  #     server checks the room's lock, so the player sees one lock and the server checks another.
+  # Only entries NpcHabits.doorway_problem clears are resolved, as each_lock_answer does; an entry
+  # it flags is one the client never reads.
+  def door_entry_issues(rooms)
+    issues = []
+    rooms.each do |room_id, room|
+      next unless room.is_a?(Hash) && room['doors'].is_a?(Array)
+
+      room['doors'].each_with_index do |entry, i|
+        next unless entry.is_a?(Hash)
+        next unless BreakEscape::NpcHabits.doorway_problem(room, i).nil?
+
+        connected = rooms[entry['connectedRoom']]
+        next unless connected.is_a?(Hash)
+
+        own_lock_type = entry['lockType'].is_a?(String) ? entry['lockType'] : nil
+        room_lock_type = connected['lockType'].is_a?(String) ? connected['lockType'] : nil
+        resolved = own_lock_type || room_lock_type
+        path = "rooms/#{room_id}/doors[#{i}]"
+
+        if own_lock_type.nil? && entry.key?('requires') && ANSWER_LOCK_TYPES.include?(resolved)
+          issues << "❌ ERROR: secret leak: #{path} ships its `requires` because the server filter reads the entry's own `lockType` and this entry has none while its connected room '#{entry['connectedRoom']}' is a #{resolved} lock; set a `lockType` on the entry, or remove `requires` and let the room carry it"
+          next
+        end
+
+        lock_type_differs = !own_lock_type.nil? && own_lock_type != room_lock_type
+        requires_differs = entry.key?('requires') && entry['requires'] != connected['requires']
+        if lock_type_differs || requires_differs
+          issues << "⚠️ WARNING: #{path} has a lock type or `requires` that differs from its connected room '#{entry['connectedRoom']}'; the server checks the room's lock, so the player sees one lock and the server checks another"
+        end
+      end
+    end
     issues
   end
 

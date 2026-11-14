@@ -86,6 +86,20 @@ test('a combination in the common string form is caught in a global', { skip }, 
     { globals: { hint: '5' } })), 'combination answer at');
 });
 
+test('a combination copied into minigameData as an equal array is a leak', { skip }, () => {
+  // collect_scalars now yields the array whole, so the array branch of answer_matches_leaf? is
+  // reached; [12, 30, 5] in minigameData equals the authored combination.
+  const sc = withLock({ id: 'combo', locked: true, lockType: 'combination', requires: [12, 30, 5] },
+    { mg: { dials: [12, 30, 5] } });
+  assertHas(errors(issues(sc)), 'combination answer at');
+});
+
+test('a non-equal array in minigameData is not a combination leak', { skip }, () => {
+  const sc = withLock({ id: 'combo', locked: true, lockType: 'combination', requires: [12, 30, 5] },
+    { mg: { dials: [1, 2, 3] } });
+  assert.deepEqual(errors(issues(sc)), []);
+});
+
 test('a cryptex answer in a different case is an error', { skip }, () => {
   const sc = withLock({ id: 'cr', locked: true, lockType: 'cryptex', requires: 'wolf' }, { mg: { x: 'WOLF' } });
   assertHas(errors(issues(sc)), 'cryptex answer at');
@@ -132,6 +146,46 @@ test('a resolved door-entry PIN copied into a global is a leak', { skip }, () =>
     vault: { locked: true, lockType: 'pin', requires: '9999', connections: {}, objects: [] }
   }, globalVariables: { tip: '7781' } };
   assertHas(errors(issues(sc)), 'pin answer at');
+});
+
+test('a bare door entry whose connected room is a secret lock ships its requires (error)', { skip }, () => {
+  // No lockType of its own, connected room is a pin lock: the server strips `requires` only from a
+  // node with its own lockType, so this entry's `requires` ships. Plan item 4 makes it an error.
+  const sc = { rooms: {
+    office: { connections: { north: 'vault' }, objects: [],
+      doors: [{ connectedRoom: 'vault', direction: 'north', requires: '4821' }] },
+    vault: { locked: true, lockType: 'pin', requires: '4821', connections: {}, objects: [] }
+  } };
+  assertHas(errors(issues(sc)), 'ships its `requires` because the server filter reads');
+});
+
+test('a bare door entry whose connected room is rfid is not an error', { skip }, () => {
+  // An rfid card id is not a secret, so a bare entry resolving to rfid raises nothing (the two
+  // corpus rfid bare-requires entries must stay clean).
+  const sc = { rooms: {
+    lobby: { connections: { east: 'secure' }, objects: [],
+      doors: [{ connectedRoom: 'secure', direction: 'east', requires: 'card07' }] },
+    secure: { locked: true, lockType: 'rfid', requires: 'card07', connections: {}, objects: [] }
+  } };
+  assert.deepEqual(issues(sc), []);
+});
+
+test('a door entry whose requires differs from its connected room warns', { skip }, () => {
+  const sc = { rooms: {
+    hall: { connections: { south: 'store' }, objects: [],
+      doors: [{ connectedRoom: 'store', direction: 'south', lockType: 'rfid', requires: 'card01' }] },
+    store: { locked: true, lockType: 'rfid', requires: 'card99', connections: {}, objects: [] }
+  } };
+  assertHas(warnings(issues(sc)), 'the server checks the room');
+});
+
+test('a door entry matching its connected room raises nothing', { skip }, () => {
+  const sc = { rooms: {
+    hall: { connections: { south: 'store' }, objects: [],
+      doors: [{ connectedRoom: 'store', direction: 'south', lockType: 'rfid', requires: 'card01' }] },
+    store: { locked: true, lockType: 'rfid', requires: 'card01', connections: {}, objects: [] }
+  } };
+  assert.deepEqual(issues(sc), []);
 });
 
 test('a requires in a social block and a clue on a note text raise nothing', { skip }, () => {
