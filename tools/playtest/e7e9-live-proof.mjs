@@ -263,14 +263,21 @@ async function main() {
             const late = Number(process.env.LATE_MS);
             out.harness.push(`player placed beside the pair once ${late} ms or less of the overlap is left`);
             const left = () => page.evaluate(() => { const sys = window.npcNeedsSystem; const a = sys.states.get('sanjay')?.job, b = sys.states.get('rosa')?.job; return a && b ? Math.min(a.useUntil, b.useUntil) - sys.clockMs : null; });
-            for (let i = 0; i < 400; i++) { const l = await left(); if (l !== null && l <= late) break; await sleep(50); }
+            // The kitchen is entered ~1.5 s early (enterRoom takes a moment), with the player put back
+            // in the office spot's distance until the placement
+            for (let i = 0; i < 2400; i++) { const l = await left(); if (l !== null && l <= late + 1500) break; await sleep(50); }
+            out.enterLeft = await left();
+            await page.evaluate(() => window.__test.enterRoom('kitchen'));
+            const far = await page.evaluate(() => { const p = window.player, x = -100, y = 120; p.setPosition(x, y); p.body?.reset?.(x, y); return window.currentPlayerRoom; });
+            out.enterRoomNow = far;
+            for (let i = 0; i < 2400; i++) { const l = await left(); if (l !== null && l <= late) break; await sleep(20); }
             out.lateAt = await page.evaluate(() => {
-                const sys = window.npcNeedsSystem; window.__test.enterRoom('kitchen');
+                const sys = window.npcNeedsSystem;
                 const s = sys.world.npcPos('sanjay'), r = sys.world.npcPos('rosa');
                 const x = (s.x + r.x) / 2, y = Math.max(s.y, r.y) + 40;
                 const p = window.player; p.setPosition(x, y); p.body?.reset?.(x, y);
                 const a = sys.states.get('sanjay').job, b = sys.states.get('rosa').job;
-                return { t: sys.clockMs, left: Math.min(a.useUntil, b.useUntil) - sys.clockMs, player: { x: Math.round(x), y: Math.round(y) } };
+                return { t: sys.clockMs, left: Math.min(a.useUntil, b.useUntil) - sys.clockMs, player: { x: Math.round(x), y: Math.round(y) }, room: window.currentPlayerRoom, hears: { sanjay: sys.world.playerHears('sanjay', 160), rosa: sys.world.playerHears('rosa', 160) } };
             });
             await waitFor(page, x => !both(x), 15000, 150);
             await sleep(1000);
