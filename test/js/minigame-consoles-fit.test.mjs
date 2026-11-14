@@ -411,3 +411,99 @@ test('review round 2: segmentation map labels are 16px VT323 and not bold, the s
     assert.match(nsm, /@media \(max-height: 500px\) \{\s*\.nsm-wrapper \{[^}]*overflow-y: auto[^}]*\}\s*\.nsm-body \{\s*flex: none/);
     assert.match(code, /class="nsm-wrapper pixel-scroll"/);
 });
+
+// Fix round 1 (UI_CONSOLES2_REVIEW_R1.md): the bar is one row on short windows, scenes give
+// up rows the bar now duplicates, and no title is said twice
+test('fix round 1: the console title is one line with an ellipsis; the subtitle joins it on short windows and hides on phones (M2)', () => {
+    const fw = css('minigames-framework.css');
+    const rule = (sel, from = 0) => { const i = fw.indexOf(sel + ' {', from); assert.ok(i >= 0, `rule ${sel}`); return fw.slice(i, fw.indexOf('}', i)); };
+    const title = rule('.console-window .console-title');
+    assert.match(title, /white-space: nowrap/);
+    assert.match(title, /text-overflow: ellipsis/);
+    assert.doesNotMatch(title, /overflow-wrap: anywhere/, 'the title never wraps');
+    const short = fw.indexOf('@media (max-height: 500px) {');
+    assert.ok(short >= 0, 'short-window rule');
+    assert.match(rule('.console-titles', short), /display: flex/, 'title and subtitle share one line');
+    assert.match(rule('.console-window .console-subtitle', short), /flex: 1 1 0/, 'the subtitle takes what the title leaves');
+    const phone = fw.lastIndexOf('@media (max-width: 600px) {');
+    assert.match(rule('.console-window .console-subtitle', phone), /display: none/, 'phones keep the subtitle in the title attribute');
+});
+
+test('fix round 1: the bar title attribute carries the full title and subtitle, and follows setConsoleTitle (M2)', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'minigame-console-'));
+    try {
+        writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
+        for (const rel of ['minigames/framework/base-minigame.js', 'utils/display-dashes.js', 'utils/escape-html.js']) {
+            mkdirSync(dirname(join(dir, rel)), { recursive: true });
+            writeFileSync(join(dir, rel), readFileSync(join(root, 'js', rel), 'utf8'));
+        }
+        const { MinigameScene } = await import(pathToFileURL(join(dir, 'minigames/framework/base-minigame.js')).href);
+        class Console extends MinigameScene { static consoleWindow = true; }
+        const attrs = {};
+        const holder = { setAttribute: (k, v) => { attrs[k] = v; }, removeAttribute: (k) => { delete attrs[k]; } };
+        const els = {};
+        const el = (cls) => (els[cls] ||= { textContent: '', hidden: false, style: {}, parentElement: holder, classList: { add() {}, toggle() {} } });
+        const container = {
+            innerHTML: '', classList: { toggle() {}, add() {} },
+            querySelector: (sel) => ({ '.console-window': el('win'), '.console-title': el('title'), '.console-subtitle': el('sub'), '.minigame-header': el('hdr'), '.minigame-game-container': el('body') })[sel] || null
+        };
+        const savedDoc = globalThis.document, log = console.log;
+        globalThis.document = { getElementById: () => ({ addEventListener() {} }) };
+        console.log = () => {};
+        try {
+            const scene = new Console(container, { title: 'Claims', consoleSubtitle: 'Case 7' });
+            el('title').textContent = 'Claims'; el('sub').textContent = 'Case 7';
+            scene.init();
+            scene.setConsoleTitle('Claims system', 'Case 7');
+            assert.equal(attrs.title, 'Claims system\nCase 7');
+            scene.setConsoleTitle('Fleet console', '');
+            assert.equal(attrs.title, 'Fleet console', 'no subtitle, title only');
+        } finally { globalThis.document = savedDoc; console.log = log; }
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('fix round 1: SIEM clock in the status bar, segmentation map badge in its legend: no row of their own (M2)', () => {
+    const siem = src('siem/siem-dashboard-minigame.js');
+    assert.doesNotMatch(siem, /class="siem-header"/);
+    const bar = siem.slice(siem.indexOf('<div class="siem-status-bar">'), siem.indexOf('</div>', siem.indexOf('<div class="siem-status-bar">')));
+    assert.match(bar, /id="siem-system-clock"/);
+    const nsm = src('network-segmentation-map/network-segmentation-map-minigame.js');
+    assert.doesNotMatch(nsm, /class="nsm-header-bar"/);
+    const legend = nsm.slice(nsm.indexOf('<div class="nsm-legend">'), nsm.indexOf('<div class="nsm-sever-group">'));
+    assert.match(legend, /nsm-status-badge">ACTIVE INCIDENT/);
+});
+
+test('fix round 1: network diagram detail folds to a toggle row, legend to one line on short windows; square focus outline (M1, m4)', () => {
+    const code = src('network-architecture/network-architecture-minigame.js');
+    assert.match(code, /id="nad-detail-toggle" aria-expanded="false"/);
+    assert.match(code, /_setDetailOpen\(!detail\.classList\.contains\('nad-detail-open'\)\)/);
+    assert.match(code, /setAttribute\('aria-expanded', open \? 'true' : 'false'\)/);
+    const nad = css('network-architecture-minigame.css');
+    assert.match(nad, /\.nad-detail-toggle \{\s*display: none;/, 'no toggle on tall windows');
+    const short = nad.slice(nad.indexOf('@media (max-height: 500px) {'));
+    assert.match(short, /\.nad-detail \{\s*min-height: 0;/);
+    assert.match(short, /\.nad-legend \{\s*flex-wrap: nowrap;/);
+    assert.match(short, /\.nad-leg-more \{\s*display: none;/);
+    assert.match(short, /\.nad-detail-content \{\s*display: none;/);
+    assert.match(nad, /\.nad-node:focus-visible \{\s*outline: 2px solid #ffffff;/);
+    assert.match(nad, /\.nad-node:focus \{\s*outline: none;/, 'no rounded browser ring');
+});
+
+test('fix round 1: titles the bar already shows are not repeated in the scene (M3, m1)', () => {
+    const cf = src('concern-form/concern-form-minigame.js');
+    assert.match(cf, /const showHeading = !!heading && !same\(heading, this\.text\('title'\)\);/);
+    assert.match(cf, /if \(!showHeading\) \{\s*intro\.tabIndex = -1;\s*intro\.dataset\.autofocus = '1';/, 'focus moves to the intro text');
+    assert.doesNotMatch(src('ncsc-brief/ncsc-brief-minigame.js'), /ncsc-envelope-name/);
+    const wcc = src('warranty-checklist/warranty-checklist-minigame.js');
+    assert.match(wcc, /const docTitle = sameName \? '' :/);
+    assert.doesNotMatch(wcc, /<div class="wcc-doc-title">Warranty Compliance Checklist<\/div>/);
+    const sis03 = readFileSync(join(here, '../../scenarios/sis03_cyber_insurance/scenario.json.erb'), 'utf8');
+    assert.match(sis03, /"title": "Warranty Compliance Checklist",/);
+    assert.doesNotMatch(sis03, /"title": "Warranty Compliance Checklist [^"]*MC-2023/);
+});
+
+test('fix round 1: the backup consequence panel has no scroller of its own (m2)', () => {
+    const br = css('backup-recovery-minigame.css');
+    const i = br.indexOf('.backup-recovery-panel {');
+    assert.match(br.slice(i, br.indexOf('}', i)), /overflow: visible/);
+});
