@@ -509,6 +509,36 @@ test('R1 m5: no authored headshot means the silhouette, and the talk image is ne
     assert.equal(document.querySelector('.pc-start-headshot').dataset.frame, 'silhouette');
 });
 
+test('UI PC 2 R1 M2: an account whose NPC room is not loaded keeps its headshot from the session answer; silhouette only with none', async () => {
+    base({ images: { '/break_escape/assets/characters/male_office_worker_v2_headshot.png': [32, 32] } });
+    window.npcManager.npcs.clear();
+    window.ApiClient.login = async () => ({ success: true, npcId: 'sam', username: 'sokafor', displayName: 'Sam Okafor', via: 'password',
+        portrait: 'assets/characters/male_office_worker_v2_talk.png' });
+    await sessions.signIn('hot_desk', 'sokafor', 'x');
+    assert.equal(sessions.get('hot_desk').portrait, 'assets/characters/male_office_worker_v2_talk.png');
+    await open(loginPc());
+    await settle(12);
+    const box = document.querySelector('.pc-taskbar-headshot');
+    assert.equal(box.dataset.frame, 'headshot', 'the empty manager does not send Sam to the silhouette');
+    assert.match(box.style.backgroundImage, /male_office_worker_v2_headshot\.png/);
+    assert.equal(document.querySelector('.pc-start-headshot').dataset.frame, 'headshot');
+    // A session restored on load carries it too
+    base({ images: { '/break_escape/assets/characters/male_office_worker_v2_headshot.png': [32, 32] } });
+    window.npcManager.npcs.clear();
+    sessions.load({ hot_desk: { npcId: 'sam', username: 'sokafor', displayName: 'Sam Okafor', via: 'password', portrait: 'assets/characters/male_office_worker_v2_talk.png' } }, ['hot_desk']);
+    await open(loginPc());
+    await settle(12);
+    assert.equal(document.querySelector('.pc-taskbar-headshot').dataset.frame, 'headshot', 'restored session');
+    // No NPC record and no picture source: the silhouette
+    base();
+    window.npcManager.npcs.clear();
+    window.ApiClient.login = async () => ({ success: true, npcId: 'sam', username: 'sokafor', displayName: 'Sam Okafor', via: 'password' });
+    await sessions.signIn('hot_desk', 'sokafor', 'x');
+    await open(loginPc());
+    await settle(12);
+    assert.equal(document.querySelector('.pc-taskbar-headshot').dataset.frame, 'silhouette');
+});
+
 test('R1 nit 1: Tab out of the panel closes it; moving between its entries does not', async () => {
     base();
     await sessions.signIn('hot_desk', 'ishaw', 'x');

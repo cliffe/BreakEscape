@@ -3486,6 +3486,12 @@ module BreakEscape
         'displayName' => npc['displayName'] || npc['id'],
         'via' => via
       }
+      # The account's picture source, so the desktop's taskbar shows its headshot even when the
+      # NPC's room never loaded (UI PC 2 fix round 1, M2). Computed here, never stored, and sent
+      # only with a sign-in answer or the scenario's `sessions` on load; nothing in player_state.
+      portrait = self.class.npc_talk_portrait(npc)
+      answer['portrait'] = portrait if portrait
+      answer['avatar'] = npc['avatar'] if npc['avatar'].is_a?(String) && !npc['avatar'].empty?
       return answer unless foothold.present?
 
       pc = find_login_pc(pc_id)&.dig(:object)

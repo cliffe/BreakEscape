@@ -114,7 +114,18 @@ function publicSession(pcId, s) {
     // A locked session (UI slice 6) stays held but needs the password again; the open flow
     // reads this to show the sign-in screen with the account pre-chosen.
     if (s.locked === true) out.locked = true;
+    // The account's picture source (a headshot key's portrait or avatar), only when the server sent it
+    if (typeof s.portrait === 'string' && s.portrait) out.portrait = s.portrait;
+    if (typeof s.avatar === 'string' && s.avatar) out.avatar = s.avatar;
     return out;
+}
+
+/** The picture source of a server session entry: portrait and avatar, each only when sent. */
+function pictureFields(s) {
+    return {
+        ...(typeof s?.portrait === 'string' && s.portrait ? { portrait: s.portrait } : {}),
+        ...(typeof s?.avatar === 'string' && s.avatar ? { avatar: s.avatar } : {})
+    };
 }
 
 /** The remote fields of a server session entry (4.4): only a remote one carries them. */
@@ -193,6 +204,7 @@ export class PcSessions {
                 username: s.username ?? null,
                 displayName: s.displayName ?? null,
                 via: s.via || 'password',
+                ...pictureFields(s),
                 restored: true,
                 // A locked session survives a reload like any other session state (UI slice 6)
                 ...(s.locked === true ? { locked: true } : {}),
@@ -298,6 +310,7 @@ export class PcSessions {
         }
         const session = {
             npcId: body.npcId, username: body.username ?? null, displayName: body.displayName ?? null, via: body.via || 'password',
+            ...pictureFields(body),
             ...remoteFields(body)
         };
         this._replace(pcId, session);
@@ -340,7 +353,7 @@ export class PcSessions {
         if (!body || body.success === false || !body.npcId) {
             return { ok: false, reason: 'refused', message: body?.message || 'Sign in required' };
         }
-        const session = { npcId: body.npcId, username: body.username ?? null, displayName: body.displayName ?? null, via: 'claim' };
+        const session = { npcId: body.npcId, username: body.username ?? null, displayName: body.displayName ?? null, via: 'claim', ...pictureFields(body) };
         if (guest) session.guest = true;
         this._replace(pcId, session);
         // The owner came back while the claim was in flight: workstation_owner_returned
