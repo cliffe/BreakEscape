@@ -1643,6 +1643,9 @@ export class PasswordMinigame extends MinigameScene {
         // chosen account's line holds a Change button back to the tiles.
         const area = this.gameContainer.querySelector('.signin-mode');
         area?.classList.toggle('signin-chosen', chosen && this.signInTilesOffered());
+        // A locked screen has its account already: on a narrow screen the tiles fold as in a
+        // short window, so the card and its message fit in view (fix round 1, m4)
+        area?.classList.toggle('signin-locked', this.signIn?.current?.locked === true);
         const selectedEl = this.gameContainer.querySelector('#signin-selected');
         const tile = st.other ? null : this.signInTileFor(st.selected);
         if (selectedEl) {

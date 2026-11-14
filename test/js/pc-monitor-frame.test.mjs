@@ -547,6 +547,9 @@ test('UI PC 2 (E06): the card CSS: one 2px frame, no chips inside it, the plain 
     noChip(/\.pc-screen-area \.signin-card \.signin-field-row label,\s*\.pc-screen-area \.pc-lock-panel \.password-input-container label \{[^}]*\}/);
     noChip(/\.pc-screen-area \.signin-card \.signin-message,\s*\.pc-screen-area \.pc-lock-panel \.password-message \{[^}]*\}/);
     noChip(/\.pc-screen-area \.pc-lock-panel \.pc-screen-note \{[^}]*\}/);
+    const prompt = sec.match(/\.pc-screen-area \.signin-prompt \{[^}]*\}/)[0];
+    assert.match(prompt, /border: 0;/, 'the prompt has no frame');
+    assert.match(prompt, /background: #101820;/, 'a flat plate so it reads over the wallpaper');
     assert.doesNotMatch(sec, /border-radius|box-shadow|gradient|rgba\(/);
 });
 
@@ -605,8 +608,13 @@ test('UX slice 6: a locked session\'s sign-in screen says it is locked; an open 
         window.MinigameFramework.currentMinigame = mg;
         mg.init();
         assert.equal(document.querySelector('.signin-current').textContent.trim(), want);
+        // Fix round 1 (m4): a locked screen marks itself, so a narrow phone folds the tiles
+        assert.equal(document.querySelector('.signin-mode').classList.contains('signin-locked'), locked);
         mg.cleanup?.();
     }
+    const t = css('password-minigame.css');
+    assert.match(t, /\.pc-monitor\[data-compact\] \.signin-mode\.signin-chosen\.signin-locked \.signin-tiles,\s*\.pc-monitor\[data-compact\] \.signin-mode\.signin-chosen\.signin-locked \.signin-captured \{\s*display: none;/);
+    assert.match(t, /\.signin-chosen\.signin-locked \.signin-change \{\s*display: inline-block;/);
 });
 
 test('the desktop\'s taskbar shows the signed-in NPC\'s headshot (x1), the start panel at x2 (UX slice 6)', async () => {
