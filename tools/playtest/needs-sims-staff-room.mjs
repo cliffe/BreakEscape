@@ -20,6 +20,8 @@ fs.mkdirSync(outDir, { recursive: true });
 const browser = await chromium.launch({ headless: true, executablePath: EXEC, args: process.env.GL ? ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] : [] });
 const page = await browser.newPage({ viewport: { width: 1200, height: 800 } });
 const errs = []; page.on('pageerror', e => errs.push(String(e).slice(0, 200)));
+page.on('crash', () => { errs.push('PAGE CRASHED'); console.log('PAGE CRASHED'); });
+browser.on('disconnected', () => console.log('BROWSER DISCONNECTED'));
 const report = { gid, port, beat, errs };
 const t = ms => page.waitForTimeout(ms);
 const shot = n => page.screenshot({ path: outDir + `sr-${beat}-${n}-${gid}.png` });
