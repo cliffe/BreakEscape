@@ -483,6 +483,17 @@
   }
 }
 
+/* Phones held upright: the count says what the pill is, so the clipboard gives its 28px to the
+   aim's text (about three more characters at 360 to 420 px wide); the open sheet keeps it */
+@media (max-width: 420px) {
+  .objectives-panel.collapsed .objectives-clipboard {
+    display: none;
+  }
+  .objectives-panel.collapsed .objectives-pill-summary {
+    margin-left: 0;
+  }
+}
+
 /* A hard on/off blink in whole steps (no soft glow) */
 @keyframes objectives-pill-pulse {
   0% { outline: 2px solid #ffd23f; outline-offset: 0; }

@@ -73,6 +73,12 @@ body:has([data-minigame="phone-chat"]) #npc-speech-container {
   display: none;
 }
 
+/* "Clear all" is for two or more texts on screen: with fewer showing (the rest stepped aside)
+   it would stand alone in the lane. Its inline display comes from npc-barks.js. */
+#npc-bark-container:not(:has(.npc-bark:not(.hud-lane-yield) ~ .npc-bark:not(.hud-lane-yield))) .npc-bark-clear-all {
+  display: none !important;
+}
+
 /* Phones: a little less padding, so more of the room shows */
 body.hud-compact .npc-bark {
   padding: 4px 8px;

@@ -434,6 +434,12 @@ test('R1 m1: phone texts step aside one at a time, oldest first, and a hidden on
     assert.deepEqual(laneYields({ caption: 0, speech: 0, toasts: 80, phone: [60, 60] }, 90), { caption: false, phone: true, phoneHidden: 2 });
     // the Clear all button counts while any text shows
     assert.equal(laneYields({ caption: 0, speech: 0, toasts: 80, phone: [60, 60], phoneExtra: 30 }, 200).phoneHidden, 1);
+    assert.equal(laneYields({ caption: 0, speech: 0, toasts: 80, phone: [60, 60], phoneExtra: 30 }, 160).phoneHidden, 1, 'Clear all is not counted for one text');
+    assert.match(css('npc-barks.css'), /:not\(:has\(\.npc-bark:not\(\.hud-lane-yield\) ~ \.npc-bark:not\(\.hud-lane-yield\)\)\) \.npc-bark-clear-all \{\s*display: none !important;/, 'Clear all hides with fewer than two texts showing');
+    // texts alone: the oldest step aside for the newest, which always shows
+    assert.deepEqual(laneYields({ caption: 0, speech: 0, toasts: 0, phone: [60, 60, 60] }, 100), { caption: false, phone: false, phoneHidden: 2 });
+    // the bark system leaves fitting placed texts to the lanes (no close for want of room)
+    assert.match(readFileSync(join(js, 'systems/npc-barks.js'), 'utf8'), /host\.dataset\.lane === 'notify'\) available = Infinity/);
 
     // live in the DOM: the bark system's texts, placed by applyLanes on a short screen
     const sys = barkRig({ kim: { id: 'kim', npcType: 'phone', displayName: 'Kim' }, lee: { id: 'lee', npcType: 'phone', displayName: 'Lee' } });

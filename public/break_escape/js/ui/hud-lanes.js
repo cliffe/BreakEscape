@@ -42,7 +42,7 @@ export function laneBudgetShare({ compact, vh }) {
  * explain a refusal, so they never step aside; they share what is left.
  * @param {{caption:number, speech:number, toasts:number, phone:number|number[], phoneExtra?:number}} h
  *   heights (0 = none); phone is one height or each text's height, oldest first; phoneExtra is
- *   the "Clear all" button, counted while any text shows
+ *   the "Clear all" button, counted while two or more texts show (it hides with fewer)
  * @returns {{caption:boolean, phone:boolean, phoneHidden:number}} phone is true when every text
  *   stepped aside; phoneHidden is how many did (the oldest ones)
  */
@@ -52,16 +52,17 @@ export function laneYields(h, budget, gap = LANE_GAP) {
   const sum = (list) => list.filter(x => x > 0).reduce((a, x) => a + x + gap, 0);
   const need = (cap, hidden) => {
     const shown = texts.slice(hidden);
-    return sum([cap, h.speech, h.toasts]) + sum(shown) + (shown.length && extra ? extra + gap : 0);
+    return sum([cap, h.speech, h.toasts]) + sum(shown) + (shown.length >= 2 && extra ? extra + gap : 0);
   };
   const out = { caption: false, phone: false, phoneHidden: 0 };
   if (need(h.caption, 0) <= budget) return out;
   if (h.caption > 0 && (h.speech > 0 || h.toasts > 0 || texts.length > 0)) out.caption = true;
   const cap = out.caption ? 0 : h.caption;
   if (need(cap, 0) <= budget) return out;
-  if (!(h.speech > 0 || h.toasts > 0)) return out;   // texts only make way for speech or a toast
+  // Texts make way for speech or a toast; among themselves the newest always shows
+  const keep = (h.speech > 0 || h.toasts > 0) ? 0 : 1;
   let n = 0;
-  while (n < texts.length && need(cap, n) > budget) n++;
+  while (n < texts.length - keep && need(cap, n) > budget) n++;
   out.phoneHidden = n;
   out.phone = n > 0 && n === texts.length;
   return out;
@@ -294,10 +295,14 @@ export function applyLanes(doc = document, win = window) {
   const texts = phoneEl ? Array.from(phoneEl.querySelectorAll('.npc-bark')).filter(el => !el._removing) : [];
   const textH = texts.map(el => yieldable(el, heightOf(el)).h);
   const clearAllEl = phoneEl?.querySelector('.npc-bark-clear-all');
-  const clearAllH = clearAllEl ? heightOf(clearAllEl) : 0;
+  // Its height as last seen: CSS hides it while fewer than two texts show, and a height that
+  // came and went with it would make the placing flip between two answers
+  const seenClearAll = clearAllEl ? heightOf(clearAllEl) : 0;
+  if (clearAllEl && seenClearAll > 0) clearAllEl._laneH = seenClearAll;
+  const clearAllH = clearAllEl ? (seenClearAll || clearAllEl._laneH || 0) : 0;
   const phoneSum = (hidden) => {
-    const shown = textH.slice(hidden);
-    return sum(shown) + (shown.some(h => h > 0) && clearAllH ? clearAllH + LANE_GAP : 0);
+    const shown = textH.slice(hidden).filter(h => h > 0);
+    return sum(shown) + (shown.length >= 2 && clearAllH ? clearAllH + LANE_GAP : 0);
   };
   const toastH = contentOf(toastsEl);
   const speechH = contentOf(speechEl);

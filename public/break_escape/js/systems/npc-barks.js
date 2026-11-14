@@ -695,6 +695,9 @@ export default class NPCBarkSystem {
 
       // Oldest barks are first in the DOM. Skip any already on their way out.
       const barks = Array.from(host.querySelectorAll('.npc-bark')).filter(el => !el._removing);
+      // Phone texts placed by the lanes are not closed for want of room: the lanes step the
+      // oldest aside, paused, until there is room (review R1 m1); only the count limit applies
+      if (host === this.container && host.dataset.lane === 'notify') available = Infinity;
       const drop = barksToTrim(barks.map(el => ({ height: el.offsetHeight })), available);
       barks.slice(0, drop).forEach(el => this._removeBark(el));
     });
