@@ -1,10 +1,12 @@
 # Office life: the sims showcase day, audit and build plan
 
-This plan grows `scenarios/test_needs_sims` (the neutral office-life showcase, no security narrative) into a believable small office day: an open-plan floor with its print corner, a kitchen, a meeting room, an IT room, a facilities office, a reception and a private office, with thirteen people. It specifies the missing pieces as small build slices, each with engine work (where there is any), node tests, a scenario addition with an objective and a live proof. The order follows the campaign: the showcase first proves what the m02 pilot needs, then what m06, m05 and m08 need, in the rollout order of the missions plan. Part 1 is the audit. Parts 2 to 8 are the plan.
+This plan grows `scenarios/test_needs_sims` (the neutral office-life showcase, no security narrative) into a small office day: the open-plan floor with its print corner, a kitchen, a meeting room, a reception, a private office, an IT room and a staff room, with thirteen people. It is built in small slices. Each slice has its engine work (where there is any), schema and validator entries, node tests, a scenario addition with an objective, a live proof, its regression files, a size and a sync note.
 
-Line numbers drift. Engine references give the function name with the file:line where it starts on branch `build/ol-sims` at d28417369 (engine, server, validator, test and scenario files are byte-identical to 69a77f696). Scenario references are to `scenarios/test_needs_sims/scenario.json.erb` (`sims.erb`).
+The order serves the campaign. The m02 pilot's patterns land first, each with its own live proof, before the wider day is built: the attack probe, the arrival check, the still NPC who prints by command, the staff-room pair, and the validator check for pools nothing can trigger. Then come the patterns m06 and later missions need.
 
-Related documents: `docs/achitechture/OFFICE_LIFE_PLAN.md` (OLP), `docs/achitechture/NPC_NEEDS_SYSTEM.md` (the author contract), and the campaign plan `docs/achitechture/OFFICE_LIFE_MISSIONS_PLAN.md` on branch `plan/office-life-missions` at 2e0bca43f (OLMP). OLMP's pilot is m02 ransomed_trust, its rollout is in OLMP 6.14, its engine gaps are E1 to E6 in OLMP 9, and its sync table is OLMP 7. Section 2 quotes the parts this plan answers to.
+References are to branch `build/ol-sims` at d6fc3f07c (merged with main at 1f3ac1f0b, scenario format 3). Engine paths are under `public/break_escape/js/`. Line numbers drift, so each reference gives the function name and the line where it starts. `sims.erb` is `scenarios/test_needs_sims/scenario.json.erb`.
+
+Related documents: `docs/achitechture/OFFICE_LIFE_PLAN.md` (OLP), `docs/achitechture/NPC_NEEDS_SYSTEM.md` (the author contract), `docs/achitechture/SCENARIO_FORMAT_HARDENING_PLAN.md` (format 3), and the campaign plan `docs/achitechture/OFFICE_LIFE_MISSIONS_PLAN.md` on branch `plan/office-life-missions` at 8748f2bf8 (OLMP). OLMP's pilot is m02 ransomed_trust (section 6), its engine gaps are E1 to E6 (section 9), its validator checks V1 to V10 (section 4), and its sync caps are in section 7.
 
 ---
 
@@ -12,271 +14,239 @@ Related documents: `docs/achitechture/OFFICE_LIFE_PLAN.md` (OLP), `docs/achitech
 
 ### 1.1 Behaviours
 
-States: **shown** = built and shown in test_needs_sims; **not shown** = built, not shown there; **unproved** = built, never proved live; **planned**; **not planned**. The last column names the slice that shows it.
+States: **shown** = built and shown in test_needs_sims; **not shown** = built, not shown there; **unproved** = built, never proved live; **planned**. The last column names the slice that shows it.
 
 | # | Behaviour | State | Engine evidence | Shown by |
 |---|---|---|---|---|
-| 1 | Needs decay, urgency, bounded selector, needs clock | shown | `tick` npc-needs.js:1006, `update` 606, `_tickNpc` 1257, `_select` 1490 | now |
-| 2 | Posts and home preference (`needsHome`, object or tile) | shown | `_goHome` 3771, `_useCandidate` 1567 | now; tile homes at chairs in SIMS-3 |
-| 3 | Presets by exact type or `officeType`; `affordance: false` | shown (by type only) | `presetIdFor` office-presets.js:49, `resolveAffordance` 66; office-presets.json; validator `expand_presets` validate_npc_needs.rb:627 | `officeType` on boilers, fridge, `pc5`, `pc12`, phones; `affordance: false` on an empty cooler (SIMS-3, SIMS-4) |
-| 4 | Room leash, allow list and deny list | not shown | `_roomForbidden` 1197, `_avoidRooms` 1209; `npc_needs_leashed` with `skipped`; validator `leash_rule` 1086, `leash_reach` 1116 | allow: Neil, Keith, Jodie, Leila, Andrés, Siân; deny: Nisha (the first live use) |
-| 5 | Private rooms and objects | shown | `_owners` 1218, `_permitted` 1229; validator `check_private` 1048 | now; every new room |
-| 6 | Carry jobs for tagged items | shown | `_carryCandidate` 2799 | now |
-| 7 | Reveal slots | shown | `_revealOutput` 3512, `_reserve` 3612; validator `check_slots` 1381 | now; the IT copier tray |
-| 8 to 12 | Icons, pressing-need bubbles, item in hand, seating, typing bob | shown | npc-action-icons.js `pickIconEntry` 135, `pressingBubble` 202; npc-office-visuals.js `heldPlacement` 174; seating.js `needsStop` 1738, `typingBob` 1779 | now; seated tile homes in SIMS-3 |
-| 13 | Idle roll, rare swivel, look round; `swivel: false` | shown | `fidgetOffset` seating.js:1169, `swivelFacing` 1268, the opt-out at 1295 | now; `swivel: false` on Neil |
-| 14 | Own-post use is not a leave; caught at the desk | shown | `_atOwnPost` 2949, `_checkCaught` 3066 | now; Neil's mug (SIMS-3) |
-| 15 to 17 | Lock decisions, lock-screen habits, idle auto-lock, cues, indicators | shown | workstation-state.js `decideLocked` 147, `habitOf` 125, `_checkAutoLock` 466; `lockCuePlan` npc-office-visuals.js:101 | now; Leila, Nisha, Siân |
-| 18 | Left-behind items | shown | `_leaveItemsBehind` 2983 | now |
-| 19 | Chat at a capacity-2 chatter object, compatibility | shown | `_maybePair` 3863, `_compatible` 3844, `_tickChats` 3887 | now; the facilities pair and the IT tea pair |
-| 20, 21 | Queues, queue chatter, avoidance, balking, parked needs | shown | `_queueCandidate` 4387, `_tickQueueChats` 4466, `_avoidedAt` 1764 | now; the vending queue (SIMS-5) |
-| 22 | Chatter pools, `hush` | shown (no `hush`) | `chatterPool` 242, hush on a chat 3895-3901, ended with reason `hushed` (`_endChat` 2784) | the IT tea pair (SIMS-4) |
-| 23 | Exchanges heard once, `requireGlobal` | shown (ungated or string gate) | `_findExchange` 2685, `_startExchange` 2711, `_finishExchange` 2751 | gated both ways (SIMS-4); a pair's exchange (SIMS-3) |
-| 24 | Print and forget, print-job lever | shown | `_tickPrints` 3672, `_dueErrand` 3644 | now; Leila (SIMS-4) |
-| 25 | `offWhen` switches | shown | `_isOff` 687, `_deadStation` 2125 | now; the manager's printer (SIMS-7) |
-| 26, 27, 29 | Magnets, word of mouth, table landing | shown | `_noteMagnets` 731, `_tickNews` 838; world `settleMagnet` 5303 | now (the cake) |
-| 28 | A magnet seen only | not shown | same code, no `announce` | the pizza (SIMS-6) |
-| 30 | Desk-phone calls | shown | `onPhoneRing` 4015, `_tickRings`, `_tickCalls` 4238 | now; reception and the private office |
-| 31 | Room tone and `roomToneTypes` | shown (table types only) | `profileForRoom` office-room-tone.js:41 | `room_security` mapped (SIMS-3) |
-| 32 to 34 | Use sounds by room, conversation freeze, debug overlay | shown | `useVolume` npc-office-visuals.js:135, `_talking` 3979, npc-needs-debug.js | now |
-| 35 | Player consumables | not shown | consumables.js `consumableKind` 67, `useConsumable` emits `item_consumed` with `itemId` (216-218); map cups are drinkable (`DRINKABLE_CUPS` 80-88) | the kitchen cup (SIMS-4) |
-| 36 | Work judged against resources, frustration, outage kick, check visits | not shown | `_plan` 2100, `_judged` 2106, `_countFailure` 2226, `_tickKick` 2333, `enqueueVisit` 2371 | the private office (SIMS-7) |
-| 37 | Workarounds | not shown | npc-workarounds.js `due` 119 | kept out (1.2) |
-| 38 | `social_media` need, the phone `self` job | not shown | `_socialCandidate` 2148 (own station first; the phone when there is none or it is `socialBlocked`), `_startSelfJob` 2905 | Andrés, who has no station (SIMS-5) |
-| 39 to 42 | Friendface, awareness, USB, sessions and sign-in | not shown | social-feed.js; door-gates.js:134; `usbRefusedBy` 258; workstation-state.js `guestOf` 286 | kept out (1.2) |
-| 43 | Traits (OLP slice 6) | planned | none | backlog SIMS-11 |
-| 44 | Routines (OLP slice 9) | planned | none | not planned here (5.12) |
-| 45 | Arrive and leave on the game clock (OLP slice 12) | planned | `game-clock.js` exists | backlog SIMS-8 |
-| 46 | Stock and refills (OLP slice 13) | planned | none | backlog SIMS-10 |
-| 47 | Per-NPC sessions (OLP 16b) | superseded by row 42 | none | none |
-| 48 | E1: attacked and knocked-out needs NPCs, live | unproved | `isAvailable` 1086 and the block in `_tickNpc` 1273-1281, `_goHome` on `unblocked` 1282-1285; `onKnockedOut` workstation-state.js:566; server KO drop guard game.rb 486-523 and `find_npc_held_item` 1151 | `test_needs_attack` (SIMS-1) |
-| 49 | E2: vending presets | planned | sprites `vending_machine1`, `drinks_vending1`; no preset | reception (SIMS-5) |
-| 50 | E3: more than 8 needs NPCs | unmeasured | test/js/npc-needs-tick-cost.test.mjs; 6-NPC mean tick 0.19 ms | 13 needs NPCs (SIMS-5) |
-| 51 | E4: lazy room loading | design rule | `_onRoomsLoaded` 1119 | the tour opens doors in order |
-| 52 | E5: an NPC at its post for a beat | design rule; helper in the backlog | OLMP section 2, three protections | protections 1 (Neil) and 2 (every new NPC); backlog SIMS-9 |
-| 53 | Simulating unloaded rooms | not planned | OLP 4.1 | none |
-| 54, 57 | `maxUnmetMin`, `deferrable: false` | not shown | `_starved` 1410; `_useCandidate` 1580-1582 | kept out (1.2) |
-| 55 | `printHabit.shareAfterSeconds` | not shown | `_tickPrints` 3691-3696 | Leila (SIMS-4) |
-| 56 | `npc_print_gone` (taken before the due time; no walk) | not shown | `_tickPrints` 3676-3684 | Leila (SIMS-4) |
-| 58 | A magnet that starts as a room object | unproved | `_noteMagnets` over `listObjects` at room load, `_shownMagnets` 751; validator warning validate_npc_needs.rb:272 | the pizza (SIMS-6) |
-| 59 | An NPC whose only need is met by its own post object, printing by command | not shown | at-post jobs (`_atOwnPost` 2949); `control` 949 `print` with `forget`; seat mode `stand` (`seatPreference` seating.js:1794) | Neil (SIMS-3) |
-| 60 | Coupled breaks: `npc_left_post` with `targetId` setting a partner's need | not shown | payload at npc-needs.js:2968; mapping `needs` through `control` (npc-manager.js:1581) | the facilities pair (SIMS-3) |
-| 61 | `chatterCooldownMin` below the default of 5 | not shown | `CHATTER_COOLDOWN_MIN` 73, read at 2628 | the facilities pair (SIMS-3) |
-| 62 | A `room_entered` mapping that starts a break | not shown | mapping `cooldown` in ms (npc-manager.js:1223) | the facilities pair (SIMS-3) |
+| 1 | Needs decay, urgency, selector, needs clock | shown | npc-needs.js `update` 606, `tick` 1006, `_tickNpc` 1253, `_select` 1486 | now |
+| 2 | Posts and home preference | shown | `_useCandidate` 1563 (home object first while free and reachable, 1620), `_goHome` 3767 | now; tile homes in SIMS-4 |
+| 3 | Presets by exact type or `officeType`; `affordance: false` | shown (by type only) | office-presets.js `presetIdFor` 49 (exact `type`, else `officeType`), `resolveAffordance` 66; js/data/office-presets.json | `officeType` on the staff boiler and microwave (SIMS-4), the desk PCs (SIMS-6) |
+| 4 | Room leash, allow and deny lists | not shown | `_roomForbidden` 1197, `_avoidRooms` 1209, `npc_needs_leashed` from `_startJob` (2882) with `skipped` | Leila (allow), Nisha (deny), SIMS-6 |
+| 5 | Private rooms and objects | shown | `_owners` 1217 (object `owner`), `_permitted` 1225 (object `private`) | now; every new room |
+| 6, 18 | Carry jobs, left-behind items | shown | `_carryCandidate` 2795, `_leaveItemsBehind` 2979 | now |
+| 7, 24 | Reveal slots, print and forget | shown | `_revealOutput` 3508, `_recyclable` 3593, `_reserve` 3608, `_tickPrints` 3668 | now; the IT copier (SIMS-3, SIMS-6) |
+| 8 to 13 | Icons, bubbles, item in hand, seating, typing, swivel | shown | npc-action-icons.js, npc-office-visuals.js, seating.js | now; seated tile homes (SIMS-4) |
+| 14, 59 | Own-post use is not a leave; an NPC that takes part without moving | shown / not shown | `_atOwnPost` 2945, `_leavePost` 2957 | Neil (SIMS-3) |
+| 15 to 17 | Lock decisions, screen habits, auto-lock, cues | shown | workstation-state.js `decideLocked` 144 | now; Leila, Nisha (SIMS-6), Siân (SIMS-9) |
+| 19, 22, 23 | Chat at a capacity-2 chatter object, pools, `hush`, exchanges | shown (no `hush`) | `_maybePair` 3859, `_tickChats` 3883, `_findExchange` 2681 | the pair (SIMS-4); `hush` at the IT kettle (SIMS-6) |
+| 20, 21 | Queues, avoidance, balking | shown | `_queueCandidate` 4383, `_avoidedAt` 1760 | now |
+| 25 | `offWhen` switches | shown | `_isOff` 687 | now |
+| 26 to 29 | Magnets, word of mouth, table landing | shown | `_noteMagnets` 731, `_tickNews` 838 | now (the cake) |
+| 28, 58 | A magnet seen only, starting as a room object | not shown / unproved | `_noteMagnets` at room load, `_shownMagnets` 751 | the pizza (SIMS-7) |
+| 30 | Desk-phone calls | shown | `onPhoneRing` 4011, `_tickRings` 4041, `_ownerCanAnswer` 4060 | now; reception (SIMS-8), private office (SIMS-9) |
+| 31 | Room tone and `roomToneTypes` | shown (table types only) | office-room-tone.js `profileForRoom` | `roomToneTypes` for the staff room (SIMS-4) |
+| 32 to 34 | Use sounds by room, conversation freeze, debug overlay | shown | npc-office-visuals.js, `_talking` | now |
+| 35 | Player consumables | not shown | consumables.js (`item_consumed` with `itemId`) | the kitchen mug (SIMS-6) |
+| 36 | Work judged against a resource, frustration, outage kick, check visits | not shown | `_plan` 2096, `_judged` 2102, `_countFailure` 2222, `_tickKick` 2329, `enqueueVisit` 2367; npc-work.js `failures` 63 | Siân (SIMS-9) |
+| 38 | `social_media` need, the phone `self` job | not shown | `_socialCandidate` 2144, `_startSelfJob` 2901 | Andrés (SIMS-8) |
+| 60 | Coupled breaks (`npc_left_post` with `targetId`) | not shown | payload in `_leavePost` 2957; mapping `needs.set` through `control` 949 | the pair (SIMS-4) |
+| 61 | `chatterCooldownMin` below the default 5 | not shown | `CHATTER_COOLDOWN_MIN` 73, `_cooldownMs` 2623 | the pair (SIMS-4) |
+| 62 | A break started from the room before | not shown | mapping `cooldown` in wall-time ms (npc-manager.js, default 5000) | the pair (SIMS-4) |
+| 63 | A print command from a `conversation_closed` mapping with `delayMs` | not shown | `control` 949 (`print` with `forget`); npc-manager.js `_scheduleDelayedMapping` (condition checked at the event and again when the delay ends; waits while a minigame is open) | Neil (SIMS-3) |
+| 48 | E1: attacked and knocked-out needs NPCs, live | unproved | `isAvailable` 1086, the block in `_tickNpc`; server KO drop guard (game.rb, `find_npc_held_item`) | `test_needs_attack` (SIMS-1) |
+| 49 | E2: vending preset | planned | sprites `vending_machine1`, `drinks_vending1` | SIMS-8 |
+| 50 | E3: more than 8 needs NPCs | unmeasured | test/js/npc-needs-tick-cost.test.mjs | SIMS-8 |
+| 64 | V10: pools, exchanges and calls nothing can trigger | planned | none | SIMS-5 |
+| 43 to 46 | Traits, routines, schedules, stock | planned in OLP | none | backlog (5.10) |
 
 ### 1.2 Built behaviours the showcase leaves out, and why
 
-- **Workarounds (row 37), Friendface (39), awareness, USB, sessions and sign-in (40 to 42).** Each is a security beat (a propped door, a written password, a borrowed session, a feed to mine). The showcase stays neutral; they keep their own floors (test_access_work, test_access_social, test_access_habits, test_access_sessions, test_access_signin, lab_physical_pentest).
-- **`maxUnmetMin` and `deferrable: false` (rows 54, 57).** Story-need knobs with nothing to watch on a normal day; OLMP 2 says `deferrable: false` is not a protection. They stay in the author contract and the unit tests.
+- **Workarounds, Friendface, awareness, USB, sessions and sign-in.** Each is a security beat (a propped door, a written password, a borrowed session, a feed to mine). The showcase stays neutral, and they keep their own floors (test_access_work, test_access_social, test_access_habits, test_access_sessions, test_access_signin, lab_physical_pentest).
+- **`maxUnmetMin` and `deferrable: false`.** Story-need knobs with nothing to watch on a normal day; OLMP section 2 says `deferrable: false` is not a protection. They stay in the author contract and the unit tests.
 
-Work needs and the phone break (rows 36, 38) are ordinary office life and are shown (SIMS-5, SIMS-7).
+### 1.3 The arrival fault (baseline game 3537)
 
-### 1.3 The Grace overlay fault (baseline game 3537)
-
-`base-05-office-later2-3537.png` shows Grace's overlay ("grace: using 12s lounge_sofa") and her `Z` icon over the office's west desks, with Grace's sprite under them. The decision log has `482 urgent rest`, `482 job_start rest lounge_sofa`, `482 windup` and `491 using rest lounge_sofa`. Nine ticks is 2.25 s of needs clock; the sofa's approach cell (540,244) is about 15 tiles from her desk. Two targeted probes on :3093 (games 3560, 3572) did not repeat it.
+`base-05-office-later2-3537.png` shows Grace's overlay ("grace: using 12s lounge_sofa") and her `Z` icon over the office's west desks, with Grace's sprite under them. The decision log has `482 urgent rest`, `482 job_start rest lounge_sofa`, `491 using rest lounge_sofa`: nine ticks (2.25 s of needs clock) for a sofa about 15 tiles away. Two targeted probes (games 3560, 3572) did not repeat it.
 
 What the code allows:
 
-- `_advanceJob` (3119) treats any queued `npc_arrived:<id>` whose owner is `needs` as the job's arrival (`onArrived` 630 queues every one), with no check of where the NPC stands.
-- Seating's chair fetch moves the NPC with owner `needs` (`moveNeeds` seating.js:2029-2033), but only while `needsStop` (1738) returns a stop: an own-desk job, `returning` at the post, `using`, or `idle` at the post. An arrival that lands during a job's windup is taken off `_arrivals` (npc-needs.js:1318) and dropped when the windup branch returns (1342-1349), and `_leavePost`'s move then replaces the fetch's path (npc-behavior.js `goToAndStay` 2980). So a fetch arrival reaching the `goto_target` phase needs a path not yet identified.
-- The behaviour layer fires the arrival whenever its current path runs out (npc-behavior.js:1236-1245, `_triggerGoToStayArrival` 3064), with no check against `_goToStayDest`. A path that ends short (an async path answer at 1722-1752, a planned path that stops at a door) carries the job's own move, so only a distance check can catch it.
-- The baseline's other oddity, `return_resumed` at (116,156) every 12 ticks for 70 ticks on the way home, is `_watchReturn` (3791-3800) re-issuing a walk home that is not getting anywhere. It is a stalled return, not a chair fetch.
+- `_advanceJob` (3115) treats any queued `npc_arrived:<id>` whose owner is `needs` as the job's arrival (`onArrived` 630 queues every one), with no check of where the NPC stands.
+- The behaviour layer fires the arrival whenever its path runs out or it has stood within a tile for 1.5 s (npc-behavior.js 1213-1245, `_triggerGoToStayArrival` 3064), with no check against `_goToStayDest` at the path-end branch. A path that ends short (an async path answer, a planned path that stops at a door) carries the job's own move, so only a distance check catches it.
+- The other oddity in the baseline, `return_resumed` every 12 ticks on the way home, is `_watchReturn` (3787) re-issuing a walk home that is not getting anywhere: a stalled return.
 
-SIMS-2 therefore instruments every owner-`needs` arrival first, runs until the fault repeats, and fixes it with a distance check as the main guard and move ids as the second.
+SIMS-2 logs every needs arrival first, runs until the fault repeats, and fixes it with a distance check as the main guard and move ids as the second.
 
----
+### 1.4 Format 3 in the showcase
 
-## 2. What the campaign needs from the showcase
+Scenario format 3 is on main (`FormatUpgrade::STEPS` holds 8a, 8b and 8c). The validator's retired-key check rejects the old names, so every field in this plan is a format 3 name:
 
-### 2.1 The missions plan, quoted
+| Retired | Format 3 |
+|---|---|
+| `screenOwner` on a workstation | object `owner` |
+| `phoneOwner` on a desk phone | object `owner` plus `deskPhone: true` |
+| `affordance.owners` | object `owner` (a string or a list) |
+| `affordance.private` | object-level `private` |
+| `leftBehindBy` | `owner`, with `leftBehindChance` |
+| `screenHabit`, `printHabit` | `habits.screen`, `habits.print` |
 
-OLMP 6.14, "Rollout":
-
-> 1. m02 (pilot)
-> 2. m06
-> 3. m05
-> 4. m08
-> 5. m01, then the m01, sis01 and sis02 gate playtests again
-> 6. m07
-> 7. m04
-> 8. m03
-> 9. m09 and m10: the analysis stage runs, is expected to recommend Tier 0, records that and stops.
->
-> One mission is in implementation at a time. The next mission's analysis and design can run while the previous one is in review, as AGENTS.md's mission loop allows. Lessons from each mission go into the skill's references before the next one starts. The vending preset (E2) lands as its own item straight after the pilot, before m06.
-
-OLMP 9, the proposal for each gap:
-
-> **E1** A live probe run in the showcase as slice SIMS-2 (`test_needs_sims`, with the hostile-from-start case in `test_npc_needs`), **before the pilot's design closes**, because the result decides which NPCs may move. If it fails, those NPCs keep needs inside their own room only, and the fix goes to the user as an engine item.
->
-> **E2** A vending entry in `office-presets.json` (hunger and thirst, a short use, a coin sound). Only test scenarios set `officePresets` today, so it changes no deployed game, but it is shared data and an approval item. It lands straight after the pilot, as its own item (the user's decision). Toilets: not planned.
->
-> **E3** Measure frame time with all of the pilot's needs NPCs active, at normal frame rate, before review. Measure first for any mission that would have more than 8.
->
-> **E4** A design rule, not engine work. Need targets sit in rooms that load with the NPC's own room, or the plan accepts that the kitchen comes alive once the player opens it.
->
-> **E5** A design rule plus V2: the three protections in section 2. A "summon to post" helper is backlog only.
->
-> **E6** Fixed in the showcase stream (slice SIMS-2 of `OFFICE_LIFE_SIMS_BUILD_PLAN.md`, move ids for arrivals, about 50 lines) before the pilot's stage 5 playtests. Not a pilot change: it lands on main through the integrator with its own tests, and the pilot rebases over it.
-
-OLMP 9, "Alignment with the showcase":
-
-> - **Before the pilot's design closes:** SIMS-1, the E1 probe, in its own `test_needs_attack` scenario. Its result decides whether the staff-room pair keep their walks (they are the pilot's only walking NPCs).
-> - **Before the pilot's stage 5:** SIMS-2, the arrival check (E6).
-> - **Patterns the pilot uses that the showcase should show first** (scenario work, no engine change): an NPC whose only need is met by its own post object, so it takes part without moving, and which prints through the `needs: { print: { producer, forget: true } }` command from a mapping (Gary, option (a)); a coupled break, where a mapping on `npc_left_post:<a>` with a `targetId` condition sets `<b>`'s matching need low so the two meet at one capacity-2 chatter object; and one pool line per speaker per break with `chatterCooldownMin: 2`, to confirm the rhythm in 6.4 reads as conversation rather than noise; and the `room_entered` break with a 120 s cooldown.
-> - **Not needed by the pilot:** SIMS-4 (E3, vending and Keith; vending is E2 and lands after the pilot), SIMS-5 (the leftover pizza, for m06), and the backlog SIMS-6 to SIMS-8.
-> - **Showcase rows to retire.** The showcase plan's m02 rows (its section on what each mission needs) describe an earlier pilot: Gary walking to a kettle and copier, `officeType: "fridge"` on the undercounter fridge, `hush` pools, and a second NPC reaching IT through a door. This pilot uses none of these with Gary option (a), so SIMS-3 need not prove them for m02; Neil's walking pattern stays as evidence for Gary option (b) and for later missions.
-
-### 2.2 Where this plan departs from the quoted text, and why
-
-- **E1 runs in `test_needs_attack`, as SIMS-1.** OLMP's alignment list says so; its E1 row still says "SIMS-2 (`test_needs_sims`, ...)". The showcase is a neutral office with no combat beats, so the probe gets its own scenario, and its hostile-from-start NPC lives there too rather than in `test_npc_needs`. Request to the OLMP owner: make the E1 row read "SIMS-1, in its own `test_needs_attack` scenario".
-- **E6 is SIMS-2, about 75 lines, not 50.** The distance guard, the move ids through the world's `moveTo` and `cancelMove`, and checks in three arrival paths need more than the earlier estimate (5.2).
-- **Slice numbers after SIMS-2 differ from OLMP's "Not needed" list.** Here SIMS-5 is E3, vending and the reception, SIMS-6 the pizza, SIMS-7 the private office, and the backlog is SIMS-8 to SIMS-12. Request to the OLMP owner: renumber that bullet when OLMP is next touched.
-- **The retired m02 rows stay in the showcase.** Allow and deny leashes, `officeType: "fridge"`, `hush` and print and forget are built behaviours the showcase must show (the brief: every built behaviour visible), and Leila's walking pattern is OLMP's "evidence for Gary option (b) and for later missions". They move to SIMS-4 and are not counted as m02 proof.
-
-### 2.3 What each mission needs, and where it is proved
-
-| Mission (rollout order) | Needs proved first | Where | Slice |
-|---|---|---|---|
-| m02 (pilot), before its design closes | E1: a needs NPC attacked and knocked out outside its post room, KO globals, tasks and held-item drops once, reload; hostile from the start; protection 3; a sight catch on a walking needs NPC (Gary's `on_cabinet_picked`); a knocked-out partner whose partner's next coupled break goes ahead alone (OLMP 6.11 step 2); a Gary (a) NPC knocked out before its print, which prints nothing (step 3) | `test_needs_attack` | SIMS-1 |
-| m02, before its stage 5 | E6: an arrival counts only where the NPC is | every needs scenario | SIMS-2 |
-| m02, the patterns | Gary (a): one need met by the own post object, `seat: "stand"`, `swivel: false`, a command print with `forget: true` from `conversation_closed` with `delayMs`, the room kettle `affordance: false`, a 2 px stillness proof; the staff-room pair: tile homes at table chairs, coupled breaks, `chatterCooldownMin: 2`, the boiler (`officeType: "kettle"`, `useSeconds: 30`, `restores: 40`, `queue: false`) and cooler (`useSeconds: 25`, `restores: 40`), the `room_entered` break with a 120 s cooldown, an exchange on the lower id's list, OLMP 6.4's exit test; `roomToneTypes` | Neil in the IT room; Keith and Jodie in the facilities office | SIMS-3 |
-| E2 (after the pilot, before m06) | vending presets | reception | SIMS-5 |
-| m06 | a magnet seen, not announced, from an in-world source, drawing a desk NPC away and opening a screen-habit window; servings across a reload; print and forget with fetch errands from real desks; a pair whose chatter happens in a working office | the pizza and Nisha; Leila and Nisha | SIMS-4, SIMS-6 |
-| m05, m08 | E3 above 8 needs NPCs; needs confined to one room (m05's Lisa, m08's off-duty agent) | 13 needs NPCs; Andrés, Siân, the pair | SIMS-5 |
-| m01, m03, m04, m07 | coffee and cooler, cake, `avoids`, screen-lock habits, an exchange at a coffee point, a kettle with needs confined to one room | shown now, or by SIMS-3 and SIMS-4 | none new |
-| m09, m10 | Tier 0 | nothing | none |
+The merge already renamed these existing showcase keys (sims.erb as it stands): `amara_pc`, `tom_pc` and `sanjay_pc` gained `owner` and object-level `private: true`, and lost `affordance.private`; `tom_badge`'s `leftBehindBy` became `owner`; `tom_phone`'s `phoneOwner` became `owner` with `deskPhone: true`; Amara's and Sanjay's `screenHabit` and Tom's `printHabit` became `habits.screen` and `habits.print`. The README's annotated examples were updated in the same merge. `needsHome` no longer implies an owner, so every owned workstation, desk phone and private object in this plan names its `owner`. Only `habits.screen` and `habits.print` reach the browser (schema `npc.habits`).
 
 ---
 
-## 3. The showcase: a small office day
+## 2. What the campaign needs first
+
+### 2.1 The m02 pilot as it now stands (OLMP 6)
+
+- **Talk needs a pair.** Chatter and exchanges play only between two compatible NPCs using one capacity-2 chatter object at once (`_maybePair` 3859). So the pilot adds two non-clinical night workers in the staff room, a night porter and a night domestic, seated at two tables (`hospital_chair_south` and `hospital_chair_north`, the only chairs there in seating's `STATIC_SEATS`, seating.js:209-210), leashed to the room, with a boiler, a cooler and a microwave declared on the drawn decor.
+- **Coupled breaks about every four minutes.** On the domestic, `npc_left_post:night_porter` with `data.targetId === 'staff_boiler'` sets her caffeine to 20; on the porter, `npc_left_post:night_domestic` with `data.targetId === 'staff_cooler'` sets his thirst to 20. The boiler and cooler restore 40; `chatterCooldownMin: 2` gives one pool line per speaker per break.
+- **Breaks started from the room before.** A crossing takes about two seconds, and a break triggered on entering the staff room starts too late (a tick, a 0.7 s wind-up and two walks). So `room_entered` mappings on the rooms just before the crossing (corridor, IT, Kim's office, Boardroom, 120 s cooldown) start a boiler break on the porter or a cooler break on the domestic; `room_entered:staff_room` stays as a fallback.
+- **Three exchanges on the domestic's list** (the lower id's list is read first, `_findExchange` 2681), gated on `cover_burned` and `cover_restored`, one on `heard_<knot>` and one ungated.
+- **Presets** for the boiler (`officeType: "kettle"`), the cooler (by type) and the microwave (`officeType: "microwave"`, since the preset lists only `microwave1`).
+- **Gary stays fixed.** A declared cold mug is his own post object and his only need's source (object-level `private: true`, `owner: ["gary_whitlock"]`, `seat: "stand"`); the IT kettle is `affordance: false`. He is never moved.
+- **An auto-print.** A mapping on `conversation_closed:gary_whitlock` with `delayMs: 6000`, `onceOnly`, a condition on two globals and `needs: { print: { producer, forget: true } }` puts one page on the IT copier's tray about 6 s after the conversation closes.
+- **No desk phone, no screen habits, no lever** in m02. Those come with m06.
+- **V10**, a new validator warning on chatter pools, exchanges and calls that nothing in the scenario can trigger.
+- **E1** (the attack probe) before the pilot's design closes; **E6** (the arrival check) before its stage 5 playtests.
+
+### 2.2 Where each is proved
+
+| Pattern | Slice | Live proof |
+|---|---|---|
+| E1, including a knocked-out partner whose partner breaks alone, a still NPC knocked out before its print, and a reload before the page is taken | SIMS-1 | `needs-attack-probe.mjs` |
+| E6, an arrival counts only where the NPC is | SIMS-2 | `needs-arrival-proof.mjs` |
+| The still NPC with a declared mug, `seat: "stand"`, the auto-print 6 s after a conversation closes, the room kettle kept out | SIMS-3 | `needs-sims-neil.mjs` |
+| The pair: drawn-decor presets for boiler, cooler and microwave, seated tile homes at the two static seats, coupled breaks, `chatterCooldownMin: 2`, room-before triggers for both objects, the fallback, three gated exchanges, `roomToneTypes` | SIMS-4 | `needs-sims-staff-room.mjs` |
+| V10 | SIMS-5 | the SIMS-4 run's heard-line count against V10's report |
+| E2 vending (after the pilot), E3, the phone break, a call | SIMS-8 | `needs-sims-reception.mjs`, `needs-perf.mjs` |
+| m06: screen habits, a seen-only magnet from the world that opens a screen window, print and forget with fetch errands, a pair talking in a working office | SIMS-6, SIMS-7 | `needs-sims-it.mjs`, `needs-sims-pizza.mjs` |
+| m05, m08: needs confined to one room, E3 | SIMS-4, SIMS-8 | as above |
+
+SIMS-1 to SIMS-5 carry the m02 patterns and run before anything else. The showcase deliberately uses m02's own staff-room map, so the seats, the drawn boiler above the counter, the microwave in the table layer and the room-tone mapping are the pilot's own.
+
+---
+
+## 3. The showcase
 
 ### 3.1 What stays fixed
 
-- The three rooms (`office`, `kitchen`, `lounge`), the six NPCs (`amara`, `tom`, `grace`, `sanjay`, `rosa`, `marek`), every object id, global and task id keep their numbers, seed (`npcNeedsSeed: "test_needs_sims"`), positions and the start position (5,6). The README's live-proof tables and the node fixture (`test/js/fixtures/needs-sims-world.mjs`, `GOLDEN_SIMS_DAY`) hold. Nothing is renamed.
-- Every new room is private to its own staff (`needsPrivateTo`), and every new NPC is leashed away from the office, kitchen and lounge, with every source of its needs inside rooms it may use. No office NPC can walk to a new source and no new NPC to an old one, so the README's office beats (coffee contention, the kitchen fallback, the queue, the outcast, the cake) log the same with every door open. Each slice re-runs them.
-- Files that read this scenario and must keep passing: `test/js/npc-left-behind.test.mjs`, `test/js/npc-needs-slots.test.mjs` (`GOLDEN_SIMS_DAY`), `test/js/npc-needs.test.mjs`, `test/js/npc-needs-tick-cost.test.mjs`, `test/js/npc-desk-phone.test.mjs`, `test/js/table-drop.test.mjs`, `test/js/validator-office-presets.test.mjs` (asserts the exact preset object list at 84-93; updated in SIMS-3, 4, 5 and 7), `test/js/inventory-menu.test.mjs` (the droppable items at 30-60; updated in SIMS-6), `test/js/npc-voiced-chatter.test.mjs` (reads the compiled ink, 22), `test/unit/format_8a_corpus_test.rb` and `test/js/format-8a-reader-parity.test.mjs` (frozen renders in `test/fixtures/format_8a/`), and `tools/playtest/needs-baseline-capture.js` (its visit list stays valid). Hacktivity's tests load `test_objectives` and `test_simple_success`, not this scenario.
-- The scenario stays ERB-free (the format corpus test needs a deterministic parse).
+- The three rooms (`office`, `kitchen`, `lounge`), the six NPCs (`amara`, `tom`, `grace`, `sanjay`, `rosa`, `marek`), every object id, global and task id, the seed (`npcNeedsSeed: "test_needs_sims"`), positions and the start position (5,6). Nothing is renamed.
+- Every new room is private to its own staff (`needsPrivateTo`), and every new NPC is leashed away from the office, kitchen and lounge, with every source of its needs in rooms it may use. No office NPC can use a new source and no new NPC an old one.
+- The office beats in the README (coffee contention, the kitchen fallback, the queue, the outcast, the cake) keep the **same outcomes and task ticks** with every door open. Their log lines will not be byte for byte the same: `_chatSeq` is one counter across all rooms and salts each chat's first speaker and chattiness rolls (`_maybePair` 3859), and `door_opened` clears back-offs and retries parked needs. Each regression compares beat outcomes and task ticks, not log bytes.
+- The node fixture (`test/js/fixtures/needs-sims-world.mjs`, `GOLDEN_SIMS_DAY`) is hand-copied, so new scenario NPCs do not change it.
+- Files that read this scenario and must keep passing: `test/js/npc-left-behind.test.mjs`, `test/js/npc-needs-slots.test.mjs`, `test/js/npc-needs.test.mjs`, `test/js/npc-needs-tick-cost.test.mjs`, `test/js/npc-desk-phone.test.mjs`, `test/js/table-drop.test.mjs`, `test/js/validator-office-presets.test.mjs` (asserts the exact preset object list; updated in SIMS-3, 4, 6, 8 and 9), `test/js/inventory-menu.test.mjs` (the droppable items; updated in SIMS-7), `test/js/npc-voiced-chatter.test.mjs` (reads the compiled ink), `test/unit/format_8a_corpus_test.rb`, `test/js/format-8a-reader-parity.test.mjs` and `test/js/format-8c-reader-parity.test.mjs` (frozen renders), and `tools/playtest/needs-baseline-capture.js` (its visit list stays valid). Hacktivity's tests load `test_objectives` and `test_simple_success`, not this scenario.
+- The scenario stays ERB-free (the format corpus test needs a deterministic parse, and `tools/format/rewrite_templates.rb` handles only pure-JSON templates).
 
 ### 3.2 Rooms
 
-`python3 scripts/check_door_alignment.py` passes for this layout, run on a scratch copy of the current scenario with the four rooms and connections added: office south (48,288) = reception north (48,288); IT south (48,32) = office north (48,32); IT west (16,-176) = private office east (-16,-176); facilities west (336,-176) = IT east (304,-176); the kitchen and lounge pairs are as now.
-
 ```
- manager_office (room_ceo) ── west ── it_room (room_it) ── east ── facilities_office (room_security)
+ manager_office (room_ceo) ── west ── it_room (room_IT) ── east ── staff_room (room_hospital_staff)
                                          │ south door
            kitchen (room_break) ── office (room_office, start) ── lounge (room_meeting)
                                          │ south door
                                     reception (room_reception)
 ```
 
-| Room id | Map | Connections | Private to | Role |
-|---|---|---|---|---|
-| `office` (start) | room_office | west kitchen, east lounge, **north it_room, south reception** | nobody | the open-plan floor and its print corner (the office copier, five slots, the Print Queue note), as now |
-| `kitchen` | room_break | east office | nobody | as now, plus a mug of coffee for the player |
-| `lounge` | room_meeting | west office | Rosa, Grace | the meeting room, which Rosa uses as her team room; plus the leftover pizza on the table (SIMS-6) |
-| `it_room` (new) | room_it | south office, east facilities_office, west manager_office | `["neil", "leila", "nisha"]` | IT support: Neil at his bench, Leila at her desk, the boiler, the copier with four slots, a fridge, an empty cooler |
-| `facilities_office` (new) | room_security | west it_room | `["keith", "jodie", "nisha"]` | facilities: Nisha's desk; Keith and Jodie waiting for jobs on the radio on the waiting chairs; their own boiler, cooler and microwave |
-| `reception` (new) | room_reception | north office | `["andres"]` | the front desk: Andrés standing at the counter, the reception phone, the courtesy phone, the vending machines (SIMS-5) |
-| `manager_office` (new) | room_ceo | east it_room | `["sian"]` | the head of facilities' private office: her laptop, desk phone, own coffee station and own printer (SIMS-7) |
+| Room id | Map | Connections | Private to | Role | Slice |
+|---|---|---|---|---|---|
+| `office` (start) | room_office | west kitchen, east lounge, **north it_room, south reception** | nobody | the open-plan floor and its print corner (the office copier, five slots), as now | built |
+| `kitchen` | room_break | east office | nobody | as now, plus a mug of coffee for the player | built; SIMS-6 |
+| `lounge` | room_meeting | west office | Rosa, Grace | the meeting room; plus the leftover pizza on the table | built; SIMS-7 |
+| `it_room` | room_IT | south office, east staff_room, west manager_office | `["neil", "leila", "nisha"]` | IT support: Neil at the south bench with his mug, the IT copier; later Leila's and Nisha's desks and their kettle | SIMS-3, SIMS-6 |
+| `manager_office` | room_ceo | east it_room | `["sian"]` | the private office; in SIMS-3 an empty room on the way in, in SIMS-9 Siân's | SIMS-3, SIMS-9 |
+| `staff_room` | room_hospital_staff | west it_room | `["keith", "jodie"]` | the facilities staff room: Keith and Jodie waiting for jobs on the radio; boiler, cooler, microwave | SIMS-4 |
+| `reception` | room_reception | north office | `["andres"]` | the front desk: Andrés, the reception phone, a courtesy phone, a vending machine | SIMS-8 |
 
-Why these maps. `room_it` is the generic IT room (m01, sis02, test_access_signin); its lock pick, keys, safes and VM launchers are conditional and appear only when claimed. `room_security` is a plain two-desk office with filing cabinets, a chalkboard and six waiting chairs, no sign or logo. `room_reception` and `room_ceo` carry no logo and are both in `js/data/room-tones.json`. Rejected: `room_zds_reception`, `room_qdc_lobby`, `room_aes_reception` and `room_hq_lobby` carry a mission's wordmark; `small_room_1x1gu` has nine floor tiles.
+**Why these maps.** `room_IT` is the generic IT room; its lock pick, keys, safes and VM launchers are conditional and appear only when claimed. `room_hospital_staff` is m02's Night Handover room: a staff kitchen with lockers, a rota board, pigeonholes, three tables and drawn `hot_water_boiler1` (items, top-left (4.75, 0.88)), `microwave1` (table_items, (6.16, 2.13)) and `water_cooler1` (items, (8.44, 5.78)). It carries no wordmark, so as an office's staff room it reads plainly, and using it means the showcase proves the pilot's seats, claims and `useFrom` cells on the same map. `room_reception` and `room_ceo` carry no logo. Rejected: `room_zds_reception`, `room_qdc_lobby`, `room_aes_reception`, `room_hq_lobby` (a mission's wordmark); `room_security` (no kitchen decor, and its waiting chairs are 45 px from any tile home, beyond `NEAR_CHAIR` 36, seating.js:1732).
 
-**Reception has no staff side.** Its counter (`reception_table1`, tiles 2.4 to 7.8, row 2.8) stands against the back wall. Andrés is a front-of-house officer who stands at the counter's east end facing the waiting chairs, which reads as a guard at a front desk, not a visitor.
+**Doors.** On 10 by 10 rooms, north and south doors sit at tile columns 1 to 2 and east and west doors at rows 2 to 3. Step 1 of SIMS-3, SIMS-4 and SIMS-8 runs `python3 scripts/check_door_alignment.py` on the scenario with the new connections. No queue or approach cell sits in a door's column or row within two tiles of the door.
 
-**Overlaps.** The facilities office (x 320 to 640, y -256 to 64) overlaps the lounge's top two tile rows, and the private office (x -320 to 0) overlaps the kitchen's, with no door between them. Walking "behind" a back wall is the intended 3D effect and stays open; step 1 of SIMS-3 and SIMS-7 confirms the walls draw, the fade works and nothing is usable across the overlap.
+**Overlaps.** Unconnected rooms may overlap by a wall row (the staff room over the lounge, the private office over the kitchen). Walking "behind" a back wall is the intended 3D effect and stays open; step 1 confirms the walls draw, the fade works and nothing is usable across the overlap.
 
-**Room tone.** `room_it` maps to `it`, `room_reception` to `reception`, `room_ceo` to its own entry. `room_security` is not in the table, so SIMS-3 adds `"roomToneTypes": { "room_security": "quiet_office" }`, the mechanism m02 uses for its hospital rooms.
+**Room tone.** `room_IT` maps to `it`, `room_reception` to `reception`, `room_ceo` to `quiet_office` in `js/data/room-tones.json`. `room_hospital_staff` is not in the table, so SIMS-4 adds `"roomToneTypes": { "room_hospital_staff": "kitchen" }`, exactly as m02 maps it.
 
-**When each room's life starts.** Only loaded rooms exist (E4); a room loads when its door is first opened and stays loaded.
+**When each room's life starts.** Only loaded rooms exist (E4); a room loads when its door is first opened and stays loaded. IT always loads before the staff room and the private office, so an NPC registered there finds its targets from its first tick. A `room_entered` mapping on an NPC whose room is not yet loaded does nothing (the NPC is not registered).
 
-| Room | Reached | Life starts |
-|---|---|---|
-| office | at load | Amara, Tom, Grace, Sanjay, Marek |
-| kitchen, lounge, reception | one door | when opened; Rosa with the lounge, Andrés with reception |
-| it_room | one door (north) | when opened; Neil and Leila |
-| facilities_office, manager_office | two doors (north, then east or west) | when opened; Keith, Jodie and Nisha, or Siân. IT is always loaded first, so every target of Nisha's exists from her first tick |
+**Not built, and why.** An outside or smoking area: no outdoor map without mission branding and no ashtray, bench or shelter sprite (art request, 6.4). A separate print room: the office copier corner already carries the print beats.
 
-**Not built, and why.** An outside or smoking area: no outdoor map without mission branding (`room_m09_dock` carries Mountain States bay signs, `room_m10_forward` is a military gravel yard) and no ashtray, bench or shelter sprite exists; it is an art request (6.4). A separate print room: the office copier corner already carries the print beats, and the only 10 by 6 candidate, `room_lw_postroom`, has Ledgerwell signage.
+### 3.3 Objects
 
-### 3.3 Objects added
+Positions are top-left tiles (scenario `position` is the sprite's top-left; the office coffee at (8, 8) has its centre at x 269 in the fixture). A declared object claims a drawn Tiled sprite only by **base type**: the room's item pool strips trailing digits from each image name (`extractBaseTypeFromImageName`, core/rooms.js:185) and `findMatchFor` (261) takes the first unreserved item of that base type in the order items, table items, conditional items, conditional table items. So a declaration claims a drawn sprite only when its `type` is the base type and that sprite is first in that order; every other object here gets its exact sprite `type`, an explicit `position` (with `elevation` for desk items) and no claim. A preset then matches the exact `type` (office-presets.js `presetIdFor` 49) or the object's `officeType`.
 
-Positions are starting tiles, square to the walls, one or two angled props per room at most. Step 1 of each room's slice renders the room with `tools/playtest/room-snapshot.mjs`, lists every drawn item and moves any object that sits on furniture or within two tiles of a doorway's approach. Queue and approach cells stay out of all doorways. Doors on 10 by 10 rooms: north and south at tile column 1.5, east and west at row 2.5.
+**it_room (SIMS-3):**
 
-**it_room (SIMS-3 and SIMS-4):**
+| Id | Type, place | Fields | Purpose |
+|---|---|---|---|
+| `neil_mug` | `office-misc-cup3`, explicit position on the middle south bench (smalldesk2, top-left (4.64, 8.20)), about (5.0, 8.4), elevation set in step 1 | not takeable; name "Neil's Mug"; observation "Cold. Nobody has drunk from it since lunch."; `private: true`, `owner: ["neil"]`; `affordance: { satisfies: "caffeine", restores: 30, useSeconds: 4, capacity: 1, useSound: "drink_gulp", seat: "stand", useFrom: <offset read in step 1 so the approach cell is the walk cell under Neil> }` | Neil's post and only source |
+| `it_copier` | `photocopier1` (room_IT draws none), explicit position on the east wall's south stretch, about (8.5, 7.1), between the plant (bottom 6.79) and the south-east corner | copier preset by type; `useFrom: { dx: -1, dy: 0 }` (the default cell below it is the wall row); `uncollectedAfterSeconds: 180` | Neil's print; later Leila's and Nisha's |
+| `it_out_a` to `it_out_f` | `notes1`, explicit positions on the copier's tray, declared last in IT's list | `outputOf: "it_copier"`, `revealOnGlobal: "it_out_<x>_shown"`, `needsTag: "printout"`, readable, **all takeable**, neutral IT text (a change log, a toner order, a patch note, a desk move list, a training reminder, a cable audit; no account, address, password or code) | the auto-print and the paper leak |
+
+**staff_room (SIMS-4):** each declaration claims its drawn sprite.
 
 | Id | Type | Fields | Purpose |
 |---|---|---|---|
-| `neil_mug` | office-misc-cup3, on the middle south-wall bench (smalldesk2, about (4.6, 9.0)) | not takeable; observation "Cold. Nobody has drunk from it since lunch."; `affordance: { satisfies: "caffeine", restores: 30, useSeconds: 4, capacity: 1, useSound: "drink_gulp", seat: "stand", private: true, owners: ["neil"], useFrom: <the cell Neil's tile home snaps to> }` | Neil's post (Gary (a)) |
-| `it_boiler` | hot_water_boiler1, east wall below the door, about (8.4, 6.0) | `officeType: "kettle"`, `affordance: { capacity: 2, chatter: "tea" }` | the IT tea point (SIMS-4) |
-| `it_fridge` | undercounter_fridge1, about (8.4, 7.5) | `officeType: "fridge"` (the fridge preset lists only `qdc_fridge1`) | Leila's and Nisha's hunger |
-| `it_cooler_empty` | water_cooler1, east wall south end, about (9.0, 8.6) | `affordance: false`, name "Empty Water Cooler", observation "The bottle has been empty for a week." | a declared preset type kept out (Gary's kettle in m02) |
-| `it_copier` | photocopier1, west wall below the waiting chairs, about (0.9, 7.6), clear of the south door's approach (columns 1 to 2) | copier preset, `uncollectedAfterSeconds: 180` | all IT prints |
-| `it_out_a` to `it_out_d` | notes1 on the copier tray | `outputOf: "it_copier"`, `revealOnGlobal: "it_out_<x>_shown"`, `needsTag: "printout"`, readable, neutral IT text (a toner order, a patch note, a desk move list, a training reminder; no account, address, password or code); `a` and `b` takeable | Neil's command print, the paper leak |
-| `leila_pc` | pc12 (claims the lower desk's conditional PC at (5.5, 5.3)) | `officeType: "desk_pc"` (pc12 has no preset), `workstation: true`, `screenOwner: "leila"`, `lockChance: 1` | Leila's post |
-| `leila_chair` | chair-white-1-rotate6 (claims the conditional chair at (5.5, 6.8), below that desk) | none | her seat |
-| `tea_round_note`, `it_print_queue` | notes1 | readable, names "Tea Round", "IT Print Queue" | levers (SIMS-4) |
+| `staff_boiler` | `hot_water_boiler` (claims `hot_water_boiler1`) | `officeType: "kettle"`; `affordance: { capacity: 2, chatter: "coffee", queue: false, useSeconds: 30, restores: 40, useFrom: <floor cell in front of the sink counter, read in step 1> }` (the kettle preset is capacity 1 with no chatter, and its default cell below a wall-mounted boiler falls inside the counter) | the pair's boiler |
+| `staff_cooler` | `water_cooler` (claims `water_cooler1`; the cooler preset lists `water_cooler`) | `affordance: { useSeconds: 25, restores: 40 }` over the preset (capacity 2, `chatter: "cooler"`, `useFrom` dy 1) | the pair's cooler |
+| `staff_microwave` | `microwave` (claims the table-layer `microwave1`) | `officeType: "microwave"` (the preset lists only `microwave1`); `affordance: { useFrom: <in front of the counter> }` | Keith's hunger, solo |
+| `job_board` | `notes6` (claims the first conditional `notes6` on the back wall, (7.38, 1.12)) | readable "Job Board", observation only | dressing |
 
-**facilities_office (SIMS-3, SIMS-4, SIMS-6):** `facilities_boiler` (hot_water_boiler1 on the back wall's east end, about (8.5, 1.6); `officeType: "kettle"`; hand-written `affordance: { capacity: 2, chatter: "tea", queue: false, useSeconds: 30, restores: 40, private: true, owners: ["keith", "jodie"], useFrom: <floor cell below> }`); `facilities_cooler` (water_cooler1 on the east wall, about (9.0, 4.2); cooler preset with `useSeconds: 25`, `restores: 40`, `private: true`, `owners: ["keith", "jodie"]`); `facilities_microwave` (microwave1 on the back wall west of the boiler, about (7.6, 1.8); microwave preset, same owners); `nisha_pc` (pc5, claims the left desk's PC at (2.8, 3.8); `officeType: "desk_pc"` (pc5 has no preset), `workstation: true`, `screenOwner: "nisha"`, `lockChance: 0`, `autoLockSeconds: 90`); `facilities_print_queue` (notes1, "Facilities Print Queue", the lever for Nisha's print, SIMS-4). The right desk's PC stays unclaimed (the conditional `pc5` at (6.1, 3.8) is not drawn).
+The room is private to `["keith", "jodie"]`, so the objects need no `private` of their own. The undercounter fridge and the dishwasher sit in the `tables` layer, which the claim pool does not index, so they are not declared.
 
-**reception (SIMS-5):** `reception_phone` (phone1, claims the drawn phone on the counter; `officeType: "desk_phone"`, `phoneOwner: "andres"`); `courtesy_phone` (phone2 by the waiting chairs, about (1.0, 6.0); name "Courtesy Phone"; an `emit_event` of `desk_phone_ring:reception_phone`, as `spare_phone` does at sims.erb:199-205); `reception_snacks` (vending_machine1) and `reception_drinks` (drinks_vending1) on the east wall at about (8.9, 6.2) and (8.9, 7.6); `vending_note` (notes1, "Vending Restocked", the lever).
+**manager_office (SIMS-3, empty; SIMS-9):** no objects until SIMS-9: `sian_laptop` (`laptop6`, explicit position (4.33, 3.05), elevation, `officeType: "desk_pc"`, `workstation: true`, `owner: "sian"`, `private: true`); `sian_phone` (`phone3`, explicit position (5.56, 2.79), elevation, `officeType: "desk_phone"`, `deskPhone: true`, `owner: "sian"`, `rings: 2`); `sian_coffee` (`coffee_station1`, explicit position on the back wall east of the smartscreen, about (7.2, 1.0)); `manager_printer` (`photocopier1`, explicit position on the back wall's west end, about (0.4, 1.3), `offWhen: "manager_printer_off"`; step 1 checks its use cell clears the sofa's top at row 3.27, else it swaps places with the coffee station); `manager_printer_socket` (`wall_socket1` beside it, toggles `manager_printer_off`, as `office_copier_socket` does); `internal_line` (`phone2`, explicit position by the east door, name "Internal Line", `triggerOnInteract` `emit_event` `desk_phone_ring:sian_phone`, as `spare_phone` does at sims.erb:202).
 
-**manager_office (SIMS-7):** `sian_laptop` (laptop, claims the conditional `laptop6` on the executive desk at (4.3, 3.4); `workstation: true`, `screenOwner: "sian"`, `screenHabit: { lockIfAwayOverSeconds: 20 }`); `sian_phone` (phone3, claims the conditional phone at (5.6, 3.3); `officeType: "desk_phone"`, `phoneOwner: "sian"`); `sian_coffee` (coffee_station1 on the west wall below the sofa, about (0.9, 7.0)); `manager_printer` (photocopier1 on the back wall's west end, about (1.6, 2.2), clear of the east door; `offWhen: "manager_printer_off"`); `manager_printer_socket` (wall_socket1 beside it; toggles `manager_printer_off`, as `office_copier_socket` does); `call_facilities_note` (notes1 in the IT room, "Call Facilities", emits `desk_phone_ring:sian_phone`).
+**it_room later (SIMS-6):** `leila_pc` (`pc12`, explicit position (5.54, 4.60), elevation, on the lower desk; `officeType: "desk_pc"` (pc12 has no preset); `workstation: true`, `owner: "leila"`, `private: true`, `lockChance: 1`); `leila_chair` (`chair-white-1-rotate6`, explicit position (5.49, 5.80), south of that desk); `nisha_pc` (`pc5`, explicit position on the upper desk above `chair-white-1-rotate3`, about (3.7, 2.9), elevation; `officeType: "desk_pc"`; `workstation: true`, `owner: "nisha"`, `private: true`, `lockChance: 0`, `autoLockSeconds: 90`); `nisha_chair` (`chair-white-1-rotate3`, explicit position (3.78, 3.91)); `it_kettle` (`kettle1` on the west south bench, smalldesk1 at (2.64, 8.20), about (3.2, 8.3); kettle preset by type; `affordance: { capacity: 2, chatter: "tea", useFrom: { dx: 0, dy: -1 } }`; object `private: true`, `owner: ["leila", "nisha"]`, so Neil never has a second caffeine source); `tea_round_note` and `it_print_queue` (`notes1`, within five tiles of the kettle, "Tea Round" and "IT Print Queue"). The kitchen gains `kitchen_cup` (`office-misc-cup2`, "Mug of coffee", takeable, on a kitchen table).
 
-**kitchen (SIMS-4):** `kitchen_cup` (office-misc-cup2, "Mug of coffee", takeable, on a kitchen table): a player consumable. The map cups in the new rooms (three in room_IT, two in room_security) are drinkable too (`DRINKABLE_CUPS`, consumables.js:80-88); nobody reacts, and the README says so.
+**lounge (SIMS-7):** `leftover_pizza` (`pizza_boxes1` on the meeting table; `takeable: true`, `droppable: true`, `affordance: { satisfies: "hunger", restores: 60, useSeconds: 15, magnet: { tempt: 30, servings: 2, perPerson: 1 } }`, no `announce`).
 
-**lounge (SIMS-6):** `leftover_pizza` (pizza_boxes1 on the meeting table; `takeable: true`, `droppable: true`, `affordance: { satisfies: "hunger", restores: 60, useSeconds: 15, magnet: { tempt: 30, servings: 2, perPerson: 1 } }`, no `announce`, no `needsTag`). Rosa and Grace have no hunger, so it draws nobody until the player moves it.
+**reception (SIMS-8):** `reception_phone` (`phone`, claims the drawn `phone1` on the counter, the first `phone` in the pool order since it is in `table_items`; `officeType: "desk_phone"`, `deskPhone: true`, `owner: "andres"`); `courtesy_phone` (`phone2`, explicit position by the west waiting chairs, about (2.0, 5.2); "Courtesy Phone"; `emit_event` `desk_phone_ring:reception_phone`); `reception_snacks` (`vending_machine1`, explicit position on the back wall east of the counter, about (8.2, 0.9), so its bottom (row 2.8) lines up with the counter's; `vending_snack` preset by type, use cell (8.8, 3.0), queue cell (7.8, 3.0)); `vending_note` (`notes1`, "Vending Restocked"). The room's east and west walls below the counter are taken by four large plants (rows 5.1 to 9.5), so the room holds one machine; the drinks preset is tested in node tests only.
 
 ### 3.4 Cast
 
-**Which sprites are free.** The project's rules (AGENTS.md "Characters", `README_scenario_design.md` "Every speaking character has their own art"): no two characters in one scenario share a sheet, and a named recurring character keeps its own art. A generic sprite worn by a one-off character elsewhere, or one players can pick, is free. Not free: `male_spy_v2` (Director Netherton in m02, m03, m05, m06), `male_hacker_hood_down_v2` (Agent 0x00 across the campaign), and the six sheets already in this scenario. `female_hacker_hood_v2` and `male_hacker_hood_v2` are free by the rule but are the player's own stand-ins (m01's "Agent", the labs' "Consultant", the default avatar), so they are not cast. That leaves nine, each with walk, 8 sit frames (one per direction), a headshot and a talk sheet or visemes:
+**Which sprites are free.** No two characters in one scenario share a sheet, and a named recurring character keeps its own art (AGENTS.md "Characters", `README_scenario_design.md` "Every speaking character has their own art"). A generic sprite worn by a one-off character elsewhere, or one players can pick, is free. Not free: `male_spy_v2` (Director Netherton), `male_hacker_hood_down_v2` (Agent 0x00), m01's `male_office_worker_v2`, `female_office_worker_v2` and `male_nerd_v2` (Derek Lawson, Sarah O'Brien, Kevin Park; Derek recurs in m09 and m10), and the six sheets already in this scenario. `female_hacker_hood_v2` and `male_hacker_hood_v2` are the player's own stand-ins and are not cast. That leaves:
 
-| Sprite key | Worn elsewhere by | Look | Cast as |
+| Sprite key | Worn elsewhere by | Talk art | Cast as |
 |---|---|---|---|
-| `offduty_agent` | m08 "Off-Duty Agent" (unnamed) | white Geordie man about 46, reading glasses, green jumper, lanyard | Neil |
-| `junior_analyst` | m08 "Junior Analyst" (unnamed) | British-Indian woman about 25, maroon sweatshirt | Nisha |
-| `female_hacker_hood_down_v2` | lab_tesseract_trials Megan Oyelaran (one-off); a player avatar | young woman with light olive skin, mustard hoodie, hood down | Leila |
-| `security_guard` | m04, m10 "Guard" | white Bristol man, mid 50s, grey beard, hi-vis vest and radio | Keith |
-| `female_telecom_v2` | sis02 Helen Marsh (one-off); a player avatar | young woman, brown ponytail, orange hi-vis utility vest | Jodie |
-| `hashchain_guard` | m06, m10 "Checkpoint Guard" | British-Colombian man about 45, shaved head, bomber jacket, radio, clipboard | Andrés |
-| `female_security_guard_v2` | m02 Val Okonkwo (one-off); a player avatar | woman in a dark uniform jumper | Siân (open question 1) |
-| `male_security_guard_v2` | unnamed guards in test scenarios; a player avatar | man in a dark uniform | not cast |
-| `courier_hivis` (walk only, no sit frames) | lab_physical_pentest's courier disguise | British South Asian man, early 30s, courier's hi-vis | not cast (backlog SIMS-12) |
+| `offduty_agent` | m08 "Off-Duty Agent" (unnamed) | visemes | Neil |
+| `security_guard` | m04, m10 "Guard" | visemes | Keith |
+| `female_telecom_v2` | sis02 Helen Marsh (one-off); a player avatar | headshot only | Jodie |
+| `female_hacker_hood_down_v2` | lab_tesseract_trials Megan Oyelaran (one-off); a player avatar | visemes | Leila |
+| `junior_analyst` | m08 "Junior Analyst" (unnamed) | visemes | Nisha |
+| `hashchain_guard` | m06, m10 "Checkpoint Guard" | visemes | Andrés |
+| `female_security_guard_v2` | m02 Val Okonkwo (one-off); a player avatar | headshot only | Siân |
+| `male_security_guard_v2` | unnamed guards in test scenarios | headshot only | not cast here |
 
-A player who picked the same starter avatar as a cast member sees a twin; the six existing NPCs already carry that chance and it is accepted.
+Jodie and Siân talk with their headshot only, as the existing office cast does; visemes for both are an art request (6.4). A player who picked the same avatar as a cast member sees a twin; the existing NPCs carry that chance already.
 
-| Id | Name, role | Post | Leash | Needs (initial / decay per min / urgent at) | Other fields | Shows |
+| Id | Name, role | Post | Leash | Needs (initial / decay per min / urgent at) | Other fields | Slice |
 |---|---|---|---|---|---|---|
-| `neil` (SIMS-3) | Neil Robson, IT support engineer, Geordie, mid 40s | `neil_mug`, standing at the south-wall bench | `needsRooms: ["it_room"]` | caffeine 60 / 6 / 45 (`neil_mug` only) | `swivel: false`; a mapping on `conversation_closed:neil` (below); `globalVarOnKO: "neil_ko"` | Gary (a): protection 1 in effect, a command print |
-| `keith` (SIMS-3) | Keith Dando, caretaker, Bristol, mid 50s | tile home at the east waiting chairs' north seat, about (7.0, 5.9), facing west | `needsRooms: ["facilities_office"]` | caffeine 45 / 5 / 35, `jitterPct: 10`; thirst 95 / 3 / 30; hunger 70 / 2 / 30 (OLMP 6.4's porter) | `chatterCooldownMin: 2`; group `facilities_radio`; coupling and `room_entered` mappings | the staff-room pair |
-| `jodie` (SIMS-3) | Jodie Kerr, maintenance engineer, Glaswegian, mid 20s | tile home at the east waiting chairs' middle seat, about (7.0, 6.7) | `needsRooms: ["facilities_office"]` | thirst 65 / 5 / 35, `jitterPct: 10`; caffeine 95 / 3 / 30 (OLMP 6.4's domestic) | `chatterCooldownMin: 2`; group `facilities_radio`; exchange `exchange_radio_wait` with `keith` (her id sorts first) | the staff-room pair |
-| `leila` (SIMS-4) | Leila Haddad, IT service desk analyst, British-Lebanese, late 20s | `leila_pc` | `needsRooms: ["it_room"]` | caffeine 70 / 8 / 40 (`it_boiler`), work 80 / 10 / 50 (`leila_pc`), hunger 75 / 3 / 40 (`it_fridge`) | `printHabit: { fetchAfterSeconds: [30, 90], forgetChance: 0.5, shareAfterSeconds: 240 }`; `onUse: { leila_pc: { revealOutput: "it_copier" } }`; group `it_tea`; `tea` pool with `hush`; exchanges `exchange_leila_tea`, `exchange_leila_page_gone` with `nisha` | protection 2 on a walker, allow leash, print and forget, the paper leak, gated exchanges, `hush`; Gary (b) evidence |
-| `nisha` (SIMS-4) | Nisha Kapoor, facilities coordinator (apprentice), early 20s | `nisha_pc` | `needsAvoidRooms: ["office", "kitchen", "lounge"]` | caffeine 72 / 8 / 40 (`it_boiler`), work 85 / 10 / 50 (`nisha_pc`), hunger 70 / 3 / 40 (`it_fridge`, first urgent 10:00 after her room loads, so she is inside the pizza's tempt band until then; the pizza in SIMS-6) | `printHabit: { fetchAfterSeconds: [20, 60], forgetChance: 0 }`; `onUse: { nisha_pc: { revealOutput: "it_copier" } }`; group `it_tea`; `tea` pool with `hush` | deny leash, a second room through a door, print errands, a careless screen (m06) |
-| `andres` (SIMS-5) | Andrés Mejía, front-of-house officer, mid 40s | tile home at the counter's east end, about (8.4, 3.2), standing (`seated: false`) | `needsRooms: ["reception"]` | hunger 62 / 3 / 40 (`reception_snacks`), thirst 72 / 4 / 40 (`reception_drinks`), social_media 70 / 6 / 40 (the phone) | `answersPhones` not set; `phoneCalls: [{ "knot": "call_front_desk" }]` | vending, a phone break, a voiced call, needs in one room (m05, m08) |
-| `sian` (SIMS-7) | Siân Pryce, head of facilities, Welsh | `sian_laptop` | `needsRooms: ["manager_office"]` | work 80 / 8 / 50 (`sian_laptop`, judged), caffeine 70 / 6 / 40 (`sian_coffee`) | `workNeeds: ["+manager_printer"]`, `frustration: { perFail: 34 }`, as test_access_work's staff; `phoneCalls: [{ "knot": "call_supplier" }]` | a private office, work against a resource, frustration, the outage kick, a check visit, a call answered or rung out |
+| `neil` | Neil Robson, IT support engineer, Geordie, mid 40s | `needsHome: "neil_mug"`, standing at the south bench, spawned on the mug's approach cell | `needsRooms: ["it_room"]` | caffeine 60 / 6 / 45 (`neil_mug` only) | `swivel: false`; the print mapping below; `globalVarOnKO: "neil_ko"` | SIMS-3 |
+| `keith` | Keith Dando, caretaker, Bristol, mid 50s (the porter's pattern) | tile home on the walkable cell in front of `hospital_chair_south` (sprite top-left (6.72, 4.69)), facing south | `needsRooms: ["staff_room"]` | caffeine 45 / 5 / 35, `jitterPct: 10`; thirst 95 / 3 / 30; hunger 46 / 2 / 30 | `chatterCooldownMin: 2`; group `facilities`; `coffee` and `cooler` pools; mappings below | SIMS-4 |
+| `jodie` | Jodie Kerr, cleaner, Glaswegian, mid 20s (the domestic's pattern) | tile home on the walkable cell in front of `hospital_chair_north` ((3.41, 5.31)), facing north | `needsRooms: ["staff_room"]` | thirst 65 / 5 / 35, `jitterPct: 10`; caffeine 95 / 3 / 30 | `chatterCooldownMin: 2`; group `facilities`; `coffee` and `cooler` pools; the three exchanges (her id sorts first) | SIMS-4 |
+| `leila` | Leila Haddad, IT service desk analyst, British-Lebanese, late 20s | `leila_pc` | `needsRooms: ["it_room"]` | work 80 / 10 / 50, caffeine 70 / 8 / 40 (`it_kettle`), hunger 75 / 3 / 40 | `habits.print: { fetchAfterSeconds: [30, 90], forgetChance: 0.5, shareAfterSeconds: 240 }`; `onUse: { leila_pc: { revealOutput: "it_copier" } }`; group `it_tea`; `tea` pool with `hush` | SIMS-6 |
+| `nisha` | Nisha Kapoor, facilities coordinator (apprentice), early 20s | `nisha_pc` | `needsAvoidRooms: ["office", "kitchen", "lounge"]` | work 85 / 10 / 50, caffeine 72 / 8 / 40 (`it_kettle`), hunger 70 / 3 / 40 | `habits.print: { fetchAfterSeconds: [20, 60], forgetChance: 0 }`; `onUse: { nisha_pc: { revealOutput: "it_copier" } }`; group `it_tea`; `tea` pool with `hush` | SIMS-6 |
+| `andres` | Andrés Mejía, front-of-house officer, mid 40s | tile home in front of the counter's west end, about (3.0, 3.2), standing (`seated: false`), facing south | `needsRooms: ["reception"]` | hunger 62 / 3 / 40 (`reception_snacks`), social_media 70 / 6 / 40 (the phone) | `socialUse: { useSeconds: 45 }`; `phoneCalls: [{ "knot": "call_front_desk" }]` | SIMS-8 |
+| `sian` | Siân Pryce, head of facilities, Welsh | `sian_laptop` | `needsRooms: ["manager_office"]` | work 80 / 8 / 50 (judged), caffeine 70 / 6 / 40 (`sian_coffee`) | `workNeeds: ["+manager_printer"]`, `frustration: { perFail: 34 }`; `habits.screen: { lockIfAwayOverSeconds: 10 }` (set in step 1); `phoneCalls: [{ "knot": "call_supplier" }]` | SIMS-9 |
 
-Neil's print mapping: `{ "eventPattern": "conversation_closed:neil", "condition": "globalVars.neil_print_asked === true && globalVars.neil_ko !== true", "onceOnly": true, "delayMs": 6000, "needs": { "print": { "producer": "it_copier", "forget": true } } }`. `neil_print_asked` is set in his ink when the player asks for the change log. A command print with `forget: true` reveals a slot at once and is never fetched (OLMP 2, "Staying put while taking part").
+**Neil's print mapping** (SIMS-3): `{ "eventPattern": "conversation_closed:neil", "condition": "globalVars.neil_print_asked === true && globalVars.neil_ko !== true", "onceOnly": true, "delayMs": 6000, "needs": { "print": { "producer": "it_copier", "forget": true } } }`. `neil_print_asked` is set in his ink when the player asks for the change log, which stands in for m02's `cover_burned`. The condition uses only `globalVars.` terms joined by `&&`, which `safeEvaluateCondition` (npc-manager.js:25) supports, and it is checked at the close and again when the delay ends.
 
-The pair's mappings, as OLMP 6.4: on Jodie, `{ "eventPattern": "npc_left_post:keith", "condition": "data.targetId === 'facilities_boiler'", "needs": { "set": { "caffeine": 20 } } }`; on Keith, `{ "eventPattern": "npc_left_post:jodie", "condition": "data.targetId === 'facilities_cooler'", "needs": { "set": { "thirst": 20 } } }` and `{ "eventPattern": "room_entered:facilities_office", "cooldown": 120000, "needs": { "set": { "caffeine": 20 } } }`. None is `onceOnly`, so none writes anything.
+**The pair's mappings** (SIMS-4), the pilot's shape with the showcase's ids. None is `onceOnly`, so none writes anything; the default mapping cooldown of 5 s applies where none is given.
 
-Groups. `facilities_radio` and `it_tea` mirror the pilot's `night_staff`. The two groups never meet at one object (every chatter object is private to one pair), so no pairing is refused by group; the showcase shows a refused pairing through `avoids` (Sanjay and Marek), which runs through the same `_compatible` (3844).
+- On Jodie: `{ "eventPattern": "npc_left_post:keith", "condition": "data.targetId === 'staff_boiler'", "needs": { "set": { "caffeine": 20 } } }`.
+- On Keith: `{ "eventPattern": "npc_left_post:jodie", "condition": "data.targetId === 'staff_cooler'", "needs": { "set": { "thirst": 20 } } }`.
+- On Keith, the room before for a boiler break: `{ "eventPattern": "room_entered:it_room", "cooldown": 120000, "needs": { "set": { "caffeine": 20 } } }`, and the same on `room_entered:staff_room` as the fallback.
+- On Jodie, the room before for a cooler break: `{ "eventPattern": "room_entered:manager_office", "cooldown": 120000, "needs": { "set": { "thirst": 20 } } }`. The player reaches the staff room from the private office through IT, so this is a second room-before trigger on a different object, as m02 has on Kim's office and the Boardroom. `room_entered:office` is not used, because the player enters the office from every side.
 
-Cast mix across thirteen: seven women and six men; heritage Nigerian, English, Swedish, Indian, Hispanic, Polish (the six), Geordie, West Country, Scottish, Welsh, British-Indian, British-Lebanese, British-Colombian (the seven); ages early 20s to mid 50s. Four of the seven new people are white, which is what the free art allows; a new character from the art request list (6.4) would widen it. Names and heritage follow the concept prompts and can change without touching an id; Siân's age is set from her sprite at step 1. Every new NPC gets a `voice` with a style line, and a short ink story (a greeting, two choices, a parting line).
+**The three exchanges** (SIMS-4), on Jodie's list in this order, each `with: "keith"`, standing in for m02's three: `exchange_job_called` with `requireGlobal: { "job_called": true, "job_cleared": false }`; `exchange_job_cleared` with `requireGlobal: { "job_cleared": true, "heard_exchange_job_called": true }`; `exchange_waiting` with no gate. The first unheard exchange whose gate holds plays. `job_called` and `job_cleared` are set in Keith's ink ("Any jobs on?" and, on a later visit, "That job sorted?"), as m02's cover globals are set in conversations. None is a lever: nothing the player does to the room starts a break.
+
+**Groups.** `facilities` and `it_tea` mirror the pilot's `night_staff`. The two groups never meet at one object (every chatter object is private to one pair); the showcase shows a refused pairing through `avoids` (Sanjay and Marek), which runs through the same `_compatible`.
+
+**Cast mix across thirteen:** seven women and six men; heritage Nigerian, English, Swedish, Indian, Hispanic and Polish (the six), Geordie, West Country, Scottish, Welsh, British-Indian, British-Lebanese and British-Colombian (the seven); ages early 20s to mid 50s. Four of the seven new people are white, which is what the free art allows; the art request in 6.4 would widen it. Names and heritage can change without touching an id. Every new NPC gets a `voice` with a style line and a short ink story (a greeting, two choices, a parting line).
 
 ### 3.5 The day on the needs clock
 
-There is no game clock in the main slices. Times are needs-clock minutes after the NPC's room loads. The clock advances with each frame's delta, capped at 1 s per frame (`update` 606), so it keeps pace with wall time headless above 1 fps; proofs read `npcNeedsSystem.clockMs`. Initial levels have no jitter except Keith's caffeine and Jodie's thirst (10 %, fixed by the seed).
+There is no game clock in the main slices. Times are needs-clock minutes after the NPC's room loads. The clock advances with each frame's delta, capped at 1 s a frame (`update` 606); proofs read `npcNeedsSystem.clockMs`. Initial levels have no jitter except Keith's caffeine and Jodie's thirst (10 %, fixed by the seed).
 
 | After the room loads | Without levers | Slice |
 |---|---|---|
-| IT, 0:00 to 2:30 | Neil stands at his bench; at 2:30 he sips from his mug without a step (cup icon, quiet sound), then every 5:00 (60 restored to 75, back to 45 at 6 a minute) | SIMS-3 |
-| facilities, about 2:00 (1:06 to 2:54 by jitter) | Keith's tea: he leaves for the boiler; the coupling sets Jodie's caffeine to 20 and she follows; 30 s at the boiler, so the second arrival overlaps the first by 20 s or more; the first time, `exchange_radio_wait` plays; afterwards one pool line each per break. A shared break about every four minutes, alternating boiler and cooler | SIMS-3 |
-| IT, 3:00 | Leila's first work use at her desk: a print lands on the tray; she fetches it 30 to 90 s later or forgets it (half the time); a forgotten page logs `npc_print_uncollected:leila` at 180 s and becomes anyone's at 240 s | SIMS-4 |
-| IT, 3:45 | Leila's tea at the IT boiler, with a `leashed` event | SIMS-4 |
-| facilities, 3:30 and 4:00 | Nisha's work use and print (she walks to IT 20 to 60 s later to fetch it); her tea at the IT boiler | SIMS-4 |
-| reception, 4:00 to 8:00 | Andrés checks his phone at the desk (5:00), buys a snack (7:20) and a drink (8:00) | SIMS-5 |
-| private office, 3:45 | Siân's work use at her laptop; caffeine at 5:00 | SIMS-7 |
-
-The levers (section 7) bring each beat forward, so the README tour never waits on these times.
+| IT, 2:30, then every 5:00 | Neil sips from his mug where he stands (cup icon, quiet sound): caffeine 60 falls to 45 at 6 a minute, the sip restores 30 | SIMS-3 |
+| staff room, about 2:00 (1:06 to 2:54 by jitter) | Keith's tea; the coupling sets Jodie's caffeine to 20 and she follows; 30 s at the boiler, so the overlap is 20 s or more | SIMS-4 |
+| staff room, about 6:00 | Jodie's cooler; the coupling sets Keith's thirst to 20 | SIMS-4 |
+| staff room, 8:00 | Keith at the microwave, alone | SIMS-4 |
+| staff room, about 10:00 and every four minutes after | shared breaks alternating boiler and cooler (each main need comes back about eight minutes after a 40 restore) | SIMS-4 |
+| IT, 3:00 and 3:30 | Leila's and Nisha's first work uses; each prints | SIMS-6 |
+| IT, 3:45 and 4:00 | their tea at the IT kettle | SIMS-6 |
+| reception, about 5:00 | Andrés checks his phone for 45 s at the counter, no step | SIMS-8 |
+| reception, 7:20 | Andrés at the snack machine | SIMS-8 |
+| private office, 3:45 and 5:00 | Siân's work use; her coffee | SIMS-9 |
 
 ---
 
@@ -286,229 +256,221 @@ Rows refer to table 1.1. "Now" means already in the scenario.
 
 | Row | Behaviour | Where | When, and the lever |
 |---|---|---|---|
-| 1, 2, 3 | needs, posts, presets, `officeType`, `affordance: false` | every room; boilers, fridge, `pc5`, `pc12`, phones; `it_cooler_empty` | all day |
-| 4 | leash, allow and deny | Neil, Keith, Jodie, Leila, Andrés, Siân (allow); Nisha (deny) | each new NPC's first source search away from its post emits `npc_needs_leashed`; `skipped` names office sources whenever they are free |
-| 5 | private rooms and objects | lounge (now), the four new rooms, the pair's boiler and cooler | all day |
+| 1, 2, 3 | needs, posts, presets, `officeType` | every room; the staff boiler and microwave; the IT desks | all day |
+| 4 | leash, allow and deny | Leila (allow), Nisha (deny); every new NPC allow | each new NPC's first source search; `skipped` names the office coffee whenever it is free |
+| 5 | private rooms and objects | lounge (now), the four new rooms, Neil's mug, the IT kettle | all day |
 | 6, 18 | carry jobs, left-behind | now | the parcel, the mugs, Tom's badge |
-| 7, 24, 55, 56 | slots, print and forget, sharing, paper leak | office and kitchen copiers (now); `it_copier` | the IT Print Queue note, then take Leila's page before her fetch is due |
-| 8 to 13 | icons, bubbles, items in hand, seating, typing, swivel | every NPC in the player's room; the pair seated on waiting chairs from tile homes | all day |
-| 14, 59 | own-post use; caught at the desk; an NPC that takes part without moving | any owned desk; Neil's mug | the player stands at a desk as its owner returns; Neil sips at his bench |
-| 15 to 17 | lock decisions and cues | office PCs (now); Leila always locks; Nisha never does and her PC auto-locks after 90 s; Siân locks after 20 s away | every leave |
-| 19, 22, 23, 60, 61, 62 | chat, pools, `hush`, exchanges, coupled breaks, cooldown, the entry break | kitchen cooler (now); facilities boiler and cooler (the pair); `it_boiler` (Leila and Nisha) | breaks on their own; walk into the facilities office; the Tea Round note |
-| 20, 21 | queues, avoidance | office and kitchen coffee (now); the vending machines | Activity Board, Coffee Notice (now); Vending Restocked |
-| 25, 36 | `offWhen`; work judged against a resource, frustration, kick, check visit | sockets (now); the manager's printer | switch off `manager_printer_socket` |
-| 26 to 29, 58 | cake with announce, table landing; a magnet seen only, starting in a room | now; `leftover_pizza` | drop the cake; carry the pizza to the facilities office |
-| 30 | desk phones | now; reception; private office | the spare phone (now), the courtesy phone, the Call Facilities note |
-| 31 | room tone and `roomToneTypes` | every room | all day |
-| 32 to 34 | heard use sounds, freeze and yield, overlay | everyone | all day |
-| 35 | player consumable | `kitchen_cup`, map cups | pick up, use from the inventory |
-| 38 | social media on the phone | Andrés | on its own, about every 5:00 |
-| 48 | E1 | test_needs_attack (SIMS-1) | the probe |
-| 49, 50 | vending; E3 | reception; the whole showcase (SIMS-5) | Vending Restocked; the perf tool |
+| 7, 24 | slots, print and forget, sharing, the paper leak | office and kitchen copiers (now); `it_copier` | Neil's page; the IT Print Queue note |
+| 8 to 13 | icons, bubbles, items in hand, seating, typing, swivel | every NPC in the player's room; the pair seated at static seats | all day |
+| 14, 59, 63 | own-post use; an NPC that takes part without moving; a print by command after a conversation | Neil | his sip; ask him for the change log |
+| 15 to 17 | lock decisions and cues | office PCs (now); Leila always locks, Nisha never and her PC auto-locks after 90 s; Siân locks for her coffee | every leave |
+| 19, 22, 23, 60 to 62 | chat, pools, `hush`, exchanges, coupled breaks, short cooldown, room-before breaks | kitchen cooler (now); the staff boiler and cooler; the IT kettle | walk through IT or the private office into the staff room; the Tea Round note |
+| 20, 21 | queues, avoidance | office and kitchen coffee (now) | Activity Board, Coffee Notice (now) |
+| 25, 36 | `offWhen`; work judged against a resource | sockets (now); the manager's printer | switch off `manager_printer_socket` |
+| 26 to 29, 58 | cake with announce; a magnet seen only, starting in a room | now; `leftover_pizza` | drop the cake; carry the pizza into IT |
+| 30 | desk phones | now; reception; private office | spare phone (now), courtesy phone, Internal Line |
+| 31 | room tone and `roomToneTypes` | every room; the staff room through `roomToneTypes` | all day |
+| 32 to 34 | use sounds, freeze and yield, overlay | everyone | all day |
+| 35 | player consumable | `kitchen_cup`, drawn cups | pick up, use from the inventory |
+| 38 | social media on the phone | Andrés | about every 6:00 |
+| 48 to 50, 64 | E1, E2, E3, V10 | test_needs_attack; reception; the whole showcase; the validator | SIMS-1, 8, 5 |
 
-Rows 37, 39 to 42, 54 and 57 stay in their own floors (1.2).
+The drawn cups in IT (three `office-misc-cup` on the benches and desks) and the staff room (`office-misc-cup3`, `office-misc-cup`) are player drinkables (consumables.js `DRINKABLE_CUPS`); nobody reacts, and the README says so.
 
 ---
 
 ## 5. Build slices
 
-Order: SIMS-1 and SIMS-2 (both before the pilot's dates in 2.1), SIMS-3, SIMS-4, SIMS-5, SIMS-6, SIMS-7; then the backlog only when a mission's design or the user asks. SIMS-1 touches no engine file and can run beside SIMS-2; from SIMS-2 on, slices run one at a time, because each touches `npc-needs.js` or the showcase.
+Order: SIMS-1 and SIMS-2 (the pilot's E1 and E6 dates), then SIMS-3, SIMS-4 and SIMS-5 (the pilot's patterns), then SIMS-6 to SIMS-9 (m06 and the wider day). SIMS-1 touches no engine file and can run beside SIMS-2; from SIMS-2 on, slices run one at a time, because each touches `npc-needs.js`, the validator or the showcase. The backlog (5.10) is built only when a mission or the owner asks.
 
-**Every slice ends the same way.** Node tests through `bin/test-js`; `ruby scripts/validate_scenario.rb` with 0 errors on every scenario it touches; ink compiled; `check_door_alignment.py` on any new door; the scenario README's annotated example, live-proof table and tour rows; the slice's own files committed (explicit paths, `git diff --cached --stat` checked) before any live run, with fixes as follow-up commits; then the live proof on a keyless server, headless, after dismissing popups: if `loop.actualFps` is below 10, switch Phaser's rAF to setTimeout mode; then `g.loop.smoothStep=false; g.loop.minFps=1; world.setFPS(20)` with fixed steps on (never `fixedStep=false`). The E3 measurement is the exception: normal frame rate under a virtual display (xvfb), never a visible window. A proof that fixes a fault first reproduces it on the build as it stands. Sizes count engine, validator and schema lines, not tests or scenario data. A new static import in an engine module goes in each JS test harness copy list. Each slice's report lists its new spoken lines.
+**Every slice ends the same way.** Node tests through `bin/test-js`; `ruby scripts/validate_scenario.rb` with 0 errors on every scenario it touches; ink compiled; `check_door_alignment.py` on any new door; the scenario README's annotated example, live-proof table and tour rows; the slice's own files committed with explicit paths (`git commit -m "..." -- <paths>`, `git diff --cached --stat` checked) before any live run, fixes as follow-up commits. Then the live proof on a keyless server (:3001, or :3002 from a worktree), headless, after dismissing popups: if `loop.actualFps` is below 10, switch Phaser's rAF to setTimeout mode; then `g.loop.smoothStep=false; g.loop.minFps=1; world.setFPS(20)` with fixed steps on (never `fixedStep=false`). The E3 measurement is the exception: normal frame rate under xvfb. A proof that fixes a fault first reproduces it on the build as it stands. Sizes count engine, validator and schema lines, not tests or scenario data. A new static import in an engine module goes into each JS test harness copy list. Each slice's report lists its new spoken lines.
 
-**The standard node set**, run by every slice: `test/js/npc-needs.test.mjs`, `npc-needs-slots.test.mjs`, `npc-needs-tick-cost.test.mjs`, `npc-room-leash.test.mjs`, `npc-magnet.test.mjs`, `npc-left-behind.test.mjs`, `npc-desk-phone.test.mjs`, `npc-coffee-off.test.mjs`, `npc-expected-away-route.test.mjs`, `table-drop.test.mjs`, `seating.test.mjs`, `workstation-state.test.mjs`, `office-presets.test.mjs`, `validator-office-presets.test.mjs`, `validator-npc-leash.test.mjs`, `inventory-menu.test.mjs`, `npc-voiced-chatter.test.mjs`, `consumables.test.mjs`, `format-8a-reader-parity.test.mjs` (all under `test/js/`), and `ruby test/unit/format_8a_corpus_test.rb`. **The standard live set**: test_needs_leash (leashed and unleashed runs), lab_physical_pentest (its three beats), test_access_work (judged uses end through the same arrival code), and the README's office beats in test_needs_sims with every door open.
+**The standard node set**, run by every slice (all under `test/js/` unless named): `npc-needs.test.mjs`, `npc-needs-slots.test.mjs`, `npc-needs-tick-cost.test.mjs`, `npc-room-leash.test.mjs`, `npc-magnet.test.mjs`, `npc-left-behind.test.mjs`, `npc-desk-phone.test.mjs`, `npc-coffee-off.test.mjs`, `npc-avoidance.test.mjs`, `npc-print-forget.test.mjs`, `npc-expected-away-route.test.mjs`, `table-drop.test.mjs`, `seating.test.mjs`, `workstation-state.test.mjs`, `office-presets.test.mjs`, `validator-office-presets.test.mjs`, `validator-npc-leash.test.mjs`, `inventory-menu.test.mjs`, `npc-voiced-chatter.test.mjs`, `consumables.test.mjs`, `format-8a-reader-parity.test.mjs`, `format-8c-reader-parity.test.mjs`, `validator-retired-keys.test.mjs`, and `ruby test/unit/format_8a_corpus_test.rb`.
+
+**The standard live set**: test_needs_leash (leashed and unleashed runs); lab_physical_pentest (its three beats); test_access_work (judged uses end through the same arrival code); the README's office beats in test_needs_sims with every door open (outcomes and task ticks); and, from SIMS-3 on, **Neil's stillness check** (with the player in IT for 10 minutes of needs clock, his sprite stays within 2 px of his spawn and no move is issued), because every later slice touches the showcase and SIMS-6 adds a second caffeine source to his room.
 
 ### 5.1 SIMS-1: E1, attacked and knocked-out needs NPCs, in `test_needs_attack`
 
-- **Purpose.** OLMP E1 before m02's design closes: the answer decides which NPCs may move in missions that allow attacks. It also proves protection 3, a sight catch on a walking needs NPC (Gary's `on_cabinet_picked`), and OLMP 6.11 steps 2 and 3.
-- **Scenario** `scenarios/test_needs_attack/` (new; mission.json, ERB-free scenario.json.erb, ink, README). Rooms: `office` (room_office, start), `kitchen` (room_break, west), `back_room` (room_meeting, east). `officePresets: true`. Each NPC has a short ink story and a `voice`; sprites are one per NPC.
-  - `ava` (junior_analyst): post `ava_pc`; interest `dirty_mugs` (weight 3) carrying `office_mugs` to the kitchen's `washing_up_tray`; also `itemsHeld: [{ "id": "ava_folder", "type": "notes1", "name": "Ava's Folder", "takeable": true }]`; `globalVarOnKO: "ava_ko"`, `taskOnKO: "check_ko_drop"`.
-  - `ben` (offduty_agent): post `ben_pc`; thirst 60 / 20 / 40 at the kitchen `water_cooler` (no thirst source in the office); `itemsHeld: [{ "id": "ben_notebook", "type": "notes1", "name": "Ben's Notebook", "takeable": true }]`; `globalVarOnKO: "ben_ko"`, `taskOnKO: "check_held_drop"`; protection 3: a mapping on `object_interacted` with `data.objectName === 'Meeting Note'` and `patrolOverride.targetTile` at his post tile, `completeTask: "check_called_home"`, and `"needs": "resume"` on `data.objectName === 'Meeting Over'`.
-  - `cal` (hashchain_guard): in `back_room`, `behavior.hostile: true` from the start, with `needs` and `needsHome`.
-  - `dee` (security_guard): post `dee_pc`, `needsRooms: ["office"]`, caffeine 60 / 20 / 40 at an office coffee station, `los: { "enabled": true, "range": 400, "angle": 360, "visualize": false, "occlusion": false }`, and a mapping on `lockpick_used_in_view` with `targetKnot: "on_drawer_picked"`, `conversationMode: "person-chat"`, condition `data.lockable.scenarioData.id === 'dee_drawer'`, `onceOnly: true`, `completeTask: "check_caught_walking"`. `dee_drawer` is a key-locked, pickable `filing_cabinet` in the office.
-  - `eli` (male_office_worker_v2), Gary (a): `needsHome: "eli_mug"` (a mug affordance as `neil_mug`), one need, `swivel: false`, the print mapping on `conversation_closed:eli` with `condition: "globalVars.eli_ko !== true"`, `delayMs: 6000`, `forget: true`, to an office copier with one slot `eli_page`; `globalVarOnKO: "eli_ko"`.
-  - `fran` (female_office_worker_v2) and `gil` (male_nerd_v2): tile homes at the kitchen table chairs, `needsRooms: ["kitchen"]`, coupled breaks at a kitchen kettle (`capacity: 2`, `chatter: "tea"`) and the cooler, with the OLMP 6.4 mappings; `globalVarOnKO: "fran_ko"` and `"gil_ko"`.
-  - Notes `meeting_note`, `meeting_over`, and "Break Time" (sets Ben's thirst, Dee's caffeine and Gil's caffeine to 10; cooldown 30 s).
-  - Aim `checks` with tasks `check_ko_drop`, `check_held_drop`, `check_called_home`, `check_caught_walking`, `check_solo_break` (`npc_left_post:gil` with condition `globalVars.fran_ko === true`). The calm-down and walk home are read from the decision log.
+- **Purpose.** OLMP E1 before the pilot's design closes, and OLMP 6.11's checks in neutral form: a walking needs NPC attacked outside its post room, a held item dropped after a knock-out, a hostile-from-start NPC, protection 3, a sight catch on a walking NPC (Gary's option (b)), a knocked-out partner whose partner's next coupled break goes ahead alone, a still NPC knocked out before its print, and a reload before the page is taken.
+- **Scenario** `scenarios/test_needs_attack/` (new; mission.json, ERB-free scenario.json.erb, ink, README). Rooms: `office` (room_office, start), `kitchen` (room_break, west), `back_room` (room_meeting, east). `officePresets: true`. Each NPC has a short ink story and a `voice`. Sprites, one each, from the free list (3.4): Ava `junior_analyst`, Ben `offduty_agent`, Cal `hashchain_guard`, Dee `security_guard`, Eli `male_security_guard_v2`, Fran `female_telecom_v2`, Gil `female_hacker_hood_down_v2`. Sharing a free sheet with a showcase NPC is allowed, because they are different scenarios.
+  - `ava`: post `ava_pc` (`owner: "ava"`, `private: true`); interest `dirty_mugs` (weight 3) carrying `office_mugs` to the kitchen's `washing_up_tray`; `itemsHeld: [{ "id": "ava_folder", "type": "notes1", "name": "Ava's Folder", "takeable": true }]`; `globalVarOnKO: "ava_ko"`, `taskOnKO: "check_ko_drop"`.
+  - `ben`: post `ben_pc`; thirst 60 / 20 / 40 at the kitchen `water_cooler` (no thirst source in the office); `itemsHeld: [{ "id": "ben_notebook", "type": "notes1", "name": "Ben's Notebook", "takeable": true }]`; `globalVarOnKO: "ben_ko"`, `taskOnKO: "check_held_drop"`; protection 3: a mapping on `object_interacted` with `data.objectName === 'Meeting Note'` and `patrolOverride.targetTile` at his post tile, `completeTask: "check_called_home"`, and `"needs": "resume"` on `data.objectName === 'Meeting Over'`.
+  - `cal`: in `back_room`, `behavior.hostile: true` from the start, with `needs` and `needsHome`.
+  - `dee`: post `dee_pc`, `needsRooms: ["office"]`, caffeine 60 / 20 / 40 at an office coffee station, `los: { "enabled": true, "range": 400, "angle": 360, "visualize": false, "occlusion": false }`, `swivel: false`, and a mapping on `lockpick_used_in_view` with `targetKnot: "on_drawer_picked"`, `conversationMode: "person-chat"`, condition `data.lockable.scenarioData.id === 'dee_drawer'`, `onceOnly: true`, `completeTask: "check_caught_walking"`. `dee_drawer` is a key-locked, pickable `filing_cabinet` in the office.
+  - `eli`, the still NPC: `needsHome: "eli_mug"` (a mug as `neil_mug`, `private: true`, `owner: ["eli"]`), one need, `swivel: false`, the print mapping on `conversation_closed:eli` with condition `globalVars.eli_asked === true && globalVars.eli_ko !== true`, `delayMs: 6000`, `onceOnly`, `forget: true`, to an office copier with one takeable slot `eli_page`; `globalVarOnKO: "eli_ko"`.
+  - `fran` and `gil`: tile homes at the kitchen table chairs, `needsRooms: ["kitchen"]`, coupled breaks at a kitchen kettle (`capacity: 2`, `chatter: "coffee"`) and the cooler with the mappings of 3.4; `globalVarOnKO: "fran_ko"` and `"gil_ko"`.
+  - Notes `meeting_note`, `meeting_over`, and "Break Time" (sets Ben's thirst, Dee's caffeine and Gil's caffeine to 10; cooldown 30 s). This scenario is a probe, so a lever is fine here.
+  - Aim `checks`, tasks `check_ko_drop`, `check_held_drop`, `check_called_home`, `check_caught_walking`, `check_solo_break` (`npc_left_post:gil`, condition `globalVars.fran_ko === true`), `check_eli_page` (`object_revealed:*`, condition `data.objectId === 'eli_page'`).
 - **Behaviour under test.**
-  (a) Ava attacked in the kitchen mid-carry: she turns hostile (`player-combat.js:456`), the needs system blocks her (`isAvailable` 1086, the abort in `_tickNpc` 1273-1281 drops the mugs as an abort does), she calms down and on `unblocked` walks home and resumes.
-  (b) Ava knocked out there mid-carry: the job ends once; `ava_ko` and `check_ko_drop` fire once; `onKnockedOut` (566) runs; the folder drops once where she fell. The carried mugs are not in her `itemsHeld`, so the server's KO-drop gate (`add_item_to_room!` game.rb:489 calling `find_npc_held_item` 1151) is expected to refuse them: after a reload the folder is there once and the mugs are gone. That is recorded as the expected E1 result for carry-job items ("a carried world object does not survive a knock-out"), not a failure; if the mugs persist, how is recorded.
-  (c) Ben knocked out at the kitchen cooler: the notebook drops once where he fell; the server accepts it outside his scenario room only once the defeat is recorded (game.rb 486-523); after a reload he stays down and the notebook is there once.
+  (a) Ava attacked in the kitchen mid-carry: she turns hostile (player-combat.js:453), the needs system blocks her (`isAvailable` 1086), the abort drops the mugs, she calms down and on `unblocked` walks home and resumes.
+  (b) Ava knocked out there mid-carry: the job ends once; `ava_ko` and `check_ko_drop` fire once; the folder drops once where she fell. The carried mugs are not in her `itemsHeld`, so the server's KO drop gate refuses them; after a reload the folder is there once and the mugs are gone. That is the expected result for carried world objects, recorded as such.
+  (c) Ben knocked out at the kitchen cooler: the notebook drops once where he fell; the server accepts it outside his scenario room only once the defeat is recorded; after a reload he stays down and the notebook is there once.
   (d) Ben at the cooler when the Meeting Note is read: the patrol override walks him home and suspends needs; Meeting Over resumes them.
   (e) Cal never starts a job: registered, blocked from the first tick.
-  (f) Dee walking to the coffee when the player picks `dee_drawer`: the catch fires, her conversation opens, she freezes for it, then finishes or restarts her coffee and returns to her post; her conversation opens again later.
-  (g) Fran knocked out mid-walk to the cooler: `fran_ko` once; Gil's next coupled break (Break Time) goes ahead alone (`check_solo_break`), and he never waits for her.
+  (f) Dee walking to the coffee when the player picks `dee_drawer`: the catch fires, her conversation opens, she freezes for it, then finishes or restarts her coffee and returns to her post.
+  (g) Fran knocked out mid-walk to the cooler: `fran_ko` once, nothing drops (she holds nothing); Gil's next coupled break (Break Time) goes ahead alone (`check_solo_break`), and he never waits for her. Reload: she stays down.
   (h) Eli knocked out before the player has talked to him: no conversation closes, `eli_page` is never revealed, and a reload reveals nothing.
-- **Engine.** None. A failing check goes to the user as an engine item with its file:line (likely `_abortJob` 3700 on a knock-out mid-carry, or world `dropHeld`). Until it is fixed, missions keep needs NPCs inside their own post room (OLMP's fallback).
+  (i) Eli asked, conversation closed: the page lands about 6 s later (`check_eli_page`); reload before taking it: the tray is empty afterwards (a reload files every revealed slot nobody holds) and nothing prints again, because the mapping is `onceOnly` and saved.
+- **Engine.** None. A failing check goes to the owner as an engine item with its file:line (likely `_abortJob` 3696 on a knock-out mid-carry, or world `dropHeld`). Until it is fixed, missions keep needs NPCs inside their own post room (OLMP's fallback).
 - **Schema and validator.** Nothing new. 0 errors; any warning on Cal (hostile from the start with needs) is recorded in the README as intended.
-- **Node tests.** `test/js/npc-needs.test.mjs`: an NPC hostile from tick 0 never starts a job and logs `blocked` once; a coupled partner of a knocked-out NPC starts its break alone. `test/js/npc-needs-attack-scenario.test.mjs` (new): the validator on `test_needs_attack` gives 0 errors; Ben's cooler and Ava's tray are outside their post rooms; Eli's only need target is his own post object.
-- **Live proof.** `tools/playtest/needs-attack-probe.mjs` (new): for each of (a) to (h), drive the beat through the test bridge, sample state, behaviour, hostility and position every 250 ms for 60 s, dump the server's game state (`npcHostility`, KO records, room `objects_added`), reload, dump again. Screenshots: before, hostile, down with the dropped item, after the reload, Dee's conversation opening mid-walk, Gil alone at the kettle.
+- **Node tests.** `test/js/npc-needs.test.mjs`: an NPC hostile from tick 0 never starts a job and logs `blocked` once; a coupled partner of a knocked-out NPC starts its break alone. `test/js/npc-needs-attack-scenario.test.mjs` (new): the validator on `test_needs_attack` gives 0 errors; Ben's cooler and Ava's tray are outside their post rooms; Eli's only need target is his own post object; every task and mapping condition passes through the real `safeEvaluateCondition` with a sample payload.
+- **Live proof.** `tools/playtest/needs-attack-probe.mjs` (new): for each of (a) to (i), drive the beat through the test bridge, sample state, behaviour, hostility and position every 250 ms for 60 s, dump the server's game state (`npcHostility`, KO records, room `objects_added`), reload, dump again. Screenshots: before, hostile, down with the dropped item, after the reload, Dee's conversation opening mid-walk, Gil alone at the kettle, Eli's page on the tray.
 - **Regressions.** The standard node set; the standard live set.
-- **Size.** 0 engine lines; scenario about 400 lines, 7 ink files, probe about 220.
-- **Sync.** Existing records only: up to 7 `npcHostility` entries (one per attacked NPC); KO records and KO globals for Ava, Ben, Eli, Fran and Gil (5 booleans); at most two `objects_added` entries (the folder and the notebook always; the mugs only if a carry-job KO drop is accepted), deduplicated by id; 5 `triggeredEvents` keys for the `onceOnly` task mappings and 1 for Eli's print. Each is sent once as a delta. Nothing grows with play time; a reload replays nothing.
+- **Size.** 0 engine lines; scenario about 420 lines, 7 ink files, probe about 240.
+- **Sync.** Existing records only: up to 7 `npcHostility` entries; KO records and KO globals for Ava, Ben, Eli, Fran and Gil (5 booleans); `eli_asked` and the slot's reveal global (2 booleans); at most two `objects_added` entries (the folder and the notebook), deduplicated by id; 6 `triggeredEvents` keys for the `onceOnly` mappings and 1 for Eli's print. Each is sent once as a delta. Nothing grows with play time; a reload replays nothing.
 
 ### 5.2 SIMS-2: an arrival counts only where the NPC is
 
-- **Purpose.** Remove the fault in 1.3: a needs NPC entering `using` for a target it never reached.
-- **Step 1, find the path.** Add one log line on every owner-`needs` arrival in `onArrived` (630): `arrival { moveId, fromSeating, pathLeft, dist }`, with `dist` to the behaviour's `_goToStayDest` and `fromSeating` from the move's options. Run `tools/playtest/needs-baseline-capture.js` on the build as it stands, in a loop with a fresh seed each time, until an `using` entry more than 48 px from its approach cell appears, and record which arrival caused it. This line stays (it is cheap and the next fault will want it).
+- **Purpose.** Remove the fault in 1.3 (OLMP E6) before the pilot's stage 5 playtests.
+- **Step 1, find the path.** One log line on every owner-`needs` arrival in `onArrived` (630): `arrival { moveId, pathLeft, dist }`, with `dist` to the behaviour's `_goToStayDest`. Run `tools/playtest/needs-baseline-capture.js` on the build as it stands, in a loop with a fresh seed each time, until a `using` entry more than 48 px from its approach cell appears, and record which arrival caused it. The line stays (it is cheap and the next fault will want it).
 - **Behaviour.**
   1. **Distance first.** A needs arrival counts for a job phase, a queue step or a walk home only if the NPC is within 48 px (one and a half tiles) of that move's destination. A farther arrival is logged `arrival_far { phase, target, x, y, dest, moveId }` and the move is re-issued once; a second far arrival in the same phase fails the job with `arrival_far` and the NPC walks home.
-  2. **Move ids second.** Every move the needs system issues carries a `moveId` (a counter on the system); the behaviour echoes it in `npc_arrived`; an arrival whose id is not the current phase's is logged `arrival_ignored { moveId, want }` and dropped. Seating's moves carry none and are dropped by the needs system (seating tracks its own fetch phases).
-  3. Own-desk shortcuts, where `_moveForPhase` (3080) queues the arrival itself, are unchanged. The returning branch (`s.mode === 'returning' && arrived`, npc-needs.js:1326) gets the same distance check, so an early arrival never sets `atPost` away from the post.
-- **Engine.** `npc-behavior.js`: `goToAndStay` (2980) stores `opts.moveId` as `this._moveId`; `_triggerGoToStayArrival` (3064) adds `moveId` to the payload and clears it; `cancelMove` (3038) clears it. `npc-needs.js`: the world's `moveTo` (5088) passes `opts.moveId` into the options it builds; `onArrived` (630) takes the payload's `moveId` and the NPC's position; `installNpcNeeds` passes `data.moveId` from the `npc_arrived:*` listener; `_advanceJob` (3119), `_advanceQueued` (4408) and the returning branch of `_tickNpc` check distance and id. `seating.js`: none.
+  2. **Move ids second.** Every move the needs system issues carries a `moveId` (a counter on the system); the behaviour echoes it in `npc_arrived`; an arrival whose id is not the current phase's is logged `arrival_ignored { moveId, want }` and dropped. **An arrival with no id is treated as the current move and still passes the distance check.** That is the transitional rule while other callers (the node stub world, scripted moves, seating's own moves) send none; it is tested as such, and the distance check is what guards it.
+  3. Own-desk shortcuts, where `_moveForPhase` (3076) queues the arrival itself, are unchanged. The returning branch of `_tickNpc` gets the same distance check, so an early arrival never sets `atPost` away from the post.
+- **Engine.** `npc-behavior.js`: `goToAndStay` (2980) stores `opts.moveId`; `_triggerGoToStayArrival` (3064) adds `moveId` to the payload and clears it; `cancelMove` (3038) clears it. `npc-needs.js`: `_moveForPhase` (its `moveTo` at 3112) and `_goHome` (3767) pass a `moveId`; the world's `moveTo` (5085) passes it through; `onArrived` (630) takes the payload's `moveId` and the NPC's position; the `npc_arrived:*` listener in `installNpcNeeds` (5326) passes `data.moveId`; `_advanceJob` (3115), `_advanceQueued` (4404) and the returning branch check distance and id. `test/js/fixtures/needs-stub-world.mjs`: `moveTo` echoes `opts.moveId` into `sys.onArrived` (27-29).
 - **Schema and validator.** None. Scenario mappings on `npc_arrived:<id>` see one extra payload field.
-- **Node tests.** `test/js/npc-needs.test.mjs`: a matching arrival 200 px off is re-issued, then counts when near; two far arrivals fail with `arrival_far`; an arrival with another move's id is ignored; one with no id is ignored; an early arrival while returning does not set `atPost`; a seated own-desk work job still starts at once. `test/js/npc-behavior-arrival.test.mjs` (new): `goToAndStay` with a `moveId` echoes it once; `cancelMove` clears it. `GOLDEN_SIMS_DAY` and the sims-day digest stay byte for byte the same.
-- **Scenario.** No new data. The existing task `see_rest` (Grace on the sofa) is the objective this slice keeps ticking; the README gains a line under "Engine findings".
-- **Live proof.** `tools/playtest/needs-arrival-proof.mjs` (new). First, on the build before the slice: reproduce the early path end by stubbing the behaviour's `_planMovePath` through the test bridge to return a path that ends at the lounge door for Grace's sofa move; the unfixed build enters `using lounge_sofa` at the door (screenshot and log). If step 1 found a natural path, reproduce that too. Then 20 natural runs forcing Grace's `rest` low each time she starts a chair fetch (`npc_fetching_chair`), and 20 of Tom's kitchen trips with the office coffee switched off. On the fixed build: the stubbed short path logs `arrival_far` and Grace walks on; every `using` entry is within 48 px of its cell. Screenshots: Grace on the sofa with her overlay, once per run.
-- **Regressions.** The standard node set; the standard live set.
-- **Size.** About 75 lines (npc-behavior.js about 10, npc-needs.js about 65).
+- **Node tests.** `test/js/npc-needs.test.mjs`: a matching arrival 200 px off is re-issued, then counts when near; two far arrivals fail with `arrival_far`; an arrival with another move's id is ignored; one with no id counts when near and is re-issued when far; an early arrival while returning does not set `atPost`; a seated own-desk work job still starts at once. `test/js/npc-behavior-arrival.test.mjs` (new): `goToAndStay` with a `moveId` echoes it once; `cancelMove` clears it. The direct `onArrived(` calls in `npc-needs.test.mjs`, `npc-magnet.test.mjs`, `npc-coffee-off.test.mjs`, `npc-avoidance.test.mjs`, `npc-desk-phone.test.mjs` and `workstation-state.test.mjs` pass unchanged under the transitional rule, and `GOLDEN_SIMS_DAY` and the sims-day digest stay byte for byte the same, because the stub places the NPC on its destination before it calls `onArrived`.
+- **Scenario.** No new data. The existing task `see_rest` (Grace on the sofa) is the objective this slice keeps ticking; the README's engine section gains a line.
+- **Live proof.** `tools/playtest/needs-arrival-proof.mjs` (new). First, on the build before the slice: reproduce the early path end by stubbing the behaviour's `_planMovePath` (npc-behavior.js:1620) through the test bridge to return a path that ends at the lounge door for Grace's sofa move; the unfixed build enters `using lounge_sofa` at the door (screenshot and log). If step 1 found a natural path, reproduce that too. Then 20 natural runs forcing Grace's `rest` low each time she starts a chair fetch, and 20 of Tom's kitchen trips with the office coffee switched off. On the fixed build the stubbed short path logs `arrival_far` and Grace walks on, and every `using` entry is within 48 px of its cell.
+- **Regressions.** The standard node set (including every file with a direct `onArrived(` call, listed above); the standard live set.
+- **Size.** About 90 lines (npc-behavior.js about 10, npc-needs.js about 70, the stub about 3, the rest wiring).
 - **Sync.** Writes nothing; move ids live only in the browser.
 
-### 5.3 SIMS-3: the IT room and the facilities office, m02's patterns
+### 5.3 SIMS-3: the IT room and Neil, the still NPC who prints by command (m02's Gary)
 
-- **Purpose.** OLMP's three patterns and the `room_entered` break (2.1), in neutral office form: Neil is Gary (a), Keith and Jodie are the staff-room pair.
-- **Step 1, render.** Add both rooms with no NPCs; render with `tools/playtest/room-snapshot.mjs`; place `neil_mug`, `it_cooler_empty`, `it_copier` with its four slots, the facilities boiler, cooler and microwave; check doorways, the facilities-over-lounge overlap, and that the waiting chairs are reached from the pair's home cells (seating finds a chair from the home cell; if seating fetches one instead, set `seated: { fetch: false }`, which `seatPreference` (seating.js:1794) reads as `near`). Read Neil's snapped home cell through `window.__test.needs` and set `neil_mug`'s `useFrom` to it.
-- **Step 2, data.** Rooms, the objects above, Neil, Keith and Jodie (3.4). Top level: `"roomToneTypes": { "room_security": "quiet_office" }`. Globals declared false: `it_out_a_shown` to `it_out_d_shown`, `neil_print_asked`, `neil_ko`, `heard_exchange_radio_wait`. Ink: `neil.ink` (hub; a choice asking for the change log sets `neil_print_asked`), `keith.ink`, `jodie.ink` (hub plus `exchange_radio_wait`, about 5 lines: waiting for the radio, a job called and not yet come through; neutral).
-- **Spoken lines.** Keith: `tea` (4), `cooler` (4). Jodie: `tea` (4), `cooler` (4). No `hush` (their own room, their own break). Exchange about 5 lines; conversations about 10 lines each for Neil, Keith and Jodie. One line each, 40 characters at most, no `{ }`, no speaker prefix. About 51 lines.
-- **Schema and validator.** No new fields. Expected output: presets for `it_copier` (copier), `facilities_boiler` (kettle through `officeType`), `facilities_cooler` (cooler), `facilities_microwave` (microwave); none for `it_cooler_empty`; Neil's leash with his only target his own post object; the pair's leash with every target in their room; the exchange found with both speakers voiced; no pool without a pair at a chatter object.
-- **Node tests.** `test/js/validator-office-presets.test.mjs`: the sims list gains `facilities_boiler`, `facilities_cooler`, `facilities_microwave`, `it_copier`. `test/js/npc-needs-sims-validator.test.mjs` (new): the validator run above, line by line. `test/js/npc-needs.test.mjs`: an NPC whose only need target is its own post object never issues a move over 30 minutes of needs clock; the print command with `forget: true` reveals a slot and schedules no fetch; a coupled mapping sets the partner's need only when `targetId` matches; `chatterCooldownMin: 2` allows a pool line two minutes after the last.
-- **Objectives** (new aim `watch_the_back_office`, `onceOnly` task mappings): `see_neil_sip` (`npc_used:neil_mug`), `get_neils_page` (`object_revealed:*`, condition `data.producerId === 'it_copier' && data.npcId === 'neil'`; emitted at npc-needs.js:5207), `see_shared_break` (`npc_chatted:facilities_boiler`; the event is keyed on the object), `hear_radio_wait` (`npc_exchange_heard:exchange_radio_wait`), `see_microwave` (`npc_used:facilities_microwave`).
-- **Live proof.** `tools/playtest/needs-sims-back-office.mjs` (new).
-  1. Neil: with the player in IT for 10 minutes of needs clock, his sprite stays within 2 px of his snapped home cell; his conversation opens at once at five random moments, including mid-sip; after the conversation in which he is asked, the copier runs about 6 s after the close and one slot is revealed; no fetch is ever scheduled.
-  2. The pair, OLMP 6.4's exit test: with the player in the facilities office for 20 minutes, a shared break starts in at least one of any three 30-second windows, the two needs about four minutes apart in the decision log; on entry more than two minutes after the last shared break, a shared break starts within 10 s, and a pool line or exchange line is heard before the pair sit down again. Record whether the first entry (when the room loads and both register) starts one.
-  3. Each sits on a waiting chair at home; the facilities office plays the quiet office bed.
-  Screenshots: Neil sipping, the page on the tray, the pair at the boiler, the pair seated.
+- **Purpose.** Prove m02's Gary option (a) in neutral form: an NPC whose only need is met by a declared mug that is its own post object, standing (`seat: "stand"`), `swivel: false`, never moved, whose copier prints one page about 6 s after a named conversation closes. Add the private office as an empty room the player passes through, for SIMS-4's second room-before trigger.
+- **Step 1, render.** Add `it_room` and `manager_office` (no NPCs yet, Siân's objects later) with their doors; run `check_door_alignment.py`; render with `tools/playtest/room-snapshot.mjs`; list every drawn item and each declared object's final layer and coordinates against 3.3; place `neil_mug`, `it_copier` and its six slots. Spawn Neil, read his mug's approach cell through `window.__test.needs`, set the mug's `useFrom` so that cell is the walk cell under his body centre, and move his spawn onto it (within `HOME_EPS` 12 px, npc-needs.js:30). Confirm nothing in IT gains a preset except `it_copier` (the conditional PCs and laptop are not claimed, so they are not drawn or declared).
+- **Step 2, data.** Rooms, objects and Neil (3.3, 3.4). Globals declared false: `it_out_a_shown` to `it_out_f_shown`, `neil_print_asked`, `neil_ko`. Ink: `neil.ink` (hub; a choice asking for the change log sets `neil_print_asked` with `#set_global`).
+- **Spoken lines.** Neil's conversation, about 10 lines. No pools: he is alone in IT in this slice, so a pool would never play.
+- **Schema and validator.** No new fields. Expected output: a preset for `it_copier` only; Neil's leash with his only target his own post object; no impossible need.
+- **Node tests.** `test/js/validator-office-presets.test.mjs`: the sims list gains `it_copier`. `test/js/npc-needs-sims-validator.test.mjs` (new): the validator run above, line by line, plus every new task and mapping condition through the real `safeEvaluateCondition`. `test/js/npc-needs.test.mjs`: an NPC whose only need target is its own post object never issues a move over 30 minutes of needs clock; the print command with `forget: true` reveals a slot and schedules no fetch; a forgotten command print is the oldest recyclable slot once the tray fills (`_recyclable` 3593), so the README can say when Neil's page would be reused.
+- **Objectives** (new aim `watch_it`): `see_neil_sip` (`npc_used:neil_mug`), `get_neils_page` (`object_revealed:*`, condition `data.producerId === 'it_copier' && data.npcId === 'neil'`).
+- **Live proof.** `tools/playtest/needs-sims-neil.mjs` (new). With the player in IT for 10 minutes of needs clock: Neil's sprite stays within 2 px of his spawn and no move is issued; he sips at 2:30 and 7:30 (cup icon, sound); his conversation opens at once at five random moments, including mid-sip. A conversation in which he is not asked prints nothing. After the conversation in which he is asked, the copier's run sound plays about 6 s after the close and one slot is revealed; no fetch is ever scheduled. A second run: leave IT within 6 s of the close; the page is still there on return (the run sound plays only in the player's room). A third run: reload before taking the page; the tray is empty and nothing prints again. Screenshots: Neil sipping, the page on the tray.
 - **Regressions.** The standard node set; the standard live set.
-- **Size.** 0 engine lines; scenario about 350 lines, 3 ink files, proof script about 200.
-- **Sync.** 4 slot globals (at most one set in this slice), `neil_print_asked`, `neil_ko`, `heard_exchange_radio_wait` (each once), 5 `triggeredEvents` keys and 1 for Neil's print mapping. The coupling and entry mappings are not `onceOnly` and write nothing. Worst case 7 globals and 6 event keys; nothing grows with play time; a reload restores them and replays no beat.
+- **Size.** 0 engine lines; scenario about 200 lines, 1 ink file, proof about 180.
+- **Sync.** 6 slot globals (at most one set in this slice), `neil_print_asked`, `neil_ko`, 2 `triggeredEvents` keys for the tasks and 1 for the print mapping. Each once, as a delta. Nothing grows with play time.
 
-### 5.4 SIMS-4: Leila and Nisha, leashes, print and forget, the paper leak, gated exchanges, `hush`
+### 5.4 SIMS-4: the staff room pair (m02's porter and domestic)
 
-- **Purpose.** The built behaviours OLMP retires from m02 but keeps as evidence for Gary (b), m06 and later missions; the player cup.
-- **Step 1, render.** Place `it_boiler`, `it_fridge`, `leila_pc` with its chair (the lower desk's `pc12` and `chair-white-1-rotate6`), `nisha_pc`, both notes, `facilities_print_queue`, and `kitchen_cup`; check that Leila's chair sits at her PC and that the boiler's use and queue cells are clear of the east door.
-- **Step 2, data.** Leila and Nisha (3.4). Globals declared false: `leila_print_gone`, `heard_exchange_leila_tea`, `heard_exchange_leila_page_gone`. Leila's exchanges: `exchange_leila_tea` (`requireGlobal: { "leila_print_gone": false }`) and `exchange_leila_page_gone` (`requireGlobal: { "leila_print_gone": true }`), both `with: "nisha"`. Mappings: the Tea Round note sets Leila's and Nisha's caffeine to 10 (cooldown 30 s); the IT Print Queue note sends Leila `"needs": { "print": { "producer": ["it_copier"], "fetchAfterSeconds": [20, 30], "forget": false } }` (cooldown 60 s, as Tom's Print Queue mapping); the Facilities Print Queue note sends Nisha the same; `npc_print_gone:leila` sets `leila_print_gone` and barks one line from her JSON (`onceOnly`). Ink: `leila.ink` (hub plus the two exchange knots, about 6 lines each, neutral, no pool line repeated), `nisha.ink` (hub).
-- **Spoken lines.** Leila: `tea` pool (4, `{ "lines": [...], "hush": true }`); the print-gone bark (1, written for someone sitting at her desk, for example "Who's had my printout?"; an eventMapping bark is voiced live, so the voicing step lists it by hand). Nisha: `tea` pool (4, with `hush`). Exchanges about 12; conversations about 10 each. About 41 lines.
-- **Schema and validator.** No new fields. Expected output: presets for `leila_pc` and `nisha_pc` (desk_pc through `officeType`), `it_boiler` (kettle), `it_fridge` (fridge); Leila's leash with every target in IT; Nisha's reachable rooms `facilities_office` and `it_room` (the others are denied or private); both exchanges found with both speakers voiced; no impossible need.
-- **Node tests.** `test/js/validator-office-presets.test.mjs`: the sims list gains `it_boiler`, `it_fridge`, `leila_pc`, `nisha_pc`. `test/js/npc-needs-sims-validator.test.mjs`: the new lines. `test/js/npc-room-leash.test.mjs`: a deny-list NPC whose only caffeine source is in its second room goes there through the door, and its `leashed` event lists the first room's free source in `skipped`. `test/js/npc-needs.test.mjs`: an exchange with `requireGlobal: { x: false }` plays only while `x` is false and its twin only after; a `hush` chat ends with reason `hushed` when the player comes within range and plays no further line; a print shared after `shareAfterSeconds` logs `print_shared`, loses its owner (`setPrintedBy(id, null)`), and whether its slot takes a later print is asserted as the code does it (if it does not, the README says the tray fills after four forgotten prints and later prints become cosmetic copies, the slots test's "pool exhausted" case). `test/js/npc-voiced-chatter.test.mjs` passes with the new ink.
-- **Objectives** (new aim `watch_it`): `see_it_tea` (`npc_used:it_boiler`), `see_kept_to_it` (`npc_needs_leashed:leila`, condition `Array.isArray(data.skipped) && data.skipped.includes('office_coffee')`), `see_kept_out` (`npc_needs_leashed:nisha`, same condition), `hear_tea_round` (`npc_exchange_heard:exchange_leila_tea`), `take_leilas_page` (`npc_print_gone:leila`), `hear_page_gone` (`npc_exchange_heard:exchange_leila_page_gone`), `see_print_errand` (`npc_print_fetched:nisha`), `see_print_forgotten` (`npc_print_uncollected:leila`; the later share at 240 s is a log line, `print_shared`, read from the overlay, not a task), `drink_a_coffee` (`item_consumed`, condition `data.itemId === 'kitchen_cup'`).
-- **Live proof.** `tools/playtest/needs-sims-it.mjs` (new), all doors open, to 15 minutes. Pass: every new task ticks; Leila stays in IT and Nisha never enters the office, kitchen or lounge; the `hush` beat: after both exchanges are heard, read the Tea Round note a third time, wait for a pool line at the boiler, walk the player up, and the log shows the chat ending `hushed` with no further line; the paper leak: read the IT Print Queue note, take the page within 20 s, and at the due time Leila, still at her desk, says her line (no walk); the errand: read the Facilities Print Queue note and watch Nisha walk into IT 20 to 30 s later. Screenshots: the tea pair at the boiler, Leila at her desk beside the empty tray, Nisha fetching in IT, the hushed pair.
+- **Purpose.** Prove m02's staff room in neutral form on m02's own map: presets on drawn decor for the boiler, cooler and microwave; two seated tile homes at the two static seats; coupled breaks about every four minutes; `chatterCooldownMin: 2`; breaks started from the room before, on two different rooms for the two objects, with the fallback; three gated exchanges on the lower id's list; `roomToneTypes`.
+- **Step 1, render.** Add `staff_room` with its door; run `check_door_alignment.py`; render; confirm that `staff_boiler`, `staff_cooler`, `staff_microwave` and `job_board` each claim the drawn sprite and hide no other. Read through `window.__test.needs`: the boiler's and the microwave's floor cells in front of the sink counter, the boiler's second user cell, and the walkable cells in front of `hospital_chair_south` and `hospital_chair_north` for the tile homes. Confirm both sit (seating sits a tile-home NPC on a `STATIC_SEATS` chair within `NEAR_CHAIR` 36 px); if either is beyond it, move the home cell, never the chair. Check that no use, queue or second-user cell is within two tiles of the west door (rows 2 to 3).
+- **Step 2, data.** The room (private to Keith and Jodie), its objects, Keith and Jodie with the mappings and exchanges of 3.4. Top level: `"roomToneTypes": { "room_hospital_staff": "kitchen" }`. Globals declared false: `job_called`, `job_cleared`, `heard_exchange_job_called`, `heard_exchange_job_cleared`, `heard_exchange_waiting`. Ink: `keith.ink` (hub; "Any jobs on?" sets `job_called`, a later "That job sorted?" sets `job_cleared`), `jodie.ink` (hub plus the three exchange knots, about 5 lines each: waiting for the radio, a job called and not yet come through, a job cleared; neutral, no clock time).
+- **Spoken lines.** Keith: `coffee` (4), `cooler` (4). Jodie: `coffee` (4), `cooler` (4). No `hush` (their own room, their own break). Exchanges about 15 lines; conversations about 10 each. One line each, 40 characters at most, no `{ }`, no speaker prefix. About 51 lines.
+- **Schema and validator.** No new fields. Expected output: presets for `staff_boiler` (kettle, through `officeType`), `staff_cooler` (cooler, by type), `staff_microwave` (microwave, through `officeType`); none for `job_board`; the pair's leash with every target in the room; the three exchanges found with both speakers voiced; the room tone mapping accepted.
+- **Node tests.** `test/js/validator-office-presets.test.mjs`: the sims list gains the three staff-room objects. `test/js/npc-needs-sims-validator.test.mjs`: the new lines. `test/js/npc-needs.test.mjs`: a coupled mapping sets the partner's need only when `targetId` matches (a microwave trip stays solo); `chatterCooldownMin: 2` allows a pool line two minutes after the last; a `needs.set` from a `room_entered` mapping on an NPC whose room is not loaded does nothing; with Jodie's list in order, the ungated exchange plays first while no global is set, `exchange_job_called` plays once `job_called` holds, and `exchange_job_cleared` never plays before `heard_exchange_job_called`.
+- **Objectives** (new aim `watch_the_staff_room`): `see_shared_break` (`npc_chatted:staff_boiler`), `see_cooler_break` (`npc_chatted:staff_cooler`), `hear_waiting` (`npc_exchange_heard:exchange_waiting`), `hear_job_called` (`npc_exchange_heard:exchange_job_called`), `see_microwave` (`npc_used:staff_microwave`).
+- **Live proof.** `tools/playtest/needs-sims-staff-room.mjs` (new), OLMP 6.4's exit test.
+  1. Ten boiler entries, each more than two minutes after the last: from IT's south door, walk straight through IT into the staff room within 25 s and step to within five tiles of the counter (the exchange earshot is 160 px, `OVERHEAR_RADIUS`, and needs a clear line). Pass: the pair are at the boiler as the player arrives, and in at least five of the ten a voiced pool line or an exchange line is heard.
+  2. Ten cooler entries the same way from the private office through IT. Pass as above, at the cooler.
+  3. Twenty minutes in the staff room with no entries: the decision log shows the two main needs coming round about four minutes apart, alternating boiler and cooler, and Keith at the microwave at about 8:00.
+  4. The first-ever entry, when the room loads and both register, is recorded as it falls (the IT trigger fired before they existed; the fallback may or may not start a break).
+  5. Talk to Keith, ask for jobs; at the next heard break `exchange_job_called` plays.
+  6. Each sits at home between breaks; the room plays the kitchen bed.
+  Screenshots: the pair at the boiler, at the cooler, seated.
+- **Regressions.** The standard node set; the standard live set; the speech-lock count: over 15 minutes, count voiced against picture lines at the office coffee and kitchen cooler with the IT and staff-room doors shut, then open. The global speech lock (`_speak` 2653, `_speechFree` 2628) is taken by every voiced line, heard or not, so a back-room line can make an office chat wait or drop to pictures. If the voiced count drops by more than a fifth, raise an engine item for the owner (take the lock only for an overheard line, a few lines in `_speak` and `_pickBark` with node tests) and record it for OLMP; m02 has one pair and is not affected.
+- **Size.** 0 engine lines; scenario about 260 lines, 2 ink files, proof about 220.
+- **Sync.** `job_called`, `job_cleared` and 3 `heard_` booleans, each once; 5 `triggeredEvents` keys for the tasks. The coupling and entry mappings are not `onceOnly` and write nothing. Nothing grows with play time; a reload restores them and replays no beat.
+
+### 5.5 SIMS-5: V10, pools, exchanges and calls nothing can trigger
+
+- **Purpose.** OLMP's V10, built where it is first needed and proved against a live run: a lone NPC at a chatter object says nothing, so a pool nothing can trigger is voiced and paid for and never heard.
+- **Step 1, reproduce.** List every topic the engine speaks from a pool, by reading each `_pickBark(` and `_grumble(` call site in `npc-needs.js` (the chatter-object topics from `affordance.chatter`, `grumble` and `grumble_<reason>` from `_grumbleTopic` 2085 and `_failTopic` 2193, `greet`, the desk-phone topics such as `phone` and `phone_message`, and any other). Run the check by hand on the showcase as it stands and on m02's draft data, and record each pool it would flag.
+- **Behaviour.** A warning for each NPC or scenario `chatter` pool, `exchanges` entry or `phoneCalls` knot that nothing in the scenario can trigger: a chatter-object topic needs a capacity-2 object with that `chatter` value this NPC may use (leash, room privacy, object `private` and `owner`) and a compatible partner who may use the same object; `grumble` and `grumble_<reason>` need a turn-back the NPC can meet (an avoid, a queue, an `offWhen` outage, a magnet that runs out, a printer that can be off, a judged work failure); `greet` needs an affordance with `chatter: "greet"`; a phone topic needs a desk phone the NPC owns or answers; an exchange needs both speakers able to share one chatter object; a `phoneCalls` knot needs a phone this NPC owns or answers and something that rings it. The rule set mirrors step 1's list, so a topic the engine does not speak is itself a warning.
+- **Engine.** None at runtime. New `scripts/validate_office_life.rb` with V10 only, called from `validate_scenario.rb` with one line, in the file and form OLMP section 4 sets out, so the missions tooling adds V1 to V9 to the same file. It reads owner and habit keys by their format 3 names only.
+- **Schema.** None.
+- **Node tests.** `test/js/validator-office-life-v10.test.mjs` (new), spawning the validator on fixtures: a lone NPC's `cooler` pool warns; the same pool with a compatible partner at a capacity-2 cooler does not; a partner who `avoids` the speaker warns; a pool on a private object the NPC does not own warns; a `grumble` with no turn-back warns; an exchange whose speakers have no shared object warns; a `phoneCalls` knot on an NPC with no phone warns; `test_needs_sims`, `test_needs_attack`, `test_needs_leash`, `lab_physical_pentest` and `test_access_work` give the warnings step 1 recorded and no others.
+- **Scenario.** Any showcase pool step 1 flags is resolved: given a trigger if the beat is wanted, otherwise removed and listed in the report (no audio exists for the showcase yet, so removing a line costs nothing).
+- **Objectives.** None new; the check is the validator's.
+- **Live proof.** From the SIMS-4 proof's 20-minute run with every door open, plus SIMS-3's: count the voiced lines heard per pool. Every pool V10 passes is heard at least once, or the report says why it was not (a long cooldown, a topic that comes round rarely). The fixture pools that warn are never heard in a matching scenario run of 10 minutes (the lone-cooler fixture loaded as a scratch game on :3001).
+- **Regressions.** The standard node set; the validator on every scenario (`ruby scripts/validate_scenario.rb --skip-ink --no-graph` across the corpus) gives no new error, and every new warning is listed.
+- **Size.** About 110 validator lines.
+- **Sync.** None.
+
+### 5.6 SIMS-6: Leila and Nisha, screen habits, leashes, print and forget, the paper leak, `hush` (m06)
+
+- **Purpose.** m06's patterns in neutral form: screen habits on owned desk PCs, a pair whose chatter happens in a working office, print and forget with fetch errands from real desks, the paper leak; and the built behaviours still unshown (both leash forms, `hush`, sharing, a player consumable).
+- **Step 1, render.** Place `leila_pc`, `leila_chair`, `nisha_pc`, `nisha_chair`, `it_kettle`, both notes and `kitchen_cup` (3.3); confirm each chair sits at its PC and that seating sits each owner; confirm the kettle's two use cells are clear of the south door's column and of Neil's spot; confirm Neil's caffeine has only his mug (the kettle is private to Leila and Nisha, so `_permitted` 1225 refuses it to him).
+- **Step 2, data.** Leila and Nisha (3.4). Mappings: the Tea Round note sets Leila's and Nisha's caffeine to 10 (cooldown 30 s); the IT Print Queue note sends Leila `"needs": { "print": { "producer": ["it_copier"], "fetchAfterSeconds": [20, 30], "forget": false } }` (cooldown 60 s, as Tom's Print Queue mapping). Ink: `leila.ink`, `nisha.ink` (hubs).
+- **Spoken lines.** Leila: `tea` pool (4, `{ "lines": [...], "hush": true }`). Nisha: `tea` pool (4, with `hush`). Conversations about 10 each. About 28 lines. No eventMapping bark: such a bark is voiced live, outside the pool batch.
+- **Schema and validator.** No new fields. Expected output: presets for `leila_pc` and `nisha_pc` (desk_pc through `officeType`), `it_kettle` (kettle by type); Leila's leash with every target in IT; Nisha's reachable rooms `it_room` only (the others are denied or private); Neil's only target still his own mug; V10 passes both `tea` pools.
+- **Node tests.** `test/js/validator-office-presets.test.mjs`: the sims list gains `it_kettle`, `leila_pc`, `nisha_pc`. `test/js/npc-needs-sims-validator.test.mjs`: the new lines, and the two leash conditions through the real evaluator. `test/js/npc-room-leash.test.mjs`: a deny-list NPC whose free source in a denied room is listed in its `leashed` event's `skipped`. `test/js/npc-needs.test.mjs`: a `hush` chat ends (`_endChat` 2780 with `hushed`, which emits nothing) when the player comes within 96 px (`_playerWithin`) and plays no further line; a print shared after `shareAfterSeconds` logs `print_shared`, loses its owner (`setPrintedBy(id, null)`) and is never recycled, so a tray of shared and forgotten prints fills (the README says so: after that, later prints become cosmetic copies). `test/js/npc-voiced-chatter.test.mjs` passes with the new ink.
+- **Objectives** (aim `watch_it`): `see_it_tea` (`npc_chatted:it_kettle`), `see_kept_to_it` (`npc_needs_leashed:leila`, condition `data.skipped.includes('office_coffee')`; the evaluator tests array membership with `.includes`, npc-manager.js:102), `see_kept_out` (`npc_needs_leashed:nisha`, same condition), `take_leilas_page` (`npc_print_gone:leila`), `see_print_errand` (`npc_print_fetched:nisha`), `see_print_forgotten` (`npc_print_uncollected:leila`), `see_leila_locks` (`workstation_owner_left:leila_pc`, condition `data.screenLocked === true`), `see_nisha_auto_lock` (`workstation_auto_locked:nisha_pc`), `drink_a_coffee` (`item_consumed`, condition `data.itemId === 'kitchen_cup'`).
+- **Live proof.** `tools/playtest/needs-sims-it.mjs` (new), all doors open, to 15 minutes. Pass: every new task ticks; Leila stays in IT and Nisha never enters the office, kitchen or lounge; the `hush` beat: read the Tea Round note, wait for a voiced pool line at the kettle, walk the player up, and no further `npc_chatted:it_kettle` follows while both still stand at the kettle (the end emits no event and has no task, so the proof reads the chat table through the test bridge); the paper leak: read the IT Print Queue note, assert which slot the page landed on (it must be one of `it_out_a` to `it_out_f`, all takeable), take it within 20 s, and at the due time `npc_print_gone:leila` fires with Leila still at her desk; the errand: Nisha prints at her desk and walks to the copier 20 to 60 s later; Neil's page from SIMS-3 is still on the tray at 15 minutes if it was not taken (six slots hold Neil's one and at most three shared prints in that time). Neil's stillness check runs in the same game. Screenshots: the pair at the kettle, Leila's locked screen, Nisha fetching, the hushed pair.
 - **Regressions.** The standard node set; the standard live set.
-- **Size.** 0 engine lines; scenario about 300 lines, 2 ink files.
-- **Sync.** 6 workstation booleans (2 owned PCs x 3), up to 3 more slot globals, `leila_print_gone`, 2 `heard_` booleans, 9 `triggeredEvents` keys and 1 for the bark mapping, each once. The page and the cup go through the existing inventory echo. Nothing grows with play time.
+- **Size.** 0 engine lines; scenario about 260 lines, 2 ink files, proof about 200.
+- **Sync.** 6 workstation booleans (2 owned PCs, 3 each), up to 5 more slot globals, 9 `triggeredEvents` keys, each once. The page and the cup go through the existing inventory echo. Nothing grows with play time.
 
-### 5.5 SIMS-5: reception, vending (E2), the phone break, a call, and E3 measured
-
-- **Purpose.** E2 straight after the pilot and before m06; E3 before the cast passes 8 (m05, m08); needs confined to one room on an NPC with no desk; the phone `self` job; a voiced desk-phone call carried by a single NPC.
-- **Step 1, render.** Add reception; render; place the phones and vending machines; check each machine's footprint (42 by 60 px, about 1.3 by 2 tiles) and set `useFrom` if the default cell is inside it; check that Andrés' home cell is not in the north door's approach.
-- **Step 2, presets.** `office-presets.json` gains `vending_snack` (`types: ["vending_machine1"]`, hunger, restores 50, 8 s, capacity 1, `useFrom: { dx: 0, dy: 1 }`, `useSound: "eat_snack"`, `queue: { cells: [{ dx: -1, dy: 1 }] }`) and `vending_drinks` (`types: ["drinks_vending1"]`, thirst, restores 60, 6 s, `useSound: "drink_gulp"`, same cells). No `startSound` until a coin sound exists (6.4). Only test scenarios set `officePresets`, so no deployed game changes; the user took this decision on 2026-11-14 (OLMP 14, item 7).
-- **Step 3, data.** Reception (private to Andrés), its objects, Andrés (3.4) with `andres.ink` (hub plus `call_front_desk`, about 6 lines: a caller asking whether a visitor has signed in; neutral). The Vending Restocked note sets Andrés' hunger and thirst to 30 (cooldown 30 s).
-- **Spoken lines.** The call (about 6) and a conversation (about 10). No pools: Andrés is alone, so a pool would never play.
-- **Step 4, E3.** `tools/playtest/needs-perf.mjs` (new) at the normal frame rate under xvfb, no rAF switch, no physics throttle, on a quiet machine (load under 4): wrap `npcNeedsSystem.tick` and the action-icon `update` with `performance.now`, record frame intervals from `requestAnimationFrame` for 180 s after opening every door. Both runs on the scenario after this slice, so the loaded rooms are the same: A, every NPC added since SIMS-3 with `needs` removed (6 needs NPCs); B, as shipped (12, and 13 after SIMS-7, when it is re-run). Pass: in B, tick mean at most 1.0 ms and p95 at most 3 ms; frame-interval p95 within 10 % of A. The numbers go in the README's engine findings and to the OLMP owner for the E3 row. If B fails: profile, and raise an engine item; the showcase keeps its cast.
-- **Schema and validator.** No schema change; `preset_table` reads the file, so the validator lists both machines.
-- **Node tests.** `test/js/office-presets.test.mjs`: `presetIdFor` for both types, and none for a takeable vending machine. `test/js/validator-office-presets.test.mjs`: the preset table test; the sims list gains `reception_drinks`, `reception_snacks`, `reception_phone`. `test/js/npc-needs.test.mjs`: an NPC with a `social_media` need and no workstation takes the phone `self` job at its post, issues no move and emits no `npc_left_post`. `test/js/npc-desk-phone.test.mjs`: the owner at a tile post answers; away within its room, the phone rings out (`desk_phone_unanswered`) with no colleague claim (the room is private).
-- **Objectives** (new aim `watch_reception`): `see_vending_snack` (`npc_used:reception_snacks`), `see_vending_drink` (`npc_used:reception_drinks`), `see_phone_break` (`npc_used_phone:andres`), `hear_front_desk_call` (`desk_phone_answered:reception_phone`).
-- **Live proof.** Read Vending Restocked with the player in reception: Andrés at the snack machine, then the drinks machine; the use sounds heard in reception and not from the office. Use the courtesy phone while he is at his post: he answers standing, the call plays. Use it while he is at a machine: it rings out. Wait for his phone break: phone icon, no step. Then the E3 runs. Screenshots: at the machine, on the phone, mid-call.
-- **Regressions.** The standard node set; the standard live set; the README's office beats with the reception door open (reception is private, so the office's hungry staff keep the kitchen).
-- **Size.** About 4 lines of shared data; 0 engine lines; perf tool about 140; scenario about 200; 1 ink file.
-- **Sync.** 4 `triggeredEvents` keys; `heard_call_front_desk` if the call is heard-once (1). No workstation. Nothing grows with play time.
-
-### 5.6 SIMS-6: the leftover pizza, a magnet from the world, and an open screen (m06)
+### 5.7 SIMS-7: the leftover pizza, a magnet from the world, and an open screen (m06)
 
 - **Purpose.** m06's beat: a magnet seen rather than announced, from an in-world source, drawing a desk NPC away and opening a screen-habit window, with servings kept across a reload.
-- **Step 1, reproduce.** On the build as it stands, add `leftover_pizza` (3.3) and `leftover_pizza_servings: 2`; run the validator (it warns that the magnet "is not a droppable item the player holds", validate_npc_needs.rb:272) and the live proof below. Either the engine path works and the warning is the only fault (`_noteMagnets` reads room objects at load and `_shownMagnets` shows any magnet lying in a room), or a step fails and the fix is sized then, in `_noteMagnets` (731) or `onItemDropped` (705).
-- **Behaviour.** The pizza lies on the lounge table, seen by Rosa and Grace, who have no hunger. The player picks it up (it stops showing; everyone forgets it), carries it through the office and IT and drops it in the facilities office. Nisha and Keith (hunger from 70, falling at 3 and 2 a minute), inside the tempt band (above 40, at most 70; `_tempting` 802-809), see it and come; each takes one serving; the second ends it and removes the box. Nisha's PC stays open while she is away (`lockChance: 0`). Dropped in the office instead, it draws whoever there has hunger (Tom, Sanjay, Amara).
-- **Validator.** `check_magnets` (260): a room-object magnet with `takeable: true` and `droppable: true` passes with no warning and an info line naming its starting room and the NPCs there who can see it and have its need (none for the lounge, which tells the author it waits for the player); a room magnet the player cannot take keeps the warning. About 20 lines.
-- **Schema.** None (the fields exist).
-- **Node tests.** `test/js/npc-magnet.test.mjs`: a room-object magnet registered at room load is seen in its room; picked up, it is forgotten; dropped in another room, it is learnt by sight there and not before; servings restored from the global after a simulated reload; the validator section (from line 300): the takeable room magnet gives the info line and no warning, a fixed one warns. `test/js/inventory-menu.test.mjs`: the sims droppable list gains `leftover_pizza`.
-- **Objectives** (aim `watch_the_back_office`): `see_pizza_spotted` (`npc_saw_magnet:nisha`, condition `data.magnetId === 'leftover_pizza' && data.roomId === 'facilities_office'`), `see_pizza_pulls_nisha` (`npc_left_post:nisha`, condition `data.targetId === 'leftover_pizza'`), `see_pizza_eaten` (`magnet_serving:leftover_pizza`), `use_nishas_screen` (`workstation_accessed:nisha_pc`).
-- **Spoken lines.** None. Eating at a magnet is not a chat, so a pool there would never play.
-- **Live proof.** Pick the pizza up in the lounge, carry it to the facilities office, drop it; sample every 250 ms: both see it, both eat one serving, the servings global reads 1 then 0 and the box is removed; Nisha's screen is open while she eats; sit at her desk and use it. A second run: drop it, let one serving go, reload; the box is in the facilities office with one serving, and the next hungry NPC who sees it takes the last. Screenshots: the box in the lounge, both at the box, Nisha's open screen with its indicator, after the reload.
+- **Step 1, reproduce.** On the build as it stands, add `leftover_pizza` (3.3) and `leftover_pizza_servings: 2`; run the validator (it warns that the magnet "is not a droppable item the player holds", `check_magnets` in validate_npc_needs.rb) and the live proof below. Either the engine path works and the warning is the only fault (`_noteMagnets` 731 reads room objects at load and `_shownMagnets` 751 shows any magnet lying in a room), or a step fails and the fix is sized then, in `_noteMagnets` or `onItemDropped` (705).
+- **Behaviour.** The pizza lies on the lounge table, seen by Rosa and Grace, who have no hunger. The player picks it up (it stops showing; everyone forgets it), carries it through the office into IT and drops it. Nisha (hunger 70 at load, 3 a minute, urgent at 40) is inside the tempt band (above 40, at most 70, `_tempting` 802) from IT's load until 10:00; Leila (75, 3, 40) from 1:40 until 11:40. Each sees it, comes, takes one serving; the second ends it and removes the box. Nisha's PC stays open while she is away (`lockChance: 0`) until its 90 s auto-lock. Neil has no hunger and never moves. Dropped in the office instead, it draws whoever there has hunger.
+- **Validator.** `check_magnets`: a room-object magnet with `takeable: true` and `droppable: true` passes with no warning and an info line naming its starting room and the NPCs there who can see it and have its need (none for the lounge, which tells the author it waits for the player); a room magnet the player cannot take keeps the warning. About 20 lines.
+- **Schema.** None.
+- **Node tests.** `test/js/npc-magnet.test.mjs`: a room-object magnet registered at room load is seen in its room; picked up, it is forgotten; dropped in another room, it is learnt by sight there and not before; servings restored from the global after a simulated reload; the validator section: the takeable room magnet gives the info line and no warning, a fixed one warns. `test/js/inventory-menu.test.mjs`: the sims droppable list gains `leftover_pizza`.
+- **Objectives** (aim `watch_it`): `see_pizza_spotted` (`npc_saw_magnet:nisha`, condition `data.magnetId === 'leftover_pizza'`), `see_pizza_pulls_nisha` (`npc_left_post:nisha`, condition `data.targetId === 'leftover_pizza'`), `see_pizza_eaten` (`magnet_serving:leftover_pizza`), `use_nishas_screen` (`workstation_accessed:nisha_pc`).
+- **Spoken lines.** None. Eating at a magnet is not a chat, so a pool there would never play (V10 agrees).
+- **Live proof.** Pick the pizza up in the lounge, carry it into IT, drop it; sample every 250 ms: both see it, both eat one serving, the servings global reads 1 then 0 and the box is removed; Nisha's screen is open while she eats; sit at her desk and use it. A second run: drop it, let one serving go, reload; the box is in IT with one serving, and the next hungry NPC who sees it takes the last. Screenshots: the box in the lounge, both at the box, Nisha's open screen with its indicator, after the reload.
 - **Regressions.** The standard node set; the standard live set; the README's cake rows (the cake shares the magnet code).
-- **Size.** About 20 validator lines; engine 0 unless step 1 fails; scenario about 50.
-- **Sync.** `leftover_pizza_servings` (one integer, changes twice); room-state records through the existing `add_object` and `remove_object` actions: the lounge's removal on pickup, one `objects_added` in the facilities office on the drop (deduplicated by id), and the facilities office's removal on the last serving (`_finishMagnet`, npc-needs.js:939). 4 `triggeredEvents` keys. Nothing grows with play time; a reload restores where it lies and the servings left.
+- **Size.** About 20 validator lines; engine 0 unless step 1 fails; scenario about 40.
+- **Sync.** `leftover_pizza_servings` (one integer, changes twice); room-state records through the existing `add_object` and `remove_object` actions: the lounge's removal on pickup, one `objects_added` in IT on the drop (deduplicated by id), and IT's removal on the last serving (`_finishMagnet` 939). 4 `triggeredEvents` keys. Nothing grows with play time.
 
-### 5.7 SIMS-7: the private office, work against a resource, and a call that rings out
+### 5.8 SIMS-8: reception, the vending preset (E2), the phone break, a call, and E3 measured
+
+- **Purpose.** E2 after the pilot; E3 before a cast passes 8 (m05, m08); needs confined to one room on an NPC with no desk (m05's Lisa, m08's off-duty agent); the phone `self` job; a voiced desk-phone call carried by one NPC, answered and rung out on demand.
+- **Gate.** The `office-presets.json` change is shared data. It merges to main only after the pilot's merge, as the owner decided on 2026-11-14 (OLMP section 14, item 7). The rest of the slice can be built and proved on this branch before then.
+- **Step 1, render.** Add reception; render; claim the counter phone; place the courtesy phone, the vending machine and the note (3.3); check the machine's use cell (8.8, 3.0) and queue cell (7.8, 3.0) are floor and clear of the north door (columns 1 to 2); check Andrés' home cell is not in the north door's approach.
+- **Step 2, presets.** `office-presets.json` gains `vending_snack` (`types: ["vending_machine1"]`, hunger, restores 50, 8 s, capacity 1, `useFrom: { dx: 0, dy: 1 }`, `useSound: "eat_snack"`, `queue: { cells: [{ dx: -1, dy: 1 }] }`) and `vending_drinks` (`types: ["drinks_vending1"]`, thirst, restores 60, 6 s, `useSound: "drink_gulp"`, same cells). No `startSound` until a coin sound exists (6.4). Only test scenarios set `officePresets`, so no deployed game changes.
+- **Step 3, data.** Reception, its objects, Andrés (3.4) with `andres.ink` (hub plus `call_front_desk`, about 6 lines: a caller asking whether a visitor has signed in; neutral). The Vending Restocked note sets Andrés' hunger to 30 (cooldown 30 s).
+- **Spoken lines.** The call (about 6) and a conversation (about 10). No pools: Andrés is alone, so a pool would never play.
+- **Step 4, E3.** `tools/playtest/needs-perf.mjs` (new) at the normal frame rate under xvfb, no rAF switch, no physics throttle, on a quiet machine (load under 4): wrap `npcNeedsSystem.tick` and the action-icon `update` with `performance.now`, record frame intervals from `requestAnimationFrame` for 180 s after opening every door. Both runs on the scenario after this slice, so the loaded rooms are the same: A, every NPC added since SIMS-3 with `needs` removed (6 needs NPCs); B, as shipped (12, and 13 after SIMS-9, when it is re-run). Pass: in B, tick mean at most 1.0 ms and p95 at most 3 ms; frame-interval p95 within 10 % of A. The numbers go in the README's engine section and to the OLMP owner for the E3 row. If B fails: profile, and raise an engine item; the showcase keeps its cast.
+- **Schema and validator.** No schema change; the preset table is read from the file, so the validator lists the machine.
+- **Node tests.** `test/js/office-presets.test.mjs`: `presetIdFor` for both vending types, and none for a takeable vending machine. `test/js/validator-office-presets.test.mjs`: the preset table test; the sims list gains `reception_snacks`, `reception_phone`. `test/js/npc-needs.test.mjs`: an NPC with a `social_media` need and no workstation takes the phone `self` job at its post (`_socialCandidate` 2144; social media is always judged, `_judged` 2102), issues no move and emits no `npc_left_post`; `socialUse.useSeconds` sets its length. `test/js/npc-desk-phone.test.mjs`: the owner idle at a tile post answers; the owner on a `self` job does not (`_ownerCanAnswer` 4060 counts only a `use` or `visit` of the own post object), and with nobody set to `answersPhones` no colleague is claimed (`_claimAnswerer` 4093), so the phone rings out (`desk_phone_unanswered`).
+- **Objectives** (new aim `watch_reception`): `see_vending_snack` (`npc_used:reception_snacks`), `see_phone_break` (`npc_used_phone:andres`), `hear_front_desk_call` (`desk_phone_answered:reception_phone`), `see_front_desk_rang_out` (`desk_phone_unanswered:reception_phone`).
+- **Live proof.** Read Vending Restocked with the player in reception: Andrés at the machine; the use sound heard in reception and not from the office. Use the courtesy phone while he stands idle at the counter: he answers standing about 2.25 s after the first ring (`PICKUP_MS`) and the call plays. Wait for his phone break (phone icon, no step, 45 s) and use the courtesy phone in its first 30 s: four rings at 3 s each (`RINGS`, `RING_MS`), then it rings out. Then the E3 runs. Screenshots: at the machine, on his phone, mid-call.
+- **Regressions.** The standard node set; the standard live set; the README's office beats with the reception door open.
+- **Size.** About 4 lines of shared data; 0 engine lines; perf tool about 140; scenario about 160; 1 ink file.
+- **Sync.** 4 `triggeredEvents` keys; `heard_call_front_desk` (1). No workstation. Nothing grows with play time.
+
+### 5.9 SIMS-9: the private office, work against a resource, a screen habit by trip length, a call that rings out
 
 - **Purpose.** The brief's private office, and row 36 (work judged against a resource, frustration, the outage kick, a check visit) as ordinary office life.
-- **Step 1, render.** Add the private office; render; claim the laptop and phone on the executive desk; place the coffee station, printer and socket; check the kitchen overlap and the east door.
-- **Step 2, data.** Room private to Siân; her objects (3.3); Siân (3.4); a top-level `resources` entry `manager_printer` (`kind: "printer"`, `object: "manager_printer"`), as test_access_work declares its printer (scenario.json.erb:2790 on). Her `workNeeds: ["+manager_printer"]` makes each work use judged: with the printer off, the use fails (`_countFailure` 2226), her frustration rises by `perFail`, she grumbles, the outage kick fires when the socket global turns on (`_tickKick` 2333 reads the plan's globals), and a check visit walks her to the printer (`enqueueVisit` 2371, `npc_checked:manager_printer`). The Call Facilities note in IT rings her phone. `sian.ink`: hub plus `call_supplier` (about 6 lines).
-- **Spoken lines.** The call (about 6); the failure grumble pool (2 lines, under the topic `_failTopic` picks for a failed resource, which step 2 reads from the code and names); a conversation (about 10).
-- **Schema and validator.** No new fields; the validator's work checks (roles, resources, `workNeeds`) run as for test_access_work, 0 errors.
-- **Node tests.** `test/js/validator-office-presets.test.mjs`: the sims list gains `sian_coffee`, `sian_laptop`, `sian_phone`, `manager_printer`. `test/js/npc-needs-sims-validator.test.mjs`: Siân's leash and work lines. `test/js/npc-desk-phone.test.mjs`: a private-room phone rings out when its owner is at another object in the room.
-- **Objectives** (new aim `watch_the_manager`): `see_work_fail` (`npc_use_failed:sian`), `see_printer_checked` (`npc_checked:manager_printer`), `hear_supplier_call` (`desk_phone_answered:sian_phone`), `see_call_rang_out` (`desk_phone_unanswered:sian_phone`, npc-needs.js:4141), `see_sian_locks` (`workstation_owner_left:sian_laptop`, condition `data.screenLocked === true`).
-- **Live proof.** Read Call Facilities while Siân is at her desk: she answers seated and the call plays; again while she is at her coffee station: it rings out. Switch off the printer socket and force her work low: the use fails, the grumble plays, the kick and the check visit follow; switch it on and her next use succeeds. Re-run SIMS-5's E3 run B with all 13. Screenshots: on the phone, at the printer on her check visit, her locked screen.
+- **Step 1, render and measure.** Place Siân's objects (3.3); check the printer's and coffee station's use cells (the sofa's top at row 3.27, the east door at rows 2 to 3). With Siân registered, log the `expectedAwayMs` on `npc_left_post:sian` for her coffee trip and for a check visit to the printer (`_expectedAwayMs` 3022: both legs at her speed plus the target's dwell; the coffee preset's dwell is 12 s). Set `habits.screen.lockIfAwayOverSeconds` between the two, so one trip locks and the other stays open (`decideLocked` 144: an expected absence at or under the threshold leaves the screen open). The expected values are about 15 s for the coffee and less for the visit, so the default is 10; if the visit is not shorter, the threshold is set so the coffee locks and the README says the visit locks too.
+- **Step 2, data.** Room private to Siân; her objects and Siân (3.3, 3.4); a top-level `resources` entry `"manager_printer": { "name": "Manager's printer", "kind": "printer", "object": "manager_printer", "offWhen": "manager_printer_off" }`, as test_access_work declares its printer. **The `offWhen` must be on the resource**: the browser's work verdict reads only the plan resource's `offWhen` (npc-work.js `failures` 63, `planGlobals`), and the server copies the resource's `offWhen` and `object` into the plan it sends (access_work.rb `plan` 1147-1157). The object keeps its own `offWhen` too, which switches the copier's affordance off. A "Monthly Report" note on her desk sets her work to 40 (cooldown 30 s), so the player need not wait for her next work turn. The Internal Line rings her phone. `sian.ink`: hub plus `call_supplier` (about 6 lines).
+- **How the work fields reach the browser.** `workNeeds` and `frustration` are removed from the NPC record by `WITHHELD_WORK_NPC_KEYS` (game.rb:5624, applied at 5657) and reach the browser only as the server-compiled `work` plan (`compile_npc_plan!`, game.rb:5599), attached on the lazy room load (`filtered_room_data`), not in the bootstrap. The plan is built only when the NPC has a `work` need and a non-empty resolved work list (`work_plan?`, access_work.rb:147), so the slice depends on a valid top-level `resources` block. The frustration level is server-owned: the browser reports failures through `POST /games/:id/npc_frustration`, and the bootstrap serves `npcFrustration` back.
+- **Spoken lines.** The call (about 6); the failure grumble pool (2 lines, under the topic `_failTopic` 2193 picks for a failed printer, named in step 2 from the code); a conversation (about 10).
+- **Schema and validator.** No new fields; the validator's work checks (roles, resources, `workNeeds`) run as for test_access_work, 0 errors, with the resource reading the socket global; V10 passes the grumble pool (a judged work failure is its turn-back).
+- **Node tests.** `test/js/validator-office-presets.test.mjs`: the sims list gains `sian_coffee`, `sian_laptop`, `sian_phone`, `manager_printer`. `test/js/npc-needs-sims-validator.test.mjs`: Siân's leash and work lines. `test/js/npc-needs-work.test.mjs`: with the real `npcWork.failures` and a plan built as the server builds it, a resource whose only `offWhen` is on its object never fails, and the same resource with its own `offWhen` fails `down` while the global holds. `test/js/npc-desk-phone.test.mjs`: a phone with `rings: 2` rings out about 6 s after the first ring when its owner is away.
+- **Objectives** (new aim `watch_the_manager`): `see_work_fail` (`npc_use_failed:sian`), `see_printer_checked` (`npc_checked:manager_printer`), `hear_supplier_call` (`desk_phone_answered:sian_phone`), `see_call_rang_out` (`desk_phone_unanswered:sian_phone`), `see_sian_locks` (`workstation_owner_left:sian_laptop`, condition `data.screenLocked === true`).
+- **Live proof.** With the player in her office: use the Internal Line while she is at her desk; she answers seated and the call plays. Use it the moment she gets up for her coffee: two rings and it rings out (her trip is about 15 s; she cannot be back within 6 s). Her screen locks as she leaves for the coffee, and stays open for the check visit if step 1 split them. Switch off the printer socket and read the Monthly Report note: the use fails, the grumble plays, her frustration rises by 34, the outage kick and the check visit follow; switch it on and her next use succeeds. Re-run SIMS-8's E3 run B with all 13. Screenshots: on the phone, at the printer on her check visit, her locked screen.
 - **Regressions.** The standard node set; the standard live set; test_access_work's walkthrough (the same work code).
-- **Size.** 0 engine lines; scenario about 220; 1 ink file.
-- **Sync.** 3 workstation booleans; `manager_printer_off` (one boolean, on each switch); `sian_frustration` (one integer, sent as a delta on the 30-second sync) and the server's `npcFrustration` record for one NPC (about 450 bytes, frustration reports batched at most 20); 5 `triggeredEvents` keys; `heard_call_supplier` if heard-once. Nothing grows with play time: the frustration record holds one NPC's fixed fields, not a log.
+- **Size.** 0 engine lines; scenario about 200; 1 ink file.
+- **Sync.** 3 workstation booleans; `manager_printer_off` (one boolean, on each switch); `sian_frustration` (one integer, written only on a change and sent as a delta on the 30-second sync) and the server's `npcFrustration` record for one NPC (about 450 bytes, reports batched at most 20); 5 `triggeredEvents` keys; `heard_call_supplier` (1). Nothing grows with play time.
 
-### 5.8 Backlog SIMS-8: arrive and leave on the game clock (about 300 lines)
+### 5.10 Backlog, built only when a mission or the owner asks
 
-Built only if m05's design, another mission or the user asks. It is not in OLMP's engine list, so a mission that adopts it adds a sync row to OLMP 7 first.
+The owner's picks of 2026-11-06 set the order of office-life work: lock-screen habits, print and forget, social magnets, desk-phone calls, room tone, idle swivel, and events the player directs through existing systems; "timetabled schedules maybe later"; traits and routines left unmarked. The main slices follow those picks. Traits and schedules stay here for that reason, each with an open question (section 8).
 
-- **Behaviour.** NPC `schedule: { "arrive": "HH:MM", "leave": "HH:MM", "arriveFrom": { "room", "x", "y" }, "leaveVia": { "room", "x", "y" } }` (either time optional). Before `arrive` the NPC is hidden; hidden, it stays registered with no decay. At `arrive`, its levels reset to their initials and `lastSatisfiedAt` to now (the code in `register`, npc-needs.js:461-466); it appears at `arriveFrom` if that room and its post's room are loaded and walks home, otherwise it is at its post when its room loads. At `leave`, once out of any conversation, it ends its job cleanly, says a line from its `leaving` pool, walks to `leaveVia`, the workstation layer records a leave with an unbounded expected absence (so `lockIfAwayOverSeconds` habits lock and `lockChance` rolls), a left-behind roll runs, and it is hidden. Schedule walks pass no `avoidRooms`, so a leashed NPC can cross rooms its needs may not use. An anchor jump past several leave times sends leavers one at a time, 8 s apart, in time order.
-- **Reload.** Reconciled from the saved game clock, `npcVisibility` and the saved workstation globals, never re-run: an NPC past its leave time is hidden with its saved lock globals; no `leaving` line, `npc_left_for_day` or left-behind roll fires again.
-- **Engine.** New `systems/npc-schedule.js` (about 150): `installNpcSchedule`, a 1 s check against `window.gameClock` (`gameSecondsAt` game-clock.js:99), `setNPCVisible`. `npc-needs.js` (about 60): `arriveForDay`, `leaveForDay`, the decay skip, events `npc_arrived_for_day:<id>`, `npc_left_for_day:<id>`. `workstation-state.js` (about 25): `onLeft(npcId, { forDay: true })` (541) and `resetGlobals` (497). Server: `filtered_scenario_for_bootstrap`'s `hasPresentNpc` (game.rb:1323) skips NPCs with a `schedule`. The new module goes in each JS test harness copy list.
-- **Schema and validator.** NPC `schedule`; times parse and arrive is before leave; `gameClock` present; `arriveFrom` and `leaveVia` are floor tiles; `needsHome` and no patrol; a warning on an NPC with tasks, `taskOnKO` or a required conversation; a warning when `arriveFrom` is in a room that does not load with the post (E4).
-- **Scenario.** `"gameClock": { "start": "Tue 08:30", "rate": 20, "anchors": [ { "condition": "globalVars.clock_home_time === true", "time": "17:40" } ] }`; a street door on reception's south wall (decor; stand-in 6.4) with `arriveFrom` and `leaveVia` on the floor tile in front of it, about (5, 8); leave times 17:00 to 17:30, so one pull of an `office_clock` lever (wall_clock1, confirm "Wind the clock on to home time?", sets `clock_home_time`) sends everyone. At rate 20, 17:00 is 25:30 of play, after every proof window. Tasks `see_leave`, `see_left_open_overnight`.
-- **Node tests.** `test/js/npc-schedule.test.mjs` (new): hidden before with no decay; arrival with initial levels; leave during a use; leave held by a chat; lock decision per habit; left-behind at leave; anchor jump with three leavers; a leashed leave walk crossing a forbidden room; reload before, during and after, asserting the saved globals and `npcVisibility` and that no leave side effect re-fires.
-- **Live proof.** Pull the clock lever with all rooms open; screenshot the office every 10 s until it is empty; log the order and each lock decision; reload after the last leave and check.
-- **Regressions.** The standard node set; m05's walkthrough smoke run (it has a `gameClock` and no schedules); test_access_sessions.
-- **Sync.** `npcVisibility`: one boolean per scheduled NPC, a delta on each arrive or leave (at most 13 here); the game clock's elapsed time and reached anchors (existing). **Request to the OLMP owner:** before any mission adopts schedules, OLMP 7 needs "Scheduled NPC visibility (`npcVisibility.<id>`), engine-owned, one key each as a delta on arrive and leave, one boolean per scheduled NPC, cap N".
+- **B1, arrive and leave on the game clock (about 300 lines).** NPC `schedule: { arrive, leave, arriveFrom, leaveVia }` on `window.gameClock`; hidden before arrival with no decay; a clean leave with a `leaving` line, a lock decision with an unbounded expected absence and a left-behind roll; reconciled on reload from the saved clock, `npcVisibility` and the saved workstation globals, never re-run. Engine: new `systems/npc-schedule.js` (about 150), `npc-needs.js` (about 60), `workstation-state.js` (about 25), and `filtered_scenario_for_bootstrap`'s present-NPC check skipping scheduled NPCs. Sync: one `npcVisibility` boolean per scheduled NPC, a delta on each arrive or leave (at most 13 here); OLMP section 7 gains a row before any mission adopts it.
+- **B2, traits as named bundles (about 60 lines).** Top-level `traits: { "<name>": { habits, chattiness, leftBehindChance, needsCompany } }` and NPC `traits: [...]`, merged at registration, the NPC's own fields winning. Names for fields that already exist; no new behaviour, no sync.
+- **B3, summon to post (about 95 lines).** A mapping `"needs": { "summon": { "holdSeconds": 20 } }` that ends the current job cleanly, walks home without yielding and holds; OLMP keeps E5 as a design rule and this helper in the backlog. Writes nothing.
+- **B4, stock and refills (about 170 lines).** `affordance.stock: { max, perUse, lowAt }`, turn-backs with reason `empty`, a `restock` visit. Client-only, reset on reload.
+- **B5, a visitor at reception (data only).** A courier (`courier_hivis`, standing only) shown by a lever, walked to the counter by `patrolOverride.targetTile`, with a short ink story. One `npcVisibility` boolean.
 
-### 5.9 Backlog SIMS-9: summon to post (about 95 lines)
-
-OLMP keeps E5 as a design rule and this helper in the backlog.
-
-- **Behaviour.** An eventMapping `"needs": { "summon": { "holdSeconds": 20 } }`: the NPC ends what it is doing cleanly (a use cut short with no restore, a carried item dropped as an abort does, out of any queue, chat or call), walks home without yielding, emits `npc_at_post:<id>` `{ summoned: true }`, and picks no need for `holdSeconds` or until `"needs": { "release": true }` or `"resume"`. A player conversation during the hold extends it. Knocked-out, hostile or hidden NPCs ignore it. Not persisted.
-- **Engine.** `npc-needs.js`: `control` (949) gains `summon` and `release`; `_tickNpc` skips `_select` while held; the walk reuses `_abortJob` (3700), `_leaveQueue`, `_endChat` (2784), `_hangUp` and `_goHome` (3771, `yieldToPlayer: false`); `getState` (4542) shows `summoned`; `_pressing` (4515) hides the bubble while held.
-- **Schema and validator.** The mapping `needs` object gains `summon: { holdSeconds: 1-600 }` and `release: true`; a summon on an NPC with no `needs`, no `needsHome` or a patrol is an error.
-- **Scenario.** A `facilities_buzzer` (stand-in `phone3`, 6.4) on Nisha's desk emits `facilities_buzz`; Nisha's mapping summons her with a voiced `bark`; task `see_summoned`.
-- **Node tests.** `test/js/npc-needs-summon.test.mjs` (new): from a use, a carry, a queue, a chat pair, a call; already at post; KO ignored; hold length; release; player chat extends; `suspend` and `resume` unchanged.
-- **Live proof.** Nisha at the IT boiler, press the buzzer: back at her desk, held 20 s with the bubble hidden, then free.
-- **Sync.** Writes nothing; an `onceOnly` on the mapping is one `triggeredEvents` key.
-
-### 5.10 Backlog SIMS-10: stock and refills (about 170 lines)
-
-- **Behaviour.** `affordance.stock: { max, perUse, lowAt }`; each completed use takes `perUse`; at 0 walkers and queuers turn back with reason `empty` (topic `grumble_empty`); parked needs wake on refill. An NPC with `restocks: [ids]` gets a `restock` visit (`enqueueVisit` 2371) at `lowAt`, which restores `max`. Client-only, reset on reload like need levels.
-- **Engine.** `_useCandidate` (1567) skips empty sources; `_completeJob` (3219) takes stock; `_turnBack` reason `empty`; a `lowAt` watch; icon `restock` (stand-in 6.4).
-- **Schema and validator.** `affordance.stock`, NPC `restocks`; targets have stock and the restocker's leash reaches them; `grumble_empty` lines exist.
-- **Scenario.** Both vending machines `stock: { max: 6, perUse: 1, lowAt: 1 }`; Andrés `restocks` both; task `see_refill`.
-- **Node tests, proof.** Empty turn-back, refill visit, reload reset, sims-day digest unchanged without stock; live: six forced uses, the turn-back, the refill.
-- **Sync.** None.
-
-### 5.11 Backlog SIMS-11: traits as named bundles (about 60 lines)
-
-- **Behaviour.** Top-level `traits: { "<name>": { screenHabit, printHabit, chattiness, leftBehindChance, needsCompany } }` and NPC `traits: ["<name>"]`, merged into the NPC record at registration, the NPC's own fields winning. No new behaviour: each trait is a name for fields that already exist.
-- **Engine.** The merge where needs NPCs register (`register`, npc-needs.js:461 on, and the workstation habit reader `habitOf` workstation-state.js:125 reading the merged record). About 30 lines; validator and schema about 30.
-- **Scenario.** `careful` (locks at once, never forgets a print), `scatty` (never locks, forgets half), `chatty`; assigned to the new staff in place of their own fields, so the day plays the same.
-- **Node tests.** Merge order, unknown trait error, sims-day digest unchanged. **Live proof.** The SIMS-4 and SIMS-7 lock and print beats unchanged with traits.
-- **Sync.** None.
-
-### 5.12 Backlog SIMS-12: a visitor at reception (data only)
-
-A courier (`courier_hivis`, no sit frames, standing only) hidden at start (`behavior.initiallyHidden`), shown by a lever ("Delivery Due" note) through `setVisible`, walked from reception's south wall to the counter by `patrolOverride.targetTile`, with a short ink story and a bark; Andrés' `call_front_desk` gains a gated knot. No needs (a patrol or scripted walk excludes them). Proof: visible, walks, talks, hides again on a second lever; reload keeps `npcVisibility`. Sync: one `npcVisibility` boolean. Built after SIMS-8's street-door stand-in exists, or with an `exit_sign1` stand-in.
-
-### 5.13 Not planned, and why
-
-- **Routines (OLP slice 9: a multi-step tea round, fetch the post and file).** About 450 lines; reveal slots, carry jobs and print errands already show the steps; the user's 2026-11-06 picks left routines unmarked (open question 3).
-- **Per-NPC sessions (OLP 16b).** The access model's sign-in PCs and unlocked sessions do this.
-- **Schedule preemption, stand-ups, fire drills.** No mission asks for gathering or escorting.
-- **An outside or smoking area.** No unbranded outdoor map and no ashtray, bench or shelter sprite (3.2; art request 6.4).
+Not planned: **routines** (OLP slice 9, about 450 lines; reveal slots, carry jobs and print errands already show the steps a routine would chain); per-NPC sessions (the access model's sign-in PCs do this); stand-ups and fire drills (no mission asks for gathering or escorting).
 
 | Slice | Size (engine, validator, schema) | Needed by |
 |---|---|---|
-| SIMS-1 E1 in test_needs_attack | 0 (scenario about 400, probe about 220) | m02 before its design closes |
-| SIMS-2 arrivals by distance and move id | about 75 | every needs scenario; m02 before stage 5 |
-| SIMS-3 IT and facilities: Gary (a) and the pair | 0 (scenario about 350, 3 ink files) | m02's patterns |
-| SIMS-4 Leila and Nisha | 0 (scenario about 300, 2 ink files) | m06; Gary (b) evidence; m04, m07 |
-| SIMS-5 reception, vending, E3 | about 4 lines of shared data (perf tool about 140) | E2 before m06; E3 for m05, m08 |
-| SIMS-6 leftover pizza | about 20 (engine 0 unless step 1 fails) | m06 |
-| SIMS-7 private office, work and frustration | 0 (scenario about 220, 1 ink file) | the brief; later missions with work needs |
-| SIMS-8 arrive and leave (backlog) | about 300 | only if m05 or the user asks |
-| SIMS-9 summon to post (backlog) | about 95 | only if a mission asks |
-| SIMS-10 stock and refills (backlog) | about 170 | nobody yet |
-| SIMS-11 traits (backlog) | about 60 | the user's answer to open question 2 |
-| SIMS-12 visitor (backlog) | 0 | the brief, after SIMS-8 or with a stand-in |
+| SIMS-1 E1 in test_needs_attack | 0 (scenario about 420, probe about 240) | m02 before its design closes |
+| SIMS-2 arrivals by distance and move id | about 90 | every needs scenario; m02 before stage 5 |
+| SIMS-3 IT and Neil, the still NPC who prints by command | 0 (scenario about 200) | m02 (Gary) |
+| SIMS-4 the staff room pair | 0 (scenario about 260) | m02 (the porter and the domestic) |
+| SIMS-5 V10 | about 110 | m02 and every mission pass |
+| SIMS-6 Leila and Nisha | 0 (scenario about 260) | m06; m04, m07 |
+| SIMS-7 the leftover pizza | about 20 (engine 0 unless step 1 fails) | m06 |
+| SIMS-8 reception, E2, E3 | about 4 lines of shared data (perf tool about 140) | E2 after the pilot; E3 for m05, m08 |
+| SIMS-9 the private office | 0 (scenario about 200) | the brief; later missions with work needs |
+| B1 to B5 | about 300, 60, 95, 170, 0 | only on request |
 
 ---
 
@@ -516,37 +478,36 @@ A courier (`courier_hivis`, no sit frames, standing only) hidden at start (`beha
 
 ### 6.1 Spoken lines
 
-- Every bark, chatter line, exchange and call is scenario data: single-speaker lines in the NPC's or the scenario's `chatter` pools or eventMapping `bark` fields; multi-speaker exchanges and calls in ink knots. Each is voiceable: one line, 40 characters at most, no `{ }`, no printed variables, no speaker prefix. The validator's pool and exchange checks (`check_pool_lines` 676, `check_exchanges` 826) run on every new pool.
-- Only lines that can play are written: a pool needs a pair at a capacity-2 chatter object, `grumble` plays only on a turn-back (`_grumbleTopic` 2089), `greet` only at an object with `chatter: "greet"`. Andrés, Siân and Neil have no pools for that reason.
-- eventMapping barks (Leila's print-gone line) are voiced live, outside the pool batch, so each slice's report lists them by hand.
-- The engine carries no spoken words; its fallbacks are pictures only (`PICTURE_CHATTER`, npc-needs.js:213). Backlog topics (`summoned`, `leaving`, `grumble_empty`) get picture fallbacks.
-- Audio is made last, with the user's agreement. Every new speaking NPC has a `voice`.
+- Every bark, chatter line, exchange and call is scenario data: single-speaker lines in an NPC's or the scenario's `chatter` pools; multi-speaker exchanges and calls in ink knots. Each is voiceable: one line, 40 characters at most, no `{ }`, no printed variables, no speaker prefix. The validator's pool and exchange checks run on every new pool, and V10 (from SIMS-5) on every pool.
+- Only lines that can play are written (V10's rule). Neil, Andrés and Siân (apart from her failure grumble) have no pools for that reason.
+- No eventMapping barks are added: they are voiced live, outside the pool batch.
+- The engine carries no spoken words; its fallbacks are pictures only (`PICTURE_CHATTER`, npc-needs.js:213).
+- Audio is made last, with the owner's agreement. Every new speaking NPC has a `voice`.
 
 ### 6.2 Server and cheat resistance
 
-- Nothing here guards a secret, key, password or forged item. Levers, magnets, prints, phones and work failures move NPCs or change client choices, which the policy allows as best-effort client behaviour. No printout or note carries an account, address, password or code.
-- Every new global (`it_out_*_shown`, `neil_print_asked`, `neil_ko`, `leila_print_gone`, `heard_*`, `leftover_pizza_servings`, `manager_printer_off`, the KO globals in test_needs_attack) completes optional tasks only; forging one ticks an optional task.
-- Anything the player can take is a declared scenario object (the pages, the cup, the pizza, the folder and notebook). A player drop is rebuilt from the server's held copy and refused unless `droppable: true` (game.rb 541-554); a KO drop must match an authored `itemsHeld` entry (`find_npc_held_item` 1151), records the KO and dedups by id (486-523).
-- New NPC and object fields reach the client because `withhold_npc_secrets!` removes only `WITHHELD_NPC_KEYS` (game.rb:5620, 5656) and `filtered_room_data` (1603) strips named keys only; none of the fields used here is withheld.
+- Nothing here guards a secret, key, password or forged item. Notes, magnets, prints, phones and work failures move NPCs or change client choices, which the policy allows as best-effort client behaviour. No printout or note carries an account, address, password or code.
+- Every new global (`it_out_*_shown`, `neil_print_asked`, `neil_ko`, `job_called`, `job_cleared`, `heard_*`, `leftover_pizza_servings`, `manager_printer_off`, the KO globals in test_needs_attack) completes optional tasks only; forging one ticks an optional task.
+- Anything the player can take is a declared scenario object (the pages, the cup, the pizza, the folder and notebook). A player drop is rebuilt from the server's held copy and refused unless `droppable: true`; a KO drop must match an authored `itemsHeld` entry (`find_npc_held_item`), records the KO and dedups by id.
+- NPC and object fields reach the browser on the lazy room load (`filtered_room_data`); the bootstrap carries only room metadata and sprite keys (`filtered_scenario_for_bootstrap`). `withhold_npc_secrets!` removes `WITHHELD_NPC_KEYS` and `WITHHELD_WORK_NPC_KEYS` (game.rb:5656-5657). The second list strips `workNeeds`, `frustration`, `feed` and `usbHabit`, so Siân's work fields arrive only as the compiled `work` plan (5.9). Of `habits`, only `habits.screen` and `habits.print` reach the browser. No other field used here is withheld.
 - All new fields are author content checked by the validator; no end-user or organisation text is involved.
 
 ### 6.3 Art, UI and layout
 
 - Existing art only; nothing here plans image generation. New art is in 6.4 with a stand-in.
-- UI follows the pixel-art rule (2 px borders or the `ui-themes.css` 9-slice skin, pixel fonts only, no radius) and the UI design language (X closes, no Cancel; the backlog clock lever keeps the `confirm_action` pattern; one look per concept; NPC headshots in conversations).
-- Props square to the walls, top-down, one or two angled per room at most; pixel art never scaled down.
-- Walking "behind" a back wall is intended; never sealed. Cross-room interaction is blocked instead.
+- UI follows the pixel-art rule (2 px borders or the `ui-themes.css` 9-slice skin, pixel fonts only, no radius) and the UI design language (X closes, no Cancel; one look per concept; NPC headshots in conversations).
+- Props are orthogonal (front or top views, square to the walls), with one or two angled props per room at most, and pixel art is never scaled down. The rule is about isometric angles: front-view machines on a side wall are this game's usual practice (m02's staff-room cooler stands on the east wall, the showcase kitchen cooler on the west), so the IT copier on the east wall is fine.
+- Walking "behind" a back wall is intended and is never sealed; cross-room interaction is blocked instead.
 
-### 6.4 Art and sound requests for the user
+### 6.4 Art and sound requests for the owner
 
 | Item | Kind | Needed by | Stand-in meanwhile |
 |---|---|---|---|
-| A vending coin and drop sound | MP3 one-shot (`startSound`) | SIMS-5 | none: the use sound only |
-| An office manager or team lead, a person of colour, office clothes | character (concept, bust, visemes from four talk inits, walk, sit) | optional for SIMS-7 (open question 1) and a more varied cast | Siân on `female_security_guard_v2` |
-| An outdoor smoking shelter: a small unbranded yard map with a bench, an ashtray bin and a shelter | room map plus 2 to 3 props, sized from the catalogue | a smoking area (3.2) | none; not built |
-| A plain street door for an outside wall | object sprite | SIMS-8, SIMS-12 | `exit_sign1` above the tile |
-| A desk bell or buzzer | object sprite | SIMS-9 | `phone3` named "Facilities Buzzer" |
-| A restock icon (`npc-restock`, 16x16) | icon | SIMS-10 | the `npc-file` icon |
+| A vending coin and drop sound | MP3 one-shot (`startSound`) | SIMS-8 | none: the use sound only |
+| Visemes for `female_telecom_v2` (Jodie) and `female_security_guard_v2` (Siân), four talk inits first | character talk art | SIMS-4, SIMS-9 | headshot only |
+| An office manager or team lead, a person of colour, office clothes | character (concept, bust, visemes from four talk inits, walk, sit) | optional for SIMS-9 (open question 1) and a more varied cast | Siân on `female_security_guard_v2` |
+| An outdoor smoking shelter: a small unbranded yard map with a bench, an ashtray bin and a shelter | room map plus 2 to 3 props, sized from the catalogue | a smoking area | none; not built |
+| A plain street door, a desk buzzer, a restock icon | object sprites, icon | B1, B3, B4, B5 | `exit_sign1`, `phone3`, `npc-file` |
 
 ### 6.5 Sync, all slices together
 
@@ -555,62 +516,61 @@ Needs state, positions, queues, move ids, chats, magnet knowledge and stock live
 | Piece | Count | Changes |
 |---|---|---|
 | Workstation booleans for `leila_pc`, `nisha_pc`, `sian_laptop` | 9 | on each leave and return |
-| IT slot globals | 4 | once each |
-| `neil_print_asked`, `neil_ko`, `leila_print_gone` | 3 | once each |
-| `heard_` booleans (three exchanges; two calls if heard-once) | at most 5 | once each |
+| IT slot globals | 6 | once each |
+| `neil_print_asked`, `neil_ko`, `job_called`, `job_cleared` | 4 | once each |
+| `heard_` booleans (three exchanges, two calls) | 5 | once each |
 | `leftover_pizza_servings` | 1 integer | twice |
 | `manager_printer_off` | 1 | on each switch |
-| `sian_frustration` and its server record | 1 integer, about 450 bytes | as a delta on the 30-second sync |
-| `triggeredEvents` keys for new `onceOnly` mappings | about 30 | once each |
-| Room-state records for the pizza (two removals, one add) | 3 | once each, through `add_object` and `remove_object`, not `sync_state` |
+| `sian_frustration` and its server record | 1 integer, about 450 bytes | on a change, as a delta on the 30-second sync |
+| `triggeredEvents` keys for new `onceOnly` mappings | about 32 | once each |
+| Room-state records for the pizza (two removals, one add) | 3 | once each, through `add_object` and `remove_object` |
 
-test_needs_attack adds, in its own games, up to 7 `npcHostility` entries, 5 KO records and globals, 2 `objects_added` and 6 `triggeredEvents` keys. The backlog adds at most 13 `npcVisibility` booleans (SIMS-8). Every count is fixed by the authored content; nothing grows with play time; a reload seeds the sync's confirmed state from the saved blocks, so it sends only what changes, and replays no beat.
+test_needs_attack adds, in its own games, up to 7 `npcHostility` entries, 5 KO records and globals, 2 more globals, 2 `objects_added` and 7 `triggeredEvents` keys. The backlog adds at most 13 `npcVisibility` booleans (B1). Every count is fixed by the authored content; nothing grows with play time; a reload seeds the sync's confirmed state from the saved blocks, so it sends only what changes, and replays no beat.
 
-The showcase is a test floor, so it sits above OLMP 7's per-mission caps for reveal globals and `onceOnly` mappings (the office and kitchen copiers have seven slots and every task uses one mapping); each is still one boolean set once. It has six owned workstations (under the cap of 8), two magnets (at the cap of 2) and one NPC with frustration (under the cap of 6).
+The showcase is a test floor, so it sits above OLMP section 7's per-mission caps for reveal globals and `onceOnly` mappings (its copiers have thirteen slots and every task uses one mapping); each is still one boolean set once. It has six owned workstations (under the cap of 8), two magnets (at the cap of 2) and one NPC with frustration (under the cap of 6).
 
 ---
 
 ## 7. What to watch for: a guided tour for the README
 
-Times are needs-clock minutes from load. Levers are in bold. Each row says what to do if a beat does not come by itself.
+Steps are in order; each says how long to wait and what to do if a beat does not come. Levers are in bold. Times are needs-clock minutes after the named room first loads.
 
-| Time | Where | Lever | What should happen | Slice |
+| Step | Where | Do | What should happen | Slice |
 |---|---|---|---|---|
-| 0:00 to 1:00 | office | none | Amara and Tom at the coffee station: one waits, then goes; icons and bubbles; typing | built |
-| 1:00 | office, then north | **open the north door** | IT: Neil standing at his bench; Leila typing at her desk; the empty cooler never shows a use icon | SIMS-3, 4 |
-| 1:20 | IT, then east | **open the facilities door** | Keith and Jodie sitting on the waiting chairs, Nisha at her desk; the room has its own quiet tone | SIMS-3, 4 |
-| 1:30 to 4:00 | facilities | stay | Keith gets up for tea and Jodie follows; at the boiler they talk; the first time, the radio exchange plays (`hear_radio_wait`). If nothing comes in two minutes, **walk out to IT and back in** after two minutes: a shared break starts within 10 s | SIMS-3 |
-| 3:30 | IT | **talk to Neil, ask for the change log**, close | about 6 s later the copier runs and a page lands; Neil never moves (`get_neils_page`); he sips from his mug where he stands (`see_neil_sip`) | SIMS-3 |
-| 4:00 | IT | **read the Tea Round note** | within about 10 s Leila and Nisha are at the boiler and chat; the first time, the tea exchange plays (`hear_tea_round`); `leashed` events tick `see_kept_to_it` and `see_kept_out` within a few teas | SIMS-4 |
-| 4:40 | IT | **read the IT Print Queue note**, then **take the page from the tray** within 20 s | at the due time Leila, still at her desk, asks who has had her printout (`take_leilas_page`) | SIMS-4 |
-| 5:20 | IT | **read the Tea Round note again** (30 s cooldown) | the second exchange plays, about the missing page (`hear_page_gone`) | SIMS-4 |
-| 6:00 | IT | **read it a third time**, wait for a line at the boiler, **walk up to them** | they stop talking as you arrive (the chat ends `hushed`) | SIMS-4 |
-| 6:30 | facilities | **read the Facilities Print Queue note**, go back to IT | 20 to 30 s later Nisha walks in and takes her page (`see_print_errand`) | SIMS-4 |
-| 7:30 | lounge | **pick up the pizza boxes**, carry them through the office and IT, **drop them in the facilities office** | no announcement: Nisha and Keith see the box and come; Nisha leaves her screen open; two servings, then the box is gone. **Sit at Nisha's desk** while she eats (`use_nishas_screen`) | SIMS-6 |
-| 9:00 | office, then south | **open the south door**, **read Vending Restocked** | Andrés at the snack machine, then the drinks machine; the sounds only in reception | SIMS-5 |
-| 10:00 | reception | **use the courtesy phone** while Andrés is at the desk | he answers standing and the call plays; try again while he is at a machine and it rings out. Now and then he checks his own phone without a step | SIMS-5 |
-| 11:00 | IT, then west | **open the west door**, **read Call Facilities** in IT, go in | Siân answers at her desk; read it again while she is at her coffee and it rings out | SIMS-7 |
-| 12:00 | private office | **switch off the printer socket**; wait for her next work turn | her work fails, she grumbles, kicks out at the outage and walks over to check the printer; switch it back on | SIMS-7 |
-| any | kitchen | **pick up the mug of coffee, use it from the inventory** | you drink it, with a sound (`drink_a_coffee`); the map cups in the new rooms drink the same, and nobody minds | SIMS-4 |
+| 1 | office | watch for a minute | Amara and Tom at the coffee station: one waits, then goes; icons, bubbles, typing | built |
+| 2 | office, then north | **open the north door** | IT: Neil standing at the south bench; about 2:30 after the door opens he sips from his mug without a step (`see_neil_sip`) | SIMS-3 |
+| 3 | IT | **talk to Neil, ask for the change log**, close | about 6 s later the copier runs and a page lands; Neil never moves; take the page (`get_neils_page`) | SIMS-3 |
+| 4 | IT, then east | **open the staff-room door** | Keith and Jodie seated at two tables; the room has a kitchen hum. This first entry may not start a break | SIMS-4 |
+| 5 | staff room, then IT | go back to IT, wait two minutes, then **walk straight back into the staff room** and step towards the counter | the pair are at the boiler; the first time, the waiting exchange plays (`hear_waiting`, `see_shared_break`) | SIMS-4 |
+| 6 | staff room | **talk to Keith, ask if any jobs are on**; go to IT and wait two minutes; come back the same way | the job exchange plays at the boiler (`hear_job_called`) | SIMS-4 |
+| 7 | IT, then west | **open the private office**, then walk back through IT into the staff room within 25 s | the pair are at the cooler (`see_cooler_break`) | SIMS-4 |
+| 8 | staff room | stay until about 8:00 after its first load | Keith heats something in the microwave, alone (`see_microwave`) | SIMS-4 |
+| 9 | IT | **read the Tea Round note** by the kettle and stay close | Leila and Nisha at the kettle within about 10 s, talking (`see_it_tea`); walk right up while one is speaking and they stop talking; Leila's screen locks as she gets up (`see_leila_locks`); the `leashed` events tick `see_kept_to_it` and `see_kept_out` within a few teas | SIMS-6 |
+| 10 | IT | **read the IT Print Queue note**, then **take the page from the tray** within 20 s | at the due time Leila, still at her desk, finds it gone (`take_leilas_page`) | SIMS-6 |
+| 11 | IT | wait | Nisha prints at her desk and walks to the copier 20 to 60 s later (`see_print_errand`); her screen locks itself 90 s after she leaves (`see_nisha_auto_lock`); a page Leila forgets is logged as uncollected after three minutes (`see_print_forgotten`) | SIMS-6 |
+| 12 | lounge | **pick up the pizza boxes**, carry them through the office into IT, **drop them** | no announcement: Nisha and Leila see the box and come; Nisha leaves her screen open; two servings, then the box is gone. **Sit at Nisha's desk** while she eats (`use_nishas_screen`) | SIMS-7 |
+| 13 | kitchen | **pick up the mug of coffee, use it from the inventory** | you drink it, with a sound (`drink_a_coffee`); the drawn cups in IT and the staff room drink the same, and nobody minds | SIMS-6 |
+| 14 | office, then south | **open the south door**, **read Vending Restocked** | Andrés at the vending machine; the sound only in reception (`see_vending_snack`) | SIMS-8 |
+| 15 | reception | **use the courtesy phone** while Andrés stands at the counter | he answers standing and the call plays (`hear_front_desk_call`) | SIMS-8 |
+| 16 | reception | wait for his phone break (a phone icon, about 5:00 after reception opens, 45 s long), then **use the courtesy phone** | it rings four times and stops (`see_front_desk_rang_out`, `see_phone_break`) | SIMS-8 |
+| 17 | private office | **use the Internal Line** while Siân is at her desk; again the moment she gets up for coffee | she answers seated (`hear_supplier_call`); the second rings twice and stops (`see_call_rang_out`); her screen locks as she goes (`see_sian_locks`) | SIMS-9 |
+| 18 | private office | **switch off the printer socket**, **read the Monthly Report note** | her work fails, she grumbles, kicks out at the outage and walks over to check the printer (`see_work_fail`, `see_printer_checked`); switch it back on and her next use works | SIMS-9 |
 | any | office | the earlier levers: notes, sockets, spare phone, cake, parcel, mugs | as the README lists | built |
 | any | everywhere | the debug overlay and `window.__test.needs.log()` | every beat has a log line and, where listed, a task | built |
 
-Without levers the new beats still come on the times in 3.5. The order above keeps each beat clear of the next: the pizza comes while Nisha's and Keith's hunger is still inside the tempt band, and Vending Restocked touches only Andrés. The attack checks are in test_needs_attack's own README.
+Steps 2 to 8 need no lever at all, as in m02: the pair's breaks come from their own needs and from the rooms the player passes. Without levers the later beats still come on the times in 3.5. Step 12 must come before 10:00 after IT opens, while Nisha's hunger is in the pizza's tempt band. The attack checks are in test_needs_attack's own README.
 
 ---
 
 ## 8. Open questions (recommended default in bold)
 
-1. The private office's occupant: no free sprite looks like a manager. Cast Siân on `female_security_guard_v2` (a uniformed head of facilities, the caretakers' boss), or commission a manager character (6.4) and leave the office without its occupant until the art lands? **Cast Siân on the free sprite now; swap her sheet later if the manager is commissioned. Her id and records stay.**
-2. Traits. The brief asks for a cast with traits; the user's picks of 2026-11-06 left traits unmarked and built every habit as a per-NPC field. Build SIMS-11 (about 60 lines, names for existing fields, no new behaviour) after SIMS-7, or keep it in the backlog? **Keep it in the backlog until the user says; it adds names, not behaviour, and the per-NPC fields already vary the cast.**
-3. Routines. The brief asks for routines; the same picks left them unmarked; OLP slice 9 is about 450 lines. **Not planned; reveal slots, carry jobs and print errands show the steps a routine would chain.**
-4. Schedules. The brief asks for them; the picks said "timetabled schedules maybe later" and preferred player levers. **Backlog (SIMS-8) until m05's design or the user asks.**
-5. A smoking or outside area needs a new map and props (6.4). **Not built until the art exists.**
-6. Make every new room private to its own staff? **Yes: it keeps the README's office beats as they are and makes each room's life its own.**
-7. Andrés standing at the counter's end, since `room_reception` has no staff side? **Yes.**
-8. Nisha's leash as a deny list, so the showcase shows both forms? **Yes.**
-9. Start the pizza on the lounge table, where nobody with hunger goes? **Yes.**
-10. Build the backlog (SIMS-8 to SIMS-12) only when a mission's design or the user asks? **Yes.**
-11. If schedules are built: leave times on the game clock (saved) rather than the needs clock (reset on reload)? **Game clock, so a reload never replays the evening.**
-12. If the summon is built: a fixed hold or until released? **20 s, extended by a player conversation; a `release` mapping ends it early.**
-13. If refills are built: should stock survive a reload? **No: client-only, reset to full like need levels.**
+1. The private office's occupant: no free sprite looks like a manager. **Cast Siân on `female_security_guard_v2` now (a uniformed head of facilities); swap her sheet later if the manager character is commissioned. Her id and records stay.**
+2. Traits: the brief asks for a cast with traits, and the owner's picks of 2026-11-06 left traits unmarked and built every habit as a per-NPC field. **Keep B2 in the backlog; it adds names, not behaviour, and the per-NPC fields already vary the cast. Build it after SIMS-9 if the owner says so (about 60 lines, no sync).**
+3. Schedules: the brief asks for them; the same picks said "timetabled schedules maybe later" and preferred player levers. **Keep B1 in the backlog until m05's design or the owner asks; B1 states its size and sync row so the owner can call it.**
+4. Routines. **Not planned; reveal slots, carry jobs and print errands show the steps a routine would chain.**
+5. V10 is built here, in `scripts/validate_office_life.rb`, the file OLMP names for V1 to V10. **Yes: the showcase is where the pair's pools are first heard, and the missions tooling adds the other checks to the same file.**
+6. The staff room uses m02's own map, `room_hospital_staff`. **Yes: it is unbranded, and the pilot's seats, claims and cells are then proved on the map the pilot uses.**
+7. If SIMS-4's count shows back-room chats taking voiced lines from the office: **raise the speech-lock change (lock only for overheard lines) as an engine item for the owner; until then the showcase accepts picture chat in the office at those moments.**
+8. Reception holds one vending machine. **Yes; the drinks preset is tested in node tests.**
+9. Make every new room private to its own staff? **Yes: it keeps the README's office beats as they are and makes each room's life its own.**
+10. If schedules are built: leave times on the game clock (saved) rather than the needs clock (reset on reload)? **Game clock, so a reload never replays the evening.**
