@@ -204,6 +204,21 @@ module ValidateOfficeLife
     ''
   end
 
+  # The story as text for global-writer scans: the .ink source, or the compiled JSON when no
+  # .ink is committed beside it.
+  def self.story_text(npc)
+    src = ink_text(npc)
+    return src unless src.empty?
+
+    p = npc['storyPath']
+    return '' unless p.is_a?(String) && !p.empty?
+
+    full = File.expand_path(p, REPO_ROOT)
+    File.file?(full) ? File.read(full, encoding: 'UTF-8') : ''
+  rescue StandardError
+    ''
+  end
+
   # ── V1: --office-summary ────────────────────────────────────────────────────────────────────
 
   KEY_ITEM_TYPES = %w[key keycard id_badge rfid_card access_card].freeze
@@ -219,9 +234,13 @@ module ValidateOfficeLife
     ink_text(npc).scan(/#\s*complete_task\s*:\s*([A-Za-z0-9_\-]+)/).flatten.uniq.select { |t| w.required_tasks.key?(t) }
   end
 
-  def self.sets_task?(w, npc)
-    return true if ink_text(npc) =~ /#\s*complete_task\s*:/
+  # V1 'task': the NPC's ink sets a task with #complete_task.
+  def self.ink_sets_task?(npc)
+    ink_text(npc) =~ /#\s*complete_task\s*:/ ? true : false
+  end
 
+  # V1 'task-mapping': a mapping the NPC holds completes a task (observer mappings included).
+  def self.mapping_sets_task?(npc)
     Array(npc['eventMappings']).any? { |m| m.is_a?(Hash) && !names(m['completeTask']).empty? }
   end
 
@@ -231,17 +250,49 @@ module ValidateOfficeLife
     end
   end
 
+  # Scenario-level disableAttacks is the only switch the engine reads (player-combat.js), and
+  # koImmune makes the punch pass over. Phone NPCs have no sprite to punch.
   def self.attackable?(json, npc)
-    json['disableAttacks'] != true && npc['koImmune'] != true && npc['disableAttacks'] != true
+    json['disableAttacks'] != true && npc['koImmune'] != true && npc['npcType'] != 'phone'
+  end
+
+  # behavior.hostile is the combat tuning block (npc-hostile.js); only startHostile makes the NPC
+  # hostile from the start (npc-behavior.js). A bare `hostile: true` is kept for safety.
+  def self.starts_hostile?(npc)
+    h = npc.dig('behavior', 'hostile')
+    h == true || (h.is_a?(Hash) && h['startHostile'] == true)
+  end
+
+  # The engine enables a patrol when it is enabled, or has waypoints or bounds (npc-behavior.js).
+  def self.patrols?(npc)
+    p = npc.dig('behavior', 'patrol')
+    return false unless p.is_a?(Hash)
+
+    p['enabled'] == true || (p['waypoints'].is_a?(Array) && !p['waypoints'].empty?) || p['bounds'].is_a?(Hash)
+  end
+
+  # Exchanges the NPC starts plus those another NPC starts `with` it.
+  def self.exchange_count(w, npc)
+    others = w.npcs.sum do |_r, o|
+      next 0 if o.equal?(npc)
+
+      Array(o['exchanges']).count { |e| e.is_a?(Hash) && names(e['with']).include?(npc['id'].to_s) }
+    end
+    Array(npc['exchanges']).size + others
   end
 
   def self.class_hints(w, npc)
     hints = []
-    hints << 'task' if sets_task?(w, npc)
+    hints << 'task' if ink_sets_task?(npc)
+    hints << 'task-mapping' if mapping_sets_task?(npc)
     hints << 'conv' if conversation_target?(w, npc)
     hints << 'key' if key_source?(npc)
-    hints << 'hostile' if npc.dig('behavior', 'hostile')
-    hints << 'patrol' if npc.dig('behavior', 'patrol', 'enabled') == true
+    if starts_hostile?(npc)
+      hints << 'hostile'
+    elsif npc.dig('behavior', 'hostile').is_a?(Hash)
+      hints << 'fights'
+    end
+    hints << 'patrol' if patrols?(npc)
     hints << 'hidden' if npc['initiallyHidden'] == true
     hints << 'attackable' if attackable?(w.json, npc)
     hints
@@ -273,7 +324,7 @@ module ValidateOfficeLife
         "avoids=#{list_s(n.dig('needsCompany', 'avoids'))}",
         "habits=#{habits}",
         "chatter=#{chatter}",
-        "exchanges=#{Array(n['exchanges']).size}",
+        "exchanges=#{exchange_count(w, n)}",
         "calls=#{Array(n['phoneCalls']).size}"
       ].join(' ')
     end
@@ -297,21 +348,60 @@ module ValidateOfficeLife
 
   # ── V2 ──────────────────────────────────────────────────────────────────────────────────────
 
-  # Rooms other than its home that hold an object meeting one of its needs, which it may use and
-  # can reach over connections without entering a forbidden room.
+  # Producer ids the NPC prints to: onUse revealOutput hooks, and mapping needs.print commands.
+  def self.print_producers(npc)
+    out = []
+    (npc['onUse'].is_a?(Hash) ? npc['onUse'] : {}).each_value do |hook|
+      out.concat(VN.printer_list(hook['revealOutput'])) if hook.is_a?(Hash) && hook.key?('revealOutput')
+    end
+    Array(npc['eventMappings']).each do |m|
+      next unless m.is_a?(Hash) && m['needs'].is_a?(Hash) && m['needs'].key?('print')
+
+      cmd = m['needs']['print']
+      out.concat(VN.printer_list(cmd.is_a?(Hash) ? cmd['producer'] : cmd))
+    end
+    out.uniq
+  end
+
+  # Rooms other than its home that its needs can take it to, under its leash: an object meeting a
+  # need that it may use; the output tray of a printer it prints to (a print fetch); an item tagged
+  # for one of its interests; and, when a droppable magnet satisfies one of its needs, any room it
+  # can reach (the player can drop the magnet anywhere). [rooms, reasons].
   def self.away_need_rooms(w, npc, room)
     home = home_room(w, npc, room)
     reach = VN.leash_reach(w.json, npc, home)
+    away = ->(r) { r && r != home && reach.include?(r) }
     needs = npc['needs'].keys
-    w.objs.select do |o|
+    rooms = {}
+    add = ->(r, why) { (rooms[r] ||= []) << why if away.call(r) }
+    w.objs.each do |o|
       a = o.data['affordance']
-      o.room && o.room != home && reach.include?(o.room) && a.is_a?(Hash) &&
-        (VN.list(a['satisfies']) & needs).any? && VN.use_rule(w.json, npc, o, home, w.npcs).nil?
-    end.map(&:room).uniq.sort
+      next unless a.is_a?(Hash) && (VN.list(a['satisfies']) & needs).any?
+      next if a['magnet'].is_a?(Hash)
+
+      add.call(o.room, 'need') if VN.use_rule(w.json, npc, o, home, w.npcs).nil?
+    end
+    prods = print_producers(npc)
+    unless prods.empty?
+      w.objs.each { |o| add.call(o.room, 'print fetch') if prods.include?(o.data['outputOf']) || prods.include?(o.id) }
+    end
+    tags = npc['interests'].is_a?(Hash) ? npc['interests'].keys : []
+    w.objs.each { |o| add.call(o.room, 'interest') if tags.include?(o.data['needsTag']) } unless tags.empty?
+    if w.objs.any? { |o| (m = o.data['affordance']).is_a?(Hash) && m['magnet'].is_a?(Hash) && (VN.list(m['satisfies']) & needs).any? }
+      reach.each { |r| add.call(r, 'magnet') }
+    end
+    rooms.keys.sort.map { |r| "#{r} (#{rooms[r].uniq.join('/')})" }
   end
 
-  def self.post_override?(npc)
-    Array(npc['eventMappings']).any? { |m| m.is_a?(Hash) && m.dig('patrolOverride', 'targetTile').is_a?(Hash) }
+  # A patrolOverride walks to a tile in the room the NPC is in when it fires (npc-manager.js), so
+  # it returns the NPC to its post only when that room is its home and the trigger is a story
+  # event (an office-life event fires while it is away).
+  def self.post_override?(w, npc, room)
+    return false unless home_room(w, npc, room) == room
+
+    Array(npc['eventMappings']).any? do |m|
+      m.is_a?(Hash) && m.dig('patrolOverride', 'targetTile').is_a?(Hash) && !office_life_event?(m['eventPattern'])
+    end
   end
 
   def self.check_story_npcs_leave(w, issues)
@@ -325,7 +415,7 @@ module ValidateOfficeLife
       why << "owns a knot that sets required task(s) #{tasks.uniq.sort.join(', ')}" unless tasks.empty?
       why << 'is the target of a conversation-mode mapping' if conversation_target?(w, n)
       why << 'is a key or card source' if key_source?(n)
-      next if why.empty? || post_override?(n)
+      next if why.empty? || post_override?(w, n, room)
 
       away = away_need_rooms(w, n, room)
       next if away.empty?
@@ -342,7 +432,14 @@ module ValidateOfficeLife
     needs_ids = w.npcs.select { |_r, n| needs_npc?(n) }.map { |_r, n| n['id'] }.to_set
     w.mappings.each do |m, owner|
       pat = m['eventPattern']
-      next unless pat.is_a?(String) && (id = pat[/\Anpc_arrived:(.+)\z/, 1]) && needs_ids.include?(id)
+      next unless pat.is_a?(String)
+
+      if pat == 'npc_arrived:*' && !needs_ids.empty?
+        issues << "⚠️ WARNING: office life V3: eventMapping '#{pat}'#{owner ? " on '#{owner}'" : ''} listens for any arrival, " \
+                  "and #{needs_ids.to_a.sort.join(', ')} ha#{needs_ids.size == 1 ? 's' : 've'} needs; needs walks fire npc_arrived too, so it fires on every coffee run."
+        next
+      end
+      next unless (id = pat[/\Anpc_arrived:(.+)\z/, 1]) && needs_ids.include?(id)
 
       issues << "⚠️ WARNING: office life V3: eventMapping '#{pat}'#{owner ? " on '#{owner}'" : ''} listens for an arrival of " \
                 "'#{id}', which has needs; its needs walks also fire npc_arrived, so the mapping can fire on a coffee run."
@@ -351,25 +448,54 @@ module ValidateOfficeLife
 
   # ── V4 ──────────────────────────────────────────────────────────────────────────────────────
 
+  # The KO drops: itemsHeld ids (else type), as plan 6.10 asks the info line to list.
+  def self.held_s(npc)
+    list_s(Array(npc['itemsHeld']).select { |i| i.is_a?(Hash) }.map { |i| i['id'] || i['type'] || i['name'] })
+  end
+
   def self.check_attackable_needs(w, issues)
     w.npcs.each do |_room, n|
       next unless needs_npc?(n) && attackable?(w.json, n)
 
+      drops = "KO globals #{list_s(n['globalVarOnKO'])}, KO tasks #{list_s(n['taskOnKO'])}, held items #{held_s(n)}"
+      ignored = n['disableAttacks'] == true ? ' Its own disableAttacks has no effect: the engine reads only the scenario-level flag.' : ''
       if E1_PROBE_PASSED
-        issues << "ℹ office life V4: needs NPC '#{n['id']}' can be attacked; KO globals " \
-                  "#{list_s(n['globalVarOnKO'])}, KO tasks #{list_s(n['taskOnKO'])}."
+        issues << "ℹ office life V4: needs NPC '#{n['id']}' can be attacked; #{drops}.#{ignored}"
       else
         issues << "⚠️ WARNING: office life V4: needs NPC '#{n['id']}' can be attacked mid-walk (no disableAttacks, " \
-                  "not koImmune) and the E1 attack probe has not passed. KO globals #{list_s(n['globalVarOnKO'])}, " \
-                  "KO tasks #{list_s(n['taskOnKO'])}."
+                  "not koImmune) and the E1 attack probe has not passed. #{drops}.#{ignored}"
       end
     end
   end
 
   # ── V5 ──────────────────────────────────────────────────────────────────────────────────────
 
-  # { global => source } for every global office life writes (plan section 4, V5).
+  # { global => source } for every global office life writes (plan section 4, V5), and nothing
+  # else does. Followed to a fixed point: a mapping triggered by an office-life global is itself
+  # office life, so the globals it sets count too, and it no longer counts as another writer.
   def self.office_life_globals(w)
+    base = base_office_globals(w)
+    globals = {}
+    20.times do
+      cand = base.dup
+      w.mappings.each do |m, owner|
+        why = office_trigger(m, globals)
+        next unless why
+
+        names(m['setGlobal']).each do |g|
+          cand[g] ||= "set by the office-life mapping '#{m['eventPattern']}'#{owner ? " on '#{owner}'" : ''}"
+        end
+      end
+      other = other_global_writes(w, globals)
+      nxt = cand.reject { |g, _| other.include?(g) }
+      break if nxt == globals
+
+      globals = nxt
+    end
+    globals
+  end
+
+  def self.base_office_globals(w)
     out = {}
     w.npcs.each do |_r, n|
       AW.workarounds(w.json, n).each { |wa| names(wa['setGlobal']).each { |g| out[g] ||= "workaround setGlobal on '#{n['id']}'" } }
@@ -393,37 +519,39 @@ module ValidateOfficeLife
         out[g] ||= "reveal global of '#{o.id}'"
       end
     end
-    w.mappings.each do |m, owner|
-      next unless office_life_event?(m['eventPattern'])
-
-      names(m['setGlobal']).each { |g| out[g] ||= "set by the office-life mapping '#{m['eventPattern']}'#{owner ? " on '#{owner}'" : ''}" }
-    end
-    # Only globals nothing else writes: a mapping on a non-office-life event, an object, or ink.
-    other = other_global_writes(w)
-    out.reject { |g, _| other.include?(g) }
+    out
   end
 
   OFFICE_HOLDERS = %w[workarounds onUse].freeze
 
-  def self.other_global_writes(w)
+  # Globals written by anything that is not office life: a mapping whose trigger is not office
+  # life (given the office globals so far), an object, an action list ({ type: set_global, key }),
+  # a social-influence effect ({ type: setGlobal, global }), or a story the NPCs load (ink
+  # #set_global / #set_variable tags and `~ name =`; the compiled JSON when no .ink is committed).
+  def self.other_global_writes(w, globals = {})
     set = Set.new
     walk = lambda do |node, skip|
       case node
       when Hash
-        mapping_office = node.key?('eventPattern') && office_life_event?(node['eventPattern'])
+        office = skip || (node.key?('eventPattern') && office_trigger(node, globals))
+        unless office
+          set << node['key'] if node['type'] == 'set_global' && node['key'].is_a?(String)
+          set << node['global'] if node['type'] == 'setGlobal' && node['global'].is_a?(String)
+        end
         node.each do |k, v|
           next if OFFICE_HOLDERS.include?(k)
 
-          names(v).each { |g| set << g } if k == 'setGlobal' && !skip && !mapping_office
-          walk.call(v, skip || mapping_office)
+          names(v).each { |g| set << g } if k == 'setGlobal' && !office
+          walk.call(v, office)
         end
       when Array then node.each { |v| walk.call(v, skip) }
       end
     end
     walk.call(w.json, false)
-    w.npcs.map { |_r, n| ink_text(n) }.uniq.each do |src|
-      src.scan(/#\s*set_global\s*:\s*([A-Za-z0-9_]+)/).flatten.each { |g| set << g }
+    w.npcs.map { |_r, n| story_text(n) }.uniq.each do |src|
+      src.scan(/#\s*set_(?:global|variable)\s*:\s*([A-Za-z0-9_]+)/).flatten.each { |g| set << g }
       src.scan(/^\s*~\s*([A-Za-z0-9_]+)\s*=(?!=)/).flatten.each { |g| set << g }
+      src.scan(/"VAR=":\s*"([A-Za-z0-9_]+)"/).flatten.each { |g| set << g }
     end
     set
   end
@@ -444,8 +572,30 @@ module ValidateOfficeLife
     g ? "global '#{g}' (#{globals[g]}) in its condition, which only office life writes" : nil
   end
 
+  # { 'object:<id>' / 'room:<id>' => [required task ids] } for required unlock_object / unlock_room tasks,
+  # which complete when their targetObject / targetRoom unlocks (objectives-manager.js).
+  def self.required_unlock_targets(json)
+    req = required_tasks(json)
+    out = Hash.new { |h, k| h[k] = [] }
+    Array(json['objectives']).each do |aim|
+      next unless aim.is_a?(Hash)
+
+      Array(aim['tasks']).each do |t|
+        next unless t.is_a?(Hash) && req.key?(t['taskId'].to_s)
+
+        if t['type'] == 'unlock_object' && t['targetObject'].is_a?(String)
+          out["object:#{t['targetObject']}"] << t['taskId']
+        elsif t['type'] == 'unlock_room' && t['targetRoom'].is_a?(String)
+          out["room:#{t['targetRoom']}"] << t['taskId']
+        end
+      end
+    end
+    out
+  end
+
   def self.check_office_life_triggers(w, issues)
     globals = office_life_globals(w)
+    unlock_tasks = required_unlock_targets(w.json)
     w.mappings.each do |m, owner|
       why = office_trigger(m, globals)
       next unless why
@@ -456,9 +606,18 @@ module ValidateOfficeLife
         issues << "❌ ERROR: office life V5: #{where} completes required task(s) #{req.join(', ')} from #{why}. " \
                   'Required content must not wait on office life (rule 1): key it on a story event or global.'
       end
-      next if names(m['unlockDoor']).empty? && names(m['unlockObject']).empty?
+      targets = names(m['unlockDoor']).map { |t| ['room', t] } + names(m['unlockObject']).map { |t| ['object', t] }
+      next if targets.empty?
 
-      issues << "⚠️ WARNING: office life V5: #{where} unlocks #{(names(m['unlockDoor']) + names(m['unlockObject'])).join(', ')} " \
+      proven, other = targets.partition { |k, t| unlock_tasks.key?("#{k}:#{t}") }
+      other = other.map(&:last)
+      proven.each do |k, t|
+        issues << "❌ ERROR: office life V5: #{where} unlocks #{k} '#{t}' from #{why}, and required task(s) " \
+                  "#{unlock_tasks["#{k}:#{t}"].join(', ')} complete when it unlocks. Required content must not wait on office life (rule 1)."
+      end
+      next if other.empty?
+
+      issues << "⚠️ WARNING: office life V5: #{where} unlocks #{other.join(', ')} " \
                 "from #{why}. If that lock is on the critical path, it waits on office life (rule 1)."
     end
     Array(w.json['objectives']).each do |aim|
@@ -586,8 +745,14 @@ module ValidateOfficeLife
       c['reveal and left-behind globals'] += 1 if left
       c['office-life items'] += 1 if (left || (a.is_a?(Hash) && a['magnet'].is_a?(Hash))) && o.data['takeable'] != false
     end
-    c['office-life onceOnly mappings'] = w.mappings.count { |m, _| m['onceOnly'] == true && office_life_event?(m['eventPattern']) }
+    c['office-life onceOnly mappings'] = w.mappings.count { |m, _| m['onceOnly'] == true && (office_life_event?(m['eventPattern']) || office_life_action?(m)) }
     BUDGET_CAPS.map { |kind, cap| [kind, c[kind], cap] }
+  end
+
+  # A mapping that drives office life whatever its trigger: a needs command (print included), a
+  # patrolOverride, or an emitted office-life event (desk_phone_ring and the like).
+  def self.office_life_action?(m)
+    m['needs'].is_a?(Hash) || m['patrolOverride'].is_a?(Hash) || office_life_event?(m['emitEvent'])
   end
 
   def self.check_sync_budget(w, issues)

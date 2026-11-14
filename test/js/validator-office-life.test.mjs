@@ -59,7 +59,7 @@ test('V1: one line per NPC, sorted by id, with class hints, post, needs and coun
     const s = scenario({ npcs: [
         worker({ id: 'zed', chatter: { coffee: ['Kettle on.', 'Milk?'] }, needsRooms: ['office', 'kitchen'] }),
         { id: 'amy', displayName: 'Amy', npcType: 'person', position: { x: 1, y: 1 }, initiallyHidden: true,
-          behavior: { hostile: true }, itemsHeld: [{ type: 'keycard', name: 'Card' }] }
+          behavior: { hostile: { startHostile: true, chaseSpeed: 120 } }, itemsHeld: [{ type: 'keycard', name: 'Card' }] }
     ] });
     const lines = call(s, 'ValidateOfficeLife.office_summary(json)');
     assert.equal(lines.length, 2);
@@ -67,6 +67,35 @@ test('V1: one line per NPC, sorted by id, with class hints, post, needs and coun
     assert.match(lines[1], /^zed \(office\) .*leash=rooms=office,kitchen needs=caffeine .*chatter=2 exchanges=0 calls=0$/);
     s.disableAttacks = true;
     assertNot(call(s, 'ValidateOfficeLife.office_summary(json)'), 'attackable');
+});
+
+test('V1: combat tuning alone is fights, not hostile (the real behavior.hostile shape)', { skip }, () => {
+    // m01's receptionist shape: a tuning block with no startHostile.
+    const tuned = { id: 'sarah', displayName: 'Sarah', npcType: 'person', position: { x: 1, y: 1 },
+        behavior: { hostile: { chaseSpeed: 110, attackDamage: 10, fightStyle: 'brawler', leash: 6 } } };
+    const line = call(scenario({ npcs: [tuned] }), 'ValidateOfficeLife.office_summary(json)')[0];
+    assert.match(line, /class=fights,attackable /);
+    assert.doesNotMatch(line, /hostile/);
+    const starts = { ...tuned, behavior: { hostile: { ...tuned.behavior.hostile, startHostile: true } } };
+    assert.match(call(scenario({ npcs: [starts] }), 'ValidateOfficeLife.office_summary(json)')[0], /class=hostile,attackable /);
+});
+
+test('V1: phone NPCs are not attackable, waypoints patrol, exchanges count both sides, task split', { skip }, () => {
+    const s = scenario({ npcs: [
+        { id: 'agent', displayName: 'Agent', npcType: 'phone', phoneId: 'player_phone' },
+        { id: 'guard', displayName: 'Guard', npcType: 'person', position: { x: 1, y: 1 },
+          behavior: { patrol: { waypoints: [{ x: 1, y: 1 }, { x: 4, y: 1 }] } } },
+        worker({ id: 'amara', exchanges: [{ with: 'tom', knot: 'k1' }],
+                 eventMappings: [{ eventPattern: 'npc_used:coffee', completeTask: 'maybe' }] }),
+        worker({ id: 'tom' })
+    ] });
+    const by = Object.fromEntries(call(s, 'ValidateOfficeLife.office_summary(json)').map(l => [l.split(' ')[0], l]));
+    assert.doesNotMatch(by.agent, /attackable/);
+    assert.match(by.guard, /class=patrol,attackable /);
+    assert.match(by.tom, /exchanges=1 /);
+    assert.match(by.amara, /exchanges=1 /);
+    assert.match(by.amara, /class=task-mapping,attackable /);
+    assert.doesNotMatch(by.amara, /class=task,/);
 });
 
 test('V1: --office-summary prints the section; without it nothing', { skip }, () => {
@@ -86,7 +115,7 @@ test('V1: --office-summary prints the section; without it nothing', { skip }, ()
 test('V2: a key source whose needs leave its room warns; a leash, a post override or no reach clears it', { skip }, () => {
     const keyed = worker({ itemsHeld: [{ type: 'key', name: 'Key', key_id: 'k1' }] });
     assertHas(campaign(scenario({ npcs: [keyed] })), "V2: NPC 'gary' is a key or card source");
-    assertHas(campaign(scenario({ npcs: [keyed] })), 'out of its own room (to kitchen)');
+    assertHas(campaign(scenario({ npcs: [keyed] })), 'out of its own room (to kitchen (need))');
     assertNot(campaign(scenario({ npcs: [{ ...keyed, needsRooms: ['office'] }], officeObjs: [coffee('desk_coffee')] })), 'V2');
     const override = { ...keyed, eventMappings: [{ eventPattern: 'room_entered:office', patrolOverride: { targetTile: { x: 3, y: 3 } } }] };
     assertNot(campaign(scenario({ npcs: [override] })), 'V2');
@@ -100,6 +129,32 @@ test('V2: a conversation-mode mapping target warns, and deferrable: false does n
     assertNot(campaign(scenario({ npcs: [worker()] })), 'V2');
 });
 
+test('V2: a post override counts only on a story event, with the NPC posted in its home room', { skip }, () => {
+    const keyed = worker({ itemsHeld: [{ type: 'key', name: 'Key', key_id: 'k1' }] });
+    const tile = { patrolOverride: { targetTile: { x: 3, y: 3 } } };
+    // keyed on an office-life event: it fires while the NPC is away, so no exemption
+    assertHas(campaign(scenario({ npcs: [{ ...keyed, eventMappings: [{ eventPattern: 'npc_used:coffee', ...tile }] }] })), 'V2');
+    // home is the kitchen chair, so a tile in the start room is not its post
+    const away = { ...keyed, needsHome: 'chair', eventMappings: [{ eventPattern: 'room_entered:office', ...tile }] };
+    const s = scenario({ npcs: [away], kitchenObjs: [{ id: 'chair', type: 'chair', position: { x: 1, y: 1 } }], officeObjs: [coffee()] });
+    assertHas(campaign(s), "V2: NPC 'gary' is a key or card source");
+});
+
+test('V2: a print fetch, an interest and a dropped magnet also take a story NPC away', { skip }, () => {
+    const keyed = (extra) => worker({ itemsHeld: [{ type: 'key', name: 'Key', key_id: 'k1' }], ...extra });
+    const printer = [{ id: 'printer', type: 'printer', position: { x: 1, y: 1 } },
+                     { id: 'tray', type: 'notes', outputOf: 'printer', position: { x: 1, y: 2 } }];
+    const noCoffee = { kitchenObjs: printer, officeObjs: [coffee('desk_coffee')] };
+    assertHas(campaign(scenario({ ...noCoffee, npcs: [keyed({ onUse: { desk_coffee: { revealOutput: 'printer' } } })] })), 'to kitchen (print fetch)');
+    assertHas(campaign(scenario({ ...noCoffee, npcs: [keyed({ eventMappings: [{ eventPattern: 'room_entered:office', needs: { print: 'printer' } }] })] })), 'to kitchen (print fetch)');
+    assertNot(campaign(scenario({ ...noCoffee, npcs: [keyed()] })), 'V2');
+    const tagged = { kitchenObjs: [{ id: 'mug', type: 'notes', needsTag: 'mugs', position: { x: 1, y: 1 } }], officeObjs: [coffee('desk_coffee')] };
+    assertHas(campaign(scenario({ ...tagged, npcs: [keyed({ interests: { mugs: {} } })] })), 'to kitchen (interest)');
+    const cake = { id: 'cake', type: 'cake', droppable: true, affordance: { satisfies: ['caffeine'], magnet: { tempt: 50, servings: 4, perPerson: 1 } } };
+    const magnet = scenario({ kitchenObjs: [], officeObjs: [coffee('desk_coffee')], npcs: [keyed()], extra: { startItemsInInventory: [cake] } });
+    assertHas(campaign(magnet), 'to kitchen (magnet)');
+});
+
 // ── V3 ─────────────────────────────────────────────────────────────────────────────────────
 
 test('V3: npc_arrived:<id> on a needs NPC warns in every scenario; on a still NPC it does not', { skip }, () => {
@@ -110,6 +165,13 @@ test('V3: npc_arrived:<id> on a needs NPC warns in every scenario; on a still NP
     assertNot(out, "'npc_arrived:still'");
 });
 
+test('V3: npc_arrived:* warns when any NPC has needs', { skip }, () => {
+    const watcher = { id: 'still', displayName: 'S', npcType: 'person', position: { x: 1, y: 1 },
+        eventMappings: [{ eventPattern: 'npc_arrived:*', setGlobal: { x: true } }] };
+    assertHas(check(scenario({ npcs: [worker(), watcher] })), "V3: eventMapping 'npc_arrived:*' on 'still' listens for any arrival, and gary has needs");
+    assertNot(check(scenario({ npcs: [watcher] })), 'V3');
+});
+
 // ── V4 ─────────────────────────────────────────────────────────────────────────────────────
 
 test('V4: an attackable needs NPC in a campaign mission warns; disableAttacks and koImmune clear it', { skip }, () => {
@@ -118,6 +180,14 @@ test('V4: an attackable needs NPC in a campaign mission warns; disableAttacks an
     assertNot(campaign(scenario({ extra: { disableAttacks: true } })), 'V4');
     assertNot(campaign(scenario({ npcs: [worker({ koImmune: true })] })), 'V4');
     assertNot(check(scenario()), 'V4');
+});
+
+test('V4: lists held items, and an NPC-level disableAttacks does not exempt (the engine ignores it)', { skip }, () => {
+    const gary = worker({ itemsHeld: [{ id: 'gary_card', type: 'keycard', name: 'Card' }, { id: 'lanyard', type: 'notes', name: 'Lanyard' }] });
+    assertHas(campaign(scenario({ npcs: [gary] })), 'held items gary_card,lanyard');
+    const own = campaign(scenario({ npcs: [{ ...gary, disableAttacks: true }] }));
+    assertHas(own, "V4: needs NPC 'gary' can be attacked mid-walk");
+    assertHas(own, 'Its own disableAttacks has no effect');
 });
 
 // ── V5 (spawned with --campaign) ───────────────────────────────────────────────────────────
@@ -179,6 +249,50 @@ test('V5: aim unlockCondition and concludeRequires on an office-life global are 
     assertHas(out, "concludeRequires needs global 'propped'");
 });
 
+test('V5: unlocking the target of a required unlock_object or unlock_room task from office life is an error', { skip }, () => {
+    const s = (m) => {
+        const x = mapping(m);
+        x.objectives[0].tasks.push({ taskId: 'open_safe', title: 'S', type: 'unlock_object', targetObject: 'safe', status: 'active' },
+            { taskId: 'open_store', title: 'R', type: 'unlock_room', targetRoom: 'kitchen', status: 'active' },
+            { taskId: 'side_safe', title: 'X', type: 'unlock_object', targetObject: 'drawer', status: 'active', optional: true });
+        return x;
+    };
+    assertHas(validate(s({ eventPattern: 'workstation_owner_left:pc', unlockObject: 'safe' }), ['--campaign']),
+        "❌ ERROR: office life V5: eventMapping 'workstation_owner_left:pc' on 'gary' unlocks object 'safe' from office-life event 'workstation_owner_left:pc', and required task(s) open_safe complete when it unlocks");
+    assertHas(validate(s({ eventPattern: 'npc_used:coffee', unlockDoor: 'kitchen' }), ['--campaign']), "unlocks room 'kitchen'");
+    // an object id that matches a room task's room is not the same lock
+    const other = validate(s({ eventPattern: 'npc_used:coffee', unlockObject: 'kitchen' }), ['--campaign']);
+    assert.ok(other.every(l => !l.includes('❌')), other.join('\n'));
+    assertHas(other, '⚠️ WARNING: office life V5');
+    assertHas(validate(s({ eventPattern: 'npc_used:coffee', unlockObject: 'drawer' }), ['--campaign']), '⚠️ WARNING: office life V5');
+    assertNot(validate(s({ eventPattern: 'room_entered:office', unlockObject: 'safe' }), ['--campaign']), 'V5');
+});
+
+test('V5: follows office-life globals through a chain of mappings', { skip }, () => {
+    const s = scenario({ npcs: [worker({ workarounds: [{ setGlobal: 'propped' }], eventMappings: [
+        { eventPattern: 'global_variable_changed:propped', setGlobal: { step2: true } },
+        { eventPattern: 'room_entered:kitchen', condition: 'globalVars.step2', completeTask: 'must' }] })] });
+    assertHas(campaign(s), "global 'step2' (set by the office-life mapping 'global_variable_changed:propped' on 'gary')");
+    s.rooms.office.npcs[0].eventMappings.push({ eventPattern: 'room_entered:office', setGlobal: { step2: true } });
+    assertNot(campaign(s), 'V5');
+});
+
+test('V5: ink set_variable tags, action lists, influence effects and compiled-only stories are other writers', { skip }, () => {
+    const gated = (npcExtra = {}, extra = {}) => scenario({ extra, npcs: [worker({ workarounds: [{ setGlobal: 'propped' }], ...npcExtra,
+        eventMappings: [{ eventPattern: 'room_entered:kitchen', condition: 'globalVars.propped', completeTask: 'must' }] })] });
+    assertHas(campaign(gated()), "global 'propped'");
+    assertNot(campaign(gated({}, { somewhere: { actions: [{ type: 'set_global', key: 'propped', value: true }] } })), 'V5');
+    assertNot(campaign(gated({ influence: { effects: [{ type: 'setGlobal', global: 'propped', value: true }] } })), 'V5');
+    const dir = mkdtempSync(join(root, 'tmp', 'ol-v5-'));
+    try {
+        writeFileSync(join(dir, 'tagged.ink'), '=== start ===\nRight. #set_variable:propped=true\n-> END\n');
+        writeFileSync(join(dir, 'compiled.json'), JSON.stringify({ inkVersion: 21, root: [['^x', { 'VAR=': 'propped', re: true }]] }));
+        const rel = f => join(dir, f).slice(root.length + 1);
+        assertNot(campaign(gated({ storyPath: rel('tagged.json') })), 'V5');
+        assertNot(campaign(gated({ storyPath: rel('compiled.json') })), 'V5');
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
 // ── V7 ─────────────────────────────────────────────────────────────────────────────────────
 
 test('V7: a pool line repeating another pool line, a bark or the ink opener warns', { skip }, () => {
@@ -215,6 +329,14 @@ test('V8: the budget counts each kind, sums the small keys and warns above a cap
     assert.deepEqual(call(scenario({ npcs: [] , kitchenObjs: [] }), 'ValidateOfficeLife.sync_budget_lines(json)'), []);
 });
 
+test('V8: an onceOnly mapping carrying an office-life action counts, whatever its trigger', { skip }, () => {
+    const s = scenario({ npcs: [worker({ eventMappings: [
+        { eventPattern: 'conversation_closed:gary', onceOnly: true, needs: { print: 'printer' } },
+        { eventPattern: 'conversation_closed:gary', onceOnly: true, emitEvent: 'desk_phone_ring:ph' },
+        { eventPattern: 'conversation_closed:gary', onceOnly: true, setGlobal: { x: true } }] })] });
+    assert.match(call(s, 'ValidateOfficeLife.sync_budget_lines(json)')[0], /office-life onceOnly mappings 2\/10/);
+});
+
 // ── corpus pins ────────────────────────────────────────────────────────────────────────────
 
 function corpus(ids, opts) {
@@ -242,4 +364,14 @@ test('corpus: V2, V4 and V5 report nothing on the labs and test scenarios that u
     const ids = ['lab_physical_pentest', 'lab_social_engineering', 'test_needs_sims', 'test_access_work', 'test_access_social'];
     const out = corpus(ids, 'scenario_id: id');
     for (const id of ids) assert.deepEqual(out[id].filter(l => /office life V[245]:/.test(l)), [], id);
+});
+
+test('corpus: forced into campaign scope, lab_physical_pentest gives its 3 real V5 errors', { skip }, () => {
+    // Proves V5 on real data, including the global chain (kp_creds_captured set by a workstation mapping).
+    const out = corpus(['lab_physical_pentest'], 'scenario_id: id, campaign: true').lab_physical_pentest;
+    const errs = out.filter(l => l.startsWith('❌') && l.includes('V5'));
+    assert.equal(errs.length, 3, errs.join('\n'));
+    assertHas(errs, "'global_variable_changed:kp_creds_captured' on 'hampshire' completes required task(s) grab_creds from global 'kp_creds_captured'");
+    assertHas(errs, "'item_dropped:kit_deviceB' on 'lord' completes required task(s) drop_usb");
+    assertHas(errs, "'npc_used:usb_target_pc' on 'lord' completes required task(s) usb_foothold");
 });
