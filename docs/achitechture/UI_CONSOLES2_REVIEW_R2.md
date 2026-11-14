@@ -89,8 +89,8 @@ drug library's or the command board's subtitle tells the player anything they ne
 
 ## Nits
 
-- n1. js/systems/minigame-starters.js:854 still falls back to the old title "Warranty Compliance
-  Checklist — MC-2023-ALBE-007" when a scenario gives none; the scene's own default is now the short
+- n1. js/systems/minigame-starters.js:854 still falls back to the old title (the document name, a dash and
+  sis03's case reference) when a scenario gives none; the scene's own default is now the short
   name (js/minigames/warranty-checklist/warranty-checklist-minigame.js:5), so such a scenario would
   bring back the repeated reference and the paper's name line. No scenario hits it today.
 - n2. The warranty letterhead still hard-codes sis03's case reference
