@@ -6,7 +6,7 @@ import { escapeHtml } from '../../utils/escape-html.js';
 // name shows; the text content, and the bar's title attribute, stay whole.
 function consoleTitleHtml(text) {
     const t = String(text || '');
-    const m = t.match(/^(.+?)( \/\/ | - )(.+)$/);
+    const m = t.match(/^(.+?)( \/\/ | - | \u2014 )(.+)$/);
     if (!m) return escapeHtml(t);
     return `<span class="console-title-org">${escapeHtml(m[1] + m[2])}</span>${escapeHtml(m[3])}`;
 }
