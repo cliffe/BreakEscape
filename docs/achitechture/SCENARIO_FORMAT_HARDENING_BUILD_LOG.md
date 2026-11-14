@@ -3345,3 +3345,16 @@ Date: 2026-11-14. Branch `build/hard-6a1`. Resolving `SCENARIO_FORMAT_STEP6A1_RE
 answers, which `Game#filter_target_flags` strips from every task in the bootstrap, so it is a section-2 flag
 answer that the plan's 6a-1 list left out. The client reads it only defensively (objectives-manager.js:94,
 falling back when the server supplies `targetCount`). The node declared-top-level test asserts the mark.
+
+#### Review R3 fixes (6a-1)
+
+A server-side sweep (every strip, filter, WITHHELD list and delete) found more stripped fields with no mark. Now
+`x-serverOnly: true`, served by no route:
+- `item.flags`: a flag station's accepted flags, references or literal answers, replaced by `flagCount` in
+  every payload (`filter_requires_and_contents_recursive`).
+- `item.hintOnlyFlags`: flag references and hint text, stripped there too.
+- `item.network`, `item.linkName`, `item.linkStoreIn` (`NetworkAccess::WITHHELD_OBJECT_FIELDS`) and
+  `room.network` (deleted from every room payload). These are not section-2 secrets, but they are withheld
+  today, so the scan fails closed on them.
+The node declared-top-level test asserts every mark. The validator exits 0 on m01, m02, lab_physical_pentest
+and test_access_networks.

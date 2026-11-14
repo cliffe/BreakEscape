@@ -4174,7 +4174,7 @@
         },
         "access": { "$ref": "#/definitions/accessList" },
         "acceptsUIDOnly": { "type": "boolean", "description": "Access model 4.1: an rfid lock with access also opens to a UID-only (DESFire) copy. Default false." },
-        "network": { "type": "string", "description": "Networks 3.2: the default network (a networks key) for this room's objects; an object's own network wins. Never sent to the browser." },
+        "network": { "x-serverOnly": true, "type": "string", "description": "Networks 3.2: the default network (a networks key) for this room's objects; an object's own network wins. Never sent to the browser (deleted from every room payload)." },
         "biometricMatchThreshold": { "type": "number", "minimum": 0, "maximum": 1 },
         "requires": {
           "x-serverOnly": { "unlessLockType": ["biometric", "bluetooth", "rfid"] },
@@ -5274,14 +5274,17 @@
           "items": { "type": "string" }
         },
         "flags": {
+          "x-serverOnly": true,
           "type": "array",
-          "items": { "type": "string" }
+          "items": { "type": "string" },
+          "description": "A flag station's accepted flags (references or literal answers). Server-only (hardening step 6a-1): replaced by flagCount in every payload (filter_requires_and_contents_recursive), served by no route."
         },
         "flagRewards": {
           "type": "array",
           "items": { "$ref": "#/definitions/flagReward" }
         },
         "hintOnlyFlags": {
+          "x-serverOnly": true,
           "type": "object",
           "description": "Flag reference => hint message. A flag listed here is validated but not submitted or scored; the station just shows the message (used when a flag is spent elsewhere). Server-side only, stripped from the client scenario.",
           "additionalProperties": { "type": "string" }
@@ -5432,7 +5435,7 @@
         "acceptsUIDOnly": { "type": "boolean", "description": "Access model 4.1: an rfid lock with access also opens to a UID-only (DESFire) copy. Default false." },
         "loginPicker": { "oneOf": [ { "type": "string", "enum": ["accounts", "known"] }, { "type": "boolean", "enum": [false] } ], "description": "Access model 5.3: a sign-in PC's account tiles. accounts (default): every account its access admits; known: those the player has met; false: type the username." },
         "policy": { "type": "string", "description": "Access model 5.5: the named policy (top-level policies) this PC follows." },
-        "network": { "type": "string", "description": "Networks 3.2: the network (a networks key) this object is on; overrides its room's network. Never sent to the browser." },
+        "network": { "x-serverOnly": true, "type": "string", "description": "Networks 3.2: the network (a networks key) this object is on; overrides its room's network. Never sent to the browser (NetworkAccess::WITHHELD_OBJECT_FIELDS)." },
         "host": { "type": "string", "description": "Networks 3.2: a PC's computer name (HB-FIN-02), on any PC or laptop. A sign-in PC's label on the network; on any PC the computer name in the desktop taskbar (q94). Default: its name. Not secret." },
         "desktopUser": {
           "type": "object",
@@ -5448,8 +5451,8 @@
         "networkJack": { "type": "boolean", "description": "Networks 3.3: this room object is a jack; a rogue device planted in it gives a foothold on its network. Takes no triggerOnInteract, requiresItem, lock or lockType." },
         "jackConfirm": { "type": "string", "description": "Networks 3.3: the confirm text before a plant. Default: Plug <device name> into <jack name>?" },
         "plantedSprite": { "type": "string", "description": "Networks 3.3: the jack's texture while a device is in it." },
-        "linkName": { "type": "string", "description": "Networks 4.1: the name of the link item the plant puts in the inventory. Default: <device name>: <jack name>." },
-        "linkStoreIn": { "type": "string", "description": "Networks 13.4: the holder the link item is filed in (storeIn)." },
+        "linkName": { "x-serverOnly": true, "type": "string", "description": "Networks 4.1: the name of the link item the plant puts in the inventory. Default: <device name>: <jack name>. Withheld from every object payload; it arrives on the link item." },
+        "linkStoreIn": { "x-serverOnly": true, "type": "string", "description": "Networks 13.4: the holder the link item is filed in (storeIn). Withheld from every object payload; it arrives on the link item." },
         "rogueDevice": { "type": "boolean", "description": "Networks 3.3: a takeable item with an id that can be planted in a jack. Not droppable." },
         "wifiAp": { "type": "boolean", "description": "Slice 9.3b (Wi-Fi, 5.3): true marks this object a Wi-Fi access point on its network (which must define a wifi block). Its click is the join flow; it is not a sign-in host, a jack or a lock." },
         "portSecurity": { "type": "boolean", "description": "Networks 9.3b (port security): on a networkJack, the switch port refuses an unknown device. The device goes in, no foothold is given, and it stays in the inventory. Only valid on a jack; cannot be combined with wifiAp." },

@@ -88,6 +88,10 @@ test('the top-level secret blocks carry whole-record server-only marks', () => {
   const P = schema.properties;
   assert.equal(P.flags['x-serverOnly'], true);
   assert.equal(schema.definitions.task.properties.targetFlags['x-serverOnly'], true, 'task.targetFlags (flag answers) is server-only');
+  for (const k of ['flags', 'hintOnlyFlags', 'network', 'linkName', 'linkStoreIn']) {
+    assert.equal(schema.definitions.item.properties[k]['x-serverOnly'], true, `item.${k} is server-only`);
+  }
+  assert.equal(schema.definitions.room.properties.network['x-serverOnly'], true, 'room.network is server-only');
   assert.equal(P.roles['x-serverOnly'], true);
   assert.equal(P.accountProfiles['x-serverOnly'], true);
   assert.equal(P.accountProfiles['x-servedBy'], 'GET /container');
