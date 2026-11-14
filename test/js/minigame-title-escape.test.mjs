@@ -228,9 +228,10 @@ test('the container panel shows a hostile name and observations as text (desktop
     const mg = new ContainerMinigame(fresh(), { containerItem, contents: [], mode: 'pc', desktopMode: true });
     await initQuietlyAsync(mg);
     assert.ok(document.querySelector('.desktop-mode'), 'desktop mode rendered');
-    // In the PC monitor (UX slice 2c): the name on the bezel, the observations in the taskbar
+    // In the PC monitor (UX slice 2c): the name on the bezel; the observations are no longer
+    // printed on the desktop (UI PC polish item 1), so the hostile text has nowhere to land
     assertText(document.querySelector('.pc-monitor-name'), 'desktop monitor name');
-    assertText(document.querySelector('.desktop-taskbar-note'), 'desktop taskbar observations');
+    assert.equal(document.querySelector('.desktop-taskbar-note'), null, 'no observations on the desktop');
 });
 
 test('the lockpicking item panel shows a hostile item name as text', () => {

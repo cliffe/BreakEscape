@@ -413,7 +413,7 @@ module BreakEscape
       assert_equal 2, a['tell'], 'one more failure brings the borrow into force'
       b = travel_to(t + 25) { report(dana_down).first }
       assert_equal 'borrow_session', b['run']['do']
-      assert_equal false, b['run']['leavesOpen'], 'Dana has no screenHabit: a careful guest'
+      assert_equal false, b['run']['leavesOpen'], 'Dana has no habits.screen: a careful guest'
     end
 
     test 'hold after an ease uses the use floor; the ease and fail gates hold the use floor at its boundary' do

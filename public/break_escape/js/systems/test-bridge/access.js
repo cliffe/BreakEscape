@@ -147,7 +147,7 @@ export const accessBridge = {
         if (!ws || !ws.env) return { ok: false, reason: 'no-workstation-state' };
         const data = (ws.env.objects() || []).find(d => d?.id === pcId);
         if (!data) return { ok: false, reason: 'unknown-object', id: pcId };
-        const owner = ownerOf(data, ws.env.npcs()) || null;
+        const owner = ownerOf(data) || null;
         const rec = owner && ws.away instanceof Map ? ws.away.get(owner) : undefined;
         let present = null;
         if (owner) {

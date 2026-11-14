@@ -5,5 +5,5 @@
   "collection": "test_scenarios",
   "estimated_duration_minutes": 30,
   "test_type": "access_model",
-  "test_objective": "Prove the locksScreen fill (never, sometimes, always) and that the PC's own field and a policy beat it, the claim check reading the owner's screenHabit, the writesDown sticky note (its picture, its text only from /login_accounts, hasPostit on pc_signin_shown), a backed guessable password and a backed reused one, and the seeded sometimes sequence across a reload"
+  "test_objective": "Prove the locksScreen fill (never, sometimes, always) and that the PC's own field and a policy beat it, the claim check reading the owner's habits.screen, the writesDown sticky note (its picture, its text only from /login_accounts, hasPostit on pc_signin_shown), a backed guessable password and a backed reused one, and the seeded sometimes sequence across a reload"
 }

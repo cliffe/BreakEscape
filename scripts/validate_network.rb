@@ -186,7 +186,7 @@ def check_network_model(json_data, scenario_dir = nil)
     room = rooms[e[:room]]
     err.call("headless host #{where} has no network of its own or from its room; it could never be reached.") unless nm.network_of(obj, room)
     if ai.owner_id(obj, json_data)
-      err.call("headless host #{where} is a workstation with an owner (screenOwner or an NPC's needsHome); a " \
+      err.call("headless host #{where} is a workstation with an owner; a " \
                'headless host has no screen for anyone to sit at.')
     end
   end

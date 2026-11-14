@@ -86,6 +86,10 @@ module BreakEscape
       show?
     end
 
+    def lock_session?
+      show?
+    end
+
     def login_accounts?
       show?
     end
