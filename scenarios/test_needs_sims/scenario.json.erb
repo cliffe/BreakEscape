@@ -56,8 +56,10 @@
     "it_out_f_shown": false,
     "neil_print_asked": false,
     "neil_page_on_tray": false,
+    "neil_page_taken": false,
     "neil_ko": false,
     "job_called": false,
+    "staff_room_seen": false,
     "job_cleared": false,
     "heard_exchange_waiting": false,
     "heard_exchange_job_called": false,
@@ -606,7 +608,8 @@
             { "eventPattern": "item_dropped:player_mugs", "onceOnly": true, "cooldown": 0, "setGlobal": { "mugs_dropped": true } },
             { "eventPattern": "npc_used:neil_mug", "onceOnly": true, "cooldown": 0, "completeTask": "see_neil_sip" },
             { "eventPattern": "object_revealed:*", "condition": "data.producerId === 'it_copier' && data.npcId === 'neil' && !data.cosmetic", "onceOnly": true, "cooldown": 0, "completeTask": "see_neils_page", "setGlobal": { "neil_page_on_tray": true }, "_comment": "SIMS-3 R2 M2: Neil's change log landing on the tray mirrors into neil_page_on_tray (the engine owns the slot's own reveal global and forbids a mapping touching it, so we keep our own flag). neil.ink's 'ready' line reads it. The page going again (taken) is handled by it_out_a's onRead.setVariable." },
-            { "eventPattern": "game_loaded", "onceOnly": false, "cooldown": 0, "setGlobal": { "neil_page_on_tray": false }, "_comment": "SIMS-3 R2 M2 (reload state): the slot's own reveal global is client-only and nondeterministic on reload (server review m1), so the mirror cannot be trusted to still match the tray after a reload. Clear it on every load; the auto-print is onceOnly so it never re-prints, so after a reload Neil says 'have a look' rather than falsely 'help yourself'. Within a session (no reload) game_loaded fires once at start, before any print, so it never resets a live tray." }
+            { "eventPattern": "game_loaded", "onceOnly": false, "cooldown": 0, "setGlobal": { "neil_page_on_tray": false }, "_comment": "SIMS-3 R3 M1 (reload state): a printed page still on the tray is filed away on every reload (stow on sight, by design: npc-needs.js:1222-1227, stowRevealedSlots:5381-5395, slotHome:4854-4855), so the tray is always empty after a reload (game 4507: the slot's reveal global and neil_page_on_tray read true on the server before the reload, empty after). We clear the mirror to match; the auto-print is onceOnly so it never re-prints, so after a reload Neil says 'have a look' rather than falsely 'help yourself'. This bare setGlobal does not sync to the server (npc-manager.js does not call _worldChanged); it is deliberately client-only, re-cleared on every load, and relies on Amara being the start-room NPC so this listener is always registered before game_loaded fires. Within a session (no reload) game_loaded fires once at start, before any print, so it never resets a live tray." },
+            { "eventPattern": "room_entered:staff_room", "onceOnly": false, "cooldown": 0, "setGlobal": { "staff_room_seen": true }, "_comment": "SIMS-3 R3 m4: mark that the player has been in the staff room, so neil.ink only offers the flickering-light choice once they could have seen the light. On Amara (always loaded) so it fires wherever the player is. Not onceOnly: a bare setGlobal does not sync to the server, so re-entering the staff room after a reload re-sets it client-side." }
           ]
         },
         {
@@ -962,7 +965,7 @@
           "observations": "A printout on the IT copier tray.",
           "outputOf": "it_copier",
           "revealOnGlobal": "it_out_a_shown",
-          "onRead": { "setVariable": { "neil_page_on_tray": false } },
+          "onRead": { "setVariable": { "neil_page_on_tray": false, "neil_page_taken": true } },
           "needsTag": "printout",
           "_comment": "The change log Neil prints on command (his mapping reveals the first free slot, a first). Takeable: the auto-print and the paper leak."
         },
