@@ -3338,3 +3338,10 @@ Date: 2026-11-14. Branch `build/hard-6a1`. Resolving `SCENARIO_FORMAT_STEP6A1_RE
   list into the node test's `otherApproved` readers.
 - **MI4 (merge risk with steps 4 and 5), left as-is** per the review; the orchestrator owns merge
   order, and the plan already says the later branch re-applies its hunks.
+
+#### Review R2 fix (6a-1)
+
+`definitions/task.targetFlags` is now `x-serverOnly: true`, served by no route. It holds the expected flag
+answers, which `Game#filter_target_flags` strips from every task in the bootstrap, so it is a section-2 flag
+answer that the plan's 6a-1 list left out. The client reads it only defensively (objectives-manager.js:94,
+falling back when the server supplies `targetCount`). The node declared-top-level test asserts the mark.

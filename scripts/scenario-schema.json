@@ -3934,9 +3934,10 @@
           "description": "Matches collection_group field on items for group-collection tracking"
         },
         "targetFlags": {
+          "x-serverOnly": true,
           "type": "array",
           "items": { "type": "string" },
-          "description": "Array of flag identifiers to submit (e.g., ['desktop-flag1', 'kali-flag1'])"
+          "description": "Array of flag identifiers to submit (e.g., ['desktop-flag1', 'kali-flag1']). Server-only (hardening step 6a-1): the expected flag answers, stripped from every task by Game#filter_target_flags, served by no route."
         },
         "targetCount": { "type": "integer" },
         "currentCount": { "type": "integer" },

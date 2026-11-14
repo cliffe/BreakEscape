@@ -87,6 +87,7 @@ test('the two authored answer copies and requires carry the server-only marks', 
 test('the top-level secret blocks carry whole-record server-only marks', () => {
   const P = schema.properties;
   assert.equal(P.flags['x-serverOnly'], true);
+  assert.equal(schema.definitions.task.properties.targetFlags['x-serverOnly'], true, 'task.targetFlags (flag answers) is server-only');
   assert.equal(P.roles['x-serverOnly'], true);
   assert.equal(P.accountProfiles['x-serverOnly'], true);
   assert.equal(P.accountProfiles['x-servedBy'], 'GET /container');
