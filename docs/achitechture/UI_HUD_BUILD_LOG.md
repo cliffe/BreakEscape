@@ -166,3 +166,30 @@ Main merged first (3a083f167 or later, no conflicts). Then the R3 findings and t
 - Gotcha: the lightweight toast tests (`toast-duplicate`) stub elements without `classList.contains`, so the repeat path keys off `_yieldLeft` only.
 
 Live (keyless server :3460, a fresh game per size, scrollbars shown, one browser at a time; scripts in scratchpad `ui-hud-r3/`: `sweep2.sh`, `rt.sh`, `replytap.js`): the five-at-once sweep passes at 320x568, 360x640, 390x844, 844x390, 915x412 and 1400x1000 in m01_first_contact and ca01_invoice_fraud (12 of 12, no overlap, no line cut for three samples). 320x568 m01 passes now (R3 m1 failed it). ca01 has no phone contacts, so the landscape reply proof is m01 only. At 320 ca01's aim still takes three lines (ends "email in..."), accepted in R3.
+
+## Merge train 46
+
+Merged train/46 (1c44f0807) into build/ui-hud as fd7ba4805; test added in e32ccc1db. One conflict, in `js/systems/npc-barks.js` `_renderBark`, where the toast is finished off: train 41 (bark-followups) added the voice hold on a toast (its own voice, or the bubble's voice a continuation carries), and this branch added the speech-lane early return and the lane-yield hook for phone texts.
+
+Resolution: the voice hold runs before the speech return, so a no-room line from someone in the building (a speech-lane toast) stays up until its voice ends; phone texts then get the lane-yield hook, hover pause and click as before. Everything else merged cleanly: train 41's continuation bypass of the queue sits beside this branch's `_watchDialogHold` arming in `showBark`, the superseded-play null and NaN-as-playing are in `_speakBark`, and `npc-world-bubbles.js` has both the speech-lane HUD selector and `voiceLive`. One addition: `_bubbleLeft` also calls `_watchDialogHold()` after putting a covered bubble's line back at the front of the queue, so a line held under a dialog (which never drains the queue on close) is released by the watch.
+
+How the two holds meet: a bubble covered mid-voice stops its voice and goes to the front of the queue (`unshift`); barks that arrived while the panel was open sit behind it. The release takes from the live queue (`queue.shift()`), so the replay goes first, and the next bark waits for the replay's voice to end, as for any held bark. The covered line is not toasted as well (`_bubbleLeft` returns before `_toastRemainder`), so it shows once. A lane-yielded phone text whose voice ends while it is hidden stays paused; its countdown starts when it shows again (`_resumeAutoClose` does nothing while `_voiceHold` is set, and the hold release does nothing while paused).
+
+### Tests
+
+New `test/js/bark-lanes-voice-merge.test.mjs` (3): voiced speech-lane toast held for its voice; voice-held phone text that steps aside keeps its countdown paused; a bubble held under a dialog arms the watch and replays before a later bark, shown once. Removing the new `_watchDialogHold()` line fails the third test.
+
+Run one file at a time with plain `node`, all pass: bark-release-policy 31, npc-bark-delay 20, ui-hud-lanes 40, tts-superseded-play 5, nsm-continue-after-sever 8, bark-lifetime 7, phone-call-bark-hold 2, engine-fixes-round6 9, toast-once-across-panel-handover 6, toast-duplicate 8, bark-voice-followups 15, phone-voice-superseded 1, toast-once-before-container 8, toast-hold-over-panels 6, bark-lanes-voice-merge 3; and every other test that imports npc-barks, npc-world-bubbles, tts-manager, bark-release-policy or phone-chat-ui (31 files, 499 tests).
+
+### Live (keyless server :3460, m01_first_contact, a fresh game per run, scripts in scratchpad `ui-hud-m46/`)
+
+The server has no TTS key, so no real voice plays: the keyless runs prove holding, order, gaps and the silent paths. The voiced paths were driven with a stand-in TTS manager for Sarah in the page (audio that "plays" for 6 s, as in the unit tests).
+
+| proof | result |
+|---|---|
+| Barks sent while the notes minigame is open (1400x1000, game 4085) | 3 held (Sarah, a phone text, unregistered speech), none on screen; after close: Sarah's bubble at 107 ms, phone text at 2615 ms, speech line at 5109 ms, each once, queue 0 |
+| Bubble covered by a minigame, no voice (game 4089) | bubble closed under the panel; its rest held as a continuation, the later phone text behind it; after close: rest as a speech-lane toast at 69 ms, phone text 2.5 s later, each once |
+| Bubble covered mid-voice, stand-in voice (game 4093) | voice stopped once, whole line held first with its voice; after close the line replays in her bubble 55 ms later, voiced again (2 plays in all); the phone text waits for the replay's voice and shows at 6.3 s; the bubble shows once after the close |
+| Five-at-once sampler | 390x844 (game 4094) pass, 1400x1000 (game 4095) pass: no overlap, no line cut for three samples |
+
+Shots looked at: `held-1st/2nd/3rd__1400x1000.png`, `replay-after-close__1400x1000.png`, `replay-stub-after-close__1400x1000.png`, `m46-scene__390x844.png`, `m46-scene__1400x1000.png`, in `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/e7a32fee-bb00-4a46-ab62-f0d4de35d260/scratchpad/ui-hud-m46/shots/`.
