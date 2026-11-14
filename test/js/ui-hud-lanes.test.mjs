@@ -199,3 +199,22 @@ test('H1: on a phone the panel opens as a pill, never by itself, and objective t
     Object.defineProperty(window, 'innerWidth', { value: was[0], configurable: true });
     Object.defineProperty(window, 'innerHeight', { value: was[1], configurable: true });
 });
+
+test('H1: when the lanes are short the caption steps aside first, then phone texts; speech and toasts never', () => {
+    const { laneYields, laneBudgetShare, LANE_BUDGET } = L;
+    assert.deepEqual(laneYields({ caption: 40, speech: 60, toasts: 60, phone: 60 }, 400), { caption: false, phone: false }, 'all fit');
+    assert.deepEqual(laneYields({ caption: 40, speech: 60, toasts: 60, phone: 60 }, 220), { caption: true, phone: false });
+    assert.deepEqual(laneYields({ caption: 40, speech: 80, toasts: 80, phone: 60 }, 180), { caption: true, phone: true });
+    assert.deepEqual(laneYields({ caption: 0, speech: 0, toasts: 0, phone: 300 }, 100), { caption: false, phone: false }, 'a lone text is never hidden');
+    assert.equal(laneBudgetShare({ compact: true, vh: 390 }), LANE_BUDGET.short);
+    assert.equal(laneBudgetShare({ compact: true, vh: 844 }), LANE_BUDGET.compact);
+    assert.equal(laneBudgetShare({ compact: false, vh: 1000 }), LANE_BUDGET.wide);
+});
+
+test('H1: lanes grow into space no message needs, and never meet even when the messages need more than there is', () => {
+    for (const [nc, mc] of [[0, 0], [300, 0], [0, 300], [300, 300], [900, 900]]) {
+        const l = computeLanes({ vw: 390, vh: 844, compact: true, topBarBottom: 90, dockTop: 660, notifyContent: nc, messageContent: mc });
+        assert.ok(notifyBox(l).bottom <= messageBox(l, 844).top, `${nc}/${mc}`);
+        if (nc + mc <= 400) assert.ok(l.notify.maxHeight >= nc && l.message.maxHeight >= mc, `room for both at ${nc}/${mc}`);
+    }
+});

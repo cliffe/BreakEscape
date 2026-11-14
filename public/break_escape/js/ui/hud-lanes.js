@@ -24,7 +24,33 @@ export const DESKTOP_RIGHT = 20;    // px from the right edge to the notify lane
 // The free height between the top bar and the dock: the two lanes together may use at most this
 // share of it, so the rest always stays world view. Space no message needs is split in the
 // ratio of the shares below; when the messages need more than the budget, it is split by need.
-export const LANE_BUDGET = { compact: 0.75, wide: 0.8 };
+// Phones held sideways (500 px tall or less) have so little height that the lanes may use
+// nearly all of it for the few seconds a message shows.
+export const LANE_BUDGET = { compact: 0.75, short: 0.95, wide: 0.8 };
+
+/** The budget share for a measurement. */
+export function laneBudgetShare({ compact, vh }) {
+  if (compact && vh <= 500) return LANE_BUDGET.short;
+  return compact ? LANE_BUDGET.compact : LANE_BUDGET.wide;
+}
+
+/**
+ * Which lane members step aside (are hidden until there is room) when the messages need more
+ * than the budget, in this order: the caption first (it comes back on the next hover or tap),
+ * then the phone texts (they are kept in the phone thread, with the unread badge). Speech is
+ * voiced and toasts explain a refusal, so they never step aside; they share what is left.
+ * @param {{caption:number, speech:number, toasts:number, phone:number}} h  heights (0 = none)
+ * @returns {{caption:boolean, phone:boolean}}
+ */
+export function laneYields(h, budget, gap = LANE_GAP) {
+  const need = (list) => list.filter(x => x > 0).reduce((a, x) => a + x + gap, 0);
+  const out = { caption: false, phone: false };
+  if (need([h.caption, h.speech, h.toasts, h.phone]) <= budget) return out;
+  if (h.caption > 0 && (h.speech > 0 || h.toasts > 0 || h.phone > 0)) out.caption = true;
+  if (need([out.caption ? 0 : h.caption, h.speech, h.toasts, h.phone]) <= budget) return out;
+  if (h.phone > 0 && (h.speech > 0 || h.toasts > 0)) out.phone = true;
+  return out;
+}
 export const NOTIFY_SHARE = { compact: 0.4, wide: 0.5 };
 export const MESSAGE_SHARE = { compact: 0.3, wide: 0.3 };
 
@@ -67,7 +93,7 @@ export function computeLanes({ vw, vh, compact, topBarBottom = 0, dockTop = null
   const messageBottomY = Math.round(dock - LANE_GAP);            // the lane's lower edge, as a y
   const free = Math.max(0, messageBottomY - notifyTop);
   const share = compact ? 'compact' : 'wide';
-  const budget = Math.floor(free * LANE_BUDGET[share]);
+  const budget = Math.floor(free * laneBudgetShare({ compact, vh }));
   const needN = Math.max(0, notifyContent || 0);
   const needM = Math.max(0, messageContent || 0);
   let notifyMax;
@@ -202,24 +228,34 @@ export function applyLanes(doc = document, win = window) {
   const contentOf = (el) => (el ? el.scrollHeight * zoomOf(el) : 0);
   const capOf = (el) => (el && el.classList.contains('visible') ? heightOf(el) : 0);
   const sum = (hs) => hs.filter(h => h > 0).reduce((a, h) => a + h + LANE_GAP, 0);
-  // A caption already stepped aside counts at the height it had when it last showed. The class
-  // is only written when it changes, so placing the lanes never sets off another placing.
-  const yielded = !!captionEl?.classList.contains('hud-lane-yield');
+  // A member that has stepped aside counts at the height it had when it last showed. Classes
+  // are only written when they change, so placing the lanes never sets off another placing.
+  const yieldable = (el, h) => {
+    if (!el) return { h: 0, was: false };
+    const was = el.classList.contains('hud-lane-yield');
+    if (!was && h > 0) el._laneH = h;
+    return { h: was ? (el._laneH || 0) : h, was };
+  };
   const visibleCap = !!captionEl?.classList.contains('visible');
-  if (captionEl && visibleCap && !yielded) captionEl._laneH = capOf(captionEl);
-  const capH = visibleCap ? (yielded ? (captionEl._laneH || 0) : capOf(captionEl)) : 0;
-  m.notifyContent = sum([contentOf(toastsEl), contentOf(phoneEl)]);
+  const cap = yieldable(captionEl, visibleCap ? capOf(captionEl) : 0);
+  if (!visibleCap) cap.h = 0;
+  const phoneHasTexts = !!phoneEl?.querySelector('.npc-bark');
+  const ph = yieldable(phoneEl, contentOf(phoneEl));
+  if (!phoneHasTexts) ph.h = 0;
+  const toastH = contentOf(toastsEl);
   const speechH = contentOf(speechEl);
-  m.messageContent = sum([capH, speechH]);
+  m.notifyContent = sum([toastH, ph.h]);
+  m.messageContent = sum([cap.h, speechH]);
   let lanes = computeLanes(m);
-  // One at a time in the message lane when space is short (H1 option A): speech is voiced and
-  // goes when its time is up, so the caption steps aside for it and comes back after
+  // One at a time when space is short (H1 option A): see laneYields for the order
   const free = Math.max(0, (m.vh - lanes.message.bottom) - lanes.notify.top);
-  const budget = Math.floor(free * LANE_BUDGET[m.compact ? 'compact' : 'wide']);
-  const yieldNow = !!captionEl && speechH > 0 && capH > 0 && m.notifyContent + m.messageContent > budget;
-  if (captionEl && yieldNow !== yielded) captionEl.classList.toggle('hud-lane-yield', yieldNow);
-  if (yieldNow) {
-    m.messageContent = sum([speechH]);
+  const budget = Math.floor(free * laneBudgetShare(m));
+  const y = laneYields({ caption: cap.h, speech: speechH, toasts: toastH, phone: ph.h }, budget);
+  if (captionEl && y.caption !== cap.was) captionEl.classList.toggle('hud-lane-yield', y.caption);
+  if (phoneEl && y.phone !== ph.was) phoneEl.classList.toggle('hud-lane-yield', y.phone);
+  if (y.caption || y.phone) {
+    m.notifyContent = sum([toastH, y.phone ? 0 : ph.h]);
+    m.messageContent = sum([y.caption ? 0 : cap.h, speechH]);
     lanes = computeLanes(m);
   }
   const body = doc.body;

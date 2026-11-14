@@ -49,6 +49,20 @@ body.minigame-holds-barks #npc-speech-container {
   z-index: 1400 !important;
 }
 
+/* The notify lane is full: phone texts step aside while a toast or speech shows (ui/hud-lanes.js).
+   They are still in the phone thread, with the unread badge. */
+#npc-bark-container.hud-lane-yield {
+  display: none;
+}
+
+/* Phones: a little less padding, so more of the room shows */
+body.hud-compact .npc-bark {
+  padding: 4px 8px;
+}
+body.hud-compact .npc-bark--phone {
+  padding-left: 14px;
+}
+
 /* Shared parts */
 .npc-bark {
   position: relative;
