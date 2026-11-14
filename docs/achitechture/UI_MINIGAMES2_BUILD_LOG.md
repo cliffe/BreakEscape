@@ -98,3 +98,7 @@ Merged main 372600713 (format hardening 8b and 8c) into the branch (f9ffc9a8e). 
 tip, game 3513, :3465: shell-x-check 168 checked, 0 failed (log scratchpad ui-mg2/shellx-fixed.log).
 Shots on the fixed tip: scratchpad ui-mg2/for-user/A35-after-pc__ and container-after__ at
 1400x1000, 800x600, 915x412, 390x844, 360x740.
+Audit on the merged fixed tip (`--all --strict --skip person-chat,network-view`, four sizes):
+window-offscreen 0, frame-offscreen 1, clipped 0, x-on-frame 0, overflow 3, the baseline
+(log scratchpad ui-mg2/audit-fixed.log). Server :3465 stopped by PID. The 19 node test files
+listed under Proof pass on the merged tip.
