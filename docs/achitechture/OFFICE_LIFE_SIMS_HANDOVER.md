@@ -1,6 +1,39 @@
 # Office life sims showcase: handover
 
-## Lead's state, 2026-11-14 (read this first)
+## Lead's state, 2026-11-14, second lead (read this first)
+
+Branch `build/ol-sims` (worktree `p-ol-sims`, tip after 1d7025a5d): SIMS-1 to SIMS-5, with
+build/ol-sims-2 (SIMS-4) merged in at 5118f584d and main 768f8d09c merged at bf6d89338.
+build/ol-sims-2 is now fully contained; no further work goes there. `proto/ol-e7-e9` untouched.
+No server left running on 3093-3095.
+
+Slice status (B/M/m per round):
+- SIMS-1, SIMS-2: done, 0/0/0.
+- SIMS-3: R1 and R2 as before; R3 design 0/1/6, server 0/0/3; all fixed (8e1df6c3f, eecf7e424:
+  reload story rewritten across docs, four-branch ready line, re-entry line and
+  `reopenRefreshesHub`, light choice gated on `staff_room_seen`); copier/page pick overlap is an
+  owner item. Not re-reviewed after the R3 fixes (they changed neil.ink and Neil's data, so one more
+  round is advisable).
+- SIMS-4: merged; Jodie's thirst 85 to 90 (plan step-1 rule); schedule rerun 4434 PASS within 3 s.
+  R1 design 1/3/5, server 0/0/2; all fixed (65b7cc43d, 933661ca5, 1665f412a: ink exits, staff-room
+  flicker via lighting variants, node tests, proof-tool rewrite). Reruns: job beat 6/6, boiler 9/10
+  from the close (4570 unexplained miss, possibly the R3 neil.ink edits landing mid-run), cooler
+  10/10. **Open:** the doors-open speech-lock rerun (game 4546 hit the driver's 600 s timeout; raise
+  `timeout` in scratchpad `s4_driver.sh` above 16 min and rerun), a look at 4570, then **SIMS-4
+  review round 2** (opus55 design with live proof, opus48 server).
+- SIMS-5 (V10): built (d2f14c431, 0604c49d7): `scripts/validate_office_life.rb`, one line in
+  validate_scenario.rb, `test/js/validator-office-life-v10.test.mjs` (12 cases). V10 warns 3 on
+  test_needs_sims (amara/tom/marek own `cooler` pools nothing can trigger; likely a content slip,
+  pinned not edited), 0 elsewhere. Focused live proof game 4524. **Open:** the full 5.5 live proof
+  (README office beats with levers, the 20-minute staff-room `_pickBark` count, 10-minute scratch
+  fixture runs), the content-slip decision, then **two review rounds**.
+- Owner items added: E-carry-422 (game 4558, `remove_object office_mugs` 422 in the kitchen),
+  SIMS-3 copier/page pick overlap; earlier ones stand.
+
+Next, in order: speech-lock rerun and 4570; SIMS-4 R2; SIMS-3 R4 (light, on the R3 fixes);
+SIMS-5 full proof, fix the pinned cooler pools if the owner agrees, two review rounds.
+
+## First lead's state, 2026-11-14 (superseded above)
 
 Branches and worktrees:
 - `build/ol-sims` (worktree `p-ol-sims`, tip 98ddacd14 or later): SIMS-1 to SIMS-3 with both review
