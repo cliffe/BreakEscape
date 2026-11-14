@@ -100,11 +100,13 @@ function resolveEhrStatus(globalVariables, fallbackStatus = 'offline') {
 }
 
 export class EhrTerminalMinigame extends MinigameScene {
-    // Its frame keeps a bar at the bottom for Cancel (minigames-framework.css)
-    static controlsOverlay = true;
+    // Draws in the shared console window (UI decision X8): title bar and X come from there.
+    // The window wraps the short outage notice and fills for the online record view (render()).
+    static consoleWindow = true;
 
-    // The X sits inside the terminal panel's header (critique B X4), which is padded for it
-    static closeInsideFrame = true;
+    consoleTitle() {
+        return 'NORTHGATE TRUST EHR - PRESCRIBING MODULE';
+    }
 
     constructor(container, params = {}) {
         super(container, {
@@ -167,10 +169,6 @@ export class EhrTerminalMinigame extends MinigameScene {
                 });
             });
         });
-    }
-
-    closeAnchor() {
-        return this.gameContainer?.querySelector?.('.ehr-terminal-panel') || this.gameContainer;
     }
 
     renderOnlineBody() {
@@ -248,6 +246,7 @@ export class EhrTerminalMinigame extends MinigameScene {
     render() {
         const isOnline = this.ehrStatus === 'online';
         this.gameContainer.classList.toggle('ehr-online-mode', isOnline);
+        this.consoleWindowEl?.classList.toggle('console-window-fill', isOnline);
         const badgeText = isOnline ? '[ONLINE]' : '[OFFLINE]';
         const badgeClass = isOnline ? 'online' : 'offline';
         const safeMessage = escapeHtml(this.offlineMessage);
@@ -262,7 +261,6 @@ export class EhrTerminalMinigame extends MinigameScene {
         this.gameContainer.innerHTML = `
             <div class="ehr-terminal-panel">
                 <div class="ehr-terminal-header">
-                    <span class="ehr-terminal-title">NORTHGATE TRUST EHR - PRESCRIBING MODULE</span>
                     <span class="ehr-terminal-status ${badgeClass}">${badgeText}</span>
                 </div>
 
