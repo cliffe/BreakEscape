@@ -3170,3 +3170,10 @@ Keyless server by hand on port 3676 (`BREAK_ESCAPE_STANDALONE=true`, no `GEMINI_
 ### Sync
 
 No runtime change (the server's output is unchanged by construction).
+
+### Step 5 review R1 minor 1: m01 to m10 flag triage
+
+The validator (`--no-graph --skip-ink`) was run on every m01 to m10 template on this branch and on a base at main
+cb259dbdf, counting lines that mention flags (the check_vm_flags_load_bearing warnings among them). Counts are
+identical on both sides and every run exits 0: m01 7, m02 3, m03 1, m04 4, m05 4, m06 0, m07 3, m08 0, m09 3,
+m10 0. The array to Hash change in the validator's flags hides no flag-station or flag-lock warning.
