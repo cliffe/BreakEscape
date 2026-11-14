@@ -511,24 +511,60 @@ test('R1 n1: requestSoon after stop() starts nothing', async (t) => {
   assert.equal(requests.length, 1);
 });
 
-// Review R2. A model of sync_state's ordering rule (games_controller.rb
-// stale_sync_request?): a request whose clientTs is not above the newest one accepted is
-// stale, and its last-write-wins sections (globals and notes here) are skipped. Requests
-// wait until the test delivers them, in the order it chooses.
+// Review R2 / chunk 4. A model of sync_state's ordering rule with the stale-but-recent
+// ring (games_controller.rb stale_sync_request? and the ring pre-filter): a request whose
+// clientTs is above the newest accepted is fresh and applies every key, recording the
+// keys it changed in the ring at its ts. A request at or below the newest is stale-but-
+// recent: it merges only the keys no newer recorded request already wrote (the skip set,
+// the union of ring entries with ts >= its own), never moving the stamp, and still answers
+// { stale: true } (so the client does not confirm it and resends its sections once, a
+// harmless no-op since the server already holds them). This models globals (keyed) and
+// notes (keyed by id), the two last-write-wins sections these tests exercise. It assumes
+// the completeness guard holds; the guard's failure (an evicted newer write) is covered by
+// the Ruby controller tests, not here. Requests wait until the test delivers them, in the
+// order it chooses.
 function modelServer() {
-  const server = { lastTs: 0, globals: {}, notes: {} };
+  const server = { lastTs: 0, globals: {}, notes: {}, ring: [] };
   const pending = [];
   reply = body => new Promise(resolve => pending.push({ body, resolve }));
+  const skipSet = ts => {
+    const skip = { globalVariables: new Set(), notes: new Set() };
+    for (const e of server.ring) {
+      if (e.ts < ts) continue;
+      for (const k of e.w.globalVariables || []) skip.globalVariables.add(k);
+      for (const id of e.w.notes || []) skip.notes.add(id);
+    }
+    return skip;
+  };
+  const mergeBody = (body, skip) => {
+    const w = { globalVariables: [], notes: [] };
+    for (const [k, v] of Object.entries(body.globalVariables || {})) {
+      if (skip && skip.globalVariables.has(k)) continue;
+      if (v === null) { if (k in server.globals) { delete server.globals[k]; w.globalVariables.push(k); } }
+      else if (server.globals[k] !== v) { server.globals[k] = v; w.globalVariables.push(k); }
+    }
+    for (const n of body.notes || []) {
+      if (skip && skip.notes.has(n.id)) continue;
+      if (JSON.stringify(server.notes[n.id]) !== JSON.stringify(n)) { server.notes[n.id] = n; w.notes.push(n.id); }
+    }
+    return w;
+  };
+  const record = (ts, w) => {
+    if (typeof ts !== 'number' || (!w.globalVariables.length && !w.notes.length)) return;
+    server.ring.push({ ts, w });
+    const newest = Math.max(...server.ring.map(e => e.ts));
+    server.ring = server.ring.filter(e => newest - e.ts <= 60000).sort((a, b) => b.ts - a.ts).slice(0, 8);
+  };
   const deliver = (i, { fail = false } = {}) => {
     const { body, resolve } = pending[i];
     if (fail) return resolve({ ok: false, json: {} });
-    const stale = typeof body.clientTs === 'number' && body.clientTs <= server.lastTs;
+    const ts = typeof body.clientTs === 'number' ? body.clientTs : null;
+    const stale = ts !== null && ts <= server.lastTs;
     if (!stale) {
-      if (typeof body.clientTs === 'number') server.lastTs = body.clientTs;
-      for (const [k, v] of Object.entries(body.globalVariables || {})) {
-        if (v === null) delete server.globals[k]; else server.globals[k] = v;
-      }
-      for (const n of body.notes || []) server.notes[n.id] = n;
+      if (ts !== null) server.lastTs = ts;
+      record(ts, mergeBody(body, null));
+    } else {
+      record(ts, mergeBody(body, skipSet(ts)));
     }
     resolve({ ok: true, json: stale ? { success: true, stale: true } : { success: true } });
   };
@@ -555,26 +591,29 @@ test('R2 m1: a large hidden flush in flight, a change while hidden, then pagehid
   assert.equal(pending.length, 2, 'the pagehide sent a body');
   const [hidden, pagehide] = pending.map(p => p.body);
   assert.deepEqual(pagehide.globalVariables, { late: 1 }, 'only what changed since the hidden flush');
-  assert.ok(pagehide.clientTs < hidden.clientTs, 'a clientTs below the hidden flush, so it cannot make it stale');
+  assert.ok(pagehide.clientTs > hidden.clientTs, 'a clientTs above the hidden flush (the re-stamp), so it carries the newest content');
   assert.ok(pagehide.clientTs > requests[0].body.clientTs, 'and above the sync before it');
   assert.ok(inflightBytes(requests.slice(1)) <= 60000, 'both flushes together fit the quota');
 });
 
-test('R2 m1: the hidden flush lands after the pagehide: the server holds both, and nothing is resent', async () => {
+test('R2 m1: the hidden flush lands after the pagehide: the ring keeps both, the client resends the stale flush once', async () => {
   const { sync, server, pending, deliver } = await bigHiddenThenLateChange();
   assert.equal(pending.length, 2);
-  deliver(1);
+  deliver(1);                               // the re-stamped pagehide body lands first, fresh
   await settled();
-  deliver(0);
+  deliver(0);                               // the hidden flush lands second, stale-but-recent
   await settled();
-  assert.equal(server.globals.big.length, 45000, 'the hidden flush was not made stale');
+  assert.equal(server.globals.big.length, 45000, 'the ring merged the stale-but-recent flush');
   assert.equal(server.globals.late, 1, 'the later change is saved');
-  // A page restored from the back-forward cache carries on syncing.
+  // The hidden flush answered { stale: true }, so the client did not confirm it and resends
+  // its section once on the next sync; the server already holds it, so the resend is a no-op.
   show();
   reply = () => ({ ok: true, json: { success: true } });
   const before = requests.length;
   await sync.sync();
-  assert.equal(requests.length, before, 'both answers confirmed: nothing left to send');
+  assert.equal(requests.length, before + 1, 'the stale-but-recent flush is resent once');
+  assert.equal(requests.at(-1).body.globalVariables.big.length, 45000, 'it resends big (already held by the ring)');
+  assert.equal(requests.at(-1).body.globalVariables.late, undefined, 'late was confirmed');
 });
 
 test('R2 m1: the hidden flush fails after the pagehide: the later change is saved and the guard clears', async () => {
@@ -597,7 +636,7 @@ test('R2 m1: the hidden flush fails after the pagehide: the later change is save
   assert.equal(last.globalVariables.late, undefined, 'the pagehide\'s change was confirmed');
 });
 
-test('R2 m1: the hidden flush landing first keeps everything it carried (the later change is then stale, as with no pagehide body)', async () => {
+test('R2 m1: the hidden flush landing first, then the re-stamped pagehide body lands fresh above it (the residual loss is closed)', async () => {
   const { server, pending, deliver } = await bigHiddenThenLateChange();
   assert.equal(pending.length, 2);
   deliver(0);
@@ -605,7 +644,7 @@ test('R2 m1: the hidden flush landing first keeps everything it carried (the lat
   deliver(1);
   await settled();
   assert.equal(server.globals.big.length, 45000);
-  assert.equal(server.globals.late, undefined, 'the residual loss BUILD.md describes');
+  assert.equal(server.globals.late, 1, 'the re-stamp carries the later change above the flush, so it is saved (no residual loss)');
 });
 
 test('R2: a pagehide reduced beside a hidden flush in flight never makes that flush stale', async () => {
@@ -644,7 +683,7 @@ test('R2: what changed since the hidden flush is itself reduced when it does not
   const pagehide = pending[1].body;
   assert.equal(pagehide.notes, undefined, 'notes left out to fit');
   assert.deepEqual(pagehide.globalVariables, { late: 1 });
-  assert.ok(pagehide.clientTs < pending[0].body.clientTs);
+  assert.ok(pagehide.clientTs > pending[0].body.clientTs, 'the re-stamp puts it above the hidden flush');
   assert.ok(inflightBytes(requests.slice(1)) <= 60000);
   sync.stop();
 });
@@ -704,5 +743,134 @@ test('R3 m1: a failed earlier hidden flush clears the guard set by a later diffe
   for (let i = 1; i < m.pending.length; i++) { m.deliver(i); await settled(); }
   assert.equal(m.server.globals.big, 'x'.repeat(45000), 'the big delta reached the server');
   assert.equal(m.server.globals.late, 1, 'the later change reached the server');
+  sync.stop();
+});
+
+// Chunk 4 (SYNC_STALE_RING_PLAN section 8 and 11.4): the reduced flush body that chases
+// the flushes in flight (_changesSinceInFlight) is now stamped with a fresh clientTs ABOVE
+// them, not one below the oldest, and the "leave one free below" reservation is gone. The
+// stale-but-recent ring (chunks 1 to 3) recovers an older flush that then lands second.
+
+test('C4: the since-body is stamped one above the in-flight flush (not below), and the old below-stamp suppression is gone', async (t) => {
+  // Freeze Date so every stamp is last+1: the flush and the since-body end up adjacent, the
+  // exact case the old "oldest.clientTs - 1 <= oldest.prevTs" rule (state-sync.js:972) would
+  // have suppressed once the reservation was removed. It must now be sent, stamped above.
+  t.mock.timers.enable({ apis: ['Date'] });
+  const sync = resetGame();
+  sync.start();
+  reply = () => new Promise(() => {});                 // the hidden flush stays in flight
+  window.gameState.notes.push({ id: 'n1', text: 'y'.repeat(40000) });
+  hide();
+  assert.equal(sync._flushesInFlight.size, 1, 'the hidden flush is in flight');
+  const flush = [...sync._flushesInFlight][0];
+  window.gameState.globalVariables.late = 1;
+  window.fire('pagehide');
+  assert.equal(sync._flushesInFlight.size, 2, 'the since-body was sent, not suppressed');
+  const since = [...sync._flushesInFlight].find(f => f !== flush);
+  assert.equal(requests.at(-1).body.globalVariables.late, 1, 'it carries only what changed since the flush');
+  assert.equal(requests.at(-1).body.notes, undefined, 'the flush already carried the note');
+  // With Date frozen the old below-stamp rule would have set clientTs = flush.clientTs - 1
+  // and, since that is at or below the flush's prevTs, returned null (suppressed). The
+  // re-stamp instead draws a fresh clientTs strictly above the flush and sends the body.
+  assert.ok(since.clientTs > flush.clientTs, 'stamped above the flush, not suppressed below it');
+  sync.stop();
+});
+
+test('C4: the whole-delta-if-it-fits branch is unchanged (a small delta beside a flush still goes whole, above it)', async () => {
+  const sync = resetGame();
+  sync.start();
+  await sync.sync();
+  reply = () => new Promise(() => {});                 // the hidden flush stays in flight
+  window.gameState.notes.push({ id: 'n1', text: 'small' });
+  hide();
+  const flush = [...sync._flushesInFlight][0];
+  window.gameState.globalVariables.late = 1;
+  window.fire('pagehide');
+  const body = requests.at(-1).body;
+  // The whole delta fits beside the flush, so it carries both the flush's note and the new
+  // global (not a reduced body), stamped above the flush.
+  assert.ok(Array.isArray(body.notes) && body.notes.some(n => n.id === 'n1'), 'the note rides the whole delta');
+  assert.equal(body.globalVariables.late, 1, 'and the new global');
+  assert.ok(body.clientTs > flush.clientTs, 'stamped above the flush');
+  sync.stop();
+});
+
+// Integrator race (a): a hidden flush, a show, then a second hide whose re-stamped since-body
+// is stamped above the first flush. Both land in each order; the ring keeps both.
+async function hideShowHide() {
+  const sync = resetGame();
+  sync.start();
+  await sync.sync();
+  const model = modelServer();
+  window.gameState.globalVariables.big = 'x'.repeat(45000);
+  hide();                                               // flush H1 (big), held by the model
+  show();
+  window.gameState.globalVariables.late = 1;
+  hide();                                               // flush H2 (since-body: late), re-stamped above H1
+  return { sync, ...model };
+}
+
+test('C4 race (a): hide, show, hide, then H1 before H2: both are saved', async () => {
+  const { sync, server, pending, deliver } = await hideShowHide();
+  assert.equal(pending.length, 2, 'two hidden flushes in flight');
+  const [h1, h2] = pending.map(p => p.body);
+  assert.deepEqual(h2.globalVariables, { late: 1 }, 'the second hide sent only what changed since the first');
+  assert.ok(h2.clientTs > h1.clientTs, 're-stamped above the first flush');
+  deliver(0); await settled();                          // H1 (big) lands first, fresh
+  deliver(1); await settled();                          // H2 (late) lands second, fresh (above)
+  assert.equal(server.globals.big.length, 45000, 'exact big saved');
+  assert.equal(server.globals.late, 1, 'exact late saved');
+  sync.stop();
+});
+
+test('C4 race (a): hide, show, hide, then H2 before H1: the ring recovers H1 and both are saved', async () => {
+  const { sync, server, pending, deliver } = await hideShowHide();
+  assert.equal(pending.length, 2);
+  deliver(1); await settled();                          // H2 (late) lands first, fresh
+  deliver(0); await settled();                          // H1 (big) lands second, stale-but-recent
+  assert.equal(server.globals.late, 1, 'exact late saved (landed first)');
+  assert.equal(server.globals.big.length, 45000, 'exact big recovered by the ring, not lost');
+  // H1 answered stale, so the client resends big once; the server already holds it.
+  show();
+  reply = () => ({ ok: true, json: { success: true } });
+  const before = requests.length;
+  await sync.sync();
+  assert.equal(requests.length, before + 1, 'the stale-but-recent flush is resent once');
+  assert.equal(requests.at(-1).body.globalVariables.big.length, 45000);
+  sync.stop();
+});
+
+// Integrator race (b): a refused currentRoom carried by a re-stamped since-body. The since-
+// body is a full body (currentRoom is never put in a reduced list), so _applyAnswer runs and
+// the refusal is confirmed: currentRoom is not resent, but a genuinely new room still is.
+test('C4 race (b): a refused currentRoom inside a re-stamped since-body is confirmed, not resent', async () => {
+  const sync = resetGame();
+  sync.start();
+  await sync.sync();
+  let releaseBig;
+  reply = body => body.currentRoom
+    ? Promise.resolve({ ok: true, json: { success: true, notSaved: ['currentRoom'] } })
+    : new Promise(r => { releaseBig = () => r({ ok: true, json: { success: true } }); });
+  window.gameState.globalVariables.big = 'x'.repeat(45000);
+  hide();                                               // flush H1 (big), held
+  const flush = [...sync._flushesInFlight][0];
+  window.currentPlayerRoom = 'server_room';
+  window.fire('pagehide');                              // since-body carries currentRoom, above H1
+  await settle();
+  const sent = requests.at(-1).body;
+  assert.equal(sent.currentRoom, 'server_room', 'the since-body carried the room');
+  assert.ok(sent.clientTs > flush.clientTs, 're-stamped above the flush');
+  assert.equal(sent.globalVariables, undefined, 'big stayed with the flush, not the since-body');
+  // The refusal was confirmed, so the next sync does not resend the refused room.
+  releaseBig?.();
+  await settle();
+  reply = () => ({ ok: true, json: { success: true } });
+  window.gameState.globalVariables.x = 1;
+  await sync.sync();
+  assert.equal(requests.at(-1).body.currentRoom, undefined, 'the refused room is not resent');
+  // A genuinely new room still goes up.
+  window.currentPlayerRoom = 'lobby2';
+  await sync.sync();
+  assert.equal(requests.at(-1).body.currentRoom, 'lobby2', 'a new room is still sent');
   sync.stop();
 });
