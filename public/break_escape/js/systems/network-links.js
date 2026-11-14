@@ -50,6 +50,7 @@
 
 import { resolveObjectField } from '../utils/conditional-text.js';
 import { writeGlobal } from './global-writer.js';
+import { unreachableMessage, notRespondingMessage } from '../utils/remote-host-text.js';
 
 export const NO_DEVICE_HINT = 'You have nothing to plug into this port.';
 export const LINK_GONE_MESSAGE = 'The link is gone.';
@@ -63,9 +64,10 @@ export const IMPLANT_NOT_READY_DELAY_MS = 1500;
 // The longest the view waits for the globals sync before it fetches anyway (review R1 m1)
 export const VIEW_SYNC_WAIT_MS = 3000;
 export const sessionEndedMessage = (host) => `Your session on ${host || 'that host'} has ended.`;
-export const unreachableMessage = (host) => `${host || 'That host'} can't be reached over this link.`;
-// A host whose own service is off (9.3b plan 5.2): the same words as its row in the view
-export const notRespondingMessage = (host) => `${host || 'That host'} is not responding.`;
+// unreachableMessage and notRespondingMessage (a host whose own service is off, 9.3b plan 5.2:
+// the same words as its row in the view) live in utils/remote-host-text.js, shared with the
+// remote sign-in screen (credential keyring plan 8.5)
+export { unreachableMessage, notRespondingMessage };
 
 const win = () => (typeof window !== 'undefined' ? window : {});
 const apiClient = () => win().ApiClient || win().APIClient || null;
