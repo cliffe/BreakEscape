@@ -495,6 +495,15 @@ module BreakEscape
     # through the candidate match and keeps its stored `at`; a heard share in sharedLogins is
     # recorded from the server's composition; any other target is dropped. First wins. Returns
     # whether anything changed.
+    #
+    # A phish target's capture is never proven on the client global alone: it follows the same
+    # server-store path as a live capture, recorded proven only when the re-derived build evidence
+    # holds (capture_evidence_holds?). In the bootstrap pass the stores are usually still empty at
+    # this point, so the entry is recorded unproven; the same locked pass then runs
+    # migrate_legacy_phish_evidence! (fills seLandingPages / sePhishSends) and stamp_proven_captures!
+    # (stamps it), so an honest legacy save is proven on its first bootstrap and a weak or forged one
+    # is withheld (run_bootstrap_writers! order, game.rb). A non-phish capture has no server
+    # re-derivation to defer to, so it keeps the old-rules grandfather (proven: true).
     def migrate_legacy_captures!(scenario:)
       globals = player_state['globalVariables']
       legacy = globals.is_a?(Hash) ? globals['se_captures'] : nil
@@ -520,7 +529,12 @@ module BreakEscape
           next if candidates.empty?
 
           chosen = pick_capture_candidate(candidates, entry)
-          stored = store_capture_entry(record, chosen[:fields], proven: true)
+          proven = if CaptureModel.phish_target_ids(scenario).include?(target_id)
+                     capture_evidence_holds?(chosen[:fields], scenario: scenario)
+          else
+                     true
+          end
+          stored = store_capture_entry(record, chosen[:fields], proven: proven)
           stored['at'] = at if at.is_a?(Numeric)
         end
       end

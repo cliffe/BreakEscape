@@ -153,41 +153,66 @@ module BreakEscape
                    'capture_secrets serves the secret after the one-bootstrap co-migration'
     end
 
-    # The weak-choices twin, withheld. The legacy se_captures global migrates proven: true for any
-    # declared target regardless of the build (capture_proofs.rb:522), so a genuinely withheld case
-    # cannot carry it; it holds the capture as a top-level unproven claim and lets the phish-evidence
-    # gate decide. The build's domain is tier 0 (below the page's minDomainTier 2), so the server
-    # re-derives meetsThreshold: false, no send lands, the stamp cannot prove the capture and
-    # capture_secrets withholds the secret.
+    # The weak-choices twin, withheld, now carrying the legacy se_captures global. Chunk C closes the
+    # gap where migrate_legacy_captures! stamped a phish target proven: true off the client global
+    # alone: a phish capture now follows the server-store path, recorded proven only when the
+    # re-derived build evidence holds. So the honest co-migrating save (CONVINCING, served) and its
+    # weak twin (below threshold, withheld) carry the same two legacy globals; only the choices
+    # differ. The build's domain is below the page's threshold, so the server re-derives
+    # meetsThreshold: false, no send lands, the stamp cannot prove the capture and capture_secrets
+    # withholds the secret.
     WEAK_CHOICES = CONVINCING.merge('domainId' => 'd_unrelated').freeze
 
-    test 'the weak-choices twin migrates an unmet build, lands no send and the secret is withheld' do
-      state = {
-        'currentRoom' => 'office', 'unlockedRooms' => ['office'],
-        'globalVariables' => { 'se_landing_pages' => { 'payroll_login' => {
-          'pageId' => 'payroll_login', 'targetId' => 'lord', 'built' => true,
-          'credibility' => 99, 'meetsThreshold' => true, 'choices' => WEAK_CHOICES,
-          'victim' => { 'visited' => true, 'submitted' => true }, 'at' => 1_731_600_000_000
-        } } },
-        'seCaptures' => { 'lord' => { 'targetId' => 'lord', 'kind' => 'credential',
-                                      'address' => 's.lord@ledgerwell.example', 'proven' => false } }
-      }
-      build_game(state)
+    test 'the weak-choices twin keeps the se_captures global, migrates an unmet build and the secret is withheld' do
+      build_game(legacy_globals_state(choices: WEAK_CHOICES))
+      assert @game.player_state.dig('globalVariables', 'se_captures', 'lord'),
+             'the weak twin carries the same legacy capture global as the honest save'
 
       get game_path('scenario'), as: :json
       assert_response :success
 
       st = @game.reload.player_state
       assert_equal true, st['phishEvidenceMigrated'], 'the migration ran'
+      assert_nil st.dig('globalVariables', 'se_captures'), 'migrate_legacy_captures! consumed the legacy capture global'
+      assert st.dig('seCaptures', 'lord').is_a?(Hash), 'the capture is recreated from the legacy global'
       assert_equal false, st.dig('seLandingPages', 'payroll_login', 'meetsThreshold'),
                    'the server re-derives the weak build as not meeting the threshold'
       assert_equal false, st.dig('sePhishSends', 'lord/kit_payroll_page', 'landed'),
                    'a build that does not meet the threshold lands no send'
-      refute st.dig('seCaptures', 'lord', 'proven'), 'the capture stays unproven'
+      refute st.dig('seCaptures', 'lord', 'proven'),
+             'the phish capture is recorded unproven off the client global and the stamp cannot prove it'
 
       get game_path('capture_secrets'), as: :json
       assert_response :success
       assert_nil JSON.parse(response.body).dig('secrets', 'lord'), 'the secret is withheld for a weak build'
+    end
+
+    # A legacy se_captures global for a phish target with NO se_landing_pages at all (the old client
+    # dropped or never wrote the build global). migrate_legacy_captures! records the capture unproven
+    # (a phish target is never proven off the client global), migrate_legacy_phish_evidence! finds no
+    # build to import, and the stamp has no server evidence to prove it off. The secret is withheld.
+    test 'a phish se_captures global with no se_landing_pages migrates unproven and the secret is withheld' do
+      build_game(
+        'currentRoom' => 'office', 'unlockedRooms' => ['office'],
+        'globalVariables' => {
+          'se_captures' => { 'lord' => { 'targetId' => 'lord', 'kind' => 'credential',
+                                         'address' => 's.lord@ledgerwell.example', 'at' => 1_731_600_000_000 } }
+        }
+      )
+
+      get game_path('scenario'), as: :json
+      assert_response :success
+
+      st = @game.reload.player_state
+      assert_nil st.dig('globalVariables', 'se_captures'), 'migrate_legacy_captures! consumed the legacy capture global'
+      assert st.dig('seCaptures', 'lord').is_a?(Hash), 'the capture is recreated from the legacy global'
+      refute st.dig('seCaptures', 'lord', 'proven'), 'with no build evidence the phish capture stays unproven'
+      assert_empty st['seLandingPages'] || {}, 'no build store: there was no se_landing_pages to migrate'
+
+      get game_path('capture_secrets'), as: :json
+      assert_response :success
+      assert_nil JSON.parse(response.body).dig('secrets', 'lord'),
+                 'the secret is withheld with no landing page build'
     end
 
     test 'the two server stores and the flag never ride the bootstrap back to the client' do

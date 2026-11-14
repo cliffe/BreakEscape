@@ -960,3 +960,35 @@ Closes the three Minors from `PHISH_EVIDENCE_CHUNK_C_REVIEW_R1.md`.
 Verification (single files, no suites, no server): `phish_legacy_migration_controller_test`,
 `capture_proofs_test`, `capture_record_test`, `phish_legacy_migration_test` and `captures_sync_test`
 together, 74 runs, 376 assertions, 0 failures.
+
+### Review R2 minor (legacy capture migration trusted a client claim for a phish target)
+
+Closes the single Minor from `PHISH_EVIDENCE_CHUNK_C_REVIEW_R2.md`. `migrate_legacy_captures!`
+stamped a stored `globalVariables.se_captures` entry `proven: true` for any declared target,
+including phish targets, so a legacy save that carried the capture global was served the phish
+secret with no server re-derivation of the build. That was the one phish secret path that trusted a
+client-written claim without a server recompute.
+
+The fix routes a phish target's legacy capture down the same server-store path as a live capture.
+In `migrate_legacy_captures!`, a target in `CaptureModel.phish_target_ids(scenario)` is now stored
+`proven: capture_evidence_holds?(fields, scenario:)` instead of `proven: true`; a non-phish target
+keeps the old-rules grandfather (`proven: true`), because it has no server re-derivation to defer
+to. The bootstrap order is unchanged and already correct: `run_bootstrap_writers!` runs
+`migrate_legacy_captures!` first (the entry is recorded unproven while the stores are still empty),
+then `migrate_legacy_phish_evidence!` fills `seLandingPages` / `sePhishSends` from the save's own
+`globalVariables.se_landing_pages`, then `stamp_proven_captures!` proves the entry off those server
+stores. So an honest legacy save (convincing build, `victim.submitted`) is proven on its first
+bootstrap, and a weak or forged one is withheld. Non-phish capture kinds are unchanged, and no other
+capture kind has a server re-derivation to bypass, so the gap does not apply to them.
+
+Tests (real requests, `phish_legacy_migration_controller_test.rb`): the honest co-migration test
+(capture global + convincing choices + `victim.submitted`) still serves `Sofia2026!` on one
+bootstrap. The weak-choices twin is rewritten to keep the `se_captures` global (it can now be
+withheld honestly) and asserts the secret is withheld. A new test drives a phish `se_captures`
+global with no `se_landing_pages` at all and asserts the capture migrates unproven and the secret is
+withheld. `capture_record_test.rb` pins that a non-phish legacy capture still migrates `proven:
+true`.
+
+Verification (`RBENV_VERSION=2.7.8 bin/rails test`, these files together): `phish_legacy_migration_test`,
+`phish_legacy_migration_controller_test`, `capture_proofs_test`, `captures_sync_test`,
+`capture_record_test` and `reload_persistence_test`, 146 runs, 651 assertions, 0 failures.

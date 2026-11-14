@@ -99,6 +99,8 @@ module BreakEscape
       record = @game.player_state['seCaptures']
       assert record['len'].is_a?(Hash)
       assert_equal 7, record['len']['at'], 'the stored time is kept'
+      assert_equal true, record['len']['proven'],
+                   'a non-phish capture has no server re-derivation to defer to, so it keeps the old-rules grandfather'
       refute record['len'].key?('secret'), 'the client secret is never stored'
       refute record.key?('ghost'), 'an undeclared target is dropped'
       refute @game.player_state['globalVariables'].key?('se_captures'), 'the legacy global is deleted'
