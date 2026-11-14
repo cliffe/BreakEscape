@@ -48,3 +48,12 @@ Raised with file:line for the owner. No edit applied; the probe measures each.
 
 E7, E8 and E9 (missions plan section 9) are approval items. Any prototype lives on its own branch
 and is listed here with its tests and proof; nothing here is on `build/ol-sims`.
+
+## Merges of main
+
+- 2026-11-14: main 9e23e384b merged into build/ol-sims as f8e23f7a2, and on into build/ol-sims-2
+  (69aa3c8ae). No conflicts. Main brought held barks and HUD lanes (`npc-barks.js`, `ui/hud-lanes.js`,
+  `hud.js`, `npc-barks.css`); none of it touches `npc-needs.js` or `npc-behavior.js`, and
+  npc-manager.js gained 2 lines. Full `bin/test-js` on build/ol-sims-2 after the merge: 648 files
+  pass, 0 fail. Needs chatter still reaches the screen through the bark system, so SIMS-4's
+  staff-room proof watches for chatter being held or laned by the new HUD code.
