@@ -9,14 +9,16 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const ruby = spawnSync('ruby', ['--version']);
 const skip = ruby.status !== 0 && 'ruby not found';
 
-function roomTypeIssues(scenario) {
+function roomTypeIssues(scenario, repoRoot = root) {
     const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
-      puts JSON.generate(check_room_types(JSON.parse(STDIN.read), ${JSON.stringify(root)}))`;
+      puts JSON.generate(check_room_types(JSON.parse(STDIN.read), ${JSON.stringify(repoRoot)}))`;
     const r = spawnSync('ruby', ['-e', script], {
         input: JSON.stringify(scenario), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' },
     });
@@ -47,4 +49,22 @@ test('the three stale enum-only types (no map) are now rejected', { skip }, () =
         const out = roomTypeIssues(withRooms({ a: { type: t, connections: {} } }));
         assert.equal(out.length, 1, `${t} should be rejected (no tilemapTiledJSON registration)`);
     }
+});
+
+test('a missing or unparseable game.js fails loudly, never as a silent pass (R2 minor 1)', { skip }, () => {
+    const scenario = withRooms({ a: { type: 'room_office', connections: {} } });
+    const missing = mkdtempSync(join(tmpdir(), 'roomtypes-missing-'));
+    const empty = mkdtempSync(join(tmpdir(), 'roomtypes-empty-'));
+    mkdirSync(join(empty, 'public/break_escape/js/core'), { recursive: true });
+    writeFileSync(join(empty, 'public/break_escape/js/core/game.js'), '// no room maps here\n');
+    for (const r of [missing, empty]) {
+        const out = roomTypeIssues(scenario, r);
+        assert.equal(out.length, 1);
+        assert.match(out[0], /^⚠️ WARNING: room type check skipped/);
+    }
+});
+
+test('the room type error carries no em or en dash (R2 minor 2)', { skip }, () => {
+    const out = roomTypeIssues(withRooms({ lobby: { type: 'room_ghost_never', connections: {} } }));
+    assert.doesNotMatch(out[0], /[\u2013\u2014]/);
 });

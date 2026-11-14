@@ -8132,7 +8132,12 @@ def check_room_types(json_data, repo_root)
   return issues unless json_data.is_a?(Hash)
 
   valid = load_valid_room_types(repo_root)
-  return issues if valid.nil?
+  if valid.nil?
+    # Fail loudly, never silently: a missing game.js or a parse that finds no room maps means
+    # the check could not run, and the author must know that rather than read a clean pass.
+    return ["⚠️ WARNING: room type check skipped: public/break_escape/js/core/game.js is missing " \
+            "or registers no tilemapTiledJSON room maps, so room 'type' values were not checked."]
+  end
 
   (json_data['rooms'] || {}).each do |room_id, room|
     next unless room.is_a?(Hash)
@@ -8142,7 +8147,7 @@ def check_room_types(json_data, repo_root)
     next if valid.include?(type)
 
     issues << "❌ ERROR: room '#{room_id}' has type '#{type}', which no room map registers (no " \
-              "tilemapTiledJSON('#{type}', ...) in game.js) — check the spelling or add the room map."
+              "tilemapTiledJSON('#{type}', ...) in game.js); check the spelling or add the room map."
   end
 
   issues
