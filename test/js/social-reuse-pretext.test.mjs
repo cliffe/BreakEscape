@@ -35,7 +35,7 @@ globalThis.getComputedStyle = dom.window.getComputedStyle.bind(dom.window);
 globalThis.MouseEvent = dom.window.MouseEvent;
 globalThis.KeyboardEvent = dom.window.KeyboardEvent;
 
-const { factLabel, cardFacts, callWords, readinessLines } = await import(pathToFileURL(join(dir, 'minigames/pretext-prep/pretext-card.js')));
+const { factLabel, cardFacts, callWords } = await import(pathToFileURL(join(dir, 'minigames/pretext-prep/pretext-card.js')));
 const { PretextPrepMinigame } = await import(pathToFileURL(join(dir, 'minigames/pretext-prep/pretext-prep-minigame.js')));
 
 const call = {
@@ -79,7 +79,6 @@ test('factLabel: the id formatted, unless the fact gives a label', () => {
     assert.equal(factLabel('start_date', ''), 'Start date');
     assert.equal(cardFacts(call)[0].label, undefined);
     assert.equal(cardFacts(call, social())[0].label, 'Start day');
-    assert.deepEqual(readinessLines(cardFacts(call, social()), {}), ['Start day: nothing held yet']);
 });
 
 test('the blank button reads the fact label; without a label it reads the formatted id', () => {

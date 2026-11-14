@@ -158,37 +158,6 @@
     font-size: 14px;
 }
 
-/* ---- CONFIRM button ---- */
-.ip-confirm-btn {
-    width: 100%;
-    background: #1a4a1a;
-    color: #00ff88;
-    border: 2px solid #00c853;
-    padding: 14px 8px;
-    font-family: 'GNF', monospace;
-    font-size: 16px;
-    line-height: 24px;
-    cursor: pointer;
-    border-radius: 0;
-    letter-spacing: 1px;
-    transition: background 0.15s, box-shadow 0.15s;
-    text-transform: uppercase;
-}
-
-.ip-confirm-btn:hover {
-    background: #2a5a2a;
-    box-shadow: none;
-}
-
-.ip-confirm-btn:active {
-    background: #0a3a0a;
-}
-
-.ip-confirm-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-}
-
 /* ---- Double-check modal ---- */
 .ip-modal-overlay {
     position: absolute;
@@ -243,28 +212,6 @@
     font-family: 'VT323', monospace;
     font-size: 16px;
     margin-bottom: 20px;
-}
-
-.ip-modal-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.ip-modal-btn {
-    padding: 12px 8px;
-    font-family: 'GNF', monospace;
-    font-size: 16px;
-    cursor: pointer;
-    border-radius: 0;
-    border: 2px solid;
-    letter-spacing: 0.5px;
-    line-height: 24px;
-    transition: opacity 0.15s;
-}
-
-.ip-modal-btn:hover {
-    opacity: 0.85;
 }
 
 .ip-modal-correct {

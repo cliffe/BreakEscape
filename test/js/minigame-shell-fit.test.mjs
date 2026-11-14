@@ -237,6 +237,18 @@ test('notes: the notepad fits a phone and the nav row is in the flow under it (A
     assert.match(js, /notes-minigame-content-area pixel-scroll/);
 });
 
+test('notes: the short note has one look, a torn slip with one tape strip (S7-notes pick)', () => {
+    const notes = css('notes.css');
+    assert.doesNotMatch(notes, /note-style/, 'no tape or pinned variants left');
+    const slip = rule(notes, '.notes-minigame-text-box');
+    assert.match(slip['clip-path'], /calc\(100% - 8px\)/, 'bottom edge torn in square steps');
+    assert.equal(slip['border-bottom'], '0');
+    const tape = rule(notes, '.notes-minigame-text-box::before');
+    assert.equal(tape.left, 'calc(50% - 24px)', 'one strip, top centre, clear of the pencil');
+    assert.equal(tape.width, '48px');
+    assert.equal(rules(notes, '.notes-minigame-text-box::after').length, 0, 'no second strip');
+});
+
 test('PIN: a wrong code is reported on the keypad\'s own line, not over the keys (A10, A11)', () => {
     const js = src('minigames/pin/pin-minigame.js');
     assert.match(js, /className = 'pin-minigame-message'/);
@@ -255,8 +267,13 @@ test('alarm panel: scrolls on a short window, stepped lamps, 8px labels, X in th
     // R2 M2: the panel takes a phone's width at 1:1 instead of scrolling sideways; the SVG keeps
     // its scale (slice from the top left) and only loses empty space on the right
     assert.equal(rule(c, '.ap-panel-wrap').width, '100%');
-    assert.equal(rule(c, '.ap-panel-wrap')['max-width'], '460px');
-    assert.equal(rule(c, '.ap-svg')['max-width'], '420px');
+    assert.equal(rule(c, '.ap-panel-wrap')['max-width'], '324px');
+    // UI backlog 1: the SVG is always its 320px viewBox width and the panel is 324px at most (320 plus
+    // the two 2px borders), so the SVG is never scaled (a scaled box makes the browser report
+    // 6.74px / 13.49px text on a phone)
+    assert.equal(rule(c, '.ap-svg').width, '320px');
+    assert.equal(rule(c, '.ap-svg')['max-width'], 'none');
+    assert.match(src('minigames/alarm-panel/alarm-panel-minigame.js'), /const SVG_W = 320;/);
     assert.match(src('minigames/alarm-panel/alarm-panel-minigame.js'), /preserveAspectRatio="xMinYMin slice"/);
     assert.match(src('minigames/alarm-panel/alarm-panel-minigame.js'), /<svg class="ap-svg" width="\$\{SVG_W\}" height="\$\{SVG_H\}"/);
     assert.equal(rule(c, '.ap-label')['font-size'], '8px');
@@ -284,8 +301,9 @@ test('biometrics: the samples list keeps two rows; instructions are a closed dis
     const l = rule(c, '.biometrics-samples-list-container');
     assert.equal(l['min-height'], '160px');
     assert.equal(l.flex, '0 0 auto');
-    assert.match(src('minigames/biometrics/biometrics-minigame.js'), /document\.createElement\('details'\);\s*instructionsContainer\.className = 'biometrics-scanner-instructions'/);
-    assert.equal(rule(c, '.biometrics-categories', 'max-width: 768px')['flex-direction'], undefined, 'chips stay inline');
+    assert.match(src('minigames/biometrics/biometrics-minigame.js'), /document\.createElement\('details'\);\s*instructionsContainer\.className = 'biometrics-scanner-instructions[ a-z-]*'/);
+    // The chips' phone rule is the shared scanner panel's now (A22): inline, wrapping
+    assert.equal(rule(css('scanner-panel.css'), '.scanner-panel .scan-chips')['flex-wrap'], 'wrap', 'chips stay inline');
 });
 
 test('X inside the frame for dusting, examine, flag station, VM launcher, text file (A14, A26, A30, A34, A40)', () => {
@@ -353,7 +371,7 @@ test('lockpicking zooms by a whole number on a big window and centres (A09)', ()
 
 test('BLE scanner list uses the pixel scrollbar, a More below cue and an accent SAVE (A23)', () => {
     const js = src('minigames/ble-scanner/ble-scanner-minigame.js');
-    assert.match(js, /class="ble-device-list pixel-scroll"/);
+    assert.match(js, /class="ble-device-list[ a-z-]* pixel-scroll"/);
     assert.match(js, /id="ble-device-more" hidden/);
     assert.match(js, /static hasMoreBelow\(box\)/);
     const c = css('ble-scanner.css');

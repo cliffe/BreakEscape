@@ -280,10 +280,13 @@ test('nothing held hides the un-fillable line, names the blank, and still allows
     const button = blank(scene, 'contact');
     assert.equal(button.disabled, true);
     assert.match(button.textContent, /Contact: nothing held yet/);
-    assert.match(scene.container.querySelector('.pretext-readiness').textContent, /Contact: nothing held yet/);
+    // No separate orange readiness note: it only restated the disabled buttons, which already name
+    // every gap, so it read like an error (C-PP3, user 2026-11-15). The disabled button is the one
+    // place the gap is named.
+    assert.equal(scene.container.querySelector('.pretext-readiness'), null, 'the readiness note is gone (C-PP3)');
     // The only text line's blank can never be filled, so the "____ asked me to chase this" line is
     // not shown: an un-fillable gap beside the disabled "nothing held yet" button only puzzled the
-    // learner (E3 N4). The blank control and the readiness note still name what is missing.
+    // learner (E3 N4). The blank control still names what is missing.
     assert.equal(scene.container.querySelector('[data-line="open_ref"]'), null, 'the un-fillable line is hidden');
     assert.equal(scene.container.querySelector('.pretext-line'), null, 'no pretext line is shown when none can be filled');
     assert.equal(scene.beginButton.disabled, false);

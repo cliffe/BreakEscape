@@ -14,7 +14,14 @@
  * and each lane's members are placed one after another inside it, each limited to what is left.
  * So two lanes never meet, and two members of one lane never meet.
  *
- * Pure parts (computeLanes, stackMembers, barkSource, arrowDirection, isCompactViewport) are
+ * The incoming-call banner (#phone-ring-layer) is a fixed top-centre strip, above minigames. While
+ * a minigame is open it must never cover a control the player needs (a key, a button, an input, the
+ * PIN entry display, a title or the close X): ringLayerSpot tries the bottom of the screen, the
+ * spot below the minigame's frame, the right-hand end of the notify lane, and only when none is
+ * clear the top centre (a covered title costs less than a covered key). It also keeps off the
+ * toasts showing in the notify lane (UI backlog item 5d, review R1 M1 and m2).
+ *
+ * Pure parts (computeLanes, stackMembers, ringLayerSpot, barkSource, arrowDirection, isCompactViewport) are
  * unit tested; startHudLanes() measures and applies them in the browser.
  */
 
@@ -191,6 +198,49 @@ export function stackMembers(heights, laneMax, gap = LANE_GAP) {
 }
 
 /**
+ * Where the incoming-call banner goes while a minigame is open (UI backlog 5d, review R1 M1).
+ * `titles` and `controls` are the boxes of the minigame's headings and of everything the player
+ * can press or must read (buttons, inputs, the PIN display); `toasts` are the notify lane's toasts
+ * showing now. Spots, tried in order, the first that touches none of them wins:
+ *   1. bottom   the bottom centre (where the tutorial step panel's banner sits, phone-ring.css)
+ *   1. bottom   then the bottom right
+ *   2. below    just under the minigame's frame (`frame`), kept inside the viewport
+ *   3. lane     the right-hand end of the notify lane
+ *   4. lane-below  the same spot moved under the lowest toast showing, if that is clear and on screen
+ * With none clear, the top centre where it always sat: a covered title costs less than a covered key.
+ * With no minigame boxes at all it stays top centre. Boxes are grown by `margin` (default 4px).
+ * @param {{vw:number, vh:number, size:{width:number,height:number},
+ *          titles?:Array<{left,top,right,bottom}>, controls?:Array<{left,top,right,bottom}>,
+ *          toasts?:Array<{left,top,right,bottom}>, frame?:{left,top,right,bottom}|null,
+ *          lane?:{top:number,left:number,width:number}, top?:number, edge?:number, margin?:number}} a
+ * @returns {{name:'default'|'bottom'|'below'|'lane'|'lane-below', top:number, left:number}}
+ */
+export function ringLayerSpot({ vw, vh = 0, size, titles = [], controls = [], toasts = [], frame = null, lane,
+  top = 12, edge = SIDE_GUTTER, margin = 4 } = {}) {
+  const w = Math.max(0, size?.width || 0);
+  const h = Math.max(0, size?.height || 0);
+  const centre = Math.round((vw - w) / 2);
+  const blockers = [...titles, ...controls];
+  if (!blockers.length) return { name: 'default', top, left: centre };
+  const hits = (l, tp) => blockers.some(r => l < r.right + margin && r.left < l + w + margin && tp < r.bottom + margin && r.top < tp + h + margin)
+    || toasts.some(r => l < r.right + margin && r.left < l + w + margin && tp < r.bottom + margin && r.top < tp + h + margin);
+  const tryAt = (name, l, tp) => (hits(l, tp) ? null : { name, top: tp, left: l });
+  const fit = (y) => Math.round(vh > 0 ? Math.max(0, Math.min(y, vh - h - edge)) : y);
+  const bottom = fit(vh - h - edge);
+  const right = Math.round(Math.max(0, vw - w - edge));
+  const spots = [tryAt('bottom', centre, bottom), tryAt('bottom', right, bottom)];
+  if (frame) spots.push(tryAt('below', centre, fit(frame.bottom + margin + 4)));
+  if (lane) {
+    const laneLeft = Math.round(Math.max(lane.left, lane.left + lane.width - w));
+    spots.push(tryAt('lane', laneLeft, lane.top));
+    // A toast in the lane: try just under the lowest one before giving up and covering a title
+    const under = toasts.length ? Math.round(Math.max(...toasts.map(r => r.bottom)) + LANE_GAP) : null;
+    if (under !== null && (vh <= 0 || under + h <= vh - edge)) spots.push(tryAt('lane-below', laneLeft, under));
+  }
+  return spots.find(Boolean) || { name: 'default', top, left: centre };
+}
+
+/**
  * The arrow pointing from the player towards an off-screen speaker: one of eight compass points
  * ('n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw'), or null when either position is unknown or they
  * are on the same spot. Screen y grows downwards.
@@ -313,6 +363,84 @@ function placeHearts(doc) {
   const c = shownRect(doc.getElementById('combat-buttons'));
   const lift = h && c ? heartsLift(h, c) : 0;
   if (lift > 0) el.style.setProperty('--hearts-lift', `${Math.round(lift / zoomOf(el))}px`);
+}
+
+// The headings of an open minigame the incoming-call banner keeps clear of (item 5d): the console
+// window's title bar, the framework header (hidden in a console, so not measured then), a
+// scene's own title line (the PIN pad's "Enter PIN: ...") and the close X beside them.
+const MINIGAME_TITLES = ['.console-titlebar', '.minigame-header', '[class*="minigame-title"]', '.minigame-close-button'];
+// What the player presses or reads inside an open minigame or console window (review R1 M1)
+const MINIGAME_CONTROLS = ['button', 'input', 'textarea', 'select', 'a[href]', '[role="button"]', '[onclick]',
+  '[tabindex]:not([tabindex="-1"])', '.pin-minigame-display'];
+
+function boxOf(r) { return { left: r.left, top: r.top, right: r.right, bottom: r.bottom }; }
+
+/**
+ * The boxes in the open minigame(s): headings, controls (the listed selectors plus anything with a
+ * pointer cursor), and the frame to place a banner under. Shown elements only; an element over
+ * half the screen (a clickable backdrop) is no control.
+ */
+export function measureMinigame(doc, win) {
+  const titles = [];
+  const controls = [];
+  let frame = null;
+  const area = (win.innerWidth || 0) * (win.innerHeight || 0);
+  for (const mg of doc.querySelectorAll('.minigame-container')) {
+    if (!shownRect(mg)) continue;
+    for (const sel of MINIGAME_TITLES) {
+      for (const t of mg.querySelectorAll(sel)) {
+        const r = shownRect(t);
+        if (r) titles.push(boxOf(r));
+      }
+    }
+    const seen = new Set();
+    const add = (el) => {
+      if (seen.has(el) || el.closest?.('#phone-ring-layer')) return;
+      seen.add(el);
+      const r = shownRect(el);
+      if (r && (!area || r.width * r.height <= area / 2)) controls.push(boxOf(r));
+    };
+    mg.querySelectorAll(MINIGAME_CONTROLS.join(', ')).forEach(add);
+    mg.querySelectorAll('*').forEach((el) => { if (!seen.has(el) && gcs(el).cursor === 'pointer') add(el); });
+    const anchor = win.MinigameFramework?.currentMinigame?.closeAnchor?.();
+    const fr = shownRect(anchor && mg.contains(anchor) ? anchor : mg.querySelector('.minigame-game-container'));
+    if (fr) frame = frame ? { left: Math.min(frame.left, fr.left), top: Math.min(frame.top, fr.top), right: Math.max(frame.right, fr.right), bottom: Math.max(frame.bottom, fr.bottom) } : boxOf(fr);
+  }
+  return { titles, controls, frame };
+}
+
+// A toast slides in and out with a translateY (notifications.css), so its box mid-slide is up to
+// 20px off where it settles, and nothing re-places the banner when the slide ends. The vertical
+// shift is taken back out, so the banner is placed against the settled box.
+function settledBox(el, r) {
+  const m = /^matrix\(([^)]*)\)$/.exec(gcs(el).transform || '');
+  const ty = m ? parseFloat(m[1].split(',')[5]) : 0;
+  const b = boxOf(r);
+  if (Number.isFinite(ty) && ty) { b.top -= ty; b.bottom -= ty; }
+  return b;
+}
+
+function placeRingLayer(doc, win, lanes) {
+  const layer = doc.getElementById('phone-ring-layer');
+  if (!layer) return null;
+  const clear = () => { for (const k of ['top', 'left', 'transform']) if (layer.style[k]) layer.style[k] = ''; };
+  // Only a banner over a minigame needs placing; the tutorial step panel has its own spot (CSS)
+  if (!shownRect(layer.querySelector('.incoming-call')) || layer.classList.contains('under-tutorial')) { clear(); return null; }
+  const mg = measureMinigame(doc, win);
+  const toasts = [];
+  for (const el of doc.querySelectorAll('#notification-container .notification')) {
+    const r = shownRect(el);
+    if (r && !el.classList.contains('hud-lane-yield')) toasts.push(settledBox(el, r));
+  }
+  clear();                                   // measure the banner where the CSS puts it
+  const box = layer.getBoundingClientRect();
+  const spot = ringLayerSpot({ vw: win.innerWidth, vh: win.innerHeight, size: { width: box.width, height: box.height },
+    titles: mg.titles, controls: mg.controls, toasts, frame: mg.frame, lane: lanes.notify });
+  if (spot.name === 'default') return spot;
+  layer.style.transform = 'none';
+  setPx(layer, 'top', spot.top);
+  setPx(layer, 'left', spot.left);
+  return spot;
 }
 
 /** Place the lane members for one measurement. Exposed for tests and the proof scripts. */
@@ -482,7 +610,8 @@ export function applyLanes(doc = document, win = window) {
     speech.style.overflow = 'hidden';
     speech.dataset.lane = 'message';
   }
-  win.__hudLanes = { measured: m, lanes };
+  const ringSpot = placeRingLayer(doc, win, lanes);
+  win.__hudLanes = { measured: m, lanes, ringSpot };
   return { measured: m, lanes };
 }
 
@@ -497,9 +626,25 @@ export function startHudLanes(doc = document, win = window) {
   const relayout = () => {
     if (queued) return;
     queued = true;
-    win.requestAnimationFrame(() => { queued = false; try { applyLanes(doc, win); } catch (e) { console.debug('[hud-lanes]', e); } });
+    win.requestAnimationFrame(() => { queued = false; try { applyLanes(doc, win); syncMinigameWatch(); } catch (e) { console.debug('[hud-lanes]', e); } });
   };
   win.addEventListener('resize', relayout);
+  // While the banner is placed over an open minigame, a control added inside it (a view switch,
+  // a confirm step) re-places the banner; the observer is dropped when either goes (review R2 m2)
+  let mgObs = null;
+  let mgTarget = null;
+  const syncMinigameWatch = () => {
+    const shown = !!doc.querySelector('#phone-ring-layer .incoming-call');
+    const mg = shown ? doc.querySelector('.minigame-container') : null;
+    if (mg === mgTarget) return;
+    mgObs?.disconnect();
+    mgObs = null;
+    mgTarget = mg;
+    if (mg && typeof win.MutationObserver === 'function') {
+      mgObs = new win.MutationObserver(() => relayout());
+      mgObs.observe(mg, { childList: true, subtree: true });
+    }
+  };
   const ro = typeof win.ResizeObserver === 'function' ? new win.ResizeObserver(relayout) : null;
   const watched = new Set();
   const watch = () => {
@@ -517,13 +662,16 @@ export function startHudLanes(doc = document, win = window) {
     if (cap && !attached.has(cap)) { attached.add(cap); mo.observe(cap, { attributes: true, attributeFilter: ['class'] }); }
     const toasts = doc.getElementById('notification-container');
     if (toasts && !attached.has(toasts)) { attached.add(toasts); mo.observe(toasts, { childList: true }); }
+    // The incoming-call banner comes and goes inside its layer (item 5d)
+    const ring = doc.getElementById('phone-ring-layer');
+    if (ring && !attached.has(ring)) { attached.add(ring); mo.observe(ring, { childList: true, attributes: true, attributeFilter: ['class'] }); }
   };
   mo = new win.MutationObserver(() => { watch(); attach(); relayout(); });
   mo.observe(doc.body, { childList: true });
   watch();
   attach();
   relayout();
-  win.__hudLanesStarted = { relayout, stop: () => { ro?.disconnect(); mo.disconnect(); win.removeEventListener('resize', relayout); win.__hudLanesStarted = null; } };
+  win.__hudLanesStarted = { relayout, stop: () => { ro?.disconnect(); mo.disconnect(); mgObs?.disconnect(); mgObs = null; mgTarget = null; win.removeEventListener('resize', relayout); win.__hudLanesStarted = null; } };
   win.hudLanesRelayout = relayout;
   return win.__hudLanesStarted;
 }

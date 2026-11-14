@@ -257,54 +257,6 @@
     gap: 8px;
 }
 
-.cms-button {
-    border: 2px solid #405f91;
-    background: #1d2e4d;
-    color: #e5edff;
-    font-family: 'GNF', monospace;
-    font-size: 16px;
-    line-height: 24px;
-    padding: 10px 16px;
-    min-width: 132px;
-    cursor: pointer;
-}
-
-.cms-button:hover,
-.cms-button:focus {
-    outline: none;
-    background: #29426e;
-}
-
-.cms-button-secondary {
-    border-color: #2d4166;
-    background: #17243e;
-    color: #b9c9eb;
-}
-
-.cms-button-secondary:hover,
-.cms-button-secondary:focus {
-    background: #1e3152;
-    border-color: #4b69a3;
-}
-
-.cms-button-primary {
-    border-color: #78582a;
-    background: #3b2a14;
-    color: #ffd995;
-}
-
-.cms-button-primary:hover,
-.cms-button-primary:focus {
-    background: #6a4a1f;
-    border-color: #a77a32;
-    color: #fff0d1;
-}
-
-.cms-button:disabled {
-    cursor: not-allowed;
-    opacity: 0.6;
-}
-
 .cms-empty-state {
     border: 2px solid #2b3b58;
     background: #111a2d;
