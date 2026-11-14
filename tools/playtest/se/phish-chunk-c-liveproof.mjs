@@ -104,6 +104,11 @@ g.with_lock do
   }
   ps.delete('seLandingPages'); ps.delete('sePhishSends'); ps.delete('phishEvidenceMigrated')
   ps.delete('mailState')
+  # The honest legacy save also holds its captured credential, recorded unproven, with no
+  # surviving sent mail. The migration populates the stores and the bootstrap stamp (chunk C
+  # reader) proves it; capture_secrets then serves Sofia2026! for the strong save, withholds for weak.
+  ps['seCaptures'] = { 'lord' => { 'targetId' => 'lord', 'kind' => 'credential',
+                                   'address' => 's.lord@ledgerwell.example', 'proven' => false } }
   g.player_state = ps
   g.save!
 end

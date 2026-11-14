@@ -903,3 +903,34 @@ server-owned stores (plan section 6), and the retiring machinery goes with it.
   first bootstrap (chunk C reader).
 - `social-phish-send-client.test.mjs`: added a re-drive `redrive:true` body test (minor 1) and an
   overlapping-drain single-post test (minor 4).
+
+### Live browser proof (chunk C)
+
+`tools/playtest/se/phish-chunk-c-liveproof.mjs` on a keyless server on port 3665 (headless,
+`setFPS(20)`, fixed steps on). All eight cases PASS; the server was stopped by PID afterwards and
+port 3665 confirmed down.
+
+- **(a) honest online. PASS. Game 4633.** Real builder build for lord then a real convincing send;
+  a fresh `GET capture_secrets` returns `{"secrets":{"lord":"Sofia2026!"}}` off the two server
+  stores (the chunk C reader), not the client globals.
+- **(b) offline hold then drain. PASS. Game 4636.** Honest build+send held in the queues while
+  offline, drained on reconnect; stores land.
+- **(c) queue, reload, re-drive. PASS. Game 4639.** Routes held, durable global re-drives the build
+  and send on reload; stores land.
+- **(d) forged send refused. PASS. Game 4640.** A non-phish target and a non-link kit both answered
+  422; `sePhishSends` stayed empty.
+- **(e) chunk C legacy reveal. PASS. Games 4630 (strong) and 4631 (weak).** The legacy save carries
+  the durable `victim.submitted` marker, no surviving sent mail, the capture recorded unproven, and
+  empty server stores. The first bootstrap migrates the stores (server-re-derived verdict) and the
+  stamp proves the capture off them. Strong: `GET capture_secrets` now returns
+  `{"secrets":{"lord":"Sofia2026!"}}` (served, the chunk C change). Weak: the server re-derives
+  `meetsThreshold:false`, the imported send is `landed:false`, and the secret is withheld.
+- **(f) improve after a weak build. PASS. Game 4641.** A weak build is rebuilt convincing (last-wins
+  replaces the verdict in place), and a later send lands.
+- **(g) forged reader refused. PASS. Game 4635.** A forged `se_landing_pages` global and a forged
+  landed sent mail, empty server stores, `phishEvidenceMigrated` already set so the migration is a
+  no-op. The capture stays unproven and `GET capture_secrets` returns `{"secrets":{}}`: the reader
+  reads only the server stores. This is the forge the plan closes.
+- **(h) re-drive downgrade refused. PASS. Game 4624.** A convincing build is recorded, then a
+  hand-crafted `POST se/landing_page` with `redrive:true` and weak choices. The server keeps the
+  stronger verdict (`meetsThreshold:true`, credibility 87 unchanged) and the answer reports it.
