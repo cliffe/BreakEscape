@@ -520,3 +520,29 @@ lands on re-post, unauthored target/kit refused, unauthored fromAccount/attachme
 oversized target/slot refused, body-asserted landed ignored, resend first-wins idempotent, the
 superset property (a convincing build plus any authored send lands) and the guard property (a
 weak/mis-addressed message over a convincing page still lands).
+
+### Chunk A client wiring
+
+- `systems/se-landing-page-client.js` registers each in-flight build POST per page id
+  (`pendingBuildPost`), so the send client can await the build being recorded first.
+- `systems/se-phish-send-client.js` (new): `phishSendBody` (bounds the body to the mail client's
+  PENDING_MESSAGE_KEYS plus targetId/kitId), `recordPhishSend` (awaits the build POST, retries once
+  on `page_not_built_yet`, queues on offline/still-not-built), `drainPhishSendQueue` (bounded queue
+  keyed by targetId/kitId, drained on `online` and callable after a sync).
+- `mail-client-minigame.js` `_handleComposeSend` posts a judged link send via a dynamic import of
+  the send client. Dynamic, not static, so no mail-client test harness copy list changes and the
+  builder folder stays network-free (social-landing-page-render still passes). The client reveal is
+  unchanged (plan section 7); this POST is the server's own record.
+
+Tests (node): `test/js/social-phish-send-client.test.mjs` (6 cases) asserts the body key bounding,
+the build-await ordering, the one retry then land, the queue-then-drain, the bounded offline queue
+(one entry per target/kit), and that a permanent below-threshold miss leaves the queue. Neighbours
+re-run green: social-landing-page-render (15), social-landing-page-builder (19), social-mail-bridge
+(23), minigame-se-close (13), social-mail-composer (29), social-captures-view (7).
+
+### Still to do (handover)
+
+- Live browser proof (plan section 15, Chunk A): keyless server on port 3664/3665, headless,
+  setFPS(20) + fixed steps, drive lab_social_engineering build then send to lord with
+  kit_payroll_page, assert sePhishSends landed via a fresh bootstrap/rails runner; include a
+  delayed/aborted build+send POST and an offline build-then-send; record game ids. Not yet run.
