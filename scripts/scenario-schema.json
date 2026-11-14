@@ -30,6 +30,18 @@
       "maxLength": 80,
       "description": "Optional name shown on the title screen in place of the mission's display_name (the server trims it to 80 characters). Blank falls back to display_name."
     },
+    "pcWallpaper": {
+      "type": "string",
+      "pattern": "^assets/[A-Za-z0-9_/-]+\\.png$",
+      "description": "Optional desktop wallpaper for every PC screen in the mission (sign-in, desktop, share windows), a PNG under assets/, e.g. assets/mini-games/desktop-wallpaper-m02.png. Absent keeps the shared desktop-wallpaper.png (utils/pc-monitor.js pcWallpaperUrl)."
+    },
+    "pcWallpaperFocus": {
+      "type": "array",
+      "items": { "type": "number", "minimum": 0, "maximum": 1 },
+      "minItems": 2,
+      "maxItems": 2,
+      "description": "Optional [x, y], shares of the wallpaper's width and height where its subject sits. A narrow PC screen (a phone) crops the picture; the crop is centred on this point. Absent centres the picture."
+    },
     "resumeSpawn": {
       "type": "object",
       "description": "batch-13 (opt-in): where the player respawns in the startRoom after a reload, in startPosition's tile units, e.g. by an awareness kiosk. Applies only to a resumed game and, when whenGlobal is named, only once that global is set (true, non-zero, non-empty). Default (unset): a reload spawns at startPosition, as before.",

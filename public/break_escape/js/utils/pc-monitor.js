@@ -87,6 +87,63 @@ export const PC_FRAME_EDGE = 2;
 const even = (v) => Math.max(0, Math.floor(v / 2) * 2);
 
 /**
+ * A scenario's own PC wallpaper: the top-level `pcWallpaper` field, a PNG under assets/
+ * (e.g. "assets/mini-games/desktop-wallpaper-m02.png"). Every PC screen in the mission shows
+ * it in place of the shared desktop-wallpaper.png. Anything else (no field, another file
+ * type, "..", a full URL) gives null and the shared wallpaper stays.
+ *   -> "/break_escape/assets/..." or null
+ */
+export function pcWallpaperUrl(scenario) {
+    const p = scenario?.pcWallpaper;
+    if (typeof p !== 'string' || !/^assets\/[A-Za-z0-9_\-/]+\.png$/.test(p) || p.includes('//')) return null;
+    return `/break_escape/${p}`;
+}
+
+/** The shared wallpaper (css/pc-monitor.css names the same file). */
+export const PC_SHARED_WALLPAPER = '/break_escape/assets/mini-games/desktop-wallpaper.png';
+
+/**
+ * Where the wallpaper's subject sits: the optional top-level `pcWallpaperFocus`, [x, y] as
+ * shares (0 to 1) of the picture's width and height. A narrow screen crops the picture, and
+ * the crop is centred on this point (as far as the picture's edges allow). Absent or not two
+ * numbers in 0..1 gives the centre.
+ *   -> [x, y]
+ */
+export function pcWallpaperFocus(scenario) {
+    const f = scenario?.pcWallpaperFocus;
+    const ok = Array.isArray(f) && f.length === 2 && f.every((n) => typeof n === 'number' && n >= 0 && n <= 1);
+    return ok ? [f[0], f[1]] : [0.5, 0.5];
+}
+
+/**
+ * The smallest whole-number scale at which a picture of natW x natH covers a screen box
+ * (R2 M2: `background-size: cover` gave x3.10 and x3.40 at common window sizes, so source
+ * pixels drew 3 and 4 screen pixels wide). Never below 1.
+ */
+export function wallpaperScale(screenW, screenH, natW, natH) {
+    if (!(natW > 0) || !(natH > 0)) return 1;
+    const need = Math.max(Number(screenW) / natW, Number(screenH) / natH);
+    return Math.max(1, Math.ceil(need - 1e-9));
+}
+
+/**
+ * The picture's size and offset inside the screen box, on whole screen pixels: the integer
+ * scale, then the offset that puts the focus point at the centre of the box, held inside the
+ * picture's edges (so no gap shows).
+ *   -> { scale, width, height, x, y }  (x and y are <= 0)
+ */
+export function wallpaperLayout(screenW, screenH, natW, natH, focus = [0.5, 0.5]) {
+    const scale = wallpaperScale(screenW, screenH, natW, natH);
+    const width = natW * scale;
+    const height = natH * scale;
+    const place = (box, size, share) => {
+        const at = Math.round(box / 2 - share * size);
+        return Math.min(0, Math.max(box - size, at));
+    };
+    return { scale, width, height, x: place(screenW, width, focus[0]), y: place(screenH, height, focus[1]) };
+}
+
+/**
  * The notepad entry for a PC's post-it, added from a view of the PC that is not its own
  * desktop (a share window or a file opened from the desktop, R4 m2): the note is stuck on
  * the monitor, so it can be noted from any of the PC's views.
@@ -247,6 +304,12 @@ export function applyPcMonitorMetrics(parts, m) {
         screen.style.top = `${m.bezel.top}px`;
         screen.style.width = `${m.screen.width}px`;
         screen.style.height = `${m.screen.height}px`;
+        const wp = parts.wallpaper;
+        if (wp?.w > 0 && wp?.h > 0) {
+            const l = wallpaperLayout(m.screen.width, m.screen.height, wp.w, wp.h, wp.focus);
+            screen.style.backgroundSize = `${l.width}px ${l.height}px`;
+            screen.style.backgroundPosition = `${l.x}px ${l.y}px`;
+        }
     }
     // A note the player has dragged keeps its place; the rest follow the frame
     if (postit?.style && postit.dataset?.dragged !== 'true') {
@@ -322,6 +385,8 @@ export function mountPcMonitor(scene, { name = '', postitHtml = '', pcId = null,
     const controls = root.querySelector('.pc-monitor-controls');
     const nameEl = root.querySelector('.pc-monitor-name');
     if (nameEl) nameEl.textContent = String(name || '');
+    const wallpaper = pcWallpaperUrl(view?.gameScenario);
+    if (wallpaper) screen.style.backgroundImage = `url("${wallpaper}")`;
 
     area.parentNode.insertBefore(root, area);
     screen.appendChild(area);
@@ -404,6 +469,25 @@ export function mountPcMonitor(scene, { name = '', postitHtml = '', pcId = null,
     }
 
     update();
+    // The wallpaper is drawn at a whole-number scale, so its size is read once (R2 M2). A
+    // well-formed path to a file that is missing falls back to the shared wallpaper (R2 m2).
+    const readWallpaper = (url, fallback) => {
+        if (typeof Image !== 'function') return;
+        const img = new Image();
+        img.onload = () => {
+            parts.wallpaper = { w: img.naturalWidth, h: img.naturalHeight, focus: pcWallpaperFocus(view?.gameScenario) };
+            if (parts.metrics && root.isConnected !== false) applyPcMonitorMetrics(parts, parts.metrics);
+        };
+        img.onerror = () => {
+            if (!fallback) return;
+            screen.style.backgroundImage = '';
+            screen.style.backgroundSize = '';
+            screen.style.backgroundPosition = '';
+            readWallpaper(PC_SHARED_WALLPAPER, false);
+        };
+        img.src = url;
+    };
+    readWallpaper(wallpaper || PC_SHARED_WALLPAPER, !!wallpaper);
     // Through the scene, so its cleanup() removes them even when the manager ends the
     // minigame without complete() (R1 m4)
     const listen = (target, type) => {
