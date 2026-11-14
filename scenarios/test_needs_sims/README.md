@@ -756,6 +756,21 @@ Notes:
   keys and reverses them when `currentPlayerRoom` changes.
 - The first run of the typing check missed the effect because a worker types for under ten seconds; sampling every 100 ms found it.
 
+### SIMS-2 live proof: an arrival counts only where the NPC is (2026-11-14, keyless :3094, headless, worktree p-ol-sims2)
+
+Tool `tools/playtest/needs-arrival-proof.mjs`. Thirty natural runs did not repeat the baseline
+(game 3537) arrival by chance, so the stubbed short path is the reproduction, as plan 5.2 allows.
+
+| Beat | Result | Evidence |
+|---|---|---|
+| Reproduce the fault (stubbed short path, fix neutralised) | PASS | Game 4178: Grace's `_planMovePath` stubbed to end ~35 % along her office->lounge route and the SIMS-2 check neutralised in-browser (old "any arrival counts"): she enters `using lounge_sofa` 164 px from the sofa cell, out in the office (`64 arrival  334`, `65 using lounge_sofa`). `stub-legacy-4178.png` |
+| The fix on the same stubbed short path | PASS | Game 4178: real fix, same stub — the arrival is logged `arrival_far` and no `using` fires at the door (`79 arrival 261`, `80 arrival_far lounge_sofa`). `stub-fixed-4178.png` |
+| Every `using` within 48 px (natural play) | PASS | Game 4181: across 33 natural `using` entries the maximum distance from the move's cell was **37 px**, no offender over 48. `natural-end-4181.png` |
+| Tom's kitchen trips (office coffee off) | PASS | Game 4181: 18 of 20 forced caffeine trips reached `using` at a kitchen source, all within 48 px |
+| Grace's natural sofa runs | not captured | Game 4181: Grace's cross-room office->lounge walk did not reach `using lounge_sofa` within the manual-clock harness's per-run step budget (a harness/cross-room-navigation limit, the same class as SIMS-1's E-carry, not an arrival-fix fault); her exact fault is proved fixed by the stubbed-path beats above |
+
+Screenshots and `proof-*-<game>.json` in scratchpad `officelife-sims/s2/`.
+
 ## Engine findings
 
 0. **Fixed 2026-11-14 (SIMS-2, OLMP E6).** An NPC used an object from across the room (baseline
