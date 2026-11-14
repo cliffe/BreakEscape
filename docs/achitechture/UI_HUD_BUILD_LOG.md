@@ -89,3 +89,40 @@ Shots looked at: `m01-tutorial-held__390x844`, `m01-confirm-released__390x844`, 
 
 - n2 (arrow does not follow movement) and n3, n4 (older behaviour) untouched.
 - On a phone held upright with the phone open, a toast or another contact's text covers the phone's header row (not its replies or back button, which hit-test clear). Holding those too would be a change to the m04 decision.
+
+## Fix round 2 (review R2: 4 M, 1 m)
+
+Main 1f3ac1f0b merged in first, no conflicts (9fd12dbb0). Code d2874ff6b, toast hide fix 45c2e2296.
+
+- M1. `npc-barks.js` `drainDeferredBarks`: when it finds a hold, it now starts `_watchDialogHold()` before it returns, so a minigame that closes under a dialog leaves the dialog's watch running and the queue goes when the dialog closes (the watch does nothing if no dialog is open; a minigame still drains on its own close).
+- M2 (coordinator's decision). On the phone layout (`body.hud-compact`), `_shouldDefer` holds every bark while phone chat is open, texts from other contacts included; they go in order when the phone closes (the existing close drain). A text already showing when the phone opens sits under it (`css/npc-barks.css`, z 1400), so it cannot take a tap. `phone-chat-ui.js`: `refreshBackUnread()` puts an unread count on the back button (unread texts and missed calls in the phone's other threads, the list's `unread-badge` look, aria label "Back, n unread"); called from `showConversation` and from `showBark` while the phone is open. `listContacts` and `unreadCountFor` are shared with the contact list, which keeps its badges. Wide screens keep the m04 rule. The count also shows on wide screens (it reads history, so it is right there too).
+- M3. `.tutorial-overlay .tutorial-panel` added to `DIALOG_SELECTORS` (the coordinator's call, not the reviewer's lane option): barks wait while a step panel shows and go in order after, through the dialog watch.
+- M4. A finished-task or aim line (`.notification.brief`) has priority in the notify lane (`hud-lanes.js` `applyLanes`): caption and texts step aside first (as before), then the other toasts, oldest first, stay aside while a brief line shows (countdown paused and resumed, `notifications.js` `laneYieldHandler`, at least 1.5 s on return); if the brief line still does not fit, `computeLanes` takes `notifyFloor` and gives the notify lane its height whole, the message lane keeping the rest (lanes still never meet). A brief toast no longer queues behind the one-toast limit (it shows at once with the pill's blink; R2 n3). `.notification.hud-lane-yield` needs `!important`: `css/utilities.css` has `.show { display: block !important }`.
+- m1. Phones held upright (`max-width 899.98px`, `min-height 501px`, portrait): the pill's aim wraps to two lines, clamped with an ellipsis after that; width unchanged, so it stays 8 px clear of the menu buttons. ca01's "Send the email in Derek's name" and m01's "Establish Access" now read in full at 390 and 360.
+- n1. The CSS comment now says how its list and `DIALOG_SELECTORS` differ.
+
+### Tests
+
+Each file alone with plain node: 71 files (the R2 list plus every test reading a changed module), 872 pass, 0 fail. ui-hud-lanes 35 (8 new: M1 sequence, M2 hold and order, M2 back count, M3 hold and order, M4 floor, M4 toast step-aside, M4 brief does not queue, m1 CSS), bark-release-policy 31 (1 new: person-chat hold, dialog opens, minigame closes, dialog closes, released in order; its stub `dialogLayerOpen` now reads `globalThis.__dialogOpen`), bark-lifetime 7, engine-fixes-round6, toast-once-across-panel-handover, npc-bark-delay 20, phone-call-bark-hold 2: all green.
+
+### Proof (keyless server :3460, fresh games 3829 m01_first_contact, 3831 ca01_invoice_fraud)
+
+Scripts and shots: scratchpad `ui-hud-f2/` (`sweep.sh`, `scene.js`, `watch.js`, `shots/`, `sweep-m01.txt`, `sweep-ca01.txt`). The sampler (`watch.js`) now fails a run on any overlap and on any line cut by its lane for three samples in a row (750 ms; a line sliding in is cut for one sample at most).
+
+| size | m01 | ca01 | pill aim (lines, full) |
+| --- | --- | --- | --- |
+| 390x844 | pass | pass | m01 1, ca01 2, both full |
+| 360x640 | hearts x Block 24 px only (R1 n3, older) | pass | m01 2, ca01 2, both full |
+| 844x390 | pass | pass | 1, full |
+| 915x412 | pass | pass | 1, full |
+| 800x600 | pass | pass | 1, full |
+| 1400x1000 | pass | pass | open panel |
+
+360x640 m01 (error toast, finished task, phone text, speech, caption): the error toast stepped aside (display none), the brief line 84 to 172 whole, the lane 96 px, speech 328 to 448 whole, text and caption aside; the error toast came back at 3.1 s into the sample with time left.
+
+### Handover (stopped at the coordinator's handover call)
+
+Done: all five code items, unit tests, size sweeps above, all committed.
+Not done (live, scripts written and untried): `ui-hud-f2/fix2.sh <game> <tag> WxH m1 m2 m2toast m3` drives `m1seq.js` (phone holds speech, confirm, phone closes, Stay clicked: bark should release), `m2phone.js` and `m2back.js` (second sender's text showing before the phone opens and two more while open; back badge, hit tests at back, header and replies, real tap on back, release order on close) at 390x844, 360x640, 844x390, 915x412, and `m3tut.js` (tutorial relaunch, three barks, Skip clicked, release order). Fresh m01 game 3830 is unused for these. m2phone registers `r2_second` via `registerNPC` if m01's phone has one contact only; check that registration works and that the back badge counts it.
+Files: `js/systems/npc-barks.js` (`_shouldDefer` ~227, `drainDeferredBarks` ~296, `_refreshPhoneUnread`, `compactHud` at the end), `js/ui/hud-lanes.js` (`DIALOG_SELECTORS` 97, `computeLanes` floor ~150, brief priority in `applyLanes` ~345), `js/systems/notifications.js` (`laneYieldHandler` ~225, brief no-wait ~390), `js/minigames/phone-chat/phone-chat-ui.js` (`listContacts`, `unreadCountFor`, `refreshBackUnread` ~590 to 660), CSS in npc-barks, notifications, objectives, phone-chat-minigame.
+Gotcha: any new hide class on a toast needs `!important` (utilities.css `.show`).
