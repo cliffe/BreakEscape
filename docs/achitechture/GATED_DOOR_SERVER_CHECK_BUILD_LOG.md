@@ -1080,3 +1080,5 @@ real objects rather than left to the structural argument.
 
 No production code changed: the behaviour was already correct and is now covered. The Chunk E
 "Open / not done" entry above is closed.
+
+UID-only test review R1 (GATED_UID_TEST_REVIEW_R1.md): SHIP, 0 blockers, 0 majors, 3 minors. The after-promotion UID path is proven by contents and unlockedObjects only. The fixture's one task is credited by the gate, so unlock_object task completion and re-post idempotency are not exercised here; gated_door_credit_controller_test covers both generically. The other two minors (a weak empty-list equality, Len's unused unlockDoor mapping kept for realism) are left as they are.
