@@ -33,8 +33,10 @@ import { workstationPopupOpen } from '../../utils/overlay-open.js';
 import {
     clickWorld, pressKey as rawPressKey, keyDown, keyUp,
     sleepFrames, sleep, worldToClient, isWorldPointOnScreen,
-    clickElement as clickElementDom
+    clickElement as clickElementDom, getScene
 } from './input.js';
+import { chooseAimPoint } from './aim.js';
+import { opaqueAt } from '../tap-pick.js';
 import { reachX } from '../interaction-reach.js';
 import { wallClearFrom, sameRoomFrom } from '../interaction-walls.js';
 import { getState, scanNearby, activeMinigameSummary, detectBlockingUi, sessionOverlayShowing, sessionOverlayButtons, interactionMenuState, solveStandingPoint, engineInteractDistance, plainNearestEntity, roomContents, doorways } from './state.js';
@@ -69,8 +71,13 @@ function interactableNear(x, y) {
     // were hijacked and the player ended up 100+px from where it was sent.
     const p = window.player;
     const rooms = window.rooms || {};
+    // A 2px margin: the engine turns the click back into world coordinates
+    // from the pointer's pixel and the camera scroll at its next step, so a
+    // point a fraction outside an edge can land on it (sis01: a staging click
+    // checked as just clear of the trolley PC opened it).
+    const M = 2;
     const inBounds = (s) => {
-        try { const b = s.getBounds(); return x >= b.left && x <= b.right && y >= b.top && y <= b.bottom; }
+        try { const b = s.getBounds(); return x >= b.left - M && x <= b.right + M && y >= b.top - M && y <= b.bottom + M; }
         catch (e) { return false; }
     };
     const inReach = (s) => p && Math.hypot(s.x - p.x, s.y - p.y) <= INTERACTION_RANGE;
@@ -462,6 +469,139 @@ function findEntity(id) {
     return scanNearby(Infinity, 5000).find(e => e.id === id) || null;
 }
 
+const doorIdOf = (d) => (d?.doorProperties ? `door:${d.doorProperties.roomId}->${d.doorProperties.connectedRoom}` : null);
+const doorPairOf = (d) => [d.doorProperties.roomId, d.doorProperties.connectedRoom].sort().join('|');
+const boundsOf = (s) => {
+    try { const b = s.getBounds(); return { left: b.left, top: b.top, right: b.right, bottom: b.bottom }; }
+    catch (e) { return null; }
+};
+
+/** The live sprite behind a scan entity (object, NPC or the nearest sprite of a door). */
+function liveSpriteFor(entity) {
+    if (!entity) return null;
+    if (entity.kind === 'object') return findSpriteById(entity.id);
+    let best = null, bestD = Infinity;
+    for (const room of Object.values(window.rooms || {})) {
+        const list = entity.kind === 'npc' ? (room.npcSprites || []) : entity.kind === 'door' ? (room.doorSprites || []) : [];
+        for (const s of list) {
+            if (!s) continue;
+            const sid = entity.kind === 'npc' ? s.npcId : doorIdOf(s);
+            if (sid !== entity.id) continue;
+            const d = Math.hypot(s.x - entity.x, s.y - entity.y);
+            if (d < bestD) { bestD = d; best = s; }
+        }
+    }
+    return best;
+}
+
+/**
+ * Everything other than `target` that could claim a tap, in aim.js terms.
+ * Reach is the engine's own test (isObjectInInteractionRange) where it is
+ * exposed, so the slop rule matches what the engine will gather.
+ */
+function otherClaimants(target) {
+    const p = window.player;
+    const engineReach = window.isObjectInInteractionRange;
+    const inReach = (s) => (typeof engineReach === 'function'
+        ? !!engineReach(s)
+        : !!p && Math.hypot(s.x - p.x, s.y - p.y) <= INTERACTION_RANGE);
+    const ko = window.npcHostileSystem;
+    const targetPair = target?.doorProperties ? doorPairOf(target) : null;
+    const out = [];
+    for (const room of Object.values(window.rooms || {})) {
+        for (const o of Object.values(room.objects || {})) {
+            if (!o || o === target || !o.active || !o.visible || !o.interactable) continue;
+            out.push({ id: o.scenarioData?.id || o.objectId || null, kind: 'object', bounds: boundsOf(o),
+                x: o.x, y: o.y, inReach: inReach(o), swivel: !!o.isSwivelChair });
+        }
+        for (const s of (room.npcSprites || [])) {
+            if (!s || s === target || s.destroyed || !s.visible || !s._isNPC) continue;
+            if (ko && s.npcId && ko.isNPCKO(s.npcId)) continue;
+            out.push({ id: s.npcId || null, kind: 'npc', bounds: boundsOf(s), x: s.x, y: s.y, inReach: inReach(s) });
+        }
+        for (const d of (room.doorSprites || [])) {
+            if (!d || d === target || !d.active || d.scene === null || !d.doorProperties) continue;
+            // The far side's sprite of the target's own doorway is the same door.
+            if (targetPair && doorPairOf(d) === targetPair) continue;
+            const shutInReach = !d.doorProperties.open && !!p
+                && Math.hypot(d.x - p.x, d.y - p.y) <= DOOR_INTERACTION_RANGE;
+            out.push({ id: doorIdOf(d), kind: 'door', bounds: boundsOf(d), x: d.x, y: d.y, inReach: shutInReach });
+        }
+    }
+    return out;
+}
+
+/**
+ * The world point interact() clicks for `entity`: inside its own bounds, on
+ * its own pixels where possible, and claimed by nothing else (aim.js). Falls
+ * back to the entity position when there is no live sprite.
+ */
+function aimPointFor(entity) {
+    const sprite = liveSpriteFor(entity);
+    const bounds = sprite ? boundsOf(sprite) : null;
+    if (!bounds) return { x: entity.x, y: entity.y, clean: null, fallback: 'no-sprite-bounds' };
+    const scene = getScene();
+    const tm = scene?.textures;
+    const alphaAt = tm?.getPixelAlpha ? (x, y, key, frame) => tm.getPixelAlpha(x, y, key, frame) : null;
+    const others = otherClaimants(sprite);
+    const pick = chooseAimPoint({ bounds, x: sprite.x, y: sprite.y }, others, {
+        onScreen: (x, y) => isWorldPointOnScreen(x, y),
+        opaque: alphaAt ? (x, y) => { try { return opaqueAt(sprite, x, y, alphaAt); } catch (e) { return true; } } : null
+    });
+    if (!pick) return { x: entity.x, y: entity.y, clean: null, fallback: 'no-point-on-screen' };
+    const named = (ids) => ids.map(rid => {
+        const o = others.find(c => c.id === rid);
+        return { id: rid, kind: o ? o.kind : null };
+    });
+    const result = { x: pick.x, y: pick.y, clean: pick.clean, onPixels: pick.onPixels };
+    if (!pick.clean) {
+        result.sharedWith = named(pick.rivals);
+        result.hint = 'No point of this target is free of other interactables; the engine will raise '
+            + 'the disambiguation menu (picked by name) or act on the nearest claimant.';
+    }
+    return result;
+}
+
+/**
+ * A move is only a move: if the engine acted on anything while it ran (an
+ * object, NPC or door handler, or a minigame opened), mark the result failed
+ * and say what, so a walk that opened a PC on the way is never read as a
+ * clean arrival. Mutates and returns `res`.
+ */
+function flagTriggeredMove(res, sinceT) {
+    const rec = engineTargets.find(r => r.t >= sinceT);
+    const mg = activeMinigameSummary();
+    if (!rec && !mg) return res;
+    res.ok = false;
+    res.reason = 'move-triggered-interaction';
+    res.triggered = rec ? { kind: rec.kind, id: rec.id, name: rec.name } : { kind: 'minigame' };
+    if (mg) res.triggered.opened = { id: mg.id, title: mg.title || null };
+    res.hint = 'The walk made the engine act on something (see triggered). Close what opened before '
+        + 'carrying on; moveToNear walks without clicking, so prefer it for positioning.';
+    return res;
+}
+
+/**
+ * What the engine was handed for the current interact() (the first handler
+ * record since it started), or the door a lock minigame names. Null when the
+ * engine acted on nothing the bridge can see.
+ */
+function pickedTarget(entity) {
+    const rec = engineTargets.find(r => r.t >= interactStartT);
+    if (rec) {
+        const out = { kind: rec.kind, id: rec.id, name: rec.name };
+        if (entity && entity.id) out.matches = rec.kind === entity.kind && (!rec.id || rec.id === entity.id);
+        return out;
+    }
+    const dp = window.MinigameFramework?.currentMinigame?.params?.lockable?.doorProperties;
+    if (dp) {
+        const id = `door:${dp.roomId}->${dp.connectedRoom}`;
+        return { kind: 'door', id, name: dp.door_sign || null, via: 'lock-minigame',
+            matches: entity ? id === entity.id : undefined };
+    }
+    return null;
+}
+
 /**
  * Refuse main-world actions while a minigame owns the screen.
  * The engine has literally disabled scene input in that state
@@ -535,14 +675,54 @@ const bridge = {
      * teleport, and must never be turned into `player.setPosition(x, y)` or
      * `player.body.reset(x, y)`. If you are tempted, you are removing the only
      * thing this function proves.
+     *
+     * `pointer: false` takes the same pathfinder call on screen too, for
+     * callers that only need to be somewhere (moveToNear): a click is never
+     * sent, so the walk cannot open whatever lies under or near the point.
+     *
+     * Any move that ends with the engine having acted on something (an object,
+     * NPC or door handler ran, or a minigame opened) returns ok:false with
+     * reason 'move-triggered-interaction' and names it in `triggered`.
      */
-    async moveTo(x, y, { timeoutMs = 20000, wait = true } = {}) {
+    async moveTo(x, y, { timeoutMs = 20000, wait = true, pointer = true } = {}) {
         const blocked = blockedByMinigame();
         if (blocked) return blocked;
         if (!window.player) return fail('no-player');
+        ensureTargetRecorder();
+        const moveStartT = performance.now();
+        const checked = (res) => flagTriggeredMove(res, moveStartT);
 
         const onScreen = isWorldPointOnScreen(x, y);
         let via;
+        if (!pointer) {
+            // A click also drops a pending far-tap use; do the same, or an
+            // earlier interact()'s queued use would fire on arrival.
+            if (typeof window.__clearPendingTapUse === 'function') window.__clearPendingTapUse();
+            via = 'pathfinder-direct(no-click)';
+            movePlayerToPoint(x, y);
+            if (!wait) {
+                const started = { ok: true, via, waited: false };
+                logAction('moveTo', { x, y }, started);
+                return started;
+            }
+            const arrival = await waitForMovementEnd({ timeoutMs });
+            const feet = playerFeet();
+            const distanceToTarget = Math.round(Math.hypot(feet.x - x, feet.y - y));
+            const res = checked({
+                ok: arrival.ok, via,
+                reason: arrival.ok ? undefined : arrival.reason,
+                blocked: arrival.blocked,
+                target: { x, y },
+                arrivedAt: { x: Math.round(window.player.x), y: Math.round(window.player.y) },
+                feetAt: { x: Math.round(feet.x), y: Math.round(feet.y) },
+                distanceToTarget,
+                reachedTarget: distanceToTarget <= TILE_SIZE / 4,
+                shortfall: distanceToTarget > TILE_SIZE / 4 ? distanceToTarget : undefined,
+                elapsedMs: arrival.elapsedMs
+            });
+            logAction('moveTo', { x, y }, res);
+            return res;
+        }
         // A world click is not a movement primitive. If the destination falls
         // within the engine's gather radius of an interactable, the click acts
         // on that interactable instead of moving — opening a note or an NPC
@@ -579,6 +759,7 @@ const bridge = {
                 staged
             };
             if (!res.reachedTarget) res.shortfall = res.distanceToTarget;
+            checked(res);
             logAction('moveTo', { x, y }, res);
             return res;
         }
@@ -625,6 +806,7 @@ const bridge = {
             shortfall: distanceToTarget > TILE_SIZE / 4 ? Math.round(distanceToTarget) : undefined,
             elapsedMs: arrival.elapsedMs
         };
+        checked(result);
         logAction('moveTo', { x, y }, result);
         return result;
     },
@@ -672,7 +854,13 @@ const bridge = {
         // on the spot.
         const feetNow = playerFeet();
         const feetOffset = { x: feetNow.x - window.player.x, y: feetNow.y - window.player.y };
-        const moved = await bridge.moveTo(spot.x + feetOffset.x, spot.y + feetOffset.y, { timeoutMs });
+        // No click: a click on the way can land on (or within tap slop of)
+        // something the player passes, and the engine then opens it (sis01:
+        // the staging click for Ravi landed on the trolley PC's edge and
+        // opened its ransomware screen). The pathfinder call is the one a
+        // plain-move click makes, so the walk itself is the same.
+        const moveStartT = performance.now();
+        const moved = await bridge.moveTo(spot.x + feetOffset.x, spot.y + feetOffset.y, { timeoutMs, pointer: false });
         // A click stops up to 8px short and pathfinding can stop short of an
         // unreachable feet cell, so the sprite can land at the edge of range.
         // Close the rest on the arrow keys (real input), straight at the
@@ -705,9 +893,11 @@ const bridge = {
             id,
             reason: after.inRange ? undefined : (after.otherRoom ? 'different-room' : 'arrived-but-still-out-of-range'),
             // Where the sprite centre was meant to end up (the engine's measure
-            // point), and the feet target actually clicked to get it there.
+            // point), and the feet target walked to to get it there (the field
+            // keeps its old name for existing callers; nothing is clicked now).
             aimedAt: { x: Math.round(spot.x), y: Math.round(spot.y) },
             clickedFeetTarget: { x: Math.round(spot.x + feetOffset.x), y: Math.round(spot.y + feetOffset.y) },
+            moveVia: moved.via,
             predictedDistance: Math.round(spot.predictedDistance),
             arrivedAt: moved.arrivedAt,
             moveShortfall: moved.shortfall,
@@ -749,6 +939,10 @@ const bridge = {
                 + 'interact() and keyboard "i" will both select that rival instead. Use the disambiguation '
                 + 'menu (interact again and choose by name), and do not record a plain interact here as a pass.';
         }
+        // The nudges are arrow keys and the walk sends no click, so nothing
+        // should have been acted on. Check anyway (a timed event can open a
+        // minigame mid-walk) and never report that as a clean arrival.
+        flagTriggeredMove(result, moveStartT);
         logAction('moveToNear', { id }, result);
         return result;
     },
@@ -916,6 +1110,15 @@ const bridge = {
         if (!entity) return fail(`unknown-entity:${id}`);
         ensureTargetRecorder();
         interactStartT = performance.now();
+        // Every result says where the click went and what the engine was
+        // actually handed, so a caller never has to infer it from what opened.
+        let aim = null;
+        const done = (result) => {
+            if (aim) result.aim = aim;
+            result.picked = pickedTarget(entity);
+            logAction('interact', { id }, result);
+            return result;
+        };
 
         // Out of range and off camera: walk into view first, or the pointer
         // event has nowhere valid to land.
@@ -935,12 +1138,14 @@ const bridge = {
                     + 'player interact with things in the room they stand in (doors excepted). Walk into that room '
                     + '(moveToNear does) and interact again.'
             });
-            logAction('interact', { id }, result);
-            return result;
+            return done(result);
         }
 
         let sinceSeq = currentSeq();
-        await clickWorld(entity.x, entity.y);
+        // Not entity.x/y: for scenario objects that is the top-left corner,
+        // which can sit inside a neighbour's hit box (see aim.js).
+        aim = aimPointFor(entity);
+        await clickWorld(aim.x, aim.y);
 
         // The click may have raised the disambiguation menu instead of acting,
         // if other interactables were within tap slop. Pick our target from it.
@@ -951,20 +1156,17 @@ const bridge = {
             const result = picked.ok
                 ? withConfirmation({ id, mode: 'via-interaction-menu', chose: picked.chose, entity }, await confirmEffect(menuSeq), entity)
                 : fail('interaction-menu-open', { id, menu: interactionMenuState(), entity });
-            logAction('interact', { id }, result);
-            return result;
+            return done(result);
         }
 
         if (entity.inRange) {
             const result = withConfirmation({ id, mode: 'direct', entity }, await confirmEffect(sinceSeq), entity);
-            logAction('interact', { id }, result);
-            return result;
+            return done(result);
         }
 
         if (!approach) {
             const result = { ok: true, id, mode: 'approach-only', entity };
-            logAction('interact', { id }, result);
-            return result;
+            return done(result);
         }
 
         // The click started a walk toward the entity. Wait for it to finish,
@@ -982,8 +1184,7 @@ const bridge = {
         if (earlyChk && earlyChk.verified) {
             const result = withConfirmation({ id, mode: 'approach-click-acted', entity },
                 { confirmed: true, via: 'minigame' }, entity);
-            logAction('interact', { id }, result);
-            return result;
+            return done(result);
         }
         if (early && !engineTargets.some(r => r.t >= interactStartT)) {
             // A minigame opened during the walk that nothing ties to this click.
@@ -994,14 +1195,12 @@ const bridge = {
                     + '(a timed or forced event, or an earlier interaction\'s delayed open, such as a pickup '
                     + 'then open). Deal with it, close it, then interact again.'
             });
-            logAction('interact', { id }, result);
-            return result;
+            return done(result);
         }
         if (engineTargets.some(r => r.t >= interactStartT)) {
             const result = withConfirmation({ id, mode: 'approach-click-acted', entity },
                 { confirmed: true, via: early ? 'minigame' : 'engine-record' }, entity);
-            logAction('interact', { id }, result);
-            return result;
+            return done(result);
         }
         let after = findEntity(id);
         if (!after) return fail(`entity-vanished:${id}`);
@@ -1024,20 +1223,19 @@ const bridge = {
                 hint: `Arrived within reach of "${after.name || id}" but in ${window.currentPlayerRoom || 'another room'}, `
                     + `not ${after.room || 'its room'}; the game refuses cross-room interaction.`
             });
-            logAction('interact', { id }, result);
-            return result;
+            return done(result);
         }
         if (!after.inRange) {
             const result = fail('still-out-of-range', {
                 id, distance: after.distance, range: after.kind === 'door' ? DOOR_INTERACTION_RANGE : INTERACTION_RANGE, entity: after,
                 hint: 'Player could not get close enough — the target may be behind a collider.'
             });
-            logAction('interact', { id }, result);
-            return result;
+            return done(result);
         }
         sinceSeq = currentSeq();
         interactStartT = performance.now();
-        await clickWorld(after.x, after.y);
+        aim = aimPointFor(after);
+        await clickWorld(aim.x, aim.y);
         await sleepFrames(4);
         if (interactionMenuState()) {
             const menuSeq = currentSeq();
@@ -1045,12 +1243,10 @@ const bridge = {
             const r2 = picked.ok
                 ? withConfirmation({ id, mode: 'approached-then-menu', chose: picked.chose, entity: after }, await confirmEffect(menuSeq), after)
                 : fail('interaction-menu-open', { id, menu: interactionMenuState(), entity: after });
-            logAction('interact', { id }, r2);
-            return r2;
+            return done(r2);
         }
         const result = withConfirmation({ id, mode: 'approached-then-interacted', entity: after }, await confirmEffect(sinceSeq), after);
-        logAction('interact', { id }, result);
-        return result;
+        return done(result);
     },
 
     /**
