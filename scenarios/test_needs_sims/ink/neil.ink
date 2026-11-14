@@ -2,10 +2,10 @@
 // choice below. Gating the ask on it stops Neil promising a second print that never comes (M4).
 VAR neil_print_asked = false
 // neil_page_on_tray mirrors the change-log slot: an eventMapping sets it true when the page lands
-// (object_revealed:it_out_a) and false when the player takes it (item_picked_up). The engine owns
-// the slot's own reveal global, so we keep this flag instead. The "ready" line below branches on it
-// so Neil only claims the page is on the tray when it really is: not yet printed, taken, or lost on
-// a reload all read false (R2 M2).
+// (object_revealed:it_out_a), the page's onRead clears it when the player takes it, and a
+// game_loaded mapping clears it on reload. The engine owns the slot's own reveal global, so we keep
+// this flag instead. The "ready" line below branches on it so Neil only claims the page is on the
+// tray when it really is: not yet printed, taken, or after a reload all read false (R2 M2).
 VAR neil_page_on_tray = false
 
 === start ===
