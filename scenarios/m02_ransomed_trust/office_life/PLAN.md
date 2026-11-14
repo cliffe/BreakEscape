@@ -420,7 +420,7 @@ Run `ruby scripts/generate_dungeon_graph.rb scenarios/m02_ransomed_trust/scenari
 
 - `locks` (ids, lock types and requirement hashes), `gatesAccessWearable`, `objectives` and `concludeRequires`: **unchanged**;
 - the aim chain: unchanged at 4 hops;
-- `graph`: unchanged, or at most new item nodes and their room edges for `gary_mug` and `it_copier_page` (stage 4 records which the graph draws); no new lock, key, door or gate, and no edge into an existing lock or key. Anything else fails the check.
+- `graph`: expected unchanged, because the mug and the page have no `puzzle_graph_role` and the new NPCs hold nothing (`generate_dungeon_graph.rb:248` to `:251`); if the graph does draw an item node and room edge for either, stage 4 records it as the only allowed change; no new lock, key, door or gate, and no edge into an existing lock or key. Anything else fails the check.
 
 ### 10.8 Documents
 
