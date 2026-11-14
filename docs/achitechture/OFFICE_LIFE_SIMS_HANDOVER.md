@@ -1,5 +1,32 @@
 # Office life sims showcase: handover
 
+## Lead's state, 2026-11-14 (read this first)
+
+Branches and worktrees:
+- `build/ol-sims` (worktree `p-ol-sims`, tip 98ddacd14 or later): SIMS-1 to SIMS-3 with both review
+  rounds and fixes; main d69c29089 merged.
+- `build/ol-sims-2` (worktree `p-ol-sims2`): SIMS-4 (5c1447beb, 033d90227 and proof-tool commits up to
+  174b094e0). Not yet merged into build/ol-sims; expect a `neil.ink` conflict around the hub (SIMS-3's
+  ask/ready/exit rework against SIMS-4's flickering-light choice) and README/build-log conflicts.
+- `proto/ol-e7-e9` (worktree `p-ol-e7e9`): E7, E8, E9 prototypes (09f3fe0b8, 512d51caf, 7850759d1) and
+  the approval note as build plan section 10 (3a32d7708). Never merge without the owner's decision.
+
+Slice status (B/M/m open after the last round):
+- SIMS-1: 2 design + 2 server rounds; all findings fixed; 0/0/0 open. Owner items in the build log.
+- SIMS-2: 2 + 2 rounds; R2 design minors fixed (docs); 0/0/0 open. Includes the offWhen copy fix.
+- SIMS-3: 2 + 2 rounds; R2 findings fixed in 98ddacd14's batch, not re-reviewed (a third round is
+  optional).
+- SIMS-4: built, first_visit/job_beat/cooler_cross proved; the full counts, the 20-minute schedule
+  run (game 4360) and the speech-lock count (game 4369) ran detached from a stopped agent. Collect them
+  with `python3 <scratchpad>/officelife-sims/s4/finish/aggregate.py` and the two report-sr-*.json files
+  (see `OFFICE_LIFE_SIMS_HANDOVER_SIMS4.md` on build/ol-sims-2), update README and build log, then
+  two review rounds (design with live proof; server/sync).
+- SIMS-5 (validator V10): not started.
+
+Next, in order: collect SIMS-4's results and fix anything they show; merge build/ol-sims-2 into
+build/ol-sims (resolve neil.ink by hand, recompile, rerun the Neil and staff-room proofs once);
+SIMS-4 reviews and fixes; SIMS-5 build, proof and two review rounds. Ports 3093-3095.
+
 Branch `build/ol-sims`, worktree `.claude/worktrees/p-ol-sims`, merged with main 5edb17541 (format 3).
 Ports for this work: 3093-3095 only. No server is left running.
 
