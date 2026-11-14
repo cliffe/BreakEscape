@@ -1025,10 +1025,42 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
             ? ((this.choices.check && this.choices.check.hostId) || '')
             : (this.choices.domainId || '');
         writeGlobal(`landing_${this.pageId}_domain`, domainValue);
+
+        // Record the build server-side so the gate reads the server's own recomputed verdict,
+        // not the client's (PHISH_EVIDENCE_SERVER_PLAN.md section 3.2, Route 1). Fire-and-forget
+        // after the local writeGlobal so the UI is unchanged; the server recomputes the score
+        // from these choices and ignores any client verdict. Guarded so the builder still runs
+        // headless (no window/fetch) in tests. The promise is kept so the send path can await
+        // the build landing before it posts (plan section 10).
+        this._buildPost = this._recordBuildOnServer();
+
         this._attached = true;
         this._announce('Page attached.');
         this.gameResult = this.closeResult();
         this.complete(true);
+    }
+
+    /**
+     * POST the build to the server (phish evidence plan, Route 1). Returns the fetch promise, or
+     * null when there is no server to reach (headless tests, no config). The body carries the
+     * page id, the target and the raw choices only; the server recomputes the verdict. Non-
+     * blocking: a failure never stops the player attaching the page.
+     */
+    _recordBuildOnServer() {
+        try {
+            const cfg = (typeof window !== 'undefined') ? window.breakEscapeConfig : null;
+            if (!cfg || !cfg.apiBasePath || typeof fetch !== 'function') return null;
+            const token = cfg.csrfToken ||
+                ((typeof document !== 'undefined') ? document.querySelector('meta[name="csrf-token"]')?.content : '') || '';
+            return fetch(`${cfg.apiBasePath}/se/landing_page`, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-Token': token },
+                body: JSON.stringify({ pageId: this.pageId, targetId: this.targetId, choices: this.choices })
+            }).catch(() => null);
+        } catch (e) {
+            return null;
+        }
     }
 
     // ── nested launch, exit ────────────────────────────────────────────────────
