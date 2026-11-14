@@ -308,17 +308,6 @@
     border: 4px solid rgba(255,255,255,0.3);
 }
 
-/* Action buttons container */
-.notes-minigame-buttons-container {
-    position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 15px;
-    z-index: 10;
-}
-
 
 /* Edit interface styles */
 .notes-minigame-edit-textarea {

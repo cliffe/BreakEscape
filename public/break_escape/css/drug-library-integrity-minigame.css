@@ -294,20 +294,6 @@
   gap: 10px;
 }
 
-.dli-investigate-btn {
-  padding: 6px 14px;
-  background: #1c1600;
-  border: 2px solid #ccaa00;
-  border-radius: 0;
-  color: #ccaa00;
-  font-family: 'VT323', monospace;
-  font-size: 16px;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.dli-investigate-btn:hover { background: #2a2000; }
-
 .dli-backup-btn {
   padding: 6px 14px;
   background: #0a1a0f;
