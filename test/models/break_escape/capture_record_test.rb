@@ -154,7 +154,8 @@ module BreakEscape
     # Chunk C (plan section 6): phish_evidence_fingerprint and each_stored_sent_message are retired
     # with the sync's phish stamp branch (the gate reads the two server stores, written by the two
     # gated routes, never the client globals or the stored mailbox). Their stability and memoisation
-    # tests retire with them; the new reader is proven in phish_reader_test and the route and
-    # migration tests.
+    # tests retire with them; the new reader is proven in capture_proofs_test (the chunk C serving
+    # tests), the two route tests (se_landing_page_build_test, se_phish_send_test) and the legacy
+    # import tests (phish_legacy_migration_test and phish_legacy_migration_controller_test).
   end
 end

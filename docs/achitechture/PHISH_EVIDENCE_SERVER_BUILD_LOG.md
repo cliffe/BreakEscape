@@ -934,3 +934,29 @@ port 3665 confirmed down.
 - **(h) re-drive downgrade refused. PASS. Game 4624.** A convincing build is recorded, then a
   hand-crafted `POST se/landing_page` with `redrive:true` and weak choices. The server keeps the
   stronger verdict (`meetsThreshold:true`, credibility 87 unchanged) and the answer reports it.
+
+### Review R1 minors (test hygiene, no app code)
+
+Closes the three Minors from `PHISH_EVIDENCE_CHUNK_C_REVIEW_R1.md`.
+
+- **Minor 1 (co-migration untested).** Added two controller tests in
+  `phish_legacy_migration_controller_test.rb`. The first drives a pure pre-store save holding both
+  legacy globals (`globalVariables.se_captures` for lord and `globalVariables.se_landing_pages` with
+  convincing choices and `victim.submitted`), with no top-level `seCaptures` and no server stores: one
+  bootstrap recreates the capture, fills the two stores, stamps proven and consumes the capture
+  global, and `capture_secrets` serves `Sofia2026!`. The withheld twin uses a tier-0 domain (below
+  the page's `minDomainTier`); since the legacy capture global proves `proven: true` regardless of the
+  build, the twin carries the capture as a top-level unproven claim instead and lets the
+  phish-evidence gate decide, so the server re-derives `meetsThreshold: false`, no send lands and the
+  secret is withheld.
+- **Minor 2 (dead helper, fast path unpinned).** Added a `capture_proofs_test.rb` test that uses the
+  previously dead `count_scenario_loads` helper to assert a plain sync (no capture, no legacy global)
+  loads no scenario, while a capture-bearing sync loads one.
+- **Minor 3 (stale comment).** Corrected the retirement comment in `capture_record_test.rb` to name
+  the real reader-covering files (`capture_proofs_test`, `se_landing_page_build_test`,
+  `se_phish_send_test`, `phish_legacy_migration_test`, `phish_legacy_migration_controller_test`); there
+  is no `phish_reader_test`.
+
+Verification (single files, no suites, no server): `phish_legacy_migration_controller_test`,
+`capture_proofs_test`, `capture_record_test`, `phish_legacy_migration_test` and `captures_sync_test`
+together, 74 runs, 376 assertions, 0 failures.

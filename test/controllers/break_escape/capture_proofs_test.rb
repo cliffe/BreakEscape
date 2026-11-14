@@ -455,6 +455,31 @@ module BreakEscape
       assert_equal({ 'phished' => 'Land-Secret-1' }, secrets, 'the populated server stores serve it')
     end
 
+    # Minor 2 (review R1): pin the plain-sync fast path. apply_capture_sync_step returns before
+    # stored_scenario_data when the request carries no capture and no legacy se_captures global
+    # (games_controller.rb:948), so a plain sync loads no scenario; a capture-bearing sync must load
+    # one to record the capture. count_scenario_loads counts the full scenario_data column loads.
+    test 'chunk C: a plain sync with no capture and no legacy global loads no scenario, a capture-bearing one does' do
+      build_game(phish_scenario)
+      # Prime the sync ring so later syncs are not the first (keeps the two counts comparable).
+      put game_path('sync_state'), params: { currentRoom: 'office', globalVariables: { 'poke' => 1 } }, as: :json
+      assert_response :success
+
+      plain_loads = count_scenario_loads do
+        put game_path('sync_state'), params: { currentRoom: 'office', globalVariables: { 'poke2' => 1 } }, as: :json
+        assert_response :success
+      end
+      assert_equal 0, plain_loads, 'a plain sync skips the scenario load'
+
+      capture_loads = count_scenario_loads do
+        put game_path('sync_state'), params: { globalVariables: { 'se_captures' => {
+          'phished' => { 'targetId' => 'phished', 'kind' => 'credential', 'at' => 1 }
+        } } }, as: :json
+        assert_response :success
+      end
+      assert_operator capture_loads, :>, 0, 'a capture-bearing sync loads the scenario to record it'
+    end
+
     # m4 (code review R1): phishTargets as a map, and a page with no capture block.
     test 'phishTargets as a map is read as the mail bridge reads it, and every target is declared' do
       data = { 'social' => { 'phishTargets' => { 'a' => { 'id' => 'tgt_a' }, 'b' => { 'id' => 'tgt_b', 'foothold' => {} } },
