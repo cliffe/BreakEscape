@@ -104,7 +104,8 @@
 .ib-h {
     margin: 0 0 8px;
     font-family: 'Press Start 2P', monospace;
-    font-size: 11px;
+    font-size: 16px;
+    line-height: 24px;
     font-weight: 400;
     color: #fff;
     text-shadow: 1px 1px 0 #000;
