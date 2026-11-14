@@ -8,9 +8,9 @@ module BreakEscape
   # The one-time legacy phish-evidence import over the real routes (chunk B,
   # docs/achitechture/PHISH_EVIDENCE_SERVER_PLAN.md sections 9.1, 14). The scenario bootstrap on a
   # legacy save takes the lock via legacy_phish_evidence?, runs migrate_legacy_phish_evidence!
-  # before the capture stamp in one locked pass, and (chunk B keeps the old client-evidence reader)
-  # stamps the capture off the client globals the save still holds. sync_state never runs it, and
-  # the server-owned phishEvidenceMigrated flag is never accepted from a sync body.
+  # before the capture stamp in one locked pass, so the stamp (now reading the two server stores
+  # the migration wrote, chunk C) proves the capture at once. sync_state never runs it, and the
+  # server-owned phishEvidenceMigrated flag is never accepted from a sync body.
   class PhishLegacyMigrationControllerTest < ActionDispatch::IntegrationTest
     CP = CaptureProofScenario
 
@@ -81,7 +81,29 @@ module BreakEscape
       assert_equal true, state.dig('seLandingPages', 'payroll_login', 'meetsThreshold'), 'the build store is populated'
       assert_equal true, state.dig('sePhishSends', 'lord/kit_payroll_page', 'landed'), 'the send store is populated'
       assert_equal true, state.dig('seCaptures', 'lord', 'proven'),
-                   'the stamp in the same locked pass proves the capture off the client evidence the save still holds'
+                   'the stamp in the same locked pass proves the capture off the two server stores the migration wrote'
+    end
+
+    # Chunk C: an honest legacy save with NO surviving sent mail (the mailbox cap trimmed it) now
+    # gets the credential on its first bootstrap. The migration imports the landed send off the
+    # durable victim.submitted marker and the re-derived build, and the chunk C reader reads that
+    # server store, so capture_secrets serves the secret with no stored sent message at all.
+    test 'an honest legacy save with no surviving sent mail is stamped and serves the secret on its first bootstrap' do
+      build_game(legacy_state(with_sent_mail: false))
+      refute @game.player_state.key?('mailState'), 'this old save kept no sent mail record'
+
+      get game_path('scenario'), as: :json
+      assert_response :success
+
+      state = @game.reload.player_state
+      assert_equal true, state.dig('sePhishSends', 'lord/kit_payroll_page', 'landed'),
+                   'the send is imported off the victim.submitted marker, not a sent mail record'
+      assert_equal true, state.dig('seCaptures', 'lord', 'proven'), 'the capture is stamped proven'
+
+      get "#{game_path('capture_secrets')}", as: :json
+      assert_response :success
+      assert_equal 'Sofia2026!', JSON.parse(response.body).dig('secrets', 'lord'),
+                   'the chunk C reader serves the secret off the migrated server store'
     end
 
     test 'the two server stores and the flag never ride the bootstrap back to the client' do

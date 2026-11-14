@@ -838,3 +838,68 @@ All six cases PASS.
   improved page then landed: `sePhishSends["lord/kit_payroll_page"].landed == true`. So a weak build is
   not frozen: a rebuild replaces its choices/verdict, and the send gate reads the current (improved)
   verdict.
+
+## Chunk C: the reader change and stamping
+
+The chunk that moves trust off the client. `phish_page_evidence_holds?` now reads only the two
+server-owned stores (plan section 6), and the retiring machinery goes with it.
+
+### What changed
+
+- `phish_page_evidence_holds?(page_id, target_id, scenario)` reads `seLandingPages` (built plus the
+  server's own `meetsThreshold`) and `sePhishSends` (a landed send to this target carrying one of
+  the page's authored link kits). It no longer reads `globalVariables.se_landing_pages`, the stored
+  mailbox or `victim.submitted`; the derived submission is exactly the two server facts holding
+  together. `extra_sent` is dropped from `phish_page_evidence_holds?`, `capture_evidence_holds?`,
+  `capture_revealable?` and `stamp_proven_captures!`.
+- Retired: `phish_evidence_fingerprint`, `phish_gated_unproven_captures?`, `each_stored_sent_message`
+  (capture_proofs.rb), `incoming_sent_messages` (game.rb, dead once `extra_sent` goes), and the dead
+  `phishGated` writes (the `record_capture!` `phish_gated` computation and the `store_capture_entry`
+  write). `captures_for_client` is an allowlist that never emitted `phishGated`, so it is unchanged.
+- The controller's phish-gating block in `apply_capture_sync_step` is removed: `@phish_fp_before`,
+  the `needs_stamp` fingerprint compare, and the `extra_sent` build and forward. The sync step now
+  runs only when it has a capture to record or a legacy `se_captures` global to migrate; a plain
+  `stamp_proven_captures!(scenario:)` stays (a capture recorded on a sync is still stamped off the
+  route-written stores). A `sync_state` can no longer advance the phish evidence.
+- Route stamping is unchanged from chunks A and B: `send_phish!` and the bootstrap already re-stamp,
+  so the capture is proven the instant the second route commits, with no wait for a sync.
+
+### A+B R2 minors folded in
+
+- **Minor 1 (reload re-drive must not downgrade a recorded build).** Option (b), the server-side
+  guard: the reload re-drive marks its build body `redrive: true`, and Route 1
+  (`record_landing_page_build!`) refuses to replace an existing `meetsThreshold: true` build with a
+  weaker verdict (threshold now failing, or lower credibility) when that flag is set. The server
+  trusts the flag only in the downgrade-refusing direction, so a client global that drifted weaker
+  than a correct server build cannot launder a weaker verdict over it on reload. A normal rebuild
+  (no flag) stays last-wins, so an honest deliberate weaken and an honest improve-after-weak (live
+  case f) both still apply. The client marks the re-drive in `redrivePhishEvidence` and threads the
+  flag through the build queue so a failed re-drive keeps the guard on a later drain.
+- **Minor 2 (superset scan).** The scenario scan now pre-filters tolerant of JSON spacing
+  (`/"kind"\s*:\s*"link"/`) and matches `kind` on the PARSED JSON in `link_cases`, which returns
+  every link-kit page per scenario (not just the first). Each page is checked with its maximal
+  convincing choices and, where the menus allow a weaker-but-still-passing set, a derived
+  near-threshold case, so a server that rejected only just-above-threshold pages fails loudly.
+- **Minor 4 (concurrent drains).** `drainPhishQueues` has a single in-flight flag, so an `online`
+  drain and a `sync-ok` drain that overlap do not both post the same queued builds and sends.
+
+### Tests changed (old contract)
+
+- `capture_record_test.rb`: removed the `phish_evidence_fingerprint` stability test and the
+  `each_stored_sent_message` memoisation test (both machinery retired).
+- `capture_proofs_test.rb`: removed the `CaptureHotPathSpy` module and the three hot-path tests that
+  asserted the retired fingerprint/mail-walk optimisation (`m1` scenario-load skip, `m1` plain-sync
+  mail re-walk, `n2` part-3-vs-phish fingerprint). Rewrote the phish-evidence serving tests: they
+  seed the two server stores the way the routes do (a `seed_phish_stores` helper) instead of syncing
+  `se_landing_pages`/`mailState`. Added: the section-1 forge now serves nothing; a convincing page
+  with no landed send withholds; bootstrap stamping plus proven survives the stores going away; a
+  stale-but-recent request records and serves off the stores; a capture recorded before the stores
+  exist is served once they are populated.
+- `phish_superset_test.rb`: rewritten per minor 2 (above).
+- `se_landing_page_build_test.rb`: added the re-drive downgrade-guard test and an honest-rebuild
+  still-lowers test (minor 1).
+- `phish_legacy_migration_controller_test.rb`: updated the stamp comment (reads the server stores
+  now) and added a no-surviving-sent-mail legacy save that is stamped and serves the secret on its
+  first bootstrap (chunk C reader).
+- `social-phish-send-client.test.mjs`: added a re-drive `redrive:true` body test (minor 1) and an
+  overlapping-drain single-post test (minor 4).
