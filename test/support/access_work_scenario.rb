@@ -20,6 +20,23 @@ module AccessWorkScenario
       'affordance' => { 'satisfies' => 'work', 'useSeconds' => 5 } }.merge(extra)
   end
 
+  # Format 2: ownership is an explicit `owner`; write it on any id-bearing PC that an NPC's
+  # needsHome names, as the rewrite/upgrade does, so the fixture exercises the new reader.
+  def self.assign_owners!(data)
+    homes = {}
+    data['rooms'].each_value do |room|
+      Array(room['npcs']).each do |n|
+        homes[n['needsHome']] ||= n['id'] if n.is_a?(Hash) && n['needsHome'].is_a?(String) && n['id'].is_a?(String)
+      end
+    end
+    data['rooms'].each_value do |room|
+      Array(room['objects']).each do |o|
+        o['owner'] = homes[o['id']] if o.is_a?(Hash) && o['id'].is_a?(String) && !o.key?('owner') && homes.key?(o['id'])
+      end
+    end
+    data
+  end
+
   def self.staff(id, username, password, extra = {})
     { 'id' => id, 'displayName' => id.capitalize, 'npcType' => 'person', 'role' => 'staff',
       'creds' => { 'username' => username, 'password' => password },
@@ -28,7 +45,7 @@ module AccessWorkScenario
   end
 
   def self.scenario
-    {
+    data = {
       'scenario_brief' => 'Slice 9.2 test scenario',
       'startRoom' => 'lobby',
       'officePresets' => true,
@@ -82,5 +99,6 @@ module AccessWorkScenario
         }
       }
     }
+    assign_owners!(data)
   end
 end

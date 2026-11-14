@@ -56,7 +56,7 @@ function clean() {
                         { id: 'jake_post_1', text: 'Biscuit turns 5 today! Best boy.', fact: 'jake_pet_name' },
                         { id: 'jake_post_2', text: 'Back from Crete, three hundred emails waiting.' }
                     ] },
-                    itemsHeld: [{ type: 'phone_friendface', id: 'jake_phone', name: "Jake's phone", takeable: true, phoneOf: 'jake' }],
+                    itemsHeld: [{ type: 'phone_friendface', id: 'jake_phone', name: "Jake's phone", takeable: true, owner: 'jake' }],
                     // Jake offers his phone (review R2 m2): the give is in his record, as no story file is read here
                     eventMappings: [{ eventPattern: 'global_variable_changed:lend_phone', action: 'give_item:phone_friendface' }]
                 }]
@@ -274,12 +274,12 @@ test('phone: an NPC that posts from a phone must hold its Friendface phone; a "p
     assertLacks(issues(s), 'posts from a phone');
 });
 
-test('phone: phoneOf must name the NPC holding it, which has a phone; one each; site only on the player\'s own', { skip }, () => {
-    let s = clean(); jake(s).itemsHeld[0].phoneOf = 'nobody';
-    assertHas(errors(issues(s)), "phoneOf 'nobody' names no room NPC");
-    s = clean(); s.rooms.lobby.objects.push({ type: 'phone_friendface', id: 'loose', name: 'Loose phone', takeable: true, phoneOf: 'jake' });
+test('phone: owner must name the NPC holding it, which has a phone; one each; site only on the player\'s own', { skip }, () => {
+    let s = clean(); jake(s).itemsHeld[0].owner = 'nobody';
+    assertHas(errors(issues(s)), "owner 'nobody' names no room NPC");
+    s = clean(); s.rooms.lobby.objects.push({ type: 'phone_friendface', id: 'loose', name: 'Loose phone', takeable: true, owner: 'jake' });
     assertHas(errors(issues(s)), "is not in jake's itemsHeld");
-    s = clean(); jake(s).itemsHeld.push({ type: 'phone_friendface', id: 'jake_phone_2', name: 'Spare', takeable: true, phoneOf: 'jake' });
+    s = clean(); jake(s).itemsHeld.push({ type: 'phone_friendface', id: 'jake_phone_2', name: 'Spare', takeable: true, owner: 'jake' });
     assertHas(errors(issues(s)), 'holds 2 Friendface phones');
     s = clean(); jake(s).phone = false;
     assertHas(errors(issues(s)), 'who is "phone": false');
@@ -296,15 +296,16 @@ test('phone: the player\'s own phone may be anywhere; its site must be a social 
     assert.deepEqual(errors(issues(s)), []);
 });
 
-test('phone (review R1 m3, m4, n1): an NPC phone must be takeable and have an id; a phone needs a social site; phoneOf on another type warns', { skip }, () => {
+// Format 2 note: the old "phoneOf on another type warns" sub-case is dropped. phoneOf is retired to
+// the single `owner` field, which is meaningful on any object kind, so the warning no longer exists;
+// the retired-key error for phoneOf is covered in validator-retired-keys.test.mjs.
+test('phone (review R1 m3, m4, n1): an NPC phone must be takeable and have an id; a phone needs a social site', { skip }, () => {
     let s = clean(); delete jake(s).itemsHeld[0].takeable;
     assertHas(errors(issues(s)), 'is not "takeable": true');
     s = clean(); delete jake(s).itemsHeld[0].id;
     assertHas(errors(issues(s)), 'needs an id');
     s = clean(); s.social.osint.sites = s.social.osint.sites.filter((x) => x.type !== 'social');
     assertHas(errors(issues(s)), 'has no social osint site');
-    s = clean(); s.rooms.lobby.objects.push({ type: 'phone', id: 'desk_phone', name: 'Desk phone', phoneOf: 'jake' });
-    assertHas(warnings(issues(s)), "has phoneOf, which only a phone_friendface reads");
     assert.deepEqual(issues(clean()), []);
 });
 

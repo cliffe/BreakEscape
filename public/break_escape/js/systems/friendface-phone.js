@@ -2,8 +2,8 @@
  * Friendface phone items (user decision q35; docs/achitechture/FRIENDFACE_PHONE_ITEM_PLAN.md).
  *
  * An item of type `phone_friendface` opens the osint browser on its social site:
- * - `phoneOf: <npcId>` is that NPC's phone: it opens at the NPC's profile;
- * - no `phoneOf` is the player's own phone: it opens the site's home.
+ * - `owner: <npcId>` is that NPC's phone: it opens at the NPC's profile;
+ * - no `owner` is the player's own phone: it opens the site's home.
  * The browser keeps its own title (the osint block's), as at any terminal.
  * Opening asks the server first (POST /friendface_phone). The server refuses a phone the player
  * does not hold. Its answer carries no posts (review R3 n5: only a test asks for them, with
@@ -29,9 +29,9 @@ export const HOLD_POLL_MS = 300;
 
 const isStr = (v) => typeof v === 'string' && v.length > 0;
 
-/** The owner key of a phone item: its phoneOf NPC id, or OWN for the player's own phone. */
+/** The owner key of a phone item: its owner NPC id, or OWN for the player's own phone. */
 export function phoneKey(data) {
-    return isStr(data?.phoneOf) ? data.phoneOf : OWN;
+    return isStr(data?.owner) ? data.owner : OWN;
 }
 
 export function isFriendfacePhone(data) {
@@ -120,7 +120,7 @@ export class FriendfacePhones {
     /** Every held NPC phone makes its NPC phone-less on the client (plan section 3). */
     syncOwners() {
         for (const phone of this._held()) {
-            if (isStr(phone.phoneOf)) this.deps.setNoPhone?.(phone.phoneOf);
+            if (isStr(phone.owner)) this.deps.setNoPhone?.(phone.owner);
         }
     }
 }
@@ -138,7 +138,7 @@ export function startKey(body) {
  */
 export async function openFriendfacePhone(data, deps) {
     if (!isFriendfacePhone(data)) return null;
-    const owner = isStr(data.phoneOf) ? data.phoneOf : null;
+    const owner = isStr(data.owner) ? data.owner : null;
     let body;
     try {
         body = await deps.request(owner);

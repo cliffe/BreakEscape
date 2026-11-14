@@ -273,7 +273,7 @@ module BreakEscape
     end
 
     # A careful guest (6.4): 9.1's screen_always_locks? with no PC field, on the saved (expanded)
-    # NPC record, so no screenHabit at all is careful. Such a guest signs out of a borrowed PC.
+    # NPC record, so no habits.screen at all is careful. Such a guest signs out of a borrowed PC.
     def careful_guest?(npc)
       AccessIdentities.screen_always_locks?({}, npc)
     end

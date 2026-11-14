@@ -2563,11 +2563,12 @@ module BreakEscape
     # Game#add_item_to_room! stamps it. A client must not set it on an item it builds
     # (an always-allowed item reaches the non-Hash branch below with just this filter),
     # so a security marker is never client-writable (code review R2, m2).
-    # phoneOf names whose Friendface phone an item is; only the scenario sets it
-    # (q35 review R1 m1).
+    # owner names whose thing an item is (a Friendface phone's owner, since format 2); only the
+    # scenario sets it, so a client-built item could otherwise mint one (q35 review R1 m1). phoneOf
+    # stays listed so a tab still running pre-format-2 code cannot send the old name either.
     CLIENT_ITEM_FORBIDDEN_FIELDS = (
       BreakEscape::ItemIdentity::FORGEABLE_ITEM_FIELDS +
-      %w[scenarioData phoneOf] +
+      %w[scenarioData phoneOf owner] +
       [BreakEscape::ItemIdentity::CLIENT_ADDED_MARKER]
     ).freeze
 
@@ -2703,7 +2704,7 @@ module BreakEscape
         # Review R2 M1: an NPC's Friendface phone lies in a room only as a stored NPC drop. A save
         # made before add_item_to_room! checked the drop can hold one taken from a live NPC that
         # never offered it, so the pickup asks the same question
-        owner = found_item['phoneOf']
+        owner = found_item['owner']
         if found_item['type'] == BreakEscape::SocialFeed::FRIENDFACE_PHONE && owner.is_a?(String) &&
            !@game.npc_room_drop_allowed?(owner, found_item)
           error_msg = "NPC does not give this item: #{owner}"

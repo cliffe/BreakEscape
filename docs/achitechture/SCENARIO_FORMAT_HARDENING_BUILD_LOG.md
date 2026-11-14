@@ -1398,3 +1398,1676 @@ blob, and is edit-proof; the live guard above covers returning old names.
 **Proof it still bites.** Prefixing the renamed value in `rename_one_hash_outage_fields!` turns the
 Ruby corpus test red (6 failures); reverting restores green (21 runs, 298 assertions, 0 failures).
 The node parity test passes (1 file). README updated with how both sides are made.
+
+## Step 8b build plan (re-anchored 2026-11-13, anchor 2f5471209)
+
+Step 8b (one owner field, format 2) is re-anchored in the plan against `2f5471209`; see
+`SCENARIO_FORMAT_HARDENING_STEP8B_REANCHOR.md` (verdict: mechanical). Split into five chunks, each a
+fresh agent under about 150k tokens, built on branch `build/harden-8b` from a main that holds steps 7
+and 8a. 8a needed four builders plus a review-fix pass; 8b is the same shape. Each chunk commits its
+own files with explicit paths; the integrator runs the full suites once per merge batch.
+
+Standing rules for every chunk: no `db:` task on the shared DB; the validator runs with
+`LANG=C.UTF-8 /usr/bin/ruby3.2 scripts/validate_scenario.rb <file> --no-graph`; a new static JS import
+goes on each test-harness copy list; count every `❌` line as a failure.
+
+### Chunk 1 — schema, transform, validator (first; others build on it)
+
+- **Scope.** `scripts/scenario-schema.json`: add object-level `owner` (string or array of strings),
+  `private` (boolean), `deskPhone` (boolean), and item-level `owner`; remove object `screenOwner`,
+  `phoneOwner`, `affordance.owners`, `affordance.private` and item `phoneOf`, `leftBehindBy` from the
+  closed blocks, all in one commit. Make `leftBehindChance` the left-behind marker (required for a
+  left-behind item). `lib/break_escape/format_upgrade.rb`: `STEP_8B` (version 2,
+  `one_owner_field`), `current` now 2; the `scenario` transform renames each old field to `owner`,
+  moves `affordance.owners`/`affordance.private` up to object `owner`/`private`, writes an explicit
+  `owner` wherever the old `needsHome` rule derived one (computed on the data as supplied), marks desk
+  phones `deskPhone: true` and left-behind items `leftBehindChance: 0` where absent, and empties an
+  affordance it drains to `{}`; the `player_state` transform renames the keys inside item copies
+  (inventory, `room_states.*.objects_added`, dropped/copied/cloned lists) in place. Both idempotent,
+  skip notes and free data, no-op on format-2 data. `retired`: object `screenOwner`, `phoneOwner`,
+  `affordance.owners`, `affordance.private`; item `phoneOf`, `leftBehindBy`. Validator:
+  `known_item_fields` (validate_scenario.rb:780-814) loses the four item/object names and gains
+  `owner`, `private`, `deskPhone`; the list-owner errors for a workstation / desk phone / Friendface
+  phone / left-behind item; the `needsHome`-no-longer-sets-an-owner warning; the two-field conflict
+  report (`screenOwner` vs `affordance.owners`, none expected); the formatter suppresses the schema
+  unknown-key line for a reintroduced retired key (as 8a's dedup does).
+- **Files.** `scripts/scenario-schema.json`, `lib/break_escape/format_upgrade.rb`,
+  `scripts/validate_scenario.rb`, `test/unit/format_upgrade_test.rb`,
+  `test/js/validator-retired-keys.test.mjs`.
+- **Tests.** `format_upgrade_test.rb` (the 8b transform on raw and on prepared data: derived owner for
+  a workstation, a private object, a desk phone, a left-behind item, and an object that is an NPC's
+  `needsHome` but none of those gets no owner; the player_state transform on a phone in the inventory
+  and on a room-added item; idempotence; no-op on format-2); `validator-retired-keys.test.mjs` (each
+  retired key one rename line; a list owner on each single-owner kind one error, on a private object
+  none; `owner`/`private`/`deskPhone` print no unknown-field warning). Hand-verify the validator
+  prints the rename error on a reintroduced `screenOwner`.
+- **Done when.** Those two test files pass alone; the four touched scenarios still need the rewrite
+  (chunk 4) so they are not validated clean yet; `FormatUpgrade.current` is 2.
+
+### Chunk 2 — Ruby readers
+
+- **Scope.** Move every Ruby owner reader to `owner`/`private`/`deskPhone`, reading only the new
+  names: `AccessIdentities.owner_id` (access_identities.rb:230), `OwnerClaim` (owner_claim.rb:244,
+  :375-377), `NpcHabits.owned_workstations` (npc_habits.rb:165, through `owner_id`), `AccessWork`
+  (hot-desk owner, access_work.rb:1381), `SocialFeed` (`friendface_owner`, social_feed.rb:343, and
+  `held_friendface_phone`), `Game` (`login_pc_owner` game.rb:2088, the held-phone check game.rb:1739),
+  `GamesController` (found item game.rb/controller:2671, the allowed-field list :2535, and
+  `CLIENT_ITEM_FORBIDDEN_FIELDS` :2533-2538 gains `owner`, keeps `phoneOf`). Validator owner-derivers:
+  `validate_access_work.rb:397`/`:1226-1230`, `validate_npc_needs.rb` (`owners_of` :1075, :507/:1078,
+  desk phone :148-170, left-behind :1437-1474), `validate_npc_habits.rb:403`/`:242`/`:450`,
+  `validate_network.rb:189`, `validate_scenario.rb:6960`/`:7011`; `tools/playtest/verify-run.rb`
+  :161/:177. The desk-phone marker becomes `deskPhone: true` (not the presence of `phoneOwner`).
+- **Files.** The Ruby files above plus their support fixtures (`test/support/*_scenario.rb` that set
+  owner fields) and the Rails tests named in the plan (`owner_claim_test.rb`,
+  `owner_claim_enforce_test.rb`, `npc_habits_test.rb`, `npc_habits_loader_test.rb`,
+  `npc_habits_postit_test.rb`, `friendface_phone_test.rb`, `feed_post_reply_test.rb`,
+  `validator-access-*`). Grep `test/` for `screenOwner|phoneOwner|phoneOf|leftBehindBy|affordance.*owners|affordance.*private`
+  for the full list.
+- **Tests.** Each touched Rails test alone, RBENV_VERSION=2.7.8: `owner_id` reads `owner` only and an
+  object with only a `needsHome` NPC has no owner; a client-built item carrying `owner` (and one
+  carrying `phoneOf`) is stored without it; a game at format 1 with a Friendface phone in its
+  inventory still opens the same feed after load and the NPC still has no phone.
+- **Done when.** Every touched Rails/support file passes alone; readers read no retired name (grep of
+  app/lib/scripts/tools leaves only comments, the schema, and the retired list).
+
+### Chunk 3 — JS readers, the reveal event, fixtures
+
+- **Scope.** Move every JS owner reader: `workstation-state.js` `ownerOf` (:115), `npc-needs.js`
+  (`_owners` :1218, `affordance.private` :1231, desk-phone owner :3989, the shipped-copy builder
+  :4633/:4640, left-behind reveal :4594/:5205/:5229), `npc-action-icons.js` (:301),
+  `office-room-tone.js` (:115, now reads `deskPhone`), `left-card-consequence.js`,
+  `friendface-phone.js` (:34/:123/:141). Rename the `object_revealed:<id>` payload key `leftBehindBy`
+  to `owner` (emit npc-needs.js:5229, read left-card-consequence.js:57) in the same commit; grep
+  scenarios, ink and `docs/` for a handler of the payload key (none expected).
+- **Files.** The JS files above; `test/js/fixtures/` that carry owner fields; the node tests
+  (`workstation-state.test.mjs`, `npc-needs.test.mjs`, `npc-left-behind.test.mjs`,
+  `npc-desk-phone.test.mjs`, `left-card-consequence.test.mjs`, `friendface-phone.test.mjs`); each
+  harness copy list if a new import appears.
+- **Tests.** Each touched node test alone (`bin/test-js` runs plain node): `ownerOf` reads `owner`
+  only; a desk phone with `owner` and `deskPhone: true` rings for its owner and an object with `owner`
+  and no `deskPhone` does not; a left-behind item with `owner` and `leftBehindChance` is a reveal
+  slot; the `object_revealed` payload carries `owner`.
+- **Done when.** Every touched node file passes alone; no JS reader reads a retired name.
+
+### Chunk 4 — template rewrite, corpus equivalence, reader parity
+
+- **Scope.** `tools/format/rewrite_templates.rb --step 2` rewrites the nine templates
+  (lab_physical_pentest [incl. its 1 `affordance.private`], test_access_habits, test_access_sessions,
+  test_access_social, test_access_work, test_capture_log, test_clone_left_card, test_needs_sims, and
+  test_npc_needs which holds no retired key but gains derived `owner`s). lab_physical_pentest is on the
+  labs track: the user's decision covers the edit; the labs track is told before the branch merges.
+  Update any `_comment`/ERB note that names a retired key. Freeze both sides as fixtures as 8a learnt
+  (`test/fixtures/format_8b/<scenario>.old.json` and `.new.json`, captured with `srand(1)` and
+  SecureRandom stubbed), never read through `git merge-base`; add an edit-proof live guard that
+  renders the live templates and asserts no retired owner key has returned.
+- **Files.** The nine `scenarios/*/scenario.json.erb`; `tools/format/rewrite_templates.rb` (if the
+  8b case needs owner-derivation support); `test/fixtures/format_8b/*`;
+  `test/unit/format_8b_corpus_test.rb`; `test/js/format-8b-reader-parity.test.mjs`.
+- **Tests.** Corpus equivalence: the 8b `scenario` transform on each old render equals the new render
+  (parsed JSON, key order ignored); `prepare_scenario_data!` agrees across the rename;
+  `retired_keys_in` finds nothing in any new render. Reader parity: the old `owner_id`/`ownerOf`
+  reproduced inline (own field read, no office preset defines an owner field — confirm by grep) equal
+  the new `owner` for every object; for every private object the NPCs allowed; for every desk phone
+  and left-behind item its owner; and the needs target lists for test_needs_sims tom_pc and sanjay_pc
+  (the emptied affordances) are unchanged. Record whether the old Ruby and JS rules ever disagree
+  (none expected: no object is two NPCs' `needsHome` on the corpus). Prove both tests still bite
+  (prefix a renamed value → red).
+- **Done when.** The four test scenarios most changed (and the nine in all) validate with 0 errors
+  (`--no-graph`); the corpus and parity tests pass and bite; moved keys per scenario are logged with
+  counts matching the re-anchor.
+
+### Chunk 5 — live proofs (including the old-game proof)
+
+- **Scope.** Two keyless servers sharing the dev DB, `setFPS(20)` with fixed steps on, headless, on
+  the builder's assigned ports (not :3000/:3001/:3002). Branch server on one port; base server on a
+  hand-made base worktree at `git merge-base main build/harden-8b`. Prove, per plan step 8b Live
+  proof: test_access_sessions owner claim at a PC whose owner used to be derived; test_needs_sims the
+  desk phone rings and its owner answers and a left-behind item appears when its owner leaves;
+  test_access_social Jake's Friendface phone; lab_physical_pentest the left-card beat; and the
+  stored-game proof — a real old game made on the base (section 2 one-off runner, or
+  `swap-scenario-game.rb` if the brief directs, recording which), Jake's phone taken on the base
+  before the switch, loaded on the branch, upgrading to format 2 on first load (old keys gone from
+  `scenario_data` and from the stored item copies, read with `bin/rails runner`), the beat behaving,
+  an old tab's sync refused with 409 and the header, `verify-run.rb` showing progress. Keep both dumps
+  (before and after the load). Stop both servers by PID.
+- **Files.** Drivers and the read-only row reader in the session scratchpad only; nothing added to the
+  repo except this log's proof section.
+- **Done when.** Each beat passes; the stored game shows format 2 with the renamed keys; the old-tab
+  refusal shows 409 + header; both servers confirmed down.
+
+## Step 8b chunk 1 — schema, transform, validator (2026-11-13)
+
+Branch `build/harden-8b` from `0193813e9` (tip; steps 7 and 8a merged, format subsystem live at
+current 1). Chunk 1 of the five-chunk split: the schema, the `FormatUpgrade` step and the validator
+only. Templates and the Rails/JS owner readers stay on the old names (chunks 2 to 4), so the corpus
+is not validated clean yet; the expected failures that follow are cleared by chunk 4's template
+rewrite.
+
+### What changed
+
+- **`scripts/scenario-schema.json`.** The closed `affordance` block loses `owners` and `private`.
+  The `item` definition (the one object/item node) loses `screenOwner`, `phoneOwner`, `phoneOf` and
+  `leftBehindBy`, and gains `owner` (string or non-empty array of strings), `private` (boolean) and
+  `deskPhone` (boolean). `leftBehindChance` stays and its description now makes it the left-behind
+  marker. Descriptions that taught the old names (`workstation`, the `site` phone, the two
+  `phone_friendface` type notes) now name `owner`. No `x-ref` added (step 4 owns that).
+- **`lib/break_escape/format_upgrade.rb`.** `STEP_8B` (version 2, name `one_owner_field`); `STEPS`
+  is now `[STEP_8A, STEP_8B]` so `current` is 2. The `scenario` transform `one_owner_field!` runs in
+  two phases: phase A walks every live Hash (`AuthorNotes.each_live`, `free: :skip`) and renames
+  `screenOwner`/`phoneOwner`/`phoneOf`/`leftBehindBy` to `owner`, moves `affordance.owners` and
+  `affordance.private` up to `owner`/`private` (an emptied affordance stays `{}`), marks a desk phone
+  `deskPhone: true` and writes `leftBehindChance: 0` where absent; phase B writes the explicit owner
+  the old `needsHome` rule derived — a String on a workstation (the inlined `isWorkstation` rule),
+  a one-element list on a private object — only where no owner is present. The `needsHome` map and
+  the room-object walk are inlined (not `AccessIdentities`, which chunk 2 changes) so the upgrade
+  stays fixed. The `player_state` transform renames the same keys inside the stored item copies
+  (inventory, `room_states.*.objects_added`, dropped/copied/cloned lists) in place, with no
+  derivation. `retired`: object `screenOwner`, `phoneOwner`, `affordance.owners`, `affordance.private`;
+  item `phoneOf`, `leftBehindBy`. Both transforms idempotent and a no-op on format-2 data.
+- **`scripts/validate_scenario.rb`.** `known_item_fields` loses `screenOwner`, `phoneOwner`,
+  `phoneOf`, `leftBehindBy` and gains `owner`, `private`, `deskPhone` (`screenLocked`, `rings`, `site`,
+  `leftBehindChance` kept). New `check_owner_fields` (registered after `check_retired_keys`): a list
+  `owner` on a workstation / desk phone / Friendface phone / left-behind item is one error (a private
+  object may list several); a warning where a workstation or private object has no owner of its own
+  but an NPC's `needsHome` names it; the pre-rename two-field conflict (`screenOwner` vs
+  `affordance.owners`, differing) is an error (none expected). `check_item_fields` now suppresses the
+  redundant unknown-field warning for a retired key name, so a reintroduced item-level retired key
+  (open block, no schema `additionalProperties` line for 8a's formatter dedup to catch) prints only
+  the one rename error from `check_retired_keys`.
+
+### Tests
+
+- `test/unit/format_upgrade_test.rb` (RBENV_VERSION=2.7.8): **17 runs, 85 assertions, 0 failures.**
+  Added three 8b tests (every old field to one owner plus needsHome derivation and an emptied
+  affordance; idempotent and no-op on format-2; the player_state rename without derivation). Fixed
+  the two 8a assertions the current bump moved (`formatVersion`/`ran` now cover both steps; the dev
+  switch leaves `current` 2).
+- `test/js/validator-retired-keys.test.mjs`: **22 tests, 0 fail.** Added the six retired owner keys
+  (each one rename line to `owner` in format 2; `affordance.owners`/`private` as moved-up renames; the
+  reintroduced-`affordance.private` schema-line suppression); a list owner on each single-owner kind
+  is one error and on a private object none; `owner`/`private`/`deskPhone` print no unknown-field
+  warning.
+- Hand-verify: the full validator on a scenario with a reintroduced `screenOwner` prints exactly one
+  line — the format-2 rename error, no duplicate unknown-field warning.
+- Importers of the changed module (current 1 to 2): `format_version_test.rb` + `format_deployed_scenarios_test.rb`
+  (27 runs, 0 fail — they stub `steps`); `access_model_loader_test.rb`, `npc_habits_loader_test.rb`,
+  `upgrade_games_tool_test.rb`, `capture_proofs_test.rb`, `reload_persistence_test.rb` (125 runs, 0
+  fail); the access validator node tests `validator-access-work/social/model` (99 tests, 0 fail).
+
+### Expected failures left for later chunks
+
+- `test/unit/format_8a_corpus_test.rb`: **9 failures.** It asserts the live templates carry no retired
+  key; the un-rewritten corpus still holds the 8b owner keys (test_access_work screenOwner +
+  affordance.private; test_access_social 11 phoneOf; test_needs_sims affordance.private x3 +
+  leftBehindBy + phoneOwner). Cleared by **chunk 4** (template rewrite). The paths and counts match
+  the re-anchor's per-scenario lists.
+- The nine corpus scenarios do not validate clean (retired-key errors plus the needsHome-no-owner
+  warnings) until **chunk 4** rewrites them.
+
+### Sync size
+
+No growth. The `player_state` transform renames item copies in place once per game at load; a copy
+keeps its size (owner replaces the old key) or gains at most one bounded key (`deskPhone` bool or
+`leftBehindChance: 0`). Sync reads and writes no owner field, so nothing is re-sent because of 8b.
+
+### Files touched
+
+`scripts/scenario-schema.json`, `lib/break_escape/format_upgrade.rb`, `scripts/validate_scenario.rb`,
+`test/unit/format_upgrade_test.rb`, `test/js/validator-retired-keys.test.mjs`,
+`docs/achitechture/SCENARIO_FORMAT_HARDENING_BUILD_LOG.md`.
+
+### Handover
+
+- **Done:** chunk 1 as specified. `FormatUpgrade.current` is 2; the two named test files pass alone.
+- **For chunk 2 (Ruby readers):** `AccessIdentities.owner_id`, `OwnerClaim`, `NpcHabits`, `AccessWork`,
+  `SocialFeed`, `Game`, `GamesController` (and `CLIENT_ITEM_FORBIDDEN_FIELDS` gains `owner`), plus the
+  validator owner-derivers at `validate_scenario.rb:6960`/`:7011` and the `validate_access_*`/`npc_*`
+  scripts, all still read the old names. `check_owner_fields`' new `owner`-reading checks and the
+  derived-owner transform already read the new names.
+- **For chunk 4:** rewrite the nine templates and freeze the format_8b fixtures; the 9
+  `format_8a_corpus_test` failures and the corpus validation errors clear then.
+- **Note for chunks 4/5:** verify the real 8b transform is a no-op on the four deployed scenarios
+  (m01, sis01, sis02, lab_social_engineering) — the plan asserts it, but chunk 1 did not render them
+  (the deployed-scenarios Rails test stubs `steps`, so it did not exercise the real transform).
+
+## Step 8b chunk 3 — JS readers, the reveal event, fixtures (2026-11-13)
+
+Branch `build/harden-8b` (chunk 1 at tip `1aeb51d76`). Chunk 3 of the five-chunk split: the engine
+JS owner readers, the `object_revealed` payload key, and the node fixtures and tests that carry owner
+fields. Every reader now reads `owner`/`private`/`deskPhone` only, never deriving an owner from
+`needsHome`; single-owner readers take a String only. No new static import, so no harness copy list
+changed.
+
+### What changed (engine JS)
+
+- **`workstation-state.js`.** `ownerOf(data)` returns `data.owner` when it is a non-empty String, else
+  null (a list is not a single owner); the `npcs` argument and the `needsHome` fallback are gone. Its
+  call sites in this file, `lighting.js`, `screen-states.js` and `test-bridge/access.js` drop the
+  now-unused second argument; `_stationsOf`'s dead `npcs` local is removed. Doc comment updated.
+- **`npc-needs.js`.** `_owners(o)` reads `o.owner` (a String, or a list on a private object), no
+  affordance/screenOwner/needsHome fallbacks; `_permitted` reads top-level `o.private`. `onPhoneRing`
+  rings only when `o.deskPhone === true` and reads `o.owner` (String). The live-world `describe`
+  builder ships top-level `owner`, `private` and (for a desk phone) `deskPhone` + `rings` in place of
+  `screenOwner`/`phoneOwner`, so the needs world's `getObject`/`listObjects` carry the new fields.
+  `isSlot` treats `leftBehindChance !== undefined` as the left-behind marker; `leftBehindItems`
+  filters by `sd.owner`; the `object_revealed:<id>` reveal emit carries `owner: npcId` (was
+  `leftBehindBy`). Comments updated.
+- **`npc-action-icons.js`** (`d.deskPhone === true` for the phone icon), **`office-room-tone.js`**
+  (`sd.deskPhone === true` marks a desk phone), **`friendface-phone.js`** (`phoneKey`,
+  `syncOwners`, `openFriendfacePhone` read `data.owner`; comments updated),
+  **`left-card-consequence.js`** (payload comment only; it already reads `data.objectId`, not the
+  owner key).
+- **The reveal event.** `object_revealed:<id>`'s payload key `leftBehindBy` becomes `owner` (emit
+  `npc-needs.js`, read `left-card-consequence.js` via `objectId`). Grep of `scenarios/`, ink and
+  `docs/` found no condition or handler reading the payload key (only item-field declarations, which
+  chunk 4 rewrites); `docs/test-bridge.md` already names the bridge output `owner`, so it is
+  unchanged.
+
+### Fixtures and tests
+
+Node fixtures and the chunk's tests moved to the new names. `test/js/fixtures/needs-sims-world.mjs`:
+the three private PCs carry top-level `owner`/`private`; the left-behind helper uses `owner` and emits
+`owner`. `workstation-state.test.mjs` gets an `assignOwners(objects, npcs)` shim (and explicit
+`owner` on the late-pushed and inline-literal stations) that writes the owner the format-2 upgrade
+derives, so the readers see an explicit `owner`; the `ownerOf` unit test now asserts no derivation and
+that a list gives null. `npc-needs.test.mjs` private-object tests use top-level `owner` (single or
+list) and `private`; `npc-desk-phone.test.mjs` uses `owner`+`deskPhone`; `npc-left-behind.test.mjs`
+uses `owner`+`leftBehindChance` (and its validator sub-test matches chunk 2's new left-behind
+messages). `lighting-workstation-indicators.test.mjs`, `npc-needs-work.test.mjs`, `room-tone`,
+`friendface-phone`, `social-feed-replies`, `left-card-consequence`, `npc-action-icons`,
+`office-presets`, `lab-ux-ui`, `npc-lockout`, `screen-states`, `test-bridge-access` and
+`npc-office-visuals` moved to explicit owners.
+
+### Tests
+
+- Run alone (RBENV_VERSION=2.7.8, plain `node`): `workstation-state` (53), `npc-needs` (64),
+  `npc-desk-phone` (25), `npc-left-behind` (14 pass + 1 expected fail, below), `left-card-consequence`
+  (5), `friendface-phone` (11); all pass.
+- Every `test/js` file importing a changed module (`workstation-state.js`, `npc-needs.js`,
+  `npc-action-icons.js`, `office-room-tone.js`, `left-card-consequence.js`, `friendface-phone.js`,
+  plus `lighting.js`/`screen-states.js`/`test-bridge/access.js` touched by the `ownerOf` signature):
+  53 files via `bin/test-js`, **51 pass, 2 fail** (both expected, below). Fixed along the way:
+  `lighting-workstation-indicators`, `npc-lockout`, `screen-states`, `test-bridge-access`,
+  `npc-office-visuals`, `office-presets`, `room-tone`, `npc-needs`, `npc-needs-work`,
+  `social-feed-replies`, `social-feed-reactions`, `npc-action-icons`.
+
+### Expected failures left (cleared by chunk 4)
+
+- `npc-left-behind.test.mjs` test "validator: test_needs_sims has no errors and lists Tom's badge"
+  and `npc-needs-slots.test.mjs` test "validator: test_needs_sims has no errors and lists its copier
+  pool": both run the full validator on `scenarios/test_needs_sims/scenario.json.erb`, which still
+  carries the retired owner keys until **chunk 4** rewrites it. No other failure.
+
+### Sync size
+
+No growth. The JS readers read owner fields off the already-synced scenario/world data and the
+`player_state` item copies; the `describe` builder swaps `screenOwner`/`phoneOwner` for `owner` plus
+at most a bool `private`/`deskPhone` on an in-memory world copy that is never synced. Nothing a sync
+sends changes.
+
+### Files touched
+
+`public/break_escape/js/systems/workstation-state.js`, `.../npc-needs.js`, `.../npc-action-icons.js`,
+`.../office-room-tone.js`, `.../friendface-phone.js`, `.../left-card-consequence.js`,
+`.../lighting.js`, `.../screen-states.js`, `.../test-bridge/access.js`;
+`test/js/fixtures/needs-sims-world.mjs`; `test/js/{workstation-state,npc-needs,npc-needs-work,npc-desk-phone,npc-left-behind,left-card-consequence,friendface-phone,social-feed-replies,social-feed-reactions,room-tone,lighting-workstation-indicators,npc-action-icons,office-presets,lab-ux-ui,npc-lockout,screen-states,test-bridge-access,npc-office-visuals}.test.mjs`;
+this build log.
+
+### Handover
+
+- **Done:** chunk 3 as specified. No JS reader reads a retired owner name; the `object_revealed`
+  payload carries `owner`; all touched node files pass alone bar the two chunk-4-gated validator
+  sub-tests.
+- **For chunk 4:** rewriting `test_needs_sims` (and the other eight templates) clears the two expected
+  failures above. The chunk-3 fixtures were hand-moved to the new names; they do not depend on the
+  template rewrite.
+- **For chunk 5 (live proofs):** the desk phone rings only with `deskPhone: true`; the left-behind
+  slot shows for `sd.owner === <npc>` with `leftBehindChance` present; Jake's Friendface phone opens
+  at its owner from item `owner`. The `describe` builder is the live path for the needs world, so a
+  live proof that exercises private-object permission, desk-phone ring and left-behind reveal covers
+  the renamed shipped fields.
+- **Note:** `validator-access-*`, `validator-npc-habits`, `validator-npc-leash`, `validator-strict-keys`
+  and `validator-retired-keys` node tests drive the Ruby validator (not the changed JS modules) and
+  are chunk 1/2's; chunk 3 did not touch them. `lighting.js`'s `workstationIndicators(data, npcs, …)`
+  signature keeps its now-unused `npcs` param (external callers pass it); only `ownerOf`'s dropped.
+
+## Step 8b chunk 2 — Ruby readers (2026-11-13)
+
+Chunk 2 of the five-chunk split: every Ruby owner reader now reads `owner`/`private`/`deskPhone`
+only, never deriving an owner from `needsHome`. Single-owner readers accept a String only. Built on
+chunk 1 (schema, transform, validator), on branch `build/hard-8b`. Templates stay on the old names
+until chunk 4, so the live corpus is not clean yet; the expected failures below clear then.
+
+### What changed
+
+- **`lib/break_escape/access_identities.rb`.** `owner_id(obj, _scenario = nil)` returns `obj['owner']`
+  (a String) or nil; no `needsHome` fallback. The scenario arg is kept for callers.
+- **`lib/break_escape/owner_claim.rb`.** `colleague_phone?` gates on `deskPhone == true` and reads
+  `owner`; `permitted?` reads object-level `private`; `owners_of(obj)` returns the object's explicit
+  `owner` (String → one-element list, or a list as-is), no `needsHome`.
+- **`lib/break_escape/access_work.rb`.** `lockout_pc?` reads `st['owner']` (hot-desk-has-no-owner rule).
+- **`lib/break_escape/npc_habits.rb`.** comment only (`owned_workstations` delegates to `owner_id`).
+- **`app/models/break_escape/social_feed.rb`.** `friendface_owner` reads item `owner`. A phone taken
+  before the upgrade still counts: the player_state transform (chunk 1) renames the stored inventory
+  copy's `phoneOf` to `owner`, which `held_friendface_phone`/`friendface_phone_taken?` read.
+- **`app/models/break_escape/game.rb`.** `login_pc_owner` reads `pc['owner']` (no `needsHome`); the
+  room-bootstrap held-phone drop reads item `owner`.
+- **`app/controllers/break_escape/games_controller.rb`.** `CLIENT_ITEM_FORBIDDEN_FIELDS` gains `owner`
+  and keeps `phoneOf` (an old-code tab cannot send either); the found-item friendface check reads
+  `owner`.
+- **Validators (owner derivers moved to the new names, messages reworded):**
+  `validate_network.rb` (headless-owner message); `validate_access_work.rb` (`screen_owned_pcs`,
+  `private_pc?` now object-level only, the writes-down owner rule via `AccessIdentities.owner_id`, the
+  friendface-phone block reads item `owner`); `validate_npc_habits.rb` (owned message, `check_ids`
+  owner); `validate_npc_needs.rb` (`check_phones` keyed on `deskPhone` reading `owner`, the answerer
+  checks, `station_owner`, `owners_of` object-level `owner`, `private` reads moved off `affordance`,
+  `check_left_behind` keyed on `leftBehindChance` reading `owner`); `validate_scenario.rb` (the
+  owner-name error message and the placement-warning workstation owner read; its `check_owner_fields`
+  conflict/`needsHome`-warning block and `check_item_fields` suppression are chunk 1's and untouched).
+  `tools/playtest/verify-run.rb` and `generate_dungeon_graph.rb` read owners only through
+  `AccessIdentities.owner_id`, so they move with it and needed no edit.
+- **Support fixtures and tests moved to the new names.** `test/support/{access_model,capture_proof,
+  network_model}_scenario.rb` rename explicit `screenOwner`; `access_work_scenario.rb` gains an
+  `assign_owners!(data)` that writes `owner` on any id-bearing PC an NPC's `needsHome` names (what the
+  chunk-4 rewrite does), called by its `scenario` builder and by two tests that add owned PCs after
+  it (`npc_lockout_l`, `npc_workaround`). `npc_habits_loader_test.rb`'s `scenario` helper does the
+  same. The owner Rails/unit tests set explicit `owner` where they relied on `needsHome` ownership.
+
+### Tests (RBENV_VERSION=2.7.8, single files, no full suite)
+
+- `owner_claim_test` + `npc_habits_test`: 50 runs, 288 assertions, 0 fail.
+- `npc_habits_loader_test` + `npc_habits_postit_test`: 16 runs, 166, 0 fail.
+- `friendface_phone_test` + `feed_post_reply_test` + `feed_post_reactions_test`: 49 runs, 271, 0 fail.
+- `owner_claim_enforce_test` + `social_lockout_q33_test` + `npc_lockout_l_test`: 38 runs, 358, 0 fail.
+- `access_model_login_test` + `network_remote_signin_test`: 47 runs, 576, 0 fail.
+- `access_model_{loader,rules,withholding}_test` + `access_work_plan_test` + `network_model_test`
+  (unit): 62 runs, 417, 0 fail.
+- `npc_workaround_test` + `npc_workaround_h_test`: 63 runs, 431, 0 fail (after adding `assign_owners!`
+  to npc_workaround's scenario). `npc_frustration_test` + `capture_proofs_test` + `usb_habit_test`
+  passed in the same batch.
+- `access_model_{desktop,no_password,rfid}_test` + `access_helper_equality_test` +
+  `access_model_rules_test`: 85 runs, 937, 0 fail.
+- network batch 1 (`network_model` unit, `network_remote_signin`, `network_host_service_off`,
+  `network_outages`, `network_withholding`): 77 runs, 755, 0 fail.
+- misc batch (`captures_sync`, `network_footholds`, `network_pivot`, `network_shares`, `network_wifi`,
+  `usb_habit`, `wearable`, `clone_card_saved_cards`): 142 runs, 944, 0 fail.
+- network batch 2 (`network_implants`, `network_inventory_delta`, `network_link_names`,
+  `network_no_exposure`, `network_notes_not_live`, `start_item_answer_network`,
+  `lab_physical_pentest_network`): 67 runs, 2280, 0 fail.
+- Ruby validator (`scripts/validate_scenario.rb test_needs_sims --no-graph`): runs clean, no
+  exception; the retired-key / owner-absent errors are the un-rewritten template (chunk 4).
+
+### Expected failures left for later chunks
+
+- `test/models/break_escape/lab_physical_pentest_secrets_test.rb`: **3 failures** (lines 94, 482, 506).
+  All read ownership off the live `lab_physical_pentest` template, which still carries `screenOwner`
+  (staff_pc, staff_pc_2) until **chunk 4** rewrites it, so `owner_id`/`login_pc_owner` return nil and
+  the screenHabit fill and claim do not fire. Cleared by chunk 4's template rewrite. No other Rails
+  test depends on an un-rewritten template.
+
+### Sync size
+
+No growth. Readers only; no state added. The player_state transform (chunk 1) renames item copies in
+place once per load. Sync reads and writes no owner field.
+
+### Files touched
+
+`lib/break_escape/{access_identities,owner_claim,access_work,npc_habits}.rb`,
+`app/models/break_escape/{social_feed,game}.rb`,
+`app/controllers/break_escape/games_controller.rb`,
+`scripts/validate_{network,access_work,npc_habits,npc_needs,scenario}.rb`,
+`test/support/{access_model,capture_proof,network_model,access_work}_scenario.rb`,
+`test/unit/{owner_claim,npc_habits}_test.rb`, `test/models/break_escape/{npc_habits_loader,
+lab_physical_pentest_secrets}_test.rb`, `test/controllers/break_escape/{npc_habits_postit,
+friendface_phone,feed_post_reply,feed_post_reactions,owner_claim_enforce,social_lockout_q33,
+npc_lockout_l,npc_workaround,access_model_login,network_remote_signin}_test.rb`,
+`docs/achitechture/SCENARIO_FORMAT_HARDENING_BUILD_LOG.md`.
+
+### Handover
+
+- **Done:** chunk 2 as specified. Every Ruby owner reader reads only `owner`/`private`/`deskPhone`;
+  grep of app/lib/scripts/tools for the retired names leaves only comments, the schema and transform
+  (chunk 1), and the intentional `check_owner_fields` conflict block and `CLIENT_ITEM_FORBIDDEN_FIELDS`
+  `phoneOf` entry.
+- **For chunk 4:** rewriting the nine templates clears the 3 `lab_physical_pentest_secrets` failures
+  and the un-rewritten-template validator errors. The `assign_owners!` helpers added to the test
+  fixtures mirror the rewrite; they are test-only and do not change the shipped templates.
+- **For chunk 5 (live proofs):** the desk phone answers only with `deskPhone: true` and `owner`; the
+  owner claim reads `pc['owner']` (`login_pc_owner`); a Friendface phone taken on the base server is
+  still taken after the upgrade because the player_state transform renames its stored `phoneOf` to
+  `owner`, which `SocialFeed` reads.
+
+## Step 8b chunk 4 — template rewrite, corpus equivalence, reader parity (2026-11-13)
+
+Chunk 4 of the five-chunk split: the nine templates move to format 2 (one owner field), the frozen
+format_8b fixtures, the Ruby corpus/parity test and the JS reader-parity test, and the real-transform
+no-op proof on the deployed scenarios. Built on chunks 1 to 3 (schema/transform/validator, Ruby and
+JS readers), branch `build/hard-8b`.
+
+### Template rewrite (moved keys per scenario)
+
+`tools/format/rewrite_templates.rb --step 2` (new) rewrites the seven pure-JSON templates as surgical
+source edits that keep each file's own formatting: it uses the real `FormatUpgrade::STEP_8B` transform
+as an oracle (render the template, transform, edit the source to that shape), does file-level renames
+for the item keys that live outside room objects (`phoneOf`/`leftBehindBy`), and rewrites each
+affected affordance block to match its inline-or-multiline source style. It verifies, per scenario,
+that the rewritten template re-renders to exactly `transform(old)` and holds no retired owner key, and
+refuses an ERB template. The two ERB templates (`lab_physical_pentest`, `test_capture_log`) are
+hand-edited.
+
+Keys moved (objects changed), matching the re-anchor's derived-owner counts:
+
+- `test_access_habits`: 17 objects — 9 derived PC `owner`s, 8 coffee objects move `affordance.owners`
+  (a one-element `owner` list) + `affordance.private` up to object level.
+- `test_access_sessions`: 14 — 7 derived PC `owner`s, 7 coffee `affordance.owners`+`private` moves.
+- `test_access_social`: 16 derived PC `owner`s + 11 item `phoneOf` -> `owner` on NPC-held Friendface
+  phones.
+- `test_access_work`: 13 — 12 derived PC `owner`s, 1 `screenOwner` -> `owner` and `affordance.private`
+  -> `private` (pat_pc).
+- `test_needs_sims`: 5 — amara/sanjay/tom PCs derive `owner` and move `affordance.private` up (two
+  drain the affordance to `{}`), `phoneOwner` -> `owner` + `deskPhone: true` (tom_phone),
+  `leftBehindBy` -> `owner` (tom_badge).
+- `test_npc_needs`: 2 derived PC `owner`s (no retired keys).
+- `test_clone_left_card`: 1 `leftBehindBy` -> `owner`.
+- `test_capture_log` (ERB, hand): 1 `screenOwner` -> `owner` (mel_pc).
+- `lab_physical_pentest` (ERB, hand, labs track): 2 `screenOwner` -> `owner` (staff_pc, staff_pc_2),
+  3 `leftBehindBy` -> `owner` (pierce_comms_card, pierce_printout, hampshire_badge), kieran_laptop
+  derives `owner: ["kieran"]` and moves `affordance.private` up to `private`, and one ERB note naming
+  `leftBehindBy pierce` now says `owner pierce`. Only the owner keys and their notes were touched.
+
+All nine validate with 0 errors (`--no-graph`). No dungeon_graph was written (every run used
+`--no-graph`).
+
+### Corpus equivalence and reader parity
+
+`test/fixtures/format_8b/*` freezes the old render (template at the merge base `2f5471209`, which
+still carries the pre-8b owner keys) and the new render (the rewritten template) for the four
+scenarios that cover every transform path: habits (affordance.owners/private move), social (item
+phoneOf), work (screenOwner + affordance.private + derived), needs_sims (phoneOwner desk phone,
+leftBehindBy badge, drained affordances, derived). Both sides are frozen so a later scenario edit
+cannot make `transform(old)` drift from `new`; the live templates are guarded separately by an
+edit-proof retired-key check in each test (per the 8a lesson: never compare live templates with HEAD).
+
+- `test/unit/format_8b_corpus_test.rb` (29 runs, 490 assertions, 0 fail): `transform(old) == new`,
+  the transform is a no-op on new, `retired_keys_in(new)` empty, and the prepared-data agreement. The
+  prepared check uses `prepared(transform(old)) == prepared(new)`, NOT 8a's `transform(prepared(old))`:
+  the real load pipeline is upgrade then prepare (`Game#ensure_current_format!`), `prepare_scenario_data!`
+  derives owner-dependent state (an NPC's `screenHabit` from the workstation it owns) and does not
+  itself run the upgrade, so unlike 8a the transform and prepare do NOT commute. Reader parity: the
+  old `AccessIdentities.owner_id`, `OwnerClaim.owners_of`/`permitted?`/`colleague_phone?` and the
+  left-behind owner, reproduced inline, equal the live readers for every object. `owner_id` parity is
+  scoped to the workstation domain (the isWorkstation rule plus any object that carried an explicit
+  screenOwner): a non-workstation needsHome target (e.g. a USB-policy PC) got no derived owner by
+  design, and no caller reads `owner_id` for one.
+- `test/js/format-8b-reader-parity.test.mjs` (12 subtests, pass): the old `ownerOf(data, npcs)` loaded
+  from the merge-base module text via `git show`, the new `ownerOf(data)` from the live module; equal
+  over every workstation across the four scenarios, plus the edit-proof live-template guard.
+
+Both tests bite: prefixing a frozen owner value turns each red (verified, then restored).
+
+### Ruby/JS disagreement
+
+None. No object is two NPCs' `needsHome` on the corpus (asserted per scenario in both tests), so the
+old Ruby `owner_id` (first room NPC) and old JS `ownerOf` (first in the room's npcs list) could never
+resolve to different owners; first-match order is never observable and the single-owner merge is
+unambiguous.
+
+### Deployed-scenarios no-op (real transform)
+
+`test/controllers/break_escape/format_8b_deployed_noop_test.rb` (4 runs, 12 assertions, 0 fail)
+renders m01, sis01, sis02 and lab_social_engineering through the real `Mission::ScenarioBinding` and
+applies the real `STEP_8B` (not a stub): a no-op on every one, no retired owner key present. The
+step-7 deployed-scenarios test stubs `FormatUpgrade.steps`, so it never exercised the real transform;
+this closes the chunk-1 handover note.
+
+### Failures cleared
+
+- `format_8a_corpus_test` (was 9, then 6): the 8a fixtures predate 8b and carried the now-retired
+  owner keys. STEP_8A (outage) and STEP_8B (owner) touch disjoint keys, so both sides of the social,
+  work and needs_sims 8a pairs were upgraded through STEP_8B in place; `transform_8a(old) == new`
+  still holds and the owner keys are gone. 21 runs, 0 fail; the 8a JS parity still passes; the 8a
+  README records the upgrade.
+- `npc-left-behind.test.mjs` and `npc-needs-slots.test.mjs` validator sub-tests: pass (the rewritten
+  test_needs_sims validates clean).
+- `lab_physical_pentest_secrets_test.rb` (was 3 fail, lines 94/482/506): 38 runs, 0 fail (staff_pc /
+  staff_pc_2 now carry `owner`).
+
+### Tests run (single files, no full suite)
+
+format_8b_corpus (29/0), format_8b_deployed_noop (4/0), format_8a_corpus (21/0); format-8b-reader-parity,
+format-8a-reader-parity, npc-left-behind, npc-needs-slots, validator-office-presets,
+lab-physical-pentest-route-lines (JS, pass); scenario_schema_test + lab_physical_pentest_content_test +
+npc_habits_clues_test (28/0); lab_physical_pentest_secrets_test (38/0). Validator on all nine templates:
+0 errors each (`--no-graph`).
+
+### Pre-existing failures found (NOT chunk 4's, for the orchestrator)
+
+Six validator node tests that drive the Ruby validator with inline fixtures still carry the old owner
+keys and so fail against chunk 2's owner-reading validator: `validator-access-work`,
+`validator-access-model`, `validator-access-social`, `validator-npc-habits`, `validator-npc-leash`,
+`validator-strict-keys`. They were last touched at step 8a, not by chunk 2, and chunk 3's handover
+named this set as "chunk 1/2's". They are independent of the chunk-4 template/fixture work (their
+fixtures are inline, not the live templates) and migrating them needs chunk 2's exact new validator
+wording, so they are left for a chunk-2 follow-up.
+
+### Sync size
+
+No growth. Templates and fixtures only; no synced state changed. The transform renames in place and
+derives at most one bounded key per object, as chunks 1 to 3 recorded.
+
+### Files touched
+
+The nine `scenarios/*/scenario.json.erb`; `tools/format/rewrite_templates.rb`;
+`test/fixtures/format_8b/*` (README + 8 json); `test/fixtures/format_8a/{README.md,
+test_access_social,test_access_work,test_needs_sims}.{old,new}.json`;
+`test/unit/format_8b_corpus_test.rb`; `test/js/format-8b-reader-parity.test.mjs`;
+`test/controllers/break_escape/format_8b_deployed_noop_test.rb`; `README_scenario_design.md`;
+`scenarios/test_needs_sims/README.md`; this build log.
+
+### Handover
+
+- **Done:** chunk 4 as specified. All nine templates are format 2 and validate clean; corpus
+  equivalence, both-side reader parity and the deployed no-op pass and bite; the listed chunk-1-to-3
+  failures are cleared; the owner field docs in `README_scenario_design.md` and
+  `scenarios/test_needs_sims/README.md` moved to the new names (grep of living READMEs and scenario
+  notes is clean).
+- **For chunk 5 (live proofs):** the rewritten templates are the live path; test_access_sessions owner
+  claim, test_needs_sims desk-phone ring / left-behind reveal, test_access_social Jake's phone and the
+  lab left-card beat all read the new owner fields. The merge base for the old-game proof is
+  `2f5471209`.
+- **For the orchestrator:** the six validator node tests above (chunk-2 owner-fixture migration gap)
+  need a chunk-2 follow-up before the batch merges.
+
+## Step 8b chunk-2 follow-up — validator node fixtures to one owner field (2026-11-13)
+
+Migrated the six validator node tests the chunk-4 handover named, so each inline fixture uses the
+format-2 owner shape (`owner`, `private`, `deskPhone`, `leftBehindChance`) and checks against the
+current validator wording. No validator script changed. Branch `build/hard-8b`, built on `d8cf09321`.
+
+### What changed (per file)
+
+- **validator-npc-leash.test.mjs** (12/12): `cooler` helper hoists `private`/`owners` to object-level
+  `private`/`owner`; the two inline `tom_pc` fixtures moved `affordance.private`/`owners` up. The
+  `affordance.owners names unknown NPC` assertion is now `object '…' owner names unknown NPC` (validate
+  _npc_needs wording). The "needsHome makes Tom its owner" case: needsHome no longer owns, so the
+  private `tom_pc` carries an explicit `owner: 'tom'` and still serves nobody-warning-free (intent
+  kept, not weakened).
+- **validator-access-social.test.mjs** (25/25): the held Friendface phone and the test fixtures use
+  `owner` not `phoneOf`; the `phoneOf 'nobody' names no room NPC` assertion is now `owner 'nobody'…`.
+  Dropped the "phoneOf on another type warns" sub-case: `phoneOf` is retired to `owner`, which is
+  valid on any object kind, so that warning no longer exists (retired-key error is covered in
+  validator-retired-keys.test.mjs). Title updated.
+- **validator-access-model.test.mjs** (36/36): `jake_pc` carries explicit `owner: 'jake'` (was derived
+  from needsHome); `screenOwner`→`owner` on the hot_desk and dana_ws fixtures with the matching
+  `owner '…' names unknown person` / `through owner` wording; the colleague-phone leave route uses
+  `deskPhone: true, owner`; the private-source miss uses object-level `private`/`owner`.
+- **validator-strict-keys.test.mjs** (15/15): the base `pc1` fixture moved `affordance.owners` to
+  object-level `owner`/`private`. The `owners→owner` affordance slip (the retired key) is replaced by
+  a `restores→restore` affordance slip, which still proves affordance is a closed, hinted block.
+- **validator-npc-habits.test.mjs** (46/46) and **validator-access-work.test.mjs** (38/38): added an
+  `assignOwners` helper that writes an explicit `owner` onto each id-bearing PC an NPC's needsHome
+  names (mirrors chunk-2's `assign_owners!`), reproducing the old derivation the loader no longer
+  does; explicit `screenOwner`/`affordance.private` fixtures renamed; the `owns '…' through screenOwner`
+  assertion is now `through owner`. An id-less owned PC (the id-warning fixture) sets `owner` inline.
+
+### Tests
+
+- The six files: 12 + 25 + 36 + 15 + 46 + 38 = 172, all pass.
+- Full `test/js/validator-*.test.mjs` suite: 893 tests, 891 pass, 2 fail. The two failures are in files
+  outside this assignment and share the same chunk-2 gap (they still author retired owner fields):
+  `validator-access-reactive.test.mjs` ("C2: a clean reactive feed raises nothing", uses `phoneOf`) and
+  `validator-network-model.test.mjs` ("headless … on an owned workstation is an error", uses a
+  needsHome-derived owner). The chunk-4 handover's "six" undercounts: these two need the same
+  migration. Left for the orchestrator (not in this agent's file ownership).
+
+## Step 8b chunk 5 — live proofs (including the old-game proof) (2026-11-13)
+
+Chunk 5 of the five-chunk split: the five live proofs from plan step 8b "Live proof", each on the
+real page with the real `window.__test` bridge, headless. Two keyless servers sharing the dev DB:
+the branch server on **:3610** (branch `build/hard-8b`, `FormatUpgrade.current` 2), the base server
+on **:3611** from the hand-made base worktree `.claude/worktrees/p-hard-8b-base` at the merge base
+`2f5471209` (8a merged, `current` 1). Both started by hand the way `start-keyless-server.sh` does,
+`env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true`, GEMINI warning confirmed in each boot log. No
+`db:` task anywhere. Drivers, the read-only row reader (`dump_owner.rb`) and the captures live in the
+session scratchpad (`8b-chunk5/`); nothing was added to the repo except this section.
+
+Branch games were made by `new-game.rb` (the real standalone-new-game creation path) where the
+scenario has a Mission row, and by `swap-scenario-game.rb` only for `test_access_sessions` (no row;
+its branch game is a current game, not an old one, so the swap tool is allowed there). The old game
+for the stored-game proof was made by the **base worktree's own `new-game.rb`** (real-page creation,
+Mission row 245 present), never the swap tool, per the 8a lesson and plan section 2.
+
+All four branch games read back `formatVersion` 2 with zero retired owner keys in `scenario_data` and
+`player_state`, and carry explicit `owner` on the derived PCs: `test_access_social` (3221) jake_pc
+`owner "jake"`, lena_pc `owner "lena"`, jake_phone `owner "jake"`; `test_needs_sims` (3222) tom_pc
+`owner "tom"`/`private true`, tom_badge `owner "tom"`/`leftBehindChance 0.7`, tom_phone `owner
+"tom"`/`deskPhone true`; `test_access_sessions` (3224) dana_pc `owner "dana"`, ian_pc `owner "ian"`.
+
+### Proof 1 — test_access_sessions, owner claim at a derived-owner PC (branch game 3224)
+
+Beat T2. Entered `dana_room`; `waitFor npc_left_post:dana` returned (Dana to `dana_coffee`). After a
+4 s settle, `interact dana_pc` opened her desktop with no password. The server's room payload for
+`dana_room` carried `dana_pc ... "owner":"dana"` (derived owner, now explicit in format 2). The claim
+request **POST /login -> 200** `{"success":true,"npcId":"dana","username":"dreyes","via":"claim"}`;
+**GET /container/dana_pc -> 200** with `session {via: claim}`. `drain` held `pc_signed_in`,
+`workstation_accessed`, `workstation_owner_left`; `window.__test.access.sessions()` =
+`[{pcId:"dana_pc", npcId:"dana", username:"dreyes", via:"claim"}]`. `verify-run.rb 3224`:
+`sessions 1: dana_pc = dana (claim)`, `signedInPcs dana_pc`, progress recorded (8 rooms beyond the
+first). **PASS.**
+
+### Proof 2 — test_needs_sims, desk phone answered by its owner + left-behind item (branch game 3222)
+
+Desk phone: `interact spare_phone` (its `triggerOnInteract` emits `desk_phone_ring:tom_phone`) while
+Tom was at his desk. Recorded event **`desk_phone_answered:tom_phone` `{ownerId:"tom",
+answeredBy:"tom", knot:"call_supplier"}`** followed by `npc_call_heard:call_supplier
+{speakerId:"tom", ownerId:"tom", phoneId:"tom_phone"}`; task `hear_tom_call` completed. The owner is
+read from the `deskPhone` object's `owner` field. Left-behind: on Tom's real leave,
+`npc_left_post:tom {leftBehind:["tom_badge"]}` and **`object_revealed:tom_badge` `{npcId:"tom",
+objectId:"tom_badge", owner:"tom"}`** — the `object_revealed` payload carries the renamed `owner` key
+(chunk 3's `leftBehindBy -> owner`), and the badge drew on the empty desk (visible, interactable);
+task `see_left_behind` completed. `verify-run.rb` reports this single-room office scenario as
+"BOOTSTRAP ONLY" by its rooms/objects/flags gate (no room transition and the badge pickup did not
+register as an object unlock), but the two task completions and the two events are the evidence that
+both owner reads fire on the live path. **PASS** (desk-phone owner answer and left-behind reveal).
+
+### Proof 3 — test_access_social, Jake's Friendface phone (branch game 3221)
+
+`debugKO jake` dropped `jake_phone` (`owner "jake"`); picked it up (`interact jake_phone`, now in the
+inventory). Opening it issued **POST /friendface_phone -> 200** `{"npcId":"jake","site":"friendface",
+"person":"jake"}` and the osint-browser opened on **Jake Brooks'** profile. The server reads the held
+phone's `owner` (SocialFeed `held_friendface_phone`/`friendface_owner`). Task `f14_jake_phone`
+completed; `verify-run.rb 3221` progress recorded, inventory holds Jake's phone. **PASS.**
+
+### Proof 4 — lab_physical_pentest, the left-card beat (branch game 3241)
+
+Through the briefing to `open_plan`; `waitFor workstation_owner_left:staff_pc_2` returned
+`{ownerId:"pierce", screenLocked:false, reason:"needs"}`. The needs system set
+`pierce_comms_card_left` and the card revealed: **`object_revealed:pierce_comms_card` `{npcId:"pierce",
+objectId:"pierce_comms_card", owner:"pierce"}`**. The open_plan room payload then carried
+`pierce_comms_card ... "owner":"pierce","card_id":"lw_comms_card"` (format 2 owner on the keycard, the
+left-card the owner leaves when she steps away). `verify-run.rb 3241`: progress recorded (4 rooms
+beyond the first), globals include `pierce_comms_card_left` and `staff_pc_2_owner_away`. Clone/take of
+the card was not driven (it needs the RFID cloner from the kit); the reveal and the server owner field
+are the owner-read under test. **PASS** (left-card reveal reads `owner`).
+
+### Proof 5 — the stored-game (old-game) proof on test_access_social (game 3239)
+
+The old game was made on the base (`:3611`, `current` 1) by the **base worktree's `new-game.rb`**
+(real creation path: `generate_scenario_data` renders the base template, then `prepare_scenario_data!`
+fills, then `stamp_format_version` stamps 1; Mission row 245 present), NOT the swap tool. Played on
+the base's real page: `jake_room`, `debugKO jake`, picked up `jake_phone`, synced, so `player_state`
+holds the old stored copy.
+
+**Before (base, format 1), `dump_owner.rb 3239`:** `formatVersion 1`; **11** retired keys in
+`scenario_data` (every `*_phone/phoneOf`, incl. `jake_phone phoneOf "jake"`); the derived PC owners
+are not materialised in format 1 (read-time only). `player_state["inventory"]` `jake_phone` copy keys
+include **`phoneOf "jake"`**, no `owner`. Base **GET /scenario** header `X-Break-Escape-Format: 1`;
+base **POST /friendface_phone -> 200** `{"npcId":"jake","person":"jake"}` (old reader read `phoneOf`).
+
+Stopped the base session, then the base server (by its listening pid), confirmed `:3611` down.
+
+Loaded the same game on the branch (`:3610`). First **GET /scenario -> 200**, header
+**`X-Break-Escape-Format: 2`** — the load upgraded the game (`set_game` ->
+`ensure_current_format!`, under the row lock).
+
+**After (branch, format 2), `dump_owner.rb 3239`:** `formatVersion 2`; **0** retired keys in
+`scenario_data` and **0** in `player_state`; `jake_phone owner "jake"` (object), jake_pc `owner "jake"`
+and lena_pc `owner "lena"` (the derived owners now explicit); `player_state` `jake_phone` inventory
+copy **`owner "jake"`, no retired key** (the `player_state` transform renamed the stored copy in
+place). The phone still counts as taken (it is still in the inventory after the upgrade; the taken
+check reads the inventory copy). Opening the held phone on the branch page: **POST /friendface_phone
+-> 200** `{"npcId":"jake","person":"jake"}`, the feed opened on Jake Brooks the same as before.
+`verify-run.rb 3239`: progress recorded (1 room beyond the first, inventory holds Jake's phone, task
+`f14_jake_phone` completed). **PASS.** (The old-tab 409 refusal is outside this brief's listed
+requirements; the 409 + `X-Break-Escape-Format` header mechanism is format-agnostic and was proved at
+step 8a, section "3c".)
+
+### Sync size
+
+No growth. Every proof's `player_state` sync carried the same bounded data before and after the owner
+rename: the stored item copy's `phoneOf` became `owner` **in place** (one shorter key, no addition),
+a derived-owner PC gains at most the one `owner` key once at upgrade, and `sync_state` reads and
+writes no owner field (globals and encountered NPCs only). The upgraded old game (3239) `player_state`
+holds the same inventory it held before, one key renamed.
+
+### Servers and clean-up
+
+Branch server `:3610` and base server `:3611` both stopped by their own listening pids; both
+confirmed down by curl. All browser sessions stopped by `session-stop.sh` (or their pidfile). The base
+worktree `.claude/worktrees/p-hard-8b-base` is left in place, as 8a did. Games 3221, 3222, 3224, 3236,
+3239, 3241 are development-DB games left at format 2, recorded here; no other game was touched.
+
+### Handover
+
+- **Done:** chunk 5 as specified. All five proofs pass on the real page. The stored game upgraded on
+  first load (format 1 -> 2, the 11 `phoneOf` keys gone from `scenario_data` and the renamed key gone
+  from the stored `jake_phone` copy, header `X-Break-Escape-Format: 2`, phone still taken, feed opens
+  the same, `verify-run` progress). Branch games are format 2 with derived owners explicit and zero
+  retired keys.
+- **Old games made:** stored-game proof via the base worktree's own `new-game.rb` (real-page creation,
+  Mission row 245), never the swap tool; `test_access_sessions`' branch game via `swap-scenario-game.rb`
+  (current game, not an old one).
+- **For the orchestrator:** `test_needs_sims`' `verify-run` prints "BOOTSTRAP ONLY" because it is a
+  single-room office scenario (no room transition, no object unlock) — the two task completions and the
+  two owner-read events are the evidence there; not a regression. The two extra validator node tests the
+  chunk-2 follow-up still leaves red (`validator-access-reactive`, `validator-network-model`) are
+  independent of chunk 5.
+
+## Step 8b full-suite fixes — the last test fixtures still deriving an owner (2026-11-13)
+
+The integrator's full JS and Rails suites on the merge tip `92460079a` left four JS files and five
+Rails cases red. Each is a test fixture that still relied on an owner derived from `needsHome`, or
+still authored a retired owner key; no production reader was wrong. Every owner reader the failures
+exercise was confirmed to read `owner` only and never derive from `needsHome`:
+`scripts/generate_dungeon_graph.rb` (through `AccessIdentities.owner_id`), `tools/playtest/verify-run.rb`
+(`owner_id`), `tools/playtest/lib/access_leak_scanner.rb` (through `Game#login_pc_owner`, game.rb:2088,
+which reads `pc['owner']`), `NpcHabits.owned_workstations` (`owner_id`) and `scripts/validate_network.rb`
+(`owner_id`). The brief-named readers (`generate_dungeon_graph.rb`, `verify-run.rb`,
+`access_leak_scanner.rb`, `access_identities.rb`, `npc_habits.rb`) were all already on format 2;
+nothing an earlier chunk missed.
+
+### Fixes (test-only, each reproduces the retired needsHome derivation with an explicit `owner`)
+
+- **test/js/dungeon-graph-habits.test.mjs** (9/9): the sticky-note fixture's `omar_pc` and the
+  locksScreen fixture's six PCs (`dana_pc`...`tom_pc`) gain `owner: '<npc>'` matching each NPC's
+  `needsHome`. The graph's writesDown and locksScreen edges hang off `owner_id`/`screen[:filled]`, so
+  without an explicit owner it drew none. kai_pc (policy instant), priya_pc (own `locksScreenOnLeave`),
+  ian_pc (always locks) and tom_pc (needs untracked) are still correctly edge-free with the owner set.
+- **test/js/playtest-verify-run-access.test.mjs** (15/15): `HABITS_SCENARIO`'s dana_pc/priya_pc/omar_pc
+  gain `owner`, so `verify-run --access` prints the per-PC owner lines the test asserts.
+- **test/js/validator-access-reactive.test.mjs** (10/10): dana's held phone used retired `phoneOf: 'dana'`;
+  now `owner: 'dana'`, so the q35 "holds no Friendface phone" error no longer fires on the clean feed.
+- **test/js/validator-network-model.test.mjs** (64/64): the clean fixture's `lena_pc` gains `owner: 'lena'`,
+  so the "headless host is a workstation with an owner" error bites (the check reads `owner_id`).
+- **test/unit/pc_screen_lock_precedence_test.rb** (8 cases): the bare PC gains `owner: 'jake'` so
+  `NpcHabits.expand!` fills jake's screenHabit from `habits.locksScreen`.
+- **test/unit/access_identities_screen_test.rb** (plain-Ruby case): the two PCs gain `owner: 'jake'`/
+  `owner: 'mia'`. The raw-data assertion (the id-less PC owns nothing) still holds: `workstation?`
+  needs an id, so the unstamped raw PC is not an owned workstation.
+- **test/unit/access_leak_scanner_test.rb** (:399, :406, :420): `habits_scenario`'s `omar_pc` gains
+  `owner: 'omar'` so `login_pc_owner` resolves and the owner's own postitNote/savedNotes exception
+  fires; `hot_desk` is left ownerless by design (its three cases expect the password reported).
+
+### Grep sweep (whole tree)
+
+Remaining hits for `screenOwner`/`phoneOwner`/`phoneOf`/`leftBehindBy`/`affordance.owners`/
+`affordance.private`/needsHome-as-owner are all legitimate: the `CLIENT_ITEM_FORBIDDEN_FIELDS` list and
+its test (`games_controller.rb`, `friendface_phone_test.rb`), the schema `owner`/`deskPhone`
+descriptions, the `rewrite_templates.rb` upgrade transform, the frozen `test/fixtures/format_8b/*.old.json`
+renders with their old-reader parity tests (`format_8b_corpus_test.rb`, `format-8b-reader-parity.test.mjs`),
+and `check_owner_fields` in `validate_scenario.rb` (the plan's intended migration-aid block that
+detects the pre-rename conflict and warns when `needsHome` names an ownerless workstation). `owner_claim.rb`
+reads `needsHome` only for the owner's idle/print position, with an explicit comment that it no longer
+sets an owner. No stray reader left.
+
+### Tests
+
+- JS: dungeon-graph-habits 9/9, playtest-verify-run-access 15/15, validator-access-reactive 10/10,
+  validator-network-model 64/64.
+- Rails: pc_screen_lock_precedence + access_identities_screen + access_leak_scanner together 55 runs,
+  318 assertions, 0 failures.
+- Only test-fixture files changed; nothing imports them, so no other importer to run.
+
+## Step 8b review R1 minor fixes
+
+Two coverage/wording nits from `SCENARIO_FORMAT_HARDENING_STEP8B_REVIEW_R1.md`, no correctness defect.
+
+- **Player_state rename is marker-free.** `rename_one_hash_owner_fields!` now takes `write_markers:`
+  (default true). The scenario walk keeps the markers (`phoneOwner` sets `deskPhone: true`, a
+  left-behind item gets `leftBehindChance: 0`). The player_state walk
+  (`one_owner_field_in_player_state!`) passes `write_markers: false`, so a stored item copy is renamed
+  in place and gains at most the one `owner` key. This keeps the SYNC SIZE RULE tight by construction:
+  the upgrade cannot add a second key to a re-sent copy, independent of what the corpus happens to
+  carry. Left-behind slots are read from scenario-sourced room objects, never from stored copies,
+  and desk phones are not takeable, so no reader needs the markers on a stored copy. One unreachable
+  case remains: a left-behind item that is also droppable, re-dropped after the upgrade, carries no
+  `leftBehindChance` where a fresh game's re-dropped copy would. No corpus left-behind item is
+  droppable, and the reveal global already gates it, so the key is deliberately not re-added.
+- **Corpus coverage.** The frozen equivalence and parity fixtures cover test_access_habits,
+  test_access_social, test_access_work and test_needs_sims, which between them exercise every path of
+  the transform (derived workstation and private owners, emptied affordance, desk phone, left-behind,
+  Friendface phone). test_access_sessions, test_npc_needs, test_clone_left_card, test_capture_log and
+  lab_physical_pentest were rewritten by the same transform (or by hand for the two with ERB) and
+  validate with no retired-key line; they have no frozen fixture of their own.
+- **The needsHome warning now has an executing test.** `validator-retired-keys.test.mjs` fires
+  `check_owner_fields`' "needsHome no longer sets an owner" warning (a workstation that is an NPC's
+  `needsHome` with no owner of its own) and asserts the matching case with an explicit owner stays
+  silent.
+
+### Tests
+
+- Ruby: `format_upgrade_test`, `format_8b_corpus_test`, `format_8b_deployed_noop_test` together
+  51 runs, 594 assertions, 0 failures. (`engine.rb` is the only other requirer of `format_upgrade.rb`;
+  the deployed-noop test exercises its load path.)
+- JS: `validator-retired-keys.test.mjs` 24/24 (was 22; two new 8b owner-warning cases).
+
+## Step 8c build plan (re-anchored 2026-11-13, anchor a693650b9)
+
+Step 8c (habits in one block, format 3) is re-anchored in the plan against `a693650b9` (the finished
+8b branch tip; formats 0 to 2 live, `FormatUpgrade.current` 2); see
+`SCENARIO_FORMAT_HARDENING_STEP8C_REANCHOR.md` (verdict: mechanical). Built on branch `build/hard-8c`
+from a main that holds steps 2, 2b, 7, 8a and 8b. Seven chunks, each a fresh agent under about 150k
+tokens; each commits its own files with explicit paths. The 8c test surface is larger than 8b's (26
+test files name the three keys, plus the USB subsystem), so the test ownership below is exhaustive and
+the integrator does not re-run the full suites until chunk 7.
+
+Standing rules for every chunk: no `db:` task on the shared DB; the validator runs with
+`LANG=C.UTF-8 /usr/bin/ruby3.2 scripts/validate_scenario.rb <file> --no-graph`; a new static JS import
+goes on each test-harness copy list; count every `❌` line as a failure. **Do not edit**
+`test/fixtures/format_8a/*` or `test/fixtures/format_8b/*`: they are frozen historical renders that
+still carry habit keys and would break the 8a/8b corpus tests if touched.
+
+The three keys fold as: `screenHabit` -> `habits.screen`, `printHabit` -> `habits.print`,
+`usbHabit` -> `habits.usb`, each keeping its own keys and staying a closed block with `^_` allowed.
+
+### Chunk 1 — schema, transform, validate_scenario.rb, format upgrade (first; others build on it)
+
+- **Scope.** `scripts/scenario-schema.json`: add `screen`, `print`, `usb` sub-objects inside the closed
+  `habits` block (4275-4290), each carrying the keys and descriptions moved from the top-level
+  `screenHabit`/`printHabit`/`usbHabit` definitions (:4781-:4783), then remove those three top-level
+  keys, all in one commit. `lib/break_escape/format_upgrade.rb`: `STEP_8C` (version 3,
+  `habits_in_one_block`), `current` now 3; the `scenario` transform moves each top-level habit key into
+  `habits.<screen|print|usb>` (creating `habits` if absent), idempotent, skips notes and free data,
+  no-op on format-3 data. NPC records are not stored in player_state, so the `player_state` transform
+  is a no-op (confirm by grep and assert it). `retired`: NPC `screenHabit`, `printHabit`, `usbHabit`.
+  `scripts/validate_scenario.rb`: `known_npc_fields` (:807-:822) loses `screenHabit printHabit usbHabit`;
+  the `screen_habits` map (:1297-:1302) reads `habits.screen`; the ship note at :7092; the retired-key
+  dedup so a reintroduced top-level key prints only the one rename line (as 8a/8b do).
+- **Files.** `scripts/scenario-schema.json`, `lib/break_escape/format_upgrade.rb`,
+  `scripts/validate_scenario.rb`, `test/unit/format_upgrade_test.rb`,
+  `test/js/validator-retired-keys.test.mjs`.
+- **Tests.** `format_upgrade_test.rb` (the 8c transform on raw data and on prepared data with an
+  authored and with a loader-filled habit; player_state no-op; idempotence; no-op on format-3);
+  `validator-retired-keys.test.mjs` (each of the three retired keys one rename line; `habits.screen`/
+  `.print`/`.usb` print no unknown-field warning). Also add a `format_8c_deployed_noop_test.rb`
+  asserting the four deployed scenarios (m01_first_contact, sis01_healthcare, sis02_energy,
+  lab_social_engineering) upgrade to format 3 with no habit change, since none authors the keys and
+  none has `awareness`/`habits.locksScreen`.
+- **Done when.** Those test files pass alone; `FormatUpgrade.current` is 3; the three authored-habit
+  scenarios still await the rewrite (chunk 5) so they do not validate clean yet.
+
+### Chunk 2 — Ruby runtime readers and the ship filter
+
+- **Scope.** Move every Ruby runtime habit reader to the folded paths, reading only the new names:
+  `NpcHabits.fill_screen_habit!` (npc_habits.rb:179) and `expand!` (:116/:146) write/read
+  `habits.screen`; `AccessIdentities` screen read (access_identities.rb:186/:196); `OwnerClaim`
+  (`printHabit` owner_claim.rb:157/:254/:260, `screenHabit` :226/:235); `AccessWork.usb_habit`
+  (access_work.rb:1211) and the `work.usb` build (:1165-:1170); `NpcFrustration` (its `AccessWork.usb_habit`
+  call at :439 follows for free; update the comment at :276); `Game` the filter
+  (`WITHHELD_NPC_KEYS`/`WITHHELD_WORK_NPC_KEYS` game.rb:5620/:5624, applied :5656-:5657) becomes an
+  allow list that keeps `habits.screen` and `habits.print` and deletes the rest of `habits`
+  (`locksScreen`, `writesDown`, `password`, `passwordPattern`, `holdsDoors`, `usb`, and any later key);
+  `work.usb` stays built from `habits.usb`; the `screenHabit` precedence note beside `pc_always_locks?`
+  (:2094-:2096) and the `habits`-block reads `npc_habit`/`written_down?` (:2101-:2113).
+- **Files.** `lib/break_escape/npc_habits.rb`, `access_identities.rb`, `owner_claim.rb`, `access_work.rb`;
+  `app/models/break_escape/npc_frustration.rb`, `game.rb`; `test/support/access_model_scenario.rb`;
+  the Rails/unit tests: `npc_habits_test.rb`, `npc_habits_loader_test.rb`,
+  `access_identities_screen_test.rb`, `pc_screen_lock_precedence_test.rb`, `owner_claim_test.rb`,
+  `owner_claim_enforce_test.rb`, `npc_frustration_test.rb`, `npc_lockout_l_test.rb`,
+  `npc_workaround_h_test.rb`, `access_model_withholding_test.rb`, `access_leak_scanner_test.rb`,
+  `lab_physical_pentest_secrets_test.rb`, `usb_habit_test.rb`, `access_work_usb_habit_test.rb`.
+- **Tests.** Each touched Rails/unit file alone (RBENV_VERSION=2.7.8): the readers read `habits.screen`/
+  `.print`/`.usb` only; the loader fills `habits.screen` with the same values and report entries as
+  before; the Rails what-ships test shows a room NPC carrying every `habits` key arriving in the
+  bootstrap and room payload with `habits` holding exactly `screen` and `print` (`writesDown`,
+  `password`, `holdsDoors` never ship), and `work.usb` still built for a USB habit.
+- **Done when.** Every touched Ruby file passes alone; no runtime reader reads a retired name (grep of
+  app/lib leaves only comments, the schema and the retired list).
+
+### Chunk 3 — JS readers and node reader tests
+
+- **Scope.** `public/break_escape/js/systems/workstation-state.js` reads `npc.habits.screen` (:124);
+  `npc-needs.js` reads `rec.habits.print` (:973/:3351) and keeps reading `work.usb` (:508/:3413/:3439,
+  unchanged, since usb ships in the work plan). Grep the rest of the engine for any other
+  `screenHabit`/`printHabit` read (none expected).
+- **Files.** `workstation-state.js`, `npc-needs.js`; the node tests `workstation-state.test.mjs`,
+  `npc-office-visuals.test.mjs`, `npc-print-forget.test.mjs`, `npc-printer-power.test.mjs`; each
+  harness copy list if a new import appears.
+- **Tests.** Each touched node file alone (`bin/test-js` runs plain node): `decideLocked` reads the
+  owner's `habits.screen`; the print errand reads `habits.print`; the office visuals and printer-power
+  cases pass on the folded fixtures.
+- **Done when.** Every touched node file passes alone; no JS reader reads a retired name.
+
+### Chunk 4 — the Ruby validators, verify-run, the leak scanner, and their node tests
+
+- **Scope.** Move the validator derivers to the folded paths: `validate_npc_habits.rb`
+  (:158/:333/:354/:521/:527, including the effective-rule printout source labels), `validate_npc_needs.rb`
+  (screen :497/:526-:529/:566, print :335/:394-:418), `validate_access_work.rb` (the careful-guest
+  screen warning :1164-:1169, usb :357/:508/:577-:615/:680-:699/:750). `tools/playtest/verify-run.rb`
+  (:165-:166 reads `habits.screen`). `tools/playtest/lib/access_leak_scanner.rb` (the withheld-key set
+  :147/:320). Keep all `validate_scenario.rb` edits in chunk 1; this chunk does not touch it.
+- **Files.** The five files above; the node tests `validator-npc-habits.test.mjs`,
+  `validator-access-work.test.mjs`, `validator-usb-habit.test.mjs`, `validator-strict-keys.test.mjs`,
+  `validator-access-model.test.mjs`, `playtest-verify-run-access.test.mjs`.
+- **Tests.** Each touched node file alone: each retired key one error; the effective-rule printout for
+  a PC with its own field, an owner with an authored `habits.screen`, an owner with a preset, and a hot
+  desk guest; `verify-run --access` prints the per-PC lines on the folded fixtures.
+- **Done when.** Every touched node file passes alone; no validator or tool reads a retired name.
+
+### Chunk 5 — template rewrite, README, corpus equivalence, reader parity
+
+- **Scope.** `tools/format/rewrite_templates.rb --step 3` rewrites the three templates that author a
+  habit key: test_access_social (5 `screenHabit`, 1 `usbHabit`), test_access_work (3 `screenHabit`),
+  test_needs_sims (2 `screenHabit`, 1 `printHabit`). test_access_habits and lab_physical_pentest author
+  none (lab_physical_pentest's two `screenHabit` mentions are `<%# %>` comments; update their wording by
+  hand), so they get no key move but are re-validated. Update `README_scenario_design.md`: the habit
+  teaching (the closed-blocks list at :56 and the sections at :1077, :1150, :1177, :1187) moves to
+  `habits.screen`/`.print`/`.usb`; in the same commit clear the `downIf`->`offWhen` wording step 8a
+  left in that file (:931, :945, :964, :966, :990, :992, :1090, :1100, :1104, :1191, :1193, :1195).
+  Freeze both sides as fixtures (`test/fixtures/format_8c/<scenario>.old.json` [format-2 render, still
+  `screenHabit`] and `.new.json` [folded], captured with `srand(1)` and SecureRandom stubbed), never
+  read through `git merge-base`; add an edit-proof live guard that renders the live templates and
+  asserts no retired habit key has returned.
+- **Files.** The three `scenarios/*/scenario.json.erb` plus lab_physical_pentest's comment wording;
+  `README_scenario_design.md`; `tools/format/rewrite_templates.rb` (if the 8c case needs support);
+  `test/fixtures/format_8c/*`; `test/unit/format_8c_corpus_test.rb`;
+  `test/js/format-8c-reader-parity.test.mjs`.
+- **Tests.** Corpus equivalence: the 8c transform on each old render equals the new render (parsed
+  JSON, key order ignored); `prepare_scenario_data!` agrees across the fold (the loader finds
+  `habits.screen` present and fills nothing, matching the old filled `screenHabit` field for field);
+  `retired_keys_in` finds nothing in any new render. Reader parity: for every workstation and every NPC
+  that can borrow one, the effective lock rule is the same under the old reader on the old render and
+  the new reader on the new render; the five fixtures (priya_pc test_access_habits, omar_pc
+  test_access_social, rosa_pc/ian_pc/jake_pc test_access_work) are named. Prove both tests bite
+  (prefix a renamed value -> red).
+- **Done when.** All five authored/awareness scenarios validate with 0 errors (`--no-graph`); the
+  corpus and parity tests pass and bite; moved keys per scenario are logged with counts matching the
+  re-anchor.
+
+### Chunk 6 — live proofs (including the old-game proof)
+
+- **Scope.** Two keyless servers sharing the dev DB, `setFPS(20)` with fixed steps on, headless, on the
+  builder's assigned ports (not :3000/:3001/:3002). Branch server on one port; base server on a
+  hand-made base worktree at `git merge-base main build/hard-8c`. Prove, per plan step 8c Live proof:
+  test_access_work the hot desk beats H1 to H3 (the guest's `habits.screen` decides) and Rosa's own PC
+  locking when she leaves; test_needs_sims a print fetched; test_access_social the USB refusal; and the
+  stored-game proof — a real old game on test_access_habits made on the base (section 2 one-off runner,
+  or `swap-scenario-game.rb` if the brief directs, recording which), whose game holds a `screenHabit`
+  the old loader filled from awareness, loaded on the branch, upgrading to format 3 on first load (old
+  top-level keys gone, the value now at `habits.screen`, read with `bin/rails runner`), then the beat
+  that habit drives (priya_pc locking when she leaves), an old tab's sync refused with 409 and the
+  header, `verify-run.rb` showing progress. Keep both dumps (before and after the load). Stop both
+  servers by PID.
+- **Files.** Drivers and the read-only row reader in the session scratchpad only; nothing added to the
+  repo except this log's proof section.
+- **Done when.** Each beat passes; the stored game shows format 3 with `habits.screen`; the old-tab
+  refusal shows 409 + header; both servers confirmed down.
+
+### Chunk 7 — full suites under the shared lock, test-only fallout, before review
+
+- **Scope.** Run the full Rails and JS suites once on the branch tip under the shared lock
+  (`flock /tmp/claude-1000/.../tests.lock bin/rails test` and the same for `bin/test-js -j 3`). Fix
+  only test-only fallout: any remaining test file with an inline habit fixture or assertion still on a
+  retired name that the owning chunk missed (the 8b lesson: the full suites found ten such late). For
+  each failure, confirm the production reader already reads the folded path (quote the reader line) and
+  that only the fixture was stale; never weaken a reader to make a test pass. Known timing flakes
+  (fingerprint-generator, client-purchase, password-signin-mode) count green only if they pass rerun
+  alone. Truncate `test/dummy/log/test.log` if it grows large.
+- **Files.** Whatever test/support/fixture files the run reveals; log the grep sweep of the whole tree
+  for `screenHabit`/`printHabit`/`usbHabit` showing every remaining hit is legitimate (comments, the
+  schema, the retired list, the frozen `format_8a`/`format_8b`/`format_8c` fixtures, the upgrade
+  transform).
+- **Done when.** Both full suites green on one tip (flakes reruns aside); the grep sweep is clean; the
+  branch is ready for code review.
+
+## Step 8c chunk 1 — schema, transform, validate_scenario.rb, format upgrade (2026-11-13)
+
+Branch `build/hard-8c` from `e5499e795` (step 8b plus current main; formats 0 to 2 live,
+`FormatUpgrade.current` 2). Chunk 1 of the seven-chunk split: the schema, the `FormatUpgrade` step
+and the `validate_scenario.rb` edits only. Every runtime reader (Ruby and JS), the validator
+derivers, the templates and the fixtures stay on the old names (chunks 2 to 5), so the corpus is not
+validated clean yet; the expected failures that follow clear in later chunks.
+
+### What changed
+
+- **`scripts/scenario-schema.json`.** The closed NPC `habits` block (awareness habits) gains three
+  closed sub-blocks `screen`, `print` and `usb`, each `additionalProperties: false` with `^_` allowed,
+  carrying the keys and descriptions moved from the top-level `screenHabit`/`printHabit`/`usbHabit`
+  definitions. The three top-level keys are removed. The `locksScreen` description (and the moved
+  `screen` description) now name `habits.screen`, not `screenHabit`. No `x-ref` added (step 4 owns
+  that).
+- **`lib/break_escape/format_upgrade.rb`.** `STEP_8C` (version 3, name `habits_in_one_block`); `STEPS`
+  is now `[STEP_8A, STEP_8B, STEP_8C]` so `current` is 3. The `scenario` transform
+  `habits_in_one_block!` walks every live Hash (`AuthorNotes.each_live`, `free: :skip`) and folds the
+  three top-level habit keys into the NPC's `habits` block via `fold_one_hash_habit_fields!`, creating
+  `habits` only where at least one key is present; each move is guarded by `unless habits.key?(new)`
+  so a second run or format-3 data is a no-op and an already-folded value wins, and the top-level key
+  is always removed. The `player_state` transform is `->(state) { state }` — a no-op: no sync path
+  stores an NPC record (grep of `app`/`lib`: player_state holds `npcFrustration`, `phonesTaken`,
+  `npc_given_items`, `sharedLogins`, `encounteredNPCs`, never an NPC hash with habit keys).
+  `retired`: NPC `screenHabit` -> `habits.screen`, `printHabit` -> `habits.print`,
+  `usbHabit` -> `habits.usb`, each `path: nil` (match anywhere; the keys are unique to NPC records,
+  as 8b did for its item keys).
+- **`scripts/validate_scenario.rb`.** `known_npc_fields` loses `screenHabit`, `printHabit`, `usbHabit`.
+  `npc_screen_habits` reads `habits.screen` from the expanded copy, not `screenHabit`. The owner-claim
+  ship-note comment (`:7092` area) now says "`habits.screen` is filled". The NPC unknown-field loop in
+  `check_unknown_fields` now suppresses the redundant unknown-field warning for a retired NPC key
+  (reusing the `retired_item_keys` set, which holds every retired entry's key), so a reintroduced
+  top-level `screenHabit` prints only the one rename line from `check_retired_keys` (the 8a/8b dedup
+  pattern, now for NPC keys). The validator derivers in `validate_npc_habits.rb`/`validate_npc_needs.rb`/
+  `validate_access_work.rb`, `verify-run.rb` and the leak scanner are untouched (chunk 4).
+
+### Tests
+
+- `test/unit/format_upgrade_test.rb` (RBENV_VERSION=2.7.8): **22 runs, 112 assertions, 0 failures.**
+  Added four 8c tests (the fold into a new and into an existing `habits` block, with a note left as
+  written; the fold of a loader-filled `screenHabit` on prepared data via `NpcHabits.expand!`,
+  unchanged; idempotence and no-op on format-3; the player_state no-op). Updated the three current-bump
+  assertions the version-3 step moved (`formatVersion`/`ran` now cover all three steps; the dev-switch
+  teardown leaves `current` 3).
+- `test/js/validator-retired-keys.test.mjs`: **29 tests, 0 fail** (was 24). Added the three NPC retired
+  keys (each one rename line to `habits.screen`/`.print`/`.usb` in format 3); the folded
+  `habits.screen`/`.print`/`.usb` print no unknown-field warning; a reintroduced top-level `screenHabit`
+  on an NPC prints no unknown-field warning (the dedup).
+- `test/controllers/break_escape/format_8c_deployed_noop_test.rb` (new): **4 runs, 60 assertions, 0
+  failures.** The real `STEP_8C` scenario transform is a no-op on each of m01_first_contact,
+  sis01_healthcare, sis02_energy and lab_social_engineering, and the raw render carries no
+  `screenHabit`/`printHabit`/`usbHabit`/`awareness` and no `habits.locksScreen`, so the loader fills no
+  habit either; a full `upgrade!` only stamps `formatVersion` 3.
+- Hand check: the full validator on test_access_social prints exactly 6 retired-key errors
+  (5 `screenHabit` + 1 `usbHabit`, matching the re-anchor) and no duplicate unknown-field warning; it
+  does not crash on the now-empty `npc_screen_habits` map.
+- Importers of `format_upgrade.rb` (current 2 to 3): `format_version_test` + `format_deployed_scenarios_test`
+  + `upgrade_games_tool_test` (29 runs, 0 fail — they stub `steps`); `access_model_loader_test`,
+  `npc_habits_loader_test`, `capture_proofs_test`, `reload_persistence_test` (123 runs, 0 fail). Node
+  tests that name a habit key and were not expected to change: `validator-usb-habit` (25),
+  `validator-access-work` (38), `validator-access-model` (36), `playtest-verify-run-access` (15),
+  `workstation-state` (55), `npc-office-visuals` (36), `npc-print-forget` (15), `npc-printer-power`
+  (14) — all 0 fail.
+
+### Expected failures left for later chunks
+
+- `test/unit/format_8a_corpus_test.rb`: **9 failures**; `test/unit/format_8b_corpus_test.rb`: **10
+  failures.** Both assert the live templates carry no retired key and the frozen format-2 render holds
+  none; the un-rewritten corpus still authors the habit keys (test_access_social 5 `screenHabit` + 1
+  `usbHabit`, test_access_work 3 `screenHabit`, test_needs_sims 2 `screenHabit` + 1 `printHabit`).
+  Cleared by **chunk 5** (template rewrite). Counts and paths match the re-anchor's per-scenario lists.
+- The three authored-habit scenarios (test_access_social, test_access_work, test_needs_sims) do not
+  validate clean (retired-key errors) until **chunk 5** rewrites them.
+- `test/js/validator-strict-keys.test.mjs`: **3 failures.** Two: a reintroduced top-level `screenHabit`
+  is now a retired key (one rename line, no schema unknown-key line), so the test's count of 1 schema
+  line for `screenHabit` reads 0. One: the closed-block enumeration reads the removed top-level habit
+  schema paths and raises on `additionalProperties`. Cleared by **chunk 4** (it owns this test and
+  moves its habit paths to `habits.screen`/`.print`/`.usb`).
+- `test/js/validator-npc-habits.test.mjs`: **1 failure** (`the office life autoLockSeconds check sees
+  the filled habit`, line 240). The fixture fills a habit from `awareness: 'low'`; in chunk 1 the
+  loader (`NpcHabits`) still fills `screenHabit` while `npc_screen_habits` already reads `habits.screen`,
+  so the screen-habit map is empty and the autoLockSeconds warning fires. Cleared by **chunk 2**, which
+  makes `NpcHabits.fill_screen_habit!`/`expand!` fill `habits.screen`.
+
+### Sync size
+
+No growth. NPC records are not stored in player_state, so the `player_state` transform is a no-op and
+nothing a sync writes or reads changes. The scenario transform renames keys inside NPC records in
+`scenario_data` only, once per game at load.
+
+### Files touched
+
+`scripts/scenario-schema.json`, `lib/break_escape/format_upgrade.rb`, `scripts/validate_scenario.rb`,
+`test/unit/format_upgrade_test.rb`, `test/js/validator-retired-keys.test.mjs`,
+`test/controllers/break_escape/format_8c_deployed_noop_test.rb`,
+`docs/achitechture/SCENARIO_FORMAT_HARDENING_BUILD_LOG.md`.
+
+### Handover
+
+- **Done:** chunk 1 as specified. `FormatUpgrade.current` is 3; the three named chunk-1 test files pass
+  alone.
+- **For chunk 2 (Ruby runtime readers):** `NpcHabits.fill_screen_habit!`/`expand!`, `AccessIdentities`,
+  `OwnerClaim`, `AccessWork.usb_habit`/`work.usb`, `NpcFrustration`, and the `Game` ship filter still
+  read the old names. Making the loader fill `habits.screen` clears the `validator-npc-habits` line-240
+  failure (chunk 1's `npc_screen_habits` already reads the folded path).
+- **For chunk 4:** `validator-strict-keys.test.mjs` needs its habit schema paths moved to
+  `habits.screen`/`.print`/`.usb` and its `screenHabit` slip case treated as a retired key.
+- **For chunk 5:** rewrite the three authored-habit templates and freeze the `format_8c` fixtures; the
+  9 + 10 corpus-test failures and the three scenarios' retired-key errors clear then.
+
+## Step 8c chunk 3 — JS readers and node reader tests (2026-11-13)
+
+Branch `build/hard-8c` on chunk 1's tip (`6943c3b47`). Chunk 3 moves the engine JS habit readers to the
+folded paths and migrates the four node test files that carry habit fixtures. No new static import, so
+no test-harness copy list changes.
+
+### What changed
+
+- **`public/break_escape/js/systems/workstation-state.js`.** `habitOf()` now reads
+  `npc?.habits?.screen` (was `npc?.screenHabit`). Precedence is untouched: the PC's own field still beats
+  the owner's habit, the order is unchanged. The three doc comments that named `screenHabit` as the data
+  key now say `habits.screen`.
+- **`public/break_escape/js/systems/npc-needs.js`.** The two print-errand readers (the `print` command at
+  :968 and the `revealOutput` hook path at :3350) now read `rec.habits?.print` (was `rec.printHabit`),
+  inlined so no local variable carries the retired substring. `work.usb` is read via `this._plan(s)?.usb`
+  (the work plan the ship filter builds from `habits.usb`) and is unchanged, as specified. The three
+  comments naming `printHabit` as the data key now say `habits.print`.
+- Engine-wide grep of `public/break_escape/js` for `screenHabit`/`printHabit`/`usbHabit`: clean (no reads,
+  no comments).
+
+### Tests
+
+All run with `bin/test-js` (plain node), `RBENV_VERSION=2.7.8` for the ruby-shelling validator sub-tests.
+
+- `workstation-state.test.mjs` (JS reader only): **PASS.** `habitOf`/`rig16` fixtures folded to
+  `habits.screen`; `decideLocked` takes the habit as a direct arg and was untouched.
+- `npc-print-forget.test.mjs`: **PASS.** The print-mechanic rig fixture folded (`tom.habits.print`); the
+  validator sub-test folded and its two `printHabit` assertion regexes moved to `habits\.print`.
+- `npc-printer-power.test.mjs`: **PASS.** Rig fixture and the three validator `printHabit: {}` fixtures
+  folded; its assertions key on `revealOutput`/room wording, unchanged.
+- `npc-office-visuals.test.mjs`: **PASS.** This file is validator-only for habits: npc fixtures folded to
+  `habits.screen`, the issue filter regex moved to `habits\.screen`, and the four message-substring
+  assertions moved to the folded wording (`NPC 'x' habits.screen never applies`,
+  `habits.screen.lockChance`, `habits.screen but the NPC owns no workstation`).
+- Importers sweep: ran every `test/js` file importing `npc-needs.js` or `workstation-state.js` (45 files,
+  fixtures excluded). **43 pass, 2 fail** — `npc-needs-slots.test.mjs` and `npc-left-behind.test.mjs`,
+  both only in their `validator: test_needs_sims has no errors` subtest. These are the live-template
+  retired-key errors chunk 1 introduced in `validate_scenario.rb` (the un-rewritten `test_needs_sims`
+  still authors 2 `screenHabit` + 1 `printHabit`), independent of chunk 3; cleared by **chunk 5**. Every
+  other test/js file that still names a habit key is chunk-4-owned (`validator-*`) or chunk-1's
+  `validator-retired-keys`; no reader-side test outside my four names a habit key.
+
+### Cross-chunk note (important)
+
+The validator sub-tests inside `npc-office-visuals`, `npc-print-forget` and `npc-printer-power` shell to
+`scripts/validate_npc_needs.rb`, which **chunk 4 owns and had already folded in the working tree** (reads
+`npc['habits']['screen']` / `habits.print`, messages say `habits.screen` / `habits.print`). My assertions
+are aligned to that folded wording. These sub-tests pass only once chunk 4's `validate_npc_needs.rb` fold
+is committed; against chunk 1's committed validator they would fail with retired-key errors. If chunk 4
+settles on different message wording, these three files' assertions must be re-checked (chunk 7 sweep).
+
+### Sync size
+
+No change. Chunk 3 only reads NPC records on the client; nothing is written to or read from player_state.
+
+### Files touched
+
+`public/break_escape/js/systems/workstation-state.js`, `public/break_escape/js/systems/npc-needs.js`,
+`test/js/workstation-state.test.mjs`, `test/js/npc-office-visuals.test.mjs`,
+`test/js/npc-print-forget.test.mjs`, `test/js/npc-printer-power.test.mjs`,
+`docs/achitechture/SCENARIO_FORMAT_HARDENING_BUILD_LOG.md`.
+
+### Expected failures left for later chunks
+
+- `npc-needs-slots.test.mjs`, `npc-left-behind.test.mjs` (the `test_needs_sims` validator subtest only):
+  cleared by **chunk 5** (template rewrite).
+- The three validator sub-tests in my files depend on **chunk 4**'s `validate_npc_needs.rb` fold being
+  committed (see cross-chunk note).
+
+## Step 8c chunk 4 — the Ruby validators, verify-run, the leak scanner, and their node tests (2026-11-13)
+
+Branch `build/hard-8c` (tip `6c6483a74` at start: chunk 1 and chunk 3 committed; chunk 2's Ruby runtime
+readers, the ship filter and its tests are present in the tree, uncommitted). Chunk 4 of the seven-chunk
+split: the three validator derivers, `verify-run.rb`, the leak scanner, and the six node tests the plan
+assigns. No runtime reader, schema, template or `validate_scenario.rb` edit (owned by other chunks).
+
+### What changed
+
+- **`scripts/validate_npc_habits.rb`.** `effective_lock` reads the owner's `habits.screen`
+  (`owner.dig('habits', 'screen')`, was top-level `screenHabit`). The effective-rule printout source
+  labels and the author-facing warnings now name `habits.screen`: the `:authored_screen_habit` conflict
+  warning, `habit_source`, the default-rule label, and `screen_effects` (`habit not applied: the NPC
+  sets habits.screen`, `habits.screen lockChance ...`).
+- **`scripts/validate_npc_needs.rb`.** The print-habit check reads `npc.dig('habits', 'print')` and all
+  its error/warning text names `habits.print`. The screen-habit/autoLockSeconds check reads
+  `habits.screen` (presence via `npc['habits'].key?('screen')`, value via `dig`, and the owner fallback
+  `dig('habits', 'screen')`); the `screen_habits:` keyword doc comment follows.
+- **`scripts/validate_access_work.rb`.** `usbHabit` left `A_ONLY_FIELDS` (the whole `habits` block is
+  not an A-only field); a separate check flags `habits.usb` on a non-room NPC record. `check_usb_habit`
+  reads `npc.dig('habits', 'usb')` and its messages name `habits.usb`; `check_usb_give_order`/
+  `check_usb_ko_route` read `npc.dig('habits', 'usb', 'setGlobal')`; the `usb_refusal_beats?` walk skip
+  list is `%w[globalVariables usb]` (so the habit's own declaration is not read as a beat; policy `usb`
+  string values are harmless to skip and the `setGlobal` string is already guarded). The careful-guest
+  warnings now teach `"habits": { "screen": { "lockChance": 0 } }`.
+- **`tools/playtest/verify-run.rb`.** The per-NPC habits line reads the screen habit from
+  `npc.dig('habits', 'screen')` and is labelled `habits.screen`; `screen`/`print`/`usb` are excluded
+  from the `values` key=value dump (they get their own treatment or are server-only), so the awareness
+  habit values print unchanged.
+- **`tools/playtest/lib/access_leak_scanner.rb`.** Mirrors the chunk-2 ship filter: `WITHHELD_KEYS`
+  drops `habits` and `WITHHELD_WORK_KEYS` drops `usbHabit` (both now covered by the habits allow list);
+  a new `SHIPPED_HABIT_KEYS = %w[screen print]` and `scan_withheld_keys` flags any `habits` sub-key
+  outside that allow list (`npc:<id>/habits.<key>`), so a leaked `locksScreen`/`writesDown`/`password`/
+  `passwordPattern`/`holdsDoors`/`usb` is caught. The `withheld_key` description is updated. This touches
+  line 145 (`WITHHELD_KEYS`) as well as the re-anchor's cited 147/320, because the re-anchor's citations
+  came from grepping the three retired key names and `habits` is not one of them; removing `habits` is
+  required for correctness now that `habits.screen`/`.print` ship.
+
+### Tests
+
+Node (single files, `node --test`):
+- `validator-strict-keys.test.mjs`: 15 pass, 0 fail (was 3 fail). Folded the NPC fixture's
+  `screenHabit`/`printHabit`/`usbHabit` into `habits.screen`/`.print`/`.usb` (each keeping `...c`), moved
+  the three slip cases and pointers to `#/rooms/r1/npcs/0/habits/{screen,print,usb}`, and pointed the
+  closed-block enumeration at `D.npc.properties.habits.properties.{screen,print,usb}`.
+- `validator-npc-habits.test.mjs`: 46 pass, 0 fail (was 4 fail). Folded the authored `screenHabit`
+  fixtures into `habits.screen`; the report-line and warning assertions now read `habits.screen`.
+- `validator-usb-habit.test.mjs`: 25 pass, 0 fail (was 19 fail). Folded `usbHabit` into `habits.usb`
+  throughout; all assertions name `habits.usb`.
+- `validator-access-work.test.mjs`: 38 pass, 0 fail (was 1 fail). Folded the borrower's `screenHabit`
+  into `habits.screen`.
+- `validator-access-model.test.mjs`: 36 pass, 0 fail. Folded jake's `screenHabit`/`printHabit` edits
+  into `habits.screen`/`.print`.
+- `playtest-verify-run-access.test.mjs`: 15 pass, 0 fail. Folded the three NPCs' `screenHabit` into
+  `habits.screen`; the report expectation reads `habits.screen`.
+
+Ruby test of a changed script: `test/unit/access_leak_scanner_test.rb` (chunk 2 owns this file and has
+updated it in the tree to expect `npc:omar/habits.password` and `npc:omar/habits.usb`): **43 runs, 258
+assertions, 0 failures** against this chunk's scanner — chunk 2 and chunk 4 agree on the allow-list
+behaviour.
+
+Assertions changed in meaning: none weakened. Every assertion that named an old top-level habit key now
+names the folded path (`habits.screen`/`.print`/`.usb`) and tests the same behaviour; the strict-keys
+slip cases still prove the folded sub-blocks are closed and allow `^_`.
+
+### Expected failures left for later chunks
+
+- `test/unit/scenario_schema_test.rb` `test_corpus_has_no_setglobal_map_under_nil` (1 failure): the live
+  `test_access_social` template still authors top-level `usbHabit`, whose `setGlobal` the chunk-1 schema
+  no longer places, so the walk reaches it "under nil". Cleared by **chunk 5** (template rewrite). Not a
+  chunk-4 file.
+- The three authored-habit templates (`test_access_social`, `test_access_work`, `test_needs_sims`) still
+  validate with retired-key errors until **chunk 5** rewrites them.
+
+### Sync size
+
+No change. These are validator/diagnostic scripts; none reads or writes player_state. The leak scanner
+reads captured response bodies only.
+
+### Files touched
+
+`scripts/validate_npc_habits.rb`, `scripts/validate_npc_needs.rb`, `scripts/validate_access_work.rb`,
+`tools/playtest/verify-run.rb`, `tools/playtest/lib/access_leak_scanner.rb`,
+`test/js/validator-strict-keys.test.mjs`, `test/js/validator-npc-habits.test.mjs`,
+`test/js/validator-usb-habit.test.mjs`, `test/js/validator-access-work.test.mjs`,
+`test/js/validator-access-model.test.mjs`, `test/js/playtest-verify-run-access.test.mjs`,
+`docs/achitechture/SCENARIO_FORMAT_HARDENING_BUILD_LOG.md`.
+
+## Step 8c chunk 2 — Ruby runtime readers and the ship filter (2026-11-13)
+
+Branch `build/hard-8c` on chunk 1's tip (`6943c3b47`). Chunk 2 moves every Ruby runtime habit
+reader to the folded paths and turns the NPC `habits` filter into an allow list. No schema,
+transform, validator-script or JS edit here (chunks 1, 3, 4). Ran with `RBENV_VERSION=2.7.8`.
+
+### What changed
+
+- **`lib/break_escape/npc_habits.rb`.** `fill_screen_habit!` reads and writes `npc['habits']['screen']`
+  (was the top-level `screenHabit`): the authored-habit guard is `habits.key?('screen')` and the fill
+  is `(npc['habits'] ||= {})['screen'] = { 'lockChance' => chance }`. `expand!` now carries the folded
+  office-life sub-blocks (`FOLDED = screen print usb`) across the awareness expansion so the write-back
+  (`npc['habits'] = plan[:habits].merge(folded)`) never drops an authored `habits.screen`/`.print`/`.usb`.
+  `expanded` gained a guard: a `habits` block holding only folded keys (no non-folded awareness key) and
+  no level expands to nothing, so a bare authored `habits.screen` leaves the NPC untouched and out of the
+  report, exactly as a bare top-level `screenHabit` did before the fold (an invalid-only awareness block
+  still resolves to `{}` as before, so `format_upgrade_test`/`npc_habits_test` passwordPattern cases hold).
+- **`lib/break_escape/access_identities.rb`.** `screen_always_locks?` reads `owner['habits']['screen']`.
+- **`lib/break_escape/owner_claim.rb`.** the owner-claim print source and `prints?` read
+  `owner['habits']['print']`; `open_without_estimate?` reads `owner['habits']['screen']`.
+- **`lib/break_escape/access_work.rb`.** `usb_habit` reads `npc['habits']['usb']`; the `work.usb` build
+  and `NpcFrustration` (through `AccessWork.usb_habit`) follow unchanged.
+- **`app/models/break_escape/game.rb`.** the filter is now an allow list. `WITHHELD_NPC_KEYS` loses
+  `habits`; `WITHHELD_WORK_NPC_KEYS` loses `usbHabit`; a new `SHIPPED_HABIT_KEYS = %w[screen print]`.
+  `withhold_npc_secrets!` keeps only `habits.slice('screen','print')` and deletes the rest of `habits`
+  (`locksScreen`, `writesDown`, `password`, `passwordPattern`, `holdsDoors`, `usb`, any later key); a
+  `habits` block that ends up empty, or is not a Hash, is deleted whole, as the old deny-list delete did.
+  `work.usb` is still built from `habits.usb` (`compile_npc_plan!` runs before the filter). The
+  `npc_habit`/`written_down?` reads (`habits.writesDown`, unchanged by the fold) and the precedence
+  comment beside `pc_always_locks?` are left reading the `habits` block.
+- Comments naming the retired keys (npc_frustration.rb:276, the readers above, test support) updated to
+  the folded names. Grep of `app/`/`lib/` for `screenHabit`/`printHabit`/`usbHabit` now leaves only
+  `lib/break_escape/format_upgrade.rb` (chunk 1's retired list and fold transform).
+
+### Tests
+
+All 14 assigned Rails/unit files migrated to the folded fixtures and run together:
+**296 runs, 2664 assertions, 0 failures.** Notable additions:
+
+- `access_model_withholding_test.rb`: the two filter tests now assert a shipped `habits` holds only
+  `screen` and `print`; a block of only server-only habits (dana's `password`) is dropped whole; a moved
+  NPC keeps its shipped `habits.screen`; the bootstrap JSON carries no `locksScreen`/`writesDown`/
+  `holdsDoors`/`passwordPattern`.
+- `usb_habit_test.rb`: a new what-ships test (the brief's requirement) — a room NPC carrying every
+  `habits` key arrives in the room payload with `habits` holding exactly `screen` and `print`,
+  `writesDown`/`password`/`holdsDoors`/`usb` absent, and `work.usb` still built from the usb habit; the
+  bootstrap carries no server-only habit key.
+- `access_leak_scanner_test.rb`: migrated to the scanner's per-subkey reporting (`npc:omar/habits.password`,
+  `npc:omar/habits.usb`) and `habits.usb` stick fixtures. The scanner itself
+  (`tools/playtest/lib/access_leak_scanner.rb`) is **chunk 4's** and was already folded in the shared
+  working tree; the chunk-2 test is aligned to that folded scanner (`SHIPPED_HABIT_KEYS = screen print`).
+
+### Expected failures and cross-chunk notes
+
+- **`test/unit/format_upgrade_test.rb:252` (chunk 1's file) now fails.** Its test "step 8c folds a
+  loader-filled screenHabit on prepared data, unchanged" asserts `expand!` fills a top-level
+  `screenHabit` for the transform to fold. After chunk 2 the loader fills `habits.screen` directly, so
+  there is no top-level key and the fold is a no-op. The test must be updated to assert the loader fills
+  `habits.screen` and the transform leaves it. **I did not edit it** (not a chunk-2 file); chunk 1 or the
+  integrator should update it.
+- `validator-npc-habits.test.mjs` line 240 (chunk 1's listed expected failure): the loader now fills
+  `habits.screen`, which `npc_screen_habits` already reads, so this clears once chunk 4 owns that test;
+  that file is chunk 4's, untouched here.
+- The leak-scanner alignment assumes chunk 4's folded `access_leak_scanner.rb` lands; against chunk 1's
+  committed tree the scanner is already folded in the working copy.
+
+### Sync size
+
+No growth. NPC records are not in player_state; the filter only prunes keys from room/bootstrap payloads
+(the shipped `habits` shrinks to at most `screen` and `print`), so each sync sends no more than before.
+
+### Files touched (chunk 2)
+
+`lib/break_escape/npc_habits.rb`, `access_identities.rb`, `owner_claim.rb`, `access_work.rb`;
+`app/models/break_escape/npc_frustration.rb`, `game.rb`; `test/support/access_model_scenario.rb`;
+`test/unit/npc_habits_test.rb`, `test/models/break_escape/npc_habits_loader_test.rb`,
+`test/unit/access_identities_screen_test.rb`, `test/unit/pc_screen_lock_precedence_test.rb`,
+`test/unit/owner_claim_test.rb`, `test/controllers/break_escape/owner_claim_enforce_test.rb`,
+`test/controllers/break_escape/npc_frustration_test.rb`, `npc_lockout_l_test.rb`,
+`npc_workaround_h_test.rb`, `test/models/break_escape/access_model_withholding_test.rb`,
+`test/unit/access_leak_scanner_test.rb`, `test/models/break_escape/lab_physical_pentest_secrets_test.rb`,
+`test/controllers/break_escape/usb_habit_test.rb`, `test/unit/access_work_usb_habit_test.rb`,
+`docs/achitechture/SCENARIO_FORMAT_HARDENING_BUILD_LOG.md`.
+
+## Step 8c chunk 5 — template rewrite, README, corpus equivalence, reader parity (2026-11-13)
+
+Branch `build/hard-8c` on the chunk 1-4 tip (`21fff798c`). Chunk 5 rewrites the three authored-habit
+templates, updates the author-facing docs, freezes the `format_8c` fixtures, and adds the corpus
+equivalence, reader parity and stored-game equivalence tests. The old side for equivalence and parity
+is the step-8b tip `ab14d1926` (format 2). No runtime reader, schema, validator-script or
+`validate_scenario.rb` edit (owned by earlier chunks).
+
+### What changed
+
+- **`tools/format/rewrite_templates.rb`.** Added a `--step 3` path (`rewrite_scenario_8c`). For each
+  NPC with a top-level `screenHabit`/`printHabit`/`usbHabit`, it wraps the key's value verbatim in a
+  fresh `habits` block (`screen`/`print`/`usb`), preserving inline-vs-multiline source style, and
+  edits bottom-up. The real `STEP_8C` transform is the oracle: it refuses to write unless the
+  rewritten template, rendered, equals `transform_8c(old render)` and carries no retired key (so an
+  NPC that already held a `habits` block, which would collide, is refused for a hand edit — none in
+  the corpus).
+- **Templates.** `tools/format/rewrite_templates.rb --step 3` rewrote `test_access_social`
+  (5 `screenHabit` + 1 `usbHabit`), `test_access_work` (3 `screenHabit`) and `test_needs_sims`
+  (2 `screenHabit` + 1 `printHabit`), matching the re-anchor's per-scenario counts. By hand, the two
+  `_comment` author notes in `test_needs_sims` and the two `<%# %>` comments in
+  `lab_physical_pentest` that named `screenHabit` were reworded to `habits.screen`, so no template
+  teaches a retired name. `test_access_habits` authors none; it is re-validated only.
+- **`README_scenario_design.md`.** The habit teaching moved to `habits.screen`/`.print`/`.usb` (the
+  closed-blocks list; "The owner's habit"; the careful-guest rule; the USB-habit field and its
+  server-only note). In the same commit the leftover step-8a `downIf` wording was cleared: every
+  `downIf` (13 occurrences, networks and resources) now reads `offWhen`, the network-outage table row
+  and error wording were generalised to the requireGlobal form (`offWhen` accepts a name or a
+  `{ name: value }` object), and the station outage line now reads `offWhen` not `affordance.offWhen`.
+- **Fixtures.** `test/fixtures/format_8c/`: `<scenario>.old.json` (format-2 render) and `.new.json`
+  (format-3 render) for the three rewritten templates plus `test_access_habits`;
+  `test_access_habits.old.loaded.json`, `lab_physical_pentest.old.loaded.json` and
+  `priya_awareness.old.loaded.json` (format-2 loader output, `NpcHabits.expand!` on `ab14d1926`, a
+  top-level `screenHabit` filled). Captured on a detached base worktree at `ab14d1926`, removed after.
+
+### Moved keys per scenario (matching the re-anchor)
+
+- test_access_social: 5 `screenHabit` -> `habits.screen`, 1 `usbHabit` -> `habits.usb`.
+- test_access_work: 3 `screenHabit` -> `habits.screen`.
+- test_needs_sims: 2 `screenHabit` -> `habits.screen`, 1 `printHabit` -> `habits.print`.
+- test_access_habits, lab_physical_pentest: no template move (loader-filled habit only; stored-game change).
+
+### Tests
+
+- `test/unit/format_8c_corpus_test.rb` (new): **23 runs, 813 assertions, 0 failures.** Corpus
+  equivalence (`transform(old) == new`, notes stripped; no-op on new; `retired_keys_in(new)` empty);
+  prepare agrees across the fold; the edit-proof live guard (no retired key, and no author note names
+  one); Ruby reader parity on the effective screen-lock rule for every workstation and every NPC that
+  could borrow it (old `screen_always_locks?` reading `screenHabit` vs the live reader reading
+  `habits.screen`); the five named precedence fixtures (priya_pc, omar_pc, rosa_pc, ian_pc, jake_pc);
+  and the stored-game equivalence for test_access_habits and lab_physical_pentest (a format-2 loader
+  game, folded, equals a fresh format-3 game field for field and per-workstation lock rule). Proved to
+  bite: prefixing a folded value in a fixture turns it red (4 failures), restored.
+- `test/js/format-8c-reader-parity.test.mjs` (new): **PASS.** Loads the old `habitOf`/`decideLocked`
+  from `ab14d1926` with `git show` and the live ones; the effective lock rule (decideLocked over a
+  spread of trip lengths, roll null so deterministic) matches old-on-old vs new-on-new for every
+  workstation and borrower across the rewritten scenarios; the five named fixtures asserted directly
+  (test_access_habits via the loaded fixture and a JS fold); the edit-proof live guard. Proved to
+  bite, restored.
+- `test/unit/format_upgrade_test.rb:252` fixed: the "folds a loader-filled screenHabit on prepared
+  data" test now starts from the frozen `priya_awareness.old.loaded.json` (format-2 loader output,
+  top-level `screenHabit`), folds it, and asserts the result equals the current loader's format-3
+  fill field for field. **22 runs, 114 assertions, 0 failures.**
+- Expected failures chunks 1-4 left for chunk 5, all cleared:
+  - `format_8a_corpus_test.rb` and `format_8b_corpus_test.rb`: the frozen format-1/2 renders
+    legitimately still carry habit keys (retired by the later step 8c), so each test's retired-key
+    assertion was scoped to its own step version (`version <= 1` / `<= 2`); the live-template guards
+    pass unchanged now the templates no longer author habits. **50 runs, 0 failures.**
+  - `scenario_schema_test.rb` `test_corpus_has_no_setglobal_map_under_nil`: the folded `usbHabit`
+    now sits at `habits.usb`, which the schema places. **0 failures.**
+  - `npc-needs-slots.test.mjs`, `npc-left-behind.test.mjs` (`test_needs_sims` validator subtest), and
+    the validator subtests in `npc-office-visuals`/`npc-print-forget`/`npc-printer-power`: **5 files
+    PASS** (templates validate clean; chunk 4's `validate_npc_needs.rb` fold is committed).
+  - The three authored templates plus lab_physical_pentest and test_access_habits validate with
+    **0 errors** (`--no-graph`); no dungeon_graph side effects.
+
+### Sync size
+
+No change. The templates only move NPC-record keys inside `scenario_data`; NPC records are not stored
+in player_state, so the player_state transform is a no-op and no sync payload changes.
+
+### Files touched (chunk 5)
+
+`tools/format/rewrite_templates.rb`, `scenarios/test_access_social/scenario.json.erb`,
+`scenarios/test_access_work/scenario.json.erb`, `scenarios/test_needs_sims/scenario.json.erb`,
+`scenarios/lab_physical_pentest/scenario.json.erb`, `README_scenario_design.md`,
+`test/unit/format_upgrade_test.rb`, `test/unit/format_8a_corpus_test.rb`,
+`test/unit/format_8b_corpus_test.rb`, `test/unit/format_8c_corpus_test.rb`,
+`test/js/format-8c-reader-parity.test.mjs`, `test/fixtures/format_8c/*`,
+`docs/achitechture/SCENARIO_FORMAT_HARDENING_BUILD_LOG.md`.
+
+### For chunks 6 and 7
+
+- Chunk 6 (live proofs): the detached base worktree pattern worked (`git worktree add --detach
+  <path> ab14d1926`), but `bin/rails` there hit a bundler "GemNotFound" despite an identical
+  `Gemfile.lock`; the format-2 loader output was captured with a standalone `ruby3.2` script requiring
+  the libs directly (`NpcHabits.expand!`), no Rails. Chunk 6 needs a full server, so it may need the
+  existing `p-hard-8b` worktree's bundle or a `bundle install` on its base.
+- Stale author-facing docs still name the retired habit keys but were OUT of the build-plan's file
+  list, so left for a later sweep (flag to the orchestrator): per-scenario `PLAYTEST.md` and
+  `README.md` in test_access_habits/test_access_work/test_access_social/test_needs_sims/
+  lab_physical_pentest, `test_access_habits/mission.json` (`test_objective`), and the `usbHabit.setGlobal`
+  mention in `scenarios/test_access_social/ink/kim.ink`. None ships or is schema-validated.
+- Chunk 7 full-suite sweep: grep the tree for `screenHabit`/`printHabit`/`usbHabit`; legitimate hits
+  are comments, the schema's "was screenHabit" notes, the retired list, the frozen format_8a/8b/8c
+  fixtures, and the docs listed above.
+
+## Step 8c chunk 6 — live proofs (including the old-game proof) (2026-11-13)
+
+Chunk 6 of the seven-chunk split: the live proofs from the chunk-6 plan, each on the real page with the
+real `window.__test` bridge, headless. Two keyless servers sharing the dev DB: the branch server on
+**:3616** (branch `build/hard-8c`, tip `6bf4eca9c`, `FormatUpgrade.current` 3), the base server on
+**:3617** from the pre-prepared base worktree `.claude/worktrees/p-hard-8b` at `ab14d1926` (the 8b tip,
+format 2, `current` 2), which the brief directed as the old-code server (its `.bundle/config` and
+`node_modules` were already in place, so no `bundle install` was needed; the chunk-5 GemNotFound in a
+fresh detached worktree did not recur). Both started by hand the way `start-keyless-server.sh` does,
+`env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true`, the GEMINI warning confirmed in each boot log. No
+`db:` task anywhere. Drivers, the read-only row reader (`dump_habits.rb`, counts retired top-level
+`screenHabit`/`printHabit`/`usbHabit` and prints each NPC's `habits` block) and the captures live in the
+session scratchpad (`8c-chunk6/`); per the plan nothing was added to the repo except this section.
+
+**Scenario pick.** The brief let the old-game proof use test_access_habits (screen only, loader-filled
+from awareness) or test_needs_sims, "pick one that exercises screen and print habits". test_needs_sims
+was chosen because it authors both (amara and sanjay `screenHabit`, tom `printHabit`), so one game
+exercises the screen and print folds together; this diverges from the chunk-6 plan's test_access_habits
+priya_pc example, on the brief's explicit instruction.
+
+### Proof 1 — the stored-game (old-game) proof on test_needs_sims (game 3334)
+
+The old game was made on the base (`:3617`, `current` 2) by the **base worktree's own `new-game.rb`**
+(real standalone creation path, Mission row 236 present), never the swap tool. Played on the base's real
+page (`:3617`): opened the kitchen door, then waited; the autonomous needs system drove the habit beats
+and the `see_auto_lock` task completed (`waitFor task:see_auto_lock` returned after 185 s), then synced.
+
+**Before (base, format 2), `dump_habits.rb 3334`:** `formatVersion 2`; **3** retired top-level habit keys
+in `scenario_data` (office/amara `screenHabit`, office/tom `printHabit`, office/sanjay `screenHabit`),
+`habits` absent on all three; **0** retired keys in `player_state`. `player_state` held real habit-driven
+state from the base play: `sanjay_pc_screen_locked true`, `sanjay_pc_owner_away true`, `kitchen` in
+`unlockedRooms`, and 13 completed tasks including `see_auto_lock`, `see_printout`, `see_left_behind`,
+`spot_open_screen`. Base `verify-run.rb 3334`: progress recorded, 1 room beyond the first.
+
+Loaded the same game on the branch (`:3616`). First **GET /scenario -> 200**, header
+**`X-Break-Escape-Format: 3`**, bootstrap body `formatVersion 3`: the load upgraded the game through the
+real server path (`set_game -> ensure_current_format!`, under the row lock).
+
+**After (branch, format 3), `dump_habits.rb 3334`:** `formatVersion 3`; **0** retired keys in
+`scenario_data` and **0** in `player_state`; the three keys folded, each keeping its own sub-keys:
+office/amara `habits.screen {lockIfAwayOverSeconds: 20}`, office/sanjay `habits.screen {lockChance: 0}`,
+office/tom `habits.print {forgetChance: 0.5, fetchAfterSeconds: [30,120], _comment}`. The `player_state`
+habit state carried across unchanged (`sanjay_pc_screen_locked true`, `sanjay_pc_owner_away true`,
+`kitchen` still unlocked, the completed tasks kept): the `player_state` transform is a no-op for habits,
+as the chunk-1 plan states, because NPC records are not stored in player_state. Re-driving the upgraded
+game on the branch (resume, real page) fired the same folded-reader behaviour: `sanjay_pc_screen_locked`
+toggled (its `habits.screen.lockChance 0` leaves the machine's auto-lock to fire),
+`workstation_owner_left`/`workstation_owner_returned` for amara_pc, sanjay_pc and tom_pc, and copier print
+output picked up and placed. Branch `verify-run.rb 3334`: progress recorded, 18 tasks completed. **PASS.**
+
+A second old game (3318) was also made on the base (format 2, 3 retired keys) and loaded on the branch
+via the browser bootstrap; it upgraded to format 3 with the keys folded and 0 retired, but was not played
+far on the base (`verify-run` BOOTSTRAP ONLY), so 3334 is the primary old-game proof and 3318 the clean
+fold-on-load confirmation.
+
+### Proof 2 — the X-Break-Escape-Format header / old-tab path (games 3318 and 3334 on the base)
+
+The branch server stamps `X-Break-Escape-Format: 3` on every engine response; the base stamps `2`
+(confirmed on the root redirect and on `/scenario`). After the branch upgraded 3318 and 3334 to format 3,
+the base server (reads up to 2) refuses each, which is the "old client tab holding format 2 against a game
+a newer server advanced" case:
+
+- base **GET show** (`/break_escape/games/<id>`): **409**, header `X-Break-Escape-Format: 2`, full-page
+  HTML "...newer version of Break Escape (format 3; this server reads up to 2)".
+- base **GET /scenario** and **GET /room/office** (the `set_game` routes the format guard wraps): **409**,
+  header `X-Break-Escape-Format: 2`, body
+  `{"error":"format","message":"This game was saved by a newer version of Break Escape (format 3; this server reads up to 2)","current":2}`.
+- branch same routes: **200**, header `X-Break-Escape-Format: 3`.
+
+The format guard's reload-once-then-banner on a 409/header mismatch is unit-proven
+(`format-guard.test.mjs`); the mechanism is format-agnostic and was proved end-to-end at step 7/8a. Both
+games showed the identical 409 + header 2, so the header path behaves as the plan says. **PASS.**
+
+### Proof 3 — fresh branch game, screen and print habits on the real path (games 3322 and 3345)
+
+**3322 (test_needs_sims, native format 3, `dump_habits.rb`: folded `habits.screen`/`habits.print`, 0
+retired).** Opened the kitchen door and watched the office; the folded habit readers drove the behaviour
+live. Events seen: `workstation_auto_locked:sanjay_pc`, `workstation_lock_heard:sanjay_pc`,
+`sanjay_pc_screen_locked` (sanjay's `habits.screen.lockChance 0` leaves the auto-lock to fire),
+`workstation_owner_left`/`_returned` for amara_pc, sanjay_pc and tom_pc, `amara_pc_owner_away` (she left
+unlocked for a short trip, her `lockIfAwayOverSeconds 20`), `tom_badge_left`, and copier output produced
+and collected. `verify-run.rb 3322`: progress recorded, 1 room beyond the first, **14 tasks completed**
+including `see_auto_lock` and `spot_open_screen` (screen habit) and `see_printout` (the print pipeline).
+**PASS** (screen habit on the real browser path).
+
+**3345 (test_needs_sims, print habit specifically).** Walked to the Print Queue note and read it, which
+releases a held print as Tom; `waitFor event:npc_print_uncollected:tom` returned
+`{ownerId:"tom", slotId:"copier_out_a", producerId:"office_copier", ageMs:150000, forgotten:true}` (tom's
+`habits.print` forget behaviour). During the same wait Tom printed again and fetched it
+(`copier_out_b` produced, `npc_picked_up:copier_out_b`, `npc_placed:copier_out_b`, task `see_printout`
+completed) and `tom_pc_screen_locked` toggled (his `lockChance 0.5` roll). `verify-run.rb 3345` is
+BOOTSTRAP ONLY because the run stayed in the office (no room transition), so the `npc_print_uncollected:tom`
+event and the 10 task completions are the evidence, the same gate note as 8b's test_needs_sims. **PASS**
+(print habit on the real browser path, reading the folded `habits.print`).
+
+### Sync size
+
+No growth. The `scenario_data` fold renames each top-level habit key into `habits.<screen|print|usb>` in
+place (the sub-object holds exactly what the top-level key held, so no addition); the `player_state`
+transform is a no-op for habits (NPC records are not in player_state), and the habit-driven globals it
+does carry (`*_screen_locked`, `*_owner_away`, `tom_badge_left`) are bounded booleans the needs system
+already wrote before 8c. `sync_state` reads and writes no habit field, so nothing is re-sent because of
+8c. The upgraded old game (3334) `player_state` held the same bounded data before and after the load.
+
+### Servers and clean-up
+
+Branch server `:3616` and base server `:3617` both stopped by their own listening pids; both confirmed
+down by curl (connection refused). All browser sessions quit. The base worktree `.claude/worktrees/p-hard-8b`
+is left in place and unchanged (read-only, as directed). Games 3318, 3322, 3334, 3345 are development-DB
+games left at format 3, recorded here; no other game was touched.
+
+### Handover
+
+- **Done:** chunk 6 as specified. Old game 3334 upgraded on the branch's real load (format 2 -> 3, the 3
+  retired habit keys folded to `habits.screen`/`habits.print`, 0 retired in `scenario_data` and
+  `player_state`, header 3, habit `player_state` state preserved, the screen and print beats behaving the
+  same after the fold). The X-Break-Escape-Format old-tab path shows 409 + header 2 on the base for both
+  format-3 games. A fresh branch game (3322) and the Tom print game (3345) prove the screen habit
+  (auto-lock, owner-left tracking, `spot_open_screen`) and the print habit (`npc_print_uncollected:tom`,
+  print fetched) on the real page, reading the folded keys.
+- **Old game made via:** the base worktree's own `new-game.rb` (real creation path, Mission row 236),
+  never the swap tool.
+- **Proof scripts** live only in the session scratchpad (`8c-chunk6/`), per the plan's "nothing added to
+  the repo except this log's proof section"; `dump_habits.rb` is the read-only row reader.
+- **For chunk 7:** the full-suite sweep and the stale author-facing docs still naming the retired habit
+  keys (chunk-5 handover list) remain.
+
+## Step 8c chunk 7 — full suites and fallout (2026-11-13)
+
+Branch `build/hard-8c` at `fba01a77a` (chunks 1 to 6 done, `build/hard-8b` and main merged in). Chunk 7
+is the last chunk: fold the stale author-facing docs, re-check the cross-chunk node sub-tests, run both
+full suites under the shared lock, and record the green tip.
+
+### What changed
+
+- **Stale author-facing docs folded** (`screenHabit`/`printHabit`/`usbHabit` ->
+  `habits.screen`/`habits.print`/`habits.usb`): `scenarios/test_access_social/PLAYTEST.md` (2 `usbHabit`),
+  `scenarios/test_access_work/PLAYTEST.md` (2 `screenHabit`), `scenarios/test_needs_sims/README.md`
+  (1 `screenHabit`, 2 `printHabit`), `scenarios/test_access_habits/PLAYTEST.md` (11 `screenHabit`),
+  `scenarios/test_access_habits/mission.json` `test_objective` (1 `screenHabit`),
+  `scenarios/lab_physical_pentest/PLAYTEST.md` (2 `screenHabit`), and the `usbHabit.setGlobal` comment in
+  `scenarios/test_access_social/ink/kim.ink`. The five named scenarios have no other README/PLAYTEST hits
+  (only test_needs_sims carries a README; the others' author doc is PLAYTEST.md).
+- **`kim.ink` recompiled** with `bin/inklecate -o kim.json kim.ink` (the repo's `scripts/compile-ink.sh`
+  path): `kim.json` is byte-identical before and after, the ink change being comment-only. No `.ink.json`
+  twin exists for this file.
+- **`scripts/scenario-schema.json`:** two `revealOutput`/needs-command description strings that named
+  `printHabit` in prose now say `habits.print` (the field itself was already removed in chunk 1). JSON
+  still parses. This is the only out-of-scope live mention folded; see the sweep below for the ones left.
+
+### Cross-chunk node sub-tests (chunk 3 / chunk 4)
+
+Chunk 3's note warned that the validator sub-tests in `npc-office-visuals.test.mjs`,
+`npc-print-forget.test.mjs` and `npc-printer-power.test.mjs` were aligned to chunk 4's then-uncommitted
+`validate_npc_needs.rb` wording. Chunk 4 is committed; all three pass against the committed validator
+(`bin/test-js` of the three files: 3 passed, 0 failed).
+
+### Full suites (shared lock, tip `0305bd1ad`)
+
+- **JS** (`flock <tests.lock> bin/test-js -j 3`): **617 files passed, 0 failed.**
+- **Rails** (`flock <tests.lock> bin/rails test`, `RBENV_VERSION=2.7.8`): **2486 runs, 44421 assertions,
+  0 failures, 0 errors, 1 skip.**
+
+Both suites ran on the same tip `0305bd1ad` (the chunk 7 doc/schema commit), green with no fallout to fix.
+No test file carried a stale inline habit fixture or assertion that the owning chunk missed (the 8b lesson
+did not recur in 8c). No known timing flake needed a rerun.
+
+### Grep sweep (whole tree)
+
+`grep -rn 'screenHabit|printHabit|usbHabit'` over the repo (node_modules and .git aside) leaves only
+legitimate hits:
+- `lib/break_escape/format_upgrade.rb` — the `retired` list (the rename source of truth).
+- `scripts/validate_scenario.rb:1001` — a comment naming the three retired NPC keys in the dedup logic.
+- `lib/break_escape/npc_habits.rb:93` — a comment contrasting the pre-fold bare top-level `screenHabit`.
+- `scripts/scenario-schema.json` — none left (the two prose mentions folded above).
+- `test/fixtures/format_8a/*`, `format_8b/*`, `format_8c/*` — frozen historical renders (old side still
+  carries the keys by design).
+- `test/unit/format_upgrade_test.rb`, `format_8b_corpus_test.rb`, `format_8c_corpus_test.rb`,
+  `test/controllers/break_escape/format_8c_deployed_noop_test.rb`, `test/js/validator-retired-keys.test.mjs`,
+  `test/js/format-8c-reader-parity.test.mjs`, `tools/format/rewrite_templates.rb` — the transform/fold
+  machinery and its tests, which must name both sides of the rename.
+- `docs/achitechture/*` and `docs/handover/*` — build-log / plan / patch history.
+- `scenarios/lab_physical_pentest/IMPROVEMENT_LOOP_LOG.md:831` — a dated slice-17 log entry recording the
+  `printHabit` feature at the commits that built it (history, left as written).
+- `tools/playtest/test_access_habits-report.md` — a generated historical playtest report (left as written).
+
+### Sync size
+
+No change. Chunk 7 touches docs, a schema description string and test fixtures only; no sync path.
+
+### Files touched
+
+`scenarios/test_access_social/PLAYTEST.md`, `scenarios/test_access_social/ink/kim.ink`,
+`scenarios/test_access_work/PLAYTEST.md`, `scenarios/test_needs_sims/README.md`,
+`scenarios/test_access_habits/PLAYTEST.md`, `scenarios/test_access_habits/mission.json`,
+`scenarios/lab_physical_pentest/PLAYTEST.md`, `scripts/scenario-schema.json`,
+`docs/achitechture/SCENARIO_FORMAT_HARDENING_BUILD_LOG.md`.
+
+### Done when
+
+Both full suites green on one tip (`0305bd1ad`), the grep sweep clean of stray live mentions, the three
+cross-chunk node files passing against the committed validator. Step 8c is ready for code review.

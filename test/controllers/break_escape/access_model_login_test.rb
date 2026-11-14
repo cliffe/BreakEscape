@@ -488,7 +488,7 @@ module BreakEscape
         'owner whose only need is invalid' =>
           [tracked_scenario('needs' => { 'coffee' => { 'decayPerMin' => 0, 'urgentAt' => 40 } }, 'interests' => { 'x' => 0 }), {}, 'jake_pc'],
         'owner with no account' =>
-          [tracked_scenario { |d| jake_pc(d)['screenOwner'] = 'len' }.tap do |d|
+          [tracked_scenario { |d| jake_pc(d)['owner'] = 'len' }.tap do |d|
             d['rooms']['lobby']['npcs'].find { |n| n['id'] == 'len' }['needs'] = { 'tea' => { 'decayPerMin' => 5, 'urgentAt' => 30 } }
           end, {}, 'jake_pc'],
         'access list does not admit the owner' => [tracked_scenario, {}, 'it_pc'],

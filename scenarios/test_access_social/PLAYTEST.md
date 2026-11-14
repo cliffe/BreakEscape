@@ -146,7 +146,7 @@ use and is usually answered `{ post: null, done: false }`, so a per-run total gr
 ## USB habit beat (q39): U1
 
 East of Hamid's room, `u1_room` holds Kim (`docs/achitechture/USB_HABIT_PLAN.md`). Her PC is under
-`usb_locked` (`usb: storage_blocked`) and her `usbHabit.every` is 2, so every second work use there
+`usb_locked` (`usb: storage_blocked`) and her `habits.usb.every` is 2, so every second work use there
 copies a file to a USB stick and is refused. Her feed is `reactive_first` with one ordered post and a
 vent keyed on `cause: "usb_refused"`. Start the game with `new-game.rb test_access_social --start-room
 u1_room` to run the beat alone.
@@ -161,8 +161,8 @@ u1_room` to run the beat alone.
 Tampered (U2): with Kim still holding the stick, `POST /unlock` and `GET /container` for `kim_usb` (or any invented stick id) answer 422 and 404, and a forged stick in the browser's own tray opens nothing. No room, bootstrap or inventory response carries the file's text or name.
 
 Tampered: a `fail` for Kim naming `usb_refused` for `social_media`, or naming another PC, is refused,
-and so is one for an NPC with no `usbHabit` (Nadia). Room data for Kim carries `work.usb` and no
-`usbHabit`.
+and so is one for an NPC with no `habits.usb` (Nadia). Room data for Kim carries `work.usb` and no
+`habits.usb`.
 
 The leak check must still say `VERDICT: no leaks found` after each reactive beat, and its counts line
 must show the reactive post texts among the feed posts it checked. One reload during the run (as F7)
