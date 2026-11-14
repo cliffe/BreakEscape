@@ -5,7 +5,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { NPCNeedsSystem, needTiming, NEEDS_TICK_MS, RETURN_YIELD_MS, createEngineWorld } from '../../public/break_escape/js/systems/npc-needs.js';
+import { NPCNeedsSystem, needTiming, NEEDS_TICK_MS, RETURN_YIELD_MS, createEngineWorld, requiredGlobalsHold } from '../../public/break_escape/js/systems/npc-needs.js';
 
 import { makeWorld } from './fixtures/needs-stub-world.mjs';
 import { makeSimsWorld, addCopierBeat, SIMS_SEED } from './fixtures/needs-sims-world.mjs';
@@ -1662,4 +1662,141 @@ test('a forgotten command print is the oldest recyclable slot once the tray fill
     const rec = p.evs('recycled', 'tom');
     assert.deepEqual(rec.map(e => e.item), ['copier_out_b'], 'the oldest read-in-place forgotten slot is reused, the takeable a is kept');
     assert.equal(p.w.globals.copier_out_a_shown, true, 'the takeable forgotten printout still waits on the tray');
+});
+
+// ── SIMS-4 (plan 5.4): the staff-room pair's couplings, cooldown and gated exchanges ──
+// The staff room's patterns, proved on the stub: a coupling on the use start that targets only the
+// named partner, a use started straight from another job still emitting npc_use_started, the
+// chatterCooldownMin: 0.25 window, a needs.set on an NPC whose room is not loaded doing nothing, and
+// Jodie's three gated exchanges resolving in reading order (exchange_job_cleared never before
+// heard_exchange_job_called).
+
+const EX_LINES = {
+    exchange_waiting: [
+        { speakerId: 'keith', text: 'Quiet on the radio tonight.' },
+        { speakerId: 'jodie', text: 'Long shift when it is this slow.' },
+        { speakerId: 'keith', text: 'A brew while we can, then.' }
+    ],
+    exchange_job_called: [
+        { speakerId: 'jodie', text: 'That light in here still flickering?' },
+        { speakerId: 'keith', text: "Neil's put it out on the radio." },
+        { speakerId: 'keith', text: "Someone'll be up soon, Jodie." }
+    ],
+    exchange_job_cleared: [
+        { speakerId: 'keith', text: 'They sorted that flickering light.' },
+        { speakerId: 'jodie', text: 'About time. Hurt my eyes, that did.' },
+        { speakerId: 'keith', text: 'Peace and quiet again. Lovely.' }
+    ]
+};
+const JODIE_EXCHANGES = [
+    { with: 'keith', knot: 'exchange_job_called', requireGlobal: { job_called: true } },
+    { with: 'keith', knot: 'exchange_job_cleared', requireGlobal: { job_cleared: true, heard_exchange_job_called: true } },
+    { with: 'keith', knot: 'exchange_waiting' }
+];
+
+/** keith and jodie in the staff room: a boiler (caffeine), a cooler (thirst) and a microwave (hunger). */
+function staffRoom({ globals = {}, registerJodie = true, keithNeeds, jodieNeeds } = {}) {
+    const objects = [
+        { id: 'staff_boiler', x: 200, y: 100, affordance: { satisfies: 'caffeine', restores: 40, useSeconds: 30, capacity: 2, chatter: 'staff_tea' } },
+        { id: 'staff_cooler', x: 300, y: 100, affordance: { satisfies: 'thirst', restores: 40, useSeconds: 25, capacity: 2, chatter: 'staff_water' } },
+        { id: 'staff_microwave', x: 400, y: 100, affordance: { satisfies: 'hunger', restores: 60, useSeconds: 10 } }
+    ];
+    const npcs = {
+        keith: { pos: { x: 120, y: 300 }, rec: {
+            id: 'keith', needsHome: { room: 'office', x: 4, y: 10 }, needsSpeed: 80, chatterCooldownMin: 0.25,
+            needs: keithNeeds || { caffeine: { decayPerMin: 1, urgentAt: 40, initial: 95, jitterPct: 0 }, thirst: { decayPerMin: 1, urgentAt: 40, initial: 95, jitterPct: 0 } },
+            chatter: { staff_tea: ['Best brew on site, this.'], staff_water: ['Keeps you sharp, water.'] }
+        } }
+    };
+    if (registerJodie) npcs.jodie = { pos: { x: 180, y: 300 }, rec: {
+        id: 'jodie', needsHome: { room: 'office', x: 6, y: 10 }, needsSpeed: 80, chatterCooldownMin: 0.25,
+        needs: jodieNeeds || { thirst: { decayPerMin: 1, urgentAt: 40, initial: 95, jitterPct: 0 }, caffeine: { decayPerMin: 1, urgentAt: 40, initial: 95, jitterPct: 0 } },
+        chatter: { staff_tea: ['Cheers, Keith.'], staff_water: ['Parched, so I am.'] },
+        exchanges: JODIE_EXCHANGES
+    } };
+    const w = makeWorld({ npcs, objects });
+    w.world.globalHolds = cond => requiredGlobalsHold(cond, globals);
+    w.world.exchangeLines = (owner, knot) => EX_LINES[knot] || null;
+    w.world.chatterConfig = () => ({ staff_tea: ['Best brew on site, this.'], staff_water: ['Keeps you sharp, water.'] });
+    w.world.playerHears = () => ({ overheard: true, distance: 50 });
+    w.world.playerProximity = () => ({ nearby: false, distance: null });
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.register('keith');
+    if (registerJodie) sys.register('jodie');
+    return { w, sys, globals };
+}
+
+test('SIMS-4 coupling: a boiler use start carries its npcId; the coupling sets only the named partner need', () => {
+    const { w, sys } = staffRoom();
+    sys.states.get('keith').levels.caffeine = 10;   // keith goes for a brew
+    while (!w.calls.emits.some(e => e.name === 'npc_use_started:staff_boiler') && sys.clockMs < 30000) sys.step(NEEDS_TICK_MS);
+    const start = w.calls.emits.find(e => e.name === 'npc_use_started:staff_boiler');
+    assert.ok(start, 'the boiler use start was emitted');
+    assert.equal(start.data.npcId, 'keith', 'the start names the user');
+    // Jodie's coupling: fires on keith's boiler start only (condition data.npcId === "keith").
+    const coupling = ev => { if (ev.name === 'npc_use_started:staff_boiler' && ev.data.npcId === 'keith') sys.control('jodie', { set: { caffeine: 20 } }); };
+    coupling(start);
+    assert.equal(sys.states.get('jodie').levels.caffeine, 20, "the partner's named need is set");
+    assert.ok(sys.states.get('jodie').levels.thirst > 90, 'no other need of the partner is set to 20');
+    // Jodie's own boiler start, or a microwave start, must not bring her through this coupling.
+    coupling({ name: 'npc_use_started:staff_boiler', data: { npcId: 'jodie' } });   // condition false
+    coupling({ name: 'npc_use_started:staff_microwave', data: { npcId: 'keith' } }); // wrong pattern
+    assert.equal(sys.states.get('jodie').levels.caffeine, 20, 'neither fired the coupling again');
+});
+
+test('SIMS-4: every break emits npc_use_started, so a second coupled break still brings the partner', () => {
+    // Two urgent needs: Keith takes a brew, then eats. Each use start emits npc_use_started, which
+    // is the event the couplings listen on, so no break is silent to the partner.
+    const { w, sys } = staffRoom({
+        keithNeeds: {
+            caffeine: { decayPerMin: 1, urgentAt: 40, initial: 10, jitterPct: 0 },
+            hunger: { decayPerMin: 1, urgentAt: 40, initial: 10, jitterPct: 0 }
+        }
+    });
+    while (sys.clockMs < 120000 && new Set(w.calls.emits.filter(e => e.name.startsWith('npc_use_started:')).map(e => e.name)).size < 2) sys.step(NEEDS_TICK_MS);
+    const starts = w.calls.emits.filter(e => e.name.startsWith('npc_use_started:') && e.data.npcId === 'keith');
+    const objs = starts.map(e => e.name.split(':')[1]);
+    assert.ok(objs.includes('staff_boiler') && objs.includes('staff_microwave'), `both uses emitted a start: ${objs.join(', ')}`);
+    assert.ok(starts.every(e => e.data.npcId === 'keith' && typeof e.data.need === 'string'), 'each start names its user and need');
+});
+
+test('SIMS-4: chatterCooldownMin 0.25 allows a pool line 15 s of needs clock after the last', () => {
+    const { sys } = staffRoom();
+    const s = sys.states.get('keith');
+    s.chatterQuietUntil = 0; sys._speechUntil = 0;
+    const first = sys._pickBark(s, 'staff_tea', {});
+    assert.ok(first && first.line, 'a pool line is available');
+    assert.equal(s.chatterQuietUntil, sys.clockMs + 15000, 'the 0.25 min cooldown is 15 s');
+    const during = sys._pickBark(s, 'staff_tea', {});
+    assert.ok(during && during.picture && !during.line, 'inside the cooldown it falls to a picture');
+    sys.clockMs += 15000;   // 15 s of needs clock later
+    const after = sys._pickBark(s, 'staff_tea', {});
+    assert.ok(after && after.line, 'a pool line is allowed again 15 s on');
+});
+
+test('SIMS-4: a needs.set on an NPC whose room is not loaded does nothing', () => {
+    const { sys } = staffRoom({ registerJodie: false });   // the staff room never loaded Jodie
+    assert.equal(sys.states.get('jodie'), undefined, 'Jodie is not registered');
+    assert.equal(sys.control('jodie', { set: { thirst: 20 } }), false, 'the set is a no-op on an unregistered NPC');
+    assert.equal(sys.states.get('jodie'), undefined, 'and creates no state');
+});
+
+test('SIMS-4 exchange gates: the ungated waiting exchange plays first, then job_called once its global holds', () => {
+    let g = {};
+    let r = staffRoom({ globals: g });
+    assert.equal(r.sys._findExchange({ npcId: 'jodie' }, { npcId: 'keith' }).knot, 'exchange_waiting', 'no global set: the ungated knot');
+    g = { job_called: true };
+    r = staffRoom({ globals: g });
+    assert.equal(r.sys._findExchange({ npcId: 'jodie' }, { npcId: 'keith' }).knot, 'exchange_job_called', 'job_called held: its gated knot sorts first');
+});
+
+test('SIMS-4 exchange gates: exchange_job_cleared never plays before heard_exchange_job_called', () => {
+    // waiting is marked heard so only the job knots are in play.
+    let g = { job_cleared: true, heard_exchange_waiting: true };
+    let r = staffRoom({ globals: g });
+    assert.equal(r.sys._findExchange({ npcId: 'jodie' }, { npcId: 'keith' }), null, 'job_cleared alone opens nothing');
+    g = { job_cleared: true, heard_exchange_job_called: true, heard_exchange_waiting: true };
+    r = staffRoom({ globals: g });
+    assert.equal(r.sys._findExchange({ npcId: 'jodie' }, { npcId: 'keith' }).knot, 'exchange_job_cleared', 'both keys held: the clearance exchange opens');
 });

@@ -121,11 +121,11 @@ The boiler, cooler and microwave each claim a drawn sprite by base type (the ket
 | about 10:00 (9:54 on this seed) | Jodie's first cooler (thirst 90, 5 a min, urgent 35, validator T1 11:00; the seed's initial jitter is about -6 %); her use start sets Keith's thirst to 20; 25 s at the cooler, overlap about 21 s. At 85 it landed at 8:58, 58 s after the microwave, so plan step 1 moved it by 5 |
 | after that | shared breaks alternating boiler and cooler about four minutes apart; the partner's coupled need is always reset before it falls due |
 
-**Annotated example.** The pair's topics are their own (`staff_tea`, `staff_water`), not the scenario-level `coffee`/`cooler` pools, so their bags hold only their own lines; the cooler's use cell is hand-written one tile west of the preset's (E8: `besideCell` makes no route check, and the preset's second-user cell sits against the east wall):
+**Annotated example.** The pair's topics are their own (`staff_tea`, `staff_water`), not the scenario-level `coffee`/`cooler` pools, so their bags hold only their own lines; the cooler's use cell is hand-written one tile west and half a tile south of the preset's, `{ "dx": -1, "dy": 1.5 }` against the preset's `{ "dx": 0, "dy": 1 }` (E8: `besideCell` makes no route check, and the preset's second-user cell sits against the east wall):
 
 ```jsonc
 // staff_cooler: claims the drawn water_cooler1 by base type; the cooler preset supplies
-// thirst and capacity 2. useFrom one tile west of the preset's approach cell, so the second
+// thirst and capacity 2. useFrom one tile west and half a tile south of the preset's cell, so the second
 // user's cell is reachable from both homes, not against the east wall.
 { "type": "water_cooler", "id": "staff_cooler",
   "affordance": { "chatter": "staff_water", "useSeconds": 25, "restores": 40,
@@ -141,6 +141,8 @@ The boiler, cooler and microwave each claim a drawn sprite by base type (the ket
 ```
 
 A player should expect a voiced line or two on a crossing and picture chat for the rest, because lines spoken before they are in earshot are spent (E7).
+
+**On reload.** The globals and the five task keys survive, so no task re-ticks. Two cosmetic beats can replay and are harmless (server review R1 m1/m2): the three `heard_exchange_*` markers persist only on the next periodic or page-hide sync, not the moment the exchange plays, so a reload within about 30 seconds of a first overhear and with no page-hide can replay that optional exchange (three to five lines, the task stays ticked); and `firstVisit` is per-load (the engine clears `discoveredRooms` on load), so the first staff-room entry after any reload re-arms the opening tea break. Neither double-ticks a task.
 
 ## Live proof (2026-11-05, keyless :3001, headless, load average ~80)
 
@@ -926,7 +928,7 @@ Round-2 design/engine review: 2 major, 7 minor; server review: 1 minor. Tool `to
 
 ### SIMS-4 live proof: the staff-room pair (2026-11-14, keyless :3094, headless, worktree p-ol-sims2)
 
-Tool `tools/playtest/needs-sims-staff-room.mjs`, on test_needs_sims games from `new-game.rb`; the conversations with Neil are opened and closed through their UI and the doors walked through, never emitted. Scratchpad `officelife-sims/s4/`. Step 1 cell checks (`tools/playtest/sims4-step1.mjs`, game 4340): door alignment OK (it_room east door 304 vs staff_room 336); the boiler, cooler, microwave and job board each claim their drawn sprite; all three use-object approach cells are walkable; the cooler's hand-written cell is one tile west of the preset's; Keith sits on `hospital_chair_south` (feet 20.8 px, within NEAR_CHAIR 36), Jodie on `hospital_chair_north` (14.0 px); homes at room-local (6.97, 4.85) and (4.2, 6.1); no use cell within two tiles of the west door. Validator T1/P (the seed's schedule): Keith caffeine 2.0/8.0 min, Jodie thirst 10.0/8.0 min; with the first-visit start Keith's second tea moves to ~4:30-6:30.
+Tool `tools/playtest/needs-sims-staff-room.mjs`, on test_needs_sims games from `new-game.rb`; the conversations with Neil are opened and closed through their UI and the doors walked through, never emitted. Scratchpad `officelife-sims/s4/`. Step 1 cell checks (`tools/playtest/sims4-step1.mjs`, game 4340): door alignment OK (it_room east door 304 vs staff_room 336); the boiler, cooler, microwave and job board each claim their drawn sprite; all three use-object approach cells are walkable, and a path search from both homes reaches the boiler's and the cooler's second-user cells; the cooler's hand-written cell is one tile west and half a tile south of the preset's; Keith sits on `hospital_chair_south` (feet 20.8 px, within NEAR_CHAIR 36), Jodie on `hospital_chair_north` (14.0 px); homes at room-local (6.97, 4.85) and (4.2, 6.1); no use cell within two tiles of the west door. Validator T1/P (the seed's schedule): Keith caffeine 2.0/8.0 min, Jodie thirst 10.0/8.0 min; with the first-visit start Keith's second tea moves to ~4:30-6:30.
 
 Counts (fresh `new-game.rb` game per run, driver `officelife-sims/s4/finish/driver.sh`, 0 setup failures, no run flagged two starts on different partners within 5 s):
 

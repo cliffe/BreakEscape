@@ -1084,6 +1084,7 @@
       "door_sign": "Staff Room",
       "needsPrivateTo": ["keith", "jodie"],
       "connections": { "west": "it_room" },
+      "lighting": { "flicker": true, "variants": [{ "condition": "globalVars.job_cleared === true", "flicker": false }] },
       "objects": [
         {
           "type": "hot_water_boiler",
@@ -1194,7 +1195,7 @@
           "_comment": "SIMS-4 (m02 night-domestic pattern): tile home on the cell east of hospital_chair_north; seating sits her on it facing north. Her id sorts first, so her exchange list is read first (_findExchange): job-called (gated job_called), job-cleared (gated job_cleared + heard job-called), then the ungated waiting exchange. Coupled on Keith's boiler use; the private-office entry starts her cooler break.",
           "eventMappings": [
             { "eventPattern": "npc_use_started:staff_boiler", "condition": "data.npcId === 'keith'", "needs": { "set": { "caffeine": 20 } } },
-            { "eventPattern": "room_entered:manager_office", "cooldown": 120000, "needs": { "set": { "thirst": 20 } } },
+            { "eventPattern": "room_entered:manager_office", "cooldown": 120000, "fireOnlyWhenLoaded": true, "needs": { "set": { "thirst": 20 } } },
             { "eventPattern": "npc_chatted:staff_boiler", "condition": "data.overheard === true", "onceOnly": true, "cooldown": 0, "completeTask": "see_shared_break" },
             { "eventPattern": "npc_exchange_heard:exchange_waiting", "onceOnly": true, "cooldown": 0, "completeTask": "hear_waiting" },
             { "eventPattern": "npc_exchange_heard:exchange_job_called", "onceOnly": true, "cooldown": 0, "completeTask": "hear_job_called" }

@@ -41,7 +41,7 @@ async function load() {
             const orig = ed.emit.bind(ed);
             // npc_sat is emitted bare (seating.js) with no ":<id>" suffix, so allow end-of-string
             // after the event keyword as well as a colon.
-            ed.emit = (ev, data) => { try { if (/^(npc_(chatted|exchange_heard|use_started|returned_post|sat|sat_at|used|left_post)|room_entered)(:|$)/.test(ev)) window.__s4.push({ clockMs: (window.npcNeedsSystem && window.npcNeedsSystem.clockMs) || 0, ev, data }); } catch (e) {} return orig(ev, data); };
+            ed.emit = (ev, data) => { try { if (/^(npc_(chatted|exchange_heard|use_started|returned_post|sat|sat_at|used|left_post)|room_entered|conversation_closed)(:|$)/.test(ev)) window.__s4.push({ clockMs: (window.npcNeedsSystem && window.npcNeedsSystem.clockMs) || 0, ev, data }); } catch (e) {} return orig(ev, data); };
             ed.__s4wrapped = true;
         }
     });
@@ -155,40 +155,82 @@ if (beat === 'first_visit') {
     };
 }
 
-if (beat === 'job_beat') {
-    // Report the flickering light to Neil, close, walk straight into the staff room.
-    report.closed = await talkNeil({ reportLight: true });
-    report.job_called = await page.evaluate(() => (window.gameState.globalVariables || {}).job_called);
-    await enterRoom('staff_room');
-    await standNear('staff_boiler');
+// B1: a break the player walks into must be started by leaving Neil (or entering the private office),
+// not by the first visit. So load the staff room first, let the first-visit break settle, wait more
+// than 120 s of needs clock since the last staff start with both NPCs home, then do the close/cross.
+async function settleStaff(minGapMs = 125000, capMs = 280000) {
+    const startReal = Date.now();
+    while (Date.now() - startReal < capMs) {
+        const evs = await events();
+        const starts = evs.filter(e => e.ev.startsWith('npc_use_started:staff_'));
+        const last = starts.length ? starts[starts.length - 1].clockMs : 0;
+        const now = await clock();
+        const k = await npc('keith'), j = await npc('jodie');
+        const bothHome = !k.phase && !j.phase && k.mode !== 'using' && j.mode !== 'using';
+        if (starts.length && bothHome && (now - last) > minGapMs) return { ok: true, now_ms: now, last_start_ms: last, gap_s: +((now - last) / 1000).toFixed(1) };
+        await t(4000);
+    }
+    return { ok: false };
+}
+
+if (beat === 'job_beat' || beat === 'boiler_cross') {
+    const reportLight = beat === 'job_beat';
+    await enterRoom('staff_room'); await t(1500);           // the first visit (first-visit break)
+    const settled = await settleStaff();                    // both home, > 120 s since the last start
+    const before = (await events()).filter(e => e.ev.startsWith('npc_use_started:staff_')).length;
+    report.closed = await talkNeil({ reportLight });        // leaving Neil starts Keith's break
+    const closeClock = await clock();
+    await enterRoom('staff_room'); await standNear('staff_boiler');
     const samples = [];
     for (let i = 0; i < 20; i++) { samples.push({ clock: await clock(), keith: await npc('keith'), jodie: await npc('jodie') }); if (i === 4) await shot('01-in-staff-room'); await t(1800); }
     const evs = await events();
-    report.job_beat = {
+    const close = evs.filter(e => e.ev === 'conversation_closed:neil').slice(-1)[0] || null;
+    const closeMs = close ? close.clockMs : closeClock;
+    const after = evs.filter(e => e.ev.startsWith('npc_use_started:staff_') && e.clockMs >= closeMs - 100);
+    const firstAfter = after[0] || null;
+    const firstVisitInWindow = evs.some(e => e.ev === 'room_entered:staff_room' && e.data && e.data.firstVisit && e.clockMs >= closeMs - 100);
+    report[beat] = {
+        settled, staff_starts_before_close: before,
         job_called: await page.evaluate(() => (window.gameState.globalVariables || {}).job_called),
-        boiler_use_starts: bothUsing(evs, 'staff_boiler').map(e => ({ clock_s: +(e.clockMs / 1000).toFixed(1), npc: e.data.npcId })),
+        neil_close_ms: closeMs,
+        first_staff_start_after_close_ms: firstAfter ? firstAfter.clockMs : null,
+        first_start_npc: firstAfter ? firstAfter.data.npcId : null,
+        gap_close_to_start_s: firstAfter ? +((firstAfter.clockMs - closeMs) / 1000).toFixed(1) : null,
+        start_from_neil_close: !!(firstAfter && (firstAfter.clockMs - closeMs) <= 5000 && (firstAfter.clockMs - closeMs) >= -200),
+        no_firstvisit_in_window: !firstVisitInWindow,
         job_called_exchange_heard: evs.filter(e => e.ev === 'npc_exchange_heard:exchange_job_called').map(e => e.data),
+        boiler_use_starts: bothUsing(evs, 'staff_boiler').map(e => ({ clock_s: +(e.clockMs / 1000).toFixed(1), npc: e.data.npcId })),
         tasks: await tasks(), ...stepFive(evs), ...analyse(evs)
     };
 }
 
-if (beat === 'boiler_cross' || beat === 'cooler_cross') {
-    // boiler: talk to Neil (no report), close, walk into staff room.
-    // cooler: from IT walk into manager_office then straight back through IT into staff room.
-    if (beat === 'boiler_cross') { report.closed = await talkNeil({ reportLight: false }); await enterRoom('staff_room'); await standNear('staff_boiler'); }
-    else {
-        // Load the staff room first (register Jodie), let the first-visit break pass, then cross
-        // IT -> manager_office -> IT -> staff_room so the private-office entry starts the cooler break.
-        await enterRoom('staff_room'); await t(45000); await enterRoom('it_room'); await t(400);
-        await enterRoom('manager_office'); await t(900); await enterRoom('it_room'); await t(400); await enterRoom('staff_room'); await standNear('staff_cooler');
-    }
-    const obj = beat === 'boiler_cross' ? 'staff_boiler' : 'staff_cooler';
+if (beat === 'cooler_cross') {
+    // Load the staff room first, settle (> 120 s, m4), then cross IT -> manager_office -> IT ->
+    // staff_room so the private-office entry (not the first visit) starts the cooler break.
+    await enterRoom('staff_room'); await t(1500);
+    const settled = await settleStaff();
+    await enterRoom('it_room'); await t(400);
+    const before = (await events()).filter(e => e.ev.startsWith('npc_use_started:staff_')).length;
+    await enterRoom('manager_office'); await t(900);
+    const entryClock = await clock();
+    await enterRoom('it_room'); await t(400); await enterRoom('staff_room'); await standNear('staff_cooler');
     const samples = [];
-    for (let i = 0; i < 22; i++) { samples.push({ clock: await clock(), keith: await npc('keith'), jodie: await npc('jodie') }); if (i === 5) await shot(`01-at-${obj}`); await t(1800); }
+    for (let i = 0; i < 22; i++) { samples.push({ clock: await clock(), keith: await npc('keith'), jodie: await npc('jodie') }); if (i === 5) await shot('01-at-staff_cooler'); await t(1800); }
     const evs = await events();
-    report[beat] = {
-        use_starts: bothUsing(evs, obj).map(e => ({ clock_s: +(e.clockMs / 1000).toFixed(1), npc: e.data.npcId })),
-        both_used: new Set(bothUsing(evs, obj).map(e => e.data.npcId)).size >= 2,
+    const entry = evs.filter(e => e.ev === 'room_entered:manager_office').slice(-1)[0] || null;
+    const entryMs = entry ? entry.clockMs : entryClock;
+    const after = evs.filter(e => e.ev.startsWith('npc_use_started:staff_cooler') && e.clockMs >= entryMs - 100);
+    const firstAfter = after[0] || null;
+    const firstVisitInWindow = evs.some(e => e.ev === 'room_entered:staff_room' && e.data && e.data.firstVisit && e.clockMs >= entryMs - 100);
+    report.cooler_cross = {
+        settled, staff_starts_before_entry: before,
+        office_entry_ms: entryMs,
+        first_cooler_start_after_entry_ms: firstAfter ? firstAfter.clockMs : null,
+        gap_entry_to_start_s: firstAfter ? +((firstAfter.clockMs - entryMs) / 1000).toFixed(1) : null,
+        start_from_private_office: !!(firstAfter && (firstAfter.clockMs - entryMs) <= 5000 && (firstAfter.clockMs - entryMs) >= -200),
+        no_firstvisit_in_window: !firstVisitInWindow,
+        use_starts: bothUsing(evs, 'staff_cooler').map(e => ({ clock_s: +(e.clockMs / 1000).toFixed(1), npc: e.data.npcId })),
+        both_used: new Set(bothUsing(evs, 'staff_cooler').map(e => e.data.npcId)).size >= 2,
         tasks: await tasks(), ...stepFive(evs), ...analyse(evs)
     };
 }
@@ -220,10 +262,14 @@ if (beat === 'speechlock') {
     // open, count office `_pickBark` turns that return a picture or `wait` while `_speechUntil` is
     // held by a staff-room line (keith/jodie) whose `overheard` is false.
     const minutes = Number(process.argv[6]) || 15;
-    // Load both room-sets so office and staff-room NPCs tick for the whole run.
+    // Load every room-set so office, staff-room, kitchen and lounge NPCs tick for the whole run
+    // (m2: the kitchen and lounge doors must be open or their cooler pair never chats).
     await enterRoom('it_room'); await t(600);
     await enterRoom('staff_room'); await t(1800);        // register Keith & Jodie
     await enterRoom('it_room'); await t(600);
+    await enterRoom('office'); await t(800);
+    await enterRoom('kitchen'); await t(1400);            // register the kitchen cooler pair
+    await enterRoom('lounge'); await t(1400);             // register the lounge
     await enterRoom('office'); await t(1500);             // office NPCs active; park the player here
     await page.evaluate(() => {
         const ns = window.npcNeedsSystem; const STAFF = new Set(['keith', 'jodie']);

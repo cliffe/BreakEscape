@@ -201,3 +201,58 @@ test("the new SIMS-3 conditions hold on the payloads the engine sends them", () 
     assert.equal(fires(seePage, { producerId: 'it_copier', npcId: 'sanjay' }), false);
     assert.equal(fires(seePage, { producerId: 'it_copier', npcId: 'neil', cosmetic: true }), false);
 });
+
+// --- SIMS-4 (plan 5.4): the staff-room pair's new lines, gates and globals ---
+
+const VOICEABLE = (s) => s.length <= 40 && !/[{}]/.test(s);
+const POOL_OK = (s) => VOICEABLE(s) && !/^[A-Z][a-z]+:/.test(s); // no "Name:" prefix on pool lines
+
+test('SIMS-4: Keith and Jodie each have six-line staff_tea and staff_water pools, all voiceable', () => {
+    for (const id of ['keith', 'jodie']) {
+        const n = npc(id);
+        assert.ok(n, `${id} exists`);
+        for (const pool of ['staff_tea', 'staff_water']) {
+            const lines = n.chatter[pool];
+            assert.ok(Array.isArray(lines) && lines.length === 6, `${id}.${pool} is six lines`);
+            for (const l of lines) assert.ok(POOL_OK(l), `${id}.${pool} line not voiceable or has a speaker prefix: ${l}`);
+        }
+    }
+});
+
+test("SIMS-4: Jodie's exchange list carries the three gated knots in reading order", () => {
+    const jodie = npc('jodie');
+    assert.deepEqual(jodie.exchanges, [
+        { with: 'keith', knot: 'exchange_job_called', requireGlobal: { job_called: true } },
+        { with: 'keith', knot: 'exchange_job_cleared', requireGlobal: { job_cleared: true, heard_exchange_job_called: true } },
+        { with: 'keith', knot: 'exchange_waiting' }
+    ]);
+});
+
+test('SIMS-4: the five staff-room globals are declared false once', () => {
+    const gv = scenario.globalVariables || {};
+    for (const g of ['job_called', 'job_cleared', 'heard_exchange_job_called', 'heard_exchange_job_cleared', 'heard_exchange_waiting']) {
+        assert.ok(g in gv, `${g} declared`);
+        assert.equal(gv[g], false, `${g} starts false`);
+    }
+});
+
+test("SIMS-4: jodie.ink's exchange knots have the expected line counts and voiceable text", () => {
+    const ink = readFileSync(join(root, 'scenarios/test_needs_sims/ink/jodie.ink'), 'utf8');
+    const knotLines = (name) => {
+        const m = ink.split(new RegExp(`===\\s*${name}\\s*===`))[1];
+        assert.ok(m, `knot ${name} present`);
+        return m.split('-> DONE')[0].split('\n').map(s => s.trim()).filter(s => /^(Keith|Jodie):/.test(s));
+    };
+    const counts = { exchange_waiting: 5, exchange_job_called: 3, exchange_job_cleared: 3 };
+    for (const [knot, n] of Object.entries(counts)) {
+        const lines = knotLines(knot);
+        assert.equal(lines.length, n, `${knot} has ${n} lines`);
+        for (const l of lines) {
+            const text = l.replace(/^(Keith|Jodie):\s*/, '');
+            assert.ok(VOICEABLE(text), `${knot} line text not voiceable: ${text}`);
+        }
+    }
+    // m1 fix: the "someone'll be up" reassurance is Keith's, not Jodie's (she is the one who fixes it).
+    const called = knotLines('exchange_job_called');
+    assert.match(called[2], /^Keith: Someone'll be up soon/, 'the reassurance line is spoken by Keith');
+});

@@ -23,7 +23,8 @@ Evening. Keith, night security. I'm parked here till the radio wants me.
     # speaker:npc
     Boiler does a proper brew. Best thing about nights, that.
     -> hub
-+ [I'll let you get on.] #exit_conversation
++ [I'll let you get on.]
     # speaker:npc
     Right you are. Mind how you go.
-    -> hub
+    # exit_conversation
+    -> END

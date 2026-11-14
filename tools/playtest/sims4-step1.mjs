@@ -80,6 +80,34 @@ const report = await page.evaluate(() => {
             levels: st.levels, caffeine: st.levels && st.levels.caffeine, thirst: st.levels && st.levels.thirst
         };
     }
+    // Path search from each home to each second-user cell (plan 5.4 step 1: besideCell makes no
+    // route check, so each second-user cell must be reachable by a real path search from both homes).
+    out.pathSearches = {};
+    const pathTo = (sx, sy, ex, ey) => { let res = null; try { pm && pm.findWorldPath(sx, sy, ex, ey, p => { res = p; }); } catch (e) {} return res; };
+    const homeOf = id => { const st = sys.getState(id) || {}; return st.home ? { x: st.home.x, y: st.home.y } : null; };
+    for (const objId of ['staff_boiler', 'staff_cooler']) {
+        const o = world.getObject(objId); if (!o) continue;
+        const approach = world.approachCell ? world.approachCell(o) : null;
+        const beside = (approach && world.besideCell) ? world.besideCell(approach, []) : null;
+        if (!beside) { out.pathSearches[objId] = { secondUserCell: null }; continue; }
+        out.pathSearches[objId] = { secondUserCell: { tx: +(beside.x / TILE).toFixed(2), ty: +(beside.y / TILE).toFixed(2) } };
+        for (const id of ['keith', 'jodie']) {
+            const h = homeOf(id);
+            const path = h ? pathTo(h.x, h.y, beside.x, beside.y) : null;
+            out.pathSearches[objId][id] = { fromHome: h ? { tx: +(h.x / TILE).toFixed(2), ty: +(h.y / TILE).toFixed(2) } : null, reachable: !!(path && path.length), waypoints: path ? path.length : 0 };
+        }
+    }
+    // Jitter log: each NPC's configured initial vs the jittered value loaded for the coupled need.
+    out.jitter = {};
+    for (const id of ['keith', 'jodie']) {
+        const st = sys.getState(id) || {};
+        const rec = world.getNpc ? world.getNpc(id) : null;
+        const need = id === 'keith' ? 'caffeine' : 'thirst';
+        const cfg = rec && rec.needs && rec.needs[need];
+        const loaded = st.levels && st.levels[need];
+        out.jitter[id] = { need, initial: cfg && cfg.initial, jitterPct: cfg && cfg.jitterPct, loaded_at_start: loaded != null ? +Number(loaded).toFixed(2) : null, jitter_delta: (cfg && cfg.initial != null && loaded != null) ? +(loaded - cfg.initial).toFixed(2) : null };
+    }
+    out.jitter_note = 'restores re-jitter on each break; those are logged per start in the schedule beat (needs-sims-staff-room.mjs schedule).';
     // West door of staff_room
     const gates = (room && room.doorGates) || (room && room.gates) || null;
     out.doors.note = 'west door connects to it_room; door column read from check_door_alignment.py (OK)';

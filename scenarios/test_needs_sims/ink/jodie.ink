@@ -4,6 +4,7 @@
 // job_called / job_cleared are scenario globals synced into these VARs on load.
 VAR job_called = false
 VAR job_cleared = false
+VAR heard_exchange_job_called = false
 
 === start ===
 # speaker:npc
@@ -15,19 +16,21 @@ Hiya. Jodie, maintenance. On call for whatever breaks, mostly the kettle.
     # speaker:npc
     Fix whatever Keith's radio turns up. Lights, locks, leaks.
     -> hub
-+ { job_called && not job_cleared } [Did that light get sorted?]
++ { job_called && not job_cleared && heard_exchange_job_called } [Did that light get sorted?]
     # speaker:npc
     Aye, I swapped the tube. No more flickering. Cheers for flagging it.
     #set_global:job_cleared:true
+    ~ job_cleared = true
     -> hub
 + [Busy night?]
     # speaker:npc
     Comes in waves. Right now it's just us and the boiler.
     -> hub
-+ [I'll let you get on.] #exit_conversation
++ [I'll let you get on.]
     # speaker:npc
     Nae bother. Away you go.
-    -> hub
+    # exit_conversation
+    -> END
 
 // Exchanges played by the needs system when Keith and Jodie meet at a chatter object, with the
 // player in earshot. Never reached from the player's conversation. Lines are voiceable: the "Name:"
@@ -46,7 +49,7 @@ Keith: A brew while we can, then.
 === exchange_job_called ===
 Jodie: That light in here still flickering?
 Keith: Neil's put it out on the radio.
-Jodie: Someone'll be up to fix it soon.
+Keith: Someone'll be up soon, Jodie.
 -> DONE
 
 // Gated on job_cleared and heard_exchange_job_called: the job has been done.
