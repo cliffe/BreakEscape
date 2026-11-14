@@ -886,9 +886,12 @@ test('the shared .pixel-scroll rule draws a pixel-art scrollbar', () => {
     assert.match(utilRule('.pixel-scroll::-webkit-scrollbar-button') || '', /display:\s*none/);
     const ff = util.slice(util.indexOf('@supports not selector(::-webkit-scrollbar)'));
     assert.match(ff, /\.pixel-scroll\s*\{[^}]*scrollbar-color:[^}]*scrollbar-width:|\.pixel-scroll\s*\{[^}]*scrollbar-width:[^}]*scrollbar-color:/);
-    const block = util.slice(util.indexOf('.pixel-scroll {'));
+    // Only the .pixel-scroll rules themselves (other shared rules later in the file may reset
+    // box-shadow: none, which is not a shadow)
+    const block = (util.replace(/\/\*[\s\S]*?\*\//g, '').match(/[^{}]*\.pixel-scroll[^{}]*\{[^}]*\}/g) || []).join('\n');
+    assert.ok(block.length > 0, 'pixel-scroll rules found');
     assert.doesNotMatch(block, /border-radius:\s*[1-9]/, 'no radius');
-    assert.doesNotMatch(block.replace(/\/\*[\s\S]*?\*\//g, ''), /gradient|box-shadow/);
+    assert.doesNotMatch(block, /gradient|box-shadow:\s*(?!none)/);
     // The class resets the inherited Firefox properties, so Chrome keeps the art under a parent
     // that sets them (code review R3 n2); the guarded block after it still wins in Firefox
     const base = utilRule('.pixel-scroll') || '';
