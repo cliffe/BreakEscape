@@ -327,3 +327,46 @@ To resume: start a keyless server from this worktree on a port in 3480 to 3484 (
 UI_SHELL_BUILD_LOG.md "Merge batch"), then
 `node /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/e7a32fee-bb00-4a46-ab62-f0d4de35d260/scratchpad/ui-consoles2/shoot.mjs --port <port> --specs /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/e7a32fee-bb00-4a46-ab62-f0d4de35d260/scratchpad/ui-consoles2/specs.mjs --only network-architecture --out /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/e7a32fee-bb00-4a46-ab62-f0d4de35d260/scratchpad/ui-consoles2/after --json /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/e7a32fee-bb00-4a46-ab62-f0d4de35d260/scratchpad/ui-consoles2/after.json`
 and `python3 -I /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/e7a32fee-bb00-4a46-ab62-f0d4de35d260/scratchpad/ui-consoles2/sheet2.py /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/e7a32fee-bb00-4a46-ab62-f0d4de35d260/scratchpad/ui-consoles2/before /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/e7a32fee-bb00-4a46-ab62-f0d4de35d260/scratchpad/ui-consoles2/after /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/e7a32fee-bb00-4a46-ab62-f0d4de35d260/scratchpad/ui-consoles2/sheets`.
+
+## Merge train 46 (2026-11-14)
+
+Merged train/46 (1c44f0807: main 5edb17541 plus trains 41 to 46) into build/ui-consoles2 (merge 73a43a87f).
+Three conflicts, resolved by keeping both sides:
+- network-segmentation-map-minigame.js (start()): the scene keeps the shared console X (no own
+  #nsm-close handler, the base class binds #minigame-close to closeByPlayer, which completes with the
+  severed state); train 41/44's #nsm-continue-btn click handler stays.
+- network-view-minigame.js (render header): train 44's unplug hint (unplugHintHtml) and Unplug button
+  (showHeader) go into this branch's header strip. showHeader now also shows or hides the strip by
+  whether the header has any content, so an Unplug-only header (loading, error) still shows.
+- minigame-consoles-fit.test.mjs: both groups of tests kept (the fix-round tests and the SCADA
+  annotate and segmentation-map label tests).
+Everything else merged cleanly (CONTINUE row and hint, severed reopen, svg text pointer-events,
+phone layout fixes sit beside the legend-strip badge and the SEVER hint).
+
+Space fix (coordinator decision), js/core/player.js: new keysBelongToUi(event) is true while a
+minigame is open (window.MinigameFramework.currentMinigame) or when the event target is inside a
+button, input, textarea, select, a[href] or contenteditable. The keydown and keyup handlers then
+leave the key alone (no preventDefault, no jump, no walking) and clear held keys. Space still jumps in
+the world. Tests: test/js/player-keys-ui-owned.test.mjs (3: world Space jumps and is cancelled;
+minigame open leaves Space and arrows alone; each control kind keeps Space). confirm-holds-keys lifts
+the handler from source and now lifts the helper too. nsm-continue-after-sever now clicks the shared
+#minigame-close (the scene's own #nsm-close is gone).
+
+Tests (plain node, one file at a time): minigame-consoles-fit 32, minigame-shell-fit 30,
+minigame-close-shell 19, minigame-pixel-art 48, network-view 59, nsm-continue-after-sever 8,
+engine-fixes-pass4b 10, player-keys-ui-owned 3, confirm-holds-keys 10, plus 31 files that mention the
+touched modules (network segmentation map, network view, network architecture, SCADA, player.js): all
+pass, 0 fail.
+
+Live (server :3480, fresh games per run: sis01 4099 at 390x844, 4100 at 667x375, 4102 at 1400x1000;
+sis02 4105 for the Space check; seating 4106 for the audit). Segmentation map in the shared window at all three
+sizes: title one line (ellipsis on the phone), no own title bar, ACTIVE INCIDENT in the legend strip,
+12/12 rule targets toggle by real click (each flips a rule), SEVER enabled, confirm scrolled to YES on
+the phone and clicked, CONTINUE shown (GNF 16px, theme button skin) with the severed hint, CONTINUE
+closes, reopen shows the severed panel with CONTINUE, X closes, no sideways scroll on the page, window,
+game area or wrapper. Space on a focused NAD details toggle at 667x375: toggles true then false, player
+stays at 160,144, createPlayerJump called 0 times, keydown not default-prevented.
+Strict audit (game 4106, four sizes): window-offscreen 0, frame-offscreen 1 (alarm panel 915x412, by
+design), clipped 0, x-on-frame 0, overflow 0. Shell X check: 172 checked, 0 failed.
+Shots and scripts: /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/e7a32fee-bb00-4a46-ab62-f0d4de35d260/scratchpad/ui-consoles2-final/m2 (nsm-*__390x844, 667x375, 1400x1000 png, nad-space__667x375.png, audit.log,
+shellx.log). Server :3480 stopped by PID.
