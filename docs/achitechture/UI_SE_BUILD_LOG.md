@@ -560,3 +560,105 @@ shredded reorder) still to capture. Env: keyless server on :3490 (worktree; PID 
 test/dummy/tmp/pids/server-3490.pid) - stop by PID at the end. RBENV_VERSION=2.7.8;
 PLAYWRIGHT_CHROMIUM_EXECUTABLE=$HOME/.cache/ms-playwright/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell.
 Resume recipe unchanged (fresh new-game.rb + audit back-to-back).
+
+## Fix round 2 part C (build/ui-se, from tip bdb74ddeb; main 1f3ac1f0b merged)
+
+Scope: UI styling only for the social engineering awareness lab; no attack content. Ports 3490-3492.
+
+### Owed eyeball shots (done, looked at)
+
+- Kiosk bezel with real ca05_signin_pages content. Opened episode-runner on a fresh
+  ca05_signin_pages game (its window.gameScenario.social.awarenessEpisode = e5_signin_pages)
+  at 390x844 and 360x740. Confirms: the themed steel X (not the SE flat red), the device chin
+  (card-reader slot + green READY LED), and the step strip ("1 Brief 2 Research 3 Build 4 Wr...")
+  fitting in one sideways-scrolling row inside the bezel. Shots: scratchpad se-c/kiosk/.
+  Finding while looking: .aw-wordmark (the QUAYHOLT brand pill in the kiosk strip, not diegetic
+  page content) still had border-radius 3px. Fixed to 0 in css/awareness-skin.css:42.
+- Shredded document Up/Down and Flip, by touch and keyboard. Opened shredded-document with a real
+  four-strip memo and allowRotation at 1400x1000 and 390x844. Confirms: each strip has Up / Down /
+  Flip named buttons (no missing glyph), first strip's Up and last strip's Down disabled, two
+  strips shown upside-down so the Flip use-case is visible, and the instruction line names both the
+  drag and the Up/Down routes. The keyboard+touch behaviour itself is asserted by
+  social-shredded-reorder.test.mjs. Shots: scratchpad se-c/shredded/.
+  Finding while looking: .sdm-drag-handle rendered Press Start 2P at 14px (off the 8px grid).
+  Fixed to 16px in css/shredded-document-minigame.css:156.
+
+### Layout minors (C-MC1 fixed; the rest reviewed and proved clean at five sizes)
+
+Captured current-state shots of mail-client, landing-page-builder and password-guesser at
+1400x1000, 800x600, 667x375, 390x844, 360x740 first (scratchpad se-c/before/), then judged each:
+
+- C-MC1 (mail account picker) - FIXED. At 800x600 the send-as account shrank to the stub "Cons"
+  (and truncated at 915x412): the 767px narrow rules give it its own row, but the 768-1000px band
+  did not. Added `@media (max-width: 1000px)` to css/mail-client-minigame.css: the toolbar wraps,
+  the account takes its own full-width row and the select keeps min-width 16ch, so the active
+  sender (the fact the lesson turns on) stays legible at every width. New assertion in
+  social-mail-narrow.test.mjs.
+- C-MC2 (mail toolbar rows at 390) - reviewed, no change. The current 390 layout is clean and
+  readable: account on its own row, then Inbox/Sent and Contacts/Compose/X across two short rows,
+  with the message list below and room to spare. Passes strict at all five sizes. The critique's
+  icon-tab redesign is not warranted on top of a layout that already fits; left as an optional
+  polish.
+- C-PG1 (password-guesser buttons at 390) - reviewed, appears already resolved in the current
+  build: the three action buttons stack in one vertical column, all visible, no clip and no large
+  empty band above them (the part-A/B card work). Clean at all five sizes.
+- C-LP2 (landing-page-builder empty preview) - NOT done. Judging this needs the real two-pane
+  builder with a service picked (the title-only start shows only a "page not available" placeholder,
+  not the empty-preview-vs-choices split the critique flagged). Deferred: it wants the in-game
+  builder flow to capture, not a bare minigame start.
+- C-PC2 (person-chat ~200px black at 390) - NOT done. person-chat needs the game's own NPC and is
+  outside the bare-minigame audit (it is on the audit --skip list); not captured this round.
+
+### Tests (plain `node --test`, one file at a time, no lock)
+
+- social-mail-narrow 13/13 (+1 new, C-MC1 1000px account row).
+- social-shredded-reorder 5/5 (+1 new, C-SD1 drag-handle on the 8px grid).
+- Regression on every test that reads a changed CSS file (awareness-skin, mail-client-minigame,
+  shredded-document-minigame), all 0 fail: minigame-se-close 13, social-episode-views 30,
+  social-reuse-authenticator 13, social-mail-accounts 21, social-engine-r3-triage 11,
+  social-engine-ux1 16, social-engine-ux-batch4 10, social-episode-aftermath 7,
+  social-episode-sandbox 18, social-mail-client-shell 14, social-mail-episode-options 10,
+  social-reuse-mail 7, social-role-swap 9, social-triage-row-address-font 5.
+- No JS module changed, so no test-harness copy-list change. Full suites NOT run (congestion rule).
+
+### Strict audit (end of round)
+
+Fresh lab_social_engineering game (id 3899), strict audit over the 15 SE lab scenes at 1400x1000,
+800x600, 667x375, 390x844, 360x740, with real shredded params. EXIT 0. The JSON was scanned for
+EVERY breach kind (not just the fit kinds --strict exits on): zero breaches across every scene and
+size, so the wordmark-radius and drag-handle-font-size fixes land and the SE lab keeps all zeros.
+Log/json: scratchpad se-c/ (final.json, final/ shots).
+
+### For the user (do NOT change - captured for a decision)
+
+Current-state shots and a per-item note in scratchpad se-user/:
+- C-PP3 (pretext prep orange gate line) - mg-pretext-prep_1400x1000.png, _390x844.png, C-PP3.txt.
+  Reproduced with the lab's real service_desk_call spec, nothing held: the `.pretext-readiness`
+  orange line (pretext-prep-minigame.js:240-242) repeats the Team/Intern readiness buttons.
+- C-PV1 (privacy panel switch label/state/note) - mg-privacy-panel_1400x1000.png, _390x844.png,
+  C-PV1.txt. Reproduced with the ca14_social_media privacyPanel settings: the switch label
+  describes the tightened target while the state pill reads "Open", so they look contradictory.
+Each .txt says what the player sees, the critique's options, and which file holds the authored text.
+
+### Not done (for a part D)
+
+- Phone scenes C-AU1 / C-PH1 / C-PH2 / C-PH3 and the C-PH4 empty state (heavy phone/authenticator
+  markup restructures, each needing per-size browser verification) - not started this round.
+- C-X7 single stepper render-module merge (the look is already unified; only the three render
+  functions remain separate) - not started.
+- Layout minors C-LP2 and C-PC2 (need the in-game builder flow / person-chat NPC to capture).
+
+### Handover (2026-11-14, part C)
+
+Tip after this round's commit on build/ui-se (main 1f3ac1f0b merged). All "done" work is committed
+with explicit paths. Changed files: css/awareness-skin.css, css/mail-client-minigame.css,
+css/shredded-document-minigame.css, test/js/social-mail-narrow.test.mjs,
+test/js/social-shredded-reorder.test.mjs, docs/achitechture/UI_SE_BUILD_LOG.md. Open for a part D:
+phone scenes (C-AU1/C-PH1/C-PH2/C-PH3/C-PH4 empty state), C-X7 render-module merge, and layout
+minors C-LP2 (in-game builder) and C-PC2 (person-chat). The two user-call items C-PP3 and C-PV1 are
+captured in scratchpad se-user/ and await the owner's wording decision. Env: keyless server was on
+:3490 (worktree; PID file test/dummy/tmp/pids/server-3490.pid), stopped by PID at the end of this
+round. RBENV_VERSION=2.7.8;
+PLAYWRIGHT_CHROMIUM_EXECUTABLE=$HOME/.cache/ms-playwright/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell.
+Resume: start the server by hand on :3490 (copy start-keyless-server.sh's bundle exec line to the
+worktree root and port), create a fresh game with new-game.rb, run the audit back-to-back.

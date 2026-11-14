@@ -39,7 +39,7 @@
 /* wordmark: drawn in CSS from the brand's logoText, no image */
 .aw-wordmark {
     display: inline-block; padding: 2px 10px; margin-right: 12px;
-    background: var(--aw-accent); color: #fff; border-radius: 3px;
+    background: var(--aw-accent); color: #fff; border-radius: 0;
     font-weight: 800; letter-spacing: 0.14em; font-size: 14px; text-transform: uppercase;
 }
 

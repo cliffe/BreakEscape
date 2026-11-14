@@ -153,7 +153,8 @@
 
 .sdm-drag-handle {
     color: #b0a090;
-    font-size: 14px;
+    /* Press Start 2P (inherited) must sit on its 8px grid, so 16px not 14px. */
+    font-size: 16px;
     flex-shrink: 0;
     line-height: 1;
 }

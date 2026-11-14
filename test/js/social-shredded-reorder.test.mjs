@@ -77,3 +77,10 @@ test('C-SD3 the strip style drops the tilt and soft blur, keeps 2px edges', () =
     // The flip/move buttons get a 44px touch target without changing the drawn size.
     assert.match(sheet, /pointer:\s*coarse[\s\S]*\.sdm-(move|flip)-btn::after/, 'a touch target is added for coarse pointers');
 });
+
+test('C-SD1 the drag handle sits on the Press Start 2P 8px grid (16px, not 14px)', () => {
+    const sheet = readFileSync(join(css, 'shredded-document-minigame.css'), 'utf8');
+    const handle = sheet.match(/\.sdm-drag-handle\s*\{[^}]*\}/)[0];
+    const size = Number((handle.match(/font-size:\s*(\d+)px/) || [])[1]);
+    assert.ok(size % 8 === 0, `drag-handle font-size ${size}px must be a multiple of 8 (Press Start 2P grid)`);
+});
