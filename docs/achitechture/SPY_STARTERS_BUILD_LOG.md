@@ -61,6 +61,13 @@ How a mission declares choices: `validSprites` (patterns, `*` wildcards; a `<key
 
 Cast spread: four women and four men; white English, Chinese-British, Mexican-American, Nigerian-British, Korean-British, white Irish, Black British and Sikh Punjabi-British; ages early thirties to early sixties.
 
+## Fix round 1
+
+1. List drift (m): left as hand-written lists. The game's own render context (`Mission::ScenarioBinding`) could reach `PlayerPreference::AVAILABLE_SPRITES`, but the scenario validator and the dungeon graph script each carry their own copy of the binding and run without Rails, and `tools/pass2/render.rb` and `tools/format/rewrite_templates.rb` render with a bare `binding`. A generated list would need a second source of the constant in each, which is the same drift moved. The existing test that m01 to m10 offer the starters and keep their earlier options is the guard.
+2. Picker overflow (m): the code-name input (`.form-control`) was `width: 100%` with padding and a border but no `box-sizing`, so it ran 12px past its column. Added `box-sizing: border-box` in `public/break_escape/css/player_preferences.css`. Measured with scrollbars shown: no element extends past the viewport and the page has no horizontal scroll at 320, 360, 390 and 1400 wide (before: 12px over at 320, 360 and 390). Nothing needed `.pixel-scroll`.
+3. Live proof on fresh games (new-game.rb): m01 game 3659 as lucia_moreno (picked on the configuration page, texture and HUD headshot are hers, walk_east and walk_south frames play, seated on a reception chair with `sit_west_frame_000`, picker shows the eight as "This mission" with her selected at 1400x1000 and 390x844). m07 game 3660 as marcus_hale (picked, walks, picker at both sizes shows him selected). Sitting was not shown in m07: the start room's two hospital chairs open no interaction menu through the test bridge, so that part is not proved there.
+   The shared demo player's avatar was set back to female_hacker_hood_v2 through the configuration page afterwards.
+
 ## Open
 
 - Art merges only after the user approves the contact sheet.
