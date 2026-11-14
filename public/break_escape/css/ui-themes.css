@@ -1073,6 +1073,14 @@
   }
 }
 
+/* Phones held upright: the pill's aim may take two lines, so the panel is sized from its content
+   instead of the one-line cap above (review R3 m2; the same test as objectives.css) */
+@media (max-width: 899.98px) and (min-height: 501px) and (orientation: portrait) {
+  [data-ui-theme] .objectives-panel.collapsed {
+    max-height: none;
+  }
+}
+
 [data-ui-theme] .objectives-header {
   background: var(--ui-surface-raised);
   border-bottom: 2px solid var(--ui-line);

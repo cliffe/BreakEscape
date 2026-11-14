@@ -754,6 +754,9 @@ test('R3 m2 and n2: the two-line pill is sized from its content; the back badge 
     const c = css('objectives.css');
     const block = c.match(/@media \(max-width: 899\.98px\) and \(min-height: 501px\) and \(orientation: portrait\) \{([\s\S]*?)\n\}/);
     assert.match(block[1], /\.objectives-panel\.collapsed \{[^}]*max-height: none;/);
+    const themed = css('ui-themes.css').match(/@media \(max-width: 899\.98px\) and \(min-height: 501px\) and \(orientation: portrait\) \{([\s\S]*?)\n\}/);
+    assert.ok(themed, 'the themed cap is lifted under the same test');
+    assert.match(themed[1], /\[data-ui-theme\] \.objectives-panel\.collapsed \{[^}]*max-height: none;/);
     assert.match(css('phone-chat-minigame.css'), /\.back-button \.back-unread \{[^}]*font-size: 16px;/);
 });
 
