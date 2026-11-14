@@ -260,7 +260,8 @@ For a numeric clientTs with a stored `lastSyncClientTs`:
 - `client_ts > stored`: fresh. Store it as today. Record a ring entry for what
   it changed.
 - `stored - client_ts > SYNC_STALE_RESET_MS` (over ten minutes below): the
-  existing reset. Treat as fresh, store it, as today.
+  existing reset. Treat as fresh, store it, as today, and clear `syncWrites` as
+  well (see "Clearing the ring on a reset" below).
 - `0 <= stored - client_ts <= SYNC_STALE_RESET_MS` and the completeness guard
   below holds: stale but recent, the new path. Build the skip set from the ring
   and apply last-write-wins sections key by key. Do not move `lastSyncClientTs`.
@@ -268,6 +269,32 @@ For a numeric clientTs with a stored `lastSyncClientTs`:
 - `0 <= stored - client_ts <= SYNC_STALE_RESET_MS` and the completeness guard
   does not hold: fully stale, exactly today's behaviour. Skip all last-write-wins
   sections, run grow-only and capture, do not move the stamp, record nothing.
+
+### Clearing the ring on a reset
+
+The ten-minute reset branch stores a `client_ts` far below the entries the ring
+already holds (`stale_sync_request?`, games_controller.rb:2175-2178). This branch
+is reachable: `lastClientTs` starts at 0 on a fresh page and `nextClientTs`
+floors at `Date.now()` (state-sync.js), so a system clock set back more than ten
+minutes between a reload's old and new page lands a request far below stored.
+Without a clearing step the ring would then hold only pre-reset high-`ts`
+entries, which stay the largest `ts` present, so every later low-`ts` append is
+dropped at once by expiry step 2 (more than 60 s below the lingering max) and the
+oldest retained entry stays above every new request. The completeness guard would
+then always fail and the stale-but-recent merge would go dormant for the rest of
+the session. The invariant is not broken (the guard falls back to the safe
+whole-skip), but the fix would silently stop working after a backward-clock
+reset.
+
+So when the reset branch fires, clear `syncWrites` (set it empty, the same write
+that stores the lower `lastSyncClientTs`). The ring then rebuilds from the
+post-reset writes on the new, lower timeline, and the next reduced body that
+chases a post-reset flush recovers through the empty-ring branch above. Clearing
+the whole ring is chosen over dropping only entries with `ts > client_ts` because
+the reset establishes a fresh stamp timeline and the pre-reset entries can never
+again match a legitimate stale-but-recent request's `ts >=` test. A test drives a
+reset after the ring holds pre-reset entries and asserts the ring is empty
+afterwards and a post-reset stale-but-recent merge engages again.
 
 ### The completeness guard (why the key-by-key merge is safe)
 
@@ -281,6 +308,19 @@ retained ring entry's `ts`. Then every write newer than D is still in the ring,
 by expiry step 2 and step 3 having kept them, so the skip set is complete.
 Otherwise some newer write may have been evicted, and the request falls back to
 fully stale and skips all last-write-wins sections.
+
+Empty ring. When the ring holds no entries there is no oldest entry, so the
+guard expression has no value to compare against and the implementer must pick a
+branch. The chosen behaviour is to treat the skip set as empty and merge every
+key, not to fall back. This is safe and is the better of the two safe choices.
+An empty ring can only occur before the first last-write-wins write is recorded
+(append normalisation never drops the just-appended entry, and eviction always
+leaves at least one entry once anything is recorded), so there is no unrecorded
+newer write to protect, and merging against an empty skip set cannot put an
+older value over a newer one. Falling back would also be safe but would forgo
+gap 1 recovery for a reduced body that chases the very first flush, so the merge
+branch is specified explicitly to stop an implementer picking the fall-back by
+reflex and quietly losing that first-flush recovery.
 
 The guard never weakens gaps 2 and 3. Both of those gaps are about not letting H
 overwrite a key D already wrote with a newer value. On the fall-back path H is
@@ -334,6 +374,93 @@ their own guards (server-owned globals, read-only globals, the revoked-cards
 union, the mail and phone caps) all still apply. A key left in is, by
 construction, one no newer accepted request wrote, so this request holds the
 most recent value for it and last-write-wins is correct.
+
+### Pre-filtering the compound-key sections (mailState, phoneState)
+
+For `globalVariables` a claimed key is a plain top-level params key, so the
+recorder and the pre-filter use the same string on both sides and the filter is a
+direct top-level reject. `mailState` and `phoneState` need the mapping spelled
+out, because the key the server merges by is not the shape a value is nested in,
+and a filter that gets the mapping wrong under-filters and lets an older key
+overwrite a newer one (the one place a wrong implementation breaks the invariant
+rather than merely degrading).
+
+The canonical claim key is a single dotted string, the same spelling the client
+sends and the same spelling that keys the params hash. The two sections differ
+only in how the server derives that string:
+
+- `mailState`. `params[:mailState]` is a flat map whose top-level keys are
+  already the dotted compound keys the client built (`mailboxes.<box>.<msgId>`,
+  `threads.<key>`, `jobs`, `drafts`, `metrics`; state-sync.js keys mailState per
+  key as a `KEYED_SECTIONS` member). `mail_state_updates` (game.rb:5494) parses
+  each of those into an internal array path (`['mailboxes', box, msgId]`,
+  `['threads', key]`) or a scalar key (`'jobs'`). The recorder must canonicalise
+  that array path back to the dotted string, not record the array as-is, or its
+  claim keys never compare equal to the dotted params keys the pre-filter sees.
+- `phoneState`. `params[:phoneState]` is a flat map keyed by npc id, each value a
+  whole entry that `merge_phone_state!` (game.rb:5198) replaces per npc id. The
+  claim key is the npc id itself, so no compound derivation is needed; it is
+  listed here because, like mailState, its claim key is the params top-level key,
+  not a section-level `true`.
+
+Mapping, both directions:
+
+```
+# Recording direction: a landed update -> a canonical claim key string.
+def claim_key_for(path)             # path as mail_state_updates yields it
+  path.is_a?(Array) ? path.join('.') # ['mailboxes', box, msg] -> "mailboxes.box.msg"
+                                      # ['threads', key]        -> "threads.key"
+                    : path.to_s       # 'jobs' / 'drafts' / 'metrics' -> itself
+end
+# phoneState: the claim key is the npc id, recorded as-is.
+
+# Filtering direction: drop any claimed key from the incoming params section.
+def prefilter_section(section_params, claimed_keys)   # claimed_keys is a Set of strings
+  return nil if claimed_keys == :whole                 # whole-section claim: skip the merge
+  kept = section_params.reject { |k, _| claimed_keys.include?(k.to_s) }
+  kept.empty? ? nil : kept                             # nil -> skip the merge call
+end
+```
+
+The join on the recording side and the top-level params key on the filtering
+side are the same string, so the map is identity on the dotted form; the only
+transform is array-path to dotted when recording. A thread key or a message id
+that itself contains a dot round-trips correctly: `mail_state_updates` splits
+`mailboxes.<box>.<msgId>` on the first dot only (`split('.', 2)`), so joining
+`['mailboxes', box, msgId]` with `.` rebuilds the exact original key.
+
+Worked example. A newer entry recorded that it wrote `mailboxes.inbox.m2`. An
+older stale-but-recent request D then arrives carrying an older read-state for
+`m1` and the only copy of `m2`:
+
+Before the pre-filter, `params[:mailState]`:
+
+```json
+{
+  "mailboxes.inbox.m1": { "id": "m1", "read": false },
+  "mailboxes.inbox.m2": { "id": "m2", "read": true }
+}
+```
+
+Skip set for D: `{ "mailState": { "mailboxes.inbox.m2" } }`.
+
+After the pre-filter, the hash handed to `merge_mail_state!`:
+
+```json
+{ "mailboxes.inbox.m1": { "id": "m1", "read": false } }
+```
+
+`m2` is dropped (a newer request already wrote it), `m1` is kept and applied (no
+newer request wrote it, so D holds its most recent value). Health of the test: a
+naive top-level filter fails here. If the recorder claims mailState as a whole
+section, or the pre-filter treats `mailState` as one opaque params key, D's `m1`
+is dropped along with `m2` and gap 1's unique key is lost; if instead the filter
+compares the recorded array path `['mailboxes','inbox','m2']` against the dotted
+params key `"mailboxes.inbox.m2"`, they never match, nothing is dropped, and D's
+older `m2` overwrites the newer one, breaking the invariant. The section 10 test
+asserts the correct result: after D, `m1` is applied and `m2` keeps its newer
+value, which only the per-compound-key filter with the canonical mapping
+produces.
 
 ### How each section is claimed (merge semantics re-audited)
 
@@ -428,7 +555,10 @@ packets reorder never loses progress and is never refused:
 - A clock set back mid-session: `nextClientTs` keeps stamps rising on the page;
   the ten-minute reset still absorbs a reload-time clock change. The ring window
   is 60 s, well inside that, so a reset request (over ten minutes below) is
-  fresh, never a stale-but-recent merge against a stale window.
+  fresh, never a stale-but-recent merge against a stale window. The reset also
+  clears `syncWrites` (section 5, "Clearing the ring on a reset"), so the ring
+  does not linger on the pre-reset stamps and keep the completeness guard failing
+  for the rest of the session.
 - No new refusal is introduced. A stale-but-recent request returns
   `{ success: true, stale: true }` with the capture answer fields as today, plus
   it now actually applies its unclaimed keys. The client still treats a stale
@@ -450,13 +580,27 @@ order, so the ring is pointed the wrong way:
   at 1002 lands second and is also fresh (1002 above 1001), so H is never on the
   stale-but-recent path and overwrites with the older 5. Not closed.
 
-So one client change is needed, and it is what closes both gaps. In `flush`, the
-`_changesSinceInFlight` path (:875-881) stops stamping the reduced body at
-`oldest.clientTs - 1` and instead draws a fresh stamp above every in-flight
-flush (a plain `nextClientTs`, already above them). The "leave one clientTs free
-below every flush" reservation (:853-855) is then no longer needed and is
-removed. The whole-delta-if-it-fits branch (:868-871) already stamps above and
-is unchanged.
+So one client change is needed, and it is what closes both gaps. The reduced
+body is stamped inside `_changesSinceInFlight` (:968-981), not in the caller: the
+below-stamp is `const clientTs = oldest.clientTs - 1` at state-sync.js:971, and
+the very next line, `if (clientTs <= oldest.prevTs) return null` at :972,
+suppresses the reduced body whenever there is no free slot below the oldest
+flush. Both lines change together:
+
+- :971 draws a fresh stamp above every in-flight flush (a plain `nextClientTs`,
+  already above them) instead of `oldest.clientTs - 1`.
+- :972's null return must be neutralised. It exists only to refuse a body that
+  has no slot below the oldest flush; once the body is stamped above, there is
+  always a valid stamp and that refusal no longer applies. Removing only the
+  caller's "leave one clientTs free below every flush" reservation (:853-855) and
+  re-stamping, while leaving :972 in place, still suppresses a legitimate reduced
+  body whenever `oldest.clientTs - 1 <= oldest.prevTs`, even though a valid stamp
+  above exists. The remaining null return from :980 (nothing changed since the
+  in-flight flushes) stays: a truly empty difference is still nothing to send.
+
+The caller's reservation (:853-855) is then no longer needed and is removed, and
+the whole-delta-if-it-fits branch (:868-871) already stamps above and is
+unchanged.
 
 With D stamped above H, stamp order matches content order and both gaps close:
 if H lands first, D is fresh and applies; if D lands first, H is stale-but-recent
@@ -515,6 +659,21 @@ model test if the ring helpers live in Game):
 - ring normalisation: over-32-key entry collapses largest sections to `true`;
   entries older than 60 s below the max are dropped; at most eight kept; byte cap
   holds after a long synthetic run.
+- reset clears the ring: with the ring holding pre-reset high-`ts` entries, a
+  request over ten minutes below stored takes the reset branch; assert
+  `syncWrites` is empty afterwards, and that a following post-reset
+  stale-but-recent request on the new lower timeline engages the merge (rather
+  than the guard failing forever on the lingering pre-reset entries).
+- mailState and phoneState pre-filter maps compound keys: a newer entry claimed
+  `mailboxes.inbox.m2`; a stale-but-recent request carrying older `m1` and the
+  unique `m2` has `m2` dropped and `m1` applied. The test is written so that a
+  whole-section skip of mailState, or a filter comparing the array path against
+  the dotted params key, gives the wrong answer (m1 lost, or older m2 applied
+  over the newer one); only the canonical dotted-key filter passes. A phoneState
+  claim by npc id skips only that contact's entry.
+- empty-ring branch: the first reduced body that chases the very first flush,
+  with no ring entries yet, merges all its keys (empty skip set) rather than
+  falling back.
 - skip-set build: union of writes of entries with ts at or above a given ts
   (equal ts included), with `true` dominating.
 - completeness guard: a burst of more than eight last-write-wins writes lands;
@@ -550,9 +709,12 @@ player_state.
 Unit, JS (extend `test/js/state-sync-hidden-save.test.mjs` or a new
 `test/js/sync-stale-ring.test.mjs`): the reduced flush body is stamped above the
 newest in-flight flush, not below; the "leave one free below" reservation is
-gone; the whole-delta-if-it-fits path is unchanged; no regression in the hidden
-guard tests. Add the new JS file to each test harness copy list if it imports a
-new module (it should not need to).
+gone; a valid reduced body that the old `oldest.clientTs - 1 <= oldest.prevTs`
+rule would have suppressed at state-sync.js:972 is now sent (the null return no
+longer fires for a body stamped above, while a genuinely empty difference still
+returns null); the whole-delta-if-it-fits path is unchanged; no regression in the
+hidden guard tests. Add the new JS file to each test harness copy list if it
+imports a new module (it should not need to).
 
 Live browser proof on the keyless server on an assigned port (3670 or 3671,
 started by hand the way `tools/playtest/start-keyless-server.sh` starts :3001,
@@ -581,12 +743,15 @@ suite. The integrator runs the full suites once per batch.
    ring, nothing reads it. This chunk already adds the `syncWrites` key that
    `reload_persistence_test` carries and already touches the save path, so its
    tests land here, not later. Commit.
-2. Stale-but-recent band in `stale_sync_request?`, the completeness guard, and
-   the key-by-key pre-filter in `sync_state`, for the keyed sections, the
-   whole-section claims (playerHealth, timedMessages) and the deletion claim.
-   Guard test (the burst of more than eight writes) and the per-section merge
-   tests. The guard lands here, with the read path it protects, never later.
-   Commit.
+2. Stale-but-recent band in `stale_sync_request?` (including the empty-ring
+   branch and clearing `syncWrites` when the ten-minute reset fires), the
+   completeness guard, and the key-by-key pre-filter in `sync_state`, for the
+   keyed sections, the compound-key sections (mailState and phoneState, with the
+   canonical dotted-key mapping), the whole-section claims (playerHealth,
+   timedMessages) and the deletion claim. Guard test (the burst of more than
+   eight writes), the reset-clearing test, the compound-key pre-filter test and
+   the per-section merge tests. The guard lands here, with the read path it
+   protects, never later. Commit.
 3. currentRoom under the stale-but-recent path (skip when newer, else the normal
    acceptance and notSaved contract). currentRoom test. Commit.
 4. Client re-stamp of the reduced flush body above the in-flight flushes, remove
@@ -599,7 +764,12 @@ suite. The integrator runs the full suites once per batch.
 
 Each chunk commits with explicit paths after checking `git diff --cached --stat`.
 
-## 12. Open questions
+## 12. Decisions
+
+These were the plan's open questions. Each is settled here by the plan's own
+recommendation, since all five are technical calls the integrator can review and
+override. The context and the diagrams are kept so the reasoning behind each
+decision stays on the page.
 
 ### Q1. Ring in player_state, or a new column?
 
@@ -635,9 +805,9 @@ After (chosen):
 }
 ```
 
-Recommendation: player_state. The migration constraint is decisive here, the
-size is bounded, and the never-sent proof is the same one `lastSyncClientTs`
-already relies on.
+Decision: player_state, under `syncWrites`. Reason: a new column needs a
+migration that cannot be run or tested in this shared-database environment, while
+player_state is bounded here and already proven never to reach the client.
 
 ### Q2. Per-key records with a cap, or section-level only?
 
@@ -675,13 +845,14 @@ After (per-key with a 32-key cap, whole-replace sections always `true`):
 { "ts": 1700000001002, "w": { "globalVariables": ["late"], "playerHealth": true } }
 ```
 
-Recommendation: per-key for the keyed sections, capped at 32 keys per entry and
+Decision: per-key for the keyed sections, capped at 32 keys per entry and
 collapsing the largest sections to `true` only when a single request writes more
 than the cap; whole-section `true` for playerHealth, timedMessages and
 currentRoom; grow-only sections never recorded; deletions recorded as key
-claims; and only keys a merge actually changed are recorded. This keeps gap 1
-recovery for the common small difference bodies, protects the whole-replace
-sections, and bounds the size.
+claims; and only keys a merge actually changed are recorded. Reason: per-key is
+what preserves a stale-but-recent request's unique keys (gap 1), with
+whole-section `true` only where the server replaces the section whole and a
+partial hash would wipe a kept key.
 
 ### Q3. Ship the client re-stamp with this, or server only?
 
@@ -707,9 +878,10 @@ Before (reduced body stamp today): `clientTs = oldest.clientTs - 1` (below H).
 
 After: `clientTs = nextClientTs()` (above every in-flight flush).
 
-Recommendation: ship both together on train 47. Either gap needs both halves, so
-they cannot be split, and a single-server deploy never reaches the only order in
-which a new client against an old server would be worse than today.
+Decision: ship the client re-stamp together with the server ring on train 47.
+Reason: either gap needs both halves (the ring alone cannot act on an inverted
+ts order), and a single-server deploy never reaches the only order in which a new
+client against an old server would be worse than today.
 
 ### Q4. Ring window 60 s and size 8: right numbers?
 
@@ -733,12 +905,13 @@ flowchart LR
 Before and after are the constants, not data: `SYNC_RING_WINDOW_MS` and
 `SYNC_RING_MAX`.
 
-Recommendation: 60 s window, size 8, `SYNC_RING_KEYS_PER_ENTRY = 32`. Size 8
-rather than the integrator's original 4 so the completeness guard keeps holding
-through a realistic burst and gap 1 stays shrunk; gaps 2 and 3 close at any size,
-because the guard's fall-back whole-skip still protects them. A test asserting
-the byte ceiling pins the size, and the guard test pins the correctness that the
-size does not affect.
+Decision: 60 s window, size 8, `SYNC_RING_KEYS_PER_ENTRY = 32`. Reason: a KO
+fight can put about six writes ahead of a 3 s in-flight flush, so eight keeps the
+completeness guard holding and gap 1 shrunk where four would nearly always fall
+back; gaps 2 and 3 close at any size, so the raise costs only about 8 KB of
+bounded jsonb.
+
+This decision raises the ring size from the integrator's figure of 4 to 8.
 
 ### Q5. The gap 1 residue: leave it, or add a client preference for one body?
 
@@ -762,7 +935,7 @@ Before: H carries unique `blob`, D carries `late`, two bodies.
 
 After (option C): one body carries `blob` and `late` when it fits the budget.
 
-Recommendation: leave the residue as backlog for this plan. It is a failed
-request or a rare burst eviction, neither of which a further server change
-reaches, and the single-body client preference deserves its own plan rather than
-riding this one.
+Decision: leave the gap 1 residue to the backlog. Reason: the residue is a
+failed request or a rare burst eviction, neither of which a further server change
+reaches, and the single-body client preference is a separate client change that
+deserves its own plan and review.
