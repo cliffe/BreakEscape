@@ -84,6 +84,22 @@ function analyse(evs) {
     };
 }
 
+// Step 5 / setup-failure fields shared by every beat: all object use-starts, the post returns and
+// sits after breaks, and whether two starts on DIFFERENT objects fired within 5 s (a setup failure).
+function stepFive(evs) {
+    const starts = evs.filter(e => e.ev.startsWith('npc_use_started:')).map(e => ({ obj: e.ev.split(':')[1], npc: e.data.npcId, clock_s: +(e.clockMs / 1000).toFixed(1) }));
+    let setupFail = null;
+    for (let i = 0; i < starts.length; i++) for (let j = i + 1; j < starts.length; j++) {
+        if (starts[i].obj !== starts[j].obj && Math.abs(starts[i].clock_s - starts[j].clock_s) <= 5) setupFail = [starts[i], starts[j]];
+    }
+    return {
+        all_use_starts: starts,
+        returned_post: evs.filter(e => e.ev.startsWith('npc_returned_post:')).map(e => e.ev.split(':')[1]),
+        sat_count: evs.filter(e => e.ev === 'npc_sat').length,
+        setup_failure_diff_object_within_5s: setupFail
+    };
+}
+
 await load();
 report.hud_before = await hudState();
 await enterRoom('it_room'); await t(800);
@@ -131,6 +147,7 @@ if (beat === 'first_visit') {
         returned_post: evs.filter(e => e.ev.startsWith('npc_returned_post:')).map(e => e.ev),
         sat: evs.filter(e => /^npc_sat/.test(e.ev)).map(e => e.ev),
         tasks: await tasks(),
+        ...stepFive(evs),
         ...analyse(evs)
     };
 }
@@ -148,7 +165,7 @@ if (beat === 'job_beat') {
         job_called: await page.evaluate(() => (window.gameState.globalVariables || {}).job_called),
         boiler_use_starts: bothUsing(evs, 'staff_boiler').map(e => ({ clock_s: +(e.clockMs / 1000).toFixed(1), npc: e.data.npcId })),
         job_called_exchange_heard: evs.filter(e => e.ev === 'npc_exchange_heard:exchange_job_called').map(e => e.data),
-        tasks: await tasks(), ...analyse(evs)
+        tasks: await tasks(), ...stepFive(evs), ...analyse(evs)
     };
 }
 
@@ -169,7 +186,7 @@ if (beat === 'boiler_cross' || beat === 'cooler_cross') {
     report[beat] = {
         use_starts: bothUsing(evs, obj).map(e => ({ clock_s: +(e.clockMs / 1000).toFixed(1), npc: e.data.npcId })),
         both_used: new Set(bothUsing(evs, obj).map(e => e.data.npcId)).size >= 2,
-        tasks: await tasks(), ...analyse(evs)
+        tasks: await tasks(), ...stepFive(evs), ...analyse(evs)
     };
 }
 
