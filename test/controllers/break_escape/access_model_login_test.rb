@@ -218,6 +218,168 @@ module BreakEscape
       assert_equal ['jake_pc'], response.parsed_body['signedInPcs']
     end
 
+    # ---- locking a held session (UI slice 6) ---------------------------------------
+
+    def lock_session(pc_id = 'jake_pc')
+      post lock_session_game_url(@game), params: { pc_id: pc_id }, as: :json
+      response.parsed_body
+    end
+
+    test 'the holder locks a held session; it stays held and signed in' do
+      build
+      login('jbrooks', JAKE_PASSWORD)
+      body = lock_session
+      assert_response :success
+      assert_equal({ 'success' => true, 'pcId' => 'jake_pc', 'locked' => true }, body)
+      state = @game.reload.player_state
+      assert_equal({ 'id' => 'jake', 'via' => 'password', 'locked' => true }, state['sessions']['jake_pc'])
+      # Still signed in: a lock does not sign out
+      assert_equal ['jake_pc'], state['signedInPcs']
+    end
+
+    test 'the scenario answer carries locked for a locked session and the locking capability' do
+      build
+      login('jbrooks', JAKE_PASSWORD)
+      lock_session
+      get scenario_game_url(@game), as: :json
+      assert_equal true, response.parsed_body['sessionLockingSupported']
+      assert_equal({ 'npcId' => 'jake', 'username' => 'jbrooks', 'displayName' => 'Jake Brooks', 'via' => 'password', 'locked' => true },
+                   response.parsed_body['sessions']['jake_pc'])
+      # A reload keeps the lock on the server (a password session is not ended on load)
+      assert_equal true, @game.reload.player_state['sessions']['jake_pc']['locked']
+    end
+
+    test 'an unlocked session carries no locked key in the scenario answer' do
+      build
+      login('jbrooks', JAKE_PASSWORD)
+      get scenario_game_url(@game), as: :json
+      refute response.parsed_body['sessions']['jake_pc'].key?('locked')
+    end
+
+    test 'unlocking goes through the same password check, counting wrong tries toward maxAttempts' do
+      build
+      login('jbrooks', JAKE_PASSWORD)
+      lock_session
+      # A wrong password at a locked PC is counted exactly as a normal sign-in's wrong try
+      results = (1..4).map { login('jbrooks', 'nope') }
+      assert_equal [4, 3, 2, 1], results.map { |b| b['attemptsLeft'] }
+      # The session is still held and still locked while the player gets it wrong
+      assert_equal true, @game.reload.player_state['sessions']['jake_pc']['locked']
+      # The right password unlocks: a fresh session record with no locked flag
+      body = login('jbrooks', JAKE_PASSWORD)
+      assert_response :success
+      assert_equal 'jake', body['npcId']
+      assert_equal({ 'id' => 'jake', 'via' => 'password' }, @game.reload.player_state['sessions']['jake_pc'])
+    end
+
+    test 'enough wrong unlock tries lock the account out, as a normal sign-in would' do
+      build
+      login('jbrooks', JAKE_PASSWORD)
+      lock_session
+      results = (1..5).map { login('jbrooks', 'nope') }
+      assert_equal true, results.last['lockedOut']
+      assert_equal ['jake_pc|jbrooks'], @game.reload.player_state['loginLockouts']
+    end
+
+    test 'locking a PC the player holds no session at is refused 422 (a forged lock)' do
+      build
+      body = lock_session
+      assert_response :unprocessable_entity
+      assert_equal false, body['success']
+      assert_nil @game.reload.player_state['sessions']['jake_pc']
+    end
+
+    test 'a forged unlock without the right password is refused 422 and leaves the lock' do
+      build
+      login('jbrooks', JAKE_PASSWORD)
+      lock_session
+      # No unlock route exists: a request that claims to continue without the password is a
+      # wrong sign-in, refused the same way, and the session stays locked.
+      body = login('jbrooks', 'not-the-password')
+      assert_response :unprocessable_entity
+      assert_equal false, body['success']
+      assert_equal true, @game.reload.player_state['sessions']['jake_pc']['locked']
+    end
+
+    # ---- a locked session is refused on every read path (owner decision, re-auth gate) ----
+
+    def copy_profile_file(transfer: 'copy')
+      post "/break_escape/games/#{@game.id}/inventory",
+           params: { action_type: 'add', item: { type: 'text_file', name: 'Q3 budget.xlsx' },
+                     source_pc_id: 'jake_pc', transfer: transfer }, as: :json
+      response.parsed_body
+    end
+
+    def held_names
+      Array(@game.reload.player_state['inventory']).map { |item| item['name'] }
+    end
+
+    test 'the local desktop of a locked PC is refused as signed-out, and served again after the password' do
+      build
+      login('jbrooks', JAKE_PASSWORD)
+      open_desktop
+      assert_response :success
+      lock_session
+      open_desktop
+      assert_response :forbidden
+      assert_equal 'no_session', response.parsed_body['reason']
+      # The right password (an ordinary sign-in) clears the lock and the desktop is served again
+      login('jbrooks', JAKE_PASSWORD)
+      open_desktop
+      assert_response :success
+      assert response.parsed_body['contents'].present?
+    end
+
+    test 'a copy from a locked PC profile is refused, and allowed again after the password' do
+      build
+      login('jbrooks', JAKE_PASSWORD)
+      lock_session
+      copy_profile_file
+      refute_includes held_names, 'Q3 budget.xlsx', 'a locked session must not hand over a profile file'
+      login('jbrooks', JAKE_PASSWORD)
+      copy_profile_file
+      assert_includes held_names, 'Q3 budget.xlsx'
+    end
+
+    test 'locking a claimed owner session is refused 422 and leaves it unlocked' do
+      build(scenario: tracked_scenario)
+      claim
+      assert_equal 'claim', @game.reload.player_state['sessions']['jake_pc']['via']
+      body = lock_session
+      assert_response :unprocessable_entity
+      assert_equal false, body['success']
+      refute @game.reload.player_state['sessions']['jake_pc'].key?('locked'),
+             'a claim the player holds without a password must not be lockable'
+    end
+
+    test 'locking a guest session is refused 422 and leaves it unlocked' do
+      build
+      # A guest session is held via a claim (no password was entered), as claim_guest_session!
+      # records it: via "claim", with a guestSessions marker. Lock must refuse it the same way.
+      @game.player_state['sessions'] = { 'jake_pc' => { 'id' => 'jake', 'via' => 'claim' } }
+      @game.player_state['guestSessions'] = { 'jake_pc' => 'jake' }
+      @game.save!
+      body = lock_session
+      assert_response :unprocessable_entity
+      assert_equal false, body['success']
+      refute @game.reload.player_state['sessions']['jake_pc'].key?('locked')
+    end
+
+    test 'a second permitted account signs in at a locked PC and gets a fresh session, never the locked desktop' do
+      build
+      login('jbrooks', JAKE_PASSWORD)
+      lock_session
+      # Dana (also admitted at jake_pc) signs in with her own password: a new session replaces
+      # the locked record, with no locked flag, and the served desktop is hers (integrator n2).
+      body = login('dwhite', DANA_PASSWORD)
+      assert_response :success
+      assert_equal 'dana', body['npcId']
+      assert_equal({ 'id' => 'dana', 'via' => 'password' }, @game.reload.player_state['sessions']['jake_pc'])
+      open_desktop
+      assert_response :success
+      assert_equal 'dana', response.parsed_body['session']['npcId']
+    end
+
     test 'a reset clears every access model key' do
       build
       login('jbrooks', JAKE_PASSWORD)
@@ -326,7 +488,7 @@ module BreakEscape
         'owner whose only need is invalid' =>
           [tracked_scenario('needs' => { 'coffee' => { 'decayPerMin' => 0, 'urgentAt' => 40 } }, 'interests' => { 'x' => 0 }), {}, 'jake_pc'],
         'owner with no account' =>
-          [tracked_scenario { |d| jake_pc(d)['screenOwner'] = 'len' }.tap do |d|
+          [tracked_scenario { |d| jake_pc(d)['owner'] = 'len' }.tap do |d|
             d['rooms']['lobby']['npcs'].find { |n| n['id'] == 'len' }['needs'] = { 'tea' => { 'decayPerMin' => 5, 'urgentAt' => 30 } }
           end, {}, 'jake_pc'],
         'access list does not admit the owner' => [tracked_scenario, {}, 'it_pc'],

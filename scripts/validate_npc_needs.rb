@@ -14,7 +14,7 @@ module ValidateNpcNeeds
 
   Obj = Struct.new(:id, :room, :data, :x, :y, keyword_init: true)
 
-  # screen_habits: { npc id => screenHabit } from the habits expansion (slice 9.1), read by
+  # screen_habits: { npc id => habits.screen } from the habits expansion (slice 9.1), read by
   # the autoLockSeconds rule before the authored field. Default {}: today's output.
   def self.check(json, screen_habits: {})
     return [] unless json.is_a?(Hash) && json['rooms'].is_a?(Hash)
@@ -122,7 +122,7 @@ module ValidateNpcNeeds
   end
 
   # ── desk phones (slice 19, OFFICE_LIFE_PLAN 12.5) ──────────────────────────
-  # A phone is a declared object with phoneOwner: the owner is an NPC with a needsHome object in the
+  # A phone is a declared object marked deskPhone: its owner (a single NPC id) is an NPC with a needsHome object in the
   # phone's room; the phone sits within 1.5 tiles of the owner's post (the owner answers without
   # moving) and has a standing affordance (a colleague answering never takes the owner's chair), is
   # not takeable, and its own approach cell (useFrom) is to the side of the owner's chair spot.
@@ -145,13 +145,13 @@ module ValidateNpcNeeds
 
   def self.check_phones(json, npcs, objs, issues)
     by_id = npcs.to_h { |r, n| [n['id'], [r, n]] }
-    phones = objs.select { |o| o.data.key?('phoneOwner') }
+    phones = objs.select { |o| o.data['deskPhone'] == true }
     globals = json['globalVariables'].is_a?(Hash) ? json['globalVariables'] : {}
     phones.each do |ph|
       where = "desk phone '#{ph.id}'"
-      owner_id = ph.data['phoneOwner']
+      owner_id = ph.data['owner']
       if ph.id.to_s.empty?
-        issues << "❌ ERROR: a desk phone (phoneOwner '#{owner_id}') has no id; desk_phone_ring:<id> rings it by id."
+        issues << "❌ ERROR: a desk phone (owner '#{owner_id}') has no id; desk_phone_ring:<id> rings it by id."
         next
       end
       if ph.data['takeable'] == true
@@ -167,7 +167,7 @@ module ValidateNpcNeeds
         issues << "❌ ERROR: #{where} affordance does not stand (seat '#{aff['seat']}'); a colleague answering it would sit in the owner's chair. Set \"seat\": \"stand\"."
       end
       unless owner_id.is_a?(String) && by_id[owner_id]
-        issues << "❌ ERROR: #{where} phoneOwner '#{owner_id}' is not an NPC in this scenario."
+        issues << "❌ ERROR: #{where} owner '#{owner_id}' is not an NPC in this scenario."
         next
       end
       _r, owner = by_id[owner_id]
@@ -200,7 +200,7 @@ module ValidateNpcNeeds
       where = "NPC '#{n['id']}'"
       if n.key?('answersPhones') && ![true, false].include?(n['answersPhones'])
         issues << "❌ ERROR: #{where} answersPhones must be true or false."
-      elsif n['answersPhones'] == true && phones.none? { |ph| ph.room == room_id && ph.data['phoneOwner'] != n['id'] }
+      elsif n['answersPhones'] == true && phones.none? { |ph| ph.room == room_id && ph.data['owner'] != n['id'] }
         issues << "⚠️ WARNING: #{where} answersPhones, but no colleague's desk phone is in room '#{room_id}'."
       end
       next unless n.key?('phoneCalls')
@@ -209,7 +209,7 @@ module ValidateNpcNeeds
         issues << "❌ ERROR: #{where} phoneCalls must be a list of { knot, requireGlobal }."
         next
       end
-      if phones.none? { |ph| ph.data['phoneOwner'] == n['id'] } && n['answersPhones'] != true
+      if phones.none? { |ph| ph.data['owner'] == n['id'] } && n['answersPhones'] != true
         issues << "⚠️ WARNING: #{where} has phoneCalls but owns no desk phone and does not answer others' (answersPhones)."
       end
       issues << "⚠️ WARNING: #{where} has phoneCalls but no voice; the call shows as bubbles only." unless n['voice'].is_a?(Hash)
@@ -332,9 +332,9 @@ module ValidateNpcNeeds
     end
   end
 
-  # Slice 17 (OFFICE_LIFE_PLAN 12.3): print and forget. A hook's chance (0-1); printHabit's shape
+  # Slice 17 (OFFICE_LIFE_PLAN 12.3): print and forget. A hook's chance (0-1); habits.print's shape
   # and bounds; a mapping's needs.print command; affordance.uncollectedAfterSeconds. An owner (a
-  # printHabit or a print command) needs a needsHome object, where the errand takes the print; a
+  # habits.print or a print command) needs a needsHome object, where the errand takes the print; a
   # habit with nothing that prints for it does nothing; a producer in a room the owner may not
   # reach is never fetched from. Per producer, slots against printing NPCs (forgotten prints hold
   # slots until a reload or a recycle).
@@ -391,20 +391,20 @@ module ValidateNpcNeeds
         end
         issues << "❌ ERROR: #{where} mapping '#{m['eventPattern']}' needs.print forget must be true or false." if spec.key?('forget') && ![true, false].include?(spec['forget'])
       end
-      habit = npc['printHabit']
+      habit = npc.dig('habits', 'print')
       unless habit.nil?
         if habit.is_a?(Hash)
           if habit.key?('fetchAfterSeconds') && !fetch_range_ok?(habit['fetchAfterSeconds'])
-            issues << "❌ ERROR: #{where} printHabit.fetchAfterSeconds must be [min, max] seconds, 0 <= min <= max <= 3600 (default [20, 60])."
+            issues << "❌ ERROR: #{where} habits.print.fetchAfterSeconds must be [min, max] seconds, 0 <= min <= max <= 3600 (default [20, 60])."
           end
-          issues << "❌ ERROR: #{where} printHabit.forgetChance must be a number from 0 to 1 (default 0)." if habit.key?('forgetChance') && !(habit['forgetChance'].is_a?(Numeric) && habit['forgetChance'] >= 0 && habit['forgetChance'] <= 1)
-          issues << "❌ ERROR: #{where} printHabit.weight must be 0.1 to 10 (default 2)." if habit.key?('weight') && !(habit['weight'].is_a?(Numeric) && habit['weight'] >= 0.1 && habit['weight'] <= 10)
-          issues << "❌ ERROR: #{where} printHabit.shareAfterSeconds must be seconds > 0 (unset: a forgotten print stays reserved)." if habit.key?('shareAfterSeconds') && !(habit['shareAfterSeconds'].is_a?(Numeric) && habit['shareAfterSeconds'].positive?)
+          issues << "❌ ERROR: #{where} habits.print.forgetChance must be a number from 0 to 1 (default 0)." if habit.key?('forgetChance') && !(habit['forgetChance'].is_a?(Numeric) && habit['forgetChance'] >= 0 && habit['forgetChance'] <= 1)
+          issues << "❌ ERROR: #{where} habits.print.weight must be 0.1 to 10 (default 2)." if habit.key?('weight') && !(habit['weight'].is_a?(Numeric) && habit['weight'] >= 0.1 && habit['weight'] <= 10)
+          issues << "❌ ERROR: #{where} habits.print.shareAfterSeconds must be seconds > 0 (unset: a forgotten print stays reserved)." if habit.key?('shareAfterSeconds') && !(habit['shareAfterSeconds'].is_a?(Numeric) && habit['shareAfterSeconds'].positive?)
         else
-          issues << "❌ ERROR: #{where} printHabit must be an object."
+          issues << "❌ ERROR: #{where} habits.print must be an object."
         end
         if hooked.empty? && commanded.empty?
-          issues << "⚠️ WARNING: #{where} has a printHabit but no revealOutput hook and no mapping print command; nothing prints as it, so the habit does nothing."
+          issues << "⚠️ WARNING: #{where} has a habits.print but no revealOutput hook and no mapping print command; nothing prints as it, so the habit does nothing."
         end
       end
       owner_prods = (habit.nil? ? [] : hooked) + commanded
@@ -415,7 +415,7 @@ module ValidateNpcNeeds
       home = npc['needsHome']
       home_obj = home.is_a?(String) ? by_id[home]&.first : nil
       unless home_obj
-        issues << "❌ ERROR: #{where} owns its prints (printHabit or a print command) but has no needsHome object; the fetch errand takes the print to its needsHome object and has nowhere to go."
+        issues << "❌ ERROR: #{where} owns its prints (habits.print or a print command) but has no needsHome object; the fetch errand takes the print to its needsHome object and has nowhere to go."
         next
       end
       home_room = home_obj.room || npc_room
@@ -494,7 +494,7 @@ module ValidateNpcNeeds
     out
   end
 
-  # Slice 16 (OFFICE_LIFE_PLAN 12.2): the owner's screenHabit and the machine's autoLockSeconds.
+  # Slice 16 (OFFICE_LIFE_PLAN 12.2): the owner's habits.screen and the machine's autoLockSeconds.
   # The same rules as systems/workstation-state.js: an object's own lockChance or
   # locksScreenOnLeave wins over the habit; auto-lock only ever locks an open screen.
   LOCK_FIELDS = %w[lockChance locksScreenOnLeave].freeze
@@ -503,10 +503,10 @@ module ValidateNpcNeeds
     data['workstation'] == true || LOCK_FIELDS.any? { |f| data.key?(f) }
   end
 
-  def self.station_owner(data, npcs)
-    return data['screenOwner'] if data['screenOwner'].is_a?(String) && !data['screenOwner'].empty?
+  def self.station_owner(data, _npcs = nil)
+    return data['owner'] if data['owner'].is_a?(String) && !data['owner'].empty?
 
-    npcs.find { |_, n| n['needsHome'] == data['id'] }&.last&.dig('id')
+    nil
   end
 
   # Does this habit ever leave the screen open on a leave?
@@ -523,10 +523,10 @@ module ValidateNpcNeeds
     end
     stations = objs.select { |o| o.data.is_a?(Hash) && o.data['id'].is_a?(String) && workstation?(o.data) }
     npcs.each do |_, npc|
-      next unless npc.key?('screenHabit')
+      next unless npc['habits'].is_a?(Hash) && npc['habits'].key?('screen')
 
-      where = "NPC '#{npc['id']}' screenHabit"
-      h = npc['screenHabit']
+      where = "NPC '#{npc['id']}' habits.screen"
+      h = npc.dig('habits', 'screen')
       unless h.is_a?(Hash)
         issues << "❌ ERROR: #{where} must be an object { lockChance, lockIfAwayOverSeconds }."
         next
@@ -544,7 +544,7 @@ module ValidateNpcNeeds
       if borrower
         # nothing to warn: the habit decides whether the hot desk is left signed in
       elsif own.empty?
-        issues << "⚠️ WARNING: #{where} but the NPC owns no workstation (needsHome or screenOwner on an object with workstation: true): nothing to lock."
+        issues << "⚠️ WARNING: #{where} but the NPC owns no workstation (owner on an object with workstation: true): nothing to lock."
       elsif own.all? { |o| LOCK_FIELDS.any? { |f| o.data.key?(f) } }
         issues << "⚠️ WARNING: #{where} never applies: every station it owns (#{own.map(&:id).join(', ')}) sets lockChance or locksScreenOnLeave, and the object wins. Remove the object's field to use the habit."
       end
@@ -563,7 +563,7 @@ module ValidateNpcNeeds
         next
       end
       owner_id = station_owner(d, npcs)
-      habit = screen_habits.key?(owner_id) ? screen_habits[owner_id] : npcs.find { |_, n| n['id'] == owner_id }&.last&.dig('screenHabit')
+      habit = screen_habits.key?(owner_id) ? screen_habits[owner_id] : npcs.find { |_, n| n['id'] == owner_id }&.last&.dig('habits', 'screen')
       always = d['lockChance'].is_a?(Numeric) ? d['lockChance'] >= 1 : (d.key?('locksScreenOnLeave') ? d['locksScreenOnLeave'] != false : !habit_leaves_open?(habit))
       if always
         issues << "⚠️ WARNING: #{where} never applies: the screen always locks when its owner leaves (locksScreenOnLeave, lockChance 1 or no habit that leaves it open), and auto-lock only locks an open screen."
@@ -1044,7 +1044,7 @@ module ValidateNpcNeeds
 
   # ── room leash and private objects (OFFICE_LIFE_PLAN 7.2, slice 2a) ──────
 
-  # Room-level needsPrivateTo and object-level affordance.private / owners.
+  # Room-level needsPrivateTo and object-level private / owner.
   def self.check_private(json, npcs, objs, issues)
     npc_ids = npcs.map { |_, n| n['id'] }.compact
     json['rooms'].each do |room_id, room|
@@ -1059,26 +1059,22 @@ module ValidateNpcNeeds
       end
     end
     objs.each do |o|
-      aff = o.data['affordance']
-      next unless aff.is_a?(Hash)
-
-      Array(aff['owners']).each do |id|
-        issues << "❌ ERROR: object '#{o.id}' affordance.owners names unknown NPC '#{id}'." unless npc_ids.include?(id)
+      owners_of(o, npcs).each do |id|
+        issues << "❌ ERROR: object '#{o.id}' owner names unknown NPC '#{id}'." unless id.is_a?(String) && npc_ids.include?(id)
       end
-      next unless aff['private'] == true && owners_of(o, npcs).empty?
+      next unless o.data['private'] == true && owners_of(o, npcs).empty?
 
-      issues << "⚠️ WARNING: object '#{o.id}' is private but has no owner (no affordance.owners, no screenOwner, no NPC with it as needsHome); it serves nobody."
+      issues << "⚠️ WARNING: object '#{o.id}' is private but has no owner; it serves nobody."
     end
   end
 
-  # affordance.owners, else screenOwner, else the first NPC whose needsHome is the object.
-  def self.owners_of(obj, npcs)
-    aff = obj.data['affordance'].is_a?(Hash) ? obj.data['affordance'] : {}
-    return aff['owners'] if aff['owners'].is_a?(Array)
-    return [obj.data['screenOwner']] if obj.data['screenOwner'].is_a?(String) && !obj.data['screenOwner'].empty?
+  # The object's explicit owner(s), a String or a list. needsHome no longer sets one.
+  def self.owners_of(obj, _npcs = nil)
+    o = obj.data['owner']
+    return o if o.is_a?(Array)
+    return [o] if o.is_a?(String) && !o.empty?
 
-    first = npcs.find { |_, n| n['needsHome'] == obj.id && !obj.id.nil? }
-    first ? [first[1]['id']] : []
+    []
   end
 
   # Why an NPC's needs may not enter a room, or nil. The home room is never forbidden here; the
@@ -1100,7 +1096,7 @@ module ValidateNpcNeeds
   def self.use_rule(json, npc, obj, home_room, npcs)
     rule = leash_rule(json, npc, obj.room, home_room)
     return "room '#{obj.room}' is #{rule}" if rule
-    return nil unless obj.data.dig('affordance', 'private') == true
+    return nil unless obj.data['private'] == true
 
     owners = owners_of(obj, npcs)
     owners.include?(npc['id']) ? nil : "it is private to #{owners.inspect}"
@@ -1109,7 +1105,7 @@ module ValidateNpcNeeds
   def self.leashed?(json, npc, objs)
     npc.key?('needsRooms') || npc.key?('needsAvoidRooms') ||
       json['rooms'].any? { |_, r| r.is_a?(Hash) && r['needsPrivateTo'].is_a?(Array) } ||
-      objs.any? { |o| o.data.dig('affordance', 'private') == true }
+      objs.any? { |o| o.data['private'] == true }
   end
 
   # Rooms reachable from home over `connections` without entering a forbidden room.
@@ -1199,7 +1195,7 @@ module ValidateNpcNeeds
       if priv.is_a?(Array) && !priv.include?(nid)
         issues << "❌ ERROR: #{where} home room '#{home_room}' is needsPrivateTo #{priv.inspect}, which does not list it."
       end
-      if home.is_a?(String) && (h = by_id[home]&.first) && h.data.dig('affordance', 'private') == true && !owners_of(h, npcs).include?(nid)
+      if home.is_a?(String) && (h = by_id[home]&.first) && h.data['private'] == true && !owners_of(h, npcs).include?(nid)
         issues << "❌ ERROR: #{where} needsHome '#{home}' is private to #{owners_of(h, npcs).inspect}."
       end
       reach = leash_reach(json, npc, home_room)
@@ -1423,43 +1419,44 @@ module ValidateNpcNeeds
   end
 
   # ── left-behind items (OFFICE_LIFE_PLAN 2.10, slice 11) ─────────────────
-  # A declared item with leftBehindBy "<npcId>" is a slot by Part A's definition: the engine shows
-  # it at the owner's post on a real leave (seeded roll under leftBehindChance) and stows it on
-  # return, through its own revealOnGlobal. Same global and read-in-place rules as a reveal slot.
+  # A declared item with leftBehindChance is a slot by Part A's definition: the engine shows
+  # it at its owner's post on a real leave (seeded roll under leftBehindChance) and stows it on
+  # return, through its own revealOnGlobal. Its owner is a single NPC id (owner). Same global and
+  # read-in-place rules as a reveal slot.
   def self.check_left_behind(json, npcs, objs, issues)
     by_npc = npcs.to_h { |room_id, n| [n['id'], [room_id, n]] }
     by_id = objs.group_by(&:id)
     objs.each do |o|
       d = o.data
-      if d.key?('leftBehindChance') && !d.key?('leftBehindBy')
-        issues << "⚠️ WARNING: object '#{o.id || d['name']}' sets leftBehindChance without leftBehindBy; nothing rolls it."
-      end
-      next unless d.key?('leftBehindBy')
+      next unless d.key?('leftBehindChance')
 
       label = "left-behind item '#{o.id || d['name']}'"
       issues << "❌ ERROR: #{label} has no id; left-behind items are shown and stowed by id." if o.id.to_s.empty?
-      issues << "❌ ERROR: #{label} has both outputOf and leftBehindBy; a slot belongs to a producer or an owner, not both." if d.key?('outputOf')
-      owner = by_npc[d['leftBehindBy']]
-      if owner.nil?
-        issues << "❌ ERROR: #{label} leftBehindBy names '#{d['leftBehindBy']}', which is not an NPC id in this scenario."
-      elsif owner[1]['needsHome'].nil?
-        issues << "❌ ERROR: #{label} leftBehindBy '#{d['leftBehindBy']}' has no needsHome; only a leave from a post can leave something behind."
+      issues << "❌ ERROR: #{label} has both outputOf and leftBehindChance; a slot belongs to a producer or an owner, not both." if d.key?('outputOf')
+      owner_id = d['owner'].is_a?(String) && !d['owner'].empty? ? d['owner'] : nil
+      if owner_id.nil?
+        issues << "❌ ERROR: #{label} has leftBehindChance but no owner; only a named owner leaving a post can leave something behind."
       else
-        home = owner[1]['needsHome']
-        home_room = home.is_a?(Hash) ? home['room'] : by_id[home]&.first&.room
-        if home_room && o.room && o.room != home_room
-          issues << "⚠️ WARNING: #{label} is in room '#{o.room}', but its owner's post is in '#{home_room}'; it shows wherever it is declared, so put it at the post."
+        owner = by_npc[owner_id]
+        if owner.nil?
+          issues << "❌ ERROR: #{label} owner names '#{owner_id}', which is not an NPC id in this scenario."
+        elsif owner[1]['needsHome'].nil?
+          issues << "❌ ERROR: #{label} owner '#{owner_id}' has no needsHome; only a leave from a post can leave something behind."
+        else
+          home = owner[1]['needsHome']
+          home_room = home.is_a?(Hash) ? home['room'] : by_id[home]&.first&.room
+          if home_room && o.room && o.room != home_room
+            issues << "⚠️ WARNING: #{label} is in room '#{o.room}', but its owner's post is in '#{home_room}'; it shows wherever it is declared, so put it at the post."
+          end
         end
       end
       c = d['leftBehindChance']
-      if c.nil?
-        issues << "⚠️ WARNING: #{label} has no leftBehindChance; the default is 0, so it is never left."
-      elsif !c.is_a?(Numeric) || c.negative? || c > 1
+      if !c.is_a?(Numeric) || c.negative? || c > 1
         issues << "❌ ERROR: #{label} leftBehindChance must be a number from 0 to 1."
       end
       g = d['revealOnGlobal']
       unless g.is_a?(String) && !g.empty?
-        issues << "❌ ERROR: #{label} has leftBehindBy but no revealOnGlobal; the engine shows and stows it through its own global."
+        issues << "❌ ERROR: #{label} has leftBehindChance but no revealOnGlobal; the engine shows and stows it through its own global."
         next
       end
       others = objs.reject { |x| x.equal?(o) }.select { |x| x.data['revealOnGlobal'] == g }
@@ -1471,7 +1468,7 @@ module ValidateNpcNeeds
         issues << "❌ ERROR: #{label} is a non-takeable readable #{d['type']} without readDisplay \"gameDisplay\"; the notes minigame removes what it opens. Add \"readDisplay\": \"gameDisplay\" or make it takeable (one beat)."
       end
       beat = d['takeable'] == true ? 'takeable: one beat, gone for good once taken' : 'not takeable: repeats on later leaves'
-      issues << "ℹ️ Left-behind item '#{o.id}' (#{d['leftBehindBy']}, chance #{c.inspect}): #{beat}."
+      issues << "ℹ️ Left-behind item '#{o.id}' (#{d['owner']}, chance #{c.inspect}): #{beat}."
     end
   end
 

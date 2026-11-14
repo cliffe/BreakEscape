@@ -38,7 +38,7 @@
 #
 # With it, a `habits` block (slice 9.1, ACCESS_MODEL_SLICE_9_1_PLAN.md step 6) of values only,
 # read from the game's saved scenario: one line per NPC with a habits object (its habits and
-# its screenHabit as saved) and one per owned workstation (its owner, its own lockChance or
+# its habits.screen as saved) and one per owned workstation (its owner, its own lockChance or
 # locksScreenOnLeave, whether the server's claim check calls it "always locks", and whether
 # it shows a sticky note), and one per gate door with a noHold (step 5: the door, its openFor
 # and its noHold as saved). It does not say which values a habit filled: the validator's
@@ -161,9 +161,10 @@ def habits_section(g)
   owners = ai.room_npcs(data).to_h { |e| [e[:npc]['id'], e[:npc]] }
   lines = ['habits']
   npcs.each do |npc|
-    values = npc['habits'].reject { |k, _| k == '_comment' }.map { |k, v| "#{k}=#{v}" }.join(' ')
-    habit = npc.key?('screenHabit') ? JSON.generate(npc['screenHabit']) : '-'
-    lines << "  npc #{npc['id'].to_s.ljust(14)} #{values}  screenHabit #{habit}"
+    values = npc['habits'].reject { |k, _| %w[_comment screen print usb].include?(k) }.map { |k, v| "#{k}=#{v}" }.join(' ')
+    screen = npc.dig('habits', 'screen')
+    habit = screen.nil? ? '-' : JSON.generate(screen)
+    lines << "  npc #{npc['id'].to_s.ljust(14)} #{values}  habits.screen #{habit}"
   end
   ai.room_objects(data).each do |entry|
     pc = entry[:object]

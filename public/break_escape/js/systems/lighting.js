@@ -244,7 +244,7 @@ export function flashShape(kind, t, reduced = false) {
  * offsets, so it moves with the dot.
  */
 export function workstationIndicators(data, npcs, size = {}) {
-  if (!isWorkstation(data) || !ownerOf(data, npcs)) return [];
+  if (!isWorkstation(data) || !ownerOf(data)) return [];
   const { offsetX, offsetY } = screenAnchor(size.key, size);
   return [
     { ...INDICATOR_LOCKED, condition: `globalVars.${data.id}_screen_locked`, offsetX, offsetY },

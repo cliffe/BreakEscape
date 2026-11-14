@@ -39,6 +39,11 @@ module BreakEscape
 
     LOCK_FIELDS = %w[lockChance locksScreenOnLeave].freeze
 
+    # Step 8c: the office-life habit sub-blocks that live in `habits` but are not awareness
+    # habits (they are not in HABITS or PARAMETERS). `authored`/`expanded` ignore them, so
+    # `expand!` carries an authored one across the awareness expansion unchanged.
+    FOLDED = %w[screen print usb].freeze
+
     def level?(value)
       value.is_a?(String) && LEVELS.include?(value)
     end
@@ -82,12 +87,18 @@ module BreakEscape
       habits.select { |k, v| valid_habit?(k, v) || valid_parameter?(k, v) }
     end
 
-    # The NPC's habits after the preset and the overrides; nil when it has neither a level
-    # nor a `habits` object.
+    # The NPC's habits after the preset and the overrides; nil when it has neither a level nor
+    # an awareness `habits` block. Step 8c: a `habits` block holding only the folded office-life
+    # sub-blocks (screen/print/usb) carries no awareness authoring, so with no level there is
+    # nothing to expand, exactly as a bare top-level screenHabit had no habits block before the
+    # fold. A block with any non-folded key (valid or not) is an awareness block and still
+    # expands, so an invalid-only block still resolves to {} as before.
     def expanded(npc, scenario)
       level = level_of(npc, scenario)
+      habits = npc.is_a?(Hash) ? npc['habits'] : nil
       own = authored(npc)
-      return nil if level.nil? && own.nil?
+      awareness_block = habits.is_a?(Hash) && habits.keys.any? { |k| !FOLDED.include?(k) }
+      return nil if level.nil? && !awareness_block
 
       (level ? PRESETS[level].dup : {}).merge(own || {})
     end
@@ -139,7 +150,12 @@ module BreakEscape
 
       plans.each do |plan|
         npc = plan[:entry][:npc]
-        npc['habits'] = plan[:habits] if plan[:level] || npc['habits'] != plan[:habits]
+        # Step 8c: screen/print/usb are not awareness habits, so they are absent from
+        # plan[:habits]; carry an authored one across so the write-back does not drop it.
+        current = npc['habits'].is_a?(Hash) ? npc['habits'] : {}
+        folded = FOLDED.each_with_object({}) { |k, h| h[k] = current[k] if current.key?(k) }
+        expanded_habits = plan[:habits].merge(folded)
+        npc['habits'] = expanded_habits if plan[:level] || npc['habits'] != expanded_habits
         item = { id: npc['id'], room: plan[:entry][:room], path: plan[:entry][:path],
                  level: plan[:level], level_source: plan[:level_source],
                  habits: plan[:habits].dup, sources: plan[:sources], screen: nil }
@@ -159,9 +175,8 @@ module BreakEscape
       report
     end
 
-    # { npc_id => [{ object:, room:, path: }] } for every workstation an NPC owns. An object
-    # with no id is never matched to an owner (owner_id would match a missing id to the
-    # first NPC with no needsHome); AccessIdentities.workstation? needs an id.
+    # { npc_id => [{ object:, room:, path: }] } for every workstation an NPC owns, read from the
+    # object's explicit owner (owner_id); AccessIdentities.workstation? needs an id.
     def owned_workstations(scenario)
       out = Hash.new { |h, k| h[k] = [] }
       AccessIdentities.room_objects(scenario).each do |entry|
@@ -174,7 +189,7 @@ module BreakEscape
       out
     end
 
-    # The locksScreen fill (5.2): the NPC's own screenHabit, unless the author wrote one,
+    # The locksScreen fill (5.2): the NPC's own habits.screen, unless the author wrote one,
     # or the NPC owns no workstation, or every workstation it owns sets its own lock field.
     # No object is written. Returns the report's screen entry.
     def fill_screen_habit!(npc, value, stations)
@@ -187,7 +202,8 @@ module BreakEscape
           applied: field.nil?, field: field }
       end
       screen = { value: value, lock_chance: chance, pcs: pcs, filled: false, reason: nil }
-      if npc.key?('screenHabit')
+      habits = npc['habits'].is_a?(Hash) ? npc['habits'] : nil
+      if habits && habits.key?('screen')
         screen[:reason] = :authored_screen_habit
         pcs.each { |pc| pc[:applied] = false }
       elsif pcs.empty?
@@ -195,7 +211,7 @@ module BreakEscape
       elsif pcs.none? { |pc| pc[:applied] }
         screen[:reason] = :every_pc_sets_a_field
       else
-        npc['screenHabit'] = { 'lockChance' => chance }
+        (npc['habits'] ||= {})['screen'] = { 'lockChance' => chance }
         screen[:filled] = true
       end
       screen
@@ -245,9 +261,9 @@ module BreakEscape
       listed = room['connections'].is_a?(Hash) ? room['connections'][dir] : nil
       # doors.js skips a falsy connections[dir] ("north": ""), so it builds no doorway
       listed = if listed.is_a?(Array) then listed
-               elsif listed.nil? || listed == '' then []
-               else [listed]
-               end
+      elsif listed.nil? || listed == '' then []
+      else [listed]
+      end
       return :no_connection unless target.is_a?(String) && listed.include?(target)
 
       first = doors.index { |d| d.is_a?(Hash) && d['connectedRoom'] == target && d['direction'] == dir }
@@ -283,8 +299,8 @@ module BreakEscape
         reason = fill.is_a?(Symbol) ? fill : nil
         # In the gate's noHold: the one written for the habit, or an authored one
         listed = if reason == :authored_no_hold then gate_no_hold(gate[:gate]).include?(npc_id)
-                 else fill.is_a?(Array) && fill.include?(npc_id)
-                 end
+        else fill.is_a?(Array) && fill.include?(npc_id)
+        end
         { path: gate[:path], room: gate[:room], connected_room: gate[:connected_room],
           applied: reason.nil?, no_hold: listed, reason: reason }
       end

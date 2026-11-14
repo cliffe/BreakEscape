@@ -27,7 +27,7 @@ put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n
 put('utils/conditional-text.js', 'export function resolveObjectField(o, f, d) { return (o && o[f] != null) ? o[f] : d; }\n');
 put('systems/inventory.js', 'export async function addToInventory() { return { ok: true }; }\nexport function removeFromInventory() {}\nexport function inventoryImageKey(d) { return d?.type; }\n');
 for (const rel of ['utils/escape-html.js', 'utils/computer-keywords.js', 'utils/author-html.js', 'utils/lock-scope-refusal.js',
-    'utils/pc-monitor.js', 'utils/more-below.js', 'utils/npc-headshot.js', 'minigames/framework/base-minigame.js',
+    'utils/pc-monitor.js', 'utils/more-below.js', 'utils/npc-headshot.js', 'utils/pc-taskbar.js', 'minigames/framework/base-minigame.js',
     'minigames/container/container-item-image.js', 'minigames/container/container-minigame.js',
     'minigames/password/password-minigame.js', 'systems/pc-sessions.js', 'minigames/text-file/text-file-minigame.js',
     'minigames/notes/notes-minigame.js', 'utils/note-markdown.js', 'utils/test-state-text.js']) copy(rel);
@@ -403,12 +403,12 @@ test('a tile shows the headshot at x2, never the talk crop, when the file exists
     applyTilePortrait(el, { username: 'lfox', displayName: 'Lena Fox', portrait: 'assets/characters/female_blowse_talk.png' }, fakeImage({
         '/break_escape/assets/characters/female_blowse_v2_headshot.png': [32, 32],
         '/break_escape/assets/characters/female_blowse_talk.png': [256, 256]
-    }), () => null, { record: null, onMissing: (k) => missing.push(k) });
+    }), { record: null, onMissing: (k) => missing.push(k) });
     await settle(5); await settle(5);
     assert.equal(el.dataset.headshot, 'female_blowse_v2');
     assert.match(el.style.backgroundImage, /female_blowse_v2_headshot\.png/);
     assert.equal(el.style.backgroundSize, '64px 64px', 'the 32px headshot at x2');
-    assert.equal(el.dataset.short, 'avatar', 'and at x1 in the short window');
+    assert.equal(el.dataset.short, 'single', 'and at x1 in the short window');
     assert.deepEqual(missing, []);
 });
 
@@ -419,39 +419,40 @@ test('the world sprite from the NPC record picks the headshot', async () => {
     const el = document.createElement('span');
     applyTilePortrait(el, { username: 'ishaw', portrait: 'assets/characters/someone_else_talk.png' }, fakeImage({
         '/break_escape/assets/characters/male_nerd_v2_headshot.png': [32, 32]
-    }), () => null, { record: manager.npcs.get('ian') });
+    }), { record: manager.npcs.get('ian') });
     await settle(5); await settle(5);
     assert.equal(el.dataset.headshot, 'male_nerd_v2');
 });
 
-test('no headshot file: the talk crop as before, and the key is logged once', async () => {
+test('no headshot file: the silhouette, never the talk crop, and the key is logged once', async () => {
     const el = document.createElement('span');
     const missing = [];
     applyTilePortrait(el, { username: 'okafor', portrait: 'assets/characters/ms_okafor_talk.png' }, fakeImage({
         '/break_escape/assets/characters/ms_okafor_talk.png': [256, 256]
-    }), () => null, { record: null, onMissing: (k) => missing.push(k) });
+    }), { record: null, onMissing: (k) => missing.push(k) });
     for (let i = 0; i < 4; i++) await settle(5);
-    assert.equal(el.dataset.frame, 'talk-sheet', 'the crop fallback');
+    assert.equal(el.dataset.frame, 'silhouette', 'the silhouette fallback');
     assert.equal(el.dataset.headshot, undefined);
+    assert.doesNotMatch(el.style.backgroundImage, /talk/);
     assert.deepEqual(missing, [['ms_okafor_v2', 'ms_okafor']], 'logged once, with every key tried');
     assert.equal(el.dataset.headshotMissing, 'ms_okafor_v2 ms_okafor');
 });
 
-test('R1 m8: the desktop bar falls back the same way as a tile: the talk sheet\'s 32x32 head crop', async () => {
+test('the desktop bar never crops the talk image: no headshot file hides the box and logs every key', async () => {
     const box = document.createElement('span');
     const missing = [];
+    const heard = [];
+    const asked = [];
+    const Base = fakeImage({ '/break_escape/assets/characters/ms_okafor_talk.png': [256, 256] });
     applyHeadshotBox(box, { spriteSheet: 'ms_okafor_sprite', portrait: 'assets/characters/ms_okafor_talk.png' }, {
-        talkUrl: '/break_escape/assets/characters/ms_okafor_talk.png',
-        ImageCtor: fakeImage({ '/break_escape/assets/characters/ms_okafor_talk.png': [256, 256] }),
-        readAlpha: () => null, onMissing: (k) => missing.push(k)
+        ImageCtor: class extends Base { set src(u) { asked.push(u); super.src = u; } get src() { return super.src; } },
+        onMissing: (k) => missing.push(k), onResult: (r) => heard.push(r)
     });
     for (let i = 0; i < 6; i++) await settle(5);
     assert.deepEqual(missing, [['ms_okafor_sprite', 'ms_okafor_v2', 'ms_okafor']], 'every key, the sprite sheet first');
-    assert.equal(box.dataset.frame, 'head-crop');
-    assert.equal(box.hidden, false);
-    assert.equal(box.style.backgroundSize, '256px 256px', 'at scale 1');
-    // the bedside override (the same crop as the short tile)
-    assert.equal(box.style.backgroundPosition, '-36px -30px');
+    assert.equal(box.hidden, true, 'hidden: the caller draws the silhouette');
+    assert.deepEqual(heard, [null]);
+    assert.equal(asked.some(u => /_talk\.png/.test(u)), false, 'the talk image is never loaded');
     // a headshot file wins, at x1
     const shot = document.createElement('span');
     applyHeadshotBox(shot, { spriteSheet: 'male_nerd_v2' }, {
@@ -542,17 +543,41 @@ test('a PC\'s sign-in screen and its desktop use the same frame, at the same siz
     }
 });
 
-test('the desktop\'s account bar shows the signed-in NPC\'s headshot', async () => {
+test('UX slice 6: a locked session\'s sign-in screen says it is locked; an open one says signed in now', async () => {
+    for (const [locked, want] of [[true, 'Locked: Sam Okafor. Enter the password to unlock'], [false, 'Signed in now: Sam Okafor (sokafor)']]) {
+        document.body.innerHTML = '<div id="mg"></div>';
+        window.MinigameFramework = { currentMinigame: null, endMinigame: () => {} };
+        window.playUISound = () => {};
+        const mg = new PasswordMinigame(document.getElementById('mg'), {
+            title: 'Sign in',
+            signIn: { pcId: 'hot_desk', pcName: 'Hot desk PC', picker: 'accounts', tiles: [{ username: 'sokafor', displayName: 'Sam Okafor' }],
+                      current: { username: 'sokafor', displayName: 'Sam Okafor', via: 'password', ...(locked ? { locked: true } : {}) } }
+        });
+        window.MinigameFramework.currentMinigame = mg;
+        mg.init();
+        assert.equal(document.querySelector('.signin-current').textContent.trim(), want);
+        mg.cleanup?.();
+    }
+});
+
+test('the desktop\'s taskbar shows the signed-in NPC\'s headshot (x1), the start panel at x2 (UX slice 6)', async () => {
     const restore = sizeWindow(1400, 1000);
+    const { resetTaskbarHeadshots } = await imp('utils/pc-taskbar.js');
+    resetTaskbarHeadshots();
     globalThis.Image = fakeImage({ '/break_escape/assets/characters/male_office_worker_v2_headshot.png': [32, 32] });
     try {
         await desktop();
         await settle(5); await settle(5);
-        const box = document.querySelector('.pc-desktop-topbar .desktop-account-headshot');
-        assert.ok(box, 'a headshot in the top bar');
+        assert.equal(document.querySelector('.pc-desktop-topbar'), null, 'no top bar for a password session');
+        const box = document.querySelector('.pc-taskbar .pc-taskbar-headshot');
+        assert.ok(box, 'a headshot in the taskbar');
         assert.equal(box.dataset.headshot, 'male_office_worker_v2');
         assert.match(box.style.backgroundImage, /male_office_worker_v2_headshot\.png/);
+        assert.equal(box.style.backgroundSize, '32px 32px');
         assert.equal(box.hidden, false);
+        const big = document.querySelector('.pc-start-panel .pc-start-headshot');
+        assert.equal(big.style.backgroundSize, '64px 64px', 'the panel draws it at x2');
+        resetTaskbarHeadshots();
     } finally {
         delete globalThis.Image;
         restore();
@@ -669,19 +694,19 @@ test('R1 m6: a tap on the note does not mark it dragged; a move does', async () 
     }
 });
 
-test('R1 M3: a long description is all in the taskbar, wrapped and scrolled, never cut with an ellipsis', async () => {
+test('UI PC polish 1: the desktop does not repeat the PC\'s observations, however long; a share\'s status line still wraps and scrolls', async () => {
     const restore = sizeWindow(390, 844);
     const long = 'A shared hot desk PC. Anyone with an account can sign in here, and the last user left a sticky note about the payroll share on the second floor.';
     try {
         await desktop({ observations: long });
-        const note = document.querySelector('.desktop-taskbar-note');
-        assert.equal(note.textContent, long, 'every word is in the DOM');
-        assert.ok(note.classList.contains('pixel-scroll'), 'the pixel scrollbar when it scrolls');
+        assert.equal(document.querySelector('.desktop-taskbar-note'), null, 'no description on the desktop');
+        assert.equal(document.querySelector('.pc-desktop-status'), null, 'no strip for it');
+        assert.ok(!document.querySelector('.pc-desktop').textContent.includes('payroll share'), 'the words are not on the desktop');
     } finally {
         restore();
     }
     const box = css('container-minigame.css');
-    for (const sel of ['.desktop-taskbar-note {', '.share-folder-status {']) {
+    for (const sel of ['.share-folder-status {']) {
         const rule = box.slice(box.indexOf(sel), box.indexOf('}', box.indexOf(sel)));
         assert.match(rule, /white-space: normal/, sel);
         assert.doesNotMatch(rule, /text-overflow: ellipsis|nowrap/, sel);
@@ -751,14 +776,15 @@ test('R2 M2: the desktop\'s icon area has the pixel scrollbar and "More below" w
     assert.match(cue, /border-top: 2px solid/);
 });
 
-test('R2 m4: no taskbar strip under a desktop with no description and nothing to take', async () => {
+test('R2 m4 / slice 6 / UI PC polish 1: no description strip, with or without observations; the taskbar is always under the desktop', async () => {
     const restore = sizeWindow(390, 844);
     try {
         const a = await desktop({ observations: '' });
-        assert.equal(document.querySelector('.desktop-taskbar'), null, 'no empty strip');
+        assert.equal(document.querySelector('.pc-desktop-status'), null, 'no empty strip');
+        assert.ok(document.querySelector('.pc-desktop > .pc-taskbar'), 'the taskbar');
         a.cleanup?.();
         const b = await desktop({ observations: 'A hot desk.' });
-        assert.ok(document.querySelector('.desktop-taskbar .desktop-taskbar-note'), 'a description keeps it');
+        assert.equal(document.querySelector('.pc-desktop-status'), null, 'a description gets no strip (item 1)');
         b.cleanup?.();
     } finally {
         restore();
@@ -776,6 +802,81 @@ test('R2 m3 and m5: icon labels on the monitor have the dark backing, not the ou
     const s = frame.indexOf('.pc-monitor[data-ui-scale="2"] .pc-monitor-name {');
     assert.ok(s > 0, 'an x2 rule for the name');
     assert.match(frame.slice(s, frame.indexOf('}', s)), /font-size: 16px;\s*line-height: 16px;/);
+});
+
+// UI PC polish 2: labels wrap at spaces only; a word that cannot fit steps the pixel font down a
+// whole size, then ends in an ellipsis. jsdom has no layout, so the widths are stubbed from the
+// label's font size: a word is `chars` characters wide at `px` pixels per character.
+function stubWidths(label, chars, perChar = 0.5, box = 104) {
+    Object.defineProperty(label, 'clientWidth', { configurable: true, get: () => box });
+    Object.defineProperty(label, 'scrollWidth', { configurable: true, get: () => {
+        const size = parseInt(label.style.fontSize, 10) || 16;
+        if (label.querySelector('.desktop-icon-word')) return box;
+        return Math.round(chars * size * perChar);
+    } });
+}
+
+test('UI PC polish 2: a label that fits keeps the 16px base; a wide word is never shrunk to a fractional size', async () => {
+    const mod = await imp('minigames/container/container-minigame.js');
+    const { fitIconLabel } = mod;
+    assert.equal(mod.LABEL_FIT_SIZES, undefined, 'no in-between font sizes (crisp GNF)');
+    const fits = document.createElement('div');
+    fits.textContent = 'Personal Notes - Safe';
+    stubWidths(fits, 12);
+    assert.equal(fitIconLabel(fits), 'fits');
+    assert.equal(fits.style.fontSize, '', 'a label that fits keeps the base size');
+    // 14 characters at 8px a character is 112px wide at 16px: wider than the box, so it is cut
+    const word = document.createElement('div');
+    word.textContent = 'CONTINGENCYXY';
+    stubWidths(word, 14);
+    assert.equal(fitIconLabel(word), 'ellipsis');
+    assert.equal(word.style.fontSize, '', 'the font size is never touched');
+    assert.equal(word.getAttribute('title'), 'CONTINGENCYXY');
+    assert.equal(word.textContent, 'CONTINGENCYXY', 'the text reads the same');
+});
+
+test('UI PC polish 2: a word too wide for the label ends in an ellipsis; the whole name stays in the title', async () => {
+    const { fitIconLabel } = await imp('minigames/container/container-minigame.js');
+    const label = document.createElement('div');
+    label.textContent = 'ELECTROENCEPHALOGRAPHY - Audit Response';
+    stubWidths(label, 40);
+    assert.equal(fitIconLabel(label), 'ellipsis');
+    assert.equal(label.style.fontSize, '', 'back at the base size');
+    assert.equal(label.getAttribute('title'), 'ELECTROENCEPHALOGRAPHY - Audit Response');
+    const words = [...label.querySelectorAll('.desktop-icon-word')].map(w => w.textContent);
+    assert.deepEqual(words, ['ELECTROENCEPHALOGRAPHY', '-', 'Audit', 'Response'], 'one box per word, so a break can only fall at a space');
+    assert.equal(label.textContent, 'ELECTROENCEPHALOGRAPHY - Audit Response', 'the text reads the same');
+    // refitting from the cut state restores the whole name first
+    stubWidths(label, 5);
+    assert.equal(fitIconLabel(label), 'fits');
+    assert.equal(label.querySelector('.desktop-icon-word'), null);
+    assert.equal(label.getAttribute('title'), null);
+});
+
+test('UI PC polish 2: the label CSS breaks only at spaces and cuts a word with an ellipsis', () => {
+    const box = css('container-minigame.css');
+    const rule = box.slice(box.indexOf('.desktop-icon-label {'), box.indexOf('}', box.indexOf('.desktop-icon-label {')));
+    assert.match(rule, /overflow-wrap: normal;/);
+    assert.doesNotMatch(rule, /overflow-wrap: anywhere|break-all|break-word/);
+    const word = box.slice(box.indexOf('.desktop-icon-label .desktop-icon-word {'), box.indexOf('}', box.indexOf('.desktop-icon-label .desktop-icon-word {')));
+    assert.match(word, /text-overflow: ellipsis;/);
+    assert.match(word, /white-space: nowrap;/);
+});
+
+// UI PC polish 5: the post-it's pin (8px wide, 5px in from the edge) leaves the text clear
+test('UI PC polish 5: the post-it keeps right padding past its pin at every size', () => {
+    const frame = css('pc-monitor.css');
+    const pin = css('password-minigame.css');
+    const pinRule = pin.slice(pin.indexOf('.postit-note::after {'), pin.indexOf('}', pin.indexOf('.postit-note::after {')));
+    const right = Number(/right: (\d+)px/.exec(pinRule)[1]);
+    const width = Number(/width: (\d+)px/.exec(pinRule)[1]);
+    for (const sel of ['.pc-monitor > .postit-note.pc-monitor-postit {', '.pc-monitor[data-compact] > .postit-note.pc-monitor-postit {']) {
+        const start = frame.indexOf(sel);
+        const rule = frame.slice(start, frame.indexOf('}', start));
+        const padding = /padding: (\d+)px (\d+)px (\d+)px (\d+)px;/.exec(rule);
+        assert.ok(padding, `${sel} sets four paddings`);
+        assert.ok(Number(padding[2]) >= right + width + 2, `${sel}: right padding ${padding[2]}px clears the pin (${right + width}px)`);
+    }
 });
 
 // ── The one rule in CSS ──────────────────────────────────────────────────────
@@ -1235,4 +1336,14 @@ test('UI quick: the chin button reads Add Postit to notepad on the sign-in scree
     } finally {
         sizing();
     }
+});
+
+// UI slice 6 review R2 minor 1: the 18 px icon box made each panel entry 2 px taller and the
+// panel scrolled by 4 px at 1400x1000; the entry's own padding is 1 px to pay for it. The real
+// measurement is a live one (no layout here), so this pins the two numbers that must agree.
+test('R2 m1: a panel entry is an 18 px icon box with 1 px vertical padding', () => {
+    const sheet = css('pc-monitor.css');
+    const item = sheet.match(/\.pc-monitor button\.pc-start-item \{[^}]*\}/)[0];
+    assert.match(item, /padding:\s*1px 6px/);
+    assert.match(sheet.match(/\.pc-start-item-icon \{\s*width: 26px;[^}]*\}/)[0], /height:\s*18px/);
 });

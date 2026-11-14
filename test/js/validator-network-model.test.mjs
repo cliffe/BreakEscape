@@ -72,7 +72,7 @@ function clean() {
                 locked: true, lockType: 'key', requires: 'fin_key',
                 objects: [
                     { id: 'lena_pc', type: 'pc', name: "Lena's PC", host: 'HB-FIN-02', policy: 'open_remote',
-                      locked: true, lockType: 'login', access: { roles: ['finance'] } }
+                      locked: true, lockType: 'login', owner: 'lena', access: { roles: ['finance'] } }
                 ]
             },
             store: {

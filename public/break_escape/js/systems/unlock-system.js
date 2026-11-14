@@ -269,7 +269,9 @@ export function openLoginPc(lockable) {
         showHeadlessObservations(lockable);
         return;
     }
-    if (pcId && window.pcSessions?.has(pcId)) {
+    // A locked session (UI slice 6) stays held, but opens the sign-in screen (account
+    // pre-chosen), not the desktop: the player re-enters the password to continue.
+    if (pcId && window.pcSessions?.has(pcId) && !window.pcSessions?.isLocked?.(pcId)) {
         openLoginDesktop(lockable);
     } else {
         openLoginSignIn(lockable);
@@ -485,6 +487,12 @@ export async function interactLoginPc(lockable) {
         return 'in_use';
     }
     if (sessions?.has?.(pcId)) {
+        // A locked session (UI slice 6): the sign-in screen with the account pre-chosen, not
+        // the desktop and never a claim (the player already holds the session here).
+        if (sessions?.isLocked?.(pcId)) {
+            openLoginSignIn(lockable, { reason: 'locked' });
+            return 'signin';
+        }
         openLoginDesktop(lockable);
         return 'desktop';
     }
@@ -611,6 +619,9 @@ export async function openLoginSignIn(lockable, { switching = false, reason = un
     const postitNote = servedNote || data.postitNote || '';
     const showPostit = !!postitNote && data.showPostit !== false;
     sessions?.screenShown?.(pcId, picker === false ? [] : tiles, switching ? 'switch' : reason, showPostit);
+    // A locked session (UI slice 6) pre-chooses its own account: the player only re-enters the
+    // password. The username is the held session's; the server still checks the password.
+    const current = sessions?.get?.(pcId) || null;
     framework.startMinigame('password', null, {
         title: data.name || 'Sign in',
         lockable,
@@ -620,7 +631,8 @@ export async function openLoginSignIn(lockable, { switching = false, reason = un
             pcName: data.name || pcId,
             picker,
             tiles: picker === false ? [] : tiles,
-            current: sessions?.get?.(pcId) || null
+            current,
+            preselect: current && current.locked ? current.username : null
         },
         postitNote,
         showPostit,
@@ -667,6 +679,8 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
             picker: false,
             tiles: [],
             current: held && held.via !== 'claim' ? held : null,
+            // A locked held session pre-chooses its own account, as the local screen does
+            preselect: held && held.via !== 'claim' && held.locked ? held.username : null,
             remote: { footholdId, linkName },
             captured: [],
             capturedLoading: true

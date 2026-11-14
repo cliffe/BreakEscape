@@ -134,7 +134,7 @@ The hot desk wing is Hall C: `hot_desk` (unowned, under `managed`, so it locks 5
 after a guest leaves it), the PIN-locked `comms_cabinet`, the unlocked `hall_c_drawer` holding the
 temporary account's note, and Rosa's desk with her own breaker for `finance_share_down`. Ian is
 north in `cable_room` (W6); his own PC carries `lockChance: 1`, and he and Rosa author
-`screenHabit: { lockChance: 0 }`, so each leaves the hot desk signed in. H4 is `open_office`, east
+`habits.screen: { lockChance: 0 }`, so each leaves the hot desk signed in. H4 is `open_office`, east
 of Priya's room: Sam works on the CRM (`crm_down`, its switch by the door) and Ruth stands at the
 far desk. Game one: H1, H2, H3. Game two: H4, then H5. Hear the events with a listener on
 `npc_sat_at:*`, `npc_borrowed_session:*`, `npc_borrow_done:*`, `npc_guest_left:*`,
@@ -163,7 +163,7 @@ overheard note).
 `lock_room` is east of `open_office` (H4). Jake Brooks works at `jake_pc` and Leo Marsh at
 `leo_pc`, both sign-in PCs under `strict` (`maxAttempts: 3`); `hot_desk_2` stands between them
 under `managed`, unowned; the fridge is in the corner. Jake's own PC always locks
-(`lockChance: 1`) and he borrows `hot_desk_2` at 50, leaving it signed in (`screenHabit:
+(`lockChance: 1`) and he borrows `hot_desk_2` at 50, leaving it signed in (`habits.screen:
 { lockChance: 0 }`); Leo's PC never locks. Both go to the fridge every few minutes (Jake first,
 about a minute in). Hear the events with a listener on `npc_use_failed:*`, `npc_locked_out:*`,
 `npc_sat_at:*`, `npc_borrowed_session:*`, `workstation_owner_returned:*`, `pc_signin_failed` and

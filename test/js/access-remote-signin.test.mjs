@@ -42,6 +42,7 @@ copy('utils/more-below.js');
 copy('utils/computer-keywords.js');
 copy('utils/pc-monitor.js');
 copy('utils/npc-headshot.js');
+copy('utils/pc-taskbar.js');
 copy('utils/author-html.js');
 put('systems/inventory.js',
     'export async function addToInventory() { return { ok: true }; }\n' +
@@ -61,6 +62,8 @@ const { PcSessions } = await imp('systems/pc-sessions.js');
 const { NetworkLinks } = await imp('systems/network-links.js');
 const { ContainerMinigame } = await imp('minigames/container/container-minigame.js');
 
+// UX slice 6: Switch user and Sign out are in the start panel
+const startAction = (id) => { document.querySelector('.pc-start-btn').click(); document.getElementById(`pc-start-${id}`).click(); };
 const settle = async (n = 4) => { for (let i = 0; i < n; i++) await new Promise(r => setTimeout(r, 0)); };
 
 const foothold = { id: 'jack_comms_port', via: 'jack', name: 'Drop box: comms room', itemId: 'netlink_jack_comms_port',
@@ -315,7 +318,7 @@ test('Switch user on a remote desktop opens the remote screen; a refused switch 
     await remoteDesktopOpen();
     views.length = 0;
     calls.length = 0;
-    document.querySelector('#desktop-switch-user').click();
+    startAction('switch');
     await settle();
     const [type, params] = started.at(-1);
     assert.equal(type, 'password');
@@ -404,7 +407,7 @@ test('the remote desktop closed by its Close returns to the view; Sign out too',
     openRemoteDesktop('lena_pc', 'jack_comms_port');
     await settle();
     views.length = 0;
-    document.querySelector('#desktop-sign-out').click();
+    startAction('signout');
     await settle(6);
     assert.equal(sessions.has('lena_pc'), false);
     assert.deepEqual(views, [['jack_comms_port', null]]);
