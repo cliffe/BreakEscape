@@ -3558,3 +3558,58 @@ either.
 `access_leak_scanner_test`, `access_leak_scanner_feed_test` together: **164 runs, 833 assertions, 0
 failures, 0 errors, 0 skips** (unchanged from the completion run; these fixes touch only the
 validator and one fixture scenario). No new gems or npm packages.
+
+### Item 6: the live browser proof (2026-11-14, tip 566db9073)
+
+The step-3 live proof ran on a keyless headless server on port 3678 (`setFPS(20)`, fixed steps on),
+through a headless Chromium driving the real client (`window.__test`, `window.submitSECapture`, the
+inventory "Drop here" action, `window.ApiClient.unlock`) and asserting against FRESH server
+responses (`GET /scenario`, `GET /room/:id`, `GET /capture_secrets`), never the page's own view.
+Games were created only through the normal routes (`swap-scenario-game.rb` for the no-Mission test
+scenarios, `new-game.rb` for m06). The tool is
+`tools/playtest/secret-leak-withholding-live-proof.mjs`.
+
+Result: **22 of 22 checks passed.** Game ids (last run): test_secret_leaks 4980,
+m06_follow_the_money 4981, test_unlock_gaps 4982.
+
+Per case:
+- **test_secret_leaks withholding (the three secrets).** Each of Mara's combination capture secret
+  `12-30-5`, Tess's door-entry capture secret `4821` (usePayload targetId `dropzone`) and Rhea's
+  account password `WOLF` (the cryptex answer) was ABSENT from every payload before its proof: the
+  bootstrap's structured fields, both rooms' `GET /room` payloads, and `GET /capture_secrets` (`{}`).
+  The three captures were then earned through the game's own capture client and, with the proof not
+  yet held, `GET /capture_secrets` still withheld all three. After the real inventory drop of
+  `evidence_usb` (the `{ dropped: evidence_usb }` proof), `GET /capture_secrets` served all three
+  (`{"mara":"12-30-5","rhea":"WOLF","dropzone":"4821"}`), the right route for each. A legitimate
+  player then opened each lock through the real `POST /unlock`: the strongbox combination `12-30-5`,
+  the cryptex `WOLF` (casecmp over the authored `wolf`) and the vault PIN door `4821` all returned
+  `success: true` (never refused). After a reload the bootstrap was still clean and the secrets were
+  still served (persisted).
+- **Bootstrap strip.** On test_secret_leaks and on m06_follow_the_money, `GET /scenario` carried no
+  `acknowledgedClues` key, no door/object `requires` answer anywhere in `rooms`, and the m06
+  marker's reason prose ("Tracing the three suspense withdrawals ...") was absent;
+  `window.gameScenario.acknowledgedClues` was `undefined` after load and after reload.
+- **Comparator on test_unlock_gaps (read only).** The combination locker refused a wrong, a blank
+  and a malformed answer and opened with `12-30-5`; the cryptex box refused `CIPHEX` and opened with
+  the different-case `cipher` (casecmp); the archive cryptex door, given only a wrong answer, was
+  still `locked: true` in a fresh bootstrap after a reload.
+
+**The door-entry leak the proof first found, and its fix.** On the first run the vault PIN `4821`
+appeared in the office `GET /room` payload: the office-to-vault door entry carried a bare
+`"requires": "4821"`, and `filtered_room_data` / `filter_requires_and_contents_recursive` descend
+into objects, npcs, contents and itemsHeld but not into a room's own `doors` array, so a door-entry
+answer shipped. This is the same leak the R1 review caught: the item-4 M1 validator guard
+(`414172137`) now errors on a bare door-entry `requires` that equals a lock answer, and the scenario
+was corrected (`5fc9760d9`) to drop the bare `requires`, leaving the vault room's own pin lock to
+gate entry (so `4821` ships only from `/capture_secrets` once Tess's proof holds). The proof was
+re-run on fresh games against the corrected scenario with no engine change: `office` now reports
+`false` for `4821`, and all 22 checks pass. (An overlapping runtime strip of door-entry answers in
+`filtered_room_data` was prototyped during the proof and then reverted, since the review had already
+closed the leak at the validator and scenario level; a runtime defence-in-depth strip is noted here
+as an option for the orchestrator, not taken unilaterally.)
+
+The access-leak property the step-3 `access_leak_scanner.rb` `capture_secret` rule encodes (a
+non-account capture secret allowed only on `/capture_secrets` and a capture page, flagged anywhere
+else) is asserted directly here against fresh `/capture_secrets`, `/room` and `/scenario` responses,
+so a separate `access-leak-check.rb` run over a captured `responses.jsonl` was not added. The server
+was stopped by its logged PID afterwards and the port confirmed down.
