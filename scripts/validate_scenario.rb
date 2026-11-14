@@ -6867,6 +6867,40 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
     end
   end
 
+  # Phish evidence: a landing page whose capture.secret is a hard-access value (a password or PIN
+  # lock code, an RFID or biometric requires, a Wi-Fi PSK or a flag) is only safe to serve once the
+  # server has recorded a built, convincing page and a landed send for it, which it can do only when
+  # a link kit names the page. A protected secret behind a phish with no payloadKit link kit reopens
+  # the client forge the phish-evidence server hardening closes (PHISH_EVIDENCE_SERVER_PLAN sections
+  # 11 to 13): a tampered client can forge the build and send state and be served the secret without
+  # running the minigames. Error so a future author cannot quietly reopen it. Where the landing
+  # secret is not a hard-access value (every awareness page), nothing fires.
+  hard_access = BreakEscape::CaptureModel.hard_access_values(json_data)
+  unless hard_access.empty?
+    evidence_kits = BreakEscape::CaptureModel.page_evidence_kits(json_data)
+    BreakEscape::CaptureModel.landing_pages(json_data).each do |page|
+      next unless page.is_a?(Hash)
+
+      capture = page['capture']
+      next unless capture.is_a?(Hash)
+
+      secret = capture['secret']
+      next unless BreakEscape::CaptureModel.present_string?(secret) && hard_access.include?(secret.to_s)
+
+      page_id = page['id']
+      info = BreakEscape::CaptureModel.present_string?(page_id) ? evidence_kits[page_id] : nil
+      next if info.is_a?(Hash) && Array(info[:kits]).any?
+
+      page_label = BreakEscape::CaptureModel.present_string?(page_id) ? page_id : '(no id)'
+      err.call("landing page '#{page_label}' carries a capture.secret that is also a password or PIN " \
+               'lock code, an RFID or biometric requires, a Wi-Fi PSK or a flag, but no ' \
+               'social.mailClient.payloadKit link kit names it (landingPageId), so the server cannot ' \
+               'gate the reveal on a built page and a landed send. A tampered client could forge the ' \
+               'build and send and be served the secret. Wire the page through a link kit, or make the ' \
+               'secret open nothing.')
+    end
+  end
+
   # Access lists: people must be room NPCs; roles should be held by someone
   roles_held = room_npcs.flat_map { |e| ai.identity_roles(e[:npc]) }.to_set
   acl_sources = []
