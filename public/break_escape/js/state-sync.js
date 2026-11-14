@@ -982,7 +982,10 @@ export class StateSync {
 
   /** A hidden flush that did not land (non-2xx, network error, rejected) no longer blocks the pagehide. */
   _clearHiddenGuard(reason, key) {
-    if (reason === 'hidden' && key !== null && this._hiddenFlushKey === key) this._hiddenFlushKey = null;
+    // Any failed hidden flush clears the guard, not only the newest one: a later hide
+    // may have sent only the difference behind it (review R3 m1), so its key no longer
+    // covers what the failed flush carried. The cost is at most one duplicate request.
+    if (reason === 'hidden') this._hiddenFlushKey = null;
   }
 
   /**

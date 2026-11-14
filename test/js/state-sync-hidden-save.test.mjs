@@ -680,3 +680,29 @@ test('R2 n2: a stale answer to a reduced hidden flush clears its guard too', asy
   assert.equal(sync._hiddenFlushKey, null);
   sync.stop();
 });
+
+// R3 m1: hide with a 45 KB flush in flight, show, change, hide again (a difference body
+// with its own guard), then the first flush fails. The pagehide must still send the big
+// delta: any failed hidden flush clears the guard, not only the newest one.
+test('R3 m1: a failed earlier hidden flush clears the guard set by a later difference flush', async () => {
+  const sync = resetGame();
+  sync.start();
+  await sync.sync();
+  const m = modelServer();
+  window.gameState.globalVariables.big = 'x'.repeat(45000);
+  hide();
+  show();
+  window.gameState.globalVariables.late = 1;
+  hide();
+  assert.ok(m.pending[0].body.globalVariables?.big, 'the first hidden flush carried the big global');
+  m.deliver(0, { fail: true });
+  await settled();
+  const before = m.pending.length;
+  window.fire('pagehide');
+  await settled();
+  assert.ok(m.pending.length > before, 'the pagehide sent something');
+  for (let i = 1; i < m.pending.length; i++) { m.deliver(i); await settled(); }
+  assert.equal(m.server.globals.big, 'x'.repeat(45000), 'the big delta reached the server');
+  assert.equal(m.server.globals.late, 1, 'the later change reached the server');
+  sync.stop();
+});
