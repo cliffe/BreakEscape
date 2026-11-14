@@ -1025,3 +1025,30 @@ refused the room and it will not be resent, leaving the keyed-section wording un
 - Rails: `scenario_schema_test` (10 runs), `game_security_test` (55 runs), `social_sync_then_emit_test`
   (5 runs), `lab_physical_pentest_secrets_test` (38 runs). 0 failures.
 - Validator: `lab_physical_pentest` 0 errors, 7 warnings (unchanged from the Chunk E baseline).
+
+## Post-merge fix: format_8c lab loader fixture (2026-11-14)
+
+Merging main (8b/8c) onto this branch broke `test/unit/format_8c_corpus_test.rb:264`
+("lab_physical_pentest: a format-2 loader game, upgraded, matches a fresh format-3 game").
+`test/fixtures/format_8c/lab_physical_pentest.old.loaded.json` was frozen at the 8b tip
+`ab14d1926`, before Chunk D's gated-door edits, so the fresh format-3 render (which carries the
+gate `creditOnPass` and no client credit writers) no longer matched the frozen old-loader side.
+
+Re-made the fixture the way the folder README prescribes: the `ab14d1926` lab template with this
+branch's own lab edits applied (the changes in `git diff fc4b4d8a5 08a3073e8 --
+scenarios/lab_physical_pentest/`, nothing from 8b or 8c), rendered with `srand(1)` on a detached
+`ab14d1926` worktree and run through `NpcHabits.expand!` (the format-2 loader), pretty-printed with
+the same json gem the other fixtures use (`/usr/bin/ruby3.2`, so empty `[]` / `{}` keep the
+blank-line style). The old-vs-new fixture diff is only the tailgating edits: the two removed
+`room_entered:secure_area` `tailgate_in` backstops on `ruth_phone`, the removed `kp_badge_tailgated`
+and `door_gate_player_opened` credit writers on `ruth`, and the added gate `creditOnPass`
+(`viaPass` / `viaCredential`). The assertion was not relaxed and no fresh format-3 output was copied
+in. Only `lab_physical_pentest.old.loaded.json` encodes the lab; the other format_8b/8c fixtures do
+not.
+
+### Tests run (no full suites)
+
+- Rails: `format_8c_corpus_test` (23 runs), `format_8b_corpus_test`, `format_upgrade_test`,
+  `lab_physical_pentest_secrets_test`, and the gated-door model and controller tests
+  (`gated_server_completed_task`, `gated_door_credit`, `gated_route_room`) in one run: 157 runs,
+  2603 assertions, 0 failures, 0 errors.

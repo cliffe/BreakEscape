@@ -43,3 +43,10 @@ same folded data, field for field) as a fresh format-3 game the current loader f
 
 Regenerate after a deliberate change by re-rendering/re-loading the same way. A change that alters the
 step-8c transform is the only thing that should move `.new.json` relative to `transform(.old.json)`.
+
+`lab_physical_pentest.old.loaded.json` now carries the gated-door server-check edits (the records door
+gate's `creditOnPass`, and the removed client credit writers and `tailgate_in` backstops). It was
+re-made the same way: the ab14d1926 lab template with this branch's own lab edits applied (the changes
+in `git diff fc4b4d8a5 08a3073e8 -- scenarios/lab_physical_pentest/`, nothing from 8b or 8c), rendered
+with `srand(1)` on a detached ab14d1926 worktree and run through `NpcHabits.expand!`. The diff from the
+previous fixture is only those tailgating edits.
