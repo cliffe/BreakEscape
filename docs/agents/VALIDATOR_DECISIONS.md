@@ -206,6 +206,8 @@ Owner: escape-room track. Status: signed off by the orchestrator, 2026-11-12 (me
 }
 ```
 
+Signed off by the hardening orchestrator, 2026-11-15.
+
 Owner: m06. Acknowledged clue (step 3). The custody console PIN (`data_center/objects[1].requires`, id `cold_storage_console`) equals three `withdrawals[].slot` values in the transaction server's `minigameData` (`data_center/objects[0]`, id `transaction_server`). The server is not the lock and not inside it; reading the slots off the unlocked server is the deduction.
 
 ## 2026-11-14: m08 suite_code spoken clue
@@ -217,5 +219,7 @@ Owner: m06. Acknowledged clue (step 3). The custody console PIN (`data_center/ob
   "reason": "Netherton says the interrogation suite code aloud in his voiced ink, so the global carries it from game start; accepted as a best-effort clue (q85)."
 }
 ```
+
+Signed off by the hardening orchestrator, 2026-11-15.
 
 Owner: m08. Acknowledged clue in a global (step 3), printed as a warning, not an info line. The interrogation suite PIN is held in `globalVariables.suite_code` so Netherton's voiced ink can speak it. Server-held globals are dropped (q85); this is the cheat policy's best effort for a clue an NPC must say aloud.
