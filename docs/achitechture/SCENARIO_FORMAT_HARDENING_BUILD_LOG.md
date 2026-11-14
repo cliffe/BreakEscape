@@ -3400,6 +3400,32 @@ both scanner files): a non-account capture secret served through `/capture_secre
 capture page is allowed, the same value in a room response or a notepad is a finding named by its
 target id, and an account's own password stays with the `password` rule (`capture_secrets` count 0).
 
+**Item 5, validator corpus before/after table** (ink on, `--no-graph`, every scenario). A detached
+worktree at the merge base `896ec3cd8` was made by hand under the session scratchpad (it has no
+`validate_secret_leaks.rb`, so it is the true "before"); the validator ran over all 179 shared
+scenarios on both the base and the step-3 tip, and the `❌`/`⚠️` lines were diffed per scenario. The
+worktree was removed afterwards. The step-3 tip also validates one new scenario, `test_secret_leaks`
+(0 errors, 0 warnings), which the base does not have.
+
+Every added line is accounted for; **no scenario gains an error** (0 new `❌` lines). The complete
+list of changed lines:
+
+| Scenario | Before | After | New lines |
+|---|---|---|---|
+| ceo_exfil | 2 err (2 known), 0 warn | 2 err (2 known), 1 warn | +1 inert-`requires` warning (office1/objects[0]) |
+| crypto1_captain_meow | 1 err (1 known), 1 warn | 1 err (1 known), 3 warn | +2 inert-`requires` warnings (office2, office3) |
+| crypto2_rsa_asymmetric | 0 err, 0 warn | 0 err, 5 warn | +5 inert-`requires` warnings (room_start, room_office, room_servers, room_closet, room_ceo) |
+| crypto3_aes_symmetric | 0 err, 0 warn | 0 err, 2 warn | +2 inert-`requires` warnings (room_reception, room_closet) |
+| crypto4_encoding_encryption | 0 err, 0 warn | 0 err, 5 warn | +5 inert-`requires` warnings (room_reception, room_office, room_servers, room_closet, room_ceo) |
+| m06_follow_the_money | 0 err, 27 warn | 0 err, 27 warn, 3 acknowledged clues | +3 `ℹ️ acknowledged clue` info lines (the custody-console slots) |
+| m08_the_mole | 0 err, 5 warn | 0 err, 6 warn | +1 `⚠️ acknowledged clue in a global` warning (suite_code) |
+
+The 15 inert-`requires` warnings are the legacy unlocked PCs with the literal `"requires":
+"password"` the plan named (ceo_exfil 1, crypto1 2, crypto2 5, crypto3 2, crypto4 5), shipping as
+warnings per the orchestrator decision. m06's three info lines and m08's one warning are the two
+signed-off acknowledged-clue markers. No other scenario's `❌`/`⚠️` lines move; the known-error
+counts are unchanged everywhere. This is the full merge-batch record for step 3's validator change.
+
 **Reader wiring for the 6a-1 merge.** The marker reader is a non-test module,
 `test/js/validator-acknowledged-clues-reader.mjs`, mirroring `validator-decisions-reader.mjs`. It
 exports `readAcknowledgedClues(root)` (every marker across `scenarios/*/scenario.json.erb`, read
