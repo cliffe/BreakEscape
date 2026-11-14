@@ -62,8 +62,10 @@
     border: 2px solid #111111;
     background-color: #1e3a28;
     background-image: url('../assets/mini-games/desktop-wallpaper.png');
-    background-size: cover;
-    background-position: center;
+    /* utils/pc-monitor.js sets a whole-number size and the focus-centred position inline once
+       the picture's size is known (R2 M2); before that, its own size from the top left */
+    background-size: auto;
+    background-position: 0 0;
     background-repeat: no-repeat;
     image-rendering: pixelated;
 }
