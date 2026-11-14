@@ -278,7 +278,7 @@ async function main() {
             out.lateAt = await page.evaluate(() => {
                 const sys = window.npcNeedsSystem;
                 const s = sys.world.npcPos('sanjay'), r = sys.world.npcPos('rosa');
-                const x = (s.x + r.x) / 2, y = Math.max(s.y, r.y) + 40;
+                const x = Math.max(s.x, r.x) + 48, y = (s.y + r.y) / 2;   // east of the pair, on the floor (below them is the wall)
                 const p = window.player; p.setPosition(x, y); p.body?.reset?.(x, y);
                 const a = sys.states.get('sanjay').job, b = sys.states.get('rosa').job;
                 return { t: sys.clockMs, left: Math.min(a.useUntil, b.useUntil) - sys.clockMs, player: { x: Math.round(x), y: Math.round(y) }, room: window.currentPlayerRoom, hears: { sanjay: sys.world.playerHears('sanjay', 160), rosa: sys.world.playerHears('rosa', 160) } };
