@@ -418,8 +418,11 @@
    hint beside it (severedHint) says what it does. Two classes, so the shared
    .minigame-button type (minigames-framework.css) cannot shrink it. */
 .minigame-button.nsm-continue-btn {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 14px;
+    /* GNF 16 like SEVER, whose place it takes (console buttons are GNF 16; Press Start stays on
+       its 8px grid, consoles review R2 m4) */
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 24px;
     padding: 12px 18px;
     letter-spacing: 1px;
     white-space: nowrap;
