@@ -496,9 +496,15 @@ end
 # (or restore-sprite.rb) puts it back.
 pref = g.player.respond_to?(:ensure_break_escape_preference!) ? (g.player.ensure_break_escape_preference!; g.player.break_escape_preference) : g.player.preference
 if pref && !pref.sprite_valid_for_scenario?(g.scenario_data)
-  pick = BreakEscape::PlayerPreference::AVAILABLE_SPRITES.find do |sp|
-    BreakEscape::PlayerPreference.sprite_matches_pattern?(sp, '*') &&
-      Array(g.scenario_data['validSprites']).any? { |pat| BreakEscape::PlayerPreference.sprite_matches_pattern?(sp, pat) }
+  # Prefer what the character screen would offer (the mission's own characters and
+  # unlocked avatars); a mission with no validSprites still needs a pick when the
+  # saved sprite is an avatar this user has not unlocked.
+  # The AVAILABLE_SPRITES fallback and the abort below cannot run today:
+  # available_sprites always exists and falls back to the starter set, which is
+  # in the catalogue (review R2 n8). Kept as a guard in case either changes.
+  offered = pref.respond_to?(:available_sprites) ? Array(pref.available_sprites(g.scenario_data)) : []
+  pick = offered.first || BreakEscape::PlayerPreference::AVAILABLE_SPRITES.find do |sp|
+    Array(g.scenario_data['validSprites'] || ['*']).any? { |pat| BreakEscape::PlayerPreference.sprite_matches_pattern?(sp, pat) }
   end
   abort "No available sprite matches validSprites #{g.scenario_data['validSprites'].inspect}" unless pick
   orig = pref.read_attribute(:selected_sprite)
