@@ -98,6 +98,12 @@ scenario with a long jack/PC/network id would make its own remote sign-in screen
 the keyboard still works. Matches the plan's "at most 64 characters" wording, so flagged only as a latent
 asymmetry, not a deviation.
 
+**R1 fix decision (left alone):** the cap is kept. It is the plan's stated remote-branch bound and the
+keyboard branch has no equivalent lookup to align it to (it judges reach at the keyboard regardless of the
+foothold value, never treating the foothold as a held key), so there is nothing to make symmetric without
+inventing a cap the keyboard path does not use. Real ids are short; revisit only if a scenario ever needs a
+foothold id over 64 characters.
+
 ---
 
 ## Checks that passed

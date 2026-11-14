@@ -51,6 +51,33 @@ module BreakEscape
       assert_equal 'PC not reachable: lena_pc', body['error']
     end
 
+    test 'step 2: a held foothold that reaches a different host but not this one is 403 (R1 m3)' do
+      # A foothold on workshop_lan only. It reaches the bench PC on its own network, but Sam's
+      # PC on office_lan is held-but-off-network: host_reachable_through? must judge the reach,
+      # not merely that the foothold is held.
+      build_network_game
+      take_drop_box
+      plant('bench_port')
+      assert_response :success, response.body
+      bench = remote_tiles('bench_pc', 'jack_bench_port')
+      assert_response :success
+      assert_equal 'WS-BENCH-01', bench['host']
+      off_net = remote_tiles('sam_pc', 'jack_bench_port')
+      assert_response :forbidden
+      assert_equal 'PC not reachable: sam_pc', off_net['error']
+    end
+
+    test 'a structured foothold param is coerced to a string and never 500s or falls through (R1 m4)' do
+      # ?foothold[]=... makes params[:foothold] an array; the controller sends .to_s, so the
+      # string guard and the footholds lookup handle it: a 403 (not held), never a 500 or the
+      # keyboard answer.
+      with_office_foothold
+      get game_path('login_accounts'), params: { pc_id: 'sam_pc', foothold: ['jack_comms_port'] }, as: :json
+      assert_response :forbidden
+      assert_equal 'PC not reachable: sam_pc', response.parsed_body['error']
+      refute response.parsed_body.key?('postitNote'), 'a structured foothold never reaches the keyboard answer'
+    end
+
     test 'step 3: a PC whose policy blocks remote sign-in is 422 remoteBlocked' do
       with_office_foothold
       body = remote_tiles('kiosk_pc', OFFICE)
