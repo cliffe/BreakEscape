@@ -108,14 +108,31 @@ test('C-ER1 the episode runner draws a kiosk bezel in normal play, full-bleed on
     assert.match(src, /classList[^\n]*toggle[^\n]*epr-kiosk[^\n]*kiosk/, 'toggles .epr-kiosk for kiosk play');
     // In kiosk play it builds the bezel and mounts the close X in the bezel top strip.
     assert.match(src, /epr-kiosk-bezel/, 'builds the kiosk bezel');
-    assert.match(src, /mountCloseControl\(top,/, 'the X sits in the bezel top strip');
+    // R2 m2 (a): a kiosk is a device like the PC, so its X is the themed steel close, in the top strip.
+    assert.match(src, /mountThemedCloseControl\(top,[^)]*epr-kiosk-close/, 'the themed X sits in the bezel top strip');
     assert.ok(!/minigame-framed/.test(src), 'no longer uses the generic 9-slice frame');
+    // R2 m2 (b): the device cue - a card-reader slot and a status LED on the chin.
+    assert.match(src, /epr-kiosk-chin/, 'builds the kiosk chin');
+    assert.match(src, /epr-kiosk-reader/, 'builds the card-reader slot');
+    assert.match(src, /epr-kiosk-led/, 'builds the status LED');
     // The bezel is CSS-drawn in the PC monitor look: 2px borders, stepped corners, no image art.
     const er = readFileSync(join(css, 'episode-runner.css'), 'utf8');
     const bezel = er.match(/\.epr-kiosk-bezel\s*\{[^}]*\}/)[0];
     assert.match(bezel, /border:\s*2px solid/, 'the bezel has a 2px outline');
     assert.match(bezel, /clip-path:\s*polygon/, 'the bezel corners are cut in steps');
     assert.ok(!/url\(/.test(bezel), 'no image art in the bezel');
+    // The chin cue is 2px pixel art: no radius, no soft shadow, no image art.
+    for (const sel of ['.epr-kiosk-chin', '.epr-kiosk-reader', '.epr-kiosk-reader-slot', '.epr-kiosk-led', '.epr-kiosk-status-label']) {
+        const rule = er.match(new RegExp('\\' + sel + '\\s*\\{[^}]*\\}'))[0];
+        assert.doesNotMatch(rule, /border-radius:\s*[1-9]/, `${sel}: no rounded corners`);
+        assert.ok(!/url\(/.test(rule), `${sel}: no image art`);
+    }
+    // The kiosk close is themed, not the flat red SE X: ui-themes keeps the themed skin while
+    // the two-class SE rule stays scoped to .minigame-close-button.se-overlay-close only.
+    const kioskClose = er.match(/\.epr-kiosk-top \.epr-kiosk-close\s*\{[^}]*\}/)[0];
+    assert.ok(!/se-overlay-close/.test(kioskClose), 'the kiosk close is not the flat SE X');
+    const ut = readFileSync(join(css, 'ui-themes.css'), 'utf8');
+    assert.match(ut, /\.minigame-close-button\.se-overlay-close\s*\{/, 'the SE flat close override targets both classes');
 });
 
 test('C-X1 hand-rolled text Close buttons are gone from the SE scenes', () => {

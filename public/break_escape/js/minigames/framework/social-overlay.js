@@ -76,6 +76,20 @@ export class SocialOverlayScene extends MinigameScene {
     }
 
     /**
+     * A diegetic device (a kiosk, a monitor) closes with the themed steel X, the
+     * same look as the PC monitor's close, not the flat red SE overlay X. Builds a
+     * `.minigame-close-button` (so the [data-ui-theme] skin styles it) wired to the
+     * same requestClose as the SE control, with an optional extra class for
+     * placement, and adds it to `parent`. Returns the button.
+     */
+    mountThemedCloseControl(parent = this.container, label = 'Close', extraClass = '') {
+        const btn = this.buildCloseControl(label);
+        btn.className = ['minigame-close-button', extraClass].filter(Boolean).join(' ');
+        parent.appendChild(btn);
+        return btn;
+    }
+
+    /**
      * Register an open sub-layer (picker, panel, sheet). Esc calls `close` for
      * the topmost one before anything else. Returns a function that removes it;
      * call it whenever the layer goes away by any route.

@@ -1,6 +1,7 @@
 /* OSINT browser (design 02). Dark chrome on the --ui-* tokens, a light "page" area for the site
    content. Every string the player reads is DOM text, in the pixel font GNF (--se-font-readable),
-   except domains, addresses and handles, which are Source Sans 3 (--se-font-address).
+   including domains, addresses and handles, which use --se-font-address (GNF first, with a
+   smooth fallback only for glyphs GNF lacks).
    Marks are always paired with words.
    The stylesheet <link> is added by the wiring packet (P2-W). */
 

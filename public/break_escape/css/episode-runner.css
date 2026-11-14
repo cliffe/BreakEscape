@@ -56,15 +56,70 @@
     white-space: nowrap;
     text-overflow: ellipsis;
 }
-.epr-kiosk-top .se-overlay-close { flex: 0 0 auto; margin: 0; }
+/* R2 m2 (a): the kiosk close is the themed steel .minigame-close-button (the PC monitor's X),
+   not the flat red SE X. Keep it in the top strip's flex flow (the base rule makes it absolute). */
+.epr-kiosk-top .epr-kiosk-close {
+    position: static;
+    top: auto;
+    right: auto;
+    flex: 0 0 auto;
+    margin: 0;
+}
 .epr-kiosk-screen {
     flex: 1 1 auto;
     min-height: 0;
     display: flex;
     overflow: hidden;
-    margin: 0 6px 6px;
+    margin: 0 8px;
     border: 2px solid #111111;
     background: var(--aw-surface, #f6f8f7);
+}
+/* R2 m2 (b): the kiosk chin - a card-reader slot and a status LED that mark it as a public
+   kiosk rather than a window. All 2px pixel art: flat fills, hard edges, no radius or soft shadow. */
+.epr-kiosk-chin {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 24px;
+    padding: 5px 12px 7px;
+}
+.epr-kiosk-reader {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 14px;
+    background: #2a2a2a;
+    border: 2px solid #161616;
+}
+.epr-kiosk-reader-slot {
+    display: block;
+    width: 40px;
+    height: 4px;
+    background: #555555;
+}
+.epr-kiosk-status {
+    flex: 0 0 auto;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.epr-kiosk-led {
+    display: block;
+    width: 8px;
+    height: 8px;
+    background: #39d353;
+    box-shadow: inset 0 0 0 2px #1f7a33;
+}
+.epr-kiosk-status-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    line-height: 1;
+    letter-spacing: 1px;
+    color: #9a9a9a;
 }
 .epr-kiosk-screen > .epr-root { flex: 1 1 auto; min-width: 0; }
 

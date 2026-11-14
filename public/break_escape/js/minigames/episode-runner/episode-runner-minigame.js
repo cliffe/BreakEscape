@@ -341,11 +341,27 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             const cap = el('div', 'epr-kiosk-cap');
             cap.textContent = 'Security Awareness';
             top.appendChild(cap);
-            this.mountCloseControl(top, 'Close');
+            // R2 m2 (a): a kiosk is a diegetic device like the PC monitor, so it closes with the
+            // themed steel X (the PC monitor's close look), not the flat red SE overlay X.
+            this.mountThemedCloseControl(top, 'Close', 'epr-kiosk-close');
             const screen = el('div', 'epr-kiosk-screen');
             screen.appendChild(root);
             bezel.appendChild(top);
             bezel.appendChild(screen);
+            // R2 m2 (b): a device cue on the chin so it reads as a public kiosk, not a window -
+            // a card-reader slot and a status LED beside a READY label, all 2px pixel art.
+            const chin = el('div', 'epr-kiosk-chin');
+            const reader = el('div', 'epr-kiosk-reader');
+            reader.setAttribute('aria-hidden', 'true');
+            reader.appendChild(el('span', 'epr-kiosk-reader-slot'));
+            const status = el('div', 'epr-kiosk-status');
+            const led = el('span', 'epr-kiosk-led');
+            led.setAttribute('aria-hidden', 'true');
+            status.appendChild(led);
+            status.appendChild(el('span', 'epr-kiosk-status-label', 'READY'));
+            chin.appendChild(reader);
+            chin.appendChild(status);
+            bezel.appendChild(chin);
             this.gameContainer.appendChild(bezel);
         } else {
             this.mountCloseControl(bar, 'Close');
