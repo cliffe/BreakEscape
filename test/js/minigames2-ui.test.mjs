@@ -79,6 +79,10 @@ test('A45: tool windows are capped at 960x720, wrap their content and centre', (
     assert.equal(r.width, 'fit-content');
     assert.equal(r.height, 'auto');
     assert.equal(r.margin, 'auto');
+    // Regression (shell-x-check, 2026-11-14): with height auto and no floor, a window whose
+    // content is not drawn yet (or is empty) collapsed to its padding and the X fell outside it
+    assert.match(r['min-height'] || '', /^min\(\d+px, 100%\)$/, 'a min-height floor keeps an empty window from collapsing');
+    assert.ok(parseInt(r['min-height'].slice(4), 10) >= 100, 'the floor holds the X and a line of content');
 });
 
 // The PNG's colour type and its distinct alpha values (8-bit RGBA, filter bytes skipped)

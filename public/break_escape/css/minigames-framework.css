@@ -256,6 +256,9 @@
     max-width: min(960px, 100%);
     height: auto;
     max-height: min(720px, 100%);
+    /* A floor, so a window whose content has not been drawn yet (or has none) still holds
+       its X inside the frame instead of collapsing to its padding (the shell X check) */
+    min-height: min(160px, 100%);
     margin: auto;
 }
 
