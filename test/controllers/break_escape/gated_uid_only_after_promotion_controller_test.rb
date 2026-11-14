@@ -111,5 +111,18 @@ module BreakEscape
       assert_response :unprocessable_entity
       refute_includes Array(state(game)['unlockedObjects']), 'uid_safe'
     end
+
+    # A near-copy of the admitted id (other case, padded) is not the recorded clone: the match is exact.
+    test 'a case-changed or padded copy of the admitted id does not open the UID safe' do
+      [EXEC.swapcase, " #{EXEC} "].each do |near|
+        game = build('unlockedRooms' => %w[lobby secure_area],
+                     'inventory' => [GatedUidScenario::CLONER.dup],
+                     'serverClones' => GatedUidScenario.uid_clone_state)
+        post unlock_game_url(game), params: { targetType: 'object', targetId: 'uid_safe', method: 'rfid', card_ids: [near] }, as: :json
+
+        assert_response :unprocessable_entity, "#{near.inspect} must be refused"
+        refute_includes Array(state(game)['unlockedObjects']), 'uid_safe'
+      end
+    end
   end
 end
