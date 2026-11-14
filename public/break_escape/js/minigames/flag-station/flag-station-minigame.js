@@ -19,6 +19,26 @@ export class FlagStationMinigame extends MinigameScene {
         give_item: '📦', unlock_door: '🔓', unlock_object: '🔓',
         emit_event: '⚡', hint: '💡', set_global: '✦'
     };
+    // Launch device (launch-abort mode): what the header says once the code is accepted,
+    // and after each outcome. The code prompt keeps the header built in buildLaunchAbortUI.
+    static LAUNCH_HEADER = {
+        armed: {
+            heading: 'OPERATION SHATTER: CODE ACCEPTED',
+            status: 'This device is armed. Abort the operation or execute the launch.'
+        },
+        aborted: {
+            heading: 'OPERATION SHATTER',
+            status: 'Abort confirmed. This device is disarmed.'
+        },
+        launched: {
+            heading: 'OPERATION SHATTER',
+            status: 'Launch confirmed. This device has fired.'
+        }
+    };
+    static LAUNCH_OUTCOMES = {
+        aborted: { title: 'OPERATION ABORTED', message: 'Abort signal transmitted. All attack vectors terminated.', color: '#00ff00' },
+        launched: { title: 'OPERATION LAUNCHED', message: 'Attack vector deployed. 2,347,832 targets receiving payload.', color: '#ff4444' }
+    };
 
     constructor(container, params) {
         super(container, params);
@@ -419,10 +439,10 @@ export class FlagStationMinigame extends MinigameScene {
         const station = document.createElement('div');
         station.className = 'flag-station';
         station.innerHTML = `
-            <div style="text-align:center; margin-bottom:20px;">
-                <div style="font-size:48px; margin-bottom:10px;">⚠️</div>
-                <div style="color:#ff4444; font-size:16px; margin-bottom:6px;">OPERATION SHATTER — ENTER LAUNCH AUTHORIZATION CODE</div>
-                <div style="color:#888; font-size:13px;">This device is armed. Enter the authorization code to proceed.</div>
+            <div class="launch-abort-header" style="text-align:center; margin-bottom:20px;">
+                <div class="launch-abort-icon" style="font-size:48px; margin-bottom:10px;">⚠️</div>
+                <div class="launch-abort-heading" style="color:#ff4444; font-size:16px; margin-bottom:6px;">OPERATION SHATTER — ENTER LAUNCH AUTHORIZATION CODE</div>
+                <div class="launch-abort-status" style="color:#888; font-size:13px;">This device is armed. Enter the authorization code to proceed.</div>
             </div>
 
             <div class="flag-input-container">
@@ -473,10 +493,10 @@ export class FlagStationMinigame extends MinigameScene {
     restoreLaunchState() {
         if (this.outcomeApplied(this.onAbortConfig)) {
             this.choiceMade = true;
-            this.showFinalState('OPERATION ABORTED', 'Abort signal transmitted. All attack vectors terminated.', '#00ff00');
+            this.showFinalState('aborted');
         } else if (this.outcomeApplied(this.onLaunchConfig)) {
             this.choiceMade = true;
-            this.showFinalState('OPERATION LAUNCHED', 'Attack vector deployed. 2,347,832 targets receiving payload.', '#ff4444');
+            this.showFinalState('launched');
         } else if (this.launchCodeAccepted()) {
             this.showLaunchAbortChoice();
         }
@@ -625,6 +645,8 @@ export class FlagStationMinigame extends MinigameScene {
     showLaunchAbortChoice() {
         const inputContainer = this.gameContainer.querySelector('.flag-input-container');
         if (!inputContainer) return;
+        // The code is in: the header stops asking for it
+        this.setLaunchHeader(FlagStationMinigame.LAUNCH_HEADER.armed);
 
         inputContainer.innerHTML = `
             <div class="launch-abort-armed" style="text-align:center; margin: 20px 0;">
@@ -661,7 +683,7 @@ export class FlagStationMinigame extends MinigameScene {
         if (!confirm(this.abortConfirmText)) return;
         this.choiceMade = true;
         this.applyChoiceConfig(this.onAbortConfig);
-        this.showFinalState('OPERATION ABORTED', 'Abort signal transmitted. All attack vectors terminated.', '#00ff00');
+        this.showFinalState('aborted');
     }
 
     handleLaunch() {
@@ -669,7 +691,7 @@ export class FlagStationMinigame extends MinigameScene {
         if (!confirm(this.launchConfirmText)) return;
         this.choiceMade = true;
         this.applyChoiceConfig(this.onLaunchConfig);
-        this.showFinalState('OPERATION LAUNCHED', 'Attack vector deployed. 2,347,832 targets receiving payload.', '#ff4444');
+        this.showFinalState('launched');
     }
 
     applyChoiceConfig(config) {
@@ -685,13 +707,34 @@ export class FlagStationMinigame extends MinigameScene {
         }
     }
 
-    showFinalState(title, message, color) {
+    /** Header lines of the launch device (textContent: plain text only). `icon: false`
+     *  hides the warning icon, which only fits while the device is armed. */
+    setLaunchHeader({ heading, status }, { icon = true } = {}) {
+        const q = (sel) => this.gameContainer.querySelector(sel);
+        const h = q('.launch-abort-heading');
+        const s = q('.launch-abort-status');
+        const i = q('.launch-abort-icon');
+        if (h) h.textContent = heading;
+        if (s) s.textContent = status;
+        if (i) i.style.display = icon ? '' : 'none';
+    }
+
+    /** The result of the choice, 'aborted' or 'launched'. The whole panel follows it: the
+     *  header says the outcome, and the submit step's result and reward lines (which
+     *  still said the attack was "yours to abort") are cleared. Same on a reopen. */
+    showFinalState(outcome) {
+        const o = FlagStationMinigame.LAUNCH_OUTCOMES[outcome];
         const inputContainer = this.gameContainer.querySelector('.flag-input-container');
-        if (!inputContainer) return;
+        if (!o || !inputContainer) return;
+        this.setLaunchHeader(FlagStationMinigame.LAUNCH_HEADER[outcome], { icon: false });
+        for (const sel of ['#flag-result', '#reward-notification']) {
+            const el = this.gameContainer.querySelector(sel);
+            if (el) { el.innerHTML = ''; el.className = el.id === 'flag-result' ? 'flag-result' : 'reward-notification'; el.style.display = 'none'; }
+        }
         inputContainer.innerHTML = `
-            <div style="text-align:center; padding:20px; color:${color}; font-size:14px;">
-                <div style="font-size:18px; margin-bottom:12px;">${title}</div>
-                <div style="color:#888;">${message}</div>
+            <div class="launch-abort-final" data-outcome="${outcome}" style="text-align:center; padding:20px; color:${o.color}; font-size:14px;">
+                <div style="font-size:18px; margin-bottom:12px;">${o.title}</div>
+                <div style="color:#888;">${o.message}</div>
             </div>`;
     }
 
