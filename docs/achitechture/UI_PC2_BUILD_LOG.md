@@ -123,6 +123,27 @@ folder `ui-pc2-f1/shots`, names `f1-*`): Sam's PC at 390x844, 360x640, 667x375, 
 the network flow (plant, jack, refused Unplug, real Unplug, inventory, remote sign-in to Sam)
 at the same sizes.
 
+## Final pass
+
+- Merged main (5edb17541) with no conflicts.
+- R2 m1: two Rails tests. A refused, locked-out and not-permitted sign-in answer omits `portrait` and `avatar`
+  (access_model_login_test.rb); a remote sign-in success carries them and stores none of it
+  (network_remote_signin_test.rb).
+- R2 n1: the window X's touch area is now `inset: -8px -10px -12px -10px` (still 44px tall). The bezel X sits
+  at least 12px above the window X at every size, so the two touch areas keep a 4px gap. Measured at 390x844;
+  at the other sizes the gap follows from the measured button rects. A CSS test in pc-monitor-frame.test.mjs pins it.
+- Live proof (keyless :3447, fresh games, scrollbars shown, real clicks, shots in the scratchpad `ui-pc2-r2/shots`):
+  Sam's PC at 390x844, 360x640, 667x375, 844x390 and 1400x900. M1 prompt outside the card with no empty card on
+  the tiles; M2 taskbar headshot with Sam's room unloaded (local, and remote at 390x844); m4 locked and wrong at
+  360x640 fits with no inner scroll; m5 share window X closes the share, bezel X closes the PC. Network flow at
+  390x844 and 360x640: refused Unplug notice inline, inventory hint, remote bezel X lands back in the view.
+  The 667x375 and 844x390 network runs (m3, Unplug on the header row) had not finished when this was written.
+- Node tests, one file at a time on the merged tip, all green: network-links-routing 4, objectives-network-footholds 8,
+  access-signin-routing 23, container-shares 45, network-view 59, pc-monitor-frame 58, pc-taskbar 31,
+  password-signin-mode 64, access-remote-signin 17, network-links 70, test-bridge-access 15,
+  minigame-title-escape 24, container-transfer-dialog 14.
+- Rails: access_model_login 43, network_remote_signin 22, network_host_service_off 16, all green.
+
 ## Not done / notes
 
 - (Fixed in fix round 1, m5: the share window now has the window X.)
