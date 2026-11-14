@@ -2,6 +2,49 @@
 
 Branch `build/ol-sims-2` (worktree `p-ol-sims2`). Port 3094. Scratch `officelife-sims/s4/`.
 
+## Status: NOT DONE. Proof runs IN FLIGHT as of 2026-11-14 (session p-train36-live)
+
+The proof-tool gaps are fixed and committed; the full count/schedule/speechlock/office-beats runs
+were launched but a forced early handback stopped this session before they finished. The runs are
+detached (`nohup`) and keep writing reports to disk after the session ends.
+
+**Fixed and committed this session (proof tool only, 0 engine lines):**
+- `9708d5f1c` capture bare `npc_sat` (seating.js emits `npc_sat` with no `:id`; the regex required a
+  colon, which is why `npc_sat` was missed); add the `speechlock` beat (step-7 `_pickBark`/`_speak`
+  wrap).
+- `0cb03402d` speechlock beat also records the office-beats-with-doors-open regression (Neil
+  stillness, cooler-pair chat, office task ticks).
+- `fa60ad970` every beat records step-5 returns/sits, all-object use starts, a setup-failure flag.
+- `d2093cdb2` setup-failure scoped to staff-room break starts only (office NPC uses are not pair
+  breaks).
+- `60e0f3b3b` `npc()` helper tolerates an NPC with only some needs (Neil has caffeine, no thirst).
+
+**Regressions re-run green this session:** standard node set (25 files) PASS; `npc-needs-sims-validator`
+PASS; validator 0 errors / 34 known warnings; Ruby format corpus 8a/8b/8c (21 runs) PASS.
+
+**Harness validated live:** first_visit 2/2 PASS (games 4368, 4370): pair did not stand within 1.5 s,
+both used the boiler, `exchange_waiting` 5/5 overheard, both `npc_returned_post`, `npc_sat`=5, E7=0.
+
+**IN FLIGHT at handback (collect from disk, then aggregate + update docs):**
+- Driver `s4/finish/driver.sh` (detached): 5 first_visit, 5 job_beat, 10 boiler_cross, 10
+  cooler_cross, each a fresh `new-game.rb` game; `s4/finish/manifest.csv` logs `beat,run,gid,rc`;
+  reports at `s4/report-sr-<beat>-<gid>.json`. ~2/30 done at handback.
+- Schedule 20 min: game 4360, `node tools/playtest/needs-sims-staff-room.mjs 4360 3094 schedule
+  s4/finish/ 20` -> `s4/finish/report-sr-schedule-4360.json`.
+- Speechlock/office-beats 15 min: game 4369 -> `s4/finish/report-sr-speechlock-4369.json`.
+
+**To finish (resumed session):** wait for `s4/finish/manifest.csv` to reach 30 rows and both long
+reports to exist, then `python3 s4/finish/aggregate.py` for steps 1-5 pass counts, overlaps,
+returns/sits and setup failures; read the schedule report (`schedule.use_starts` vs README computed
+times, within 15 s) and the speechlock report (`blocked_by_unheard_staff_line / office_turns`,
+`threshold_1_in_20`, and `office_regression`). Re-run any run flagged `setup_failure_diff_object_within_5s`.
+Then update README SIMS-4 live-proof rows + build-log SIMS-4 section, mark this handover done, commit
+explicit paths. **The 3094 server (PID file `tmp/pids/server-3094.pid`) and the detached node/chrome
+runs are still up at handback — stop them by PID once the reports are collected (other sessions use
+3093/3095; never pkill -f).**
+
+## (Original handover below)
+
 ## Done
 
 - Full scenario data (plan 5.4): staff room off IT east, `staff_boiler`/`staff_cooler`/
