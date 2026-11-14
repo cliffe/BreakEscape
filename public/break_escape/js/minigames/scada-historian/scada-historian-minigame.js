@@ -739,7 +739,7 @@ export class ScadaHistorianMinigame extends MinigameScene {
     _openAnnotateModal() {
         const charts = document.querySelector('.sh-charts');
         if (!charts) return;
-        const overlay = this._el('div', 'sh-modal-overlay');
+        const overlay = this._el('div', 'sh-modal-overlay pixel-scroll');
         const modal   = this._el('div', 'sh-modal');
 
         const title = this._el('div', 'sh-modal-title');

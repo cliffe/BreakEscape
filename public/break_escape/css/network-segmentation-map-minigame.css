@@ -408,7 +408,8 @@
     inset: 0;
     background: rgba(0, 0, 0, 0.88);
     justify-content: center;
-    align-items: center;
+    align-items: safe center;   /* a tall modal starts at the top instead of above it (consoles R3 m1) */
+    overflow-y: auto;
     z-index: 100;
 }
 

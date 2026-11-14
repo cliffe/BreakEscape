@@ -765,7 +765,9 @@
 }
 
 @media (max-width: 720px) {
-    .bce-mx-body { grid-template-columns: 1fr; overflow-y: auto; }
+    /* Stacked rows take their content's height, so the OUT column never paints over the
+       ADDRESS REUSE slots (consoles R3 B1) */
+    .bce-mx-body { grid-template-columns: 1fr; grid-auto-rows: max-content; overflow-y: auto; }
     .bce-mx-col { overflow: visible; }
     .bce-mx-help { grid-template-columns: 1fr 1fr; }
 }

@@ -250,7 +250,10 @@
     inset: 0;
     background: rgba(0, 0, 0, 0.75);
     display: flex;
-    align-items: center;
+    /* A modal taller than the chart area scrolls and starts at the top, so both buttons can be
+       reached on a portrait phone with no X and no Esc (consoles R3 M1) */
+    align-items: safe center;
+    overflow-y: auto;
     justify-content: center;
     z-index: 200;
 }
