@@ -274,6 +274,140 @@ module BreakEscape
                              meetsThreshold: entry['meetsThreshold'], credibility: entry['credibility'] } }
     end
 
+    # --- Phish evidence: phish send route (Route 2) -----------------------------------------
+    #
+    # docs/achitechture/PHISH_EVIDENCE_SERVER_PLAN.md sections 3.3, 5, 13. The server records each
+    # phish send in player_state['sePhishSends'] = { "targetId/kitId" => entry }, each
+    # { targetId, kitId, pageId, landed, at }. Under the settled lighter gate (decision two,
+    # section 13) `landed` is true exactly when the kit's landing page is server-recorded built by
+    # Route 1 with the server's own meetsThreshold holding: the route resolves NO account and
+    # judges NO message. The composed message is validated field by field against the target's
+    # authored accounts and payload kits as hostile-input hygiene only (like a typed lock code); it
+    # never decides `landed`. The body's `landed` is ignored. Nothing reads sePhishSends for the
+    # gate yet (the reader change is a later chunk, plan section 14); the re-stamp here runs the
+    # existing client-evidence reader, so honest play is unaffected.
+
+    # Record one client-claimed phish send, server-verified. Returns
+    # { result: :recorded|:already, entry:, retryable: } or { result: :refused, reason: 'invalid' }.
+    # Does not save; the route wrapper saves once. First-wins on landed:true (a later send cannot
+    # un-land an earlier success), last-wins while still landed:false (a resend after the page is
+    # built overwrites the earlier miss). `retryable` is true only when no built page is recorded
+    # yet (the send arrived before Route 1 committed); a built-but-weak page is a permanent miss.
+    def record_phish_send!(input, scenario:)
+      return { result: :refused, reason: 'invalid' } unless input.is_a?(Hash)
+
+      target_id = input['targetId']
+      return { result: :refused, reason: 'invalid' } unless valid_capture_target_id?(target_id)
+      return { result: :refused, reason: 'invalid' } unless CaptureModel.phish_target_ids(scenario).include?(target_id)
+
+      kit_id = input['kitId']
+      return { result: :refused, reason: 'invalid' } unless valid_capture_target_id?(kit_id)
+      kit = CaptureModel.link_payload_kit(scenario, kit_id)
+      return { result: :refused, reason: 'invalid' } unless kit.is_a?(Hash)
+
+      return { result: :refused, reason: 'invalid' } unless valid_send_message?(scenario, input)
+
+      page_id = kit['landingPageId']
+      page = player_state.dig('seLandingPages', page_id)
+      page_built = page.is_a?(Hash) && page['built'] == true
+      landed = page_built && page['meetsThreshold'] == true
+
+      store = (player_state['sePhishSends'] ||= {})
+      key = "#{target_id}/#{kit_id}"
+      existing = store[key]
+      return { result: :already, entry: existing, retryable: false } if existing.is_a?(Hash) && existing['landed'] == true
+
+      entry = { 'targetId' => target_id.to_s, 'kitId' => kit_id.to_s, 'pageId' => page_id,
+                'landed' => landed, 'at' => capture_now_ms }
+      store[key] = entry
+      { result: :recorded, entry: entry, retryable: !page_built }
+    end
+
+    # Route-facing wrapper (POST se/phish_send): validate, record the send, re-stamp any capture
+    # whose evidence now holds, save once, and answer. The answer carries the send verdict plus,
+    # in the sync's captures shape, any capture this send freshly made revealable (plan section 6);
+    # a send that arrived before its build returns retryable so the client re-posts once.
+    def send_phish!(input)
+      result = record_phish_send!(input, scenario: scenario_data)
+      if result[:result] == :refused
+        return { status: :unprocessable_entity, body: { success: false, reason: result[:reason] || 'invalid' } }
+      end
+
+      before = proven_capture_target_ids
+      stamp_proven_captures!(scenario: scenario_data)
+      save!
+
+      entry = result[:entry]
+      landed = entry['landed'] == true
+      body = { success: true, targetId: entry['targetId'], kitId: entry['kitId'],
+               pageId: entry['pageId'], landed: landed }
+      unless landed
+        if result[:retryable]
+          body[:reason] = 'page_not_built_yet'
+          body[:retryable] = true
+        else
+          body[:reason] = 'page_below_threshold'
+        end
+      end
+
+      newly = proven_capture_target_ids - before
+      if newly.any?
+        cleaned = captures_for_client(scenario: scenario_data)
+        answers = {}
+        newly.each { |tid| answers[tid] = cleaned[tid] if cleaned.key?(tid) }
+        body[:captures] = answers if answers.any?
+      end
+      { status: :ok, body: body }
+    end
+
+    # The set of currently-proven credential targetIds, for a before/after diff around a stamp.
+    def proven_capture_target_ids
+      record = player_state['seCaptures']
+      return [] unless record.is_a?(Hash)
+
+      record.filter_map { |target_id, entry| target_id if entry.is_a?(Hash) && entry['proven'] == true }
+    end
+
+    # Validate a phish send's composed message against the scenario's authored accounts and payload
+    # kits (plan section 3.3 step 3). Hostile-input hygiene only: it bounds the body to authored
+    # options and caps id/slot lengths so a tampered body cannot inject arbitrary data or raise; it
+    # does NOT judge the message and does not feed `landed`. An unset (nil) field passes, as an
+    # honest composition may omit optional fields.
+    def valid_send_message?(scenario, input)
+      from_account = input['fromAccount']
+      unless from_account.nil?
+        return false unless valid_choice_id?(from_account)
+        return false unless CaptureModel.mail_account_ids(scenario).include?(from_account)
+      end
+
+      %w[link attachment].each do |key|
+        value = input[key]
+        next if value.nil?
+        return false unless valid_choice_id?(value)
+        return false unless CaptureModel.payload_kit_id?(scenario, value)
+      end
+
+      return false unless bounded_string_map?(input['slots'])
+      return false unless bounded_string_map?(input['templates'])
+
+      true
+    end
+
+    # A nil map passes; otherwise every key and string value must be a bounded choice id (shape and
+    # length cap), and a non-string leaf is refused. Keeps a hostile slots/templates object bounded
+    # without a deep authored-value match (the gate does not read these).
+    def bounded_string_map?(map)
+      return true if map.nil?
+      return false unless map.is_a?(Hash)
+
+      map.all? do |key, value|
+        next false unless valid_choice_id?(key)
+        next true if value.nil?
+
+        value.is_a?(String) ? valid_choice_id?(value) : false
+      end
+    end
+
     # Whether an old save still holds a non-empty legacy globalVariables.se_captures to migrate.
     def legacy_captures?
       legacy = player_state.dig('globalVariables', 'se_captures')

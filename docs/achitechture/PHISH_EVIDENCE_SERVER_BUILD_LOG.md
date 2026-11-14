@@ -489,3 +489,34 @@ Game ids: 4005 (slice, item 1), 4006 (lab, item 2), 4007 (slice throttle, item 3
 PID afterwards. This section not committed: the full suites were running under the shared lock and
 their finish could not be confirmed, so per the brief the re-proof write was kept out of the tracked
 build log.
+
+## Chunk A: Route 2 (phish send) and its store write
+
+Built on branch `build/hard-phish-b` (worktree `p-hard-phish-b`). Route 2 records each phish
+send server-side under the settled lighter gate (plan sections 3.3, 5, 7, 13): `landed` is true
+exactly when the kit's landing page is server-recorded built by Route 1 with the server's own
+`meetsThreshold` holding. The route resolves no account and judges no message; the composed
+message is validated against the authored accounts and payload kits as hostile-input hygiene only
+and never feeds `landed`. The body's `landed` is ignored.
+
+Server:
+- `CaptureModel.payload_kits` / `link_payload_kit` / `payload_kit_id?` / `mail_account_ids`
+  (`lib/break_escape/capture_model.rb`): authored-set lookups for the kit and account validation.
+- `CaptureProofs#record_phish_send!` and the route wrapper `send_phish!`
+  (`app/models/break_escape/capture_proofs.rb`): validate target/kit/message, compute `landed`
+  from `seLandingPages`, store `sePhishSends["targetId/kitId"]` (first-wins on landed, last-wins
+  while a miss), re-stamp captures (the existing client-evidence reader, unchanged this chunk) and
+  answer with the send verdict plus any freshly revealable capture in the sync's captures shape.
+  `retryable` is set only when no built page is recorded yet (`page_not_built_yet`); a built-weak
+  page answers `page_below_threshold` (permanent).
+- `POST se/phish_send` (`config/routes.rb`, `games_controller#se_phish_send`), under
+  `around_action :with_game_lock` and `before_action :set_game`, with `GamePolicy#se_phish_send?`.
+- `game_state_locking_test.rb`: `send_phish!` added to the state-writer list, plus a focused
+  `se_phish_send is locked` test.
+
+Tests (Ruby): `test/controllers/break_escape/se_phish_send_test.rb` drives real POSTs: landed from
+the built page, weak page -> landed false (not retryable), send before build -> retryable then
+lands on re-post, unauthored target/kit refused, unauthored fromAccount/attachment refused,
+oversized target/slot refused, body-asserted landed ignored, resend first-wins idempotent, the
+superset property (a convincing build plus any authored send lands) and the guard property (a
+weak/mis-addressed message over a convincing page still lands).
