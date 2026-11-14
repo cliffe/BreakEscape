@@ -348,6 +348,21 @@
       "description": "Map of room IDs to room definitions",
       "additionalProperties": { "$ref": "#/definitions/room" }
     },
+    "acknowledgedClues": {
+      "type": "array",
+      "description": "Step 3: a value shown on screen that equals a lock answer because tracing it is the puzzle, marked so the secret-leak check reports it as an acknowledged clue rather than a leak. Never shipped to the client (the bootstrap deletes it).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["lock", "in", "reason", "approved"],
+        "properties": {
+          "lock": { "type": "string", "description": "Id of the room or object whose answer is matched" },
+          "in": { "type": "string", "description": "Id of the object holding the minigameData, or global:<name> for a clue an NPC must say aloud" },
+          "reason": { "type": "string", "description": "One line: why showing it is the deduction" },
+          "approved": { "type": "string", "description": "Heading text in docs/agents/VALIDATOR_DECISIONS.md whose json block restates this entry" }
+        }
+      }
+    },
     "narrator": {
       "type": "object",
       "description": "Optional narrator NPC that appears in multiple scenarios (e.g., for cutscenes or narration)",

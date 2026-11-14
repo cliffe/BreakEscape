@@ -1798,6 +1798,10 @@ module BreakEscape
       # Strip top-level flag values — client must never see actual flag answers.
       filtered.delete('flags')
 
+      # Step 3: acknowledgedClues is an authoring record (each reason is a spoiler, though not a
+      # secret). No client code reads it; it never ships.
+      filtered.delete('acknowledgedClues')
+
       # Account profiles (access model 5.1) are served only by GET /container against a
       # sign-in session, never in the bootstrap. policies and defaultPolicy hold no
       # secrets and ship as authored (5.5).

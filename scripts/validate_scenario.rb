@@ -25,6 +25,7 @@ require_relative 'validate_social'
 require_relative 'validate_npc_needs'
 require_relative 'validate_network'
 require_relative 'validate_capture_log'
+require_relative 'validate_secret_leaks'
 require_relative 'validate_wearable'
 require_relative 'validate_phone_calls'
 require_relative '../lib/break_escape/scenario_schema'
@@ -729,7 +730,7 @@ def check_unknown_fields(json_data)
   known_top_level = %w[
     scenario_id scenario_name scenario_brief endGoal version startRoom startPosition resumeSpawn titleScreenName pcWallpaper pcWallpaperFocus
     show_scenario_brief disableAttacks creditsTheme creditsOverlay gameClock flags music startItemsInInventory globalVariables
-    player objectives rooms npcs phoneNPCs narrator timers _comment mutuallyExclusiveGlobals lighting
+    player objectives rooms npcs phoneNPCs narrator timers _comment mutuallyExclusiveGlobals lighting acknowledgedClues
     importGlobals exportGlobals social npcNeedsSeed disguises actionIcons officeVisuals npcWindupMs showPressingNeeds showNpcIntentBubbles needsDebugOverlay officePresets chatter lockCues roomTone roomToneTypes
     ttsPregenerateChatter
     accountProfiles policies defaultPolicy
@@ -8114,6 +8115,7 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
   run.call('check_speaker_id_name_clashes') { check_speaker_id_name_clashes(json_data) }
   run.call('check_network_model') { check_network_model(json_data, scenario_dir) }
   run.call('check_capture_log') { check_capture_log(json_data) }
+  run.call('check_secret_leaks') { check_secret_leaks(json_data, erb_path) }
   run.call('check_wearables') { check_wearables(json_data, scenario_dir) }
   run.call('check_phone_calls') { check_phone_calls(json_data, repo_root) }
   run.call('ValidateAccessWork') { ValidateAccessWork.check(json_data) }
