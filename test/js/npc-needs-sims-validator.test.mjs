@@ -243,7 +243,7 @@ test("SIMS-4: jodie.ink's exchange knots have the expected line counts and voice
         assert.ok(m, `knot ${name} present`);
         return m.split('-> DONE')[0].split('\n').map(s => s.trim()).filter(s => /^(Keith|Jodie):/.test(s));
     };
-    const counts = { exchange_waiting: 5, exchange_job_called: 3, exchange_job_cleared: 3 };
+    const counts = { exchange_waiting: 5, exchange_job_called: 4, exchange_job_cleared: 3 };
     for (const [knot, n] of Object.entries(counts)) {
         const lines = knotLines(knot);
         assert.equal(lines.length, n, `${knot} has ${n} lines`);
@@ -252,7 +252,11 @@ test("SIMS-4: jodie.ink's exchange knots have the expected line counts and voice
             assert.ok(VOICEABLE(text), `${knot} line text not voiceable: ${text}`);
         }
     }
-    // m1 fix: the "someone'll be up" reassurance is Keith's, not Jodie's (she is the one who fixes it).
+    // S4 R2 M2: Keith hands the job to Jodie and she takes it (she is the one who fixes it), and the
+    // cleared exchange has her own the fix.
     const called = knotLines('exchange_job_called');
-    assert.match(called[2], /^Keith: Someone'll be up soon/, 'the reassurance line is spoken by Keith');
+    assert.match(called[2], /^Keith: That'll be one for you, Jodie/, 'Keith hands her the job');
+    assert.match(called[3], /^Jodie: /, 'Jodie takes it');
+    assert.ok(!called.some(l => /someone'll be up/i.test(l)), 'nobody tells the maintenance worker someone will come');
+    assert.match(knotLines('exchange_job_cleared')[1], /^Jodie: New tube/, 'Jodie owns the fix');
 });

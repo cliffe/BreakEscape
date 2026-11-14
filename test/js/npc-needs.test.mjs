@@ -1680,11 +1680,12 @@ const EX_LINES = {
     exchange_job_called: [
         { speakerId: 'jodie', text: 'That light in here still flickering?' },
         { speakerId: 'keith', text: "Neil's put it out on the radio." },
-        { speakerId: 'keith', text: "Someone'll be up soon, Jodie." }
+        { speakerId: 'keith', text: "That'll be one for you, Jodie." },
+        { speakerId: 'jodie', text: "Once I've finished this, aye." }
     ],
     exchange_job_cleared: [
-        { speakerId: 'keith', text: 'They sorted that flickering light.' },
-        { speakerId: 'jodie', text: 'About time. Hurt my eyes, that did.' },
+        { speakerId: 'keith', text: "Light's behaving now." },
+        { speakerId: 'jodie', text: 'New tube. Should last a while.' },
         { speakerId: 'keith', text: 'Peace and quiet again. Lovely.' }
     ]
 };
@@ -1754,11 +1755,22 @@ test('SIMS-4: every break emits npc_use_started, so a second coupled break still
             hunger: { decayPerMin: 1, urgentAt: 40, initial: 10, jitterPct: 0 }
         }
     });
+    // The walk home never arrives here, so the second use has to start straight from the first
+    // job (the returning NPC's next select), the case plan 5.4 names (S4 R2 m4).
+    const objCells = new Set(w.objs.map(o => `${o.x},${o.y + 32}`));
+    const moveTo = w.world.moveTo.bind(w.world);
+    w.world.moveTo = (id, x, y, sp, o) => { if (objCells.has(`${x},${y}`)) return moveTo(id, x, y, sp, o); w.calls.moves.push({ id, x, y, moveId: o.moveId }); };
     while (sys.clockMs < 120000 && new Set(w.calls.emits.filter(e => e.name.startsWith('npc_use_started:')).map(e => e.name)).size < 2) sys.step(NEEDS_TICK_MS);
     const starts = w.calls.emits.filter(e => e.name.startsWith('npc_use_started:') && e.data.npcId === 'keith');
     const objs = starts.map(e => e.name.split(':')[1]);
     assert.ok(objs.includes('staff_boiler') && objs.includes('staff_microwave'), `both uses emitted a start: ${objs.join(', ')}`);
     assert.ok(starts.every(e => e.data.npcId === 'keith' && typeof e.data.need === 'string'), 'each start names its user and need');
+    // The case the plan names: the second use starts straight from the first job, with no return
+    // home between them (S4 R2 m4), and it still emits its start.
+    const names = w.calls.emits.map(e => e.name);
+    const i1 = names.indexOf(starts[0].name), i2 = names.indexOf(starts[1].name, i1 + 1);
+    assert.ok(i2 > i1, 'two starts in order');
+    assert.ok(!names.slice(i1, i2).includes('npc_returned_post:keith'), 'no npc_returned_post:keith between the two starts');
 });
 
 test('SIMS-4: chatterCooldownMin 0.25 allows a pool line 15 s of needs clock after the last', () => {
