@@ -135,6 +135,11 @@ function normalizeStateWrites(rawStateWrites) {
 }
 
 export class ClaimsManagementSystemMinigame extends MinigameScene {
+    // Draws in the shared console window (UI decision X8): title bar and X come from there.
+    // Its nav, content and relevance panes scroll, so the window takes its full size.
+    static consoleWindow = true;
+    static consoleWindowFill = true;
+
     constructor(container, params = {}) {
         super(container, {
             ...params,
@@ -152,6 +157,14 @@ export class ClaimsManagementSystemMinigame extends MinigameScene {
         this.printEnabled = params.printEnabled !== false && minigameData.printEnabled !== false;
         this.activeSectionId = this.sections[0]?.id || null;
         this.viewedSections = new Set();
+    }
+
+    consoleTitle() {
+        return this.params.title || DEFAULT_TITLE;
+    }
+
+    consoleSubtitle() {
+        return 'MC-2023-ALBE-007 | Coverage Analysis Workspace';
     }
 
     getViewedSectionStore() {
@@ -408,8 +421,6 @@ export class ClaimsManagementSystemMinigame extends MinigameScene {
             <div class="cms-panel pixel-scroll">
                 <div class="cms-header">
                     <div class="cms-header-left">
-                        <h2 class="cms-title">${escapeText(this.params.title || DEFAULT_TITLE)}</h2>
-                        <div class="cms-subtitle">MC-2023-ALBE-007 | Coverage Analysis Workspace</div>
                         <div class="cms-progress-wrap">
                             <div class="cms-progress-label">Review Progress: ${reviewedCount}/${totalCount} sections</div>
                             <div class="cms-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progressPercent}">
