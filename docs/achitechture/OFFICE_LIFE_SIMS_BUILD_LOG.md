@@ -24,12 +24,14 @@ catch line reworded ("try to pick it", the pick is stopped before the cabinet op
 re-cited: E-carry widened to seated residents in any room, E-reload-mugs's cause moved to the client
 `dropHeld`, and the KO need bubble added as a fourth. No engine or server change.
 
-Status: **live proof re-run on round-1 fixes**, a fresh game per beat (a 4183, b 4184, c 4208,
-d 4211, e 4221, f 4212, g 4214, h 4222, h2 4215, i 4217, i2 4220), server keys dumped from
-`player_state` (see the README live-proof table). `test/js/npc-needs.test.mjs` and
-`test/js/npc-needs-attack-scenario.test.mjs` pass; validator 0 errors, 4 intended warnings
-(`--skip-ink --no-graph`; 5 with ink, the extra being the dialogue lint). The `completeTask` question
-stays settled (a probe timing artifact, not an engine fault).
+Status: **round-2 re-runs pass**, a fresh game per touched beat (a 4281, b 4282, c 4270, d 4271,
+f 4278/4279/4280 three fresh games, g 4287, i2r 4288); the untouched beats keep round-1 proof
+(e 4221, h 4222, h2 4215, i 4217, i2 4220). Beat (c)/(d) now reach phase `using` at the cooler, (f)
+passes 3/3, (a) shows `npc_attacked:ava`, (g) proves Fran down (`isKO`/idle), and (i2r) shows the
+i2-lost page is recoverable by a second conversation. Server keys dumped from `player_state`.
+`test/js/npc-needs.test.mjs` and `test/js/npc-needs-attack-scenario.test.mjs` pass; validator 0
+errors, 4 intended warnings (`--skip-ink --no-graph`; 5 with ink, the extra being the dialogue lint).
+The `completeTask` question stays settled (a probe timing artifact, not an engine fault).
 
 Four engine/server faults recorded (not fixed — owner items, see the table below and
 `scenarios/test_needs_attack/README.md`): **E-carry** (a needs move re-paths through a seated NPC's
