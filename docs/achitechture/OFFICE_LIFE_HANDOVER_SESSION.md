@@ -165,3 +165,13 @@ about 30. Playtests ran at 1.3 fps and the leash test timed out, which looked li
 
 Build slice 7 (plan 2.2 Part A: carry outcomes and reveal slots), then 8, 10 and 11. After each slice, report
 to the user in the format of `AGENTS.md` "Reporting progress by stage".
+
+## 9. Missions plan (m02 pilot): state on 2026-11-14
+
+Branch `plan/office-life-missions`, worktree `.claude/worktrees/p-ol-plan`. Main merged in (7b0d2ec4b). Draft 8 of `OFFICE_LIFE_MISSIONS_PLAN.md` (571cce413) follows the user's decisions of 2026-11-14 (plan section 14): m02 pilot, m06 second, m01 in a normal slot with gate playtests re-run, build on today's names, voice then merge, Tier 3 with approval per room or NPC, openings optional only, vending after the pilot, m09/m10 analysis only, no production release until office life settles. The earlier V5 minors (match rule, `npc_placed`, literal scan, `--campaign`) are folded into section 4.
+
+Round 8 ran with two reviewers: `OFFICE_LIFE_MISSIONS_PLAN_REVIEW_R8.md` (design, B=2 M=4 m=9 n=3) and `OFFICE_LIFE_MISSIONS_PLAN_REVIEW_R8_SERVER.md` (server, cheat, sync: B=0 M=1 m=3 n=1). None applied yet. Checked by the orchestrator: B1 holds (Gary's observations, `scenario.json.erb:2035`, and his ink line 80 say he has not left his chair, so he is "fixed by the text"), and M2 holds (Doyle's "Two of us", ward nurse ink line 147, rules out a ward HCA as N1).
+
+Next step: draft 9 rewrites section 6 standalone. Expected direction from the findings: Gary stays stationary (print without walking through the `needs.print` command, or no routine); N1 becomes a night porter; fix which needs the kettle presets satisfy (caffeine, not thirst) and the print need wiring; make sure N1 and any partner actually meet at one chatter object or cut the exchanges and unheard pools from the voice estimate; give N1 a KO global and credits line; re-gate the exchanges; regenerate V5's lists from the emitted names (server M1). Then round 9 (one opus55 design reviewer, one opus48 server reviewer), and continue to at least round 10, up to 12, while blockers or majors keep falling.
+
+Evidence: live game 3540 (port 3090, keyless, every room unlocked for screenshots only); screenshots in the session scratchpad `officelife-m02/` (staff room, IT, Boardroom, corridor, ward), which is lost when the session ends.
