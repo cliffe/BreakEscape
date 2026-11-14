@@ -34,6 +34,8 @@ export class BleScannerMinigame extends MinigameScene {
 
     init() {
         super.init();
+        // One scanner-panel look, themed by this scanner's accent (css/scanner-panel.css, A22)
+        this.container.classList.add('scanner-panel', 'scanner-panel--ble');
         this.container.className += ' ble-scanner-minigame-container';
         this.headerElement.innerHTML = '';
         this.gameContainer.className += ' ble-scanner-minigame-game-container';
@@ -43,25 +45,25 @@ export class BleScannerMinigame extends MinigameScene {
 
     createScannerInterface() {
         const header = document.createElement('div');
-        header.className = 'ble-scanner-header';
+        header.className = 'ble-scanner-header scan-header';
         header.innerHTML = `
-            <div class="ble-scanner-title">
-                <img src="/break_escape/assets/objects/bluetooth_scanner.png" alt="BLE Scanner" class="ble-scanner-icon">
+            <div class="ble-scanner-title scan-title">
+                <img src="/break_escape/assets/objects/bluetooth_scanner.png" alt="BLE Scanner" class="ble-scanner-icon scan-icon">
                 <span>BLE Scanner</span>
             </div>
-            <div class="ble-scanner-status">
+            <div class="ble-scanner-status scan-status">
                 <div class="ble-scanner-indicator active"></div>
                 <span>Scanning...</span>
             </div>
         `;
 
         const controls = document.createElement('div');
-        controls.className = 'ble-scanner-controls';
+        controls.className = 'ble-scanner-controls scan-controls';
         controls.innerHTML = `
             <div class="ble-search-container">
-                <input type="text" id="ble-search" placeholder="Search devices..." class="ble-search-input">
+                <input type="text" id="ble-search" placeholder="Search devices..." class="ble-search-input scan-search">
             </div>
-            <div class="ble-categories">
+            <div class="ble-categories scan-chips">
                 <div class="ble-category active" data-category="all">All</div>
                 <div class="ble-category" data-category="nearby">Nearby</div>
                 <div class="ble-category" data-category="saved">Saved</div>
@@ -71,13 +73,13 @@ export class BleScannerMinigame extends MinigameScene {
         `;
 
         const listContainer = document.createElement('div');
-        listContainer.className = 'ble-device-list-container';
+        listContainer.className = 'ble-device-list-container scan-list-wrap';
         listContainer.innerHTML = `
-            <div class="ble-device-list-header">
+            <div class="ble-device-list-header scan-list-header">
                 <span>Detected Devices</span>
-                <div class="ble-device-count">0 devices</div>
+                <div class="ble-device-count scan-count">0 devices</div>
             </div>
-            <div class="ble-device-list pixel-scroll" id="ble-device-list"></div>
+            <div class="ble-device-list scan-list pixel-scroll" id="ble-device-list"></div>
             <div class="ble-device-more" id="ble-device-more" hidden aria-hidden="true"><span class="ble-device-more-arrow"></span><span>${MORE_BELOW_TEXT}</span></div>
         `;
 

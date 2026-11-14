@@ -1,4 +1,5 @@
-/* Bluetooth Scanner Minigame Styles */
+/* Bluetooth Scanner Minigame Styles. The panel, header, search, chips, list header and
+   instructions are in css/scanner-panel.css (A22). */
 
 .bluetooth-scanner-minigame-container {
     /* Much smaller, compact interface */
@@ -103,11 +104,6 @@
    Chrome's default with its rounded thumb and arrows. Chrome 121+ ignores the WebKit
    rules once scrollbar-color or scrollbar-width is set, so both stay auto. */
 .bluetooth-scanner-minigame-container > .bluetooth-scanner-minigame-game-container,
-.bluetooth-scanner-instructions {
-    scrollbar-color: auto;
-    scrollbar-width: auto;
-}
-
 .bluetooth-scanner-minigame-game-container::-webkit-scrollbar,
 .bluetooth-scanner-instructions::-webkit-scrollbar {
     width: 8px;
@@ -167,43 +163,10 @@
 }
 
 /* Scanner Header */
-.bluetooth-scanner-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-    margin-right: 40px;   /* clear of the X, which sits inside the frame's top right (slice 7 R1) */
-    /* The expand toggle sits beside the header box, not across its border (critique A20) */
-    margin-left: 32px;
-    padding: 10px;
-    background: rgba(0, 188, 212, 0.1);
-    border: 2px solid #00bcd4;
-    /* border-radius: 6px; */
-    box-shadow: none;
-}
-
-.bluetooth-scanner-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 18px;
-    font-weight: bold;
-    color: #00bcd4;
-    text-shadow: none;
-}
-
 .scanner-icon {
     height: 24px;
     filter: none;
     image-rendering: pixelated;
-}
-
-.bluetooth-scanner-status {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 18px;
-    color: #4caf50;
 }
 
 .scanner-indicator {
@@ -231,34 +194,6 @@
 }
 
 /* Expand/Collapse Toggle */
-.bluetooth-scanner-expand-toggle {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    width: 24px;
-    height: 24px;
-    background: rgba(0, 188, 212, 0.2);
-    border: 2px solid #00bcd4;
-    /* border-radius: 4px; */
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    color: #00bcd4;
-    transition: all 0.3s ease;
-    z-index: 10;
-}
-
-.bluetooth-scanner-expand-toggle:hover {
-    background: rgba(0, 188, 212, 0.3);
-    box-shadow: none;
-}
-
-.bluetooth-scanner-expand-toggle.expanded {
-    transform: rotate(180deg);
-}
-
 /* Controls */
 .bluetooth-scanner-controls {
     margin-bottom: 10px;
@@ -273,65 +208,6 @@
     opacity: 0;
 }
 
-.bluetooth-search-container {
-    margin-bottom: 10px;
-}
-
-.bluetooth-search-input {
-    width: 100%;
-    padding: 8px 12px;
-    background: rgba(0, 0, 0, 0.3);
-    border: 2px solid #00bcd4;
-    /* border-radius: 6px; */
-    color: #e0e0e0;
-    font-family: 'GNF', monospace;
-    font-size: 18px;
-    box-shadow: none;
-    transition: all 0.3s ease;
-}
-
-.bluetooth-search-input:focus {
-    outline: none;
-    border-color: #4caf50;
-    box-shadow: none;
-    background: rgba(0, 0, 0, 0.5);
-}
-
-.bluetooth-search-input::placeholder {
-    color: #888;
-}
-
-.bluetooth-categories {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-.bluetooth-category {
-    padding: 6px 12px;
-    background: rgba(0, 0, 0, 0.3);
-    border: 2px solid #555;
-    /* border-radius: 4px; */
-    cursor: pointer;
-    font-size: 18px;
-    color: #ccc;
-    transition: all 0.3s ease;
-    user-select: none;
-}
-
-.bluetooth-category:hover {
-    background: rgba(0, 188, 212, 0.2);
-    border-color: #00bcd4;
-    color: #00bcd4;
-}
-
-.bluetooth-category.active {
-    background: rgba(0, 188, 212, 0.3);
-    border-color: #00bcd4;
-    color: #00bcd4;
-    box-shadow: none;
-}
-
 /* Device List */
 .bluetooth-device-list-container {
     flex: 1;
@@ -343,29 +219,6 @@
 
 .bluetooth-scanner-minigame-container:not(.expanded) .bluetooth-device-list-container {
     max-height: 200px;
-}
-
-.bluetooth-device-list-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-    padding: 8px 12px;
-    background: rgba(0, 0, 0, 0.2);
-    border: 2px solid #444;
-    /* border-radius: 6px; */
-    font-size: 18px;
-    font-weight: bold;
-    color: #00bcd4;
-}
-
-.device-count {
-    font-size: 18px;
-    color: #4caf50;
-    background: rgba(76, 175, 80, 0.2);
-    padding: 2px 6px;
-    /* border-radius: 3px; */
-    border: 2px solid #4caf50;
 }
 
 .bluetooth-device-list {
@@ -515,10 +368,6 @@
 
 .instruction-text {
     color: #aaa;
-}
-
-.instruction-text strong {
-    color: #00bcd4;
 }
 
 /* Responsive Design */
