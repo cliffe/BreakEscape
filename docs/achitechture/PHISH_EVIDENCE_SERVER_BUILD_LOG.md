@@ -724,3 +724,43 @@ are still neither stored nor judged, so this is hostile-input hygiene only. The 
 now carries the real composed shapes (an object headerFrom, a linkInfo object, the capped fields) and
 an honest lab send still lands; new tests refuse an unauthored headerFrom string, an oversized subject
 and an oversized headerFrom name, and pass an authored-account headerFrom string.
+
+## Handover: chunk A/B reconcile done and verified; live proofs (section 15) still to run
+
+Done and committed on `build/hard-phish-b` (merge of `build/hard-phish-mig`):
+
+1. Merge of chunk B (legacy migration) into chunk A; build log keeps both chunk sections.
+2. Reconcile (chunk B minor 3): Route 2's `landed` goes through the shared `phish_page_build_landed?`;
+   `sePhishSends` first-wins on landed:true (a migrated landed:false upgrades); key form matches the
+   migration (single-link-kit page: kit_ids.min == the carried kit). Reconciliation test added.
+3. Chunk A major 1: bounded build re-post queue (`systems/se-landing-page-client.js`), re-post
+   triggered from `recordPhishSend`, builds drain before sends.
+4. Chunk A major 2: `state-sync.js` dispatches `break-escape:sync-ok`; the build client binds one
+   combined drain to `online` and that event.
+5. Chunk A minor 3: `main.js` re-drives durable `se_landing_pages` once on `game_loaded` via
+   `redrivePhishEvidence` (dynamic import).
+6. Chunk A minor 4: real cross-scenario superset scan test.
+7. Chunk A minor 5: `headerFrom` validation and free-text length caps in `valid_send_message?`.
+
+Verification run green (no lock, in the worktree):
+- Ruby (224 runs, 914 assertions, 0 failures): se_phish_send (25), game_state_locking,
+  se_landing_page_build, capture_proofs (controller), captures_sync, capture_record,
+  phish_score_parity, phish_legacy_migration (model + controller), phish_superset (4),
+  reload_persistence, format_version.
+- JS (503 tests, 0 fail): social-phish-send-client (14), social-phish-score-parity, social-phish-rules,
+  all social-landing-page-*, all social-mail-*, social-captures(+view), state-sync, state-sync-hidden-save.
+
+STILL TO DO: the chunk A and chunk B live browser proofs (plan section 15), task 8 of the brief. Not
+started. Run them on a keyless server on port 3664, headless, setFPS(20), fixed steps on, games via
+tools/playtest/new-game.rb (lab_social_engineering), asserting server stores through a fresh bootstrap
+and read-only rails runner, then kill the server by its PID and confirm the port is down. The five
+cases: (a) honest online build+send to lord with the payroll kit (sePhishSends landed, seLandingPages
+meetsThreshold); (b) Playwright-route-held/aborted build then send, then online/sync, both drain and
+land; (c) queue a send, reload before drain, the re-drive lands it; (d) a forged send for another
+target refused; (e) the chunk B legacy save seeded through rails runner on the game's player_state JSON
+(stores populated, phishEvidenceMigrated set). Record game ids here.
+
+Branch tip at handover: see git log. Main checkout note: the two kieran_doyle_nonpixelart files that
+were untracked in main at the start are now tracked there (a concurrent session merged them into main
+at bb0a458b1); only docs/agents/UI_PASS_RESUME.md remains untracked in main. No work from this branch
+leaked into the main checkout.
