@@ -1,6 +1,6 @@
 # Credential keyring: build plan for phases 0 and 1
 
-Status: plan. Decided by the user on 2026-11-13 (q92, option 3: "remote sign-in model: credential keyring, option 3"). Engine paths are under `public/break_escape/js/`; the Ruby files cited by bare name (`game.rb`, `network_access.rb`, `capture_proofs.rb`, `npc_frustration.rb`) are under `app/models/break_escape/`, and `games_controller.rb` is under `app/controllers/break_escape/`. Line numbers are on main 1ce7486c7, which contains UX slice 2b0 (remote sign-in captured tiles), the conclude-race fix and the rfid server-trust fix.
+Status: plan. Decided by the user on 2026-11-13 (q92, option 3: "remote sign-in model: credential keyring, option 3"). Decisions D1 to D7 taken on 2026-11-14 (section 14); D8, how far the Sign-ins list reaches, is open (section 8.7). Engine paths are under `public/break_escape/js/`; the Ruby files cited by bare name (`game.rb`, `network_access.rb`, `capture_proofs.rb`, `npc_frustration.rb`) are under `app/models/break_escape/`, and `games_controller.rb` is under `app/controllers/break_escape/`. Line numbers are on main 1ce7486c7, which contains UX slice 2b0 (remote sign-in captured tiles), the conclude-race fix and the rfid server-trust fix.
 
 ## 1. What this builds
 
@@ -9,18 +9,18 @@ A **credential** is anything the player holds that a PC accepts as proof that th
 | Phase | Scope | Slices | Size |
 |---|---|---|---|
 | 0 | Policy `remoteScreen`; the target PC's own account tiles on the remote sign-in screen, passwords only | K0 | M |
-| 1 | The `credentials` registry, the `held` and `foothold` proofs, policy `accepts`, the POST /login credential branch, credentials on sign-in screens, Connect, the relay; kinds `password` (found in files), `saved_connection`, `assist_invite` | K1, K2, K3a, K3b, K3c, K4 | L in all (M each) |
-| 1, follow-up | Foothold and `from` credential sessions lockable under UI slice 6's session lock | K-lock (section 8.6) | S |
-| 2 | `token` | sketch, section 10 | M |
-| 3 | `hash`, `acceptedOn`, machine accounts | sketch, section 11 | M |
+| 1 | The `credentials` registry, the `held` and `foothold` proofs, policy `accepts`, the POST /login credential branch, credentials on sign-in screens, Connect, the relay, the Sign-ins list, signing in from a desktop; kinds `password` (found in files), `saved_connection`, `assist_invite`, `token` | K1, K2, K3a, K3b, K3c, K3d, K4, K5 | L in all (M each) |
+| 1, follow-up | Foothold, `from` and token credential sessions lockable under UI slice 6's session lock | K-lock (section 8.6) | S |
+| 2 | The labs' granted sessions as token credentials, new games only (D5) | sketch, section 11 | M |
+| 3 | `hash`, `acceptedOn`, the `machineAccounts` block (D3) | sketch, section 12 | M |
 
-Each slice is one branch, built, reviewed and live-proved on its own, and merged before the next starts. K0 also waits for decision D1 before it merges, since it changes a shipped lab's screens. Main stays playable and safe between slices: K1 changes no sign-in behaviour, K2 adds a server branch that nothing in the client calls until K3a, and K3a works through footholds alone.
+Each slice is one branch, built, reviewed and live-proved on its own, and merged before the next starts. Order: K0, K1, K2, K3a, K3b, K3c, then K3d, K4 and K5 in any order (each needs only K3c), then K-lock. Main stays playable and safe between slices: K1 changes no sign-in behaviour, K2 adds a server branch that nothing in the client calls until K3a, and K3a works through footholds alone.
 
-Out of scope: tokens and hashes; converting the labs' hand-written granted sessions (decision D5); the inline item shape; any field tidy that would need a format step (section 12).
+Out of scope: hashes and machine accounts (phase 3); converting the labs' hand-written granted sessions (phase 2, D5); the inline item shape; any field tidy that would need a format step (section 13).
 
 ### 1.1 Changes from the explainer the user decided from
 
-Each is shown on the picks page. The ones marked "Default" are behaviour the player meets; the user can overturn them.
+Each was shown on the picks page. The ones marked "Default" are behaviour the player meets; the user overturned none of them (2026-11-14), so each stands as written.
 
 | Change | Reason |
 |---|---|
@@ -30,7 +30,7 @@ Each is shown on the picks page. The ones marked "Default" are behaviour the pla
 | Default: under `remoteScreen: "typed"` the screen still shows the player's own captured sign-ins, tagged (the explainer's typed screen "asks first and shows nothing") | The captures are the player's own notes, not the PC's list; the screen says the PC lists none |
 | Default: a refused credential gets a specific answer (wrong PC, policy, lockout, ended) once its proof holds; the explainer refused every failed check as an unknown credential | The proof check runs first, so the browser still cannot probe the registry, and honest play learns why |
 | Machine accounts, if built, live in a top-level `machineAccounts` block, not `accounts` (D3) | `accounts` already names `social.mail.accounts` and a `loginPicker` value |
-| Default: the invite can also end on a timer (90 seconds in the test scenario) after the relay desktop first opens, as well as through Jake's later ink. The timer shows no countdown (`showCountdown: false`) | Teaches that an invite is short-lived; the ink ending alone may never be reached. No countdown keeps the end a surprise, as a real holder's choice would be; the closing line and Jake's bark name what happened |
+| Default: the invite can also end on a timer (90 seconds in the test scenario) that starts when the player reads `vendor_contract.txt` on the relay desktop, as well as through Jake's later ink, which is offered only after that read (section 9.1). The timer shows no countdown (`showCountdown: false`) | Teaches that an invite is short-lived; the ink ending alone may never be reached. Starting at the read, not when the relay desktop first opens, means the invite cannot end before the one thing only it reaches. No countdown keeps the end a surprise, as a real holder's choice would be; the closing line and Jake's bark name what happened |
 | The keyring reaches the client by GET /keyring with a `rev` digest, asked after the events that can change it, not as deltas inside other answers | One reader, no change to every answer that could earn a credential; a repeat costs a few bytes |
 | Default: a relay session (assist invite) gives no network reach, maps no shares, is no source for a desktop sign-in, is not listed in the network view, is not offered at the holder's keyboard and ends on reload (the explainer said every route after sign-in is unchanged) | The invite is Jake's own screen shared through his vendor's relay, not a foothold on his network |
 | The assist code comes from Jake through an ink gift (`#give_item` from his `itemsHeld`), not a declared grant | A declared grant can be claimed from the first second, skipping the conversation |
@@ -38,26 +38,17 @@ Each is shown on the picks page. The ones marked "Default" are behaviour the pla
 | The policy refusal reads "{host} always asks for the password, so a saved one is ignored." in place of "This PC does not allow saved passwords" | Names the control in two lines on a phone; the fix itself is in the saved connection's teaching toast; final wording is D7 |
 | Default: a lockout refuses a saved connection too | A saved connection presents the password, so the lockout applies; an assist invite (the person's own session) is not refused. Lockouts never expire (`loginLockouts`, `game.rb:2257-2261`), so a scenario must not make a saved connection the only way to something it needs at a PC with `maxAttempts`: the validator says so (6.3) |
 | Default: keyboard screens show password entries only | Connecting kinds are used from somewhere else (section 3.7) |
-| The keyring view ("the capture log grown") is not in phase 1 (D4, recommended (c)) | The capture log is carried by one test scenario; the sign-in screens and Connect are where credentials are used |
+| The keyring view ("the capture log grown") is the capture log's Captures section, renamed "Sign-ins": one list of captures and found credentials with kind tags and no duplicate rows (D4 (d), slice K3d). The word on screen is "Sign-ins", never "Keyring" | The tray already calls grouped physical keys "Key Ring". Where else the list shows (the labs' Harvested Credentials view among them) is D8, open (section 8.7) |
 | Item type `remote_access` becomes an existing type with a tray slot (`text_file`) | No new item art or item type; a small connection icon is logged in the backlog. The only new art is two 8x8 badge glyphs for the short window (section 5.2) |
-| `token` leaves the phase 1 default `accepts` | Tokens are phase 2 (D2) |
+| `token` is built in phase 1, in its own slice K5, and joins the default `accepts` there | D2 (b): the honest kind for a session taken through a foothold, and phase 2's lab conversion builds on it |
 | The inline item shape (a credential described inside the item) is not accepted | No content uses it; a second shape is a second thing to test |
-| New-game conversion of the labs' items moves out of phase 1 (D5) | The honest kind for them is `token` |
-| The desktop pivot ("open the .rdp from Sam's desktop") is slice K4 (D6) | It needs its own route and session reader changes |
+| New-game conversion of the labs' items is phase 2, as `token` credentials (D5 (a)) | The honest kind for them is `token`, built in K5 |
+| The desktop pivot ("open the .rdp from Sam's desktop") is slice K4, in phase 1 (D6 (a)) | It needs its own route and session reader changes |
 | Default: Connect signs in directly when the server accepts; a saved connection's sign-in screen opens only to show a policy or lockout refusal | One meaningful action acts directly |
 | Default: the relay desktop says whose session it is and has Disconnect, not Switch user and Sign out | The player did not sign in; they were let in |
 | The explainer's later kinds (an RFID card as a credential, a one-time code, a key file) are not planned | Logged in `docs/IDEAS_BACKLOG.md` in K1 |
 
-Evidence for the Default rows on the picks page, each beside its alternative (the explainer's behaviour):
-- file password never filled, and the "In file" wait: beat R3 and mock m1 (Jake's tile untagged, then tagged with the found-password line), beside a mock of the filled field;
-- typed screen still shows captures: the K0 shot of HB-OPS-02, beside the same screen with no tiles;
-- specific refusals: mock m2 and the m9 sheet's refusal toasts, beside the generic "Incorrect username or password";
-- the invite timer: the 9.1 timer JSON and beat R7a, beside R7b's ink-only ending;
-- the relay sink: the R6 view shot (no bridge named after Jake) and the 3.7 route table, beside a view with a `server_lan` block through HB-FIN-03;
-- assist invite by Connect only, and lockout refuses a saved connection: mock m9's toasts and K2's check list, with the stranding case spelt out (five wrong passwords lock the account at that PC for the rest of the game, and the saved connection with it);
-- keyboard screens show password entries only: a mock of HB-DESK-01's keyboard screen;
-- Connect signs in directly: mock m3 and the R2 desktop shot;
-- the relay desktop's bar: mock m4.
+The picks page showed each Default beside its alternative (the explainer's behaviour), with shots, mocks and JSON; none was overturned.
 
 ## 2. What exists today
 
@@ -84,7 +75,7 @@ Evidence for the Default rows on the picks page, each beside its alternative (th
 - **Accounts are room NPCs.** `account_npcs` (`game.rb:1896`) reads only `rooms.*.npcs`.
 - **Networks scenarios with sign-in hosts**: `test_access_networks` and `lab_physical_pentest`. In the lab, all on `office_lan` with `revealSecret: true` (`scenario.json.erb:78`) and no policies block: LW-OPEN-07 `staff_pc_2` (default picker, `access: { people: ["pierce"] }`, line 1893), the hot desk LW-HOT-01 `hot_desk_pc` (default picker, `access: { people: ["hampshire", "lord", "pierce"] }`, line 1937) and LW-DOOR01. The lab captures Hampshire, Lord and Pierce (Pierce's proof is `session: staff_pc_2`, line 1698). Its scope text says Pierce's password "may be used at the hot desk" (line 187). m01 to m10, `lab_social_engineering` and the other test scenarios have no foothold, so no remote screen. The `ca20` scenarios' `networks` keys are phone Wi-Fi lists, not this model.
 - **Granted remote sessions** are hand-written `pc` items: `lab_social_engineering/scenario.json.erb:170-200` (`sofia_remote`) and `lab_physical_pentest/scenario.json.erb:586`.
-- **The capture log** (`minigames/capture-log/`, sections Captures, Sessions, Findings) is carried only by `test_capture_log`.
+- **The capture log** (`minigames/capture-log/`, sections Captures, Sessions, Findings) is carried only by `test_capture_log`. Its Captures rows are built by `capture-rows.js` (`buildCaptureRow`), which the page builder's captures view (`view: "captures"`, the "Harvested Credentials" object in `lab_social_engineering` and the tray tablet in `lab_physical_pentest`) also uses. The rows read the `se_captures` global (`systems/captures.js`: phish look-alike page sign-ins, document and executable footholds, keylogger, drop box and note captures, shared logins), with secrets from GET /capture_secrets under `social.captures.revealSecret`. The engagement report reads the same list (`engagement-report/report-model.js:181`).
 
 ## 3. The model
 
@@ -105,8 +96,8 @@ Two optional fields, shipped in the bootstrap (not secret):
 }
 ```
 
-- `remoteScreen`: `"tiles"` shows the PC's own account tiles (by its `loginPicker`) over the network; `"typed"` shows none of the PC's accounts until a password is right, as Network Level Authentication does. Default: decision D1 (recommended `"tiles"`). Never affects the keyboard screen. A headless host shows no PC tiles under either value.
-- `accepts`: the kinds the PC takes. Absent: `CredentialModel::DEFAULT_ACCEPTS` (phase 1: `password`, `saved_connection`, `assist_invite`; never `hash`). `password` is always accepted (a PC that refused typed passwords would be unusable); a list without it draws a validator warning.
+- `remoteScreen`: `"tiles"` shows the PC's own account tiles (by its `loginPicker`) over the network; `"typed"` shows none of the PC's accounts until a password is right, as Network Level Authentication does. Default: `"tiles"` (D1 (a)). Never affects the keyboard screen. A headless host shows no PC tiles under either value.
+- `accepts`: the kinds the PC takes. Absent: `CredentialModel::DEFAULT_ACCEPTS` (phase 1: `password`, `saved_connection`, `assist_invite`, and `token` from K5; never `hash`). `password` is always accepted (a PC that refused typed passwords would be unusable); a list without it draws a validator warning.
 - `maxAttempts` keeps its meaning. Only typed passwords count.
 
 ### 3.3 The registry
@@ -133,6 +124,8 @@ A top-level `credentials` map, server-only: the bootstrap strips it and no answe
 | `connectsTo` | The sign-in PC it opens. Required for connecting kinds; not allowed on `password` |
 | `foundIn` | Required on `password`, not allowed on other kinds: the item whose text holds the password. It names the entry's label, tag ("In file"), toast and found-password line |
 | `endsOnGlobal` | `assist_invite` only, optional: a declared global; once true, the invite is over for the game |
+| `label` | `token` only, required (K5): the name the screens and toasts use, since no item carries a token; at most 40 characters |
+| `expiresMin` | `token` only, required (K5): whole minutes from first use, 1 to 240 |
 
 At most 64 entries; the server reads the first 64 by sorted id. References are checked by the validator (section 6.3); the schema only closes the entry's shape.
 
@@ -178,14 +171,14 @@ KINDS = {
   'password'         => { built: true, connects: false },
   'saved_connection' => { built: true, connects: true, routes: %w[foothold from], honours_lockout: true },
   'assist_invite'    => { built: true, connects: true, routes: %w[relay],        honours_lockout: false },
-  'token'            => { built: false },  # phase 2
+  'token'            => { built: true, connects: true, routes: %w[proof_foothold], honours_lockout: false },  # K5
   'hash'             => { built: false }   # phase 3
 }
-DEFAULT_ACCEPTS = %w[password saved_connection assist_invite]
+DEFAULT_ACCEPTS = %w[password saved_connection assist_invite token]
 PROOF_KINDS     = %w[session planted dropped held foothold]
 ```
 
-`proof_kind` requires exactly one key, as `CaptureModel.proof_kind` does. The player-facing strings live in the client's text table (section 8.5), keyed by kind.
+Until K5 lands, `token` is `{ built: false }` and absent from `DEFAULT_ACCEPTS`; K5 sets the line above. `proof_kind` requires exactly one key, as `CaptureModel.proof_kind` does. The player-facing strings live in the client's text table (section 8.5), keyed by kind.
 
 ### 3.7 Routes
 
@@ -195,6 +188,7 @@ A connecting credential signs in only at its `connectsTo` PC, and never at that 
 |---|---|---|---|---|
 | `foothold` | `saved_connection` | `host_reachable_through?(foothold, pc)`, not `remote: "blocked"` | `foothold` | as a password session: pivots, shares, `from` source |
 | `from: pcId` (K4) | `saved_connection` | source: the player holds a session at `pcId` that carries no `relay`, is not locked (UI slice 6) and whose route is up, and `pcId` is on; target: not `remote: "blocked"`, its network is in `from_reach(network of pcId)`, and it is neither `pcId` nor any PC on the source's own `from` chain | `from` | as a password session |
+| `proof_foothold` (K5) | `token` | as `foothold`, with the foothold fixed to the token's own proof foothold; the token is not expired (section 10) | `foothold` | as a password session |
 | `relay` | `assist_invite` | none for reach: the account holder's own vendor relay. The PC must be on; `remote: "blocked"` does not apply | `relay: true` | none |
 
 **The relay invariant.** A relay session is a sink: it is reached only by Connect, and it is never a pivot in the reach walk, never a bridge or down block in the network view, never a share source, maps no shares on its desktop, is never the source of a `from` route, is never offered at the holder's keyboard and is not listed in the network view. Section 3.8 names every reader that enforces it.
@@ -235,8 +229,8 @@ Client readers (each in the slice named):
 ## 4. What every slice must keep
 
 - **GET /capture_secrets answers stay identical.** No slice edits `capture_secrets_for_client`, `account_capture_usernames` or `account_capture_served?`. K1 adds a golden test of the answer for every fixture game in `test/fixtures/files/access_leak/responses.jsonl` and the test scenarios with captures.
-- **Shipped scenarios.** K0 changes the remote screens of the two networks scenarios (section 9.2), `lab_physical_pentest` among them, so K0 merges only after D1 is picked. From K1 on, every new screen element appears only in a scenario that declares `credentials`.
-- **No format step** (section 12).
+- **Shipped scenarios.** K0 changes the remote screens of the two networks scenarios (section 9.2), `lab_physical_pentest` among them, under D1 (a) with the lab's answer (i). From K1 on, every new screen element appears only in a scenario that declares `credentials`.
+- **No format step** (section 13).
 - **Pixel-art rule and UI language:** 2px borders or the theme skin, pixel fonts only, authored headshots for every account, X closes, one look per concept, the frame wraps all content at 1400x1000, 390x844, 915x412 and 800x600, scrollers keep the frame whole with the pixel scrollbar and a "More below" cue.
 - **One phrasing per state.** On a remote screen, the tray and the view, the off, unreachable and remote-off states use one helper each (section 8.5). The keyboard screen keeps "This PC ..." for the PC in front of the player.
 - **Sync size:** each slice states what it stores and what each request sends.
@@ -245,7 +239,7 @@ Client readers (each in the slice named):
 
 ## 5. Slice K0: phase 0, the target's own tiles over the network
 
-Base: main. Size: M. Merges after D1 is picked (the picks page sits between K0's live proof and its merge).
+Base: main. Size: M. D1 is taken: `"tiles"` by default, and the lab takes the default (i).
 
 ### 5.1 Server
 
@@ -295,11 +289,11 @@ Base: main. Size: M. Merges after D1 is picked (the picks page sits between K0's
   - The capture card at `scenario.json.erb:295` reads "Her tile is then tagged Captured on a remote sign-in screen." in place of the "Captured sign-ins" sentence.
   - PLAYTEST.md: P3 "all six hosts"; Run 0 step 5's host list (six, in order); the expected validator output (identity reach and "Reachable without a foothold" gain the two desk-room PCs); the captured-tile selector becomes `.signin-tile[data-username="lfox"] .signin-tag`; the harness note becomes "on a tiles screen, `clickText('Other user')` before typing into field 0"; P5, P6 (the remote screen now lists the PC's tiles), P8, N14 (`bench_pc` gains its PC tiles over the network) and the P3 script updated.
   - New beats: P5b (in Run B, where Sam's PC has not been opened at the keyboard: Sam's PC over the network lists Sam, Lena and Ian, as every account holder has the `staff` role; untagged before the lobby capture cards, Lena and Ian tagged after), P5c (HB-IT-01 after Ian's card: one tagged Ian tile, no duplicate), P5d (HB-OPS-02: typed, the NLA line, captured tiles only).
-- `lab_physical_pentest/PLAYTEST.md:1028, 1033`: the **Captured sign-ins** wording becomes the tagged tiles under D1's lab answer.
+- `lab_physical_pentest/PLAYTEST.md:1028, 1033`: the **Captured sign-ins** wording becomes the tagged tiles under (i): Pierce's tile on LW-OPEN-07 (Hampshire and Lord gone, since the PC does not admit them), the hot desk's three PC tiles tagged. No lab policy changes.
 
 ### 5.5 Live proof
 
-New games of `test_access_networks`: plant the drop box; Sam's PC from the view (tiles, headshots, Other user), before and after the cards; HB-OPS-02 (typed, the NLA line); read Ian's card, open HB-IT-01 (tagged tile, no duplicate); HB-DOOR-01 from the view (the headless line, signs in as P8 does today); Switch user on a remote desktop of HB-DOOR-01 (the headless line again); P3 completes on six hosts. Re-run P5, P6, P8 and N14. On `lab_physical_pentest`, with the drop box planted and all three captures read: LW-OPEN-07, the hot desk and LW-DOOR01 from the view, on main today and under each D1 lab answer. Shots at the four sizes, including the loading state with `/login_accounts` held back by a route delay, the late redraw after the cap, and the Other user form with a refusal line at 1400x1000 (no scroller). Tampered client: a foothold not held (403), a malformed one (400).
+New games of `test_access_networks`: plant the drop box; Sam's PC from the view (tiles, headshots, Other user), before and after the cards; HB-OPS-02 (typed, the NLA line); read Ian's card, open HB-IT-01 (tagged tile, no duplicate); HB-DOOR-01 from the view (the headless line, signs in as P8 does today); Switch user on a remote desktop of HB-DOOR-01 (the headless line again); P3 completes on six hosts. Re-run P5, P6, P8 and N14. On `lab_physical_pentest`, with the drop box planted and all three captures read: LW-OPEN-07, the hot desk and LW-DOOR01 from the view, on main today and under (i). Shots at the four sizes, including the loading state with `/login_accounts` held back by a route delay, the late redraw after the cap, and the Other user form with a refusal line at 1400x1000 (no scroller). Tampered client: a foothold not held (403), a malformed one (400).
 
 ### 5.6 Sync size
 
@@ -327,7 +321,7 @@ Base: main after K0. Size: M. No sign-in behaviour changes.
 - `scripts/validate_scenario.rb`: `credentials` in `known_top_level`, `credential` in `known_item_fields`, new `check_credentials` (6.3).
 - Dungeon graph: edges proof source (item, PC, foothold) to a credential node, and credential node to each PC that accepts it.
 - `README_scenario_design.md`: a credentials section (registry, kinds, proofs, policy `accepts`, item `credential`, the item type rule, where a credential item may be placed, the ink gift path for an invite, the relay invariant); and correct line 2753: a reload resumes a timer from its saved running time, it does not restart it.
-- `docs/IDEAS_BACKLOG.md`: the connection icon; the later kinds (RFID card as a credential, one-time code, key file); an optional per-entry teaching line for scenario-specific wording.
+- `docs/IDEAS_BACKLOG.md`: the connection icon; the later kinds (RFID card as a credential, one-time code, key file); an optional per-entry teaching line for scenario-specific wording. (K3d adds: the engagement report reading the Sign-ins rows, masked.)
 
 ### 6.2 GET /keyring
 
@@ -367,7 +361,7 @@ Base: main after K0. Size: M. No sign-in behaviour changes.
 ### 6.3 Validator checks (`check_credentials`)
 
 Errors:
-- unknown kind; a kind not built yet ("not supported until phase 2/3"); `accepts` naming an unknown kind;
+- unknown kind; a kind not built yet ("not supported until K5" for `token` before K5 lands, "not supported until phase 3" for `hash`); `accepts` naming an unknown kind;
 - `account` not an account holder; `connectsTo` not a sign-in PC, missing on a connecting kind, or present on `password`; `connectsTo` a headless PC for `assist_invite` (no screen to share);
 - `proof` not exactly one known kind; `session` naming no sign-in PC; `held` naming no item in `item_definition`'s scope; `foothold` naming no foothold id any jack, access point or implant action can create;
 - a proof that can never hold: a `held` item that is not takeable and is in no declared grant, NPC `itemsHeld` or start inventory; a `session` PC no account is admitted at and no claim opens; a `planted` or `dropped` proof `CaptureModel` already finds unreachable;
@@ -480,7 +474,7 @@ Saved connections are secret-class and hard-enforced: one opens an account witho
 | Keep a `session` proof from a transient relay | a relay sign-in is not recorded in `signedInPcs` |
 | Read a token or hash value | no value exists in any answer |
 
-## 8. Slices K3a, K3b and K3c: the keyring on screen (client)
+## 8. Slices K3a to K3d: the keyring on screen (client)
 
 ### 8.1 K3a: the sign-in screen (shared module)
 
@@ -489,7 +483,7 @@ Base: main after K2. Size: M.
 Only in a scenario that declares `credentials` (shipped scenarios are unchanged). On the remote screen, and on the keyboard screen for password entries only:
 
 - **One tile per account, never per entry.** Order and inclusion as K0 (section 5.2), with keyring accounts in place of captured ones, matched by username. Tags by kind with K0's tag rules ("+N", ellipsis, badge in the short window): "Captured", "In file", "Saved", "Assist".
-- **Only usable kinds show.** A screen shows a tag and a button only for a credential whose kind allows that screen's route: `password` everywhere; `saved_connection` on a `foothold` or (K4) `from` screen. An `assist_invite` never shows on a sign-in screen; it is used by Connect alone (8.2).
+- **Only usable kinds show.** A screen shows a tag and a button only for a credential whose kind allows that screen's route: `password` everywhere; `saved_connection` on a `foothold` or (K4) `from` screen; (K5) `token` on a `foothold` screen whose foothold is the token's proof. An `assist_invite` never shows on a sign-in screen; it is used by Connect alone (8.2).
 - **An "In file" tag waits** until the client has opened that item in this page. The keyring module keeps the set of opened `foundIn` item ids for the page's life. After a reload the tag shows at once and its toast is skipped: an accepted gap, since the server keeps no record of a file being read.
 - **Choosing an account** shows its ways in on the chosen line, in this order: one button per usable credential for this PC ("Connect with HB-FIN-02.rdp"), each with its full kind name; for a found password, two lines, "Type the password from" and then the file name alone ("passwords.txt"), so the label has the slab's whole width; the Password field (filled only for a captured password the server served) and Sign in, always shown, since `password` is always accepted. A saved connection refused by this PC's policy shows as a greyed button (`aria-disabled`, not `disabled`) with its refused reason under it; its click signs nothing in and shows the full reason (below).
 - **The teaching line** is never drawn on the sign-in screen (the 560x350 base has no room for it at any scale): it shows once per page as a toast after the first successful use of each kind (a reload may show it once more), and in the button's title. A refused reason shows under the greyed button in a short form that fits one line at 390x844 with the longest host in play ("{host}: type the password.", six glyphs shorter than the earlier "{host} needs the password typed.", which measured 302px of 306px with HB-DESK-01, so a 12px scrollbar or slab padding does not wrap it; `signin-fit.mjs` checks the line count); clicking the greyed button puts the full reason, control included, in the message slot, so a phone shows it too.
@@ -528,14 +522,14 @@ Base: main after K3a. Size: M.
   7. no route: toast "{host} can't be reached from here. You need a way onto its network.";
   8. a route (K4's `from` first, then footholds, then, from K3c, relay): POST /login with the credential and that route. On success, hand any `endedPcIds` in the answer to `linkDropped`, open the desktop and show the teaching toast the first time for the kind in this page (a reload may show it once more; accepted, since nothing is stored). On a network failure, the toast of step 1. A race since the GET answers as steps 4, 6 and 7 do: 403 `not_responding` gives `notRespondingMessage(host)`, 403 unreachable gives step 7's line, 422 `remoteBlocked` gives the remote-off sentence. On a refusal: for a saved connection's `kindRefused` or lockout, open the target's remote sign-in screen with the account and credential chosen and the refusal shown as 8.1 says; for `LOGIN_NOT_PERMITTED`, toast "That account can't sign in on {host}."; for an assist invite's `kindRefused` or `ended`, the toast of 8.5. (`wrongPc` cannot occur: Connect always posts to `connectsTo`.)
   Connect starts no network-view trip, so closing the screen or desktop returns to the world, or to the opener given as `returnTo` (K4: the desktop it was started from).
-- **Find toasts.** `systems/keyring.js` fetches a baseline after bootstrap, then asks with `rev` after a successful sign-in (once the desktop has opened), an inventory add or removal of an item with `credential`, a plant, implant or Wi-Fi join, and the opening of a `foundIn` item. Registry entries new since the last answer give one toast, worded by use under D4 (c), with names, hosts and labels from the entry:
+- **Find toasts.** `systems/keyring.js` fetches a baseline after bootstrap, then asks with `rev` after a successful sign-in (once the desktop has opened), an inventory add or removal of an item with `credential`, a plant, implant or Wi-Fi join, and the opening of a `foundIn` item. Registry entries new since the last answer give one toast, with names, hosts and labels from the entry. When the player holds a capture log, the toast points at it (D4 (d)): "New in your capture log: {label} ({full kind name, lower case} for {displayName})." ("New in your capture log: HB-FIN-02.rdp (saved connection for Lena Fox)."), and for a password in a file "New in your capture log: {displayName}'s password, in {label}.". Under D8's option A the holder's own name replaces "your capture log" for a captures view (section 8.7). With no list to point at, the toast says where to use the find:
   - saved connection: "Saved connection found: {label} for {displayName} on {host}.";
   - assist invite (from K3c; before it, an invite gets no toast and no Connect): "{label}: Connect it from your inventory to join {displayName}'s session.";
   - password in a file: "{displayName}'s password is in {label}.";
   - with more than two at once, two then "and N more".
   A find caused by an NPC give (the ink gift) is held until the conversation closes, so it never lands beside the gift's own "Received" toast.
-  Captured entries stay silent (the capture has its own notice). A `foundIn` entry waits until the item is opened. Nothing is written to globals or player state. D4 has the wording under its other options.
-- **The keyring view** follows D4 (recommended: none in phase 1).
+  Captured entries stay silent (the capture has its own notice). A `foundIn` entry waits until the item is opened. Nothing is written to globals or player state. The capture log wording arrives with K3d; until then every find uses the lines above.
+- **The Sign-ins list** is slice K3d (section 8.7).
 - **Backlog:** the NPC gift toast's emoji (`chat-helpers.js:141`) breaks the pixel-font rule; logged in `docs/IDEAS_BACKLOG.md`.
 
 Files: `systems/inventory-menu.js`, `systems/unlock-system.js`, `systems/keyring.js`, `systems/pc-sessions.js`, `systems/network-links.js` (no trip for Connect; the helpers reused, unchanged).
@@ -590,11 +584,13 @@ Tags (one line, at most 9 glyphs) and full names (title and chosen line):
 | captured password | "Captured" | "Captured password" |
 | password in a file | "In file" | "Password in a file" |
 | saved_connection | "Saved" | "Saved connection" |
-| assist_invite | "Assist" | "Remote assist" (Connect only) |
+| assist_invite | "Assist" | "Remote assist" (drawn in the Sign-ins list only; no sign-in screen shows it, since it is used by Connect) |
+| token (K5) | "Token" | "Session token" |
+| captured foothold (Sign-ins list only) | "Foothold" | "Foothold" |
 
 Lines:
 
-| Key | Text | Alternative for D7 |
+| Key | Text | Alternative (not taken: D7 (a)) |
 |---|---|---|
 | password in a file teach | "People save passwords in files. Anyone who reaches the file has the account. Keep passwords in a password manager, not a file." | "A password in a file is a password anyone can read." |
 | saved_connection teach | "The password is saved inside this file, so opening it signs you in as {displayName}. A policy that always asks for the password stops it." | "This file remembers {displayName}'s password. Whoever holds it is {displayName}." |
@@ -613,22 +609,89 @@ Lines:
 | keyring failed | "Your found sign-ins could not be loaded." ("Saved" names one kind; the tray's "Key Ring" is the physical keys) | |
 | K0 lines | as section 5.2 | |
 | found password on the chosen line | "Type the password from" / "{label}" (two lines; the label alone on the second) | |
-| find toasts | as 8.2 | under D4 |
+| find toasts | as 8.2 (D4 (d)) | |
 | relay desktop bar (under the header "Remote assist session") | "Using {displayName}'s session ({username})", as the claim bar | "{displayName}'s screen, shared with you" |
 | relay desktop, no shares | "Shared drives are not mapped over remote assist." | |
+| token teach (K5, new since D7: reviewed with K5) | "A stolen session token signs in without the password until it expires. Short session lifetimes and signing out limit it." | |
+| token found (K5) | "Session token captured: {label} for {displayName} on {host}." | |
+| token expired (K5: Connect, the sign-in screen, and `linkDropped` reason `token_expired`) | "{label} expired. Your session on {host} ended." (an open session), "{label} has expired." (a later try) | |
+| token desktop bar, second line (K5) | "with a session token, about {n} min left" | |
+| Sign-ins list lines (K3d) | section 8.7 | |
 
 ### 8.6 K-lock: credential sessions under the session lock
 
 Base: main after both K3c and UI slice 6 (whichever merges second). Size: S. Skipped if slice 6 is dropped.
 
 Slice 6 owns the lock: the `locked` flag and its delta, `session_identity` answering nil for a locked session, the reach walk's skip and its cache key, the view's Locked label, `canLock`, and the unlock through the PC's password check counted against `maxAttempts`. K-lock adds only what slice 6 leaves out for credential sessions:
-- Slice 6 refuses a lock with 422 for any session that is not a password sign-in. K-lock widens that rule to a `via: "credential"` session with `foothold` or `from`, which the player opened as the account; the client's `canLock` follows. Such a session unlocks in either of two ways: the account's password, through slice 6's check, or a fresh sign-in with the same credential, which K2's branch already does (`start_login_session!` replaces the record, and the new record carries no `locked`), counted like any credential sign-in (nothing counted; a lockout still refuses a saved connection). Without the second way a player who locks the .rdp session on HB-FIN-02 would be stranded, since the test scenario never gives Lena's password, the case for which slice 6 refuses to lock a claim. GET /keyring reports `sessionHeld: false` for a locked session (`session_identity` answers nil), so Connect takes step 8 and signs in again, and the remote sign-in screen offers the .rdp button as for any foothold screen. A lock on a relay session is still refused: it is the holder's own screen, with Disconnect only.
+- Slice 6 refuses a lock with 422 for any session that is not a password sign-in. K-lock widens that rule to a `via: "credential"` session with `foothold` or `from` (a token session carries `foothold`, so it is included once K5 has landed), which the player opened as the account; the client's `canLock` follows. Such a session unlocks in either of two ways: the account's password, through slice 6's check, or a fresh sign-in with the same credential, which K2's branch already does (`start_login_session!` replaces the record, and the new record carries no `locked`), counted like any credential sign-in (nothing counted; a lockout still refuses a saved connection). Without the second way a player who locks the .rdp session on HB-FIN-02 would be stranded, since the test scenario never gives Lena's password, the case for which slice 6 refuses to lock a claim. GET /keyring reports `sessionHeld: false` for a locked session (`session_identity` answers nil), so Connect takes step 8 and signs in again, and the remote sign-in screen offers the .rdp button as for any foothold screen. A lock on a relay session is still refused: it is the holder's own screen, with Disconnect only.
 - Tests: a foothold credential session locks, is treated as signed out while locked (through slice 6's `session_identity`), and unlocks with the account's password, counted; the .rdp signs in again and the new record carries no `locked`; GET /keyring answers `sessionHeld: false` while it is locked; a lock on a relay session answers 422.
 - Live proof: lock HB-FIN-02's .rdp session on `test_access_keyring`, then Connect the .rdp from the tray: the desktop reopens unlocked.
 
+### 8.7 Slice K3d: the Sign-ins list, captures and keyring together
+
+Base: main after K3c. Size: M. D4 (d): the capture log's Captures section becomes the Sign-ins list. Whether the same list also takes the place of the Captures list in the labs' Harvested Credentials view is D8, open (end of this section).
+
+**What the player sees.** The section heading "Captures" becomes "Sign-ins". There is one row for each thing the player has captured or can sign in with:
+- a captured password (an `se_captures` credential entry);
+- a captured foothold (an `se_captures` foothold entry: an opened document or executable);
+- each registry entry GET /keyring lists (its proof holds): a password in a file, a saved connection, a remote assist code, a session token (K5).
+
+Each row has the account (display name and username, or the capture's role and address), the kind tags of 8.5 (the same words and look as on a sign-in tile, so a tag means one thing everywhere), a source tag, and one line on how to use it:
+
+| Row | Use line |
+|---|---|
+| captured password | the value, or the mask under `revealSecret: false`, as today |
+| password in a file | "Type it from {label}." (never the value) |
+| saved connection | "Connect {label} from your inventory." |
+| remote assist | "Connect {label} from your inventory."; once `ended`, greyed: "{displayName} ended the remote assist." |
+| session token (K5) | "Use it on {host}'s sign-in screen, through {link}. About {n} min left."; once expired, greyed: "{label} has expired." |
+| foothold | today's "Foothold on {host}: {note}" |
+
+The capture's note follows when it has one. Source tags are drawn in outline, the kind tags filled:
+- "Phished": a capture of a phish target (`social.phishTargets` ids);
+- "Recorded": any other capture (keylogger, drop box, note, shared login), and a token, which a foothold recorded;
+- "Found": a registry entry whose proof is `session`, `planted` or `dropped`, or `held` on an item placed in a room, a container, a desktop or a share;
+- "Given": `held` on an item from an NPC's `itemsHeld`, a declared grant or the start inventory. "Given" rather than "Granted": a declared grant is the server action the validator warns about for connecting kinds, and the invite comes through an ink gift.
+
+**One row per credential, no duplicates.** Row keys are `capture:<targetId>` for a capture and `cred:<id>` for a registry entry. GET /keyring's implicit entries (`<npcId>.password`) are built from the same captures, so they never add a row: the capture row takes the entry's account fields. A password found in a file for an account whose password was also captured is one row, keyed `capture:<targetId>`, with both kind tags ("Captured", "In file") and both source tags; the use line shows the captured value or mask, and a second line reads "Also in {label}.". Connecting kinds are one row each: an .rdp and a token for the same account are two things and two rows. Rows are oldest first: a capture by its `at`, a registry entry by when this page first got it, then by id.
+
+**What the server answers.** No new endpoint. The client builds the rows from three answers it already has: the `se_captures` global, GET /capture_secrets and GET /keyring. GET /keyring entries gain `how` (`found`, `given` or `recorded`), from `item_definition`'s location for the held item or from the proof kind; "Phished" is read from the bootstrap's phish target ids. Leak rules:
+- a captured value appears only where GET /capture_secrets serves it today: `revealSecret` off masks every value, and a capture whose record is not proven shows the mask;
+- a registry entry whose proof does not hold is never in GET /keyring, so it is never listed;
+- a registry password never carries a value;
+- a `foundIn` row waits until the file is opened in this page, as its tag does (after a reload it shows at once, the accepted gap of 8.1).
+The access-leak scanner gains one rule: no Sign-ins row text holds a registry password or the secret of an unproven capture.
+
+**Cheat analysis.** Display only. A forged `se_captures` entry (the global is written by the client) gets a row with the mask and no keyring tags, as the capture log shows it today; tags and registry rows come only from GET /keyring. A forged phish target id changes one word on the player's own screen.
+
+**Sync size.** Nothing new stored. The capture log's New marks write one `__capture_log_seen:<key>` global per row, once (the existing per-row delta), bounded by the rows: at most 64 registry rows plus the captures. One GET /keyring per open, usually `unchanged`.
+
+**Files.** `minigames/capture-log/signin-rows.js` (new, pure: `buildSignInRows({ captures, secrets, keyring, social, openedFiles })` returns row objects; a DOM builder beside `buildCaptureRow`); `capture-log-model.js` (the section's row keys); `capture-log-minigame.js` (heading, rows, the GET /keyring fetch through `systems/keyring.js`); `css/capture-log-minigame.css` (tags under the pixel-art rule); the JS test harness copy lists for the new module.
+
+**Test scenario.** `test_access_keyring` gains a capture log in its start inventory (`holds: { captures: true, items: false }`), so K3d is proved there, and its find toasts take the capture log wording of 8.2. `test_capture_log` keeps its beats; its PLAYTEST says "Sign-ins".
+
+**Tests.** `test/js/signin-rows.test.mjs`: one row per credential; the merged captured and in-file row; implicit entries never add a row; the mask under `revealSecret: false` and for an unproven capture; no row for an entry GET /keyring does not list; the `foundIn` wait; ended and expired rows greyed; source tags; order. The capture log tests: the heading, rows from both sources, New marks per row key. `signin-fit.mjs`: the list at the four sizes with a 32-character label and a row with three tags.
+
+**Live proof.** Beat R13 (section 9.1), shots at the four sizes, `verify-run.rb`, and the leak check over the capture log's page text, as `test_capture_log`'s PLAYTEST runs it.
+
+#### D8 (open): where else the list shows
+
+Under D4 (d) as written, only a player holding a capture log sees the list: `test_capture_log` and, from K3d, `test_access_keyring`. The labs show their captures in the page builder's captures view ("Harvested Credentials"), and their found credentials (tokens, from phase 2) would show only in toasts and on sign-in screens.
+
+| Option | What the player sees | Scenarios that get it | Cost |
+|---|---|---|---|
+| A. One row model, two readers | The Sign-ins list in the capture log and in the captures view, both built by `signin-rows.js`; the captures view's heading becomes "Sign-ins", and the toasts name the holder the player has ("New in Harvested Credentials: ...") | `test_capture_log`, `test_access_keyring`, both labs (the new look for their captures in phase 1; their tokens as rows from phase 2) | K3d plus the second reader, S on top of M; no content change |
+| B. A capture log for every scenario with credentials | The capture log with Sign-ins, Sessions and Findings | `test_access_keyring` at once; the labs only if their captures tablet becomes a capture log holder: a change to two shipped labs, new games only, with a filing pass for `storeIn` | K3d M, plus M per lab, best done in phase 2 with D5 |
+| C. A Sign-ins tray item | A new item, given when a scenario declares `credentials`, opening its own list | scenarios with `credentials`; the labs from phase 2 | New item, art and minigame (M to L); in the labs a third place that lists captures |
+| D. Keep the sources apart | (d) in the capture log only; the captures view keeps captures only | as (d) | K3d as written (M) |
+
+Every option uses the same row rules, leak rules and sync above. Recommendation: A. The labs already have a captures view the player is told to check after each capture; giving it the same rows reaches them with no new device and no content change, and the list looks the same wherever it shows. B suits a scenario built around the capture log and stays open for a later lab pass.
+
+The engagement report (`report-model.js:181`) is a third reader of the same captures: it lists revealed addresses on each landing page's line. Under A it could take the same rows, masked as its banner promises ("masked in the report"), to list the credentials recovered. Logged in `docs/IDEAS_BACKLOG.md` in K3d, not built in phase 1.
+
 ## 9. Slice K4: signing in from a desktop
 
-Base: main after K3c. Size: M. Decision D6 says whether it is in phase 1 (recommended: yes).
+Base: main after K3c. Size: M. In phase 1 (D6 (a)).
 
 - Route `from: pcId` (section 3.7) in POST /login, GET /keyring `routes`, `desktop_request_allowed?` (with `desktop_refusal` and `render_login_desktop`), `session_route_up?` and `host_row` (section 3.8). A source session carrying `relay` is never a `from` source, in every one of them.
 - `prune_unreachable_sessions!` ends a `from` session whose source session is gone, carries `relay`, or whose walk repeats (3.8); `logout_session!` and `end_claimed_sessions!` already call it. Unplug (`end_sessions_through!`, `network_access.rb:298`) and the end of an NPC borrow (`record_borrow_done!`, `npc_frustration.rb:372`) end sessions without pruning today; K4 has both call it afterwards. Unplug adds the pruned ids to its `endedPcIds`; the `npc_workaround` answer gains `endedPcIds` (only when non-empty), which `systems/npc-workarounds.js` hands to `pcSessions.linkDropped`. `pc-sessions.js` `displaced()` passes its POST /logout answer's `endedPcIds` to `linkDropped`, as `signOut` already does. So a `from` session whose source has gone ends with it on both sides, and GET /keyring never reports a dead `sessionHeld`.
@@ -645,7 +708,7 @@ Base: main after K3c. Size: M. Decision D6 says whether it is in phase 1 (recomm
 
 ### 9.1 Test scenario `test_access_keyring`
 
-Browser-only, no VM, built in K1 and grown through K4. `social.captures.revealSecret: true`, so a captured password fills when served. Start inventory: the drop box only. Every account holder is a room NPC with a sprite, talk portrait and headshot, with a varied cast.
+Browser-only, no VM, built in K1 and grown through K4. `social.captures.revealSecret: true`, so a captured password fills when served. Start inventory: the drop box, and from K3d a capture log (section 8.7). Every account holder is a room NPC with a sprite, talk portrait and headshot, with a varied cast.
 
 **Networks:** `office_lan`; `server_lan`, linked from `office_lan`.
 
@@ -668,16 +731,16 @@ Browser-only, no VM, built in K1 and grown through K4. `social.captures.revealSe
 | NPC | Role | Account | Where | How the player gets in |
 |---|---|---|---|---|
 | Sam Okafor | staff | `sokafor` | Office, standing | sticky note on HB-DESK-01 |
-| Lena Fox | finance | `lfox` | Lobby, standing | `lena_rdp` |
+| Lena Fox | finance | `lfox` | Lobby, standing | `lena_rdp`; `lena_token` (K5) |
 | Jake Brooks | finance | `jbrooks` | Finance, standing; an existing walk sheet with a headshot no other cast member here uses, no new art, named in K1's build log | `jake_pw_note` (Switch user on HB-FIN-02), `jake_assist` |
 | Ian Shaw | it | `ishaw` | Comms, standing | captured password (card plus drop box), served under `revealSecret` |
 
-**Registry:** `lena_rdp` (saved connection, `held: lena_rdp_file`); `ops_rdp` (saved connection for Ian, `connectsTo: ops_pc`, `held: ops_rdp_file`); `jake_pw_note` (`session: lena_pc`, `foundIn: lena_passwords_txt`); `jake_assist` (`held: jake_assist_code`, `endsOnGlobal: jake_ended_assist`).
+**Registry:** `lena_rdp` (saved connection, `held: lena_rdp_file`); `ops_rdp` (saved connection for Ian, `connectsTo: ops_pc`, `held: ops_rdp_file`); `jake_pw_note` (`session: lena_pc`, `foundIn: lena_passwords_txt`); `jake_assist` (`held: jake_assist_code`, `endsOnGlobal: jake_ended_assist`); from K5, `lena_token` (token for Lena, `connectsTo: lena_pc`, `proof: { foothold: jack_comms_port }`, `label: "HB-FIN-02 session cookie"`, `expiresMin: 2`).
 
 **Jake.** `jake_assist_code` (type `text_file`) is in Jake's `itemsHeld`. Posing as the helpdesk, one ink choice gives it with `#give_item:text_file:jake_assist_code`, shown once (gated on a global set by the item's `onPickup`). Two ways end the invite, both setting `jake_ended_assist`:
 - the timer: a mapping on Jake for `global_variable_changed:jake_contract_read` with condition `!globalVars.jake_ended_assist`, `onceOnly`, sets `jake_assist_armed`; `jake_contract_read` is set when `vendor_contract.txt` is opened (the mechanism K1's build log names, the same one the last task uses), so the invite cannot end before the one thing only it reaches is read; a top-level `timers` entry with `startOnGlobal: jake_assist_armed`, `delayMs: 90000` (long enough for R6's checks), condition `!globalVars.jake_ended_assist`, `showCountdown: false`, sets `jake_ended_assist` and `jake_timer_ended_assist`. On reload the timer resumes from its saved running time, so the invite still ends about 90 seconds after the contract was read, counting only time in play;
 - the ink: a later conversation, offered only once `jake_contract_read` is true, lets him grow suspicious and sets the same global.
-The README credentials section adds the rule: an invite that is the only route to something the mission needs must not end before that thing is reached; the validator cannot check it, so the picks page shows this stranding case beside the timer evidence (HB-FIN-03 with no route once the invite ends: remote blocked, office locked, `endedCredentials` grow-only, code given once).
+The README credentials section adds the rule: an invite that is the only route to something the mission needs must not end before that thing is reached; the validator cannot check it. The stranding case it guards against, which the read start avoids, is HB-FIN-03 with no route once the invite ends: remote blocked, office locked, `endedCredentials` grow-only, code given once.
 The bark is on a Jake mapping for `global_variable_changed:jake_timer_ended_assist` (so the ink ending, which has its own lines, gets no bark), in his NPC JSON, in the past tense: "I've ended that session. The helpdesk never calls me back." It waits behind the relay desktop, which the prompt sync of K3c closes within a second or so, so the player reads the end line, then hears Jake.
 
 **Earned secrets:**
@@ -691,14 +754,15 @@ The bark is on a Jake mapping for `global_variable_changed:jake_timer_ended_assi
 | Jake's password | `passwords.txt` on Lena's desktop | Switch user to Jake on HB-FIN-02 (R4) |
 | Ian's password | capture card plus drop box, served under `revealSecret` | SV-OPS-01 over the network (R5a) |
 | Jake's assist code | Jake's ink | HB-FIN-03 by relay (R6) |
+| Lena's session token (K5) | recorded by the drop box once planted | HB-FIN-02 through the drop box for two minutes (R12) |
 | Vendor contract | Jake's desktop, reached only by the relay | the last task (R6) |
 
-**Runs.** Run A is R1, R2, R3, R5a, R5b, R4, R6, R7a and R7b in that order, on one game, then R11. Run B starts a new game, plays R1, R2 and R3, opens Finance and gets the code, then Connects without signing out of HB-FIN-02, opens the contract and reloads with the relay desktop open (R8). Run C plays R1 and R2 and unplugs (R9). Run D (K4) starts a new game and never plants the drop box (R10).
+**Runs.** Run A is R1, R2, R3, R5a, R5b, R4, R6, R7a, R7b and (from K3d) R13 in that order, on one game, then R11. Run B starts a new game, plays R1, R2 and R3, opens Finance and gets the code, then Connects without signing out of HB-FIN-02, opens the contract and reloads with the relay desktop open (R8). Run C plays R1 and R2 and unplugs (R9). Run D (K4) starts a new game and never plants the drop box (R10). Run E (K5) starts a new game, plants the drop box and never takes the .rdp (R12).
 
 | Beat | What it proves | Slice |
 |---|---|---|
 | R1 | At Sam's keyboard (sticky note), take HB-FIN-02.rdp; toast "Saved connection found"; sign out at HB-DESK-01, so the only pivot later is Lena's session | K1, K3b |
-| R2 | Plant the drop box; HB-FIN-02 from the network view; Lena's tile tagged "Saved"; "Connect with HB-FIN-02.rdp" signs in; account bar line; the drop box view now lists `server_lan` through Lena's session | K2, K3a |
+| R2 | Plant the drop box; HB-FIN-02 from the network view; Lena's tile tagged "Saved" (and, from K5, "Token": the two-tag case); "Connect with HB-FIN-02.rdp" signs in; account bar line; the drop box view now lists `server_lan` through Lena's session | K2, K3a |
 | R3 | On Lena's desktop open passwords.txt; Jake's toast and "In file" tag appear only after it is opened; read door_code.txt | K1, K3a, K3b |
 | R5a | Still on Lena's desktop, take SV-OPS-01.rdp; read Ian's card; open SV-OPS-01 from the view: Ian's tile tagged "Captured" and "Saved", the greyed "Connect with SV-OPS-01.rdp" with the policy reason, the password filled; Sign in works | K2, K3a |
 | R5b | Connect the SV-OPS-01.rdp from the tray: the screen opens with the refusal under the greyed button | K3b |
@@ -709,125 +773,71 @@ The bark is on a Jake mapping for `global_variable_changed:jake_timer_ended_assi
 | R8 | (Run B) Reload with the relay desktop open: the relay session is gone, the .rdp session through the drop box is kept, Connect works again, and, once the contract is read, the timer ends the invite after about 90 seconds of play from that read, a reload during it not counting | K2, K3c |
 | R9 | Unplug the drop box: the .rdp session ends as a password session would | K2 |
 | R10 | No drop box: from Sam's keyboard session, Connect on the .rdp signs in from HB-DESK-01 | K4 |
-| R11 | Tampered-client checks of sections 7.4 and 9 | K2, K4 |
+| R11 | Tampered-client checks of sections 7.4, 9 and 10 | K2, K4, K5 |
+| R12 | (Run E) The token toast on planting; HB-FIN-02 from the view: Lena tagged "Token", "Connect with HB-FIN-02 session cookie" signs in, the bar says about 2 min left; after two minutes the desktop closes with "HB-FIN-02 session cookie expired. Your session on HB-FIN-02 ended."; Connect again: "HB-FIN-02 session cookie has expired."; a reload in between does not reset the time | K5 |
+| R13 | Open the capture log: one Sign-ins list holding Ian (Captured, Recorded, the value), Lena's .rdp (Saved, Found), Jake's password (In file, Found, "Type it from passwords.txt."), Jake's assist code (Assist, Given, greyed and ended) and, from K5, Lena's token (Token, Recorded); no row for `ops_rdp` until SV-OPS-01.rdp is taken; no duplicate row for Ian | K3d |
 
 ### 9.2 What each slice changes in existing scenarios
 
 | Slice | Changes |
 |---|---|
-| K0 | Remote screens in the two networks scenarios with sign-in hosts. Every remote screen in both loses the "Captured sign-ins" heading and gains tagged captured tiles and K0's lines. `test_access_networks`: tiles under the default, two new PCs, the `nla` policy, the capture card's text, P3's host list and PLAYTEST updates (section 5.4). `lab_physical_pentest`: section D1's lab answer; LW-DOOR01 (headless) shows its captured tiles tagged and the headless line under any answer; PLAYTEST lines 1028 and 1033. The build log has before and after shots of all three hosts |
+| K0 | Remote screens in the two networks scenarios with sign-in hosts. Every remote screen in both loses the "Captured sign-ins" heading and gains tagged captured tiles and K0's lines. `test_access_networks`: tiles under the default, two new PCs, the `nla` policy, the capture card's text, P3's host list and PLAYTEST updates (section 5.4). `lab_physical_pentest`: answer (i), the default, with no lab policy change; LW-DOOR01 (headless) shows its captured tiles tagged and the headless line under any answer; PLAYTEST lines 1028 and 1033. The build log has before and after shots of all three hosts |
 | K0 | No change in m01 to m10, `lab_social_engineering` or the other test scenarios: none has a foothold, so none opens a remote screen |
 | K1 | None (validator checks apply only where `credentials` or `accepts` is authored) |
 | K2 | None (no client calls the branch); the session readers change behaviour only for credential sessions |
-| K3a to K4 | Only scenarios that declare `credentials` (`test_access_keyring`). K4's `from` param is refused in every scenario without `credentials`; its live proof sends a typed `from: hot_desk_pc` sign-in to LW-DOOR01 on a new `lab_physical_pentest` game with no drop box and expects the refusal |
+| K3a to K5 | Only scenarios that declare `credentials` (`test_access_keyring`), and K3d's capture log heading ("Sign-ins") in `test_capture_log`. Under D8's option A, K3d also changes the captures view of both labs: heading "Sign-ins" and kind and source tags on their capture rows, nothing else until phase 2. K4's `from` param is refused in every scenario without `credentials`; its live proof sends a typed `from: hot_desk_pc` sign-in to LW-DOOR01 on a new `lab_physical_pentest` game with no drop box and expects the refusal |
 
-## 10. Phase 2 sketch: tokens
+## 10. Slice K5: tokens
 
-- `KINDS['token'] = { built: true, connects: true, routes: %w[proof_foothold], honours_lockout: false }`; registry fields `connectsTo`, `proof: { foothold }`, `expiresMin`.
-- Live while the proof foothold is held and until `expiresMin` game minutes after first use, on the server clock as the guest claim is timed. First use in `player_state['credentialClock'][credId]` (bounded by the registry, server-only).
-- The session's `foothold` is the proof foothold, so today's pruning ends it on loss; `session_route_up?` adds the expiry.
-- No new endpoint and no new answer shape; the client gains a kind label, a teaching line and "expires in".
-- `lab_social_engineering`'s `sofia_remote` maps onto this kind (D5).
+Base: main after K3c. Size: M. In phase 1 (D2 (b)).
 
-## 11. Phase 3 sketch: hashes and machine accounts
+A **session token** stands for a signed-in session, recorded off the wire by a foothold the player holds. It signs in as the account with no password, only through the foothold that recorded it, and only until it expires.
+
+- **Catalogue.** K5 sets `token` as section 3.6 shows and adds it to `DEFAULT_ACCEPTS`. Until K5, K1's validator answers a token entry with "not supported until K5".
+- **Registry.** `connectsTo` (required), `proof: { foothold }` (required; no other proof kind), `label` and `expiresMin` (section 3.3).
+- **Route `proof_foothold`.** The foothold route of 3.7 with the foothold fixed to the proof's: `host_reachable_through?`, power and `remote: "blocked"` as for a saved connection. Never `from`, `relay` or the keyboard. The session record is a foothold credential session (`foothold` is the proof foothold), so today's pruning ends it when the foothold goes, and it survives a reload until it expires.
+- **Expiry.** On the first accepted sign-in the server writes `player_state['credentialClock'][credId]`, its own time in ms (`server_now`, as guest sessions are timed, `npc_frustration.rb:385`): grow-only, at most 64 entries, server-only, never sent. The token has expired once `expiresMin` real minutes have passed since then, game open or not, as a real token would. `session_route_up?` refuses a token session once it has expired, so every scoped request through it answers 403 (the client's existing 403 path ends it) and `prune_unreachable_sessions!` ends it when it next runs. POST /login gains a step after 8: an expired token answers 422 `{ expired: true }`. Nothing the client clears revives it: the clock is server-only.
+- **GET /keyring.** A token entry carries `label`, `host`, `routes` (its proof foothold, when it reaches `connectsTo`), `sessionHeld`, `targetOff`, `remoteBlocked`, `expiresInS` (whole seconds left, once first used) and `expired: true` once over. Never a value: none exists.
+- **Client.** Tag "Token", full name "Session token" (8.5). On the remote sign-in screen reached through the proof foothold, the account's chosen line has "Connect with {label}" (K3a's button and rules); on any other screen the token is not shown. No item carries a token, so there is no tray Connect; the Sign-ins list (K3d) says where to use it. The desktop's account bar gains the second line "with a session token, about {n} min left", from `expiresInS`, updated each minute. A client timer from `expiresInS` closes the desktop when it runs out, through `linkDropped` with the reason `token_expired` and the 8.5 line; the server stays the authority. Find toast and first-use teaching toast as 8.5 (under D4 (d), with a capture log held: "New in your capture log: HB-FIN-02 session cookie (session token for Lena Fox).").
+- **Validator.** Errors: a token without `label` or `expiresMin`, `expiresMin` outside 1 to 240, a proof other than `foothold`. Warnings: a token whose proof foothold cannot reach `connectsTo`. Info line: a token that is the only route to something the mission needs (it expires, as the lockout info line of 6.3 says for saved connections).
+- **K-lock.** A token session locks as a foothold credential session (8.6); a fresh sign-in with the token unlocks it while it has not expired.
+- **Tests.** `test/controllers/break_escape/credential_token_test.rb`: the route through the proof foothold only (another held foothold reaching the PC is refused with the generic refusal); the clock written once, on first use; expiry by a stubbed `server_now`; 422 `expired`; a scoped request through an expired session answers 403; pruning on unplug; survival over reload; GET /keyring's `expiresInS` and `expired`; the clock never in an answer. `test/js/keyring-signin.test.mjs` and `keyring-client.test.mjs`: the Token tag, the button only on a screen through the proof foothold, the bar line, the timer close with its line, the expired toast. Validator fixtures for each error and warning.
+- **Live proof.** Beat R12 on a new game (Run E), with tampered-client checks: the token through another foothold, after expiry, and with a cleared client state.
+- **Sync.** `credentialClock` is server-only and bounded by the registry. The session record is as a foothold credential session. The login answer gains `expiresInS` for a token.
+- **Cheat.** No token value exists anywhere. The proof is a foothold the server holds, the clock is the server's and grow-only, and the route is fixed to the proof foothold, so a token never reaches further than the drop box that recorded it.
+
+## 11. Phase 2 sketch: the labs' granted sessions as tokens (D5 (a))
+
+- Both labs' hand-written `pc` items (`lab_social_engineering/scenario.json.erb:170-200`, `sofia_remote`, given by a timer on `phish_lord_foothold`; `lab_physical_pentest/scenario.json.erb:586`, `records_remote_session`, given on `kp_usb_foothold`) become token credentials, for new games only; saved games keep their stored scenario data.
+- Open design points for the phase 2 plan: neither lab's foothold is a network foothold (one is a phished executable, one a BadUSB), so a token there needs a proof kind `capture: <targetId>` (holds when the server's capture record has a proven foothold entry for the target) and a route for a session that comes back through the implant itself, a sink like the relay, since the social lab has no networks block; and LW-FIN-07 needs to be a sign-in PC, or the token needs a target with no `connectsTo` PC.
+- Under D8's option A the labs' Harvested Credentials view lists the tokens as rows from this phase.
+
+## 12. Phase 3 sketch: hashes and machine accounts
 
 - `KINDS['hash'] = { built: true, connects: false, honours_lockout: false }`, never in `DEFAULT_ACCEPTS`; registry field `acceptedOn`; the login check adds "this PC is in `acceptedOn`".
 - Used from the account's chosen line on the target's screen through the screen's route, as K3a's credential buttons are.
-- Machine accounts (D3): a top-level `machineAccounts` block read through one `account_for_id` that every session reader moves to, or hashes tied to NPC accounts only.
+- Machine accounts (D3 (a)): a top-level `machineAccounts` block (not `accounts`, which already names `social.mail.accounts` and a `loginPicker` value), read through one `account_for_id` that every session reader moves to. The reader audit comes first: `session_identity`, `session_for_client` (`game.rb:2400`), `host_row` (`network_access.rb:911`), `login_session_answer`, `account_npcs` (`game.rb:1896`), `resource_admits_player?` (`network_access.rb:1218`) and the profile checks each assume a session id is an NPC.
 - Same registry, proofs, policy field and POST branch.
 
-## 12. Format version
+## 13. Format version
 
-Phases 0 to 3 add optional fields only (`remoteScreen`, `accepts`, `credentials`, item `credential`) and rename and move nothing, so no `FormatUpgrade` step: each slice runs at whatever format is current when it lands (format 1 on main; steps 8b and 8c hold 2 and 3). Conflicts with 8b and 8c are textual (both edit `known_item_fields` and the schema's item definition); whichever lands second rebases. A step would be needed only for a later tidy of the sign-in fields into one block, or folding `creds.password` into the registry; this plan does neither.
+Phases 0 to 3 add optional fields only (`remoteScreen`, `accepts`, `credentials`, item `credential`, and in phase 3 `machineAccounts`) and rename and move nothing, so no `FormatUpgrade` step: each slice runs at whatever format is current when it lands (format 1 on main; steps 8b and 8c hold 2 and 3). Conflicts with 8b and 8c are textual (both edit `known_item_fields` and the schema's item definition); whichever lands second rebases. A step would be needed only for a later tidy of the sign-in fields into one block, or folding `creds.password` into the registry; this plan does neither.
 
-## 13. Decisions for the user
+## 14. Decisions taken
 
-Each decision goes on the picks page with its evidence. D1 is picked after K0's live proof and before K0 merges; D2 to D7 before K1 starts. K0's shots are real (from its live proof). Every shot of a K3a to K4 state is a static mock: one HTML file per state, built from the K0 screen's real CSS and the monitor frame, captured at the named sizes, and labelled "mock". Diagrams that need K1's dungeon graph are hand-drawn Mermaid until K1 exists. Sizes are 1400x1000 and 390x844 unless named.
+Taken by the user on 2026-11-14 from the picks page.
 
-Mocks to build: (m1) the chosen line with each sign-in kind's tag and button; (m2) the greyed refused saved connection with its reason; (m3) the tray's `[Connect, Examine]` menu; (m4) the relay desktop's bar with Disconnect; (m5) R10's "Remote sign-in from HB-DESK-01" header; (m6) a desktop file's dialog offering Connect beside its existing actions; (m7) the capture log's Captures section as one Sign-ins list with kind tags (D4 (d)); (m8) a Sign-ins item in the tray with its toast (D4 (b)); (m9) one sheet of every toast (find, teaching, Connect's outcomes, ended) as `gameAlert` draws them at 1400x1000 and 390x844, each with its D7 alternative beside it.
+- **D1 (a):** `remoteScreen` defaults to `"tiles"`; `lab_physical_pentest` takes (i), the default, with no lab policy change.
+- **D2 (b):** phase 1 also builds the `token` kind, in slice K5 (section 10).
+- **D3 (a):** machine accounts get a top-level `machineAccounts` block in phase 3, with the reader audit (section 12).
+- **D4 (d):** the capture log's Captures section becomes the Sign-ins list, one list with kind tags and no duplicate rows (slice K3d, section 8.7); find toasts use the capture log wording of 8.2; on screen the word is "Sign-ins", never "Keyring".
+- **D5 (a):** both labs' granted sessions convert to token credentials in phase 2, for new games only (section 11).
+- **D6 (a):** K4, signing in from a desktop, stays in phase 1.
+- **D7 (a):** section 8.5's tables and 8.2's toasts are approved as written; the token lines K5 adds are new and are reviewed with K5.
+- **Defaults of 1.1:** none overturned.
+- **D8 (open):** where else the Sign-ins list shows: A (one row model in the capture log and the labs' captures view, recommended), B, C or D (section 8.7). It blocks only K3d.
 
-### D1. The default remote screen: tiles or typed
-
-- (a) `"tiles"` by default, missions opt into `"typed"` on hardened PCs. (b) `"typed"` by default, tiles only where a scenario opts in.
-- Lab sub-question, `lab_physical_pentest` (all three captures read, `revealSecret: true`):
-
-  | Answer | LW-OPEN-07 over the drop box | Hot desk over the drop box |
-  |---|---|---|
-  | Main today | Hampshire, Lord and Pierce as captured tiles, all filled | the same three captured tiles, all filled |
-  | (i) take the default (`tiles` under (a)) | Pierce's PC tile, tagged, filled; Hampshire and Lord gone (the PC does not admit them) | its three PC tiles, each tagged and filled |
-  | (ii) a `typed` policy on both PCs | the three captured tiles, filled, and the NLA line | the same, and the NLA line |
-  | (iii) as (i), plus `remote: "blocked"` on LW-OPEN-07 | no remote sign-in (the row reads "Remote sign-in off") | as (i) |
-
-- Trade-off: tiles teach account enumeration on every exposed screen and make typed-username puzzles easier; typed teaches the control but hides the lesson unless a scenario opts in. In the lab, Pierce's filled one-click tile on LW-OPEN-07 exists on main today and stays under (i) and (ii); only (iii) removes it, and that is a lab design change (her PC can no longer be reached over the network at all), whereas the lab's scope text points her password at the hot desk (`scenario.json.erb:187`). (i) changes the least: the same accounts reach the same PCs, minus two tiles LW-OPEN-07 would refuse anyway.
-- Recommendation: (a), matching the q92 pick and the keyboard screen; a hardened policy is one line. For the lab, (i): it removes only accounts the PC refuses and needs no lab design change; (iii) belongs to a lab pass if the one-click on LW-OPEN-07 is unwanted. Under any answer the lab's remote screens change look (tagged tiles, no heading, K0's lines).
-- Blocks: K0's merge (one constant and, under (ii) or (iii), one policy in the lab).
-- Evidence:
-  - shots (real, K0): Sam's PC over the network before and after the capture cards; HB-OPS-02 (typed, the NLA line); HB-IT-01 (tagged Ian, no duplicate); HB-DOOR-01 (headless line); the main remote screen of Sam's PC today, for comparison; the short-window badge at 915x412;
-  - lab shots: LW-OPEN-07, the hot desk and LW-DOOR01 over the drop box with all three captures read, on main today and under (i), (ii) and (iii);
-  - JSON: the `finance` and `nla` policy snippets; the lab's policy under (ii) and under (iii); a GET /login_accounts answer over a foothold under `tiles`, under `typed` and for a headless host;
-  - list: the two networks scenarios with sign-in hosts and the PCs on each whose remote screen changes under (a) and (b); the scenarios K0 leaves alone.
-
-### D2. The phase 1 kinds
-
-- (a) `saved_connection` and `assist_invite`. (b) also `token` now.
-- Recommendation: (a). Tokens need the server clock and the foothold binding, and the content that wants them (the labs' items) needs its own yes (D5).
-- Blocks: K1 and K2.
-- Evidence:
-  - JSON: the `sofia_remote` item (`lab_social_engineering/scenario.json.erb:170-200`); the four registry entries of `test_access_keyring` (9.1); the inline item shape that is not accepted, beside the registry form, with the reason;
-  - tables: the kind catalogue (3.6) and the route table (3.7); K2's check list with and without the token rules;
-  - mocks: m1 (each sign-in kind's tag and button) and m4 (relay desktop).
-
-### D3. Machine accounts
-
-- (a) a top-level `machineAccounts` block (not `accounts`, which clashes with `social.mail.accounts` and the `loginPicker` value); (b) hashes tied to NPC accounts only.
-- Recommendation: (a), in phase 3, with the reader audit.
-- Blocks: phase 3 only.
-- Evidence:
-  - JSON: both shapes for one service account and one hash;
-  - list: the server readers that assume a session id is an NPC (`session_identity`, `session_for_client` `game.rb:2400`, `host_row` `network_access.rb:911`, `login_session_answer`, `account_npcs` `game.rb:1896`, `resource_admits_player?` `network_access.rb:1218`, the profile checks), with line numbers.
-
-### D4. A keyring view beyond the sign-in screens
-
-- (a) a Keyring section in the capture log, which only `test_capture_log` carries, so elsewhere this is (c); (b) a Keyring inventory item given when a scenario declares `credentials`; (c) the sign-in screens and Connect only; (d) the capture log's Captures section becomes the Keyring (one list with kind tags, no duplicate rows).
-- Recommendation: (c) for phase 1. The sign-in screen is where a credential is used, and "what does this machine accept?" is answered there; (a) and (d) reach one test scenario and duplicate the Captures and Sessions rows; (b) is new UI to justify with a mission that needs it. A further cost of (a), (b) and (d): the tray already labels grouped physical keys "Key Ring" (`systems/inventory.js:1208, 1223, 1238`), so a "Keyring" item or section would give one word two meanings; their mocks (m7, m8) and toasts use "Sign-ins" instead.
-- Blocks: nothing in K3a; K3b's toast wording.
-- Find toasts, side by side:
-  - under (c): as 8.2 ("Saved connection found: HB-FIN-02.rdp for Lena Fox on HB-FIN-02.", "Remote assist code (Jake): Connect it from your inventory to join Jake Brooks's session.", "Jake Brooks's password is in passwords.txt.");
-  - under (a) or (d): "New in your capture log: HB-FIN-02.rdp (saved connection for Lena Fox).", "New in your capture log: Jake Brooks's password, in passwords.txt.";
-  - under (b): "New in your Sign-ins: HB-FIN-02.rdp (saved connection for Lena Fox). Open Sign-ins in your inventory.".
-- Evidence:
-  - shots: `test_capture_log`'s log with a captured password (real);
-  - mocks: m1, m3, m7, m8, m9;
-  - text: the toasts above;
-  - list: the scenarios that carry a capture log.
-
-### D5. The labs' granted sessions, for new games
-
-- (a) not in phase 1; convert `lab_social_engineering`'s `sofia_remote` to a `token` credential in phase 2, for new games only; (b) convert it in phase 1 as an `assist_invite`; (c) leave it. For `lab_physical_pentest`'s item: (a) the same as the social lab; (b) leave it.
-- Recommendation: (a) for both. The honest kind for a phished foothold is a token, the social lab is played on Hacktivity, and saved games keep their stored scenario data either way.
-- Blocks: nothing in phase 1.
-- Evidence:
-  - JSON: both items with line numbers (`lab_social_engineering/scenario.json.erb:170-200`, `lab_physical_pentest/scenario.json.erb:586`); each item now and as a token credential, side by side;
-  - diagrams: their dungeon graph nodes today (real) and as credential nodes (Mermaid).
-
-### D6. Signing in from a desktop (K4)
-
-- (a) keep K4 in phase 1; (b) drop it, so a saved connection always needs a foothold.
-- Recommendation: (a). The explainer's worked pivot ("open the .rdp from Sam's desktop") is this slice; without it the found-on-a-desktop chain becomes "find the file, plant a box, come back". It is M and touches only the session readers already changed in K2.
-- Blocks: K4.
-- Evidence:
-  - diagrams (Mermaid): the explainer's pivot sequence (Sam's desktop, the .rdp, Lena's PC, Switch user to Jake) beside the K3-only flow (find, plant, return); the `test_access_keyring` beats R1 to R4 and R10 as a graph with and without the `from` edge;
-  - table: the `from` row of the route table (3.7), with the relay-source exclusion;
-  - mocks: m5 and m6.
-
-### D7. The on-screen text
-
-- (a) approve section 8.5's tables and 8.2's toasts as written; (b) take the alternative column where given; (c) reword named lines.
-- Recommendation: (a). Each teaching line names the control as well as the risk, the tags fit a tile whole, and the engine text is neutral about who the account holder is.
-- Blocks: K3a (tags and sign-in lines), K3b (toasts), K3c (relay lines); the K0 lines are part of D1. Placeholders until approved.
-- Evidence: the tables with both columns; each sign-in screen line's measured width at 306px beside its alternative's; mocks m1, m2, m4 and m9 carrying the lines in place; the K0 shots for the K0 lines and the "Captured" tag.
-
-## 14. Defaults settled in this plan
+## 15. Defaults settled in this plan
 
 - The keyring appears only in scenarios that declare `credentials`; keyboard screens show password entries only, and captured tags appear at a keyboard only in such a scenario.
 - One look for a captured account on every remote screen: its tile with a "Captured" tag; tags by kind, at most two per tile, each short enough to fit whole.
@@ -845,8 +855,10 @@ Mocks to build: (m1) the chosen line with each sign-in kind's tag and button; (m
 - Credential items use an existing type with a tray slot (`text_file`), never a notes or always-allowed type; `credential` is a server-only item field; a credential item may be placed anywhere the `held` scope covers; a declared grant draws a warning for a connecting kind, since it can be claimed at once.
 - Connect signs in directly when accepted; a saved connection's screen opens only for a policy or lockout refusal; Connect opens only from an uncovered tray and ignores clicks while running.
 - The inline item shape is not accepted.
+- The Sign-ins list has one row per credential: an implicit captured password never adds a row of its own, a captured and a found password for one account share a row, and a registry entry is listed only while GET /keyring lists it.
+- A token is used only through the foothold that recorded it and expires on the server's clock, game open or not.
 
-## Appendix A. Review history (2026-11-13, round 10 applied, loop closed)
+## Appendix A. Review history (2026-11-13, round 10 applied, loop closed; decisions applied 2026-11-14)
 
 For the next agent continuing the plan's review loop. Remove this appendix when the loop ends.
 
@@ -863,7 +875,8 @@ For the next agent continuing the plan's review loop. Remove this appendix when 
 - **Round 9.** Counts: server B0 M2 m5 n3 (633787d92), UX B0 M2 m8 n7 (27a5b0e85) (4). All four majors held on re-check; none rejected. Evidence: `network_access.rb:1129-1137` (`networks_reachable_from` is a plain link walk with no session needed), `:1081-1112` (the foothold pivot walk needs a session per network crossed), `game.rb:2141-2182` (no `credentials` gate on the typed branch); slice 6 `lock_session!` on 20a8a83a7 refuses non-password sessions because the password is the only way back; `game.rb:2914-2924` (a fresh sign-in drops `locked`); the beat order R4 before R6 with `jake_pc` in Finance; the UX reviewer's calibrated replica (reproduces today's 364/350) for the Switch user heights. Applied: K4 judges the `from` target by `from_reach` (the pivot walk seeded from the source network) and answers `from` only in a scenario with `credentials`, with a lab tampered-client check; K-lock lets a fresh sign-in with the same credential unlock (Connect re-signs in, `sessionHeld` false while locked), dropping "no credential-based unlock"; HB-FIN-03 moves into a Jake's office that stays locked, with `vendor_contract.txt` as the relay's own payoff and the last task; on remote Switch user screens the "Signed in now" and remote lines merge and the label slabs go at x2 and in the short window, with new K0 fixtures and a 35px (x2) and 20px (915x412) target. **Not applied, round 9 minors and nits** (see the R9 files): server m1 (Connect on the invite replaces a keyboard password session), m2 (the claim guard change is tagged K3c but K2 tests it), m3 (`endedRelayPcIds` sent once; a lost answer leaves the relay desktop open), m4 (a locked session not excluded as a `from` source; `from_reach` now excludes it on networks crossed, the source itself still open), m5 (`settle_session_at_keyboard!` would strip `from` from a typed `from` session); n1 to n3. UX m1 to m8 and n1 to n7.
 - **Round 10 (the last round).** Counts: server B0 M2 m6 n5 (729fc6252), UX B0 M2 m10 n6 (4e33fe3a3) (4). All four majors held; none rejected. Evidence: `network_access.rb:1089-1104` (the pivot walk reads `reach_session_hosts` and never calls `session_route_up?` on a pivot, so a `from_reach` that did would recurse); `held` needs the item in the inventory, so a desktop Connect without a take fails K2 step 2; the timer armed on the first relay desktop could end the invite before `vendor_contract.txt` was read, stranding the last task (remote blocked, office locked, `endedCredentials` grow-only); `pc-sessions.js:88-93` `unplugEndedMessage` is the only text `linkDropped` shows, so a pruned session would say "Unplugged". Applied: `from_reach` is `reach_walk_uncached` copied and seeded from the source network, with access and structural variants named per caller and the cache key; the desktop Connect takes the file first (mock m6 reworded to the real dialog); the timer and the ink end arm only on `jake_contract_read`, with a README rule and the stranding case for the picks page; `linkDropped` gains a reason and 8.5 a "route ended" line. Round 9's four cheap server minors were applied before round 10 (46bdbafb7).
 - **Convergence call.** B+M by round: 15, 12, 13, 13, 11, 5, 10, 4, 4, 4. Rounds 9 and 10 each found 4, so the plan did not reach the 2-or-fewer bar; round 10 was the last round by the brief. Every blocker and major from every round is applied; **no item above minor is open.** The scope cut was not taken.
-- **Known open items for the build to settle (all minor or nit; see the R9 and R10 files).** Server R10: m1 `reach_cache_key` holds only session ids, so a relay or lock change needs its own term (latent today); m2 K-lock's `sessionHeld: false` while locked must be written into GET /keyring's rule, not assumed; m3 a `from` source locked after sign-in has no rule, and no slice owns the lock checks if K4 lands before slice 6; m4 a `from` session is not pruned when its target network leaves structural reach; m5 the bootstrap `sessions` answer should also leave out `from` sessions the same request prunes; m6 K1's notepad forgery test must assert the stored item has no `credential`. UX R10: the "Assist" tag is listed but never drawn (drop it from the tag table); the short-window badge for an account with both a key and a plug credential; K0's three-tag fixture cannot exist before K3a; ellipsis cuts tested in jsdom and flagged by the `scrollWidth` rule; the assist teaching line addresses the attacker; `from` sessions need merged-slab wording and one preposition for the route; with one task, R3 to R5 show no `verify-run` progress; D4 (a) has no mock; the merged slab reads as if the holder came through the drop box and drops the username; the 915x412 Switch user baseline (322 of 306 in round 9, 306 of 306 in round 10) to be re-measured in K0. Server R9 m1 (Connect on an invite replaces a keyboard password session) and UX R9 m1 to m8 that R10 did not repeat.
+- **Decisions applied (2026-11-14).** D1 (a) with the lab on (i); D2 (b) as a new slice K5 (section 10), with `label`, `expiresMin`, route `proof_foothold` and `credentialClock`; D3 (a) in section 12; D4 (d) as slice K3d (section 8.7), with the capture log toast wording in 8.2 and a capture log in `test_access_keyring`; D5 (a) in section 11, with its open design points; D6 (a); D7 (a). Section 14 (13 before the renumbering) rewritten as "Decisions taken"; the picks evidence lists and mock list removed. The invite timer: section 1.1 said it starts when the relay desktop first opens, 9.1 when `vendor_contract.txt` is read; the picks page offered "start when the relay desktop opens" as a change from the read start, and it was not taken, so 1.1 now matches 9.1 (the read). The user's question on D4 ("can the social media captures and the sign-ins be combined?") is answered by 8.7's row rules and D8, open. Minors the picks settle: UX R10 "the Assist tag is never drawn" (it is drawn in the Sign-ins list, kept); "D4 (a) has no mock" (moot); "the assist teaching line addresses the attacker" (kept, D7 (a)).
+- **Known open items for the build to settle (all minor or nit; see the R9 and R10 files).** Server R10: m1 `reach_cache_key` holds only session ids, so a relay or lock change needs its own term (latent today); m2 K-lock's `sessionHeld: false` while locked must be written into GET /keyring's rule, not assumed; m3 a `from` source locked after sign-in has no rule, and no slice owns the lock checks if K4 lands before slice 6; m4 a `from` session is not pruned when its target network leaves structural reach; m5 the bootstrap `sessions` answer should also leave out `from` sessions the same request prunes; m6 K1's notepad forgery test must assert the stored item has no `credential`. UX R10: the short-window badge for an account with both a key and a plug credential; K0's three-tag fixture cannot exist before K3a; ellipsis cuts tested in jsdom and flagged by the `scrollWidth` rule; `from` sessions need merged-slab wording and one preposition for the route; with one task, R3 to R5 show no `verify-run` progress; the merged slab reads as if the holder came through the drop box and drops the username; the 915x412 Switch user baseline (322 of 306 in round 9, 306 of 306 in round 10) to be re-measured in K0. Server R9 m1 (Connect on an invite replaces a keyboard password session) and UX R9 m1 to m8 that R10 did not repeat.
 - **Next step (was, before round 9).** Apply the round 8 minors above (the foothold-to-relay desktop request and the prune after a relay sign-in first), then round 9 with fresh reviewers on the same two briefs (plan body only, no Appendix A, no review files). Converged at the first round with B+M of 2 or fewer, applied. If round 9 is not better than round 8's 4, consider the scope cut: phase 1a is K0, K1, K2 without the relay branch, and K3a; phase 1b is K3b, K3c, K4 and K-lock under their own plan.
 - **Files touched:** `docs/achitechture/CREDENTIAL_KEYRING_PLAN.md` and the review files beside it. Branch `plan/keyring` in worktree `.claude/worktrees/p-keyring-plan`.
 - **Gotchas:** HB-DOOR-01 and LW-DOOR01 are headless; the capture log is carried only by `test_capture_log`; PUT /sync_state loads no `scenario_data`; bootstrap writers run only when `bootstrap_state_needs_write?`; `notes` items never take a tray slot; accounts must be room NPCs; timers run in real time and resume on reload; UI slice 6 is not on main; commit with explicit paths, UK English, no em or en dashes, no model names in repo files.
