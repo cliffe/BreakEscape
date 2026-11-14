@@ -20,6 +20,7 @@ require 'json'
 require 'erb'
 require_relative File.expand_path('../../lib/break_escape/author_notes', __dir__)
 require_relative File.expand_path('../../lib/break_escape/format_upgrade', __dir__)
+require_relative File.expand_path('../../lib/break_escape/scenario_binding', __dir__)
 
 FU = BreakEscape::FormatUpgrade
 
@@ -36,7 +37,7 @@ end
 
 def render_text(text)
   srand(1)
-  JSON.parse(ERB.new(text).result(binding))
+  JSON.parse(BreakEscape::ScenarioBinding.render(text))
 end
 
 def transform(data)

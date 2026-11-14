@@ -3358,3 +3358,109 @@ A server-side sweep (every strip, filter, WITHHELD list and delete) found more s
   today, so the scan fails closed on them.
 The node declared-top-level test asserts every mark. The validator exits 0 on m01, m02, lab_physical_pentest
 and test_access_networks.
+
+## Step 5. One ScenarioBinding in lib/ for every renderer, and a JSON-safe ERB helper (build/hard-step5)
+
+Built on main at `cb259dbdf`. phone-calls is merged into main; **build/phone-calls-writing is still
+unmerged and conflicts with `mission.rb`**: per the plan (section 5, order item 4, and Risks), whoever
+merges it after step 5 redoes the binding move in `mission.rb` (it changed `generate_scenario_data` and
+deleted the inline `ScenarioBinding` class, which step 5 also touches).
+
+### What changed
+
+- **New `lib/break_escape/scenario_binding.rb`** (`BreakEscape::ScenarioBinding`), plain Ruby. It carries
+  the server's binding behaviour as the truth (`vm_object`, `flags_for_vm`, `flags_for_vm_slice`,
+  `vm_flags_json` returning the `{ "flag_1": … }` Hash with the `'{}'`-on-missing rule), plus:
+  - `self.render(template_text, vm_context = {})`: builds a fresh binding inside the call (so a seed set
+    immediately before is honoured for the `@random_pin` draw) and returns the rendered JSON **string**;
+    callers `JSON.parse` it themselves. Uses the server's ERB options (no trim mode).
+  - `json(value)`: `value.to_json`, for `"title": <%= json(title) %>`.
+  - Requires `securerandom`, `json`, `erb` **and `base64`**. The plan listed the first three; `base64` is
+    added because several templates (m01, m03, m04) define an inline `base64_encode` that calls
+    `Base64.strict_encode64` and rely on the host having loaded `base64` (the server through Rails; each old
+    tool through its own `require`). m08 self-requires it inside the template. `base64` is a Ruby stdlib,
+    already required elsewhere (`tts_service.rb`), so this is not a new gem. Without it the standalone
+    callers (dungeon graph, check_door_alignment, the m08 ink route) would raise on those templates.
+- **`app/models/break_escape/mission.rb`**: deleted the inline `ScenarioBinding` class;
+  `ScenarioBinding = ::BreakEscape::ScenarioBinding` keeps `Mission::ScenarioBinding` working for the TTS
+  readers and the swap tool; `generate_scenario_data` now calls `ScenarioBinding.render`.
+- **`scripts/validate_scenario.rb`**: deleted its copy; `require_relative '../lib/break_escape/scenario_binding'`;
+  `render_erb_to_json` calls `BreakEscape::ScenarioBinding.render`. The validator now sees the server's Hash
+  for a top-level `flags` block for the first time.
+- **`scripts/generate_dungeon_graph.rb`**: deleted its copy; `require_relative` and `render`. Its old copy's
+  `vm_flags_json` returned the fallback array; it now matches the server.
+- **`tools/pass2/render.rb`** and **`scenarios/lab_tesseract_trials/tools/render_scenario.rb`**:
+  `require_relative` the lib and render through it. Both **lose `trim_mode: '-'`** (no template uses `-%>`).
+  pass2 also drops its drifted local `vm_object` (which merged a `system_name` key the server never adds).
+- **`scripts/check_door_alignment.py`** (embedded Ruby), the four **ink-route `*.js`**
+  (m02, m05, m07, m08) and **`scripts/ink_runtime_check/sis02_multicall.mjs`**: the embedded render is now the
+  one-liner `ruby -r <repo>/lib/break_escape/scenario_binding.rb -e 'print BreakEscape::ScenarioBinding.render(File.read(ARGV[0]))'`.
+  check_door_alignment loses its `trim_mode: '-'` too.
+- **`test/js/validator-office-presets.test.mjs`** and **`test/js/validator-action-condition.test.mjs`**: the two
+  bare `ERB.new(...).result` renders now go through the lib binding.
+- **`README_scenario_design.md`**: added the `json(value)` row to the ERB Template Helpers table.
+
+### Render equivalence
+
+Method: a one-off diff (`scratchpad/equiv.rb`) renders every `scenarios/*/scenario.json.erb` twice: once with
+the validator's **former** binding (`vm_flags_json` -> plain array) and once with the new
+`BreakEscape::ScenarioBinding`, with `SecureRandom.alphanumeric`/`hex` stubbed to constants and `srand(4242)`
+set before each render, so both are deterministic and drawn from the same sequence. Parsed JSON compared with `==`.
+
+Result over 179 templates:
+- **167 identical.**
+- **11 differ only in the top-level `flags` value**: exactly the `vm_flags_json` users (m01-m10 and
+  test_simple_vm_flag). Old rendered the inner VM flag value as a JSON array; new renders it as the server's
+  `{ "flag_1": … }` Hash. This is the intended fix (the validator now matches the server), the one documented
+  exception.
+- **1 (lab_tesseract_trials)** differs in `rooms`, but it is **inherently non-deterministic**, not a step-5
+  regression: the template generates AES/RSA key material via `SecureRandom.random_bytes(16)` and OpenSSL
+  `public_encrypt` with OAEP padding (randomised internally). Two renders with the **same** new binding also
+  differ in the same five rooms, so the binding change contributes nothing to it.
+
+### Tests
+
+- New Rails unit test `test/unit/break_escape/scenario_binding_test.rb`: each helper (`vm_object` standalone /
+  ip-override / hacktivity, `flags_for_vm`, `flags_for_vm_slice`, `vm_flags_json` with/without context and the
+  `'{}'` case), `json` with quotes, backslashes, non-ASCII, newline, number and nil, `render` returns a string,
+  `render` builds the binding after a caller seed, and `Mission::ScenarioBinding` is the lib class.
+- New node test `test/js/scenario-binding-callers.test.mjs`: the embedded caller one-liner renders m01 (which
+  draws no random values, so it renders deterministically) with the server Hash `flags` shape; pass2/render.rb
+  renders m01 identically to the one-liner; check_door_alignment.py loads m01 through the shared binding.
+- Updated `test/js/validator-office-presets.test.mjs` and `test/js/validator-action-condition.test.mjs`.
+
+Results (builder run, no lock):
+- `test/unit/break_escape/scenario_binding_test.rb`: 12 runs, 20 assertions, 0 failures.
+- Node: `scenario-binding-callers.test.mjs` 3/3, `validator-action-condition.test.mjs` 4/4,
+  `validator-office-presets.test.mjs` 6/6.
+- Validator (`--no-graph`) over all 53 `scenarios/test_*` scenarios: every one exits 0 (no unlisted
+  `❌`); m01 exits 0 (0 errors, 13 warnings). The dungeon graph of a flags user (test_simple_vm_flag)
+  regenerated byte-identically to the committed file (the graph does not read the top-level flags shape).
+
+### Live proof
+
+Keyless server by hand on port 3676 (`BREAK_ESCAPE_STANDALONE=true`, no `GEMINI_API_KEY`, RBENV 2.7.8,
+`bin/rails server`, headless), PID 120436, from the branch worktree sharing the development database.
+- `tools/playtest/new-game.rb m08_the_mole` (ERB-heavy: base64_encode, random helpers, vm_flags_json) ->
+  GAME_ID 4665, 4 VM flags rendered (`safetynet_gitlist_server:4`), PREFLIGHT OK.
+- `tools/playtest/new-game.rb ca00_first_play` (plain: no ERB) -> GAME_ID 4667, no VM flags, PREFLIGHT OK.
+- Bootstrap route `GET /break_escape/games/<id>/scenario` on :3676: game 4665 -> HTTP 200 (36 KB),
+  game 4667 -> HTTP 200 (5 KB). The branch server renders, filters and serves the bootstrap end to end.
+- Bootstrap unchanged against main's render: the server's render logic is byte-identical to main
+  (`cb259dbdf`). Diffing the ScenarioBinding method bodies (initialize, vm_object, flags_for_vm,
+  flags_for_vm_slice, vm_flags_json) between main's `mission.rb` and the lib leaves only two additive
+  lines, the `json` helper (`value.to_json`) and its comment; no template calls `json()` yet, so no
+  current render changes. The 11-flags validator difference does not touch the server: main's server
+  `vm_flags_json` already returned the `{ "flag_1": … }` Hash.
+- Server stopped by PID 120436; port 3676 confirmed down; process gone. :3000 never touched.
+
+### Sync
+
+No runtime change (the server's output is unchanged by construction).
+
+### Step 5 review R1 minor 1: m01 to m10 flag triage
+
+The validator (`--no-graph --skip-ink`) was run on every m01 to m10 template on this branch and on a base at main
+cb259dbdf, counting lines that mention flags (the check_vm_flags_load_bearing warnings among them). Counts are
+identical on both sides and every run exits 0: m01 7, m02 3, m03 1, m04 4, m05 4, m06 0, m07 3, m08 0, m09 3,
+m10 0. The array to Hash change in the validator's flags hides no flag-station or flag-lock warning.

@@ -167,12 +167,7 @@ module BreakEscape
       # proven: false and stamped later (stamp_proven_captures!) once the evidence reaches the
       # server. A foothold, and a credential with no evidence to wait on, is proven at once.
       proven = capture_evidence_holds?(chosen[:fields], scenario: scenario)
-      # Branch review R1 n2: mark an unproven entry phishGated when a sync can advance its evidence
-      # (it waits on a landing page's part 2 evidence). An entry unproven only because of a part 3
-      # proof carries no mark, so phish_gated_unproven_captures? stays false and the sync step skips
-      # the mailbox fingerprint walk. A server-only field, never served to the client.
-      phish_gated = !proven && !phish_evidence_page_for(chosen[:fields], scenario).nil?
-      entry = store_capture_entry(record, chosen[:fields], proven: proven, phish_gated: phish_gated)
+      entry = store_capture_entry(record, chosen[:fields], proven: proven)
       { result: :recorded, entry: entry }
     end
 
@@ -250,6 +245,17 @@ module BreakEscape
       credibility = verdict ? verdict[:credibility] : nil
 
       store = (player_state['seLandingPages'] ||= {})
+      existing = store[page_id]
+      # A+B R2 minor 1: a reload re-drive must never downgrade a recorded build. The reload re-drive
+      # marks its body redrive:true; the server trusts that flag only in the downgrade-refusing
+      # direction, so a client global that drifted weaker than a correct server build cannot launder
+      # a weaker verdict over it on reload. A normal rebuild (no flag) stays last-wins, so an honest
+      # deliberate weaken, and an honest improve-after-weak (live case f), both still apply.
+      if input['redrive'] == true && existing.is_a?(Hash) && existing['meetsThreshold'] == true &&
+         redrive_downgrade?(existing, meets, credibility)
+        return { result: :already, entry: existing }
+      end
+
       entry = {
         'pageId' => page_id, 'targetId' => target_id.to_s,
         'choices' => normalise_build_choices(choices),
@@ -258,6 +264,16 @@ module BreakEscape
       }
       store[page_id] = entry
       { result: :recorded, entry: entry }
+    end
+
+    # Whether a re-drive's recomputed verdict is weaker than the recorded build (A+B R2 minor 1):
+    # the new verdict fails the threshold, or scores a lower credibility than the recorded one. An
+    # equal or stronger re-drive replaces in place (a no-op for identical choices).
+    def redrive_downgrade?(existing, meets, credibility)
+      return true unless meets
+
+      existing_cred = existing['credibility']
+      existing_cred.is_a?(Numeric) && credibility.is_a?(Numeric) && credibility < existing_cred
     end
 
     # Route-facing wrapper (POST se/landing_page): validate, record, save, and answer the shape
@@ -479,6 +495,15 @@ module BreakEscape
     # through the candidate match and keeps its stored `at`; a heard share in sharedLogins is
     # recorded from the server's composition; any other target is dropped. First wins. Returns
     # whether anything changed.
+    #
+    # A phish target's capture is never proven on the client global alone: it follows the same
+    # server-store path as a live capture, recorded proven only when the re-derived build evidence
+    # holds (capture_evidence_holds?). In the bootstrap pass the stores are usually still empty at
+    # this point, so the entry is recorded unproven; the same locked pass then runs
+    # migrate_legacy_phish_evidence! (fills seLandingPages / sePhishSends) and stamp_proven_captures!
+    # (stamps it), so an honest legacy save is proven on its first bootstrap and a weak or forged one
+    # is withheld (run_bootstrap_writers! order, game.rb). A non-phish capture has no server
+    # re-derivation to defer to, so it keeps the old-rules grandfather (proven: true).
     def migrate_legacy_captures!(scenario:)
       globals = player_state['globalVariables']
       legacy = globals.is_a?(Hash) ? globals['se_captures'] : nil
@@ -504,7 +529,12 @@ module BreakEscape
           next if candidates.empty?
 
           chosen = pick_capture_candidate(candidates, entry)
-          stored = store_capture_entry(record, chosen[:fields], proven: true)
+          proven = if CaptureModel.phish_target_ids(scenario).include?(target_id)
+                     capture_evidence_holds?(chosen[:fields], scenario: scenario)
+          else
+                     true
+          end
+          stored = store_capture_entry(record, chosen[:fields], proven: proven)
           stored['at'] = at if at.is_a?(Numeric)
         end
       end
@@ -628,12 +658,12 @@ module BreakEscape
     # nothing, so it always holds. For a credential:
     #   part 2 (phish): when the entry's address is a landing page's capture address, or the
     #     target is a phish target with exactly one page secret (the single-secret fallback), the
-    #     server must hold that page's record (built, meetsThreshold, victim.submitted all true)
-    #     and a sent message that landed to this target carrying one of the page's link kits,
-    #     either in the stored mailState or in extra_sent (the request's own sent messages);
+    #     server must hold that page's build record (built, meetsThreshold) in seLandingPages and a
+    #     landed send to this target carrying one of the page's link kits in sePhishSends, both
+    #     server-owned stores written only by the two gated routes (plan section 6);
     #   part 3 (proofs): when the target's capture proofs are not empty, one of them must hold.
     # Every other credential holds.
-    def capture_evidence_holds?(entry, scenario:, extra_sent: [])
+    def capture_evidence_holds?(entry, scenario:)
       return true unless entry.is_a?(Hash)
 
       kind = entry['kind'] || 'credential'
@@ -642,7 +672,7 @@ module BreakEscape
       target_id = entry['targetId']
       page_id = phish_evidence_page_for(entry, scenario)
       if page_id
-        return false unless phish_page_evidence_holds?(page_id, target_id, scenario, extra_sent)
+        return false unless phish_page_evidence_holds?(page_id, target_id, scenario)
       end
 
       # Part 3 (6b review n1): a non-empty proof list must have one proof hold, even for an account
@@ -659,57 +689,21 @@ module BreakEscape
       true
     end
 
-    # A cheap, bounded, scenario-free fingerprint of the part 2 phish evidence a sync_state request
-    # can advance: each landing page's built / meetsThreshold / victim.submitted flags, and the set
-    # of landed sent-mail (targetId, kitId) pairs, from stored state plus the request's own sent
-    # messages. It needs no scenario_data, so the sync step can compare it before and after the
-    # merge and skip the scenario load when a request brought no new phish evidence (6b review m1:
-    # a forged, never-provable unproven entry no longer forces the load on every later sync). The
-    # string is bounded by the declared pages and declared phish targets, so it never grows without
-    # bound; it is computed only, never stored.
-    def phish_evidence_fingerprint(extra_sent: [])
-      pages = player_state.dig('globalVariables', 'se_landing_pages')
-      page_part = if pages.is_a?(Hash)
-        pages.keys.sort.map do |pid|
-          rec = pages[pid]
-          next pid.to_s unless rec.is_a?(Hash)
-
-          victim = rec['victim']
-          submitted = victim.is_a?(Hash) && victim['submitted'] == true
-          "#{pid}:#{rec['built'] == true ? 1 : 0}#{rec['meetsThreshold'] == true ? 1 : 0}#{submitted ? 1 : 0}"
-        end.join(',')
-      else
-        ''
-      end
-
-      keys = []
-      add_sent_key = lambda do |msg|
-        next unless msg.is_a?(Hash) && msg['folder'] == 'sent' && msg['landed'] == true
-
-        link = msg['link']
-        keys << "#{msg['targetId']}/#{link.is_a?(Hash) ? link['kitId'] : nil}"
-      end
-      each_stored_sent_message.each(&add_sent_key)
-      Array(extra_sent).each(&add_sent_key)
-
-      "#{page_part}|#{keys.uniq.sort.join(',')}"
-    end
-
     # entry['proven'] once stamped, else whether the evidence holds now (an honest capture whose
     # evidence arrived a moment after it is served the instant the evidence is there).
-    def capture_revealable?(entry, scenario:, extra_sent: [])
+    def capture_revealable?(entry, scenario:)
       return false unless entry.is_a?(Hash)
       return true if entry['proven'] == true
 
-      capture_evidence_holds?(entry, scenario: scenario, extra_sent: extra_sent)
+      capture_evidence_holds?(entry, scenario: scenario)
     end
 
-    # Stamp proven: true on each stored entry whose evidence now holds, counting extra_sent (the
-    # request's own sent messages). The proof records (plantedItems, droppedItems, signedInPcs,
-    # gainedFootholds) only grow, so a proof that held keeps holding; the stamp matters for the
-    # page evidence, which the client can change. No save; the caller saves. Returns whether
-    # anything changed.
-    def stamp_proven_captures!(scenario:, extra_sent: [])
+    # Stamp proven: true on each stored entry whose evidence now holds. The proof records
+    # (plantedItems, droppedItems, signedInPcs, gainedFootholds) only grow, so a proof that held
+    # keeps holding; the phish evidence now lives in the two server-owned stores, written only by
+    # the two gated routes (each of which re-stamps), and the bootstrap stamp picks up a migrated
+    # legacy save. No save; the caller saves. Returns whether anything changed.
+    def stamp_proven_captures!(scenario:)
       record = player_state['seCaptures']
       return false unless record.is_a?(Hash)
 
@@ -717,7 +711,7 @@ module BreakEscape
       record.each_value do |entry|
         next unless entry.is_a?(Hash)
         next if entry['proven'] == true
-        next unless capture_evidence_holds?(entry, scenario: scenario, extra_sent: extra_sent)
+        next unless capture_evidence_holds?(entry, scenario: scenario)
 
         entry['proven'] = true
         changed = true
@@ -741,18 +735,6 @@ module BreakEscape
     def unproven_captures?
       record = player_state['seCaptures']
       record.is_a?(Hash) && record.each_value.any? { |entry| entry.is_a?(Hash) && entry['proven'] != true }
-    end
-
-    # Cheap (player_state alone): whether any unproven entry waits on part 2 phish evidence a
-    # sync_state request can advance (phishGated, set at record time). An entry unproven only
-    # because of a part 3 proof carries no mark, so it returns false and the sync step skips the
-    # fingerprint walk (branch review R1 n2). Migrated legacy entries are always stored proven, so
-    # they never reach here unproven.
-    def phish_gated_unproven_captures?
-      record = player_state['seCaptures']
-      record.is_a?(Hash) && record.each_value.any? do |entry|
-        entry.is_a?(Hash) && entry['proven'] != true && entry['phishGated'] == true
-      end
     end
 
     private
@@ -924,49 +906,24 @@ module BreakEscape
       secret_pages.size == 1 ? secret_pages.first : nil
     end
 
-    # Whether the server holds the page record and the landed sent mail part 2 needs.
-    def phish_page_evidence_holds?(page_id, target_id, scenario, extra_sent)
-      pages = player_state.dig('globalVariables', 'se_landing_pages')
-      rec = pages.is_a?(Hash) ? pages[page_id] : nil
-      return false unless rec.is_a?(Hash)
-      return false unless rec['built'] == true && rec['meetsThreshold'] == true
-
-      victim = rec['victim']
-      return false unless victim.is_a?(Hash) && victim['submitted'] == true
+    # Whether the two server-owned stores hold the part 2 evidence (plan section 6). The gate reads
+    # only seLandingPages (the build route's record) and sePhishSends (the send route's record),
+    # never the client's se_landing_pages global or mailState: the page must be recorded built with
+    # the server's own meetsThreshold, and a send that landed to this target carrying one of the
+    # page's authored link kits must be recorded. The derived victim submission is exactly these two
+    # server facts holding together (page meetsThreshold and send landed).
+    def phish_page_evidence_holds?(page_id, target_id, scenario)
+      page = player_state.dig('seLandingPages', page_id)
+      return false unless page.is_a?(Hash) && page['built'] == true && page['meetsThreshold'] == true
 
       info = CaptureModel.page_evidence_kits(scenario)[page_id]
       kit_ids = info ? Array(info[:kits]) : []
       return false if kit_ids.empty?
 
-      matcher = lambda do |msg|
-        msg.is_a?(Hash) && msg['folder'] == 'sent' && msg['landed'] == true &&
-          msg['targetId'].to_s == target_id.to_s &&
-          msg['link'].is_a?(Hash) && kit_ids.include?(msg['link']['kitId'])
+      Array(player_state['sePhishSends']).any? do |_key, send|
+        send.is_a?(Hash) && send['landed'] == true &&
+          send['targetId'].to_s == target_id.to_s && kit_ids.include?(send['kitId'])
       end
-      return true if each_stored_sent_message.any?(&matcher)
-
-      Array(extra_sent).any?(&matcher)
-    end
-
-    # Every stored mail message, as an Array of hashes. Memoised per request against the identity
-    # of the mailboxes hash (6b review n2): several capture_revealable? / stamp checks in one
-    # request, or several unproven entries, reuse one scan instead of walking the whole mailbox each
-    # time. merge_mail_state! replaces player_state['mailState'] with a fresh object, so a merge
-    # within the request changes the mailboxes identity and the memo recomputes.
-    def each_stored_sent_message
-      mail = player_state['mailState']
-      boxes = mail.is_a?(Hash) ? mail['mailboxes'] : nil
-      return [] unless boxes.is_a?(Hash)
-
-      return @stored_sent_message_memo[1] if @stored_sent_message_memo && @stored_sent_message_memo[0].equal?(boxes)
-
-      list = []
-      boxes.each_value do |box|
-        msgs = box.is_a?(Hash) ? box['messages'] : nil
-        Array(msgs).each { |m| list << m }
-      end
-      @stored_sent_message_memo = [boxes, list]
-      list
     end
 
     def capture_now_ms
@@ -993,15 +950,11 @@ module BreakEscape
 
     # Store the candidate's fields whole (nothing authored is cut), with the server's `at` and
     # `proven`. Returns the stored entry.
-    def store_capture_entry(record, fields, proven:, phish_gated: false)
+    def store_capture_entry(record, fields, proven:)
       entry = { 'targetId' => fields['targetId'], 'kind' => fields['kind'] }
       %w[roleLabel address host note].each { |k| entry[k] = fields[k] if fields.key?(k) }
       entry['at'] = capture_now_ms
       entry['proven'] = proven
-      # Branch review R1 n2: a server-only hint that this unproven entry waits on part 2 phish
-      # evidence a sync can advance. Only stored when true (keeps the record small); captures_for_client
-      # never copies it, so it never reaches the browser.
-      entry['phishGated'] = true if phish_gated
       record[fields['targetId']] = entry
       entry
     end

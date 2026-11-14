@@ -55,17 +55,9 @@ const NPC_OF = { briefing: 'opening_briefing_cutscene', phone: 'agent_0x99', arc
   hollis: 'ray_hollis', elena: 'elena_rodriguez', mercer: 'james_mercer', park: 'thomas_park', debrief: 'closing_debrief' };
 
 // ---- render the scenario (validator stubs: no VM context) ----
-const RUBY = `
-require 'erb'; require 'json'
-class R
-  def vm_context; nil; end
-  def vm_object(t, f = {}); f.to_json; end
-  def flags_for_vm(v, f = []); f.to_json; end
-  def vm_flags_json(v, f = []); f.to_json; end
-  def b; binding; end
-end
-print ERB.new(File.read(ARGV[0])).result(R.new.b)`;
-const scenario = JSON.parse(execFileSync('ruby', ['-e', RUBY, path.join(REPO, MISSION, 'scenario.json.erb')], { encoding: 'utf8' }));
+// Plan step 5: one binding for every renderer. Renders through the server's BreakEscape::ScenarioBinding.
+const RUBY = `print BreakEscape::ScenarioBinding.render(File.read(ARGV[0]))`;
+const scenario = JSON.parse(execFileSync('ruby', ['-r', path.join(REPO, 'lib/break_escape/scenario_binding.rb'), '-e', RUBY, path.join(REPO, MISSION, 'scenario.json.erb')], { encoding: 'utf8' }));
 const G = Object.assign({}, scenario.globalVariables);
 const MAPPINGS = []; const NPCS = {}; const ITEMS = {};
 function collectItems(node) {
