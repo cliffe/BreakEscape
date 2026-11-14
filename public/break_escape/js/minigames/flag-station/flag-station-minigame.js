@@ -19,6 +19,12 @@ export class FlagStationMinigame extends MinigameScene {
         give_item: '📦', unlock_door: '🔓', unlock_object: '🔓',
         emit_event: '⚡', hint: '💡', set_global: '✦'
     };
+    // Launch device (launch-abort mode): header colour per state. The words come from
+    // launchHeader(), built from the item's operationName and outcome texts.
+    static LAUNCH_COLORS = { prompt: '#ff4444', armed: '#ff4444', aborted: '#00ff00', launched: '#ff4444' };
+    // Neutral outcome lines for a device whose scenario gives none (abortedText, launchedText)
+    static DEFAULT_ABORTED_TEXT = 'Abort confirmed. The operation will not go ahead.';
+    static DEFAULT_LAUNCHED_TEXT = 'Launch confirmed. The operation is under way.';
 
     constructor(container, params) {
         super(container, params);
@@ -49,6 +55,13 @@ export class FlagStationMinigame extends MinigameScene {
         this.onLaunchConfig   = params.onLaunch         || null;
         this.abortConfirmText = params.abortConfirmText  || 'Abort the operation?';
         this.launchConfirmText= params.launchConfirmText || 'Execute the operation?';
+        // The name in every launch heading. Without one (a game stored before the field
+        // existed), the device's own name, so no mission's operation is named by the engine.
+        this.operationName    = (typeof params.operationName === 'string' && params.operationName.trim())
+            || (typeof params.stationName === 'string' && params.stationName.trim())
+            || 'LAUNCH DEVICE';
+        this.abortedText      = params.abortedText  || FlagStationMinigame.DEFAULT_ABORTED_TEXT;
+        this.launchedText     = params.launchedText || FlagStationMinigame.DEFAULT_LAUNCHED_TEXT;
         this.choiceMade       = false;
         // The device's own flagRewards (the server leaves them on the client copy). Its
         // set_global reward with value true is the "launch code accepted" marker, so the
@@ -419,14 +432,14 @@ export class FlagStationMinigame extends MinigameScene {
         const station = document.createElement('div');
         station.className = 'flag-station';
         station.innerHTML = `
-            <div style="text-align:center; margin-bottom:20px;">
-                <div style="font-size:48px; margin-bottom:10px;">⚠️</div>
-                <div style="color:#ff4444; font-size:16px; margin-bottom:6px;">OPERATION SHATTER — ENTER LAUNCH AUTHORIZATION CODE</div>
-                <div style="color:#888; font-size:13px;">This device is armed. Enter the authorization code to proceed.</div>
+            <div class="launch-abort-header" style="text-align:center; margin-bottom:20px;">
+                <div class="launch-abort-icon" style="font-size:48px; margin-bottom:10px;">⚠️</div>
+                <div class="launch-abort-heading" style="color:#ff4444; font-size:16px; margin-bottom:6px;"></div>
+                <div class="launch-abort-status" style="color:#888; font-size:13px;"></div>
             </div>
 
             <div class="flag-input-container">
-                <label class="flag-input-label">LAUNCH AUTHORIZATION CODE:</label>
+                <label class="flag-input-label">LAUNCH AUTHORISATION CODE:</label>
                 <div class="flag-input-wrapper">
                     <input type="text" class="flag-input" id="flag-input" placeholder="flag{...}"
                            autocomplete="off" spellcheck="false">
@@ -438,6 +451,7 @@ export class FlagStationMinigame extends MinigameScene {
             <div class="reward-notification" id="reward-notification" style="display: none;"></div>
         `;
         this.gameContainer.appendChild(station);
+        this.setLaunchHeader('prompt');
         this.attachEventHandlers();
 
         this.restoreLaunchState();
@@ -473,10 +487,10 @@ export class FlagStationMinigame extends MinigameScene {
     restoreLaunchState() {
         if (this.outcomeApplied(this.onAbortConfig)) {
             this.choiceMade = true;
-            this.showFinalState('OPERATION ABORTED', 'Abort signal transmitted. All attack vectors terminated.', '#00ff00');
+            this.showFinalState('aborted');
         } else if (this.outcomeApplied(this.onLaunchConfig)) {
             this.choiceMade = true;
-            this.showFinalState('OPERATION LAUNCHED', 'Attack vector deployed. 2,347,832 targets receiving payload.', '#ff4444');
+            this.showFinalState('launched');
         } else if (this.launchCodeAccepted()) {
             this.showLaunchAbortChoice();
         }
@@ -625,11 +639,13 @@ export class FlagStationMinigame extends MinigameScene {
     showLaunchAbortChoice() {
         const inputContainer = this.gameContainer.querySelector('.flag-input-container');
         if (!inputContainer) return;
+        // The code is in: the header stops asking for it
+        this.setLaunchHeader('armed');
 
         inputContainer.innerHTML = `
             <div class="launch-abort-armed" style="text-align:center; margin: 20px 0;">
                 <div style="color:#ff4444; font-size:16px; margin-bottom:8px; animation: blink 1s infinite;">
-                    ⚠ ARMED — LAUNCH WINDOW: SUNDAY 06:00 UTC
+                    ⚠ ARMED: LAUNCH WINDOW SUNDAY 06:00 UTC
                 </div>
                 <div style="display:flex; gap:20px; justify-content:center; margin-top:20px;">
                     <button id="abort-btn" style="
@@ -661,7 +677,7 @@ export class FlagStationMinigame extends MinigameScene {
         if (!confirm(this.abortConfirmText)) return;
         this.choiceMade = true;
         this.applyChoiceConfig(this.onAbortConfig);
-        this.showFinalState('OPERATION ABORTED', 'Abort signal transmitted. All attack vectors terminated.', '#00ff00');
+        this.showFinalState('aborted');
     }
 
     handleLaunch() {
@@ -669,7 +685,7 @@ export class FlagStationMinigame extends MinigameScene {
         if (!confirm(this.launchConfirmText)) return;
         this.choiceMade = true;
         this.applyChoiceConfig(this.onLaunchConfig);
-        this.showFinalState('OPERATION LAUNCHED', 'Attack vector deployed. 2,347,832 targets receiving payload.', '#ff4444');
+        this.showFinalState('launched');
     }
 
     applyChoiceConfig(config) {
@@ -685,14 +701,46 @@ export class FlagStationMinigame extends MinigameScene {
         }
     }
 
-    showFinalState(title, message, color) {
+    /** Heading and status line for a launch-device state: prompt, armed, aborted, launched. */
+    launchHeader(state) {
+        const op = this.operationName.toUpperCase();
+        switch (state) {
+            case 'armed': return { heading: `${op}: CODE ACCEPTED`, status: 'Choose: abort the operation or execute the launch.' };
+            case 'aborted': return { heading: `${op}: ABORTED`, status: this.abortedText };
+            case 'launched': return { heading: `${op}: LAUNCHED`, status: this.launchedText };
+            default: return { heading: `${op}: ENTER LAUNCH AUTHORISATION CODE`, status: 'This device is armed. Enter the authorisation code to proceed.' };
+        }
+    }
+
+    /** Write a state's header (textContent: scenario text stays plain text). The warning
+     *  icon shows only while the device is armed (prompt and armed states). Colour is set
+     *  every time, so the helper can move between any two states. */
+    setLaunchHeader(state) {
+        const { heading, status } = this.launchHeader(state);
+        const q = (sel) => this.gameContainer.querySelector(sel);
+        const h = q('.launch-abort-heading');
+        const s = q('.launch-abort-status');
+        const i = q('.launch-abort-icon');
+        if (h) { h.textContent = displayDashes(heading); h.style.color = FlagStationMinigame.LAUNCH_COLORS[state] || ''; }
+        if (s) s.textContent = displayDashes(status);
+        if (i) i.style.display = (state === 'aborted' || state === 'launched') ? 'none' : '';
+    }
+
+    /** The result of the choice, 'aborted' or 'launched'. The header carries the outcome
+     *  (one heading, one status line); the input block and the submit step's result and
+     *  reward lines (which still said the attack was "yours to abort") are cleared. Same
+     *  on a reopen. */
+    showFinalState(outcome) {
+        if (outcome !== 'aborted' && outcome !== 'launched') return;
         const inputContainer = this.gameContainer.querySelector('.flag-input-container');
         if (!inputContainer) return;
-        inputContainer.innerHTML = `
-            <div style="text-align:center; padding:20px; color:${color}; font-size:14px;">
-                <div style="font-size:18px; margin-bottom:12px;">${title}</div>
-                <div style="color:#888;">${message}</div>
-            </div>`;
+        this.setLaunchHeader(outcome);
+        for (const id of ['flag-result', 'reward-notification']) {
+            const el = this.gameContainer.querySelector(`#${id}`);
+            // The ids are also the elements' base class names
+            if (el) { el.innerHTML = ''; el.className = id; el.style.display = 'none'; }
+        }
+        inputContainer.innerHTML = `<div class="launch-abort-final" data-outcome="${outcome}"></div>`;
     }
 
 

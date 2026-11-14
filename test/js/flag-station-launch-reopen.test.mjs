@@ -42,7 +42,7 @@ function open(params, globals = {}, session = {}) {
     });
     const shown = [];
     s.showLaunchAbortChoice = () => shown.push('choice');
-    s.showFinalState = (title) => shown.push('final:' + title);
+    s.showFinalState = (outcome) => shown.push('final:' + outcome);
     s.restoreLaunchState();
     return { s, shown };
 }
@@ -70,13 +70,13 @@ test('server says all flags are submitted', () => {
 
 test('outcome already chosen: ABORT shows the final state, not the choice', () => {
     const { s, shown } = open({}, { launch_code_submitted: true, player_aborted_attack: true, ready_for_debrief: true });
-    assert.deepEqual(shown, ['final:OPERATION ABORTED']);
+    assert.deepEqual(shown, ['final:aborted']);
     assert.equal(s.choiceMade, true);
 });
 
 test('outcome already chosen: LAUNCH shows its final state', () => {
     const { shown } = open({}, { launch_code_submitted: true, player_launched_attack: true, ready_for_debrief: true });
-    assert.deepEqual(shown, ['final:OPERATION LAUNCHED']);
+    assert.deepEqual(shown, ['final:launched']);
 });
 
 test('ready_for_debrief alone is not an outcome', () => {
