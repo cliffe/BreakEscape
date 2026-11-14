@@ -262,7 +262,7 @@
           "globalVarOnKO": "eli_ko",
           "eventMappings": [
             { "eventPattern": "conversation_closed:eli", "condition": "globalVars.eli_asked === true && globalVars.eli_ko !== true", "onceOnly": true, "delayMs": 6000, "needs": { "print": { "producer": "office_copier", "forget": true } } },
-            { "eventPattern": "object_revealed:*", "condition": "data.objectId === 'eli_page'", "onceOnly": true, "cooldown": 0, "completeTask": "check_eli_page" }
+            { "eventPattern": "object_revealed:eli_page", "onceOnly": true, "cooldown": 0, "completeTask": "check_eli_page" }
           ]
         }
       ]

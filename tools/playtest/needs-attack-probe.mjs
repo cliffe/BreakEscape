@@ -56,9 +56,10 @@ const snap = () => page.evaluate(() => {
     const T = window.__test;
     const ids = T.needs.ids();
     const gv = (window.gameState && window.gameState.globalVariables) || {};
+    const asList = x => Array.isArray(x) ? x : Object.values(x || {});
     const revealed = [];
     for (const [rid, room] of Object.entries(window.rooms || {})) {
-        for (const o of (room.objects || [])) {
+        for (const o of asList(room && room.objects)) {
             if (o && o.id && o.revealOnGlobal && gv[o.revealOnGlobal]) revealed.push(`${rid}:${o.id}`);
         }
     }
@@ -79,7 +80,8 @@ const snap = () => page.evaluate(() => {
 const roomItems = (roomId) => page.evaluate(r => {
     const room = (window.rooms || {})[r];
     if (!room) return [];
-    return (room.objects || []).filter(o => o && o.takeable).map(o => o.id);
+    const list = Array.isArray(room.objects) ? room.objects : Object.values(room.objects || {});
+    return list.filter(o => o && o.takeable).map(o => o.id);
 }, roomId);
 
 async function recordBeat(name, fn) {
@@ -93,6 +95,8 @@ await shot('00-start');
 
 // (e) Cal: hostile from start in the back room, never starts a job, logs blocked once.
 if (beat === 'all' || beat === 'e') await recordBeat('e_hostile_from_start', async () => {
+    // Cal registers with the needs system only once the back room loads.
+    await page.evaluate(() => window.__test.enterRoom('back_room')).catch(() => {});
     await t(8000);
     const before = await snap();
     const calLog = await page.evaluate(() => window.__test.needs.log().filter(e => e.npc === 'cal'));

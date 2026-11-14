@@ -110,17 +110,22 @@ The KO and reload beats (`a b c g`, and the within-6 s `i` case) are cleanest ea
 game, because a KO is saved to the server. `beat=all` runs the non-destructive beats (`d e h`, and the
 print half of `i`) in one game.
 
+Run on a keyless server built from this worktree (format 3). The :3093 server in this
+environment runs an older worktree (reads format up to 1) and refuses format-3 games, so the
+proof was run on a worktree server on :3094; games made with `swap-scenario-game.rb` (host
+`test_needs_sims`), not `new-game.rb`, because there is no Mission row for this folder yet.
+
 | beat | game id | result |
 |------|---------|--------|
 | (a) attacked mid-carry | | _pending live run_ |
 | (b) KO mid-carry, folder drops, reload | | _pending live run_ |
 | (c) KO at cooler, notebook drops, reload | | _pending live run_ |
-| (d) recalled by Meeting Note, resumed | | _pending live run_ |
-| (e) hostile from start, never acts | | _pending live run_ |
+| (d) recalled by Meeting Note, resumed | 4014 | PARTIAL: patrolOverride walk-home + needs suspend/resume confirmed (mode idle→returning); `check_called_home` did not tick from the probe's synthetic `object_interacted` emit — confirm with a real note interaction or a code check next session |
+| (e) hostile from start, never acts | 4014 | PASS: cal hostile from tick 0, `blocked` logged once, no `job_start`, mode idle |
 | (f) sight catch on a walking NPC | | _pending live run_ |
 | (g) partner down, Gil breaks alone | | _pending live run_ |
 | (h) KO before any talk, no reveal | | _pending live run_ |
-| (i) print ~6 s after close; reload cases | | _pending live run_ |
+| (i) print ~6 s after close | 4014 | PARTIAL: `eli_asked`, the 6 s print, `eli_page_shown` and the revealed `office:eli_page` slot all confirmed; `check_eli_page` did not tick from the synthetic `conversation_closed:eli` emit — confirm the `object_revealed:eli_page` completeTask with a real conversation close next session |
 
 ## What to watch for (tour)
 
@@ -138,12 +143,39 @@ print half of `i`) in one game.
 
 ## Engine faults
 
-None found yet. A failing beat is an engine fault, not a scenario fix: record it here with file:line,
-the game id and the log lines, and raise it as its own slice. Likely suspects are `_abortJob`
-(npc-needs.js:3696) on a knock-out mid-carry and the world's `dropHeld`.
+None confirmed yet. A failing beat is an engine fault, not a scenario fix: record it here with
+file:line, the game id and the log lines, and raise it as its own slice. Likely suspects are
+`_abortJob` (npc-needs.js:3696) on a knock-out mid-carry and the world's `dropHeld`.
+
+Open question (not yet an engine fault): in game 4014 the `completeTask` on the Eli print mapping
+(`object_revealed:eli_page` → `check_eli_page`) and on Ben's recall mapping
+(`object_interacted` Meeting Note → `check_called_home`) did not tick the task when the triggering
+event was emitted synthetically through `window.eventDispatcher` from the probe, even though the
+side effects fired (the page revealed; Ben walked home and suspended). `completeTask` is applied at
+npc-manager.js:1462 via `window.objectivesManager.completeTask`. Confirm next session whether a real
+in-game interaction (reading the note; closing Eli's conversation) ticks the task — if it does, this
+is a probe/synthetic-event artifact; if a real interaction also fails to tick, it is an engine fault
+to raise as its own slice.
 
 ## Handover
 
 Status: scenario, ink (7 files), both node tests and the probe are written and committed; the
-validator is clean (0 errors) and both test files pass. Live proof pending/partial — see the table
-above and the probe report JSON in the session scratchpad `officelife-sims/s1/`.
+validator is clean (0 errors) and both test files pass.
+
+Live proof: run on a worktree server on :3094 (the environment's :3093 is a stale worktree that
+refuses format-3 games). Beats confirmed so far (game 4014): (e) PASS; (d) and (i) PARTIAL (core
+side effects confirmed, the `completeTask` task-tick open — see Engine faults). Beats (a), (b), (c),
+(f), (g), (h) are **not yet run live**; each KO/reload beat wants its own fresh swapped game.
+
+Next session, to finish SIMS-1:
+1. Start a keyless server from this worktree: `env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true
+   bundle exec rails server -b 127.0.0.1 -p 3094` (3093 is the wrong build here).
+2. For each destructive beat make a fresh game:
+   `... PLAYTEST_PORT=3094 bundle exec rails runner tools/playtest/swap-scenario-game.rb
+   test_needs_sims test_needs_attack --unlock-all` → GAME_ID, then
+   `node tools/playtest/needs-attack-probe.mjs <GAME_ID> 3094 <beat>`.
+3. Resolve the `completeTask` open question with a real interaction (read the Meeting Note in-game;
+   close Eli's conversation), then fill in this README's live-proof table and the probe screenshots.
+4. Run the full standard node set (3.3) and the standard live set (5.1) before the slice is closed.
+
+Probe report JSON and screenshots: session scratchpad `officelife-sims/s1/`.
