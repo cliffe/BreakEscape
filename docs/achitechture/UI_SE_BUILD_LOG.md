@@ -425,3 +425,138 @@ To resume: start the server by hand on :3490 (the script is hard-wired to :3001 
 bundle exec line), create a fresh game with `PLAYTEST_PORT=3490 BREAK_ESCAPE_STANDALONE=true
 bin/rails runner tools/playtest/new-game.rb lab_social_engineering`, and run the audit immediately
 back-to-back in one command.
+
+## Fix round 2 part B (build/ui-se, from tip fbb532e4e; main 1f3ac1f0b already merged)
+
+Commits this round (explicit paths, no attribution lines):
+- bdc991bfd per-scene minors + C-X7 stepper + aw-button-secondary
+- ea8ad0a43 more per-scene minors (C-PH4, C-MC3, C-LP3, C-PC1, C-OB1, C-PP2)
+- bdb74ddeb tests (captures 16px C-X8, episode-runner close selector, two new tests)
+
+### Owed part-A live proof (done)
+
+Fresh `lab_social_engineering` game (id 3819) on keyless :3490, strict `--all` audit at
+1400x1000, 800x600, 667x375, 390x844, 360x740 (`--skip person-chat,network-view`). Log:
+scratchpad r2b/audit-partA.log. Every SE lab scene is clean at all five sizes except two expected
+lines: inbox-triage `gradient 1` (the flat single-colour surface fill, the known false positive -
+now fixed this round by C-IT2) and phone-chat `shadow 1` (the clipped green glow = C-PH4 - fixed
+this round). The other non-clean lines are all NON-SE scenes at the narrow sizes and outside this
+branch and its scope: siem-dashboard `cancel-beside-x`, network-architecture / notes / alarm-panel
+fit (NAD-class, by design), cryptex / combination `clipped` and examine `font-size` at 667x375 /
+360x740 (pre-existing responsive issues in the wider game, not touched by build/ui-se). These sizes
+were not in the section-1 baseline, so they are not regressions from this branch.
+
+### C-X7 shared stepper (done as one look; single render module NOT merged)
+
+The three step strips now read as one boxed stepper and behave the same: 2px square boxes, the
+current step in the accent colour, 14px text, and one sideways-scrolling row at <=767px.
+- inbox-triage `.tri-step` (css:19) converted from tiny underlined tabs to the boxed look
+  matching landing-page-builder; narrow one-row scroll in the media block.
+- landing-page-builder `.lpb-step` bumped 13px -> 14px; added narrow one-row scroll.
+- episode-runner `.aw-step` was already the boxed look (part A C-X5); added narrow one-row scroll.
+What is NOT done: folding the three separate render functions into a single shared stepper
+component. Targets if that refactor is picked up: `js/minigames/episode-runner/step-strip.js`
+`renderStepStrip` + `css/awareness-skin.css` `.aw-step*`; `js/minigames/inbox-triage/
+inbox-triage-minigame.js:351-365` (`.tri-steps`); `js/minigames/landing-page-builder/
+landing-page-builder-minigame.js:480-511` (`.lpb-steps`). The visible unification is delivered;
+the code-level single-component merge is deferred (risk + budget).
+
+### Phone scenes
+
+- **C-PH4 (part done)** `css/phone-chat-minigame.css:54` - removed the 20px green glow that the
+  stepped clip-path clips away entirely and that trips the audit (`shadow 1`). The empty-state
+  "No messages yet" line is NOT added (needs the messages-render path; deferred).
+- **C-AU1, C-PH1, C-PH2, C-PH3 - NOT done.** These are the heavier phone-shell items (reuse the
+  phone-chat stepped shell for the authenticator; the error toast inside the phone; Add to Notepad
+  onto the phone; X off the bezel). Each restructures phone/authenticator markup and needs live
+  browser verification per size; left for a follow-up with budget for it.
+
+### Per-scene minors
+
+Done:
+- **C-AU3** authenticator `.auth-outcome/.auth-card/.auth-card-action/.auth-card-deny/.auth-banner`
+  squared (radius 0) with 2px borders; banner raised to 16px with no faux-bold.
+- **C-RP1** engagement-report options are a full-width left-aligned quiz list (`.er-option`).
+- **C-ER2 / C-ER3** stepper is one scrolling row at narrow (kiosk X already pinned in the top
+  strip, part A); the scope note now carries `.se-notice` only - the left-bar `.epr-scope` box
+  is gone.
+- **C-IT1 / C-IT2** inbox-triage: boxed stepper (above); flat surfaces written as
+  `background-color` not single-colour gradients (clears the audit false positive); the soft
+  scroll-fade gradients and the blurred `box-shadow` replaced by the shared `.pixel-scroll` bar on
+  the result body and a hard 2px offset separator; the hidden-text reveal uses the readable font
+  with a 2px square dashed edge, not the browser monospace with a 1px rounded edge.
+- **C-LP3** captures: no faux-bold role; address in `--se-font-address` 16px; secret in GNF 16px
+  (C-X8 >=16px).
+- **C-MC3** the current mail folder reads as an accent-filled pressed tab, not a yellow outline
+  that looks like a focus ring (focus keeps the outline).
+- **C-OB1** osint site tabs are one sideways-scrolling row at narrow, not four full-width rows.
+- **C-PC1** person-chat `[SPACE]` hint is a solid colour and hidden under `(pointer: coarse)`.
+- **C-PP2** the pretext call target is labelled "Calling: <name>", not a bare word (the headshot
+  half is not added - optional, needs the NPC portrait lookup).
+- **Confirmed already satisfied by part A (no change needed):** C-AC2 (the m2 keep-light decision;
+  `.ac-section/.ac-reply` are squared 2px), C-CS1 (`.epr-sbx-card` is 2px), C-RP2
+  (`.er-section/.er-card` radius 0), C-IB1 (`.ib-option` is `width:100%`), C-LP1 (`.lpb-chip` is
+  square, 14px) - each noted so the next reviewer does not re-flag them.
+
+Not done (layout items that need per-size browser verification - deferred to a follow-up):
+- **C-MC1** mail account picker min-width / own row below 1000px.
+- **C-MC2** mail toolbar three rows at 390 -> one icon-tab row.
+- **C-LP2** empty preview collapse at narrow, single scroll area.
+- **C-PC2** ~200px black under person-chat dialogue at 390.
+- **C-PG1** password-guesser sticky action bar / drop the spacer.
+
+For the user (design / pedagogy calls the critique left open):
+- **C-PP3** the orange gate line ("Team: nothing held yet ...") repeats the card rows and reads as
+  an error. The fix is either to reword the authored `gate.line` or to suppress it when the
+  readiness rows already show the same gaps - both change the exercise's authored wording /
+  behaviour, so left for the owner of the lab_social_engineering pretext content.
+- **C-PV1** the privacy switch label ("Posts: friends only"), its state ("Open") and its note
+  ("Leave this off: ...") contradict each other. Renaming the switch as the action with an Off/On
+  state and rewording the note ("Closes: her dog's name") changes the learner's mental model of
+  the exercise; it needs the content owner's call, not a blind UI edit. The default strings live in
+  `js/minigames/privacy-panel/privacy-model.js` and the per-switch labels are authored in the
+  scenario.
+
+### item 5: aw-button-secondary wired
+
+The unused `.aw-button-secondary` is now the brief-card **Back** button (episode-runner), the one
+clear secondary action in the awareness windows (C-X9 asked for one primary + one secondary). A
+two-class `.epr-button.aw-button-secondary` override in `css/episode-runner.css` guarantees the
+white-fill secondary look beats the primary `.epr-button` fill regardless of load order. New test
+in social-episode-brief-cards asserts Back carries the variant and stays in the shared button
+family while Next does not.
+
+### Tests (plain `node --test`, one file at a time, no lock)
+
+- minigame-se-close 13/13; social-episode-runner 48/48 (close selector updated); social-episode-
+  brief-cards 11/11 (+1 new, aw-button-secondary); social-pretext-prep 18/18 (+1 new, Calling
+  label); social-triage-ui 24/24; social-engagement-report 23/23; social-authenticator 9/9;
+  social-episode-views 30/30; pretext-debrief-labels 5/5; minigame-pixel-art 48/48.
+- **Pre-existing failure found and closed:** at the part-A tip (fbb532e4e) social-episode-runner
+  had 3 failures - part A's C-ER1 themed kiosk close (`mountThemedCloseControl`) stops carrying
+  `.se-overlay-close`, but three assertions still queried that class. Verified the 3 fail on the
+  parent source and pass with mine; updated the three assertions to accept
+  `.se-overlay-close, .epr-kiosk-close`. No production code changed for this.
+- Full suites NOT run (congestion rule): the orchestrator runs them per merge batch. New static
+  imports: none, so no test-harness copy-list change.
+
+### Live proof
+
+- Part-A `--all` strict audit: game 3819, scratchpad r2b/audit-partA.log (summary above).
+- After-change focused strict audit (the 15 changed/adjacent SE scenes x 5 sizes, fresh game
+  3848): scratchpad r2b/audit-after.log - confirms inbox-triage and phone-chat clean after C-IT2
+  and C-PH4, and no new breach on the changed scenes.
+- NOT captured this round (budget): the owed targeted eyeball shots (kiosk bezel at 390/360 with
+  real ca05_signin_pages episode content; shredded Up/Down + Flip by touch and keyboard). The
+  strict audit covers fit/style; these are the "look at the shot" confirmations still owed.
+
+### Handover (2026-11-14, part B)
+
+Tip: bdb74ddeb on build/ui-se (main 1f3ac1f0b merged). Everything in "Done" is committed with
+explicit paths. Open for a part C: C-X7 single render-module merge (look already unified); phone
+scenes C-AU1 / C-PH1 / C-PH2 / C-PH3 and the C-PH4 empty state; layout minors C-MC1, C-MC2, C-LP2,
+C-PC2, C-PG1; and the two user-call items C-PP3 and C-PV1. Owed eyeball shots (kiosk 390/360,
+shredded reorder) still to capture. Env: keyless server on :3490 (worktree; PID file
+test/dummy/tmp/pids/server-3490.pid) - stop by PID at the end. RBENV_VERSION=2.7.8;
+PLAYWRIGHT_CHROMIUM_EXECUTABLE=$HOME/.cache/ms-playwright/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell.
+Resume recipe unchanged (fresh new-game.rb + audit back-to-back).
