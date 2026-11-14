@@ -699,6 +699,12 @@ export class FlagStationMinigame extends MinigameScene {
         if (config.emitEvent) {
             window.eventDispatcher?.emit(config.emitEvent, { source: 'launch_device' });
         }
+        // Save the choice now rather than on the 30 s timer or pagehide, so a crash or a
+        // hard close straight after it keeps the outcome. The sync sends only what changed
+        // (the choice's globals, plus anything else already pending).
+        if (config.setGlobal) {
+            try { Promise.resolve(window.stateSync?.sync?.()).catch(() => {}); } catch (e) { /* the timer retries */ }
+        }
     }
 
     /** Heading and status line for a launch-device state: prompt, armed, aborted, launched. */
