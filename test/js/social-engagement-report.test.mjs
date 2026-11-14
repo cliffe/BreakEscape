@@ -306,7 +306,7 @@ test('Close is a normal exit and reports completion', () => {
     setWorld({ mailState: { metrics: {} } });
     const s = open();
     ended.length = 0;
-    s.container.querySelector('.er-close').click();
+    s.container.querySelector('.se-overlay-close').click();
     assert.equal(ended.length, 1);
     assert.equal(ended[0].success, true);
     assert.equal(ended[0].result.completed, false);

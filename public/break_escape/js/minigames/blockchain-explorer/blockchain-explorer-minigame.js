@@ -39,6 +39,10 @@ function truncHash(str) {
 }
 
 export class BlockchainExplorerMinigame extends MinigameScene {
+    // Draws in the shared console window (UI decision X8): title bar and X come from there
+    static consoleWindow = true;
+    static consoleWindowFill = true;
+
     constructor(container, params = {}) {
         super(container, {
             ...params,
@@ -77,6 +81,10 @@ export class BlockchainExplorerMinigame extends MinigameScene {
 
         // Cache graph layout so it doesn't recompute on every render
         this._graphLayout = null;
+    }
+
+    consoleTitle() {
+        return this._mixerBoard ? this._mixerBoard.title : this._title;
     }
 
     init() {
@@ -438,13 +446,7 @@ export class BlockchainExplorerMinigame extends MinigameScene {
 
         this.gameContainer.innerHTML = `
             <div class="bce-panel">
-                <div class="bce-header">
-                    <div class="bce-title-group">
-                        <span class="bce-title-icon">⛓</span>
-                        <span class="bce-title">${escapeText(this._title)}</span>
-                    </div>
-                    ${caseRef}
-                </div>
+                ${caseRef ? `<div class="bce-header">${caseRef}</div>` : ''}
                 <div class="bce-body">
                     <div class="bce-graph-pane pixel-scroll" id="bce-graph-pane">
                         ${this._renderGraph()}

@@ -287,10 +287,29 @@ test('A3 R1 m1: a call that diverted out of its knots is not settled either', ()
 test('wiring: a ringer call has no Cancel and no Add to Notepad; the x is End call', () => {
     const s = readFileSync(join(chat, 'phone-chat-minigame.js'), 'utf8');
     assert.match(s, /if \(this\.params\.ringerCall\) this\.params\.showCancel = false;/);
-    assert.match(s, /const controls = this\.params\.ringerCall \? null : this\.ensureControlsRow\(\);/);
+    // C-PH2: the Add-to-Notepad action lives on the phone (its status bar / header), not the
+    // framework controls row; a ringer call still gets none (the !ringerCall guard).
+    assert.match(s, /if \(!this\.params\.ringerCall\) \{/);
+    assert.match(s, /this\.gameContainer\.querySelector\('\.phone-header'\)/);
     assert.match(s, /endBtn\.setAttribute\('aria-label', 'End call'\)/);
     assert.match(s, /closeBtn\.cloneNode\(true\);\s*\/\/ drops the base complete\(false\) listener/);
     assert.match(readFileSync(join(here, '../../public/break_escape/js/minigames/phone-chat/phone-ringer-dom.js'), 'utf8'), /showCancel: false/);
+});
+
+test('C-PH4: a missing contact shows the toast and falls back to the contact list', async () => {
+    const { inst } = make({ ringer: false });
+    const calls = { notified: [], listShown: 0 };
+    inst.phoneId = 'p1';
+    inst.npcManager = { getNPC: () => null, addMessage() {} };
+    inst.ui = {
+        showNotification: (m, t) => calls.notified.push([m, t]),
+        showContactList: (id) => { calls.listShown += 1; calls.listPhoneId = id; },
+        showConversation() { throw new Error('should not reach conversation for a missing NPC'); },
+    };
+    await inst.openConversation('ghost');
+    assert.deepEqual(calls.notified, [['Contact not found', 'error']]);
+    assert.equal(calls.listShown, 1, 'falls back to the contact list, not a blank screen');
+    assert.equal(calls.listPhoneId, 'p1', 'the list is scoped to this phone');
 });
 
 // ---- A2b live proof findings ----------------------------------------------------------------

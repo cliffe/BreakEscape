@@ -1,56 +1,22 @@
-.ehr-terminal-minigame-container {
-    background: rgba(0, 0, 0, 0.92);
-    border: 2px solid #1f1f1f;
-    color: #eaf0ff;
-}
-
-.ehr-terminal-minigame-game-container {
-    padding: 0;
-    width: 100%;
-    max-width: 600px;
-    height: auto;
-    max-height: 100%;
-    margin: 0 auto;
-    box-sizing: border-box;
-}
-
-.ehr-terminal-minigame-game-container.ehr-online-mode {
-    width: 100%;
-    max-width: none;
-    height: 100%;
-    margin: 0;
-}
-
+/* The shared console window (css/minigames-framework.css) is the frame and the title bar;
+   the terminal panel fills its body. */
 .ehr-terminal-panel {
     display: flex;
     flex-direction: column;
     width: 100%;
-    height: auto;
-    max-height: 100%;
-    border: 2px solid #2f3b4f;
+    min-height: 0;
     background: #071430;
     box-sizing: border-box;
 }
 
-.ehr-online-mode .ehr-terminal-panel {
-    height: 100%;
-}
-
 .ehr-terminal-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
     gap: 12px;
-    padding: 12px 72px 12px 12px;
+    padding: 12px;
     border-bottom: 2px solid #2f3b4f;
     background: #0c1f43;
-}
-
-.ehr-terminal-title {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 8px;
-    line-height: 16px;
-    color: #dfe8ff;
 }
 
 .ehr-terminal-status {
@@ -149,6 +115,10 @@
     align-items: stretch;
 }
 
+.ehr-online-layout > * {
+    min-width: 0;
+}
+
 .ehr-patient-list {
     border: 2px solid #2f8d3c;
     background: rgba(8, 20, 10, 0.85);
@@ -203,6 +173,8 @@
 }
 
 .ehr-record-panel {
+    min-width: 0;
+    overflow-x: auto;
     border: 2px solid #2f8d3c;
     background: rgba(8, 20, 10, 0.85);
     padding: 10px;
@@ -317,7 +289,7 @@
 /* Phones: the patient list sits above the record (critique B X3) */
 @media (max-width: 600px) {
     .ehr-online-layout {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
     }
 
     .ehr-patient-list {

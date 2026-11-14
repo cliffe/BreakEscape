@@ -163,12 +163,6 @@ export const MinigameFramework = {
         // Lets the UI themes (css/ui-themes.css) frame the generic tool windows
         container.dataset.minigame = sceneType;
 
-        // Show the popup overlay to darken the background
-        const popupOverlay = document.querySelector('.popup-overlay');
-        if (popupOverlay) {
-            popupOverlay.classList.add('active');
-        }
-        
         // Create and start the minigame
         const MinigameClass = this.registeredScenes[sceneType];
         this.currentMinigame = new MinigameClass(container, params);
@@ -231,12 +225,6 @@ export const MinigameFramework = {
             // cannot skip it (phone calls plan 2.9, review R2 M2).
             try {
             ending.cleanup();
-            
-            // Hide the popup overlay
-            const popupOverlay = document.querySelector('.popup-overlay');
-            if (popupOverlay) {
-                popupOverlay.classList.remove('active');
-            }
             
             // Remove minigame container only if it was auto-created
             // (remove THIS minigame's container, not whichever comes first in the DOM)

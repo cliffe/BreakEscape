@@ -218,7 +218,8 @@
       "warranties"
     ],
     "optional": [
-      "title"
+      "title",
+      "caseRef"
     ]
   },
   "coverage_decision_form": {
@@ -244,7 +245,8 @@
     "optional": [
       "stateWrites",
       "printEnabled",
-      "title"
+      "title",
+      "subtitle"
     ]
   },
   "forensic_data_platform": {

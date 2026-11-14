@@ -30,14 +30,22 @@ import { authorHtml } from '../../utils/author-html.js';
  *   { setVariable, fromSection, equalsValue }     — write boolean (selected === equalsValue)
  */
 
+// Plain text of an author string: entities decoded, bare tags dropped, anything else shown as typed
+function plainText(value) {
+    const probe = document.createElement('div');
+    probe.innerHTML = authorHtml(value);
+    return probe.textContent;
+}
+
 export class CoverageDecisionFormMinigame extends MinigameScene {
+    // Draws in the shared console window (UI decision X8): title bar and X come from there
+    static consoleWindow = true;
+
     constructor(container, params = {}) {
         const sd = params.lockable?.scenarioData?.minigameData || {};
         super(container, {
             ...params,
             title:      'Coverage Recommendation Form',
-            showCancel: true,
-            cancelText: 'Close',
         });
         this._headerRef          = sd.headerRef          || '';
         this._claimsManager      = sd.claimsManager      || '';
@@ -61,6 +69,19 @@ export class CoverageDecisionFormMinigame extends MinigameScene {
         this._renderLayout();
     }
 
+    // The form's name and its policy line are the window's title and subtitle
+    consoleTitle() {
+        return plainText(this._formTitle);
+    }
+
+    consoleSubtitle() {
+        return [
+            'Meridian Cyber Insurance',
+            this._headerRef     ? `Policy Ref: ${plainText(this._headerRef)}`          : null,
+            this._claimsManager ? `Claims Manager: ${plainText(this._claimsManager)}` : null,
+        ].filter(Boolean).join(' \u2014 ');
+    }
+
     start() {
         super.start();
         if (this._openVar) {
@@ -76,15 +97,9 @@ export class CoverageDecisionFormMinigame extends MinigameScene {
     // ── Layout ───────────────────────────────────────────────────────────────
 
     _renderLayout() {
-        // HTML: each scenario part goes through authorHtml once. headerSub and badge are
-        // finished HTML (escaped parts joined by literal &mdash; and &#10003;): insert them
-        // as they are, never through authorHtml or escapeHtml again.
-        const headerSub = [
-            'Meridian Cyber Insurance',
-            this._headerRef   ? `Policy Ref: ${authorHtml(this._headerRef)}`       : null,
-            this._claimsManager ? `Claims Manager: ${authorHtml(this._claimsManager)}` : null,
-        ].filter(Boolean).join(' &mdash; ');
-
+        // HTML: each scenario part goes through authorHtml once. badge is finished HTML
+        // (escaped parts joined by literal &mdash; and &#10003;): insert it as it is, never
+        // through authorHtml or escapeHtml again.
         const badge = this._headerRef
             ? `&#10003; RECOMMENDATION LOGGED &mdash; ${authorHtml(this._headerRef)}`
             : '&#10003; RECOMMENDATION LOGGED';
@@ -93,11 +108,6 @@ export class CoverageDecisionFormMinigame extends MinigameScene {
 
         this.gameContainer.innerHTML = `
 <div class="cdf-wrap">
-  <div class="cdf-header">
-    <div class="cdf-header-title">${authorHtml(this._formTitle)}</div>
-    <div class="cdf-header-sub">${headerSub}</div>
-  </div>
-
   <div class="cdf-body pixel-scroll">
     ${sectionsHtml}
   </div>

@@ -205,14 +205,7 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
             buttons.appendChild(caseBtn);
             this.caseButton = caseBtn;
         }
-        const close = h('button', { type: 'button', class: 'se-overlay-close minigame-button ob-close',
-            text: 'Close', 'aria-label': 'Close' });
-        this.addEventListener(close, 'click', (e) => {
-            e.preventDefault?.();
-            e.stopPropagation?.();
-            this.requestClose();
-        });
-        this.closeButton = close;
+        const close = this.buildCloseControl();
         buttons.appendChild(close);
 
         this.addressText = h('span', { class: 'ob-address-text ob-readable', 'data-address': '' });

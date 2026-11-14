@@ -4,48 +4,14 @@
 .cdf-wrap {
     display: flex;
     flex-direction: column;
-    width: 100%;
-    height: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
     background: #0d1117;
     color: #c9d1d9;
     font-family: 'VT323', monospace;
     font-size: 20px;
     box-sizing: border-box;
     overflow: hidden;
-}
-
-/* ── Header ───────────────────────────────────────────────────────────────── */
-.cdf-header {
-    display: flex;
-    flex-direction: column;
-    background: #1a233a;
-    padding: 10px 52px 8px 16px;
-    border-bottom: 2px solid #334466;
-    flex-shrink: 0;
-}
-.cdf-header-title {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 16px;
-    line-height: 24px;
-    color: #ffffff;
-    text-transform: uppercase;
-}
-.cdf-header-sub {
-    font-size: 18px;
-    color: #8899cc;
-    margin-top: 2px;
-    letter-spacing: 0.03em;
-}
-
-/* ── No framework cancel row: the X closes ─────────────────────────────────── */
-.cdf-minigame-container .minigame-controls { display: none; }
-
-/* The form fills the window; its body scrolls between the fixed header and footer */
-.cdf-minigame-container > .cdf-game-container {
-    width: 100%;
-    height: 100%;
-    padding: 0;
-    margin: 0;
 }
 
 /* ── Body ─────────────────────────────────────────────────────────────────── */
@@ -220,11 +186,6 @@
 }
 
 @media (max-width: 600px) {
-    .cdf-header-title {
-        font-size: 8px;
-        line-height: 16px;
-    }
-
     .cdf-body {
         padding: 10px;
     }

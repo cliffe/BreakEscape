@@ -9,13 +9,12 @@
    ============================================================ */
 
 /* ── Root scoping ──────────────────────────────────────────── */
-.dli-minigame-container,
-.dli-game-container {
+.dli-wrap {
   background: #0a0e1a;
   font-family: 'VT323', monospace;
   color: #c9d1d9;
-  width: 100%;
-  height: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -25,27 +24,13 @@
 .dli-console-header {
   background: #0d1117;
   border-bottom: 2px solid #21262d;
-  padding: 10px 52px 8px 16px;
+  padding: 8px 16px;
   flex-shrink: 0;
-}
-
-.dli-console-title {
-  font-size: 18px;
-  color: #e6edf3;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-
-.dli-console-subtitle {
-  font-size: 16px;
-  color: #7d8590;
-  margin-top: 2px;
 }
 
 .dli-console-files {
   font-size: 16px;
   color: #0088cc;
-  margin-top: 4px;
   display: flex;
   gap: 16px;
 }

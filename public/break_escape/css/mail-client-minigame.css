@@ -55,15 +55,13 @@
 }
 .mail-account { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 0 1 auto; margin-right: 8px; }
 /* The label shrinks and ellipses so the whole toolbar, Close included, stays on one row. */
-.mail-account-label { font-family: var(--se-font-address); font-size: 15px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mail-account-label { font-family: var(--se-font-address); font-size: 16px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mail-folders { display: flex; gap: 4px; flex: none; }
 /* Toolbar buttons size to their label and never shrink, so Contacts, Compose and
    Close keep their whole label on one row; only the account label (min-width:0,
    ellipsis) gives way when the row is tight (A9; P1-T2 clip at 1400 px). */
-.mail-toolbar .minigame-button,
-.mail-toolbar .se-overlay-close { white-space: nowrap; width: auto; flex: none; }
-.mail-client .minigame-button,
-.mail-client .se-overlay-close {
+.mail-toolbar .minigame-button { white-space: nowrap; width: auto; flex: none; }
+.mail-client .minigame-button {
     min-height: 44px;
     min-width: 44px;
     padding: 6px 12px;
@@ -71,7 +69,9 @@
 /* Close sits at the right of the header row, never wrapped to its own line (P1-T). */
 .mail-toolbar .se-overlay-close { margin-left: auto; }
 .mail-folder-btn { display: inline-flex; align-items: center; gap: 6px; }
-.mail-folder-btn.active { outline: 2px solid var(--ui-accent, #ffcc44); }
+/* C-MC3: the current folder reads as a pressed/accent-filled tab, not a yellow outline that
+   looks like a keyboard focus ring (focus keeps the outline, via the shared :focus-visible). */
+.mail-folder-btn.active { background: var(--ui-accent, #ffcc44); color: #16213a; border-color: var(--ui-accent, #ffcc44); }
 .mail-folder-count {
     min-width: 1.4em;
     padding: 0 4px;
@@ -145,7 +145,7 @@
 .mail-row-body { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 .mail-row-top { display: flex; justify-content: space-between; gap: 8px; }
 .mail-row-who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mail-row-who.mail-row-address { font-family: var(--se-font-address); font-size: 15px; }
+.mail-row-who.mail-row-address { font-family: var(--se-font-address); font-size: 16px; }
 .mail-row[data-unread='true'] .mail-row-who,
 .mail-row[data-unread='true'] .mail-row-subject { font-weight: 700; }
 .mail-row-time { flex: none; color: var(--ui-text-dim, #a8b2c8); font-size: 14px; }
@@ -198,7 +198,7 @@
     background-color: var(--ui-slot-bg, rgba(66, 80, 118, 0.88));
 }
 .mail-chip-link { cursor: pointer; min-height: 44px; vertical-align: middle; text-decoration: underline; }
-.mail-link-status { min-height: 1.4em; margin: 4px 0; color: var(--ui-accent, #ffcc44); font-family: var(--se-font-address); font-size: 15px; overflow-wrap: anywhere; }
+.mail-link-status { min-height: 1.4em; margin: 4px 0; color: var(--ui-accent, #ffcc44); font-family: var(--se-font-address); font-size: 16px; overflow-wrap: anywhere; }
 
 .mail-judged { display: flex; align-items: center; gap: 6px; margin: 8px 0 0; font-family: var(--se-font-readable); font-size: 16px; }
 .mail-judged.landed { color: var(--ui-success, #6ee08f); }
@@ -270,7 +270,7 @@
     flex-wrap: wrap;
     gap: 4px 10px;
     padding: 8px 4px;
-    border-bottom: 1px solid var(--ui-line, #4c5b80);
+    border-bottom: 2px solid var(--ui-line, #4c5b80);
     font-family: var(--se-font-readable);
     font-size: 16px;
 }
@@ -339,7 +339,7 @@
     padding: 6px;
     background: var(--ui-surface-2, rgba(16, 22, 38, 0.9));
     color: var(--ui-text, #eef1f8);
-    border: 1px solid var(--ui-line, #4c5b80);
+    border: 2px solid var(--ui-line, #4c5b80);
 }
 .mail-compose-blanks { display: flex; flex-wrap: wrap; gap: 8px; margin-left: 94px; }
 /* line-height set here: dusting.css has a global [data-slot] { line-height: 0 } that reached
@@ -525,6 +525,16 @@
     .mail-picker-list { width: 100%; min-width: 0; max-height: 60%; }
 }
 
+/* C-MC1: from 1000px down, the send-as account takes its own toolbar row and keeps
+   a readable minimum width, so the active sender never shrinks to a stub like "Cons"
+   or a bare chevron. The sender address is the fact the lesson turns on, so it must
+   stay legible at the mid widths (800x600, 915x412) the 767px rules do not reach. */
+@media (max-width: 1000px) {
+    .mail-toolbar { flex-wrap: wrap; }
+    .mail-account { flex: 1 1 100%; margin-right: 0; }
+    .mail-account-select { width: 100%; min-width: 16ch; }
+}
+
 /* A short window with a pointer: a tighter composer so the form down to Ask fits above the pinned
    meter and Send (E8 F2). Touch screens keep the 44 px controls. */
 @media (min-width: 768px) and (max-height: 820px) and (hover: hover) {
@@ -553,7 +563,7 @@
     padding: 6px;
     background: var(--ui-surface-2, rgba(16, 22, 38, 0.9));
     color: var(--ui-text, #eef1f8);
-    border: 1px solid var(--ui-line, #4c5b80);
+    border: 2px solid var(--ui-line, #4c5b80);
 }
 .mail-account-select { flex: 0 1 auto; }
 .mail-account-select[hidden], .mail-account-label[hidden] { display: none; }
@@ -580,7 +590,7 @@
     gap: 4px 8px;
     min-height: 44px;
     padding: 6px 8px;
-    border: 1px solid var(--ui-line, #4c5b80);
+    border: 2px solid var(--ui-line, #4c5b80);
     font-family: var(--se-font-readable);
     font-size: 16px;
     cursor: pointer;
@@ -681,7 +691,7 @@
     font-size: 16px;
     line-height: 1.45;
     color: inherit;
-    border: 1px solid var(--ui-border, rgba(168, 178, 200, 0.4));
+    border: 2px solid var(--ui-border, rgba(168, 178, 200, 0.4));
     background: var(--ui-slot-bg, rgba(66, 80, 118, 0.4));
     overflow-wrap: anywhere;
 }

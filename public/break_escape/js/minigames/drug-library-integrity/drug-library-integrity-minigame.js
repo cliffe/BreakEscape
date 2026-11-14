@@ -43,14 +43,15 @@ function randomHex(len) {
 // ──────────────────────────────────────────────────────────────────────────────
 
 export class DrugLibraryIntegrityMinigame extends MinigameScene {
-    // The X sits inside the frame (MinigameScene.closeInsideFrame)
-    static closeInsideFrame = true;
+    // Draws in the shared console window (UI decision X8): title bar and X come from there.
+    // Its tabs and panels scroll, so the window takes its full size.
+    static consoleWindow = true;
+    static consoleWindowFill = true;
+
     constructor(container, params = {}) {
         super(container, {
             ...params,
             title:      'Drug Library Integrity Terminal',
-            showCancel: true,
-            cancelText: 'Close',
         });
 
         const sd = params.sprite?.scenarioData?.minigameData || {};
@@ -77,6 +78,15 @@ export class DrugLibraryIntegrityMinigame extends MinigameScene {
         // Tampered row index (match by name)
         this._tamperedIdx = this._lib.findIndex(e => e.name === this._tampered.drug);
         if (this._tamperedIdx === -1) this._tamperedIdx = 5; // fallback
+    }
+
+    // The fleet console's name and its subtitle are the shared bar's title and subtitle
+    consoleTitle() {
+        return this._data.consoleTitle || 'PUMP FLEET MANAGEMENT CONSOLE';
+    }
+
+    consoleSubtitle() {
+        return this._data.consoleSubtitle || '';
     }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -121,16 +131,13 @@ export class DrugLibraryIntegrityMinigame extends MinigameScene {
 
     _renderLayout() {
         const sd = this._data;
-        const title    = sd.consoleTitle    || 'PUMP FLEET MANAGEMENT CONSOLE';
-        const subtitle = sd.consoleSubtitle || '';
         const libFile  = sd.libraryFile     || 'drug_library.csv';
         const bakFile  = sd.backupFile      || 'drug_library.bak';
         const hashFile = sd.hashFile        || 'drug_library.sha256';
 
         this.gameContainer.innerHTML = `
+<div class="dli-wrap">
 <div class="dli-console-header">
-  <div class="dli-console-title">${escapeHtml(displayDashes(title))}</div>
-  ${subtitle ? `<div class="dli-console-subtitle">${escapeHtml(displayDashes(subtitle))}</div>` : ''}
   <div class="dli-console-files">
     <span>${escapeHtml(libFile)}</span><span>${escapeHtml(bakFile)}</span><span>${escapeHtml(hashFile)}</span>
   </div>
@@ -147,7 +154,8 @@ export class DrugLibraryIntegrityMinigame extends MinigameScene {
 <div class="dli-progress-wrap" id="dli-progress-wrap" style="display:none">
   <div class="dli-progress-bar" id="dli-progress-bar"></div>
 </div>
-<div class="dli-panel pixel-scroll" id="dli-panel"></div>`;
+<div class="dli-panel pixel-scroll" id="dli-panel"></div>
+</div>`;
 
         this.gameContainer.querySelectorAll('.dli-tab').forEach(btn => {
             this.addEventListener(btn, 'click', () => this._onTabClick(btn.dataset.tab));

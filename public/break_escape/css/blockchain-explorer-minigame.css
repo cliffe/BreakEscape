@@ -36,35 +36,13 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px 56px 8px 16px;
-    min-height: 60px;
+    padding: 8px 16px;
     box-sizing: border-box;
     gap: 8px 16px;
     flex-wrap: wrap;
     border-bottom: 2px solid #21262d;
     background: #080d12;
     flex-shrink: 0;
-}
-
-.bce-title-group {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.bce-title-icon {
-    font-family: 'GNF', monospace;
-    font-size: 22px;
-    color: #58a6ff;
-    line-height: 1;
-}
-
-.bce-title {
-    font-size: 16px;
-    line-height: 24px;
-    color: #58a6ff;
-    letter-spacing: 2px;
-    text-transform: uppercase;
 }
 
 .bce-case-ref {
@@ -536,7 +514,7 @@
 
 /* ── Close button ──────────────────────────────────────────── */
 
-.bce-close-btn {
+.bce-mx-files-btn {
     font-family: 'GNF', monospace;
     font-size: 16px;
     line-height: 24px;
@@ -550,7 +528,7 @@
     transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 
-.bce-close-btn:hover {
+.bce-mx-files-btn:hover {
     background: #161b22;
     color: #c9d1d9;
     border-color: #444d58;
@@ -757,11 +735,6 @@
         border-bottom: 2px solid #21262d;
         box-sizing: border-box;
     }
-
-    .bce-title {
-        font-size: 8px;
-        line-height: 16px;
-    }
 }
 
 @media (max-width: 720px) {
@@ -771,5 +744,4 @@
     .bce-mx-col { overflow: visible; }
     .bce-mx-help { grid-template-columns: 1fr 1fr; }
 }
-.bce-mx .bce-title { font-size: 8px; }
 .bce-mx .bce-status-item { font-size: 8px; }
