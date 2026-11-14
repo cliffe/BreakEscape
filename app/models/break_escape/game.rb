@@ -1953,7 +1953,7 @@ module BreakEscape
     def hard_access_capture_value?(secret)
       return false unless secret.is_a?(String) && !secret.empty?
 
-      (@hard_access_capture_values ||= CaptureModel.hard_access_values(scenario_data)).include?(secret)
+      CaptureModel.lock_answer?(@hard_access_capture_values ||= CaptureModel.hard_access_values(scenario_data), secret)
     end
 
     # { target_id => { secret:, address:, proof: } } for every non-account capture writer with
@@ -3546,19 +3546,13 @@ module BreakEscape
     # can only differ by an authoring slip. A blank secret or answer never opens.
     def self.lock_answer_matches?(lock_type, secret, attempt)
       case lock_type
-      when 'combination'
-        numbers = lambda do |value|
-          parts = value.is_a?(Array) ? value.map(&:to_s) : value.to_s.split(/[^0-9]+/)
-          parts = parts.map(&:strip).reject(&:empty?)
-          parts.all? { |p| p.match?(/\A\d+\z/) } ? parts.map(&:to_i) : nil
-        end
-        want = numbers.call(secret)
-        got = numbers.call(attempt)
-        want.present? && got.present? && want == got
-      when 'cryptex'
-        want = secret.is_a?(String) ? secret.strip : ''
-        got = attempt.is_a?(String) ? attempt.strip : ''
-        !want.empty? && want.casecmp?(got)
+      when 'combination', 'cryptex'
+        # The normalisation lives in one place, CaptureModel.answer_key, so the comparator and
+        # the two answer sets agree on what equal means. A blank, nil or malformed secret or
+        # attempt gives nil, which never equals a real key, so nothing opens.
+        want = CaptureModel.answer_key(lock_type, secret)
+        got = CaptureModel.answer_key(lock_type, attempt)
+        !want.nil? && want == got
       else
         false
       end

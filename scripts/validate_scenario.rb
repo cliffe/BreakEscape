@@ -7162,7 +7162,7 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
     room_npcs.reject { |e| ai.account?(e[:npc]) }.each do |e|
       npc = e[:npc]
       payload = npc['usePayload']
-      if payload.is_a?(Hash) && hard_access.include?(payload['secret'].to_s)
+      if payload.is_a?(Hash) && BreakEscape::CaptureModel.lock_answer?(hard_access, payload['secret'])
         own = payload['targetId']
         ungated = if own.is_a?(String) && !own.strip.empty?
                     !payload['proof'].is_a?(Hash)
@@ -7182,7 +7182,7 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
       end
       Array(npc['eventMappings']).each_with_index do |mapping, i|
         capture = mapping.is_a?(Hash) ? mapping['addCapture'] : nil
-        next unless capture.is_a?(Hash) && hard_access.include?(capture['secret'].to_s)
+        next unless capture.is_a?(Hash) && BreakEscape::CaptureModel.lock_answer?(hard_access, capture['secret'])
         next if capture['proof'].is_a?(Hash)
 
         warn.call("NPC #{name_of.call(npc)} eventMappings[#{i}].addCapture.secret is also a hard-access value " \
@@ -7232,7 +7232,7 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
       next unless capture.is_a?(Hash)
 
       secret = capture['secret']
-      next unless BreakEscape::CaptureModel.present_string?(secret) && hard_access.include?(secret.to_s)
+      next unless BreakEscape::CaptureModel.present_string?(secret) && BreakEscape::CaptureModel.lock_answer?(hard_access, secret)
 
       page_id = page['id']
       page_label = BreakEscape::CaptureModel.present_string?(page_id) ? page_id : '(no id)'

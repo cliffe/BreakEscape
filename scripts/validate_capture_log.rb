@@ -43,7 +43,7 @@ def check_capture_log(json_data)
   # the serving path, but these string fields ride the bootstrap mirror and the sync answer
   # verbatim, so an author who put a lock code into a note would leak it on a forged pre-beat
   # claim. Keep the note channel as safe as the secret channel.
-  hard_values = cm.hard_access_values(json_data).to_a.select { |v| v.is_a?(String) && v.length >= 3 }
+  hard_values = cm.hard_access_raw_values(json_data).to_a.select { |v| v.is_a?(String) && v.length >= 3 }
   cm.all_capture_candidates(json_data).each do |cand|
     fields = cand[:fields]
     tid = fields['targetId'].to_s
@@ -121,12 +121,12 @@ def check_capture_log(json_data)
   pc_admits = lambda do |pc, npc|
     pc['access'].nil? || ai.acl_admits?(pc['access'], npc)
   end
-  lock_codes = cm.lock_codes(json_data)
+  lock_answer_keys = cm.lock_answer_keys(json_data)
   # The server's rule (CaptureProofs#account_password_opens_something?): a sign-in PC that
-  # admits the account, a password or PIN lock whose code is the password, or an access-listed
-  # share that admits it.
+  # admits the account, a password, PIN, combination or cryptex lock whose answer is the password,
+  # or an access-listed share that admits it.
   opens_something = lambda do |npc|
-    return true if cm.password_opens_lock?(npc, json_data, lock_codes)
+    return true if cm.password_opens_lock?(npc, json_data, lock_answer_keys)
     return true if login_pcs.any? { |pc| pc_admits.call(pc, npc) }
     return false unless networks
 
@@ -338,21 +338,26 @@ end
 
 # Every lock code (a string requires) and every account password, for the storeIn text check.
 def capture_log_secret_strings(json_data, holders)
+  cm = BreakEscape::CaptureModel
   out = Set.new
   holders.each do |npc|
     pw = npc['creds']['password']
     out << pw if pw.is_a?(String) && pw.length >= 3
   end
-  walk = lambda do |node|
-    case node
-    when Hash
-      req = node['requires']
-      out << req if req.is_a?(String) && req.length >= 3 && node['lockType'].is_a?(String) && %w[pin password].include?(node['lockType'])
-      node.each_value { |v| walk.call(v) }
-    when Array
-      node.each { |v| walk.call(v) }
+  # Over the whole-tree lock-answer walk (step 3), so the storeIn text check also catches a
+  # combination, cryptex or door-entry answer written into visible text, not only pin/password.
+  cm.each_lock_answer(json_data) do |lock_type, value, _path|
+    case lock_type
+    when 'pin', 'password', 'cryptex'
+      str = value.to_s
+      out << str if str.length >= 3
+    when 'combination'
+      nums = cm.combination_numbers(value)
+      next unless nums
+
+      str = nums.join('-')
+      out << str if str.length >= 3
     end
   end
-  walk.call(json_data['rooms'])
   out.to_a
 end
