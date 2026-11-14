@@ -466,6 +466,10 @@ export function preload() {
     this.load.image('lw_franking_machine1', 'objects/lw_franking_machine1.png');
     this.load.image('lw_card_index1', 'objects/lw_card_index1.png');
     this.load.image('lw_sign_store1', 'objects/lw_sign_store1.png');
+    this.load.image('power_socket1', 'objects/power_socket1.png');
+    this.load.image('power_socket2', 'objects/power_socket2.png');
+    this.load.image('power_socket_off1', 'objects/power_socket_off1.png');
+    this.load.image('power_socket_off2', 'objects/power_socket_off2.png');
     this.load.image('page-builder', 'objects/page-builder.png');
     this.load.image('report-workstation', 'objects/report-workstation.png');
     this.load.image('suitcase', 'objects/suitcase-1.png');

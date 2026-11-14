@@ -1146,6 +1146,8 @@ WALL_MOUNTED_EXTRAS = {
     "lw_pigeonholes",
     "lw_time_clock",
     "lw_sign_store",
+    "power_socket",
+    "power_socket_off",
 }
 
 
