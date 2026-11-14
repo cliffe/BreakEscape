@@ -43,12 +43,15 @@
     z-index: 1;
 }
 
-/* CRT vignette */
+/* CRT vignette: a stepped pixel image, flat bands with hard edges (critique A38; made by
+   tools/make_title_vignette.py). The old soft version, for a quick revert:
+   background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.9) 100%); */
 .title-screen-container::after {
     content: '';
     position: absolute;
     inset: 0;
-    background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.9) 100%);
+    background: url('../assets/ui/title-vignette.png') center / 100% 100% no-repeat;
+    image-rendering: pixelated;
     pointer-events: none;
     z-index: 1;
 }
@@ -66,7 +69,7 @@
     /* 300px, or on a phone half the screen less a 16px gutter, so the zoom to 200% ends
        inside the screen instead of being cut by the container (coordinator 5b) */
     width: min(300px, calc(50vw - 16px));
-    filter: drop-shadow(0 0 20px rgba(126, 18, 214, 0.3));
+    /* No soft glow behind the logo (A38); was drop-shadow(0 0 20px rgba(126, 18, 214, 0.3)) */
     animation: logoFadeZoom 2.5s ease-in-out forwards;
     transform-origin: center center;
     pointer-events: none;
