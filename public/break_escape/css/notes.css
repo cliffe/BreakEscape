@@ -308,17 +308,6 @@
     border: 4px solid rgba(255,255,255,0.3);
 }
 
-/* Action buttons container */
-.notes-minigame-buttons-container {
-    position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 15px;
-    z-index: 10;
-}
-
 
 /* Edit interface styles */
 .notes-minigame-edit-textarea {
@@ -435,7 +424,8 @@
     .notes-minigame-content-area { padding: 0 9% 9% 17%; font-size: 14px; line-height: 1.3; height: calc(90% - 48px); }
     .notes-minigame-text-box { margin: 2% 0 4% 4%; padding: 8px; }
     .notes-minigame-text { margin-left: 0; }
-    .notes-minigame-title { font-size: 8px; line-height: 16px; margin: 0 0 2% 4%; }
+    /* 16px on short screens too, one line, cut with an ellipsis when long (S7-notes) */
+    .notes-minigame-title { font-size: 16px; line-height: 24px; margin: 0 0 2% 4%; }
     .notes-minigame-observation-container { margin: 2% 0 4% 4%; }
     .notes-minigame-observation { font-size: 14px; min-height: 24px; padding: 6px; }
     /* Continue stays beside the notepad here, out of the flow (the framework
@@ -445,4 +435,62 @@
         position: absolute; left: auto; right: 24px; bottom: 16px; transform: none; margin: 0;
     }
     .notes-minigame-nav-container { position: absolute; left: 24px; bottom: 16px; transform: none; flex-wrap: wrap; max-width: 28%; margin: 0; justify-content: flex-start; }
+}
+
+
+/* Short landscape phones up to 768px wide: the frame is 90% of the height with padding, so the
+   page is a little shorter than on wider short screens and its top stays inside the frame */
+@media (orientation: landscape) and (max-height: 640px) and (max-width: 768px) {
+    .notes-minigame-notepad {
+        height: calc(90vh - 12px);
+        width: calc((90vh - 12px) * 165 / 205);
+    }
+}
+
+/* ── The note slip, stuck on the page (S7-notes, user pick 2026-11-15: torn) ────────────
+   The text box is a slip of paper fixed to the notepad page: its bottom edge torn in square
+   steps, one strip of tape across the top centre. All flat colours and square steps: no
+   rotation, gradients or soft shadows. */
+
+/* On short screens the title is one line: a long one ends in an ellipsis. Elsewhere it wraps. */
+@media (orientation: landscape) and (max-height: 640px) {
+    .notes-minigame-title {
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .notes-minigame-title .notes-minigame-star { vertical-align: middle; margin-right: 8px; }
+}
+
+.notes-minigame-text-box .notes-minigame-celotape { display: none; }
+/* One strip of yellowed tape at the top centre, ends cut in 2px teeth */
+.notes-minigame-text-box::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: calc(50% - 24px);
+    width: 48px;
+    height: 16px;
+    background: #e9d488;
+    opacity: 0.92;
+    pointer-events: none;
+    z-index: 1;
+    clip-path: polygon(0 0, 100% 0, 100% 4px, calc(100% - 2px) 4px, calc(100% - 2px) 8px, 100% 8px, 100% 12px,
+        calc(100% - 2px) 12px, calc(100% - 2px) 100%, 2px 100%, 2px 12px, 0 12px, 0 8px, 2px 8px, 2px 4px, 0 4px);
+}
+
+/* The slip: bottom edge torn in uneven square steps */
+.notes-minigame-text-box {
+    background: #fff6d6;
+    border: 2px solid #d9c98e;
+    box-shadow: none;
+    border-bottom: 0;
+    padding-bottom: 20px;
+    clip-path: polygon(-20px -20px, calc(100% + 20px) -20px, calc(100% + 20px) calc(100% - 6px),
+        100% calc(100% - 6px), 93% calc(100% - 6px), 93% 100%, 86% 100%, 86% calc(100% - 4px), 77% calc(100% - 4px),
+        77% calc(100% - 8px), 68% calc(100% - 8px), 68% calc(100% - 2px), 58% calc(100% - 2px), 58% 100%,
+        49% 100%, 49% calc(100% - 6px), 41% calc(100% - 6px), 41% calc(100% - 2px), 30% calc(100% - 2px),
+        30% calc(100% - 8px), 21% calc(100% - 8px), 21% calc(100% - 4px), 12% calc(100% - 4px), 12% 100%,
+        5% 100%, 5% calc(100% - 6px), -20px calc(100% - 6px));
 }

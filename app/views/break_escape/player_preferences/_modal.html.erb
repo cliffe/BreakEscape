@@ -63,7 +63,6 @@
       <div class="form-actions modal-footer">
         <button type="button" id="relaunch-tutorial-btn" class="btn btn-secondary modal-tutorial-button">Relaunch Tutorial</button>
         <%= f.submit 'Save Configuration', class: 'btn btn-primary', id: 'save-preferences-btn' %>
-        <button type="button" id="player-preferences-cancel-btn" class="btn btn-secondary">Cancel</button>
       </div>
     <% end %>
   </div>
@@ -118,12 +117,6 @@
   const closeBtn = document.getElementById('player-preferences-close-btn');
   if (closeBtn) {
     closeBtn.addEventListener('click', function() {
-      if (window.playerHUD) window.playerHUD.closePlayerPreferences();
-    });
-  }
-  const cancelBtn = document.getElementById('player-preferences-cancel-btn');
-  if (cancelBtn) {
-    cancelBtn.addEventListener('click', function() {
       if (window.playerHUD) window.playerHUD.closePlayerPreferences();
     });
   }

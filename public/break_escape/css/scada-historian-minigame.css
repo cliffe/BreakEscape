@@ -14,18 +14,6 @@
     overflow: hidden;
 }
 
-.sh-close-btn {
-    background: #1e2a44;
-    border: 2px solid #ffffff;
-    color: #ffffff;
-    font-family: inherit;
-    font-size: 20px;
-    cursor: pointer;
-    padding: 2px 8px;
-    letter-spacing: 0.05em;
-}
-.sh-close-btn:hover { background: #334466; }
-
 /* ── Body layout ─────────────────────────────────────────── */
 .sh-body {
     display: flex;

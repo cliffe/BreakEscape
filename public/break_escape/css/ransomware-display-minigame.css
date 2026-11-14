@@ -140,59 +140,6 @@
     gap: 10px;
 }
 
-.ransomware-display-btn {
-    border: 2px solid #6f6f6f;
-    background: #2b2b2b;
-    color: #ececec;
-    min-height: 78px;
-    padding: 8px;
-    text-align: center;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 6px;
-    font-family: 'GNF', monospace;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
-
-.ransomware-display-btn .icon {
-    font-size: 24px;
-    line-height: 32px;
-    color: #bdbdbd;
-    margin: 0 auto;
-}
-
-.ransomware-display-btn .label {
-    font-size: 16px;
-    line-height: 24px;
-    font-family: 'Press Start 2P', monospace;
-}
-
-.ransomware-display-btn.contact.selected,
-.ransomware-display-btn.contact:hover:not(:disabled) {
-    border-color: #b20000;
-    color: #ff9f9f;
-}
-
-.ransomware-display-btn.report.selected,
-.ransomware-display-btn.report:hover:not(:disabled) {
-    border-color: #2d6bff;
-    color: #9ec0ff;
-}
-
-.ransomware-display-btn.recovery.selected,
-.ransomware-display-btn.recovery:hover:not(:disabled) {
-    border-color: #2ea74b;
-    color: #9de4ad;
-}
-
-.ransomware-display-btn:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-}
-
 @media (max-width: 840px) {
     .ransomware-display-panel {
         padding: 12px;

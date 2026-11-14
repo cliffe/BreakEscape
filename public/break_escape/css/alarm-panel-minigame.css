@@ -27,11 +27,10 @@
     background: #080e1b;
     border: 2px solid #2a3a5a;
     width: 100%;
-    max-width: 460px;
-    /* Text is never scaled: the labels are 8px pixel text drawn in the SVG. On a phone the
-       panel takes the screen's width instead of keeping 460px, and the SVG (1:1,
-       preserveAspectRatio slice) loses only its empty right-hand end, so nothing scrolls
-       sideways (UI shell reviews M5, R2 M2) */
+    max-width: 324px;
+    /* Text is never scaled: the labels are 8px pixel text drawn in the SVG, which is always its
+       320px viewBox width, and the panel is that plus its borders, or the screen's width on a
+       narrower phone (UI shell reviews M5, R2 M2; UI backlog item 1) */
     flex: 0 0 auto;
     box-sizing: border-box;
     display: flex;
@@ -77,12 +76,15 @@
 
 /* ── SVG panel ──────────────────────────────────────────────────────────── */
 
+/* The SVG is always its full 320px viewBox width and the panel is 324px (320 plus its two 2px
+   borders) at most, so the viewBox is never scaled: the browser then reports the pixel faces at
+   8px and 16px, not 6.74px and 13.49px on a phone (UI backlog item 1). 320px fits a 360px phone. */
 .ap-svg {
-    /* Drawn at the viewBox size (1:1, set in the markup), never scaled */
     flex: 0 0 auto;
     align-self: center;
-    width: 100%;
-    max-width: 420px;
+    display: block;
+    width: 320px;
+    max-width: none;
 }
 
 /* Colour transitions on the lamps */

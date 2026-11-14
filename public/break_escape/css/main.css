@@ -227,29 +227,6 @@ body {
     border: none;
     border: 2px solid #333;
 }
-
-.laptop-close-btn {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    width: 30px;
-    height: 30px;
-    background: #e74c3c;
-    color: white;
-    border: none;
-    border: 2px solid #333;
-    cursor: pointer;
-    font-size: 18px;
-    font-weight: bold;
-    z-index: 10000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.laptop-close-btn:hover {
-    background: #c0392b;
-} 
 /* A word that must not break across lines, such as a password on a sticky note
    (escapeHtmlKeepWords in utils/escape-html.js). */
 .keep-whole {
