@@ -1,6 +1,13 @@
 {
   "title": "Break Escape Scenario Schema",
   "description": "Schema for validating Break Escape scenario.json.erb files",
+  "x-engineGlobals": [
+    { "suffix": "_frustration", "over": "npc" },
+    { "suffix": "_screen_locked", "over": "object" },
+    { "suffix": "_owner_away", "over": "object" },
+    { "suffix": "_accessed", "over": "object" },
+    { "suffix": "_planted", "over": "object" }
+  ],
   "type": "object",
   "required": ["scenario_brief", "startRoom", "rooms"],
   "properties": {
@@ -260,7 +267,7 @@
           "kind": { "type": "string", "description": "file_share, printer, or another kind." },
           "name": { "type": "string" },
           "host": { "type": "string", "description": "The machine it lives on, as a label." },
-          "network": { "type": "string", "description": "A networks key. A resource with no network is never listed." },
+          "network": { "type": "string", "x-ref": "network", "description": "A networks key. A resource with no network is never listed." },
           "access": { "$ref": "#/definitions/accessList" },
           "contents": { "type": "array", "items": { "$ref": "#/definitions/item" }, "description": "file_share only: items, as in an account profile. Ids are global." },
           "observations": { "type": "string", "description": "For a resource with no contents: the text shown when the player clicks its row." },
@@ -3790,10 +3797,10 @@
         "unlockCondition": {
           "type": "object",
           "properties": {
-            "aimCompleted": { "type": "string" },
+            "aimCompleted": { "type": "string", "x-ref": "aim" },
             "aimsCompleted": {
               "type": "array",
-              "items": { "type": "string" },
+              "items": { "type": "string", "x-ref": "aim" },
               "description": "Array variant of aimCompleted -- unlocks when ALL listed aims are completed"
             }
           }
@@ -3808,12 +3815,12 @@
           "properties": {
             "tasksCompleted": {
               "type": "array",
-              "items": { "type": "string" },
+              "items": { "type": "string", "x-ref": "task" },
               "description": "Task IDs that must be completed. The server-authoritative form: flag-submission task records are written only after the flag is validated against the scenario's targetFlags. Use this for VM/CTF work."
             },
             "globals": {
               "type": "array",
-              "items": { "type": "string" },
+              "items": { "type": "string", "x-ref": "global" },
               "description": "Global variables that must be true. Client-reported, so the weaker form -- use for story state, not for gating technical work."
             }
           },
@@ -3899,9 +3906,9 @@
         "onComplete": {
           "type": "object",
           "properties": {
-            "unlockTask": { "type": "string" },
-            "unlockAim": { "type": "string" },
-            "setGlobal": {"x-id-map": true, 
+            "unlockTask": { "type": "string", "x-ref": "task" },
+            "unlockAim": { "type": "string", "x-ref": "aim" },
+            "setGlobal": {"x-id-map": true,
               "type": "object",
               "description": "Global variables to set when this task completes",
               "additionalProperties": true
@@ -4127,7 +4134,7 @@
         },
         "access": { "$ref": "#/definitions/accessList" },
         "acceptsUIDOnly": { "type": "boolean", "description": "Access model 4.1: an rfid lock with access also opens to a UID-only (DESFire) copy. Default false." },
-        "network": { "type": "string", "description": "Networks 3.2: the default network (a networks key) for this room's objects; an object's own network wins. Never sent to the browser." },
+        "network": { "type": "string", "x-ref": "network", "description": "Networks 3.2: the default network (a networks key) for this room's objects; an object's own network wins. Never sent to the browser." },
         "biometricMatchThreshold": { "type": "number", "minimum": 0, "maximum": 1 },
         "requires": {
           "oneOf": [
@@ -4843,8 +4850,8 @@
         "condition": { "type": "string" },
         "closeDoor": {
           "oneOf": [
-            { "type": "string" },
-            { "type": "array", "items": { "type": "string" } }
+            { "type": "string", "x-ref": "room" },
+            { "type": "array", "items": { "type": "string", "x-ref": "room" } }
           ],
           "description": "Room id or ids: shut the gate door(s) into that room now (systems/door-gates.js closeNow, forced). Warns if the door is not a gate."
         },
@@ -4986,9 +4993,10 @@
         },
         "setGlobal": {"x-id-map": true,  "type": "object" },
         "addCapture": { "type": "object", "description": "Record a capture into se_captures (merged with the npc_used payload). proof: the capture proof shorthand, counted for the account whose username equals the address, or, with no address, for the NPC carrying the mapping (engine plan section 6).", "properties": { "targetId": { "type": "string" }, "proof": { "type": "object", "description": "One capture proof: { \"planted\": item, \"on\"?: object }, { \"dropped\": item } or { \"session\": pc } (engine plan section 6)", "properties": { "planted": { "type": "string" }, "on": { "type": "string" }, "dropped": { "type": "string" }, "session": { "type": "string" } }, "patternProperties": { "^_": {} }, "additionalProperties": false } } },
-        "completeTask": {"x-free-data": true},
-        "unlockTask": {"x-free-data": true},
-        "unlockAim": {"x-free-data": true},
+        "completeTask": { "oneOf": [ { "type": "string", "x-ref": "task" }, { "type": "array", "items": { "type": "string", "x-ref": "task" } } ] },
+        "unlockTask": { "oneOf": [ { "type": "string", "x-ref": "task" }, { "type": "array", "items": { "type": "string", "x-ref": "task" } } ] },
+        "unlockAim": { "oneOf": [ { "type": "string", "x-ref": "aim" }, { "type": "array", "items": { "type": "string", "x-ref": "aim" } } ] },
+        "skipTask": { "oneOf": [ { "type": "string", "x-ref": "task" }, { "type": "array", "items": { "type": "string", "x-ref": "task" } } ] },
         "_comment": { "type": "string" }
       }
     },
@@ -5370,7 +5378,7 @@
         "acceptsUIDOnly": { "type": "boolean", "description": "Access model 4.1: an rfid lock with access also opens to a UID-only (DESFire) copy. Default false." },
         "loginPicker": { "oneOf": [ { "type": "string", "enum": ["accounts", "known"] }, { "type": "boolean", "enum": [false] } ], "description": "Access model 5.3: a sign-in PC's account tiles. accounts (default): every account its access admits; known: those the player has met; false: type the username." },
         "policy": { "type": "string", "description": "Access model 5.5: the named policy (top-level policies) this PC follows." },
-        "network": { "type": "string", "description": "Networks 3.2: the network (a networks key) this object is on; overrides its room's network. Never sent to the browser." },
+        "network": { "type": "string", "x-ref": "network", "description": "Networks 3.2: the network (a networks key) this object is on; overrides its room's network. Never sent to the browser." },
         "host": { "type": "string", "description": "Networks 3.2: a PC's computer name (HB-FIN-02), on any PC or laptop. A sign-in PC's label on the network; on any PC the computer name in the desktop taskbar (q94). Default: its name. Not secret." },
         "desktopUser": {
           "type": "object",

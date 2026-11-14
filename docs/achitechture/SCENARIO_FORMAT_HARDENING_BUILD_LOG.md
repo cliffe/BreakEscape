@@ -3071,3 +3071,119 @@ No change. Chunk 7 touches docs, a schema description string and test fixtures o
 
 Both full suites green on one tip (`0305bd1ad`), the grep sweep clean of stray live mentions, the three
 cross-chunk node files passing against the committed validator. Step 8c is ready for code review.
+
+## Step 4 — reference and id checks driven by schema annotations (2026-11-14)
+
+Branch `build/hard-step4`, from main `cb259dbdf` (well past the plan's anchor 406fa7791: steps 2, 2b,
+3, 5, 7, 8a, 8b and 8c are all merged here). Ports 3668/3669 reserved; no server was needed (the work
+is a validator check plus a server test that already existed).
+
+### What changed
+
+- **`scripts/scenario-schema.json` — `x-ref` annotations.** A property that names something now carries
+  `"x-ref": "<kind>"` (on the property, or, for an array of references, on its `items`). Placed on the
+  fields the existing one-off checks do not already cover, so no reference is reported twice:
+  - eventMapping `completeTask`, `unlockTask`, `skipTask` (x-ref `task`) and `unlockAim` (x-ref `aim`),
+    each retyped from the step 2b `{"x-free-data": true}` stub to `oneOf` [string, array of strings],
+    with `x-ref` on the string and on the array items. `skipTask` is newly declared here.
+  - task `onComplete.unlockTask` (task), `onComplete.unlockAim` (aim).
+  - objective `unlockCondition.aimCompleted` and `unlockCondition.aimsCompleted.items` (aim).
+  - objective `concludeRequires.tasksCompleted.items` (task), `concludeRequires.globals.items` (global).
+  - eventMapping `closeDoor` (room, on both the string and array-item branches).
+  - object `network`, room-default `network` and resource `network` (network).
+- **`scripts/scenario-schema.json` — `x-engineGlobals`.** A new top-level schema annotation listing the
+  engine-written global patterns as `{suffix, over}`: `_frustration` over npc; `_screen_locked`,
+  `_owner_away`, `_accessed`, `_planted` over object. The reference index expands these over the
+  scenario's ids so a condition on, say, `pc1_screen_locked` resolves. It is schema metadata (ignored by
+  json-schema validation of data); the validator reads it off the compiled schema's root.
+- **`lib/break_escape/schema_walk.rb` — the shared walker (new).** `BreakEscape::SchemaWalk.walk(data,
+  node)` yields every value paired with its schema Node, descending with `ScenarioSchema.child`/`item`,
+  so `$ref`, `oneOf` and `anyOf` are resolved by the data's shape (the step 2b resolver). `ref_kind(node)`
+  reads the `x-ref` kind off a Node's branches; `path_string` renders a readable path. Steps 6a and 6b
+  reuse it. Plain Ruby, no Rails.
+- **`scripts/validate_scenario.rb` — `check_references` (new, common stage).** Builds an index of every
+  id by kind (room map keys; NPC ids from rooms/npcs/phoneNPCs; object ids at every depth via
+  `each_object_id` over objects/contents/itemsHeld/startItemsInInventory; task and aim ids; declared
+  globals plus the expanded engine patterns; networks/resources/policies/roles keys), walks the scenario
+  with `SchemaWalk`, and resolves every `x-ref` string leaf against the index. An unresolved reference is
+  a `⚠️ WARNING`. Uniqueness: an object id reused at any depth is a warning (a set whose occurrences are
+  all top-level room objects is left to the `ValidateSocial` duplicate-object-ids error, so there is no
+  double report); an NPC id reused is a warning; a string that is both a task id and a global is a
+  `💡 SUGGESTION` note. Wired in beside `check_common_issues` as `run.call('check_references')`.
+
+### The 2026-11-12 grant_foothold ruling (folded in)
+
+The ruling (server `NetworkModel.grant_foothold_actions` must skip `_` note keys, with a server test)
+is already satisfied in this tree by step 2b: `grant_foothold_actions` walks with
+`AuthorNotes.each_live(data, ScenarioSchema.root)`, which skips `_` notes and visits free data in full,
+and `test/controllers/break_escape/network_notes_not_live_test.rb` proves, through the real
+`POST /network/implant`, that a `grant_foothold` parked only in a `_draft` note is refused as
+`no_action` and grants nothing (and that a free-data grant and an `_annex` room id still work). Re-run
+here: 8 runs, 0 failures. No new server code was required; this step adds no server change.
+
+### Corpus run
+
+175 `scenarios/*/scenario.json.erb`, `--no-graph --skip-ink`. Before this step `check_references` did
+not exist (0 of its lines). After: 5 new lines across 3 scenarios, and **0 new errors anywhere**:
+- `npc-hub-demo-ghost-protocol`: 3 `⚠️ WARNING` NPC-id reuses (`netherton`, `dr_chen`, `haxolottle`,
+  each in the briefing room and in the character's own room).
+- `lab_social_engineering`: 1 `💡 SUGGESTION` (`profile_done` is both a task id and a global).
+- `m03_ghost_in_the_machine`: 1 `💡 SUGGESTION` (`victoria_choice_made` is both a task id and a global).
+
+No `x-ref` reference resolved short (every reference in the corpus points at something real), and no
+object-id duplicate was found at any depth. The plan's premise that m09, m10, lab_tesseract_trials and
+test_access_social carry duplicate object ids is **stale**: it was checked on main 406fa7791, and on
+this tree all four show 0 errors and no step-4 duplicate warning (m09 26 / m10 64 / test_access_social 6
+/ lab_tesseract_trials 19 warnings, all pre-existing). Their historical duplicates were evidently
+resolved by their owners between 406fa7791 and cb259dbdf. ink-on spot check of the demo matched the
+`--skip-ink` result with no `could not run` line.
+
+### Accounting for the new findings
+
+- The 3 NPC-id reuse warnings in `npc-hub-demo-ghost-protocol` (this build's demo) are shipped **as
+  warnings**, as the plan specifies for step 4; the promotion-to-errors commit (plan, "Promotion to
+  errors") is a separate, later step, and fixing the demo's NPC ids belongs there. The reuse looks
+  intentional (the same character staged in the briefing room and in their own room), so whether to
+  rename or to accept is the demo owner's call at promotion. Owner: this build.
+- The 2 `💡 SUGGESTION` notes are informational and need no action.
+- **No new error (`❌`) is produced by this step**, so there is no `validator_known_failures.json` entry
+  and no `docs/agents/VALIDATOR_DECISIONS.md` heading to propose.
+
+### Deferred (as noted for the orchestrator)
+
+- **Plan item 6 (replace the hard-coded room `type` enum with a check against the room map files).** Left
+  for a follow-up: removing the large enum is a sizeable `scenario-schema.json` edit that risks
+  conflicting with the parallel step 5 and step 6a-1 schema work, and `room_test_desk_seating` is already
+  in the enum (so test_desk_seating passes today). The reference-index machinery is in place to drive it.
+- **Broader `x-ref` coverage.** Kinds annotated: task, aim, room, global, network. Deferred: npc, object,
+  item, lock, resource, policy, role. Several of those fields are already covered by existing one-off
+  checks (`targetObject` warns, `targetNPC`/`targetRoom`/`unlockDoor`/connections error, the
+  `setVariable` globals error); the index already carries all kinds, so extending the annotations is
+  mechanical.
+- **The m01-with-six-slips integration fixture** (plan Tests): it spans several validator stages
+  (unknown-field for `lockedd`/`requries`, existing error checks for `unlock_door`/`targetRoom`, and
+  step-4 for `completeTask`), so it is a full-validator fixture rather than a `check_references` unit
+  fixture; left as a follow-up.
+
+### Tests
+
+- `test/js/validator-references.test.mjs` (new): 9 tests, each kind (missing task, aim, global, network),
+  duplicates in contents and itemsHeld, an engine-written global accepted, duplicate top-level room ids
+  left to the social lint, a reused NPC id, and a clean scenario. All pass.
+- `test/unit/schema_walk_test.rb` (new): 6 runs, the walker and `ref_kind`/`path_string` against the real
+  schema (completeTask string and array, object network, FREE/nil nodes). All pass.
+- Re-ran the step 2b schema invariants: `test/unit/scenario_schema_test.rb` and
+  `test/unit/author_notes_test.rb` (29 runs, 0 failures) — the retype of the three eventMapping action
+  fields from `x-free-data` to typed `oneOf` keeps every open-node-marked and resolver assertion green.
+- `test/controllers/break_escape/network_notes_not_live_test.rb` (8 runs) for the grant_foothold ruling.
+
+### Sync size
+
+No runtime change. `check_references` is validator-only; the schema annotations are read by the
+validator and the lib walker; no payload, player_state or bootstrap path is touched.
+
+### Files touched
+
+`lib/break_escape/schema_walk.rb` (new), `scripts/scenario-schema.json`, `scripts/validate_scenario.rb`,
+`test/js/validator-references.test.mjs` (new), `test/unit/schema_walk_test.rb` (new),
+`docs/achitechture/SCENARIO_FORMAT_HARDENING_BUILD_LOG.md`.
