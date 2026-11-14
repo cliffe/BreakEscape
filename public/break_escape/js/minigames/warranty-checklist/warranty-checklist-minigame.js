@@ -59,6 +59,9 @@ function setGlobalAndNotify(varName, value) {
 }
 
 export class WarrantyChecklistMinigame extends MinigameScene {
+    // Draws in the shared console window (UI decision X8): title bar and X come from there
+    static consoleWindow = true;
+
     constructor(container, params = {}) {
         super(container, {
             ...params,
@@ -75,6 +78,10 @@ export class WarrantyChecklistMinigame extends MinigameScene {
 
         this.verdicts = {};
         this.submitted = false;
+    }
+
+    consoleTitle() {
+        return this.params.title || DEFAULT_TITLE;
     }
 
     init() {

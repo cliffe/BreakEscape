@@ -249,10 +249,12 @@ test('coverage decision form: every field renders as text, ids and values stay i
     const mg = new CoverageDecisionFormMinigame(fresh(), lockable(md));
     quietly(() => mg.init());
     assertClean('form');
-    for (const sel of ['.cdf-header-title', '.cdf-outcome-speaker', '.cdf-section-title', '.cdf-section-desc', '.cdf-radio-sublabel']) {
+    // The form's title and policy line are the shared bar's title and subtitle (X8)
+    assert.equal(document.querySelector('.console-title').textContent, HOSTILE, 'title');
+    for (const sel of ['.cdf-outcome-speaker', '.cdf-section-title', '.cdf-section-desc', '.cdf-radio-sublabel']) {
         assert.equal(document.querySelector(sel).textContent, HOSTILE, sel);
     }
-    assert.ok(document.querySelector('.cdf-header-sub').textContent.includes(`Policy Ref: ${HOSTILE}`));
+    assert.ok(document.querySelector('.console-subtitle').textContent.includes(`Policy Ref: ${HOSTILE}`));
     const radio = document.querySelector('input[type="radio"]');
     assert.equal(radio.name, ATTR);
     assert.equal(radio.value, ATTR);

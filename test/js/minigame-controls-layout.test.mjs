@@ -71,7 +71,6 @@ test('full-window consoles opt in to the overlaid Cancel row; no class allowlist
 
 test('scene overrides keep the Cancel row positioned, so its z-index holds (R2 m2)', () => {
     for (const [file, sel] of [['examine-minigame.css', '.examine-minigame .minigame-controls'],
-        ['forensic-data-platform-minigame.css', '.fdp-minigame-container .minigame-controls'],
         ['biometrics-minigame.css', '.fingerprint-reader-container .minigame-controls']]) {
         assert.equal(rule(css(file), sel).position, 'relative', sel);
     }

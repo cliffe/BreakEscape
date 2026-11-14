@@ -130,14 +130,14 @@ test('the network segmentation map title bar shows a hostile title as text', () 
     window.gameState = { globalVariables: {} };
     const mg = new NetworkSegmentationMapMinigame(fresh(), { title: HOSTILE, rules: [] });
     initQuietly(mg);
-    assertText(document.querySelector('.nsm-title-text'), 'segmentation map title');
+    assertText(document.querySelector('.console-title'), 'segmentation map title');
 });
 
 test('the forensic data platform title shows a hostile title as text', () => {
     window.gameState = { globalVariables: {} };
     const mg = new ForensicDataPlatformMinigame(fresh(), { title: HOSTILE, tabs: [] });
     initQuietly(mg);
-    assertText(document.querySelector('.fdp-title'), 'forensic platform title');
+    assertText(document.querySelector('.console-title'), 'forensic platform title');
 });
 
 test('the password device panel shows a hostile title as text (deviceImage path)', () => {
