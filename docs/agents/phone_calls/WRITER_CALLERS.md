@@ -9,7 +9,7 @@ Order: m09 (M1), m04 (M4), m05 (M5), m07 (M6).
 
 ---
 
-## M1 — m09 Nightshade, Torres, Gary (incoming voiced calls)
+## M1: m09 Nightshade, Torres, Gary (incoming voiced calls)
 
 These were unvoiced text threads that already read as calls (plan 7.2). The ink already reads as
 speech, so the writer work was: drop the fake `[Ring back.]` home stubs (the engine now provides a
@@ -17,7 +17,7 @@ real missed-call callback / ring-out), mark each `call` knot `// lint: call-knot
 Gary's `_comment`. No call-VAR openings: the M1 rows do not ask for callback / slow-answer lines on
 these one-shot callers, so each has a single opening line.
 
-### Config each knot needs (for the implementer — plan 7.2 M1 row)
+### Config each knot needs (for the implementer: plan 7.2 M1 row)
 
 - `call_map(...)` for each contact gains a `ring:` keyword; the mapping passes `ring: true` and
   `voiced: true`. Defaults: `onMissed: "callback"`, 20 s ring-out.
@@ -25,7 +25,7 @@ these one-shot callers, so each has a single opening line.
   - Torres: the two `call_map`s (box `object_interacted` and `item_unlocked`) plus the reading-found fallback.
   - Gary: `call_map("door_unlock_attempt", "... salvage_cage && m02_gary_protected", "call", delay: 1500, ...)`.
 - Gary voice: plan asks to keep Charon aligned to the m10 `gary` style (`m10 scenario.json.erb:498`).
-  That is a voice-block / config change, OUTSIDE this writer's scope — NOT done here. Flagged for the
+  That is a voice-block / config change, OUTSIDE this writer's scope, NOT done here. Flagged for the
   orchestrator. Audio step must check a Charon clash with Netherton and log for the user.
 
 ### Spoken lines table (knot = `call`; all voiced after config)
@@ -78,7 +78,7 @@ within-caller repeats.
 
 ---
 
-## M4 — m04 Robert Vance callable (voiced outgoing call)
+## M4: m04 Robert Vance callable (voiced outgoing call)
 
 Scope here is Vance only. m04's HaX dial-ring (`on_anomaly_confirmed`) and HaX bring-in are the HaX
 writer's. The Vance support conversation was a silent text thread that read as spoken SCADA guidance;
@@ -86,7 +86,7 @@ it becomes a voiced call the player places from Vance's thread. Vance is a stres
 up on the first ring, so NO `call_answer_seconds` line; outgoing call, so NO `call_is_callback` line
 (plan 3.6).
 
-### Config each knot needs (implementer — plan 7.2 M4 Vance row)
+### Config each knot needs (implementer: plan 7.2 M4 Vance row)
 
 - `robert_vance_phone` record (`scenario.json.erb:1489`) gains:
   - `"call": { "knot": "support_call", "when": "globalVars.vance_is_ally && !globalVars.robert_vance_ko", "unavailable": "no_answer" }`
@@ -121,7 +121,7 @@ now carries a voice unchanged. Only deletions were the non-voiced stub/guard lin
 |---|---|---|---|
 | `start` routing + `[(He's at the ops desk…)]` + `[(No answer.)]` | fake not-ally/KO stubs | one `[(Close.)]` exit | no (text stub) |
 | opening (support_call) | "Vance. What do you need?" / "Banks are isolated…" / "Vance. The hydrogen's still climbing." / "Vance." | unchanged | yes |
-| `support_call_end` first line | "Call me if you need it." | unchanged (stays — Vance is callable, 7.3) | yes |
+| `support_call_end` first line | "Call me if you need it." | unchanged (stays: Vance is callable, 7.3) | yes |
 
 ### Variety listing
 
@@ -132,7 +132,7 @@ with HaX's openings or with the m09 callers.
 
 ### Voiced-line count
 
-~51–65 lines now carry a voice (the whole Vance support conversation). Re-keyed: 0 (no text changed).
+~51 to 65 lines now carry a voice (the whole Vance support conversation). Re-keyed: 0 (no text changed).
 
 ### Checks run
 
@@ -149,12 +149,12 @@ with HaX's openings or with the m09 callers.
 
 ---
 
-## M5 — m05 Recruiter + Patricia (voiced calls); rewords already applied by HaX writer
+## M5: m05 Recruiter + Patricia (voiced calls); rewords already applied by HaX writer
 
 My M5 scope: Recruiter (first call, ring-back, follow-up), Patricia callable, and the plan-named M5
 rewords. The HaX root-flag ring (`topic_architect`) and HaX bring-in are the HaX writer's.
 
-### IMPORTANT — overlap found
+### IMPORTANT: overlap found
 
 The shared files `scenario.json.erb`, `m05_phone_agent_0x99.ink`/`.json` already carry UNCOMMITTED
 changes from the HaX writer in this worktree. All six M5 rewords the brief assigned me are ALREADY
@@ -172,7 +172,7 @@ LEFT as "call me" (the bring-in is a real call). I did NOT edit or commit these 
 belong to the HaX writer and contain their uncommitted work (root-flag ring + bring-in). The rewords
 will land with the HaX writer's ERB/ink commit. Content verified against plan 7.3; nothing left to do.
 
-### Config each knot needs (implementer — plan 7.2 M5 rows)
+### Config each knot needs (implementer: plan 7.2 M5 rows)
 
 - **Recruiter** record (`scenario.json.erb:1503`): replace the three `conversation_closed:{patricia_morgan,
   patricia_phone,agent_0x99_handler}` sendTimedMessage mappings with a `ring` mapping on the same three
@@ -184,7 +184,7 @@ will land with the HaX writer's ERB/ink commit. Content verified against plan 7.
     false`, next to the other `recruiter_*` globals). The ink sets it with a plain `~`, and the engine syncs
     an ink VAR back only when the name is already a global (`npc-conversation-state.js:522`). Undeclared, the
     `when` is always true and every press of Call after her final word replays `return_contact`. Declare it
-    and keep the condition — do not drop it. No ink change (the `~` assignments sync once it is a global).
+    and keep the condition (do not drop it). No ink change (the `~` assignments sync once it is a global).
 - **Patricia** record (`:1534`): keep the text intro; add `call: { knot: "phone_call",
   when: "globalVars.patricia_phone_available && !globalVars.patricia_ko", unavailable: "no_answer" }`.
 - **Current-flow break (documented):** on this branch (no `call` block yet) both threads open on the new
@@ -192,7 +192,7 @@ will land with the HaX writer's ERB/ink commit. Content verified against plan 7.
   No mapping/`targetKnot` referenced the renamed entries (recruiter: the pitch body is now `first_call`,
   not `start`; patricia: hub entry is `phone_call`, not `start`).
 
-### Ink structure — Recruiter (`m05_phone_recruiter.ink`)
+### Ink structure: Recruiter (`m05_phone_recruiter.ink`)
 
 - `start`: was the pitch + routing. Now a silent by-hand router (`{not torres_identified: -> not_yet}
   -> idle`), never into a call knot.
@@ -205,7 +205,7 @@ will land with the HaX writer's ERB/ink commit. Content verified against plan 7.
   never_talked_terms, hangs_up, end_contact). `~ recruiter_line_dead = true` kept.
 - `idle`: ring-back choices removed (Call button rings her back); just a `[Leave it.]` stub.
 
-### Ink structure — Patricia (`m05_phone_patricia.ink`)
+### Ink structure: Patricia (`m05_phone_patricia.ink`)
 
 - `start`: new silent text stub (one `[(Close.)]`), no route to hub.
 - `phone_call` (new, call entry): the old `start` body (`{patricia_ko}{not available} -> hub`), marked.
@@ -214,7 +214,7 @@ will land with the HaX writer's ERB/ink commit. Content verified against plan 7.
 - All call-ending `#exit_conversation -> hub` → `#exit_conversation -> DONE` (13 sites: the hub
   check-in, wrong-name/wrong-reason ends, halloran accuse, on-my-way, understood). Mid-call loop/guard
   `-> hub` lines (and `{…: -> hub}` redirects) untouched. `hub` marked call-knot.
-- Patricia's "Ring me…" lines (7.3 :120/:152/:338/:355) stay — she is callable.
+- Patricia's "Ring me…" lines (7.3 :120/:152/:338/:355) stay: she is callable.
 
 ### Variety listing (openings + last NPC lines)
 
@@ -225,7 +225,7 @@ will land with the HaX writer's ERB/ink commit. Content verified against plan 7.
 | Patricia phone_call | "Go on, then. Who?" / hub re-entry lines | "Whatever you decide in front of him, ring me when it's done." / "Ring me when it's done." |
 
 Recruiter and Patricia voices are distinct from each other and from HaX. Recruiter has two call paths
-(first_call, return_contact) with different openings. No call-VAR openings: plan 3.6 — the Recruiter's
+(first_call, return_contact) with different openings. No call-VAR openings: under plan 3.6 the Recruiter's
 slow-answer enjoyment is a "may" (not required by the M5 rows); Patricia and the Recruiter ring-back
 are outgoing (no callback line). Kept simple per the M5 rows.
 
@@ -250,19 +250,19 @@ are outgoing (no callback line). Kept simple per the M5 rows.
 - The six M5 rewords are already in the working tree via the HaX writer's uncommitted edits to
   `scenario.json.erb` and `m05_phone_agent_0x99.ink`; they will commit with the HaX writer's work, not
   mine. Flagging the overlap so the orchestrator knows the rewords are covered.
-- Plan step-8 M5 note: log for opus48 whether m05's VM companion sheet describes how the call to HaX
-  opens, now the bring-in is a placed call. (Not actioned here — sheet work is out of my scope.)
+- Plan step-8 M5 note: log for the VM-track agent whether m05's VM companion sheet describes how the call to HaX
+  opens, now the bring-in is a placed call. (Not actioned here: sheet work is out of my scope.)
 
 ---
 
-## M6 — m07 The Architect (withheld voiced calls + voicemails)
+## M6: m07 The Architect (withheld voiced calls + voicemails)
 
 My m07 scope: the Architect's taunts and sign-off as withheld voiced calls (C6), his voicemails, the
 `start`/`parked`/`dead_air_choices` router changes, and the narration rewrites. HaX's bring-in
-(`m07_phone_agent_0x99.ink`) is the HaX writer's — untouched by me. Only `m07_architect_comms.ink`
+(`m07_phone_agent_0x99.ink`) is the HaX writer's, untouched by me. Only `m07_architect_comms.ink`
 (+ .json) changed.
 
-### Config each knot needs (implementer — plan 7.2 m07 rows). CRITICAL: current flow depends on this.
+### Config each knot needs (implementer: plan 7.2 m07 rows). CRITICAL: current flow depends on this.
 
 - Each taunt mapping (`scenario.json.erb` ~:1570-1624, 1641-1646) must DROP `sendTimedMessage` and gain
   `conversationMode: "phone-chat"`, `ring: { withheld: true, onMissed: "voicemail", voicemailKnot: "<knot>_vm" }`,
@@ -286,7 +286,7 @@ My m07 scope: the Architect's taunts and sign-off as withheld voiced calls (C6),
   The config change and this ink must land together.
 - **Timing + gating preserved:** the config keeps each mapping's event/condition/delay (timing T-30…T-1
   intact). `architect_signoff_done` is still set at the top of `sign_off` (line 384) and the debrief still
-  waits on it — unchanged. `heard_*` VARs and the `late_first_contact`/`t20_folded`/`t1_first_contact`
+  waits on it, unchanged. `heard_*` VARs and the `late_first_contact`/`t20_folded`/`t1_first_contact`
   fold logic are preserved inside the taunt knots and mirrored in the `*_vm` knots.
 
 ### Ink changes
@@ -296,17 +296,17 @@ My m07 scope: the Architect's taunts and sign-off as withheld voiced calls (C6),
 - `t30_close`…`t1_close`, `signoff_close`, `seattle_close`: end `#exit_conversation` + `-> DONE` instead
   of `-> parked` (plan (2)).
 - Six voicemail knots `taunt_t30_vm`…`taunt_t1_vm`, `seattle_call_vm`: each sets the same `heard_*` VARs
-  (folds included) its live taunt would, then 1–3 short `voice:` lines (≤25 words each) carrying the
+  (folds included) its live taunt would, then 1 to 3 short `voice:` lines (≤25 words each) carrying the
   taunt's point; `taunt_t30_vm` also sets `architect_echo_heard` with the teacher-echo line, so the m06/m07
   teacher thread survives a declined T-30 (plan (3)).
 - `seattle_call` (+ `seattle_call_choices`, `seattle_close`): new post-countdown withheld call.
 - Narration rewrites (plan (4)): the five first-contact openers ("…already connected, and has been for
   some seconds.") → "No caller ID. The line opens before you speak."; the three "no call in log" lines
   (t30_close, t20_close, signoff_close) → a log that shows a withheld call ("…one call: no number, no
-  name." etc.). Judgment: I also reworded two else-branch openers that directly contradicted a ringing
+  name." etc.). Judgement: I also reworded two else-branch openers that directly contradicted a ringing
   call ("The handset opens the line without asking." / "…the line is already open.") since "narration
   rewrites" is in my scope; I left `taunt_t20`/`taunt_t10` else openers ("cuts across the facility alarm",
-  "screen wakes on its own") — defensible as his style, and the plan scoped only the five. Flagging for the
+  "screen wakes on its own"), defensible as his style, and the plan scoped only the five. Flagging for the
   reviewer in case all subsequent openers should ring too.
 - `// lint: call-knot` on taunt_t30..taunt_t1, sign_off, seattle_call and the six vm knots.
 - To clear a validator warning on THIS branch (bark "Seattle first. As scheduled." == my seattle_call
@@ -314,7 +314,7 @@ My m07 scope: the Architect's taunts and sign-off as withheld voiced calls (C6),
   scheduled." instead of verbatim. (The warning is an old-config artifact; it also clears once the config
   drops the bark.)
 
-### Variety listing — the Architect's calls (one shared voice block, so these MUST differ)
+### Variety listing: the Architect's calls (one shared voice block, so these MUST differ)
 
 | Call | Opening (first spoken) | Last NPC line |
 |---|---|---|
@@ -333,7 +333,7 @@ so the shared phrasing is never heard twice. Across different taunts/vms the ope
 
 - Live taunts + sign-off + seattle_call: ~60 lines now carry a voice.
 - Voicemails: ~14 `voice:` lines across six vm knots.
-- Re-key: 0 (new voiced content; no existing voiced line's text changed in a way that re-keys — narration
+- Re-key: 0 (new voiced content; no existing voiced line's text changed in a way that re-keys: narration
   is not voiced).
 
 ### Checks run
@@ -364,7 +364,7 @@ return_contact distinct, Patricia distinct; m07 Architect's seven calls distinct
 
 ---
 
-## Fix round 1 (callers) — updated counts and variety listings (2026-11-12)
+## Fix round 1 (callers): updated counts and variety listings (2026-11-12)
 
 Review `REVIEW_WRITER_CALLERS_R1.md` actioned; see `REVIEW_WRITER_CALLERS_R1_OUTCOMES.md` for each finding.
 Commits: m09 `7666e9494`, m04 `a5bc7eb32`, m05 `09df82fcc`, m07 `acc063b4c`.
@@ -374,13 +374,13 @@ Commits: m09 `7666e9494`, m04 `a5bc7eb32`, m05 `09df82fcc`, m07 `acc063b4c`.
 | Mission | Caller | Before (writer) | After fix round 1 |
 |---|---|---|---|
 | m09 | Nightshade, Torres, Gary | ~22 | ~22 (co-speaker reprefix + home stubs, no count change; optional m8 not taken) |
-| m04 | Vance | ~51 | ~48 (−3: M5 SCADA cuts; M4 call-end adds no lines) |
-| m05 | Recruiter | ~60 | ~49 (B2 −13, m4 +2 call-VAR openers; longest answered path ~17–18) |
-| m05 | Patricia | ~50 | ~53 (M2 +3 answer lines, M3 +1 goodbye, m6 −1) |
-| m07 | Architect live calls | ~60 | ~59 (M7 +1 ten-minutes; M8 net −1) |
-| m07 | Architect voicemails | ~14 | ~16 (M6 whole-line branches; seattle_vm −1) |
+| m04 | Vance | ~51 | ~48 (-3: M5 SCADA cuts; M4 call-end adds no lines) |
+| m05 | Recruiter | ~60 | ~49 (B2 -13, m4 +2 call-VAR openers; longest answered path ~17 to 18) |
+| m05 | Patricia | ~50 | ~53 (M2 +3 answer lines, M3 +1 goodbye, m6 -1) |
+| m07 | Architect live calls | ~60 | ~59 (M7 +1 ten-minutes; M8 net -1) |
+| m07 | Architect voicemails | ~14 | ~16 (M6 whole-line branches; seattle_vm -1) |
 
-### Variety listing — redone after the fixes
+### Variety listing: redone after the fixes
 
 **m09 (unchanged in shape):** Nightshade "Agent 0x00. I'd ask how the leave was…" (last line now
 `agent_0x99:` "He's right. I hate that he's right."); Torres "I gave you this address back in October…";
@@ -405,7 +405,7 @@ still climbing." / "Vance."; last line "Call me if you need it." + "And hurry." 
 log." / "That's all for now." → "Right." (plain goodbye after a topic). "[Just checking in.]" shows only when
 no topic was taken on the call.
 
-**m07 Architect** (shared voice block — all distinct):
+**m07 Architect** (shared voice block, all distinct):
 | Call | Opening (first spoken) | Last NPC line |
 |---|---|---|
 | taunt_t30 | "Don't look for the trace. It isn't there." | "Let it hurt afterwards, not during…" |
@@ -421,7 +421,7 @@ taunt; T-30 and T-20 carry an opener in his voice ("You let it ring. Sensible." 
 
 ---
 
-## Fix round 2 (callers) — updated counts and variety listings (2026-11-12)
+## Fix round 2 (callers): updated counts and variety listings (2026-11-12)
 
 Review `REVIEW_WRITER_CALLERS_R2.md` actioned; see `REVIEW_WRITER_CALLERS_R2_OUTCOMES.md` for each
 finding. Commits: m04 `4ed621179`, m05 `e1a63d819`, m07 `e57d6fb94`. m09 untouched. Config follow-ups
@@ -433,12 +433,12 @@ finding. Commits: m04 `4ed621179`, m05 `e1a63d819`, m07 `e57d6fb94`. m09 untouch
 |---|---|---|---|
 | m09 | Nightshade, Torres, Gary | ~22 | ~22 (untouched) |
 | m04 | Vance | ~48 | ~48 (comment-only; no spoken line changed) |
-| m05 | Recruiter | ~49 | ~47 (−2: M1 orphan cut, m2 refusal tail cut) |
-| m05 | Patricia | ~53 | ~50 (−3: m3 opener reuse −2, m4 badge-log reuse −1; M2/M5 reword, 0) |
+| m05 | Recruiter | ~49 | ~47 (-2: M1 orphan cut, m2 refusal tail cut) |
+| m05 | Patricia | ~53 | ~50 (-3: m3 opener reuse -2, m4 badge-log reuse -1; M2/M5 reword, 0) |
 | m07 | Architect live calls | ~59 | ~59 (M7 drop + M8 split are 0 net on live lines) |
-| m07 | Architect voicemails | ~16 | ~11 (−5: m6 voicemails reuse live strings; M3 reword 0) |
+| m07 | Architect voicemails | ~16 | ~11 (-5: m6 voicemails reuse live strings; M3 reword 0) |
 
-### Variety listing — changed lines only
+### Variety listing: changed lines only
 
 **m05 Recruiter:** `recruiter_introduction` now opens "Torres took debt relief and a standing consultancy
 retainer…" (the "only variable is currency" line is gone). Casualty projection `architect_discussed`

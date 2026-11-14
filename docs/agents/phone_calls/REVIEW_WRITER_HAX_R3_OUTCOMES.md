@@ -29,7 +29,7 @@ changed line is under its length cap, each changed ink compiles, and the A7a val
 - m2 drops the fourth "Message me if…" from m01's support thread (the voiced first ring already
   says "Message me the moment you're stuck"). The other three "Message me if…" lines stand.
 
-## m4 (m10 `hax_post` :49/:53) — not changed, logged
+## m4 (m10 `hax_post` :49/:53): not changed, logged
 
 Both lines are pre-existing and voiced. The review's only candidate fix, `:49` → "Ask me on
 the phone. It works just as well underground.", re-keys a voiced line and so costs a clip. The
