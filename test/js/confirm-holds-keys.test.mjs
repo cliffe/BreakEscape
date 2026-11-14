@@ -49,12 +49,14 @@ const { applyActions } = await import(pathToFileURL(join(dir, 'systems', 'apply-
 const playerSrc = readFileSync(join(js, 'core/player.js'), 'utf8');
 const setupSrc = playerSrc.match(/function setupKeyboardInput\(\) \{[\s\S]*?\n\}/)[0];
 const clearSrc = playerSrc.match(/function clearKeyboardMovement\(\) \{[\s\S]*?\n\}/)[0];
+const uiSrc = playerSrc.match(/const FOCUSABLE_CONTROL = [^\n]*\n[\s\S]*?\nfunction keysBelongToUi\(event\) \{[\s\S]*?\n\}/)[0];
 assert.match(playerSrc, /import \{ openModalCount \} from '\.\.\/ui\/modal-stack\.js';/);
 const playerKeys = new Function('openModalCount', 'window', 'document', `
     let keyboardPaused = false; let isKeyboardMoving = false;
     const keyboardInput = { up: false, down: false, left: false, right: false, space: false, shift: false };
     const console = { log() {} };
     ${clearSrc}
+    ${uiSrc}
     ${setupSrc}
     setupKeyboardInput();
     return { state: () => ({ ...keyboardInput, isKeyboardMoving }) };`)(openModalCount, window, document);

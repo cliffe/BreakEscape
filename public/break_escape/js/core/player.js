@@ -281,6 +281,19 @@ export function createPlayer(gameInstance) {
     return player;
 }
 
+const FOCUSABLE_CONTROL = 'button, input, textarea, select, a[href], [contenteditable]:not([contenteditable="false"])';
+
+/**
+ * True when a key event belongs to the interface and not the player: a minigame is open, or the
+ * focus is on a control that uses the key itself (Space presses a focused button and types in a
+ * field). The game keys then neither move the player nor have their default action cancelled.
+ */
+function keysBelongToUi(event) {
+    if (window.MinigameFramework?.currentMinigame) return true;
+    const target = event?.target;
+    return !!(target && typeof target.closest === 'function' && target.closest(FOCUSABLE_CONTROL));
+}
+
 function setupKeyboardInput() {
     // Handle keydown events
     document.addEventListener('keydown', (event) => {
@@ -299,6 +312,12 @@ function setupKeyboardInput() {
             return;
         }
         
+        // A minigame is open or a control has the focus: the key is the interface's
+        if (keysBelongToUi(event)) {
+            clearKeyboardMovement();
+            return;
+        }
+
         const key = event.key.toLowerCase();
         
         // Shift key for running
@@ -403,6 +422,13 @@ function setupKeyboardInput() {
             return;
         }
         
+        // Same rule as keydown: leave the key's default to the open minigame or focused control,
+        // but let go of anything the player was holding
+        if (keysBelongToUi(event)) {
+            clearKeyboardMovement();
+            return;
+        }
+
         const key = event.key.toLowerCase();
         
         // Shift key
