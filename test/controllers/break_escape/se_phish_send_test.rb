@@ -221,6 +221,30 @@ module BreakEscape
       assert_equal first_at, sends['lord/kit_payroll_page']['at'], 'the landed entry is not rewritten'
     end
 
+    # ── reconciliation with the legacy migration (chunk B review minor 3) ──
+    #
+    # The migration writes a sePhishSends record keyed targetId/kitId (kit_ids.min across a page's
+    # authored link kits) with landed:false when the re-derived build was below threshold. A later
+    # genuine Route 2 send over a now-convincing build must upgrade that record in place: the store
+    # is first-wins only on landed:true, and both paths key a single-link-kit page identically
+    # (here kit_ids.min == 'kit_payroll_page', the kit the live send carries).
+
+    test 'a migrated landed false send is upgraded by a live send after a convincing build' do
+      migrated = { 'targetId' => 'lord', 'kitId' => 'kit_payroll_page', 'pageId' => 'payroll_login',
+                   'landed' => false, 'at' => 1 }
+      build_game(se_scenario, 'sePhishSends' => { 'lord/kit_payroll_page' => migrated },
+                              'phishEvidenceMigrated' => true)
+      assert_equal false, sends['lord/kit_payroll_page']['landed'], 'seeded as a migration miss'
+
+      post_build(choices: CONVINCING)
+      post_send
+      assert_response :success, response.body
+      assert_equal true, response.parsed_body['landed']
+      assert_equal 1, sends.size, 'the live send upgrades the migrated row, it does not add one'
+      assert_equal true, sends['lord/kit_payroll_page']['landed']
+      refute_equal 1, sends['lord/kit_payroll_page']['at'], 'the landed send overwrites the migration miss'
+    end
+
     # ── superset (section 7): every client-landed case passes the server gate ──
     #
     # The client judge grants the capture only when meets (the page meetsThreshold) and the email

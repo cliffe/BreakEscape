@@ -649,3 +649,21 @@ PID; port 3665 confirmed down.
   forged old marker is not laundered into a server fact.
 
 Game ids: 4467, 4468, 4469. Server stopped by PID; port 3665 down.
+
+## Chunk A/B reconciliation (merge of build/hard-phish-mig)
+
+`build/hard-phish-mig` merged into `build/hard-phish-b` with `--no-ff`; the only conflict was this
+build log (both chunks appended a section at the same point), resolved by keeping the Chunk A and
+Chunk B sections in full. Then chunk B review minor 3 (the cross-chunk note) was closed:
+
+- Route 2's `landed` now routes through the shared `phish_page_build_landed?` helper that the
+  migration also uses (`capture_proofs.rb` `record_phish_send!`), so the two paths share one
+  definition of a landed build and cannot drift.
+- `sePhishSends` is already first-wins on `landed: true` and last-wins while `landed: false`, so a
+  migration-written `landed: false` record (or a live miss) is upgraded by a later genuine send over
+  a now-convincing build. The key form matches: the migration keys on `targetId/kit_ids.min` and
+  Route 2 keys on `targetId/kitId`; for a single-link-kit page (`payroll_login` carries only
+  `kit_payroll_page`) `kit_ids.min` equals the kit the live send carries, so both write the same key.
+- New reconciliation test (`se_phish_send_test.rb`): a seeded migration miss
+  (`sePhishSends["lord/kit_payroll_page"].landed = false`, `phishEvidenceMigrated = true`) is upgraded
+  to `landed: true` by a live send after a convincing build, with one row, not two.

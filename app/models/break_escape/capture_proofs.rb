@@ -310,7 +310,9 @@ module BreakEscape
       page_id = kit['landingPageId']
       page = player_state.dig('seLandingPages', page_id)
       page_built = page.is_a?(Hash) && page['built'] == true
-      landed = page_built && page['meetsThreshold'] == true
+      # Shared with the legacy migration (chunk B): one definition of a landed build, so Route 2
+      # and the imported send never diverge (plan section 5; chunk B review minor 3).
+      landed = phish_page_build_landed?(page)
 
       store = (player_state['sePhishSends'] ||= {})
       key = "#{target_id}/#{kit_id}"
