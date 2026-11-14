@@ -72,7 +72,7 @@ const snap = () => page.evaluate(() => {
         globals: { ava_ko: gv.ava_ko, ben_ko: gv.ben_ko, eli_ko: gv.eli_ko, fran_ko: gv.fran_ko, gil_ko: gv.gil_ko, eli_asked: gv.eli_asked, eli_page_shown: gv.eli_page_shown },
         revealed,
         log: T.needs.log().slice(-24).map(e => `${e.t} ${e.npc} ${e.ev} ${e.target || e.objectId || ''}`.trim()),
-        tasks: (window.objectivesManager && Object.values(window.objectivesManager.tasks || {}).filter(x => x.status === 'completed').map(x => x.taskId || x.id)) || []
+        tasks: (window.objectivesManager && Object.values(window.objectivesManager.taskIndex || {}).filter(x => x.status === 'completed').map(x => x.taskId || x.id)) || []
     };
 });
 
@@ -107,28 +107,43 @@ if (beat === 'all' || beat === 'e') await recordBeat('e_hostile_from_start', asy
 });
 
 // (i-print) Eli: ask for the handover, close, page lands ~6s later; check_eli_page ticks.
+// Driven through the REAL UI path: interact to open the person-chat, pick the handover choice
+// (sets eli_asked via #set_global), pick the exit choice (#exit_conversation closes the chat and
+// emits conversation_closed:eli), then wait for the 6 s print and the object_revealed mapping.
 if (beat === 'all' || beat === 'i') await recordBeat('i_eli_print', async () => {
-    await page.evaluate(() => window.__test.needs.set && window.gameState.globalVariables && (window.gameState.globalVariables.eli_asked = true));
-    // Drive the conversation close via the event dispatcher so the delayed print mapping arms.
-    await page.evaluate(() => window.eventDispatcher && window.eventDispatcher.emit('conversation_closed:eli', { npcId: 'eli' }));
+    const opened = await page.evaluate(() => window.__test.interact('eli'));
+    await t(1500);
+    const chA = await page.evaluate(() => window.__test.minigames['person-chat'].choose('handover'));
+    await t(1000);
+    const chB = await page.evaluate(() => window.__test.minigames['person-chat'].choose('leave you be'));
+    await t(1200);
+    await page.evaluate(() => window.__test.dismissBlockingUi && window.__test.dismissBlockingUi()).catch(() => {});
+    const closed = await snap();
     await t(9000);
     const after = await snap();
     await shot('i-eli-page');
-    return { eli_asked: after.globals.eli_asked, eli_page_shown: after.globals.eli_page_shown, revealed: after.revealed, check_eli_page: after.tasks.includes('check_eli_page') };
+    return { interact_ok: opened && opened.ok, choose_handover: chA && chA.ok, choose_exit: chB && chB.ok, eli_asked_after_close: closed.globals.eli_asked, eli_page_shown: after.globals.eli_page_shown, revealed: after.revealed, check_eli_page: after.tasks.includes('check_eli_page') };
 });
 
 // (d) Ben recalled by the Meeting Note: patrol override walks him home and suspends needs;
-//     Meeting Over resumes them.
+//     Meeting Over resumes them. Driven through the REAL UI path: interact with the note objects
+//     in the office, which emit object_interacted with objectName from scenarioData.name.
 if (beat === 'all' || beat === 'd') await recordBeat('d_ben_recalled', async () => {
     await page.evaluate(() => window.__test.needs.set('ben', 'thirst', 10));
     await t(2000);
-    await page.evaluate(() => window.eventDispatcher && window.eventDispatcher.emit('object_interacted', { objectName: 'Meeting Note', objectId: 'meeting_note' }));
-    await t(3000);
+    const readNote = await page.evaluate(() => window.__test.interact('meeting_note'));
+    await t(800);
+    await page.evaluate(() => window.__test.dismissBlockingUi && window.__test.dismissBlockingUi()).catch(() => {});
+    await t(2500);
     const recalled = await snap();
-    await page.evaluate(() => window.eventDispatcher && window.eventDispatcher.emit('object_interacted', { objectName: 'Meeting Over', objectId: 'meeting_over' }));
+    await shot('d-recalled');
+    const readOver = await page.evaluate(() => window.__test.interact('meeting_over'));
+    await t(800);
+    await page.evaluate(() => window.__test.dismissBlockingUi && window.__test.dismissBlockingUi()).catch(() => {});
     await t(2000);
     const resumed = await snap();
     return {
+        read_note_ok: readNote && readNote.ok, read_over_ok: readOver && readOver.ok,
         check_called_home: recalled.tasks.includes('check_called_home'),
         ben_suspended_mode: (recalled.states.find(s => s.id === 'ben') || {}).mode,
         ben_resumed_mode: (resumed.states.find(s => s.id === 'ben') || {}).mode
@@ -202,6 +217,64 @@ if (beat === 'h') await recordBeat('h_eli_ko_no_page', async () => {
     await load();
     const after = await snap();
     return { ko_ok: r.ok, eli_ko: after.globals.eli_ko, eli_page_shown: after.globals.eli_page_shown, revealed_after_reload: after.revealed, check_eli_page_fired: after.tasks.includes('check_eli_page') };
+});
+
+// (f) Dee sees the player pick dee_drawer: the lockpick catch opens her conversation and
+//     check_caught_walking ticks. The scenario grants no lockpick, so one is injected into the
+//     inventory first (the catch itself checks line of sight, not possession); the key-mode
+//     lockpicking minigame then exposes "Switch to Lockpicking", whose gate runs the catch.
+if (beat === 'f') await recordBeat('f_dee_catch', async () => {
+    await page.evaluate(() => {
+        if (window.inventory && Array.isArray(window.inventory.items)) {
+            window.inventory.items.push({ scenarioData: { id: 'probe_lockpick', type: 'lockpick', name: 'Lockpick Kit' } });
+        }
+    });
+    const dee0 = await snap();
+    const open = await page.evaluate(() => window.__test.interact('dee_drawer'));
+    await t(1500);
+    const mgState = await page.evaluate(() => { try { return window.__test.minigame.getState(); } catch (e) { return { err: String(e).slice(0, 120) }; } });
+    // Trigger the switch-to-pick gate, which is where catchLockpickInView runs.
+    const sw = await page.evaluate(() => {
+        const m = window.__test.minigame;
+        for (const label of ['Switch to Lockpicking', 'Switch to Lockpick', 'Lockpick', 'Pick']) {
+            try { const r = m.clickText(label); if (r && r.ok) return { label, r }; } catch (e) {}
+        }
+        return { tried: true };
+    });
+    await t(2500);
+    await shot('f-caught');
+    const after = await snap();
+    return {
+        lockpick_injected: true, interact_ok: open && open.ok, mg_id: mgState && mgState.id,
+        switch_attempt: sw,
+        caught_log: after.log.filter(l => l.includes('dee')),
+        check_caught_walking: after.tasks.includes('check_caught_walking'),
+        tasks: after.tasks
+    };
+});
+
+// (i2) Reload within the 6 s print delay: the pending delayed mapping is lost, so no page and no
+//      reveal global. Expected and recorded as such. Real UI path to arm the print, then reload fast.
+if (beat === 'i2') await recordBeat('i2_reload_within_delay', async () => {
+    const opened = await page.evaluate(() => window.__test.interact('eli'));
+    await t(1500);
+    await page.evaluate(() => window.__test.minigames['person-chat'].choose('handover'));
+    await t(1000);
+    await page.evaluate(() => window.__test.minigames['person-chat'].choose('leave you be'));
+    await t(1000);
+    await page.evaluate(() => window.__test.dismissBlockingUi && window.__test.dismissBlockingUi()).catch(() => {});
+    const armed = await snap();
+    // Reload well inside the 6 s delay.
+    await t(2000);
+    await load();
+    await t(7000);
+    const after = await snap();
+    await shot('i2-after-reload');
+    return {
+        interact_ok: opened && opened.ok, eli_asked_before_reload: armed.globals.eli_asked,
+        eli_page_shown_after_reload: after.globals.eli_page_shown, revealed_after_reload: after.revealed,
+        check_eli_page_after_reload: after.tasks.includes('check_eli_page')
+    };
 });
 
 await snap().then(s => { report.end = s; });
