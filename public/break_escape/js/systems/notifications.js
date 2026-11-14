@@ -373,7 +373,12 @@ function renderNotification(message, type, title, duration, seen = false, option
         same._toast.shownAt = Date.now();
         if (duration > 0) {
             same._toast.duration = duration;
-            startCountdown(same, duration);
+            if (same.classList.contains('hud-lane-yield') && same._yieldLeft != null) {
+                // Stepped aside for a finished-task line: the fresh time waits with it (review R3 m3)
+                same._yieldLeft = duration;
+            } else {
+                startCountdown(same, duration);
+            }
         }
         return same;
     }

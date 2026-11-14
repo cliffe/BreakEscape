@@ -593,7 +593,7 @@ export default class PhoneChatUI {
      * @param {string} phoneId - Optional phone ID to filter contacts
      * @returns {Object[]}
      */
-    listContacts(phoneId = null) {
+    listContacts(phoneId = null, quiet = false) {
         this._listPhoneId = phoneId;
         // Get NPCs for this phone
         let npcs;
@@ -606,7 +606,7 @@ export default class PhoneChatUI {
         
         // Filter to only allowed NPCs if npcIds was specified
         if (this.allowedNpcIds && this.allowedNpcIds.length > 0) {
-            console.log(`🔍 Filtering contacts: allowed NPCs = ${this.allowedNpcIds.join(', ')}`);
+            if (!quiet) console.log(`🔍 Filtering contacts: allowed NPCs = ${this.allowedNpcIds.join(', ')}`);
             npcs = npcs.filter(npc => {
                 // Include if in allowed list
                 if (this.allowedNpcIds.includes(npc.id)) {
@@ -616,7 +616,7 @@ export default class PhoneChatUI {
                 const history = this.npcManager.getConversationHistory(npc.id);
                 return history && history.length > 0;
             });
-            console.log(`✅ Filtered to ${npcs.length} contacts`);
+            if (!quiet) console.log(`✅ Filtered to ${npcs.length} contacts`);
         }
         
         return npcs || [];
@@ -639,7 +639,7 @@ export default class PhoneChatUI {
         if (!btn || !btn.isConnected) return 0;
         let n = 0;
         try {
-            for (const npc of this.listContacts(this._listPhoneId ?? this.params.phoneId ?? 'player_phone')) {
+            for (const npc of this.listContacts(this._listPhoneId ?? this.params.phoneId ?? 'player_phone', true)) {
                 if (npc && npc.id !== this.currentNPCId) n += this.unreadCountFor(npc.id);
             }
         } catch (e) { n = 0; }

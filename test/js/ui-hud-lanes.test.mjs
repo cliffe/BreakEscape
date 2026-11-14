@@ -664,7 +664,7 @@ test('R2 M4: with a finished-task line the other toasts step aside first (countd
     assert.ok(lanes.notify.top + lanes.notify.maxHeight < messageTop, 'clear of the speech lane');
     // the brief line goes: the older toast comes back
     brief.remove();
-    rect(rig.toasts, { left: 16, top: 84, width: 328, height: 153 });
+    rect(rig.toasts, { left: 16, top: 84, width: 328, height: 0 });   // the hidden toast takes no height
     L.applyLanes(document, window);
     assert.ok(!older.classList.contains('hud-lane-yield'));
     assert.deepEqual(yields, [true, false], 'its countdown goes on');
@@ -699,4 +699,60 @@ test('R2 m1: on phones held upright the pill\'s aim may wrap to two lines', () =
     assert.match(block[1], /\.objectives-pill-summary \{[^}]*white-space: normal;/);
     assert.match(block[1], /\.objectives-pill-text \{[^}]*-webkit-line-clamp: 2;/);
     assert.doesNotMatch(block[1], /border-radius|box-shadow|gradient/);
+});
+
+test('R3 m1: a toast returning from stepping aside waits until it fits whole next to the speech line', () => {
+    const rig = hudRig(320, 568, { combat: false });
+    const older = document.createElement('div');
+    older.className = 'notification error show';
+    const brief = document.createElement('div');
+    brief.className = 'notification success brief show';
+    rig.toasts.append(older, brief);
+    rect(older, { left: 16, top: 84, width: 288, height: 143 });
+    rect(brief, { left: 16, top: 237, width: 288, height: 88 });
+    rect(rig.toasts, { left: 16, top: 84, width: 288, height: 241 });
+    rect(rig.speech, { left: 16, top: 380, width: 288, height: 120 });
+    L.applyLanes(document, window);
+    assert.ok(older.classList.contains('hud-lane-yield'), 'stepped aside for the brief line');
+    assert.ok(older._laneH >= 143, `its height was kept (${older._laneH})`);
+    // the brief line goes while a tall speech line is up: too little room for both whole
+    brief.remove();
+    rect(rig.toasts, { left: 16, top: 84, width: 288, height: 0 });
+    rect(rig.speech, { left: 16, top: 200, width: 288, height: 300 });
+    L.applyLanes(document, window);
+    assert.ok(older.classList.contains('hud-lane-yield'), 'stays aside, nothing is cut');
+    // the speech line ends: it shows then
+    rect(rig.speech, { left: 16, top: 500, width: 288, height: 0 });
+    L.applyLanes(document, window);
+    assert.ok(!older.classList.contains('hud-lane-yield'), 'back once it fits');
+    setWindow(1400, 1000);
+});
+
+test('R3 m3: a toast raised again while it is stepped aside keeps its countdown paused', async () => {
+    document.body.innerHTML = '<div id="notification-container"></div>';
+    document.body.className = 'hud-compact';
+    N.showNotification('The door is locked', 'error', 'Locked', 5000);
+    const t = document.querySelector('#notification-container .notification');
+    t.classList.add('hud-lane-yield');
+    t._onLaneYield(true);
+    const before = t._countdownAt;
+    await tick(20);
+    N.showNotification('The door is locked', 'error', 'Locked', 5000);
+    assert.equal(document.querySelectorAll('#notification-container .notification').length, 1, 'no second copy');
+    assert.equal(t._yieldLeft, 5000, 'the fresh time waits with it');
+    assert.equal(t._countdownAt, before, 'no countdown started while hidden');
+    t.classList.remove('hud-lane-yield');
+    t._onLaneYield(false);
+    assert.equal(t._yieldLeft, null);
+    assert.ok(t._countdownMs >= 4999, `full time after it shows (${t._countdownMs})`);
+    clearTimeout(t._hideTimer);
+    document.body.innerHTML = '';
+    document.body.className = '';
+});
+
+test('R3 m2 and n2: the two-line pill is sized from its content; the back badge is GNF 16', () => {
+    const c = css('objectives.css');
+    const block = c.match(/@media \(max-width: 899\.98px\) and \(min-height: 501px\) and \(orientation: portrait\) \{([\s\S]*?)\n\}/);
+    assert.match(block[1], /\.objectives-panel\.collapsed \{[^}]*max-height: none;/);
+    assert.match(css('phone-chat-minigame.css'), /\.back-button \.back-unread \{[^}]*font-size: 16px;/);
 });

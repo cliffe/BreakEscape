@@ -393,7 +393,9 @@ export function applyLanes(doc = document, win = window) {
     for (const el of toastEls) {
       if (tH <= lanes.notify.maxHeight) break;
       if (el.classList.contains('brief') || el.classList.contains('hud-lane-yield')) continue;
-      tH = Math.max(0, tH - outerHeightOf(el));
+      const oh = outerHeightOf(el);
+      if (oh > 0) el._laneH = oh;
+      tH = Math.max(0, tH - oh);
       yieldToast(el, true);
       m.notifyContent = sum([tH, phoneSum(y.phoneHidden)]);
       lanes = computeLanes(m);
@@ -403,7 +405,22 @@ export function applyLanes(doc = document, win = window) {
       lanes = computeLanes(m);
     }
   } else {
-    toastEls.forEach(el => yieldToast(el, false));
+    // With no brief line the toasts come back oldest first, each only when it fits whole next to
+    // what shows (as texts do): until then it stays aside with its countdown paused, and shows
+    // when the speech line or text that needed the room ends (review R3 m1). A toast with
+    // nothing else to share the lanes with always comes back.
+    let tH = toastH;
+    for (const el of toastEls) {
+      if (!el.classList.contains('hud-lane-yield')) continue;
+      const back = el._laneH || 0;
+      const others = phoneSum(y.phoneHidden) + m.messageContent;
+      const fits = sum([tH + back, phoneSum(y.phoneHidden)]) + m.messageContent <= budget;
+      if (!fits && (tH > 0 || others > 0)) break;
+      yieldToast(el, false);
+      tH += back;
+      m.notifyContent = sum([tH, phoneSum(y.phoneHidden)]);
+      lanes = computeLanes(m);
+    }
   }
   // The objectives pill on a phone may use the width up to the menu buttons (review R1 M2)
   const pill = doc.querySelector('.objectives-panel');

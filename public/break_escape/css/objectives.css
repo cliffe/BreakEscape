@@ -498,6 +498,10 @@
    m1). The pill keeps its width, clear of the menu buttons; past two lines it ends in an
    ellipsis, and the header's title still has the whole aim. The lanes measure the taller pill. */
 @media (max-width: 899.98px) and (min-height: 501px) and (orientation: portrait) {
+  /* Sized from the content: two 18px lines, the header's padding and the frame (review R3 m2) */
+  .objectives-panel.collapsed {
+    max-height: none;
+  }
   .objectives-panel.collapsed .objectives-pill-summary {
     align-items: flex-start;
     white-space: normal;
