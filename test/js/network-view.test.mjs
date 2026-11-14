@@ -840,6 +840,10 @@ test('rows lay out in two columns when there is room; headings and locked shares
     assert.equal(row('data-host-id', 'lena_pc').querySelector('.network-row-title strong').textContent, 'HB-FIN-02');
     assert.match(ruleBody('.network-row-hostname') || '', /white-space:\s*nowrap/);
     assert.match(ruleBody('.network-row-host .network-row-label') || '', /min-width:\s*min-content/);
+    // A locked share's label keeps the resource rule's min-content floor; a wide-row min-width: 0
+    // overrode it after a merge and squeezed the label to a letter per line at 375-480px (consoles R5 M1)
+    assert.match(ruleBody('.network-row-resource .network-row-label') || '', /min-width:\s*min-content/);
+    assert.equal(ruleBody('.network-row-wide > .network-row-label'), null, 'no wide-row rule overrides the label floor');
     assert.match(ruleBody('.network-row-control') || '', /flex:\s*0 1 auto/);
     // The open button breaks before the bracket, never inside the name (code review R3 n1)
     const open = row('data-host-id', 'lena_pc').querySelector('[data-action="open"]');

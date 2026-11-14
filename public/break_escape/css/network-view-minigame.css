@@ -384,11 +384,6 @@
     flex-shrink: 0;
 }
 
-.network-row-wide > .network-row-label {
-    min-width: 0;
-    overflow-wrap: anywhere;
-}
-
 @media (max-width: 480px) {
     .network-row-wide {
         flex-wrap: wrap;
