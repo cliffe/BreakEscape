@@ -283,9 +283,9 @@ export class StateSync {
     // Bytes of this page's flush keepalives still in flight, so two flushes stay under
     // the browser's shared keepalive quota together.
     this._keepaliveInflight = 0;
-    // The flushes still in flight: { clientTs, prevTs (the last clientTs sent before it),
-    // sentAck (what its body carried), sentAt }. A flush behind one that cannot carry the
-    // whole delta sends only what changed since (_changesSinceInFlight).
+    // The flushes still in flight: { clientTs, sentAck (what its body carried), sentAt }.
+    // A flush behind one that cannot carry the whole delta sends only what changed since
+    // (_changesSinceInFlight).
     this._flushesInFlight = new Set();
     // clientTs of the newest request whose answer was confirmed: an older request's
     // answer that lands later confirms nothing (its ack would overwrite a newer one).
@@ -848,11 +848,7 @@ export class StateSync {
         console.log('State flush: the hidden-page flush already sent this delta');
         return;
       }
-      let prevTs = this.lastClientTs;
       let clientTs = this.nextClientTs();
-      // Leave one clientTs free below every flush, for a pagehide that sends only what
-      // changed since it while it is still in flight (_changesSinceInFlight).
-      if (clientTs - 1 <= prevTs) clientTs = this.nextClientTs();
       // The browser's keepalive quota is shared by every keepalive in flight, so this
       // body gets what the flushes still uploading leave.
       const budget = KEEPALIVE_BODY_LIMIT - this._keepaliveInflight;
@@ -877,7 +873,7 @@ export class StateSync {
             console.log('State flush: nothing new since the flush in flight, or no clientTs below it');
             return;
           }
-          ({ changes, clientTs, prevTs } = since);
+          ({ changes, clientTs } = since);
           sized = this._sizeFlushBody(changes, clientTs, budget);
         }
       }
@@ -889,7 +885,7 @@ export class StateSync {
       // it did not land, so a pagehide that follows still sends the delta.
       if (reason === 'hidden') this._hiddenFlushKey = key;
       const size = bodyBytes(body);
-      const flight = { clientTs, prevTs, sentAck: sentAckOf(changes.ack, sent), sentAt: Date.now() };
+      const flight = { clientTs, sentAck: sentAckOf(changes.ack, sent), sentAt: Date.now() };
       this._keepaliveInflight += size;
       this._flushesInFlight.add(flight);
       let request;
@@ -957,19 +953,21 @@ export class StateSync {
 
   /**
    * What changed since the flushes still in flight: the delta against their sent values
-   * laid over `confirmed`, with a clientTs one below the oldest of them, which is still
-   * above every request this page sent before it. The server then never answers those
-   * flushes stale because of this one, whichever it takes first. Taken after them, this
-   * one is stale and its last-write-wins sections are lost (as when it is not sent at
-   * all); taken before them, a key both carry ends with their older value. Null when
-   * nothing has changed since, or when there is no clientTs to spare below the oldest.
-   * @returns {{ changes: Object, clientTs: number, prevTs: number }|null}
+   * laid over `confirmed`, stamped with a fresh clientTs above every flush in flight.
+   * nextClientTs is max(Date.now(), last + 1) and `last` rose as each flush drew its
+   * stamp, so this stamp is strictly above the newest of them, and the reduced body
+   * carries the newest value for each key it holds. Taken after the flushes it is fresh
+   * and applies. Taken before them it lands first as fresh, and when each older flush
+   * then arrives stale-but-recent the server's ring skips the keys this body already
+   * wrote while merging that flush's unique sections (the ones left out here), so no
+   * section is lost in either order. The ring is what makes stamping above safe: without
+   * it, an older flush landing second would look wholly stale and its unique sections
+   * would be dropped. Null when nothing has changed since (a genuinely empty
+   * difference), in which case no stamp is drawn.
+   * @returns {{ changes: Object, clientTs: number }|null}
    */
   _changesSinceInFlight() {
     const flights = [...this._flushesInFlight].sort((a, b) => a.clientTs - b.clientTs);
-    const oldest = flights[0];
-    const clientTs = oldest.clientTs - 1;
-    if (clientTs <= oldest.prevTs) return null;
     let base = this.confirmed;
     let clockConfirmedAt = this.clockConfirmedAt;
     for (const f of flights) {
@@ -977,7 +975,9 @@ export class StateSync {
       if (f.sentAck.clockKey !== undefined) clockConfirmedAt = Math.max(clockConfirmedAt, f.sentAt);
     }
     const changes = this.buildChanges({ base, clockConfirmedAt });
-    return changes ? { changes, clientTs, prevTs: oldest.prevTs } : null;
+    if (!changes) return null;
+    const clientTs = this.nextClientTs();
+    return { changes, clientTs };
   }
 
   /** A hidden flush that did not land (non-2xx, network error, rejected) no longer blocks the pagehide. */
@@ -1000,6 +1000,16 @@ export class StateSync {
    */
   _applyAnswer(changes, clientTs, answer) {
     for (const part of this._parts.values()) part.onAnswer?.(answer);
+    // A stale answer confirms nothing, so this request's sections are all resent on the
+    // next sync. A stale-but-recent answer may now carry notSaved and mailTrimmed (the
+    // server merged this request's pre-filtered sections and refused or trimmed some),
+    // but the client acts on neither here: because nothing was confirmed, every refused
+    // or trimmed key is still in the delta and goes up again on the next fresh sync, whose
+    // answer carries the same notSaved and mailTrimmed and is handled below. A refused
+    // currentRoom therefore reconciles (and is recorded, so it stops resending) one sync
+    // later, and trimmed mail reconciles then; neither loops. The parts' onAnswer hooks
+    // above read only their own capture fields, never notSaved or mailTrimmed, so a stale
+    // answer leaves them unaffected too.
     if (answer?.stale) return { stale: true, notSaved: [] };
     const notSaved = Array.isArray(answer?.notSaved) ? answer.notSaved : [];
     for (const section of notSaved) {

@@ -138,13 +138,19 @@ module BreakEscape
       get game_path('login_accounts'), params: { pc_id: 'sam_pc' }, as: :json
       assert_response :forbidden
       assert_equal 'off', response.parsed_body['reason'], 'the sign-in screen is not shown'
-      # Any foothold value, real or forged, gets the same refusal (review R3 nit 3)
-      [OFFICE, 'anything'].each do |fid|
-        get game_path('login_accounts'), params: { pc_id: 'sam_pc', foothold: fid }, as: :json
-        assert_response :forbidden
-        assert_equal 'off', response.parsed_body['reason'], "foothold=#{fid} gets no tiles"
-        refute_includes response.body, 'sokafor'
-      end
+      # A foothold request no longer reaches the keyboard off-check (keyring K0): it is judged by
+      # reach. A held foothold that reaches sam_pc, whose own service is off, gets 403
+      # not_responding (never the power state, never tiles).
+      get game_path('login_accounts'), params: { pc_id: 'sam_pc', foothold: OFFICE }, as: :json
+      assert_response :forbidden
+      assert_equal 'not_responding', response.parsed_body['reason'], 'a reaching foothold on an off host gets not_responding'
+      refute_includes response.body, 'sokafor'
+      # A foothold the player does not hold cannot reach the PC: 403 reach refusal, no off/tiles.
+      get game_path('login_accounts'), params: { pc_id: 'sam_pc', foothold: 'anything' }, as: :json
+      assert_response :forbidden
+      assert_includes response.parsed_body['error'], 'PC not reachable'
+      refute_equal 'off', response.parsed_body['reason']
+      refute_includes response.body, 'sokafor'
 
       post game_path('login'), params: { pc_id: 'sam_pc', claim: 'owner' }, as: :json
       assert_response :forbidden
