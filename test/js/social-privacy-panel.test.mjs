@@ -185,6 +185,14 @@ test('state is shown in words as well as colour, and the board flag shows for a 
     assert.equal(q('.pp-section').textContent, 'Sam');
 });
 
+test('the switch state pill reads Exposed when open and Closed when tightened (C-PV1)', () => {
+    openPanel();
+    const pill = () => q('[data-setting="audience"] .pp-switch-state');
+    assert.equal(pill().textContent, 'Exposed', 'an open setting is labelled Exposed, agreeing with the red note');
+    click('[data-setting="audience"]');
+    assert.equal(pill().textContent, 'Closed', 'a tightened setting is labelled Closed');
+});
+
 test('a setting with default tight starts closed', () => {
     openPanel({ config: config({ settings: [{ id: 'a', label: 'A', closesFacts: ['pet'], default: 'tight' }, { id: 'b', label: 'B', closesFacts: ['leave'] }] }) });
     assert.deepEqual(closedIds(), ['pet']);

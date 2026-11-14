@@ -79,7 +79,6 @@
 .pretext-ethics,
 .pretext-held-empty,
 .pretext-no-blanks,
-.pretext-readiness,
 .pretext-gate,
 .pretext-line {
     margin: 0 0 8px;
@@ -146,7 +145,6 @@
     cursor: not-allowed;
 }
 
-.pretext-readiness,
 .pretext-gate {
     color: var(--ui-warn, #e6b04d);
 }
