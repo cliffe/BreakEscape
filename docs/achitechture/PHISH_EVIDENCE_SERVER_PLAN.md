@@ -14,9 +14,8 @@ record from `globalVariables.se_landing_pages` and the landed send from `mailSta
 one reader onto two server-owned records written by two gated routes, and derives the victim's submission
 rather than trusting it.
 
-This revision is the plan as it stands after four design decisions were settled (recorded in each relevant
-section). In short: the server recomputes every scenario's verdict through one code path (no
-protected-vs-not branch at runtime); the send gate is the lighter check (page meets threshold plus an
+Four design decisions set the shape. The server recomputes every scenario's verdict through one code path
+(no protected-vs-not branch at runtime); the send gate is the lighter check (page meets threshold plus an
 authored send to the authored target and kit), not a full server re-judgement of the message;
 `se_landing_pages` stays a client UI global the gate no longer trusts; and an old save that already landed
 a phish has that fact imported once, gated on the server's re-derived build threshold.
@@ -81,9 +80,9 @@ Four chunks are built, reviewed and merged to main. The remaining work (sections
   field.
 
 The remaining work is: the send route (Route 2), the legacy migration, and the reader change. It is
-designed below under the settled decisions.
+designed below under the four decisions.
 
-## 3. The design decisions this revision is built on
+## 3. The design decisions
 
 - **One code path for the recompute.** The server recompute of `meetsThreshold` and `landed` runs for every
   scenario, not only when the served secret is protected. There is no protected-vs-not branch at runtime; a
@@ -235,33 +234,60 @@ walk, `phish_evidence_fingerprint`, and the `phishGated` / `phish_gated_unproven
 for this path. The controller's phish-gating block in `apply_capture_sync_step` (`@phish_fp_before`, the
 `needs_stamp` fingerprint compare, and the `extra_sent` build and forward) goes with them.
 
+The capture record itself is still created the way it is today, from the client's own capture claim. When
+the client's mail minigame judges a send as landing on a built, convincing page (`describeVictimOutcome`
+returns `submitted: true`, `captureGranted` fires), it calls `recordCapture` into `se_captures`
+(`mail-bridge.js:422-438`) and syncs it, and `apply_capture_sync_step` writes the `seCaptures` entry through
+`record_capture!` exactly as before. Route 2 does not create the capture; it records the send evidence the
+stamp then checks. The server never fabricates a capture the client did not claim, and, because the server
+gate is a strict superset of the client judge (section 7), every claim the client makes is one the server
+stamps.
+
 This does not regress part-3 serving: the two live readers re-check `capture_revealable?` on every serve
 (`game.rb`, `network_access.rb`), so a part-3-gated capture is served off that live read, not off a
 sync-time stamp. Part-3 proofs (`target_capture_proofs`) are unchanged; they already read server-owned proof
 lists (`plantedItems`, `signedInPcs`, `gainedFootholds`), arriving through their own routes, so a credential
 gated on both a phish and a part-3 proof still needs both.
 
-## 7. Client consistency: the player sees what the server decides (decision two follow-through)
+## 7. Client and server in parity: the gate is a strict superset of the client judge
 
-Under the lighter gate the server's `landed` can be true on a send the client's own `evaluateMessage` would
-judge as not landing (a convincing page, an authored send to the right target with the right kit, but a weak
-pretext the client scores down). If the client reveals the captured credential only on its own
-`evaluateMessage` verdict, a legitimate player could be refused a capture the server has already granted,
-which breaks "never refuse a legitimate player".
+The client keeps its own judge and the client decides what the player sees. `evaluateMessage`
+(`phish-rules.js`) and `describeVictimOutcome` (`landing-page-model.js:693-703`) still decide, on the
+client, whether the victim lands and whether the credential is revealed, and the client still records the
+capture claim when they say so (`captureGranted` to `recordCapture`, `mail-bridge.js:422-438`), exactly as
+today. Nothing in the client reveal path changes.
 
-So the client's **credential reveal must follow the server's capture record**, not the client's own send
-judge. The capture already reaches the client through `captures_for_client` and the capture view, so the
-change is to confirm, and adjust if needed, that:
+The server gate is a strict superset of that client judge. The client grants the capture only when the
+victim outcome becomes `submitted`, which `describeVictimOutcome` returns only when `meets && didLand`:
+`meets` is the page's `meetsThreshold`, `didLand` is `evaluateMessage`'s `landed` (the email opened and no
+required sender/addressing/pretext factor failed). The server gate requires less to let a send through: the
+page's own `meetsThreshold` (server-recomputed, held in parity with the client's by the `PhishScore`
+shared-fixture test), an authored target and an authored kit, and a recorded send. On every honest path the
+send goes to the authored target carrying the authored kit (the composer only offers a built page's kit),
+and the two routes have been posted, so the server stores hold a built, convincing page and a landed send.
 
-- the capture the server grants (returned in the Route 2 answer and by `captures_for_client`) is always
-  surfaced to the player, regardless of the client's own `landed` verdict for that send;
-- the mail minigame's own `evaluateMessage` stays, but only as **advisory feedback** (did the email land,
-  which factors were weak), a learning signal, never the gate on whether the credential is captured.
+Because `meets` is the same page threshold on both sides and the server drops the extra
+sender/addressing/pretext factors the client adds, every send the client judges as landed is a send the
+server gate passes. So a legitimate player is never refused what the game showed them: the capture the
+client claimed is always one the server stamps `proven` through the two stores.
 
-The divergence is one-directional (the client judge is stricter than the server gate, because it also scores
-sender and pretext; section 13), so the only risk to close is the client withholding a server-granted
-capture. Nothing else in the client changes: the builder and mail UI keep writing their own
-`se_landing_pages`/`mailState` for display.
+The server can be more lenient than the client, for example toward a poor-pretext forged send that names
+the right target and carries the right kit over a server-convincing page. That leniency is the accepted cost
+of the lighter gate (section 13). The direction matters: because the server is never stricter than the
+client, client/server drift can never refuse a legitimate player. At worst a later drift lets through a
+forged send that the lighter gate already accepts; it can never withhold a credential the game revealed.
+
+Two tests pin this property (scheduled in chunk A, section 14):
+
+- **A superset test.** Shared parity fixtures across the `lab_social_engineering` kits and targets and the
+  test scenario: for every case the client judge lands (`describeVictimOutcome` returns `submitted`), the
+  server gate (`record_phish_send!`'s `landed` plus the reader's authored-target/authored-kit check) passes.
+  No client-landed case is refused by the server.
+- **A guard test.** A focused assertion that the server's `landed` depends only on the page's
+  `meetsThreshold` and the authored target and kit, not on any message-craft factor. It feeds a
+  client-landed case with a deliberately weak pretext and a mis-addressed greeting and asserts the server
+  still lands it. A later edit that made the server stricter than the client, by reading a sender or pretext
+  factor into the gate, fails this test.
 
 ## 8. Keeping the stores server-owned and off the client (decision three)
 
@@ -272,14 +298,17 @@ a client UI global the gate ignores.
   client never sends. The `sync_state` merge touches only the sections it names (`currentRoom`,
   `globalVariables`, `mailState`, inventory, and so on); it never reads the two keys from the body, so a
   client cannot write them. They are not globals and not merged sections, so no reject list is needed.
-- **Never serialised to the client.** The bootstrap `scenario` action builds the client copy from an
-  explicit allowlist of named keys, not a whole-state dump; `seCaptures` reaches the client only through
-  `captures_for_client`, which strips `proven`/`phishGated` and never serves a secret. The two stores are
-  not in that allowlist and must not be added: the client needs neither (it keeps its own `se_landing_pages`
-  and `mailState` for the UI), and the sync answer builds from `captures_for_client`, not the whole state.
-  The implementer confirms this by grepping the `scenario` action and the sync answer for the two keys and
-  finding no reference. (This is already proven for `seLandingPages` and `sePhishSends` on main; it is
-  re-confirmed when Route 2 and the reader land.)
+- **Never serialised to the client.** The bootstrap `scenario` action attaches top-level `player_state`
+  keys to the client copy one by one (`objectivesState`, `submittedFlags`, `captures`, and so on), from a
+  named set; `seLandingPages` and `sePhishSends` are not among them and must not be added. `seCaptures`
+  reaches the client only through `captures_for_client`, which strips `proven`/`phishGated` and never serves
+  a secret; the sync answer builds from `captures_for_client`, not the whole state. `globalVariables` is a
+  different case: it ships wholesale as `savedGlobalVariables` (`games_controller.rb:344-346`), a
+  whole-section dump, and it carries the legacy `se_landing_pages` global. That is why `se_landing_pages`
+  still goes out to the client (the builder UI needs it); the two server stores are not globals and are
+  never in that dump. The implementer confirms the two stores stay off the client by grepping the `scenario`
+  action and the sync answer for the two keys and finding no reference. (This is already true for
+  `seLandingPages` and `sePhishSends` on main; it is re-confirmed when Route 2 and the reader land.)
 - **`se_landing_pages` stays a client UI global, untrusted.** It is not added to `SERVER_OWNED_GLOBAL_NAMES`.
   Making it server-owned would be a larger UI change (the builder restores its own state from
   `globals[PAGES_KEY]`, `landing-page-builder-minigame.js`), for no security the gate does not already have
@@ -359,20 +388,41 @@ The migration, `migrate_legacy_phish_evidence!(scenario:)`, mirroring `migrate_l
   migrates to a server verdict computed from those choices, so a forged old save is not laundered into a
   server fact. A page whose old `choices` are absent or off-menu migrates as not built (the player rebuilds;
   honest play reaches it again).
-- **The landed send is imported once, gated on the re-derived build threshold.** The old `mailState` always
-  kept `landed` but not always a full composed message. The lighter gate needs no message to decide a
-  send's `landed` anyway (section 5: `landed` is the page threshold holding), so the migration rule is
-  simple and uniform: for each old `folder: 'sent'`, `landed: true` record to an authored target carrying an
-  authored link kit, write `sePhishSends["#{targetId}/#{kitId}"]` with `landed` taken from the **server's
-  re-derived build** for that kit's page, that is `landed = seLandingPages[pageId].built && meetsThreshold`
-  after the build migration above. An old save that honestly phished (its stored `choices` re-score to
-  `meetsThreshold: true`) is imported as landed and is not soft-locked into redoing the phish; a forged old
-  `mailState` whose page does not re-score convincing imports as `landed: false` and is still blocked. No
-  client `landed` is trusted: the imported `landed` is the server's own re-derived build threshold, so the
-  import adds no trust beyond what Route 2 would compute for a fresh send.
+- **The landed send is keyed off the legacy save's own durable landed marker, not a surviving sent mail
+  record.** The mailbox is capped and `performSend`'s `sent` record can be trimmed out of `mailState`
+  before the save is taken, so the import must not depend on that record surviving. The durable marker the
+  legacy client wrote for a landed phish is `globalVariables.se_landing_pages[pageId].victim.submitted ==
+  true`: the mail bridge writes the best victim outcome back onto the page record on the send that lands
+  (`betterVictim`, `mail-bridge.js:418-420`), and `victim.submitted` is set only when the page met threshold
+  and the email landed (`describeVictimOutcome`, `landing-page-model.js:701`). This lives in
+  `se_landing_pages`, not `mailState`, so the mailbox cap never trims it; the old reader read exactly this
+  marker (`capture_proofs.rb:626`). So the import rule is: for each legacy `se_landing_pages[pageId]` whose
+  `victim.submitted == true`, that is wired to an authored phish target and an authored `kind: 'link'`
+  payload kit (the section 5 reachability facts: the kit's `landingPageId` is this page and the target aims
+  at it), write `sePhishSends["#{targetId}/#{kitId}"]` with
+  `landed = seLandingPages[pageId].built && meetsThreshold` taken from the **server's re-derived build**
+  above. No stored sent mail is consulted, and no client `landed` is trusted. An honest old save (its stored
+  `choices` re-score to `meetsThreshold: true`) is imported as landed even if its sent record was trimmed,
+  so it is not soft-locked into redoing the phish; a forged old marker whose page does not re-score
+  convincing imports as `landed: false` and is still blocked.
+- **What a forged legacy landed marker still leaves open, and why it is no worse than live B.** A tampered
+  old save can set `victim.submitted: true` on a page it did not honestly build. But the import credits
+  `landed` only from the server's re-derived build threshold, rebuilt from the save's stored `choices`, so a
+  forged marker lands a send only when those `choices` genuinely re-score above threshold, which is playing
+  the builder. That is exactly what Route 2 computes for a fresh send: an authored target and kit over a
+  server-convincing page, with the message craft not judged. So the import adds no trust beyond live B. The
+  one thing it does not re-verify, that the forged marker's choices were really entered through the builder
+  rather than hand-written into the save, is the same best-effort gap B accepts on the live path (a forged
+  Route 1 body with choices that happen to score above threshold is playing the builder by another name),
+  so the migrated outcome is no worse than a fresh forge, which B already accepts.
+- **One-time and idempotent.** The writer runs once per save, gated on `phishEvidenceMigrated` (section
+  9.1), and `sePhishSends` is first-wins on `landed: true`, so a re-run (or a later live Route 2 send for
+  the same target/kit) credits once and never double-writes. `seLandingPages` is first-wins per page the
+  same way.
 - **An already-proven capture is left alone.** If `seCaptures[target].proven == true` already (the player was
-  served the secret in the old save), the migration leaves it; part-2 evidence only ever withholds, never
-  retracts (the proof lists are monotonic), so a player who finished the phish keeps the result.
+  served the secret in the old save), the migration leaves the capture entry as it is; part-2 evidence only
+  ever withholds, never retracts (the proof lists are monotonic), so a player who finished the phish keeps
+  the result. The migration still populates the two server stores so the reader has them once it flips.
 - **No format bump, no `db:migrate`.** The two stores default to `{}` via `ACCESS_STATE_DEFAULTS`, and the
   migration is a data move inside `player_state`. The old `se_landing_pages` global is left in place for the
   UI; the old `mailState` is untouched.
@@ -400,6 +450,14 @@ never runs for exactly the save that needs it. So:
   **before** `stamp_proven_captures!`, so the stamp that follows in the same locked pass picks up the
   migrated evidence and stamps the capture `proven: true` at once, closing the narrow `proven: false` window
   directly. The writer sets `phishEvidenceMigrated = true` when it finishes, so it runs a single time.
+
+`phishEvidenceMigrated` is a top-level, server-owned `player_state` key, not a global. It is never read from
+the `sync_state` body (a global in `globalVariables` would merge through `sync_state`, letting a tampered
+client set the flag and skip its own migration; that would only self-harm, since the server stores would
+stay empty and the reader would withhold, but it is avoidable state the client should not touch) and it is
+never in the bootstrap serialisation allowlist (a global rides back out in `savedGlobalVariables` and is
+re-synced, a small breach of the sync-size rule in section 8). Keeping it a top-level server-owned flag
+keeps it off both paths.
 
 The common honest case needs no migration to stay unlocked anyway: an honest mid-lab old save recorded the
 capture `proven: true` when it was first recorded, and `capture_revealable?` serves any `proven: true` entry
@@ -487,7 +545,7 @@ shortcut that only saves time is acceptable; hardening must never block a studen
 ## 13. Decision two: why the lighter check, and what it rules out
 
 This is written for the reader weighing the trade. It answers directly: is the client/server drift risk
-real, where would it bite, how does the lighter gate avoid it, and what does it give up.
+real, which way would it bite, how does the lighter gate make it harmless, and what does it give up.
 
 **Is the drift risk real? Yes.** Deciding `landed` from the authored rules in full means porting three
 pieces of client logic into Ruby: the account resolution (`resolveAccounts`, `mail-data.js`), the factor
@@ -496,21 +554,25 @@ bias (`applyFactorBias`, `mail-bridge.js`) and the message judge (`evaluateMessa
 coercion that differs between Ruby and JS, a factor mode read one way on one side, an account-resolution
 edge handled slightly differently, and the two verdicts disagree.
 
-**Where it would bite: a legitimate player blocked.** The failure that matters is the server refusing a send
-the client landed. A player crafts a sender and pretext the client's judge accepts, the client shows the
-email landed, and the server, diverging on one subtle branch, records `landed: false` and withholds
-`Sofia2026!`. The first symptom is a student who did everything right and cannot open the lock, with nothing
-on screen to explain it. The drift does not have to exist on day one; it is latent. The moment someone edits
-the mail client's account handling or factor logic in JS and does not mirror it in Ruby, the two silently
-diverge, and the regression surfaces as a blocked honest player. That is the bad experience the lighter gate
-is chosen to avoid.
+**Which way it would bite with a full port: a legitimate player blocked.** If the server re-judged the
+message, the failure that would matter is the server refusing a send the client landed. A player crafts a
+sender and pretext the client's judge accepts, the client shows the email landed and grants the capture, and
+the server, diverging on one subtle branch, records `landed: false` and withholds `Sofia2026!`. The first
+symptom is a student who did everything right and cannot open the lock, with nothing on screen to explain
+it. The drift would not have to exist on day one; it would be latent, surfacing the moment someone edited
+the mail client's account handling or factor logic in JS and did not mirror it in Ruby. That is the bad
+experience the lighter gate is chosen to avoid.
 
-**How the lighter gate avoids it.** It computes `landed` only from facts the server already owns outright:
-the page's server-recomputed `meetsThreshold` (one port, `PhishScore`, already on main and held in parity
-with the JS by a shared-fixture test) plus two closed-set membership checks (the target is authored, the kit
-is authored). There is no second large port to keep in sync, no account globals to resolve, no factor bias
-to reproduce. One scorer, not a scorer plus a judge. The one duplicated function that remains, `PhishScore`,
-is small, pure and already guarded against drift.
+**How the lighter gate makes drift harmless.** It computes `landed` only from facts the server already owns
+outright: the page's server-recomputed `meetsThreshold` (one port, `PhishScore`, already on main and held in
+parity with the JS by a shared-fixture test) plus two closed-set membership checks (the target is authored,
+the kit is authored). There is no second large port to keep in sync, no account globals to resolve, no
+factor bias to reproduce. One scorer, not a scorer plus a judge. And the one direction that could refuse a
+player is closed structurally: the server gate is a strict superset of the client judge (section 7), so the
+server is never stricter than the client. The client still scores sender and pretext and grants the capture
+only when its own judge lands; the server asks for less, so it passes every send the client granted.
+Client/server drift can never refuse a legitimate player; at worst a later drift lets through a forged send
+the lighter gate already accepts. The superset and guard tests (section 7, chunk A) hold that invariant.
 
 **What it gives up.** The server no longer judges the sender, addressing or pretext quality. A crafted send
 that names the right target and carries the right kit lands even with a poor pretext, a wrong-looking From or
@@ -519,27 +581,21 @@ sender, addressing and pretext factors (`senderTrust`, `addressedTo`, `pretextRe
 hard gate on the secret. Concretely: a determined player who builds a genuinely convincing page (which still
 requires playing the build minigame correctly, because the page score is server-recomputed) and sends any
 authored message to `lord` carrying the payroll kit is served `Sofia2026!`, whether or not the email would
-have fooled her.
+have fooled her. This is the accepted cost of B.
 
 **What that means for cheat resistance.** The project policy hard-enforces secrets and keys and lets
 ink-gated steps stay best effort. The lighter gate keeps the hard parts hard: the secret still requires a
 server-recomputed convincing page and a send to the authored target with the authored kit, neither of which
 a tampered client can forge. What drops out of the hard tier is the message-craft judgement, which becomes
 best effort. The learning value of crafting a convincing sender and pretext is still taught and scored, but
-client-side, as advisory feedback, not as a wall in front of the credential. The lab is a little easier to
-complete, and in exchange its protected secret can never be served off forged client state and no honest
-player is ever blocked by a Ruby/JS disagreement that does not exist.
+client-side, as the feedback the mail minigame already shows, not as a wall in front of the credential. The
+lab is a little easier to complete, and in exchange its protected secret can never be served off forged
+client state and no honest player is ever blocked by a Ruby/JS disagreement that does not exist.
 
 **What stays client-side only.** The mail minigame's `evaluateMessage`, its account resolution and its
 factor-bias handling all stay in the client, unchanged, feeding the player's send feedback (did it land,
-which factors were weak). None of it is trusted by the gate.
-
-**Does the client have to change so the player sees the same outcome the server decides? Yes, one change.**
-Because the server gate is looser than the client judge (it drops sender and pretext scoring), the client
-can judge a send as not landing when the server would serve the secret. So the client's credential reveal
-must follow the server's capture record, not its own `evaluateMessage` verdict, so a server-granted capture
-is always shown; the mail judge stays as advisory feedback. This is section 7, scheduled as part of the send
-chunk.
+which factors were weak) and the client's own reveal of the captured credential. None of it is trusted by
+the gate, and none of it is removed; the client keeps teaching pretext quality as gameplay.
 
 **What the lighter gate rules out of the design.** It drops the entire send-judge port: no
 `lib/break_escape/phish_judge.rb` (the `resolveAccounts`, `applyFactorBias` and `evaluateMessage` Ruby
@@ -559,31 +615,38 @@ the migration lands before the reader change (section 10). Order: send route, th
 
 **Chunk A: Route 2 (send) and its store write.** Add `record_phish_send!` (section 5), the
 `POST se/phish_send` route under `around_action :with_game_lock` with its `GamePolicy` method and `set_game`
-coverage, the client send POST (awaiting the build POST, section 11) and the retry/offline-queue wiring, and
-the client reveal-follows-server consistency change (section 7). Add `record_phish_send!` to the locking
-guard test. It writes `sePhishSends`; nothing reads it for the gate yet, so the old client-evidence reader
-still drives the reveal and honest play is unaffected. Both stores now fill. Commit.
+coverage, the client send POST (awaiting the build POST, section 11) and the retry/offline-queue wiring. Add
+`record_phish_send!` to the locking guard test. It writes `sePhishSends`; nothing reads it for the gate yet,
+so the old client-evidence reader still drives the reveal and honest play is unaffected. Both stores now
+fill. This chunk no longer carries a client reveal change (the client keeps its own judge and records the
+capture as today, section 7), so it is smaller than it would have been under a reveal-follows-server design:
+the client work is the send POST, the build-await and the offline queue, with nothing touched in the reveal
+path. Commit.
 
 Tests: unit (`record_phish_send!`: authored target/kit accepted and landed from the built page, unbuilt page
 gives `landed: false`, unauthored target or kit refused `invalid`, off-menu message field refused, resend is
 first-wins idempotent); controller with real requests (`POST se/phish_send` stores the server verdict, is
-under the lock per `game_state_locking_test.rb`, ignores a body-asserted `landed`); node (the send client
-posts on send, awaits the build POST, retries only on `page_not_built_yet` + `retryable`, drains the offline
-queue once and never double-credits, and the reveal follows the server capture). Live browser proof: section
-15.
+under the lock per `game_state_locking_test.rb`, ignores a body-asserted `landed`); the superset test (every
+client-landed fixture across the lab kits/targets and the test scenario passes the server gate) and the
+guard test (the server `landed` reads only the page threshold and the authored target/kit, so a stricter
+server edit fails), section 7; node (the send client posts on send, awaits the build POST, retries only on
+`page_not_built_yet` + `retryable`, drains the offline queue once and never double-credits). Live browser
+proof: section 15.
 
 **Chunk B: legacy migration and its gate.** Add `legacy_phish_evidence?`, `migrate_legacy_phish_evidence!`
-and its place in `bootstrap_state_needs_write?` / `run_bootstrap_writers!` (section 9.1). Old saves populate
-the server stores on their next bootstrap. The reader is still the old client-evidence path, so this is
-behaviour-neutral for live play (the stores it writes are not yet read) and simply has the stores ready
-before the reader flips. Commit.
+and its place in `bootstrap_state_needs_write?` / `run_bootstrap_writers!` (section 9.1), with
+`phishEvidenceMigrated` as a top-level server-owned flag. Old saves populate the server stores on their next
+bootstrap. The reader is still the old client-evidence path, so this is behaviour-neutral for live play (the
+stores it writes are not yet read) and simply has the stores ready before the reader flips. Commit.
 
-Tests: unit (an honest old save with good `choices` and a legacy landed send migrates to server
-`meetsThreshold` and an imported `landed` gated on the re-derived build; a forged old save with junk choices
-migrates to `meetsThreshold: false` and `landed: false`; an already-proven capture is left untouched; the
-writer sets `phishEvidenceMigrated` and runs once); controller with real requests (the `scenario` bootstrap
-on an exposed legacy save takes the lock via `legacy_phish_evidence?`, runs the migration and stamps the
-capture; `sync_state` does not run it). Live browser proof: section 15.
+Tests: unit (an honest old save with good `choices` and a `victim.submitted` marker migrates to server
+`meetsThreshold` and an imported `landed` gated on the re-derived build, even when the stored sent mail was
+trimmed; a forged old save with junk choices migrates to `meetsThreshold: false` and `landed: false`; an
+already-proven capture is left untouched while the stores still populate; the writer sets
+`phishEvidenceMigrated` and runs once; `phishEvidenceMigrated` is never read from a `sync_state` body);
+controller with real requests (the `scenario` bootstrap on an exposed legacy save takes the lock via
+`legacy_phish_evidence?`, runs the migration and stamps the capture; `sync_state` does not run it). Live
+browser proof: section 15.
 
 **Chunk C: the reader change and stamping.** Switch `phish_page_evidence_holds?` to the two stores
 (section 6), drop `extra_sent` through the call chain, re-stamp from the two routes, and retire
@@ -632,16 +695,17 @@ needed.
 - **Chunk A (send route).** Drive the lab to a real build, then a real send to `lord` with
   `kit_payroll_page`; confirm `POST se/phish_send` recorded `sePhishSends["lord/kit_payroll_page"].landed ==
   true` from the server's own page verdict, and that a send before the build returns `page_not_built_yet`
-  and lands on the re-post. Confirm the client reveal follows the server (a send the client judge would
-  score down, because of a weak pretext, still surfaces the server-granted capture). With Playwright `route`
+  and lands on the re-post. Confirm the superset property holds on the real path: a send with a weak pretext
+  the client judge would score down, over a server-convincing page, still records `landed: true` on the
+  server (the client's own reveal is unchanged and is covered by the superset test). With Playwright `route`
   delaying then aborting the build and send POSTs, and `context.setOffline(true)` across a build-then-send
   then `setOffline(false)`, confirm the honest player is credited (on reconnect for the offline case) and
   never refused. Record game ids in the build log.
-- **Chunk B (migration).** Seed an old save (good `choices`, a legacy landed `mailState` send, empty server
+- **Chunk B (migration).** Seed an old save (good `choices`, a `victim.submitted` marker, empty server
   stores) via the keyless path, bootstrap it, and confirm the migration derived `meetsThreshold`, imported
-  the send gated on it, and (with chunk C landed or the old reader) the secret is servable; a second seed
-  with forged `meetsThreshold: true` over junk choices migrates to `meetsThreshold: false` and the secret is
-  withheld.
+  the send gated on it off the `victim.submitted` marker (with no surviving sent mail), and (with chunk C
+  landed or the old reader) the secret is servable; a second seed with forged `meetsThreshold: true` over
+  junk choices migrates to `meetsThreshold: false` and the secret is withheld.
 - **Chunk C (reader).** Tampered run: `sync_state` the forged `se_landing_pages` and `mailState` with no
   build or send route called; confirm `capture_secrets` withholds `Sofia2026!` and the capture view shows
   the credential unproven. Honest run: build and send through the two routes; confirm the capture is served
