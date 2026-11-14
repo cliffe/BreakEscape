@@ -207,7 +207,20 @@ test('blocked placeholder draws the frame only', () => {
     assert.ok(root.classList.contains('is-blocked'));
     assert.equal(root.querySelector('.lpb-address-text').textContent, 'Blocked address');
     assert.equal(root.querySelector('.lpb-body'), null, 'no page body when blocked');
+    // C-LP2: a deliberately blocked look-alike (a service is chosen) keeps the bare placeholder,
+    // no start hint.
+    assert.equal(root.querySelector('.lpb-preview-empty'), null, 'no empty hint once a choice is made');
     assertDomSafe(root, 'blocked');
+});
+
+test('C-LP2: the empty preview shows a start hint before any choice', () => {
+    const { root, blocked } = renderLandingPage({ pageDef, choices: {}, mode: 'build', doc: freshDoc() });
+    assert.equal(blocked, true, 'nothing chosen is a blocked preview');
+    const hint = root.querySelector('.lpb-preview-empty');
+    assert.ok(hint, 'the empty state has a hint element');
+    assert.match(hint.textContent, /pick a service/i);
+    assert.equal(root.querySelector('.lpb-body'), null, 'still no page body');
+    assertDomSafe(root, 'empty');
 });
 
 test('a blocked address injected straight into the renderer still draws the placeholder', () => {

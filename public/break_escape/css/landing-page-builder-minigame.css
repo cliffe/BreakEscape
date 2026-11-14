@@ -201,6 +201,16 @@
 
 .lpb-preview.is-blocked .lpb-address-text { color: #7a1414; font-weight: 700; }
 
+/* C-LP2: the empty-state hint shown in the preview before any service is picked. Guidance chrome,
+   so a pixel font, dark on the light preview. */
+.lpb-preview-empty {
+    padding: 24px 18px;
+    font-family: var(--se-font-readable, 'GNF', sans-serif);
+    font-size: 16px;
+    color: #45506a;
+    text-align: center;
+}
+
 .lpb-body { /* note: inside .lpb-preview the renderer uses .lpb-body too */ }
 
 .lpb-preview .lpb-body {
@@ -543,8 +553,11 @@
 @media (max-width: 700px) {
     .lpb-game-container { width: 100vw; height: 100vh; }
     .lpb-body { flex-direction: column; }
-    .lpb-preview-pane { flex: 0 0 auto; border-right: none; border-bottom: 3px solid var(--ui-line, #4c5b80); }
-    .lpb-panel { flex: 1 1 auto; }
+    /* C-LP2: stacked narrow layout - the preview is a short strip at the top (capped so an empty
+       "Blocked address" box can't take the larger half and push the choices below the fold), and
+       the choice panel takes the rest and is the only pane that scrolls. */
+    .lpb-preview-pane { flex: 0 0 auto; max-height: 38vh; border-right: none; border-bottom: 3px solid var(--ui-line, #4c5b80); }
+    .lpb-panel { flex: 1 1 auto; min-height: 0; }
     .lpb-chip { width: 100%; }
 }
 
