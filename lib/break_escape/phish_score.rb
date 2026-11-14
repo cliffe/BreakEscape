@@ -278,9 +278,11 @@ module BreakEscape
     # 0 and Number([n]) to n, but to_number returns nil for all of these. This is used for two gate
     # fields only, linkThreshold and minDomainTier, and both are always authored as numbers, so there
     # is no honest divergence to catch. Were a malformed value ever to reach here, nil is the safe
-    # reading: a boolean or empty-array linkThreshold coerced to 0 or 1 would let a weak page clear
-    # the gate, whereas nil withholds; the port is stricter than Number() in exactly the direction
-    # that never over-serves a secret. Replicating JS array-to-primitive coercion would add fragile
+    # reading for linkThreshold: a boolean or empty-array value coerced to 0 or 1 would let a weak page
+    # clear the gate, whereas nil withholds. For minDomainTier nil skips the careful-reader gate, so
+    # there it is less strict than a coerced number; that is acceptable only because both fields are
+    # scenario-authored, never client input, so a malformed value cannot come from a hostile body.
+    # Replicating JS array-to-primitive coercion would add fragile
     # code for input that cannot occur and would weaken that guarantee, so the gap is left closed.
     def to_number(v)
       case v

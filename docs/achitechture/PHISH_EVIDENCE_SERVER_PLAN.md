@@ -183,7 +183,11 @@ client calls convincing the server also calls convincing.
 client send handler at `mail-client-minigame.js:840`, after the local record commit) once per send that
 the client would record as sent. Body: the composed message the client already bounds to
 `PENDING_MESSAGE_KEYS` (`mail-bridge.js:320`) plus `{ targetId, kitId }`. The gate,
-`CaptureProofs#record_phish_send!`:
+`CaptureProofs#record_phish_send!`. The route goes on the controller's `around_action :with_game_lock` list
+(`games_controller.rb:103`), as the build route does: it saves the whole `player_state` and re-stamps
+captures, so outside the row lock it would race `performSend`'s `mailState` sync on the same row and could
+revert a just-synced change from a stale copy. The locking guard test (`game_state_locking_test.rb`) lists
+`record_phish_send!` among its state writers. The gate:
 
 1. `targetId` is an authored phish target; else refuse `invalid`.
 2. `kitId` is a `kind: 'link'` payload kit whose `landingPageId` is a built page in `seLandingPages`
@@ -699,7 +703,8 @@ reader flips. Order:
    `lib/break_escape/phish_judge.rb` and `phish_judge_parity_test.rb`, including the honest-solve fixture.
    Pure, unused by any route yet. The game is unchanged. Commit.
 5. **Route 2 (send) and its store write.** Add `record_phish_send!`, the route, the client POST (awaiting
-   the build POST, section 10) and the retry/offline-queue wiring. It writes `sePhishSends`; the reader
+   the build POST, section 10) and the retry/offline-queue wiring, with the route under `with_game_lock` and
+   in the locking guard test (3.3). It writes `sePhishSends`; the reader
    still uses the old client evidence, so honest play is unaffected and both stores are now filling.
    Commit.
 6. **Legacy migration and its gate.** Add `legacy_phish_evidence?`, `migrate_legacy_phish_evidence!` and
