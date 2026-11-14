@@ -6852,6 +6852,31 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
     err.call("'#{e[:path]}' policy '#{e[:object]['policy']}' names no entry in 'policies'.")
   end
 
+  # remoteScreen (credential keyring K0, section 5.3): a policy with remoteScreen on a
+  # remote: "blocked" policy warns (no remote screen opens); remoteScreen: "tiles" on a
+  # policy only PCs with loginPicker:false or headless PCs use draws an info line (no PC
+  # tiles ever show through it).
+  tiles_pc_under = lambda do |policy_name|
+    pcs.any? do |e|
+      pc = e[:object]
+      used = (pc['policy'].presence || json_data['defaultPolicy']).to_s
+      next false unless used == policy_name
+
+      picker = pc.key?('loginPicker') ? pc['loginPicker'] : 'accounts'
+      !(picker == false) && !(pc['headless'] == true)
+    end
+  end
+  policies.each do |policy_name, policy|
+    next unless policy.is_a?(Hash) && policy.key?('remoteScreen')
+
+    if policy['remote'] == 'blocked'
+      warn.call("policy '#{policy_name}' sets remoteScreen but remote is 'blocked', so no remote sign-in screen opens under it.")
+    end
+    if policy['remoteScreen'] == 'tiles' && !tiles_pc_under.call(policy_name.to_s)
+      issues << "ℹ️ access model: policy '#{policy_name}' has remoteScreen 'tiles' but every PC under it has loginPicker false or is headless, so no PC tiles show over the network."
+    end
+  end
+
   # Profile item ids: unique across profiles and room objects (section 5.1)
   room_ids = objects.map { |e| e[:object]['id'] }.compact.map(&:to_s).to_set
   profile_items = []

@@ -203,6 +203,7 @@
           "usb": { "type": "string", "enum": ["allowed", "storage_blocked", "blocked"], "description": "Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 7): allowed (default) accepts every USB device; storage_blocked refuses items with usbClass storage; blocked refuses storage and hid. Governs only a workstation or an object that names a policy." },
           "social": { "type": "string", "enum": ["allowed", "blocked"] },
           "remote": { "type": "string", "enum": ["allowed", "blocked"], "description": "Networks (ACCESS_MODEL_SLICE_9_3_PLAN.md 3.4): whether a sign-in PC under this policy takes a remote sign-in through a foothold. Absent means allowed; a blocked PC is still listed in the network view, marked remote sign-in off." },
+          "remoteScreen": { "type": "string", "enum": ["tiles", "typed"], "description": "Credential keyring (CREDENTIAL_KEYRING_PLAN.md K0): the remote sign-in screen over a foothold. tiles (the default, D1 (a)) shows the PC's own account tiles by its loginPicker; typed shows none of the PC's accounts until a password is right, as Network Level Authentication does. Never affects the keyboard screen; a headless host shows no PC tiles under either value." },
           "_comment": { "type": "string" }
         }
       }
