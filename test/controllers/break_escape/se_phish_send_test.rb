@@ -30,7 +30,11 @@ module BreakEscape
     # An authored, well-crafted message, and a deliberately weak/mis-addressed one. The server
     # treats both only as bounded input; neither changes `landed` (the guard test).
     GOOD_MESSAGE = { 'fromAccount' => 'guest', 'to' => 's.lord@ledgerwell.example',
-                     'headerFrom' => 'portal', 'link' => 'kit_payroll_page',
+                     'headerFrom' => { 'name' => 'Payroll Team', 'address' => 'payroll@ledgerwell.example' },
+                     'subject' => 't_payslip', 'linkText' => 'ledgerwell.example/payroll',
+                     'linkInfo' => { 'domainId' => 'd_word', 'pageId' => 'payroll_login' },
+                     'attachmentKind' => 'link', 'inReplyTo' => '',
+                     'link' => 'kit_payroll_page',
                      'templates' => { 'subject' => 't_payslip', 'body' => 'b_formal' },
                      'slots' => { 'greeting' => 'g_sofia', 'org' => 'o_ledgerwell' } }.freeze
     WEAK_MESSAGE = { 'fromAccount' => 'guest', 'to' => 's.lord@ledgerwell.example',
@@ -191,6 +195,49 @@ module BreakEscape
       build_game
       post_build(choices: CONVINCING)
       post_send(message: GOOD_MESSAGE.merge('slots' => { 'greeting' => 'z' * 5000 }))
+      assert_response :unprocessable_entity
+      assert_empty sends
+    end
+
+    # ── message hygiene: headerFrom and the free-text caps (minor 5) ──────────
+
+    test 'an honest lab send with a composed headerFrom and linkInfo still passes' do
+      build_game
+      post_build(choices: CONVINCING)
+      post_send # GOOD_MESSAGE carries an object headerFrom, a linkInfo object and the capped fields
+      assert_response :success, response.body
+      assert_equal true, response.parsed_body['landed'], 'honest hygiene fields do not refuse the send'
+    end
+
+    test 'a headerFrom string that is not an authored account is refused' do
+      build_game
+      post_build(choices: CONVINCING)
+      post_send(message: GOOD_MESSAGE.merge('headerFrom' => 'portal')) # not in accounts
+      assert_response :unprocessable_entity
+      assert_equal 'invalid', response.parsed_body['reason']
+      assert_empty sends
+    end
+
+    test 'a headerFrom string that names an authored account passes' do
+      build_game
+      post_build(choices: CONVINCING)
+      post_send(message: GOOD_MESSAGE.merge('headerFrom' => 'freemail')) # an authored account id
+      assert_response :success
+      assert_equal true, response.parsed_body['landed']
+    end
+
+    test 'an oversized subject is refused with no exception and nothing stored' do
+      build_game
+      post_build(choices: CONVINCING)
+      post_send(message: GOOD_MESSAGE.merge('subject' => 's' * 5000))
+      assert_response :unprocessable_entity
+      assert_empty sends
+    end
+
+    test 'an oversized headerFrom name is refused' do
+      build_game
+      post_build(choices: CONVINCING)
+      post_send(message: GOOD_MESSAGE.merge('headerFrom' => { 'name' => 'z' * 5000 }))
       assert_response :unprocessable_entity
       assert_empty sends
     end

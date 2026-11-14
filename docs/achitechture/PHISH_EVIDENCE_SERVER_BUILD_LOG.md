@@ -700,3 +700,27 @@ send-triggered build re-post landing, the combined drain order (build before sen
 re-drive cases (built-and-submitted re-posts both, no-choices posts nothing, unsubmitted re-posts
 only the build). Neighbours green: `social-landing-page-render`, `social-landing-page-builder`(+
 fakecheck), `social-mail-bridge`, `social-mail-composer`, `state-sync`, `state-sync-hidden-save`.
+
+## Chunk A review R1 minor 4: a real cross-scenario superset test
+
+`test/models/break_escape/phish_superset_test.rb` replaces the hand-picked proxy with a scan.
+`PhishSupersetTest.phish_scenarios` globs `scenarios/*/scenario.json.erb` for those authoring a
+kind:'link' kit and phish targets (today lab_social_engineering, test_social_slice, ca05_signin_pages;
+found by scan, not a fixed list). For each, it renders the scenario, derives a convincing choice set
+from the page's own menus (best option per factor, the highest-tier .example domain to clear the
+careful-reader gate, not hand-picked), checks the derivation scores meetsThreshold on PhishScore (the
+client-landed precondition; the JS judge's describeVictimOutcome submits iff meetsThreshold and the
+send landed, and the two scorers are held in parity by phish_score_parity), then drives the real
+record_landing_page_build! + record_phish_send! and asserts the server gate records landed:true. The
+guard test (a weak, mis-addressed message over a convincing page still lands) stays in se_phish_send.
+
+## Chunk A review R1 minor 5: headerFrom and free-text hygiene
+
+`valid_send_message?` now validates `headerFrom` (a string form must name an authored account; the
+composer's object form, { account: true } or { name, address } of authored slot values, is bounded so
+an oversized name or address is refused) and length-caps `to`, `subject`, `linkText`, `attachmentKind`
+and `inReplyTo` (nil or a string within the id length), and bounds `linkInfo` as an object. The fields
+are still neither stored nor judged, so this is hostile-input hygiene only. The GOOD_MESSAGE fixture
+now carries the real composed shapes (an object headerFrom, a linkInfo object, the capped fields) and
+an honest lab send still lands; new tests refuse an unauthored headerFrom string, an oversized subject
+and an oversized headerFrom name, and pass an authored-account headerFrom string.

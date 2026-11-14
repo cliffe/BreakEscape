@@ -389,10 +389,68 @@ module BreakEscape
         return false unless CaptureModel.payload_kit_id?(scenario, value)
       end
 
+      # headerFrom is the claimed sender (plan section 5 step 3). A string form must name an
+      # authored account; the composer's object form ({ account: true } or { name, address } of
+      # authored slot values) is bounded. nil passes.
+      return false unless valid_header_from?(scenario, input['headerFrom'])
+
       return false unless bounded_string_map?(input['slots'])
       return false unless bounded_string_map?(input['templates'])
+      return false unless bounded_info_map?(input['linkInfo'])
+
+      # The remaining free-text fields are never stored and never judged, but a tampered body must
+      # not carry an arbitrarily large value (plan section 5, chunk A review minor 5). nil or empty
+      # passes; anything else is a string capped at the id length. `to` stays an address, not an
+      # authored id, so it is only length-capped, not menu-checked (keeps the superset honest).
+      %w[to subject linkText attachmentKind inReplyTo].each do |key|
+        return false unless length_capped?(input[key])
+      end
 
       true
+    end
+
+    # Whether a composed headerFrom is bounded. nil passes; a string must be an authored account; a
+    # Hash (the client's composed form) must have bounded keys and only nil/boolean/bounded-string
+    # values, so an oversized name or address is refused without rejecting an honest send.
+    def valid_header_from?(scenario, value)
+      return true if value.nil?
+      if value.is_a?(String)
+        return false unless valid_choice_id?(value)
+
+        return CaptureModel.mail_account_ids(scenario).include?(value)
+      end
+      return false unless value.is_a?(Hash)
+
+      value.all? do |key, v|
+        next false unless valid_choice_id?(key)
+        next true if v.nil? || v == true || v == false
+
+        v.is_a?(String) ? valid_choice_id?(v) : false
+      end
+    end
+
+    # nil or empty passes; otherwise a string capped at the id length. For free-text fields the gate
+    # neither stores nor reads, so only size matters.
+    def length_capped?(value)
+      value.nil? || (value.is_a?(String) && value.length <= CaptureModel::MAX_CAPTURE_TARGET_CHARS)
+    end
+
+    # A bounded info object (linkInfo): nil passes; otherwise a Hash of bounded keys whose values
+    # are nil, boolean, numeric, or a length-capped string. A nested object or oversized string is
+    # refused. Lenient on scalar types so an honest linkInfo (domainId/pageId/domain strings) passes.
+    def bounded_info_map?(map)
+      return true if map.nil?
+      return false unless map.is_a?(Hash)
+
+      map.all? do |key, value|
+        next false unless valid_choice_id?(key)
+
+        case value
+        when nil, true, false, Numeric then true
+        when String then value.length <= CaptureModel::MAX_CAPTURE_TARGET_CHARS
+        else false
+        end
+      end
     end
 
     # A nil map passes; otherwise every key and string value must be a bounded choice id (shape and
