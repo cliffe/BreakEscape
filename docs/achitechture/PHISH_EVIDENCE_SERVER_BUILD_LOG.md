@@ -296,3 +296,76 @@ concurrent sprite-restricted browser run) which made `new-game.rb` abort with "N
 matches validSprites nil". Set it back to the universal starter `female_hacker_hood_v2` to run these
 proofs. Concurrent browser playtests on different scenarios share this one demo player and so contend
 on the sprite.
+
+## Chunk 8: validator rule and schema confirmation
+
+Plan section 13. Built on its own branch (`build/hard-phish-c8`, from the reviewed tip of chunks 1
+to 3); touches only the validator, a node test and this log, so it merges without the app/engine
+chunks 4 to 7.
+
+### The rule
+
+A landing page whose `capture.secret` is a hard-access value must be reachable only through a link
+kit, so the server can gate the reveal on a recorded build and a landed send. Without a link kit the
+server has nothing to gate on, so a tampered client could forge the build and send state and be
+served the secret. The rule lives in `check_access_model` (`scripts/validate_scenario.rb`), right
+after the existing NPC-capture lock-code block, because section 13 places it in the "access-model
+pass" and that pass already builds the hard-access set and is the method the node tests drive. For
+every `social.landingPages` entry whose `capture.secret` is in
+`CaptureModel.hard_access_values(data)` (a password or PIN lock code, an RFID or biometric
+`requires`, a Wi-Fi PSK, or a flag), it errors unless a `social.mailClient.payloadKit` link kit
+names the page (the page appears in `CaptureModel.page_evidence_kits(data)` with a non-empty kit
+list). A landing secret that opens nothing (every awareness page) is never flagged. The rule emits
+only errors, never warnings.
+
+`hard_access_values` was chosen over the narrower `lock_codes` to match the plan's own definition of
+a protected secret throughout (a lock code, a PSK or a flag): it is a strict superset, so it still
+covers the lock-code case section 13's parenthetical names.
+
+### Schema
+
+No schema change. `scripts/scenario-schema.json` already defines `landingPages`, `phishTargets` and
+`payloadKit` (with `landingPageId`); the routes record derived facts and add no authored field, so
+the authored shapes are unchanged (plan section 13). Confirmed untouched.
+
+### Tests
+
+- Node cases `test/js/validator-phish-evidence-secret.test.mjs` (modelled on
+  `door-gates-validator.test.mjs`, driving `check_access_model` in-process over the Ruby validator):
+  a protected landing secret wired through a link kit raises nothing; the same with no link kit, a
+  kit naming a different page, or a non-`link` kit each error; an awareness secret that opens nothing
+  is never flagged (kit or no kit); a Wi-Fi PSK behind an unwired phish errors and clears once wired.
+  6 subtests, all pass.
+- No new static import was added to any engine JS module, so no test-harness copy list changed.
+
+### Validator counts (every scenario authoring a landing page or phish target)
+
+Run `LANG=C.UTF-8 /usr/bin/ruby3.2 scripts/validate_scenario.rb <file> --no-graph`. Errors and
+warnings were identical before and after the rule for all 19 scenarios, and the new rule fired on
+none of them (`lab_social_engineering`'s page is wired through `kit_payroll_page`; every other page
+carries no hard-access secret). No `dungeon_graph.*` rewrites (run with `--no-graph`).
+
+| Scenario | errors (before=after) | warnings (before=after) | rule hits |
+|---|---|---|---|
+| lab_social_engineering | 0 | 8 | 0 |
+| test_social_slice | 0 | 6 | 0 |
+| ca01_invoice_fraud | 0 | 3 | 0 |
+| ca02_cv_lures | 0 | 3 | 0 |
+| ca04_exec_whaling | 0 | 3 | 0 |
+| ca05_signin_pages | 0 | 3 | 0 |
+| ca06_texts_and_qr | 0 | 3 | 0 |
+| ca07_voice_ceo | 0 | 3 | 0 |
+| ca08_after_the_click | 0 | 3 | 0 |
+| ca10_downloads_and_fake_checks | 0 | 2 | 0 |
+| ca13_ai_assistant | 0 | 2 | 0 |
+| ca14_social_media | 0 | 2 | 0 |
+| test_ink_email | 0 | 2 | 0 |
+| test_social_board_indicators | 0 | 3 | 0 |
+| test_social_docs_proof | 0 | 2 | 0 |
+| test_social_episode | 0 | 6 | 0 |
+| test_social_freetext | 0 | 3 | 0 |
+| test_social_m5_channels | 0 | 7 | 0 |
+| test_social_p9 | 0 | 3 | 0 |
+
+(`ca*` scenarios that author no landing page or phish target cannot reach the rule's page loop, so
+they gain no new error by construction.)
