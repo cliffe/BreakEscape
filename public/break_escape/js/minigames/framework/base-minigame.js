@@ -11,6 +11,11 @@ export class MinigameScene {
     // true on a full-window console that keeps Cancel overlaid on its own bottom bar
     static controlsOverlay = false;
 
+    // true: the scene's game area takes the shared SE window frame (the 9-slice frame mail-client
+    // and inbox-triage use), sized min(720px, 96vw) and scrolling inside the frame (C-X2). Opt-in
+    // for the SE and awareness scenes that otherwise float a card on the black backdrop.
+    static framed = false;
+
     // The X closes a minigame (and Esc), so the shell draws no Cancel button beside it
     // (UX slice 7 R1, the user's screenshot notes). A scene whose bottom button is not a
     // second close opts back in: the notes reader (Continue). Conversations no longer keep
@@ -57,6 +62,8 @@ export class MinigameScene {
         // the overlaid Cancel row (static controlsOverlay = true on the subclass); every
         // other scene keeps Cancel in the flow under its game area (code review R2 m2)
         this.container.classList?.toggle?.('minigame-controls-overlay', this.constructor.controlsOverlay === true);
+        // The shared SE window frame opt-in (C-X2): a class the framework CSS keys the frame off.
+        this.container.classList?.toggle?.('minigame-framed', this.constructor.framed === true);
 
         this.headerElement = this.container.querySelector('.minigame-header');
         this.gameContainer = this.container.querySelector('.minigame-game-container');

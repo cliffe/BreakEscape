@@ -65,8 +65,8 @@
     margin: 0;
     flex: 1 1 auto;
     font-family: 'Press Start 2P', monospace;
-    font-size: 14px;
-    line-height: 1.4;
+    font-size: 16px;
+    line-height: 24px;
     font-weight: 400;
 }
 
@@ -388,7 +388,7 @@
     .ob-profiles { grid-template-columns: 1fr; }
     .ob-address { margin: 8px 8px 0; }
     .ob-head { padding: 8px; }
-    .ob-title { font-size: 12px; }
+    .ob-title { font-size: 16px; }
     .ob-logo { height: 40px; }
     .ob-tool { flex-basis: 100%; }
 }

@@ -39,6 +39,9 @@ function el(tag, className, text) {
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 
 export class SortDrillMinigame extends SocialOverlayScene {
+    // C-X2: take the shared SE window frame
+    static framed = true;
+
     constructor(container, params) {
         super(container, params);
         this.config = null;

@@ -61,11 +61,11 @@
     margin-top: 14px;
     padding: 8px 18px;
     font: inherit;
-    font-weight: 700;
+    font-weight: normal;
     color: #fff;
     background: var(--aw-accent);
-    border: 0;
-    border-radius: 4px;
+    border: 2px solid var(--aw-accent);
+    border-radius: 0;
     cursor: pointer;
 }
 .epr-button:focus-visible { outline: 3px solid var(--aw-ink); outline-offset: 2px; }
@@ -112,7 +112,7 @@
 }
 .epr-sbx-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
 .epr-sbx-title { font-size: 14px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--aw-accent); }
-.epr-sbx-card { padding: 12px; background: #fff; border: 1px solid var(--aw-line); }
+.epr-sbx-card { padding: 12px; background: #fff; border: 2px solid var(--aw-line); }
 .epr-sbx-intro { margin: 0 0 10px; font-size: 15px; color: #52606d; }
 .epr-sbx-heading { margin: 0 0 6px; font-size: 18px; color: var(--aw-accent); }
 .epr-sbx-heading:focus { outline: none; }

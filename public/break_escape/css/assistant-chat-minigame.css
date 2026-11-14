@@ -32,7 +32,7 @@
 
 .ac-title {
     margin: 0;
-    font-size: 1.15rem;
+    font-size: 18px;
     /* The header sits on the dark overlay backdrop, not on a light section panel, so the
        dark-green .ac-root ink was near-invisible (E13 F-6). Light title here. */
     color: #f4f8f6;
@@ -46,8 +46,8 @@
 
 .ac-section {
     background: #f4f8f6;
-    border: 1px solid #cfe0d9;
-    border-radius: 8px;
+    border: 2px solid #cfe0d9;
+    border-radius: 0;
     padding: 12px;
 }
 
@@ -62,12 +62,12 @@
 .ac-reload-note {
     margin: 0 0 8px;
     color: #cfe0d9;
-    font-size: 0.9rem;
+    font-size: 14px;
 }
 
 .ac-reply {
     background: #ffffff;
-    border: 1px solid #cfe0d9;
+    border: 2px solid #cfe0d9;
     border-left: 4px solid #2f6f5e;
     border-radius: 6px;
     padding: 10px 12px;

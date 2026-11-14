@@ -375,6 +375,21 @@
 /* Social-overlay / exercise close control (C-X1): the shared pixel ×, one look for every
    SE and awareness window. X only, no text 'Close'. It sits in the window header row and
    the header's own flex rules push it to the right; it never overlaps the header text. */
+.minigame-container.minigame-framed > .minigame-game-container {
+    box-sizing: border-box;
+    width: min(720px, 96vw);
+    margin: 0 auto;
+    height: auto;
+    max-height: calc(100% - 40px);
+    overflow: auto;
+    padding: 16px;
+    color: var(--ui-text, #eef1f8);
+    background-color: var(--ui-surface, rgba(24, 30, 48, 0.94));
+    border: 16px solid transparent;
+    border-image: var(--se-frame-image, url('/break_escape/assets/ui/social/mail-frame.png')) 8 fill / 16px stretch;
+    image-rendering: pixelated;
+}
+
 .se-overlay-close {
     flex: 0 0 auto;
     box-sizing: border-box;

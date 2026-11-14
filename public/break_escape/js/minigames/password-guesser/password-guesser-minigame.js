@@ -40,6 +40,9 @@ function el(tag, className, text) {
 }
 
 export class PasswordGuesserMinigame extends SocialOverlayScene {
+    // C-X2: take the shared SE window frame
+    static framed = true;
+
     constructor(container, params) {
         super(container, { title: DEFAULT_TEXT.heading, ...(params || {}) });
         this.config = isObj(this.params.config) ? this.params.config : {};

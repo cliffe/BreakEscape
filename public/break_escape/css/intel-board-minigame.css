@@ -19,7 +19,7 @@
     background: #aa7446 url('/break_escape/assets/ui/social/board-cork.png') 0 0 / 124px 124px repeat;
     image-rendering: pixelated;
     border: 4px solid #4a3220;
-    box-shadow: 0 0 0 2px var(--ui-line, #4c5b80), inset 0 0 24px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 0 0 2px var(--ui-line, #4c5b80);
 }
 
 .ib-root {
@@ -47,8 +47,8 @@
 .ib-title {
     margin: 0;
     font-family: 'Press Start 2P', monospace;
-    font-size: 14px;
-    line-height: 1.4;
+    font-size: 16px;
+    line-height: 24px;
     font-weight: 400;
     flex: 1 1 auto;
 }

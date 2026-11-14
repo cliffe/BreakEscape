@@ -57,6 +57,9 @@ function h(tag, props = {}, ...kids) {
 }
 
 export class AssistantChatMinigame extends SocialOverlayScene {
+    // C-X2: take the shared SE window frame
+    static framed = true;
+
     constructor(container, params) {
         super(container, params);
         this.config = isObj(this.params.config) ? this.params.config : {};

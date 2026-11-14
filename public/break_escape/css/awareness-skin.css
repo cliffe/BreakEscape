@@ -46,9 +46,9 @@
 /* step strip */
 .aw-strip { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 8px 12px; background: #fff; border-bottom: 2px solid var(--aw-line); }
 .aw-steps { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
-.aw-step { display: flex; align-items: center; gap: 6px; padding: 3px 10px 3px 4px; border: 1px solid var(--aw-line); border-radius: 999px; font-size: 14px; color: #52606d; background: #fff; }
-.aw-step-num { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; background: var(--aw-line); color: var(--aw-ink); font-size: 13px; font-weight: 700; }
-.aw-step-current { border-color: var(--aw-accent); color: var(--aw-ink); font-weight: 700; }
+.aw-step { display: flex; align-items: center; gap: 6px; padding: 3px 10px 3px 4px; border: 2px solid var(--aw-line); border-radius: 0; font-size: 14px; color: #52606d; background: #fff; }
+.aw-step-num { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 0; background: var(--aw-line); color: var(--aw-ink); font-size: 13px; font-weight: normal; }
+.aw-step-current { border-color: var(--aw-accent); color: var(--aw-ink); font-weight: normal; }
 .aw-step-current .aw-step-num { background: var(--aw-accent); color: #fff; }
 .aw-step-done .aw-step-num { background: var(--aw-accent); color: #fff; opacity: 0.7; }
 /* A stage passed over without running (e.g. the MFA demo after a refused call): greyed, not

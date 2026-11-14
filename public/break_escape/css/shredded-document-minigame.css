@@ -36,7 +36,7 @@
 
 .sdm-instruction {
     padding: 8px 14px;
-    font-size: 7px;
+    font-size: 8px;
     color: #8a9bb5;
     border-bottom: 2px solid #2a3a5a;
     line-height: 1.6;
@@ -215,7 +215,7 @@
 /* ── Empty state ─────────────────────────────────────────── */
 
 .sdm-empty-state {
-    font-size: 7px;
+    font-size: 8px;
     color: #4a6090;
     text-align: center;
     padding: 24px 0;

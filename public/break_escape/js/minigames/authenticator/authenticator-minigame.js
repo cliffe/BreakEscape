@@ -63,6 +63,9 @@ function el(tag, className, text) {
 const win = () => (typeof window !== 'undefined' ? window : {});
 
 export class AuthenticatorMinigame extends SocialOverlayScene {
+    // C-X2: take the shared SE window frame
+    static framed = true;
+
     constructor(container, params) {
         super(container, { title: 'Authenticator', ...(params || {}) });
         const deps = isObj(this.params.deps) ? this.params.deps : {};
