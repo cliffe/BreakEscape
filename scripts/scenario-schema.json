@@ -796,7 +796,7 @@
       "type": "object",
       "description": "One gate creditOnPass path (GATED_DOOR §3.4): globals the server sets and a task it completes at promotion. setGlobal names must be declared globals listed as server-credit globals; completeTask must name an existing, server-completed-only task.",
       "properties": {
-        "setGlobal": { "type": "object", "description": "Globals set by the server on this path: { <global name>: <value> }" },
+        "setGlobal": { "x-id-map": true, "type": "object", "description": "Globals set by the server on this path: { <global name>: <value> }" },
         "completeTask": { "type": "string", "description": "A task id the server completes on this path" }
       },
       "additionalProperties": false
