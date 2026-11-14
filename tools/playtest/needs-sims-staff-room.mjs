@@ -39,7 +39,9 @@ async function load() {
         const ed = window.eventDispatcher; window.__s4 = [];
         if (ed && !ed.__s4wrapped) {
             const orig = ed.emit.bind(ed);
-            ed.emit = (ev, data) => { try { if (/^(npc_(chatted|exchange_heard|use_started|returned_post|sat|sat_at|used|left_post)|room_entered):/.test(ev)) window.__s4.push({ clockMs: (window.npcNeedsSystem && window.npcNeedsSystem.clockMs) || 0, ev, data }); } catch (e) {} return orig(ev, data); };
+            // npc_sat is emitted bare (seating.js) with no ":<id>" suffix, so allow end-of-string
+            // after the event keyword as well as a colon.
+            ed.emit = (ev, data) => { try { if (/^(npc_(chatted|exchange_heard|use_started|returned_post|sat|sat_at|used|left_post)|room_entered)(:|$)/.test(ev)) window.__s4.push({ clockMs: (window.npcNeedsSystem && window.npcNeedsSystem.clockMs) || 0, ev, data }); } catch (e) {} return orig(ev, data); };
             ed.__s4wrapped = true;
         }
     });
@@ -190,6 +192,60 @@ if (beat === 'schedule') {
         use_starts: evs.filter(e => e.ev.startsWith('npc_use_started:')).map(e => ({ clock_min: +((e.clockMs - start) / 60000).toFixed(2), npc: e.data.npcId, obj: e.ev.split(':')[1] })),
         microwave_used: evs.filter(e => e.ev === 'npc_used:staff_microwave').map(e => +((e.clockMs - start) / 60000).toFixed(2)),
         tasks: await tasks(), ...analyse(evs)
+    };
+}
+
+if (beat === 'speechlock') {
+    // Plan 5.4 Regressions / step 7: over 15 min of office play with the IT and staff-room doors
+    // open, count office `_pickBark` turns that return a picture or `wait` while `_speechUntil` is
+    // held by a staff-room line (keith/jodie) whose `overheard` is false.
+    const minutes = Number(process.argv[6]) || 15;
+    // Load both room-sets so office and staff-room NPCs tick for the whole run.
+    await enterRoom('it_room'); await t(600);
+    await enterRoom('staff_room'); await t(1800);        // register Keith & Jodie
+    await enterRoom('it_room'); await t(600);
+    await enterRoom('office'); await t(1500);             // office NPCs active; park the player here
+    await page.evaluate(() => {
+        const ns = window.npcNeedsSystem; const STAFF = new Set(['keith', 'jodie']);
+        window.__s4sl = { lock: null, officeTurns: 0, blocked: 0 };
+        if (ns && !ns.__s4slwrapped) {
+            const origSpeak = ns._speak.bind(ns);
+            ns._speak = function (npcId, line, until, info) {
+                const r = origSpeak(npcId, line, until, info);
+                window.__s4sl.lock = { npcId, overheard: !!(info && info.overheard), until, staff: STAFF.has(npcId) };
+                return r;
+            };
+            const origPick = ns._pickBark.bind(ns);
+            ns._pickBark = function (s, topic, opts) {
+                const pick = origPick(s, topic, opts);
+                try {
+                    const isOffice = s && s.npcId && !STAFF.has(s.npcId);
+                    const isTurn = pick && (pick.line || pick.picture || pick.wait);
+                    if (isOffice && isTurn) {
+                        window.__s4sl.officeTurns++;
+                        if (pick.picture || pick.wait) {
+                            const L = window.__s4sl.lock;
+                            if (this.clockMs < this._speechUntil && L && L.staff && !L.overheard && this.clockMs < L.until) window.__s4sl.blocked++;
+                        }
+                    }
+                } catch (e) {}
+                return pick;
+            };
+            ns.__s4slwrapped = true;
+        }
+    });
+    const start = await clock();
+    await shot('01-office');
+    while (true) { const c = await clock(); if (c - start > minutes * 60000) break; await t(10000); }
+    await shot('02-after');
+    const evs = await events();
+    const sl = await page.evaluate(() => window.__s4sl);
+    report.speechlock = {
+        minutes, office_turns: sl.officeTurns, blocked_by_unheard_staff_line: sl.blocked,
+        ratio: sl.officeTurns ? +(sl.blocked / sl.officeTurns).toFixed(4) : 0,
+        threshold_1_in_20: sl.officeTurns ? sl.blocked > sl.officeTurns / 20 : false,
+        staff_pool_lines: evs.filter(e => e.ev.startsWith('npc_chatted:staff_')).length,
+        ...analyse(evs)
     };
 }
 
