@@ -39,7 +39,9 @@ Trigger: the first shared break the player hears, usually on the first visit to 
 
 `night_watch_cleared` (after Val clears the player, and only if the burn exchange was heard, Val was not attacked and neither Gary nor Dr Kim has been knocked out; 3 lines): Hodan "Radio again. That visitor checks out." (37) / Ernesto "There you go. Fuss over nothing." (32) / Hodan "Checks out with who, though?" (28).
 
-## Questions for the user
+## Questions for the user (answered 2026-11-14)
+
+The user approved both voices and the humour, and kept all three exchanges as written. The questions are kept for the record.
 
 1. Do the two voices read as distinct, and right for the people described?
 2. Is the humour at the right level for a crisis night in a spy-thriller campaign?
