@@ -374,6 +374,17 @@ if (beat === 'cooler_cross') {
     };
 }
 
+if (beat === 'flicker_frame') {
+    // m3: one frame at the faulty panel's dip level (0.55, the level the flicker dips to) and one at
+    // full level a moment later, same pose, so the difference is only the blink. Pinned in the page.
+    await enterRoom('staff_room'); await standNear('staff_boiler'); await t(3000);
+    const pin = (v) => page.evaluate((v) => { const st = window.lightingSystem?.rooms?.get('staff_room'); const p = st && st.panels.find(q => q.faulty); if (!p) return null; Object.defineProperty(p, 'level', { get: () => v, set: () => {}, configurable: true }); return { x: Math.round(p.x), y: Math.round(p.y), panels: st.panels.length }; }, v);
+    await page.evaluate(() => { window.game.loop.timeScale = 1; });
+    const a = await pin(0.55); await t(300); await shot('dip');
+    const b = await pin(1); await t(300); await shot('full');
+    report.flicker_frame = { faulty_panel: a, full: b };
+}
+
 if (beat === 'schedule') {
     const minutes = Number(process.argv[6]) || 20;
     await enterRoom('staff_room');
