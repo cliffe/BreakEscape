@@ -30,6 +30,42 @@ await page.evaluate(() => { const loop = window.game.sys.game.loop, raf = loop.r
 await page.evaluate(() => window.__test.enterRoom('it_room', { timeoutMs: 25000 })).catch(() => {});
 await t(1200);
 await page.evaluate(() => window.__test.enterRoom('staff_room', { timeoutMs: 25000 })).catch(() => {});
+// Jitter at load: the jittered initial is set when the staff room registers Keith and Jodie, before
+// the first-visit mapping (delayMs 2000) sets Keith's caffeine. Snapshot the first registered values.
+let jitterAtLoad = null;
+for (let i = 0; i < 25; i++) {
+    const snap = await page.evaluate(() => {
+        const s = window.npcNeedsSystem; const k = s.getState('keith'), j = s.getState('jodie');
+        if (!k || !j || !k.levels || !j.levels) return null;
+        return { keith_caffeine: +Number(k.levels.caffeine).toFixed(2), jodie_thirst: +Number(j.levels.thirst).toFixed(2) };
+    });
+    if (snap) { jitterAtLoad = snap; break; }
+    await t(100);
+}
+// Path searches, async-safe: findWorldPath's callback fires a tick later, so kick them off, wait,
+// then read the results back (besideCell makes no route check, plan 5.4 step 1).
+const pathSearches = await (async () => {
+    await page.evaluate(() => {
+        const sys = window.npcNeedsSystem, world = sys.world, pm = window.pathfindingManager, TILE = 32;
+        window.__s4paths = {};
+        const homeOf = id => { const st = sys.getState(id) || {}; return st.home ? { x: st.home.x, y: st.home.y } : null; };
+        for (const objId of ['staff_boiler', 'staff_cooler']) {
+            const o = world.getObject(objId); if (!o) continue;
+            const approach = world.approachCell ? world.approachCell(o) : null;
+            const beside = (approach && world.besideCell) ? world.besideCell(approach, []) : null;
+            window.__s4paths[objId] = { secondUserCell: beside ? { tx: +(beside.x / TILE).toFixed(2), ty: +(beside.y / TILE).toFixed(2) } : null };
+            if (!beside) continue;
+            for (const id of ['keith', 'jodie']) {
+                const h = homeOf(id);
+                window.__s4paths[objId][id] = { fromHome: h ? { tx: +(h.x / TILE).toFixed(2), ty: +(h.y / TILE).toFixed(2) } : null, reachable: null, waypoints: 0 };
+                if (h && pm) { try { pm.findWorldPath(h.x, h.y, beside.x, beside.y, p => { window.__s4paths[objId][id].reachable = !!(p && p.length); window.__s4paths[objId][id].waypoints = p ? p.length : 0; }); } catch (e) {} }
+            }
+        }
+        if (pm && pm.worldPathfinder && pm.worldPathfinder.calculate) { try { pm.worldPathfinder.calculate(); } catch (e) {} }
+    });
+    await t(1500);
+    return page.evaluate(() => window.__s4paths);
+})();
 await t(2500);
 await page.screenshot({ path: outDir + `step1-staffroom-${gid}.png` });
 
@@ -80,40 +116,28 @@ const report = await page.evaluate(() => {
             levels: st.levels, caffeine: st.levels && st.levels.caffeine, thirst: st.levels && st.levels.thirst
         };
     }
-    // Path search from each home to each second-user cell (plan 5.4 step 1: besideCell makes no
-    // route check, so each second-user cell must be reachable by a real path search from both homes).
-    out.pathSearches = {};
-    const pathTo = (sx, sy, ex, ey) => { let res = null; try { pm && pm.findWorldPath(sx, sy, ex, ey, p => { res = p; }); } catch (e) {} return res; };
-    const homeOf = id => { const st = sys.getState(id) || {}; return st.home ? { x: st.home.x, y: st.home.y } : null; };
-    for (const objId of ['staff_boiler', 'staff_cooler']) {
-        const o = world.getObject(objId); if (!o) continue;
-        const approach = world.approachCell ? world.approachCell(o) : null;
-        const beside = (approach && world.besideCell) ? world.besideCell(approach, []) : null;
-        if (!beside) { out.pathSearches[objId] = { secondUserCell: null }; continue; }
-        out.pathSearches[objId] = { secondUserCell: { tx: +(beside.x / TILE).toFixed(2), ty: +(beside.y / TILE).toFixed(2) } };
-        for (const id of ['keith', 'jodie']) {
-            const h = homeOf(id);
-            const path = h ? pathTo(h.x, h.y, beside.x, beside.y) : null;
-            out.pathSearches[objId][id] = { fromHome: h ? { tx: +(h.x / TILE).toFixed(2), ty: +(h.y / TILE).toFixed(2) } : null, reachable: !!(path && path.length), waypoints: path ? path.length : 0 };
-        }
-    }
-    // Jitter log: each NPC's configured initial vs the jittered value loaded for the coupled need.
-    out.jitter = {};
+    // Configured initial for each coupled need (the loaded jittered value is snapshotted in Node,
+    // before the first-visit mapping sets Keith's caffeine).
+    out.needConfig = {};
     for (const id of ['keith', 'jodie']) {
-        const st = sys.getState(id) || {};
         const rec = world.getNpc ? world.getNpc(id) : null;
         const need = id === 'keith' ? 'caffeine' : 'thirst';
         const cfg = rec && rec.needs && rec.needs[need];
-        const loaded = st.levels && st.levels[need];
-        out.jitter[id] = { need, initial: cfg && cfg.initial, jitterPct: cfg && cfg.jitterPct, loaded_at_start: loaded != null ? +Number(loaded).toFixed(2) : null, jitter_delta: (cfg && cfg.initial != null && loaded != null) ? +(loaded - cfg.initial).toFixed(2) : null };
+        out.needConfig[id] = { need, initial: cfg && cfg.initial, jitterPct: cfg && cfg.jitterPct };
     }
-    out.jitter_note = 'restores re-jitter on each break; those are logged per start in the schedule beat (needs-sims-staff-room.mjs schedule).';
     // West door of staff_room
     const gates = (room && room.doorGates) || (room && room.gates) || null;
     out.doors.note = 'west door connects to it_room; door column read from check_door_alignment.py (OK)';
     out.clockMs = sys.clockMs;
     return out;
 });
+report.pathSearches = pathSearches;
+report.jitterAtLoad = jitterAtLoad;
+report.jitter = {
+    keith: { need: 'caffeine', initial: report.needConfig?.keith?.initial, jitterPct: report.needConfig?.keith?.jitterPct, loaded_at_registration: jitterAtLoad?.keith_caffeine ?? null },
+    jodie: { need: 'thirst', initial: report.needConfig?.jodie?.initial, jitterPct: report.needConfig?.jodie?.jitterPct, loaded_at_registration: jitterAtLoad?.jodie_thirst ?? null }
+};
+report.jitter_note = 'loaded_at_registration is the jittered initial at load; restores re-jitter on each break and are logged per start in the schedule beat (needs-sims-staff-room.mjs schedule).';
 report.gid = gid; report.errs = errs.slice(0, 5);
 fs.writeFileSync(outDir + `step1-report-${gid}.json`, JSON.stringify(report, null, 1));
 console.log(JSON.stringify(report, null, 1).slice(0, 6000));
