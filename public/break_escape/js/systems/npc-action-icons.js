@@ -298,7 +298,7 @@ export function targetInfo(id, cache = null) {
                 const preset = op?.spritePreset ? op.spritePreset(sp, win().gameScenario) : null;
                 const info = { id: d.id, type: d.type, satisfies: Array.isArray(sat) ? sat[0] : sat,
                     print: isPrinter({ type: d.type, officeType: d.officeType, preset }),
-                    ...(typeof d.phoneOwner === 'string' && d.phoneOwner ? { phone: true } : {}) };
+                    ...(d.deskPhone === true ? { phone: true } : {}) };
                 if (cache && !sp.destroyed && sp.scene) cache.set(id, { info, sp });
                 return info;
             }

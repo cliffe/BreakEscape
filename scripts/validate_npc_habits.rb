@@ -155,7 +155,7 @@ module ValidateNpcHabits
                      "(#{screen[:pcs].map { |pc| pc[:id] }.join(', ')}) sets lockChance or locksScreenOnLeave, which wins: " \
                      'the habit does nothing.')
       when :authored_screen_habit
-        warn(issues, "#{who} has locksScreen '#{screen[:value]}' and an authored screenHabit: the authored screenHabit " \
+        warn(issues, "#{who} has locksScreen '#{screen[:value]}' and an authored habits.screen: the authored habits.screen " \
                      'wins and the habit is not applied.')
       end
     end
@@ -239,7 +239,7 @@ module ValidateNpcHabits
     end
     own = owned_login_pcs(npc, expanded)
     if own.empty?
-      warn(issues, "#{who} has writesDown but owns no sign-in PC (needsHome or screenOwner): the note has nowhere to show.")
+      warn(issues, "#{who} has writesDown but owns no sign-in PC (owner): the note has nowhere to show.")
     elsif own.all? { |e| note_blocked?(e[:object]) }
       warn(issues, "#{who} has writesDown but every sign-in PC it owns (#{own.map { |e| e[:object]['id'] }.join(', ')}) " \
                    'authors its own postitNote or sets showPostit: false, which wins.')
@@ -330,7 +330,7 @@ module ValidateNpcHabits
     return [fraction(chance), 'its lockChance', late] if chance.is_a?(Numeric)
     return [pc['locksScreenOnLeave'] == false ? 0 : 1, 'its locksScreenOnLeave', late] if pc.key?('locksScreenOnLeave')
 
-    habit = owner.is_a?(Hash) ? owner['screenHabit'] : nil
+    habit = owner.is_a?(Hash) ? owner.dig('habits', 'screen') : nil
     if habit.is_a?(Hash)
       where = habit_source(owner, item)
       if habit['lockIfAwayOverSeconds'].is_a?(Numeric)
@@ -338,7 +338,7 @@ module ValidateNpcHabits
       end
       return [habit['lockChance'].is_a?(Numeric) ? fraction(habit['lockChance']) : 1, where, late]
     end
-    [1, 'the default (no lock field and no screenHabit)', late]
+    [1, 'the default (no lock field and no habits.screen)', late]
   end
 
   def fraction(value)
@@ -351,7 +351,7 @@ module ValidateNpcHabits
 
   def habit_source(owner, item)
     screen = item && item[:screen]
-    return "the owner '#{owner['id']}' screenHabit" unless screen && screen[:filled]
+    return "the owner '#{owner['id']}' habits.screen" unless screen && screen[:filled]
 
     from = item[:sources]['locksScreen'] == :explicit ? 'by name' : "from the #{item[:level]} preset"
     "the owner '#{owner['id']}' locksScreen '#{screen[:value]}' (#{from})"
@@ -447,10 +447,10 @@ module ValidateNpcHabits
       obj = copy[:object]
       next unless AI.workstation?(obj)
 
-      owned = (obj['screenOwner'].is_a?(String) && !obj['screenOwner'].empty?) || needs_homes.include?(obj['id'])
+      owned = (obj['owner'].is_a?(String) && !obj['owner'].empty?) || needs_homes.include?(obj['id'])
       next unless owned
 
-      warn(issues, "workstation at #{raw[:path]} has no authored id but is owned (screenOwner or a needsHome naming " \
+      warn(issues, "workstation at #{raw[:path]} has no authored id but is owned (owner or a needsHome naming " \
                    "'#{obj['id']}'). That id is stamped from its position and moves when objects change: give the " \
                    "object the id '#{obj['id']}' that the owner relies on.")
     end
@@ -486,9 +486,9 @@ module ValidateNpcHabits
     report.each do |item|
       npc = expanded_npcs[item[:id]] || {}
       level = if item[:level].nil? then 'no level'
-              elsif item[:level_source] == :own then "level #{item[:level]} (its own awareness)"
-              else "level #{item[:level]} (level from role #{item[:level_source].to_s.delete_prefix('role:')})"
-              end
+      elsif item[:level_source] == :own then "level #{item[:level]} (its own awareness)"
+      else "level #{item[:level]} (level from role #{item[:level_source].to_s.delete_prefix('role:')})"
+      end
       lines << "- #{item[:id]}: #{level}"
       item[:habits].each do |name, value|
         next if NH::PARAMETERS.include?(name)
@@ -499,15 +499,15 @@ module ValidateNpcHabits
 
         lines << "  - #{name} #{value} (#{how})"
         effects = case name
-                  when 'locksScreen' then screen_effects(item[:screen])
-                  when 'writesDown' then note_effects(npc, expanded, value)
-                  when 'holdsDoors' then door_effects(item[:doors])
-                  when 'password'
+        when 'locksScreen' then screen_effects(item[:screen])
+        when 'writesDown' then note_effects(npc, expanded, value)
+        when 'holdsDoors' then door_effects(item[:doors])
+        when 'password'
                     texts ||= CL.readable_texts(expanded, scenario_dir)
                     homes ||= CL.secret_homes(expanded)
                     password_effects(npc, expanded, value, item[:habits]['passwordPattern'], texts, homes)
-                  else []
-                  end
+        else []
+        end
         effects.each { |e| lines << "      #{e}" }
       end
     end
@@ -518,13 +518,13 @@ module ValidateNpcHabits
     return [] unless screen
 
     case screen[:reason]
-    when :authored_screen_habit then return ['habit not applied: the NPC sets screenHabit']
+    when :authored_screen_habit then return ['habit not applied: the NPC sets habits.screen']
     when :no_workstation then return ['no effect: owns no workstation']
     end
     out = []
     applied = screen[:pcs].select { |pc| pc[:applied] }
     if screen[:filled]
-      out << "screenHabit lockChance #{screen[:lock_chance]}, read at #{applied.map { |pc| pc[:id] }.join(', ')}"
+      out << "habits.screen lockChance #{screen[:lock_chance]}, read at #{applied.map { |pc| pc[:id] }.join(', ')}"
     end
     screen[:pcs].reject { |pc| pc[:applied] }.each do |pc|
       out << "#{pc[:id]}: the PC sets #{pc[:field]}, habit not applied there"
@@ -572,9 +572,9 @@ module ValidateNpcHabits
       b[:pieces].each do |p|
         where = if p[:sources].any?
                   p[:sources].map { |s| s[:locks].any? ? "#{s[:path]} (behind lock #{s[:locks].join(', ')})" : s[:path] }.join(', ')
-                elsif p[:clue] then 'in the pattern clue'
-                else 'no source'
-                end
+        elsif p[:clue] then 'in the pattern clue'
+        else 'no source'
+        end
         where += ' (common punctuation: check the clue states it)' if p[:common]
         where += ' (case differs from its source: the pattern clue must state it)' if p[:case_differs]
         out << "piece #{p[:index]} of #{b[:total]}, #{p[:kind]}: #{where}"

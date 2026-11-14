@@ -4,15 +4,15 @@ require_relative '../../support/access_social_scenario'
 module BreakEscape
   # q35 (docs/achitechture/FRIENDFACE_PHONE_ITEM_PLAN.md): the Friendface phone item. POST
   # /friendface_phone opens only a phone the server's inventory holds; an NPC whose phone the
-  # player has taken is "phone": false on the server and in the room bootstrap; phoneOf never
-  # comes from a client.
+  # player has taken is "phone": false on the server and in the room bootstrap; owner never
+  # comes from a client (nor does owner).
   class FriendfacePhoneTest < ActionDispatch::IntegrationTest
     include Engine.routes.url_helpers
 
     JAKE_PHONE = { 'type' => 'phone_friendface', 'id' => 'jake_phone', 'name' => "Jake's phone",
-                   'takeable' => true, 'phoneOf' => 'jake' }.freeze
+                   'takeable' => true, 'owner' => 'jake' }.freeze
     LENA_PHONE = { 'type' => 'phone_friendface', 'id' => 'lena_phone', 'name' => "Lena's phone",
-                   'takeable' => true, 'phoneOf' => 'lena' }.freeze
+                   'takeable' => true, 'owner' => 'lena' }.freeze
     OWN_PHONE = { 'type' => 'phone_friendface', 'id' => 'my_phone', 'name' => 'Your phone', 'takeable' => true }.freeze
 
     def scenario
@@ -110,14 +110,14 @@ module BreakEscape
       assert_response :forbidden
     end
 
-    test 'a forged phone cannot be added; phoneOf is stripped from a client-built item' do
+    test 'a forged phone cannot be added; owner and phoneOf are stripped from a client-built item' do
       build
-      add_item({ 'type' => 'phone_friendface', 'id' => 'forged', 'name' => 'Forged', 'phoneOf' => 'lena' })
+      add_item({ 'type' => 'phone_friendface', 'id' => 'forged', 'name' => 'Forged', 'owner' => 'lena' })
       assert_response :unprocessable_entity
-      add_item({ 'type' => 'notepad', 'name' => 'Notepad', 'phoneOf' => 'lena' })
+      add_item({ 'type' => 'notepad', 'name' => 'Notepad', 'owner' => 'lena', 'phoneOf' => 'lena' })
       assert_response :success
       held = @game.reload.player_state['inventory']
-      assert(held.none? { |i| i.key?('phoneOf') })
+      assert(held.none? { |i| i.key?('owner') || i.key?('phoneOf') })
       open_phone('lena')
       assert_response :forbidden
     end
@@ -127,7 +127,7 @@ module BreakEscape
       add_item({ 'type' => 'phone_friendface', 'id' => 'jake_phone', 'name' => "Jake's phone" }, source_npc_id: 'jake')
       assert_response :success
       stored = @game.reload.player_state['inventory'].find { |i| i['id'] == 'jake_phone' }
-      assert_equal 'jake', stored['phoneOf']
+      assert_equal 'jake', stored['owner']
       open_phone('jake')
       assert_response :success
       assert @game.reload.friendface_phone_taken?('jake')
@@ -161,7 +161,7 @@ module BreakEscape
       assert_equal false, npcs.find { |n| n['id'] == 'jake' }['phone']
       refute_equal false, npcs.find { |n| n['id'] == 'lena' }['phone']
     end
-  
+
     test 'review R1 M1: an NPC phone the scenario never offers cannot be taken; Lena keeps her phone' do
       build
       add_item({ 'type' => 'phone_friendface', 'id' => 'lena_phone', 'name' => "Lena's phone" }, source_npc_id: 'lena')
@@ -283,7 +283,7 @@ module BreakEscape
       room_add('lena', LENA_SENT, 'npc_defeated')
       assert_response :success
       stored = @game.reload.player_state.dig('room_states', 'office', 'objects_added').find { |o| o['id'] == 'lena_phone' }
-      assert_equal 'lena', stored['phoneOf']
+      assert_equal 'lena', stored['owner']
       # The pickup, as inventory.js sends it (source_npc_id from the dropped sprite) and without
       add_item({ 'type' => 'phone_friendface', 'id' => 'lena_phone', 'name' => "Lena's phone" }, source_npc_id: 'lena')
       assert_response :success

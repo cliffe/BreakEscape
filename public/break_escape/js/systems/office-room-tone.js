@@ -112,7 +112,7 @@ export class OfficeRoomTone {
             const sd = sp?.scenarioData;
             if (!sd || sp.destroyed) continue;
             if (!out.copier && (sd.officeType === 'copier' || COPIER_TYPES.includes(sd.type))) out.copier = sp;
-            if (typeof sd.phoneOwner === 'string') out.deskPhone = true;
+            if (sd.deskPhone === true) out.deskPhone = true;
         }
         return out;
     }

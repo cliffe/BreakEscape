@@ -77,8 +77,8 @@ module BreakEscape
       }
       state = { 'inventory' => [{ 'id' => 'c', 'affordance' => { 'offWhen' => 'c_off', 'useSeconds' => 2 } }] }
       res = FU.upgrade!(data, state)
-      assert_equal 1, data['formatVersion']
-      assert_equal ['one_outage_field_offWhen'], res[:ran]
+      assert_equal 3, data['formatVersion']
+      assert_equal %w[one_outage_field_offWhen one_owner_field habits_in_one_block], res[:ran]
       assert_equal 'net_off', data.dig('networks', 'n', 'offWhen')
       refute data['networks']['n'].key?('downIf')
       assert_equal 'jam', data.dig('resources', 'r', 'offWhen')
@@ -105,6 +105,195 @@ module BreakEscape
       assert_equal({ 'mode' => 'maint' }, data.dig('resources', 'r', 'offWhen'))
       assert BreakEscape::AccessWork.globals_hold?({ 'mode' => 'maint' }, { 'mode' => 'maint' })
       refute BreakEscape::AccessWork.globals_hold?({ 'mode' => 'maint' }, { 'mode' => 'on' })
+    end
+
+    # Step 8b (format 2): the real STEP_8B transform. One owner field, with needsHome derivation.
+    def owner_scenario
+      {
+        'rooms' => {
+          'office' => {
+            'npcs' => [
+              { 'id' => 'rosa', 'needsHome' => 'rosa_pc' },
+              { 'id' => 'sam', 'needsHome' => 'sam_pc' },
+              { 'id' => 'tom', 'needsHome' => 'tom_pc' },
+              { 'id' => 'jake', 'itemsHeld' => [{ 'type' => 'phone_friendface', 'phoneOf' => 'jake' }] }
+            ],
+            'objects' => [
+              { 'id' => 'boss_pc', 'workstation' => true, 'screenOwner' => 'rosa' },
+              { 'id' => 'sam_pc', 'lockChance' => 1 },
+              { 'id' => 'shared_printer',
+                'affordance' => { 'private' => true, 'owners' => %w[rosa sam], 'satisfies' => 'print' } },
+              { 'id' => 'tom_pc', 'workstation' => true, 'affordance' => { 'private' => true } },
+              { 'id' => 'rosa_phone', 'phoneOwner' => 'rosa' },
+              { 'id' => 'mug', 'leftBehindBy' => 'sam' },
+              { 'id' => 'rosa_pc', 'affordance' => { 'satisfies' => 'x' } }
+            ],
+            '_note' => { 'objects' => [{ 'id' => 'ghost', 'screenOwner' => 'nope' }] }
+          }
+        }
+      }
+    end
+
+    test 'step 8b writes one owner from every old field and derives from needsHome' do
+      data = owner_scenario
+      res = FU.upgrade!(data, {})
+      assert_equal 3, data['formatVersion']
+      assert_includes res[:ran], 'one_owner_field'
+      objs = data['rooms']['office']['objects'].each_with_object({}) { |o, h| h[o['id']] = o }
+
+      assert_equal 'rosa', objs['boss_pc']['owner'], 'screenOwner becomes owner'
+      refute objs['boss_pc'].key?('screenOwner')
+      assert_equal 'sam', objs['sam_pc']['owner'], 'a workstation owner is derived from needsHome (String)'
+      assert_equal %w[rosa sam], objs['shared_printer']['owner'], 'affordance.owners moves up as a list'
+      assert_equal true, objs['shared_printer']['private'], 'affordance.private moves up'
+      assert_equal({ 'satisfies' => 'print' }, objs['shared_printer']['affordance'])
+      assert_equal 'tom', objs['tom_pc']['owner'], 'a private workstation derives a single String owner'
+      assert_equal true, objs['tom_pc']['private']
+      assert_equal({}, objs['tom_pc']['affordance'], 'an emptied affordance stays {}')
+      assert_equal 'rosa', objs['rosa_phone']['owner']
+      assert_equal true, objs['rosa_phone']['deskPhone'], 'phoneOwner marks a desk phone'
+      refute objs['rosa_phone'].key?('phoneOwner')
+      assert_equal 'sam', objs['mug']['owner']
+      assert_equal 0, objs['mug']['leftBehindChance'], 'a left-behind item with no chance gets 0'
+      refute objs['mug'].key?('leftBehindBy')
+      refute objs['rosa_pc'].key?('owner'), 'a needsHome target that is neither workstation nor private gets no owner'
+      phone = data['rooms']['office']['npcs'][3]['itemsHeld'][0]
+      assert_equal 'jake', phone['owner'], 'an item phoneOf becomes owner'
+      assert_equal 'nope', data['rooms']['office']['_note']['objects'][0]['screenOwner'],
+                   'a note property is left as written'
+    end
+
+    test 'step 8b is idempotent and a no-op on format-2 data' do
+      data = owner_scenario
+      FU.upgrade!(data, {})
+      before = Marshal.load(Marshal.dump(data))
+      FU.one_owner_field!(data)
+      assert_equal before, data, 'running the transform again changes nothing'
+    end
+
+    test 'step 8b player_state renames item copies in place without deriving' do
+      state = {
+        'inventory' => [{ 'type' => 'phone_friendface', 'phoneOf' => 'jake', 'name' => 'Phone' }],
+        'room_states' => { 'office' => { 'objects_added' => [{ 'id' => 'mug', 'leftBehindBy' => 'sam' }] } }
+      }
+      FU.one_owner_field_in_player_state!(state)
+      inv = state['inventory'][0]
+      assert_equal 'jake', inv['owner']
+      refute inv.key?('phoneOf')
+      added = state['room_states']['office']['objects_added'][0]
+      assert_equal 'sam', added['owner']
+      refute added.key?('leftBehindChance'), 'the player_state path renames only, writing no marker key'
+    end
+
+    test 'step 8b player_state rename gains at most the one owner key and no marker, idempotently' do
+      state = {
+        # a left-behind copy with no leftBehindChance, and a desk-phone copy
+        'droppedItems' => [{ 'id' => 'mug', 'leftBehindBy' => 'sam' }],
+        'copiedItems' => [{ 'id' => 'rosa_phone', 'phoneOwner' => 'rosa' }]
+      }
+      FU.one_owner_field_in_player_state!(state)
+      mug = state['droppedItems'][0]
+      assert_equal 'sam', mug['owner'], 'leftBehindBy becomes owner'
+      refute mug.key?('leftBehindBy')
+      refute mug.key?('leftBehindChance'), 'no leftBehindChance marker on a stored copy'
+      phone = state['copiedItems'][0]
+      assert_equal 'rosa', phone['owner'], 'phoneOwner becomes owner'
+      refute phone.key?('phoneOwner')
+      refute phone.key?('deskPhone'), 'no deskPhone marker on a stored copy'
+
+      before = Marshal.load(Marshal.dump(state))
+      FU.one_owner_field_in_player_state!(state)
+      assert_equal before, state, 'rename-only is idempotent'
+    end
+
+    # Step 8c (format 3): the real STEP_8C transform. Habits in one block.
+    def habit_scenario
+      {
+        'rooms' => {
+          'office' => {
+            'npcs' => [
+              { 'id' => 'rosa',
+                'screenHabit' => { 'lockChance' => 0 },
+                'printHabit' => { 'forgetChance' => 0.5 },
+                'usbHabit' => { 'every' => 2 } },
+              # a loader-filled screenHabit beside an authored awareness habits block
+              { 'id' => 'priya', 'habits' => { 'locksScreen' => 'always' }, 'screenHabit' => { 'lockChance' => 1 } },
+              { 'id' => 'sam' }
+            ],
+            '_note' => { 'npcs' => [{ 'id' => 'ghost', 'screenHabit' => { 'lockChance' => 0.3 } }] }
+          }
+        }
+      }
+    end
+
+    test 'step 8c folds the three habit keys into the habits block, with and without an existing block' do
+      data = habit_scenario
+      res = FU.upgrade!(data, {})
+      assert_equal 3, data['formatVersion']
+      assert_includes res[:ran], 'habits_in_one_block'
+      npcs = data['rooms']['office']['npcs'].each_with_object({}) { |n, h| h[n['id']] = n }
+
+      assert_equal({ 'lockChance' => 0 }, npcs['rosa']['habits']['screen'], 'screenHabit becomes habits.screen')
+      assert_equal({ 'forgetChance' => 0.5 }, npcs['rosa']['habits']['print'], 'printHabit becomes habits.print')
+      assert_equal({ 'every' => 2 }, npcs['rosa']['habits']['usb'], 'usbHabit becomes habits.usb')
+      refute npcs['rosa'].key?('screenHabit')
+      refute npcs['rosa'].key?('printHabit')
+      refute npcs['rosa'].key?('usbHabit')
+
+      assert_equal 'always', npcs['priya']['habits']['locksScreen'], 'the existing awareness habit is kept'
+      assert_equal({ 'lockChance' => 1 }, npcs['priya']['habits']['screen'], 'the folded key joins the existing block')
+      refute npcs['priya'].key?('screenHabit')
+
+      refute npcs['sam'].key?('habits'), 'an NPC with no habit key gets no habits block'
+      assert_equal({ 'lockChance' => 0.3 }, data['rooms']['office']['_note']['npcs'][0]['screenHabit'],
+                   'a note is left as written')
+    end
+
+    test 'step 8c folds a loader-filled screenHabit on prepared data, matching the new loader' do
+      # A frozen fixture: the format-2 loader (NpcHabits.expand! on the 8b tip ab14d1926) filled a
+      # top-level screenHabit from awareness. Starting from that OLD-loader output proves the step
+      # moves it to habits.screen and that the result matches what the current (format-3) loader
+      # fills, field for field. Starting from the new loader (as this test used to) would already
+      # have filled habits.screen, so it would no longer test an old game.
+      path = File.expand_path('../fixtures/format_8c/priya_awareness.old.loaded.json', __dir__)
+      old_loaded = JSON.parse(File.read(path))
+      npc = old_loaded['rooms']['office']['npcs'][0]
+      assert npc.key?('screenHabit'), 'the format-2 loader filled a top-level screenHabit'
+      refute npc.dig('habits', 'screen'), 'the format-2 loader wrote no habits.screen'
+      filled = Marshal.load(Marshal.dump(npc['screenHabit']))
+
+      FU.habits_in_one_block!(old_loaded)
+      npc = old_loaded['rooms']['office']['npcs'][0]
+      refute npc.key?('screenHabit')
+      assert_equal filled, npc['habits']['screen'], 'the filled screenHabit folds to habits.screen unchanged'
+      assert_equal 'always', npc['habits']['locksScreen'], 'the awareness habit block is preserved'
+
+      # The folded result equals what the current (format-3) loader fills from the same scenario.
+      fresh = {
+        'rooms' => { 'office' => {
+          'npcs' => [{ 'id' => 'priya', 'awareness' => 'high', 'needsHome' => 'priya_pc' }],
+          'objects' => [{ 'id' => 'priya_pc', 'workstation' => true, 'owner' => 'priya' }]
+        } }
+      }
+      BreakEscape::NpcHabits.expand!(fresh)
+      assert_equal fresh['rooms']['office']['npcs'][0], npc,
+                   'the folded format-2 loader output matches the fresh format-3 loader output, field for field'
+    end
+
+    test 'step 8c is idempotent and a no-op on format-3 data' do
+      data = habit_scenario
+      FU.upgrade!(data, {})
+      before = Marshal.load(Marshal.dump(data))
+      FU.habits_in_one_block!(data)
+      assert_equal before, data, 'running the transform again changes nothing'
+    end
+
+    test 'step 8c player_state transform is a no-op (NPC records are not stored in player_state)' do
+      state = { 'inventory' => [{ 'id' => 'badge' }], 'npcFrustration' => { 'rosa' => 1 },
+                'phonesTaken' => %w[jake] }
+      before = Marshal.load(Marshal.dump(state))
+      BreakEscape::FormatUpgrade::STEP_8C[:player_state].call(state)
+      assert_equal before, state, 'the player_state transform changes nothing'
     end
 
     test 'upgrade! runs the steps above the stored version in order and is idempotent' do
@@ -201,7 +390,7 @@ module BreakEscape
       assert_nil FU.install_dev_test_step!(env: 'development', enabled: true)
     ensure
       FU::STEPS.reject! { |s| s[:version] == 900 }
-      assert_equal 1, FU.current, 'the 900 dev step is removed, leaving step 8a (format 1)'
+      assert_equal 3, FU.current, 'the 900 dev step is removed, leaving steps 8a, 8b and 8c (format 3)'
     end
   end
 end
