@@ -285,7 +285,8 @@ test('biometrics: the samples list keeps two rows; instructions are a closed dis
     assert.equal(l['min-height'], '160px');
     assert.equal(l.flex, '0 0 auto');
     assert.match(src('minigames/biometrics/biometrics-minigame.js'), /document\.createElement\('details'\);\s*instructionsContainer\.className = 'biometrics-scanner-instructions[ a-z-]*'/);
-    assert.equal(rule(c, '.biometrics-categories', 'max-width: 768px')['flex-direction'], undefined, 'chips stay inline');
+    // The chips' phone rule is the shared scanner panel's now (A22): inline, wrapping
+    assert.equal(rule(css('scanner-panel.css'), '.scanner-panel .scan-chips')['flex-wrap'], 'wrap', 'chips stay inline');
 });
 
 test('X inside the frame for dusting, examine, flag station, VM launcher, text file (A14, A26, A30, A34, A40)', () => {
