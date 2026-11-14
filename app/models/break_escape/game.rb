@@ -1275,23 +1275,6 @@ module BreakEscape
       self.class.where(id: id).pick(:scenario_data)
     end
 
-    # The request's own sent messages (sync deltas R2, 6b): each mailboxes.<box>.<msgId> update
-    # mail_state_updates keeps, sanitised, with folder 'sent', landed true, a targetId and a
-    # link.kitId. The capture stamp takes these as extra part 2 evidence, so a capture whose sent
-    # mail rides the same request, or whose mail section was refused over a cap, is still proven.
-    # Reads the parsed body; stores nothing.
-    def incoming_sent_messages(mail_incoming)
-      return [] unless mail_incoming.is_a?(Hash)
-
-      mail_state_updates(mail_incoming).filter_map do |path, value|
-        next unless path.is_a?(Array) && path[0] == 'mailboxes' && value.is_a?(Hash)
-        next unless value['folder'] == 'sent' && value['landed'] == true && value['targetId'].is_a?(String)
-
-        link = value['link']
-        value if link.is_a?(Hash) && link['kitId'].is_a?(String)
-      end
-    end
-
     private
 
     # True when prepare_bootstrap_state! must take the lock and write. Each check

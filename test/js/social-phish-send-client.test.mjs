@@ -305,3 +305,43 @@ test('a reload re-drives the build but not the send when the victim did not subm
     assert.equal(build.calls.length, 1, 'the build is re-posted');
     assert.equal(send.calls.length, 0, 'no send without a submitted victim');
 });
+
+// A+B R2 minor 1: the reload re-drive marks its build body redrive:true, so the server refuses to
+// replace a recorded meetsThreshold build with a weaker one if the client global ever drifts.
+test('the reload re-drive marks the build body redrive:true', async () => {
+    resetAll();
+    const buildFetch = fakeBuildFetch([true]);
+    const sendFetch = fakeFetch([{ landed: true }]);
+    const globals = { se_landing_pages: { payroll_login: {
+        pageId: 'payroll_login', targetId: 'lord', built: true,
+        choices: { brand: 'ledgerwell' }, victim: { submitted: true },
+    } } };
+    await redrivePhishEvidence(REDRIVE_SCENARIO, globals,
+        { fetch: (url, opts) => (url.endsWith('/se/landing_page') ? buildFetch.fetchFn(url, opts) : sendFetch.fetchFn(url, opts)), window: WINDOW });
+    assert.equal(buildFetch.calls[0].body.redrive, true, 'the re-drive build body is marked for the downgrade-refusing gate');
+});
+
+// A+B R2 minor 4: an `online` drain and a `sync-ok` drain that overlap must not both post the same
+// queued build and send. The in-flight guard makes the second overlapping drain return at once.
+test('overlapping drains do not double-post', async () => {
+    resetAll();
+    await recordLandingPageBuild({ pageId: 'payroll_login', targetId: 'lord', choices: { a: 1 } },
+        { fetch: async () => { throw new Error('offline'); }, window: WINDOW });
+    await recordPhishSend({ message: {}, targetId: 'lord', kitId: 'kit_payroll_page', pageId: 'payroll_login' },
+        { fetch: async () => { throw new Error('offline'); }, window: WINDOW, pendingBuildPost: () => null });
+
+    let buildCalls = 0;
+    let sendCalls = 0;
+    const slowFetch = async (url) => {
+        await new Promise((r) => setTimeout(r, 5));
+        if (url.endsWith('/se/landing_page')) { buildCalls += 1; return { ok: true }; }
+        sendCalls += 1;
+        return { json: async () => ({ landed: true }) };
+    };
+    // Fire two drains without awaiting the first, so the second overlaps the first in flight.
+    const a = drainPhishQueues({ fetch: slowFetch, window: WINDOW });
+    const b = drainPhishQueues({ fetch: slowFetch, window: WINDOW });
+    await Promise.all([a, b]);
+    assert.equal(buildCalls, 1, 'the build posts once despite two overlapping drains');
+    assert.equal(sendCalls, 1, 'the send posts once despite two overlapping drains');
+});

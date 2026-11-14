@@ -838,3 +838,157 @@ All six cases PASS.
   improved page then landed: `sePhishSends["lord/kit_payroll_page"].landed == true`. So a weak build is
   not frozen: a rebuild replaces its choices/verdict, and the send gate reads the current (improved)
   verdict.
+
+## Chunk C: the reader change and stamping
+
+The chunk that moves trust off the client. `phish_page_evidence_holds?` now reads only the two
+server-owned stores (plan section 6), and the retiring machinery goes with it.
+
+### What changed
+
+- `phish_page_evidence_holds?(page_id, target_id, scenario)` reads `seLandingPages` (built plus the
+  server's own `meetsThreshold`) and `sePhishSends` (a landed send to this target carrying one of
+  the page's authored link kits). It no longer reads `globalVariables.se_landing_pages`, the stored
+  mailbox or `victim.submitted`; the derived submission is exactly the two server facts holding
+  together. `extra_sent` is dropped from `phish_page_evidence_holds?`, `capture_evidence_holds?`,
+  `capture_revealable?` and `stamp_proven_captures!`.
+- Retired: `phish_evidence_fingerprint`, `phish_gated_unproven_captures?`, `each_stored_sent_message`
+  (capture_proofs.rb), `incoming_sent_messages` (game.rb, dead once `extra_sent` goes), and the dead
+  `phishGated` writes (the `record_capture!` `phish_gated` computation and the `store_capture_entry`
+  write). `captures_for_client` is an allowlist that never emitted `phishGated`, so it is unchanged.
+- The controller's phish-gating block in `apply_capture_sync_step` is removed: `@phish_fp_before`,
+  the `needs_stamp` fingerprint compare, and the `extra_sent` build and forward. The sync step now
+  runs only when it has a capture to record or a legacy `se_captures` global to migrate; a plain
+  `stamp_proven_captures!(scenario:)` stays (a capture recorded on a sync is still stamped off the
+  route-written stores). A `sync_state` can no longer advance the phish evidence.
+- Route stamping is unchanged from chunks A and B: `send_phish!` and the bootstrap already re-stamp,
+  so the capture is proven the instant the second route commits, with no wait for a sync.
+
+### A+B R2 minors folded in
+
+- **Minor 1 (reload re-drive must not downgrade a recorded build).** Option (b), the server-side
+  guard: the reload re-drive marks its build body `redrive: true`, and Route 1
+  (`record_landing_page_build!`) refuses to replace an existing `meetsThreshold: true` build with a
+  weaker verdict (threshold now failing, or lower credibility) when that flag is set. The server
+  trusts the flag only in the downgrade-refusing direction, so a client global that drifted weaker
+  than a correct server build cannot launder a weaker verdict over it on reload. A normal rebuild
+  (no flag) stays last-wins, so an honest deliberate weaken and an honest improve-after-weak (live
+  case f) both still apply. The client marks the re-drive in `redrivePhishEvidence` and threads the
+  flag through the build queue so a failed re-drive keeps the guard on a later drain.
+- **Minor 2 (superset scan).** The scenario scan now pre-filters tolerant of JSON spacing
+  (`/"kind"\s*:\s*"link"/`) and matches `kind` on the PARSED JSON in `link_cases`, which returns
+  every link-kit page per scenario (not just the first). Each page is checked with its maximal
+  convincing choices and, where the menus allow a weaker-but-still-passing set, a derived
+  near-threshold case, so a server that rejected only just-above-threshold pages fails loudly.
+- **Minor 4 (concurrent drains).** `drainPhishQueues` has a single in-flight flag, so an `online`
+  drain and a `sync-ok` drain that overlap do not both post the same queued builds and sends.
+
+### Tests changed (old contract)
+
+- `capture_record_test.rb`: removed the `phish_evidence_fingerprint` stability test and the
+  `each_stored_sent_message` memoisation test (both machinery retired).
+- `capture_proofs_test.rb`: removed the `CaptureHotPathSpy` module and the three hot-path tests that
+  asserted the retired fingerprint/mail-walk optimisation (`m1` scenario-load skip, `m1` plain-sync
+  mail re-walk, `n2` part-3-vs-phish fingerprint). Rewrote the phish-evidence serving tests: they
+  seed the two server stores the way the routes do (a `seed_phish_stores` helper) instead of syncing
+  `se_landing_pages`/`mailState`. Added: the section-1 forge now serves nothing; a convincing page
+  with no landed send withholds; bootstrap stamping plus proven survives the stores going away; a
+  stale-but-recent request records and serves off the stores; a capture recorded before the stores
+  exist is served once they are populated.
+- `phish_superset_test.rb`: rewritten per minor 2 (above).
+- `se_landing_page_build_test.rb`: added the re-drive downgrade-guard test and an honest-rebuild
+  still-lowers test (minor 1).
+- `phish_legacy_migration_controller_test.rb`: updated the stamp comment (reads the server stores
+  now) and added a no-surviving-sent-mail legacy save that is stamped and serves the secret on its
+  first bootstrap (chunk C reader).
+- `social-phish-send-client.test.mjs`: added a re-drive `redrive:true` body test (minor 1) and an
+  overlapping-drain single-post test (minor 4).
+
+### Live browser proof (chunk C)
+
+`tools/playtest/se/phish-chunk-c-liveproof.mjs` on a keyless server on port 3665 (headless,
+`setFPS(20)`, fixed steps on). All eight cases PASS; the server was stopped by PID afterwards and
+port 3665 confirmed down.
+
+- **(a) honest online. PASS. Game 4633.** Real builder build for lord then a real convincing send;
+  a fresh `GET capture_secrets` returns `{"secrets":{"lord":"Sofia2026!"}}` off the two server
+  stores (the chunk C reader), not the client globals.
+- **(b) offline hold then drain. PASS. Game 4636.** Honest build+send held in the queues while
+  offline, drained on reconnect; stores land.
+- **(c) queue, reload, re-drive. PASS. Game 4639.** Routes held, durable global re-drives the build
+  and send on reload; stores land.
+- **(d) forged send refused. PASS. Game 4640.** A non-phish target and a non-link kit both answered
+  422; `sePhishSends` stayed empty.
+- **(e) chunk C legacy reveal. PASS. Games 4630 (strong) and 4631 (weak).** The legacy save carries
+  the durable `victim.submitted` marker, no surviving sent mail, the capture recorded unproven, and
+  empty server stores. The first bootstrap migrates the stores (server-re-derived verdict) and the
+  stamp proves the capture off them. Strong: `GET capture_secrets` now returns
+  `{"secrets":{"lord":"Sofia2026!"}}` (served, the chunk C change). Weak: the server re-derives
+  `meetsThreshold:false`, the imported send is `landed:false`, and the secret is withheld.
+- **(f) improve after a weak build. PASS. Game 4641.** A weak build is rebuilt convincing (last-wins
+  replaces the verdict in place), and a later send lands.
+- **(g) forged reader refused. PASS. Game 4635.** A forged `se_landing_pages` global and a forged
+  landed sent mail, empty server stores, `phishEvidenceMigrated` already set so the migration is a
+  no-op. The capture stays unproven and `GET capture_secrets` returns `{"secrets":{}}`: the reader
+  reads only the server stores. This is the forge the plan closes.
+- **(h) re-drive downgrade refused. PASS. Game 4624.** A convincing build is recorded, then a
+  hand-crafted `POST se/landing_page` with `redrive:true` and weak choices. The server keeps the
+  stronger verdict (`meetsThreshold:true`, credibility 87 unchanged) and the answer reports it.
+
+### Review R1 minors (test hygiene, no app code)
+
+Closes the three Minors from `PHISH_EVIDENCE_CHUNK_C_REVIEW_R1.md`.
+
+- **Minor 1 (co-migration untested).** Added two controller tests in
+  `phish_legacy_migration_controller_test.rb`. The first drives a pure pre-store save holding both
+  legacy globals (`globalVariables.se_captures` for lord and `globalVariables.se_landing_pages` with
+  convincing choices and `victim.submitted`), with no top-level `seCaptures` and no server stores: one
+  bootstrap recreates the capture, fills the two stores, stamps proven and consumes the capture
+  global, and `capture_secrets` serves `Sofia2026!`. The withheld twin uses a tier-0 domain (below
+  the page's `minDomainTier`); since the legacy capture global proves `proven: true` regardless of the
+  build, the twin carries the capture as a top-level unproven claim instead and lets the
+  phish-evidence gate decide, so the server re-derives `meetsThreshold: false`, no send lands and the
+  secret is withheld.
+- **Minor 2 (dead helper, fast path unpinned).** Added a `capture_proofs_test.rb` test that uses the
+  previously dead `count_scenario_loads` helper to assert a plain sync (no capture, no legacy global)
+  loads no scenario, while a capture-bearing sync loads one.
+- **Minor 3 (stale comment).** Corrected the retirement comment in `capture_record_test.rb` to name
+  the real reader-covering files (`capture_proofs_test`, `se_landing_page_build_test`,
+  `se_phish_send_test`, `phish_legacy_migration_test`, `phish_legacy_migration_controller_test`); there
+  is no `phish_reader_test`.
+
+Verification (single files, no suites, no server): `phish_legacy_migration_controller_test`,
+`capture_proofs_test`, `capture_record_test`, `phish_legacy_migration_test` and `captures_sync_test`
+together, 74 runs, 376 assertions, 0 failures.
+
+### Review R2 minor (legacy capture migration trusted a client claim for a phish target)
+
+Closes the single Minor from `PHISH_EVIDENCE_CHUNK_C_REVIEW_R2.md`. `migrate_legacy_captures!`
+stamped a stored `globalVariables.se_captures` entry `proven: true` for any declared target,
+including phish targets, so a legacy save that carried the capture global was served the phish
+secret with no server re-derivation of the build. That was the one phish secret path that trusted a
+client-written claim without a server recompute.
+
+The fix routes a phish target's legacy capture down the same server-store path as a live capture.
+In `migrate_legacy_captures!`, a target in `CaptureModel.phish_target_ids(scenario)` is now stored
+`proven: capture_evidence_holds?(fields, scenario:)` instead of `proven: true`; a non-phish target
+keeps the old-rules grandfather (`proven: true`), because it has no server re-derivation to defer
+to. The bootstrap order is unchanged and already correct: `run_bootstrap_writers!` runs
+`migrate_legacy_captures!` first (the entry is recorded unproven while the stores are still empty),
+then `migrate_legacy_phish_evidence!` fills `seLandingPages` / `sePhishSends` from the save's own
+`globalVariables.se_landing_pages`, then `stamp_proven_captures!` proves the entry off those server
+stores. So an honest legacy save (convincing build, `victim.submitted`) is proven on its first
+bootstrap, and a weak or forged one is withheld. Non-phish capture kinds are unchanged, and no other
+capture kind has a server re-derivation to bypass, so the gap does not apply to them.
+
+Tests (real requests, `phish_legacy_migration_controller_test.rb`): the honest co-migration test
+(capture global + convincing choices + `victim.submitted`) still serves `Sofia2026!` on one
+bootstrap. The weak-choices twin is rewritten to keep the `se_captures` global (it can now be
+withheld honestly) and asserts the secret is withheld. A new test drives a phish `se_captures`
+global with no `se_landing_pages` at all and asserts the capture migrates unproven and the secret is
+withheld. `capture_record_test.rb` pins that a non-phish legacy capture still migrates `proven:
+true`.
+
+Verification (`RBENV_VERSION=2.7.8 bin/rails test`, these files together): `phish_legacy_migration_test`,
+`phish_legacy_migration_controller_test`, `capture_proofs_test`, `captures_sync_test`,
+`capture_record_test` and `reload_persistence_test`, 146 runs, 651 assertions, 0 failures.

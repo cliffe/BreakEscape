@@ -208,7 +208,10 @@ export async function redrivePhishEvidence(scenario, globals, deps = {}) {
         if (!choices || typeof choices !== 'object') continue; // no stored choices: send nothing
 
         const targetId = rec.targetId;
-        const buildPost = recordLandingPageBuild({ pageId, targetId, choices }, deps);
+        // A+B R2 minor 1: mark the reload re-drive so the server refuses to replace a recorded
+        // meetsThreshold build with a weaker one. An honest re-drive carries the same stored
+        // choices, so the server recomputes the same verdict and replaces in place.
+        const buildPost = recordLandingPageBuild({ pageId, targetId, choices, redrive: true }, deps);
         if (buildPost && typeof buildPost.then === 'function') {
             try { await buildPost; } catch (e) { /* a failed re-post is held in the build queue */ }
         }
