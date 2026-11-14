@@ -103,6 +103,9 @@ export class EhrTerminalMinigame extends MinigameScene {
     // Its frame keeps a bar at the bottom for Cancel (minigames-framework.css)
     static controlsOverlay = true;
 
+    // The X sits inside the terminal panel's header (critique B X4), which is padded for it
+    static closeInsideFrame = true;
+
     constructor(container, params = {}) {
         super(container, {
             ...params,
@@ -164,6 +167,10 @@ export class EhrTerminalMinigame extends MinigameScene {
                 });
             });
         });
+    }
+
+    closeAnchor() {
+        return this.gameContainer?.querySelector?.('.ehr-terminal-panel') || this.gameContainer;
     }
 
     renderOnlineBody() {
@@ -235,7 +242,6 @@ export class EhrTerminalMinigame extends MinigameScene {
                     <div class="ehr-dose-block">${prescriptionBars}</div>
                 </div>
             </div>
-            <button id="ehr-terminal-acknowledge" class="ehr-terminal-button" type="button">[CLOSE TERMINAL]</button>
         `;
     }
 
@@ -260,7 +266,7 @@ export class EhrTerminalMinigame extends MinigameScene {
                     <span class="ehr-terminal-status ${badgeClass}">${badgeText}</span>
                 </div>
 
-                <div class="ehr-terminal-content">
+                <div class="ehr-terminal-content pixel-scroll">
                     ${bodyMarkup}
                 </div>
             </div>

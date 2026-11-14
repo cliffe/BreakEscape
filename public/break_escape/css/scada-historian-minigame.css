@@ -6,7 +6,6 @@
     flex-direction: column;
     width: 100%;
     height: 100%;
-    min-height: 500px;
     background: #0d1117;
     color: #e0e0e0;
     font-family: 'VT323', monospace;
@@ -21,13 +20,12 @@
     align-items: center;
     justify-content: space-between;
     background: #1a233a;
-    padding: 8px 12px;
+    padding: 8px 52px 8px 12px;
     border-bottom: 2px solid #334466;
     flex-shrink: 0;
 }
 .sh-header-title {
     font-size: 22px;
-    font-weight: bold;
     color: #ffffff;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -151,7 +149,7 @@
     flex-shrink: 0;
     flex-wrap: wrap;
 }
-.sh-toolbar-group { display: flex; align-items: center; gap: 3px; }
+.sh-toolbar-group { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; }
 .sh-toolbar-label { font-size: 16px; color: #556688; margin-right: 4px; letter-spacing: 0.05em; }
 .sh-range-btn {
     background: #1a233a;
@@ -252,7 +250,12 @@
     inset: 0;
     background: rgba(0, 0, 0, 0.75);
     display: flex;
-    align-items: center;
+    /* A modal taller than the chart area scrolls and starts at the top, so both buttons can be
+       reached on a portrait phone with no X and no Esc (consoles R3 M1) */
+    align-items: safe center;
+    overflow-y: auto;
+    /* Wheel past the end stays in the report instead of scrolling the charts under it (consoles R4 m1) */
+    overscroll-behavior: contain;
     justify-content: center;
     z-index: 200;
 }
@@ -267,7 +270,6 @@
 }
 .sh-modal-title {
     font-size: 20px;
-    font-weight: bold;
     color: #ffffff;
     letter-spacing: 0.05em;
     text-transform: uppercase;
@@ -356,4 +358,50 @@
 @media (max-height: 560px) {
     .sh-chart-area { min-height: 140px; }
     .sh-dzdt-panel { height: 80px; min-height: 80px; }
+    /* Phone landscape: hint plus the 140px chart is taller than the window, so the chart column
+       scrolls (pixel scrollbar) and the time axis stays reachable (review R1 m6) */
+    .sh-charts { overflow-y: auto; overflow-x: hidden; }
+}
+
+/* Phones: channel list above the chart, the progress bar under the hint, the range
+   buttons wrap (critique B SH1) */
+@media (max-width: 600px) {
+    .sh-header {
+        flex-wrap: wrap;
+    }
+
+    .sh-header-subtitle {
+        margin-left: 0;
+    }
+
+    .sh-body {
+        flex-direction: column;
+        overflow-y: auto;
+    }
+
+    .sh-left-panel {
+        width: 100%;
+        min-width: 0;
+        max-height: 30vh;
+        border-right: 0;
+        border-bottom: 2px solid #334466;
+        box-sizing: border-box;
+        flex-shrink: 0;
+    }
+
+    .sh-right-panel {
+        flex: 1 0 auto;
+    }
+
+    .sh-chart-area {
+        min-height: 220px;
+    }
+
+    .sh-hint {
+        flex-wrap: wrap;
+    }
+
+    .sh-hint-text {
+        flex-basis: 100%;
+    }
 }

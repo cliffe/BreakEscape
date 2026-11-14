@@ -17,8 +17,10 @@ const { releaseHeldBarks, HELD_BARK_GAP_MS, HELD_BARK_CAP, HELD_BARK_VOICE_CAP_M
 // npc-barks.js with its imports stubbed, except the real policy (gap and voice cap shortened
 // through globals so the tests run on real timers in milliseconds).
 writeFileSync(join(dir, 'npc-barks.mjs'), `
-import { releaseHeldBarks as realRelease } from './policy.mjs';
-const releaseHeldBarks = (q, o) => realRelease(q, { ...o, gapMs: globalThis.__gapMs, voiceCapMs: globalThis.__capMs, pauseMs: globalThis.__pauseMs });
+import { releaseHeldBarks as realRelease, HELD_BARK_VOICE_CAP_MS } from './policy.mjs';
+// __afterRelease (test hook): runs once the policy has returned, before drainDeferredBarks goes on
+const releaseHeldBarks = (q, o) => realRelease(q, { ...o, gapMs: globalThis.__gapMs, voiceCapMs: globalThis.__capMs, pauseMs: globalThis.__pauseMs })
+  .then(r => { globalThis.__afterRelease?.(q); return r; });
 const ASSETS_PATH = '', overlayDepth = () => 0, displayDashes = (s) => s;
 const workstationPopupOpen = () => false, phoneThreadOpenFor = () => false, openPhoneThread = () => null, threadTextKey = () => '';
 const dialogLayerOpen = () => !!globalThis.__dialogOpen;   // ui/hud-lanes.js (review R1 M1: dialogs hold barks)
@@ -412,44 +414,42 @@ test('NPCBarkSystem: a pause (as from muting) ends the wait', async () => {
 });
 
 test('NPCBarkSystem: an unknown or infinite clip length does not end the wait at once (m1)', async () => {
+  // R2 n3: a spy on setTimeout shows no timer is armed, with no real waiting
   const sys = barkSystem();
+  const realSetTimeout = globalThis.setTimeout;
   for (const len of [Infinity, NaN, -5]) {
     const audio = fakeAudio();
     sys.ttsManagers.set('ravi', { audio });
-    let settled = false;
-    const p = sys._voiceEnd('ravi', Promise.resolve(len)).then(v => { settled = true; return v; });
-    await wait(1300);
-    if (len === Infinity) {
-      assert.equal(settled, false, 'Infinity: no timer, waits for the audio event');
-      audio.ended = true; audio.dispatchEvent(new Event('ended'));
-      assert.equal(await p, true);
-    } else if (Number.isNaN(len)) {
-      assert.equal(await p, false, 'NaN is no voice');
-    } else {
-      assert.equal(settled, false, 'negative length: no timer either');
-      audio.ended = true; audio.dispatchEvent(new Event('ended'));
-      await p;
+    const armed = [];
+    globalThis.setTimeout = (fn, ms, ...a) => { armed.push(ms); return realSetTimeout(fn, ms, ...a); };
+    let settled = false, p;
+    try {
+      p = sys._voiceEnd('ravi', Promise.resolve(len)).then(v => { settled = true; return v; });
+      await Promise.resolve(); await Promise.resolve();
+    } finally { globalThis.setTimeout = realSetTimeout; }
+    if (Number.isNaN(len)) {
+      assert.equal(await p, false, 'NaN reaching _voiceEnd is no voice (_speakBark turns a playing NaN clip into Infinity)');
+      continue;
     }
+    assert.deepEqual(armed, [], `${len}: no fallback timer armed`);
+    assert.equal(settled, false, `${len}: waits for the audio event`);
+    audio.ended = true; audio.dispatchEvent(new Event('ended'));
+    assert.equal(await p, true);
   }
 });
 
 test('NPCBarkSystem: a bark that joins the queue just before the drain ends is released, not stranded (m4)', async () => {
+  // R2 n4: the late bark arrives through showBark in the microtasks after the policy returns,
+  // while the drain is still flagged as running (so showBark's own drain call returns at once)
   const sys = barkSystem();
-  const real = sys.deferredBarkQueue;
-  let armed = false, injected = false;
-  const orig = sys._renderBark;
-  sys._renderBark = (p) => { armed = true; return orig(p); };
-  sys.deferredBarkQueue = new Proxy(real, {
-    get(t, k) {
-      if (k === 'length' && armed && !injected && t.length === 0) {
-        injected = true;                                   // arrives as the policy's loop exits
-        t.push({ npcId: 'helen', text: 'late', voiceMs: 0 });
-        return 0;                                          // the policy saw it empty
-      }
-      const v = t[k];
-      return typeof v === 'function' ? v.bind(t) : v;
-    }
-  });
+  let injected = false;
+  globalThis.__afterRelease = () => {
+    if (injected) return;
+    injected = true;
+    assert.equal(sys.isDrainingDeferred, true, 'the drain still counts as running');
+    sys.showBark({ npcId: 'helen', text: 'late', voiceMs: 0 });
+    assert.equal(sys.deferredBarkQueue.length, 1, 'queued, its drain call returned');
+  };
   try {
     window.currentConversationMinigameType = 'person-chat';
     sys.showBark({ npcId: 'ravi', text: 'first', voiceMs: 10 });
@@ -457,9 +457,9 @@ test('NPCBarkSystem: a bark that joins the queue just before the drain ends is r
     await sys.drainDeferredBarks();
     assert.equal(injected, true);
     assert.deepEqual(whats(sys).filter(w => w.startsWith('start')), ['start first', 'start late']);
-    assert.equal(real.length, 0);
+    assert.equal(sys.deferredBarkQueue.length, 0);
     assert.equal(sys.isDrainingDeferred, false);
-  } finally { window.currentConversationMinigameType = null; }
+  } finally { window.currentConversationMinigameType = null; globalThis.__afterRelease = null; }
 });
 
 test('the voice cap timer is cleared once the wait settles (m3)', async () => {

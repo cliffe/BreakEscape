@@ -25,6 +25,7 @@ const stubs = {
     './ui-sounds.js': dataUrl('export function playUISound() {}'),
     '../utils/locked-hint.js': dataUrl(readFileSync(join(js, 'utils/locked-hint.js'), 'utf8')),
     '../minigames/biometrics/fingerprint-reader-minigame.js': dataUrl('export function startFingerprintReader() {}'),
+    '../utils/lock-scope-refusal.js': dataUrl(readFileSync(join(js, 'utils/lock-scope-refusal.js'), 'utf8')),
     './lockpick-catch.js': dataUrl('export function catchLockpickInView() { return false; }')
 };
 let src = readFileSync(join(js, 'systems/unlock-system.js'), 'utf8');

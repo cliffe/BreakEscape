@@ -10,7 +10,7 @@ import { applyActions } from '../../systems/apply-actions.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { flagRefusalLine, flagRejectReason } from '../../utils/flag-wording.js';
 import { escapeHtml } from '../../utils/escape-html.js';
-import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } from '../../utils/lock-scope-refusal.js';
+import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal, unlockWithRouteRoomRetry } from '../../utils/lock-scope-refusal.js';
 
 export class FlagStationMinigame extends MinigameScene {
     // The X sits inside the themed frame, not on its border (critique A26, A30)
@@ -583,7 +583,9 @@ export class FlagStationMinigame extends MinigameScene {
         this.showResult(resultEl, 'loading', 'Validating...');
 
         try {
-            const response = await apiClient.unlock(targetType, targetId, flagValue, 'flag');
+            // Through the shared object-unlock retry so a correct flag on a route-room object is
+            // not refused during the pre-promotion window (§3.6).
+            const response = await unlockWithRouteRoomRetry(targetType, targetId, flagValue, 'flag');
 
             if (response.success) {
                 if (window.playUISound) window.playUISound('confirm');
@@ -698,6 +700,22 @@ export class FlagStationMinigame extends MinigameScene {
         }
         if (config.emitEvent) {
             window.eventDispatcher?.emit(config.emitEvent, { source: 'launch_device' });
+        }
+        // Save the choice now rather than on the 30 s timer or pagehide, so a crash or a
+        // hard close straight after it keeps the outcome. The sync sends only what changed
+        // (the choice's globals, plus anything else already pending). A failed request is
+        // tried again a few times at 250, 500 and 1000 ms (syncConfirmed: bounded, stops on
+        // a 403) rather than waiting for the timer; each retry resends the same delta.
+        // A config with only an event syncs too: its mapping can set the globals or the
+        // timed message itself. handleAbort/handleLaunch call this once per choice.
+        if (config.setGlobal || config.emitEvent) {
+            const sync = window.stateSync;
+            try {
+                const run = typeof sync?.syncConfirmed === 'function'
+                    ? sync.syncConfirmed({ attempts: 4 })
+                    : sync?.sync?.();
+                Promise.resolve(run).catch(() => {});
+            } catch (e) { /* the timer retries */ }
         }
     }
 

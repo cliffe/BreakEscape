@@ -131,6 +131,9 @@
     gap: 10px;
     align-items: center;
     min-height: 60px;
+    /* The list is a fixed-height column that scrolls: a row never shrinks below its
+       content, or a wrapped message runs over the next row */
+    flex-shrink: 0;
     padding: 8px;
     border: 2px solid #32466f;
     background: #1a2745;
@@ -153,6 +156,7 @@
     height: 32px;
     font-family: 'Press Start 2P', monospace;
     font-size: 8px;
+    line-height: 16px;
     color: #ffffff;
     border: 2px solid rgba(255, 255, 255, 0.2);
 }
@@ -219,8 +223,9 @@
     min-width: 90px;
     height: 36px;
     border: 2px solid #2d3856;
-    font-family: 'Press Start 2P', monospace;
+    font-family: 'GNF', monospace;
     font-size: 16px;
+    line-height: 24px;
     color: #ffffff;
     cursor: pointer;
 }
@@ -270,6 +275,7 @@
     border: 2px solid rgba(255, 255, 255, 0.2);
     font-family: 'Press Start 2P', monospace;
     font-size: 8px;
+    line-height: 16px;
     color: #ffffff;
 }
 
@@ -466,7 +472,7 @@
 
 .siem-sources-empty {
     font-family: 'GNF', monospace;
-    font-size: 12px;
+    font-size: 16px;
     color: #6e7583;
     text-align: center;
     padding: 12px;
@@ -490,6 +496,7 @@
 .siem-source-name {
     font-family: 'Press Start 2P', monospace;
     font-size: 8px;
+    line-height: 16px;
     color: #d2e0ff;
     white-space: nowrap;
     overflow: hidden;
@@ -511,7 +518,7 @@
 
 .siem-source-count {
     font-family: 'GNF', monospace;
-    font-size: 10px;
+    font-size: 16px;
     color: #00ffff;
     text-align: right;
     min-width: 28px;
@@ -560,13 +567,73 @@
 }
 
 @media (max-width: 1100px) {
+    /* Two lines: badge, time, host and the buttons; then the whole message below them, so
+       the message keeps the row's full width (at 800 it was squeezed to one letter a line) */
     .siem-alert-row {
-        grid-template-columns: 56px 72px 105px minmax(0, 1fr) 168px;
+        grid-template-columns: 56px 72px minmax(0, 1fr) auto;
+        row-gap: 6px;
+    }
+
+    .siem-description {
+        grid-column: 1 / -1;
+        grid-row: 2;
     }
 
     .siem-time,
     .siem-source,
     .siem-description {
         font-size: 16px;
+    }
+
+    /* The message wraps to more lines instead of collapsing to one letter (critique B SIEM2) */
+    .siem-description {
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+}
+
+/* Phones: each alert on two lines (badge, time and host; then the message and its buttons),
+   the review queue under the list (critique B SIEM1) */
+@media (max-width: 600px) {
+    .siem-body {
+        grid-template-columns: 1fr;
+        overflow-y: auto;
+        padding: 6px;
+    }
+
+    .siem-alert-pane,
+    .siem-queue-pane {
+        min-height: auto;
+    }
+
+    .siem-alert-list {
+        overflow: visible;
+    }
+
+    .siem-alert-row {
+        grid-template-columns: 56px 64px minmax(0, 1fr);
+        gap: 6px;
+    }
+
+    .siem-description,
+    .siem-actions {
+        grid-column: 1 / -1;
+    }
+
+    .siem-actions {
+        justify-content: flex-start;
+    }
+
+    .siem-btn {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .siem-pane-title {
+        overflow-wrap: anywhere;
+    }
+
+    .siem-clock {
+        margin-right: 48px;
     }
 }

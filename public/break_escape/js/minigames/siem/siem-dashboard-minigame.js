@@ -398,7 +398,7 @@ export class SiemDashboardMinigame extends MinigameScene {
                     <div class="siem-title">NORTHGATE TRUST // SIEM CONSOLE</div>
                     <div class="siem-clock" id="siem-system-clock">00:00:00</div>
                 </div>
-                <div class="siem-body">
+                <div class="siem-body pixel-scroll">
                     <div class="siem-alert-pane">
                         <div class="siem-pane-title">ALERT STREAM</div>
                         <div class="siem-alert-list" id="siem-alert-list"></div>

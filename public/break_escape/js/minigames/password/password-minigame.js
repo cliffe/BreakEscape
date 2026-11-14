@@ -4,7 +4,7 @@ import { makeDraggable } from '../../utils/helpers.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { escapeHtml } from '../../utils/escape-html.js';
 import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
-import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } from '../../utils/lock-scope-refusal.js';
+import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal, unlockWithRouteRoomRetry } from '../../utils/lock-scope-refusal.js';
 import { isComputerType } from '../../utils/computer-keywords.js';
 import { mountPcMonitor, cssZoomOf, pcPostitButtonHtml } from '../../utils/pc-monitor.js';
 import { headshotCandidates, headshotKeys, noteMissingHeadshot, npcRecordFor, headshotSourceFor, applyHeadshotBox, SILHOUETTE_URL,
@@ -52,6 +52,7 @@ export function passwordScreenKind({ join = null, lockable = null } = {}) {
  * True for a container that is a bag or case rather than a device: its password
  * screen is drawn as a code lock on the case, not as a computer's sign-in screen.
  */
+const SIGNIN_PROMPT = 'Choose an account.';
 export const CASE_LOCK_TYPES = ['suitcase', 'briefcase', 'bag', 'bag1', 'backpack', 'satchel', 'holdall'];
 export function isCaseLockTarget(data) {
     const type = String(data?.type || '').toLowerCase();
@@ -1180,9 +1181,9 @@ export class PasswordMinigame extends MinigameScene {
 
             console.log('Validating password with server:', { targetType, targetId, attempt: enteredPassword });
 
-            // Call server API for validation (use ApiClient with correct casing)
-            const apiClient = window.ApiClient || window.APIClient;
-            const response = await apiClient.unlock(targetType, targetId, enteredPassword, 'password');
+            // Call server API for validation, through the shared object-unlock retry so a correct
+            // password on a route-room object is not refused during the pre-promotion window (§3.6).
+            const response = await unlockWithRouteRoomRetry(targetType, targetId, enteredPassword, 'password');
 
             if (response.success) {
                 // If server returned container contents, populate the lockable object
@@ -1426,7 +1427,9 @@ export class PasswordMinigame extends MinigameScene {
                         <div class="signin-title">${escapeHtml(displayDashes(s.pcName))}</div>
                         ${remoteLine}
                         ${current}
-                        ${tiles}${capturedHtml}
+                        ${tiles}${capturedHtml}${inMonitor ? `
+                        <div class="signin-prompt" id="signin-prompt" aria-live="polite" hidden></div>
+                        <div class="signin-card" id="signin-card">` : ''}
                         <div class="signin-form" id="signin-form">
                             <div class="signin-selected-row">${inMonitor ? `
                                 <span class="signin-selected-headshot" aria-hidden="true" hidden></span>` : ''}
@@ -1450,7 +1453,8 @@ export class PasswordMinigame extends MinigameScene {
                                 <button type="button" class="submit-btn${inMonitor ? ' pc-os-btn' : ''}" id="submit-password">Sign in</button>
                             </div>
                         </div>
-                        <div class="signin-message" id="signin-message" aria-live="polite"></div>
+                        <div class="signin-message" id="signin-message" aria-live="polite"></div>${inMonitor ? `
+                        </div>` : ''}
                     </div>
                 </div>
                 ${this.gameData.showPostit && this.gameData.postitNote && !inMonitor ? `
@@ -1580,7 +1584,9 @@ export class PasswordMinigame extends MinigameScene {
      */
     placeCapturedBlock() {
         const block = this.gameContainer?.querySelector?.('#signin-captured');
-        const form = this.gameContainer?.querySelector?.('#signin-form');
+        // In the monitor the form and its message are one card (UI PC 2, E06): the block goes
+        // above or below the card, never inside it
+        const form = this.gameContainer?.querySelector?.('#signin-card') || this.gameContainer?.querySelector?.('#signin-form');
         if (!block || !form) return;
         const state = this.signInLoading() ? 'loading' : (this.capturedTiles().length ? 'tiles' : 'none');
         block.dataset.state = state;
@@ -1631,11 +1637,15 @@ export class PasswordMinigame extends MinigameScene {
         const show = (el, on) => { if (el) el.style.display = on ? '' : 'none'; };
         show(this.gameContainer.querySelector('#signin-form'), chosen);
         show(this.gameContainer.querySelector('#signin-username-row'), st.other);
+        this.syncSignInCard();
         // In a short window the tile row folds away once an account is chosen, so the field,
         // Submit, the message line and the post-it fit together (UX slice 2a R3 m4); the
         // chosen account's line holds a Change button back to the tiles.
         const area = this.gameContainer.querySelector('.signin-mode');
         area?.classList.toggle('signin-chosen', chosen && this.signInTilesOffered());
+        // A locked screen has its account already: on a narrow screen the tiles fold as in a
+        // short window, so the card and its message fit in view (fix round 1, m4)
+        area?.classList.toggle('signin-locked', this.signIn?.current?.locked === true);
         const selectedEl = this.gameContainer.querySelector('#signin-selected');
         const tile = st.other ? null : this.signInTileFor(st.selected);
         if (selectedEl) {
@@ -1651,7 +1661,7 @@ export class PasswordMinigame extends MinigameScene {
         });
         // While a remote screen's captures load, it shows only "Checking..." (R1 M2)
         if (!chosen) {
-            this.setSignInMessage(this.signInLoading() ? '' : (st.message || 'Choose an account.'));
+            this.setSignInMessage(this.signInLoading() ? '' : (st.message || SIGNIN_PROMPT));
         }
         const focus = st.other && !this.usernameField.value ? this.usernameField : this.passwordField;
         // quiet: a late Captured sign-ins list redraws without moving focus or scrolling (2b0 R2 m1)
@@ -1786,11 +1796,33 @@ export class PasswordMinigame extends MinigameScene {
         return true;
     }
 
+    /**
+     * The sign-in card (in the monitor, UI PC 2 E06) is shown while it has something in it:
+     * the form once an account is chosen, or a result message (a wrong password, a lockout).
+     * The "Choose an account." prompt on the tiles is a plain line outside it, so the tiles
+     * never sit above an empty frame (fix round 1, M1).
+     */
+    syncSignInCard() {
+        const card = this.gameContainer?.querySelector?.('#signin-card');
+        if (!card) return;
+        const form = this.gameContainer.querySelector('#signin-form');
+        const formShown = !!form && form.style.display !== 'none';
+        const text = this.signInMessageEl?.textContent || '';
+        const promptOnly = !formShown && text === SIGNIN_PROMPT && this.signInMessageEl?.dataset.kind !== 'error';
+        card.hidden = !formShown && (!text || promptOnly);
+        const prompt = this.gameContainer.querySelector('#signin-prompt');
+        if (prompt) {
+            prompt.textContent = promptOnly ? text : '';
+            prompt.hidden = !promptOnly;
+        }
+    }
+
     setSignInMessage(text, kind = 'info') {
         this.signInState.message = text;
         if (!this.signInMessageEl) return;
         this.signInMessageEl.textContent = text;
         this.signInMessageEl.dataset.kind = kind;
+        this.syncSignInCard();
         // A result (a wrong password and the attempts left, a lockout) is always on screen,
         // even in a short window where the frame scrolls (UX slice 2a R2 M2)
         // The post-it holds the details the player is about to retype, so it comes into view

@@ -461,7 +461,12 @@ export default class PhoneChatUI {
                     this.updatePlayButton(playButton, false);
                 });
 
-                const duration = await this.ttsManager.play(npcId, text);
+                const playing = this.ttsManager.play(npcId, text);
+                const seq = this.ttsManager.playSeq;
+                const duration = await playing;
+                // A later play() took over while this one loaded: the button state is its now,
+                // and this message must not fall back to speech synthesis over it
+                if (this.ttsManager.playSeq !== seq) return;
                 if (duration !== null) {
                     console.log('🎤 Playing voice message via server TTS');
                     return;

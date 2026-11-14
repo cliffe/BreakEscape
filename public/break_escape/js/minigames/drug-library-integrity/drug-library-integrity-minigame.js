@@ -147,7 +147,7 @@ export class DrugLibraryIntegrityMinigame extends MinigameScene {
 <div class="dli-progress-wrap" id="dli-progress-wrap" style="display:none">
   <div class="dli-progress-bar" id="dli-progress-bar"></div>
 </div>
-<div class="dli-panel" id="dli-panel"></div>`;
+<div class="dli-panel pixel-scroll" id="dli-panel"></div>`;
 
         this.gameContainer.querySelectorAll('.dli-tab').forEach(btn => {
             this.addEventListener(btn, 'click', () => this._onTabClick(btn.dataset.tab));
@@ -246,7 +246,7 @@ export class DrugLibraryIntegrityMinigame extends MinigameScene {
 </table>
 ${alreadyRestored ? this._buildRestoredBanner() : alreadyFailed ? this._buildResultBanner() : ''}
 ${alreadyFailed && !alreadyRestored ? this._buildHashDetail(false) : ''}
-${!alreadyFailed ? `<button class="dli-run-btn" id="dli-run-btn">[ RUN INTEGRITY VERIFICATION ]</button>` : ''}`;
+${!alreadyFailed ? `<button class="minigame-button dli-run-btn" id="dli-run-btn">[ RUN INTEGRITY VERIFICATION ]</button>` : ''}`;
 
         if (!alreadyFailed) {
             const runBtn = panel.querySelector('#dli-run-btn');
@@ -681,13 +681,20 @@ ${c.warning ? `<div class="dli-modal-warning">${escapeHtml(displayDashes(c.warni
         overlay.className = 'dli-modal-overlay';
         overlay.innerHTML = `
 <div class="dli-modal">
-  <div class="dli-modal-title">${escapeHtml(displayDashes(source.label))}</div>
+  <div class="dli-modal-head">
+    <div class="dli-modal-title">${escapeHtml(displayDashes(source.label))}</div>
+    <button type="button" class="minigame-close-button dli-modal-close" aria-label="Close">&times;</button>
+  </div>
   <div class="dli-modal-body">${bodyHtml}</div>
   <button class="dli-modal-confirm-btn" id="dli-modal-confirm">CONFIRM &mdash; Value noted</button>
 </div>`;
 
         this.gameContainer.style.position = 'relative';
         this.gameContainer.appendChild(overlay);
+        this._sourceOverlay = overlay;
+        this._hideSceneX(true);
+
+        this.addEventListener(overlay.querySelector('.dli-modal-close'), 'click', () => this._closeSourceModal());
 
         const confirmBtn = overlay.querySelector('#dli-modal-confirm');
         this.addEventListener(confirmBtn, 'click', () => {
@@ -696,12 +703,32 @@ ${c.warning ? `<div class="dli-modal-warning">${escapeHtml(displayDashes(c.warni
 
         // Click outside to close without confirming
         this.addEventListener(overlay, 'click', (e) => {
-            if (e.target === overlay) overlay.remove();
+            if (e.target === overlay) this._closeSourceModal();
         });
     }
 
+    _closeSourceModal() {
+        if (this._sourceOverlay) this._sourceOverlay.remove();
+        this._sourceOverlay = null;
+        this._hideSceneX(false);
+    }
+
+    // One close control at a time: the pop-up carries its own X, so the scene X hides while it
+    // is open
+    _hideSceneX(hidden) {
+        const x = this.container?.querySelector?.('#minigame-close');
+        if (x) x.style.visibility = hidden ? 'hidden' : '';
+    }
+
+    // Esc closes the pop-up and leaves the scene open; with none open it closes the scene
+    handleEscapeKey() {
+        if (!this._sourceOverlay) return false;
+        this._closeSourceModal();
+        return true;
+    }
+
     _onSourceConfirmed(source, overlay) {
-        overlay.remove();
+        this._closeSourceModal();
         this._sourcesConsulted.add(source.id);
 
         // Fire progress action
