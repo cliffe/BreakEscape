@@ -1,4 +1,5 @@
-/* BLE Scanner Minigame Styles */
+/* BLE Scanner Minigame Styles. The panel, header, search, chips and list header are in
+   css/scanner-panel.css (A22). */
 
 .ble-scanner-minigame-container {
     position: fixed !important;
@@ -96,47 +97,7 @@
 }
 
 /* Header */
-.ble-scanner-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 10px;
-    margin-right: 40px;   /* clear of the X, which sits inside the frame's top right (slice 7 R1) */
-    padding: 8px 10px;
-    background: rgba(0, 188, 212, 0.1);
-    border: 2px solid #00bcd4;
-    box-shadow: none;
-}
-
 /* push status to the far right */
-.ble-scanner-header .ble-scanner-status {
-    margin-left: auto;
-}
-
-.ble-scanner-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 18px;
-    font-weight: bold;
-    color: #00bcd4;
-    text-shadow: none;
-}
-
-.ble-scanner-icon {
-    height: 24px;
-    filter: none;
-    image-rendering: pixelated;
-}
-
-.ble-scanner-status {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 18px;
-    color: #4caf50;
-}
-
 .ble-scanner-indicator {
     width: 8px;
     height: 8px;
@@ -154,90 +115,11 @@
 
 
 /* Controls */
-.ble-scanner-controls {
-    margin-bottom: 10px;
-}
-
-.ble-search-container {
-    margin-bottom: 8px;
-}
-
-.ble-search-input {
-    width: 100%;
-    padding: 8px 12px;
-    background: rgba(0, 0, 0, 0.3);
-    border: 2px solid #00bcd4;
-    color: #e0e0e0;
-    font-family: 'GNF', monospace;
-    font-size: 18px;
-    box-sizing: border-box;
-}
-
-.ble-search-input:focus {
-    outline: none;
-    border-color: #4caf50;
-    box-shadow: none;
-}
-
-.ble-search-input::placeholder {
-    color: #888;
-}
-
-.ble-categories {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-}
-
-.ble-category {
-    padding: 4px 10px;
-    background: rgba(0, 0, 0, 0.3);
-    border: 2px solid #555;
-    cursor: pointer;
-    font-size: 16px;
-    color: #ccc;
-    user-select: none;
-}
-
-.ble-category:hover {
-    background: rgba(0, 188, 212, 0.2);
-    border-color: #00bcd4;
-    color: #00bcd4;
-}
-
-.ble-category.active {
-    background: rgba(0, 188, 212, 0.3);
-    border-color: #00bcd4;
-    color: #00bcd4;
-    box-shadow: none;
-}
-
 /* Device List */
 .ble-device-list-container {
     display: flex;
     flex-direction: column;
     min-height: 0;
-}
-
-.ble-device-list-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 6px;
-    padding: 6px 10px;
-    background: rgba(0, 0, 0, 0.2);
-    border: 2px solid #444;
-    font-size: 18px;
-    font-weight: bold;
-    color: #00bcd4;
-}
-
-.ble-device-count {
-    font-size: 16px;
-    color: #4caf50;
-    background: rgba(76, 175, 80, 0.2);
-    padding: 2px 6px;
-    border: 2px solid #4caf50;
 }
 
 .ble-device-list {
@@ -599,12 +481,5 @@
     }
     .ble-scanner-minigame-container.expanded {
         max-width: 520px !important;
-    }
-    .ble-categories {
-        gap: 4px;
-    }
-    .ble-category {
-        font-size: 14px;
-        padding: 3px 7px;
     }
 }

@@ -38,6 +38,8 @@ export class BluetoothScannerMinigame extends MinigameScene {
     init() {
         // Call parent init to set up common components
         super.init();
+        // One scanner-panel look, themed by this scanner's accent (css/scanner-panel.css, A22)
+        this.container.classList.add('scanner-panel', 'scanner-panel--bluetooth');
         
         console.log("Bluetooth scanner minigame initializing");
         
@@ -60,19 +62,19 @@ export class BluetoothScannerMinigame extends MinigameScene {
     createScannerInterface() {
         // Create expand/collapse toggle button
         const expandToggle = document.createElement('div');
-        expandToggle.className = 'bluetooth-scanner-expand-toggle';
+        expandToggle.className = 'bluetooth-scanner-expand-toggle scan-toggle';
         expandToggle.innerHTML = '+';
         expandToggle.title = 'Expand/Collapse';
         
         // Create scanner header
         const scannerHeader = document.createElement('div');
-        scannerHeader.className = 'bluetooth-scanner-header';
+        scannerHeader.className = 'bluetooth-scanner-header scan-header';
         scannerHeader.innerHTML = `
-            <div class="bluetooth-scanner-title">
-                <img src="/break_escape/assets/objects/bluetooth_scanner.png" alt="Bluetooth Scanner" class="scanner-icon">
+            <div class="bluetooth-scanner-title scan-title">
+                <img src="/break_escape/assets/objects/bluetooth_scanner.png" alt="Bluetooth Scanner" class="scanner-icon scan-icon">
                 <span>Bluetooth Scanner</span>
             </div>
-            <div class="bluetooth-scanner-status">
+            <div class="bluetooth-scanner-status scan-status">
                 <div class="scanner-indicator active"></div>
                 <span>Scanning...</span>
             </div>
@@ -80,12 +82,12 @@ export class BluetoothScannerMinigame extends MinigameScene {
         
         // Create search and filter controls
         const controlsContainer = document.createElement('div');
-        controlsContainer.className = 'bluetooth-scanner-controls';
+        controlsContainer.className = 'bluetooth-scanner-controls scan-controls';
         controlsContainer.innerHTML = `
             <div class="bluetooth-search-container">
-                <input type="text" id="bluetooth-search" placeholder="Search devices..." class="bluetooth-search-input">
+                <input type="text" id="bluetooth-search" placeholder="Search devices..." class="bluetooth-search-input scan-search">
             </div>
-            <div class="bluetooth-categories">
+            <div class="bluetooth-categories scan-chips">
                 <div class="bluetooth-category active" data-category="all">All</div>
                 <div class="bluetooth-category" data-category="nearby">Nearby</div>
                 <div class="bluetooth-category" data-category="saved">Saved</div>
@@ -94,19 +96,20 @@ export class BluetoothScannerMinigame extends MinigameScene {
         
         // Create device list container
         const deviceListContainer = document.createElement('div');
-        deviceListContainer.className = 'bluetooth-device-list-container';
+        deviceListContainer.className = 'bluetooth-device-list-container scan-list-wrap';
         deviceListContainer.innerHTML = `
-            <div class="bluetooth-device-list-header">
+            <div class="bluetooth-device-list-header scan-list-header">
                 <span>Detected Devices</span>
-                <div class="device-count">0 devices</div>
+                <div class="device-count scan-count">0 devices</div>
             </div>
-            <div class="bluetooth-device-list" id="bluetooth-device-list"></div>
+            <div class="bluetooth-device-list scan-list pixel-scroll" id="bluetooth-device-list"></div>
         `;
         
         // Create instructions
-        const instructionsContainer = document.createElement('div');
-        instructionsContainer.className = 'bluetooth-scanner-instructions';
+        const instructionsContainer = document.createElement('details');
+        instructionsContainer.className = 'bluetooth-scanner-instructions scan-instructions pixel-scroll';
         instructionsContainer.innerHTML = `
+            <summary>How to use the scanner</summary>
             <div class="instruction-text">
                 <strong>Instructions:</strong><br>
                 • Walk around to detect Bluetooth devices<br>
@@ -135,6 +138,9 @@ export class BluetoothScannerMinigame extends MinigameScene {
         const bluetoothSearch = document.getElementById('bluetooth-search');
         if (bluetoothSearch) {
             this.addEventListener(bluetoothSearch, 'input', () => this.updateBluetoothPanel());
+            // keep typed letters away from the game's key handler (as the BLE panel does)
+            this.addEventListener(bluetoothSearch, 'keydown', (e) => e.stopPropagation());
+            this.addEventListener(bluetoothSearch, 'keyup', (e) => e.stopPropagation());
         }
         
         // Category filters

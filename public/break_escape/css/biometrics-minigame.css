@@ -1,4 +1,5 @@
-/* Biometrics Minigame Styles */
+/* Biometrics Minigame Styles. The panel, header, search, chips, buttons, list header and
+   instructions are in css/scanner-panel.css (A22). */
 
 .biometrics-minigame-container {
     /* Compact interface similar to Bluetooth scanner */
@@ -103,28 +104,6 @@
 }
 
 /* Scanner Header */
-.biometrics-scanner-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-    padding: 10px;
-    background: rgba(231, 76, 60, 0.1);
-    border: 2px solid #e74c3c;
-    /* border-radius: 6px; */
-    box-shadow: none;
-}
-
-.biometrics-scanner-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 18px;
-    font-weight: bold;
-    color: #e74c3c;
-    text-shadow: none;
-}
-
 .samples-count-header {
     font-size: 12px;
     color: #4caf50;
@@ -139,14 +118,6 @@
     height: 24px;
     filter: none;
     image-rendering: pixelated;
-}
-
-.biometrics-scanner-status {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 14px;
-    color: #4caf50;
 }
 
 .scanner-indicator {
@@ -174,34 +145,6 @@
 }
 
 /* Expand/Collapse Toggle */
-.biometrics-expand-toggle {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    width: 24px;
-    height: 24px;
-    background: rgba(231, 76, 60, 0.2);
-    border: 2px solid #e74c3c;
-    /* border-radius: 4px; */
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    color: #e74c3c;
-    transition: all 0.3s ease;
-    z-index: 10;
-}
-
-.biometrics-expand-toggle:hover {
-    background: rgba(231, 76, 60, 0.3);
-    box-shadow: none;
-}
-
-.biometrics-expand-toggle.expanded {
-    transform: rotate(180deg);
-}
-
 /* Search Room Button */
 .biometrics-search-room-container {
     margin-bottom: 15px;
@@ -231,95 +174,11 @@
     margin-bottom: 10px;
 }
 
-.biometrics-search-input {
-    width: 100%;
-    box-sizing: border-box;   /* its padding stays inside the panel */
-    padding: 8px 12px;
-    background: rgba(0, 0, 0, 0.3);
-    border: 2px solid #e74c3c;
-    /* border-radius: 6px; */
-    color: #e0e0e0;
-    font-size: 14px;
-    box-shadow: none;
-    transition: all 0.3s ease;
-}
-
-.biometrics-search-input:focus {
-    outline: none;
-    border-color: #4caf50;
-    box-shadow: none;
-    background: rgba(0, 0, 0, 0.5);
-}
-
-.biometrics-search-input::placeholder {
-    color: #888;
-}
-
-.biometrics-categories {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-bottom: 10px;
-}
-
-.biometrics-category {
-    padding: 6px 12px;
-    background: rgba(0, 0, 0, 0.3);
-    border: 2px solid #555;
-    /* border-radius: 4px; */
-    cursor: pointer;
-    font-size: 12px;
-    color: #ccc;
-    transition: all 0.3s ease;
-    user-select: none;
-}
-
-.biometrics-category:hover {
-    background: rgba(231, 76, 60, 0.2);
-    border-color: #e74c3c;
-    color: #e74c3c;
-}
-
-.biometrics-category.active {
-    background: rgba(231, 76, 60, 0.3);
-    border-color: #e74c3c;
-    color: #e74c3c;
-    box-shadow: none;
-}
-
 /* Action Buttons */
 .biometrics-actions {
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
-}
-
-.biometrics-action-btn {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 12px;
-    background: rgba(231, 76, 60, 0.2);
-    border: 2px solid #e74c3c;
-    /* border-radius: 6px; */
-    color: #e74c3c;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    user-select: none;
-}
-
-.biometrics-action-btn:hover {
-    background: rgba(231, 76, 60, 0.3);
-    box-shadow: none;
-    transform: translateY(-1px);
-}
-
-.biometrics-action-btn.active {
-    background: rgba(76, 175, 80, 0.3);
-    border-color: #4caf50;
-    color: #4caf50;
-    box-shadow: none;
 }
 
 .biometrics-action-btn .btn-icon {
@@ -377,29 +236,6 @@
     max-height: 0;
     min-height: 0;
     opacity: 0;
-}
-
-.biometrics-samples-list-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-    padding: 8px 12px;
-    background: rgba(0, 0, 0, 0.2);
-    border: 2px solid #444;
-    /* border-radius: 6px; */
-    font-size: 14px;
-    font-weight: bold;
-    color: #e74c3c;
-}
-
-.samples-count {
-    font-size: 12px;
-    color: #4caf50;
-    background: rgba(76, 175, 80, 0.2);
-    padding: 2px 6px;
-    /* border-radius: 3px; */
-    border: 2px solid #4caf50;
 }
 
 .biometrics-samples-list {
@@ -528,18 +364,6 @@
 }
 
 /* Instructions */
-.biometrics-scanner-instructions {
-    margin-top: 10px;
-    padding: 10px;
-    background: rgba(0, 0, 0, 0.2);
-    border: 2px solid #444;
-    /* border-radius: 6px; */
-    font-size: 12px;
-    line-height: 1.4;
-    color: #ccc;
-    transition: all 0.3s ease;
-}
-
 .biometrics-minigame-container:not(.expanded) .biometrics-scanner-instructions {
     display: none;
 }
@@ -547,17 +371,6 @@
 .instruction-text {
     color: #aaa;
     padding-top: 6px;
-}
-
-.biometrics-scanner-instructions summary {
-    cursor: pointer;
-    color: #e74c3c;
-}
-
-.biometrics-scanner-instructions summary:focus-visible { outline: 2px solid #fff; }
-
-.instruction-text strong {
-    color: #e74c3c;
 }
 
 /* Responsive Design */
@@ -575,37 +388,10 @@
         max-width: 500px !important;
     }
     
-    .biometrics-scanner-title {
-        font-size: 14px;
-    }
-    
-    /* The chips stay inline and wrap, as at every other size (critique A19) */
-    .biometrics-categories {
-        flex-wrap: wrap;
-        gap: 5px;
-    }
-    
-    .biometrics-category {
-        text-align: center;
-        padding: 4px 8px;
-        font-size: 11px;
-    }
-    
     .biometrics-actions {
         flex-direction: column;
     }
     
-    .biometrics-action-btn {
-        justify-content: center;
-        padding: 6px 10px;
-        font-size: 12px;
-    }
-    
-    .biometrics-expand-toggle {
-        width: 20px;
-        height: 20px;
-        font-size: 10px;
-    }
 }
 
 /* Animation for new samples */
@@ -991,3 +777,5 @@
 .fpr-result-title span { font-family: 'VT323', monospace; font-size: 24px; vertical-align: -2px; }
 
 .biometrics-minigame-game-container { padding-bottom: 56px; }
+/* A right gutter for the shell's X, so a scrolled panel never slides its search field under it */
+.biometrics-minigame-game-container { padding-right: 40px !important; }
