@@ -404,7 +404,8 @@ export default class NPCBarkSystem {
     }
     // Phone text or speech in the building (B2 option A): two looks, two places
     const manager = this.npcManager || (typeof window !== 'undefined' ? window.npcManager : null);
-    const npcDef = (npcId && manager?.getNPC?.(npcId)) || null;
+    // An NPC whose room has not loaded is not registered yet: the scenario still says who they are
+    const npcDef = (npcId && (manager?.getNPC?.(npcId) || NPCBarkSystem.scenarioNpc(npcId))) || null;
     const source = barkSource({ npcType: npcDef?.npcType || contact?.npcType || null, channel: payload.channel || null,
       hasClickHandler: typeof payload.onClick === 'function' });
     const speech = source === 'speech' && !!this.speechContainer;
@@ -627,7 +628,8 @@ export default class NPCBarkSystem {
   _updateClearAllButton() {
     if (!this.clearAllButton) return;
     // Only phone texts can be cleared: speech lines are not clickable and close on their own
-    const hasBarks = this.container.querySelectorAll('.npc-bark').length > 0;
+    // and only when there are two or more: one text has its own X
+    const hasBarks = this.container.querySelectorAll('.npc-bark').length > 1;
     this.clearAllButton.style.display = hasBarks ? 'block' : 'none';
   }
 
@@ -680,6 +682,18 @@ export default class NPCBarkSystem {
       const drop = barksToTrim(barks.map(el => ({ height: el.offsetHeight })), available);
       barks.slice(0, drop).forEach(el => this._removeBark(el));
     });
+  }
+
+  /** An NPC's definition in the loaded scenario (any room, or the scenario's own npcs list), or null. */
+  static scenarioNpc(npcId, scenario = (typeof window !== 'undefined' ? window.gameScenario : null)) {
+    if (!npcId || !scenario) return null;
+    const lists = [scenario.npcs, ...Object.values(scenario.rooms || {}).map(r => r && r.npcs)];
+    for (const list of lists) {
+      if (!Array.isArray(list)) continue;
+      const hit = list.find(n => n && n.id === npcId);
+      if (hit) return hit;
+    }
+    return null;
   }
 
   /** Compass point from the player to a speaker's sprite (hud-lanes.js arrowDirection), or null. */

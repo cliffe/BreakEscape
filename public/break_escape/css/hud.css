@@ -388,6 +388,11 @@ html .game-display-dialog {
     opacity: 1;
 }
 
+/* The message lane is full: the caption steps aside while a speech line shows (ui/hud-lanes.js) */
+#hud-info-label.hud-lane-yield {
+    display: none;
+}
+
 /* Phones held upright: Punch and Block sit in a row above the inventory strip (bottom
    116px, 68px buttons with an 11px ring), so the HUD caption moves up above that row
    instead of being cut by it (UX slice 16 R2 m6). Both are zoomed by --hud-zoom. */

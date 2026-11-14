@@ -424,7 +424,9 @@
 @media (max-width: 899.98px), (max-height: 500px) {
   .objectives-panel.collapsed {
     width: auto;
-    max-width: min(420px, calc(100vw / var(--hud-zoom, 1) - 200px));
+    /* stops 8px short of the menu buttons at the top right (14px + 132px) */
+    box-sizing: border-box;
+    max-width: min(420px, calc(100vw / var(--hud-zoom, 1) - 190px));
     min-width: 0;
   }
   .objectives-panel.collapsed .objectives-title-text {

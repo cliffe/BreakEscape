@@ -21,7 +21,10 @@
 export const LANE_GAP = 8;          // px between a lane and its neighbours, and between members
 export const SIDE_GUTTER = 16;      // px either side of a lane on a phone
 export const DESKTOP_RIGHT = 20;    // px from the right edge to the notify lane on a wide screen
-// Shares of the free height between the top bar and the dock. The rest stays world view.
+// The free height between the top bar and the dock: the two lanes together may use at most this
+// share of it, so the rest always stays world view. Space no message needs is split in the
+// ratio of the shares below; when the messages need more than the budget, it is split by need.
+export const LANE_BUDGET = { compact: 0.75, wide: 0.8 };
 export const NOTIFY_SHARE = { compact: 0.4, wide: 0.5 };
 export const MESSAGE_SHARE = { compact: 0.3, wide: 0.3 };
 
@@ -58,14 +61,26 @@ export function barkSource({ npcType = null, channel = null, hasClickHandler = f
  * @returns {{ notify: {top,left,width,maxHeight}, message: {bottom,left,width,maxHeight}, world: {top,bottom} }}
  */
 export function computeLanes({ vw, vh, compact, topBarBottom = 0, dockTop = null, leftPanelRight = 0,
-  notifyWidth = 600, messageWidth = 720, notifyTopMin = 0 } = {}) {
+  notifyWidth = 600, messageWidth = 720, notifyTopMin = 0, notifyContent = 0, messageContent = 0 } = {}) {
   const dock = Number.isFinite(dockTop) ? Math.min(dockTop, vh) : vh;
   const notifyTop = Math.round(Math.max(topBarBottom, notifyTopMin) + LANE_GAP);
   const messageBottomY = Math.round(dock - LANE_GAP);            // the lane's lower edge, as a y
   const free = Math.max(0, messageBottomY - notifyTop);
   const share = compact ? 'compact' : 'wide';
-  const notifyMax = Math.floor(free * NOTIFY_SHARE[share]);
-  const messageMax = Math.floor(free * MESSAGE_SHARE[share]);
+  const budget = Math.floor(free * LANE_BUDGET[share]);
+  const needN = Math.max(0, notifyContent || 0);
+  const needM = Math.max(0, messageContent || 0);
+  let notifyMax;
+  let messageMax;
+  if (needN + needM <= budget) {
+    const spare = budget - needN - needM;
+    const k = NOTIFY_SHARE[share] / (NOTIFY_SHARE[share] + MESSAGE_SHARE[share]);
+    notifyMax = Math.floor(needN + spare * k);
+    messageMax = budget - notifyMax;
+  } else {
+    notifyMax = Math.floor(budget * needN / (needN + needM));
+    messageMax = budget - notifyMax;
+  }
 
   let nLeft;
   let nWidth;
@@ -180,7 +195,33 @@ function heightOf(el) {
 /** Place the lane members for one measurement. Exposed for tests and the proof scripts. */
 export function applyLanes(doc = document, win = window) {
   const m = measureHud(doc, win);
-  const lanes = computeLanes(m);
+  const toastsEl = doc.getElementById('notification-container');
+  const phoneEl = doc.getElementById('npc-bark-container');
+  const captionEl = doc.getElementById('hud-info-label');
+  const speechEl = doc.getElementById('npc-speech-container');
+  const contentOf = (el) => (el ? el.scrollHeight * zoomOf(el) : 0);
+  const capOf = (el) => (el && el.classList.contains('visible') ? heightOf(el) : 0);
+  const sum = (hs) => hs.filter(h => h > 0).reduce((a, h) => a + h + LANE_GAP, 0);
+  // A caption already stepped aside counts at the height it had when it last showed. The class
+  // is only written when it changes, so placing the lanes never sets off another placing.
+  const yielded = !!captionEl?.classList.contains('hud-lane-yield');
+  const visibleCap = !!captionEl?.classList.contains('visible');
+  if (captionEl && visibleCap && !yielded) captionEl._laneH = capOf(captionEl);
+  const capH = visibleCap ? (yielded ? (captionEl._laneH || 0) : capOf(captionEl)) : 0;
+  m.notifyContent = sum([contentOf(toastsEl), contentOf(phoneEl)]);
+  const speechH = contentOf(speechEl);
+  m.messageContent = sum([capH, speechH]);
+  let lanes = computeLanes(m);
+  // One at a time in the message lane when space is short (H1 option A): speech is voiced and
+  // goes when its time is up, so the caption steps aside for it and comes back after
+  const free = Math.max(0, (m.vh - lanes.message.bottom) - lanes.notify.top);
+  const budget = Math.floor(free * LANE_BUDGET[m.compact ? 'compact' : 'wide']);
+  const yieldNow = !!captionEl && speechH > 0 && capH > 0 && m.notifyContent + m.messageContent > budget;
+  if (captionEl && yieldNow !== yielded) captionEl.classList.toggle('hud-lane-yield', yieldNow);
+  if (yieldNow) {
+    m.messageContent = sum([speechH]);
+    lanes = computeLanes(m);
+  }
   const body = doc.body;
   if (body) {
     body.classList.toggle('hud-compact', m.compact);
@@ -212,7 +253,7 @@ export function applyLanes(doc = document, win = window) {
   const caption = doc.getElementById('hud-info-label');
   const speech = doc.getElementById('npc-speech-container');
   const g = lanes.message;
-  const capShown = caption && caption.classList.contains('visible') ? heightOf(caption) : 0;
+  const capShown = caption && caption.classList.contains('visible') && !caption.classList.contains('hud-lane-yield') ? heightOf(caption) : 0;
   const mStack = stackMembers([capShown, 0], g.maxHeight);
   if (caption) {
     setPx(caption, 'bottom', g.bottom + mStack[0].offset);
