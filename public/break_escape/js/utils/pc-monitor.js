@@ -87,6 +87,19 @@ export const PC_FRAME_EDGE = 2;
 const even = (v) => Math.max(0, Math.floor(v / 2) * 2);
 
 /**
+ * A scenario's own PC wallpaper: the top-level `pcWallpaper` field, a PNG under assets/
+ * (e.g. "assets/mini-games/desktop-wallpaper-m02.png"). Every PC screen in the mission shows
+ * it in place of the shared desktop-wallpaper.png. Anything else (no field, another file
+ * type, "..", a full URL) gives null and the shared wallpaper stays.
+ *   -> "/break_escape/assets/..." or null
+ */
+export function pcWallpaperUrl(scenario) {
+    const p = scenario?.pcWallpaper;
+    if (typeof p !== 'string' || !/^assets\/[A-Za-z0-9_\-/]+\.png$/.test(p) || p.includes('//')) return null;
+    return `/break_escape/${p}`;
+}
+
+/**
  * The notepad entry for a PC's post-it, added from a view of the PC that is not its own
  * desktop (a share window or a file opened from the desktop, R4 m2): the note is stuck on
  * the monitor, so it can be noted from any of the PC's views.
@@ -322,6 +335,8 @@ export function mountPcMonitor(scene, { name = '', postitHtml = '', pcId = null,
     const controls = root.querySelector('.pc-monitor-controls');
     const nameEl = root.querySelector('.pc-monitor-name');
     if (nameEl) nameEl.textContent = String(name || '');
+    const wallpaper = pcWallpaperUrl(view?.gameScenario);
+    if (wallpaper) screen.style.backgroundImage = `url("${wallpaper}")`;
 
     area.parentNode.insertBefore(root, area);
     screen.appendChild(area);
