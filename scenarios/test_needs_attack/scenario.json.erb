@@ -1,0 +1,389 @@
+{
+  "scenario_brief": "TEST: Needs under attack (SIMS-1)\n\nA probe, not a mission. Seven office staff run their needs while the player attacks and knocks them out to see what the needs system and the server do under combat. Ava carries abandoned mugs from the office to the kitchen tray; Ben walks to the kitchen cooler for water and keeps a notebook on him; Dee gets up for an office coffee and watches the floor; Eli never moves, sipping from his own mug, and prints a handover page about six seconds after you ask him for it; Fran and Gil take their breaks together at the kitchen kettle and cooler; Cal is hostile the moment you step into the back room. Read the Meeting Note to call Ben home and suspend his needs, the Meeting Over note to resume them, and the Break Time note to send Ben, Dee and Gil on a break at once. Pick Dee's filing cabinet while she can see you and she catches you. Knock someone out mid-errand and watch what drops; reload and check what survives.",
+  "endGoal": "Demo only: attack the staff and watch the needs system and the server cope.",
+  "startRoom": "office",
+  "startPosition": { "x": 5, "y": 5 },
+  "npcNeedsSeed": "test_needs_attack",
+  "npcWindupMs": 700,
+  "showPressingNeeds": true,
+  "needsDebugOverlay": true,
+  "officePresets": true,
+
+  "chatter": {
+    "coffee": ["Go on, after you.", "Strong one today?", "Is there any milk left?", "This machine takes forever.", "Busy morning?", "Who keeps taking the mugs?"],
+    "cooler": ["Lovely and cold, this.", "Did you see the car park email?", "Is it Friday yet?", "Train was late again.", "Any plans for lunch?", "Not bad, you?"]
+  },
+
+  "globalVariables": {
+    "ava_ko": false,
+    "ben_ko": false,
+    "eli_ko": false,
+    "fran_ko": false,
+    "gil_ko": false,
+    "eli_asked": false,
+    "eli_page_shown": false
+  },
+
+  "objectives": [
+    {
+      "aimId": "checks",
+      "title": "Checks under attack",
+      "description": "Nothing to solve. Each task ticks when that behaviour under attack has happened.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "check_ko_drop", "title": "Knock Ava out mid-carry and her folder drops where she fell", "type": "custom", "status": "active" },
+        { "taskId": "check_held_drop", "title": "Knock Ben out and his notebook drops where he fell", "type": "custom", "status": "active" },
+        { "taskId": "check_called_home", "title": "Read the Meeting Note and Ben is walked home with his needs suspended", "type": "custom", "status": "active" },
+        { "taskId": "check_caught_walking", "title": "Pick Dee's cabinet while she can see you and she catches you", "type": "custom", "status": "active" },
+        { "taskId": "check_solo_break", "title": "With Fran down, Gil takes his next break alone", "type": "custom", "status": "active" },
+        { "taskId": "check_eli_page", "title": "Ask Eli for the handover and his page lands on the copier tray", "type": "custom", "status": "active" }
+      ]
+    }
+  ],
+
+  "rooms": {
+    "office": {
+      "type": "room_office",
+      "door_sign": "Office",
+      "connections": { "west": "kitchen", "east": "back_room" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "ava_pc",
+          "owner": "ava",
+          "private": true,
+          "name": "Ava's PC",
+          "takeable": false,
+          "locked": false,
+          "position": { "x": 2, "y": 6 },
+          "observations": "Ava's desk PC.",
+          "workstation": true,
+          "affordance": { "accepts": ["dirty_mugs"] }
+        },
+        {
+          "type": "pc",
+          "id": "ben_pc",
+          "owner": "ben",
+          "private": true,
+          "name": "Ben's PC",
+          "takeable": false,
+          "locked": false,
+          "position": { "x": 4, "y": 6 },
+          "observations": "Ben's desk PC.",
+          "workstation": true,
+          "affordance": {}
+        },
+        {
+          "type": "pc",
+          "id": "dee_pc",
+          "owner": "dee",
+          "private": true,
+          "name": "Dee's PC",
+          "takeable": false,
+          "locked": false,
+          "position": { "x": 7, "y": 6 },
+          "observations": "Dee's desk PC.",
+          "workstation": true,
+          "affordance": {}
+        },
+        {
+          "type": "office-misc-cup",
+          "id": "eli_mug",
+          "name": "Eli's Mug",
+          "position": { "x": 8, "y": 8 },
+          "takeable": false,
+          "private": true,
+          "owner": ["eli"],
+          "observations": "Cold. Eli never gets to the end of it before it goes cold.",
+          "affordance": { "satisfies": "caffeine", "restores": 30, "useSeconds": 4, "capacity": 1, "useSound": "drink_gulp", "seat": "stand", "useFrom": { "dx": 0, "dy": 1 } }
+        },
+        {
+          "type": "coffee_station1",
+          "id": "office_coffee",
+          "name": "Office Coffee Station",
+          "position": { "x": 6, "y": 8 },
+          "takeable": false,
+          "observations": "The office coffee station. One at a time; anyone else waits in line.",
+          "affordance": { "useFrom": { "dx": -1, "dy": 0 }, "queue": { "cells": [{ "dx": -1, "dy": 0 }, { "dx": -2, "dy": 0 }] }, "chatter": "coffee" }
+        },
+        {
+          "type": "photocopier1",
+          "id": "office_copier",
+          "name": "Photocopier",
+          "position": { "x": 4.4, "y": 1.5 },
+          "takeable": false,
+          "observations": "The office photocopier. Eli's handover prints here."
+        },
+        {
+          "type": "notes1",
+          "id": "eli_page",
+          "name": "Printout",
+          "position": { "x": 4.65, "y": 2.4 },
+          "takeable": true,
+          "readable": true,
+          "addToNotes": false,
+          "text": "PRINTOUT\n\nEli's handover notes. Page 1 of 1. Who covers what while he's on leave.",
+          "observations": "A printout on the copier tray.",
+          "outputOf": "office_copier",
+          "revealOnGlobal": "eli_page_shown"
+        },
+        {
+          "type": "filing_cabinet",
+          "id": "dee_drawer",
+          "name": "Filing Cabinet",
+          "position": { "x": 1, "y": 7 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "key",
+          "keyPins": [30, 45, 35, 50],
+          "difficulty": "easy",
+          "observations": "A locked filing cabinet by the office wall. Dee keeps her own files in it."
+        },
+        {
+          "type": "dirty_mugs1",
+          "id": "office_mugs",
+          "name": "Abandoned Mugs",
+          "position": { "x": 5, "y": 7 },
+          "takeable": true,
+          "needsTag": "dirty_mugs",
+          "observations": "Someone's left their mugs on the floor again."
+        },
+        {
+          "type": "notes1",
+          "id": "meeting_note",
+          "name": "Meeting Note",
+          "position": { "x": 2, "y": 1 },
+          "takeable": false,
+          "readable": true,
+          "addToNotes": false,
+          "observations": "A note on the office wall.",
+          "text": "MEETING NOTE\n\nBen is wanted back at his desk now. Please send him straight home."
+        },
+        {
+          "type": "notes1",
+          "id": "meeting_over",
+          "name": "Meeting Over",
+          "position": { "x": 8, "y": 1 },
+          "takeable": false,
+          "readable": true,
+          "addToNotes": false,
+          "observations": "A note on the office wall.",
+          "text": "MEETING OVER\n\nThat's the meeting done. Everyone can get back to normal."
+        },
+        {
+          "type": "notes1",
+          "id": "break_time",
+          "name": "Break Time",
+          "position": { "x": 6, "y": 1 },
+          "takeable": false,
+          "readable": true,
+          "addToNotes": false,
+          "observations": "A note on the office wall.",
+          "text": "BREAK TIME\n\nTake five. Ben, Dee and Gil, go and get a drink."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "ava",
+          "displayName": "Ava Okafor",
+          "npcType": "person",
+          "position": { "x": 2, "y": 7 },
+          "spriteSheet": "junior_analyst",
+          "storyPath": "scenarios/test_needs_attack/ink/ava.json",
+          "currentKnot": "start",
+          "voice": { "name": "Aoede", "style": "Junior analyst, late twenties, British Nigerian, London accent. Brisk and tidy.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "needsHome": "ava_pc",
+          "needsSpeed": 90,
+          "interests": { "dirty_mugs": { "weight": 3, "noticeRooms": ["office", "kitchen"] } },
+          "itemsHeld": [{ "id": "ava_folder", "type": "notes1", "name": "Ava's Folder", "takeable": true, "observations": "A month-end folder Ava was carrying." }],
+          "globalVarOnKO": "ava_ko",
+          "taskOnKO": "check_ko_drop"
+        },
+        {
+          "id": "ben",
+          "displayName": "Ben Harwell",
+          "npcType": "person",
+          "position": { "x": 4, "y": 7 },
+          "spriteSheet": "offduty_agent",
+          "storyPath": "scenarios/test_needs_attack/ink/ben.json",
+          "currentKnot": "start",
+          "voice": { "name": "Charon", "style": "Office worker, thirties, white British, Midlands accent. Easy-going.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "needsHome": "ben_pc",
+          "needsSpeed": 85,
+          "needs": { "thirst": { "decayPerMin": 20, "urgentAt": 40, "initial": 60 } },
+          "itemsHeld": [{ "id": "ben_notebook", "type": "notes1", "name": "Ben's Notebook", "takeable": true, "observations": "Ben's notebook. Numbers, mostly." }],
+          "globalVarOnKO": "ben_ko",
+          "taskOnKO": "check_held_drop",
+          "eventMappings": [
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Meeting Note'", "cooldown": 30000, "patrolOverride": { "targetTile": { "x": 4, "y": 7 } }, "needs": "suspend", "completeTask": "check_called_home" },
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Meeting Over'", "cooldown": 30000, "needs": "resume" },
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Break Time'", "cooldown": 30000, "needs": { "set": { "thirst": 10 } } }
+          ]
+        },
+        {
+          "id": "dee",
+          "displayName": "Dee Sullivan",
+          "npcType": "person",
+          "position": { "x": 7, "y": 7 },
+          "spriteSheet": "security_guard",
+          "storyPath": "scenarios/test_needs_attack/ink/dee.json",
+          "currentKnot": "start",
+          "voice": { "name": "Kore", "style": "Floor supervisor, forties, white British, Essex accent. Watchful, dry.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "needsHome": "dee_pc",
+          "needsRooms": ["office"],
+          "needsSpeed": 85,
+          "swivel": false,
+          "needs": { "caffeine": { "decayPerMin": 20, "urgentAt": 40, "initial": 60 } },
+          "los": { "enabled": true, "range": 400, "angle": 360, "visualize": false, "occlusion": false },
+          "eventMappings": [
+            { "eventPattern": "lockpick_used_in_view", "condition": "data.lockable.scenarioData.id === 'dee_drawer'", "targetKnot": "on_drawer_picked", "conversationMode": "person-chat", "background": "assets/backgrounds/hq1.png", "onceOnly": true, "cooldown": 0, "completeTask": "check_caught_walking" },
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Break Time'", "cooldown": 30000, "needs": { "set": { "caffeine": 10 } } }
+          ]
+        },
+        {
+          "id": "eli",
+          "displayName": "Eli Thornton",
+          "npcType": "person",
+          "position": { "x": 8, "y": 7 },
+          "spriteSheet": "male_security_guard_v2",
+          "storyPath": "scenarios/test_needs_attack/ink/eli.json",
+          "currentKnot": "start",
+          "voice": { "name": "Orus", "style": "Records clerk, fifties, white British, Lancashire accent. Settled, unhurried.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "needsHome": "eli_mug",
+          "needsRooms": ["office"],
+          "needsSpeed": 80,
+          "swivel": false,
+          "needs": { "caffeine": { "decayPerMin": 6, "urgentAt": 45, "initial": 60 } },
+          "globalVarOnKO": "eli_ko",
+          "eventMappings": [
+            { "eventPattern": "conversation_closed:eli", "condition": "globalVars.eli_asked === true && globalVars.eli_ko !== true", "onceOnly": true, "delayMs": 6000, "needs": { "print": { "producer": "office_copier", "forget": true } } },
+            { "eventPattern": "object_revealed:*", "condition": "data.objectId === 'eli_page'", "onceOnly": true, "cooldown": 0, "completeTask": "check_eli_page" }
+          ]
+        }
+      ]
+    },
+
+    "kitchen": {
+      "type": "room_break",
+      "door_sign": "Kitchen",
+      "connections": { "east": "office" },
+      "objects": [
+        {
+          "type": "water_cooler1",
+          "id": "water_cooler",
+          "name": "Water Cooler",
+          "position": { "x": 1, "y": 7 },
+          "takeable": false,
+          "observations": "A water cooler. Room for two to stand and chat."
+        },
+        {
+          "type": "mugs_tray1",
+          "id": "washing_up_tray",
+          "name": "Washing-up Tray",
+          "position": { "x": 3, "y": 3 },
+          "takeable": false,
+          "observations": "A tray for dirty mugs. Somebody will wash them. Eventually.",
+          "affordance": { "accepts": ["dirty_mugs"], "useSeconds": 5 }
+        },
+        {
+          "type": "coffee_station1",
+          "id": "kitchen_kettle",
+          "name": "Kitchen Kettle",
+          "position": { "x": 3, "y": 8 },
+          "takeable": false,
+          "observations": "The kitchen kettle. Room for two to stand and chat.",
+          "affordance": { "satisfies": "caffeine", "restores": 40, "useSeconds": 25, "capacity": 2, "chatter": "coffee", "useFrom": { "dx": 0, "dy": -1 }, "queue": false }
+        }
+      ],
+      "npcs": [
+        {
+          "id": "fran",
+          "displayName": "Fran Delacroix",
+          "npcType": "person",
+          "position": { "x": 6, "y": 6 },
+          "spriteSheet": "female_telecom_v2",
+          "storyPath": "scenarios/test_needs_attack/ink/fran.json",
+          "currentKnot": "start",
+          "voice": { "name": "Leda", "style": "Support engineer, thirties, French-born, years in the UK. Warm.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "needsHome": { "room": "kitchen", "x": 6, "y": 6 },
+          "needsRooms": ["kitchen"],
+          "needsSpeed": 85,
+          "needs": {
+            "caffeine": { "decayPerMin": 8, "urgentAt": 40, "initial": 80 },
+            "thirst": { "decayPerMin": 8, "urgentAt": 40, "initial": 80 }
+          },
+          "globalVarOnKO": "fran_ko",
+          "eventMappings": [
+            { "eventPattern": "npc_use_started:water_cooler", "condition": "data.npcId === 'gil'", "cooldown": 0, "needs": { "set": { "thirst": 20 } } }
+          ]
+        },
+        {
+          "id": "gil",
+          "displayName": "Gil Ashworth",
+          "npcType": "person",
+          "position": { "x": 7, "y": 6 },
+          "spriteSheet": "female_hacker_hood_down_v2",
+          "storyPath": "scenarios/test_needs_attack/ink/gil.json",
+          "currentKnot": "start",
+          "voice": { "name": "Puck", "style": "Support engineer, late twenties, white British, Geordie accent. Dry and loyal.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "needsHome": { "room": "kitchen", "x": 7, "y": 6 },
+          "needsRooms": ["kitchen"],
+          "needsSpeed": 85,
+          "needs": {
+            "caffeine": { "decayPerMin": 8, "urgentAt": 40, "initial": 80 },
+            "thirst": { "decayPerMin": 8, "urgentAt": 40, "initial": 80 }
+          },
+          "globalVarOnKO": "gil_ko",
+          "eventMappings": [
+            { "eventPattern": "npc_use_started:kitchen_kettle", "condition": "data.npcId === 'fran'", "cooldown": 0, "needs": { "set": { "caffeine": 20 } } },
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Break Time'", "cooldown": 30000, "needs": { "set": { "caffeine": 10 } } },
+            { "eventPattern": "npc_left_post:gil", "condition": "globalVars.fran_ko === true", "onceOnly": true, "cooldown": 0, "completeTask": "check_solo_break" }
+          ]
+        }
+      ]
+    },
+
+    "back_room": {
+      "type": "room_meeting",
+      "door_sign": "Back Room",
+      "connections": { "west": "office" },
+      "objects": [
+        {
+          "type": "office-misc-cup",
+          "id": "cal_mug",
+          "name": "Cal's Mug",
+          "position": { "x": 5, "y": 7 },
+          "takeable": false,
+          "private": true,
+          "owner": ["cal"],
+          "observations": "A mug on the back-room table. Cal's.",
+          "affordance": { "satisfies": "caffeine", "restores": 30, "useSeconds": 4, "capacity": 1, "useSound": "drink_gulp", "seat": "stand", "useFrom": { "dx": 0, "dy": 1 } }
+        }
+      ],
+      "npcs": [
+        {
+          "id": "cal",
+          "displayName": "Cal Mercer",
+          "npcType": "person",
+          "position": { "x": 5, "y": 6 },
+          "spriteSheet": "hashchain_guard",
+          "storyPath": "scenarios/test_needs_attack/ink/cal.json",
+          "currentKnot": "start",
+          "voice": { "name": "Charon", "style": "Back-room guard, forties, white British, London accent. Cold and flat.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96, "hostile": { "startHostile": true } },
+          "needsHome": "cal_mug",
+          "needsRooms": ["back_room"],
+          "needsSpeed": 85,
+          "needs": { "caffeine": { "decayPerMin": 20, "urgentAt": 40, "initial": 50 } }
+        }
+      ]
+    }
+  }
+}

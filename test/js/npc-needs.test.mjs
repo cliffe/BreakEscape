@@ -1252,3 +1252,64 @@ test('noticeRadius default keeps a room-wide notice: an item 20 tiles off in the
     assert.ok(noticeRun(undefined, { x: 120 + 20 * TILE, y: 100 }));
     assert.ok(!noticeRun(undefined, { x: 120 + 25 * TILE, y: 100 }), '25 tiles: beyond the default');
 });
+
+// ── SIMS-1 (OFFICE_LIFE_SIMS_BUILD_PLAN 5.1): needs NPCs under attack ─────────
+// isAvailable (npc-needs.js) treats a hostile, knocked-out or hidden NPC as not
+// present: it never starts a job, and a coupled partner of one does not wait for
+// it. The live engine path (combat, KO drop, reload) is proved by
+// scenarios/test_needs_attack and tools/playtest/needs-attack-probe.mjs.
+
+test('an NPC hostile from the first tick never starts a job and logs blocked once', () => {
+    const cfg = office();
+    cfg.npcs.clerk.rec.needs.caffeine.jitterPct = 0;
+    const w = makeWorld(cfg);
+    w.world.npcStatus = id => (id === 'clerk' ? { hostile: true } : {});
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    sys.step(20 * 60000);
+    const mine = sys.getLog().filter(e => e.npc === 'clerk');
+    assert.equal(mine.filter(e => e.ev === 'blocked').length, 1, 'blocked logged exactly once');
+    assert.equal(mine.some(e => e.ev === 'job_start'), false, 'never starts a job');
+    assert.equal(w.calls.moves.filter(m => m.id === 'clerk').length, 0, 'never moved');
+    assert.equal(w.calls.emits.some(e => e.name === 'npc_left_post:clerk'), false, 'never left its post');
+});
+
+function coupledPairCfg() {
+    // Two staff who share a capacity-2 kettle. Fran is the one knocked out.
+    return {
+        npcs: {
+            fran: { pos: { x: 100, y: 100 }, rec: {
+                id: 'fran', needsHome: { room: 'office', x: 3, y: 3 },
+                needs: { caffeine: { decayPerMin: 8, urgentAt: 40, initial: 50, jitterPct: 0 } }
+            } },
+            gil: { pos: { x: 160, y: 100 }, rec: {
+                id: 'gil', needsHome: { room: 'office', x: 5, y: 3 },
+                needs: { caffeine: { decayPerMin: 8, urgentAt: 40, initial: 50, jitterPct: 0 } }
+            } }
+        },
+        objects: [
+            { id: 'kettle', x: 300, y: 300, affordance: { satisfies: 'caffeine', restores: 40, useSeconds: 25, capacity: 2, chatter: 'coffee' } }
+        ]
+    };
+}
+
+test('a coupled partner of a knocked-out NPC takes its break alone', () => {
+    const cfg = coupledPairCfg();
+    const w = makeWorld(cfg);
+    w.world.npcStatus = id => (id === 'fran' ? { ko: true } : {});
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    sys.step(20 * 60000);
+    const log = sys.getLog();
+    // Fran is down: blocked once, never starts a job, never moves.
+    const franLog = log.filter(e => e.npc === 'fran');
+    assert.equal(franLog.filter(e => e.ev === 'blocked').length, 1, 'fran blocked once');
+    assert.equal(franLog.some(e => e.ev === 'job_start'), false, 'fran never starts a job');
+    assert.equal(w.calls.moves.filter(m => m.id === 'fran').length, 0, 'fran never moved');
+    // Gil breaks alone: leaves its post and uses the kettle, with no partner to pair.
+    assert.ok(w.calls.emits.some(e => e.name === 'npc_left_post:gil'), 'gil left its post');
+    assert.ok(log.some(e => e.npc === 'gil' && e.ev === 'used'), 'gil used the kettle');
+    assert.equal(log.some(e => e.ev === 'exchange_started'), false, 'no pairing with the downed partner');
+});
