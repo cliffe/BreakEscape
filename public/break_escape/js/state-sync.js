@@ -283,9 +283,9 @@ export class StateSync {
     // Bytes of this page's flush keepalives still in flight, so two flushes stay under
     // the browser's shared keepalive quota together.
     this._keepaliveInflight = 0;
-    // The flushes still in flight: { clientTs, prevTs (the last clientTs sent before it),
-    // sentAck (what its body carried), sentAt }. A flush behind one that cannot carry the
-    // whole delta sends only what changed since (_changesSinceInFlight).
+    // The flushes still in flight: { clientTs, sentAck (what its body carried), sentAt }.
+    // A flush behind one that cannot carry the whole delta sends only what changed since
+    // (_changesSinceInFlight).
     this._flushesInFlight = new Set();
     // clientTs of the newest request whose answer was confirmed: an older request's
     // answer that lands later confirms nothing (its ack would overwrite a newer one).
@@ -848,7 +848,6 @@ export class StateSync {
         console.log('State flush: the hidden-page flush already sent this delta');
         return;
       }
-      let prevTs = this.lastClientTs;
       let clientTs = this.nextClientTs();
       // The browser's keepalive quota is shared by every keepalive in flight, so this
       // body gets what the flushes still uploading leave.
@@ -874,7 +873,7 @@ export class StateSync {
             console.log('State flush: nothing new since the flush in flight, or no clientTs below it');
             return;
           }
-          ({ changes, clientTs, prevTs } = since);
+          ({ changes, clientTs } = since);
           sized = this._sizeFlushBody(changes, clientTs, budget);
         }
       }
@@ -886,7 +885,7 @@ export class StateSync {
       // it did not land, so a pagehide that follows still sends the delta.
       if (reason === 'hidden') this._hiddenFlushKey = key;
       const size = bodyBytes(body);
-      const flight = { clientTs, prevTs, sentAck: sentAckOf(changes.ack, sent), sentAt: Date.now() };
+      const flight = { clientTs, sentAck: sentAckOf(changes.ack, sent), sentAt: Date.now() };
       this._keepaliveInflight += size;
       this._flushesInFlight.add(flight);
       let request;
@@ -965,7 +964,7 @@ export class StateSync {
    * it, an older flush landing second would look wholly stale and its unique sections
    * would be dropped. Null when nothing has changed since (a genuinely empty
    * difference), in which case no stamp is drawn.
-   * @returns {{ changes: Object, clientTs: number, prevTs: number }|null}
+   * @returns {{ changes: Object, clientTs: number }|null}
    */
   _changesSinceInFlight() {
     const flights = [...this._flushesInFlight].sort((a, b) => a.clientTs - b.clientTs);
@@ -977,9 +976,8 @@ export class StateSync {
     }
     const changes = this.buildChanges({ base, clockConfirmedAt });
     if (!changes) return null;
-    const prevTs = this.lastClientTs;
     const clientTs = this.nextClientTs();
-    return { changes, clientTs, prevTs };
+    return { changes, clientTs };
   }
 
   /** A hidden flush that did not land (non-2xx, network error, rejected) no longer blocks the pagehide. */
