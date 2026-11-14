@@ -37,7 +37,7 @@ Rules that bind every mission pass:
 
 ## 2. What the engine offers today
 
-Everything below is built and merged. The field names are today's names; section 8 covers the coming renames. The author references are:
+Everything below is built and merged. Field names are format 3 names (section 8). The author references are:
 
 - `docs/achitechture/NPC_NEEDS_SYSTEM.md`, sections 3 and 5;
 - the slice sections of `docs/achitechture/OFFICE_LIFE_PLAN.md`, and its section 12.11, written for this skill;
@@ -48,14 +48,14 @@ Everything below is built and merged. The field names are today's names; section
 |---|---|---|
 | Needs and posts | `needs.<name>{decayPerMin, urgentAt, initial, weight, maxUnmetMin, jitterPct, deferrable}`, `needsHome`, `needsSpeed`, `interests`, `onUse` | test_needs_sims |
 | Presets | scenario `officePresets: true`; `office-presets.json` gives a default `affordance` for desk PCs, coffee, kettle, cooler, fridge, microwave, sofa, copier, shredder, filing, post tray, desk phone. A preset matches an exact sprite type (`kettle1`, `water_cooler1`, `photocopier1` and so on); any other type takes one through `officeType` (a hot-water boiler as `kettle`, an undercounter fridge as `fridge`). Takeable objects, objects with a `lockType`, objects with no id and `decor: true` never gain one (`public/break_escape/js/systems/office-presets.js`). | test_needs_sims |
-| Leash and privacy | `needsRooms`, `needsAvoidRooms`, room `needsPrivateTo`, `affordance.private`, `affordance.owners` | test_needs_leash |
+| Leash and privacy | `needsRooms`, `needsAvoidRooms`, room `needsPrivateTo`, object `private` and `owner` | test_needs_leash |
 | Social | `needsCompany{groups, avoids, avoidRadius}`, `maxQueue`, `needsDeferMin` | test_needs_sims, lab_physical_pentest |
 | Talk | NPC and scenario `chatter` pools, `chattiness`, `chatterCooldownMin`, `exchanges[{with, knot, requireGlobal}]`, `answersPhones`, `phoneCalls` | test_needs_sims |
 | Levers | magnet items (`affordance.magnet`, the cake), `offWhen` outages with switch objects, `desk_phone_ring:<id>`, droppable items with `interests` | test_needs_sims, test_access_work |
-| Workstation habits | `screenHabit`, `printHabit`, `usbHabit`, `workstation`, `lockChance`, `autoLockSeconds`, `screenOwner`, `leftBehindBy`, `leftBehindChance`, `outputOf`, `revealOnGlobal` | test_needs_sims, test_access_social |
+| Workstation habits | `habits.screen`, `habits.print`, `habits.usb`, `workstation`, `lockChance`, `autoLockSeconds`, workstation `owner`, left-behind item `owner` with `leftBehindChance`, `outputOf`, `revealOnGlobal` | test_needs_sims, test_access_social |
 | Awareness | `awareness` low, medium or high; `habits.{locksScreen, writesDown, password, passwordPattern, holdsDoors}` | test_access_habits |
 | Work and frustration | top-level `roles`, `resources{kind, access, object, offWhen}`, NPC `workNeeds`, `frustration`, `workarounds` (`writes_down`, `prop_door`, `emit`, `borrow_session`, `share_login`) | test_access_work, lab_physical_pentest (Kieran Doyle's wedged door) |
-| Friendface | `feed{site, person, posts}`, reactive posts, replies, reactions, the `phoneOf` phone item | test_access_social |
+| Friendface | `feed{site, person, posts}`, reactive posts, replies, reactions, the phone item with an `owner` | test_access_social |
 | Physical pentest | `rfid` doors with `access`, `# clone_keycard` in ink, door `gate` (tailgating), `wearable` disguises, keypad shoulder-surf windows, USB drops, network jacks and drop boxes, capture log | lab_physical_pentest, test_gate_tailgate |
 | Atmosphere | `roomTone`, `swivelChance`, `lockCues`, `showPressingNeeds`. Room-tone profiles (`js/data/room-tones.json`: office, reception, it, quiet_office, meeting, kitchen, server) match exact room types; a mission with its own room types (the hospital set, for example) maps them with scenario `roomToneTypes`, and an unmapped type stays quiet. | test_needs_sims |
 
@@ -78,7 +78,7 @@ Limits that shape the design:
 
 Layout: `.claude/skills/mission-office-life/SKILL.md` (frontmatter `name` and `description`, like the other mission skills) with a `references/` folder:
 
-- `references/field-map.md`: today's field names beside their format 2 and format 3 names (section 8), and the rule for which to write.
+- `references/field-map.md`: the format 3 field names beside the retired names they replaced (section 8), so an author reading an older note or showcase comment can map it.
 - `references/patterns.md`: one minimal authoring pattern per feature, each copied from the showcase scenarios with file:line. It covers:
   - a post and leash;
   - a private office;
@@ -116,7 +116,7 @@ Checks:
 - the mission kind, from AGENTS.md "Kinds of game" (campaign missions only; any other kind needs the user's say-so);
 - whether the mission is one students play (m01): if so, the pass records that the m01, sis01 and sis02 gate playtests must run again before any release carries it;
 - whether the mission needs VM flags (m01 to m10 do): every browser run in stages 5 and 6 seeds them, as section 12 describes;
-- the format version, whether steps 8b and 8c have merged (`STEPS` in `lib/break_escape/format_upgrade.rb`), and whether `tools/format/rewrite_templates.rb` exists for each merged step;
+- the format version (`FormatUpgrade.current`, 3 when this plan was written); if a later step has landed, its renames are added to `field-map.md` before stage 2;
 - the cached clip count in `tts_cache/<mission>/`;
 - a clean validator run.
 
@@ -316,14 +316,14 @@ A fixture test keeps the lists honest, and it is the source of truth: it is run 
 
 All ten are built before the pilot's stage 4. Each gets fixture tests under `test/` and a line in `README_scenario_design.md`.
 
-**Scope of V2, V4 and V5.** These protect campaign beats, so they run only for the ten campaign missions, named in one constant in `validate_office_life.rb`. The validator takes a `--campaign` flag that adds the scenario being checked to that set for one run. `validate_scenario.rb` parses its options in `main`, so the flag exists only when the script is spawned: V5's positive fixtures (for example, a synthetic scenario whose required task is keyed on `npc_used:x` must give an error) spawn the validator with `--campaign`, the lab and test-scenario fixtures spawn it without, and `run_validation` passes the extra campaign id through `options` to the office-life entry point. Tests that `require` the validator and call its internals never see the flag and are not used for V5. The constant lists m01 to m10. AGENTS.md "Kinds of game" names the campaign as m01 to m08; the first pass asks the integrator to bring that line into step with the constant (m09 and m10 are the campaign's finales). Elsewhere the opposite pattern is intended: `lab_physical_pentest` completes its required `usb_foothold` task from `npc_used:usb_target_pc`, `test_needs_sims` completes `see_coffee` and `see_meal` from `npc_used:*`, and `validate_access_work.rb` tells lab authors to gate on the `npc_workaround` event rather than its global. Two node tests (`npc-needs-slots.test.mjs`, `npc-left-behind.test.mjs`) already require `test_needs_sims` to validate with 0 errors. Fixture tests assert that:
+**Scope of V2, V4 and V5.** These protect campaign beats, so they run only for the ten campaign missions, named in one constant in `validate_office_life.rb`. The validator takes a `--campaign` flag that adds the scenario being checked to that set for one run. `validate_scenario.rb` parses its options in `main`, so the flag exists only when the script is spawned: V5's positive fixtures (for example, a synthetic scenario whose required task is keyed on `npc_used:x` must give an error) spawn the validator with `--campaign`, the lab and test-scenario fixtures spawn it without, and `run_validation` passes the extra campaign id through `options` to the office-life entry point. Tests that `require` the validator and call its internals never see the flag and are not used for V5. The constant lists m01 to m10. AGENTS.md "Kinds of game" still names the campaign as m01 to m08; that wording is stale and the integrator has confirmed the constant's m01 to m10 (m09 and m10 get analysis only). Elsewhere the opposite pattern is intended: `lab_physical_pentest` completes its required `usb_foothold` task from `npc_used:usb_target_pc`, `test_needs_sims` completes `see_coffee` and `see_meal` from `npc_used:*`, and `validate_access_work.rb` tells lab authors to gate on the `npc_workaround` event rather than its global. Two node tests (`npc-needs-slots.test.mjs`, `npc-left-behind.test.mjs`) already require `test_needs_sims` to validate with 0 errors. Fixture tests assert that:
 
 - V5 reports 0 errors on m01 to m10 as they stand, so its event list cannot catch existing combat and KO mappings;
 - V2, V4 and V5 report nothing on `lab_physical_pentest`, `lab_social_engineering`, `test_needs_sims`, `test_access_work` and `test_access_social`.
 
 V1, V7, V8 and V10 are reports or warnings and run for every scenario.
 
-Format steps 8b and 8c rewrite the owner and habit readers in `validate_npc_needs.rb`, `validate_access_work.rb` and `validate_scenario.rb`. To stay out of that work, V1, V2, V4, V5, V7, V8 and V10 live in a new file, `scripts/validate_office_life.rb`, called from `validate_scenario.rb` with one line. It reads renamable keys only through a small name table keyed on `FormatUpgrade.current`, which gains its format 2 and format 3 rows when 8b and 8c land. V3 is a one-line rule in the same file. V6 and V9 touch no renamed key.
+To keep office-life checks apart from the readers in `validate_npc_needs.rb`, `validate_access_work.rb` and `validate_scenario.rb`, V1, V2, V4, V5, V7, V8 and V10 live in a new file, `scripts/validate_office_life.rb`, called from `validate_scenario.rb` with one line. It reads owner and habit keys by their format 3 names only (the retired-key check already rejects old names); a later format step that renames one of them edits this file in the same commit, as steps 8b and 8c did for the other validators. V3 is a one-line rule in the same file. V6 and V9 touch no renamed key.
 
 ## 5. Per-mission fit
 
@@ -415,7 +415,7 @@ Stage 1's rule puts him in the class "fixed by the text". Two ways to give him a
 
 **(b) A small routine inside IT, with the conflicting lines rewritten.**
 
-- Gary keeps a tile post where he stands and `needsRooms: ["it_department"]`, with `caffeine` at the IT kettle (kettle preset, `startSound: kettle_boil`) and `print` at the copier (a hand-written `affordance.satisfies: "print"` on the copier, Gary's `onUse: { "it_photocopier": { "revealOutput": "it_photocopier" } }`, `printHabit: { forgetChance: 1 }`, since a tile post has no desk to carry a print back to). `swivel: false`. Both need hand-written `useFrom` cells: the kettle sits on the workbench (about 7.06, 3.94; the bench runs to about y 4.75), so the preset's cell below it is inside the bench, and the copier stands against the south wall (about 6.31, 7.88), so its preset cell is behind it.
+- Gary keeps a tile post where he stands and `needsRooms: ["it_department"]`, with `caffeine` at the IT kettle (kettle preset, `startSound: kettle_boil`) and `print` at the copier (a hand-written `affordance.satisfies: "print"` on the copier, Gary's `onUse: { "it_photocopier": { "revealOutput": "it_photocopier" } }`, `habits.print: { forgetChance: 1 }`, since a tile post has no desk to carry a print back to). `swivel: false`. Both need hand-written `useFrom` cells: the kettle sits on the workbench (about 7.06, 3.94; the bench runs to about y 4.75), so the preset's cell below it is inside the bench, and the copier stands against the south wall (about 6.31, 7.88), so its preset cell is behind it.
 - Lines changed:
   1. `scenario.json.erb:2035` observation (text only, no clip): "Gary Whitlock has not moved from that chair since half ten." becomes "Gary Whitlock has not left this room since half ten." The rest of the observation stays.
   2. `ink/m02_npc_gary_whitlock.ink:80` narrator (1 clip re-voiced): "a cold mug with a skin on it" becomes "a mug he keeps forgetting to drink"; the rest of the line stays.
@@ -431,7 +431,7 @@ Stage 1's rule puts him in the class "fixed by the text". Two ways to give him a
 
 | NPC | Class | Post | Leash | Needs (source) | Groups and avoids | Habits | Beats protected by | If attacked mid-walk |
 |---|---|---|---|---|---|---|---|---|
-| Gary Whitlock | story-critical | (a) `gary_mug`; (b) his tile (6.3, 5.8) | `needsRooms: ["it_department"]` | (a) caffeine (`gary_mug`); (b) caffeine (IT kettle), print (copier) | none | (a) command print; (b) `printHabit` | (a) protection 1 in effect; (b) protection 2 | (a) never walks; (b) stays in IT, so a knock-out drops the keycard and lanyard inside his own scenario room, which the server accepts today |
+| Gary Whitlock | story-critical | (a) `gary_mug`; (b) his tile (6.3, 5.8) | `needsRooms: ["it_department"]` | (a) caffeine (`gary_mug`); (b) caffeine (IT kettle), print (copier) | none | (a) command print; (b) `habits.print` | (a) protection 1 in effect; (b) protection 2 | (a) never walks; (b) stays in IT, so a knock-out drops the keycard and lanyard inside his own scenario room, which the server accepts today |
 | Night porter (`night_porter`, new, approval) | ambient | tile on the walkable cell in front of the east table's north chair (`hospital_chair_south`, sprite anchor 6.72, 5.78), facing south, back to the north wall | `needsRooms: ["staff_room"]` | caffeine (boiler), thirst (cooler), hunger (microwave) | group `night_staff` | none | no story duty | holds nothing; `globalVarOnKO: "night_porter_ko"`; E1 confirms the chase, calm-down and walk home |
 | Night domestic (`night_domestic`, new, approval) | ambient | tile on the walkable cell in front of the centre table's south chair (`hospital_chair_north`, sprite anchor 3.41, 6.25), facing north | `needsRooms: ["staff_room"]` | thirst (cooler), caffeine (boiler) | group `night_staff` | none | no story duty | holds nothing; `globalVarOnKO: "night_domestic_ko"` |
 | Bernie, Kim, Reeves, Doyle | as today | unchanged | none | none | none | none | protection 1: stationary | unchanged |
@@ -627,35 +627,25 @@ The worst case at these caps is 64 small keys (workstation 24, frustration 6, wo
 
 ## 8. Field names and the format hardening steps
 
-Scenario-format hardening step 8a (format 1, `offWhen` everywhere) is built. Step 8b is being built in another session (branch `build/hard-8b`, with its build plan re-anchored on 2026-11-13). Step 8c is planned. Both are specified in `docs/achitechture/SCENARIO_FORMAT_HARDENING_PLAN.md`.
+Scenario-format hardening steps 8a, 8b and 8c are on main (`FormatUpgrade::STEPS` holds all three; the current format is 3). They are specified in `docs/achitechture/SCENARIO_FORMAT_HARDENING_PLAN.md`. Every office-life pass writes format 3 names:
 
-| Today (format 1) | After 8b (format 2) | After 8c (format 3) |
-|---|---|---|
-| `screenOwner` on a workstation | `owner` | `owner` |
-| `phoneOwner` on a desk phone | `owner`, plus `deskPhone: true` | same |
-| `affordance.owners` | `owner` (a list on a private object) | same |
-| `affordance.private` | object-level `private` | same |
-| `phoneOf` on an item | `owner` | same |
-| `leftBehindBy` (with optional `leftBehindChance`) | `owner`, with `leftBehindChance` required | same |
-| `needsHome` implies an owner | `needsHome` no longer implies one; write `owner` | same |
-| `screenHabit`, `printHabit`, `usbHabit` | unchanged | `habits.screen`, `habits.print`, `habits.usb` |
+| Retired name | Format 3 name |
+|---|---|
+| `screenOwner` on a workstation | `owner` |
+| `phoneOwner` on a desk phone | `owner`, plus `deskPhone: true` |
+| `affordance.owners` | `owner` (a list on a private object) |
+| `affordance.private` | object-level `private` |
+| `phoneOf` on an item | `owner` |
+| `leftBehindBy` (with optional `leftBehindChance`) | `owner`, with `leftBehindChance` |
+| `screenHabit`, `printHabit`, `usbHabit` | `habits.screen`, `habits.print`, `habits.usb` |
 
-The schema is closed. Each step swaps the old key for the new one in the same commit, so the validator and loader accept only one set of names at any time. The template rewrite tool (`tools/format/rewrite_templates.rb --step <version>`) arrives with 8b and edits template text from the step's own transform. 8b's scope is the templates on main when it is built, so a mission still on its branch is not in it.
+`needsHome` no longer implies an owner, so ownership is always written explicitly: an `owner` on every owned workstation, desk phone and private object.
 
-The rule:
+The schema is closed and the validator's retired-key check reports any old name as an error, so a pass cannot merge format 1 or 2 keys. `tools/format/rewrite_templates.rb` rewrites only pure-JSON templates; every campaign mission is an ERB template, so if a later format step lands while a mission's branch is open, the implementer edits the renamed keys by hand (about 2 to 6 in a pass) and proves the edit the way the step proves its own corpus: the step's `scenario` transform applied to the old render equals the new render. The implementer then re-runs the validator and V9 and logs the diff as mechanical. A key rename changes no spoken text, so it re-keys no audio and needs no new dialogue review. No renamable key is placed inside an ERB loop or tag, so each maps to a single span.
 
-1. Stages 0 to 3 (analyse, design, approvals) do not depend on field names. Plans name fields by meaning (owner, private, screen habit), and `references/field-map.md` gives the exact key.
-2. Stage 4 writes the names of `FormatUpgrade.current` at that moment. If only 8b has merged, ownership uses format 2 names and habits keep today's names.
-3. When the branch rebases over 8b or 8c, the implementer runs `rewrite_templates.rb` for that step on the branch if the tool exists and handles the ERB template. Otherwise the few renamed keys (about 2 to 6 in a pilot) are edited by hand and proved the way the step proves its own corpus: the step's `scenario` transform applied to the old render equals the new render. Either way the implementer re-runs the validator and V9, and logs the diff as mechanical. A key rename changes no spoken text and so re-keys no audio, and it needs no new dialogue review.
-4. No renamable key is placed inside an ERB loop or tag, so the rewrite maps each one to a single span.
-5. The branch also rebases over the other hardening steps that touch the pilot while it is open (step 3's clue markers where they touch the mission, and steps 6a and 6b, which mark NPC fields client-visible or server-only), re-running the validator and V9 each time. Steps 6a and 6b belong to the hardening session; before the pilot's stage 4, the orchestrator asks that session to confirm its 6a-1 client-visible list includes NPC `needs`, `chatter` and `exchanges`, which the client reads.
-6. When 8b and 8c land, `references/patterns.md` and `references/field-map.md` are regenerated from the rewritten showcase scenarios, and the office-life validator's name table gains the new rows.
+The branch also rebases over the other hardening steps that touch the mission while it is open (step 3's clue markers where they touch the mission, and steps 6a and 6b, which mark NPC fields client-visible or server-only), re-running the validator and V9 each time. Before the pilot's stage 4, the orchestrator asks the hardening session to confirm its 6a-1 client-visible list includes NPC `needs`, `chatter` and `exchanges`, which the client reads.
 
-The user chose this route on 2026-11-14: build on today's names and rename on rebase. Holding stage 4 until both steps merge was rejected because 8c has no date.
-
-**m01 is a deployed scenario.** The hardening plan keeps its alias list empty because none of the four deployed scenarios uses a renamable office-life key, and promises a test that fails if one starts to (`SCENARIO_FORMAT_HARDENING_PLAN.md:27`). m01's pass therefore writes post-8b names, or waits for 8b before its stage 4; it never merges format 1 office-life keys into m01. The orchestrator tells the hardening session this now.
-
-Ownership is always written explicitly (an owner on every owned workstation, desk phone and private object), never left to `needsHome`. That keeps the 8b warning "needsHome no longer sets an owner" from firing.
+**m01 is a deployed scenario.** The hardening plan keeps its alias list empty because none of the four deployed scenarios uses a renamable office-life key, and a test fails if one starts to use a retired key (`SCENARIO_FORMAT_HARDENING_PLAN.md:27`). m01's pass writes format 3 names like every other, which that test accepts.
 
 ## 9. Engine gaps
 
@@ -782,8 +772,7 @@ Each round is a fresh read-only reviewer on the planning tier, with findings tag
 3. Run the E1 probe (the showcase's SIMS-1) and take the arrival check (SIMS-2) through the integrator.
 4. Run the pilot's stages 0 to 3 on m02.
 5. Run the pilot's stages 4 to 8.
-6. When 8b and 8c land, regenerate `patterns.md` and `field-map.md` and extend the office-life validator's name table.
-7. Revise the skill from the pilot's log, then continue the rollout (section 6).
+6. Revise the skill from the pilot's log, then continue the rollout (section 6).
 
 ## 14. Decisions taken and what waits on the user
 
@@ -791,7 +780,7 @@ The user's decisions of 2026-11-14, which this plan follows:
 
 1. **Pilot:** m02 ransomed_trust (section 6). m06 is the second mission.
 2. **m01:** in its normal rollout slot (section 6.14), with the m01, sis01 and sis02 gate playtests run again when it lands.
-3. **Format steps 8b and 8c:** build on the names current at the time and rename on rebase (section 8).
+3. **Format steps:** write the names current at stage 4 (format 3 today) and rename by hand on rebase if a later step lands (section 8).
 4. **Voicing:** each mission is voiced after its reviews and playtests, then merged (section 10).
 5. **New rooms and NPCs:** Tier 3 is allowed, and each new room or NPC needs the user's approval on the mission's review page.
 6. **Openings:** optional content only. A bypass of a required lock is not offered.
@@ -804,8 +793,8 @@ Waiting on the user, through m02's stage 3 review page (section 6.13): Gary's op
 
 ## Appendix: handover
 
-State on 2026-11-14 (draft 12): plan only, nothing built. The pilot is m02. Drafts 9 to 11 rebuilt the pilot around two new non-clinical night staff in the Night Handover room, who wait there for radio calls between runs, because every existing m02 NPC is fixed by a beat or by its text and talk needs a pair; Gary is offered to the user as (a) still, printing by command (recommended) or (b) a small routine with two re-voiced narrator lines. V5's lists were regenerated from the names the engine emits, and V10 (untriggerable pools) was added. Later drafts cut the staff-room phone (it would break Bernie's count of internal phones and the anonymous-call intrigue), retuned the breaks to about every four minutes plus breaks started from the room before the player crosses, seated the domestic at the centre table (the east table's side chairs cannot be sat on), moved Gary's print to the close of the conversation that burns the player's cover, and dropped eventMapping barks from campaign passes until V6 covers them. Format step 8a is the only step in `FormatUpgrade::STEPS`, so stage 4 writes format 1 names; the conclude-race fix (pending globals flushed before task-completion and skip POSTs) is noted in section 7.
+State on 2026-11-14 (draft 12): plan only, nothing built. The pilot is m02. Drafts 9 to 11 rebuilt the pilot around two new non-clinical night staff in the Night Handover room, who wait there for radio calls between runs, because every existing m02 NPC is fixed by a beat or by its text and talk needs a pair; Gary is offered to the user as (a) still, printing by command (recommended) or (b) a small routine with two re-voiced narrator lines. V5's lists were regenerated from the names the engine emits, and V10 (untriggerable pools) was added. Later drafts cut the staff-room phone (it would break Bernie's count of internal phones and the anonymous-call intrigue), retuned the breaks to about every four minutes plus breaks started from the room before the player crosses, seated the domestic at the centre table (the east table's side chairs cannot be sat on), moved Gary's print to the close of the conversation that burns the player's cover, and dropped eventMapping barks from campaign passes until V6 covers them. Format steps 8a to 8c are on main, so every pass writes format 3 names (section 8); the conclude-race fix (pending globals flushed before task-completion and skip POSTs) is noted in section 7.
 
-Requests to other sessions: the integrator adds the V6 release stop with the first office-life merge (section 10) and brings AGENTS.md's campaign range into step with V5's constant (section 4); the hardening session confirms its 6a-1 client-visible list covers NPC `needs`, `chatter` and `exchanges` (section 8); the showcase stream takes the alignment points in section 9.
+Requests to other sessions: the integrator adds the V6 release stop with the first office-life merge (section 10) the hardening session confirms its 6a-1 client-visible list covers NPC `needs`, `chatter` and `exchanges` (section 8); the showcase stream takes the alignment points in section 9.
 
 The next step is section 13 in order: write the skill, build the tooling with the V5 lists in section 4, run E1 in the showcase, then m02's stages 0 to 3, whose review page carries the approval items in section 6.13.
