@@ -23,9 +23,11 @@ behaviour the plan names is visibly, reliably shown and proved live.
 ## Servers, games, browser
 
 - Ports **3093, 3094, 3095 only**. Never touch :3000, :3001 or any other server. Your brief names
-  your port. Start a keyless server from this worktree (see `tools/playtest/start-keyless-server.sh`
-  and its port option; run with `env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true`) and stop it
-  when you finish.
+  your port. `tools/playtest/start-keyless-server.sh` is fixed to :3001, so do not use it; from the
+  worktree root run its command with your port:
+  `env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true nohup bundle exec rails server -b 127.0.0.1 -p <port> -P tmp/pids/server-<port>.pid > tmp/keyless-<port>.log 2>&1 &`
+  and wait for `curl http://127.0.0.1:<port>/` to answer. Stop it by its PID file when you finish.
+  Restart it after any server-side (Ruby) change; engine JS is served fresh on reload.
 - test_needs_sims games: `env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true PLAYTEST_PORT=<port> bundle exec rails runner tools/playtest/new-game.rb test_needs_sims`.
 - Scenarios without a Mission row (test_needs_attack, scratch V10 folders):
   `tools/playtest/swap-scenario-game.rb test_needs_sims <folder> [--unlock-all]` (read its header).
