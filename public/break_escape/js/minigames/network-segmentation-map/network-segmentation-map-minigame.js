@@ -25,10 +25,10 @@ import { escapeHtml as escapeTitle } from '../../utils/escape-html.js';
  *   modalConsequences[] — strings for the clinical-consequences bullet list in the confirm modal
  *
  * Optional params:
- *   severLockedHint    — shown beside SEVER while it is locked (why, and how to unlock it)
- *   severReadyHint     — shown once the risk paths have been reviewed
- *   severedHint        — shown beside CONTINUE once the link is severed (UI text, not voiced;
- *                        a neutral default is used when it is not set)
+ *   severLockedHint:   shown beside SEVER while it is locked (why, and how to unlock it)
+ *   severReadyHint:    shown once the risk paths have been reviewed
+ *   severedHint:       shown beside CONTINUE once the link is severed (UI text, not voiced;
+ *                      a neutral default is used when it is not set)
  *
  * Each rule's dashed line, its ! marker and its label all open that rule, and the
  * line brightens on hover; unreviewed lines pulse until the first one is opened

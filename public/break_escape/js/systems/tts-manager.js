@@ -58,10 +58,14 @@ class TTSManager {
      * @param {string} text - Clean dialogue text (no "Speaker: " prefix)
      * @param {Object} [options]
      * @param {string|null} [options.delivery] - the line's #delivery: note (tts-delivery.js), never shown
-     * @returns {Promise<number|null>} Audio duration in ms, or null if unavailable
+     * @returns {Promise<number|null>} Audio duration in ms, or null if unavailable or if a later
+     *   play() took over while this one was loading (it then leaves the audio element alone)
      */
     async play(npcId, text, { delivery = null } = {}) {
-        this.playSeq++;
+        const seq = ++this.playSeq;
+        // A later play() owns the element once it has started: a superseded call must not set
+        // src (that fires 'emptied' on the newer clip) or play its own line over it
+        const superseded = () => seq !== this.playSeq;
         if (!this.enabled || !text || !text.trim()) return null;
 
         // Stop any current playback
@@ -88,7 +92,7 @@ class TTSManager {
             } else {
                 // Fetch from server
                 blob = await ApiClient.getTTS(npcId, text, delivery);
-                if (!blob) return null;
+                if (!blob || superseded()) return null;
                 audioUrl = URL.createObjectURL(blob);
             }
 
@@ -120,6 +124,7 @@ class TTSManager {
                 this.audio.addEventListener('loadedmetadata', onLoaded);
                 this.audio.addEventListener('error', onError);
             });
+            if (superseded()) return null;
 
             this.currentText = text;
             this.playing = true;
@@ -130,10 +135,12 @@ class TTSManager {
             }
 
             await this.audio.play();
+            if (superseded()) return null;
 
             console.log(`[TTS] Playing for ${npcId}: "${text.substring(0, 40)}..." (${duration}ms)`);
             return duration;
         } catch (error) {
+            if (superseded()) return null;   // the newer play's state, not ours
             this.playing = false;
             console.warn('[TTS] Play failed:', error.message);
             return null;

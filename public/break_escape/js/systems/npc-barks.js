@@ -144,7 +144,12 @@ export default class NPCBarkSystem {
       this.ttsManagers.set(npcId, new TTSManager());
     }
     const mgr = this.ttsManagers.get(npcId);
-    const duration = await mgr.play(npcId, text);
+    const playing = mgr.play(npcId, text);
+    const seq = mgr.playSeq;
+    const duration = await playing;
+    // A later play() on this manager took over while this one loaded: its null is not "no voice",
+    // so no beep, and the newer clip's audio is not this bark's
+    if (mgr.playSeq !== seq) return null;
     // A clip whose length reads NaN (no duration in its metadata) is still playing: Infinity
     // means "playing, length unknown", so the hold waits for its ended/pause/error event
     // (capped by the release policy) instead of counting it as silent
