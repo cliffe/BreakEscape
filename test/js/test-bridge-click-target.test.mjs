@@ -34,7 +34,8 @@ writeFileSync(join(sysBridge, 'state.js'),
     `export const scanNearby = () => ${G}.__scan || [];\n` +
     `export const engineInteractDistance = () => 0;\n` +
     'export const sessionOverlayShowing = () => false;\nexport const sessionOverlayButtons = () => [];\n' +
-    ['getState', 'solveStandingPoint', 'plainNearestEntity', 'roomContents', 'doorways']
+    `export const solveStandingPoint = (...a) => { ${G}.__solveArgs = a; return null; };\n` +
+    ['getState', 'plainNearestEntity', 'roomContents', 'doorways']
         .map(n => `export const ${n} = () => null;`).join('\n') + '\n');
 writeFileSync(join(sysBridge, 'input.js'),
     'export const sleepFrames = async () => {};\nexport const sleep = async () => {};\n' +
@@ -164,7 +165,9 @@ test('liveSpriteFor takes the live copy of an object id, not a hidden one listed
 
 test('a handler call from a bridge click is move-triggered-interaction', async () => {
     reset();
-    const pc = obj('trolley_pc', 160, 60, 40, 60);
+    // The PC holds the click point (it is not in window.rooms, so the
+    // click-trigger check does not send the move to the keyboard).
+    const pc = obj('trolley_pc', 80, 60, 40, 60);
     globalThis.__onClick = () => window.handleObjectInteraction(pc);
     const r = await bridge.moveTo(100, 100);
     assert.equal(r.reason, 'move-triggered-interaction', JSON.stringify(r));
@@ -241,4 +244,86 @@ test('interact() hands back a pre-walk interruption instead of clicking into it'
     assert.equal(r.phase, 'pre-walk', JSON.stringify(r));
     assert.equal(r.reason, 'move-interrupted-by-game-event');
     assert.equal(globalThis.__clicks.length, 1, 'only the walk into view clicked');
+});
+
+test('a handler call inside a click\'s window on something the click did not hit is the game\'s', async () => {
+    reset();
+    // Far from the click point (100,100) and out of reach: no tap there gathers it.
+    const reader = obj('biometric_reader', 400, 400, 8, 8);
+    globalThis.__onClick = () => window.handleObjectInteraction(reader);
+    const r = await bridge.moveTo(100, 100);
+    assert.equal(globalThis.__clicks.length, 1, 'the move clicked');
+    assert.equal(r.reason, 'move-interrupted-by-game-event', JSON.stringify(r));
+    assert.equal(r.interrupted.id, 'biometric_reader');
+    assert.equal(r.triggered, undefined);
+});
+
+test('an in-reach object within the tap slop of the click point is the click\'s', async () => {
+    reset({ player: { x: 120, y: 120 } });
+    const mug = obj('mug', 120, 120, 4, 4);   // 28 px from the click, in reach
+    globalThis.__onClick = () => window.handleObjectInteraction(mug);
+    const r = await bridge.moveTo(100, 100);
+    assert.equal(r.reason, 'move-triggered-interaction', JSON.stringify(r));
+    assert.equal(r.triggered.id, 'mug');
+});
+
+test('a click that armed a far-tap use owns only the use of the object it armed', async () => {
+    reset();
+    const pc = obj('trolley_pc', 160, 60, 40, 60);
+    const other = obj('notes', 400, 400, 8, 8);
+    globalThis.__onClick = () => { window.__pendingTapUse = () => ({ obj: pc }); };
+    globalThis.__duringMove = async () => {
+        await new Promise(r => setTimeout(r, 300));
+        window.handleObjectInteraction(other);
+    };
+    const r = await bridge.moveTo(100, 100);
+    assert.equal(r.reason, 'move-interrupted-by-game-event', JSON.stringify(r));
+    assert.equal(r.interrupted.id, 'notes');
+});
+
+test('an unarmed click does not own a handler call more than 250 ms later, even on the clicked spot', async () => {
+    reset();
+    const pc = obj('trolley_pc', 80, 60, 40, 60);
+    globalThis.__duringMove = async () => {
+        await new Promise(r => setTimeout(r, 300));
+        window.handleObjectInteraction(pc);
+    };
+    const r = await bridge.moveTo(100, 100);
+    assert.equal(globalThis.__clicks.length, 1);
+    assert.equal(r.reason, 'move-interrupted-by-game-event', JSON.stringify(r));
+});
+
+test('a door lock with no record is the click\'s only when the click landed on that door', async () => {
+    for (const [cx, expect] of [[100, 'move-triggered-interaction'], [300, 'move-interrupted-by-game-event']]) {
+        reset();
+        const d = door('hall', 'office', cx, 100);
+        globalThis.__onClick = () => {
+            // A door's own zone opens its lock directly, leaving no handler record.
+            window.MinigameFramework = { currentMinigame: { params: { lockable: d } } };
+            globalThis.__mg = { id: 'lockpicking', title: 'Lock' };
+        };
+        const r = await bridge.moveTo(100, 100);
+        assert.equal(r.reason, expect, `door at x=${cx}: ${JSON.stringify(r)}`);
+        if (expect === 'move-triggered-interaction') assert.deepEqual([r.triggered.kind, r.triggered.id], ['door', 'door:hall->office']);
+    }
+});
+
+test('an interruption keeps the move\'s own range or contest warning in arrival', () => {
+    reset();
+    const t = performance.now();
+    window.handleObjectInteraction(obj('biometric_reader', 0, 0, 8, 8));
+    const res = I.flagTriggeredMove({ ok: true, reason: 'arrived-but-outside-plain-range', hint: 'step closer' }, t);
+    assert.equal(res.reason, 'move-interrupted-by-game-event');
+    assert.deepEqual(res.arrival, { reason: 'arrived-but-outside-plain-range', hint: 'step closer' });
+});
+
+test('moveToNear solves its stand point from the live copy, not a hidden one with the same id', async () => {
+    reset();
+    const hiddenCopy = obj('item', 0, 0, 8, 8, { visible: false });
+    const live = obj('item', 200, 200, 8, 8);
+    window.rooms = { r1: { objects: { a: hiddenCopy } }, r2: { objects: { b: live } } };
+    globalThis.__scan = [{ kind: 'object', id: 'item', name: 'item', x: 200, y: 200, inRange: false, onScreen: true }];
+    const r = await bridge.moveToNear('item');
+    assert.equal(r.reason, 'no-viable-standing-point', JSON.stringify(r));
+    assert.equal(globalThis.__solveArgs.at(-1), live);
 });

@@ -52,7 +52,7 @@ writeFileSync(join(sysBridge, 'log.js'),
 
 writeFileSync(join(sysBridge, 'minigames.js'), 'export const minigameBridge = {};\n');
 writeFileSync(join(sysBridge, 'access.js'), 'export const accessBridge = {};\n');
-writeFileSync(join(sysBridge, 'aim.js'), 'export const chooseAimPoint = () => null;\n');
+writeFileSync(join(sysBridge, 'aim.js'), 'export const chooseAimPoint = () => null;\nexport const rivalsAt = () => [];\n');
 writeFileSync(join(dir, 'systems/tap-pick.js'), 'export const opaqueAt = () => true;\n');
 writeFileSync(join(dir, 'utils/constants.js'), 'export const INTERACTION_RANGE = 1;\nexport const DOOR_INTERACTION_RANGE = 1;\n');
 writeFileSync(join(dir, 'utils/overlay-open.js'), 'export const workstationPopupOpen = () => false;\n');

@@ -37,7 +37,7 @@ import {
     sleepFrames, sleep, worldToClient, isWorldPointOnScreen,
     clickElement as clickElementDom, getScene
 } from './input.js';
-import { chooseAimPoint } from './aim.js';
+import { chooseAimPoint, rivalsAt } from './aim.js';
 import { opaqueAt } from '../tap-pick.js';
 import { reachX } from '../interaction-reach.js';
 import { wallClearFrom, sameRoomFrom } from '../interaction-walls.js';
@@ -346,6 +346,9 @@ function ensureTargetRecorder() {
                         name: sprite?.scenarioData?.name
                             || (kind === 'door' ? sprite?.doorProperties?.door_sign : null)
                             || sprite?.name || null };
+                // Where the sprite was when the handler got it, so a move can
+                // tell whether a bridge click could have hit it (flagTriggeredMove).
+                try { rec.hit = claimantOf(sprite, kind); } catch (e) { rec.hit = null; }
                 engineTargets.push(rec);
                 if (engineTargets.length > 30) engineTargets.shift();
             } catch (e) { /* recording must never break the interaction */ }
@@ -513,33 +516,50 @@ function liveSpriteFor(entity) {
  * Reach is the engine's own test (isObjectInInteractionRange) where it is
  * exposed, so the slop rule matches what the engine will gather.
  */
-function otherClaimants(target) {
+function reachOf(s) {
     const p = window.player;
     const engineReach = window.isObjectInInteractionRange;
-    const inReach = (s) => (typeof engineReach === 'function'
+    return typeof engineReach === 'function'
         ? !!engineReach(s)
-        : !!p && Math.hypot(s.x - p.x, s.y - p.y) <= INTERACTION_RANGE);
+        : !!p && Math.hypot(s.x - p.x, s.y - p.y) <= INTERACTION_RANGE;
+}
+
+/**
+ * One sprite as an aim.js claimant: its bounds, position and whether it is in
+ * the reach that lets a nearby tap claim it. A shut door has its own, longer
+ * reach; an open one is never gathered by a nearby tap.
+ */
+function claimantOf(s, kind) {
+    if (kind === 'door') {
+        const p = window.player;
+        const shutInReach = !!s.doorProperties && !s.doorProperties.open && !!p
+            && Math.hypot(s.x - p.x, s.y - p.y) <= DOOR_INTERACTION_RANGE;
+        return { id: doorIdOf(s), kind: 'door', bounds: boundsOf(s), x: s.x, y: s.y, inReach: shutInReach };
+    }
+    if (kind === 'npc') return { id: s.npcId || null, kind: 'npc', bounds: boundsOf(s), x: s.x, y: s.y, inReach: reachOf(s) };
+    return { id: s.scenarioData?.id || s.objectId || null, kind: 'object', bounds: boundsOf(s),
+        x: s.x, y: s.y, inReach: reachOf(s), swivel: !!s.isSwivelChair };
+}
+
+function otherClaimants(target) {
     const ko = window.npcHostileSystem;
     const targetPair = target?.doorProperties ? doorPairOf(target) : null;
     const out = [];
     for (const room of Object.values(window.rooms || {})) {
         for (const o of Object.values(room.objects || {})) {
             if (!o || o === target || !o.active || !o.visible || !o.interactable) continue;
-            out.push({ id: o.scenarioData?.id || o.objectId || null, kind: 'object', bounds: boundsOf(o),
-                x: o.x, y: o.y, inReach: inReach(o), swivel: !!o.isSwivelChair });
+            out.push(claimantOf(o, 'object'));
         }
         for (const s of (room.npcSprites || [])) {
             if (!s || s === target || s.destroyed || !s.visible || !s._isNPC) continue;
             if (ko && s.npcId && ko.isNPCKO(s.npcId)) continue;
-            out.push({ id: s.npcId || null, kind: 'npc', bounds: boundsOf(s), x: s.x, y: s.y, inReach: inReach(s) });
+            out.push(claimantOf(s, 'npc'));
         }
         for (const d of (room.doorSprites || [])) {
             if (!d || d === target || !d.active || d.scene === null || !d.doorProperties) continue;
             // The far side's sprite of the target's own doorway is the same door.
             if (targetPair && doorPairOf(d) === targetPair) continue;
-            const shutInReach = !d.doorProperties.open && !!p
-                && Math.hypot(d.x - p.x, d.y - p.y) <= DOOR_INTERACTION_RANGE;
-            out.push({ id: doorIdOf(d), kind: 'door', bounds: boundsOf(d), x: d.x, y: d.y, inReach: shutInReach });
+            out.push(claimantOf(d, 'door'));
         }
     }
     return out;
@@ -580,10 +600,12 @@ function aimPointFor(entity) {
 }
 
 // World clicks the bridge sent while moving, so whatever the engine does during
-// a move can be put down to one of them or to the game itself. A click owns the
-// handler calls made while it is being dispatched and shortly after; one that
+// a move can be put down to one of them or to the game itself. A click owns a
+// handler call made while it is being dispatched or shortly after, and only
+// when the sprite handed to the handler claims the click point by the aim
+// rules (aim.js rivalsAt: its bounds, or tap slop while in reach). A click that
 // armed a far-tap use (the engine walks over, then uses the object on arrival)
-// owns them until the move ends.
+// also owns, until the move ends, the call on the object it armed.
 const CLICK_OWNS_MS = 250;
 const bridgeClicks = [];
 async function trackedClick(x, y) {
@@ -591,12 +613,32 @@ async function trackedClick(x, y) {
     bridgeClicks.push(c);
     if (bridgeClicks.length > 30) bridgeClicks.shift();
     await clickWorld(x, y);
-    const armed = typeof window.__pendingTapUse === 'function' && !!window.__pendingTapUse();
-    c.armedTapUse = armed;
-    c.t1 = armed ? Infinity : performance.now() + CLICK_OWNS_MS;
+    const pending = typeof window.__pendingTapUse === 'function' ? window.__pendingTapUse() : null;
+    c.armedTapUse = !!pending;
+    const o = pending?.obj;
+    c.armedId = o ? (o.scenarioData?.id || o.objectId || null) : null;
+    c.t1 = performance.now() + CLICK_OWNS_MS;
     return c;
 }
-const clickOwning = (t, sinceT) => bridgeClicks.find(c => c.t0 >= sinceT && t >= c.t0 && t <= c.t1) || null;
+// Does `claim` (an aim.js claimant) cover the click point?
+const claimsClick = (claim, c) => !!claim && rivalsAt(c.x, c.y, [claim]).length > 0;
+function clickOwning(rec, sinceT) {
+    return bridgeClicks.find(c => c.t0 >= sinceT && rec.t >= c.t0 && (
+        (rec.t <= c.t1 && claimsClick(rec.hit, c))
+        || (!!c.armedId && rec.kind === 'object' && rec.id === c.armedId))) || null;
+}
+// The bridge click, if any, that landed on the door a lock minigame is for.
+function clickOnLockDoor(lockable, sinceT) {
+    if (!lockable?.doorProperties) return null;
+    const sprites = [];
+    if (typeof lockable.getBounds === 'function') sprites.push(lockable);
+    const pair = doorPairOf(lockable);
+    for (const room of Object.values(window.rooms || {})) {
+        for (const d of (room.doorSprites || [])) if (d && d !== lockable && d.doorProperties && doorPairOf(d) === pair) sprites.push(d);
+    }
+    const claims = sprites.map(d => claimantOf(d, 'door'));
+    return bridgeClicks.filter(c => c.t0 >= sinceT && claims.some(k => claimsClick(k, c))).pop() || null;
+}
 
 /**
  * A move is only a move. If the engine acted on something while it ran,
@@ -616,15 +658,20 @@ function flagTriggeredMove(res, sinceT) {
     const mg = activeMinigameSummary();
     if (!recs.length && !mg) return res;
     const opened = mg ? { id: mg.id, title: mg.title || null } : undefined;
-    // A handler record inside a bridge click's window is that click's doing. A
-    // minigame with no record is a click's only when it is a door lock and the
-    // move clicked (a door's own zone calls its handler directly, unrecorded).
-    const owned = recs.find(r => clickOwning(r.t, sinceT));
-    const lockDoor = window.MinigameFramework?.currentMinigame?.params?.lockable?.doorProperties;
-    const clickedDuring = bridgeClicks.some(c => c.t0 >= sinceT);
+    // A handler record is a bridge click's doing when it is inside the click's
+    // window and its sprite claims the click point (or it is the far-tap use
+    // the click armed). A minigame with no record is a click's only when it is
+    // a door lock and a click landed on that door (a door's own zone calls its
+    // handler directly, unrecorded). Anything else is the game's.
+    const owned = recs.find(r => clickOwning(r, sinceT));
+    const lockable = window.MinigameFramework?.currentMinigame?.params?.lockable;
+    const lockDoor = lockable?.doorProperties;
+    const lockClick = !recs.length && lockDoor ? clickOnLockDoor(lockable, sinceT) : null;
+    // Keep what the move itself concluded (moveToNear's range or contest warning).
+    if (res.reason || res.hint) res.arrival = { reason: res.reason || null, hint: res.hint || null };
     res.ok = false;
-    if (owned || (!recs.length && lockDoor && clickedDuring)) {
-        const c = owned ? clickOwning(owned.t, sinceT) : bridgeClicks.filter(k => k.t0 >= sinceT).pop();
+    if (owned || lockClick) {
+        const c = owned ? clickOwning(owned, sinceT) : lockClick;
         res.reason = 'move-triggered-interaction';
         res.triggered = owned ? { kind: owned.kind, id: owned.id, name: owned.name }
             : { kind: 'door', id: `door:${lockDoor.roomId}->${lockDoor.connectedRoom}`, name: lockDoor.door_sign || null };
@@ -925,7 +972,8 @@ const bridge = {
 
         // The sprite itself, for the wall and wide-object checks in the solver
         // (null for a doorway with no sprite, which needs neither).
-        const targetSprite = findSpriteById(id);
+        // The live copy, as interact() aims at, not a hidden one with the same id.
+        const targetSprite = liveSpriteFor(entity) || findSpriteById(id);
         const feet0 = playerFeet();
         const spot = solveStandingPoint(entity.x, entity.y, window.player.x, window.player.y,
             { x: feet0.x - window.player.x, y: feet0.y - window.player.y }, targetSprite);

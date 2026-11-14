@@ -90,3 +90,14 @@ test('a large target is sampled at most MAX_SAMPLES times', () => {
 
 // The wiring into interact() and moveTo/moveToNear is tested by behaviour in
 // test-bridge-click-target.test.mjs.
+
+test('the pixel test runs only at points that can still win on claimants, with the same pick', () => {
+    const cover = { id: 'cover', kind: 'object', bounds: box(100, 0, 160, 100), x: 100, y: 0, inReach: false };
+    let reads = 0;
+    const opaque = (x, y) => { reads++; return x > 165; };
+    const aim = chooseAimPoint(hmi, [cover], { opaque });
+    // Every point left of x=162 (160 + margin) is claimed by the cover.
+    assert.equal(aim.clean, true);
+    assert.ok(aim.x > 165 && aim.onPixels, JSON.stringify(aim));
+    assert.ok(reads < aim.sampled / 2, `pixel reads ${reads} of ${aim.sampled} samples`);
+});

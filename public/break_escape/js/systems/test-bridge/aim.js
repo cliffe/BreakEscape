@@ -77,6 +77,9 @@ export function chooseAimPoint(target, others, { onScreen = null, opaque = null,
             if (onScreen && !onScreen(x, y)) continue;
             sampled++;
             const rivals = rivalsAt(x, y, others);
+            // A point already beaten on rivals cannot win, so skip its pixel
+            // read (a canvas draw and read per call in Phaser).
+            if (best && rivals.length > best.rivals.length) continue;
             const onPixels = opaque ? !!opaque(x, y) : true;
             // Fewest rivals first, then the target's own pixels, then nearest
             // the middle of its bounds (what a person clicks).
