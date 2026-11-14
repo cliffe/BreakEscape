@@ -794,8 +794,9 @@ test('R3 m1: a failed earlier hidden flush clears the guard set by a later diffe
 
 test('C4: the since-body is stamped one above the in-flight flush (not below), and the old below-stamp suppression is gone', async (t) => {
   // Freeze Date so every stamp is last+1: the flush and the since-body end up adjacent, the
-  // exact case the old "oldest.clientTs - 1 <= oldest.prevTs" rule (state-sync.js:972) would
-  // have suppressed once the reservation was removed. It must now be sent, stamped above.
+  // exact case the old below-stamp rule (a since-body stamped one below the oldest flush, then
+  // suppressed when that left no free slot) would have dropped once the reservation was
+  // removed. It must now be sent, stamped above.
   t.mock.timers.enable({ apis: ['Date'] });
   const sync = resetGame();
   sync.start();
@@ -810,9 +811,9 @@ test('C4: the since-body is stamped one above the in-flight flush (not below), a
   const since = [...sync._flushesInFlight].find(f => f !== flush);
   assert.equal(requests.at(-1).body.globalVariables.late, 1, 'it carries only what changed since the flush');
   assert.equal(requests.at(-1).body.notes, undefined, 'the flush already carried the note');
-  // With Date frozen the old below-stamp rule would have set clientTs = flush.clientTs - 1
-  // and, since that is at or below the flush's prevTs, returned null (suppressed). The
-  // re-stamp instead draws a fresh clientTs strictly above the flush and sends the body.
+  // With Date frozen the old below-stamp rule would have set clientTs = flush.clientTs - 1 and,
+  // having no free slot below the flush, returned null (suppressed). The re-stamp instead draws
+  // a fresh clientTs strictly above the flush and sends the body.
   assert.ok(since.clientTs > flush.clientTs, 'stamped above the flush, not suppressed below it');
   sync.stop();
 });

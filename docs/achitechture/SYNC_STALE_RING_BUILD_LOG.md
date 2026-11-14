@@ -435,3 +435,18 @@ Verification (no lock, no full suites):
 - JS: `state-sync` 27, `state-sync-hidden-save` 40, `sync-request-sizes` 8, `sync-delta-proof`
   8, `global-sync-declared` 20, `npc-ko-sync-soon` 4, `social-state-sync-confirmed` 11. All
   green.
+
+## Chunk 6: comment and cross-reference tidy
+
+Small, per plan section 11.6. The only live stragglers after the m3 fold were two historical
+comments in `state-sync-hidden-save.test.mjs` that still named the removed `prevTs` field;
+reworded to describe the old below-stamp rule without naming a field that no longer exists (a
+grep for `prevTs` across the engine and its tests now returns nothing). The plan's top status
+line, which still read "PLAN only. Nothing is built.", now records that chunks 1 to 6 (with
+the R1 folds) are built and points at this log. No code behaviour change; `state-sync-hidden-
+save` 40 pass.
+
+Series complete: chunks 1 to 6 built and committed, the chunk 4 review R1 minors m1/m2/m3
+folded, the live browser proof green (5/5), every touched and section-10 neighbour test file
+green without the lock. The integrator runs the full suites under the lock and merges the
+tested hash.
