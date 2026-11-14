@@ -1,6 +1,8 @@
 # Sync stale-but-recent ring: closing three save-loss gaps
 
-Status: PLAN only. Nothing is built. Worktree `p-hard-sync-ring`, branch
+Status: BUILT, chunks 1 to 6 (section 11), including the chunk 4 review R1 folds. See
+`SYNC_STALE_RING_BUILD_LOG.md` for the chunk-by-chunk record, the live proof and the test
+counts. Worktree `p-hard-sync-ring`, branch
 `build/hard-sync-ring-plan`, cut from integration train 47 (`b83696932`), which
 already holds the gated-door currentRoom sync, the notSaved contract and the
 train 46 hidden-tab save (including the hidden-guard fix at

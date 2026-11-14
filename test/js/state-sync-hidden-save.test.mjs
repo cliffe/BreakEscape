@@ -519,10 +519,14 @@ test('R1 n1: requestSoon after stop() starts nothing', async (t) => {
 // the union of ring entries with ts >= its own), never moving the stamp, and still answers
 // { stale: true } (so the client does not confirm it and resends its sections once, a
 // harmless no-op since the server already holds them). This models globals (keyed) and
-// notes (keyed by id), the two last-write-wins sections these tests exercise. It assumes
-// the completeness guard holds; the guard's failure (an evicted newer write) is covered by
-// the Ruby controller tests, not here. Requests wait until the test delivers them, in the
-// order it chooses.
+// notes (keyed by id), the two last-write-wins sections these tests exercise. It models the
+// completeness guard (stale_recent_guard_holds?): a stale request merges key by key only
+// when the ring holds every newer write (its ts is at or above the oldest retained entry and
+// the ring is non-empty); against an absent, empty or incomplete ring it falls back to the
+// whole-skip (merges nothing), exactly as the server does (chunk 4 review R1 minor 1). A
+// real session always has a recent recorded write below a hidden flush, so the recovery
+// tests seed a qualifying ring entry explicitly (seedQualifyingRing). Requests wait until the
+// test delivers them, in the order it chooses.
 function modelServer() {
   const server = { lastTs: 0, globals: {}, notes: {}, ring: [] };
   const pending = [];
@@ -555,6 +559,10 @@ function modelServer() {
     const newest = Math.max(...server.ring.map(e => e.ts));
     server.ring = server.ring.filter(e => newest - e.ts <= 60000).sort((a, b) => b.ts - a.ts).slice(0, 8);
   };
+  // The completeness guard: a stale request merges key by key only when the ring is non-empty
+  // and the request's ts is at or above the oldest retained entry (so every newer write is
+  // still recorded to skip against). Otherwise it whole-skips.
+  const guardHolds = ts => server.ring.length > 0 && ts >= Math.min(...server.ring.map(e => e.ts));
   const deliver = (i, { fail = false } = {}) => {
     const { body, resolve } = pending[i];
     if (fail) return resolve({ ok: false, json: {} });
@@ -563,14 +571,28 @@ function modelServer() {
     if (!stale) {
       if (ts !== null) server.lastTs = ts;
       record(ts, mergeBody(body, null));
-    } else {
+    } else if (guardHolds(ts)) {
       record(ts, mergeBody(body, skipSet(ts)));
     }
+    // else: stale against an empty or incomplete ring, whole-skip (merge nothing, record
+    // nothing), exactly as the server falls back (plan section 5, R1 minor 1).
     resolve({ ok: true, json: stale ? { success: true, stale: true } : { success: true } });
   };
   return { server, pending, deliver };
 }
 const settled = async () => { for (let i = 0; i < 5; i++) await settle(); };
+
+// Seed the model ring with a prior accepted write stamped just below the hidden flush
+// (pending[0]), so the completeness guard holds when that flush lands stale-but-recent. A
+// real session always has a recent recorded last-write-wins write below a hidden flush; the
+// model server starts empty, so the recovery tests establish that precondition explicitly
+// (chunk 4 review R1 minor 1). The seeded key is below every H/D stamp, so it is never in a
+// skip set and never merges into server.globals.
+function seedQualifyingRing(server, pending) {
+  const hiddenTs = pending[0].body.clientTs;
+  server.ring.push({ ts: hiddenTs - 1, w: { globalVariables: ['seed'], notes: [] } });
+  server.lastTs = hiddenTs - 1;
+}
 
 // m1: a 45 KB hidden flush is still uploading, a global changes while hidden, then the
 // pagehide. The whole delta (90 KB with the unconfirmed flush) does not fit beside it.
@@ -599,6 +621,7 @@ test('R2 m1: a large hidden flush in flight, a change while hidden, then pagehid
 test('R2 m1: the hidden flush lands after the pagehide: the ring keeps both, the client resends the stale flush once', async () => {
   const { sync, server, pending, deliver } = await bigHiddenThenLateChange();
   assert.equal(pending.length, 2);
+  seedQualifyingRing(server, pending);      // a prior write below the hidden flush: the guard holds
   deliver(1);                               // the re-stamped pagehide body lands first, fresh
   await settled();
   deliver(0);                               // the hidden flush lands second, stale-but-recent
@@ -639,12 +662,29 @@ test('R2 m1: the hidden flush fails after the pagehide: the later change is save
 test('R2 m1: the hidden flush landing first, then the re-stamped pagehide body lands fresh above it (the residual loss is closed)', async () => {
   const { server, pending, deliver } = await bigHiddenThenLateChange();
   assert.equal(pending.length, 2);
+  seedQualifyingRing(server, pending);      // a prior write below the hidden flush: the guard holds
   deliver(0);
   await settled();
   deliver(1);
   await settled();
   assert.equal(server.globals.big.length, 45000);
   assert.equal(server.globals.late, 1, 'the re-stamp carries the later change above the flush, so it is saved (no residual loss)');
+});
+
+// R1 minor 2 (the loss direction), the JS counterpart of the Ruby controller test for R1 m2: when
+// the re-stamped pagehide body D lands first and the hidden flush H then arrives stale with
+// NO qualifying ring entry at or below it, the completeness guard fails and H whole-skips, so
+// H's unique section is dropped. This is the documented, intended R2 cost. Without seeding, the
+// only ring entry is D's, above H.
+test('R1 m2: D first, then H stale with no qualifying ring entry: H whole-skipped, its unique key dropped (the R2 cost)', async () => {
+  const { server, pending, deliver } = await bigHiddenThenLateChange();
+  assert.equal(pending.length, 2);
+  deliver(1);                               // D (late, re-stamped above) lands first, fresh
+  await settled();
+  deliver(0);                               // H (big) lands second, stale; ring holds only D above it
+  await settled();
+  assert.equal(server.globals.late, 1, 'D applied');
+  assert.equal(server.globals.big, undefined, 'H whole-skipped: its unique section is dropped (guard fails)');
 });
 
 test('R2: a pagehide reduced beside a hidden flush in flight never makes that flush stale', async () => {
@@ -659,6 +699,7 @@ test('R2: a pagehide reduced beside a hidden flush in flight never makes that fl
   window.gameState.globalVariables.late = 1;
   window.fire('pagehide');
   assert.equal(pending.length, 2);
+  seedQualifyingRing(server, pending);      // a prior write below the hidden flush: the guard holds
   // The small pagehide body reaches the server first.
   deliver(1);
   await settled();
@@ -753,8 +794,9 @@ test('R3 m1: a failed earlier hidden flush clears the guard set by a later diffe
 
 test('C4: the since-body is stamped one above the in-flight flush (not below), and the old below-stamp suppression is gone', async (t) => {
   // Freeze Date so every stamp is last+1: the flush and the since-body end up adjacent, the
-  // exact case the old "oldest.clientTs - 1 <= oldest.prevTs" rule (state-sync.js:972) would
-  // have suppressed once the reservation was removed. It must now be sent, stamped above.
+  // exact case the old below-stamp rule (a since-body stamped one below the oldest flush, then
+  // suppressed when that left no free slot) would have dropped once the reservation was
+  // removed. It must now be sent, stamped above.
   t.mock.timers.enable({ apis: ['Date'] });
   const sync = resetGame();
   sync.start();
@@ -769,9 +811,9 @@ test('C4: the since-body is stamped one above the in-flight flush (not below), a
   const since = [...sync._flushesInFlight].find(f => f !== flush);
   assert.equal(requests.at(-1).body.globalVariables.late, 1, 'it carries only what changed since the flush');
   assert.equal(requests.at(-1).body.notes, undefined, 'the flush already carried the note');
-  // With Date frozen the old below-stamp rule would have set clientTs = flush.clientTs - 1
-  // and, since that is at or below the flush's prevTs, returned null (suppressed). The
-  // re-stamp instead draws a fresh clientTs strictly above the flush and sends the body.
+  // With Date frozen the old below-stamp rule would have set clientTs = flush.clientTs - 1 and,
+  // having no free slot below the flush, returned null (suppressed). The re-stamp instead draws
+  // a fresh clientTs strictly above the flush and sends the body.
   assert.ok(since.clientTs > flush.clientTs, 'stamped above the flush, not suppressed below it');
   sync.stop();
 });
@@ -826,6 +868,7 @@ test('C4 race (a): hide, show, hide, then H1 before H2: both are saved', async (
 test('C4 race (a): hide, show, hide, then H2 before H1: the ring recovers H1 and both are saved', async () => {
   const { sync, server, pending, deliver } = await hideShowHide();
   assert.equal(pending.length, 2);
+  seedQualifyingRing(server, pending);                  // a prior write below H1: the guard holds
   deliver(1); await settled();                          // H2 (late) lands first, fresh
   deliver(0); await settled();                          // H1 (big) lands second, stale-but-recent
   assert.equal(server.globals.late, 1, 'exact late saved (landed first)');
