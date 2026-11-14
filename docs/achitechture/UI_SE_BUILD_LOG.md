@@ -9,10 +9,10 @@ Deferred to the user (do not build without their call): C-X8 (address font: the 
 "pixel font everywhere plus a letter check"; a separate GNF letter test runs first, so the
 Source Sans addresses stay for now).
 
-Added to scope mid-pass by the coordinator (2026-11-14), landed in the OPEN list because this
-pass reached its handover point first: C-X3 (A: 9-slice frame on every SE window), C-ER1 (B:
-kiosk bezel for the episode runner, full-bleed only in facilitated mode), C04 (A: merge the
-intel board's duplicate fact lists, display only). See the Handover open list for how to resume.
+Added to scope mid-pass by the coordinator (2026-11-14) and DONE in a second work block after a
+limit reset: C-X3 (9-slice frame on every SE window), C-ER1 (framed kiosk episode runner,
+full-bleed only in facilitated mode), C04 (merge the intel board's duplicate fact lists, display
+only). See sections 2 and 5.
 
 ## 1. Baseline (tip 422c55061, game 3503, keyless :3490)
 
@@ -99,12 +99,43 @@ audit-before.{log,json}.
 The remaining after-breaches are all C-X8 (address font, deferred) or the inbox-triage flat
 gradient the consoles build log already recorded as a false positive.
 
+## 5. Second block: C-X3, C-ER1, C04 (coordinator additions)
+
+### C-X3 (done) one 9-slice frame for every SE window
+- The five plain-line tool windows (intel-board, engagement-report, landing-page-builder,
+  osint-browser, pretext-prep) now carry the shared mail/triage 9-slice frame
+  (`border: 16px solid transparent; border-image: var(--se-frame-image, url(mail-frame.png)) 8 /
+  16px stretch`) on their `*-game-container` (pretext: `.pretext-prep`) in place of the 4px/3px
+  line. The outer rings (`box-shadow: 0 0 0 2px`) and the soft inner shades are gone.
+- The frame has NO `fill`, so each scene keeps its own surface (intel cork, engagement cream
+  paper, osint cream page, dark surface). Widths are unchanged (1100/960/1180/1100/640), so the
+  multi-column layouts do not reflow. (The 6 card-like scenes keep the C-X2 opt-in, which caps at
+  720 with `fill` + --ui-surface because they have no own background.)
+- Shots: scratchpad ui-se/shots-cx3b (looked at intel-board, engagement-report, osint-browser,
+  pretext-prep at 1400 and 390: frame around each, surfaces intact, X in header, no reflow).
+
+### C-ER1 (done) framed kiosk episode runner
+- episode-runner-minigame.js init() toggles `.minigame-framed` on the container when NOT
+  facilitated (`this.facilitated` = `episode.facilitated === true`). Normal play is now a framed
+  kiosk window that sits with the other SE windows; a facilitated (shared-screen) run stays
+  full-bleed. No new mode invented — the facilitated flag already existed. Shot shots-er.
+
+### C04 (done) intel board lists each unknown fact once
+- The duplicate `emptySlots` rows ("<label>: ??? / Not yet found") are dropped from the card.
+  board-model builds `emptySlots = slots.filter(!done).map(label)`, so they were the same missing
+  facts the readiness checklist already shows as "Missing: <hint> [Stuck?]". Found facts still
+  list as ticks; the `.ib-facts` ul is only drawn when there is a found fact. Display only — the
+  facts and how they unlock are unchanged (getTestState still carries emptySlots).
+- Detail: critique-e C04 (the coordinator said critique-a, but it is in critique-e). Tests:
+  social-intel-board updated (the ??? row and the board-slot-empty icon are gone by design).
+
 ## 3. Tests
 
-- test/js/minigame-se-close.test.mjs (6 tests, new): buildCloseControl is the pixel × not a text
+- test/js/minigame-se-close.test.mjs (8 tests, new): buildCloseControl is the pixel × not a text
   button; mountCloseControl appends to the given parent; `framed` default off and a framed scene
   tags the container; the shared CSS rules exist (close, framed, notice, title) and are pixel and
-  square; no hand-rolled text Close button remains in the six SE scenes.
+  square; the five wide SE windows use the 9-slice frame with no ring/line (C-X3); the episode
+  runner frames itself only when not facilitated (C-ER1); no hand-rolled text Close button remains.
 - Updated for the new X (per-scene close classes and the word 'Close' are gone):
   social-engagement-report, social-gap-engagement-report, social-intel-board, social-pretext-prep,
   social-return-to, social-episode-runner.
@@ -138,44 +169,26 @@ Tip of build/ui-se: the commit of this log. Commits: e509a4091 (C-X1), 02382a78a
   shades off intel-board and engagement-report. Tests above, all green.
 
 ### Open (not started / not finished), rough order
-1. C-X3 (coordinator A: one 9-slice frame for every SE window). The opt-in already exists: set
-   `static framed = true` on intel-board, engagement-report, landing-page-builder, osint-browser
-   and pretext-prep, then REMOVE each root's own plain-line border / outer ring / inset shade
-   (intel-board-minigame.css ~:18-22, engagement-report-minigame.css ~:21, landing-page-builder
-   ~:22, osint-browser root border, pretext-prep ~:24,:37) so the framed game-container is the
-   only frame. CAUTION: these are wide multi-column windows; a 720px frame will reflow them, so
-   shoot each at all six sizes and check the internal layout before trusting it (osint tabs+page,
-   intel columns, lpb preview+panel). The shared frame rule is in minigames-framework.css.
-2. C-ER1 (coordinator B: episode-runner kiosk bezel, full-bleed only in facilitated mode). The
-   consoles log notes a facilitated flag `epr-facilitated`; grep episode-runner-minigame.js /
-   step-strip for how facilitated mode is set (params/global). If a facilitated mode exists,
-   frame episode-runner (via the opt-in or a kiosk-bezel class) in normal play and keep full-bleed
-   only when facilitated; if there is NO such mode, frame it in every case and say so — do not
-   invent a mode. episode-runner-minigame.js:214 is where the frame class is missing.
-3. C04 (coordinator A: intel board merges duplicate fact lists, DISPLAY ONLY). Detail in
-   scratchpad critique-a/findings.md (search "C04"). Merge the duplicate unknown-fact lists so
-   each fact shows once; do not change which facts exist or how they unlock. Lives in
-   intel-board-minigame.js (the People/Contacts/Company sections) and/or its model.
-4. C-X4 apply `.se-notice` to every scope/safety/reload/empty-state notice: password-guesser
+1. C-X4 apply `.se-notice` to every scope/safety/reload/empty-state notice: password-guesser
    "No real password...", episode-runner and pretext-prep "Authorised exercise...", assistant/
    sort-drill/inbox-triage reload note, engagement-report "Ledgerwell has no button...",
    landing-page-builder "You don't own this" + captures banner + "No captures yet". Class is
    ready in utilities.css; this is markup/class edits per scene.
-5. C-X7 shared stepper (episode-runner pills, inbox-triage text tabs, landing-page-builder chips
+2. C-X7 shared stepper (episode-runner pills, inbox-triage text tabs, landing-page-builder chips
    -> one boxed stepper). Not started.
-6. C-X9 awareness one-button look (password-guesser / episode-runner / lpb). Not started.
-7. Phone scenes (C-AU1 reuse phone-chat stepped shell for the authenticator; C-PH1 phone error
+3. C-X9 awareness one-button look (password-guesser / episode-runner / lpb). Not started.
+4. Phone scenes (C-AU1 reuse phone-chat stepped shell for the authenticator; C-PH1 phone error
    toast inside the phone; C-PH2 Add to Notepad onto the phone; C-PH3 X off the bezel; C-PH4
    glow + empty state). These need the phone-chat shell logic — not started.
-8. Shredded document C-SD1-3: the flip glyph (draw a pixel icon / the word 'Flip'), keyboard and
+5. Shredded document C-SD1-3: the flip glyph (draw a pixel icon / the word 'Flip'), keyboard and
    touch strip reorder (brief allows this logic), larger flip hit area, drop the tilt blur and
    soft shadow. Only font-size 7->8 done so far. The brief asks for a shredded-doc keyboard
    reorder test too — not written.
-9. Per-scene minors not yet touched: C-AC2 (two surfaces), C-AU2/3, C-CS1, C-ER2/3, C-RP1,
+6. Per-scene minors not yet touched: C-AC2 (two surfaces), C-AU2/3, C-CS1, C-ER2/3, C-RP1,
    C-IT1/2, C-IB1, C-LP1/2/3, C-MC1/2/3, C-OB1, C-PG1, C-PC1/2, C-PP1/2/3, C-PV1. Many are small
    CSS/width fixes; a few (C-PV1 switch wording, C-PP2/3 pretext header, C-MC1 account select)
    touch scene markup.
-10. Proof still owed: reshoot at 667x375 and 360x740; drive each heavily changed scene through
+7. Proof still owed: reshoot at 667x375 and 360x740; drive each heavily changed scene through
     real clicks/keys and check X + Esc close a pop-up first then the scene; confirm the full after
     audit SUMMARY in audit-after-all.log.
 
