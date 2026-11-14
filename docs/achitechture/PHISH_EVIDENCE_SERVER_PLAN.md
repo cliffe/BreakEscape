@@ -231,8 +231,8 @@ so each route, after writing its record and before `save!`, re-runs `stamp_prove
 the route answer carries the freshly revealable capture (the same `captures`/`capturesRefused` answer shape
 the sync uses). A `sync_state` can no longer advance this evidence, so the phish branch of the sync's stamp
 walk, `phish_evidence_fingerprint`, and the `phishGated` / `phish_gated_unproven_captures?` machinery retire
-for this path, including the now-dead `phishGated` writes (capture_proofs.rb:174 and :695) and the strip of
-`phishGated` in `captures_for_client` once nothing writes it. The controller's phish-gating block in `apply_capture_sync_step` (`@phish_fp_before`, the
+for this path, including the now-dead `phishGated` writes (capture_proofs.rb:174 and :695). `captures_for_client` is
+an allowlist that never emits `phishGated`, so it needs no change. The controller's phish-gating block in `apply_capture_sync_step` (`@phish_fp_before`, the
 `needs_stamp` fingerprint compare, and the `extra_sent` build and forward) goes with them.
 
 The capture record itself is still created the way it is today, from the client's own capture claim. When
