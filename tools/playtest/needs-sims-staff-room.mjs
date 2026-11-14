@@ -234,17 +234,28 @@ if (beat === 'speechlock') {
             ns.__s4slwrapped = true;
         }
     });
+    const neil0 = await npc('neil');
     const start = await clock();
     await shot('01-office');
     while (true) { const c = await clock(); if (c - start > minutes * 60000) break; await t(10000); }
     await shot('02-after');
     const evs = await events();
     const sl = await page.evaluate(() => window.__s4sl);
+    const neil1 = await npc('neil');
+    const neilMoved = (neil0.x != null && neil1.x != null) ? +Math.hypot(neil1.x - neil0.x, neil1.y - neil0.y).toFixed(1) : null;
     report.speechlock = {
         minutes, office_turns: sl.officeTurns, blocked_by_unheard_staff_line: sl.blocked,
         ratio: sl.officeTurns ? +(sl.blocked / sl.officeTurns).toFixed(4) : 0,
         threshold_1_in_20: sl.officeTurns ? sl.blocked > sl.officeTurns / 20 : false,
         staff_pool_lines: evs.filter(e => e.ev.startsWith('npc_chatted:staff_')).length,
+        // Office-beats-with-doors-open regression: needs-driven office beats still fire, cooler pair
+        // meets, Neil stays still.
+        office_regression: {
+            neil_moved_px: neilMoved, neil_still: neilMoved != null && neilMoved <= 2,
+            cooler_chats: evs.filter(e => e.ev === 'npc_chatted:water_cooler').length,
+            office_chatted_objects: [...new Set(evs.filter(e => e.ev.startsWith('npc_chatted:') && !e.ev.includes('staff_')).map(e => e.ev.split(':')[1]))],
+            office_tasks_ticked: await tasks()
+        },
         ...analyse(evs)
     };
 }
