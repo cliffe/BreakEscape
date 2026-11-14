@@ -91,11 +91,24 @@ test('a cancelled confirm changes nothing and does not sync', () => {
     assert.equal(calls.length, 0);
 });
 
-test('a config with no globals does not sync', () => {
+test('a config with only an event syncs once, after the event; an empty one does not sync', () => {
     const { s, calls } = setup();
     s.applyChoiceConfig({ emitEvent: 'x' });
+    assert.equal(calls[0], 'emit:x');
+    assert.equal(calls.filter(c => c.startsWith('sync:')).length, 1);
+    assert.ok(calls[1].startsWith('sync:'), 'sync after the event');
+    calls.length = 0;
     s.applyChoiceConfig(null);
-    assert.deepEqual(calls, ['emit:x']);
+    s.applyChoiceConfig({});
+    assert.deepEqual(calls, []);
+});
+
+test('an event-only choice through the real button syncs once, and a second click does not', () => {
+    const { s, calls } = setup();
+    s.onAbortConfig = { emitEvent: 'attack_aborted' };
+    s.handleAbort();
+    s.handleAbort();
+    assert.equal(calls.filter(c => c.startsWith('sync:')).length, 1);
 });
 
 test('a failed sync neither throws nor stops the final state', async () => {

@@ -704,7 +704,9 @@ export class FlagStationMinigame extends MinigameScene {
         // (the choice's globals, plus anything else already pending). A failed request is
         // tried again a few times at 250, 500 and 1000 ms (syncConfirmed: bounded, stops on
         // a 403) rather than waiting for the timer; each retry resends the same delta.
-        if (config.setGlobal) {
+        // A config with only an event syncs too: its mapping can set the globals or the
+        // timed message itself. handleAbort/handleLaunch call this once per choice.
+        if (config.setGlobal || config.emitEvent) {
             const sync = window.stateSync;
             try {
                 const run = typeof sync?.syncConfirmed === 'function'
