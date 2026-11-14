@@ -1795,7 +1795,7 @@ test('SIMS-4 exchange gates: exchange_job_cleared never plays before heard_excha
     // waiting is marked heard so only the job knots are in play.
     let g = { job_cleared: true, heard_exchange_waiting: true };
     let r = staffRoom({ globals: g });
-    assert.equal(r.sys._findExchange({ npcId: 'jodie' }, { npcId: 'keith' }), null, 'job_cleared alone opens nothing');
+    assert.deepEqual(r.sys._findExchange({ npcId: 'jodie' }, { npcId: 'keith' }), { gated: true }, 'job_cleared alone opens nothing (E9: a gated entry waits)');
     g = { job_cleared: true, heard_exchange_job_called: true, heard_exchange_waiting: true };
     r = staffRoom({ globals: g });
     assert.equal(r.sys._findExchange({ npcId: 'jodie' }, { npcId: 'keith' }).knot, 'exchange_job_cleared', 'both keys held: the clearance exchange opens');

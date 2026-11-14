@@ -2723,6 +2723,16 @@ export class NPCNeedsSystem {
         return b.last;
     }
 
+    /** The index _bagNext would return next, without changing the bag (R1 M1: draw only what fits). */
+    _bagPeek(npcId, topic, lines) {
+        const key = `${npcId}|${topic}`;
+        const b = this._bags.get(key);
+        const fresh = !b || b.sig !== lines.join('\n');
+        const round = fresh ? 0 : b.round, last = fresh ? -1 : b.last;
+        if (!fresh && b.order.length) return b.order[0];
+        return bagOrder(lines.length, createSeededRng(hash32(`${this.seed}:${key}:bag:${round}`)), last)[0];
+    }
+
     _cooldownMs(s) {
         const v = Number(this._rec(s).chatterCooldownMin);
         return (Number.isFinite(v) && v >= 0 ? v : CHATTER_COOLDOWN_MIN) * 60000;
@@ -2735,11 +2745,17 @@ export class NPCNeedsSystem {
     /**
      * What a speaker says on a turn: a bark from the bag when it has lines, is off cooldown and the
      * speech lock is free; otherwise a picture. Returns { line, idx, picture, pool } or null (silent:
-     * `"chatter": false` and nothing to say). Taking a bark starts the cooldown.
+     * `"chatter": false` and nothing to say). Taking a bark starts the cooldown. `unheard` (E7, a
+     * chat turn nobody can hear) skips the bark as if the speaker were on cooldown: no line is taken
+     * from the bag, the cooldown is not started and there is no wait, so the result is a picture
+     * (or null with `pictures: false`).
+     * `maxMs` (a chat's time left in the overlap) skips the bark the same way when the bag's next
+     * line would outlast it, so a line taken is always a line said.
      */
-    _pickBark(s, topic, { waitForLock = false, ignoreCooldown = false, icons: iconsFor = null } = {}) {
+    _pickBark(s, topic, { waitForLock = false, ignoreCooldown = false, unheard = false, maxMs = Infinity, icons: iconsFor = null } = {}) {
         const pool = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter);
-        const ready = pool.lines.length && (ignoreCooldown || !(s.chatterQuietUntil > this.clockMs));
+        const ready = !unheard && pool.lines.length && (ignoreCooldown || !(s.chatterQuietUntil > this.clockMs))
+            && !(maxMs < CHAT_MAX_MS && bubbleMs(pool.lines[this._bagPeek(s.npcId, topic, pool.lines)]) > maxMs);
         if (ready && this._speechFree()) {
             const idx = this._bagNext(s.npcId, topic, pool.lines);
             s.chatterQuietUntil = this.clockMs + this._cooldownMs(s);
@@ -2777,19 +2793,24 @@ export class NPCNeedsSystem {
     }
 
     /**
-     * The first unplayed exchange for this pair whose speakers are exactly the two of them, or null.
-     * The lower id's list is read first. Lines come from the world (a separate ink story instance);
-     * null lines (story not loaded yet) give { pending: true }, so a later turn tries again.
+     * The first unplayed exchange for this pair whose speakers are exactly the two of them. The lower
+     * id's list is read first. Lines come from the world (a separate ink story instance). Results:
+     * - { knot, ownerId, lines, i }: playable now;
+     * - { pending: true }: an entry's story is not loaded yet (null lines), so a later turn tries again;
+     * - { gated: true }: an unheard entry is waiting only on its requireGlobal (E9), so a later turn of
+     *   the same meeting looks again, and the exchange can start once the gate opens;
+     * - null: nothing in this meeting can become playable (no entries for the pair, all heard,
+     *   malformed, or lines naming another speaker), so the meeting stops looking.
      */
     _findExchange(A, B) {
-        let pending = false;
+        let pending = false, gated = false;
         for (const [own, other] of [A, B].sort((x, y) => (x.npcId < y.npcId ? -1 : 1)).map((x, i, arr) => [x, arr[1 - i]])) {
             const list = this._rec(own).exchanges;
             if (!Array.isArray(list)) continue;
             for (const e of list) {
                 if (!e || typeof e.knot !== 'string' || !e.knot || !this._exchangeWith(e, other)) continue;
                 if (this._exchangeHeard(e.knot)) continue;
-                if (e.requireGlobal !== undefined && !this._globalHolds(e.requireGlobal)) continue;
+                if (e.requireGlobal !== undefined && !this._globalHolds(e.requireGlobal)) { gated = true; continue; }
                 const lines = typeof this.world.exchangeLines === 'function' ? this.world.exchangeLines(own.npcId, e.knot) : null;
                 if (lines === null || lines === undefined) { pending = true; continue; }
                 if (!Array.isArray(lines) || !lines.length) continue;
@@ -2797,13 +2818,20 @@ export class NPCNeedsSystem {
                 return { knot: e.knot, ownerId: own.npcId, lines: lines.map(l => ({ speakerId: l.speakerId, text: l.text })), i: 0 };
             }
         }
-        return pending ? { pending: true } : null;
+        if (pending) return { pending: true };
+        return gated ? { gated: true } : null;
     }
 
-    /** Is the player in earshot of the pair (slice 8 `overheard`: same room, lit, in range, clear line)? */
-    _audience(c, radius) {
-        if (typeof this.world.playerHears !== 'function') return false;
-        return [c.a, c.b].some(id => !!(this.world.playerHears(id, radius) || {}).overheard);
+    /**
+     * The earshot radius of a chat for one speaker (E7 to E9): the object's overhearRadius, else the
+     * overhearRadius of that speaker's pool for the chat's topic, else OVERHEAR_RADIUS. Bark turns,
+     * the exchange start gate and the exchange-line heard check all use it, so one rule decides.
+     */
+    _chatRadius(c, speakerId) {
+        if (c.overhearRadius) return c.overhearRadius;
+        const st = this.states.get(speakerId);
+        const pool = chatterPool(c.topic, this._scenarioChatter(), st ? this._rec(st).chatter : null);
+        return pool.overhearRadius || OVERHEAR_RADIUS;
     }
 
     /** Start an exchange on a chat: hold both uses for the knot's length (capped). */
@@ -2815,7 +2843,7 @@ export class NPCNeedsSystem {
         ex.heardLines = 0;
         c.ex = ex;
         // A hush comes from the bark pool of an earlier line in this chat. An exchange starts only
-        // with the player in earshot and is meant to be overheard, so that hush must not cut it
+        // with its first speaker in earshot and is meant to be overheard, so that hush must not cut it
         c.hush = false;
         c.hushed = false;
         // The use each NPC had before the hold raised it to the knot's end. A cut gives this back
@@ -2842,10 +2870,12 @@ export class NPCNeedsSystem {
 
     /**
      * The exchange ends, played to the end (`complete`) or cut short (`reason`: the pair broke up;
-     * a hush cannot cut it, since _startExchange clears the chat's hush). The rule for heard (EXCHANGE_HEARD_FIX_LOG.md): played to the end, or cut after the
-     * player overheard at least one of its lines. Heard: heard_<knot> (a global: one key per knot,
-     * set once) and npc_exchange_heard:<knot> { complete }, never played again. Cut before any line
-     * reached the player: unplayed, so a later meeting in earshot plays it from the start.
+     * a hush cannot cut it, since _startExchange clears the chat's hush). The rule for heard (E9,
+     * NPC_NEEDS_SYSTEM.md 5.6a): the player overheard at least one of its lines, whether it played to
+     * the end or was cut. Heard: heard_<knot> (a global: one key per knot, set once) and
+     * npc_exchange_heard:<knot> { complete }, never played again. No line reached the player (cut, or
+     * played to the end to an empty room, logged exchange_unheard): unplayed, so a later meeting in
+     * earshot plays it from the start. c.exDone stays true either way: not again in this meeting.
      */
     _finishExchange(c, { complete = true, reason = null } = {}) {
         const ex = c.ex;
@@ -2853,8 +2883,9 @@ export class NPCNeedsSystem {
         c.exDone = true;
         const front = c.queue ? this.states.get(c.b) : null;
         if (front?.job?.phase === 'queued') front.job.queuedAt += this.clockMs - ex.startedAt;
-        const heard = complete || ex.heardLines > 0;
+        const heard = ex.heardLines > 0;
         if (!complete) this._log(ex.ownerId, 'exchange_cut', { knot: ex.knot, reason, line: ex.i, of: ex.lines.length, heardLines: ex.heardLines, heard });
+        else if (!heard) this._log(ex.ownerId, 'exchange_unheard', { knot: ex.knot, of: ex.lines.length });
         if (!heard) return;
         this._exPlayed.add(ex.knot);
         if (typeof this.world.setGlobal === 'function') {
@@ -3199,8 +3230,13 @@ export class NPCNeedsSystem {
                 if (o !== s && o.job?.targetId === job.targetId && o.job.dest) taken.push(o.job.dest);
             }
             if (taken.some(d => Math.hypot(d.x - cell.x, d.y - cell.y) <= HOME_EPS)) {
-                const alt = this.world.besideCell(cell, taken);
-                if (alt) cell = alt;
+                // E8: the side cell must be reachable from where this NPC stands (its leash kept).
+                // None: fail now (npc_job_failed no_beside_cell, the fail cooldown, the walk home),
+                // rather than stand on the first user's cell or walk to a cut-off cell until the
+                // deadline. _startJob has already run _leavePost (npc_left_post) by this point.
+                const alt = this.world.besideCell(cell, taken, { from: this.world.npcPos(id), avoidRooms: this._avoidRooms(s) });
+                if (!alt) { this._failJob(s, 'no_beside_cell'); return; }
+                cell = alt;
             }
         }
         const pos = this.world.npcPos(id) || cell;
@@ -4010,12 +4046,16 @@ export class NPCNeedsSystem {
             if (c.hushed) { this._endChat(oid, c, 'hushed'); continue; }
             if (this.clockMs < c.nextAt) continue;
             const overlapEnd = c.queue ? A.job.useUntil : Math.min(A.job.useUntil, B.job.useUntil);
-            // Order of preference (11.4): an unplayed exchange with the player in earshot, then a
-            // bark from the bag, then picture chat
+            // Order of preference (11.4): an unplayed exchange with its first speaker in earshot, then
+            // a bark from the bag (only for a speaker the player hears, E7), then picture chat
             if (!c.ex && !c.exDone) {
                 const ex = this._findExchange(A, B);
-                if (ex && !ex.pending && this._audience(c, c.overhearRadius || OVERHEAR_RADIUS)) this._startExchange(c, ex, A, B);
-                else if (!ex) c.exDone = true;   // none for this pair: no need to look again this meeting
+                // E9: start only when the player hears the first line's speaker. A pending or gated
+                // result looks again on the next free turn; only null ends the search this meeting.
+                if (ex && ex.lines) {
+                    const first = ex.lines[0].speakerId;
+                    if (this.playerHears(first, this._chatRadius(c, first))) this._startExchange(c, ex, A, B);
+                } else if (!ex) c.exDone = true;
             }
             if (c.ex) {
                 // Hold the pair for the lines left, from when the next one can start
@@ -4028,7 +4068,7 @@ export class NPCNeedsSystem {
                 const partnerId = l.speakerId === c.a ? c.b : c.a;
                 c.current = { speakerId: l.speakerId, partnerId, line: l.text, until: this.clockMs + ms, knot: c.ex.knot };
                 c.ex.i++;
-                const h = typeof this.world.playerHears === 'function' ? (this.world.playerHears(l.speakerId, c.overhearRadius || OVERHEAR_RADIUS) || {}) : {};
+                const h = typeof this.world.playerHears === 'function' ? (this.world.playerHears(l.speakerId, this._chatRadius(c, l.speakerId)) || {}) : {};
                 if (h.overheard) c.ex.heardLines++;
                 this._speak(l.speakerId, l.text, c.current.until, { topic: c.topic, objectId: oid, knot: c.ex.knot, overheard: !!h.overheard });
                 const pa = this.world.npcPos(partnerId);
@@ -4050,8 +4090,19 @@ export class NPCNeedsSystem {
             c.n++;
             // chattiness: the seeded chance this speaker says something on its turn (default 1)
             const chatty = Number.isFinite(Number(rec.chattiness)) && rec.chattiness !== null ? clamp(Number(rec.chattiness), 0, 1) : 1;
-            const pick = this.roll(c.speaker, `${salt}:chatty`) < chatty ? this._pickBark(sp, c.topic, { waitForLock: true }) : null;
+            // E7: one hearing check a turn, at the chat's radius for this speaker. Nobody in earshot:
+            // a picture, with no bag line taken and no cooldown started (a world with no playerHears,
+            // a unit stub, keeps speaking as before). The same `h` gives `overheard` below.
+            const canHear = typeof this.world.playerHears === 'function';
+            const h = canHear ? (this.world.playerHears(c.speaker, this._chatRadius(c, c.speaker)) || {}) : {};
+            const unheard = canHear && !h.overheard;
+            const tries = this.roll(c.speaker, `${salt}:chatty`) < chatty;
+            // The overlap left is passed on, so a bark that could not be said is never drawn (R1 M1)
+            const pick = tries ? this._pickBark(sp, c.topic, { waitForLock: true, unheard, maxMs: overlapEnd - this.clockMs }) : null;
             if (pick?.wait) { c.n--; c.nextAt = this._speechUntil; continue; }   // a voiced line is playing: queue
+            // An unheard turn with nothing to show (`pictures: false`) is not a silent turn: it does
+            // not count towards giving up, so a player who walks in later still finds the pair talking
+            if (!pick && tries && unheard) { c.n--; c.speaker = partnerId; c.nextAt = this.clockMs + CHAT_GAP_MS; continue; }
             if (!pick) {
                 if (c.n > 40) { this._chats.delete(oid); continue; }   // two silent NPCs: give up
                 c.speaker = partnerId;
@@ -4064,8 +4115,6 @@ export class NPCNeedsSystem {
             if (this.clockMs + ms > overlapEnd) { this._chats.delete(oid); continue; }
             c.current = { speakerId: c.speaker, partnerId, line, picture, until: this.clockMs + ms };
             c.hush = pool.hush;
-            const radius = c.overhearRadius || pool.overhearRadius || OVERHEAR_RADIUS;
-            const h = typeof this.world.playerHears === 'function' ? (this.world.playerHears(c.speaker, radius) || {}) : {};
             if (line) this._speak(c.speaker, line, c.current.until, { topic: c.topic, objectId: oid, overheard: !!h.overheard });
             const data = {
                 speakerId: c.speaker, partnerId, topic: c.topic, lineId: picture ? `picture:${picture}` : `${c.topic}:${idx}`, line, picture, objectId: oid,
@@ -5003,14 +5052,22 @@ export function createEngineWorld() {
         // same pathfinder (and leash rings) as moveTo, so a trip through a door is measured round the
         // wall rather than straight through it. Used by _expectedAwayMs. Returns null when no path is
         // found or the grid is not ready, so the caller can fall back to the straight-line lower bound.
+        // E8: with opts.detail the result is { length, known }: `known` is true only when the
+        // pathfinder answered (a path, a definite empty one, or the same tile; a grid not yet built
+        // is not an answer), and `length` is null
+        // for no path. Without it, the plain length or null as before.
         routeLength(from, to, opts) {
+            const out = (length, known) => (opts?.detail ? { length, known } : length);
             const pm = W().pathfindingManager;
-            if (!pm?.findWorldPath || !from || !to) return null;
+            if (!pm?.findWorldPath || !from || !to) return out(null, false);
             const straight = Math.hypot(to.x - from.x, to.y - from.y);
             // Same tile: EasyStar gives no path when start and end share a cell (see reachable).
-            if (straight < TILE) return straight;
+            if (straight < TILE) return out(straight, true);
             const pf = pm.worldPathfinder;
-            const canSync = !!(pf && pf.enableSync && pf.disableSync);
+            // findWorldPath answers null at once while the world grid is not ready: that is no
+            // answer, not "no path" (R1 m3), so it is unknown and never read as unreachable
+            if (!pf || !pm.worldGridBounds) return out(null, false);
+            const canSync = !!(pf.enableSync && pf.disableSync);
             let path = null, called = false;
             if (canSync) pf.enableSync();
             try {
@@ -5018,15 +5075,16 @@ export function createEngineWorld() {
                 if (opts?.avoidRooms?.length) pm.findWorldPath(from.x, from.y, to.x, to.y, cb, false, { avoidRooms: opts.avoidRooms });
                 else pm.findWorldPath(from.x, from.y, to.x, to.y, cb);
             } catch (e) {
-                return null;
+                return out(null, false);
             } finally {
                 if (canSync) pf.disableSync();
             }
-            if (!called || !path || !path.length) return null;
+            if (!called) return out(null, false);
+            if (!path || !path.length) return out(null, true);
             // Sum the legs from `from` through the tile-centre waypoints (the last is `to`'s cell).
             let d = 0, prev = from;
             for (const w of path) { d += Math.hypot(w.x - prev.x, w.y - prev.y); prev = w; }
-            return d;
+            return out(d, true);
         },
         playerProximity(id) {
             const pl = W().player;
@@ -5075,7 +5133,7 @@ export function createEngineWorld() {
         // waits for the bubble layer to place the line, and a line with no room is not voiced
         // (UX slice 5 R4 n4). An exchange or call line (info.knot or info.call) is not deferred:
         // it is voiced at once and the bubble layer toasts it when no bubble fits, since the
-        // exchange counts as heard (heard_<knot>) when its lines are done or it is cut after a heard line (R5 m2)
+        // exchange counts as heard (heard_<knot>) when the player overheard at least one of its lines (E9, 5.6a)
         speak: (id, line, info) => {
             const v = W().npcChatterVoice;
             const wb = W().npcWorldBubbles;
@@ -5135,13 +5193,22 @@ export function createEngineWorld() {
             }
             return first;
         },
-        // A second user of a shared object stands one tile beside the first: right, left, below, above
-        besideCell(cell, taken) {
+        // A second user of a shared object stands one tile beside the first: right, left, below, above.
+        // E8: with opts.from (the partner's position; opts.avoidRooms its leash), a walkable free side
+        // is passed over only on a definite "no path" (routeLength detail: known, length null); a
+        // side whose route is unknown counts as reachable, as reachable() treats "no answer". So a
+        // pathfinder that cannot answer synchronously gives the first walkable free side, as before.
+        // None passes: null, and the caller fails the job (no_beside_cell).
+        besideCell(cell, taken, opts = {}) {
             const pm = W().pathfindingManager;
             if (!pm?.findNearestWalkableWorldCell) return null;
             for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
                 const c = pm.findNearestWalkableWorldCell(cell.x + dx * TILE, cell.y + dy * TILE, 0);
-                if (c && !taken.some(t => Math.hypot(t.x - c.x, t.y - c.y) < TILE / 2)) return c;
+                if (!c || taken.some(t => Math.hypot(t.x - c.x, t.y - c.y) < TILE / 2)) continue;
+                if (!opts?.from) return c;
+                const r = this.routeLength(opts.from, c, { avoidRooms: opts.avoidRooms, detail: true });
+                if (r.known && r.length === null) continue;
+                return c;
             }
             return null;
         },

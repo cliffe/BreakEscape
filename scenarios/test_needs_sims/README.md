@@ -974,6 +974,20 @@ The beats below each ran once as a representative proof.
 | E9: an exchange can be marked heard with no line heard | NOT TRIGGERED this session | In every run the player stood in earshot, so each `npc_exchange_heard` carried `heardLines` > 0 (`marked_heard_with_0_heard: false`). The design works around E9 by not gating on `heard_` of an earlier exchange except the job-cleared gate (`heard_exchange_job_called`), which mirrors m02's clearance-after-burn and is the one place a 0-heard completion could set the flag; a separate prototype measures the difference |
 | HUD: needs chatter held or laned by the main-merged bark/lane code | NO INTERFERENCE | `window.npcBarks` and the HUD-lane globals are absent in this standalone build and `npc-barks.js`/`hud-lanes.js` never reference `npc_chatted`/`npc_overheard`; the staff-room lines render as NPC speech bubbles (see the boiler screenshot's "Long shift when it's this slow.") and were heard (exchange 5/5). Needs chatter is not held or laned |
 
+### E7 to E9: chatter spent only when heard (2026-11-14, keyless :3088, headless)
+
+Sanjay and Rosa are a coupled cooler pair (`chatterCooldownMin: 2`, `npc_use_started:water_cooler` both ways). Driver `tools/playtest/e7e9-live-proof.mjs`. The cooler's `useSeconds` is 40 in the scenario since review round 1 (m1); the first runs below set it in the page and sent Sanjay once Rosa reached the kitchen. The round 1 rerun (games 4516 to 4541) sets neither: Rosa is sent, the coupling sends Sanjay, and the pair had 26 to 33 s together.
+
+| Feature | Result | Evidence |
+|---|---|---|
+| Nothing spent out of earshot (E7) | PASS, 3 of 3 | games 4445, 4449, 4450: 2 `picture:` turns each with the player out of earshot, `sanjay|cooler` and `rosa|cooler` bags unchanged (null) |
+| First heard turn takes the next line (E7) | PASS, 3 of 3 | Sanjay `cooler:9`, `overheard: true` at 42 to 155 px; bubble in `e7-g4445-heard.png` |
+| Both use the cooler at once | PASS, 7 of 7 | no `timeout` or `no_beside_cell` with the player off the doorway |
+| Exchange starts with its first speaker heard (E9) | PASS, 2 of 2 | games 4452, 4455: `exchange_started exchange_rosa_rota`, lines 0 and 1 heard |
+| No exchange with only the second speaker heard (E9) | PASS (game 4461) | see the build log; the first attempts put the second speaker against the wall |
+| R1 rerun: no line drawn unheard or past the overlap | PASS, 5 of 5 | games 4516, 4517 (coupling only, 2 draws each, both heard and said inside the overlap), 4539 (heard turn with 3.2 s left: a picture, nothing drawn), 4541 (4.5 s left: the line said, ending 1 s before the overlap); on the round 1 engine, game 4540 drew Rosa's `cooler:1` and never said it |
+| R1 rerun: an existing bag survives an unheard break | PASS, 2 of 2 | games 4516, 4517: after a heard break, a second break with the player in the office (4517 with both cooldowns cleared): 6 `picture:` turns, both bags' `order` and `last` unchanged |
+
 ## Engine findings
 
 0. **Fixed 2026-11-14 (SIMS-2, OLMP E6).** An NPC used an object from across the room (baseline

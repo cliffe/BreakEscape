@@ -682,6 +682,7 @@
           "storyPath": "scenarios/test_needs_sims/ink/sanjay.json",
           "chatter": { "cooler": ["Long morning, this.", "Did you get any lunch?"], "grumble": ["I'll skip it for now."] },
           "exchanges": [{ "with": "rosa", "knot": "exchange_rosa_rota" }],
+          "chatterCooldownMin": 2,
           "currentKnot": "start",
           "voice": { "name": "Puck", "style": "Developer, mid twenties, British Indian, Leicester accent. Polite and a little shy.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
@@ -704,7 +705,8 @@
             { "eventPattern": "npc_left_post:marek", "condition": "data.targetId === 'office_coffee'", "cooldown": 30000, "needs": { "set": { "caffeine": 10 } } },
             { "eventPattern": "npc_turned_back:sanjay", "condition": "data.reason === 'avoid'", "onceOnly": true, "cooldown": 0, "completeTask": "see_turned_back" },
             { "eventPattern": "npc_exchange_heard:exchange_rosa_rota", "onceOnly": true, "cooldown": 0, "completeTask": "hear_rota_exchange" },
-            { "eventPattern": "npc_left_post:marek", "condition": "data.targetId === 'water_cooler'", "cooldown": 30000, "needs": { "set": { "social": 10 } } }
+            { "eventPattern": "npc_left_post:marek", "condition": "data.targetId === 'water_cooler'", "cooldown": 30000, "needs": { "set": { "social": 10 } } },
+            { "eventPattern": "npc_use_started:water_cooler", "condition": "data.npcId === 'rosa'", "cooldown": 30000, "needs": { "set": { "social": 10 } }, "_comment": "E7 to E9 showcase: a coupled cooler break with Rosa (the m02 pattern). Whoever starts using the cooler first brings the other." }
           ]
         },
         {
@@ -775,7 +777,9 @@
           "name": "Water Cooler",
           "position": { "x": 1, "y": 7 },
           "takeable": false,
-          "observations": "A water cooler. Room for two to stand and chat."
+          "observations": "A water cooler. Room for two to stand and chat.",
+          "_comment": "E7 to E9 showcase: Sanjay and Rosa are coupled on npc_use_started here, so the partner sets off only once the first has started. A capacity-2 object a coupled pair shares uses for at least the partner's walk plus 20 s; the preset's 15 s gave them 3 to 7 s together.",
+          "affordance": { "useSeconds": 40 }
         },
         {
           "type": "mugs_tray1",
@@ -907,6 +911,7 @@
           "spriteVisemes": "assets/characters/female_scientist_visemes.png",
           "storyPath": "scenarios/test_needs_sims/ink/rosa.json",
           "chatter": { "cooler": ["How's your week going?", "Lunch in the park, anyone?"], "grumble": ["It can wait."] },
+          "chatterCooldownMin": 2,
           "currentKnot": "start",
           "voice": { "name": "Leda", "style": "Team lead, forties, Spanish-born, years in the UK. Relaxed and friendly.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
@@ -918,7 +923,8 @@
             "rest": { "decayPerMin": 10, "urgentAt": 40, "initial": 75 }
           },
           "eventMappings": [
-            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Activity Board'", "cooldown": 30000, "needs": { "set": { "social": 10 } } }
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Activity Board'", "cooldown": 30000, "needs": { "set": { "social": 10 } } },
+            { "eventPattern": "npc_use_started:water_cooler", "condition": "data.npcId === 'sanjay'", "cooldown": 30000, "needs": { "set": { "social": 10 } }, "_comment": "E7 to E9 showcase: the other half of the coupled cooler break with Sanjay." }
           ]
         }
       ]
