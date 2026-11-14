@@ -151,3 +151,18 @@ Live: 360x640 hearts 8..176 x 500..532, Block 188..256, no overlap, no lift; 320
 Tests: `ui-hud-lanes` 36 (1 new: widths 320 to 480 in steps of 4, with and without Block/Punch, hearts never within the gap of the buttons, no lift at 356 and up, lift below, none without Block/Punch). `bark-release-policy` 31, `bark-lifetime` 7, `npc-bark-delay` 20, `phone-call-bark-hold` 2, `engine-fixes-round6` 9, `toast-once-across-panel-handover` 6: all green, one at a time.
 
 Shots: `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/e7a32fee-bb00-4a46-ab62-f0d4de35d260/scratchpad/ui-hud-f2/shots/` (`b-m2__390x844.png`, `c-m2__360x640.png`, `c-m2__844x390.png`, `c-m2__915x412.png`, `e-m2__1400x1000.png`, `hearts-before-*.png`, `hearts-after-*.png`, `hearts-g-360x640.png`).
+
+## Final pass (after review round 3)
+
+Main merged first (3a083f167 or later, no conflicts). Then the R3 findings and the older phone bug, each as its own commit.
+
+- m1 `js/ui/hud-lanes.js`: with no finished-task line, a toast that stepped aside comes back oldest first, only when it fits whole next to the speech line and the visible texts (`sum([toasts + its saved height, texts]) + message content <= budget`). Until then it stays aside with its countdown paused. A toast with nothing else sharing the lanes always comes back. Its height is saved as `_laneH` when it steps aside.
+- m2 `css/objectives.css` and `css/ui-themes.css`: the themed one-line cap (`calc(40px + 2 * square-px)`) beat the two-line rule, so the second line was cut. On upright phones the collapsed pill now has `max-height: none` (sized from its content). 360x640 m01: 56 px became 70 px tall, "Access" whole.
+- m3 `js/systems/notifications.js`: a repeat of a toast that is stepped aside sets its saved time left to the new duration instead of starting a countdown.
+- n1 `phone-chat-ui.js`: `listContacts(phoneId, quiet)`; the back-badge count passes `quiet`, so no console lines per bark.
+- n2 `css/phone-chat-minigame.css`: `.back-button .back-unread` is GNF 16px.
+- Older bug (own commit): `@media (max-height: 500px)` in `phone-chat-minigame.css`. The thread's minimum is 40 px, the replies shrink, scroll inside the frame and use tighter padding. 844x390: frame 20 to 293, replies 215 to 244 and 248 to 277, both inside, both hit by a tap at their centre (before: second reply drawn under the clip, tap hit Add to Notepad). 915x412: frame 20 to 308, replies 231 to 260 and 264 to 292. A tap on the second reply was a real click at its centre: the conversation ended and the phone closed, Add to Notepad did not open. With more replies than fit, the list scrolls inside the frame.
+- Tests: `ui-hud-lanes` 40 (4 new: return-when-it-fits, repeat while aside, pill and badge CSS, short landscape replies CSS); the M4 return test now gives the hidden toast no height, as the real container does.
+- Gotcha: the lightweight toast tests (`toast-duplicate`) stub elements without `classList.contains`, so the repeat path keys off `_yieldLeft` only.
+
+Live (keyless server :3460, a fresh game per size, scrollbars shown, one browser at a time; scripts in scratchpad `ui-hud-r3/`: `sweep2.sh`, `rt.sh`, `replytap.js`): the five-at-once sweep passes at 320x568, 360x640, 390x844, 844x390, 915x412 and 1400x1000 in m01_first_contact and ca01_invoice_fraud (12 of 12, no overlap, no line cut for three samples). 320x568 m01 passes now (R3 m1 failed it). ca01 has no phone contacts, so the landscape reply proof is m01 only. At 320 ca01's aim still takes three lines (ends "email in..."), accepted in R3.
