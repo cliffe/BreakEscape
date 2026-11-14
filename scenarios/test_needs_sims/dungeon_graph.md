@@ -11,7 +11,7 @@ A demo of the NPC needs system. Nothing to solve. Five staff get thirsty, hungry
 | Metric | Value |
 |---|---|
 | Story aims | 3 |
-| Total tasks | 45 (0 optional) |
+| Total tasks | 47 (0 optional) |
 | VM flag challenges | 0 |
 | Physical locks | 0 |
 | AND-gate convergences | 0 |
@@ -289,9 +289,10 @@ flowchart TD
   rc_staff_boiler_50{"Boiler"}
   rc_staff_cooler_51{"Water Cooler"}
   rc_staff_microwave_52{"Microwave"}
-  rc_job_board_53{"Job Board"}
-  rc_npc_keith_dando_54("Keith Dando")
-  rc_npc_jodie_kerr_55("Jodie Kerr")
+  rc_staff_lockers_53{"Staff Lockers"}
+  rc_job_board_54{"Job Board"}
+  rc_npc_keith_dando_55("Keith Dando")
+  rc_npc_jodie_kerr_56("Jodie Kerr")
 
   office --> kitchen
   office --> lounge
@@ -350,12 +351,13 @@ flowchart TD
   staff_room --> rc_staff_boiler_50
   staff_room --> rc_staff_cooler_51
   staff_room --> rc_staff_microwave_52
-  staff_room --> rc_job_board_53
-  staff_room --> rc_npc_keith_dando_54
-  staff_room --> rc_npc_jodie_kerr_55
+  staff_room --> rc_staff_lockers_53
+  staff_room --> rc_job_board_54
+  staff_room --> rc_npc_keith_dando_55
+  staff_room --> rc_npc_jodie_kerr_56
 
   class office,kitchen,lounge,it_room,manager_office,staff_room room
-  class rc_amara_pc_1,rc_tom_pc_2,rc_tom_badge_3,rc_tom_phone_4,rc_spare_phone_5,rc_sanjay_pc_6,rc_grace_laptop_7,rc_office_coffee_8,rc_office_coffee_socket_9,rc_office_mugs_10,rc_activity_board_11,rc_office_copier_12,rc_office_copier_socket_13,rc_copier_out_a_14,rc_copier_out_b_15,rc_copier_out_c_16,rc_copier_out_d_17,rc_copier_out_e_18,rc_print_queue_note_19,rc_deadline_memo_20,rc_kitchen_rota_21,rc_coffee_notice_22,rc_fridge_28,rc_microwave_29,rc_kitchen_coffee_30,rc_water_cooler_31,rc_washing_up_tray_32,rc_kitchen_copier_33,rc_kitchen_copier_socket_34,rc_kitchen_out_a_35,rc_kitchen_out_b_36,rc_rosa_laptop_37,rc_lounge_sofa_38,rc_lounge_kettle_39,rc_neil_mug_41,rc_it_copier_42,rc_it_out_a_43,rc_it_out_b_44,rc_it_out_c_45,rc_it_out_d_46,rc_it_out_e_47,rc_it_out_f_48,rc_staff_boiler_50,rc_staff_cooler_51,rc_staff_microwave_52,rc_job_board_53 item
-  class rc_npc_amara_okoye_23,rc_npc_tom_fletcher_24,rc_npc_grace_lindqvist_25,rc_npc_sanjay_mehta_26,rc_npc_marek_nowak_27,rc_npc_rosa_delgado_40,rc_npc_neil_robson_49,rc_npc_keith_dando_54,rc_npc_jodie_kerr_55 npc
+  class rc_amara_pc_1,rc_tom_pc_2,rc_tom_badge_3,rc_tom_phone_4,rc_spare_phone_5,rc_sanjay_pc_6,rc_grace_laptop_7,rc_office_coffee_8,rc_office_coffee_socket_9,rc_office_mugs_10,rc_activity_board_11,rc_office_copier_12,rc_office_copier_socket_13,rc_copier_out_a_14,rc_copier_out_b_15,rc_copier_out_c_16,rc_copier_out_d_17,rc_copier_out_e_18,rc_print_queue_note_19,rc_deadline_memo_20,rc_kitchen_rota_21,rc_coffee_notice_22,rc_fridge_28,rc_microwave_29,rc_kitchen_coffee_30,rc_water_cooler_31,rc_washing_up_tray_32,rc_kitchen_copier_33,rc_kitchen_copier_socket_34,rc_kitchen_out_a_35,rc_kitchen_out_b_36,rc_rosa_laptop_37,rc_lounge_sofa_38,rc_lounge_kettle_39,rc_neil_mug_41,rc_it_copier_42,rc_it_out_a_43,rc_it_out_b_44,rc_it_out_c_45,rc_it_out_d_46,rc_it_out_e_47,rc_it_out_f_48,rc_staff_boiler_50,rc_staff_cooler_51,rc_staff_microwave_52,rc_staff_lockers_53,rc_job_board_54 item
+  class rc_npc_amara_okoye_23,rc_npc_tom_fletcher_24,rc_npc_grace_lindqvist_25,rc_npc_sanjay_mehta_26,rc_npc_marek_nowak_27,rc_npc_rosa_delgado_40,rc_npc_neil_robson_49,rc_npc_keith_dando_55,rc_npc_jodie_kerr_56 npc
   class node_start start
 ```
