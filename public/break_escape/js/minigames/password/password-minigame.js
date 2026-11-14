@@ -4,7 +4,7 @@ import { makeDraggable } from '../../utils/helpers.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { escapeHtml } from '../../utils/escape-html.js';
 import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
-import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } from '../../utils/lock-scope-refusal.js';
+import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal, unlockWithRouteRoomRetry } from '../../utils/lock-scope-refusal.js';
 import { isComputerType } from '../../utils/computer-keywords.js';
 import { mountPcMonitor, cssZoomOf, pcPostitButtonHtml } from '../../utils/pc-monitor.js';
 import { headshotCandidates, headshotKeys, noteMissingHeadshot, npcRecordFor, headshotSourceFor, applyHeadshotBox, SILHOUETTE_URL,
@@ -1180,9 +1180,9 @@ export class PasswordMinigame extends MinigameScene {
 
             console.log('Validating password with server:', { targetType, targetId, attempt: enteredPassword });
 
-            // Call server API for validation (use ApiClient with correct casing)
-            const apiClient = window.ApiClient || window.APIClient;
-            const response = await apiClient.unlock(targetType, targetId, enteredPassword, 'password');
+            // Call server API for validation, through the shared object-unlock retry so a correct
+            // password on a route-room object is not refused during the pre-promotion window (§3.6).
+            const response = await unlockWithRouteRoomRetry(targetType, targetId, enteredPassword, 'password');
 
             if (response.success) {
                 // If server returned container contents, populate the lockable object

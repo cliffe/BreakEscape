@@ -856,6 +856,34 @@ module BreakEscape
              "player loaded:\n#{sql.join("\n")}"
     end
 
+    test 'game creation seeds the server-owned sync memos so the first sync reads no scenario_data' do
+      # The credit-global and server-completed-only sets are derived at creation (scenario_data is
+      # loaded then) and memoised into player_state, so sync_state reads them from the narrow row
+      # and never reloads scenario_data (GATED_DOOR §3.4/§7, the sync-deltas rule). This scenario
+      # declares no creditOnPass, so both memos are the empty array, but present.
+      state = create_game.player_state
+      assert_equal [], state['serverCreditGlobals'], 'serverCreditGlobals seeded at creation'
+      assert_equal [], state['serverCompletedOnly'], 'serverCompletedOnly seeded at creation'
+    end
+
+    test 'an ordinary sync reads no scenario_data even when the credit memo is absent (a pre-change game)' do
+      # A game stored before this change has no memo. The sync-path readers must still never read
+      # the full scenario_data blob (the removed .pick fallback); [] is the safe result, because a
+      # pre-change game's stored scenario predates creditOnPass and credits no global.
+      game = create_game
+      game.player_state.delete('serverCreditGlobals')
+      game.player_state.delete('serverCompletedOnly')
+      game.save!
+
+      sql = capture_sql { put sync_state_game_url(game), params: { globalVariables: { 'a' => 1 }, clientTs: 5 }, as: :json }
+      assert_response :success
+      game_loads = sql.select { |s| s.start_with?('SELECT') && s.include?('"break_escape_games"') }
+      refute game_loads.any? { |s| s.include?('"break_escape_games"."scenario_data"') },
+             "no full scenario_data read on a sync even with the memo absent:\n#{sql.join("\n")}"
+      refute game_loads.any? { |s| s.include?('"break_escape_games".*') },
+             "no wildcard game load on a sync even with the memo absent:\n#{sql.join("\n")}"
+    end
+
     test 'every section saves on the narrow load (no MissingAttributeError), and startRoom is fetched on its own' do
       game = create_game
       game.scenario_data['rooms']['lobby']['objects'] = [{ 'type' => 'pc', 'fingerprintOwner' => 'Robert Vance' }]
@@ -894,8 +922,12 @@ module BreakEscape
       assert_equal 1000, state['lastSyncClientTs']
       assert_equal({ 'met' => true }, state.dig('npcInkVariables', 'hax'))
 
+      # R4 MINOR 1: a refused currentRoom is skipped (reported in notSaved), not rolled back;
+      # the saved room stays at the last accepted one (vault).
       put sync_state_game_url(game), params: { currentRoom: 'nowhere' }, as: :json
-      assert_response :forbidden
+      assert_response :success
+      assert_includes Array(response.parsed_body['notSaved']), 'currentRoom'
+      assert_equal 'vault', game.reload.player_state['currentRoom']
     end
 
     test 'a partial sync leaves the sections it does not carry alone' do
