@@ -1,5 +1,13 @@
 # SIMS-2 R1b handover (owner item 6 offWhen + remaining live proofs)
 
+**DONE 2026-11-14.** All five live proofs ran clean on the final tree and the docs are updated.
+Tom 20 trips office-coffee-off game 4290 (0 office picks, `_isOff` holds, 0 `arrival_far`); Design M1
+chair-fetch game 4293 (use completes, 0 `arrival_far`); offWhen carried live - networks `bench_pc`
+game 4297 (no needs change), social `l2_pc` game 4316 and work `ian_pc` game 4317 (both work sources
+now excluded when off); lab_physical_pentest three staff game 4295 (3 clean coffee trips each, 0
+`arrival_far`). Full `bin/test-js`: 649 pass, 0 fail. README SIMS-2 rows + finding 6 and build log
+updated. No new engine fault found; no further engine edits beyond the committed R1b `describe` fix.
+
 Branch `build/ol-sims-2`. Worktree `.claude/worktrees/p-ol-sims2`, port 3094.
 Scratch `officelife-sims/s2-fix-r1b/`.
 

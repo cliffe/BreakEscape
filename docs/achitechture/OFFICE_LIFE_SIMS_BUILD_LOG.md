@@ -53,6 +53,21 @@ corrected natural-run live evidence (Grace 16 of 20 real clock, game 4232; Tom's
 a working office-coffee switch-off). The earlier "30 natural runs did not repeat the baseline" claim
 is dropped (no saved artefacts for 30 baseline runs).
 
+Review R1b (owner item 6, offWhen) fixed in commit `4fcda935b`: the live needs-world `describe` was
+dropping an object's top-level `offWhen` (broken in format step 8a, `33b3ea3bc`), so `_isOff` was
+always false live and a switched-off source was never excluded from need-picks. The one-line copy in
+`describe` restores it. Live proofs on the final tree (keyless :3094, headless, port games below):
+Tom's 20 caffeine trips with the office coffee switched off (game 4290) now pick the office coffee 0
+times and cross to the kitchen 14, `_isOff(office_coffee)` holds, every `using` within 7 px, zero
+`arrival_far`. Design M1 chair-fetch (game 4293, seat_office) completes sam's use with zero
+`arrival_far` and no mid-use re-issue. offWhen carried live across scenarios: `bench_pc` (networks,
+game 4297) carries offWhen and flips but satisfies nothing (no needs change, device view only);
+`l2_pc` (social, game 4316) and `ian_pc` (work, game 4317) carry offWhen, satisfy `work` and flip,
+so each is now excluded from a work pick when off. lab_physical_pentest's three open-plan staff
+(game 4295) each made 3 clean coffee trips, every `using` within 8 px, zero `arrival_far` /
+`arrival_ignored`; the lab's `lw_post_printer` offWhen is a resource, not a scene object, so the
+`describe` fix does not touch it. Full `bin/test-js` on the final tree: 649 files pass, 0 fail.
+
 Fault reproduced on the build as it stands. The baseline (game 3537) arrival did not repeat in
 natural play, so the stubbed short path is the reproduction, as the plan allows:
 Grace's `_planMovePath` was stubbed through the test bridge to end ~35% along her office->lounge
@@ -87,6 +102,7 @@ layer emits no `npc_arrived` and `_advanceJob`'s `goto_item` branch, npc-needs.j
 | SIMS-2 R1 | npc-needs.js | `_acceptArrival` | the job far guard is keyed by `${phase}:${dest cell}` (`job._farKey`), was `job._farPhase === phase` | review R1 m2 (both reviews): queue steps all share `queued`; a far arrival at a later queue cell (or after a freeze re-issue) was read as a repeat far arrival and failed the job on two different cells | build/ol-sims-2 |
 | SIMS-2 R1 | npc-needs.js | `_tickNpc` (unfreeze), `_advanceQueued` (queue step) | clear `job._farKey` on the post-freeze re-issue and the step to a new queue cell | review R1 m2: a re-issue after a freeze or a queue-cell step is a fresh move, not a repeat far arrival | build/ol-sims-2 |
 | SIMS-2 R1 | npc-needs.js | `_acceptArrival` (returning branch), `_watchReturn` | log `arrival_far` once per return (gated on `!returnFarReissued`); `_watchReturn` re-plans with `keepFarFlag: true` so the flag persists | review R1 Design m1 / server minor 2: an unreachable home logged `arrival_far` and re-issued twice per `_watchReturn` cycle; now once per return, re-planned quietly | build/ol-sims-2 |
+| SIMS-2 R1b | npc-needs.js | `createEngineWorld` `describe` (~4780) | copy object-level `offWhen` onto the described needs object: `if (sd.offWhen !== undefined) out.offWhen = sd.offWhen;` | owner finding 6: format step 8a (`33b3ea3bc`) moved `affordance.offWhen` to object level and made `_isOff` read `o.offWhen`, but `describe` never copied it, so `_isOff` was always false live and no switched-off source was excluded (office coffee could not be switched off, game 4265). Commit `4fcda935b`; real-adapter node test `test/js/npc-needs-offwhen-adapter.test.mjs` (fails without the fix) | build/ol-sims-2 |
 
 ### SIMS-1 owner items (engine/server faults, not fixed here)
 
