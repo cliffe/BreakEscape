@@ -96,6 +96,33 @@ body:has([data-minigame="phone-chat"]) #notification-container {
     width: 100%;
 }
 
+/* Phones (UI decision H1 option A): the toast lane shows one toast at a time (notifications.js
+   maxShownToasts), two lines of message at most so it never covers the room. A warning or an
+   error explains a refusal and may take three; a verbatim toast (a password to copy) is never
+   cut. ui/hud-lanes.js sets body.hud-compact. */
+body.hud-compact .notification {
+    padding: 10px 40px 10px 14px;
+    margin-bottom: 8px;
+}
+body.hud-compact .notification-title {
+    font-size: 16px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+body.hud-compact .notification:not(.verbatim) .notification-message {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+}
+body.hud-compact .notification.warning:not(.verbatim) .notification-message,
+body.hud-compact .notification.error:not(.verbatim) .notification-message {
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+}
+
 /* Confirmation dialog */
 .game-confirm-overlay {
     position: fixed;

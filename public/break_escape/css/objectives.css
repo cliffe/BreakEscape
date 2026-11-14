@@ -412,3 +412,57 @@
 .objectives-end-button:focus {
   background: #1d4d33;
 }
+
+/* Phones (UI decision H1 option A): the panel is a one-line pill in the top bar showing the
+   current aim and its count (objectives-panel.js updatePill). It never opens by itself; a tap
+   opens it as a sheet over the map, closed by its X. Objective toasts fold into a pulse of the
+   pill (foldToast). Same test as ui/hud-lanes.js isCompactViewport. */
+.objectives-pill-summary {
+  display: none;
+}
+
+@media (max-width: 899.98px), (max-height: 500px) {
+  .objectives-panel.collapsed {
+    width: auto;
+    max-width: min(420px, calc(100vw / var(--hud-zoom, 1) - 200px));
+    min-width: 0;
+  }
+  .objectives-panel.collapsed .objectives-title-text {
+    display: none;
+  }
+  .objectives-panel.collapsed .objectives-pill-summary {
+    display: block;
+    flex: 1;
+    min-width: 0;
+    margin: 0 8px;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .objectives-panel.objectives-sheet {
+    width: calc(100vw / var(--hud-zoom, 1) - 32px);
+    left: 16px;
+    max-height: 50vh;
+  }
+  /* The sheet's toggle is its X */
+  .objectives-panel.objectives-sheet .objectives-toggle .obj-chevron {
+    display: none;
+  }
+  .objectives-panel.objectives-sheet .objectives-toggle::after {
+    content: 'X';
+    font-family: 'Press Start 2P', monospace;
+    font-size: 16px;
+    line-height: 16px;
+  }
+  .objectives-panel.pill-pulse {
+    animation: objectives-pill-pulse 0.5s steps(2, end) 4;
+  }
+}
+
+/* A hard on/off blink in whole steps (no soft glow) */
+@keyframes objectives-pill-pulse {
+  0% { outline: 2px solid #ffd23f; outline-offset: 0; }
+  100% { outline: 2px solid transparent; outline-offset: 0; }
+}

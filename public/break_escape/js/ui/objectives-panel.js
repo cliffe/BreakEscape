@@ -30,6 +30,19 @@ export class ObjectivesPanel {
     this.aimStatus = {};   // tracks last known status to detect completions
 
     this.createPanel();
+    // Phones (UI decision H1 option A): the panel is a one-line pill in the top bar, the current
+    // aim and its count. It never opens by itself; a tap opens it as a sheet with an X.
+    this._pillFlashTimer = null;
+    this._pillFlash = null;
+    this._wasCompact = ObjectivesPanel.compactNow();
+    if (this._wasCompact) this.setCollapsed(true);
+    this._compactCue = () => {
+      const compact = ObjectivesPanel.compactNow();
+      if (compact && !this._wasCompact) this.setCollapsed(true);
+      this._wasCompact = compact;
+      this.container.classList.toggle('objectives-sheet', compact && !this.isCollapsed);
+    };
+    window.addEventListener?.('resize', this._compactCue);
     this.manager.addListener((aims) => this.render(aims));
 
     // Initial render
@@ -46,7 +59,8 @@ export class ObjectivesPanel {
     const header = document.createElement('div');
     header.className = 'objectives-header';
     header.innerHTML = `
-      <span class="objectives-title"><i class="objectives-clipboard" aria-hidden="true"></i>Objectives</span>
+      <span class="objectives-title"><i class="objectives-clipboard" aria-hidden="true"></i><span class="objectives-title-text">Objectives</span></span>
+      <span class="objectives-pill-summary" aria-live="polite"></span>
       <div class="objectives-controls">
         <button class="objectives-toggle" aria-label="Toggle objectives" title="Collapse/Expand">${CHEVRON}</button>
       </div>
@@ -132,12 +146,68 @@ export class ObjectivesPanel {
   }
   
   toggleCollapse() {
-    this.isCollapsed = !this.isCollapsed;
+    this.setCollapsed(!this.isCollapsed);
+    if (window.getTutorialManager) window.getTutorialManager().notifyObjectivesToggled();
+  }
+
+  setCollapsed(collapsed) {
+    this.isCollapsed = !!collapsed;
     this.container.classList.toggle('collapsed', this.isCollapsed);
+    // Opened on a phone it is a sheet over the map, closed by its X (the toggle)
+    this.container.classList.toggle('objectives-sheet', ObjectivesPanel.compactNow() && !this.isCollapsed);
     this.updateMoreBelow();
     const toggle = this.container.querySelector('.objectives-toggle');
-    toggle.classList.toggle('is-collapsed', this.isCollapsed);
-    if (window.getTutorialManager) window.getTutorialManager().notifyObjectivesToggled();
+    toggle?.classList.toggle('is-collapsed', this.isCollapsed);
+    toggle?.setAttribute('aria-label', this.isCollapsed ? 'Open objectives' : 'Close objectives');
+  }
+
+  /** The phone layout (ui/hud-lanes.js isCompactViewport: under 900 px wide or 500 px tall). */
+  static compactNow(win = (typeof window !== 'undefined' ? window : null)) {
+    if (!win || !win.innerWidth) return false;
+    return win.innerWidth < 900 || win.innerHeight <= 500;
+  }
+
+  /**
+   * The pill's line: the first active aim and how many of its visible tasks are done, as
+   * { title, done, total }, or null with no active aim. Pure; tested.
+   */
+  static pillSummary(aims) {
+    const aim = (aims || []).find(a => a && a.status !== 'completed' && a.status !== 'locked') || null;
+    if (!aim) return null;
+    const visible = (aim.tasks || []).filter(t => t.status !== 'locked');
+    const done = visible.filter(t => t.status === 'completed' || t.status === 'skipped').length;
+    return { title: aim.title || '', done, total: visible.length };
+  }
+
+  /** Write the pill's line (the flash, while one shows, else the current aim). */
+  updatePill(aims = this._lastAims) {
+    const el = this.container?.querySelector('.objectives-pill-summary');
+    if (!el) return;
+    if (this._pillFlash) { el.textContent = this._pillFlash; return; }
+    const sum = ObjectivesPanel.pillSummary(aims);
+    el.textContent = sum ? (sum.total ? `${sum.title} ${sum.done}/${sum.total}` : sum.title) : '';
+  }
+
+  /**
+   * On a phone an objective toast (task complete, new task, aim complete, new aim) folds into
+   * the pill: it pulses and shows the news for a few seconds instead of a toast over the room
+   * (H1 option A). Returns true when it folded, so the caller skips the toast.
+   */
+  foldToast(title, message, ms = ObjectivesPanel.PILL_FLASH_MS) {
+    if (!ObjectivesPanel.compactNow() || !this.container || this.container.classList.contains('hidden')) return false;
+    if (document.body?.classList?.contains('minigame-active')) return false;   // pill hidden: keep the toast
+    this._pillFlash = `${title}: ${message}`;
+    this.updatePill();
+    this.container.classList.remove('pill-pulse');
+    void this.container.offsetWidth;   // restart the pulse
+    this.container.classList.add('pill-pulse');
+    clearTimeout(this._pillFlashTimer);
+    this._pillFlashTimer = setTimeout(() => {
+      this._pillFlash = null;
+      this.container.classList.remove('pill-pulse');
+      this.updatePill();
+    }, ms);
+    return true;
   }
   
   /**
@@ -165,6 +235,8 @@ export class ObjectivesPanel {
   }
 
   render(aims) {
+    this._lastAims = aims;
+    this.updatePill(aims);
     if (!aims || aims.length === 0) {
       this.content.innerHTML = '<div class="no-objectives">No active objectives</div>';
       this.updateMoreBelow();
@@ -368,10 +440,14 @@ export class ObjectivesPanel {
       this.container.parentNode.removeChild(this.container);
     }
     if (this._moreBelowCue) window.removeEventListener?.('resize', this._moreBelowCue);
+    if (this._compactCue) window.removeEventListener?.('resize', this._compactCue);
+    clearTimeout(this._pillFlashTimer);
     this._moreBelowObserver?.disconnect();
     this._moreBelowObserver = null;
     this.manager.removeListener(this.render);
   }
 }
+
+ObjectivesPanel.PILL_FLASH_MS = 4000;
 
 export default ObjectivesPanel;

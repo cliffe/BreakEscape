@@ -231,6 +231,12 @@ function setPlainLines(el, text) {
 
 // Toasts on screen at once; info and success toasts past this wait (renderNotification).
 export const MAX_SHOWN_TOASTS = 2;
+// On a phone the toast lane holds one toast at a time (UI decision H1 option A); the rest queue.
+// ui/hud-lanes.js marks the phone layout with body.hud-compact.
+export const MAX_SHOWN_TOASTS_COMPACT = 1;
+export function maxShownToasts(doc = (typeof document === 'undefined' ? null : document)) {
+    return doc?.body?.classList?.contains('hud-compact') ? MAX_SHOWN_TOASTS_COMPACT : MAX_SHOWN_TOASTS;
+}
 // The head of the waiting line shows after this long even if both places are still taken
 // (going over the limit by one for a moment), so it never lands long after the event it is
 // about. The rest follow it a TOAST_STAGGER_MS apart.
@@ -281,12 +287,12 @@ function headDue() {
     head.waitTimer = null;
     const container = typeof document === 'undefined' ? null : document.getElementById('notification-container');
     const shown = shownToasts(container).length;
-    if (shown > MAX_SHOWN_TOASTS) {
+    if (shown > maxShownToasts()) {
         head.waitTimer = setTimeout(headDue, TOAST_STAGGER_MS);
         return;
     }
     waitingToasts.shift();
-    if (shown >= MAX_SHOWN_TOASTS) lastOverLimitAt = Date.now();
+    if (shown >= maxShownToasts()) lastOverLimitAt = Date.now();
     showWaitingToast(head, true);
     armHead();
 }
@@ -325,7 +331,7 @@ function holdForPanel(list) {
 function showNextWaiting() {
     if (typeof document === 'undefined') return;
     const container = document.getElementById('notification-container');
-    while (waitingToasts.length && shownToasts(container).length < MAX_SHOWN_TOASTS) {
+    while (waitingToasts.length && shownToasts(container).length < maxShownToasts()) {
         if (!showWaitingToast(waitingToasts.shift(), false)) break;
     }
     armHead();
@@ -354,7 +360,7 @@ function renderNotification(message, type, title, duration, seen = false, option
     // what the player just did, so they still show at once.
     // A toast that stays until closed takes no place and never waits for one.
     if (!overLimit && HOLDABLE_TYPES.has(type) && duration > 0
-        && shownToasts(notificationContainer).length >= MAX_SHOWN_TOASTS) {
+        && shownToasts(notificationContainer).length >= maxShownToasts()) {
         if (!isQueuedDuplicate(waitingToasts, message, type, title, options)) {
             addWaiting([message, type, title, duration, seen, options]);
         }
@@ -386,6 +392,8 @@ function renderNotification(message, type, title, duration, seen = false, option
         setPlainLines(notification.querySelector('.notification-message'), verbatim ? message : displayDashes(message));
         // review R2 n1: a password's doubled, leading or trailing spaces are kept on screen
         if (verbatim) notification.querySelector('.notification-message').style.whiteSpace = 'pre-wrap';
+        // Never cut short on a phone (the two-line limit, css/notifications.css): it is copied
+        if (verbatim) notification.classList.add('verbatim');
     }
     notification._toast = { message, type, title, duration, shownAt: Date.now(), seen, html: !plainText, verbatim };
     

@@ -10,6 +10,11 @@ import { releaseHeldBarks } from './bark-release-policy.js';
 import { workstationPopupOpen, phoneThreadOpenFor, openPhoneThread, threadTextKey } from '../utils/overlay-open.js';
 import { barkLifetimeMs, barksToTrim, BARK_RESUME_MIN_MS } from './bark-lifetime.js';
 import { inventoryBlockedByForcedMinigame } from './forced-minigame-guard.js';
+import { barkSource, arrowDirection, startHudLanes } from '../ui/hud-lanes.js';
+import { applyHeadshotBox } from '../utils/npc-headshot.js';
+
+// The phone notification's icon (B2 option A): 16x16 pixel art at 1x
+export const PHONE_ICON_URL = '/break_escape/assets/icons/npc-phone.png';
 
 /**
  * Where a bark shows (UX feedback round slice 5, o-barks): the speech bubble over a person NPC
@@ -52,6 +57,7 @@ export default class NPCBarkSystem {
     this.isDrainingDeferred = false;
 
     this.clearAllButton = null;
+    this.speechContainer = null;
   }
 
   init() {
@@ -62,6 +68,20 @@ export default class NPCBarkSystem {
       this.container = document.createElement('div');
       this.container.id = 'npc-bark-container';
       document.body.appendChild(this.container);
+    }
+    // Speech from someone in the building who is out of view has a lane of its own above the
+    // caption (UI decisions H1 and B2): it is not a phone text, so it never looks like one
+    this.speechContainer = document.getElementById('npc-speech-container');
+    if (!this.speechContainer) {
+      this.speechContainer = document.createElement('div');
+      this.speechContainer.id = 'npc-speech-container';
+      this.speechContainer.setAttribute('aria-live', 'polite');
+      document.body.insertBefore(this.speechContainer, this.container);
+    }
+    // The lanes place both containers, the toasts and the caption between the top bar and dock
+    if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function'
+        && typeof window.MutationObserver === 'function' && !window.__hudLanesDisabled) {
+      try { startHudLanes(document, window); } catch (e) { console.debug('[hud-lanes] not started:', e); }
     }
     
     // Preload bark notification sound
@@ -234,6 +254,7 @@ export default class NPCBarkSystem {
     const thread = openPhoneThread();
     if (!thread) return 0;
     let n = 0;
+    // Only phone texts point at a thread; speech lines in the building have none
     for (const el of this.container.querySelectorAll('.npc-bark')) {
       if (el._removing) continue;
       if (el._npcId === thread.npcId
@@ -381,14 +402,21 @@ export default class NPCBarkSystem {
       if (ttsPromise) ttsPromise.then(ms => { if (ms) handle.setAudioMs(ms); }, () => {});
       return ttsPromise;
     }
-    this.lastRoute = { npcId, route: 'toast' };
+    // Phone text or speech in the building (B2 option A): two looks, two places
+    const manager = this.npcManager || (typeof window !== 'undefined' ? window.npcManager : null);
+    const npcDef = (npcId && manager?.getNPC?.(npcId)) || null;
+    const source = barkSource({ npcType: npcDef?.npcType || contact?.npcType || null, channel: payload.channel || null,
+      hasClickHandler: typeof payload.onClick === 'function' });
+    const speech = source === 'speech' && !!this.speechContainer;
+    const host = speech ? this.speechContainer : this.container;
+    this.lastRoute = { npcId, route: 'toast', source: speech ? 'speech' : 'phone' };
 
-    // Create bark element (using DocumentFragment for batch update)
     const el = document.createElement('div');
-    el.className = 'npc-bark';
-    
-    // Add avatar if provided
-    if (avatar) {
+    el.className = `npc-bark ${speech ? 'npc-bark--speech' : 'npc-bark--phone'}`;
+    el.dataset.source = speech ? 'speech' : 'phone';
+
+    // The sender's face: an avatar the caller gave, else the character's own 32x32 headshot
+    if (avatar && !/_headshot\.png$/i.test(String(avatar).split(/[?#]/)[0])) {
       const avatarImg = document.createElement('img');
       // Resolve avatar path to full URL if relative
       let avatarSrc = avatar;
@@ -403,39 +431,70 @@ export default class NPCBarkSystem {
       avatarImg.className = 'npc-bark-avatar';
       avatarImg.alt = npcName || npcId || 'NPC';
       el.appendChild(avatarImg);
+    } else {
+      const head = document.createElement('span');
+      head.className = 'npc-bark-avatar npc-bark-head';
+      head.setAttribute('aria-hidden', 'true');
+      head.hidden = true;
+      el.appendChild(head);
+      const talk = npcDef?.spriteTalk || null;
+      try {
+        applyHeadshotBox(head, { avatar: avatar || npcDef?.avatar || null, spriteSheet: npcDef?.spriteSheet || null, portrait: talk },
+          { talkUrl: talk ? (talk.startsWith('/') || talk.startsWith('http') ? talk : `${ASSETS_PATH}/${talk}`) : null });
+      } catch (e) { head.hidden = true; }
     }
-    
+
     // Add text content
     const textSpan = document.createElement('span');
     textSpan.className = 'npc-bark-text';
     const displayName = npcName || npcId || 'NPC';
     // A follow-up (a gate's lockedHint) that could not go in a bubble rides on the toast
     textSpan.textContent = `${displayName}: ${displayDashes(followUp ? `${text} ${followUp}` : text)}`;
-    el.appendChild(textSpan);
 
-    // Dismiss (×) button
-    const dismissBtn = document.createElement('button');
-    dismissBtn.className = 'npc-bark-dismiss';
-    dismissBtn.textContent = '×';
-    dismissBtn.addEventListener('click', e => {
-      e.stopPropagation();
-      this._removeBark(el);
-    });
-    el.appendChild(dismissBtn);
-
-    // Swipe-to-dismiss (before click handlers so capture listener fires first)
-    this._addSwipeGesture(el);
+    if (speech) {
+      // Which way the speaker is from the player, as a pixel arrow (no text, nothing to voice)
+      const arrow = document.createElement('span');
+      arrow.className = 'npc-bark-arrow';
+      arrow.setAttribute('aria-hidden', 'true');
+      const dir = this._speakerDirection(npcId);
+      if (dir) arrow.dataset.dir = dir; else arrow.hidden = true;
+      el.appendChild(textSpan);
+      el.appendChild(arrow);
+    } else {
+      // A phone text: the phone icon says where it came from, and a tap opens the thread
+      const icon = document.createElement('img');
+      icon.className = 'npc-bark-phone-icon';
+      icon.src = PHONE_ICON_URL;
+      icon.alt = '';
+      icon.setAttribute('aria-hidden', 'true');
+      el.appendChild(icon);
+      el.appendChild(textSpan);
+      // Dismiss (x) button
+      const dismissBtn = document.createElement('button');
+      dismissBtn.className = 'npc-bark-dismiss';
+      dismissBtn.textContent = '×';
+      dismissBtn.setAttribute('aria-label', 'Dismiss');
+      dismissBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        this._removeBark(el);
+      });
+      el.appendChild(dismissBtn);
+      // Swipe-to-dismiss (before click handlers so capture listener fires first)
+      this._addSwipeGesture(el);
+    }
 
     if (typeof payload.stillValid === 'function') el._stillValid = payload.stillValid;
     el._npcId = npcId || null;
     el._barkText = payload.text || payload.message || '';
 
-    this.container.appendChild(el);
+    host.appendChild(el);
     this.activeBarkCount++;
     this._updateClearAllButton();
-    this._trimBarkStackToFit();
+    this._trimBarkStackToFit(host);
 
     this._startAutoClose(el, barkLifetimeMs(textSpan.textContent));
+    if (speech) return ttsPromise;   // not clickable: it never takes a tap meant for Block or the room
+
     el.addEventListener('mouseenter', () => this._pauseAutoClose(el));
     el.addEventListener('mouseleave', () => this._resumeAutoClose(el));
 
@@ -529,7 +588,7 @@ export default class NPCBarkSystem {
    */
   _dropStaleVisibleBarks() {
     if (!this.container) return;
-    for (const el of this.container.querySelectorAll('.npc-bark')) {
+    for (const el of this._barkEls()) {
       if (el._removing || typeof el._stillValid !== 'function') continue;
       let valid = true;
       try { valid = el._stillValid(); } catch (e) { valid = true; }
@@ -567,8 +626,18 @@ export default class NPCBarkSystem {
 
   _updateClearAllButton() {
     if (!this.clearAllButton) return;
+    // Only phone texts can be cleared: speech lines are not clickable and close on their own
     const hasBarks = this.container.querySelectorAll('.npc-bark').length > 0;
     this.clearAllButton.style.display = hasBarks ? 'block' : 'none';
+  }
+
+  /** Every bark toast on screen: phone texts and speech lines, speech first (DOM order). */
+  _barkEls() {
+    const out = [];
+    for (const c of [this.speechContainer, this.container]) {
+      if (c) out.push(...c.querySelectorAll('.npc-bark'));
+    }
+    return out;
   }
 
   _clearAllBarks() {
@@ -576,29 +645,51 @@ export default class NPCBarkSystem {
   }
 
   /**
-   * Keep the stack to MAX_VISIBLE_BARKS toasts and clear of the objectives panel: the oldest
-   * close early, the newest always stays (bark-lifetime.js barksToTrim).
+   * Keep a stack to MAX_VISIBLE_BARKS toasts and inside its lane: the oldest close early, the
+   * newest always stays (bark-lifetime.js barksToTrim). The lanes (ui/hud-lanes.js) give each
+   * container a max-height; without one (no lanes yet) the phone stack keeps clear of the
+   * objectives panel as before.
    */
-  _trimBarkStackToFit() {
+  _trimBarkStackToFit(host = this.container) {
     requestAnimationFrame(() => {
-      const containerRect = this.container.getBoundingClientRect();
-      // The stack grows upward from its bottom edge (80px above the inventory bar)
-      let top = 20;
-      const panel = document.querySelector('.objectives-panel');
-      // (the panel is position: fixed, so offsetParent can't tell whether it shows)
-      if (panel && !document.body.classList.contains('minigame-active')) {
-        const r = panel.getBoundingClientRect();
-        const overlapsSideways = r.left < containerRect.right && r.right > containerRect.left;
-        if (r.height > 0 && overlapsSideways) top = Math.max(top, r.bottom + 8);
+      if (!host) return;
+      const containerRect = host.getBoundingClientRect();
+      const gcs = typeof window !== 'undefined' && window.getComputedStyle ? window.getComputedStyle(host) : null;
+      const zoom = (gcs && parseFloat(gcs.zoom)) || 1;
+      const laneMax = parseFloat(host.style.maxHeight);
+      let available;
+      const clearAll = (host === this.container && this.clearAllButton && this.clearAllButton.offsetHeight)
+        ? this.clearAllButton.offsetHeight + 8 : 0;
+      if (Number.isFinite(laneMax) && laneMax > 0) {
+        available = laneMax - clearAll;          // CSS px of the container, as offsetHeight is
+      } else {
+        // The stack grows upward from its bottom edge (80px above the inventory bar)
+        let top = 20;
+        const panel = document.querySelector('.objectives-panel');
+        // (the panel is position: fixed, so offsetParent can't tell whether it shows)
+        if (panel && !document.body.classList.contains('minigame-active')) {
+          const r = panel.getBoundingClientRect();
+          const overlapsSideways = r.left < containerRect.right && r.right > containerRect.left;
+          if (r.height > 0 && overlapsSideways) top = Math.max(top, r.bottom + 8);
+        }
+        available = (containerRect.bottom - top) / zoom - clearAll;
       }
-      const clearAll = (this.clearAllButton && this.clearAllButton.offsetHeight) ? this.clearAllButton.offsetHeight + 8 : 0;
-      const available = containerRect.bottom - top - clearAll;
 
       // Oldest barks are first in the DOM. Skip any already on their way out.
-      const barks = Array.from(this.container.querySelectorAll('.npc-bark')).filter(el => !el._removing);
+      const barks = Array.from(host.querySelectorAll('.npc-bark')).filter(el => !el._removing);
       const drop = barksToTrim(barks.map(el => ({ height: el.offsetHeight })), available);
       barks.slice(0, drop).forEach(el => this._removeBark(el));
     });
+  }
+
+  /** Compass point from the player to a speaker's sprite (hud-lanes.js arrowDirection), or null. */
+  _speakerDirection(npcId) {
+    try {
+      const sprite = window.npcWorldBubbles?._spriteAndRoom?.(npcId)?.sprite;
+      const player = window.player;
+      if (!sprite || !player) return null;
+      return arrowDirection({ x: player.x, y: player.y }, { x: sprite.x, y: sprite.y });
+    } catch (e) { return null; }
   }
 
   /**

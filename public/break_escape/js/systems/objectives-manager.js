@@ -1293,12 +1293,16 @@ export class ObjectivesManager {
     if (window.playUISound) {
       window.playUISound('objective_complete');
     }
+    // A phone folds it into the objectives pill (UI decision H1 option A)
+    if (window.objectivesPanel?.foldToast?.('Done', task.title)) return;
     if (window.gameAlert) {
       window.gameAlert(`✓ ${task.title}`, 'success', 'Task Complete');
     }
   }
   
   showTaskUnlockedNotification(task) {
+    // A phone folds it into the objectives pill (UI decision H1 option A)
+    if (window.objectivesPanel?.foldToast?.('New task', task.title)) return;
     if (window.gameAlert) {
       window.gameAlert(`New Task: ${task.title}`, 'info', 'Objective Updated');
     }
@@ -1308,12 +1312,16 @@ export class ObjectivesManager {
     if (window.playUISound) {
       window.playUISound('objective_complete');
     }
+    // A phone folds it into the objectives pill (UI decision H1 option A)
+    if (window.objectivesPanel?.foldToast?.('Aim complete', aim.title)) return;
     if (window.gameAlert) {
       window.gameAlert(`🏆 ${aim.title}`, 'success', 'Objective Complete!');
     }
   }
   
   showAimUnlockedNotification(aim) {
+    // A phone folds it into the objectives pill (UI decision H1 option A)
+    if (window.objectivesPanel?.foldToast?.('New aim', aim.title)) return;
     if (window.gameAlert) {
       window.gameAlert(`New Objective: ${aim.title}`, 'info', 'Mission Updated');
     }

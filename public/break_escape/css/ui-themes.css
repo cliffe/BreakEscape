@@ -1296,6 +1296,43 @@
 [data-ui-theme] .notification-title { color: var(--ui-accent); font-family: var(--ui-heading-font); }
 [data-ui-theme] .notification-close { color: var(--ui-text-dim); }
 
+/* --- Bark toasts (UI decision B2 option A): a phone text takes the toasts' small frame with
+       its green stripe; speech in the building takes the caption's frame, as they share the
+       message lane --- */
+[data-ui-theme] .npc-bark--phone {
+  border-style: solid;
+  border-width: var(--ui-square-px);
+  border-image-source: var(--ui-square-image);
+  border-image-slice: var(--ui-square-slice) fill;
+  border-image-width: var(--ui-square-px);
+  background: none;
+  color: var(--ui-text);
+  image-rendering: pixelated;
+}
+[data-ui-theme] .npc-bark--phone:hover { background: none; filter: brightness(1.15); }
+[data-ui-theme] .npc-bark--speech {
+  border-style: solid;
+  border-width: var(--ui-frame-px);
+  border-image-source: var(--ui-frame-image);
+  border-image-slice: var(--ui-frame-slice);
+  border-image-width: var(--ui-frame-px);
+  border-image-repeat: var(--ui-frame-repeat, stretch);
+  background: var(--ui-surface);
+  background-clip: padding-box;
+  color: var(--ui-text);
+  image-rendering: pixelated;
+}
+[data-ui-theme] .npc-bark-dismiss { color: var(--ui-text-dim); }
+[data-ui-theme] .npc-bark-clear-all {
+  border-style: solid;
+  border-width: var(--ui-square-px);
+  border-image-source: var(--ui-square-image);
+  border-image-slice: var(--ui-square-slice) fill;
+  border-image-width: var(--ui-square-px);
+  background: none;
+  color: var(--ui-text);
+}
+
 /* --- Interaction choice menu (several things under the pointer); its own
        styles are injected at run time, hence the id in each selector --- */
 [data-ui-theme] #be-interaction-menu {
