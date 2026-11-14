@@ -242,7 +242,7 @@ test('a full episode runs every stage in order and holds then clears sent', () =
     assert.ok(cur().container.querySelector('.epr-finished'), 'the episode-finished panel shows');
     assert.equal(cur().container.querySelector('.epr-finished .epr-heading').textContent, 'Episode finished');
     // the bar's Close is the only close and it closes the runner
-    const closeBtn = [...cur().container.querySelectorAll('button')].find((b) => /close/i.test(b.textContent));
+    const closeBtn = cur().container.querySelector('.se-overlay-close');
     assert.ok(closeBtn, 'a keyboard-reachable Close');
     closeBtn.click();
     assert.equal(cur(), null, 'Close closes the runner');
@@ -296,7 +296,7 @@ test('a reopen at every stage resumes there', () => {
     // one Close only: the bar's (P7-J playtest); the finished panel adds none of its own
     assert.ok(cur().container.querySelector('.epr-finished'));
     assert.equal(cur().container.querySelector('.epr-finish'), null);
-    assert.equal([...cur().container.querySelectorAll('button')].filter((b) => /close/i.test(b.textContent)).length, 1);
+    assert.equal(cur().container.querySelectorAll('.se-overlay-close').length, 1);
 });
 
 test('the flip shows no message when nothing usable was sent', () => {

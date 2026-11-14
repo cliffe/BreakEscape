@@ -293,7 +293,7 @@ test('Esc closes the picker and leaves the overlay open; Close is a clean exit w
     assert.equal(scene.gameState.isActive, true);
     assert.deepEqual(ended, []);
     // F11: a plain Close is a clean exit (success, no aborted flag, no payload), not a failure.
-    scene.container.querySelector('.pretext-close').click();
+    scene.container.querySelector('.se-overlay-close').click();
     assert.deepEqual(ended, [{ success: true, result: {} }]);
 });
 

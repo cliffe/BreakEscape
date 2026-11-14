@@ -207,8 +207,8 @@ test('Close and Esc are normal exits with { mode, completed, ready }; the keyboa
     assert.equal(s.params.requiresKeyboardInput, true);
     assert.equal(s.params.disableClose, true);
     assert.equal(s.container.querySelector('#minigame-close').style.display, 'none', 'framework close hidden');
-    assert.equal(s.container.querySelector('.ib-close').textContent, 'Close');
-    s.container.querySelector('.ib-close').click();
+    assert.equal(s.container.querySelector('.se-overlay-close').getAttribute('aria-label'), 'Close');
+    s.container.querySelector('.se-overlay-close').click();
     assert.equal(ended.length, 1);
     assert.equal(ended[0].success, true, 'a close is never minigame_failed');
     assert.deepEqual(ended[0].result, { mode: 'recon', completed: false, ready: ['pierce'] });
