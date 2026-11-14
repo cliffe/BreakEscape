@@ -976,3 +976,52 @@ failures); Rails models `gated_door_credit_test`, `gated_route_room_test`, `gate
 `enter_room_validation_test`, `lab_gated_migration_test` (39 runs, 143 assertions, 0 failures);
 `api_games_controller_test`, `saved_current_room_test` (3 runs, 7 assertions, 0 failures); node
 `state-sync`, `sync-request-sizes`, `sync-delta-proof`, `enter-room-completion` (55 subtests, all pass).
+
+## Full-suite failure triage (2026-11-14)
+
+Seven Rails failures and one node failure on the branch tip, each a suite the focused chunk runs did not
+cover. On the same main base the suites were green, so every failure came from this branch's intended
+contract changes. Classification and fix, one per failing file:
+
+- `test/js/social-mail-state-export.test.mjs:357` ("a small mailState fits with everything else"):
+  (a) old contract. The flush body now carries `currentRoom`, read from `window.currentPlayerRoom`
+  (not the legacy null `window.currentRoom`). The test's `setup()` set only the legacy field, so the
+  body had no `currentRoom`. Fixed the fixture to set `currentPlayerRoom: 'office'` (the real page
+  field), keeping the "full body fits" intent. Focused runs missed it: the currentRoom fix updated
+  `state-sync.test.mjs` and `sync-request-sizes.test.mjs` but not this social file.
+- `test/unit/scenario_schema_test.rb:174` (`every_open_location_has_exactly_one_mark`): (b) real gap in
+  the branch's schema addition. Chunk B added `gateCreditBlock` but left its open `setGlobal` object
+  unmarked. Marked `#/definitions/gateCreditBlock/properties/setGlobal` with `"x-id-map": true`, as every
+  other `setGlobal` in the schema is (a map of global name -> value). Focused runs missed it:
+  `scenario_schema_test` was not run as a neighbour of the Chunk B schema edit.
+- `test/integration/game_security_test.rb:48,:61` (sync_state teleport to a locked / non-existent room):
+  (a) old contract. The R4 fold no longer 403s a forged currentRoom; it skips only that field and reports
+  it in `notSaved`, 200, the rest of the batch committing. Updated both to assert the new contract while
+  keeping the security intent: the refused room is named in `notSaved` and the saved room is unchanged
+  (never teleported). Mirrors `current_room_guard_refusal_test`.
+- `test/integration/game_security_test.rb:533,:709` (complete_task enter_room "client-trusted"): (a) old
+  contract. Chunk F made enter_room server-validated with `player_reached_room?`. Rewrote both: a room
+  never reached is refused (422, `Room not reached`, `retryable: true`) and does not score, and a room
+  in durable `unlockedRooms` completes. Strengthens the assertion (it now proves the forge is refused).
+- `test/controllers/break_escape/social_sync_then_emit_test.rb:66` ("a refused sync (403) saves no triage
+  global"): (a) old contract. The test forced a 403 with a forged `currentRoom: 'soc'`, which no longer
+  refuses the batch. Kept the atomicity intent (a refused sync persists nothing) by causing a real
+  refusal another way: a game stored above the server's current format version is refused before any
+  merge (`:conflict`), so no global lands.
+- `test/models/break_escape/lab_physical_pentest_secrets_test.rb:236,:426` (records door credit): (a) old
+  contract. Chunk D moved the tailgate/clone credit off the client eventMappings onto the gate's
+  server-owned `creditOnPass` (viaPass / viaCredential) and removed the two client credit writers and the
+  two ruth_phone backstops. Rewrote both tests to assert the gate's `creditOnPass` carries both routes
+  (each sets its finding global and completes `tailgate_in`) and that no client eventMapping across any
+  room NPC writes `kp_badge_tailgated` / `kp_records_cloned` or completes `tailgate_in` (un-forgeable).
+
+No branch code changed except the schema mark; the rest were test-contract updates. Also folded review R5
+minor 1 (state-sync.js:665): the currentRoom branch of the once-per-section warning now says the server
+refused the room and it will not be resent, leaving the keyed-section wording unchanged.
+
+### Tests run (no full suites)
+
+- Node: `social-mail-state-export` (18), `validator-gated-door-credit` (13), `state-sync` (26). All pass.
+- Rails: `scenario_schema_test` (10 runs), `game_security_test` (55 runs), `social_sync_then_emit_test`
+  (5 runs), `lab_physical_pentest_secrets_test` (38 runs). 0 failures.
+- Validator: `lab_physical_pentest` 0 errors, 7 warnings (unchanged from the Chunk E baseline).
