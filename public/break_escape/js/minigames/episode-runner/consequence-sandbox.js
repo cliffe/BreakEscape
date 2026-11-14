@@ -43,6 +43,9 @@ function el(tag, className, text) {
 }
 
 export class ConsequenceSandboxMinigame extends SocialOverlayScene {
+    // C-X2: take the shared SE window frame
+    static framed = true;
+
     constructor(container, params) {
         super(container, { title: 'Choices', ...(params || {}) });
         this.beats = mistakeBeats({ mistake: isObj(this.params.config) ? this.params.config : {} });

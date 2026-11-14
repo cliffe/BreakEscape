@@ -6,53 +6,28 @@
    ========================================================= */
 
 /* ── Wrapper / overlay ─────────────────────────────────── */
+/* The framework game area is the console's box: the wrapper fills it */
+.lf-minigame-container > .lf-game-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
 .lf-wrapper {
     position: absolute;
     inset: 0;
     background: #12121e;
     display: flex;
     flex-direction: column;
-    font-family: 'Courier New', Courier, monospace;
+    font-family: 'VT323', monospace;
     color: #d0d0e0;
     overflow: hidden;
     box-sizing: border-box;
-    border: 2px solid #ffffff;
 }
 
 /* ── Header ─────────────────────────────────────────────── */
-.lf-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: #0d0d1a;
-    border-bottom: 2px solid #ffffff;
-    padding: 6px 10px;
-    flex-shrink: 0;
-}
-
-.lf-header-title {
-    font-size: 13px;
-    font-weight: bold;
-    color: #ffffff;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-}
-
-.lf-close-btn {
-    background: #1e1e30;
-    border: 1px solid #ffffff;
-    color: #ffffff;
-    font-family: inherit;
-    font-size: 11px;
-    cursor: pointer;
-    padding: 2px 8px;
-    letter-spacing: 0.05em;
-}
-
-.lf-close-btn:hover {
-    background: #3a3a50;
-}
-
 /* ── Tab bar ─────────────────────────────────────────────── */
 .lf-tab-bar {
     display: flex;
@@ -65,11 +40,11 @@
 
 .lf-tab-btn {
     background: #1a1a2e;
-    border: 1px solid #444466;
+    border: 2px solid #444466;
     border-bottom: none;
     color: #8888aa;
     font-family: inherit;
-    font-size: 11px;
+    font-size: 16px;
     cursor: pointer;
     padding: 4px 10px;
     letter-spacing: 0.03em;
@@ -114,7 +89,7 @@
     min-width: 220px;
     display: flex;
     flex-direction: column;
-    border-right: 1px solid #333355;
+    border-right: 2px solid #333355;
     background: #0e0e1c;
     padding: 8px;
     gap: 6px;
@@ -122,21 +97,21 @@
 }
 
 .lf-filter-pane-label {
-    font-size: 10px;
+    font-size: 16px;
     color: #7777aa;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    border-bottom: 1px solid #333355;
+    border-bottom: 2px solid #333355;
     padding-bottom: 4px;
     margin-bottom: 2px;
 }
 
 .lf-add-filter-btn {
     background: #1a2a1a;
-    border: 1px solid #447744;
+    border: 2px solid #447744;
     color: #66cc66;
     font-family: inherit;
-    font-size: 11px;
+    font-size: 16px;
     cursor: pointer;
     padding: 4px 8px;
     text-align: left;
@@ -151,7 +126,7 @@
 /* Filter picker dropdown */
 .lf-filter-picker {
     background: #1a1a2e;
-    border: 1px solid #555577;
+    border: 2px solid #555577;
     padding: 4px;
     display: flex;
     flex-direction: column;
@@ -159,7 +134,7 @@
 }
 
 .lf-filter-category {
-    font-size: 10px;
+    font-size: 16px;
     color: #9999bb;
     padding: 2px 4px;
     cursor: pointer;
@@ -185,7 +160,7 @@
 }
 
 .lf-filter-value-item {
-    font-size: 10px;
+    font-size: 16px;
     color: #8888aa;
     padding: 2px 4px;
     cursor: pointer;
@@ -198,9 +173,9 @@
 
 .lf-filter-text-input {
     font-family: inherit;
-    font-size: 10px;
+    font-size: 16px;
     background: #111122;
-    border: 1px solid #444466;
+    border: 2px solid #444466;
     color: #ccccee;
     padding: 2px 4px;
     width: calc(100% - 10px);
@@ -210,7 +185,7 @@
 
 /* Active filter tokens */
 .lf-active-filters-label {
-    font-size: 10px;
+    font-size: 16px;
     color: #666688;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -227,9 +202,9 @@
     align-items: center;
     justify-content: space-between;
     background: #1a2a3a;
-    border: 1px solid #2255aa;
+    border: 2px solid #2255aa;
     color: #88aaff;
-    font-size: 10px;
+    font-size: 16px;
     padding: 2px 5px;
     letter-spacing: 0.03em;
     gap: 4px;
@@ -240,7 +215,7 @@
     border: none;
     color: #8899cc;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 18px;
     line-height: 1;
     padding: 0;
     flex-shrink: 0;
@@ -263,7 +238,7 @@
 
 /* Command preview */
 .lf-command-preview-label {
-    font-size: 10px;
+    font-size: 16px;
     color: #666688;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -272,9 +247,9 @@
 
 .lf-command-preview {
     background: #070710;
-    border: 1px solid #225522;
+    border: 2px solid #225522;
     color: #44ee44;
-    font-size: 10px;
+    font-size: 16px;
     padding: 5px 6px;
     white-space: pre-wrap;
     word-break: break-all;
@@ -284,10 +259,10 @@
 
 .lf-clear-filters-btn {
     background: #1a0a0a;
-    border: 1px solid #773333;
+    border: 2px solid #773333;
     color: #cc6666;
     font-family: inherit;
-    font-size: 10px;
+    font-size: 16px;
     cursor: pointer;
     padding: 3px 6px;
     text-align: left;
@@ -317,7 +292,7 @@
 .lf-log-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 10px;
+    font-size: 16px;
     min-width: 600px;
 }
 
@@ -326,8 +301,7 @@
     color: #9999cc;
     text-align: left;
     padding: 4px 6px;
-    border-bottom: 1px solid #333355;
-    font-weight: bold;
+    border-bottom: 2px solid #333355;
     position: sticky;
     top: 0;
     z-index: 1;
@@ -337,7 +311,7 @@
 
 .lf-log-table td {
     padding: 3px 6px;
-    border-bottom: 1px solid #1a1a2e;
+    border-bottom: 2px solid #1a1a2e;
     color: #b0b0cc;
     white-space: nowrap;
     cursor: pointer;
@@ -376,8 +350,7 @@
 .lf-badge {
     display: inline-block;
     padding: 1px 5px;
-    font-size: 9px;
-    font-weight: bold;
+    font-size: 16px;
     letter-spacing: 0.05em;
 }
 
@@ -408,7 +381,7 @@
 .lf-level-admin      { color: #cc5555; }
 
 /* Anomaly field highlights (within anomaly row) */
-.lf-anomaly-row .lf-field-account  { color: #ffbb44; font-weight: bold; }
+.lf-anomaly-row .lf-field-account  { color: #ffbb44; }
 .lf-anomaly-row .lf-field-ip       { color: #ffaa33; }
 .lf-anomaly-row .lf-field-duration { color: #ffaa33; }
 
@@ -424,7 +397,7 @@
 /* ── Session detail panel ────────────────────────────────── */
 .lf-session-detail {
     background: #111122;
-    border-top: 1px solid #444466;
+    border-top: 2px solid #444466;
     padding: 8px 10px;
     flex-shrink: 0;
     max-height: 160px;
@@ -432,12 +405,11 @@
 }
 
 .lf-detail-header {
-    font-size: 11px;
+    font-size: 16px;
     color: #ffffff;
-    font-weight: bold;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    border-bottom: 1px solid #333355;
+    border-bottom: 2px solid #333355;
     padding-bottom: 4px;
     margin-bottom: 6px;
 }
@@ -446,7 +418,7 @@
     display: grid;
     grid-template-columns: 130px 1fr;
     gap: 2px 8px;
-    font-size: 10px;
+    font-size: 16px;
     margin-bottom: 8px;
 }
 
@@ -468,10 +440,10 @@
 
 .lf-detail-btn {
     background: #151530;
-    border: 1px solid #445566;
+    border: 2px solid #445566;
     color: #88aacc;
     font-family: inherit;
-    font-size: 10px;
+    font-size: 16px;
     cursor: pointer;
     padding: 3px 8px;
     letter-spacing: 0.03em;
@@ -503,7 +475,7 @@
 
 .lf-session-flagged-banner {
     color: #44cc44;
-    font-size: 10px;
+    font-size: 16px;
     padding: 3px 0;
     display: flex;
     align-items: center;
@@ -513,9 +485,9 @@
 .lf-tab2-prompt {
     margin-top: 6px;
     background: #1a1200;
-    border: 1px solid #aa7700;
+    border: 2px solid #aa7700;
     color: #ffcc66;
-    font-size: 10px;
+    font-size: 16px;
     padding: 5px 8px;
     display: flex;
     align-items: center;
@@ -525,10 +497,10 @@
 
 .lf-tab2-prompt-btn {
     background: #2a1e00;
-    border: 1px solid #aa7700;
+    border: 2px solid #aa7700;
     color: #ffcc44;
     font-family: inherit;
-    font-size: 10px;
+    font-size: 16px;
     cursor: pointer;
     padding: 2px 7px;
     white-space: nowrap;
@@ -561,10 +533,9 @@
 
 .lf-overlay-header {
     background: #0d0d1a;
-    border-bottom: 1px solid #444466;
+    border-bottom: 2px solid #444466;
     padding: 6px 10px;
-    font-size: 11px;
-    font-weight: bold;
+    font-size: 16px;
     color: #ffffff;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -573,19 +544,16 @@
     align-items: center;
 }
 
-.lf-overlay-close {
-    background: none;
-    border: 1px solid #666688;
-    color: #9999bb;
-    font-family: inherit;
-    font-size: 10px;
-    cursor: pointer;
-    padding: 1px 6px;
+/* The shared X, in the header row (not floated over the title) */
+.lf-overlay-header .lf-overlay-close {
+    position: static;
+    flex: none;
+    margin-left: 8px;
 }
 
-.lf-overlay-close:hover {
-    border-color: #ffffff;
-    color: #ffffff;
+.lf-overlay-header span {
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .lf-overlay-body {
@@ -597,7 +565,7 @@
 
 .lf-overlay-divider {
     border: none;
-    border-top: 1px solid #333355;
+    border-top: 2px solid #333355;
     margin: 4px 0;
 }
 
@@ -606,7 +574,7 @@
     display: grid;
     grid-template-columns: 140px 1fr;
     gap: 3px 8px;
-    font-size: 11px;
+    font-size: 16px;
 }
 
 .lf-threat-label {
@@ -619,21 +587,20 @@
 
 .lf-threat-no-match {
     color: #66cc88;
-    font-size: 12px;
+    font-size: 18px;
     letter-spacing: 0.04em;
     margin-top: 6px;
-    border: 1px solid #2a6a44;
+    border: 2px solid #2a6a44;
     padding: 3px 6px;
     background: #001a0c;
 }
 
 .lf-threat-known-bad {
     color: #ff4444;
-    font-weight: bold;
-    font-size: 12px;
+    font-size: 18px;
     letter-spacing: 0.04em;
     margin-top: 4px;
-    border: 1px solid #cc2222;
+    border: 2px solid #cc2222;
     padding: 3px 6px;
     background: #200000;
     align-self: flex-start;
@@ -644,7 +611,7 @@
     display: grid;
     grid-template-columns: 160px 1fr;
     gap: 3px 8px;
-    font-size: 11px;
+    font-size: 16px;
 }
 
 .lf-account-label {
@@ -657,21 +624,18 @@
 
 .lf-account-deprovisioned {
     color: #ff4444;
-    font-weight: bold;
 }
 
 .lf-account-gap-note {
     color: #ffaa33;
-    font-weight: bold;
 }
 
 .lf-account-anomaly-badge {
     margin-top: 6px;
     background: #200000;
-    border: 1px solid #cc2222;
+    border: 2px solid #cc2222;
     color: #ff6666;
-    font-size: 11px;
-    font-weight: bold;
+    font-size: 16px;
     padding: 4px 8px;
     text-align: center;
     letter-spacing: 0.04em;
@@ -679,7 +643,7 @@
 
 /* Flag confirm modal */
 .lf-flag-confirm-body {
-    font-size: 11px;
+    font-size: 16px;
     line-height: 1.5;
     color: #ccccee;
 }
@@ -697,10 +661,10 @@
 
 .lf-flag-confirm-btn {
     background: #1a2a1a;
-    border: 1px solid #447744;
+    border: 2px solid #447744;
     color: #66cc66;
     font-family: inherit;
-    font-size: 11px;
+    font-size: 16px;
     cursor: pointer;
     padding: 4px 12px;
     letter-spacing: 0.03em;
@@ -713,10 +677,10 @@
 
 .lf-flag-cancel-btn {
     background: #1a1a28;
-    border: 1px solid #555577;
+    border: 2px solid #555577;
     color: #8888aa;
     font-family: inherit;
-    font-size: 11px;
+    font-size: 16px;
     cursor: pointer;
     padding: 4px 12px;
 }
@@ -736,19 +700,18 @@
 
 .lf-audit-header-bar {
     background: #0e0e1c;
-    border-bottom: 1px solid #333355;
+    border-bottom: 2px solid #333355;
     padding: 6px 10px;
     flex-shrink: 0;
 }
 
 .lf-audit-title {
-    font-size: 11px;
+    font-size: 16px;
     color: #ffffff;
-    font-weight: bold;
 }
 
 .lf-audit-subtitle {
-    font-size: 10px;
+    font-size: 16px;
     color: #7777aa;
     margin-top: 2px;
 }
@@ -763,7 +726,7 @@
 .lf-audit-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 10px;
+    font-size: 16px;
     min-width: 560px;
 }
 
@@ -772,8 +735,7 @@
     color: #9999cc;
     text-align: left;
     padding: 4px 6px;
-    border-bottom: 1px solid #333355;
-    font-weight: bold;
+    border-bottom: 2px solid #333355;
     position: sticky;
     top: 0;
     z-index: 1;
@@ -783,7 +745,7 @@
 
 .lf-audit-table td {
     padding: 3px 6px;
-    border-bottom: 1px solid #1a1a2e;
+    border-bottom: 2px solid #1a1a2e;
     color: #b0b0cc;
     white-space: nowrap;
 }
@@ -803,12 +765,10 @@
 
 .lf-audit-anomaly-row .lf-audit-operator {
     color: #ffbb44;
-    font-weight: bold;
 }
 
 .lf-audit-chevron {
     color: #ffaa33;
-    font-weight: bold;
 }
 
 .lf-audit-error-row td {
@@ -821,7 +781,7 @@
     display: grid;
     grid-template-columns: 120px 1fr;
     gap: 3px 8px;
-    font-size: 11px;
+    font-size: 16px;
 }
 
 .lf-audit-detail-label {
@@ -835,9 +795,9 @@
 .lf-audit-critical {
     margin-top: 8px;
     background: #1e0000;
-    border: 1px solid #cc2222;
+    border: 2px solid #cc2222;
     padding: 6px 8px;
-    font-size: 11px;
+    font-size: 16px;
     line-height: 1.5;
     color: #ff8888;
     animation: lf-critical-pulse 2s ease-in-out infinite;
@@ -851,9 +811,9 @@
 /* ── Status bar ───────────────────────────────────────────── */
 .lf-status-bar {
     background: #080810;
-    border-top: 1px solid #333355;
+    border-top: 2px solid #333355;
     padding: 4px 10px;
-    font-size: 10px;
+    font-size: 16px;
     color: #666688;
     display: flex;
     gap: 16px;
@@ -867,10 +827,9 @@
 /* Completion banner */
 .lf-complete-banner {
     background: #001a00;
-    border: 1px solid #44aa44;
+    border: 2px solid #44aa44;
     color: #66cc66;
-    font-size: 11px;
-    font-weight: bold;
+    font-size: 16px;
     padding: 5px 10px;
     text-align: center;
     letter-spacing: 0.04em;
@@ -898,5 +857,29 @@
 .lf-filter-pane::-webkit-scrollbar-thumb,
 .lf-session-detail::-webkit-scrollbar-thumb {
     background: #333355;
-    border-radius: 3px;
+    border-radius: 0;
+}
+
+/* Phones: the filter builder above the table; the table keeps its width and scrolls
+   sideways in its own pane (critique B LF1) */
+@media (max-width: 600px) {
+    .lf-body {
+        flex-direction: column;
+        overflow-y: auto;
+    }
+
+    .lf-filter-pane {
+        width: 100%;
+        min-width: 0;
+        max-height: 40vh;
+        border-right: 0;
+        border-bottom: 2px solid #333355;
+        box-sizing: border-box;
+        flex-shrink: 0;
+    }
+
+    .lf-log-pane {
+        flex: 1 0 auto;
+        min-height: 300px;
+    }
 }

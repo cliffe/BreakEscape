@@ -161,18 +161,26 @@ function el(tag, cls, text) {
 }
 
 export class CaptureLogMinigame extends MinigameScene {
+    // Draws in the shared console window (UI decision X8): a short list, so it wraps its content
+    static consoleWindow = true;
+
     constructor(container, params) {
-        super(container, { title: 'Capture log', cancelText: 'Close', headerElement: true, ...params });
+        super(container, { title: 'Capture log', cancelText: 'Close', ...params });
         this.holderId = params?.holderId || null;
         this.secrets = null;
         this.secretRows = [];
         this.lastKeys = [];
     }
 
+    consoleTitle() {
+        return this.params?.title || 'Capture log';
+    }
+
     init() {
         super.init();
         this.container.classList?.add('capture-log-minigame');
-        this.root = el('div', 'capture-log');
+        this.gameContainer.classList?.add('capture-log-frame');
+        this.root = el('div', 'capture-log pixel-scroll');
         this.gameContainer.appendChild(this.root);
         this.redraw();
     }

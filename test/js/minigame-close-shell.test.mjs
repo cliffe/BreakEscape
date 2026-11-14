@@ -25,7 +25,7 @@ globalThis.AudioContext = window.AudioContext = FakeAudioContext;
 const imp = (rel) => import(pathToFileURL(join(js, rel)).href);
 
 const { MinigameScene } = await imp('minigames/framework/base-minigame.js');
-const { InfusionPumpMinigame } = await imp('minigames/infusion-pump/infusion-pump-minigame.js');
+const { InfusionPumpMinigame, STACK_W } = await imp('minigames/infusion-pump/infusion-pump-minigame.js');
 
 function fresh() {
     document.body.innerHTML = '<div id="mg"></div>';
@@ -173,6 +173,45 @@ test('the pump zooms its pixel canvas by the largest whole number that fits, nev
     assert.equal(z(915, 372), 1, 'too small for 1: stays 1 and scrolls');
     assert.equal(z(0, 0), 1);
     assert.equal(z(NaN, 500), 1);
+});
+
+// Critique B IP1: on a window narrower than the side-by-side canvas the MAR record stacks above
+// the pump in a column that fits a 390px phone with a scrollbar beside it
+test('the pump stacks the MAR record above the keypad when its box is narrower than 784px', () => {
+    assert.equal(InfusionPumpMinigame.isStacked(1400), false);
+    assert.equal(InfusionPumpMinigame.isStacked(800), false, '800x600 keeps the side-by-side pump');
+    assert.equal(InfusionPumpMinigame.isStacked(901), false, '915x412 keeps the side-by-side pump');
+    assert.equal(InfusionPumpMinigame.isStacked(783), true);
+    assert.equal(InfusionPumpMinigame.isStacked(390), true);
+    assert.equal(InfusionPumpMinigame.isStacked(0), false, 'no width yet: side by side');
+    assert.ok(STACK_W <= 390 - 15, 'the stacked column fits a phone beside a 15px scrollbar');
+    const side = InfusionPumpMinigame.layoutFor(false);
+    assert.deepEqual([side.w, side.h, side.rx.x, side.rx.w, side.pmp.x, side.pmp.w], [784, 510, 8, 290, 302, 474]);
+    const stack = InfusionPumpMinigame.layoutFor(true);
+    assert.equal(stack.w, STACK_W);
+    assert.equal(stack.rx.w, STACK_W - 16);
+    assert.equal(stack.pmp.w, STACK_W - 16);
+    assert.notEqual(InfusionPumpMinigame.layoutFor(true).rx, stack.rx, 'each call gets its own rectangles to fill in');
+});
+
+test('the pump keypad and Confirm keep their side-by-side places, and fit the stacked column', () => {
+    const side = InfusionPumpMinigame.pumpGeometry(InfusionPumpMinigame.layoutFor(false).pmp);
+    assert.deepEqual([side.ix, side.iw, side.scr.y, side.scr.h, side.kpY0, side.btnW, side.confY], [314, 450, 20, 155, 183, 146, 406]);
+    const pmp = { ...InfusionPumpMinigame.layoutFor(true).pmp, y: 400 };
+    const g = InfusionPumpMinigame.pumpGeometry(pmp, 180);
+    assert.equal(g.ix + 3 * g.btnW + 2 * 5 <= pmp.x + pmp.w - 12, true, 'three keys fit inside the bezel');
+    assert.equal(g.kpY0, 400 + 12 + 180 + 8);
+});
+
+test('pump pop-ups centre on the part of the canvas the box shows', () => {
+    const y = InfusionPumpMinigame.modalCentreY;
+    assert.equal(y(0, 960, 1, 510, 320), 255, 'whole canvas shown: canvas centre');
+    assert.equal(y(0, 336, 1, 510, 320), 168, '915x412, not scrolled: centre of the top 336px');
+    assert.equal(y(174, 336, 1, 510, 320), 342, 'scrolled to the end');
+    assert.equal(y(0, 768, 1, 888, 320), 384);
+    assert.equal(y(0, 100, 1, 888, 320), 164, 'never above the canvas top');
+    assert.equal(y(800, 768, 1, 888, 320), 724, 'never below the canvas bottom');
+    assert.equal(y(0, 100, 1, 200, 320), 100, 'pop-up taller than the canvas: canvas centre');
 });
 
 // Slice 7 R3 M1: the pump's box scrolls on a swipe, so its buttons act on a tap only

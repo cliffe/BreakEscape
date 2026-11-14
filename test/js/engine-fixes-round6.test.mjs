@@ -212,7 +212,8 @@ test('m08: Add to Notepad uses the 16 px notes icon, drawn at its own size', () 
         'minigames/vm-launcher/vm-launcher-minigame.js']) {
         const src = read(rel);
         assert.ok(!src.includes('notes-sm.png'), `${rel}: no 9 px icon blown up to a white square`);
-        assert.match(src, /icons\/notes\.png" alt="Notepad" class="icon-small/);
+        // alt is "Notepad", or empty where the button carries the word and an aria-label (phone status bar)
+        assert.match(src, /icons\/notes\.png" alt="(?:Notepad)?" class="icon-small/);
     }
     // notes.png is 16x16, and .icon-small draws at 16x16
     const png = readFileSync(join(pub, 'assets/icons/notes.png'));

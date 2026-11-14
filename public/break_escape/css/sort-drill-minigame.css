@@ -118,3 +118,7 @@
     .sd-bin-btn { flex: 1 1 100%; }
     .sd-board { grid-template-columns: 1fr; }
 }
+
+/* C-X4 (n2): the shared notice takes the drill tokens, so it adapts to the dark skin and the
+   aw-skin light variant alike. */
+.sd-root .se-notice { color: var(--sd-dim); border-color: var(--sd-line); }

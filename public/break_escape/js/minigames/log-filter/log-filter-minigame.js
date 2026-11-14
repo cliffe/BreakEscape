@@ -31,6 +31,14 @@ import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 
 export class LogFilterMinigame extends MinigameScene {
+    // Draws in the shared console window (UI decision X8): title bar and X come from there
+    static consoleWindow = true;
+    static consoleWindowFill = true;
+
+    consoleTitle() {
+        return this._title;
+    }
+
 
     // ── Column schemas ─────────────────────────────────────────────────────
 
@@ -270,7 +278,11 @@ export class LogFilterMinigame extends MinigameScene {
     // ── Top-level layout ───────────────────────────────────────────────────
 
     _renderLayout() {
-        const c = this.container;
+        // The scene draws inside the framework's game area; the title is in the shared console bar
+        if (this.headerElement) this.headerElement.style.display = 'none';
+        this.container.classList.add('lf-minigame-container');
+        const c = this.gameContainer;
+        c.classList.add('lf-game-container');
         c.innerHTML = '';
 
         // Outer wrapper
@@ -278,24 +290,13 @@ export class LogFilterMinigame extends MinigameScene {
         c.appendChild(wrap);
         this._dom.wrap = wrap;
 
-        // Header
-        const header = this._el('div', 'lf-header');
-        const titleEl = this._el('div', 'lf-header-title');
-        titleEl.textContent = displayDashes(this._title);
-        const closeBtn = this._el('button', 'lf-close-btn');
-        closeBtn.textContent = '[CLOSE]';
-        closeBtn.addEventListener('click', () => this.complete(false));
-        header.appendChild(titleEl);
-        header.appendChild(closeBtn);
-        wrap.appendChild(header);
-
         // Tab bar
         const tabBar = this._el('div', 'lf-tab-bar');
         wrap.appendChild(tabBar);
         this._dom.tabBar = tabBar;
 
         // Body
-        const body = this._el('div', 'lf-body');
+        const body = this._el('div', 'lf-body pixel-scroll');
         wrap.appendChild(body);
         this._dom.body = body;
 
@@ -343,6 +344,7 @@ export class LogFilterMinigame extends MinigameScene {
     _switchTab(tabId) {
         this._currentTab = tabId;
         this._overlayMode = null;
+        this._hideSceneX(false);
         this._updateTabActiveClass();
 
         const body = this._dom.body;
@@ -367,7 +369,7 @@ export class LogFilterMinigame extends MinigameScene {
 
     _renderSessionLogTab(body) {
         // Left pane: filter builder
-        const filterPane = this._el('div', 'lf-filter-pane');
+        const filterPane = this._el('div', 'lf-filter-pane pixel-scroll');
         body.appendChild(filterPane);
         this._dom.filterPane = filterPane;
         this._renderFilterPane(filterPane);
@@ -618,7 +620,7 @@ export class LogFilterMinigame extends MinigameScene {
         const oldTable = pane.querySelector('.lf-log-table-wrap');
         if (oldTable) oldTable.remove();
 
-        const wrap = this._el('div', 'lf-log-table-wrap');
+        const wrap = this._el('div', 'lf-log-table-wrap pixel-scroll');
         // Insert before session-detail if it exists
         const detail = pane.querySelector('.lf-session-detail');
         if (detail) {
@@ -783,7 +785,7 @@ export class LogFilterMinigame extends MinigameScene {
         // Only one Session Detail card at a time: a new render replaces the old one.
         pane.querySelectorAll('.lf-session-detail').forEach(el => el.remove());
 
-        const panel = this._el('div', 'lf-session-detail');
+        const panel = this._el('div', 'lf-session-detail pixel-scroll');
         this._dom.sessionDetail = panel;
 
         const header = this._el('div', 'lf-detail-header');
@@ -941,12 +943,29 @@ export class LogFilterMinigame extends MinigameScene {
     _openOverlay(mode) {
         this._overlayMode = mode;
         this._renderOverlay();
+        this._hideSceneX(true);
     }
 
     _closeOverlay() {
         this._overlayMode = null;
-        const existing = this._dom.body.querySelector('.lf-overlay');
+        const existing = this._dom.body?.querySelector('.lf-overlay');
         if (existing) existing.remove();
+        this._hideSceneX(false);
+    }
+
+    // One close control at a time (UI consoles rule): pop-ups carry their own X, the two
+    // confirm-style ones carry named buttons and no X, so the scene X hides while one is open
+    _hideSceneX(hidden) {
+        const x = this.container?.querySelector?.('#minigame-close');
+        if (x) x.style.visibility = hidden ? 'hidden' : '';
+    }
+
+    // Esc acts as Cancel on an open pop-up and leaves the scene open; with none open it
+    // closes the scene as before (base-minigame handleEscapeKey hook)
+    handleEscapeKey() {
+        if (!this._overlayMode) return false;
+        this._closeOverlay();
+        return true;
     }
 
     _renderOverlay() {
@@ -957,7 +976,7 @@ export class LogFilterMinigame extends MinigameScene {
         const overlay = this._el('div', 'lf-overlay');
         this._dom.body.appendChild(overlay);
 
-        const panel = this._el('div', 'lf-overlay-panel');
+        const panel = this._el('div', 'lf-overlay-panel pixel-scroll');
         overlay.appendChild(panel);
 
         switch (this._overlayMode) {
@@ -973,11 +992,17 @@ export class LogFilterMinigame extends MinigameScene {
         const hdr = this._el('div', 'lf-overlay-header');
         const t = this._el('span');
         t.textContent = displayDashes(title);
-        const closeBtn = this._el('button', 'lf-overlay-close');
-        closeBtn.textContent = '[✕]';
-        closeBtn.addEventListener('click', () => this._closeOverlay());
         hdr.appendChild(t);
-        hdr.appendChild(closeBtn);
+        // Confirm-style pop-ups keep their named buttons and have no X; the rest use the
+        // shared X, inside the pop-up
+        if (this._overlayMode !== 'flag_confirm' && this._overlayMode !== 'flag_rejected') {
+            const closeBtn = this._el('button', 'minigame-close-button lf-overlay-close');
+            closeBtn.type = 'button';
+            closeBtn.ariaLabel = 'Close';
+            closeBtn.textContent = '\u00d7';
+            closeBtn.addEventListener('click', () => this._closeOverlay());
+            hdr.appendChild(closeBtn);
+        }
         panel.appendChild(hdr);
         const body = this._el('div', 'lf-overlay-body');
         panel.appendChild(body);
@@ -1213,7 +1238,7 @@ export class LogFilterMinigame extends MinigameScene {
         headerBar.appendChild(subtitleEl);
         pane.appendChild(headerBar);
 
-        const tableWrap = this._el('div', 'lf-audit-table-wrap');
+        const tableWrap = this._el('div', 'lf-audit-table-wrap pixel-scroll');
         pane.appendChild(tableWrap);
 
         const table = this._el('table', 'lf-audit-table');

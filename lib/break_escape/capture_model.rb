@@ -328,8 +328,15 @@ module BreakEscape
       list.is_a?(Hash) ? list.values : []
     end
 
+    # The authored landing-page definition (social.landingPages entry) for a page id, or nil.
+    # The phish-evidence build route (CaptureProofs#record_landing_page_build!) validates the
+    # client's choices against this page's own menus and recomputes its score from it.
+    def landing_page(data, page_id)
+      landing_pages(data).find { |p| p.is_a?(Hash) && p['id'] == page_id }
+    end
+
     def landing_page_capture(data, page_id)
-      page = landing_pages(data).find { |p| p.is_a?(Hash) && p['id'] == page_id }
+      page = landing_page(data, page_id)
       page.is_a?(Hash) && page['capture'].is_a?(Hash) ? page['capture'] : nil
     end
 

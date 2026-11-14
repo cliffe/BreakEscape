@@ -1,49 +1,36 @@
 /* SIS Config Threshold Minigame Styles */
 
-.sis-threshold-minigame-container {
-    background: rgba(13, 20, 32, 0.72);
-    border: 2px solid #2b3446;
-}
-
+/* The shared console window (css/minigames-framework.css) is the frame and the title bar */
 .sis-threshold-minigame-game-container {
-    max-width: 620px;
-    margin: 20px auto;
-    width: 100%;
-    background: rgba(17, 26, 40, 0.78) !important;
-    border: 2px solid #263246;
-    box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.5);
+    background: #111a28;
     padding: 12px;
-    height: 50vh;
     box-sizing: border-box;
-    display: flex;
-    align-items: center;
 }
 
 .sis-threshold {
-    font-family: 'GNF', 'Courier New', monospace;
+    font-family: 'GNF', 'VT323', monospace;
     color: #e9edf5;
     padding: 8px;
     width: 100%;
-    min-height: 100%;
     position: relative;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
+    flex: 1 1 auto;
 }
 
-.sis-threshold-header {
-    background: #133f73;
-    border: 2px solid #2b5d93;
-    padding: 10px 12px;
-    font-size: 18px;
-    letter-spacing: 0.4px;
+/* The table and buttons keep a readable width inside the wide window; the pop-up overlay
+   covers the whole body */
+.sis-threshold-main {
+    width: 100%;
+    max-width: 720px;
+    margin: 0 auto;
 }
 
 .sis-threshold-table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 10px;
     font-size: 16px;
 }
 
@@ -75,22 +62,19 @@
 
 .sis-status-green {
     color: #84d78a;
-    font-weight: 700;
 }
 
 .sis-status-amber {
     color: #ffd14b;
-    font-weight: 700;
 }
 
 .sis-status-red {
     color: #ff6a6a;
-    font-weight: 700;
 }
 
 .sis-row-meta {
     color: #9ea7b7;
-    font-size: 14px;
+    font-size: 16px;
     margin-top: 4px;
 }
 
@@ -132,9 +116,7 @@
 }
 
 .sis-btn-compare:hover {
-    box-shadow: 0 0 12px rgba(255, 209, 75, 0.45);
     filter: brightness(1.08);
-    transform: translateY(-1px);
 }
 
 .sis-btn-confirm:hover {
@@ -158,36 +140,58 @@
 .sis-help {
     margin-top: 8px;
     color: #c9cfd9;
-    font-size: 14px;
+    font-size: 16px;
 }
 
+/* Covers the whole shell (the overlay is a child of it), so a pop-up opened on a scrolled
+   form is always on screen and centred */
 .sis-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(6, 10, 18, 0.32);
+    background: rgba(6, 10, 18, 0.6);
     display: none;
     align-items: center;
     justify-content: center;
     padding: 8px;
     z-index: 5;
+    overflow: auto;
     box-sizing: border-box;
 }
 
+/* A global `.show { display: block !important }` would otherwise win */
 .sis-overlay.show {
-    display: flex;
+    display: flex !important;
 }
 
 .sis-modal {
     background: #161c26;
     border: 2px solid #3c4d68;
-    max-width: 100%;
+    max-width: 720px;
     width: 100%;
     padding: 14px;
     box-sizing: border-box;
     margin: 0 auto;
 }
 
+/* The detail and compare pop-ups are not confirms: they close with the shared X, inside the
+   pop-up's frame, and their title stops short of it */
+.sis-modal-with-x {
+    position: relative;
+}
+
+.sis-modal .sis-modal-close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 1;
+}
+
+.sis-modal-with-x h4 {
+    padding-right: 40px;
+}
+
 .sis-modal h4 {
+    overflow-wrap: anywhere;
     margin: 0 0 8px 0;
     color: #f4f7fb;
     font-size: 20px;
@@ -253,7 +257,7 @@
 
 .sis-compare-item {
     margin: 0 0 6px 0;
-    font-size: 17px;
+    font-size: 18px;
     line-height: 1.35;
     color: #eef3ff;
     word-break: break-word;
@@ -261,5 +265,44 @@
 
 .sis-compare-item-alert {
     color: #ffd46b;
-    font-weight: 700;
+}
+
+/* Phones: the three table columns become one card per row, the column names drawn in each
+   cell (critique B SIS1) */
+@media (max-width: 600px) {
+    .sis-threshold-minigame-game-container {
+        padding: 6px;
+    }
+
+    .sis-threshold-table thead {
+        display: none;
+    }
+
+    .sis-threshold-table,
+    .sis-threshold-table tbody,
+    .sis-threshold-table tr,
+    .sis-threshold-table td {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .sis-threshold-table tr {
+        margin-bottom: 8px;
+        border: 2px solid #2a2f3b;
+    }
+
+    .sis-threshold-table td {
+        border: 0;
+        padding: 4px 8px;
+    }
+
+    .sis-threshold-table td[data-label]::before {
+        content: attr(data-label) ': ';
+        color: #9ea7b7;
+    }
+
+    .sis-compare-grid {
+        grid-template-columns: 1fr;
+    }
 }

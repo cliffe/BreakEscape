@@ -14,7 +14,8 @@
  *   trip       the way back from the network screens (4.3, "Getting back"), below.
  *
  * The jack. A click on an object with `networkJack: true` runs interactJack(sprite)
- * (interactions.js): a planted jack asks "Unplug it" / "Leave it"; with no rogue device
+ * (interactions.js): a planted jack opens its box's network view, with Unplug in it (UI PC 2,
+ * critique N05; unplugFromView); with no rogue device
  * held it shows the jack's requiresItemHint; otherwise it confirms with `jackConfirm` and
  * only then asks the server (POST /network/plant). The device leaves the tray and the link
  * item arrives through inventory.js's showServerItem and syncInventoryFromServer, with no
@@ -54,8 +55,8 @@ import { writeGlobal } from './global-writer.js';
 export const NO_DEVICE_HINT = 'You have nothing to plug into this port.';
 export const LINK_GONE_MESSAGE = 'The link is gone.';
 export const PLANT_LABEL = 'Plug it in';
-export const UNPLUG_LABEL = 'Unplug it';
-export const LEAVE_LABEL = 'Leave it';
+// The network view's button that takes a planted box back out (opened at its jack only)
+export const UNPLUG_LABEL = 'Unplug';
 // A dropped-device implant answered not_ready asks again this many times, this far apart, so a
 // timer that fires before the drop's save lands still grants the foothold (review I R3 m2)
 export const IMPLANT_NOT_READY_RETRIES = 3;
@@ -109,7 +110,9 @@ const LANDINGS = {
     view: {
         close: () => ({ leave: 'closed' }),
         handover: () => null,
-        foothold_gone: () => ({ leave: 'foothold_gone', message: LINK_GONE_MESSAGE })
+        foothold_gone: () => ({ leave: 'foothold_gone', message: LINK_GONE_MESSAGE }),
+        // Unplug in the view: the box is back in the inventory and the jack shows it is empty
+        unplugged: () => ({ leave: 'unplugged' })
     },
     signin: {
         // Closed with no session at that PC: the view. With one (Switch user left with no
@@ -378,11 +381,11 @@ export class NetworkLinks {
         const held = this.heldAt(jackId);
 
         if (held) {
-            const message = `Your ${this._deviceName(held)} is plugged in here. Open it from your inventory.`;
-            const unplug = typeof confirm === 'function'
-                ? await confirm(message, UNPLUG_LABEL, LEAVE_LABEL, { plainText: true }) : false;
-            if (!unplug) return { action: 'left' };
-            return this.unplug(jackId, sprite);
+            // The box's own network view, with Unplug inside it (UI PC 2, critique N05): the one
+            // thing worth doing at a planted jack is to look through the box, so the click acts
+            // at once. Unplug is offered there because the player is standing at the jack.
+            this.open(held.id, { atJack: jackId, jackSprite: sprite });
+            return { action: 'opened', footholdId: held.id };
         }
 
         const device = this._heldDevice();
@@ -399,11 +402,11 @@ export class NetworkLinks {
             || `Plug ${deviceName} into ${jackName}?`;
         const ok = typeof confirm === 'function' ? await confirm(text, PLANT_LABEL, 'Cancel', { plainText: true }) : false;
         if (!ok) return { action: 'cancelled' };
-        return this.plant(jackId, device.scenarioData.id, { deviceName: device.scenarioData.name });
+        return this.plant(jackId, device.scenarioData.id, { deviceName: device.scenarioData.name, jackSprite: sprite });
     }
 
     /** POST /network/plant, then the tray, the jack, the global and the events. */
-    async plant(jackId, deviceId = null, { deviceName = null } = {}) {
+    async plant(jackId, deviceId = null, { deviceName = null, jackSprite = null } = {}) {
         const api = apiClient();
         if (!api?.networkPlant) return { action: 'error' };
         this._busy = true;
@@ -444,7 +447,8 @@ export class NetworkLinks {
         this._emit('network_device_planted', { jackId, footholdId: foothold.id, networkId, deviceId: deviceId ?? null }, jackId);
         this._emit('network_foothold_gained', { footholdId: foothold.id, via: foothold.via, networkId, sourceId: jackId }, jackId);
         // Seeing what is exposed is the point: the first foothold at a jack opens the view
-        if (body.first) this.open(foothold.id);
+        // The player is at the jack that was just planted, so the view offers Unplug (fix round 1, m1)
+        if (body.first) this.open(foothold.id, { atJack: jackId, jackSprite });
         return { action: 'planted', footholdId: foothold.id, first: !!body.first };
     }
 
@@ -525,8 +529,20 @@ export class NetworkLinks {
         return { action: 'implanted', footholdId: foothold.id, first };
     }
 
+    /**
+     * Unplug from the network view (its Unplug button): only for the jack the running trip was
+     * opened at, so a view opened from the inventory never offers it. The view closes itself on
+     * success (landed('view', 'unplugged')). Resolves to what unplug() resolves to.
+     */
+    async unplugFromView(jackId) {
+        if (!jackId || this.trip?.atJack !== jackId) return { action: 'none' };
+        if (this._busy) return { action: 'busy' };
+        // quiet: a refusal comes back as `message` for the view to show by its button, not as a toast
+        return this.unplug(jackId, this.trip.jackSprite || null, { quiet: true });
+    }
+
     /** POST /network/unplug: the device back, the link item and the foothold gone. */
-    async unplug(jackId, sprite = null) {
+    async unplug(jackId, sprite = null, { quiet = false } = {}) {
         const api = apiClient();
         if (!api?.networkUnplug) return { action: 'error' };
         const footholdId = footholdIdFor(jackId);
@@ -540,15 +556,16 @@ export class NetworkLinks {
             if (err?.status === 422 && b.reason === 'not_planted') {
                 // The server holds nothing here: the client's copy was stale
                 this._dropFoothold(foothold?.id || footholdId);
-                toast('Nothing is plugged in here.', 'info');
-                return { action: 'not_planted' };
+                if (!quiet) toast('Nothing is plugged in here.', 'info');
+                return { action: 'not_planted', message: 'Nothing is plugged in here.' };
             }
-            toast(err?.status === 403 ? "You can't reach that port from here." : 'The port did not respond. Try again.', 'error');
-            return { action: 'error', status: err?.status ?? null };
+            const message = err?.status === 403 ? "You can't reach that port from here." : 'The port did not respond. Try again.';
+            if (!quiet) toast(message, 'error');
+            return { action: 'error', status: err?.status ?? null, message };
         } finally {
             this._busy = false;
         }
-        if (!body?.success) return { action: 'error' };
+        if (!body?.success) return { action: 'error', message: 'The port did not respond. Try again.' };
         const id = foothold?.id || footholdId;
         // The link item leaves and the device that was plugged in comes back, both named in the
         // server's `added`/`removed` delta (sync deltas P2); no inventory scan is needed.
@@ -675,9 +692,15 @@ export class NetworkLinks {
      * Open the network view for a held foothold, starting a trip. `returnTo({ reason })` is
      * called once when the player leaves the network screens (4.3, 13.4).
      */
-    open(footholdId, { returnTo = null } = {}) {
+    open(footholdId, { returnTo = null, atJack = null, jackSprite = null } = {}) {
+        // atJack: opened by a click on the planted jack itself, so the view offers Unplug (a box
+        // is pulled out by hand, at its jack; a view opened from the inventory never offers it).
+        // Kept on the trip, so a view reopened after a sign-in or a share on the same trip still
+        // offers it.
         const trip = this._startTrip({ footholdId, start: 'view', pcId: null,
-            returnTo: typeof returnTo === 'function' ? returnTo : null });
+            returnTo: typeof returnTo === 'function' ? returnTo : null,
+            atJack: typeof atJack === 'string' && atJack ? atJack : null,
+            jackSprite: atJack ? jackSprite : null });
         if (!this.footholds.has(footholdId)) {
             toast(LINK_GONE_MESSAGE, 'info');
             this.leave('foothold_gone');
@@ -711,7 +734,7 @@ export class NetworkLinks {
     _showView(trip, message) {
         const start = win().startNetworkViewMinigame;
         if (typeof start === 'function') {
-            start(trip.footholdId, { message: message || null });
+            start(trip.footholdId, trip.atJack ? { message: message || null, unplugJack: trip.atJack } : { message: message || null });
             return;
         }
         // Until step 8's view exists: fetch it (so a run can read it), say which network

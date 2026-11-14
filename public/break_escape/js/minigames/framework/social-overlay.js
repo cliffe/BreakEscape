@@ -44,22 +44,48 @@ export class SocialOverlayScene extends MinigameScene {
     }
 
     /**
-     * Add the overlay's own Close control to `parent` (default: the container).
-     * Returns the button.
+     * Build the overlay's own Close control: the shared pixel × (not a text
+     * 'Close' button), aria-label `label`, one look for every SE and exercise
+     * window (C-X1). The caller appends it where the window header wants it.
+     * Returns the button and records it as this.closeButton.
      */
-    mountCloseControl(parent = this.container, label = 'Close') {
+    buildCloseControl(label = 'Close') {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = 'se-overlay-close minigame-button';
-        btn.textContent = label;
+        btn.className = 'se-overlay-close';
+        btn.innerHTML = '&times;';
         btn.setAttribute('aria-label', label);
+        btn.title = label;
         this.addEventListener(btn, 'click', (e) => {
             e.preventDefault?.();
             e.stopPropagation?.();
             this.requestClose();
         });
-        parent.appendChild(btn);
         this.closeButton = btn;
+        return btn;
+    }
+
+    /**
+     * Build the Close control and add it to `parent` (default: the container).
+     * Returns the button.
+     */
+    mountCloseControl(parent = this.container, label = 'Close') {
+        const btn = this.buildCloseControl(label);
+        parent.appendChild(btn);
+        return btn;
+    }
+
+    /**
+     * A diegetic device (a kiosk, a monitor) closes with the themed steel X, the
+     * same look as the PC monitor's close, not the flat red SE overlay X. Builds a
+     * `.minigame-close-button` (so the [data-ui-theme] skin styles it) wired to the
+     * same requestClose as the SE control, with an optional extra class for
+     * placement, and adds it to `parent`. Returns the button.
+     */
+    mountThemedCloseControl(parent = this.container, label = 'Close', extraClass = '') {
+        const btn = this.buildCloseControl(label);
+        btn.className = ['minigame-close-button', extraClass].filter(Boolean).join(' ');
+        parent.appendChild(btn);
         return btn;
     }
 

@@ -353,7 +353,7 @@ test('a finished episode reopened and closed again leaves the state exactly as i
     setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: stages } });
     const before = JSON.stringify(stored(ep.id));
     open(ep);
-    click('.se-overlay-close');
+    click('.se-overlay-close, .epr-kiosk-close');
     assert.equal(JSON.stringify(stored(ep.id)), before);
 });
 

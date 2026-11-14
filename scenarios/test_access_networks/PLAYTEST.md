@@ -62,8 +62,9 @@ The leak check must say `VERDICT: no leaks found` after every beat. Compare the 
   P8 the handover note). Ian's tile is refused on Lena's PC. A run that skips the cards sees
   the typed form, as before.
 - **The jack's prompts are `gameConfirm` dialogs, not minigames.** Answer the plant confirm with
-  `{"cmd":"dismiss","label":"Plug it in"}` (or `"Cancel"`), and the planted jack's prompt with
-  `{"cmd":"dismiss","label":"Unplug it"}` or `"Leave it"`. `mg clickSelector` cannot see them.
+  `{"cmd":"dismiss","label":"Plug it in"}` (or `"Cancel"`). `mg clickSelector` cannot see it.
+  A planted jack has no prompt (UI PC 2, 2026-11-14): a click opens the box's network view with
+  an Unplug button in its header (`[data-unplug]`, `networkView` test state `unplug`).
 - **The breaker and the two USB sockets also ask first** (`gameConfirm`, buttons "Confirm" and
   "Cancel"): `server_breaker` (N5, N7), `sam_dock` (N12) and `kiosk_dock` (N13). Answer with
   `{"cmd":"dismiss","label":"Confirm"}`; a run that does not answer sees nothing change.
@@ -103,10 +104,11 @@ The leak check must say `VERDICT: no leaks found` after every beat. Compare the 
 5. Click the link item in the inventory: the same one-line toast; `networkView('jack_comms_port')`
    lists the hosts `door_box`, `kiosk_pc`, `lena_pc`, `sam_pc` (in that order), then
    `ledger_archive`, `print_queue`, `scanned_inbox`, and nothing of the workshop network.
-6. `interact` `comms_port`: "Your Network drop box is plugged in here. Open it from your
-   inventory." with `Unplug it` and `Leave it`. Answer `Leave it`: nothing changes, no request.
-7. `interact` again and answer `Unplug it`: one box in the inventory, none on the lobby table, no
-   link item; the port is back to `network_rack1`; `comms_port_planted` is false.
+6. `interact` `comms_port`: the drop box's network view opens, with Unplug in its header. Close
+   it with the X: nothing changes, no unplug request.
+7. `interact` again and press Unplug (`[data-unplug]`): the view closes; one box in the
+   inventory, none on the lobby table, no link item; the port is back to `network_rack1`;
+   `comms_port_planted` is false.
    - Server: no `footholds`; `gainedFootholds` still has `comms_port`; `p2_plant` still complete.
 8. Plant again (`Plug it in`): the link item is back; the toast does not repeat as a first
    foothold's view (the view opens by itself only the first time at a jack).

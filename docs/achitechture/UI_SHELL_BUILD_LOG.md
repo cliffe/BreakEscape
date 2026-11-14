@@ -340,11 +340,11 @@ The orchestrator (or integrator) needs, before `MERGE_BATCH=1 bin/test-js -j 3`:
     mkdir -p tmp
     env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true nohup bundle exec rails server \
         -b 127.0.0.1 -p 3451 -P tmp/pids/server-3451.pid > tmp/keyless-3451.log 2>&1 &
+    #    (rails resolves -P against the dummy app: the pid file is test/dummy/tmp/pids/server-<port>.pid)
     #    or, on :3001: tools/playtest/start-keyless-server.sh
-    # 2. a game: open http://127.0.0.1:3451/break_escape/missions in a browser (or drive
-    #    tools/playtest/session-start.sh), start any mission with a title-only start such as the
-    #    test_seating scenario, and read the game id from the URL /break_escape/games/<id>
-    #    (a POST /break_escape/games with mission_id also makes one; it needs the CSRF token)
+    # 2. a game: from the merge tree,
+    #      env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true bundle exec rails runner tools/playtest/new-game.rb test_seating
+    #    and read the GAME_ID= line (it prints a :3000 URL; ignore that, use your own port)
     # 3. the variables, then the suite
     export PLAYWRIGHT_CHROMIUM_EXECUTABLE=$HOME/.cache/ms-playwright/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
     export SHELL_X_PORT=3451 SHELL_X_GAME=<game id>
