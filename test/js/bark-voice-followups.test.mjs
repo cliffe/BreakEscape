@@ -227,6 +227,28 @@ test('item 3: a bubble that loses its place mid-release shows the rest at once, 
     sys.isDrainingDeferred = false;
 });
 
+test('item 3: a bubble that loses its place while its voice is still loading: the toast is held once the voice starts', async () => {
+    const r = rig();
+    const sys = barkSystem();
+    const ravi = fakeVoice(sys, 'ravi', { duration: 6000 });
+    let start;
+    const realPlay = ravi.play;
+    ravi.play = (id, text) => new Promise(res => { start = () => res(realPlay(id, text)); });
+    const rendered = sys._renderBark({ npcId: 'ravi', npcName: 'Ravi', message: 'The network has gone down.', useTTS: true });
+    r.bubbles._hudRects = () => [{ x: -1000, y: -1000, w: 3000, h: 3000, hud: true }];
+    r.bubbles.update();
+    await tick();
+    const el = document.querySelector('.npc-bark');
+    assert.ok(el, 'the rest shows at once');
+    assert.equal(el._voiceHold, undefined, 'nothing to hold for yet');
+    start();
+    await rendered;
+    await tick();
+    assert.equal(el._voiceHold, true, 'held from when the voice starts');
+    ravi.end();
+    clearTimeout(el._autoCloseTimer);
+});
+
 test('item 3: a continuation toast stays while the voice plays, then keeps the rest of its reading time', async () => {
     rig();
     const sys = barkSystem();

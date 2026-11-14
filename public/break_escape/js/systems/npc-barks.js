@@ -170,7 +170,7 @@ export default class NPCBarkSystem {
     const mgrOf = () => this.ttsManagers.get(npcId);
     const stopIfOurs = () => { const m = mgrOf(); if (m && m.currentText === text) m.stop(); };
     const v = {
-      state: ttsPromise ? 'pending' : 'none', cancelled: false,
+      state: ttsPromise ? 'pending' : 'none', cancelled: false, started: ttsPromise || null,
       live: () => {
         if (v.cancelled) return false;
         if (v.state === 'pending') return true;
@@ -487,7 +487,11 @@ export default class NPCBarkSystem {
     el._lifetime = el._autoCloseRemaining;
     // The toast stays while the voice it carries plays: its own, or (a continuation) the voice
     // of the bubble it took over from
-    if (payload.continuation) this._holdToastForVoice(el, npcId);
+    // (the bubble's voice may still be loading: then hold from when it starts)
+    const carried = payload.continuation ? payload.continuationVoice : null;
+    if (carried && carried.state === 'pending' && carried.started) {
+      carried.started.then(() => { if (carried.live()) this._holdToastForVoice(el, npcId); }, () => {});
+    } else if (payload.continuation) this._holdToastForVoice(el, npcId);
     else if (ttsPromise) ttsPromise.then(ms => { if (ms) this._holdToastForVoice(el, npcId); }, () => {});
     el.addEventListener('mouseenter', () => this._pauseAutoClose(el));
     el.addEventListener('mouseleave', () => this._resumeAutoClose(el));
@@ -538,11 +542,12 @@ export default class NPCBarkSystem {
    * nearer bark took the bubble's place), as a toast with the speaker's name. Silent: the
    * audio carries on. Goes through showBark, so it is held while a panel is open.
    */
-  _toastRemainder(payload, rest) {
+  _toastRemainder(payload, rest, voice = null) {
     if (!rest) return;
-    // The rest already holds any follow-up pages still to come
+    // The rest already holds any follow-up pages still to come. continuationVoice: the bubble's
+    // voice, which the toast stays up for (it may still be loading)
     this.showBark({ ...payload, message: rest, text: undefined, followUp: null, playSound: false, useTTS: false, forceToast: true,
-      continuation: true });
+      continuation: true, continuationVoice: voice });
   }
 
   /**
@@ -558,7 +563,7 @@ export default class NPCBarkSystem {
       this.deferredBarkQueue.unshift(payload);
       return;
     }
-    this._toastRemainder(payload, rest);
+    this._toastRemainder(payload, rest, voice);
   }
 
   /**
