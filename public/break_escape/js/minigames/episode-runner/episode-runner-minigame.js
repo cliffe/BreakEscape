@@ -318,6 +318,9 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         root.setAttribute('aria-label', 'Exercise');
         applyBrand(root, this.episode.brand);
         if (this.facilitated) root.classList.add('epr-facilitated');
+        // C-ER1: in normal play the kiosk episode is a framed window that sits with the other
+        // SE windows; only a facilitated (shared-screen) run stays full-bleed for projection.
+        this.container?.classList?.toggle?.('minigame-framed', !this.facilitated);
         this.root = root;
 
         const bar = el('div', 'epr-bar');

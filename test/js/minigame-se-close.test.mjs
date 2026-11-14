@@ -101,6 +101,11 @@ test('C-X3 the wide SE windows take the shared 9-slice frame, no ring or line', 
     }
 });
 
+test('C-ER1 the episode runner frames itself in normal play, full-bleed only when facilitated', () => {
+    const src = readFileSync(join(js, 'minigames/episode-runner/episode-runner-minigame.js'), 'utf8');
+    assert.match(src, /classList[^\n]*toggle[^\n]*minigame-framed[^\n]*!this\.facilitated/, 'framed when not facilitated');
+});
+
 test('C-X1 hand-rolled text Close buttons are gone from the SE scenes', () => {
     for (const rel of [
         'minigames/assistant-chat/assistant-chat-minigame.js',
