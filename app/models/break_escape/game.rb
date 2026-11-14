@@ -1299,8 +1299,8 @@ module BreakEscape
     # and 6a OR in cards_need_repair?, legacy_captures?, unrecorded_shared_logins?
     # and stampable_captures?; until then no bootstrap write is ever needed.
     def bootstrap_state_needs_write?
-      cards_need_repair? || legacy_cloned_cards? || legacy_captures? || unrecorded_shared_logins? ||
-        stampable_captures?
+      cards_need_repair? || legacy_cloned_cards? || legacy_captures? || legacy_phish_evidence? ||
+        unrecorded_shared_logins? || stampable_captures?
     end
 
     # Run the bootstrap writers inside the lock (none of which saves) and return
@@ -1317,6 +1317,10 @@ module BreakEscape
       changed = repair_saved_cards! || changed
       changed = migrate_legacy_captures!(scenario: scenario) || changed
       changed = record_shared_logins!(scenario: scenario) || changed
+      # Legacy phish evidence (plan sections 9, 9.1): import the client-global build and send facts
+      # into the two server stores once, before the stamp, so a returning legacy save is migrated
+      # and stamped in one locked pass.
+      changed = migrate_legacy_phish_evidence!(scenario: scenario) || changed
       # 6b: an unproven entry whose page evidence now holds is stamped proven: true on the
       # bootstrap, so a secret earned across a reload is served without a fresh sync.
       changed = stamp_proven_captures!(scenario: scenario) || changed

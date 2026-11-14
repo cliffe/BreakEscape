@@ -489,3 +489,56 @@ Game ids: 4005 (slice, item 1), 4006 (lab, item 2), 4007 (slice throttle, item 3
 PID afterwards. This section not committed: the full suites were running under the shared lock and
 their finish could not be confirmed, so per the brief the re-proof write was kept out of the tracked
 build log.
+
+## Chunk B: legacy migration and its gate
+
+Plan sections 9, 9.1 and the chunk B parts of sections 14, 15. Built on branch
+`build/hard-phish-mig` off `d0764d4b8`. Chunk A (Route 2, the send route) is built in parallel on a
+separate branch and is not part of this chunk.
+
+An old save holds its phish build and send facts in the client global
+`globalVariables.se_landing_pages`, not in the two server stores. On the first bootstrap that holds
+`scenario_data`, migrate it once: re-derive the build verdict with `PhishScore` from the stored
+`choices` (never the old `meetsThreshold`), and import a landed send off the save's own durable
+`victim.submitted` marker, gated on that re-derived build. The reader is still the old
+client-evidence path, so this is behaviour-neutral for live play; it only readies the stores before
+the reader flips in chunk C.
+
+### What was built
+
+- `legacy_phish_evidence?` (`app/models/break_escape/capture_proofs.rb`): a cheap, scenario-free
+  predicate, true when `globalVariables.se_landing_pages` is a non-empty Hash and
+  `phishEvidenceMigrated` is not set. Added to the OR in `bootstrap_state_needs_write?`
+  (`game.rb`), so the lock is taken for exactly the save that needs the migration (a legacy global
+  with already-migrated captures and empty new stores trips none of the other predicates).
+- `migrate_legacy_phish_evidence!(scenario:)` (`capture_proofs.rb`): added to
+  `run_bootstrap_writers!` (`game.rb`) ordered **before** `stamp_proven_captures!`, so a returning
+  legacy save is migrated and stamped in one locked pass.
+  - First line is the entry guard: `return false if player_state['phishEvidenceMigrated'] == true`.
+    The lock predicate alone is not enough: `run_bootstrap_writers!` calls every writer whenever the
+    lock is taken for any reason, and this migration leaves `se_landing_pages` in place (unlike
+    `migrate_legacy_captures!`, which deletes its own trigger), so without the guard it would re-read
+    the client-writable global on every later locked bootstrap.
+  - Re-scores each legacy page from its stored `choices` through `PhishScore` (validated field by
+    field against the page menus with the existing `valid_build_choices?` / `valid_landing_target?`
+    helpers), writing the server's own `meetsThreshold`/`credibility` into `seLandingPages`,
+    first-wins per page. Off-menu or absent choices migrate as not built (no entry; the player
+    rebuilds).
+  - Imports the landed send off `se_landing_pages[pageId].victim.submitted == true`, for a page
+    wired to an authored phish target and an authored `kind: 'link'` payload kit, writing
+    `sePhishSends["#{targetId}/#{kitId}"]` with `landed` taken from the re-derived build. No stored
+    sent mail is consulted (the mailbox cap can trim it). First-wins on `landed: true`.
+  - Sets `phishEvidenceMigrated = true` whatever the save held, so it runs a single time.
+- `phishEvidenceMigrated` is a top-level, server-owned `player_state` key: not a global, never read
+  from the `sync_state` body, never in the bootstrap serialisation allowlist (the `scenario` action
+  attaches a named set of keys; it is not among them). It needs no `ACCESS_STATE_DEFAULTS` default
+  (absent reads as not-migrated).
+
+### Shared helper for chunk A to reconcile
+
+`phish_page_build_landed?(page_entry)` (`capture_proofs.rb`, private) is the server's "landed" rule:
+a send lands exactly when its kit's `seLandingPages` entry has `built == true` and the server's own
+`meetsThreshold == true`. Route 2 in chunk A computes `landed` the same way off the same store, so
+the two paths must share this one method. Chunk A defines its send route separately; at merge, the
+orchestrator should point Route 2's `landed` computation at this helper (or reconcile a duplicate).
+`migrated_build_entry` and `migrated_at` are chunk-B-only helpers.

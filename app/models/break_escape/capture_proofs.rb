@@ -319,6 +319,92 @@ module BreakEscape
       true
     end
 
+    # --- legacy phish evidence: a one-time import (plan sections 9, 9.1) --------------------
+    #
+    # A save made before the phish-evidence server stores existed holds its build and send facts
+    # in the client global globalVariables.se_landing_pages, not in seLandingPages / sePhishSends.
+    # On the first bootstrap that holds scenario_data, migrate it once: re-derive the build verdict
+    # with PhishScore from the stored choices (never trusting the old meetsThreshold), and import a
+    # landed send off the save's own durable victim.submitted marker, gated on that re-derived
+    # build. No stored sent mail is consulted (the mailbox cap can trim it), and no client landed is
+    # trusted. Mirrors migrate_legacy_captures!: a data move inside player_state, no schema change.
+
+    # Whether an old save still holds legacy phish evidence to import: a non-empty
+    # globalVariables.se_landing_pages with the migration not yet run. player_state alone (no
+    # scenario), so it is a cheap predicate for bootstrap_state_needs_write? (plan section 9.1).
+    def legacy_phish_evidence?
+      return false if player_state['phishEvidenceMigrated'] == true
+
+      legacy = player_state.dig('globalVariables', 'se_landing_pages')
+      legacy.is_a?(Hash) && legacy.any?
+    end
+
+    # Import the legacy phish evidence into the two server-owned stores once, gated on a top-level
+    # server-owned phishEvidenceMigrated flag. Ordered before stamp_proven_captures! in
+    # run_bootstrap_writers!, so the stamp in the same locked pass picks up the migrated evidence.
+    # Returns whether anything changed. Idempotent: the entry guard returns at once once the flag is
+    # set (the lock can be taken by any other writer's predicate, and this migration leaves
+    # se_landing_pages in place for the builder UI, so without the guard it would re-read that
+    # client-writable global on every later locked bootstrap).
+    def migrate_legacy_phish_evidence!(scenario:)
+      return false if player_state['phishEvidenceMigrated'] == true
+
+      legacy = player_state.dig('globalVariables', 'se_landing_pages')
+      if legacy.is_a?(Hash) && legacy.any?
+        land_store = (player_state['seLandingPages'] ||= {})
+        send_store = (player_state['sePhishSends'] ||= {})
+
+        legacy.each do |page_id, rec|
+          next unless valid_capture_target_id?(page_id)
+          next unless rec.is_a?(Hash) && rec['built'] == true
+
+          page_def = CaptureModel.landing_page(scenario, page_id)
+          next unless page_def.is_a?(Hash)
+
+          choices = rec['choices']
+          # Off-menu or absent choices migrate as not built: the player rebuilds, honest play
+          # reaches it again (plan section 9).
+          next unless valid_build_choices?(page_def, choices)
+
+          target_id = rec['targetId']
+          next unless valid_landing_target?(page_def, target_id, scenario)
+
+          # Re-derive the build verdict (first-wins per page), storing the server's own
+          # meetsThreshold, never the old record's. A forged meetsThreshold: true over junk choices
+          # migrates to the server verdict computed from those choices.
+          build = (land_store[page_id] ||= migrated_build_entry(scenario, page_def, page_id, target_id, choices, rec))
+
+          # Import the landed send off the durable victim.submitted marker, gated on the re-derived
+          # build above. No stored sent mail is consulted.
+          victim = rec['victim']
+          next unless victim.is_a?(Hash) && victim['submitted'] == true
+          next unless CaptureModel.phish_target_ids(scenario).include?(target_id.to_s)
+
+          info = CaptureModel.page_evidence_kits(scenario)[page_id]
+          # page_evidence_kits already keeps only present-string kit ids (capture_model.rb).
+          kit_ids = info ? Array(info[:kits]) : []
+          next if kit_ids.empty?
+
+          kit_id = kit_ids.min
+          landed = phish_page_build_landed?(build)
+          key = "#{target_id}/#{kit_id}"
+          existing = send_store[key]
+          # First-wins on landed: true; a later live Route 2 send for the same target/kit credits once.
+          next if existing.is_a?(Hash) && existing['landed'] == true
+
+          send_store[key] = {
+            'targetId' => target_id.to_s, 'kitId' => kit_id, 'pageId' => page_id,
+            'landed' => landed, 'at' => migrated_at(rec)
+          }
+        end
+      end
+
+      # Runs a single time: set the flag whatever the save held, so a later locked bootstrap never
+      # re-reads the client-writable se_landing_pages global (plan section 9.1).
+      player_state['phishEvidenceMigrated'] = true
+      true
+    end
+
     # The record for the browser: every entry without the server-only keys (proven) and never a
     # secret. The bootstrap and every sync answer use this shape. Reads se_captures_record, so an
     # old save whose captures still sit in the legacy global reads through in place until the
@@ -594,6 +680,35 @@ module BreakEscape
         }
       end
       out
+    end
+
+    # The seLandingPages entry the legacy migration writes for one page: the server's re-derived
+    # verdict (plan section 9), the same shape record_landing_page_build! stores. First-wins per
+    # page (the caller only builds it when the store has no entry).
+    def migrated_build_entry(scenario, page_def, page_id, target_id, choices, rec)
+      verdict = recompute_page_verdict?(scenario, page_id) ? BreakEscape::PhishScore.score(page_def, choices, target_id.to_s) : nil
+      {
+        'pageId' => page_id, 'targetId' => target_id.to_s,
+        'choices' => normalise_build_choices(choices),
+        'credibility' => verdict ? verdict[:credibility] : nil,
+        'meetsThreshold' => verdict ? verdict[:meets_threshold] == true : false,
+        'built' => true, 'at' => migrated_at(rec)
+      }
+    end
+
+    # The legacy record's own timestamp when numeric, else the migration time.
+    def migrated_at(rec)
+      at = rec.is_a?(Hash) ? rec['at'] : nil
+      at.is_a?(Numeric) ? at : capture_now_ms
+    end
+
+    # The server's "landed" rule: a send lands exactly when its kit's landing page has been
+    # recorded built by Route 1 and the server's own recomputed meetsThreshold holds. Route 2
+    # (chunk A) computes landed the same way off the same seLandingPages entry; shared here so the
+    # two paths cannot drift. Takes a seLandingPages entry (or nil for a page the server has no
+    # build for).
+    def phish_page_build_landed?(page_entry)
+      page_entry.is_a?(Hash) && page_entry['built'] == true && page_entry['meetsThreshold'] == true
     end
 
     # The landing page id whose part 2 evidence a credential entry needs, or nil. The entry's
