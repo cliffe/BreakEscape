@@ -18,10 +18,6 @@
     margin: 0 !important;
 }
 
-.bce-container .minigame-close-button {
-    top: 0;
-    right: 0;
-}
 
 /* ── Panel ─────────────────────────────────────────────────── */
 
@@ -40,7 +36,11 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px 40px 8px 16px;
+    padding: 8px 56px 8px 16px;
+    min-height: 60px;
+    box-sizing: border-box;
+    gap: 8px 16px;
+    flex-wrap: wrap;
     border-bottom: 2px solid #21262d;
     background: #080d12;
     flex-shrink: 0;
@@ -60,7 +60,8 @@
 }
 
 .bce-title {
-    font-size: 7px;
+    font-size: 16px;
+    line-height: 24px;
     color: #58a6ff;
     letter-spacing: 2px;
     text-transform: uppercase;
@@ -68,7 +69,7 @@
 
 .bce-case-ref {
     font-family: 'GNF', monospace;
-    font-size: 15px;
+    font-size: 16px;
     color: #8b949e;
     letter-spacing: 1px;
 }
@@ -98,7 +99,7 @@
 }
 
 .bce-graph-section-label {
-    font-size: 6px;
+    font-size: 8px;
     color: #3d444d;
     letter-spacing: 2px;
     text-transform: uppercase;
@@ -106,7 +107,7 @@
 }
 
 .bce-graph-empty {
-    font-size: 6px;
+    font-size: 8px;
     color: #8b949e;
     margin: auto;
 }
@@ -203,7 +204,8 @@
 /* Node text */
 .bce-gn-type {
     font-family: 'Press Start 2P', monospace;
-    font-size: 5px;
+    font-size: 8px;
+    line-height: 16px;
     fill: #3d444d;
 }
 .bce-gn-id {
@@ -236,7 +238,7 @@
 }
 
 .bce-detail-empty {
-    font-size: 6px;
+    font-size: 8px;
     color: #8b949e;
     text-align: center;
     padding: 32px 0;
@@ -261,7 +263,7 @@
 }
 
 .bce-view-title {
-    font-size: 7px;
+    font-size: 8px;
     color: #58a6ff;
     letter-spacing: 2px;
 }
@@ -283,7 +285,7 @@
 }
 
 .bce-meta-label {
-    font-size: 7px;
+    font-size: 8px;
     color: #8b949e;
     align-self: center;
 }
@@ -297,7 +299,7 @@
 
 .bce-meta-subtle {
     font-family: 'GNF', monospace;
-    font-size: 14px;
+    font-size: 16px;
     color: #6a7280;
     line-height: 1;
 }
@@ -309,12 +311,12 @@
 }
 
 .bce-io-heading {
-    font-size: 6px;
+    font-size: 8px;
     color: #8b949e;
     letter-spacing: 1px;
     margin-bottom: 8px;
     padding-bottom: 4px;
-    border-bottom: 1px solid #21262d;
+    border-bottom: 2px solid #21262d;
     text-transform: uppercase;
 }
 
@@ -325,7 +327,7 @@
     align-items: center;
     gap: 10px;
     padding: 6px 0;
-    border-bottom: 1px solid #161b22;
+    border-bottom: 2px solid #161b22;
 }
 
 /* 3-col variant for wallet tx list (link | amount | time) */
@@ -343,7 +345,7 @@
 
 .bce-io-empty {
     font-family: 'GNF', monospace;
-    font-size: 14px;
+    font-size: 16px;
     color: #8b949e;
     padding: 6px 0;
 }
@@ -374,7 +376,8 @@
 
 .bce-link-sublabel {
     font-family: 'Press Start 2P', monospace;
-    font-size: 6px;
+    font-size: 8px;
+    line-height: 16px;
     color: #6a7280;
     white-space: nowrap;
     flex-shrink: 0;
@@ -397,20 +400,20 @@
 
 .bce-badge {
     font-family: 'Press Start 2P', monospace;
-    font-size: 5px;
+    font-size: 8px;
     padding: 2px 5px;
-    border-radius: 2px;
+    border-radius: 0;
     flex-shrink: 0;
     white-space: nowrap;
-    line-height: 1.4;
+    line-height: 16px;
 }
 
-.bce-badge-in     { background: #0d2b1a; color: #3fb950; border: 1px solid #1a4a2a; }
-.bce-badge-out    { background: #2b0d0d; color: #f85149; border: 1px solid #4a1a1a; }
+.bce-badge-in     { background: #0d2b1a; color: #3fb950; border: 2px solid #1a4a2a; }
+.bce-badge-out    { background: #2b0d0d; color: #f85149; border: 2px solid #4a1a1a; }
 
 .bce-tx-time {
     font-family: 'GNF', monospace;
-    font-size: 14px;
+    font-size: 16px;
     color: #6a7280;
     flex-shrink: 0;
     white-space: nowrap;
@@ -420,33 +423,33 @@
 /* ── Mixer callout ─────────────────────────────────────────── */
 
 .bce-callout {
-    border-radius: 2px;
+    border-radius: 0;
     padding: 10px 14px;
     margin: 12px 0 8px;
 }
 
 .bce-callout-mixer {
     background: #1a1400;
-    border: 1px solid #6e5500;
+    border: 2px solid #6e5500;
     border-left: 3px solid #f0c040;
 }
 
 .bce-callout-threat {
     background: #0e1a2a;
-    border: 1px solid #1a3d6e;
+    border: 2px solid #1a3d6e;
     border-left: 3px solid #e05252;
 }
 
 .bce-no-intel {
     font-family: 'GNF', monospace;
-    font-size: 14px;
+    font-size: 16px;
     color: #3d444d;
     padding: 8px 0 4px;
     letter-spacing: 0.5px;
 }
 
 .bce-callout-title {
-    font-size: 6px;
+    font-size: 8px;
     margin-bottom: 6px;
     letter-spacing: 1px;
 }
@@ -456,7 +459,7 @@
 
 .bce-callout-body {
     font-family: 'GNF', monospace;
-    font-size: 15px;
+    font-size: 16px;
     line-height: 1.5;
 }
 
@@ -468,8 +471,9 @@
 .bce-flag-btn {
     display: block;
     margin: 8px 0 4px auto;
-    font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 24px;
     padding: 10px 16px;
     background: #0d1f3e;
     color: #58a6ff;
@@ -486,7 +490,7 @@
 .bce-flagged-badge {
     display: block;
     margin: 8px 0 4px auto;
-    font-size: 6px;
+    font-size: 8px;
     color: #3fb950;
     text-align: right;
     letter-spacing: 1px;
@@ -515,7 +519,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 7px;
+    font-size: 8px;
     letter-spacing: 1px;
 }
 
@@ -533,8 +537,9 @@
 /* ── Close button ──────────────────────────────────────────── */
 
 .bce-close-btn {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 24px;
     padding: 8px 14px;
     background: #0d1117;
     color: #6a7280;
@@ -570,12 +575,13 @@
 
 .bce-mx-rules-label {
     font-family: 'Press Start 2P', monospace;
-    font-size: 7px;
+    font-size: 8px;
+    line-height: 16px;
     color: #8b949e;
     letter-spacing: 1px;
 }
 
-.bce-mx-src { font-family: 'GNF', monospace; font-size: 14px; letter-spacing: 0; color: #6a7280; }
+.bce-mx-src { font-family: 'GNF', monospace; font-size: 16px; letter-spacing: 0; color: #6a7280; }
 
 .bce-mx-chip {
     font-size: 16px;
@@ -588,7 +594,7 @@
 .bce-mx-help-btn, .bce-mx-work-btn {
     margin-left: auto;
     font-family: 'GNF', monospace;
-    font-size: 15px;
+    font-size: 16px;
     padding: 3px 10px;
     background: #0d1f3e;
     color: #58a6ff;
@@ -608,8 +614,9 @@
     flex-shrink: 0;
 }
 .bce-mx-tip { border: 2px solid #21262d; padding: 6px 8px; }
-.bce-mx-tip-title { font-family: 'Press Start 2P', monospace; font-size: 7px; color: #58a6ff; margin-bottom: 6px; }
-.bce-mx-tip-body { font-size: 14px; line-height: 1.35; color: #9aa4af; }
+.bce-mx-tip-title { font-family: 'Press Start 2P', monospace; font-size: 8px;
+    line-height: 16px; color: #58a6ff; margin-bottom: 6px; }
+.bce-mx-tip-body { font-size: 16px; line-height: 1.35; color: #9aa4af; }
 
 .bce-mx-body {
     display: grid;
@@ -632,7 +639,8 @@
 
 .bce-mx-heading {
     font-family: 'Press Start 2P', monospace;
-    font-size: 7px;
+    font-size: 8px;
+    line-height: 16px;
     color: #6a7280;
     letter-spacing: 1px;
     margin-bottom: 8px;
@@ -656,7 +664,7 @@
     width: 100%;
     text-align: left;
     font-family: 'GNF', monospace;
-    font-size: 15px;
+    font-size: 16px;
     color: #c9d1d9;
     background: #0d1117;
     border: 2px solid #21262d;
@@ -670,12 +678,12 @@
 .bce-mx-wd.bce-mx-matched .bce-mx-swatch { background: var(--mx-c); }
 .bce-mx-card-main { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
 .bce-mx-card-title { color: var(--mx-c); font-size: 16px; }
-.bce-mx-card-sub { color: #6a7280; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bce-mx-card-sub { color: #6a7280; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bce-mx-card-row { display: flex; justify-content: space-between; gap: 8px; }
 .bce-mx-amt { color: #e6edf3; }
 .bce-mx-slot { color: #8b949e; }
-.bce-mx-delta { color: #58a6ff; font-size: 14px; }
-.bce-mx-card-link { color: var(--mx-c); font-size: 14px; }
+.bce-mx-delta { color: #58a6ff; font-size: 16px; }
+.bce-mx-card-link { color: var(--mx-c); font-size: 16px; }
 
 .bce-mx-selected { border-color: var(--mx-c); background: #121a24; box-shadow: inset 0 0 0 1px var(--mx-c); }
 .bce-mx-dep.bce-mx-matched { opacity: 0.8; }
@@ -685,28 +693,30 @@
 
 .bce-mx-mid-title {
     font-family: 'Press Start 2P', monospace;
-    font-size: 9px;
+    font-size: 8px;
     color: #58a6ff;
     letter-spacing: 1px;
     margin-bottom: 8px;
-    line-height: 1.5;
+    line-height: 16px;
 }
 .bce-mx-text { font-size: 16px; line-height: 1.4; color: #c9d1d9; margin-bottom: 8px; }
 .bce-mx-tx { border: 2px solid #21262d; background: #080d12; padding: 6px 8px; margin-bottom: 8px; }
-.bce-mx-out-row { display: flex; justify-content: space-between; gap: 8px; font-size: 15px; padding: 2px 0; }
-.bce-mx-tag { font-size: 13px; color: #3fb950; border: 1px solid #23863640; padding: 0 5px; }
+.bce-mx-out-row { display: flex; justify-content: space-between; gap: 8px; font-size: 16px; padding: 2px 0; }
+.bce-mx-tag { font-size: 16px; color: #3fb950; border: 2px solid #23863640; padding: 0 5px; }
 .bce-mx-tag-change { color: #8b949e; border-color: #444d58; }
-.bce-mx-note { font-size: 14px; color: #8b949e; line-height: 1.3; margin-top: 2px; }
+.bce-mx-note { font-size: 16px; color: #8b949e; line-height: 1.3; margin-top: 2px; }
 .bce-mx-look { font-size: 16px; color: #f0c040; line-height: 1.4; }
 .bce-mx-working { margin-top: 10px; font-size: 16px; line-height: 1.5; color: #c9d1d9; border-left: 3px solid #1f6feb; padding-left: 8px; }
 .bce-mx-working b { color: #ffffff; font-weight: normal; }
 
-.bce-mx-big { font-family: 'Press Start 2P', monospace; font-size: 18px; color: #3fb950; margin: 6px 0 12px; }
+.bce-mx-big { font-family: 'Press Start 2P', monospace; font-size: 16px;
+    line-height: 24px; color: #3fb950; margin: 6px 0 12px; }
 
 .bce-mx-slots { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
 .bce-mx-slot-btn {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 24px;
     padding: 10px 12px;
     background: #0d1f3e;
     color: #58a6ff;
@@ -729,13 +739,37 @@
 .bce-mx-fb-bad  { color: #ff9b8f; background: #1d0f0e; }
 .bce-mx-fb-info { color: #f0c040; }
 
-.bce-mx-footer-btns { display: flex; gap: 8px; }
+.bce-mx-footer-btns { display: flex; flex-wrap: wrap; gap: 8px; }
 .bce-mx-files-btn { color: #9aa4af; }
 
+/* Phones: the graph above the detail pane, each at full width (critique B BCE1) */
+@media (max-width: 600px) {
+    .bce-body {
+        flex-direction: column;
+        overflow-y: auto;
+    }
+
+    .bce-graph-pane {
+        width: 100%;
+        min-width: 0;
+        max-height: 45vh;
+        border-right: 0;
+        border-bottom: 2px solid #21262d;
+        box-sizing: border-box;
+    }
+
+    .bce-title {
+        font-size: 8px;
+        line-height: 16px;
+    }
+}
+
 @media (max-width: 720px) {
-    .bce-mx-body { grid-template-columns: 1fr; overflow-y: auto; }
+    /* Stacked rows take their content's height, so the OUT column never paints over the
+       ADDRESS REUSE slots (consoles R3 B1) */
+    .bce-mx-body { grid-template-columns: 1fr; grid-auto-rows: max-content; overflow-y: auto; }
     .bce-mx-col { overflow: visible; }
     .bce-mx-help { grid-template-columns: 1fr 1fr; }
 }
-.bce-mx .bce-title { font-size: 9px; }
+.bce-mx .bce-title { font-size: 8px; }
 .bce-mx .bce-status-item { font-size: 8px; }

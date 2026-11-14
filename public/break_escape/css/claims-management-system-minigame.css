@@ -1,11 +1,9 @@
 .cms-minigame-container {
     background: #0f1524;
-    border: 2px solid #2b3b58;
 }
 
 .cms-minigame-game-container {
     padding: 0;
-    min-height: 620px;
     height: 100%;
 }
 
@@ -14,10 +12,10 @@
     flex-direction: column;
     width: 100%;
     height: 100%;
-    min-height: 620px;
     border: 2px solid #2b3b58;
-    background: linear-gradient(180deg, #101827 0%, #0b1220 100%);
+    background: #0d1524;
     box-sizing: border-box;
+    overflow: auto;
 }
 
 .cms-header {
@@ -27,14 +25,14 @@
     gap: 16px;
     border-bottom: 2px solid #2b3b58;
     background: #14213a;
-    padding: 12px;
+    padding: 12px 52px 12px 12px;
 }
 
 .cms-title {
     margin: 0;
     font-family: 'Press Start 2P', monospace;
-    font-size: 11px;
-    line-height: 1.4;
+    font-size: 16px;
+    line-height: 24px;
     color: #e5edff;
 }
 
@@ -47,13 +45,13 @@
 
 .cms-header-right {
     font-family: 'Press Start 2P', monospace;
-    font-size: 9px;
+    font-size: 8px;
+    line-height: 16px;
     color: #f9cd73;
     border: 2px solid #78582a;
     background: #2f2614;
     padding: 8px;
     white-space: nowrap;
-    margin-right: 28px;
 }
 
 .cms-header-right-in-progress {
@@ -80,9 +78,10 @@
 }
 
 .cms-progress-label {
-    margin-bottom: 5px;
+    margin-bottom: 4px;
     font-family: 'Press Start 2P', monospace;
     font-size: 8px;
+    line-height: 16px;
     color: #9cb7e4;
 }
 
@@ -97,14 +96,14 @@
 .cms-progress-fill {
     display: block;
     height: 100%;
-    background: linear-gradient(90deg, #5fc0a5 0%, #8fe3ab 100%);
+    background: #8fe3ab;
 }
 
 .cms-body {
-    flex: 1;
-    min-height: 0;
+    flex: 1 0 auto;
+    min-height: 280px;
     display: grid;
-    grid-template-columns: 220px minmax(0, 1fr) 320px;
+    grid-template-columns: 244px minmax(0, 1fr) 320px;
     gap: 10px;
     padding: 10px;
 }
@@ -130,6 +129,8 @@
     flex-direction: column;
     gap: 4px;
     font-family: 'GNF', monospace;
+    /* Its spans set their own sizes; this keeps the button itself off the 13.33px default */
+    font-size: 16px;
 }
 
 .cms-nav-button:hover,
@@ -141,6 +142,8 @@
 }
 
 .cms-nav-label {
+    min-width: 0;
+    overflow-wrap: anywhere;
     font-size: 22px;
     line-height: 1.1;
 }
@@ -148,6 +151,7 @@
 .cms-nav-state {
     font-family: 'Press Start 2P', monospace;
     font-size: 8px;
+    line-height: 16px;
     color: #f4c76c;
 }
 
@@ -180,7 +184,8 @@
 
 .cms-summary-label {
     font-family: 'Press Start 2P', monospace;
-    font-size: 7px;
+    font-size: 8px;
+    line-height: 16px;
     color: #b5c8ea;
     text-transform: uppercase;
 }
@@ -205,14 +210,15 @@
 .cms-content-title {
     margin: 0;
     font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
-    line-height: 1.4;
+    font-size: 8px;
+    line-height: 16px;
     color: #e5edff;
 }
 
 .cms-content-status {
     font-family: 'Press Start 2P', monospace;
     font-size: 8px;
+    line-height: 16px;
     color: #f9cd73;
     border: 2px solid #78582a;
     background: #2f2614;
@@ -241,7 +247,8 @@
 .cms-context h4 {
     margin: 0 0 8px;
     font-family: 'Press Start 2P', monospace;
-    font-size: 9px;
+    font-size: 8px;
+    line-height: 16px;
     color: #9cb7e4;
 }
 
@@ -279,8 +286,9 @@
     border: 2px solid #405f91;
     background: #1d2e4d;
     color: #e5edff;
-    font-family: 'Press Start 2P', monospace;
-    font-size: 12px;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 24px;
     padding: 10px 16px;
     min-width: 132px;
     cursor: pointer;
@@ -343,10 +351,55 @@
     }
 
     .cms-body {
-        grid-template-columns: 190px minmax(0, 1fr);
+        grid-template-columns: 228px minmax(0, 1fr);
     }
 
     .cms-context {
         grid-column: 1 / -1;
+    }
+}
+
+.cms-print-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Phones: nav as a wrapping strip above the record, one summary card per row, the
+   evidence panel below (critique B CMS2) */
+@media (max-width: 600px) {
+    .cms-title {
+        font-size: 8px;
+        line-height: 16px;
+    }
+
+    .cms-header-right {
+        white-space: normal;
+    }
+
+    .cms-body {
+        grid-template-columns: 1fr;
+        padding: 6px;
+    }
+
+    .cms-nav {
+        flex-direction: row;
+        flex-wrap: wrap;
+        overflow: visible;
+    }
+
+    .cms-nav-button {
+        flex: 1 1 140px;
+    }
+
+    .cms-summary-strip {
+        grid-template-columns: 1fr;
+    }
+
+    .cms-content-list {
+        font-size: 22px;
+    }
+
+    .cms-context p {
+        max-width: none;
     }
 }

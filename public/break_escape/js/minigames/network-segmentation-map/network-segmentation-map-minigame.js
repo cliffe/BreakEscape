@@ -65,12 +65,12 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
 
         this.container.innerHTML = `
             <button type="button" class="minigame-close-button" id="nsm-close">&times;</button>
-            <div class="nsm-wrapper">
+            <div class="nsm-wrapper pixel-scroll">
                 <div class="nsm-header-bar">
                     <span class="nsm-title-text">${escapeTitle(displayDashes(title))}</span>
                     <span class="nsm-status-badge">ACTIVE INCIDENT</span>
                 </div>
-                <div class="nsm-body">
+                <div class="nsm-body pixel-scroll">
                     <div class="nsm-topology-area" id="nsm-topology-area">
                         <div class="nsm-zones">
                             ${this._buildZonesHTML()}
@@ -275,11 +275,27 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
             : `<strong style="color:#e57373">⚠ Proceeding without full authorisation violates ${escapeTitle(displayDashes(claimRef))}.</strong>`;
 
         this.container.querySelector('#nsm-modal-overlay').classList.add('nsm-modal-visible');
+        this._hideSceneX(true);
         if (window.playUISound) window.playUISound('alert');
     }
 
     _closeModal() {
         this.container.querySelector('#nsm-modal-overlay').classList.remove('nsm-modal-visible');
+        this._hideSceneX(false);
+    }
+
+    // The confirm has two named buttons and no X, so the scene X hides while it is open
+    _hideSceneX(hidden) {
+        const x = this.container?.querySelector?.('#nsm-close');
+        if (x) x.style.visibility = hidden ? 'hidden' : '';
+    }
+
+    // Esc is Cancel while the confirm is open; with none open it closes the scene
+    handleEscapeKey() {
+        const overlay = this.container?.querySelector?.('#nsm-modal-overlay');
+        if (!overlay || !overlay.classList.contains('nsm-modal-visible')) return false;
+        this._closeModal();
+        return true;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -505,7 +521,7 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
                 const from = slot[rule.fromSlot];
                 const to   = slot[rule.toSlot];
                 const midX = (from.right + to.left) / 2;
-                const rY   = centerY + i * 32;
+                const rY   = centerY + i * 46;
                 const active = this.ruleStates[rule.id];
 
                 const ruleLine = this._svgLine(svg, ns, from.right, rY, to.left, rY, '#ff7700', 2, '8 5', active ? 1 : 0.45);
@@ -515,7 +531,7 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
                 this._wireRuleToggle(ruleHit, rule.id, rule.title, ruleLine);
                 const warn = this._svgWarning(svg, ns, midX, rY);
                 this._wireRuleToggle(warn, rule.id, rule.title, ruleLine);
-                const lbl = this._svgRuleLabel(svg, ns, midX, rY + 16, rule.label, 13);
+                const lbl = this._svgRuleLabel(svg, ns, midX, rY + 21, rule.label);
                 this._wireRuleToggle(lbl, rule.id, rule.title, ruleLine);
                 if (active) {
                     this._drawAttackPath(svg, ns, from.right, rY, to.left, rY);
@@ -541,12 +557,12 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
                 this._wireRuleToggle(ruleHit, rule.id, rule.title, rulePath);
                 const warn = this._svgWarning(svg, ns, midX, legacyWarnY);
                 this._wireRuleToggle(warn, rule.id, rule.title, rulePath);
-                const lbl = this._svgRuleLabel(svg, ns, midX, legacyWarnY + 22, rule.label);
+                const lbl = this._svgRuleLabel(svg, ns, midX, legacyWarnY + 25, rule.label);
                 this._wireRuleToggle(lbl, rule.id, rule.title, rulePath);
                 if (active) {
                     this._drawAttackPathCurve(svg, ns, d);
                 }
-                this._svgRuleLabel(svg, ns, midX, legacyArcPeakY - 10, 'NO SEGMENTATION');
+                this._svgRuleLabel(svg, ns, midX, legacyArcPeakY - 12, 'NO SEGMENTATION');
             });
 
         } else {
@@ -565,7 +581,7 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
             t.setAttribute('y',           sY + 32);
             t.setAttribute('text-anchor', 'middle');
             t.setAttribute('fill',        '#ff2200');
-            t.setAttribute('font-size',   '14');
+            t.setAttribute('font-size',   '16');
             t.setAttribute('font-family', "'VT323', monospace");
             t.textContent = 'LINK SEVERED';
             svg.appendChild(t);
@@ -696,7 +712,7 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
         svg.appendChild(path);
     }
 
-    _svgRuleLabel(svg, ns, x, y, text, fontSize = 11) {
+    _svgRuleLabel(svg, ns, x, y, text, fontSize = 16) {
         const t = document.createElementNS(ns, 'text');
         t.setAttribute('x', x);
         t.setAttribute('y', y);
@@ -704,7 +720,6 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
         t.setAttribute('fill', '#d0d6ff');
         t.setAttribute('font-size', fontSize);
         t.setAttribute('font-family', "'VT323', monospace");
-        t.setAttribute('font-weight', 'bold');
         t.setAttribute('pointer-events', 'none');
         t.textContent = displayDashes(text);
         svg.appendChild(t);
@@ -746,7 +761,7 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
         const g = document.createElementNS(ns, 'g');
 
         const tri = document.createElementNS(ns, 'polygon');
-        tri.setAttribute('points', `${x},${y-9} ${x-8},${y+5} ${x+8},${y+5}`);
+        tri.setAttribute('points', `${x},${y-12} ${x-11},${y+8} ${x+11},${y+8}`);
         tri.setAttribute('fill',   '#1a0a00');
         tri.setAttribute('stroke', '#ff7700');
         tri.setAttribute('stroke-width', '1.5');
@@ -754,12 +769,11 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
 
         const t = document.createElementNS(ns, 'text');
         t.setAttribute('x',           x);
-        t.setAttribute('y',           y + 4);
+        t.setAttribute('y',           y + 6);
         t.setAttribute('text-anchor', 'middle');
         t.setAttribute('fill',        '#ff7700');
-        t.setAttribute('font-size',   '9');
-        t.setAttribute('font-family', 'monospace');
-        t.setAttribute('font-weight', 'bold');
+        t.setAttribute('font-size',   '16');
+        t.setAttribute('font-family', "'VT323', monospace");
         t.textContent = '!';
         g.appendChild(t);
 

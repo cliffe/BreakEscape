@@ -212,6 +212,8 @@ export class MinigameScene {
         if (this.params.disableClose !== true) {
             this._fallbackCloseHandler = (e) => {
                 if (e.key === 'Escape') {
+                    // A scene with a pop-up or confirm open handles Esc as Cancel itself
+                    if (typeof this.handleEscapeKey === 'function' && this.handleEscapeKey(e)) return;
                     console.log('Escape key pressed, closing minigame');
                     this.closeByPlayer();
                 }

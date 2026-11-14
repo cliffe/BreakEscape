@@ -98,7 +98,7 @@ export class CoverageDecisionFormMinigame extends MinigameScene {
     <div class="cdf-header-sub">${headerSub}</div>
   </div>
 
-  <div class="cdf-body">
+  <div class="cdf-body pixel-scroll">
     ${sectionsHtml}
   </div>
 
@@ -110,12 +110,8 @@ export class CoverageDecisionFormMinigame extends MinigameScene {
     <div class="cdf-submitted-badge" id="cdf-submitted-badge">${badge}</div>
     <button class="cdf-submit-btn" id="cdf-submit-btn" disabled>[SUBMIT RECOMMENDATION &#9654;]</button>
     <div class="cdf-hint" id="cdf-hint">Complete all ${this._sections.length} sections to submit your recommendation.</div>
-    <button class="cdf-close-btn" id="cdf-close-btn">Close</button>
   </div>
 </div>`;
-
-        const closeBtn = this.gameContainer.querySelector('#cdf-close-btn');
-        this.addEventListener(closeBtn, 'click', () => this.complete(false));
 
         this.gameContainer.querySelectorAll('input[type="radio"]').forEach(radio => {
             this.addEventListener(radio, 'change', () => this._onRadioChange(radio));

@@ -446,7 +446,7 @@ export class BlockchainExplorerMinigame extends MinigameScene {
                     ${caseRef}
                 </div>
                 <div class="bce-body">
-                    <div class="bce-graph-pane" id="bce-graph-pane">
+                    <div class="bce-graph-pane pixel-scroll" id="bce-graph-pane">
                         ${this._renderGraph()}
                     </div>
                     <div class="bce-detail" id="bce-detail">
@@ -641,7 +641,6 @@ export class BlockchainExplorerMinigame extends MinigameScene {
                 ${mixerStatus}
                 ${destStatus}
             </div>
-            <button class="bce-close-btn" id="bce-close-btn" type="button">Close Terminal</button>
         `;
     }
 
@@ -669,8 +668,5 @@ export class BlockchainExplorerMinigame extends MinigameScene {
         const destBtn = this.gameContainer.querySelector('#bce-flag-dest');
         if (destBtn) this.addEventListener(destBtn, 'click', () => this._flagDestination());
 
-        // Close Terminal
-        const closeBtn = this.gameContainer.querySelector('#bce-close-btn');
-        if (closeBtn) this.addEventListener(closeBtn, 'click', () => this.complete(false));
     }
 }

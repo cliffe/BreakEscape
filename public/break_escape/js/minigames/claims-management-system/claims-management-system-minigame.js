@@ -382,13 +382,6 @@ export class ClaimsManagementSystemMinigame extends MinigameScene {
             });
         });
 
-        const closeButton = this.gameContainer.querySelector('#cms-close-button');
-        if (closeButton) {
-            this.addEventListener(closeButton, 'click', () => {
-                this.complete(false);
-            });
-        }
-
         const printButton = this.gameContainer.querySelector('#cms-print-button');
         if (printButton) {
             this.addEventListener(printButton, 'click', () => {
@@ -412,7 +405,7 @@ export class ClaimsManagementSystemMinigame extends MinigameScene {
         const headerStatus = this.getHeaderStatus(reviewedCount, totalCount);
 
         this.gameContainer.innerHTML = `
-            <div class="cms-panel">
+            <div class="cms-panel pixel-scroll">
                 <div class="cms-header">
                     <div class="cms-header-left">
                         <h2 class="cms-title">${escapeText(this.params.title || DEFAULT_TITLE)}</h2>
@@ -428,11 +421,11 @@ export class ClaimsManagementSystemMinigame extends MinigameScene {
                 </div>
 
                 <div class="cms-body">
-                    <nav class="cms-nav">
+                    <nav class="cms-nav pixel-scroll">
                         ${this.sections.map((section) => this.renderNav(section)).join('')}
                     </nav>
 
-                    <main class="cms-content">
+                    <main class="cms-content pixel-scroll">
                         ${this.renderSummaryStrip(activeSection)}
                         ${this.renderSectionBody(activeSection)}
                     </main>
@@ -441,8 +434,7 @@ export class ClaimsManagementSystemMinigame extends MinigameScene {
                 </div>
 
                 <div class="cms-footer">
-                    <button id="cms-close-button" class="cms-button cms-button-secondary" type="button">Close</button>
-                    <button id="cms-print-button" class="cms-button cms-button-primary" type="button" ${this.printEnabled ? '' : 'disabled'}>Print Excerpt</button>
+                    <button id="cms-print-button" class="minigame-button cms-print-button" type="button" ${this.printEnabled ? '' : 'disabled'}>Print Excerpt</button>
                 </div>
             </div>
         `;
