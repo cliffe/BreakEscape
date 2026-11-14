@@ -950,6 +950,18 @@ Step 6, game 4360 (thirst 85), staff-room use starts against the computed times:
 
 The standard live set on other scenarios (test_needs_leash, lab_physical_pentest, test_access_work) was not rerun: SIMS-4 changes no engine or server line, only this scenario's data, so those scenarios cannot change. The office beats with every door open ran inside game 4369: Neil moved 1 px, 13 office tasks ticked; the kitchen cooler pair did not chat in those 15 minutes (`cooler_chats: 0`, open for review).
 
+### SIMS-5 live proof: V10, lines spoken in every room (2026-11-14, keyless :3093, headless, worktree p-ol-sims)
+
+`_pickBark` was wrapped through the test bridge to log every non-null line spoken (not heard), with its NPC, topic and room; needs were forced with `window.__test.needs.set` to start each beat in seconds rather than the natural minutes (stated here as required). Game 4524, tool `v10-proof.mjs`, result `v10-proof-4524.json`.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Every pool V10 passes is spoken | PASS | Four topics spoken: `coffee` (amara, tom at the office coffee), `cooler` (grace, sanjay at the kitchen cooler), `staff_tea` and `staff_water` (keith, jodie at the staff boiler and cooler). The scenario `coffee`/`cooler` pools and the staff pair's own pools all trigger live. |
+| The three flagged pools are never spoken | PASS | `amara`, `tom` and `marek` emitted **0** `cooler` topic lines in the run: Amara and Tom speak only `coffee`, Marek (avoids everyone) never chats at all. This confirms V10's three pinned warnings on this scenario (their own `cooler` pools are voiced and never heard). |
+| Levers | The office `cooler` scenario pool needs a lever to be seen in a short window (two compatible thirst/social NPCs forced to the kitchen cooler together), as the SIMS-4 note already found; forced here. `npc_exchange_heard`/`npc_call_heard` were not captured in this forced run (the staff pool chat started before the player was positioned for an overheard exchange); the exchange-heard path is proved by SIMS-4's own live rows. | `v10-proof-4524.json` |
+
+Not run (handed back on budget): the full README office-beats-with-levers pass and the natural 20-minute staff-room run captured through `_pickBark`, and the 10-minute scratch-scenario runs for the fixture warning cases (those warning cases are covered by `test/js/validator-office-life-v10.test.mjs`). See the SIMS-5 handover.
+
 The beats below each ran once as a representative proof.
 
 | Beat | Result | Evidence |
