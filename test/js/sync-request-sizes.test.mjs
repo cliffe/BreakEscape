@@ -67,7 +67,11 @@ function loadedGame() {
   const sent = new Map();
   Object.assign(globalThis.window, {
     gameState: { globalVariables: { briefing_played: true, intel_count: 3 }, notes: [{ id: 'n1', title: 'Lobby', text: 'A keypad by the door', sprite: {} }] },
-    currentRoom: { name: 'lobby' },
+    // The real page keeps the player's room in window.currentPlayerRoom (a string, set by
+    // core/rooms.js); window.currentRoom is the legacy null global. state-sync.js reads
+    // currentPlayerRoom (:392), so the harness must set it for buildChanges to see the room.
+    currentPlayerRoom: 'lobby',
+    currentRoom: null,
     gameClock: { exportState: () => ({ elapsedMs: 600000 }) },
     scenarioTimerDispatcher: { exportState: () => ({ elapsedMs: 600000, fired: [], cancelled: [], started: {} }) },
     npcManager: {

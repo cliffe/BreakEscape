@@ -36,11 +36,13 @@
 
 .flag-input-wrapper {
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
 }
 
 .flag-input {
     flex: 1;
+    min-width: 0;   /* the size=20 intrinsic width pushed the button off narrow windows */
     background: #000;
     border: 2px solid #333;
     color: #00ff00;

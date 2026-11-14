@@ -13,6 +13,7 @@
 #music-widget-btn-anchor,
 #music-widget-panel,
 #npc-bark-container,
+#npc-speech-container,
 .phone-access-button,
 #notification-container,
 .npc-interaction-prompt,
@@ -146,6 +147,14 @@ html .game-display-dialog {
      slots scroll instead of sliding under them (padding alone doesn't) */
   body:has(#combat-buttons) #inventory-container {
     right: 220px;
+  }
+}
+
+/* Narrow phones: a tighter gap (the pair is 16 px narrower), so the hearts (168 px wide, at the
+   left) clear them from 356 px wide; below that hud-lanes.js lifts the hearts above the buttons */
+@media (max-width: 480px) {
+  #combat-buttons {
+    gap: 12px;
   }
 }
 
@@ -385,6 +394,11 @@ html .game-display-dialog {
 
 #hud-info-label.visible {
     opacity: 1;
+}
+
+/* The message lane is full: the caption steps aside while a speech line shows (ui/hud-lanes.js) */
+#hud-info-label.hud-lane-yield {
+    display: none;
 }
 
 /* Phones held upright: Punch and Block sit in a row above the inventory strip (bottom

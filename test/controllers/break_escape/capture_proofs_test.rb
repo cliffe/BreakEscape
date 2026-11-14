@@ -3,26 +3,6 @@ require_relative '../../support/capture_proof_scenario'
 require_relative '../../support/network_model_scenario'
 
 module BreakEscape
-  # Branch review R1 m1/n2: count the hot-path mail walks so a plain sync can be proved not to
-  # re-parse the mail (m1) or fingerprint the mailbox for an entry a sync can never advance (n2).
-  module CaptureHotPathSpy
-    COUNTS = Hash.new(0)
-    def self.reset
-      COUNTS.clear
-    end
-
-    def incoming_sent_messages(*args)
-      CaptureHotPathSpy::COUNTS[:incoming_sent_messages] += 1
-      super
-    end
-
-    def phish_evidence_fingerprint(*args, **kwargs)
-      CaptureHotPathSpy::COUNTS[:phish_evidence_fingerprint] += 1
-      super
-    end
-  end
-  Game.prepend(CaptureHotPathSpy) unless Game.ancestors.include?(CaptureHotPathSpy)
-
   # Capture proofs (docs/achitechture/PHYSICAL_PENTEST_FEEDBACK_PLAN_ENGINE.md, section 6). Every
   # proof is earned through the real requests, never by writing player_state: an inventory remove
   # with used_on, a player_drop, a sign-in or an owner claim, a network plant.
@@ -331,175 +311,173 @@ module BreakEscape
       refute CaptureModel.declares_proofs?(@game.reload.scenario_data)
     end
 
-    test 'a landing page capture is served with its phish evidence (6b), and the single-secret fallback refuses an undeclared target id' do
-      scenario = CP.scenario
-      scenario['social']['landingPages'] = [{ 'id' => 'portal', 'capture' => { 'address' => 'p@x.example', 'secret' => 'Land-Secret-1' } }]
-      scenario['social']['phishTargets'] = [{ 'id' => 'phished' }]
-      # A link kit naming the page is the honest route to a phish credential (6a records the
-      # scenario's own fields), so the page the capture resolves to has a kit.
-      scenario['social']['mailClient'] = { 'payloadKit' => [{ 'id' => 'kit_portal', 'kind' => 'link', 'landingPageId' => 'portal' }] }
-      build_game(scenario)
-      # 6b: the page capture is served only once the server holds the page record and a landed
-      # sent message to the target carrying the page's kit. The honest send produces both; they
-      # ride the same sync as the capture claim and the single-secret fallback then serves it.
+    # Chunk C (plan section 6): write the two server-owned stores the way the two gated routes do,
+    # so a controller test can serve a phish credential off them without driving the full lab
+    # builder/mail progression. Nothing here forges: the stores are server-written only and this
+    # stands in for the routes having run.
+    def seed_phish_stores(landed: true, meets: true, built: true, kit: 'kit_portal', target: 'phished')
+      @game.reload
+      @game.player_state['seLandingPages'] = { 'portal' => {
+        'pageId' => 'portal', 'targetId' => target, 'choices' => {}, 'credibility' => 88,
+        'meetsThreshold' => meets, 'built' => built, 'at' => 1
+      } }
+      @game.player_state['sePhishSends'] = { "#{target}/#{kit}" => {
+        'targetId' => target, 'kitId' => kit, 'pageId' => 'portal', 'landed' => landed, 'at' => 1
+      } }
+      @game.save!
+    end
+
+    test 'chunk C: a landing page capture is served from the two server stores, and the single-secret fallback refuses an undeclared target id' do
+      build_game(phish_scenario)
+      # The build and send routes recorded the page build and a landed send to lord's analogue; the
+      # reader reads only those two server stores (never the client globals).
+      seed_phish_stores
       put game_path('sync_state'), params: {
         globalVariables: {
           'se_captures' => {
             'phished' => { 'targetId' => 'phished', 'kind' => 'credential', 'address' => 'other@x.example', 'at' => 1 },
             'invented' => { 'targetId' => 'invented', 'kind' => 'credential', 'address' => 'p@x.example', 'at' => 2 }
-          },
-          'se_landing_pages' => {
-            'portal' => { 'built' => true, 'meetsThreshold' => true, 'victim' => { 'submitted' => true } }
           }
-        },
-        mailState: {
-          'mailboxes.inbox.m_phish' => { 'id' => 'm_phish', 'folder' => 'sent', 'landed' => true,
-                                         'targetId' => 'phished', 'link' => { 'kitId' => 'kit_portal' } }
         }
       }, as: :json
+      # phished resolves through the single-secret fallback and has a landed send in sePhishSends;
+      # invented resolves to portal by its capture address but has no landed send to targetId
+      # invented, so the fallback refuses it.
       assert_equal({ 'phished' => 'Land-Secret-1' }, secrets)
     end
 
-    test '6b: a landing page capture claimed with no phish evidence is not served' do
-      scenario = CP.scenario
-      scenario['social']['landingPages'] = [{ 'id' => 'portal', 'capture' => { 'address' => 'p@x.example', 'secret' => 'Land-Secret-1' } }]
-      scenario['social']['phishTargets'] = [{ 'id' => 'phished' }]
-      scenario['social']['mailClient'] = { 'payloadKit' => [{ 'id' => 'kit_portal', 'kind' => 'link', 'landingPageId' => 'portal' }] }
-      build_game(scenario)
+    test 'chunk C: a landing page capture claimed with no server evidence is not served' do
+      build_game(phish_scenario)
       put game_path('sync_state'), params: { globalVariables: { 'se_captures' => {
         'phished' => { 'targetId' => 'phished', 'kind' => 'credential', 'address' => 'other@x.example', 'at' => 1 }
       } } }, as: :json
       assert_equal({}, secrets)
     end
 
-    # 6b review m1: a forged, never-provable unproven entry must not make every later
-    # evidence-carrying sync load the scenario to run a stamp that finds nothing. A sync that does
-    # not advance the phish evidence loads no scenario_data; one that builds the page does.
-    test 'm1: a later sync with no new phish evidence does not load the scenario, one with new evidence does' do
+    # The forge the plan closes (section 1, hostile case 5): a tampered client syncs a built,
+    # convincing se_landing_pages global with a victim.submitted marker and a landed sent mail, and
+    # NEVER calls the two routes. After the reader change the gate reads neither client section, so
+    # the capture stays unproven and the secret is withheld.
+    test 'chunk C: the forged se_landing_pages and mailState sync no longer serves the secret' do
       build_game(phish_scenario)
-      # Forge the unproven capture claim. seCaptures now holds a never-provable entry.
-      put game_path('sync_state'), params: { clientTs: 1, globalVariables: { 'se_captures' => {
-        'phished' => { 'targetId' => 'phished', 'kind' => 'credential', 'address' => 'other@x.example', 'at' => 1 }
-      } } }, as: :json
-      refute @game.reload.player_state.dig('seCaptures', 'phished', 'proven'), 'entry is unproven'
-
-      # A later sync that carries globals/mail but no new phish evidence: no scenario load.
-      loads = count_scenario_loads do
-        put game_path('sync_state'), params: { clientTs: 2,
-          globalVariables: { 'some_flag' => true }, mailState: { 'metrics' => { 'opened' => 1 } } }, as: :json
-      end
-      assert_equal 0, loads, 'no scenario_data query when the request brought no new phish evidence'
-
-      # A sync that builds the landing page advances the evidence: the scenario loads to stamp.
-      loads = count_scenario_loads do
-        put game_path('sync_state'), params: { clientTs: 3, globalVariables: { 'se_landing_pages' => {
-          'portal' => { 'built' => true, 'meetsThreshold' => true, 'victim' => { 'submitted' => true } }
-        } }, mailState: { 'mailboxes.inbox.m1' => { 'id' => 'm1', 'folder' => 'sent', 'landed' => true,
-                                                    'targetId' => 'phished', 'link' => { 'kitId' => 'kit_portal' } } } }, as: :json
-      end
-      assert loads >= 1, 'the scenario loads when the request advanced the phish evidence'
-      assert_equal true, @game.reload.player_state.dig('seCaptures', 'phished', 'proven'), 'now stamped proven'
+      put game_path('sync_state'), params: {
+        globalVariables: {
+          'se_captures' => { 'phished' => { 'targetId' => 'phished', 'kind' => 'credential', 'address' => 'other@x.example', 'at' => 1 } },
+          'se_landing_pages' => { 'portal' => { 'built' => true, 'meetsThreshold' => true, 'victim' => { 'submitted' => true } } }
+        },
+        mailState: { 'mailboxes.inbox.m_forge' => { 'id' => 'm_forge', 'folder' => 'sent', 'landed' => true,
+                                                    'targetId' => 'phished', 'link' => { 'kitId' => 'kit_portal' } } }
+      }, as: :json
+      assert_equal({}, secrets, 'the forged client globals no longer serve the secret')
+      refute @game.reload.player_state.dig('seCaptures', 'phished', 'proven'), 'the capture stays unproven'
+      assert_empty @game.player_state['seLandingPages'] || {}, 'no build store is written from a sync'
+      assert_empty @game.player_state['sePhishSends'] || {}, 'no send store is written from a sync'
     end
 
-    # Branch review R1 m1: a sync with no capture and nothing phish-gated must not re-parse the
-    # incoming mail. The merge already walked it once; the discarded extra_sent walked it again.
-    test 'm1: a plain sync does not re-walk the incoming mail a second time' do
+    # A convincing server-built page whose kit's page has no landed send in sePhishSends withholds
+    # the secret (plan section 14, chunk C tests; hostile case 2 second half, case 3).
+    test 'chunk C: a convincing page with no landed send withholds the secret' do
       build_game(phish_scenario)
-      CaptureHotPathSpy.reset
-      put game_path('sync_state'), params: { clientTs: 1,
-        globalVariables: { 'some_flag' => true },
-        mailState: { 'mailboxes.inbox.m1' => { 'id' => 'm1', 'folder' => 'inbox', 'landed' => true } } }, as: :json
-      assert_response :success
-      assert_equal 0, CaptureHotPathSpy::COUNTS[:incoming_sent_messages],
-                   'no second mail walk on a no-capture, nothing-phish-gated sync'
-    end
-
-    # Branch review R1 n2: an entry unproven only because of a part 3 proof can never be advanced by
-    # a sync, so a sync must not fingerprint the whole mailbox for it; a phish-gated entry still does.
-    test 'n2: a part-3-only unproven entry skips the phish fingerprint, a phish-gated one keeps it' do
-      build_network_game({}, network_scenario_with_proof({ 'planted' => 'kit_dropbox', 'on' => 'comms_port' }))
-      network_forge
-      refute @game.reload.player_state.dig('seCaptures', 'lena', 'proven'), 'lena is unproven'
-      refute @game.phish_gated_unproven_captures?, 'lena waits only on a part 3 proof'
-      CaptureHotPathSpy.reset
-      put game_path('sync_state'), params: { clientTs: 50, globalVariables: { 'x' => 1 } }, as: :json
-      assert_response :success
-      assert_equal 0, CaptureHotPathSpy::COUNTS[:phish_evidence_fingerprint],
-                   'no fingerprint walk for a part-3-only unproven entry'
-
-      # Contrast: a phish-gated unproven entry still makes the sync fingerprint the phish evidence.
-      build_game(phish_scenario)
-      put game_path('sync_state'), params: { clientTs: 1, globalVariables: { 'se_captures' => {
-        'phished' => { 'targetId' => 'phished', 'kind' => 'credential', 'address' => 'other@x.example', 'at' => 1 }
-      } } }, as: :json
-      assert @game.reload.phish_gated_unproven_captures?, 'the phished entry is phish-gated'
-      CaptureHotPathSpy.reset
-      put game_path('sync_state'), params: { clientTs: 2, globalVariables: { 'y' => 1 } }, as: :json
-      assert CaptureHotPathSpy::COUNTS[:phish_evidence_fingerprint] >= 1,
-             'a phish-gated unproven entry still fingerprints the evidence'
-    end
-
-    # 6b: phish evidence that arrives in a later sync serves the secret and stamps proven: true,
-    # and un-building the page afterwards still serves it (evidence that goes away later).
-    test '6b: phish evidence arriving later serves the secret, stamps proven, and survives un-building' do
-      build_game(phish_scenario)
-      # The capture claim with no evidence yet.
+      seed_phish_stores(landed: false)
       put game_path('sync_state'), params: { globalVariables: { 'se_captures' => {
         'phished' => { 'targetId' => 'phished', 'kind' => 'credential', 'address' => 'other@x.example', 'at' => 1 }
       } } }, as: :json
-      assert_equal({}, secrets, 'no evidence yet, so no secret')
+      assert_equal({}, secrets, 'a page built but with no landed send does not serve the secret')
+    end
+
+    # The two server stores stamp the capture proven on the bootstrap and the proven entry survives
+    # the stores later going away (part 2 evidence only ever withholds, never retracts).
+    test 'chunk C: the server stores stamp proven on bootstrap and the proven entry survives the stores going away' do
+      build_game(phish_scenario)
+      # Claim the capture with no server evidence yet: recorded unproven, withheld.
+      put game_path('sync_state'), params: { globalVariables: { 'se_captures' => {
+        'phished' => { 'targetId' => 'phished', 'kind' => 'credential', 'address' => 'other@x.example', 'at' => 1 }
+      } } }, as: :json
+      assert_equal({}, secrets, 'no server evidence yet, so no secret')
       refute @game.reload.player_state.dig('seCaptures', 'phished', 'proven'), 'stored unproven'
 
-      # The page record and the landed sent mail arrive in a later sync.
-      put game_path('sync_state'), params: {
-        clientTs: 2,
-        globalVariables: { 'se_landing_pages' => { 'portal' => { 'built' => true, 'meetsThreshold' => true, 'victim' => { 'submitted' => true } } } },
-        mailState: { 'mailboxes.inbox.m1' => { 'id' => 'm1', 'folder' => 'sent', 'landed' => true, 'targetId' => 'phished', 'link' => { 'kitId' => 'kit_portal' } } }
-      }, as: :json
-      assert_equal({ 'phished' => 'Land-Secret-1' }, secrets, 'served once the evidence holds')
-      assert_equal true, @game.reload.player_state.dig('seCaptures', 'phished', 'proven'), 'stamped proven'
+      # The two routes record the build and a landed send; the next bootstrap stamps the capture.
+      seed_phish_stores
+      get game_path('scenario'), as: :json
+      assert_response :success
+      assert_equal true, @game.reload.player_state.dig('seCaptures', 'phished', 'proven'), 'stamped proven on the bootstrap'
+      assert_equal({ 'phished' => 'Land-Secret-1' }, secrets, 'served once the server evidence holds')
 
-      # Un-build the page: the stamped entry stays served.
-      put game_path('sync_state'), params: { clientTs: 3,
-        globalVariables: { 'se_landing_pages' => { 'portal' => { 'built' => false } } } }, as: :json
+      # Clear the server stores: the stamped entry stays served.
+      @game.reload
+      @game.player_state['seLandingPages'] = {}
+      @game.player_state['sePhishSends'] = {}
+      @game.save!
       assert_equal({ 'phished' => 'Land-Secret-1' }, secrets, 'a proven entry is never withdrawn')
     end
 
-    # 6b: an entry recorded under 6a (stored proven: true) keeps its secret when 6b ships, even
-    # with no page evidence at all. Simulates the grandfathering window: the stored record already
-    # holds proven: true.
-    test '6b: a 6a-grandfathered proven entry is served with no evidence' do
+    # 6b: an entry recorded under 6a (stored proven: true) keeps its secret when the reader ships,
+    # even with no server stores at all.
+    test 'chunk C: a grandfathered proven entry is served with no server evidence' do
       build_game(phish_scenario, 'seCaptures' => {
         'phished' => { 'targetId' => 'phished', 'kind' => 'credential', 'address' => 'p@x.example', 'at' => 1, 'proven' => true }
       })
       assert_equal({ 'phished' => 'Land-Secret-1' }, secrets)
     end
 
-    # 6b: the capture and its evidence sent together on a stale request record the capture but do
-    # not serve it (a stale request's mail is not merged); the next non-stale sync carrying the
-    # same evidence serves it.
-    test '6b: a stale request records but does not serve a phish credential' do
+    # A stale-but-recent request still records the capture (a capture is grow-only and recorded on a
+    # stale request too), and serving reads the live server stores, so the secret is served off the
+    # routes' records whatever the sync's staleness.
+    test 'chunk C: a stale-but-recent request records the capture and serves it off the server stores' do
       build_game(phish_scenario)
-      # Prime the stored clientTs so a lower one is stale.
-      put game_path('sync_state'), params: { clientTs: 10 }, as: :json
+      seed_phish_stores
+      # Prime a non-empty ring so clientTs 25 is stale-but-recent (at or above the oldest retained
+      # entry, 20). Neither primed key is claimed by this request, so it is not whole-skipped.
+      put game_path('sync_state'), params: { clientTs: 20, globalVariables: { 'anchor' => 1 } }, as: :json
+      put game_path('sync_state'), params: { clientTs: 30, globalVariables: { 'anchor2' => 1 } }, as: :json
       put game_path('sync_state'), params: {
-        clientTs: 5,
-        globalVariables: {
-          'se_captures' => { 'phished' => { 'targetId' => 'phished', 'kind' => 'credential', 'at' => 1 } },
-          'se_landing_pages' => { 'portal' => { 'built' => true, 'meetsThreshold' => true, 'victim' => { 'submitted' => true } } }
-        },
-        mailState: { 'mailboxes.inbox.m1' => { 'id' => 'm1', 'folder' => 'sent', 'landed' => true, 'targetId' => 'phished', 'link' => { 'kitId' => 'kit_portal' } } }
+        clientTs: 25,
+        globalVariables: { 'se_captures' => { 'phished' => { 'targetId' => 'phished', 'kind' => 'credential', 'at' => 1 } } }
       }, as: :json
-      assert_equal true, JSON.parse(response.body)['stale'], 'the request is stale'
+      assert_equal true, JSON.parse(response.body)['stale'], 'the request is stale-but-recent'
       assert @game.reload.player_state.dig('seCaptures', 'phished'), 'the capture is recorded'
-      assert_equal({}, secrets, 'a stale request does not serve the secret')
+      assert_equal({ 'phished' => 'Land-Secret-1' }, secrets,
+                   'the server stores hold, so the secret is served')
+    end
 
-      put game_path('sync_state'), params: {
-        clientTs: 11,
-        globalVariables: { 'se_landing_pages' => { 'portal' => { 'built' => true, 'meetsThreshold' => true, 'victim' => { 'submitted' => true } } } },
-        mailState: { 'mailboxes.inbox.m1' => { 'id' => 'm1', 'folder' => 'sent', 'landed' => true, 'targetId' => 'phished', 'link' => { 'kitId' => 'kit_portal' } } }
-      }, as: :json
-      assert_equal({ 'phished' => 'Land-Secret-1' }, secrets, 'the next non-stale sync serves it')
+    # Without the server stores a recorded capture is withheld; once the routes populate the stores
+    # a later sync serves it.
+    test 'chunk C: a capture recorded before the server stores exist is served once they are populated' do
+      build_game(phish_scenario)
+      put game_path('sync_state'), params: { clientTs: 50, globalVariables: {
+        'se_captures' => { 'phished' => { 'targetId' => 'phished', 'kind' => 'credential', 'at' => 1 } }
+      } }, as: :json
+      assert @game.reload.player_state.dig('seCaptures', 'phished'), 'the capture is recorded'
+      assert_equal({}, secrets, 'no server stores yet, so the secret is withheld')
+
+      seed_phish_stores
+      put game_path('sync_state'), params: { clientTs: 101, globalVariables: { 'poke' => 1 } }, as: :json
+      assert_equal({ 'phished' => 'Land-Secret-1' }, secrets, 'the populated server stores serve it')
+    end
+
+    # Minor 2 (review R1): pin the plain-sync fast path. apply_capture_sync_step returns before
+    # stored_scenario_data when the request carries no capture and no legacy se_captures global
+    # (games_controller.rb:948), so a plain sync loads no scenario; a capture-bearing sync must load
+    # one to record the capture. count_scenario_loads counts the full scenario_data column loads.
+    test 'chunk C: a plain sync with no capture and no legacy global loads no scenario, a capture-bearing one does' do
+      build_game(phish_scenario)
+      # Prime the sync ring so later syncs are not the first (keeps the two counts comparable).
+      put game_path('sync_state'), params: { currentRoom: 'office', globalVariables: { 'poke' => 1 } }, as: :json
+      assert_response :success
+
+      plain_loads = count_scenario_loads do
+        put game_path('sync_state'), params: { currentRoom: 'office', globalVariables: { 'poke2' => 1 } }, as: :json
+        assert_response :success
+      end
+      assert_equal 0, plain_loads, 'a plain sync skips the scenario load'
+
+      capture_loads = count_scenario_loads do
+        put game_path('sync_state'), params: { globalVariables: { 'se_captures' => {
+          'phished' => { 'targetId' => 'phished', 'kind' => 'credential', 'at' => 1 }
+        } } }, as: :json
+        assert_response :success
+      end
+      assert_operator capture_loads, :>, 0, 'a capture-bearing sync loads the scenario to record it'
     end
 
     # m4 (code review R1): phishTargets as a map, and a page with no capture block.

@@ -41,8 +41,9 @@ const Y_MAX = 42;
 const INSPECT_MS = 3000;
 
 export class ScadaHistorianMinigame extends MinigameScene {
-    // The X sits inside the frame (MinigameScene.closeInsideFrame)
-    static closeInsideFrame = true;
+    // Draws in the shared console window (UI decision X8): title bar and X come from there
+    static consoleWindow = true;
+    static consoleWindowFill = true;
 
     constructor(container, params = {}) {
         const sd = params.sprite?.scenarioData?.minigameData || {};
@@ -120,6 +121,9 @@ export class ScadaHistorianMinigame extends MinigameScene {
         return points ? findAnomaly(points, this._cfg) : null;
     }
 
+    consoleTitle() { return this._title; }
+    consoleSubtitle() { return this._subtitle; }
+
     // ── Layout ─────────────────────────────────────────────────────────────
 
     _renderLayout() {
@@ -129,23 +133,8 @@ export class ScadaHistorianMinigame extends MinigameScene {
 
         const wrap = this._el('div', 'sh-wrapper');
 
-        // Header
-        const header = this._el('div', 'sh-header');
-        const titleGroup = this._el('div', '');
-        titleGroup.style.display = 'flex';
-        titleGroup.style.alignItems = 'baseline';
-        titleGroup.style.gap = '0';
-        titleGroup.style.flexWrap = 'wrap';
-        const titleEl = this._el('span', 'sh-header-title');
-        titleEl.textContent = displayDashes(this._title);
-        const subtitleEl = this._el('span', 'sh-header-subtitle');
-        subtitleEl.textContent = displayDashes(this._subtitle);
-        titleGroup.appendChild(titleEl);
-        titleGroup.appendChild(subtitleEl);
-        // No [CLOSE] of its own: the framework X (inside the frame) and Esc close the
-        // console; a second close beside the X sat under it (slice 7 R1)
-        header.appendChild(titleGroup);
-        wrap.appendChild(header);
+        // The title and subtitle are in the shared console bar (consoleTitle / consoleSubtitle);
+        // no [CLOSE] of its own: the shared X and Esc close the console
 
         // Body
         const body = this._el('div', 'sh-body');
@@ -229,7 +218,7 @@ export class ScadaHistorianMinigame extends MinigameScene {
         right.appendChild(toolbar);
 
         // Charts area
-        const charts = this._el('div', 'sh-charts');
+        const charts = this._el('div', 'sh-charts pixel-scroll');
 
         // Hint line at the top of the chart (the framework's Close button covers the bottom),
         // with a progress bar while a falsified point is inspected
@@ -737,9 +726,11 @@ export class ScadaHistorianMinigame extends MinigameScene {
     // ── Annotate modal ─────────────────────────────────────────────────────
 
     _openAnnotateModal() {
+        // A second ANNOTATE press while the report is open would stack a report Cancel cannot clear (consoles R4 M1)
+        if (this._annotateOverlay) return;
         const charts = document.querySelector('.sh-charts');
         if (!charts) return;
-        const overlay = this._el('div', 'sh-modal-overlay');
+        const overlay = this._el('div', 'sh-modal-overlay pixel-scroll');
         const modal   = this._el('div', 'sh-modal');
 
         const title = this._el('div', 'sh-modal-title');
@@ -759,16 +750,37 @@ export class ScadaHistorianMinigame extends MinigameScene {
         const buttons = this._el('div', 'sh-modal-buttons');
         const confirmBtn = this._el('button', 'sh-modal-confirm-btn');
         confirmBtn.textContent = confirmLabel;
-        confirmBtn.addEventListener('click', () => { overlay.remove(); this._onComplete(); });
+        confirmBtn.addEventListener('click', () => { this._closeAnnotateModal(); this._onComplete(); });
         const cancelBtn = this._el('button', 'sh-modal-cancel-btn');
         cancelBtn.textContent = '[CANCEL]';
-        cancelBtn.addEventListener('click', () => overlay.remove());
+        cancelBtn.addEventListener('click', () => this._closeAnnotateModal());
         buttons.appendChild(confirmBtn);
         buttons.appendChild(cancelBtn);
         modal.appendChild(buttons);
 
         overlay.appendChild(modal);
         charts.appendChild(overlay);
+        this._annotateOverlay = overlay;
+        this._hideSceneX(true);
+    }
+
+    _closeAnnotateModal() {
+        if (this._annotateOverlay) this._annotateOverlay.remove();
+        this._annotateOverlay = null;
+        this._hideSceneX(false);
+    }
+
+    // The report is a confirm (two named buttons, no X), so the scene X hides while it is open
+    _hideSceneX(hidden) {
+        const x = this.container?.querySelector?.('#minigame-close');
+        if (x) x.style.visibility = hidden ? 'hidden' : '';
+    }
+
+    // Esc is Cancel while the report is open; with none open it closes the scene
+    handleEscapeKey() {
+        if (!this._annotateOverlay) return false;
+        this._closeAnnotateModal();
+        return true;
     }
 
     // ── Completion ─────────────────────────────────────────────────────────

@@ -282,6 +282,42 @@ test('P5-4: an NPC whose sprite is the player\'s swaps to another of the same se
     assert.deepEqual(avoidPlayerLookalike(phone, 'female_blowse_v2', used), []);
 });
 
+test('P5-4: a copied sprite and its original are one look (kevin_park = male_nerd_v2, derek_lawson = male_office_worker_v2)', () => {
+    const kevin = { id: 'kevin_park', npcType: 'person', spriteSheet: 'kevin_park',
+        spriteTalk: 'assets/characters/kevin_park_talk.png', spriteVisemes: 'assets/characters/kevin_park_visemes.png' };
+    const nerd = { id: 'kieran', npcType: 'person', spriteSheet: 'male_nerd_v2' };
+    const derek = { id: 'derek_lawson', npcType: 'person', spriteSheet: 'derek_lawson' };
+    const clerk = { id: 'clerk', npcType: 'person', spriteSheet: 'male_office_worker_v2' };
+    const notIn = (swap, ...keys) => keys.forEach((k) => assert.notEqual(swap.spriteSheet, k));
+    // player wears the original, meets the copy
+    const a = lookalikeSwap(kevin, 'male_nerd_v2', ['kevin_park', 'derek_lawson']);
+    notIn(a, 'male_nerd_v2', 'kevin_park', 'male_office_worker_v2', 'derek_lawson'); // derek's art is in use
+    // Kevin's portrait is a byte copy of male_nerd_talk.png, so it counts as stock and follows the swap (R2 M1)
+    assert.equal(a.spriteTalk, `assets/characters/${a.spriteSheet.replace(/_v2$/, '')}_talk.png`);
+    assert.equal(a.spriteVisemes, `assets/characters/${a.spriteSheet.replace(/_v2$/, '')}_visemes.png`);
+    // a portrait that is not the sprite's (or its copy's) is the author's and stays
+    const custom = lookalikeSwap({ ...kevin, spriteTalk: 'assets/characters/someone_else_talk.png',
+        spriteVisemes: 'assets/characters/someone_else_visemes.png' }, 'male_nerd_v2', []);
+    assert.equal('spriteTalk' in custom, false);
+    assert.equal('spriteVisemes' in custom, false);
+    // player wears the copy, meets the original elsewhere
+    const b = lookalikeSwap(nerd, 'kevin_park', ['male_nerd_v2']);
+    notIn(b, 'male_nerd_v2', 'kevin_park');
+    assert.ok(b.spriteSheet.startsWith('male_'));
+    // player wears the copy, meets the copy
+    const c = lookalikeSwap(kevin, 'kevin_park', []);
+    notIn(c, 'male_nerd_v2', 'kevin_park');
+    // the Derek pair behaves the same
+    notIn(lookalikeSwap(derek, 'male_office_worker_v2', []), 'male_office_worker_v2', 'derek_lawson');
+    notIn(lookalikeSwap(clerk, 'derek_lawson', []), 'male_office_worker_v2', 'derek_lawson');
+    notIn(lookalikeSwap(derek, 'derek_lawson', []), 'male_office_worker_v2', 'derek_lawson');
+    // unrelated looks are left alone, and main's original swap still holds
+    assert.equal(lookalikeSwap(kevin, 'male_telecom_v2', []), null);
+    assert.equal(lookalikeSwap(kevin, 'derek_lawson', []), null);
+    assert.equal(lookalikeSwap(nerd, 'male_office_worker_v2', []), null);
+    assert.equal(lookalikeSwap(nerd, 'male_nerd_v2', ['male_nerd_v2']).spriteSheet, 'male_office_worker_v2');
+});
+
 // ── validator: subjects[].requiresTemplate and templates[].flags ─────────────
 
 const ruby = spawnSync('ruby', ['--version']);

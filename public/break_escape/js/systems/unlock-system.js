@@ -17,6 +17,7 @@ import { playUISound } from './ui-sounds.js';
 import { appendLockedHint, lockedHintDuration, showLockedHintToast, doorRefusalTitle } from '../utils/locked-hint.js';
 import { startFingerprintReader } from '../minigames/biometrics/fingerprint-reader-minigame.js';
 import { catchLockpickInView } from './lockpick-catch.js';
+import { unlockWithRouteRoomRetry } from '../utils/lock-scope-refusal.js';
 
 // Helper function to notify server of unlock and get room/container data
 export async function notifyServerUnlock(lockable, type, method) {
@@ -30,13 +31,17 @@ export async function notifyServerUnlock(lockable, type, method) {
             const targetId = unlockTargetId(lockable, type);
 
             console.log(`Notifying server of ${method} unlock:`, { type, targetId });
-            serverResponse = await apiClient.unlock(type, targetId, null, method);
+            // Shared object-unlock POST with the GATED_DOOR §3.6 route-room retry (one sync, one
+            // re-post on a room_not_reachable retryable body; never for a door).
+            serverResponse = await unlockWithRouteRoomRetry(type, targetId, null, method);
 
             // Populate container contents if returned
-            if (serverResponse.hasContents && serverResponse.contents && lockable.scenarioData) {
+            if (serverResponse && serverResponse.hasContents && serverResponse.contents && lockable.scenarioData) {
                 lockable.scenarioData.contents = serverResponse.contents;
             }
         } catch (error) {
+            // Non-retryable refusal, or still refused after the one re-post (the room never
+            // promoted, i.e. a forge): surface as the normal refusal, exactly as before.
             console.error(`Failed to notify server of ${method} unlock:`, error);
         }
     }

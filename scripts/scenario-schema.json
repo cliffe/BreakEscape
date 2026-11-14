@@ -21,6 +21,46 @@
       "minimum": 0,
       "description": "Scenario format version (hardening step 7). The server stamps this onto scenario_data at game creation and bumps it when a load-time upgrade step renames a stored field; templates never carry it (the validator errors on a template that sets it). Shipped in the bootstrap so the client's reload check can tell when the tab is on a different format than the server."
     },
+    "scenario_id": {
+      "type": "string",
+      "description": "Mission identifier (hardening step 6a-1: declared top-level key). No reader in app/, lib/ or the client on main."
+    },
+    "scenario_name": {
+      "type": "string",
+      "description": "Human-readable mission name (hardening step 6a-1: declared top-level key). Read client-side: the mission name in bond-visualiser.js, and the office-life needs seed fallback in npc-needs.js when no npcNeedsSeed is set. Ships today (6b decides x-client)."
+    },
+    "name": {
+      "type": "string",
+      "description": "Alternative mission name (hardening step 6a-1: declared top-level key). Read client-side as the office-life needs seed fallback after npcNeedsSeed and scenario_name (npc-needs.js). Ships today (6b decides x-client)."
+    },
+    "description": {
+      "type": "string",
+      "description": "Mission description (hardening step 6a-1: declared top-level key). No reader in app/, lib/ or the client on main."
+    },
+    "exportGlobals": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Carry-over (carry_over.rb): globals this scenario exports to a later scenario (hardening step 6a-1: declared top-level key). Documented in a comment only; no code reader on main."
+    },
+    "importGlobals": {
+      "type": "array",
+      "items": { "x-free-data": true, "type": "object" },
+      "description": "Carry-over (carry_over.rb): globals imported from an earlier scenario at creation, also read by TTS extraction (hardening step 6a-1: declared top-level key). Server-only in effect; marks left to 6b."
+    },
+    "validSprites": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Avatar sprite allow list (hardening step 6a-1: declared top-level key). Read server-side (avatar_unlocks.rb, the player preferences controller)."
+    },
+    "timedMessages": {
+      "type": "array",
+      "items": { "x-free-data": true, "type": "object" },
+      "description": "Top-level timed messages (hardening step 6a-1: declared top-level key). No reader at the top level on main (the NPC manager reads each NPC's own timedMessages)."
+    },
+    "showTitleScreen": {
+      "type": "boolean",
+      "description": "Title-screen demo flag (hardening step 6a-1: declared top-level key). No reader on main (main.js starts the title screen unconditionally)."
+    },
     "startRoom": {
       "type": "string",
       "description": "ID of the starting room"
@@ -29,6 +69,18 @@
       "type": "string",
       "maxLength": 80,
       "description": "Optional name shown on the title screen in place of the mission's display_name (the server trims it to 80 characters). Blank falls back to display_name."
+    },
+    "pcWallpaper": {
+      "type": "string",
+      "pattern": "^assets/[A-Za-z0-9_/-]+\\.png$",
+      "description": "Optional desktop wallpaper for every PC screen in the mission (sign-in, desktop, share windows), a PNG under assets/, e.g. assets/mini-games/desktop-wallpaper-m02.png. Absent keeps the shared desktop-wallpaper.png (utils/pc-monitor.js pcWallpaperUrl)."
+    },
+    "pcWallpaperFocus": {
+      "type": "array",
+      "items": { "type": "number", "minimum": 0, "maximum": 1 },
+      "minItems": 2,
+      "maxItems": 2,
+      "description": "Optional [x, y], shares of the wallpaper's width and height where its subject sits. A narrow PC screen (a phone) crops the picture; the crop is centred on this point. Absent centres the picture."
     },
     "resumeSpawn": {
       "type": "object",
@@ -95,9 +147,9 @@
         "_comment": { "type": "string" }
       }
     },
-    "flags": {"x-id-map": true, 
+    "flags": {"x-id-map": true, "x-serverOnly": true,
       "type": "object",
-      "description": "Top-level VM flag data, keyed by VM name. Use ERB helper vm_flags_json() to populate.",
+      "description": "Top-level VM flag data, keyed by VM name. Use ERB helper vm_flags_json() to populate. Server-only (hardening step 6a-1): deleted from the bootstrap, served by no route.",
       "additionalProperties": true
     },
     "lighting": {
@@ -176,6 +228,7 @@
       "description": "Debug overlay (systems/npc-needs-debug.js): need-level bars and the current job above each needs NPC. Default false. Also toggled by window.__test.needs.overlay(true|false)."
     },
     "accountProfiles": {
+      "x-serverOnly": true, "x-servedBy": "GET /container",
       "type": "object",
       "description": "Access model (ACCESS_MODEL_PLAN.md 5.1): desktop contents that follow an account to any sign-in PC it may use. Each profile lists who it is for (roles and people) and its contents. Never sent in the bootstrap; served by GET /container against a sign-in session.",
       "additionalProperties": {
@@ -210,6 +263,7 @@
     },
     "defaultPolicy": { "type": "string", "description": "Access model: the policy a PC with no policy of its own uses." },
     "networks": {
+      "x-serverOnly": true, "x-servedBy": ["GET /network", "GET /container"],
       "type": "object",
       "description": "Networks (ACCESS_MODEL_SLICE_9_3_PLAN.md 3.1): network id to { name }. The name is what the player sees once they hold a foothold on it. Never sent in the bootstrap.",
       "additionalProperties": {
@@ -233,11 +287,13 @@
       }
     },
     "networkLinks": {
+      "x-serverOnly": true, "x-servedBy": ["GET /network", "GET /container"],
       "type": "array",
       "description": "Links (ACCESS_MODEL_SLICE_9_3B_PLAN.md 4.1): an undirected link joins two in-game networks. Each entry is a two-item list of network ids. A rogue device's foothold is not a member of a linked network; the linked network is reached only by pivoting through a host the player holds a session on.",
       "items": { "type": "array", "items": { "type": "string" }, "minItems": 2, "maxItems": 2 }
     },
     "resources": {
+      "x-serverOnly": true, "x-servedBy": ["GET /network", "GET /container"],
       "type": "object",
       "description": "Resources registry (ACCESS_MODEL_SLICE_9_3_PLAN.md 3.4; slice 9.2 owns other fields on the same entries). Never sent in the bootstrap. A resource on a network is listed in a foothold's view; a file_share's contents are served by GET /container to a held foothold or session that its access list allows.",
       "additionalProperties": {
@@ -259,6 +315,7 @@
       }
     },
     "roles": {
+      "x-serverOnly": true,
       "type": "object",
       "description": "Slice 9.1 (ACCESS_MODEL_SLICE_9_1_PLAN.md section 4): defaults by role name. awareness is the level an NPC with that role gets when it has none of its own (the first of its roles with one, the implicit staff last). Slice 9.2 adds its own keys. Never sent to the browser.",
       "additionalProperties": {
@@ -552,7 +609,7 @@
                 "type": "object",
                 "properties": {
                   "address": {"type": "string", "description": "A fictional .example address (00 S11 lint field list)"},
-                  "secret": {"type": "string", "description": "Authored fiction: the simulated password the fake page 'captured'. Never read from the page (the builder has no form); shown in the Captures view only when social.captures.revealSecret is true (technical labs)."},
+                  "secret": {"x-serverOnly": true, "x-servedBy": "GET /capture_secrets", "type": "string", "description": "Hardening step 6a-1: the captured password. Stripped from the bootstrap (Game.strip_capture_secrets!, CAPTURE_SECRET_KEYS includes 'capture'); the browser holds none until the capture is earned. Served by GET /capture_secrets once the server's se_captures record shows the capture was made and social.captures.revealSecret is true (a route-served reveal, never a bootstrap ship). Authored fiction: the simulated password the fake page 'captured'. Never read from the page (the builder has no form)."},
                   "note": {"type": "string", "description": "Authored capture note; holds no password value"}
                 },
                 "patternProperties": {"^_": {}},
@@ -793,6 +850,15 @@
     }
   },
   "definitions": {
+    "gateCreditBlock": {
+      "type": "object",
+      "description": "One gate creditOnPass path (GATED_DOOR §3.4): globals the server sets and a task it completes at promotion. setGlobal names must be declared globals listed as server-credit globals; completeTask must name an existing, server-completed-only task.",
+      "properties": {
+        "setGlobal": { "x-id-map": true, "type": "object", "description": "Globals set by the server on this path: { <global name>: <value> }" },
+        "completeTask": { "type": "string", "description": "A task id the server completes on this path" }
+      },
+      "additionalProperties": false
+    },
     "socialInfluenceDisplay": {
       "type": "object",
       "description": "Which influence UI shows (README AA): each key defaults to true; bar false also hides the number. Linted by validate_social.rb influence_display_lint",
@@ -3868,9 +3934,10 @@
           "description": "Matches collection_group field on items for group-collection tracking"
         },
         "targetFlags": {
+          "x-serverOnly": true,
           "type": "array",
           "items": { "type": "string" },
-          "description": "Array of flag identifiers to submit (e.g., ['desktop-flag1', 'kali-flag1'])"
+          "description": "Array of flag identifiers to submit (e.g., ['desktop-flag1', 'kali-flag1']). Server-only (hardening step 6a-1): the expected flag answers, stripped from every task by Game#filter_target_flags, served by no route."
         },
         "targetCount": { "type": "integer" },
         "currentCount": { "type": "integer" },
@@ -4059,6 +4126,7 @@
           "type": "array",
           "description": "Entries for this room's doorways, matched by connectedRoom and direction (first match wins). An entry carries a gate; lock fields (locked, lockType, requires, keyPins and the rest) belong on the room the door leads into, because the game never reads them on a door entry. Optional.",
           "items": {
+            "lockTypeFrom": "connectedRoom",
             "type": "object",
             "properties": {
               "connectedRoom": { "type": "string" },
@@ -4079,6 +4147,15 @@
                   "holdMs": { "type": "number", "minimum": 0, "description": "ms it stays open after the last NPC leaves (default 2500)" },
                   "playerMayPassIf": { "type": "string", "description": "A global. While false, the open gate is solid for a player outside the secured room, and one within openRadius keeps it shut (or shuts it as soon as nobody is in the doorway)" },
                   "noHold": { "type": "array", "items": { "type": "string" }, "description": "Written by the loader (slice 9.1): the openFor NPCs whose holdsDoors habit is false. While every guard the gate opened for (or, shut, every guard near it) is listed, it bars the player as a false playerMayPassIf does. Not written on a gate with playerMayPassIf; an authored noHold wins and is never changed" },
+                  "creditOnPass": {
+                    "type": "object",
+                    "description": "Server-owned credit for passing a split gated door (GATED_DOOR_SERVER_CHECK_PLAN.md §3.4). One block per provable path: viaPass (the gate's server-owned playerMayPassIf is true, credited on the currentRoom sync) and viaCredential (the player holds the room's requires card, credited on the rfid/key unlock). The server applies the matching block at promotion: it sets the named globals (which become read-only to sync_state, so a tampered client cannot forge the finding) and completes the named task (which must be server-completed-only). Only meaningful on a gate that splits (a server-owned playerMayPassIf or an obtainable requires card).",
+                    "properties": {
+                      "viaPass": { "$ref": "#/definitions/gateCreditBlock" },
+                      "viaCredential": { "$ref": "#/definitions/gateCreditBlock" }
+                    },
+                    "additionalProperties": false
+                  },
                   "sound": {
                     "oneOf": [
                       { "type": "string" },
@@ -4097,15 +4174,21 @@
         },
         "access": { "$ref": "#/definitions/accessList" },
         "acceptsUIDOnly": { "type": "boolean", "description": "Access model 4.1: an rfid lock with access also opens to a UID-only (DESFire) copy. Default false." },
-        "network": { "type": "string", "description": "Networks 3.2: the default network (a networks key) for this room's objects; an object's own network wins. Never sent to the browser." },
+        "network": { "x-serverOnly": true, "type": "string", "description": "Networks 3.2: the default network (a networks key) for this room's objects; an object's own network wins. Never sent to the browser (deleted from every room payload)." },
         "biometricMatchThreshold": { "type": "number", "minimum": 0, "maximum": 1 },
         "requires": {
+          "x-serverOnly": { "unlessLockType": ["biometric", "bluetooth", "rfid"] },
           "oneOf": [
             { "type": "string" },
             { "type": "array", "items": { "type": ["string", "integer"] }, "description": "A list of ids, or a combination padlock's three numbers such as [12, 30, 5] (the server compares a combination as numbers)" }
           ]
         },
-        "cryptexConfig": {"x-free-data": true,  "type": "object", "description": "A cryptex door's wheels: wheelCount, alphabets, hintStrip, wornRings, maxAttempts. The answer goes in requires, never here." },
+        "combination": {
+          "x-serverOnly": { "whenLockType": ["combination"] },
+          "oneOf": [ { "type": "string" }, { "type": "array", "items": { "type": ["string", "integer"] } } ],
+          "description": "Hardening step 6a-1: the combination minigame once read the answer here; the live secret is in requires. Game.strip_lock_answers! removes it when lockType is combination (app/models/break_escape/game.rb). Server-only under that lock type; an authored copy here fails the payload scan on its path."
+        },
+        "cryptexConfig": {"x-free-data": true,  "type": "object", "properties": { "answer": { "x-serverOnly": true, "type": "string", "description": "Hardening step 6a-1: the cryptex minigame once read the answer here; the live secret is in requires. Game.strip_lock_answers! removes it (app/models/break_escape/game.rb). Server-only; an authored copy here fails the payload scan on its path." } }, "description": "A cryptex door's wheels: wheelCount, alphabets, hintStrip, wornRings, maxAttempts. The answer goes in requires, never here (an authored answer here is stripped and is server-only)." },
         "keyPins": {
           "type": "array",
           "items": { "type": "integer" }
@@ -4256,15 +4339,17 @@
           "additionalProperties": true
         },
         "role": {
+          "x-serverOnly": true,
           "oneOf": [ { "type": "string", "minLength": 1 }, { "type": "array", "items": { "type": "string", "minLength": 1 } } ],
           "description": "Access model section 3: this NPC's job role(s), free strings, read by access lists. Room NPCs only. Never sent to the browser."
         },
         "creds": {
+          "x-serverOnly": true,
           "type": "object",
           "description": "Access model section 3: this NPC's sign-in details. Room NPCs only. Never sent to the browser; the card is sent as rfidCard.",
           "properties": {
             "username": { "type": "string", "minLength": 1, "description": "Makes an account (a password is then required). Unique, compared trimmed and case-insensitively." },
-            "password": { "type": "string", "minLength": 1, "description": "The only place this account's password is authored." },
+            "password": { "type": "string", "minLength": 1, "x-servedBy": [ { "route": "GET /login_accounts", "key": "postitNote" }, "GET /capture_secrets" ], "description": "The only place this account's password is authored. Server-only; served as the constructed sticky-note in a GET /login_accounts tile's postitNote when the owner writes it down (written_down?, game.rb), and by GET /capture_secrets once a capture proof for this account holds (captureProof, game.rb)." },
             "card": {"x-id-map": false,  "type": "object", "description": "The card this NPC carries (replaces rfidCard): name, card_id, rfid_protocol and any protocol fields.", "additionalProperties": true },
             "_comment": { "type": "string" }
           },
@@ -4272,19 +4357,19 @@
           "patternProperties": { "^_": {} }
         },
         "staff": { "type": "boolean", "description": "Access model section 3: false drops the implicit staff role an NPC with creds has." },
-        "awareness": { "type": "string", "enum": ["low", "medium", "high"], "description": "Slice 9.1: this person's security awareness. A preset that fills habits the author leaves out (low: locksScreen never, holdsDoors true; medium: locksScreen sometimes, holdsDoors true; high: locksScreen always, holdsDoors false). Room NPCs only. Never sent to the browser." },
+        "awareness": { "x-serverOnly": true, "type": "string", "enum": ["low", "medium", "high"], "description": "Slice 9.1: this person's security awareness. A preset that fills habits the author leaves out (low: locksScreen never, holdsDoors true; medium: locksScreen sometimes, holdsDoors true; high: locksScreen always, holdsDoors false). Room NPCs only. Never sent to the browser." },
         "habits": {
           "type": "object",
           "description": "Slice 9.1: habits set by name, which override the awareness preset. Room NPCs only. Only habits.screen and habits.print are sent to the browser; every other habit (password, usb, awareness habits) stays on the server.",
           "properties": {
-            "locksScreen": { "type": "string", "enum": ["never", "sometimes", "always"], "description": "Fills this NPC's habits.screen (lockChance 0, 0.5 or 1) when habits.screen is not authored. A PC's own lockChance or locksScreenOnLeave still wins." },
-            "writesDown": { "type": "boolean", "description": "true: the account's username and password are on a sticky note on the owner's own sign-in PC, read on its sign-in screen at the desk. Never set by a preset." },
-            "password": { "type": "string", "enum": ["strong", "guessable", "reused"], "description": "A claim the validator checks: guessable needs every piece of the password readable in the world and a pattern clue; reused needs another secret equal to it. No run-time effect. Never set by a preset." },
-            "holdsDoors": { "type": "boolean", "description": "false: a gate door that opens for this NPC will not open with the player close by, and shuts as soon as the player comes near (the loader lists the NPC in the gate's noHold). true: the gate opens beside the player and lingers. Not applied to a gate with playerMayPassIf or an authored noHold." },
-            "passwordPattern": { "type": "string", "minLength": 1, "description": "The object that gives the pattern for a guessable password (a parameter of password, not a habit)." },
+            "locksScreen": { "x-serverOnly": true, "type": "string", "enum": ["never", "sometimes", "always"], "description": "Fills this NPC's habits.screen (lockChance 0, 0.5 or 1) when habits.screen is not authored. A PC's own lockChance or locksScreenOnLeave still wins." },
+            "writesDown": { "x-serverOnly": true, "type": "boolean", "description": "true: the account's username and password are on a sticky note on the owner's own sign-in PC, read on its sign-in screen at the desk. Never set by a preset." },
+            "password": { "x-serverOnly": true, "type": "string", "enum": ["strong", "guessable", "reused"], "description": "A claim the validator checks: guessable needs every piece of the password readable in the world and a pattern clue; reused needs another secret equal to it. No run-time effect. Never set by a preset." },
+            "holdsDoors": { "x-serverOnly": true, "type": "boolean", "description": "false: a gate door that opens for this NPC will not open with the player close by, and shuts as soon as the player comes near (the loader lists the NPC in the gate's noHold). true: the gate opens beside the player and lingers. Not applied to a gate with playerMayPassIf or an authored noHold." },
+            "passwordPattern": { "x-serverOnly": true, "type": "string", "minLength": 1, "description": "The object that gives the pattern for a guessable password (a parameter of password, not a habit)." },
             "screen": { "type": "object", "additionalProperties": false, "patternProperties": { "^_": {} }, "description": "Lock-screen habit (systems/workstation-state.js, OFFICE_LIFE_PLAN 12.2, slice 16): how this person leaves the workstation they own. Applies only where the station sets neither lockChance nor locksScreenOnLeave (the object wins). A trip expected to last at most lockIfAwayOverSeconds stays open; a longer one, or one with no estimate, rolls lockChance (seeded, salt habit:<objectId>:<leaves>); the threshold alone means a long trip always locks. A locksScreen habit (slice 9.1) fills this when it is not authored; an authored habits.screen wins.", "properties": { "lockChance": { "type": "number", "minimum": 0, "maximum": 1, "description": "Chance 0..1 that a (long) trip locks the screen." }, "lockIfAwayOverSeconds": { "type": "number", "minimum": 0, "description": "Lock only when the trip is expected to last longer than this (npc_left_post expectedAwayMs)." }, "_comment": { "type": "string" } } },
             "print": { "type": "object", "additionalProperties": false, "patternProperties": { "^_": {} }, "description": "Print and forget (OFFICE_LIFE_PLAN 12.3, slice 17): this NPC owns what it prints (revealOutput hooks and needs.print commands). An owned print is reserved from other NPCs' interests; two seeded rolls per owned print decide forget, else a due time, from which the NPC fetches it to its needsHome object (an errand: it walks over, carries it back, sets it down, emits npc_print_fetched:<npcId>). Events: npc_print_uncollected:<npcId> (still on the tray after the producer's uncollectedAfterSeconds), npc_print_gone:<npcId> (taken before the fetch).", "properties": { "fetchAfterSeconds": { "type": "array", "items": { "type": "number", "minimum": 0, "maximum": 3600 }, "minItems": 2, "maxItems": 2, "description": "[min, max] seconds after the print before the fetch (default [20, 60])." }, "forgetChance": { "type": "number", "minimum": 0, "maximum": 1, "description": "Chance 0..1 that a print is never fetched (default 0)." }, "weight": { "type": "number", "minimum": 0.1, "maximum": 10, "description": "Score of the fetch, like an interest's weight (default 2): an urgent need can still win." }, "shareAfterSeconds": { "type": "number", "exclusiveMinimum": 0, "description": "Unset by default. After this long an unfetched print is no longer reserved, so interest NPCs (a tidy colleague) may take it." }, "_comment": { "type": "string" } } },
-            "usb": { "type": "object", "additionalProperties": false, "patternProperties": { "^_": {} }, "description": "USB habit (USB_HABIT_PLAN.md, user decision q39): every nth judged work use at the NPC's own station (its needsHome) copies a file to a USB stick. Where the station's policy refuses storage (usb storage_blocked or blocked) the use fails with the cause usb_refused: the NPC mutters from the usb_refused pool, npc_usb_refused:<npcId> fires and a reactive feed post can key on \"cause\": \"usb_refused\". Where the policy allows it, npc_usb_copied:<npcId> fires. Needs a work plan (a work need and a non-empty work list). The NPC must hold the stick: a usb item with an id in itemsHeld (sprite usb_bowl1, usbClass storage or none, takeable). Its contents are the files on it, text_file items each with an id, name and text, and unlocked folders or archives of them; with no contents it holds one default work_file.txt. Offer an ink give of the stick only after the first refusal (gate it on setGlobal), or the habit stops before it acts. The files are served only to a player who holds the stick (given, pickpocketed, or picked up after a knock-out), never in room data. Once the stick has left the NPC the habit stops: a use is a plain use, not a failure. Room NPCs only; the browser gets it inside the work plan.", "properties": { "every": { "type": "integer", "minimum": 1, "maximum": 10, "description": "Every nth judged work use at the station carries the copy (default 2)." }, "setGlobal": { "type": "string", "minLength": 1, "description": "The workaround: a declared global set true when a refusal is first recorded (the NPC emails the file to itself instead). The server sets it on the accepted fail." }, "_comment": { "type": "string" } } },
+            "usb": { "x-serverOnly": true, "type": "object", "additionalProperties": false, "patternProperties": { "^_": {} }, "description": "USB habit (USB_HABIT_PLAN.md, user decision q39): every nth judged work use at the NPC's own station (its needsHome) copies a file to a USB stick. Where the station's policy refuses storage (usb storage_blocked or blocked) the use fails with the cause usb_refused: the NPC mutters from the usb_refused pool, npc_usb_refused:<npcId> fires and a reactive feed post can key on \"cause\": \"usb_refused\". Where the policy allows it, npc_usb_copied:<npcId> fires. Needs a work plan (a work need and a non-empty work list). The NPC must hold the stick: a usb item with an id in itemsHeld (sprite usb_bowl1, usbClass storage or none, takeable). Its contents are the files on it, text_file items each with an id, name and text, and unlocked folders or archives of them; with no contents it holds one default work_file.txt. Offer an ink give of the stick only after the first refusal (gate it on setGlobal), or the habit stops before it acts. The files are served only to a player who holds the stick (given, pickpocketed, or picked up after a knock-out), never in room data. Once the stick has left the NPC the habit stops: a use is a plain use, not a failure. Room NPCs only; the browser gets it inside the work plan.", "properties": { "every": { "type": "integer", "minimum": 1, "maximum": 10, "description": "Every nth judged work use at the station carries the copy (default 2)." }, "setGlobal": { "type": "string", "minLength": 1, "description": "The workaround: a declared global set true when a refusal is first recorded (the NPC emails the file to itself instead). The server sets it on the accepted fail." }, "_comment": { "type": "string" } } },
             "_comment": { "type": "string" }
           },
           "additionalProperties": false,
@@ -4742,12 +4827,12 @@
         "needsAvoidRooms": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "NPC needs system, room leash (deny list): rooms this NPC's needs never use objects in or walk through, even as a short cut; it goes the long way or waits. The home room may not be listed. Fixed per NPC. Scripts and route patrols ignore it." },
         "maxQueue": { "type": "integer", "minimum": 0, "description": "NPC needs system, balking (OFFICE_LIFE_PLAN 10, slice 14): refuse to join a queue that already holds this many; the NPC tries another source, else parks the need (reason queue). 0 never queues. Unset: no limit." },
         "needsDeferMin": { "type": "number", "exclusiveMinimum": 0, "description": "NPC needs system, parked needs (OFFICE_LIFE_PLAN 10, slice 14): minutes (needs clock) a need with no acceptable source stays parked, level held at urgentAt + 1 and decay paused, before it is retried. A room loading or a door opening retries it sooner. Default 4." },
-        "workNeeds": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 4): changes to the role defaults' resources: \"x\" or \"+x\" adds, \"-x\" removes. Room NPCs only; never sent to the browser." },
-        "frustration": { "type": "object", "additionalProperties": false, "patternProperties": { "^_": {} }, "properties": { "perFail": { "type": "number", "minimum": 1, "maximum": 100 }, "easePerSuccess": { "type": "number", "minimum": 0, "maximum": 100 }, "breakDrain": { "type": "number", "minimum": 0, "maximum": 50 }, "_comment": { "type": "string" } }, "description": "Slice 9.2: perFail (default 25), easePerSuccess (default 10), breakDrain (default 10); overrides the role defaults field by field. Room NPCs only; never sent to the browser." },
-        "workarounds": { "type": "array", "items": { "type": "object", "required": ["at", "do"], "additionalProperties": false, "patternProperties": { "^_": {} }, "properties": { "at": { "type": "number", "minimum": 1, "maximum": 100 }, "do": { "type": "string", "enum": ["writes_down", "prop_door", "emit", "borrow_session", "share_login"] }, "pc": { "type": "string" }, "with": { "type": "string" }, "door": { "type": "string" }, "prop": { "type": "string" }, "event": { "type": "string" }, "setGlobal": { "type": "string" }, "noWarning": { "type": "boolean" }, "_comment": { "type": "string" } } }, "description": "Slice 9.2 (section 6): what this person does as frustration rises. Replaces the role's list. Room NPCs only; never sent to the browser." },
+        "workNeeds": { "x-serverOnly": true, "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 4): changes to the role defaults' resources: \"x\" or \"+x\" adds, \"-x\" removes. Room NPCs only; never sent to the browser." },
+        "frustration": { "x-serverOnly": true, "type": "object", "additionalProperties": false, "patternProperties": { "^_": {} }, "properties": { "perFail": { "type": "number", "minimum": 1, "maximum": 100 }, "easePerSuccess": { "type": "number", "minimum": 0, "maximum": 100 }, "breakDrain": { "type": "number", "minimum": 0, "maximum": 50 }, "_comment": { "type": "string" } }, "description": "Slice 9.2: perFail (default 25), easePerSuccess (default 10), breakDrain (default 10); overrides the role defaults field by field. Room NPCs only; never sent to the browser." },
+        "workarounds": { "type": "array", "items": { "type": "object", "required": ["at", "do"], "additionalProperties": false, "patternProperties": { "^_": {} }, "properties": { "at": { "type": "number", "minimum": 1, "maximum": 100 }, "do": { "type": "string", "enum": ["writes_down", "prop_door", "emit", "borrow_session", "share_login"] }, "pc": { "type": "string" }, "with": { "type": "string" }, "door": { "type": "string" }, "prop": { "type": "string" }, "event": { "type": "string" }, "setGlobal": { "type": "string" }, "noWarning": { "type": "boolean" }, "_comment": { "type": "string" } } }, "x-serverOnly": true, "description": "Slice 9.2 (section 6): what this person does as frustration rises. Replaces the role's list. Room NPCs only; never sent to the browser." },
         "phone": { "type": "boolean", "description": "Slice 9.2 (section 8): false: the NPC has no phone. Default true for an NPC with a social_media need." },
         "socialUse": { "type": "object", "properties": { "restores": { "type": "number" }, "useSeconds": { "type": "number", "minimum": 0 }, "_comment": { "type": "string" } }, "description": "Slice 9.2: a social media use (defaults 60 and 20)." },
-        "feed": { "type": "object", "additionalProperties": false, "patternProperties": { "^_": {} }, "properties": { "site": { "type": "string" }, "person": { "type": "string" }, "order": { "type": "string", "enum": ["facts_first", "reactive_first", "mixed"], "description": "C2: how ordered and reactive posts interleave. Default facts_first." }, "posts": { "type": "array", "items": { "type": "object", "additionalProperties": false, "patternProperties": { "^_": {} }, "properties": { "id": { "type": "string" }, "text": { "type": "string", "description": "A reply's text may hold {name}, filled by the server with the named NPC's Friendface name." }, "fact": { "type": "string" }, "date": { "type": "string" }, "note": { "type": "string" }, "deliberate": { "type": "boolean", "description": "C: a high-awareness NPC posting a fact on purpose." }, "when": {"x-id-map": false,  "type": "object", "description": "C2: a reactive post's condition (frustrationAtLeast, frustrationBelow, cause, need, workaround, needMet, global). Server-only." }, "replyTo": { "type": "string", "description": "C3: a reply naming an own post on a room NPC's feed on the same site; the replier's own post makes an answer." }, "replyToComplaint": { "type": "string", "description": "C3: a reply joining a served vent tagged with this complaint on another NPC's feed. Server-only." }, "complaint": { "type": "string", "description": "C3: tags an own post as a vent in this complaint. Server-only." }, "insteadOf": { "type": "string", "description": "C3: the replier's own reactive post that the reply stands in for. Server-only." } } } }, "reacts": { "type": "array", "description": "Friendface reactions: this NPC's reactions to other NPCs' feed posts on the same site, each with exactly one of to and toComplaint and a key from the fixed set (the validator checks it). No text. Server-only.", "items": { "type": "object", "additionalProperties": false, "patternProperties": { "^_": {} }, "properties": { "to": { "type": "string", "description": "A feed post or reply id on another room NPC's feed on the same site." }, "toComplaint": { "type": "string", "description": "A C3 complaint tag: the oldest served vent of it on another NPC's feed." }, "key": { "type": "string", "description": "A reaction key: like, laugh, sad or angry (checked by the validator, not listed here)." }, "alongside": { "type": "string", "description": "One of this NPC's own posts or replies: the reaction comes out only with that post." }, "_comment": { "type": "string" } } } }, "_comment": { "type": "string" } }, "description": "Slice 9.2 (section 8): posts revealed one at a time into the social media browser. Room NPCs only; withheld until each is revealed." },
+        "feed": { "x-serverOnly": true, "type": "object", "additionalProperties": false, "patternProperties": { "^_": {} }, "properties": { "site": { "type": "string" }, "person": { "type": "string" }, "order": { "type": "string", "enum": ["facts_first", "reactive_first", "mixed"], "description": "C2: how ordered and reactive posts interleave. Default facts_first." }, "posts": { "type": "array", "items": { "type": "object", "additionalProperties": false, "patternProperties": { "^_": {} }, "properties": { "id": { "x-servedBy": "feedPosts", "type": "string" }, "text": { "x-servedBy": "feedPosts", "type": "string", "description": "A reply's text may hold {name}, filled by the server with the named NPC's Friendface name." }, "fact": { "x-servedBy": "feedPosts", "type": "string" }, "date": { "x-servedBy": "feedPosts", "type": "string" }, "note": { "x-servedBy": "feedPosts", "type": "string" }, "deliberate": { "type": "boolean", "description": "C: a high-awareness NPC posting a fact on purpose." }, "when": {"x-id-map": false,  "type": "object", "description": "C2: a reactive post's condition (frustrationAtLeast, frustrationBelow, cause, need, workaround, needMet, global). Server-only." }, "replyTo": { "x-servedBy": "feedPosts", "type": "string", "description": "C3: a reply naming an own post on a room NPC's feed on the same site; the replier's own post makes an answer." }, "replyToComplaint": { "type": "string", "description": "C3: a reply joining a served vent tagged with this complaint on another NPC's feed. Server-only." }, "complaint": { "type": "string", "description": "C3: tags an own post as a vent in this complaint. Server-only." }, "insteadOf": { "type": "string", "description": "C3: the replier's own reactive post that the reply stands in for. Server-only." } } } }, "reacts": { "type": "array", "description": "Friendface reactions: this NPC's reactions to other NPCs' feed posts on the same site, each with exactly one of to and toComplaint and a key from the fixed set (the validator checks it). No text. Server-only.", "items": { "type": "object", "additionalProperties": false, "patternProperties": { "^_": {} }, "properties": { "to": { "type": "string", "description": "A feed post or reply id on another room NPC's feed on the same site." }, "toComplaint": { "type": "string", "description": "A C3 complaint tag: the oldest served vent of it on another NPC's feed." }, "key": { "type": "string", "description": "A reaction key: like, laugh, sad or angry (checked by the validator, not listed here)." }, "alongside": { "type": "string", "description": "One of this NPC's own posts or replies: the reaction comes out only with that post." }, "_comment": { "type": "string" } } } }, "_comment": { "type": "string" } }, "description": "Slice 9.2 (section 8): posts revealed one at a time into the social media browser. Room NPCs only; withheld until each is revealed." },
         "needsCompany": {
           "type": "object",
           "description": "NPC needs system, social compatibility (OFFICE_LIFE_PLAN 7.3). Two NPCs chat at a shared object only if neither avoids the other and they share a group (or either has none). An avoidance is declared one way and acts BOTH ways: it also stops the two sharing a capacity-2 object (the second waits; npc_avoided:<npcId>). With no needsCompany anywhere, everyone pairs. Slice 14: an NPC that declares avoids (or an avoidRadius) also turns away from a source someone avoided (either way) is using, is queued for, or stands within avoidRadius tiles of (npc_turned_back, npc_need_parked).",
@@ -4786,7 +4871,7 @@
         "phoneCalls": { "type": "array", "description": "Desk phones (slice 19): ink knots in this NPC's own story, half a phone conversation each: every line is this NPC's own (no 'Name:' prefix), voiced one per bubble with listening gaps when the player is in earshot. Played once per game (sets heard_<knot>, declare it; emits npc_call_heard:<knot>); then calls use the NPC's chatter pool 'phone' (on its own phone) or 'phone_message' (answering someone else's), then the phone picture.", "items": { "type": "object", "properties": { "knot": { "type": "string", "minLength": 1 }, "requireGlobal": { "description": "Only while this global holds: a name (truthy) or { name: value }", "oneOf": [ { "type": "string" }, {"x-id-map": true,  "type": "object" } ] }, "_comment": { "type": "string" } }, "required": ["knot"], "additionalProperties": false } },
         "chatterCooldownMin": { "type": "number", "minimum": 0, "description": "Voiced chatter (OFFICE_LIFE_PLAN 11.2): needs-clock minutes after a spoken chatter line before this NPC speaks another (default 5); in between it shows picture chat." },
         "exchanges": { "type": "array", "description": "Scripted exchanges (OFFICE_LIFE_PLAN 11.4): ink knots in this NPC's story, played once per game when this NPC and the 'with' NPC chat (social pairing or queue chat) with the player in earshot. Lines are prefixed with the speaker's id or displayName; each is spoken in that speaker's voice. Sets global heard_<knot> (declare it) and emits npc_exchange_heard:<knot> { complete }. A meeting cut after the player overheard at least one line also counts as heard (event data complete: false) and the rest is never played; a cut before any line was overheard leaves it unplayed. Bind a task with condition \"data.complete === true\" when it needs the whole exchange, and put anything the player must learn in the first line. Keep a knot under 60 s of lines (the validator warns).", "items": { "type": "object", "properties": { "with": { "type": "string", "minLength": 1, "description": "An NPC id or group:<name> (needsCompany.groups)" }, "knot": { "type": "string", "minLength": 1 }, "requireGlobal": { "description": "Only while this global holds: a name (truthy) or { name: value }", "oneOf": [ { "type": "string" }, {"x-id-map": true,  "type": "object" } ] }, "_comment": { "type": "string" } }, "required": ["with", "knot"], "additionalProperties": false } },
-        "usePayload": {"x-free-data": true,  "description": "NPC needs system: any JSON value, opaque to the engine and owned by the NPC. A clone rides on every npc_used event this NPC emits." },
+        "usePayload": {"x-free-data": true, "properties": { "secret": { "x-serverOnly": true, "x-servedBy": "GET /capture_secrets", "type": "string", "description": "Hardening step 6a-1: a capture secret riding on the NPC's usePayload. Stripped from the bootstrap (Game.strip_capture_secrets!, CAPTURE_SECRET_KEYS includes 'usePayload'); served by GET /capture_secrets once the capture is earned. The rest of usePayload is free data (the resolver's declared-property rule reaches this node; other keys stay free)." } }, "description": "NPC needs system: any JSON value, opaque to the engine and owned by the NPC. A clone rides on every npc_used event this NPC emits." },
         "captureProof": { "type": "array", "minItems": 1, "description": "Capture proofs for this account holder (engine plan section 6): any one holding lets GET /capture_secrets serve the password. A scenario that declares any proof serves a password that opens a sign-in PC only once one holds.", "items": { "type": "object", "description": "One capture proof: { \"planted\": item, \"on\"?: object }, { \"dropped\": item } or { \"session\": pc } (engine plan section 6)", "properties": { "planted": { "type": "string" }, "on": { "type": "string" }, "dropped": { "type": "string" }, "session": { "type": "string" } }, "patternProperties": { "^_": {} }, "additionalProperties": false } },
         "onUse": {
           "type": "object",
@@ -4955,7 +5040,7 @@
           ]
         },
         "setGlobal": {"x-id-map": true,  "type": "object" },
-        "addCapture": { "type": "object", "description": "Record a capture into se_captures (merged with the npc_used payload). proof: the capture proof shorthand, counted for the account whose username equals the address, or, with no address, for the NPC carrying the mapping (engine plan section 6).", "properties": { "targetId": { "type": "string" }, "proof": { "type": "object", "description": "One capture proof: { \"planted\": item, \"on\"?: object }, { \"dropped\": item } or { \"session\": pc } (engine plan section 6)", "properties": { "planted": { "type": "string" }, "on": { "type": "string" }, "dropped": { "type": "string" }, "session": { "type": "string" } }, "patternProperties": { "^_": {} }, "additionalProperties": false } } },
+        "addCapture": { "type": "object", "description": "Record a capture into se_captures (merged with the npc_used payload). proof: the capture proof shorthand, counted for the account whose username equals the address, or, with no address, for the NPC carrying the mapping (engine plan section 6).", "properties": { "targetId": { "type": "string" }, "secret": { "x-serverOnly": true, "x-servedBy": "GET /capture_secrets", "type": "string", "description": "Hardening step 6a-1: the capture secret this mapping records. Stripped from the bootstrap (Game.strip_capture_secrets!, CAPTURE_SECRET_KEYS includes 'addCapture'); served by GET /capture_secrets once the capture is earned." }, "proof": { "type": "object", "description": "One capture proof: { \"planted\": item, \"on\"?: object }, { \"dropped\": item } or { \"session\": pc } (engine plan section 6)", "properties": { "planted": { "type": "string" }, "on": { "type": "string" }, "dropped": { "type": "string" }, "session": { "type": "string" } }, "patternProperties": { "^_": {} }, "additionalProperties": false } } },
         "completeTask": {"x-free-data": true},
         "unlockTask": {"x-free-data": true},
         "unlockAim": {"x-free-data": true},
@@ -5100,11 +5185,18 @@
           "enum": ["key", "pin", "rfid", "password", "bluetooth", "biometric", "flag", "ransomware_display", "network_architecture", "alarm_panel", "login", "combination", "cryptex", "ble"]
         },
         "requires": {
+          "x-serverOnly": { "unlessLockType": ["biometric", "bluetooth", "rfid"] },
           "oneOf": [
             { "type": "string" },
             { "type": "array", "items": { "type": ["string", "integer"] }, "description": "A list of ids, or a combination padlock's three numbers such as [12, 30, 5] (the server compares a combination as numbers)" }
           ]
         },
+        "combination": {
+          "x-serverOnly": { "whenLockType": ["combination"] },
+          "oneOf": [ { "type": "string" }, { "type": "array", "items": { "type": ["string", "integer"] } } ],
+          "description": "Hardening step 6a-1: the combination minigame once read the answer here; the live secret is in requires. Game.strip_lock_answers! removes it when lockType is combination (app/models/break_escape/game.rb). Server-only under that lock type; an authored copy here fails the payload scan on its path."
+        },
+        "cryptexConfig": {"x-free-data": true,  "type": "object", "properties": { "answer": { "x-serverOnly": true, "type": "string", "description": "Hardening step 6a-1: the cryptex minigame once read the answer here; the live secret is in requires. Game.strip_lock_answers! removes it (app/models/break_escape/game.rb). Server-only; an authored copy here fails the payload scan on its path." } }, "description": "A cryptex door's wheels: wheelCount, alphabets, hintStrip, wornRings, maxAttempts. The answer goes in requires, never here (an authored answer here is stripped and is server-only)." },
         "opens_lock": { "type": "string", "description": "The lock this item opens -- a reference to a lock's 'requires' value, NOT this item's own name. Many-to-one: two spare keys to the same door share one opens_lock and keep distinct 'id's. If the value does not name a lock, it is an identity and belongs in 'id'." },
         "key_id": { "type": "string", "description": "DEPRECATED -- renamed to 'opens_lock'. Read by the engine only so missions started before the rename can finish; the validator errors on it in a scenario file." },
         "keyPins": {
@@ -5182,14 +5274,17 @@
           "items": { "type": "string" }
         },
         "flags": {
+          "x-serverOnly": true,
           "type": "array",
-          "items": { "type": "string" }
+          "items": { "type": "string" },
+          "description": "A flag station's accepted flags (references or literal answers). Server-only (hardening step 6a-1): replaced by flagCount in every payload (filter_requires_and_contents_recursive), served by no route."
         },
         "flagRewards": {
           "type": "array",
           "items": { "$ref": "#/definitions/flagReward" }
         },
         "hintOnlyFlags": {
+          "x-serverOnly": true,
           "type": "object",
           "description": "Flag reference => hint message. A flag listed here is validated but not submitted or scored; the station just shows the message (used when a flag is spent elsewhere). Server-side only, stripped from the client scenario.",
           "additionalProperties": { "type": "string" }
@@ -5215,6 +5310,18 @@
         "launchConfirmText": {
           "type": "string",
           "description": "Player-facing text for the launch confirmation dialog on launch-device"
+        },
+        "operationName": {
+          "type": "string",
+          "description": "launch-device: the operation named in the panel headings (e.g. OPERATION SHATTER). Defaults to the device's name"
+        },
+        "abortedText": {
+          "type": "string",
+          "description": "launch-device: the status line shown after the player aborts (plain words: what will not happen). A neutral default is used when absent"
+        },
+        "launchedText": {
+          "type": "string",
+          "description": "launch-device: the status line shown after the player launches (plain words: what is now happening). A neutral default is used when absent"
         },
         "itemsHeld": {
           "type": "array",
@@ -5328,7 +5435,7 @@
         "acceptsUIDOnly": { "type": "boolean", "description": "Access model 4.1: an rfid lock with access also opens to a UID-only (DESFire) copy. Default false." },
         "loginPicker": { "oneOf": [ { "type": "string", "enum": ["accounts", "known"] }, { "type": "boolean", "enum": [false] } ], "description": "Access model 5.3: a sign-in PC's account tiles. accounts (default): every account its access admits; known: those the player has met; false: type the username." },
         "policy": { "type": "string", "description": "Access model 5.5: the named policy (top-level policies) this PC follows." },
-        "network": { "type": "string", "description": "Networks 3.2: the network (a networks key) this object is on; overrides its room's network. Never sent to the browser." },
+        "network": { "x-serverOnly": true, "type": "string", "description": "Networks 3.2: the network (a networks key) this object is on; overrides its room's network. Never sent to the browser (NetworkAccess::WITHHELD_OBJECT_FIELDS)." },
         "host": { "type": "string", "description": "Networks 3.2: a PC's computer name (HB-FIN-02), on any PC or laptop. A sign-in PC's label on the network; on any PC the computer name in the desktop taskbar (q94). Default: its name. Not secret." },
         "desktopUser": {
           "type": "object",
@@ -5344,8 +5451,8 @@
         "networkJack": { "type": "boolean", "description": "Networks 3.3: this room object is a jack; a rogue device planted in it gives a foothold on its network. Takes no triggerOnInteract, requiresItem, lock or lockType." },
         "jackConfirm": { "type": "string", "description": "Networks 3.3: the confirm text before a plant. Default: Plug <device name> into <jack name>?" },
         "plantedSprite": { "type": "string", "description": "Networks 3.3: the jack's texture while a device is in it." },
-        "linkName": { "type": "string", "description": "Networks 4.1: the name of the link item the plant puts in the inventory. Default: <device name>: <jack name>." },
-        "linkStoreIn": { "type": "string", "description": "Networks 13.4: the holder the link item is filed in (storeIn)." },
+        "linkName": { "x-serverOnly": true, "type": "string", "description": "Networks 4.1: the name of the link item the plant puts in the inventory. Default: <device name>: <jack name>. Withheld from every object payload; it arrives on the link item." },
+        "linkStoreIn": { "x-serverOnly": true, "type": "string", "description": "Networks 13.4: the holder the link item is filed in (storeIn). Withheld from every object payload; it arrives on the link item." },
         "rogueDevice": { "type": "boolean", "description": "Networks 3.3: a takeable item with an id that can be planted in a jack. Not droppable." },
         "wifiAp": { "type": "boolean", "description": "Slice 9.3b (Wi-Fi, 5.3): true marks this object a Wi-Fi access point on its network (which must define a wifi block). Its click is the join flow; it is not a sign-in host, a jack or a lock." },
         "portSecurity": { "type": "boolean", "description": "Networks 9.3b (port security): on a networkJack, the switch port refuses an unknown device. The device goes in, no foothold is given, and it stays in the inventory. Only valid on a jack; cannot be combined with wifiAp." },

@@ -175,22 +175,23 @@ export class PhoneChatMinigame extends MinigameScene {
         this.ui = new PhoneChatUI(this.gameContainer, safeParams, this.npcManager, this.allowedNpcIds);
         this.ui.render();
         
-        // Add notebook button to minigame controls (before close button). Not on a ringer call:
-        // startNotesMinigame would replace the call (row 32) and the phone would reopen as a
+        // C-PH2: the notepad action belongs to the phone, not the framework controls row below it
+        // (that row overlapped the HUD on small screens). Anchor it on the device — the status bar
+        // when the phone has one, else the contact-list header, else the screen. Not on a ringer
+        // call: startNotesMinigame would replace the call (row 32) and the phone would reopen as a
         // plain thread carrying a stale ringerCall (A2a_NOTES, R3 M2).
-        const controls = this.params.ringerCall ? null : this.ensureControlsRow();
-        if (controls) {
+        if (!this.params.ringerCall) {
             const notebookBtn = document.createElement('button');
-            notebookBtn.className = 'minigame-button';
+            notebookBtn.type = 'button';
+            notebookBtn.className = 'phone-notepad-btn';
             notebookBtn.id = 'minigame-notebook';
-            notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
-            // Insert before the cancel/close button
-            const cancelBtn = controls.querySelector('#minigame-cancel');
-            if (cancelBtn) {
-                controls.insertBefore(notebookBtn, cancelBtn);
-            } else {
-                controls.appendChild(notebookBtn);
-            }
+            notebookBtn.setAttribute('aria-label', 'Add to Notepad');
+            notebookBtn.setAttribute('title', 'Add to Notepad');
+            notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="" class="icon-small notepad-btn-icon"> Notepad';
+            const host = this.gameContainer.querySelector('.phone-header')
+                || this.gameContainer.querySelector('.contact-list-header')
+                || this.gameContainer.querySelector('.phone-screen');
+            if (host) host.appendChild(notebookBtn);
         }
         
         // Set up event listeners
@@ -486,6 +487,9 @@ export class PhoneChatMinigame extends MinigameScene {
         if (!npc) {
             console.error(`❌ NPC not found: ${npcId}`);
             this.ui.showNotification('Contact not found', 'error');
+            // C-PH4: fall back to the contact list so the player sees the list (or its empty
+            // state) instead of a blank screen behind the toast.
+            this.ui.showContactList(this.phoneId);
             return;
         }
         

@@ -120,7 +120,7 @@ test('reload with the item showing: stowed on sight, and a later leave can show 
 // ── the decision log ────────────────────────────────────────────────────────
 
 // Recorded in npc-needs-slots.test.mjs before slice 7; still the day with no slots or left items
-const GOLDEN_SIMS_DAY = 'a87a652c0b54abe9d8c237f6ba4b8cc097f193097a546267bbcf6b5b86b86948';
+const GOLDEN_SIMS_DAY = 'd6dbd5a503737c56739831f658d6c6be9c8ed2eceee8278a7b5a11fade52381e';   // the kitchen cooler at 40 s (E7 to E9 R1 m1)
 
 test('the sims-day log is byte-identical where nothing is left behind', () => {
     const { sys } = runSimsDay(NPCNeedsSystem, { minutes: 15 });

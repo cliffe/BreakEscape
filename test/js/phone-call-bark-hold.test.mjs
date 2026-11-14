@@ -21,6 +21,8 @@ writeFileSync(join(dir, 'minigame-manager.mjs'), rd('minigames/framework/minigam
 writeFileSync(join(dir, 'npc-barks.mjs'), `
 const ASSETS_PATH = '', overlayDepth = () => 0, displayDashes = (s) => s, releaseHeldBarks = () => {};
 const workstationPopupOpen = () => false, phoneThreadOpenFor = () => false, openPhoneThread = () => null, threadTextKey = () => '';
+const dialogLayerOpen = () => false;   // ui/hud-lanes.js (review R1 M1: dialogs hold barks)
+const barkSource = ({ npcType, channel }) => channel || (npcType === 'phone' ? 'phone' : 'speech');
 const barkLifetimeMs = () => 0, barksToTrim = () => 0, BARK_RESUME_MIN_MS = 0, inventoryBlockedByForcedMinigame = () => false;
 const phoneBarkText = (s) => s;
 class TTSManager {}

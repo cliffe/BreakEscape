@@ -9,13 +9,12 @@
    ============================================================ */
 
 /* ── Root scoping ──────────────────────────────────────────── */
-.dli-minigame-container,
-.dli-game-container {
+.dli-wrap {
   background: #0a0e1a;
   font-family: 'VT323', monospace;
   color: #c9d1d9;
-  width: 100%;
-  height: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -25,28 +24,13 @@
 .dli-console-header {
   background: #0d1117;
   border-bottom: 2px solid #21262d;
-  padding: 10px 16px 8px;
+  padding: 8px 16px;
   flex-shrink: 0;
-}
-
-.dli-console-title {
-  font-size: 18px;
-  font-weight: bold;
-  color: #e6edf3;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-
-.dli-console-subtitle {
-  font-size: 16px;
-  color: #7d8590;
-  margin-top: 2px;
 }
 
 .dli-console-files {
   font-size: 16px;
   color: #0088cc;
-  margin-top: 4px;
   display: flex;
   gap: 16px;
 }
@@ -54,6 +38,7 @@
 /* ── Tab bar ───────────────────────────────────────────────── */
 .dli-tab-bar {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
   padding: 8px 12px 0;
   background: #0d1117;
@@ -70,7 +55,6 @@
   color: #7d8590;
   font-family: 'VT323', monospace;
   font-size: 16px;
-  font-weight: bold;
   cursor: pointer;
   letter-spacing: 0.3px;
   transition: color 0.15s, background 0.15s;
@@ -105,7 +89,6 @@
 .dli-status-bar {
   padding: 6px 16px;
   font-size: 16px;
-  font-weight: bold;
   letter-spacing: 0.5px;
   text-transform: uppercase;
   flex-shrink: 0;
@@ -153,15 +136,10 @@
 /* ── Panel (main scrollable area) ──────────────────────────── */
 .dli-panel {
   flex: 1;
-  overflow-y: auto;
+  min-height: 0;
+  overflow: auto;
   padding: 14px 16px;
-  scrollbar-width: thin;
-  scrollbar-color: #30363d #0a0e1a;
 }
-
-.dli-panel::-webkit-scrollbar { width: 6px; }
-.dli-panel::-webkit-scrollbar-track { background: #0a0e1a; }
-.dli-panel::-webkit-scrollbar-thumb { background: #30363d; border-radius: 0; }
 
 /* ── Library table ─────────────────────────────────────────── */
 .dli-lib-table {
@@ -198,7 +176,7 @@
 .dli-col-drug { min-width: 140px; color: #e6edf3; }
 .dli-col-conc { min-width: 60px; color: #8b949e; text-align: right; }
 .dli-col-dmin { min-width: 60px; color: #8b949e; text-align: right; }
-.dli-col-dmax { min-width: 70px; color: #e6edf3; font-weight: bold; text-align: right; }
+.dli-col-dmax { min-width: 70px; color: #e6edf3; text-align: right; }
 .dli-col-unit { min-width: 80px; color: #8b949e; }
 .dli-col-rate { min-width: 70px; color: #8b949e; text-align: right; }
 .dli-col-status { min-width: 90px; }
@@ -206,12 +184,10 @@
 /* ── Scan badges ───────────────────────────────────────────── */
 .dli-badge-pass {
   color: #33cc66;
-  font-weight: bold;
 }
 
 .dli-badge-fail {
   color: #cc3333;
-  font-weight: bold;
   animation: dli-pulse-fail 1.2s ease-in-out infinite;
 }
 
@@ -227,25 +203,14 @@
 }
 
 /* ── Run button ────────────────────────────────────────────── */
+/* The shared minigame button (critique B DLI2); only the width and spacing are the scene's */
 .dli-run-btn {
   display: block;
   width: 100%;
   margin: 14px 0 0;
-  padding: 10px;
-  background: #1f6feb;
-  color: #fff;
-  font-family: 'VT323', monospace;
-  font-size: 18px;
-  font-weight: bold;
-  letter-spacing: 0.5px;
-  border: none;
-  border-radius: 0;
-  cursor: pointer;
-  transition: background 0.15s;
 }
 
-.dli-run-btn:hover:not(:disabled) { background: #388bfd; }
-.dli-run-btn:disabled { background: #21262d; color: #3d444d; cursor: default; }
+.dli-run-btn:disabled { opacity: 0.5; cursor: default; }
 
 /* ── Result banner ─────────────────────────────────────────── */
 .dli-result-banner {
@@ -258,7 +223,6 @@
 
 .dli-result-banner-title {
   color: #cc3333;
-  font-weight: bold;
   font-size: 16px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -281,7 +245,6 @@
 
 .dli-hash-detail-title {
   color: #cc3333;
-  font-weight: bold;
   font-size: 16px;
   margin-bottom: 8px;
   text-transform: uppercase;
@@ -331,21 +294,6 @@
   gap: 10px;
 }
 
-.dli-investigate-btn {
-  padding: 6px 14px;
-  background: #1c1600;
-  border: 2px solid #ccaa00;
-  border-radius: 0;
-  color: #ccaa00;
-  font-family: 'VT323', monospace;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.dli-investigate-btn:hover { background: #2a2000; }
-
 .dli-backup-btn {
   padding: 6px 14px;
   background: #0a1a0f;
@@ -354,7 +302,6 @@
   color: #33cc66;
   font-family: 'VT323', monospace;
   font-size: 16px;
-  font-weight: bold;
   cursor: pointer;
   transition: background 0.15s;
 }
@@ -382,7 +329,6 @@
 
 .dli-diff-panel-file {
   color: #e6edf3;
-  font-weight: bold;
   font-size: 16px;
 }
 
@@ -419,7 +365,7 @@
   border-left: 3px solid #33cc66;
 }
 
-.dli-diff-value-large { font-size: 22px; font-weight: bold; line-height: 1; }
+.dli-diff-value-large { font-size: 22px; line-height: 1; }
 .dli-diff-val-tampered { color: #cc3333; }
 .dli-diff-val-correct  { color: #33cc66; }
 
@@ -433,12 +379,11 @@
   font-size: 16px;
 }
 
-.dli-diff-summary-title { font-weight: bold; margin-bottom: 3px; }
+.dli-diff-summary-title { margin-bottom: 3px; }
 
 /* ── Verification tab ──────────────────────────────────────── */
 .dli-verify-title {
   font-size: 18px;
-  font-weight: bold;
   color: #e6edf3;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -490,7 +435,6 @@
   border-color: #33cc66;
   background: #33cc66;
   color: #0a0e1a;
-  font-weight: bold;
 }
 
 .dli-source-label { flex: 1; font-size: 16px; color: #c9d1d9; }
@@ -510,7 +454,6 @@
   color: #58a6ff;
   font-family: 'VT323', monospace;
   font-size: 16px;
-  font-weight: bold;
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.15s;
@@ -533,7 +476,6 @@
   color: #33cc66;
   font-family: 'VT323', monospace;
   font-size: 16px;
-  font-weight: bold;
   cursor: default;
   white-space: nowrap;
 }
@@ -547,7 +489,6 @@
   color: #3d444d;
   font-family: 'VT323', monospace;
   font-size: 18px;
-  font-weight: bold;
   letter-spacing: 0.5px;
   border: 2px solid #30363d;
   border-radius: 0;
@@ -607,15 +548,29 @@
   overflow-y: auto;
 }
 
-.dli-modal-title {
-  font-size: 16px;
-  font-weight: bold;
-  color: #e6edf3;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+.dli-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
   border-bottom: 2px solid #21262d;
   padding-bottom: 8px;
   margin-bottom: 12px;
+}
+
+/* The shared X, in the pop-up's header row (not floated over the title) */
+.dli-modal-head .dli-modal-close {
+  position: static;
+  flex: none;
+}
+
+.dli-modal-title {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 16px;
+  color: #e6edf3;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .dli-modal-body {
@@ -636,8 +591,8 @@
 }
 
 .dli-modal-val          { color: #e6edf3; }
-.dli-modal-val-green    { color: #33cc66; font-weight: bold; }
-.dli-modal-val-amber    { color: #ccaa00; font-weight: bold; }
+.dli-modal-val-green    { color: #33cc66; }
+.dli-modal-val-amber    { color: #ccaa00; }
 
 .dli-modal-warning {
   margin-top: 10px;
@@ -659,7 +614,6 @@
   color: #fff;
   font-family: 'VT323', monospace;
   font-size: 16px;
-  font-weight: bold;
   border: none;
   border-radius: 0;
   cursor: pointer;
@@ -671,7 +625,6 @@
 /* ── Fleet report tab ──────────────────────────────────────── */
 .dli-fleet-title {
   font-size: 18px;
-  font-weight: bold;
   color: #e6edf3;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -723,7 +676,6 @@
 
 .dli-badge-active-today {
   color: #ccaa00;
-  font-weight: bold;
   animation: dli-pulse-amber-text 2s ease-in-out infinite;
 }
 
@@ -733,7 +685,7 @@
 }
 
 .dli-badge-inactive { color: #3d444d; }
-.dli-serial-bold { font-weight: bold; color: #e6edf3; }
+.dli-serial-bold { color: #e6edf3; }
 
 .dli-view-log-btn {
   margin-top: 14px;
@@ -744,7 +696,6 @@
   color: #ccaa00;
   font-family: 'VT323', monospace;
   font-size: 16px;
-  font-weight: bold;
   cursor: pointer;
   transition: background 0.15s;
 }
@@ -764,7 +715,6 @@
 
 .dli-activity-log-title {
   font-size: 16px;
-  font-weight: bold;
   color: #e6edf3;
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -774,7 +724,7 @@
 }
 
 .dli-log-ts       { color: #0088cc; }
-.dli-log-event    { color: #e6edf3; font-weight: bold; }
+.dli-log-event    { color: #e6edf3; }
 .dli-log-field    { color: #7d8590; }
 .dli-log-val      { color: #c9d1d9; }
 .dli-log-tampered { color: #cc3333; }
@@ -826,3 +776,19 @@
 }
 
 .dli-fleet-closing p { margin: 3px 0; }
+
+/* Phones: the console tabs wrap, the library table scrolls sideways inside the panel */
+@media (max-width: 600px) {
+  .dli-console-files {
+    flex-wrap: wrap;
+    gap: 4px 16px;
+  }
+
+  .dli-tab {
+    padding: 4px 10px;
+  }
+
+  .dli-panel {
+    padding: 10px;
+  }
+}

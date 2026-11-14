@@ -328,8 +328,15 @@ module BreakEscape
       list.is_a?(Hash) ? list.values : []
     end
 
+    # The authored landing-page definition (social.landingPages entry) for a page id, or nil.
+    # The phish-evidence build route (CaptureProofs#record_landing_page_build!) validates the
+    # client's choices against this page's own menus and recomputes its score from it.
+    def landing_page(data, page_id)
+      landing_pages(data).find { |p| p.is_a?(Hash) && p['id'] == page_id }
+    end
+
     def landing_page_capture(data, page_id)
-      page = landing_pages(data).find { |p| p.is_a?(Hash) && p['id'] == page_id }
+      page = landing_page(data, page_id)
       page.is_a?(Hash) && page['capture'].is_a?(Hash) ? page['capture'] : nil
     end
 
@@ -363,6 +370,42 @@ module BreakEscape
         info[:address] = cap['address'] if cap.is_a?(Hash) && present_string?(cap['address'])
       end
       out
+    end
+
+    # All social.mailClient.payloadKit entries (an Array), or [].
+    def payload_kits(data)
+      social = data.is_a?(Hash) ? data['social'] : nil
+      mail_client = social.is_a?(Hash) ? social['mailClient'] : nil
+      kits = mail_client.is_a?(Hash) ? mail_client['payloadKit'] : nil
+      Array(kits).select { |kit| kit.is_a?(Hash) }
+    end
+
+    # The authored `kind: 'link'` payload kit with a string landingPageId for a kit id, or nil
+    # (the findLinkKit discipline, mail-bridge.js linkKitOf). Route 2 (record_phish_send!) resolves
+    # the kit this way and takes its landingPageId as the send's pageId, never from the body.
+    def link_payload_kit(data, kit_id)
+      return nil unless present_string?(kit_id)
+
+      payload_kits(data).find do |kit|
+        kit['id'] == kit_id && kit['kind'] == 'link' && present_string?(kit['landingPageId'])
+      end
+    end
+
+    # Whether a kit id names any authored payload kit (any kind): used by Route 2 to bound a
+    # message's link/attachment fields to authored kits (hostile-input hygiene).
+    def payload_kit_id?(data, kit_id)
+      return false unless present_string?(kit_id)
+
+      payload_kits(data).any? { |kit| kit['id'] == kit_id }
+    end
+
+    # Every authored mail account id (social.mailClient.accounts[].id): used by Route 2 to bound a
+    # message's fromAccount to an authored account (hostile-input hygiene).
+    def mail_account_ids(data)
+      social = data.is_a?(Hash) ? data['social'] : nil
+      mail_client = social.is_a?(Hash) ? social['mailClient'] : nil
+      accounts = mail_client.is_a?(Hash) ? mail_client['accounts'] : nil
+      Array(accounts).filter_map { |acct| acct['id'] if acct.is_a?(Hash) && present_string?(acct['id']) }.uniq
     end
 
     def owner_id_of(owner)

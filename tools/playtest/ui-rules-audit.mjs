@@ -108,7 +108,9 @@ export function audit({ rootSel }) {
                 const ab = a.getBoundingClientRect();
                 const ox = acs.overflowX, oy = acs.overflowY;
                 const t = ab.top + px(acs.borderTopWidth), l = ab.left + px(acs.borderLeftWidth);
-                const bt = t + a.clientHeight, rt = l + a.clientWidth;
+                // `zoom` scales the rect but not clientWidth/clientHeight: bring them to the same scale
+                const zx = a.offsetWidth ? ab.width / a.offsetWidth : 1, zy = a.offsetHeight ? ab.height / a.offsetHeight : 1;
+                const bt = t + a.clientHeight * zy, rt = l + a.clientWidth * zx;
                 const hide = (o) => o === 'hidden' || o === 'clip';
                 const scroll = (o) => o === 'auto' || o === 'scroll';
                 let cut = null;
@@ -180,7 +182,14 @@ export function audit({ rootSel }) {
             if (!isText) continue;
             const first = (cs.fontFamily.split(',')[0] || '').replace(/["']/g, '').trim().toLowerCase();
             if (!ALLOWED.includes(first)) { out.push({ kind: 'font', where: path(el), detail: cs.fontFamily.slice(0, 40) }); continue; }
-            const size = px(cs.fontSize);
+            // SVG text is sized in viewBox units: the size on screen is that times the SVG's
+            // own scale (the network architecture diagram draws at 2x, NAD1)
+            let size = px(cs.fontSize);
+            const svg = el.ownerSVGElement;
+            if (svg?.viewBox?.baseVal?.width) {
+                const k = svg.getBoundingClientRect().width / svg.viewBox.baseVal.width;
+                if (k > 0) size = Math.round(size * k * 100) / 100;
+            }
             fontSizes[`${first} ${size}`] = (fontSizes[`${first} ${size}`] || 0) + 1;
             if (PIXEL.includes(first)) {
                 if (Math.abs(size - Math.round(size)) > 0.01) out.push({ kind: 'font-size', where: path(el), detail: `${first} ${size}px fractional` });

@@ -196,9 +196,10 @@ test('parity: the sims day with presets plus the listed overrides makes the same
     const orig = makeSimsWorld().objs;
     const pre = makeSimsWorld({ presets: { resolve } }).objs;
     assert.ok(countFields(pre) < countFields(orig) / 2, `fields ${countFields(orig)} -> ${countFields(pre)}`);
-    // The remaining overrides are exactly the plan's list (plus slice 2a's private PCs and the kettle)
+    // The remaining overrides are exactly the plan's list (plus slice 2a's private PCs, the kettle
+    // and the E7 to E9 showcase cooler's 40 s use)
     const withOwn = Object.entries(PRESET_OBJECTS).filter(([, p]) => 'affordance' in p).map(([id]) => id).sort();
-    assert.deepEqual(withOwn, ['amara_pc', 'grace_laptop', 'kitchen_coffee', 'lounge_kettle', 'office_coffee', 'rosa_laptop', 'sanjay_pc', 'tom_pc', 'washing_up_tray']);
+    assert.deepEqual(withOwn, ['amara_pc', 'grace_laptop', 'kitchen_coffee', 'lounge_kettle', 'office_coffee', 'rosa_laptop', 'sanjay_pc', 'tom_pc', 'washing_up_tray', 'water_cooler']);
     // Each resolved affordance carries every authored field of the original
     const origById = Object.fromEntries(orig.map(o => [o.id, o]));
     for (const o of pre) {
