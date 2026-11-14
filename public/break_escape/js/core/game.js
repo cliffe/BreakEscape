@@ -13,6 +13,7 @@ import { createInfoLabel, updateInfoLabel } from '../ui/info-label.js';
 import { preloadPixelFont } from '../utils/pixel-text.js';
 import { showInteractionMenu, isInteractionMenuOpen, closeInteractionMenu, openHandIcon, jabHandIcon, talkIcon } from '../ui/interaction-menu.js';
 import { resolveObjectField, evaluateGlobalCondition } from '../utils/conditional-text.js';
+import { worldObservations } from '../utils/pc-observations.js';
 import { introduceScenario } from '../utils/helpers.js';
 import '../minigames/index.js';
 import SoundManager from '../systems/sound-manager.js';
@@ -1753,7 +1754,8 @@ export async function create() {
     import('../systems/wearables.js').catch(e => console.warn('⚠️ wearables failed to load:', e));
     // Sign-in PC sessions and the PCs signed in to (access model 5.3): password
     // sessions survive a reload, a claimed one ends (pc-sessions.js load).
-    pcSessions.load(gameScenario.sessions || {}, gameScenario.signedInPcs || []);
+    pcSessions.load(gameScenario.sessions || {}, gameScenario.signedInPcs || [],
+        { lockingSupported: gameScenario.sessionLockingSupported === true });
     // Footholds and the jacks they were gained at (slice 9.3a, 4.1): publishes
     // <jackId>_planted before any room loads; no request.
     networkLinks.load(gameScenario.footholds || [], gameScenario.gainedFootholds || []);
@@ -2815,7 +2817,7 @@ function gatherInteractablesNearClick(worldX, worldY, tapObjectIds = [], tapTest
                 if (obj.isSwivelChair ? !tapHits(Infinity, Infinity, obj) : !tapHits(obj.x, obj.y, obj)) return;
                 const data = obj.scenarioData || {};
                 const name = data.name || obj.name || 'Item';
-                const detail = resolveObjectField(data, 'observations', obj.observations || null);
+                const detail = worldObservations(data, resolveObjectField(data, 'observations', obj.observations || null), window.pcSessions);
                 // Swivel props that aren't seats are kicked (jab); chairs are sat on, and
                 // everything else uses the open-hand interact icon.
                 const seat = !!window.seating?.isSeat(obj);
@@ -3000,7 +3002,7 @@ function walkToObjectThenUse(obj) {
 // A far object in the tap's pick list (beside something in reach under the same tap)
 function farObjectCandidate(obj) {
     const data = obj.scenarioData || {};
-    const obs = resolveObjectField(data, 'observations', obj.observations || null);
+    const obs = worldObservations(data, resolveObjectField(data, 'observations', obj.observations || null), window.pcSessions);
     // A sign-in PC someone is using says so: picking it explains, and does not walk (R2 m3)
     const userAt = !window.seating?.isSeat(obj) ? window.pcInUseBy?.(obj) : null;
     const user = userAt ? (window.npcManager?.getNPC?.(userAt)?.displayName || userAt) : null;

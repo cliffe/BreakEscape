@@ -37,7 +37,7 @@ const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true 
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const imp = (rel) => import(pathToFileURL(join(dir, rel)));
-const { NetworkViewMinigame, displayOrder, hostAction, resourceAction, shareLockable, REMOTE_OFF_TEXT, SHARE_LOCKED_TEXT, NOT_RESPONDING_TEXT, STALE_TEXT, linkOffText,
+const { NetworkViewMinigame, displayOrder, hostAction, resourceAction, shareLockable, REMOTE_OFF_TEXT, SHARE_LOCKED_TEXT, HOST_LOCKED_LABEL, SHARE_LOCKED_LABEL, lockBadgeLabel, NOT_RESPONDING_TEXT, STALE_TEXT, linkOffText,
     downState, viewSubtitle, joinedStatus, DOWN_TAG, POWERED_DOWN_TAG, NO_ROUTE_TEXT, OWN_HEADING, MORE_BELOW_TEXT } =
     await imp('minigames/network-view/network-view-minigame.js');
 const { NetworkLinks } = await imp('systems/network-links.js');
@@ -145,6 +145,17 @@ test('hostAction: a host that is not responding wins over every other action', (
     assert.equal(hostAction({ responding: true, remoteSignIn: true }), 'sign-in', 'only false marks it');
 });
 
+// UI slice 6: a held-but-locked session is shown Locked, not Open
+test('hostAction: a locked password session is locked, not open', () => {
+    assert.equal(hostAction({ remoteSignIn: true, session: { via: 'password', remote: true, locked: true } }), 'locked');
+    assert.equal(hostAction({ remoteSignIn: true, session: { via: 'password', remote: false, locked: true } }), 'locked',
+        'a local locked session too');
+    assert.equal(hostAction({ remoteSignIn: true, session: { via: 'password', remote: true } }), 'open',
+        'an unlocked session still opens');
+    assert.equal(hostAction({ responding: false, remoteSignIn: true, session: { via: 'password', locked: true } }), 'not_responding',
+        'not responding still wins over a locked session');
+});
+
 test('a not-responding host row shows the text and no control, and its test state says so', async () => {
     const hosts = HOSTS.map(h => (h.id === 'lena_pc'
         ? { id: 'lena_pc', kind: 'pc', name: "Lena's PC", host: 'HB-FIN-02', sprite: 'pc_desktop', headless: false, responding: false }
@@ -190,7 +201,7 @@ test('the view lists each row with its action and the row attributes, from GET /
         ['sam_pc', 'door_box', 'lena_pc', 'kiosk_pc', 'ledger_archive', 'scanned_inbox', 'print_queue']);
     assert.deepEqual([...document.querySelectorAll('.network-row-group')].map(el => el.textContent),
         ['Computers', 'File shares', 'Printers and devices']);
-    assert.match(row('data-resource-id', 'ledger_archive').querySelector('.network-row-locked').textContent, /Locked/);
+    assert.match(row('data-resource-id', 'ledger_archive').querySelector('.network-row-locked').textContent, /Needs account/);
     assert.equal(row('data-host-id', 'door_box').querySelector('[data-action]').dataset.action, 'sign-in');
     assert.equal(row('data-host-id', 'kiosk_pc').querySelector('[data-action]'), null);
     assert.match(row('data-host-id', 'kiosk_pc').textContent, new RegExp(REMOTE_OFF_TEXT));
@@ -202,6 +213,56 @@ test('the view lists each row with its action and the row attributes, from GET /
     assert.equal(row('data-resource-id', 'scanned_inbox').querySelector('[data-action]').dataset.action, 'open');
     assert.equal(row('data-resource-id', 'print_queue').querySelector('[data-action]').dataset.action, 'observe');
     assert.equal(scenarioReads, 0, 'the view never reads scenario data');
+});
+
+// UI slice 6: a locked remote PC shows the padlock "Locked" badge in place of Open, with a
+// Sign in control that opens the remote sign-in screen (review R2 blocker 1: never stranded).
+test('a locked remote session shows a Locked badge and a Sign in control, not Open', async () => {
+    const hosts = HOSTS.map(h => h.id === 'lena_pc'
+        ? { ...h, session: { ...h.session, locked: true } } : h);
+    setup({ hosts });
+    links.open('jack_comms_port');
+    await settle();
+    const lena = row('data-host-id', 'lena_pc');
+    const actions = [...lena.querySelectorAll('[data-action]')].map(b => b.dataset.action);
+    assert.deepEqual(actions, ['sign-in'], 'Sign in only, no open button on a locked PC');
+    assert.match(lena.querySelector('.network-row-locked').textContent, /Locked/);
+    // sam_pc is still an ordinary open
+    assert.equal(row('data-host-id', 'sam_pc').querySelector('[data-action]').dataset.action, 'open');
+    const before = signIns.length;
+    lena.querySelector('[data-action="sign-in"]').click();
+    assert.equal(signIns.length, before + 1, 'Sign in opens the remote sign-in screen');
+    assert.equal(signIns[signIns.length - 1][0], 'lena_pc');
+});
+
+// A locked session and a share that needs an account are two different reasons: two labels, one badge look
+test('the padlock badge says Locked for a locked session and Needs account for a share', async () => {
+    assert.equal(HOST_LOCKED_LABEL, 'Locked');
+    assert.equal(SHARE_LOCKED_LABEL, 'Needs account');
+    assert.equal(lockBadgeLabel('host'), 'Locked');
+    assert.equal(lockBadgeLabel('share'), 'Needs account');
+    assert.notEqual(lockBadgeLabel('host'), lockBadgeLabel('share'));
+    const hosts = HOSTS.map(h => h.id === 'lena_pc' ? { ...h, session: { ...h.session, locked: true } } : h);
+    setup({ hosts });
+    links.open('jack_comms_port');
+    await settle();
+    const host = row('data-host-id', 'lena_pc').querySelector('.network-row-locked');
+    const share = row('data-resource-id', 'ledger_archive').querySelector('.network-row-locked');
+    assert.equal(host.textContent.trim(), 'Locked');
+    assert.equal(share.textContent.trim(), 'Needs account');
+    assert.equal(host.className, share.className, 'the same badge look');
+    assert.equal(host.querySelector('img').getAttribute('src'), share.querySelector('img').getAttribute('src'));
+});
+
+test('a locked share\'s badge keeps its width instead of spilling over the description', () => {
+    const css = readFileSync(join(js, '../css/network-view-minigame.css'), 'utf8');
+    const rule = css.slice(css.indexOf('.network-row-resource .network-row-control {'), css.indexOf('}', css.indexOf('.network-row-resource .network-row-control {')));
+    assert.match(rule, /flex: 0 0 auto;/);
+    assert.match(rule, /margin-left: auto;/, 'in a narrow column the badge drops under the label');
+    assert.match(css, /\.network-row-resource \{\s*flex-wrap: wrap;/);
+    assert.match(css, /\.network-row-word \{\s*white-space: nowrap;/, 'names never break at a hyphen');
+    // and a column narrower than a 340px row never scrolls sideways
+    assert.match(css, /minmax\(min\(340px, 100%\), 1fr\)/);
 });
 
 test('network_viewed carries the network, the host ids and hostList; it fires on every open', async () => {
@@ -768,7 +829,7 @@ test('"More below" shows while the list overflows the frame and hides at the end
 });
 
 test('rows lay out in two columns when there is room; headings and locked shares span (R1 m2)', async () => {
-    assert.match(ruleBody('.network-view-rows') || '', /grid-template-columns:\s*repeat\(auto-fill, minmax\(\d+px, 1fr\)\)/);
+    assert.match(ruleBody('.network-view-rows') || '', /grid-template-columns:\s*repeat\(auto-fill, minmax\((?:\d+px|min\(\d+px, 100%\)), 1fr\)\)/);
     setup();
     links.open('jack_comms_port');
     await settle();
@@ -846,4 +907,44 @@ test('the joined count leaves out a powered-down host (R1 n3)', async () => {
     links.open('wifi_guest_wifi');
     await settle();
     assert.equal(document.querySelector('.network-view-status').textContent, 'Joined. Reaches 1 host.');
+});
+
+// UI slice 6 review R3 nit 1: a locked host's badge and Sign in sit side by side where the row
+// is wide, and stack where it is not
+test('R3 n1: a locked host row marks its control so badge and button can sit side by side', async () => {
+    const hosts = HOSTS.map(h => h.id === 'lena_pc' ? { ...h, session: { ...h.session, locked: true } } : h);
+    setup({ hosts });
+    links.open('jack_comms_port');
+    await settle();
+    const lena = row('data-host-id', 'lena_pc').querySelector('.network-row-control');
+    assert.ok(lena.classList.contains('network-row-control-locked'));
+    assert.ok(lena.querySelector('.network-row-locked') && lena.querySelector('[data-action="sign-in"]'));
+    assert.ok(!row('data-host-id', 'sam_pc').querySelector('.network-row-control').classList.contains('network-row-control-locked'));
+    const rule = cssText.match(/\.network-row-control-locked \{[^}]*\}/)[0];
+    assert.match(rule, /flex-direction:\s*row/);
+    assert.match(rule, /flex-wrap:\s*wrap/, 'it wraps (stacks) where it does not fit');
+});
+
+test('wordsHtml keeps each word whole (no break at a hyphen) and reads the same', async () => {
+    const { wordsHtml } = await import(join(js, 'minigames/network-view/network-view-minigame.js'));
+    const html = wordsHtml('Remote sign-in <off>');
+    assert.equal(html, '<span class="network-row-word">Remote</span> <span class="network-row-word">sign-in</span> <span class="network-row-word">&lt;off&gt;</span>');
+    assert.equal(wordsHtml(''), '');
+});
+
+test('hostnameClass keeps short host labels whole and lets very long ones break', async () => {
+    const { hostnameClass, NOWRAP_WORD_MAX } = await import(join(js, 'minigames/network-view/network-view-minigame.js'));
+    assert.equal(hostnameClass('HB-FS01'), 'network-row-hostname');
+    assert.equal(hostnameClass('x'.repeat(NOWRAP_WORD_MAX)), 'network-row-hostname');
+    assert.equal(hostnameClass('FINANCE-RECONCILIATION-WS-0001'), 'network-row-hostname-long');
+    assert.equal(hostnameClass(undefined), 'network-row-hostname');
+});
+
+test('wordsHtml leaves a very long word out of the nowrap span, still escaped (PC polish R2 m2)', async () => {
+    const { wordsHtml, NOWRAP_WORD_MAX } = await import(join(js, 'minigames/network-view/network-view-minigame.js'));
+    const long = 'Quarterly-Reconciliation-Archive-<2026>';
+    assert.ok(long.length > NOWRAP_WORD_MAX);
+    assert.equal(wordsHtml(`Old ${long}`), '<span class="network-row-word">Old</span> Quarterly-Reconciliation-Archive-&lt;2026&gt;');
+    const edge = 'x'.repeat(NOWRAP_WORD_MAX);
+    assert.equal(wordsHtml(edge), `<span class="network-row-word">${edge}</span>`);
 });

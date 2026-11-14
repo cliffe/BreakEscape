@@ -650,3 +650,122 @@ test('q44: Sign out, a claim ended by the owner and a restored claim say pc_sign
     await settle();
     assert.deepEqual(order.at(-1), ['pc_signed_out', 'claim_ended']);
 });
+
+// ── UI slice 6: locking a held session ──────────────────────────────────────────────
+
+test('lockSession posts /lock_session, marks the session locked, closes the desktop, keeps it held', async () => {
+    const s = setup();
+    window.ApiClient.lockSession = async (pcId) => { calls.push(['lock', pcId]); return { success: true, pcId, locked: true }; };
+    await s.signIn('hot_desk', 'sokafor', 'right-sam');
+    const closed = [];
+    s.registerDesktop('hot_desk', (message, reason) => closed.push([message, reason]));
+    calls.length = 0;
+    const r = await s.lockSession('hot_desk');
+    assert.equal(r.ok, true);
+    assert.deepEqual(calls, [['lock', 'hot_desk']]);
+    // Still held and signed in, now locked
+    assert.equal(s.has('hot_desk'), true);
+    assert.equal(s.isLocked('hot_desk'), true);
+    assert.equal(s.get('hot_desk').locked, true);
+    assert.equal(s.wasSignedIn('hot_desk'), true);
+    // The open desktop closed, and one pc_session_locked fired
+    assert.deepEqual(closed, [['Locked. Sign in again to continue.', 'locked']]);
+    assert.deepEqual(named('pc_session_locked'), [{ pcId: 'hot_desk', npcId: 'sam' }]);
+});
+
+// Merge (train 33) interaction: the hot-desk workstation events end claim/guest sessions
+// only, so a borrow or guest-leave flow can neither end nor clear a locked password session.
+test('a hot-desk owner-return or auto-lock never ends or clears a locked password session', async () => {
+    const s = setup();
+    window.ApiClient.lockSession = async (pcId) => ({ success: true, pcId, locked: true });
+    await s.signIn('hot_desk', 'sokafor', 'right-sam');
+    await s.lockSession('hot_desk');
+    assert.equal(s.isLocked('hot_desk'), true);
+    // A locked session is a password session; both hot-desk handlers guard on via === 'claim'.
+    assert.equal(await s.ownerReturned('hot_desk'), false, 'owner return does not touch a password session');
+    assert.equal(await s.screenAutoLocked('hot_desk'), false, 'auto lock does not touch a password session');
+    assert.equal(s.has('hot_desk'), true, 'the session is still held');
+    assert.equal(s.isLocked('hot_desk'), true, 'and still locked');
+});
+
+test('lockSession refuses when the player holds no session there, and never sends locked back', async () => {
+    const s = setup();
+    let posted = false;
+    window.ApiClient.lockSession = async () => { posted = true; return { success: true }; };
+    const r = await s.lockSession('hot_desk');
+    assert.equal(r.ok, false);
+    assert.equal(r.reason, 'no_session');
+    assert.equal(posted, false, 'no request for a PC with no local session');
+    // The client re-sends sessions to no one: a locked session is not part of any sync payload
+    await s.signIn('hot_desk', 'sokafor', 'right-sam');
+    window.ApiClient.lockSession = async (pcId) => ({ success: true, pcId, locked: true });
+    await s.lockSession('hot_desk');
+    const sent = JSON.stringify(calls);
+    assert.ok(!sent.includes('"locked"'), 'the client never puts locked into an outbound request');
+});
+
+test('a server refusal (422) leaves the session unlocked and open', async () => {
+    const s = setup();
+    window.ApiClient.lockSession = async () => { throw Object.assign(new Error('x'), { status: 422, body: { success: false, message: 'No session is held at this PC' } }); };
+    await s.signIn('hot_desk', 'sokafor', 'right-sam');
+    const r = await s.lockSession('hot_desk');
+    assert.equal(r.ok, false);
+    assert.equal(r.reason, 'refused');
+    assert.equal(s.isLocked('hot_desk'), false);
+});
+
+test('load restores a locked session and the locking capability; a reload keeps the lock', () => {
+    const s = setup();
+    s.load(
+        { sam_pc: { npcId: 'sam', username: 'sokafor', displayName: 'Sam Okafor', via: 'password', locked: true },
+          ian_pc: { npcId: 'ian', username: 'ishaw', displayName: 'Ian Shaw', via: 'password' } },
+        ['sam_pc', 'ian_pc'],
+        { lockingSupported: true }
+    );
+    assert.equal(s.lockingSupported(), true);
+    assert.equal(s.isLocked('sam_pc'), true);
+    assert.equal(s.get('sam_pc').locked, true);
+    assert.equal(s.isLocked('ian_pc'), false);
+    assert.equal(s.get('ian_pc').locked, undefined);
+});
+
+test('lockingSupported defaults to false when the scenario answer does not say so', () => {
+    const s = setup();
+    s.load({}, []);
+    assert.equal(s.lockingSupported(), false);
+});
+
+test('canLock offers Lock only for a held password session while locking is supported', () => {
+    const s = setup();
+    s.load(
+        { sam_pc: { npcId: 'sam', username: 'sokafor', displayName: 'Sam Okafor', via: 'password' },
+          ian_pc: { npcId: 'ian', username: 'ishaw', displayName: 'Ian Shaw', via: 'password', locked: true } },
+        ['sam_pc', 'ian_pc'],
+        { lockingSupported: true }
+    );
+    // A claim session is held without a password (set directly: load ends restored claims)
+    s.sessions.set('jake_pc', { npcId: 'jake', username: 'jbrooks', displayName: 'Jake Brooks', via: 'claim' });
+    assert.equal(s.canLock('sam_pc'), true);
+    assert.equal(s.canLock('jake_pc'), false, 'a claim has no password to unlock it');
+    assert.equal(s.canLock('ian_pc'), false, 'an already-locked session is not offered Lock again');
+    assert.equal(s.canLock('missing_pc'), false);
+});
+
+test('canLock is false when the server does not support locking', () => {
+    const s = setup();
+    s.load({ sam_pc: { npcId: 'sam', username: 'sokafor', displayName: 'Sam Okafor', via: 'password' } }, ['sam_pc'], { lockingSupported: false });
+    assert.equal(s.canLock('sam_pc'), false);
+});
+
+test('lockSession never attempts to lock a password-free claim/guest session', async () => {
+    const s = setup();
+    let posted = false;
+    window.ApiClient.lockSession = async () => { posted = true; return { success: true }; };
+    s.load({}, [], { lockingSupported: true });
+    s.sessions.set('jake_pc', { npcId: 'jake', username: 'jbrooks', displayName: 'Jake Brooks', via: 'claim' });
+    const r = await s.lockSession('jake_pc');
+    assert.equal(r.ok, false);
+    assert.equal(r.reason, 'refused');
+    assert.equal(posted, false, 'no POST /lock_session is sent for a password-free session');
+    assert.equal(s.isLocked('jake_pc'), false);
+});
