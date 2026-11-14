@@ -1000,6 +1000,15 @@ Not run (handed back on budget): the full README office-beats-with-levers pass a
 
 V10 now mirrors the engine's own rules (code review R1): `grumble` needs the NPC's own avoid radius and an NPC it avoids (or that avoids it, `requireGlobal` included) able to be at any source it uses, or an off/gone turn-back with no `grumble_off`/`grumble_gone` lines for it; `coffee`, `cooler`, `greet` and `news` are judged, never passed as another subsystem's; a colleague answers a rung phone only with `answersPhones`, at home in the phone's room, and a list `owner` is no owner; an announce pool needs a teller who can see the magnet and, at home away from it, a hearer. On this scenario that rule found five own `grumble` pools nothing can speak: Amara, Tom, Grace and Rosa have no `needsCompany` (avoid radius 0) and Marek's `avoidRadius` is 0, and every off or gone turn-back speaks the scenario's `grumble_off`/`grumble_gone` lines. The lines were removed (one each, five in all), not given a trigger: an avoid on any of them would refuse chats the other beats rely on, and the avoid grumble is already shown by Sanjay and Marek. V10 now gives no warning on this scenario. Live check: see the rows below.
 
+| Check | Result | Evidence |
+|---|---|---|
+| Newly triggered pools spoken and heard | NOT APPLICABLE | No pool was given a new trigger (all five were removed) |
+| Job beat end to end with the merged job-called mapping (one onceOnly mapping ticks `hear_job_called` and sends Jodie) | PASS | Game 4950 (tool `needs-sims-staff-room.mjs job_beat`, GL): `exchange_job_called` complete, 4 of 4 heard; Jodie's locker start 14.5 s after it; `npc_used:staff_lockers` by Jodie; `job_cleared` true; lighting variant 0, minimum level 1.0 over 6 s; all seven staff-room tasks tick |
+| The upkeep icon at the lockers (S4 R3 m1) | PASS | The work picture (`icon:npc-work`) over Jodie's head at the lockers, where a blank dot was: `sr-job_beat-02-jodie-at-lockers-4950.png`, crop `crop-lockers-icon-4950.png` |
+| Jodie's reworded lines (S4 R3 m2) spoken and heard | PASS | Hub reply "Aye, sorted. Spare tube was in my locker. Cheers for flagging it." (`sr-job_beat-06-jodie-reply-4950.png`); `exchange_job_cleared` 3 of 3 heard, Jodie "Spare from my locker did it." (`sr-job_beat-05-cleared-exchange-4950.png`) |
+
+Screenshots in the session scratchpad, `officelife-sims/s5-r1fix/`.
+
 ### E7 to E9: chatter spent only when heard (2026-11-14, keyless :3088, headless)
 
 Sanjay and Rosa are a coupled cooler pair (`chatterCooldownMin: 2`, `npc_use_started:water_cooler` both ways). Driver `tools/playtest/e7e9-live-proof.mjs`. The cooler's `useSeconds` is 40 in the scenario since review round 1 (m1); the first runs below set it in the page and sent Sanjay once Rosa reached the kitchen. The round 1 rerun (games 4516 to 4541) sets neither: Rosa is sent, the coupling sends Sanjay, and the pair had 26 to 33 s together.

@@ -450,6 +450,16 @@ forget it.", Grace "I'll try again later.", Marek "Fine. Later, then.", Rosa "It
 for flagging it." (was "Aye, I swapped the tube. No more flickering. Cheers for flagging it."). Both
 need TTS when the showcase is voiced.
 
+Tests: `bin/test-js` (all files) 658 of 658 pass; `validate_scenario.rb` on test_needs_sims 0 errors, 33
+warnings (Jodie's onceOnly pair warning gone). Corpus: `validate_scenario.rb --skip-ink --no-graph` on all
+180 `scenarios/*/scenario.json.erb`: every run exit 0, no crash, no error, no V10 warning anywhere
+(test_needs_sims after the five removals; no other scenario gains one).
+
+Live (keyless :3093, game 4950, `needs-sims-staff-room.mjs job_beat` with GL): the job beat passes end to
+end with the merged mapping; the work icon shows over Jodie at the lockers
+(`s5-r1fix/sr-job_beat-02-jodie-at-lockers-4950.png`, `crop-lockers-icon-4950.png`); both reworded lines
+spoken and heard. No pool was given a new trigger, so there was none to prove. See the README rows.
+
 Engine and server changes: none (the validator script is tooling).
 
 ## Engine and server changes (every slice)
