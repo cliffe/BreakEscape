@@ -76,8 +76,9 @@ print (`eli_ko !== true`).
   conversation opens, `check_caught_walking` ticks; she then resumes. After the close and a reload,
   picking the drawer again does not reopen the catch (the mapping's `onceOnly` key is saved).
 - **(g)** Fran knocked out mid-walk to the cooler: `fran_ko` once, nothing drops; Gil's next coupled
-  break goes ahead alone: Gil enters `using` at the kettle, no coupling/`paired` line forms, Fran's
-  state stays `blocked`, and `check_solo_break` ticks. Reload: she stays down.
+  break goes ahead alone: Gil enters `using` at the kettle, no coupling/`paired` line forms, Fran
+  stays down (`isKO` with mode `idle` and no job; a KO has no separate `blocked` flag), and
+  `check_solo_break` ticks. Reload (kitchen reloaded first): she stays down.
 - **(h)** Eli knocked out before the player talks to him: no conversation closes, `eli_page` is never
   revealed, a reload reveals nothing.
 - **(h2)** Eli knocked out **inside** the 6 s print delay after a real close: the mapping re-checks

@@ -396,7 +396,9 @@ if (beat === 'c') await recordBeat('c_ben_ko', async () => {
 
 // (g) Fran knocked out mid-walk to the cooler; Gil's next break goes alone. Assert Gil enters
 //     `using` at the kettle within his walk time, that no `paired`/coupling line forms, and that
-//     Fran's state stays `blocked` (design m1). check_solo_break ticks on npc_left_post:gil.
+//     Fran stays down: a KO'd needs NPC has no `blocked` flag, she is `isKO` with mode `idle` and no
+//     job (design m1). check_solo_break ticks on npc_left_post:gil; the kitchen is reloaded after the
+//     reload so her KO is read on a loaded floor (F8).
 if (beat === 'g') await recordBeat('g_fran_ko_gil_solo', async () => {
     await loadKitchen();
     await page.evaluate(() => window.__test.needs.set('fran', 'thirst', 10));
@@ -408,15 +410,20 @@ if (beat === 'g') await recordBeat('g_fran_ko_gil_solo', async () => {
     const gilUsing = await waitUntil(async () => { const s = await njob('gil'); return (s.job && s.job.phase === 'using' && s.job.targetId === 'kitchen_kettle') ? s : null; }, 20000);
     const after = await snap(); await shot('g-gil-alone');
     const gil = gilUsing || await njob('gil');
-    const franState = await njob('fran');
+    // A KO'd needs NPC has no `blocked` boolean; she is `isKO` with mode `idle` and no job, i.e. down
+    // and not taking a break. Assert that, which is stronger than the old "any job or idle" (F8).
+    const franMode = (after.states.find(s => s.id === 'fran') || {}).mode;
     const gilLog = await page.evaluate(() => window.__test.needs.log().filter(e => e.npc === 'gil').map(e => e.ev));
     await load();
+    await t(1500);
+    await loadKitchen();
     const reloaded = await snap();
     return { fran_walking_before_ko: !!franWalking, ko_ok: r.ok, fran_ko: after.globals.fran_ko,
         check_solo_break: after.tasks.includes('check_solo_break'),
         gil_using_at_kettle: !!gilUsing, gil_phase: gil.job && gil.job.phase, gil_target: gil.job && gil.job.targetId,
-        no_paired_line: !gilLog.some(ev => /pair/i.test(ev)), fran_state_blocked: franState.blocked === true,
-        fran_still_ko_after_reload: reloaded.ko.fran };
+        no_paired_line: !gilLog.some(ev => /pair/i.test(ev)),
+        fran_down_after_ko: after.ko.fran === true && franMode === 'idle', fran_mode_after_ko: franMode,
+        fran_still_ko_after_reload: reloaded.ko.fran === true, fran_ko_global_after_reload: reloaded.globals.fran_ko };
 });
 
 // (h) Eli knocked out before any conversation: no page is ever revealed, reload reveals nothing.
