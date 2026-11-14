@@ -158,7 +158,7 @@ module NetworkModelScenario
           'objects' => [
             { 'id' => 'sam_pc', 'type' => 'pc', 'name' => "Sam's PC", 'host' => 'HB-DESK-01', 'network' => 'office_lan',
               'locked' => true, 'lockType' => 'login', 'access' => { 'roles' => ['staff'] },
-              'screenOwner' => 'sam', 'locksScreenOnLeave' => false,
+              'owner' => 'sam', 'locksScreenOnLeave' => false,
               'contents' => [{ 'id' => 'sam_local', 'type' => 'text_file', 'name' => 'todo.txt', 'takeable' => false,
                                'text' => 'todo' }] },
             { 'id' => 'offline_pc', 'type' => 'pc', 'name' => 'Offline PC', 'locked' => true, 'lockType' => 'login',

@@ -52,7 +52,7 @@ module AccessModelScenario
           'type' => 'room_office', 'connections' => { 'south' => 'lobby' },
           'locked' => true, 'lockType' => 'pin', 'requires' => '4321',
           'objects' => [
-            { 'id' => 'jake_pc', 'type' => 'pc', 'name' => "Jake's PC",
+            { 'id' => 'jake_pc', 'type' => 'pc', 'name' => "Jake's PC", 'owner' => 'jake',
               'locked' => true, 'lockType' => 'login', 'access' => { 'roles' => ['staff'] },
               'policy' => 'corp_default', 'loginPicker' => 'accounts',
               'contents' => [{ 'type' => 'text_file', 'name' => 'Local.txt', 'takeable' => false, 'text' => PC_LOCAL_MARKER }] },
@@ -65,7 +65,7 @@ module AccessModelScenario
               'position' => { 'x' => 3, 'y' => 3 },
               'role' => 'finance',
               'creds' => { 'username' => 'jbrooks', 'password' => JAKE_PASSWORD, 'card' => JAKE_CARD.dup },
-              # high (slice 9.1): its locksScreen always fills screenHabit lockChance 1, which
+              # high (slice 9.1): its locksScreen always fills habits.screen lockChance 1, which
               # leaves every claim as it was before habits had an effect.
               'awareness' => 'high', 'habits' => { 'writesDown' => false }, 'workarounds' => ['shared_drive'],
               'needsHome' => 'jake_pc',
@@ -128,7 +128,7 @@ module AccessModelScenario
     jake_pc['lockChance'] = 0.5
     finance['objects'] << { 'id' => 'profile_pc', 'type' => 'pc', 'name' => 'Hot desk',
                             'locked' => true, 'lockType' => 'login', 'access' => { 'roles' => ['staff'] } }
-    finance['objects'] << { 'id' => 'it_pc', 'type' => 'pc', 'name' => 'IT PC', 'screenOwner' => 'jake',
+    finance['objects'] << { 'id' => 'it_pc', 'type' => 'pc', 'name' => 'IT PC', 'owner' => 'jake',
                             'lockChance' => 0.5, 'locked' => true, 'lockType' => 'login',
                             'access' => { 'roles' => ['it'] } }
 

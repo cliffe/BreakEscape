@@ -535,40 +535,40 @@ test('glyph text stand-ins until the icons have loaded', () => {
     } finally { delete globalThis.window; }
 });
 
-test('validator (slice 16): screenHabit bounds, nothing to lock, shadowed habit; autoLockSeconds on a non-workstation or a station that always locks', { skip: ruby.status !== 0 && 'ruby not found' }, () => {
+test('validator (slice 16): habits.screen bounds, nothing to lock, shadowed habit; autoLockSeconds on a non-workstation or a station that always locks', { skip: ruby.status !== 0 && 'ruby not found' }, () => {
     const scenario = { lockCues: 'yes', rooms: { office: { objects: [
-        { id: 'pc_amara', type: 'pc1', workstation: true },
-        { id: 'pc_tom', type: 'pc1', lockChance: 0.5 },
-        { id: 'pc_san', type: 'pc1', workstation: true, autoLockSeconds: 30 },
-        { id: 'pc_def', type: 'pc1', workstation: true, autoLockSeconds: 30 },
+        { id: 'pc_amara', type: 'pc1', workstation: true, owner: 'amara' },
+        { id: 'pc_tom', type: 'pc1', lockChance: 0.5, owner: 'tom' },
+        { id: 'pc_san', type: 'pc1', workstation: true, autoLockSeconds: 30, owner: 'san' },
+        { id: 'pc_def', type: 'pc1', workstation: true, autoLockSeconds: 30, owner: 'def' },
         { id: 'pc_on', type: 'pc1', locksScreenOnLeave: true, autoLockSeconds: 30 },
         { id: 'lamp', type: 'lamp1', autoLockSeconds: 10 },
         { id: 'pc_bad', type: 'pc1', workstation: true, autoLockSeconds: -1 }
     ], npcs: [
-        { id: 'amara', needsHome: 'pc_amara', screenHabit: { lockIfAwayOverSeconds: 20 } },
-        { id: 'tom', needsHome: 'pc_tom', screenHabit: { lockChance: 0 } },
-        { id: 'san', needsHome: 'pc_san', screenHabit: { lockChance: 0 } },
+        { id: 'amara', needsHome: 'pc_amara', habits: { screen: { lockIfAwayOverSeconds: 20 } } },
+        { id: 'tom', needsHome: 'pc_tom', habits: { screen: { lockChance: 0 } } },
+        { id: 'san', needsHome: 'pc_san', habits: { screen: { lockChance: 0 } } },
         { id: 'def', needsHome: 'pc_def' },
-        { id: 'loner', screenHabit: { lockChance: 2, lockIfAwayOverSeconds: 'x', colour: 1 } },
+        { id: 'loner', habits: { screen: { lockChance: 2, lockIfAwayOverSeconds: 'x', colour: 1 } } },
         // 9.2 H: a borrower's habit is read at the hot desk, so neither shadow warning applies
-        { id: 'ian', needsHome: 'pc_tom', screenHabit: { lockChance: 0 }, workarounds: [{ at: 50, do: 'borrow_session', pc: 'hot' }] },
-        { id: 'roamer', screenHabit: { lockChance: 0 }, workarounds: [{ at: 50, do: 'borrow_session', pc: 'hot' }] }
+        { id: 'ian', needsHome: 'pc_tom', habits: { screen: { lockChance: 0 } }, workarounds: [{ at: 50, do: 'borrow_session', pc: 'hot' }] },
+        { id: 'roamer', habits: { screen: { lockChance: 0 } }, workarounds: [{ at: 50, do: 'borrow_session', pc: 'hot' }] }
     ] } } };
     const script = `require ${JSON.stringify(join(root, 'scripts/validate_npc_needs.rb'))}
       puts JSON.generate(ValidateNpcNeeds.check(JSON.parse(STDIN.read)))`;
     const r = spawnSync('ruby', ['-e', script], { input: JSON.stringify(scenario), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' } });
     assert.equal(r.status, 0, r.stderr);
-    const issues = JSON.parse(r.stdout.trim().split('\n').pop()).filter(s => /screenHabit|autoLockSeconds|lockCues/.test(s));
+    const issues = JSON.parse(r.stdout.trim().split('\n').pop()).filter(s => /habits\.screen|autoLockSeconds|lockCues/.test(s));
     const has = f => issues.some(s => s.includes(f));
     assert.ok(has('ERROR: lockCues must be true or false'));
     assert.ok(!has("NPC 'amara'"), 'a habit on a plain workstation is fine');
-    assert.ok(has("WARNING: NPC 'tom' screenHabit never applies"));
+    assert.ok(has("WARNING: NPC 'tom' habits.screen never applies"));
     assert.ok(!has("NPC 'san'"));
     assert.ok(!has("NPC 'ian'") && !has("NPC 'roamer'"), 'a borrower\'s habit applies at the hot desk');
-    assert.ok(has("ERROR: NPC 'loner' screenHabit.lockChance"));
-    assert.ok(has("ERROR: NPC 'loner' screenHabit.lockIfAwayOverSeconds"));
-    assert.ok(!has("'colour'"), 'an unknown screenHabit key is the schema\'s one line, not a second warning here');
-    assert.ok(has("WARNING: NPC 'loner' screenHabit but the NPC owns no workstation"));
+    assert.ok(has("ERROR: NPC 'loner' habits.screen.lockChance"));
+    assert.ok(has("ERROR: NPC 'loner' habits.screen.lockIfAwayOverSeconds"));
+    assert.ok(!has("'colour'"), 'an unknown habits.screen key is the schema\'s one line, not a second warning here');
+    assert.ok(has("WARNING: NPC 'loner' habits.screen but the NPC owns no workstation"));
     assert.ok(!has("'pc_san' autoLockSeconds"), 'the habit leaves it open');
     assert.ok(has("WARNING: object 'pc_def' autoLockSeconds never applies"), 'no habit: always locks');
     assert.ok(has("WARNING: object 'pc_on' autoLockSeconds never applies"));
