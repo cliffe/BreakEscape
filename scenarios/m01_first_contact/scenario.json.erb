@@ -1193,7 +1193,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
             "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
             "language": "en-GB"
           },
-          "avatar": "assets/characters/male_nerd_headshot.png",
+          "avatar": "assets/characters/kevin_park_headshot.png",
           "sender": "Kevin Park (IT)",
           "timestamp": "Yesterday, 6:47 PM",
           "observations": "The message light is blinking — one unheard voicemail"
@@ -1396,9 +1396,10 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "displayName": "Derek Lawson",
           "npcType": "person",
           "position": { "x": 5, "y": 4 },
-          "spriteSheet": "male_office_worker_v2",
-          "spriteTalk": "assets/characters/male_office_worker_talk.png",
-          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "spriteSheet": "derek_lawson",
+          "gender": "male",
+          "spriteTalk": "assets/characters/derek_lawson_talk.png",
+          "spriteVisemes": "assets/characters/derek_lawson_visemes.png",
           "spriteConfig": {
             "idleFrameRate": 6,
             "walkFrameRate": 10
@@ -1444,6 +1445,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "id": "entropy_launch_device",
               "mode": "launch-abort",
               "name": "ENTROPY Launch Device",
+              "operationName": "OPERATION SHATTER",
               "takeable": true,
               "observations": "A ruggedised tactical device. Screen: OPERATION SHATTER — ARMED. T-72 HOURS TO LAUNCH WINDOW.",
               "acceptsVms": ["shatter_server"],
@@ -1461,6 +1463,8 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
                 "emitEvent": "attack_launched"
               },
               "abortConfirmText": "ABORT OPERATION SHATTER?\n\nThis will terminate all active attack vectors. The attack will not proceed.",
+              "abortedText": "Abort confirmed. No fake emergency messages will be sent.",
+              "launchedText": "Launch confirmed. The fake emergency messages are going out.",
               "launchConfirmText": "EXECUTE OPERATION SHATTER?\n\n2,347,832 people will receive simultaneous coordinated emergency disinformation.\n\nProjected casualties among vulnerable populations.\n\nThis cannot be undone."
             }
           ]
@@ -1588,9 +1592,10 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "displayName": "Kevin Park",
           "npcType": "person",
           "position": { "x": 5.2, "y": 5.1 },
-          "spriteSheet": "male_nerd_v2",
-          "spriteTalk": "assets/characters/male_nerd_talk.png",
-          "spriteVisemes": "assets/characters/male_nerd_visemes.png",
+          "spriteSheet": "kevin_park",
+          "gender": "male",
+          "spriteTalk": "assets/characters/kevin_park_talk.png",
+          "spriteVisemes": "assets/characters/kevin_park_visemes.png",
           "spriteConfig": {
             "idleFrameRate": 6,
             "walkFrameRate": 10
@@ -1644,7 +1649,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "type": "pc",
           "name": "IT Monitoring Station",
           "host": "IT-MON-01",
-          "desktopUser": {"name": "Kevin Park", "character": "male_nerd_v2"},
+          "desktopUser": {"name": "Kevin Park", "character": "kevin_park"},
           "takeable": false,
           "locked": false,
           "observations": "Network monitoring displays showing server activity",
@@ -1811,7 +1816,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "type": "pc",
           "name": "Kevin's Workstation",
           "host": "KEVIN-WS",
-          "desktopUser": {"name": "Kevin Park", "character": "male_nerd_v2"},
+          "desktopUser": {"name": "Kevin Park", "character": "kevin_park"},
           "takeable": false,
           "lockType": "password",
           "requires": "tiaspbiqe2r",
@@ -1947,7 +1952,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "id": "derek_computer",
           "name": "Derek's Computer",
           "host": "DEREK-PC",
-          "desktopUser": {"name": "Derek Lawson", "character": "male_office_worker_v2"},
+          "desktopUser": {"name": "Derek Lawson", "character": "derek_lawson"},
           "takeable": false,
           "locked": true,
           "lockType": "password",

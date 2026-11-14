@@ -84,7 +84,11 @@ export function pcTaskbarModel({ pcData = null, session = null, remote = false, 
                 name: session.displayName || session.username || '',
                 username: session.username || '',
                 npcId: session.npcId || null,
-                claimed: session.via === 'claim'
+                claimed: session.via === 'claim',
+                // The picture's source from the server's session answer, so an NPC whose room is
+                // not loaded still has its headshot (fix round 1, M2)
+                ...(session.portrait ? { portrait: session.portrait } : {}),
+                ...(session.avatar ? { avatar: session.avatar } : {})
             };
         }
     } else {
@@ -266,7 +270,7 @@ function paint(el, result, scale) {
 export function applyAccountPicture(el, account, { scale = 1, ImageCtor } = {}) {
     if (!el || !account) return;
     const record = account.kind === 'session' ? npcRecordFor({ npcId: account.npcId, username: account.username }) : null;
-    const source = account.kind === 'session' ? headshotSourceFor({}, record) : { spriteSheet: account.character || null };
+    const source = account.kind === 'session' ? headshotSourceFor({ portrait: account.portrait || null, avatar: account.avatar || null }, record) : { spriteSheet: account.character || null };
     const key = account.kind === 'session' ? `s:${account.npcId || account.username}` : `d:${account.character || account.name}`;
     const waiting = new Set();
     if (headshotCache.has(key)) {

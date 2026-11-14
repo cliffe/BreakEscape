@@ -146,6 +146,12 @@
     overflow: visible;
 }
 
+/* Labels never take a tap: a rule line under its label stays tappable along its whole length,
+   and a "!" marker's triangle takes the tap for its group (consoles final proof, sis01 at 400px) */
+.nsm-svg text {
+    pointer-events: none;
+}
+
 /* ── Consequence panel ──────────────────────────────────────────────────────── */
 
 .nsm-consequence-panel {
@@ -338,6 +344,19 @@
     justify-content: flex-end;
 }
 
+/* Severed: the group shares the legend's row (the hint narrows) and takes a row of its own
+   only when there is less than 320 px left, as on a phone. */
+.nsm-sever-group.nsm-sever-group-severed {
+    flex: 1 1 0;
+    min-width: min(100%, 320px);
+}
+
+.nsm-sever-group-severed .nsm-sever-hint {
+    flex: 1 1 0;
+    min-width: 0;
+    text-align: right;
+}
+
 .nsm-sever-hint {
     font-family: 'GNF', monospace;
     font-size: 18px;
@@ -393,11 +412,31 @@
     color: #7b7b90;
 }
 
-.nsm-sever-btn-done {
-    background: #1c1c2a !important;
-    border-color: #3a3a55 !important;
-    color: #55556a !important;
-    cursor: default !important;
+/* After SEVER: CONTINUE takes SEVER's place and is the only way on, so it reads as the
+   primary action: the theme's button skin (.minigame-button in ui-themes.css) for border
+   and fill, the theme's accent colour for its label (as other primary actions), and the
+   hint beside it (severedHint) says what it does. Two classes, so the shared
+   .minigame-button type (minigames-framework.css) cannot shrink it. */
+.minigame-button.nsm-continue-btn {
+    /* GNF 16 like SEVER, whose place it takes (console buttons are GNF 16; Press Start stays on
+       its 8px grid, consoles review R2 m4) */
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 24px;
+    padding: 12px 18px;
+    letter-spacing: 1px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+[data-ui-theme] .minigame-button.nsm-continue-btn,
+[data-ui-theme] .minigame-button.nsm-continue-btn:hover {
+    color: var(--ui-accent);
+}
+
+.nsm-sever-btn[hidden],
+.nsm-continue-btn[hidden] {
+    display: none;
 }
 
 /* ── Confirmation modal ─────────────────────────────────────────────────────── */

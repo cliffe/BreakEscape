@@ -48,6 +48,7 @@ module BreakEscape
       plant_device!
       unplug_device!
       settle_session_at_keyboard!
+      build_landing_page!
     ].freeze
 
     # create builds a brand new record that nothing else can hold a reference
@@ -157,6 +158,16 @@ module BreakEscape
                         "#{action} writes footholds, sessions or the inventory; without the lock a " \
                         'concurrent plant, unplug or desktop fetch is lost.'
       end
+    end
+
+    # Phish evidence Route 1 (se_landing_page) records the build with build_landing_page!, which
+    # save!s the whole player_state. The client POSTs it straight after the attach sync, so the
+    # two race on the same row: unlocked, the POST reverted the sync's se_landing_pages.built back
+    # to false, which the old reveal reader keys on. It must hold the lock so it reloads under it.
+    test 'se_landing_page is locked' do
+      assert_includes locked_actions, 'se_landing_page',
+                      'se_landing_page save!s player_state and the client POSTs it alongside the ' \
+                      'attach sync; without the lock the sync\'s built flag is silently reverted.'
     end
 
     test 'a write in a private helper counts as its action writing' do

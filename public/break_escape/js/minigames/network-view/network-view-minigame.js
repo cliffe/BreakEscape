@@ -20,6 +20,10 @@
  *                 the scroll area, so the list's scrollbar (pixel art, .pixel-scroll) starts
  *                 under it and never meets the X (R2 m2). The view closes with the X or Esc
  *                 only: no Close button under it.
+ *   unplug        a planted box's view opened by a click on its jack (`unplugJack`) has an
+ *                 Unplug button under the header's lines (UI PC 2, critique N05). It takes the box
+ *                 out through networkLinks.unplugFromView and the view closes ('unplugged'). A
+ *                 view opened from the inventory has no Unplug.
  *   down states   one helper, downState, for every kind (slice 1): "(down)" with "No route" for
  *                 a network with no route and its rows, "(powered down)" alone for a host whose
  *                 own service is off (R1 n1: the tag says it), "(down)" on the title when an
@@ -107,6 +111,11 @@ export function lockBadgeLabel(kind) {
 function lockBadgeHtml(kind) {
     return `<span class="network-row-locked"><img class="network-row-padlock" src="/break_escape/assets/icons/padlock_32.png" alt=""> ${lockBadgeLabel(kind)}</span>`;
 }
+
+// A planted box's view opened at its jack (UI PC 2, critique N05): Unplug in the header takes
+// the box back out, through window.networkLinks.unplugFromView. Not offered from the inventory.
+export const UNPLUG_TEXT = 'Unplug';
+export const UNPLUGGING_TEXT = 'Unplugging...';
 
 export const SHARE_LOCKED_TEXT = "Needs an account with access. It opens from that account's desktop.";
 const KIND_LABELS = { file_share: 'File share', printer: 'Printer', pc: 'Computer' };
@@ -236,6 +245,10 @@ export class NetworkViewMinigame extends MinigameScene {
         super(container, { ...params, showCancel: false });
         this.footholdId = params?.footholdId || null;
         this.message = params?.message || null;
+        // The jack this view was opened at, when it was opened by a click on that jack
+        this.unplugJack = typeof params?.unplugJack === 'string' && params.unplugJack ? params.unplugJack : null;
+        this._unplugging = false;
+        this.unplugNotice = '';
         this.view = null;
         this.status = 'loading';
         this.exitReason = 'close';
@@ -260,6 +273,8 @@ export class NetworkViewMinigame extends MinigameScene {
         if (this.container?.classList) this.container.classList.add('network-view-minigame');
         this.buildFrame();
         this.gameContainer.innerHTML = '<div class="network-view"><div class="network-view-loading">Connecting...</div></div>';
+        // Unplug is there from the start: it does not wait for the link to answer
+        this.showHeader('');
         this.loaded = this.load();
     }
 
@@ -324,6 +339,7 @@ export class NetworkViewMinigame extends MinigameScene {
         if (!answer.ok) {
             this.status = 'error';
             this.gameContainer.innerHTML = '<div class="network-view"><div class="network-view-error">The link did not answer. Close this and try again.</div></div>';
+            this.showHeader('');
             return answer;
         }
         this.view = answer.view;
@@ -522,14 +538,14 @@ export class NetworkViewMinigame extends MinigameScene {
                     ${subtitle ? `<p class="network-view-subtitle">${escapeHtml(subtitle)}</p>` : ''}
                     ${status ? `<p class="network-view-status">${escapeHtml(status)}</p>` : ''}
                     ${this.message ? `<p class="network-view-message">${escapeHtml(this.message)}</p>` : ''}
-                    ${this.stale ? `<p class="network-view-stale">${STALE_TEXT}</p>` : ''}`;
+                    ${this.stale ? `<p class="network-view-stale">${STALE_TEXT}</p>` : ''}${this.unplugHintHtml()}`;
         // The header sits above the scroll area (R2 m2); with no frame (no DOM parent) it
         // heads the list as before
         const inList = !this.headerElement;
-        if (this.headerElement) this.headerElement.innerHTML = headerHtml;
+        if (!inList) this.showHeader(headerHtml);
         this.gameContainer.innerHTML = `
             <div class="network-view${v.via ? ` network-view-${escapeHtml(v.via)}` : ''}">
-                ${inList ? `<div class="network-view-header">${headerHtml}</div>` : ''}
+                ${inList ? `<div class="network-view-header">${headerHtml}${this.unplugHtml()}</div>` : ''}
                 ${(v.responding !== false && !rows.length && this.ownDownBlock()) ? '' : `<div class="network-block network-block-own">
                     ${ownName ? `<h5 class="network-block-title">${escapeHtml(ownName)}</h5>` : ''}
                     <ul class="network-view-rows">
@@ -541,6 +557,7 @@ export class NetworkViewMinigame extends MinigameScene {
                 ${this.networkBlocks().map(b => this.blockSectionHtml(b)).join('')}
                 <div class="network-view-notice" aria-live="polite"></div>
             </div>`;
+        if (inList) this.bindUnplug(this.gameContainer);
         const lookup = this.allRows();
         this.gameContainer.querySelectorAll('[data-action]').forEach(btn => {
             const li = btn.closest('[data-host-id], [data-resource-id]');
@@ -569,6 +586,78 @@ export class NetworkViewMinigame extends MinigameScene {
         const v = this.view || {};
         if (v.via !== 'wifi' || v.responding === false) return '';
         return joinedStatus(this.reachedHostCount());
+    }
+
+    /** The header's text (title, subtitle, lines) with the Unplug button after it, when offered. */
+    showHeader(html) {
+        if (!this.headerElement) return;
+        this.headerElement.innerHTML = `${html}${this.unplugHtml()}`;
+        this.bindUnplug(this.headerElement);
+    }
+
+    /**
+     * A view opened from the inventory has no Unplug (the box can only be pulled out at its
+     * jack), so a plugged-in jack box says where: its link's name ends with the room and the
+     * port ("Drop box: Desks, Spare wall port"). Fix round 1, nit.
+     */
+    unplugHintHtml() {
+        if (this.unplugJack) return '';
+        const f = this.links()?.get?.(this.footholdId);
+        if (!f || f.via !== 'jack' || typeof f.name !== 'string') return '';
+        const where = f.name.includes(': ') ? f.name.slice(f.name.indexOf(': ') + 2).trim() : '';
+        if (!where) return '';
+        return `<p class="network-view-hint">${escapeHtml(`You can unplug the box at its port (${where}).`)}</p>`;
+    }
+
+    unplugHtml() {
+        if (!this.unplugJack) return '';
+        const label = this._unplugging ? UNPLUGGING_TEXT : UNPLUG_TEXT;
+        return `
+                    <div class="network-view-actions"><button type="button" class="minigame-button network-view-unplug" data-unplug${this._unplugging ? ' disabled' : ''}>${label}</button></div>
+                    <p class="network-view-unplug-notice" aria-live="polite"${this.unplugNotice ? '' : ' hidden'}>${escapeHtml(this.unplugNotice || '')}</p>`;
+    }
+
+    bindUnplug(root) {
+        const btn = root?.querySelector?.('[data-unplug]');
+        if (btn) this.addEventListener(btn, 'click', (e) => { e?.preventDefault?.(); this.unplugBox(); });
+    }
+
+    /**
+     * Unplug the box this view was opened at (network-links.js unplugFromView, POST
+     * /network/unplug). The view closes once the box is out ('unplugged': back to the world,
+     * the device in the inventory again); a refusal keeps it open, its message already shown.
+     */
+    async unplugBox() {
+        if (!this.unplugJack || this._unplugging || !this.gameState.isActive) return { action: 'none' };
+        const links = this.links();
+        if (typeof links?.unplugFromView !== 'function') return { action: 'none' };
+        const btn = () => this.container?.querySelector?.('[data-unplug]');
+        this.setUnplugNotice('');
+        this._unplugging = true;
+        if (btn()) { btn().disabled = true; btn().textContent = UNPLUGGING_TEXT; }
+        let out;
+        try {
+            out = await links.unplugFromView(this.unplugJack);
+        } finally {
+            this._unplugging = false;
+        }
+        if (out?.action === 'unplugged' || out?.action === 'not_planted') {
+            this.exitReason = 'unplugged';
+            if (window.MinigameFramework?.currentMinigame === this && !this._ending) this.complete(false);
+            return out;
+        }
+        if (btn()) { btn().disabled = false; btn().textContent = UNPLUG_TEXT; }
+        // A refusal is said here, next to the button, not as a toast over the header (fix round 1, m2)
+        this.setUnplugNotice(out?.message || 'The port did not respond. Try again.');
+        return out;
+    }
+
+    setUnplugNotice(text) {
+        this.unplugNotice = text || '';
+        const el = this.container?.querySelector?.('.network-view-unplug-notice');
+        if (!el) return;
+        el.textContent = this.unplugNotice;
+        el.hidden = !this.unplugNotice;
     }
 
     showNotice(text) {
@@ -639,6 +728,7 @@ export class NetworkViewMinigame extends MinigameScene {
             responding: this.view?.responding !== false,
             message: this.message,
             notice: this.notice,
+            unplug: this.unplugJack ? { jackId: this.unplugJack, selector: '[data-unplug]' } : null,
             rows: this.rows().map(r => (r.kind === 'pc'
                 ? { id: r.id, kind: 'pc', host: r.host || null, name: r.name || null, action: hostAction(r),
                     session: r.session ? (r.session.displayName || r.session.username || null) : null,
@@ -664,7 +754,7 @@ export class NetworkViewMinigame extends MinigameScene {
  * Open the view for a held foothold (network-links.js looks this up on window). Starts no
  * trip: network-links.js has one running already.
  */
-export function startNetworkViewMinigame(footholdId, { message = null } = {}) {
+export function startNetworkViewMinigame(footholdId, { message = null, unplugJack = null } = {}) {
     const framework = window.MinigameFramework;
     if (!framework) {
         console.error('MinigameFramework not available for the network view');
@@ -675,7 +765,8 @@ export function startNetworkViewMinigame(footholdId, { message = null } = {}) {
     return framework.startMinigame('network-view', null, {
         title: name || 'Network link',
         footholdId,
-        message
+        message,
+        unplugJack
     });
 }
 

@@ -138,9 +138,17 @@ module BreakEscape
       assert_equal 1, @game.reload.tasks_completed
     end
 
-    test 'a refused sync (403) saves no triage global' do
-      body = sync({ globalVariables: TRIAGE_GLOBALS, currentRoom: 'soc', clientTs: 1000 }, expect: :forbidden)
-      assert_equal false, body['success']
+    test 'a refused sync saves no triage global (the whole request rolls back)' do
+      # A currentRoom the server cannot vouch for is no longer a hard refusal: it is skipped and
+      # the rest of the batch commits (GATED_DOOR R4 MINOR 1), so it can no longer stand in for a
+      # whole-batch rollback. The sync-then-emit order still relies on a refused sync persisting
+      # nothing, so prove that atomicity another way: a game stored above the server's current
+      # format version is refused before any merge runs, so no triage global lands.
+      @game.update_column(:scenario_data, @game.scenario_data.merge('formatVersion' => 9999))
+
+      body = sync({ globalVariables: TRIAGE_GLOBALS, clientTs: 1000 }, expect: :conflict)
+      assert_equal 'format', body['error']
+
       globals = @game.reload.player_state['globalVariables']
       assert_equal false, globals['triage_pass'], 'the refusal rolled back the whole request'
       assert_equal false, globals['triage_complete']
