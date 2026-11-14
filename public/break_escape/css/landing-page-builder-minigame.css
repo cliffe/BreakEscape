@@ -533,8 +533,8 @@
 /* C-LP3: no faux-bold; addresses in the shared address font and secrets in GNF, not the
    browser's monospace. */
 .lpb-captures-role { font-weight: normal; font-size: 14px; }
-.lpb-captures-address { font-size: 14px; font-family: var(--se-font-address, 'GNF', sans-serif); }
-.lpb-captures-secret { font-size: 14px; font-family: var(--se-font-readable, 'GNF', sans-serif); letter-spacing: 1px; }
+.lpb-captures-address { font-size: 16px; font-family: var(--se-font-address, 'GNF', sans-serif); }
+.lpb-captures-secret { font-size: 16px; font-family: var(--se-font-readable, 'GNF', sans-serif); letter-spacing: 1px; }
 .lpb-captures-foothold { font-size: 13px; }
 .lpb-captures-empty { padding: 16px 12px; color: var(--ui-text, #eef1f8); border: 2px dashed var(--ui-line, #4c5b80); }
 @media (max-width: 700px) { .lpb-captures { padding: 8px; } }

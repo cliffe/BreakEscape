@@ -242,6 +242,16 @@ test('the brief lists held board sentences and the authored scope, and hides wha
     assert.ok(paused > 0);
 });
 
+test('the call target is labelled "Calling: <name>", not a bare word (C-PP2)', () => {
+    const scene = open({
+        call: brandtCall,
+        npc: { id: 'brandt_desk', npcType: 'phone', displayName: 'Brandt', currentKnot: 'start' },
+        globals: held('teague_trusts_shah')
+    });
+    const who = scene.container.querySelector('.pretext-who');
+    if (who) assert.match(who.textContent, /^Calling: /, 'the target name carries a Calling: label');
+});
+
 test('a contact blank offers the held sender name and not a recipient name', () => {
     const scene = open({
         call: brandtCall,
