@@ -435,7 +435,8 @@
     .notes-minigame-content-area { padding: 0 9% 9% 17%; font-size: 14px; line-height: 1.3; height: calc(90% - 48px); }
     .notes-minigame-text-box { margin: 2% 0 4% 4%; padding: 8px; }
     .notes-minigame-text { margin-left: 0; }
-    .notes-minigame-title { font-size: 8px; line-height: 16px; margin: 0 0 2% 4%; }
+    /* 16px on short screens too, one line, cut with an ellipsis when long (S7-notes) */
+    .notes-minigame-title { font-size: 16px; line-height: 24px; margin: 0 0 2% 4%; }
     .notes-minigame-observation-container { margin: 2% 0 4% 4%; }
     .notes-minigame-observation { font-size: 14px; min-height: 24px; padding: 6px; }
     /* Continue stays beside the notepad here, out of the flow (the framework
@@ -445,4 +446,80 @@
         position: absolute; left: auto; right: 24px; bottom: 16px; transform: none; margin: 0;
     }
     .notes-minigame-nav-container { position: absolute; left: 24px; bottom: 16px; transform: none; flex-wrap: wrap; max-width: 28%; margin: 0; justify-content: flex-start; }
+}
+
+
+/* ── The note slip, stuck on the page (S7-notes) ─────────────────────────────────────
+   The text box is a slip of paper fixed to the notepad page. Three looks for the user's
+   review; the default is "tape". The others are chosen by a class on the notepad:
+     (default) / .note-style-tape   tape strips across both top corners
+     .note-style-torn               a slip torn off at the bottom, one strip of tape on top
+     .note-style-pinned             a yellow slip placed a little off the ruled lines, pinned
+   All flat colours and square steps: no rotation, gradients or soft shadows. */
+
+/* The title is always one line: a long one ends in an ellipsis */
+.notes-minigame-title {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.notes-minigame-title .notes-minigame-star { vertical-align: middle; margin-right: 8px; }
+
+.notes-minigame-text-box {
+    background: #fffdf2;
+    border: 2px solid #d9d0ae;
+    box-shadow: none;
+}
+
+/* Default (tape): two strips of yellowed tape over the top corners, ends cut in 2px teeth */
+.notes-minigame-text-box .notes-minigame-celotape { display: none; }
+.notes-minigame-text-box::before,
+.notes-minigame-text-box::after {
+    content: '';
+    position: absolute;
+    top: -8px;
+    width: 40px;
+    height: 16px;
+    background: #efe3a8;
+    opacity: 0.9;
+    pointer-events: none;
+    z-index: 1;
+    clip-path: polygon(0 0, 100% 0, 100% 4px, calc(100% - 2px) 4px, calc(100% - 2px) 8px, 100% 8px, 100% 12px,
+        calc(100% - 2px) 12px, calc(100% - 2px) 100%, 2px 100%, 2px 12px, 0 12px, 0 8px, 2px 8px, 2px 4px, 0 4px);
+}
+.notes-minigame-text-box::before { left: -14px; }
+.notes-minigame-text-box::after { right: -14px; }
+
+/* Torn: the bottom edge torn in uneven square steps; one strip of tape at the top centre */
+.note-style-torn .notes-minigame-text-box {
+    border-bottom: 0;
+    padding-bottom: 20px;
+    clip-path: polygon(-20px -20px, calc(100% + 20px) -20px, calc(100% + 20px) calc(100% - 6px),
+        100% calc(100% - 6px), 93% calc(100% - 6px), 93% 100%, 86% 100%, 86% calc(100% - 4px), 77% calc(100% - 4px),
+        77% calc(100% - 8px), 68% calc(100% - 8px), 68% calc(100% - 2px), 58% calc(100% - 2px), 58% 100%,
+        49% 100%, 49% calc(100% - 6px), 41% calc(100% - 6px), 41% calc(100% - 2px), 30% calc(100% - 2px),
+        30% calc(100% - 8px), 21% calc(100% - 8px), 21% calc(100% - 4px), 12% calc(100% - 4px), 12% 100%,
+        5% 100%, 5% calc(100% - 6px), -20px calc(100% - 6px));
+}
+.note-style-torn .notes-minigame-text-box::after { display: none; }
+.note-style-torn .notes-minigame-text-box::before { left: calc(50% - 24px); width: 48px; }
+
+/* Pinned: a yellow slip set 12px right and 6px down, off the page's lines, with a pixel pin */
+.note-style-pinned .notes-minigame-text-box {
+    background: #fff4a3;
+    border-color: #ddd07a;
+    transform: translate(12px, 6px);
+    box-shadow: 4px 4px 0 #c9c2a0;
+}
+.note-style-pinned .notes-minigame-text-box::after { display: none; }
+.note-style-pinned .notes-minigame-text-box::before {
+    left: calc(50% - 6px);
+    top: -6px;
+    width: 8px;
+    height: 8px;
+    background: #d63031;
+    border: 2px solid #7a1414;
+    opacity: 1;
+    clip-path: none;
 }
