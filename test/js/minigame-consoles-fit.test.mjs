@@ -63,21 +63,114 @@ test('log filter draws inside the game area, so the framework X is never wiped (
     assert.match(text, /const c = this\.gameContainer;/);
 });
 
-test('framed consoles put the X inside their frame (X4)', () => {
-    const anchors = {
-        'backup-recovery': '.backup-recovery-shell',
-        'command-board': '#cb-panel',
-        'ehr-terminal': '.ehr-terminal-panel',
-        'esd-pushbutton': '.esd-panel',
-        'sis-config-threshold': null,
-        'log-filter': null,
-        'capture-log': null
-    };
-    for (const [name, sel] of Object.entries(anchors)) {
-        const text = src(SCENES[name]);
+// X8: every console, SIS and network scene draws in the one shared console window, except the
+// scenes that are physical devices (their diegetic frame stays; UI_CONSOLES2_BUILD_LOG.md)
+const CONSOLE_SCENES = {
+    'concern-form': 'concern-form/concern-form-minigame.js',
+    'coverage-decision-form': 'coverage-decision-form/coverage-decision-form-minigame.js',
+    'drug-library-integrity': 'drug-library-integrity/drug-library-integrity-minigame.js',
+    'forensic-data-platform': 'forensic-data-platform/forensic-data-platform-minigame.js',
+    'ncsc-brief': 'ncsc-brief/ncsc-brief-minigame.js',
+    'network-architecture': 'network-architecture/network-architecture-minigame.js',
+    'scada-historian': 'scada-historian/scada-historian-minigame.js',
+    'blockchain-explorer': 'blockchain-explorer/blockchain-explorer-minigame.js',
+    'capture-log': 'capture-log/capture-log-minigame.js',
+    'warranty-checklist': 'warranty-checklist/warranty-checklist-minigame.js',
+    'log-filter': 'log-filter/log-filter-minigame.js',
+    'claims-management-system': 'claims-management-system/claims-management-system-minigame.js',
+    'backup-recovery': 'backup-recovery/backup-recovery-minigame.js',
+    'command-board': 'command-board/command-board-minigame.js',
+    'ehr-terminal': 'ehr-terminal/ehr-terminal-minigame.js',
+    'sis-config-threshold': 'sis-config-threshold/sis-config-threshold-minigame.js',
+    'ransomware-display': 'ransomware-display/ransomware-display-minigame.js',
+    'siem': 'siem/siem-dashboard-minigame.js',
+    'network-segmentation-map': 'network-segmentation-map/network-segmentation-map-minigame.js'
+};
+const DEVICE_SCENES = {
+    'esd-pushbutton': ['esd-pushbutton/esd-pushbutton-minigame.js', '.esd-panel'],
+    'infusion-pump': ['infusion-pump/infusion-pump-minigame.js', null]
+};
+
+test('X8: every console scene opts into the shared console window and draws no X placement of its own', () => {
+    for (const [name, rel] of Object.entries(CONSOLE_SCENES)) {
+        const text = src(rel);
+        assert.match(text, /static consoleWindow = true;/, `${name} opts into the shared window`);
+        assert.doesNotMatch(text, /static closeInsideFrame = true;/, `${name}: the X is laid out in the shared bar, not placed`);
+        assert.doesNotMatch(text, /^\s*closeAnchor\s*\(\)\s*\{/m, `${name}: the frame is the shared window`);
+        assert.doesNotMatch(text, /this\.container\.innerHTML\s*=/, `${name}: never replaces the shell (it would drop the shared bar)`);
+    }
+});
+
+test('X8: device scenes keep their diegetic frame with the X inside it', () => {
+    for (const [name, [rel, sel]] of Object.entries(DEVICE_SCENES)) {
+        const text = src(rel);
+        assert.doesNotMatch(text, /static consoleWindow = true;/, `${name} is a device, not a console window`);
         assert.match(text, /static closeInsideFrame = true;/, `${name} opts in`);
         if (sel) assert.ok(text.includes(`'${sel}'`), `${name} anchors the X on ${sel}`);
     }
+});
+
+test('X8: the shared window has one title bar with the X inside it, a 9-slice frame and the size caps', () => {
+    const base = src('framework/base-minigame.js');
+    const block = base.slice(base.indexOf('if (isConsole) {'), base.indexOf('} else this.container.innerHTML'));
+    assert.equal((block.match(/class="console-titlebar"/g) || []).length, 1, 'one title bar');
+    assert.equal((block.match(/id="minigame-close"/g) || []).length, 1, 'one X');
+    const bar = block.slice(block.indexOf('console-titlebar'), block.indexOf('minigame-header'));
+    assert.match(bar, /id="minigame-close"/, 'the X sits inside the title bar');
+    assert.match(bar, /class="console-title"/);
+    assert.match(bar, /class="console-subtitle"/);
+    assert.match(base, /return this\.consoleWindowEl \|\| this\.gameContainer;/, 'the window is the frame the checks measure');
+    assert.match(base, /consoleWindow !== true && this\.params\.disableClose/, 'no X placement watcher for console windows');
+
+    const fw = css('minigames-framework.css');
+    const rule = (sel) => { const i = fw.indexOf(sel + ' {'); assert.ok(i >= 0, `rule ${sel}`); return fw.slice(i, fw.indexOf('}', i)); };
+    const win = rule('.console-window');
+    assert.match(win, /width: min\(1280px, 100%\)/);
+    assert.match(win, /max-height: min\(880px, 100%\)/);
+    assert.match(win, /border-image-source: var\(--ui-frame-image\)/);
+    assert.doesNotMatch(win, /border-radius|gradient|box-shadow: [^n]/);
+    const title = rule('.console-window .console-title');
+    assert.match(title, /font-family: 'Press Start 2P'/);
+    assert.match(title, /font-size: 16px/);
+    assert.match(title, /line-height: 24px/);
+    const sub = rule('.console-window .console-subtitle');
+    assert.match(sub, /font-family: 'GNF'/);
+    assert.match(sub, /font-size: 16px/);
+    assert.match(rule('.console-titlebar > .minigame-close-button'), /position: static/, 'the X is laid out in the bar');
+    assert.match(rule('.minigame-container.minigame-console'), /padding: 8px/, 'phones: the whole window less 8px');
+    assert.match(fw, /@media \(max-width: 600px\), \(max-height: 500px\) \{\s*\.console-window \{\s*width: 100%;\s*height: 100%;/);
+});
+
+test('X8: the shared window title is escaped text and can be changed later', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'minigame-console-'));
+    try {
+        writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
+        for (const rel of ['minigames/framework/base-minigame.js', 'utils/display-dashes.js', 'utils/escape-html.js']) {
+            mkdirSync(dirname(join(dir, rel)), { recursive: true });
+            writeFileSync(join(dir, rel), readFileSync(join(root, 'js', rel), 'utf8'));
+        }
+        const { MinigameScene } = await import(pathToFileURL(join(dir, 'minigames/framework/base-minigame.js')).href);
+        class Console extends MinigameScene { static consoleWindow = true; }
+        const els = {};
+        const el = (cls) => (els[cls] ||= { textContent: '', hidden: false, style: {}, classList: { add() {}, toggle() {} } });
+        const container = {
+            innerHTML: '', classList: { toggle() {}, add() {} },
+            querySelector: (sel) => ({ '.console-window': el('win'), '.console-title': el('title'), '.console-subtitle': el('sub'), '.minigame-header': el('hdr'), '.minigame-game-container': el('body') })[sel] || null
+        };
+        const savedDoc = globalThis.document, log = console.log;
+        globalThis.document = { getElementById: () => ({ addEventListener() {} }) };
+        console.log = () => {};
+        try {
+            const scene = new Console(container, { title: '<b>SIEM</b>', consoleSubtitle: 'Trust & co' });
+            scene.init();
+            assert.match(container.innerHTML, /&lt;b&gt;SIEM&lt;\/b&gt;/, 'title escaped');
+            assert.match(container.innerHTML, /Trust &amp; co/, 'subtitle escaped');
+            assert.equal(scene.closeAnchor(), el('win'));
+            scene.setConsoleTitle('Fleet console', '');
+            assert.equal(el('title').textContent, 'Fleet console');
+            assert.equal(el('sub').hidden, true, 'an empty subtitle hides');
+        } finally { globalThis.document = savedDoc; console.log = log; }
+    } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
 test('no scene-owned px minimum or viewport height pushes a frame off a short window (X2)', () => {

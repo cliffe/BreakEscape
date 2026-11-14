@@ -29,10 +29,18 @@ const txt = (value) => escapeHtml(displayDashes(value));
  *                    nodes follow the same shape as main nodes but without zone
  */
 export class NetworkArchitectureMinigame extends MinigameScene {
-    // The X sits inside the frame (MinigameScene.closeInsideFrame)
-    static closeInsideFrame = true;
-    // Its frame keeps a bar at the bottom for Cancel (minigames-framework.css)
-    static controlsOverlay = true;
+    // Draws in the shared console window (UI decision X8): title bar and X come from there
+    static consoleWindow = true;
+    static consoleWindowFill = true;
+
+    // NAD1: the diagram is drawn at a whole-number scale of its viewBox (1x or 2x), so every
+    // label lands on a whole pixel size. The labels are 8 viewBox units of VT323 (16px on
+    // screen) and 4 units of Press Start 2P (8px), which needs 2x: the node boxes are too
+    // small to hold 16px text at 1x. So the diagram is always 2x and a pane smaller than it
+    // pans (pixel scrollbars, or drag with the mouse). The scale is chosen in
+    // diagramScale(), so a scenario with larger boxes could allow 1x by lowering the minimum.
+    static DIAGRAM_MIN_SCALE = 2;
+    static DIAGRAM_MAX_SCALE = 2;
 
     constructor(container, params = {}) {
         super(container, {
@@ -52,7 +60,6 @@ export class NetworkArchitectureMinigame extends MinigameScene {
 
     init() {
         super.init();
-        if (this.headerElement) this.headerElement.style.display = 'none';
         this.container.classList.add('nad-minigame-container');
         this.gameContainer.classList.add('nad-game-container');
 
@@ -61,8 +68,15 @@ export class NetworkArchitectureMinigame extends MinigameScene {
         this.renderLayout();
     }
 
+    consoleTitle() {
+        return this.params.title || 'NETWORK ARCHITECTURE (PURDUE MODEL)';
+    }
+
     start() {
         super.start();
+        this._fitDiagramScale();
+        this.addEventListener(window, 'resize', () => this._fitDiagramScale());
+        this._attachPan();
         const reviewedVar = this.params.reviewedVar || 'network_architecture_reviewed';
         const alreadySeen = window.gameState?.globalVariables?.[reviewedVar];
         if (!alreadySeen) {
@@ -74,11 +88,9 @@ export class NetworkArchitectureMinigame extends MinigameScene {
     // ── Layout ───────────────────────────────────────────────────────────────────
 
     renderLayout() {
-        const title = this.params.title || 'NETWORK ARCHITECTURE (PURDUE MODEL)';
         this.gameContainer.innerHTML = `
 <div class="nad-wrap">
   <div class="nad-header">
-    <div class="nad-title">${txt(title)}</div>
     <div class="nad-legend">
       <span class="nad-leg-item"><span class="nad-leg-line nad-leg-normal"></span>Intended path</span>
       <span class="nad-leg-item"><span class="nad-leg-line nad-leg-boundary"></span>IT/OT boundary</span>
@@ -88,7 +100,7 @@ export class NetworkArchitectureMinigame extends MinigameScene {
     </div>
   </div>
   <div class="nad-body">
-    <div class="nad-svg-wrap">
+    <div class="nad-svg-wrap pixel-scroll">
       ${this._buildSVG()}
     </div>
     <div class="nad-detail" id="nad-detail">
@@ -99,6 +111,65 @@ export class NetworkArchitectureMinigame extends MinigameScene {
 
         this._svgEl = this.gameContainer.querySelector('.nad-svg');
         this._attachNodeListeners();
+    }
+
+    _viewBoxSize() {
+        const parts = String(this.params.viewBox || '0 0 900 572').trim().split(/[\s,]+/).map(Number);
+        const w = parts[2] > 0 ? parts[2] : 900;
+        const h = parts[3] > 0 ? parts[3] : 572;
+        return { w, h };
+    }
+
+    // Whole-number scale: the largest that fits the pane's width, never under the minimum
+    diagramScale(paneWidth) {
+        const { w } = this._viewBoxSize();
+        const C = this.constructor;
+        const fit = Math.floor((paneWidth || 0) / w);
+        return Math.min(C.DIAGRAM_MAX_SCALE, Math.max(C.DIAGRAM_MIN_SCALE, fit));
+    }
+
+    _fitDiagramScale() {
+        const svg = this._svgEl;
+        const wrap = this.gameContainer?.querySelector?.('.nad-svg-wrap');
+        if (!svg || !wrap) return;
+        const cs = window.getComputedStyle(wrap);
+        const inner = wrap.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0);
+        const s = this.diagramScale(inner);
+        const { w, h } = this._viewBoxSize();
+        svg.setAttribute('width', String(Math.round(w * s)));
+        svg.setAttribute('height', String(Math.round(h * s)));
+        svg.dataset.scale = String(s);
+    }
+
+    // Drag to pan the diagram with the mouse (touch scrolls natively); a click on a node
+    // still selects it unless the pointer moved
+    _attachPan() {
+        const wrap = this.gameContainer?.querySelector?.('.nad-svg-wrap');
+        if (!wrap) return;
+        let drag = null;
+        this.addEventListener(wrap, 'pointerdown', (e) => {
+            if (e.pointerType !== 'mouse' || e.button !== 0) return;
+            drag = { x: e.clientX, y: e.clientY, l: wrap.scrollLeft, t: wrap.scrollTop, moved: false };
+        });
+        this.addEventListener(window, 'pointermove', (e) => {
+            if (!drag) return;
+            const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+            if (!drag.moved && Math.abs(dx) + Math.abs(dy) < 4) return;
+            drag.moved = true;
+            wrap.classList.add('nad-panning');
+            wrap.scrollLeft = drag.l - dx;
+            wrap.scrollTop = drag.t - dy;
+        });
+        this.addEventListener(window, 'pointerup', () => {
+            if (drag?.moved) {
+                // swallow the click that ends a drag so it does not select a node
+                const stop = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
+                wrap.addEventListener('click', stop, { capture: true, once: true });
+                setTimeout(() => wrap.removeEventListener('click', stop, { capture: true }), 0);
+            }
+            drag = null;
+            wrap.classList.remove('nad-panning');
+        });
     }
 
     _buildSVG() {
@@ -150,14 +221,14 @@ export class NetworkArchitectureMinigame extends MinigameScene {
             const zx = z.x !== undefined ? z.x : 8;
             const zw = z.width !== undefined ? z.width : 780;
             zonesSvg += `<rect class="nad-zone" x="${escapeHtml(zx)}" y="${escapeHtml(z.y)}" width="${escapeHtml(zw)}" height="${escapeHtml(z.h)}" fill="${escapeHtml(z.fill)}" stroke="${escapeHtml(z.stroke)}" stroke-width="2"/>`;
-            zonesSvg += `<text class="nad-zone-label" x="${escapeHtml(zx + 6)}" y="${escapeHtml(z.y + 11)}">${txt(z.label)}</text>`;
+            zonesSvg += `<text class="nad-zone-label" x="${escapeHtml(zx + 6)}" y="${escapeHtml(z.y + 9)}">${txt(z.label)}</text>`;
         });
 
         externalOrgs.forEach(org => {
             zonesSvg += `<rect class="nad-zone" x="${escapeHtml(org.x)}" y="${escapeHtml(org.y)}" width="${escapeHtml(org.w)}" height="${escapeHtml(org.h)}" fill="#0d1a0d" stroke="#14532d" stroke-width="2"/>`;
-            zonesSvg += `<text class="nad-zone-label" x="${escapeHtml(org.x + 6)}" y="${escapeHtml(org.y + 11)}">${txt(org.label)}</text>`;
+            zonesSvg += `<text class="nad-zone-label" x="${escapeHtml(org.x + 6)}" y="${escapeHtml(org.y + 9)}">${txt(org.label)}</text>`;
             if (org.label2) {
-                zonesSvg += `<text class="nad-zone-label" x="${escapeHtml(org.x + 6)}" y="${escapeHtml(org.y + 22)}">${txt(org.label2)}</text>`;
+                zonesSvg += `<text class="nad-zone-label" x="${escapeHtml(org.x + 6)}" y="${escapeHtml(org.y + 17)}">${txt(org.label2)}</text>`;
             }
         });
 
@@ -171,7 +242,7 @@ export class NetworkArchitectureMinigame extends MinigameScene {
 
             nodesSvg += `
 <g class="nad-node ${zoneCls}" id="nad-${escapeHtml(n.id)}" data-id="${escapeHtml(n.id)}" style="cursor:pointer" role="button" tabindex="0">
-  <rect class="nad-node-rect" x="${escapeHtml(n.x)}" y="${escapeHtml(n.y)}" width="${escapeHtml(n.w)}" height="${escapeHtml(n.h)}" rx="2"/>
+  <rect class="nad-node-rect" x="${escapeHtml(n.x)}" y="${escapeHtml(n.y)}" width="${escapeHtml(n.w)}" height="${escapeHtml(n.h)}"/>
   <text class="nad-node-label" x="${escapeHtml(n.x + n.w / 2)}" y="${escapeHtml(n.y + (n.sublabel ? 14 : 20))}">${txt(n.label)}</text>
   ${n.sublabel ? `<text class="nad-node-sub" x="${escapeHtml(n.x + n.w / 2)}" y="${escapeHtml(n.y + 26)}">${txt(n.sublabel)}</text>` : ''}
   ${warnBadge}
@@ -179,7 +250,7 @@ export class NetworkArchitectureMinigame extends MinigameScene {
         });
 
         return `
-<svg class="nad-svg" viewBox="${escapeHtml(viewBox)}" xmlns="http://www.w3.org/2000/svg">
+<svg class="nad-svg" viewBox="${escapeHtml(viewBox)}" width="${escapeHtml(this._viewBoxSize().w * this.constructor.DIAGRAM_MIN_SCALE)}" height="${escapeHtml(this._viewBoxSize().h * this.constructor.DIAGRAM_MIN_SCALE)}" data-scale="${escapeHtml(this.constructor.DIAGRAM_MIN_SCALE)}" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <marker id="nad-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="#ef4444"/>

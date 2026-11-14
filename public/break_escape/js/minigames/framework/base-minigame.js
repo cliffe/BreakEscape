@@ -25,6 +25,17 @@ export class MinigameScene {
     // with their own CSS (title bars, the blockchain explorer, the shredded document).
     static closeInsideFrame = false;
 
+    // true: the scene draws inside the shared console window (UI decision X8): the theme's
+    // 9-slice frame, at most 1280x880, centred over the dimmed game (the whole window less
+    // 8px on phones), with one title bar holding the title (Press Start 2P 16px), an optional
+    // GNF subtitle and the X. The scene fills the game area under the bar and draws no title
+    // bar or outer frame of its own; its inner panels keep their own look. The title is
+    // consoleTitle() and the subtitle consoleSubtitle(); setConsoleTitle() changes them later.
+    static consoleWindow = false;
+    // With consoleWindow: true for a data console whose own panes scroll (a diagram, a log,
+    // a dashboard), so the window takes its full size instead of wrapping its content
+    static consoleWindowFill = false;
+
     constructor(container, params) {
         this.container = container;
         this.params = params;
@@ -43,7 +54,29 @@ export class MinigameScene {
         const disableClose = this.params.disableClose === true;
         const showCancel = this.constructor.keepsCancelButton === true && this.params.showCancel !== false && !disableClose;
 
-        this.container.innerHTML = `
+        const isConsole = this.constructor.consoleWindow === true;
+        this.container.classList?.toggle?.('minigame-console', isConsole);
+        if (isConsole) {
+            const sub = this.consoleSubtitle();
+            this.container.innerHTML = `
+            <div class="console-window${this.constructor.consoleWindowFill === true ? ' console-window-fill' : ''}" data-console-window>
+                <div class="console-titlebar">
+                    <div class="console-titles">
+                        <h2 class="console-title">${escapeHtml(displayDashes(this.consoleTitle()))}</h2>
+                        <div class="console-subtitle" ${sub ? '' : 'hidden'}>${escapeHtml(displayDashes(sub))}</div>
+                    </div>
+                    <button class="minigame-close-button minigame-close-in-frame" id="minigame-close" aria-label="Close" ${disableClose ? 'style="display:none"' : ''}>&times;</button>
+                </div>
+                <div class="minigame-header" style="display:none"><h3></h3></div>
+                <div class="minigame-game-container console-body"></div>
+                <div class="minigame-message-container"></div>
+                ${showCancel ? `<div class="minigame-controls"><button class="minigame-button" id="minigame-cancel">${escapeHtml(this.params.cancelText || 'Cancel')}</button></div>` : ''}
+            </div>
+        `;
+            this.consoleWindowEl = this.container.querySelector('.console-window');
+            this.consoleTitleEl = this.container.querySelector('.console-title');
+            this.consoleSubtitleEl = this.container.querySelector('.console-subtitle');
+        } else this.container.innerHTML = `
             <button class="minigame-close-button" id="minigame-close" ${disableClose ? 'style="display:none"' : ''}>&times;</button>
             <div class="minigame-header">
                 <h3>${escapeHtml(displayDashes(this.params.title || 'Minigame'))}</h3>
@@ -124,9 +157,27 @@ export class MinigameScene {
         return null;
     }
 
-    // The element whose top-right corner holds the X (closeInsideFrame scenes)
+    // The element whose top-right corner holds the X (closeInsideFrame scenes); a console
+    // scene's frame is the shared window
     closeAnchor() {
-        return this.gameContainer;
+        return this.consoleWindowEl || this.gameContainer;
+    }
+
+    // Shared console window title and subtitle (plain text)
+    consoleTitle() {
+        return this.params?.title || '';
+    }
+
+    consoleSubtitle() {
+        return this.params?.consoleSubtitle || '';
+    }
+
+    setConsoleTitle(title, subtitle) {
+        if (this.consoleTitleEl && title != null) this.consoleTitleEl.textContent = displayDashes(String(title));
+        if (this.consoleSubtitleEl && subtitle !== undefined) {
+            this.consoleSubtitleEl.textContent = displayDashes(String(subtitle || ''));
+            this.consoleSubtitleEl.hidden = !subtitle;
+        }
     }
 
     // Puts the X inside the frame: below and left of the frame's border by a 4px gap, kept
@@ -204,7 +255,8 @@ export class MinigameScene {
         this.gameState.isActive = true;
         console.log("Minigame started");
         try { this._watchShellScrollbar(); } catch (e) { console.warn('watchShellScrollbar', e); }
-        if (this.constructor.closeInsideFrame === true && this.params.disableClose !== true) {
+        // A console window's X is laid out in its title bar, so it needs no placing
+        if (this.constructor.closeInsideFrame === true && this.constructor.consoleWindow !== true && this.params.disableClose !== true) {
             try { this._watchCloseButton(); } catch (e) { console.warn('placeCloseButton', e); }
         }
         

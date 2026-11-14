@@ -6,12 +6,6 @@
    ========================================================= */
 
 /* ── Container ─────────────────────────────────────────── */
-.nad-minigame-container {
-    background: #070b14;
-    height: 100%;
-    box-sizing: border-box;
-}
-
 .nad-game-container {
     height: 100%;
     box-sizing: border-box;
@@ -31,10 +25,9 @@
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    /* The right padding keeps the legend clear of the X (38px with its border, 4px inside
-       the frame's top-right corner) with an 8px gap (slice 7 R5 m6, critique B X4) */
-    padding: 8px 54px 8px 14px;
-    min-height: 46px;
+    /* The title and the X are in the shared console window's bar (X8); this strip holds
+       the legend only */
+    padding: 8px 14px;
     box-sizing: border-box;
     background: #0a0f1e;
     border-bottom: 2px solid #1e3a5a;
@@ -42,21 +35,15 @@
     flex-wrap: wrap;
 }
 
-.nad-title {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 8px;
-    color: #e2e8f0;
-    letter-spacing: 0.5px;
-    line-height: 16px;
-}
 
 /* ── Legend ────────────────────────────────────────────── */
 .nad-legend {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 4px 14px;
     flex-wrap: wrap;
-    flex-shrink: 0;
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
 .nad-leg-item {
@@ -99,11 +86,23 @@
     box-sizing: border-box;
 }
 
+.nad-svg-wrap {
+    cursor: grab;
+}
+
+.nad-svg-wrap.nad-panning {
+    cursor: grabbing;
+    user-select: none;
+}
+
+/* NAD1: drawn at the whole-number scale set in its width and height attributes (2x of the
+   viewBox), never stretched to the pane, so the labels stay on whole pixel sizes; the pane
+   pans. Lines and boxes draw on whole pixels. */
 .nad-svg {
     display: block;
-    width: 100%;
-    height: auto;
-    min-width: 700px;
+    flex: none;
+    max-width: none;
+    shape-rendering: crispEdges;
 }
 
 /* ── SVG: Zones ────────────────────────────────────────── */
@@ -113,8 +112,7 @@
 
 .nad-zone-label {
     font-family: 'Press Start 2P', monospace;
-    font-size: 8px;
-    line-height: 16px;
+    font-size: 4px;   /* viewBox units: 8px on screen at 2x */
     fill: #64748b;
     letter-spacing: 0.3px;
     pointer-events: none;
@@ -123,7 +121,7 @@
 /* ── SVG: Connection lines ─────────────────────────────── */
 .nad-line {
     fill: none;
-    stroke-width: 1.5;
+    stroke-width: 1;   /* 2px on screen */
     transition: opacity 0.2s;
 }
 
@@ -144,7 +142,7 @@
 
 .nad-line-label {
     font-family: 'VT323', monospace;
-    font-size: 7px;
+    font-size: 8px;   /* viewBox units: 16px on screen at 2x */
     fill: #64748b;
     text-anchor: middle;
     pointer-events: none;
@@ -154,7 +152,7 @@
 .nad-line-attack {
     fill: none;
     stroke: #ef4444;
-    stroke-width: 2.5;
+    stroke-width: 2;
     stroke-dasharray: 10 6;
     marker-end: url(#nad-arrow);
     opacity: 0;
@@ -182,7 +180,7 @@
 }
 
 .nad-node-rect {
-    stroke-width: 1.5;
+    stroke-width: 1;   /* 2px on screen */
     transition: stroke 0.2s, stroke-width 0.2s;
 }
 
@@ -200,13 +198,13 @@
 /* Selected */
 .nad-node.nad-node-selected .nad-node-rect {
     stroke: #f59e0b;
-    stroke-width: 2.5;
+    stroke-width: 2;
 }
 
 /* Node text */
 .nad-node-label {
     font-family: 'VT323', monospace;
-    font-size: 9px;
+    font-size: 8px;   /* viewBox units: 16px on screen at 2x */
     fill: #e2e8f0;
     text-anchor: middle;
     pointer-events: none;
@@ -214,14 +212,15 @@
 
 .nad-node-sub {
     font-family: 'VT323', monospace;
-    font-size: 7px;
+    font-size: 8px;   /* viewBox units: 16px on screen at 2x */
     fill: #94a3b8;
     text-anchor: middle;
     pointer-events: none;
 }
 
 .nad-node-warn {
-    font-size: 9px;
+    font-family: 'VT323', monospace;
+    font-size: 8px;   /* viewBox units: 16px on screen at 2x */
     fill: #f59e0b;
     pointer-events: none;
 }
