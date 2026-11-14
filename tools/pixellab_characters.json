@@ -227,6 +227,17 @@
     "imported": "2026-11-05",
     "sit_from": "58458568-e335-4437-8edb-048817f7652c"
   },
+  "derek_lawson": {
+    "character_id": "f9fdf0ce-34a5-424e-a4c1-af43aaaa8f37",
+    "name": "A man office worker in his forties with short dark...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-05",
+    "sit_from": "2700d754-04d2-4dbf-8739-a56afcaed3f0",
+    "copied_from": "male_office_worker_v2"
+  },
   "dev_malhotra": {
     "character_id": "17bea81b-0912-4868-b9ac-3ed08f124c09",
     "name": "Make portrait for Officer Dev Malhotra\nA slim Brit...",
@@ -605,6 +616,17 @@
     },
     "imported": "2026-11-06",
     "sit_from": "d31ee10d-3c0d-4251-9d5b-b17a69a04f20"
+  },
+  "kevin_park": {
+    "character_id": "ae175532-182f-435a-8f0a-d7408d88eb2f",
+    "name": "A young man with short dark hair, a full dark bear...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-06",
+    "sit_from": "d2346e82-0a06-4440-9efc-3bce63aca588",
+    "copied_from": "male_nerd_v2"
   },
   "len": {
     "character_id": "d6814179-c356-43a2-87cb-204828ffa6c5",
