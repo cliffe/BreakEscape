@@ -51,7 +51,8 @@
       2px 10px,
       0px 10px
     );
-    box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+    /* C-PH4: the stepped clip-path clips a soft glow away entirely, so it never shows but
+       trips the UI audit. Removed. */
     font-family: 'GNF', monospace;
 }
 

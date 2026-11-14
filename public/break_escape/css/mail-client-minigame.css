@@ -69,7 +69,9 @@
 /* Close sits at the right of the header row, never wrapped to its own line (P1-T). */
 .mail-toolbar .se-overlay-close { margin-left: auto; }
 .mail-folder-btn { display: inline-flex; align-items: center; gap: 6px; }
-.mail-folder-btn.active { outline: 2px solid var(--ui-accent, #ffcc44); }
+/* C-MC3: the current folder reads as a pressed/accent-filled tab, not a yellow outline that
+   looks like a keyboard focus ring (focus keeps the outline, via the shared :focus-visible). */
+.mail-folder-btn.active { background: var(--ui-accent, #ffcc44); color: #16213a; border-color: var(--ui-accent, #ffcc44); }
 .mail-folder-count {
     min-width: 1.4em;
     padding: 0 4px;

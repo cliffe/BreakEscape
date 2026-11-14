@@ -139,7 +139,7 @@ export class PretextPrepMinigame extends SocialOverlayScene {
 
         const head = h('div', { class: 'pretext-head' },
             h('h2', { class: 'pretext-title', text: words.title }),
-            brief.characterName ? h('p', { class: 'pretext-who', text: brief.characterName }) : null,
+            brief.characterName ? h('p', { class: 'pretext-who', text: `Calling: ${brief.characterName}` }) : null,
             this._closeButton()
         );
         root.appendChild(head);

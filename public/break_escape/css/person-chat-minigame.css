@@ -262,11 +262,15 @@
     flex: 0 0 auto;
 }
 
+/* C-PC1: a solid colour (not 60% on grey) and hidden on touch, where there is no space bar. */
 .person-chat-continue-hint {
     font-size: 11px;
     font-weight: normal;
-    color: rgba(78, 255, 74, 0.6);
+    color: #4eff4a;
     letter-spacing: 0.05em;
+}
+@media (pointer: coarse) {
+    .person-chat-continue-hint { display: none; }
 }
 
 .person-chat-continue-button:hover {
