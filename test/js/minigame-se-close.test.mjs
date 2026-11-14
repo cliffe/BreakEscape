@@ -185,7 +185,10 @@ test('n2 the shared .se-notice is applied to the listed scene notices', () => {
         ['minigames/sort-drill/sort-drill-minigame.js', /sd-reload-note se-notice/],
         ['minigames/pretext-prep/pretext-prep-minigame.js', /pretext-scope se-notice/],
         ['minigames/engagement-report/engagement-report-minigame.js', /er-note[^']*se-notice/],
-        ['minigames/landing-page-builder/landing-page-builder-minigame.js', /lpb-captures-empty se-notice/]
+        ['minigames/landing-page-builder/landing-page-builder-minigame.js', /lpb-captures-empty se-notice/],
+        // R2 part A C-X4: the two notices still missing the class last round.
+        ['minigames/inbox-triage/inbox-triage-minigame.js', /tri-brief-restart se-notice/],
+        ['minigames/landing-page-builder/landing-page-builder-minigame.js', /lpb-captures-banner se-notice/]
     ];
     for (const [rel, re] of cases) {
         assert.match(readFileSync(join(js, rel), 'utf8'), re, `${rel}: notice carries .se-notice`);

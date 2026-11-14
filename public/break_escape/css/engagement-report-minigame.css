@@ -58,10 +58,6 @@
     color: var(--ui-text-dim, #a8b2c8);
 }
 
-.er-close {
-    flex: 0 0 auto;
-}
-
 .er-live {
     position: absolute;
     width: 1px;

@@ -55,13 +55,6 @@
     font-size: 18px;
 }
 
-.pretext-close {
-    min-width: 88px;
-    min-height: 44px;
-    font-family: "GNF", monospace;
-    cursor: pointer;
-}
-
 .pretext-scroll {
     flex: 1 1 auto;
     min-height: 0;

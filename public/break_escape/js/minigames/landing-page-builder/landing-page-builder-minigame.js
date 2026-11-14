@@ -436,7 +436,7 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
         const head = h('header', { class: 'lpb-head' },
             h('h2', { class: 'lpb-title', text: 'Captures' }),
             h('div', { class: 'lpb-head-buttons' }, close));
-        const banner = h('p', { class: 'lpb-captures-banner', role: 'note', text: captureBannerText(reveal) });
+        const banner = h('p', { class: 'lpb-captures-banner se-notice', role: 'note', text: captureBannerText(reveal) });
         const list = h('ul', { class: 'lpb-captures-list', 'aria-label': 'Captures' });
         if (!entries.length) {
             list.appendChild(h('li', { class: 'lpb-captures-empty se-notice', text: 'No captures yet.' }));
