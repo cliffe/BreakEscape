@@ -66,3 +66,29 @@ Run on the merged tip (main cb6d7feb4 merged into the branch, a5a2db3b7, then th
 - `ui-rules-audit --all --strict --skip person-chat,network-view` at 1400x1000, 800x600, 915x412, 390x844: `frame-offscreen 1` (alarm panel at 915x412, the baseline), clipped 0, x-on-frame 0, overflow 0. The other non-clean lines are old: SIEM `cancel-beside-x` (known false positive, UI_CONSOLES_BUILD_LOG) and `examine` `font-size` at 390x844 (`h3.examine-name` Press Start 2P 13px; not touched here, left for the owner of that scene).
 - `shell-x-check`: 172 checked, 0 failed.
 - Node tests on the merged tip: minigame-shell-fit 30/30, hud-lanes-ring-layer 6/6, dead-console-button-rules 2/2, ui-hud-lanes 40/40, phone-ring-layer 23/23.
+
+## Fix round 1 (review R1, UI_BACKLOG_REVIEW_R1.md)
+
+Shots and probe output: `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/e7a32fee-bb00-4a46-ab62-f0d4de35d260/scratchpad/ui-backlog-f1/` (game 4258 on :3470; audit game 4267). Main d69c29089 merged, not rebased.
+
+**M1 (banner covered controls).** `ringLayerSpot` (hud-lanes.js) now takes the open minigame's title boxes, control boxes (button, input, textarea, select, a[href], role=button, onclick, tabindex, `.pin-minigame-display`, plus anything with a pointer cursor, except an element over half the screen), the notify lane's toasts and the minigame's frame (`measureMinigame`). Order: bottom centre, bottom right, just under the frame (clamped to the viewport), the notify lane's right end, and only when none is clear the original top centre. Boxes are grown by 4px. No minigame boxes: top centre as on main. The banner's look is unchanged.
+
+Spot used, measured by `tools/playtest/ring-banner-probe.mjs` (boxes of every control read in the page, intersected with the banner box; 0 overlaps each time):
+| scene and size | spot | banner box |
+|---|---|---|
+| PIN 1400x1000 | bottom | 520,892 to 880,984 |
+| PIN 915x412 | bottom | 278,304 to 638,396 |
+| PIN 390x844 | bottom | 16,734 to 374,828 |
+| PIN 360x740 | bottom | 16,630 to 344,724 |
+| EHR 915x412 | bottom | 278,304 to 638,396 |
+| EHR 390x844 | lane (the [UNDERSTOOD] button sits at 127..263 x 705..757, so the bottom is not clear) | 16,84 to 374,178 |
+
+**m1 (warning toasts over titles).** `measureHud` raises `notifyTopMin` to the lowest bottom of the open minigame's headings and X (headings above 60 percent of the height), so the notify lane starts below them. PIN warning toast boxes, none touching a title or the X: 1400x1000 780,215 to 1380,343; 915x412 16,123 to 899,210; 390x844 16,207 to 374,350; 360x740 16,155 to 344,298. Trade-off: a toast is a wide box under the title, so it now covers part of the PIN display or the top keys for its few seconds (1 to 7 controls at the four sizes), where before it covered the title. It is feedback the player has just asked for and it times out. The user may want to rule on this (see the report).
+
+**m2 (banner over lane toasts).** Chose to make the banner avoid the toasts' current boxes (one extra array in the same overlap test) rather than make it a lane member, which would have changed `computeLanes` and its tests for a banner that is only placed while a minigame is open. A toast coming or going already re-places it (the toast container is observed). If nothing is clear the top centre fallback may still overlap a toast (EHR 390x844 with a warning up: default, over the toast at y 84); the probe records that as a note.
+
+**m3.** `test/js/hud-lanes-ring-layer.test.mjs` 8/8: feeds boxes measured from the PIN layout at 915x412 and 390x844 into `ringLayerSpot` and asserts no key, display, title or X is under the banner, plus the R1 spot (539,84) is rejected, a toast is avoided, the fallback, the viewport clamp, no-minigame and the source wiring. Mutation: R1's hud-lanes.js put back, 6 of 8 fail (2 pass); new code restored, 8/8. Reusable live probe: `tools/playtest/ring-banner-probe.mjs --port P --game G --size WxH [--scene pin|ehr-terminal]`; it exits 1 on any control, title or toast overlap.
+
+**Nits.** `hits` lost its unused `t` parameter; the below spot is clamped to the viewport; the vpn-log-viewer stylesheet is on `docs/IDEAS_BACKLOG.md` (2026-11-14).
+
+Gates on the merged tip (main d69c29089 merged): `ui-rules-audit --all --strict --skip person-chat,network-view` at 1400x1000, 800x600, 915x412, 390x844: frame-offscreen 1 (mg-alarm-panel at 915x412, the baseline), window-offscreen 0, clipped 0, x-on-frame 0, overflow 0; the other lines are the old ones (examine font-size 1 at 390x844). `shell-x-check`: 172 checked, 0 failed. Node: hud-lanes-ring-layer 8/8, ui-hud-lanes 40/40, phone-ring-layer 23/23, bark-release-policy 31/31, npc-bark-delay 20/20, phone-call-bark-hold 2/2.
