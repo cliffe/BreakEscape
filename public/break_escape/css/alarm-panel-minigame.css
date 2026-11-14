@@ -11,11 +11,14 @@
 
 .ap-game-container {
     display: flex;
-    align-items: center;
-    justify-content: center;
+    align-items: safe center;
+    justify-content: safe center;
     height: 100%;
     padding: 16px;
     box-sizing: border-box;
+    /* On a short window the panel scrolls here instead of running off the top and bottom
+       (critique A41) */
+    overflow: auto;
 }
 
 /* ── Panel wrapper ──────────────────────────────────────────────────────── */
@@ -23,7 +26,14 @@
 .ap-panel-wrap {
     background: #080e1b;
     border: 2px solid #2a3a5a;
-    width: 460px;
+    width: 100%;
+    max-width: 460px;
+    /* Text is never scaled: the labels are 8px pixel text drawn in the SVG. On a phone the
+       panel takes the screen's width instead of keeping 460px, and the SVG (1:1,
+       preserveAspectRatio slice) loses only its empty right-hand end, so nothing scrolls
+       sideways (UI shell reviews M5, R2 M2) */
+    flex: 0 0 auto;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     font-family: 'Press Start 2P', monospace;
@@ -36,8 +46,11 @@
     align-items: center;
     justify-content: space-between;
     padding: 14px 18px;
+    /* room for the X in the panel's top-right corner (critique A43) */
+    padding-right: 56px;
     border-bottom: 2px solid #2a3a5a;
     background: #0a1020;
+    flex-shrink: 0;
 }
 
 .ap-panel-title {
@@ -47,12 +60,11 @@
     line-height: 1.8;
 }
 
-/* LIVE indicator — pulsing green dot */
+/* LIVE indicator: a pulsing green square lamp (no radius, critique A42) */
 .ap-live-dot {
     display: inline-block;
     width: 10px;
     height: 10px;
-    border-radius: 50%;
     background: #00c853;
     flex-shrink: 0;
     animation: ap-live-pulse 2s ease-in-out infinite;
@@ -66,13 +78,15 @@
 /* ── SVG panel ──────────────────────────────────────────────────────────── */
 
 .ap-svg {
+    /* Drawn at the viewBox size (1:1, set in the markup), never scaled */
+    flex: 0 0 auto;
+    align-self: center;
     width: 100%;
-    padding: 0 8px;
-    box-sizing: border-box;
+    max-width: 420px;
 }
 
-/* Smooth colour transitions on lamp circles */
-.ap-svg circle {
+/* Colour transitions on the lamps */
+.ap-svg polygon {
     transition: fill 0.4s ease;
 }
 
@@ -97,7 +111,7 @@
 
 .ap-label {
     font-family: 'Press Start 2P', monospace;
-    font-size: 7px;
+    font-size: 8px;   /* Press Start 2P on its 8px grid (critique A42) */
     fill: #c8d8ff;
 }
 
@@ -110,17 +124,19 @@
 /* Row separator lines */
 .ap-row-sep {
     stroke: #1a2438;
-    stroke-width: 1;
+    stroke-width: 2;
 }
 
 /* ── Footer ─────────────────────────────────────────────────────────────── */
 
 .ap-footer {
     font-family: 'Press Start 2P', monospace;
-    font-size: 7px;
-    color: #1e2d4a;
+    font-size: 8px;
+    line-height: 16px;
+    color: #6b7fa8;   /* readable on the panel (critique A42) */
     letter-spacing: 1px;
     text-align: center;
     padding: 8px 18px;
     border-top: 2px solid #1a2438;
+    flex-shrink: 0;
 }

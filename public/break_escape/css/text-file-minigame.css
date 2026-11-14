@@ -57,6 +57,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 8px 12px;
+    /* the X sits at the title bar's right end, inside the window (critique A34) */
+    padding-right: 48px;
     background: #f6f6f6;
     border-bottom: 2px solid #d1d5db;
     min-height: 28px;
@@ -344,15 +346,18 @@
     .content-header {
         padding: 6px 12px;
         min-height: 32px;
+        flex-wrap: wrap;
+        gap: 6px;
     }
     
     .content-label {
         font-size: 18px;
     }
     
+    /* Readable on a phone: the toolbar wraps rather than shrinking its text (critique A36) */
     .action-btn {
         padding: 3px 8px;
-        font-size: 11px;
+        font-size: 16px;
     }
     
     .file-content {

@@ -121,6 +121,13 @@ export class TextFileMinigame extends MinigameScene {
         return this.pcMonitor?.controls || null;
     }
 
+    // The X sits in the file window's title bar, inside the window: there are no fake
+    // traffic-light buttons beside it any more (critique A34)
+    closeAnchor() {
+        if (this.pcMonitor) return this.gameContainer;
+        return this.gameContainer?.querySelector?.('.text-file-container') || this.gameContainer;
+    }
+
     // In the monitor the X lives in the bezel's top strip (css/pc-monitor.css)
     placeCloseButton() {
         if (this.pcMonitor) return;
@@ -157,10 +164,75 @@ export class TextFileMinigame extends MinigameScene {
         `;
         this.fileContent = this.gameContainer.querySelector('#file-content');
         this.copyBtn = this.gameContainer.querySelector('#copy-btn');
+        // The PC's taskbar under the window (UX slice 6, critique E11): the account stays in
+        // view, and the start panel leads back to the desktop. Loaded when needed, as the
+        // note's drag is, so a reader outside a PC never pulls it in.
+        if (this.pcScreen?.pcId) {
+            this.taskbarReady = import('../../utils/pc-taskbar.js')
+                .then((m) => this.mountTaskbar(m))
+                .catch((e) => console.warn('PC taskbar', e));
+        }
         this.selectAllBtn = null;
         this.closeBtn = null;
         this.minimizeBtn = null;
         this.maximizeBtn = null;
+    }
+
+    /**
+     * The taskbar and start panel (utils/pc-taskbar.js) for the PC this file was opened on.
+     * Desktop and a mapped share leave the file for that view; Lock, Switch user and Sign out
+     * act on the PC's session as on the desktop.
+     */
+    mountTaskbar(m) {
+        const host = this.gameContainer?.querySelector?.('.share-folder-layout.pc-file');
+        if (!host || !host.isConnected || this.taskbar) return;
+        const pcId = this.pcScreen.pcId;
+        const kept = m.rememberedDesktop(pcId);
+        const desktop = kept?.containerItem || null;
+        const pcData = desktop?.scenarioData || m.findPcData(pcId);
+        const session = window.pcSessions?.get?.(pcId) || null;
+        const remote = desktop?.scenarioData?.remote?.footholdId ? desktop.scenarioData.remote
+            : (session?.remote === true ? { footholdId: session.footholdId } : null);
+        const linkName = remote?.footholdId ? (window.networkLinks?.get?.(remote.footholdId)?.name || null) : null;
+        this.taskbarModel = m.pcTaskbarModel({ pcData, session, remote: !!remote, linkName, places: kept?.places || [], lockSupported: m.lockSupported(), canLock: window.pcSessions?.canLock?.(pcId), canSwitch: !!desktop });
+        const leaveFor = (open) => {
+            // Not the player's own Close: the reader does not reopen what it came from
+            if (window.MinigameFramework?.currentMinigame === this) this.complete(false);
+            open();
+        };
+        this.taskbar = m.mountPcTaskbar(host, this.taskbarModel, {
+            windowTitle: this.textFileData.fileName,
+            onPlace: (place) => {
+                if (!desktop || typeof window.startContainerMinigame !== 'function') { this.closeByPlayer(); return; }
+                if (place.kind === 'desktop') {
+                    leaveFor(() => window.startContainerMinigame(desktop, null, false, true));
+                } else if (place.kind === 'share') {
+                    const share = { scenarioData: { ...place.item, locked: false }, name: 'network_share', objectId: `share_${place.item.id}`, sourcePcId: pcId, parentLockable: desktop };
+                    leaveFor(() => window.startContainerMinigame(share, null, false, false));
+                }
+            },
+            onAction: (action) => {
+                if (action === 'signout') { leaveFor(() => window.pcSessions?.signOut?.(pcId)); return; }
+                if (action === 'lock') {
+                    if (!m.lockSupported()) return;
+                    // Ask the server first: the reader stays open and says a refusal inside the
+                    // monitor; it closes only once the lock succeeded (R1 m2)
+                    m.lockPcSession(pcId, { onRefuse: (msg) => this.notify(msg, false, 3000) }).then((result) => {
+                        if (!result?.ok) return;
+                        // No desktop is open behind a reader, so the lock's message was parked:
+                        // take it and say it, so the reader never closes silently (R2 m2)
+                        const parked = window.pcSessions?.takeEndedMessage?.(pcId);
+                        if (parked?.message) window.gameAlert?.(parked.message, 'info', '', 5000, { plainText: true });
+                        if (window.MinigameFramework?.currentMinigame === this) this.complete(false);
+                    });
+                    return;
+                }
+                if (action === 'switch' && desktop) {
+                    const r = desktop.scenarioData?.remote?.footholdId ? desktop.scenarioData.remote : null;
+                    leaveFor(() => window.openLoginSignIn?.(desktop, r ? { switching: true, remote: r } : { switching: true }));
+                }
+            }
+        });
     }
 
     /** A short result line: on the window's toolbar in the monitor, else the framework's message. */
@@ -183,11 +255,6 @@ export class TextFileMinigame extends MinigameScene {
         this.gameContainer.innerHTML = `
             <div class="text-file-container">
                 <div class="text-file-window-header">
-                    <div class="window-controls">
-                        <button class="window-control close" title="Close"></button>
-                        <button class="window-control minimize" title="Minimize"></button>
-                        <button class="window-control maximize" title="Maximize"></button>
-                    </div>
                     <div class="window-title">${escapeHtml(displayDashes(this.textFileData.fileName))}</div>
                     <div></div>
                 </div>
@@ -503,6 +570,7 @@ export class TextFileMinigame extends MinigameScene {
 
     cleanup() {
         clearTimeout(this._notifyTimer);
+        this.taskbar?.destroy?.();
         this.pcMonitor?.destroy?.();
         // Call parent cleanup (handles event listeners)
         super.cleanup();

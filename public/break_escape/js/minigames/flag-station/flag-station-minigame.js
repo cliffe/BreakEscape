@@ -13,6 +13,8 @@ import { escapeHtml } from '../../utils/escape-html.js';
 import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } from '../../utils/lock-scope-refusal.js';
 
 export class FlagStationMinigame extends MinigameScene {
+    // The X sits inside the themed frame, not on its border (critique A26, A30)
+    static closeInsideFrame = true;
     static REWARD_ICONS = {
         give_item: '📦', unlock_door: '🔓', unlock_object: '🔓',
         emit_event: '⚡', hint: '💡', set_global: '✦'
@@ -93,7 +95,7 @@ export class FlagStationMinigame extends MinigameScene {
         style.textContent = `
             .flag-station {
                 padding: 20px;
-                font-family: 'VT323', 'Courier New', monospace;
+                font-family: 'VT323', monospace;
             }
             
             .flag-station-header {
@@ -134,7 +136,7 @@ export class FlagStationMinigame extends MinigameScene {
                 border: 2px solid #333;
                 color: #00ff00;
                 padding: 12px 15px;
-                font-family: 'Courier New', monospace;
+                font-family: 'VT323', monospace;
                 font-size: 16px;
                 outline: none;
             }
@@ -153,7 +155,7 @@ export class FlagStationMinigame extends MinigameScene {
                 border: 2px solid #000;
                 padding: 12px 20px;
                 font-family: 'Press Start 2P', monospace;
-                font-size: 11px;
+                font-size: 16px;
                 cursor: pointer;
                 white-space: nowrap;
             }
@@ -207,7 +209,7 @@ export class FlagStationMinigame extends MinigameScene {
             
             .flag-history {
                 margin-top: 30px;
-                border-top: 1px solid #333;
+                border-top: 2px solid #333;
                 padding-top: 20px;
             }
             
@@ -237,9 +239,9 @@ export class FlagStationMinigame extends MinigameScene {
             }
             
             .flag-value {
-                font-family: 'Courier New', monospace;
+                font-family: 'VT323', monospace;
                 color: #00ff00;
-                font-size: 13px;
+                font-size: 20px;
             }
             
             .flag-check {
@@ -297,9 +299,9 @@ export class FlagStationMinigame extends MinigameScene {
                 background: #00aa00;
                 color: #000;
                 padding: 4px 12px;
-                font-size: 14px;
+                font-size: 20px;
                 font-weight: bold;
-                font-family: 'Courier New', monospace;
+                font-family: 'VT323', monospace;
             }
         `;
         this.gameContainer.appendChild(style);
@@ -392,23 +394,23 @@ export class FlagStationMinigame extends MinigameScene {
     buildLaunchAbortUI() {
         const style = document.createElement('style');
         style.textContent = `
-            .flag-station { padding: 20px; font-family: 'VT323', 'Courier New', monospace; }
+            .flag-station { padding: 20px; font-family: 'VT323', monospace; }
             .flag-input-label { display: block; color: #ff4444; margin-bottom: 8px; font-size: 14px; }
             .flag-input-wrapper { display: flex; gap: 10px; }
             .flag-input { flex: 1; background: #000; border: 2px solid #440000; color: #ff4444;
-                padding: 12px 15px; font-family: 'Courier New', monospace; font-size: 16px; outline: none; }
+                padding: 12px 15px; font-family: 'VT323', monospace; font-size: 16px; outline: none; }
             .flag-input:focus { border-color: #ff4444; }
             .flag-input::placeholder { color: #444; }
             .flag-submit-btn { background: #440000; color: #ff4444; border: 2px solid #ff4444;
-                padding: 12px 20px; font-family: 'Press Start 2P', monospace; font-size: 11px; cursor: pointer; }
+                padding: 12px 20px; font-family: 'Press Start 2P', monospace; font-size: 16px; cursor: pointer; }
             .flag-submit-btn:hover:not(:disabled) { background: #660000; }
             .flag-submit-btn:disabled { background: #333; color: #666; cursor: not-allowed; }
             .flag-result { margin-top: 10px; padding: 10px; display: none; }
-            .flag-result.success { background: #001100; border: 1px solid #00ff00; color: #00ff00; }
-            .flag-result.error { background: #110000; border: 1px solid #ff0000; color: #ff4444; }
+            .flag-result.success { background: #001100; border: 2px solid #00ff00; color: #00ff00; }
+            .flag-result.error { background: #110000; border: 2px solid #ff0000; color: #ff4444; }
             .flag-result.loading { color: #888; }
             .reward-notification { margin-top: 10px; padding: 10px; background: #001100;
-                border: 1px solid #00aa00; color: #00ff00; }
+                border: 2px solid #00aa00; color: #00ff00; }
             @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
             @keyframes pulse-border { 0%,100%{border-color:#ff4444} 50%{border-color:#880000} }
         `;
@@ -483,23 +485,23 @@ export class FlagStationMinigame extends MinigameScene {
     buildLockUI() {
         const style = document.createElement('style');
         style.textContent = `
-            .flag-station { padding: 20px; font-family: 'VT323', 'Courier New', monospace; }
+            .flag-station { padding: 20px; font-family: 'VT323', monospace; }
             .flag-input-label { display: block; color: #00ff00; margin-bottom: 8px; font-size: 14px; }
             .flag-input-wrapper { display: flex; gap: 10px; }
             .flag-input { flex: 1; background: #000; border: 2px solid #004400; color: #00ff00;
-                padding: 12px 15px; font-family: 'Courier New', monospace; font-size: 16px; outline: none; }
+                padding: 12px 15px; font-family: 'VT323', monospace; font-size: 16px; outline: none; }
             .flag-input:focus { border-color: #00ff00; }
             .flag-input::placeholder { color: #444; }
             .flag-submit-btn { background: #002200; color: #00ff00; border: 2px solid #00ff00;
-                padding: 12px 20px; font-family: 'Press Start 2P', monospace; font-size: 11px; cursor: pointer; }
+                padding: 12px 20px; font-family: 'Press Start 2P', monospace; font-size: 16px; cursor: pointer; }
             .flag-submit-btn:hover:not(:disabled) { background: #003300; }
             .flag-submit-btn:disabled { background: #333; color: #666; cursor: not-allowed; }
             .flag-result { margin-top: 10px; padding: 10px; display: none; }
-            .flag-result.success { background: #001100; border: 1px solid #00ff00; color: #00ff00; }
-            .flag-result.error { background: #110000; border: 1px solid #ff0000; color: #ff4444; }
+            .flag-result.success { background: #001100; border: 2px solid #00ff00; color: #00ff00; }
+            .flag-result.error { background: #110000; border: 2px solid #ff0000; color: #ff4444; }
             .flag-result.loading { color: #888; }
             .reward-notification { margin-top: 10px; padding: 10px; background: #001100;
-                border: 1px solid #00aa00; color: #00ff00; }
+                border: 2px solid #00aa00; color: #00ff00; }
         `;
         this.gameContainer.appendChild(style);
 

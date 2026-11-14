@@ -4,6 +4,9 @@
    look only. Pixel art: 2px borders, stepped corners, flat fills, pixel fonts. */
 
 .minigame-container.pc-view {
+    /* The PC view places its own monitor: the shell never scrolls, so a post-it dragged past
+       the window edge adds no scrollbars (UI shell review m6) */
+    overflow: hidden;
     /* The monitor is placed by left/top from the window's own box */
     display: block;
     /* The dynamic viewport (R2 M3): a phone's address bar is left out, and neither a pinch
@@ -314,7 +317,8 @@
     z-index: 6;
     box-sizing: border-box;
     width: max-content;
-    padding: 10px 14px;
+    /* The right padding clears the pin (.postit-note::after: 8px wide, 5px from the edge) */
+    padding: 10px 18px 10px 14px;
     font-size: 18px;
     line-height: 20px;
 }
@@ -349,7 +353,396 @@
 }
 
 .pc-monitor[data-compact] > .postit-note.pc-monitor-postit {
-    padding: 6px 10px;
+    padding: 6px 18px 6px 10px;
     font-size: 16px;
     line-height: 18px;
+}
+
+/* ── The taskbar and start panel (UX slice 6, option C; js/utils/pc-taskbar.js) ──────────
+   Along the bottom of the screen in every view of a PC (desktop, share window, file): Start,
+   the open window, the account's 32px headshot and name, the computer name. The panel opens
+   above it. 2px borders, square corners, GNF at 16px, pictures at whole-number scales. */
+.pc-monitor .pc-has-taskbar {
+    position: relative;
+}
+
+.pc-monitor .pc-share.pc-has-taskbar > .container-minigame.share-folder {
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 0;
+}
+
+.pc-monitor .pc-taskbar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 38px;
+    padding: 0 4px;
+    box-sizing: border-box;
+    background: #16202a;
+    border-top: 2px solid #3a4a58;
+    color: #dde6ee;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 18px;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.pc-monitor .pc-taskbar button.pc-os-btn.pc-start-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+    padding: 4px 8px;
+}
+
+.pc-monitor .pc-taskbar button.pc-os-btn.pc-start-btn.pc-start-open {
+    filter: brightness(1.25);
+}
+
+.pc-start-icon,
+.pc-start-item-icon {
+    flex: 0 0 auto;
+    image-rendering: pixelated;
+}
+
+/* Every panel entry's icon sits in the same 26x18 box, drawn at its own size and centred
+   (no scaling), so the labels line up whether the icon is 16x16 or the 26x18 folder */
+.pc-start-item-icon {
+    width: 26px;
+    height: 18px;
+    object-fit: none;
+    object-position: center;
+}
+
+.pc-monitor .pc-taskbar-window {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 40%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 2px 6px;
+    border: 2px solid #5a6a78;
+    background: #22303c;
+}
+
+.pc-monitor .pc-taskbar-spacer {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.pc-monitor .pc-taskbar-account {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 1 auto;
+    min-width: 32px;
+    overflow: hidden;
+}
+
+.pc-monitor .pc-taskbar-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pc-monitor .pc-headshot {
+    flex: 0 0 auto;
+    box-sizing: content-box;
+    background-color: #2c3e50;
+    image-rendering: pixelated;
+}
+
+.pc-monitor .pc-taskbar-headshot {
+    width: 32px;
+    height: 32px;
+}
+
+.pc-monitor .pc-start-headshot {
+    width: 64px;
+    height: 64px;
+    border: 2px solid #4a5560;
+}
+
+.pc-monitor .pc-start-headshot[data-scale="1"] {
+    width: 32px;
+    height: 32px;
+}
+
+.pc-monitor .pc-taskbar-host {
+    flex: 0 0 auto;
+    color: #9ee6ff;
+}
+
+.pc-monitor .pc-taskbar-remote {
+    flex: 0 0 auto;
+    padding: 0 4px;
+    border: 2px solid #c08a2a;
+    color: #ffe0a0;
+}
+
+.pc-monitor .pc-taskbar .minigame-button {
+    flex: 0 0 auto;
+}
+
+.pc-monitor .pc-taskbar .pc-take-btn {
+    min-width: 0;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    padding-left: 10px;
+    padding-right: 10px;
+    font-size: 16px;
+    line-height: 18px;
+}
+
+.pc-monitor .pc-taskbar .pc-take-short {
+    display: none;
+}
+
+/* A narrow screen: Take Container reads "Take" (its label stays whole for readers) and the
+   computer name, which the bezel already shows, gives way so the button is not cut off */
+.pc-monitor[data-narrow] .pc-taskbar-takeable .pc-take-long {
+    display: none;
+}
+
+.pc-monitor[data-narrow] .pc-taskbar-takeable .pc-take-short {
+    display: inline;
+}
+
+.pc-monitor[data-narrow] .pc-taskbar-takeable .pc-taskbar-host {
+    display: none;
+}
+
+/* A line above the taskbar inside the screen: why a Lock was refused */
+.pc-monitor .pc-taskbar-notice {
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    bottom: 42px;
+    z-index: 7;
+    box-sizing: border-box;
+    padding: 4px 8px;
+    background: #3a1a1a;
+    border: 2px solid #c0392b;
+    color: #ffd7d0;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 18px;
+}
+
+/* A narrow screen (a phone): the account is its headshot, the window tab shorter */
+.pc-monitor[data-narrow] .pc-taskbar-name,
+.pc-monitor[data-narrow] .pc-taskbar-remote {
+    display: none;
+}
+
+.pc-monitor[data-narrow] .pc-taskbar-window {
+    max-width: 30%;
+}
+
+.pc-monitor .pc-start-panel {
+    position: absolute;
+    left: 0;
+    bottom: 38px;
+    z-index: 6;
+    width: 340px;   /* wide enough for "Remote through <link>" on one line */
+    max-width: 100%;
+    max-height: calc(100% - 38px);
+    box-sizing: border-box;
+    overflow-x: hidden;
+    overflow-y: auto;   /* only if even the fixed parts do not fit; Places scrolls first */
+    display: flex;
+    flex-direction: column;
+    background: #1c2833;
+    border: 2px solid #5a6a78;
+    color: #dde6ee;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 18px;
+}
+
+.pc-monitor .pc-start-panel[hidden] {
+    display: none;
+}
+
+.pc-monitor .pc-start-account {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    background: #22303c;
+    border-bottom: 2px solid #3a4a58;
+}
+
+.pc-monitor .pc-start-who {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.pc-monitor .pc-start-name,
+.pc-monitor .pc-start-line {
+    overflow-wrap: anywhere;
+}
+
+.pc-monitor .pc-start-username {
+    color: #9fb0bf;
+}
+
+.pc-monitor .pc-start-section,
+.pc-monitor .pc-start-actions {
+    display: flex;
+    flex-direction: column;
+    padding: 4px 6px;
+}
+
+.pc-monitor .pc-start-section {
+    border-bottom: 2px solid #3a4a58;
+}
+
+/* On the shortest screens (568x320, or a long PC name at 740x360) the whole panel scrolls as a
+   last resort. The actions stay pinned to its bottom edge so Lock, Switch user and Sign out are
+   still on show; the parts above scroll under them (slice 6 R5 m1). */
+.pc-monitor .pc-start-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    background: #1c2833;
+}
+
+/* The account, This PC and the actions never shrink: Lock, Switch user and Sign out
+   are always on show. Only the Places list scrolls, under a "More below" strip (R3 M1). */
+.pc-monitor .pc-start-account,
+.pc-monitor .pc-start-section,
+.pc-monitor .pc-start-actions {
+    flex: 0 0 auto;
+}
+
+/* Places takes what is left and shrinks only down to its heading and one row of list
+   (padding 8 + heading 18 + list 24 + border 2), so its list can never hang out over the
+   actions below (R4 M1). min-content would count the whole list. A panel that still cannot
+   fit scrolls as a whole, as a last resort. */
+.pc-monitor .pc-start-section.pc-start-places {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 52px;
+}
+
+.pc-monitor .pc-start-compact .pc-start-section.pc-start-places {
+    min-height: 48px;
+}
+
+.pc-monitor .pc-start-compact .pc-start-more {
+    top: 2px;
+}
+
+.pc-monitor .pc-start-places-list {
+    flex: 1 1 auto;
+    min-height: 24px;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+/* "More below" on the Places heading's line, right-aligned, while the list runs on: a stepped
+   arrow and the shared words, the desktop's cue. It sits in the heading's empty space, so it
+   costs the panel no height and hides no entry. */
+.pc-monitor .pc-start-more {
+    position: absolute;
+    top: 4px;
+    right: 22px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #9ee6ff;
+    line-height: 18px;
+    pointer-events: none;
+}
+
+.pc-monitor .pc-start-more[hidden] {
+    display: none;
+}
+
+/* A stepped down arrow, 12 x 6 in 2px steps, as the desktop's cue */
+.pc-monitor .pc-start-more-arrow {
+    width: 12px;
+    height: 6px;
+    background: #9ee6ff;
+    clip-path: polygon(0 0, 12px 0, 12px 2px, 10px 2px, 10px 4px, 8px 4px, 8px 6px,
+                       4px 6px, 4px 4px, 2px 4px, 2px 2px, 0 2px);
+}
+
+.pc-monitor .pc-start-heading {
+    padding: 0 2px;
+    color: #9ee6ff;
+    text-transform: uppercase;
+}
+
+.pc-monitor .pc-start-line {
+    padding: 0 2px 0 10px;
+}
+
+.pc-monitor .pc-start-remote {
+    color: #ffe0a0;
+}
+
+.pc-monitor button.pc-start-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    margin: 0;
+    padding: 1px 6px;
+    border: 2px solid transparent;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.pc-monitor button.pc-start-item:hover,
+.pc-monitor button.pc-start-item:focus-visible {
+    border-color: #9ee6ff;
+    background: #22303c;
+    outline: none;
+}
+
+/* A short screen (a landscape phone): the panel fits without scrolling. Wider, so the remote
+   line stays on one line; the PC's name is left to the bezel's top strip, which shows it;
+   entries without their 2px padding. */
+.pc-monitor[data-short] .pc-start-panel {
+    width: 340px;
+}
+
+/* Compact: tighter padding, so a short phone screen shows more before the panel has to scroll */
+.pc-monitor .pc-start-compact .pc-start-account {
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+/* On a short screen the This PC heading goes too: its lines (computer name, "Remote through")
+   say what they are, and the taskbar names the PC again. Places keeps its heading. */
+.pc-monitor[data-short] .pc-start-compact .pc-start-section:not(.pc-start-places) .pc-start-heading {
+    display: none;
+}
+
+.pc-monitor .pc-start-compact .pc-start-section,
+.pc-monitor .pc-start-compact .pc-start-actions {
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+.pc-monitor .pc-start-compact .pc-start-pcname,
+.pc-monitor[data-short] .pc-start-pcname {
+    display: none;
+}
+
+.pc-monitor[data-short] button.pc-start-item {
+    padding-top: 0;
+    padding-bottom: 0;
 }
