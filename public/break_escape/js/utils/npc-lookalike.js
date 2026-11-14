@@ -19,6 +19,13 @@ const POOLS = Object.freeze({
     male: Object.freeze(['male_office_worker_v2', 'male_telecom_v2', 'male_nerd_v2',
         'male_security_guard_v2', 'male_spy_v2'])
 });
+// Characters whose walk art is a byte-identical copy of a stock sprite (tools/pixellab_characters.json
+// `copied_from`). A copy and its original are one look, so a player wearing either meets the other
+// as a twin. Add a line here for every new copy; the comparison and the pool follow from it.
+const SAME_ART = Object.freeze({
+    kevin_park: 'male_nerd_v2',
+    derek_lawson: 'male_office_worker_v2'
+});
 const SPRITE_NPC_TYPES = ['person', 'both'];
 
 const isStr = (v) => typeof v === 'string' && v.length > 0;
@@ -26,6 +33,7 @@ const isStr = (v) => typeof v === 'string' && v.length > 0;
 /** A saved legacy key (female_blowse) counts as its redraw (female_blowse_v2). */
 function normalise(key) {
     if (!isStr(key)) return '';
+    if (SAME_ART[key]) return SAME_ART[key];
     if (key.endsWith('_v2')) return key;
     const v2 = `${key}_v2`;
     return POOLS.female.includes(v2) || POOLS.male.includes(v2) ? v2 : key;

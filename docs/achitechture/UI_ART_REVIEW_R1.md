@@ -72,3 +72,7 @@ A completed game's stored `unlockedAvatars` is used as-is; backfill runs only wh
 
 - The desktop account bar picture after signing in to KEVIN-WS or DEREK-PC. The sign-in screen does not show the user picture, and I did not sign in. The resolver and file checks above cover the path.
 - Full suites (orchestrator runs them per merge batch).
+
+## R1 fixes
+
+- M1 fixed. `npc-lookalike.js` has a small `SAME_ART` map (`kevin_park` to `male_nerd_v2`, `derek_lawson` to `male_office_worker_v2`) applied in `normalise()`, so a copy and its original compare as one look, and the replacement is always chosen from the stock pool minus the canonical key (so neither member of the pair). An explicit map was chosen over reading `copied_from` because the manifest lives in tools and is not loaded by the client; a new copy needs one added line. Test: `test/js/social-engine-r5.test.mjs` ("a copied sprite and its original are one look"). Live proof: fresh m01 game, avatar set to `male_nerd_v2`, Kevin loaded as `male_telecom_v2` (authored key kept in `authoredSpriteSheet`; his own portrait kept).
