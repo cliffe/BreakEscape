@@ -385,6 +385,11 @@ function damageNPC(npcId, amount) {
       });
       console.log(`📋 Auto-completed task ${npcRef.taskOnKO} (NPC ${npcId} KO'd)`);
     }
+
+    // Save the KO (npcHostility, globalVarOnKO) soon rather than at the next 30 s sync,
+    // so a crash just after a fight keeps it. Debounced in StateSync: several KOs in one
+    // fight share one delta sync.
+    window.stateSync?.requestSoon?.();
   }
 
   return true;

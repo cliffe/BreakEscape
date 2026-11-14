@@ -8,6 +8,21 @@ const KEEPALIVE_BODY_LIMIT = 60000;
 // crash loses at most this much of it. Any other change carries the clock too.
 const CLOCK_ONLY_INTERVAL_MS = 5 * 60 * 1000;
 
+// requestSoon() (a KO): requests this close together share one sync, and none waits
+// longer than the cap after the first request of its window.
+export const REQUEST_SOON_DEBOUNCE_MS = 750;
+export const REQUEST_SOON_MAX_MS = 1500;
+
+// The comparison key of a flush: what it would mark confirmed (the ack, without the
+// elapsed clock time, which moves on its own), plus the phone threads and parts, which
+// ride without an ack. Two flushes with the same key carry the same delta.
+function flushKeyOf(changes, partNames) {
+  const { clockElapsedMs, ...ack } = changes.ack;
+  const parts = {};
+  for (const name of partNames) if (changes.body[name] !== undefined) parts[name] = changes.body[name];
+  return stableJson({ ack, phoneState: changes.body.phoneState, parts });
+}
+
 // Keyed sections: only changed keys are sent, and a key that has gone is sent
 // as null (the server deletes it for globalVariables and ignores it elsewhere).
 const KEYED_SECTIONS = ['globalVariables', 'npcVisibility', 'npcHostility', 'triggeredEvents', 'npcInkVariables', 'mailState'];
@@ -207,7 +222,21 @@ export class StateSync {
   constructor(interval = 30000) { // 30 seconds
     this.interval = interval;
     this.timer = null;
-    this.onPageHide = () => this.flush();
+    this.onPageHide = () => this.flush({ reason: 'pagehide' });
+    // A phone browser can kill a background tab without ever firing pagehide, so the
+    // same flush also runs when the page is hidden. Back to visible clears the guard.
+    this.onVisibilityChange = () => {
+      if (typeof document === 'undefined') return;
+      if (document.visibilityState === 'hidden') this.flush({ reason: 'hidden' });
+      else this._hiddenFlushKey = null;
+    };
+    // The change key (flushKeyOf) of the flush sent when the page was last hidden, or
+    // null while visible. A pagehide that follows skips the same delta (no double send).
+    this._hiddenFlushKey = null;
+    // requestSoon(): the pending debounce timer, and when the first request in the
+    // current window was made (the wait is capped at REQUEST_SOON_MAX_MS from it).
+    this._soonTimer = null;
+    this._soonFirstAt = 0;
     // Last values the server acknowledged. Keyed sections hold { key: JSON },
     // whole sections and the clock/timed-text keys hold one JSON string.
     // Phone threads are tracked by npcManager (markPhoneStateSynced).
@@ -330,7 +359,9 @@ export class StateSync {
     // last sync, so re-entry guards (briefing_played, clone_call_done, ...)
     // replayed their scenes. Send one last sync as the page goes away.
     window.addEventListener('pagehide', this.onPageHide);
-    console.log('State sync started (every 30s, and on page hide)');
+    // A background tab on a phone may be killed with no pagehide: save on hidden too.
+    if (typeof document !== 'undefined') document.addEventListener?.('visibilitychange', this.onVisibilityChange);
+    console.log('State sync started (every 30s, and on page hide or hidden)');
   }
 
   stop() {
@@ -338,7 +369,30 @@ export class StateSync {
       clearInterval(this.timer);
       this.timer = null;
     }
+    if (this._soonTimer) {
+      clearTimeout(this._soonTimer);
+      this._soonTimer = null;
+    }
     window.removeEventListener('pagehide', this.onPageHide);
+    if (typeof document !== 'undefined') document.removeEventListener?.('visibilitychange', this.onVisibilityChange);
+  }
+
+  /**
+   * Ask for a sync soon, for a change that should not wait for the 30 s timer (an NPC
+   * knocked out). Debounced: requests within REQUEST_SOON_DEBOUNCE_MS of each other share
+   * one sync, and the wait from the first request is capped at REQUEST_SOON_MAX_MS, so a
+   * multi-NPC fight sends one delta and a crash a few seconds after a KO still keeps it.
+   * The sync it runs is the normal delta sync (sync()).
+   */
+  requestSoon() {
+    const now = Date.now();
+    if (!this._soonTimer) this._soonFirstAt = now;
+    else clearTimeout(this._soonTimer);
+    const wait = Math.max(0, Math.min(REQUEST_SOON_DEBOUNCE_MS, this._soonFirstAt + REQUEST_SOON_MAX_MS - now));
+    this._soonTimer = setTimeout(() => {
+      this._soonTimer = null;
+      this.sync();
+    }, wait);
   }
 
   /** Sections a multiplayer game would share across the team. */
@@ -714,18 +768,37 @@ export class StateSync {
   }
 
   /**
-   * Best-effort sync while the page unloads: the changes since the last
-   * confirmed sync, with the clock. keepalive lets the request outlive the
+   * Best-effort sync while the page unloads or is hidden: the changes since the
+   * last confirmed sync, with the clock. keepalive lets the request outlive the
    * page; it can't be awaited, and its body is size-capped, so an oversized
    * body falls back to the reload-critical sections.
+   *
+   * reason 'hidden' (visibilitychange): a phone may kill a background tab with no
+   * pagehide, so the same delta goes up as the page is hidden. reason 'pagehide'
+   * after a hidden flush, with the page not visible since, does not send that
+   * delta again: when the hidden flush's answer has been confirmed, nothing is
+   * left to send (the clock is not forced, it went with the hidden flush); when
+   * it has not come back yet, a pagehide whose delta has the same key is skipped.
+   * A full-body flush whose 2xx answer arrives is confirmed like a sync, so the
+   * next periodic sync does not repeat it either (a refused currentRoom is
+   * confirmed too, as confirm() does for the tailgating guard).
    */
-  flush() {
+  flush({ reason = 'pagehide' } = {}) {
     try {
-      const changes = this.buildChanges({ forceClock: true });
+      const afterHidden = reason === 'pagehide' && this._hiddenFlushKey !== null;
+      const changes = this.buildChanges({ forceClock: !afterHidden });
       if (!changes) return;
+      const key = flushKeyOf(changes, this._parts.keys());
+      if (afterHidden && key === this._hiddenFlushKey) {
+        console.log('State flush: the hidden-page flush already sent this delta');
+        return;
+      }
+      if (reason === 'hidden') this._hiddenFlushKey = key;
       const payload = { ...changes.body, clientTs: this.nextClientTs() };
       let body = JSON.stringify(payload);
+      let reduced = false;
       if (body.length > KEEPALIVE_BODY_LIMIT) {
+        reduced = true;
         // Keep the reload-critical parts: globals, the mail changed since the last
         // sync (a delivered reply and its job travel together), fired one-shot
         // handlers, the timed texts they scheduled, and the phone threads changed
@@ -752,10 +825,24 @@ export class StateSync {
           'X-CSRF-Token': getCsrfToken()
         },
         body
+      }).then(response => {
+        // A reduced body left sections out, so only a full one is confirmed.
+        if (reduced || !response?.ok) return;
+        return response.json().then(answer => this._confirmFlush(changes, answer));
       }).catch(() => {});
     } catch (error) {
       console.error('State flush failed:', error);
     }
+  }
+
+  /** Record a flush's 2xx answer as _syncOnce records a sync's (parts first, then stale, then confirm). */
+  _confirmFlush(changes, answer) {
+    for (const part of this._parts.values()) part.onAnswer?.(answer);
+    if (answer?.stale) return;
+    const notSaved = Array.isArray(answer?.notSaved) ? answer.notSaved : [];
+    this.confirm(changes, Date.now(), notSaved);
+    const mailTrimmed = Array.isArray(answer?.mailTrimmed) ? answer.mailTrimmed : [];
+    if (mailTrimmed.length) this._reconcileTrimmedMail(mailTrimmed);
   }
 }
 
