@@ -662,7 +662,14 @@ export class StateSync {
       for (const section of notSaved) {
         if (this._notSavedLogged.has(section)) continue;
         this._notSavedLogged.add(section);
-        console.warn(`State sync: the server did not save ${section} (over a cap); resending it with each sync`);
+        if (section === 'currentRoom') {
+          // currentRoom is not capped: a notSaved means the server refused the room (it could not
+          // vouch for it). confirm() records it anyway, so it is not resent with every sync; a new
+          // room is sent only when currentRoom actually changes (R5 minor 1).
+          console.warn('State sync: the server refused currentRoom; it will not be resent');
+        } else {
+          console.warn(`State sync: the server did not save ${section} (over a cap); resending it with each sync`);
+        }
       }
       this.confirm(changes, Date.now(), notSaved);
       // The server may have trimmed read mail to fit the 1 MB cap while still
