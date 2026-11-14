@@ -21,18 +21,26 @@
  */
 
 export const TAP_SLOP = 32;
+// Safety margin round every claim, the same 2 px the bridge's click-trigger
+// test uses: the engine maps the click back to the world from the pointer's
+// pixel and the camera scroll at its next step, and an NPC can move a little
+// between the bridge's mousemove and mousedown.
+export const CLICK_MARGIN = 2;
+// At most this many sample points per target; a large prop widens the step.
+export const MAX_SAMPLES = 2500;
 
-const inside = (b, x, y) => !!b && x >= b.left && x <= b.right && y >= b.top && y <= b.bottom;
+const inside = (b, x, y, m = 0) => !!b && x >= b.left - m && x <= b.right + m && y >= b.top - m && y <= b.bottom + m;
 
 /**
- * Ids of the other interactables that would claim a tap at (x, y).
+ * Ids of the other interactables that would claim a tap at (x, y), counting
+ * `margin` px round each claim.
  * @param {Array<{id, kind, bounds, x, y, inReach, swivel}>} others
  */
-export function rivalsAt(x, y, others) {
+export function rivalsAt(x, y, others, margin = CLICK_MARGIN) {
     const out = [];
     for (const o of others || []) {
-        if (inside(o.bounds, x, y)) { out.push(o.id); continue; }
-        if (o.inReach && !o.swivel && Math.hypot(o.x - x, o.y - y) <= TAP_SLOP) out.push(o.id);
+        if (inside(o.bounds, x, y, margin)) { out.push(o.id); continue; }
+        if (o.inReach && !o.swivel && Math.hypot(o.x - x, o.y - y) <= TAP_SLOP + margin) out.push(o.id);
     }
     return out;
 }
@@ -45,7 +53,8 @@ export function rivalsAt(x, y, others) {
  * @param {object} [opts]
  * @param {(x:number, y:number) => boolean} [opts.onScreen]  points the pointer can reach
  * @param {(x:number, y:number) => boolean} [opts.opaque]    the target's own pixels
- * @param {number} [opts.step]  sampling step in world px (default 2)
+ * @param {number} [opts.step]  sampling step in world px (default 2; widened to keep
+ *   the count under MAX_SAMPLES)
  * @returns {{x, y, clean:boolean, onPixels:boolean, rivals:string[], sampled:number}|null}
  *   clean: no other interactable claims the point. When no clean point exists,
  *   the point with the fewest rivals (a disambiguation menu is then expected).
@@ -56,9 +65,11 @@ export function chooseAimPoint(target, others, { onScreen = null, opaque = null,
     if (!b || !(b.right >= b.left) || !(b.bottom >= b.top)) return null;
     const cx = (b.left + b.right) / 2;
     const cy = (b.top + b.bottom) / 2;
-    // Stay a pixel inside the edges: the engine's tests are inclusive, but a
-    // neighbour flush against the target shares its edge.
-    const inset = Math.min(1, (b.right - b.left) / 2, (b.bottom - b.top) / 2);
+    // Stay CLICK_MARGIN inside the target's own edges, for the same reason
+    // as the margin round the claims.
+    const inset = Math.min(CLICK_MARGIN, (b.right - b.left) / 2, (b.bottom - b.top) / 2);
+    const area = Math.max(1, (b.right - b.left + 1) * (b.bottom - b.top + 1));
+    step = Math.max(step, Math.sqrt(area / MAX_SAMPLES));
     let best = null;
     let sampled = 0;
     for (let y = b.top + inset; y <= b.bottom - inset + 1e-9; y += step) {

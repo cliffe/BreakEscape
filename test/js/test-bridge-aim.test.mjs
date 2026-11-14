@@ -7,12 +7,11 @@
 // the board instead of opening the workstation.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const bridgeDir = join(dirname(fileURLToPath(import.meta.url)), '../../public/break_escape/js/systems/test-bridge');
-const { chooseAimPoint, rivalsAt, TAP_SLOP } = await import(pathToFileURL(join(bridgeDir, 'aim.js')));
+const { chooseAimPoint, rivalsAt, TAP_SLOP, CLICK_MARGIN, MAX_SAMPLES } = await import(pathToFileURL(join(bridgeDir, 'aim.js')));
 
 const box = (left, top, right, bottom) => ({ left, top, right, bottom });
 const inside = (b, p) => p.x >= b.left && p.x <= b.right && p.y >= b.top && p.y <= b.bottom;
@@ -72,28 +71,22 @@ test('no bounds gives null (caller falls back to the entity position)', () => {
     assert.equal(chooseAimPoint({ x: 1, y: 1 }, []), null);
 });
 
-// The wiring in index.js, which only runs in a browser. Source checks, so a
-// later edit that goes back to clicking the origin or clicking to walk fails here.
-const src = readFileSync(join(bridgeDir, 'index.js'), 'utf8');
-const body = (name) => {
-    const a = src.indexOf(`    async ${name}(`);
-    assert.ok(a > 0, `${name} found`);
-    const b = src.indexOf('\n    async ', a + 10);
-    return src.slice(a, b);
-};
-
-test('interact() clicks the aim point, never the entity origin', () => {
-    const fn = body('interact');
-    assert.doesNotMatch(fn, /clickWorld\((entity|after)\.x/);
-    assert.equal((fn.match(/aim = aimPointFor\(/g) || []).length, 2);
-    assert.match(fn, /result\.picked = pickedTarget\(entity\)/);
+test('every claim has a 2 px margin, and the aim keeps clear of it', () => {
+    const slopRival = { id: 'mug', kind: 'object', bounds: box(100, 100, 101, 101), x: 140, y: 80, inReach: true };
+    assert.deepEqual(rivalsAt(140 + TAP_SLOP + 1, 80, [slopRival]), ['mug'], 'just outside the slop still counts');
+    assert.deepEqual(rivalsAt(103, 100, [{ ...slopRival, inReach: false }]), ['mug'], '2 px off its box still counts');
+    assert.deepEqual(rivalsAt(104, 100, [{ ...slopRival, inReach: false }]), []);
+    const aim = chooseAimPoint(hmi, [slopRival]);
+    assert.ok(aim.clean);
+    assert.ok(Math.hypot(aim.x - 140, aim.y - 80) > TAP_SLOP + CLICK_MARGIN);
 });
 
-test('moveToNear walks without a click and reports anything the walk triggered', () => {
-    const fn = body('moveToNear');
-    assert.match(fn, /bridge\.moveTo\([^)]*pointer: false/);
-    assert.match(fn, /flagTriggeredMove\(result, moveStartT\)/);
-    const mv = body('moveTo');
-    assert.match(mv, /if \(!pointer\)[\s\S]*movePlayerToPoint\(x, y\)/);
-    assert.equal((mv.match(/checked\((res|result)\)/g) || []).length, 2);
+test('a large target is sampled at most MAX_SAMPLES times', () => {
+    const big = { bounds: box(0, 0, 600, 600), x: 0, y: 0 };
+    const aim = chooseAimPoint(big, []);
+    assert.ok(aim.sampled <= MAX_SAMPLES, String(aim.sampled));
+    assert.ok(aim.clean);
 });
+
+// The wiring into interact() and moveTo/moveToNear is tested by behaviour in
+// test-bridge-click-target.test.mjs.
