@@ -107,3 +107,7 @@ Section 9.1, E7 tests and live proof; 6.4 exit test. The voiced-chatter fixture'
 - m02 text: the handover board is the Ward 3 / Exec board (`scenario.json.erb:3386`), which the pair can plausibly share; `cover_burned` is set by the `objective_task_completed:talk_to_gary` mapping (`:932` to `:938`), so a knock-out (`taskOnKO: talk_to_gary`) also burns cover without closing a conversation, and the burn break and print correctly do not fire; Val's own lines put security on the radio (`ink/m02_npc_security_guard.ink:257`, `:532`, `:705`), so the burn and cleared exchanges' source fits; Gary's seventh email was copied to the Board Secretariat (`scenario.json.erb:97`, `:2195`), so the secretariat's automatic reply on the copier tray fits; the debrief reads only its own KO globals (`ink/m02_closing_debrief.ink:34` to `:67`), so the new globals change no debrief line.
 - Music: attacking the porter or the domestic switches to the threat playlist (`scenario.json.erb:146` to `:150`), as for any m02 NPC today; nothing new.
 - Stage plan: tooling, E1, then E7 to E9, then stages 0 to 3, then 4 to 8 is in a workable order, with m7 and m8 the two gaps.
+
+## Outcome notes
+
+- m8 declined as written: the integrator decided E7 to E9 are built from main, not from `build/ol-sims`, so there is no merge order to state; plan 9.1 instead has `build/ol-sims` merge main afterwards, records the shared `_moveForPhase` edit, and has the implementation reviews diff against the main commit the branch started from.
