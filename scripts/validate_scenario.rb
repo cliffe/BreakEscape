@@ -60,60 +60,10 @@ rescue LoadError
   exit 1
 end
 
-# ScenarioBinding class - replicates the one from app/models/break_escape/mission.rb
-class ScenarioBinding
-  def initialize(vm_context = {})
-    require 'securerandom'
-    @random_password = SecureRandom.alphanumeric(8)
-    @random_pin = rand(1000..9999).to_s
-    @random_code = SecureRandom.hex(4)
-    @vm_context = vm_context || {}
-  end
-
-  attr_reader :random_password, :random_pin, :random_code, :vm_context
-
-  # Get a VM from the context by title, or return a fallback VM object
-  def vm_object(title, fallback = {})
-    if vm_context && vm_context['hacktivity_mode'] && vm_context['vms']
-      vm = vm_context['vms'].find { |v| v['title'] == title }
-      return vm.to_json if vm
-    end
-
-    result = fallback.dup
-    if vm_context && vm_context['vm_ips'] && vm_context['vm_ips'][title]
-      result['ip'] = vm_context['vm_ips'][title]
-    end
-    result.to_json
-  end
-
-  # Get flags for a specific VM from the context
-  def flags_for_vm(vm_name, fallback = [])
-    if vm_context && vm_context['flags_by_vm']
-      flags = vm_context['flags_by_vm'][vm_name]
-      return flags.to_json if flags
-    end
-    fallback.to_json
-  end
-
-  # Get a slice of flags for a VM (mirrors Mission::ScenarioBinding#flags_for_vm_slice).
-  def flags_for_vm_slice(vm_name, start_index, count, fallback = [])
-    if vm_context && vm_context['flags_by_vm']
-      flags = vm_context['flags_by_vm'][vm_name]
-      return flags.slice(start_index, count).to_json if flags
-    end
-    fallback.to_json
-  end
-
-  # Get VM flags as a JSON array for use in the top-level 'flags' object.
-  # Mirrors flags_for_vm but used in the top-level flags: { vm_name: vm_flags_json('vm_name') } pattern.
-  def vm_flags_json(vm_name, fallback = [])
-    flags_for_vm(vm_name, fallback)
-  end
-
-  def get_binding
-    binding
-  end
-end
+# One ERB binding for every renderer (plan step 5): the validator renders through the same
+# BreakEscape::ScenarioBinding as the server, so a top-level `flags` block is the Hash the server
+# builds, not the plain array the validator's old copy produced.
+require_relative '../lib/break_escape/scenario_binding'
 
 # Load valid item types from the objects asset directory.
 # Returns a Set of type strings (filenames without .png extension), or nil if the directory
@@ -151,9 +101,7 @@ def render_erb_to_json(erb_path, vm_context = {}, include_rendered: false)
   end
 
   erb_content = File.read(erb_path)
-  erb = ERB.new(erb_content)
-  binding_context = ScenarioBinding.new(vm_context)
-  json_output = erb.result(binding_context.get_binding)
+  json_output = BreakEscape::ScenarioBinding.render(erb_content, vm_context)
 
   parsed = JSON.parse(json_output)
   include_rendered ? [parsed, json_output] : parsed
