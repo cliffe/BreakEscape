@@ -1052,3 +1052,31 @@ not.
   `lab_physical_pentest_secrets_test`, and the gated-door model and controller tests
   (`gated_server_completed_task`, `gated_door_credit`, `gated_route_room`) in one run: 157 runs,
   2603 assertions, 0 failures, 0 errors.
+
+## UID-only after-promotion discrimination test (2026-11-14): BUILT, the carried Chunk A/E item
+
+The deferred end-to-end UID-only test (test 11b) now has a dedicated fixture, so the
+after-promotion `reason: uid_only` return and the acceptsUIDOnly acceptance are both proven on
+real objects rather than left to the structural argument.
+
+- Fixture: `test/support/gated_uid_scenario.rb`. A split gated room (`secure_area`), reached
+  viaPass (worn hi-vis + Len's route) or viaCredential, holds two rfid safes keyed to the exec
+  role: `uid_safe` (`acceptsUIDOnly: true`) and `strict_safe` (no acceptsUIDOnly). An exec NPC
+  carries a MIFARE_DESFire card, so a copy of it is recorded UID-only. Test-only, no shipped
+  scenario, no `scenarios/` change, no dungeon graph.
+- Model `test/models/break_escape/gated_uid_only_after_promotion_test.rb`: the honest UID clone
+  passes the acceptsUIDOnly lock and is refused by the strict lock; a card id the server never
+  recorded, and a recorded clone claimed without the cloner in hand, both fail; the object-action
+  gate holds the UID objects only while the room is unpromoted; `uid_only_refusal?` leaks nothing
+  for a route-room object and returns the reason after promotion (and never for the acceptsUIDOnly
+  lock); `promote_route_room!` unlocks the room alone and leaves the safes locked and the
+  viaCredential global unset; and `migrate_soft_locked_route_rooms!` demotes an uncredited UID
+  route room (re-gating its objects) but leaves a credited one unlocked.
+- Controller `test/controllers/break_escape/gated_uid_only_after_promotion_controller_test.rb`:
+  the honest route end to end (POST /clone_card the exec, wear the hi-vis, slip in behind Len,
+  sync to promote) then opens the acceptsUIDOnly safe; the UID safe is gated with
+  `room_not_reachable` while unpromoted; the strict safe leaks no `uid_only` reason while
+  unpromoted and answers `uid_only` after promotion; a forged card id opens nothing.
+
+No production code changed: the behaviour was already correct and is now covered. The Chunk E
+"Open / not done" entry above is closed.
