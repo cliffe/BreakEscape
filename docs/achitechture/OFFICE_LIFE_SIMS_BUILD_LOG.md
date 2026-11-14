@@ -266,7 +266,8 @@ chat in that run (open for review). Step 6 schedule (4360, thirst 85): first vis
 second tea 5:35 (computed 4:30-6:30), microwave 7:59 (8:00), Jodie's first cooler 8:58 (nominal
 10:00; the seed's jitter is about -6 %), boiler 13:52, cooler 16:46. The cooler fell 58 s after the
 microwave, inside step 1's one-minute rule, so **Jodie's initial thirst moved 85 to 90** (scenario
-data only); the rerun is recorded below. The standard live set on other scenarios was not rerun:
+data only). Rerun on the merged build, game 4434: 0:03 first visit, 5:36 second tea, 7:59 microwave,
+9:54 Jodie's first cooler, 13:53 boiler, 17:42 cooler, each within 3 s of the expected seed time (PASS). The standard live set on other scenarios was not rerun:
 SIMS-4 changes no engine or server line.
 
 ## Engine and server changes (every slice)
