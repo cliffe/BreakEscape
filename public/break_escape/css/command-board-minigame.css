@@ -1,12 +1,8 @@
-.command-board-container {
-    background: #0e1322;
-}
-
+/* The shared console window is the frame and title bar; the board fills its body */
 .command-board-game-container {
     padding: 12px;
     box-sizing: border-box;
     background: #0e1322;
-    height: 100%;
     overflow: hidden;
 }
 
@@ -22,14 +18,13 @@
     overflow: hidden;
 }
 
+/* The clock and status dots share the SYSTEM STATUS heading row (no bar of their own) */
 .cb-header {
     flex-shrink: 0;
-    min-height: 48px;
-    padding: 10px 56px 10px 12px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: #0a0f1e;
+    gap: 8px;
     border-bottom: 2px solid #1e2d48;
 }
 
@@ -42,29 +37,10 @@
     100% { border-bottom-color: #e04060; }
 }
 
-.cb-header-title-wrap {
-    min-width: 0;
-}
-
-.cb-header-title {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 16px;
-    line-height: 24px;
-    color: #c8d8ff;
-}
-
-.cb-header-subtitle {
-    margin-top: 6px;
-    font-family: 'GNF', monospace;
-    font-size: 18px;
-    color: #4a5a70;
-}
-
 .cb-header-right {
     display: flex;
     align-items: center;
     gap: 14px;
-    margin-left: 12px;
 }
 
 .cb-status-dots {
@@ -95,7 +71,8 @@
 
 .cb-clock {
     font-family: 'GNF', monospace;
-    font-size: 34px;
+    font-size: 24px;
+    line-height: 24px;
     color: #d4a84b;
     min-width: 56px;
     text-align: right;
@@ -403,13 +380,6 @@
     cursor: default;
 }
 
-@media (max-width: 1200px) {
-    .cb-header-title {
-        font-size: 8px;
-        line-height: 16px;
-    }
-}
-
 /* Short windows: the board scrolls inside its frame rather than squeezing the columns */
 @media (max-height: 520px) {
     .cb-panel {
@@ -430,15 +400,6 @@
 
     .cb-panel {
         overflow-y: auto;
-    }
-
-    .cb-header {
-        flex-wrap: wrap;
-        padding-right: 48px;
-    }
-
-    .cb-header-right {
-        margin-left: 0;
     }
 
     .cb-body {

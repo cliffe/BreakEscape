@@ -88,7 +88,7 @@ test('forensic platform: block content keeps the allowed markup and drops the re
     mg._renderTabContent('tab1');
     const root = document.getElementById('mg');
     assertClean(root, 'forensic platform');
-    assertText(root.querySelector('.fdp-case'), 'forensic case ref');
+    assertText(document.querySelector('.console-subtitle'), 'forensic case ref');
     assertText(root.querySelector('.fdp-tab'), 'forensic tab label');
     assertText(root.querySelector('#fdp-confirm-btn'), 'forensic confirm label');
     assertText(root.querySelector('#fdp-confirm-hint'), 'forensic confirm hint');

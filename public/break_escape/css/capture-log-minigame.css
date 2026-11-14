@@ -21,11 +21,3 @@
 .lpb-captures-row.capture-log-new .capture-log-new-mark { margin-left: 0; }
 .capture-log .lpb-captures-host, .capture-log .lpb-captures-note { font-size: 18px; }
 .capture-log-empty { margin: 0; padding: 16px 12px; border: 2px dashed var(--ui-line, #4c5b80); }
-/* The window: a 2px frame around the title bar and the list, sized to its content and capped
-   to the screen; the list scrolls inside it */
-.capture-log-minigame > .capture-log-frame { display: flex; flex-direction: column; width: 100%; max-width: 760px;
-    height: auto; max-height: 100%; margin: 0 auto; padding: 12px 16px 16px; box-sizing: border-box; background: #10161c; border: 2px solid #6b7f8f; }
-.capture-log-frame > .minigame-header { margin: 0 0 8px; padding: 4px 48px 4px 0; min-height: 38px; box-sizing: border-box;
-    border-bottom: 2px solid #4c5b80; background: transparent; text-align: left; }
-.capture-log-frame > .minigame-header h3 { margin: 0; }
-@media (max-width: 600px) { .capture-log-minigame > .capture-log-frame { padding: 8px 10px 10px; } }

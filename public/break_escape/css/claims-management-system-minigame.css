@@ -1,18 +1,8 @@
-.cms-minigame-container {
-    background: #0f1524;
-}
-
-.cms-minigame-game-container {
-    padding: 0;
-    height: 100%;
-}
-
 .cms-panel {
     display: flex;
     flex-direction: column;
-    width: 100%;
-    height: 100%;
-    border: 2px solid #2b3b58;
+    flex: 1 1 auto;
+    min-height: 0;
     background: #0d1524;
     box-sizing: border-box;
     overflow: auto;
@@ -25,22 +15,7 @@
     gap: 16px;
     border-bottom: 2px solid #2b3b58;
     background: #14213a;
-    padding: 12px 52px 12px 12px;
-}
-
-.cms-title {
-    margin: 0;
-    font-family: 'Press Start 2P', monospace;
-    font-size: 16px;
-    line-height: 24px;
-    color: #e5edff;
-}
-
-.cms-subtitle {
-    margin-top: 8px;
-    font-family: 'GNF', monospace;
-    font-size: 22px;
-    color: #97b0d7;
+    padding: 12px;
 }
 
 .cms-header-right {
@@ -73,7 +48,7 @@
 }
 
 .cms-progress-wrap {
-    margin-top: 10px;
+    margin-top: 0;
     max-width: 560px;
 }
 
@@ -367,11 +342,6 @@
 /* Phones: nav as a wrapping strip above the record, one summary card per row, the
    evidence panel below (critique B CMS2) */
 @media (max-width: 600px) {
-    .cms-title {
-        font-size: 8px;
-        line-height: 16px;
-    }
-
     .cms-header-right {
         white-space: normal;
     }

@@ -44,8 +44,12 @@ function normalizeStatus(status) {
 }
 
 export class SisConfigThresholdMinigame extends MinigameScene {
-    // The X sits inside the panel frame, beside the padded header (critique B X4)
-    static closeInsideFrame = true;
+    // Draws in the shared console window (UI decision X8): title bar and X come from there
+    static consoleWindow = true;
+
+    consoleTitle() {
+        return 'SIS CONFIGURATION - BATTERY HALL SIS';
+    }
 
     constructor(container, params = {}) {
         super(container, params);
@@ -59,7 +63,6 @@ export class SisConfigThresholdMinigame extends MinigameScene {
         this.params.cancelText = this.params.cancelText || 'Close';
         super.init();
 
-        // Keep SIS panel footprint similar to PIN minigame and style as translucent panel.
         this.container.className += ' sis-threshold-minigame-container';
         this.gameContainer.className += ' sis-threshold-minigame-game-container';
 
@@ -92,7 +95,7 @@ export class SisConfigThresholdMinigame extends MinigameScene {
         }).join('');
 
         container.innerHTML = `
-            <div class="sis-threshold-header">SIS CONFIGURATION - BATTERY HALL SIS</div>
+            <div class="sis-threshold-main">
             <table class="sis-threshold-table">
                 <thead>
                     <tr>
@@ -112,12 +115,17 @@ export class SisConfigThresholdMinigame extends MinigameScene {
             <div class="sis-help" id="sis-help-text">
                 ${canCompare ? 'Select highlighted rows to inspect deviations.' : 'Retrieve the SIS certification document to unlock side-by-side comparison.'}
             </div>
-            <div class="sis-overlay" id="sis-detail-overlay"></div>
+            </div>
         `;
 
         this.gameContainer.appendChild(container);
 
-        this.overlayEl = container.querySelector('#sis-detail-overlay');
+        // The pop-up layer covers the whole window (not the scrolling body), so a pop-up
+        // opened on a scrolled form is always on screen
+        this.overlayEl = document.createElement('div');
+        this.overlayEl.className = 'sis-overlay';
+        this.overlayEl.id = 'sis-detail-overlay';
+        this.container.appendChild(this.overlayEl);
         this.helpTextEl = container.querySelector('#sis-help-text');
     }
 

@@ -1,22 +1,10 @@
 /* SIS Config Threshold Minigame Styles */
 
-.sis-threshold-minigame-container {
-    background: rgba(13, 20, 32, 0.72);
-}
-
+/* The shared console window (css/minigames-framework.css) is the frame and the title bar */
 .sis-threshold-minigame-game-container {
-    max-width: 620px;
-    margin: 0 auto;
-    width: 100%;
-    background: #111a28 !important;
-    border: 2px solid #263246;
+    background: #111a28;
     padding: 12px;
-    height: auto;
-    max-height: 100%;
-    overflow: auto;
     box-sizing: border-box;
-    display: flex;
-    align-items: flex-start;
 }
 
 .sis-threshold {
@@ -28,21 +16,21 @@
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
+    flex: 1 1 auto;
 }
 
-.sis-threshold-header {
-    background: #133f73;
-    border: 2px solid #2b5d93;
-    padding: 10px 48px 10px 12px;
-    font-size: 18px;
-    letter-spacing: 0.4px;
+/* The table and buttons keep a readable width inside the wide window; the pop-up overlay
+   covers the whole body */
+.sis-threshold-main {
+    width: 100%;
+    max-width: 720px;
+    margin: 0 auto;
 }
 
 .sis-threshold-table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 10px;
     font-size: 16px;
 }
 
@@ -155,26 +143,30 @@
     font-size: 16px;
 }
 
+/* Covers the whole shell (the overlay is a child of it), so a pop-up opened on a scrolled
+   form is always on screen and centred */
 .sis-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(6, 10, 18, 0.32);
+    background: rgba(6, 10, 18, 0.6);
     display: none;
     align-items: center;
     justify-content: center;
     padding: 8px;
     z-index: 5;
+    overflow: auto;
     box-sizing: border-box;
 }
 
+/* A global `.show { display: block !important }` would otherwise win */
 .sis-overlay.show {
-    display: flex;
+    display: flex !important;
 }
 
 .sis-modal {
     background: #161c26;
     border: 2px solid #3c4d68;
-    max-width: 100%;
+    max-width: 720px;
     width: 100%;
     padding: 14px;
     box-sizing: border-box;
@@ -280,11 +272,6 @@
 @media (max-width: 600px) {
     .sis-threshold-minigame-game-container {
         padding: 6px;
-    }
-
-    /* The shell X sits in the dark band above the blue header box, not across its corner */
-    .sis-threshold-header {
-        margin-top: 28px;
     }
 
     .sis-threshold-table thead {
