@@ -751,7 +751,16 @@ suite. The integrator runs the full suites once per batch.
    timedMessages) and the deletion claim. Guard test (the burst of more than
    eight writes), the reset-clearing test, the compound-key pre-filter test and
    the per-section merge tests. The guard lands here, with the read path it
-   protects, never later. Commit.
+   protects, never later. Until chunk 3 lands, the stale-but-recent merge
+   strips `currentRoom` from the params it sees, so currentRoom keeps today's
+   whole-skip on any stale request (it is handled inline in `sync_state`, not by a
+   `merge_*!` call the pre-filter covers). The band also passes `stale: true` to
+   `apply_capture_sync_step`, so capture proof stamping is deferred to the next
+   fresh sync, exactly as today: the stale answer makes the client resend the
+   mail, and that fresh request stamps it. Tests: an older room on a
+   stale-but-recent request leaves the newer stored room in place, and phish
+   proof mail on a stale-but-recent request is kept and stamped on the next fresh
+   sync. Commit.
 3. currentRoom under the stale-but-recent path (skip when newer, else the normal
    acceptance and notSaved contract). currentRoom test. Commit.
 4. Client re-stamp of the reduced flush body above the in-flight flushes, remove
