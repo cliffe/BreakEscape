@@ -1,0 +1,140 @@
+/* One notepad look for the text viewers (critique A35, awaiting the user's confirmation):
+   a Windows 95 style window, navy title bar holding the X, grey toolbar with bevelled
+   buttons, the text in GNF on a light page. Applies to the text file viewer opened from the
+   world (.text-file-container) and a file read on a PC (.pc-file-window).
+
+   Everything for A35 is in this file. To go back to the previous looks, remove its <link>
+   from app/views/break_escape/games/show.html.erb: the old rules in text-file-minigame.css
+   and container-minigame.css are untouched. */
+
+:root {
+    --np-navy: #000080;
+    --np-face: #c0c0c0;
+    --np-light: #ffffff;
+    --np-shade: #808080;
+    --np-dark: #404040;
+    --np-page: #fbfbf2;
+    --np-ink: #111111;
+}
+
+/* ── Opened from the world ─────────────────────────────────────────────────────────── */
+.text-file-container {
+    background: var(--np-face);
+    border: 2px solid;
+    border-color: var(--np-light) var(--np-dark) var(--np-dark) var(--np-light);
+    clip-path: none;
+    box-shadow: none;
+    padding: 2px;
+    box-sizing: border-box;
+}
+
+.text-file-container .text-file-window-header {
+    justify-content: flex-start;
+    min-height: 40px;
+    padding: 4px 48px 4px 8px;   /* the X sits at the bar's right end (critique A34) */
+    background: var(--np-navy);
+    border-bottom: 0;
+    box-sizing: border-box;
+}
+
+.text-file-container .window-title {
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 18px;
+    color: #ffffff;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.text-file-container .file-header {
+    background: var(--np-face);
+    border-bottom: 2px solid var(--np-shade);
+    padding: 8px 10px;
+}
+
+.text-file-container .file-name,
+.text-file-container .file-meta,
+.text-file-container .file-size {
+    color: var(--np-ink);
+}
+
+.text-file-container .file-type {
+    background: var(--np-light);
+    border: 2px solid var(--np-shade);
+    color: var(--np-ink);
+}
+
+.text-file-container .file-content-area {
+    background: var(--np-face);
+}
+
+.text-file-container .content-header {
+    background: var(--np-face);
+    border-bottom: 0;
+    padding: 6px 8px;
+}
+
+/* Bevelled Windows 95 buttons, square, 2px */
+.text-file-container .action-btn {
+    background: var(--np-face);
+    border: 2px solid;
+    border-color: var(--np-light) var(--np-dark) var(--np-dark) var(--np-light);
+    color: var(--np-ink);
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    box-shadow: none;
+}
+
+.text-file-container .action-btn:hover { background: #d4d4d4; }
+
+.text-file-container .action-btn:active {
+    border-color: var(--np-dark) var(--np-light) var(--np-light) var(--np-dark);
+    transform: none;
+}
+
+/* The page: sunken, light, dark GNF text */
+.text-file-container .file-content {
+    margin: 0 8px 8px;
+    background: var(--np-page);
+    border: 2px solid;
+    border-color: var(--np-shade) var(--np-light) var(--np-light) var(--np-shade);
+}
+
+.text-file-container .file-text {
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 20px;
+    color: var(--np-ink);
+    background: transparent;
+}
+
+.text-file-container .file-observations {
+    background: var(--np-face);
+    border-top: 2px solid var(--np-shade);
+    color: var(--np-ink);
+}
+
+/* The OS dark-mode variant in text-file-minigame.css would turn the page dark again */
+@media (prefers-color-scheme: dark) {
+    .text-file-container { background: var(--np-face); border-color: var(--np-light) var(--np-dark) var(--np-dark) var(--np-light); }
+    .text-file-container .text-file-window-header { background: var(--np-navy); }
+    .text-file-container .file-header,
+    .text-file-container .content-header,
+    .text-file-container .file-content-area { background: var(--np-face); }
+    .text-file-container .file-content { background: var(--np-page); }
+    .text-file-container .file-text,
+    .text-file-container .file-name { color: var(--np-ink); }
+}
+
+/* ── Read on a PC (the title bar is already navy: css/container-minigame.css) ───────── */
+.pc-monitor .pc-file-window .pc-file-body {
+    background: var(--np-page);
+    border: 2px solid;
+    border-color: var(--np-shade) var(--np-light) var(--np-light) var(--np-shade);
+}
+
+.pc-monitor .pc-file-window .pc-file-body .file-text {
+    color: var(--np-ink);
+}
