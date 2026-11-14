@@ -282,3 +282,47 @@ just-created game (ids seen: 3629, 3709).
   landing-page-model.js and mail-bridge.js only).
 - Deferred phone scenes, C-X7 stepper, C-X9 one-button, remaining per-scene minors from R1 are
   still open (unchanged by this round).
+
+### Fix round 1 handover (2026-11-14)
+
+Tip: commit b644119e8 on build/ui-se, which already has main 372600713 (format 3) merged
+(merge commit 2a3225bab, clean, no conflicts).
+
+Done (all items in the round): M1 osint fit, M2 pretext fit, C-ER1 kiosk bezel (pick B), m3
+shredded shared X, m4 radius/shadow/hairline sweep on the wide windows, m5 mail hairlines, m2
+light-card decision (kept light + 2px border), C-X8 GNF address font + >=16px + cross glyph -> x in
+landing-page-model.js, n2 shared .se-notice on the listed notices with scene-token colour overrides.
+
+Proof:
+- Strict audit (`ui-rules-audit.mjs --strict`, 15 SE scenes x 5 sizes 1400x1000/800x600/667x375/
+  390x844/360x740, fresh lab_social_engineering game on :3490): every SE scene clean at every size.
+  Before: osint clipped 5 @667x375 + font 5; pretext overflow 1 @667x375; mail hairline 1 + font 1.
+  After: 0 of each. The only remaining non-clean is inbox-triage `gradient 1` at all sizes, the flat
+  single-colour `.tri-brief` false positive already recorded (R1 n1), not a fit breach. Logs/json:
+  scratchpad uise/after.{log,json}, before.{log,json}.
+- Screenshots (looked at): scratchpad uise/shots/mg-*_{size}.png. Confirmed osint 667x375 (strip +
+  address reachable, GNF address, scrolls in frame), pretext 667x375 (bottom border in view, scope
+  note in se-notice box), episode-runner 390x844 and 360x740 (kiosk bezel, X in top strip, step
+  strip wraps, not squeezed; caption ellipsises at 360), password-guesser 1400x1000 (light worksheet
+  with a 2px edge in the dark frame; both notices in dashed se-notice boxes with readable dark text).
+- Tests (plain `node --test`, one file at a time): minigame-se-close 12/12 (updated C-ER1 + new m3,
+  C-X8 font, C-X8 cross glyph, n2 tests); social-password-guesser 35, social-triage-row-address-font
+  5, minigame-pixel-art 48, social-episode-views 30, social-episode-aftermath 7,
+  social-landing-page-render 13, social-landing-page-fakecheck 7, social-osint-browser 51,
+  social-engagement-report 23, social-gap-engagement-report 18, social-pretext-prep 17,
+  social-assistant-chat 24, social-sort-drill 27, social-mail-client-shell 14, social-intel-board 10,
+  social-return-to 17, minigame-close-shell 19, minigame-title-escape 24, social-password-guesser-spray
+  23, social-engine-ux-batch4 10 - all 0 fail.
+
+Left / not done this round: none of the round's items. Out of scope and left as-is (noted): the cross
+glyph in non-SE scenes (flag-wording, combination, cryptex) and the tick glyph in landing-page-model
+pass lines; mail-bridge.js was not touched (its cross glyph is only in a strip-regex/comment, renders
+no glyph). Full suites not run (congestion rule): only touched/importing test files run above; the
+orchestrator runs the full suites per merge batch.
+
+Env / resume: keyless server on :3490 (this worktree; PID in test/dummy/tmp/pids/server-3490.pid -
+stopped at end of this round). RBENV_VERSION=2.7.8;
+PLAYWRIGHT_CHROMIUM_EXECUTABLE=$HOME/.cache/ms-playwright/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell.
+Shared-DB sprite churn: make a fresh game with new-game.rb and start the audit back-to-back (one
+command), because the demo sprite is flipped by other agents within seconds and a mid-gap flip makes
+the game page redirect to character config so window.__test never loads.
