@@ -32,6 +32,9 @@ Alright? Neil, IT support. I'm parked here by me mug, so give us a shout.
 // A reopen after an X close re-navigates to this knot (person-chat-minigame.js), so the top line
 // shows again as a fresh re-entry instead of the stale last reply (R3 m3). The start knot and every
 // in-chat reply divert straight to the choices gather below, so this line only shows on a reopen.
+// An X close does not end the story, so start does not run on that reopen: asked_now is reset here
+// too, so a reopened chat is never treated as the asking chat (S3 R4 M1).
+~ asked_now = false
 # speaker:npc
 Back again? What's up?
 - (choices)
@@ -45,10 +48,10 @@ Back again? What's up?
 + {neil_print_asked} [Is that change log ready?]
     # speaker:npc
     {
-        - asked_now && not neil_page_on_tray:
-            Soon as you let me get back to it, pet.
         - neil_page_taken:
             You've got it already, pet.
+        - asked_now && not neil_page_on_tray:
+            Soon as you let me get back to it, pet.
         - neil_page_on_tray:
             It's on the copier tray, pet. Help yourself.
         - else:
