@@ -28,16 +28,15 @@ import { authorHtml } from '../../utils/author-html.js';
  */
 
 export class NcscBriefMinigame extends MinigameScene {
-    // The X sits inside the frame (MinigameScene.closeInsideFrame)
-    static closeInsideFrame = true;
+    // Draws in the shared console window (UI decision X8): title bar and X come from there
+    static consoleWindow = true;
+
     constructor(container, params = {}) {
         const sd = params.lockable?.scenarioData || {};
         const md = sd.minigameData || {};
         super(container, {
             ...params,
-            title:      sd.title      || 'NCSC Attribution Brief',
-            showCancel: true,
-            cancelText: sd.cancelText || 'Close'
+            title:      sd.title      || 'NCSC Attribution Brief'
         });
         this._gateVar         = sd.gateVar             || 'warranty_checklist_complete';
         this._reviewedVar     = md.reviewedVar          || 'ncsc_brief_reviewed';
@@ -78,7 +77,7 @@ export class NcscBriefMinigame extends MinigameScene {
         this.gameContainer.innerHTML = `
 <div class="ncsc-wrap">
   <div class="ncsc-tlp-bar">TLP:AMBER &mdash; PRIVILEGED AND CONFIDENTIAL &mdash; ADDRESSEE ONLY</div>
-  <div class="ncsc-body" id="ncsc-body"></div>
+  <div class="ncsc-body pixel-scroll" id="ncsc-body"></div>
 </div>`;
     }
 
@@ -94,7 +93,6 @@ export class NcscBriefMinigame extends MinigameScene {
         el.innerHTML = `
 <div class="ncsc-envelope-panel">
   <img class="ncsc-envelope-icon" src="/break_escape/assets/icons/mail-new.png" alt="" width="64" height="64">
-  <div class="ncsc-envelope-name">NCSC Attribution Brief</div>
   <div class="ncsc-envelope-ref">${authorHtml(this._caseRef)}</div>
   <div class="ncsc-status-badge ncsc-status-locked"><img class="ncsc-badge-icon" src="/break_escape/assets/icons/npc-lock.png" alt="" width="16" height="16"> SEALED &mdash; AUTHORISATION REQUIRED</div>
   <div class="ncsc-sealed-message">${authorHtml(this._sealedMessage)}</div>
@@ -109,7 +107,6 @@ export class NcscBriefMinigame extends MinigameScene {
         el.innerHTML = `
 <div class="ncsc-envelope-panel">
   <img class="ncsc-envelope-icon" src="/break_escape/assets/icons/mail-new.png" alt="" width="64" height="64">
-  <div class="ncsc-envelope-name">NCSC Attribution Brief</div>
   <div class="ncsc-envelope-ref">${authorHtml(this._caseRef)}</div>
   <div class="ncsc-status-badge ncsc-status-ready"><img class="ncsc-badge-icon" src="/break_escape/assets/icons/mark-tick.png" alt="" width="16" height="16"> ${authorHtml(this._openableBadge)}</div>
   <div class="ncsc-sealed-message ncsc-ready-message">${authorHtml(this._openableMessage)}</div>

@@ -345,7 +345,7 @@ test('helper: Close control; closeMode abort gives { aborted: true } and complet
     reset();
     const b = FW.startMinigame('board', el('div'), socialOverlayParams({}));
     const btn = b.mountCloseControl();
-    assert.equal(btn.textContent, 'Close');
+    assert.ok(btn.className.includes('se-overlay-close'), 'the shared pixel X close control');
     btn.click();
     assert.equal(FW.currentMinigame, null);
     assert.equal(window.eventDispatcher.events.at(-1).name, 'minigame_completed');

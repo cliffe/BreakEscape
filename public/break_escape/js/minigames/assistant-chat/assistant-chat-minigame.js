@@ -57,6 +57,9 @@ function h(tag, props = {}, ...kids) {
 }
 
 export class AssistantChatMinigame extends SocialOverlayScene {
+    // C-X2: take the shared SE window frame
+    static framed = true;
+
     constructor(container, params) {
         super(container, params);
         this.config = isObj(this.params.config) ? this.params.config : {};
@@ -88,10 +91,7 @@ export class AssistantChatMinigame extends SocialOverlayScene {
     _build() {
         const head = h('header', { class: 'ac-head' },
             h('h2', { class: 'ac-title', text: this._title }));
-        const close = h('button', { type: 'button', class: 'se-overlay-close minigame-button ac-close',
-            text: 'Close', 'aria-label': 'Close' });
-        this.addEventListener(close, 'click', (e) => { e.preventDefault?.(); e.stopPropagation?.(); this.requestClose(); });
-        this.closeButton = close;
+        const close = this.buildCloseControl();
         head.appendChild(h('div', { class: 'ac-head-buttons' }, close));
 
         this.body = h('div', { class: 'ac-body' });
@@ -105,7 +105,7 @@ export class AssistantChatMinigame extends SocialOverlayScene {
         const reloadNote = this.config.reloadNote === '' ? ''
             : (isStr(this.config.reloadNote) ? this.config.reloadNote
                 : 'If you close or reload this window, these tasks start again.');
-        if (reloadNote) this.body.appendChild(h('p', { class: 'ac-reload-note', text: reloadNote }));
+        if (reloadNote) this.body.appendChild(h('p', { class: 'ac-reload-note se-notice', text: reloadNote }));
 
         // Fixed section order; only the authored sections appear.
         if (isObj(this.config.summarise)) this._buildSummarise(this.config.summarise);

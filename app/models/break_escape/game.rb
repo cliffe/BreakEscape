@@ -139,6 +139,475 @@ module BreakEscape
       world.is_a?(Hash) && world['room'].is_a?(String) && world['room'] == room_id
     end
 
+    # Gated-door tailgating (GATED_DOOR_SERVER_CHECK_PLAN.md §3). A room an NPC route
+    # opened for the player's slip-in but which the player has not yet earned. Kept apart
+    # from unlockedRooms: the player may stand in a route room, but its contents stay gated
+    # (§3.6) until the pass is earned. Server-written only; never part of the client sync
+    # payload (SYNC SIZE §9). Defaults to [] on first read.
+    def npc_route_rooms
+      list = player_state.is_a?(Hash) ? player_state['npcRouteRooms'] : nil
+      list.is_a?(Array) ? list : []
+    end
+
+    def in_npc_route_room?(room_id)
+      return false if room_id.blank?
+      npc_route_rooms.include?(room_id)
+    end
+
+    # Record a route room for the player's slip-in, keeping it out of unlockedRooms.
+    def record_npc_route_room!(room_id)
+      return if room_id.blank?
+      player_state['npcRouteRooms'] ||= []
+      player_state['npcRouteRooms'] << room_id unless player_state['npcRouteRooms'].include?(room_id)
+      save!
+    end
+
+    # True when `name` is a global a client sync_state cannot write: a worn-costume global,
+    # an imported global, a server-credit global (creditOnPass, §3.4), or a named server-owned
+    # global. The same union the viaPass check uses (§3.3a).
+    def server_owned_global_name?(name)
+      return false if name.blank?
+      (worn_global_names + imported_global_names + server_credit_global_names +
+       self.class::SERVER_OWNED_GLOBAL_NAMES).include?(name.to_s)
+    end
+
+    # True when the scenario defines any rfid_cloner object (presence is enough; §3.1). The
+    # runtime split predicate does not trace whether a specific card is reachable from it;
+    # the validator (§11) owns the sharper check.
+    def scenario_has_rfid_cloner?
+      return false unless scenario_data.is_a?(Hash)
+      rooms = scenario_data['rooms']
+      return false unless rooms.is_a?(Hash)
+
+      rooms.each_value.any? do |room|
+        next false unless room.is_a?(Hash) && room['objects'].is_a?(Array)
+        room['objects'].any? { |obj| object_subtree_rfid_cloner?(obj) }
+      end
+    end
+
+    # A gate splits (its NPC route unlock records the room in npcRouteRooms rather than
+    # unlockedRooms) only when a provable path into it exists (§3.1). The runtime test is the
+    # simplest safe one: the gate's playerMayPassIf is a server-owned global, or the scenario
+    # contains an rfid_cloner object at all. It may over-split, but an over-split gate credits
+    # nothing it should not (§3.1).
+    # A gate splits (its NPC route records the room in npcRouteRooms, not unlockedRooms) when a
+    # provable path exists: a server-owned pass global, or an rfid_cloner anywhere in the scenario
+    # (no condition on the target room's requires). This is the single source of truth for the
+    # split predicate; scripts/validate_scenario.rb (check_gated_door_credit) and
+    # scripts/generate_dungeon_graph.rb mirror it exactly (R3 minor 3). Change all three together.
+    def gate_splits?(gate)
+      return false unless gate.is_a?(Hash)
+      pass_global = gate['playerMayPassIf']
+      return true if pass_global.present? && server_owned_global_name?(pass_global)
+      scenario_has_rfid_cloner?
+    end
+
+    # The gate (with openFor) on the door whose connectedRoom is `room_id`, or nil. Doors live
+    # per-room, so the door into a room sits in the adjacent room's doors array.
+    def gate_for_connected_room(room_id)
+      return nil if room_id.blank? || !scenario_data.is_a?(Hash)
+      rooms = scenario_data['rooms']
+      return nil unless rooms.is_a?(Hash)
+
+      rooms.each_value do |room|
+        next unless room.is_a?(Hash) && room['doors'].is_a?(Array)
+        room['doors'].each do |door|
+          next unless door.is_a?(Hash) && door['connectedRoom'] == room_id
+          gate = door['gate']
+          return gate if gate.is_a?(Hash) && gate['openFor'].present?
+        end
+      end
+      nil
+    end
+
+    # NPC-keyed (§3.1): true when a door into room_id has a gate.openFor naming npc_id and the
+    # split condition holds. Selects the method: npc route branch of the unlock action (§3.5).
+    def gated_route_room?(npc_id, room_id)
+      return false if npc_id.blank? || room_id.blank?
+      gate = gate_for_connected_room(room_id)
+      return false unless gate
+      return false unless Array(gate['openFor']).map(&:to_s).include?(npc_id.to_s)
+      gate_splits?(gate)
+    end
+
+    # Door-keyed, attempt-independent (§3.1): true when the room's door has a gate.openFor and
+    # the split condition holds. Selects the credential branch (§3.3b, Chunk B), where the
+    # method: rfid unlock carries attempt: null and the NPC-keyed helper would never match.
+    def split_gated_door?(room_id)
+      gate = gate_for_connected_room(room_id)
+      gate ? gate_splits?(gate) : false
+    end
+
+    # The object-action gate predicate (§3.6): true when `target_id` resolves to an object
+    # whose room is a served-but-unearned route room (in npcRouteRooms, not in unlockedRooms).
+    # An object added at runtime resolves to room_id: nil and is not gated (§3.2, permissive).
+    def object_in_unpromoted_route_room?(target_id)
+      room_id = login_scope_of(target_id)&.[](:room_id)
+      return false if room_id.blank?
+      in_npc_route_room?(room_id) &&
+        !Array(player_state['unlockedRooms']).include?(room_id)
+    end
+
+    # True when this object, or anything nested in its contents, is an rfid_cloner.
+    def object_subtree_rfid_cloner?(obj)
+      return false unless obj.is_a?(Hash)
+      type = obj['type'] || obj.dig('scenarioData', 'type')
+      return true if type == 'rfid_cloner'
+      contents = obj['contents']
+      contents.is_a?(Array) && contents.any? { |item| object_subtree_rfid_cloner?(item) }
+    end
+
+    # --- Gated-door credit, server-owned (GATED_DOOR_SERVER_CHECK_PLAN.md §3.3, §3.4) ---
+
+    # The distinct global names any gate credits through creditOnPass.*.setGlobal (§3.4). Derived
+    # once from the scenario and memoised in player_state, as worn_global_names does, so the read
+    # path never saves. sync_state loads the narrow row without scenario_data, so that is read on
+    # its own there. Unioned into the read-only list in merge_global_variables! and into
+    # server_owned_global_name?, so a client sync_state can never write one.
+    def server_credit_global_names
+      return [] unless player_state.is_a?(Hash)
+
+      names = player_state['serverCreditGlobals']
+      return names.grep(String) if names.is_a?(Array)
+
+      # Memo absent. Derive only when scenario_data is already loaded in-request (game creation,
+      # show, the credit paths that call ensure_scenario_data_loaded! first); never read it here.
+      # An ordinary sync runs on the narrow SYNC_STATE_COLUMNS row, so reading scenario_data would
+      # reload the whole blob on every sync (the sync-deltas / SYNC SIZE rule forbids it). The memo
+      # is seeded at creation (initialize_player_state), so a game created by this code always has
+      # it. An absent memo therefore means a game stored before this change, whose scenario snapshot
+      # predates creditOnPass and so credits no global at all; [] is correct and the safe direction
+      # (a client cannot write a credit global that does not exist for this game).
+      return [] unless has_attribute?(:scenario_data) && scenario_data.is_a?(Hash)
+      player_state['serverCreditGlobals'] = self.class.credit_global_names_in(scenario_data)
+    end
+
+    # Walk every door gate's creditOnPass block and collect the setGlobal names, sorted/unique.
+    def self.credit_global_names_in(data)
+      return [] unless data.is_a?(Hash)
+      rooms = data['rooms']
+      return [] unless rooms.is_a?(Hash)
+
+      names = []
+      rooms.each_value do |room|
+        next unless room.is_a?(Hash) && room['doors'].is_a?(Array)
+        room['doors'].each do |door|
+          credit = door.is_a?(Hash) && door['gate'].is_a?(Hash) ? door['gate']['creditOnPass'] : nil
+          next unless credit.is_a?(Hash)
+          credit.each_value do |block|
+            set = block.is_a?(Hash) ? block['setGlobal'] : nil
+            names.concat(set.keys.map(&:to_s)) if set.is_a?(Hash)
+          end
+        end
+      end
+      names.uniq.sort
+    end
+
+    # The task ids any gate credits through creditOnPass.*.completeTask (§7). A task in this set
+    # is server-completed only: complete_task! refuses it unless called with trusted: true, and
+    # skip_task! refuses it outright, so a tampered client cannot forge the objective tick that
+    # the server-checked passage is meant to earn. Derived once and memoised in player_state as
+    # server_credit_global_names does, so the read path never saves; sync_state loads the narrow
+    # row without scenario_data, so that is read on its own there.
+    def server_completed_only_task_ids
+      return [] unless player_state.is_a?(Hash)
+
+      ids = player_state['serverCompletedOnly']
+      return ids.grep(String) if ids.is_a?(Array)
+
+      # Same rule as server_credit_global_names: derive only when scenario_data is already loaded,
+      # never read it on the narrow sync row. Seeded at creation; an absent memo is a pre-change
+      # game whose snapshot predates creditOnPass, so no task is server-completed-only and [] is the
+      # safe default (complete_task!/skip_task! then impose no extra server-completed-only guard,
+      # matching that game's scenario, which has no such tasks).
+      return [] unless has_attribute?(:scenario_data) && scenario_data.is_a?(Hash)
+      player_state['serverCompletedOnly'] = self.class.completed_only_task_ids_in(scenario_data)
+    end
+
+    # Walk every door gate's creditOnPass block and collect the completeTask ids, sorted/unique.
+    def self.completed_only_task_ids_in(data)
+      return [] unless data.is_a?(Hash)
+      rooms = data['rooms']
+      return [] unless rooms.is_a?(Hash)
+
+      ids = []
+      rooms.each_value do |room|
+        next unless room.is_a?(Hash) && room['doors'].is_a?(Array)
+        room['doors'].each do |door|
+          credit = door.is_a?(Hash) && door['gate'].is_a?(Hash) ? door['gate']['creditOnPass'] : nil
+          next unless credit.is_a?(Hash)
+          credit.each_value do |block|
+            task = block.is_a?(Hash) ? block['completeTask'] : nil
+            ids << task.to_s if task.present?
+          end
+        end
+      end
+      ids.uniq.sort
+    end
+
+    # Make the record whole for a credit about to fire on the sync path, which loads the narrow
+    # SYNC_STATE_COLUMNS (§3.3a). The viaPass credit runs the whole complete_task! tree, which
+    # reads scenario_data and reads/writes the stat columns (tasks_completed, score,
+    # mission_concluded_at) and whose save! validates mission and status, none of which are on the
+    # narrow row. Load every column the row is missing except player_state (the in-flight sync
+    # merge, which a reload would clobber) in one query, set each on the record and clear its dirty
+    # state, so the follow-up save! writes only the columns the credit genuinely changed
+    # (player_state and the stats) and never rewrites the large, unchanged scenario_data column.
+    # A no-op on a full load (the unlock/credential path), where nothing is missing.
+    def ensure_scenario_data_loaded!
+      missing = self.class.column_names.reject { |c| c == 'player_state' || has_attribute?(c) }
+      return if missing.empty?
+
+      values = self.class.where(id: id).pick(*missing)
+      values = [values] if missing.size == 1
+      missing.each_with_index do |col, i|
+        write_attribute(col, values[i])
+        clear_attribute_change(col)
+      end
+      nil
+    end
+
+    # Apply a gate's creditOnPass block for the path that passed (§3.4): set its globals through
+    # write_server_globals! (bypassing the sync read-only check, the teeth) and complete its task.
+    # Returns true when a block existed and was applied.
+    def apply_credit_on_pass!(room_id, path_key)
+      gate = gate_for_connected_room(room_id)
+      return false unless gate.is_a?(Hash)
+      credit = gate['creditOnPass']
+      return false unless credit.is_a?(Hash)
+      block = credit[path_key.to_s]
+      return false unless block.is_a?(Hash)
+
+      set_globals = block['setGlobal']
+      write_server_globals!(set_globals) if set_globals.is_a?(Hash) && set_globals.any?
+
+      task_id = block['completeTask']
+      # trusted: the server itself is crediting a server-completed-only task (§7); the
+      # complete_task! guard would otherwise refuse it as a client forge.
+      complete_task!(task_id, trusted: true) if task_id.present?
+      true
+    end
+
+    # Promote a route room to earned (§3.3): unlock it, remove it from npcRouteRooms (keep the two
+    # lists disjoint, or "in npcRouteRooms means unearned" misfires after promotion), and apply the
+    # path's creditOnPass. Callers gate on !room_unlocked?, so a room earned by one path is never
+    # re-credited by the other. Saves (unlock_room! and complete_task! each save; the final save!
+    # here covers a credit block that sets a global but completes no task).
+    def promote_route_room!(room_id, path_key)
+      unlock_room!(room_id)
+      remove_npc_route_room!(room_id)
+      apply_credit_on_pass!(room_id, path_key)
+      save! if changed?
+      true
+    end
+
+    def remove_npc_route_room!(room_id)
+      list = player_state['npcRouteRooms']
+      return unless list.is_a?(Array) && list.include?(room_id)
+      list.delete(room_id)
+    end
+
+    # viaPass credit on the currentRoom sync (§3.3a). The cheap player_state gate runs first, so a
+    # sync whose currentRoom is not a served-but-unearned route room reads no scenario. Only once
+    # that holds is scenario_data loaded (dirty cleared, so no scenario_data write) to read the
+    # gate: promote only when the gate's playerMayPassIf is a server-owned global and true. On a
+    # fail (the honest no-vest slip-in) nothing is credited and the room stays a route room.
+    def credit_via_pass_on_sync!(room_id)
+      return false if room_id.blank?
+      # Cheap player_state gate first (no scenario read, so the common sync pays nothing): a route
+      # room is never the start room, so unlockedRooms membership is the only "already earned" test
+      # needed here, and room_unlocked? -> start_room? would raise on the narrow sync row.
+      return false unless in_npc_route_room?(room_id) &&
+                          !Array(player_state['unlockedRooms']).include?(room_id)
+
+      ensure_scenario_data_loaded!
+      gate = gate_for_connected_room(room_id)
+      return false unless gate.is_a?(Hash)
+
+      pass_global = gate['playerMayPassIf']
+      return false unless pass_global.present? && server_owned_global_name?(pass_global)
+      return false unless global_variable_value(pass_global)
+
+      promote_route_room!(room_id, 'viaPass')
+    end
+
+    # viaCredential credit in the unlock door branch (§3.3b). Credited only when the server
+    # possession check passes: a held keycard or a live clone whose id is in the door's requires
+    # (rfid), or a held key (key). validate_unlock already refused a non-holder, so this re-asserts
+    # the same server result at the credit site, never a client-sent boolean. Callers pass the room
+    # unlocked by serve_opened_room and gate on it not having been unlocked before; this removes it
+    # from npcRouteRooms (closing the Chunk A dual-list interim) and applies the viaCredential block.
+    def credit_via_credential!(room_id, method, card_ids)
+      return false if room_id.blank?
+
+      lock = room_data(room_id)
+      return false unless lock.is_a?(Hash)
+
+      passes = case method.to_s
+      when 'rfid' then rfid_lock_passes?(lock, card_ids)
+      when 'key'  then lock['requires'].present? && has_key_in_inventory?(lock['requires'])
+      else false
+      end
+      return false unless passes
+
+      remove_npc_route_room!(room_id)
+      applied = apply_credit_on_pass!(room_id, 'viaCredential')
+      save! if changed?
+      applied
+    end
+
+    # True when the server's durable record shows the player has legitimately
+    # reached this room (plan section 8). A room becomes a member of one of these
+    # lists only through a server-checked route the avatar cannot skip, so the
+    # union passes every player who honestly entered and refuses only a forge:
+    # - unlockedRooms (via room_unlocked?): added by a server-checked door unlock
+    #   before the avatar can cross, and monotonic (never shrinks on leaving).
+    # - startRoom (via room_unlocked?) and an awareness world room: open from the
+    #   start.
+    # - npcRouteRooms: a room an NPC route opened for a legitimate slip-in. The
+    #   list is server-written only.
+    # - currentRoom (last synced): a soft, defensive disjunct. The sync guard only
+    #   ever sets the saved currentRoom to a room already in one of the durable
+    #   lists, so it adds no coverage of its own; the durable terms carry the check.
+    # Room entry is low-stakes control flow, so this is a server sanity check, not
+    # a hard secret gate (cheat policy).
+    def player_reached_room?(room_id)
+      return false if room_id.blank?
+      return true if room_unlocked?(room_id)
+      return true if awareness_world_room?(room_id)
+      return true if in_npc_route_room?(room_id)
+      player_state['currentRoom'] == room_id
+    end
+
+    # True when a sync_state request may set the saved currentRoom to this room. The acceptance set
+    # mirrors player_reached_room? minus its own circular currentRoom disjunct: the player
+    # legitimately occupies the room, so saving it is not a forge. A room outside this set is a
+    # forge and the sync refuses it (GATED_DOOR §3.3a). The three cheap player_state checks come
+    # first, so an ordinary sync into an unlocked room (the start room included, since unlockedRooms
+    # is seeded with it) reads no scenario. The scenario is loaded only when they all miss, to admit
+    # the awareness world room, which enterWorld (public/.../utils/world-play.js) places the player
+    # in without a door unlock, so it is never in unlockedRooms; before this method existed that was
+    # a genuine room the player stood in yet the guard would have 403'd once currentRoom began to
+    # sync. Runs on the narrow sync row (SYNC_STATE_COLUMNS), so it loads scenario_data lazily.
+    def may_sync_current_room?(room_id)
+      return false if room_id.blank?
+      return true if Array(player_state['unlockedRooms']).include?(room_id)
+      return true if in_npc_route_room?(room_id)
+      ensure_scenario_data_loaded!
+      return true if start_room?(room_id)
+      awareness_world_room?(room_id)
+    end
+
+    # Stored-game soft-lock migration (GATED_DOOR_SERVER_CHECK_PLAN.md §10). A game saved before this
+    # work may have a split gate's room already in unlockedRooms (Len's route ran) but no credit set,
+    # because the player had not yet worn the hi-vis or cloned a badge when the client still wrote the
+    # credit. After deploy the client credit writers are gone and promotion runs only for a room in
+    # npcRouteRooms, so such a room would be stuck unlocked-but-uncredited and its credited task
+    # (tailgate_in) could never complete. One-shot fix: move each soft-locked split room back into
+    # npcRouteRooms so the earn check re-runs on the next entry (viaPass on the currentRoom sync, or
+    # viaCredential on an rfid unlock). A room whose credit is already earned stays in unlockedRooms,
+    # untouched. Runs only on a full load (scenario_data present), pinned to the game show action (§10),
+    # never the narrow sync row, and before any auto-unlock that reads unlockedRooms.
+    #
+    # show is a read-only action that must not routinely pay a row lock. So this scans lock-free first
+    # (any_soft_locked_route_room?) and returns without a write for every game with nothing stuck (the
+    # common case). Only when a genuinely soft-locked stored game is found does it take its own row lock,
+    # re-check under it (a concurrent earn may have promoted the room meanwhile), demote and stamp
+    # routeRoomsMigrated once. The flag short-circuits later loads of a game that was migrated.
+    def migrate_soft_locked_route_rooms!
+      return unless player_state.is_a?(Hash)
+      return if player_state['routeRoomsMigrated']
+      return unless has_attribute?(:scenario_data) && scenario_data.is_a?(Hash)
+      return unless any_soft_locked_route_room?
+
+      # The lock-free scan derives and memoises serverCreditGlobals into player_state as a read-path
+      # side effect (as worn_global_names does); with_lock refuses a record with unpersisted changes,
+      # so discard that transient dirty state. with_lock reloads the row under the lock and re-derives
+      # it, so nothing is lost. show has no other pending player_state write at this point.
+      clear_attribute_change('player_state')
+
+      with_lock do
+        # next, not return: leave the block normally on the concurrent-migrate race (R3
+        # observation) so the lock/transaction closes cleanly rather than unwinding through a
+        # non-local return. No mutation has happened yet, so the empty transaction is a no-op.
+        next if player_state['routeRoomsMigrated']
+
+        unlocked = player_state['unlockedRooms']
+        unlocked = [] unless unlocked.is_a?(Array)
+
+        split_gated_room_ids.each do |room_id|
+          next unless unlocked.include?(room_id)
+          gate = gate_for_connected_room(room_id)
+          next unless gate.is_a?(Hash)
+          credit = gate['creditOnPass']
+          next unless credit.is_a?(Hash)
+          next unless route_room_soft_locked?(credit)
+
+          unlocked.delete(room_id)
+          player_state['npcRouteRooms'] ||= []
+          player_state['npcRouteRooms'] << room_id unless player_state['npcRouteRooms'].include?(room_id)
+        end
+
+        player_state['unlockedRooms'] = unlocked
+        player_state['routeRoomsMigrated'] = true
+        save!
+      end
+    end
+
+    # Read-only (no lock, no write): true when a split gated room is in unlockedRooms and still
+    # soft-locked, so the migration has demotion work to do. The gate that keeps show lock-free.
+    def any_soft_locked_route_room?
+      unlocked = Array(player_state['unlockedRooms'])
+      split_gated_room_ids.any? do |room_id|
+        next false unless unlocked.include?(room_id)
+        gate = gate_for_connected_room(room_id)
+        credit = gate.is_a?(Hash) ? gate['creditOnPass'] : nil
+        credit.is_a?(Hash) && route_room_soft_locked?(credit)
+      end
+    end
+
+    # The connectedRoom id of every door whose gate has an openFor and splits (§3.1). Doors live in the
+    # adjacent room's doors array, so this walks all rooms. Used by the soft-lock migration (§10).
+    def split_gated_room_ids
+      return [] unless scenario_data.is_a?(Hash)
+      rooms = scenario_data['rooms']
+      return [] unless rooms.is_a?(Hash)
+
+      ids = []
+      rooms.each_value do |room|
+        next unless room.is_a?(Hash) && room['doors'].is_a?(Array)
+        room['doors'].each do |door|
+          next unless door.is_a?(Hash)
+          gate = door['gate']
+          next unless gate.is_a?(Hash) && gate['openFor'].present?
+          room_id = door['connectedRoom']
+          next if room_id.blank?
+          ids << room_id if gate_splits?(gate)
+        end
+      end
+      ids.uniq
+    end
+
+    # True when a split gated room is soft-locked: every creditOnPass global is still false/unset and
+    # every credited task is still incomplete, so the player had not earned the pass when the room was
+    # unlocked (§10). A single truthy credit global or completed credited task means the pass was earned,
+    # so the room is left in unlockedRooms.
+    def route_room_soft_locked?(credit)
+      globals = player_state['globalVariables']
+      globals = {} unless globals.is_a?(Hash)
+
+      credit.each_value do |block|
+        next unless block.is_a?(Hash)
+        set = block['setGlobal']
+        if set.is_a?(Hash)
+          set.each_key { |name| return false if globals[name.to_s] }
+        end
+        task_id = block['completeTask']
+        return false if task_id.present? && task_status(task_id) == 'completed'
+      end
+      true
+    end
+
     # Object management
     def unlock_object!(object_id)
       player_state['unlockedObjects'] ||= []
@@ -335,9 +804,10 @@ module BreakEscape
       # through record_capture! in the sync_state capture step, so the client's write (an old
       # tab's whole map, or a stray key) is dropped whenever it appears.
       variables = variables.reject { |key, _| SERVER_OWNED_GLOBAL_NAMES.include?(key.to_s) }
-      # Imported globals and the worn globals with pp_disguise (Wearables: only POST wear
-      # writes them)
-      read_only = imported_global_names + wearable_read_only_globals
+      # Imported globals, the worn globals with pp_disguise (Wearables: only POST wear writes
+      # them), and the gated-door credit globals (GATED_DOOR §3.4: only the server's creditOnPass
+      # write sets them, so a tampered client cannot forge a tailgate/clone finding).
+      read_only = imported_global_names + wearable_read_only_globals + server_credit_global_names
       variables.each do |key, value|
         if key.to_s == REVOKED_CARDS_GLOBAL
           # Grow-only union (the left-card consequence, apply-actions.js revoke_card, only ever
@@ -1778,6 +2248,13 @@ module BreakEscape
       # Capture proofs (engine plan section 6): devices the server saw planted at a named
       # object, and items it accepted as player drops. Grow-only.
       'plantedItems' => [], 'droppedItems' => [],
+      # Phish evidence (docs/achitechture/PHISH_EVIDENCE_SERVER_PLAN.md section 3.1): two
+      # server-written-only stores that record the landing-page build and the landed send the
+      # server verified itself, so a tampered client cannot forge the evidence that gates a
+      # phished secret. seLandingPages = { pageId => entry }, sePhishSends = { sendKey => entry }.
+      # Never read from a sync body and never serialised to the client (section 7); bounded by
+      # scenario authorship (section 8), so they never grow per sync.
+      'seLandingPages' => {}, 'sePhishSends' => {},
       # Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 9.4): frustration per room NPC, held on the server
       'npcFrustration' => {},
       # Slice 9.2 sub-slice H (9.4): who last left a borrowed session at each PC, and the
@@ -2714,6 +3191,8 @@ module BreakEscape
     # copy at a lock without acceptsUIDOnly: the controller answers reason "uid_only".
     def uid_only_refusal?(target_type, target_id, card_ids)
       return false if target_type != 'door' && unlock_scope_refused?(target_id)
+      # Served-but-unearned route room (§3.6): leak no uid_only reason for its objects.
+      return false if target_type != 'door' && object_in_unpromoted_route_room?(target_id)
 
       lock = target_type == 'door' ? room_data(target_id) : find_scenario_object(target_id)
       return false unless lock.is_a?(Hash) && lock['lockType'] == 'rfid' && self.class.acl_lock?(lock)
@@ -3014,6 +3493,12 @@ module BreakEscape
         'displayName' => npc['displayName'] || npc['id'],
         'via' => via
       }
+      # The account's picture source, so the desktop's taskbar shows its headshot even when the
+      # NPC's room never loaded (UI PC 2 fix round 1, M2). Computed here, never stored, and sent
+      # only with a sign-in answer or the scenario's `sessions` on load; nothing in player_state.
+      portrait = self.class.npc_talk_portrait(npc)
+      answer['portrait'] = portrait if portrait
+      answer['avatar'] = npc['avatar'] if npc['avatar'].is_a?(String) && !npc['avatar'].empty?
       return answer unless foothold.present?
 
       pc = find_login_pc(pc_id)&.dig(:object)
@@ -3359,6 +3844,8 @@ module BreakEscape
     def pin_cracker_feedback(target_type, target_id, attempt)
       return nil unless has_pin_cracker_in_inventory?
       return nil if target_type != 'door' && unlock_scope_refused?(target_id)
+      # Served-but-unearned route room (§3.6): leak no pin pips for its objects.
+      return nil if target_type != 'door' && object_in_unpromoted_route_room?(target_id)
 
       lock = target_type == 'door' ? room_data(target_id) : find_scenario_object(target_id)
       return nil unless lock && lock['lockType'] == 'pin' && lock['requires'].present?
@@ -3371,6 +3858,8 @@ module BreakEscape
     # It tells the player only that their own entry was right apart from case.
     def password_case_mismatch?(target_type, target_id, attempt)
       return false if target_type != 'door' && unlock_scope_refused?(target_id)
+      # Served-but-unearned route room (§3.6): leak no case hint for its objects.
+      return false if target_type != 'door' && object_in_unpromoted_route_room?(target_id)
 
       lock = target_type == 'door' ? room_data(target_id) : find_scenario_object(target_id)
       return false unless lock && lock['lockType'] == 'password'
@@ -3754,7 +4243,7 @@ module BreakEscape
     end
 
     # Complete a task with server-side validation
-    def complete_task!(task_id, validation_data = {})
+    def complete_task!(task_id, validation_data = {}, trusted: false)
       initialize_objectives
 
       task = find_task_in_scenario(task_id)
@@ -3780,6 +4269,19 @@ module BreakEscape
           end
         end
         return response
+      end
+
+      # Server-completed-only guard (§7, R3 minor 1): a task credited by a gate's creditOnPass
+      # completes only through the server-checked passage (apply_credit_on_pass! passes
+      # trusted: true). Every client route (POST /complete_task, and the ink/eventMapping/NPC
+      # completeTask mappings that drive it) lands here with trusted false, so a direct forge of
+      # the objective tick is refused. trusted is a real keyword, never read from validation_data,
+      # so a client cannot smuggle { "trusted": true } through the request body. The guard sits
+      # after the already-completed branch so an honest re-post of a task the server has already
+      # credited gets the idempotent "Already completed" rather than a hard block; a forge targets
+      # a not-yet-completed task, so it never enters that branch and still hits the guard here.
+      if !trusted && server_completed_only_task_ids.include?(task_id.to_s)
+        return { success: false, error: 'Task is server-completed only' }
       end
 
       # Validate based on task type
@@ -3825,8 +4327,16 @@ module BreakEscape
           return { success: false, error: 'NPC not encountered' }
         end
       when 'enter_room'
-        # Room entry is validated by the client having discovered the room
-        # Trust the client for this low-stakes validation
+        # Server sanity check (plan section 8): the player must have reached the
+        # target room per the server's durable record (player_reached_room?). The
+        # refusal is retryable so an honest ordering gap self-heals on the client's
+        # re-sync and re-post rather than stranding the task; a true forge (never
+        # unlocked the door, never slipped in on a route, never synced currentRoom
+        # there) is refused. Room entry is low-stakes control flow, so this is a
+        # sanity check, not a hard secret gate.
+        unless player_reached_room?(task['targetRoom'])
+          return { success: false, error: 'Room not reached', retryable: true }
+        end
       when 'submit_flags'
         unless validate_flag_submission(task, validation_data[:submittedFlags])
           return { success: false, error: 'Not all required flags submitted' }
@@ -3885,6 +4395,17 @@ module BreakEscape
 
       current = player_state.dig('objectivesState', 'tasks', task_id, 'status')
       return { success: true, taskId: task_id, status: current, message: "Already #{current}" } if %w[completed skipped].include?(current)
+
+      # Server-completed-only guard (§7, R3 minor 1): skip_task! runs check_aim_completion for any
+      # task id the client names, so a tampered skip_task of a credited task would otherwise reach
+      # its aim without the server-checked passage. A credited task is never legitimately skipped,
+      # so this refuses outright (no trusted bypass). The guard sits after the already-completed/
+      # skipped branch so an honest re-post of a credited task already completed by the server gets
+      # the idempotent "Already completed"; a forge targets a not-yet-settled task and still hits
+      # the guard here.
+      if server_completed_only_task_ids.include?(task_id.to_s)
+        return { success: false, error: 'Task is server-completed only' }
+      end
 
       was_not_concluded_before = mission_concluded_at.nil?
 
@@ -5947,6 +6468,18 @@ module BreakEscape
 
       # Worn globals (Wearables): read-only to sync_state from the start
       refresh_wearable_globals!
+
+      # Gated-door credit (GATED_DOOR §3.4, §7): derive the server-owned credit globals and the
+      # server-completed-only task ids once, from scenario_data (loaded here at creation), and
+      # memoise them into player_state. sync_state then reads them from the narrow player_state
+      # load and never reloads scenario_data (the sync-deltas / SYNC SIZE rule). Both are bounded,
+      # server-written only, and never grow per sync. A game created without this code (before this
+      # change) has no memo; its sync-path readers fall back to [] safely (its scenario predates
+      # creditOnPass, so it credits nothing).
+      if scenario_data.is_a?(Hash)
+        self.player_state['serverCreditGlobals'] = self.class.credit_global_names_in(scenario_data)
+        self.player_state['serverCompletedOnly'] = self.class.completed_only_task_ids_in(scenario_data)
+      end
     end
 
     def set_started_at

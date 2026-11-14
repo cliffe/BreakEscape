@@ -100,8 +100,13 @@ function resolveEhrStatus(globalVariables, fallbackStatus = 'offline') {
 }
 
 export class EhrTerminalMinigame extends MinigameScene {
-    // Its frame keeps a bar at the bottom for Cancel (minigames-framework.css)
-    static controlsOverlay = true;
+    // Draws in the shared console window (UI decision X8): title bar and X come from there.
+    // The window wraps the short outage notice and fills for the online record view (render()).
+    static consoleWindow = true;
+
+    consoleTitle() {
+        return 'NORTHGATE TRUST EHR - PRESCRIBING MODULE';
+    }
 
     constructor(container, params = {}) {
         super(container, {
@@ -220,7 +225,7 @@ export class EhrTerminalMinigame extends MinigameScene {
         return `
             <div class="ehr-online-layout">
                 <div class="ehr-patient-list">${patientRows}</div>
-                <div class="ehr-record-panel">
+                <div class="ehr-record-panel pixel-scroll">
                     <div class="ehr-demographics">
                         NAME: ${escapeHtml(selected.name || 'Unknown')}<br>
                         DOB: ${escapeHtml(selected.dob || 'Unknown')}<br>
@@ -235,13 +240,13 @@ export class EhrTerminalMinigame extends MinigameScene {
                     <div class="ehr-dose-block">${prescriptionBars}</div>
                 </div>
             </div>
-            <button id="ehr-terminal-acknowledge" class="ehr-terminal-button" type="button">[CLOSE TERMINAL]</button>
         `;
     }
 
     render() {
         const isOnline = this.ehrStatus === 'online';
         this.gameContainer.classList.toggle('ehr-online-mode', isOnline);
+        this.consoleWindowEl?.classList.toggle('console-window-fill', isOnline);
         const badgeText = isOnline ? '[ONLINE]' : '[OFFLINE]';
         const badgeClass = isOnline ? 'online' : 'offline';
         const safeMessage = escapeHtml(this.offlineMessage);
@@ -256,11 +261,10 @@ export class EhrTerminalMinigame extends MinigameScene {
         this.gameContainer.innerHTML = `
             <div class="ehr-terminal-panel">
                 <div class="ehr-terminal-header">
-                    <span class="ehr-terminal-title">NORTHGATE TRUST EHR - PRESCRIBING MODULE</span>
                     <span class="ehr-terminal-status ${badgeClass}">${badgeText}</span>
                 </div>
 
-                <div class="ehr-terminal-content">
+                <div class="ehr-terminal-content pixel-scroll">
                     ${bodyMarkup}
                 </div>
             </div>

@@ -310,6 +310,56 @@ test('a card carried by several NPCs and used at an access lock is a warning', {
     assertHas(out, "ℹ️ Identity reach: card '4F00A1C2' (jake, dana) opens door 'finance_office'");
 });
 
+// ---- remoteScreen policy lint (credential keyring K0, section 5.3; review R1 B1/m1/m2) ----
+// A tiles policy reaches the policy-name resolution the validator does without ActiveSupport;
+// issues() asserts ruby exits 0, so each tiles fixture below is the B1 regression (the old
+// `.presence` raised NoMethodError and suppressed every other access-model message).
+
+function headlessPcUnder(sc, policy) {
+    lobby(sc).objects.push({
+        id: 'door_ctl', type: 'pc', name: 'Door controller', locked: true, lockType: 'login',
+        headless: true, access: { roles: ['it'] }, policy
+    });
+}
+
+test('a remote:blocked policy that sets remoteScreen warns, and the check does not crash', { skip }, () => {
+    const sc = clean();
+    sc.policies.blocked_rs = { remote: 'blocked', remoteScreen: 'typed' };
+    obj(sc, 'hot_desk').policy = 'blocked_rs';
+    const out = issues(sc);
+    assertHas(warnings(out), "policy 'blocked_rs' sets remoteScreen but remote is 'blocked'");
+    assert.ok(!has(out, 'could not run'), out.join('\n'));
+});
+
+test("remoteScreen 'tiles' on a policy whose only PC is headless draws the info line (B1 regression)", { skip }, () => {
+    const sc = clean();
+    sc.policies.headless_tiles = { remoteScreen: 'tiles' };
+    headlessPcUnder(sc, 'headless_tiles');
+    assertHas(issues(sc), "policy 'headless_tiles' has remoteScreen 'tiles' but every PC under it");
+});
+
+test('remoteScreen tiles with a tile-capable PC under it draws no info line', { skip }, () => {
+    const sc = clean();
+    sc.policies.open_tiles = { remoteScreen: 'tiles' };
+    obj(sc, 'hot_desk').policy = 'open_tiles';
+    assert.ok(!has(issues(sc), 'no PC tiles show'), 'a tile-capable PC means tiles do show');
+});
+
+test('remoteScreen tiles on a policy no PC uses draws no info line (R1 m1)', { skip }, () => {
+    const sc = clean();
+    sc.policies.spare_tiles = { remoteScreen: 'tiles' };
+    assert.ok(!has(issues(sc), "policy 'spare_tiles'"), 'an unused policy is not "every PC tiles hidden"');
+});
+
+test('a remote:blocked policy with remoteScreen tiles gets the warning only, never both (R1 m2)', { skip }, () => {
+    const sc = clean();
+    sc.policies.blocked_tiles = { remote: 'blocked', remoteScreen: 'tiles' };
+    headlessPcUnder(sc, 'blocked_tiles');
+    const out = issues(sc);
+    assertHas(warnings(out), "policy 'blocked_tiles' sets remoteScreen but remote is 'blocked'");
+    assert.ok(!has(out, "has remoteScreen 'tiles' but every PC under it"), 'the warning already explains it');
+});
+
 // check_lock_credentials (step 7): a keycard carrying an NPC's card opens every access lock
 // that admits that NPC, so it is not "a credential that opens nothing".
 function lockCredentialIssues(scenario) {

@@ -187,16 +187,24 @@ function jsBreaches(file) {
 }
 
 // VT323 under 16px in the CSS. Sizes in px only (em sizes follow their parent). The network
-// diagram's labels are SVG text in viewBox units, scaled with the diagram: they wait for a
-// diagram redesign with larger node boxes (slice 7 R1, left for a follow-up).
-const SVG_UNIT_LABELS = ['.nad-line-label', '.nad-node-label', '.nad-node-sub'];
+// diagram's labels are SVG text in viewBox units, drawn at the diagram's whole-number scale
+// (NAD1: always 2x, network-architecture-minigame.js), so their size on screen is the CSS size
+// times that scale: that is what both font checks below measure for them.
+const SVG_UNIT_LABELS = ['.nad-zone-label', '.nad-line-label', '.nad-node-label', '.nad-node-sub', '.nad-node-warn'];
+function nadScale() {
+    const js = read('js/minigames/network-architecture/network-architecture-minigame.js');
+    const min = Number(js.match(/DIAGRAM_MIN_SCALE = (\d+);/)?.[1]);
+    const max = Number(js.match(/DIAGRAM_MAX_SCALE = (\d+);/)?.[1]);
+    assert.ok(min >= 1 && min === max, 'the diagram draws at one whole-number scale');
+    return min;
+}
+const screenPx = (selector, px) => SVG_UNIT_LABELS.includes(selector) ? px * nadScale() : px;
 function cssSmallVt323(file) {
     const found = [];
     for (const { selector, decls } of cssRules(read(file))) {
-        if (SVG_UNIT_LABELS.includes(selector)) continue;
         const fam = decls.find(([k]) => k === 'font-family');
         const size = decls.find(([k]) => k === 'font-size');
-        if (fam && /^['"]?VT323/i.test(fam[1]) && size && /^\d+(\.\d+)?px$/.test(size[1]) && parseFloat(size[1]) < 16) found.push(`${file} ${selector} ${size[1]}`);
+        if (fam && /^['"]?VT323/i.test(fam[1]) && size && /^\d+(\.\d+)?px$/.test(size[1]) && screenPx(selector.trim(), parseFloat(size[1])) < 16) found.push(`${file} ${selector} ${size[1]}`);
     }
     return found;
 }
@@ -289,7 +297,7 @@ test('Press Start 2P sizes in the slice sheets sit on the 8px grid', () => {
             const size = r.decls.find(([p]) => p === 'font-size');
             if (!fam || !size || !/press start 2p/i.test(fam[1])) continue;
             const m = size[1].match(/^(\d+(?:\.\d+)?)px/);
-            if (m && Number(m[1]) % 8 !== 0) off.push(`${rel} ${r.selector.trim()} ${size[1]}`);
+            if (m && screenPx(r.selector.trim(), Number(m[1])) % 8 !== 0) off.push(`${rel} ${r.selector.trim()} ${size[1]}`);
         }
     }
     assert.deepEqual(off, []);

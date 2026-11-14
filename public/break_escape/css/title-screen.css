@@ -63,7 +63,9 @@
 
 .title-screen-logo {
     position: absolute;
-    width: 300px;
+    /* 300px, or on a phone half the screen less a 16px gutter, so the zoom to 200% ends
+       inside the screen instead of being cut by the container (coordinator 5b) */
+    width: min(300px, calc(50vw - 16px));
     filter: drop-shadow(0 0 20px rgba(126, 18, 214, 0.3));
     animation: logoFadeZoom 2.5s ease-in-out forwards;
     transform-origin: center center;

@@ -44,6 +44,13 @@ function normalizeStatus(status) {
 }
 
 export class SisConfigThresholdMinigame extends MinigameScene {
+    // Draws in the shared console window (UI decision X8): title bar and X come from there
+    static consoleWindow = true;
+
+    consoleTitle() {
+        return 'SIS CONFIGURATION - BATTERY HALL SIS';
+    }
+
     constructor(container, params = {}) {
         super(container, params);
         this.rows = Array.isArray(params.rows) && params.rows.length > 0 ? params.rows : DEFAULT_ROWS;
@@ -56,7 +63,6 @@ export class SisConfigThresholdMinigame extends MinigameScene {
         this.params.cancelText = this.params.cancelText || 'Close';
         super.init();
 
-        // Keep SIS panel footprint similar to PIN minigame and style as translucent panel.
         this.container.className += ' sis-threshold-minigame-container';
         this.gameContainer.className += ' sis-threshold-minigame-game-container';
 
@@ -82,14 +88,14 @@ export class SisConfigThresholdMinigame extends MinigameScene {
                         <div>${escapeHtml(displayDashes(row.parameter || ''))}</div>
                         <div class="sis-row-meta">${escapeHtml(displayDashes(row.lastModified || ''))} | ${escapeHtml(displayDashes(row.modifiedBy || ''))}</div>
                     </td>
-                    <td>${escapeHtml(displayDashes(row.currentValue || ''))}</td>
-                    <td class="${statusClass}">${escapeHtml(status)}</td>
+                    <td data-label="Current Value">${escapeHtml(displayDashes(row.currentValue || ''))}</td>
+                    <td class="${statusClass}" data-label="Status">${escapeHtml(status)}</td>
                 </tr>
             `;
         }).join('');
 
         container.innerHTML = `
-            <div class="sis-threshold-header">SIS CONFIGURATION - BATTERY HALL SIS</div>
+            <div class="sis-threshold-main">
             <table class="sis-threshold-table">
                 <thead>
                     <tr>
@@ -109,12 +115,17 @@ export class SisConfigThresholdMinigame extends MinigameScene {
             <div class="sis-help" id="sis-help-text">
                 ${canCompare ? 'Select highlighted rows to inspect deviations.' : 'Retrieve the SIS certification document to unlock side-by-side comparison.'}
             </div>
-            <div class="sis-overlay" id="sis-detail-overlay"></div>
+            </div>
         `;
 
         this.gameContainer.appendChild(container);
 
-        this.overlayEl = container.querySelector('#sis-detail-overlay');
+        // The pop-up layer covers the whole window (not the scrolling body), so a pop-up
+        // opened on a scrolled form is always on screen
+        this.overlayEl = document.createElement('div');
+        this.overlayEl.className = 'sis-overlay';
+        this.overlayEl.id = 'sis-detail-overlay';
+        this.container.appendChild(this.overlayEl);
         this.helpTextEl = container.querySelector('#sis-help-text');
     }
 
@@ -161,15 +172,14 @@ export class SisConfigThresholdMinigame extends MinigameScene {
 
         const detailText = row.detailText || 'This value deviates from the IEC 61511 certified baseline.';
         this.overlayEl.innerHTML = `
-            <div class="sis-modal">
+            <div class="sis-modal sis-modal-with-x">
+                <button type="button" class="minigame-close-button sis-modal-close" id="sis-detail-close" aria-label="Close">&times;</button>
                 <h4>${escapeHtml(displayDashes(row.parameter || 'Parameter Detail'))}</h4>
                 <p>${escapeHtml(displayDashes(detailText))}</p>
-                <div class="sis-modal-actions">
-                    <button class="sis-btn" id="sis-detail-close">Close</button>
-                </div>
             </div>
         `;
         this.overlayEl.classList.add('show');
+        this._hideSceneX(true);
 
         const closeBtn = this.overlayEl.querySelector('#sis-detail-close');
         this.addEventListener(closeBtn, 'click', () => this.closeOverlay());
@@ -189,7 +199,8 @@ export class SisConfigThresholdMinigame extends MinigameScene {
         }).join('');
 
         this.overlayEl.innerHTML = `
-            <div class="sis-modal">
+            <div class="sis-modal sis-modal-with-x">
+                <button type="button" class="minigame-close-button sis-modal-close" id="sis-compare-close" aria-label="Close">&times;</button>
                 <h4>${escapeHtml(displayDashes(this.compareTitle))}</h4>
                 <div class="sis-compare-grid">
                     <div class="sis-compare-card">
@@ -201,12 +212,10 @@ export class SisConfigThresholdMinigame extends MinigameScene {
                         ${certifiedRows}
                     </div>
                 </div>
-                <div class="sis-modal-actions">
-                    <button class="sis-btn" id="sis-compare-close">Close</button>
-                </div>
             </div>
         `;
         this.overlayEl.classList.add('show');
+        this._hideSceneX(true);
 
         const closeBtn = this.overlayEl.querySelector('#sis-compare-close');
         this.addEventListener(closeBtn, 'click', () => this.closeOverlay());
@@ -226,6 +235,7 @@ export class SisConfigThresholdMinigame extends MinigameScene {
             </div>
         `;
         this.overlayEl.classList.add('show');
+        this._hideSceneX(true);
 
         const noBtn = this.overlayEl.querySelector('#sis-confirm-no');
         const yesBtn = this.overlayEl.querySelector('#sis-confirm-yes');
@@ -246,10 +256,25 @@ export class SisConfigThresholdMinigame extends MinigameScene {
         this.showSuccess('SIS tamper reported. Priya has been notified.', true, 900);
     }
 
+    // Esc is Cancel on an open pop-up or confirm; with none open it closes the scene
+    handleEscapeKey() {
+        if (!this.overlayEl?.classList.contains('show')) return false;
+        this.closeOverlay();
+        return true;
+    }
+
     closeOverlay() {
         if (!this.overlayEl) return;
         this.overlayEl.classList.remove('show');
         this.overlayEl.innerHTML = '';
+        this._hideSceneX(false);
+    }
+
+    // One X on screen at a time: the pop-ups carry their own X and the confirm has two named
+    // buttons and no X (user rule), so the scene X hides while the overlay is open
+    _hideSceneX(hidden) {
+        const x = this.container?.querySelector?.('#minigame-close');
+        if (x) x.style.visibility = hidden ? 'hidden' : '';
     }
 
     setScenarioGlobal(name, value) {

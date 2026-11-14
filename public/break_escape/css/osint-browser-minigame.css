@@ -1,6 +1,7 @@
 /* OSINT browser (design 02). Dark chrome on the --ui-* tokens, a light "page" area for the site
    content. Every string the player reads is DOM text, in the pixel font GNF (--se-font-readable),
-   except domains, addresses and handles, which are Source Sans 3 (--se-font-address).
+   including domains, addresses and handles, which use --se-font-address (GNF first, with a
+   smooth fallback only for glyphs GNF lacks).
    Marks are always paired with words.
    The stylesheet <link> is added by the wiring packet (P2-W). */
 
@@ -10,22 +11,26 @@
 
 .osint-browser-game-container {
     width: min(1100px, 96vw);
-    height: min(92vh, 860px);
+    /* M1 fit: the frame wraps its content and scrolls inside rather than clipping. At short
+       heights (667x375) the fixed-height + overflow:hidden window cut the site tab strip and
+       page nav with no way to reach them; the frame now caps its height and scrolls. */
+    max-height: min(92vh, 860px);
     margin: 0 auto;
     padding: 0;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     background: var(--ui-surface, rgba(24, 30, 48, 0.94));
-    border: 4px solid var(--ui-line, #4c5b80);
+    border: 16px solid transparent;
+    border-image: var(--se-frame-image, url('/break_escape/assets/ui/social/mail-frame.png')) 8 / 16px stretch;
 }
 
 .ob-root {
     display: flex;
     flex-direction: column;
-    min-height: 0;
-    height: 100%;
+    min-height: 100%;
     font-family: var(--se-font-readable, 'GNF', 'Source Sans 3', sans-serif);
     font-size: 16px;
     color: var(--ui-text, #eef1f8);
@@ -65,14 +70,13 @@
     margin: 0;
     flex: 1 1 auto;
     font-family: 'Press Start 2P', monospace;
-    font-size: 14px;
-    line-height: 1.4;
+    font-size: 16px;
+    line-height: 24px;
     font-weight: 400;
 }
 
 .ob-head-buttons { display: flex; gap: 8px; }
 
-.ob-close,
 .ob-case,
 .ob-props-open,
 .ob-props-close,
@@ -124,7 +128,7 @@
 
 .ob-site.is-current { border-color: var(--ui-accent, #ffcc44); }
 .ob-site-name { font-weight: 700; }
-.ob-site-url { font-size: 14px; color: var(--ui-text-dim, #a8b2c8); }
+.ob-site-url { font-size: 16px; color: var(--ui-text-dim, #a8b2c8); }
 
 .ob-head button:focus-visible,
 .ob-site:focus-visible,
@@ -290,7 +294,7 @@
 .ob-profiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
 .ob-profile-link { gap: 10px; padding: 6px 8px; border: 2px solid #c9c2b2; text-decoration: none; width: 100%; box-sizing: border-box; }
 .ob-profile-name { font-weight: 700; text-decoration: underline; }
-.ob-handle { color: #4a4f5c; font-size: 15px; }
+.ob-handle { color: #4a4f5c; font-size: 16px; }
 .ob-headshot { width: 64px; height: 64px; image-rendering: pixelated; background: #d8d2c2; flex: 0 0 auto; }
 .ob-profile-head { display: flex; align-items: center; gap: 14px; }
 .ob-profile-who { display: flex; flex-direction: column; gap: 2px; }
@@ -382,13 +386,15 @@
 /* ── small screens: one column; the sites strip is a vertical list ── */
 @media (max-width: 700px) {
     .osint-browser-game-container { width: 100vw; height: 100vh; border-width: 2px; }
-    .ob-strip { flex-direction: column; }
-    .ob-site { width: 100%; }
+    /* C-OB1: one sideways-scrolling tab row at narrow widths, not four full-width rows that
+       push the page below the fold. */
+    .ob-strip { flex-wrap: nowrap; overflow-x: auto; }
+    .ob-site { flex: 0 0 auto; }
     .ob-main { margin: 0 8px 8px; padding: 12px; }
     .ob-profiles { grid-template-columns: 1fr; }
     .ob-address { margin: 8px 8px 0; }
     .ob-head { padding: 8px; }
-    .ob-title { font-size: 12px; }
+    .ob-title { font-size: 16px; }
     .ob-logo { height: 40px; }
     .ob-tool { flex-basis: 100%; }
 }

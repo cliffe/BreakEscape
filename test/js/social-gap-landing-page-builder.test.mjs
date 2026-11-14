@@ -38,6 +38,7 @@ for (const rel of [
     'utils/display-dashes.js', 'utils/escape-html.js', 'utils/author-html.js',
     'ui/modal-stack.js',
     'systems/global-writer.js',
+    'systems/se-landing-page-client.js',
     'systems/captures.js'
 ]) {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });

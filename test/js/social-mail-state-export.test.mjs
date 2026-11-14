@@ -43,6 +43,9 @@ function setup({ timed = false, saved = null } = {}) {
   Object.assign(window, {
     mailScheduler: mail,
     gameState: { globalVariables: { a: 1 }, notes: [] },
+    // state-sync.js reads window.currentPlayerRoom (the real engine field); window.currentRoom
+    // is the legacy null global and no longer feeds the sync. Set both so the page is faithful.
+    currentPlayerRoom: 'office',
     currentRoom: { name: 'office' }
   });
   delete window.npcManager;

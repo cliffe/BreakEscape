@@ -215,6 +215,65 @@ module BreakEscape
       end
     end
 
+    # --- Phish evidence: landing-page build route (Route 1) ---------------------------------
+    #
+    # docs/achitechture/PHISH_EVIDENCE_SERVER_PLAN.md sections 3.1, 3.2, 4. The server records the
+    # landing-page build itself, in player_state['seLandingPages'] = { pageId => entry }, each
+    # { pageId, targetId, choices, credibility, meetsThreshold, built: true, at }. The client's
+    # choices are validated field by field against the page's own authored menus (the same
+    # closed-menu discipline pick_capture_candidate applies to a capture), and the verdict is
+    # recomputed with BreakEscape::PhishScore, never taken from the body (the body carries no
+    # score). This chunk only writes the store; nothing reads it for the gate yet (the reader
+    # change and the capture re-stamp land later in the build order, plan section 14).
+
+    # Record one client-claimed landing-page build, server-verified. Returns
+    # { result: :recorded, entry: } or { result: :refused, reason: 'invalid' }. Does not save;
+    # the route wrapper saves once. First-wins on the page, last-score-wins on a rebuild (a repeat
+    # build with different choices replaces choices/credibility/meetsThreshold, keeping built).
+    def record_landing_page_build!(input, scenario:)
+      return { result: :refused, reason: 'invalid' } unless input.is_a?(Hash)
+
+      page_id = input['pageId']
+      return { result: :refused, reason: 'invalid' } unless valid_capture_target_id?(page_id)
+
+      page_def = CaptureModel.landing_page(scenario, page_id)
+      return { result: :refused, reason: 'invalid' } unless page_def.is_a?(Hash)
+
+      target_id = input['targetId']
+      return { result: :refused, reason: 'invalid' } unless valid_landing_target?(page_def, target_id, scenario)
+
+      choices = input['choices']
+      return { result: :refused, reason: 'invalid' } unless valid_build_choices?(page_def, choices)
+
+      verdict = recompute_page_verdict?(scenario, page_id) ? BreakEscape::PhishScore.score(page_def, choices, target_id.to_s) : nil
+      meets = verdict ? verdict[:meets_threshold] == true : false
+      credibility = verdict ? verdict[:credibility] : nil
+
+      store = (player_state['seLandingPages'] ||= {})
+      entry = {
+        'pageId' => page_id, 'targetId' => target_id.to_s,
+        'choices' => normalise_build_choices(choices),
+        'credibility' => credibility, 'meetsThreshold' => meets,
+        'built' => true, 'at' => capture_now_ms
+      }
+      store[page_id] = entry
+      { result: :recorded, entry: entry }
+    end
+
+    # Route-facing wrapper (POST se/landing_page): validate, record, save, and answer the shape
+    # the controller renders.
+    def build_landing_page!(input)
+      result = record_landing_page_build!(input, scenario: scenario_data)
+      if result[:result] == :refused
+        return { status: :unprocessable_entity, body: { success: false, reason: result[:reason] || 'invalid' } }
+      end
+
+      save!
+      entry = result[:entry]
+      { status: :ok, body: { success: true, pageId: entry['pageId'],
+                             meetsThreshold: entry['meetsThreshold'], credibility: entry['credibility'] } }
+    end
+
     # Whether an old save still holds a non-empty legacy globalVariables.se_captures to migrate.
     def legacy_captures?
       legacy = player_state.dig('globalVariables', 'se_captures')
@@ -417,6 +476,125 @@ module BreakEscape
     end
 
     private
+
+    # Q1 (plan section 16): option A, the recommendation. Recompute the page verdict for every
+    # scenario, one code path. The server owns the page score outright, so it never trusts a
+    # client verdict. Switching to option B (recompute only when the page's served secret is
+    # protected) is this one predicate returning false for an unprotected page.
+    def recompute_page_verdict?(_scenario, _page_id)
+      true
+    end
+
+    # Whether a build's targetId is one the page is authored for: a key of the page's targets
+    # map, or a declared phish target (plan section 3.2 step 2).
+    def valid_landing_target?(page_def, target_id, scenario)
+      return false unless valid_capture_target_id?(target_id)
+
+      targets = page_def['targets']
+      return true if targets.is_a?(Hash) && targets.key?(target_id)
+
+      CaptureModel.phish_target_ids(scenario).include?(target_id)
+    end
+
+    # Validate the build choices field by field against the page's authored menus (plan section
+    # 3.2 step 3). A value naming something off the menu is refused; an unset (nil) choice is
+    # allowed, as the scorer treats it. The fake-check variant validates choices.check.
+    def valid_build_choices?(page_def, choices)
+      return false unless choices.is_a?(Hash)
+      return valid_check_choices?(page_def, choices['check']) if page_def['pageType'] == 'fakeCheck'
+
+      return false unless choice_on_menu_or_nil?(choices['brand'], landing_menu_ids(page_def['brands']))
+      return false unless valid_purpose_choice?(page_def, choices['purpose'])
+      # logo and padlock are fixed closed option sets, not page-authored menus (plan section 3.2
+      # step 3); a page need not author a `logos` list. An unrecognised logo only scores zero on
+      # recompute, so this guards shape and hostile input, not the gate.
+      return false unless choice_on_menu_or_nil?(choices['logo'], LANDING_LOGO_IDS)
+      return false unless choice_on_menu_or_nil?(choices['wording'], landing_menu_ids(page_def['wordings']))
+      return false unless valid_build_padlock?(choices['padlock'])
+      return false unless valid_build_fields?(page_def, choices['fields'])
+      # The domain must resolve to an option under the chosen brand (same resolver the scorer
+      # uses), so a stored build can never be the guard's blocked case.
+      return false if choices['domainId'].nil?
+      return false unless valid_choice_id?(choices['domainId'])
+
+      !BreakEscape::PhishScore.find_domain_option(page_def, choices['brand'], choices['domainId']).nil?
+    end
+
+    # The fixed logo closed set (landing-page-model.js scoreLogo recognises crisp/blurry/stretched,
+    # anything else scores zero; the builder also offers 'none').
+    LANDING_LOGO_IDS = Set['crisp', 'blurry', 'stretched', 'none'].freeze
+    # Fallback purpose ids for a page that authors no purposes menu.
+    LANDING_PURPOSE_FALLBACK_IDS = Set['signin', 'expired', 'payslip'].freeze
+
+    # purpose validates against the page's authored purposes menu when it has one, else the fixed
+    # fallback (plan section 3.2 step 3 groups purpose with the closed option sets).
+    def valid_purpose_choice?(page_def, value)
+      ids = landing_menu_ids(page_def['purposes'])
+      ids = LANDING_PURPOSE_FALLBACK_IDS if ids.empty?
+      choice_on_menu_or_nil?(value, ids)
+    end
+
+    def valid_check_choices?(page_def, check)
+      return false unless check.is_a?(Hash)
+
+      menus = page_def['check'].is_a?(Hash) ? page_def['check'] : {}
+      choice_on_menu_or_nil?(check['hostId'], landing_menu_ids(menus['hosts'])) &&
+        choice_on_menu_or_nil?(check['pretextId'], landing_menu_ids(menus['pretexts'])) &&
+        choice_on_menu_or_nil?(check['stepsId'], landing_menu_ids(menus['steps'])) &&
+        choice_on_menu_or_nil?(check['urgencyId'], landing_menu_ids(menus['urgencies']))
+    end
+
+    # The id set of an authored menu list ([{ 'id' => .. }, ..]).
+    def landing_menu_ids(list)
+      Array(list).filter_map { |opt| opt['id'] if opt.is_a?(Hash) && opt['id'].is_a?(String) }.to_set
+    end
+
+    # A single choice id: nil (unset) passes; otherwise a non-empty string within the cap that
+    # names a value in the menu id set.
+    def choice_on_menu_or_nil?(value, ids)
+      return true if value.nil?
+      return false unless valid_choice_id?(value)
+
+      ids.include?(value)
+    end
+
+    def valid_choice_id?(value)
+      value.is_a?(String) && !value.empty? && value.length <= CaptureModel::MAX_CAPTURE_TARGET_CHARS
+    end
+
+    def valid_build_padlock?(value)
+      value.nil? || value == true || value == false
+    end
+
+    # fields is nil (treated as none) or an array of known field ids on the page, each within
+    # the cap. Anything else is refused.
+    def valid_build_fields?(page_def, fields)
+      return true if fields.nil?
+      return false unless fields.is_a?(Array)
+
+      known = Array(page_def['fields']).select { |f| f.is_a?(String) }.to_set
+      fields.all? { |f| valid_choice_id?(f) && known.include?(f) }
+    end
+
+    # The closed choice set stored on the build entry, mirroring landing-page-model.js normChoices:
+    # the seven sign-in keys, plus the four-key `check` only when present (fake check).
+    def normalise_build_choices(choices)
+      c = choices.is_a?(Hash) ? choices : {}
+      out = {
+        'brand' => c['brand'], 'purpose' => c['purpose'], 'domainId' => c['domainId'],
+        'logo' => c['logo'], 'wording' => c['wording'],
+        'fields' => (c['fields'].is_a?(Array) ? c['fields'].dup : []),
+        'padlock' => c['padlock'] == true
+      }
+      if c['check'].is_a?(Hash)
+        chk = c['check']
+        out['check'] = {
+          'hostId' => chk['hostId'], 'pretextId' => chk['pretextId'],
+          'urgencyId' => chk['urgencyId'], 'stepsId' => chk['stepsId']
+        }
+      end
+      out
+    end
 
     # The landing page id whose part 2 evidence a credential entry needs, or nil. The entry's
     # address matching a page's capture address names that page; otherwise a phish target with

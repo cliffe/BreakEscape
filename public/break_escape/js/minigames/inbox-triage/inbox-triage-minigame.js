@@ -543,7 +543,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         // F12: closing or reloading mid-round restarts it from the top (only the result is
         // ever saved), so say so here rather than leave a student puzzled by a reset.
         // Batch 11 item 8: a launcher that saves each verdict (params.onProgress) resumes instead.
-        p.appendChild(el('p', 'tri-brief-restart', typeof this.params?.onProgress === 'function'
+        p.appendChild(el('p', 'tri-brief-restart se-notice', typeof this.params?.onProgress === 'function'
             ? 'Your answers are saved as you go, so a reload picks up where you left off.'
             : 'Closing or reloading before the end restarts this round from the first message.'));
         if (this.skipped.length) {
@@ -1672,7 +1672,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
 
         // The text scrolls in its own body and the action bar sits below it, so the skill breakdown
         // is never underneath Finish (E8 F5).
-        const body = el('div', 'tri-result-body');
+        const body = el('div', 'tri-result-body pixel-scroll');
         while (p.firstChild) body.appendChild(p.firstChild);
         p.appendChild(body);
 

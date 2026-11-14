@@ -60,9 +60,12 @@ test('full-window consoles opt in to the overlaid Cancel row; no class allowlist
         assert.equal(rules(framework, `${box} .minigame-controls`).length, 0, `${box} is no longer listed by class`);
     }
     const js = (p) => readFileSync(join(here, '../../public/break_escape/js/minigames', p), 'utf8');
-    for (const f of ['siem/siem-dashboard-minigame.js', 'ehr-terminal/ehr-terminal-minigame.js',
-        'network-architecture/network-architecture-minigame.js', 'backup-recovery/backup-recovery-minigame.js']) {
-        assert.match(js(f), /static controlsOverlay = true;/, f);
+    // SIEM and the network architecture diagram moved onto the shared console window (X8), which
+    // owns the bar the X sits in, so they no longer opt in
+    // The EHR terminal and the backup recovery console moved onto it too
+    for (const f of ['siem/siem-dashboard-minigame.js', 'network-architecture/network-architecture-minigame.js',
+        'ehr-terminal/ehr-terminal-minigame.js', 'backup-recovery/backup-recovery-minigame.js']) {
+        assert.doesNotMatch(js(f), /static controlsOverlay = true;/, f);
     }
     const base = js('framework/base-minigame.js');
     assert.match(base, /static controlsOverlay = false;/);
@@ -71,7 +74,6 @@ test('full-window consoles opt in to the overlaid Cancel row; no class allowlist
 
 test('scene overrides keep the Cancel row positioned, so its z-index holds (R2 m2)', () => {
     for (const [file, sel] of [['examine-minigame.css', '.examine-minigame .minigame-controls'],
-        ['forensic-data-platform-minigame.css', '.fdp-minigame-container .minigame-controls'],
         ['biometrics-minigame.css', '.fingerprint-reader-container .minigame-controls']]) {
         assert.equal(rule(css(file), sel).position, 'relative', sel);
     }

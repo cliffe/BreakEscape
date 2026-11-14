@@ -26,7 +26,7 @@ module BreakEscape
 
     before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :capture_secrets, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :conclude_mission,
                                         :login, :logout, :lock_session, :login_accounts, :clone_card, :network, :network_plant, :network_unplug, :network_implant, :network_join,
-                                        :npc_frustration, :npc_workaround, :feed_post, :friendface_phone, :wear]
+                                        :npc_frustration, :npc_workaround, :feed_post, :friendface_phone, :wear, :se_landing_page]
     # A host may also route the game page under its own address (Hacktivity: /hacktivities/:event_id/play/mission/:id,
     # inside a Game event's web app scope). The game must belong to that event: any other pair is a 404.
     before_action :require_game_in_host_event, only: [:show]
@@ -94,9 +94,15 @@ module BreakEscape
     # login, logout and clone_card write sessions, sign-in failures and card copies
     # (access model, section 6), so they take the lock like unlock. network_plant and
     # network_unplug write footholds, the inventory and sessions (slice 9.3a, section 5).
+    # se_landing_page (phish evidence Route 1) records the build into seLandingPages and
+    # save!s the whole player_state. The client fires its POST right after the attach sync,
+    # so the two race: the unlocked POST read player_state before the sync committed, added
+    # its own key and saved its stale copy back, reverting the sync's globalVariables
+    # se_landing_pages.built to false (observed on the branch; main has no such route). It
+    # takes the lock so it reloads under it, like the others.
     around_action :with_game_lock, only: [:container, :update_room, :unlock, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :reset, :new_session, :inventory, :room,
                                           :login, :logout, :lock_session, :clone_card, :network_plant, :network_unplug, :network_implant, :network_join,
-                                          :npc_frustration, :npc_workaround, :feed_post, :wear]
+                                          :npc_frustration, :npc_workaround, :feed_post, :wear, :se_landing_page]
 
     # GET /games/new?mission_id=:id
     # Show VM set selection page for VM-required missions
@@ -193,6 +199,13 @@ module BreakEscape
     def show
       authorize @game if defined?(Pundit)
       @mission = @game.mission
+
+      # Stored-game soft-lock migration (GATED_DOOR_SERVER_CHECK_PLAN.md §10). show is room-agnostic
+      # and holds the full row, so this sees every split gated room in one pass before any room GET or
+      # currentRoom sync, and before this request's auto-unlock. It is read-only (no lock) for every
+      # game with nothing stuck, and takes its own row lock only for the one-time demotion of a stored
+      # soft-locked game, so show keeps its lock-free read-only cost in the common case.
+      @game.migrate_soft_locked_route_rooms!
 
       # Load player preference data for the in-game modal
       @player_preference = current_player_preference || create_default_preference
@@ -534,13 +547,18 @@ module BreakEscape
         # from scenario_data on every request.
         is_world_room = @game.awareness_world_room?(room_id)
 
-        unless is_start_room || is_unlocked || is_world_room
+        # A gated route room the player is slipping into (GATED_DOOR §3.2): served so the
+        # avatar and NPCs load, but not promoted to unlockedRooms, so its contents stay gated.
+        is_route_room = @game.in_npc_route_room?(room_id)
+
+        unless is_start_room || is_unlocked || is_world_room || is_route_room
           return render_error("Room not accessible: #{room_id}", :forbidden)
         end
 
         # Auto-add room to unlockedRooms when accessed
         # This ensures items in the room can be collected
-        if !is_unlocked
+        # A route room is deliberately NOT auto-unlocked (§3.2): promotion is earned, not a GET.
+        if !is_unlocked && !is_route_room
           @game.player_state['unlockedRooms'] ||= []
           @game.player_state['unlockedRooms'] << room_id unless @game.player_state['unlockedRooms'].include?(room_id)
           @game.save!
@@ -832,6 +850,11 @@ module BreakEscape
           raise ActiveRecord::Rollback
         end
 
+        # The request's own clientTs, kept for the ring entry's ts. A request
+        # without a numeric clientTs (a client from before the sync-ordering
+        # change) records nothing, so the ring stays keyed entirely by real
+        # stamps.
+        @sync_client_ts = params[:clientTs].is_a?(Numeric) ? params[:clientTs].to_i : nil
         stale = stale_sync_request?
         # 6b review m1: fingerprint the phish evidence before the merge, only when something is
         # waiting on it, so the capture step can tell whether this request advanced that evidence
@@ -842,8 +865,26 @@ module BreakEscape
         # advanced by a sync_state request (part 3 proofs arrive through other routes), so it needs
         # no fingerprint; walking the whole mailbox to produce one a sync can never move is wasted.
         @phish_fp_before = (!stale && @game.phish_gated_unproven_captures?) ? @game.phish_evidence_fingerprint : nil
-        refusal = merge_last_write_wins_sections unless stale
+        # Snapshot the last-write-wins sections before the merge so the ring can
+        # record only the keys a merge actually changed (a no-op resend then
+        # records nothing and forces no save). Taken only on the path that merges
+        # them.
+        ring_before = nil
+        if !stale
+          ring_before = ring_before_snapshot
+          refusal = merge_last_write_wins_sections
+        elsif @stale_recent
+          # Stale but recent, and the ring holds every newer write (the
+          # completeness guard): merge the last-write-wins sections key by key,
+          # skipping only the keys a newer recorded request already wrote. The
+          # stamp is not moved (stale_sync_request? did not store it), so this
+          # applies only unclaimed keys and can never put an older value over a
+          # newer one. currentRoom is stripped until chunk 3.
+          ring_before = ring_before_snapshot
+          refusal = merge_last_write_wins_sections(skip: ring_skip_set(@sync_client_ts))
+        end
         raise ActiveRecord::Rollback if refusal
+        record_ring_write!(ring_before) if ring_before
 
         merge_grow_only_sections
         # Server-owned capture record (sync deltas R2, 6a). Runs on a stale request too (a
@@ -875,6 +916,17 @@ module BreakEscape
         render json: { success: false, message: refusal }, status: :forbidden
       elsif stale
         body = { success: true, stale: true }
+        # A stale-but-recent request now merges its pre-filtered last-write-wins
+        # sections (chunk 2 and 3), so it can refuse a section the same way a fresh
+        # request does: a forged currentRoom, a capped phone or mail update. Surface
+        # notSaved and mailTrimmed on the stale answer too, so the answer reports what
+        # the server refused or trimmed. The client today returns early on any stale
+        # answer (state-sync.js) and reads neither field: it resends, and the next
+        # fresh answer carries the same notSaved and mailTrimmed. A refused room does
+        # not loop and trimmed mail reconciles then. A fully-stale whole-skip merges
+        # nothing, so neither is set.
+        body[:notSaved] = @not_saved if @not_saved.any?
+        body[:mailTrimmed] = @mail_trimmed if @mail_trimmed.present?
         add_capture_answer_fields(body)
         render json: body
       else
@@ -1137,10 +1189,39 @@ module BreakEscape
       # id, a copy only as viaCopy (UX devices R1)
       rfid_card_answer = method == 'rfid' && card_ids && !already_open ? @game.rfid_unlock_card_answer(target_type, target_id, card_ids) : nil
 
+      # Object-action gate (GATED_DOOR §3.6): an object in a served-but-unearned route room is
+      # refused before any write, so a locked container, its contents and its unlock credit stay
+      # gated until the room is promoted. The refusal is retryable: an honest player who just
+      # earned the pass (viaPass) may be one sync behind, so the client flushes a sync and re-posts
+      # (the object-path retry in unlock-system.js). It surfaces only if the room never promotes.
+      # Keyed on target_type so no door is ever gated here (a door into a route room is the split
+      # itself, §3.5). Placed before the transaction so the refusal writes nothing.
+      if target_type != 'door' && @game.object_in_unpromoted_route_room?(target_id)
+        return render json: { success: false, reason: 'room_not_reachable', retryable: true },
+                      status: :forbidden
+      end
+
       # Use transaction to ensure atomic update
       ActiveRecord::Base.transaction do
         if target_type == 'door'
-          room_data = serve_opened_room(target_id)
+          if @game.gated_route_room?(attempt, target_id) && !@game.room_unlocked?(target_id)
+            # Gated route-room split (§3.5): the NPC route opened the door for the player's
+            # slip-in, but the room is not yet earned. Record it in npcRouteRooms rather than
+            # unlockedRooms and serve it without unlock_room!, so its contents stay gated (§3.6).
+            # Still compose filtered_room_data and track_npc_encounters, or route-room NPCs go
+            # untracked until promotion.
+            @game.record_npc_route_room!(target_id)
+            room_data = @game.filtered_room_data(target_id)
+            track_npc_encounters(target_id, room_data)
+          else
+            # Credential path (GATED_DOOR §3.3b): capture "not yet earned" before serve_opened_room's
+            # unlock_room! adds the room, then credit viaCredential on the server possession result
+            # (never a client boolean). This also deletes the room from npcRouteRooms, closing the
+            # Chunk A interim where a credential unlock left the room in both lists.
+            credit_credential = @game.split_gated_door?(target_id) && !@game.room_unlocked?(target_id)
+            room_data = serve_opened_room(target_id)
+            @game.credit_via_credential!(target_id, method, card_ids) if credit_credential
+          end
 
           door_answer = {
             success: true,
@@ -1189,7 +1270,9 @@ module BreakEscape
               # Use the flag ref directly ("vm:flag_N") as the submitted identifier —
               # avoids collision with station-position-based flag_ids ("vm-flagN").
               flag_ref    = object_data['requires'] || ''
-              task_result = @game.complete_task!(task_id, { submittedFlags: [flag_ref] })
+              # trusted: false (a client-driven completion); the explicit keyword also keeps the
+              # positional validation_data hash unambiguous under Ruby 2.7 keyword separation.
+              task_result = @game.complete_task!(task_id, { submittedFlags: [flag_ref] }, trusted: false)
               completed_tasks << task_id if task_result[:success]
             end
             response[:completedTasks] = completed_tasks
@@ -1386,21 +1469,32 @@ module BreakEscape
 
       info = @game.find_login_pc(params[:pc_id].to_s)
       return render_error("Sign-in PC not found: #{params[:pc_id]}", :not_found) unless info
+
+      # A request that carries a foothold is the remote sign-in screen (credential keyring K0,
+      # section 5.1): judged by reach through the foothold, never at the keyboard, and never
+      # given a post-it. A malformed foothold is refused here (400), never falling through to
+      # the keyboard branch.
+      if params[:foothold].present?
+        result = @game.remote_login_accounts(info, params[:foothold].to_s)
+        return render json: result[:body], status: result[:status]
+      end
+
       # A headless host has no screen and no tiles (networks slice 9.3a, section 5)
       unless @game.login_pc_reachable?(info) && !BreakEscape::NetworkModel.headless?(info[:object])
         return render_error("PC not reachable: #{params[:pc_id]}", :forbidden)
       end
-      # The sign-in screen at a switched-off PC's keyboard is not shown (q72). The route is
-      # judged at the keyboard whatever foothold value it carries (review R3 nit 3): the PC is
-      # physically reachable here, so saying it is off tells nothing new.
+      # The sign-in screen at a switched-off PC's keyboard is not shown (q72). This keyboard
+      # off-branch runs only for a request with no foothold: a foothold request is intercepted
+      # above and judged by reach (K0 section 5.1), never here. The PC is physically reachable,
+      # so saying it is off tells nothing new.
       if @game.host_service_off?(info[:object])
         return render json: { error: BreakEscape::NetworkAccess::PC_OFF_MESSAGE, reason: 'off' }, status: :forbidden
       end
 
       answer = { pc_id: info[:object]['id'], loginAccounts: @game.login_account_tiles(info[:object]) }
-      # A written-down note is seen at the PC's own keyboard only: a request that names a
-      # foothold (a remote sign-in, slice 9.3a 4.4 and 13.1) never gets it
-      note = params[:foothold].present? ? nil : @game.login_postit_for(info[:object])
+      # A written-down note is seen at the PC's own keyboard only. A foothold request never
+      # reaches here (the remote branch above handles it), so this keyboard answer carries the note.
+      note = @game.login_postit_for(info[:object])
       answer[:postitNote] = note if note
       render json: answer
     end
@@ -1595,6 +1689,23 @@ module BreakEscape
       render json: body
     end
 
+    # POST /games/:id/se/landing_page
+    # Record a landing-page build server-side (phish evidence plan, Route 1). Body:
+    # { pageId, targetId, choices }. The server validates choices against the page's authored
+    # menus and recomputes the verdict itself (BreakEscape::PhishScore); the body carries no
+    # score. Nothing reads the store for the gate yet (plan build order, chunk 3). The raw
+    # params are passed through so the model's own type and menu checks bite a hostile body.
+    def se_landing_page
+      authorize @game if defined?(Pundit)
+
+      choices = params[:choices]
+      choices = choices.to_unsafe_h if choices.respond_to?(:to_unsafe_h)
+      input = { 'pageId' => params[:pageId], 'targetId' => params[:targetId], 'choices' => choices }
+
+      result = @game.build_landing_page!(input)
+      render json: result[:body], status: result[:status]
+    end
+
     # POST /games/:id/objectives/unlock
     # Record an aim or task the client unlocked from an ink tag or an
     # eventMapping (params: kind = 'aim' | 'task', objective_id). Only reveals; never
@@ -1642,7 +1753,11 @@ module BreakEscape
         validation_data[:currentCount] = params[:currentCount].to_i
       end
 
-      result = @game.complete_task!(task_id, validation_data)
+      # trusted: false — this is the client route; a server-completed-only task (a gate's
+      # creditOnPass completeTask) is refused here and completes only through the server's own
+      # credit path. The explicit keyword also keeps validation_data unambiguously positional
+      # under Ruby 2.7 keyword separation.
+      result = @game.complete_task!(task_id, validation_data, trusted: false)
 
       if result[:success]
         Rails.logger.info "[BreakEscape] Task completed: #{task_id}"
@@ -2051,6 +2166,26 @@ module BreakEscape
     # sync from the new page stale until it passed the old value.
     SYNC_STALE_RESET_MS = 10.minutes.in_milliseconds
 
+    # The stale-but-recent write ring (SYNC_STALE_RING_PLAN). A short, bounded
+    # record of the last few accepted last-write-wins writes, by clientTs and the
+    # keys (never values) each wrote, so a stale-but-recent request can be merged
+    # key by key, skipping only what a newer recorded request already wrote. It
+    # lives in player_state under 'syncWrites', is read and written only inside
+    # sync_state, and is never serialised to the client (like lastSyncClientTs).
+    SYNC_RING_MAX = 8                    # newest entries kept
+    SYNC_RING_WINDOW_MS = 60_000         # entries this far below the newest ts are dropped
+    SYNC_RING_KEYS_PER_ENTRY = 32        # recorded keys across all sections in one entry
+
+    # Last-write-wins sections the ring records per key (the string is the claim
+    # key). mailState and notes are keyed too but derive their claim key
+    # specially, so they are handled on their own below.
+    RING_KEYED_SECTIONS = %w[globalVariables npcInkVariables npcVisibility npcHostility phoneState].freeze
+    # Sections the server replaces whole (replace_timed_messages!,
+    # merge_player_health!): recorded as a whole-section claim ("true"), never per
+    # key, so a stale-but-recent request is skipped for them rather than handed a
+    # partial hash that would wipe a kept key.
+    RING_WHOLE_SECTIONS = %w[playerHealth timedMessages].freeze
+
     # Step 7. Judge the stored formatVersion under the sync row lock. Returns a FormatUpgrade::TooNew
     # (stored above current) or Unreadable (a bad value) to refuse the sync, or nil to proceed.
     #
@@ -2097,15 +2232,219 @@ module BreakEscape
     # is a write, which under the change-only client means a request that has
     # something to save anyway).
     def stale_sync_request?
+      @stale_recent = false
       client_ts = params[:clientTs]
       return false unless client_ts.is_a?(Numeric)
 
       client_ts = client_ts.to_i
       stored = @game.player_state['lastSyncClientTs']
-      return true if stored.is_a?(Numeric) && client_ts <= stored && stored - client_ts <= SYNC_STALE_RESET_MS
+      if stored.is_a?(Numeric) && client_ts <= stored
+        if stored - client_ts <= SYNC_STALE_RESET_MS
+          # Stale but recent. Do not move the stamp. @stale_recent decides whether
+          # the key-by-key merge may run (the completeness guard) or the request
+          # falls back to today's whole-skip.
+          @stale_recent = stale_recent_guard_holds?(client_ts)
+          return true
+        end
+        # The ten-minute reset (a clock set back more than ten minutes between a
+        # reload's old and new page). Treat as fresh on the new, lower timeline,
+        # and clear the ring so its lingering pre-reset high-ts entries do not keep
+        # the completeness guard failing for the rest of the session (section 5,
+        # "Clearing the ring on a reset"). The same write that lowers the stamp.
+        @game.player_state['syncWrites'] = [] if @game.player_state['syncWrites'].present?
+      end
 
       @game.player_state['lastSyncClientTs'] = client_ts
       false
+    end
+
+    # The completeness guard (section 5): the key-by-key merge is correct only if
+    # the ring holds every accepted write with ts >= the request's ts. The ring
+    # keeps the newest entries within a 60 s window, so the guard holds when the
+    # request's ts is at or above the oldest retained entry's ts.
+    #
+    # An absent or empty ring is a guard failure (fall back to today's whole-skip),
+    # not a merge. This method runs only from stale_sync_request?'s stale-but-recent
+    # branch, which is reached only when lastSyncClientTs is already set, so an empty
+    # ring here never means a brand-new game: it means a game whose stamp predates
+    # the ring (an existing game on its first sync after this deploys), a ring that
+    # has fully expired, or a ring the ten-minute reset cleared. In each of those a
+    # newer last-write-wins write may sit behind the stamp with no ring entry to skip
+    # it, so merging key by key could put an older value over that newer one (build
+    # review R2, Major 1). Falling back whole-skips every last-write-wins section, so
+    # no older value lands. The only recovery this forgoes is gap 1 for the very
+    # first reduced body before any last-write-wins ring entry exists; it self-heals
+    # on the first recorded last-write-wins write.
+    def stale_recent_guard_holds?(ts)
+      ring = @game.player_state['syncWrites']
+      return false unless ring.is_a?(Array) && ring.any?
+
+      ts >= ring.map { |entry| entry['ts'] }.min
+    end
+
+    # A deep copy of the last-write-wins sections before the merge, so
+    # record_ring_write! can tell what the merge actually changed. Only the
+    # sections the ring records are snapshotted; currentRoom is a plain string.
+    def ring_before_snapshot
+      ps = @game.player_state
+      snap = {}
+      (RING_KEYED_SECTIONS + RING_WHOLE_SECTIONS + %w[notes]).each do |section|
+        snap[section] = ps[section].deep_dup
+      end
+      # mailState is capped at 1 MB, so a whole-section deep_dup here is the most
+      # expensive part of the snapshot (about 5.7 ms at the cap on Ruby 2.7.8). The
+      # mail diff (changed_mail_keys) only reads the request's own incoming claim
+      # keys, so snapshot just those before-values rather than the whole mailbox
+      # (build review R2, Minor 1). Deletion and changed-key detection stay exact:
+      # changed_mail_keys already inspects only incoming keys, so no mail change
+      # outside the incoming set was ever recorded.
+      snap['mailState'] = mail_before_snapshot(ps['mailState'])
+      snap['currentRoom'] = ps['currentRoom']
+      snap
+    end
+
+    # The before-values for just this request's incoming mailState claim keys, deep
+    # copied so the merge cannot mutate them, keyed by the dotted claim key.
+    # changed_mail_keys reads it by key rather than by navigating a mailState, so it
+    # holds only the few values this request touches, never the whole 1 MB section.
+    def mail_before_snapshot(mail)
+      incoming = params[:mailState]
+      snap = {}
+      return snap unless incoming.respond_to?(:keys)
+
+      incoming.keys.each do |k|
+        ks = k.to_s
+        snap[ks] = mail_value_at(mail, ks).deep_dup
+      end
+      snap
+    end
+
+    # Append this request's ring entry: the sections and keys its merge actually
+    # changed (after server-owned drops, notSaved refusals, cap rejections and a
+    # refused currentRoom), then normalise the ring to its fixed bound. A request
+    # with no numeric clientTs, or one whose merge changed nothing, records
+    # nothing, so a no-op resend neither grows the ring nor forces a save.
+    def record_ring_write!(before)
+      return if @sync_client_ts.nil?
+
+      w = ring_write_map(before)
+      return if w.empty?
+
+      ring = @game.player_state['syncWrites']
+      ring = [] unless ring.is_a?(Array)
+      @game.player_state['syncWrites'] = BreakEscape::SyncRing.normalise(
+        ring + [{ 'ts' => @sync_client_ts, 'w' => w }],
+        max: SYNC_RING_MAX, window_ms: SYNC_RING_WINDOW_MS, keys_per_entry: SYNC_RING_KEYS_PER_ENTRY
+      )
+    end
+
+    # The 'w' map for this request: section name to the array of claim keys it
+    # changed, or true for a whole-section claim. Only changed values are
+    # recorded (see ring_before_snapshot).
+    def ring_write_map(before)
+      ps = @game.player_state
+      w = {}
+      RING_KEYED_SECTIONS.each do |section|
+        keys = changed_hash_keys(before[section], ps[section])
+        w[section] = keys unless keys.empty?
+      end
+      notes = changed_note_ids(before['notes'], ps['notes'])
+      w['notes'] = notes unless notes.empty?
+      mail = changed_mail_keys(before['mailState'], ps['mailState'])
+      w['mailState'] = mail unless mail.empty?
+      RING_WHOLE_SECTIONS.each do |section|
+        w[section] = true if before[section] != ps[section]
+      end
+      w['currentRoom'] = true if before['currentRoom'] != ps['currentRoom']
+      w
+    end
+
+    # The keys whose value differs between two per-key section hashes (a deleted
+    # key is a change too, so a tombstone is recorded by its name). Keys are
+    # stringified to match the params keys the pre-filter compares against.
+    def changed_hash_keys(old, new)
+      old = old.is_a?(Hash) ? old : {}
+      new = new.is_a?(Hash) ? new : {}
+      (old.keys | new.keys).select { |k| old[k] != new[k] }.map(&:to_s)
+    end
+
+    # The note ids whose stored record changed (notes merge by id in the
+    # controller).
+    def changed_note_ids(old, new)
+      old_by = note_index(old)
+      new_by = note_index(new)
+      (old_by.keys | new_by.keys).select { |id| old_by[id] != new_by[id] }
+    end
+
+    def note_index(notes)
+      idx = {}
+      Array(notes).each { |n| idx[n['id'].to_s] = n if n.is_a?(Hash) && n.key?('id') }
+      idx
+    end
+
+    # The mailState claim keys this request changed. `before` is the dotted before-
+    # value map from mail_before_snapshot (keyed by the dotted claim key); `after` is
+    # the live mailState. The claim key is the dotted string the client sent as a
+    # top-level params key (mailboxes.<box>.<msgId>, threads.<key>, jobs/drafts/
+    # metrics), which is also the string the pre-filter compares, so the map is
+    # identity on the dotted form. A key is recorded only when its stored value
+    # actually changed, so a notSaved (refused) or no-op mailState records nothing.
+    def changed_mail_keys(before, after)
+      incoming = params[:mailState]
+      return [] unless incoming.respond_to?(:keys)
+
+      before = before.is_a?(Hash) ? before : {}
+      incoming.keys.map(&:to_s).select { |k| before[k] != mail_value_at(after, k) }
+    end
+
+    # The stored value a dotted mailState claim key points at, so before and
+    # after can be compared. Mirrors mail_state_updates' parse (split on the first
+    # dot after the prefix), so a box or message id containing a dot round-trips.
+    def mail_value_at(mail, dotted_key)
+      return nil unless mail.is_a?(Hash)
+
+      if dotted_key.start_with?('mailboxes.')
+        box_id, msg_id = dotted_key.delete_prefix('mailboxes.').split('.', 2)
+        box = mail.dig('mailboxes', box_id)
+        return nil unless box.is_a?(Hash)
+
+        Array(box['messages']).find { |m| m.is_a?(Hash) && m['id'] == msg_id }
+      elsif dotted_key.start_with?('threads.')
+        mail.dig('threads', dotted_key.delete_prefix('threads.'))
+      else
+        mail[dotted_key]
+      end
+    end
+
+    # The skip set for a stale-but-recent request at `ts`, built from the stored
+    # ring by BreakEscape::SyncRing.skip_set.
+    def ring_skip_set(ts)
+      BreakEscape::SyncRing.skip_set(@game.player_state['syncWrites'], ts)
+    end
+
+    # The incoming section hash narrowed for a stale-but-recent request: the
+    # claimed keys (keys a newer recorded request already wrote) removed. Returns
+    # the narrowed hash, or nil to skip the merge entirely (a wholly-claimed
+    # section, or nothing left after filtering). With no skip set (a fresh
+    # request) the hash is returned unchanged. The existing merge methods then run
+    # unchanged on the narrowed input, so their own guards still apply, and a key
+    # left in is one no newer accepted request wrote, so last-write-wins is
+    # correct for it.
+    def ring_filter_section(section, hash, skip)
+      return hash if skip.nil?
+
+      claim = skip[section]
+      return hash if claim.nil?
+      return nil if claim == :whole
+
+      kept = hash.reject { |k, _| claim.include?(k.to_s) }
+      kept.empty? ? nil : kept
+    end
+
+    # A whole-replace section (playerHealth, timedMessages) a newer entry claimed:
+    # skip its merge entirely rather than hand it a partial hash.
+    def ring_whole_claimed?(section, skip)
+      !skip.nil? && skip[section] == :whole
     end
 
     # Sections where the last write wins: a stale request would put older
@@ -2114,71 +2453,113 @@ module BreakEscape
     # set back to hidden), and a phone entry replaces the saved one whole, so
     # an older thread would drop newer texts. npcHostility and playerHealth
     # likewise. Returns a refusal message, or nil.
-    def merge_last_write_wins_sections
-      if params[:currentRoom]
+    #
+    # On a stale-but-recent request `skip` is the ring skip set (section 5): each
+    # section is pre-filtered to drop the keys a newer recorded request already
+    # wrote. currentRoom is handled inline rather than by a merge_*! call, and is
+    # recorded as a whole-section claim, so it is skipped only when a newer ring
+    # entry claimed it (`ring_whole_claimed?`); an unclaimed room on a
+    # stale-but-recent request goes through the normal acceptance below, exactly as
+    # a fresh room does (skip nil makes `ring_whole_claimed?` false). Chunk 3.
+    def merge_last_write_wins_sections(skip: nil)
+      if params[:currentRoom] && !ring_whole_claimed?('currentRoom', skip)
         room = params[:currentRoom]
-        unless Array(@game.player_state['unlockedRooms']).include?(room) ||
-               Game.where(id: @game.id).pick(Arel.sql("scenario_data->>'startRoom'")) == room
-          return "Cannot enter locked room: #{room}"
+        # Accept currentRoom for a gated route room the player is slipping into (GATED_DOOR
+        # §3.3a), so the avatar and the saved room agree (no snap-back) and the no-vest slip-in
+        # works. Acceptance is never promotion: the viaPass credit below runs only when the
+        # gate's server-owned playerMayPassIf is true.
+        # Acceptance mirrors player_reached_room? (Game#may_sync_current_room?): unlockedRooms, a
+        # route room, the start room, or the awareness world room. The last admits an awareness
+        # episode's world room (e.g. ca12's "lobby"), which enterWorld places the player in without a
+        # door unlock so it is never in unlockedRooms; without it, enabling the currentRoom sync
+        # would refuse every sync while the learner stood in that room.
+        if @game.may_sync_current_room?(room)
+          @game.player_state['currentRoom'] = room
+          # viaPass credit (GATED_DOOR §3.3a): if this room is a served-but-unearned route room and
+          # the gate's server-owned pass global is true, promote it and apply the viaPass credit. A
+          # no-op (and no scenario read) on an ordinary room; the honest no-vest slip-in fails the
+          # pass check and stays a route room. Runs inside the sync_state row-lock transaction.
+          @game.credit_via_pass_on_sync!(room)
+        else
+          # R4 MINOR 1: a room outside the acceptance set is a forge (or a future bespoke placement
+          # the room-load invariant does not cover). Skip ONLY the currentRoom update and its viaPass
+          # credit -- never save or credit a refused room -- and report it in notSaved so the rest of
+          # this batch (globalVariables, notes, captures, health and the rest) still commits. The old
+          # behaviour returned a refusal, which rolled the whole batch back and 403'd it; with
+          # currentRoom now a live sync field, a persistent refusal would re-send the whole batch on
+          # every sync forever (SYNC SIZE) and never advance any saved section. The client confirms
+          # currentRoom on a notSaved (so it does not re-send the same refused room) and sends a room
+          # again only when it changes. Globals and every other section keep their own guards.
+          @not_saved << 'currentRoom'
         end
-
-        @game.player_state['currentRoom'] = room
       end
 
       if params[:globalVariables].respond_to?(:to_unsafe_h)
-        @game.merge_global_variables!(params[:globalVariables].to_unsafe_h)
+        gv = ring_filter_section('globalVariables', params[:globalVariables].to_unsafe_h, skip)
+        @game.merge_global_variables!(gv) if gv
       end
 
       if params[:npcInkVariables].respond_to?(:to_unsafe_h)
-        @game.merge_npc_ink_variables!(params[:npcInkVariables].to_unsafe_h)
+        ink = ring_filter_section('npcInkVariables', params[:npcInkVariables].to_unsafe_h, skip)
+        @game.merge_npc_ink_variables!(ink) if ink
       end
 
-      if params[:timedMessages].respond_to?(:to_unsafe_h)
+      if params[:timedMessages].respond_to?(:to_unsafe_h) && !ring_whole_claimed?('timedMessages', skip)
         @game.replace_timed_messages!(params[:timedMessages].to_unsafe_h)
       end
 
-      if params[:phoneState].respond_to?(:to_unsafe_h) &&
-         @game.merge_phone_state!(params[:phoneState].to_unsafe_h) == false
-        @not_saved << 'phoneState'
+      if params[:phoneState].respond_to?(:to_unsafe_h)
+        phone = ring_filter_section('phoneState', params[:phoneState].to_unsafe_h, skip)
+        @not_saved << 'phoneState' if phone && @game.merge_phone_state!(phone) == false
       end
 
       # mailState: each key replaces the saved message, thread or list whole, so
       # an older copy would undo a read mark or bring back a delivered job (00 §10a)
       if params[:mailState].respond_to?(:to_unsafe_h)
-        if @game.merge_mail_state!(params[:mailState].to_unsafe_h) == false
-          @not_saved << 'mailState'
-        elsif @game.mail_trimmed_keys.any?
-          # A successful save still trimmed read mail to fit the 1 MB cap: report
-          # the dropped keys so the client drops them too, instead of holding
-          # them as confirmed and losing them silently on reload (P1-D).
-          @mail_trimmed = @game.mail_trimmed_keys
+        mail = ring_filter_section('mailState', params[:mailState].to_unsafe_h, skip)
+        if mail
+          if @game.merge_mail_state!(mail) == false
+            @not_saved << 'mailState'
+          elsif @game.mail_trimmed_keys.any?
+            # A successful save still trimmed read mail to fit the 1 MB cap: report
+            # the dropped keys so the client drops them too, instead of holding
+            # them as confirmed and losing them silently on reload (P1-D).
+            @mail_trimmed = @game.mail_trimmed_keys
+          end
         end
       end
 
       if params[:npcVisibility].respond_to?(:to_unsafe_h)
-        @game.merge_npc_visibility!(params[:npcVisibility].to_unsafe_h)
+        vis = ring_filter_section('npcVisibility', params[:npcVisibility].to_unsafe_h, skip)
+        @game.merge_npc_visibility!(vis) if vis
       end
 
       # Hostility is latest-wins per NPC (a KO is kept by the merge itself)
       if params[:npcHostility].respond_to?(:to_unsafe_h)
-        @game.merge_npc_hostility!(params[:npcHostility].to_unsafe_h)
+        host = ring_filter_section('npcHostility', params[:npcHostility].to_unsafe_h, skip)
+        @game.merge_npc_hostility!(host) if host
       end
 
       # The player's HP (m05 E6): latest wins, so a stale flush can't undo a hit
-      if params[:playerHealth].respond_to?(:to_unsafe_h)
+      if params[:playerHealth].respond_to?(:to_unsafe_h) && !ring_whole_claimed?('playerHealth', skip)
         @game.merge_player_health!(params[:playerHealth].to_unsafe_h)
       end
 
       # Notes merge by id, so an edit overwrites the saved copy and a new note
       # is added
       if params[:notes].present?
-        existing = @game.player_state['notes'] ||= []
-        params[:notes].map(&:to_unsafe_h).each do |note|
-          idx = existing.index { |n| n['id'].to_s == note['id'].to_s }
-          if idx
-            existing[idx] = note
-          else
-            existing << note
+        notes_claim = skip && skip['notes']
+        unless notes_claim == :whole
+          existing = @game.player_state['notes'] ||= []
+          params[:notes].map(&:to_unsafe_h).each do |note|
+            next if notes_claim && notes_claim.include?(note['id'].to_s)
+
+            idx = existing.index { |n| n['id'].to_s == note['id'].to_s }
+            if idx
+              existing[idx] = note
+            else
+              existing << note
+            end
           end
         end
       end

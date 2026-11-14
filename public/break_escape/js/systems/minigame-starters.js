@@ -851,9 +851,10 @@ export function startWarrantyChecklistMinigame(lockable, options = {}) {
     const minigameData = scenarioData.minigameData || {};
 
     window.MinigameFramework.startMinigame('warranty-checklist', null, {
-        title: options.title || minigameData.title || 'Warranty Compliance Checklist — MC-2023-ALBE-007',
+        title: options.title || minigameData.title || 'Warranty Compliance Checklist',
         lockable,
         warranties: options.warranties || minigameData.warranties,
+        caseRef: options.caseRef || minigameData.caseRef,
         onComplete: (success, result) => {
             if (typeof options.onComplete === 'function') {
                 options.onComplete(success, result);

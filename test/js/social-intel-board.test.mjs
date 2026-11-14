@@ -73,7 +73,7 @@ test('with nothing found: unnamed cards, empty slots, every checklist line missi
     assert.equal(pierce.querySelectorAll('.ib-slot.missing').length, 3);
     assert.equal(pierce.querySelectorAll('.ib-slot.done').length, 0);
     assert.match(pierce.textContent, /Missing:\s*You still don't know what Melanie does here\./);
-    assert.match(pierce.textContent, /Who she is: \?\?\?/);
+    assert.doesNotMatch(pierce.textContent, /\?\?\?/, 'C04: unknown facts show once in the checklist, no duplicate ??? rows');
     assert.match(pierce.textContent, /Not ready/);
     assert.doesNotMatch(pierce.textContent, /Ready to approach/);
     assert.match(text(s), /Stay inside the agreed scope/);          // scope note banner
@@ -153,7 +153,6 @@ test('marks are paired with words and the pushpin and card art are wired', () =>
     const srcs = [...s.container.querySelectorAll('.ib-icon')].map((i) => i.getAttribute('src'));
     assert.ok(srcs.includes('/break_escape/assets/icons/board-ready.png'));
     assert.ok(srcs.includes('/break_escape/assets/icons/board-not-ready.png'));
-    assert.ok(srcs.includes('/break_escape/assets/icons/board-slot-empty.png'));
     const css = readFileSync(join(here, '../../public/break_escape/css/intel-board-minigame.css'), 'utf8');
     assert.match(css, /ui\/social\/board-cork\.png/);
     assert.match(css, /ui\/social\/board-card\.png/);
@@ -207,8 +206,8 @@ test('Close and Esc are normal exits with { mode, completed, ready }; the keyboa
     assert.equal(s.params.requiresKeyboardInput, true);
     assert.equal(s.params.disableClose, true);
     assert.equal(s.container.querySelector('#minigame-close').style.display, 'none', 'framework close hidden');
-    assert.equal(s.container.querySelector('.ib-close').textContent, 'Close');
-    s.container.querySelector('.ib-close').click();
+    assert.equal(s.container.querySelector('.se-overlay-close').getAttribute('aria-label'), 'Close');
+    s.container.querySelector('.se-overlay-close').click();
     assert.equal(ended.length, 1);
     assert.equal(ended[0].success, true, 'a close is never minigame_failed');
     assert.deepEqual(ended[0].result, { mode: 'recon', completed: false, ready: ['pierce'] });

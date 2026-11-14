@@ -179,7 +179,7 @@ test('a mapped share closed by its Close reopens the desktop it came from', asyn
     await openRemote();
     icon('Ledger-Archive').click();
     await settle();
-    document.querySelector('#minigame-close').click();   // the X: no Cancel beside it (slice 7 R1)
+    document.querySelector('.pc-window-close').click();   // the window's X: no Cancel beside it (slice 7 R1; UI PC 2 m5)
     await settle();
     assert.equal(current().loginPcId, 'lena_pc');
     assert.equal(fetches.at(-1), '/break_escape/games/9/container/lena_pc?foothold=jack_comms_port');
@@ -722,12 +722,49 @@ test('slice 2a: a share from a local desktop closes back to that desktop (parent
     await settle();
     assert.equal(current().shareFolder, true);
     assert.equal(current().parentLockable, desk);
-    // The X closes it (slice 7: no Cancel beside the X)
-    document.querySelector('#minigame-close').click();
+    // The window's X closes it (slice 7: no Cancel beside the X; UI PC 2 m5: the window's own X)
+    document.querySelector('.pc-window-close').click();
     await settle();
     assert.equal(current().loginPcId, 'sam_pc', 'back on the local desktop');
     assert.equal(current().desktopMode, true);
     assert.equal(fetches.at(-1), '/break_escape/games/9/container/sam_pc');
+});
+
+test('UI PC 2 m5: a share window has the reader\'s X (E08); the window X closes the share, the bezel X closes the PC', async () => {
+    setup();
+    await sessions.signIn('sam_pc', 'sokafor', 'x');
+    const desk = { scenarioData: { id: 'sam_pc', name: "Sam's PC", type: 'pc', lockType: 'login', locked: true } };
+    window.startContainerMinigame(desk, null, false, true);
+    await settle();
+    icon('Scanned-Inbox').click();
+    await settle();
+    const winX = document.querySelector('.share-folder-titlebar > .pc-window-close');
+    assert.ok(winX, 'the X is in the share window\'s title bar');
+    assert.equal(winX.getAttribute('aria-label'), 'Close folder');
+    // Esc does what the window X does: back to the desktop
+    document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    await settle();
+    assert.equal(current().loginPcId, 'sam_pc', 'Esc goes back to the desktop');
+    // The bezel X from a share closes the PC: the desktop does not reopen
+    icon('Scanned-Inbox').click();
+    await settle();
+    const before = fetches.length;
+    document.querySelector('#minigame-close').click();
+    await settle();
+    assert.equal(current(), null, 'the PC is closed');
+    assert.equal(fetches.length, before, 'nothing reopened');
+});
+
+test('UI PC 2 m5: the bezel X on a share from a remote desktop lands the trip, the window X returns to the desktop', async () => {
+    setup();
+    await openRemote();
+    icon('Ledger-Archive').click();
+    await settle();
+    const before = landings.length;
+    document.querySelector('#minigame-close').click();
+    await settle();
+    assert.equal(current(), null, 'no desktop reopened');
+    assert.ok(landings.slice(before).some(l => l[1] === 'close'), 'the trip lands as a close');
 });
 
 test('slice 2a: a share from a remote desktop closes back to the remote desktop', async () => {
@@ -736,7 +773,7 @@ test('slice 2a: a share from a remote desktop closes back to the remote desktop'
     icon('Ledger-Archive').click();
     await settle();
     assert.equal(current().shareFolder, true);
-    document.querySelector('#minigame-close').click();
+    document.querySelector('.pc-window-close').click();
     await settle();
     assert.equal(current().loginPcId, 'lena_pc');
     assert.ok(current().remote, 'the remote desktop again');

@@ -120,6 +120,29 @@ test('announcePickup: a key is announced; an item filed in a holder is left to "
     } finally { off?.(); }
 });
 
+test('addToInventory: a second copy answers already with the held copy; a refusal answers once with one alert', async () => {
+    resetInventory();
+    const first = worldSprite({ id: 'dev_1', type: 'launch-device', name: 'Launch device', takeable: true });
+    assert.deepEqual(await inv.addToInventory(first), { ok: true, reason: 'added' });
+    const held = window.inventory.items.find(i => i?.scenarioData?.id === 'dev_1');
+    assert.ok(held, 'the slot is in the inventory');
+    toasts.length = 0;
+    const second = worldSprite({ id: 'dev_1', type: 'launch-device', name: 'Launch device', takeable: true });
+    const res = await inv.addToInventory(second);
+    assert.equal(res.ok, true);
+    assert.equal(res.reason, 'already');
+    assert.equal(res.item, held, 'the held copy, so the caller can open it');
+    assert.equal(toasts.length, 1);
+
+    resetInventory();
+    let posts = 0;
+    globalThis.fetch = async () => { posts++; return { json: async () => ({ success: false, message: 'NPC not encountered' }) }; };
+    const refused = await inv.addToInventory(worldSprite({ id: 'dev_2', type: 'launch-device', name: 'Launch device', takeable: true }));
+    assert.deepEqual(refused, { ok: false, reason: 'rejected', message: 'NPC not encountered' });
+    assert.equal(posts, 1);
+    assert.equal(toasts.length, 1);
+});
+
 // ── interactions.js, imports stubbed (as examine-minigame.test.mjs does) ─────────
 const calls = [];
 globalThis.__calls = calls;
