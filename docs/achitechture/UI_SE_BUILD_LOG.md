@@ -326,3 +326,102 @@ PLAYWRIGHT_CHROMIUM_EXECUTABLE=$HOME/.cache/ms-playwright/chromium_headless_shel
 Shared-DB sprite churn: make a fresh game with new-game.rb and start the audit back-to-back (one
 command), because the demo sprite is flipped by other agents within seconds and a mid-gap flip makes
 the game page redirect to character config so window.__test never loads.
+
+## Fix round 2 part A (build/ui-se, from tip abbf8cc90; main merged)
+
+Merged main (1f3ac1f0b, launch-device / flag-station work) into build/ui-se first: clean, no
+conflicts (merge commit cb4492564). All items below are committed with explicit paths.
+
+### Done this round
+
+1. **R2 m1 - shredded X is the flat-red SE close, not the themed steel skin.** Added a two-class
+   override `[data-ui-theme] .minigame-close-button.se-overlay-close` in `css/ui-themes.css`
+   (after the themed close rule at :1024). Specificity 0,3,0 beats the themed
+   `[data-ui-theme] .minigame-close-button` (0,2,0); it only matches an element carrying BOTH
+   classes (shredded is the one SE scene that reuses the framework `#minigame-close`), so the
+   themed X is unchanged everywhere else. Base + hover + active states set to the flat SE red.
+   Commit 50b67e142.
+2. **R2 m2 - kiosk reads as a device.** (a) Its X is now the PC monitor's themed steel X, not the
+   SE flat red: new `mountThemedCloseControl()` in `js/minigames/framework/social-overlay.js`
+   builds a `.minigame-close-button` (so the themed skin styles it) wired to the same requestClose;
+   `episode-runner-minigame.js` kiosk branch calls it with class `epr-kiosk-close`;
+   `episode-runner.css` keeps it in the top strip's flex flow (base rule makes it absolute).
+   (b) Device cue on a new chin: a card-reader slot (`.epr-kiosk-reader` + `.epr-kiosk-reader-slot`)
+   and a status LED (`.epr-kiosk-led`) beside a READY label, all 2px pixel art, flat fills, no
+   radius/soft shadow/image. Screen side margins widened 6px->8px so the case reads thicker.
+   Full-bleed kept in facilitated mode (the chin and kiosk only build when `kiosk === !facilitated`).
+   Commit 50b67e142.
+3. **n2 - osint stale comment** at `css/osint-browser-minigame.css:3` rewritten: addresses use
+   `--se-font-address` (GNF first, smooth fallback only for missing glyphs), not "Source Sans 3".
+   Commit 50b67e142.
+4. **C-X4 - .se-notice on the two remaining notices.** inbox-triage reload note
+   (`.tri-brief-restart`) and the lpb captures banner (`.lpb-captures-banner`) now carry
+   `se-notice`; the banner's own CSS trimmed to just `margin:0` so the shared rule governs its look.
+   Commit 532b6afdf.
+5. **Tidy inert per-scene close CSS rules.** Removed the dead `.ob-close`, `.lpb-close`,
+   `.pretext-close`, `.ib-close` (+ its `:focus-visible`) and `.er-close` rules - confirmed unused
+   in JS (grep). No `.ac-close` rule existed. Commit 532b6afdf.
+6. **Shredded-document C-SD1-3.** `.sdm-doc-title`/`.sdm-completed-banner` 7px->8px (on the
+   Press Start 2P grid); the `U+2195` glyph replaced by a named **Flip** button; a keyboard- and
+   touch-usable **Up/Down** reorder route (`.sdm-move-btn` + `_move(index, dir)`) beside drag, with
+   first/last disabled and focus kept on the moved strip; strips de-tilted (no `transform:rotate`),
+   hard 2px offset shadow (was a 6px blur), all edges 2px (were 1px dashed / 3px solid); flip and
+   move buttons get a 44px touch target via `::after` on coarse pointers. New test
+   `test/js/social-shredded-reorder.test.mjs` (4 tests). Commit 2d5e75893.
+7. **C-X9 - awareness one-button look.** `.aw-button` (used by the episode-runner flip/debrief/
+   sandbox views) was rounded (radius 4), borderless and faux-bold; now square, 2px border,
+   normal weight - matching `.epr-button` and the password-guesser's action button, so every
+   awareness/dark-window action reads the same. Added a `.aw-button-secondary` variant and dropped
+   the `.lpb-step::before` faux-bold. Commit fbb532e4e.
+
+### Tests (plain `node --test`, one file at a time, no lock)
+
+- minigame-se-close 13/13 (updated C-ER1 for the themed kiosk X + device cue + the two-class SE
+  close rule; added C-X9; extended n2 for the two new notices).
+- social-shredded-reorder 4/4 (new).
+- Regression check on touched/importing files, all 0 fail: minigame-pixel-art 48,
+  social-episode-views 30, social-episode-aftermath 7, social-episode-brief-cards 10,
+  social-triage-ui 24, social-landing-page-builder 19, social-landing-page-render 13,
+  engine-fixes-pass4b 10.
+- Full suites NOT run (congestion rule): the orchestrator runs them per merge batch.
+
+### Live proof - OWED (not completed this round)
+
+A fresh `lab_social_engineering` game (id 3800) was created on the keyless :3490 server and the
+strict audit started back-to-back, but `ui-rules-audit.mjs` timed out after 240s on
+`page.waitForFunction` for `window.__test` (five sizes 1400x1000/800x600/667x375/390x844/360x740,
+`--skip person-chat,network-view`). That is the shared-DB sprite-churn redirect to character config
+noted in the Fix round 1 env note, not a code defect - all unit tests pass. Live proof with real
+clicks + the strict audit (keep all zeros) and the two targeted shots (kiosk at 390x844 and 360x740
+to confirm the step strip still fits inside the bezel with the new chin; shredded Up/Down + Flip) is
+still owed and should be re-run on a freshly created game when the DB is quieter. Audit log:
+scratchpad r2a/audit.log.
+
+### Left for part B (do NOT treat as done)
+
+- **C-X7 shared stepper** - NOT STARTED. Fold the three step strips into one boxed stepper:
+  episode-runner pills (`js/minigames/episode-runner/step-strip.js` + `.aw-step*` in
+  `css/awareness-skin.css:47-59`), inbox-triage text tabs
+  (`js/minigames/inbox-triage/header-panel.js`), and the lpb chips (`.lpb-steps`/`.lpb-step`,
+  `css/landing-page-builder-minigame.css:85-115`). Target the landing-page-builder boxed look
+  (2px square boxes, current step in the accent colour, done steps ticked); at 390 let it scroll
+  sideways in one row. This is a three-scene refactor with its own tests and live proof - deferred
+  here because it could not be completed and proven within budget.
+- Phone scenes **C-AU1** (reuse phone-chat shell for the authenticator), **C-PH1-4** (phone error
+  toast inside the phone; Add to Notepad onto the phone; X off the bezel; glow + empty state) -
+  explicitly left for part B by the brief.
+- Per-scene minors list (C-AC2 decided keep-light, C-AU2/3, C-CS1, C-ER2/3, C-RP1/RP2, C-IT1/2,
+  C-IB1, C-LP1/2/3, C-MC1/2/3, C-OB1, C-PG1, C-PC1/2, C-PP1/2/3, C-PV1) - left for part B.
+
+### Handover (2026-11-14, past the ~150k/181k token point)
+
+Tip: fbb532e4e on build/ui-se (main 1f3ac1f0b merged at cb4492564). Everything in "Done this round"
+is committed with explicit paths; the only open engineering item in this brief's part-A scope is
+C-X7 (above, NOT STARTED). Live proof is owed (audit timed out on sprite churn; unit tests green).
+Env: keyless server was on :3490 (worktree; PID file test/dummy/tmp/pids/server-3490.pid) and is
+stopped at the end of this round. RBENV_VERSION=2.7.8;
+PLAYWRIGHT_CHROMIUM_EXECUTABLE=$HOME/.cache/ms-playwright/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell.
+To resume: start the server by hand on :3490 (the script is hard-wired to :3001 - copy its
+bundle exec line), create a fresh game with `PLAYTEST_PORT=3490 BREAK_ESCAPE_STANDALONE=true
+bin/rails runner tools/playtest/new-game.rb lab_social_engineering`, and run the audit immediately
+back-to-back in one command.
