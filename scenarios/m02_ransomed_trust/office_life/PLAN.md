@@ -55,7 +55,7 @@ Three pieces of existing text fix Gary in place: his observation "has not moved 
     "needs": { "print": { "producer": "it_photocopier", "forget": true } } }
   ```
 
-  `cover_burned` is set when `talk_to_gary` completes (HaX's mapping, `:957` to `:961`; also in the ink's `leverage_payoff`, `ink/m02_npc_gary_whitlock.ink:378`), and on every conversation route that is the conversation in which the keycard changes hands (`ink/m02_npc_gary_whitlock.ink:198`, `:267`, `:290`, `:313`, `:379`). The print therefore follows the close of that conversation, after HaX's burn text (4 s, `:963`), when room tone is no longer ducked, so the copier's run sound is heard. Measured: 6.0 s after the close, `copier_run` heard in IT. Gary's routes are rapport, transaction, leverage and force (`TESTING_WALKTHROUGH.md` step 15); force is the only one with no conversation close, and a knock-out completes `talk_to_gary` through `taskOnKO` (`:2061`), so after a knock-out nothing prints. The page is optional. The run sound plays only in the player's room, so a player who leaves IT within 6 s gets a silent print, with the page still there.
+  `cover_burned` is set when `talk_to_gary` completes (HaX's mapping, `:957` to `:961`; also in the ink's `leverage_payoff`, `ink/m02_npc_gary_whitlock.ink:378`), and on every conversation route that is the conversation in which the keycard changes hands (`ink/m02_npc_gary_whitlock.ink:198`, `:267`, `:290`, `:313`, `:379`). The print therefore follows the close of that conversation, after HaX's burn text (4 s, `:963`), when room tone is no longer ducked, so the copier's run sound is heard. Measured: 6.0 s after the close, `copier_run` heard in IT. Gary's routes are rapport, transaction, reluctant, blame, leverage, walk away then return, and knock-out (`TESTING_WALKTHROUGH.md` step 15), and every keycard knot sets `cover_burned` in the ink (`ink/m02_npc_gary_whitlock.ink:206`, `:266`, `:289`, `:312`, `:378`); on walk away then return the first close has `cover_burned` false, so only the second prints. The knock-out is the only route with no conversation close, and a knock-out completes `talk_to_gary` through `taskOnKO` (`:2061`), so after a knock-out nothing prints. The page is optional. The run sound plays only in the player's room, so a player who leaves IT within 6 s gets a silent print, with the page still there.
 - **Existing lines changed:** none. Re-voiced clips: 0.
 - **Not in this pass:** his observation and the cabinet catch put him in a chair, and his atlas has seated frames; `seat: "stand"` keeps him standing at his post as today. Seating him in place is a possible later change, not part of this plan.
 
@@ -69,9 +69,16 @@ Three pieces of existing text fix Gary in place: his observation "has not moved 
 
 **No story items.** Neither carries or leaves anything. A badge of theirs would be a second source for `staff_lanyard_obtained`, a route past Val.
 
-**The free items in the room.** The ward clerk's laptop (centre table, across from the domestic) and the contractor lanyard (west table) stay free; the staff do not stop the player taking them, which is the Human Factors point the lanyard's own text makes. The drawn warm mug on the east table is the porter's coffee and stays a free drink; stage 4 reads the name the engine gives that sprite (`core/rooms.js`, `consumables.js` `drinkableCupName`) and the lines follow it. No bark is added for any of these.
+**The free items in the room.** The ward clerk's laptop (centre table, across from the domestic) and the contractor lanyard (west table) stay free; the staff do not stop the player taking them, which is the Human Factors point the lanyard's own text makes. The drawn warm mug on the east table is the porter's coffee and stays a free drink; the drawn sprite is `office-misc-cup`, which the engine names "Cup of coffee" (`consumables.js:79`), and no line contradicts that (`core/rooms.js`, `consumables.js` `drinkableCupName`) and the lines follow it. No bark is added for any of these.
 
-**Attacks and knock-outs.** Each has a KO global, a credits line (text, not voiced, style `warning`, conditioned on the global): "NIGHT PORTER: Assaulted on shift" and "NIGHT DOMESTIC: Assaulted on shift" (a hostile chase ignores `needsRooms`, so a knock-out can happen outside the staff room), and a one-off HaX text through a `global_variable_changed` mapping (text, not voiced). An attack that stops short of a knock-out also counts, as m02 does for Val (`attacked_guard`) and the patients (`npc_attacked:<bed>` setting `patient_assaulted`, `:1351` to `:1366`): two `onceOnly` mappings on HaX, `npc_attacked:night_porter` and `npc_attacked:night_domestic`, each set `night_staff_attacked` (declared `false`). Every exchange requires it `false`, and both conversations open with a short wary greeting when it is true. None of these globals is exported. The closing debrief's staff outcomes (`ink/m02_closing_debrief.ink:803` to `:835`) are not changed: a porter or domestic assault shows in the credits and HaX's text only, which keeps every existing line as it is; adding a debrief line for each (two clips) is an option for the user (section 9).
+**Attacks and knock-outs.** Each has a KO global, a credits line (text, not voiced, style `warning`, conditioned on the global): "NIGHT PORTER: Assaulted on shift" and "NIGHT DOMESTIC: Assaulted on shift" (a hostile chase ignores `needsRooms`, so a knock-out can happen outside the staff room), and a one-off HaX text through a `global_variable_changed` mapping (text, not voiced). An attack that stops short of a knock-out also counts, as m02 does for Val (`attacked_guard`) and the patients (`npc_attacked:<bed>` setting `patient_assaulted`, `:1351` to `:1366`): two `onceOnly` mappings on HaX, `npc_attacked:night_porter` and `npc_attacked:night_domestic`, each set `night_staff_attacked` (declared `false`). Every exchange requires it `false`, and both conversations open with a short wary greeting when it is true. Their breaks stop as well, so neither says a pool line to the player who hit them: each new NPC gets two mappings, appended to its list and not `onceOnly`, `{ "eventPattern": "global_variable_changed:night_staff_attacked", "condition": "value === true", "needs": "suspend" }` and `{ "eventPattern": "room_entered:staff_room", "condition": "globalVars.night_staff_attacked === true", "needs": "suspend" }` (the second re-applies it after a reload; `control()`, `npc-needs.js:948` to `:957`, aborts any job and leaves the NPC idle). The attacked NPC's chase, calm-down and walk home are the hostility system's, not a needs job. None of these globals is exported. The closing debrief's staff outcomes (`ink/m02_closing_debrief.ink:803` to `:835`) are not changed: a porter or domestic assault shows in the credits and HaX's text only, which keeps every existing line as it is; adding a debrief line for each (two clips) is an option for the user (section 9).
+
+**Where they are declared.** The staff room has no `npcs` today; the pair go in a new `rooms.staff_room.npcs` array. **Credits**, appended to the existing staff-outcome warnings in the shape the mission already uses (`:230`):
+
+```json
+{ "text": "NIGHT PORTER: Assaulted on shift", "style": "warning", "condition": "globalVars.night_porter_ko" },
+{ "text": "NIGHT DOMESTIC: Assaulted on shift", "style": "warning", "condition": "globalVars.night_domestic_ko" }
+```
 
 **Cast (approved).** Ernesto "Ernie" Bautista, early sixties, Filipino heritage, thirty years at St Catherine's. Hodan Warsame, early twenties, British-Somali, from Birmingham. Each gets their own sprite key (`night_porter`, `night_domestic`) and goes through the character pipeline in stage 6. Voice styles (approved): porter "Hospital night porter, early sixties, Filipino-British, thirty years in the job. Warm and unhurried, dry humour, a soft Filipino lilt over a Midlands base. Never raises his voice."; domestic "Night domestic, early twenties, British-Somali, Birmingham accent. Quick, wry and chatty, tired but sharp; drops her voice for gossip."
 
@@ -101,7 +108,7 @@ Mappings 1 to 3 set the porter's caffeine to 20 and mapping 4 his thirst to 20; 
 
 1. **Staff-room entry**, on the porter:
    `{ "eventPattern": "room_entered:staff_room", "cooldown": 120000, "delayMs": 2000, "needs": { "set": { "caffeine": 20 } } }`.
-   The delay keeps the pair from standing the moment the door opens (measured without it: `npc_stood` 0.1 to 0.4 s after entry, which reads as a reaction to the player). Measured with it: stood 2.1 to 2.3 s after entry, met 3.9 to 4.3 s after; on the first visit the paper exchange played to a player doing step 10 in 5 of 5 runs (all lines heard in 4). A crossing takes 2.5 to 4.5 s, so on a crossing the pair meet after the player has left; this serves a player who stops and, with the 50 s use, one who comes straight back through.
+   A `delayMs` that ends while a minigame is open waits for it to close (`npc-manager.js:925` to `:929`): a step-10 player who opens the handover board within 2 s of entering starts the break when the board closes, which stage 4 records beside the timings below. The delay keeps the pair from standing the moment the door opens (measured without it: `npc_stood` 0.1 to 0.4 s after entry, which reads as a reaction to the player). Measured with it: stood 2.1 to 2.3 s after entry, met 3.9 to 4.3 s after; on the first visit the paper exchange played to a player doing step 10 in 5 of 5 runs (all lines heard in 4). A crossing takes 2.5 to 4.5 s, so on a crossing the pair meet after the player has left; this serves a player who stops and, with the 50 s use, one who comes straight back through.
 2. **The burn**, on the porter:
    `{ "eventPattern": "conversation_closed:gary_whitlock", "condition": "globalVars.cover_burned === true", "onceOnly": true, "needs": { "set": { "caffeine": 20 } } }`.
    Measured: the pair meet 4.2 to 4.4 s after the close, while a player walking straight out is in the staff room from about 2.2 s to 4.5 s after it. With E9 the burn exchange starts only if its first speaker is in earshot; a player who has already left misses nothing, because the exchange stays unplayed and is offered first at the next meeting the player hears. HaX's text 1.5 s after the first staff-room entry after the burn (`:970` to `:973`) gives a reason to stop. A break already running when Gary's conversation closes absorbs this mapping (the `set` lands mid-use, the restore is added at completion, no new break follows, the `onceOnly` is spent); with E9 the meeting looks again for the gated exchange on each free turn, so the burn exchange starts on that break's next free turn with its first speaker in earshot, or waits. One exception: a meeting plays at most one exchange (`_finishExchange` sets `c.exDone`, `npc-needs.js:2780`), so if that running break has already played the paper exchange, the burn exchange waits for the next meeting the player hears.
@@ -122,7 +129,7 @@ Measured at the boiler: the partner stood 0.06 to 0.3 s after the first user's `
 
 ### 2.8 Long enough to talk; hearing across the room
 
-The boiler's `useSeconds` is 50 (tea brewed and drunk standing) and the cooler's 25. Measured with a 30 s use: overlaps of 27.8, 28.5 and 28.2 s; at 50 s about 48 s (estimate). The longer use spends no extra line; it keeps a break running when the player comes back through. The paper exchange's five lines end about 26 s in (measured). Every exchange is well inside the 60 s cap. The paper exchange (about 26 s) is longer than a cooler use (25 s): if it is first heard at a cooler break (a ward-arrival break before any boiler meeting), it is cut at about line 4 and counts as heard, and line 5 is lost. No paper line carries anything the player needs, so this is accepted.
+The boiler's `useSeconds` is 50 (tea brewed and drunk standing) and the cooler's 25. Measured with a 30 s use: overlaps of 27.8, 28.5 and 28.2 s; at 50 s about 48 s (estimate). The longer use spends no extra line; it keeps a break running when the player comes back through. The paper exchange's five lines end about 26 s in (measured). Every exchange is well inside the 60 s cap. The paper exchange (about 26 s) is longer than a cooler use (25 s), but a running exchange holds both uses to the knot's end, up to 60 s (`_startExchange`, `_holdExchange`, `npc-needs.js:2734` to `:2766`), so it is not cut there.
 
 E7 and E9 count a speaker as heard by `playerHears` at the chat's radius (`_chatRadius`: the object's `overhearRadius`, else the pool's, else 160 px), while the voice layer plays a line anywhere in the room. The boiler's approach cell (164, 124) is about 164 px from Kim's door and 163 px from the south door, and the lanyard on the west table is 175 px from the second-user cell, so at 160 px a player at a door would see pictures. Both chatter objects therefore set `affordance.overhearRadius: 360`, a whole-room value (the engine reads the radius only from the affordance, `npc-needs.js:3906`, `:4535`; the presets supply none, and a top-level object field would be ignored): the staff room's floor runs in rows 2 to 8 of a 10 by 10 tile map, about 288 px, and 360 covers its diagonal with margin. `playerHears` already requires the same room, light and a clear line, so the value cannot carry talk into IT, Kim's office or the corridor. The door positions used here are approximate; stage 4 measures each doorway's first floor cell.
 
@@ -161,9 +168,9 @@ Starting shapes for stage 4. Positions are the starting values above; the stage 
              "thirst":   { "initial": 65, "decayPerMin": 3, "urgentAt": 30 } },
   "chatter": { "coffee": ["<4 lines>"], "cooler": ["<4 lines>"] },
   "exchanges": [
-    { "with": "night_porter", "knot": "night_watch_burned", "requireGlobal": { "cover_burned": true, "night_staff_attacked": false } },
-    { "with": "night_porter", "knot": "night_watch_cleared", "requireGlobal": { "cover_restored": true, "heard_night_watch_burned": true, "attacked_guard": false, "guard_knocked_out": false, "night_staff_attacked": false } },
-    { "with": "night_porter", "knot": "night_watch_paper", "requireGlobal": { "night_staff_attacked": false } } ],
+    { "with": "night_porter", "knot": "night_watch_burned", "requireGlobal": { "cover_burned": true, "night_staff_attacked": false, "gary_ko": false } },
+    { "with": "night_porter", "knot": "night_watch_cleared", "requireGlobal": { "cover_restored": true, "heard_night_watch_burned": true, "attacked_guard": false, "guard_knocked_out": false, "night_staff_attacked": false, "gary_ko": false } },
+    { "with": "night_porter", "knot": "night_watch_paper", "requireGlobal": { "night_staff_attacked": false, "gary_ko": false } } ],
   "eventMappings": ["<the two couplings of 2.7 on the domestic>"] }
 ```
 
@@ -180,24 +187,22 @@ Objects (`officeType` is an object-level field, read by `presetIdFor`, `office-p
 
 ```json
 { "id": "staff_boiler", "type": "hot_water_boiler", "name": "Hot Water Boiler", "takeable": false,
-  "position": { "x": 4.75, "y": 1.81 }, "officeType": "kettle",
+  "officeType": "kettle",
   "affordance": { "capacity": 2, "chatter": "coffee", "queue": false, "useSeconds": 50, "restores": 40,
                   "overhearRadius": 360, "useFrom": { "dx": 0, "dy": 2.5 } } }
 
 { "id": "staff_cooler", "type": "water_cooler", "name": "Water Cooler", "takeable": false,
-  "position": { "x": 8.44, "y": 7.25 },
   "affordance": { "capacity": 2, "chatter": "cooler", "queue": false, "useSeconds": 25, "restores": 40,
                   "overhearRadius": 360, "useFrom": "<set in stage 4, section 3>" } }
 
 { "id": "staff_microwave", "type": "microwave", "name": "Microwave", "takeable": false,
-  "position": { "x": 6.16, "y": 2.69 }, "officeType": "microwave",
+  "officeType": "microwave",
   "affordance": { "useFrom": "<a tile east of the boiler's second-user cell>" } }
 
-{ "id": "it_photocopier", "type": "photocopier", "name": "Photocopier", "takeable": false,
-  "position": "<its drawn position, about 6.31, 7.88>" }
+{ "id": "it_photocopier", "type": "photocopier", "name": "Photocopier", "takeable": false }
 
 { "id": "gary_mug", "type": "dirty_mugs1", "name": "Gary's Mug", "takeable": false,
-  "position": { "x": 5.6, "y": 4.2 }, "observations": "Cold. There's a skin on it.",
+  "position": { "x": 5.6, "y": 4.2 }, "observations": "Stone cold. He drinks it anyway.",
   "private": true, "owner": ["gary_whitlock"],
   "affordance": { "satisfies": "caffeine", "restores": 30, "useSeconds": 4, "capacity": 1,
                   "useSound": "drink_gulp", "seat": "stand", "useFrom": { "dx": 0.5, "dy": 1.45 } } }
@@ -207,7 +212,7 @@ Objects (`officeType` is an object-level field, read by `presetIdFor`, `office-p
   "outputOf": "it_photocopier", "revealOnGlobal": "it_copier_page_shown" }
 ```
 
-The positions are starting values from the drawn decor (`room_hospital_staff.json`) and the prototype; `name` values are proposals. The mug uses `dirty_mugs1`, which is not in `DRINKABLE_CUPS` (`consumables.js:78` to `:86`): a cup sprite from that list would heal the player and be used up on a click, taking Gary's only caffeine source and writing the consumed-objects global. Stage 4 confirms the mug's hover offers no drink and a click consumes nothing; if `dirty_mugs1` reads wrong at desk scale, the fallback is a listed cup sprite with a field from `ROLE_FIELDS` (`consumables.js:94` to `:96`) so it is not drunk, logged as a change.
+The four claimed decor objects carry **no `position`**: a declared object that claims a Tiled sprite is drawn where the map draws it, as m02's own `it_department_kettle` (`:2284`) and `conference_water_cooler` (`:3140`) are. A declared `position` is the sprite's top-left in tiles (`core/rooms.js:540` to `:543`, `:2462` to `:2463`), not the Tiled bottom edge, so writing the Tiled values would move each sprite down by its own height (the boiler about 30 px, the cooler about 47 px towards the south door) and invalidate the measured cells, which were taken with the sprites where the map draws them. Only the two new objects take a `position`: the mug's (5.6, 4.2) is the prototype's, whose sprite centre was measured at (187.5, 141), and the page's is set on the copier's tray in stage 4. `name` values are proposals. `name` values are proposals. The mug uses `dirty_mugs1`, which is not in `DRINKABLE_CUPS` (`consumables.js:78` to `:86`): a cup sprite from that list would heal the player and be used up on a click, taking Gary's only caffeine source and writing the consumed-objects global. Stage 4 confirms the mug's hover offers no drink and a click consumes nothing; if `dirty_mugs1` reads wrong at desk scale, the fallback is a listed cup sprite with a field from `ROLE_FIELDS` (`consumables.js:94` to `:96`) so it is not drunk, logged as a change.
 
 ## 3. Rooms and objects
 
@@ -215,12 +220,12 @@ The positions are starting values from the drawn decor (`room_hospital_staff.jso
 
 | Object | Room | How | Preset or affordance |
 |---|---|---|---|
-| `staff_boiler` (the drawn `hot_water_boiler1`, `items` 4.75, 1.81) | staff_room | declare `type: "hot_water_boiler"` at its drawn position, so it claims the sprite | object-level `officeType: "kettle"`; `affordance` with `capacity: 2`, `chatter: "coffee"`, `queue: false`, `useSeconds: 50`, `restores: 40`, `overhearRadius: 360` (inside `affordance`), hand-written `useFrom` on the floor in front of the sink counter (the default cell below a wall-mounted boiler falls inside the counter). Starting value `{ dx: 0, dy: 2.5 }`: measured approach (164, 124) px, second user (196, 124), both reached in every run |
+| `staff_boiler` (the drawn `hot_water_boiler1`, `items` 4.75, 1.81) | staff_room | declare `type: "hot_water_boiler"` with no `position`, so it claims the drawn sprite (the trailing digit is stripped when matching, `core/rooms.js:192`) | object-level `officeType: "kettle"`; `affordance` with `capacity: 2`, `chatter: "coffee"`, `queue: false`, `useSeconds: 50`, `restores: 40`, `overhearRadius: 360` (inside `affordance`), hand-written `useFrom` on the floor in front of the sink counter (the default cell below a wall-mounted boiler falls inside the counter). Starting value `{ dx: 0, dy: 2.5 }`: measured approach (164, 124) px, second user (196, 124), both reached in every run |
 | `staff_cooler` (the drawn `water_cooler1`, `items` 8.44, 7.25) | staff_room | declare `type: "water_cooler"` | cooler preset (`capacity: 2`, `chatter: "cooler"`), `queue: false`, `useSeconds: 25`, `restores: 40`, `overhearRadius: 360` (inside `affordance`), hand-written `useFrom` on the north or west face, set in stage 4 so that one side of the approach cell is reachable from both posts and neither cell is within one tile of the south doorway |
 | `staff_microwave` (the drawn `microwave1`, `table_items` 6.16, 2.69) | staff_room | declare `type: "microwave"` | object-level `officeType: "microwave"` (the preset lists only `microwave1`), hand-written `useFrom` in front of the counter a tile east of the boiler's second-user cell (measured with `dy: 1.5` alone the cell was (212, 124), 16 px from it); stage 4 checks microwave and boiler in use together |
 | `it_photocopier` (the drawn `photocopier1`, about 6.31, 7.88) | it_department | declare `type: "photocopier"` | copier preset (its run sound plays for the command print) |
 | `it_copier_page` | it_department | new slot object on the copier's tray, declared **last** in IT's object list (after `gary_mug` and `it_photocopier`) with an explicit `position` on the tray (a fourth `notes` object finds no Tiled sprite, because a declared `notes` takes the room's first unreserved `notes` sprite, `core/rooms.js` `findMatchFor`, and IT's three are claimed) | `type: "notes"`, `takeable: true`, `readable: true`, `outputOf: "it_photocopier"`, `revealOnGlobal: "it_copier_page_shown"` (engine-owned), name "Downtime Fault Log", text in 3.1 |
-| `gary_mug` | it_department | new object on Gary's desk, sprite `dirty_mugs1` (not a drinkable cup, 2.11), not takeable, observation "Cold. There's a skin on it." | `affordance: { satisfies: "caffeine", restores: 30, useSeconds: 4, capacity: 1, useSound: "drink_gulp", seat: "stand" }`, object-level `private: true`, `owner: ["gary_whitlock"]`, `useFrom` aimed at Gary's body centre (2.1). `seat: "stand"` keeps seating from moving him to the chair about 42 px away |
+| `gary_mug` | it_department | new object on Gary's desk, sprite `dirty_mugs1` (not a drinkable cup, 2.11), not takeable, observation "Stone cold. He drinks it anyway." (not a near-repeat of the voiced "a cold mug with a skin on it") | `affordance: { satisfies: "caffeine", restores: 30, useSeconds: 4, capacity: 1, useSound: "drink_gulp", seat: "stand" }`, object-level `private: true`, `owner: ["gary_whitlock"]`, `useFrom` aimed at Gary's body centre (2.1). `seat: "stand"` keeps seating from moving him to the chair about 42 px away |
 | `it_department_kettle` (`:2284`) | it_department | already declared | `affordance: false` |
 | `conference_water_cooler` (`:3140`) | conference_room | already declared | `affordance: false` (no leash reaches the Boardroom) |
 
@@ -244,10 +249,10 @@ Atmosphere:
 
 ### 3.1 The printout
 
-A blank IT downtime fault log: the paper form wards fill in by hand while the systems are down, which Gary prints between restores. It is not correspondence, because Gary's desk printouts say he has printed only his own half of the email trail and that the replies are in the locked filing cabinet (`gary_desk_printouts`, `:2168` to `:2175`); a printed reply would contradict that clue and spend part of the cabinet's payoff. Draft text:
+A blank IT downtime fault log: the paper form wards fill in by hand while the systems are down. Gary copies the blank master between restores (the copier needs no workstation). It is not correspondence, because Gary's desk printouts say he has printed only his own half of the email trail and that the replies are in the locked filing cabinet (`gary_desk_printouts`, `:2168` to `:2175`); a printed reply would contradict that clue and spend part of the cabinet's payoff. Draft text:
 
 ```
-ST CATHERINE'S REGIONAL -- IT DOWNTIME FAULT LOG
+ST. CATHERINE'S REGIONAL -- IT DOWNTIME FAULT LOG
 
 Use while clinical systems are unavailable.
 One line per fault. Hand to IT at handover.
@@ -280,16 +285,16 @@ All new; NPC-own pools only; no printed variables; 40 characters at most for poo
 | Porter | `coffee` | Lab's quiet. That never lasts. | 30 |
 | Porter | `coffee` | Thirty years. Never seen it like this. | 38 |
 | Porter | `coffee` | Next run's bloods. On foot, again. | 34 |
-| Porter | `coffee` | Radio's gone quiet. Won't last. | 31 |
+| Porter | `coffee` | Tea's stewed. Drink it anyway. | 30 |
 | Porter | `cooler` | Cold in that corridor tonight. | 30 |
 | Porter | `cooler` | My knees know every stair now. | 30 |
 | Porter | `cooler` | Radio's on. Just nothing on it. | 31 |
 | Porter | `cooler` | Water's free, at least. | 23 |
 | Domestic | `coffee` | Four beds turned. Linen's run out. | 34 |
-| Domestic | `coffee` | Nobody can find a bed list. Nobody. | 35 |
+| Domestic | `coffee` | Every bed I turn, they want two. | 32 |
 | Domestic | `coffee` | I've walked more tonight than all week. | 39 |
-| Domestic | `coffee` | If that radio goes, I'm not here. | 33 |
-| Domestic | `cooler` | Who keeps nicking the cups? | 27 |
+| Domestic | `coffee` | Can't feel my hands. Mop water's cold. | 38 |
+| Domestic | `cooler` | This cooler's warmer than the sink. | 35 |
 | Domestic | `cooler` | My feet have given up, Ernie. | 29 |
 | Domestic | `cooler` | Bed manager's on my radio every hour. | 37 |
 | Domestic | `cooler` | Floor's done till they call me. | 31 |
@@ -298,19 +303,19 @@ All new; NPC-own pools only; no printed variables; 40 characters at most for poo
 
 | Order | Knot | Gate | Speaker | Line | Chars |
 |---|---|---|---|---|---|
-| 1 | `night_watch_burned` | `requireGlobal: { "cover_burned": true, "night_staff_attacked": false }` | Domestic | Radio says security want a visitor. | 35 |
+| 1 | `night_watch_burned` | `requireGlobal: { "cover_burned": true, "night_staff_attacked": false, "gary_ko": false }` | Domestic | Radio says security want a visitor. | 35 |
 | | | | Porter | Not our list, love. Not our problem. | 36 |
 | | | | Domestic | Good. I clean floors. I don't do badges. | 40 |
-| 2 | `night_watch_cleared` | `requireGlobal: { "cover_restored": true, "heard_night_watch_burned": true, "attacked_guard": false, "guard_knocked_out": false, "night_staff_attacked": false }` | Domestic | Radio again. That visitor checks out. | 37 |
+| 2 | `night_watch_cleared` | `requireGlobal: { "cover_restored": true, "heard_night_watch_burned": true, "attacked_guard": false, "guard_knocked_out": false, "night_staff_attacked": false, "gary_ko": false }` | Domestic | Radio again. That visitor checks out. | 37 |
 | | | | Porter | There you go. Fuss over nothing. | 32 |
 | | | | Domestic | Checks out with who, though? | 28 |
-| 3 | `night_watch_paper` | `requireGlobal: { "night_staff_attacked": false }` | Domestic | How many lab runs is that now, Ernie? | 37 |
+| 3 | `night_watch_paper` | `requireGlobal: { "night_staff_attacked": false, "gary_ko": false }` | Domestic | How many lab runs is that now, Ernie? | 37 |
 | | | | Porter | Eleven. Every result in an envelope. | 36 |
 | | | | Domestic | My bed list's on the back of a menu. | 36 |
 | | | | Porter | Hospital runs on legs tonight. Ours. | 36 |
 | | | | Domestic | Don't let them hear you enjoying it. | 36 |
 
-Gate notes. Every exchange requires `night_staff_attacked` false: once the player has hit either of them, they stop chatting about their night in front of the player. The burn exchange's source is the radio, never anything heard from the Boardroom; it names no extension, no Reeves and no badge, and reads true even if first heard after Val has cleared the player (a player who lingers in IT meets it at the next heard meeting; with E9 it is never used up unheard). The cleared exchange needs the burn exchange heard (at least one line), so it always follows news the player heard; it also needs Val unharmed (`attacked_guard` and `guard_knocked_out` false, both declared `false` in `globalVariables`), because "Fuss over nothing" would read badly next door to an assaulted guard. If Val was attacked, it never plays. The paper exchange holds before and after the burn, because a player who rushes may first hear it late; it is the first-visit exchange, where the player stands still, so it runs to five lines. On the first visit the burn gate is false, so the paper exchange plays; after the burn, the burn exchange is offered first.
+Gate notes. Every exchange requires `night_staff_attacked` and `gary_ko` false (`gary_ko` is declared `false`, `:3720`): once the player has hit either of them, or knocked out Gary next door, no exchange about their night plays. After an attack on either of them their breaks stop too (2.2), so no pool line plays to the attacker either. The burn exchange's source is the radio, never anything heard from the Boardroom; it names no extension, no Reeves and no badge, and reads true even if first heard after Val has cleared the player (a player who lingers in IT meets it at the next heard meeting; with E9 it is never used up unheard). The cleared exchange needs the burn exchange heard (at least one line), so it always follows news the player heard; it also needs Val unharmed (`attacked_guard` and `guard_knocked_out` false, both declared `false` in `globalVariables`), because "Fuss over nothing" would read badly next door to an assaulted guard. If Val was attacked, it never plays. The paper exchange holds before and after the burn, because a player who rushes may first hear it late; it is the first-visit exchange, where the player stands still, so it runs to five lines. On the first visit the burn gate is false, so the paper exchange plays; after the burn, the burn exchange is offered first.
 
 **Conversations.** Porter about 14 lines, domestic about 12 (`m02_npc_night_porter.ink`, `m02_npc_night_domestic.ink`), each with one line on the paper night, one wary greeting used when `night_staff_attacked` is true, and one line used once `heard_night_watch_burned` is true: a shrug about the radio call that does not identify the player as the visitor. Optional, no clue, no task. Written by the planning-tier writer in stage 4, slice 3, and reviewed with the pools.
 
@@ -329,12 +334,13 @@ Gate notes. Every exchange requires `night_staff_attacked` false: once the playe
 | `heard_<knot>` (three exchanges) | 3 |
 | Reveal global for the printout slot | 1 |
 | KO globals for the two new NPCs | 2 |
+| Room-state KO overlay (`isKO`, `currentHP`) for a knocked-out new NPC, through `RoomStateSync.updateNpcState` (`npc-hostile.js:316`), the path Gary and Val already use | at most 2 entries in `staff_room`'s room state, written on the knock-out, not per sync |
 | Attack global (`night_staff_attacked`) | 1 |
 | New `onceOnly` mappings (the print, the burn break, two HaX KO texts, two attack mappings) | 6 (in `triggeredEvents`) |
 | Printout in the inventory echo | 1 item |
 | Workstation, frustration, workaround, servings, Friendface, capture or card records | 0 |
 
-13 small keys and one inventory item, all under the section 7 caps (`onceOnly` 6 of 10, `heard_` 3 of 8, reveal 1 of 6). The seven globals (`heard_night_watch_burned`, `heard_night_watch_cleared`, `heard_night_watch_paper`, `night_porter_ko`, `night_domestic_ko`, `night_staff_attacked`, `it_copier_page_shown`) are declared `false` in `globalVariables`. They ride the save-ordering ring (`app/models/break_escape/sync_ring.rb`) as per-key `globalVariables` deltas. Six are monotonic booleans, set `false` to `true` once and never sent back as `false`, so last-write-wins cannot regress them whichever way two requests race. The seventh, `it_copier_page_shown`, is engine-owned and **not** monotonic: it goes true when the page prints and the engine sets it back to `false` when it files an untaken slot away on reload (`npc-needs.js:4790` to `:4800`, `NPC_NEEDS_SYSTEM.md` 3.3a). A race between those two writes can at worst show or hide the tray page wrongly for one load; it cannot create an item, because the server stores a pickup from its own scenario copy, and nothing else reads the global, so this is acceptable. Every name is far under the 128-byte key limit. The six `onceOnly` keys go to the grow-only `triggeredEvents` section (max-merged per key), adding 6 to its shared 2000-key cap. m02's existing `onceOnly` mappings are a few hundred at most, so the total stays far under the cap; this matters because `merge_triggered_events!` drops a whole update that would pass 2000 keys, not just the overflow (`game.rb:4864` to `:4866`), and V8 confirms the count from stage 4. Needs state (levels, positions, cooldowns, bags) stays in the browser. The coupling and break-start mappings are not `onceOnly` and write nothing. Nothing grows with play time, no whole-sent record is written, and the one non-monotonic global is the engine-owned reveal global above. m02's consumed-objects record is not touched, because Gary's mug is not a drinkable cup (2.11).
+13 small keys and one inventory item, all under the section 7 caps (`onceOnly` 6 of 10, `heard_` 3 of 8, reveal 1 of 6). The seven globals (`heard_night_watch_burned`, `heard_night_watch_cleared`, `heard_night_watch_paper`, `night_porter_ko`, `night_domestic_ko`, `night_staff_attacked`, `it_copier_page_shown`) are declared `false` in `globalVariables`. They ride the save-ordering ring (`app/models/break_escape/sync_ring.rb`) as per-key `globalVariables` deltas. Six are monotonic booleans, set `false` to `true` once and never sent back as `false`, so last-write-wins cannot regress them whichever way two requests race. The seventh, `it_copier_page_shown`, is engine-owned and **not** monotonic: it goes true when the page prints and the engine sets it back to `false` when it files an untaken slot away on reload (`npc-needs.js:4790` to `:4800`, `NPC_NEEDS_SYSTEM.md` 3.3a). A race between those two writes can at worst show or hide the tray page wrongly for one load; it cannot create an item, because the server stores a pickup from its own scenario copy, and nothing server-side derives an item or a secret from it (its one reader is the client's reveal-slot visibility, `npc-needs.js:767` to `:769`), so this is acceptable. Every name is far under the 128-byte key limit. The six `onceOnly` keys go to the grow-only `triggeredEvents` section (max-merged per key), adding 6 to its shared 2000-key cap. m02's existing `onceOnly` mappings are a few hundred at most, so the total stays far under the cap; this matters because `merge_triggered_events!` drops a whole update that would pass 2000 keys, not just the overflow (`game.rb:4864` to `:4866`), and V8 confirms the count from stage 4. Needs state (levels, positions, cooldowns, bags) stays in the browser. The coupling and break-start mappings are not `onceOnly` and write nothing. Nothing grows with play time, no whole-sent record is written, and the one non-monotonic global is the engine-owned reveal global above. m02's consumed-objects record is not touched, because Gary's mug is not a drinkable cup (2.11).
 
 **Cheat safety.** The reveal global, the `heard_` globals, the KO globals and the exchange gates are set and read in the client (`requireGlobal` is evaluated in `npc-needs.js`), so a tampered client could reveal and take the page early or replay an exchange. That needs no server enforcement under the cheat-resistance policy, because none of them holds or gates a server-checked secret, key, card or required step: the page is a declared item whose pickup the server stores from its own scenario copy (`canonical_inventory_item`, `games_controller.rb:2983`), so a forged field cannot ride in on it, and no task, objective, lock or `concludeRequires` reads an office-life global.
 
@@ -360,7 +366,7 @@ Decided by the user (2026-11-14): Gary option (a), no line changes; Ernie and Ho
 
 ### 10.1 Walkthrough steps that must still pass
 
-Every step of `TESTING_WALKTHROUGH.md` with office life on, VM flags seeded (`new-game.rb` FLAGS_XML to `session-start.sh --flags`), on a keyless server from this worktree on ports 3090 to 3092. In particular step 5 (Bernie), 10 (Night Handover: now two staff), 11 (Kim), 12 (IT door, key and picks; nobody reacts), the Gary conversation on every route (rapport, leverage, blame), the cabinet catch (`on_cabinet_picked`), Val's `cover_challenge` on the first corridor entry after the burn, the Boardroom ambush and the close. Nothing mapped to NPC position fires early or twice. The aim chain stays at 4 hops.
+Every step of `TESTING_WALKTHROUGH.md` with office life on, VM flags seeded (`new-game.rb` FLAGS_XML to `session-start.sh --flags`), on a keyless server from this worktree on ports 3090 to 3092. In particular step 5 (Bernie), 10 (Night Handover: now two staff), 11 (Kim), 12 (IT door, key and picks; nobody reacts), the Gary conversation on every route in `TESTING_WALKTHROUGH.md` step 15 (rapport, transaction, reluctant, blame, leverage, walk away then return, and knock-out; on walk away then return, the first close prints nothing and the second prints), the cabinet catch (`on_cabinet_picked`), Val's `cover_challenge` on the first corridor entry after the burn, the Boardroom ambush and the close. Nothing mapped to NPC position fires early or twice. The aim chain stays at 4 hops.
 
 ### 10.2 Office-life checks, live (stage 4, then stage 5; five tries each at walking pace unless stated)
 
@@ -401,18 +407,20 @@ Other: frame time with the three needs NPCs active (E3); a room-tone listen thro
 
 ### 10.4 Attack probe (live in m02, after E1 lands in the showcase)
 
-1. Attack the porter on his walk to the cooler: he turns hostile, chases, calms down and walks back to his post. Reload: at his post.
-2. Knock the domestic out mid-walk: `night_domestic_ko` set once, credits line shows, nothing drops, the porter's next coupled break goes ahead alone. Reload: she stays down. (With the porter down, mapped breaks stop and the domestic keeps natural breaks, alone and silent: accepted without a probe.)
+Attacks are made through player combat (`player-combat.js`), because the test bridge's knock-out helper calls `damageNPC` without emitting `npc_attacked` (`test-bridge/index.js:1618` to `:1634`) and would never set `night_staff_attacked`.
+
+1. Attack the porter on his walk to the cooler: he turns hostile, chases, calms down and walks back to his post; `night_staff_attacked` is set once; both NPCs are suspended (no further break, no pool line, no exchange) and both conversations open with the wary greeting. Reload: he is at his post, both are still suspended after the player enters the staff room, and no exchange starts.
+2. Knock the domestic out mid-walk: `night_staff_attacked` and `night_domestic_ko` set once, credits line shows, nothing drops, the porter is suspended at his post. Reload: she stays down and he stays suspended.
 3. Gary, as today: knock him out at his desk; keycard and lanyard drop once; `gary_ko`; `talk_to_gary` and `obtain_password_hints` complete once; no page prints. Reload: he stays down, nothing drops twice.
 4. Regression: Val's `lockpick_used_in_view` catch and Gary's `on_cabinet_picked` fire as the walkthrough describes.
 
 ### 10.5 Open numbers (estimates stage 4 measures and replaces)
 
-The boiler overlap at a 50 s use; the cooler's approach and second-user cells and their reachability; the cooler break timing on mapping 4; the rhythm periods (about 6 needs-minutes at the boiler, about 11 at the cooler); the repeat interval for a player who stays (about 24 needs-minutes); each doorway's first floor cell and its distance to both users' cells; the microwave's cell next to the boiler's second user; which cell each speaker takes on mapped and natural breaks; the name the engine gives the east-table cup; the walkthrough's needs-clock length.
+The boiler overlap at a 50 s use; the cooler's approach and second-user cells and their reachability; the cooler break timing on mapping 4; the rhythm periods (about 6 needs-minutes at the boiler, about 11 at the cooler); the repeat interval for a player who stays (about 24 needs-minutes); each doorway's first floor cell and its distance to both users' cells; the microwave's cell next to the boiler's second user; which cell each speaker takes on mapped and natural breaks;  the walkthrough's needs-clock length.
 
 ### 10.6 Static checks after each slice
 
-Ink compile; `ruby scripts/validate_scenario.rb`: 0 errors, every new warning cleared or justified; V1 diff against the baseline (three lines change: Gary, porter, domestic); V2 Gary passes (his only target is his own post object in IT), the pair have no story duty; V3 nothing; V4 a warning on all three until E1 passes, then an info line listing `gary_ko`, `taskOnKO: talk_to_gary`, the held keycard and lanyard, `night_porter_ko`, `night_domestic_ko`; V5 0 errors; V7 each pool line against the speaker's ink and every m02 bark; V8 at most 10 keys; V10 passes (every pool has a pair at its object, every exchange both speakers at both objects); the preset list matches section 3; no queue cell in a doorway; the three exchange knots exist and both speakers have voices; no knot runs past 60 s; Gary's `los` with needs carries `swivel: false`; `check_door_alignment.py`; inkcheck and loopcheck; `reopencheck.mjs`; `dialoguelint.mjs` on the new ink; `tagdiff.mjs` (no existing ink is touched, so empty).
+Ink compile; `ruby scripts/validate_scenario.rb`: 0 errors, every new warning cleared or justified; V1 diff against the baseline (three lines change: Gary, porter, domestic); V2 Gary passes (his only target is his own post object in IT), the pair have no story duty; V3 nothing; V4 a warning on all three until E1 passes, then an info line listing `gary_ko`, `taskOnKO: talk_to_gary`, the held keycard and lanyard, `night_porter_ko`, `night_domestic_ko`; V5 0 errors; V7 each pool line against the speaker's ink and every m02 bark; V8 13 keys, every kind under its section 7 cap (`onceOnly` 6 of 10, `heard_` 3 of 8, reveal 1 of 6); V10 passes (every pool has a pair at its object, every exchange both speakers at both objects); the preset list matches section 3; no queue cell in a doorway; the three exchange knots exist and both speakers have voices; no knot runs past 60 s; Gary's `los` with needs carries `swivel: false`; `check_door_alignment.py`; inkcheck and loopcheck; `reopencheck.mjs`; `dialoguelint.mjs` on the new ink; `tagdiff.mjs` (no existing ink is touched, so empty).
 
 ### 10.7 Expected lock and key diff
 
