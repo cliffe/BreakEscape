@@ -32,10 +32,40 @@ The eight PixelLab URLs are the noir detectives imported on 2026-11-03 (commits 
 - By eye: all eight read as seated in every facing, colours match the walk rotation, back views show the head above the seat. Daniel's and Ngozi's coats flare wide on the back facings; acceptable.
 - Headshots: unchanged by the re-import (byte-identical).
 
-## Step 3 onwards
+## Step 3: keys and headshots
 
-(see below)
+The existing keys stay (named after each character, none clashes). Each already had `<key>_headshot.png` from its November import; the re-import left them byte-identical.
+
+## Step 4: starting options in m01 to m10
+
+How a mission declares choices: `validSprites` (patterns, `*` wildcards; a `<key>` also matches `<key>_v2`). Only m01 and lab_tesseract_trials declared it; m02 to m10 fell back to the starter set (`PlayerPreference::AVAILABLE_SPRITES`). Patterns only matched sprites in the catalogue (NPC sprites of published missions plus the starters), and no NPC wears the detectives, so listing them did nothing.
+
+- Engine (`app/models/break_escape/avatar_unlocks.rb`): `listed_avatars` takes the `validSprites` entries that name one avatar sprite exactly (no wildcard, not a legacy or retired key, full walk atlas and headshot) and offers them in that mission even when no NPC wears them, named from the key ("Mei Lin Chow"). `mission_sprites` now returns sprites in the order the patterns list them, so a mission's existing options come first. They are not added to the global catalogue, so they don't show as locked in other games or on the menu outside a game.
+- Not chosen: adding them to `AVAILABLE_SPRITES`. That would put them in every scenario without `validSprites` (labs, SIS games, awareness), beyond m01 to m10.
+- Scenarios: m01's list keeps its four hooded options and gains the eight (one place, the existing block). m02 to m10 get a `validSprites` block after `show_scenario_brief`: the 14 starter keys written out, then the eight. If the starter set changes later, these lists need the same change.
+- Validator: 0 errors on all ten, before and after merging main at 372600713 (format 3).
+- Tests (named files, no lock): avatar_unlocks_test 18 runs 0 failures (4 new: exact key offered in listed order and not locked; listed keys skip wildcards, retired and non-avatar keys; all eight have full atlases and sit frames in 8 directions; m01 to m10 render the eight last and keep their earlier options), player_preference_name_test 7, player_preferences_controller_test 45, games_controller_test 63, format_8a_corpus 21, format_8b_corpus 29, format_8c_corpus 23, format_upgrade 22. All 0 failures.
+
+## Step 5: live check (keyless server on :3498, merged code)
+
+- m01 (game 3611) as vivian_ashby: the pre-game picker lists the four hooded options then the eight, all "This mission". After saving, the player texture and HUD headshot are Vivian; walk_east and walk_south frames play; she sits on a reception waiting chair (seated side frame).
+- m05 (game 3612) as ngozi_adeyemi: picker lists the 14 starters then the eight; walks; sits in the reception club chair.
+- m05 (game 3622, started in open_office_area) as harjit_singh: sits on a desk swivel chair, `sit_south_frame_000` shown, driver hidden. Earlier click attempts in that game had pushed the chair to the end of the desk, so he sits beside the desk facing south.
+- In-game picker at 1400x1000 and 390x844: the eight show with "This mission" badges after the existing options, headshots load, the chosen one is selected, no sideways page scroll.
+- Noticed, not acted on: at 390 wide the picker's grid panel shows a light browser horizontal scrollbar (shared picker UI, not changed here).
+- The standalone demo player is shared: another session reset its avatar to female_hacker_hood_v2 three seconds after one of my saves, so the scripts pick the avatar right before loading. It ended as female_hacker_hood_v2, as it started.
+
+## Step 6: contact sheet
+
+`/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/e7a32fee-bb00-4a46-ab62-f0d4de35d260/scratchpad/spy-starters/spy_starters_contact_sheet.png` (session scratchpad): standing S, walk S, walk E, seated S, E, N at 2x.
+
+Cast spread: four women and four men; white English, Chinese-British, Mexican-American, Nigerian-British, Korean-British, white Irish, Black British and Sikh Punjabi-British; ages early thirties to early sixties.
+
+## Open
+
+- Art merges only after the user approves the contact sheet.
+- These are noir detectives by their concept prompts; the user called them spies.
 
 ## Handover
 
-(none yet)
+Not needed: the work finished inside one context.
