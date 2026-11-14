@@ -261,6 +261,28 @@ test('E9: the player hears only the second speaker: no exchange starts, the turn
     assert.equal(o.globals.heard_ex_parcel, undefined);
 });
 
+// R1 M2: lab_physical_pentest's coffee_exchange shape. The exchange owner (Chris there, ann here)
+// speaks first and is at the machine; the player stands by the queue end, hearing only the queued
+// partner. The gate is on the first speaker, so nothing starts until ann is heard too.
+test('E9: a coffee queue chat with only the queued speaker heard starts no exchange; hearing the user too starts it', () => {
+    const distances = { bob: 50 };   // ann (LINES[0], at the machine) out of earshot
+    const o = office({ coffee: true, distances });
+    let chat = null;
+    o.until(() => (chat = o.sys._chats.get('coffee')) && o.emitted('npc_chatted:coffee').length >= 2, 30000, 'queue chat turns');
+    assert.ok(chat.queue, 'a queue chat');
+    assert.equal(chat.a, 'ann', 'ann is using the machine');
+    assert.equal(chat.b, 'bob', 'bob is the front of the queue');
+    assert.equal(o.evs('exchange_started').length, 0, 'no exchange_started');
+    assert.equal(o.exLines().length, 0);
+    const turns = o.emitted('npc_chatted:coffee');
+    assert.ok(turns.every(e => !e.data.exchange));
+    assert.ok(turns.filter(e => e.data.speakerId === 'ann').every(e => e.data.picture && !e.data.overheard), 'ann, unheard: pictures');
+    assert.equal(o.globals.heard_ex_parcel, undefined);
+    distances.ann = 100;   // the player steps up to the machine, within ann's 160 px
+    o.until(() => o.evs('exchange_started').length === 1, 10000, 'the exchange once ann is heard');
+    assert.equal(o.exLines()[0]?.data.speakerId, 'ann');
+});
+
 test('E9: an object overhearRadius of 224 with the first speaker 200 px away starts the exchange; without it, not', () => {
     const wide = office({ distances: { ann: 200, bob: 200 } });
     wide.sys.world.getObject('cooler').affordance.overhearRadius = 224;

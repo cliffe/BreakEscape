@@ -2620,6 +2620,16 @@ export class NPCNeedsSystem {
         return b.last;
     }
 
+    /** The index _bagNext would return next, without changing the bag (R1 M1: draw only what fits). */
+    _bagPeek(npcId, topic, lines) {
+        const key = `${npcId}|${topic}`;
+        const b = this._bags.get(key);
+        const fresh = !b || b.sig !== lines.join('\n');
+        const round = fresh ? 0 : b.round, last = fresh ? -1 : b.last;
+        if (!fresh && b.order.length) return b.order[0];
+        return bagOrder(lines.length, createSeededRng(hash32(`${this.seed}:${key}:bag:${round}`)), last)[0];
+    }
+
     _cooldownMs(s) {
         const v = Number(this._rec(s).chatterCooldownMin);
         return (Number.isFinite(v) && v >= 0 ? v : CHATTER_COOLDOWN_MIN) * 60000;
@@ -2636,10 +2646,13 @@ export class NPCNeedsSystem {
      * chat turn nobody can hear) skips the bark as if the speaker were on cooldown: no line is taken
      * from the bag, the cooldown is not started and there is no wait, so the result is a picture
      * (or null with `pictures: false`).
+     * `maxMs` (a chat's time left in the overlap) skips the bark the same way when the bag's next
+     * line would outlast it, so a line taken is always a line said.
      */
-    _pickBark(s, topic, { waitForLock = false, ignoreCooldown = false, unheard = false, icons: iconsFor = null } = {}) {
+    _pickBark(s, topic, { waitForLock = false, ignoreCooldown = false, unheard = false, maxMs = Infinity, icons: iconsFor = null } = {}) {
         const pool = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter);
-        const ready = !unheard && pool.lines.length && (ignoreCooldown || !(s.chatterQuietUntil > this.clockMs));
+        const ready = !unheard && pool.lines.length && (ignoreCooldown || !(s.chatterQuietUntil > this.clockMs))
+            && !(maxMs < CHAT_MAX_MS && bubbleMs(pool.lines[this._bagPeek(s.npcId, topic, pool.lines)]) > maxMs);
         if (ready && this._speechFree()) {
             const idx = this._bagNext(s.npcId, topic, pool.lines);
             s.chatterQuietUntil = this.clockMs + this._cooldownMs(s);
@@ -3971,7 +3984,8 @@ export class NPCNeedsSystem {
             const h = canHear ? (this.world.playerHears(c.speaker, this._chatRadius(c, c.speaker)) || {}) : {};
             const unheard = canHear && !h.overheard;
             const tries = this.roll(c.speaker, `${salt}:chatty`) < chatty;
-            const pick = tries ? this._pickBark(sp, c.topic, { waitForLock: true, unheard }) : null;
+            // The overlap left is passed on, so a bark that could not be said is never drawn (R1 M1)
+            const pick = tries ? this._pickBark(sp, c.topic, { waitForLock: true, unheard, maxMs: overlapEnd - this.clockMs }) : null;
             if (pick?.wait) { c.n--; c.nextAt = this._speechUntil; continue; }   // a voiced line is playing: queue
             // An unheard turn with nothing to show (`pictures: false`) is not a silent turn: it does
             // not count towards giving up, so a player who walks in later still finds the pair talking
@@ -4921,7 +4935,8 @@ export function createEngineWorld() {
         // wall rather than straight through it. Used by _expectedAwayMs. Returns null when no path is
         // found or the grid is not ready, so the caller can fall back to the straight-line lower bound.
         // E8: with opts.detail the result is { length, known }: `known` is true only when the
-        // pathfinder answered (a path, a definite empty one, or the same tile), and `length` is null
+        // pathfinder answered (a path, a definite empty one, or the same tile; a grid not yet built
+        // is not an answer), and `length` is null
         // for no path. Without it, the plain length or null as before.
         routeLength(from, to, opts) {
             const out = (length, known) => (opts?.detail ? { length, known } : length);
@@ -4931,7 +4946,10 @@ export function createEngineWorld() {
             // Same tile: EasyStar gives no path when start and end share a cell (see reachable).
             if (straight < TILE) return out(straight, true);
             const pf = pm.worldPathfinder;
-            const canSync = !!(pf && pf.enableSync && pf.disableSync);
+            // findWorldPath answers null at once while the world grid is not ready: that is no
+            // answer, not "no path" (R1 m3), so it is unknown and never read as unreachable
+            if (!pf || !pm.worldGridBounds) return out(null, false);
+            const canSync = !!(pf.enableSync && pf.disableSync);
             let path = null, called = false;
             if (canSync) pf.enableSync();
             try {

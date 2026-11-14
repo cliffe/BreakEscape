@@ -19,6 +19,7 @@ function fakeWindow({ walls = [], cutOff = [], visitor = { x: 780, y: 110 }, noC
         },
         pathfindingManager: {
             worldPathfinder: { enableSync() {}, disableSync() {} },
+            worldGridBounds: { minX: 0, minY: 0, cols: 64, rows: 32, step: 32 },
             findNearestWalkableWorldCell: (x, y) => (has(walls, x, y) ? null : { x, y }),
             findWorldPath: (sx, sy, ex, ey, cb, avoid, opts) => {
                 searches.push({ to: { x: ex, y: ey }, opts: opts || null });
@@ -143,4 +144,22 @@ test('routeLength detail: known false for a missing pathfinder, a throw and no c
         assert.deepEqual(w.routeLength(PARTNER, ABOVE, { detail: true }), { length: plain, known: true });
         assert.deepEqual(w.routeLength(ABOVE, { x: ABOVE.x + 4, y: ABOVE.y }, { detail: true }), { length: 4, known: true }, 'same tile');
     });
+});
+
+// R1 m3: findWorldPath calls back null at once while worldPathfinder or worldGridBounds is missing
+// (npc-pathfinding.js, "world grid not ready"). That is no answer, so known is false, and
+// besideCell keeps the first free walkable side rather than failing with no_beside_cell.
+test('routeLength detail: the pathfinder\'s "grid not ready" null is unknown, not no path', () => {
+    for (const missing of ['worldPathfinder', 'worldGridBounds']) {
+        const { win, searches } = fakeWindow({ cutOff: [LEFT, ABOVE] });
+        const pm = win.pathfindingManager;
+        delete pm[missing];
+        pm.findWorldPath = (sx, sy, ex, ey, cb) => { searches.push({ to: { x: ex, y: ey } }); cb(null); };   // as the real one does
+        withWindow(win, () => {
+            const w = createEngineWorld();
+            assert.deepEqual(w.routeLength(PARTNER, LEFT, { detail: true }), { length: null, known: false }, `${missing} missing`);
+            assert.equal(w.routeLength(PARTNER, LEFT), null, `${missing} missing, without detail: as before`);
+            assert.deepEqual(w.besideCell(APPROACH, [RIGHT], { from: PARTNER }), LEFT, `${missing} missing: the first free walkable side, not null`);
+        });
+    }
 });

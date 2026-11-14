@@ -241,6 +241,67 @@ test('E7: pictures false, 60 unheard turns leave the chat in place; the first he
     assert.ok(['Mine.', 'Yours.'].includes(said[0].data.line));
 });
 
+test('bag peek: always the index the next draw gives, across rounds, and it changes nothing', () => {
+    const o = office({ ann: {}, bob: {} });
+    for (let k = 0; k < 10; k++) {
+        const before = bagState(o.sys, 'ann');
+        const peek = o.sys._bagPeek('ann', 'cooler', POOL.cooler);
+        assert.equal(bagState(o.sys, 'ann'), before, 'peek leaves the bag as it was');
+        assert.equal(o.sys._bagNext('ann', 'cooler', POOL.cooler), peek, `draw ${k}`);
+    }
+});
+
+// R1 m4: the stronger form of the E7 bag check, on a bag that already exists after a heard meeting
+test('E7: after a heard meeting, a whole unheard meeting leaves each bag\'s order and last as they were', () => {
+    let hearing = true;
+    const o = office({ ann: { chatterCooldownMin: 0 }, bob: { chatterCooldownMin: 0 } }, { hears: () => hearing, lines: null });
+    o.sys.step(20000);
+    const bags = () => ['ann', 'bob'].map(id => o.sys._bags.get(`${id}|cooler`));
+    assert.ok(bags().every(b => b && b.last >= 0), 'both bags drawn from while heard');
+    const before = bags().map(b => JSON.stringify({ order: b.order, last: b.last, round: b.round }));
+    hearing = false;
+    for (const id of ['ann', 'bob']) o.sys.states.get(id).levels.thirst = 10;
+    const n0 = o.emitted('npc_chatted:').length;
+    o.sys.step(60000);
+    const unheard = o.emitted('npc_chatted:').slice(n0);
+    assert.ok(unheard.length >= 2, `a second meeting, unheard: ${unheard.length} turns`);
+    assert.ok(unheard.every(e => e.data.picture && !e.data.line));
+    assert.deepEqual(bags().map(b => JSON.stringify({ order: b.order, last: b.last, round: b.round })), before, 'order, last and round unchanged');
+});
+
+// R1 M1: a heard turn takes a bag line only when the line can be said inside the overlap left
+test('E7: a heard turn with 3 s of overlap left takes no line (bag and cooldown unchanged); with 5 s it takes one', () => {
+    const LONG = 'Has anyone seen the stapler?';   // bubbleMs 3.9 s: longer than 3 s, shorter than 5 s
+    const run = (leftMs) => {
+        let hearing = false;
+        const o = office({ ann: {}, bob: {} }, { hears: () => hearing, lines: null, chatter: { cooler: [LONG] } });
+        o.w.world.getObject('cooler').affordance.useSeconds = 60;
+        o.sys.step(2000);
+        const c = o.sys._chats.get('cooler');
+        assert.ok(c, 'the pair is chatting');
+        while (c.current) o.sys.step(NEEDS_TICK_MS);   // between turns, so the next tick is a turn
+        const before = { ann: bagState(o.sys, 'ann'), bob: bagState(o.sys, 'bob') };
+        const quiet = { ann: o.sys.states.get('ann').chatterQuietUntil, bob: o.sys.states.get('bob').chatterQuietUntil };
+        for (const id of ['ann', 'bob']) o.sys.states.get(id).job.useUntil = o.sys.clockMs + NEEDS_TICK_MS + leftMs;
+        c.nextAt = 0;
+        hearing = true;
+        const n0 = o.emitted('npc_chatted:').length;
+        o.sys.step(NEEDS_TICK_MS);
+        return { o, c, before, quiet, turn: o.emitted('npc_chatted:').slice(n0)[0] };
+    };
+    const short = run(3000);
+    assert.equal(short.o.spoken.length, 0, '3 s: nothing voiced');
+    assert.ok(!short.turn || short.turn.data.line === null, '3 s: no line shown');
+    for (const id of ['ann', 'bob']) {
+        assert.equal(bagState(short.o.sys, id), short.before[id], `3 s: ${id}'s bag unchanged`);
+        assert.equal(short.o.sys.states.get(id).chatterQuietUntil, short.quiet[id], `3 s: ${id}'s cooldown unchanged`);
+    }
+    const long = run(5000);
+    assert.equal(long.turn?.data.line, LONG, '5 s: the line is said');
+    assert.equal(long.o.spoken.length, 1);
+    assert.ok(long.o.sys.states.get(long.turn.data.speakerId).chatterQuietUntil > long.o.sys.clockMs, '5 s: the cooldown started');
+});
+
 // ── speech lock ────────────────────────────────────────────────────────────
 
 test('speech lock: two pairs at two coolers never speak at once; the second pair queues', () => {

@@ -571,6 +571,11 @@ during the walk home (exists). Player-facing behaviour:
 - **Timing.** A line shows for 2.5 s + 50 ms a character, at most 4 s, then a 0.5 s gap, on the
   needs clock. A line starts only if it ends before the first of the two uses does, so a 15 s
   overlap gives three or four lines and a short one gives one. Dwell times never stretch.
+- **Coupled pairs.** A pair sent to a capacity-2 object by an eventMapping on `npc_use_started`
+  (the partner's need set so it follows the first user) overlap only for the use less the
+  partner's walk. Give such an object a `useSeconds` of at least the partner's measured walk to it
+  plus 20 s, so the pair have time for an exchange or several barks (the test_needs_sims cooler is
+  40 s; at the preset's 15 s the pair had 3 to 7 s together).
 - **Pools.** Since slice 15 there are no built-in lines (5.6a): a scenario's `chatter` pools
   (`coffee`, `cooler`, `greet`, `grumble`) and an NPC's own `chatter` lines for that topic make up
   what an NPC can say, and with none it shows picture chat. `"chatter": false` turns chat off
@@ -635,10 +640,16 @@ during the walk home (exists). Player-facing behaviour:
 - **Spent only when heard (E7).** A bark turn takes a line from the bag, and starts the speaker's
   cooldown, only when the player hears that speaker. Out of earshot the turn is a picture (or
   nothing, for a pool with `pictures: false`), no line is taken, the cooldown does not start and the
-  speech lock is not held, so a pair nobody hears never delays a pair the player can hear. An
+  speech lock is not held, so a bark turn nobody hears never delays a pair the player can hear. This
+  is for bark turns only: an exchange voices every line through the speech lock whether or not the
+  player is in earshot of it, so an exchange whose first line was heard holds the lock to its end
+  even after the player walks away, and a pair the player stands beside waits behind it. An
   unheard turn with nothing to show does not count towards the 40 silent turns after which a
   meeting is given up. A break that starts before the player arrives still has a line ready for
-  each speaker when the player walks in.
+  each speaker when the player walks in. A heard turn takes a line only if it can be said inside
+  the overlap left (`_pickBark`'s `maxMs`, checked on the bag's next line before it is drawn): one
+  that would outlast the overlap gives a picture if that fits, or ends the chat, with the bag and
+  the cooldown untouched.
 - **Cooldown.** After a spoken line the NPC stays quiet for `chatterCooldownMin` needs-clock minutes
   (NPC field, default 5). Pictures never start or wait for it.
 - **Speech lock.** One global lock (`_speechUntil`, across rooms): bark and exchange turns wait for

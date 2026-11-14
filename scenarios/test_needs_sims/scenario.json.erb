@@ -730,7 +730,9 @@
           "name": "Water Cooler",
           "position": { "x": 1, "y": 7 },
           "takeable": false,
-          "observations": "A water cooler. Room for two to stand and chat."
+          "observations": "A water cooler. Room for two to stand and chat.",
+          "_comment": "E7 to E9 showcase: Sanjay and Rosa are coupled on npc_use_started here, so the partner sets off only once the first has started. A capacity-2 object a coupled pair shares uses for at least the partner's walk plus 20 s; the preset's 15 s gave them 3 to 7 s together.",
+          "affordance": { "useSeconds": 40 }
         },
         {
           "type": "mugs_tray1",
