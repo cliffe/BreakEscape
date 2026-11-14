@@ -485,8 +485,12 @@ html .minigame-container.minigame-console {
     line-height: 24px;
     color: var(--ui-accent, #ffcc44);
     text-align: left;
-    overflow-wrap: anywhere;
     text-transform: none;
+    /* One line, never wrapped: a long title ends in an ellipsis and the bar's title
+       attribute holds the full text (Fix round 1 M2) */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .console-window .console-subtitle {
@@ -495,7 +499,9 @@ html .minigame-container.minigame-console {
     font-size: 16px;
     line-height: 24px;
     color: var(--ui-text-dim, #a8b2c8);
-    overflow-wrap: anywhere;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .console-window .console-subtitle[hidden] {
@@ -562,5 +568,36 @@ html .minigame-container .console-window > .console-body > * {
     .console-titlebar {
         padding: 4px 4px 4px 8px;
         gap: 8px;
+        align-items: center;
+    }
+    .console-titles {
+        padding-top: 0;
+    }
+}
+
+/* Short windows: the subtitle joins the title's line (the title keeps its width first and
+   the subtitle takes what is left), so the bar is one row */
+@media (max-height: 500px) {
+    .console-titles {
+        display: flex;
+        align-items: baseline;
+        gap: 16px;
+    }
+    .console-window .console-title {
+        flex: 0 1 auto;
+        min-width: 0;
+    }
+    .console-window .console-subtitle {
+        flex: 1 1 0;
+        min-width: 0;
+        margin: 0;
+    }
+}
+
+/* Narrow phones: no room beside the title, so the subtitle lives in the bar's title
+   attribute only and the bar stays one row */
+@media (max-width: 600px) {
+    .console-window .console-subtitle {
+        display: none;
     }
 }

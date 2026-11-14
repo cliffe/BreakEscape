@@ -92,11 +92,11 @@ export class NetworkArchitectureMinigame extends MinigameScene {
 <div class="nad-wrap">
   <div class="nad-header">
     <div class="nad-legend">
-      <span class="nad-leg-item"><span class="nad-leg-line nad-leg-normal"></span>Intended path</span>
-      <span class="nad-leg-item"><span class="nad-leg-line nad-leg-boundary"></span>IT/OT boundary</span>
-      <span class="nad-leg-item"><span class="nad-leg-line nad-leg-legacy"></span>Legacy exception !</span>
-      <span class="nad-leg-item"><span class="nad-leg-line nad-leg-hardwired"></span>Hardwired interlock</span>
-      <span class="nad-leg-item"><span class="nad-leg-line nad-leg-attack"></span>Attack path</span>
+      <span class="nad-leg-item" title="Intended path"><span class="nad-leg-line nad-leg-normal"></span>Intended<span class="nad-leg-more"> path</span></span>
+      <span class="nad-leg-item" title="IT/OT boundary"><span class="nad-leg-line nad-leg-boundary"></span>IT/OT<span class="nad-leg-more"> boundary</span></span>
+      <span class="nad-leg-item" title="Legacy exception !"><span class="nad-leg-line nad-leg-legacy"></span>Legacy<span class="nad-leg-more"> exception</span> !</span>
+      <span class="nad-leg-item" title="Hardwired interlock"><span class="nad-leg-line nad-leg-hardwired"></span>Hardwired<span class="nad-leg-more"> interlock</span></span>
+      <span class="nad-leg-item" title="Attack path"><span class="nad-leg-line nad-leg-attack"></span>Attack<span class="nad-leg-more"> path</span></span>
     </div>
   </div>
   <div class="nad-body">
@@ -104,13 +104,41 @@ export class NetworkArchitectureMinigame extends MinigameScene {
       ${this._buildSVG()}
     </div>
     <div class="nad-detail" id="nad-detail">
-      <div class="nad-detail-hint">Click any system node to see details and attack paths</div>
+      <button type="button" class="nad-detail-toggle" id="nad-detail-toggle" aria-expanded="false" aria-controls="nad-detail-content">
+        <span class="nad-detail-toggle-label">Details</span><span class="nad-detail-toggle-state">[SHOW]</span>
+      </button>
+      <div class="nad-detail-content" id="nad-detail-content">
+        <div class="nad-detail-hint">Click any system node to see details and attack paths</div>
+      </div>
     </div>
   </div>
 </div>`;
 
         this._svgEl = this.gameContainer.querySelector('.nad-svg');
         this._attachNodeListeners();
+        this._attachDetailToggle();
+    }
+
+    // Short windows (CSS, max-height 500px): the detail pane folds to one row with a toggle,
+    // so the diagram keeps the height. The toggle is hidden on taller windows.
+    _attachDetailToggle() {
+        const detail = this.gameContainer.querySelector('#nad-detail');
+        const toggle = this.gameContainer.querySelector('#nad-detail-toggle');
+        if (!detail || !toggle) return;
+        this.addEventListener(toggle, 'click', (e) => {
+            e.preventDefault();
+            this._setDetailOpen(!detail.classList.contains('nad-detail-open'));
+        });
+    }
+
+    _setDetailOpen(open) {
+        const detail = this.gameContainer.querySelector('#nad-detail');
+        const toggle = this.gameContainer.querySelector('#nad-detail-toggle');
+        if (!detail || !toggle) return;
+        detail.classList.toggle('nad-detail-open', open);
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        const state = toggle.querySelector('.nad-detail-toggle-state');
+        if (state) state.textContent = open ? '[HIDE]' : '[SHOW]';
     }
 
     _viewBoxSize() {
@@ -319,8 +347,10 @@ export class NetworkArchitectureMinigame extends MinigameScene {
     }
 
     _renderDetail(node) {
-        const detail = this.gameContainer.querySelector('#nad-detail');
+        const detail = this.gameContainer.querySelector('#nad-detail-content') || this.gameContainer.querySelector('#nad-detail');
         if (!detail) return;
+        const toggleLabel = this.gameContainer.querySelector('.nad-detail-toggle-label');
+        if (toggleLabel) toggleLabel.textContent = `Details: ${node.label}`;
 
         const pathEntries = (node.paths || [])
             .map(pid => this._pathMap[pid])

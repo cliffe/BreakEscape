@@ -124,11 +124,23 @@ export class ConcernFormMinigame extends SocialOverlayScene {
 
     _renderIntro() {
         const p = el('section', 'cf-panel cf-intro');
-        const h = el('h3', 'cf-heading', this.text('heading'));
-        h.tabIndex = -1;
-        h.dataset.autofocus = '1';
-        p.appendChild(h);
-        p.appendChild(el('p', 'cf-text', this.text('intro')));
+        // The shared title bar already says the form's name: a heading with the same words is
+        // left out (one look per concept), and the intro text takes the first focus instead
+        const heading = this.text('heading');
+        const same = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
+        const showHeading = !!heading && !same(heading, this.text('title'));
+        if (showHeading) {
+            const h = el('h3', 'cf-heading', heading);
+            h.tabIndex = -1;
+            h.dataset.autofocus = '1';
+            p.appendChild(h);
+        }
+        const intro = el('p', 'cf-text', this.text('intro'));
+        if (!showHeading) {
+            intro.tabIndex = -1;
+            intro.dataset.autofocus = '1';
+        }
+        p.appendChild(intro);
         if (this.config.guidance) p.appendChild(el('p', 'cf-guidance', this.config.guidance));
         // The form keeps no state across a close or reload, so a reopen starts the picks again. Say so
         // on the Start card, as the sort drill does (E16 F-E16-8). strings.reloadNote: '' suppresses it.

@@ -76,6 +76,7 @@ export class MinigameScene {
             this.consoleWindowEl = this.container.querySelector('.console-window');
             this.consoleTitleEl = this.container.querySelector('.console-title');
             this.consoleSubtitleEl = this.container.querySelector('.console-subtitle');
+            this.syncConsoleTitleTip();
         } else this.container.innerHTML = `
             <button class="minigame-close-button" id="minigame-close" ${disableClose ? 'style="display:none"' : ''}>&times;</button>
             <div class="minigame-header">
@@ -178,6 +179,19 @@ export class MinigameScene {
             this.consoleSubtitleEl.textContent = displayDashes(String(subtitle || ''));
             this.consoleSubtitleEl.hidden = !subtitle;
         }
+        this.syncConsoleTitleTip();
+    }
+
+    // The title is one line with an ellipsis, and on short or narrow windows the subtitle
+    // shares that line or is hidden, so the bar's title attribute carries the full text
+    syncConsoleTitleTip() {
+        const holder = this.consoleTitleEl?.parentElement;
+        if (!holder) return;
+        const title = this.consoleTitleEl.textContent || '';
+        const sub = this.consoleSubtitleEl && !this.consoleSubtitleEl.hidden ? (this.consoleSubtitleEl.textContent || '') : '';
+        const tip = sub ? `${title}\n${sub}` : title;
+        if (tip) holder.setAttribute('title', tip);
+        else holder.removeAttribute('title');
     }
 
     // Puts the X inside the frame: below and left of the frame's border by a 4px gap, kept

@@ -51,20 +51,10 @@
     border-bottom: 2px solid #ff3a5a;
 }
 
-.siem-header {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    padding: 12px;
-    border-bottom: 2px solid #364261;
-    background: #11192b;
-}
-
-/* Press Start 2P sizes in this sheet are 8px (labels): one font pixel per eighth of the size,
-   so anything else smears (slice 7 R5 M2). Letter spacing stays whole. */
+/* The clock sits in the status bar (Fix round 1 M2: no row of its own under the shared
+   title bar), in the bar's own font size and the clock's colour */
 .siem-clock {
     font-family: 'GNF', monospace;
-    font-size: 32px;
     color: #ffd27f;
 }
 
@@ -288,6 +278,8 @@
 
 .siem-status-bar {
     display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
     justify-content: space-between;
     align-items: center;
     min-height: 48px;
@@ -511,15 +503,6 @@
    frame, and the two panes scroll inside it, so the bottom border and the status bar stay
    on screen (slice 7 R5 M3) */
 @media (max-height: 560px) {
-    .siem-header {
-        box-sizing: border-box;
-        padding: 4px 12px;
-    }
-
-    .siem-clock {
-        font-size: 24px;
-    }
-
     .siem-body {
         padding: 6px;
         gap: 6px;

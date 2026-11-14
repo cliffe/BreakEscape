@@ -271,7 +271,8 @@
 
 .nsm-legend {
     display: flex;
-    gap: 22px;
+    align-items: center;
+    gap: 8px 22px;
     flex-wrap: wrap;
 }
 

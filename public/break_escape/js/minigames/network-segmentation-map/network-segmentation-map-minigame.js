@@ -63,9 +63,6 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
         this.gameContainer.classList.add('nsm-game-container');
         this.gameContainer.innerHTML = `
             <div class="nsm-wrapper pixel-scroll">
-                <div class="nsm-header-bar">
-                    <span class="nsm-status-badge">ACTIVE INCIDENT</span>
-                </div>
                 <div class="nsm-body pixel-scroll">
                     <div class="nsm-topology-area" id="nsm-topology-area">
                         <div class="nsm-zones">
@@ -80,6 +77,7 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
                 </div>
                 <div class="nsm-action-bar">
                     <div class="nsm-legend">
+                        <span class="nsm-status-badge">ACTIVE INCIDENT</span>
                         <span class="nsm-legend-item">
                             <span class="nsm-legend-line nsm-legend-white"></span>PERIMETER FIREWALL
                         </span>

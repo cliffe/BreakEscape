@@ -194,7 +194,9 @@
     display: grid;
     gap: 10px;
     align-content: start;
-    overflow: auto;
+    /* No scroller of its own: the scene root scrolls as one (Fix round 1 m2; an overflow:auto
+       grid item may shrink to a 24px slot under the shared body) */
+    overflow: visible;
 }
 
 .backup-recovery-panel-header {

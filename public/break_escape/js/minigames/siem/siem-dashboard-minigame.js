@@ -391,9 +391,6 @@ export class SiemDashboardMinigame extends MinigameScene {
         this.gameContainer.innerHTML = `
             <div class="siem-panel" id="siem-panel">
                 <div class="siem-result-banner" id="siem-result-banner"></div>
-                <div class="siem-header">
-                    <div class="siem-clock" id="siem-system-clock">00:00:00</div>
-                </div>
                 <div class="siem-body pixel-scroll">
                     <div class="siem-alert-pane">
                         <div class="siem-pane-title">ALERT STREAM</div>
@@ -407,6 +404,7 @@ export class SiemDashboardMinigame extends MinigameScene {
                 </div>
                 <div class="siem-status-bar">
                     <span id="siem-pending-count">ALERTS PENDING: 0</span>
+                    <span class="siem-clock" id="siem-system-clock">00:00:00</span>
                     <span id="siem-time-remaining">TIME REMAINING: 00:00</span>
                 </div>
             </div>

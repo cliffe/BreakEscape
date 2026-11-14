@@ -229,6 +229,11 @@ export class WarrantyChecklistMinigame extends MinigameScene {
 
         const prevScrollTop = this.gameContainer.querySelector('.wcc-doc-body')?.scrollTop || 0;
 
+        // The shared title bar carries the document's name: the paper repeats it only when the
+        // bar says something else (one look per concept)
+        const sameName = String(this.consoleTitle() || '').trim().toLowerCase() === DEFAULT_TITLE.toLowerCase();
+        const docTitle = sameName ? '' : `<div class="wcc-doc-title">${escapeText(DEFAULT_TITLE)}</div>`;
+
         this.gameContainer.innerHTML = `
             <div class="wcc-panel">
                 <div class="wcc-desk">
@@ -238,7 +243,7 @@ export class WarrantyChecklistMinigame extends MinigameScene {
                             <span class="wcc-letterhead-ref">MC-2023-ALBE-007</span>
                         </div>
                         <div class="wcc-doc-header">
-                            <div class="wcc-doc-title">Warranty Compliance Checklist</div>
+                            ${docTitle}
                             <div class="wcc-doc-meta">
                                 <span>Albion Energy Storage Ltd</span>
                                 <span class="wcc-doc-status wcc-status-${escapeText(statusInfo.className)}">${escapeText(statusInfo.text)}</span>
