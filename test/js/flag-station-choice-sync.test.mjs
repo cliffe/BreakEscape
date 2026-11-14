@@ -164,3 +164,13 @@ test('a choice sync that keeps failing stops after four tries; a 403 stops at on
     await new Promise(r => setTimeout(r, 400));
     assert.equal(runs, 1);
 });
+
+test('a reopen after the choice shows the outcome and sends no sync', () => {
+    for (const [globals, outcome] of [[ABORT.setGlobal, 'aborted'], [LAUNCH.setGlobal, 'launched']]) {
+        const { s, calls } = setup();
+        window.stateSync.syncConfirmed = () => { calls.push('confirmed:'); return Promise.resolve(true); };
+        Object.assign(window.gameState.globalVariables, globals);
+        s.restoreLaunchState();
+        assert.deepEqual(calls, ['final:' + outcome], 'the outcome, with no sync and no event');
+    }
+});
