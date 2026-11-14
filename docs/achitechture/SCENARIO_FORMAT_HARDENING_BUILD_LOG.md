@@ -3385,6 +3385,21 @@ known-failures list and the acknowledgedClues markers (the payload-scan-exceptio
 automatically if `test/fixtures/files/payload_scan_exceptions.json` is present, which it is not
 here).
 
+**Item 3, playtest leak scanner.** `tools/playtest/lib/access_leak_scanner.rb` gained a
+`capture_secret` rule (`collect_capture_secrets`, `scan_capture_secrets`). It collects every
+non-account capture secret the way `Game#build_authored_capture_secrets` does: the `secret` on an
+add_capture action, an addCapture mapping or a non-account NPC's `usePayload`
+(`CaptureModel.each_capture_writer`, skipping any writer on an account holder), keyed by target id.
+The server serves these only through `GET /capture_secrets`, so the value is reported anywhere else,
+with the same route exception the account-password rule already carries (`ctx[:capture_secrets]`:
+the `/capture_secrets` answer and a capture-log dom page). The match rule mirrors a password (a
+6-char-or-longer secret as a substring, shorter as a whole token); the finding names the target id,
+never the value, and the secret is added to `secret_values` so redaction covers it. `counts` gains
+`capture_secrets`. Tests: `test/unit/access_leak_scanner_test.rb` adds two cases (94 -> 96 runs over
+both scanner files): a non-account capture secret served through `/capture_secrets` and on a
+capture page is allowed, the same value in a room response or a notepad is a finding named by its
+target id, and an account's own password stays with the `password` rule (`capture_secrets` count 0).
+
 **Reader wiring for the 6a-1 merge.** The marker reader is a non-test module,
 `test/js/validator-acknowledged-clues-reader.mjs`, mirroring `validator-decisions-reader.mjs`. It
 exports `readAcknowledgedClues(root)` (every marker across `scenarios/*/scenario.json.erb`, read
