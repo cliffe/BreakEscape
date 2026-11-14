@@ -93,6 +93,53 @@ The reveal is a client gate, not a server one: the slots are takeable objects in
 
 `neil_print_asked` is set in `neil.ink` when the player picks the "print the change log" choice (`#set_global:neil_print_asked:true`), standing in for m02's `cover_burned`. It is the only new preset object in IT: `it_copier` (type `photocopier1`) takes the copier preset; the mug's affordance is wholly authored.
 
+## The staff room (SIMS-4)
+
+An east door off IT opens onto the **staff room** (`room_hospital_staff`, m02's own Night Handover map, used plainly here with no wordmark), private to **Keith Dando** (night security, West Country) and **Jodie Kerr** (maintenance, Glaswegian). They wait on the radio, seated at two tables, and take their breaks together: one gets up, and the other's coupled need pulls them to the same object. The pair are m02's night porter and domestic in neutral form. The room reads a kitchen bed (`roomToneTypes` maps `room_hospital_staff` to `kitchen`).
+
+The boiler, cooler and microwave each claim a drawn sprite by base type (the kettle, cooler and microwave presets supply what the authored fields leave out). Keith and Jodie sit on tile homes beside the two static `hospital_chair_south`/`hospital_chair_north` seats. Breaks are coupled on the **use start** (`npc_use_started:<object>` with a `data.npcId` condition): Keith's boiler use sets Jodie's caffeine to 20, Jodie's cooler use sets Keith's thirst to 20, so each break brings the partner. `chatterCooldownMin: 0.25` with 6-line pools is the E7 workaround (a pool line is spent at pairing whether anyone hears it, so short cooldowns and bigger pools keep a line for a player who walks in mid-break).
+
+**The pair's break tour.** Times are needs-clock minutes after the staff room first loads. No lever is needed: breaks come from the pair's needs, from where the player goes and from whom they leave.
+
+| Step | Do | What should happen |
+|---|---|---|
+| 1 | **open the staff-room door** (east of IT), walk in and stand by the counter ~40 s | about 4 s after you walk in (not instantly: the first-visit start has a 2 s delay) Keith and Jodie get up and meet at the **boiler**; the **waiting** exchange plays in full (`hear_waiting`, `see_shared_break`). A step out through the west door and back in starts nothing (the mapping's `firstVisit` condition) |
+| 2 | at least two minutes later, **talk to Neil and report the flickering light**, close, then walk straight out of IT's east door into the staff room | the pair are just meeting at the boiler, and the **job-called** exchange plays as you come near (`hear_job_called`) |
+| 3 | another two minutes on, talk to Neil about anything, close, walk straight into the staff room | the pair at the boiler; you hear a line or two and the rest is picture chat |
+| 4 | two minutes on, go back to IT, **open the private office**, then walk straight back through IT into the staff room | the pair at the **cooler** (`see_cooler_break`); the private-office entry started the break |
+| 5 | stay until about 8:00 after the staff room first loaded | Keith heats something in the **microwave**, alone (`see_microwave`); the task ticks even if you are elsewhere; the next trip comes about half an hour later |
+
+**The day on the needs clock (computed for the seed, SIMS-4 step 1 / validator T1 and P).** The staff-room rows assume the player walks in as the door opens; every event start sets the starter's need to 20 and the break restores 40 from there, moving that NPC's next break.
+
+| After the room loads | Beat |
+|---|---|
+| about 0:03 | the first-visit start: Keith's tea; his use start sets Jodie's caffeine to 20 and she follows; 30 s at the boiler, overlap about 27 s |
+| about 4:30 to 6:30 | Keith's second tea, Jodie following (the first break restored 40 to a caffeine set to 20, back at 35 about four and a half to six minutes later). Without the first-visit start the natural first tea is at 2:00 (validator T1) |
+| 8:00, then every 30:00 | Keith at the microwave, alone (hunger 46, 2 a min, urgent 30; preset restores 60) |
+| about 10:00 | Jodie's first cooler (thirst 85, 5 a min, urgent 35, validator T1 10:00); her use start sets Keith's thirst to 20; 25 s at the cooler, overlap about 22 s |
+| after that | shared breaks alternating boiler and cooler about four minutes apart; the partner's coupled need is always reset before it falls due |
+
+**Annotated example.** The pair's topics are their own (`staff_tea`, `staff_water`), not the scenario-level `coffee`/`cooler` pools, so their bags hold only their own lines; the cooler's use cell is hand-written one tile west of the preset's (E8: `besideCell` makes no route check, and the preset's second-user cell sits against the east wall):
+
+```jsonc
+// staff_cooler: claims the drawn water_cooler1 by base type; the cooler preset supplies
+// thirst and capacity 2. useFrom one tile west of the preset's approach cell, so the second
+// user's cell is reachable from both homes, not against the east wall.
+{ "type": "water_cooler", "id": "staff_cooler",
+  "affordance": { "chatter": "staff_water", "useSeconds": 25, "restores": 40,
+    "useFrom": { "dx": -1, "dy": 1.5 } } }
+// Jodie (her id sorts first, so her exchange list is read first): the job-called exchange is
+// gated on job_called (set in neil.ink), job-cleared on job_cleared AND heard_exchange_job_called,
+// then the ungated waiting exchange. The coupling sets the partner's need on the use start.
+"eventMappings": [
+  { "eventPattern": "npc_use_started:staff_boiler", "condition": "data.npcId === 'keith'",
+    "needs": { "set": { "caffeine": 20 } } },
+  { "eventPattern": "room_entered:manager_office", "cooldown": 120000,
+    "needs": { "set": { "thirst": 20 } } } ]
+```
+
+A player should expect a voiced line or two on a crossing and picture chat for the rest, because lines spoken before they are in earshot are spent (E7).
+
 ## Live proof (2026-11-05, keyless :3001, headless, load average ~80)
 
 Game 499 (session log `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/c84d7b68-c29e-4285-9c19-4612b082eed3/scratchpad/lpp-sims/session-499.jsonl`), confirmation game 501. `verify-run.rb 499`: 8/8 tasks completed, 2 rooms beyond the first. Log ticks are 250 ms.
@@ -852,6 +899,22 @@ R1 fixes (B1 mug move, real-clock proof, the four 5.3 checks). Scratchpad `offic
 | Reload after the page lands: tray filed empty, a later close reprints nothing | PASS | Game 4329: page lands, then reload; `it_out_a_shown` false and no IT slot revealed (a print-revealed slot is client-only; reload files the tray empty); a later close reprints nothing (the `onceOnly` key fired and is saved). |
 | Reload within the 6 s delay: the pending print is lost, but the **next close prints** | PASS | Game 4330: reload 2.5 s after the close, inside the 6 s delay; after the reload `neil_print_asked` is still true (saved at the close) and nothing is on the tray (the pending print is lost); a plain no-ask close after the reload prints `it_out_a` and ticks `see_neils_page`. `neil-reload_during-01-after-next-close-4330.png` |
 | Office beats keep their outcomes with every door open | PASS | Games 4331 and 4333: with the kitchen, lounge and new IT door all open, five core office tasks tick in each (`see_coffee`, `see_work`, `see_back_at_desk`, `see_meal`, `see_drink`); **no office NPC ever enters IT** (`it_intruders: []`, the leash + room privacy hold with the door open). `see_rest` (Grace's full walk to the lounge sofa) did not complete inside the 180 s proof window in either run; its mechanism is untouched by the IT move. `office-regress-4331.png` |
+
+### SIMS-4 live proof: the staff-room pair (2026-11-14, keyless :3094, headless, worktree p-ol-sims2)
+
+Tool `tools/playtest/needs-sims-staff-room.mjs`, on test_needs_sims games from `new-game.rb`; the conversations with Neil are opened and closed through their UI and the doors walked through, never emitted. Scratchpad `officelife-sims/s4/`. Step 1 cell checks (`tools/playtest/sims4-step1.mjs`, game 4340): door alignment OK (it_room east door 304 vs staff_room 336); the boiler, cooler, microwave and job board each claim their drawn sprite; all three use-object approach cells are walkable; the cooler's hand-written cell is one tile west of the preset's; Keith sits on `hospital_chair_south` (feet 20.8 px, within NEAR_CHAIR 36), Jodie on `hospital_chair_north` (14.0 px); homes at room-local (6.97, 4.85) and (4.2, 6.1); no use cell within two tiles of the west door. Validator T1/P (the seed's schedule): Keith caffeine 2.0/8.0 min, Jodie thirst 10.0/8.0 min; with the first-visit start Keith's second tea moves to ~4:30-6:30.
+
+The full step-1 count runs (5 first visits, 5 job beats, 10 boiler and 10 cooler crossings), the 20-minute schedule run, the speech-lock regression and the standard live set are **not yet run** this session (see the SIMS-4 handover). The beats below each ran once as a representative proof.
+
+| Beat | Result | Evidence |
+|---|---|---|
+| Step 1, first visit: the pair do not stand within 1.5 s; both meet at the boiler; `exchange_waiting` plays in full | PASS | Game 4345: `room_entered:staff_room` (firstVisit) at 13.0 s, first boiler use at 17.0 s (delay 4.0 s ≥ 1.5 s, the 2 s mapping delay plus walk); Keith uses the boiler at 17.8 s, Jodie follows at 20.3 s (the coupling on `npc_use_started:staff_boiler` sets her caffeine to 20); `exchange_waiting` complete, 5 of 5 lines overheard; `see_shared_break` and `hear_waiting` tick; both `npc_returned_post`. `sr-first_visit-01-pair-at-boiler-4345.png` |
+| Step 2, the job beat: report the light to Neil, close, walk in; `exchange_job_called` plays | PASS | Game 4346: the Neil close sets `job_called` true and starts Keith's boiler break (the `conversation_closed:neil` mapping, 21.3 s), Jodie follows at 23.8 s; the **gated** `exchange_job_called` plays complete, 3 of 3 lines heard; `hear_job_called` and `see_shared_break` tick. The job-called exchange plays because `job_called` holds and its knot sorts before the ungated waiting exchange on Jodie's list |
+| Step 4, the cooler crossing: IT → private office → IT → staff room starts the cooler break (E8 cell) | PASS | Game 4347: after the first visit, entering the private office starts Jodie's cooler break (the `room_entered:manager_office` mapping sets her thirst to 20, use at 68.0 s), Keith follows at 70.8 s (the cooler coupling); **both use the cooler at once** on the hand-written cell one tile west of the preset's (no `arrival_far` failure, so the second user's cell is reachable from both homes: E8 workaround holds); `see_cooler_break` ticks |
+| E7: a pool line is spent at pairing whether anyone hears it | OBSERVED | Games 4341/4344 (player in the room but not within OVERHEAR_RADIUS 160 px of the boiler): 3 `staff_tea` pool lines each spoken with `overheard: false` ("That's the stuff.", "Dull shift, touch wood.", "Needed that, me."), spent unheard; game 4347: 5 more across the crossings. This is why the 0.25 min cooldown and 6-line pools are used: a player who walks into earshot mid-break still hears one |
+| E8: the second user's cell beside the preset's has no route check | OBSERVED (worked around) | Step 1 (game 4340): the preset cooler's approach is at the east edge and its `besideCell` second-user cell would sit against the east wall; the authored `useFrom` dx -1 moves the approach one tile west, so `besideCell` returns a reachable cell. Game 4347 confirms both NPCs reach the cooler at once with no far-arrival failure |
+| E9: an exchange can be marked heard with no line heard | NOT TRIGGERED this session | In every run the player stood in earshot, so each `npc_exchange_heard` carried `heardLines` > 0 (`marked_heard_with_0_heard: false`). The design works around E9 by not gating on `heard_` of an earlier exchange except the job-cleared gate (`heard_exchange_job_called`), which mirrors m02's clearance-after-burn and is the one place a 0-heard completion could set the flag; a separate prototype measures the difference |
+| HUD: needs chatter held or laned by the main-merged bark/lane code | NO INTERFERENCE | `window.npcBarks` and the HUD-lane globals are absent in this standalone build and `npc-barks.js`/`hud-lanes.js` never reference `npc_chatted`/`npc_overheard`; the staff-room lines render as NPC speech bubbles (see the boiler screenshot's "Long shift when it's this slow.") and were heard (exchange 5/5). Needs chatter is not held or laned |
 
 ## Engine findings
 

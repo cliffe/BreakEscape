@@ -33,17 +33,20 @@ async function load() {
         await page.evaluate(() => window.__test.dismissBlockingUi && window.__test.dismissBlockingUi()).catch(() => {});
     }
     await page.evaluate(() => { const loop = window.game.sys.game.loop, raf = loop.raf; if (loop.actualFps < 10 && !raf.isSetTimeOut) { const cb = raf.callback; raf.stop(); raf.start(cb, true, 4); } loop.smoothStep = false; loop.minFps = 1; window.game.physics.world.setFPS(20); });
-    // Capture every needs event we care about, with the needs-clock time.
+    // Capture every needs event we care about, with the needs-clock time. Both _emit and the direct
+    // world.emit (npc_use_started) funnel through window.eventDispatcher.emit, so wrap that.
     await page.evaluate(() => {
-        const sys = window.npcNeedsSystem; window.__s4 = [];
-        if (!sys.__s4wrapped) {
-            const orig = sys._emit.bind(sys);
-            sys._emit = (ev, data) => { try { if (/^npc_(chatted|exchange_heard|use_started|returned_post|sat|used|left_post):/.test(ev)) window.__s4.push({ clockMs: sys.clockMs, ev, data }); } catch (e) {} return orig(ev, data); };
-            sys.__s4wrapped = true;
+        const ed = window.eventDispatcher; window.__s4 = [];
+        if (ed && !ed.__s4wrapped) {
+            const orig = ed.emit.bind(ed);
+            ed.emit = (ev, data) => { try { if (/^(npc_(chatted|exchange_heard|use_started|returned_post|sat|sat_at|used|left_post)|room_entered):/.test(ev)) window.__s4.push({ clockMs: (window.npcNeedsSystem && window.npcNeedsSystem.clockMs) || 0, ev, data }); } catch (e) {} return orig(ev, data); };
+            ed.__s4wrapped = true;
         }
     });
 }
 const enterRoom = async (rid) => { const r = await page.evaluate((r) => window.__test.enterRoom(r, { timeoutMs: 25000 }), rid).catch(() => null); await t(1200); return !!(r && r.ok); };
+// Stand within OVERHEAR_RADIUS (160 px) of a chatter object so the pair have an audience.
+const standNear = async (objId) => { const r = await page.evaluate((o) => window.__test.moveToNear(o, { timeoutMs: 20000 }), objId).catch(() => null); await t(800); return r; };
 const playerRoom = () => page.evaluate(() => window.currentPlayerRoom);
 const clock = () => page.evaluate(() => window.npcNeedsSystem.clockMs);
 const events = () => page.evaluate(() => window.__s4.slice());
@@ -106,19 +109,25 @@ if (beat === 'first_visit') {
     // Watch the 1.5 s window: sample modes just after entry.
     await t(1600);
     const at1_5 = { keith: await npc('keith'), jodie: await npc('jodie') };
-    // Stand near the boiler and watch.
+    // Stand within earshot of the boiler so the pair have an audience for the exchange.
+    await standNear('staff_boiler');
     const samples = [];
     for (let i = 0; i < 24; i++) { samples.push({ clock: await clock(), keith: await npc('keith'), jodie: await npc('jodie') }); if (i === 6) await shot('01-pair-at-boiler'); await t(1800); }
     await shot('02-after');
     const evs = await events();
+    const roomEntered = evs.filter(e => e.ev === 'room_entered:staff_room' && e.data && e.data.firstVisit);
+    const firstBoiler = bothUsing(evs, 'staff_boiler')[0];
     report.first_visit = {
         enter_clock_ms: enterClock,
-        neither_stood_within_1_5s: !(/job|goto|using/.test(String(at1_5.keith.mode)) || /job|goto|using/.test(String(at1_5.jodie.mode))),
+        first_visit_room_entered_ms: roomEntered[0] ? roomEntered[0].clockMs : null,
+        first_boiler_use_ms: firstBoiler ? firstBoiler.clockMs : null,
+        delay_room_entered_to_first_use_ms: (roomEntered[0] && firstBoiler) ? firstBoiler.clockMs - roomEntered[0].clockMs : null,
+        pair_did_not_stand_within_1_5s: (roomEntered[0] && firstBoiler) ? (firstBoiler.clockMs - roomEntered[0].clockMs) >= 1500 : null,
         modes_at_1_5s: { keith: at1_5.keith.mode, jodie: at1_5.jodie.mode },
         boiler_use_starts: bothUsing(evs, 'staff_boiler').map(e => ({ clock_s: +(e.clockMs / 1000).toFixed(1), npc: e.data.npcId })),
         both_used_boiler: new Set(bothUsing(evs, 'staff_boiler').map(e => e.data.npcId)).size >= 2,
         returned_post: evs.filter(e => e.ev.startsWith('npc_returned_post:')).map(e => e.ev),
-        sat: evs.filter(e => e.ev.startsWith('npc_sat:')).map(e => e.ev),
+        sat: evs.filter(e => /^npc_sat/.test(e.ev)).map(e => e.ev),
         tasks: await tasks(),
         ...analyse(evs)
     };
@@ -129,6 +138,7 @@ if (beat === 'job_beat') {
     report.closed = await talkNeil({ reportLight: true });
     report.job_called = await page.evaluate(() => (window.gameState.globalVariables || {}).job_called);
     await enterRoom('staff_room');
+    await standNear('staff_boiler');
     const samples = [];
     for (let i = 0; i < 20; i++) { samples.push({ clock: await clock(), keith: await npc('keith'), jodie: await npc('jodie') }); if (i === 4) await shot('01-in-staff-room'); await t(1800); }
     const evs = await events();
@@ -143,8 +153,13 @@ if (beat === 'job_beat') {
 if (beat === 'boiler_cross' || beat === 'cooler_cross') {
     // boiler: talk to Neil (no report), close, walk into staff room.
     // cooler: from IT walk into manager_office then straight back through IT into staff room.
-    if (beat === 'boiler_cross') { report.closed = await talkNeil({ reportLight: false }); await enterRoom('staff_room'); }
-    else { await enterRoom('manager_office'); await t(800); await enterRoom('it_room'); await t(400); await enterRoom('staff_room'); }
+    if (beat === 'boiler_cross') { report.closed = await talkNeil({ reportLight: false }); await enterRoom('staff_room'); await standNear('staff_boiler'); }
+    else {
+        // Load the staff room first (register Jodie), let the first-visit break pass, then cross
+        // IT -> manager_office -> IT -> staff_room so the private-office entry starts the cooler break.
+        await enterRoom('staff_room'); await t(45000); await enterRoom('it_room'); await t(400);
+        await enterRoom('manager_office'); await t(900); await enterRoom('it_room'); await t(400); await enterRoom('staff_room'); await standNear('staff_cooler');
+    }
     const obj = beat === 'boiler_cross' ? 'staff_boiler' : 'staff_cooler';
     const samples = [];
     for (let i = 0; i < 22; i++) { samples.push({ clock: await clock(), keith: await npc('keith'), jodie: await npc('jodie') }); if (i === 5) await shot(`01-at-${obj}`); await t(1800); }
