@@ -645,7 +645,7 @@ test('R2 M4: with a finished-task line the other toasts step aside first (countd
     L.applyLanes(document, window);
     assert.ok(!older.classList.contains('hud-lane-yield'));
     assert.deepEqual(yields, [true, false], 'its countdown goes on');
-    assert.match(css('notifications.css'), /\.notification\.hud-lane-yield \{\s*display: none;/);
+    assert.match(css('notifications.css'), /\.notification\.hud-lane-yield \{\s*display: none !important;/, 'beats utilities.css .show');
     setWindow(1400, 1000);
 });
 
