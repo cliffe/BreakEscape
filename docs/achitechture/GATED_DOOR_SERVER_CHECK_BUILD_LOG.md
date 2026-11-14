@@ -873,3 +873,74 @@ Server log read back per request:
 `may_sync_current_room?` probed directly with `lobby` absent from `unlockedRooms` (in-memory, not
 saved): `lobby` -> true (the awareness lazy-read branch), start room -> true, forged -> false. So the
 awareness world room is accepted via the lazy scenario read and a genuine forge is still refused.
+
+## currentRoom live proofs (2026-11-14)
+
+First time the server sees the real client room (eb1230fef makes state-sync.js read
+`window.currentPlayerRoom`; `Game#may_sync_current_room?` widens the guard). Proven safe on every
+mission below. Keyless servers, headless, setFPS(20) with fixed steps on. Branch build/hard-tailgate-plan
+(tip b0189acf0) on :3650; base (main fc4b4d8a5) on :3654. Drivers in the hardening scratchpad
+(`tgplay/`): `delta_walk.mjs`, `smoke.mjs`, `slow_net.mjs`, shared boot/dismiss in `boot.mjs`. All
+games started from `tools/playtest/new-game.rb`; the first door of m01 is key-gated, so the m01 walks
+use the `--start-room=main_office_area` head-start (everything past that first door is open).
+
+### 1. DELTA SYNC (m01_first_contact)
+
+Same six-room walk (main_office_area -> hallway_west -> manager_office -> kevin_office -> hallway_east ->
+maya_office), idling between rooms, on the branch (game 3489) and on main's own code (base, game 3490).
+Every `sync_state` request body captured.
+
+- Branch: `currentRoom` is present only on the syncs where the room changed (five of them, one per new
+  room: hallway_west, manager_office, kevin_office, hallway_east, maya_office). Every idle sync (room
+  unchanged) omits it. Room-change sync bodies 137-140 bytes; idle sync bodies 143 bytes.
+- Base (main code): across the identical walk, no sync ever carried `currentRoom` (main's state-sync.js
+  read the always-null `window.currentRoom`). Idle sync bodies 140-141 bytes.
+- So the fix adds `currentRoom` only to room-change syncs and leaves the idle sync the same size
+  (base 140-141 B vs branch 143 B; the 2-3 B is the idle probe counter/jsonb ordering, not the room).
+  SYNC SIZE holds: `currentRoom` is one short string sent by delta, never re-sent while the room is
+  unchanged.
+
+### 2. WIDENED GUARD
+
+`may_sync_current_room?(room)` accepts a room only from the server's own data, never the client string:
+
+- `player_state['unlockedRooms']` includes it -- server-written on a door unlock (seeded with the
+  start room).
+- `in_npc_route_room?` (`player_state['npcRouteRooms']`) -- server-written on an NPC route slip-in
+  (Chunk A); never part of the client sync payload.
+- `start_room?` -- `scenario_data['startRoom']` (scenario data).
+- `awareness_world_room?` -- `scenario_data['social']['awarenessEpisode']['world']['room']` (scenario
+  data); the one room `enterWorld` places the learner in without a door unlock.
+
+Every source is scenario data or server-written player_state. A room outside the set is a forge and the
+sync is refused (403), the saved currentRoom left unchanged.
+
+- Rails tests `test/controllers/break_escape/current_room_guard_refusal_test.rb` (4 runs, 9 assertions,
+  0 failures): a forged id that exists nowhere, a real-but-locked room of this scenario, and a room id
+  that is real only in another scenario are each refused 403 with `currentRoom` unchanged; a sanity test
+  confirms the start room and an unlocked room are still accepted.
+- Slow network (user requirement: an honest player is never refused). Game 3506 (m01, access_it_room
+  enter_room task active, it_room door crossable), `sync_state` delayed 1.5-3 s with a Playwright route
+  delay. The player walks into it_room; the `access_it_room` enter_room task fires while the room sync is
+  still in flight. Result: the task completed (status active -> completed), every sync returned 200 (no
+  403), and the only toast raised was the success "Task Complete" -- no "Room not reached" and no
+  "Objective Blocked". The durable term of `player_reached_room?` carries the check while the delayed
+  currentRoom sync is outstanding, and the retryable enter_room path heals the ordering gap. (The pure
+  currentRoom-only dependency, a room reached with no unlockedRooms/route membership, is the tailgate
+  route-room path, already proven under the same 1.5-3 s throttle earlier in this log.)
+
+### 3. OLD GAME (stale currentRoom from main, loaded on the branch)
+
+Game 3490 created with main's own code on the base (:3654) and walked through several rooms (avatar
+reached maya_office). main never syncs currentRoom, so the base left `player_state.currentRoom =
+"main_office_area"` (the start room: stale). Base stopped. The same game loaded on the branch (:3650)
+and walked: the first currentRoom sync replaced the stale value, every sync returned 200 (no 403, no
+refused task), and play continued. After: `player_state.currentRoom = "maya_office"`. Before
+"main_office_area" -> after "maya_office"; 3 syncs, all 200, 0x403, 2 carried currentRoom, no toasts.
+
+### 4. SMOKE (branch, :3650)
+
+- m01_first_contact game 3502: six rooms through open doors; 6 syncs, all 200, 0x403, 2 carried
+  currentRoom, no error toast.
+- sis01_healthcare game 3505 (start it_security_office): three rooms (it_security_office,
+  major_incident_room, ward_7) through two doors; all syncs 200, 0x403, no error toast.
