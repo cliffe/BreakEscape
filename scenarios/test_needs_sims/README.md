@@ -758,6 +758,15 @@ Notes:
 
 ## Engine findings
 
+0. **Fixed 2026-11-14 (SIMS-2, OLMP E6).** An NPC used an object from across the room (baseline
+   game 3537: "grace: using lounge_sofa" with her sprite over the west office desks). A needs
+   arrival was taken as "arrived at the object" wherever the NPC stood: `_advanceJob` treated any
+   queued `npc_arrived:<id>` as the job's arrival with no position check, and the behaviour layer
+   fires the arrival whenever a path runs out (a short path end: an async path answer, a path
+   stopped at a door). The fix stamps every needs move with an id and checks, on arrival, the
+   distance to the move's cell (within 48 px) and the echoed id; a far arrival is logged
+   `arrival_far` and re-issued (a second far arrival fails the job; a returning NPC re-issues once
+   and is left to `_watchReturn`). `see_rest` (Grace on the sofa) still ticks. See SIMS-2 live proof.
 1. **Fixed 2026-11-05.** The home is now provisional until the `needsHome` object exists and is re-resolved once a second; and an NPC standing on its own desk's approach cell now counts as able to reach it (EasyStar gave no path for start == end, which is why Sanjay chose `tom_pc` in game 501). Original finding: **Needs homes in the start room resolve to the spawn point and stay there.** `npc-needs.js:301` resolves `s.home` on the first tick that has a sprite position and caches it; `_resolveHome` (`npc-needs.js:628-640`) falls back to the spawn point with `objectId: null` when `getObject`/`approachCell` fail. For the start room the NPCs are registered (`core/game.js:2004-2006`) before the room's objects or pathfinding are ready, so every start-room needs NPC gets the fallback and the home-object preference in `_useCandidate` (`npc-needs.js:475`) never applies. NPCs in rooms loaded later (Rosa, lounge) resolve correctly. Repro: load this scenario, then `[...npcNeedsSystem.states].map(([k,s]) => [k, s.home.objectId])` gives null for amara, tom, grace and sanjay, `rosa_laptop` for rosa. Suggested fix: don't cache a fallback home while `needsHome` names an object that isn't found yet (retry each tick until the object exists, or for a few seconds). `test_npc_needs` and `lab_physical_pentest` start-room NPCs are likely affected too, but hidden because each spawns at its own desk. Workaround here: each NPC spawns beside its own desk, and the work task reads "Someone works at a desk". Even so, game 501 had Sanjay choose `tom_pc` over his own adjacent PC (nearest-reachable from his seated position), so the workaround isn't reliable.
 2. **Server hides a room item that shares type and name with an inventory item.** `games_controller.rb` `item_in_inventory?` (around line 1766) falls back to a name match when the ids differ, so a floor item called "Dirty Mugs" vanished because the player held a different "Dirty Mugs" (id `player_mugs`). Workaround: the floor one is "Abandoned Mugs".
 3. **Minor:** `converse` on an NPC walking a needs job returned `no-dialogue-appeared`; `interact` on a stationary one opened the chat. Probably the harness hitting a moving target, not the engine.
