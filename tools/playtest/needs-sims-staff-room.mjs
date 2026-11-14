@@ -52,7 +52,7 @@ const standNear = async (objId) => { const r = await page.evaluate((o) => window
 const playerRoom = () => page.evaluate(() => window.currentPlayerRoom);
 const clock = () => page.evaluate(() => window.npcNeedsSystem.clockMs);
 const events = () => page.evaluate(() => window.__s4.slice());
-const npc = (id) => page.evaluate((id) => { const st = window.npcNeedsSystem.getState(id) || {}; const b = window.npcBehaviorManager && window.npcBehaviorManager.getBehavior(id); const sp = b && b.sprite; return { mode: st.mode, phase: st.job && st.job.phase, target: st.job && st.job.targetId, x: sp ? +sp.x.toFixed(0) : null, y: sp ? +sp.y.toFixed(0) : null, caffeine: st.levels && +st.levels.caffeine.toFixed(0), thirst: st.levels && +st.levels.thirst.toFixed(0) }; }, id);
+const npc = (id) => page.evaluate((id) => { const st = window.npcNeedsSystem.getState(id) || {}; const b = window.npcBehaviorManager && window.npcBehaviorManager.getBehavior(id); const sp = b && b.sprite; return { mode: st.mode, phase: st.job && st.job.phase, target: st.job && st.job.targetId, x: sp ? +sp.x.toFixed(0) : null, y: sp ? +sp.y.toFixed(0) : null, caffeine: st.levels && st.levels.caffeine != null ? +st.levels.caffeine.toFixed(0) : null, thirst: st.levels && st.levels.thirst != null ? +st.levels.thirst.toFixed(0) : null }; }, id);
 const tasks = () => page.evaluate(() => Object.values((window.objectivesManager && window.objectivesManager.taskIndex) || {}).filter(x => x.status === 'completed' || x.status === 'completing').map(x => x.taskId || x.id));
 const hudState = () => page.evaluate(() => ({
     npcBarks: !!window.npcBarks, hudLanes: !!(window.hud && window.hud.lanes) || !!window.hudLanes,
