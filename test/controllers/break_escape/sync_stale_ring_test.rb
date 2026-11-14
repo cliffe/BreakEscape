@@ -118,7 +118,7 @@ module BreakEscape
 
     test 'a cap-rejected npcInkVariables update is not recorded' do
       sync(clientTs: 1000, globalVariables: { 'a' => 1 },
-           npcInkVariables: { 'hax' => { 'big' => 'x' * 130_000 } })
+           npcInkVariables: { 'hax' => { 'big' => 'x' * 200_000 } })
       assert_response :success
 
       assert_equal %w[a], latest_w['globalVariables']
