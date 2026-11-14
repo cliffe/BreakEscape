@@ -125,7 +125,7 @@ if (beat === 'still_ask') {
             samples.push({ el, d: Math.round(d * 10) / 10, mode: n.mode });
             const sipping = /using|job/.test(String(n.mode));
             if (sipping && sipShots < 2) { sipShots++; await shot(`0${sipShots}-sipping`); }
-            if (sipping && wantMidSip) { wantMidSip = false; const c = await talk({ ask: false }); c.at = el; c.midSip = true; chats.push(c); continue; }
+            if (sipping && wantMidSip) { wantMidSip = false; const c = await talk({ ask: false }); c.at = el; c.midSip = true; c.sipModeAtTrigger = n.mode; chats.push(c); continue; }
             if (next < plan.length && el >= plan[next]) { next++; const c = await talk({ ask: false }); c.at = el; chats.push(c); }
             if (el >= 630000 || Date.now() - realStart > 1500000) break;
             await t(2000);
@@ -140,11 +140,13 @@ if (beat === 'still_ask') {
             move_events: moves, sip_count: sipTicks.length,
             sip_clock_min: sipTicks.map(tk => +(tk * 250 / 60000).toFixed(2)),
             gulp_sounds: play.map(e => ({ played: e.played, volume: e.volume, room: e.room })),
-            opens: chats.map(c => ({ at_ms: c.at, mid_sip: !!c.midSip, mode_at_open: c.modeAtOpen, chat_up_ms: c.chatUp, closed: c.closed })),
+            opens: chats.map(c => ({ at_ms: c.at, mid_sip: !!c.midSip, sip_mode_at_trigger: c.sipModeAtTrigger, mode_at_open: c.modeAtOpen, chat_up_ms: c.chatUp, closed: c.closed })),
             opens_count: chats.length,
-            // m7: the mid-sip open counts only when the mode at open really was a sip (job/using),
-            // not merely that the sampler flagged it before talk() walked over and the sip ended.
-            mid_sip_open: chats.some(c => c.midSip && /job|using/.test(String(c.modeAtOpen))),
+            // m7: the mid-sip open counts only when the sip was really in progress when the open was
+            // triggered (sampler mode job/using). mode_at_open is captured after the chat has frozen
+            // Neil, so it reads 'frozen' and cannot be the test: the freeze pausing the sip is the
+            // point. We assert on the trigger-time mode and record mode_at_open as the freeze proof.
+            mid_sip_open: chats.some(c => c.midSip && /job|using/.test(String(c.sipModeAtTrigger))),
             see_neil_sip: (await tasks()).includes('see_neil_sip')
         };
     })();

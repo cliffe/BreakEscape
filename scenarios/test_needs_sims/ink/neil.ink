@@ -40,4 +40,4 @@ Alright? Neil, IT support. I'm parked here by me mug, so give us a shout.
     # speaker:npc
     No bother, pet. Mind the cables on your way out.
     # exit_conversation
-    -> hub
+    -> END
