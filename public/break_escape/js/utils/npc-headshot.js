@@ -218,25 +218,6 @@ export function npcRecordFor({ npcId = null, username = null } = {}, manager = (
     return null;
 }
 
-/**
- * The NPC record behind an account: the manager's, else the scenario's own NPC data. The
- * manager only holds the NPCs of rooms already loaded, so an account whose NPC lives in
- * another room (a remote sign-in, a session restored on page load) has no manager record
- * yet its picture is known from the scenario. Null when neither has it.
- */
-export function npcRecordOrScenario({ npcId = null, username = null } = {}, manager = (typeof window !== 'undefined' ? window.npcManager : null),
-                                    scenario = (typeof window !== 'undefined' ? window.gameScenario : null)) {
-    const rec = npcRecordFor({ npcId, username }, manager);
-    if (rec) return rec;
-    for (const room of Object.values(scenario?.rooms || {})) {
-        for (const npc of (Array.isArray(room?.npcs) ? room.npcs : [])) {
-            if (!npc) continue;
-            if ((npcId && npc.id === npcId) || (username && npc.creds?.username === username)) return npc;
-        }
-    }
-    return null;
-}
-
 /** The headshot source for an NPC record or a sign-in tile. */
 export function headshotSourceFor(tile = {}, record = null) {
     return {

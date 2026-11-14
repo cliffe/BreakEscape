@@ -51,6 +51,18 @@ module BreakEscape
 
     # ---- password sign-in ----------------------------------------------------------
 
+    test 'a sign-in answer and the load sessions carry the account picture source when the NPC has one, and nothing otherwise' do
+      build(scenario: tracked_scenario({ 'spriteSheet' => 'male_office_worker_v2', 'avatar' => 'assets/characters/male_office_worker_v2_headshot.png' }))
+      body = login('jbrooks', JAKE_PASSWORD)
+      assert_response :success
+      assert_equal 'assets/characters/male_office_worker_v2_talk.png', body['portrait']
+      assert_equal 'assets/characters/male_office_worker_v2_headshot.png', body['avatar']
+      row = @game.reload.sessions_for_client['jake_pc']
+      assert_equal 'assets/characters/male_office_worker_v2_talk.png', row['portrait']
+      assert_equal 'assets/characters/male_office_worker_v2_headshot.png', row['avatar']
+      assert_nil @game.player_state['sessions']['jake_pc']['portrait'], 'computed, never stored in player_state'
+    end
+
     test 'a correct password signs in and answers the session' do
       build
       body = login('jbrooks', JAKE_PASSWORD)
