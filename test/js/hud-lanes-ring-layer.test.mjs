@@ -209,3 +209,22 @@ test('R2 m2: a control added inside the open minigame while the banner rings mov
   handle.stop();
   r.win.close();
 });
+
+test('R2 m3 follow-up: a toast mid-slide (translateY -20px) is measured where it settles', () => {
+  const r = rig();
+  pinScene(r);
+  const layer = r.add('<div id="phone-ring-layer"></div>', [278, 12, 638, 104]);
+  r.add('<div class="incoming-call"></div>', [278, 12, 638, 104], layer);
+  const container = r.add('<div id="notification-container"></div>', [0, 0, 0, 0]);
+  // Mid-slide box 200..284; settled it is 220..304, which the bottom spot (304) would touch
+  r.add('<div class="notification show" style="transform: matrix(1, 0, 0, 1, 0, -20)"></div>', [278, 200, 638, 284], container);
+  const orig = r.win.Element.prototype.getBoundingClientRect;
+  r.win.Element.prototype.getBoundingClientRect = function () {
+    if (this.id === 'phone-ring-layer') return { left: 278, top: 12, right: 638, bottom: 104, width: 360, height: 92 };
+    return orig.call(this);
+  };
+  applyLanes(r.doc, r.win);
+  const spot = r.win.__hudLanes.ringSpot;
+  assert.ok(!overlaps(spot, { width: 360, height: 92 }, B(278, 216, 638, 308)), JSON.stringify(spot));   // settled box plus the 4px margin
+  r.win.close();
+});

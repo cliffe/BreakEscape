@@ -93,6 +93,7 @@ await p.evaluate(() => window.showNotification('That PIN is not right. Two tries
 await p.waitForTimeout(1000);
 m = await boxes();
 report.bannerAfterWarnSpot = m.spot;
+report.bannerAfterWarn = m.banner; report.toastsAfterWarn = m.toasts;
 report.toastVsBanner = m.banner ? m.toasts.filter(t => hit(m.banner, t)).length : null;
 if (report.toastVsBanner && m.spot !== 'default') report.failures.push('banner overlaps a toast');
 else if (report.toastVsBanner) {

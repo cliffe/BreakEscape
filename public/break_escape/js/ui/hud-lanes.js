@@ -409,6 +409,17 @@ export function measureMinigame(doc, win) {
   return { titles, controls, frame };
 }
 
+// A toast slides in and out with a translateY (notifications.css), so its box mid-slide is up to
+// 20px off where it settles, and nothing re-places the banner when the slide ends. The vertical
+// shift is taken back out, so the banner is placed against the settled box.
+function settledBox(el, r) {
+  const m = /^matrix\(([^)]*)\)$/.exec(gcs(el).transform || '');
+  const ty = m ? parseFloat(m[1].split(',')[5]) : 0;
+  const b = boxOf(r);
+  if (Number.isFinite(ty) && ty) { b.top -= ty; b.bottom -= ty; }
+  return b;
+}
+
 function placeRingLayer(doc, win, lanes) {
   const layer = doc.getElementById('phone-ring-layer');
   if (!layer) return null;
@@ -419,7 +430,7 @@ function placeRingLayer(doc, win, lanes) {
   const toasts = [];
   for (const el of doc.querySelectorAll('#notification-container .notification')) {
     const r = shownRect(el);
-    if (r && !el.classList.contains('hud-lane-yield')) toasts.push(boxOf(r));
+    if (r && !el.classList.contains('hud-lane-yield')) toasts.push(settledBox(el, r));
   }
   clear();                                   // measure the banner where the CSS puts it
   const box = layer.getBoundingClientRect();
