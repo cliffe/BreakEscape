@@ -88,10 +88,7 @@ export class AssistantChatMinigame extends SocialOverlayScene {
     _build() {
         const head = h('header', { class: 'ac-head' },
             h('h2', { class: 'ac-title', text: this._title }));
-        const close = h('button', { type: 'button', class: 'se-overlay-close minigame-button ac-close',
-            text: 'Close', 'aria-label': 'Close' });
-        this.addEventListener(close, 'click', (e) => { e.preventDefault?.(); e.stopPropagation?.(); this.requestClose(); });
-        this.closeButton = close;
+        const close = this.buildCloseControl();
         head.appendChild(h('div', { class: 'ac-head-buttons' }, close));
 
         this.body = h('div', { class: 'ac-body' });

@@ -179,14 +179,7 @@ export class PretextPrepMinigame extends SocialOverlayScene {
     }
 
     _closeButton() {
-        const btn = h('button', { type: 'button', class: 'pretext-close minigame-button', text: 'Close', 'aria-label': 'Close' });
-        this.addEventListener(btn, 'click', (event) => {
-            event.preventDefault?.();
-            event.stopPropagation?.();
-            this.requestClose();
-        });
-        this.closeButton = btn;
-        return btn;
+        return this.buildCloseControl();
     }
 
     _briefBlock(brief, held, words) {

@@ -423,10 +423,7 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
     _buildInvalid() {
         const wrap = h('div', { class: 'lpb-root lpb-invalid', tabindex: '-1' },
             h('p', { class: 'lpb-invalid-text', text: this._invalid }),
-            h('button', { type: 'button', class: 'se-overlay-close minigame-button', text: 'Close' }));
-        this.addEventListener(wrap.querySelector('button'), 'click', (e) => {
-            e.preventDefault?.(); this.requestClose();
-        });
+            this.buildCloseControl());
         this.root = wrap;
         this.gameContainer.appendChild(wrap);
     }
@@ -435,12 +432,7 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
     _buildCaptures() {
         const reveal = capturesReveal(this.social);
         const entries = captureList(this.globals);
-        const close = h('button', { type: 'button', class: 'se-overlay-close minigame-button lpb-close',
-            text: 'Close', 'aria-label': 'Close' });
-        this.addEventListener(close, 'click', (e) => {
-            e.preventDefault?.(); e.stopPropagation?.(); this.requestClose();
-        });
-        this.closeButton = close;
+        const close = this.buildCloseControl();
         const head = h('header', { class: 'lpb-head' },
             h('h2', { class: 'lpb-title', text: 'Captures' }),
             h('div', { class: 'lpb-head-buttons' }, close));
@@ -482,12 +474,7 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
 
     _buildShell() {
         const title = h('h2', { class: 'lpb-title', text: this.pageDef.title || 'Build a page' });
-        const close = h('button', { type: 'button', class: 'se-overlay-close minigame-button lpb-close',
-            text: 'Close', 'aria-label': 'Close' });
-        this.addEventListener(close, 'click', (e) => {
-            e.preventDefault?.(); e.stopPropagation?.(); this.requestClose();
-        });
-        this.closeButton = close;
+        const close = this.buildCloseControl();
         const head = h('header', { class: 'lpb-head' }, title, h('div', { class: 'lpb-head-buttons' }, close));
 
         this.stepStrip = h('ol', { class: 'lpb-steps', 'aria-label': 'Steps' });

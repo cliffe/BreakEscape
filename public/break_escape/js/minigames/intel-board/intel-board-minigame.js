@@ -150,14 +150,7 @@ export class IntelBoardMinigame extends SocialOverlayScene {
             : '';
         live.textContent = this._liveText;
 
-        const close = h('button', { type: 'button', class: 'se-overlay-close minigame-button ib-close',
-            'aria-label': 'Close', text: 'Close' });
-        this.addEventListener(close, 'click', (e) => {
-            e.preventDefault?.();
-            e.stopPropagation?.();
-            this.requestClose();
-        });
-        this.closeButton = close;
+        const close = this.buildCloseControl();
 
         const progress = m.labels.progress.replace('{n}', m.ready.length).replace('{total}', m.total);
         const head = h('header', { class: 'ib-head' },
@@ -190,14 +183,7 @@ export class IntelBoardMinigame extends SocialOverlayScene {
         live.textContent = this._liveText;
         this._liveEl = live;
 
-        const close = h('button', { type: 'button', class: 'se-overlay-close minigame-button ib-close',
-            'aria-label': 'Close', text: 'Close' });
-        this.addEventListener(close, 'click', (e) => {
-            e.preventDefault?.();
-            e.stopPropagation?.();
-            this.requestClose();
-        });
-        this.closeButton = close;
+        const close = this.buildCloseControl();
 
         const progress = d.complete
             ? `Exposure review complete. ${d.doneCount} of ${d.total} reduced.`
@@ -376,14 +362,7 @@ export class IntelBoardMinigame extends SocialOverlayScene {
         live.textContent = this._liveText;
         this._liveEl = live;
 
-        const close = h('button', { type: 'button', class: 'se-overlay-close minigame-button ib-close',
-            'aria-label': 'Close', text: 'Close' });
-        this.addEventListener(close, 'click', (ev) => {
-            ev.preventDefault?.();
-            ev.stopPropagation?.();
-            this.requestClose();
-        });
-        this.closeButton = close;
+        const close = this.buildCloseControl();
 
         const progress = e.complete
             ? `${e.title} complete.`

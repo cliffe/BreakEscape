@@ -116,14 +116,7 @@ export class EngagementReportMinigame extends SocialOverlayScene {
         live.textContent = this._liveText;
         this._liveEl = live;
 
-        const close = h('button', { type: 'button', class: 'se-overlay-close minigame-button er-close',
-            'aria-label': 'Close', text: 'Close' });
-        this.addEventListener(close, 'click', (e) => {
-            e.preventDefault?.();
-            e.stopPropagation?.();
-            this.requestClose();
-        });
-        this.closeButton = close;
+        const close = this.buildCloseControl();
 
         const resultsDone = m.steps.find((s) => s.id === m.resultsStepId)?.done;
         const progress = m.complete

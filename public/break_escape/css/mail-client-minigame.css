@@ -60,10 +60,8 @@
 /* Toolbar buttons size to their label and never shrink, so Contacts, Compose and
    Close keep their whole label on one row; only the account label (min-width:0,
    ellipsis) gives way when the row is tight (A9; P1-T2 clip at 1400 px). */
-.mail-toolbar .minigame-button,
-.mail-toolbar .se-overlay-close { white-space: nowrap; width: auto; flex: none; }
-.mail-client .minigame-button,
-.mail-client .se-overlay-close {
+.mail-toolbar .minigame-button { white-space: nowrap; width: auto; flex: none; }
+.mail-client .minigame-button {
     min-height: 44px;
     min-width: 44px;
     padding: 6px 12px;
