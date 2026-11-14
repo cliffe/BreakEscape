@@ -147,18 +147,28 @@ function setupFailure(why) {
     return browser.close().then(() => process.exit(3));
 }
 const light = () => page.evaluate(() => { const st = window.lightingSystem?.rooms?.get('staff_room'); if (!st) return null; return { variantIdx: st.variantIdx, flicker: !!st.cfg?.flicker, faulty: st.panels.filter(p => p.faulty).length, levels: st.panels.map(p => +(p.level ?? 0).toFixed(2)) }; }).catch(() => null);
-// m3: freeze the loop on the frame where the faulty panel dips, so a screenshot shows the blink.
+// m3: a frame of the blink. The dip lasts about 90 ms, too short to screenshot, so when the faulty
+// panel dips its level is held at that real dip value for the screenshot, then released. The game
+// keeps running; only that one panel's level is pinned in the page, and the report says so.
 async function shotDip(name, capMs = 30000) {
-    const got = await page.evaluate((capMs) => new Promise(res => {
+    const gotP = page.evaluate((capMs) => new Promise(res => {
         const st = window.lightingSystem?.rooms?.get('staff_room'); const p = st && st.panels.find(q => q.faulty);
         if (!p) return res({ ok: false, why: 'no faulty panel' });
         const t0 = Date.now();
         const iv = setInterval(() => {
-            if ((p.level ?? 1) < 0.75) { clearInterval(iv); window.game.loop.sleep(); return res({ ok: true, level: +p.level.toFixed(2), x: Math.round(p.x), y: Math.round(p.y) }); }
+            if ((p.level ?? 1) < 0.75) {
+                clearInterval(iv); const v = p.level; window.__dipPanel = p;
+                Object.defineProperty(p, 'level', { get: () => v, set: () => {}, configurable: true });
+                return res({ ok: true, level: +v.toFixed(2), x: Math.round(p.x), y: Math.round(p.y), held_for_screenshot: true });
+            }
             if (Date.now() - t0 > capMs) { clearInterval(iv); res({ ok: false, why: 'no dip in cap' }); }
         }, 5);
     }), capMs).catch(e => ({ ok: false, why: String(e) }));
-    if (got.ok) { await shot(name); await page.evaluate(() => window.game.loop.wake()); }
+    const got = await Promise.race([gotP, new Promise(r => setTimeout(() => r({ ok: false, why: 'node-side timeout' }), capMs + 5000))]);
+    if (got.ok) {
+        await t(400); await shot(name);
+        await page.evaluate(() => { const p = window.__dipPanel; if (p) { delete p.level; p.level = 1; } }).catch(() => {});
+    }
     return got;
 }
 // Only what a player hears on the crossing: the staff pair's turns at objId from fromMs on (not the
@@ -271,6 +281,7 @@ if (beat === 'job_beat' || beat === 'boiler_cross') {
     const closeMs = neil.closeMs;
     await enterRoom('staff_room'); await standNear('staff_boiler');
     const light0 = await light();
+    const dip0 = beat === 'job_beat' ? await shotDip('03-flicker-dip', 15000) : null;
     for (let i = 0; i < 20; i++) { if (i === 4) await shot('01-in-staff-room'); await t(1800); }
     let evs = await events();
     const after = evs.filter(e => e.ev.startsWith('npc_use_started:staff_') && e.clockMs >= closeMs - 100);
@@ -287,7 +298,7 @@ if (beat === 'job_beat' || beat === 'boiler_cross') {
         no_firstvisit_in_window: !firstVisitInWindow,
         crossing: crossing(evs, closeMs, 'staff_boiler'),
         job_called_exchange_heard: evs.filter(e => e.ev === 'npc_exchange_heard:exchange_job_called').map(e => e.data),
-        light_at_crossing: light0
+        light_at_crossing: light0, dip_shot_before_fix: dip0
     };
     if (beat === 'job_beat') {
         // M2: Jodie takes the job in the exchange, then walks to the lockers; the light steadies when
@@ -295,7 +306,7 @@ if (beat === 'job_beat' || beat === 'boiler_cross') {
         const t0 = Date.now(); let shotLockers = false;
         while (Date.now() - t0 < 150000) {
             evs = await events();
-            if (!shotLockers && evs.some(e => e.ev === 'npc_use_started:staff_lockers')) { await t(1500); await shot('02-jodie-at-lockers'); r.light_while_at_lockers = await light(); r.dip_before_fix = await shotDip('03-flicker-dip', 20000); shotLockers = true; }
+            if (!shotLockers && evs.some(e => e.ev === 'npc_use_started:staff_lockers')) { await t(1500); await shot('02-jodie-at-lockers'); r.light_while_at_lockers = await light(); shotLockers = true; }
             if (evs.some(e => e.ev === 'npc_used:staff_lockers')) break;
             await t(1000);
         }
