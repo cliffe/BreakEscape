@@ -28,6 +28,10 @@ const FAIL_COOLDOWN_MS = 60000;
 // inside the window, and startBy stays the only bound
 const BORROW_FAIL_COOLDOWN_MS = 5000;
 const HOME_EPS = 12;
+// SIMS-2 (OLMP E6): an arrival counts for a move only if the NPC is within this of the move's
+// destination (1.5 tiles). A farther arrival is a short path that ended before the cell (an async
+// path answer, a path stopped at a door); it is re-issued, not taken as "arrived".
+const ARRIVAL_NEAR_PX = 48;
 const HOME_RETRY_TICKS = 4;   // provisional needsHome re-lookup: once a second
 const SELECT_BACKOFF_TICKS = 4; // a selection that path-searched and found nothing retries after 1 s
 // The walk home yields to the player (stops and faces them). After this long without moving
@@ -369,7 +373,12 @@ export class NPCNeedsSystem {
         this._lastElapsed = null;
         this.states = new Map();
         this.log = [];
-        this._arrivals = new Set();
+        // SIMS-2 (OLMP E6): a Map npcId -> { x, y, moveId, pathLeft, synthetic } instead of a Set,
+        // so an arrival carries the position the behaviour layer reported and the move id it echoed.
+        this._arrivals = new Map();
+        // SIMS-2: every move the needs system issues carries an id; an arrival echoes it, so a stale
+        // arrival for a cancelled or superseded move is ignored.
+        this._moveSeq = 0;
         // Tick-cost hygiene (OFFICE_LIFE_PLAN 2.0). tickCache: skip the object scan for an NPC with
         // nothing urgent, build the object list once per tick, cache reachability per tick (the
         // decision log is unchanged). selectBackoff: an NPC whose selection path-searched and found
@@ -626,10 +635,99 @@ export class NPCNeedsSystem {
 
     // ── external notifications ─────────────────────────────────────────────
 
-    /** npc_arrived:<id> with owner 'needs' — handled at the next tick. */
-    onArrived(npcId, owner) {
+    /**
+     * npc_arrived:<id> with owner 'needs' — handled at the next tick. SIMS-2 (OLMP E6): the payload
+     * carries the position the behaviour layer stopped at, the echoed move id and the steps the path
+     * had left. The step-1 diagnostic line `arrival { pathLeft, dist }` is logged only for a real
+     * behaviour-layer arrival (one that carries pathLeft); the node stub's own arrivals and the
+     * synthetic own-post arrivals carry none, so the sims-day log stays byte for byte the same.
+     */
+    onArrived(npcId, owner, payload = {}) {
         if (owner !== 'needs' || !this.states.has(npcId)) return;
-        this._arrivals.add(npcId);
+        const p = payload || {};
+        const x = Number.isFinite(p.x) ? p.x : null;
+        const y = Number.isFinite(p.y) ? p.y : null;
+        const moveId = p.moveId ?? null;
+        const pathLeft = p.pathLeft ?? null;
+        if (pathLeft !== null) {
+            const dest = this._phaseDest(this.states.get(npcId));
+            let dist = null;
+            if (dest && x !== null && y !== null) dist = Math.round(Math.hypot(x - dest.x, y - dest.y));
+            this._log(npcId, 'arrival', { pathLeft, dist });
+        }
+        this._arrivals.set(npcId, { x, y, moveId, pathLeft });
+    }
+
+    /** SIMS-2: the destination the NPC's current move is heading for (a job phase, a queue cell or home). */
+    _phaseDest(s) {
+        if (!s) return null;
+        if (s.mode === 'returning') return s.home || null;
+        return s.job?.dest || null;
+    }
+
+    /** SIMS-2: a fresh move id for a walk the needs system issues. */
+    _nextMoveId() { return ++this._moveSeq; }
+
+    /**
+     * SIMS-2 (OLMP E6): decide whether a queued arrival counts for the current move. Move ids first:
+     * an arrival echoing another move's id is dropped (`arrival_ignored`); one with no id is treated
+     * as the current move (the transitional rule for callers that send none — the node stub, scripted
+     * moves, seating). Distance second: an arrival within ARRIVAL_NEAR_PX of the move's destination
+     * counts; a farther one is logged `arrival_far` and the move is re-issued once. A second far
+     * arrival in the same job phase fails the job and walks it home; a returning NPC never fails, so
+     * its walk home is re-issued once and `_watchReturn` covers any further stall.
+     * @returns {boolean} true when the arrival counts for this tick.
+     */
+    _acceptArrival(s, pos, arrival) {
+        const id = s.npcId;
+        // SIMS-2: an own-post shortcut or a walk home already within HOME_EPS queues its own arrival
+        // (_moveForPhase, _goHome). It is not a real walk, so it skips the distance and id checks.
+        if (arrival.synthetic) return true;
+        // SIMS-2 review R1 Design M1: only arrivals for a move the needs system actually issued go
+        // through the distance/id guard — a job's goto_item/goto_target/queued leg or a walk home.
+        // An arrival that fires in any other phase (seating's chair fetch during `using`, which walks
+        // with goToAndStay and carries no move id) is dropped silently, exactly as before the slice,
+        // so a fetch at a non-own work object is never cut short with a spurious `arrival_far`.
+        const returning = s.mode === 'returning';
+        const phase = returning ? 'returning' : (s.job?.phase ?? null);
+        if (!returning && phase !== 'goto_item' && phase !== 'goto_target' && phase !== 'queued') return false;
+        const want = returning ? (s.returnMoveId ?? null) : (s.job?.moveId ?? null);
+        const got = arrival.moveId ?? null;
+        if (got !== null && want !== null && got !== want) {
+            this._log(id, 'arrival_ignored', { moveId: got, want });
+            return false;
+        }
+        const dest = this._phaseDest(s);
+        if (!dest) return true;   // nothing to check against (a self job, or no current move)
+        const px = Number.isFinite(arrival.x) ? arrival.x : pos.x;
+        const py = Number.isFinite(arrival.y) ? arrival.y : pos.y;
+        if (Math.hypot(px - dest.x, py - dest.y) <= ARRIVAL_NEAR_PX) return true;
+        const logFar = () => this._log(id, 'arrival_far', {
+            phase, target: s.job?.targetId ?? null,
+            x: Math.round(px), y: Math.round(py),
+            dest: { x: Math.round(dest.x), y: Math.round(dest.y) }, moveId: got
+        });
+        if (returning) {
+            // SIMS-2 review R1 Design m1 / server minor 2: a returning NPC never fails. The walk home
+            // is re-issued once; a repeat far arrival is left to _watchReturn. `arrival_far` is logged
+            // on the first far arrival of this return only — `returnFarReissued` persists across the
+            // _watchReturn re-issues (keepFarFlag), so an unreachable home spins quietly, not a line a
+            // tick. A genuinely new return re-arms the flag (and the log) in _goHome.
+            if (!s.returnFarReissued) { logFar(); s.returnFarReissued = true; this._goHome(s, { yieldToPlayer: false, keepFarFlag: true }); }
+            return false;
+        }
+        logFar();
+        // SIMS-2 review R1 m2 (both reviews): key the far guard by phase AND destination cell, so a
+        // genuine step to a new queue cell (or a re-issue after a freeze, which resets the key) is not
+        // mistaken for a second far arrival at the same stuck cell. The job fails only when the same
+        // phase+cell goes far twice.
+        if (s.job) {
+            const farKey = `${phase}:${Math.round(dest.x)},${Math.round(dest.y)}`;
+            if (s.job._farKey === farKey) { this._failJob(s, 'arrival_far'); return false; }
+            s.job._farKey = farKey;
+            this._moveForPhase(s);
+        }
+        return false;
     }
 
     /** A goToAndStay not issued by needs (a script): suspend needs for this NPC. */
@@ -1303,6 +1401,7 @@ export class NPCNeedsSystem {
                 else {
                     s.job.deadline += this.clockMs - (s.job.frozenAt || this.clockMs);
                     if (s.job.phase === 'queued') { s.job.queuedAt += this.clockMs - (s.job.frozenAt || this.clockMs); s.job.qCell = null; }
+                    s.job._farKey = null;   // SIMS-2 m2: a post-freeze re-issue is a fresh move, not a repeat far arrival
                     this._moveForPhase(s);
                 }
             } else if (s.mode === 'returning') {
@@ -1311,7 +1410,11 @@ export class NPCNeedsSystem {
             return;
         }
 
-        const arrived = this._arrivals.delete(id);
+        // SIMS-2: a queued arrival only counts where the NPC actually stands, and only for the move
+        // the needs system last issued (_acceptArrival; far/stale arrivals are re-issued or dropped).
+        const arrival = this._arrivals.get(id);
+        this._arrivals.delete(id);
+        const arrived = arrival ? this._acceptArrival(s, pos, arrival) : false;
 
         // Coming back from a real leave: is the player at the desk? (once per return)
         if (s.mode === 'returning' && !s.atPost && !s.caughtEmitted) this._checkCaught(s, pos);
@@ -3107,9 +3210,12 @@ export class NPCNeedsSystem {
         job.dest = { x: cell.x, y: cell.y };
         // Own-desk work never moves the NPC: seated, its body sits ~30 px off the home cell, and a
         // move would stand it up (goToAndStay unseats)
-        if (dist <= HOME_EPS || (s.atPost && this._atOwnPost(s))) { this._arrivals.add(id); return; }
+        if (dist <= HOME_EPS || (s.atPost && this._atOwnPost(s))) { job.moveId = null; this._arrivals.set(id, { synthetic: true, moveId: null }); return; }
+        // SIMS-2: stamp this move's id so a stale arrival for a superseded move is ignored.
+        const moveId = this._nextMoveId();
+        job.moveId = moveId;
         // arriveWithin: walk on to the cell itself (the behaviour layer's default stops a tile short)
-        this.world.moveTo(id, cell.x, cell.y, speed, { yieldToPlayer: false, avoidRooms: this._avoidRooms(s), arriveWithin: 6 });
+        this.world.moveTo(id, cell.x, cell.y, speed, { yieldToPlayer: false, avoidRooms: this._avoidRooms(s), arriveWithin: 6, moveId });
     }
 
     _advanceJob(s, arrived) {
@@ -3764,17 +3870,22 @@ export class NPCNeedsSystem {
      * yieldToPlayer: the walk stops to face a player within reach (the behaviour layer's
      * face_player); _watchReturn turns it off after RETURN_YIELD_MS without progress.
      */
-    _goHome(s, { stayPut = false, yieldToPlayer = true } = {}) {
+    _goHome(s, { stayPut = false, yieldToPlayer = true, keepFarFlag = false } = {}) {
         const id = s.npcId;
         s.mode = 'returning';
         s.returnWatch = null;
+        // SIMS-2: a fresh return re-arms the one far re-issue; a re-issue from _acceptArrival keeps it.
+        if (!keepFarFlag) s.returnFarReissued = false;
         const pos = this.world.npcPos(id);
         if (!s.home || !pos) { s.mode = 'idle'; return; }
         if (stayPut || Math.hypot(pos.x - s.home.x, pos.y - s.home.y) <= HOME_EPS) {
-            this._arrivals.add(id);
+            s.returnMoveId = null;
+            this._arrivals.set(id, { synthetic: true, moveId: null });
             return;
         }
-        this.world.moveTo(id, s.home.x, s.home.y, this.world.speedFor(id), { yieldToPlayer, avoidRooms: this._avoidRooms(s) });
+        const moveId = this._nextMoveId();
+        s.returnMoveId = moveId;
+        this.world.moveTo(id, s.home.x, s.home.y, this.world.speedFor(id), { yieldToPlayer, avoidRooms: this._avoidRooms(s), moveId });
     }
 
     /**
@@ -3792,7 +3903,9 @@ export class NPCNeedsSystem {
         }
         if (this.clockMs - w.since < RETURN_YIELD_MS) return;
         this._log(s.npcId, 'return_resumed', { x: Math.round(pos.x), y: Math.round(pos.y) });
-        this._goHome(s, { yieldToPlayer: false });
+        // SIMS-2 m1: keep returnFarReissued so an unreachable home logs `arrival_far` once per return,
+        // not once per _watchReturn cycle; this re-plans the walk without re-arming the far log.
+        this._goHome(s, { yieldToPlayer: false, keepFarFlag: true });
         s.returnWatch = { x: pos.x, y: pos.y, since: this.clockMs };
     }
 
@@ -4432,7 +4545,7 @@ export class NPCNeedsSystem {
         const place = this._queuePlace(s, obj);
         if (!place) { this._leaveQueue(s, 'no_queue_cell'); return; }
         const key = `${Math.round(place.cell.x)},${Math.round(place.cell.y)}`;
-        if (key !== job.qCell) { this._moveForPhase(s); return; }
+        if (key !== job.qCell) { job._farKey = null; this._moveForPhase(s); return; }   // SIMS-2 m2: a step to a new queue cell is a fresh move
         if (arrived) {
             job.qArrived = true;
             this.world.faceTo(s.npcId, obj.x, obj.y);
@@ -5083,7 +5196,7 @@ export function createEngineWorld() {
             return behaviour(id)?.config?.patrol?.speed || 80;
         },
         moveTo(id, x, y, speed, opts) {
-            W().npcBehaviorManager?.goToAndStay(id, x, y, speed, { owner: 'needs', yieldToPlayer: !!opts?.yieldToPlayer, avoidRooms: opts?.avoidRooms || [], arriveWithin: opts?.arriveWithin || 0 });
+            W().npcBehaviorManager?.goToAndStay(id, x, y, speed, { owner: 'needs', yieldToPlayer: !!opts?.yieldToPlayer, avoidRooms: opts?.avoidRooms || [], arriveWithin: opts?.arriveWithin || 0, moveId: opts?.moveId });
         },
         cancelMove(id) {
             W().npcBehaviorManager?.cancelMove?.(id);
@@ -5324,7 +5437,7 @@ export function installNpcNeeds(opts = {}) {
             : (w.gameScenario?.npcNeedsSeed !== undefined ? w.gameScenario.npcNeedsSeed : (w.gameScenario?.scenario_name || w.gameScenario?.name || 'scenario'));
         w.npcNeedsSystem = new NPCNeedsSystem(createEngineWorld(), { seed });
         w.eventDispatcher?.on('npc_arrived:*', (data) => {
-            if (data?.npcId) w.npcNeedsSystem.onArrived(data.npcId, data.owner);
+            if (data?.npcId) w.npcNeedsSystem.onArrived(data.npcId, data.owner, data);
         });
         // Slice 14: an opened door retries parked needs (room loads are noticed by _checkRooms)
         w.eventDispatcher?.on('door_opened', () => w.npcNeedsSystem.onDoorOpened());

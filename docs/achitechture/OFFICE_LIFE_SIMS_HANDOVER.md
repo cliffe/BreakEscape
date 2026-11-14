@@ -52,6 +52,23 @@ and closed in its UI). Screenshots and `report-<beat>-<game>.json` in scratchpad
 
 **Next:** two review rounds on the slice with live proof.
 
+## Slice SIMS-2 (an arrival counts only where the NPC is, OLMP E6): engine fix + live proof
+
+Branch `build/ol-sims-2` (from `build/ol-sims` a734d5f57), worktree `.claude/worktrees/p-ol-sims2`,
+port 3094, scratch `officelife-sims/s2/`. Commit 11b563d51 (engine + node tests). Engine: every
+needs move carries a `moveId`; `onArrived` checks distance (48 px) and the echoed id, re-issues a
+far arrival once and fails the job on a second (returning re-issues once, never fails); own-post and
+at-home synthetic arrivals bypass the checks, so `GOLDEN_SIMS_DAY` and the sims-day digest are
+unchanged. Files: npc-needs.js, npc-behavior.js (NPCBehavior exported for the test), the stub world.
+Node tests: SIMS-2 cases in `npc-needs.test.mjs`, new `npc-behavior-arrival.test.mjs`; full standard
+node set green. Live proof tool `tools/playtest/needs-arrival-proof.mjs`. Reproduced via the stubbed
+short path (30 natural runs did not repeat 3537 by chance, so the stub is the reproduction, as the
+plan allows): legacy build uses `lounge_sofa` 164 px away in the office; fixed build logs
+`arrival_far` and walks on (game 4178, `stub-legacy-4178.png`, `stub-fixed-4178.png`).
+E-carry is a different cause (a never-firing arrival on a failed cross-room path), left for its own
+slice. **Open:** the broad standard live set (test_needs_leash, lab_physical_pentest, test_access_work,
+the README office beats, the kitchen cooler pair) per plan 5 still to run.
+
 ## Next slices (plan order)
 
 SIMS-2 arrival check (the Grace "using lounge_sofa from the office" fault in baseline game 3537;
