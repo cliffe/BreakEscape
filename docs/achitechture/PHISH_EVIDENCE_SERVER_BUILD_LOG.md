@@ -546,3 +546,106 @@ re-run green: social-landing-page-render (15), social-landing-page-builder (19),
   setFPS(20) + fixed steps, drive lab_social_engineering build then send to lord with
   kit_payroll_page, assert sePhishSends landed via a fresh bootstrap/rails runner; include a
   delayed/aborted build+send POST and an offline build-then-send; record game ids. Not yet run.
+## Chunk B: legacy migration and its gate
+
+Plan sections 9, 9.1 and the chunk B parts of sections 14, 15. Built on branch
+`build/hard-phish-mig` off `d0764d4b8`. Chunk A (Route 2, the send route) is built in parallel on a
+separate branch and is not part of this chunk.
+
+An old save holds its phish build and send facts in the client global
+`globalVariables.se_landing_pages`, not in the two server stores. On the first bootstrap that holds
+`scenario_data`, migrate it once: re-derive the build verdict with `PhishScore` from the stored
+`choices` (never the old `meetsThreshold`), and import a landed send off the save's own durable
+`victim.submitted` marker, gated on that re-derived build. The reader is still the old
+client-evidence path, so this is behaviour-neutral for live play; it only readies the stores before
+the reader flips in chunk C.
+
+### What was built
+
+- `legacy_phish_evidence?` (`app/models/break_escape/capture_proofs.rb`): a cheap, scenario-free
+  predicate, true when `globalVariables.se_landing_pages` is a non-empty Hash and
+  `phishEvidenceMigrated` is not set. Added to the OR in `bootstrap_state_needs_write?`
+  (`game.rb`), so the lock is taken for exactly the save that needs the migration (a legacy global
+  with already-migrated captures and empty new stores trips none of the other predicates).
+- `migrate_legacy_phish_evidence!(scenario:)` (`capture_proofs.rb`): added to
+  `run_bootstrap_writers!` (`game.rb`) ordered **before** `stamp_proven_captures!`, so a returning
+  legacy save is migrated and stamped in one locked pass.
+  - First line is the entry guard: `return false if player_state['phishEvidenceMigrated'] == true`.
+    The lock predicate alone is not enough: `run_bootstrap_writers!` calls every writer whenever the
+    lock is taken for any reason, and this migration leaves `se_landing_pages` in place (unlike
+    `migrate_legacy_captures!`, which deletes its own trigger), so without the guard it would re-read
+    the client-writable global on every later locked bootstrap.
+  - Re-scores each legacy page from its stored `choices` through `PhishScore` (validated field by
+    field against the page menus with the existing `valid_build_choices?` / `valid_landing_target?`
+    helpers), writing the server's own `meetsThreshold`/`credibility` into `seLandingPages`,
+    first-wins per page. Off-menu or absent choices migrate as not built (no entry; the player
+    rebuilds).
+  - Imports the landed send off `se_landing_pages[pageId].victim.submitted == true`, for a page
+    wired to an authored phish target and an authored `kind: 'link'` payload kit, writing
+    `sePhishSends["#{targetId}/#{kitId}"]` with `landed` taken from the re-derived build. No stored
+    sent mail is consulted (the mailbox cap can trim it). First-wins on `landed: true`.
+  - Sets `phishEvidenceMigrated = true` whatever the save held, so it runs a single time.
+- `phishEvidenceMigrated` is a top-level, server-owned `player_state` key: not a global, never read
+  from the `sync_state` body, never in the bootstrap serialisation allowlist (the `scenario` action
+  attaches a named set of keys; it is not among them). It needs no `ACCESS_STATE_DEFAULTS` default
+  (absent reads as not-migrated).
+
+### Shared helper for chunk A to reconcile
+
+`phish_page_build_landed?(page_entry)` (`capture_proofs.rb`, private) is the server's "landed" rule:
+a send lands exactly when its kit's `seLandingPages` entry has `built == true` and the server's own
+`meetsThreshold == true`. Route 2 in chunk A computes `landed` the same way off the same store, so
+the two paths must share this one method. Chunk A defines its send route separately; at merge, the
+orchestrator should point Route 2's `landed` computation at this helper (or reconcile a duplicate).
+`migrated_build_entry` and `migrated_at` are chunk-B-only helpers.
+
+### Tests (chunk B)
+
+- `test/models/break_escape/phish_legacy_migration_test.rb`: 9 runs, 48 assertions. Covers
+  `legacy_phish_evidence?`, an honest old save with no surviving sent mail (server verdict +
+  imported landed send), a forged junk-choice save (meetsThreshold false, landed false), off-menu
+  choices migrating as not built, a built-but-unsent page, an already-proven capture left untouched
+  while the stores populate, runs-once (second call a no-op after `se_landing_pages` is edited),
+  first-wins on `landed: true`, and the empty-global flag set.
+- `test/controllers/break_escape/phish_legacy_migration_controller_test.rb`: 4 runs, 19 assertions.
+  The `scenario` bootstrap on a legacy save takes the lock, migrates the two stores and stamps the
+  capture in one pass; the two stores and the flag never ride the bootstrap back to the client
+  (`savedGlobalVariables.se_landing_pages` still ships); `sync_state` does not run the migration;
+  `phishEvidenceMigrated` is never accepted from a `sync_state` body.
+- Touched-file neighbours (no lock, chunk B tip): `capture_record_test`, `captures_sync_test`,
+  `reload_persistence_test`, `format_version_test`, `se_landing_page_build_test`,
+  `capture_payload_secret_test`, `capture_proofs_test`, `capture_secret_endpoint_test`,
+  `capture_secret_test`, `phish_score_parity_test` all green (201 + 62 runs, 0 failures). No JS was
+  touched, so no node run.
+
+### Live browser proof (chunk B)
+
+Keyless server on port 3665 (`env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true RBENV_VERSION=2.7.8
+bundle exec rails server -b 127.0.0.1 -p 3665`), started by hand, GEMINI warning confirmed in the
+boot log. Three `lab_social_engineering` games created through `tools/playtest/new-game.rb`, each
+seeded as a legacy save by rewriting its `player_state` JSON through `rails runner` (no migrations or
+schema commands): `globalVariables.se_landing_pages.payroll_login` with a `victim.submitted` marker,
+an unproven `seCaptures.lord`, and the two server stores and the flag cleared. Each game was loaded
+headless in Chromium (Playwright, `setFPS(20)`, fixed stepping on), which fires the real GET
+`/scenario` bootstrap. Server state read back read-only through `rails runner`. Server then killed by
+PID; port 3665 confirmed down.
+
+- **Game 4467: honest, no surviving sent mail.** After the bootstrap: `phishEvidenceMigrated =
+  true`, `seLandingPages.payroll_login.meetsThreshold = true` (re-derived, credibility 87, not the
+  seeded forged 99), `sePhishSends["lord/kit_payroll_page"].landed = true` (imported off the
+  `victim.submitted` marker with no sent mail in `mailState`). The legacy `se_landing_pages` global
+  is left in place. Under chunk B's old client-evidence reader with no sent mail the capture stays
+  unproven; a direct simulation of chunk C's store-based reader against the migrated stores lands,
+  so the secret is servable the moment the reader flips. The store import is mail-independent, as
+  designed.
+- **Game 4468: honest, full client evidence (stamp path).** Same legacy save plus a landed `sent`
+  mail record. After the bootstrap the migration ran before the stamp in one locked pass and
+  `seCaptures.lord.proven = true`, with both stores populated and the flag set. This is the literal
+  "takes the lock, migrates and stamps" case.
+- **Game 4469: forged, weak choices under a submitted marker.** After the bootstrap
+  `seLandingPages.payroll_login.meetsThreshold = false` (re-derived from the weak choices, credibility
+  34, not the seeded forged `meetsThreshold: true`), `sePhishSends["lord/kit_payroll_page"].landed =
+  false`, the capture is not proven and chunk C's reader does not land, so the secret is withheld. A
+  forged old marker is not laundered into a server fact.
+
+Game ids: 4467, 4468, 4469. Server stopped by PID; port 3665 down.
