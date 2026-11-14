@@ -711,7 +711,7 @@ export function announcePickup(sprite, result) {
  * very different outcomes apart:
  *
  *   { ok: true,  reason: 'added' }    slot created, item is held
- *   { ok: true,  reason: 'already' }  was already held; source may be removed
+ *   { ok: true,  reason: 'already', item }  was already held (item: the held copy); source may be removed
  *   { ok: false, reason: 'rejected' } the server refused it
  *   { ok: false, reason: 'error' }    network or unexpected failure
  *   { ok: false, reason: 'invalid' }  nothing usable was passed in
@@ -747,7 +747,7 @@ export async function addToInventory(sprite) {
         const itemData = sprite.scenarioData;
         
         // More robust duplicate check - compare by identifier, or by id/opens_lock if available
-        const isAlreadyInInventory = window.inventory.items.some(item => {
+        const heldCopy = window.inventory.items.find(item => {
             if (!item || !item.scenarioData) return false;
             
             const existingIdentifier = createItemIdentifier(item.scenarioData);
@@ -765,7 +765,7 @@ export async function addToInventory(sprite) {
             return false;
         });
 
-        if (isAlreadyInInventory) {
+        if (heldCopy) {
             console.log(`Item ${itemIdentifier} (id: ${itemData.id || window.lockRef(itemData) || 'none'}) is already in inventory - removing from environment`);
             
             // Remove from environment even if already in inventory
@@ -808,7 +808,8 @@ export async function addToInventory(sprite) {
 
             // The player holds it, so a caller that owns the source is safe to
             // remove it. This is the case that must not look like a refusal.
-            return { ok: true, reason: 'already' };
+            // `item` is the held copy, so a pick-up-then-open caller can open that one.
+            return { ok: true, reason: 'already', item: heldCopy };
         }
 
         // NEW: Validate with server before adding.
