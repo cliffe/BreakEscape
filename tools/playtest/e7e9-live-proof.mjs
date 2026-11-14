@@ -16,6 +16,15 @@
 //   e8         five coupled breaks (BREAKS=n) on a copy with the cooler's right cell blocked;
 //              E8_BLOCK_ABOVE=1 when the copy blocks the above cell too (expects no_beside_cell)
 //
+//   e7 options (R1 rerun): COUPLED_ONLY=1 sends Rosa only and lets the scenario's coupling send
+//   Sanjay; LATE_MS=n walks the player in (placed beside the pair) once n ms or less of the overlap
+//   is left; SECOND_BREAK=1 runs a second coupled break with the player kept in the office and
+//   compares both bags before and after it.
+//
+// Every bag draw (_bagNext) is logged with the needs clock, and every chat line with its bubble's
+// end and the pair's overlap end, so a run shows whether any line was drawn and not said, drawn
+// unheard, or said past the overlap (out.drawCheck).
+//
 // Env: PORT, SHOTS (screenshot folder), MISSION (default test_needs_sims), BREAKS.
 // Everything the harness changes is in the page only; the output JSON lists it.
 import { chromium } from 'playwright';
@@ -73,9 +82,21 @@ async function record(page) {
         window.__ev = [];
         const orig = sys._emit.bind(sys);
         sys._emit = (n, d) => {
-            if (/^npc_(chatted|overheard|exchange_heard|job_failed|use_started|left_post|used|queued)/.test(n)) window.__ev.push({ n, d: { ...d }, t: sys.clockMs, room: window.currentPlayerRoom });
+            if (/^npc_(chatted|overheard|exchange_heard|job_failed|use_started|left_post|used|queued)/.test(n)) {
+                const e = { n, d: { ...d }, t: sys.clockMs, room: window.currentPlayerRoom };
+                const c = n.startsWith('npc_chatted:') ? sys._chats.get(d.objectId) : null;
+                if (c?.current) {
+                    const A = sys.states.get(c.a), B = sys.states.get(c.b);
+                    e.until = c.current.until;
+                    e.overlapEnd = c.queue ? A?.job?.useUntil : Math.min(A?.job?.useUntil ?? Infinity, B?.job?.useUntil ?? Infinity);
+                }
+                window.__ev.push(e);
+            }
             return orig(n, d);
         };
+        window.__draws = [];
+        const bag = sys._bagNext.bind(sys);
+        sys._bagNext = (npcId, topic, lines) => { const idx = bag(npcId, topic, lines); window.__draws.push({ t: sys.clockMs, npcId, topic, idx }); return idx; };
     });
 }
 
@@ -95,6 +116,22 @@ const snap = (page, pair = ['sanjay', 'rosa'], oid = 'water_cooler') => page.eva
     return out;
 }, [pair, oid]);
 const events = page => page.evaluate(() => window.__ev);
+// Each draw must be a line said on the same tick, heard, and ending inside the overlap
+async function drawCheck(page) {
+    const [ev, draws] = await Promise.all([events(page), page.evaluate(() => window.__draws)]);
+    const said = ev.filter(e => e.n.startsWith('npc_chatted:') && e.d.line && !e.d.exchange);
+    const rows = draws.map(d => {
+        const e = said.find(x => x.t === d.t && x.d.speakerId === d.npcId && x.d.lineId === `${d.topic}:${d.idx}`);
+        return { ...d, said: !!e, overheard: e ? e.d.overheard : null, until: e?.until ?? null, overlapEnd: e?.overlapEnd ?? null, inOverlap: e ? e.until <= e.overlapEnd : null };
+    });
+    return {
+        draws: rows.length,
+        drawnNotSaid: rows.filter(r => !r.said).length,
+        drawnUnheard: rows.filter(r => r.said && !r.overheard).length,
+        pastOverlap: rows.filter(r => r.said && !r.inOverlap).length,
+        rows
+    };
+}
 const usingBoth = (s, a, b, oid) => s[a].job?.phase === 'using' && s[b].job?.phase === 'using' && s[a].job.target === oid && s[b].job.target === oid;
 const both = s => usingBoth(s, 'sanjay', 'rosa', 'water_cooler');
 
@@ -171,12 +208,14 @@ async function main() {
         if (mode === 'probe') { await probe(page, out); return; }
         if (mode === 'e8') { await e8(page, out); return; }
         if (mode === 'e7') { await page.evaluate(() => { window.gameState.globalVariables.heard_exchange_rosa_rota = true; }); out.harness.push('heard_exchange_rosa_rota preset (no exchange)'); }
-        out.useSeconds = await longUse(page); out.harness.push('water_cooler useSeconds 40');
+        // R1 m1: the scenario's cooler is 40 s now; the page sets it only on an older scenario
+        out.useSeconds = await page.evaluate(() => window.npcNeedsSystem.world.getObject('water_cooler')?.affordance?.useSeconds);
+        if (!(out.useSeconds >= 40)) { out.useSeconds = await longUse(page); out.harness.push('water_cooler useSeconds 40'); }
         out.before = await snap(page);
         const first = mode === 'e9neg' ? 'sanjay' : 'rosa', second = first === 'sanjay' ? 'rosa' : 'sanjay';
         await page.evaluate(id => window.__test.needs.set(id, 'social', 10), first);
         out.harness.push(`${first} social 10 first`);
-        if (first === 'rosa') {
+        if (first === 'rosa' && !process.env.COUPLED_ONLY) {
             // Head start for the partner: Rosa walks from the lounge, so Sanjay is sent once she is
             // in the kitchen (the coupling on her npc_use_started still fires; he is already going)
             out.firstInKitchen = !!(await waitFor(page, x => x.rosa.pos?.room === 'kitchen', 40000));
@@ -219,7 +258,24 @@ async function main() {
         }
         const met = await waitFor(page, both, 60000);
         out.metAt = met && { t: met.t, sanjay: met.sanjay.pos, rosa: met.rosa.pos, player: met.player, room: met.room };
-        if (mode === 'e7') {
+        if (mode === 'e7' && process.env.LATE_MS) {
+            // Out of earshot until LATE_MS or less of the overlap is left, then placed beside the pair
+            const late = Number(process.env.LATE_MS);
+            out.harness.push(`player placed beside the pair once ${late} ms or less of the overlap is left`);
+            const left = () => page.evaluate(() => { const sys = window.npcNeedsSystem; const a = sys.states.get('sanjay')?.job, b = sys.states.get('rosa')?.job; return a && b ? Math.min(a.useUntil, b.useUntil) - sys.clockMs : null; });
+            for (let i = 0; i < 400; i++) { const l = await left(); if (l !== null && l <= late) break; await sleep(50); }
+            out.lateAt = await page.evaluate(() => {
+                const sys = window.npcNeedsSystem; window.__test.enterRoom('kitchen');
+                const s = sys.world.npcPos('sanjay'), r = sys.world.npcPos('rosa');
+                const x = (s.x + r.x) / 2, y = Math.max(s.y, r.y) + 40;
+                const p = window.player; p.setPosition(x, y); p.body?.reset?.(x, y);
+                const a = sys.states.get('sanjay').job, b = sys.states.get('rosa').job;
+                return { t: sys.clockMs, left: Math.min(a.useUntil, b.useUntil) - sys.clockMs, player: { x: Math.round(x), y: Math.round(y) } };
+            });
+            await waitFor(page, x => !both(x), 15000, 150);
+            await sleep(1000);
+            await page.screenshot({ path: `${SHOTS}/e7late-g${id}.png` });
+        } else if (mode === 'e7') {
             await sleep(1500);
             out.unheardEvents = chatRows(await events(page));
             out.duringUnheard = await snap(page);
@@ -233,6 +289,25 @@ async function main() {
             }
             await sleep(300);
             await page.screenshot({ path: `${SHOTS}/e7-g${id}-heard.png` });
+            if (process.env.SECOND_BREAK) {
+                // R1 m4: a second coupled break nobody hears, on bags that already exist
+                await waitFor(page, x => !both(x), 60000, 300);
+                await page.evaluate(() => { window.__test.enterRoom('office'); });
+                await clearUi(page);
+                await page.evaluate(() => window.__test.moveTo(90, 220, { timeoutMs: 8000 }));
+                await waitFor(page, x => x.sanjay.job?.target !== 'water_cooler' && x.rosa.job?.target !== 'water_cooler', 60000, 300);
+                const b0 = await snap(page);
+                out.secondBefore = { t: b0.t, bags: b0.bags, room: b0.room };
+                const n0 = (await events(page)).length;
+                await page.evaluate(() => window.__test.needs.set('rosa', 'social', 10));
+                out.harness.push('second break: rosa social 10, player held in the office');
+                out.secondMet = !!(await waitFor(page, both, 90000, 300));
+                await waitFor(page, x => !both(x), 60000, 300);
+                const b1 = await snap(page);
+                out.secondAfter = { t: b1.t, bags: b1.bags, room: b1.room };
+                out.secondTurns = chatRows((await events(page)).slice(n0));
+                out.secondBagsUnchanged = JSON.stringify(b0.bags) === JSON.stringify(b1.bags);
+            }
         } else if (mode === 'e9neg') {
             await sleep(6000);
             await page.screenshot({ path: `${SHOTS}/e9neg-g${id}.png` });
@@ -251,6 +326,7 @@ async function main() {
         out.exchangeHeardEvents = ev.filter(e => e.n.startsWith('npc_exchange_heard')).map(e => [e.t, e.n, e.d.complete]);
         out.failed = ev.filter(e => e.n.startsWith('npc_job_failed')).map(e => e.d);
         out.log = await exLog(page);
+        out.drawCheck = await drawCheck(page);
         out.leftAt = await page.evaluate(() => window.__leftAt ?? null);
     } finally {
         out.consoleErrors = consoleErrors;
