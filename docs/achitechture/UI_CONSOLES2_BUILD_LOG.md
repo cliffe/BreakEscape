@@ -256,6 +256,48 @@ Tests (plain `node`, one at a time): minigame-consoles-fit 29 pass (2 new), mini
 Shots: scratchpad ui-consoles2-r2/ (network-view__390x844, __360x740, __1400x1000;
 claims-with__ and claims-without__ at 1400x1000 and 390x844; proof.json).
 
+## Final pass (2026-11-14, after review round 2)
+
+Main (5edb17541) merged into the branch, clean; build/ui-consoles is not in main yet, so nothing to
+resolve. Fixes for review R2:
+- m1: a title of the form "ORG // NAME", "ORG - NAME" or "ORG, em dash, NAME" keeps the prefix in
+  `span.console-title-org`, hidden under 600px wide; the text content and the bar's title attribute
+  stay whole. An en dash (made from user text with two hyphens) never splits. A colon prefix
+  ("ORG: NAME") is not split, since "Drop box: Comms room" would lose its first word.
+- m2: `fitConsoleSubtitle()` hides a folded subtitle on short landscape windows when it gets under
+  48px of width (class `console-subtitle-nowidth`); it stays in the title attribute.
+- n1: starter fallback title is "Warranty Compliance Checklist". n2: letterhead reads `caseRef` from
+  the scene's data (sis03 sets it; schema updated); sis03 validator 0 errors.
+- n3: the command board clock and dots sit in the SYSTEM STATUS heading row, no bar of their own.
+- n4: the stray comment now sits on `consoleSubtitleEssential`.
+
+Live proof (server :3480, fresh games each run; scripts and logs in /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/e7a32fee-bb00-4a46-ab62-f0d4de35d260/scratchpad/ui-consoles2-final):
+- NAD by keyboard (nad.mjs, 667x375 and 915x412): Enter toggles with aria-expanded true/false, Tab
+  focus draws the 2px square outline, mouse toggle and Esc work. Space does NOT toggle: the page's
+  keyup handler in js/core/player.js swallows Space (preventDefault) when a minigame has not paused
+  the keyboard, so a focused button never gets its click (and the keydown makes the player jump
+  behind the scene). Older than this branch, affects every shared console button; not fixed here.
+- Esc closes pop-ups first (esc-popups.mjs): log filter lookup, drug library reference, concern form
+  keep-going: 6/6 at 1400x1000 and 667x375. One log-filter run at 1400 read as FAIL because the
+  Mission Brief opened after the scene closed (intended).
+- Main action per scene (drive/clicks.mjs 14/14, drive-nsm.mjs 6/6, drive.mjs SIEM, scada, mixer,
+  log filter, network view, drive-forms.mjs concern, coverage, NCSC, warranty, FDP, claims).
+- Network view X click (nv.mjs): 390x844 window 374x828, bar 78px, subtitle whole, X closed;
+  1400x1000 window 1280x538, bar 74px, X closed.
+- Strict audit (four sizes, game 3995): window-offscreen 0, frame-offscreen 1 (alarm panel 915x412,
+  by design), clipped 0, x-on-frame 0, overflow 0. Known non-console lines: SIEM DISMISS
+  cancel-beside-x, phone-chat shadow, inbox-triage gradient. Shell X check: 172 checked, 0 failed.
+- Contact sheet of 22 scenes at 390x844: /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/e7a32fee-bb00-4a46-ab62-f0d4de35d260/scratchpad/ui-consoles2-final/contact-390x844.png. Titles show the console name
+  (VPN, segmentation map, SIEM, backup, EHR, command board). Short sizes: command board and drug
+  library subtitle hidden, network view subtitle kept at 915x412.
+
+Tests (plain `node`, one file at a time): the six named files (consoles-fit 30, shell-fit 30,
+close-shell 19, pixel-art 48, network-view 51, engine-fixes-pass4b 10) and all 120 files that import
+base-minigame: 1857 pass, 0 fail (rfid-door-screen passes here). nsm-continue-after-sever does not
+exist on this branch. One new test in minigame-consoles-fit.
+
+Open: Space on focused console buttons (above); titles with a colon prefix stay whole on phones.
+
 ## Handover (context limit, 2026-11-14)
 
 Fix round 1 (section 5) closed open items 1, 3 and 4 below and the review's M1 to M3 and m1 to m5;
