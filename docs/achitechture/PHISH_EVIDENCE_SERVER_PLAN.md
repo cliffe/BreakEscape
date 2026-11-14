@@ -103,8 +103,11 @@ server must hold to verify them, and the plan treats them differently.
   The one input the server cannot own or independently verify is the account resolution: `resolveAccounts`
   and `applyFactorBias` read gameplay globals the client writes. The server holds those globals (they
   round-trip in `player_state`), so it can reproduce the client's verdict, but it cannot prove they were
-  earned. Section 5 sets out what a forged account global can and cannot buy, and the main user question
-  (section 16, Q2) turns on it.
+  earned. This is a general property of the judge. It does not touch the one protected secret the plan
+  closes: in `lab_social_engineering` the protected target `lord` lands only through the `given` `guest`
+  account (section 5), and a `given` account reads no account global at all, so on the protected path the
+  server reads no forgeable account global. Section 5 sets out what a forged account global can and cannot
+  buy, and the trade the user is asked to weigh (section 16, Q2) turns on it.
 
 | Fact | Source today | Under this plan | Why |
 |---|---|---|---|
@@ -115,7 +118,7 @@ server must hold to verify them, and the plan treats them differently.
 | `landed` | client `mailState[].landed` | server recomputes the judge on the send, resolving the account from stored globals | the second gate on the reveal |
 | `victim.submitted` | client `se_landing_pages[].victim.submitted` | **derived** server-side: `page.meetsThreshold && send.landed` | not an independent fact; `describeVictimOutcome` (`landing-page-model.js:701`) already defines it this way |
 | page `choices`, composed message | client | bounded client input, validated against authored menus | free choice between authored options, like a typed code |
-| sending account resolution | client `ctx.accounts` | server ports `resolveAccounts` over stored globals, bounded to authored addresses | the one input the server reads from client globals; see section 5 |
+| sending account resolution | client `ctx.accounts` | server ports `resolveAccounts` over stored globals, bounded to authored addresses | the one input the server reads from client globals in general; on the protected `lord` path the account is `given` and reads none; see section 5 |
 
 ## 3. The server model
 
@@ -310,16 +313,30 @@ the honest solve rather than refusing it: an honest player's globals are the rea
 `resolveAccounts` returns the real account and `landed` computes as the client computed it. But the
 server cannot prove they were earned.
 
-So a fully server-side `landed` check is **not possible without trusting these bounded client globals**.
-The plan's position: the server ports the resolution and reads the globals, bounded to authored accounts
-and addresses, and treats a forged account global as a client control-flow shortcut, not a secret
-bypass. A forged `acct_<id>` can at most claim the player activated an authored sending account they had
-not legitimately reached (account acquisition). It cannot manufacture page credibility (the page score
-is recomputed from `choices` the server owns), invent an unauthored sender identity (the address is
-bounded to authored values), or land a send to an unauthored target or kit (both validated). The
-protected secret stays gated on the server-recomputed page `meetsThreshold` and a landed send to the
-authored target with the authored kit. This is the cheat-policy judgement in section 11, and because it
-is the one input the server must read from client globals, it is the main user question (section 16, Q2).
+**The protected `lord` path reads no account global.** `lord`'s `requiredFactors` include `senderTrust`
+(`scenario.json.erb:967`), which passes only when the From is the portal address `lord` expects. Only an
+account with `spoofsFrom: true` can set that From, and the lab authors exactly one such account, `guest`
+(`scenario.json.erb:628-629`), which is `kind: given`. A `given` account is always resolved with no
+global read at all: in `resolveAccounts` (`mail-data.js:32-41`) it has no `unlockedBy` and is not
+`created`, so the `acct_<id>`/`acct_<id>_choice` branch is skipped. The only other account, `freemail`,
+is `spoofsFrom: false` (`scenario.json.erb:630`) and cannot satisfy `senderTrust` for `lord`; its
+`acct_freemail` globals serve the hampshire/pierce intel phish, which gates no secret. `burned` is read
+nowhere in `phish-rules.js` or `mail-bridge.js`, so `burned_guest` cannot change `landed` either. So for
+the one protected scenario, the server reads no forgeable account global on the path to the secret. The
+account-global reading below is a general property of the judge that bears on the awareness scenarios and
+on any future protected phish through a `created` account, not on `lord`.
+
+So a fully server-side `landed` check is **not possible in general without trusting these bounded client
+globals**. The plan's position: the server ports the resolution and reads the globals, bounded to
+authored accounts and addresses, and treats a forged account global as a client control-flow shortcut,
+not a secret bypass. A forged `acct_<id>` can at most claim the player activated an authored sending
+account they had not legitimately reached (account acquisition). It cannot manufacture page credibility
+(the page score is recomputed from `choices` the server owns), invent an unauthored sender identity (the
+address is bounded to authored values), or land a send to an unauthored target or kit (both validated).
+The protected secret stays gated on the server-recomputed page `meetsThreshold` and a landed send to the
+authored target with the authored kit. This is the cheat-policy judgement in section 11. The user
+question (section 16, Q2) is how far to port the judge, given the account-global reading; for `lord` that
+reading does not reach the secret.
 
 **Honest sizing.** The port is the three parts above, roughly: `resolveAccounts` plus `domainOf`
 (about 40 lines of `mail-data.js`), `applyFactorBias` (about 40 lines of `mail-bridge.js`), and the
@@ -355,10 +372,24 @@ phish branch of the sync's stamp walk and `phish_evidence_fingerprint` (`capture
 an unproven phish-gated entry is now stamped at the send route, not chased on every later sync. This
 **shrinks** what the sync must trust and what it must walk.
 
+**The controller's phish-gating block retires with them.** The live sync gating is not only in the model;
+`apply_capture_sync_step` (`games_controller.rb`) sets `@phish_fp_before` from
+`phish_evidence_fingerprint` (`:844`), builds `extra_sent` and computes `needs_stamp` from a second
+fingerprint (`:914-919`), and forwards `extra_sent` to the final `stamp_proven_captures!` (`:955`). All
+three go: `@phish_fp_before`, the `needs_stamp` fingerprint compare and the `extra_sent` build and
+forward. Once that block is removed, `stamp_proven_captures!` is reached on a sync only for an incoming
+capture or a legacy migration (the step early-returns otherwise, `games_controller.rb:920`), and it no
+longer takes `extra_sent`. This does not regress part-3 serving, because the two live readers re-check
+`capture_revealable?` on every serve (`game.rb:1458`, `network_access.rb:1419`), so a part-3-gated
+capture is served off that live read, not off a sync-time stamp.
+
 Part 3 proofs (`target_capture_proofs`, `capture_proofs.rb:315`) are unchanged: they already read
-server-owned proof lists (`plantedItems`, `signedInPcs`, `gainedFootholds`), so a credential gated on
-both a phish and a part-3 proof still needs both, and the part-3 half still stamps on the sync that
-records that proof.
+server-owned proof lists (`plantedItems`, `signedInPcs`, `gainedFootholds`), so a credential gated on both
+a phish and a part-3 proof still needs both. Those proofs arrive through their own routes
+(`record_planted_item!`, the sign-in and foothold paths), not through `sync_state`, and a part-3-gated
+capture is served through the live `capture_revealable?` re-check that reads the server proof lists
+(`game.rb:1458`, `network_access.rb:1419`), whether or not any entry was ever stamped. So no sync-time
+part-3 stamp is wired or needed.
 
 ## 7. Making the stores server-owned, and keeping them off the client
 
@@ -533,18 +564,25 @@ routes are self-contained server events, so the guarantees are simpler than the 
   route has already been POSTed; the send helper waits for that POST's own promise to resolve, then posts
   the send. The earlier idea of awaiting one `window.stateSync.sync()` is wrong for this: `seLandingPages`
   is server-written only and never in the sync answer (sections 3.1, 7), so a sync neither carries the
-  build confirmation to the client nor proves the build POST committed. If, despite the ordering, a send
-  route still arrives before its build route is recorded, Route 2 records the send `landed: false` and
-  answers `{ success: true, landed: false, reason: 'page_not_built_yet', retryable: true }`; the send
-  helper, on that reason-and-flag, re-awaits the in-flight build POST (or re-posts the build from the
-  client page record if none is pending) and re-posts the send once. The re-post lands because the build
-  is now recorded. The retry fires only on that body, so every other outcome is unchanged.
-- **Offline, then reconnect.** A route POST cannot be sent while offline. A build or send made offline is
-  held in a **bounded in-memory re-send queue** on the SE minigame controller (not in `player_state`, so
-  the sync size rule is untouched), keyed by `pageId` (builds) or `targetId/kitId` (sends) so it holds at
-  most one entry per page or per target/kit and cannot grow per attempt; it is drained on the browser
-  `online` event (the `conclude-mission.js:156` precedent) and on the next successful sync, each drain
-  re-posting through the normal route once, builds before sends. The server records are idempotent
+  build confirmation to the client nor proves the build POST committed. This await is the primary guarantee against
+  the race; the retry below sits behind it as belt and braces. If, despite the ordering, a send route
+  still arrives before its build route is recorded, Route 2 records the send `landed: false` and answers
+  `{ success: true, landed: false, reason: 'page_not_built_yet', retryable: true }`; the send helper, on
+  that reason-and-flag, re-awaits the in-flight build POST (or re-posts the build from the client page
+  record if none is pending) and re-posts the send once. The re-post normally lands because the build is
+  now recorded. If that single re-post also returns `page_not_built_yet` (the build POST still has not
+  committed), the send is not left stranded: the helper hands it to the same bounded offline re-send queue
+  below, keyed by `targetId/kitId`, which re-posts it (builds before sends) on the next `online` event or
+  sync until the build is recorded and the send lands. So an honest send always reaches a landed state
+  eventually, whether through the await, the one re-post, or the queue drain. The retry fires only on that
+  body, so every other outcome is unchanged.
+- **Offline, then reconnect.** A route POST cannot be sent while offline. A build or send made offline, or
+  a send that a persistent `page_not_built_yet` left unlanded after its one re-post (above), is held in a
+  **bounded in-memory re-send queue** on the SE minigame controller (not in `player_state`, so the sync
+  size rule is untouched), keyed by `pageId` (builds) or `targetId/kitId` (sends) so it holds at most one
+  entry per page or per target/kit and cannot grow per attempt; it is drained on the browser `online`
+  event (the `conclude-mission.js:156` precedent) and on the next successful sync, each drain re-posting
+  through the normal route once, builds before sends. The server records are idempotent
   (first-wins on success), so a drained duplicate is a no-op and never double-credits. A true forge (a
   build route with off-menu choices, a send route to an unauthored target) is refused on every drain and
   never credited; the queue cannot spin because each drain is one route call triggered only externally.
@@ -569,15 +607,19 @@ shortcut that only saves time is acceptable; hardening must never block a studen
   derived from the two. The secret (`Sofia2026!`, a password-lock code) is served only when both server
   facts hold. Forging `se_landing_pages`/`mailState` no longer serves it. **This is mandatory, not a
   preference, for a protected secret.**
-- **The one input read from client globals is a control-flow shortcut, not a secret bypass.** The account
-  resolution reads client-written globals (section 5). A forged account global can at most claim the
-  player activated an authored sending account they had not earned, skipping part of the account-acquisition
-  control flow. It cannot forge the page credibility, invent an unauthored sender identity, or land to an
-  unauthored target or kit. Under the cheat policy a control-flow shortcut that reaches a point honest play
-  can reach (honest play reaches the secret by building a good page and sending a credible message from a
-  legitimate account to the right target) is acceptable; access honest play could never reach is refused,
-  and nothing here opens such access. The validator rule (section 13) keeps the page's secret reachable
-  only through the two routes, so a future author cannot quietly reopen the forge.
+- **The account globals the judge reads do not touch the protected secret, and reading them elsewhere is a
+  control-flow shortcut, not a secret bypass.** For `lord`, the only protected target, the required
+  sender factor can be met only by the `given` `guest` account, which resolves with no account global read
+  (section 5), so the server reads no forgeable account global on the path to `Sofia2026!`. Where the judge
+  does read account globals (a `created` account, as in the awareness intel phish), those globals are
+  client-written (section 5). A forged account global can at most claim the player activated an authored
+  sending account they had not earned, skipping part of the account-acquisition control flow. It cannot
+  forge the page credibility, invent an unauthored sender identity, or land to an unauthored target or kit.
+  Under the cheat policy a control-flow shortcut that reaches a point honest play can reach (honest play
+  reaches the secret by building a good page and sending a credible message from a legitimate account to
+  the right target) is acceptable; access honest play could never reach is refused, and nothing here opens
+  such access. The validator rule (section 13) keeps the page's secret reachable only through the two
+  routes, so a future author cannot quietly reopen the forge.
 - **Best effort is acceptable where the served secret is not a hard-access value.** The fallback (recording
   the authored build and landed send without recomputing the message verdict) is allowed only when the
   secret is not protected. Across the corpus that is every awareness scenario (section 12): each landing
@@ -629,8 +671,15 @@ behind an awareness phish, so a future scenario cannot quietly reopen the forge.
 ## 14. Build order (chunks)
 
 The work lands in chunks, each leaving the game runnable, testable and committable on its own, so a chunk
-can merge without the next existing. The reader change (3.4) lands only **after** both stores and both
-ports exist, or the gate would withhold the secret from honest players in the interim. Order:
+can merge and deploy without the next existing. Two ordering constraints set the sequence. The reader
+change (3.4) lands only **after** both stores and both ports exist, or the gate would withhold the secret
+from honest players in the interim. The legacy migration lands **before** the reader change, not after:
+once the reader consults the server stores, a returning honest save in the narrow `proven: false` window
+(built and sent, not yet stamped, section 9.1) has its phish evidence only in the client globals, so if
+the migration has not populated the server stores first the new reader returns false and withholds
+`Sofia2026!` from a legitimately playing student. Migration-before-reader is strictly safe: the migration
+writes the server stores while the old reader still reads client globals, which is harmless until the
+reader flips. Order:
 
 1. **Stores and defaults.** Add `seLandingPages` and `sePhishSends` to `ACCESS_STATE_DEFAULTS`
    (`game.rb:1773`) and confirm the seed (`:5926`). No behaviour change yet: nothing reads or writes them.
@@ -648,20 +697,27 @@ ports exist, or the gate would withhold the secret from honest players in the in
    the build POST, section 10) and the retry/offline-queue wiring. It writes `sePhishSends`; the reader
    still uses the old client evidence, so honest play is unaffected and both stores are now filling.
    Commit.
-6. **The reader change and stamping.** Switch `phish_page_evidence_holds?` to the two stores (3.4), drop
+6. **Legacy migration and its gate.** Add `legacy_phish_evidence?`, `migrate_legacy_phish_evidence!` and
+   its place in `bootstrap_state_needs_write?` / `run_bootstrap_writers!` (section 9.1). Old saves populate
+   the server stores on their next bootstrap. The reader is still the old client-evidence path, so this is
+   behaviour-neutral for live play (the server stores it writes are not yet read) and simply has the stores
+   ready before the reader flips. Commit.
+7. **The reader change and stamping.** Switch `phish_page_evidence_holds?` to the two stores (3.4), drop
    `extra_sent` through the call chain, re-stamp from the two routes (section 6), and retire
-   `phish_evidence_fingerprint` / `phish_gated_unproven_captures?` / `each_stored_sent_message` and the
-   sync's phish stamp branch. This is the chunk that moves trust off the client; it lands only now that
-   both stores and both ports exist. Update the two tests that assert on the retiring machinery (section
-   15). Commit.
-7. **Legacy migration and its gate.** Add `legacy_phish_evidence?`, `migrate_legacy_phish_evidence!` and
-   its place in `bootstrap_state_needs_write?` / `run_bootstrap_writers!` (section 9.1). Old saves migrate
-   on their next bootstrap. Commit.
+   `phish_evidence_fingerprint` / `phish_gated_unproven_captures?` / `each_stored_sent_message`, the
+   controller's `@phish_fp_before` / `needs_stamp` / `extra_sent` block in `apply_capture_sync_step`
+   (`games_controller.rb:844, 914-919, 955`) and the sync's phish stamp branch. This is the chunk that
+   moves trust off the client; it lands only now that both stores and both ports exist and the migration
+   has populated the stores for returning saves. Update the two tests that assert on the retiring machinery
+   (section 15). Commit.
 8. **Validator rule and schema confirmation** (section 13). Commit.
 
-Chunks 1 to 5 each leave the reader on the old client evidence, so the game plays exactly as today and
-the forge is still open but no worse than today; chunk 6 closes it. Each chunk's "still runnable" claim
-holds against this order.
+Chunks 1 to 6 each leave the reader on the old client evidence, so the game plays exactly as today and the
+forge is still open but no worse than today; chunk 7 closes it. With the migration (chunk 6) landing
+before the reader (chunk 7), every chunk can merge and deploy on its own without the next: a returning
+honest save in the `proven: false` window already has its server stores populated by the time the reader
+consults them, so no legitimate student is withheld the secret between the two deploys. Each chunk's
+"still runnable" claim holds against this order.
 
 ## 15. Tests and live proofs
 
@@ -710,7 +766,7 @@ Rails (`test/models/break_escape/`, `test/controllers/break_escape/`):
     on both routes: refused, nothing stored, no exception (the `valid_capture_target_id?` length-cap
     discipline, `capture_proofs.rb:489`).
 
-**Updating the retiring tests.** Chunk 6 retires `phish_evidence_fingerprint` and
+**Updating the retiring tests.** The reader chunk (chunk 7) retires `phish_evidence_fingerprint` and
 `phish_gated_unproven_captures?` and the `extra_sent` plumbing for the phish path.
 `test/models/break_escape/capture_record_test.rb` and
 `test/controllers/break_escape/capture_proofs_test.rb` assert on that machinery and will fail or go stale;
@@ -770,15 +826,24 @@ Recommendation: **Option A, recompute universally.** It is one code path with no
 at runtime, it gives every scenario a server-owned verdict, and the recompute is cheap once the ports
 exist. The awareness scenarios cost nothing extra and gain a server-truthful report.
 
-### Q2. How far to port the send judge, given it must read client-written account globals
+### Q2. How far to port the send judge, given the full judge reads client-written account globals
 
 This is the real cost and trust decision, and it replaces the earlier "port `evaluateMessage` or not"
 framing. Deciding `landed` from the authored rules means porting not just the message judge but the
 account resolution and the factor bias, and those read gameplay globals the client writes: `acct_<id>`,
 `acct_<id>_choice`, an account's `unlockedBy`, `burned_<id>`, and the `boostIfGlobal`/`strictIfGlobal`
-flags. None is server-owned, so a fully server-side `landed` is not possible without trusting them. The
-server holds them (they round-trip in `player_state`), so reading them reproduces the client's verdict and
-credits the honest solve; the open point is that it cannot prove they were earned.
+flags. None is server-owned, so a fully server-side `landed` is not possible in general without trusting
+them. The server holds them (they round-trip in `player_state`), so reading them reproduces the client's
+verdict and credits the honest solve; the open point is that it cannot prove they were earned.
+
+**For the one protected secret, Option A reads no account global.** In `lab_social_engineering` the
+protected target `lord` lands only through the `given` `guest` account, the lab's only `spoofsFrom: true`
+account (`scenario.json.erb:628-629`), and a `given` account resolves with no account global read at all
+(section 5). So Option A's reading of client account globals never reaches `Sofia2026!`; it bears only on
+the awareness intel phish through the `created` `freemail` account, which gates no secret. The
+account-global cost below is a general property of the judge, not a risk on the protected path. The real
+difference between the options for `lord` is the reverse: Option A checks `lord`'s required sender, pretext
+and addressing factors; Option B checks none of them.
 
 ```mermaid
 flowchart TD
@@ -796,17 +861,23 @@ flowchart TD
 
 - **Option A (recommended): port the full judge, reading the bounded account globals.** The server decides
   `landed` from the authored rules, resolving the sending account from stored globals bounded to authored
-  addresses. Message craft (sender trust, pretext, addressing) is checked. A forged account global is a
-  control-flow shortcut past account acquisition, not a secret bypass (section 11); the page credibility,
-  the sender identity set and the target/kit are all still server-bounded. Parity fixtures over the whole
-  assembly, including the honest-solve case, contain drift and prove the honest lab solve is credited.
+  addresses. Message craft (`senderTrust`, `pretextRelevant`, `addressedTo`) is checked, which is `lord`'s
+  core learning gate: craft the sender and the pretext. On the protected `lord` path the resolution reads
+  no account global (the account is `given`); where it does read globals (the awareness `created` account)
+  a forged one is a control-flow shortcut past account acquisition, not a secret bypass (section 11); the
+  page credibility, the sender identity set and the target/kit are all still server-bounded. Parity
+  fixtures over the whole assembly, including the honest-solve case, contain drift and prove the honest lab
+  solve is credited.
 - **Option B: gate on the server page `meetsThreshold` plus a server-verified send to the authored target
   carrying the authored kit; treat message craft as a bounded client assertion.** Smaller: no account
-  resolution, factor bias or message-judge port. Residual: a tampered client that has an honestly-built
-  page and sends to the right target with the right kit lands regardless of sender/message craft, and the
-  sender factors are not checked at all. Still cannot forge the page credibility or send to an unauthored
-  target or kit. It does not literally decide `landed` server-side, so it is weaker than the mandatory rule
-  reads for a protected secret, but it avoids reading any account global.
+  resolution, factor bias or message-judge port, and it reads no account global. The cost is the sender and
+  pretext checks. For `lord`, Option B leaves `senderTrust`, `addressedTo` and `pretextRelevant` entirely
+  unchecked: a page that meets threshold plus any authored send to `lord` carrying the kit serves
+  `Sofia2026!` whether or not the From is the portal she expects, the message is addressed to her, or the
+  pretext is a payslip notice. That is the lab's primary required factor, so dropping it guts the learning
+  gate. Option B still cannot forge the page credibility or send to an unauthored target or kit, and it
+  does not literally decide `landed` server-side, so for a protected secret it is weaker than the mandatory
+  rule reads.
 
 Before/after of the one gate value the choice turns on:
 
@@ -818,12 +889,13 @@ Before/after of the one gate value the choice turns on:
 ```
 
 Recommendation: **Option A.** The one scenario this binds (`lab_social_engineering`) phishes a protected
-secret and the mandatory rule reads strictly; the account globals it reads are bounded to authored values
-and a forge of them is a control-flow shortcut, not a secret bypass. The honest-solve parity fixture makes
-a refusal of honest play a red test. If the full judge proves disproportionate, Option B with the
-validator rule (section 13) keeping protected secrets behind the two routes is the explicit fallback. If
-Option B is chosen, decide whether it drops the sender factors entirely (simplest) and accept that message
-craft is then unchecked for every scenario, protected or not.
+secret, and Option A checks the sender, pretext and addressing factors that are its learning gate while
+reading no account global on that path. The honest-solve parity fixture makes a refusal of honest play a
+red test. The trade is not Option A carrying a protected-secret account-global risk against a modest
+Option B simplification: on the protected path Option A reads no account global, and Option B drops
+`lord`'s primary required factor. If the full judge proves disproportionate, Option B with the validator
+rule (section 13) keeping protected secrets behind the two routes is the explicit fallback, accepting that
+message craft (sender, pretext, addressing) is then unchecked for every scenario, protected or not.
 
 ### Q3. Leave `se_landing_pages` a client UI global the gate ignores, or make it server-owned?
 
