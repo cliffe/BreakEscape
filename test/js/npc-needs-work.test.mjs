@@ -144,7 +144,7 @@ test('a station switched off during a use: the use finishes, judged on its resou
 
 test('the dead PC parks whatever is in reach: a private colleague desk and a busy plain desk', () => {
     const objects = [...baseObjects(),
-        { id: 'pat_pc', x: 140, y: 68, desk: true, affordance: { satisfies: 'work', useSeconds: 5, private: true, owners: ['pat'] } },
+        { id: 'pat_pc', x: 140, y: 68, desk: true, private: true, owner: ['pat'], affordance: { satisfies: 'work', useSeconds: 5 } },
         { id: 'spare_pc', x: 160, y: 68, desk: true, affordance: { satisfies: 'work', useSeconds: 5 } }];
     const npcs = { dana: { pos: { x: 100, y: 100 }, rec: dana() },
                    bob: { pos: { x: 160, y: 100 }, rec: { id: 'bob', needsHome: 'spare_pc', needs: { work: { decayPerMin: 40, urgentAt: 50, initial: 50, jitterPct: 0 } } } } };

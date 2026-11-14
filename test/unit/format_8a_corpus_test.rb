@@ -145,8 +145,10 @@ module BreakEscape
                      "#{name}: upgrading the old render must give exactly the new render"
         assert_equal new, transformed(new),
                      "#{name}: the transform is a no-op on the new (format-1) render"
-        assert_empty FU.retired_keys_in(new),
-                     "#{name}: no retired key remains in the new render"
+        # A format-1 render may still carry keys a LATER step retires (owner keys from 8b, habit keys
+        # from 8c); it must only be clear of keys retired at or before 8a (version 1).
+        assert_empty FU.retired_keys_in(new).select { |e| e[:version] <= 1 },
+                     "#{name}: no step-8a retired key remains in the new render"
       end
 
       test "#{name}: prepare_scenario_data! agrees across the rename" do
@@ -155,8 +157,8 @@ module BreakEscape
 
         assert_equal prepared_new, transformed(prepared_old),
                      "#{name}: the transform on prepared old data must equal prepared new data"
-        assert_empty FU.retired_keys_in(prepared_new),
-                     "#{name}: no retired key remains in prepared new data"
+        assert_empty FU.retired_keys_in(prepared_new).select { |e| e[:version] <= 1 },
+                     "#{name}: no step-8a retired key remains in prepared new data"
       end
     end
 

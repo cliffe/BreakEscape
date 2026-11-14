@@ -8,8 +8,8 @@ class PcScreenLockPrecedenceTest < ActiveSupport::TestCase
   AI = BreakEscape::AccessIdentities
   OC = BreakEscape::OwnerClaim
 
-  NEVER = { 'id' => 'jake', 'screenHabit' => { 'lockChance' => 0 } }.freeze
-  ALWAYS = { 'id' => 'jake', 'screenHabit' => { 'lockChance' => 1 } }.freeze
+  NEVER = { 'id' => 'jake', 'habits' => { 'screen' => { 'lockChance' => 0 } } }.freeze
+  ALWAYS = { 'id' => 'jake', 'habits' => { 'screen' => { 'lockChance' => 1 } } }.freeze
 
   test 'a PC that locks ignores an owner who never locks' do
     [{ 'lockChance' => 1 }, { 'locksScreenOnLeave' => true }].each do |pc|
@@ -41,12 +41,12 @@ class PcScreenLockPrecedenceTest < ActiveSupport::TestCase
   end
 
   # The habit filled from habits.locksScreen (NpcHabits.expand!) rather than a hand-written
-  # screenHabit: it decides at a PC with neither field, and a PC field still beats it
+  # habits.screen: it decides at a PC with neither field, and a PC field still beats it
   test 'a locksScreen habit decides at a bare PC and loses to a PC field' do
     { 'never' => [false, true], 'always' => [true, false] }.each do |value, (locks, open)|
       [[{}, locks, open],
        [{ 'locksScreenOnLeave' => !locks }, !locks, !open]].each do |fields, want_locks, want_open|
-        pc = { 'type' => 'pc', 'id' => 'jake_pc', 'workstation' => true }.merge(fields)
+        pc = { 'type' => 'pc', 'id' => 'jake_pc', 'workstation' => true, 'owner' => 'jake' }.merge(fields)
         jake = { 'id' => 'jake', 'displayName' => 'Jake', 'needsHome' => 'jake_pc', 'habits' => { 'locksScreen' => value } }
         data = { 'startRoom' => 'office',
                  'rooms' => { 'office' => { 'type' => 'room_office', 'objects' => [pc], 'npcs' => [jake] } } }

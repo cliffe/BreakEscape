@@ -45,9 +45,9 @@ export const RECORDED_CELLS = {
 function objects() {
     return [
         // office (start room)
-        { id: 'amara_pc', roomId: 'office', x: 229, y: 122, affordance: { satisfies: 'work', restores: 60, useSeconds: 10, accepts: ['post'], private: true } },
-        { id: 'tom_pc', roomId: 'office', x: 88, y: 166, affordance: { satisfies: 'work', restores: 60, useSeconds: 10, private: true } },
-        { id: 'sanjay_pc', roomId: 'office', x: 92.5, y: 122.5, affordance: { satisfies: 'work', restores: 60, useSeconds: 10, private: true } },
+        { id: 'amara_pc', roomId: 'office', x: 229, y: 122, owner: 'amara', private: true, affordance: { satisfies: 'work', restores: 60, useSeconds: 10, accepts: ['post'] } },
+        { id: 'tom_pc', roomId: 'office', x: 88, y: 166, owner: 'tom', private: true, affordance: { satisfies: 'work', restores: 60, useSeconds: 10 } },
+        { id: 'sanjay_pc', roomId: 'office', x: 92.5, y: 122.5, owner: 'sanjay', private: true, affordance: { satisfies: 'work', restores: 60, useSeconds: 10 } },
         { id: 'grace_laptop', roomId: 'office', x: 45.5, y: 175 },
         { id: 'office_coffee', roomId: 'office', x: 269, y: 276.5, affordance: { satisfies: 'caffeine', restores: 70, useSeconds: 12, useFrom: { dx: -1, dy: 0 }, queue: { cells: [{ dx: -1, dy: 0 }, { dx: -2, dy: 0 }] }, chatter: 'coffee' } },
         { id: 'office_mugs', roomId: 'office', x: 135.5, y: 231, needsTag: 'dirty_mugs' },
@@ -72,9 +72,9 @@ function objects() {
  * same overrides.
  */
 export const PRESET_OBJECTS = {
-    amara_pc: { type: 'pc', affordance: { accepts: ['post'], private: true } },   // the parcel beat; private (slice 2a)
-    tom_pc: { type: 'pc', affordance: { private: true } },
-    sanjay_pc: { type: 'pc', affordance: { private: true } },
+    amara_pc: { type: 'pc', owner: 'amara', private: true, affordance: { accepts: ['post'] } },   // the parcel beat; private (slice 2a)
+    tom_pc: { type: 'pc', owner: 'tom', private: true, affordance: {} },
+    sanjay_pc: { type: 'pc', owner: 'sanjay', private: true, affordance: {} },
     grace_laptop: { type: 'laptop', affordance: false },                           // no affordance today
     office_coffee: { type: 'coffee_station1', affordance: { useFrom: { dx: -1, dy: 0 }, queue: { cells: [{ dx: -1, dy: 0 }, { dx: -2, dy: 0 }] }, chatter: 'coffee' } },   // queue and chatter: slice 10
     office_mugs: { type: 'dirty_mugs1' },
@@ -322,7 +322,7 @@ export function addCopierBeat(w, { cfgNpcs = w.cfgNpcs, accepts = ['post', 'prin
 
 /**
  * Slice 11 (left-behind items, OFFICE_LIFE_PLAN 2.10): Tom's ID badge on his desk, as the
- * showcase declares it (leftBehindBy "tom", leftBehindChance 0.7, own revealOnGlobal), and the
+ * showcase declares it (owner "tom", leftBehindChance 0.7, own revealOnGlobal), and the
  * world's left-behind methods with the live adapter's rules (leftBehindItems, revealLeftBehind;
  * stowSlot and stowRevealedSlots chain to any copier beat already added). Extra handles:
  * w.badge, w.takeLeft(id) (the player takes it), w.globals, calls.leftShown / calls.leftStowed.
@@ -332,7 +332,7 @@ export function addLeftBehind(w, { chance = 0.7, id = 'tom_badge', owner = 'tom'
     calls.leftShown = calls.leftShown || [];
     calls.leftStowed = calls.leftStowed || [];
     const g = calls.globals;
-    const item = { id, roomId: 'office', x: 104, y: 150, pickable: false, slot: true, leftBehindBy: owner, leftBehindChance: chance, global: `${id}_left`, takeable, home: { roomId: 'office', x: 104, y: 150 } };
+    const item = { id, roomId: 'office', x: 104, y: 150, pickable: false, slot: true, owner, leftBehindChance: chance, global: `${id}_left`, takeable, home: { roomId: 'office', x: 104, y: 150 } };
     w.objs.push(item);
     const items = { [id]: item };
     const stow = (o) => {
@@ -344,7 +344,7 @@ export function addLeftBehind(w, { chance = 0.7, id = 'tom_badge', owner = 'tom'
     };
     const world = w.world;
     world.leftBehindItems = npcId => Object.values(items)
-        .filter(o => o.leftBehindBy === npcId && o.roomId && !o.taken && g[o.global] !== true)
+        .filter(o => o.owner === npcId && o.roomId && !o.taken && g[o.global] !== true)
         .sort((a, b) => (a.id < b.id ? -1 : 1))
         .map(o => ({ id: o.id, chance: o.leftBehindChance }));
     world.revealLeftBehind = (itemId, npcId) => {
@@ -352,7 +352,7 @@ export function addLeftBehind(w, { chance = 0.7, id = 'tom_badge', owner = 'tom'
         if (!o || o.taken || !o.roomId) return false;
         g[o.global] = true; o.pickable = true;
         calls.leftShown.push({ npcId, itemId });
-        world.emit(`object_revealed:${itemId}`, { npcId, objectId: itemId, leftBehindBy: npcId });
+        world.emit(`object_revealed:${itemId}`, { npcId, objectId: itemId, owner: npcId });
         return true;
     };
     const baseStow = world.stowSlot, baseOnSight = world.stowRevealedSlots;

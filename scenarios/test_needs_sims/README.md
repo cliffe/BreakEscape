@@ -153,14 +153,15 @@ What changed in this scenario, on purpose (a behaviour change of the showcase):
     { "condition": "globalVars.tom_pc_screen_locked", "value": "... He locked it before he walked off." },
     { "condition": "globalVars.tom_pc_owner_away",    "value": "... He has left it unlocked ..." }
   ],
-  "affordance": { "private": true }
+  "owner": "tom",                 // his desk PC: the one NPC who owns it
+  "private": true                 // only its owner uses it (object-level, was affordance.private)
 }
 // amara_pc and sanjay_pc: "workstation": true (locksScreenOnLeave defaults to true: locked on every leave)
 // Tom's mappings: workstation_owner_left:tom_pc with data.screenLocked === false -> spot_open_screen
 ```
 
-Nothing else is authored for the dots. Every workstation whose owner is known (`needsHome` or
-`screenOwner`) gets them from `lighting.js`: a steady blue dot at the screen's top-right corner while
+Nothing else is authored for the dots. Every workstation whose owner is known (its
+`owner` field) gets them from `lighting.js`: a steady blue dot at the screen's top-right corner while
 `<id>_screen_locked`, a larger warm-white dot that breathes while `<id>_owner_away` and not locked,
 none while the owner is at the desk. The screen's own glow does not change. A room `lighting.emitters`
 entry on the object id with `"indicators": [...]` replaces them (`[]` turns them off).
@@ -347,7 +348,7 @@ either way, and Marek follows Tom's `npc_queued` either way; only Sanjay's socia
 ### Slice 11 re-run: something left on an empty desk (2026-11-06, keyless :3001, headless, load 2-9)
 
 **Annotated example.** Tom's ID badge (`tom_badge`, `id_badge` sprite) is declared on the open
-desk top between his laptop and keyboard, hidden, with `"leftBehindBy": "tom"`,
+desk top between his laptop and keyboard, hidden, with `"owner": "tom"`,
 `"leftBehindChance": 0.7` and its own `"revealOnGlobal": "tom_badge_left"`. Each time Tom really
 leaves his desk (a coffee or a meal; working at his own PC doesn't count), a seeded roll keyed on
 his leave count decides whether he forgets it. With this scenario's seed, leaves 1, 2 and 4 leave it
@@ -496,7 +497,7 @@ does. `test_needs_leash` game 899 and the lab game 900 are in the plan's 12.7 Bu
 
 ### Slice 16 re-run: lock-screen habits and cues (2026-11-06, keyless :3001, headless)
 
-How to watch it: Amara locks only for a longer trip (`screenHabit.lockIfAwayOverSeconds` 20: the office coffee stays open, a kitchen run
+How to watch it: Amara locks only for a longer trip (`habits.screen.lockIfAwayOverSeconds` 20: the office coffee stays open, a kitchen run
 or a queue place locks); Sanjay never locks on leaving (`lockChance` 0) but his PC locks itself 20 s after he goes (`autoLockSeconds`);
 Tom's object `lockChance` 0.5 still wins over any habit. Each lock plays a flash at the screen indicator (lighting on) or a padlock glyph
 (lighting off) and a soft two-note chime in the same room; each return plays the wake flash and the rising chime. Tasks `hear_screen_lock`
@@ -557,14 +558,14 @@ covered by the node test.
 ### Slice 17 re-run: print and forget, and the print-job lever (2026-11-06, keyless :3001, headless)
 
 How to watch it: Tom now prints at his PC (`onUse.tom_pc.revealOutput` with `chance` 0.4) and owns what he prints
-(`printHabit`: fetch 30 to 120 s later, or forget about half of them). His printouts are his: Amara's printout interest leaves them
+(`habits.print`: fetch 30 to 120 s later, or forget about half of them). His printouts are his: Amara's printout interest leaves them
 on the tray. Two levers do not wait for chance. **Read the Print Queue note** (on the desk south of the copier): a job prints as Tom
 at once and he never fetches it; it is still on the tray two and a half minutes later (task `see_uncollected`). **Use Tom's open
 screen** while he is away: a print job goes to the copier, due 5 to 10 s later, so he usually comes back by way of the copier,
 picks the printout up, carries it to his desk and puts it down (task `send_print_job`). Stay at his desk or in his PC's examine
 view and he catches you on the way back. A fetch is one more leave, so Tom's screen window opens more often. The pool has five
 slots now (`copier_out_d` and `e` read in place); when it is full, a print recycles the oldest forgotten slot, read-in-place ones
-first, so the takeable `copier_out_a` is the last to go. Sanjay has no `printHabit`, so Amara still delivers his prints
+first, so the takeable `copier_out_a` is the last to go. Sanjay has no `habits.print`, so Amara still delivers his prints
 (`see_printout`).
 
 Evidence is in the session scratchpad `s17/`: `note-read-923.png`, `tray-forgotten-2min-923.png` (the forgotten printout on the
