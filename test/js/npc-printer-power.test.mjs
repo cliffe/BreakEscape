@@ -40,7 +40,7 @@ function powerWorld({ tickCache = true, list = BOTH, habit = null, power = {}, k
     const tom = w.cfgNpcs.tom.rec;
     tom.needs = { caffeine: { decayPerMin: 0.1, urgentAt: 40, initial: 99 }, hunger: { decayPerMin: 0.1, urgentAt: 40, initial: 99 }, work: { decayPerMin: 0.1, urgentAt: 50, initial: 99 } };
     tom.onUse = { ...tom.onUse, tom_pc: { revealOutput: list } };
-    if (habit) tom.printHabit = habit;
+    if (habit) tom.habits = { ...(tom.habits || {}), print: habit };
     w.cfgNpcs.sanjay.rec.onUse = {};
     delete w.cfgNpcs.amara.rec.interests.printout;
     const globals = { copier_off: false, kitchen_copier_off: false, ...power };
@@ -301,7 +301,7 @@ function validate(npcPatch, { mappings = [], kitchenPrivate = false } = {}) {
 
 test('validator: revealOutput and print lists', () => {
     const lines = out => out.split('\n').filter(l => /ERROR|WARNING/.test(l) && /revealOutput|print/i.test(l)).join('\n');
-    const ok = validate({ onUse: { tom_pc: { revealOutput: BOTH } }, printHabit: {} }, { mappings: [{ eventPattern: 'x', needs: { print: { producer: BOTH, forget: true } } }] });
+    const ok = validate({ onUse: { tom_pc: { revealOutput: BOTH } }, habits: { print: {} } }, { mappings: [{ eventPattern: 'x', needs: { print: { producer: BOTH, forget: true } } }] });
     assert.equal(lines(ok), '', ok);
     assert.match(validate({ onUse: { tom_pc: { revealOutput: ['office_copier', 'nope'] } } }), /ERROR.*revealOutput names 'nope'/);
     assert.match(validate({ onUse: { tom_pc: { revealOutput: [] } } }), /ERROR.*revealOutput is an empty list/);
@@ -310,6 +310,6 @@ test('validator: revealOutput and print lists', () => {
     assert.match(validate({}, { mappings: [{ eventPattern: 'x', needs: { print: ['office_copier', 'nope'] } }] }), /ERROR.*print producer 'nope'/);
     assert.match(validate({}, { mappings: [{ eventPattern: 'x', needs: { print: { producer: [] } } }] }), /ERROR.*needs.print must be/);
     // The owner cannot get into the kitchen (private to Rosa): its prints there are never fetched
-    assert.match(validate({ onUse: { tom_pc: { revealOutput: BOTH } }, printHabit: {} }, { kitchenPrivate: true }), /WARNING.*prints to 'kitchen_copier' in room 'kitchen'/);
-    assert.doesNotMatch(validate({ onUse: { tom_pc: { revealOutput: BOTH } }, printHabit: {} }, { kitchenPrivate: true }), /prints to 'office_copier'/);
+    assert.match(validate({ onUse: { tom_pc: { revealOutput: BOTH } }, habits: { print: {} } }, { kitchenPrivate: true }), /WARNING.*prints to 'kitchen_copier' in room 'kitchen'/);
+    assert.doesNotMatch(validate({ onUse: { tom_pc: { revealOutput: BOTH } }, habits: { print: {} } }, { kitchenPrivate: true }), /prints to 'office_copier'/);
 });

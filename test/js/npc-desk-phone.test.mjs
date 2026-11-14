@@ -28,7 +28,7 @@ function office({ tom = {}, amara = {}, rosa = null, phone = {}, globals = {}, c
         { id: 'tom_pc', x: 100, y: 100, affordance: { satisfies: ['work'], restores: 30, useSeconds: 60 } },
         { id: 'amara_pc', x: 300, y: 100, affordance: { satisfies: ['work'], restores: 30, useSeconds: 60 } },
         { id: 'kettle', x: 600, y: 100, affordance: { satisfies: ['thirst'], restores: 60, useSeconds: 10 } },
-        { id: 'tom_phone', x: 130, y: 100, phoneOwner: 'tom', affordance: { useSeconds: 0, capacity: 1, seat: 'stand' }, ...phone }
+        { id: 'tom_phone', x: 130, y: 100, owner: 'tom', deskPhone: true, affordance: { useSeconds: 0, capacity: 1, seat: 'stand' }, ...phone }
     ];
     const npcs = {
         tom: { pos: { x: 100, y: 132 }, rec: { id: 'tom', needsHome: 'tom_pc', needs: calm(), phoneCalls: [{ knot: 'call_supplier' }], ...tom } },
@@ -456,7 +456,7 @@ const vScen = ({ phone = {}, tom = {}, amara = {}, presets = true, chatter = {} 
         office: {
             objects: [
                 { id: 'tom_pc', type: 'pc', position: { x: 2, y: 5 }, affordance: { satisfies: ['work'], useFrom: { dx: 0, dy: 1 } } },
-                { id: 'tom_phone', type: 'phone1', officeType: 'desk_phone', phoneOwner: 'tom', takeable: false, position: { x: 2.6, y: 5 }, affordance: { useFrom: { dx: 1.4, dy: 1 } }, ...phone }
+                { id: 'tom_phone', type: 'phone1', officeType: 'desk_phone', owner: 'tom', deskPhone: true, takeable: false, position: { x: 2.6, y: 5 }, affordance: { useFrom: { dx: 1.4, dy: 1 } }, ...phone }
             ],
             npcs: [
                 { id: 'tom', displayName: 'Tom Fletcher', needsHome: 'tom_pc', needs: { work: { decayPerMin: 1, urgentAt: 50, initial: 80 } }, voice: { name: 'Charon' }, storyPath: 'scenarios/test_needs_sims/ink/tom.json', phoneCalls: [{ knot: 'call_supplier' }], ...tom },
@@ -473,7 +473,7 @@ test('validator: a well-formed phone (preset, owner, reach, side cell) raises no
 
 test('validator: owner, affordance, stand, takeable, reach, chair spot and rings', { skip: ruby.status !== 0 }, () => {
     const has = (sc, re, kind = 'ERROR') => phoneIssues(sc).some(l => l.includes(kind) && re.test(l));
-    assert.ok(has(vScen({ phone: { phoneOwner: 'nobody' } }), /not an NPC/));
+    assert.ok(has(vScen({ phone: { owner: 'nobody' } }), /not an NPC/));
     assert.ok(has(vScen({ tom: { needsHome: { room: 'office', x: 2, y: 6 } } }), /needsHome object/));
     assert.ok(has(vScen({ presets: false, phone: { officeType: undefined, affordance: undefined } }), /no affordance/));
     assert.ok(has(vScen({ presets: false, phone: { officeType: undefined, affordance: { useSeconds: 0, capacity: 1 } } }), /does not stand/));

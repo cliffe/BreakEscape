@@ -44,9 +44,9 @@ module ValidateAccessWork
 
   FRIENDFACE_PHONE = 'phone_friendface'
 
-  # An NPC's Friendface phone (`phoneOf`) sits in that NPC's itemsHeld, the NPC has a phone, and it
+  # An NPC's Friendface phone (`owner`) sits in that NPC's itemsHeld, the NPC has a phone, and it
   # holds at most one; an NPC with a social_media need, a feed and a phone holds its phone. A phone
-  # with no phoneOf is the player's own and may be anywhere; its `site` must be a social site.
+  # with no owner is the player's own and may be anywhere; its `site` must be a social site.
   def check_friendface_phones(json_data, issues)
     npcs = room_npcs(json_data).to_h { |e| [e[:npc]['id'], e[:npc]] }
     sites = osint_sites(json_data).to_h { |site| [site['id'], site] }
@@ -58,15 +58,9 @@ module ValidateAccessWork
     no_site_said = false
     all_objects(json_data).each do |o|
       item = o[:obj]
-      if item['type'] != FRIENDFACE_PHONE
-        if item.key?('phoneOf')
-          warn(issues, "'#{item['name'] || item['id'] || item['type']}' (type '#{item['type']}') has phoneOf, which only a " \
-                       "#{FRIENDFACE_PHONE} reads: it is ignored here.")
-        end
-        next
-      end
+      next if item['type'] != FRIENDFACE_PHONE
 
-      owner = item['phoneOf']
+      owner = item['owner']
       name = item['name'] || item['id'] || FRIENDFACE_PHONE
       # Review R1 m4: the phone opens a social site (its owner's feed site, else the first one)
       if !social_site && !no_site_said
@@ -81,13 +75,13 @@ module ValidateAccessWork
         next
       end
       if !owner.is_a?(String) || !npcs.key?(owner)
-        err(issues, "Friendface phone '#{name}' phoneOf '#{owner}' names no room NPC.")
+        err(issues, "Friendface phone '#{name}' owner '#{owner}' names no room NPC.")
       elsif !held_by[owner].any? { |i| i.equal?(item) }
-        err(issues, "Friendface phone '#{name}' is #{owner}'s (phoneOf) but is not in #{owner}'s itemsHeld: an NPC's phone starts with that NPC.")
+        err(issues, "Friendface phone '#{name}' is #{owner}'s but is not in #{owner}'s itemsHeld: an NPC's phone starts with that NPC.")
       elsif !AW.phone?(npcs[owner])
         err(issues, "Friendface phone '#{name}' belongs to #{owner}, who is \"phone\": false: that NPC has no personal phone.")
       end
-      err(issues, "Friendface phone '#{name}' has a site field; only the player's own phone (no phoneOf) takes one.") if item.key?('site')
+      err(issues, "Friendface phone '#{name}' has a site field; only the player's own phone (no owner) takes one.") if item.key?('site')
       # Review R1 m3: an NPC phone that is not takeable can never be given or picked up
       err(issues, "Friendface phone '#{name}' (#{owner}'s) is not \"takeable\": true, so it can never be given or picked up.") unless item['takeable'] == true
       # Review R2 m2, R3 m1: the server hands an NPC's phone over only when its story or record
@@ -117,12 +111,12 @@ module ValidateAccessWork
       err(issues, "Friendface phone id '#{id}' is used by #{list.size} phones: each phone needs its own id.") if list.size > 1
     end
     npcs.each do |nid, npc|
-      own = held_by[nid].select { |i| i['phoneOf'] == nid }
+      own = held_by[nid].select { |i| i['owner'] == nid }
       err(issues, "#{nid} holds #{own.size} Friendface phones of its own; an NPC carries one.") if own.size > 1
       next unless AW.need?(npc, 'social_media') && npc['feed'].is_a?(Hash) && AW.phone?(npc) && own.empty?
 
       err(issues, "#{nid} posts from a phone (social_media need, a feed, no \"phone\": false) but holds no Friendface phone: " \
-                  "add { \"type\": \"#{FRIENDFACE_PHONE}\", \"phoneOf\": \"#{nid}\", \"takeable\": true } to its itemsHeld (q35).")
+                  "add { \"type\": \"#{FRIENDFACE_PHONE}\", \"owner\": \"#{nid}\", \"takeable\": true } to its itemsHeld (q35).")
     end
   end
 
@@ -360,7 +354,7 @@ module ValidateAccessWork
     else []
     end
   end
-  A_ONLY_FIELDS = %w[workNeeds frustration workarounds feed usbHabit].freeze
+  A_ONLY_FIELDS = %w[workNeeds frustration workarounds feed].freeze
   STATION_POOL = 'station_fail'
   NO_ACCESS_POOL = 'work_fail_no_access'
   FALLBACK_POOL = 'work_fail'
@@ -392,9 +386,9 @@ module ValidateAccessWork
     home.is_a?(Hash) || (home.is_a?(Array) && home.size == 2)
   end
 
-  # The PCs an NPC owns through screenOwner
+  # The PCs an NPC owns through its explicit owner
   def screen_owned_pcs(json_data, npc)
-    AW.object_index(json_data).values.map { |e| e[:obj] }.select { |o| o['screenOwner'] == npc['id'] }.map { |o| o['id'] }
+    AW.object_index(json_data).values.map { |e| e[:obj] }.select { |o| o['owner'] == npc['id'] }.map { |o| o['id'] }
   end
 
   def check_work(json_data, issues)
@@ -409,6 +403,10 @@ module ValidateAccessWork
         next unless npc.key?(field)
 
         err(issues, "'#{path}' has '#{field}', which is allowed only on room NPCs (rooms.<id>.npcs[]): " \
+                    'other NPC records reach the browser unfiltered.')
+      end
+      if npc['habits'].is_a?(Hash) && npc['habits'].key?('usb')
+        err(issues, "'#{path}' has 'habits.usb', which is allowed only on room NPCs (rooms.<id>.npcs[]): " \
                     'other NPC records reach the browser unfiltered.')
       end
     end
@@ -511,7 +509,7 @@ module ValidateAccessWork
     nid = npc['id']
     plan = AW.work_plan?(json_data, npc)
     social = AW.need?(npc, 'social_media') && !AW.phone?(npc)
-    check_usb_habit(json_data, npc, plan, issues) if npc.key?('usbHabit')
+    check_usb_habit(json_data, npc, plan, issues) if npc['habits'].is_a?(Hash) && npc['habits'].key?('usb')
 
     if plan || social
       dm = npc['needsDeferMin']
@@ -547,8 +545,8 @@ module ValidateAccessWork
       owned = screen_owned_pcs(json_data, npc)
       what = coordinate?(home) ? 'a coordinate' : (st ? "'#{home}', which satisfies no work" : (home ? "'#{home}', which names no object" : 'unset'))
       hint = if owned.any?
-               " It owns #{owned.map { |id| "'#{id}'" }.join(', ')} through screenOwner: make that its needsHome " \
-                 '(a PC owned only through screenOwner is a desk like any other for a judged need).'
+               " It owns #{owned.map { |id| "'#{id}'" }.join(', ')} through owner: make that its needsHome " \
+                 '(a PC owned only through owner is a desk like any other for a judged need).'
       else
                ' Give it a station that authors affordance.satisfies "work" (a sign-in PC takes no office preset).'
       end
@@ -580,33 +578,33 @@ module ValidateAccessWork
   # The USB habit (USB_HABIT_PLAN.md, q39): its shape, its global, and whether it can act
   def check_usb_habit(json_data, npc, plan, issues)
     nid = npc['id']
-    h = npc['usbHabit']
+    h = npc.dig('habits', 'usb')
     unless h.is_a?(Hash)
-      err(issues, "#{nid}.usbHabit must be an object { every, setGlobal }.")
+      err(issues, "#{nid}.habits.usb must be an object { every, setGlobal }.")
       return
     end
     if h.key?('every') && !(h['every'].is_a?(Integer) && AW::USB_EVERY_RANGE.cover?(h['every']))
-      err(issues, "#{nid}.usbHabit.every is #{h['every'].inspect}; it must be a whole number from 1 to 10.")
+      err(issues, "#{nid}.habits.usb.every is #{h['every'].inspect}; it must be a whole number from 1 to 10.")
     end
     if h.key?('setGlobal') && !(h['setGlobal'].is_a?(String) && declared_globals(json_data).key?(h['setGlobal']))
-      err(issues, "#{nid}.usbHabit.setGlobal #{h['setGlobal'].inspect} is not declared in globalVariables: the server only sets a declared global.")
+      err(issues, "#{nid}.habits.usb.setGlobal #{h['setGlobal'].inspect} is not declared in globalVariables: the server only sets a declared global.")
     end
     check_usb_stick(json_data, npc, issues)
     unless plan
-      warn(issues, "#{nid} has a usbHabit but no work plan (a work need and a non-empty workNeeds list): only judged work " \
+      warn(issues, "#{nid} has a habits.usb but no work plan (a work need and a non-empty workNeeds list): only judged work " \
                    'uses are checked, so the habit never acts. Give it a work plan, or remove the habit.')
       return
     end
     # Review R1 m5: the copy is made at the NPC's own PC only
     st = AW.station(json_data, npc)
     unless st
-      warn(issues, "#{nid} has a usbHabit but no station (needsHome naming an object in a room): the copy is made only " \
+      warn(issues, "#{nid} has a habits.usb but no station (needsHome naming an object in a room): the copy is made only " \
                    "at the NPC's own PC, so the habit never acts. Set needsHome, or remove the habit.")
       return
     end
     return unless h['setGlobal'].is_a?(String) && !AW.usb_habit_refused?(json_data, npc)
 
-    warn(issues, "#{nid}.usbHabit.setGlobal '#{h['setGlobal']}' can never be set: the policy at '#{st['id']}' allows a USB " \
+    warn(issues, "#{nid}.habits.usb.setGlobal '#{h['setGlobal']}' can never be set: the policy at '#{st['id']}' allows a USB " \
                  'stick, so the copy is never refused. Check the policy name (an unknown one falls back to the default) ' \
                  'or its usb field.')
   end
@@ -618,7 +616,7 @@ module ValidateAccessWork
     unless stick
       other = Array(npc['itemsHeld']).find { |i| i.is_a?(Hash) && i['type'] == 'usb' && AW.present_string?(i['id']) }
       extra = other ? " ('#{other['id']}' has usbClass '#{other['usbClass']}'; a habit stick is a storage stick)" : ''
-      err(issues, "#{nid} has a usbHabit but holds no USB stick#{extra}: add a { \"type\": \"usb\", \"id\": ..., \"sprite\": " \
+      err(issues, "#{nid} has a habits.usb but holds no USB stick#{extra}: add a { \"type\": \"usb\", \"id\": ..., \"sprite\": " \
                   "\"usb_bowl1\", \"usbClass\": \"storage\", \"takeable\": true } item to its itemsHeld. Its files default to " \
                   "#{AW::USB_STICK_DEFAULT_FILE}; list others in its contents.")
       return
@@ -683,13 +681,13 @@ module ValidateAccessWork
   # block gated on the habit's setGlobal.
   def check_usb_give_order(json_data, npc, stick, issues)
     nid = npc['id']
-    glob = npc.dig('usbHabit', 'setGlobal')
+    glob = npc.dig('habits', 'usb', 'setGlobal')
     return unless usb_refusal_beats?(json_data, nid, glob)
 
     ungated = usb_stick_gives(json_data, npc, stick).reject { |_where, conds| conds.any? { |c| names_global?(c, glob) } }
     return if ungated.empty?
 
-    want = glob.is_a?(String) ? "a choice gated on {#{glob}}" : 'a choice offered only after the refusal (set usbHabit.setGlobal and gate on it)'
+    want = glob.is_a?(String) ? "a choice gated on {#{glob}}" : 'a choice offered only after the refusal (set habits.usb.setGlobal and gate on it)'
     warn(issues, "#{nid}'s ink gives the USB stick '#{stick['id']}' (#{ungated.map(&:first).join(', ')}) where the player " \
                  "can take it before #{nid}'s first refusal; the habit then stops and anything keyed on the refusal " \
                  "(npc_usb_refused:#{nid}#{glob ? ", #{glob}" : ''}, a usb_refused post) never happens. Offer the give from #{want}.")
@@ -702,7 +700,7 @@ module ValidateAccessWork
     nid = npc['id']
     return if npc['koImmune'] == true || json_data['disableAttacks'] == true
 
-    glob = npc.dig('usbHabit', 'setGlobal')
+    glob = npc.dig('habits', 'usb', 'setGlobal')
     vents = Array(npc.dig('feed', 'posts')).select { |p| p.is_a?(Hash) && p.dig('when', 'cause') == 'usb_refused' }.map { |p| p['id'] }.compact
     refusal = lambda do |m|
       pat = m['eventPattern'].to_s
@@ -753,7 +751,7 @@ module ValidateAccessWork
       case v
       when Hash
         v.each do |k, x|
-          next if %w[globalVariables usbHabit].include?(k)
+          next if %w[globalVariables usb].include?(k)
           found = true if k == 'cause' && x == 'usb_refused'
           walk.call(x, k)
         end
@@ -999,7 +997,7 @@ module ValidateAccessWork
     end
 
     # Per room NPC, its resolved list: the kind's own rules. A guest's screen habit is read on
-    # the copy with slice 9.1's habits expanded (locksScreen fills screenHabit), as the server reads it.
+    # the copy with slice 9.1's habits expanded (locksScreen fills habits.screen), as the server reads it.
     expanded = expanded_room_npcs(json_data)
     room_npcs(json_data).each do |e|
       npc = e[:npc]
@@ -1123,9 +1121,9 @@ module ValidateAccessWork
     {}
   end
 
-  # A PC marked private (office life: in its affordance, or on the object)
-  def private_pc?(json_data, pc)
-    pc['private'] == true || AW.affordance(json_data, pc)&.dig('private') == true
+  # A PC marked private (office life: an object-level private flag)
+  def private_pc?(_json_data, pc)
+    pc['private'] == true
   end
 
   # Sub-slice H (plan 6.4 and section 10): the hot desk's rules
@@ -1167,12 +1165,12 @@ module ValidateAccessWork
                    "#{lacking.include?('social_media') ? ' and its feed post is refused' : ''}.")
     end
     if BreakEscape::AccessIdentities.screen_always_locks?({}, guest)
-      warn(issues, "#{tag}: #{nid} is a careful guest (no screenHabit, or one that always locks), so it signs out of " \
-                   "'#{pid}' and the workaround opens nothing. Author \"screenHabit\": { \"lockChance\": 0 } or " \
+      warn(issues, "#{tag}: #{nid} is a careful guest (no habits.screen, or one that always locks), so it signs out of " \
+                   "'#{pid}' and the workaround opens nothing. Author \"habits\": { \"screen\": { \"lockChance\": 0 } } or " \
                    'locksScreen: "never" on a borrower meant to leave the session open.')
     end
     if pc.key?('lockChance') || pc.key?('locksScreenOnLeave')
-      warn(issues, "#{tag}: '#{pid}' sets lockChance or locksScreenOnLeave, which a guest ignores (its own screenHabit decides).")
+      warn(issues, "#{tag}: '#{pid}' sets lockChance or locksScreenOnLeave, which a guest ignores (its own habits.screen decides).")
     end
     if holds_forbidden?(pc)
       warn(issues, "#{tag} opens a session at '#{pid}', which is a flag station or VM launcher: a modified browser can reach " \
@@ -1223,11 +1221,11 @@ module ValidateAccessWork
           warn(issues, "#{tag}: '#{st['id']}' authors its own postitNote or sets showPostit: false, which wins over the " \
                        'written-down note: the workaround shows nothing new.')
         else
-          # The server's owner rule (Game#login_pc_owner): screenOwner first, else the first room
-          # NPC whose needsHome is the PC. Another owner means a mark on the screen and no note.
-          owner = st['screenOwner'].is_a?(String) && !st['screenOwner'].empty? ? st['screenOwner'] : room_npcs(json_data).map { |x| x[:npc] }.find { |n| n['needsHome'] == st['id'] }&.dig('id')
+          # The server's owner rule (Game#login_pc_owner): the PC's explicit owner. Another owner
+          # means a mark on the screen and no note.
+          owner = BreakEscape::AccessIdentities.owner_id(st, json_data)
           if owner != nid
-            err(issues, "#{tag}: '#{st['id']}' belongs to #{owner.inspect} (screenOwner, else the first NPC with it as needsHome), " \
+            err(issues, "#{tag}: '#{st['id']}' belongs to #{owner.inspect} (its owner), " \
                         "not #{nid}, so the sign-in screen shows no note.")
           end
         end
@@ -2466,11 +2464,11 @@ module ValidateAccessWork
         line += if r['alongside']
                   # The toComplaint form already says "out by then" in `what`
                   r['to'] ? ", alongside '#{r['alongside']}', if '#{r['to']}' is out by then" : ", alongside '#{r['alongside']}'"
-                elsif v[:finished]
+        elsif v[:finished]
                   ", with it, since #{xn} has finished posting by then"
-                else
+        else
                   ", with #{xn}'s first post after it, or with it if #{xn} has finished posting by then"
-                end
+        end
         ends = []
         if v[:never]
           ends = ['never comes out']

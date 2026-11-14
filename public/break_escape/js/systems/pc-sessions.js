@@ -79,6 +79,7 @@
 export const SIGNED_OUT_MESSAGE = 'Signed out';
 export const SCREEN_LOCKED_MESSAGE = 'The screen locked';
 export const LINK_DROPPED_MESSAGE = 'The link dropped';
+export const SESSION_LOCKED_MESSAGE = 'Locked. Sign in again to continue.';
 
 /**
  * The toast an unplug shows for sessions it ended with no desktop open (on-screen text,
@@ -110,6 +111,9 @@ function publicSession(pcId, s) {
     if (s.remote === true) Object.assign(out, { remote: true, footholdId: s.footholdId ?? null, host: s.host ?? null });
     // A guest claim says so, so its desktop can say how it ends (UX access R1 finding 5)
     if (s.guest === true) out.guest = true;
+    // A locked session (UI slice 6) stays held but needs the password again; the open flow
+    // reads this to show the sign-in screen with the account pre-chosen.
+    if (s.locked === true) out.locked = true;
     return out;
 }
 
@@ -124,6 +128,9 @@ export class PcSessions {
         this.sessions = new Map();
         this.signedIn = new Set();
         this.desktops = new Map();
+        // UI slice 6: the server said locking a held session is supported (the scenario answer's
+        // sessionLockingSupported). The start panel reads lockingSupported() to show the Lock button.
+        this._lockingSupported = false;
         // pcId -> { message, reason }: a session that ended while its desktop was closed for
         // a reader; the container return shows it (container-minigame.js, review M2)
         this.endedUnseen = new Map();
@@ -166,10 +173,11 @@ export class PcSessions {
      * session ends (POST /logout, pc_signed_out): the workstation state resets with every
      * owner back at the desk, so the end rules for a claim could no longer apply (5.3).
      */
-    load(sessions = {}, signedInPcs = []) {
+    load(sessions = {}, signedInPcs = [], { lockingSupported = false } = {}) {
         this.listen();
         this.sessions.clear();
         this.signedIn.clear();
+        this._lockingSupported = lockingSupported === true;
         (Array.isArray(signedInPcs) ? signedInPcs : []).forEach(pcId => {
             if (typeof pcId === 'string' && pcId) this.signedIn.add(pcId);
         });
@@ -186,10 +194,31 @@ export class PcSessions {
                 displayName: s.displayName ?? null,
                 via: s.via || 'password',
                 restored: true,
+                // A locked session survives a reload like any other session state (UI slice 6)
+                ...(s.locked === true ? { locked: true } : {}),
                 ...remoteFields(s)
             });
             this.signedIn.add(pcId);
         }
+    }
+
+    /** UI slice 6: the server supports locking a held session (the scenario answer said so). */
+    lockingSupported() { return this._lockingSupported === true; }
+
+    /** True when the held session at pcId is locked (UI slice 6): the open flow shows the sign-in screen. */
+    isLocked(pcId) { return this.sessions.get(pcId)?.locked === true; }
+
+    /**
+     * Whether the start panel may offer Lock for pcId (UI slice 6): the server supports
+     * locking, a session is held here, it was entered with a password (not a claim or guest,
+     * which no password could unlock), and it is not already locked. The server enforces the
+     * same rule (lock_session! refuses a non-password session with 422); this keeps the
+     * affordance from ever being shown or attempted for those.
+     */
+    canLock(pcId) {
+        if (!this.lockingSupported()) return false;
+        const s = this.sessions.get(pcId);
+        return !!s && s.via === 'password' && s.locked !== true;
     }
 
     _endRestoredClaim(pcId, s) {
@@ -434,6 +463,38 @@ export class PcSessions {
         // returned them, so their desktops close with "the link dropped".
         if (Array.isArray(ended) && ended.length) this.linkDropped(ended);
         return true;
+    }
+
+    /**
+     * Lock the held session at pcId (UI slice 6): POST /lock_session (only the holder can
+     * lock; the server refuses a PC with no session). The session stays held and signed in;
+     * `locked` is set on the local copy, an open desktop closes with `message`, and
+     * pc_session_locked fires. The next open shows the sign-in screen with the account
+     * pre-chosen; a correct password (an ordinary sign-in) clears the lock on the server.
+     * Resolves { ok: true } or { ok: false, reason }. `locked` is never sent back as state.
+     */
+    async lockSession(pcId, { message = SESSION_LOCKED_MESSAGE } = {}) {
+        const s = this.sessions.get(pcId);
+        if (!s) return { ok: false, reason: 'no_session' };
+        if (s.locked === true) return { ok: true, alreadyLocked: true };
+        // Only a password sign-in can be locked (UI slice 6): a claim or guest session has no
+        // password to unlock it. The server also refuses this with 422; never attempt it.
+        if (s.via !== 'password') return { ok: false, reason: 'refused', message: 'Only a signed-in session can be locked' };
+        const api = apiClient();
+        if (!api?.lockSession) return { ok: false, reason: 'error', message: 'Locking is not available' };
+        try {
+            const body = await api.lockSession(pcId);
+            if (!body || body.success === false) {
+                return { ok: false, reason: 'error', message: body?.message || 'Could not lock the session' };
+            }
+        } catch (err) {
+            const b = err?.body || {};
+            return { ok: false, reason: err?.status === 422 ? 'refused' : 'error', status: err?.status ?? null, message: b.message || b.error || 'Could not lock the session' };
+        }
+        s.locked = true;
+        this._emit('pc_session_locked', { pcId, npcId: s.npcId ?? null });
+        this._closeDesktop(pcId, message, 'locked');
+        return { ok: true };
     }
 
     /**

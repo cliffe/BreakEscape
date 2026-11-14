@@ -7,8 +7,8 @@ import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } from '../../utils/lock-scope-refusal.js';
 import { isComputerType } from '../../utils/computer-keywords.js';
 import { mountPcMonitor, cssZoomOf, pcPostitButtonHtml } from '../../utils/pc-monitor.js';
-import { headshotCandidates, headshotKeys, noteMissingHeadshot, npcRecordFor, headshotSourceFor, applyHeadshotBox,
-    SHORT_PORTRAIT_PX, TILE_PORTRAIT_PX, isTalkSheetSize, portraitCropOverride, headCropOffset, frameAlphaReader } from '../../utils/npc-headshot.js';
+import { headshotCandidates, headshotKeys, noteMissingHeadshot, npcRecordFor, headshotSourceFor, applyHeadshotBox, SILHOUETTE_URL,
+    SHORT_PORTRAIT_PX, TILE_PORTRAIT_PX } from '../../utils/npc-headshot.js';
 // The portrait crop helpers live with the headshots (UX slice 2c R1 m8: the desktop bar
 // falls back the same way as a tile); exported here too for the tests and callers that
 // import them from the password screen
@@ -112,92 +112,54 @@ export function setShortPortrait(el, { src, width, height, kind, offset = null }
 }
 
 /**
- * Draw a tile's picture into `el` as person-chat would: the portrait, else the avatar,
- * else the display name's initials. Every picture is at a whole scale (R4 m1 and n3):
- * - a talk sheet: a 64x64 head crop of its top-left frame (closed mouth) at scale 1, and
- *   a 32x32 crop for the short window (setShortPortrait);
- * - a 64x64 image at scale 1, with a 32x32 head crop of it for the short window;
- * - a 32x32 headshot at scale 2, and at scale 1 in the short window;
- * - any other size is skipped (the next source, else initials in the pixel font), since
- *   fitting it to the box would scale it down.
- * `ImageCtor` and `readAlpha` are injectable for tests.
+ * Draw a tile's picture into `el`: the character's authored 32x32 `<key>_headshot.png`, else
+ * the pixel silhouette. Never a crop of the talk image, a dialogue bust or any other picture
+ * (standing rule; UI PC polish item 3). Every picture is at a whole scale:
+ * - the headshot at scale 2 in the 64px tile and scale 1 in the short window's 32px one;
+ * - the silhouette (also 32x32) the same;
+ * - initials in the pixel font only when there is no image machinery at all.
+ * The keys tried are logged once when no headshot file exists. `ImageCtor` is injectable for
+ * tests.
  */
-export function applyTilePortrait(el, tile, ImageCtor = (typeof Image !== 'undefined' ? Image : null), readAlpha = frameAlphaReader,
+export function applyTilePortrait(el, tile, ImageCtor = (typeof Image !== 'undefined' ? Image : null),
                                   { record = undefined, onMissing = noteMissingHeadshot } = {}) {
-    // The character's own 32x32 headshot comes first (UX slice 2c): the talk sheet is cropped
-    // only when no headshot file exists, and that key is logged once
     const rec = record === undefined ? npcRecordFor({ username: tile?.username }) : record;
     const headSource = headshotSourceFor(tile || {}, rec);
     const heads = headshotCandidates(headSource);
     const headKeys = headshotKeys(headSource);
-    const sources = [...heads, ...[tile?.portrait, tile?.avatar].map(portraitUrl).filter(Boolean)]
-        .filter((v, i, a) => a.indexOf(v) === i);
-    let missingNoted = heads.length === 0;
-    const noteMissing = (i) => {
-        if (missingNoted || i < heads.length) return;
-        missingNoted = true;
-        // Every key tried, the world sprite's first (R1 m8)
-        el.dataset.headshotMissing = headKeys.join(' ');
-        onMissing?.(headKeys);
-    };
     const initials = () => {
         el.style.backgroundImage = '';
         el.dataset.frame = 'initials';
         el.classList.add('signin-portrait-initials');
         el.textContent = tileInitials(tile?.displayName || tile?.username);
     };
+    const draw = (src, kind) => {
+        setTilePortrait(el, { src, width: SHORT_PORTRAIT_PX, height: SHORT_PORTRAIT_PX, kind, scale: TILE_PORTRAIT_PX / SHORT_PORTRAIT_PX });
+        setShortPortrait(el, { src, width: SHORT_PORTRAIT_PX, height: SHORT_PORTRAIT_PX, kind });
+        el.textContent = '';
+        el.classList.remove('signin-portrait-initials');
+        el.dataset.src = src;
+    };
+    const silhouette = () => {
+        if (headKeys.length) {
+            el.dataset.headshotMissing = headKeys.join(' ');
+            onMissing?.(headKeys);
+        }
+        if (!ImageCtor) { initials(); return; }
+        draw(SILHOUETTE_URL, 'silhouette');
+    };
     const tryAt = (i) => {
-        noteMissing(i);
-        if (i >= sources.length || !ImageCtor) { initials(); return; }
-        const src = sources[i];
+        if (i >= heads.length || !ImageCtor) { silhouette(); return; }
         const img = new ImageCtor();
         img.onload = () => {
             const w = img.naturalWidth || img.width;
             const h = img.naturalHeight || img.height;
-            const crop = (frameSize, box) => {
-                const alpha = readAlpha ? readAlpha(img, frameSize) : null;
-                return alpha ? headCropOffset(alpha, frameSize, box) : { left: frameSize / 2 - box / 2, top: 0 };
-            };
-            if (isTalkSheetSize(w, h)) {
-                const frameSize = w / 2;
-                const override = portraitCropOverride(src);
-                setTilePortrait(el, { src, width: w, height: h, kind: 'talk-sheet',
-                                      offset: override?.tile || crop(frameSize, TILE_PORTRAIT_PX) });
-                setShortPortrait(el, { src, width: w, height: h, kind: 'head-crop',
-                                       offset: override?.short || crop(frameSize, SHORT_PORTRAIT_PX) });
-            } else if (w === TILE_PORTRAIT_PX && h === TILE_PORTRAIT_PX) {
-                setTilePortrait(el, { src, width: w, height: h, kind: 'single' });
-                setShortPortrait(el, { src, width: w, height: h, kind: 'head-crop', offset: crop(w, SHORT_PORTRAIT_PX) });
-            } else if (w === SHORT_PORTRAIT_PX && h === SHORT_PORTRAIT_PX) {
-                setTilePortrait(el, { src, width: w, height: h, kind: 'single', scale: TILE_PORTRAIT_PX / SHORT_PORTRAIT_PX });
-                setShortPortrait(el, { src, width: w, height: h, kind: 'avatar' });
-            } else {
-                tryAt(i + 1);
-                return;
-            }
-            el.textContent = '';
-            el.classList.remove('signin-portrait-initials');
-            el.dataset.src = src;
-            if (i < heads.length) { el.dataset.headshot = headKeys[i]; return; }
-            preferAvatar(src);
+            if (w !== SHORT_PORTRAIT_PX || h !== SHORT_PORTRAIT_PX) { tryAt(i + 1); return; }
+            draw(heads[i], 'single');
+            el.dataset.headshot = headKeys[i];
         };
         img.onerror = () => tryAt(i + 1);
-        img.src = src;
-    };
-    // The avatar, when it is a 32x32 headshot, is the short window's picture
-    const avatar = portraitUrl(tile?.avatar);
-    const preferAvatar = (shown) => {
-        if (!avatar || avatar === shown || !ImageCtor) return;
-        const a = new ImageCtor();
-        a.onload = () => {
-            const w = a.naturalWidth || a.width;
-            const h = a.naturalHeight || a.height;
-            if (w === SHORT_PORTRAIT_PX && h === SHORT_PORTRAIT_PX) {
-                setShortPortrait(el, { src: avatar, width: w, height: h, kind: 'avatar' });
-            }
-        };
-        a.onerror = () => {};
-        a.src = avatar;
+        img.src = heads[i];
     };
     tryAt(0);
 }
@@ -421,14 +383,24 @@ export class PasswordMinigame extends MinigameScene {
         if (this.signIn) {
             const picker = this.signIn.picker;
             const tiles = picker === false ? [] : (Array.isArray(this.signIn.tiles) ? this.signIn.tiles : []);
+            // A locked session (UI slice 6) pre-chooses its own account: start with that username
+            // selected (a tile when it is shown, else the "Other user" field pre-filled), so the
+            // player lands straight on the password. The server still checks the password.
+            const preselect = typeof this.signIn.preselect === 'string' && this.signIn.preselect ? this.signIn.preselect : null;
+            const presetTile = preselect ? tiles.find(t => t.username === preselect) : null;
+            const presetOther = !!preselect && !presetTile;
             this.signInState = {
                 tiles,
                 // null: no account chosen yet; '' with other: true: typing a username
-                selected: null,
+                // A locked session (UI slice 6) pre-selects its own account.
+                selected: presetTile ? preselect : null,
                 // A remote screen with captures starts on its tiles as the keyboard does, with
-                // none on the typed form; while they load it shows neither (UX slice 2b0 R1 M2)
-                other: picker === false && !(this.signIn.remote && (this.signIn.capturedLoading
-                    || (Array.isArray(this.signIn.captured) && this.signIn.captured.length > 0))),
+                // none on the typed form; while they load it shows neither (UX slice 2b0 R1 M2).
+                // A pre-chosen account with no tile (presetOther) types its username instead.
+                other: (picker === false && !(this.signIn.remote && (this.signIn.capturedLoading
+                    || (Array.isArray(this.signIn.captured) && this.signIn.captured.length > 0)))) || presetOther,
+                // The "Other user" field's pre-filled value, when the pre-chosen account has no tile
+                presetUsername: presetOther ? preselect : null,
                 message: ''
             };
         }
@@ -1433,12 +1405,17 @@ export class PasswordMinigame extends MinigameScene {
                 </button>
             </div>`;
         const current = s.current
-            ? `<div class="signin-current">Signed in now: ${escapeHtml(s.current.displayName || s.current.username)} (${escapeHtml(s.current.username)})</div>`
+            ? (s.current.locked === true
+                // A locked session (UI slice 6): it is held, but needs its password again
+                ? `<div class="signin-current signin-current-locked">Locked: ${escapeHtml(s.current.displayName || s.current.username)}. Enter the password to unlock</div>`
+                : `<div class="signin-current">Signed in now: ${escapeHtml(s.current.displayName || s.current.username)} (${escapeHtml(s.current.username)})</div>`)
             : '';
         const remoteLine = s.remote
             ? `<div class="signin-remote">Remote sign-in${s.remote.linkName ? ` through ${escapeHtml(displayDashes(s.remote.linkName))}` : ''}</div>`
             : '';
-        const capturedHtml = s.remote ? `
+        // A locked screen has its account already (the held session's), so the Captured sign-ins
+        // strip would only crowd the password field out of view (UI slice 6 review R3 m1)
+        const capturedHtml = s.remote && s.current?.locked !== true ? `
                         <div class="signin-captured" id="signin-captured">${this.capturedListHtml()}</div>` : '';
 
         const inMonitor = !!this.pcMonitor;
@@ -1487,6 +1464,10 @@ export class PasswordMinigame extends MinigameScene {
         this.togglePasswordBtn = this.gameContainer.querySelector('#toggle-password');
         this.submitBtn = this.gameContainer.querySelector('#submit-password');
         this.signInMessageEl = this.gameContainer.querySelector('#signin-message');
+        // A locked session with no tile (UI slice 6): pre-fill the "Other user" field.
+        if (this.signInState?.presetUsername && this.usernameField && !this.usernameField.value) {
+            this.usernameField.value = this.signInState.presetUsername;
+        }
 
         this.gameContainer.querySelectorAll('.signin-tile[data-tile-index]').forEach(el => {
             const idx = el.dataset.tileIndex;
@@ -1698,10 +1679,18 @@ export class PasswordMinigame extends MinigameScene {
         if (box.dataset.headshotFor === tile.username && !box.hidden) return;
         box.dataset.headshotFor = tile.username;
         const record = tile.record !== undefined ? tile.record : npcRecordFor({ username: tile.username });
-        const talk = typeof record?.spriteTalk === 'string' ? record.spriteTalk : '';
-        const talkUrl = !talk ? null
-            : (/^(\/|https?:|data:)/.test(talk) ? talk : `/break_escape/${talk.startsWith('assets/') ? '' : 'assets/'}${talk}`);
-        applyHeadshotBox(box, headshotSourceFor(tile, record), { talkUrl });
+        // The authored headshot, else the pixel silhouette: never a crop of the talk image
+        applyHeadshotBox(box, headshotSourceFor(tile, record), {
+            onResult: (r) => {
+                if (r) return;
+                box.style.backgroundImage = `url("${SILHOUETTE_URL}")`;
+                box.style.backgroundRepeat = 'no-repeat';
+                box.style.backgroundSize = '32px 32px';
+                box.style.backgroundPosition = '0px 0px';
+                box.dataset.frame = 'silhouette';
+                box.hidden = false;
+            }
+        });
     }
 
     /**
@@ -1742,7 +1731,7 @@ export class PasswordMinigame extends MinigameScene {
             const idx = el.dataset.captureIndex;
             if (idx !== 'other') {
                 const t = tiles[Number(idx)];
-                if (t) applyTilePortrait(el.querySelector('.signin-portrait'), t, undefined, undefined, { record: t.record });
+                if (t) applyTilePortrait(el.querySelector('.signin-portrait'), t, undefined, { record: t.record });
             }
             this.addEventListener(el, 'click', () => (idx === 'other' ? this.selectSignInTile('other') : this.fillCapturedSignIn(Number(idx))));
         });
