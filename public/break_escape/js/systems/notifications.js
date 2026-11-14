@@ -235,7 +235,8 @@ export const MAX_SHOWN_TOASTS = 2;
 // ui/hud-lanes.js marks the phone layout with body.hud-compact.
 export const MAX_SHOWN_TOASTS_COMPACT = 1;
 export function maxShownToasts(doc = (typeof document === 'undefined' ? null : document)) {
-    return doc?.body?.classList?.contains('hud-compact') ? MAX_SHOWN_TOASTS_COMPACT : MAX_SHOWN_TOASTS;
+    const cl = doc?.body?.classList;
+    return typeof cl?.contains === 'function' && cl.contains('hud-compact') ? MAX_SHOWN_TOASTS_COMPACT : MAX_SHOWN_TOASTS;
 }
 // The head of the waiting line shows after this long even if both places are still taken
 // (going over the limit by one for a moment), so it never lands long after the event it is
