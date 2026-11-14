@@ -111,18 +111,32 @@ if (beat === 'all' || beat === 'e') await recordBeat('e_hostile_from_start', asy
 // (sets eli_asked via #set_global), pick the exit choice (#exit_conversation closes the chat and
 // emits conversation_closed:eli), then wait for the 6 s print and the object_revealed mapping.
 if (beat === 'all' || beat === 'i') await recordBeat('i_eli_print', async () => {
+    // Try the real UI: interact, pick the handover choice, pick the exit choice (closes the
+    // chat and emits conversation_closed:eli). Eli is boxed in by tables, so headless
+    // pathfinding may not reach his post; when the chat does not open, fall back to arming the
+    // print directly (eli_asked + conversation_closed:eli). Either way the completeTask under
+    // test (check_eli_page) fires on object_revealed:eli_page, a real needs-system event.
+    let path = 'real';
     const opened = await page.evaluate(() => window.__test.interact('eli'));
     await t(1500);
-    const chA = await page.evaluate(() => window.__test.minigames['person-chat'].choose('handover'));
-    await t(1000);
-    const chB = await page.evaluate(() => window.__test.minigames['person-chat'].choose('leave you be'));
-    await t(1200);
-    await page.evaluate(() => window.__test.dismissBlockingUi && window.__test.dismissBlockingUi()).catch(() => {});
+    const chatUp = await page.evaluate(() => { try { const s = window.__test.minigame.getState(); return !!(s && s.dialogue); } catch (e) { return false; } });
+    let chA = null, chB = null;
+    if (opened && opened.ok && chatUp) {
+        chA = await page.evaluate(() => window.__test.minigame.choose('handover'));
+        await t(1000);
+        chB = await page.evaluate(() => window.__test.minigame.choose('leave you be'));
+        await t(1200);
+        await page.evaluate(() => window.__test.dismissBlockingUi && window.__test.dismissBlockingUi()).catch(() => {});
+    } else {
+        path = 'armed-fallback';
+        await page.evaluate(() => window.gameState.globalVariables && (window.gameState.globalVariables.eli_asked = true));
+        await page.evaluate(() => window.eventDispatcher && window.eventDispatcher.emit('conversation_closed:eli', { npcId: 'eli' }));
+    }
     const closed = await snap();
     await t(9000);
     const after = await snap();
     await shot('i-eli-page');
-    return { interact_ok: opened && opened.ok, choose_handover: chA && chA.ok, choose_exit: chB && chB.ok, eli_asked_after_close: closed.globals.eli_asked, eli_page_shown: after.globals.eli_page_shown, revealed: after.revealed, check_eli_page: after.tasks.includes('check_eli_page') };
+    return { path, interact_ok: opened && opened.ok, chat_up: chatUp, choose_handover: chA && chA.ok, choose_exit: chB && chB.ok, eli_asked_after_close: closed.globals.eli_asked, eli_page_shown: after.globals.eli_page_shown, revealed: after.revealed, check_eli_page: after.tasks.includes('check_eli_page') };
 });
 
 // (d) Ben recalled by the Meeting Note: patrol override walks him home and suspends needs;
@@ -256,14 +270,23 @@ if (beat === 'f') await recordBeat('f_dee_catch', async () => {
 // (i2) Reload within the 6 s print delay: the pending delayed mapping is lost, so no page and no
 //      reveal global. Expected and recorded as such. Real UI path to arm the print, then reload fast.
 if (beat === 'i2') await recordBeat('i2_reload_within_delay', async () => {
+    let path = 'real';
     const opened = await page.evaluate(() => window.__test.interact('eli'));
     await t(1500);
-    await page.evaluate(() => window.__test.minigames['person-chat'].choose('handover'));
-    await t(1000);
-    await page.evaluate(() => window.__test.minigames['person-chat'].choose('leave you be'));
-    await t(1000);
-    await page.evaluate(() => window.__test.dismissBlockingUi && window.__test.dismissBlockingUi()).catch(() => {});
+    const chatUp = await page.evaluate(() => { try { const s = window.__test.minigame.getState(); return !!(s && s.dialogue); } catch (e) { return false; } });
+    if (opened && opened.ok && chatUp) {
+        await page.evaluate(() => window.__test.minigame.choose('handover'));
+        await t(1000);
+        await page.evaluate(() => window.__test.minigame.choose('leave you be'));
+        await t(1000);
+        await page.evaluate(() => window.__test.dismissBlockingUi && window.__test.dismissBlockingUi()).catch(() => {});
+    } else {
+        path = 'armed-fallback';
+        await page.evaluate(() => window.gameState.globalVariables && (window.gameState.globalVariables.eli_asked = true));
+        await page.evaluate(() => window.eventDispatcher && window.eventDispatcher.emit('conversation_closed:eli', { npcId: 'eli' }));
+    }
     const armed = await snap();
+    armed.path = path;
     // Reload well inside the 6 s delay.
     await t(2000);
     await load();
@@ -271,7 +294,7 @@ if (beat === 'i2') await recordBeat('i2_reload_within_delay', async () => {
     const after = await snap();
     await shot('i2-after-reload');
     return {
-        interact_ok: opened && opened.ok, eli_asked_before_reload: armed.globals.eli_asked,
+        path, interact_ok: opened && opened.ok, eli_asked_before_reload: armed.globals.eli_asked,
         eli_page_shown_after_reload: after.globals.eli_page_shown, revealed_after_reload: after.revealed,
         check_eli_page_after_reload: after.tasks.includes('check_eli_page')
     };
