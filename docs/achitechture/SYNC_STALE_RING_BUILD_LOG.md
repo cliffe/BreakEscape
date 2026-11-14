@@ -83,11 +83,48 @@ is expired.
   the ring helpers live in Game"). The controller keeps the diff/record logic
   (it needs `player_state` and params).
 
-Tests (chunk 1): PENDING FIRST RUN.
+Tests (chunk 1): `sync_ring_test.rb` 9 runs; `sync_stale_ring_test.rb` 15 runs;
+both green. Neighbours green: `reload_persistence_test`, `capture_proofs_test`,
+`captures_sync_test`, `mail_state_sync_test` (123 runs together);
+`current_room_guard_refusal_test`, `saved_current_room_test`,
+`format_version_test`, `format_upgrade_test`, `format_deployed_scenarios_test`
+(56 runs together).
 
 ## Chunk 2: stale-but-recent band, guard, pre-filter
 
-PENDING.
+Scope: the middle band in `stale_sync_request?`, the completeness guard, the
+empty-ring branch, clearing `syncWrites` on the ten-minute reset, and the
+key-by-key pre-filter in `merge_last_write_wins_sections`. currentRoom is
+whole-stripped on any stale-but-recent request (handled inline, not by a
+`merge_*!` call) until chunk 3. `apply_capture_sync_step` already received
+`stale: true` on every stale request (chunk 1 did not change that), so capture
+proof stamping is deferred to the next fresh sync exactly as today.
+
+Files:
+
+- `app/controllers/break_escape/games_controller.rb`: `@stale_recent` set in
+  `stale_sync_request?` (three bands: fresh, stale-but-recent, fully stale);
+  reset branch clears `syncWrites`; `stale_recent_guard_holds?`;
+  `sync_state` runs `merge_last_write_wins_sections(skip: ring_skip_set(...))` on
+  the stale-but-recent path; `ring_filter_section`, `ring_whole_claimed?`; every
+  section in `merge_last_write_wins_sections` pre-filtered.
+- `test/controllers/break_escape/sync_stale_ring_merge_test.rb` (new): empty-ring
+  branch, guard holds vs falls back (the >8 burst), the key-by-key pre-filter,
+  mailState compound keys, phoneState by npc id, currentRoom whole-strip, and the
+  reset-clearing re-engage test.
+
+The guard holds when the request's ts is at or above the oldest retained ring
+entry's ts; an empty ring merges against an empty skip set (the explicit
+empty-ring branch). The stale-but-recent path never moves `lastSyncClientTs`;
+the request's ring entry is recorded at its own (lower) ts.
+
+### Drift (chunk 2)
+
+- None material. currentRoom is stripped by gating its inline block on
+  `skip.nil?` (so a stale-but-recent request never reaches it), matching the
+  plan's "stripped from the params it sees" for chunk 2; chunk 3 replaces this.
+
+Tests (chunk 2): PENDING FIRST RUN.
 
 ## Chunk 3: currentRoom under the stale-but-recent path
 

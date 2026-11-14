@@ -870,9 +870,18 @@ module BreakEscape
         # records nothing and forces no save). Taken only on the path that merges
         # them.
         ring_before = nil
-        unless stale
+        if !stale
           ring_before = ring_before_snapshot
           refusal = merge_last_write_wins_sections
+        elsif @stale_recent
+          # Stale but recent, and the ring holds every newer write (the
+          # completeness guard): merge the last-write-wins sections key by key,
+          # skipping only the keys a newer recorded request already wrote. The
+          # stamp is not moved (stale_sync_request? did not store it), so this
+          # applies only unclaimed keys and can never put an older value over a
+          # newer one. currentRoom is stripped until chunk 3.
+          ring_before = ring_before_snapshot
+          refusal = merge_last_write_wins_sections(skip: ring_skip_set(@sync_client_ts))
         end
         raise ActiveRecord::Rollback if refusal
         record_ring_write!(ring_before) if ring_before
@@ -2201,15 +2210,44 @@ module BreakEscape
     # is a write, which under the change-only client means a request that has
     # something to save anyway).
     def stale_sync_request?
+      @stale_recent = false
       client_ts = params[:clientTs]
       return false unless client_ts.is_a?(Numeric)
 
       client_ts = client_ts.to_i
       stored = @game.player_state['lastSyncClientTs']
-      return true if stored.is_a?(Numeric) && client_ts <= stored && stored - client_ts <= SYNC_STALE_RESET_MS
+      if stored.is_a?(Numeric) && client_ts <= stored
+        if stored - client_ts <= SYNC_STALE_RESET_MS
+          # Stale but recent. Do not move the stamp. @stale_recent decides whether
+          # the key-by-key merge may run (the completeness guard) or the request
+          # falls back to today's whole-skip.
+          @stale_recent = stale_recent_guard_holds?(client_ts)
+          return true
+        end
+        # The ten-minute reset (a clock set back more than ten minutes between a
+        # reload's old and new page). Treat as fresh on the new, lower timeline,
+        # and clear the ring so its lingering pre-reset high-ts entries do not keep
+        # the completeness guard failing for the rest of the session (section 5,
+        # "Clearing the ring on a reset"). The same write that lowers the stamp.
+        @game.player_state['syncWrites'] = [] if @game.player_state['syncWrites'].present?
+      end
 
       @game.player_state['lastSyncClientTs'] = client_ts
       false
+    end
+
+    # The completeness guard (section 5): the key-by-key merge is correct only if
+    # the ring holds every accepted write with ts >= the request's ts. The ring
+    # keeps the newest entries within a 60 s window, so the guard holds when the
+    # request's ts is at or above the oldest retained entry's ts. An empty ring
+    # means nothing newer has been recorded yet, so the skip set is empty and the
+    # merge runs against it (the explicit empty-ring branch, not a fall-back): it
+    # recovers a reduced body that chases the very first flush.
+    def stale_recent_guard_holds?(ts)
+      ring = @game.player_state['syncWrites']
+      return true unless ring.is_a?(Array) && ring.any?
+
+      ts >= ring.map { |entry| entry['ts'] }.min
     end
 
     # A deep copy of the last-write-wins sections before the merge, so
@@ -2321,10 +2359,34 @@ module BreakEscape
     end
 
     # The skip set for a stale-but-recent request at `ts`, built from the stored
-    # ring by BreakEscape::SyncRing.skip_set (the read path that consumes it lands
-    # in chunk 2).
+    # ring by BreakEscape::SyncRing.skip_set.
     def ring_skip_set(ts)
       BreakEscape::SyncRing.skip_set(@game.player_state['syncWrites'], ts)
+    end
+
+    # The incoming section hash narrowed for a stale-but-recent request: the
+    # claimed keys (keys a newer recorded request already wrote) removed. Returns
+    # the narrowed hash, or nil to skip the merge entirely (a wholly-claimed
+    # section, or nothing left after filtering). With no skip set (a fresh
+    # request) the hash is returned unchanged. The existing merge methods then run
+    # unchanged on the narrowed input, so their own guards still apply, and a key
+    # left in is one no newer accepted request wrote, so last-write-wins is
+    # correct for it.
+    def ring_filter_section(section, hash, skip)
+      return hash if skip.nil?
+
+      claim = skip[section]
+      return hash if claim.nil?
+      return nil if claim == :whole
+
+      kept = hash.reject { |k, _| claim.include?(k.to_s) }
+      kept.empty? ? nil : kept
+    end
+
+    # A whole-replace section (playerHealth, timedMessages) a newer entry claimed:
+    # skip its merge entirely rather than hand it a partial hash.
+    def ring_whole_claimed?(section, skip)
+      !skip.nil? && skip[section] == :whole
     end
 
     # Sections where the last write wins: a stale request would put older
@@ -2333,8 +2395,14 @@ module BreakEscape
     # set back to hidden), and a phone entry replaces the saved one whole, so
     # an older thread would drop newer texts. npcHostility and playerHealth
     # likewise. Returns a refusal message, or nil.
-    def merge_last_write_wins_sections
-      if params[:currentRoom]
+    #
+    # On a stale-but-recent request `skip` is the ring skip set (section 5): each
+    # section is pre-filtered to drop the keys a newer recorded request already
+    # wrote. currentRoom is handled inline rather than by a merge_*! call, so
+    # until chunk 3 it is stripped whole on any stale request (skip present): it
+    # keeps today's whole-skip.
+    def merge_last_write_wins_sections(skip: nil)
+      if params[:currentRoom] && skip.nil?
         room = params[:currentRoom]
         # Accept currentRoom for a gated route room the player is slipping into (GATED_DOOR
         # §3.3a), so the avatar and the saved room agree (no snap-back) and the no-vest slip-in
@@ -2367,59 +2435,71 @@ module BreakEscape
       end
 
       if params[:globalVariables].respond_to?(:to_unsafe_h)
-        @game.merge_global_variables!(params[:globalVariables].to_unsafe_h)
+        gv = ring_filter_section('globalVariables', params[:globalVariables].to_unsafe_h, skip)
+        @game.merge_global_variables!(gv) if gv
       end
 
       if params[:npcInkVariables].respond_to?(:to_unsafe_h)
-        @game.merge_npc_ink_variables!(params[:npcInkVariables].to_unsafe_h)
+        ink = ring_filter_section('npcInkVariables', params[:npcInkVariables].to_unsafe_h, skip)
+        @game.merge_npc_ink_variables!(ink) if ink
       end
 
-      if params[:timedMessages].respond_to?(:to_unsafe_h)
+      if params[:timedMessages].respond_to?(:to_unsafe_h) && !ring_whole_claimed?('timedMessages', skip)
         @game.replace_timed_messages!(params[:timedMessages].to_unsafe_h)
       end
 
-      if params[:phoneState].respond_to?(:to_unsafe_h) &&
-         @game.merge_phone_state!(params[:phoneState].to_unsafe_h) == false
-        @not_saved << 'phoneState'
+      if params[:phoneState].respond_to?(:to_unsafe_h)
+        phone = ring_filter_section('phoneState', params[:phoneState].to_unsafe_h, skip)
+        @not_saved << 'phoneState' if phone && @game.merge_phone_state!(phone) == false
       end
 
       # mailState: each key replaces the saved message, thread or list whole, so
       # an older copy would undo a read mark or bring back a delivered job (00 §10a)
       if params[:mailState].respond_to?(:to_unsafe_h)
-        if @game.merge_mail_state!(params[:mailState].to_unsafe_h) == false
-          @not_saved << 'mailState'
-        elsif @game.mail_trimmed_keys.any?
-          # A successful save still trimmed read mail to fit the 1 MB cap: report
-          # the dropped keys so the client drops them too, instead of holding
-          # them as confirmed and losing them silently on reload (P1-D).
-          @mail_trimmed = @game.mail_trimmed_keys
+        mail = ring_filter_section('mailState', params[:mailState].to_unsafe_h, skip)
+        if mail
+          if @game.merge_mail_state!(mail) == false
+            @not_saved << 'mailState'
+          elsif @game.mail_trimmed_keys.any?
+            # A successful save still trimmed read mail to fit the 1 MB cap: report
+            # the dropped keys so the client drops them too, instead of holding
+            # them as confirmed and losing them silently on reload (P1-D).
+            @mail_trimmed = @game.mail_trimmed_keys
+          end
         end
       end
 
       if params[:npcVisibility].respond_to?(:to_unsafe_h)
-        @game.merge_npc_visibility!(params[:npcVisibility].to_unsafe_h)
+        vis = ring_filter_section('npcVisibility', params[:npcVisibility].to_unsafe_h, skip)
+        @game.merge_npc_visibility!(vis) if vis
       end
 
       # Hostility is latest-wins per NPC (a KO is kept by the merge itself)
       if params[:npcHostility].respond_to?(:to_unsafe_h)
-        @game.merge_npc_hostility!(params[:npcHostility].to_unsafe_h)
+        host = ring_filter_section('npcHostility', params[:npcHostility].to_unsafe_h, skip)
+        @game.merge_npc_hostility!(host) if host
       end
 
       # The player's HP (m05 E6): latest wins, so a stale flush can't undo a hit
-      if params[:playerHealth].respond_to?(:to_unsafe_h)
+      if params[:playerHealth].respond_to?(:to_unsafe_h) && !ring_whole_claimed?('playerHealth', skip)
         @game.merge_player_health!(params[:playerHealth].to_unsafe_h)
       end
 
       # Notes merge by id, so an edit overwrites the saved copy and a new note
       # is added
       if params[:notes].present?
-        existing = @game.player_state['notes'] ||= []
-        params[:notes].map(&:to_unsafe_h).each do |note|
-          idx = existing.index { |n| n['id'].to_s == note['id'].to_s }
-          if idx
-            existing[idx] = note
-          else
-            existing << note
+        notes_claim = skip && skip['notes']
+        unless notes_claim == :whole
+          existing = @game.player_state['notes'] ||= []
+          params[:notes].map(&:to_unsafe_h).each do |note|
+            next if notes_claim && notes_claim.include?(note['id'].to_s)
+
+            idx = existing.index { |n| n['id'].to_s == note['id'].to_s }
+            if idx
+              existing[idx] = note
+            else
+              existing << note
+            end
           end
         end
       end
