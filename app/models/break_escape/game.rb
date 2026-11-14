@@ -2248,6 +2248,13 @@ module BreakEscape
       # Capture proofs (engine plan section 6): devices the server saw planted at a named
       # object, and items it accepted as player drops. Grow-only.
       'plantedItems' => [], 'droppedItems' => [],
+      # Phish evidence (docs/achitechture/PHISH_EVIDENCE_SERVER_PLAN.md section 3.1): two
+      # server-written-only stores that record the landing-page build and the landed send the
+      # server verified itself, so a tampered client cannot forge the evidence that gates a
+      # phished secret. seLandingPages = { pageId => entry }, sePhishSends = { sendKey => entry }.
+      # Never read from a sync body and never serialised to the client (section 7); bounded by
+      # scenario authorship (section 8), so they never grow per sync.
+      'seLandingPages' => {}, 'sePhishSends' => {},
       # Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 9.4): frustration per room NPC, held on the server
       'npcFrustration' => {},
       # Slice 9.2 sub-slice H (9.4): who last left a borrowed session at each PC, and the

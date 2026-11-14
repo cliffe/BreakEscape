@@ -26,7 +26,7 @@ module BreakEscape
 
     before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :capture_secrets, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :conclude_mission,
                                         :login, :logout, :lock_session, :login_accounts, :clone_card, :network, :network_plant, :network_unplug, :network_implant, :network_join,
-                                        :npc_frustration, :npc_workaround, :feed_post, :friendface_phone, :wear]
+                                        :npc_frustration, :npc_workaround, :feed_post, :friendface_phone, :wear, :se_landing_page]
     # A host may also route the game page under its own address (Hacktivity: /hacktivities/:event_id/play/mission/:id,
     # inside a Game event's web app scope). The game must belong to that event: any other pair is a 404.
     before_action :require_game_in_host_event, only: [:show]
@@ -94,9 +94,15 @@ module BreakEscape
     # login, logout and clone_card write sessions, sign-in failures and card copies
     # (access model, section 6), so they take the lock like unlock. network_plant and
     # network_unplug write footholds, the inventory and sessions (slice 9.3a, section 5).
+    # se_landing_page (phish evidence Route 1) records the build into seLandingPages and
+    # save!s the whole player_state. The client fires its POST right after the attach sync,
+    # so the two race: the unlocked POST read player_state before the sync committed, added
+    # its own key and saved its stale copy back, reverting the sync's globalVariables
+    # se_landing_pages.built to false (observed on the branch; main has no such route). It
+    # takes the lock so it reloads under it, like the others.
     around_action :with_game_lock, only: [:container, :update_room, :unlock, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :reset, :new_session, :inventory, :room,
                                           :login, :logout, :lock_session, :clone_card, :network_plant, :network_unplug, :network_implant, :network_join,
-                                          :npc_frustration, :npc_workaround, :feed_post, :wear]
+                                          :npc_frustration, :npc_workaround, :feed_post, :wear, :se_landing_page]
 
     # GET /games/new?mission_id=:id
     # Show VM set selection page for VM-required missions
@@ -1636,6 +1642,23 @@ module BreakEscape
       # scenario with networks, so a scenario without them gets the first slice's answer.
       body[:accounts] = @game.account_capture_usernames if @game.network_scenario?
       render json: body
+    end
+
+    # POST /games/:id/se/landing_page
+    # Record a landing-page build server-side (phish evidence plan, Route 1). Body:
+    # { pageId, targetId, choices }. The server validates choices against the page's authored
+    # menus and recomputes the verdict itself (BreakEscape::PhishScore); the body carries no
+    # score. Nothing reads the store for the gate yet (plan build order, chunk 3). The raw
+    # params are passed through so the model's own type and menu checks bite a hostile body.
+    def se_landing_page
+      authorize @game if defined?(Pundit)
+
+      choices = params[:choices]
+      choices = choices.to_unsafe_h if choices.respond_to?(:to_unsafe_h)
+      input = { 'pageId' => params[:pageId], 'targetId' => params[:targetId], 'choices' => choices }
+
+      result = @game.build_landing_page!(input)
+      render json: result[:body], status: result[:status]
     end
 
     # POST /games/:id/objectives/unlock
