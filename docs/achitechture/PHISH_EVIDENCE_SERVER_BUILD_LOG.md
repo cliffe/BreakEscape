@@ -432,3 +432,60 @@ bar `node_modules`).
 
 (`ca*` scenarios that author no landing page or phish target cannot reach the rule's page loop, so
 they gain no new error by construction.)
+
+## Chunk 3 live browser re-proof after the build POST move (branch tip 0cfffe0bb)
+
+Re-run of the chunk 3 live browser proof after commit ae3d74b8b moved the build POST out of the
+landing-page builder overlay into `public/break_escape/js/systems/se-landing-page-client.js`
+(`recordLandingPageBuild`), which the builder now holds as `this._buildPost`. Main 5edb17541 and
+chunk 8 have been merged in since the earlier proof. No app code was changed for this re-proof.
+
+All runs used the keyless server on `:3660` (TTS off), headless Chromium, `setFPS(20)` with fixed
+steps on. Driver: `tools/playtest/se/phish-build-liveproof.mjs`, driving the REAL landing-page
+builder through `window.__test` and clicking the real Attach button, so the minigame's own
+`attach()` fires the POST through the moved client module. Server store read back read-only with a
+rails runner. The shared demo player's saved sprite was already valid for both scenarios, so
+new-game.rb did no sprite switch and none was needed.
+
+Convincing choices for `payroll_login` / `lord` (linkThreshold 70, minDomainTier 2): brand
+ledgerwell, purpose payslip, domain `d_word` (tier 2), crisp logo, matching wording `w_formal`,
+email+password, padlock on. The builder scores credibility 87, meetsThreshold true.
+
+### Item 1 - test_social_slice, game 4005 (normal)
+
+Built the convincing page through the real builder chips and clicked Attach. POST
+`games/4005/se/landing_page` returned 200
+`{"success":true,"pageId":"payroll_login","meetsThreshold":true,"credibility":87}`. The DB then held
+`seLandingPages['payroll_login']` with the server's own verdict: `built: true`, `meetsThreshold:
+true`, `credibility: 87`, `targetId: 'lord'`, the validated `choices`. `sePhishSends` empty. The real
+in-browser attach fills the store with the server verdict through the moved POST path. PASS.
+
+### Item 2 - lab_social_engineering, game 4006 (lost-update check)
+
+Started in `operations_room` (`new-game.rb --start-room operations_room`) to reach the real
+`page_builder`. Same convincing build through the UI; POST 200. The DB held
+`seLandingPages['payroll_login']` `built: true`, `meetsThreshold: true`, `credibility: 87`,
+`targetId: 'lord'`. After the client sync the client record `globalVariables.se_landing_pages.
+payroll_login.built` stayed `true` (and `landing_payroll_login_built` true). The lost-update that the
+locking fix 6ea22ce9d closed does not recur: the honest build is recorded and the client built flag
+is not reverted. PASS.
+
+### Item 3 - throttled network, game 4007 (test_social_slice)
+
+CDP `Network.emulateNetworkConditions` slow-3G (latency 400 ms, 500 kbps) plus a 1200 ms Playwright
+`route` delay on the build POST, then build + attach. The POST still returned 200; the DB held
+`seLandingPages['payroll_login']` `built: true`, `meetsThreshold: true`, `credibility: 87`. The
+honest build is never refused under a throttled network. PASS.
+
+### Item 4 - seLandingPages / sePhishSends never reach the client
+
+The build driver scanned every response body the browser received on a game route across items 1, 2
+and 3 (55 responses in all: the bare game page, `scenario` bootstrap, `room/<id>` GET, `ink`,
+`inventory`, `objectives/tasks/...`, every `sync_state` answer, and the `se/landing_page` answer).
+Neither `seLandingPages` nor `sePhishSends` appeared in any of them. The stores stay server-owned and
+off every client-facing serialisation. PASS.
+
+Game ids: 4005 (slice, item 1), 4006 (lab, item 2), 4007 (slice throttle, item 3). Server stopped by
+PID afterwards. This section not committed: the full suites were running under the shared lock and
+their finish could not be confirmed, so per the brief the re-proof write was kept out of the tracked
+build log.
