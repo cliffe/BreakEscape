@@ -128,6 +128,22 @@ def load_valid_item_types(base_dir)
   Set.new(types)
 end
 
+# Load valid room types from the engine's room map registry. A room's "type" is the key the engine
+# registers with this.load.tilemapTiledJSON('<type>', 'rooms/<file>.json') in game.js; a type with
+# no registration cannot load. This reads those keys straight from the engine, the way the sprite
+# check reads the object asset files, so a new room map is accepted the moment the engine loads it
+# and no hand-maintained enum can drift. Returns a Set of type strings, or nil when game.js cannot be
+# found (callers skip the check).
+def load_valid_room_types(base_dir)
+  game_js = File.join(base_dir, 'public', 'break_escape', 'js', 'core', 'game.js')
+  return nil unless File.exist?(game_js)
+
+  types = File.read(game_js).scan(/tilemapTiledJSON\(\s*['"]([^'"]+)['"]/).flatten
+  return nil if types.empty?
+
+  Set.new(types)
+end
+
 # Render ERB template to JSON
 def render_erb_to_json(erb_path, vm_context = {}, include_rendered: false)
   unless File.exist?(erb_path)
@@ -7994,6 +8010,28 @@ def each_object_id(json_data)
   end
 end
 
+# Every id of an item that an action creates in the inventory: a give_item action's nested "item"
+# object, anywhere in the scenario (triggerOnInteract, flagRewards, onConfirm, timers, onInteract).
+# Yields the id string. These are not in any room's objects, so each_object_id misses them, but a
+# wear/take_off/unlock_object reference can name them, so the index needs them.
+def each_given_item_id(json_data)
+  return enum_for(:each_given_item_id, json_data) unless block_given?
+
+  visit = lambda do |node|
+    case node
+    when Hash
+      item = node['item']
+      if item.is_a?(Hash) && item['id'].is_a?(String) && !item['id'].empty?
+        yield item['id']
+      end
+      node.each_value { |v| visit.call(v) }
+    when Array
+      node.each { |v| visit.call(v) }
+    end
+  end
+  visit.call(json_data)
+end
+
 # Every NPC id: rooms[*].npcs, top-level npcs and phoneNPCs. Yields [id, path_string].
 def each_npc_id(json_data)
   return enum_for(:each_npc_id, json_data) unless block_given?
@@ -8017,6 +8055,11 @@ end
 def build_reference_index(json_data)
   object_ids = Set.new
   each_object_id(json_data) { |id, _| object_ids.add(id) }
+  # Items defined inside a give_item action (triggerOnInteract, flagRewards, onConfirm, timers) are
+  # real inventory ids a wear/take_off/unlock_object action can name, but they live in an action,
+  # not in a room's objects, so each_object_id does not see them. Fold them into the object/item
+  # index so such a reference resolves (e.g. lab_physical_pentest's granted hi-vis vest).
+  each_given_item_id(json_data) { |id| object_ids.add(id) }
   npc_ids = Set.new
   each_npc_id(json_data) { |id, _| npc_ids.add(id) }
   room_ids = (json_data['rooms'] || {}).keys.to_set
@@ -8077,6 +8120,31 @@ def check_references(json_data, _repo_root = nil)
   end
 
   issues.concat(reference_uniqueness_issues(json_data, index))
+  issues
+end
+
+# Every room's "type" must be a room map the engine can load. The valid set is the engine's own
+# tilemapTiledJSON registry (load_valid_room_types), the same way the sprite check reads the object
+# asset files, so no hand-maintained enum can drift. An unknown type is an ❌ ERROR, as the sprite
+# check reports an unknown object type: the room cannot load. Skipped when game.js cannot be found.
+def check_room_types(json_data, repo_root)
+  issues = []
+  return issues unless json_data.is_a?(Hash)
+
+  valid = load_valid_room_types(repo_root)
+  return issues if valid.nil?
+
+  (json_data['rooms'] || {}).each do |room_id, room|
+    next unless room.is_a?(Hash)
+
+    type = room['type']
+    next unless type.is_a?(String) && !type.empty?
+    next if valid.include?(type)
+
+    issues << "❌ ERROR: room '#{room_id}' has type '#{type}', which no room map registers (no " \
+              "tilemapTiledJSON('#{type}', ...) in game.js) — check the spelling or add the room map."
+  end
+
   issues
 end
 
@@ -8303,6 +8371,7 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
   run = ->(name, &blk) { common_issues.concat(report.run_check('common', name, &blk)) }
   run.call('check_common_issues') { check_common_issues(json_data, valid_item_types) }
   run.call('check_references') { check_references(json_data, repo_root) }
+  run.call('check_room_types') { check_room_types(json_data, repo_root) }
   run.call('check_lock_credentials') { check_lock_credentials(json_data) }
   run.call('check_pin_locks') { check_pin_locks(json_data) }
   run.call('check_combination_cryptex_locks') { check_combination_cryptex_locks(json_data) }

@@ -24,6 +24,17 @@ function refs(scenario) {
     return JSON.parse(r.stdout.trim().split('\n').pop());
 }
 
+// The reference index's set for one kind, straight from build_reference_index.
+function indexSet(scenario, kind) {
+    const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
+      puts JSON.generate(build_reference_index(JSON.parse(STDIN.read))[${JSON.stringify(kind)}].to_a)`;
+    const r = spawnSync('ruby', ['-e', script], {
+        input: JSON.stringify(scenario), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' },
+    });
+    assert.equal(r.status, 0, r.stderr);
+    return JSON.parse(r.stdout.trim().split('\n').pop());
+}
+
 // A minimal, schema-valid-ish scenario; the checks read only the parts each test exercises.
 const base = (over = {}) => ({
     scenario_brief: 'x', startRoom: 'a', globalVariables: { known_flag: false },
@@ -56,12 +67,13 @@ test('a missing aim in unlockCondition.aimCompleted warns', { skip }, () => {
     assert.match(out[0], /references aim 'ghost_aim'/);
 });
 
-test('a missing global in concludeRequires.globals warns; a declared one is silent', { skip }, () => {
+// Minor-1 / Minor-4: concludeRequires.tasksCompleted and .globals keep their own ❌ ERROR checks
+// (run_validation, not check_references), so x-ref was dropped from both item schemas; check_references
+// must stay silent on them and never double-report.
+test('concludeRequires.globals is owned by the existing error, not double-reported by check_references', { skip }, () => {
     const s = base();
-    s.objectives[0].concludeRequires = { globals: ['known_flag', 'undeclared_flag'] };
-    const out = only(refs(s), /references global/);
-    assert.equal(out.length, 1);
-    assert.match(out[0], /references global 'undeclared_flag'/);
+    s.objectives[0].concludeRequires = { tasksCompleted: ['task1', 'ghost_task'], globals: ['known_flag', 'undeclared_flag'] };
+    assert.deepEqual(only(refs(s), /references (global|task)/), []);
 });
 
 test('a missing network on an object warns', { skip }, () => {
@@ -75,12 +87,14 @@ test('a missing network on an object warns', { skip }, () => {
     assert.equal(only(refs(s), /references network/).length, 0);
 });
 
-test('an engine-written global (<objId>_screen_locked, <npcId>_frustration) is accepted', { skip }, () => {
+test('engine-written globals (<objId>_screen_locked, <npcId>_frustration) are in the global index', { skip }, () => {
     const s = base();
     s.rooms.a.objects = [{ id: 'pc1', type: 'pc', name: 'PC' }];
     s.rooms.a.npcs = [{ id: 'bob', type: 'person', name: 'B' }];
-    s.objectives[0].concludeRequires = { globals: ['pc1_screen_locked', 'bob_frustration', 'pc1_accessed'] };
-    assert.deepEqual(only(refs(s), /references global/), []);
+    const g = indexSet(s, 'global');
+    for (const name of ['pc1_screen_locked', 'bob_frustration', 'pc1_accessed', 'pc1_owner_away']) {
+        assert.ok(g.includes(name), `${name} should be an engine-written global in the index`);
+    }
 });
 
 test('a reused object id at any depth (contents and itemsHeld) warns', { skip }, () => {
@@ -110,6 +124,77 @@ test('a reused NPC id warns', { skip }, () => {
     s.npcs = [{ id: 'twin', type: 'person', name: 'B' }];
     const out = only(refs(s), /NPC id 'twin' is used by more than one NPC/);
     assert.equal(out.length, 1);
+});
+
+// --- Step-4 follow-up: x-ref on the remaining kinds (npc, object, item, policy). ---
+
+test('a PC policy naming a missing top-level policy warns; a declared one is silent', { skip }, () => {
+    const s = base({ policies: { office: {} } });
+    s.rooms.a.objects = [{ id: 'pc1', type: 'pc', name: 'PC', policy: 'ghost_policy' }];
+    const out = only(refs(s), /references policy/);
+    assert.equal(out.length, 1);
+    assert.match(out[0], /references policy 'ghost_policy'/);
+    s.rooms.a.objects[0].policy = 'office';
+    assert.deepEqual(only(refs(s), /references policy/), []);
+});
+
+test('a defaultPolicy naming a missing policy warns', { skip }, () => {
+    const s = base({ policies: { office: {} }, defaultPolicy: 'ghost_policy' });
+    const out = only(refs(s), /references policy/);
+    assert.equal(out.length, 1);
+    assert.match(out[0], /references policy 'ghost_policy'/);
+});
+
+test('a gate openFor naming a missing NPC warns; a real NPC is silent', { skip }, () => {
+    const s = base();
+    s.rooms.a.npcs = [{ id: 'guard', type: 'person', name: 'G' }];
+    s.rooms.a.doors = [{ connectedRoom: 'a', direction: 'north', gate: { openFor: 'ghost_npc' } }];
+    const out = only(refs(s), /references npc/);
+    assert.equal(out.length, 1);
+    assert.match(out[0], /references npc 'ghost_npc'/);
+    s.rooms.a.doors[0].gate.openFor = 'guard';
+    assert.deepEqual(only(refs(s), /references npc/), []);
+});
+
+test("an object owner naming a missing NPC warns (Format 2 owner = npc id)", { skip }, () => {
+    const s = base();
+    s.rooms.a.npcs = [{ id: 'alice', type: 'person', name: 'A' }];
+    s.rooms.a.objects = [{ id: 'pc1', type: 'pc', name: 'PC', owner: 'ghost_npc' }];
+    const out = only(refs(s), /references npc/);
+    assert.equal(out.length, 1);
+    assert.match(out[0], /references npc 'ghost_npc'/);
+    s.rooms.a.objects[0].owner = 'alice';
+    assert.deepEqual(only(refs(s), /references npc/), []);
+});
+
+test('triggerOnInteract unlock_door/unlock_object/wear name missing room, object and item', { skip }, () => {
+    const s = base();
+    s.rooms.a.objects = [{
+        id: 'pc1', type: 'pc', name: 'PC',
+        triggerOnInteract: [
+            { type: 'unlock_door', roomId: 'ghost_room' },
+            { type: 'unlock_object', objectId: 'ghost_obj' },
+            { type: 'wear', itemId: 'ghost_item' },
+        ],
+    }];
+    assert.match(only(refs(s), /references room/)[0] || '', /references room 'ghost_room'/);
+    assert.match(only(refs(s), /references object/)[0] || '', /references object 'ghost_obj'/);
+    assert.match(only(refs(s), /references item/)[0] || '', /references item 'ghost_item'/);
+});
+
+test('a flagReward unlock_door/unlock_object/complete_task names missing room, object and task', { skip }, () => {
+    const s = base();
+    s.rooms.a.objects = [{
+        id: 'station', type: 'pc', name: 'Station',
+        flagRewards: [
+            { type: 'unlock_door', target_room: 'ghost_room' },
+            { type: 'unlock_object', objectId: 'ghost_obj' },
+            { type: 'complete_task', taskId: 'ghost_task' },
+        ],
+    }];
+    assert.match(only(refs(s), /references room/)[0] || '', /references room 'ghost_room'/);
+    assert.match(only(refs(s), /references object/)[0] || '', /references object 'ghost_obj'/);
+    assert.match(only(refs(s), /references task/)[0] || '', /references task 'ghost_task'/);
 });
 
 test('a clean scenario produces no reference findings', { skip }, () => {
