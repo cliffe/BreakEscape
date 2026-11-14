@@ -430,7 +430,7 @@ test('R1 m2: on a hide the clock follows the 5-minute rule', async () => {
 const bytes = s => new TextEncoder().encode(s).length;
 const inflightBytes = reqs => reqs.reduce((n, r) => n + bytes(r.init.body), 0);
 
-test('R1 m3: a pagehide while a large hidden flush is in flight is reduced to fit what is left', async () => {
+test('R1 m3: a pagehide while a large hidden flush is in flight sends only what fits beside it', async () => {
   const sync = resetGame();
   sync.start();
   await sync.sync();
@@ -443,7 +443,7 @@ test('R1 m3: a pagehide while a large hidden flush is in flight is reduced to fi
   assert.equal(requests.length, 2);
   window.gameState.globalVariables.later = 1;
   window.fire('pagehide');
-  assert.equal(requests.length, 3, 'the pagehide sent a reduced body');
+  assert.equal(requests.length, 3, 'the pagehide sent a body');
   assert.equal(requests[2].body.notes, undefined, 'notes left out to fit');
   assert.equal(requests[2].body.globalVariables.later, 1, 'the reload-critical globals kept');
   assert.ok(inflightBytes(requests.slice(1)) <= 60000, 'both flushes together fit the quota');
@@ -458,11 +458,12 @@ test('R1 m3: when even the reduced body does not fit, the pagehide sends nothing
   await sync.sync();
   const held = [];
   reply = () => new Promise(r => held.push(() => r({ ok: true, json: { success: true } })));
-  // 20 KB in flight; the pagehide's delta (both globals, 50 KB) fits the limit alone
-  // but not beside it, and the globals are kept by both reduced lists.
+  // 20 KB in flight; the pagehide's delta (both globals, 65 KB) and even what changed
+  // since the hidden flush (45 KB) do not fit beside it, and the globals are kept by
+  // both reduced lists.
   window.gameState.globalVariables.big = 'x'.repeat(20000);
   hide();
-  window.gameState.globalVariables.later = 'z'.repeat(30000);
+  window.gameState.globalVariables.later = 'z'.repeat(45000);
   window.fire('pagehide');
   assert.equal(requests.length, 2, 'nothing sent over the quota');
   for (const r of held) r();
@@ -470,7 +471,7 @@ test('R1 m3: when even the reduced body does not fit, the pagehide sends nothing
   reply = () => ({ ok: true, json: { success: true } });
   await sync.sync();
   assert.equal(requests.length, 3, 'the next sync sends the kept delta');
-  assert.equal(requests[2].body.globalVariables.later.length, 30000);
+  assert.equal(requests[2].body.globalVariables.later.length, 45000);
   assert.equal(requests[2].body.globalVariables.big, undefined, 'the hidden flush was confirmed');
   sync.stop();
 });
@@ -508,4 +509,174 @@ test('R1 n1: requestSoon after stop() starts nothing', async (t) => {
   t.mock.timers.reset();
   await settle();
   assert.equal(requests.length, 1);
+});
+
+// Review R2. A model of sync_state's ordering rule (games_controller.rb
+// stale_sync_request?): a request whose clientTs is not above the newest one accepted is
+// stale, and its last-write-wins sections (globals and notes here) are skipped. Requests
+// wait until the test delivers them, in the order it chooses.
+function modelServer() {
+  const server = { lastTs: 0, globals: {}, notes: {} };
+  const pending = [];
+  reply = body => new Promise(resolve => pending.push({ body, resolve }));
+  const deliver = (i, { fail = false } = {}) => {
+    const { body, resolve } = pending[i];
+    if (fail) return resolve({ ok: false, json: {} });
+    const stale = typeof body.clientTs === 'number' && body.clientTs <= server.lastTs;
+    if (!stale) {
+      if (typeof body.clientTs === 'number') server.lastTs = body.clientTs;
+      for (const [k, v] of Object.entries(body.globalVariables || {})) {
+        if (v === null) delete server.globals[k]; else server.globals[k] = v;
+      }
+      for (const n of body.notes || []) server.notes[n.id] = n;
+    }
+    resolve({ ok: true, json: stale ? { success: true, stale: true } : { success: true } });
+  };
+  return { server, pending, deliver };
+}
+const settled = async () => { for (let i = 0; i < 5; i++) await settle(); };
+
+// m1: a 45 KB hidden flush is still uploading, a global changes while hidden, then the
+// pagehide. The whole delta (90 KB with the unconfirmed flush) does not fit beside it.
+async function bigHiddenThenLateChange() {
+  const sync = resetGame();
+  sync.start();
+  await sync.sync();
+  const model = modelServer();
+  window.gameState.globalVariables.big = 'x'.repeat(45000);
+  hide();
+  window.gameState.globalVariables.late = 1;
+  window.fire('pagehide');
+  return { sync, ...model };
+}
+
+test('R2 m1: a large hidden flush in flight, a change while hidden, then pagehide: the change is sent', async () => {
+  const { pending } = await bigHiddenThenLateChange();
+  assert.equal(pending.length, 2, 'the pagehide sent a body');
+  const [hidden, pagehide] = pending.map(p => p.body);
+  assert.deepEqual(pagehide.globalVariables, { late: 1 }, 'only what changed since the hidden flush');
+  assert.ok(pagehide.clientTs < hidden.clientTs, 'a clientTs below the hidden flush, so it cannot make it stale');
+  assert.ok(pagehide.clientTs > requests[0].body.clientTs, 'and above the sync before it');
+  assert.ok(inflightBytes(requests.slice(1)) <= 60000, 'both flushes together fit the quota');
+});
+
+test('R2 m1: the hidden flush lands after the pagehide: the server holds both, and nothing is resent', async () => {
+  const { sync, server, pending, deliver } = await bigHiddenThenLateChange();
+  assert.equal(pending.length, 2);
+  deliver(1);
+  await settled();
+  deliver(0);
+  await settled();
+  assert.equal(server.globals.big.length, 45000, 'the hidden flush was not made stale');
+  assert.equal(server.globals.late, 1, 'the later change is saved');
+  // A page restored from the back-forward cache carries on syncing.
+  show();
+  reply = () => ({ ok: true, json: { success: true } });
+  const before = requests.length;
+  await sync.sync();
+  assert.equal(requests.length, before, 'both answers confirmed: nothing left to send');
+});
+
+test('R2 m1: the hidden flush fails after the pagehide: the later change is saved and the guard clears', async () => {
+  const { sync, server, pending, deliver } = await bigHiddenThenLateChange();
+  assert.equal(pending.length, 2);
+  deliver(1);
+  await settled();
+  deliver(0, { fail: true });
+  await settled();
+  assert.equal(server.globals.late, 1, 'the later change is saved');
+  assert.equal(server.globals.big, undefined, 'the failed flush is not');
+  assert.equal(sync._hiddenFlushKey, null, 'the guard cleared (R1 M1)');
+  assert.equal(sync._flushesInFlight.size, 0);
+  // Restored from the back-forward cache: the next sync resends what the failed flush held.
+  show();
+  reply = () => ({ ok: true, json: { success: true } });
+  await sync.sync();
+  const last = requests[requests.length - 1].body;
+  assert.equal(last.globalVariables.big.length, 45000, 'the failed flush\'s delta is resent');
+  assert.equal(last.globalVariables.late, undefined, 'the pagehide\'s change was confirmed');
+});
+
+test('R2 m1: the hidden flush landing first keeps everything it carried (the later change is then stale, as with no pagehide body)', async () => {
+  const { server, pending, deliver } = await bigHiddenThenLateChange();
+  assert.equal(pending.length, 2);
+  deliver(0);
+  await settled();
+  deliver(1);
+  await settled();
+  assert.equal(server.globals.big.length, 45000);
+  assert.equal(server.globals.late, undefined, 'the residual loss BUILD.md describes');
+});
+
+test('R2: a pagehide reduced beside a hidden flush in flight never makes that flush stale', async () => {
+  const sync = resetGame();
+  sync.start();
+  await sync.sync();
+  const { server, pending, deliver } = modelServer();
+  // A 40 KB note goes up on the hide. The pagehide's whole delta would carry it again
+  // and has to shrink; a reduced body leaves notes out.
+  window.gameState.notes.push({ id: 'n1', text: 'y'.repeat(40000) });
+  hide();
+  window.gameState.globalVariables.late = 1;
+  window.fire('pagehide');
+  assert.equal(pending.length, 2);
+  // The small pagehide body reaches the server first.
+  deliver(1);
+  await settled();
+  deliver(0);
+  await settled();
+  assert.equal(server.notes.n1?.text.length, 40000, 'the hidden flush\'s note is saved');
+  assert.equal(server.globals.late, 1);
+  sync.stop();
+});
+
+test('R2: what changed since the hidden flush is itself reduced when it does not fit beside it', async () => {
+  const sync = resetGame();
+  sync.start();
+  await sync.sync();
+  const { pending } = modelServer();
+  window.gameState.globalVariables.big = 'x'.repeat(20000);
+  hide();
+  window.gameState.notes.push({ id: 'n2', text: 'y'.repeat(45000) });
+  window.gameState.globalVariables.late = 1;
+  window.fire('pagehide');
+  assert.equal(pending.length, 2);
+  const pagehide = pending[1].body;
+  assert.equal(pagehide.notes, undefined, 'notes left out to fit');
+  assert.deepEqual(pagehide.globalVariables, { late: 1 });
+  assert.ok(pagehide.clientTs < pending[0].body.clientTs);
+  assert.ok(inflightBytes(requests.slice(1)) <= 60000);
+  sync.stop();
+});
+
+test('R2 n2: a stale answer to the hidden flush clears its guard, so the pagehide sends the delta', async () => {
+  const sync = resetGame();
+  sync.start();
+  await sync.sync();
+  reply = () => ({ ok: true, json: { success: true, stale: true } });
+  window.gameState.globalVariables.k = 2;
+  hide();
+  await settled();
+  assert.equal(sync._hiddenFlushKey, null, 'a stale answer saved nothing: no guard');
+  reply = () => ({ ok: true, json: { success: true } });
+  window.fire('pagehide');
+  await settled();
+  assert.equal(requests.length, 3, 'the pagehide sent the delta again');
+  assert.equal(requests[2].body.globalVariables.k, 2);
+  sync.stop();
+});
+
+test('R2 n2: a stale answer to a reduced hidden flush clears its guard too', async () => {
+  const sync = resetGame();
+  sync.start();
+  await sync.sync();
+  reply = () => ({ ok: true, json: { success: true, stale: true } });
+  window.gameState.notes.push({ id: 'n3', text: 'y'.repeat(70000) });
+  window.gameState.globalVariables.k = 3;
+  hide();
+  await settled();
+  assert.equal(requests.length, 2);
+  assert.equal(requests[1].body.notes, undefined, 'the hidden flush was reduced');
+  assert.equal(sync._hiddenFlushKey, null);
+  sync.stop();
 });

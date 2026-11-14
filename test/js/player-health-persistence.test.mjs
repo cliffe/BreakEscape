@@ -79,8 +79,9 @@ test('state-sync sends playerHealth when it changes, not when it does not', () =
 
 test('the unload flush keeps playerHealth when it trims an oversized body', () => {
     const src = readFileSync(join(js, 'state-sync.js'), 'utf8');
-    const flush = src.slice(src.indexOf('  flush({'));
-    const trims = flush.match(/JSON\.stringify\(\{ globalVariables[^}]*\}\)/g);
+    // The reduced bodies are built in _sizeFlushBody (state sync review R2)
+    const flush = src.slice(src.indexOf('  _sizeFlushBody('));
+    const trims = flush.match(/sent = \{ globalVariables[^}]*\}/g);
     assert.equal(trims.length, 2);
     for (const t of trims) assert.match(t, /playerHealth/);
 });

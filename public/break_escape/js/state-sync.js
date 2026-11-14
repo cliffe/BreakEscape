@@ -104,6 +104,50 @@ function clockKeyOf(clock) {
   return stableJson({ fired: t.fired || [], cancelled: t.cancelled || [], started: Object.keys(t.started || {}).sort() });
 }
 
+// The part of a flush's ack that its sent body really carried: a reduced body leaves
+// sections out, and a part's flushKeep can send only some keys of a section.
+function sentAckOf(ack, sent) {
+  const out = {};
+  for (const section of [...KEYED_SECTIONS]) {
+    const keys = sent[section];
+    if (!ack[section] || !keys || typeof keys !== 'object') continue;
+    const part = {};
+    for (const k of Object.keys(keys)) if (k in ack[section]) part[k] = ack[section][k];
+    if (Object.keys(part).length) out[section] = part;
+  }
+  if (ack.notes && Array.isArray(sent.notes)) {
+    const part = {};
+    for (const note of sent.notes) if (note && note.id in ack.notes) part[note.id] = ack.notes[note.id];
+    if (Object.keys(part).length) out.notes = part;
+  }
+  for (const key of [...WHOLE_SECTIONS, 'currentRoom', 'scenarioBriefShown']) {
+    if (ack[key] !== undefined && sent[key] !== undefined) out[key] = ack[key];
+  }
+  if (sent.timedMessages !== undefined && ack.timedMessagesKey !== undefined) out.timedMessagesKey = ack.timedMessagesKey;
+  if (sent.scenarioClock !== undefined) {
+    if (ack.clockKey !== undefined) out.clockKey = ack.clockKey;
+    if (ack.clockElapsedMs !== undefined) out.clockElapsedMs = ack.clockElapsedMs;
+  }
+  return out;
+}
+
+// A copy of `confirmed` with an ack laid over it, as confirm() would record it.
+function layerAck(confirmed, ack) {
+  const out = { ...confirmed };
+  for (const section of [...KEYED_SECTIONS, 'notes']) {
+    if (!ack[section]) continue;
+    const kept = { ...(out[section] || {}) };
+    for (const [key, s] of Object.entries(ack[section])) {
+      if (s === null) delete kept[key]; else kept[key] = s;
+    }
+    out[section] = kept;
+  }
+  for (const key of [...WHOLE_SECTIONS, 'currentRoom', 'scenarioBriefShown', 'timedMessagesKey', 'clockKey', 'clockElapsedMs']) {
+    if (ack[key] !== undefined) out[key] = ack[key];
+  }
+  return out;
+}
+
 /**
  * A `confirmed`-shaped object built from the bootstrap's saved blocks, every value
  * turned into its stableJson string (the same strings buildChanges compares), so
@@ -239,6 +283,10 @@ export class StateSync {
     // Bytes of this page's flush keepalives still in flight, so two flushes stay under
     // the browser's shared keepalive quota together.
     this._keepaliveInflight = 0;
+    // The flushes still in flight: { clientTs, prevTs (the last clientTs sent before it),
+    // sentAck (what its body carried), sentAt }. A flush behind one that cannot carry the
+    // whole delta sends only what changed since (_changesSinceInFlight).
+    this._flushesInFlight = new Set();
     // clientTs of the newest request whose answer was confirmed: an older request's
     // answer that lands later confirms nothing (its ack would overwrite a newer one).
     this._confirmedTs = 0;
@@ -508,16 +556,19 @@ export class StateSync {
    * @param {boolean} [opts.forceClock] - send the clock even if only elapsed time
    *   moved (the unload flush)
    * @param {number} [opts.now]
+   * @param {Object} [opts.base] - what to compare against (default this.confirmed); a
+   *   pagehide behind a hidden flush still in flight lays that flush's sent values over it
+   * @param {number} [opts.clockConfirmedAt] - when base's clock was sent (5-minute rule)
    * @returns {{ body: Object, ack: Object }|null}
    */
-  buildChanges({ forceClock = false, now = Date.now() } = {}) {
+  buildChanges({ forceClock = false, now = Date.now(), base = this.confirmed, clockConfirmedAt = this.clockConfirmedAt } = {}) {
     const full = this.buildPayload({ onlyChanged: true });
     const body = {};
     const ack = {};
 
     for (const section of KEYED_SECTIONS) {
       const current = full[section] || {};
-      const confirmed = this.confirmed[section] || {};
+      const confirmed = base[section] || {};
       const changes = {};
       const acked = {};
       const changeKeys = CHANGE_KEYS[section] || {};
@@ -537,7 +588,7 @@ export class StateSync {
     }
 
     // Notes: new or changed ones, by id (the server merges by id)
-    const confirmedNotes = this.confirmed.notes || {};
+    const confirmedNotes = base.notes || {};
     const notes = [];
     const ackedNotes = {};
     for (const note of full.notes || []) {
@@ -549,15 +600,15 @@ export class StateSync {
     for (const section of WHOLE_SECTIONS) {
       if (full[section] === undefined) continue;
       const s = stableJson(full[section]);
-      if (this.confirmed[section] !== s) { body[section] = full[section]; ack[section] = s; }
+      if (base[section] !== s) { body[section] = full[section]; ack[section] = s; }
     }
 
-    if (full.currentRoom && full.currentRoom !== this.confirmed.currentRoom) {
+    if (full.currentRoom && full.currentRoom !== base.currentRoom) {
       body.currentRoom = full.currentRoom;
       ack.currentRoom = full.currentRoom;
     }
 
-    if (full.scenarioBriefShown && !this.confirmed.scenarioBriefShown) {
+    if (full.scenarioBriefShown && !base.scenarioBriefShown) {
       body.scenarioBriefShown = true;
       ack.scenarioBriefShown = true;
     }
@@ -574,7 +625,7 @@ export class StateSync {
         pending: (full.timedMessages.pending || []).map(m => m.id),
         delivered: full.timedMessages.delivered || []
       });
-      if (timedKey !== this.confirmed.timedMessagesKey) ack.timedMessagesKey = timedKey;
+      if (timedKey !== base.timedMessagesKey) ack.timedMessagesKey = timedKey;
     }
 
     // Clock: elapsed time alone is not a change. Timer state is.
@@ -589,11 +640,11 @@ export class StateSync {
     const partBodies = this._partBodies();
     const hasParts = Object.keys(partBodies).length > 0;
 
-    const clockStateChanged = clockKey !== null && clockKey !== this.confirmed.clockKey;
+    const clockStateChanged = clockKey !== null && clockKey !== base.clockKey;
     const somethingElse = Object.keys(body).length > 0 || ack.timedMessagesKey !== undefined;
     const clockDue = full.scenarioClock &&
-      full.scenarioClock.elapsedMs !== this.confirmed.clockElapsedMs &&
-      now - this.clockConfirmedAt >= CLOCK_ONLY_INTERVAL_MS;
+      full.scenarioClock.elapsedMs !== base.clockElapsedMs &&
+      now - clockConfirmedAt >= CLOCK_ONLY_INTERVAL_MS;
 
     if (!somethingElse && !clockStateChanged && !clockDue && !forceClock && !hasParts) return null;
 
@@ -769,8 +820,11 @@ export class StateSync {
    * reason 'hidden' (visibilitychange): a phone may kill a background tab with no
    * pagehide, so the same delta goes up as the page is hidden. A hide with no
    * change sends nothing (the clock is not forced on a hide). A hidden flush that
-   * does not land (non-2xx, network error, rejected) clears its guard, so the
-   * pagehide after it sends the delta. reason 'pagehide'
+   * does not land (non-2xx, network error, rejected, or answered stale) clears its
+   * guard, so the pagehide after it sends the delta. A pagehide with a different
+   * delta while a hidden flush is still in flight sends the whole delta if it fits
+   * beside it, else only what changed since that flush (_changesSinceInFlight).
+   * reason 'pagehide'
    * after a hidden flush, with the page not visible since, does not send that
    * delta again: when the hidden flush's answer has been confirmed, nothing is
    * left to send (the clock is not forced, it went with the hidden flush); when
@@ -787,45 +841,57 @@ export class StateSync {
       // GameClock is wall-clock based, so a hidden page's clock does not drift), and a
       // pagehide after a hidden flush that went up does not send the clock again.
       const afterHidden = reason === 'pagehide' && this._hiddenFlushKey !== null;
-      const changes = this.buildChanges({ forceClock: reason === 'pagehide' && !afterHidden });
+      let changes = this.buildChanges({ forceClock: reason === 'pagehide' && !afterHidden });
       if (!changes) return;
       key = flushKeyOf(changes, this._parts.keys());
       if (afterHidden && key === this._hiddenFlushKey) {
         console.log('State flush: the hidden-page flush already sent this delta');
         return;
       }
-      const clientTs = this.nextClientTs();
-      const payload = { ...changes.body, clientTs };
+      let prevTs = this.lastClientTs;
+      let clientTs = this.nextClientTs();
+      // Leave one clientTs free below every flush, for a pagehide that sends only what
+      // changed since it while it is still in flight (_changesSinceInFlight).
+      if (clientTs - 1 <= prevTs) clientTs = this.nextClientTs();
       // The browser's keepalive quota is shared by every keepalive in flight, so this
       // body gets what the flushes still uploading leave.
       const budget = KEEPALIVE_BODY_LIMIT - this._keepaliveInflight;
-      let body = JSON.stringify(payload);
-      let reduced = false;
-      if (bodyBytes(body) > budget) {
-        reduced = true;
-        // Keep the reload-critical parts: globals, the mail changed since the last
-        // sync (a delivered reply and its job travel together), fired one-shot
-        // handlers, the timed texts they scheduled, and the phone threads changed
-        // since the last sync. mailState is dropped whole, never cut, in the
-        // second list (00 §10a "The pagehide flush has a size budget").
-        const { globalVariables, mailState, triggeredEvents, timedMessages, phoneState, scenarioClock, npcVisibility, npcHostility, commandBoardLog, playerHealth } = payload;
-        // Parts (a capture, R2) ride in each reduced list after clientTs; a part
-        // also names extra keyed changes to keep through flushKeep (2.2).
-        const parts = this._partBodies();
-        const keep = this._flushKeep(changes);
-        body = JSON.stringify({ globalVariables, mailState, triggeredEvents, timedMessages, phoneState, scenarioClock, npcVisibility, npcHostility, commandBoardLog, playerHealth, ...keep, ...parts, clientTs });
-        if (bodyBytes(body) > budget) {
-          body = JSON.stringify({ globalVariables, triggeredEvents, timedMessages, scenarioClock, npcVisibility, npcHostility, commandBoardLog, playerHealth, ...keep, ...parts, clientTs });
-          // Too big even reduced: send nothing. Nothing is confirmed and no guard is
-          // set, so the delta goes with the next sync or the pagehide.
-          if (bodyBytes(body) > budget) return;
+      let sized = null;
+      if (this._flushesInFlight.size === 0) {
+        sized = this._sizeFlushBody(changes, clientTs, budget);
+      } else {
+        // Another flush is still uploading (a large hidden flush, then this pagehide).
+        // The whole delta holds everything that flush carried, with newer values and a
+        // newer clientTs, so it is safe whichever the server takes first: send it if it
+        // fits. A reduced one is not: taken first, it would make the older flush stale
+        // and the sections it left out would be lost.
+        const whole = { ...changes.body, clientTs };
+        const wholeBody = JSON.stringify(whole);
+        if (bodyBytes(wholeBody) <= budget) {
+          sized = { sent: whole, body: wholeBody, reduced: false };
+        } else {
+          // Send only what changed since the flushes in flight, with a clientTs just
+          // below the oldest of them, so this body can never make them stale.
+          const since = this._changesSinceInFlight();
+          if (!since) {
+            console.log('State flush: nothing new since the flush in flight, or no clientTs below it');
+            return;
+          }
+          ({ changes, clientTs, prevTs } = since);
+          sized = this._sizeFlushBody(changes, clientTs, budget);
         }
       }
+      // Too big even reduced: send nothing. Nothing is confirmed and no guard is set,
+      // so the delta goes with the next sync or the pagehide.
+      if (!sized) return;
+      const { sent, body, reduced } = sized;
       // The guard is set only for a flush that is sent, and cleared again below when
       // it did not land, so a pagehide that follows still sends the delta.
       if (reason === 'hidden') this._hiddenFlushKey = key;
       const size = bodyBytes(body);
+      const flight = { clientTs, prevTs, sentAck: sentAckOf(changes.ack, sent), sentAt: Date.now() };
       this._keepaliveInflight += size;
+      this._flushesInFlight.add(flight);
       let request;
       try {
         request = fetch(`${getApiBase()}/sync_state`, {
@@ -844,17 +910,74 @@ export class StateSync {
       }
       Promise.resolve(request).then(response => {
         if (!response?.ok) return false;
-        // A reduced body left sections out, so only a full one is confirmed.
-        if (reduced) return true;
-        return response.json().then(answer => { this._applyAnswer(changes, clientTs, answer); return true; });
+        return response.json().then(answer => {
+          // A stale answer saved none of the last-write-wins sections, so it has not
+          // landed. A reduced body left sections out, so only a full one is confirmed.
+          if (reduced) return !answer?.stale;
+          return !this._applyAnswer(changes, clientTs, answer).stale;
+        });
       }).catch(() => false).then(landed => {
         this._keepaliveInflight = Math.max(0, this._keepaliveInflight - size);
+        this._flushesInFlight.delete(flight);
         if (!landed) this._clearHiddenGuard(reason, key);
       });
     } catch (error) {
       this._clearHiddenGuard(reason, key);
       console.error('State flush failed:', error);
     }
+  }
+
+  /**
+   * The flush body for `changes` within `budget` bytes: the whole delta, or, when it is
+   * too big, the reload-critical parts: globals, the mail changed since the last sync (a
+   * delivered reply and its job travel together), fired one-shot handlers, the timed
+   * texts they scheduled, and the phone threads changed since the last sync. mailState
+   * is dropped whole, never cut, in the second list (00 §10a "The pagehide flush has a
+   * size budget"). Null when even that does not fit.
+   * @returns {{ sent: Object, body: string, reduced: boolean }|null}
+   */
+  _sizeFlushBody(changes, clientTs, budget) {
+    const payload = { ...changes.body, clientTs };
+    let sent = payload;
+    let body = JSON.stringify(payload);
+    if (bodyBytes(body) <= budget) return { sent, body, reduced: false };
+    const { globalVariables, mailState, triggeredEvents, timedMessages, phoneState, scenarioClock, npcVisibility, npcHostility, commandBoardLog, playerHealth } = payload;
+    // Parts (a capture, R2) ride in each reduced list after clientTs; a part
+    // also names extra keyed changes to keep through flushKeep (2.2).
+    const parts = this._partBodies();
+    const keep = this._flushKeep(changes);
+    sent = { globalVariables, mailState, triggeredEvents, timedMessages, phoneState, scenarioClock, npcVisibility, npcHostility, commandBoardLog, playerHealth, ...keep, ...parts, clientTs };
+    body = JSON.stringify(sent);
+    if (bodyBytes(body) <= budget) return { sent, body, reduced: true };
+    sent = { globalVariables, triggeredEvents, timedMessages, scenarioClock, npcVisibility, npcHostility, commandBoardLog, playerHealth, ...keep, ...parts, clientTs };
+    body = JSON.stringify(sent);
+    if (bodyBytes(body) <= budget) return { sent, body, reduced: true };
+    return null;
+  }
+
+  /**
+   * What changed since the flushes still in flight: the delta against their sent values
+   * laid over `confirmed`, with a clientTs one below the oldest of them, which is still
+   * above every request this page sent before it. The server then never answers those
+   * flushes stale because of this one, whichever it takes first. Taken after them, this
+   * one is stale and its last-write-wins sections are lost (as when it is not sent at
+   * all); taken before them, a key both carry ends with their older value. Null when
+   * nothing has changed since, or when there is no clientTs to spare below the oldest.
+   * @returns {{ changes: Object, clientTs: number, prevTs: number }|null}
+   */
+  _changesSinceInFlight() {
+    const flights = [...this._flushesInFlight].sort((a, b) => a.clientTs - b.clientTs);
+    const oldest = flights[0];
+    const clientTs = oldest.clientTs - 1;
+    if (clientTs <= oldest.prevTs) return null;
+    let base = this.confirmed;
+    let clockConfirmedAt = this.clockConfirmedAt;
+    for (const f of flights) {
+      base = layerAck(base, f.sentAck);
+      if (f.sentAck.clockKey !== undefined) clockConfirmedAt = Math.max(clockConfirmedAt, f.sentAt);
+    }
+    const changes = this.buildChanges({ base, clockConfirmedAt });
+    return changes ? { changes, clientTs, prevTs: oldest.prevTs } : null;
   }
 
   /** A hidden flush that did not land (non-2xx, network error, rejected) no longer blocks the pagehide. */
