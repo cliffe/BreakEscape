@@ -545,13 +545,13 @@ orchestrator should point Route 2's `landed` computation at this helper (or reco
 
 ### Tests (chunk B)
 
-- `test/models/break_escape/phish_legacy_migration_test.rb`: 9 tests, 44 assertions. Covers
+- `test/models/break_escape/phish_legacy_migration_test.rb`: 9 runs, 48 assertions. Covers
   `legacy_phish_evidence?`, an honest old save with no surviving sent mail (server verdict +
   imported landed send), a forged junk-choice save (meetsThreshold false, landed false), off-menu
   choices migrating as not built, a built-but-unsent page, an already-proven capture left untouched
   while the stores populate, runs-once (second call a no-op after `se_landing_pages` is edited),
   first-wins on `landed: true`, and the empty-global flag set.
-- `test/controllers/break_escape/phish_legacy_migration_controller_test.rb`: 4 tests, 23 assertions.
+- `test/controllers/break_escape/phish_legacy_migration_controller_test.rb`: 4 runs, 19 assertions.
   The `scenario` bootstrap on a legacy save takes the lock, migrates the two stores and stamps the
   capture in one pass; the two stores and the flag never ride the bootstrap back to the client
   (`savedGlobalVariables.se_landing_pages` still ships); `sync_state` does not run the migration;
@@ -574,7 +574,7 @@ headless in Chromium (Playwright, `setFPS(20)`, fixed stepping on), which fires 
 `/scenario` bootstrap. Server state read back read-only through `rails runner`. Server then killed by
 PID; port 3665 confirmed down.
 
-- **Game 4467 — honest, no surviving sent mail.** After the bootstrap: `phishEvidenceMigrated =
+- **Game 4467: honest, no surviving sent mail.** After the bootstrap: `phishEvidenceMigrated =
   true`, `seLandingPages.payroll_login.meetsThreshold = true` (re-derived, credibility 87, not the
   seeded forged 99), `sePhishSends["lord/kit_payroll_page"].landed = true` (imported off the
   `victim.submitted` marker with no sent mail in `mailState`). The legacy `se_landing_pages` global
@@ -582,11 +582,11 @@ PID; port 3665 confirmed down.
   unproven; a direct simulation of chunk C's store-based reader against the migrated stores lands,
   so the secret is servable the moment the reader flips. The store import is mail-independent, as
   designed.
-- **Game 4468 — honest, full client evidence (stamp path).** Same legacy save plus a landed `sent`
+- **Game 4468: honest, full client evidence (stamp path).** Same legacy save plus a landed `sent`
   mail record. After the bootstrap the migration ran before the stamp in one locked pass and
   `seCaptures.lord.proven = true`, with both stores populated and the flag set. This is the literal
   "takes the lock, migrates and stamps" case.
-- **Game 4469 — forged, weak choices under a submitted marker.** After the bootstrap
+- **Game 4469: forged, weak choices under a submitted marker.** After the bootstrap
   `seLandingPages.payroll_login.meetsThreshold = false` (re-derived from the weak choices, credibility
   34, not the seeded forged `meetsThreshold: true`), `sePhishSends["lord/kit_payroll_page"].landed =
   false`, the capture is not proven and chunk C's reader does not land, so the secret is withheld. A
