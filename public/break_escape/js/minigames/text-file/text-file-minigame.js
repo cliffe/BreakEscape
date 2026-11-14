@@ -1,7 +1,7 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { escapeHtml, escapeHtmlKeepWords } from '../../utils/escape-html.js';
-import { mountPcMonitor, postitNotebookEntry } from '../../utils/pc-monitor.js';
+import { mountPcMonitor, postitNotebookEntry, pcPostitButtonHtml } from '../../utils/pc-monitor.js';
 
 // File names, types and observations are scenario text: escaped before they reach HTML
 
@@ -93,7 +93,7 @@ export class TextFileMinigame extends MinigameScene {
         const note = this.pcScreen.postitNote;
         this.pcMonitor = mountPcMonitor(this, {
             name: displayDashes(this.pcScreen.name),
-            postitHtml: note ? escapeHtmlKeepWords(displayDashes(note)) : '',
+            postitHtml: note ? escapeHtmlKeepWords(displayDashes(note), { joinPunctuation: true }) : '',
             pcId: this.pcScreen.pcId
         });
         const postit = this.pcMonitor?.postit;
@@ -111,7 +111,7 @@ export class TextFileMinigame extends MinigameScene {
         btn.type = 'button';
         btn.className = 'minigame-button';
         btn.id = 'minigame-notebook-postit';
-        btn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
+        btn.innerHTML = pcPostitButtonHtml();
         row.appendChild(btn);
         this.addEventListener(btn, 'click', () => this.addPostitToNotebook());
     }
@@ -119,6 +119,13 @@ export class TextFileMinigame extends MinigameScene {
     // The chin's button (the post-it's Add to Notepad) goes in the monitor's chin
     controlsHost() {
         return this.pcMonitor?.controls || null;
+    }
+
+    // The X sits in the file window's title bar, inside the window: there are no fake
+    // traffic-light buttons beside it any more (critique A34)
+    closeAnchor() {
+        if (this.pcMonitor) return this.gameContainer;
+        return this.gameContainer?.querySelector?.('.text-file-container') || this.gameContainer;
     }
 
     // In the monitor the X lives in the bezel's top strip (css/pc-monitor.css)
@@ -183,11 +190,6 @@ export class TextFileMinigame extends MinigameScene {
         this.gameContainer.innerHTML = `
             <div class="text-file-container">
                 <div class="text-file-window-header">
-                    <div class="window-controls">
-                        <button class="window-control close" title="Close"></button>
-                        <button class="window-control minimize" title="Minimize"></button>
-                        <button class="window-control maximize" title="Maximize"></button>
-                    </div>
                     <div class="window-title">${escapeHtml(displayDashes(this.textFileData.fileName))}</div>
                     <div></div>
                 </div>

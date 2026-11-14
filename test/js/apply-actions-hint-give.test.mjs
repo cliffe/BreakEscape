@@ -227,6 +227,37 @@ test('confirm_action: passes its named labels, and Confirm or Cancel when they a
     delete window.gameConfirm;
 });
 
+
+// UX slice 4 R1 m7 item 3: a wearable given by give_item is added, never offered
+test('give_item: a wearable is given with no put-on offer', async () => {
+    const given = [];
+    const offers = [];
+    window.addToInventory = (sprite) => { given.push(sprite.scenarioData.id); return Promise.resolve({ ok: true, reason: 'added' }); };
+    window.wearables = { offerAfterTake: (id) => { offers.push(id); return Promise.resolve(true); } };
+    await quietly(() => applyActions([
+        { type: 'give_item', item: { id: 'kit_hivis_vest', type: 'hivis', name: 'Hi-vis vest',
+            wearable: { costume: 'courier', global: 'courier_ready' } } }
+    ]));
+    await new Promise((r) => setTimeout(r, 0));
+    assert.deepEqual(given, ['kit_hivis_vest']);
+    assert.deepEqual(offers, []);
+    delete window.wearables;
+});
+test('confirm_action: passes exactly the text and two labels, nothing more (no X option)', async () => {
+    const calls = [];
+    window.gameConfirm = (...a) => { calls.push(a); return Promise.resolve(false); };
+    await quietly(() => applyActions([
+        { type: 'confirm_action', text: 'Put it on?', confirmLabel: 'Put it on', cancelLabel: 'Leave it off', closeButton: false, onConfirm: [] },
+        { type: 'confirm_action', text: 'Plain?', onConfirm: [] }
+    ]));
+    assert.deepEqual(calls, [
+        ['Put it on?', 'Put it on', 'Leave it off'],
+        ['Plain?', 'Confirm', 'Cancel']
+    ]);
+    assert.ok(calls.every(c => c.length === 3), 'three arguments each');
+    delete window.gameConfirm;
+});
+
 test('confirm_action: confirming runs onConfirm', async () => {
     const seen = [];
     window.gameConfirm = (text, ok, cancel) => { seen.push(ok); return Promise.resolve(true); };

@@ -106,8 +106,10 @@ export class FingerprintReaderMinigame extends MinigameScene {
         this.gameContainer.innerHTML = `
             <div class="fpr-panel">
                 <div class="fpr-bezel">
-                    <span class="fpr-led" data-state="ready" aria-hidden="true"></span>
-                    <h2 class="fpr-heading">Fingerprint Reader</h2>
+                    <div class="fpr-head-row">
+                        <span class="fpr-led" data-state="ready" aria-hidden="true"></span>
+                        <h2 class="fpr-heading">Fingerprint Reader</h2>
+                    </div>
                     <div class="fpr-sign"><span class="fpr-sign-tag">Sign</span> ${sign}</div>
                 </div>
                 <p class="fpr-prompt">Choose a lift to present to the reader.</p>
@@ -176,7 +178,8 @@ export class FingerprintReaderMinigame extends MinigameScene {
     start() {
         super.start();
         this.addEventListener(document, 'keydown', (e) => this.onKey(e));
-        this.cards[0]?.button.focus();
+        // Without scrolling the panel: a short window opened scrolled past the heading (A25)
+        this.cards[0]?.button.focus({ preventScroll: true });
     }
 
     // Arrows move between lifts; 1 to 9 present the numbered lift. Enter and Space work natively.

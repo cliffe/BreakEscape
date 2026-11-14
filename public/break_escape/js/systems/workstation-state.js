@@ -213,6 +213,10 @@ export class WorkstationState {
         this.env.on('npc_returned_post:*', (d) => this.onReturned(d?.npcId));
         this.env.on('npc_ko:*', (d) => this.onKnockedOut(d?.npcId));
         this.env.on('npc_guest_left:*', (d) => this.onGuestLeft(d?.objectId, d?.npcId));
+        // The borrower left a leave-open borrow signed in here. For a policy that locks outright
+        // (autoLockMin 0) this is the real event, since the server answers guest: false and no
+        // npc_guest_left ever reaches the client (onBorrowedSession).
+        this.env.on('npc_borrowed_session:*', (d) => this.onBorrowedSession(d?.objectId, d?.npcId));
         this.env.on('npc_sat_at:*', (d) => this.onSatAt(d?.objectId, d?.npcId));
         // Review R1 M1: the player's own sign-out at a PC, or a sign-in there that is not a
         // claim, ends the guest session there, as the server does
@@ -291,12 +295,37 @@ export class WorkstationState {
         this.env.setGlobal(`${pcId}_owner_away`, !!away);
     }
 
+    /**
+     * npc_borrowed_session:<pcId>: an NPC left a leave-open borrow signed in here. A policy with
+     * autoLockMin 0 locks the screen the instant the borrower leaves, so no guest session is ever
+     * open at such a PC. This is the real event for that lock: the server refuses the guest claim
+     * for an autoLockMin 0 PC (game.rb "policy autoLockMin is 0") and record_borrow_done! writes
+     * no guest record, so borrow_body answers guest: false and no npc_guest_left reaches the
+     * client. Lock the screen outright here to agree with the server, as the owner-leave roll does
+     * (_rollScreen, decideLocked's autoLockMin 0). A policy above 0 (or none) leaves the open
+     * session to the guest flow (onGuestLeft), which the server's guest: true answer drives.
+     */
+    onBorrowedSession(pcId, npcId) {
+        const data = this._find(pcId);
+        if (!data || typeof npcId !== 'string' || !npcId || ownerOf(data, this.env.npcs())) return false;
+        if (this._policy(data)?.autoLockMin !== 0) return false;
+        this.guests.delete(pcId);
+        data.screenLocked = true;
+        this._publishGuest(pcId, true, true);
+        this.env.emit(`workstation_auto_locked:${pcId}`, { objectId: pcId, ownerId: npcId, guest: true });
+        // Emit the screen-changed event the office visuals key their lock cue on, as the sibling
+        // outright-lock paths (guestClaimRefused, _autoLock) do; without it the kiosk guest-leave
+        // auto-lock plays no flash/glyph/chime (npc-office-visuals.js line 580).
+        this._changed(data, npcId, true, 'auto');
+        return true;
+    }
+
     /** npc_guest_left:<pcId>: the borrower left the session open; a leave with the screen open. */
     onGuestLeft(pcId, npcId) {
         const data = this._find(pcId);
         if (!data || typeof npcId !== 'string' || !npcId || ownerOf(data, this.env.npcs())) return false;
-        const rec = { npcId };
         const min = this._policy(data)?.autoLockMin;
+        const rec = { npcId };
         if (typeof min === 'number' && Number.isFinite(min) && min > 0) rec.lockAt = this._clock() + min * 60000;
         this.guests.set(pcId, rec);
         this._publishGuest(pcId, true, false);
@@ -360,6 +389,8 @@ export class WorkstationState {
         this.guests.delete(pcId);
         this._publishGuest(pcId, true, true);
         const data = this._find(pcId) || { id: pcId };
+        // Set the queryable state too (the test bridge reads data.screenLocked), as _autoLock does.
+        data.screenLocked = true;
         this.env.emit(`workstation_auto_locked:${pcId}`, { objectId: pcId, ownerId: g.npcId, guest: true });
         this._changed(data, g.npcId, true, 'auto');
         return true;

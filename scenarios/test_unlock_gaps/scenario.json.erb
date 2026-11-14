@@ -1,9 +1,24 @@
 {
   "scenario_id": "test_unlock_gaps",
   "scenario_name": "Test: combination, cryptex and NPC-held containers",
-  "scenario_brief": "Engine check (unlock gaps build).\n\n1. Read the Codes note.\n2. Open the Locker: dial 1 LEFT to 12, dial 2 RIGHT to 30, dial 3 LEFT to 5.\n3. Open the Cryptex with CIPHER.\n4. Punch the Courier until he is knocked out, then open the Courier Bag he drops with Satchel42.\n5. Open the Vault door: 7, 21, 39.\n6. Open the Archive door, north of the Vault: it is a 4-wheel cryptex, KEYS.",
-  "endGoal": "Check combination and cryptex locks (objects and doors) and a dropped NPC-held container.",
+  "scenario_brief": "Engine check (unlock gaps build).\n\n0. Open the Pocket Cryptex you start with (in your tray): POCKET.\n1. Read the Codes note.\n2. Open the Locker: dial 1 LEFT to 12, dial 2 RIGHT to 30, dial 3 LEFT to 5.\n3. Open the Cryptex with CIPHER.\n4. Punch the Courier until he is knocked out, then open the Courier Bag he drops with Satchel42.\n5. Open the Vault door: 7, 21, 39.\n6. Open the Archive door, north of the Vault: it is a 4-wheel cryptex, KEYS.",
+  "endGoal": "Check combination and cryptex locks (objects and doors), a dropped NPC-held container and a locked start item.",
   "startRoom": "lobby",
+  "startItemsInInventory": [
+    {
+      "type": "bag1",
+      "id": "test_start_cryptex",
+      "name": "Pocket Cryptex",
+      "takeable": true,
+      "locked": true,
+      "lockType": "cryptex",
+      "requires": "POCKET",
+      "cryptexConfig": { "wheelCount": 6 },
+      "contents": [
+        { "type": "notes", "id": "test_start_note", "name": "Pocket Note", "takeable": true, "readable": true, "text": "The pocket cryptex opened." }
+      ]
+    }
+  ],
   "rooms": {
     "lobby": {
       "type": "room_office",
