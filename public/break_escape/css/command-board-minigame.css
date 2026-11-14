@@ -1,12 +1,8 @@
-.command-board-container {
-    background: #0e1322;
-}
-
+/* The shared console window is the frame and title bar; the board fills its body */
 .command-board-game-container {
     padding: 12px;
     box-sizing: border-box;
     background: #0e1322;
-    height: 100%;
     overflow: hidden;
 }
 
@@ -24,11 +20,11 @@
 
 .cb-header {
     flex-shrink: 0;
-    min-height: 48px;
-    padding: 10px 56px 10px 12px;
+    min-height: 40px;
+    padding: 10px 12px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
     background: #0a0f1e;
     border-bottom: 2px solid #1e2d48;
 }
@@ -40,24 +36,6 @@
 @keyframes cb-header-critical-pulse {
     0% { border-bottom-color: #5f1b29; }
     100% { border-bottom-color: #e04060; }
-}
-
-.cb-header-title-wrap {
-    min-width: 0;
-}
-
-.cb-header-title {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 16px;
-    line-height: 24px;
-    color: #c8d8ff;
-}
-
-.cb-header-subtitle {
-    margin-top: 6px;
-    font-family: 'GNF', monospace;
-    font-size: 18px;
-    color: #4a5a70;
 }
 
 .cb-header-right {
@@ -403,13 +381,6 @@
     cursor: default;
 }
 
-@media (max-width: 1200px) {
-    .cb-header-title {
-        font-size: 8px;
-        line-height: 16px;
-    }
-}
-
 /* Short windows: the board scrolls inside its frame rather than squeezing the columns */
 @media (max-height: 520px) {
     .cb-panel {
@@ -434,7 +405,6 @@
 
     .cb-header {
         flex-wrap: wrap;
-        padding-right: 48px;
     }
 
     .cb-header-right {

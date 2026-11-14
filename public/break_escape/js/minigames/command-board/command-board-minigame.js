@@ -27,11 +27,17 @@ function isCriticalType(type) {
 }
 
 export class CommandBoardMinigame extends MinigameScene {
-    // The X sits inside the board's frame, in the padded header (critique B X4)
-    static closeInsideFrame = true;
+    // Draws in the shared console window (UI decision X8): title bar and X come from there
+    static consoleWindow = true;
+    static consoleWindowFill = true;
 
-    closeAnchor() {
-        return this.gameContainer?.querySelector?.('#cb-panel') || this.gameContainer;
+    // The board's title and subtitle come from the scenario (commandBoard.title/subtitle)
+    consoleTitle() {
+        return displayDashes(String(this.boardConfig?.title || DEFAULT_TITLE));
+    }
+
+    consoleSubtitle() {
+        return displayDashes(String(this.boardConfig?.subtitle || DEFAULT_SUBTITLE));
     }
 
     constructor(container, params = {}) {
@@ -271,10 +277,6 @@ export class CommandBoardMinigame extends MinigameScene {
         this.gameContainer.innerHTML = `
             <div class="cb-panel pixel-scroll" id="cb-panel">
                 <div class="cb-header" id="cb-header">
-                    <div class="cb-header-title-wrap">
-                        <div class="cb-header-title"></div>
-                        <div class="cb-header-subtitle"></div>
-                    </div>
                     <div class="cb-header-right">
                         <div class="cb-status-dots" id="cb-status-dots">
                             <span class="cb-status-dot dot-1"></span>
@@ -310,10 +312,11 @@ export class CommandBoardMinigame extends MinigameScene {
         this.dotContainerEl = this.gameContainer.querySelector('#cb-status-dots');
         this.headerEl = this.gameContainer.querySelector('#cb-header');
 
-        const titleEl = this.gameContainer.querySelector('.cb-header-title');
-        const subtitleEl = this.gameContainer.querySelector('.cb-header-subtitle');
-        if (titleEl) titleEl.textContent = displayDashes(String(this.boardConfig.title || DEFAULT_TITLE));
-        if (subtitleEl) subtitleEl.textContent = displayDashes(String(this.boardConfig.subtitle || DEFAULT_SUBTITLE));
+        // The scenario's title and subtitle go to the shared window's bar
+        this.setConsoleTitle(
+            String(this.boardConfig.title || DEFAULT_TITLE),
+            String(this.boardConfig.subtitle || DEFAULT_SUBTITLE)
+        );
     }
 
     renderTimeline(newKeys = []) {
