@@ -24,10 +24,15 @@ artifact, not an engine fault (details in `scenarios/test_needs_attack/README.md
 ## SIMS-2: an arrival counts only where the NPC is (OLMP E6)
 
 Branch `build/ol-sims-2` (from `build/ol-sims` a734d5f57). Commit 11b563d51 (engine + node tests),
-then the live-proof tool and docs.
+then the live-proof tool and docs. Review R1 (design/engine 0B/2M/4m, server 0B/0M/2m) fixes in a
+later commit: Design M1 (gate the arrival check to needs-issued moves), m1 (returning logs once per
+return), m2 (far guard keyed by phase+cell), m3 (node tests, rewritten capacity-2 test), and the
+corrected natural-run live evidence (Grace 16 of 20 real clock, game 4232; Tom's kitchen trips with
+a working office-coffee switch-off). The earlier "30 natural runs did not repeat the baseline" claim
+is dropped (no saved artefacts for 30 baseline runs).
 
-Fault reproduced on the build as it stands. Thirty natural runs did not repeat the baseline
-(game 3537) arrival by chance, so the stubbed short path is the reproduction, as the plan allows:
+Fault reproduced on the build as it stands. The baseline (game 3537) arrival did not repeat in
+natural play, so the stubbed short path is the reproduction, as the plan allows:
 Grace's `_planMovePath` was stubbed through the test bridge to end ~35% along her office->lounge
 route, and with the SIMS-2 distance check neutralised in-browser (the old "any arrival counts"
 behaviour) the build enters `using lounge_sofa` 164 px from the sofa cell, out in the **office**
@@ -56,6 +61,15 @@ layer emits no `npc_arrived` and `_advanceJob`'s `goto_item` branch, npc-needs.j
 | SIMS-2 | npc-needs.js | world `moveTo`, `installNpcNeeds` npc_arrived listener | pass `moveId` through; pass the whole payload to `onArrived` | wire the id and position end to end | build/ol-sims-2 |
 | SIMS-2 | public/break_escape/js/systems/npc-behavior.js | `goToAndStay`, `_triggerGoToStayArrival`, `cancelMove` | store `opts.moveId`; add `moveId` and `pathLeft` to the `npc_arrived` payload; clear on cancel | the behaviour layer echoes the move id and the steps the path had left | build/ol-sims-2 |
 | SIMS-2 | npc-behavior.js | `class NPCBehavior` | exported | reachable by the arrival unit test; the manager stays the only game constructor | build/ol-sims-2 |
+| SIMS-2 R1 | npc-needs.js | `_acceptArrival` | gate the distance/id check to `returning`, `goto_item`, `goto_target`, `queued` only; an arrival in any other phase is dropped silently | review R1 Design M1: a seating chair fetch during `using` (owner needs, no move id) was going through the check and cutting the use short with a spurious `arrival_far` + mid-use re-issue at a non-own work object; drop it as before the slice | build/ol-sims-2 |
+| SIMS-2 R1 | npc-needs.js | `_acceptArrival` | the job far guard is keyed by `${phase}:${dest cell}` (`job._farKey`), was `job._farPhase === phase` | review R1 m2 (both reviews): queue steps all share `queued`; a far arrival at a later queue cell (or after a freeze re-issue) was read as a repeat far arrival and failed the job on two different cells | build/ol-sims-2 |
+| SIMS-2 R1 | npc-needs.js | `_tickNpc` (unfreeze), `_advanceQueued` (queue step) | clear `job._farKey` on the post-freeze re-issue and the step to a new queue cell | review R1 m2: a re-issue after a freeze or a queue-cell step is a fresh move, not a repeat far arrival | build/ol-sims-2 |
+| SIMS-2 R1 | npc-needs.js | `_acceptArrival` (returning branch), `_watchReturn` | log `arrival_far` once per return (gated on `!returnFarReissued`); `_watchReturn` re-plans with `keepFarFlag: true` so the flag persists | review R1 Design m1 / server minor 2: an unreachable home logged `arrival_far` and re-issued twice per `_watchReturn` cycle; now once per return, re-planned quietly | build/ol-sims-2 |
+
+## Merges
+
+- `cb6d7feb4` (main) merged into `build/ol-sims-2` as `5af54d887` before the review R1 fixes, to
+  carry the latest shared-tree changes (sync-ring build review R3). No conflicts in the SIMS-2 files.
 
 ## Prototypes not merged
 

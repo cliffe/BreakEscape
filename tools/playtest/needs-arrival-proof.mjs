@@ -160,37 +160,56 @@ async function runStub() {
 }
 
 async function runNatural() {
-    const out = { graceRuns: 0, tomRuns: 0, maxDist: 0, offenders: [] };
+    // Review R1 M2: the natural cross-room walks (Grace office->lounge, Tom office->kitchen) do not
+    // finish inside the manual-clock step budget, so the natural run drives the REAL game clock and
+    // lets real frames carry the walk. Each trip records which source the NPC actually reached.
+    const out = { graceRuns: 0, tomRuns: 0, maxDist: 0, offenders: [], graceTrips: [], tomTrips: [] };
     await page.evaluate(() => window.__test.needs.setSeed(window.gameScenario.npcNeedsSeed));
     await installUsingCapture();
-    await setManual(true);
-    // 20 Grace sofa runs: force rest urgent, step until she uses the sofa, repeat.
-    for (let r = 0; r < 20 && out.graceRuns < 20; r++) {
+    await setManual(false);   // real game clock
+    const lastCap = npc => page.evaluate(n => { const c = (window.npcNeedsSystem.__usingCap || []).filter(x => x.npc === n); return c[c.length - 1] || null; }, npc);
+    const jobOf = npc => page.evaluate(n => { const s = window.__test.needs.state(n); return { mode: s && s.mode, phase: s && s.job && s.job.phase, target: s && s.job && s.job.targetId }; }, npc);
+    // 20 Grace sofa runs: force rest urgent, poll real time until she uses the sofa, record the trip.
+    for (let r = 0; r < 20; r++) {
         await setNeed('grace', 'rest', 18);
-        let used = false;
-        for (let i = 0; i < 80 && !used; i++) {
-            await stepClock(250, 2);
-            const g = await graceState();
-            if (g.job && g.job.phase === 'using' && g.job.targetId === 'lounge_sofa') { used = true; out.graceRuns++; }
+        let trip = null;
+        for (let i = 0; i < 260 && !trip; i++) {
+            await t(200);
+            const j = await jobOf('grace');
+            if (j.phase === 'using' && j.target === 'lounge_sofa') { trip = await lastCap('grace'); out.graceRuns++; }
         }
-        // let her finish and walk home
-        for (let i = 0; i < 20; i++) { await stepClock(500, 1); const g = await graceState(); if (g.mode === 'idle' || g.mode === 'returning') break; }
+        out.graceTrips.push(trip || { miss: true });
+        for (let i = 0; i < 120; i++) { await t(250); const j = await jobOf('grace'); if (j.mode === 'idle') break; }
     }
-    // 20 Tom kitchen trips: switch the office coffee off, force caffeine urgent.
-    await page.evaluate(() => { window.gameState.globalVariables.office_coffee_off = true; window.eventDispatcher.emit('global_variable_changed:office_coffee_off', { name: 'office_coffee_off', value: true }); });
-    for (let r = 0; r < 20 && out.tomRuns < 20; r++) {
+    // 20 Tom kitchen trips: set the offWhen global and notify the needs system, then force caffeine
+    // and record the source each trip. NB: `out.coffeeOff.isOff` can be false while `holds` is true —
+    // the needs-world adapter (`describe`) drops top-level `offWhen`, so `_isOff` never sees it and the
+    // office coffee cannot be switched off live (README engine finding 6, an owner item). The arrival
+    // guard is still exercised: every `using` must land within 48 px whichever source Tom reaches.
+    out.coffeeOff = await page.evaluate(() => {
+        window.gameState.globalVariables.office_coffee_off = true;
+        window.eventDispatcher.emit('global_variable_changed:office_coffee_off', { name: 'office_coffee_off', value: true, oldValue: false });
+        if (typeof window.npcNeedsSystem.onGlobalChanged === 'function') window.npcNeedsSystem.onGlobalChanged('office_coffee_off');
+        const oc = window.npcNeedsSystem.world.getObject('office_coffee');
+        return { isOff: window.npcNeedsSystem._isOff(oc), holds: window.npcNeedsSystem._globalHolds('office_coffee_off') };
+    });
+    for (let r = 0; r < 20; r++) {
         await setNeed('tom', 'caffeine', 18);
-        let used = false;
-        for (let i = 0; i < 80 && !used; i++) {
-            await stepClock(250, 2);
-            const s = await page.evaluate(() => { const x = window.__test.needs.state('tom'); return x && x.job ? { phase: x.job.phase, target: x.job.targetId } : null; });
-            if (s && s.phase === 'using') { used = true; out.tomRuns++; }
+        let trip = null;
+        for (let i = 0; i < 260 && !trip; i++) {
+            await t(200);
+            const j = await jobOf('tom');
+            if (j.phase === 'using') { trip = { target: j.target, ...(await lastCap('tom')) }; out.tomRuns++; }
         }
-        for (let i = 0; i < 20; i++) { await stepClock(500, 1); const s = await page.evaluate(() => window.__test.needs.state('tom')); if (s && (s.mode === 'idle' || s.mode === 'returning')) break; }
+        out.tomTrips.push(trip || { miss: true });
+        for (let i = 0; i < 120; i++) { await t(250); const j = await jobOf('tom'); if (j.mode === 'idle') break; }
     }
+    out.tomKitchen = out.tomTrips.filter(x => x.target === 'kitchen_coffee').length;
+    out.tomOffice = out.tomTrips.filter(x => x.target === 'office_coffee').length;
     const caps = await usingCaps();
     for (const c of caps) { if (c.dist != null) { out.maxDist = Math.max(out.maxDist, c.dist); if (c.dist > 48) out.offenders.push(c); } }
     out.usingCount = caps.length;
+    out.arrivalFar = await page.evaluate(() => window.__test.needs.log().filter(e => e.ev === 'arrival_far' || e.ev === 'arrival_ignored').map(e => ({ t: e.t, ev: e.ev, npc: e.npc, target: e.target || null, phase: e.phase })));
     await shot('natural-end');
     report.natural = out;
 }

@@ -758,18 +758,36 @@ Notes:
 
 ### SIMS-2 live proof: an arrival counts only where the NPC is (2026-11-14, keyless :3094, headless, worktree p-ol-sims2)
 
-Tool `tools/playtest/needs-arrival-proof.mjs`. Thirty natural runs did not repeat the baseline
-(game 3537) arrival by chance, so the stubbed short path is the reproduction, as plan 5.2 allows.
+Tool `tools/playtest/needs-arrival-proof.mjs` (stub beats, manual clock) and the real-clock
+harnesses in scratchpad `officelife-sims/s2/live/` and `s2-fix-r1/`. The baseline (game 3537)
+arrival did not repeat in natural play, so the stubbed short path is the reproduction, as plan 5.2
+allows. Review R1 corrected the earlier natural rows (which over-claimed): the figures below are the
+saved real-clock runs.
 
 | Beat | Result | Evidence |
 |---|---|---|
 | Reproduce the fault (stubbed short path, fix neutralised) | PASS | Game 4178: Grace's `_planMovePath` stubbed to end ~35 % along her office->lounge route and the SIMS-2 check neutralised in-browser (old "any arrival counts"): she enters `using lounge_sofa` 164 px from the sofa cell, out in the office (`64 arrival  334`, `65 using lounge_sofa`). `stub-legacy-4178.png` |
 | The fix on the same stubbed short path | PASS | Game 4178: real fix, same stub — the arrival is logged `arrival_far` and no `using` fires at the door (`79 arrival 261`, `80 arrival_far lounge_sofa`). `stub-fixed-4178.png` |
-| Every `using` within 48 px (natural play) | PASS | Game 4181: across 33 natural `using` entries the maximum distance from the move's cell was **37 px**, no offender over 48. `natural-end-4181.png` |
-| Tom's kitchen trips (office coffee off) | PASS | Game 4181: 18 of 20 forced caffeine trips reached `using` at a kitchen source, all within 48 px |
-| Grace's natural sofa runs | not captured | Game 4181: Grace's cross-room office->lounge walk did not reach `using lounge_sofa` within the manual-clock harness's per-run step budget (a harness/cross-room-navigation limit, the same class as SIMS-1's E-carry, not an arrival-fix fault); her exact fault is proved fixed by the stubbed-path beats above |
+| Grace's natural sofa runs (real clock) | PASS (16 of 20) | Game 4232: 20 forced-rest runs on the real game clock, 16 reached `using lounge_sofa`, maximum 30 px from the cell, zero `arrival_far`. The 4 misses wedged beside Amara's seated desk and timed out: a pre-existing navigation fault (owner item below), not an arrival-fix fault. `grace-real-4232.json`, `natural-real-4232.png` |
+| Every `using` within 48 px (natural play) | PASS | Game 4245: across 14 natural `using` entries the maximum distance from the move's cell was 12 px, no offender over 48. The two `arrival_far` lines (amara at her own desk, grace) each self-corrected with a walk-home re-issue. `showcase-real-4245.json`, `showcase-real-4245.png` |
+| Cross-room kitchen walk reaches `using` within 48 px | PASS | Game 4245: Tom's forced caffeine trip walked office->kitchen and entered `using kitchen_coffee` 5 px from the cell. This is the class of cross-room walk the fault lived in; the arrival guard lands it on the cell. `showcase-real-4245.json` |
+| Tom's 20 caffeine trips, arrival guard clean (real clock) | PASS for the guard; off-switch blocked | Game 4265: 20 forced caffeine trips, every `using` entry within 8 px of its cell, no offender over 48 (one `arrival_far` was Marek's queue re-issue at the office coffee, self-corrected). But the office coffee could not be switched off: `_globalHolds('office_coffee_off')` is true yet `_isOff(office_coffee)` stays false, so 14 of 20 trips used the office coffee and 3 reached the kitchen. The cause is an engine owner item (the needs-world adapter drops top-level `offWhen`, finding 6 below), not a SIMS-2 fault. `tom20-4265.json`, `tom20-end-4265.png` |
+| Own-desk work uses are not false offenders (test_access_work) | PASS | Game 4241: mei used `mei_pc`, rosa used `rosa_pc` (each its own `needsHome`); the body sits 55/58 px off the approach cell, but these are own-post uses through `_moveForPhase`'s synthetic shortcut, which skips the distance check, so no spurious `arrival_far`. Confirmed own-desk, not a fault. `fast-access-work-4241.json` |
+| External leash scenario, arrivals clean | PASS | Game 4240 (`test_needs_leash`, leashed and unleashed): zero `arrival_far` / `arrival_ignored`. `ext-leash-leashed-4240.json`, `fast-leash-unleashed-4240.json` |
+| Cooler pair unchanged | PASS | Games 4247/4255: no new `arrival_far` / `arrival_ignored` on the shared-cooler path. `cooler-pair-4247.json`, `cooler-pair-4255.json` |
 
-Screenshots and `proof-*-<game>.json` in scratchpad `officelife-sims/s2/`.
+Screenshots and `proof-*-<game>.json` / `*-<game>.json` in scratchpad `officelife-sims/s2/`,
+`s2/live/` and `s2-fix-r1/`.
+
+Notes (review R1):
+- A chair fetch during `using` (seating's goToAndStay with no move id) is dropped as before the
+  slice: the arrival check runs only for the moves the needs system issues (goto, queue, home), so a
+  fetch at a non-own work object is never cut short with a spurious `arrival_far` (Design M1).
+- A returning NPC never fails. An unreachable home logs `arrival_far` once per return, not once per
+  `_watchReturn` cycle; the walk home is re-planned quietly after that (Design m1).
+- The stub reproduces the symptom (`using lounge_sofa` far from the cell) but the exact cause of
+  baseline 3537 is still unproven; the fix catches either a short path or a stale/foreign arrival
+  (Design m4).
 
 ## Engine findings
 
@@ -780,9 +798,16 @@ Screenshots and `proof-*-<game>.json` in scratchpad `officelife-sims/s2/`.
    fires the arrival whenever a path runs out (a short path end: an async path answer, a path
    stopped at a door). The fix stamps every needs move with an id and checks, on arrival, the
    distance to the move's cell (within 48 px) and the echoed id; a far arrival is logged
-   `arrival_far` and re-issued (a second far arrival fails the job; a returning NPC re-issues once
-   and is left to `_watchReturn`). `see_rest` (Grace on the sofa) still ticks. See SIMS-2 live proof.
+   `arrival_far` and re-issued (a second far arrival at the same phase and cell fails the job; a
+   returning NPC re-issues once and is left to `_watchReturn`). The check runs only for the moves
+   the needs system issues (`goto_item`, `goto_target`, a queue step and the walk home); an arrival
+   during `using` (seating's chair fetch, no move id) is dropped as before, so a fetch at a non-own
+   work object is not cut short (review R1 Design M1). The far guard is keyed by phase and
+   destination cell, so a genuine queue step or a post-freeze re-issue is not read as a repeat far
+   arrival (review R1 m2). `see_rest` (Grace on the sofa) still ticks. See SIMS-2 live proof.
 1. **Fixed 2026-11-05.** The home is now provisional until the `needsHome` object exists and is re-resolved once a second; and an NPC standing on its own desk's approach cell now counts as able to reach it (EasyStar gave no path for start == end, which is why Sanjay chose `tom_pc` in game 501). Original finding: **Needs homes in the start room resolve to the spawn point and stay there.** `npc-needs.js:301` resolves `s.home` on the first tick that has a sprite position and caches it; `_resolveHome` (`npc-needs.js:628-640`) falls back to the spawn point with `objectId: null` when `getObject`/`approachCell` fail. For the start room the NPCs are registered (`core/game.js:2004-2006`) before the room's objects or pathfinding are ready, so every start-room needs NPC gets the fallback and the home-object preference in `_useCandidate` (`npc-needs.js:475`) never applies. NPCs in rooms loaded later (Rosa, lounge) resolve correctly. Repro: load this scenario, then `[...npcNeedsSystem.states].map(([k,s]) => [k, s.home.objectId])` gives null for amara, tom, grace and sanjay, `rosa_laptop` for rosa. Suggested fix: don't cache a fallback home while `needsHome` names an object that isn't found yet (retry each tick until the object exists, or for a few seconds). `test_npc_needs` and `lab_physical_pentest` start-room NPCs are likely affected too, but hidden because each spawns at its own desk. Workaround here: each NPC spawns beside its own desk, and the work task reads "Someone works at a desk". Even so, game 501 had Sanjay choose `tom_pc` over his own adjacent PC (nearest-reachable from his seated position), so the workaround isn't reliable.
 2. **Server hides a room item that shares type and name with an inventory item.** `games_controller.rb` `item_in_inventory?` (around line 1766) falls back to a name match when the ids differ, so a floor item called "Dirty Mugs" vanished because the player held a different "Dirty Mugs" (id `player_mugs`). Workaround: the floor one is "Abandoned Mugs".
 3. **Minor:** `converse` on an NPC walking a needs job returned `no-dialogue-appeared`; `interact` on a stationary one opened the chat. Probably the harness hitting a moving target, not the engine.
 4. **Minor:** onUse fires for any completed use of that object by that NPC, need or carry. Amara's `onUse.amara_pc` would also fire on a plain work use; that matches the spec, but a scenario wanting "opened the parcel" has to use an `npc_used` mapping with `data.tag` (as this one does for the board).
+5. **Owner item (not an arrival-fix fault): a needs walk that routes into a seated NPC or desk wedges with no recovery.** In game 4232, 4 of Grace's 20 office->lounge sofa runs wedged at roughly (226-232, 134), beside Amara's seated desk, firing no arrival and ending in `job_failed timeout` (several `return_resumed` at the same spot on the way back). The patrol stuck-watch `_checkPathStuck` (`npc-behavior.js:1307`, with `_recoverFromStuck` at `1350`) re-paths, nudges and drops a stuck patrol target, but its own docstring (`npc-behavior.js:1296-1297`) says it "never runs while the NPC ... has arrived (goToAndStay)" — so a **needs** walk (which moves with `goToAndStay`) has no equivalent recovery. A path that routes into Amara's desk corner or her seated body leaves Grace wedged until the job's deadline. This is the same path-into-NPC-or-desk class as SIMS-1's E-carry; left for its own slice. Suggested fix: give needs `goToAndStay` walks a stuck-watch like the patrol's, or steer paths clear of seated bodies and desk footprints.
+6. **Owner item (pre-existing, outside SIMS-2): the needs-world adapter drops an object's top-level `offWhen`, so the `offWhen` slice-18a never fires live.** In `createEngineWorld`'s `describe` (`npc-needs.js:4653-4677`, used by both `getObject` and `listObjects`), the needs object is built from the sprite's `scenarioData` but `offWhen` is not copied onto `out`. So `world.getObject('office_coffee').offWhen` is `undefined`, `_isOff` always returns `false`, and `pick.offWhen`/`job.offWhen` are never set — the switched-off source is never excluded and no NPC turns back with `off`, even though `_globalHolds('office_coffee_off')` is true (probe on game 4265). The node tests pass because the stub world supplies `offWhen` directly; only the live adapter drops it. Slice-18a (the office-coffee wall socket, the kitchen-copier outage) is therefore non-functional live in this scenario. One-line fix: add `if (sd.offWhen !== undefined) out.offWhen = sd.offWhen;` to `describe`. Left for the owner because it changes behaviour across every scenario that uses `offWhen` (needs its own slice and regression pass), not SIMS-2.
