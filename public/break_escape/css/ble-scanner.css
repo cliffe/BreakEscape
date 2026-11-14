@@ -482,11 +482,4 @@
     .ble-scanner-minigame-container.expanded {
         max-width: 520px !important;
     }
-    .ble-categories {
-        gap: 4px;
-    }
-    .ble-category {
-        font-size: 14px;
-        padding: 3px 7px;
-    }
 }

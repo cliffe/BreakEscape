@@ -385,22 +385,6 @@
         max-width: 500px !important;
     }
     
-    .bluetooth-scanner-title {
-        font-size: 18px;
-    }
-    
-    /* The chips stay inline and wrap, as at every other size (critique A21) */
-    .bluetooth-categories {
-        flex-wrap: wrap;
-        gap: 5px;
-    }
-    
-    .bluetooth-category {
-        text-align: center;
-        padding: 4px 8px;
-        font-size: 18px;
-    }
-    
     .bluetooth-device-name {
         flex-direction: column;
         align-items: flex-start;
@@ -411,11 +395,6 @@
         align-self: flex-end;
     }
     
-    .bluetooth-scanner-expand-toggle {
-        width: 20px;
-        height: 20px;
-        font-size: 18px;
-    }
 }
 
 /* Animation for new devices */

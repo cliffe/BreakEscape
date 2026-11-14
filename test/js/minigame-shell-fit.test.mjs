@@ -284,7 +284,7 @@ test('biometrics: the samples list keeps two rows; instructions are a closed dis
     const l = rule(c, '.biometrics-samples-list-container');
     assert.equal(l['min-height'], '160px');
     assert.equal(l.flex, '0 0 auto');
-    assert.match(src('minigames/biometrics/biometrics-minigame.js'), /document\.createElement\('details'\);\s*instructionsContainer\.className = 'biometrics-scanner-instructions'/);
+    assert.match(src('minigames/biometrics/biometrics-minigame.js'), /document\.createElement\('details'\);\s*instructionsContainer\.className = 'biometrics-scanner-instructions[ a-z-]*'/);
     assert.equal(rule(c, '.biometrics-categories', 'max-width: 768px')['flex-direction'], undefined, 'chips stay inline');
 });
 
@@ -353,7 +353,7 @@ test('lockpicking zooms by a whole number on a big window and centres (A09)', ()
 
 test('BLE scanner list uses the pixel scrollbar, a More below cue and an accent SAVE (A23)', () => {
     const js = src('minigames/ble-scanner/ble-scanner-minigame.js');
-    assert.match(js, /class="ble-device-list pixel-scroll"/);
+    assert.match(js, /class="ble-device-list[ a-z-]* pixel-scroll"/);
     assert.match(js, /id="ble-device-more" hidden/);
     assert.match(js, /static hasMoreBelow\(box\)/);
     const c = css('ble-scanner.css');

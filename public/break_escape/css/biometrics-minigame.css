@@ -388,37 +388,10 @@
         max-width: 500px !important;
     }
     
-    .biometrics-scanner-title {
-        font-size: 14px;
-    }
-    
-    /* The chips stay inline and wrap, as at every other size (critique A19) */
-    .biometrics-categories {
-        flex-wrap: wrap;
-        gap: 5px;
-    }
-    
-    .biometrics-category {
-        text-align: center;
-        padding: 4px 8px;
-        font-size: 11px;
-    }
-    
     .biometrics-actions {
         flex-direction: column;
     }
     
-    .biometrics-action-btn {
-        justify-content: center;
-        padding: 6px 10px;
-        font-size: 12px;
-    }
-    
-    .biometrics-expand-toggle {
-        width: 20px;
-        height: 20px;
-        font-size: 10px;
-    }
 }
 
 /* Animation for new samples */
