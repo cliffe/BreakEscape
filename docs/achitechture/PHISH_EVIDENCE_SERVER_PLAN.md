@@ -231,7 +231,8 @@ so each route, after writing its record and before `save!`, re-runs `stamp_prove
 the route answer carries the freshly revealable capture (the same `captures`/`capturesRefused` answer shape
 the sync uses). A `sync_state` can no longer advance this evidence, so the phish branch of the sync's stamp
 walk, `phish_evidence_fingerprint`, and the `phishGated` / `phish_gated_unproven_captures?` machinery retire
-for this path. The controller's phish-gating block in `apply_capture_sync_step` (`@phish_fp_before`, the
+for this path, including the now-dead `phishGated` writes (capture_proofs.rb:174 and :695) and the strip of
+`phishGated` in `captures_for_client` once nothing writes it. The controller's phish-gating block in `apply_capture_sync_step` (`@phish_fp_before`, the
 `needs_stamp` fingerprint compare, and the `extra_sent` build and forward) goes with them.
 
 The capture record itself is still created the way it is today, from the client's own capture claim. When
@@ -282,7 +283,9 @@ Two tests pin this property (scheduled in chunk A, section 14):
 - **A superset test.** Shared parity fixtures across the `lab_social_engineering` kits and targets and the
   test scenario: for every case the client judge lands (`describeVictimOutcome` returns `submitted`), the
   server gate (`record_phish_send!`'s `landed` plus the reader's authored-target/authored-kit check) passes.
-  No client-landed case is refused by the server.
+  No client-landed case is refused by the server. The fixture set also takes one landing kit and target from
+  each other scenario that authors a phish (the awareness scenarios included, found by a scenario scan in the
+  test, not a fixed list), so the one reader is checked on every authored phish, not only the lab.
 - **A guard test.** A focused assertion that the server's `landed` depends only on the page's
   `meetsThreshold` and the authored target and kit, not on any message-craft factor. It feeds a
   client-landed case with a deliberately weak pretext and a mis-addressed greeting and asserts the server
@@ -449,7 +452,12 @@ never runs for exactly the save that needs it. So:
 - A new writer `migrate_legacy_phish_evidence!(scenario:)` is added to `run_bootstrap_writers!`, ordered
   **before** `stamp_proven_captures!`, so the stamp that follows in the same locked pass picks up the
   migrated evidence and stamps the capture `proven: true` at once, closing the narrow `proven: false` window
-  directly. The writer sets `phishEvidenceMigrated = true` when it finishes, so it runs a single time.
+  directly. The writer sets `phishEvidenceMigrated = true` when it finishes.
+- The writer's first line is an entry guard: it returns at once when `player_state['phishEvidenceMigrated']
+  == true`. The lock predicate alone is not enough, because `run_bootstrap_writers!` (game.rb:1309-1323) calls
+  every writer whenever the lock is taken for any reason (another writer's predicate can take it), and unlike
+  `migrate_legacy_captures!` this migration leaves `se_landing_pages` in place, so without the guard it would
+  re-read that client-writable global on every later locked bootstrap. With the guard it runs a single time.
 
 `phishEvidenceMigrated` is a top-level, server-owned `player_state` key, not a global. It is never read from
 the `sync_state` body (a global in `globalVariables` would merge through `sync_state`, letting a tampered
@@ -643,7 +651,9 @@ Tests: unit (an honest old save with good `choices` and a `victim.submitted` mar
 `meetsThreshold` and an imported `landed` gated on the re-derived build, even when the stored sent mail was
 trimmed; a forged old save with junk choices migrates to `meetsThreshold: false` and `landed: false`; an
 already-proven capture is left untouched while the stores still populate; the writer sets
-`phishEvidenceMigrated` and runs once; `phishEvidenceMigrated` is never read from a `sync_state` body);
+`phishEvidenceMigrated` and runs once; with `phishEvidenceMigrated` already set, a bootstrap that takes the
+lock through a different writer's predicate leaves both stores untouched even after `se_landing_pages` is
+edited; `phishEvidenceMigrated` is never read from a `sync_state` body);
 controller with real requests (the `scenario` bootstrap on an exposed legacy save takes the lock via
 `legacy_phish_evidence?`, runs the migration and stamps the capture; `sync_state` does not run it). Live
 browser proof: section 15.
