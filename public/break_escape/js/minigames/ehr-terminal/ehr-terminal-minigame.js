@@ -225,7 +225,7 @@ export class EhrTerminalMinigame extends MinigameScene {
         return `
             <div class="ehr-online-layout">
                 <div class="ehr-patient-list">${patientRows}</div>
-                <div class="ehr-record-panel">
+                <div class="ehr-record-panel pixel-scroll">
                     <div class="ehr-demographics">
                         NAME: ${escapeHtml(selected.name || 'Unknown')}<br>
                         DOB: ${escapeHtml(selected.dob || 'Unknown')}<br>

@@ -62,10 +62,9 @@ test('full-window consoles opt in to the overlaid Cancel row; no class allowlist
     const js = (p) => readFileSync(join(here, '../../public/break_escape/js/minigames', p), 'utf8');
     // SIEM and the network architecture diagram moved onto the shared console window (X8), which
     // owns the bar the X sits in, so they no longer opt in
-    for (const f of ['ehr-terminal/ehr-terminal-minigame.js', 'backup-recovery/backup-recovery-minigame.js']) {
-        assert.match(js(f), /static controlsOverlay = true;/, f);
-    }
-    for (const f of ['siem/siem-dashboard-minigame.js', 'network-architecture/network-architecture-minigame.js']) {
+    // The EHR terminal and the backup recovery console moved onto it too
+    for (const f of ['siem/siem-dashboard-minigame.js', 'network-architecture/network-architecture-minigame.js',
+        'ehr-terminal/ehr-terminal-minigame.js', 'backup-recovery/backup-recovery-minigame.js']) {
         assert.doesNotMatch(js(f), /static controlsOverlay = true;/, f);
     }
     const base = js('framework/base-minigame.js');

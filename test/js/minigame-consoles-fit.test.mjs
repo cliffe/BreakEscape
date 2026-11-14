@@ -370,7 +370,9 @@ test('review round 1: segmentation map keeps its panel in view (M1), SIS title w
     assert.match(css('sis-config-threshold-minigame.css'), /\.sis-modal h4 \{\s*overflow-wrap: anywhere/);
     // The X is in the shared bar now (X8), so the letterhead needs no band or right padding for it
     assert.doesNotMatch(css('warranty-checklist-minigame.css'), /\.wcc-letterhead \{[^}]*(min-height: 62px|52px)/);
-    assert.match(css('sis-config-threshold-minigame.css'), /\.sis-threshold-header \{\s*margin-top: 28px/);
+    // The SIS title is in the shared bar (X8): no in-page header and no band for the X
+    assert.doesNotMatch(css('sis-config-threshold-minigame.css'), /\.sis-threshold-header/);
+    assert.match(src(SCENES['sis-config-threshold']), /consoleTitle\(\) \{\s*return 'SIS CONFIGURATION - BATTERY HALL SIS'/);
     assert.match(src(SCENES['blockchain-explorer']), /class="bce-graph-pane pixel-scroll"/);
     assert.match(css('claims-management-system-minigame.css'), /\.cms-nav-label \{[^}]*overflow-wrap: anywhere/);
 });
