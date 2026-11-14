@@ -756,3 +756,12 @@ test('R3 m2 and n2: the two-line pill is sized from its content; the back badge 
     assert.match(block[1], /\.objectives-panel\.collapsed \{[^}]*max-height: none;/);
     assert.match(css('phone-chat-minigame.css'), /\.back-button \.back-unread \{[^}]*font-size: 16px;/);
 });
+
+test('older bug: on short landscape phones the replies fit inside the phone frame and scroll there', () => {
+    const c = css('phone-chat-minigame.css');
+    const block = c.match(/@media \(max-height: 500px\) \{([\s\S]*?)\n\}/);
+    assert.ok(block, 'short-height rule');
+    assert.match(block[1], /\.messages-container \{ min-height: 40px; \}/, 'the thread gives way first');
+    assert.match(block[1], /\.choices-container \{[^}]*min-height: 0;[^}]*flex-shrink: 1;[^}]*overflow-y: auto;/, 'replies shrink and scroll inside the frame');
+    assert.doesNotMatch(block[1], /border-radius|box-shadow|gradient/);
+});
