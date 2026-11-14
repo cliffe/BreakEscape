@@ -494,6 +494,28 @@
   }
 }
 
+/* Phones held upright: the aim may take a second line, so most aims read in full (review R2
+   m1). The pill keeps its width, clear of the menu buttons; past two lines it ends in an
+   ellipsis, and the header's title still has the whole aim. The lanes measure the taller pill. */
+@media (max-width: 899.98px) and (min-height: 501px) and (orientation: portrait) {
+  .objectives-panel.collapsed .objectives-pill-summary {
+    align-items: flex-start;
+    white-space: normal;
+  }
+  .objectives-panel.collapsed .objectives-pill-count {
+    line-height: 18px;
+  }
+  .objectives-panel.collapsed .objectives-pill-text {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    line-height: 18px;
+    max-height: 36px;
+    overflow-wrap: break-word;
+  }
+}
+
 /* A hard on/off blink in whole steps (no soft glow) */
 @keyframes objectives-pill-pulse {
   0% { outline: 2px solid #ffd23f; outline-offset: 0; }

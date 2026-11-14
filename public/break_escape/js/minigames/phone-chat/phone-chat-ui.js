@@ -589,13 +589,12 @@ export default class PhoneChatUI {
     }
     
     /**
-     * Populate the contact list with NPCs
+     * The contacts the list shows for this phone (remembered for the back button's count).
      * @param {string} phoneId - Optional phone ID to filter contacts
+     * @returns {Object[]}
      */
-    populateContactList(phoneId = null) {
-        const contactList = this.elements.contactList;
-        contactList.innerHTML = '';
-        
+    listContacts(phoneId = null) {
+        this._listPhoneId = phoneId;
         // Get NPCs for this phone
         let npcs;
         if (phoneId) {
@@ -619,6 +618,55 @@ export default class PhoneChatUI {
             });
             console.log(`✅ Filtered to ${npcs.length} contacts`);
         }
+        
+        return npcs || [];
+    }
+
+    /** Unread texts and missed calls in one contact's thread (the list's badge). */
+    unreadCountFor(npcId) {
+        const history = this.npcManager.getConversationHistory(npcId) || [];
+        return history.filter(msg => msg && !msg.read &&
+            (msg.type === 'npc' || (msg.type === 'call' && msg.callEvent === 'missed'))).length;
+    }
+
+    /**
+     * The back button counts unread texts in the phone's other threads, so a text that came in
+     * while a thread is open (held on a phone screen, review R2 M2) is not missed. Plain text.
+     * @returns {number} the count shown
+     */
+    refreshBackUnread() {
+        const btn = this.elements?.backButton;
+        if (!btn || !btn.isConnected) return 0;
+        let n = 0;
+        try {
+            for (const npc of this.listContacts(this._listPhoneId ?? this.params.phoneId ?? 'player_phone')) {
+                if (npc && npc.id !== this.currentNPCId) n += this.unreadCountFor(npc.id);
+            }
+        } catch (e) { n = 0; }
+        let badge = btn.querySelector('.back-unread');
+        if (n > 0) {
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'back-unread unread-badge';
+                btn.appendChild(badge);
+            }
+            badge.textContent = String(n);
+            btn.setAttribute('aria-label', `Back, ${n} unread`);
+        } else {
+            badge?.remove();
+            btn.setAttribute('aria-label', 'Back');
+        }
+        return n;
+    }
+    
+    /**
+     * Populate the contact list with NPCs
+     * @param {string} phoneId - Optional phone ID to filter contacts
+     */
+    populateContactList(phoneId = null) {
+        const contactList = this.elements.contactList;
+        contactList.innerHTML = '';
+        const npcs = this.listContacts(phoneId);
         
         if (!npcs || npcs.length === 0) {
             contactList.innerHTML = `
@@ -701,8 +749,7 @@ export default class PhoneChatUI {
             if (!isNarration(history[i])) { lastMessage = history[i]; break; }
         }
         // A missed call counts as unread, like a text (plan 2.6)
-        const unreadCount = history.filter(msg => !msg.read &&
-            (msg.type === 'npc' || (msg.type === 'call' && msg.callEvent === 'missed'))).length;
+        const unreadCount = this.unreadCountFor(npc.id);
         const lastIsMissedCall = !!lastMessage && lastMessage.type === 'call' && lastMessage.callEvent === 'missed';
         
         const contactItem = document.createElement('div');
@@ -783,6 +830,7 @@ export default class PhoneChatUI {
         
         // Update header with avatar
         this.updateHeader(npc.displayName || npc.id, npc.id);
+        this.refreshBackUnread();
         
         // Clear messages and choices
         this.elements.messagesContainer.innerHTML = '';

@@ -249,9 +249,12 @@ test('R1 M1: a dialog holds every bark until it closes, then they go in order', 
     sys._renderBark = async (p) => { order.push(p.npcId); return null; };
     for (const sel of L.DIALOG_SELECTORS) {
         assert.equal(L.dialogLayerOpen(), false);
-        const el = document.querySelector(sel) || add(sel.startsWith('#')
-            ? `<div id="${sel.slice(1).split('.')[0]}" class="${sel.split('.').slice(1).join(' ')}"></div>`
-            : `<div class="${sel.slice(1)}"></div>`);
+        // one element per part of the selector, each inside the one before ('.a .b')
+        const one = (part) => part.startsWith('#')
+            ? `<div id="${part.slice(1).split('.')[0]}" class="${part.split('.').slice(1).join(' ')}">`
+            : `<div class="${part.slice(1).split('.').join(' ')}">`;
+        const parts = sel.split(' ');
+        const el = document.querySelector(sel) || add(parts.map(one).join('') + '</div>'.repeat(parts.length));
         assert.equal(L.dialogLayerOpen(), true, `${sel} counts as a dialog`);
         el.remove();
     }
@@ -477,4 +480,200 @@ test('R1 m2 and n1: bubbles keep clear of the speech line; no popup-overlay left
     assert.ok(HUD_SELECTORS.includes('#npc-speech-container .npc-bark'));
     const ref = readFileSync(join(here, '../../public/break_escape/index.html.reference'), 'utf8');
     assert.doesNotMatch(ref, /popup-overlay/);
+});
+
+// ---------------------------------------------------------------- fix round 2 (review R2)
+
+const PHONE_UI_STUBS = `
+const displayPhoneLine = (type, text) => ({ type, text }), otherSpeaker = () => null,
+  displayDashes = (s) => s, messageClockText = () => '9:41', ASSETS_PATH = '', escHtml = (s) => String(s);
+const noop = () => {};
+const portraitFor = () => ({}), npcDmFields = () => ({}), onAccentColour = noop;
+class TTSManager {} class MusicController {} class ChatInfluence {} class PhoneChatConversation {} class InkEngine {}
+const hasHiddenChoicesBelow = noop, numberedChoiceText = noop, createBottomPin = () => ({}),
+  isPhoneCallMode = () => false, callLabelFor = () => 'Voice call', formatCallDuration = () => '0:00', callSubtitle = noop,
+  CALL_STATUS_HTML = '', CALL_SPEAKING_HTML = '', CALL_CONTROLS_HTML = '';
+`;
+
+test('R2 M1: barks a minigame holds are released when a dialog that was open as it closed goes', async () => {
+    const sys = barkRig({ tom: { id: 'tom', npcType: 'person', displayName: 'Tom' } });
+    NPCBarkSystem.DIALOG_HOLD_POLL_MS = 10;
+    const order = [];
+    sys._renderBark = async (p) => { order.push(p.npcId); return null; };
+    // phone chat open: speech from someone in the building is held
+    window.MinigameFramework = { isOpen: (t) => t === 'phone-chat', holdsBarks: () => false };
+    sys.showBark({ npcId: 'tom', npcName: 'Tom', message: 'Held by the phone.' });
+    await tick(30);
+    assert.deepEqual(order, []);
+    assert.equal(sys.deferredBarkQueue.length, 1);
+    assert.ok(!sys._dialogHoldTimer, 'no dialog yet, so no watch');
+    // a confirm opens over the phone, then the phone closes under it (the framework drains)
+    const confirm = add('<div class="game-confirm-overlay"><button>OK</button></div>');
+    window.MinigameFramework = undefined;
+    await sys.drainDeferredBarks();
+    await tick(30);
+    assert.deepEqual(order, [], 'still held behind the confirm');
+    assert.ok(sys._dialogHoldTimer, 'the drain started the dialog watch');
+    // the confirm closes: the bark goes
+    confirm.remove();
+    await tick(60);
+    assert.deepEqual(order, ['tom'], 'released once the confirm closed');
+    assert.equal(sys.deferredBarkQueue.length, 0);
+    assert.ok(!sys._dialogHoldTimer, 'watch cleared');
+});
+
+test('R2 M2: on the phone layout phone chat holds every text, released in order on close; wide screens keep texts on top', async () => {
+    const sys = barkRig({ kim: { id: 'kim', npcType: 'phone', displayName: 'Kim' }, lee: { id: 'lee', npcType: 'phone', displayName: 'Lee' } });
+    const order = [];
+    sys._renderBark = async (p) => { order.push(p.npcId); return null; };
+    let refreshed = 0;
+    window.MinigameFramework = { isOpen: (t) => t === 'phone-chat', holdsBarks: () => false,
+        currentMinigame: { _sceneType: 'phone-chat', currentNPCId: 'max', ui: { refreshBackUnread: () => { refreshed++; return 1; } } } };
+    document.body.classList.add('hud-compact');
+    assert.equal(sys._shouldDefer({ npcId: 'kim' }), true, 'another contact\'s text waits on a phone screen');
+    sys.showBark({ npcId: 'kim', npcName: 'Kim', message: 'First.' });
+    sys.showBark({ npcId: 'lee', npcName: 'Lee', message: 'Second.' });
+    await tick(30);
+    assert.deepEqual(order, [], 'nothing over the open phone');
+    assert.equal(refreshed, 2, 'the back button count is refreshed for each text');
+    // the phone closes: released first in, first out, with the usual gap
+    window.MinigameFramework = undefined;
+    sys.drainDeferredBarks();
+    await tick(30);
+    assert.deepEqual(order, ['kim']);
+    await tick(2700);
+    assert.deepEqual(order, ['kim', 'lee'], 'in the order sent');
+    // wide screen: the m04 rule stands
+    document.body.classList.remove('hud-compact');
+    window.MinigameFramework = { isOpen: (t) => t === 'phone-chat', holdsBarks: () => false };
+    assert.equal(sys._shouldDefer({ npcId: 'kim' }), false, 'a text for another thread shows beside the phone');
+    window.MinigameFramework = undefined;
+    // a text already showing sits under the phone on the phone layout
+    assert.match(css('npc-barks.css'), /body\.hud-compact:has\(\[data-minigame="phone-chat"\]\) #npc-bark-container \{[^}]*z-index: 1400 !important;/);
+});
+
+test('R2 M2: the phone\'s back button counts unread texts in the other threads; the list keeps its badges', async () => {
+    const dataUrl = (s) => 'data:text/javascript;base64,' + Buffer.from(s).toString('base64');
+    const src = readFileSync(join(js, 'minigames/phone-chat/phone-chat-ui.js'), 'utf8').replace(/^import [\s\S]*?;\s*$/gm, '');
+    const mod = await import(dataUrl(PHONE_UI_STUBS + src));
+    const UI = mod.PhoneChatUI || mod.default;
+    document.body.innerHTML = '<button class="back-button" id="back-button">←</button>';
+    const hist = {
+        kim: [{ type: 'npc', text: 'open thread', read: false }],
+        lee: [{ type: 'npc', text: 'new', read: false }, { type: 'npc', text: 'old', read: true }],
+        max: [{ type: 'call', callEvent: 'missed', read: false }, { type: 'player', text: 'me', read: true }]
+    };
+    const ui = Object.create(UI.prototype);
+    ui.elements = { backButton: document.getElementById('back-button') };
+    ui.params = { phoneId: 'player_phone' };
+    ui.currentNPCId = 'kim';
+    ui.npcManager = { getNPCsByPhone: () => [{ id: 'kim' }, { id: 'lee' }, { id: 'max' }], getConversationHistory: (id) => hist[id] || [] };
+    assert.equal(ui.refreshBackUnread(), 2, 'one text from Lee and a missed call from Max; the open thread is not counted');
+    const badge = document.querySelector('#back-button .back-unread');
+    assert.equal(badge.textContent, '2');
+    assert.ok(badge.classList.contains('unread-badge'), 'the list\'s badge look');
+    assert.equal(ui.elements.backButton.getAttribute('aria-label'), 'Back, 2 unread');
+    assert.equal(ui.unreadCountFor('lee'), 1, 'the contact list counts the same way');
+    hist.lee[0].read = true;
+    hist.max[0].read = true;
+    assert.equal(ui.refreshBackUnread(), 0);
+    assert.equal(document.querySelector('#back-button .back-unread'), null, 'no badge with nothing unread');
+    assert.match(css('phone-chat-minigame.css'), /\.back-button \.back-unread \{/);
+});
+
+test('R2 M3: the tutorial\'s step panel holds barks while it shows, released in order after', async () => {
+    const sys = barkRig({ kim: { id: 'kim', npcType: 'phone', displayName: 'Kim' }, tom: { id: 'tom', npcType: 'person', displayName: 'Tom' } });
+    NPCBarkSystem.DIALOG_HOLD_POLL_MS = 10;
+    const order = [];
+    sys._renderBark = async (p) => { order.push(p.npcId); return null; };
+    const overlay = add('<div class="tutorial-overlay"><div class="tutorial-panel">Step 1 of 5</div></div>');
+    assert.equal(L.dialogLayerOpen(), true, 'the step panel counts as a dialog');
+    sys.showBark({ npcId: 'kim', npcName: 'Kim', message: 'One.' });
+    sys.showBark({ npcId: 'tom', npcName: 'Tom', message: 'Two.' });
+    await tick(30);
+    assert.deepEqual(order, [], 'nothing under the step panel');
+    overlay.remove();
+    await tick(40);
+    assert.deepEqual(order, ['kim'], 'first in, first out after the tutorial');
+    await tick(2700);
+    assert.deepEqual(order, ['kim', 'tom']);
+    assert.ok(L.DIALOG_SELECTORS.includes('.tutorial-overlay .tutorial-panel'));
+});
+
+test('R2 M4: computeLanes gives a finished-task line its height whole; the lanes still never meet', () => {
+    const m = { vw: 360, vh: 640, compact: true, topBarBottom: 76, dockTop: 540, notifyContent: 240, messageContent: 140 };
+    const plain = computeLanes(m);
+    assert.ok(plain.notify.maxHeight < 240, `without a floor the notify lane is cut (${plain.notify.maxHeight})`);
+    const floored = computeLanes({ ...m, notifyFloor: 240 });
+    assert.ok(floored.notify.maxHeight >= 240, `the floor is met (${floored.notify.maxHeight})`);
+    const notifyBottom = floored.notify.top + floored.notify.maxHeight;
+    const messageTop = 640 - floored.message.bottom - floored.message.maxHeight;
+    assert.ok(notifyBottom + LANE_GAP <= messageTop, `lanes apart: ${notifyBottom} and ${messageTop}`);
+    assert.ok(floored.message.maxHeight > 0, 'speech keeps the rest');
+    // a floor the lane already meets changes nothing
+    assert.deepEqual(computeLanes({ ...m, notifyFloor: 10 }), plain);
+});
+
+test('R2 M4: with a finished-task line the other toasts step aside first (countdown waits) and come back after', () => {
+    const rig = hudRig(360, 640, { combat: false });
+    const older = document.createElement('div');
+    older.className = 'notification error show';
+    const brief = document.createElement('div');
+    brief.className = 'notification success brief show';
+    rig.toasts.append(older, brief);
+    rect(older, { left: 16, top: 84, width: 328, height: 143 });
+    rect(brief, { left: 16, top: 237, width: 328, height: 88 });
+    rect(rig.toasts, { left: 16, top: 84, width: 328, height: 241 });
+    rect(rig.speech, { left: 16, top: 380, width: 328, height: 140 });
+    const yields = [];
+    older._onLaneYield = (h) => yields.push(h);
+    brief._onLaneYield = () => assert.fail('the brief line never steps aside');
+    L.applyLanes(document, window);
+    assert.ok(older.classList.contains('hud-lane-yield'), 'the older toast stepped aside');
+    assert.deepEqual(yields, [true], 'its countdown was told to wait');
+    // next frame: the container now holds the brief line only
+    rect(rig.toasts, { left: 16, top: 84, width: 328, height: 98 });
+    const { lanes } = L.applyLanes(document, window);
+    assert.ok(older.classList.contains('hud-lane-yield'), 'stays aside while the brief line shows');
+    assert.ok(lanes.notify.maxHeight >= 98, `the brief line is whole (${lanes.notify.maxHeight})`);
+    assert.ok(parseInt(rig.toasts.style.maxHeight, 10) >= 98);
+    const messageTop = 640 - lanes.message.bottom - lanes.message.maxHeight;
+    assert.ok(lanes.notify.top + lanes.notify.maxHeight < messageTop, 'clear of the speech lane');
+    // the brief line goes: the older toast comes back
+    brief.remove();
+    rect(rig.toasts, { left: 16, top: 84, width: 328, height: 153 });
+    L.applyLanes(document, window);
+    assert.ok(!older.classList.contains('hud-lane-yield'));
+    assert.deepEqual(yields, [true, false], 'its countdown goes on');
+    assert.match(css('notifications.css'), /\.notification\.hud-lane-yield \{\s*display: none;/);
+    setWindow(1400, 1000);
+});
+
+test('R2 M4: on a phone a finished-task line does not queue behind another toast; a toast stepped aside keeps its time', async () => {
+    document.body.innerHTML = '<div id="notification-container"></div>';
+    document.body.className = 'hud-compact';
+    N.showNotification('Something else', 'info', 'Note', 5000);
+    N.showNotification('✓ Look', 'success', '', 5000, { brief: true });
+    const shown = document.querySelectorAll('#notification-container .notification');
+    assert.equal(shown.length, 2, 'the brief line shows at once');
+    assert.equal(N.waitingToastCount(), 0);
+    const t = shown[0];
+    t._onLaneYield(true);
+    assert.ok(t._yieldLeft > 4000 && t._yieldLeft <= 5000, `time left kept (${t._yieldLeft})`);
+    await tick(30);
+    t._onLaneYield(false);
+    assert.equal(t._yieldLeft, null);
+    assert.ok(t._countdownMs > 4000, 'counting down again from what was left');
+    for (const el of shown) clearTimeout(el._hideTimer);
+    document.body.innerHTML = '';
+    document.body.className = '';
+});
+
+test('R2 m1: on phones held upright the pill\'s aim may wrap to two lines', () => {
+    const c = css('objectives.css');
+    const block = c.match(/@media \(max-width: 899\.98px\) and \(min-height: 501px\) and \(orientation: portrait\) \{([\s\S]*?)\n\}/);
+    assert.ok(block, 'upright phone rule');
+    assert.match(block[1], /\.objectives-pill-summary \{[^}]*white-space: normal;/);
+    assert.match(block[1], /\.objectives-pill-text \{[^}]*-webkit-line-clamp: 2;/);
+    assert.doesNotMatch(block[1], /border-radius|box-shadow|gradient/);
 });

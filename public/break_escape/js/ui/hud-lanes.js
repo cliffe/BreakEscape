@@ -93,7 +93,8 @@ export function barkSource({ npcType = null, channel = null, hasClickHandler = f
 
 // Dialogs and modals the bark lanes sit under (css/npc-barks.css) and hold new barks for
 // (npc-barks.js _shouldDefer), review R1 M1. Minigames and conversations have their own hold.
-export const DIALOG_SELECTORS = ['.tutorial-prompt-overlay', '.game-confirm-overlay', '#game-menu-overlay.visible',
+// The tutorial's step panel holds them too while it shows (review R2 M3): it covers the notify lane.
+export const DIALOG_SELECTORS = ['.tutorial-prompt-overlay', '.tutorial-overlay .tutorial-panel', '.game-confirm-overlay', '#game-menu-overlay.visible',
   '#password-modal', '#player-preferences-modal', '.ending-check-overlay', '.success-screen-overlay'];
 
 /** True while one of DIALOG_SELECTORS shows, or the tutorial prompt is due (it counts from the call). */
@@ -120,10 +121,12 @@ export function dialogLayerOpen(doc = (typeof document !== 'undefined' ? documen
  *   leftPanelRight  right edge of a wide screen's objectives panel (the notify lane keeps clear)
  *   notifyWidth     wide screens: the notify lane's preferred width (600 at zoom 1)
  *   messageWidth    the message lane's preferred width (720 at zoom 1)
+ *   notifyFloor     height the notify lane must have whole (a finished-task line, review R2 M4):
+ *                   it may take the world view's reserve, and the message lane keeps what is left
  * @returns {{ notify: {top,left,width,maxHeight}, message: {bottom,left,width,maxHeight}, world: {top,bottom} }}
  */
 export function computeLanes({ vw, vh, compact, topBarBottom = 0, dockTop = null, leftPanelRight = 0,
-  notifyWidth = 600, messageWidth = 720, notifyTopMin = 0, notifyContent = 0, messageContent = 0 } = {}) {
+  notifyWidth = 600, messageWidth = 720, notifyTopMin = 0, notifyContent = 0, messageContent = 0, notifyFloor = 0 } = {}) {
   const dock = Number.isFinite(dockTop) ? Math.min(dockTop, vh) : vh;
   const notifyTop = Math.round(Math.max(topBarBottom, notifyTopMin) + LANE_GAP);
   const messageBottomY = Math.round(dock - LANE_GAP);            // the lane's lower edge, as a y
@@ -142,6 +145,13 @@ export function computeLanes({ vw, vh, compact, topBarBottom = 0, dockTop = null
   } else {
     notifyMax = Math.floor(budget * needN / (needN + needM));
     messageMax = budget - notifyMax;
+  }
+  // A finished task or aim is never cut: it may use the reserve, and the message lane keeps
+  // what is left of the free height (the lanes still never meet)
+  const floor = Math.ceil(Math.max(0, notifyFloor || 0));
+  if (floor > notifyMax) {
+    notifyMax = Math.min(floor, free);
+    messageMax = Math.max(0, Math.min(Math.max(messageMax, needM), free - notifyMax - LANE_GAP));
   }
 
   let nLeft;
@@ -270,6 +280,14 @@ function heightOf(el) {
   return r ? r.height : 0;
 }
 
+/** A shown element's height with its bottom margin (toasts are spaced by margin), screen px. */
+function outerHeightOf(el) {
+  const h = heightOf(el);
+  if (!h) return 0;
+  const mb = parseFloat(gcs(el).marginBottom);
+  return h + (Number.isFinite(mb) ? mb * zoomOf(el) : 0);
+}
+
 /** Place the lane members for one measurement. Exposed for tests and the proof scripts. */
 export function applyLanes(doc = document, win = window) {
   const m = measureHud(doc, win);
@@ -331,6 +349,33 @@ export function applyLanes(doc = document, win = window) {
     m.notifyContent = sum([toastH, phoneSum(y.phoneHidden)]);
     m.messageContent = sum([y.caption ? 0 : cap.h, speechH]);
     lanes = computeLanes(m);
+  }
+  // A finished task or aim (a brief toast) is never cut (review R2 M4). The caption and texts
+  // have stepped aside above; next the other toasts step aside, oldest first (their countdown
+  // waits, notifications.js), and they stay aside while a brief line shows. Then the notify lane
+  // gets the brief line's height whole (notifyFloor). With no brief line they all come back.
+  const toastEls = toastsEl ? Array.from(toastsEl.querySelectorAll('.notification')).filter(el => !el._toast?.closing) : [];
+  const yieldToast = (el, hide) => {
+    if (el.classList.contains('hud-lane-yield') === hide) return;
+    el.classList.toggle('hud-lane-yield', hide);
+    try { el._onLaneYield?.(hide); } catch (e) { /* the toast closed meanwhile */ }
+  };
+  if (toastEls.some(el => el.classList.contains('brief'))) {
+    let tH = toastH;
+    for (const el of toastEls) {
+      if (tH <= lanes.notify.maxHeight) break;
+      if (el.classList.contains('brief') || el.classList.contains('hud-lane-yield')) continue;
+      tH = Math.max(0, tH - outerHeightOf(el));
+      yieldToast(el, true);
+      m.notifyContent = sum([tH, phoneSum(y.phoneHidden)]);
+      lanes = computeLanes(m);
+    }
+    if (tH > lanes.notify.maxHeight) {
+      m.notifyFloor = tH;
+      lanes = computeLanes(m);
+    }
+  } else {
+    toastEls.forEach(el => yieldToast(el, false));
   }
   // The objectives pill on a phone may use the width up to the menu buttons (review R1 M2)
   const pill = doc.querySelector('.objectives-panel');

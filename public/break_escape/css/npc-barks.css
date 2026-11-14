@@ -52,7 +52,9 @@ body.minigame-holds-barks #npc-speech-container {
 /* An open dialog or modal (tutorial, confirm, pause menu, password, preferences, the ending)
    keeps both bark lanes under it, so a line never covers its buttons and a phone text never
    takes a tap meant for them (review R1 M1). New barks wait for it to close (npc-barks.js);
-   the tutorial overlay is 1400. The list matches ui/hud-lanes.js DIALOG_SELECTORS. */
+   the tutorial overlay is 1400. ui/hud-lanes.js DIALOG_SELECTORS holds barks for the same
+   layers; it lists #password-modal and #player-preferences-modal by id and checks their computed
+   display, where this rule needs the classes and inline styles that show them. */
 body:has(.tutorial-prompt-overlay, .tutorial-overlay, .game-confirm-overlay, #game-menu-overlay.visible,
   #password-modal.show, #password-modal[style*="flex"], #player-preferences-modal[style*="flex"],
   .ending-check-overlay, .success-screen-overlay) :is(#npc-bark-container, #npc-speech-container) {
@@ -63,6 +65,13 @@ body:has(.tutorial-prompt-overlay, .tutorial-overlay, .game-confirm-overlay, #ga
    sits under the phone (minigames are 1500). Phone texts from other contacts stay on top: they
    flag another thread, and on a wide screen the notify lane keeps right of the phone. */
 body:has([data-minigame="phone-chat"]) #npc-speech-container {
+  z-index: 1400 !important;
+}
+
+/* On the phone layout the notify lane runs across the open phone: every bark waits until it
+   closes (npc-barks.js), and a text already showing sits under the phone, so it cannot take a
+   tap meant for the back button (review R2 M2). The back button counts the unread texts. */
+body.hud-compact:has([data-minigame="phone-chat"]) #npc-bark-container {
   z-index: 1400 !important;
 }
 

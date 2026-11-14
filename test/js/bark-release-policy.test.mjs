@@ -21,7 +21,7 @@ import { releaseHeldBarks as realRelease } from './policy.mjs';
 const releaseHeldBarks = (q, o) => realRelease(q, { ...o, gapMs: globalThis.__gapMs, voiceCapMs: globalThis.__capMs, pauseMs: globalThis.__pauseMs });
 const ASSETS_PATH = '', overlayDepth = () => 0, displayDashes = (s) => s;
 const workstationPopupOpen = () => false, phoneThreadOpenFor = () => false, openPhoneThread = () => null, threadTextKey = () => '';
-const dialogLayerOpen = () => false;   // ui/hud-lanes.js (review R1 M1: dialogs hold barks)
+const dialogLayerOpen = () => !!globalThis.__dialogOpen;   // ui/hud-lanes.js (review R1 M1: dialogs hold barks)
 const barkLifetimeMs = () => 0, barksToTrim = () => 0, BARK_RESUME_MIN_MS = 0, inventoryBlockedByForcedMinigame = () => false;
 const phoneBarkText = (s) => s;
 class TTSManager {}
@@ -468,4 +468,30 @@ test('the voice cap timer is cleared once the wait settles (m3)', async () => {
   await releaseHeldBarks(q, { shouldHold: () => false, render: () => ({ voiceEnd: Promise.resolve(true) }), gapMs: 1, voiceCapMs: 60000, pauseMs: 1, log: () => {} });
   assert.ok(Date.now() - t0 < 500);
   // a 60 s timer left behind would keep node from exiting; the suite finishing is the proof
+});
+
+test('NPCBarkSystem: barks a minigame held go when a dialog open as it closed is closed (review R2 M1)', async () => {
+  const sys = barkSystem();
+  const poll = NPCBarkSystem.DIALOG_HOLD_POLL_MS;
+  NPCBarkSystem.DIALOG_HOLD_POLL_MS = 10;
+  try {
+    window.currentConversationMinigameType = 'person-chat';
+    sys.showBark({ npcId: 'ravi', text: 'one' });
+    sys.showBark({ npcId: 'helen', text: 'two' });
+    globalThis.__dialogOpen = true;                 // a confirm opens over the conversation
+    window.currentConversationMinigameType = null;  // the conversation closes under it
+    await sys.drainDeferredBarks();
+    await wait(40);
+    assert.deepEqual(whats(sys), [], 'held behind the confirm');
+    assert.ok(sys._dialogHoldTimer, 'the drain started the dialog watch');
+    globalThis.__dialogOpen = false;                // the confirm closes
+    await wait(80);
+    assert.deepEqual(whats(sys), ['start one', 'start two'], 'released in order');
+    assert.equal(sys.deferredBarkQueue.length, 0);
+    assert.ok(!sys._dialogHoldTimer);
+  } finally {
+    globalThis.__dialogOpen = false;
+    window.currentConversationMinigameType = null;
+    NPCBarkSystem.DIALOG_HOLD_POLL_MS = poll;
+  }
 });

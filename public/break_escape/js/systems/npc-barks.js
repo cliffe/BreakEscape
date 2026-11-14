@@ -179,6 +179,8 @@ export default class NPCBarkSystem {
    */
   showBark(payload = {}) {
     if (!this.container) this.init();
+    // A text for another thread is already in its history: the open phone's back button counts it
+    this._refreshPhoneUnread();
 
     // A bark repeating a line the open phone thread already shows adds nothing
     // (m06 confirmation R4 M2)
@@ -225,6 +227,10 @@ export default class NPCBarkSystem {
     // Phone chat keeps phone texts from other contacts on top, but speech from someone in the
     // building is not a notification for a thread: it waits until the phone closes (R1 M1)
     if (window.MinigameFramework?.isOpen?.('phone-chat')) {
+      // On the phone layout the notify lane runs across the open phone, where a text would
+      // take a tap meant for its back button: every bark waits, and the back button counts the
+      // other threads' unread texts (review R2 M2). Wide screens keep texts on top (m04).
+      if (compactHud()) return true;
       if (payload ? this._isSpeech(payload) : this.deferredBarkQueue.some(p => this._isSpeech(p))) return true;
     }
     // The phone keeps other contacts' barks on top, but a bark from the contact whose
@@ -290,7 +296,10 @@ export default class NPCBarkSystem {
   async drainDeferredBarks() {
     if (!this._shouldDefer()) this._dropStaleVisibleBarks();
     if (this.isDrainingDeferred || this.deferredBarkQueue.length === 0) return;
-    if (this._shouldDefer()) return;   // another minigame opened; drained when it closes
+    // Another minigame opened (drained when it closes), or a dialog is open: a minigame that
+    // closes under a dialog drains here, so the dialog's watch must start now or nothing
+    // releases the queue when the dialog goes (review R2 M1)
+    if (this._shouldDefer()) { this._watchDialogHold(); return; }
     this.isDrainingDeferred = true;
     console.log(`📣 Releasing ${this.deferredBarkQueue.length} held bark(s)`);
     try {
@@ -731,6 +740,14 @@ export default class NPCBarkSystem {
     }, NPCBarkSystem.DIALOG_HOLD_POLL_MS);
   }
 
+  /** The open phone's back button counts unread texts in its other threads (review R2 M2). */
+  _refreshPhoneUnread() {
+    try {
+      const m = window.MinigameFramework?.currentMinigame;
+      if (m && !m._ending && m._sceneType === 'phone-chat') m.ui?.refreshBackUnread?.();
+    } catch (e) { /* the phone closed meanwhile */ }
+  }
+
   /** Compass point from the player to a speaker's sprite (hud-lanes.js arrowDirection), or null. */
   _speakerDirection(npcId) {
     try {
@@ -1096,3 +1113,8 @@ export default class NPCBarkSystem {
 
 // How often a bark held behind a dialog checks whether the dialog has closed (_watchDialogHold)
 NPCBarkSystem.DIALOG_HOLD_POLL_MS = 250;
+
+// The phone layout (ui/hud-lanes.js sets body.hud-compact; css/npc-barks.css uses the same class)
+function compactHud() {
+  try { return !!document?.body?.classList?.contains('hud-compact'); } catch (e) { return false; }
+}

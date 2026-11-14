@@ -218,7 +218,29 @@ function startCountdown(notification, duration) {
         progress.style.transition = `width ${duration}ms linear`;
         setTimeout(() => { progress.style.width = '0%'; }, 10);
     }
+    notification._countdownAt = Date.now();
+    notification._countdownMs = duration;
     notification._hideTimer = setTimeout(() => removeNotification(notification), duration);
+}
+
+// A toast that steps aside for a finished-task line (ui/hud-lanes.js, review R2 M4) keeps the
+// time it had left and gets it back when it shows again (at least TOAST_RESUME_MIN_MS).
+export const TOAST_RESUME_MIN_MS = 1500;
+function laneYieldHandler(notification) {
+    return (hidden) => {
+        const t = notification._toast;
+        if (!t || t.closing || !(t.duration > 0)) return;
+        if (hidden) {
+            if (notification._yieldLeft != null) return;
+            clearTimeout(notification._hideTimer);
+            const used = Date.now() - (notification._countdownAt || Date.now());
+            notification._yieldLeft = Math.max(0, (notification._countdownMs || t.duration) - used);
+        } else if (notification._yieldLeft != null) {
+            const left = Math.max(TOAST_RESUME_MIN_MS, notification._yieldLeft);
+            notification._yieldLeft = null;
+            startCountdown(notification, left);
+        }
+    };
 }
 
 // Plain text into an element: textContent per line, a <br> element between lines.
@@ -360,7 +382,9 @@ function renderNotification(message, type, title, duration, seen = false, option
     // success toast waits its turn and shows as one goes; warnings and errors answer
     // what the player just did, so they still show at once.
     // A toast that stays until closed takes no place and never waits for one.
-    if (!overLimit && HOLDABLE_TYPES.has(type) && duration > 0
+    // A finished task or aim (options.brief) does not wait: the pill blinks now, and the lanes
+    // step the other toasts aside for it (review R2 M4)
+    if (!overLimit && HOLDABLE_TYPES.has(type) && duration > 0 && options?.brief !== true
         && shownToasts(notificationContainer).length >= maxShownToasts()) {
         if (!isQueuedDuplicate(waitingToasts, message, type, title, options)) {
             addWaiting([message, type, title, duration, seen, options]);
@@ -400,6 +424,7 @@ function renderNotification(message, type, title, duration, seen = false, option
     // is never cut, so the task's name can always be read (review R1 M2)
     if (options?.brief === true) notification.classList.add('brief');
     notification._toast = { message, type, title, duration, shownAt: Date.now(), seen, html: !plainText, verbatim };
+    notification._onLaneYield = laneYieldHandler(notification);
     
     // Add to container
     notificationContainer.appendChild(notification);

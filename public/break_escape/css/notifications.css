@@ -45,6 +45,12 @@ body:has([data-minigame="phone-chat"]) #notification-container {
     transform: translateY(0);
 }
 
+/* Stepped aside while a finished-task line needs the toast lane (ui/hud-lanes.js, review R2 M4);
+   its countdown waits and it comes back after */
+.notification.hud-lane-yield {
+    display: none;
+}
+
 .notification.info {
     border-left: 4px solid #3498db;
 }
