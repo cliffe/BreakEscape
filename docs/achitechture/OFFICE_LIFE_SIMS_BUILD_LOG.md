@@ -206,12 +206,76 @@ Round-2 design/engine review: 0 blockers, 2 major, 7 minor; server review: 1 min
 
 New spoken lines: Neil's `neil.ink` stays at **7** NPC lines (two reworded: the "ready" line now has two branch texts in one line, and the goodbye); no new voiced lines, no pools.
 
+## SIMS-4: the staff-room pair (Keith and Jodie, m02's porter and domestic) (2026-11-14, build/ol-sims-2)
+
+The staff room (`room_hospital_staff`, m02's own Night Handover map, used plainly) off IT's east door,
+private to Keith Dando (night security, West Country) and Jodie Kerr (maintenance, Glaswegian). All
+scenario data; **0 engine lines** (the pilot pattern needs no engine change). Built from plan 5.4.
+
+- **Objects** claim the drawn decor by base type: `staff_boiler` (`hot_water_boiler`, kettle preset
+  through `officeType`, capacity 2, `queue: false`, `chatter: staff_tea`, restores 40, 30 s),
+  `staff_cooler` (`water_cooler`, cooler preset, `chatter: staff_water`, restores 40, 25 s),
+  `staff_microwave` (`microwave`, microwave preset through `officeType`, Keith's solo hunger),
+  `job_board` (`notes`, dressing only, claims conditional `notes6`).
+- **Pair** on tile homes beside the two `STATIC_SEATS` chairs: Keith on `hospital_chair_south`
+  (home room-local (6.97, 4.85)), Jodie on `hospital_chair_north` ((4.2, 6.1)). `chatterCooldownMin:
+  0.25`, 6-line `staff_tea`/`staff_water` pools each, group `facilities`. Jodie's id sorts first so
+  her exchange list is read first.
+- **Coupling** on the use start (not `onceOnly`, writes nothing): Keith's boiler use sets Jodie's
+  caffeine to 20; Jodie's cooler use sets Keith's thirst to 20. **Break starts:** first-visit
+  (`room_entered:staff_room`, `firstVisit` condition, delayMs 2000) on Keith; Neil close
+  (`conversation_closed:neil`, cooldown 120 s) on Keith; private-office entry
+  (`room_entered:manager_office`, cooldown 120 s) on Jodie.
+- **Three exchanges** on Jodie's list: `exchange_job_called` (gated `job_called`, set in neil.ink's
+  new flickering-light choice), `exchange_job_cleared` (gated `job_cleared` + `heard_exchange_job_called`,
+  `job_cleared` set in jodie.ink), `exchange_waiting` (ungated). `roomToneTypes` maps
+  `room_hospital_staff` to `kitchen`.
+- **Objectives** (aim `watch_the_staff_room`): `see_shared_break`/`see_cooler_break`
+  (`npc_chatted` + `overheard`), `hear_waiting`/`hear_job_called` (`npc_exchange_heard`),
+  `see_microwave` (`npc_used`).
+- **Workarounds for E7/E8/E9 (not fixed, by brief):** `chatterCooldownMin 0.25` + 6-line pools (E7
+  spends a pool line at pairing unheard); the cooler `useFrom` dx -1 (E8, `besideCell` has no route
+  check and the preset's second-user cell is against the east wall); gates that avoid depending on
+  `heard_` of an earlier exchange save the one job-cleared gate (E9). Live observations: E7 seen
+  (3-5 pool lines spent unheard per run, games 4341/4344/4347); E8 worked around (both reach the
+  cooler, game 4347); E9 not triggered (player always in earshot, `heardLines` > 0).
+- **HUD (main-merged `npc-barks.js`/`ui/hud-lanes.js`):** no interference. Those systems never
+  reference `npc_chatted`/`npc_overheard`; staff-room chatter renders as NPC speech bubbles. The HUD
+  globals are absent in the standalone build; chatter is neither held nor laned.
+
+New spoken lines (SIMS-4): Keith `staff_tea` (6) + `staff_water` (6) = 12; Jodie `staff_tea` (6) +
+`staff_water` (6) = 12; exchanges `exchange_waiting` (5) + `exchange_job_called` (3) +
+`exchange_job_cleared` (3) = 11; Keith conversation 6; Jodie conversation 5; Neil's new
+flickering-light choice reply 1. **Total 47 new lines.** No `hush` (their own room). One line each,
+40 characters at most, no `{ }`, no speaker prefix on the pool lines (exchange lines carry a
+`Keith:`/`Jodie:` prefix that is stripped before timing and TTS).
+
+Tests: validator 0 errors (34 warnings, incl. Jodie's `female_telecom_v2_talk.png` art-request
+fallback and the `room_entered:manager_office` relay note, both expected); the standard node set
+(25 files) + the Ruby format corpus (8a/8b/8c) pass; `validator-office-presets.test.mjs` updated to
+add `staff_boiler`/`staff_cooler`/`staff_microwave` to the preset list. Door alignment OK.
+
+Live proof: `tools/playtest/needs-sims-staff-room.mjs` (+ `sims4-step1.mjs`). Step 1 (game 4340) and
+beats first_visit (4345), job_beat (4346), cooler_cross (4347) PASS; see the README SIMS-4 live-proof
+table. Counts (fresh game per run, 0 setup failures): step 1 first visit 5/5 (4368-4375); step 2 job
+beat 5/5 (4376-4383); step 3 boiler crossings pair 10/10, line heard 10/10, overlap 27.5 s
+(4384-4401); step 4 cooler crossings pair 10/10, line heard 10/10, overlap 21.2 s (4402-4428); step 5
+both returned and sat after every break. Step 7 speech lock (4369, 15 min): 0 of 6 office turns
+blocked (small sample), 13 of 13 staff pool lines spent unheard (E7); the kitchen cooler pair did not
+chat in that run (open for review). Step 6 schedule (4360, thirst 85): first visit 0:02, Keith's
+second tea 5:35 (computed 4:30-6:30), microwave 7:59 (8:00), Jodie's first cooler 8:58 (nominal
+10:00; the seed's jitter is about -6 %), boiler 13:52, cooler 16:46. The cooler fell 58 s after the
+microwave, inside step 1's one-minute rule, so **Jodie's initial thirst moved 85 to 90** (scenario
+data only); the rerun is recorded below. The standard live set on other scenarios was not rerun:
+SIMS-4 changes no engine or server line.
+
 ## Engine and server changes (every slice)
 
 | Slice | File | Function | Change | Why | Branch |
 |---|---|---|---|---|---|
 | SIMS-1 | none applied | | | | |
 | SIMS-3 | none applied | | the Gary pattern is all scenario data (declared mug, print command, `forget`, reveal slots, `delayMs`) | nothing in the engine needed changing | build/ol-sims |
+| SIMS-4 | none applied | | the pilot staff-room pattern is all scenario data (claimed decor, couplings on the use start, first-visit/close/private-office break starts, hand-written cooler cell, gated exchanges, roomToneTypes) | the plan builds SIMS-4 to work around E7/E8/E9 without touching the chatter engine | build/ol-sims-2 |
 | SIMS-2 | public/break_escape/js/systems/npc-needs.js | `onArrived` | now takes the arrival payload; logs `arrival {pathLeft,dist}` for a real behaviour-layer arrival; stores `{x,y,moveId,pathLeft}` in the `_arrivals` Map | step 1 diagnostic + carry the position/id the tick needs | build/ol-sims-2 |
 | SIMS-2 | npc-needs.js | `_phaseDest`, `_nextMoveId`, `_acceptArrival` (new) | distance-first + move-id check; a far arrival re-issues once then fails the job (returning re-issues once, never fails); synthetic own-post/home arrivals bypass | the fix: an arrival counts only within 48 px of the move's cell, and only for the current move | build/ol-sims-2 |
 | SIMS-2 | npc-needs.js | `_tickNpc` | consumes the stored arrival through `_acceptArrival` instead of a boolean Set membership | route every arrival through the distance/id guard | build/ol-sims-2 |
