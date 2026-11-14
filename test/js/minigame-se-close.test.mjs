@@ -84,6 +84,23 @@ test('C-X4/C-X6 shared notice and title rules exist, pixel and square', () => {
     assert.match(title, /font-weight:\s*normal/, 'no faux bold');
 });
 
+test('C-X3 the wide SE windows take the shared 9-slice frame, no ring or line', () => {
+    const files = {
+        'intel-board-minigame.css': '.intel-board-game-container',
+        'engagement-report-minigame.css': '.engagement-report-game-container',
+        'landing-page-builder-minigame.css': '.lpb-game-container',
+        'osint-browser-minigame.css': '.osint-browser-game-container',
+        'pretext-prep-minigame.css': '.pretext-prep'
+    };
+    for (const [fn, sel] of Object.entries(files)) {
+        const src = readFileSync(join(css, fn), 'utf8');
+        const rule = src.match(new RegExp(sel.replace(/[.]/g, '\\.') + '\\s*\\{[^}]*\\}'))[0];
+        assert.match(rule, /border-image:[^;]*mail-frame\.png/, `${fn}: uses the shared 9-slice frame`);
+        assert.doesNotMatch(rule, /box-shadow:\s*0 0 0/, `${fn}: no outer ring`);
+        assert.doesNotMatch(rule, /border:\s*[34]px solid/, `${fn}: the plain line is gone`);
+    }
+});
+
 test('C-X1 hand-rolled text Close buttons are gone from the SE scenes', () => {
     for (const rel of [
         'minigames/assistant-chat/assistant-chat-minigame.js',
