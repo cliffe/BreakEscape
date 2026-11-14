@@ -243,3 +243,7 @@ Tests (chunk 3): `sync_stale_ring_merge_test.rb` 10 runs, green.
   the ring entry for a stale-but-recent request is recorded at its own lower ts;
   the reset request clears the pre-reset ring then records its own fresh entry
   (so the ring is not empty after a reset, only free of pre-reset stamps).
+
+## Build review R1 (chunks 1 to 3)
+
+SYNC_STALE_RING_BUILD_REVIEW_R1.md: SHIP CHUNKS 1-3, 0 blockers, 0 majors, 2 minors. Minor 1, the stale-answer comment that overstated what the client does with notSaved and mailTrimmed, is corrected in games_controller.rb: the client returns early on a stale answer and reads neither field, and the next fresh answer carries them. Chunk 4 owns any client handling of the stale path. Minor 2: the stale answer's fields pass through every part's onAnswer before the early return. The parts key off the stamp, so nothing changes today. Chunk 4 re-checks it.

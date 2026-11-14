@@ -919,9 +919,12 @@ module BreakEscape
         # A stale-but-recent request now merges its pre-filtered last-write-wins
         # sections (chunk 2 and 3), so it can refuse a section the same way a fresh
         # request does: a forged currentRoom, a capped phone or mail update. Surface
-        # notSaved and mailTrimmed on the stale answer too, so the notSaved contract
-        # holds on this path (the client marks the refused section confirmed rather
-        # than nothing). A fully-stale whole-skip merges nothing, so neither is set.
+        # notSaved and mailTrimmed on the stale answer too, so the answer reports what
+        # the server refused or trimmed. The client today returns early on any stale
+        # answer (state-sync.js) and reads neither field: it resends, and the next
+        # fresh answer carries the same notSaved and mailTrimmed. A refused room does
+        # not loop and trimmed mail reconciles then. A fully-stale whole-skip merges
+        # nothing, so neither is set.
         body[:notSaved] = @not_saved if @not_saved.any?
         body[:mailTrimmed] = @mail_trimmed if @mail_trimmed.present?
         add_capture_answer_fields(body)
