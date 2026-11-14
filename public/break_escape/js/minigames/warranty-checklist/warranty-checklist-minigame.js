@@ -77,6 +77,8 @@ export class WarrantyChecklistMinigame extends MinigameScene {
             ? (params.warranties || minigameData.warranties)
             : [];
 
+        this.caseRef = String(params.caseRef || minigameData.caseRef || '');
+
         this.verdicts = {};
         this.submitted = false;
     }
@@ -240,7 +242,7 @@ export class WarrantyChecklistMinigame extends MinigameScene {
                     <div class="wcc-paper">
                         <div class="wcc-letterhead">
                             <h2 class="wcc-letterhead-title">Meridian Cyber Insurance</h2>
-                            <span class="wcc-letterhead-ref">MC-2023-ALBE-007</span>
+                            ${this.caseRef ? `<span class="wcc-letterhead-ref">${escapeText(this.caseRef)}</span>` : ''}
                         </div>
                         <div class="wcc-doc-header">
                             ${docTitle}

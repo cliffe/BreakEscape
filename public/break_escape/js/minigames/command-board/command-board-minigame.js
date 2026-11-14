@@ -276,16 +276,6 @@ export class CommandBoardMinigame extends MinigameScene {
     renderLayout() {
         this.gameContainer.innerHTML = `
             <div class="cb-panel pixel-scroll" id="cb-panel">
-                <div class="cb-header" id="cb-header">
-                    <div class="cb-header-right">
-                        <div class="cb-status-dots" id="cb-status-dots">
-                            <span class="cb-status-dot dot-1"></span>
-                            <span class="cb-status-dot dot-2"></span>
-                            <span class="cb-status-dot dot-3"></span>
-                        </div>
-                        <div class="cb-clock" id="cb-clock">00:00</div>
-                    </div>
-                </div>
                 <div class="cb-body">
                     <section class="cb-timeline-col">
                         <div class="cb-section-title">INCIDENT TIMELINE</div>
@@ -293,7 +283,17 @@ export class CommandBoardMinigame extends MinigameScene {
                         <div class="cb-timeline-list" id="cb-timeline-list"></div>
                     </section>
                     <section class="cb-status-col">
-                        <div class="cb-section-title">SYSTEM STATUS</div>
+                        <div class="cb-header" id="cb-header">
+                            <div class="cb-section-title">SYSTEM STATUS</div>
+                            <div class="cb-header-right">
+                                <div class="cb-status-dots" id="cb-status-dots">
+                                    <span class="cb-status-dot dot-1"></span>
+                                    <span class="cb-status-dot dot-2"></span>
+                                    <span class="cb-status-dot dot-3"></span>
+                                </div>
+                                <div class="cb-clock" id="cb-clock">00:00</div>
+                            </div>
+                        </div>
                         <div class="cb-status-list pixel-scroll" id="cb-status-list"></div>
                     </section>
                 </div>

@@ -1,6 +1,16 @@
 import { displayDashes } from '../../utils/display-dashes.js';
 import { escapeHtml } from '../../utils/escape-html.js';
 
+// A title of the form "ORGANISATION // CONSOLE NAME" (or "ORGANISATION - CONSOLE NAME") keeps
+// the organisation in its own span, which phones under 600px wide hide so the console's own
+// name shows; the text content, and the bar's title attribute, stay whole.
+function consoleTitleHtml(text) {
+    const t = String(text || '');
+    const m = t.match(/^(.+?)( \/\/ | - | \u2013 )(.+)$/);
+    if (!m) return escapeHtml(t);
+    return `<span class="console-title-org">${escapeHtml(m[1] + m[2])}</span>${escapeHtml(m[3])}`;
+}
+
 // params.title and params.cancelText are plain text: they often come from scenario
 // object names, NPC names or server data, so they are escaped before they reach the
 // header HTML. No caller needs markup in a title, and there is deliberately no option
@@ -35,6 +45,10 @@ export class MinigameScene {
     // With consoleWindow: true for a data console whose own panes scroll (a diagram, a log,
     // a dashboard), so the window takes its full size instead of wrapping its content
     static consoleWindowFill = false;
+    // A scene whose subtitle carries something the player needs sets this to true: on phones
+    // under 600px wide the subtitle then stays, on a second line of the bar
+    // (css/minigames-framework.css)
+    static consoleSubtitleEssential = false;
 
     constructor(container, params) {
         this.container = container;
@@ -62,7 +76,7 @@ export class MinigameScene {
             <div class="console-window${this.constructor.consoleWindowFill === true ? ' console-window-fill' : ''}${this.constructor.consoleSubtitleEssential === true ? ' console-subtitle-essential' : ''}" data-console-window>
                 <div class="console-titlebar">
                     <div class="console-titles">
-                        <h2 class="console-title">${escapeHtml(displayDashes(this.consoleTitle()))}</h2>
+                        <h2 class="console-title">${consoleTitleHtml(displayDashes(this.consoleTitle()))}</h2>
                         <div class="console-subtitle" ${sub ? '' : 'hidden'}>${escapeHtml(displayDashes(sub))}</div>
                     </div>
                     <button class="minigame-close-button minigame-close-in-frame" id="minigame-close" aria-label="Close" ${disableClose ? 'style="display:none"' : ''}>&times;</button>
@@ -174,7 +188,11 @@ export class MinigameScene {
     }
 
     setConsoleTitle(title, subtitle) {
-        if (this.consoleTitleEl && title != null) this.consoleTitleEl.textContent = displayDashes(String(title));
+        if (this.consoleTitleEl && title != null) {
+            const text = displayDashes(String(title));
+            if (typeof this.consoleTitleEl.innerHTML === 'string' && this.consoleTitleEl.nodeType === 1) this.consoleTitleEl.innerHTML = consoleTitleHtml(text);
+            else this.consoleTitleEl.textContent = text;
+        }
         if (this.consoleSubtitleEl && subtitle !== undefined) {
             this.consoleSubtitleEl.textContent = displayDashes(String(subtitle || ''));
             this.consoleSubtitleEl.hidden = !subtitle;
@@ -182,9 +200,16 @@ export class MinigameScene {
         this.syncConsoleTitleTip();
     }
 
-    // A scene whose subtitle carries something the player needs sets
-    // `static consoleSubtitleEssential = true`: on phones under 600px wide the subtitle then
-    // stays, on a second line of the bar (css/minigames-framework.css)
+    // On short landscape windows the subtitle takes the width the title leaves; when that is
+    // next to nothing it is hidden (it stays in the bar's title attribute). Measured with the
+    // flag cleared so a window that grows again gets it back.
+    fitConsoleSubtitle() {
+        const sub = this.consoleSubtitleEl;
+        if (typeof sub?.classList?.remove !== 'function' || sub.hidden) return;
+        sub.classList.remove('console-subtitle-nowidth');
+        if (!window.matchMedia?.('(max-height: 500px)').matches) return;
+        if (sub.clientWidth < 48) sub.classList.add('console-subtitle-nowidth');
+    }
 
     // The title is one line with an ellipsis, and on short or narrow windows the subtitle
     // shares that line or is hidden, so the bar's title attribute carries the full text
@@ -196,6 +221,7 @@ export class MinigameScene {
         const tip = sub ? `${title}\n${sub}` : title;
         if (tip) holder.setAttribute('title', tip);
         else holder.removeAttribute('title');
+        this.fitConsoleSubtitle();
     }
 
     // Puts the X inside the frame: below and left of the frame's border by a 4px gap, kept
@@ -252,7 +278,11 @@ export class MinigameScene {
     }
 
     _watchCloseButton() {
-        const place = () => { if (this.gameState.isActive) this.placeCloseButton(); };
+        const place = () => {
+            if (!this.gameState.isActive) return;
+            this.fitConsoleSubtitle();
+            this.placeCloseButton();
+        };
         const raf = window.requestAnimationFrame || ((f) => setTimeout(f, 16));
         raf(place);
         this.addEventListener(window, 'resize', place);

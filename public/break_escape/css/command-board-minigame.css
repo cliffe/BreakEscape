@@ -18,14 +18,13 @@
     overflow: hidden;
 }
 
+/* The clock and status dots share the SYSTEM STATUS heading row (no bar of their own) */
 .cb-header {
     flex-shrink: 0;
-    min-height: 40px;
-    padding: 10px 12px;
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    background: #0a0f1e;
+    justify-content: space-between;
+    gap: 8px;
     border-bottom: 2px solid #1e2d48;
 }
 
@@ -42,7 +41,6 @@
     display: flex;
     align-items: center;
     gap: 14px;
-    margin-left: 12px;
 }
 
 .cb-status-dots {
@@ -73,7 +71,8 @@
 
 .cb-clock {
     font-family: 'GNF', monospace;
-    font-size: 34px;
+    font-size: 24px;
+    line-height: 24px;
     color: #d4a84b;
     min-width: 56px;
     text-align: right;
@@ -401,14 +400,6 @@
 
     .cb-panel {
         overflow-y: auto;
-    }
-
-    .cb-header {
-        flex-wrap: wrap;
-    }
-
-    .cb-header-right {
-        margin-left: 0;
     }
 
     .cb-body {

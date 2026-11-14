@@ -504,7 +504,8 @@ html .minigame-container.minigame-console {
     text-overflow: ellipsis;
 }
 
-.console-window .console-subtitle[hidden] {
+.console-window .console-subtitle[hidden],
+.console-window .console-subtitle.console-subtitle-nowidth {
     display: none;
 }
 
@@ -597,6 +598,9 @@ html .minigame-container .console-window > .console-body > * {
 /* Narrow phones: no room beside the title, so the subtitle lives in the bar's title
    attribute only and the bar stays one row */
 @media (max-width: 600px) {
+    .console-window .console-title-org {
+        display: none;
+    }
     .console-window .console-subtitle {
         display: none;
     }

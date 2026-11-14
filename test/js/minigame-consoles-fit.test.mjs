@@ -534,3 +534,19 @@ test('fix round 2: the claims subtitle comes from the scenario data, none when a
     assert.match(cms, /minigameData\.subtitle/);
     assert.match(cms, /return this\.subtitleText \|\| ''/);
 });
+
+test('final pass: phones show the console name, short windows hide a subtitle with no width, case reference from data', () => {
+    const base = src('framework/base-minigame.js');
+    assert.match(base, /console-title-org/, 'the organisation prefix has its own span');
+    const fw = css('minigames-framework.css');
+    const narrow = fw.slice(fw.indexOf('@media (max-width: 600px) {\n    .console-window .console-title-org'));
+    assert.match(narrow.slice(0, 120), /console-title-org \{\s*display: none/, 'hidden under 600px');
+    assert.match(fw, /console-subtitle\.console-subtitle-nowidth/, 'a subtitle with no width is hidden');
+    assert.match(base, /fitConsoleSubtitle\(\)/);
+    const starters = readFileSync(join(root, 'js/systems/minigame-starters.js'), 'utf8');
+    assert.doesNotMatch(starters, /ALBE-007/, 'no case reference in the starter fallback');
+    assert.doesNotMatch(src('warranty-checklist/warranty-checklist-minigame.js'), /ALBE-007/, 'letterhead reads the case reference from data');
+    assert.match(src('warranty-checklist/warranty-checklist-minigame.js'), /minigameData\.caseRef/);
+    const cb = src('command-board/command-board-minigame.js');
+    assert.ok(cb.indexOf('id="cb-header"') > cb.indexOf('cb-status-col'), 'the command board clock sits in the status column heading, not a bar of its own');
+});

@@ -217,7 +217,8 @@
       "warranties"
     ],
     "optional": [
-      "title"
+      "title",
+      "caseRef"
     ]
   },
   "coverage_decision_form": {
