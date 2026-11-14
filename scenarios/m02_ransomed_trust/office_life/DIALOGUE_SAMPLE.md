@@ -12,7 +12,7 @@ For the user's calibration before the dialogue cycles continue (missions plan 6.
 |---|---|---|---|---|
 | Ernie | `coffee` | a shared break at the boiler, the player in the staff room | Lab's quiet. That never lasts. | 30 |
 | Ernie | `coffee` | as above | Thirty years. Never seen it like this. | 38 |
-| Ernie | `coffee` | as above | Bloods all night. All on foot. | 29 |
+| Ernie | `coffee` | as above | Bloods all night. All on foot. | 30 |
 | Ernie | `cooler` | a shared break at the cooler (often as the player comes in from the ward) | Lift's out again. Stairs it is. | 31 |
 | Hodan | `coffee` | a shared break at the boiler | Four beds turned. Linen's run out. | 34 |
 | Hodan | `coffee` | as above | Every bed I turn, they want two. | 32 |
@@ -35,9 +35,9 @@ Trigger: the first shared break the player hears, usually on the first visit to 
 
 ## The other two exchanges, for context
 
-`night_watch_burned` (after the keycard conversation with Gary, when security put out word that a visitor is not on the list; 3 lines): Hodan "Radio says security want a visitor." (35) / Ernie "Not our list, love. Not our problem." (36) / Hodan "Good. I clean floors. I don't do lists." (39).
+`night_watch_burned` (after the keycard conversation with Gary, when security put out word that a visitor is not on the list, and only if neither Gary nor Dr Kim has been knocked out; 3 lines): Hodan "Radio says security want a visitor." (35) / Ernie "Not our list, love. Not our problem." (36) / Hodan "Good. I clean floors. I don't do lists." (39).
 
-`night_watch_cleared` (after Val clears the player, and only if the burn exchange was heard and Val was not attacked; 3 lines): Hodan "Radio again. That visitor checks out." (37) / Ernie "There you go. Fuss over nothing." (32) / Hodan "Checks out with who, though?" (28).
+`night_watch_cleared` (after Val clears the player, and only if the burn exchange was heard, Val was not attacked and neither Gary nor Dr Kim has been knocked out; 3 lines): Hodan "Radio again. That visitor checks out." (37) / Ernie "There you go. Fuss over nothing." (32) / Hodan "Checks out with who, though?" (28).
 
 ## Questions for the user
 

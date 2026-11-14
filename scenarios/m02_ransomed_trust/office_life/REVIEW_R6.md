@@ -83,3 +83,7 @@ Besides `offWhen` (M1), the affordance list leaves out `satisfies` and `useSound
 - The cleared exchange's "Checks out with who, though?" is already user question 3 in `DIALOGUE_SAMPLE.md`.
 - The porter's "Lift's out again" agrees with the handover board ("Lift 2 still out") and the snag list (item 17) and carries no clue, which is consistent rather than a repeat.
 - Line numbers in the plan are for base commit `9fe568a7c`. The engine line numbers above are for `e50538706`, which has the same engine; a few of the plan's engine citations have drifted by a few lines, which is harmless.
+
+## Folded
+
+All findings, M1 and m1 to m10, were folded into draft 7; none was declined.
