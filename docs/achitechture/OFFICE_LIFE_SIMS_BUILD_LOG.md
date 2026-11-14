@@ -129,8 +129,55 @@ game 4304, once Grace's full walk to the lounge sofa completes, `used lounge_sof
 `arrival_far`), and **no office NPC enters IT** (`it_intruders: []`): the leash and room privacy hold
 with the door open, so the office outcomes are unchanged.
 
-New spoken lines: Neil's `neil.ink` conversation, 5 single-speaker NPC lines (greeting + four
-choice replies). No pools (Neil is alone in IT in this slice, so a pool would never play).
+### SIMS-3 R1 review fixes (2026-11-14, commits 510a2e99e + 279080517 + the live-proof follow-up)
+
+Round-1 design review: 1 blocker, 4 major, 9 minor; server review: 3 minor. All fixed or reconciled.
+
+- **B1 (blocker): the mug and bench drew under the office's back wall.** `neil_mug` had no position and
+  claimed a drawn cup on a south bench; IT's bottom two rows (world y 0 to 64) overlap the office top
+  wall (depth 64), so the mug and benches were hidden and Neil appeared to drink from nothing. Fix:
+  `neil_mug` now has an explicit position on the lower IT desk, tile (6.2, 6.0) elevation 24, with
+  `useFrom { dx: -0.4, dy: 1 }`; Neil spawns at (5.8, 7.0) on the approach cell. The six `it_out_*`
+  slots moved from (8.2, 7.7) (straddling the wall line, m5) up to the west tray at (8.1, 7.2). Live
+  render game 4326: a cover probe at the mug finds only Neil's sprite over it (no `walls`/`room`
+  layer); home distance 5 px. Plan 3.3 gains a dated note that the IT south benches draw under the
+  office wall, so SIMS-6's `it_kettle` avoids them.
+- **M1/M2 (proof): the stillness check ran on the manual clock and four 5.3 checks were missing.** The
+  proof tool now runs stillness on the **real** needs clock (sampling the sprite), reads the
+  `drink_gulp`/`copier_run` sounds from `npcOfficeVisuals.playLog`, and adds the four checks: five
+  opens incl. one mid-sip, leave-within-6 s with the page landing while away (sound suppressed outside
+  IT), close-to-page timing with the run sound audible in IT, and the next-close-after-reload. Reproven
+  on fresh games 4327 (still_ask: drift 0.4 px, sips 2.70/7.77 with gulp sound in IT, 6 opens incl
+  mid-sip, suspend/resume drift 0, asked close reveals at 5857 ms with `copier_run` played:true in IT,
+  `see_neils_page`, 0 fetch), 4328 (leave_after: page lands at 5888 ms while in the office,
+  `copier_run` played:false), 4329 (reload_after), 4330 (reload_during).
+- **M3 (reload during the delay): the next close prints.** `neil_print_asked` is saved at the close,
+  before the delay, so after a reload during the 6 s the pending print is lost but a plain no-ask close
+  prints the page (game 4330: `next_close_printed: true`). The README, this log and plan 5.3 are
+  corrected (the earlier "nothing reprints" was wrong).
+- **M4 (ink): the ask choice is gated.** `neil.ink` declares `VAR neil_print_asked` (synced from the
+  global) and gates the change-log choice on `{not neil_print_asked}`; once asked it is replaced by an
+  "Is that change log ready?" line pointing at the tray, so Neil no longer promises a second print that
+  never comes. Recompiled `neil.json`.
+- **Minors:** m1 (README cup sentence removed), m2 (mug observation reworded), m3 (`readDisplay:
+  gameDisplay` on `it_out_a`, so all six match), m4 (the training printout is now fire-warden, no
+  security note), m6 (ink dialect eased to plain spelling for TTS, keeping "Howay"/"pet"/"Aye"; grown
+  from 5 to 7 NPC lines), m7 (the two node tests now assert per-condition true/false and run
+  `presetIdFor` over every IT object, so they can fail), m8 (stale report rerun), m9 (SIMS-6 kettle
+  note). Server m3: the `see_neils_page` condition gained `&& !data.cosmetic` so a full-tray cosmetic
+  reveal does not tick it. Server m1/m2 are recorded as owner items above (print-reveal global not
+  synced; pickup not reveal-gated); the docs and README are reconciled to the real client-only
+  behaviour. No engine or server code changed in this slice.
+- **Not fixed (not counted):** a "Neil Robson" hover name box lingers over the office copier after the
+  bridge's chats; it looks like a bridge pointer label, not a player-visible artefact, and belongs to
+  whoever owns the hover labels.
+- Office-beats regression after the move (games 4331, 4333): five core beats tick in each and
+  `it_intruders: []`; `see_rest` (Grace's lounge-sofa walk) did not complete inside the 180 s window in
+  either run, a proof-window timing artefact, not a regression from the IT-only change.
+
+New spoken lines: Neil's `neil.ink` conversation, now **7** single-speaker NPC lines (greeting + six
+choice replies, up from 5: the change-log ask, the "ready" line, what-he-looks-after, the coffee, a
+quiet-day line, and the exit). No pools (Neil is alone in IT in this slice, so a pool would never play).
 
 ## Engine and server changes (every slice)
 
