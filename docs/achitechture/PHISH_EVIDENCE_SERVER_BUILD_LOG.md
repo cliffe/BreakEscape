@@ -159,3 +159,100 @@ Gotchas: a new game route needs three edits beyond the controller action, the `s
 `GamePolicy` `<action>?` method, and (for Pundit) nothing else; missing either gives a 500, not a
 403. The build POST is a guarded direct `fetch`, deliberately not an `ApiClient` static import, to
 avoid the test-harness copy-list burden and keep the builder headless-safe.
+
+## Chunk 3 live browser proof: real in-browser attach() fills the server store
+
+The chunk-3 handover left one proof outstanding: the full in-browser drive of the landing-page
+builder to a real `attach()` that fires the client POST. This section closes it, and covers the
+plan's network-resilience and leak checks for the build route (sections 10 and 7). All runs used the
+keyless server on `:3660` (TTS off), headless Chromium, `setFPS(20)` with fixed steps on. The two
+proof drivers are `tools/playtest/se/phish-build-liveproof.mjs` (build + attach, throttle and
+offline modes, response-leak scan) and `tools/playtest/se/phish-reveal-liveproof.mjs` (the old
+client-evidence reveal). No app code was changed for these proofs. The server store was read back
+read-only with a rails runner.
+
+The build POST body is about 217 bytes (`pageId`, `targetId`, `choices`); its answer is 80 bytes
+(`{"success":true,"pageId":"payroll_login","meetsThreshold":true,"credibility":87}`). The
+`seLandingPages` entry is one page row (bounded by the scenario's landing pages).
+
+Convincing choices for `payroll_login` / `lord` (linkThreshold 70, minDomainTier 2): brand
+ledgerwell, purpose payslip, domain `d_word` (tier 2), crisp logo, matching wording `w_formal`,
+email+password, padlock on; the builder scores credibility 87, meetsThreshold true.
+
+### Item 1 - test_social_slice, game 3715
+
+Drove `interact slice_page_builder` (after a real `grantFact('portal_name')`), built the convincing
+page through the builder chips, clicked the real Attach button. The minigame's own `attach()` fired
+`_recordBuildOnServer()`, POST `games/3715/se/landing_page` returned 200
+`{"success":true,...,"meetsThreshold":true,"credibility":87}`. The DB then held
+`seLandingPages['payroll_login']` with the server's own verdict: `built: true`, `meetsThreshold:
+true`, `credibility: 87`, `targetId: 'lord'`, the validated `choices`. `sePhishSends` empty (no send
+route in chunk 3). PASS.
+
+### Item 2 - lab_social_engineering, game 3725
+
+Started in `operations_room` (`new-game.rb --start-room operations_room`, a VM-free seed) to reach
+the real `page_builder`. Same convincing build through the UI; POST 200. DB held
+`seLandingPages['payroll_login']` `built: true`, `meetsThreshold: true`, `credibility: 87`,
+`targetId: 'lord'`. An honest convincing build is recorded with meetsThreshold true. PASS.
+
+### Item 3 - network throttling and offline (test_social_slice)
+
+- Throttle, game 3727: CDP `Network.emulateNetworkConditions` slow-3G (latency 400 ms, 500 kbps)
+  plus a 1200 ms Playwright `route` delay on the build POST, then build + attach. The POST still
+  returned 200; DB `seLandingPages['payroll_login']` `built: true`, `meetsThreshold: true`,
+  `credibility: 87`. The honest build is never refused under a throttled network. PASS.
+- Offline, game 3728: `context.setOffline(true)`, then build + attach. The fire-and-forget POST
+  failed (`net::ERR_INTERNET_DISCONNECTED`) and the attach still completed client-side with no
+  error. Back online (`setOffline(false)`), a second attach POSTed 200 and the DB recorded
+  `built: true`, `meetsThreshold: true`. The honest build is never refused and ends up recorded.
+  PASS, with one caveat tied to the build order: chunk 3 is fire-and-forget with no re-send queue, so
+  a build attached while offline is lost until the next attach; the bounded offline re-send queue
+  that would drain it on the `online` event is chunk 5 (plan section 10), not yet built. The re-post
+  here was a second honest attach, which stands in for that queue drain.
+
+### Item 4 - the old client-evidence path still drives the reveal (chunk 7 not landed)
+
+At this tip `phish_page_evidence_holds?` (`app/models/break_escape/capture_proofs.rb:441`) still
+reads the client globals (`player_state.globalVariables.se_landing_pages` for
+`built`/`meetsThreshold`/`victim.submitted` and `mailState` for the landed send), not the two server
+stores; the reader change is chunk 7. Proven in the browser on lab game 3733: built + attached the
+page through the real UI, then wrote the client evidence the honest send produces (the page record's
+`victim.submitted` and a landed `sent` message to `lord` carrying `kit_payroll_page`, injected into
+`window.mailScheduler.state` so the keyed mailState delta carries it), recorded the capture through
+the game's own `window.submitSECapture`, and synced. `GET games/3733/capture_secrets` then served
+`{"lord":"Sofia2026!"}` and the DB `seCaptures['lord']` was stamped `proven: true`. Conversely the
+server store filled in items 1 and 2 did not by itself reveal anything (those games' `seCaptures`
+stayed empty), confirming the server store is not yet the gate. The game behaves as on main. PASS.
+
+### Item 5 - seLandingPages / sePhishSends never reach the client
+
+The build driver scanned every response body the browser received on a game route across items 1, 2
+and 3 (65 responses: the bare game page, the `scenario` bootstrap, `room/<id>` GET, `ink`,
+`inventory`, every `sync_state` answer, and the `se/landing_page` answer). Neither `seLandingPages`
+nor `sePhishSends` appeared in any of them. The stores stay server-owned and off every client-facing
+serialisation (plan section 7). PASS.
+
+### Observation (not introduced by chunks 1 to 3, left unfixed)
+
+After an honest in-browser `attach()` on the slice and the lab, the DB shows the server store
+`seLandingPages['payroll_login'].built == true` but the client UI global
+`globalVariables.se_landing_pages.payroll_login.built == false` (while
+`landing_payroll_login_built == true` persists). `attach()` writes the record with `built: true` via
+`_writeRecord` (`landing-page-builder-minigame.js:1018`, `:1278`, `setBuilt` in
+`landing-page-model.js:635`), so the record's `built` is clobbered back to false somewhere between
+the attach and the next read (a later record write, or the globalVariables sync-delta not
+registering the nested change). This is pre-existing: chunk 3 did not touch `_writeRecord`,
+`setBuilt` or the client reader. The old reveal reader keys on this record's `built`, so it is worth
+confirming whether the honest lab send path (`performSend` re-writing `se_landing_pages[pageId]` with
+`victim.submitted`, mail-bridge `:407-420`) re-asserts `built: true`; item 4 set it explicitly and
+revealed the secret, so the reveal pipeline itself is sound. It does not affect the chunk 1 to 3
+server-store deliverables. Flagged for the reviewer, left unfixed.
+
+### Shared-state note
+
+The shared demo player's saved sprite had been left as a non-starter (`marcus_hale`, from a
+concurrent sprite-restricted browser run) which made `new-game.rb` abort with "No available sprite
+matches validSprites nil". Set it back to the universal starter `female_hacker_hood_v2` to run these
+proofs. Concurrent browser playtests on different scenarios share this one demo player and so contend
+on the sprite.
