@@ -17,7 +17,8 @@ module BreakEscape
   # Every character is treated as named: the menu (menu) lists every avatar
   # sprite, named after the NPC who wears it. A mission's own characters come
   # first and are always available in it: those its validSprites patterns
-  # match, or the starter set (PlayerPreference::AVAILABLE_SPRITES) when it
+  # match (an exact key also offers an avatar no NPC wears, such as the m01 to
+  # m10 noir starters), or the starter set (PlayerPreference::AVAILABLE_SPRITES) when it
   # declares none or there is no mission. Then the characters the player has
   # unlocked, also choosable, then the rest, locked.
   module AvatarUnlocks
@@ -73,12 +74,30 @@ module BreakEscape
       # Sprites always available in a scenario: those its validSprites patterns
       # match among the catalogued avatars, or the starter set when it declares
       # none (or there is no scenario).
+      #
+      # A pattern that names one avatar sprite exactly also offers it when no
+      # NPC wears it (see listed_avatars), so a mission can add starting
+      # characters of its own. Sprites come in the order the patterns list them.
       def mission_sprites(scenario_data, catalogue_entries = catalogue)
         patterns = scenario_data.is_a?(Hash) ? Array(scenario_data['validSprites']) : []
         return PlayerPreference::AVAILABLE_SPRITES.dup if patterns.empty?
 
-        catalogue_entries.keys.select do |sprite|
-          patterns.any? { |pattern| PlayerPreference.sprite_matches_pattern?(sprite, pattern) }
+        pool = catalogue_entries.keys | listed_avatars(scenario_data).keys
+        patterns.flat_map do |pattern|
+          pool.select { |sprite| PlayerPreference.sprite_matches_pattern?(sprite, pattern) }
+        end.uniq
+      end
+
+      # validSprites entries that name an avatar sprite exactly (no wildcard,
+      # not a legacy or retired key): sprite => { 'sprite', 'name', 'missions' },
+      # named from the key ("mei_lin_chow" -> "Mei Lin Chow").
+      def listed_avatars(scenario_data)
+        patterns = scenario_data.is_a?(Hash) ? Array(scenario_data['validSprites']) : []
+        patterns.each_with_object({}) do |sprite, acc|
+          next unless sprite.is_a?(String) && !sprite.include?('*')
+          next unless PlayerPreference.current_sprite(sprite) == sprite && unlockable_sprite?(sprite)
+
+          acc[sprite] = { 'sprite' => sprite, 'name' => sprite.titleize, 'missions' => [] }
         end
       end
 
@@ -91,8 +110,9 @@ module BreakEscape
       def menu(unlocked, scenario_data = nil)
         catalogue_entries = catalogue
         here = mission_sprites(scenario_data, catalogue_entries)
+        listed = listed_avatars(scenario_data)
         entry_for = lambda do |sprite|
-          catalogue_entries[sprite] || { 'sprite' => sprite, 'name' => sprite.humanize, 'missions' => [] }
+          catalogue_entries[sprite] || listed[sprite] || { 'sprite' => sprite, 'name' => sprite.humanize, 'missions' => [] }
         end
 
         here_status = scenario_data.is_a?(Hash) ? 'mission' : 'starter'
