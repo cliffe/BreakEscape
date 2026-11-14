@@ -55,5 +55,27 @@ module BreakEscape
       assert_nil SchemaWalk.ref_kind(ScenarioSchema::FREE)
       assert_nil SchemaWalk.ref_kind(nil)
     end
+
+    # Observation (step 4): walk routes through AuthorNotes.each_live, so "_" author notes are
+    # skipped by the step 2b schema rule (never by a name list) and 6a/6b can reuse the walk
+    # without a note counting as live data. A note's x-ref leaf must not be yielded; a sibling
+    # live reference must be.
+    test 'walk skips "_" author notes but yields a sibling live reference' do
+      data = { 'rooms' => { 'a' => { 'type' => 'room_office', 'connections' => {},
+                                     'npcs' => [{ 'id' => 'b', 'type' => 'person', 'name' => 'B',
+                                                  'eventMappings' => [
+                                                    { 'eventPattern' => 'x', 'completeTask' => 'live_task' },
+                                                    { '_eventPattern' => 'y', 'completeTask' => 'noted_task' }
+                                                  ] }] } } }
+      kinds = ref_kinds(data)
+      assert_equal 'task', kinds['rooms/a/npcs[0]/eventMappings[0]/completeTask']
+      # The second mapping's completeTask is live, but a "_"-noted key inside it would be skipped.
+      noted = { 'rooms' => { 'a' => { 'type' => 'room_office', 'connections' => {},
+                                      'npcs' => [{ 'id' => 'b', 'type' => 'person', 'name' => 'B',
+                                                   '_draft' => { 'eventMappings' => [{ 'eventPattern' => 'z', 'completeTask' => 'noted_task' }] } }] } } }
+      values = []
+      SchemaWalk.walk(noted, ScenarioSchema.root) { |v, _, _| values << v if v == 'noted_task' }
+      assert_empty values, 'a completeTask parked in a _draft note must not be walked'
+    end
   end
 end

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'scenario_schema' unless defined?(BreakEscape::ScenarioSchema)
+require_relative 'author_notes' unless defined?(BreakEscape::AuthorNotes)
 
 module BreakEscape
   # Step 4 of the scenario format hardening. One shared schema walker: it visits the data and the
@@ -14,23 +15,16 @@ module BreakEscape
   module SchemaWalk
     module_function
 
-    # Yield [value, node, path] for every value in data (data itself first), each paired with the
-    # schema Node, ScenarioSchema::FREE, or nil that describes it. path is the keys (String) and
+    # Yield [value, node, path] for every live value in data (data itself first), each paired with
+    # the schema Node, ScenarioSchema::FREE, or nil that describes it. path is the keys (String) and
     # array indices (Integer) that reached the value. Descends with child and item, so oneOf/anyOf
-    # and $ref are resolved by the data's actual shape, never guessed.
+    # and $ref are resolved by the data's actual shape, never guessed. "_" author notes (step 2b, by
+    # the schema through AuthorNotes.note?, never by a name list) are skipped, so 6a and 6b can reuse
+    # the walk without a note ever counting as live data; free data holds no notes and is walked in
+    # full. This routes through AuthorNotes.each_live, the one walker that already pairs data with
+    # schema and honours notes and free data together.
     def walk(data, node, path = [], &block)
-      block.call(data, node, path)
-
-      case data
-      when Hash
-        data.each do |k, v|
-          ks = k.to_s
-          walk(v, ScenarioSchema.child(node, ks), path + [ks], &block)
-        end
-      when Array
-        inode = ScenarioSchema.item(node)
-        data.each_with_index { |v, i| walk(v, inode, path + [i], &block) }
-      end
+      AuthorNotes.each_live(data, node, keys: path, &block)
     end
 
     # The "x-ref" kind a Node declares (the first object- or array-capable branch that carries one),
