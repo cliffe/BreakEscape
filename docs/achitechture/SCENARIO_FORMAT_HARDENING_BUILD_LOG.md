@@ -3071,3 +3071,86 @@ No change. Chunk 7 touches docs, a schema description string and test fixtures o
 
 Both full suites green on one tip (`0305bd1ad`), the grep sweep clean of stray live mentions, the three
 cross-chunk node files passing against the committed validator. Step 8c is ready for code review.
+
+## Step 6a-1. Server-only marks, the declared top level and the fresh-state payload scan
+
+Date: 2026-11-14. Branch `build/hard-6a1`, from main cb259dbdf. Plan: section 1 (cheat policy),
+section 2 (secret list), step 6a-1 (around plan line 420), build order (plan line 823). 8b and 8c
+have landed, so the field names are current: `habits.screen` and `habits.print` are client-visible,
+the rest of `habits` is server-only.
+
+### Client-visible: NPC needs, chatter and exchanges
+
+The m02 office-life pilot asked which of the needs, chatter, barks and exchanges fields reach the
+browser. Every verdict below is read from `scripts/scenario-schema.json` and from the engine JS that
+reads the shipped scenario (the office-life needs system runs client-side: `systems/npc-needs.js`
+builds each NPC's record straight from `window.gameScenario` and reads these fields from it). Line
+numbers are anchored to main cb259dbdf and re-anchored later if they move.
+
+**The whole group is client-visible.** None of NPC `needs`, `needsHome`, `chatter`, the eventMapping
+`bark` family, or `exchanges` is a secret under section 2, and none carries a grant's contents, so
+none is withheld. The only server-only fields in reach sit inside `habits`, where the ship filter
+keeps a two-key allow list (`withhold_npc_secrets!`, `app/models/break_escape/game.rb:6276-6282`,
+`SHIPPED_HABIT_KEYS` at `game.rb:6239`). The filter's deny-by-default shape means `needs`, `chatter`
+and `exchanges` are never touched by it.
+
+NPC `needs` (a map; `npc-needs.js:447-449` normalises each entry, read at `:1476`, `:1751` and the
+scoring loops). Every sub-property is client-visible:
+
+| Property | Verdict |
+|---|---|
+| `decayPerMin` | client-visible |
+| `urgentAt` | client-visible (`npc-needs.js:1476`) |
+| `initial` | client-visible |
+| `weight` | client-visible |
+| `maxUnmetMin` | client-visible |
+| `deferrable` | client-visible (`npc-needs.js:1751`) |
+| `jitterPct` | client-visible |
+| `_comment` | an author note, stripped from every client payload (step 2b); not shipped |
+
+`needsHome` (a string object id or a `{ room, x, y }` tile) is client-visible: the needs system
+resolves the home from the shipped record (`npc-needs.js:1186`, `:2109`). Its sub-keys `room`, `x`,
+`y` are client-visible.
+
+NPC `chatter` (a map of topic name to an array of lines or `{ lines, hush, overhearRadius }`) is
+client-visible: the lines are voiced client-side, drawn through `chatterPool` from the shipped record
+(`npc-needs.js:1993`, `:2186`). Sub-properties `lines`, `hush`, `overhearRadius` are all
+client-visible; `_comment` is an author note (not shipped).
+
+Barks (the eventMapping speech fields, `scenario-schema.json:4863-4875`): `bark`, `message` (its
+legacy alias) and `barkDelay` are client-visible. The engine shows the speech bubble and plays TTS
+client-side from the mapping in the shipped scenario; the text is authored dialogue, not a secret.
+
+NPC `exchanges` (an array; each entry read at `npc-needs.js:2705`, and the NPC's ink story is loaded
+when it declares `exchanges`, `npc-needs-chatter.js:149`) is client-visible:
+
+| Property | Verdict |
+|---|---|
+| `with` | client-visible |
+| `knot` | client-visible |
+| `requireGlobal` | client-visible (a global-name gate the client evaluates, `npc-needs.js:2710`; not a secret value) |
+| `_comment` | an author note (not shipped) |
+
+### Habits (step 8c field names)
+
+`habits.screen` and `habits.print` are the only two habits that ship; everything else in the block is
+server-only, deleted by the allow-list filter (`game.rb:6276-6282`, `SHIPPED_HABIT_KEYS` at `:6239`).
+
+| Property | Verdict | Server reader (server-only cite) |
+|---|---|---|
+| `screen` | client-visible | shipped (`game.rb:6239`, `:6278`); read client-side at `public/break_escape/js/systems/workstation-state.js:124` |
+| `print` | client-visible | shipped (`game.rb:6239`, `:6278`); read client-side at `npc-needs.js:973`, `:3387` |
+| `locksScreen` | server-only | folded into the screen/door habits server-side (`lib/break_escape/npc_habits.rb:33-35`, `:84-87`); withheld (`game.rb:6276-6282`) |
+| `writesDown` | server-only | drives the constructed sign-in sticky note (`written_down?`, `game.rb:2619-2620`), a route-built access clue; the habit itself is withheld (`game.rb:6276-6282`) |
+| `password` | server-only | a validator-only claim (no run-time effect); withheld (`game.rb:6276-6282`) |
+| `passwordPattern` | server-only | read by the guessable-password clue check (`lib/break_escape/npc_habits/clues.rb:487`); withheld (`game.rb:6276-6282`) |
+| `holdsDoors` | server-only | folded into the gate `noHold` list server-side (`lib/break_escape/npc_habits.rb:148`); withheld (`game.rb:6276-6282`) |
+| `usb` | server-only in `habits` | reships only inside the resolved work plan as `work.usb` (`lib/break_escape/access_work.rb:1213`, via `compile_npc_plan!`, `game.rb:6247-6258`); the raw `habits.usb` is withheld (`game.rb:6276-6282`) |
+
+Server-only note: these habits are not literal section-2 secret values; they are server-side access
+logic that reveals or drives a sign-in secret, and the 6a-1 mark makes the `habits` block
+`x-serverOnly` except `screen` and `print` (which carry `x-servedBy` through the shipped payload).
+The broader needs-system fields outside this grouping (`interests`, `needsCompany`, `phoneCalls`,
+`onUse`, `chattiness`, `swivel`, and so on) are client-visible too; `role`, `creds`, `awareness`,
+`workNeeds`, `frustration`, `workarounds` and `feed` are the NPC fields withheld alongside the
+non-shipped habits (`WITHHELD_NPC_KEYS` `game.rb:6227`, `WITHHELD_WORK_NPC_KEYS` `game.rb:6231`).
