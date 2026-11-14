@@ -501,20 +501,30 @@ async function signInScreen() {
     return mg;
 }
 
-test('UI PC 2 (E06): the chosen account, the fields, Sign in and the message are one card; no card on the tiles alone', async () => {
+test('UI PC 2 (E06): the chosen account, the fields, Sign in and the message are one card; the tiles alone show a plain prompt line and no card', async () => {
     const mg = await signInScreen();
     mg.start?.();
     const card = document.querySelector('.pc-screen-area #signin-card.signin-card');
     assert.ok(card, 'one card on the PC screen');
-    // Before an account is chosen: the tiles, and the card holds only the prompt line
-    assert.equal(card.hidden, false, 'the prompt line is in the card');
-    assert.equal(document.getElementById('signin-message').textContent, 'Choose an account.');
+    // Before an account is chosen: the tiles and a plain prompt line; the card is not shown
+    assert.equal(card.hidden, true, 'no card (empty frame) on the tiles alone');
+    const prompt = document.getElementById('signin-prompt');
+    assert.equal(prompt.hidden, false);
+    assert.equal(prompt.textContent, 'Choose an account.');
+    assert.ok(!card.contains(prompt), 'the prompt sits outside the card');
     assert.ok(!card.contains(document.querySelector('#signin-tiles')), 'the tiles are outside the card');
     document.querySelector('.signin-tile[data-tile-index="0"]').click();
     for (const sel of ['.signin-selected-headshot', '#signin-selected', '#signin-change', '#password-field', '#toggle-password', '#submit-password', '#signin-message']) {
         assert.ok(card.contains(document.querySelector(sel)), `${sel} is in the card`);
     }
     assert.equal(card.hidden, false);
+    assert.equal(prompt.hidden, true, 'the prompt line goes once an account is chosen');
+    // A result message on the tiles (a lockout) shows in the card, not as the prompt
+    mg.signInState.selected = null;
+    mg.renderSignInForm({ quiet: true });
+    mg.setSignInMessage('Too many attempts.', 'error');
+    assert.equal(card.hidden, false, 'a result message is shown in the card');
+    assert.equal(prompt.hidden, true);
     // Nothing to show: no empty frame
     mg.setSignInMessage('');
     mg.signInState.selected = null;

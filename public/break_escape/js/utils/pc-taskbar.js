@@ -24,7 +24,7 @@
 import { escapeHtml } from './escape-html.js';
 import { displayDashes } from './display-dashes.js';
 import { MORE_BELOW_TEXT } from './more-below.js';
-import { applyHeadshotBox, npcRecordFor, headshotSourceFor, SILHOUETTE_URL } from './npc-headshot.js';
+import { applyHeadshotBox, npcRecordOrScenario, headshotSourceFor, SILHOUETTE_URL } from './npc-headshot.js';
 
 const ICONS = '/break_escape/assets/icons';
 export const PC_SILHOUETTE_URL = SILHOUETTE_URL;
@@ -265,7 +265,7 @@ function paint(el, result, scale) {
  */
 export function applyAccountPicture(el, account, { scale = 1, ImageCtor } = {}) {
     if (!el || !account) return;
-    const record = account.kind === 'session' ? npcRecordFor({ npcId: account.npcId, username: account.username }) : null;
+    const record = account.kind === 'session' ? npcRecordOrScenario({ npcId: account.npcId, username: account.username }) : null;
     const source = account.kind === 'session' ? headshotSourceFor({}, record) : { spriteSheet: account.character || null };
     const key = account.kind === 'session' ? `s:${account.npcId || account.username}` : `d:${account.character || account.name}`;
     const waiting = new Set();

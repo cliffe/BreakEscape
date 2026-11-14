@@ -248,6 +248,7 @@ export class NetworkViewMinigame extends MinigameScene {
         // The jack this view was opened at, when it was opened by a click on that jack
         this.unplugJack = typeof params?.unplugJack === 'string' && params.unplugJack ? params.unplugJack : null;
         this._unplugging = false;
+        this.unplugNotice = '';
         this.view = null;
         this.status = 'loading';
         this.exitReason = 'close';
@@ -537,7 +538,7 @@ export class NetworkViewMinigame extends MinigameScene {
                     ${subtitle ? `<p class="network-view-subtitle">${escapeHtml(subtitle)}</p>` : ''}
                     ${status ? `<p class="network-view-status">${escapeHtml(status)}</p>` : ''}
                     ${this.message ? `<p class="network-view-message">${escapeHtml(this.message)}</p>` : ''}
-                    ${this.stale ? `<p class="network-view-stale">${STALE_TEXT}</p>` : ''}`;
+                    ${this.stale ? `<p class="network-view-stale">${STALE_TEXT}</p>` : ''}${this.unplugHintHtml()}`;
         // The header sits above the scroll area (R2 m2); with no frame (no DOM parent) it
         // heads the list as before
         const inList = !this.headerElement;
@@ -594,11 +595,26 @@ export class NetworkViewMinigame extends MinigameScene {
         this.bindUnplug(this.headerElement);
     }
 
+    /**
+     * A view opened from the inventory has no Unplug (the box can only be pulled out at its
+     * jack), so a plugged-in jack box says where: its link's name ends with the room and the
+     * port ("Drop box: Desks, Spare wall port"). Fix round 1, nit.
+     */
+    unplugHintHtml() {
+        if (this.unplugJack) return '';
+        const f = this.links()?.get?.(this.footholdId);
+        if (!f || f.via !== 'jack' || typeof f.name !== 'string') return '';
+        const where = f.name.includes(': ') ? f.name.slice(f.name.indexOf(': ') + 2).trim() : '';
+        if (!where) return '';
+        return `<p class="network-view-hint">${escapeHtml(`You can unplug the box at its port (${where}).`)}</p>`;
+    }
+
     unplugHtml() {
         if (!this.unplugJack) return '';
         const label = this._unplugging ? UNPLUGGING_TEXT : UNPLUG_TEXT;
         return `
-                    <div class="network-view-actions"><button type="button" class="minigame-button network-view-unplug" data-unplug${this._unplugging ? ' disabled' : ''}>${label}</button></div>`;
+                    <div class="network-view-actions"><button type="button" class="minigame-button network-view-unplug" data-unplug${this._unplugging ? ' disabled' : ''}>${label}</button></div>
+                    <p class="network-view-unplug-notice" aria-live="polite"${this.unplugNotice ? '' : ' hidden'}>${escapeHtml(this.unplugNotice || '')}</p>`;
     }
 
     bindUnplug(root) {
@@ -616,6 +632,7 @@ export class NetworkViewMinigame extends MinigameScene {
         const links = this.links();
         if (typeof links?.unplugFromView !== 'function') return { action: 'none' };
         const btn = () => this.container?.querySelector?.('[data-unplug]');
+        this.setUnplugNotice('');
         this._unplugging = true;
         if (btn()) { btn().disabled = true; btn().textContent = UNPLUGGING_TEXT; }
         let out;
@@ -630,7 +647,17 @@ export class NetworkViewMinigame extends MinigameScene {
             return out;
         }
         if (btn()) { btn().disabled = false; btn().textContent = UNPLUG_TEXT; }
+        // A refusal is said here, next to the button, not as a toast over the header (fix round 1, m2)
+        this.setUnplugNotice(out?.message || 'The port did not respond. Try again.');
         return out;
+    }
+
+    setUnplugNotice(text) {
+        this.unplugNotice = text || '';
+        const el = this.container?.querySelector?.('.network-view-unplug-notice');
+        if (!el) return;
+        el.textContent = this.unplugNotice;
+        el.hidden = !this.unplugNotice;
     }
 
     showNotice(text) {

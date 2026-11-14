@@ -509,6 +509,28 @@ test('R1 m5: no authored headshot means the silhouette, and the talk image is ne
     assert.equal(document.querySelector('.pc-start-headshot').dataset.frame, 'silhouette');
 });
 
+test('UI PC 2 R1 M2: an account whose NPC room is not loaded still shows its headshot (scenario NPC data), silhouette only with none', async () => {
+    base({ images: { '/break_escape/assets/characters/male_office_worker_v2_headshot.png': [32, 32] } });
+    window.npcManager.npcs.clear();
+    window.gameScenario = { rooms: { lobby: { npcs: [{ id: 'ian', spriteSheet: 'male_office_worker_v2_sprite', spriteTalk: 'assets/characters/male_office_worker_v2_talk.png' }] } } };
+    await sessions.signIn('hot_desk', 'ishaw', 'x');
+    await open(loginPc());
+    await settle(12);
+    const box = document.querySelector('.pc-taskbar-headshot');
+    assert.equal(box.dataset.frame, 'headshot', 'the empty manager does not send Sam to the silhouette');
+    assert.match(box.style.backgroundImage, /male_office_worker_v2_headshot\.png/);
+    assert.equal(document.querySelector('.pc-start-headshot').dataset.frame, 'headshot');
+    // No NPC data anywhere: the silhouette
+    base();
+    window.npcManager.npcs.clear();
+    window.gameScenario = { rooms: {} };
+    await sessions.signIn('hot_desk', 'ishaw', 'x');
+    await open(loginPc());
+    await settle(12);
+    assert.equal(document.querySelector('.pc-taskbar-headshot').dataset.frame, 'silhouette');
+    delete window.gameScenario;
+});
+
 test('R1 nit 1: Tab out of the panel closes it; moving between its entries does not', async () => {
     base();
     await sessions.signIn('hot_desk', 'ishaw', 'x');

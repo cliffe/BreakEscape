@@ -509,7 +509,7 @@
    desktop OS's own windows, with an 8x7 pixel cross drawn at x2. 2px bevel borders, square
    corners. The drawn box is 28x24; on a phone or a touch screen the hit area is at least
    44px (nothing more is drawn). */
-.pc-monitor .pc-file .share-folder-path {
+.pc-monitor .pc-share .share-folder-path {
     flex: 1 1 auto;
     min-width: 0;
 }

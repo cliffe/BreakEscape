@@ -1,7 +1,7 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { escapeHtml, escapeHtmlKeepWords } from '../../utils/escape-html.js';
-import { mountPcMonitor, postitNotebookEntry, pcPostitButtonHtml } from '../../utils/pc-monitor.js';
+import { mountPcMonitor, bindPcWindowCloses, postitNotebookEntry, pcPostitButtonHtml } from '../../utils/pc-monitor.js';
 
 // File names, types and observations are scenario text: escaped before they reach HTML
 
@@ -141,27 +141,7 @@ export class TextFileMinigame extends MinigameScene {
      * closeByPlayer; that binding is swapped for closePc.
      */
     bindMonitorCloses() {
-        const bezelX = this.container?.querySelector?.('#minigame-close');
-        if (bezelX) {
-            this._eventListeners = this._eventListeners.filter((l) => {
-                if (l.element !== bezelX || l.eventType !== 'click') return true;
-                bezelX.removeEventListener('click', l.handler, l.options);
-                return false;
-            });
-            this.addEventListener(bezelX, 'click', (e) => {
-                e.preventDefault?.();
-                e.stopPropagation?.();
-                this.closePc();
-            });
-        }
-        const windowX = this.gameContainer?.querySelector?.('.pc-window-close');
-        if (windowX) {
-            this.addEventListener(windowX, 'click', (e) => {
-                e.preventDefault?.();
-                e.stopPropagation?.();
-                this.closeByPlayer();
-            });
-        }
+        bindPcWindowCloses(this);
     }
 
     /**

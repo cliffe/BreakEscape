@@ -402,11 +402,11 @@ export class NetworkLinks {
             || `Plug ${deviceName} into ${jackName}?`;
         const ok = typeof confirm === 'function' ? await confirm(text, PLANT_LABEL, 'Cancel', { plainText: true }) : false;
         if (!ok) return { action: 'cancelled' };
-        return this.plant(jackId, device.scenarioData.id, { deviceName: device.scenarioData.name });
+        return this.plant(jackId, device.scenarioData.id, { deviceName: device.scenarioData.name, jackSprite: sprite });
     }
 
     /** POST /network/plant, then the tray, the jack, the global and the events. */
-    async plant(jackId, deviceId = null, { deviceName = null } = {}) {
+    async plant(jackId, deviceId = null, { deviceName = null, jackSprite = null } = {}) {
         const api = apiClient();
         if (!api?.networkPlant) return { action: 'error' };
         this._busy = true;
@@ -447,7 +447,8 @@ export class NetworkLinks {
         this._emit('network_device_planted', { jackId, footholdId: foothold.id, networkId, deviceId: deviceId ?? null }, jackId);
         this._emit('network_foothold_gained', { footholdId: foothold.id, via: foothold.via, networkId, sourceId: jackId }, jackId);
         // Seeing what is exposed is the point: the first foothold at a jack opens the view
-        if (body.first) this.open(foothold.id);
+        // The player is at the jack that was just planted, so the view offers Unplug (fix round 1, m1)
+        if (body.first) this.open(foothold.id, { atJack: jackId, jackSprite });
         return { action: 'planted', footholdId: foothold.id, first: !!body.first };
     }
 
@@ -536,11 +537,12 @@ export class NetworkLinks {
     async unplugFromView(jackId) {
         if (!jackId || this.trip?.atJack !== jackId) return { action: 'none' };
         if (this._busy) return { action: 'busy' };
-        return this.unplug(jackId, this.trip.jackSprite || null);
+        // quiet: a refusal comes back as `message` for the view to show by its button, not as a toast
+        return this.unplug(jackId, this.trip.jackSprite || null, { quiet: true });
     }
 
     /** POST /network/unplug: the device back, the link item and the foothold gone. */
-    async unplug(jackId, sprite = null) {
+    async unplug(jackId, sprite = null, { quiet = false } = {}) {
         const api = apiClient();
         if (!api?.networkUnplug) return { action: 'error' };
         const footholdId = footholdIdFor(jackId);
@@ -554,15 +556,16 @@ export class NetworkLinks {
             if (err?.status === 422 && b.reason === 'not_planted') {
                 // The server holds nothing here: the client's copy was stale
                 this._dropFoothold(foothold?.id || footholdId);
-                toast('Nothing is plugged in here.', 'info');
-                return { action: 'not_planted' };
+                if (!quiet) toast('Nothing is plugged in here.', 'info');
+                return { action: 'not_planted', message: 'Nothing is plugged in here.' };
             }
-            toast(err?.status === 403 ? "You can't reach that port from here." : 'The port did not respond. Try again.', 'error');
-            return { action: 'error', status: err?.status ?? null };
+            const message = err?.status === 403 ? "You can't reach that port from here." : 'The port did not respond. Try again.';
+            if (!quiet) toast(message, 'error');
+            return { action: 'error', status: err?.status ?? null, message };
         } finally {
             this._busy = false;
         }
-        if (!body?.success) return { action: 'error' };
+        if (!body?.success) return { action: 'error', message: 'The port did not respond. Try again.' };
         const id = foothold?.id || footholdId;
         // The link item leaves and the device that was plugged in comes back, both named in the
         // server's `added`/`removed` delta (sync deltas P2); no inventory scan is needed.

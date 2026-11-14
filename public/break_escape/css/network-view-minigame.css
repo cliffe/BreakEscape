@@ -144,6 +144,12 @@
     color: #ffe0a0;
 }
 
+.network-view-hint {
+    margin: 4px 0 0 0;
+    color: #9aa6ae;
+    font-size: 16px;
+}
+
 .network-view-stale {
     margin: 6px 0 0 0;
     color: #9aa6ae;
@@ -161,6 +167,33 @@
     margin: 0;
     padding: 4px 12px;
     font-size: 16px;
+}
+
+/* A refused Unplug says why next to the button (fix round 1, m2) */
+.network-view-unplug-notice {
+    margin: 4px 0 0 0;
+    color: #ffe680;
+    font-size: 16px;
+}
+
+.network-view-unplug-notice[hidden] {
+    display: none;
+}
+
+/* Short landscape (667x375, 844x390): Unplug sits on the title's row, left of the X, so the
+   list keeps its space (fix round 1, m3) */
+@media (orientation: landscape) and (max-height: 460px) {
+    .network-view-header-body {
+        position: relative;
+        padding-right: 100px;
+    }
+
+    .network-view-header-body .network-view-actions {
+        position: absolute;
+        top: 0;
+        right: 0;
+        margin: 0;
+    }
 }
 
 /* Two columns once the panel is wide enough (code review R1 m2); headings and wide rows span */

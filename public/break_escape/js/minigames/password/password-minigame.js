@@ -52,6 +52,7 @@ export function passwordScreenKind({ join = null, lockable = null } = {}) {
  * True for a container that is a bag or case rather than a device: its password
  * screen is drawn as a code lock on the case, not as a computer's sign-in screen.
  */
+const SIGNIN_PROMPT = 'Choose an account.';
 export const CASE_LOCK_TYPES = ['suitcase', 'briefcase', 'bag', 'bag1', 'backpack', 'satchel', 'holdall'];
 export function isCaseLockTarget(data) {
     const type = String(data?.type || '').toLowerCase();
@@ -1427,6 +1428,7 @@ export class PasswordMinigame extends MinigameScene {
                         ${remoteLine}
                         ${current}
                         ${tiles}${capturedHtml}${inMonitor ? `
+                        <div class="signin-prompt" id="signin-prompt" aria-live="polite" hidden></div>
                         <div class="signin-card" id="signin-card">` : ''}
                         <div class="signin-form" id="signin-form">
                             <div class="signin-selected-row">${inMonitor ? `
@@ -1656,7 +1658,7 @@ export class PasswordMinigame extends MinigameScene {
         });
         // While a remote screen's captures load, it shows only "Checking..." (R1 M2)
         if (!chosen) {
-            this.setSignInMessage(this.signInLoading() ? '' : (st.message || 'Choose an account.'));
+            this.setSignInMessage(this.signInLoading() ? '' : (st.message || SIGNIN_PROMPT));
         }
         const focus = st.other && !this.usernameField.value ? this.usernameField : this.passwordField;
         // quiet: a late Captured sign-ins list redraws without moving focus or scrolling (2b0 R2 m1)
@@ -1793,14 +1795,23 @@ export class PasswordMinigame extends MinigameScene {
 
     /**
      * The sign-in card (in the monitor, UI PC 2 E06) is shown while it has something in it:
-     * the form once an account is chosen, or a message line. No empty frame on the tiles.
+     * the form once an account is chosen, or a result message (a wrong password, a lockout).
+     * The "Choose an account." prompt on the tiles is a plain line outside it, so the tiles
+     * never sit above an empty frame (fix round 1, M1).
      */
     syncSignInCard() {
         const card = this.gameContainer?.querySelector?.('#signin-card');
         if (!card) return;
         const form = this.gameContainer.querySelector('#signin-form');
         const formShown = !!form && form.style.display !== 'none';
-        card.hidden = !formShown && !this.signInMessageEl?.textContent;
+        const text = this.signInMessageEl?.textContent || '';
+        const promptOnly = !formShown && text === SIGNIN_PROMPT && this.signInMessageEl?.dataset.kind !== 'error';
+        card.hidden = !formShown && (!text || promptOnly);
+        const prompt = this.gameContainer.querySelector('#signin-prompt');
+        if (prompt) {
+            prompt.textContent = promptOnly ? text : '';
+            prompt.hidden = !promptOnly;
+        }
     }
 
     setSignInMessage(text, kind = 'info') {

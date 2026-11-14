@@ -246,7 +246,7 @@ test('a plant: link item in with no request, box out, global, events once each, 
     assert.equal(named('network_foothold_gained:comms_port').length, 1);
     assert.equal(sprite.texture.key, 'pi_cluster1', 'the jack shows its plantedSprite');
     assert.equal(sprite.scenarioData.jackPlanted, true);
-    assert.deepEqual(views, [{ footholdId: 'jack_comms_port', message: null }], 'the view opened by itself');
+    assert.deepEqual(views, [{ footholdId: 'jack_comms_port', message: null, unplugJack: 'comms_port' }], 'the view opened by itself, with Unplug (the player is at the jack)');
     assert.deepEqual(links.list(), [foothold]);
     assert.equal(links.wasGained('comms_port'), true);
 });
@@ -381,6 +381,20 @@ test('UI PC 2 (N05): Unplug in the view restores the tray, ends the foothold, em
     await settle(4);
     assert.deepEqual(named('network_view_closed').map(e => e.data.reason), ['unplugged']);
     assert.deepEqual(toasts, []);
+});
+
+test('UI PC 2 fix round 1 (m2): a refused Unplug from the view comes back as a message and shows no toast', async () => {
+    await reset({ planted: true });
+    withStarters();
+    links.open('jack_comms_port', { atJack: 'comms_port' });
+    window.ApiClient.networkUnplug = async () => { const e = new Error('no'); e.status = 403; throw e; };
+    const out = await links.unplugFromView('comms_port');
+    assert.equal(out.action, 'error');
+    assert.equal(out.message, "You can't reach that port from here.");
+    assert.deepEqual(toasts, [], 'the view says it by the button, not as a toast over the header');
+    // The jack's own (non-view) path still toasts
+    await links.unplug('comms_port');
+    assert.deepEqual(toasts, ["You can't reach that port from here."]);
 });
 
 test('UI PC 2 (N05): unplugFromView names only the trip\'s own jack', async () => {

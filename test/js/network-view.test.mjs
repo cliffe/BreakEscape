@@ -996,6 +996,8 @@ test('UI PC 2 (N05): Unplug takes the box out and the view closes to the world',
 
 test('UI PC 2 (N05): a refused Unplug keeps the view open with the button back', async () => {
     setupUnplug(async (jackId) => { requests.push(['unplug', jackId]); throw Object.assign(new Error('no'), { status: 403 }); });
+    const toasts = [];
+    window.gameAlert = (msg) => { toasts.push(msg); };
     await links.interactJack(plantedJackSprite());
     await settle(6);
     const before = view();
@@ -1007,6 +1009,12 @@ test('UI PC 2 (N05): a refused Unplug keeps the view open with the button back',
     assert.equal(document.querySelector('[data-unplug]').disabled, false);
     assert.equal(document.querySelector('[data-unplug]').textContent, realView.UNPLUG_TEXT);
     assert.equal(links.list().length, 1, 'the box is still in');
+    // Fix round 1 (m2): the reason is on the view by the button, not a toast over the header
+    const note = document.querySelector('.network-view-header .network-view-unplug-notice');
+    assert.equal(note.hidden, false);
+    assert.equal(note.textContent, "You can't reach that port from here.");
+    assert.ok(note.previousElementSibling.querySelector('[data-unplug]'), 'right after the button\'s row');
+    assert.deepEqual(toasts, [], 'no toast');
 });
 
 test('UI PC 2 (N05): the view opened from the inventory has no Unplug', async () => {
@@ -1016,6 +1024,27 @@ test('UI PC 2 (N05): the view opened from the inventory has no Unplug', async ()
     assert.ok(view() instanceof NetworkViewMinigame);
     assert.equal(document.querySelector('[data-unplug]'), null);
     assert.equal(view().getTestState().unplug, null);
+    // Fix round 1 (nit): a line says where the box can be unplugged, naming the room and port
+    const hint = document.querySelector('.network-view-hint');
+    assert.ok(hint, 'a hint line');
+    assert.match(hint.textContent, /^You can unplug the box at its port \(.+\)\.$/);
+    assert.match(hint.textContent, new RegExp(links.get('jack_comms_port').name.split(': ').slice(1).join(': ').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+});
+
+test('UI PC 2 fix round 1 (m1, nit): the view at the jack has Unplug and no hint', async () => {
+    setupUnplug();
+    await links.interactJack(plantedJackSprite());
+    await settle(6);
+    assert.ok(document.querySelector('[data-unplug]'));
+    assert.equal(document.querySelector('.network-view-hint'), null);
+});
+
+test('UI PC 2 fix round 1 (m3): short landscape puts Unplug on the title row, left of the X', () => {
+    const t = cssText;
+    const m = t.match(/@media \(orientation: landscape\) and \(max-height: 460px\) \{([\s\S]*?)\n\}\n/);
+    assert.ok(m, 'a short-landscape rule');
+    assert.match(m[1], /\.network-view-header-body \.network-view-actions \{[^}]*position: absolute;[^}]*top: 0;[^}]*right: 0;/);
+    assert.match(m[1], /\.network-view-header-body \{[^}]*padding-right: 100px;/);
 });
 
 test('UI PC 2 (N05): Unplug shows even when the link did not answer', async () => {
