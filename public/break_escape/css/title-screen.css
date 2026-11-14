@@ -43,15 +43,12 @@
     z-index: 1;
 }
 
-/* CRT vignette: a stepped pixel image, flat bands with hard edges (critique A38; made by
-   tools/make_title_vignette.py). The old soft version, for a quick revert:
-   background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.9) 100%); */
+/* CRT vignette */
 .title-screen-container::after {
     content: '';
     position: absolute;
     inset: 0;
-    background: url('../assets/ui/title-vignette.png') center / var(--vignette-size, cover) no-repeat;
-    image-rendering: pixelated;
+    background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.9) 100%);
     pointer-events: none;
     z-index: 1;
 }
@@ -69,7 +66,7 @@
     /* 300px, or on a phone half the screen less a 16px gutter, so the zoom to 200% ends
        inside the screen instead of being cut by the container (coordinator 5b) */
     width: min(300px, calc(50vw - 16px));
-    /* No soft glow behind the logo (A38); was drop-shadow(0 0 20px rgba(126, 18, 214, 0.3)) */
+    filter: drop-shadow(0 0 20px rgba(126, 18, 214, 0.3));
     animation: logoFadeZoom 2.5s ease-in-out forwards;
     transform-origin: center center;
     pointer-events: none;
@@ -149,11 +146,13 @@
     opacity: 0.8; /* dimmed so the title stays the brightest thing on screen */
 }
 
-/* With art, the vignette image is the art variant (tools/make_title_vignette.py --art): the
-   oval plus a darker zone to the right and along the bottom for the text, as the same square
-   blocks with curved steps. No bands are drawn over the picture. */
-.title-screen-container.has-art::after {
-    background-image: url('../assets/ui/title-vignette-art.png');
+.title-screen-art::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0) 40%),
+        linear-gradient(to left, rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.7) 38%, rgba(0, 0, 0, 0) 68%);
 }
 
 /* The logo stays centred while the text moves into the calm right-hand strip. */
@@ -172,7 +171,7 @@
     margin-right: 2%;
     box-sizing: border-box;
     overflow-wrap: anywhere;
-    text-shadow: 2px 2px 0 #000;
+    text-shadow: 0 0 6px rgba(0, 0, 0, 0.9), 0 2px 2px rgba(0, 0, 0, 0.9);
 }
 
 .title-screen-container.has-art .title-screen-title {

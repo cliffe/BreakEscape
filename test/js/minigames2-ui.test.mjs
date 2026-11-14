@@ -1,12 +1,11 @@
-// build/ui-minigames2: the shared scanner panel (A22), the tool-window cap (A45) and the
-// title screen's stepped vignette (A38). Reads the stylesheets and scene sources.
+// build/ui-minigames2: the shared scanner panel (A22) and the tool-window cap (A45).
+// Reads the stylesheets and scene sources.
 // Run with: node test/js/minigames2-ui.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { inflateSync } from 'node:zlib';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const pub = join(root, 'public/break_escape');
@@ -83,50 +82,4 @@ test('A45: tool windows are capped at 960x720, wrap their content and centre', (
     // content is not drawn yet (or is empty) collapsed to its padding and the X fell outside it
     assert.match(r['min-height'] || '', /^min\(\d+px, 100%\)$/, 'a min-height floor keeps an empty window from collapsing');
     assert.ok(parseInt(r['min-height'].slice(4), 10) >= 100, 'the floor holds the X and a line of content');
-});
-
-// The PNG's colour type and its distinct alpha values (8-bit RGBA, filter bytes skipped)
-function pngAlphas(buf) {
-    let off = 8, w = 0, h = 0, type = 0;
-    const idat = [];
-    while (off < buf.length) {
-        const len = buf.readUInt32BE(off), kind = buf.toString('ascii', off + 4, off + 8);
-        const data = buf.subarray(off + 8, off + 8 + len);
-        if (kind === 'IHDR') { w = data.readUInt32BE(0); h = data.readUInt32BE(4); type = data[9]; }
-        if (kind === 'IDAT') idat.push(data);
-        off += 12 + len;
-    }
-    const raw = inflateSync(Buffer.concat(idat));
-    const stride = w * 4 + 1;
-    // Undo the PNG row filters (Sub, Up, Average, Paeth) to read the real alpha values
-    const out = Buffer.alloc(w * h * 4);
-    for (let y = 0; y < h; y++) {
-        const f = raw[y * stride];
-        for (let x = 0; x < w * 4; x++) {
-            const v = raw[y * stride + 1 + x];
-            const a = x >= 4 ? out[y * w * 4 + x - 4] : 0;
-            const b = y > 0 ? out[(y - 1) * w * 4 + x] : 0;
-            const c = x >= 4 && y > 0 ? out[(y - 1) * w * 4 + x - 4] : 0;
-            let p = 0;
-            if (f === 1) p = a; else if (f === 2) p = b; else if (f === 3) p = (a + b) >> 1;
-            else if (f === 4) { const q = a + b - c, pa = Math.abs(q - a), pb = Math.abs(q - b), pc = Math.abs(q - c); p = pa <= pb && pa <= pc ? a : pb <= pc ? b : c; }
-            out[y * w * 4 + x] = (v + p) & 0xff;
-        }
-    }
-    const alphas = new Set();
-    for (let i = 3; i < out.length; i += 4) alphas.add(out[i]);
-    return { type, alphas };
-}
-
-test('A38: the title vignette is a stepped image of a few flat shades; no radial gradient or glow', () => {
-    const c = css('title-screen.css');
-    const after = block(c, '.title-screen-container::after');
-    assert.match(after.background, /title-vignette\.png/);
-    assert.equal(after['image-rendering'], 'pixelated');
-    assert.doesNotMatch(c, /radial-gradient/);
-    assert.doesNotMatch(c, /drop-shadow/);
-    const { type, alphas } = pngAlphas(readFileSync(join(pub, 'assets/ui/title-vignette.png')));
-    assert.equal(type, 6, 'RGBA');
-    assert.ok(alphas.size >= 3 && alphas.size <= 6, `a few flat shades, got ${alphas.size}`);
-    assert.ok(alphas.has(0), 'clear in the middle');
 });

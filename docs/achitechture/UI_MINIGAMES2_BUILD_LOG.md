@@ -192,4 +192,9 @@ right before each run.
   stays (hidden, still built by the JS and covered by an existing test). New test in
   `test/js/minigame-shell-fit.test.mjs` pins the single look.
 - A35 (text viewer, notepad look): approved as built, no change.
-- A38 (title-screen vignette): not decided; untouched.
+- A38 (title-screen vignette): C, keep main's soft vignette. Dropped from this branch:
+  `css/title-screen.css` and `title-screen-minigame.js` are main's (d69c29089) again, so the
+  soft radial vignette, the logo glow, the art gradients and the soft text shadow are back.
+  `assets/ui/title-vignette.png`, `title-vignette-art.png` and `tools/make_title_vignette.py`
+  are removed (moved to tmp/delete), and the A38 test in `test/js/minigames2-ui.test.mjs` is
+  gone. Rows above that mention A38 describe the build as it was reviewed.
