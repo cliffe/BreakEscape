@@ -116,7 +116,7 @@ The boiler, cooler and microwave each claim a drawn sprite by base type (the ket
 | about 0:03 | the first-visit start: Keith's tea; his use start sets Jodie's caffeine to 20 and she follows; 30 s at the boiler, overlap about 27 s |
 | about 4:30 to 6:30 | Keith's second tea, Jodie following (the first break restored 40 to a caffeine set to 20, back at 35 about four and a half to six minutes later). Without the first-visit start the natural first tea is at 2:00 (validator T1) |
 | 8:00, then every 30:00 | Keith at the microwave, alone (hunger 46, 2 a min, urgent 30; preset restores 60) |
-| about 10:00 | Jodie's first cooler (thirst 85, 5 a min, urgent 35, validator T1 10:00); her use start sets Keith's thirst to 20; 25 s at the cooler, overlap about 22 s |
+| about 10:00 (9:54 on this seed) | Jodie's first cooler (thirst 90, 5 a min, urgent 35, validator T1 11:00; the seed's initial jitter is about -6 %); her use start sets Keith's thirst to 20; 25 s at the cooler, overlap about 21 s. At 85 it landed at 8:58, 58 s after the microwave, so plan step 1 moved it by 5 |
 | after that | shared breaks alternating boiler and cooler about four minutes apart; the partner's coupled need is always reset before it falls due |
 
 **Annotated example.** The pair's topics are their own (`staff_tea`, `staff_water`), not the scenario-level `coffee`/`cooler` pools, so their bags hold only their own lines; the cooler's use cell is hand-written one tile west of the preset's (E8: `besideCell` makes no route check, and the preset's second-user cell sits against the east wall):
@@ -904,7 +904,23 @@ R1 fixes (B1 mug move, real-clock proof, the four 5.3 checks). Scratchpad `offic
 
 Tool `tools/playtest/needs-sims-staff-room.mjs`, on test_needs_sims games from `new-game.rb`; the conversations with Neil are opened and closed through their UI and the doors walked through, never emitted. Scratchpad `officelife-sims/s4/`. Step 1 cell checks (`tools/playtest/sims4-step1.mjs`, game 4340): door alignment OK (it_room east door 304 vs staff_room 336); the boiler, cooler, microwave and job board each claim their drawn sprite; all three use-object approach cells are walkable; the cooler's hand-written cell is one tile west of the preset's; Keith sits on `hospital_chair_south` (feet 20.8 px, within NEAR_CHAIR 36), Jodie on `hospital_chair_north` (14.0 px); homes at room-local (6.97, 4.85) and (4.2, 6.1); no use cell within two tiles of the west door. Validator T1/P (the seed's schedule): Keith caffeine 2.0/8.0 min, Jodie thirst 10.0/8.0 min; with the first-visit start Keith's second tea moves to ~4:30-6:30.
 
-The full step-1 count runs (5 first visits, 5 job beats, 10 boiler and 10 cooler crossings), the 20-minute schedule run, the speech-lock regression and the standard live set are **not yet run** this session (see the SIMS-4 handover). The beats below each ran once as a representative proof.
+Counts (fresh `new-game.rb` game per run, driver `officelife-sims/s4/finish/driver.sh`, 0 setup failures, no run flagged two starts on different partners within 5 s):
+
+| Step | Pass | Result | Games |
+|---|---|---|---|
+| 1, first visit: the pair do not stand within 1.5 s, both use the boiler, `exchange_waiting` overheard | 5/5 | PASS | 4368, 4370, 4371, 4374, 4375 |
+| 2, job beat (more than 2 min after the first visit): `exchange_job_called` heard | 5/5 | PASS | 4376, 4377, 4379, 4381, 4383 |
+| 3, boiler crossing: pair at the boiler, a line heard | pair 10/10, line 10/10 | PASS | 4384 to 4401; overlap 27.5 s every run |
+| 4, cooler crossing (private office, then the staff room): pair at the cooler, a line heard | pair 10/10, line 10/10 | PASS | 4402 to 4428; overlap 21.2 s every run (the plan expected about 22 s) |
+| 5, both `npc_returned_post` and `npc_sat` after every break | every run | PASS | all of the above |
+| 6, 20-minute schedule, every break start within 15 s of the computed time | see below | thirst moved, rerun | 4360 (thirst 85) |
+| 7, speech lock: office chat turns blocked by an unheard staff-room line | 0 of 6 | below 1 in 20 (small sample) | 4369 (15 min); 13 of 13 staff pool lines spent unheard (E7) |
+
+Step 6, game 4360 (thirst 85), staff-room use starts against the computed times: first visit 0:02 (Keith) and 0:05 (Jodie), computed about 0:03; Keith's second tea 5:35, computed 4:30 to 6:30; microwave 7:59, computed 8:00; Jodie's first cooler 8:58 and Keith 9:00, computed about 10:00 (the nominal, without the seed's jitter); then boiler 13:52 and cooler 16:46. Every start matched its mechanism, and the timings repeat across games (the crossings land within 0.5 s of each other run to run), so these are the seed's times. Jodie's cooler fell 58 s after the microwave, inside plan step 1's one-minute rule, so her initial thirst moved from 85 to 90; the rerun on the merged build is in the next table. The jitter in the restores is the same fraction each game, so the expected seed times at 90 are: 0:03 first visit, 5:35 Keith's second tea, 8:00 microwave, about 9:54 Jodie's first cooler, 13:52 boiler, about 17:40 cooler.
+
+The standard live set on other scenarios (test_needs_leash, lab_physical_pentest, test_access_work) was not rerun: SIMS-4 changes no engine or server line, only this scenario's data, so those scenarios cannot change. The office beats with every door open ran inside game 4369: Neil moved 1 px, 13 office tasks ticked; the kitchen cooler pair did not chat in those 15 minutes (`cooler_chats: 0`, open for review).
+
+The beats below each ran once as a representative proof.
 
 | Beat | Result | Evidence |
 |---|---|---|

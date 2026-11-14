@@ -230,8 +230,17 @@ add `staff_boiler`/`staff_cooler`/`staff_microwave` to the preset list. Door ali
 
 Live proof: `tools/playtest/needs-sims-staff-room.mjs` (+ `sims4-step1.mjs`). Step 1 (game 4340) and
 beats first_visit (4345), job_beat (4346), cooler_cross (4347) PASS; see the README SIMS-4 live-proof
-table. **Not yet run this session:** the full step-1 counts (5/5/10/10), the 20-minute schedule run,
-the speech-lock regression and the standard live set (see `OFFICE_LIFE_SIMS_HANDOVER_SIMS4.md`).
+table. Counts (fresh game per run, 0 setup failures): step 1 first visit 5/5 (4368-4375); step 2 job
+beat 5/5 (4376-4383); step 3 boiler crossings pair 10/10, line heard 10/10, overlap 27.5 s
+(4384-4401); step 4 cooler crossings pair 10/10, line heard 10/10, overlap 21.2 s (4402-4428); step 5
+both returned and sat after every break. Step 7 speech lock (4369, 15 min): 0 of 6 office turns
+blocked (small sample), 13 of 13 staff pool lines spent unheard (E7); the kitchen cooler pair did not
+chat in that run (open for review). Step 6 schedule (4360, thirst 85): first visit 0:02, Keith's
+second tea 5:35 (computed 4:30-6:30), microwave 7:59 (8:00), Jodie's first cooler 8:58 (nominal
+10:00; the seed's jitter is about -6 %), boiler 13:52, cooler 16:46. The cooler fell 58 s after the
+microwave, inside step 1's one-minute rule, so **Jodie's initial thirst moved 85 to 90** (scenario
+data only); the rerun is recorded below. The standard live set on other scenarios was not rerun:
+SIMS-4 changes no engine or server line.
 
 ## Engine and server changes (every slice)
 
