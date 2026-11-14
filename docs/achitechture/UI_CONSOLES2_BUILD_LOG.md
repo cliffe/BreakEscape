@@ -123,7 +123,114 @@ minigame-close-shell, minigame-pixel-art and minigame-consoles-fit: 125 files, 1
 on 5428d3779 and again after merging 372600713 (47e0f97a2). No new static imports, so no harness
 copy lists changed.
 
+## 5. Fix round 1 (review UI_CONSOLES2_REVIEW_R1.md)
+
+Kept from X8: title in Press Start 2P 16px, subtitle in GNF 16px, the X inside the bar.
+
+**M2, the bar on short windows.** The title is one line (`white-space: nowrap`, ellipsis) at
+every size and never wraps; the full title and subtitle go in the bar's `title` attribute
+(`syncConsoleTitleTip()`, kept current by `setConsoleTitle()`). Up to 500px tall the subtitle
+sits on the title's line and takes only the width the title leaves; under 600px wide it is
+hidden and lives in the title attribute only. The bar is one row (50px) at every short or
+narrow size; it was up to 162px (four title lines plus subtitle) at 360x740. Status rows the
+bar now duplicated: the SIEM clock moved into the SIEM status bar (no `.siem-header` row);
+the segmentation map's ACTIVE INCIDENT badge moved into its legend strip (no `.nsm-header-bar`).
+Scenes that still had too little: the segmentation map puts its SEVER hint beside the button
+(the button may wrap to two lines on windows up to 700px tall); the warranty paper and FDP
+scroll as one column on short windows and phones (FDP already did on short windows).
+
+**M1, network diagram on short windows.** Up to 500px tall the detail pane folds to one
+toggle row ("Details: <node>" and [SHOW]/[HIDE], `aria-expanded`), hidden on taller windows;
+the legend keeps one line with short labels (the full label in each item's title).
+
+**M3 and m1, repeated titles.** Concern form: the intro heading is left out when it says the
+same as the bar, and the intro text takes the first focus (no browser focus box). NCSC brief:
+the envelope name label is gone (the case reference stays). Warranty checklist: the paper's
+document-name line is left out when the bar carries that name, and sis03's title is now
+"Warranty Compliance Checklist" (scenarios/sis03_cyber_insurance/scenario.json.erb), so the
+bar carries the document name and the letterhead the case reference. Validator on sis03:
+0 errors, 11 warnings.
+
+**m2.** The backup consequence panel has no scroller of its own (`overflow: visible`); it was
+a 24px slot at 800x600 and smaller. **m4.** Network nodes: no browser ring on click; keyboard
+focus draws a 2px solid white square outline (`:focus-visible`), checked by Tab then Enter.
+
+### Measured heights (px, `clientHeight`; "col" = the scene scrolls as one column, figure is the console body)
+
+Before is tip 804657747's files served over the same server and games (Playwright routing of
+the 12 changed files), sis03 title set back to the old one; after is this round.
+
+| Scene, pane | Size | Before | After |
+|---|---|---|---|
+| Segmentation map, `.nsm-body` | 800x600 | 156 | 309 |
+| | 390x844 | 297 | 375 |
+| | 360x740 | 169 | 271 |
+| | 1400x1000 | 589 | 653 |
+| Warranty, `.wcc-doc-body` | 915x412 | 42 | col 310 |
+| | 667x375 | 0 | col 273 |
+| | 360x740 | 114 | col 638 |
+| | 800x600 | 210 | 264 |
+| FDP, `.fdp-panel` | 667x375 | col 233 | col 273 |
+| | 360x740 | 96 | col 638 |
+| | 390x844 | 200 | col 742 |
+| | 800x600 | 253 | 277 |
+| Drug library, `.dli-panel` | 667x375 | 113 | 153 |
+| | 360x740 | 358 | 470 |
+| | 915x412 | 188 | 204 |
+| SIEM alert list / queue | 667x375 | 140 / 50 | 177 / 87 |
+| | 800x600 | 295 / 247 | 358 / 310 |
+| Network diagram pane | 667x375 | 97 (0 whole nodes) | 201 (a full node row and its links) |
+| | 915x412 | 154 | 238 |
+| Backup consequence panel | 800x600 | 24 (scroller) | 328 (no scroller) |
+| Title bar | 360x740 (drug library, FDP) | 162 | 50 |
+
+### Proof (server :3480, fresh games after main's format 3: sis01 3710, sis02 3711, sis03 3714, exercise station 3696, test_seating 3689, test_access_networks 3716)
+
+- Every console scene at 1400x1000, 667x375 and 360x740 (66 scene-sizes, scratchpad
+  ui-consoles2-r1/fix1/probe-fix1.log): Esc closes and the X closes in all 66; window and X
+  placement as before; no title or subtitle repeated in the body except the claims subtitle's
+  case reference, which also appears as a value in a section summary card (data, left as is).
+- Builder's drive scripts rerun (fix1/drive/*.log): SIEM escalate; segmentation map rule
+  click enables SEVER, confirm opens, Esc closes the confirm first and the scene stays, X
+  closes; log filter picker; SCADA range; blockchain graph; mixer board (no own title);
+  concern form close ask and keep going; coverage form submit; NCSC break seal; warranty
+  verdicts and submit; FDP tabs and confirm; claims navigation (1400 and 390); EHR
+  UNDERSTOOD; command board post; backup tile; SIS row detail, detail X, Esc closes the
+  confirm first, Confirm sets its global. Two "fails" in clicks.mjs are the fresh games'
+  Mission Brief opening after the scene closed (intended on a fresh game), not the scenes.
+- Network diagram (fix1/nad/nad.json): at 667x375 a real click selects a node, the toggle
+  opens and closes the detail, Esc closes; at 1400x1000 Tab focuses a node with the square
+  outline and Enter selects it.
+- Network view, live (m5; fix1/netview): fresh game, `interact('comms_port')`, Plug it in
+  opens the network view straight away (so the inventory step is not needed). 390x844: window
+  374x828 at 8px, bar 50px, title "Drop box: Comms room" with ellipsis, subtitle in the title
+  attribute, list scrolls with "More below"; 1400x1000: window 1280x538, title and subtitle on
+  two lines. Esc closes; no page errors.
+
+- Strict audit (`--all --strict --skip person-chat,network-view`, four sizes, game 3689,
+  fix1/audit.log): window-offscreen 0, frame-offscreen 1 (alarm panel 915x412, by design),
+  clipped 0, x-on-frame 0, overflow 0; exit 1 on that known line, as in the build and the
+  review. The only console-scene line is the known SIEM DISMISS cancel-beside-x.
+- Shell X check (`node tools/playtest/shell-x-check.mjs --port 3480 --game 3689`,
+  fix1/shellx.log): 172 checked, 0 failed.
+
+Tests (plain `node file`, one at a time): the 18 files that name a changed scene, the sis03
+scenario or the console window, plus minigame-shell-fit, close-shell, pixel-art and
+consoles-fit: 353 pass, 0 fail (6 new tests in minigame-consoles-fit). The other 105 files
+that import base-minigame: 1520 pass, 1 fail, rfid-door-screen ("Unable to deserialize
+cloned data"), which fails the same way on main 372600713.
+
+Shots: before and after per scene and size in scratchpad ui-consoles2-r1/fix1/before,
+after, after2 (warranty, FDP, map), after3 (map, final), nad/, netview/, probe-shots/.
+
+Open for the orchestrator: on narrow phones the network view's subtitle (which network and
+port) is only in the title attribute, which touch players cannot see; the claims subtitle
+hard-codes sis03's case reference in engine code (claims-management-system-minigame.js).
+
 ## Handover (context limit, 2026-11-14)
+
+Fix round 1 (section 5) closed open items 1, 3 and 4 below and the review's M1 to M3 and m1 to m5;
+server :3480 stopped by PID afterwards.
 
 Done: sections 1 to 4. Main merged twice (61c033b13 at 5428d3779, 372600713 at 47e0f97a2), both
 clean, tests rerun after each.
