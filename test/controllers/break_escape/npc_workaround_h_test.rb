@@ -30,7 +30,7 @@ module BreakEscape
       office['objects'] += [AccessWorkScenario.pc('sam_pc'), AccessWorkScenario.pc('ruth_pc')]
       ian = npc_in(data, 'ian')
       ian['workarounds'] = ian_workarounds || [{ 'at' => 40, 'do' => 'borrow_session', 'pc' => 'hot_desk' }]
-      ian['screenHabit'] = ian_habit if ian_habit
+      (ian['habits'] ||= {})['screen'] = ian_habit if ian_habit
       office['npcs'] += [
         AccessWorkScenario.staff('sam', 'sokafor', SAM_PASSWORD, 'displayName' => 'Sam Okafor', 'workNeeds' => ['+printer'],
                                                                'workarounds' => [{ 'at' => 40, 'do' => 'share_login', 'with' => sam_with }]),
@@ -218,7 +218,7 @@ module BreakEscape
       end
     end
 
-    test 'locksScreen habits (slice 9.1) decide the guest as they fill the screenHabit' do
+    test 'locksScreen habits (slice 9.1) decide the guest as they fill habits.screen' do
       { 'always' => false, 'never' => nil }.each do |value, expected|
         data = scenario(ian_habit: nil)
         npc_in(data, 'ian')['habits'] = { 'locksScreen' => value }
@@ -529,7 +529,7 @@ module BreakEscape
     def queue_scenario
       data = scenario
       data['globalVariables']['finance_share_down'] = true
-      npc_in(data, 'dana')['screenHabit'] = LEAVES_OPEN
+      (npc_in(data, 'dana')['habits'] ||= {})['screen'] = LEAVES_OPEN
       data
     end
 
