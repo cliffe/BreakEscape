@@ -33,6 +33,7 @@ require_relative '../lib/break_escape/format_upgrade'
 require_relative '../lib/break_escape/declared_grants'
 require_relative '../lib/break_escape/access_identities'
 require_relative '../lib/break_escape/capture_model'
+require_relative '../lib/break_escape/phish_score'
 require_relative '../lib/break_escape/npc_habits'
 require_relative '../lib/break_escape/npc_habits/clues'
 require_relative 'validate_npc_habits'
@@ -6739,6 +6740,80 @@ end
 # its own (a copy of the room's is harmless); access and acceptsUIDOnly are errors.
 DOOR_ENTRY_LOCK_FIELDS = %w[locked lockType keyPins key_pins difficulty lockedHint biometricMatchThreshold
                             maxAttempts passwordHint showHint postitNote showPostit showKeyboard pinLength].freeze
+# Whether some closed-menu choice set for this landing page reaches meets_threshold for the given
+# target, proving an honest player can build a convincing page (PHISH_EVIDENCE_SERVER_PLAN section
+# 13: "Share PhishScore with the validator so an authored page can be checked for being solvable,
+# some choice set meets its linkThreshold"). It reuses the shared BreakEscape::PhishScore port
+# (lib/break_escape/phish_score.rb), the same scorer the build route recomputes with, so the
+# validator and the server agree on what is buildable and the check cannot drift from the runtime.
+#
+# This is a bounded exhaustive search, not a blind best-choice-per-part pick, because one choice is
+# coupled: the brand choice feeds the brand points, the brand gate and the domain menu, and a domain
+# option lives under the brand that owns it. So the search enumerates every (brand, domain) pair and,
+# within it, every authored purpose and wording option. The three remaining factors are fixed to
+# their own factor maximum, which is independent of every other choice, so fixing them loses no
+# reachable credibility: logo 'crisp' is the only full-points logo (score_logo), padlock true is the
+# only full-points padlock (score_padlock), and choosing exactly a brand's realFields is always full
+# form points (score_form rule 4) for that brand. Each menu is a handful of options, so the product
+# is tiny and the search is exact: if it finds no meeting choice set, none exists.
+def landing_page_buildable?(page_def, target_id)
+  return false unless page_def.is_a?(Hash)
+  return fake_check_buildable?(page_def, target_id) if page_def['pageType'] == 'fakeCheck'
+
+  pretext = page_def['pretext'].is_a?(Hash) ? page_def['pretext'] : {}
+  purposes = Array(page_def['purposes']).filter_map { |p| p['id'] if p.is_a?(Hash) }
+  purposes = (purposes + [pretext['purposeId'], 'signin']).compact.uniq
+  purposes = [nil] if purposes.empty?
+  wordings = Array(page_def['wordings']).filter_map { |w| w['id'] if w.is_a?(Hash) }
+  wordings = (wordings + [nil]).uniq
+  brands = page_def['brands'].is_a?(Array) ? page_def['brands'] : []
+
+  brands.each do |brand|
+    next unless brand.is_a?(Hash)
+
+    real_fields = brand['realFields'].is_a?(Array) ? brand['realFields'] : []
+    domains = brand['domains'].is_a?(Array) ? brand['domains'] : []
+    # A page with no domain options still gets the no-domain case: guard_domain blocks it (so it is
+    # never convincing), but enumerating [nil] keeps the search total.
+    (domains.empty? ? [nil] : domains).each do |domain|
+      domain_id = domain.is_a?(Hash) ? domain['id'] : nil
+      purposes.each do |purpose|
+        wordings.each do |wording|
+          choices = {
+            'brand' => brand['id'], 'domainId' => domain_id, 'purpose' => purpose,
+            'logo' => 'crisp', 'wording' => wording, 'fields' => real_fields, 'padlock' => true
+          }
+          return true if BreakEscape::PhishScore.score(page_def, choices, target_id)[:meets_threshold]
+        end
+      end
+    end
+  end
+  false
+end
+
+# The fake-check variant (scoreFakeCheck): four independent menus (hosts, pretexts, steps,
+# urgencies) and no gates. Each factor's points depend only on its own menu option, so the full
+# product of the four menus is a small, exact search.
+def fake_check_buildable?(page_def, target_id)
+  check = page_def['check'].is_a?(Hash) ? page_def['check'] : {}
+  ids = lambda do |key|
+    out = Array(check[key]).filter_map { |o| o['id'] if o.is_a?(Hash) }
+    out.empty? ? [nil] : out
+  end
+  ids.call('hosts').each do |host_id|
+    ids.call('pretexts').each do |pretext_id|
+      ids.call('steps').each do |steps_id|
+        ids.call('urgencies').each do |urgency_id|
+          choices = { 'check' => { 'hostId' => host_id, 'pretextId' => pretext_id,
+                                   'stepsId' => steps_id, 'urgencyId' => urgency_id } }
+          return true if BreakEscape::PhishScore.score(page_def, choices, target_id)[:meets_threshold]
+        end
+      end
+    end
+  end
+  false
+end
+
 def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
   issues = []
   return issues unless json_data.is_a?(Hash)
@@ -6830,15 +6905,19 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
              '(usernames compare trimmed and case-insensitively).')
   end
 
-  # A non-account capture secret that is also a password or PIN lock code is withheld until a
-  # capture proof holds (Game#authored_capture_secret), so one authored with no proof is never
-  # served and the capture silently stops working. Warn the author (usePayload/capture review R1).
-  lock_codes = BreakEscape::CaptureModel.lock_codes(json_data)
-  unless lock_codes.empty?
+  # A non-account capture secret that is also a hard-access value (a password or PIN lock code, an
+  # RFID or biometric requires, a Wi-Fi PSK or a flag) is withheld until a capture proof holds
+  # (Game#authored_capture_secret / authored_capture_served?), so one authored with no proof is never
+  # served and the capture silently stops working. Warn the author (usePayload/capture review R1,
+  # widened from lock codes to the full hard-access set at phish-evidence review R1, Minor 2: the
+  # server withholds a PSK or flag secret the same way it withholds a lock code). Stays a warning,
+  # not an error: the server never over-serves such a capture, it only withholds it.
+  hard_access = BreakEscape::CaptureModel.hard_access_values(json_data)
+  unless hard_access.empty?
     room_npcs.reject { |e| ai.account?(e[:npc]) }.each do |e|
       npc = e[:npc]
       payload = npc['usePayload']
-      if payload.is_a?(Hash) && lock_codes.include?(payload['secret'].to_s)
+      if payload.is_a?(Hash) && hard_access.include?(payload['secret'].to_s)
         own = payload['targetId']
         ungated = if own.is_a?(String) && !own.strip.empty?
                     !payload['proof'].is_a?(Hash)
@@ -6850,20 +6929,105 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
                     end
         end
         if ungated
-          warn.call("NPC #{name_of.call(npc)} has a usePayload.secret that is also a password or PIN lock " \
-                    'code but no capture proof gates it, so the capture is withheld and never served. Add a ' \
+          warn.call("NPC #{name_of.call(npc)} has a usePayload.secret that is also a hard-access value (a " \
+                    'password or PIN lock code, an RFID or biometric requires, a Wi-Fi PSK or a flag) but no ' \
+                    'capture proof gates it, so the capture is withheld and never served. Add a ' \
                     "'proof' to the capture, or make the secret open nothing.")
         end
       end
       Array(npc['eventMappings']).each_with_index do |mapping, i|
         capture = mapping.is_a?(Hash) ? mapping['addCapture'] : nil
-        next unless capture.is_a?(Hash) && lock_codes.include?(capture['secret'].to_s)
+        next unless capture.is_a?(Hash) && hard_access.include?(capture['secret'].to_s)
         next if capture['proof'].is_a?(Hash)
 
-        warn.call("NPC #{name_of.call(npc)} eventMappings[#{i}].addCapture.secret is also a password or PIN " \
-                  'lock code but the mapping has no \'proof\', so the capture is withheld and never served. ' \
+        warn.call("NPC #{name_of.call(npc)} eventMappings[#{i}].addCapture.secret is also a hard-access value " \
+                  '(a password or PIN lock code, an RFID or biometric requires, a Wi-Fi PSK or a flag) but the ' \
+                  "mapping has no 'proof', so the capture is withheld and never served. " \
                   "Add a 'proof' to the capture, or make the secret open nothing.")
       end
+    end
+  end
+
+  # Phish evidence: a landing page whose capture.secret is a hard-access value (a password or PIN
+  # lock code, an RFID or biometric requires, a Wi-Fi PSK or a flag) is only safe to serve once the
+  # server has recorded a built, convincing page and a landed send for it (PHISH_EVIDENCE_SERVER_PLAN
+  # sections 11 to 13). For such a page three facts must all hold, or a tampered client can forge the
+  # build and send state and be served the secret without running the minigames:
+  #   1. a social.mailClient.payloadKit link kit names the page (landingPageId), so there is a kit to
+  #      attach and the server has something to record a send against;
+  #   2. some authored social.phishTargets entry is one the page aims at (its own 'targets' map), so
+  #      the link kit has an authored target that can be sent it and the server can record a landed
+  #      send to a real target. This is a STRUCTURAL check only: it proves a phish target the page is
+  #      aimed at exists and carries the per-target threshold. The full "a message can land" check
+  #      (does a composed message actually pass the target's required factors) needs the send judge
+  #      BreakEscape::PhishJudge, which lands in chunk 4; it should be added here then, so an aimed
+  #      target that no message could ever satisfy is also caught at authoring time;
+  #   3. the page is buildable: some closed-menu choice set reaches the aimed target's linkThreshold
+  #      (checked with the shared BreakEscape::PhishScore port, section 13 bullet 3). If no choice set
+  #      can ever be convincing, the server can never record a built page, so the secret is withheld
+  #      from honest play forever while the validator would otherwise pass.
+  # Error on any of the three so a future author cannot quietly reopen the forge or ship an
+  # unsolvable protected page. Where the landing secret is not a hard-access value (every awareness
+  # page), nothing fires.
+  #
+  # Only the Array form of social.landingPages is iterated, matching exactly what the server serves a
+  # phish secret from (Game#capture_secrets_for_client, game.rb:1428, `pages.is_a?(Array) ? pages :
+  # []`). A Hash-form landingPages is never read by that serve path, so a hard-access secret authored
+  # under a Hash form can never be served through the forge and needs no gate here; erroring on it
+  # would be a false positive the server cannot reach (review R1, Minor 1).
+  unless hard_access.empty?
+    evidence_kits = BreakEscape::CaptureModel.page_evidence_kits(json_data)
+    phish_target_ids = BreakEscape::CaptureModel.phish_target_ids(json_data).to_set
+    social = json_data['social']
+    array_pages = social.is_a?(Hash) && social['landingPages'].is_a?(Array) ? social['landingPages'] : []
+    array_pages.each do |page|
+      next unless page.is_a?(Hash)
+
+      capture = page['capture']
+      next unless capture.is_a?(Hash)
+
+      secret = capture['secret']
+      next unless BreakEscape::CaptureModel.present_string?(secret) && hard_access.include?(secret.to_s)
+
+      page_id = page['id']
+      page_label = BreakEscape::CaptureModel.present_string?(page_id) ? page_id : '(no id)'
+
+      # 1. A link kit must name the page.
+      info = BreakEscape::CaptureModel.present_string?(page_id) ? evidence_kits[page_id] : nil
+      unless info.is_a?(Hash) && Array(info[:kits]).any?
+        err.call("landing page '#{page_label}' carries a capture.secret that is also a password or PIN " \
+                 'lock code, an RFID or biometric requires, a Wi-Fi PSK or a flag, but no ' \
+                 'social.mailClient.payloadKit link kit names it (landingPageId), so the server cannot ' \
+                 'gate the reveal on a built page and a landed send. A tampered client could forge the ' \
+                 'build and send and be served the secret. Wire the page through a link kit, or make the ' \
+                 'secret open nothing.')
+        next
+      end
+
+      # 2. Some authored phish target the page aims at must exist (kit reachability, structural).
+      page_targets = page['targets'].is_a?(Hash) ? page['targets'].keys : []
+      aimed = page_targets.select { |t| phish_target_ids.include?(t.to_s) }
+      if aimed.empty?
+        err.call("landing page '#{page_label}' carries a capture.secret that is also a password or PIN " \
+                 'lock code, an RFID or biometric requires, a Wi-Fi PSK or a flag, and a link kit names ' \
+                 'it, but no authored social.phishTargets entry is one the page aims at (its \'targets\' ' \
+                 'map), so the link kit has no real target to be sent to and the server can never record ' \
+                 'a landed send for it. Add a phish target id to the page\'s targets map, or make the ' \
+                 'secret open nothing. (The full check that a composed message can actually land needs ' \
+                 'the send judge PhishJudge, chunk 4.)')
+        next
+      end
+
+      # 3. The page must be buildable for some aimed target (PhishScore: a choice set meets threshold).
+      next if aimed.any? { |target_id| landing_page_buildable?(page, target_id) }
+
+      err.call("landing page '#{page_label}' carries a capture.secret that is also a password or PIN " \
+               'lock code, an RFID or biometric requires, a Wi-Fi PSK or a flag wired through a link ' \
+               'kit, but no closed-menu choice set reaches its linkThreshold for any phish target the ' \
+               'page aims at (checked with BreakEscape::PhishScore), so the page can never be scored ' \
+               'convincing, the server can never record a built page, and the secret is withheld from ' \
+               'honest play. Lower the target linkThreshold or minDomainTier, fix the page menus, or ' \
+               'make the secret open nothing.')
     end
   end
 

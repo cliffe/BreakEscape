@@ -296,3 +296,139 @@ concurrent sprite-restricted browser run) which made `new-game.rb` abort with "N
 matches validSprites nil". Set it back to the universal starter `female_hacker_hood_v2` to run these
 proofs. Concurrent browser playtests on different scenarios share this one demo player and so contend
 on the sprite.
+
+## Chunk 8: validator rule and schema confirmation
+
+Plan section 13. Built on its own branch (`build/hard-phish-c8`, from the reviewed tip of chunks 1
+to 3); touches only the validator, a node test and this log, so it merges without the app/engine
+chunks 4 to 7.
+
+### The rule
+
+A landing page whose `capture.secret` is a hard-access value must be reachable only through a link
+kit, so the server can gate the reveal on a recorded build and a landed send. Without a link kit the
+server has nothing to gate on, so a tampered client could forge the build and send state and be
+served the secret. The rule lives in `check_access_model` (`scripts/validate_scenario.rb`), right
+after the existing NPC-capture lock-code block, because section 13 places it in the "access-model
+pass" and that pass already builds the hard-access set and is the method the node tests drive. For
+every `social.landingPages` entry whose `capture.secret` is in
+`CaptureModel.hard_access_values(data)` (a password or PIN lock code, an RFID or biometric
+`requires`, a Wi-Fi PSK, or a flag), it errors unless a `social.mailClient.payloadKit` link kit
+names the page (the page appears in `CaptureModel.page_evidence_kits(data)` with a non-empty kit
+list). A landing secret that opens nothing (every awareness page) is never flagged. The rule emits
+only errors, never warnings.
+
+`hard_access_values` was chosen over the narrower `lock_codes` to match the plan's own definition of
+a protected secret throughout (a lock code, a PSK or a flag): it is a strict superset, so it still
+covers the lock-code case section 13's parenthetical names.
+
+### Review R1 follow-ups (this pass)
+
+The round-1 review (`PHISH_EVIDENCE_C8_REVIEW_R1.md`) shipped the forge-closing rule but flagged a
+section 13 deliverable left out and two edges. All four are now folded in; the rule now checks three
+facts for every protected landing page, erroring on any one missing.
+
+1. **Kit wiring** (the original rule): a `social.mailClient.payloadKit` link kit must name the page.
+
+2. **Buildability** (Major 1, section 13 bullet 3): some closed-menu choice set must reach the aimed
+   target's `linkThreshold`, so an honest player can produce a convincing page and the server can
+   record a built page. Checked with the shared `BreakEscape::PhishScore` port
+   (`lib/break_escape/phish_score.rb`), the same scorer the build route recomputes with, so the
+   validator and the runtime cannot disagree on what is buildable. Without this an author could wire a
+   protected secret to a page whose threshold no choice set can reach: the server's
+   `phish_page_evidence_holds?` needs `meetsThreshold == true`, which the build route would never
+   record, so the secret is withheld from honest play forever while the validator passed.
+
+   `landing_page_buildable?` is a **bounded exhaustive search**, not a blind best-choice-per-part
+   pick, because one choice is coupled: the brand choice feeds the brand points, the brand gate and
+   the domain menu, and a domain option lives under its own brand. The search enumerates every
+   `(brand, domain)` pair and, within it, every authored purpose and wording option. The three
+   remaining factors are fixed to their own factor maximum, which is independent of every other
+   choice, so fixing them loses no reachable credibility: logo `crisp` is the only full-points logo,
+   `padlock` true the only full-points padlock, and choosing exactly a brand's `realFields` is always
+   full form points (score_form rule 4). Each menu is a handful of options, so the product is tiny and
+   the search is exact: no meeting choice set found means none exists. The fake-check variant
+   (`fake_check_buildable?`) enumerates the full product of its four independent `check` menus.
+
+3. **Kit reachability** (Major 1, second part): some authored `social.phishTargets` entry must be one
+   the page aims at (a key of the page's own `targets` map), so the link kit has a real target that
+   can be sent it and the server can record a landed send to it. This is a **structural check only**:
+   it proves an aimed phish target exists and carries the per-target threshold. The full "a message
+   can actually land" check (does a composed message pass the target's required factors) needs the
+   send judge `BreakEscape::PhishJudge`, which arrives in **chunk 4**; it should be added here then,
+   so an aimed target that no message could ever satisfy is caught at authoring time too. This is
+   written in the validator comment on the rule and here.
+
+**Minor 1 (Array-form only).** The rule now iterates only the Array form of `social.landingPages`
+(replacing `CaptureModel.landing_pages`, which also accepts a Hash), matching exactly what the server
+serves a phish secret from (`Game#capture_secrets_for_client`, `game.rb:1428`,
+`pages.is_a?(Array) ? pages : []`). A Hash-form `landingPages` is never read by that serve path, so a
+hard-access secret authored under a Hash form can never be served through the forge and needs no gate
+here; erroring on it would be a false positive the server cannot reach. The Array-only reading was
+chosen over erroring on a Hash form because mirroring the serve path is exact and raises nothing the
+server would not itself serve.
+
+**Minor 2 (NPC-capture warning widened).** The pre-existing NPC-capture block
+(`validate_scenario.rb`, just above this rule) warned when a non-account NPC's `usePayload`/`addCapture`
+secret equalled a *lock code* with no proof. It now warns on the full hard-access set (lock code, RFID
+or biometric `requires`, Wi-Fi PSK, flag), because the server withholds a PSK or flag secret with no
+proof the same way it withholds a lock code (`authored_capture_served?`). It stays a **warning**, not
+an error: the server never over-serves such a capture, it only withholds it, so this is a dead-capture
+author hint, not a forge. No shipped scenario trips the widened case.
+
+### Schema
+
+No schema change. `scripts/scenario-schema.json` already defines `landingPages`, `phishTargets` and
+`payloadKit` (with `landingPageId`); the routes record derived facts and add no authored field, so
+the authored shapes are unchanged (plan section 13). Confirmed untouched.
+
+### Tests
+
+- Node cases `test/js/validator-phish-evidence-secret.test.mjs` (driving `check_access_model`
+  in-process over the Ruby validator). The factory now builds a page that is wired, aimed and
+  buildable by default, with one toggle per failure mode. Cases: a wired, aimed, buildable secret
+  raises nothing; no link kit, a kit naming a different page, or a non-`link` kit each error (kit
+  wiring); an awareness secret that opens nothing is never flagged (kit or no kit); a Wi-Fi PSK
+  behind an unwired phish errors and clears once wired (hard-access set is wider than lock codes); a
+  wired page no phish target aims at errors (kit reachability); a wired, aimed page no choice set can
+  make convincing errors, and a buildable one at the same threshold clears (buildability); a Wi-Fi
+  PSK on a non-account NPC capture with no proof warns (Minor 2 widening). **10 subtests, all pass.**
+- No new static import was added to any engine JS module, so no test-harness copy list changed. The
+  validator requires `lib/break_escape/phish_score.rb`, which already existed from chunk 2.
+
+### Validator counts (every scenario authoring a landing page or phish target)
+
+Run `LANG=C.UTF-8 /usr/bin/ruby3.2 scripts/validate_scenario.rb <file> --no-graph`. Re-run after the
+review R1 follow-ups: errors and warnings are still identical before and after for all 19 scenarios
+(the "before" validator is the branch tip `2eccc2878`, run from a committed copy of its
+`validate_scenario.rb`). No new error or warning fired on any shipped scenario: the lab's page is
+wired through `kit_payroll_page`, aims at the authored `lord` target and is buildable (a best choice
+set scores 100 against `linkThreshold` 70); every other page carries no hard-access secret; and no
+scenario has a non-account NPC capture of a PSK or flag, so the widened Minor 2 warning fires on none.
+The lab stays **0 errors**. No `dungeon_graph.*` rewrites (run with `--no-graph`; `git status` clean
+bar `node_modules`).
+
+| Scenario | errors (before=after) | warnings (before=after) | rule hits |
+|---|---|---|---|
+| lab_social_engineering | 0 | 8 | 0 |
+| test_social_slice | 0 | 6 | 0 |
+| ca01_invoice_fraud | 0 | 3 | 0 |
+| ca02_cv_lures | 0 | 3 | 0 |
+| ca04_exec_whaling | 0 | 3 | 0 |
+| ca05_signin_pages | 0 | 3 | 0 |
+| ca06_texts_and_qr | 0 | 3 | 0 |
+| ca07_voice_ceo | 0 | 3 | 0 |
+| ca08_after_the_click | 0 | 3 | 0 |
+| ca10_downloads_and_fake_checks | 0 | 2 | 0 |
+| ca13_ai_assistant | 0 | 2 | 0 |
+| ca14_social_media | 0 | 2 | 0 |
+| test_ink_email | 0 | 2 | 0 |
+| test_social_board_indicators | 0 | 3 | 0 |
+| test_social_docs_proof | 0 | 2 | 0 |
+| test_social_episode | 0 | 6 | 0 |
+| test_social_freetext | 0 | 3 | 0 |
+| test_social_m5_channels | 0 | 7 | 0 |
+| test_social_p9 | 0 | 3 | 0 |
+
+(`ca*` scenarios that author no landing page or phish target cannot reach the rule's page loop, so
+they gain no new error by construction.)
