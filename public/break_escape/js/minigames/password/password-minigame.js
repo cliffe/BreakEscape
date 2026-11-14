@@ -6,6 +6,13 @@ import { escapeHtml } from '../../utils/escape-html.js';
 import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } from '../../utils/lock-scope-refusal.js';
 import { isComputerType } from '../../utils/computer-keywords.js';
+import { mountPcMonitor, cssZoomOf, pcPostitButtonHtml } from '../../utils/pc-monitor.js';
+import { headshotCandidates, headshotKeys, noteMissingHeadshot, npcRecordFor, headshotSourceFor, applyHeadshotBox,
+    SHORT_PORTRAIT_PX, TILE_PORTRAIT_PX, isTalkSheetSize, portraitCropOverride, headCropOffset, frameAlphaReader } from '../../utils/npc-headshot.js';
+// The portrait crop helpers live with the headshots (UX slice 2c R1 m8: the desktop bar
+// falls back the same way as a tile); exported here too for the tests and callers that
+// import them from the password screen
+export { SHORT_PORTRAIT_PX, TILE_PORTRAIT_PX, isTalkSheetSize, PORTRAIT_CROP_OVERRIDES, portraitCropOverride, headCropOffset } from '../../utils/npc-headshot.js';
 
 /**
  * The keypad's line after a wrong password. A near miss (right apart from letter
@@ -66,41 +73,11 @@ export function tileInitials(name) {
     return letters || '?';
 }
 
-/** A square image of at least 256 pixels with even sides is a 2x2 talk sheet (person-chat's _isTalkSheet). */
-export function isTalkSheetSize(width, height) {
-    return width >= 256 && width === height && width % 2 === 0;
-}
-
 /** A portrait path from the server ("assets/characters/x_talk.png") as a URL. */
 export function portraitUrl(path) {
     if (typeof path !== 'string' || !path) return null;
     if (path.startsWith('/') || path.startsWith('http') || path.startsWith('data:')) return path;
     return path.startsWith('assets/') ? `/break_escape/${path}` : `${ASSETS_PATH}/${path}`;
-}
-
-/** The short-window tile's portrait box (css/password-minigame.css, max-height: 640px). */
-export const SHORT_PORTRAIT_PX = 32;
-
-/** The tile's portrait box at every other size (css/password-minigame.css, .signin-portrait). */
-export const TILE_PORTRAIT_PX = 64;
-
-/**
- * Head crops for posed portraits the finder cannot read (UX slice 2a R4 n3): in a bedside
- * portrait the pillow or the hair is the first opaque row, so the finder's box lands on
- * bedding. Keyed by the talk sheet's file name (one sheet per character); `tile` is the
- * 64x64 crop's top-left in the first frame, `short` the 32x32 crop's, both at scale 1.
- */
-export const PORTRAIT_CROP_OVERRIDES = Object.freeze({
-    'mr_ahmed_talk.png': { tile: { left: 36, top: 18 }, short: { left: 46, top: 32 } },
-    'mr_pryce_talk.png': { tile: { left: 22, top: 6 }, short: { left: 38, top: 20 } },
-    'mrs_kowalski_talk.png': { tile: { left: 28, top: 0 }, short: { left: 45, top: 12 } },
-    'ms_okafor_talk.png': { tile: { left: 20, top: 12 }, short: { left: 36, top: 30 } }
-});
-
-/** The crop override for a portrait URL, or null. */
-export function portraitCropOverride(src) {
-    const name = String(src || '').split(/[?#]/)[0].split('/').pop();
-    return Object.prototype.hasOwnProperty.call(PORTRAIT_CROP_OVERRIDES, name) ? PORTRAIT_CROP_OVERRIDES[name] : null;
 }
 
 /**
@@ -116,48 +93,6 @@ export function setTilePortrait(el, { src, width, height, kind, offset = null, s
     el.style.backgroundSize = `${width * scale}px ${height * scale}px`;
     el.style.backgroundPosition = `${left ? -left : 0}px ${top ? -top : 0}px`;
     el.dataset.frame = kind;
-}
-
-/**
- * Where to cut a box x box head crop from a talk sheet's first frame (frameSize square), at
- * scale 1 (UX slice 2a R3 n1: the 32px tile showed the whole 128px frame at a quarter, a
- * downscale that lost the face). `alpha(x, y)` reads the frame's alpha. The crop starts 4px
- * below the top of the head and is centred on the head's width over its first 24 rows, so
- * the eyes, nose and mouth are in the box. A blank frame gives the top-centre box.
- */
-export function headCropOffset(alpha, frameSize, box = SHORT_PORTRAIT_PX) {
-    const clamp = (v) => Math.max(0, Math.min(frameSize - box, v));
-    let y0 = -1;
-    for (let y = 0; y < frameSize && y0 < 0; y++) {
-        for (let x = 0; x < frameSize; x++) { if (alpha(x, y) > 0) { y0 = y; break; } }
-    }
-    if (y0 < 0) return { left: clamp(Math.round(frameSize / 2) - box / 2), top: 0 };
-    let minX = Infinity, maxX = -1;
-    for (let y = y0; y < Math.min(frameSize, y0 + 24); y++) {
-        for (let x = 0; x < frameSize; x++) {
-            if (alpha(x, y) > 0) { if (x < minX) minX = x; if (x > maxX) maxX = x; }
-        }
-    }
-    const cx = maxX >= 0 ? (minX + maxX) / 2 : frameSize / 2;
-    return { left: clamp(Math.round(cx) - box / 2), top: clamp(y0 + 4) };
-}
-
-/** The alpha reader for an image's top-left frameSize square, or null when the canvas
- *  cannot be read (no canvas, or a tainted one). */
-function frameAlphaReader(img, frameSize) {
-    try {
-        if (typeof document === 'undefined') return null;
-        const canvas = document.createElement('canvas');
-        canvas.width = frameSize;
-        canvas.height = frameSize;
-        const ctx = canvas.getContext && canvas.getContext('2d');
-        if (!ctx) return null;
-        ctx.drawImage(img, 0, 0);
-        const data = ctx.getImageData(0, 0, frameSize, frameSize).data;
-        return (x, y) => data[(y * frameSize + x) * 4 + 3];
-    } catch (e) {
-        return null;
-    }
 }
 
 /**
@@ -187,8 +122,24 @@ export function setShortPortrait(el, { src, width, height, kind, offset = null }
  *   fitting it to the box would scale it down.
  * `ImageCtor` and `readAlpha` are injectable for tests.
  */
-export function applyTilePortrait(el, tile, ImageCtor = (typeof Image !== 'undefined' ? Image : null), readAlpha = frameAlphaReader) {
-    const sources = [tile?.portrait, tile?.avatar].map(portraitUrl).filter(Boolean);
+export function applyTilePortrait(el, tile, ImageCtor = (typeof Image !== 'undefined' ? Image : null), readAlpha = frameAlphaReader,
+                                  { record = undefined, onMissing = noteMissingHeadshot } = {}) {
+    // The character's own 32x32 headshot comes first (UX slice 2c): the talk sheet is cropped
+    // only when no headshot file exists, and that key is logged once
+    const rec = record === undefined ? npcRecordFor({ username: tile?.username }) : record;
+    const headSource = headshotSourceFor(tile || {}, rec);
+    const heads = headshotCandidates(headSource);
+    const headKeys = headshotKeys(headSource);
+    const sources = [...heads, ...[tile?.portrait, tile?.avatar].map(portraitUrl).filter(Boolean)]
+        .filter((v, i, a) => a.indexOf(v) === i);
+    let missingNoted = heads.length === 0;
+    const noteMissing = (i) => {
+        if (missingNoted || i < heads.length) return;
+        missingNoted = true;
+        // Every key tried, the world sprite's first (R1 m8)
+        el.dataset.headshotMissing = headKeys.join(' ');
+        onMissing?.(headKeys);
+    };
     const initials = () => {
         el.style.backgroundImage = '';
         el.dataset.frame = 'initials';
@@ -196,6 +147,7 @@ export function applyTilePortrait(el, tile, ImageCtor = (typeof Image !== 'undef
         el.textContent = tileInitials(tile?.displayName || tile?.username);
     };
     const tryAt = (i) => {
+        noteMissing(i);
         if (i >= sources.length || !ImageCtor) { initials(); return; }
         const src = sources[i];
         const img = new ImageCtor();
@@ -226,6 +178,7 @@ export function applyTilePortrait(el, tile, ImageCtor = (typeof Image !== 'undef
             el.textContent = '';
             el.classList.remove('signin-portrait-initials');
             el.dataset.src = src;
+            if (i < heads.length) { el.dataset.headshot = headKeys[i]; return; }
             preferAvatar(src);
         };
         img.onerror = () => tryAt(i + 1);
@@ -332,12 +285,17 @@ export function snapInnerBoxes(root, dpr = 1, view = (typeof window !== 'undefin
             }
             rec.x = tidy(rec.x + x);
             rec.y = tidy(rec.y + y);
+            // The moves are measured on screen; inside the PC monitor's scaled screen (CSS
+            // zoom, UX slice 2c R1 M2) a length on the box is drawn `zoom` times larger; the
+            // zoom is measured where the browser has no currentCSSZoom (R2 m2)
+            const z = cssZoomOf(el);
+            const lx = tidy(rec.x / z), ly = tidy(rec.y / z);
             if (rec.mode === 'translate') {
-                el.style.translate = `${rec.x}px ${rec.y}px`;
+                el.style.translate = `${lx}px ${ly}px`;
             } else {
                 if (rec.pos !== 'relative') el.style.position = 'relative';
-                if (rec.x) el.style.left = `${tidy(rec.left + rec.x)}px`;
-                if (rec.y) el.style.top = `${tidy(rec.top + rec.y)}px`;
+                if (rec.x) el.style.left = `${tidy(rec.left + lx)}px`;
+                if (rec.y) el.style.top = `${tidy(rec.top + ly)}px`;
             }
         }
     }
@@ -467,7 +425,10 @@ export class PasswordMinigame extends MinigameScene {
                 tiles,
                 // null: no account chosen yet; '' with other: true: typing a username
                 selected: null,
-                other: picker === false,
+                // A remote screen with captures starts on its tiles as the keyboard does, with
+                // none on the typed form; while they load it shows neither (UX slice 2b0 R1 M2)
+                other: picker === false && !(this.signIn.remote && (this.signIn.capturedLoading
+                    || (Array.isArray(this.signIn.captured) && this.signIn.captured.length > 0))),
                 message: ''
             };
         }
@@ -498,7 +459,8 @@ export class PasswordMinigame extends MinigameScene {
                     ...(this.signIn.remote ? {
                         remote: { footholdId: this.signIn.remote.footholdId ?? null },
                         captured: (this.signIn.captured || []).map(c => ({ targetId: c.targetId, label: c.label, username: c.username, fillsPassword: !!c.password })),
-                        capturedLoading: !!this.signIn.capturedLoading
+                        capturedLoading: !!this.signIn.capturedLoading,
+                        capturedNote: this.signIn.capturedNote || null
                     } : {})
                 },
                 // clickText('<display name>') or clickText('Other user') first; then the visible
@@ -508,7 +470,8 @@ export class PasswordMinigame extends MinigameScene {
         }
         return {
             ...super.getTestState(),
-            attemptsText: (this.attemptsDisplay?.innerText || '').trim() || null,
+            // A PC's screen has no counter (R2 M1): the count comes from the game data
+            attemptsText: (this.attemptsDisplay?.innerText || '').trim() || (this.pcMonitor && !this.join ? String(this.gameData.attempts) : null),
             hasPasswordField: !!document.getElementById('password-field'),
             // Type into field 0 then clickText('Submit'), or type(0, pw, {submit:true}).
             entryHint: 'type(0, "<password>", { submit: true })'
@@ -523,7 +486,11 @@ export class PasswordMinigame extends MinigameScene {
         this.params = { ...this.params, showCancel: false };
         // Call parent init to set up basic UI structure
         super.init();
-        this.wrapInFrame();
+        // A computer's own screens (sign-in, a PC's password) sit in the one PC monitor frame
+        // (UX slice 2c, utils/pc-monitor.js); a Wi-Fi key, an archive and a case lock keep
+        // the password frame
+        if (this.isPcScreen()) this.mountMonitor();
+        else this.wrapInFrame();
 
         if (this.signIn) {
             this.initSignIn();
@@ -555,7 +522,11 @@ export class PasswordMinigame extends MinigameScene {
             const notebookBtn = document.createElement('button');
             notebookBtn.className = 'minigame-button';
             notebookBtn.id = 'minigame-notebook-postit';
-            notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
+            if (this.pcMonitor) {
+                notebookBtn.innerHTML = pcPostitButtonHtml();
+            } else {
+                notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
+            }
             this.ensureControlsRow()?.appendChild(notebookBtn);
         }
         
@@ -563,6 +534,44 @@ export class PasswordMinigame extends MinigameScene {
         this.setupEventListeners();
     }
     
+    /** True for a computer's own screen: a sign-in PC, or a computer's password lock. */
+    isPcScreen() {
+        if (this.signIn) return true;
+        if (this.join) return false;
+        const target = this.params.lockable || this.params.sprite;
+        if (isCaseLockTarget(target?.scenarioData)) return false;
+        return passwordScreenKind({ join: this.join, lockable: target }) === 'screen';
+    }
+
+    /** The PC's id, for the post-it height its frame keeps (utils/pc-monitor.js). */
+    pcId() {
+        if (this.signIn) return this.signIn.pcId || null;
+        const target = this.params.lockable || this.params.sprite;
+        return target?.scenarioData?.id || target?.objectId || null;
+    }
+
+    /** The PC's name for the monitor's top strip. */
+    pcName() {
+        if (this.signIn) return this.signIn.pcName || '';
+        const target = this.params.lockable || this.params.sprite;
+        return target?.scenarioData?.name || target?.name || this.params.deviceName || '';
+    }
+
+    /**
+     * Put the screen in the PC monitor frame (UX slice 2c): the X in the bezel, Add to
+     * Notepad in the chin, the post-it stuck on the chin. Boxes inside the screen still
+     * snap to whole pixels; the frame itself is placed on whole pixels by its metrics.
+     */
+    mountMonitor() {
+        const note = this.gameData.showPostit && this.gameData.postitNote
+            ? escapeHtmlKeepWords(displayDashes(this.gameData.postitNote), { joinPunctuation: true }) : '';
+        this.pcMonitor = mountPcMonitor(this, { name: displayDashes(this.pcName()), postitHtml: note, pcId: this.pcId() });
+        if (!this.pcMonitor) { this.wrapInFrame(); return; }
+        this.frameElement = this.pcMonitor.root;
+        if (this.pcMonitor.postit) makeDraggable(this.pcMonitor.postit);
+        this.snapFrameToPixels(this.pcMonitor.root, { moveFrame: false });
+    }
+
     /**
      * The password screen's frame: a box that wraps the game area at every window size, with
      * the X inside its top-right corner (the user's UX notes: the frame wraps its content, and
@@ -596,19 +605,22 @@ export class PasswordMinigame extends MinigameScene {
      * without changing the frame's size. A MutationObserver sees those changes; the records
      * of the snap's own style writes are dropped, so it does not run itself again.
      */
-    snapFrameToPixels(frame) {
+    snapFrameToPixels(frame, { moveFrame = true } = {}) {
         if (typeof window === 'undefined' || !frame || typeof frame.getBoundingClientRect !== 'function') return;
         this.stopFrameSnap();
         const snap = () => {
             if (!frame.isConnected) { this.stopFrameSnap(); return; }
             unsnapInnerBoxes(this._innerSnapped);
             this._innerSnapped = [];
-            frame.style.left = '';
-            frame.style.top = '';
             const dpr = window.devicePixelRatio || 1;
-            const { x, y } = wholePixelOffset(frame.getBoundingClientRect(), dpr);
-            if (x) frame.style.left = `${x}px`;
-            if (y) frame.style.top = `${y}px`;
+            // The PC monitor is placed by its metrics, already on whole pixels (moveFrame false)
+            if (moveFrame) {
+                frame.style.left = '';
+                frame.style.top = '';
+                const { x, y } = wholePixelOffset(frame.getBoundingClientRect(), dpr);
+                if (x) frame.style.left = `${x}px`;
+                if (y) frame.style.top = `${y}px`;
+            }
             this._innerSnapped = snapInnerBoxes(frame, dpr, window);
             this._contentObserver?.takeRecords?.();
         };
@@ -675,6 +687,7 @@ export class PasswordMinigame extends MinigameScene {
 
     complete(success) {
         this.stopFrameSnap();
+        this.pcMonitor?.destroy?.();
         super.complete(success);
     }
 
@@ -723,7 +736,7 @@ export class PasswordMinigame extends MinigameScene {
      * R2 m3): the area scrolls above it, so the post-it cannot cover it.
      */
     controlsHost() {
-        return this.frameElement || null;
+        return this.pcMonitor?.controls || this.frameElement || null;
     }
 
     setupPasswordInterface() {
@@ -754,7 +767,9 @@ export class PasswordMinigame extends MinigameScene {
 
         // Name the lock over the field, as the PIN keypad does ("Enter PIN: Cable
         // Vault"); the framework hides the header, so it read just "Password:" (m07 #5)
-        const fieldLabel = this.join ? 'Network key' : passwordFieldLabel(this.params.title);
+        // In the PC monitor the bezel names the PC, so the label is the sign-in form's plain
+        // "Password:" (UX slice 2c R2 M1)
+        const fieldLabel = this.join ? 'Network key' : (this.pcMonitor ? 'Password:' : passwordFieldLabel(this.params.title));
         const kind = passwordScreenKind({ join: this.join, lockable: this.params.lockable || this.params.sprite });
         // The framework hides the header, so a Wi-Fi prompt names its network on the panel
         const promptTitle = this.join ? `Join Wi-Fi: ${this.join.apName || 'network'}` : '';
@@ -762,10 +777,20 @@ export class PasswordMinigame extends MinigameScene {
         // A carried case (a bag, briefcase or suitcase) has a code lock, not a computer
         // screen: it gets the case-lock look, with no desktop wallpaper (UX pass, 2026-11-12)
         const caseLock = isCaseLockTarget((this.params.lockable || this.params.sprite)?.scenarioData);
+        // In the PC monitor (UX slice 2c) the monitor is the frame: no device picture above it,
+        // no second bezel, and the post-it is on the monitor's chin (mountPcMonitor)
+        const inMonitor = !!this.pcMonitor;
+        const observations = imageData?.observations || '';
+        // The PC's OS has one button look (R2 M1): the theme's thin skin (css/pc-monitor.css)
+        const osBtn = inMonitor ? ' pc-os-btn' : '';
+        const keyboardToggle = this.gameData.showKeyboard ? `
+                        <button type="button" class="keyboard-toggle-btn${inMonitor ? ' pc-os-btn pc-os-icon-btn' : ''}" id="keyboard-toggle">
+                            <img class="icon-keyboard" src="/break_escape/assets/objects/keyboard1.png" alt="Toggle keyboard">
+                        </button>` : '';
 
         this.gameContainer.innerHTML = `
-            <div class="password-minigame-area${kind === 'prompt' ? ' prompt-mode' : ''}${caseLock ? ' case-lock' : ''}">
-                ${imageData ? `
+            <div class="password-minigame-area${kind === 'prompt' ? ' prompt-mode' : ''}${caseLock ? ' case-lock' : ''}${inMonitor ? ' pc-screen-area' : ''}">
+                ${imageData && !inMonitor ? `
                     <div class="password-image-section">
                         <img src="/break_escape/assets/objects/${escapeHtml(imageData.imageFile)}.png" 
                              alt="${escapeHtml(imageData.deviceName)}" 
@@ -776,8 +801,9 @@ export class PasswordMinigame extends MinigameScene {
                         </div>
                     </div>
                 ` : ''}
-                <div class="monitor-bezel">
-                    <div class="monitor-screen">
+                <div class="${inMonitor ? 'pc-lock-screen' : 'monitor-bezel'}">
+                    <div class="${inMonitor ? 'pc-lock-panel' : 'monitor-screen'}">
+                        ${inMonitor && observations ? `<div class="pc-screen-note">${escapeHtml(displayDashes(observations))}</div>` : ''}
                         <div class="password-input-container">
                             ${promptTitle ? `<div class="password-prompt-title">${escapeHtml(displayDashes(promptTitle))}</div>` : ''}
                             <label for="password-field">${escapeHtml(displayDashes(fieldLabel))}</label>
@@ -787,17 +813,17 @@ export class PasswordMinigame extends MinigameScene {
                                        class="password-field"
                                        placeholder="${this.join ? 'Enter key...' : 'Enter password...'}"
                                        maxlength="50">
-                                <button type="button" class="toggle-password-btn" id="toggle-password">
+                                <button type="button" class="toggle-password-btn${inMonitor ? ' pc-os-btn pc-os-icon-btn' : ''}" id="toggle-password">
                                     <img class="icon-small" src="/break_escape/assets/icons/${this.gameData.showPassword ? 'visible.png' : 'hidden.png'}" alt="Toggle password visibility">
-                                </button>
+                                </button>${inMonitor ? keyboardToggle : ''}
                             </div>
                         </div>
 
                         <div class="hint-controls">
                             ${this.gameData.showHint ? `
-                                <button type="button" class="hint-btn" id="show-hint">Show Hint</button>
+                                <button type="button" class="hint-btn${osBtn}" id="show-hint">Show Hint</button>
                             ` : ''}
-                            <button type="button" class="submit-btn" id="submit-password">Submit</button>
+                            <button type="button" class="submit-btn${osBtn}" id="submit-password">Submit</button>
                         </div>
                         ${this.gameData.showHint ? `
                             <div class="password-hint-container">
@@ -810,19 +836,14 @@ export class PasswordMinigame extends MinigameScene {
                     </div>
                 </div>
                 
-                ${this.gameData.showPostit && this.gameData.postitNote ? `
+                ${this.gameData.showPostit && this.gameData.postitNote && !inMonitor ? `
                     <div class="postit-note">
                         ${escapeHtmlKeepWords(displayDashes(this.gameData.postitNote))}
                     </div>
                 ` : ''}
                 
-                <div class="password-controls">
-                    ${this.gameData.showKeyboard ? `
-                        <button type="button" class="keyboard-toggle-btn" id="keyboard-toggle">
-                            <img class="icon-keyboard" src="/break_escape/assets/objects/keyboard1.png" alt="Toggle keyboard">
-                        </button>
-                    ` : ''}
-                </div>
+                ${inMonitor ? '' : `<div class="password-controls">${keyboardToggle}
+                </div>`}
                 
                 ${this.gameData.showKeyboard ? `
                     <div class="onscreen-keyboard" id="onscreen-keyboard" style="display: ${this.gameData.keyboardVisible ? 'flex' : 'none'}">
@@ -880,7 +901,7 @@ export class PasswordMinigame extends MinigameScene {
                     </div>
                 ` : ''}
                 
-                ${this.join ? '' : `
+                ${(this.join || inMonitor) ? '' : `
                 <div class="attempts-counter">
                     Attempts: <span id="attempts-display">${escapeHtml(this.gameData.attempts)}</span>/${escapeHtml(this.gameData.maxAttempts)}
                 </div>
@@ -898,9 +919,9 @@ export class PasswordMinigame extends MinigameScene {
 
         // Make the post-it note draggable (rendered via HTML template above)
         if (this.gameData.showPostit && this.gameData.postitNote) {
-            const postit = this.gameContainer
+            const postit = this.pcMonitor ? null : (this.gameContainer
                 ? this.gameContainer.querySelector('.postit-note')
-                : document.querySelector('.password-minigame-area .postit-note');
+                : document.querySelector('.password-minigame-area .postit-note'));
             if (postit) {
                 makeDraggable(postit);
             }
@@ -1115,9 +1136,13 @@ export class PasswordMinigame extends MinigameScene {
         this.showScreenMessage('');
 
         this.gameData.attempts++;
-        this.attemptsDisplay.textContent = this.gameData.attempts;
-        // The counter is on screen after each try, even in a short window (UX slice 2a R2 M2)
-        revealInFrame(this.attemptsDisplay?.closest?.('.attempts-counter') || this.attemptsDisplay);
+        if (this.attemptsDisplay) this.attemptsDisplay.textContent = this.gameData.attempts;
+        // The counter is on screen after each try, even in a short window (UX slice 2a R2 M2).
+        // A PC's screen has no counter: its message line carries the count and is revealed
+        // when it is written (UX slice 2c R2 M1), so nothing is revealed here: the line was
+        // just emptied (R3 m6)
+        const counter = this.attemptsDisplay?.closest?.('.attempts-counter') || this.attemptsDisplay;
+        if (counter) revealInFrame(counter);
 
         // SECURITY: ALWAYS use server-side validation for password attempts
         const apiClient = window.ApiClient || window.APIClient;
@@ -1207,7 +1232,7 @@ export class PasswordMinigame extends MinigameScene {
                 // The PC the lock sits on is off, not responding or out of reach (review R4
                 // m2): not an attempt and not a wrong password, so say why and close as cancelled
                 this.gameData.attempts--;
-                this.attemptsDisplay.textContent = this.gameData.attempts;
+                if (this.attemptsDisplay) this.attemptsDisplay.textContent = this.gameData.attempts;
                 this.cleanup();
                 this.showScreenMessage(LOCK_SCOPE_REFUSAL_TEXT[refusal], { closeAfterMs: 2000 });
                 this.gameResult = { success: false, reason: 'cancelled', cancelled: true, refused: refusal,
@@ -1218,7 +1243,7 @@ export class PasswordMinigame extends MinigameScene {
                 this.showScreenMessage('Network error. Please try again.');
                 // Decrease attempts counter since this wasn't a real attempt
                 this.gameData.attempts--;
-                this.attemptsDisplay.textContent = this.gameData.attempts;
+                if (this.attemptsDisplay) this.attemptsDisplay.textContent = this.gameData.attempts;
             }
         }
     }
@@ -1373,6 +1398,14 @@ export class PasswordMinigame extends MinigameScene {
     }
     
     cleanup() {
+        // Release the frame-snap observers and the PC monitor's chin ResizeObserver when the
+        // game really ends (endMinigame sets _ending, then calls cleanup(); the X goes the same
+        // way). Mid-flow cleanup() calls (lockout, accepted, wrong password) leave the screen up
+        // with a message, so the snap and pc-view stay; both releases are idempotent
+        if (this._ending) {
+            this.stopFrameSnap?.();
+            this.pcMonitor?.destroy?.();
+        }
         // Call parent cleanup (handles event listeners)
         super.cleanup();
     }
@@ -1408,18 +1441,20 @@ export class PasswordMinigame extends MinigameScene {
         const capturedHtml = s.remote ? `
                         <div class="signin-captured" id="signin-captured">${this.capturedListHtml()}</div>` : '';
 
+        const inMonitor = !!this.pcMonitor;
         this.gameContainer.innerHTML = `
-            <div class="password-minigame-area signin-mode">
-                <div class="monitor-bezel">
-                    <div class="monitor-screen signin-screen">
+            <div class="password-minigame-area signin-mode${inMonitor ? ' pc-screen-area' : ''}">
+                <div class="${inMonitor ? 'pc-lock-screen' : 'monitor-bezel'}">
+                    <div class="${inMonitor ? 'signin-screen' : 'monitor-screen signin-screen'}">
                         <div class="signin-title">${escapeHtml(displayDashes(s.pcName))}</div>
                         ${remoteLine}
                         ${current}
-                        ${tiles}
+                        ${tiles}${capturedHtml}
                         <div class="signin-form" id="signin-form">
-                            <div class="signin-selected-row">
+                            <div class="signin-selected-row">${inMonitor ? `
+                                <span class="signin-selected-headshot" aria-hidden="true" hidden></span>` : ''}
                                 <div class="signin-selected" id="signin-selected"></div>
-                                <button type="button" class="signin-change" id="signin-change">Change</button>
+                                <button type="button" class="signin-change${inMonitor ? ' pc-os-btn' : ''}" id="signin-change">Change</button>
                             </div>
                             <div class="signin-field-row" id="signin-username-row">
                                 <label for="signin-username">Username:</label>
@@ -1429,19 +1464,19 @@ export class PasswordMinigame extends MinigameScene {
                                 <label for="password-field">Password:</label>
                                 <div class="password-field-wrapper">
                                     <input type="password" id="password-field" class="password-field" placeholder="Password" maxlength="64" autocomplete="off">
-                                    <button type="button" class="toggle-password-btn" id="toggle-password">
+                                    <button type="button" class="toggle-password-btn${inMonitor ? ' pc-os-btn pc-os-icon-btn' : ''}" id="toggle-password">
                                         <img class="icon-small" src="/break_escape/assets/icons/hidden.png" alt="Toggle password visibility">
                                     </button>
                                 </div>
                             </div>
                             <div class="hint-controls">
-                                <button type="button" class="submit-btn" id="submit-password">Sign in</button>
+                                <button type="button" class="submit-btn${inMonitor ? ' pc-os-btn' : ''}" id="submit-password">Sign in</button>
                             </div>
-                        </div>${capturedHtml}
+                        </div>
                         <div class="signin-message" id="signin-message" aria-live="polite"></div>
                     </div>
                 </div>
-                ${this.gameData.showPostit && this.gameData.postitNote ? `
+                ${this.gameData.showPostit && this.gameData.postitNote && !inMonitor ? `
                     <div class="postit-note">${escapeHtmlKeepWords(this.gameData.postitNote)}</div>
                 ` : ''}
             </div>
@@ -1461,18 +1496,23 @@ export class PasswordMinigame extends MinigameScene {
             this.addEventListener(el, 'click', () => this.selectSignInTile(idx));
         });
         this.bindCapturedSignIns();
+        this.placeCapturedBlock();
         const change = this.gameContainer.querySelector('#signin-change');
         if (change) this.addEventListener(change, 'click', () => this.clearSignInChoice());
 
         if (this.gameData.showPostit && this.gameData.postitNote) {
-            const postit = this.gameContainer.querySelector('.postit-note');
+            const postit = inMonitor ? null : this.gameContainer.querySelector('.postit-note');
             if (postit) makeDraggable(postit);
             const controls = this.ensureControlsRow();
             if (controls) {
                 const notebookBtn = document.createElement('button');
                 notebookBtn.className = 'minigame-button';
                 notebookBtn.id = 'minigame-notebook-postit';
-                notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
+                if (this.pcMonitor) {
+                    notebookBtn.innerHTML = pcPostitButtonHtml();
+                } else {
+                    notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
+                }
                 controls.appendChild(notebookBtn);
                 this.addEventListener(notebookBtn, 'click', () => this.addPostitToNotebook());
             }
@@ -1520,9 +1560,12 @@ export class PasswordMinigame extends MinigameScene {
     /** Back to the tiles (the Change button, shown in a short window once an account is chosen). */
     clearSignInChoice() {
         const st = this.signInState;
-        if (!st || this.signIn?.picker === false) return;
+        if (!st) return;
+        const remote = !!this.signIn?.remote;
+        if (!remote && this.signIn?.picker === false) return;
         st.selected = null;
-        st.other = false;
+        // A remote screen goes back to its captured tiles, or to the typed form with none
+        st.other = remote && !this.signInTilesOffered();
         this.passwordField.value = '';
         this.gameData.password = '';
         this.setSignInMessage('');
@@ -1530,7 +1573,78 @@ export class PasswordMinigame extends MinigameScene {
         this.gameContainer.querySelector('.signin-tile')?.focus?.();
     }
 
-    renderSignInForm() {
+    /** Whether a tile (the PC's own or a captured sign-in) is the chosen one. */
+    signInTileSelected(el, captured = this.capturedTiles()) {
+        const st = this.signInState;
+        const { tileIndex, captureIndex } = el.dataset;
+        if (tileIndex !== undefined) {
+            if (tileIndex === 'other') return !!st.other && this.signInTilesOffered();
+            return st.selected !== null && st.tiles[Number(tileIndex)]?.username === st.selected;
+        }
+        if (captureIndex !== undefined) {
+            if (captureIndex === 'other') return !!st.other;
+            return !st.other && st.selected !== null && captured[Number(captureIndex)]?.username === st.selected;
+        }
+        return false;
+    }
+
+    /** A remote screen still waiting for its Captured sign-ins (GET /capture_secrets). */
+    signInLoading() {
+        return !!this.signIn?.remote && !!this.signIn.capturedLoading;
+    }
+
+    /**
+     * The Captured sign-ins block sits above the form while it holds tiles or is loading,
+     * and below the form, as one line, when there are none (UX slice 2b0 R1 m1).
+     */
+    placeCapturedBlock() {
+        const block = this.gameContainer?.querySelector?.('#signin-captured');
+        const form = this.gameContainer?.querySelector?.('#signin-form');
+        if (!block || !form) return;
+        const state = this.signInLoading() ? 'loading' : (this.capturedTiles().length ? 'tiles' : 'none');
+        block.dataset.state = state;
+        if (state === 'none') {
+            if (form.nextElementSibling !== block) form.after(block);
+        } else if (form.previousElementSibling !== block) {
+            form.before(block);
+        }
+    }
+
+    /** Whether this screen offers any tiles: its own accounts, or a remote screen's captures. */
+    signInTilesOffered() {
+        return this.signIn?.picker !== false || (!!this.signIn?.remote && this.capturedTiles().length > 0);
+    }
+
+    /** The account tile for a username: the PC's own, else a captured sign-in's. */
+    signInTileFor(username) {
+        if (username === null || username === undefined) return null;
+        return this.signInState.tiles.find(t => t.username === username)
+            || this.capturedTiles().find(t => t.username === username) || null;
+    }
+
+    /**
+     * A remote screen's Captured sign-ins as account tiles (UX slice 2b0): the name from the
+     * NPC record the client already holds (by the capture's target id, else its username),
+     * else the capture's label; the headshot from the same record. Nothing new is asked of
+     * the server.
+     */
+    capturedTiles() {
+        const list = Array.isArray(this.signIn?.captured) ? this.signIn.captured : [];
+        return list.map(c => {
+            const record = npcRecordFor({ npcId: c.targetId, username: c.username });
+            return {
+                username: c.username,
+                displayName: record?.displayName || c.label || c.username,
+                label: c.label || null,
+                targetId: c.targetId,
+                portrait: null,
+                avatar: null,
+                record
+            };
+        });
+    }
+
+    renderSignInForm({ quiet = false } = {}) {
         const st = this.signInState;
         const chosen = st.other || st.selected !== null;
         const show = (el, on) => { if (el) el.style.display = on ? '' : 'none'; };
@@ -1540,43 +1654,97 @@ export class PasswordMinigame extends MinigameScene {
         // Submit, the message line and the post-it fit together (UX slice 2a R3 m4); the
         // chosen account's line holds a Change button back to the tiles.
         const area = this.gameContainer.querySelector('.signin-mode');
-        area?.classList.toggle('signin-chosen', chosen && this.signIn.picker !== false);
+        area?.classList.toggle('signin-chosen', chosen && this.signInTilesOffered());
         const selectedEl = this.gameContainer.querySelector('#signin-selected');
-        const tile = st.tiles.find(t => t.username === st.selected);
+        const tile = st.other ? null : this.signInTileFor(st.selected);
         if (selectedEl) {
             selectedEl.textContent = tile ? `${tile.displayName || tile.username} (${tile.username})` : '';
             show(selectedEl, !!tile);
         }
+        this.applySelectedHeadshot(tile);
+        // One pass over every tile, the PC's own and a remote screen's captures alike, so the
+        // chosen edge has one owner (UX slice 2b0 R1 m2)
+        const captured = this.capturedTiles();
         this.gameContainer.querySelectorAll('.signin-tile').forEach(el => {
-            const idx = el.dataset.tileIndex;
-            const on = idx === 'other' ? (st.other && this.signIn.picker !== false) : (st.tiles[Number(idx)]?.username === st.selected && st.selected !== null);
-            el.classList.toggle('selected', !!on);
+            el.classList.toggle('selected', this.signInTileSelected(el, captured));
         });
+        // While a remote screen's captures load, it shows only "Checking..." (R1 M2)
         if (!chosen) {
-            this.setSignInMessage(st.message || 'Choose an account.');
+            this.setSignInMessage(this.signInLoading() ? '' : (st.message || 'Choose an account.'));
         }
         const focus = st.other && !this.usernameField.value ? this.usernameField : this.passwordField;
-        if (chosen && focus && typeof focus.focus === 'function') focus.focus();
+        // quiet: a late Captured sign-ins list redraws without moving focus or scrolling (2b0 R2 m1)
+        if (!quiet && chosen && focus && typeof focus.focus === 'function') focus.focus();
         // Once an account is chosen, the form down to its message line (Submit, the attempts
         // left) scrolls into view in a short window (UX slice 2a R2 M2)
-        if (chosen) revealInFrame(this.signInMessageEl?.textContent ? this.signInMessageEl : this.submitBtn);
+        if (!quiet && chosen) revealInFrame(this.signInMessageEl?.textContent ? this.signInMessageEl : this.submitBtn);
     }
 
-    /** The Captured sign-ins block's inner markup (a remote screen, 4.4). */
+    /**
+     * The chosen account's headshot beside its name, in the monitor (R3 m1): once the tiles
+     * fold away at x2 or in a short window, an NPC's identity still shows its face. The same
+     * 32px box and fallback as the desktop's account bar; shown at every size, so the line
+     * has one look. Hidden for Other user and with no tile chosen.
+     */
+    applySelectedHeadshot(tile) {
+        const box = this.gameContainer?.querySelector?.('.signin-selected-headshot');
+        if (!box) return;
+        if (!tile) {
+            box.hidden = true;
+            box.style.backgroundImage = '';
+            delete box.dataset.headshotFor;
+            return;
+        }
+        if (box.dataset.headshotFor === tile.username && !box.hidden) return;
+        box.dataset.headshotFor = tile.username;
+        const record = tile.record !== undefined ? tile.record : npcRecordFor({ username: tile.username });
+        const talk = typeof record?.spriteTalk === 'string' ? record.spriteTalk : '';
+        const talkUrl = !talk ? null
+            : (/^(\/|https?:|data:)/.test(talk) ? talk : `/break_escape/${talk.startsWith('assets/') ? '' : 'assets/'}${talk}`);
+        applyHeadshotBox(box, headshotSourceFor(tile, record), { talkUrl });
+    }
+
+    /**
+     * The Captured sign-ins block's inner markup (a remote screen, 4.4): a heading, then the
+     * captures as the shared account tiles with an Other user tile for typing (UX slice 2b0).
+     */
     capturedListHtml() {
         const s = this.signIn || {};
-        const captured = Array.isArray(s.captured) ? s.captured : [];
-        const body = captured.length
-            ? captured.map((c, i) => `
-                            <button type="button" class="signin-captured-item" data-capture-index="${i}" data-target-id="${escapeHtml(c.targetId)}">${escapeHtml(c.label)} (${escapeHtml(c.username)})</button>`).join('')
-            : (s.capturedLoading ? '<div class="signin-captured-empty">Checking...</div>' : '<div class="signin-captured-empty">None yet.</div>');
+        const tiles = this.capturedTiles();
+        const body = tiles.length
+            ? `
+                            <div class="signin-tiles signin-captured-tiles">${tiles.map((t, i) => `
+                                <button type="button" class="signin-tile signin-captured-tile" data-capture-index="${i}" data-target-id="${escapeHtml(t.targetId)}" title="${escapeHtml(t.label && t.label !== t.displayName ? `${t.displayName}, ${t.label}` : t.displayName)}">
+                                    <span class="signin-portrait"></span>
+                                    <span class="signin-name">${escapeHtml(t.displayName)}</span>
+                                    <span class="signin-username">${escapeHtml(t.username)}</span>
+                                </button>`).join('')}
+                                <button type="button" class="signin-tile signin-other" data-capture-index="other" title="Other user">
+                                    <span class="signin-portrait signin-portrait-initials">?</span>
+                                    <span class="signin-name">Other user</span>
+                                    <span class="signin-username">type a name</span>
+                                </button>
+                            </div>`
+            : (s.capturedLoading ? '<div class="signin-captured-empty">Checking...</div>' : null);
+        // None: one line below the form, as before the tiles (R1 m1). Still on its way after
+        // the wait cap, or failed, the line says so rather than "none yet" (2b0 R2 m1, n1).
+        const noneLine = s.capturedNote === 'pending' ? 'Captured sign-ins: still checking.'
+            : (s.capturedNote === 'failed' ? 'Captured sign-ins could not be loaded.' : 'Captured sign-ins: none yet.');
+        if (body === null) return `
+                            <div class="signin-captured-title">${noneLine}</div>`;
         return `
                             <div class="signin-captured-title">Captured sign-ins</div>${body}`;
     }
 
     bindCapturedSignIns() {
-        this.gameContainer?.querySelectorAll('.signin-captured-item[data-capture-index]').forEach(el => {
-            this.addEventListener(el, 'click', () => this.fillCapturedSignIn(Number(el.dataset.captureIndex)));
+        const tiles = this.capturedTiles();
+        this.gameContainer?.querySelectorAll('.signin-tile[data-capture-index]').forEach(el => {
+            const idx = el.dataset.captureIndex;
+            if (idx !== 'other') {
+                const t = tiles[Number(idx)];
+                if (t) applyTilePortrait(el.querySelector('.signin-portrait'), t, undefined, undefined, { record: t.record });
+            }
+            this.addEventListener(el, 'click', () => (idx === 'other' ? this.selectSignInTile('other') : this.fillCapturedSignIn(Number(idx))));
         });
     }
 
@@ -1584,28 +1752,43 @@ export class PasswordMinigame extends MinigameScene {
      * The Captured sign-ins arrive after the screen has opened (GET /capture_secrets), so
      * the view or desktop that opened it is replaced at once (review R1 minor 1).
      */
-    setCapturedSignIns(list) {
+    setCapturedSignIns(list, { pending = false, failed = false } = {}) {
         if (!this.signIn?.remote) return false;
+        // A list after the wait cap's empty one (2b0 R2 m1): the form already had its focus
+        // once, so the redraw adds the tiles without taking focus or scrolling
+        const late = this.signIn.capturedNote === 'pending';
         this.signIn.captured = Array.isArray(list) ? list : [];
         this.signIn.capturedLoading = false;
+        this.signIn.capturedNote = pending ? 'pending' : (failed ? 'failed' : null);
         const block = this.gameContainer?.querySelector('#signin-captured');
         if (!block) return false;
         block.innerHTML = this.capturedListHtml();
         this.bindCapturedSignIns();
+        this.placeCapturedBlock();
+        // The list decides the screen once: its tiles, as at the keyboard, or with none the
+        // typed form (focused then, not before; R1 M2). A player already in the typed form
+        // (a field holds text or focus) keeps it.
+        const st = this.signInState;
+        const active = typeof document !== 'undefined' ? document.activeElement : null;
+        const typing = !!st.other && !!(this.usernameField?.value || this.passwordField?.value
+            || (active && (active === this.usernameField || active === this.passwordField)));
+        if (st.selected === null && !typing) st.other = this.signIn.captured.length === 0;
+        this.renderSignInForm({ quiet: late });
         return true;
     }
 
     /**
-     * Fill the form from a captured sign-in: the username always, the password only when
-     * the server served it. The server's password check is the gate (4.4).
+     * Choose a captured sign-in's tile: the account is chosen as a tile at the keyboard is,
+     * and the password filled only when the server served it. The server's password check
+     * is the gate (4.4).
      */
     fillCapturedSignIn(index) {
         const c = (this.signIn?.captured || [])[index];
         if (!c || !this.gameState.isActive) return false;
         const st = this.signInState;
-        st.other = true;
-        st.selected = null;
-        if (this.usernameField) this.usernameField.value = c.username;
+        st.other = false;
+        st.selected = c.username;
+        if (this.usernameField) this.usernameField.value = '';
         if (this.passwordField) this.passwordField.value = c.password || '';
         this.gameData.password = c.password || '';
         this.setSignInMessage('');

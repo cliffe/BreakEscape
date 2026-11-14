@@ -9,7 +9,7 @@
 // The real unlock-system.js (its browser-only imports stubbed), container-minigame.js,
 // pc-sessions.js and network-links.js run against jsdom.
 // Run with: node test/js/access-remote-signin.test.mjs
-import test from 'node:test';
+import test, { mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -37,7 +37,10 @@ put('systems/lockpick-catch.js', 'export function catchLockpickInView() { return
 put('utils/helpers.js', 'export function makeDraggable() {}\n');
 put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n');
 copy('utils/escape-html.js');
+copy('utils/more-below.js');
 copy('utils/computer-keywords.js');
+copy('utils/pc-monitor.js');
+copy('utils/npc-headshot.js');
 copy('utils/author-html.js');
 put('systems/inventory.js',
     'export async function addToInventory() { return { ok: true }; }\n' +
@@ -52,7 +55,7 @@ const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true 
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const imp = (rel) => import(pathToFileURL(join(dir, rel)));
-const { openLoginSignIn, interactLoginPc, openLoginPc, remoteLockable, openRemoteSignIn, openRemoteDesktop } = await imp('systems/unlock-system.js');
+const { openLoginSignIn, interactLoginPc, openLoginPc, remoteLockable, openRemoteSignIn, openRemoteDesktop, REMOTE_CAPTURES_WAIT_MS } = await imp('systems/unlock-system.js');
 const { PcSessions } = await imp('systems/pc-sessions.js');
 const { NetworkLinks } = await imp('systems/network-links.js');
 const { ContainerMinigame } = await imp('minigames/container/container-minigame.js');
@@ -194,6 +197,77 @@ test('the remote screen starts before /capture_secrets answers, and its Captured
     await opening;
     assert.deepEqual(scene.filled, [{ targetId: 'lena', label: 'Lena Fox', username: 'lfox', password: null }]);
     delete window.capturedSignIns;
+});
+
+// The screen's wait for its list is capped (2b0 R2 m1): the sync retries and the fetch can
+// take 8 s or more on a struggling server. Fake timers drive the cap; setImmediate drains.
+function slowCapturesScene() {
+    window.gameState.globalVariables.se_captures = { lena: { targetId: 'lena', kind: 'password', roleLabel: 'Lena Fox', at: 1 } };
+    window.capturedSignIns = (captures, accounts) => Object.values(captures)
+        .filter(e => accounts[e.targetId]).map(e => ({ targetId: e.targetId, label: e.roleLabel, username: accounts[e.targetId], password: null }));
+    const answer = {};
+    window.ApiClient.get = (path) => { calls.push(['get', path]); return new Promise((ok, fail) => { answer.ok = ok; answer.fail = fail; }); };
+    const scene = { _sceneType: 'password', cleanup() {}, fills: [], setCapturedSignIns(list, opts) { this.fills.push([list, opts || {}]); } };
+    const start = window.MinigameFramework.startMinigame.bind(window.MinigameFramework);
+    window.MinigameFramework.startMinigame = (type, c, params) => {
+        const m = start(type, c, params);
+        if (type !== 'password') return m;
+        Object.assign(scene, { params });
+        window.MinigameFramework.currentMinigame = scene;
+        return scene;
+    };
+    return { scene, answer };
+}
+const drain = async (n = 6) => { for (let i = 0; i < n; i++) await new Promise(r => setImmediate(r)); };
+
+test('2b0 R2 m1: a slow /capture_secrets shows the typed form at the cap, and the late list still arrives', async () => {
+    setup();
+    mock.timers.enable({ apis: ['setTimeout'] });
+    try {
+        const { scene, answer } = slowCapturesScene();
+        const opening = openRemoteSignIn(LENA_ROW, 'jack_comms_port');
+        await drain();
+        assert.equal(REMOTE_CAPTURES_WAIT_MS, 3000);
+        mock.timers.tick(REMOTE_CAPTURES_WAIT_MS - 1);
+        assert.deepEqual(scene.fills, [], 'still "Checking..." just before the cap');
+        mock.timers.tick(1);
+        assert.deepEqual(scene.fills, [[[], { pending: true }]], 'at the cap: an empty list, marked as still on its way');
+        answer.ok({ accounts: { lena: 'lfox' }, secrets: {} });
+        await opening;
+        assert.equal(scene.fills.length, 2);
+        assert.deepEqual(scene.fills[1], [[{ targetId: 'lena', label: 'Lena Fox', username: 'lfox', password: null }], { failed: false }]);
+    } finally {
+        mock.timers.reset();
+        delete window.capturedSignIns;
+    }
+});
+
+test('2b0 R2 m1 / n1: an answer inside the cap fills once; a failed fetch says so', async () => {
+    setup();
+    mock.timers.enable({ apis: ['setTimeout'] });
+    try {
+        let { scene, answer } = slowCapturesScene();
+        let opening = openRemoteSignIn(LENA_ROW, 'jack_comms_port');
+        await drain();
+        mock.timers.tick(1000);
+        answer.ok({ accounts: { lena: 'lfox' }, secrets: {} });
+        await opening;
+        mock.timers.tick(REMOTE_CAPTURES_WAIT_MS);
+        assert.equal(scene.fills.length, 1, 'the cap is cleared once the list is in');
+        assert.deepEqual(scene.fills[0][1], { failed: false });
+
+        setup();
+        ({ scene, answer } = slowCapturesScene());
+        opening = openRemoteSignIn(LENA_ROW, 'jack_comms_port');
+        await drain();
+        answer.fail(new Error('500'));
+        await opening;
+        mock.timers.tick(REMOTE_CAPTURES_WAIT_MS);
+        assert.deepEqual(scene.fills, [[[], { failed: true }]]);
+    } finally {
+        mock.timers.reset();
+        delete window.capturedSignIns;
+    }
 });
 
 test('the remote option keeps a keyboard lockable off /login_accounts: no tiles and no sticky note (9.1 m5)', async () => {

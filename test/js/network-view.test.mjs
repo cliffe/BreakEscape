@@ -25,6 +25,7 @@ const put = (rel, text) => { mkdirSync(dirname(join(dir, rel)), { recursive: tru
 const copy = (rel) => put(rel, readFileSync(join(js, rel), 'utf8'));
 put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n');
 copy('utils/escape-html.js');
+copy('utils/more-below.js');
 copy('utils/author-html.js');
 copy('utils/conditional-text.js');
 copy('systems/global-writer.js');

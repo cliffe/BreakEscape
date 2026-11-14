@@ -83,7 +83,8 @@ test('one escape helper: the minigames that had local copies now import the shar
     ];
     for (const rel of files) {
         const src = readFileSync(join(js, rel), 'utf8');
-        assert.match(src, /import \{ escapeHtml( as \w+)? \} from '(\.\.\/)+utils\/escape-html\.js';/, `${rel} imports the shared helper`);
+        // Other helpers from the same module may share the line (escapeHtmlKeepWords)
+        assert.match(src, /import \{ escapeHtml( as \w+)?(, \w+)* \} from '(\.\.\/)+utils\/escape-html\.js';/, `${rel} imports the shared helper`);
         assert.doesNotMatch(src, /'&': '&amp;'/, `${rel} keeps no local escape table`);
     }
     for (const rel of ['minigames/ncsc-brief/ncsc-brief-minigame.js', 'minigames/coverage-decision-form/coverage-decision-form-minigame.js', 'systems/apply-actions.js']) {
@@ -327,4 +328,15 @@ test('forensic cleanStyle: font sizes are px or rem in a readable range; compoun
     assert.equal(cleanStyle('font-size:9999px;color:#f00'), 'font-size:48px;color:#f00');
     assert.equal(cleanStyle('font-size:calc(100vw);font-weight:bold'), 'font-weight:bold');
     assert.equal(cleanStyle('font-size: 12px'), 'font-size:12px');
+});
+
+test('escapeHtmlKeepWords joinPunctuation: a punctuation-only token stays with the word before it, still escaped', async () => {
+    const { escapeHtmlKeepWords } = await imp('utils/escape-html.js');
+    const words = (html) => [...html.matchAll(/<span class="keep-whole">(.*?)<\/span>/g)].map(m => m[1]);
+    assert.deepEqual(words(escapeHtmlKeepWords('Sam: sokafor / Marmalade-82', { joinPunctuation: true })), ['Sam:', 'sokafor /', 'Marmalade-82']);
+    assert.deepEqual(words(escapeHtmlKeepWords('a - b', { joinPunctuation: true })), ['a -', 'b']);
+    // not at the start, not across a line break, and markup stays escaped
+    assert.deepEqual(words(escapeHtmlKeepWords('/ a\n/ <b>', { joinPunctuation: true })), ['/', 'a', '/', '&lt;b&gt;']);
+    // the default is unchanged
+    assert.deepEqual(words(escapeHtmlKeepWords('Sam: sokafor / x')), ['Sam:', 'sokafor', '/', 'x']);
 });

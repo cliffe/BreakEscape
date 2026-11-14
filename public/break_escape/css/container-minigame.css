@@ -484,6 +484,10 @@
     font-style: italic;
 }
 
+.container-actions:empty {
+    display: none;   /* no stray rule with nothing under it (critique A33) */
+}
+
 .container-actions {
     display: flex;
     justify-content: center;
@@ -538,9 +542,18 @@
         text-align: center;
     }
     
+    /* Columns as wide as an item's label, so "Office key" and "Old phone" do not run
+       into each other on a phone (critique A32) */
     .container-contents-grid {
-        grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
-        gap: 8px;
+        grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+        /* the labels hang under each slot: the row gap leaves room for two lines */
+        gap: 44px 16px;
+        padding-bottom: 36px;
+        justify-items: center;
+    }
+
+    .container-content-label {
+        width: 88px;
     }
     
     .container-content-slot {
@@ -623,6 +636,50 @@
     margin: 0;
     font-size: 11px;
     padding: 6px 8px;
+}
+
+/* The Copy / Move dialog on a PC monitor's screen (UX slice 2c R3): centred without a
+   transform, on whole pixels by the script (R4 m3, centreOnWholePixels: margin: auto put an
+   odd spare width or height on a half pixel), never taller than its window (it ran past the
+   screen's top and bottom at x2), GNF at 16px in the title bar as the share window's, the
+   PC's thin buttons, and no see-through shadow */
+.pc-monitor .desktop-transfer-dialog {
+    top: 0;
+    left: 0;
+    margin: 0;
+    width: fit-content;
+    height: fit-content;
+    max-height: calc(100% - 8px);
+    min-width: 0;
+    box-sizing: border-box;
+    overflow-x: hidden;
+    overflow-y: auto;
+    transform: none;
+    box-shadow: none;
+}
+
+.pc-monitor .desktop-transfer-dialog .desktop-window-titlebar {
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 18px;
+}
+
+.pc-monitor .desktop-transfer-dialog .desktop-window-body {
+    padding: 6px 8px;
+}
+
+.pc-monitor .desktop-transfer-dialog .desktop-window-body p {
+    margin: 0 0 6px 0;
+    font-size: 16px;
+    line-height: 18px;
+}
+
+.pc-monitor .desktop-transfer-dialog .desktop-window-buttons {
+    gap: 4px;
+}
+
+.pc-monitor .desktop-transfer-dialog button.pc-os-btn.desktop-transfer-btn {
+    width: 100%;
 }
 
 /* A claimed open session (access model 5.4): the player is on someone else's screen */
@@ -791,4 +848,251 @@
     .container-contents-grid.share-folder-files {
         min-height: 80px;
     }
+}
+
+/* ── In the PC monitor (UX slice 2c, css/pc-monitor.css) ─────────────────────────────
+   The desktop and a share's folder window draw straight onto the monitor's screen, over the
+   frame's wallpaper: a top bar with the signed-in account, the icons, a taskbar with the
+   computer's description. The monitor sets the size, so these fill it. */
+.pc-monitor .container-minigame.desktop-mode.pc-desktop {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    min-height: 100%;
+    margin: 0;
+    padding: 0;
+    gap: 0;
+    box-sizing: border-box;
+}
+
+.pc-desktop-topbar {
+    flex: 0 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 12px;
+    padding: 4px 8px;
+    background: #1c1c1c;
+    border-bottom: 2px solid #3a3a3a;
+}
+
+.pc-desktop-topbar .desktop-account-bar {
+    margin: 0;
+    flex: 1 1 auto;
+}
+
+/* Whole-pixel line boxes, so text centred beside the 32px headshot, or under an icon,
+   starts on a whole pixel at x1 and at the x2 content scale (R1 M2 live check: the name sat
+   at 7.5px in the bar and odd-width labels at a half pixel under the icon) */
+.pc-desktop-topbar .desktop-account-name {
+    line-height: 18px;
+}
+
+/* On the monitor's wallpaper a label has the dark backing of every other line of text there
+   (.pc-screen-note, R1 m3) instead of the outline: at x2 the 2px outline became 4px and
+   filled the letters in (R2 m3) */
+.pc-monitor .pc-desktop .desktop-icon-label {
+    /* As wide as its text (evenShareLabels rounds it to an even width, so the centring lands
+       on a whole pixel), up to the icon's 112px */
+    align-self: center;
+    box-sizing: border-box;
+    max-width: 112px;
+    line-height: 18px;
+    padding: 0 2px;
+    background: #101820;
+    border: 2px solid #2a3a48;
+    color: #dde6ee;
+    text-shadow: none;
+}
+
+/* On the monitor the icon has no see-through plate (R3 m4): the label is its solid backing.
+   The hover is the OS accent on a 2px edge, not the old terminal green. */
+.pc-monitor .pc-desktop .desktop-icon-image {
+    background: transparent;
+}
+
+.pc-monitor .pc-desktop .desktop-icon:hover .desktop-icon-image,
+.pc-monitor .pc-desktop .desktop-icon:focus-visible .desktop-icon-image {
+    border-color: #9ee6ff;
+    background: transparent;
+}
+
+.pc-monitor .pc-desktop .desktop-icon:hover .desktop-icon-label {
+    border-color: #9ee6ff;
+}
+
+/* "More below" under the icon area while the icons run past it (R2 M2), the network view's
+   cue: a flat strip with a 2px top edge and a stepped arrow */
+.pc-monitor .pc-desktop > .desktop-more {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 2px 8px;
+    background: #1d2a36;
+    border-top: 2px solid #2d3a44;
+    color: #9ee6ff;
+    font-size: 16px;
+    line-height: 18px;
+}
+
+.pc-monitor .pc-desktop > .desktop-more[hidden] {
+    display: none;
+}
+
+/* A stepped down arrow, 12 x 6 in 2px steps (rows 12, 8 and 4 wide) */
+.desktop-more-arrow {
+    width: 12px;
+    height: 6px;
+    background: #9ee6ff;
+    clip-path: polygon(0 0, 12px 0, 12px 2px, 10px 2px, 10px 4px, 8px 4px, 8px 6px,
+                       4px 6px, 4px 4px, 2px 4px, 2px 2px, 0 2px);
+}
+
+/* Take Container on the taskbar: the PC's one button look, the theme's thin skin (R2 M1) */
+.pc-monitor .desktop-taskbar .minigame-button {
+    margin: 0;
+    padding: 0 8px;
+    font-size: 16px;
+    line-height: 16px;
+}
+
+[data-ui-theme] .pc-monitor .desktop-taskbar .minigame-button {
+    border-width: var(--ui-small-button-px);
+    border-image-source: var(--ui-small-button-image);
+    border-image-slice: var(--ui-small-button-slice) fill;
+    border-image-width: var(--ui-small-button-px);
+}
+
+.pc-desktop-topbar .desktop-claim-line,
+.pc-desktop-topbar .desktop-remote-line {
+    margin: 0;
+}
+
+.desktop-account-headshot {
+    width: 32px;
+    height: 32px;
+    image-rendering: pixelated;
+    background-color: #2c3e50;
+    box-shadow: 0 0 0 2px #4a5560;
+    flex: 0 0 auto;
+}
+
+.desktop-account-headshot[hidden] {
+    display: none;
+}
+
+/* Stronger than the old desktop rules (.container-minigame.desktop-mode .desktop-background
+   kept a 16:10 box capped at 100vh - 440px), so the icons fill the screen */
+.pc-monitor .container-minigame.desktop-mode.pc-desktop > .desktop-background {
+    aspect-ratio: auto;
+    max-height: none;
+    flex: 1 1 auto;
+    min-height: 0;
+    background: none;
+    overflow: auto;
+}
+
+.pc-monitor .container-minigame.desktop-mode.pc-desktop .desktop-icons {
+    box-sizing: border-box;
+    height: auto;
+    min-height: 100%;
+}
+
+.pc-monitor .container-minigame.desktop-mode.pc-desktop > .desktop-taskbar {
+    flex: 0 0 auto;
+    min-height: 0;
+    padding: 4px 8px;
+    gap: 8px;
+}
+
+/* The PC's description (its observations, which can carry clues): wrapped, up to three lines,
+   then it scrolls; never cut off (R1 M3) */
+.desktop-taskbar-note {
+    display: block;
+    font-size: 16px;
+    line-height: 18px;
+    color: #cfd6dc;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    max-height: 54px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.pc-monitor[data-compact] .container-minigame.desktop-mode.pc-desktop .desktop-icons {
+    padding: 8px;
+    gap: 8px;
+}
+
+.pc-monitor[data-compact] .desktop-account-bar {
+    font-size: 16px;
+    gap: 4px 8px;
+}
+
+/* Switch user and Sign out on the theme's thin button skin, so the top bar stays one
+   headshot tall instead of taking 70px of the screen */
+/* GNF at 16px, the size it draws crisply at (R1 m2); the thin skin leaves the room */
+.pc-desktop-topbar .minigame-button.desktop-account-btn {
+    margin: 0;
+    padding: 0 8px;
+    font-size: 16px;
+    line-height: 16px;
+}
+
+[data-ui-theme] .pc-desktop-topbar .minigame-button.desktop-account-btn {
+    border-width: var(--ui-small-button-px);
+    border-image-source: var(--ui-small-button-image);
+    border-image-slice: var(--ui-small-button-slice) fill;
+    border-image-width: var(--ui-small-button-px);
+}
+
+.pc-monitor[data-compact] .pc-desktop-topbar .minigame-button.desktop-account-btn {
+    padding: 0 6px;
+}
+
+/* A share's folder window on the screen: maximised, so no wallpaper shows and it never reads
+   as another PC's desktop (slice 2a, main3-08) */
+.pc-monitor .share-folder-layout.pc-share {
+    height: 100%;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.pc-monitor .pc-share > .container-minigame.share-folder {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+}
+
+.share-folder-status {
+    flex: 0 0 auto;
+    margin: 4px 0 0;
+    padding: 2px 6px;
+    border: 2px solid #808080;
+    border-right-color: #fff;
+    border-bottom-color: #fff;
+    color: #000;
+    font-size: 16px;
+    line-height: 18px;
+    /* Wrapped, up to three lines, then it scrolls; never cut off (R1 M3). The border-box
+       height is the three lines plus the 2px padding and 2px border on each side */
+    white-space: normal;
+    overflow-wrap: anywhere;
+    max-height: 62px;
+    box-sizing: border-box;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+
+.pc-monitor[data-compact] .container-contents-grid.share-folder-files {
+    min-height: 0;
+    padding: 8px 8px 32px;
+    gap: 32px 8px;
 }

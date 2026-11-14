@@ -1137,7 +1137,16 @@ const bridge = {
 
         clickElementDom(target);
         await sleepFrames(4);
-        const result = { ok: true, clicked: (target.innerText || '').trim(), stillBlocked: !!detectBlockingUi() };
+        const clicked = (target.innerText || '').trim();
+        const afterBlocker = detectBlockingUi();
+        // The click landed on a real button, but the page can still be blocked: the overlay did
+        // not close, or it revealed another (the tutorial prompt sits over the session-resume
+        // overlay at startup). It used to answer ok:true with stillBlocked:true, so a caller that
+        // trusts `ok` carried on against a blocked UI. Report a failure instead, so the caller
+        // stops and dismisses the new blocker; the field stays for callers that still read it.
+        const result = afterBlocker
+            ? fail('still-blocked-after-dismiss', { clicked, stillBlocked: true, blocker: afterBlocker })
+            : { ok: true, clicked, stillBlocked: false };
         logAction('dismissBlockingUi', { labelMatch }, result);
         return result;
     },

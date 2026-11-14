@@ -656,6 +656,72 @@ def check_notes_hold_no_actions(json_data)
   warnings
 end
 
+# q94: desktopUser on a PC or laptop is { name, character? }: an object with a non-empty string name,
+# and character (if set) a non-empty string. A character with no <key>_headshot.png in the character
+# assets is a warning, since the desktop frame then shows a silhouette. Walks room objects (and
+# their contents and itemsHeld), NPC itemsHeld and the starting inventory. Warns when set on a sign-in PC (lockType login).
+# An unknown key inside desktopUser is reported once, by the schema (additionalProperties false).
+DESKTOP_USER_CHARS_DIR = File.join(File.expand_path('..', __dir__), 'public/break_escape/assets/characters')
+
+def check_desktop_users(json_data, chars_dir = DESKTOP_USER_CHARS_DIR)
+  issues = []
+  check = lambda do |item, path|
+    return unless item.is_a?(Hash)
+
+    if item.key?('desktopUser')
+      du = item['desktopUser']
+      where = "'#{path}' desktopUser"
+      if item['lockType'] == 'login'
+        issues << "⚠️ WARNING: #{where} is set on a sign-in PC (lockType login): " \
+                  'the live session shows the signed-in user there, so desktopUser is ignored or conflicts. Remove it.'
+      end
+      if !du.is_a?(Hash)
+        issues << "❌ ERROR: #{where} must be an object { \"name\": \"...\", \"character\": \"...\" }."
+      else
+        unless du['name'].is_a?(String) && !du['name'].strip.empty?
+          issues << "❌ ERROR: #{where} needs a non-empty string 'name' (the display name shown as signed in)."
+        end
+        if du.key?('character')
+          ch = du['character']
+          if !ch.is_a?(String) || ch.strip.empty?
+            issues << "❌ ERROR: #{where} 'character' must be a non-empty string (a character key)."
+          elsif !File.exist?(File.join(chars_dir, "#{ch}_headshot.png"))
+            issues << "⚠️ WARNING: #{where} character '#{ch}' has no assets/characters/#{ch}_headshot.png: " \
+                      'the desktop frame shows a silhouette instead.'
+          end
+        end
+      end
+    end
+    item['contents']&.each_with_index { |c, i| check.call(c, "#{path}/contents[#{i}]") } if item['contents'].is_a?(Array)
+    item['itemsHeld']&.each_with_index { |c, i| check.call(c, "#{path}/itemsHeld[#{i}]") } if item['itemsHeld'].is_a?(Array)
+  end
+  rooms = json_data.is_a?(Hash) && json_data['rooms'].is_a?(Hash) ? json_data['rooms'] : {}
+  rooms.each do |room_id, room|
+    next unless room.is_a?(Hash) && room['objects'].is_a?(Array)
+
+    room['objects'].each_with_index do |obj, i|
+      check.call(obj, "rooms/#{room_id}/objects[#{i}](#{(obj.is_a?(Hash) && (obj['id'] || obj['name'])) || '?'})")
+    end
+  end
+  inv = json_data.is_a?(Hash) ? json_data['startItemsInInventory'] : nil
+  inv.each_with_index { |obj, i| check.call(obj, "startItemsInInventory[#{i}]") } if inv.is_a?(Array)
+  # Objects an NPC carries (itemsHeld), on room NPCs and on the top-level npcs list.
+  npc_held = lambda do |npc, npath|
+    next unless npc.is_a?(Hash) && npc['itemsHeld'].is_a?(Array)
+
+    npc['itemsHeld'].each_with_index { |obj, i| check.call(obj, "#{npath}/itemsHeld[#{i}]") }
+  end
+  rooms.each do |room_id, room|
+    next unless room.is_a?(Hash) && room['npcs'].is_a?(Array)
+
+    room['npcs'].each_with_index { |n, i| npc_held.call(n, "rooms/#{room_id}/npcs[#{i}](#{(n.is_a?(Hash) && n['id']) || '?'})") }
+  end
+  if json_data.is_a?(Hash) && json_data['npcs'].is_a?(Array)
+    json_data['npcs'].each_with_index { |n, i| npc_held.call(n, "npcs[#{i}](#{(n.is_a?(Hash) && n['id']) || '?'})") }
+  end
+  issues
+end
+
 # Check for unknown fields in JSON that aren't in the schema
 def check_unknown_fields(json_data)
   warnings = []
@@ -808,7 +874,7 @@ def check_unknown_fields(json_data)
     phoneOwner rings
     actions onOwnerNoticesMissing interactionWarning saved_cards rfid_protocol
     access acceptsUIDOnly loginPicker policy transfer cloneable identity
-    network host headless networkJack jackConfirm plantedSprite linkName linkStoreIn rogueDevice
+    network host desktopUser headless networkJack jackConfirm plantedSprite linkName linkStoreIn rogueDevice
     wifiAp portSecurity portSecurityMessage
     _comment
   ]
@@ -2833,6 +2899,8 @@ end
 # interactionWarning (systems/interactions.js): an author-defined "are you sure?" any
 # object may carry, shown before the object's normal interaction. Validate its shape
 # wherever it appears (walk the whole document, so nested contents/itemsHeld are covered).
+CONFIRM_LABEL_MAX = 16
+
 def check_interaction_warnings(json_data)
   issues = []
   # The apply-actions.js action vocabulary (its case labels) plus the extra names the
@@ -2888,6 +2956,15 @@ def check_interaction_warnings(json_data)
           end
         end
       end
+      # A confirm's button label stays on one line (notifications.css nowrap), and at phone
+      # width a button holds about 18 characters before the frame cuts it (UX slice 16 R1 m9).
+      %w[confirmLabel cancelLabel proceedLabel declineLabel].each do |lk|
+        label = node[lk]
+        next unless label.is_a?(String) && label.strip.length > CONFIRM_LABEL_MAX
+        issues << "⚠️ WARNING: '#{path}/#{lk}' is #{label.strip.length} characters (\"#{label.strip}\"). " \
+                  "A confirm button label of more than #{CONFIRM_LABEL_MAX} characters is cut off at phone width; " \
+                  "shorten it (\"Switch off\", \"Leave it\")."
+      end
       # A minigame's own data is its own format: the EHR terminal's medication rows carry a
       # string 'interactionWarning' that the object-level warning code never reads.
       node.each { |k, v| walk.call(v, path.empty? ? k.to_s : "#{path}/#{k}") unless k == 'minigameData' }
@@ -2908,17 +2985,54 @@ end
 def check_revoke_card_globals(json_data)
   issues = []
   found = false
-  walk = nil
-  walk = lambda do |node|
+  revoked_ids = []
+  granted = {} # card_id => the pointer of the give_item or start item that hands it over
+
+  # Every card_id string under a granted item subtree: its own card_id and any nested
+  # rfidCard/card/contents card_id, so a card handed over inside a container counts too.
+  card_ids_under = nil
+  card_ids_under = lambda do |node, out|
     case node
     when Hash
-      found = true if node['type'] == 'revoke_card'
-      node.each_value { |v| walk.call(v) }
+      cid = node['card_id']
+      out << cid if cid.is_a?(String) && !cid.empty?
+      out.concat(cid.select { |c| c.is_a?(String) && !c.empty? }) if cid.is_a?(Array)
+      node.each_value { |v| card_ids_under.call(v, out) }
     when Array
-      node.each { |v| walk.call(v) }
+      node.each { |v| card_ids_under.call(v, out) }
+    end
+    out
+  end
+
+  walk = nil
+  walk = lambda do |node, pointer|
+    case node
+    when Hash
+      if node['type'] == 'revoke_card'
+        found = true
+        cid = node['card_id']
+        revoked_ids << cid if cid.is_a?(String) && !cid.empty?
+        revoked_ids.concat(cid.select { |c| c.is_a?(String) && !c.empty? }) if cid.is_a?(Array)
+      end
+      if node['type'] == 'give_item' && node['item'].is_a?(Hash)
+        card_ids_under.call(node['item'], []).each { |c| granted[c] ||= "#{pointer}/item" }
+      end
+      node.each { |k, v| walk.call(v, "#{pointer}/#{k}") }
+    when Array
+      node.each_with_index { |v, i| walk.call(v, "#{pointer}/#{i}") }
     end
   end
-  walk.call(json_data)
+  walk.call(json_data, '#')
+
+  # Start items the player begins with: each carried card_id is granted at game start.
+  if json_data['startItemsInInventory'].is_a?(Array)
+    json_data['startItemsInInventory'].each_with_index do |item, i|
+      next unless item.is_a?(Hash)
+
+      card_ids_under.call(item, []).each { |c| granted[c] ||= "#/startItemsInInventory/#{i}" }
+    end
+  end
+
   return issues unless found
 
   globals = json_data['globalVariables']
@@ -2928,6 +3042,18 @@ def check_revoke_card_globals(json_data)
               "not declared as an array. The server enforces card cancellation from this global " \
               "(stored grow-only) and the client reads it for the UI; without the declared array " \
               "default [] the cancellation never takes, so a revoked card keeps opening its door."
+  end
+
+  # Advisory (hardening item 2): a card handed to the player that a revoke_card also cancels.
+  # revoked_card_ids is grow-only (merge_global_variables! unions it every sync and there is no
+  # un-revoke path), so a card re-issued under the same id after revocation stays dead. Fires on
+  # nothing in the corpus; purely an authoring guard.
+  (revoked_ids.uniq & granted.keys).sort.each do |cid|
+    issues << "⚠️ WARNING: #{granted[cid]}: card_id '#{cid}' is handed to the player (give_item or a " \
+              "start item) and is also cancelled by a 'revoke_card' action. revoked_card_ids is " \
+              "grow-only, so once this id is revoked it stays refused for the rest of the game. That is " \
+              "fine for a card given and later cancelled. If the player is meant to get a working card " \
+              "back after the revoke, give the re-issued card a fresh card_id."
   end
   issues
 end
@@ -4991,6 +5117,10 @@ def check_recurring_bugs(json_data, repo_root)
       # producer, or two slots of one producer, are meant to share a spot
       next if a['outputOf'].is_a?(String) && (a['outputOf'] == b['id'] || a['outputOf'] == b['outputOf'])
       next if b['outputOf'].is_a?(String) && b['outputOf'] == a['id']
+      # A click cannot open an object with interactable: false (the tap filter in game.js and the
+      # proximity pass in interactions.js both skip it), so such a pair cannot steal clicks. The
+      # lab's plain corridor extinguisher and its revealed wedge share one spot on purpose.
+      next if a['interactable'] == false || b['interactable'] == false
       issues << "⚠️ WARNING: rooms/#{rid}: objects[#{ai}] '#{a['name'] || a['id']}' and objects[#{bi}] '#{b['name'] || b['id']}' " \
                 "are pinned #{dist.round} px apart, inside the 32 px interaction range (constants.js INTERACTION_RANGE), so " \
                 "one click can open the other. Move them at least a tile apart. (Objects placed by Tiled slots aren't " \
@@ -6627,8 +6757,10 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
 
     capture_route = payload.is_a?(Hash) ||
                     Array(npc['eventMappings']).any? { |m| m.is_a?(Hash) && m['addCapture'].is_a?(Hash) }
-    reveal = json_data.dig('social', 'captures', 'revealSecret') if json_data['social'].is_a?(Hash) && json_data['social']['captures'].is_a?(Hash)
-    if capture_route && !reveal
+    captures_cfg = json_data['social'].is_a?(Hash) && json_data['social']['captures'].is_a?(Hash) ? json_data['social']['captures'] : {}
+    # An explicit revealSecret: false is a choice (the password is typed from its earned
+    # source), not a forgotten switch, so only a missing one is warned about
+    if capture_route && !captures_cfg.key?('revealSecret')
       warn.call("NPC #{name_of.call(npc)} has a capture route (usePayload or addCapture), but " \
                 'social.captures.revealSecret is not set, so a captured sign-in never shows its password.')
     end
@@ -7352,6 +7484,11 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
     puts "✓ No unknown fields"
   end
   puts
+
+  puts "Checking desktop users (q94)..."
+  desktop_user_issues = report.run_check('common', 'check_desktop_users') { check_desktop_users(json_data) }
+  print_issue_list(report, desktop_user_issues, error_header: 'Desktop user check failed with',
+                                                warning_header: 'Found %d desktop user warning(s):', ok_line: '✓ Desktop users valid')
 
   puts "Checking author notes hold no actions..."
   note_action_warnings = report.run_check('common', 'check_notes_hold_no_actions') { check_notes_hold_no_actions(json_data) }

@@ -82,15 +82,17 @@
     background-color: #000;
 }
 
-/* Caption area - positioned at bottom 1/3 of screen, full width background */
+/* Caption area - a flat dark band at the bottom, as tall as its content, full width.
+   Pixel art (UX slice 16 R1 m14): no gradient fade. The top edge steps down in two 4 px
+   bands drawn by hard shadows with no blur (an outer shadow is only drawn outside the box). */
 .person-chat-caption-area {
     position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
     width: 100%;
-    height: 33%;
-    background: linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,0.95));
+    background: rgba(0, 0, 0, 0.82);
+    box-shadow: 0 -4px 0 rgba(0, 0, 0, 0.5), 0 -8px 0 rgba(0, 0, 0, 0.3);
     z-index: 10;
     box-sizing: border-box;
     display: flex;
@@ -184,7 +186,7 @@
     margin: 0;
     white-space: pre-wrap;
     word-wrap: break-word;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.8); /* a hard pixel offset, no blur */
 }
 
 /* Choices and continue button area (right side, fixed width) */
@@ -322,54 +324,110 @@
     width: 0;
 }
 
-/* Responsive adjustments */
-/* @media (max-width: 1200px) {
+/* Phone width (UX slice 16 R1 m11, m12): the portrait sits at the top at its own 4:3 shape
+   and the caption follows it in flow, so the speaker's name and line never cover the face;
+   the line and the choices stack in one column and the choices take the full width. The
+   caption scrolls if a long line and many choices outgrow the space below the portrait. */
+@media (max-width: 600px) {
+    .person-chat-main-content {
+        justify-content: flex-start;
+    }
+
+    .person-chat-portrait-section {
+        position: relative;
+        flex: 0 0 auto;
+        height: auto;
+        aspect-ratio: 4 / 3;
+        max-height: 50%;
+    }
+
     .person-chat-caption-area {
-        height: 40%;
+        position: relative;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        align-items: flex-start;
+        padding: 16px;
+        background: #000;
+        box-shadow: none;
+    }
+
+    .person-chat-caption-content {
+        flex-direction: column;
+        flex-wrap: nowrap;
+        align-items: stretch;
+        gap: 16px;
+    }
+
+    .person-chat-talk-right {
+        flex: 0 0 auto;
+        min-width: 0;
+    }
+
+    .person-chat-speaker-name {
+        font-size: 16px;
+    }
+
+    .person-chat-dialogue-text {
+        font-size: 24px;
+    }
+
+    .person-chat-controls-area {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    .person-chat-choice-button {
+        min-width: 0;
+    }
+
+    /* "More below" (R2 m4): under the caption while its choices run past the bottom edge */
+    .person-chat-more:not([hidden]) {
+        display: flex;
     }
 }
 
-@media (max-width: 768px) {
-    .person-chat-caption-area {
-        height: 45%;
-        padding: 10px;
-        gap: 10px;
-    }
-    
-    .person-chat-choice-button {
-        font-size: 18px;
-        padding: 8px 12px;
-    }
-} */
+/* Hidden above 600 px, where the caption grows instead of scrolling */
+.person-chat-more {
+    display: none;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 4px 8px;
+    background: #1d2a36;
+    border-top: 2px solid #2d3a44;
+    color: #9ee6ff;
+    font-family: 'VT323', 'Press Start 2P', monospace;
+    font-size: 18px;
+    z-index: 11;
+}
+
+/* A stepped down arrow, 12 x 6 in 2px steps (rows 12, 8 and 4 wide) */
+.person-chat-more-arrow {
+    width: 12px;
+    height: 6px;
+    background: currentColor;
+    clip-path: polygon(0 0, 12px 0, 12px 2px, 10px 2px, 10px 4px, 8px 4px, 8px 6px,
+                       4px 6px, 4px 4px, 2px 4px, 2px 2px, 0 2px);
+}
 
 /* ===========================================================================
    VIDEO CALL MODE
-   A framed "secure video link": inset border + scanlines, a top status bar
+   A framed "secure video link": a hard inset frame, a top status bar
    (LIVE dot / secure-link label / peer name / call timer) and a picture-in-
    picture self-view of the player in the top-left corner.
    =========================================================================== */
 
-/* Framed border + subtle inner glow around the whole call */
+/* Hard pixel frame around the whole call: two 2px rings, no blur (pixel-art UI rule, UX slice 16
+   R2 m5). The old soft vignette and the gradient scanline overlay are gone. */
 .person-chat-root.video-call-mode {
     box-shadow:
-        inset 0 0 0 3px #2b6f4e,           /* hard pixel frame */
-        inset 0 0 0 5px #0b1a12,
-        inset 0 0 60px rgba(0, 0, 0, 0.7);  /* vignette */
-}
-
-/* Faint scanline overlay for the CRT/video feel (kept very subtle, non-interactive) */
-.person-chat-root.video-call-mode::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: 15;
-    pointer-events: none;
-    background: repeating-linear-gradient(
-        to bottom,
-        rgba(0, 0, 0, 0) 0px,
-        rgba(0, 0, 0, 0) 2px,
-        rgba(0, 0, 0, 0.10) 3px
-    );
+        inset 0 0 0 2px #2b6f4e,
+        inset 0 0 0 4px #0b1a12;
 }
 
 /* Top status bar */
@@ -382,13 +440,15 @@
     display: flex;
     align-items: center;
     gap: 16px;
-    padding: 8px 16px;
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0));
+    /* Right padding keeps the call timer clear of the chat's X */
+    padding: 8px 64px 8px 16px;
+    background: rgba(0, 0, 0, 0.85);
+    border-bottom: 2px solid #2b6f4e;
     font-family: 'VT323', 'Press Start 2P', monospace;
     font-size: 20px;
     letter-spacing: 0.08em;
     color: #cfeede;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9);
+    text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.9);
 }
 
 .person-chat-vc-live {
@@ -396,16 +456,16 @@
     align-items: center;
     gap: 8px;
     color: #ff5a5a;
-    font-weight: bold;
 }
 
 .person-chat-vc-dot {
     width: 10px;
     height: 10px;
     background: #ff3b3b;
-    border-radius: 50%;
-    box-shadow: 0 0 6px #ff3b3b;
-    animation: vcPulse 1.4s ease-in-out infinite;
+    /* A round dot drawn in 2px steps, blinking on and off rather than fading */
+    clip-path: polygon(2px 0, 8px 0, 8px 2px, 10px 2px, 10px 8px, 8px 8px, 8px 10px,
+                       2px 10px, 2px 8px, 0 8px, 0 2px, 2px 2px);
+    animation: vcPulse 1.4s steps(1, end) infinite;
 }
 
 @keyframes vcPulse {
@@ -419,7 +479,6 @@
 
 .person-chat-vc-peer {
     color: #ffffff;
-    font-weight: bold;
     text-transform: uppercase;
 }
 
@@ -440,7 +499,7 @@
     height: 132px; /* 4:3 webcam feel */
     background: #000;
     border: 2px solid #2b6f4e;
-    box-shadow: 0 0 0 1px #000, 0 4px 12px rgba(0, 0, 0, 0.6);
+    box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.6);
     overflow: hidden;
 }
 
@@ -471,7 +530,7 @@
     font-size: 14px;
     letter-spacing: 0.1em;
     color: #ff9a4a;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.95);
+    text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.95);
 }
 
 /* On small screens keep the PiP from crowding the portrait */
@@ -483,6 +542,11 @@
     .person-chat-vc-statusbar {
         font-size: 16px;
         gap: 10px;
+        white-space: nowrap;
+    }
+    /* Room for LIVE, the name and the timer on one line beside the X (R2 m5) */
+    .person-chat-vc-link {
+        display: none;
     }
 }
 

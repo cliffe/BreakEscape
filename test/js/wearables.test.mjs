@@ -233,9 +233,139 @@ test('the default alert and confirm pass no html option (toasts are plain text b
     assert.equal(alerts[0][4], undefined, 'no options: plain text');
     w.npcManager.npcs.get('tom').roomId = 'hall';
     assert.equal(await W.putOn('vest', { confirm: true }, deps), true);
-    assert.deepEqual(confirms[0], ['Put it on?', 'Confirm', 'Cancel']);
+    // UX q99: the confirm has no X, so both buttons are named for what they do
+    assert.deepEqual(confirms[0], ['Put it on?', 'Put it on', 'Leave it off']);
+    assert.equal(await W.takeOff('vest', { confirm: true }, deps), true);
+    assert.deepEqual(confirms[1], ['Take it off?', 'Take it off', 'Keep it on']);
 });
 
+// UX slice 4 (q91): a world take asks once, "Put it on now?"
+test('take offer: asked once, Put it on wears it with no second confirm', async () => {
+    const { w, deps, log } = rig();
+    const labels = [];
+    deps.confirm = async (text, l) => { log.confirms.push(text); labels.push(l); return true; };
+    assert.equal(await W.offerAfterTake('vest', deps), true);
+    assert.deepEqual(log.confirms, ['Taken: Hi-vis vest.\nPut it on now?'], 'only the offer, not confirmOn as well');
+    assert.deepEqual(labels[0], ['Put it on', 'Leave it off']);
+    assert.equal(W.wornItemId(w), 'vest');
+    assert.deepEqual(log.posts, [{ item_id: 'vest', worn: true }]);
+    assert.deepEqual(log.actions, ['on'], 'onWear runs as from the tray');
+    // Taken off, dropped and taken again: not asked a second time
+    await W.takeOff('vest', {}, deps);
+    assert.equal(await W.offerAfterTake('vest', deps), null);
+    assert.equal(log.confirms.length, 1);
+});
+
+test('take offer: Leave it off leaves it carried and is not asked again', async () => {
+    const { w, deps, log } = rig();
+    deps.confirm = async (text) => { log.confirms.push(text); return false; };
+    assert.equal(await W.offerAfterTake('vest', deps), false);
+    assert.equal(W.wornItemId(w), null);
+    assert.equal(log.posts.length, 0);
+    assert.equal(await W.offerAfterTake('vest', deps), null);
+    assert.equal(log.confirms.length, 1);
+});
+
+test('take offer: skipped when watched, worn, busy, not held or not a wearable', async () => {
+    // Watched: no question (it would only be refused); still offered later, out of sight
+    const watched = rig({ npcs: [person('tom')] });
+    assert.equal(await W.offerAfterTake('vest', watched.deps), null);
+    assert.equal(watched.log.confirms.length, 0);
+    assert.equal(W.offerSkipReason(watched.w.inventory.items[0], watched.w), 'watched');
+    watched.w.npcManager.npcs.get('tom').roomId = 'hall';
+    assert.equal(await W.offerAfterTake('vest', watched.deps), true);
+    // The worn item would come off in front of a watcher: a swap is refused too
+    const swap = rig({ npcs: [person('tom', { roomId: 'hall' })] });
+    await W.putOn('vest', {}, swap.deps);
+    swap.w.npcManager.npcs.get('tom').roomId = 'office';
+    assert.equal(W.offerSkipReason(swap.w.inventory.items[1], swap.w), 'watched');
+    // Busy: a minigame is open
+    const busy = rig();
+    busy.w.MinigameFramework = { currentMinigame: {} };
+    assert.equal(await W.offerAfterTake('vest', busy.deps), null);
+    assert.equal(busy.log.confirms.length, 0);
+    // Worn already, not held, not a wearable
+    const r = rig({ items: [VEST, { id: 'pen', name: 'Pen' }] });
+    await W.putOn('vest', {}, r.deps);
+    assert.equal(W.offerSkipReason(r.w.inventory.items[0], r.w), 'worn');
+    assert.equal(await W.offerAfterTake('coat', r.deps), null);
+    assert.equal(await W.offerAfterTake('pen', r.deps), null);
+    assert.equal(r.log.confirms.length, 0);
+});
+
+test('take offer text: the item name, then the question; plain question without a name', () => {
+    assert.equal(W.offerText({ name: 'Guard jacket' }), 'Taken: Guard jacket.\nPut it on now?');
+    assert.equal(W.offerText({}), 'Put it on now?');
+});
+
+
+// UX slice 4 R1 m7: the offer path keeps the cheat-resistance checks of the tray path
+test('take offer: someone walks in while it is open, so Put it on is refused with no post', async () => {
+    const { w, deps, log } = rig({ npcs: [person('tom', { roomId: 'hall' })] });
+    deps.confirm = async (text) => {
+        log.confirms.push(text);
+        w.npcManager.npcs.get('tom').roomId = 'office';
+        return true;
+    };
+    assert.equal(await W.offerAfterTake('vest', deps), false);
+    assert.equal(log.posts.length, 0, 'nothing sent to the server');
+    assert.equal(W.wornItemId(w), null);
+    assert.equal(log.alerts.length, 1, 'the refusal toast');
+    assert.match(log.alerts[0], /TOM is watching/);
+    assert.deepEqual(log.actions, [], 'no onWear');
+});
+
+test('take offer: the server refuses the put on, so it is not worn and onWear does not run', async () => {
+    const { w, deps, log } = rig({ refuse: true });
+    assert.equal(await W.offerAfterTake('vest', deps), false);
+    assert.deepEqual(log.posts, [{ item_id: 'vest', worn: true }]);
+    assert.equal(W.wornItemId(w), null);
+    assert.equal(w.gameState.globalVariables.vest_on, undefined);
+    assert.deepEqual(log.actions, []);
+    assert.deepEqual(log.alerts, ['Refused by server']);
+});
+
+test('take offer: busy while another confirm is open (R1 m3)', async () => {
+    const r = rig();
+    r.w.gameConfirmOpen = () => true;
+    assert.equal(W.offerSkipReason(r.w.inventory.items[0], r.w), 'busy');
+    assert.equal(await W.offerAfterTake('vest', r.deps), null);
+    assert.equal(r.log.confirms.length, 0);
+    r.w.gameConfirmOpen = () => false;
+    assert.equal(W.offerSkipReason(r.w.inventory.items[0], r.w), null, 'asked once the confirm is gone');
+});
+
+test('the tray menu: a wearable that cannot be dropped has Put on and Examine when it has text (R1 m5)', () => {
+    const w = { wearables: { menuLabel: (d) => W.menuLabel(d, w) }, gameState: { wornItem: null } };
+    const el = { scenarioData: { ...COAT, observations: 'A white lab coat.' } };
+    assert.deepEqual(inventoryMenuFor(el, { inventoryItems: [el], dropBlocked: null, window: w }).map(e => e.label),
+        ['Put on', 'Examine']);
+    w.gameState.wornItem = { itemId: 'coat' };
+    assert.deepEqual(inventoryMenuFor(el, { inventoryItems: [el], dropBlocked: null, window: w }).map(e => e.label),
+        ['Take off', 'Examine']);
+    // Nothing to read: its click stays the one toggle
+    const bare = { scenarioData: COAT };
+    assert.equal(inventoryMenuFor(bare, { inventoryItems: [bare], dropBlocked: null, window: w }), null);
+    // Not a wearable and not droppable: no menu, as before
+    const pen = { scenarioData: { id: 'pen', type: 'pen', name: 'Pen', observations: 'A pen.' } };
+    assert.equal(inventoryMenuFor(pen, { inventoryItems: [pen], dropBlocked: null, window: w }), null);
+});
+
+test('the tray menu: Examine for a wearable that cannot be dropped uses what Examine would show (R2 m4)', () => {
+    const w = { wearables: { menuLabel: (d) => W.menuLabel(d, w) }, gameState: { wornItem: null, globalVariables: {} } };
+    const ask = (el) => inventoryMenuFor(el, { inventoryItems: [el], dropBlocked: null, window: w });
+    // Only text, no observations
+    const textOnly = { scenarioData: { ...COAT, text: 'Property of the lab.' } };
+    assert.deepEqual(ask(textOnly).map(e => e.label), ['Put on', 'Examine']);
+    // Observations that only exist under a condition
+    const variant = { scenarioData: { ...COAT, observationVariants: [{ condition: 'globalVars.seen_coat', value: 'A coat you saw earlier.' }] } };
+    assert.equal(ask(variant), null, 'nothing to read until the condition holds');
+    w.gameState.globalVariables.seen_coat = true;
+    assert.deepEqual(ask(variant).map(e => e.label), ['Put on', 'Examine']);
+    // Blank text counts as nothing to read
+    const blank = { scenarioData: { ...COAT, observations: '  ', text: '' } };
+    assert.equal(ask(blank), null);
+});
 test('the server refusal message is shown as plain text', async () => {
     const { w, deps } = rig({ refuse: true });
     delete deps.alert;

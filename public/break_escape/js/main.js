@@ -299,6 +299,11 @@ function initializeGame() {
         const hudZoom = Math.max(hudStep < 0 ? 1 / dpr : 1, hudDevicePixels / 2 / dpr);
         document.documentElement.style.setProperty('--hud-zoom', hudZoom);
 
+        // Canvas text that has to stay readable (speech bubbles) picks its own whole-number scale
+        // from this (q105 R1 M2); the bubble system reads it on install and is told of changes
+        window.pixelDisplay = { scale, dpr, hudStep, viewWidth: gameWidth };
+        try { window.npcWorldBubbles?.setDisplayScale?.(window.pixelDisplay); } catch (e) { /* bubbles keep their scale */ }
+
         console.log(`Pixel scale ${scale}x (dpr ${dpr}): game ${gameWidth}x${gameHeight}`);
     };
 
@@ -324,7 +329,16 @@ function initializeGame() {
     window.addEventListener('be:display-settings-changed', handleResize);
     window.addEventListener('orientationchange', handleOrientationChange);
     document.addEventListener('fullscreenchange', handleOrientationChange);
-    
+    // The container can change size with no window 'resize': on touch devices
+    // show.html.erb makes the body 1px taller than the viewport for 700 ms (to
+    // retract the URL bar), which shows a root scrollbar where scrollbars are
+    // classic. A canvas sized in that window stayed 15px short and left a #333
+    // band down the right edge once the scrollbar went (UX slice 4 finish).
+    if (typeof ResizeObserver === 'function') {
+        const containerEl = document.getElementById('game-container');
+        if (containerEl) new ResizeObserver(handleResize).observe(containerEl);
+    }
+
     // Check for LOS visualization debug flag
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('debug-los') || urlParams.has('los')) {

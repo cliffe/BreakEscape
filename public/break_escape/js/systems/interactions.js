@@ -766,6 +766,8 @@ export function maybeInteractionWarning(sprite) {
     // Busy-guard (commit 1dd843566): never open over a chat or minigame the player is in.
     // Drop the interaction rather than barge over the open minigame and steal its input.
     if (window.MinigameFramework?.currentMinigame) return true;
+    // A confirm is already open (this warning, asked again): never stack a second copy.
+    if (window.gameConfirmOpen?.()) return true;
     if (!window.gameConfirm) return false; // no dialog available: don't block the object
 
     const text = typeof w.text === 'string' ? w.text : '';
@@ -1989,7 +1991,21 @@ export function handleObjectInteraction(sprite) {
         const added = addToInventory(sprite);
         // Every pickup says so ("Picked up <name>"), not only the few types with a
         // toast of their own (inventory.js announcePickup)
-        Promise.resolve(added).then(res => window.announcePickup?.(sprite, res));
+        Promise.resolve(added).then(res => {
+            // A wearable taken for the first time asks once whether to put it on now
+            // (UX slice 4, q91); it is put on, taken off, dropped and examined from the tray.
+            // That offer opens "Taken: <name>.", so it is the take's announcement and no
+            // "Picked up" toast is shown beside it (UX slice 4 R1 m6)
+            const offered = res?.ok && res.reason === 'added' && data.wearable;
+            const held = offered && typeof window.wearables?.offerSkipReason === 'function'
+                ? (window.inventory?.items || []).find(i => i?.scenarioData?.id === data.id) : null;
+            if (!(held && window.wearables.offerSkipReason(held) === null)) {
+                window.announcePickup?.(sprite, res);
+            }
+            if (offered) {
+                window.wearables?.offerAfterTake?.(data.id)?.catch?.(e => console.warn('[Interaction] wear offer failed:', e));
+            }
+        });
 
         // Only show the observation notification if item was NOT added (duplicate)
         // because addToInventory() already shows its own notification
@@ -2036,7 +2052,11 @@ export function handleObjectInteraction(sprite) {
         };
 
         if (data.onInteract.confirmationText && window.gameConfirm) {
-            window.gameConfirm(data.onInteract.confirmationText).then(confirmed => {
+            // The confirm has no X (UX q99): name both buttons when the author does.
+            const named = (v, fallback) => (typeof v === 'string' && v.trim() ? v : fallback);
+            window.gameConfirm(data.onInteract.confirmationText,
+                named(data.onInteract.confirmLabel, 'Confirm'),
+                named(data.onInteract.cancelLabel, 'Cancel')).then(confirmed => {
                 if (confirmed) { applyOnInteract(); showObservation(); }
             });
             return;

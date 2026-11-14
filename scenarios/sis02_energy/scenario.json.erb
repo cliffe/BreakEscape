@@ -276,7 +276,7 @@ require 'base64'
         {
           // MG-VM02: hmi_eng_02 — LogFilterMinigame (log-filter), IMPLEMENTED
           "taskId": "identify_rdp_session",
-          "title": "Find the session on the jump server that shouldn't be there",
+          "title": "Find the session on the jump server that shouldn't be there, and flag it",
           "type": "manual",
           "status": "active"
         }
@@ -1547,7 +1547,7 @@ require 'base64'
               { "id": "CASTLETECH","label": "CastleTech",   "sublabel": "SOC (VPN)",              "warn": false, "zone": "1", "x": 330, "y": 148, "w": 100, "h": 36, "paths": [],                "desc": "Remote security monitoring SOC. Connected via VPN. Contract explicitly excludes OT system monitoring: a blind spot.", "vuln": "Monitoring scope explicitly excludes OT systems. The anomaly was not detected by CastleTech." },
               { "id": "BMS_IT",    "label": "Building Mgmt","sublabel": "System",                 "warn": false, "zone": "1", "x": 450, "y": 148, "w": 90,  "h": 36, "paths": [],                "desc": "Building Management System covering HVAC, fire suppression, and physical access control.", "vuln": null },
               { "id": "HISTORIAN", "label": "Historian",    "sublabel": "Dual-Homed ⚠",          "warn": true,  "zone": "2", "x": 30,  "y": 254, "w": 110, "h": 36, "paths": ["2"],             "desc": "Process historian server. Records all SCADA sensor values over time. Has network interfaces on BOTH enterprise and SCADA networks.", "vuln": "Dual-homed: one interface on enterprise VLAN, one on SCADA network. Provides passive data relay path that can be repurposed as active OT pivot." },
-              { "id": "HMI_OPS",  "label": "HMI-OPS-01",   "sublabel": "Operator WS",            "warn": false, "zone": "2", "x": 165, "y": 254, "w": 100, "h": 36, "paths": [],                "desc": "SCADA operator workstation. Used by control room staff to monitor battery hall status. Password-protected.", "vuln": null },
+              { "id": "HMI_OPS",  "label": "HMI-OPS-01",   "sublabel": "Operator WS",            "warn": false, "zone": "2", "x": 165, "y": 254, "w": 100, "h": 36, "paths": [],                "desc": "SCADA operator workstation. Used by control room staff to monitor battery hall status.", "vuln": null },
               { "id": "HMI_ENG",  "label": "HMI-ENG-02",   "sublabel": "Engineering WS",         "warn": false, "zone": "2", "x": 285, "y": 254, "w": 100, "h": 36, "paths": ["1","4"],          "desc": "Engineering workstation. Accessible from jump server via bidirectional RDP. Also has access to SIS engineering port.", "vuln": "Reachable from Jump Server via RDP. c.ellison session terminates here. Used to modify SIS setpoints at 03:22." },
               { "id": "SCADA",    "label": "SCADA",         "sublabel": "Server",                 "warn": false, "zone": "2", "x": 410, "y": 254, "w": 90,  "h": 36, "paths": ["1","2","3","4"],  "desc": "Central SCADA server. Polls PLCs every 1–5 seconds. Communicates via Modbus/TCP (no auth, no encryption).", "vuln": "Reachable via Jump Server, Historian dual-home, and legacy Modbus/TCP firewall rules. Three separate attack paths converge here." },
               { "id": "PLC_BMS",  "label": "PLC-BMS",       "sublabel": "Battery Mgmt",          "warn": false, "zone": "3", "x": 60,  "y": 362, "w": 90,  "h": 34, "paths": ["1"],             "desc": "Battery Management System PLC. Controls charging/discharging of Racks A1–A4. Communicates via unauthenticated Modbus/TCP.", "vuln": "No authentication on Modbus/TCP. Any device with SCADA network access can write register values." },
@@ -2063,6 +2063,8 @@ require 'base64'
             {
               "type": "confirm_action",
               "text": "Disconnect cable JS-SCADA-LAN?",
+              "confirmLabel": "Disconnect",
+              "cancelLabel": "Leave it",
               "onConfirm": [
                 { "type": "set_global", "key": "jump_server_isolated", "value": true }
               ]

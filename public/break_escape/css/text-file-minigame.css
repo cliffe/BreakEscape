@@ -57,6 +57,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 8px 12px;
+    /* the X sits at the title bar's right end, inside the window (critique A34) */
+    padding-right: 48px;
     background: #f6f6f6;
     border-bottom: 2px solid #d1d5db;
     min-height: 28px;
@@ -344,15 +346,18 @@
     .content-header {
         padding: 6px 12px;
         min-height: 32px;
+        flex-wrap: wrap;
+        gap: 6px;
     }
     
     .content-label {
         font-size: 18px;
     }
     
+    /* Readable on a phone: the toolbar wraps rather than shrinking its text (critique A36) */
     .action-btn {
         padding: 3px 8px;
-        font-size: 11px;
+        font-size: 16px;
     }
     
     .file-content {
@@ -485,4 +490,71 @@
     .file-content::-webkit-scrollbar-corner {
         background: #374151;
     }
+}
+
+/* ── In the PC monitor (UX slice 2c R3 M2) ───────────────────────────────────────────
+   A file opened from a PC's desktop or a share opens in that PC's monitor frame, as a
+   maximised window in the share window's look (css/container-minigame.css .pc-share):
+   the file name in the title bar, the PC's buttons (.pc-os-btn), the text in GNF at 16px
+   on the dark pane, the observations in the status bar. No window buttons: the X is on
+   the bezel. */
+.pc-monitor .pc-file-icon {
+    width: 16px;
+    height: 16px;
+    image-rendering: pixelated;
+    flex: 0 0 auto;
+}
+
+.pc-monitor .pc-file-toolbar {
+    flex: 0 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 6px;
+    margin: 0 0 4px;
+}
+
+.pc-monitor .pc-file-toolbar .pc-os-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pc-monitor .pc-file-toolbar .pc-os-btn .icon-small {
+    width: 16px;
+    height: 16px;
+    image-rendering: pixelated;
+}
+
+.pc-monitor .pc-file-message {
+    font-size: 16px;
+    line-height: 18px;
+    color: #000000;
+}
+
+.pc-monitor .pc-file-message.pc-file-message-error {
+    color: #8a0000;
+}
+
+.pc-monitor .pc-file-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin: 0;
+    padding: 6px 8px;
+    background: #1c1c1c;
+    border-bottom: 2px solid #3a3a3a;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.pc-monitor .pc-file-body .file-text {
+    min-height: 0;
+    margin: 0;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 18px;
+    font-weight: normal;
+    color: #dde6ee;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
 }

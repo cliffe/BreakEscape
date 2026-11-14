@@ -29,7 +29,18 @@ export function savedCardConfirmation(cardData) {
     return `${name} is saved on your ${clonerNameInSentence()}. Hold it to the card's reader to play it back.`;
 }
 
+// The close X sits inside the copier's frame (UI design language: the X is inside the frame,
+// never on its border). From the frame's outer edge: 2px outline, 2px bevel, then the body,
+// whose own corner steps reach 10px further in. 12px from the top and right clears all of it.
+export const COPIER_CLOSE_INSET = 12;
+// The battery keeps this gap from the X
+export const COPIER_CLOSE_GAP = 8;
+
 export class RFIDMinigame extends MinigameScene {
+    // The X goes inside the frame (MinigameScene.closeInsideFrame), placed by the copier's
+    // own placeCloseButton below
+    static closeInsideFrame = true;
+
     constructor(container, params) {
         // Set title based on mode
         const title = params.mode === 'clone' ? 'Cloning Card...' : 'RFID Reader';
@@ -56,7 +67,14 @@ export class RFIDMinigame extends MinigameScene {
         // it and the card's id (SYNC_DELTAS_PLAN 5.2, access model 4.2).
         this.cloneSource = params.cloneSource || null;
         this.cloneFrom = params.cloneFrom || null;
-        this.isLockingAttempt = this.requiredCardIds.length > 0; // True if trying to unlock a specific lock, false if just browsing
+        // At a lock with an access list (UX slice 3b) the server decides: each Emulate or
+        // tap sends that one card's id through params.requestAccess (unlock-system.js
+        // requestRfidAccessUnlock) and follows the answer. Such a lock may have no
+        // `requires` at all, so it still counts as a reader.
+        this.accessList = params.accessList === true && typeof params.requestAccess === 'function';
+        this._accessPending = false;
+        // True if trying to unlock a specific lock, false if just browsing
+        this.isLockingAttempt = this.requiredCardIds.length > 0 || this.accessList;
 
         // Components
         this.ui = null;
@@ -92,6 +110,48 @@ export class RFIDMinigame extends MinigameScene {
         }
 
         console.log('🔐 RFIDMinigame initialized');
+    }
+
+    // The copier's frame holds the X
+    closeAnchor() {
+        return this.gameContainer?.querySelector?.('.flipper-zero-frame') || this.gameContainer;
+    }
+
+    /**
+     * The X inside the copier frame at its top right, at every window size: clear of the
+     * stepped corner (COPIER_CLOSE_INSET), level with the header's name line, and the
+     * header's battery moved left so it never sits under the X. Re-run on resize and when
+     * the frame changes size (MinigameScene._watchCloseButton).
+     */
+    placeCloseButton() {
+        const btn = this.container?.querySelector?.('#minigame-close');
+        const frame = this.closeAnchor();
+        if (!btn || !frame?.getBoundingClientRect || btn.style.display === 'none') return;
+        const r = frame.getBoundingClientRect();
+        if (!r.width || !r.height) return;
+        const c = this.container.getBoundingClientRect();
+        const b = btn.getBoundingClientRect();
+        const header = frame.querySelector?.('.flipper-header');
+        if (header) header.style.paddingRight = '';
+        const h = header ? header.getBoundingClientRect() : null;
+        const frameTop = Math.max(r.top, c.top);
+        let top = frameTop + COPIER_CLOSE_INSET;
+        // Level with the header's name line (its box less the rule under it)
+        if (h && h.height && b.height) {
+            const cs = window.getComputedStyle ? window.getComputedStyle(header) : null;
+            const below = cs ? (parseFloat(cs.paddingBottom) || 0) + (parseFloat(cs.borderBottomWidth) || 0) : 0;
+            top = Math.max(top, h.top + (h.height - below - b.height) / 2);
+        }
+        const right = c.right - Math.min(r.right, c.right) + COPIER_CLOSE_INSET;
+        btn.style.top = `${Math.round(top - c.top)}px`;
+        btn.style.right = `${Math.round(right)}px`;
+        btn.classList.add('minigame-close-in-frame', 'rfid-close-in-frame');
+        // Keep the battery clear of the X
+        if (header && h && b.width) {
+            const xLeft = c.right - right - b.width;
+            const reserve = Math.round(h.right - xLeft + COPIER_CLOSE_GAP);
+            if (reserve > 0) header.style.paddingRight = `${reserve}px`;
+        }
     }
 
     start() {
@@ -130,7 +190,20 @@ export class RFIDMinigame extends MinigameScene {
             this.animations.showTapFailure();
             const name = card.scenarioData?.name || 'This card';
             this._showDenial('Card cancelled', () => this.ui.showTapInterface(), 'revoked',
-                `${name} has been deactivated — the reader rejects it.`);
+                `${name} has been deactivated. The reader rejects it.`);
+            return;
+        }
+
+        // At an access list the server decides for this one card
+        if (this.accessList) {
+            const name = card.scenarioData?.name || null;
+            this._askAccessList(cardId, {
+                cardName: name,
+                emulated: false,
+                back: () => this.ui.showTapInterface(),
+                deniedTitle: 'Access Denied',
+                deniedDetail: `${name || 'This card'} is not cleared for this reader.`
+            });
             return;
         }
 
@@ -215,7 +288,7 @@ export class RFIDMinigame extends MinigameScene {
                 }
             }, 0)
         };
-        if (this.isLockingAttempt && typeof this.params.onRefused === 'function') {
+        if (reason && this.isLockingAttempt && typeof this.params.onRefused === 'function') {
             try { this.params.onRefused(reason); } catch (e) { console.warn('onRefused failed:', e); }
         }
     }
@@ -231,6 +304,87 @@ export class RFIDMinigame extends MinigameScene {
             d.screen.removeEventListener('click', d.onTap);
             d.screen.removeEventListener('keydown', d.onKey);
         }
+    }
+
+    /** True while this copier is the minigame on screen (the UI's own check). */
+    _isLive() {
+        if (this.ui && typeof this.ui.isLive === 'function') return this.ui.isLive();
+        return this.gameState?.isActive !== false;
+    }
+
+    /**
+     * Ask the server whether this one card opens an access-list lock (UX slice 3b), and
+     * follow its answer. The request is unlock-system.js requestRfidAccessUnlock, which waits
+     * for a copy still being recorded; the server decides from its own record of the
+     * player's cards (a copy it has not seen, a revoked card, a UID-only copy at a lock that
+     * wants full authentication are all refused there). On a yes the answer is kept in
+     * gameResult.serverResponse, so the door opens from it with no second unlock request.
+     * One request at a time: a second press while one is out does nothing.
+     */
+    _askAccessList(cardId, { cardName, emulated, protocol, isUIDOnly, back, deniedTitle, deniedDetail }) {
+        if (this._accessPending) return;
+        this._accessPending = true;
+        // A tap leaves the door list on screen: show it is being checked (R1 m7)
+        if (!emulated && this.ui && typeof this.ui.showAccessChecking === 'function') this.ui.showAccessChecking(cardName);
+        const emit = (fields) => {
+            if (!emulated || !window.eventDispatcher) return;
+            window.eventDispatcher.emit('card_emulated', {
+                cardName, cardId, protocol: protocol || 'EM4100', uidOnly: !!isUIDOnly,
+                timestamp: Date.now(), ...fields
+            });
+        };
+        Promise.resolve()
+            .then(() => this.params.requestAccess([String(cardId)]))
+            .catch(() => ({ outcome: 'error', response: null }))
+            .then((answer) => {
+                this._accessPending = false;
+                const outcome = answer && answer.outcome;
+                const response = answer && answer.response;
+                // Open before this request (R2 m2): the toast names no card, the copier says so
+                const alreadyOpen = !!(response && response.alreadyOpen === true);
+                const result = { success: true, cardName: alreadyOpen ? null : (cardName || null), emulated, serverResponse: response };
+                if (alreadyOpen) result.alreadyOpen = true;
+                // A yes has already opened the lock on the server, so the world must follow
+                // even when the copier was closed (or replaced) before it could say so
+                const late = () => {
+                    if (typeof this.params.onLateAccessUnlock !== 'function') return;
+                    try { this.params.onLateAccessUnlock(result); } catch (e) { console.warn('onLateAccessUnlock failed:', e); }
+                };
+                if (!this._isLive()) {
+                    if (outcome === 'unlocked') late();
+                    return;
+                }
+                if (outcome === 'unlocked') {
+                    if (window.playUISound) window.playUISound('card_scan');
+                    if (emulated) this.animations.showEmulationSuccess();
+                    else this.animations.showTapSuccess();
+                    this.ui.showSuccess(alreadyOpen ? 'Already open' : 'Access Granted');
+                    this.gameResult = result;
+                    emit({ success: true });
+                    setTimeout(() => {
+                        if (this._isLive()) this.complete(true);
+                        else late();
+                    }, emulated ? 2000 : 1500);
+                    return;
+                }
+                if (outcome === 'error') {
+                    // No answer is not a refusal: nothing reported to the door
+                    this._showDenial('No answer from the reader', back, null,
+                        'The card could not be checked. Try again.', 'notice');
+                    return;
+                }
+                if (window.playUISound) window.playUISound('reject');
+                if (emulated) this.animations.showEmulationFailure();
+                else this.animations.showTapFailure();
+                if (outcome === 'uid_only') {
+                    emit({ success: false, readerRejectsUIDOnly: true });
+                    this._showDenial('Reader requires full authentication', back, 'uid_only',
+                        'Only the UID was copied. This reader checks the card\'s encryption keys too.');
+                    return;
+                }
+                emit({ success: false });
+                this._showDenial(deniedTitle, back, 'wrong_card', deniedDetail);
+            });
     }
 
     /**
@@ -267,7 +421,7 @@ export class RFIDMinigame extends MinigameScene {
                 });
             }
             this._showDenial('Card cancelled', () => this.ui.showSavedCards(), 'revoked',
-                `The clone of ${savedCard.name || 'that card'} no longer works — the card has been deactivated.`);
+                `The clone of ${savedCard.name || 'that card'} no longer works. The card has been deactivated.`);
             return;
         }
 
@@ -297,6 +451,20 @@ export class RFIDMinigame extends MinigameScene {
 
             this._showDenial('Reader requires full authentication', () => this.ui.showSavedCards(), 'uid_only',
                 'Only the UID was copied. This reader checks the card\'s encryption keys too.');
+            return;
+        }
+
+        // At an access list the server decides for this one copy (q97: one at a time)
+        if (this.accessList) {
+            this._askAccessList(cardId, {
+                cardName: savedCard.name || null,
+                emulated: true,
+                protocol,
+                isUIDOnly,
+                back: () => this.ui.showSavedCards(),
+                deniedTitle: 'Card not accepted',
+                deniedDetail: `The clone works, but this reader doesn't take ${savedCard.name || 'that card'}.`
+            });
             return;
         }
 

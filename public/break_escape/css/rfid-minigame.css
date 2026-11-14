@@ -355,7 +355,7 @@
 }
 
 .flipper-info-dim {
-    color: #888;
+    color: #c8c8c8;   /* readable on the copier's dark screen (critique A44) */
     margin: 10px 0;
     text-align: center;
     font-size: 14px;
@@ -695,6 +695,24 @@
     opacity: 0.5;
 }
 
+/* At an access-list reader: the refused-badge line and the "Checking..." line under the
+   reader head, and the door list while a card is being checked (UX slice 3b R1 m3, m7) */
+.flipper-reader-refused,
+.flipper-reader-status {
+    margin: 6px 0;
+}
+.flipper-reader-status[hidden] {
+    display: none;
+}
+.flipper-zero-frame button.flipper-menu-item:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+.flipper-zero-frame button.flipper-menu-item:disabled:hover {
+    background: #3d3d3d;
+    border-color: #6a6a6a;
+}
+
 .flipper-menu-item-dim:hover {
     background: #333;
     opacity: 0.7;
@@ -728,8 +746,9 @@
        screens; here the padding counts inside the width, or 90% plus 40px of padding ran
        past both edges (UX slice 3a R1 m3). The height is the old 80vh of content plus the
        padding, rounded to whole 2px so the bottom steps land on whole pixels.
-       The close X (top 15px, 30px square plus its 4px border: it ends at y 45) sits
-       above the frame and never on its border or stepped corner (R2 m1). The game
+       The close X now sits inside the frame, at its top right (rfid-minigame.js
+       placeCloseButton, UX slice 3b R1); the bands below still keep the frame clear
+       of the window's top and bottom edges (R2 m1). The game
        container already sits 20px in from the top and bottom (minigames-framework.css
        margin: 20px auto), so 32px of padding starts the copier's area 52px down and ends
        it 52px up (100vh - 104px high). The frame is centred in that area, or starts at

@@ -411,6 +411,13 @@ export function applyActions(actions, { source = 'scenario', gameId = null, obje
                     break;
                 }
                 const { text, onConfirm } = action;
+                // The same confirm is already open: drop this copy, so the same switch pressed
+                // twice never stacks two dialogs and runs onConfirm twice (UX slice 16 R1 M1).
+                // A different confirm (a timer's) still opens (R2 m3).
+                if (window.gameConfirmOpen?.(text)) {
+                    console.warn('[applyActions] confirm_action dropped: the same confirm is already open', text);
+                    break;
+                }
                 const label = (v, fallback) => (typeof v === 'string' && v.trim() ? v : fallback);
                 window.gameConfirm(text, label(action.confirmLabel, 'Confirm'),
                     label(action.cancelLabel, 'Cancel')).then(confirmed => {
