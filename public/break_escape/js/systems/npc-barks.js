@@ -219,14 +219,14 @@ export default class NPCBarkSystem {
     // A dialog or modal (tutorial prompt, confirm, pause menu, password, preferences): every
     // bark waits until it closes, as for a minigame (review R1 M1). _watchDialogHold drains.
     if (dialogLayerOpen()) return true;
+    // A ringer call is on the line (or opening): hold every bark, so a click on another
+    // contact's toast cannot open a thread and end the call (phone calls plan 2.9).
+    if (window.phoneRinger?.callActive?.()) return true;
     // Phone chat keeps phone texts from other contacts on top, but speech from someone in the
     // building is not a notification for a thread: it waits until the phone closes (R1 M1)
     if (window.MinigameFramework?.isOpen?.('phone-chat')) {
       if (payload ? this._isSpeech(payload) : this.deferredBarkQueue.some(p => this._isSpeech(p))) return true;
     }
-    // A ringer call is on the line (or opening): hold every bark, so a click on another
-    // contact's toast cannot open a thread and end the call (phone calls plan 2.9).
-    if (window.phoneRinger?.callActive?.()) return true;
     // The phone keeps other contacts' barks on top, but a bark from the contact whose
     // thread is open waits until the phone closes (m04 confirmation N1). With no
     // payload (the drain's check), hold while any queued bark is from that contact.

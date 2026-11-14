@@ -21,6 +21,7 @@ import { releaseHeldBarks as realRelease } from './policy.mjs';
 const releaseHeldBarks = (q, o) => realRelease(q, { ...o, gapMs: globalThis.__gapMs, voiceCapMs: globalThis.__capMs, pauseMs: globalThis.__pauseMs });
 const ASSETS_PATH = '', overlayDepth = () => 0, displayDashes = (s) => s;
 const workstationPopupOpen = () => false, phoneThreadOpenFor = () => false, openPhoneThread = () => null, threadTextKey = () => '';
+const dialogLayerOpen = () => false;   // ui/hud-lanes.js (review R1 M1: dialogs hold barks)
 const barkLifetimeMs = () => 0, barksToTrim = () => 0, BARK_RESUME_MIN_MS = 0, inventoryBlockedByForcedMinigame = () => false;
 const phoneBarkText = (s) => s;
 class TTSManager {}
