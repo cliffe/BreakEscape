@@ -198,6 +198,40 @@ module BreakEscape
       assert stored.all? { |e| newest - e['ts'] <= 60_000 }, 'every kept entry is within the 60 s window'
     end
 
+    # Chunk 5 size bound: a hostile flood mixing over-cap key counts, an over-length key name
+    # and deletions must leave the ring within every bound (8 entries, 32 recorded keys per
+    # entry, 128 bytes per kept claim key), and the ring must never reach the client.
+    test 'a hostile flood keeps the ring within every bound and never ships it' do
+      base = 2_000_000
+      long_key = 'k' * 200   # over the 128-byte cap: its section collapses to a whole claim
+      50.times do |i|
+        gv =
+          case i % 3
+          when 0 then (1..40).each_with_object({}) { |k, h| h["flood#{i}_#{k}"] = k } # over the 32-key cap
+          when 1 then { long_key => i, "set#{i}" => i }                               # a 200-byte key name
+          else        { "set#{i - 1}" => nil, "d#{i}" => i }                          # a deletion plus a set
+          end
+        sync(clientTs: base + i, globalVariables: gv)
+        assert_response :success
+      end
+
+      stored = ring
+      assert_operator stored.size, :<=, 8, 'at most 8 entries'
+      stored.each do |entry|
+        count = entry['w'].sum { |_, claim| claim == true ? 1 : claim.size }
+        assert_operator count, :<=, 32, "entry #{entry['ts']} stays within 32 recorded keys"
+        entry['w'].each_value do |claim|
+          next unless claim.is_a?(Array)
+
+          claim.each { |k| assert_operator k.to_s.bytesize, :<=, 128, 'every kept claim key is within 128 bytes' }
+        end
+      end
+
+      get scenario_game_url(@game)
+      assert_response :success
+      refute_includes response.body, 'syncWrites', 'the ring never appears in the bootstrap JSON'
+    end
+
     test 'an entry more than 60 s below a newer write is expired' do
       sync(clientTs: 1_000_000, globalVariables: { 'old' => 1 })
       assert_equal 1, ring.size

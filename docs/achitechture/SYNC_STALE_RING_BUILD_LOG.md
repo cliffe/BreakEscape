@@ -351,3 +351,87 @@ Tests run (without the shared lock, no full suites):
   them via the ring, so it is a no-op); this is the one client-visible behaviour change and
   the updated hidden-save tests assert it. The JS `modelServer` assumes the completeness
   guard holds; the guard's failure (an evicted newer write) is covered by the Ruby tests.
+
+## Chunk 4 review R1 folds (minors m1, m2, m3)
+
+The three R1 minors (SYNC_STALE_RING_C4_REVIEW_R1.md), each committed on its own.
+
+- m3 (dead `prevTs`). Dropped the `prevTs` field from the in-flight flight record in
+  `state-sync.js`: it stopped being read once the below-stamp suppression was removed. The
+  `_flushesInFlight` comment, `flush()` (the `let prevTs` and the since-destructure), the
+  flight object and `_changesSinceInFlight`'s return and jsdoc all dropped it. No behaviour
+  change; the two JS test comments that name the old rule read `clientTs`, not a field, so
+  they stand. `state-sync-hidden-save` 39 pass.
+- m2 (the untested loss direction). Added a Ruby test to `sync_stale_ring_test.rb` driving the
+  D-first order against a game with a stored `lastSyncClientTs` and a clean ring (no
+  qualifying entry at or below H). D lands fresh; H then lands stale, the completeness guard
+  fails, H whole-skips and its unique section is dropped; the answer is 200 `stale:true`; the
+  next fresh sync writes normally. Pins the documented R2 cost so a later change that widened
+  the empty-ring window cannot drop a hidden flush silently.
+- m1 (the JS model overstated the guarantee). The JS `modelServer` now models the
+  completeness guard (`guardHolds`) and the empty/incomplete-ring whole-skip, matching the
+  server. The four ring-recovery tests (R2 m1 after-pagehide, the reduced-note recovery, the
+  residual-loss close, and C4 race (a) H2-before-H1) now seed a qualifying ring entry below
+  the hidden flush (`seedQualifyingRing`), the precondition a real session always meets. Added
+  the no-entry interleaving case (mirror of the Ruby m2 test): D first, H stale with no
+  qualifying entry, H whole-skipped. `state-sync-hidden-save` 40 pass.
+
+## Chunk 5: size-bound test and the live browser reordered-request proof
+
+Scope (plan section 10, 11.5): a size-bound Ruby test under a hostile flood, and the live
+browser proof on a keyless server driving the real re-stamp with held, reordered PUTs.
+
+Files:
+
+- `test/controllers/break_escape/sync_stale_ring_test.rb`: "a hostile flood keeps the ring
+  within every bound and never ships it" floods 50 syncs mixing over-cap key counts (40 keys),
+  an over-length key name (200 bytes) and deletions, then asserts the ring stays within 8
+  entries, 32 recorded keys per entry and 128 bytes per kept claim key, and that the bootstrap
+  JSON never contains `syncWrites`.
+- `tools/playtest/sync-stale-ring-live-proof.mjs` (new): the live proof. It follows the
+  existing `tools/playtest/*.mjs` live-proof convention (Playwright + the `window.__test`
+  bridge, games created only through `new-game.rb`). It drives the real flush path so the
+  client itself stamps the reduced pagehide body D above the hidden flush H (`nextClientTs`),
+  holds both PUT `/sync_state` requests at the Playwright route layer, and releases them in
+  each order against the real controller, asserting the persisted state through a fresh
+  bootstrap (GET `/scenario`). Health drives gap 2 (a whole-section claim), the global g drives
+  gap 3 (a per-key claim); a reload case holds page A's flush, reloads into page B, lets B
+  sync, then releases A. It reads the stamps the client produced (never hand-picked), so it
+  proves the shipped client change, not a helper.
+
+Commands and output (keyless server on :3671 by hand, the start-keyless-server.sh pattern with
+the assigned port; :3001 was already in use, so this run used :3670 which was free):
+
+```
+# start (env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true, assigned port, by hand)
+env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true RBENV_VERSION=2.7.8 \
+  nohup bundle exec rails server -b 127.0.0.1 -p 3670 -P tmp/pids/server-3670.pid \
+  > tmp/keyless-3670.log 2>&1 &
+# (boot log carries the "GEMINI_API_KEY ... is not set" warning: keyless, no TTS)
+
+node tools/playtest/sync-stale-ring-live-proof.mjs --port 3670 --mission test_simple_success
+
+PASS  gap2 health, Dfirst  tsH=...680 tsD=...747 (D>H true) health=70 blob=true
+PASS  gap3 global g, Dfirst tsH=...035 tsD=...075 (D>H true) g=7 blob=true
+PASS  gap2 health, Hfirst   tsH=...109 tsD=...143 (D>H true) health=70 blob=true
+PASS  gap3 global g, Hfirst  tsH=...958 tsD=...989 (D>H true) g=7 blob=true
+PASS  reload A held, B wins  tsA=...754 tsB=...643 (B>A true) g=B
+5/5 checks passed
+
+# server killed by PID afterwards (kill <PID from tmp/keyless-3670.log "PID:" line>)
+```
+
+Each gap case shows `tsD > tsH` (the client re-stamp, read off the held request bodies) and
+the newer value persisted in BOTH landing orders; `blob=true` is the ring recovering H's
+unique key on the stale-but-recent path (gap 1 shrink). The reload case shows `tsB > tsA` and
+B's value standing after A's older flush was released.
+
+Verification (no lock, no full suites):
+
+- Ruby: `sync_stale_ring_test` 21, `sync_stale_ring_merge_test` + `sync_ring_test` (45
+  together with it), and the section-10 neighbours `captures_sync_test`, `capture_proofs_test`,
+  `current_room_guard_refusal_test`, `mail_state_sync_test`, `saved_current_room_test`,
+  `reload_persistence_test`, `format_version_test` (151 runs together). All green.
+- JS: `state-sync` 27, `state-sync-hidden-save` 40, `sync-request-sizes` 8, `sync-delta-proof`
+  8, `global-sync-declared` 20, `npc-ko-sync-soon` 4, `social-state-sync-confirmed` 11. All
+  green.
