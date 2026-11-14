@@ -80,7 +80,7 @@ export class AlarmPanelMinigame extends MinigameScene {
         const CX    = 40;
         const R     = 14;
         const ROW_H = 68;
-        const SVG_W = 420;
+        const SVG_W = 320;
         const SVG_H = 30 + this._lamps.length * ROW_H + 20;
 
         const panelTitle = escapeWithBreaks(displayDashes(this._panelTitle || 'FACILITY ALARM PANEL'));
