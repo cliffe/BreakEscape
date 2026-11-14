@@ -32,6 +32,7 @@
 
 import { SocialOverlayScene } from '../framework/social-overlay.js';
 import { writeGlobal } from '../../systems/global-writer.js';
+import { recordLandingPageBuild } from '../../systems/se-landing-page-client.js';
 import { createConceptCard } from '../osint-browser/concept-card.js';
 import { renderLandingPage, logoMissing, logoSrc } from './landing-page-render.js';
 import {
@@ -1012,6 +1013,19 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
             ? ((this.choices.check && this.choices.check.hostId) || '')
             : (this.choices.domainId || '');
         writeGlobal(`landing_${this.pageId}_domain`, domainValue);
+
+        // Record the build server-side so the gate reads the server's own recomputed verdict,
+        // not the client's (PHISH_EVIDENCE_SERVER_PLAN.md section 3.2, Route 1). Fire-and-forget
+        // after the local writeGlobal so the UI is unchanged; the server recomputes the score
+        // from these choices and ignores any client verdict. The POST itself lives in
+        // systems/se-landing-page-client.js so the builder folder calls no network API (proven by
+        // social-landing-page-render.test.mjs). Guarded so the builder still runs headless (no
+        // window/fetch) in tests. The promise is kept so the send path can await the build landing
+        // before it posts (plan section 10).
+        this._buildPost = recordLandingPageBuild({
+            pageId: this.pageId, targetId: this.targetId, choices: this.choices
+        });
+
         this._attached = true;
         this._announce('Page attached.');
         this.gameResult = this.closeResult();
