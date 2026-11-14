@@ -3486,3 +3486,75 @@ harness is re-run with it included (the combination capture secret, Rhea's accou
 Tess's door-entry secret: old predicates served them, new predicates withhold them); that run was not
 repeated on the second pass (the corpus predicate diff was already empty on the first pass; this
 scenario only demonstrates the harness can see a change).
+
+### Step 3 review R1 fixes (2026-11-14)
+
+Review `SCENARIO_FORMAT_STEP3_REVIEW_R1.md` returned FIX with one Major and two minors, all in
+`scripts/validate_secret_leaks.rb`. The three findings are closed; no engine or server code moved,
+and the comparator and the serving predicates are untouched.
+
+**M1 (Major), the door-entry leak guard (plan item 4 error).** A bare door entry (a
+`rooms.*.doors[]` entry with a `requires` but no `lockType` of its own) is not stripped by the
+server: `GamesController#filter_requires_recursive` and `Game#filter_inventory_for_client!` delete
+`requires` only from a node that carries its own `lockType`, so the entry's `requires` ships in the
+room payload. Collect-answers compared the resolved entry answer only against globals, minigameData
+and scenarioData, and `lock_type_issues` skipped door entries, so the plan's named error was never
+emitted. Added `SecretLeaks.door_entry_issues(rooms)`, called from `lock_type_issues`. It walks each
+room's `doors[]`, resolves only the entries `NpcHabits.doorway_problem` clears (as
+`CaptureModel.each_lock_answer` does), and for an entry with no own `lockType` whose connected room
+has a secret lock type (pin, password, combination, cryptex) and that carries a `requires`, emits the
+error the plan names (`set a lockType on the entry, or remove requires and let the room carry it`).
+An rfid, biometric or bluetooth card id is not a secret, so a bare entry resolving to one of those is
+left clean: the two corpus rfid bare-`requires` entries (lab_physical_pentest and test_gate_tailgate)
+stay silent.
+
+**m2, the door-entry mismatch warning (plan item 4 warning).** Same pass. When an entry's own lock
+type or `requires` differs from its connected room's, it warns (`the server checks the room's lock,
+so the player sees one lock and the server checks another`). The warning is suppressed on an entry
+the M1 error already named. No corpus entry differs from its room, so this adds no corpus line.
+
+**m1, the array form of a combination answer under minigameData.** `collect_scalars` flattened every
+array into its scalar elements before matching, so an array leaf never reached the array branch of
+`answer_matches_leaf?` and a combination copied as an equal array (`[12, 30, 5]`) was missed. The
+array branch is kept, not deleted: `collect_scalars` now yields each array whole (for the combination
+comparison) and then still descends into its elements (for every other kind). A combination answer
+matches an equal array; no other kind matches an array leaf, so there is no new false positive.
+
+**Node fixtures** (`test/js/validator-secret-leaks.test.mjs`, now 24 subtests, was 18): the M1 error
+(a bare door entry whose connected room is a pin lock); the rfid non-error (a bare entry resolving to
+rfid raises nothing); the m2 mismatch warning (an entry whose `requires` differs from its room); the
+matching-door no-warning; the array combination leak (`[12, 30, 5]` under minigameData is an error);
+and a non-equal array (`[1, 2, 3]`), which is not flagged. The three focused node suites pass:
+`validator-secret-leaks` 24/0, `validator-acknowledged-clues` 10/0, `validator-known-failures` 15/0.
+
+**test_secret_leaks door entry corrected.** The review's M1 impact note said no corpus scenario
+triggers the guard ("both corpus door entries with a bare `requires` are rfid cards"). That missed a
+third bare-`requires` entry, in step 3's own fixture `scenarios/test_secret_leaks/`: its office door
+to the vault carried `"requires": "4821"` with no `lockType`, and the vault room is a pin lock with
+the same answer 4821, so the door entry shipped the vault PIN plainly in the office room payload. That
+is a real leak, and it defeated the scenario's own withholding demo (the brief states "Nothing is
+copied into a global or minigameData, so the validator reports no secret leak"; the PIN is Tess's
+`usePayload` capture secret, meant to ship only from `/capture_secrets` once her dropped-USB proof
+holds). The sanctioned fix from the M1 message was applied: the redundant `requires` was removed from
+the office door entry, leaving the vault room to carry the pin lock. 4821 now ships only from
+`/capture_secrets` after the proof, as the brief intends. The scenario still validates clean (0
+errors, 0 warnings, ink on). The vault pin lock still gates entry, so the live-proof cases are
+unchanged; the live-proof builder should note the office door entry no longer carries a `requires`.
+
+**Corpus diff vs `9c05765e0` (ink on).** The three validator changes touch only the secret-leak
+check, so the effect was isolated by running `check_secret_leaks` over every rendered scenario with
+the base `validate_secret_leaks.rb` (from a hand-made detached worktree at `9c05765e0`) and with the
+fixed one, and diffing the `secret leak` / `acknowledged clue` / door-entry lines per scenario. Over
+the task's named set (m01-m10, sis01-sis03, the labs, the test scenarios, 81 scenarios) and over the
+full 185-scenario corpus, the diff is **empty**: 0 new errors, 0 new warnings, 0 new info lines. The
+one would-be new error (test_secret_leaks' door entry) was removed at its source, as above. No corpus
+door entry is a bare-`requires` secret or differs from its room, and no combination answer equals an
+array leaf under globals/minigameData/scenarioData, so the array change adds nothing to the corpus
+either.
+
+**Focused Rails tests** (step 3 files from the completion section, under the shared flock lock,
+`RBENV_VERSION=2.7.8`): `secret_leak_withholding_test`, `combination_cryptex_unlock_test`,
+`capture_proofs_test`, `capture_secret_endpoint_test`, `capture_payload_secret_routes_test`,
+`access_leak_scanner_test`, `access_leak_scanner_feed_test` together: **164 runs, 833 assertions, 0
+failures, 0 errors, 0 skips** (unchanged from the completion run; these fixes touch only the
+validator and one fixture scenario). No new gems or npm packages.
