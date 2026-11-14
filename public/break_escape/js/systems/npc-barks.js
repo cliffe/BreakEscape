@@ -10,7 +10,7 @@ import { releaseHeldBarks } from './bark-release-policy.js';
 import { workstationPopupOpen, phoneThreadOpenFor, openPhoneThread, threadTextKey } from '../utils/overlay-open.js';
 import { barkLifetimeMs, barksToTrim, BARK_RESUME_MIN_MS } from './bark-lifetime.js';
 import { inventoryBlockedByForcedMinigame } from './forced-minigame-guard.js';
-import { barkSource, arrowDirection, startHudLanes } from '../ui/hud-lanes.js';
+import { barkSource, arrowDirection, startHudLanes, dialogLayerOpen } from '../ui/hud-lanes.js';
 import { applyHeadshotBox } from '../utils/npc-headshot.js';
 
 // The phone notification's icon (B2 option A): 16x16 pixel art at 1x
@@ -199,6 +199,7 @@ export default class NPCBarkSystem {
       console.log('💬 conversation/minigame open — deferring bark:', payload.text || payload.message);
       this.deferredBarkQueue.push(payload);
       if (!this._shouldDefer()) this.drainDeferredBarks();
+      else this._watchDialogHold();
       return null;
     }
 
@@ -215,6 +216,14 @@ export default class NPCBarkSystem {
     // workstation's operations list (m04 F7). They drain the queue on close.
     if (workstationPopupOpen()) return true;
     if (window.MinigameFramework?.holdsBarks?.()) return true;
+    // A dialog or modal (tutorial prompt, confirm, pause menu, password, preferences): every
+    // bark waits until it closes, as for a minigame (review R1 M1). _watchDialogHold drains.
+    if (dialogLayerOpen()) return true;
+    // Phone chat keeps phone texts from other contacts on top, but speech from someone in the
+    // building is not a notification for a thread: it waits until the phone closes (R1 M1)
+    if (window.MinigameFramework?.isOpen?.('phone-chat')) {
+      if (payload ? this._isSpeech(payload) : this.deferredBarkQueue.some(p => this._isSpeech(p))) return true;
+    }
     // A ringer call is on the line (or opening): hold every bark, so a click on another
     // contact's toast cannot open a thread and end the call (phone calls plan 2.9).
     if (window.phoneRinger?.callActive?.()) return true;
@@ -297,6 +306,8 @@ export default class NPCBarkSystem {
     // drain still running and returned) would wait for the next trigger: go round once more.
     // Each pass shows at least one bark or drops one, so this ends; the flag guards re-entry.
     if (this.deferredBarkQueue.length > 0 && !this._shouldDefer()) return this.drainDeferredBarks();
+    // A dialog opened part way through: the rest go when it closes
+    if (this.deferredBarkQueue.length > 0) this._watchDialogHold();
   }
 
   /**
@@ -404,11 +415,8 @@ export default class NPCBarkSystem {
     }
     // Phone text or speech in the building (B2 option A): two looks, two places
     const manager = this.npcManager || (typeof window !== 'undefined' ? window.npcManager : null);
-    // An NPC whose room has not loaded is not registered yet: the scenario still says who they are
-    const npcDef = (npcId && (manager?.getNPC?.(npcId) || NPCBarkSystem.scenarioNpc(npcId))) || null;
-    const source = barkSource({ npcType: npcDef?.npcType || contact?.npcType || null, channel: payload.channel || null,
-      hasClickHandler: typeof payload.onClick === 'function' });
-    const speech = source === 'speech' && !!this.speechContainer;
+    const npcDef = (npcId && manager?.getNPC?.(npcId)) || null;
+    const speech = this._isSpeech(payload) && !!this.speechContainer;
     const host = speech ? this.speechContainer : this.container;
     this.lastRoute = { npcId, route: 'toast', source: speech ? 'speech' : 'phone' };
 
@@ -496,6 +504,14 @@ export default class NPCBarkSystem {
     this._startAutoClose(el, barkLifetimeMs(textSpan.textContent));
     if (speech) return ttsPromise;   // not clickable: it never takes a tap meant for Block or the room
 
+    // A text that steps aside on a short screen (ui/hud-lanes.js) waits: its countdown pauses
+    // while it is hidden and goes on when it shows again (review R1 m1)
+    el._onLaneYield = (hidden) => {
+      el._laneYielded = !!hidden;
+      if (hidden) this._pauseAutoClose(el);
+      else this._resumeAutoClose(el);
+    };
+
     el.addEventListener('mouseenter', () => this._pauseAutoClose(el));
     el.addEventListener('mouseleave', () => this._resumeAutoClose(el));
 
@@ -577,7 +593,7 @@ export default class NPCBarkSystem {
   }
 
   _resumeAutoClose(el) {
-    if (el._removing || !el._autoClosePaused) return;
+    if (el._removing || !el._autoClosePaused || el._laneYielded) return;
     el._autoClosePaused = false;
     this._startAutoClose(el, Math.max(BARK_RESUME_MIN_MS, el._autoCloseRemaining));
   }
@@ -684,16 +700,32 @@ export default class NPCBarkSystem {
     });
   }
 
-  /** An NPC's definition in the loaded scenario (any room, or the scenario's own npcs list), or null. */
-  static scenarioNpc(npcId, scenario = (typeof window !== 'undefined' ? window.gameScenario : null)) {
-    if (!npcId || !scenario) return null;
-    const lists = [scenario.npcs, ...Object.values(scenario.rooms || {}).map(r => r && r.npcs)];
-    for (const list of lists) {
-      if (!Array.isArray(list)) continue;
-      const hit = list.find(n => n && n.id === npcId);
-      if (hit) return hit;
-    }
-    return null;
+  /**
+   * Is this bark speech from someone in the building (the message lane) rather than a phone
+   * text? Only registered phone contacts, timed messages (channel 'phone') and a caller's own
+   * click handler make a phone text; anyone else is speech, registered or not (review R1 M4:
+   * the client scenario has no NPC lists until a room loads).
+   */
+  _isSpeech(payload = {}) {
+    const manager = this.npcManager || (typeof window !== 'undefined' ? window.npcManager : null);
+    const npc = (payload.npcId && manager?.getNPC?.(payload.npcId)) || null;
+    return barkSource({ npcType: npc?.npcType || null, channel: payload.channel || null,
+      hasClickHandler: typeof payload.onClick === 'function' }) === 'speech';
+  }
+
+  /**
+   * Dialogs are not minigames, so nothing calls drainDeferredBarks when one closes: while barks
+   * are held behind one, look every DIALOG_HOLD_POLL_MS and release them once it has gone. The
+   * release itself is the usual one (order, gaps and voice waits unchanged).
+   */
+  _watchDialogHold() {
+    if (this._dialogHoldTimer || typeof setInterval !== 'function' || !dialogLayerOpen()) return;
+    this._dialogHoldTimer = setInterval(() => {
+      if (dialogLayerOpen()) return;
+      clearInterval(this._dialogHoldTimer);
+      this._dialogHoldTimer = null;
+      if (this.deferredBarkQueue.length > 0 && !this._shouldDefer()) this.drainDeferredBarks();
+    }, NPCBarkSystem.DIALOG_HOLD_POLL_MS);
   }
 
   /** Compass point from the player to a speaker's sprite (hud-lanes.js arrowDirection), or null. */
@@ -1058,3 +1090,6 @@ export default class NPCBarkSystem {
     }
   }
 }
+
+// How often a bark held behind a dialog checks whether the dialog has closed (_watchDialogHold)
+NPCBarkSystem.DIALOG_HOLD_POLL_MS = 250;

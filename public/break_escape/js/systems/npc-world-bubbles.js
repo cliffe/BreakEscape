@@ -91,7 +91,9 @@ export const HUD_SELECTORS = ['.objectives-panel', '#inventory-container', '#hea
     // scanner panels, and each toast on screen (not the stacks, which can be empty and large)
     '#music-widget-panel', '#phone-ring-layer .incoming-call', '.npc-interaction-prompt', '#vm-controls-overlay',
     '.panel-container', '#bluetooth-panel', '#biometrics-panel',
-    '#npc-bark-container .npc-bark', '#notification-container .notification'].join(', ');
+    '#npc-bark-container .npc-bark', '#notification-container .notification',
+    // The speech line in the message lane (review R1 m2): a bubble keeps clear of it too
+    '#npc-speech-container .npc-bark'].join(', ');
 // Above the room lighting (LIGHT_DEPTH, glows at +1 and +2): under it the fill took the
 // room's light, a soft ramp with a hard seam at the room's edge (R3 m2). Below the overlay
 // markers (overlayDepth: talk icons, health bars, damage numbers at LIGHT_DEPTH + 10 and up).

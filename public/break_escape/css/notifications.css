@@ -123,6 +123,18 @@ body.hud-compact .notification.error:not(.verbatim) .notification-message {
     line-clamp: 3;
 }
 
+/* A short line with no title: a finished task or aim on a phone (objectives-manager.js). The
+   whole text shows, wrapping (two lines for most task names), so it is never cut (R1 M2). */
+body.hud-compact .notification.brief {
+    padding: 8px 40px 8px 14px;
+}
+body.hud-compact .notification.brief .notification-message {
+    display: block;
+    -webkit-line-clamp: none;
+    line-clamp: none;
+    overflow: visible;
+}
+
 /* Confirmation dialog */
 .game-confirm-overlay {
     position: fixed;

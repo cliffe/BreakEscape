@@ -33,7 +33,6 @@ export class ObjectivesPanel {
     // Phones (UI decision H1 option A): the panel is a one-line pill in the top bar, the current
     // aim and its count. It never opens by itself; a tap opens it as a sheet with an X.
     this._pillFlashTimer = null;
-    this._pillFlash = null;
     this._wasCompact = ObjectivesPanel.compactNow();
     if (this._wasCompact) this.setCollapsed(true);
     this._compactCue = () => {
@@ -43,6 +42,15 @@ export class ObjectivesPanel {
       this.container.classList.toggle('objectives-sheet', compact && !this.isCollapsed);
     };
     window.addEventListener?.('resize', this._compactCue);
+    // Esc closes the open sheet before the game's Esc opens the pause menu, as Esc closes any
+    // pop-up first (review R1 M3). Capture phase on window, so it runs before game-menu.js.
+    this._escCue = (e) => {
+      if (e.key !== 'Escape' || !this.container?.classList.contains('objectives-sheet')) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      this.setCollapsed(true);
+    };
+    window.addEventListener?.('keydown', this._escCue, true);
     this.manager.addListener((aims) => this.render(aims));
 
     // Initial render
@@ -60,7 +68,7 @@ export class ObjectivesPanel {
     header.className = 'objectives-header';
     header.innerHTML = `
       <span class="objectives-title"><i class="objectives-clipboard" aria-hidden="true"></i><span class="objectives-title-text">Objectives</span></span>
-      <span class="objectives-pill-summary" aria-live="polite"></span>
+      <span class="objectives-pill-summary" aria-live="polite"><span class="objectives-pill-count"></span><span class="objectives-pill-text"></span></span>
       <div class="objectives-controls">
         <button class="objectives-toggle" aria-label="Toggle objectives" title="Collapse/Expand">${CHEVRON}</button>
       </div>
@@ -179,37 +187,42 @@ export class ObjectivesPanel {
     return { title: aim.title || '', done, total: visible.length };
   }
 
-  /** Write the pill's line (the flash, while one shows, else the current aim). */
+  /**
+   * Write the pill's line: the count first, in a box of its own that never shrinks, then the
+   * current aim, cut with an ellipsis; the whole line is the pill's title (review R1 M2).
+   */
   updatePill(aims = this._lastAims) {
     const el = this.container?.querySelector('.objectives-pill-summary');
     if (!el) return;
-    if (this._pillFlash) { el.textContent = this._pillFlash; return; }
     const sum = ObjectivesPanel.pillSummary(aims);
-    el.textContent = sum ? (sum.total ? `${sum.title} ${sum.done}/${sum.total}` : sum.title) : '';
+    const count = sum && sum.total ? `${sum.done}/${sum.total}` : '';
+    const countEl = el.querySelector('.objectives-pill-count');
+    const textEl = el.querySelector('.objectives-pill-text');
+    if (countEl) { countEl.textContent = count; countEl.hidden = !count; }
+    if (textEl) textEl.textContent = sum ? sum.title : '';
+    const header = this.container.querySelector('.objectives-header');
+    const full = sum ? (count ? `${sum.title} (${count})` : sum.title) : 'Objectives';
+    if (header) header.title = full;
   }
 
   /**
-   * On a phone an objective toast (task complete, new task, aim complete, new aim) folds into
-   * the pill: it pulses and shows the news for a few seconds instead of a toast over the room
-   * (H1 option A). Returns true when it folded, so the caller skips the toast.
+   * On a phone the pill blinks for an objective's news (task complete, new task, aim complete,
+   * new aim). It shows no text of its own, so the count stays readable: a new task or aim shows
+   * in the pill's line and sheet; a finished task or aim also gets a short line in the notify
+   * lane (objectives-manager.js), since the pill moves on from it (review R1 M2). Returns true
+   * on the phone layout with the pill showing.
    */
   foldToast(title, message, ms = ObjectivesPanel.PILL_FLASH_MS) {
     if (!ObjectivesPanel.compactNow() || !this.container || this.container.classList.contains('hidden')) return false;
     if (document.body?.classList?.contains('minigame-active')) return false;   // pill hidden: keep the toast
-    this._pillFlash = `${title}: ${message}`;
-    this.updatePill();
     this.container.classList.remove('pill-pulse');
     void this.container.offsetWidth;   // restart the pulse
     this.container.classList.add('pill-pulse');
     clearTimeout(this._pillFlashTimer);
-    this._pillFlashTimer = setTimeout(() => {
-      this._pillFlash = null;
-      this.container.classList.remove('pill-pulse');
-      this.updatePill();
-    }, ms);
+    this._pillFlashTimer = setTimeout(() => this.container?.classList.remove('pill-pulse'), ms);
     return true;
   }
-  
+
   /**
    * Required tasks get a '*' only in an aim that has at least one visible
    * optional task, so aims (and missions) without optional tasks look as they
@@ -441,6 +454,7 @@ export class ObjectivesPanel {
     }
     if (this._moreBelowCue) window.removeEventListener?.('resize', this._moreBelowCue);
     if (this._compactCue) window.removeEventListener?.('resize', this._compactCue);
+    if (this._escCue) window.removeEventListener?.('keydown', this._escCue, true);
     clearTimeout(this._pillFlashTimer);
     this._moreBelowObserver?.disconnect();
     this._moreBelowObserver = null;

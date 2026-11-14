@@ -1060,6 +1060,18 @@
   max-height: calc(40px + 2 * var(--ui-frame-px));
 }
 
+/* Phones: the one-line pill takes the small square frame, not the 18px panel frame, so the
+   aim's text has the room (review R1 M2). Same test as ui/hud-lanes.js isCompactViewport. */
+@media (max-width: 899.98px), (max-height: 500px) {
+  [data-ui-theme] .objectives-panel.collapsed {
+    border-width: var(--ui-square-px);
+    border-image-source: var(--ui-square-image);
+    border-image-slice: var(--ui-square-slice) fill;
+    border-image-width: var(--ui-square-px);
+    max-height: calc(40px + 2 * var(--ui-square-px));
+  }
+}
+
 [data-ui-theme] .objectives-header {
   background: var(--ui-surface-raised);
   border-bottom: 2px solid var(--ui-line);

@@ -49,9 +49,27 @@ body.minigame-holds-barks #npc-speech-container {
   z-index: 1400 !important;
 }
 
-/* The notify lane is full: phone texts step aside while a toast or speech shows (ui/hud-lanes.js).
-   They are still in the phone thread, with the unread badge. */
-#npc-bark-container.hud-lane-yield {
+/* An open dialog or modal (tutorial, confirm, pause menu, password, preferences, the ending)
+   keeps both bark lanes under it, so a line never covers its buttons and a phone text never
+   takes a tap meant for them (review R1 M1). New barks wait for it to close (npc-barks.js);
+   the tutorial overlay is 1400. The list matches ui/hud-lanes.js DIALOG_SELECTORS. */
+body:has(.tutorial-prompt-overlay, .tutorial-overlay, .game-confirm-overlay, #game-menu-overlay.visible,
+  #password-modal.show, #password-modal[style*="flex"], #player-preferences-modal[style*="flex"],
+  .ending-check-overlay, .success-screen-overlay) :is(#npc-bark-container, #npc-speech-container) {
+  z-index: 1390 !important;
+}
+
+/* Phone chat: speech in the building waits until the phone closes and any line already showing
+   sits under the phone (minigames are 1500). Phone texts from other contacts stay on top: they
+   flag another thread, and on a wide screen the notify lane keeps right of the phone. */
+body:has([data-minigame="phone-chat"]) #npc-speech-container {
+  z-index: 1400 !important;
+}
+
+/* The notify lane is full: phone texts step aside one at a time, oldest first, while a toast or
+   speech shows (ui/hud-lanes.js); a hidden text's countdown waits. They are still in the phone
+   thread, with the unread badge. */
+#npc-bark-container .npc-bark.hud-lane-yield {
   display: none;
 }
 

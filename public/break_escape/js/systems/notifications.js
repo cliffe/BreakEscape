@@ -396,6 +396,9 @@ function renderNotification(message, type, title, duration, seen = false, option
         // Never cut short on a phone (the two-line limit, css/notifications.css): it is copied
         if (verbatim) notification.classList.add('verbatim');
     }
+    // A short line with no title (a finished task on a phone, objectives-manager.js): its text
+    // is never cut, so the task's name can always be read (review R1 M2)
+    if (options?.brief === true) notification.classList.add('brief');
     notification._toast = { message, type, title, duration, shownAt: Date.now(), seen, html: !plainText, verbatim };
     
     // Add to container

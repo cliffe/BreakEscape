@@ -37,18 +37,33 @@ export function laneBudgetShare({ compact, vh }) {
 /**
  * Which lane members step aside (are hidden until there is room) when the messages need more
  * than the budget, in this order: the caption first (it comes back on the next hover or tap),
- * then the phone texts (they are kept in the phone thread, with the unread badge). Speech is
- * voiced and toasts explain a refusal, so they never step aside; they share what is left.
- * @param {{caption:number, speech:number, toasts:number, phone:number}} h  heights (0 = none)
- * @returns {{caption:boolean, phone:boolean}}
+ * then the phone texts one at a time, oldest first (they are kept in the phone thread, with the
+ * unread badge, and their countdown waits while they are hidden). Speech is voiced and toasts
+ * explain a refusal, so they never step aside; they share what is left.
+ * @param {{caption:number, speech:number, toasts:number, phone:number|number[], phoneExtra?:number}} h
+ *   heights (0 = none); phone is one height or each text's height, oldest first; phoneExtra is
+ *   the "Clear all" button, counted while any text shows
+ * @returns {{caption:boolean, phone:boolean, phoneHidden:number}} phone is true when every text
+ *   stepped aside; phoneHidden is how many did (the oldest ones)
  */
 export function laneYields(h, budget, gap = LANE_GAP) {
-  const need = (list) => list.filter(x => x > 0).reduce((a, x) => a + x + gap, 0);
-  const out = { caption: false, phone: false };
-  if (need([h.caption, h.speech, h.toasts, h.phone]) <= budget) return out;
-  if (h.caption > 0 && (h.speech > 0 || h.toasts > 0 || h.phone > 0)) out.caption = true;
-  if (need([out.caption ? 0 : h.caption, h.speech, h.toasts, h.phone]) <= budget) return out;
-  if (h.phone > 0 && (h.speech > 0 || h.toasts > 0)) out.phone = true;
+  const texts = (Array.isArray(h.phone) ? h.phone : [h.phone]).map(x => Math.max(0, x || 0)).filter(x => x > 0);
+  const extra = Math.max(0, h.phoneExtra || 0);
+  const sum = (list) => list.filter(x => x > 0).reduce((a, x) => a + x + gap, 0);
+  const need = (cap, hidden) => {
+    const shown = texts.slice(hidden);
+    return sum([cap, h.speech, h.toasts]) + sum(shown) + (shown.length && extra ? extra + gap : 0);
+  };
+  const out = { caption: false, phone: false, phoneHidden: 0 };
+  if (need(h.caption, 0) <= budget) return out;
+  if (h.caption > 0 && (h.speech > 0 || h.toasts > 0 || texts.length > 0)) out.caption = true;
+  const cap = out.caption ? 0 : h.caption;
+  if (need(cap, 0) <= budget) return out;
+  if (!(h.speech > 0 || h.toasts > 0)) return out;   // texts only make way for speech or a toast
+  let n = 0;
+  while (n < texts.length && need(cap, n) > budget) n++;
+  out.phoneHidden = n;
+  out.phone = n > 0 && n === texts.length;
   return out;
 }
 export const NOTIFY_SHARE = { compact: 0.4, wide: 0.5 };
@@ -65,13 +80,33 @@ export function isCompactViewport(vw, vh) {
  *   'speech' a person in the building, out of view: a line in the message lane, not clickable
  * payload.channel ('phone' or 'speech') wins when a caller knows; a timed message with a phone id
  * is a text whoever sends it. A caller's own click handler keeps the bark clickable (phone).
+ * Phone contacts are registered when the game starts, so any other sender (a person, or an NPC
+ * whose room has not loaded and so is not registered yet) is speech (review R1 M4).
  */
 export function barkSource({ npcType = null, channel = null, hasClickHandler = false } = {}) {
   if (channel === 'phone' || channel === 'speech') return channel;
   if (npcType === 'phone') return 'phone';
   if (hasClickHandler) return 'phone';
-  if (npcType === 'person') return 'speech';
-  return 'phone';
+  return 'speech';
+}
+
+// Dialogs and modals the bark lanes sit under (css/npc-barks.css) and hold new barks for
+// (npc-barks.js _shouldDefer), review R1 M1. Minigames and conversations have their own hold.
+export const DIALOG_SELECTORS = ['.tutorial-prompt-overlay', '.game-confirm-overlay', '#game-menu-overlay.visible',
+  '#password-modal', '#player-preferences-modal', '.ending-check-overlay', '.success-screen-overlay'];
+
+/** True while one of DIALOG_SELECTORS shows, or the tutorial prompt is due (it counts from the call). */
+export function dialogLayerOpen(doc = (typeof document !== 'undefined' ? document : null),
+  win = (typeof window !== 'undefined' ? window : null)) {
+  try { if (win?.getTutorialManager?.()?.isPromptOpen?.()) return true; } catch (e) { /* no tutorial */ }
+  if (!doc?.querySelectorAll) return false;
+  for (const el of doc.querySelectorAll(DIALOG_SELECTORS.join(', '))) {
+    if (el.style && el.style.display === 'none') continue;
+    const cs = gcs(el);
+    if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+    return true;
+  }
+  return false;
 }
 
 /**
@@ -167,7 +202,11 @@ function gcs(el) {
 }
 
 const TOP_BAR = ['.objectives-panel', '#music-widget-btn-anchor', '#toggle-buttons-container', '#scenario-timer-display'];
-const DOCK = ['#inventory-container', '#player-hud-buttons', '#combat-buttons'];
+// The hearts sit inside #player-hud-buttons but outside its box (themed HUD), so they are measured
+// on their own: without Block/Punch they are the dock's top (review R1 M6)
+const DOCK = ['#inventory-container', '#player-hud-buttons', '#combat-buttons', '#health-ui-container'];
+// The open phone (a wide screen): the notify lane keeps clear of its right edge (m06 F3, R1 M5)
+const PHONE_FRAME = '[data-minigame="phone-chat"] .phone-messages-container';
 
 function shownRect(el) {
   if (!el || !el.getBoundingClientRect) return null;
@@ -202,11 +241,23 @@ export function measureHud(doc = document, win = window) {
     const r = shownRect(doc.querySelector(sel));
     if (r && r.top > vh / 2) dockTop = Math.min(dockTop, r.top);
   }
+  // A wide screen with the phone open: toasts and phone texts stay right of the phone, clear of
+  // its header and unread badge (m06 F3); the lane's inline width replaced the CSS rule for it
+  if (!compact) {
+    const ph = shownRect(doc.querySelector(PHONE_FRAME));
+    if (ph) leftPanelRight = Math.max(leftPanelRight, ph.right);
+  }
+  // Room for the objectives pill on a phone: up to 8 px short of the menu buttons
+  let menuLeft = vw;
+  for (const sel of ['#music-widget-btn-anchor', '#toggle-buttons-container']) {
+    const r = shownRect(doc.querySelector(sel));
+    if (r && r.top < vh / 2 && r.left > vw / 2) menuLeft = Math.min(menuLeft, r.left);
+  }
   // The notify lane starts where it always did on a wide screen (86 px below the top, zoomed),
   // under the music and VM buttons even before they draw
   const z = parseFloat(gcs(doc.documentElement).getPropertyValue('--hud-zoom')) || 1;
   return { vw, vh, compact, topBarBottom, dockTop, leftPanelRight, notifyWidth: 600 * z, messageWidth: 720 * z,
-    notifyTopMin: compact ? 0 : 78 * z };
+    notifyTopMin: compact ? 0 : 78 * z, menuLeft };
 }
 
 function setPx(el, prop, screenPx) {
@@ -239,24 +290,53 @@ export function applyLanes(doc = document, win = window) {
   const visibleCap = !!captionEl?.classList.contains('visible');
   const cap = yieldable(captionEl, visibleCap ? capOf(captionEl) : 0);
   if (!visibleCap) cap.h = 0;
-  const phoneHasTexts = !!phoneEl?.querySelector('.npc-bark');
-  const ph = yieldable(phoneEl, contentOf(phoneEl));
-  if (!phoneHasTexts) ph.h = 0;
+  // Phone texts step aside one at a time, oldest first (review R1 m1): each is measured on its own
+  const texts = phoneEl ? Array.from(phoneEl.querySelectorAll('.npc-bark')).filter(el => !el._removing) : [];
+  const textH = texts.map(el => yieldable(el, heightOf(el)).h);
+  const clearAllEl = phoneEl?.querySelector('.npc-bark-clear-all');
+  const clearAllH = clearAllEl ? heightOf(clearAllEl) : 0;
+  const phoneSum = (hidden) => {
+    const shown = textH.slice(hidden);
+    return sum(shown) + (shown.some(h => h > 0) && clearAllH ? clearAllH + LANE_GAP : 0);
+  };
   const toastH = contentOf(toastsEl);
   const speechH = contentOf(speechEl);
-  m.notifyContent = sum([toastH, ph.h]);
+  m.notifyContent = sum([toastH, phoneSum(0)]);
   m.messageContent = sum([cap.h, speechH]);
   let lanes = computeLanes(m);
   // One at a time when space is short (H1 option A): see laneYields for the order
   const free = Math.max(0, (m.vh - lanes.message.bottom) - lanes.notify.top);
   const budget = Math.floor(free * laneBudgetShare(m));
-  const y = laneYields({ caption: cap.h, speech: speechH, toasts: toastH, phone: ph.h }, budget);
+  const y = laneYields({ caption: cap.h, speech: speechH, toasts: toastH, phone: textH, phoneExtra: clearAllH }, budget);
   if (captionEl && y.caption !== cap.was) captionEl.classList.toggle('hud-lane-yield', y.caption);
-  if (phoneEl && y.phone !== ph.was) phoneEl.classList.toggle('hud-lane-yield', y.phone);
-  if (y.caption || y.phone) {
-    m.notifyContent = sum([toastH, y.phone ? 0 : ph.h]);
+  // Hidden texts are the oldest y.phoneHidden (empty heights are not counted by laneYields)
+  let toHide = y.phoneHidden;
+  texts.forEach((el) => {
+    const hide = toHide > 0;
+    if (hide) toHide--;
+    const was = el.classList.contains('hud-lane-yield');
+    if (hide === was) return;
+    el.classList.toggle('hud-lane-yield', hide);
+    // The bark system pauses a hidden text's countdown and resumes it when it shows again
+    try { el._onLaneYield?.(hide); } catch (e) { /* the bark closed meanwhile */ }
+  });
+  // The container itself no longer steps aside as a whole
+  if (phoneEl?.classList.contains('hud-lane-yield')) phoneEl.classList.remove('hud-lane-yield');
+  if (y.caption || y.phoneHidden) {
+    m.notifyContent = sum([toastH, phoneSum(y.phoneHidden)]);
     m.messageContent = sum([y.caption ? 0 : cap.h, speechH]);
     lanes = computeLanes(m);
+  }
+  // The objectives pill on a phone may use the width up to the menu buttons (review R1 M2)
+  const pill = doc.querySelector('.objectives-panel');
+  if (pill && m.compact) {
+    const pr = shownRect(pill);
+    if (pr && Number.isFinite(m.menuLeft) && m.menuLeft < m.vw) {
+      const room = `${Math.max(120, Math.floor((m.menuLeft - 8 - pr.left) / zoomOf(pill)))}px`;
+      if (doc.documentElement.style.getPropertyValue('--hud-pill-room') !== room) {
+        doc.documentElement.style.setProperty('--hud-pill-room', room);
+      }
+    }
   }
   const body = doc.body;
   if (body) {

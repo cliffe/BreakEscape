@@ -422,28 +422,48 @@
 }
 
 @media (max-width: 899.98px), (max-height: 500px) {
+  /* The pill takes the width up to 8px short of the menu buttons (ui/hud-lanes.js measures it
+     into --hud-pill-room; the fallback is the 14px + 132px buttons). The whole pill is the
+     button, so no chevron; the count comes first and never shrinks (review R1 M2). */
   .objectives-panel.collapsed {
-    width: auto;
-    /* stops 8px short of the menu buttons at the top right (14px + 132px) */
     box-sizing: border-box;
-    max-width: min(420px, calc(100vw / var(--hud-zoom, 1) - 190px));
+    width: var(--hud-pill-room, calc(100vw / var(--hud-zoom, 1) - 174px));
+    max-width: 480px;
     min-width: 0;
   }
+  .objectives-panel.collapsed .objectives-header {
+    padding: 8px 8px;
+  }
+  .objectives-panel.collapsed .objectives-controls,
   .objectives-panel.collapsed .objectives-title-text {
     display: none;
   }
+  .objectives-panel.collapsed .objectives-clipboard {
+    margin-right: 0;
+  }
   .objectives-panel.collapsed .objectives-pill-summary {
-    display: block;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
     flex: 1;
     min-width: 0;
-    margin: 0 8px;
+    margin: 0 0 0 8px;
     font-family: 'GNF', monospace;
     font-size: 16px;
     white-space: nowrap;
+  }
+  .objectives-pill-count {
+    flex: 0 0 auto;
+  }
+  .objectives-pill-text {
+    flex: 1 1 auto;
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  /* The sheet's frame stays on screen: its border is inside the width (review R1 M3) */
   .objectives-panel.objectives-sheet {
+    box-sizing: border-box;
     width: calc(100vw / var(--hud-zoom, 1) - 32px);
     left: 16px;
     max-height: 50vh;
