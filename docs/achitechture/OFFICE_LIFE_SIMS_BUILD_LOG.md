@@ -300,6 +300,28 @@ Round-1 design/engine review: 1 blocker, 3 major, 5 minor; server review: 0 bloc
 
 New or changed spoken lines (SIMS-4 R1 fixes): one changed exchange line, `Keith: Someone'll be up soon, Jodie.` (was `Jodie: Someone'll be up to fix it soon.`). No other new voiced lines; the two conversation exits keep their existing farewell text.
 
+### SIMS-4 R2 and SIMS-3 R4 review fixes (2026-11-14, keyless :3093, worktree p-ol-sims, E7 to E9 merged)
+
+Commits ed270e239 (ink, scenario, tool), 20682cd6e (node tests), 0797e9b4e (docs), 3fe96a487 and two tool follow-ups, and the docs commit that carries this entry. No engine or server change.
+
+- **Design M1 (crossing counts measured the first-visit exchange). Fixed.** Every staff-room beat now stands by the boiler on the first visit until `exchange_waiting` is heard, then settles. The crossing is counted on its own: only Keith's and Jodie's turns at the crossing object from the Neil close or the private-office entry on, pool lines and exchange lines apart, "pair" as both use starts after it. Reruns: boiler 5/5 with 3 pool lines heard each, cooler 5/5 with 2 each, none spoken unheard (games 4662, 4675, 4676, 4678, 4686; 4692, 4699, 4700, 4701, 4703). README tour and crossing note say two or three lines and pictures.
+- **Design M2 (the job-cleared beat contradicted what the player sees). Fixed with an existing needs mechanism.** Choice: Jodie walks to a stand-in fixture rather than a reword, because the engine already supports it with data only and it makes the light change on something the player watches. Jodie gains an `upkeep` need (decay 0.01 a minute, never due on its own) met only by the drawn **staff lockers** (`staff_lockers`, new object, 12 s use). The job-called exchange now ends with her taking the job; its `npc_exchange_heard` mapping drops `upkeep` to 0, so after her break she walks to the lockers; `npc_used:staff_lockers` (Jodie) sets `job_cleared` and completes a new task `see_light_fixed`, and the light steadies as she finishes. Her hub reply no longer sets the global: "Did that light get sorted?" is offered only once `job_cleared` holds; before it, "Will you see to that light?" gets a new line. A `room_entered:staff_room` mapping re-sends her after a reload between the exchange and the fix (need levels are not saved). New optional task `hear_job_cleared`. Proved 5/5 (4704, 4707, 4733, 4933, 4934). Not animated: she stands at the lockers; there is no tube-swap or stepladder art (art request).
+- **Design m1 (tour lacked the light and cleared beat). Fixed.** Tour rows 1 to 5 now name the blinking pool, the lockers trip, both Jodie choices and the cleared exchange.
+- **Design m2 (stale README rows). Fixed.** The 4369 doors-open claim corrected; the round-0 table marked history; the 4570 row explained; the old speech-lock row marked superseded.
+- **Design m3 (no frame of the flicker). Withdrawn as a fix, kept as an owner item.** The faulty panel pinned at its real dip level (0.55) and at 1.0, same pose (4710, and 4704 at the crossing): the two frames are not distinguishable by eye at the game zoom. The flicker is kept short for WCAG 2.3.1, so a stronger flicker is the owner's call; the tour calls it subtle.
+- **Design m4 (node coupling test tested its own lambda). Fixed.** New `test/js/npc-needs-sims-mappings.test.mjs` reads the staff-room mappings from `scenario.json.erb` and runs them through NPCManager's real mapping path (5 cases: both couplings, the upkeep drop, the locker fix, the reload re-send). The chained-break test now holds the walk home and asserts no `npc_returned_post:keith` between the two starts.
+- **Server m1 (a sub-30 s reload can lose `job_cleared`). Fixed in docs.** README reload note and plan 5.4 Sync add `job_called` and `job_cleared`, and how the new mappings heal it.
+- **S3 R4 M1 (ready line after an X close). Fixed.** `~ asked_now = false` at the top of `hub` (only reopens pass there) and the `neil_page_taken` branch tested first; `neil.json` recompiled with inklecate. Game 4706 (the reviewer's script): after X close, take, reopen, "You've got it already, pet."; the asking chat still "Soon as". README X-path row added.
+- **S3 R4 m1 (bare `setGlobal` docs). Fixed.** Six sites reworded: a mapping `setGlobal` reaches the server on the next 30 s sync or the unload flush; a task completion only makes that sooner.
+- **Probe race behind 4570. Fixed.** `talkNeil` returns true only on a `conversation_closed:neil` after the call, retries once after Neil's sip, else the run is a setup failure (exit 3). 0 setup failures in 15 staff-room runs.
+- **Speech-lock beat. Re-scoped and rerun.** The player stands by the office coffee pair while both pairs take forced breaks (needs set through the bridge, said). 4932, 10 min: 66 office turns, 0 blocked, 0 staff lines spoken. It now proves that a pair out of earshot holds no speech lock against the pair the player hears; the old measure cannot occur with E7.
+- **E7 regression on Sanjay and Rosa.** `e7e9-live-proof.mjs e7` COUPLED_ONLY=1, game 4708: no unheard draw, first line on entry.
+- **Tool fix during the round.** Freezing the game loop for the dip screenshot hung two job runs (4655, 4680, not counted); the shot now pins the panel's level instead.
+
+New or changed spoken lines: 5. Jodie, new: "Once I've finished this, aye." (job-called exchange), "Aye, spare tube's in my locker." (hub), "New tube. Should last a while." (cleared exchange, replaces "About time. Hurt my eyes, that did."). Keith, changed: "That'll be one for you, Jodie." (replaces "Someone'll be up soon, Jodie."), "Light's behaving now." (replaces "They sorted that flickering light."). Jodie's "Aye, I swapped the tube..." is unchanged, now behind `job_cleared`. Needs TTS for the five.
+
+Tests: `bin/test-js test/js/npc-needs*.test.mjs test/js/npc-behavior-arrival.test.mjs test/js/validator-office-life-v10.test.mjs` 15/15 files pass. Validator on test_needs_sims: 0 errors, 34 warnings, no V10 warning.
+
 ## SIMS-5: V10, pools, exchanges and calls nothing can trigger (2026-11-14, build/ol-sims)
 
 New files: `scripts/validate_office_life.rb` (V10 only; the missions tooling adds V1 to V9 here
@@ -339,6 +361,8 @@ Tests: the standard node set (25 files incl. the new V10 test) PASS; the three R
 tests (8a/8b/8c) 0 failures. Live proof: see the README SIMS-5 live-proof rows. No new spoken lines.
 
 ## Engine and server changes (every slice)
+
+SIMS-4 R2 / SIMS-3 R4 fix round: none.
 
 | Slice | File | Function | Change | Why | Branch |
 |---|---|---|---|---|---|
