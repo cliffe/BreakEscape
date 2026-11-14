@@ -11,6 +11,18 @@ const bodyBytes = s => (typeof TextEncoder !== 'undefined' ? new TextEncoder().e
 // crash loses at most this much of it. Any other change carries the clock too.
 const CLOCK_ONLY_INTERVAL_MS = 5 * 60 * 1000;
 
+// Fired on a successful sync so the phish re-post queues (systems/se-landing-page-client.js) can
+// re-post a build or send held while the server was unreachable. A plain window event, so this file
+// takes no phish import and stays off their harness copy lists (chunk A review major 2).
+const SYNC_OK_EVENT = 'break-escape:sync-ok';
+function notifySyncOk() {
+  try {
+    if (typeof window === 'undefined' || typeof window.dispatchEvent !== 'function') return;
+    if (typeof CustomEvent !== 'function') return;
+    window.dispatchEvent(new CustomEvent(SYNC_OK_EVENT));
+  } catch (e) { /* a dispatch failure must never fail a sync */ }
+}
+
 // requestSoon() (a KO): requests this close together share one sync, and none waits
 // longer than the cap after the first request of its window.
 export const REQUEST_SOON_DEBOUNCE_MS = 750;
@@ -777,6 +789,12 @@ export class StateSync {
       }
       this.lastError = null;
       console.log('✓ State synced to server');
+      // A successful sync means the server is reachable again, so any phish build or send held in
+      // the client re-post queues (systems/se-landing-page-client.js) can now be re-posted. A small
+      // window event, not a static import, keeps the queue modules off this file's harness copy list
+      // and this file free of a phish dependency (chunk A review major 2). Guarded so the headless
+      // sync tests (no window.dispatchEvent / CustomEvent) are unaffected.
+      notifySyncOk();
       // A run that left a capped section refused is not fully confirmed (N-4): the
       // saved sections are confirmed above, but syncConfirmed must not report success
       // while a section stays unsaved and is resent on every sync. Nor while a part

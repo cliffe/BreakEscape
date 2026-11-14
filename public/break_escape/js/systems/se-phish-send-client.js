@@ -11,13 +11,22 @@
 // Ordering (plan section 11): linkCredible on the server reads the page's server-recorded
 // meetsThreshold, so the send must not be judged before Route 1 has recorded the build. The send
 // therefore awaits the build POST's own promise (pendingBuildPost) before posting, and on a
-// `page_not_built_yet` answer re-awaits and re-posts once. If it still cannot land (offline, or the
-// build has still not committed), it is held in a bounded, in-memory re-send queue keyed by
-// targetId/kitId (one entry per target/kit, never grows per attempt) and drained on the browser
-// `online` event. The server records are idempotent (first-wins on a landed send), so a drained
-// duplicate never double-credits.
+// `page_not_built_yet` answer triggers a build re-post (if the build POST is missing or failed)
+// then re-posts the send once. If it still cannot land (offline, or the build has still not
+// committed), it is held in a bounded, in-memory re-send queue keyed by targetId/kitId (one entry
+// per target/kit, never grows per attempt). The build client owns the combined drain on the browser
+// `online` event and on a successful sync, builds before sends (registerAfterBuildDrain). The server
+// records are idempotent (first-wins on a landed send), so a drained duplicate never double-credits.
 
-import { pendingBuildPost } from './se-landing-page-client.js';
+import {
+    pendingBuildPost, drainBuildQueue, registerAfterBuildDrain, ensurePhishDrainBound,
+    recordLandingPageBuild,
+} from './se-landing-page-client.js';
+
+// The combined online/sync drain lives in the build client (one listener, builds before sends).
+// Register the send-queue drain so it runs after the build queue drains. Hoisted, so this is safe
+// before drainPhishSendQueue's textual definition below.
+registerAfterBuildDrain((deps) => drainPhishSendQueue(deps));
 
 // The keys the mail client persists on a sent record (mail-bridge.js PENDING_MESSAGE_KEYS). The
 // send body is the composed message bounded to exactly these, plus targetId and kitId.
@@ -43,10 +52,9 @@ export function phishSendBody({ message, targetId, kitId }) {
 }
 
 // One entry per targetId/kitId, so the queue holds at most one send per target/kit and cannot grow
-// per attempt. Module-scoped: the browser loads this module once, so the queue and the online
-// listener are shared across the session; tests pass their own deps and clear it between runs.
+// per attempt. Module-scoped: the browser loads this module once, so the queue is shared across the
+// session; tests pass their own deps and clear it between runs.
 const sendQueue = new Map();
-let onlineBound = false;
 
 function windowOf(deps) {
     return deps.window ?? (typeof window !== 'undefined' ? window : null);
@@ -103,15 +111,17 @@ async function attemptSend(body, deps) {
 function enqueue(key, body, deps) {
     // Keep only the deps a later drain needs (fetch/window), never a live closure that could grow.
     sendQueue.set(key, { body, deps: { fetch: deps.fetch, window: deps.window, pendingBuildPost: deps.pendingBuildPost } });
-    bindOnlineDrain(deps);
+    ensurePhishDrainBound(deps);
 }
 
-function bindOnlineDrain(deps) {
-    if (onlineBound) return;
-    const w = windowOf(deps);
-    if (!w || typeof w.addEventListener !== 'function') return;
-    onlineBound = true;
-    w.addEventListener('online', () => { drainPhishSendQueue().catch(() => {}); });
+// Whether the build POST for this page is missing (none pending) or failed (settled to not-ok), so
+// a retryable send should trigger a build re-post before it tries again (plan section 11).
+async function pendingBuildFailed(pageId, deps) {
+    const fn = deps.pendingBuildPost || pendingBuildPost;
+    let post;
+    try { post = fn(pageId); } catch (e) { return true; }
+    if (!post || typeof post.then !== 'function') return true; // no build POST recorded
+    try { const r = await post; return !(r && r.ok === true); } catch (e) { return true; }
 }
 
 /**
@@ -127,7 +137,16 @@ export async function recordPhishSend({ message, targetId, kitId, pageId }, deps
     let res = await attemptSend(body, deps);
 
     if (res && res.retryable) {
-        // The build POST had not committed when the send arrived; re-await it and re-post once.
+        // The build had not committed when the send arrived. If its build POST is missing or
+        // failed (offline, 5xx), re-post the queued build first (plan section 11, chunk A major 1),
+        // then re-await the build and re-post the send once.
+        if (await pendingBuildFailed(pageId, deps)) {
+            // Drain with no overriding deps so each queued build re-posts through its OWN stored
+            // fetch/window (the real browser falls back to the globals either way); the send's fetch
+            // must not post a build.
+            const drain = deps.drainBuildQueue || drainBuildQueue;
+            try { await drain(); } catch (e) { /* a failed re-post leaves the send for the queue */ }
+        }
         await awaitBuild(pageId, deps);
         res = await attemptSend(body, deps);
     }
@@ -143,13 +162,66 @@ export async function recordPhishSend({ message, targetId, kitId, pageId }, deps
  * Drain the offline re-send queue once, re-posting each held send through the normal route. A send
  * that lands or is a permanent miss (landed false, not retryable) is dropped; one still offline or
  * still not built stays for the next drain. Idempotent server-side, so a duplicate never
- * double-credits. Call on the `online` event (bound here) and after a successful sync.
+ * double-credits. Run after the build queue drains (the build client's combined drain calls it on
+ * the `online` event and after a successful sync); also callable directly.
  */
 export async function drainPhishSendQueue(extraDeps = {}) {
     if (sendQueue.size === 0) return;
     for (const [key, item] of Array.from(sendQueue.entries())) {
         const res = await attemptSend(item.body, { ...item.deps, ...extraDeps });
         if (res && !res.retryable) sendQueue.delete(key); // landed, or a permanent below-threshold miss
+    }
+}
+
+// The authored kind:'link' payload kit ids wired to each landing page, from the scenario's mail
+// config. { pageId: [kitId, ...] }; used only to re-drive a reload (below).
+function linkKitsByPage(scenario) {
+    const out = {};
+    const kits = scenario && scenario.social && scenario.social.mailClient &&
+        scenario.social.mailClient.payloadKit;
+    if (!Array.isArray(kits)) return out;
+    for (const k of kits) {
+        if (k && k.kind === 'link' && typeof k.landingPageId === 'string' && typeof k.id === 'string') {
+            (out[k.landingPageId] || (out[k.landingPageId] = [])).push(k.id);
+        }
+    }
+    return out;
+}
+
+/**
+ * Re-drive the phish routes once after a reload (plan section 11; chunk A review minor 3). The
+ * in-memory queues are lost on a reload, but the durable globalVariables.se_landing_pages keeps the
+ * stored choices and victim marker, so on game load the client re-posts each page's build, and for
+ * a page whose victim.submitted is set, re-posts the send for its authored target and (min) link
+ * kit. Both routes are idempotent and first-wins, and the work is bounded by the authored pages, so
+ * this never double-credits and closes the lost-queue-on-reload gap without putting the queue in
+ * synced state. A page with no stored choices is skipped entirely: nothing is posted for it.
+ */
+export async function redrivePhishEvidence(scenario, globals, deps = {}) {
+    const pages = globals && globals.se_landing_pages;
+    if (!pages || typeof pages !== 'object') return;
+    const kitsByPage = linkKitsByPage(scenario);
+
+    for (const [pageId, rec] of Object.entries(pages)) {
+        if (!rec || typeof rec !== 'object') continue;
+        const choices = rec.choices;
+        if (!choices || typeof choices !== 'object') continue; // no stored choices: send nothing
+
+        const targetId = rec.targetId;
+        const buildPost = recordLandingPageBuild({ pageId, targetId, choices }, deps);
+        if (buildPost && typeof buildPost.then === 'function') {
+            try { await buildPost; } catch (e) { /* a failed re-post is held in the build queue */ }
+        }
+
+        const submitted = rec.victim && rec.victim.submitted === true;
+        if (!submitted) continue;
+        const kitIds = kitsByPage[pageId] || [];
+        if (!kitIds.length) continue;
+        // The min kit id, matching the legacy migration's key so a re-drive never splits a row.
+        const kitId = kitIds.slice().sort()[0];
+        try {
+            await recordPhishSend({ message: {}, targetId, kitId, pageId }, deps);
+        } catch (e) { /* recordPhishSend never throws, but keep the loop bounded regardless */ }
     }
 }
 
@@ -160,5 +232,4 @@ export function _phishSendQueueSize() {
 
 export function _resetPhishSendClient() {
     sendQueue.clear();
-    onlineBound = false;
 }

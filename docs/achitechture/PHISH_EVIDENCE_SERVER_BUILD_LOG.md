@@ -667,3 +667,36 @@ Chunk B sections in full. Then chunk B review minor 3 (the cross-chunk note) was
 - New reconciliation test (`se_phish_send_test.rb`): a seeded migration miss
   (`sePhishSends["lord/kit_payroll_page"].landed = false`, `phishEvidenceMigrated = true`) is upgraded
   to `landed: true` by a live send after a convincing build, with one row, not two.
+
+## Chunk A review R1 fixes (offline, sync and reload resilience)
+
+Closes the two Majors and minor 3 from `PHISH_EVIDENCE_CHUNK_A_REVIEW_R1.md`. All client-side, no
+synced state added; the queues stay in memory (the sync size rule holds).
+
+- **Major 1: a bounded build re-post queue.** `systems/se-landing-page-client.js` now holds a
+  queue keyed by page id (the build body only, in memory). A build POST that fails offline, with a
+  5xx or with a network error is enqueued (`recordLandingPageBuild` inspects `resp.ok`); the queue
+  drains before the send queue. `recordPhishSend` triggers a build re-post when the kit's page has
+  no pending build POST or it settled not-ok (`pendingBuildFailed` + `drainBuildQueue`), then re-posts
+  the send once, so an honest offline build is no longer refused forever. The builder folder stays
+  network-free (`social-landing-page-render` still passes); the re-post lives in the systems module.
+- **Major 2: drain on a successful sync, not only on `online`.** `state-sync.js` dispatches a small
+  `break-escape:sync-ok` window event on a successful sync (guarded, so the headless sync tests are
+  unaffected; no new import, so no harness copy-list change). The build client binds one combined
+  drain (`drainPhishQueues`, builds before sends) to both `online` and `break-escape:sync-ok`, so a
+  5xx-queued send is retried without needing an offline-to-online transition. The send client
+  registers its drain through `registerAfterBuildDrain`, so the single listener runs builds then
+  sends.
+- **Minor 3: a reload re-drive.** `main.js`, once on `game_loaded` (the first bootstrap applied),
+  dynamically imports `redrivePhishEvidence`, which re-posts each built page in the durable
+  `globalVariables.se_landing_pages` that has stored choices, and for a page whose `victim.submitted`
+  is set, re-posts the send for its authored target and min link kit (matching the migration's key).
+  Both routes are idempotent and first-wins; the work is bounded by the authored pages; a page with
+  no stored choices posts nothing. The in-memory queue is not put in synced state.
+
+Tests (node): `test/js/social-phish-send-client.test.mjs` grows to 14 (was 6): the build queue (a
+5xx is queued and re-posts, an offline build is bounded one-per-page, no-config posts nothing), the
+send-triggered build re-post landing, the combined drain order (build before send), and the three
+re-drive cases (built-and-submitted re-posts both, no-choices posts nothing, unsubmitted re-posts
+only the build). Neighbours green: `social-landing-page-render`, `social-landing-page-builder`(+
+fakecheck), `social-mail-bridge`, `social-mail-composer`, `state-sync`, `state-sync-hidden-save`.

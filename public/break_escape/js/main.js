@@ -185,6 +185,22 @@ function initializeGame() {
         });
     }
 
+    // Reload handler: re-drive the phish routes once the bootstrap has applied (phish evidence
+    // plan section 11; chunk A review minor 3). The in-memory re-post queues do not survive a
+    // reload, but the durable globalVariables.se_landing_pages keeps the stored build choices and
+    // the victim.submitted marker, so a reload re-posts each built page's build (and, where the
+    // victim submitted, its send) through the idempotent, first-wins routes. Dynamically imported
+    // so the phish network module stays off the main bundle's static graph and harness copy lists.
+    if (window.eventDispatcher) {
+        window.eventDispatcher.once('game_loaded', () => {
+            const globals = window.gameState?.globalVariables;
+            if (!globals || !globals.se_landing_pages) return;
+            import('./systems/se-phish-send-client.js')
+                .then((mod) => mod.redrivePhishEvidence(window.gameScenario, globals))
+                .catch((err) => console.warn('[BreakEscape] phish re-drive failed:', err));
+        });
+    }
+
     // Reload handler: if this game was already concluded, replay the conclusion screen
     // once the scene is fully loaded and objectives are available.
     if (window.breakEscapeConfig?.missionConcludedAt) {
