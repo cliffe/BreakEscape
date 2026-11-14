@@ -115,6 +115,22 @@ async function loadKitchen() {
     return { kitchen_ok: a && a.ok, rooms: await page.evaluate(() => Object.keys(window.rooms || {})) };
 }
 
+// Read a wall note through the real interaction path (moveToNear + interact), then fully close the
+// readable popup it opens (Escape + dismissBlockingUi) so the next interaction is not blocked.
+async function readNoteObject(id) {
+    await page.evaluate(i => window.__test.moveToNear(i, { timeoutMs: 20000 }), id).catch(() => {});
+    const r = await page.evaluate(i => window.__test.interact(i), id);
+    await t(900);
+    for (let i = 0; i < 3; i++) {
+        const busy = await page.evaluate(() => { try { const st = window.__test.getState(); return !!(st.activeMinigame || st.blockingUi); } catch (e) { return false; } });
+        if (!busy) break;
+        await page.keyboard.press('Escape'); await t(400);
+        await page.evaluate(() => window.__test.dismissBlockingUi && window.__test.dismissBlockingUi()).catch(() => {});
+        await t(300);
+    }
+    return r;
+}
+
 // Real conversation with Eli through the person-chat UI: approach (moveToNear), interact to open
 // the chat, pick the handover choice (#set_global eli_asked), then the exit choice
 // (#exit_conversation, which emits conversation_closed:eli). Falls back to arming the print only
@@ -130,10 +146,20 @@ async function eliConversation() {
     const chatUp = await page.evaluate(() => { try { return !!window.__test.minigame.getState(); } catch (e) { return false; } });
     let chA = null, chB = null;
     if (opened && opened.ok && chatUp) {
-        chA = await page.evaluate(() => window.__test.minigame.choose('handover'));
+        // The intro line animates first; press Space to reveal the hub choices, retrying the
+        // choice until it matches a rendered option.
+        for (let i = 0; i < 8 && !(chA && chA.ok); i++) {
+            chA = await page.evaluate(() => window.__test.minigame.choose('handover'));
+            if (chA && chA.ok) break;
+            await page.keyboard.press('Space'); await t(500);
+        }
+        await t(1000);
+        for (let i = 0; i < 8 && !(chB && chB.ok); i++) {
+            chB = await page.evaluate(() => window.__test.minigame.choose('leave you be'));
+            if (chB && chB.ok) break;
+            await page.keyboard.press('Space'); await t(500);
+        }
         await t(1200);
-        chB = await page.evaluate(() => window.__test.minigame.choose('leave you be'));
-        await t(1400);
         await page.evaluate(() => window.__test.dismissBlockingUi && window.__test.dismissBlockingUi()).catch(() => {});
     } else {
         path = 'armed-fallback';
@@ -168,10 +194,13 @@ if (beat === 'all' || beat === 'e') await recordBeat('e_hostile_from_start', asy
 if (beat === 'all' || beat === 'i') await recordBeat('i_eli_print', async () => {
     const conv = await eliConversation();
     const closed = await snap();
-    await t(9000);
+    // The print has a 6 s delay; then object_revealed:eli_page ticks check_eli_page through an
+    // async server round-trip. Wait past the delay and the round-trip, then poll for the tick.
+    await t(10000);
+    const ticked = await waitUntil(async () => (await snap()).tasks.includes('check_eli_page'), 10000, 1000);
     const after = await snap();
     await shot('i-eli-page');
-    return { ...conv, eli_asked_after_close: closed.globals.eli_asked, eli_page_shown: after.globals.eli_page_shown, revealed: after.revealed, check_eli_page: after.tasks.includes('check_eli_page') };
+    return { ...conv, eli_asked_after_close: closed.globals.eli_asked, eli_page_shown: after.globals.eli_page_shown, revealed: after.revealed, check_eli_page: after.tasks.includes('check_eli_page'), check_eli_page_polled: !!ticked };
 });
 
 // (d) Ben recalled by the Meeting Note (real reads). Load the kitchen so his thirst can send him
@@ -184,18 +213,12 @@ if (beat === 'all' || beat === 'd') await recordBeat('d_ben_recalled', async () 
     await t(1200);
     await page.evaluate(() => window.__test.needs.set('ben', 'thirst', 10));
     const left = await waitUntil(async () => { const s = await njob('ben'); return (s.reg && s.atPost === false) ? s : null; }, 20000);
-    await page.evaluate(() => window.__test.moveToNear('meeting_note', { timeoutMs: 20000 })).catch(() => {});
-    const readNote = await page.evaluate(() => window.__test.interact('meeting_note'));
-    await t(800);
-    await page.evaluate(() => window.__test.dismissBlockingUi && window.__test.dismissBlockingUi()).catch(() => {});
+    const readNote = await readNoteObject('meeting_note');
     await t(2800);
     const recalled = await snap();
     const benAfterNote = await njob('ben');
     await shot('d-recalled');
-    await page.evaluate(() => window.__test.moveToNear('meeting_over', { timeoutMs: 20000 })).catch(() => {});
-    const readOver = await page.evaluate(() => window.__test.interact('meeting_over'));
-    await t(800);
-    await page.evaluate(() => window.__test.dismissBlockingUi && window.__test.dismissBlockingUi()).catch(() => {});
+    const readOver = await readNoteObject('meeting_over');
     await t(2500);
     const benAfterOver = await njob('ben');
     await shot('d-resumed');
