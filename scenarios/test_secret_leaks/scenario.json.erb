@@ -1,0 +1,88 @@
+{
+  "scenario_id": "test_secret_leaks",
+  "scenario_name": "Test: Secret Leaks",
+  "scenario_brief": "Scenario format hardening step 3 fixture. The strongbox is a combination padlock (12-30-5). Mara the informant's usePayload secret is that same combination, gated by a dropped-USB capture proof. Rhea's account password is the cryptex answer WOLF, which opens the cryptex cabinet, so the scenario declares proofs and her password is withheld until her dropped proof holds. Tess the tipster's usePayload carries the vault door PIN 4821 as a capture secret, gated the same way. Nothing is copied into a global or minigameData, so the validator reports no secret leak; the secrets ship only from /capture_secrets once each proof holds.",
+  "endGoal": "Engine and validator test only.",
+  "startRoom": "office",
+  "startPosition": { "x": 8, "y": 8 },
+  "social": { "captures": { "revealSecret": true } },
+  "startItemsInInventory": [
+    { "type": "usb", "id": "evidence_usb", "name": "Evidence USB", "takeable": true, "droppable": true, "needsTag": "evidence", "observations": "A USB stick. Drop it to leave evidence and earn a capture proof." }
+  ],
+  "rooms": {
+    "office": {
+      "type": "room_office",
+      "door_sign": "Office",
+      "connections": { "north": "vault" },
+      "doors": [
+        { "connectedRoom": "vault", "direction": "north", "requires": "4821" }
+      ],
+      "npcs": [
+        {
+          "npcType": "person",
+          "id": "mara",
+          "displayName": "Mara",
+          "position": { "x": 5, "y": 8 },
+          "usePayload": { "targetId": "mara", "secret": "12-30-5", "proof": { "dropped": "evidence_usb" } }
+        },
+        {
+          "npcType": "person",
+          "id": "rhea",
+          "displayName": "Rhea",
+          "position": { "x": 11, "y": 8 },
+          "creds": { "username": "r.mills", "password": "WOLF" },
+          "eventMappings": [
+            { "eventPattern": "greet", "addCapture": { "targetId": "rhea", "address": "r.mills" } }
+          ],
+          "captureProof": [{ "dropped": "evidence_usb" }]
+        },
+        {
+          "npcType": "person",
+          "id": "tess",
+          "displayName": "Tess",
+          "position": { "x": 14, "y": 8 },
+          "usePayload": { "targetId": "dropzone", "secret": "4821", "proof": { "dropped": "evidence_usb" } }
+        }
+      ],
+      "objects": [
+        {
+          "type": "safe",
+          "id": "strongbox",
+          "name": "Strongbox",
+          "locked": true,
+          "lockType": "combination",
+          "requires": "12-30-5",
+          "observations": "A combination padlock with three dials.",
+          "contents": [
+            { "type": "notes", "id": "strongbox_note", "name": "Strongbox note", "takeable": true, "observations": "A note.", "text": "Well done opening the combination padlock." }
+          ]
+        },
+        {
+          "type": "safe",
+          "id": "cryptex_cabinet",
+          "name": "Cryptex cabinet",
+          "locked": true,
+          "lockType": "cryptex",
+          "requires": "wolf",
+          "observations": "A cryptex cabinet with four lettered wheels.",
+          "cryptexConfig": { "wheelCount": 4, "alphabets": ["ABCDEFGHIJKLMNOPQRSTUVWXYZ0", "ABCDEFGHIJKLMNOPQRSTUVWXYZ0", "ABCDEFGHIJKLMNOPQRSTUVWXYZ0", "ABCDEFGHIJKLMNOPQRSTUVWXYZ0"] },
+          "contents": [
+            { "type": "notes", "id": "cryptex_note", "name": "Cryptex note", "takeable": true, "observations": "A note.", "text": "The cryptex cabinet is open." }
+          ]
+        }
+      ]
+    },
+    "vault": {
+      "type": "room_office",
+      "door_sign": "Vault",
+      "locked": true,
+      "lockType": "pin",
+      "requires": "4821",
+      "connections": { "south": "office" },
+      "npcs": [],
+      "objects": [
+        { "type": "notes", "id": "vault_note", "name": "Vault note", "takeable": true, "observations": "A note.", "text": "Inside the vault." }
+      ]
+    }
+  }
+}
