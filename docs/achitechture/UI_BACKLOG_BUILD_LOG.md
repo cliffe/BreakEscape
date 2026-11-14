@@ -62,4 +62,7 @@ Tests run after the removals: minigame-consoles-fit 32/32, minigame-pixel-art 48
 
 ## Gates
 
-(see the end of this file once filled in)
+Run on the merged tip (main cb6d7feb4 merged into the branch, a5a2db3b7, then the log commit):
+- `ui-rules-audit --all --strict --skip person-chat,network-view` at 1400x1000, 800x600, 915x412, 390x844: `frame-offscreen 1` (alarm panel at 915x412, the baseline), clipped 0, x-on-frame 0, overflow 0. The other non-clean lines are old: SIEM `cancel-beside-x` (known false positive, UI_CONSOLES_BUILD_LOG) and `examine` `font-size` at 390x844 (`h3.examine-name` Press Start 2P 13px; not touched here, left for the owner of that scene).
+- `shell-x-check`: 172 checked, 0 failed.
+- Node tests on the merged tip: minigame-shell-fit 30/30, hud-lanes-ring-layer 6/6, dead-console-button-rules 2/2, ui-hud-lanes 40/40, phone-ring-layer 23/23.
