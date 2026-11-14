@@ -126,3 +126,28 @@ Done: all five code items, unit tests, size sweeps above, all committed.
 Not done (live, scripts written and untried): `ui-hud-f2/fix2.sh <game> <tag> WxH m1 m2 m2toast m3` drives `m1seq.js` (phone holds speech, confirm, phone closes, Stay clicked: bark should release), `m2phone.js` and `m2back.js` (second sender's text showing before the phone opens and two more while open; back badge, hit tests at back, header and replies, real tap on back, release order on close) at 390x844, 360x640, 844x390, 915x412, and `m3tut.js` (tutorial relaunch, three barks, Skip clicked, release order). Fresh m01 game 3830 is unused for these. m2phone registers `r2_second` via `registerNPC` if m01's phone has one contact only; check that registration works and that the back badge counts it.
 Files: `js/systems/npc-barks.js` (`_shouldDefer` ~227, `drainDeferredBarks` ~296, `_refreshPhoneUnread`, `compactHud` at the end), `js/ui/hud-lanes.js` (`DIALOG_SELECTORS` 97, `computeLanes` floor ~150, brief priority in `applyLanes` ~345), `js/systems/notifications.js` (`laneYieldHandler` ~225, brief no-wait ~390), `js/minigames/phone-chat/phone-chat-ui.js` (`listContacts`, `unreadCountFor`, `refreshBackUnread` ~590 to 660), CSS in npc-barks, notifications, objectives, phone-chat-minigame.
 Gotcha: any new hide class on a toast needs `!important` (utilities.css `.show`).
+
+## Fix round 2 proofs
+
+Keyless server :3460, a fresh m01_first_contact game before each run (3844 to 3858 and later), scripts in scratchpad `ui-hud-f2/` (`fix2.sh`, `hp.sh`, `hearts.js`). No script needed fixing and no product bug showed in the five R2 proofs. m04 was not started; the 1400x1000 wide-screen run used the same code path in m01 (the rule is in the bark system, not the mission).
+
+| proof | result |
+| --- | --- |
+| M1 stuck-bark sequence (phone holds speech, confirm opens, phone closes, Stay clicked) | pass: held 1 in the phone; after the phone closed it stayed held with the dialog watch running (timer true); Stay hit at its centre; the speech showed 284 ms after the click, queue 0, timer cleared |
+| M2 390x844, 360x640, 844x390, 915x412, phone open | pass at all four: compact true, second sender's pre-shown text sat under the phone (z 1400, a tap at its centre reached the phone, not the text), nothing from another sender over the phone, 3 held (text, speech, text), back button "Back, 3 unread" with badge 3, a real tap on back opened the contact list (r2_second badge 3), on close the held lines released in order: text at about 0 ms, speech at about 2.5 s, text at about 5 s, queue 0 |
+| M2 1400x1000 (wide) | pass: compact false, two texts shown beside the phone (x 916 to 1380, phone ends 900), z 9999, hit as barks; only speech and the third text held; back "Back, 3 unread"; release in order |
+| M3 tutorial step panel (390x844) | pass: panel up (step 1 of 5), 3 barks held and none on screen, timer on; Skip clicked; released at 99 ms, 2.6 s, 5.1 s in order, queue 0, overlay gone |
+
+Seen, not changed: at 844x390 and 915x412 the phone's second reply sits below the phone frame (the frame is 20 to 293 high, the reply 301 to 338; a tap there reaches the notebook button). The reply list scrolls inside the frame; this is the existing landscape layout, not the bark rules.
+
+### Hearts against Block/Punch (R1 n3)
+
+At 360x640 the hearts (8 to 176) overlapped Block (172 on); at 320x568 by 44 px. Two changes:
+- `css/hud.css`: on phones (max-width 480px) the Block/Punch gap is 12 px (was 28), so the pair is 148 px wide and starts at vw - 172. The hearts now clear it from 356 px wide, with the 8 px lane gap.
+- `js/ui/hud-lanes.js`: `heartsLift(hearts, combat, gap)` (pure) and `placeHearts` at the top of `applyLanes`. Below 356 px, where the two still reach each other, the hearts rise to end 8 px above Block/Punch, through `--hearts-lift` (read by the max-width 480px rule in `css/ui-themes.css`). It is measured with the lift cleared, so it does not depend on the last answer; with no Block/Punch there is no lift. The dock top then follows the hearts, so the lanes stay clear of them as before.
+
+Live: 360x640 hearts 8..176 x 500..532, Block 188..256, no overlap, no lift; 320x568 lifted to 344..376, Block 384..452 (8 px above); 390x844 clear as before (hearts 704, Block 660, side by side 26 px). ca01 (no Block/Punch): no hearts box, nothing to meet. Lane sampler at 360x640 m01: pass (it failed before this round on the overlap). At 320x568, the five-things-at-once scene reports the error toast and speech cut by their lanes (39 and 44 px), because lifting the hearts takes 84 px from the lane budget; 320 is below the sizes in the sweep and the scene is the worst case, noted as a known limit.
+
+Tests: `ui-hud-lanes` 36 (1 new: widths 320 to 480 in steps of 4, with and without Block/Punch, hearts never within the gap of the buttons, no lift at 356 and up, lift below, none without Block/Punch). `bark-release-policy` 31, `bark-lifetime` 7, `npc-bark-delay` 20, `phone-call-bark-hold` 2, `engine-fixes-round6` 9, `toast-once-across-panel-handover` 6: all green, one at a time.
+
+Shots: `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/e7a32fee-bb00-4a46-ab62-f0d4de35d260/scratchpad/ui-hud-f2/shots/` (`b-m2__390x844.png`, `c-m2__360x640.png`, `c-m2__844x390.png`, `c-m2__915x412.png`, `e-m2__1400x1000.png`, `hearts-before-*.png`, `hearts-after-*.png`, `hearts-g-360x640.png`).
