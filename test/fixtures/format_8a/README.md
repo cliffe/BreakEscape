@@ -26,6 +26,13 @@ otherwise point at the new code) and lets the tests run in a gitless checkout.
   where 8a lands (before any later scenario edit) `transform(old)` already equals this render, which
   is why it is safe to freeze.
 
+When format hardening step 8b (one owner field, format 2) landed, both sides of the social, work and
+needs_sims pairs were upgraded through the 8b `scenario` transform in place (the owner keys became one
+`owner`, `private`/`deskPhone` moved to object level). Step 8a (outage) and step 8b (owner) touch
+disjoint keys, so `transform_8a(old)` still equals `new`; the upgrade only removes owner keys the
+`retired_keys_in` check would otherwise flag now that `current` is 2. `test_access_networks` carries no
+owner key and was left unchanged.
+
 To regenerate after a deliberate corpus change, re-render the relevant base template for the `.old`
 side and the current template for the `.new` side the same way, and overwrite the file. A change that
 alters the step-8a transform is the only thing that should move `.new.json` relative to
