@@ -88,9 +88,12 @@ function analyse(evs) {
 // sits after breaks, and whether two starts on DIFFERENT objects fired within 5 s (a setup failure).
 function stepFive(evs) {
     const starts = evs.filter(e => e.ev.startsWith('npc_use_started:')).map(e => ({ obj: e.ev.split(':')[1], npc: e.data.npcId, clock_s: +(e.clockMs / 1000).toFixed(1) }));
+    // Setup failure (plan 5.4): two STAFF-ROOM break starts on different objects within 5 s, i.e. the
+    // pair's two coupled breaks colliding. Office NPCs using their own objects are not staff breaks.
+    const staff = starts.filter(s => s.obj.startsWith('staff_'));
     let setupFail = null;
-    for (let i = 0; i < starts.length; i++) for (let j = i + 1; j < starts.length; j++) {
-        if (starts[i].obj !== starts[j].obj && Math.abs(starts[i].clock_s - starts[j].clock_s) <= 5) setupFail = [starts[i], starts[j]];
+    for (let i = 0; i < staff.length; i++) for (let j = i + 1; j < staff.length; j++) {
+        if (staff[i].obj !== staff[j].obj && Math.abs(staff[i].clock_s - staff[j].clock_s) <= 5) setupFail = [staff[i], staff[j]];
     }
     return {
         all_use_starts: starts,
