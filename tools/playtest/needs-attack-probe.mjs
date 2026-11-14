@@ -8,9 +8,9 @@
 // new-game.rb, because this folder has no Mission row. Each KO/reload beat is cleanest in its
 // own fresh game, because a KO is saved to the server.
 //
-// beat: one of a b c d e f g h h2 i i2, or "all" (default). "all" runs only the
+// beat: one of a b c d e f g h h2 i i2 i2r, or "all" (default). "all" runs only the
 // non-destructive beats (e, d, i) in one game and warns that the KO/reload beats
-// (a b c f g h h2 i2) each want a fresh game id.
+// (a b c f g h h2 i2 i2r) each want a fresh game id.
 //
 // Movement and needs are driven only through window.__test (never a teleport). Beat (a)
 // attacks Ava through the real player-combat punch path (window.playerCombat.attack), which
@@ -235,18 +235,20 @@ if (beat === 'all' || beat === 'i') await recordBeat('i_eli_print', async () => 
         second_print_log: second.log.filter(l => /eli|copier|print/.test(l)) };
 });
 
-// (d) Ben recalled by the Meeting Note (real reads). He must be AT or walking to the kitchen
-// cooler when the note is read (design M5), so the recall is a real cross-room patrolOverride, not
-// a step off his own desk. Wait for him in the kitchen (ideally using the cooler), read the note,
-// then assert he walks back to his office post tile (4,7) and is scriptSuspended there.
+// (d) Ben recalled from the kitchen cooler by the Meeting Note (real reads). He must be at the
+// cooler in phase `using` when the note is read (design M5/F2), so the recall is a real cross-room
+// patrolOverride, not a step off his own desk. The player is parked at the washing-up tray so it is
+// clear of the office door Ben transits. Wait for him using the cooler, read the note, then assert
+// he walks back to his office post tile (4,7) and is scriptSuspended there.
 if (beat === 'all' || beat === 'd') await recordBeat('d_ben_recalled', async () => {
     await loadKitchen();
+    await page.evaluate(() => window.__test.moveToNear('washing_up_tray', { timeoutMs: 15000 })).catch(() => {});
     await page.evaluate(() => window.__test.needs.set('ben', 'thirst', 10));
     const atCooler = await waitUntil(async () => {
         const s = await njob('ben');
-        return (s.room === 'kitchen' && s.job && s.job.targetId === 'water_cooler' && (s.job.phase === 'using' || s.job.phase === 'goto_target')) ? s : null;
+        return (s.room === 'kitchen' && s.job && s.job.targetId === 'water_cooler' && s.job.phase === 'using') ? s : null;
     }, 60000, 300);
-    if (!atCooler) throw new Error('ben never reached the kitchen cooler');
+    if (!atCooler) throw new Error('ben never reached phase using at the kitchen cooler');
     const benAtCooler = atCooler;
     const readNote = await readNoteObject('meeting_note');
     const recalled = await snap();
@@ -282,6 +284,10 @@ if (beat === 'a') await recordBeat('a_ava_attacked', async () => {
         return (s.job && s.job.kind === 'carry' && s.job.carrying && s.room === 'kitchen') ? s : null;
     }, 60000);
     if (!atCarry) throw new Error('ava never carried the mugs into the kitchen');
+    // Listen (not emit) for npc_attacked:ava on the event dispatcher, so the punch below can be shown
+    // to fire it, exactly as a player's jab does (player-combat.js:461), rather than reading the
+    // needs log, which never carries an attack event (F7).
+    await page.evaluate(() => { window.__avaAttacked = false; try { window.eventDispatcher && window.eventDispatcher.on && window.eventDispatcher.on('npc_attacked:ava', () => { window.__avaAttacked = true; }); } catch (e) {} });
     // Real punch: approach, then attack facing Ava. One jab converts her to hostile.
     await page.evaluate(() => window.__test.moveToNear('ava', { timeoutMs: 15000 })).catch(() => {});
     await t(500);
@@ -299,7 +305,7 @@ if (beat === 'a') await recordBeat('a_ava_attacked', async () => {
         if (h) break;
         await page.evaluate(() => window.__test.moveToNear('ava', { timeoutMs: 8000 })).catch(() => {});
     }
-    const attackedEvt = await page.evaluate(() => window.__test.needs.log().some(e => e.npc === 'ava' && /attack/i.test(e.ev)));
+    const attackedEvt = await page.evaluate(() => window.__avaAttacked === true);
     await t(1200);
     const hostile = await snap(); await shot('a-hostile');
     // No in-play calm route (reviewed): force calm through the hostile system so the needs side
@@ -310,7 +316,7 @@ if (beat === 'a') await recordBeat('a_ava_attacked', async () => {
     const avaLog = calm.log.filter(l => l.includes('ava'));
     return {
         carrying_at_attack: !!atCarry, carry_room_at_attack: atCarry && atCarry.room,
-        punch_path: punched, hostile_mid: hostile.hostility.ava, npc_attacked_logged: attackedEvt,
+        punch_path: punched, hostile_mid: hostile.hostility.ava, npc_attacked_emitted: attackedEvt,
         calm_via: 'npcHostileSystem.setNPCHostile(false) — no in-play calm route in this scenario',
         aborted: avaLog.some(l => l.includes('job_aborted')),
         blocked: avaLog.some(l => / blocked/.test(l)),
@@ -339,8 +345,12 @@ if (beat === 'b') await recordBeat('b_ava_ko', async () => {
     const officeBefore = await roomItems('office'); const kitchenBefore = await roomItems('kitchen');
     await load();
     await t(1500);
+    // The office is loaded on reload (start room); load the kitchen before counting its takeables so
+    // the dropped folder is really counted and not missed on a half-loaded floor (F8).
+    const officeAfter = await roomItems('office');
+    await loadKitchen();
     const after = await snap(); await shot('b-reload');
-    const officeAfter = await roomItems('office'); const kitchenAfter = await roomItems('kitchen');
+    const kitchenAfter = await roomItems('kitchen');
     const avaAfter = await njob('ava');
     return { ko_room: atCarry.room, carrying_at_ko: !!atCarry, ko_ok: r.ok, ava_ko: after.globals.ava_ko,
         check_ko_drop: down.tasks.includes('check_ko_drop'), still_ko_after_reload: after.ko.ava,
@@ -349,39 +359,35 @@ if (beat === 'b') await recordBeat('b_ava_ko', async () => {
         ava_body_room_after_reload: avaAfter.room, ava_body_pos_after_reload: avaAfter.pos };
 });
 
-// (c) Ben knocked out in the kitchen on his cooler errand: notebook drops where he fell; survives
-//     reload. He is caught in the kitchen, on the cross-room thirst job for water_cooler, stopped at
-//     his closest approach (not mid-stride across the office). The engine cannot give him phase
-//     `using` at this cooler: its authored corner cell (1,7) is not reachable by an NPC entering
-//     from the office door, so he stalls at goto_target and would otherwise return. That is the
-//     cooler arrival-cell limitation the plan flags in section 9 note 3 (E8), out of SIMS-1 scope;
-//     the strict "phase=using at the cooler" (review m3) is declined for it. After the reload the
-//     body is at his office spawn while the notebook stays in the kitchen (E-reload-ko-pos).
+// (c) Ben knocked out at the kitchen cooler on his cross-room thirst errand: the notebook drops
+//     where he fell and survives a reload. Fran and Gil now sit at the kitchen's south-east
+//     (tiles (6,8)/(7,8)) instead of (6,6)/(7,6), so Ben's route from the office door to the
+//     cooler's approach cell (1,8) no longer pinches between their seated bodies and the east wall
+//     and he reaches phase `using`. The earlier stall at (6,4.5) was the E-carry fault (a needs
+//     move re-paths through a seated NPC's immovable body; stuck recovery does not route round it,
+//     npc-behavior.js ~1305/1348), not an unreachable cooler corner. The probe parks the player at
+//     the washing-up tray so it is clear of the office door Ben transits. After the reload the body
+//     is at his office spawn while the notebook stays in the kitchen (E-reload-ko-pos).
 if (beat === 'c') await recordBeat('c_ben_ko', async () => {
     await loadKitchen();
+    await page.evaluate(() => window.__test.moveToNear('washing_up_tray', { timeoutMs: 15000 })).catch(() => {});
     await page.evaluate(() => window.__test.needs.set('ben', 'thirst', 10));
-    const coolerPx = await page.evaluate(() => {
-        const kit = window.rooms.kitchen; const list = Array.isArray(kit.objects) ? kit.objects : Object.values(kit.objects || {});
-        const o = list.find(x => x && (x.id === 'water_cooler' || (x.scenarioData && x.scenarioData.id === 'water_cooler')));
-        return o ? { x: o.x, y: o.y } : null;
-    });
     const atCooler = await waitUntil(async () => {
         const s = await njob('ben');
-        if (!(s.room === 'kitchen' && s.job && s.job.targetId === 'water_cooler' && s.pos && coolerPx)) return null;
-        const d = Math.hypot(s.pos.x - coolerPx.x, s.pos.y - coolerPx.y);
-        return (s.job.phase === 'using' || (s.job.phase === 'goto_target' && s.speed < 12 && d < 190)) ? { ...s, dist: Math.round(d) } : null;
+        return (s.room === 'kitchen' && s.job && s.job.targetId === 'water_cooler' && s.job.phase === 'using') ? s : null;
     }, 60000, 250);
-    if (!atCooler) throw new Error('ben never stalled near the kitchen cooler on his thirst job');
+    if (!atCooler) throw new Error('ben never reached phase using at the kitchen cooler');
     const r = await page.evaluate(() => window.__test.debugKO('ben'));
     await t(2000);
     const down = await snap(); await shot('c-down');
     const kitchenBefore = await roomItems('kitchen');
     await load();
     await t(1500);
+    await loadKitchen();
     const after = await snap(); await shot('c-reload');
     const kitchenAfter = await roomItems('kitchen');
     const benAfter = await njob('ben');
-    return { ben_room_when_ko: atCooler.room, ben_phase_when_ko: atCooler.job.phase, ben_dist_to_cooler_px: atCooler.dist, ben_speed_when_ko: atCooler.speed,
+    return { ben_room_when_ko: atCooler.room, ben_phase_when_ko: atCooler.job.phase,
         ko_ok: r.ok, ben_ko: after.globals.ben_ko,
         check_held_drop: down.tasks.includes('check_held_drop'), still_ko_after_reload: after.ko.ben,
         kitchen_takeables_before: kitchenBefore, kitchen_takeables_after_reload: kitchenAfter,
@@ -394,7 +400,8 @@ if (beat === 'c') await recordBeat('c_ben_ko', async () => {
 if (beat === 'g') await recordBeat('g_fran_ko_gil_solo', async () => {
     await loadKitchen();
     await page.evaluate(() => window.__test.needs.set('fran', 'thirst', 10));
-    const franWalking = await waitUntil(async () => { const s = await njob('fran'); return (s.reg && s.atPost === false && s.job) ? s : null; }, 20000);
+    const franWalking = await waitUntil(async () => { const s = await njob('fran'); return (s.reg && s.atPost === false && s.job && s.speed > 5) ? s : null; }, 20000);
+    if (!franWalking) throw new Error('fran never walked off her post toward the cooler');
     const r = await page.evaluate(() => window.__test.debugKO('fran'));
     await t(1500);
     await page.evaluate(() => window.__test.needs.set('gil', 'caffeine', 10));
@@ -408,7 +415,7 @@ if (beat === 'g') await recordBeat('g_fran_ko_gil_solo', async () => {
     return { fran_walking_before_ko: !!franWalking, ko_ok: r.ok, fran_ko: after.globals.fran_ko,
         check_solo_break: after.tasks.includes('check_solo_break'),
         gil_using_at_kettle: !!gilUsing, gil_phase: gil.job && gil.job.phase, gil_target: gil.job && gil.job.targetId,
-        no_paired_line: !gilLog.some(ev => /pair/i.test(ev)), fran_state_blocked: franState.blocked === true || franState.mode === 'idle',
+        no_paired_line: !gilLog.some(ev => /pair/i.test(ev)), fran_state_blocked: franState.blocked === true,
         fran_still_ko_after_reload: reloaded.ko.fran };
 });
 
@@ -462,23 +469,32 @@ if (beat === 'f') await recordBeat('f_dee_catch', async () => {
         return window.__test.interact('office_lockpick');
     });
     const hasPick = await page.evaluate(() => (window.inventory && window.inventory.items || []).some(it => it && it.scenarioData && it.scenarioData.type === 'lockpick'));
-    await page.evaluate(() => window.__test.needs.set('dee', 'caffeine', 10));
-    // Position the player at the drawer with the lock UI ready, then wait for Dee to be walking.
+    // Walk the player to the drawer FIRST (design M4/F1), so the lock UI is ready, THEN set Dee's
+    // caffeine low. Her ~2 s walk to the coffee then begins while the 120 ms poll is already running,
+    // so the pick is made while she is in phase goto_target with real velocity, not after she arrives.
     await page.evaluate(() => window.__test.moveToNear('dee_drawer', { timeoutMs: 15000 })).catch(() => {});
+    await page.evaluate(() => window.__test.needs.set('dee', 'caffeine', 10));
     const walking = await waitUntil(async () => {
         const s = await njob('dee');
         return (s.reg && s.atPost === false && s.job && s.job.phase === 'goto_target' && s.speed > 5) ? s : null;
-    }, 20000);
+    }, 20000, 120);
     if (!walking) throw new Error('dee never walked to the coffee (no goto_target with velocity)');
     const open = await page.evaluate(() => window.__test.interact('dee_drawer'));
+    const deeAtPick = await njob('dee');
     await t(2000);
     await shot('f-caught');
+    const mgAtCatch = await page.evaluate(() => { try { return window.MinigameFramework.currentMinigame && window.MinigameFramework.currentMinigame.constructor.name; } catch (e) { return null; } });
     const after = await snap();
     const caught = after.tasks.includes('check_caught_walking') || after.tasksCompleting.includes('check_caught_walking');
-    // Close the catch conversation, let Dee resume, and check she returns to her post.
+    // Close the catch conversation, let Dee finish her coffee and walk back; wait for `returned_post`
+    // in her log (F8) rather than any job/idle state, with a long bound (her coffee use + walk home).
     for (let i = 0; i < 4; i++) { await page.keyboard.press('Escape'); await t(400); await page.evaluate(() => window.__test.dismissBlockingUi && window.__test.dismissBlockingUi()).catch(() => {}); await t(300); }
-    const resumed = await waitUntil(async () => { const s = await njob('dee'); return (s.reg && (s.job || s.mode === 'idle')) ? s : null; }, 15000);
-    // onceOnly persistence: reload, then pick the drawer again — no second catch.
+    const resumed = await waitUntil(async () => {
+        const r = await page.evaluate(() => { const s = window.__test.needs.state('dee') || {}; const log = window.__test.needs.log().filter(e => e.npc === 'dee').map(e => e.ev); return { returned: log.includes('returned_post'), atPost: s.atPost === true }; });
+        return r.returned ? r : null;
+    }, 60000, 1000);
+    const deeState = await njob('dee');
+    // onceOnly persistence: reload, then pick the drawer again — no second person-chat catch.
     await load();
     await t(1500);
     const reHasPick = await page.evaluate(() => (window.inventory && window.inventory.items || []).some(it => it && it.scenarioData && it.scenarioData.type === 'lockpick'));
@@ -486,15 +502,15 @@ if (beat === 'f') await recordBeat('f_dee_catch', async () => {
     await page.evaluate(() => window.__test.moveToNear('dee_drawer', { timeoutMs: 12000 })).catch(() => {});
     const open2 = await page.evaluate(() => window.__test.interact('dee_drawer'));
     await t(2000);
-    const mg2 = await page.evaluate(() => { try { return window.__test.minigame.getState(); } catch (e) { return null; } });
-    const reopened = !!(mg2 && /person|chat|dialog/i.test(JSON.stringify(mg2.id || mg2.type || '')));
+    const mg2 = await page.evaluate(() => { try { return window.MinigameFramework.currentMinigame && window.MinigameFramework.currentMinigame.constructor.name; } catch (e) { return null; } });
     await shot('f-after-reload');
     return {
         lockpick_picked_up: pickup && pickup.ok, has_lockpick: hasPick,
         dee_phase_at_pick: walking.job.phase, dee_speed_at_pick: walking.speed, dee_room_at_pick: walking.room,
-        interact_ok: open && open.ok, check_caught_walking: caught,
-        dee_resumed: !!resumed, dee_resume_mode: resumed && resumed.mode,
-        reload_has_lockpick: reHasPick, reopen_interact_ok: open2 && open2.ok, catch_reopened_after_reload: reopened,
+        interact_ok: open && open.ok, minigame_at_catch: mgAtCatch, check_caught_walking: caught,
+        dee_returned_post: !!resumed, dee_atpost_after: deeState.atPost,
+        reload_has_lockpick: reHasPick, reopen_interact_ok: open2 && open2.ok,
+        minigame_after_reload_pick: mg2, catch_reopened_after_reload: /person|chat/i.test(mg2 || ''),
         tasks: after.tasks
     };
 });
@@ -521,6 +537,27 @@ if (beat === 'i2') await recordBeat('i2_reload_within_delay', async () => {
         eli_page_shown_after_reload: after.globals.eli_page_shown, revealed_after_reload: after.revealed,
         check_eli_page_after_reload: after.tasks.includes('check_eli_page'),
         clog: clog.slice(clogBase).map(c => [c[0] - conv.closedAt, c[1]]) };
+});
+
+// (i2r) After an (i2) reload lost the pending print, a SECOND real conversation and close reprints
+//       the page: the delayed mapping's onceOnly key was never saved (it is saved only when it
+//       fires), so asking again is allowed and the lost page is recoverable. Expected recovery.
+if (beat === 'i2r') await recordBeat('i2r_recover_after_lost', async () => {
+    const clogBase = clog.length;
+    const conv = await eliConversation();
+    const scheduled = await waitUntil(async () => clog.slice(clogBase).find(c => /fires in/.test(c[1])) || null, 6000, 200);
+    await t(2500);                 // reload within the 6 s delay: the pending mapping is lost
+    await load();
+    await t(7000);
+    const afterReload = await snap();
+    const conv2 = await eliConversation();      // a second real conversation and close
+    await t(10000);
+    const second = await snap(); await shot('i2r-second');
+    return { first_conv_closed: conv.chat_closed_before_return, scheduled_seen: !!scheduled,
+        shown_after_reload: afterReload.globals.eli_page_shown, revealed_after_reload: afterReload.revealed,
+        second_conv_path: conv2.path, second_conv_closed: conv2.chat_closed_before_return,
+        second_eli_page_shown: second.globals.eli_page_shown, second_revealed: second.revealed,
+        check_eli_page_after_second: second.tasks.includes('check_eli_page') || second.tasksCompleting.includes('check_eli_page') };
 });
 
 await snap().then(s => { report.end = s; });

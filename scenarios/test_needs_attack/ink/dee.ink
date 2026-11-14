@@ -17,7 +17,7 @@ Morning. Don't mind me, I'm only after a coffee.
 // while Dee can see it.
 === on_drawer_picked ===
 # speaker:npc
-Oi. That's a locked cabinet, and I just watched you open it.
+Oi. That's a locked cabinet, and I just watched you try to pick it.
 # speaker:npc
 Step away from it. I've got your face now.
 #exit_conversation
