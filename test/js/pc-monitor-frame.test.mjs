@@ -1303,7 +1303,7 @@ test('UI PC 2 (E08): the window X is pixel art: a 2px bevel, square corners, the
     assert.match(rule, /image-rendering: pixelated;/);
     assert.match(rule, /width: 28px;[\s\S]*height: 24px;/);
     assert.doesNotMatch(rule, /rgba\(|gradient|box-shadow: [^n]/);
-    assert.match(t, /\.pc-monitor button\.pc-window-close::after \{[^}]*inset: -12px -10px;/, '24x20 inside the border, 44x44 to touch');
+    assert.match(t, /\.pc-monitor button\.pc-window-close::after \{[^}]*inset: -8px -10px -12px -10px;/, '44x44 to touch, 8px short at the top to clear the bezel X (final n1)');
 });
 
 test('R4 m1: a note taken from a container still goes through the container\'s return first', async () => {
@@ -1498,4 +1498,16 @@ test('R2 m1: a panel entry is an 18 px icon box with 1 px vertical padding', () 
     const item = sheet.match(/\.pc-monitor button\.pc-start-item \{[^}]*\}/)[0];
     assert.match(item, /padding:\s*1px 6px/);
     assert.match(sheet.match(/\.pc-start-item-icon \{\s*width: 26px;[^}]*\}/)[0], /height:\s*18px/);
+});
+
+test('final n1: the window X touch area stays 44px tall but leaves a gap to the bezel X above it', () => {
+    const sheet = css('text-file-minigame.css');
+    const m = sheet.match(/\.pc-monitor button\.pc-window-close::after\s*\{[^}]*inset:\s*([^;]+);/);
+    assert.ok(m, 'the hit area rule is there');
+    const [top, right, bottom, left] = m[1].trim().split(/\s+/).map((v) => Math.abs(parseFloat(v)));
+    assert.ok(top + 24 + bottom >= 44, 'the target is at least 44px tall');
+    assert.ok(right + 28 + left >= 44, 'and at least 44px wide');
+    // Measured at 390x844, 360x640, 667x375, 844x390 and 1400x900: the bezel X's bottom edge is
+    // at least 12px above the window X's top edge. The hit area may use up to 8 of them.
+    assert.ok(top <= 8, 'the target leaves at least 4px to the bezel X');
 });

@@ -547,11 +547,14 @@
     background-position: 6px 5px;
 }
 
+/* A 44px target on a phone. The top edge reaches only 8px above the button: the bezel's X
+   sits above the window's title bar with 12px between the two buttons, and the targets must
+   leave a gap (4px) rather than touch, at every size. */
 @media (max-width: 600px), (pointer: coarse) {
     .pc-monitor button.pc-window-close::after {
         content: '';
         position: absolute;
-        inset: -12px -10px;
+        inset: -8px -10px -12px -10px;
     }
 }
 
