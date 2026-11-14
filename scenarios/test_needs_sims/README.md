@@ -758,7 +758,7 @@ Notes:
 
 ### E7 to E9: chatter spent only when heard (2026-11-14, keyless :3088, headless)
 
-Sanjay and Rosa are a coupled cooler pair (`chatterCooldownMin: 2`, `npc_use_started:water_cooler` both ways). Driver `tmp/e7e9-live-proof.mjs` in the build worktree; the cooler's use was raised to 40 s in the page, and Sanjay sent once Rosa reached the kitchen, for a usable overlap (build log, finding 1).
+Sanjay and Rosa are a coupled cooler pair (`chatterCooldownMin: 2`, `npc_use_started:water_cooler` both ways). Driver `tools/playtest/e7e9-live-proof.mjs`. The cooler's `useSeconds` is 40 in the scenario since review round 1 (m1); the first runs below set it in the page and sent Sanjay once Rosa reached the kitchen. The round 1 rerun (games 4516 to 4541) sets neither: Rosa is sent, the coupling sends Sanjay, and the pair had 26 to 33 s together.
 
 | Feature | Result | Evidence |
 |---|---|---|
@@ -766,7 +766,9 @@ Sanjay and Rosa are a coupled cooler pair (`chatterCooldownMin: 2`, `npc_use_sta
 | First heard turn takes the next line (E7) | PASS, 3 of 3 | Sanjay `cooler:9`, `overheard: true` at 42 to 155 px; bubble in `e7-g4445-heard.png` |
 | Both use the cooler at once | PASS, 7 of 7 | no `timeout` or `no_beside_cell` with the player off the doorway |
 | Exchange starts with its first speaker heard (E9) | PASS, 2 of 2 | games 4452, 4455: `exchange_started exchange_rosa_rota`, lines 0 and 1 heard |
-| No exchange with only the second speaker heard (E9) | not run | layout put the second speaker against the wall (build log handover) |
+| No exchange with only the second speaker heard (E9) | PASS (game 4461) | see the build log; the first attempts put the second speaker against the wall |
+| R1 rerun: no line drawn unheard or past the overlap | PASS, 5 of 5 | games 4516, 4517 (coupling only, 2 draws each, both heard and said inside the overlap), 4539 (heard turn with 3.2 s left: a picture, nothing drawn), 4541 (4.5 s left: the line said, ending 1 s before the overlap); on the round 1 engine, game 4540 drew Rosa's `cooler:1` and never said it |
+| R1 rerun: an existing bag survives an unheard break | PASS, 2 of 2 | games 4516, 4517: after a heard break, a second break with the player in the office (4517 with both cooldowns cleared): 6 `picture:` turns, both bags' `order` and `last` unchanged |
 
 ## Engine findings
 

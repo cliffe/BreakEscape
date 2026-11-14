@@ -17,9 +17,9 @@
 //              E8_BLOCK_ABOVE=1 when the copy blocks the above cell too (expects no_beside_cell)
 //
 //   e7 options (R1 rerun): COUPLED_ONLY=1 sends Rosa only and lets the scenario's coupling send
-//   Sanjay; LATE_MS=n places the player beside the pair for a turn with n ms of the overlap
-//   is left (both uses trimmed in the page so a turn falls exactly there); SECOND_BREAK=1 runs a second coupled break with the player kept in the office and
-//   compares both bags before and after it.
+//   Sanjay; LATE_MS=n places the player beside the pair for a turn with n ms of the overlap left
+//   (both uses trimmed in the page so a turn falls exactly there); SECOND_BREAK=1 runs a second
+//   coupled break with the player kept in the office and compares both bags before and after it.
 //
 // Every bag draw (_bagNext) is logged with the needs clock, and every chat line with its bubble's
 // end and the pair's overlap end, so a run shows whether any line was drawn and not said, drawn

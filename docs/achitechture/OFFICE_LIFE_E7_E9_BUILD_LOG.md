@@ -145,3 +145,28 @@ Session 1 stopped at the tool-call budget with live proofs open; session 2 ran t
 3. Seen in passing, not investigated: Grace's `job_failed ... timeout` (dirty mugs at `washing_up_tray` in 4462, `rest` at `lounge_sofa` in 4476) and Tom's `caffeine` timeout at `kitchen_coffee` in 4487 (main's engine). None involves a chatter pair or a second user's cell.
 
 Server: keyless, `env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true bundle exec rails server -b 127.0.0.1 -p 3088 -P tmp/pids/server-3088.pid` from this worktree, stopped by its PID after the runs.
+
+## Review round 1 fixes
+
+Against `OFFICE_LIFE_E7_E9_REVIEW_R1.md` (0 B, 2 M, 4 m).
+
+- **M1, fixed.** `_pickBark` takes `maxMs`; `_tickChats` passes `overlapEnd - clockMs`. When less than `CHAT_MAX_MS` is left, the bag's next line is looked at with `_bagPeek` (pure: the same index `_bagNext` would give, nothing stored) and drawn only if its bubble fits; otherwise the turn is a picture if that fits, or the chat ends, with the bag and cooldown untouched. The review's simpler bound (no bark under `CHAT_MAX_MS` left) was tried first and broke the existing "exchange: plays with the player in earshot" test, whose first bark after an exchange fits in under 4 s, so the exact form went in. Tests in `npc-voiced-chatter.test.mjs`: 3 s left takes no line, 5 s takes it (fails on 2180042a4), and the peek matches the draw across rounds.
+- **M2, the remaining parts.** The queue-chat gate test is in `npc-exchange-heard.test.mjs`, shaped on `lab_physical_pentest`'s `coffee_exchange`: the owner and first speaker uses the machine, only the queued partner is heard, no `exchange_started`; hearing the user too starts it (fails on d69c29089). The lab verify-run was not done: `tools/playtest/verify-run.rb` only scores a game that has already been played to the credits, and `tools/playtest` holds no committed critical-path driver for `lab_physical_pentest` (the score-100 runs in its `IMPROVEMENT_LOOP_LOG.md`, games 1026 and 1163, were driven from session scratch scripts). A full replay is a playtest-scenario run of its own, so it goes back to the orchestrator; the `regress` run above (games 4486, 4497) is the evidence for the lab so far.
+- **m1, fixed.** The showcase cooler has an object-level `useSeconds` of 40, mirrored in `test/js/fixtures/needs-sims-world.mjs` and its `PRESET_OBJECTS`. The sims-day golden hash (shared by `npc-coffee-off`, `npc-left-behind`, `npc-avoidance` and `npc-needs-slots`) moves with it, and only with it: with the R1 engine and the old fixture all four still match the old hash. `office-presets`' overrides list gains `water_cooler`. The walk-plus-20 s rule is in `NPC_NEEDS_SYSTEM.md` 5.6 ("Coupled pairs"). The `mission-office-life` skill and `OFFICE_LIFE_MISSIONS_PLAN.md` are not on this branch, so the same line still has to go into the skill's stage 2 when it is written.
+- **m2, fixed (doc).** 5.6a now says a bark turn nobody hears never takes the lock, and that an exchange voices every line through the lock whether heard or not. The optional engine change (an unheard exchange line shown without `_speak`) changes the voice rule and is left for the user.
+- **m3, fixed.** `routeLength` returns `known: false` before calling `findWorldPath` when `worldPathfinder` or `worldGridBounds` is missing. Test in `npc-needs-cell-beside.test.mjs` (fails on 2180042a4), including `besideCell` keeping the first free side.
+- **m4, fixed.** The three node gaps above, plus a node test of the stronger E7 bag form (a bag that exists after a heard meeting, unchanged by an unheard one), and the same live (below).
+
+### Live rerun (keyless :3088 from this worktree, headless, `setFPS(20)` with fixed steps on)
+
+The driver logs every `_bagNext` draw and, for every chat line, its bubble's end and the pair's overlap end, then checks that each draw is a line said on the same tick, heard, and ending inside the overlap (`drawCheck`). `COUPLED_ONLY=1`: only Rosa is sent; the scenario's coupling sends Sanjay; no page-side cooler setting.
+
+| Game | Set-up | Draws | Drawn, not said | Drawn unheard | Past the overlap | Other |
+|---|---|---|---|---|---|---|
+| 4516 | e7, coupling only, `SECOND_BREAK=1` | 2 | 0 | 0 | 0 | met at 30750, overlap to 64000; second break unheard, 6 pictures, both bags unchanged (cooldowns still running) |
+| 4517 | as 4516, both cooldowns cleared before the second break | 2 | 0 | 0 | 0 | 6 unheard pictures; both bags' `order`, `round` and `last` unchanged |
+| 4539 | `LATE_MS=3200`: both uses trimmed to end 3.2 s after a turn, player placed beside the pair just before it | 0 | 0 | 0 | 0 | the heard turn (Rosa, 86 px) is `picture:social`; bags and cooldowns unchanged |
+| 4540 | as 4539 on the round 1 engine (`ENGINE=2180042a4`) | 1 | 1 | 0 | 0 | the before case: Rosa's `cooler:1` drawn and never said, cooldown started (160250), the chat ended |
+| 4541 | `LATE_MS=4500` | 1 | 0 | 0 | 0 | Rosa's `cooler:1` said, overheard, ending at 53000 against an overlap end of 54000 |
+
+Games 4520, 4522, 4525 and 4526 are void: the first late-arrival placement missed the tail between turns or put the player inside the kitchen's bottom wall (no room), so no turn was heard. Console errors: `/tts` 503s only (keyless). Unrelated job failures seen: Sanjay `work` at `sanjay_pc` `timeout` (4516, 4517, after the harness's room moves) and Grace at `washing_up_tray` `timeout` (4539, 4541), as in session 2.

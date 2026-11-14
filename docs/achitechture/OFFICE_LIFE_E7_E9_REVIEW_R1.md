@@ -75,3 +75,5 @@ Fix: in `routeLength`, return `out(null, false)` when `!pm.worldPathfinder || !p
 
 - **(a) Cooler 15 s, 3 to 7 s together:** m (m1). Fix the showcase with an object-level `useSeconds` (40) mirrored in the sims fixture, and add the walk-plus-20 s rule to the skill. m02 is not affected.
 - **(b) Heard turn spends a line whose bubble outlasts the overlap (game 4444):** M (M1). Fix in this item: pass `maxMs: overlapEnd - clockMs` to `_pickBark` and draw a bark only when `maxMs >= CHAT_MAX_MS`, with a node test.
+
+No minor was declined. m2's optional engine follow-up (an unheard exchange line shown without `_speak`) was not made: it changes the voice rule, so it waits for the user.
