@@ -149,6 +149,20 @@
     color: #9aa6ae;
 }
 
+/* Unplug, under the header's lines when the view was opened at the box's jack (UI PC 2,
+   critique N05): the row buttons' size, on its own line so a phone never squeezes the title */
+.network-view-actions {
+    display: flex;
+    margin: 6px 0 2px 0;
+}
+
+.network-view .network-view-unplug,
+.network-view-header .network-view-unplug {
+    margin: 0;
+    padding: 4px 12px;
+    font-size: 16px;
+}
+
 /* Two columns once the panel is wide enough (code review R1 m2); headings and wide rows span */
 .network-view-rows {
     list-style: none;

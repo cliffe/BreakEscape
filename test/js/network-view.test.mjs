@@ -948,3 +948,87 @@ test('wordsHtml leaves a very long word out of the nowrap span, still escaped (P
     const edge = 'x'.repeat(NOWRAP_WORD_MAX);
     assert.equal(wordsHtml(edge), `<span class="network-row-word">${edge}</span>`);
 });
+
+// ---------------------------------------------------------------- UI PC 2 (critique N05)
+
+const realView = await imp('minigames/network-view/network-view-minigame.js');
+function plantedJackSprite() {
+    return { texture: { key: 'network_rack1' }, setTexture(k) { this.texture = { key: k }; },
+        scenarioData: { id: 'comms_port', type: 'pc', name: 'Spare wall port', networkJack: true } };
+}
+function setupUnplug(unplug) {
+    setup();
+    window.startNetworkViewMinigame = realView.startNetworkViewMinigame;
+    window.applyInventoryDelta = () => {};
+    window.gameConfirm = async () => { throw new Error('no prompt at a planted jack'); };
+    window.gameState = { globalVariables: {} };
+    window.ApiClient.networkUnplug = unplug || (async (jackId) => {
+        requests.push(['unplug', jackId]);
+        return { success: true, added: [], removed: ['netlink_jack_comms_port'], endedPcIds: [] };
+    });
+}
+
+test('UI PC 2 (N05): a click on the planted jack opens the view with Unplug in its header', async () => {
+    setupUnplug();
+    const out = await links.interactJack(plantedJackSprite());
+    await settle(6);
+    assert.equal(out.action, 'opened');
+    assert.ok(view() instanceof NetworkViewMinigame);
+    const btn = document.querySelector('.network-view-header [data-unplug]');
+    assert.ok(btn, 'Unplug sits in the header, outside the scrolling list');
+    assert.equal(btn.textContent, realView.UNPLUG_TEXT);
+    assert.equal(btn.disabled, false);
+    assert.deepEqual(view().getTestState().unplug, { jackId: 'comms_port', selector: '[data-unplug]' });
+    assert.ok(document.querySelector('[data-host-id="door_box"]'), 'the rows load as usual');
+});
+
+test('UI PC 2 (N05): Unplug takes the box out and the view closes to the world', async () => {
+    setupUnplug();
+    await links.interactJack(plantedJackSprite());
+    await settle(6);
+    document.querySelector('[data-unplug]').click();
+    await settle(8);
+    assert.deepEqual(requests.filter(r => r[0] === 'unplug'), [['unplug', 'comms_port']]);
+    assert.equal(window.MinigameFramework.currentMinigame, null, 'the view closed');
+    assert.deepEqual(events.filter(e => e[0] === 'network_view_closed').map(e => e[1].reason), ['unplugged']);
+    assert.deepEqual(links.list(), []);
+});
+
+test('UI PC 2 (N05): a refused Unplug keeps the view open with the button back', async () => {
+    setupUnplug(async (jackId) => { requests.push(['unplug', jackId]); throw Object.assign(new Error('no'), { status: 403 }); });
+    await links.interactJack(plantedJackSprite());
+    await settle(6);
+    const before = view();
+    document.querySelector('[data-unplug]').click();
+    assert.equal(document.querySelector('[data-unplug]').disabled, true, 'disabled while it runs');
+    assert.equal(document.querySelector('[data-unplug]').textContent, realView.UNPLUGGING_TEXT);
+    await settle(8);
+    assert.equal(view(), before, 'still open');
+    assert.equal(document.querySelector('[data-unplug]').disabled, false);
+    assert.equal(document.querySelector('[data-unplug]').textContent, realView.UNPLUG_TEXT);
+    assert.equal(links.list().length, 1, 'the box is still in');
+});
+
+test('UI PC 2 (N05): the view opened from the inventory has no Unplug', async () => {
+    setupUnplug();
+    links.open('jack_comms_port');
+    await settle(6);
+    assert.ok(view() instanceof NetworkViewMinigame);
+    assert.equal(document.querySelector('[data-unplug]'), null);
+    assert.equal(view().getTestState().unplug, null);
+});
+
+test('UI PC 2 (N05): Unplug shows even when the link did not answer', async () => {
+    setupUnplug();
+    window.ApiClient.network = async () => { throw Object.assign(new Error('down'), { status: 500 }); };
+    await links.interactJack(plantedJackSprite());
+    await settle(6);
+    assert.ok(document.querySelector('.network-view-error'));
+    assert.ok(document.querySelector('.network-view-header [data-unplug]'));
+});
+
+test('UI PC 2 (N05): the Unplug button CSS is pixel art (no radius, no shadow)', () => {
+    const body = ruleBody('.network-view .network-view-unplug,\n.network-view-header .network-view-unplug') || '';
+    assert.match(body, /padding:\s*4px 12px/);
+    assert.doesNotMatch(body, /border-radius|box-shadow/);
+});
