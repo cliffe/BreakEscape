@@ -430,21 +430,21 @@ test('R1 M6: the message lane stays above the hearts, with or without Block/Punc
 });
 
 test('R1 n3: the hearts never meet Block/Punch at any phone width, with or without them', () => {
-    // real narrow-phone geometry: hearts 168 x 32 fixed at left 8, bottom 108; Block/Punch 164 x 68 at right 24, bottom 116
+    // real narrow-phone geometry: hearts 168 x 32 fixed at left 8, bottom 108; Block/Punch 148 x 68 (gap 12) at right 24, bottom 116
     for (let vw = 320; vw <= 480; vw += 4) {
         const vh = 640;
         for (const combat of [true, false]) {
             hudRig(vw, vh, { combat: false, hearts: { left: 8, top: vh - 108 - 32, width: 168, height: 32 } });
-            if (combat) rect(add('<div id="combat-buttons"></div>'), { left: vw - 24 - 164, top: vh - 116 - 68, width: 164, height: 68 });
+            if (combat) rect(add('<div id="combat-buttons"></div>'), { left: vw - 24 - 148, top: vh - 116 - 68, width: 148, height: 68 });
             const heartsEl = document.getElementById('health-ui-container');
             L.applyLanes(document, window);
             const lift = parseInt(heartsEl.style.getPropertyValue('--hearts-lift') || '0', 10);
             const h = { left: 8, right: 176, top: vh - 140 - lift, bottom: vh - 108 - lift };
             if (!combat) { assert.equal(lift, 0, `${vw}: no Block/Punch, no lift`); continue; }
-            const c = { left: vw - 188, right: vw - 24, top: vh - 184, bottom: vh - 116 };
+            const c = { left: vw - 172, right: vw - 24, top: vh - 184, bottom: vh - 116 };
             assert.equal(L.heartsLift(h, c), 0, `${vw}: hearts (lift ${lift}) still within ${L.LANE_GAP}px of Block/Punch`);
             // where they are clear sideways they stay put
-            if (vw >= 372) assert.equal(lift, 0, `${vw}: clear sideways, no lift`);
+            if (vw >= 356) assert.equal(lift, 0, `${vw}: clear sideways, no lift`);
             else assert.ok(lift > 0, `${vw}: lifted`);
         }
     }

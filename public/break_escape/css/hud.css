@@ -150,6 +150,14 @@ html .game-display-dialog {
   }
 }
 
+/* Narrow phones: a tighter gap (the pair is 16 px narrower), so the hearts (168 px wide, at the
+   left) clear them from 356 px wide; below that hud-lanes.js lifts the hearts above the buttons */
+@media (max-width: 480px) {
+  #combat-buttons {
+    gap: 12px;
+  }
+}
+
 .combat-button {
   --bezel: #c8c8c8;
   --bezel-dark: #000;
