@@ -175,7 +175,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-11-03"
+    "imported": "2026-11-14",
+    "sit_from": "6f2edec6-a625-4f44-ac06-0785c06360be"
   },
   "danny_foster": {
     "character_id": "c0b52964-6a42-4be3-b9b0-2bb2da39ab0d",
@@ -385,7 +386,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-11-03"
+    "imported": "2026-11-14",
+    "sit_from": "881cc210-800c-4791-b2c7-a24675666ece"
   },
   "gareth_fairbairn": {
     "character_id": "46fc0e4f-fea2-45f4-841e-30f8e0c2af2c",
@@ -474,7 +476,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-11-03"
+    "imported": "2026-11-14",
+    "sit_from": "1198fb80-da48-4f86-a33f-3858bec7fdd2"
   },
   "hashchain_guard": {
     "character_id": "429ff98c-3927-4eb8-9d37-0b2abd2c30f5",
@@ -663,7 +666,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-11-03"
+    "imported": "2026-11-14",
+    "sit_from": "170c26bd-8dca-4650-82f4-98dc661deb5c"
   },
   "lyle_dillard": {
     "character_id": "274429e7-ac0b-476f-a1e9-973922a5cae9",
@@ -753,7 +757,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-11-03"
+    "imported": "2026-11-14",
+    "sit_from": "d8f2c2ec-296d-476f-84ba-6bbedcc49632"
   },
   "margaret_sorensen": {
     "character_id": "866ff41a-08ea-48a0-a07e-1ae403d904a8",
@@ -782,7 +787,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-11-03"
+    "imported": "2026-11-14",
+    "sit_from": "8faf4ffa-e1ac-47fe-950e-835bd6ac4071"
   },
   "netherton": {
     "character_id": "37ee8f05-6adf-4c4c-b780-810098d9f00b",
@@ -801,7 +807,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-11-03"
+    "imported": "2026-11-14",
+    "sit_from": "9262254a-68c7-4ff1-ad1e-4fbb8eaf6bff"
   },
   "niamh_doherty": {
     "character_id": "82795d92-3115-4309-9692-993ae4b6f77e",
@@ -1169,7 +1176,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-11-03"
+    "imported": "2026-11-14",
+    "sit_from": "6b4a1d75-4e3a-4cc8-9c79-3611a1965e34"
   },
   "voltage": {
     "character_id": "a51966d8-6ef5-4dec-8404-15e0799f18ae",
