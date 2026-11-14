@@ -24,7 +24,7 @@ Hiya. Jodie, maintenance. On call for whatever breaks, mostly the kettle.
     -> hub
 * { job_cleared } [Did that light get sorted?]
     # speaker:npc
-    Aye, I swapped the tube. No more flickering. Cheers for flagging it.
+    Aye, sorted. Spare tube was in my locker. Cheers for flagging it.
     -> hub
 + [Busy night?]
     # speaker:npc
@@ -61,6 +61,6 @@ Jodie: Once I've finished this, aye.
 // Gated on job_cleared and heard_exchange_job_called: Jodie has done the job.
 === exchange_job_cleared ===
 Keith: Light's behaving now.
-Jodie: New tube. Should last a while.
+Jodie: Spare from my locker did it.
 Keith: Peace and quiet again. Lovely.
 -> DONE

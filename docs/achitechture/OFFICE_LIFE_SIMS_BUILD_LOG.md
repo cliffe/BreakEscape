@@ -312,7 +312,7 @@ Commits ed270e239 (ink, scenario, tool), 20682cd6e (node tests), 0797e9b4e (docs
 - **Design m4 (node coupling test tested its own lambda). Fixed.** New `test/js/npc-needs-sims-mappings.test.mjs` reads the staff-room mappings from `scenario.json.erb` and runs them through NPCManager's real mapping path (5 cases: both couplings, the upkeep drop, the locker fix, the reload re-send). The chained-break test now holds the walk home and asserts no `npc_returned_post:keith` between the two starts.
 - **Server m1 (a sub-30 s reload can lose `job_cleared`). Fixed in docs.** README reload note and plan 5.4 Sync add `job_called` and `job_cleared`, and how the new mappings heal it.
 - **S3 R4 M1 (ready line after an X close). Fixed.** `~ asked_now = false` at the top of `hub` (only reopens pass there) and the `neil_page_taken` branch tested first; `neil.json` recompiled with inklecate. Game 4706 (the reviewer's script): after X close, take, reopen, "You've got it already, pet."; the asking chat still "Soon as". README X-path row added.
-- **S3 R4 m1 (bare `setGlobal` docs). Fixed.** Six sites reworded: a mapping `setGlobal` reaches the server on the next 30 s sync or the unload flush; a task completion only makes that sooner.
+- **S3 R4 m1 (bare `setGlobal` docs). Fixed.** Six sites reworded: a mapping `setGlobal` reaches the server on the next 30 s sync or the unload flush; a task completion only makes that sooner. (Corrected in S4 R3 server m1: sooner only in a scenario whose conclusion gates on a global, which `test_needs_sims` does not.)
 - **Probe race behind 4570. Fixed.** `talkNeil` returns true only on a `conversation_closed:neil` after the call, retries once after Neil's sip, else the run is a setup failure (exit 3). 0 setup failures in 15 staff-room runs.
 - **Speech-lock beat. Re-scoped and rerun.** The player stands by the office coffee pair while both pairs take forced breaks (needs set through the bridge, said). 4932, 10 min: 66 office turns, 0 blocked, 0 staff lines spoken. It now proves that a pair out of earshot holds no speech lock against the pair the player hears; the old measure cannot occur with E7.
 - **E7 regression on Sanjay and Rosa.** `e7e9-live-proof.mjs e7` COUPLED_ONLY=1, game 4708: no unheard draw, first line on entry.
@@ -330,7 +330,7 @@ later) and `test/js/validator-office-life-v10.test.mjs`. One line wires it into
 beside `ValidateAccessWork`). V10 is a warning-only static check; it adds no engine or server line
 and nothing at runtime. It reuses `ValidateNpcNeeds`'s object/preset/leash/privacy helpers
 (`collect`, `expand_presets`, `use_rule`, `leash_reach`, `owners_of`, `pool_lines`) so its reasoning
-matches the needs engine (`npc-needs.js` `_pickBark` 2740 and its call sites: `_maybePair`,
+matches the needs engine (`npc-needs.js` `_pickBark` and its call sites: `_maybePair`,
 `_tickQueueChats`, `_tickChats`, `_grumbleTopic`, `_failTopic`, `_chooseCall`, `_tickNews`). The set
 of topics the engine speaks is read from `PICTURE_CHATTER` in `npc-needs.js`, so the list cannot
 drift; V10 judges triggerability for the office-life kinds it owns (chatter-object topics, the
@@ -345,9 +345,9 @@ and access/workaround topics (spoken by other subsystems) to their own checks.
   scenario `cooler` pool. Marek needs `thirst` but avoids everyone (`avoids: ["*"]`), so he never
   pairs. The scenario `cooler` pool is fine (Grace/Sanjay/Rosa can pair), as are every other pool,
   the two exchanges and the two calls. These three are a content slip (the own pools read like they
-  were meant as `coffee` pools); they are left in place and pinned, not edited, because the showcase
-  scenario is shared and the lines are dead rather than wrong. Recommend the owner re-key or drop
-  them.
+  were meant as `coffee` pools). (Superseded: commit 3f4068967 re-keyed Amara's and Tom's to
+  `coffee`, dropped Marek's and unpinned the test. The R1 fix round below then found five dead own
+  `grumble` pools and removed them; V10 gives no warning on this scenario now.)
 - `test_needs_attack`: none.
 
 **Scenarios owned by other work (no error; warnings listed, not pinned):** `test_needs_leash` none,
@@ -359,6 +359,98 @@ the labs, sis01 to sis03 included): no crash, no error, and no warning anywhere 
 
 Tests: the standard node set (25 files incl. the new V10 test) PASS; the three Ruby format corpus
 tests (8a/8b/8c) 0 failures. Live proof: see the README SIMS-5 live-proof rows. No new spoken lines.
+
+## SIMS-5 R1 and SIMS-4 R3 review fixes
+
+Reviews: `OFFICE_LIFE_SIMS_S5_REVIEW_R1_CODE.md` (1 B, 3 M, 5 m), `OFFICE_LIFE_SIMS_S4_REVIEW_R3_DESIGN.md`
+m1 to m5, `OFFICE_LIFE_SIMS_S4_REVIEW_R3_SERVER.md` m1. Each finding was checked against the engine
+before the fix; none was withdrawn. `scripts/validate_office_life.rb` was rewritten to mirror
+`npc-needs.js` as it stands (functions cited by name, not line).
+
+**SIMS-5 R1 (code).**
+
+- **B1. Fixed.** `grumble` now follows `_recheck` (returns unless `_avoidRadius` > 0, and only for a
+  deferrable need), `_avoidedAt` (any use object but the NPC's own `needsHome`; any avoided NPC,
+  either way, that can be in that room, needs or not; groups play no part; a `requireGlobal` avoid
+  counts while its global holds) and `_grumbleTopic` (an off or gone turn-back speaks `grumble` when
+  the merged `grumble_off` / `grumble_gone` pool has no lines). An off turn-back for a judged need
+  speaks `_failTopic` and is not counted (`_turnBack`'s `judged` branch; `AccessWork.work_plan?`). A
+  `failed` turn-back is always judged (`_failUse`), so it never falls back to `grumble`; `_printBlocked`
+  speaks `grumble_printer_off` with no fallback. `compatible?` is kept for pairing only. Every magnet
+  runs out (`magnetOf`: servings default 1), so a `grumble_gone` pool needs only a magnet the NPC may
+  use (the old check skipped a magnet with non-numeric servings, a false warning).
+- **M1. Fixed.** The blanket "another subsystem" pass now covers only `PICTURE_CHATTER` topics outside
+  the office set (`coffee cooler greet news`, the grumble family, the phone topics) plus `work_fail*`.
+  A chatter-object topic with no such object warns; `news` is the announce pool of a magnet with no
+  `announce` and is judged by the announce rule.
+- **M2. Fixed.** A colleague answers (`phone_message`, colleague `phoneCalls`) only with
+  `answersPhones: true`, a home room equal to the phone's room, and no unconditional avoid either way
+  with the owner (`_claimAnswerer`). A phone counts only with a non-empty String `owner` (`onPhoneRing`).
+- **M3. Fixed.** An announce pool needs a teller: an NPC that can be in the magnet's room (`_sight`,
+  need or not) or is told by one, whose home room is not the magnet's room, with another NPC able to be
+  in that home room that neither avoids unconditionally (`_tickNews`, `_newsHearers`); hearers become
+  knowers in turn. A room-less (held) magnet is permissive on rooms. Node test 9 rewritten.
+- **m1. Fixed.** One map from knot to its exchange and call entries; one warning per knot with more than
+  one entry; a mirrored pair (two NPCs naming each other) is exempt.
+- **m2. Fixed.** A queue counts only with a cell holding numeric `dx` and `dy` (`_queueCfg`). Held and
+  inventory objects are not sources, except a magnet, which `onItemDropped` makes a source where it is
+  dropped (the showcase cake is a start-inventory magnet with `chatter: "cake"`; skipping it outright
+  gave a false warning on the scenario `cake` pool, so the reviewer's fix was narrowed to non-magnets).
+  `gone` now checks the magnet's room against the NPC's leash and privacy.
+- **m3. Fixed.** Reasons are phrased whole (no "no an ..."), and every pool warning ends with "give it a
+  partner or trigger, or remove the lines".
+- **m4. Fixed.** The SIMS-5 step 1 paragraph above is marked superseded; Ruby comments cite functions,
+  not line numbers.
+- **m5. Fixed.** New node cases: exchange knot shared by two pairs, the preset path (`officePresets`,
+  coffee preset queue pairs; own `queue: false` does not), test 13 now asserts the exit status only and
+  prints a visible skip note for `lab_physical_pentest` without `json-schema`. Plus cases for every rule
+  changed: B1 (both directions, 8 asserts), M1 (greet, coffee, news, an access topic left alone), M2
+  (no `answersPhones`, in the room, avoiding the owner, another room, a list owner), m1, m2.
+  `test/js/validator-office-life-v10.test.mjs` has 18 tests.
+- **Plan note.** Plan 5.5 no longer lists "a queue" among grumble turn-backs (`_leaveQueue` on
+  `max_wait` leaves in silence) and states the B1 rule.
+
+**Scenario (plan 5.5).** V10 then flagged exactly the five own `grumble` pools B1 predicted. Each was
+removed rather than given a trigger: none of the five has an avoid radius (Amara, Tom, Grace, Rosa have
+no `needsCompany`; Marek has `avoidRadius: 0`), and giving one an avoid would refuse chats that the
+coffee, cooler and phone beats rely on, while the avoid grumble is already shown by Sanjay (radius 2,
+avoids Marek). Their off and gone turn-backs speak the scenario `grumble_off` / `grumble_gone` lines.
+The test pin stays `[]` for both owned scenarios.
+
+**SIMS-4 R3 (design).**
+
+- **m1. Fixed.** `actionIcons` gains `"upkeep": "icon:npc-work"` (`pickIconEntry` reads the need key
+  before the fallback dot). Art request: a tube or toolbox icon.
+- **m2. Fixed (option a, wording).** Jodie's lines now say what she visibly does (fetches a spare from
+  her locker); the task title says she "sorts" the light, which steadies "as she finishes there".
+- **m3. Fixed.** Plan 3.3 gains the `staff_lockers` row; 3.4 gives Jodie's `upkeep` need, the 4-line
+  job-called exchange and how `job_cleared` is set (marked S4 R2 M2, with "do not rebuild the dialogue
+  setter"); 5.4 step 2, Spoken lines, Objectives (`see_light_fixed`, `hear_job_cleared`) and Sync (7
+  `onceOnly` keys) match the scenario.
+- **m4. Fixed.** `test/js/npc-needs-sims-mappings.test.mjs` runs the real `_handleEventMapping`, with
+  only `window.npcNeedsSystem.control` and `window.objectivesManager.completeTask` stubbed; it asserts
+  the control call, `gameState.globalVariables.job_cleared`, the task ids and the persisted onceOnly
+  keys. The JSON lookup is gone.
+- **m5. Fixed.** Jodie's two onceOnly mappings on `npc_exchange_heard:exchange_job_called` are one
+  (`completeTask: hear_job_called` plus `needs.set.upkeep 0`, no condition). The validator warning is
+  gone.
+
+**SIMS-4 R3 (server) m1. Fixed (docs and comment only).** At the lockers-mapping comment, README (the
+IT reload passage and "On reload"), plan 5.3 Sync, 5.4 Sync (3) and 6.5, the wording now says a task
+completion brings the globals' sync sooner only in a scenario whose conclusion gates on a global
+(`objectives-manager.js` `scenarioGatesOnGlobals`, checked in `serverCompleteTaskWithRetry`);
+`test_needs_sims` has none, so `job_cleared` rides the periodic or page-hide sync and the design relies
+on the self-heal. Plan 6.5's stale "a bare setGlobal does not sync" is corrected too. The log entry for
+S3 R4 m1 carries a correction note.
+
+Spoken lines: 5 removed, 2 changed, 0 added. Removed: Amara "Never mind, I'll go later.", Tom "Oh,
+forget it.", Grace "I'll try again later.", Marek "Fine. Later, then.", Rosa "It can wait." (own
+`grumble` pools, never spoken). Changed: Jodie, cleared exchange, "Spare from my locker did it." (was
+"New tube. Should last a while."); Jodie, hub reply, "Aye, sorted. Spare tube was in my locker. Cheers
+for flagging it." (was "Aye, I swapped the tube. No more flickering. Cheers for flagging it."). Both
+need TTS when the showcase is voiced.
+
+Engine and server changes: none (the validator script is tooling).
 
 ## Engine and server changes (every slice)
 

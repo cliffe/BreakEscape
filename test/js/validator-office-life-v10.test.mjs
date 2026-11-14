@@ -123,12 +123,38 @@ test('capacity-1 coffee with a queue pairs two users; queue:false warns for the 
     assert.ok(has(i, "NPC 'a' exchange 'ex_ab' (with 'b') can never play"), 'and the exchange cannot play');
 });
 
-// ── 9: a magnet's announce pool with an NPC who can see the magnet does not warn ──
-test('a magnet announce pool with a hungry NPC who can reach it does not warn', { skip }, () => {
+// ── 9: a magnet's announce pool needs a teller who saw it and, at home away from it, a hearer ──
+// _tickNews: the teller tells in its own home room, never the magnet's room, and only with a hearer.
+test('a magnet announce pool: a teller at home outside the magnet room with a hearer passes; a lone NPC in its room warns', { skip }, () => {
     const magnet = { id: 'cake', type: 'cake1', position: { x: 4, y: 4 }, affordance: { satisfies: ['hunger', 'social'], restores: 40, capacity: 3, chatter: 'cake', magnet: { servings: 2, announce: 'news_cake' } } };
-    const a = { id: 'a', needsHome: 'a_pc', needs: { hunger: { decayPerMin: 4, urgentAt: 40 } } };
-    const sc = oneRoom({ objects: [desk('a_pc'), magnet], npcs: [a], chatter: { news_cake: ["Cake's out!"] } });
-    assert.ok(!has(check(sc), "chatter pool 'news_cake'"), 'the cake is in a room the hungry NPC can reach');
+    const hunger = { hunger: { decayPerMin: 4, urgentAt: 40 } };
+    const a = { id: 'a', needsHome: 'a_pc', needs: hunger };
+    const b = { id: 'b', needsHome: 'b_pc' };   // no needs: it stays at its desk and hears
+    const two = {
+        officePresets: false, chatter: { news_cake: ["Cake's out!"] },
+        rooms: {
+            office: { type: 'room_office', connections: { north: 'kitchen' }, objects: [desk('a_pc'), desk('b_pc')], npcs: [a, b] },
+            kitchen: { type: 'room_office', connections: { south: 'office' }, objects: [magnet], npcs: [] }
+        }
+    };
+    let i = check(two);
+    assert.ok(!has(i, "chatter pool 'news_cake'"), 'a walks past the cake and tells b at home: ' + i.join('\n'));
+
+    const lone = oneRoom({ objects: [desk('a_pc'), magnet], npcs: [a], chatter: { news_cake: ["Cake's out!"] } });
+    i = check(lone);
+    assert.ok(has(i, "scenario chatter pool 'news_cake'"), 'the only NPC lives in the cake room, with nobody to tell');
+
+    // The need does not matter: b has no hunger, but sees the cake in its own room and tells c next door.
+    const c = { id: 'c', needsHome: 'c_pc' };
+    const tellerNoNeed = {
+        officePresets: false, chatter: { news_cake: ["Cake's out!"] },
+        rooms: {
+            kitchen: { type: 'room_office', connections: { south: 'office' }, objects: [magnet], npcs: [] },
+            office: { type: 'room_office', connections: { north: 'kitchen' }, objects: [desk('a_pc'), desk('c_pc')], npcs: [{ id: 'a', needsHome: 'a_pc', needs: thirst, chatter: { news_cake: ['Cake, everyone!'] } }, c] }
+        }
+    };
+    i = check(tellerNoNeed);
+    assert.ok(!has(i, "NPC 'a' chatter pool 'news_cake'"), 'a thirsty NPC that can walk to the cake room can tell: ' + i.join('\n'));
 });
 
 // ── 10: a scenario pool one NPC can trigger is fine; an NPC's own pool it cannot warns ──
@@ -151,12 +177,143 @@ test('two NPCs sharing a phoneCalls knot name warn', { skip }, () => {
     const b = { id: 'b', needsHome: 'b_pc', needs: thirst, phoneCalls: [{ knot: 'shared' }] };
     const sc = oneRoom({ objects: [desk('a_pc'), desk('b_pc'), ringer, pa, pb], npcs: [a, b] });
     const i = check(sc);
-    assert.ok(has(i, "phoneCalls knot 'shared' is used by more than one NPC"), i.join('\n'));
+    assert.ok(has(i, "knot 'shared' is used by more than one exchange or phone call"), i.join('\n'));
     assert.ok(!has(i, "phoneCalls knot 'shared' can never play"), 'each owns a rung phone: ' + i.join('\n'));
 });
 
-// ── 12: the scenarios this branch owns, pinned (step 1 of SIMS-5) ──
-test('test_needs_sims: no V10 warning (the cooler pools were re-keyed to coffee or dropped)', { skip }, () => {
+// ── 14 (review R1 B1): grumble follows _recheck / _avoidedAt / _grumbleTopic ──
+test('grumble: group mismatch or being avoided is no turn-back; an own avoid at any source, a requireGlobal avoid and the off/gone fallback are', { skip }, () => {
+    const g = { grumble: ['Typical.'] };
+    const W = "NPC 'a' chatter pool 'grumble'";
+    // false passes before the fix
+    let sc = oneRoom({ objects: [desk('a_pc'), desk('b_pc'), cooler('c1')], npcs: [
+        { id: 'a', needsHome: 'a_pc', needs: thirst, needsCompany: { groups: ['x'] }, chatter: g },
+        { id: 'b', needsHome: 'b_pc', needs: thirst, needsCompany: { groups: ['y'] } }] });
+    assert.ok(has(check(sc), W), 'disjoint groups share in silence; nobody turns back');
+    sc = oneRoom({ objects: [desk('a_pc'), desk('b_pc'), cooler('c1')], npcs: [
+        { id: 'a', needsHome: 'a_pc', needs: thirst, chatter: g },
+        { id: 'b', needsHome: 'b_pc', needs: thirst, needsCompany: { avoids: ['a'] } }] });
+    assert.ok(has(check(sc), W), 'only b avoids a: a has avoid radius 0 and never turns back');
+    sc = oneRoom({ objects: [desk('a_pc'), desk('b_pc'), cooler('c1')], npcs: [
+        { id: 'a', needsHome: 'a_pc', needs: thirst, needsCompany: { avoids: ['b'], avoidRadius: 0 }, chatter: g },
+        { id: 'b', needsHome: 'b_pc', needs: thirst }] });
+    assert.ok(has(check(sc), W), 'avoidRadius 0 switches the recheck off');
+    // false warnings before the fix
+    const fridge = { id: 'f1', type: 'fridge', affordance: { satisfies: 'thirst', capacity: 1 } };
+    sc = oneRoom({ objects: [desk('a_pc'), desk('b_pc'), fridge], npcs: [
+        { id: 'a', needsHome: 'a_pc', needs: thirst, needsCompany: { avoids: ['b'] }, chatter: g },
+        { id: 'b', needsHome: 'b_pc' }] });
+    let i = check(sc);
+    assert.ok(!has(i, W), 'an avoid at a source with no chatter, by an NPC with no needs, still turns a back: ' + i.join('\n'));
+    sc = oneRoom({ objects: [desk('a_pc'), desk('b_pc'), cooler('c1')], npcs: [
+        { id: 'a', needsHome: 'a_pc', needs: thirst, needsCompany: { avoids: [{ npc: 'b', requireGlobal: 'feud' }] }, chatter: g },
+        { id: 'b', needsHome: 'b_pc', needs: thirst }] });
+    i = check(sc);
+    assert.ok(!has(i, W), 'a requireGlobal avoid turns a back while the global holds: ' + i.join('\n'));
+    const offCooler = { ...cooler('c1'), offWhen: 'cooler_broken' };
+    sc = oneRoom({ objects: [desk('a_pc'), offCooler], npcs: [{ id: 'a', needsHome: 'a_pc', needs: thirst, chatter: g }] });
+    i = check(sc);
+    assert.ok(!has(i, W), 'an off turn-back with no grumble_off lines speaks grumble: ' + i.join('\n'));
+    sc = oneRoom({ objects: [desk('a_pc'), offCooler], npcs: [{ id: 'a', needsHome: 'a_pc', needs: thirst, chatter: g }], chatter: { grumble_off: ["It's off."] } });
+    assert.ok(has(check(sc), W), 'with grumble_off lines the off turn-back speaks those instead');
+    const cake = { id: 'cake', type: 'cake1', affordance: { satisfies: 'thirst', capacity: 3, magnet: { servings: 2 } } };
+    sc = oneRoom({ objects: [desk('a_pc'), cake], npcs: [{ id: 'a', needsHome: 'a_pc', needs: thirst, chatter: g }] });
+    i = check(sc);
+    assert.ok(!has(i, W), 'a gone turn-back with no grumble_gone lines speaks grumble: ' + i.join('\n'));
+});
+
+// ── 15 (review R1 M1): a chatter-object topic or news with nothing to trigger it warns ──
+test('greet and coffee pools with no such object, and news with no magnet, warn', { skip }, () => {
+    let i = check(oneRoom({ objects: [desk('a_pc')], npcs: [{ id: 'a', needsHome: 'a_pc', needs: thirst, chatter: { greet: ['Morning.'], coffee: ['Fresh pot?'] } }] }));
+    assert.ok(has(i, "NPC 'a' chatter pool 'greet'"), 'greet needs an affordance with chatter "greet"');
+    assert.ok(has(i, "NPC 'a' chatter pool 'coffee'"), 'no coffee object');
+    i = check(oneRoom({ objects: [desk('a_pc')], npcs: [{ id: 'a', needsHome: 'a_pc', needs: thirst }], chatter: { news: ['Cake in the kitchen!'] } }));
+    assert.ok(has(i, "scenario chatter pool 'news'"), 'news needs a magnet with no announce of its own');
+    i = check(oneRoom({ objects: [desk('a_pc')], npcs: [{ id: 'a', needsHome: 'a_pc', needs: thirst, chatter: { station_fail: ['Not again.'] } }] }));
+    assert.ok(!has(i, "chatter pool 'station_fail'"), 'an access topic stays outside V10');
+});
+
+// ── 16 (review R1 M2): a colleague answers only with answersPhones, at home in the phone's room ──
+test('phone_message and a colleague phoneCalls need answersPhones in the phone room; an owner list is no owner', { skip }, () => {
+    const ringer = { id: 'ring', type: 'phone2', triggerOnInteract: [{ type: 'emit_event', event_name: 'desk_phone_ring:pa' }] };
+    const pa = { id: 'pa', type: 'phone', deskPhone: true, owner: 'a' };
+    const a = { id: 'a', needsHome: 'a_pc', needs: thirst };
+    const b = extra => ({ id: 'b', needsHome: 'b_pc', needs: thirst, chatter: { phone_message: ['Left a note.'] }, phoneCalls: [{ knot: 'call_b' }], ...extra });
+    let i = check(oneRoom({ objects: [desk('a_pc'), desk('b_pc'), ringer, pa], npcs: [a, b({})] }));
+    assert.ok(has(i, "NPC 'b' chatter pool 'phone_message'"), 'no answersPhones');
+    assert.ok(has(i, "NPC 'b' phoneCalls knot 'call_b' can never play"), 'no answersPhones, no call');
+    i = check(oneRoom({ objects: [desk('a_pc'), desk('b_pc'), ringer, pa], npcs: [a, b({ answersPhones: true })] }));
+    assert.ok(!has(i, "NPC 'b'"), 'answersPhones in the phone room: ' + i.join('\n'));
+    i = check(oneRoom({ objects: [desk('a_pc'), desk('b_pc'), ringer, pa], npcs: [a, b({ answersPhones: true, needsCompany: { avoids: ['a'] } })] }));
+    assert.ok(has(i, "NPC 'b' chatter pool 'phone_message'"), 'an answerer who avoids the owner never claims');
+    const two = {
+        officePresets: false,
+        rooms: {
+            office: { type: 'room_office', connections: { north: 'side' }, objects: [desk('a_pc'), ringer, pa], npcs: [a] },
+            side: { type: 'room_office', connections: { south: 'office' }, objects: [desk('b_pc')], npcs: [b({ answersPhones: true })] }
+        }
+    };
+    assert.ok(has(check(two), "NPC 'b' chatter pool 'phone_message'"), 'leash reach is not enough: the answerer must live in the phone room');
+    const listOwner = { ...pa, owner: ['a'] };
+    i = check(oneRoom({ objects: [desk('a_pc'), ringer, listOwner], npcs: [{ ...a, chatter: { phone: ['Hello?'] }, phoneCalls: [{ knot: 'call_a' }] }] }));
+    assert.ok(has(i, "NPC 'a' chatter pool 'phone'"), 'onPhoneRing ignores a list owner');
+    assert.ok(has(i, "NPC 'a' phoneCalls knot 'call_a' can never play"), 'and its calls');
+});
+
+// ── 17 (review R1 m1, m5): one heard_<knot> per knot over exchanges and calls ──
+test('a knot shared by an exchange and a call, by one NPC twice or by two exchanges warns once; a mirrored pair does not', { skip }, () => {
+    const ringer = { id: 'ring', type: 'phone2', triggerOnInteract: [{ type: 'emit_event', event_name: 'desk_phone_ring:pa' }] };
+    const pa = { id: 'pa', type: 'phone', deskPhone: true, owner: 'a' };
+    const n = (id, extra = {}) => ({ id, needsHome: `${id}_pc`, needs: thirst, ...extra });
+    const objs = [desk('a_pc'), desk('b_pc'), desk('c_pc'), desk('d_pc'), cooler('c1'), ringer, pa];
+    const count = (i, knot) => i.filter(x => x.includes(`knot '${knot}' is used by more than one`)).length;
+    let i = check(oneRoom({ objects: objs, npcs: [n('a', { phoneCalls: [{ knot: 'k1' }] }), n('b', { exchanges: [{ with: 'a', knot: 'k1' }] })] }));
+    assert.equal(count(i, 'k1'), 1, 'exchange and call share k1: ' + i.join('\n'));
+    i = check(oneRoom({ objects: objs, npcs: [n('a', { exchanges: [{ with: 'b', knot: 'k3' }, { with: 'c', knot: 'k3' }] }), n('b'), n('c')] }));
+    assert.equal(count(i, 'k3'), 1, 'one NPC, two partners');
+    i = check(oneRoom({ objects: objs, npcs: [n('a', { exchanges: [{ with: 'b', knot: 'k2' }] }), n('b', { exchanges: [{ with: 'a', knot: 'k2' }] })] }));
+    assert.equal(count(i, 'k2'), 0, 'a and b naming each other is one exchange');
+    i = check(oneRoom({ objects: objs, npcs: [n('a', { exchanges: [{ with: 'b', knot: 'k4' }] }), n('b'), n('c', { exchanges: [{ with: 'd', knot: 'k4' }] }), n('d')] }));
+    assert.equal(count(i, 'k4'), 1, 'two exchanges between different pairs share k4');
+});
+
+// ── 18 (review R1 m2): queue cells, held objects and the gone leash ──
+test('an empty queue does not pair, a cooler only an NPC holds is no source, and a gone grumble needs a reachable magnet', { skip }, () => {
+    let i = check(oneRoom({ objects: [desk('a_pc'), desk('b_pc'), cooler('c1', { capacity: 1, queue: {} })], npcs: [
+        { id: 'a', needsHome: 'a_pc', needs: thirst, chatter: { cooler: ['Hi'] } }, { id: 'b', needsHome: 'b_pc', needs: thirst }] }));
+    assert.ok(has(i, "NPC 'a' chatter pool 'cooler'"), 'queue: {} has no cells, so _queueCfg is null');
+    i = check(oneRoom({ objects: [desk('a_pc'), desk('b_pc')], npcs: [
+        { id: 'a', needsHome: 'a_pc', needs: thirst, chatter: { cooler: ['Hi'] }, itemsHeld: [cooler('c1')] }, { id: 'b', needsHome: 'b_pc', needs: thirst }] }));
+    assert.ok(has(i, "NPC 'a' chatter pool 'cooler'"), 'a held cooler is not in the world');
+    const cake = { id: 'cake', type: 'cake1', affordance: { satisfies: 'thirst', capacity: 3, magnet: { servings: 2 } } };
+    const sc = {
+        officePresets: false,
+        rooms: {
+            office: { connections: { north: 'kitchen' }, objects: [desk('a_pc')], npcs: [{ id: 'a', needsHome: 'a_pc', needs: thirst, needsRooms: ['office'], chatter: { grumble_gone: ['Gone.'] } }] },
+            kitchen: { connections: { south: 'office' }, objects: [cake] }
+        }
+    };
+    assert.ok(has(check(sc), "NPC 'a' chatter pool 'grumble_gone'"), 'the magnet room is outside needsRooms');
+    // A dropped magnet is a source wherever it lies: a start-inventory cake pairs its chatter.
+    const held = { id: 'cake', type: 'cake1', takeable: true, affordance: { satisfies: 'thirst', capacity: 3, chatter: 'cake', magnet: { servings: 2 } } };
+    i = check({ ...oneRoom({ objects: [desk('a_pc'), desk('b_pc')], npcs: [
+        { id: 'a', needsHome: 'a_pc', needs: thirst, chatter: { cake: ['Nice cake.'] } }, { id: 'b', needsHome: 'b_pc', needs: thirst }] }), startItemsInInventory: [held] });
+    assert.ok(!has(i, "chatter pool 'cake'"), 'a held magnet counts once dropped: ' + i.join('\n'));
+});
+
+// ── 19 (review R1 m5): queue: false over a preset's queue ──
+test('officePresets: a coffee preset queue pairs; its own queue: false does not', { skip }, () => {
+    const station = aff => ({ id: 'cof1', type: 'coffee_station', affordance: { chatter: 'coffee', ...aff } });
+    const npcs = [{ id: 'a', needsHome: 'a_pc', needs: caffeine, chatter: { coffee: ['Fresh pot?'] } }, { id: 'b', needsHome: 'b_pc', needs: caffeine }];
+    const sc = aff => ({ officePresets: true, rooms: { office: { type: 'room_office', connections: {}, objects: [desk('a_pc'), desk('b_pc'), station(aff)], npcs } } });
+    let i = check(sc({}));
+    assert.ok(!has(i, "NPC 'a' chatter pool 'coffee'"), 'the preset queue pairs the queuer: ' + i.join('\n'));
+    i = check(sc({ queue: false }));
+    assert.ok(has(i, "NPC 'a' chatter pool 'coffee'"), 'queue: false over the preset leaves capacity 1 alone');
+});
+
+// ── 12: the scenarios this branch owns, pinned ──
+test('test_needs_sims: no V10 warning (the five dead own grumble pools were removed in SIMS-5 R1)', { skip }, () => {
     assert.deepEqual(checkFile('scenarios/test_needs_sims/scenario.json.erb'), []);
 });
 
@@ -164,12 +321,15 @@ test('test_needs_attack: no V10 warning', { skip }, () => {
     assert.deepEqual(checkFile('scenarios/test_needs_attack/scenario.json.erb'), []);
 });
 
-// ── 13: scenarios other work owns — V10 must raise no error (warnings are listed in the report) ──
-test('test_needs_leash, test_access_work and lab_physical_pentest: V10 raises no error', { skip }, () => {
+// ── 13: scenarios other work owns: V10 must not crash or exit non-zero (it emits warnings only) ──
+test('test_needs_leash, test_access_work and lab_physical_pentest: V10 runs and exits 0', { skip }, (t) => {
     for (const p of ['scenarios/test_needs_leash/scenario.json.erb', 'scenarios/test_access_work/scenario.json.erb']) {
-        assert.ok(!checkFile(p).some(s => s.startsWith('❌')), p);
+        assert.ok(Array.isArray(checkFile(p)), p);   // checkFile asserts the exit status
     }
     if (haveSchema) {
-        assert.ok(!checkFile('scenarios/lab_physical_pentest/scenario.json.erb', { render: true }).some(s => s.startsWith('❌')), 'lab_physical_pentest');
+        assert.ok(Array.isArray(checkFile('scenarios/lab_physical_pentest/scenario.json.erb', { render: true })), 'lab_physical_pentest');
+    } else {
+        t.diagnostic('lab_physical_pentest skipped: the json-schema gem is missing, so its ERB render cannot run');
+        console.log('# SKIP lab_physical_pentest: json-schema gem missing');
     }
 });

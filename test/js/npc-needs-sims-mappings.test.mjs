@@ -1,6 +1,9 @@
 // SIMS-4 (plan 5.4): the staff-room pair's eventMappings, read from test_needs_sims's own scenario
-// and run through NPCManager's real mapping path (_setupEventMappings, _mappingWouldFire and the
-// condition evaluator), so the conditions the scenario ships are the ones under test (S4 R2 m4).
+// and run through NPCManager's real mapping path (_setupEventMappings, _handleEventMapping with its
+// fire check, condition evaluator and action half), so the conditions and actions the scenario ships
+// are the ones under test (S4 R2 m4, S4 R3 m4). Only the systems the actions reach are stubs:
+// window.npcNeedsSystem.control and window.objectivesManager.completeTask record their calls, and
+// setGlobal writes the real window.gameState.globalVariables.
 // Run with: node test/js/npc-needs-sims-mappings.test.mjs
 
 import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
@@ -36,75 +39,82 @@ function makeDispatcher() {
     };
 }
 
-// A manager carrying one NPC's real mappings; _handleEventMapping records each mapping that fires
-// (by its index in the scenario list) and applies onceOnly bookkeeping as the real handler does.
+// A manager carrying one NPC's real mappings. Each action the real handler takes is recorded:
+// needs control calls ([npcId, config]), completed task ids, and the globals it writes.
 function setup(npcId, globals = {}) {
     window.gameState.globalVariables = { ...globals };
+    const needs = [], tasks = [];
+    window.npcNeedsSystem = { control: (id, c) => needs.push([id, c]) };
+    window.objectivesManager = { completeTask: async id => { tasks.push(id); } };
+    window.eventDispatcher = null;
+    window.npcConversationStateManager = null;
     const m = new NPCManager(makeDispatcher(), null);
     m.npcs.set(npcId, { id: npcId, npcType: 'person' });
-    const mappings = staffNpc(npcId).eventMappings;
-    const fired = [];
-    m._handleEventMapping = (id, pattern, config, data) => {
-        const check = m._mappingWouldFire(id, pattern, config, data);
-        if (!check.fire) return;
-        check.triggered.count++; check.triggered.lastTime = check.now; m.triggeredEvents.set(check.eventKey, check.triggered);
-        fired.push(mappings.find(x => x.eventPattern === pattern && JSON.stringify(x.needs || x.setGlobal || x.completeTask) === JSON.stringify(config.needs || config.setGlobal || config.completeTask)) || { eventPattern: pattern });
+    m._setupEventMappings(npcId, staffNpc(npcId).eventMappings);
+    return {
+        m, needs, tasks, globals: () => window.gameState.globalVariables,
+        persisted: () => [...m.triggeredEvents.values()].filter(t => t.persist).length,
+        emit: async (ev, data) => { m.eventDispatcher.emit(ev, data); await new Promise(r => setImmediate(r)); }
     };
-    m._setupEventMappings(npcId, mappings);
-    return { m, fired, emit: (ev, data) => m.eventDispatcher.emit(ev, data) };
 }
 
-test("Jodie's boiler coupling fires on Keith's start only, with the scenario's own condition", () => {
+const quiet = console.log;
+test.before(() => { console.log = () => {}; });
+test.after(() => { console.log = quiet; });
+
+test("Jodie's boiler coupling fires on Keith's start only, with the scenario's own condition", async () => {
     const t = setup('jodie');
-    t.emit('npc_use_started:staff_boiler', { npcId: 'jodie', objectId: 'staff_boiler' });
-    assert.equal(t.fired.length, 0, "her own boiler start does not bring her");
-    t.emit('npc_use_started:staff_microwave', { npcId: 'keith', objectId: 'staff_microwave' });
-    assert.equal(t.fired.length, 0, "Keith's microwave start is not the coupling's event");
-    t.emit('npc_use_started:staff_boiler', { npcId: 'keith', objectId: 'staff_boiler' });
-    assert.equal(t.fired.length, 1);
-    assert.deepEqual(t.fired[0].needs, { set: { caffeine: 20 } }, 'the coupling sets only her caffeine');
+    await t.emit('npc_use_started:staff_boiler', { npcId: 'jodie', objectId: 'staff_boiler' });
+    assert.equal(t.needs.length, 0, "her own boiler start does not bring her");
+    await t.emit('npc_use_started:staff_microwave', { npcId: 'keith', objectId: 'staff_microwave' });
+    assert.equal(t.needs.length, 0, "Keith's microwave start is not the coupling's event");
+    await t.emit('npc_use_started:staff_boiler', { npcId: 'keith', objectId: 'staff_boiler' });
+    assert.deepEqual(t.needs, [['jodie', { set: { caffeine: 20 } }]], 'the coupling sets only her caffeine, through npcNeedsSystem.control');
 });
 
-test("Keith's cooler coupling fires on Jodie's start only", () => {
+test("Keith's cooler coupling fires on Jodie's start only", async () => {
     const t = setup('keith');
-    t.emit('npc_use_started:staff_cooler', { npcId: 'keith', objectId: 'staff_cooler' });
-    assert.equal(t.fired.length, 0);
-    t.emit('npc_use_started:staff_cooler', { npcId: 'jodie', objectId: 'staff_cooler' });
-    assert.equal(t.fired.length, 1);
-    assert.deepEqual(t.fired[0].needs, { set: { thirst: 20 } });
+    await t.emit('npc_use_started:staff_cooler', { npcId: 'keith', objectId: 'staff_cooler' });
+    assert.equal(t.needs.length, 0);
+    await t.emit('npc_use_started:staff_cooler', { npcId: 'jodie', objectId: 'staff_cooler' });
+    assert.deepEqual(t.needs, [['keith', { set: { thirst: 20 } }]]);
 });
 
-test('S4 R2 M2: the job-called exchange sends Jodie to the lockers, and only while the job is open', () => {
-    const open = setup('jodie', { job_called: true });
-    open.emit('npc_exchange_heard:exchange_job_called', { knot: 'exchange_job_called', complete: true });
-    const needs = open.fired.filter(f => f.needs).map(f => f.needs);
-    assert.deepEqual(needs, [{ set: { upkeep: 0 } }], 'upkeep drops to 0 once');
-    assert.ok(open.fired.some(f => f.completeTask === 'hear_job_called'), 'and the task mapping fires as before');
-    const done = setup('jodie', { job_called: true, job_cleared: true });
-    done.emit('npc_exchange_heard:exchange_job_called', { knot: 'exchange_job_called', complete: true });
-    assert.equal(done.fired.filter(f => f.needs).length, 0, 'a cleared job sends her nowhere');
+test('S4 R2 M2 / R3 m5: the job-called exchange ticks its task and sends Jodie to the lockers, once', async () => {
+    const t = setup('jodie', { job_called: true });
+    await t.emit('npc_exchange_heard:exchange_job_called', { knot: 'exchange_job_called', complete: true });
+    assert.deepEqual(t.needs, [['jodie', { set: { upkeep: 0 } }]], 'upkeep drops to 0');
+    assert.deepEqual(t.tasks, ['hear_job_called'], 'and the task ticks, from the same mapping');
+    assert.equal(t.persisted(), 1, 'the onceOnly handler is saved so a reload does not replay it');
+    await t.emit('npc_exchange_heard:exchange_job_called', { knot: 'exchange_job_called', complete: true });
+    assert.equal(t.needs.length, 1, 'onceOnly');
+    assert.equal(t.tasks.length, 1, 'onceOnly');
 });
 
-test('S4 R2 M2: finishing at the lockers sets job_cleared and ticks see_light_fixed, for Jodie only', () => {
+test('S4 R2 M2: finishing at the lockers sets job_cleared and ticks see_light_fixed, for Jodie only', async () => {
     const t = setup('jodie', { job_called: true, heard_exchange_job_called: true });
-    t.emit('npc_used:staff_lockers', { npcId: 'keith', objectId: 'staff_lockers' });
-    assert.equal(t.fired.length, 0);
-    t.emit('npc_used:staff_lockers', { npcId: 'jodie', objectId: 'staff_lockers' });
-    assert.equal(t.fired.length, 1);
-    assert.deepEqual(t.fired[0].setGlobal, { job_cleared: true });
-    assert.equal(t.fired[0].completeTask, 'see_light_fixed');
-    t.emit('npc_used:staff_lockers', { npcId: 'jodie', objectId: 'staff_lockers' });
-    assert.equal(t.fired.length, 1, 'onceOnly');
+    await t.emit('npc_used:staff_lockers', { npcId: 'keith', objectId: 'staff_lockers' });
+    assert.equal(t.globals().job_cleared, undefined);
+    assert.equal(t.tasks.length, 0);
+    await t.emit('npc_used:staff_lockers', { npcId: 'jodie', objectId: 'staff_lockers' });
+    assert.equal(t.globals().job_cleared, true, 'setGlobal wrote gameState.globalVariables');
+    assert.deepEqual(t.tasks, ['see_light_fixed']);
+    assert.equal(t.persisted(), 1);
+    t.globals().job_cleared = 'marker';
+    await t.emit('npc_used:staff_lockers', { npcId: 'jodie', objectId: 'staff_lockers' });
+    assert.equal(t.globals().job_cleared, 'marker', 'onceOnly: no second write');
+    assert.equal(t.tasks.length, 1, 'onceOnly');
 });
 
-test('S4 R2 M2, reload: re-entering the staff room re-sends her only between the exchange and the fix', () => {
+test('S4 R2 M2, reload: re-entering the staff room re-sends her only between the exchange and the fix', async () => {
+    const sent = t => t.needs.filter(([, c]) => c.set && c.set.upkeep === 0).length;
     const before = setup('jodie', { job_called: true });
-    before.emit('room_entered:staff_room', { roomId: 'staff_room' });
-    assert.equal(before.fired.filter(f => f.needs && f.needs.set.upkeep === 0).length, 0, 'not before the exchange');
+    await before.emit('room_entered:staff_room', { roomId: 'staff_room' });
+    assert.equal(sent(before), 0, 'not before the exchange');
     const between = setup('jodie', { job_called: true, heard_exchange_job_called: true });
-    between.emit('room_entered:staff_room', { roomId: 'staff_room' });
-    assert.equal(between.fired.filter(f => f.needs && f.needs.set.upkeep === 0).length, 1, 'between: she goes');
+    await between.emit('room_entered:staff_room', { roomId: 'staff_room' });
+    assert.equal(sent(between), 1, 'between: she goes');
     const after = setup('jodie', { job_called: true, heard_exchange_job_called: true, job_cleared: true });
-    after.emit('room_entered:staff_room', { roomId: 'staff_room' });
-    assert.equal(after.fired.filter(f => f.needs && f.needs.set.upkeep === 0).length, 0, 'not after the fix');
+    await after.emit('room_entered:staff_room', { roomId: 'staff_room' });
+    assert.equal(sent(after), 0, 'not after the fix');
 });

@@ -23,7 +23,8 @@
   },
 
   "actionIcons": {
-    "lounge_kettle": { "sprite": "kettle1", "text": "K" }
+    "lounge_kettle": { "sprite": "kettle1", "text": "K" },
+    "upkeep": "icon:npc-work"
   },
 
   "globalVariables": {
@@ -172,7 +173,7 @@
         { "taskId": "see_cooler_break", "title": "Keith and Jodie meet at the water cooler (later, a break pulls both to the cooler)", "type": "custom", "status": "active" },
         { "taskId": "hear_waiting", "title": "Overhear the pair chatting while they wait (stand near the boiler on your first visit until they finish)", "type": "custom", "status": "active" },
         { "taskId": "hear_job_called", "title": "Overhear them talk about the flickering light (report it to Neil, then walk straight into the staff room while they are on a break)", "type": "custom", "status": "active" },
-        { "taskId": "see_light_fixed", "title": "Jodie fixes the light (after that chat she fetches a spare tube from the staff lockers, and the blinking ceiling light holds steady)", "type": "custom", "status": "active" },
+        { "taskId": "see_light_fixed", "title": "Jodie sorts the light (after that chat she fetches a spare tube from the staff lockers, and the blinking ceiling light holds steady as she finishes there)", "type": "custom", "status": "active" },
         { "taskId": "hear_job_cleared", "title": "Overhear them notice the light is fixed (on their next break together)", "type": "custom", "status": "active" },
         { "taskId": "see_microwave", "title": "Keith heats something in the microwave on his own (about eight minutes after the staff room opens; the task ticks even if you are elsewhere)", "type": "custom", "status": "active" }
       ]
@@ -538,7 +539,7 @@
           "spriteTalk": "assets/characters/female_office_worker_talk.png",
           "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
           "storyPath": "scenarios/test_needs_sims/ink/amara.json",
-          "chatter": { "coffee": ["Lovely and hot, this.", "Is it Friday yet?"], "grumble": ["Never mind, I'll go later."], "phone_message": ["He's not at his desk just now.", "Can I take a message?", "I'll tell him you rang."] },
+          "chatter": { "coffee": ["Lovely and hot, this.", "Is it Friday yet?"], "phone_message": ["He's not at his desk just now.", "Can I take a message?", "I'll tell him you rang."] },
           "exchanges": [{ "with": "tom", "knot": "exchange_tom_parcel", "requireGlobal": "amara_opened_parcel" }],
           "answersPhones": true,
           "phoneCalls": [{ "knot": "call_take_message" }],
@@ -623,7 +624,7 @@
           "spriteTalk": "assets/characters/male_office_worker_talk.png",
           "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
           "storyPath": "scenarios/test_needs_sims/ink/tom.json",
-          "chatter": { "coffee": ["Anyone watching the match tonight?", "I'm starving already."], "grumble": ["Oh, forget it."], "phone": ["Hello, Tom speaking.", "Can I call you back later?", "Yes, that's fine. Bye."] },
+          "chatter": { "coffee": ["Anyone watching the match tonight?", "I'm starving already."], "phone": ["Hello, Tom speaking.", "Can I call you back later?", "Yes, that's fine. Bye."] },
           "phoneCalls": [{ "knot": "call_supplier" }],
           "currentKnot": "start",
           "voice": { "name": "Charon", "style": "Sales assistant, late twenties, white British, Yorkshire accent. Cheerful and easily distracted.", "language": "en-GB" },
@@ -661,7 +662,7 @@
           "spriteTalk": "assets/characters/female_blowse_talk.png",
           "spriteVisemes": "assets/characters/female_blowse_visemes.png",
           "storyPath": "scenarios/test_needs_sims/ink/grace.json",
-          "chatter": { "cooler": ["Who left the window open?", "You should drink more water."], "grumble": ["I'll try again later."] },
+          "chatter": { "cooler": ["Who left the window open?", "You should drink more water."] },
           "currentKnot": "start",
           "voice": { "name": "Kore", "style": "Office manager, early sixties, Swedish-born, decades in the UK. Kind and brisk.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
@@ -720,7 +721,6 @@
           "spriteTalk": "assets/characters/male_telecom_talk.png",
           "spriteVisemes": "assets/characters/male_telecom_visemes.png",
           "storyPath": "scenarios/test_needs_sims/ink/marek.json",
-          "chatter": { "grumble": ["Fine. Later, then."] },
           "currentKnot": "start",
           "voice": { "name": "Orus", "style": "Telecoms contractor, fifties, Polish-born, years in the UK. Gruff but not unfriendly.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
@@ -912,7 +912,7 @@
           "spriteTalk": "assets/characters/female_scientist_talk.png",
           "spriteVisemes": "assets/characters/female_scientist_visemes.png",
           "storyPath": "scenarios/test_needs_sims/ink/rosa.json",
-          "chatter": { "cooler": ["How's your week going?", "Lunch in the park, anyone?"], "grumble": ["It can wait."] },
+          "chatter": { "cooler": ["How's your week going?", "Lunch in the park, anyone?"] },
           "chatterCooldownMin": 2,
           "currentKnot": "start",
           "voice": { "name": "Leda", "style": "Team lead, forties, Spanish-born, years in the UK. Relaxed and friendly.", "language": "en-GB" },
@@ -1220,10 +1220,9 @@
             { "eventPattern": "room_entered:manager_office", "cooldown": 120000, "fireOnlyWhenLoaded": true, "needs": { "set": { "thirst": 20 } } },
             { "eventPattern": "npc_chatted:staff_boiler", "condition": "data.overheard === true", "onceOnly": true, "cooldown": 0, "completeTask": "see_shared_break" },
             { "eventPattern": "npc_exchange_heard:exchange_waiting", "onceOnly": true, "cooldown": 0, "completeTask": "hear_waiting" },
-            { "eventPattern": "npc_exchange_heard:exchange_job_called", "onceOnly": true, "cooldown": 0, "completeTask": "hear_job_called" },
-            { "eventPattern": "npc_exchange_heard:exchange_job_called", "condition": "globalVars.job_cleared !== true", "onceOnly": true, "cooldown": 0, "needs": { "set": { "upkeep": 0 } }, "_comment": "SIMS-4 R2 M2: Jodie takes the job ('Once I've finished this, aye.'): her upkeep need drops to 0, so when her break ends she walks to the staff lockers for a tube. upkeep decays at 0.01 a minute, so nothing else sends her." },
+            { "eventPattern": "npc_exchange_heard:exchange_job_called", "onceOnly": true, "cooldown": 0, "completeTask": "hear_job_called", "needs": { "set": { "upkeep": 0 } }, "_comment": "SIMS-4 R2 M2: Jodie takes the job ('Once I've finished this, aye.'): the task ticks and her upkeep need drops to 0, so when her break ends she walks to the staff lockers for a tube. upkeep decays at 0.01 a minute, so it never falls due on its own. S4 R3 m5: one mapping, no condition (was two onceOnly mappings on this event, one gated on job_cleared !== true). job_cleared can only hold here if the heard marker was lost and the cleared flag kept; then the task is already ticked and one more locker trip does no harm, since the lockers mapping is onceOnly." },
             { "eventPattern": "room_entered:staff_room", "condition": "globalVars.heard_exchange_job_called === true && globalVars.job_cleared !== true", "cooldown": 60000, "needs": { "set": { "upkeep": 0 } }, "_comment": "SIMS-4 R2 M2, reload: need levels are not saved, so after a reload between the job-called exchange and the fix, walking back in sends her to the lockers again." },
-            { "eventPattern": "npc_used:staff_lockers", "condition": "data.npcId === 'jodie'", "onceOnly": true, "cooldown": 0, "setGlobal": { "job_cleared": true }, "completeTask": "see_light_fixed", "_comment": "SIMS-4 R2 M2: the fix is done when Jodie finishes at the lockers: job_cleared steadies the light (the staff_room lighting variant) and opens the cleared exchange's gate. The task completion makes the global reach the server sooner (server R2 m1)." },
+            { "eventPattern": "npc_used:staff_lockers", "condition": "data.npcId === 'jodie'", "onceOnly": true, "cooldown": 0, "setGlobal": { "job_cleared": true }, "completeTask": "see_light_fixed", "_comment": "SIMS-4 R2 M2: the fix is done when Jodie finishes at the lockers: job_cleared steadies the light (the staff_room lighting variant) and opens the cleared exchange's gate. The task completion does not bring job_cleared to the server sooner here: that pre-flush runs only in a scenario whose mission conclusion gates on a global, and this one has none, so job_cleared rides the next periodic or page-hide sync like any bare setGlobal and a lost one self-heals through the room_entered:staff_room mapping (server R2 m1, S4 R3 server m1)." },
             { "eventPattern": "npc_exchange_heard:exchange_job_cleared", "onceOnly": true, "cooldown": 0, "completeTask": "hear_job_cleared" }
           ]
         }

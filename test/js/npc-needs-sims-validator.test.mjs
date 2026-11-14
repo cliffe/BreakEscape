@@ -258,5 +258,5 @@ test("SIMS-4: jodie.ink's exchange knots have the expected line counts and voice
     assert.match(called[2], /^Keith: That'll be one for you, Jodie/, 'Keith hands her the job');
     assert.match(called[3], /^Jodie: /, 'Jodie takes it');
     assert.ok(!called.some(l => /someone'll be up/i.test(l)), 'nobody tells the maintenance worker someone will come');
-    assert.match(knotLines('exchange_job_cleared')[1], /^Jodie: New tube/, 'Jodie owns the fix');
+    assert.match(knotLines('exchange_job_cleared')[1], /^Jodie: Spare from my locker/, 'Jodie owns the fix');
 });

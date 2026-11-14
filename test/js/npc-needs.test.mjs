@@ -1685,7 +1685,7 @@ const EX_LINES = {
     ],
     exchange_job_cleared: [
         { speakerId: 'keith', text: "Light's behaving now." },
-        { speakerId: 'jodie', text: 'New tube. Should last a while.' },
+        { speakerId: 'jodie', text: 'Spare from my locker did it.' },
         { speakerId: 'keith', text: 'Peace and quiet again. Lovely.' }
     ]
 };
