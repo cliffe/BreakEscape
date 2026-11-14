@@ -301,8 +301,11 @@ module BreakEscape
       return valid_check_choices?(page_def, choices['check']) if page_def['pageType'] == 'fakeCheck'
 
       return false unless choice_on_menu_or_nil?(choices['brand'], landing_menu_ids(page_def['brands']))
-      return false unless choice_on_menu_or_nil?(choices['purpose'], landing_menu_ids(page_def['purposes']))
-      return false unless choice_on_menu_or_nil?(choices['logo'], landing_menu_ids(page_def['logos']))
+      return false unless valid_purpose_choice?(page_def, choices['purpose'])
+      # logo and padlock are fixed closed option sets, not page-authored menus (plan section 3.2
+      # step 3); a page need not author a `logos` list. An unrecognised logo only scores zero on
+      # recompute, so this guards shape and hostile input, not the gate.
+      return false unless choice_on_menu_or_nil?(choices['logo'], LANDING_LOGO_IDS)
       return false unless choice_on_menu_or_nil?(choices['wording'], landing_menu_ids(page_def['wordings']))
       return false unless valid_build_padlock?(choices['padlock'])
       return false unless valid_build_fields?(page_def, choices['fields'])
@@ -312,6 +315,20 @@ module BreakEscape
       return false unless valid_choice_id?(choices['domainId'])
 
       !BreakEscape::PhishScore.find_domain_option(page_def, choices['brand'], choices['domainId']).nil?
+    end
+
+    # The fixed logo closed set (landing-page-model.js scoreLogo recognises crisp/blurry/stretched,
+    # anything else scores zero; the builder also offers 'none').
+    LANDING_LOGO_IDS = Set['crisp', 'blurry', 'stretched', 'none'].freeze
+    # Fallback purpose ids for a page that authors no purposes menu.
+    LANDING_PURPOSE_FALLBACK_IDS = Set['signin', 'expired', 'payslip'].freeze
+
+    # purpose validates against the page's authored purposes menu when it has one, else the fixed
+    # fallback (plan section 3.2 step 3 groups purpose with the closed option sets).
+    def valid_purpose_choice?(page_def, value)
+      ids = landing_menu_ids(page_def['purposes'])
+      ids = LANDING_PURPOSE_FALLBACK_IDS if ids.empty?
+      choice_on_menu_or_nil?(value, ids)
     end
 
     def valid_check_choices?(page_def, check)
