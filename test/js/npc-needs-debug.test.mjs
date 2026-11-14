@@ -108,6 +108,22 @@ test('stackOverlayBoxes: a chain of three overlapping blocks stacks into a colum
     assert.ok(top('c', 96) + 20 + 2 <= top('b', 98));
 });
 
+test('stackOverlayBoxes stable: two NPCs passing each other never swap panels', async () => {
+    const { stackOverlayBoxes } = await import('../../public/break_escape/js/systems/npc-needs-debug.js');
+    // "ann" sorts first, so she keeps her place whichever block is lower; the other goes up
+    for (const [annY, bobY] of [[100, 90], [90, 100], [95, 95]]) {
+        const dy = stackOverlayBoxes([
+            { id: 'bob', x: 5, y: bobY, w: 40, h: 30 }, { id: 'ann', x: 0, y: annY, w: 40, h: 30 }
+        ], 2, true);
+        assert.equal(dy.ann, 0, `ann stays when her block is at ${annY} and bob's at ${bobY}`);
+        assert.ok(bobY + dy.bob + 30 + 2 <= annY, 'bob clears ann');
+    }
+    // input order does not matter
+    const a = stackOverlayBoxes([{ id: 'x', x: 0, y: 5, w: 9, h: 9 }, { id: 'y', x: 0, y: 5, w: 9, h: 9 }], 2, true);
+    const b = stackOverlayBoxes([{ id: 'y', x: 0, y: 5, w: 9, h: 9 }, { id: 'x', x: 0, y: 5, w: 9, h: 9 }], 2, true);
+    assert.deepEqual(a, b);
+});
+
 test('npcLabelName: the display name when the NPC manager has one, else the id', async () => {
     const { npcLabelName } = await import('../../public/break_escape/js/systems/npc-needs-debug.js');
     const w = { npcManager: { getNPC: (id) => (id === 'amara' ? { displayName: 'Amara Osei' } : null) } };

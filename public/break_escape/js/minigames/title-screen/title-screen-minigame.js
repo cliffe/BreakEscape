@@ -58,6 +58,18 @@ export class TitleScreenMinigame extends MinigameScene {
         `;
 
         this.titleScreenContainer = this.container.querySelector('.title-screen-container');
+        // The vignette image (160x120) is scaled by a whole number to cover the screen, so its
+        // blocks stay square (critique A38)
+        this._fitVignette = () => {
+            const el = this.titleScreenContainer;
+            if (!el) return;
+            const r = el.getBoundingClientRect();
+            const w = r.width || window.innerWidth, h = r.height || window.innerHeight;
+            const k = Math.max(1, Math.ceil(Math.max(w / 160, h / 120)));
+            el.style.setProperty('--vignette-size', `${160 * k}px ${120 * k}px`);
+        };
+        this._fitVignette();
+        window.addEventListener('resize', this._fitVignette);
         this._typingStarted = false;
         this._typingTimer = null;
         this._phaseTimer = null;
@@ -217,6 +229,7 @@ export class TitleScreenMinigame extends MinigameScene {
 
     cleanup() {
         this._ended = true;
+        if (this._fitVignette) { window.removeEventListener('resize', this._fitVignette); this._fitVignette = null; }
         if (this._phaseTimer) { clearTimeout(this._phaseTimer); this._phaseTimer = null; }
         if (this.autoCloseTimer) clearTimeout(this.autoCloseTimer);
         if (this._typingTimer) clearTimeout(this._typingTimer);

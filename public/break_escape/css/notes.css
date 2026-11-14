@@ -490,8 +490,9 @@
     clip-path: polygon(0 0, 100% 0, 100% 4px, calc(100% - 2px) 4px, calc(100% - 2px) 8px, 100% 8px, 100% 12px,
         calc(100% - 2px) 12px, calc(100% - 2px) 100%, 2px 100%, 2px 12px, 0 12px, 0 8px, 2px 8px, 2px 4px, 0 4px);
 }
-.notes-minigame-text-box::before { left: -18px; }
-.notes-minigame-text-box::after { right: -18px; }
+/* inset so they stay on the page at every size; the right one clears the pencil button */
+.notes-minigame-text-box::before { left: 6px; }
+.notes-minigame-text-box::after { right: 44px; }
 
 /* Torn: the bottom edge torn in uneven square steps; one strip of tape at the top centre */
 .note-style-torn .notes-minigame-text-box {
@@ -509,12 +510,12 @@
 .note-style-torn .notes-minigame-text-box::after { display: none; }
 .note-style-torn .notes-minigame-text-box::before { left: calc(50% - 24px); width: 48px; }
 
-/* Pinned: a yellow slip set 12px right and 6px down, off the page's lines, with a pixel pin */
+/* Pinned: a yellow slip set 4px right and 4px up, off the page's lines, with a pixel pin */
 .note-style-pinned .notes-minigame-text-box {
     background: #fff4a3;
     border-color: #ddd07a;
-    transform: translate(12px, 6px);
-    box-shadow: 4px 4px 0 #c9c2a0;
+    transform: translate(4px, -4px);
+    box-shadow: 3px 3px 0 #c9c2a0;
 }
 .note-style-pinned .notes-minigame-text-box::after { display: none; }
 .note-style-pinned .notes-minigame-text-box::before {

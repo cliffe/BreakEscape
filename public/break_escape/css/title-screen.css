@@ -50,7 +50,7 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: url('../assets/ui/title-vignette.png') center / 100% 100% no-repeat;
+    background: url('../assets/ui/title-vignette.png') center / var(--vignette-size, cover) no-repeat;
     image-rendering: pixelated;
     pointer-events: none;
     z-index: 1;
@@ -154,8 +154,9 @@
     position: absolute;
     inset: 0;
     background:
-        linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0) 40%),
-        linear-gradient(to left, rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.7) 38%, rgba(0, 0, 0, 0) 68%);
+        /* flat bands with hard edges, no soft ramps (pixel-art UI rule) */
+        linear-gradient(to top, rgba(0, 0, 0, 0.7) 0 6%, rgba(0, 0, 0, 0.6) 6% 12%, rgba(0, 0, 0, 0.5) 12% 18%, rgba(0, 0, 0, 0.4) 18% 24%, rgba(0, 0, 0, 0.3) 24% 30%, rgba(0, 0, 0, 0.2) 30% 36%, rgba(0, 0, 0, 0.1) 36% 40%, rgba(0, 0, 0, 0) 40%),
+        linear-gradient(to left, rgba(0, 0, 0, 0.88) 0 6%, rgba(0, 0, 0, 0.84) 6% 14%, rgba(0, 0, 0, 0.79) 14% 22%, rgba(0, 0, 0, 0.7) 22% 38%, rgba(0, 0, 0, 0.6) 38% 44%, rgba(0, 0, 0, 0.5) 44% 50%, rgba(0, 0, 0, 0.4) 50% 56%, rgba(0, 0, 0, 0.3) 56% 62%, rgba(0, 0, 0, 0.2) 62% 68%, rgba(0, 0, 0, 0.1) 68% 74%, rgba(0, 0, 0, 0) 74%);
 }
 
 /* The logo stays centred while the text moves into the calm right-hand strip. */
@@ -174,7 +175,7 @@
     margin-right: 2%;
     box-sizing: border-box;
     overflow-wrap: anywhere;
-    text-shadow: 0 0 6px rgba(0, 0, 0, 0.9), 0 2px 2px rgba(0, 0, 0, 0.9);
+    text-shadow: 2px 2px 0 #000;
 }
 
 .title-screen-container.has-art .title-screen-title {

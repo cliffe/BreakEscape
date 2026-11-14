@@ -122,11 +122,14 @@ export function npcLabelName(id, w = win()) {
 /**
  * Pure: move overlapping overlay blocks apart (critique S01: panels sat over each other and
  * over heads). `boxes` = [{ id, x, y, w, h }] in world px, y the top. The block lowest on
- * screen keeps its place; each one above it that overlaps a placed block goes up until it
+ * screen keeps its place (or, with `stable`, the first by id); each one above it that overlaps a placed block goes up until it
  * clears it by `gap`. Returns { id: dy } (0 or negative).
  */
-export function stackOverlayBoxes(boxes, gap = 2) {
-    const order = [...boxes].sort((a, b) => (b.y + b.h) - (a.y + a.h));
+export function stackOverlayBoxes(boxes, gap = 2, stable = false) {
+    // stable: a fixed order by id, so two NPCs walking past each other never swap panels
+    const order = stable
+        ? [...boxes].sort((a, b) => (String(a.id) < String(b.id) ? -1 : String(a.id) > String(b.id) ? 1 : 0))
+        : [...boxes].sort((a, b) => (b.y + b.h) - (a.y + a.h));
     const placed = [];
     const dy = {};
     for (const b of order) {
@@ -258,7 +261,7 @@ export class NpcNeedsDebug {
             if (vis) shown.push([id, p, this._box(p)]);
         }
         // Panels that would overlap are stacked upwards, clear of each other (critique S01)
-        const dy = stackOverlayBoxes(shown.map(([id, , b]) => ({ id, x: b.x, y: b.y, w: b.w, h: b.h })));
+        const dy = stackOverlayBoxes(shown.map(([id, , b]) => ({ id, x: b.x, y: b.y, w: b.w, h: b.h })), 2, true);
         for (const [id, p, b] of shown) this._place(p, b, dy[id] || 0);
     }
 }

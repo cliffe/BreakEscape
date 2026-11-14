@@ -25,7 +25,7 @@
     --scan-bg: #2e1a1a;
 }
 
-/* The frame: same place, size and stepped corners for all three */
+/* The frame: same place and size for all three (square corners) */
 .minigame-container.scanner-panel {
     position: fixed !important;
     top: 5vh !important;
