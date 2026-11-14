@@ -2923,7 +2923,11 @@ const pendingGateWalk = createPendingGateWalk({
     range: DOOR_INTERACTION_RANGE,
     minigameOpen: () => !!window.MinigameFramework?.currentMinigame
 });
-if (typeof window !== 'undefined') window.__pendingGateWalk = () => pendingGateWalk.get();
+if (typeof window !== 'undefined') {
+    window.__pendingGateWalk = () => pendingGateWalk.get();
+    // The test bridge's no-click moves drop it as a click does (scene pointerdown)
+    window.__clearPendingGateWalk = () => pendingGateWalk.clear();
+}
 
 // Face an in-reach object and use it (a tap, a pick from the menu, or a far tap's arrival)
 function useObjectInReach(obj) {

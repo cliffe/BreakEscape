@@ -382,7 +382,14 @@ export class StateSync {
   /** Sections that belong to one player. */
   buildPlayerSections({ onlyChanged = false } = {}) {
     const out = {};
-    out.currentRoom = window.currentRoom?.name;
+    // The player's actual room is the detected room id (core/rooms.js sets both the module
+    // `currentPlayerRoom` and window.currentPlayerRoom). window.currentRoom is a legacy global that
+    // main.js sets to null and never assigns, so `window.currentRoom?.name` was always undefined and
+    // currentRoom never synced (true on main too). Read currentPlayerRoom so the real room reaches
+    // the server; an empty detection ('' before the first detect) collapses to undefined, so it is
+    // not sent (the delta below only sends a truthy, changed room), and never a bare '' the guard
+    // would refuse.
+    out.currentRoom = window.currentPlayerRoom || undefined;
 
     // Notes, so observations survive page reloads. Plain data only (no sprites).
     out.notes = (window.gameState?.notes || []).map(pickNote);
@@ -546,6 +553,14 @@ export class StateSync {
    * Record what the server now holds, after a 2xx answer that wasn't stale.
    * Sections in notSaved (the server refused them over a cap and kept its
    * previous copy) are not confirmed, so they are sent again (00 §13).
+   *
+   * currentRoom is the exception: when the server refuses a currentRoom
+   * (may_sync_current_room? rejected it, R4 MINOR 1) it names it in notSaved
+   * too, but the room is still confirmed below. Re-sending the same refused
+   * room on every sync is exactly the forever loop (SYNC SIZE) the server fix
+   * avoids, so for currentRoom a notSaved means "the server kept its own room;
+   * do not re-send this one" -- a new room is sent only when currentRoom
+   * actually changes (buildChanges compares against this.confirmed.currentRoom).
    */
   confirm({ body, ack }, now = Date.now(), notSaved = []) {
     const refused = new Set(Array.isArray(notSaved) ? notSaved : []);
@@ -557,6 +572,8 @@ export class StateSync {
       }
       this.confirmed[section] = kept;
     }
+    // currentRoom is confirmed even when refused (see the note above): a refusal
+    // must not make the client re-send the same room forever.
     for (const key of [...WHOLE_SECTIONS, 'currentRoom', 'scenarioBriefShown', 'timedMessagesKey', 'clockKey', 'clockElapsedMs']) {
       if (ack[key] !== undefined) this.confirmed[key] = ack[key];
     }
@@ -645,7 +662,14 @@ export class StateSync {
       for (const section of notSaved) {
         if (this._notSavedLogged.has(section)) continue;
         this._notSavedLogged.add(section);
-        console.warn(`State sync: the server did not save ${section} (over a cap); resending it with each sync`);
+        if (section === 'currentRoom') {
+          // currentRoom is not capped: a notSaved means the server refused the room (it could not
+          // vouch for it). confirm() records it anyway, so it is not resent with every sync; a new
+          // room is sent only when currentRoom actually changes (R5 minor 1).
+          console.warn('State sync: the server refused currentRoom; it will not be resent');
+        } else {
+          console.warn(`State sync: the server did not save ${section} (over a cap); resending it with each sync`);
+        }
       }
       this.confirm(changes, Date.now(), notSaved);
       // The server may have trimmed read mail to fit the 1 MB cap while still

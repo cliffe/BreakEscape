@@ -51,6 +51,35 @@ module BreakEscape
 
     # ---- password sign-in ----------------------------------------------------------
 
+    test 'a sign-in answer and the load sessions carry the account picture source when the NPC has one, and nothing otherwise' do
+      build(scenario: tracked_scenario({ 'spriteSheet' => 'male_office_worker_v2', 'avatar' => 'assets/characters/male_office_worker_v2_headshot.png' }))
+      body = login('jbrooks', JAKE_PASSWORD)
+      assert_response :success
+      assert_equal 'assets/characters/male_office_worker_v2_talk.png', body['portrait']
+      assert_equal 'assets/characters/male_office_worker_v2_headshot.png', body['avatar']
+      row = @game.reload.sessions_for_client['jake_pc']
+      assert_equal 'assets/characters/male_office_worker_v2_talk.png', row['portrait']
+      assert_equal 'assets/characters/male_office_worker_v2_headshot.png', row['avatar']
+      assert_nil @game.player_state['sessions']['jake_pc']['portrait'], 'computed, never stored in player_state'
+    end
+
+    test 'a refused, locked-out and not-permitted sign-in answer omits the account picture source' do
+      build(scenario: tracked_scenario({ 'spriteSheet' => 'male_office_worker_v2', 'avatar' => 'assets/characters/male_office_worker_v2_headshot.png' }))
+      wrong = login('jbrooks', 'nope')
+      assert_response :unprocessable_entity
+      refused = [wrong]
+      refused << login('jbrooks', JAKE_PASSWORD, pc_id: 'it_pc')
+      assert_equal true, refused.last['notPermitted']
+      4.times { refused << login('jbrooks', 'nope') }
+      assert_equal true, refused.last['lockedOut']
+      refused << login('jbrooks', JAKE_PASSWORD)
+      assert_equal true, refused.last['lockedOut']
+      refused.each do |body|
+        refute body.key?('portrait'), "a refusal must not carry portrait: #{body.inspect}"
+        refute body.key?('avatar'), "a refusal must not carry avatar: #{body.inspect}"
+      end
+    end
+
     test 'a correct password signs in and answers the session' do
       build
       body = login('jbrooks', JAKE_PASSWORD)

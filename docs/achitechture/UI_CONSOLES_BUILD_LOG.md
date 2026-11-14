@@ -222,3 +222,10 @@ Findings from UI_CONSOLES_REVIEW_R2.md, fixed on top of 40d178748.
 Gotcha: the segmentation map replaces the container HTML, so its X is `#nsm-close`, not the framework `#minigame-close`.
 
 Proof after the fixes (game 3346): audit --strict 0/1/0/0/3 (the two known lines, alarm panel 915x412 and network architecture 390x844), shell X check 168 checked, 0 failed. Blockchain mixer board footer buttons wrap (`flex-wrap`) now that `.bce-close-btn` is 16px. Shots in the session scratchpad `ui-consoles-fix2/`.
+
+## Review round 3 fixes (coordinator)
+
+- B1 mixer board on phones: `.bce-mx-body { grid-auto-rows: max-content }` in the 720px rule, so stacked columns take their content height and the OUT column no longer paints over the ADDRESS REUSE slots. Live (reviewer's mx.mjs): all six slots click through at 320x640, 360x740, 390x844, 800x600, 915x412, 1400x1000.
+- M1 SCADA report confirm on portrait phones: `.sh-modal-overlay` scrolls (`overflow-y: auto`, `align-items: safe center`, pixel scrollbar), so both buttons are reachable with the scene X hidden. Live (modal.mjs): title visible and buttons hit at 1400x1000, 1024x768, 915x412, 844x390, 667x375, 390x844, 360x740.
+- m1 segmentation map confirm title above the window: `.nsm-modal-overlay` `align-items: safe center` plus `overflow-y: auto`. Live: title top 94px and buttons hit at the same seven sizes.
+- m2 correction to "Review round 2 fixes": four of the ten button rules (`.cms-button`, `.ip-confirm-btn`, `.ip-modal-btn`, `.ransomware-display-btn`) match no markup. Only the three blockchain buttons went from 8px to 16px. The pump's real buttons are Phaser text at 8px Press Start and are unchanged. The dead rules are left for a later tidy.

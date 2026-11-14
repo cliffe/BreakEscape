@@ -778,7 +778,7 @@ def check_unknown_fields(json_data)
 
   # Known top-level fields
   known_top_level = %w[
-    scenario_id scenario_name scenario_brief endGoal version startRoom startPosition resumeSpawn titleScreenName
+    scenario_id scenario_name scenario_brief endGoal version startRoom startPosition resumeSpawn titleScreenName pcWallpaper pcWallpaperFocus
     show_scenario_brief disableAttacks creditsTheme creditsOverlay gameClock flags music startItemsInInventory globalVariables
     player objectives rooms npcs phoneNPCs narrator timers _comment mutuallyExclusiveGlobals lighting
     importGlobals exportGlobals social npcNeedsSeed disguises actionIcons officeVisuals npcWindupMs showPressingNeeds showNpcIntentBubbles needsDebugOverlay officePresets chatter lockCues roomTone roomToneTypes
@@ -4959,6 +4959,19 @@ def check_recurring_bugs(json_data, repo_root)
               "In standalone mode (and Rails games with no saved sprite) the player has no texture."
   end
 
+  # Top-level pcWallpaper (utils/pc-monitor.js): a missing file falls back to the shared wallpaper
+  # in game, so say so here. pcWallpaperFocus is [x, y], shares of the picture (0 to 1).
+  if json_data.key?('pcWallpaper') && json_data['pcWallpaper'].is_a?(String) && !asset_exists.call(json_data['pcWallpaper'])
+    issues << "⚠️ WARNING: pcWallpaper '#{json_data['pcWallpaper']}' does not exist under public/break_escape/. " \
+              "Every PC screen shows the shared wallpaper instead."
+  end
+  if json_data.key?('pcWallpaperFocus')
+    pf = json_data['pcWallpaperFocus']
+    unless pf.is_a?(Array) && pf.size == 2 && pf.all? { |n| n.is_a?(Numeric) && n >= 0 && n <= 1 }
+      issues << "⚠️ WARNING: pcWallpaperFocus should be [x, y], shares of the wallpaper's width and height between 0 and 1. The centre is used."
+    end
+  end
+
   # Room chatBackground: person-chat's fallback background (person-chat-background.js). A missing
   # file fails quietly in game (plain frame), so say so here.
   rooms.each do |rid, room|
@@ -6739,6 +6752,290 @@ end
 # its own (a copy of the room's is harmless); access and acceptsUIDOnly are errors.
 DOOR_ENTRY_LOCK_FIELDS = %w[locked lockType keyPins key_pins difficulty lockedHint biometricMatchThreshold
                             maxAttempts passwordHint showHint postitNote showPostit showKeyboard pinLength].freeze
+# ─────────────────────────────────────────────────────────────
+# Gated-door credit (GATED_DOOR_SERVER_CHECK_PLAN.md §12). The server owns the credit for
+# passing a split gated door: at promotion it sets the gate's creditOnPass globals and completes
+# the credited task itself, and those globals are read-only to a client sync_state. These checks
+# keep an author from writing a scenario where that ownership can be defeated (a second unlock
+# route, a client-writable pass global, an ACL rfid lock, a flag-completed credited task) or
+# where a credit could never fire.
+# ─────────────────────────────────────────────────────────────
+
+# The runtime server-owned global names (Game::SERVER_OWNED_GLOBAL_NAMES). Kept in step by
+# carry_over_server_owned_globals_test, which guards that the two literals agree.
+GATED_SERVER_OWNED_GLOBALS = %w[se_captures].freeze
+
+# True when the scenario defines any rfid_cloner object anywhere (nested contents included). This
+# mirrors Game#scenario_has_rfid_cloner?, the runtime split proxy for "a requires card is obtainable".
+def scenario_contains_rfid_cloner?(node)
+  case node
+  when Array then node.any? { |n| scenario_contains_rfid_cloner?(n) }
+  when Hash
+    return true if node['type'] == 'rfid_cloner'
+    node.each_value.any? { |v| scenario_contains_rfid_cloner?(v) }
+  else
+    false
+  end
+end
+
+def check_gated_door_credit(json_data)
+  issues = []
+  return issues unless json_data.is_a?(Hash)
+  rooms = json_data['rooms']
+  return issues unless rooms.is_a?(Hash)
+
+  declared = json_data['globalVariables'].is_a?(Hash) ? json_data['globalVariables'].keys.map(&:to_s).to_set : Set.new
+
+  # task id -> type, so a creditOnPass.completeTask can be checked to exist and not be a submit_flags task.
+  task_types = {}
+  Array(json_data['objectives']).each do |aim|
+    next unless aim.is_a?(Hash)
+    Array(aim['tasks']).each do |t|
+      task_types[t['taskId'].to_s] = t['type'].to_s if t.is_a?(Hash) && t['taskId']
+    end
+  end
+
+  # Globals a client sync_state cannot write (mirrors Game#server_owned_global_name?): worn-costume
+  # globals, imported globals, the creditOnPass credit globals, and the runtime server-owned names.
+  worn = BreakEscape::WearableModel.worn_globals(json_data)
+  imported = Array(json_data['importGlobals']).filter_map { |e| carry_over_import_name(e) }
+
+  # The runtime serverCompletedOnly set (mirrors Game.completed_only_task_ids_in): every task named
+  # by any door gate's creditOnPass.completeTask, independent of openFor or whether the gate splits.
+  credited_task_ids = Set.new
+  rooms.each_value do |room|
+    next unless room.is_a?(Hash) && room['doors'].is_a?(Array)
+    room['doors'].each do |door|
+      credit = door.is_a?(Hash) && door['gate'].is_a?(Hash) ? door['gate']['creditOnPass'] : nil
+      next unless credit.is_a?(Hash)
+      credit.each_value do |block|
+        t = block.is_a?(Hash) ? block['completeTask'] : nil
+        credited_task_ids << t.to_s if t.is_a?(String) && !t.strip.empty?
+      end
+    end
+  end
+
+  # First pass: collect every openFor gate, its credit blocks and the credit globals.
+  gates = []            # [{ room_id, i, connected, gate, requires, open_for }]
+  credit_globals = Set.new
+  credit_block_paths = Set.new
+  rooms.each do |room_id, room|
+    next unless room.is_a?(Hash) && room['doors'].is_a?(Array)
+    room['doors'].each_with_index do |door, i|
+      next unless door.is_a?(Hash)
+      gate = door['gate']
+      next unless gate.is_a?(Hash) && Array(gate['openFor']).any?
+      connected = door['connectedRoom'].to_s
+      target = rooms[connected]
+      gates << { room_id: room_id, i: i, connected: connected, gate: gate,
+                 requires: Array(target.is_a?(Hash) ? target['requires'] : nil).map(&:to_s).reject(&:empty?),
+                 open_for: Array(gate['openFor']).map(&:to_s).to_set }
+      credit = gate['creditOnPass']
+      next unless credit.is_a?(Hash)
+      credit.each do |path_key, block|
+        set = block.is_a?(Hash) ? block['setGlobal'] : nil
+        next unless set.is_a?(Hash)
+        set.each_key { |n| credit_globals << n.to_s }
+        credit_block_paths << "rooms/#{room_id}/doors[#{i}]/gate/creditOnPass/#{path_key}/setGlobal"
+      end
+    end
+  end
+
+  server_owned = (worn + imported + credit_globals.to_a + GATED_SERVER_OWNED_GLOBALS).to_set
+  has_cloner = scenario_contains_rfid_cloner?(json_data)
+
+  split_rooms = {}  # connected_room -> open_for set (only splitting gates)
+  gates.each do |g|
+    at = "rooms/#{g[:room_id]}/doors[#{g[:i]}]"
+    gate = g[:gate]
+    pass = gate['playerMayPassIf']
+    pass_present = pass.is_a?(String) && !pass.strip.empty?
+    pass_server_owned = pass_present && server_owned.include?(pass)
+    # A gate splits (its NPC route records the room in npcRouteRooms rather than unlockedRooms) when a
+    # provable path exists: a server-owned pass, or an rfid_cloner anywhere in the scenario. This
+    # mirrors runtime Game#gate_splits? exactly (R3 minor 3): the runtime does not condition the
+    # cloner term on the target room carrying a `requires` card, so neither does this. Dropping the
+    # former `&& !requires.empty?` closes the hole where the runtime split a cloner gate but the
+    # validator stayed silent on a client-writable pass; for every deployed/test scenario the only
+    # cloner gates (lab, test_gate_tailgate) carry a requires card, so the split decision is
+    # unchanged. Keep this in step with Game#gate_splits? and generate_dungeon_graph.rb.
+    splits = pass_server_owned || has_cloner
+    credit = gate['creditOnPass']
+
+    if splits
+      split_rooms[g[:connected]] = g[:open_for]
+      # §12: a split gate's playerMayPassIf must be a global a client sync_state cannot write; a
+      # client-writable pass global could be forged to fake the viaPass promotion.
+      if pass_present && !pass_server_owned
+        issues << "❌ ERROR: '#{at}' is a split gated door whose playerMayPassIf '#{pass}' is a " \
+                  "client-writable global. It must be server-owned (a worn-costume global, an imported " \
+                  "global, or a creditOnPass credit global), or a tampered client could forge the viaPass pass."
+      end
+      # §12 / Chunk E to-do (b): a split gate's rfid room lock must be requires-only, never an ACL
+      # (access-list) lock. credit_via_credential! re-asserts possession with rfid_lock_passes!, which for
+      # a requires-only lock delegates to rfid_requires_held? (server inventory + clones, ignores the
+      # client card_ids). An ACL lock would consult the client card_ids through the access model, so the
+      # credential credit would inherit the client-driven access semantics rather than a server check.
+      target = rooms[g[:connected]]
+      if target.is_a?(Hash) && target['lockType'].to_s == 'rfid' && target.key?('access')
+        issues << "❌ ERROR: split gated room '#{g[:connected]}' has an rfid lock with an 'access' ACL list. " \
+                  "A split gate's credential credit re-asserts server possession (rfid_requires_held?), which " \
+                  "needs a requires-only lock; make the lock requires-only (drop the access list)."
+      end
+    elsif credit.is_a?(Hash)
+      # §12: a gate that does not split named a creditOnPass, so the credit can never fire.
+      issues << "⚠️ WARNING: '#{at}' names a creditOnPass but the gate does not split (no server-owned " \
+                "playerMayPassIf and no obtainable requires card), so the server credit can never fire."
+    end
+
+    next unless credit.is_a?(Hash)
+    credit.each do |path_key, block|
+      next unless block.is_a?(Hash)
+      cat = "#{at}/gate/creditOnPass/#{path_key}"
+      set = block['setGlobal']
+      if set.is_a?(Hash)
+        set.each_key do |name|
+          unless declared.include?(name.to_s)
+            issues << "❌ ERROR: '#{cat}/setGlobal' sets '#{name}', which is not declared in globalVariables."
+          end
+        end
+      end
+      task_id = block['completeTask']
+      if task_id.is_a?(String) && !task_id.strip.empty?
+        if !task_types.key?(task_id)
+          issues << "❌ ERROR: '#{cat}/completeTask' names task '#{task_id}', which no objective defines."
+        elsif task_types[task_id] == 'submit_flags'
+          issues << "❌ ERROR: '#{cat}/completeTask' names submit_flags task '#{task_id}'. Flag completion " \
+                    "(process_flag_task_completions!) writes task status directly, bypassing the server-completed-only " \
+                    "guard, so a credited task must never be a submit_flags task."
+        end
+      end
+    end
+  end
+
+  # §12: a credit global still written by a client set_global / setGlobal mapping is a half-done
+  # migration (the client writer races the server credit and is no longer read-only to sync_state).
+  unless credit_globals.empty?
+    BreakEscape::WearableModel.global_writers(json_data).each do |w|
+      name = w[:name].to_s
+      next unless credit_globals.include?(name)
+      # Skip the creditOnPass setGlobal nodes themselves (the server writer, not a client one).
+      next if credit_block_paths.include?(w[:path].to_s)
+      issues << "⚠️ WARNING: credit global '#{name}' is still written by a client setter at '#{w[:path]}'. " \
+                "The server owns it through creditOnPass; remove the client writer so the credit cannot be forged or raced."
+    end
+  end
+
+  # §12 / R3 minor 2: a credited task (named by a creditOnPass.completeTask, so serverCompletedOnly
+  # at runtime) that is ALSO completed by a client completeTask (an eventMapping, reward or action)
+  # is a half-done migration. With the server-completed-only guard now behind the already-completed
+  # branch (R3 minor 1), such a client completer, fired before the server credit lands, reaches the
+  # guard on a not-yet-completed task and surfaces a hard "Objective Blocked" to an honest player.
+  # Mirrors the credit-global client-writer warning above. The creditOnPass blocks themselves (the
+  # server writer) are pruned, so only a genuine client completer trips it.
+  unless credited_task_ids.empty?
+    walk_client_complete = lambda do |node|
+      case node
+      when Array then node.each { |n| walk_client_complete.call(n) }
+      when Hash
+        ct = node['completeTask']
+        if ct.is_a?(String) && credited_task_ids.include?(ct.to_s)
+          issues << "⚠️ WARNING: task '#{ct}' is credited by a gate's creditOnPass (server-completed only) but is " \
+                    "also completed by a client completeTask. Remove the client completer, or the credited task is " \
+                    "shown as 'Objective Blocked' to an honest player when the client fires before the server credit."
+        end
+        node.each do |k, v|
+          next if k.to_s == 'creditOnPass' # the server writer itself, not a client completer
+          walk_client_complete.call(v)
+        end
+      end
+    end
+    walk_client_complete.call(json_data)
+  end
+
+  unless split_rooms.empty?
+    # §12 / Chunk E to-do (a): a second unlock route into a split gated room would unlock it without
+    # the gate credit, silently defeating the split. A flag or action unlock_door reward, or a
+    # non-openFor NPC unlockDoor mapping, is such a route.
+    walk_unlock_door = lambda do |node|
+      case node
+      when Array then node.each { |n| walk_unlock_door.call(n) }
+      when Hash
+        if node['type'] == 'unlock_door'
+          target = %w[target_room roomId room connectedRoom].map { |k| node[k] }.compact.first.to_s
+          if split_rooms.key?(target)
+            issues << "❌ ERROR: an unlock_door reward/action targets split gated room '#{target}', a second " \
+                      "unlock route that opens the room without the gate credit and defeats the split."
+          end
+        end
+        node.each_value { |v| walk_unlock_door.call(v) }
+      end
+    end
+    walk_unlock_door.call(json_data)
+
+    rooms.each do |room_id, room|
+      next unless room.is_a?(Hash)
+      Array(room['npcs']).each do |npc|
+        next unless npc.is_a?(Hash)
+        npc_id = npc['id'].to_s
+        Array(npc['eventMappings']).each do |m|
+          next unless m.is_a?(Hash)
+          Array(m['unlockDoor']).map(&:to_s).each do |target|
+            next unless split_rooms.key?(target)
+            next if split_rooms[target].include?(npc_id)  # the gate's own openFor NPC: the intended route
+            issues << "❌ ERROR: NPC '#{npc_id}' in '#{room_id}' has an unlockDoor mapping for split gated room " \
+                      "'#{target}' but is not in that gate's openFor, a second unlock route that defeats the split."
+          end
+        end
+      end
+    end
+
+    # §12 / Q5: a server-enforced lock code placed in a split gated room's readable text leaks to an
+    # un-promoted client the moment the room is served (filtered_room_data serves its text). A warning,
+    # not an error: the lab's deeds_signout combination is a deliberate teaching pattern the author keeps
+    # where the leak only saves time.
+    codes = Set.new
+    collect_codes = lambda do |node|
+      case node
+      when Array then node.each { |n| collect_codes.call(n) }
+      when Hash
+        if %w[pin password combination cryptex key rfid].include?(node['lockType'])
+          Array(node['requires']).each { |r| codes << r.to_s unless r.to_s.strip.empty? }
+        end
+        node.each_value { |v| collect_codes.call(v) }
+      end
+    end
+    collect_codes.call(json_data)
+
+    unless codes.empty?
+      scan_readables = lambda do |node, &blk|
+        case node
+        when Array then node.each { |n| scan_readables.call(n, &blk) }
+        when Hash
+          blk.call(node) if node['readable'] == true && node['text'].is_a?(String)
+          node.each_value { |v| scan_readables.call(v, &blk) }
+        end
+      end
+      split_rooms.each_key do |rid|
+        room = rooms[rid]
+        next unless room.is_a?(Hash)
+        scan_readables.call(room) do |obj|
+          text = obj['text'].to_s
+          leaked = codes.select { |c| text =~ /(?<![\w])#{Regexp.escape(c)}(?![\w])/ }
+          next if leaked.empty?
+          name = obj['name'] || obj['id'] || obj['type']
+          issues << "⚠️ WARNING: readable '#{name}' in split gated room '#{rid}' contains a server-enforced " \
+                    "lock code (#{leaked.size} value#{leaked.size == 1 ? '' : 's'}) in its text, which leaks to an " \
+                    "un-promoted client the moment the room is served. Keep real secrets out of a route room's " \
+                    "readable text, or accept it where the leak only saves time."
+        end
+      end
+    end
+  end
+
+  issues
+end
+
 def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
   issues = []
   return issues unless json_data.is_a?(Hash)
@@ -7666,6 +7963,7 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
   end
   run.call('ValidateNpcNeeds') { ValidateNpcNeeds.check(json_data, screen_habits: npc_screen_habits(habits_copy)) }
   run.call('check_access_model') { check_access_model(json_data, repo_root, scenario_dir) }
+  run.call('check_gated_door_credit') { check_gated_door_credit(json_data) }
   run.call('check_speaker_id_name_clashes') { check_speaker_id_name_clashes(json_data) }
   run.call('check_network_model') { check_network_model(json_data, scenario_dir) }
   run.call('check_capture_log') { check_capture_log(json_data) }

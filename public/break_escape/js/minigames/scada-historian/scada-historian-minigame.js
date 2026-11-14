@@ -737,9 +737,11 @@ export class ScadaHistorianMinigame extends MinigameScene {
     // ── Annotate modal ─────────────────────────────────────────────────────
 
     _openAnnotateModal() {
+        // A second ANNOTATE press while the report is open would stack a report Cancel cannot clear (consoles R4 M1)
+        if (this._annotateOverlay) return;
         const charts = document.querySelector('.sh-charts');
         if (!charts) return;
-        const overlay = this._el('div', 'sh-modal-overlay');
+        const overlay = this._el('div', 'sh-modal-overlay pixel-scroll');
         const modal   = this._el('div', 'sh-modal');
 
         const title = this._el('div', 'sh-modal-title');

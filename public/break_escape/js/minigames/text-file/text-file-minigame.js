@@ -1,7 +1,7 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { escapeHtml, escapeHtmlKeepWords } from '../../utils/escape-html.js';
-import { mountPcMonitor, postitNotebookEntry, pcPostitButtonHtml } from '../../utils/pc-monitor.js';
+import { mountPcMonitor, bindPcWindowCloses, postitNotebookEntry, pcPostitButtonHtml } from '../../utils/pc-monitor.js';
 
 // File names, types and observations are scenario text: escaped before they reach HTML
 
@@ -135,9 +135,29 @@ export class TextFileMinigame extends MinigameScene {
     }
 
     /**
+     * Two Xs in the monitor (UI PC 2, critique E08): the window's own X in its navy title bar
+     * closes the file only (back to the desktop or folder it came from, as Esc does), and the
+     * bezel X closes the PC, as it does on the desktop. The framework bound the bezel X to
+     * closeByPlayer; that binding is swapped for closePc.
+     */
+    bindMonitorCloses() {
+        bindPcWindowCloses(this);
+    }
+
+    /**
+     * The bezel X: the player's own close, of the whole PC. Nothing reopens the desktop; a
+     * network screen's trip lands as that screen's own close would (cleanup).
+     */
+    closePc() {
+        this.closeWholePc = true;
+        this.closeByPlayer();
+    }
+
+    /**
      * The file in the PC monitor: a maximised window in the share window's look, the file
      * name in its title bar, Copy and Add to Notepad in the PC's button look, the text in GNF
-     * at 16px, and the observations in the status bar. The X is on the bezel. No Select All:
+     * at 16px, and the observations in the status bar. The window's X in the title bar closes
+     * the file; the bezel's X closes the PC (bindMonitorCloses). No Select All:
      * Copy already takes the whole file, and on a phone it was a second row (R4 m4).
      */
     setupMonitorInterface() {
@@ -151,6 +171,7 @@ export class TextFileMinigame extends MinigameScene {
                     <div class="desktop-window-titlebar share-folder-titlebar">
                         <img class="pc-file-icon" src="/break_escape/assets/objects/text_file.png" alt="">
                         <span class="share-folder-path">${name}</span>
+                        <button type="button" class="pc-window-close" id="pc-file-close" aria-label="Close file" title="Close file"></button>
                     </div>
                     <div class="pc-file-toolbar">
                         <button type="button" class="pc-os-btn" id="copy-btn">Copy</button>
@@ -330,7 +351,8 @@ export class TextFileMinigame extends MinigameScene {
     }
     
     setupEventListeners() {
-        // Window controls (none in the PC monitor: the X on the bezel closes it)
+        if (this.pcMonitor) this.bindMonitorCloses();
+        // Window controls (the old Mac-style frame's; the monitor has its own, above)
         if (this.closeBtn) this.addEventListener(this.closeBtn, 'click', () => {
             this.closeByPlayer();
         });
@@ -574,6 +596,21 @@ export class TextFileMinigame extends MinigameScene {
         this.pcMonitor?.destroy?.();
         // Call parent cleanup (handles event listeners)
         super.cleanup();
+
+        // The bezel X closed the whole PC (UI PC 2, E08): no return to the desktop or folder.
+        // A network screen's trip lands as that screen's own close would: a remote desktop
+        // back to the network view (or the world, for a trip started at the session).
+        if (this.closeWholePc === true && !window.pendingTextFileReturn) {
+            const back = window.pendingContainerReturn;
+            window.pendingContainerReturn = null;
+            window.pendingPhoneReturn = null;
+            const kind = back?.containerItem && typeof window.networkScreenKind === 'function'
+                ? window.networkScreenKind(back.containerItem) : null;
+            if (kind) {
+                window.networkLinks?.landed?.(kind, 'close', kind === 'desktop' ? { pcId: this.pcScreen?.pcId || null } : {});
+            }
+            return;
+        }
 
         // If we're NOT transitioning to notes (pendingTextFileReturn would be set in that case),
         // clear any stale container return state so a later independent notes session
