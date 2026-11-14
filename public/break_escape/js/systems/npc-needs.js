@@ -683,7 +683,15 @@ export class NPCNeedsSystem {
         // SIMS-2: an own-post shortcut or a walk home already within HOME_EPS queues its own arrival
         // (_moveForPhase, _goHome). It is not a real walk, so it skips the distance and id checks.
         if (arrival.synthetic) return true;
-        const want = s.mode === 'returning' ? (s.returnMoveId ?? null) : (s.job?.moveId ?? null);
+        // SIMS-2 review R1 Design M1: only arrivals for a move the needs system actually issued go
+        // through the distance/id guard — a job's goto_item/goto_target/queued leg or a walk home.
+        // An arrival that fires in any other phase (seating's chair fetch during `using`, which walks
+        // with goToAndStay and carries no move id) is dropped silently, exactly as before the slice,
+        // so a fetch at a non-own work object is never cut short with a spurious `arrival_far`.
+        const returning = s.mode === 'returning';
+        const phase = returning ? 'returning' : (s.job?.phase ?? null);
+        if (!returning && phase !== 'goto_item' && phase !== 'goto_target' && phase !== 'queued') return false;
+        const want = returning ? (s.returnMoveId ?? null) : (s.job?.moveId ?? null);
         const got = arrival.moveId ?? null;
         if (got !== null && want !== null && got !== want) {
             this._log(id, 'arrival_ignored', { moveId: got, want });
@@ -694,20 +702,29 @@ export class NPCNeedsSystem {
         const px = Number.isFinite(arrival.x) ? arrival.x : pos.x;
         const py = Number.isFinite(arrival.y) ? arrival.y : pos.y;
         if (Math.hypot(px - dest.x, py - dest.y) <= ARRIVAL_NEAR_PX) return true;
-        const phase = s.mode === 'returning' ? 'returning' : (s.job?.phase ?? null);
-        this._log(id, 'arrival_far', {
+        const logFar = () => this._log(id, 'arrival_far', {
             phase, target: s.job?.targetId ?? null,
             x: Math.round(px), y: Math.round(py),
             dest: { x: Math.round(dest.x), y: Math.round(dest.y) }, moveId: got
         });
-        if (s.mode === 'returning') {
-            // Re-issue the walk home once; a repeat far arrival is left to _watchReturn.
-            if (!s.returnFarReissued) { s.returnFarReissued = true; this._goHome(s, { yieldToPlayer: false, keepFarFlag: true }); }
+        if (returning) {
+            // SIMS-2 review R1 Design m1 / server minor 2: a returning NPC never fails. The walk home
+            // is re-issued once; a repeat far arrival is left to _watchReturn. `arrival_far` is logged
+            // on the first far arrival of this return only — `returnFarReissued` persists across the
+            // _watchReturn re-issues (keepFarFlag), so an unreachable home spins quietly, not a line a
+            // tick. A genuinely new return re-arms the flag (and the log) in _goHome.
+            if (!s.returnFarReissued) { logFar(); s.returnFarReissued = true; this._goHome(s, { yieldToPlayer: false, keepFarFlag: true }); }
             return false;
         }
+        logFar();
+        // SIMS-2 review R1 m2 (both reviews): key the far guard by phase AND destination cell, so a
+        // genuine step to a new queue cell (or a re-issue after a freeze, which resets the key) is not
+        // mistaken for a second far arrival at the same stuck cell. The job fails only when the same
+        // phase+cell goes far twice.
         if (s.job) {
-            if (s.job._farPhase === s.job.phase) { this._failJob(s, 'arrival_far'); return false; }
-            s.job._farPhase = s.job.phase;
+            const farKey = `${phase}:${Math.round(dest.x)},${Math.round(dest.y)}`;
+            if (s.job._farKey === farKey) { this._failJob(s, 'arrival_far'); return false; }
+            s.job._farKey = farKey;
             this._moveForPhase(s);
         }
         return false;
@@ -1384,6 +1401,7 @@ export class NPCNeedsSystem {
                 else {
                     s.job.deadline += this.clockMs - (s.job.frozenAt || this.clockMs);
                     if (s.job.phase === 'queued') { s.job.queuedAt += this.clockMs - (s.job.frozenAt || this.clockMs); s.job.qCell = null; }
+                    s.job._farKey = null;   // SIMS-2 m2: a post-freeze re-issue is a fresh move, not a repeat far arrival
                     this._moveForPhase(s);
                 }
             } else if (s.mode === 'returning') {
@@ -3885,7 +3903,9 @@ export class NPCNeedsSystem {
         }
         if (this.clockMs - w.since < RETURN_YIELD_MS) return;
         this._log(s.npcId, 'return_resumed', { x: Math.round(pos.x), y: Math.round(pos.y) });
-        this._goHome(s, { yieldToPlayer: false });
+        // SIMS-2 m1: keep returnFarReissued so an unreachable home logs `arrival_far` once per return,
+        // not once per _watchReturn cycle; this re-plans the walk without re-arming the far log.
+        this._goHome(s, { yieldToPlayer: false, keepFarFlag: true });
         s.returnWatch = { x: pos.x, y: pos.y, since: this.clockMs };
     }
 
@@ -4525,7 +4545,7 @@ export class NPCNeedsSystem {
         const place = this._queuePlace(s, obj);
         if (!place) { this._leaveQueue(s, 'no_queue_cell'); return; }
         const key = `${Math.round(place.cell.x)},${Math.round(place.cell.y)}`;
-        if (key !== job.qCell) { this._moveForPhase(s); return; }
+        if (key !== job.qCell) { job._farKey = null; this._moveForPhase(s); return; }   // SIMS-2 m2: a step to a new queue cell is a fresh move
         if (arrived) {
             job.qArrived = true;
             this.world.faceTo(s.npcId, obj.x, obj.y);
