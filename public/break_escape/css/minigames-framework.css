@@ -241,6 +241,24 @@
     box-sizing: border-box;
 }
 
+/* Tool windows wrap their content, at most 960x720, centred over the game (critique A45): on a
+   big screen they no longer stretch to the whole window around a strip of content. Below the
+   cap they still fit the window and scroll inside their frame (rule above). The PC desktop
+   (a container in desktop mode) keeps the full window. */
+.minigame-container[data-minigame="flag-station"] > .minigame-game-container,
+.minigame-container[data-minigame="vm-launcher"] > .minigame-game-container,
+.minigame-container[data-minigame="container"] > .minigame-game-container:not(:has(.desktop-mode)),
+.minigame-container[data-minigame="combination"] > .minigame-game-container,
+.minigame-container[data-minigame="cryptex"] > .minigame-game-container,
+.minigame-container[data-minigame="text-file"] > .minigame-game-container {
+    width: fit-content;
+    min-width: min(480px, 100%);
+    max-width: min(960px, 100%);
+    height: auto;
+    max-height: min(720px, 100%);
+    margin: auto;
+}
+
 /* No Cancel beside the X any more (slice 7 R1): the row holds only a scene's own
    footer buttons, such as Add to Notepad, and takes no room when it has none */
 .minigame-controls:empty {
