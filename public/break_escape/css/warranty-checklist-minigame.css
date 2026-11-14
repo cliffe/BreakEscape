@@ -370,3 +370,15 @@
     font-family: 'VT323', monospace;
     font-size: 20px;
 }
+
+/* Short windows and phones (Fix round 1 M2): the letterhead, status and gate note left the
+   rows 20 to 84px, so the paper scrolls as one column in the console body instead */
+@media (max-height: 500px), (max-width: 600px) {
+    .wcc-panel,
+    .wcc-desk,
+    .wcc-paper,
+    .wcc-doc-body {
+        flex: none;
+        overflow: visible;
+    }
+}

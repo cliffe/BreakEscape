@@ -400,7 +400,9 @@
 
 /* Short windows (phones in landscape): tabs and footer take most of the height, so the whole
    console scrolls in the window's body instead of clipping the Confirm strip */
-@media (max-height: 500px) {
+/* Phones too (Fix round 1 M2): the six tabs stack, so a panel scrolling inside the scrolling
+   window was 96 to 208px tall at 360x740 */
+@media (max-height: 500px), (max-width: 600px) {
     .fdp-wrap {
         flex: none;
         overflow: visible;
