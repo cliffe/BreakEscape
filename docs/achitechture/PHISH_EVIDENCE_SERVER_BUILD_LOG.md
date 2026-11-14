@@ -764,3 +764,77 @@ Branch tip at handover: see git log. Main checkout note: the two kieran_doyle_no
 were untracked in main at the start are now tracked there (a concurrent session merged them into main
 at bb0a458b1); only docs/agents/UI_PASS_RESUME.md remains untracked in main. No work from this branch
 leaked into the main checkout.
+
+## Live proofs (chunks A and B)
+
+Section 15 / task 8. Ran on a hand-started keyless server on 127.0.0.1:3664, headless Chromium,
+setFPS(20) with fixed steps on. Games created only with `tools/playtest/new-game.rb
+lab_social_engineering --start-room operations_room` (that room holds both the page builder and the
+mail workstation, so the proof reaches the real build and send controls without replaying the whole
+lab; the lord OSINT facts the lab grants through play are granted through the real
+`social-intel.js grantFact` path). Every case drives the REAL client paths: the landing-page builder
+minigame's Attach fires `systems/se-landing-page-client.js recordLandingPageBuild` -> POST
+`se/landing_page`, and the mail client minigame's Send fires `performSend`, which dynamically imports
+`systems/se-phish-send-client.js recordPhishSend` -> POST `se/phish_send`. The only hand-crafted POST
+is case (d), where a forged body is the point. Server stores are read back read-only with a rails
+runner; the reveal is read through a fresh bootstrap (`GET capture_secrets`). Harness:
+`tools/playtest/se/phish-chunk-ab-liveproof.mjs` (`node tools/playtest/se/phish-chunk-ab-liveproof.mjs
+--port 3664 [--only a,b,c,d,e,f]`).
+
+All six cases PASS.
+
+- **(a) honest online. PASS. Game 4568.** Real builder build for lord (server-recomputed
+  `credibility 87`, `meetsThreshold true`) then a real convincing mail send to lord carrying
+  `kit_payroll_page` (client judged it landed, `sentThisSession 1`). Server:
+  `seLandingPages["payroll_login"].built == true` and `.meetsThreshold == true`;
+  `sePhishSends["lord/kit_payroll_page"].landed == true`; `seCaptures["lord"].proven == true`. A fresh
+  bootstrap `GET capture_secrets` returns `{"secrets":{"lord":"Sofia2026!"}}` — the credential is
+  revealed.
+
+- **(b) hold/abort then drain. PASS. Game 4569.** `context.setOffline(true)` across the real build
+  and the real send: while offline the server stores are empty
+  (`seLandingPages {}`, `sePhishSends {}`), so the honest POSTs are held in the in-memory queues, not
+  refused. `setOffline(false)` then a browser `online` event and a sync drain the queues (builds
+  before sends): afterwards `seLandingPages["payroll_login"].meetsThreshold == true` and
+  `sePhishSends["lord/kit_payroll_page"].landed == true`. (The client's own reveal also held locally:
+  `seCaptures["lord"].proven == true`.)
+
+- **(c) queue, reload before drain, re-drive. PASS. Game 4571.** Only the two phish POST routes were
+  held (Playwright `route` abort), so the normal sync still persisted the durable
+  `globalVariables.se_landing_pages` (built + `victim.submitted`) while the build and send POSTs were
+  refused. With the routes held the server stores were empty (`seLandingPages {}`, `sePhishSends {}`).
+  The page was closed and reopened (bootstrap applied): `main.js`'s `game_loaded` re-drive re-posted
+  the build then the send from the durable global. Afterwards
+  `seLandingPages["payroll_login"].meetsThreshold == true` and
+  `sePhishSends["lord/kit_payroll_page"].landed == true` (`phishEvidenceMigrated` is also set, because
+  the same durable global makes the chunk-B migration fire on that bootstrap too; both idempotent
+  paths converge on the one landed row).
+
+- **(d) forged send refused. PASS. Game 4573.** Two crafted `POST se/phish_send` bodies from the real
+  config/CSRF: one for a non-phish target (`targetId: "ceo_not_a_target"`) and one for a non-link kit
+  (`kitId: "kit_cv"`). Both answered `422 {"success":false,"reason":"invalid"}`; `sePhishSends` stayed
+  empty (`{}`) — nothing stored.
+
+- **(e) chunk B legacy save. PASS. Games 4578 (strong) and 4580 (weak).** One game's `player_state`
+  was seeded through a rails runner to the legacy shape: `globalVariables.se_landing_pages.payroll_login`
+  with stored choices, `built: true`, a forged `meetsThreshold: true` and `victim.submitted: true`, no
+  `mailState`, and no server stores (`seLandingPages`/`sePhishSends`/`phishEvidenceMigrated` removed).
+  No migrations or schema commands were run. A fresh bootstrap ran the migration.
+  - Strong choices (game 4578): `seLandingPages["payroll_login"]` is written with the server's own
+    re-derived verdict (`credibility 87`, `meetsThreshold true`, not the forged value),
+    `sePhishSends["lord/kit_payroll_page"].landed == true`, and `phishEvidenceMigrated == true`.
+  - Weak choices (game 4580): the server re-derives `credibility 33`, `meetsThreshold false`, so the
+    imported send is `landed: false`; `phishEvidenceMigrated == true`.
+  - The secret is NOT asserted here and is withheld at this tip by design: the reader
+    (`phish_page_evidence_holds?`) still needs a stored landed sent message, which a legacy save has
+    trimmed ("no surviving sent mail"), so `GET capture_secrets` returns `{"secrets":{}}` for both until
+    chunk C's reader lands. The migration imports the server-owned stores; it does not fabricate a sent
+    mail or a capture entry.
+
+- **(f) improve after a weak build. PASS. Game 4576.** Reported plainly. A weak build recorded first:
+  `seLandingPages["payroll_login"]` with `credibility 33`, `meetsThreshold false`. Improving the same
+  page and rebuilding overwrote that one entry in place (same page key, last-wins on a build) with
+  `credibility 81`, `meetsThreshold true` and the convincing choices. A later real send over the
+  improved page then landed: `sePhishSends["lord/kit_payroll_page"].landed == true`. So a weak build is
+  not frozen: a rebuild replaces its choices/verdict, and the send gate reads the current (improved)
+  verdict.
