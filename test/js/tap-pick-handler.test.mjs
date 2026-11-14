@@ -11,6 +11,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as tapPick from '../../public/break_escape/js/systems/tap-pick.js';
 import * as reachMod from '../../public/break_escape/js/systems/interaction-reach.js';
+import { worldObservations } from '../../public/break_escape/js/utils/pc-observations.js';
 // The menu icons live in ui/interaction-menu.js (shared with the action menu); it sets
 // window globals as it loads, so a bare window must exist first
 globalThis.window ??= {};
@@ -83,7 +84,7 @@ const HELPERS = ['findObjectsAtPosition',
 const STUBS = ['window', 'document', 'Phaser', 'player', 'playerIsMoving', 'pendingGateWalk', 'doorGates',
     'isObjectInInteractionRange', 'sameRoomFrom', 'playerFeet', 'wallClearFrom', 'findClearStandPoint',
     'movePlayerToPoint', 'facePlayerToward', 'startHoldWalk', 'showInteractionMenu', 'isInteractionMenuOpen',
-    'closeInteractionMenu', 'resolveObjectField', 'TILE_SIZE', 'SPRITE_PADDING_BOTTOM_ATLAS',
+    'closeInteractionMenu', 'resolveObjectField', 'worldObservations', 'TILE_SIZE', 'SPRITE_PADDING_BOTTOM_ATLAS',
     'SPRITE_PADDING_BOTTOM_LEGACY', 'DOOR_INTERACTION_RANGE', 'INTERACTION_RANGE'];
 const IMPORTS = { ...tapPick, ...reachMod, openHandIcon: menuIcons.openHandIcon, jabHandIcon: menuIcons.jabHandIcon, talkIcon: menuIcons.talkIcon };
 const IMPORT_NAMES = ['tapPickList', 'farUnderTap', 'npcYieldsToObject', 'npcYieldTarget', 'opaqueAt', 'opaqueNear', 'objectStandPoint',
@@ -159,6 +160,7 @@ function world({ player, objects = [], npcs = [], hostile = [], roomOf = () => '
         isInteractionMenuOpen: () => state.menuOpen,
         closeInteractionMenu: () => { state.menuOpen = false; },
         resolveObjectField: (data, f, fb) => data?.[f] ?? fb,
+        worldObservations,
         TILE_SIZE: 32, SPRITE_PADDING_BOTTOM_ATLAS: 0, SPRITE_PADDING_BOTTOM_LEGACY: 0,
         DOOR_INTERACTION_RANGE: 64, INTERACTION_RANGE: RANGE
     };
@@ -212,6 +214,25 @@ test('handler: in-reach item and far item both under the tap still give the menu
     const w = world({ player, objects: [coffee, desk_pc] });
     w.tap(128, 128);
     assert.deepEqual(w.log, ['menu:coffee|far desk_pc']);
+});
+
+// ── UI PC polish 1: the menu line for a PC is its lock, and only while it is locked ──
+test('handler: a PC\'s observations show in the menu while it is locked and go once it is unlocked; a note keeps its own', () => {
+    const player = { x: 100, y: 100 };
+    const mk = (locked) => [
+        sprite('derek_pc', 108, 108, 24, 24, { depth: 40, data: { type: 'pc', lockType: 'password', locked, observations: 'password locked' } }),
+        sprite('note', 112, 112, 20, 20, { depth: 50, data: { type: 'notes', observations: 'A handwritten note.' } })
+    ];
+    const lockedWorld = world({ player, objects: mk(true) });
+    lockedWorld.tap(116, 116);
+    const lockedMenu = Object.fromEntries(lockedWorld.state.lastMenu.map(c => [c.label, c.detail]));
+    assert.equal(lockedMenu.derek_pc, 'password locked');
+    assert.equal(lockedMenu.note, 'A handwritten note.');
+    const openWorld = world({ player, objects: mk(false) });
+    openWorld.tap(116, 116);
+    const openMenu = Object.fromEntries(openWorld.state.lastMenu.map(c => [c.label, c.detail]));
+    assert.equal(openMenu.derek_pc, null, 'an unlocked PC drops its observations');
+    assert.equal(openMenu.note, 'A handwritten note.', 'a non-PC object is unchanged');
 });
 
 // ── M2: the far PC of a seated owner ──

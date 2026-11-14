@@ -37,6 +37,7 @@ BreakEscape::Engine.routes.draw do
       # Access model: sign-in PCs and card copies (docs/achitechture/ACCESS_MODEL_PLAN.md section 6)
       post 'login'           # Sign in at a sign-in PC (password, or claim the owner's open session)
       post 'logout'          # End the session at a sign-in PC
+      post 'lock_session'    # Lock a held session (UI slice 6): stays held, needs the password again
       get 'login_accounts'   # Account tiles for a sign-in PC's loginPicker
       post 'clone_card'      # Record a card copy the card copier saved
       post 'wear'            # Put a held wearable item on or take it off (docs/achitechture/WEARABLE_BUILD_LOG.md)
