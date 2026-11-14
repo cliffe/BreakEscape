@@ -184,8 +184,8 @@ module BreakEscape
     FRIENDFACE_PHONE = 'phone_friendface'.freeze
 
     # The Friendface phone the player holds for `npc_id` (nil: the player's own phone, one with no
-    # phoneOf), or nil. Reads the server's inventory, and counts only a phone the scenario declares
-    # (review R1 m1: an unsourced room add cannot mint one); phoneOf is a field a client-built item
+    # owner), or nil. Reads the server's inventory, and counts only a phone the scenario declares
+    # (review R1 m1: an unsourced room add cannot mint one); owner is a field a client-built item
     # can never carry.
     def held_friendface_phone(npc_id)
       declared = declared_friendface_phones
@@ -233,7 +233,7 @@ module BreakEscape
       return true if gifted
       # Review R2 n3, R3 n3: scenario_room_npc asks this on every call; skip the scenario walk in
       # held_friendface_phone unless the inventory holds a Friendface phone of this NPC's (the
-      # player's own phone, with no phoneOf, never brings the walk back)
+      # player's own phone, with no owner, never brings the walk back)
       return false unless Array(player_state['inventory']).any? do |i|
         i.is_a?(Hash) && i['type'] == FRIENDFACE_PHONE && friendface_owner(i) == npc_id
       end
@@ -341,7 +341,7 @@ module BreakEscape
     end
 
     def friendface_owner(item)
-      item['phoneOf'].is_a?(String) && !item['phoneOf'].empty? ? item['phoneOf'] : nil
+      item['owner'].is_a?(String) && !item['owner'].empty? ? item['owner'] : nil
     end
 
     # The first social site in the scenario's osint block, or nil

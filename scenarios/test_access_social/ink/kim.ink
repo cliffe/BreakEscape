@@ -1,5 +1,5 @@
 VAR hub_quiet = false
-// Scenario globals: the habit sets u1_kim_emailed_file at her first refusal (usbHabit.setGlobal);
+// Scenario globals: the habit sets u1_kim_emailed_file at her first refusal (habits.usb.setGlobal);
 // u1_kim_gave_usb is set by the stick's own onPickup once it reaches the player's tray, so only
 // a give that worked (or a pick-up after a knock-out) closes the choice, and it stays closed
 // after a reload (review R3 n5). u1_kim_asked_usb hides the choice from the hub listed straight
