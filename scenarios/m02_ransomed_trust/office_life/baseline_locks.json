@@ -825,28 +825,28 @@
       "requirementHash": "c53a2351fbd5140a"
     },
     {
-      "path": "/rooms/dr_kim_office/objects[0]",
-      "id": "kim_office_terminal",
-      "lockType": "ransomware_display",
-      "locked": true,
-      "requirementHash": "44136fa355b3678a"
-    },
-    {
-      "path": "/rooms/dr_kim_office/objects[6]",
+      "path": "/rooms/dr_kim_office/objects[dr_kim_safe]",
       "id": "dr_kim_safe",
       "lockType": "pin",
       "locked": true,
       "requirementHash": "3883e34ec2528014"
     },
     {
-      "path": "/rooms/emergency_equipment_storage/objects[0]",
+      "path": "/rooms/dr_kim_office/objects[kim_office_terminal]",
+      "id": "kim_office_terminal",
+      "lockType": "ransomware_display",
+      "locked": true,
+      "requirementHash": "44136fa355b3678a"
+    },
+    {
+      "path": "/rooms/emergency_equipment_storage/objects[emergency_storage_safe]",
       "id": "emergency_storage_safe",
       "lockType": "pin",
       "locked": true,
       "requirementHash": "3883e34ec2528014"
     },
     {
-      "path": "/rooms/hospital_ward/objects[0]",
+      "path": "/rooms/hospital_ward/objects[ehr_terminal_ward]",
       "id": "ehr_terminal_ward",
       "lockType": "ransomware_display",
       "locked": true,
@@ -860,43 +860,43 @@
       "requirementHash": "21ad4376eb58bcb4"
     },
     {
-      "path": "/rooms/it_department/objects[0]",
-      "id": "infected_terminal",
-      "lockType": "ransomware_display",
-      "locked": true,
-      "requirementHash": "44136fa355b3678a"
-    },
-    {
-      "path": "/rooms/it_department/objects[1]",
+      "path": "/rooms/it_department/objects[gary_workstation]",
       "id": "gary_workstation",
       "lockType": "password",
       "locked": true,
       "requirementHash": "5c1fe8898f39e908"
     },
     {
-      "path": "/rooms/it_department/objects[5]",
+      "path": "/rooms/it_department/objects[infected_terminal]",
+      "id": "infected_terminal",
+      "lockType": "ransomware_display",
+      "locked": true,
+      "requirementHash": "44136fa355b3678a"
+    },
+    {
+      "path": "/rooms/it_department/objects[it_filing_cabinet]",
       "id": "it_filing_cabinet",
       "lockType": "key",
       "locked": true,
       "requirementHash": "a560ae87d6be0482"
     },
     {
-      "path": "/rooms/reception_lobby/objects[3]",
-      "id": "reception_terminal",
-      "lockType": "ransomware_display",
-      "locked": true,
-      "requirementHash": "44136fa355b3678a"
-    },
-    {
-      "path": "/rooms/reception_lobby/objects[4]",
+      "path": "/rooms/reception_lobby/objects[reception_kiosk_1]",
       "id": "reception_kiosk_1",
       "lockType": "ransomware_display",
       "locked": true,
       "requirementHash": "44136fa355b3678a"
     },
     {
-      "path": "/rooms/reception_lobby/objects[5]",
+      "path": "/rooms/reception_lobby/objects[reception_kiosk_2]",
       "id": "reception_kiosk_2",
+      "lockType": "ransomware_display",
+      "locked": true,
+      "requirementHash": "44136fa355b3678a"
+    },
+    {
+      "path": "/rooms/reception_lobby/objects[reception_terminal]",
+      "id": "reception_terminal",
       "lockType": "ransomware_display",
       "locked": true,
       "requirementHash": "44136fa355b3678a"
@@ -909,7 +909,7 @@
       "requirementHash": "be44d2576367fc9b"
     },
     {
-      "path": "/rooms/security_office/objects[0]",
+      "path": "/rooms/security_office/objects[security_desk_terminal]",
       "id": "security_desk_terminal",
       "lockType": "ransomware_display",
       "locked": true,
@@ -923,14 +923,14 @@
       "requirementHash": "04cf75ab61a6a2b5"
     },
     {
-      "path": "/rooms/server_room/objects[6]",
+      "path": "/rooms/server_room/objects[entropy_field_case]",
       "id": "entropy_field_case",
       "lockType": "key",
       "locked": true,
       "requirementHash": "bb09799688356379"
     },
     {
-      "path": "/rooms/server_room/objects[7]",
+      "path": "/rooms/server_room/objects[entropy_staging_cache]",
       "id": "entropy_staging_cache",
       "lockType": "flag",
       "locked": true,

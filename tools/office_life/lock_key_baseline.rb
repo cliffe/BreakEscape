@@ -81,7 +81,9 @@ walk = lambda do |o, path|
     end
     o.each { |k, v| walk.call(v, "#{path}/#{k}") }
   when Array
-    o.each_with_index { |v, i| walk.call(v, "#{path}[#{i}]") }
+    # Key array members by id where they have one, so a new object declared before an
+    # existing one does not shift the existing paths.
+    o.each_with_index { |v, i| walk.call(v, v.is_a?(Hash) && v['id'] ? "#{path}[#{v['id']}]" : "#{path}[#{i}]") }
   end
 end
 walk.call(scenario, '')

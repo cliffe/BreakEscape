@@ -35,7 +35,7 @@ Graph sizes: puzzle 105 nodes and 126 edges (31 locks, 13 keys, 34 items, 13 roo
 `baseline_locks.json`, written by `tools/office_life/lock_key_baseline.rb`, an interim stand-in for V9. It records:
 
 - the graph's lock and key nodes with `optional`, and every edge;
-- 17 locks from the rendered scenario, each with a 16-hex SHA-256 of its requirement fields (`requires`, `keyPins`, `targetFlags`, `difficulty`), never the secret: the Boardroom PIN, Kim's safe PIN, the emergency-store safe PIN, the IT door key lock, the Security Office key lock, the server room RFID, Gary's workstation password, the IT filing cabinet key lock, the Sealed Equipment Case key lock, the flag-locked staging cache, and seven `ransomware_display` screens;
+- 17 locks from the rendered scenario, keyed by room and object id (so an object appended to a room shifts no existing entry), each with a 16-hex SHA-256 of its requirement fields (`requires`, `keyPins`, `targetFlags`, `difficulty`), never the secret: the Boardroom PIN, Kim's safe PIN, the emergency-store safe PIN, the IT door key lock, the Security Office key lock, the server room RFID, Gary's workstation password, the IT filing cabinet key lock, the Sealed Equipment Case key lock, the flag-locked staging cache, and seven `ransomware_display` screens;
 - `gate`, `access` and `wearable`: none in m02;
 - 8 aims and their 29 tasks with every trigger field (titles and descriptions left out), and the one `concludeRequires`.
 
