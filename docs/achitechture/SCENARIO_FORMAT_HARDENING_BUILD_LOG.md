@@ -3157,3 +3157,127 @@ The broader needs-system fields outside this grouping (`interests`, `needsCompan
 `onUse`, `chattiness`, `swivel`, and so on) are client-visible too; `role`, `creds`, `awareness`,
 `workNeeds`, `frustration`, `workarounds` and `feed` are the NPC fields withheld alongside the
 non-shipped habits (`WITHHELD_NPC_KEYS` `game.rb:6227`, `WITHHELD_WORK_NPC_KEYS` `game.rb:6231`).
+
+### What changed (6a-1, step-3-independent parts)
+
+Built on main cb259dbdf. Steps 3, 4 and 5 of this plan are not merged on this branch (verified: no
+`build/harden-step3/4/5`, `acknowledgedClues` absent everywhere in `app/`, `lib/`, `scripts/`, no
+step-4 `x-ref` schema annotations). Present and used: the ScenarioSchema resolver (step 2b),
+AuthorNotes, FormatUpgrade (step 7), `Game.strip_lock_answers!` (which still strips both `combination`
+when `lockType` is combination and `cryptexConfig.answer`, game.rb), and `CaptureModel`
+(`hard_access_values`, `lock_codes`, `lock_answer_matches?`). The user held the full fresh-state
+scan until step 3; everything below is committed now.
+
+**Schema marks and declarations (`scripts/scenario-schema.json`).**
+- The nine previously-undeclared top-level keys are declared: `scenario_id`, `scenario_name`, `name`,
+  `description` (string); `exportGlobals`, `validSprites` (array of string); `importGlobals`,
+  `timedMessages` (array of an `x-free-data` object); `showTitleScreen` (boolean). Each description
+  names its readers on main. `formatVersion` was already declared (step 7). `acknowledgedClues` is
+  step 3's and stays undeclared until then.
+- Whole-record top-level marks: `flags` and `roles` `x-serverOnly` (served by no route);
+  `accountProfiles` `x-servedBy "GET /container"`; `networks`, `networkLinks`, `resources`
+  `x-servedBy ["GET /network", "GET /container"]`.
+- Lock-answer declarations and marks on both `#/definitions/room` and `#/definitions/item`:
+  `requires` gets `x-serverOnly: { unlessLockType: ["biometric", "bluetooth", "rfid"] }`; a new
+  `combination` property gets `x-serverOnly: { whenLockType: ["combination"] }`; `cryptexConfig`
+  keeps `x-free-data: true` but gains a declared `answer` property (`type: string`) marked
+  `x-serverOnly: true`. The door-entry definition gets `"lockTypeFrom": "connectedRoom"` for the
+  scan's lock-type resolution.
+- NPC-definition whole-record marks: `role`, `creds`, `awareness`, `workNeeds`, `frustration`,
+  `workarounds`, `feed` `x-serverOnly`. `creds.password` carries
+  `x-servedBy: { route: "GET /login_accounts", key: "postitNote" }`. The six feed `POST_KEYS` (`id`,
+  `text`, `fact`, `date`, `note`, `replyTo`) carry `x-servedBy "feedPosts"`.
+- Habits: the six non-shipping leaves (`locksScreen`, `writesDown`, `password`, `passwordPattern`,
+  `holdsDoors`, `usb`) are each `x-serverOnly`; `screen` and `print` are left unmarked so they ship.
+
+**Tests and the exceptions file.**
+- `test/js/validator-declared-top-level.test.mjs` (new): every top-level key the rendered corpus
+  uses is declared; the nine keys are declared and typed; `cryptexConfig` and `combination` are
+  declared on both room and item; the answer copies, `requires`, the top-level secret blocks, the
+  NPC records and the per-leaf habit marks all carry the right marks.
+- `test/fixtures/files/payload_scan_exceptions.json` (new): an empty array. Its list-test wiring
+  lives in `test/js/validator-known-failures.test.mjs` (the shared decisions reader): a new
+  `checkPayloadScanExceptions` checks each entry's fields (`scenario`, `route`, `paths`, `reason`,
+  dates), its `approved` heading and json block (`scenario`, `route`, `paths`), a passed `reviewBy`
+  (warns, fails under `MERGE_BATCH=1`), and no heading backing two entries across the three lists.
+  `AGENTS.md` (line 186) and `VALIDATOR_DECISIONS.md` already name the file; no edit needed there.
+- `test/models/break_escape/payload_scan_fresh_state_test.rb` (new): the leaf classifier
+  (`PayloadLeafClassifier`) is live and unit-tested (classes 1, 3, 4, the conditional `requires` and
+  `combination` marks, and the class-2 rule that reads `acknowledgedClues` when the key is present).
+  The full corpus scan over real routes is a single test behind `skip SCAN_PENDING` until step 3.
+
+### Encoding decisions
+
+- **Habits are marked per leaf, not whole-record.** A whole-record `x-serverOnly` on `habits` with an
+  `x-servedBy` for the shipping route would, under the scan's precedence rule, also let the other
+  unmarked habit leaves pass on that route. Marking the six non-shipping leaves and leaving
+  `screen`/`print` unmarked is the only encoding the scan reads correctly. (This corrects a sentence
+  in the client-visible section above, now reworded.)
+- **cryptexConfig keeps `x-free-data` and gains a declared `answer`.** The plan's anchor (e937b75f8)
+  had `cryptexConfig` as `{ wheelCount, answer }`; on this branch it was changed to `x-free-data`
+  with the answer moved into `requires`. Rather than reverse that, the resolver's rule 1 (a declared
+  property wins over a free-data branch) lets `answer` be a class-1 property while the rest of
+  `cryptexConfig` stays free. `open_kinds` is empty for a property-bearing node, so the one-mark walk
+  test skips it. `answer` needs `type: string`, or it is "bare" and the one-mark test flags it.
+- **`combination` is a new declared property.** No corpus scenario carries a top-level or nested
+  `combination`, so declaring it on room and item rejects nothing; it exists so an authored copy
+  fails the scan on its path under a combination lock.
+
+### Verification
+
+- `test/unit/scenario_schema_test.rb` + `test/unit/scenario_schema_boot_test.rb`: 14 runs, 12776
+  assertions, 0 failures (the one-mark walk test passes with the new `cryptexConfig.answer` and the
+  `x-free-data` array items).
+- `test/js/validator-strict-keys.test.mjs`: 15 pass (corpus has no unknown key in any closed block).
+- `test/js/validator-known-failures.test.mjs`: 21 pass (15 existing plus 6 new exceptions-list
+  tests).
+- `test/js/validator-declared-top-level.test.mjs`: 6 pass.
+- `test/models/break_escape/payload_scan_fresh_state_test.rb`: 8 runs, 7 pass, 1 skip (the held
+  scan).
+- Validator `--no-graph --skip-ink` over the whole corpus: 0 scenarios print a schema error naming
+  any new declaration (`scenario_id`, `scenario_name`, `name`, `description`, `exportGlobals`,
+  `importGlobals`, `validSprites`, `timedMessages`, `showTitleScreen`, `combination`,
+  `cryptexConfig`, `formatVersion`). The eight representative scenarios (title-screen-demo,
+  test_dm_social, ca_post_helpdesk_ba, ca_pre_helpdesk_ab, m07, m01, lab_tesseract_trials,
+  timed_messages_example) each print 0 errors.
+
+### Sync size
+
+No runtime change. 6a-1 adds schema marks (read by the held scan), four test files and one empty
+fixture; no `app/` or `lib/` code, no payload, no player_state.
+
+### Files touched (6a-1)
+
+`scripts/scenario-schema.json`, `test/js/validator-declared-top-level.test.mjs`,
+`test/js/validator-known-failures.test.mjs`, `test/fixtures/files/payload_scan_exceptions.json`,
+`test/models/break_escape/payload_scan_fresh_state_test.rb`,
+`docs/achitechture/SCENARIO_FORMAT_HARDENING_BUILD_LOG.md`.
+
+### Left for after step 3
+
+6a-1's fresh-state scan is held because class 2 (a leaf under `globalVariables`, `minigameData` or
+`scenarioData`) follows step 3's leak rule with acknowledged clues, and step 3's `acknowledgedClues`
+marker is not on this branch. When step 3 lands:
+1. In `payload_scan_fresh_state_test.rb`, remove `skip SCAN_PENDING` and build the scan body: for
+   each scenario create a standalone game (`srand(1)` around creation, `srand(Random.new_seed)`
+   after), fetch `GET scenario`, `GET room/:id` per room, `GET container/:id` per container,
+   `GET login_accounts` per sign-in PC and `GET network` with no foothold, walk every response leaf
+   with the ScenarioSchema walker carrying the server-only ancestor state (the precedence rule), and
+   class each leaf with `PayloadLeafClassifier.classify` and `class2_reports?`. Fail on every class 1
+   leaf, every class 2 leaf `class2_reports?` returns true for, and every class 4 value match with no
+   serving field. Read exceptions from `payload_scan_exceptions.json` (a listed path that no longer
+   fails is stale and fails). Name the routes left out with a reason (the plan's list): `scenario_map`,
+   `objectives`, `capture_secrets`, `ink`, and the POST routes.
+2. The class-2 path already reads `acknowledgedClues` when present (`class2_reports?` /
+   `clue_covers?`). Step 3 owns the real `acknowledgedClues` entry shape; align `clue_covers?` with
+   it. m08_the_mole's `suite_code` global then passes once m08's `global:` marker is in; the
+   ceo_exfil and crypto1 to crypto4 legacy-PC `requires` findings get exceptions entries once step 3
+   warns about the inert field (per the user's decision, not temporary entries now).
+3. `social.intelFacts` is not marked. The `socialIntelFact` definition is shared with the
+   client-visible OSINT browser, intel fact text is class 3 (not a section-2 secret), and
+   `x-servedBy "feedPosts"` there only matters to the scan's feed handling. Decide its mark when the
+   scan is built, with the feed-post fetch in front of it.
+4. The class fixtures the plan lists (6a-1 Tests) and the corpus fixtures (m01's postitNote and the
+   other plain-text clues as class 3, test_access_habits' written-down password as class 4) are
+   added with the scan body. 6a-2 then adds the opened-state scan, the identity check and the
+   mutation tests.
