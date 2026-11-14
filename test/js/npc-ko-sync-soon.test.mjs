@@ -1,6 +1,8 @@
 // A KO asks StateSync for a sync soon (requestSoon, debounced there), so the KO and its
 // globalVarOnKO do not wait for the 30 s timer. A hit that does not knock out, a koImmune
-// NPC and an NPC already down ask for nothing.
+// NPC and an NPC already down ask for nothing. The request is made before the death
+// animation, drops and KO listeners, so a throw in any of them cannot cancel it (R1 n3);
+// the debounced sync it arms runs later and carries the globalVarOnKO.
 // Run with: node --test test/js/npc-ko-sync-soon.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -19,7 +21,7 @@ globalThis.window = {
     gameState: { globalVariables: {} },
     npcManager: { getNPC: (id) => npcs.get(id) || null },
     npcBehaviorManager: { getBehavior: () => null },
-    stateSync: { requestSoon: () => soon.push(window.gameState.globalVariables.derek_down === true) }
+    stateSync: { requestSoon: () => soon.push(true) }
 };
 
 const configUrl = dataUrl(readFileSync(join(js, 'config/combat-config.js'), 'utf8'));
@@ -35,13 +37,14 @@ window.npcHostileSystem = sys;
 
 const quiet = (fn) => { const l = console.log; console.log = () => {}; try { return fn(); } finally { console.log = l; } };
 
-test('a KO asks for one sync soon, after its globalVarOnKO is set', () => {
+test('a KO asks for one sync soon, and its globalVarOnKO is set by the time damageNPC returns', () => {
     soon = [];
     npcs.set('derek', { id: 'derek', globalVarOnKO: 'derek_down' });
     quiet(() => sys.damageNPC('derek', 1));
     assert.equal(soon.length, 0, 'a hit that does not knock out asks for nothing');
     quiet(() => sys.damageNPC('derek', 10000));
-    assert.deepEqual(soon, [true], 'one request, made once the global is true');
+    assert.equal(soon.length, 1, 'one request');
+    assert.equal(window.gameState.globalVariables.derek_down, true, 'the global is set in the same call, before the debounced sync runs');
     quiet(() => sys.damageNPC('derek', 10000));
     assert.equal(soon.length, 1, 'an NPC already down asks for nothing more');
 });
@@ -58,4 +61,17 @@ test('each NPC knocked out in a fight asks once (StateSync merges them)', () => 
     for (const id of ['g1', 'g2', 'g3']) npcs.set(id, { id });
     for (const id of ['g1', 'g2', 'g3']) quiet(() => sys.damageNPC(id, 10000));
     assert.equal(soon.length, 3);
+});
+
+test('a KO listener that throws does not cancel the sync request (R1 n3)', () => {
+    soon = [];
+    npcs.set('thrower', { id: 'thrower' });
+    const emit = window.eventDispatcher.emit;
+    window.eventDispatcher.emit = () => { throw new Error('listener failed'); };
+    try {
+        assert.throws(() => quiet(() => sys.damageNPC('thrower', 10000)));
+    } finally {
+        window.eventDispatcher.emit = emit;
+    }
+    assert.equal(soon.length, 1, 'the KO still asked for its sync');
 });

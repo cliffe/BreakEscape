@@ -3,7 +3,9 @@
 // A pagehide that follows does not send it again, stop() removes the listener, hidden
 // then visible leaves the periodic sync working, and a refused currentRoom on that path
 // is confirmed (not resent), as on the sync path. Also requestSoon(), the debounced sync
-// a KO asks for.
+// a KO asks for. Review R1: a hidden flush that fails no longer blocks the pagehide, an
+// older answer never overwrites a newer confirm, a hide with no change sends nothing,
+// and two flushes in flight stay under the keepalive quota together.
 // Run with: node --test test/js/state-sync-hidden-save.test.mjs
 
 import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
@@ -63,8 +65,13 @@ function resetGame() {
     npcHostileSystem: null
   });
   Object.assign(console, quiet);
-  return new StateSync(60 * 60 * 1000);
+  current = new StateSync(60 * 60 * 1000);
+  return current;
 }
+// A failed assertion skips a test's own stop(); stop every game here so the interval
+// cannot keep the run alive.
+let current = null;
+test.afterEach(() => { current?.stop(); current = null; });
 const hide = () => { document.visibilityState = 'hidden'; document.fire('visibilitychange'); };
 const show = () => { document.visibilityState = 'visible'; document.fire('visibilitychange'); };
 
@@ -244,11 +251,15 @@ test('requestSoon waits no longer than the cap after the first request', async (
   const sync = resetGame();
   await sync.sync();
   window.gameState.globalVariables.ko1 = true;
-  for (let i = 0; i < 10; i++) { sync.requestSoon(); t.mock.timers.tick(200); }
+  // Requests every 200 ms from 0 to 1400 ms: the debounce alone would never fire
+  for (let i = 0; i < 8; i++) { sync.requestSoon(); if (i < 7) t.mock.timers.tick(200); }
+  t.mock.timers.tick(mod.REQUEST_SOON_MAX_MS - 1400 - 1);
+  assert.equal(requests.length, 1, 'nothing sent 1 ms before the cap');
+  t.mock.timers.tick(1);
+  assert.equal(requests.length, 2, 'sent at REQUEST_SOON_MAX_MS despite constant requests');
   t.mock.timers.reset();
   await settle();
-  assert.equal(requests.length, 2, 'sent within REQUEST_SOON_MAX_MS despite constant requests');
-  assert.ok(mod.REQUEST_SOON_MAX_MS <= 2000, 'a crash 3 s after a KO keeps it');
+  assert.equal(mod.REQUEST_SOON_MAX_MS, 1500, 'a crash 2 s after a KO keeps it');
 });
 
 test('stop() cancels a pending requestSoon', async (t) => {
@@ -258,6 +269,241 @@ test('stop() cancels a pending requestSoon', async (t) => {
   window.gameState.globalVariables.ko1 = true;
   sync.requestSoon();
   sync.stop();
+  t.mock.timers.tick(5000);
+  t.mock.timers.reset();
+  await settle();
+  assert.equal(requests.length, 1);
+});
+
+// Review R1, M1: a hidden flush that did not land must not block the pagehide.
+async function hiddenFailsThenPagehide(failWith) {
+  const sync = resetGame();
+  sync.start();
+  await sync.sync();
+  const real = globalThis.fetch;
+  failWith(real);
+  window.gameState.globalVariables.probe = 1;
+  hide();
+  await settle(); await settle();
+  globalThis.fetch = real;
+  reply = () => ({ ok: true, json: { success: true } });
+  assert.equal(requests.length, 2, 'the hidden flush was attempted');
+  window.fire('pagehide');
+  await settle();
+  assert.equal(requests.length, 3, 'the pagehide sent the delta again');
+  assert.deepEqual(requests[2].body.globalVariables, { probe: 1 });
+  assert.ok(requests[2].body.scenarioClock, 'and forced the clock, as a plain pagehide does');
+  sync.stop();
+}
+
+test('R1 M1: a hidden flush answered 500, then pagehide: the pagehide sends the delta', async () => {
+  await hiddenFailsThenPagehide(() => { reply = () => ({ ok: false, json: {} }); });
+});
+
+test('R1 M1: a hidden flush rejected by fetch (network error or keepalive quota), then pagehide', async () => {
+  await hiddenFailsThenPagehide(() => {
+    globalThis.fetch = async (u, i) => { requests.push({ init: i, body: JSON.parse(i.body) }); throw new TypeError('Failed to fetch'); };
+  });
+});
+
+test('R1 M1: a hidden flush whose fetch throws at once, then pagehide', async () => {
+  await hiddenFailsThenPagehide(() => {
+    globalThis.fetch = (u, i) => { requests.push({ init: i, body: JSON.parse(i.body) }); throw new TypeError('keepalive quota'); };
+  });
+});
+
+test('R1 M1: a hidden flush whose 2xx answer cannot be read, then pagehide', async () => {
+  await hiddenFailsThenPagehide(real => {
+    globalThis.fetch = async (u, i) => {
+      requests.push({ init: i, body: JSON.parse(i.body) });
+      return { ok: true, status: 200, json: async () => { throw new SyntaxError('bad json'); } };
+    };
+  });
+});
+
+test('R1 M1: a hidden flush with no answer yet (frozen page) still blocks the same delta on pagehide', async () => {
+  const sync = resetGame();
+  sync.start();
+  await sync.sync();
+  let release;
+  reply = () => new Promise(r => { release = () => r({ ok: false, json: {} }); });
+  window.gameState.globalVariables.probe = 1;
+  hide();
+  window.fire('pagehide');
+  await settle();
+  assert.equal(requests.length, 2, 'no double send while the answer is pending');
+  release(); await settle(); await settle();
+  sync.stop();
+});
+
+// Review R1, m1: an older answer that lands after a newer one confirms nothing.
+test('R1 m1: a hidden flush answered after a later sync does not overwrite the sync\'s confirm', async () => {
+  const sync = resetGame();
+  sync.start();
+  await sync.sync();
+  let releaseFlush;
+  reply = (b) => b.globalVariables?.hp === 80 && requests.length === 2
+    ? new Promise(r => { releaseFlush = () => r({ ok: true, json: { success: true } }); })
+    : ({ ok: true, json: { success: true } });
+  window.gameState.globalVariables.hp = 80;
+  hide();                                   // flush hp=80, answer held
+  show();
+  window.gameState.globalVariables.hp = 60;
+  await sync.sync();                        // server holds 60
+  window.gameState.globalVariables.hp = 80; // healed back to the flushed value
+  releaseFlush(); await settle(); await settle();
+  const before = requests.length;
+  await sync.sync();
+  assert.equal(requests.length - before, 1, 'the next sync sends the heal');
+  assert.deepEqual(requests.at(-1).body.globalVariables, { hp: 80 });
+  sync.stop();
+});
+
+test('R1 m1: a sync answered after a later hidden flush does not overwrite the flush\'s confirm', async () => {
+  const sync = resetGame();
+  sync.start();
+  await sync.sync();
+  let releaseSync;
+  reply = () => (requests.length === 2
+    ? new Promise(r => { releaseSync = () => r({ ok: true, json: { success: true } }); })
+    : ({ ok: true, json: { success: true } }));
+  window.gameState.globalVariables.hp = 60;
+  const pending = sync.sync();              // sync hp=60, answer held
+  await settle();
+  window.gameState.globalVariables.hp = 80;
+  hide();                                   // flush hp=80, answered at once
+  await settle(); await settle();
+  show();
+  releaseSync();
+  assert.equal(await pending, true);
+  window.gameState.globalVariables.hp = 60; // the server holds 80 now
+  const before = requests.length;
+  await sync.sync();
+  assert.equal(requests.length - before, 1, 'the next sync sends 60');
+  assert.deepEqual(requests.at(-1).body.globalVariables, { hp: 60 });
+  sync.stop();
+});
+
+// Review R1, m2: a tab switch with no change sends nothing.
+test('R1 m2: a hide with no change sends nothing; the pagehide after it still forces the clock', async () => {
+  const sync = resetGame();
+  sync.start();
+  await sync.sync();
+  let elapsed = 1000;
+  window.gameClock = { exportState: () => ({ elapsedMs: elapsed }) };
+  elapsed = 5000;                           // time moved, nothing else did
+  hide();
+  await settle();
+  assert.equal(requests.length, 1, 'no request on a hide with no change');
+  assert.equal(sync._hiddenFlushKey, null, 'no guard set');
+  show(); hide();
+  await settle();
+  assert.equal(requests.length, 1, 'still none after a second tab switch');
+  window.fire('pagehide');
+  await settle();
+  assert.equal(requests.length, 2, 'the pagehide sends');
+  assert.deepEqual(Object.keys(requests[1].body).sort(), ['clientTs', 'scenarioClock']);
+  assert.equal(requests[1].body.scenarioClock.elapsedMs, 5000);
+  sync.stop();
+});
+
+test('R1 m2: on a hide the clock follows the 5-minute rule', async () => {
+  const sync = resetGame();
+  sync.start();
+  await sync.sync();
+  let elapsed = 2000;
+  window.gameClock = { exportState: () => ({ elapsedMs: elapsed }) };
+  hide();
+  await settle();
+  assert.equal(requests.length, 1, 'a clock under 5 minutes old is not sent');
+  show();
+  sync.clockConfirmedAt -= 5 * 60 * 1000;   // the last clock save is 5 minutes old
+  elapsed = 3000;
+  hide();
+  await settle();
+  assert.equal(requests.length, 2, 'a due clock goes up on the hide');
+  assert.equal(requests[1].body.scenarioClock.elapsedMs, 3000);
+  sync.stop();
+});
+
+// Review R1, m3: the keepalive quota is shared by every keepalive in flight.
+const bytes = s => new TextEncoder().encode(s).length;
+const inflightBytes = reqs => reqs.reduce((n, r) => n + bytes(r.init.body), 0);
+
+test('R1 m3: a pagehide while a large hidden flush is in flight is reduced to fit what is left', async () => {
+  const sync = resetGame();
+  sync.start();
+  await sync.sync();
+  const held = [];
+  reply = () => new Promise(r => held.push(() => r({ ok: true, json: { success: true } })));
+  // A long note (not reload-critical) goes up on the hide: ~40 KB in flight, answer
+  // pending, so the pagehide's delta still holds it too.
+  window.gameState.notes.push({ id: 'n1', text: 'y'.repeat(40000) });
+  hide();
+  assert.equal(requests.length, 2);
+  window.gameState.globalVariables.later = 1;
+  window.fire('pagehide');
+  assert.equal(requests.length, 3, 'the pagehide sent a reduced body');
+  assert.equal(requests[2].body.notes, undefined, 'notes left out to fit');
+  assert.equal(requests[2].body.globalVariables.later, 1, 'the reload-critical globals kept');
+  assert.ok(inflightBytes(requests.slice(1)) <= 60000, 'both flushes together fit the quota');
+  for (const r of held) r();
+  await settle(); await settle();
+  sync.stop();
+});
+
+test('R1 m3: when even the reduced body does not fit, the pagehide sends nothing and keeps the delta', async () => {
+  const sync = resetGame();
+  sync.start();
+  await sync.sync();
+  const held = [];
+  reply = () => new Promise(r => held.push(() => r({ ok: true, json: { success: true } })));
+  // 20 KB in flight; the pagehide's delta (both globals, 50 KB) fits the limit alone
+  // but not beside it, and the globals are kept by both reduced lists.
+  window.gameState.globalVariables.big = 'x'.repeat(20000);
+  hide();
+  window.gameState.globalVariables.later = 'z'.repeat(30000);
+  window.fire('pagehide');
+  assert.equal(requests.length, 2, 'nothing sent over the quota');
+  for (const r of held) r();
+  await settle(); await settle();
+  reply = () => ({ ok: true, json: { success: true } });
+  await sync.sync();
+  assert.equal(requests.length, 3, 'the next sync sends the kept delta');
+  assert.equal(requests[2].body.globalVariables.later.length, 30000);
+  assert.equal(requests[2].body.globalVariables.big, undefined, 'the hidden flush was confirmed');
+  sync.stop();
+});
+
+test('R1 m3: a hidden flush that cannot fit sets no guard, and the quota frees once a flush settles', async () => {
+  const sync = resetGame();
+  sync.start();
+  await sync.sync();
+  window.gameState.globalVariables.huge = 'x'.repeat(70000);
+  hide();
+  await settle();
+  assert.equal(requests.length, 1, 'nothing sent');
+  assert.equal(sync._hiddenFlushKey, null, 'no guard: the pagehide is not blocked by an unsent flush');
+  assert.equal(sync._keepaliveInflight, 0);
+  delete window.gameState.globalVariables.huge;
+  show();
+  window.gameState.globalVariables.small = 1;
+  hide();
+  await settle(); await settle();
+  assert.equal(requests.length, 2);
+  assert.equal(sync._keepaliveInflight, 0, 'freed after the answer');
+  sync.stop();
+});
+
+// Review R1, n1: stop() is final.
+test('R1 n1: requestSoon after stop() starts nothing', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'] });
+  const sync = resetGame();
+  sync.start();
+  await sync.sync();
+  sync.stop();
+  window.gameState.globalVariables.ko1 = true;
+  sync.requestSoon();
   t.mock.timers.tick(5000);
   t.mock.timers.reset();
   await settle();

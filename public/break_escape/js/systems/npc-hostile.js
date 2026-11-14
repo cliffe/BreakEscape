@@ -302,6 +302,12 @@ function damageNPC(npcId, amount) {
       try { state.koFacing = getNPCDirection(npcId, sprite); } catch (e) { /* no facing */ }
     }
     recordHostility(npcId, state);
+    // Save the KO (npcHostility, globalVarOnKO) soon rather than at the next 30 s sync,
+    // so a crash just after a fight keeps it. Asked for here, before the animation, drops
+    // and listeners below, so a throw in any of them cannot cancel it. The sync is
+    // debounced in StateSync (a timer), so it still carries the globalVarOnKO set below,
+    // and several KOs in one fight share one delta sync.
+    window.stateSync?.requestSoon?.();
     
     // Sync NPC KO state to server for persistence. The drop below waits for it: the server
     // accepts a drop outside the NPC's own room only once the KO is recorded. Retried with a
@@ -386,10 +392,6 @@ function damageNPC(npcId, amount) {
       console.log(`📋 Auto-completed task ${npcRef.taskOnKO} (NPC ${npcId} KO'd)`);
     }
 
-    // Save the KO (npcHostility, globalVarOnKO) soon rather than at the next 30 s sync,
-    // so a crash just after a fight keeps it. Debounced in StateSync: several KOs in one
-    // fight share one delta sync.
-    window.stateSync?.requestSoon?.();
   }
 
   return true;
