@@ -1,6 +1,9 @@
 // neil_print_asked is a scenario global, synced into this VAR on load, and set by the change-log
 // choice below. Gating the ask on it stops Neil promising a second print that never comes (M4).
 VAR neil_print_asked = false
+// job_called (SIMS-4): the player reports the staff room's flickering light; Neil radios it in, and
+// the staff-room pair's "job called" exchange then has its gate.
+VAR job_called = false
 
 === start ===
 # speaker:npc
@@ -28,6 +31,11 @@ Alright? Neil, IT support. I'm parked here by me mug, so give us a shout.
 + [Quiet day?]
     # speaker:npc
     There's always something on the go. I like it better that way, mind.
+    -> hub
++ { not job_called } [The staff room light's flickering.]
+    # speaker:npc
+    That tube again? I'll put it out on the radio for maintenance now.
+    #set_global:job_called:true
     -> hub
 + [I'll let you get on.] #exit_conversation
     # speaker:npc

@@ -55,8 +55,15 @@
     "it_out_e_shown": false,
     "it_out_f_shown": false,
     "neil_print_asked": false,
-    "neil_ko": false
+    "neil_ko": false,
+    "job_called": false,
+    "job_cleared": false,
+    "heard_exchange_waiting": false,
+    "heard_exchange_job_called": false,
+    "heard_exchange_job_cleared": false
   },
+
+  "roomToneTypes": { "room_hospital_staff": "kitchen" },
 
   "startItemsInInventory": [
     {
@@ -149,6 +156,20 @@
       "tasks": [
         { "taskId": "see_neil_sip", "title": "Neil sips from his mug without a step (he is standing by the south bench; about two and a half minutes after the door opens his caffeine runs low and he drinks where he stands)", "type": "custom", "status": "active" },
         { "taskId": "see_neils_page", "title": "Ask Neil for the change log and his page lands on the IT copier (talk to him, ask him to print it, close the chat: about six seconds later the copier runs and a page appears on the tray)", "type": "custom", "status": "active" }
+      ]
+    },
+    {
+      "aimId": "watch_the_staff_room",
+      "title": "Watch the staff room",
+      "description": "Nothing to solve. Open the staff-room door (east of IT) and watch Keith and Jodie take their breaks together while they wait on the radio.",
+      "status": "active",
+      "order": 2,
+      "tasks": [
+        { "taskId": "see_shared_break", "title": "Keith and Jodie meet at the boiler (walk in the first time and the pair get up together for a tea; one's break pulls the other)", "type": "custom", "status": "active" },
+        { "taskId": "see_cooler_break", "title": "Keith and Jodie meet at the water cooler (later, a break pulls both to the cooler)", "type": "custom", "status": "active" },
+        { "taskId": "hear_waiting", "title": "Overhear the pair chatting while they wait (stand near the boiler on your first visit until they finish)", "type": "custom", "status": "active" },
+        { "taskId": "hear_job_called", "title": "Overhear them talk about the flickering light (report it to Neil, then walk straight into the staff room while they are on a break)", "type": "custom", "status": "active" },
+        { "taskId": "see_microwave", "title": "Keith heats something in the microwave on his own (about eight minutes after the staff room opens; the task ticks even if you are elsewhere)", "type": "custom", "status": "active" }
       ]
     }
   ],
@@ -902,7 +923,7 @@
       "type": "room_it",
       "door_sign": "IT",
       "needsPrivateTo": ["neil"],
-      "connections": { "south": "office", "west": "manager_office" },
+      "connections": { "south": "office", "west": "manager_office", "east": "staff_room" },
       "objects": [
         {
           "type": "office-misc-cup",
@@ -1053,6 +1074,130 @@
       "connections": { "east": "it_room" },
       "objects": [],
       "npcs": []
+    },
+
+    "staff_room": {
+      "type": "room_hospital_staff",
+      "door_sign": "Staff Room",
+      "needsPrivateTo": ["keith", "jodie"],
+      "connections": { "west": "it_room" },
+      "objects": [
+        {
+          "type": "hot_water_boiler",
+          "id": "staff_boiler",
+          "name": "Boiler",
+          "takeable": false,
+          "observations": "The staff-room boiler. Keith swears by its brew.",
+          "officeType": "kettle",
+          "affordance": { "capacity": 2, "chatter": "staff_tea", "queue": false, "useSeconds": 30, "restores": 40, "useFrom": { "dx": 0.25, "dy": 2.5 } },
+          "_comment": "SIMS-4: claims the drawn hot_water_boiler1 by base type. capacity 2 + queue false lets Keith and Jodie use it together (pairing) with no line. useFrom: a floor cell in front of the sink counter, read and fixed in step 1 (the kettle preset's default cell falls inside the counter)."
+        },
+        {
+          "type": "water_cooler",
+          "id": "staff_cooler",
+          "name": "Water Cooler",
+          "takeable": false,
+          "observations": "The staff-room water cooler, by the east wall.",
+          "affordance": { "chatter": "staff_water", "useSeconds": 25, "restores": 40, "useFrom": { "dx": -1, "dy": 1.5 } },
+          "_comment": "SIMS-4: claims the drawn water_cooler1 by base type; the cooler preset supplies thirst/capacity 2. useFrom one tile west of the preset's approach cell, so the second user's cell is not against the east wall with no path (the hand-written cell; E8: besideCell makes no route check). Read and fixed in step 1."
+        },
+        {
+          "type": "microwave",
+          "id": "staff_microwave",
+          "name": "Microwave",
+          "takeable": false,
+          "observations": "A staff-room microwave on the counter.",
+          "officeType": "microwave",
+          "affordance": { "useFrom": { "dx": 0.5, "dy": 1 } },
+          "_comment": "SIMS-4: claims the table-layer microwave1 by base type; the microwave preset (officeType) supplies hunger/restores 60/useSeconds. Keith's solo hunger source. useFrom in front of the counter, never the boiler's second-user cell, read and fixed in step 1."
+        },
+        {
+          "type": "notes",
+          "id": "job_board",
+          "name": "Job Board",
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "JOB BOARD\n\nNight calls go on the radio. Log anything you fix.",
+          "observations": "The staff-room job board.",
+          "_comment": "SIMS-4: claims the first conditional notes (notes6) on the back wall by base type, as m02 claims its notes. Dressing only; no affordance, no preset."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "keith",
+          "displayName": "Keith Dando",
+          "npcType": "person",
+          "position": { "x": 6.97, "y": 4.85 },
+          "spriteSheet": "security_guard",
+          "spriteTalk": "assets/characters/security_guard_talk.png",
+          "spriteVisemes": "assets/characters/security_guard_visemes.png",
+          "storyPath": "scenarios/test_needs_sims/ink/keith.json",
+          "currentKnot": "start",
+          "voice": { "name": "Orus", "style": "Night security officer, mid fifties, white British, West Country (Bristol) accent. Steady, dry, unhurried.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "needsHome": { "room": "staff_room", "x": 6.97, "y": 4.85 },
+          "needsRooms": ["staff_room"],
+          "needsSpeed": 80,
+          "chatterCooldownMin": 0.25,
+          "needsCompany": { "groups": ["facilities"] },
+          "needs": {
+            "caffeine": { "decayPerMin": 5, "urgentAt": 35, "initial": 45, "jitterPct": 10 },
+            "thirst": { "decayPerMin": 3, "urgentAt": 30, "initial": 95 },
+            "hunger": { "decayPerMin": 2, "urgentAt": 30, "initial": 46 }
+          },
+          "chatter": {
+            "staff_tea": ["Proper brew, this.", "Nothing like a night cuppa.", "Boiler's on form tonight.", "Two sugars for me.", "Quiet on the radio still.", "Dull shift, touch wood."],
+            "staff_water": ["Cold one before the round.", "Keeps you sharp, water.", "Long night ahead yet.", "Anything on the cameras?", "Radio's gone quiet again.", "Stretch the legs, this."]
+          },
+          "_comment": "SIMS-4 (m02 night-porter pattern): tile home on the cell north of hospital_chair_south; seating sits him on it facing south. Coupled breaks on Jodie's cooler use; first-visit, Neil-close and his own needs start his tea. chatterCooldownMin 0.25 with 6-line pools (E7 workaround).",
+          "eventMappings": [
+            { "eventPattern": "npc_use_started:staff_cooler", "condition": "data.npcId === 'jodie'", "needs": { "set": { "thirst": 20 } } },
+            { "eventPattern": "room_entered:staff_room", "condition": "data.firstVisit === true", "delayMs": 2000, "needs": { "set": { "caffeine": 20 } } },
+            { "eventPattern": "conversation_closed:neil", "cooldown": 120000, "needs": { "set": { "caffeine": 20 } } },
+            { "eventPattern": "npc_chatted:staff_cooler", "condition": "data.overheard === true", "onceOnly": true, "cooldown": 0, "completeTask": "see_cooler_break" },
+            { "eventPattern": "npc_used:staff_microwave", "onceOnly": true, "cooldown": 0, "completeTask": "see_microwave" }
+          ]
+        },
+        {
+          "id": "jodie",
+          "displayName": "Jodie Kerr",
+          "npcType": "person",
+          "position": { "x": 4.2, "y": 6.1 },
+          "spriteSheet": "female_telecom_v2",
+          "storyPath": "scenarios/test_needs_sims/ink/jodie.json",
+          "currentKnot": "start",
+          "voice": { "name": "Leda", "style": "Maintenance assistant, mid twenties, Glaswegian accent. Quick, warm, practical.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "needsHome": { "room": "staff_room", "x": 4.2, "y": 6.1 },
+          "needsRooms": ["staff_room"],
+          "needsSpeed": 80,
+          "chatterCooldownMin": 0.25,
+          "needsCompany": { "groups": ["facilities"] },
+          "needs": {
+            "thirst": { "decayPerMin": 5, "urgentAt": 35, "initial": 85, "jitterPct": 10 },
+            "caffeine": { "decayPerMin": 3, "urgentAt": 30, "initial": 95 }
+          },
+          "chatter": {
+            "staff_tea": ["Go on, you pour.", "Boiler takes an age.", "Milk's nearly done again.", "Cheers, Keith.", "That's the stuff.", "Needed that, me."],
+            "staff_water": ["Parched, so I am.", "Cooler's cold tonight.", "Right, back to it soon.", "Lights holding up, aye?", "Nae calls yet, good.", "One more then the round."]
+          },
+          "exchanges": [
+            { "with": "keith", "knot": "exchange_job_called", "requireGlobal": { "job_called": true } },
+            { "with": "keith", "knot": "exchange_job_cleared", "requireGlobal": { "job_cleared": true, "heard_exchange_job_called": true } },
+            { "with": "keith", "knot": "exchange_waiting" }
+          ],
+          "_comment": "SIMS-4 (m02 night-domestic pattern): tile home on the cell east of hospital_chair_north; seating sits her on it facing north. Her id sorts first, so her exchange list is read first (_findExchange): job-called (gated job_called), job-cleared (gated job_cleared + heard job-called), then the ungated waiting exchange. Coupled on Keith's boiler use; the private-office entry starts her cooler break.",
+          "eventMappings": [
+            { "eventPattern": "npc_use_started:staff_boiler", "condition": "data.npcId === 'keith'", "needs": { "set": { "caffeine": 20 } } },
+            { "eventPattern": "room_entered:manager_office", "cooldown": 120000, "needs": { "set": { "thirst": 20 } } },
+            { "eventPattern": "npc_chatted:staff_boiler", "condition": "data.overheard === true", "onceOnly": true, "cooldown": 0, "completeTask": "see_shared_break" },
+            { "eventPattern": "npc_exchange_heard:exchange_waiting", "onceOnly": true, "cooldown": 0, "completeTask": "hear_waiting" },
+            { "eventPattern": "npc_exchange_heard:exchange_job_called", "onceOnly": true, "cooldown": 0, "completeTask": "hear_job_called" }
+          ]
+        }
+      ]
     }
   }
 }
