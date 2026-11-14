@@ -850,6 +850,11 @@ module BreakEscape
           raise ActiveRecord::Rollback
         end
 
+        # The request's own clientTs, kept for the ring entry's ts. A request
+        # without a numeric clientTs (a client from before the sync-ordering
+        # change) records nothing, so the ring stays keyed entirely by real
+        # stamps.
+        @sync_client_ts = params[:clientTs].is_a?(Numeric) ? params[:clientTs].to_i : nil
         stale = stale_sync_request?
         # 6b review m1: fingerprint the phish evidence before the merge, only when something is
         # waiting on it, so the capture step can tell whether this request advanced that evidence
@@ -860,8 +865,17 @@ module BreakEscape
         # advanced by a sync_state request (part 3 proofs arrive through other routes), so it needs
         # no fingerprint; walking the whole mailbox to produce one a sync can never move is wasted.
         @phish_fp_before = (!stale && @game.phish_gated_unproven_captures?) ? @game.phish_evidence_fingerprint : nil
-        refusal = merge_last_write_wins_sections unless stale
+        # Snapshot the last-write-wins sections before the merge so the ring can
+        # record only the keys a merge actually changed (a no-op resend then
+        # records nothing and forces no save). Taken only on the path that merges
+        # them.
+        ring_before = nil
+        unless stale
+          ring_before = ring_before_snapshot
+          refusal = merge_last_write_wins_sections
+        end
         raise ActiveRecord::Rollback if refusal
+        record_ring_write!(ring_before) if ring_before
 
         merge_grow_only_sections
         # Server-owned capture record (sync deltas R2, 6a). Runs on a stale request too (a
@@ -2121,6 +2135,26 @@ module BreakEscape
     # sync from the new page stale until it passed the old value.
     SYNC_STALE_RESET_MS = 10.minutes.in_milliseconds
 
+    # The stale-but-recent write ring (SYNC_STALE_RING_PLAN). A short, bounded
+    # record of the last few accepted last-write-wins writes, by clientTs and the
+    # keys (never values) each wrote, so a stale-but-recent request can be merged
+    # key by key, skipping only what a newer recorded request already wrote. It
+    # lives in player_state under 'syncWrites', is read and written only inside
+    # sync_state, and is never serialised to the client (like lastSyncClientTs).
+    SYNC_RING_MAX = 8                    # newest entries kept
+    SYNC_RING_WINDOW_MS = 60_000         # entries this far below the newest ts are dropped
+    SYNC_RING_KEYS_PER_ENTRY = 32        # recorded keys across all sections in one entry
+
+    # Last-write-wins sections the ring records per key (the string is the claim
+    # key). mailState and notes are keyed too but derive their claim key
+    # specially, so they are handled on their own below.
+    RING_KEYED_SECTIONS = %w[globalVariables npcInkVariables npcVisibility npcHostility phoneState].freeze
+    # Sections the server replaces whole (replace_timed_messages!,
+    # merge_player_health!): recorded as a whole-section claim ("true"), never per
+    # key, so a stale-but-recent request is skipped for them rather than handed a
+    # partial hash that would wipe a kept key.
+    RING_WHOLE_SECTIONS = %w[playerHealth timedMessages].freeze
+
     # Step 7. Judge the stored formatVersion under the sync row lock. Returns a FormatUpgrade::TooNew
     # (stored above current) or Unreadable (a bad value) to refuse the sync, or nil to proceed.
     #
@@ -2176,6 +2210,121 @@ module BreakEscape
 
       @game.player_state['lastSyncClientTs'] = client_ts
       false
+    end
+
+    # A deep copy of the last-write-wins sections before the merge, so
+    # record_ring_write! can tell what the merge actually changed. Only the
+    # sections the ring records are snapshotted; currentRoom is a plain string.
+    def ring_before_snapshot
+      ps = @game.player_state
+      snap = {}
+      (RING_KEYED_SECTIONS + RING_WHOLE_SECTIONS + %w[mailState notes]).each do |section|
+        snap[section] = ps[section].deep_dup
+      end
+      snap['currentRoom'] = ps['currentRoom']
+      snap
+    end
+
+    # Append this request's ring entry: the sections and keys its merge actually
+    # changed (after server-owned drops, notSaved refusals, cap rejections and a
+    # refused currentRoom), then normalise the ring to its fixed bound. A request
+    # with no numeric clientTs, or one whose merge changed nothing, records
+    # nothing, so a no-op resend neither grows the ring nor forces a save.
+    def record_ring_write!(before)
+      return if @sync_client_ts.nil?
+
+      w = ring_write_map(before)
+      return if w.empty?
+
+      ring = @game.player_state['syncWrites']
+      ring = [] unless ring.is_a?(Array)
+      @game.player_state['syncWrites'] = BreakEscape::SyncRing.normalise(
+        ring + [{ 'ts' => @sync_client_ts, 'w' => w }],
+        max: SYNC_RING_MAX, window_ms: SYNC_RING_WINDOW_MS, keys_per_entry: SYNC_RING_KEYS_PER_ENTRY
+      )
+    end
+
+    # The 'w' map for this request: section name to the array of claim keys it
+    # changed, or true for a whole-section claim. Only changed values are
+    # recorded (see ring_before_snapshot).
+    def ring_write_map(before)
+      ps = @game.player_state
+      w = {}
+      RING_KEYED_SECTIONS.each do |section|
+        keys = changed_hash_keys(before[section], ps[section])
+        w[section] = keys unless keys.empty?
+      end
+      notes = changed_note_ids(before['notes'], ps['notes'])
+      w['notes'] = notes unless notes.empty?
+      mail = changed_mail_keys(before['mailState'], ps['mailState'])
+      w['mailState'] = mail unless mail.empty?
+      RING_WHOLE_SECTIONS.each do |section|
+        w[section] = true if before[section] != ps[section]
+      end
+      w['currentRoom'] = true if before['currentRoom'] != ps['currentRoom']
+      w
+    end
+
+    # The keys whose value differs between two per-key section hashes (a deleted
+    # key is a change too, so a tombstone is recorded by its name). Keys are
+    # stringified to match the params keys the pre-filter compares against.
+    def changed_hash_keys(old, new)
+      old = old.is_a?(Hash) ? old : {}
+      new = new.is_a?(Hash) ? new : {}
+      (old.keys | new.keys).select { |k| old[k] != new[k] }.map(&:to_s)
+    end
+
+    # The note ids whose stored record changed (notes merge by id in the
+    # controller).
+    def changed_note_ids(old, new)
+      old_by = note_index(old)
+      new_by = note_index(new)
+      (old_by.keys | new_by.keys).select { |id| old_by[id] != new_by[id] }
+    end
+
+    def note_index(notes)
+      idx = {}
+      Array(notes).each { |n| idx[n['id'].to_s] = n if n.is_a?(Hash) && n.key?('id') }
+      idx
+    end
+
+    # The mailState claim keys this request changed. The claim key is the dotted
+    # string the client sent as a top-level params key (mailboxes.<box>.<msgId>,
+    # threads.<key>, jobs/drafts/metrics), which is also the string the pre-filter
+    # compares, so the map is identity on the dotted form. A key is recorded only
+    # when its stored value actually changed, so a notSaved (refused) or no-op
+    # mailState records nothing.
+    def changed_mail_keys(before, after)
+      incoming = params[:mailState]
+      return [] unless incoming.respond_to?(:keys)
+
+      incoming.keys.map(&:to_s).select { |k| mail_value_at(before, k) != mail_value_at(after, k) }
+    end
+
+    # The stored value a dotted mailState claim key points at, so before and
+    # after can be compared. Mirrors mail_state_updates' parse (split on the first
+    # dot after the prefix), so a box or message id containing a dot round-trips.
+    def mail_value_at(mail, dotted_key)
+      return nil unless mail.is_a?(Hash)
+
+      if dotted_key.start_with?('mailboxes.')
+        box_id, msg_id = dotted_key.delete_prefix('mailboxes.').split('.', 2)
+        box = mail.dig('mailboxes', box_id)
+        return nil unless box.is_a?(Hash)
+
+        Array(box['messages']).find { |m| m.is_a?(Hash) && m['id'] == msg_id }
+      elsif dotted_key.start_with?('threads.')
+        mail.dig('threads', dotted_key.delete_prefix('threads.'))
+      else
+        mail[dotted_key]
+      end
+    end
+
+    # The skip set for a stale-but-recent request at `ts`, built from the stored
+    # ring by BreakEscape::SyncRing.skip_set (the read path that consumes it lands
+    # in chunk 2).
+    def ring_skip_set(ts)
+      BreakEscape::SyncRing.skip_set(@game.player_state['syncWrites'], ts)
     end
 
     # Sections where the last write wins: a stale request would put older
