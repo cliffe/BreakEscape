@@ -1,6 +1,6 @@
 // Faulty panel flicker options (lighting.flicker as true or an object): true unchanged,
 // the object form, photosensitivity clamps and reduced motion. Run with: node test/js/lighting-flicker-options.test.mjs
-// Run with: node --test test/js/lighting-flicker-effect.test.mjs
+// (or node --test on the same file; bin/test-js runs it).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -119,4 +119,124 @@ test('updatePanels: stock and object panels dip in time, and reduced motion hold
   assert.ok(tuned.dipMsSeen > stock.dipMsSeen);
   assert.deepEqual(run(true, true), { lowest: 1, dipMsSeen: 0 });
   assert.deepEqual(run({ dips: 3, dipMs: [150, 250] }, true), { lowest: 1, dipMsSeen: 0 });
+});
+
+test('malformed and inverted input falls back or is swapped, never NaN', () => {
+  const finite = r => r.every(Number.isFinite);
+  for (const bad of [[NaN, NaN], ['a', 'b'], ['150', '250'], [NaN, 200], ['x'], [], null, 'x', {}, Infinity]) {
+    const plan = resolveFlicker({ dipMs: bad, gapMs: bad });
+    assert.ok(finite(plan.dipMs) && finite(plan.gapMs), `finite for ${JSON.stringify(bad)}`);
+    assert.ok(plan.dipMs[0] <= plan.dipMs[1] && plan.gapMs[0] <= plan.gapMs[1]);
+    const b = planFlickerBurst(plan, 0, lcg(5));
+    assert.ok(Number.isFinite(b.end) && b.dips.every(d => Number.isFinite(d.at) && Number.isFinite(d.len)));
+  }
+  assert.deepEqual(resolveFlicker({ dipMs: ['a', 200] }).dipMs, [100, 200], 'a bad element takes the default, the good one stays');
+  assert.deepEqual(resolveFlicker({ dipMs: [250, 150] }).dipMs, [150, 250], 'inverted range is swapped');
+  assert.deepEqual(resolveFlicker({ gapMs: [1e12, -5] }).gapMs, [2000, 60000]);
+  assert.deepEqual(resolveFlicker({ dipMs: 700 }).dipMs, [600, 600], 'a single number is a one-value range');
+  assert.equal(resolveFlicker({ dips: 'x' }).dips, 2);
+  assert.equal(resolveFlicker([1, 2]).stock, true);
+});
+
+test('omitted fields default to the stock panel, so { depth } is stock but deeper', () => {
+  const plan = resolveFlicker({ depth: 0.7 });
+  assert.equal(plan.dips, 2);
+  assert.deepEqual(plan.dipMs, [100, 100]);
+  assert.deepEqual(plan.gapMs, [2500, 8500]);
+  assert.ok(Math.abs(plan.level - 0.3) < 1e-9);
+});
+
+test('flicker: true draws the same dip schedule as the original inline code (seeded Math.random)', () => {
+  // The code before the options change, copied here as the reference.
+  const legacy = (now, r) => {
+    const first = now + 2500 + r() * 6000;
+    return r() < 0.5 ? [first] : [first, first + 260 + r() * 200];
+  };
+  const realRandom = Math.random;
+  try {
+    for (const seed of [1, 2, 3, 42, 99]) {
+      let now = 0;
+      const refRand = lcg(seed);
+      Math.random = lcg(seed);
+      const sys = { reducedMotion: false };
+      const panel = { faulty: true, strikeAt: null, level: 1, flickerPlan: resolveFlicker(true) };
+      const state = { on: true, panels: [panel] };
+      for (let t = 0; t < 120000; t += 10) {
+        const before = panel.dips;
+        LightingSystem.prototype.updatePanels.call(sys, state, t);
+        if (panel.dips !== before) {
+          const expected = legacy(t, refRand);
+          assert.deepEqual(panel.dips.map(d => d.at), expected);
+          assert.ok(panel.dips.every(d => d.len === 90));
+          assert.equal(panel.dipLevel, 0.55);
+          assert.equal(panel.nextBurst, expected[expected.length - 1] + 90);
+        }
+        now = t;
+      }
+      assert.ok(now > 0);
+    }
+  } finally { Math.random = realRandom; }
+});
+
+const roomStub = () => ({ position: { x: 0, y: 0 }, map: { widthInPixels: 320, heightInPixels: 320 } });
+const sysStub = () => ({ config: {}, defaultMode: 'on', layoutPanels: LightingSystem.prototype.layoutPanels });
+
+test('configureRoom sets the plan on one faulty panel, and none without flicker', () => {
+  const sys = sysStub();
+  const state = {};
+  LightingSystem.prototype.configureRoom.call(sys, state, roomStub(), { flicker: { depth: 0.7 } });
+  const faulty = state.panels.filter(p => p.faulty);
+  assert.equal(faulty.length, 1);
+  assert.ok(Math.abs(faulty[0].flickerPlan.level - 0.3) < 1e-9);
+  const stock = {};
+  LightingSystem.prototype.configureRoom.call(sys, stock, roomStub(), { flicker: true });
+  assert.equal(stock.panels.filter(p => p.faulty)[0].flickerPlan.stock, true);
+  const none = {};
+  LightingSystem.prototype.configureRoom.call(sys, none, roomStub(), {});
+  assert.equal(none.panels.filter(p => p.faulty).length, 0);
+});
+
+test('job_cleared variant (flicker: false) rebuilds the room with no faulty panel, steady mid-burst', () => {
+  const sys = Object.assign(sysStub(), {
+    configureRoom: LightingSystem.prototype.configureRoom,
+    npcInRoom: () => false,
+  });
+  const block = { flicker: { dips: 3, dipMs: [150, 250], depth: 0.7 }, variants: [{ condition: 'globalVars.job_cleared === true', flicker: false }] };
+  window.rooms = { r1: roomStub() };
+  window.gameState.globalVariables = { job_cleared: false };
+  const state = { roomId: 'r1', block, variantIdx: -1, lastRoomResolve: -Infinity, offTimer: null };
+  LightingSystem.prototype.configureRoom.call(sys, state, window.rooms.r1, block);
+  state.on = true;
+  const faulty = state.panels.find(p => p.faulty);
+  assert.ok(faulty);
+  // Put it mid-burst, level down.
+  LightingSystem.prototype.updatePanels.call({ reducedMotion: false }, state, 0);
+  faulty.level = 0.3;
+  window.gameState.globalVariables = { job_cleared: true };
+  LightingSystem.prototype.resolveRoomVariant.call(sys, state, 100000);
+  assert.equal(state.panels.filter(p => p.faulty).length, 0);
+  assert.ok(state.panels.every(p => p.level === 1 && !p.dips));
+  LightingSystem.prototype.updatePanels.call({ reducedMotion: false }, state, 100500);
+  assert.ok(state.panels.every(p => p.level === 1), 'steady after the job is cleared');
+});
+
+test('switchOff and switchOn drop a planned burst, so none resumes right after the strike', () => {
+  const panel = { faulty: true, strikeAt: null, level: 1, flickerPlan: resolveFlicker({ dips: 3, dipMs: [150, 250] }) };
+  const state = { on: true, panels: [panel] };
+  const sys = { rooms: new Map([['r', state]]), reducedMotion: false, playStrikeClick() {}, scene: { time: { now: 1000 } } };
+  LightingSystem.prototype.updatePanels.call(sys, state, 1000);
+  assert.ok(panel.dips);
+  LightingSystem.prototype.switchOff.call(sys, 'r');
+  assert.equal(panel.dips, null);
+  // Replan, then switch on with a strike: the old plan is gone, the next burst is at least 2.5 s out.
+  LightingSystem.prototype.updatePanels.call(sys, { on: true, panels: [panel] }, 1000);
+  assert.ok(panel.dips);
+  LightingSystem.prototype.switchOn.call(sys, 'r');
+  assert.equal(panel.dips, null);
+  const strikeEnd = panel.strikeAt + 460;
+  for (let t = 1000; t <= strikeEnd + 1000; t += 10) {
+    LightingSystem.prototype.updatePanels.call(sys, state, t);
+    if (t > strikeEnd && t <= strikeEnd + 1000) assert.equal(panel.level, 1, `no dip within 1 s of the strike (t=${t})`);
+  }
+  assert.ok(panel.dips[0].at - strikeEnd >= 2000, 'next burst at least 2 s after the strike');
 });

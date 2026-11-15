@@ -70,3 +70,13 @@ Fix: add the cases above and keep one correct run line.
 Each flickering room runs its own schedule. If two flickering rooms are on screen at once, their panels can dip in the same second. m02 already has two stock `flicker: true` rooms (2739, 3486). Under WCAG, separate small areas flashing out of step are usually judged one area at a time, so this is probably fine. If a mission ever puts two object-form rooms side by side, a shared "next dip allowed" time across rooms would keep the whole screen at 2 flashes a second or fewer.
 
 The README's "a burst every 2.5 to 8.5 s" is the gap between bursts, not the start-to-start period (the period adds the burst's own 1.2 to 1.5 s). The stock comment used the same wording, so this is left as is.
+
+## Outcomes
+
+All five findings fixed.
+
+- **m1: fixed.** `clampRange` now falls back through `numberOr(a[0], fallback[1])` for the max, so a non-number first element no longer gives NaN. Tests cover `[NaN, NaN]`, two strings, one bad element, empty, null and a single value, and check that `planFlickerBurst` stays finite.
+- **m2: fixed.** `switchOn` and `switchOff` set `p.dips = null`, so the next burst is planned fresh after the strike. For stock panels (`flicker: true`) the only change is that a burst cut by the lights going off no longer resumes right after the strike; the dip shape, timing and random draw order are as before. A test checks no dip lands within 1 s of the strike's end and that the next burst is at least 2 s after it.
+- **m3: fixed.** Missing object fields default to the stock panel: dips 2, dipMs [90, 90] (the clamp raises 90 to the 100 ms floor), gapMs [2500, 8500], depth 0.45. So `{ "depth": 0.7 }` is the stock panel but deeper. The defaults are documented in the lighting.js header and in the schema descriptions. The test_needs_sims staff room sets dips, dipMs, gapMs and depth explicitly, so it is unaffected.
+- **m4: fixed.** Maxima added (dipMs 600, gapMs 60000; dips 3 and depth 0.9 were already there). Both places now share one `definitions.flickerOptions` through `$ref`.
+- **m5: fixed.** New tests: malformed and inverted input, the omitted-field defaults, `configureRoom` setting the plan on one faulty panel, the `job_cleared` variant (`flicker: false`) leaving no faulty panel and level 1 after a mid-burst, switch-off and switch-on dropping the plan, and a seeded `Math.random` comparison of `flicker: true` against a copy of the original inline schedule. The header now names the right file.

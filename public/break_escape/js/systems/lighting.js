@@ -16,7 +16,9 @@
  *     "offAfter": 30,                      // motion: seconds after the player leaves before lights go off
  *     "flicker": true,                     // one faulty fluorescent panel; or an object, clamped for
  *                                          // photosensitivity: { "dips": 3, "dipMs": [150, 250],
- *                                          // "gapMs": [2500, 8500], "depth": 0.6 } (see resolveFlicker)
+ *                                          // "gapMs": [2500, 8500], "depth": 0.6 } (see resolveFlicker).
+ *                                          // Omitted fields default to the stock panel: dips 2, dipMs [90, 90]
+ *                                          // (raised to 100 by the clamp), gapMs [2500, 8500], depth 0.45
  *     "ambient": "#dfe3ec", "darkAmbient": "#101424",
  *     "panels": false,                     // no ceiling panel pools
  *     "lights": [{ "x": 5, "y": 4, "color": "#ffd9a0", "radius": 80, "intensity": 0.8 }],  // tile coords
@@ -325,11 +327,15 @@ const DIP_LEVEL = 0.55;
 
 // Faulty panel options. `flicker: true` is the stock panel (one or two 90 ms dips to 0.55,
 // 2.5 to 8.5 s apart). An object tunes it: { dips, dipMs: [min, max], gapMs: [min, max],
-// depth }. Everything is clamped for photosensitivity (WCAG 2.3.1): at most 3 dips a
+// depth }. Missing fields take the stock values (see the defaults below). Everything is clamped for photosensitivity (WCAG 2.3.1): at most 3 dips a
 // burst, dips of at least 100 ms with at least 100 ms between them, dip starts at least
 // FLICKER_MIN_PERIOD_MS apart (so never more than 2 flashes in any second), and at least
 // 2 s between bursts.
 const FLICKER_MAX_DIPS = 3;
+// Defaults for fields the object form leaves out, so `{ depth: 0.7 }` is the stock panel but deeper:
+// 2 dips, 90 ms (raised to the 100 ms floor by the clamp), 2.5 to 8.5 s apart, depth 0.45.
+const FLICKER_DEFAULT_DIPS = 2;
+const STOCK_DIP_MS = 90;
 const FLICKER_MIN_DIP_MS = 100;
 const FLICKER_MAX_DIP_MS = 600;
 const FLICKER_MIN_IN_GAP_MS = 100;
@@ -343,7 +349,7 @@ function numberOr(v, fallback) { return Number.isFinite(v) ? v : fallback; }
 function clampRange(pair, lo, hi, fallback) {
   const a = Array.isArray(pair) ? pair : (Number.isFinite(pair) ? [pair, pair] : fallback);
   let min = Math.min(hi, Math.max(lo, numberOr(a[0], fallback[0])));
-  let max = Math.min(hi, Math.max(lo, numberOr(a[1], a[0] ?? fallback[1])));
+  let max = Math.min(hi, Math.max(lo, numberOr(a[1], numberOr(a[0], fallback[1]))));
   if (max < min) [min, max] = [max, min];
   return [min, max];
 }
@@ -357,8 +363,8 @@ export function resolveFlicker(flicker) {
   if (typeof flicker !== 'object' || Array.isArray(flicker)) return { stock: true };
   return {
     stock: false,
-    dips: Math.min(FLICKER_MAX_DIPS, Math.max(1, Math.round(numberOr(flicker.dips, FLICKER_MAX_DIPS)))),
-    dipMs: clampRange(flicker.dipMs, FLICKER_MIN_DIP_MS, FLICKER_MAX_DIP_MS, [FLICKER_MIN_DIP_MS, FLICKER_MIN_DIP_MS]),
+    dips: Math.min(FLICKER_MAX_DIPS, Math.max(1, Math.round(numberOr(flicker.dips, FLICKER_DEFAULT_DIPS)))),
+    dipMs: clampRange(flicker.dipMs, FLICKER_MIN_DIP_MS, FLICKER_MAX_DIP_MS, [STOCK_DIP_MS, STOCK_DIP_MS]),
     gapMs: clampRange(flicker.gapMs, FLICKER_MIN_BURST_GAP_MS, FLICKER_MAX_BURST_GAP_MS, [2500, 8500]),
     level: 1 - Math.min(FLICKER_MAX_DEPTH, Math.max(FLICKER_MIN_DEPTH, numberOr(flicker.depth, 1 - DIP_LEVEL))),
   };
@@ -1050,6 +1056,8 @@ export class LightingSystem {
       } else {
         p.level = 1; p.strikeAt = null;
       }
+      // Drop any burst planned before the lights went off, so none resumes right after the strike.
+      p.dips = null;
     });
   }
 
@@ -1057,7 +1065,7 @@ export class LightingSystem {
     const state = this.rooms.get(roomId);
     if (!state) return;
     state.on = false;
-    state.panels.forEach(p => { p.level = 0; p.strikeAt = null; });
+    state.panels.forEach(p => { p.level = 0; p.strikeAt = null; p.dips = null; });
   }
 
   /** How loud a room's sounds are where the player is: own room 1, through a door 0.4, else 0. */

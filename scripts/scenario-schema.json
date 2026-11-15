@@ -872,7 +872,18 @@
     }
   },
   "definitions": {
-    "gateCreditBlock": {
+    "flickerOptions": {
+      "type": "object",
+      "description": "Tuned faulty panel; the engine clamps values for photosensitivity. Omitted fields take the stock panel's values, so { \"depth\": 0.7 } is the stock panel but deeper.",
+      "properties": {
+        "dips": { "type": "integer", "minimum": 1, "maximum": 3, "description": "Dips per burst (default 2)." },
+        "dipMs": { "type": "array", "items": { "type": "number", "minimum": 100, "maximum": 600 }, "minItems": 2, "maxItems": 2, "description": "[min, max] dip length in ms, 100 to 600 (default [90, 90], raised to 100)." },
+        "gapMs": { "type": "array", "items": { "type": "number", "minimum": 2000, "maximum": 60000 }, "minItems": 2, "maxItems": 2, "description": "[min, max] ms between bursts, 2000 to 60000 (default [2500, 8500])." },
+        "depth": { "type": "number", "minimum": 0.1, "maximum": 0.9, "description": "How far a dip drops the panel's pool (default 0.45)." }
+      },
+      "additionalProperties": false
+    },
+        "gateCreditBlock": {
       "type": "object",
       "description": "One gate creditOnPass path (GATED_DOOR §3.4): globals the server sets and a task it completes at promotion. setGlobal names must be declared globals listed as server-credit globals; completeTask must name an existing, server-completed-only task.",
       "properties": {
@@ -4082,7 +4093,7 @@
             "mode": { "type": "string", "enum": ["on", "motion", "dark"] },
             "startOn": { "type": "boolean" },
             "offAfter": { "type": "number", "minimum": 0, "description": "Motion rooms: seconds after the player leaves before the lights go off." },
-            "flicker": { "oneOf": [ { "type": "boolean" }, { "type": "object", "description": "Tuned faulty panel; values are clamped by the engine for photosensitivity.", "properties": { "dips": { "type": "integer", "minimum": 1, "maximum": 3 }, "dipMs": { "type": "array", "items": { "type": "number", "minimum": 100 }, "minItems": 2, "maxItems": 2, "description": "[min, max] dip length in ms (at least 100)." }, "gapMs": { "type": "array", "items": { "type": "number", "minimum": 2000 }, "minItems": 2, "maxItems": 2, "description": "[min, max] ms between bursts (at least 2000)." }, "depth": { "type": "number", "minimum": 0.1, "maximum": 0.9, "description": "How far a dip drops the panel's pool (default 0.45)." } }, "additionalProperties": false } ], "description": "One faulty fluorescent panel: true, or an object { dips, dipMs, gapMs, depth }." },
+            "flicker": { "oneOf": [ { "type": "boolean" }, { "$ref": "#/definitions/flickerOptions" } ], "description": "One faulty fluorescent panel: true, or an object { dips, dipMs, gapMs, depth }." },
             "panels": { "type": "boolean", "description": "false: no ceiling panel pools." },
             "ambient": { "type": "string" },
             "darkAmbient": { "type": "string" },
@@ -4120,7 +4131,7 @@
                   "condition": { "type": "string" },
                   "mode": { "type": "string", "enum": ["on", "motion", "dark"] },
                   "offAfter": { "type": "number", "minimum": 0 },
-                  "flicker": { "oneOf": [ { "type": "boolean" }, { "type": "object", "description": "Tuned faulty panel; values are clamped by the engine for photosensitivity.", "properties": { "dips": { "type": "integer", "minimum": 1, "maximum": 3 }, "dipMs": { "type": "array", "items": { "type": "number", "minimum": 100 }, "minItems": 2, "maxItems": 2, "description": "[min, max] dip length in ms (at least 100)." }, "gapMs": { "type": "array", "items": { "type": "number", "minimum": 2000 }, "minItems": 2, "maxItems": 2, "description": "[min, max] ms between bursts (at least 2000)." }, "depth": { "type": "number", "minimum": 0.1, "maximum": 0.9, "description": "How far a dip drops the panel's pool (default 0.45)." } }, "additionalProperties": false } ] },
+                  "flicker": { "oneOf": [ { "type": "boolean" }, { "$ref": "#/definitions/flickerOptions" } ] },
                   "panels": { "type": "boolean" },
                   "ambient": { "type": "string" },
                   "darkAmbient": { "type": "string" },
