@@ -470,6 +470,8 @@ export function preload() {
     this.load.image('power_socket2', 'objects/power_socket2.png');
     this.load.image('power_socket_off1', 'objects/power_socket_off1.png');
     this.load.image('power_socket_off2', 'objects/power_socket_off2.png');
+    this.load.image('power_socket_drop1', 'objects/power_socket_drop1.png');
+    this.load.image('power_socket_drop_off1', 'objects/power_socket_drop_off1.png');
     this.load.image('page-builder', 'objects/page-builder.png');
     this.load.image('report-workstation', 'objects/report-workstation.png');
     this.load.image('suitcase', 'objects/suitcase-1.png');
