@@ -12,6 +12,15 @@ Carried to stage 5 (needs E6, SIMS-2, on main first; it is on `build/ol-sims`, i
 - The sprite keys change to `ernesto_bautista` and `hodan_warsame` when their art merges (`build/ol-m02-art`).
 - Hodan stays busy about 100 s after a mid-exchange attack (engine-side, no wrong behaviour).
 
+## Lighting (stage 4 item 2)
+
+Done 2026-11-15 (`mission-room-lighting`, staff room only; the rest of m02's lighting unchanged).
+- Mode stays `motion` with no flicker. Ernesto and Hodan stand in the room from load, so it starts lit and stays lit (no `offAfter`); the dark-until-entered beat is given up, as PLAN 3 says. No flicker because the walkthrough crosses this hub more than any other room and the snag list, noticeboard and laptop are read here. Scenario ambient `#c0bdb2` kept, so the room matches its lit neighbours.
+- Added two small `above` indicator dots by object id: the microwave's clock panel (green, r 4) and the boiler's standby light (amber, r 5). Offsets are world pixels (the tour shots are at 2x).
+- Four render cycles on a keyless :3091 server, headless, `setFPS(20)`: 0 baseline (game 5272, then a fresh game each cycle); 1 dots added, both off their art; 2 offsets corrected but doubled (world vs screen pixels); 3 both on the art; 4 microwave glow shrunk to r 4, nothing further worth changing, so the loop stopped.
+- Known limit: an NPC using the microwave stands below it, and an `above` dot draws over any head that reaches the panel. Not seen in the shots.
+- Room tone (impl m2), static: `room_hospital_staff` maps to `kitchen`, so the staff room plays the `kitchen_tone` bed at level 1.0 of the ambient volume (step 2, no authored `ambientSound`), no typing loop, no spots; the asset is `assets/sounds/kitchen_tone.ogg`, preloaded by `sound-manager.js`. Profile beds never bleed, so through the north (Kim, `room_hospital_office_cto`) and south (corridor, `room_hospital_hall`) doors and the west door (conference, `room_hospital_meeting`) the next room is silent under the music; through the east door IT plays `office_ambient` at 0.35 (`quiet_office`). A doorway cell keeps the bed it had. The bed ducks to half while a heard needs line or a conversation is open. Not listened to in a browser.
+
 ## Earlier: m02 office life: stage 4 round 1 fixes, handover 2026-11-15
 
 Branch `build/ol-m02`, worktree `.claude/worktrees/p-ol-m02`. Stage 4 is built and live-checked in part (`STAGE4_LIVE.md`); round 1 of the dialogue and implementation reviews (`DIALOGUE_REVIEW_R1.md` 0/2/11, `IMPL_REVIEW_R1.md` 0/2/8) is fixed, with each finding's outcome in the review files. The dressing checks, the staff-room lighting loop and several live checks are still open (below), so not every part of PLAN section 3 is done.
@@ -50,7 +59,7 @@ R2b oddity, not explained by data: after a mid-exchange attack (`STAGE4_LIVE_R2b
 Items 1 to 4 and 6 to 8 carry over from round 1; item 5 is replaced.
 
 1. Live: the handover board, noticeboard, laptop and lanyard each open their object with both NPCs `using` the boiler and the porter at the microwave (the snag list is proven, R2a 5204); the three cups clickable with both seated and with the porter hostile; `room-snapshot.mjs` before and after; `playerHears` from every floor cell at both objects; path search to the second-user cells from both posts.
-2. The staff-room lighting loop (`mission-room-lighting`), then the room-tone listen (impl m2).
+2. Done: see "Lighting (stage 4 item 2)" above. An audible room-tone listen in a browser is still open, if wanted.
 3. Live screenshot of the page at x 6.92 on the copier (R2a covered the microwave beside the snag list only).
 4. Still unproven from R2a and R2b: `STAGE4_LIVE.md` 10.2 and 10.4 items not run; step 4 regression (Val's catch), steps 5 (cut-off timing above), 12 and Val; the whole-room walkthrough counts; the Kim and cooler crossings at the plan's five tries; the reload after an attack with the staff room loaded; the gap between the HaX strike text and KO text for a fast four-punch knock-out (impl m6).
 5. Live proof of the round 2 ink: reload then talk to each NPC (no replayed greeting, a re-entry line plays); Ernesto's radio topic on all four branches (burned or cleared, told security or not); Hodan's cleared topic; the quiet-seeker re-entry; the cleared exchange does not play after Graham escapes or the press-terminal ambush. Playtest this on a keyless server.

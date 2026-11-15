@@ -3458,7 +3458,16 @@ boardroom_pin = "0417"
     "staff_room": {
       "type": "room_hospital_staff",
       "chatBackground": "assets/backgrounds/rooms/m02_staff_room_blended.png",
-      "lighting": { "mode": "motion" },
+<%# Night handover room (office_life/PLAN.md, lighting): motion, so it starts lit while the night
+    staff wait here. No flicker: the player crosses this hub and reads the snag list here.
+    Small indicator dots on the break kit (microwave clock, boiler standby). %>
+      "lighting": {
+        "mode": "motion",
+        "emitters": {
+          "staff_microwave": { "color": "#7dffa0", "radius": 4, "intensity": 0.8, "effect": null, "above": true, "offsetX": 7, "offsetY": 0 },
+          "staff_boiler": { "color": "#ffb050", "radius": 5, "intensity": 0.8, "effect": null, "above": true, "offsetX": 6, "offsetY": 11 }
+        }
+      },
       "dimensions": {
         "width": 10,
         "height": 10
