@@ -26,7 +26,7 @@ const BOTH = ['office_copier', 'kitchen_copier'];
  * in the kitchen (kitchen_copier_off) with two slots. Tom prints at his PC to `list`; his other
  * needs are slowed so that his day is quiet. Sanjay does not print.
  */
-function powerWorld({ tickCache = true, list = BOTH, habit = null, power = {}, kitchen = true, chatter, seed = SIMS_SEED } = {}) {
+function powerWorld({ tickCache = true, list = BOTH, habit = null, power = {}, kitchen = true, chatter, seed = SIMS_SEED, hears = null } = {}) {
     const w = makeSimsWorld();
     addCopierBeat(w);
     const office = w.objs.find(o => o.id === 'office_copier');
@@ -47,7 +47,7 @@ function powerWorld({ tickCache = true, list = BOTH, habit = null, power = {}, k
     w.world.globalHolds = cond => requiredGlobalsHold(cond, globals);
     w.world.playerAtPost = () => ({ distance: null, inMinigame: false });
     w.world.playerProximity = () => ({ nearby: false, distance: null });
-    w.world.playerHears = () => ({ overheard: false, distance: null });
+    w.world.playerHears = hears || (() => ({ overheard: false, distance: null }));
     if (chatter !== undefined) w.world.chatterConfig = () => chatter;
     const sys = new NPCNeedsSystem(w.world, { seed, manualClock: true, tickCache });
     w.attach(sys);
@@ -122,7 +122,8 @@ test('fallback past a full pool: every office slot gone, the kitchen copier prin
 test('none on: nothing prints, print_blocked and npc_print_blocked, a grumble_printer_off line, no printing icon', () => {
     for (const tickCache of CACHE) {
         const chatter = { grumble_printer_off: ['The printers are all off.'] };
-        const p = powerWorld({ tickCache, power: { copier_off: true, kitchen_copier_off: true }, chatter });
+        // SIMS-5 design R3 m1: the line is spoken within earshot; out of it, the blocked picture
+        const p = powerWorld({ tickCache, power: { copier_off: true, kitchen_copier_off: true }, chatter, hears: () => ({ overheard: true, distance: 60 }) });
         p.work();
         p.until(() => p.evs('using', 'tom').length);
         assert.equal(p.sys.getState('tom').job.prints, false, 'no printing icon');
@@ -139,6 +140,12 @@ test('none on: nothing prints, print_blocked and npc_print_blocked, a grumble_pr
         assert.equal(say.topic, 'grumble_printer_off');
         assert.equal(say.line, 'The printers are all off.');
         assert.ok(!p.log().some(e2 => e2.ev === 'print_reserved'));
+        const far = powerWorld({ tickCache, power: { copier_off: true, kitchen_copier_off: true }, chatter });
+        far.work();
+        far.until(() => far.evs('print_blocked', 'tom').length);
+        const farSay = far.sys.states.get('tom').saying;
+        assert.equal(farSay.line, null, 'out of earshot: no line spent');
+        assert.ok(farSay.picture, 'the blocked picture instead');
     }
 });
 

@@ -38,6 +38,39 @@ const SELECT_BACKOFF_TICKS = 4; // a selection that path-searched and found noth
 // it is re-issued without yielding, or a player standing near the route holds it for ever.
 export const RETURN_YIELD_MS = 3000;
 const RETURN_STILL_PX = 4;    // less than this between ticks counts as standing still
+// Stalled needs walks (OFFICE_LIFE_STUCK_RETURN.md): a walk still for RETURN_YIELD_MS is re-issued
+// round other bodies; a stall within STUCK_SAME_PX of the last one is another try in the same place.
+// After STUCK_TRIES re-routes in one place a walk home logs return_stuck and stands for
+// RETURN_STUCK_BACKOFF_MS before trying again; an outbound leg logs walk_stuck and waits for its deadline.
+export const STUCK_SAME_PX = 24;
+export const STUCK_TRIES = 3;
+// The last re-route in one place nudges the body onto the nearest walkable cell, up to one tile
+// (NPC_STUCK_NUDGE_MAX_PX in npc-behavior.js), when that is safe. When a nudge ran, the place also
+// covers STUCK_SAME_PX round where it put the body, so a stall there, or back in the wedge, still
+// counts in the same place (code review R2 M1: a 28 px nudge used to start a new place and re-route
+// for ever). A refused nudge leaves the place at STUCK_SAME_PX (code review R3 M1).
+export const RETURN_STUCK_BACKOFF_MS = 15000;
+// Round 7 (game 5431: 8 minutes of back-offs in one place): after this many back-offs in the same
+// place the walk home ends (`return_abandoned`): the NPC idles where it stands and the next tick
+// re-plans from scratch (the selector first, else a fresh walk home). A second abandon in the same
+// place, or any abandon past RETURN_MAX_ABANDONS in one return, is final: only RETURN_FINAL_REPLANS late walks home follow, then it idles there until a
+// job moves it, so the cycle cannot run for ever.
+export const RETURN_STUCK_MAX_BACKOFFS = 2;
+// After a final abandon the NPC tries another walk home this long later (needs clock), so a
+// player who held it in a corridor and walked away does not leave it standing there for minutes
+// (code review R1, m2). At most RETURN_FINAL_REPLANS such late tries per return, wherever they
+// abandon (code review R2 m2, R3 m1), then it idles until a job moves it on. A late try that
+// started after an abandon with the player beside the NPC is not counted (R3 m2).
+export const RETURN_FINAL_REPLAN_MS = 60000;
+export const RETURN_FINAL_REPLANS = 3;
+export const RETURN_MAX_ABANDONS = 6;   // abandons in one return, quick re-plans included, before the next is final (R4 m1)
+// An outbound leg's deadline comes from the straight-line distance (at least 20 s, three times the
+// walk). A re-route round held bodies may take a longer path, so a re-route that leaves less than
+// this much before the deadline moves it out to this much, once per job (code review R2, m6).
+// A floor, not a flat extension: a blocked walk with time left still times out when it did (a
+// borrow's start window and the queue timeout depend on that). Once only: the needs layer does not
+// see the new path's length, and the deadline must still end a leg that re-routes from place to place.
+export const REROUTE_MIN_LEFT_MS = 10000;
 const CAUGHT_RADIUS = 48;    // px (1.5 tiles) from the home approach cell: "you were in my chair"
 export const NOTICED_MS = 3000;   // getState().noticed after npc_caught_at_post (the "noticed" action icon)
 
@@ -721,7 +754,7 @@ export class NPCNeedsSystem {
             // on the first far arrival of this return only — `returnFarReissued` persists across the
             // _watchReturn re-issues (keepFarFlag), so an unreachable home spins quietly, not a line a
             // tick. A genuinely new return re-arms the flag (and the log) in _goHome.
-            if (!s.returnFarReissued) { logFar(); s.returnFarReissued = true; this._goHome(s, { yieldToPlayer: false, keepFarFlag: true }); }
+            if (!s.returnFarReissued) { logFar(); s.returnFarReissued = true; this._goHome(s, { yieldToPlayer: false, keepFarFlag: true, reroute: true }); }
             return false;
         }
         logFar();
@@ -1159,21 +1192,22 @@ export class NPCNeedsSystem {
      */
     _buildSpeakers() {
         const out = [];
-        const add = (npcId, until) => {
+        // radius: the earshot the line was said with, so whoever could hear it looks round (round 7)
+        const add = (npcId, until, radius) => {
             const p = this.world.npcPos(npcId);
-            if (p) out.push({ npcId, roomId: p.roomId ?? null, x: p.x, y: p.y, until });
+            if (p) out.push({ npcId, roomId: p.roomId ?? null, x: p.x, y: p.y, until, radius: radius || OVERHEAR_RADIUS });
         };
         for (const c of this._chats.values()) {
             const cur = c.current;
-            if (cur && this.clockMs < cur.until) add(cur.speakerId, cur.until);
+            if (cur && this.clockMs < cur.until) add(cur.speakerId, cur.until, this._chatRadius(c, cur.speakerId));
         }
         for (const s of this.states.values()) {
-            if (s.saying && this.clockMs < s.saying.until) add(s.npcId, s.saying.until);
+            if (s.saying && this.clockMs < s.saying.until) add(s.npcId, s.saying.until, s.saying.radius);
         }
         // Slice 19: a speaker on a desk phone, for the whole call (lines and listening gaps)
         for (const c of this._calls.values()) {
             const until = c.current ? c.current.until : Math.max(c.nextAt, this.clockMs + NEEDS_TICK_MS);
-            add(c.speakerId, until);
+            add(c.speakerId, until, OVERHEAR_RADIUS);
         }
         return out;
     }
@@ -1440,6 +1474,9 @@ export class NPCNeedsSystem {
         if (s.mode === 'returning' && arrived) {
             s.mode = 'idle';
             // Only a real trip emits; a session at one's own post object never left it
+            s.returnAbandon = null;
+            s.returnLate = 0;   // late walks are counted per return (R3 m1)
+            s.returnAbandons = 0;
             if (!s.atPost) {
                 s.atPost = true;
                 this._log(id, 'returned_post');
@@ -1465,6 +1502,7 @@ export class NPCNeedsSystem {
         if (s.knows.size && this._magnets.size && !s.call) this._tickNews(s, pos);
 
         if (s.mode === 'job') {
+            if (!arrived && this._watchWalk(s, pos)) return;
             this._advanceJob(s, arrived);
             return;
         }
@@ -1482,7 +1520,16 @@ export class NPCNeedsSystem {
         const pick = this._select(s, pos);
         if (pick) {
             s.selectRetryAt = 0;
+            s.returnAbandon = null;   // a job moves it on; its walk home is a fresh return
+            s.returnLate = 0;
+            s.returnAbandons = 0;
+            s.returnStuckUntil = 0;   // and a back-off it was standing through ends (code review R1, m7)
+            s.returnBackoffs = 0;
             this._startJob(s, pick);
+        } else if (s.returnAbandon && s.mode === 'idle' && !s.atPost
+            && (s.returnAbandon.replan || (this.clockMs - s.returnAbandon.at >= RETURN_FINAL_REPLAN_MS
+                && (s.returnAbandon.player || (s.returnLate || 0) < RETURN_FINAL_REPLANS)))) {
+            this._replanAbandoned(s);
         } else if (this.selectBackoff && this._selectSearched) {
             // A free target it could not reach, or an item with nowhere to take it: searching
             // again next tick would find the same. Waiting on a claimed target searches nothing
@@ -2057,9 +2104,22 @@ export class NPCNeedsSystem {
         const need = s.job?.need;
         // Access 9.2: a caller's options ({ ignoreCooldown, icons }) win; icons: null is the topic's own picture
         const icons = opts && 'icons' in opts ? opts.icons : (reason !== 'avoid' && NEED_ICONS.includes(need) ? [need] : null);
-        const pick = this._pickBark(s, topic, { icons, ignoreCooldown: !!opts?.ignoreCooldown });
+        // SIMS-5 design R3 m1 (E7 for grumbles, as chatter and announces): with the player out of
+        // earshot the grumble still shows, as a picture; no line is taken from the bag, so none is
+        // voiced unheard. Mutters follow the same rule (a workaround's start line is as ambient as
+        // a grumble); only a line the player is meant to overhear (always: true, the priority
+        // mutters such as login_aloud, whose listening window opens when it is said) keeps its line.
+        const unheard = !opts?.always && this._unheard(s, topic);
+        const pick = this._pickBark(s, topic, { icons, ignoreCooldown: !!opts?.ignoreCooldown, unheard });
         if (!pick) return;
         this._showSaying(s, pick, topic, objectId, opts?.minMs);
+    }
+
+    /** Is the player out of earshot of this speaker for this topic (its pool's overhearRadius)? */
+    _unheard(s, topic) {
+        if (typeof this.world.playerHears !== 'function') return false;
+        const radius = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter).overhearRadius || OVERHEAR_RADIUS;
+        return !(this.world.playerHears(s.npcId, radius) || {}).overheard;
     }
 
     /**
@@ -2170,7 +2230,7 @@ export class NPCNeedsSystem {
     _sayMutter(s, topic) {
         const npcId = s.npcId;
         const before = s.saying;
-        this._grumble(s, null, topic, topic, { ignoreCooldown: true, icons: null, minMs: MUTTER_BUBBLE_MS });
+        this._grumble(s, null, topic, topic, { ignoreCooldown: true, icons: null, minMs: MUTTER_BUBBLE_MS, always: PRIORITY_MUTTERS.has(topic) });
         // npc_mutter:<npcId> (slice 9.2 B): what was shown, heard or not, so a scripted run can check
         // a failure mutter or a workaround's start line (npc_overheard fires only within earshot)
         const said = s.saying !== before ? s.saying : null;
@@ -2183,8 +2243,8 @@ export class NPCNeedsSystem {
     _showSaying(s, pick, topic, objectId, minMs = 0) {
         const { line, idx, picture, pool } = pick;
         const until = this.clockMs + Math.max(Number(minMs) || 0, picture ? PICTURE_MS : bubbleMs(line));
-        s.saying = { line, picture, topic, objectId, until };
         const radius = pool.overhearRadius || OVERHEAR_RADIUS;
+        s.saying = { line, picture, topic, objectId, until, radius };
         const h = typeof this.world.playerHears === 'function' ? (this.world.playerHears(s.npcId, radius) || {}) : {};
         // Review 9.2 B R2 m2: a floor (minMs) keeps the bubble up; the speech lock lasts only as
         // long as the words, so the next line on the floor can start when this one ends
@@ -3272,7 +3332,7 @@ export class NPCNeedsSystem {
         this._emit(`npc_caught_at_post:${s.npcId}`, { npcId: s.npcId, objectId: home.objectId, playerDistance, inMinigame: !!p.inMinigame });
     }
 
-    _moveForPhase(s) {
+    _moveForPhase(s, { reroute = false, nudge = false } = {}) {
         const id = s.npcId;
         const job = s.job;
         const destId = job.phase === 'goto_item' ? job.itemId : job.targetId;
@@ -3316,7 +3376,7 @@ export class NPCNeedsSystem {
         const moveId = this._nextMoveId();
         job.moveId = moveId;
         // arriveWithin: walk on to the cell itself (the behaviour layer's default stops a tile short)
-        this.world.moveTo(id, cell.x, cell.y, speed, { yieldToPlayer: false, avoidRooms: this._avoidRooms(s), arriveWithin: 6, moveId });
+        return this.world.moveTo(id, cell.x, cell.y, speed, { yieldToPlayer: false, avoidRooms: this._avoidRooms(s), arriveWithin: 6, moveId, ...(reroute ? { reroute: true } : {}), ...(nudge ? { nudge: true } : {}) });
     }
 
     _advanceJob(s, arrived) {
@@ -3771,7 +3831,7 @@ export class NPCNeedsSystem {
         this._log(id, 'print_blocked', { target: objectId || undefined, producers: list.slice(), viaCommand: viaCommand || undefined });
         this._emit(`npc_print_blocked:${id}`, { npcId: id, objectId: objectId || null, producers: list.slice(), viaCommand: !!viaCommand, ...this._playerProximity(id) });
         if (viaCommand) return;
-        const pick = this._pickBark(s, 'grumble_printer_off');
+        const pick = this._pickBark(s, 'grumble_printer_off', { unheard: this._unheard(s, 'grumble_printer_off') });
         if (pick) this._showSaying(s, pick, 'grumble_printer_off', objectId);
     }
 
@@ -3971,12 +4031,13 @@ export class NPCNeedsSystem {
      * yieldToPlayer: the walk stops to face a player within reach (the behaviour layer's
      * face_player); _watchReturn turns it off after RETURN_YIELD_MS without progress.
      */
-    _goHome(s, { stayPut = false, yieldToPlayer = true, keepFarFlag = false } = {}) {
+    _goHome(s, { stayPut = false, yieldToPlayer = true, keepFarFlag = false, reroute = false, nudge = false } = {}) {
         const id = s.npcId;
         s.mode = 'returning';
         s.returnWatch = null;
         // SIMS-2: a fresh return re-arms the one far re-issue; a re-issue from _acceptArrival keeps it.
-        if (!keepFarFlag) s.returnFarReissued = false;
+        // A fresh return also clears the stall count and the once-per-return return_stuck line.
+        if (!keepFarFlag) { s.returnFarReissued = false; s.stall = null; s.returnStuckLogged = false; s.returnStuckUntil = 0; s.returnBackoffs = 0; }
         const pos = this.world.npcPos(id);
         if (!s.home || !pos) { s.mode = 'idle'; return; }
         if (stayPut || Math.hypot(pos.x - s.home.x, pos.y - s.home.y) <= HOME_EPS) {
@@ -3986,7 +4047,7 @@ export class NPCNeedsSystem {
         }
         const moveId = this._nextMoveId();
         s.returnMoveId = moveId;
-        this.world.moveTo(id, s.home.x, s.home.y, this.world.speedFor(id), { yieldToPlayer, avoidRooms: this._avoidRooms(s), moveId });
+        return this.world.moveTo(id, s.home.x, s.home.y, this.world.speedFor(id), { yieldToPlayer, avoidRooms: this._avoidRooms(s), moveId, ...(reroute ? { reroute: true } : {}), ...(nudge ? { nudge: true } : {}) });
     }
 
     /**
@@ -3997,17 +4058,181 @@ export class NPCNeedsSystem {
      * sat. A re-issue also re-plans the path, which covers a walk wedged for another reason.
      */
     _watchReturn(s, pos) {
+        // Gave up for now (return_stuck): stand still until the back-off ends, then try again
+        if (s.returnStuckUntil) {
+            if (this.clockMs < s.returnStuckUntil) return;
+            s.returnStuckUntil = 0;
+            this._goHome(s, { yieldToPlayer: false, keepFarFlag: true, reroute: true });
+            s.returnWatch = { x: pos.x, y: pos.y, since: this.clockMs };
+            return;
+        }
         const w = s.returnWatch;
         if (!w || Math.hypot(pos.x - w.x, pos.y - w.y) >= RETURN_STILL_PX) {
             s.returnWatch = { x: pos.x, y: pos.y, since: this.clockMs };
             return;
         }
         if (this.clockMs - w.since < RETURN_YIELD_MS) return;
+        // OFFICE_LIFE_STUCK_RETURN.md: re-routes in one place are counted, and the walk gives up
+        // (one return_stuck line per return) rather than log return_resumed for ever.
+        const tries = this._stallTry(s, pos);
+        // A stall in a new place starts the back-off count again: back-offs count in one place
+        // (a back-off leaves s.stall at its place with tries 1, so a stall there again counts on)
+        if (tries === 1) s.returnBackoffs = 0;
+        if (tries > STUCK_TRIES) {
+            if (!s.returnStuckLogged) {
+                s.returnStuckLogged = true;
+                this._log(s.npcId, 'return_stuck', { x: Math.round(pos.x), y: Math.round(pos.y), tries: tries - 1 });
+            }
+            // Back-offs are counted in one place (s.stall carries the place across them; reset above)
+            const backoffs = (s.returnBackoffs || 0) + 1;
+            if (backoffs > RETURN_STUCK_MAX_BACKOFFS) { this._abandonReturn(s, pos); return; }
+            s.returnBackoffs = backoffs;
+            // The next stall here re-routes at once. The place keeps its first centre and any nudge
+            // landing: re-centring on each back-off let it drift along a cluttered route (R3 M1)
+            s.stall = { ...s.stall, tries: 1 };
+            s.returnWatch = null;
+            s.returnStuckUntil = this.clockMs + RETURN_STUCK_BACKOFF_MS;
+            this.world.cancelMove(s.npcId);
+            return;
+        }
         this._log(s.npcId, 'return_resumed', { x: Math.round(pos.x), y: Math.round(pos.y) });
         // SIMS-2 m1: keep returnFarReissued so an unreachable home logs `arrival_far` once per return,
         // not once per _watchReturn cycle; this re-plans the walk without re-arming the far log.
-        this._goHome(s, { yieldToPlayer: false, keepFarFlag: true });
+        // The first re-issue keeps the plain path (a player who held the walk has gone); later ones
+        // plan round other bodies, seated and held ones included.
+        // The 3 s re-issue always comes before the behaviour layer's 4 s stuck watch (a new path re-arms
+        // it), so its nudge onto a walkable cell never runs for a needs walk; the last re-route in one
+        // place does that nudge itself (code review R1, m3)
+        // The place also covers where the nudge put the body, only when a nudge ran (R2 M1, R3 M1)
+        const r = this._goHome(s, { yieldToPlayer: false, keepFarFlag: true, reroute: tries > 1, nudge: tries === STUCK_TRIES });
+        this._markNudge(s.stall, r);
         s.returnWatch = { x: pos.x, y: pos.y, since: this.clockMs };
+    }
+
+    /**
+     * End a walk home that backed off RETURN_STUCK_MAX_BACKOFFS times in one place: idle where it
+     * stands (`return_abandoned`). `s.returnAbandon` asks the next tick for a fresh plan
+     * (_replanAbandoned); a second abandon in the same place as the previous one (_samePlace:
+     * within STUCK_SAME_PX of its first stall or of where a nudge there put the body) is final: no
+     * quick re-plan, only one late one per RETURN_FINAL_REPLAN_MS of needs clock. Late walks are
+     * counted per return in s.returnLate, whatever the place, RETURN_FINAL_REPLANS at most (R3 m1);
+     * one that started while the player stood beside the NPC is not counted, and is allowed past the
+     * cap, still after the 60 s wait (R3 m2, R4 m2). Every abandon is counted in s.returnAbandons;
+     * past RETURN_MAX_ABANDONS the next is final (R4 m1).
+     */
+    _abandonReturn(s, pos) {
+        const prev = s.returnAbandon;
+        // Every abandon is counted per return; past RETURN_MAX_ABANDONS the next is final wherever it is,
+        // so wedges alternating between places on quick re-plans end too (R4 m1)
+        s.returnAbandons = (s.returnAbandons || 0) + 1;
+        const again = !!(prev && this._samePlace(prev, pos)) || s.returnAbandons > RETURN_MAX_ABANDONS;
+        const st = s.stall;
+        // The abandon's place: the previous one when it is the same place (no drift), else this stall's
+        const place = again && prev && this._samePlace(prev, pos) ? { x: prev.x, y: prev.y, nx: prev.nx, ny: prev.ny }
+            : st ? { x: st.x, y: st.y, nx: st.nx, ny: st.ny } : { x: pos.x, y: pos.y };
+        const player = typeof this.world.playerBlocks === 'function' && !!this.world.playerBlocks(s.npcId);
+        this.world.cancelMove(s.npcId);
+        s.mode = 'idle';
+        s.returnMoveId = null;
+        s.returnWatch = null;
+        s.returnStuckUntil = 0;
+        s.returnBackoffs = 0;
+        s.stall = null;
+        s.returnAbandon = { ...place, replan: !again, tick: this.tickCount, at: this.clockMs, player };
+        this._log(s.npcId, 'return_abandoned', { x: Math.round(pos.x), y: Math.round(pos.y), final: again || undefined });
+    }
+
+    /** After return_abandoned, when the selector chose nothing: one fresh walk home, planned round held bodies. */
+    _replanAbandoned(s) {
+        const a = s.returnAbandon;
+        if (!a || s.mode !== 'idle' || s.atPost || s.job || this.tickCount <= a.tick) return;   // the next tick, not this one
+        if (!a.replan && (!(this.clockMs - a.at >= RETURN_FINAL_REPLAN_MS) || (!a.player && (s.returnLate || 0) >= RETURN_FINAL_REPLANS))) return;
+        // A late try after a final abandon (R2 m2), counted per return (R3 m1); not when the player
+        // held the walk up, a blocker who steps away (R3 m2)
+        if (!a.replan && !a.player) s.returnLate = (s.returnLate || 0) + 1;
+        a.replan = false;
+        a.at = this.clockMs;   // a final abandon's late re-plan: once per RETURN_FINAL_REPLAN_MS
+        this._goHome(s, { yieldToPlayer: false, reroute: true });
+    }
+
+    /**
+     * Count a stalled walk: another try when in the same place as the last stall (_samePlace),
+     * else the first.
+     */
+    _stallTry(s, pos) {
+        const st = s.stall;
+        if (st && this._samePlace(st, pos)) st.tries++;
+        else s.stall = { x: pos.x, y: pos.y, tries: 1 };
+        return s.stall.tries;
+    }
+
+    /**
+     * Is pos the same stall place as `place`: within STUCK_SAME_PX of its first stall, or of where
+     * a nudge there put the body (nx, ny)? Code review R3 M1: this replaces a flat 32 px widening,
+     * which reached 56 px whether or not a nudge ran.
+     */
+    _samePlace(place, pos) {
+        if (Math.hypot(pos.x - place.x, pos.y - place.y) <= STUCK_SAME_PX) return true;
+        return Number.isFinite(place.nx) && Math.hypot(pos.x - place.nx, pos.y - place.ny) <= STUCK_SAME_PX;
+    }
+
+    /** Record a nudge that ran (the moveTo result's `nudged` landing) on a stall place. */
+    _markNudge(place, result) {
+        const n = result?.nudged;
+        if (place && n && Number.isFinite(n.x) && Number.isFinite(n.y)) { place.nx = n.x; place.ny = n.y; }
+    }
+
+    /**
+     * Outbound counterpart of _watchReturn (OFFICE_LIFE_STUCK_RETURN.md): a goto_item or
+     * goto_target leg that has not moved RETURN_STILL_PX for RETURN_YIELD_MS is re-issued round
+     * other bodies (`walk_rerouted`), keeping the job's deadline (moved out to
+     * REROUTE_MIN_LEFT_MS once per job when the re-route comes close to it); after STUCK_TRIES re-routes in
+     * one place it logs `walk_stuck` once and stops, and the deadline fails the job (`timeout`).
+     * @returns {boolean} true when the job ended here
+     */
+    _watchWalk(s, pos) {
+        const job = s.job;
+        if (!job || (job.phase !== 'goto_item' && job.phase !== 'goto_target') || job.moveId == null || job.windupUntil) {
+            if (job) job.walkWatch = null;
+            return false;
+        }
+        const w = job.walkWatch;
+        if (!w || w.phase !== job.phase || Math.hypot(pos.x - w.x, pos.y - w.y) >= RETURN_STILL_PX) {
+            job.walkWatch = { x: pos.x, y: pos.y, since: this.clockMs, phase: job.phase };
+            return false;
+        }
+        if (this.clockMs - w.since < RETURN_YIELD_MS) return false;
+        if (!job.stall || job.stall.phase !== job.phase) job.stall = null;
+        const st = job.stall;
+        if (st && this._samePlace(st, pos)) st.tries++;
+        else job.stall = { x: pos.x, y: pos.y, tries: 1, phase: job.phase };
+        const tries = job.stall.tries;
+        if (tries > STUCK_TRIES) {
+            // Give up re-routing: one walk_stuck line, then the job's own deadline fails it
+            // (`timeout`, its cooldown and the walk home), as before this watch
+            if (!job.walkStuckLogged) {
+                job.walkStuckLogged = true;
+                this._log(s.npcId, 'walk_stuck', { phase: job.phase, x: Math.round(pos.x), y: Math.round(pos.y), tries: tries - 1 });
+            }
+            job.walkWatch = { x: pos.x, y: pos.y, since: this.clockMs, phase: job.phase };
+            return false;
+        }
+        this._log(s.npcId, 'walk_rerouted', { phase: job.phase, x: Math.round(pos.x), y: Math.round(pos.y) });
+        // A re-route may take a longer path round held bodies: close to the deadline it gets at
+        // least REROUTE_MIN_LEFT_MS to walk it, once per job (R2 m6), only while the deadline is still
+        // ahead: one already reached on this tick fails the job as before (R3 m3)
+        let deadline = job.deadline;
+        if (!job.rerouteGrace && deadline > this.clockMs && deadline - this.clockMs < REROUTE_MIN_LEFT_MS) {
+            deadline = this.clockMs + REROUTE_MIN_LEFT_MS;
+            job.rerouteGrace = true;
+        }
+        const r = this._moveForPhase(s, { reroute: true, nudge: tries === STUCK_TRIES });
+        if (s.job === job) {
+            this._markNudge(job.stall, r);   // the place covers the nudge landing only when one ran (R3 M1)
+            job.deadline = deadline;
+            job.walkWatch = { x: pos.x, y: pos.y, since: this.clockMs, phase: job.phase };
+        }
+        return s.job !== job;
     }
 
     // ── social pairing and compatibility (slice 8: OFFICE_LIFE_PLAN 2.4, 7.3) ──
@@ -5333,7 +5558,18 @@ export function createEngineWorld() {
             return behaviour(id)?.config?.patrol?.speed || 80;
         },
         moveTo(id, x, y, speed, opts) {
-            W().npcBehaviorManager?.goToAndStay(id, x, y, speed, { owner: 'needs', yieldToPlayer: !!opts?.yieldToPlayer, avoidRooms: opts?.avoidRooms || [], arriveWithin: opts?.arriveWithin || 0, moveId: opts?.moveId });
+            W().npcBehaviorManager?.goToAndStay(id, x, y, speed, { owner: 'needs', yieldToPlayer: !!opts?.yieldToPlayer, avoidRooms: opts?.avoidRooms || [], arriveWithin: opts?.arriveWithin || 0, moveId: opts?.moveId,
+                // A stalled walk's re-issue plans round held bodies, and its last re-route in one place
+                // first steps onto the nearest walkable cell (code review R1: these were dropped here)
+                reroute: !!opts?.reroute, nudge: !!opts?.nudge });
+            // Where a requested nudge put the body, or null when none ran (code review R3, M1)
+            return { nudged: opts?.nudge ? (behaviour(id)?._lastNudge || null) : null };
+        },
+        /** Is the player's body close enough to be what holds this NPC up (NPC_STUCK_PLAYER_PX)? */
+        playerBlocks(id) {
+            const b = behaviour(id);
+            const at = b?.npcBodyPos?.();
+            return !!(at && b._playerBeside?.(at.x, at.y));
         },
         cancelMove(id) {
             W().npcBehaviorManager?.cancelMove?.(id);

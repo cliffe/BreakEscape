@@ -29,6 +29,7 @@
 
   "globalVariables": {
     "last_activity": "",
+    "coffee_notice_beat": false,
     "tom_had_lunch": false,
     "amara_opened_parcel": false,
     "parcel_dropped": false,
@@ -707,7 +708,11 @@
           "maxQueue": 1,
           "eventMappings": [
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Activity Board'", "cooldown": 30000, "needs": { "set": { "social": 10 } } },
-            { "eventPattern": "npc_left_post:marek", "condition": "data.targetId === 'office_coffee'", "cooldown": 30000, "needs": { "set": { "caffeine": 10 } } },
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Coffee Notice'", "cooldown": 0, "setGlobal": { "coffee_notice_beat": true }, "needs": { "set": { "work": 100 } }, "_comment": "OFFICE_LIFE_STUCK_RETURN.md row 2: the work top-up keeps Sanjay from starting a work spell during the beat (a running job is never interrupted, and a spell that ends after Marek reaches the coffee parks the caffeine at job selection, with no turn-back and no grumble: game 5378). Sanjay's coffee follows Marek only for the notice beat. Marek also walks to the office coffee in row 1's queue, and the old ungated mapping made Sanjay want one then; with Marek queued he parked the need for two minutes without a turn-back, so reading the notice after row 1 found the need already parked and row 2 never played (game 5347, parked at tick 283, row 2 at tick 403)." },
+            { "eventPattern": "npc_left_post:marek", "condition": "data.targetId === 'office_coffee' && globalVars.coffee_notice_beat === true", "cooldown": 30000, "needs": { "set": { "caffeine": 10 } } },
+            { "eventPattern": "npc_used:office_coffee", "condition": "data.npcId === 'marek'", "cooldown": 0, "setGlobal": { "coffee_notice_beat": false }, "_comment": "The beat ends with Marek's cup, so row 1 read again later (Activity Board) leaves Sanjay alone." },
+            { "eventPattern": "npc_turned_back:marek", "condition": "data.targetId === 'office_coffee'", "cooldown": 0, "setGlobal": { "coffee_notice_beat": false }, "_comment": "Code review R1 m8: Marek turning back from the coffee (switched off, row 3) ends the beat too." },
+            { "eventPattern": "npc_job_failed:marek", "condition": "data.targetId === 'office_coffee'", "cooldown": 0, "setGlobal": { "coffee_notice_beat": false }, "_comment": "Code review R1 m8: the beat also ends when Marek's coffee run fails without a cup (the coffee switched off before he pours, row 3, or his walk timed out, game 5430), so a later Marek coffee run does not set Sanjay's caffeine. The next notice read starts a new beat." },
             { "eventPattern": "npc_turned_back:sanjay", "condition": "data.reason === 'avoid'", "onceOnly": true, "cooldown": 0, "completeTask": "see_turned_back" },
             { "eventPattern": "npc_exchange_heard:exchange_rosa_rota", "onceOnly": true, "cooldown": 0, "completeTask": "hear_rota_exchange" },
             { "eventPattern": "npc_left_post:marek", "condition": "data.targetId === 'water_cooler'", "cooldown": 30000, "needs": { "set": { "social": 10 } } },

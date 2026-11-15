@@ -259,6 +259,16 @@
     "imported": "2026-11-05",
     "sit_from": "6da96f6a-0d21-4e31-9460-5255e778a47c"
   },
+  "ernesto_bautista": {
+    "character_id": "530d9d22-1da3-4299-bdab-90db3c8fd025",
+    "name": "Make portrait for Ernesto Bautista\nA Filipino man ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-15",
+    "sit_from": "89d8a68a-f140-4ed7-9ad9-6cd6b7a19739"
+  },
   "farah_qureshi": {
     "character_id": "39dfe7c3-8ef6-45b5-a240-d74e93f46ecd",
     "name": "Make portrait for Farah Qureshi\nA Pakistani-Americ...",
@@ -509,6 +519,17 @@
     },
     "imported": "2026-11-06",
     "sit_from": "b463fda0-bca7-4495-8bec-a78db86f7623"
+  },
+  "hodan_warsame": {
+    "character_id": "97dabcbd-5642-4c79-bec3-ed19692fd7ba",
+    "name": "Make portrait for Hodan Warsame\nA British-Somali w...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-15",
+    "sit_from": "f13c749b-24f8-4e80-9fa8-bbcbea32759b",
+    "white_threshold": 185
   },
   "ibrahim_diallo": {
     "character_id": "2970778d-a8b5-424d-8966-3baabcfd5e76",
