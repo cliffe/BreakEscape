@@ -37,6 +37,28 @@ for (let i = 0; i < 6; i++) {
     await page.evaluate(() => window.__test.dismissBlockingUi && window.__test.dismissBlockingUi()).catch(() => {});
 }
 await page.evaluate(() => { const loop = window.game.sys.game.loop, raf = loop.raf; if (loop.actualFps < 10 && !raf.isSetTimeOut) { const cb = raf.callback; raf.stop(); raf.start(cb, true, 4); } loop.smoothStep = false; loop.minFps = 1; window.game.physics.world.setFPS(20); });
+// Marek's path searches (round 7 wedge probe): every findWorldPath call from his body or with
+// his sprite as the avoidDynamic exception, with the clock, ends, the includeHeld flag and the
+// first points found. A search that returns 0 points, or a held re-route that bends round the
+// player and still stalls, shows here (games 5439, 5443). Capped at 400 entries.
+await page.evaluate(() => {
+    window.__marekSearches = [];
+    const mk = window.npcBehaviorManager.getBehavior('marek');
+    const pfm = window.pathfindingManager || mk?.pathfindingManager;
+    if (!mk?.sprite || !pfm?.findWorldPath) return;
+    const orig = pfm.findWorldPath.bind(pfm);
+    pfm.findWorldPath = (sx, sy, ex, ey, cb, avoidNPCs, opts) => {
+        const c = mk.sprite.body?.center;
+        const mine = opts?.avoidDynamic?.exceptSprite === mk.sprite || (!avoidNPCs && c && Math.hypot(sx - c.x, sy - c.y) < 20);
+        return orig(sx, sy, ex, ey, path => {
+            if (mine && window.__marekSearches.length < 400) window.__marekSearches.push({ c: window.npcNeedsSystem.clockMs,
+                from: [Math.round(sx), Math.round(sy)], to: [Math.round(ex), Math.round(ey)],
+                held: !!opts?.avoidDynamic?.includeHeld, dyn: !!opts?.avoidDynamic, n: path ? path.length : 0,
+                path: (path || []).slice(0, 6).map(q => [Math.round(q.x), Math.round(q.y)]) });
+            cb(path);
+        }, avoidNPCs, opts);
+    };
+});
 await page.evaluate(() => {
     const ed = window.eventDispatcher; window.__p = [];
     const orig = ed.emit.bind(ed);
@@ -162,6 +184,7 @@ if (!cleared) {
     report.at_skip = await page.evaluate(() => Object.fromEntries(['marek', 'sanjay'].map(id => { const s = window.npcNeedsSystem.getState(id) || {}; const p = window.npcNeedsSystem.world.npcPos(id);
         return [id, { mode: s.mode, need: s.job?.need || null, target: s.job?.targetId || null, phase: s.job?.phase || null, x: p ? Math.round(p.x) : null, y: p ? Math.round(p.y) : null }]; })));
     report.log_tail = await page.evaluate(() => window.npcNeedsSystem.getLog().filter(e => ['marek', 'sanjay'].includes(e.npc) && !/^(need|decay)/.test(e.ev)).slice(-40));
+    report.marek_searches = await page.evaluate(() => window.__marekSearches);
     fs.writeFileSync(`${outDir}/stuck-proof-${gid}.json`, JSON.stringify(report, null, 1));
     console.log(JSON.stringify({ gid, skipped: report.skipped, at_skip: report.at_skip }));
     await browser.close();
@@ -256,6 +279,7 @@ if (away) {
 report.player = await page.evaluate(() => ({ x: Math.round(window.player.body.center.x), y: Math.round(window.player.body.center.y) }));
 report.trace_tail = trace.slice(-5);
 await page.screenshot({ path: `${outDir}/stuck-proof-${gid}.png` });
+report.marek_searches = await page.evaluate(() => window.__marekSearches);
 fs.writeFileSync(`${outDir}/stuck-proof-${gid}.json`, JSON.stringify(report, null, 1));
 console.log(JSON.stringify({ gid, notice_closed: report.notice_closed, turned_back: report.see_turned_back, look_round: report.see_look_round, marek_home_s: report.marek_home_s, stalls: report.stall_lines.length, stuck: report.stall_lines.filter(e => /stuck/.test(e.ev)).length, sanjay: report.sanjay_grumble, tom_seated: report.staff_seated.tom.seated, tom_seat_lines: report.seat_lines.filter(e => e.npc === 'tom').map(e => `${e.t}:${e.ev}:${e.reason || ''}`), errs: errs.length }));
 await page.goto('about:blank');
