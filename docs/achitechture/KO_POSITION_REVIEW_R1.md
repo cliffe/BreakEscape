@@ -119,3 +119,33 @@ because there is no "search body" pickup path; the safety rests on that absence 
 than on a server check. Fixing M1 (bounding `koRoom`) removes the summon vector;
 separately, suppressing already-delivered ids from an injected NPC's `itemsHeld` (via
 the existing `delivered_item_ids`, game.rb:1465) would make it robust.
+
+## Outcomes
+
+- M1 (fixed): `ko_position_from` now also requires `koRoom` in `player_state['unlockedRooms']`
+  (`ko_room_reachable?`), the same "the player has been here" notion GET /room gates on, and
+  needs no `scenario_data` (which the narrow sync load omits). A forged KO claim for a
+  never-entered room has its position dropped, the KO kept; the met NPC is not relocated.
+- m1 (fixed): the client now captures the body centre (`sprite.body.center`) for
+  `koRoom`/`koX`/`koY`, the same point the drop path resolves its room from, so capture and
+  drop agree. This is `roomIdAtFeet`'s documented input (the body centre), unlike the former
+  sprite anchor; the sprite-anchor choice the review preferred would have left the placement
+  off by the anchor-to-centre offset, so the body-centre choice was taken instead and
+  documented here and at the call site.
+- m2 (fixed): `ko_positions` re-checks `koRoom` against `scenario_room_ids`. A stored room
+  that a mid-game scenario edit removed is skipped, so the NPC is served at home, still KO'd,
+  rather than stripped and lost.
+- m3 (fixed): new Rails tests assert the full injected definition (`itemsHeld`,
+  `eventMappings`, `conversation`, `needs`) survives the `deep_dup`, plus the reachability
+  bound (never-entered and entered rooms), the access gate on the unreachable room, and the
+  removed-room home serving.
+- m4 (fixed): the cross-room injection strips `itemsHeld` whose id is in `delivered_item_ids`
+  (dropped to the floor or in the player's hands), so a summoned KO'd body never re-carries a
+  key a real KO already dropped. The same-room duplication the review notes pre-dates D5 and
+  stays benign (a KO'd NPC is non-interactive); the injected copy is hardened because M1's
+  former summon vector made it worth it.
+- y-offset (fixed, same root cause as m1): the 30 px cross-room / 4 px same-room gap was the
+  sprite-anchor vs body-centre offset, which differs per NPC (marek larger than amara). With
+  the body centre captured, the stored position is in the same frame the server restores and
+  the sprite body is placed in, so the gap closes to the KO-pose origin shift alone. Live
+  crops before and after the reload confirm it.
