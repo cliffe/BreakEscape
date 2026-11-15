@@ -19,6 +19,7 @@ OFF_WHITE = (254, 252, 250, 255)
 OUTLINE = (20, 20, 30, 255)
 SKIN = (179, 119, 81, 255)
 HAIR = (204, 203, 203, 255)
+HALO = (220, 220, 221, 255)
 CLEAR = (0, 0, 0, 0)
 
 
@@ -77,6 +78,25 @@ class ClearEdgeWhiteTest(unittest.TestCase):
         out, n = clear_edge_white(Image.fromarray(a, "RGBA"))
         self.assertEqual(n, 0)
         np.testing.assert_array_equal(np.asarray(out), a)
+
+    def test_halo_and_speck_clear(self):
+        # Animation frames carry a 1px light halo (220) round the outline, and the odd speck.
+        a = figure_frame()
+        a[4, 5:15] = HALO
+        a[5:15, 4] = HALO
+        a[2, 17] = HALO  # a lone speck, joined to nothing
+        b = np.asarray(clear_edge_white(Image.fromarray(a, "RGBA"))[0])
+        self.assertTrue((b[4, 5:15, 3] == 0).all())
+        self.assertTrue((b[5:15, 4, 3] == 0).all())
+        self.assertEqual(b[2, 17, 3], 0)
+        np.testing.assert_array_equal(b[5:15, 5:15][1:, 1:], a[5:15, 5:15][1:, 1:])
+
+    def test_speck_pass_spares_enclosed_and_dark(self):
+        # A dark one-pixel spur on the outline stays; specks are only light pixels.
+        a = figure_frame()
+        a[15, 9] = OUTLINE
+        b = np.asarray(clear_edge_white(Image.fromarray(a, "RGBA"))[0])
+        np.testing.assert_array_equal(b[15, 9], a[15, 9])
 
     def test_white_figure_touching_edge_without_outline_is_cleared(self):
         # Documents the limit: near-white that reaches the edge is treated as background.

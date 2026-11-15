@@ -1900,10 +1900,16 @@ def ai_edit_frames(root, args, frames, idx):
 
 
 # Near-white means every RGB channel at or above this. Measured on the November 2026 m02
-# night-staff candidates: PixelLab's painted background is (254,255,254) or (254,252,250),
-# the lightest figure pixels (grey hair, a shirt highlight) top out at 232, and the outline
-# next to the background is dark (no light anti-aliased fringe). 240 sits in that gap.
-WHITE_BG_THRESHOLD = 240
+# night-staff characters: PixelLab's painted background is (254,255,254) or (254,252,250).
+# The rotations have a dark outline against it, but the animation frames often carry a 1px
+# halo snapped to the palette's hair highlight, (220,220,221). The figure's own light greys
+# (grey hair 204, a shirt highlight 230) sit inside the dark outline, so the flood fill does
+# not reach them. 215 clears the 220 halo; 200 started eating 204-grey hair on fall frames
+# where the outline breaks, so it stays above that.
+WHITE_BG_THRESHOLD = 215
+# After the fill, a light pixel (every channel at or above this) with three or four
+# transparent neighbours is a speck of halo left beside the figure, and is cleared too.
+SPECK_THRESHOLD = 180
 
 
 def clear_edge_white(im, threshold=WHITE_BG_THRESHOLD):
@@ -1914,8 +1920,9 @@ def clear_edge_white(im, threshold=WHITE_BG_THRESHOLD):
     or already transparent, and spreads through near-white and transparent pixels only, so
     white enclosed by the figure (eye whites, a badge, a highlight) stays: the outline
     separates it from the background, and 4-connectivity cannot leak through a diagonal gap.
-    Returns (new RGBA image, number of pixels cleared). An already-transparent background
-    clears nothing and leaves the image unchanged.
+    When the fill cleared anything, light specks it left (SPECK_THRESHOLD, three or four
+    transparent neighbours) go too. Returns (new RGBA image, number of pixels cleared). An
+    already-transparent background clears nothing and leaves the image unchanged.
     """
     from collections import deque
     a = np.array(im.convert("RGBA"))
@@ -1943,6 +1950,12 @@ def clear_edge_white(im, threshold=WHITE_BG_THRESHOLD):
     n = int(clear.sum())
     if n:
         a[clear] = (0, 0, 0, 0)
+        # Specks: lone light pixels of halo the fill left, mostly attached by one side.
+        tr = np.pad(a[..., 3] == 0, 1, constant_values=True)
+        open_sides = (tr[:-2, 1:-1].astype(int) + tr[2:, 1:-1] + tr[1:-1, :-2] + tr[1:-1, 2:])
+        speck = (a[..., 3] > 0) & (a[..., :3].min(axis=2) >= SPECK_THRESHOLD) & (open_sides >= 3)
+        a[speck] = (0, 0, 0, 0)
+        n += int(speck.sum())
     return Image.fromarray(a, "RGBA"), n
 
 
