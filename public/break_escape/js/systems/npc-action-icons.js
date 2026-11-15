@@ -335,7 +335,29 @@ function reducedMotion() {
     } catch (e) { return false; }
 }
 
+/**
+ * Pure (SIMS-5 design R2 m8): does a speech bubble cover this NPC's head now? Its needs state is
+ * talking, a bark is up, or the bubble layer still shows a bubble for it. The bubble pass runs in
+ * the camera's preRender, after this layer's update, so a bubble left from the last pass counts
+ * too: without it the action icon and the thought bubble came back under a bubble still showing.
+ */
+export function speechCovers(st, bubbles, npcId) {
+    if (st?.talking) return true;
+    if (!bubbles) return false;
+    try {
+        return !!bubbles.hasLine?.(npcId) || !!bubbles.showsBubble?.(npcId);
+    } catch (e) { return false; }
+}
+
 export class NpcActionIcons {
+    /** m8: hide this NPC's action icon and thought bubble now (the bubble pass calls it as it shows a bubble). */
+    hideFor(npcId) {
+        const ic = this.icons.get(npcId);
+        if (ic?.box) ic.box.setVisible(false);
+        const bb = this.bubbles.get(npcId);
+        if (bb?.box) bb.box.setVisible(false);
+    }
+
     constructor() { this.icons = new Map(); this.bubbles = new Map(); this.windups = new Map(); this.targets = new Map(); this.sceneHooked = null; this.textures = new Map(); this.faces = new Map(); }
 
     get showPressingNeeds() { return win().gameScenario?.showPressingNeeds === true; }
@@ -559,7 +581,7 @@ export class NpcActionIcons {
                 && iconShown({ npcRoom: roomId, playerRoom, dark: roomIsDark(roomId) });
             // A speech bubble (slice 8, npc-world-bubbles.js) hides both while the NPC talks,
             // chatter or a bark (UX slice 5)
-            const talking = !!st?.talking || !!win().npcWorldBubbles?.hasLine?.(id);
+            const talking = speechCovers(st, win().npcWorldBubbles, id);
             const bubble = seen && !talking ? thoughtBubble(st, actionIcons, optIn) : null;
             let bb = this.bubbles.get(id);
             if (!bubble) { if (bb) bb.box.setVisible(false); }

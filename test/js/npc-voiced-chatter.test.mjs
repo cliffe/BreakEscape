@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import {
     NPCNeedsSystem, NEEDS_TICK_MS, requiredGlobalsHold, bagOrder, createSeededRng, CHATTER_COOLDOWN_MIN,
-    PICTURE_CHATTER, exchangeLineMs
+    PICTURE_CHATTER, exchangeLineMs, ECHO_WINDOW_MS, ECHO_RADIUS
 } from '../../public/break_escape/js/systems/npc-needs.js';
 import {
     NpcChatterVoice, splitPrefix, speakerFor, exchangeLinesFromStory
@@ -243,11 +243,12 @@ test('E7: pictures false, 60 unheard turns leave the chat in place; the first he
 
 test('bag peek: always the index the next draw gives, across rounds, and it changes nothing', () => {
     const o = office({ ann: {}, bob: {} });
+    const ann = o.sys.states.get('ann');
     for (let k = 0; k < 10; k++) {
         const before = bagState(o.sys, 'ann');
-        const peek = o.sys._bagPeek('ann', 'cooler', POOL.cooler);
+        const peek = o.sys._bagPeek(ann, 'cooler', POOL.cooler);
         assert.equal(bagState(o.sys, 'ann'), before, 'peek leaves the bag as it was');
-        assert.equal(o.sys._bagNext('ann', 'cooler', POOL.cooler), peek, `draw ${k}`);
+        assert.equal(o.sys._bagTake(ann, 'cooler', POOL.cooler), peek, `draw ${k}`);
     }
 });
 
@@ -499,4 +500,87 @@ test('voice: one line at a time, in the speaker\'s own TTS, only with a voice, i
         ['sanjay', true, null], ['rosa', true, null]
     ].sort((a, b) => (a[1] === b[1] ? 0 : a[1] ? 1 : -1)));
     assert.ok(v.log.filter(e => e.spoken).every(e => e.volume > 0 && e.volume <= 1));
+});
+
+// ── SIMS-5 design R2 M4: no echo from a shared scenario pool ───────────────────────────────
+
+/** Put `line` at the front of an NPC's bag for the cooler topic (the rest keep their order). */
+function frontLoad(sys, id, line, lines = POOL.cooler) {
+    sys._bagPeek(sys.states.get(id), 'cooler', lines);
+    sys._bagNext(id, 'cooler', lines);   // create and fill the bag
+    const b = sys._bags.get(`${id}|cooler`);
+    b.order = [...Array(lines.length).keys()].filter(i => i !== b.last);
+    b.order.sort((a, c) => (lines[a] === line ? -1 : 0) - (lines[c] === line ? -1 : 0));
+    if (lines[b.last] === line) { b.order.unshift(b.last); }
+    b.last = -1;
+}
+
+test('M4: a partner drawing from the same scenario pool does not say the line just said', () => {
+    const o = office({ ann: { chatterCooldownMin: 0 }, bob: { chatterCooldownMin: 0 } });
+    const ann = o.sys.states.get('ann'), bob = o.sys.states.get('bob');
+    frontLoad(o.sys, 'ann', 'Rain again.');
+    frontLoad(o.sys, 'bob', 'Rain again.');
+    assert.equal(o.sys._pickBark(ann, 'cooler').line, 'Rain again.');
+    o.sys.clockMs += 4000;
+    const said = o.sys._pickBark(bob, 'cooler').line;
+    assert.ok(said && said !== 'Rain again.', `bob passes over the echo: ${said}`);
+    // The passed-over line stays in Bob's bag for later in the round
+    const left = o.sys._bags.get('bob|cooler').order.map(i => POOL.cooler[i]);
+    assert.ok(left.includes('Rain again.'), 'still in the bag');
+    assert.equal(new Set([said, ...left]).size, 1 + left.length, 'no line twice in the round');
+});
+
+test('M4: past ECHO_WINDOW_MS, in another room or beyond ECHO_RADIUS the line may be said again', () => {
+    const run = (move) => {
+        const o = office({ ann: { chatterCooldownMin: 0 }, bob: { chatterCooldownMin: 0 } });
+        const ann = o.sys.states.get('ann'), bob = o.sys.states.get('bob');
+        frontLoad(o.sys, 'ann', 'Lunch?');
+        frontLoad(o.sys, 'bob', 'Lunch?');
+        assert.equal(o.sys._pickBark(ann, 'cooler').line, 'Lunch?');
+        move(o);
+        return o.sys._pickBark(bob, 'cooler').line;
+    };
+    assert.notEqual(run(o => { o.sys.clockMs += ECHO_WINDOW_MS - 1; }), 'Lunch?', 'inside the window: passed over');
+    assert.equal(run(o => { o.sys.clockMs += ECHO_WINDOW_MS + 1; }), 'Lunch?', 'window passed');
+    const elsewhere = (patch) => (o) => {
+        const base = o.w.world.npcPos;
+        o.w.world.npcPos = id => (id === 'bob' ? { ...base(id), ...patch } : base(id));
+        o.sys.clockMs += 4000;
+    };
+    assert.equal(run(elsewhere({ roomId: 'kitchen' })), 'Lunch?', 'another room');
+    assert.equal(run(elsewhere({ x: 100 + ECHO_RADIUS + 10 })), 'Lunch?', 'beyond ECHO_RADIUS');
+    assert.notEqual(run(elsewhere({ x: 100 + ECHO_RADIUS - 10 })), 'Lunch?', 'inside ECHO_RADIUS');
+});
+
+test('M4: when every line left echoes, the bag\'s own next line is said (a line, not silence)', () => {
+    const lines = ['Only one.'];
+    const o = office({ ann: { chatterCooldownMin: 0 }, bob: { chatterCooldownMin: 0 } }, { chatter: { cooler: lines } });
+    assert.equal(o.sys._pickBark(o.sys.states.get('ann'), 'cooler').line, 'Only one.');
+    o.sys.clockMs += 4000;
+    assert.equal(o.sys._pickBark(o.sys.states.get('bob'), 'cooler').line, 'Only one.');
+});
+
+test('M4: a live cooler meeting on a shared pool never repeats a line inside the window; memory is capped', () => {
+    const big = { cooler: ['L1', 'L2', 'L3', 'L4', 'L5', 'L6', 'L7', 'L8'] };
+    for (const seed of [1, 2, 3, 4, 5, 6, 7, 8]) {
+        const o = office({ ann: { chatterCooldownMin: 0 }, bob: { chatterCooldownMin: 0 } }, { seed, chatter: big, lines: null });
+        o.w.world.getObject('cooler').affordance.useSeconds = 60;
+        o.sys.step(70000);
+        const texts = o.emitted('npc_chatted:cooler').filter(e => e.data.line).map(e => e.data.line);
+        assert.ok(texts.length >= 8, `seed ${seed}: a long conversation (${texts.length} lines)`);
+        // Two bags of the same eight lines: the first eight said are all different (before M4 the
+        // partner could draw the line just said); after that the pool is spent and lines come round
+        const first = texts.slice(0, big.cooler.length);
+        assert.equal(new Set(first).size, first.length, `seed ${seed}: no line twice until the pool is spent: ${first.join(' / ')}`);
+        assert.ok(o.sys._recentLines.length <= 32);
+    }
+});
+
+test('M4: the echo memory is in memory only, off the NPC state, and reset clears it', () => {
+    const o = office({ ann: { chatterCooldownMin: 0 } });
+    const said = o.sys._pickBark(o.sys.states.get('ann'), 'cooler').line;
+    assert.equal(o.sys._recentLines.length, 1);
+    assert.ok(!JSON.stringify([...o.sys.states.values()]).includes(said), 'nothing said is kept on an NPC state');
+    o.sys.reset(1);
+    assert.equal(o.sys._recentLines.length, 0);
 });

@@ -5,9 +5,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { NPCNeedsSystem, needTiming, NEEDS_TICK_MS, RETURN_YIELD_MS, createEngineWorld } from '../../public/break_escape/js/systems/npc-needs.js';
+import { NPCNeedsSystem, needTiming, NEEDS_TICK_MS, RETURN_YIELD_MS, createEngineWorld, requiredGlobalsHold } from '../../public/break_escape/js/systems/npc-needs.js';
 
 import { makeWorld } from './fixtures/needs-stub-world.mjs';
+import { makeSimsWorld, addCopierBeat, SIMS_SEED } from './fixtures/needs-sims-world.mjs';
 
 const TILE = 32;
 
@@ -1251,4 +1252,563 @@ test('noticeRadius: an item beyond the radius is left alone; one within it is fe
 test('noticeRadius default keeps a room-wide notice: an item 20 tiles off in the room is fetched', () => {
     assert.ok(noticeRun(undefined, { x: 120 + 20 * TILE, y: 100 }));
     assert.ok(!noticeRun(undefined, { x: 120 + 25 * TILE, y: 100 }), '25 tiles: beyond the default');
+});
+
+// ── SIMS-1 (OFFICE_LIFE_SIMS_BUILD_PLAN 5.1): needs NPCs under attack ─────────
+// isAvailable (npc-needs.js) treats a hostile, knocked-out or hidden NPC as not
+// present: it never starts a job, and a coupled partner of one does not wait for
+// it. The live engine path (combat, KO drop, reload) is proved by
+// scenarios/test_needs_attack and tools/playtest/needs-attack-probe.mjs.
+
+test('an NPC hostile from the first tick never starts a job and logs blocked once', () => {
+    const cfg = office();
+    cfg.npcs.clerk.rec.needs.caffeine.jitterPct = 0;
+    const w = makeWorld(cfg);
+    w.world.npcStatus = id => (id === 'clerk' ? { hostile: true } : {});
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    sys.step(20 * 60000);
+    const mine = sys.getLog().filter(e => e.npc === 'clerk');
+    assert.equal(mine.filter(e => e.ev === 'blocked').length, 1, 'blocked logged exactly once');
+    assert.equal(mine.some(e => e.ev === 'job_start'), false, 'never starts a job');
+    assert.equal(w.calls.moves.filter(m => m.id === 'clerk').length, 0, 'never moved');
+    assert.equal(w.calls.emits.some(e => e.name === 'npc_left_post:clerk'), false, 'never left its post');
+});
+
+function coupledPairCfg() {
+    // Two staff who share a capacity-2 kettle. Fran is the one knocked out.
+    return {
+        npcs: {
+            fran: { pos: { x: 100, y: 100 }, rec: {
+                id: 'fran', needsHome: { room: 'office', x: 3, y: 3 },
+                needs: { caffeine: { decayPerMin: 8, urgentAt: 40, initial: 50, jitterPct: 0 } }
+            } },
+            gil: { pos: { x: 160, y: 100 }, rec: {
+                id: 'gil', needsHome: { room: 'office', x: 5, y: 3 },
+                needs: { caffeine: { decayPerMin: 8, urgentAt: 40, initial: 50, jitterPct: 0 } }
+            } }
+        },
+        objects: [
+            { id: 'kettle', x: 300, y: 300, affordance: { satisfies: 'caffeine', restores: 40, useSeconds: 25, capacity: 2, chatter: 'coffee' } }
+        ]
+    };
+}
+
+test('a coupled partner of a knocked-out NPC takes its break alone', () => {
+    const cfg = coupledPairCfg();
+    const w = makeWorld(cfg);
+    w.world.npcStatus = id => (id === 'fran' ? { ko: true } : {});
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    sys.step(20 * 60000);
+    const log = sys.getLog();
+    // Fran is down: blocked once, never starts a job, never moves.
+    const franLog = log.filter(e => e.npc === 'fran');
+    assert.equal(franLog.filter(e => e.ev === 'blocked').length, 1, 'fran blocked once');
+    assert.equal(franLog.some(e => e.ev === 'job_start'), false, 'fran never starts a job');
+    assert.equal(w.calls.moves.filter(m => m.id === 'fran').length, 0, 'fran never moved');
+    // Gil breaks alone: leaves its post and uses the kettle, with no partner to pair.
+    assert.ok(w.calls.emits.some(e => e.name === 'npc_left_post:gil'), 'gil left its post');
+    assert.ok(log.some(e => e.npc === 'gil' && e.ev === 'used'), 'gil used the kettle');
+    assert.equal(log.some(e => e.ev === 'exchange_started'), false, 'no pairing with the downed partner');
+});
+
+
+// ── SIMS-2 (OLMP E6): an arrival counts only where the NPC is ───────────────────
+// A needs arrival counts for a job phase or a walk home only when the NPC is within
+// ARRIVAL_NEAR_PX (48) of that move's destination and echoes the move's id. A short path
+// that ends before the cell (an async path answer, a path stopped at a door) is logged
+// `arrival_far` and re-issued, not taken as "using the object from the doorway". These tests
+// read the raw state (sys.states.get) because getState() strips job.dest and job.moveId.
+
+// Drive the office clerk to a coffee goto_target on an arrive:false world (no auto-arrival).
+function driveToGoto() {
+    const cfg = office();
+    cfg.npcs.clerk.rec.needs.caffeine.jitterPct = 0;
+    const w = makeWorld({ ...cfg, arrive: false });
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    let guard = 0;
+    while (sys.states.get('clerk').job?.phase !== 'goto_target' && guard++ < 4000) sys.step(NEEDS_TICK_MS);
+    return { sys, w };
+}
+
+test('SIMS-2: a matching arrival 200 px off is re-issued, then counts when near', () => {
+    const { sys, w } = driveToGoto();
+    const job = sys.states.get('clerk').job;
+    const dest = { ...job.dest }, id0 = job.moveId;
+    const movesBefore = w.calls.moves.filter(m => m.id === 'clerk').length;
+    w.pos.clerk.x = dest.x - 200; w.pos.clerk.y = dest.y;
+    sys.onArrived('clerk', 'needs', { x: dest.x - 200, y: dest.y, moveId: id0 });
+    sys.step(NEEDS_TICK_MS);
+    assert.ok(sys.getLog().some(e => e.ev === 'arrival_far' && e.phase === 'goto_target'), 'far arrival logged');
+    assert.equal(sys.states.get('clerk').job?.phase, 'goto_target', 'still heading there, not using');
+    const id1 = sys.states.get('clerk').job.moveId;
+    assert.notEqual(id1, id0, 'the move was re-issued with a fresh id');
+    assert.ok(w.calls.moves.filter(m => m.id === 'clerk').length > movesBefore, 'a new move was issued');
+    w.pos.clerk.x = dest.x; w.pos.clerk.y = dest.y;
+    sys.onArrived('clerk', 'needs', { x: dest.x, y: dest.y, moveId: id1 });
+    sys.step(NEEDS_TICK_MS);
+    assert.equal(sys.states.get('clerk').job?.phase, 'using', 'counts when near');
+});
+
+test('SIMS-2: two far arrivals in one phase fail the job and walk it home', () => {
+    const { sys, w } = driveToGoto();
+    const dest = { ...sys.states.get('clerk').job.dest };
+    const far = () => { const id = sys.states.get('clerk').job.moveId; w.pos.clerk.x = dest.x - 300; w.pos.clerk.y = dest.y; sys.onArrived('clerk', 'needs', { x: dest.x - 300, y: dest.y, moveId: id }); sys.step(NEEDS_TICK_MS); };
+    far();
+    assert.equal(sys.getState('clerk').mode, 'job', 'still on the job after one far arrival');
+    far();
+    assert.equal(sys.getLog().filter(e => e.ev === 'arrival_far').length, 2, 'two far arrivals');
+    assert.ok(w.calls.emits.some(e => e.name === 'npc_job_failed:clerk' && e.data.reason === 'arrival_far'), 'job failed with arrival_far');
+    assert.equal(sys.getState('clerk').mode, 'returning', 'walks home');
+});
+
+test('SIMS-2: an arrival echoing another move\'s id is ignored and dropped', () => {
+    const { sys, w } = driveToGoto();
+    const job = sys.states.get('clerk').job;
+    const dest = { ...job.dest }, id0 = job.moveId;
+    const movesBefore = w.calls.moves.filter(m => m.id === 'clerk').length;
+    w.pos.clerk.x = dest.x; w.pos.clerk.y = dest.y;
+    sys.onArrived('clerk', 'needs', { x: dest.x, y: dest.y, moveId: id0 + 999 });
+    sys.step(NEEDS_TICK_MS);
+    assert.ok(sys.getLog().some(e => e.ev === 'arrival_ignored' && e.moveId === id0 + 999 && e.want === id0), 'logged arrival_ignored');
+    assert.equal(sys.states.get('clerk').job?.phase, 'goto_target', 'not taken as arrived');
+    assert.equal(w.calls.moves.filter(m => m.id === 'clerk').length, movesBefore, 'no re-issue for a stale id');
+});
+
+test('SIMS-2: an arrival with no id counts when near (transitional) and is re-issued when far', () => {
+    let { sys, w } = driveToGoto();
+    let dest = { ...sys.states.get('clerk').job.dest };
+    w.pos.clerk.x = dest.x; w.pos.clerk.y = dest.y;
+    sys.onArrived('clerk', 'needs');
+    sys.step(NEEDS_TICK_MS);
+    assert.equal(sys.states.get('clerk').job?.phase, 'using', 'no-id arrival near the cell counts');
+    ({ sys, w } = driveToGoto());
+    dest = { ...sys.states.get('clerk').job.dest };
+    const id0 = sys.states.get('clerk').job.moveId;
+    w.pos.clerk.x = dest.x - 200; w.pos.clerk.y = dest.y;
+    sys.onArrived('clerk', 'needs');
+    sys.step(NEEDS_TICK_MS);
+    assert.ok(sys.getLog().some(e => e.ev === 'arrival_far'), 'no-id arrival far the cell is re-issued');
+    assert.notEqual(sys.states.get('clerk').job.moveId, id0, 're-issued with a fresh id');
+});
+
+// Review R1 Design M1 (gap in minor 3): a no-id arrival during `using` (seating's chair fetch,
+// which walks with goToAndStay and carries no move id) is dropped silently — no `arrival_far`, no
+// re-issued move — so a fetch at a non-own work object is never cut short mid-use.
+function driveToUsing() {
+    const { sys, w } = driveToGoto();
+    const dest = { ...sys.states.get('clerk').job.dest }, id = sys.states.get('clerk').job.moveId;
+    w.pos.clerk.x = dest.x; w.pos.clerk.y = dest.y;
+    sys.onArrived('clerk', 'needs', { x: dest.x, y: dest.y, moveId: id });
+    sys.step(NEEDS_TICK_MS);
+    return { sys, w, dest };
+}
+
+test('SIMS-2 M1: a far no-id arrival during `using` is dropped, not logged far, and issues no move', () => {
+    const { sys, w, dest } = driveToUsing();
+    assert.equal(sys.states.get('clerk').job?.phase, 'using', 'in a use to start with');
+    const movesBefore = w.calls.moves.filter(m => m.id === 'clerk').length;
+    const logBefore = sys.getLog().length;
+    // Seating fetch: goToAndStay owner needs, no move id, ending 120 px from the use cell.
+    w.pos.clerk.x = dest.x - 120; w.pos.clerk.y = dest.y;
+    sys.onArrived('clerk', 'needs', { x: dest.x - 120, y: dest.y });
+    sys.step(NEEDS_TICK_MS);
+    assert.equal(sys.states.get('clerk').job?.phase, 'using', 'still using, not cut short');
+    assert.ok(!sys.getLog().slice(logBefore).some(e => e.ev === 'arrival_far' || e.ev === 'arrival_ignored'), 'no arrival_far/arrival_ignored during using');
+    assert.equal(w.calls.moves.filter(m => m.id === 'clerk').length, movesBefore, 'no move was issued');
+});
+
+test('SIMS-2: an early arrival while returning never sets atPost; re-issued once, then left to _watchReturn', () => {
+    const { sys, w } = driveToGoto();
+    let dest = { ...sys.states.get('clerk').job.dest };
+    w.pos.clerk.x = dest.x; w.pos.clerk.y = dest.y;
+    sys.onArrived('clerk', 'needs', { x: dest.x, y: dest.y, moveId: sys.states.get('clerk').job.moveId });
+    sys.step(41000);
+    assert.equal(sys.getState('clerk').mode, 'returning', 'walking home');
+    const home = sys.states.get('clerk').home;
+    const homeMoves = () => w.calls.moves.filter(m => m.id === 'clerk' && Math.round(m.x) === Math.round(home.x) && Math.round(m.y) === Math.round(home.y)).length;
+    const issued0 = homeMoves();
+    const far = () => { const id = sys.states.get('clerk').returnMoveId; w.pos.clerk.x = home.x + 300; w.pos.clerk.y = home.y; sys.onArrived('clerk', 'needs', { x: home.x + 300, y: home.y, moveId: id }); sys.step(NEEDS_TICK_MS); };
+    far();
+    assert.ok(sys.getLog().some(e => e.ev === 'arrival_far' && e.phase === 'returning'), 'far while returning logged');
+    assert.equal(sys.getState('clerk').atPost, false, 'an early arrival does not set atPost');
+    assert.equal(sys.getState('clerk').mode, 'returning', 'still returning');
+    assert.equal(homeMoves(), issued0 + 1, 'the walk home is re-issued once');
+    far();
+    assert.equal(homeMoves(), issued0 + 1, 'a second far arrival is left to _watchReturn, not re-issued again');
+    assert.equal(sys.getState('clerk').mode, 'returning', 'and the NPC never fails while returning');
+});
+
+test('SIMS-2: a seated own-desk work job still starts at once (own-post shortcut unchanged)', () => {
+    const w = makeWorld(ownDeskCfg());
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    sys.step(NEEDS_TICK_MS);
+    w.pos.clerk.x = 120; w.pos.clerk.y = 122;
+    let guard = 0;
+    while (sys.states.get('clerk').job?.phase !== 'using' && guard++ < 400) sys.step(NEEDS_TICK_MS);
+    assert.equal(sys.states.get('clerk').job?.phase, 'using', 'own-desk work reaches using with no walk');
+    assert.equal(w.calls.moves.filter(m => m.id === 'clerk').length, 0, 'no move issued for an own-post job');
+    assert.equal(sys.getLog().some(e => e.npc === 'clerk' && e.ev === 'arrival_far'), false, 'and no far arrival');
+});
+
+test('SIMS-2 (m3): a capacity-2 besideCell the path cannot reach fails after two far arrivals', () => {
+    // Review R1 m3: no longer "by construction". Two real caffeine NPCs both head for a capacity-2
+    // kettle. The first takes the approach cell, so the second is routed to a real geometric
+    // besideCell offset from it (OLMP E8 makes no path check). In this flat stub the second user's
+    // path ends at the approach cell, 200 px short of the besideCell, so its arrival is genuinely
+    // far. Two far arrivals re-issue once then fail the job, where today it would use the kettle
+    // from wherever the path ended.
+    const cfg = office();
+    cfg.objects = cfg.objects.filter(o => o.id !== 'coffee_machine');
+    cfg.objects.push({ id: 'kettle', x: 300, y: 300, affordance: { satisfies: 'caffeine', restores: 70, useSeconds: 30, capacity: 2 } });
+    cfg.npcs.clerk.rec.needs.caffeine = { decayPerMin: 8, urgentAt: 30, initial: 20, jitterPct: 0 };
+    cfg.npcs.mate = { pos: { x: 500, y: 100 }, rec: { id: 'mate', needsHome: 'mate_pc', needs: { caffeine: { decayPerMin: 8, urgentAt: 30, initial: 20, jitterPct: 0 } } } };
+    cfg.objects.push({ id: 'mate_pc', x: 500, y: 68, affordance: { accepts: ['found_item'], useSeconds: 10 } });
+    const w = makeWorld({ ...cfg, arrive: false });
+    // The live adapter's besideCell offsets from the approach cell; here that offset is where no
+    // path ends, so the second user's walk stops short and its arrival is far.
+    w.world.besideCell = cell => ({ x: cell.x + 200, y: cell.y });
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    let guard = 0;
+    while (guard++ < 400 && !(sys.states.get('clerk').job?.phase === 'goto_target' && sys.states.get('mate').job?.phase === 'goto_target')) sys.step(NEEDS_TICK_MS);
+    const mate = sys.states.get('mate');
+    assert.equal(mate.job.phase, 'goto_target', 'both heading for the kettle');
+    assert.deepEqual(mate.job.dest, { x: 500, y: 332 }, 'the second user is routed to the besideCell, off the approach cell (300,332)');
+    const far = () => { const id = sys.states.get('mate').job?.moveId; w.pos.mate.x = 300; w.pos.mate.y = 332; sys.onArrived('mate', 'needs', { x: 300, y: 332, moveId: id }); sys.step(NEEDS_TICK_MS); };
+    far();
+    assert.equal(sys.getState('mate').mode, 'job', 'one far arrival only re-issues');
+    far();
+    assert.equal(sys.getLog().filter(e => e.ev === 'arrival_far' && e.npc === 'mate').length, 2, 'two far arrivals at the same besideCell');
+    assert.ok(w.calls.emits.some(e => e.name === 'npc_job_failed:mate' && e.data.reason === 'arrival_far'), 'the job fails with arrival_far');
+    assert.equal(sys.getState('mate').mode, 'returning', 'and walks home');
+});
+
+test('SIMS-2 (Design M1): a far no-id arrival during `using` is dropped, not cut short', () => {
+    // Review R1 Major 1: seating's chair fetch walks with goToAndStay (owner 'needs', no move id)
+    // while the NPC is already `using` a non-own work object. That arrival must be dropped silently,
+    // as before the slice, never turned into `arrival_far` + a mid-use re-issue that drops the chair.
+    const { sys, w } = driveToGoto();
+    const dest = { ...sys.states.get('clerk').job.dest };
+    w.pos.clerk.x = dest.x; w.pos.clerk.y = dest.y;
+    sys.onArrived('clerk', 'needs', { x: dest.x, y: dest.y, moveId: sys.states.get('clerk').job.moveId });
+    sys.step(NEEDS_TICK_MS);
+    assert.equal(sys.states.get('clerk').job?.phase, 'using', 'the clerk is using the machine');
+    const movesBefore = w.calls.moves.filter(m => m.id === 'clerk').length;
+    // a seating-shaped fetch arrival 100 px away, with no move id, during `using`
+    w.pos.clerk.x = dest.x + 100; w.pos.clerk.y = dest.y;
+    sys.onArrived('clerk', 'needs', { x: dest.x + 100, y: dest.y });
+    sys.step(NEEDS_TICK_MS);
+    assert.equal(sys.states.get('clerk').job?.phase, 'using', 'still using: the fetch arrival did not cut it short');
+    assert.equal(sys.getLog().some(e => e.ev === 'arrival_far'), false, 'no arrival_far during using');
+    assert.equal(w.calls.moves.filter(m => m.id === 'clerk').length, movesBefore, 'no needs move re-issued mid-use');
+});
+
+test('SIMS-2 (m2): the far guard is keyed by phase and cell: a new queue cell re-issues, the same cell fails', () => {
+    // Review R1 m2 (both reviews): queue steps all share the `queued` phase. Keying the far guard by
+    // phase alone would fail the job when two different queue cells each arrive far. Keyed by cell,
+    // only a repeat far arrival at the *same* cell fails.
+    const { sys } = driveToGoto();
+    const s = sys.states.get('clerk');
+    s.mode = 'job'; s.job.phase = 'queued';
+    let reissues = 0, fails = 0;
+    sys._moveForPhase = () => { reissues++; };
+    sys._failJob = () => { fails++; };
+    const farAt = cell => {
+        s.job.dest = { ...cell };
+        const p = { x: cell.x + 500, y: cell.y };
+        return sys._acceptArrival(s, p, { x: p.x, y: p.y, moveId: s.job.moveId });
+    };
+    farAt({ x: 100, y: 100 });   // queue cell A, first far
+    assert.equal(reissues, 1); assert.equal(fails, 0);
+    farAt({ x: 100, y: 100 });   // the same cell again
+    assert.equal(fails, 1, 'a repeat far arrival at the same cell fails the job');
+    s.job._farKey = null; reissues = 0; fails = 0;
+    farAt({ x: 100, y: 100 });   // cell A
+    farAt({ x: 300, y: 164 });   // a genuine step to cell B
+    assert.equal(reissues, 2, 'each new cell re-issues'); assert.equal(fails, 0, 'two different queue cells never fail');
+});
+
+test('SIMS-2 (m2): a freeze/unfreeze resets the far guard so the re-issued move is not failed at once', () => {
+    const { sys, w } = driveToGoto();
+    const s = sys.states.get('clerk');
+    const dest = { ...s.job.dest };
+    const farOnce = () => { const id = sys.states.get('clerk').job.moveId; w.pos.clerk.x = dest.x - 300; w.pos.clerk.y = dest.y; sys.onArrived('clerk', 'needs', { x: dest.x - 300, y: dest.y, moveId: id }); sys.step(NEEDS_TICK_MS); };
+    farOnce();                                        // _farKey set, the move re-issued
+    assert.equal(sys.getState('clerk').mode, 'job');
+    w.setChat('clerk'); sys.step(NEEDS_TICK_MS);      // freeze (a conversation)
+    assert.equal(sys.getState('clerk').mode, 'frozen');
+    w.setChat(null); sys.step(NEEDS_TICK_MS);         // unfreeze: _moveForPhase, _farKey cleared
+    assert.equal(sys.getState('clerk').mode, 'job', 'back on the job');
+    farOnce();                                        // a far arrival after the freeze re-issues, not fails
+    assert.equal(sys.getState('clerk').mode, 'job', 'not failed: the far guard was reset on the unfreeze re-issue');
+});
+
+test('SIMS-2: a stale-id arrival while returning is ignored, not taken as home', () => {
+    const { sys, w } = driveToGoto();
+    const dest = { ...sys.states.get('clerk').job.dest };
+    w.pos.clerk.x = dest.x; w.pos.clerk.y = dest.y;
+    sys.onArrived('clerk', 'needs', { x: dest.x, y: dest.y, moveId: sys.states.get('clerk').job.moveId });
+    sys.step(41000);
+    assert.equal(sys.getState('clerk').mode, 'returning', 'walking home');
+    const home = sys.states.get('clerk').home;
+    const want = sys.states.get('clerk').returnMoveId;
+    w.pos.clerk.x = home.x; w.pos.clerk.y = home.y;
+    sys.onArrived('clerk', 'needs', { x: home.x, y: home.y, moveId: want + 999 });
+    sys.step(NEEDS_TICK_MS);
+    assert.ok(sys.getLog().some(e => e.ev === 'arrival_ignored' && e.want === want), 'the stale id is ignored');
+    assert.equal(sys.getState('clerk').atPost, false, 'a stale arrival does not set atPost');
+    assert.equal(sys.getState('clerk').mode, 'returning', 'still returning');
+});
+
+test('SIMS-2 (m1): an unreachable home logs arrival_far once per return; _watchReturn keeps re-planning', () => {
+    const { sys, w } = driveToGoto();
+    const dest = { ...sys.states.get('clerk').job.dest };
+    w.pos.clerk.x = dest.x; w.pos.clerk.y = dest.y;
+    sys.onArrived('clerk', 'needs', { x: dest.x, y: dest.y, moveId: sys.states.get('clerk').job.moveId });
+    sys.step(41000);
+    assert.equal(sys.getState('clerk').mode, 'returning');
+    const home = sys.states.get('clerk').home;
+    const farHome = () => { const id = sys.states.get('clerk').returnMoveId; w.pos.clerk.x = home.x + 300; w.pos.clerk.y = home.y; sys.onArrived('clerk', 'needs', { x: home.x + 300, y: home.y, moveId: id }); sys.step(NEEDS_TICK_MS); };
+    farHome();                                        // first far: logs arrival_far, re-issues home
+    sys.step(RETURN_YIELD_MS + NEEDS_TICK_MS);        // _watchReturn takes over (position unmoved)
+    farHome();                                        // a second far after a watch re-issue: no new log
+    farHome();
+    const farLines = sys.getLog().filter(e => e.ev === 'arrival_far' && e.phase === 'returning');
+    assert.equal(farLines.length, 1, 'arrival_far logged once per return, not once per _watchReturn cycle');
+    assert.ok(sys.getLog().some(e => e.ev === 'return_resumed'), '_watchReturn re-planned the walk');
+    assert.equal(sys.getState('clerk').mode, 'returning', 'and the returner never fails');
+    // a later near arrival finally sets atPost
+    const id = sys.states.get('clerk').returnMoveId;
+    w.pos.clerk.x = home.x; w.pos.clerk.y = home.y;
+    sys.onArrived('clerk', 'needs', { x: home.x, y: home.y, moveId: id });
+    sys.step(NEEDS_TICK_MS);
+    assert.equal(sys.getState('clerk').atPost, true, 'a near arrival home sets atPost');
+});
+
+// ── SIMS-3 (OFFICE_LIFE_SIMS_BUILD_PLAN 5.3): the still NPC (Neil) and the print command ──
+
+/** A Neil: one need (caffeine) met only by its own declared mug (seat stand), nothing else. */
+function stillMugCfg() {
+    const cfg = office({ objects: [
+        { id: 'own_mug', x: 100, y: 68, affordance: { satisfies: 'caffeine', restores: 30, useSeconds: 4, capacity: 1, seat: 'stand' } }
+    ] });
+    cfg.npcs.clerk.rec.needsHome = 'own_mug';
+    cfg.npcs.clerk.rec.swivel = false;
+    cfg.npcs.clerk.rec.needs = { caffeine: { decayPerMin: 6, urgentAt: 45, initial: 60, jitterPct: 0 } };
+    cfg.objects = cfg.objects.filter(o => o.id !== 'clerk_pc' && o.id !== 'coffee_machine');
+    return cfg;
+}
+
+test('an NPC whose only need target is its own post object never issues a move over 30 minutes', () => {
+    const w = makeWorld(stillMugCfg());
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    sys.step(30 * 60000);
+    const names = w.calls.emits.map(e => e.name);
+    const sips = sys.getLog().filter(e => e.npc === 'clerk' && e.ev === 'used' && e.target === 'own_mug');
+    assert.ok(sips.length >= 5, `sipped at the mug across 30 min (${sips.length})`);
+    assert.equal(w.calls.moves.filter(m => m.id === 'clerk').length, 0, 'no move was ever issued for the still NPC');
+    assert.ok(!names.includes('npc_left_post:clerk'), 'never leaves its post');
+    assert.ok(!names.includes('npc_returned_post:clerk'), 'never returns (it never left)');
+    assert.equal(sys.getState('clerk').atPost, true, 'stays at its post');
+});
+
+/** The sims stub with the copier beat and a quiet Tom, so the print command is the only event. */
+function printCmdWorld() {
+    const w = makeSimsWorld();
+    addCopierBeat(w);
+    w.cfgNpcs.tom.rec.needs = { work: { decayPerMin: 0.1, urgentAt: 50, initial: 99 } };
+    w.cfgNpcs.tom.rec.onUse = {};
+    delete w.cfgNpcs.amara.rec.interests.printout;   // nobody files the forgotten slot
+    const sys = new NPCNeedsSystem(w.world, { seed: SIMS_SEED, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    sys.tick();
+    const evs = (ev, npc) => sys.getLog().filter(e => e.ev === ev && (!npc || e.npc === npc));
+    const print = opts => sys.control('tom', { print: { producer: 'office_copier', ...opts } });
+    const ticks = n => { for (let i = 0; i < n; i++) sys.tick(); };
+    return { w, sys, evs, print, ticks };
+}
+
+test('the print command with forget:true reveals a slot and schedules no fetch', () => {
+    const p = printCmdWorld();
+    assert.equal(p.print({ forget: true }), true);
+    p.ticks(5 * 60 * 4);   // five needs-clock minutes
+    assert.equal(p.w.globals.copier_out_a_shown, true, 'the page is on the tray');
+    const res = p.evs('print_reserved', 'tom');
+    assert.equal(res.length, 1);
+    assert.equal(res[0].item, 'copier_out_a');
+    assert.equal(res[0].forgotten, true, 'forget:true marks it forgotten');
+    assert.equal(p.evs('print_fetched', 'tom').length, 0, 'no fetch errand is scheduled');
+    assert.ok(!p.sys.getLog().some(e => e.npc === 'tom' && e.ev === 'job_start' && e.item === 'copier_out_a'), 'nobody walks to fetch it');
+    assert.ok(p.sys._prints.has('copier_out_a'), 'the slot is owned (reserved), so Amara leaves it');
+});
+
+test('a forgotten command print is the oldest recyclable slot once the tray fills', () => {
+    const p = printCmdWorld();
+    for (let i = 0; i < 3; i++) { p.print({ forget: true }); p.ticks(2); }
+    assert.deepEqual([...p.sys._prints.keys()].sort(), ['copier_out_a', 'copier_out_b', 'copier_out_c'], 'the three slots are full and forgotten');
+    p.print({ forget: true });   // the tray is full: the next command recycles the oldest read-in-place slot
+    const rec = p.evs('recycled', 'tom');
+    assert.deepEqual(rec.map(e => e.item), ['copier_out_b'], 'the oldest read-in-place forgotten slot is reused, the takeable a is kept');
+    assert.equal(p.w.globals.copier_out_a_shown, true, 'the takeable forgotten printout still waits on the tray');
+});
+
+// ── SIMS-4 (plan 5.4): the staff-room pair's couplings, cooldown and gated exchanges ──
+// The staff room's patterns, proved on the stub: a coupling on the use start that targets only the
+// named partner, a use started straight from another job still emitting npc_use_started, the
+// chatterCooldownMin: 0.25 window, a needs.set on an NPC whose room is not loaded doing nothing, and
+// Jodie's three gated exchanges resolving in reading order (exchange_job_cleared never before
+// heard_exchange_job_called).
+
+const EX_LINES = {
+    exchange_waiting: [
+        { speakerId: 'keith', text: 'Quiet on the radio tonight.' },
+        { speakerId: 'jodie', text: 'Long shift when it is this slow.' },
+        { speakerId: 'keith', text: 'A brew while we can, then.' }
+    ],
+    exchange_job_called: [
+        { speakerId: 'jodie', text: 'That light in here still flickering?' },
+        { speakerId: 'keith', text: "Neil's put it out on the radio." },
+        { speakerId: 'keith', text: "That'll be one for you, Jodie." },
+        { speakerId: 'jodie', text: "Once I've finished this, aye." }
+    ],
+    exchange_job_cleared: [
+        { speakerId: 'keith', text: "Light's behaving now." },
+        { speakerId: 'jodie', text: 'Spare from my locker did it.' },
+        { speakerId: 'keith', text: 'Peace and quiet again. Lovely.' }
+    ]
+};
+const JODIE_EXCHANGES = [
+    { with: 'keith', knot: 'exchange_job_called', requireGlobal: { job_called: true } },
+    { with: 'keith', knot: 'exchange_job_cleared', requireGlobal: { job_cleared: true, heard_exchange_job_called: true } },
+    { with: 'keith', knot: 'exchange_waiting' }
+];
+
+/** keith and jodie in the staff room: a boiler (caffeine), a cooler (thirst) and a microwave (hunger). */
+function staffRoom({ globals = {}, registerJodie = true, keithNeeds, jodieNeeds } = {}) {
+    const objects = [
+        { id: 'staff_boiler', x: 200, y: 100, affordance: { satisfies: 'caffeine', restores: 40, useSeconds: 30, capacity: 2, chatter: 'staff_tea' } },
+        { id: 'staff_cooler', x: 300, y: 100, affordance: { satisfies: 'thirst', restores: 40, useSeconds: 25, capacity: 2, chatter: 'staff_water' } },
+        { id: 'staff_microwave', x: 400, y: 100, affordance: { satisfies: 'hunger', restores: 60, useSeconds: 10 } }
+    ];
+    const npcs = {
+        keith: { pos: { x: 120, y: 300 }, rec: {
+            id: 'keith', needsHome: { room: 'office', x: 4, y: 10 }, needsSpeed: 80, chatterCooldownMin: 0.25,
+            needs: keithNeeds || { caffeine: { decayPerMin: 1, urgentAt: 40, initial: 95, jitterPct: 0 }, thirst: { decayPerMin: 1, urgentAt: 40, initial: 95, jitterPct: 0 } },
+            chatter: { staff_tea: ['Best brew on site, this.'], staff_water: ['Keeps you sharp, water.'] }
+        } }
+    };
+    if (registerJodie) npcs.jodie = { pos: { x: 180, y: 300 }, rec: {
+        id: 'jodie', needsHome: { room: 'office', x: 6, y: 10 }, needsSpeed: 80, chatterCooldownMin: 0.25,
+        needs: jodieNeeds || { thirst: { decayPerMin: 1, urgentAt: 40, initial: 95, jitterPct: 0 }, caffeine: { decayPerMin: 1, urgentAt: 40, initial: 95, jitterPct: 0 } },
+        chatter: { staff_tea: ['Cheers, Keith.'], staff_water: ['Parched, so I am.'] },
+        exchanges: JODIE_EXCHANGES
+    } };
+    const w = makeWorld({ npcs, objects });
+    w.world.globalHolds = cond => requiredGlobalsHold(cond, globals);
+    w.world.exchangeLines = (owner, knot) => EX_LINES[knot] || null;
+    w.world.chatterConfig = () => ({ staff_tea: ['Best brew on site, this.'], staff_water: ['Keeps you sharp, water.'] });
+    w.world.playerHears = () => ({ overheard: true, distance: 50 });
+    w.world.playerProximity = () => ({ nearby: false, distance: null });
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.register('keith');
+    if (registerJodie) sys.register('jodie');
+    return { w, sys, globals };
+}
+
+test('SIMS-4 coupling: a boiler use start carries its npcId; the coupling sets only the named partner need', () => {
+    const { w, sys } = staffRoom();
+    sys.states.get('keith').levels.caffeine = 10;   // keith goes for a brew
+    while (!w.calls.emits.some(e => e.name === 'npc_use_started:staff_boiler') && sys.clockMs < 30000) sys.step(NEEDS_TICK_MS);
+    const start = w.calls.emits.find(e => e.name === 'npc_use_started:staff_boiler');
+    assert.ok(start, 'the boiler use start was emitted');
+    assert.equal(start.data.npcId, 'keith', 'the start names the user');
+    // Jodie's coupling: fires on keith's boiler start only (condition data.npcId === "keith").
+    const coupling = ev => { if (ev.name === 'npc_use_started:staff_boiler' && ev.data.npcId === 'keith') sys.control('jodie', { set: { caffeine: 20 } }); };
+    coupling(start);
+    assert.equal(sys.states.get('jodie').levels.caffeine, 20, "the partner's named need is set");
+    assert.ok(sys.states.get('jodie').levels.thirst > 90, 'no other need of the partner is set to 20');
+    // Jodie's own boiler start, or a microwave start, must not bring her through this coupling.
+    coupling({ name: 'npc_use_started:staff_boiler', data: { npcId: 'jodie' } });   // condition false
+    coupling({ name: 'npc_use_started:staff_microwave', data: { npcId: 'keith' } }); // wrong pattern
+    assert.equal(sys.states.get('jodie').levels.caffeine, 20, 'neither fired the coupling again');
+});
+
+test('SIMS-4: every break emits npc_use_started, so a second coupled break still brings the partner', () => {
+    // Two urgent needs: Keith takes a brew, then eats. Each use start emits npc_use_started, which
+    // is the event the couplings listen on, so no break is silent to the partner.
+    const { w, sys } = staffRoom({
+        keithNeeds: {
+            caffeine: { decayPerMin: 1, urgentAt: 40, initial: 10, jitterPct: 0 },
+            hunger: { decayPerMin: 1, urgentAt: 40, initial: 10, jitterPct: 0 }
+        }
+    });
+    // The walk home never arrives here, so the second use has to start straight from the first
+    // job (the returning NPC's next select), the case plan 5.4 names (S4 R2 m4).
+    const objCells = new Set(w.objs.map(o => `${o.x},${o.y + 32}`));
+    const moveTo = w.world.moveTo.bind(w.world);
+    w.world.moveTo = (id, x, y, sp, o) => { if (objCells.has(`${x},${y}`)) return moveTo(id, x, y, sp, o); w.calls.moves.push({ id, x, y, moveId: o.moveId }); };
+    while (sys.clockMs < 120000 && new Set(w.calls.emits.filter(e => e.name.startsWith('npc_use_started:')).map(e => e.name)).size < 2) sys.step(NEEDS_TICK_MS);
+    const starts = w.calls.emits.filter(e => e.name.startsWith('npc_use_started:') && e.data.npcId === 'keith');
+    const objs = starts.map(e => e.name.split(':')[1]);
+    assert.ok(objs.includes('staff_boiler') && objs.includes('staff_microwave'), `both uses emitted a start: ${objs.join(', ')}`);
+    assert.ok(starts.every(e => e.data.npcId === 'keith' && typeof e.data.need === 'string'), 'each start names its user and need');
+    // The case the plan names: the second use starts straight from the first job, with no return
+    // home between them (S4 R2 m4), and it still emits its start.
+    const names = w.calls.emits.map(e => e.name);
+    const i1 = names.indexOf(starts[0].name), i2 = names.indexOf(starts[1].name, i1 + 1);
+    assert.ok(i2 > i1, 'two starts in order');
+    assert.ok(!names.slice(i1, i2).includes('npc_returned_post:keith'), 'no npc_returned_post:keith between the two starts');
+});
+
+test('SIMS-4: chatterCooldownMin 0.25 allows a pool line 15 s of needs clock after the last', () => {
+    const { sys } = staffRoom();
+    const s = sys.states.get('keith');
+    s.chatterQuietUntil = 0; sys._speechUntil = 0;
+    const first = sys._pickBark(s, 'staff_tea', {});
+    assert.ok(first && first.line, 'a pool line is available');
+    assert.equal(s.chatterQuietUntil, sys.clockMs + 15000, 'the 0.25 min cooldown is 15 s');
+    const during = sys._pickBark(s, 'staff_tea', {});
+    assert.ok(during && during.picture && !during.line, 'inside the cooldown it falls to a picture');
+    sys.clockMs += 15000;   // 15 s of needs clock later
+    const after = sys._pickBark(s, 'staff_tea', {});
+    assert.ok(after && after.line, 'a pool line is allowed again 15 s on');
+});
+
+test('SIMS-4: a needs.set on an NPC whose room is not loaded does nothing', () => {
+    const { sys } = staffRoom({ registerJodie: false });   // the staff room never loaded Jodie
+    assert.equal(sys.states.get('jodie'), undefined, 'Jodie is not registered');
+    assert.equal(sys.control('jodie', { set: { thirst: 20 } }), false, 'the set is a no-op on an unregistered NPC');
+    assert.equal(sys.states.get('jodie'), undefined, 'and creates no state');
+});
+
+test('SIMS-4 exchange gates: the ungated waiting exchange plays first, then job_called once its global holds', () => {
+    let g = {};
+    let r = staffRoom({ globals: g });
+    assert.equal(r.sys._findExchange({ npcId: 'jodie' }, { npcId: 'keith' }).knot, 'exchange_waiting', 'no global set: the ungated knot');
+    g = { job_called: true };
+    r = staffRoom({ globals: g });
+    assert.equal(r.sys._findExchange({ npcId: 'jodie' }, { npcId: 'keith' }).knot, 'exchange_job_called', 'job_called held: its gated knot sorts first');
+});
+
+test('SIMS-4 exchange gates: exchange_job_cleared never plays before heard_exchange_job_called', () => {
+    // waiting is marked heard so only the job knots are in play.
+    let g = { job_cleared: true, heard_exchange_waiting: true };
+    let r = staffRoom({ globals: g });
+    assert.deepEqual(r.sys._findExchange({ npcId: 'jodie' }, { npcId: 'keith' }), { gated: true }, 'job_cleared alone opens nothing (E9: a gated entry waits)');
+    g = { job_cleared: true, heard_exchange_job_called: true, heard_exchange_waiting: true };
+    r = staffRoom({ globals: g });
+    assert.equal(r.sys._findExchange({ npcId: 'jodie' }, { npcId: 'keith' }).knot, 'exchange_job_cleared', 'both keys held: the clearance exchange opens');
 });
