@@ -866,7 +866,7 @@ Ping Commands: Basic ping with ping DESTINATION, limited count with ping -c 3 DE
 + [Show me port checking commands]
     Manual Port Checking: Using telnet with telnet IP_ADDRESS 80, using netcat with nc IP_ADDRESS 80, and test a TCP connection with bash using echo > /dev/tcp/IP_ADDRESS/PORT.
 
-Then check the last command status with echo $? (0 = success, non-zero = failure).
+    Then check the last command status with echo $? (0 = success, non-zero = failure).
 
     ~ instructor_rapport += 3
     #influence_increased
@@ -880,7 +880,7 @@ Then check the last command status with echo $? (0 = success, non-zero = failure
 + [Show me Nmap scanning commands]
     Nmap Port Scanning: Basic scan with nmap TARGET, SYN scan with sudo nmap -sS TARGET, connect scan with nmap -sT TARGET, and UDP scan with sudo nmap -sU TARGET.
 
-For ports: specific ports with nmap -p 80,443 TARGET, port range with nmap -p 1-1000 TARGET, all ports with nmap -p- TARGET, and fast scan with nmap -F TARGET.
+    For ports: specific ports with nmap -p 80,443 TARGET, port range with nmap -p 1-1000 TARGET, all ports with nmap -p- TARGET, and fast scan with nmap -F TARGET.
 
     ~ instructor_rapport += 3
     #influence_increased
@@ -888,9 +888,9 @@ For ports: specific ports with nmap -p 80,443 TARGET, port range with nmap -p 1-
 + [Show me service detection commands]
     Service Identification: Manual banner grab (FTP) with nc IP_ADDRESS 21, and manual banner grab (HTTP) with nc IP_ADDRESS 80 (then type . and press Enter).
 
-Automated banner grab with nc IP_ADDRESS 1-2000 -w 1, and Amap protocol analysis with amap -A IP_ADDRESS PORT.
+    Automated banner grab with nc IP_ADDRESS 1-2000 -w 1, and Amap protocol analysis with amap -A IP_ADDRESS PORT.
 
-Nmap version detection with nmap -sV IP_ADDRESS, and version detection on a specific port with nmap -sV -p 80 IP_ADDRESS.
+    Nmap version detection with nmap -sV IP_ADDRESS, and version detection on a specific port with nmap -sV -p 80 IP_ADDRESS.
 
     ~ instructor_rapport += 3
     #influence_increased
@@ -900,7 +900,7 @@ Nmap version detection with nmap -sV IP_ADDRESS, and version detection on a spec
 
     Timing Templates: Paranoid with nmap -T0 TARGET, sneaky with nmap -T1 TARGET, and polite with nmap -T2 TARGET.
 
-Then normal (default) with nmap -T3 TARGET, aggressive with nmap -T4 TARGET, and insane with nmap -T5 TARGET.
+    Then normal (default) with nmap -T3 TARGET, aggressive with nmap -T4 TARGET, and insane with nmap -T5 TARGET.
 
     ~ instructor_rapport += 3
     #influence_increased
@@ -908,7 +908,7 @@ Then normal (default) with nmap -T3 TARGET, aggressive with nmap -T4 TARGET, and
 + [Show me output commands]
     Nmap Output: Normal output with nmap -oN filename TARGET, XML output with nmap -oX filename TARGET, and grepable output with nmap -oG filename TARGET.
 
-All formats with nmap -oA basename TARGET, and view an output file with less filename.
+    All formats with nmap -oA basename TARGET, and view an output file with less filename.
 
     ~ instructor_rapport += 3
     #influence_increased
@@ -916,9 +916,9 @@ All formats with nmap -oA basename TARGET, and view an output file with less fil
 + [Show me combined scan examples]
     Combined Scans: Fast aggressive scan with version detection using nmap -T4 -F -sV IP_ADDRESS.
 
-Comprehensive scan of all ports with OS and version detection using sudo nmap -T4 -p- -O -sV -oA comprehensive_scan IP_ADDRESS.
+    Comprehensive scan of all ports with OS and version detection using sudo nmap -T4 -p- -O -sV -oA comprehensive_scan IP_ADDRESS.
 
-Stealth scan of specific ports using sudo nmap -T2 -sS -p 80,443,8080 IP_ADDRESS.
+    Stealth scan of specific ports using sudo nmap -T2 -sS -p 80,443,8080 IP_ADDRESS.
 
     ~ instructor_rapport += 3
     #influence_increased

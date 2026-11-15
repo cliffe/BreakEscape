@@ -974,7 +974,7 @@ scada_password = "CascadeWindow19"
               "condition": "value === true && globalVars.scada_password_found === true",
               "onceOnly": true,
               "setGlobal": { "ssh_guide_offered": true },
-              "sendTimedMessage": { "delay": 1500, "message": "Their listener gives out the operator's password in clear: it's Elena's door code. One password for both, so she told the truth. Capture's in your inventory. Want the SSH guide?" }
+              "sendTimedMessage": { "delay": 1500, "message": "Their listener gives out the operator's password in clear: it's Elena's door code, so she told the truth. Capture's in your inventory. Name and password: want the SSH guide?" }
             },
             {
               "eventPattern": "global_variable_changed:flag2_submitted",
@@ -989,7 +989,7 @@ scada_password = "CascadeWindow19"
               "condition": "value === true && globalVars.scada_password_found === true && !globalVars.flag2_submitted && !globalVars.flag3_submitted && !globalVars.reuse_hint_sent",
               "onceOnly": true,
               "setGlobal": { "reuse_hint_sent": true },
-              "sendTimedMessage": { "delay": 9000, "message": "He's too vain to change passwords: try Elena's door code as his login. Once that flag goes through, they see you and the window to move the team shuts." }
+              "sendTimedMessage": { "delay": 9000, "message": "You've got the operator's name. Elena says he reuses passwords, so try her door code as his login. Once that operator flag hits the relay, the team window shuts." }
             },
             {
               "_comment": "Elena turned after flag 1: keyed on her chat closing, never mid-scene, and after her verdict toast (1.5 s).",
@@ -997,7 +997,7 @@ scada_password = "CascadeWindow19"
               "condition": "globalVars.scada_password_found === true && globalVars.flag1_submitted === true && !globalVars.flag2_submitted && !globalVars.flag3_submitted && !globalVars.reuse_hint_sent",
               "onceOnly": true,
               "setGlobal": { "reuse_hint_sent": true },
-              "sendTimedMessage": { "delay": 6000, "message": "He's too vain to change passwords: try Elena's door code as his login. Once that flag goes through, they see you and the window to move the team shuts." }
+              "sendTimedMessage": { "delay": 6000, "message": "You've got the operator's name. Elena says he reuses passwords, so try her door code as his login. Once that operator flag hits the relay, the team window shuts." }
             },
             {
               "_comment": "R5 (VM weave): once the operator password is in hand, submitting the login flag is what closes the redirect window. Fire a can't-miss warning the instant flag 2 lands while the window is still open, for every player (not only one who already revised the projection and assigned a team), so nobody loses the chance to move the team without warning. R4: the trigger is the flag going through the relay, not the act of logging in on the host.",

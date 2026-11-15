@@ -795,7 +795,7 @@ CREDITS
               "condition": "value === true",
               "onceOnly": true,
               "setGlobal": { "found_gitlist_vuln": true, "gitsecrets_guide_offered": true },
-              "sendTimedMessage": { "delay": 1500, "message": "Our own code server's repo is open to anyone. The credential's gone from the files, not from the history. Break in and read it. Want the git secrets guide?" }
+              "sendTimedMessage": { "delay": 1500, "message": "Our code server's repo is open to anyone: a report nobody will enjoy. The credential's gone from the files, not the history. Break in and read it. Git secrets guide?" }
             },
             {
               "_comment": "Flag 2 -- the break-in and the stashed credentials. GitList remote command execution with no login gives the foothold; the mole's opsec failure (creds committed to the repo, removed, never rotated) is in its history. PASS 4 (fix 19): its guide is now offered at flag 1.",
@@ -803,7 +803,7 @@ CREDITS
               "condition": "value === true",
               "onceOnly": true,
               "setGlobal": { "found_leaked_creds": true },
-              "sendTimedMessage": { "delay": 1500, "message": "You're in, and so were the credentials, never rotated. See what the account keeps. If something's sealed, the Director has held the key for nine days, in his safe." }
+              "sendTimedMessage": { "delay": 1500, "message": "You're in, and so were the credentials, never rotated. Log in properly. If anything's sealed, the Director's held the key nine days: the full Portland intercept, in his safe." }
             },
             {
               "_comment": "Flag 3 -- proper login, home-directory flag. The mailbox ties the account to the Portland intercept (an account, not yet a person: PASS 5 Option B). Also opens the privilege-escalation guide.",
@@ -811,7 +811,7 @@ CREDITS
               "condition": "value === true",
               "onceOnly": true,
               "setGlobal": { "found_architect_comms": true, "privesc_guide_offered": true },
-              "sendTimedMessage": { "delay": 1500, "message": "The seal opened their drop: mail to architect@entropy.onion, from the Portland sender. The logs need root, which this account lacks; your web foothold has a sudo rule. Privesc guide?" }
+              "sendTimedMessage": { "delay": 1500, "message": "The seal opened their drop: mail to architect@entropy.onion, from the intercept's sender. The logs need root, which this account lacks; your web foothold has a sudo rule. Privesc guide?" }
             },
 <%# Flag 4 -- root. Access logs become readable: a terminal and a time (PASS 5,
     Option B; see below for the fallbacks that still set mole_identified).

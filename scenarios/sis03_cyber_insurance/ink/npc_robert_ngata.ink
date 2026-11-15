@@ -133,7 +133,7 @@ The Ferryman Collective access point was a printer firmware vulnerability. That'
 
 If we can share the technical profile quickly, we might prevent similar incidents at other facilities.
 
-The GREYMANTLE tools, the DNS-over-HTTPS C&C and the domain controller implant characteristics:
+The GREYMANTLE tools matter most: the DNS-over-HTTPS C&C and the domain controller implant characteristics.
 
 Those are indicators we need in the hands of defenders at other critical infrastructure sites.
 
@@ -215,9 +215,9 @@ Insurance is the financial consequence mechanism.
 
 If a critical infrastructure operator knows that a security failure will result in an insurance claim denial, they take the failure seriously.
 
-But if they know that an insurance claim will be denied specifically because a nation-state was involved, the incentive flips.
+But if they know that an insurance claim will be denied specifically because a nation-state was involved, because the exclusion applies to state-sponsored attacks, the incentive flips.
 
-The exclusion applies to state-sponsored attacks. It becomes: "Why invest in security against nation-states? The insurance won't cover it anyway."
+It becomes: "Why invest in security against nation-states? The insurance won't cover it anyway."
 
 That's the systemic problem. If that's the precedent Meridian sets, other insurers will follow.
 

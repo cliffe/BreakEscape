@@ -205,7 +205,7 @@ Instead, I'm relying on the historian database, which recorded the falsified sen
 
 But the historian was itself compromised, so those readings are the attacker's data.
 
-There's a layer of circularity there:
+There's a layer of circularity there.
 
 The evidence I'm using to prove the attack altered sensor values is data that was itself falsified by the attack.
 
