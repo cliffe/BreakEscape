@@ -2634,7 +2634,7 @@ module BreakEscape
         BreakEscape::Game.strip_puzzle_graph_keys!(obj) # generator-only authoring fields
         # A declared grant's contents are served from the held item, never shipped
         BreakEscape::DeclaredGrants.strip_grant_contents!(obj)
-        if lock_type && !%w[biometric bluetooth rfid].include?(lock_type)
+        if lock_type && !BreakEscape::Game::CARD_REFERENCE_LOCK_TYPES.include?(lock_type)
           obj.delete('requires')
         end
 
