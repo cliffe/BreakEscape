@@ -42,6 +42,10 @@ outside the pipeline:  pixellab_pipeline.py import <url> --key bernie_nwosu
 Other commands: status, collect (finish jobs a killed run left pending), balance, visemes.
 Every paid command accepts --dry-run, which prints the request without sending it.
 
+White backgrounds: `import` (online and --offline) and `reroll` make the near-white pixels
+connected to each frame's edges transparent, because some characters come back from PixelLab
+on opaque white. Enclosed white (eyes, badges) stays. `--keep-white` turns it off.
+
 Auth: PIXELLAB_API_KEY (or PIXELLAB_API_TOKEN) env var, else the Authorization header of
 the `pixellab` MCP server in ~/.claude.json. The token is never printed.
 """
@@ -1844,7 +1848,11 @@ def cmd_reroll(args):
             out = trial_dir / f"t{n:02d}"
             out.mkdir(parents=True, exist_ok=True)
             for i, url in enumerate(urls):
-                api.download(url).save(out / f"frame_{i:03d}.png")
+                frame = api.download(url)
+                if not args.keep_white:
+                    frame, _ = clear_edge_white(frame, args.white_threshold or
+                                                manifest[args.key].get("white_threshold") or WHITE_BG_THRESHOLD)
+                frame.save(out / f"frame_{i:03d}.png")
             print(f"t{n:02d}: {len(urls)} frames")
         finally:
             # The take lives on locally; remove the temporary group so the character stays clean.
@@ -1892,6 +1900,84 @@ def ai_edit_frames(root, args, frames, idx):
     return {i: (im if im.size == size else fit_square(im, size[0])) for i, im in zip(idx, out)}
 
 
+# Near-white means every RGB channel at or above this. Measured on the November 2026 m02
+# night-staff characters: PixelLab's painted background is (254,255,254) or (254,252,250).
+# The rotations have a dark outline against it, but the animation frames often carry a 1px
+# halo snapped to the palette's hair highlight, (220,220,221). The figure's own light greys
+# (grey hair 204, a shirt highlight 230) sit inside the dark outline, so the flood fill does
+# not reach them. 215 clears the 220 halo; 200 started eating 204-grey hair on fall frames
+# where the outline breaks, so it stays above that.
+WHITE_BG_THRESHOLD = 215
+# After the fill, a light pixel (every channel at or above this) with three or four
+# transparent neighbours is a speck of halo left beside the figure, and is cleared too.
+SPECK_THRESHOLD = 180
+
+
+def clear_edge_white(im, threshold=WHITE_BG_THRESHOLD):
+    """Make near-white pixels connected to the frame edges fully transparent.
+
+    Some PixelLab characters come back with the background painted opaque white instead of
+    transparent. A 4-connected flood fill is seeded from every edge pixel that is near-white
+    or already transparent, and spreads through near-white and transparent pixels only, so
+    white enclosed by the figure (eye whites, a badge, a highlight) stays: the outline
+    separates it from the background, and 4-connectivity cannot leak through a diagonal gap.
+    When the fill cleared anything, light specks it left (SPECK_THRESHOLD, three or four
+    transparent neighbours) go too. Returns (new RGBA image, number of pixels cleared). An
+    already-transparent background clears nothing and leaves the image unchanged.
+    """
+    from collections import deque
+    a = np.array(im.convert("RGBA"))
+    h, w = a.shape[:2]
+    passable = (a[..., 3] == 0) | (a[..., :3].min(axis=2) >= threshold)
+    seen = np.zeros((h, w), dtype=bool)
+    queue = deque()
+    for y in range(h):
+        for x in (0, w - 1):
+            if passable[y, x] and not seen[y, x]:
+                seen[y, x] = True
+                queue.append((y, x))
+    for x in range(w):
+        for y in (0, h - 1):
+            if passable[y, x] and not seen[y, x]:
+                seen[y, x] = True
+                queue.append((y, x))
+    while queue:
+        y, x = queue.popleft()
+        for ny, nx in ((y - 1, x), (y + 1, x), (y, x - 1), (y, x + 1)):
+            if 0 <= ny < h and 0 <= nx < w and passable[ny, nx] and not seen[ny, nx]:
+                seen[ny, nx] = True
+                queue.append((ny, nx))
+    clear = seen & (a[..., 3] > 0)
+    n = int(clear.sum())
+    if n:
+        a[clear] = (0, 0, 0, 0)
+        # Specks: lone light pixels of halo the fill left, mostly attached by one side.
+        tr = np.pad(a[..., 3] == 0, 1, constant_values=True)
+        open_sides = (tr[:-2, 1:-1].astype(int) + tr[2:, 1:-1] + tr[1:-1, :-2] + tr[1:-1, 2:])
+        speck = (a[..., 3] > 0) & (a[..., :3].min(axis=2) >= SPECK_THRESHOLD) & (open_sides >= 3)
+        a[speck] = (0, 0, 0, 0)
+        n += int(speck.sum())
+    return Image.fromarray(a, "RGBA"), n
+
+
+def clear_white_backgrounds(root, threshold=WHITE_BG_THRESHOLD):
+    """clear_edge_white on every rotation and animation frame under an export folder
+    (rotations/*.png and animations/<template>/<direction>/*.png, the sit frames included).
+    Rewrites only the frames that change. Returns (frames changed, pixels cleared)."""
+    files = sorted((root / "rotations").glob("*.png")) + sorted((root / "animations").rglob("*.png"))
+    frames = pixels = 0
+    for f in files:
+        out, n = clear_edge_white(Image.open(f), threshold)
+        if n:
+            out.save(f)
+            frames += 1
+            pixels += n
+    if frames:
+        print(f"cleared the white background on {frames} of {len(files)} frame(s) "
+              f"({pixels} pixels; --keep-white turns this off)")
+    return frames, pixels
+
+
 def cmd_import(args):
     """Download a character's ZIP from the API and convert it into a game atlas."""
     sys.path.insert(0, str(REPO / "tools"))
@@ -1902,6 +1988,7 @@ def cmd_import(args):
         args.key = args.key or args.target
         args.idle_from = args.idle_from or manifest[args.target].get("idle_from")
         args.sit_from = getattr(args, "sit_from", None) or manifest[args.target].get("sit_from")
+        args.white_threshold = args.white_threshold or manifest[args.target].get("white_threshold")
         args.target = manifest[args.target]["character_id"]
     cid = resolve_character(args.target, args.workdir)
     api = PixelLab()
@@ -1939,6 +2026,8 @@ def cmd_import(args):
     if args.offline:
         # Rebuild from the last download, e.g. after `fix`. Overrides are reapplied.
         root = export_root_for(key)
+        if not args.keep_white:
+            clear_white_backgrounds(root, args.white_threshold or WHITE_BG_THRESHOLD)
         apply_overrides(key, root)
         return convert_and_record(args, key, cid, character, DEFAULT_WORKDIR / "_export" / key)
 
@@ -1960,6 +2049,9 @@ def cmd_import(args):
         sit_cid = resolve_character(args.sit_from, args.workdir)
         sit_char = api.get(f"/characters/{sit_cid}")
         take_sit_from_state(root, state_folder(export_dir, sit_cid, sit_char, api), sit_char)
+    if not args.keep_white:
+        # Before the overrides, so a hand-edited frame is used exactly as committed.
+        clear_white_backgrounds(root, args.white_threshold or WHITE_BG_THRESHOLD)
     apply_overrides(key, root)
 
     return convert_and_record(args, key, cid, character, export_dir)
@@ -2040,6 +2132,8 @@ def convert_and_record(args, key, cid, character, export_dir):
         manifest[key]["idle_from"] = resolve_character(args.idle_from, args.workdir)
     if getattr(args, "sit_from", None):
         manifest[key]["sit_from"] = resolve_character(args.sit_from, args.workdir)
+    if getattr(args, "white_threshold", None):
+        manifest[key]["white_threshold"] = args.white_threshold
     IMPORT_MANIFEST.write_text(json.dumps(dict(sorted(manifest.items())), indent=2) + "\n")
     print(f"recorded {key} -> {cid} in {IMPORT_MANIFEST.relative_to(REPO)}")
     if args.register:
@@ -2363,6 +2457,16 @@ def main():
     p.add_argument("--offline", action="store_true", help="reconvert the last download (after `fix`) without downloading")
     p.add_argument("--ignore-drift", action="store_true",
                    help="replace the atlas even if it has hand edits not saved as overrides (they are lost)")
+    p.add_argument("--keep-white", action="store_true",
+                   help="skip the white-background fill. By default every rotation and animation frame "
+                   "(sit frames included) has the near-white pixels connected to the frame edges made "
+                   f"transparent (4-connected flood fill, every channel >= {WHITE_BG_THRESHOLD}), because "
+                   "some PixelLab characters come back on opaque white. White enclosed by the figure "
+                   "(eyes, badges, highlights) stays; a transparent frame is unchanged")
+    p.add_argument("--white-threshold", type=int,
+                   help=f"near-white cut-off for that fill (default {WHITE_BG_THRESHOLD}). Lower it for a "
+                   "character whose halo is darker and whose figure has no light greys of its own "
+                   "(check the palette first); remembered in the manifest for re-imports")
 
     p = sub.add_parser("qa", help="contact sheets + hints for reviewing an imported character's frames")
     p.add_argument("key", help="an imported key, e.g. bernie_nwosu")
@@ -2385,6 +2489,10 @@ def main():
     p.add_argument("direction")
     p.add_argument("--tries", type=int, default=2, help="takes to generate (default 2)")
     p.add_argument("--accept", help="install take tNN as overrides")
+    p.add_argument("--keep-white", action="store_true",
+                   help="keep a white background on downloaded takes (default: cleared, as in import)")
+    p.add_argument("--white-threshold", type=int, help="fill cut-off (default: the manifest's, else "
+                   f"{WHITE_BG_THRESHOLD})")
     p.add_argument("--dry-run", action="store_true")
     p.set_defaults(func=cmd_reroll)
 
