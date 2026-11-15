@@ -241,7 +241,7 @@ module BreakEscape
       ask('ivy')
       SocialFeed.rescue_reactions_in_test = true
       AccessWork.stub(:feed_reactions, ->(*_a, **_k) { raise ArgumentError, 'boom' }) do
-        Rails.error.stub(:report, ->(*_a, **_k) {}) { assert_equal 'tom_re_ivy', ask('tomasz').dig('post', 'id') }
+        Rails.error.stub(:report, ->(*_a, **_k) { }) { assert_equal 'tom_re_ivy', ask('tomasz').dig('post', 'id') }
       end
     end
 
