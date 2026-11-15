@@ -3480,8 +3480,9 @@ boardroom_pin = "0417"
         "east": "it_department"
       },
 <%# Office life (office_life/PLAN.md 2.2): two night staff waiting for radio calls between runs.
-    Ambient: no story duty, nothing held, no clue, no task. spriteSheet values are stand-ins
-    until their own art lands (office_life/HANDOVER.md). The hostile leash keeps a chase inside
+    Ambient: no story duty, nothing held, no clue, no task. Each has their own atlas, talk and
+    viseme sheets and headshot under their id (stage 5; the stage 4 stand-ins were
+    male_telecom_v2 and female_telecom_v2, still on validSprites). The hostile leash keeps a chase inside
     this room. %>
       "npcs": [
         {
@@ -3489,9 +3490,9 @@ boardroom_pin = "0417"
           "displayName": "Ernesto Bautista",
           "npcType": "person",
           "position": { "x": 6.97, "y": 4.85 },
-          "spriteSheet": "male_telecom_v2",
-          "spriteTalk": "assets/characters/male_telecom_talk.png",
-          "spriteVisemes": "assets/characters/male_telecom_visemes.png",
+          "spriteSheet": "ernesto_bautista",
+          "spriteTalk": "assets/characters/ernesto_bautista_talk.png",
+          "spriteVisemes": "assets/characters/ernesto_bautista_visemes.png",
           "storyPath": "scenarios/m02_ransomed_trust/ink/m02_npc_ernesto_bautista.json",
           "currentKnot": "start",
           "voice": { "name": "Algieba", "style": "Hospital night porter, early sixties, Filipino-British, thirty years in the job. Warm and unhurried, dry humour, a soft Filipino lilt over a Midlands base. Never raises his voice.", "language": "en-GB" },
@@ -3531,9 +3532,9 @@ boardroom_pin = "0417"
           "displayName": "Hodan Warsame",
           "npcType": "person",
           "position": { "x": 4.2, "y": 6.1 },
-          "spriteSheet": "female_telecom_v2",
-          "spriteTalk": "assets/characters/female_telecom_talk.png",
-          "spriteVisemes": "assets/characters/female_telecom_visemes.png",
+          "spriteSheet": "hodan_warsame",
+          "spriteTalk": "assets/characters/hodan_warsame_talk.png",
+          "spriteVisemes": "assets/characters/hodan_warsame_visemes.png",
           "storyPath": "scenarios/m02_ransomed_trust/ink/m02_npc_hodan_warsame.json",
           "currentKnot": "start",
           "voice": { "name": "Laomedeia", "style": "Night domestic, early twenties, British-Somali, Birmingham accent. Quick, wry and chatty, tired but sharp; drops her voice for gossip.", "language": "en-GB" },
