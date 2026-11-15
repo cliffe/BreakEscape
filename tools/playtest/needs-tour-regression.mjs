@@ -60,11 +60,18 @@ const coffeeBusy = () => page.evaluate(() => ['amara', 'tom', 'marek', 'sanjay']
 const read = async id => {
     const tries = [];
     for (let i = 0; i < 3; i++) {
+        // Round 7 (5436: every read from the coffee station ended still-out-of-range): walk to open
+        // floor mid-office first (the stuck-return driver's stand point, off the staff's routes),
+        // so moveToNear's solver starts from a side of the board it can reach, not from behind the
+        // queue at the station; then close in on the board
+        const mid = await page.evaluate(() => window.__test.moveTo(232, 176, { timeoutMs: 20000, pointer: false })).catch(e => ({ err: String(e) }));
+        await t(300);
         const mv = await page.evaluate(id => window.__test.moveToNear(id, { timeoutMs: 30000 }), id).catch(e => ({ err: String(e) }));
         await t(400);
         const r = await page.evaluate(id => window.__test.interact(id), id).catch(e => ({ err: String(e) }));
         await t(1200); await closeUi();
-        tries.push({ move: mv?.ok ?? mv, read: r?.ok ?? r, reason: r?.reason || r?.error || r?.err || undefined });
+        const pl = await page.evaluate(() => ({ x: Math.round(window.player.x), y: Math.round(window.player.y) }));
+        tries.push({ mid: mid?.ok ?? mid?.reason ?? mid, move: mv?.ok ?? mv, move_reason: mv?.reason, aimed: mv?.aimedAt, arrived: mv?.arrivedAt, short: mv?.moveShortfall, nudges: mv?.nudges, player: pl, read: r?.ok ?? r, reason: r?.reason || r?.error || r?.err || undefined });
         if (r?.ok) return { ok: true, tries };
         await t(1500);
     }
