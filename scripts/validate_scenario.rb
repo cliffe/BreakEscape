@@ -758,6 +758,9 @@ def schema_unknown_key_warnings(data, node, warnings, prefix: nil, seen: nil)
     next if seen&.include?(value.object_id)
 
     seen&.add(value.object_id)
+    # A grant_foothold action is checked against its closed definition (validate_grant_foothold_actions),
+    # which reports an unknown key as an error, so it is not warned about again here.
+    next if value['type'] == 'grant_foothold'
 
     obranches = vnode.object_branches
     next if obranches.empty? || obranches.any? { |b| schema.map_branch?(b) }
@@ -815,8 +818,8 @@ def unknown_key_path(data, vpath)
   out
 end
 
-# The keys the schema declares at a pointer in STARTS-free terms: the Node reached from the root
-# by the given data keys ("[]" for an array item). Used by the checks below that word their own
+# The keys the schema declares for the Node reached from the root by the given data keys ("[]" for
+# an array item, any id for a map key). Used by the checks below that word their own
 # message for a closed block (personalSpace, los, challengeOnSight).
 def schema_keys_at(*keys)
   node = BreakEscape::ScenarioSchema.root
@@ -829,9 +832,9 @@ end
 def check_unknown_fields(json_data)
   warnings = []
 
-  # Unknown keys anywhere the schema describes, from the schema itself.
+  # Unknown keys are checked below, against the schema: declared grants and account profile items
+  # first (so their warnings name the grant), then everything the root reaches.
   checked = Set.new
-  schema_unknown_key_warnings(json_data, BreakEscape::ScenarioSchema.root, warnings, seen: checked) if json_data.is_a?(Hash)
 
   # NPC los and the opt-in los.challengeOnSight inside it, and behavior.personalSpace: closed in
   # the schema (so json-schema reports an unknown key there as an error), and worded here as well
@@ -930,6 +933,8 @@ def check_unknown_fields(json_data)
       end
     end
   end
+
+  schema_unknown_key_warnings(json_data, BreakEscape::ScenarioSchema.root, warnings, seen: checked) if json_data.is_a?(Hash)
 
   # Room objects and NPCs: the checks that are not key lists
   if json_data['rooms']
