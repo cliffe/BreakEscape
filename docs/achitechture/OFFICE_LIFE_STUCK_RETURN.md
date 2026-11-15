@@ -1,5 +1,37 @@
 # Office life: stuck needs walks and re-routing
 
+## Handover (2026-11-15, round 4): not ready for review
+
+**Cause of the round 3 wedge, confirmed** (seating trace and chair probe in the proof driver, games 5391, 5392, 5398). After his turn-back Sanjay stops idle at his post with his feet 32 to 35 px from his home cell (92,124), so the seat search looks from the home cell (`needsSeatRef`, within `POST_SNAP`). It runs once (`_seatStopKey` set), starts no seat move and no fetch. His own chair, tucked in when he stood, has its foot at (89,126): 4 px from his home cell and 35.9 px from Marek's post (53,128). Marek's post is more than 36 px from Sanjay's home cell, so the `free()` filter in `updateNeedsSeat` counted it as another NPC's post, and any chair within 36 px of it was Marek's. Sanjay's own chair was refused, he stood in the corridor mouth for good, and Marek waited on him.
+
+**Fix** (`public/break_escape/js/systems/seating.js`):
+- `a480ba800`: a needs NPC standing idle at its post tries its chair again every 4 s of needs clock (`POST_SEAT_RETRY_MS`, `postSeatRetryDue`). Never mid-conversation with the player, never away from the post (one try stays final there), and a retry only sits on a chair already in reach: it never fetches one.
+- `42f64f738`: the nearest post owns a chair (`chairAtOtherPost`): a chair belongs to another NPC's post only when its foot is within `NEAR_CHAIR` of that post and nearer to it than to this NPC's own spot. This alone clears the round 3 wedge; the retry covers a seat move that ended short against a walker (5408: Sanjay stood 8 s, then sat).
+- Node tests in `test/js/seating.test.mjs`: `postSeatRetryDue`, the retry sitting once the chair is free (not before 4 s, not mid-chat), no retry away from the post, `chairAtOtherPost` both ways, and the rig sitting with a neighbour's post 35 px from its chair.
+- Driver: `0f9ea4272`, `19eeaf2d7` and the commit between them add the seating trace and the staff probes; `tools/playtest/needs-tour-regression.mjs` (new, in `a480ba800`) drives README rows 1, 3, 5 and 6 on one game.
+
+**Open: Tom standing at his post (next step).** Two of six runs with the fix (5404, 5407) missed `see_look_round`, and 5404 also left Marek out: Tom stood idle and unseated near his post, (123,171) in 5404, and the turn-back grumble at the coffee had no seated listener close enough. In 5404 Sanjay's walk home then stuck behind standing Tom at (118,185) and Marek behind Sanjay (`return_stuck`). The probes show Tom starts the game with no chair within 48 px of his home cell (92,164); his chair is loose elsewhere and he sits only after a fetch. A retry never fetches, so a failed or timed-out first fetch leaves him standing for the rest of the stop. Leads: let the post retry fetch as well (rate-limited, say every 15 s, the fetch timeout), and read why Tom's first fetch fails (the driver's `staff_probes` and `staff_log`; the log has no fetch lines, so add an `npc_fetching_chair` and fetch-end trace). Lead (b) from round 3 (a standing idle NPC steps aside for a walker that has waited on it) is not built.
+
+Live table (port 3093, keyless, headless setFPS(20), stand 232,176 unless noted):
+
+| Game | Code | Row 2 played | see_turned_back | see_look_round | Grumble | Marek home (s) |
+|---|---|---|---|---|---|---|
+| 5391, 5392 | before the fix (diagnosis) | yes | yes | yes | spoken, overheard | never: Sanjay standing at (116,149) and (116,145), no seat move started |
+| 5397 | retry only | yes | yes | yes | spoken | 6 (Sanjay fetched a chair) |
+| 5398 | retry only | yes | yes | yes | spoken | never: Sanjay's chair refused on every retry (probe above) |
+| 5399, 5400 | both fixes | yes | yes | yes | spoken, overheard | 6, 6 |
+| 5403 | both fixes | yes | yes | yes | spoken, overheard | 6.25 |
+| 5404 | both fixes | yes | yes | **no** (Tom standing) | spoken, overheard | **never**: Tom wedge above |
+| 5407 | both fixes | yes | yes | **no** (Tom standing) | spoken, overheard | 6.25 |
+| 5408 | both fixes, stand 300,150 | yes | yes | yes | spoken: still in earshot, as Sanjay grumbles at the coffee (about 204,269), not at his desk | 5.25 |
+| 5410 | both fixes, stand 24,264 (out of earshot of the coffee) | no: Sanjay never set off, no turn-back | no | no | none, so the out-of-earshot picture is still not proved | 2.75 |
+| 5409 | README tour (`needs-tour-regression.mjs`) | row 1 yes (69 s), row 5 yes (75 s), row 6 yes (50 s); row 3 **not proved**: the driver's Activity Board read returned false, so no fresh queue formed and the socket was switched off with nobody waiting (driver issue, not read further); one `stuck` line in the game | | | | |
+| 5411, 5412 | train smoke m01, m02 | | | | | SMOKE OK, 0 failed |
+
+Still to prove: row 3 (fix the tour driver's board read: the player probably has to walk to the board first), the out-of-earshot grumble picture (stand far from the coffee and make sure row 2 plays), and row 2 5 of 5 once Tom's standing is fixed.
+
+Tests: `bin/test-js` 674 passed, 0 failed (on `a480ba800` and on `42f64f738`); `tts_office_lines_test.rb` 9 runs, 0 failures; `bin/rubocop` no offences.
+
 ## Handover (2026-11-15, third budget stop): not ready for review
 
 Row 2 now plays: 2 of 3 runs give both `see_turned_back` and `see_look_round` with the spoken grumble. Marek's walk home after his cup is broken in every run that plays row 2 (0 of 4): a new wedge, cause found below, not fixed.
