@@ -1,16 +1,33 @@
 # Office life: stuck needs walks and re-routing
 
-## Handover (2026-11-15, budget stop)
+## Handover (2026-11-15, second budget stop)
 
-Done and committed: slice 1 engine and node tests (`0a5cdfd98`, `5a6525cf9`), slice 2 grumble earshot (`6c2eb2d6b`), this note and the proof driver `tools/playtest/needs-stuck-return-proof.mjs`. bin/test-js 673 files passed, 0 failed; `tts_office_lines_test.rb` 9 runs, 0 failures; bin/rubocop no offences. m01 (game 5337) and m02 (5338) pass train-smoke, but their start-room NPCs didn't move in 25 s in either game (receptionists and cutscene triggers, so no walkers to test), so the "NPCs walk" half of the regression check is still open.
+Earlier: slice 1 (`0a5cdfd98`, `5a6525cf9`), slice 2 grumble earshot (`6c2eb2d6b`), proof driver (`9620e78f1`).
+
+This run:
+- `c11767214`, `74508d9e2`: mutters follow the grumble earshot rule. `_sayMutter` passes `always` only for `PRIORITY_MUTTERS` (`login_aloud`, the line the player is meant to overhear; its listening window opens when it is said). The workaround start lines (`wk_writes_down`, `wk_prop_door`, `wk_borrow`, `wk_share_login`, called from `npc-workarounds.js` `due()`) are now a picture out of earshot. The q42 test's premise was updated (Mei's chatter must be heard to hold the lock) and a new test covers both cases.
+- Cause of Marek's wedge at (111-116, 138), found with a stall dump in game 5347: seated Sanjay's body (immovable, 85-107 x 122-133) touching Marek's top-left corner, and a loose swivel chair (`chair-white-2-rotate3`, a dynamic body, never in the world grid) north-east of Sanjay's seat. `handleNPCCollision` (npc-sprites.js) settled the walker for 300 ms on every collision; touching a body that never moves re-collides every frame, so velocity stayed 0 and `pathIndex` stayed 0 while a valid `includeHeld` path (13 waypoints, north round Sanjay) was loaded. Not a grid bug: the desk and seated chair were in the grid.
+- `2608540fa`: no settling against a held (immovable) NPC body. `873504ef6`: the `includeHeld` search also avoids every chair body (`window.chairs`), with a node test.
+- `873504ef6` (scenario): Sanjay's caffeine follows `npc_left_post:marek` only during the Coffee Notice beat (global `coffee_notice_beat`, set by reading the notice, cleared by Marek's cup). Row 1's queue used to set it, and with Marek queued Sanjay parked the need for two minutes without any turn-back, so row 2 found it parked (5347: parked tick 283, notice tick 403).
+- `3681252d1`: the driver reads the notice only once Marek is idle at his post (a notice read while he walks home sends him straight back with no `npc_left_post`, so Sanjay never sets off).
+
+Live proof so far (port 3093, keyless, headless setFPS(20)):
+
+| Game | Driver | Notice closed | see_turned_back | see_look_round | Marek home after coffee (s) |
+|---|---|---|---|---|---|
+| 5349-5352 | old wait, before the settle fix | yes | no | no | never in 100 s, wedged at (108-113, 138) |
+| 5358, 5359, 5360, 5362 | old wait, settle fix | yes | no | no | 6, 6, 6, 6 |
+| 5361 | old wait, settle fix | yes | no | no | 45 (wedged on the player at the stand point, 172,196) |
+| 5363, 5366 | new wait | yes | no | no | 80, 83 |
+| 5364, 5365 | new wait | yes | yes | no | not measured (no cup in the window) |
+| 5367 | new wait | yes | no | no | not measured |
 
 Still open:
-- **Marek still wedges on the walk home** (game 5336). After his coffee he stalled at about (111-113, 138), roughly where Tom stood in game 5260. The new watch did what it should: `return_resumed` three times, one `return_stuck`, a 15 s back-off, then retries. But the re-routed searches didn't get him past, and he got home after 82.5 s (the target is under 20 s). So either the `includeHeld` search finds no way round, because the blocker sits in the only gap to his desk and the search falls back to the plain path, or the blocker isn't an NPC body at all (a chair, or the desk corner). Next step: in a live game, log which body is within 24 px of Marek at the stall (NPC id, `immovable`, seated or not), and whether the `includeHeld` search returned a path. If the gap really is the only way, the fix has to move the blocker (a standing NPC in a needs walk's way could step aside) or accept an arrival at the closest reachable cell.
-- **Row 2 didn't fire in game 5336.** Sanjay never turned back, and only `idle` swivels happened. The run read the notice about 97 s in, once row 1's queue had cleared, and Marek went for his coffee. Check whether Sanjay set off at all (his caffeine after row 1 may be too high), then the 5-of-5 runs.
-- Live proof table still to do: row 2 5 of 5, Marek home in under 20 s 5 of 5, one wedge now routing round.
-- The proof driver closes the notice's gameDisplay dialog with `dismissBlockingUi`. Its first version left the dialog open, which pauses the needs clock (games 5331 and 5335 were wasted that way). Games 5328 to 5330 were created by this run and never driven.
-
-Status: built on branch build/ol-stuck-return. Owner items 5 and 5a in `scenarios/test_needs_sims/README.md`.
+- **Wedge on the player.** The driver stands the player at the midpoint between Sanjay and the coffee (about 176, 192), on Marek's route. 5361 stalled there; 5363 and 5366 probably too (not yet confirmed from their JSON in `tmp/stuck-proof/`). The NPC-player collision handler (npc-sprites.js, the second "ALWAYS trigger settling" block, about line 1590) still settles every frame, the same loop as the seated body. Next: decide whether a stationary player counts as held for settling, or move the stand point off the route (README row 2 says "mid-office"), then re-run.
+- **see_look_round 0 of 5, see_turned_back 2 of 5.** Not diagnosed. Read `sanjay_grumble` and `events` in the per-game JSON, and the needs log for Sanjay (`parked` with no `turned_back` means he chose no job because Marek already held the claim or queue: a park at candidate selection emits no `npc_turned_back`).
+- No node test for the settle guard (`handleNPCCollision` is not exported).
+- Train smoke on m01 and m02 not run this round (games 5356 and 5357 were made for it and not driven). Games 5341, 5343 and 5347 were diagnostic runs; 5353 failed to boot under load.
+- The grumble earshot pair (one picture out of earshot, one spoken) was not re-proved live this round.
 
 ## What goes wrong
 
