@@ -24,7 +24,7 @@ VAR hpost_end_quiet = false   // post_after / post_dead only, so an in-raid exit
 - hpost_quiet:
     ~ hpost_quiet = false
 - breach_open:
-    Agent HaX: I'm on your phone now. Ring me.
+    Agent HaX: From here I'm on your phone. Message me.
 - door_scene_done:
     Agent HaX: Gate terminal. Then we wait on Netherton.
 - else:

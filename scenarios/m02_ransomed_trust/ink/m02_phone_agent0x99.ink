@@ -114,7 +114,7 @@ Then Dr. Kim. Past the ward, up through the handover room. She called us in.
     -> support_hub
 }
 + [Understood.]
-    Copy. Call when you need me.
+    Copy. Message me when you need me.
     -> support_hub
 
 + [What should I know going in?]
@@ -201,7 +201,7 @@ Then Dr. Kim. Past the ward, up through the handover room. She called us in.
     -> general_advice
 
 + [I'm good for now]
-    Copy that. Call anytime, {player_name()}.
+    Copy that. I'm here, {player_name()}.
     #exit_conversation
     -> DONE
 
