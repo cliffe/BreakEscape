@@ -11,7 +11,9 @@
 #
 # Under the lock it records HEAD, starts a keyless server from the worktree
 # on <port>, makes games for m01_first_contact, sis01_healthcare and sis02_energy, then runs:
-#   0. tools/playtest/shell-x-check.mjs on the m01 game, once, in the background beside step 1 (shellx.txt)
+#   0. tools/playtest/shell-x-check.mjs on the m01 game, once, in the background beside step 1 (shellx.txt),
+#      only when the train changes a UI path (SHELLX_PATHS below, compared with main...HEAD); otherwise
+#      the summary says "shell-x not needed". SHELL_X=always or SHELL_X=never overrides.
 #   0b. bin/rubocop (the CI lint job), in the background beside step 1; any offence is RED (rubocop.txt)
 #   1. the Rails suite                      (rails.txt)
 #   1b. RUN_OPENED_SCAN=1 test/models/break_escape/payload_scan_opened_state_test.rb, after step 1 and
@@ -111,7 +113,18 @@ echo "games m01=${GAME[m01_first_contact]:-none} sis01=${GAME[sis01_healthcare]:
 
 # ---- 0. shell X check, once, beside the Rails suite ----
 SHELLX_PID=""
-if [ "${TRAIN_CHECK_SKIP_JS:-0}" != 1 ] && [ -n "${GAME[m01_first_contact]:-}" ]; then
+# Shell X guards the minigame shell's close X, so it runs only when the train touches the shell's files.
+SHELLX_PATHS='^(public/break_escape/(css|js/minigames|js/ui|assets/ui)/|app/views/|tools/playtest/shell-x-check\.mjs$|test/js/shell-x-check\.test\.mjs$)'
+SHELLX_NEEDED=1
+case "${SHELL_X:-auto}" in
+  always) SHELLX_WHY="SHELL_X=always" ;;
+  never) SHELLX_NEEDED=0; SHELLX_WHY="SHELL_X=never" ;;
+  *)
+    SHELLX_HITS="$(git diff --name-only main...HEAD 2>/dev/null | grep -cE "$SHELLX_PATHS")"
+    if [ "${SHELLX_HITS:-0}" -gt 0 ]; then SHELLX_WHY="$SHELLX_HITS UI file(s) changed against main"
+    else SHELLX_NEEDED=0; SHELLX_WHY="no UI file changed against main"; fi ;;
+esac
+if [ "$SHELLX_NEEDED" = 1 ] && [ "${TRAIN_CHECK_SKIP_JS:-0}" != 1 ] && [ -n "${GAME[m01_first_contact]:-}" ]; then
   node "$TOOLS/shell-x-check.mjs" --port "$PORT" --game "${GAME[m01_first_contact]}" > "$OUT/shellx.txt" 2>&1 &
   SHELLX_PID=$!
 fi
@@ -150,9 +163,11 @@ fi
 # ---- shell X result (started at step 0) ----
 if [ "${TRAIN_CHECK_SKIP_JS:-0}" = 1 ]; then
   echo "shell-x SKIPPED" >> "$SUM"
+elif [ "$SHELLX_NEEDED" = 0 ]; then
+  echo "shell-x not needed: $SHELLX_WHY" >> "$SUM"
 elif [ -n "$SHELLX_PID" ]; then
   wait "$SHELLX_PID"; rc=$?
-  echo "shell-x exit $rc: $(grep -E '^SHELL-X-CHECK ' "$OUT/shellx.txt" | tail -1)" >> "$SUM"
+  echo "shell-x exit $rc ($SHELLX_WHY): $(grep -E '^SHELL-X-CHECK ' "$OUT/shellx.txt" | tail -1)" >> "$SUM"
   [ "$rc" -ne 0 ] && RED+=("shell-x exit $rc")
 else
   echo "shell-x FAILED: no m01 game" >> "$SUM"; RED+=("shell-x: no m01 game")
