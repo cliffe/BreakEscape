@@ -6,6 +6,7 @@ module BreakEscape
     include ScoreBreakdown
     include NetworkAccess
     include CaptureProofs
+    include CredentialKeyring
     include NpcFrustration
     include SocialFeed
     include Wearables
@@ -1819,6 +1820,11 @@ module BreakEscape
       # The top-level roles (slice 9.1, 5.2; slice 9.2 adds its own keys): default
       # awareness levels by role. Nothing in the browser reads it.
       filtered.delete('roles')
+
+      # Credential keyring (CREDENTIAL_KEYRING_PLAN.md section 6): the top-level `credentials`
+      # registry is server-only. No answer sends it whole; the keyring reaches the client only
+      # through GET /keyring, one proven entry at a time.
+      filtered.delete('credentials')
 
       # Networks (slice 9.3a, section 6): a network's name and what it exposes reach the
       # browser only through GET /network and GET /container, for a foothold or session

@@ -24,7 +24,7 @@ module BreakEscape
       policy.worker_src  :self, :blob
     end
 
-    before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :capture_secrets, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :conclude_mission,
+    before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :capture_secrets, :keyring, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :conclude_mission,
                                         :login, :logout, :lock_session, :login_accounts, :clone_card, :network, :network_plant, :network_unplug, :network_implant, :network_join,
                                         :npc_frustration, :npc_workaround, :feed_post, :friendface_phone, :wear, :se_landing_page, :se_phish_send]
     # A host may also route the game page under its own address (Hacktivity: /hacktivities/:event_id/play/mission/:id,
@@ -1672,6 +1672,30 @@ module BreakEscape
       # scenario with networks, so a scenario without them gets the first slice's answer.
       body[:accounts] = @game.account_capture_usernames if @game.network_scenario?
       render json: body
+    end
+
+    # GET /games/:id/keyring?pc_id=&foothold=&from=&relay=&rev=
+    # Credential keyring (CREDENTIAL_KEYRING_PLAN.md section 6.2): the player's earned credentials,
+    # computed server-side from state the game already keeps. A read with no side effects, off the
+    # with_game_lock list. The registry never reaches the browser; a password value is served only
+    # where GET /capture_secrets already serves it. foothold/from/relay name the screen the client
+    # is drawing; they never assert reach.
+    def keyring
+      authorize @game if defined?(Pundit)
+
+      route =
+        if params[:relay].present? then { relay: true }
+        elsif params[:from].present? then { from: params[:from].to_s }
+        elsif params[:foothold].present? then { foothold: params[:foothold].to_s }
+        end
+      answer = @game.keyring_for_client(pc_id: params[:pc_id].presence, route: route)
+
+      response.headers['Cache-Control'] = 'no-store'
+      if params[:rev].present? && params[:rev].to_s == answer[:rev]
+        render json: { rev: answer[:rev], unchanged: true }
+      else
+        render json: answer
+      end
     end
 
     # POST /games/:id/se/landing_page
