@@ -910,7 +910,7 @@ test('swivelFacing: same for a seed, about 5% of 6 s slots, one compass step sna
     assert.notEqual(seating.swivelFacing({ state: coffee, clockMs: 500, homeFacing: 'south', roll: roll(1), chance: 1 }), 'south');
 });
 
-test('listenTarget: the nearest speaker in the same room within four tiles, until the line ends; never itself', () => {
+test('listenTarget: the nearest speaker in the same room within earshot (five tiles), until the line ends; never itself', () => {
     const speakers = [
         { npcId: 'rosa', roomId: 'office', x: 300, y: 100, until: 5000 },
         { npcId: 'amara', roomId: 'office', x: 180, y: 100, until: 5000 },
@@ -922,6 +922,18 @@ test('listenTarget: the nearest speaker in the same room within four tiles, unti
     assert.equal(seating.listenTarget({ ...base, clockMs: 5000 }), null, 'the line has ended');
     assert.equal(seating.listenTarget({ ...base, x: 400, y: 400, clockMs: 1000 }), null, 'too far');
     assert.equal(seating.listenTarget({ ...base, speakers: [], clockMs: 0 }), null);
+});
+
+test('listenTarget: the listen radius is the earshot radius, or the speaker\'s own overhearRadius', () => {
+    assert.equal(seating.LISTEN_RADIUS, 160, 'the earshot default (OVERHEAR_RADIUS)');
+    const at = (d, radius) => [{ npcId: 'sanjay', roomId: 'office', x: 100 + d, y: 100, until: 5000, ...(radius ? { radius } : {}) }];
+    const base = { npcId: 'tom', roomId: 'office', x: 100, y: 100, clockMs: 1000 };
+    // Round 6, game 5434: seated staff 149 to 192 px from the turn-back; 149 and 155 hear a 160 px line
+    assert.equal(seating.listenTarget({ ...base, speakers: at(149) })?.npcId, 'sanjay', 'inside 160 px (was outside 128)');
+    assert.equal(seating.listenTarget({ ...base, speakers: at(160) })?.npcId, 'sanjay', 'on the edge');
+    assert.equal(seating.listenTarget({ ...base, speakers: at(192) }), null, 'out of earshot');
+    assert.equal(seating.listenTarget({ ...base, speakers: at(192, 200) })?.npcId, 'sanjay', 'a wider pool overhearRadius');
+    assert.equal(seating.listenTarget({ ...base, speakers: at(100, 80) }), null, 'a narrower pool overhearRadius');
 });
 
 test('swivelEnabled: swivel false, officeVisuals false and los.enabled turn it off', () => {

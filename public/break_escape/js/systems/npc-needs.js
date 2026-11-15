@@ -1166,21 +1166,22 @@ export class NPCNeedsSystem {
      */
     _buildSpeakers() {
         const out = [];
-        const add = (npcId, until) => {
+        // radius: the earshot the line was said with, so whoever could hear it looks round (round 7)
+        const add = (npcId, until, radius) => {
             const p = this.world.npcPos(npcId);
-            if (p) out.push({ npcId, roomId: p.roomId ?? null, x: p.x, y: p.y, until });
+            if (p) out.push({ npcId, roomId: p.roomId ?? null, x: p.x, y: p.y, until, radius: radius || OVERHEAR_RADIUS });
         };
         for (const c of this._chats.values()) {
             const cur = c.current;
-            if (cur && this.clockMs < cur.until) add(cur.speakerId, cur.until);
+            if (cur && this.clockMs < cur.until) add(cur.speakerId, cur.until, this._chatRadius(c, cur.speakerId));
         }
         for (const s of this.states.values()) {
-            if (s.saying && this.clockMs < s.saying.until) add(s.npcId, s.saying.until);
+            if (s.saying && this.clockMs < s.saying.until) add(s.npcId, s.saying.until, s.saying.radius);
         }
         // Slice 19: a speaker on a desk phone, for the whole call (lines and listening gaps)
         for (const c of this._calls.values()) {
             const until = c.current ? c.current.until : Math.max(c.nextAt, this.clockMs + NEEDS_TICK_MS);
-            add(c.speakerId, until);
+            add(c.speakerId, until, OVERHEAR_RADIUS);
         }
         return out;
     }
@@ -2204,8 +2205,8 @@ export class NPCNeedsSystem {
     _showSaying(s, pick, topic, objectId, minMs = 0) {
         const { line, idx, picture, pool } = pick;
         const until = this.clockMs + Math.max(Number(minMs) || 0, picture ? PICTURE_MS : bubbleMs(line));
-        s.saying = { line, picture, topic, objectId, until };
         const radius = pool.overhearRadius || OVERHEAR_RADIUS;
+        s.saying = { line, picture, topic, objectId, until, radius };
         const h = typeof this.world.playerHears === 'function' ? (this.world.playerHears(s.npcId, radius) || {}) : {};
         // Review 9.2 B R2 m2: a floor (minMs) keeps the bubble up; the speech lock lasts only as
         // long as the words, so the next line on the floor can start when this one ends

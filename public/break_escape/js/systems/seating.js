@@ -1245,7 +1245,10 @@ function fidgetChair(st, sprite, held) {
 
 export const SWIVEL_SLOT_MS = 6000;
 export const SWIVEL_CHANCE = 0.05;
-export const LISTEN_RADIUS = 128; // px, four tiles
+// Round 7 (user, 2026-11-15: "the same earshot approach"): a seated colleague looks round at a
+// line it could hear, so the default is the earshot radius (npc-needs.js OVERHEAR_RADIUS, five
+// tiles) and a speaker entry's own `radius` (its pool's overhearRadius) wins over it.
+export const LISTEN_RADIUS = 160; // px, five tiles
 
 /** True while a needs NPC is typing: a `work` use in its `using` phase (the typing bob's rule). */
 export function isTyping(ns) {
@@ -1278,13 +1281,17 @@ export function swivelFacing({ state, clockMs, homeFacing, valid = COMPASS, roll
     return snapFacing(COMPASS[(i + (u < 0.5 ? 1 : 7)) % 8], valid);
 }
 
-/** Pure: the nearest colleague speaking in the same room within `radius`, or null. */
+/**
+ * Pure: the nearest colleague speaking in the same room within earshot, or null. Earshot is the
+ * speaker's own `radius` (the overhearRadius its line was said with), else `radius`.
+ */
 export function listenTarget({ npcId, roomId, x, y, speakers, clockMs, radius = LISTEN_RADIUS }) {
     let best = null, bestD = Infinity;
     for (const sp of speakers || []) {
         if (!sp || sp.npcId === npcId || sp.roomId !== roomId || !(sp.until > clockMs)) continue;
         const d = Math.hypot(sp.x - x, sp.y - y);
-        if (d <= radius && d < bestD) { best = sp; bestD = d; }
+        const r = Number(sp.radius) > 0 ? Number(sp.radius) : radius;
+        if (d <= r && d < bestD) { best = sp; bestD = d; }
     }
     return best;
 }
