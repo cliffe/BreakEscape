@@ -618,6 +618,11 @@ boardroom_pin = "0417"
   },
 
   "lighting": { "enabled": true, "defaultMode": "on", "ambient": "#c0bdb2" },
+<%# Office life (office_life/PLAN.md 3): presets for the break objects, and room tone in the
+    staff room and IT only (it also gates the boiler and copier sounds). %>
+  "officePresets": true,
+  "roomTone": true,
+  "roomToneTypes": { "room_hospital_staff": "kitchen", "room_hospital_office_it": "quiet_office" },
   "rooms": {
     "reception_lobby": {
       "type": "room_hospital_reception",
@@ -2316,8 +2321,25 @@ boardroom_pin = "0417"
           "puzzle_graph_reveals": "ghost_planted_physical_foothold_six_weeks_before_attack"
         },
 <%# Room dressing (m02 only): conditional sprites on room_hospital_office_it. No puzzle role. %>
-        { "type": "kettle", "id": "it_department_kettle", "name": "Department Kettle", "takeable": false, "observations": "A limescaled kettle on the workbench, next to a tea-fund jar with 40p in it." },
-        { "type": "wet_floor_sign", "id": "it_department_wet_floor_sign", "name": "Wet Floor Sign", "takeable": false, "observations": "Under a brown-stained ceiling tile. The drip is slow and steady, and the Estates ticket for it is older than the sign." }
+        { "type": "kettle", "id": "it_department_kettle", "name": "Department Kettle", "takeable": false, "affordance": false, "observations": "A limescaled kettle on the workbench, next to a tea-fund jar with 40p in it." },
+        { "type": "wet_floor_sign", "id": "it_department_wet_floor_sign", "name": "Wet Floor Sign", "takeable": false, "observations": "Under a brown-stained ceiling tile. The drip is slow and steady, and the Estates ticket for it is older than the sign." },
+<%# Office life (office_life/PLAN.md 2.1, 3, 3.1): Gary's mug is his only caffeine source and
+    an at-post job (useFrom aims at his body centre, so he never moves). The copier runs once,
+    by command, after the keycard conversation; the page on its tray is optional flavour. The
+    page is declared last, with an explicit position, since IT's notes sprites are claimed. %>
+        { "type": "dirty_mugs1", "id": "gary_mug", "name": "Gary's Mug", "takeable": false,
+          "position": { "x": 5.6, "y": 4.2 },
+          "observations": "Stone cold. He drinks it anyway.",
+          "private": true, "owner": ["gary_whitlock"],
+          "affordance": { "satisfies": "caffeine", "restores": 30, "useSeconds": 4, "capacity": 1,
+                          "useSound": "drink_gulp", "seat": "stand", "useFrom": { "dx": 0.5, "dy": 1.45 } } },
+        { "type": "photocopier", "id": "it_photocopier", "name": "Photocopier", "takeable": false,
+          "observations": "A floor-standing copier. It needs no network, which makes it one of the few things in here still working." },
+        { "type": "notes", "id": "it_copier_page", "name": "Downtime Fault Log", "takeable": true, "readable": true,
+          "position": { "x": 6.45, "y": 6.55 },
+          "text": "ST. CATHERINE'S REGIONAL -- IT DOWNTIME FAULT LOG\n\nUse while clinical systems are unavailable.\nOne line per fault. Hand to IT at handover.\n\nTIME | WARD | EQUIPMENT / SYSTEM | FAULT | REPORTED BY\n-----+------+--------------------+-------+------------\n     |      |                    |       |\n     |      |                    |       |\n     |      |                    |       |",
+          "observations": "A blank fault log, warm from the copier. Paper is how the wards report anything tonight.",
+          "outputOf": "it_photocopier", "revealOnGlobal": "it_copier_page_shown" }
       ]
     },
 
@@ -3172,7 +3194,7 @@ boardroom_pin = "0417"
 <%# Room dressing (m02 only): conditional sprites on room_hospital_meeting, so this ordinary
     conference room reads differently from sis01's major incident room. No puzzle role. %>
         { "type": "coat_stand", "id": "conference_coat_stand", "name": "Coat Stand", "takeable": false, "observations": "A coat stand by the wall, with one dark overcoat on it." },
-        { "type": "water_cooler", "id": "conference_water_cooler", "name": "Water Cooler", "takeable": false, "observations": "Half full. The paper cups ran out some time ago." }
+        { "type": "water_cooler", "id": "conference_water_cooler", "name": "Water Cooler", "takeable": false, "affordance": false, "observations": "Half full. The paper cups ran out some time ago." }
       ]
     },
 
@@ -3529,7 +3551,25 @@ boardroom_pin = "0417"
           "puzzle_graph_role": "key",
           "puzzle_graph_unlocks": "security_office",
           "puzzle_graph_optional": true
-        }
+        },
+<%# Office life (office_life/PLAN.md 2.5, 2.8, 3): the night staff's break objects, claiming the
+    drawn sprites (no position). offWhen stops every use after an attack on either of them.
+    overhearRadius 360 covers the whole room, so a pool line or exchange counts as heard from
+    any floor cell here. The cooler's useFrom is measured live (handover). %>
+        { "type": "hot_water_boiler", "id": "staff_boiler", "name": "Hot Water Boiler", "takeable": false,
+          "officeType": "kettle", "offWhen": "night_staff_attacked",
+          "observations": "A wall-mounted boiler over the sink. Somebody has written NO KETTLES on the tiles beside it.",
+          "affordance": { "capacity": 2, "chatter": "coffee", "queue": false, "useSeconds": 50, "restores": 40,
+                          "overhearRadius": 360, "useFrom": { "dx": 0, "dy": 2.5 } } },
+        { "type": "water_cooler", "id": "staff_cooler", "name": "Water Cooler", "takeable": false,
+          "offWhen": "night_staff_attacked",
+          "observations": "A water cooler by the door, a stack of paper cones on top.",
+          "affordance": { "capacity": 2, "chatter": "cooler", "queue": false, "useSeconds": 25, "restores": 40,
+                          "overhearRadius": 360 } },
+        { "type": "microwave", "id": "staff_microwave", "name": "Microwave", "takeable": false,
+          "officeType": "microwave", "offWhen": "night_staff_attacked",
+          "observations": "The staff room microwave. The turntable squeaks.",
+          "affordance": { "useFrom": { "dx": 0.5, "dy": 1.5 } } }
       ]
     },
 
@@ -3682,6 +3722,7 @@ boardroom_pin = "0417"
     "ernesto_bautista_ko": false,
     "hodan_warsame_ko": false,
     "night_staff_attacked": false,
+    "it_copier_page_shown": false,
     "briefing_played": false,
     "mission_started": false,
 <%# ransomware_deployed gates the ransomware_display lockType. Without it the five
