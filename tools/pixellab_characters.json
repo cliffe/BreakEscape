@@ -267,7 +267,12 @@
       "height": 60
     },
     "imported": "2026-11-15",
-    "sit_from": "89d8a68a-f140-4ed7-9ad9-6cd6b7a19739"
+    "sit_from": "89d8a68a-f140-4ed7-9ad9-6cd6b7a19739",
+    "poses": {
+      "drink": "3188a6ae-c885-4599-ac19-275246d3b9ae",
+      "phone": "d9b3a155-71dc-4061-aa35-b5ca703eddfe",
+      "use": "ceb4dcd4-e3f8-4774-9c3b-d0d4e8c4b730"
+    }
   },
   "farah_qureshi": {
     "character_id": "39dfe7c3-8ef6-45b5-a240-d74e93f46ecd",
@@ -529,6 +534,11 @@
     },
     "imported": "2026-11-15",
     "sit_from": "f13c749b-24f8-4e80-9fa8-bbcbea32759b",
+    "poses": {
+      "drink": "b0d19808-f1c0-4460-b217-9b68339245a5",
+      "phone": "93b29cb7-2c2b-4a9c-aa76-d62a901d030d",
+      "use": "8b98daa5-e26d-4f75-be37-7b3c95892ddd"
+    },
     "white_threshold": 185
   },
   "ibrahim_diallo": {
@@ -770,8 +780,13 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-11-05",
-    "sit_from": "2700d754-04d2-4dbf-8739-a56afcaed3f0"
+    "imported": "2026-11-15",
+    "sit_from": "2700d754-04d2-4dbf-8739-a56afcaed3f0",
+    "poses": {
+      "drink": "6bd09056-a3c8-43f9-a43c-50810915d719",
+      "phone": "3e0d6c7c-9567-40f0-939e-bd0a7ff7f83d",
+      "use": "b30b2494-46c8-4aaa-a787-535edb148cf5"
+    }
   },
   "male_security_guard_v2": {
     "character_id": "7f4b98d0-6ef6-4064-8f01-c032e0cd8050",
