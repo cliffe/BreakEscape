@@ -1,5 +1,86 @@
 # NPC carried items: server-tracked held items
 
+## Build status (slices A and B done; slice C out of scope)
+
+Slices A (server) and B (client wiring) are built and tested. Slice C (KO while
+carrying, reload mid-carry) is not built; its hooks are noted below.
+
+Design as built, differences from the plan:
+
+- Reveal slots (a copier output and the like: `outputOf` / `revealOnGlobal` /
+  `leftBehindChance`) are excluded from the carriable allowlist, so their existing
+  client-only place-then-file flow is unchanged and a filed slot never reappears
+  after a reload. `placeHeld`'s put-down call is then a no-op for them.
+- Put-down reachability is checked against the pick-up room's adjacency
+  (`rooms_connected?`), because the server does not track a needs NPC's live room.
+  Same room or a connected room is allowed; the controller's unlocked-room gate
+  still applies.
+- `apply_npc_carry!` suppresses a carried held item only when the player has taken
+  it into inventory, not via `delivered_item_ids` (the carried id lives in the
+  origin room's `objects_removed`, which `delivered_item_ids` unions, so it would
+  wrongly suppress the held item).
+- The npcCarry jsonb write needs `player_state_will_change!` before the save: an
+  intermediate save in `remove_item_from_room!` otherwise reset dirty tracking and
+  the nested entry was dropped.
+- The sync merge (`merge_npc_carry!`) validates against the allowlist only when
+  scenario_data is loaded; the narrow sync load rebuilds the entry from known keys
+  (extra keys dropped, bounded by the NPC count), and the serve path re-validates
+  every stored carry, so a non-carriable stored entry is inert (never served, put
+  down or consumed).
+
+Commits (branch build/ol-carry): slice A `d86a1bacc`, slice B `018b240b9`,
+persistence fix + Rails tests `1956a6e84`, JS test `b8f8801b0`.
+
+Tests: Rails `npc_carried_items_test.rb` 15 runs, 56 assertions, 0 failures;
+reload_persistence + forged_ko_drop + game_test 190 runs, 801 assertions, 0
+failures; rubocop 0 offences on the changed files; `bin/test-js` 674 files passed,
+0 failed (includes the new `test/js/npc-carry-wiring.test.mjs`, 5 tests, and the
+unchanged needs golden tests). train-smoke on m01/m02 NOT run (budget).
+
+### Live proof (keyless server :3095 from the worktree, game 5512)
+
+Game 5512 (`new-game.rb test_needs_sims`). Amara (a needs NPC in the office)
+carries `office_mugs`. The authoritative check reads the room-fetch endpoint
+directly. All carry/put-down/consume actions answered `{"success":true}` / 200.
+
+| step | action | server | office floor | amara itemsHeld | kitchen/office landing |
+| ---- | ------ | ------ | ------------ | --------------- | ---------------------- |
+| 1 | carry office_mugs | 200 | mug gone | office_mugs | - |
+| 2 | put_down office px333/py444 | 200 | 1 mug @ (333,444) | empty | lands once |
+| 3 | reload (re-fetch) | - | 1 mug @ (333,444) | empty | not duplicated |
+| 4 | carry again + consume_carried | 200 + 200 | mug gone | empty | - |
+| 5 | reload after consume | - | mug gone | empty | stays gone |
+
+put_down into the locked kitchen answered 403 (the unlocked-room gate), not 422.
+
+Server log: the only `Completed 422` was a pre-token attempt rejected for
+`Can't verify CSRF token authenticity` (before the harness sent the X-CSRF-Token
+header); every carry_object / put_down_object / consume_carried request that
+carried the token answered 200. No carry-logic 422.
+
+Not yet run (budget): the README browser tour rows touching carries with a
+page-error check, and the real headless needs-NPC drive (the needs walk is flaky
+headless per the scenario README; the HTTP drive above exercises the same server
+endpoints and persistence).
+
+### Slice C hooks (not built)
+
+- KO while carrying: `npc-hostile.js` KO handling (`dropNPCItems`, ~719) should ask
+  the needs world to drop the carried item into the KO room and end the carry as a
+  put-down into that room at the body position. The server put-down already accepts
+  the carrier's room when it is reachable; a KO drop would need the KO room treated
+  as reachable (the KO-drop trust, as `add_item_to_room!` does for `npc_defeated`).
+  `npcCarry[npc_id]` must be cleared on the KO drop.
+- Reload mid-carry: already correct server-side (the object is served in the NPC's
+  itemsHeld from the npcCarry delta and absent from its origin room). No client
+  restore code is needed for correctness; the needs system may stow/drop on its next
+  tick. A future reload-time rule could set it down at the NPC.
+- Player takes the carried item: `apply_npc_carry!` already suppresses the held item
+  once it is in inventory; on delivery the `npcCarry` entry should also be cleared
+  (hook: wherever `npc_given_items` / delivery is recorded).
+
+
+
 User direction (verbatim): "When an NPC picks up an item it should be in held
 items, and can be moved."
 
