@@ -329,3 +329,25 @@ Suites on `8a061ccb2`: `bin/test-js` 675 files passed, 0 failed; `tts_office_lin
 | Train smoke m02 | 5470 | OK, start room `reception_lobby` |
 
 Pass counts: row 2 3 of 3 for `see_turned_back` and `see_look_round`, 3 of 3 under 20 s home (6 to 6.25 s), 3 of 3 with a spoken overheard grumble. Away run: picture recorded. Tour: rows 1, 3, 5 pass, row 6 fails (see above). Train smoke 2 of 2. No `ReferenceError` or other page error in any run.
+
+## Live re-check after code review R2
+
+The R2 fixes (`OFFICE_LIFE_STUCK_RETURN_REVIEW_R2.md`, Outcomes) are in `c90193ecb` and `36eda6c9d`. The second commit changed only the m6 deadline rule (a flat 15 s grace became a 10 s floor near the deadline) after the full suite caught the flat grace delaying borrow and queue timeouts. Run 2026-11-15, keyless server on port 3093 from the worktree, headless setFPS(20) with fixed steps, a fresh game per run made with `tools/playtest/new-game.rb`. Row 2 uses `needs-stuck-return-proof.mjs` with the player held at (232,176).
+
+Two driver changes. `needs-tour-regression.mjs` row 6 now sets Sanjay's social need to 35 (just under its `urgentAt` of 40) with the needs system's own `control(npcId, { set })` command, the one the Activity Board mapping uses, after the rota is read. The README says row 6 will not tick straight after row 5, because the row 5 chat meets that need. `tools/playtest/lab-needs-smoke.mjs` (new, from the scratchpad smoke) walks the player from `briefing_room` through `reception` and `hall` into `open_plan` with `__test.enterRoom`, where the four needs NPCs live (Kieran in reception; Hampshire, Lord and Pierce in open_plan). It falls back to loading the room and placing the player only if a door does not open; this run needed no fallback.
+
+Suites on `36eda6c9d`: `bin/test-js` 675 files passed, 0 failed. On `c90193ecb` (the Ruby and TTS files are unchanged since): `tts_office_lines_test.rb` 9 runs, 46 assertions, 0 failures; `bin/rubocop` 366 files, no offences.
+
+| Run | Code | Game | Result |
+|---|---|---|---|
+| Row 2, run 1 | `c90193ecb` | 5473 | pass: `see_turned_back`, `see_look_round`; grumble spoken and overheard at 1.3 s, `sayings` and the shown line agree; Marek home in 6 s; 2 stalls, 0 stuck; 0 page errors |
+| Row 2, run 2 | `c90193ecb` | 5474 | pass: both tasks; grumble spoken and overheard at 1.5 s; Marek home in 6.25 s; 2 stalls, 0 stuck; 0 page errors |
+| Row 2, run 3 | `36eda6c9d` | 5477 | pass: both tasks; grumble spoken and overheard at 1.3 s; Marek home in 6 s; 2 stalls, 0 stuck; 0 page errors |
+| Tour row 1 | `c90193ecb` | 5475 | pass (queue seen, 69 s) |
+| Tour row 3 | `c90193ecb` | 5475 | pass: board read; Tom and Marek queued and both turned back at the switch-off, Marek's grumble spoken, Tom's a picture; back on |
+| Tour row 5 | `c90193ecb` | 5475 | pass: board read on the first try (41 px short, two nudges), chat seen at 25 s |
+| Tour row 6 | `c90193ecb` | 5475 | pass: rota read on the second try (the first ended 72 px short); Sanjay's social set to 35; `see_outcast` ticked at 152 s |
+| Tour stalls | `c90193ecb` | 5475 | 2 stall lines in the whole tour: Tom `return_stuck` at (14,84), Grace `walk_stuck` at (34,86), both in the kitchen doorway; no loops, each logged once; rooms kitchen, office, lounge, office all entered; 0 page errors |
+| lab_physical_pentest smoke | `c90193ecb` | 5476 | clean with needs NPCs present: all three doors walked, player in `open_plan`; 4 needs NPCs (Kieran walked 966 px, Hampshire 431, Lord 18, Pierce 16), 6 job lines in 60 s of needs clock; no `walk_stuck`, `walk_rerouted`, `return_stuck`, `return_abandoned` or `seat_gave_up`; 0 page errors |
+
+Pass counts: row 2 3 of 3 for both tasks, 3 of 3 home under 20 s (6 to 6.25 s), 3 of 3 with a spoken overheard grumble. Tour rows 1, 3, 5 and 6 pass. The lab smoke exercised four needs NPCs with no stall loop. The away-point run and the m01 and m02 train smokes were not repeated this round: the R2 changes touch the needs nudge, stall counting, late re-plans, seat give-up expiry and the outbound deadline floor, and m01 and m02 do not run the needs layer.
