@@ -1,5 +1,15 @@
 # Office life: stuck needs walks and re-routing
 
+## Handover (2026-11-15, budget stop)
+
+Done and committed: slice 1 engine and node tests (`0a5cdfd98`, `5a6525cf9`), slice 2 grumble earshot (`6c2eb2d6b`), this note and the proof driver `tools/playtest/needs-stuck-return-proof.mjs`. bin/test-js 673 files passed, 0 failed; `tts_office_lines_test.rb` 9 runs, 0 failures; bin/rubocop no offences. m01 (game 5337) and m02 (5338) pass train-smoke, but their start-room NPCs didn't move in 25 s in either game (receptionists and cutscene triggers, so no walkers to test), so the "NPCs walk" half of the regression check is still open.
+
+Still open:
+- **Marek still wedges on the walk home** (game 5336). After his coffee he stalled at about (111-113, 138), roughly where Tom stood in game 5260. The new watch did what it should: `return_resumed` three times, one `return_stuck`, a 15 s back-off, then retries. But the re-routed searches didn't get him past, and he got home after 82.5 s (the target is under 20 s). So either the `includeHeld` search finds no way round, because the blocker sits in the only gap to his desk and the search falls back to the plain path, or the blocker isn't an NPC body at all (a chair, or the desk corner). Next step: in a live game, log which body is within 24 px of Marek at the stall (NPC id, `immovable`, seated or not), and whether the `includeHeld` search returned a path. If the gap really is the only way, the fix has to move the blocker (a standing NPC in a needs walk's way could step aside) or accept an arrival at the closest reachable cell.
+- **Row 2 didn't fire in game 5336.** Sanjay never turned back, and only `idle` swivels happened. The run read the notice about 97 s in, once row 1's queue had cleared, and Marek went for his coffee. Check whether Sanjay set off at all (his caffeine after row 1 may be too high), then the 5-of-5 runs.
+- Live proof table still to do: row 2 5 of 5, Marek home in under 20 s 5 of 5, one wedge now routing round.
+- The proof driver closes the notice's gameDisplay dialog with `dismissBlockingUi`. Its first version left the dialog open, which pauses the needs clock (games 5331 and 5335 were wasted that way). Games 5328 to 5330 were created by this run and never driven.
+
 Status: built on branch build/ol-stuck-return. Owner items 5 and 5a in `scenarios/test_needs_sims/README.md`.
 
 ## What goes wrong
