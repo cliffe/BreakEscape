@@ -254,8 +254,10 @@ foothold planted in-game). The server's 200 answers for picker/headless/typed ar
 Run 0's plant then click the view's `HB-IT-01`/`HB-OPS-02`/`HB-FIN-02` rows.
 
 ### Suites (item 5)
-Run under the shared lock (`flock .../tests.lock`): `bin/test-js -j 3; bin/rails test`. See the
-run-3 report for the counts; shell-x is the known env failure, reported separately.
+Run under the shared lock (`flock .../tests.lock`): `bin/test-js -j 3; bin/rails test`, on tip
+`38251f241`. Both green:
+- JS: 654 files passed, 0 failed (shell-x passed this run; no env failure in the batch).
+- Rails: 2754 runs, 45981 assertions, 0 failures, 0 errors, 2 skips (finished in ~93s).
 
 ### Run-3 gotchas
 - `signin-fit.mjs` must measure content height with `offsetHeight` (layout px), not
