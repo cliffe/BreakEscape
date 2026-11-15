@@ -16,9 +16,10 @@
 //     cryptex answer (no `requires` on any door or object, no locked contents), on test_secret_leaks
 //     and on m06_follow_the_money (which has an acknowledgedClues marker with reason prose), after
 //     load and after reload. window.gameScenario.acknowledgedClues is undefined.
-//       Note: a scenario's authored narrative (scenario_brief / scenario_name / endGoal) is flavour
-//       text the author chose to ship; test_secret_leaks' brief documents its own codes, so the raw
-//       secret scan excludes those narrative fields and asserts the structured answer FIELDS instead.
+//       The before-proof secret scan reads the WHOLE raw bootstrap JSON and both room payloads, with
+//       no field skipped: test_secret_leaks' brief now describes its cases without any literal value,
+//       so a secret appearing in any shipped field (narrative included) fails the proof. A regression
+//       that pasted an answer back into the brief or any other shipped string would be caught here.
 //   - the comparator on test_unlock_gaps (read only): combination and cryptex locks refuse a wrong /
 //     blank / malformed answer and open with the right one; a different-case cryptex answer opens
 //     (casecmp?); a lock given only wrong answers stays shut across a reload.
@@ -133,12 +134,6 @@ async function waitFor(pred, ms = 15000) {
 
 const present = (text, secret) => String(text).toLowerCase().includes(secret.toLowerCase());
 
-// The bootstrap with authored narrative fields removed, as a raw string, for the secret scan.
-function bootWithoutNarrative(boot) {
-  const copy = { ...boot };
-  for (const k of ['scenario_brief', 'scenario_name', 'endGoal', 'scenario_id']) delete copy[k];
-  return JSON.stringify(copy);
-}
 // Any `requires` answer still present on a door or object anywhere in the bootstrap rooms?
 function bootHasRequires(boot) {
   let found = false;
@@ -180,8 +175,9 @@ async function run() {
       !hasCluesKey && !hasRequires && clues0 === 'undefined',
       `acknowledgedClues-key=${hasCluesKey} requires-present=${hasRequires} window=${clues0}`);
 
-    // No raw secret in the bootstrap's non-narrative fields, nor in either room, nor in capture_secrets.
-    const bootScan = bootWithoutNarrative(boot0);
+    // No raw secret anywhere in the whole bootstrap JSON (narrative included), nor in either room,
+    // nor in capture_secrets. No field is skipped.
+    const bootScan = JSON.stringify(boot0);
     const office0 = await roomText(baseUrl, slId, 'office');
     const vault0 = await roomText(baseUrl, slId, 'vault');
     const cs0 = JSON.stringify(await captureSecrets(baseUrl, slId));

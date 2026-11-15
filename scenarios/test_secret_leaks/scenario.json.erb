@@ -1,7 +1,7 @@
 {
   "scenario_id": "test_secret_leaks",
   "scenario_name": "Test: Secret Leaks",
-  "scenario_brief": "Scenario format hardening step 3 fixture. The strongbox is a combination padlock (12-30-5). Mara the informant's usePayload secret is that same combination, gated by a dropped-USB capture proof. Rhea's account password is the cryptex answer WOLF, which opens the cryptex cabinet, so the scenario declares proofs and her password is withheld until her dropped proof holds. Tess the tipster's usePayload carries the vault door PIN 4821 as a capture secret, gated the same way. Nothing is copied into a global or minigameData, so the validator reports no secret leak; the secrets ship only from /capture_secrets once each proof holds.",
+  "scenario_brief": "Scenario format hardening step 3 fixture. The strongbox is a combination padlock whose code is also Mara the informant's usePayload capture secret, gated by a dropped-USB proof. Rhea's account password is the answer to the cryptex cabinet, so the scenario declares proofs and her password is withheld until her dropped-USB proof holds. Tess the tipster's usePayload carries the vault door PIN as a capture secret, gated the same way. No secret is copied into a global or minigameData, and no answer appears in any narrative field, so the validator reports no secret leak; each secret ships only from /capture_secrets once its proof holds.",
   "endGoal": "Engine and validator test only.",
   "startRoom": "office",
   "startPosition": { "x": 8, "y": 8 },
