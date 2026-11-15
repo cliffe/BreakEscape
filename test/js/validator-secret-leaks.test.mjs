@@ -121,6 +121,41 @@ test('a clean scenario raises no leak', { skip }, () => {
   assert.deepEqual(errors(issues(withLock(pinLock, { globals: { msg: 'welcome' } }))), []);
 });
 
+// ── narrative leaks (always-shipped prose) ───────────────────────────────────────────────────
+
+test('the old test_secret_leaks brief (a combination written out) is caught as a warning', { skip }, () => {
+  // scenario_brief ships verbatim in GET /scenario. A combination written as its dash form is 7
+  // chars, so the whole-word rule catches it as a warning; it is not an error (a clue can hint).
+  const sc = withLock({ id: 'combo', locked: true, lockType: 'combination', requires: [12, 30, 5] });
+  sc.scenario_brief = 'The strongbox is a combination padlock (12-30-5). Open it.';
+  const l = issues(sc);
+  assertHas(warnings(l), 'appears in the shipped narrative string');
+  assert.deepEqual(errors(l), []);
+});
+
+test('a brief that describes the lock without the value is not caught', { skip }, () => {
+  const sc = withLock({ id: 'combo', locked: true, lockType: 'combination', requires: [12, 30, 5] });
+  sc.scenario_brief = 'The strongbox is a combination padlock whose code is a capture secret.';
+  assertNot(issues(sc), 'appears in the shipped narrative string');
+});
+
+test('a short common answer in prose does not warn (noise control)', { skip }, () => {
+  // "open" is four chars, under the six-char whole-word threshold, so it never fires as a substring
+  // of ordinary prose; only an exact/trimmed-equal field would.
+  const sc = withLock({ id: 'pwbox', locked: true, lockType: 'password', requires: 'open' });
+  sc.scenario_brief = 'Please open the vault and read the sign.';
+  assertNot(issues(sc), 'appears in the shipped narrative string');
+});
+
+test('a deliberate narrative clue is acknowledged, not warned', { skip }, () => {
+  const sc = withLock({ id: 'cryptexbox', locked: true, lockType: 'cryptex', requires: 'nightjar' });
+  sc.rooms.r.objects.push({ id: 'poster', name: 'Poster', observations: 'A faded poster reads NIGHTJAR.' });
+  sc.acknowledgedClues = [{ lock: 'cryptexbox', in: 'poster', reason: 'the poster is the clue', approved: 'h' }];
+  const l = issues(sc);
+  assertNot(warnings(l), 'appears in the shipped narrative string');
+  assertHas(infos(l), 'acknowledged clue in narrative: cryptexbox in poster');
+});
+
 // ── lock-type rules ──────────────────────────────────────────────────────────────────────────
 
 test('a requires with no lockType errors when locked, warns when unlocked', { skip }, () => {
