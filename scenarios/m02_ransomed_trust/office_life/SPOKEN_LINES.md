@@ -65,3 +65,28 @@ From `DIALOGUE_REVIEW_R1.md` (M1, M2, m1 to m9). The approved sample's pool line
 None. Hodan's "Still about, then?" stays, as the second line of her re-entry cycle.
 
 Not spoken, changed in the same round: Ernesto's observation (no specimen boxes), the fault log's observation (no warmth, no paper-night restatement).
+
+## Stage 4 round 2 fixes (2026-11-15)
+
+From `STAGE4_REVIEW_R2.md` (D1 to D5). The approved sample's pool lines and all three exchanges are unchanged. Counts against the 67 above: **4 added, 3 changed, 0 removed**, so 71 clips in all. D2 (the first-meeting guards) adds and changes no lines. The "You again." and "Still about, then?" alternatives in Hodan's second re-entry cycle reuse existing clips.
+
+### Changed (old, then new)
+
+| Speaker | Where | Old | New | Why |
+|---|---|---|---|---|
+| Ernesto | ink `hub`, miles topic, first line | Porter. Anything that needs carrying, I carry it. | Miles is the job. I'm the porter. Anything that needs carrying, I carry it. | D5 |
+| Hodan | ink `hub`, re-entry cycle, third line (default cycle) | Don't step on that bit, it's wet. | Sit down before you fall down. You look worse than me. | D3, the wet floor is now said once, in her exit line |
+| Hodan | ink `hub`, radio topic, second line | None of mine, unless they've walked across a wet floor. | None of mine. Mine all stay where they're put. | D3 |
+
+### Added
+
+| Speaker | Where | Line | Why |
+|---|---|---|---|
+| Ernesto | ink `hub`, radio topic once the cleared exchange was heard | Security had a call out for some visitor. Stood down now. | D1 |
+| Ernesto | same, when the player gave their cover | Your lot sorted it, I expect. Paying you nights after all. | D1 |
+| Ernesto | same, when the player gave the vague answer | Fuss over nothing, like I said. | D1 |
+| Hodan | ink `hub`, re-entry cycle for a player who said they wanted somewhere quiet (D4) | Still after your bit of quiet? | D4 |
+
+### Removed
+
+None. Ernesto's two earlier radio lines stay for a player who has not heard the cleared exchange.

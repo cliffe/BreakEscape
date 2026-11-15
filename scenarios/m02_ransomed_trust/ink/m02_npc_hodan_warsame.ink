@@ -15,6 +15,10 @@ VAR heard_night_watch_burned = false
 VAR heard_night_watch_cleared = false
 // Re-entry line for a re-talk, skipped once after an answer or a goodbye.
 VAR hub_quiet = false
+// Set after the first meeting, so a reload does not replay the greeting and its question.
+VAR met_player = false
+// Set if the player says they are after somewhere quiet; her re-entry line reads it back.
+VAR hodan_quiet_seeker = false
 
 === start ===
 ~ hub_quiet = true
@@ -22,8 +26,14 @@ VAR hub_quiet = false
     Hodan Warsame: Don't come any nearer. I'm on the radio if I need to be. #delivery: frightened, holding it together
     -> hub
 }
+{met_player:
+    ~ hub_quiet = false
+    -> hub
+}
+~ met_player = true
 Hodan Warsame: You lost? Everyone's lost tonight.
 * [Just looking for somewhere quiet.]
+    ~ hodan_quiet_seeker = true
     Hodan Warsame: You've found it. Till the radio goes.
 * [I know where I'm going.]
     Hodan Warsame: First one tonight, then.
@@ -36,7 +46,11 @@ Hodan Warsame: You lost? Everyone's lost tonight.
     {night_staff_attacked:
         Hodan Warsame: I'm not talking to you. #delivery: frightened, holding it together
     - else:
-        Hodan Warsame: {&You again.|Still about, then?|Don't step on that bit, it's wet.}
+        {hodan_quiet_seeker:
+            Hodan Warsame: {&Still after your bit of quiet?|You again.|Still about, then?}
+        - else:
+            Hodan Warsame: {&You again.|Still about, then?|Sit down before you fall down. You look worse than me.}
+        }
     }
 }
 * {not night_staff_attacked} [What are you on tonight?]
@@ -51,7 +65,7 @@ Hodan Warsame: You lost? Everyone's lost tonight.
     -> hub
 * {not night_staff_attacked && heard_night_watch_burned && not heard_night_watch_cleared} [Anything happening on the radio?]
     Hodan Warsame: Security were after some visitor. Half the building heard it.
-    Hodan Warsame: None of mine, unless they've walked across a wet floor.
+    Hodan Warsame: None of mine. Mine all stay where they're put.
     ~ hub_quiet = true
     -> hub
 * {not night_staff_attacked && heard_night_watch_cleared} [Did security find their visitor?]

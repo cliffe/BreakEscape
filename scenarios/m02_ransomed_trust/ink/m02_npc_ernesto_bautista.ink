@@ -14,6 +14,10 @@ VAR hub_quiet = false
 // Set at the first meeting if the player answers his question with their cover; the radio topic
 // reads it back. Local to this story.
 VAR ernesto_told_security = false
+// Set by the engine once a line of the night_watch_cleared exchange was heard.
+VAR heard_night_watch_cleared = false
+// Set after the first meeting, so a reload does not replay the greeting and its question.
+VAR met_player = false
 
 === start ===
 ~ hub_quiet = true
@@ -21,6 +25,11 @@ VAR ernesto_told_security = false
     Ernesto Bautista: That's close enough. Whatever you want, I haven't got it. #delivery: flat and guarded
     -> hub
 }
+{met_player:
+    ~ hub_quiet = false
+    -> hub
+}
+~ met_player = true
 Ernesto Bautista: Evening. Or morning. Hard to tell in here tonight.
 Ernesto Bautista: You with IT? Somebody ought to be.
 * [Security. I've been called in about the systems.]
@@ -41,7 +50,7 @@ Ernesto Bautista: You with IT? Somebody ought to be.
     }
 }
 * {not night_staff_attacked} [You look like you've done some miles tonight.]
-    Ernesto Bautista: Porter. Anything that needs carrying, I carry it.
+    Ernesto Bautista: Miles is the job. I'm the porter. Anything that needs carrying, I carry it.
     Ernesto Bautista: Tonight that's samples down to the lab and results back up.
     Ernesto Bautista: The computers went, so the tube system went with them. I'm the tubes now.
     Ernesto Bautista: Nobody notices the porter, normally. Tonight they're all waiting on me.
@@ -58,11 +67,20 @@ Ernesto Bautista: You with IT? Somebody ought to be.
     ~ hub_quiet = true
     -> hub
 * {not night_staff_attacked && heard_night_watch_burned} [Busy night on the radio?]
-    Ernesto Bautista: Security put a call out for some visitor. That's their department.
-    {ernesto_told_security:
-        Ernesto Bautista: Your department too, I'd have thought. You'll hear before I do.
+    {heard_night_watch_cleared:
+        Ernesto Bautista: Security had a call out for some visitor. Stood down now.
+        {ernesto_told_security:
+            Ernesto Bautista: Your lot sorted it, I expect. Paying you nights after all.
+        - else:
+            Ernesto Bautista: Fuss over nothing, like I said.
+        }
     - else:
-        Ernesto Bautista: Always someone looking for someone, a night like this.
+        Ernesto Bautista: Security put a call out for some visitor. That's their department.
+        {ernesto_told_security:
+            Ernesto Bautista: Your department too, I'd have thought. You'll hear before I do.
+        - else:
+            Ernesto Bautista: Always someone looking for someone, a night like this.
+        }
     }
     ~ hub_quiet = true
     -> hub

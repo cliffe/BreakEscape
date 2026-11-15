@@ -25,16 +25,24 @@ Coordinates are live world pixels (room-local y = live y + 256, from the cooler'
 - Clues with the pair at the counter: the handover board claims the rota board (room-local x 68 to 98, y 29 to 50) and the noticeboard notes claim `notice_board1` (214 to 256, 21 to 52); the snag list takes the first free `notes6`, at x 236 to 250, y 36 to 54, right above the microwave cell (228, 124 room-local). With a 64 px frame the microwave user's head reaches about y 60, so the sprites do not overlap on paper, but the gap is 6 px: this is the plan's named risk and the first live check to run. The laptop (93, 127 to 145) and lanyard (84, 211 to 227) are far from the counter.
 - Sprites hidden by a declaration and the room snapshot: not run (`tools/playtest/room-snapshot.mjs` needs a live load).
 
+## Round 2 fixes (2026-11-15)
+
+`STAGE4_REVIEW_R2.md` (0/0/5 dialogue, 0/0/2 implementation) fixed, outcomes in that file: D1 to D5 in both inks (Ernesto's cleared radio topic, first-meeting guards on both greetings, Hodan's wet floor said once, the "miles" reply, her quiet-seeker read-back), I1 in the cleared exchange gate, I2 closed by the live check (snag list clear, 80 px sprite, game 5204). Spoken lines: 71 clips (4 added, 3 changed). Static checks all clean; no lock or key change.
+
+R2b oddity, not explained by data: after a mid-exchange attack (`STAGE4_LIVE_R2b.md`, game 5211) the exchange was cut at line 2 of 5 (`pair_ended`) but the domestic stayed busy for over 90 s and sat 102 s after the hit, against about 60 s for a normal break. Nothing in her NPC record, the mappings or the exchange gates explains it; the use does not shorten when the exchange is cut, so the hold on the use is the place to read (`_finishExchange` in the needs engine). No wrong behaviour followed, and it is an engine question, so no change was made here.
+
 ## Open (next agent)
 
-1. Live: the snag list, handover board, noticeboard, laptop and lanyard each open their object with both NPCs `using` the boiler and the porter at the microwave; the three cups clickable with both seated and with the porter hostile; `room-snapshot.mjs` before and after; `playerHears` from every floor cell at both objects; path search to the second-user cells from both posts.
-2. The staff-room lighting loop (`mission-room-lighting`): the room is now lit from load because NPCs sit in it (PLAN 3). Then the room-tone listen (impl m2), after dressing and lighting.
-3. Live screenshot of the page at x 6.92 on the copier; microwave and boiler in use together.
-4. `STAGE4_LIVE.md` section 8: reload checks 10.3, the 10.2 and 10.4 items not run, 10.5 rhythm numbers, the 5179 anomaly; HaX attack and KO text gap (impl m6).
-5. Live: Ernesto's two first-meeting choices, his radio topic on both branches, Hodan's cleared topic after the cleared exchange.
+Items 1 to 4 and 6 to 8 carry over from round 1; item 5 is replaced.
+
+1. Live: the handover board, noticeboard, laptop and lanyard each open their object with both NPCs `using` the boiler and the porter at the microwave (the snag list is proven, R2a 5204); the three cups clickable with both seated and with the porter hostile; `room-snapshot.mjs` before and after; `playerHears` from every floor cell at both objects; path search to the second-user cells from both posts.
+2. The staff-room lighting loop (`mission-room-lighting`), then the room-tone listen (impl m2).
+3. Live screenshot of the page at x 6.92 on the copier (R2a covered the microwave beside the snag list only).
+4. Still unproven from R2a and R2b: `STAGE4_LIVE.md` 10.2 and 10.4 items not run; step 4 regression (Val's catch), steps 5 (cut-off timing above), 12 and Val; the whole-room walkthrough counts; the Kim and cooler crossings at the plan's five tries; the reload after an attack with the staff room loaded; the gap between the HaX strike text and KO text for a fast four-punch knock-out (impl m6).
+5. Live proof of the round 2 ink: reload then talk to each NPC (no replayed greeting, a re-entry line plays); Ernesto's radio topic on all four branches (burned or cleared, told security or not); Hodan's cleared topic; the quiet-seeker re-entry; the cleared exchange does not play after Graham escapes or the press-terminal ambush. Playtest this on a keyless server.
 6. Fault log `takeable: false` (dialogue m10): decide after a live print check.
-7. For the rollout: the struck-only credits line hides a second victim (impl m5); V10 is still on `build/ol-sims`, with false knot errors from that tree and a `needsRooms` mutation it misses (impl m8, for the V10 owner).
-8. Voicing waits for the user: 67 clips now.
+7. For the rollout: the struck-only credits line hides a second victim (impl m5); V10 is still on `build/ol-sims` (impl m8, for the V10 owner).
+8. Voicing waits for the user: 71 clips now.
 
 ## Files (round 1)
 
