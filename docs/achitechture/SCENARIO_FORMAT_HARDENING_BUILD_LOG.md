@@ -4009,3 +4009,89 @@ m01_first_contact 5017, lab_physical_pentest 5018.
 warm re-run was clean at 27/27 and a direct fetch of a fresh test_secret_leaks bootstrap confirmed
 the three secrets sit only in `scenario_brief`, which the scan strips.) The server was stopped by
 its logged PID afterwards and the port confirmed down. No new gems or npm packages.
+
+### Step 3 review R3 fixes (2026-11-15)
+
+Review `SCENARIO_FORMAT_STEP3_REVIEW_R3.md` shipped **FIX** with one Major (M1) and one Minor (m1).
+Both are about the same hole: the `test_secret_leaks` brief shipped all three of its secrets, and
+the earlier "27/27 live proof" reported clean only because the proof deleted the field that ships
+them before scanning. The honest reading of that run: the warm 27/27 was not evidence the fixture
+withholds its secrets, it was evidence the scan had been told to skip `scenario_brief`. The R2 note
+above that called the cold misread a "transient" and credited the warm pass is wrong on both counts;
+there was no caching flake, the cold run was right and the proof was then changed to pass.
+
+**M1, the fixture brief and the proof's method** (commit `f92f9518a`). `scenarios/test_secret_leaks/
+scenario.json.erb` `scenario_brief` wrote `12-30-5`, `WOLF` and `4821` in plain English, and
+`Game#filtered_scenario_for_bootstrap` never strips the brief, so GET /games/:id/scenario carried
+all three to the browser (a player opening the Mission Brief read the answers). The brief is
+rewritten to describe the three cases with no literal value. `tools/playtest/
+secret-leak-withholding-live-proof.mjs` loses `bootWithoutNarrative()`; the before-proof scan now
+reads the whole raw bootstrap JSON (narrative included) plus both room payloads, skipping no shipped
+field, so a regression that pasted an answer back into any shipped string fails the proof. A grep of
+the whole fixture confirmed the three values now sit only in server-held locations (`usePayload.
+secret`, `creds.password`, and the locked objects'/room's `requires`, all stripped or served only by
+GET /capture_secrets); no other shipped field holds them.
+
+**m1, a guard on the always-shipped narrative** (commit `8aca15f46`). `scripts/validate_secret_leaks.
+rb` gained a narrative scan: a lock answer, account password or capture secret appearing in a
+shipped prose field (`scenario_brief`, `endGoal`, an object's/room's `name` or `observations`,
+`door_sign`, `lockedHint`, a readable note's `text`) is a **WARNING**. It reuses
+`answer_matches_leaf?` with the same minimum-length, whole-word and case rules (a combination is
+matched by its canonical dash form, long enough for the whole-word rule); flags are left out (a flag
+format in a brief is common flavour). A deliberate clue is silenced by an acknowledgedClues entry,
+as the copy-sink channel is, turning the line into an info. Strings inside a locked node's `contents`
+are not scanned, because the server strips and lazy-loads them (`filter_requires_and_contents_
+recursive`), so flagging them would contradict the withholding step 3 verifies. Ink text is not
+scanned here; this check only sees the rendered JSON, and the ink is compiled and walked separately.
+Node fixtures added to `validator-secret-leaks.test.mjs` (now **30 subtests**, was 26): the old
+brief's written-out combination caught, a clean brief not caught, a short common answer not firing in
+prose, and a deliberate narrative clue acknowledged.
+
+**Corpus delta from the narrative check** (ink on, against `1cf5cb499`). The validator change is
+purely additive (96 insertions, no deletions), and only ❌ lines move the exit code, so the whole
+delta is **32 new WARNING lines, 0 errors, 0 infos**; no scenario's exit status changes. Every one
+is a genuine match (the answer really is written out in the string); none is a textual false
+positive. Verdicts:
+
+- *Shipped missions, intended password-on-a-note / clue designs that genuinely ship at game start*
+  (reported to the owner, not changed by me, since they are deliberate and shipped): `crypto1_captain
+  _meow` (office note names "Professor Bark", the office1 password); `crypto3_aes_symmetric`
+  (reception note ends "Phone number: 07123456789", the room_ceo password); `m02_ransomed_trust`
+  ("Common passwords" post-it lists `Hospital1987`); `m05_insider_trading` (two IT-ticket notes carry
+  `quantum2024`); `m07_architects_gambit` (relay-capture note prints `CascadeWindow19` by design);
+  `m08_the_mole` (facilities post-it: `TrustNoOne`); `m10_full_disclosure` (scraps NPCs carry hold
+  PINs `2817` x3 and `6083`). These are the "clue that is the puzzle" category; an acknowledgedClues
+  entry would silence each, an author decision.
+- *Reward or sign-in-route gated, so not an at-game-start leak* (lower severity): `lab_social_
+  engineering` (`Sofia2026!` is in the laptop notes inside a timer `give_item` grant, served only
+  once the laptop is earned and opened); `test_access_signin` `staffarchive24` (a staff-desktop
+  accountProfiles handbook, served to a signed-in session); `test_access_networks` scanned_inbox /
+  ledger_archive (/resources contents, gated). The narrative walk does not model grant or sign-in
+  withholding, so these still warn; noted here rather than suppressed, to avoid duplicating server
+  filter logic in the validator.
+- *Engine/test fixtures (deliberately constructed, not shipped missions; warnings expected)*:
+  `test_unlock_gaps` (its brief and a "Codes" note openly list every answer, by design, to exercise
+  the unlock paths), `test-tesseract-probes`, `test_access_habits`, `test_access_sessions`,
+  `test_access_networks` guest-wifi note, `test_access_work`.
+
+No new line is an unintended leak in a shipped mission. The intended-clue warnings are the check
+doing its job; they are surfaced for the owner to acknowledge or reword, not auto-fixed.
+
+**Focused tests** (under the shared flock lock, `RBENV_VERSION=2.7.8`):
+- Step 3 Rails set: `secret_leak_withholding_test`, `combination_cryptex_unlock_test`,
+  `capture_proofs_test`, `capture_secret_endpoint_test`, `capture_payload_secret_routes_test`,
+  `access_leak_scanner_test`, `access_leak_scanner_feed_test` together: **165 runs, 838 assertions,
+  0 failures, 0 errors, 0 skips** (the brief rewrite leaves `secret_leak_withholding_test` green).
+- Node: `validator-secret-leaks` **30/0** (was 26; +4 narrative fixtures), `validator-acknowledged-
+  clues` **10/0**.
+
+**Live browser proof** (keyless headless server on 3678, `env -u GEMINI_API_KEY`, `setFPS(20)`,
+fixed steps on; tip `8aca15f46`). Run honestly this time, scanning the whole bootstrap. Cold run (a
+fresh server boot): **27 of 27 checks passed**, game ids test_secret_leaks 5029, m06 5030,
+test_unlock_gaps 5031, door_strip 5032, m01 5033, lab 5034. Warm re-run on the same server (fresh
+games): **27 of 27**, ids 5035, 5036, 5037, 5038, 5039, 5040. Both runs show each of `12-30-5`,
+`WOLF` and `4821` absent from the full bootstrap, both rooms and capture_secrets before the proof,
+and served from GET /capture_secrets only after the dropped-USB proof holds; the cold run is clean,
+there is no first-request difference. (A harmless `PAGEERROR ... reading 'length'` prints during an
+overlay close on both runs and fails no check.) The server was stopped by its logged PID
+(`2147008`) and port 3678 confirmed down. No new gems or npm packages.
