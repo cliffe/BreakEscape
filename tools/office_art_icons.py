@@ -15,7 +15,7 @@ Outputs:
   assets/icons/npc-lock-open.png  23x16, body at x 8-22 (align bodies: +8 px)
   assets/icons/npc-phone.png      16x16
   assets/objects/cake1.png        25x27 (as generated)
-  assets/objects/wall_socket1.png 17x18 (as generated)
+  (assets/objects/wall_socket1.png 17x18 is retired: no longer written)
 """
 import os
 from PIL import Image
