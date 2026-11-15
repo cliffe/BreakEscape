@@ -54,7 +54,7 @@ writeFileSync(join(sysBridge, 'minigames.js'), 'export const minigameBridge = {}
 writeFileSync(join(sysBridge, 'access.js'), 'export const accessBridge = {};\n');
 writeFileSync(join(dir, 'utils/constants.js'), 'export const INTERACTION_RANGE = 32;\nexport const DOOR_INTERACTION_RANGE = 64;\n');
 writeFileSync(join(dir, 'utils/overlay-open.js'), 'export const workstationPopupOpen = () => false;\n');
-writeFileSync(join(dir, 'systems/interaction-reach.js'), 'export const reachX = (s) => s.x;\n');
+writeFileSync(join(dir, 'systems/interaction-reach.js'), 'export const reachX = (s) => s.x;\nexport const reachY = (s) => s.y;\n');
 writeFileSync(join(dir, 'systems/interaction-walls.js'), 'export const wallClearFrom = () => true;\nexport const sameRoomFrom = () => true;\n');
 writeFileSync(join(dir, 'systems/tap-pick.js'), 'export const opaqueAt = () => true;\n');
 writeFileSync(join(dir, 'core/player.js'), `export const movePlayerToPoint = (x, y) => { ${G}.__moves.push([x, y]); };\n`);

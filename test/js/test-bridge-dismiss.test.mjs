@@ -56,7 +56,7 @@ writeFileSync(join(sysBridge, 'aim.js'), 'export const chooseAimPoint = () => nu
 writeFileSync(join(dir, 'systems/tap-pick.js'), 'export const opaqueAt = () => true;\n');
 writeFileSync(join(dir, 'utils/constants.js'), 'export const INTERACTION_RANGE = 1;\nexport const DOOR_INTERACTION_RANGE = 1;\n');
 writeFileSync(join(dir, 'utils/overlay-open.js'), 'export const workstationPopupOpen = () => false;\n');
-writeFileSync(join(dir, 'systems/interaction-reach.js'), 'export const reachX = () => 0;\n');
+writeFileSync(join(dir, 'systems/interaction-reach.js'), 'export const reachX = () => 0;\nexport const reachY = () => 0;\n');
 writeFileSync(join(dir, 'systems/interaction-walls.js'), 'export const wallClearFrom = () => true;\nexport const sameRoomFrom = () => true;\n');
 writeFileSync(join(dir, 'core/player.js'), 'export const movePlayerToPoint = () => {};\n');
 

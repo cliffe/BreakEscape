@@ -18,7 +18,7 @@ import { staticNpcBodyDistSq } from '../npc-reach.js';
 // Reach also needs no wall between (interactions.js asks the same function)
 import { interactionLineClear, wallClearFrom, sameRoomFrom, playerFeet as wallsPlayerFeet } from '../interaction-walls.js';
 // Reach runs to the nearest part of a wide object, in the game and here
-import { reachX, aimX } from '../interaction-reach.js';
+import { reachX, reachY, aimX } from '../interaction-reach.js';
 // The engine's own door placement: door sprites (doors.js) and the wall gaps
 // cut for them (collision.js) both come from this one function, so a doorway
 // computed with it is where the gap really is, sprite or no sprite.
@@ -317,11 +317,12 @@ function describeObject(sprite, roomId, px, py, mx, my) {
     // object marked inRange:false at a short distance and can tell why
     // (interactDistance) rather than assuming the bridge is simply wrong.
     const rx = reachX(sprite, px); // nearest part of a wide object (interaction-reach.js)
-    const d = dist(px, py, rx, sprite.y);
+    const ry = reachY(sprite, py); // and of a tall wall-mounted one (reachY, opt-in)
+    const d = dist(px, py, rx, ry);
     // Mirrors getInteractionDistance(): the smaller of the facing-offset and
     // plain centre distances. The offset extends reach; the min stops it
     // *reducing* reach for a target the player is nearly standing on.
-    const di = Math.min(dist(mx, my, rx, sprite.y), d);
+    const di = Math.min(dist(mx, my, rx, ry), d);
     return {
         kind: 'object',
         id,
@@ -612,6 +613,11 @@ function rivalX(o, fromX) {
     return o.sprite ? reachX(o.sprite, fromX) : o.x;
 }
 
+/** y the engine measures to for a rival: its nearest span point if wall-mounted, as reachY does. */
+function rivalY(o, fromY) {
+    return o.sprite ? reachY(o.sprite, fromY) : o.y;
+}
+
 export function solveStandingPoint(targetX, targetY, fromX, fromY, feetOffset = null, target = null) {
     // With the target sprite, a stand point must also have no wall between the
     // player's feet there and the target (interactionLineClear's own test), or the
@@ -687,9 +693,10 @@ function solveStandingPointWhere(targetX, targetY, fromX, fromY, standable, targ
             // acted on nor appear in the menu — however good its offset distance
             // looks. The offset measure is then the engine's execution check.
             const tx = target ? reachX(target, sx) : targetX; // nearest part of a wide target
-            const plain = dist(sx, sy, tx, targetY);
+            const ty = target ? reachY(target, sy) : targetY; // and of a tall wall-mounted one
+            const plain = dist(sx, sy, tx, ty);
             if (plain > INTERACTION_RANGE * MARGIN) continue;
-            const d = Math.min(dist(sx + off.x, sy + off.y, tx, targetY), plain);
+            const d = Math.min(dist(sx + off.x, sy + off.y, tx, ty), plain);
             if (d > INTERACTION_RANGE * MARGIN) continue;
             const cost = dist(sx, sy, fromX, fromY);
             const point = { x: sx, y: sy, predictedDistance: d, direction: dir };
@@ -700,7 +707,7 @@ function solveStandingPointWhere(targetX, targetY, fromX, fromY, standable, targ
             const feetHere = feetOffset ? { x: sx + feetOffset.x, y: sy + feetOffset.y } : null;
             const nearestRival = rivals.reduce(
                 (m, o) => (feetHere && o.sprite && !sameRoomFrom(feetHere, o.sprite))
-                    ? m : Math.min(m, dist(sx, sy, rivalX(o, sx), o.y)), Infinity);
+                    ? m : Math.min(m, dist(sx, sy, rivalX(o, sx), rivalY(o, sy))), Infinity);
             point.plainDistance = Math.round(plain * 10) / 10;
             point.nearestRivalDistance = Number.isFinite(nearestRival)
                 ? Math.round(nearestRival * 10) / 10 : null;
@@ -801,7 +808,8 @@ export function plainNearestEntity() {
     let bestD = Infinity;
     for (const e of window.__test.getState().nearby) {
         if (typeof e.x !== 'number' || typeof e.y !== 'number') continue;
-        const d = dist(p.x, p.y, rivalX({ x: e.x, sprite: objectSpriteById(e.id) }, p.x), e.y);
+        const rival = { x: e.x, y: e.y, sprite: objectSpriteById(e.id) };
+        const d = dist(p.x, p.y, rivalX(rival, p.x), rivalY(rival, p.y));
         if (d < bestD) { bestD = d; best = { id: e.id, name: e.name, distance: Math.round(d * 10) / 10 }; }
     }
     return best;
