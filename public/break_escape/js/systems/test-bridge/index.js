@@ -39,7 +39,7 @@ import {
 } from './input.js';
 import { chooseAimPoint, rivalsAt } from './aim.js';
 import { opaqueAt } from '../tap-pick.js';
-import { reachX } from '../interaction-reach.js';
+import { reachX, reachY } from '../interaction-reach.js';
 import { wallClearFrom, sameRoomFrom } from '../interaction-walls.js';
 import { getState, scanNearby, activeMinigameSummary, detectBlockingUi, sessionOverlayShowing, sessionOverlayButtons, interactionMenuState, solveStandingPoint, engineInteractDistance, plainNearestEntity, roomContents, doorways } from './state.js';
 import {
@@ -1014,12 +1014,13 @@ const bridge = {
         for (let k = 0; k < 3; k++) {
             const pk = window.player;
             const ex = targetSprite ? reachX(targetSprite, pk.x) : entity.x; // nearest part of a wide target
-            const plainNow = Math.hypot(pk.x - ex, pk.y - entity.y);
+            const ey = targetSprite ? reachY(targetSprite, pk.y) : entity.y; // and of a tall wall-mounted one
+            const plainNow = Math.hypot(pk.x - ex, pk.y - ey);
             if (plainNow <= INTERACTION_RANGE - 6) break;
             const step = plainNow - (INTERACTION_RANGE - 12);
             const f = playerFeet();
             const nx = f.x + (ex - pk.x) / plainNow * step;
-            const ny = f.y + (entity.y - pk.y) / plainNow * step;
+            const ny = f.y + (ey - pk.y) / plainNow * step;
             // Never nudge to a spot with a wall between it and the target (a wall
             // object seen from the room behind its wall): the game would refuse
             if (targetSprite && !wallClearFrom({ x: nx, y: ny, half: f.half }, targetSprite)) {
@@ -1055,7 +1056,8 @@ const bridge = {
         // directly nor appear in the disambiguation menu.
         const p2 = window.player;
         const plainAfter = p2 && after
-            ? Math.round(Math.hypot(p2.x - (targetSprite ? reachX(targetSprite, p2.x) : after.x), p2.y - after.y) * 10) / 10 : null;
+            ? Math.round(Math.hypot(p2.x - (targetSprite ? reachX(targetSprite, p2.x) : after.x),
+                p2.y - (targetSprite ? reachY(targetSprite, p2.y) : after.y)) * 10) / 10 : null;
         result.plainDistance = plainAfter;
         if (plainAfter !== null && plainAfter > INTERACTION_RANGE) {
             result.ok = false;

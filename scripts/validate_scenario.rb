@@ -887,7 +887,7 @@ def check_unknown_fields(json_data)
     completesTask completesTaskOnOpen
     puzzle_graph_links hintOnlyFlags acceptsVmLabels
     affordance offWhen needsTag droppable officeType wearable
-    usbClass
+    usbClass wallMounted
     workstation locksScreenOnLeave lockChance screenLocked autoLockSeconds
     rings
     actions onOwnerNoticesMissing interactionWarning saved_cards rfid_protocol

@@ -7,7 +7,7 @@ import { setHeldFormatVersion, showBootstrapRefusal } from '../format-guard.js';
 import { initializeInventory, processInitialInventoryItems, registerTrayRule, refreshInventoryTray } from '../systems/inventory.js';
 import { checkObjectInteractions, setGameInstance, isObjectInInteractionRange } from '../systems/interactions.js';
 import { wallClearFrom, findClearStandPoint, sameRoomFrom, playerFeet } from '../systems/interaction-walls.js';
-import { aimX, withoutChairsIfOthers, takeablesBeforeChairs, npcGivesWay, objectIdOf, withoutLeavingNpcsIfObjects, walkAwayTracker } from '../systems/interaction-reach.js';
+import { aimX, reachY, withoutChairsIfOthers, takeablesBeforeChairs, npcGivesWay, objectIdOf, withoutLeavingNpcsIfObjects, walkAwayTracker } from '../systems/interaction-reach.js';
 import '../systems/door-gaps.js'; // registers open-doorway lookup for combat reach
 import { createInfoLabel, updateInfoLabel } from '../ui/info-label.js';
 import { preloadPixelFont } from '../utils/pixel-text.js';
@@ -466,6 +466,12 @@ export function preload() {
     this.load.image('lw_franking_machine1', 'objects/lw_franking_machine1.png');
     this.load.image('lw_card_index1', 'objects/lw_card_index1.png');
     this.load.image('lw_sign_store1', 'objects/lw_sign_store1.png');
+    this.load.image('power_socket1', 'objects/power_socket1.png');
+    this.load.image('power_socket2', 'objects/power_socket2.png');
+    this.load.image('power_socket_off1', 'objects/power_socket_off1.png');
+    this.load.image('power_socket_off2', 'objects/power_socket_off2.png');
+    this.load.image('power_socket_drop1', 'objects/power_socket_drop1.png');
+    this.load.image('power_socket_drop_off1', 'objects/power_socket_drop_off1.png');
     this.load.image('page-builder', 'objects/page-builder.png');
     this.load.image('report-workstation', 'objects/report-workstation.png');
     this.load.image('suitcase', 'objects/suitcase-1.png');
@@ -892,7 +898,6 @@ export function preload() {
     this.load.image('monitor_stand1', 'objects/monitor_stand1.png');
     this.load.image('bedside_locker1', 'objects/bedside_locker1.png');
     this.load.image('coffee_station1', 'objects/coffee_station1.png');
-    this.load.image('wall_socket1', 'objects/wall_socket1.png');
     this.load.image('cake1', 'objects/cake1.png');
     this.load.image('first_aid_cabinet1', 'objects/first_aid_cabinet1.png');
     this.load.image('instrument_trolley1', 'objects/instrument_trolley1.png');
@@ -2983,6 +2988,7 @@ function walkToObjectThenUse(obj) {
     const pfm = window.pathfindingManager;
     const target = objectStandPoint(obj, player, {
         range: INTERACTION_RANGE,
+        reachY: (o, y) => reachY(o, y),   // a tall wall-mounted object: its nearest part (interaction-reach.js)
         findCell: pfm?.findNearestWalkableWorldCell ? (x, y, r) => pfm.findNearestWalkableWorldCell(x, y, r) : null,
         wallClear: (p, o) => wallClearFrom(p, o),
         // Stand on the object's own side of a shared strip (UX slice 15 R2, M1)

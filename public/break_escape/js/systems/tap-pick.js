@@ -209,6 +209,8 @@ export function npcYieldTarget(npc, objectsUnderTap, deps) {
  * @param {object} deps
  * @param {number} deps.range - INTERACTION_RANGE
  * @param {function(number, number, number=): ?{x:number,y:number}} [deps.findCell] - pathfinder's nearest walkable cell
+ * @param {function(object, number): number} [deps.reachY] - the y reach is measured to from a sprite-centre y
+ *   (interaction-reach.js reachY: a tall wall-mounted object's nearest part); obj.y without it
  * @param {function({x:number,y:number}, object): boolean} [deps.wallClear] - no wall between the point and the object
  * @param {function({x:number,y:number}, object): boolean} [deps.sameRoom] - feet at the point stand in the object's
  *   room (interaction-walls.js sameRoomFrom). An object in the strip two rooms share (a drop in a doorway) is
@@ -233,7 +235,10 @@ export function objectStandPoint(obj, player, deps) {
     const target = { x: centreX + footDx, y: centreY + footDy };
     const findCell = deps.findCell;
     if (!findCell) return target;
-    const reachAfter = (p) => Math.hypot(p.x - footDx - obj.x, p.y - footDy - obj.y);
+    // The arrival check measures y to the object's nearest part when it is wall-mounted
+    // (interactions.js isObjectInInteractionRange, reachY), so judge stand points the same way
+    const ry = typeof deps.reachY === 'function' ? (y) => deps.reachY(obj, y) : () => obj.y;
+    const reachAfter = (p) => Math.hypot(p.x - footDx - obj.x, p.y - footDy - ry(p.y - footDy));
     const walk = (p) => Math.hypot(p.x - (player.x + footDx), p.y - (player.y + footDy));
     const aimed = findCell(target.x, target.y);
     // Return the cell that was checked, not the raw aim: the raw aim can lie inside a desk,
