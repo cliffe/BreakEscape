@@ -5359,7 +5359,17 @@ export function createEngineWorld() {
                 rec.itemsHeld = rec.itemsHeld || [];
                 rec._needsCarried = rec._needsCarried || {};
                 rec._needsCarried[itemId] = { sprite: sp, roomId: f.roomId, key: f.key };
+                // Record the carried object as a held item of the NPC (server serves
+                // it in itemsHeld; this is the local mirror for an offline frame)
+                const sd = sp.scenarioData || {};
+                if (!rec.itemsHeld.some(i => i && i.id === itemId)) {
+                    rec.itemsHeld.push({ id: itemId, type: sd.type, name: sd.name, _needsCarried: true });
+                }
             }
+            // The server holds the carry (NPC_CARRIED_ITEMS_PLAN.md): it leaves the
+            // origin room and is served in the NPC's itemsHeld. Replaces the old
+            // client-only carry that left the object in its scenario room.
+            try { Promise.resolve(W().RoomStateSync?.carryObject?.(npcId, itemId, f.roomId)).catch(() => {}); } catch (e) { /* offline */ }
             return true;
         },
         consumeHeld(npcId, itemId) {
@@ -5367,9 +5377,13 @@ export function createEngineWorld() {
             const held = rec?._needsCarried?.[itemId];
             if (!held) return;
             delete rec._needsCarried[itemId];
+            if (Array.isArray(rec.itemsHeld)) rec.itemsHeld = rec.itemsHeld.filter(i => !(i && i._needsCarried && i.id === itemId));
             try { held.sprite.destroy?.(); } catch (e) { /* already gone */ }
-            // Used up: take it off the server's room state too, or a reload brings it back
-            try { Promise.resolve(W().RoomStateSync?.removeItemFromRoom?.(held.roomId, itemId)).catch(() => {}); } catch (e) { /* offline */ }
+            // Used up: tell the server the NPC consumed it, so the carry is cleared
+            // and a reload keeps it gone. No room is named (the old remove_object sent
+            // the carrier's room and 422'd), so there is no wrong-room failure.
+            const npcRoom = W().npcBehaviorManager?.getBehavior?.(npcId)?.roomId || held.roomId;
+            try { Promise.resolve(W().RoomStateSync?.consumeCarried?.(npcId, itemId, npcRoom)).catch(() => {}); } catch (e) { /* offline */ }
         },
         dropHeld(npcId, itemId) {
             const rec = W().npcManager?.getNPC?.(npcId);
@@ -5377,6 +5391,7 @@ export function createEngineWorld() {
             const pos = this.npcPos(npcId);
             if (!held) return;
             delete rec._needsCarried[itemId];
+            if (Array.isArray(rec.itemsHeld)) rec.itemsHeld = rec.itemsHeld.filter(i => !(i && i._needsCarried && i.id === itemId));
             const sp = held.sprite;
             const roomId = W().npcBehaviorManager?.getBehavior?.(npcId)?.roomId || held.roomId;
             if (pos) { sp.x = pos.x - (sp.displayWidth || 0) / 2; sp.y = pos.y - (sp.displayHeight || 0) / 2; }
@@ -5387,6 +5402,9 @@ export function createEngineWorld() {
             try { sp.setInteractive?.({ useHandCursor: true }); } catch (e) { /* ok */ }
             const room = W().rooms?.[roomId] || W().rooms?.[held.roomId];
             if (room) { room.objects = room.objects || {}; room.objects[held.key] = sp; sp.roomId = roomId; }
+            // The server lands the object in the room the NPC set it down in, from the
+            // scenario definition, and clears the carry. Only the position is the client's.
+            try { Promise.resolve(W().RoomStateSync?.putDownObject?.(npcId, itemId, roomId, pos ? { px: pos.x, py: pos.y } : null)).catch(() => {}); } catch (e) { /* offline */ }
         },
         // ── reveal slots (slice 7) ──
         // Set a delivered slot down on the target: at its centre plus placeAt {dx, dy} tiles, else
@@ -5407,6 +5425,7 @@ export function createEngineWorld() {
                 at = cell ? { x: (target.x + cell.x) / 2, y: (target.y + cell.y) / 2 } : { x: target.x, y: target.y };
             }
             delete rec._needsCarried[itemId];
+            if (Array.isArray(rec.itemsHeld)) rec.itemsHeld = rec.itemsHeld.filter(i => !(i && i._needsCarried && i.id === itemId));
             setCentre(sp, at);
             sp._npcCarried = null;
             sp._npcPlacedBy = npcId;
@@ -5417,6 +5436,9 @@ export function createEngineWorld() {
             try { sp.setInteractive?.({ useHandCursor: true }); } catch (e) { /* ok */ }
             const room = W().rooms?.[target.roomId] || W().rooms?.[held.roomId];
             if (room) { room.objects = room.objects || {}; room.objects[sp.objectId || held.key] = sp; }
+            // The server lands a placed slot in the target room from the scenario
+            // definition and clears the carry (a reveal slot is placed, not consumed).
+            try { Promise.resolve(W().RoomStateSync?.putDownObject?.(npcId, itemId, target.roomId, { px: at.x, py: at.y })).catch(() => {}); } catch (e) { /* offline */ }
             W().eventDispatcher?.emit(`npc_placed:${itemId}`, { npcId, itemId, targetId: target.id, roomId: target.roomId });
             return true;
         },

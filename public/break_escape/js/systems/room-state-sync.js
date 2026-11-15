@@ -344,6 +344,74 @@ export async function batchUpdateRoomState(updates) {
     }
 }
 
+/**
+ * Internal: POST one update_room action and report success. The server validates
+ * every field; the client never names an arbitrary room for a carried item.
+ */
+async function postRoomAction(body) {
+    const gameId = window.breakEscapeConfig?.gameId;
+    if (!gameId) {
+        console.error('Cannot sync room state: gameId not available');
+        return false;
+    }
+    try {
+        const response = await fetch(`/break_escape/games/${gameId}/update_room`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            },
+            body: JSON.stringify(body)
+        });
+        const result = await response.json();
+        if (result.success) return true;
+        console.warn(`❌ Failed to sync ${body.actionType}: ${result.message}`);
+        return false;
+    } catch (error) {
+        console.error(`Error syncing ${body.actionType}:`, error);
+        return false;
+    }
+}
+
+/**
+ * An NPC picks an object up to carry it (NPC_CARRIED_ITEMS_PLAN.md). The server
+ * moves the object into the NPC's held items and out of its origin room, so a
+ * later put-down or consume never names the wrong room (the old 422).
+ * @param {string} npcId
+ * @param {string} itemId - the scenario object id
+ * @param {string} fromRoom - the room the object is picked up from
+ */
+export async function carryObject(npcId, itemId, fromRoom) {
+    if (isStandInObjectId(itemId)) return false;
+    return postRoomAction({ roomId: fromRoom, actionType: 'carry_object', data: { npcId, itemId } });
+}
+
+/**
+ * An NPC sets the carried object down in a room at a world-pixel position. The
+ * server lands it there from the scenario definition and clears the carry.
+ * @param {string} npcId
+ * @param {string} itemId
+ * @param {string} toRoom
+ * @param {{px:number, py:number}} position - absolute world pixels
+ */
+export async function putDownObject(npcId, itemId, toRoom, position) {
+    if (isStandInObjectId(itemId)) return false;
+    return postRoomAction({ roomId: toRoom, actionType: 'put_down_object', data: { npcId, itemId, position } });
+}
+
+/**
+ * The carried object is used up. The server clears the carry and leaves the
+ * object gone (its origin removal stays), so a reload keeps it gone. roomId is
+ * the NPC's current room, used only by the server's unlocked-room gate.
+ * @param {string} npcId
+ * @param {string} itemId
+ * @param {string} npcRoom
+ */
+export async function consumeCarried(npcId, itemId, npcRoom) {
+    if (isStandInObjectId(itemId)) return false;
+    return postRoomAction({ roomId: npcRoom, actionType: 'consume_carried', data: { npcId, itemId } });
+}
+
 // Export to window for global access
 if (typeof window !== 'undefined') window.RoomStateSync = {
     addItemToRoom,
@@ -351,7 +419,10 @@ if (typeof window !== 'undefined') window.RoomStateSync = {
     updateObjectState,
     updateNpcState,
     removeNpcFromScene,
-    batchUpdateRoomState
+    batchUpdateRoomState,
+    carryObject,
+    putDownObject,
+    consumeCarried
 };
 
 console.log('✅ Room State Sync system loaded');
