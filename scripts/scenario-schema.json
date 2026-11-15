@@ -883,47 +883,8 @@
           },
           "actions": {
             "type": "array",
-            "items": {
-              "type": "object",
-              "additionalProperties": true,
-              "properties": {
-                "item": {
-                  "$ref": "#/definitions/item"
-                },
-                "type": {
-                  "type": "string",
-                  "description": "The action type, as triggerOnInteract (apply-actions.js)."
-                },
-                "title": {
-                  "type": "string",
-                  "description": "hint: the toast heading."
-                },
-                "message": {
-                  "type": "string",
-                  "description": "hint: the toast text."
-                },
-                "condition": {
-                  "type": "string",
-                  "description": "Run the action only while this globalVars condition holds."
-                },
-                "roomId": {
-                  "type": "string",
-                  "description": "tint_objects: the room."
-                },
-                "textureKey": {
-                  "type": "string",
-                  "description": "tint_objects: the sprite texture to tint."
-                },
-                "color": {
-                  "type": "number",
-                  "description": "tint_objects: the tint colour."
-                },
-                "pulse": {
-                  "type": "boolean",
-                  "description": "tint_objects: pulse the tint (default true)."
-                }
-              }
-            }
+            "description": "Actions the timer runs (applyActions, the same types as triggerOnInteract).",
+            "items": { "$ref": "#/definitions/action" }
           },
           "id": {
             "type": "string",
@@ -962,9 +923,61 @@
         "additionalProperties": true
       }
     },
-    "npcs": {"type": "array", "items": {"$ref": "#/definitions/npc"}, "description": "Legacy: NPCs with no room (phone contacts), read by the person-chat cast lookup. Put NPCs in rooms instead."}
+    "npcs": {"type": "array", "items": {"$ref": "#/definitions/npc"}, "description": "Legacy: NPCs with no room (phone contacts), read by the person-chat cast lookup. Put NPCs in rooms instead."},
+    "phoneNPCs": {"type": "array", "items": {"$ref": "#/definitions/npc"}, "description": "Legacy and wrong: the validator reports an ERROR for it. Put phone NPCs in rooms[*].npcs with npcType phone."}
   },
   "definitions": {
+    "action": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["set_global", "emit_event", "complete_task", "unlock_task", "unlock_aim", "confirm_action", "unlock_object", "unlock_door", "give_item", "tint_objects", "show_end_screen", "lighting_dip", "grant_fact", "add_capture", "set_costume", "clear_costume", "hint", "wear", "take_off", "grant_foothold", "remove_item", "revoke_card"]
+        },
+        "pc": { "type": "string", "description": "grant_foothold (slice 9.3b I): the sign-in PC whose own network the implant foothold reaches. Never the sign-in PC's own actions (it sits on a separate prop or a timer)." },
+        "needsDropped": { "type": "string", "description": "grant_foothold dropped shape: the item id the player must have dropped (an NPC then uses it). One of needsDropped or needsSession, never both." },
+        "needsSession": { "type": "boolean", "description": "grant_foothold session shape: the player must already hold a non-foothold session at the PC and carry needsHeld, which the server removes. One of needsDropped or needsSession, never both." },
+        "needsHeld": { "type": "string", "description": "grant_foothold session shape: the device (by id, type or name) the player plugs in; the server removes it on success. Its host object must not set consumesItem." },
+        "name": { "type": "string", "description": "give_item/grant_foothold: the item label (a link-item label for grant_foothold, not a secret)." },
+        "key": { "type": "string" },
+        "condition": { "type": "string", "minLength": 1, "description": "Any action: run it only while this holds, read when the action is reached. globalVars terms (globalVars.x, !globalVars.x, or a comparison with true, false, null, a number or a quoted string) joined by && and ||, no parentheses. Anything else never holds. Read by the client only: the server ignores it." },
+        "message": { "type": "string", "description": "hint: the toast text. Its heading is `title` (default 'Intelligence Received')." },
+        "fact": { "type": "string", "description": "grant_fact: the social intel fact id (00 S15)" },
+        "value": {"x-free-data": true},
+        "event_name": { "type": "string" },
+        "text": { 
+          "type": "string",
+          "description": "Confirmation text (for confirm_action)"
+        },
+        "onConfirm": {
+          "type": "array",
+          "description": "Actions to execute on confirmation (for confirm_action)",
+          "items": {"x-id-map": false,  "type": "object" }
+        },
+        "confirmLabel": { "type": "string", "minLength": 1, "pattern": "\\S", "description": "confirm_action: the confirm button's label, a named action (\"Switch off\", \"Flip it\"). Absent: Confirm." },
+        "cancelLabel": { "type": "string", "minLength": 1, "pattern": "\\S", "description": "confirm_action: the cancel button's label (\"Leave it\"). Absent: Cancel." },
+        "objectId": { "type": "string", "x-ref": "object" },
+        "itemId": { "type": "string", "x-ref": "item", "description": "wear: the held wearable item to put on; take_off: the worn item to take off (absent: whatever is worn)" },
+        "room_id": { "type": "string", "x-ref": "room" },
+        "item": {"x-id-map": false,  "type": "object" },
+        "roomId": { "type": "string", "x-ref": "room" },
+        "textureKey": { "type": "string" },
+        "color": { "type": "number" },
+        "pulse": { "type": "boolean" },
+        "title": { "type": "string" },
+        "body": { "type": "string" },
+        "buttonText": { "type": "string" },
+        "outcome": { "type": "string" },
+        "level": { "type": "number", "minimum": 0.2, "maximum": 1, "description": "lighting_dip: how far the lights sag (0.5 = half)" },
+        "ms": { "type": "number", "minimum": 800, "maximum": 4000, "description": "lighting_dip: length of the dip" },
+        "taskId": {"type": "string", "description": "complete_task: the task to complete (apply-actions.js)."},
+        "capture": {"type": "object", "x-id-map": false, "description": "add_capture: the capture to record (apply-actions.js)."},
+        "costume": {"type": "string", "description": "set_costume: the costume id (apply-actions.js; falls back to id, then value)."},
+        "id": {"type": "string", "description": "set_costume: the costume id when `costume` is absent (apply-actions.js falls back to id, then value)."},
+        "card_id": {"x-id-map": false, "description": "revoke_card: the card id, or a list (apply-actions.js)."}
+      }
+    },
     "gateCreditBlock": {
       "type": "object",
       "description": "One gate creditOnPass path (GATED_DOOR §3.4): globals the server sets and a task it completes at promotion. setGlobal names must be declared globals listed as server-credit globals; completeTask must name an existing, server-completed-only task.",
@@ -5351,55 +5364,7 @@
         "triggerOnInteract": {
           "type": "array",
           "description": "Actions fired when player interacts with this object",
-          "items": {
-            "type": "object",
-            "properties": {
-              "type": {
-                "type": "string",
-                "enum": ["set_global", "emit_event", "complete_task", "unlock_task", "unlock_aim", "confirm_action", "unlock_object", "unlock_door", "give_item", "tint_objects", "show_end_screen", "lighting_dip", "grant_fact", "add_capture", "set_costume", "clear_costume", "hint", "wear", "take_off", "grant_foothold"]
-              },
-              "pc": { "type": "string", "description": "grant_foothold (slice 9.3b I): the sign-in PC whose own network the implant foothold reaches. Never the sign-in PC's own actions (it sits on a separate prop or a timer)." },
-              "needsDropped": { "type": "string", "description": "grant_foothold dropped shape: the item id the player must have dropped (an NPC then uses it). One of needsDropped or needsSession, never both." },
-              "needsSession": { "type": "boolean", "description": "grant_foothold session shape: the player must already hold a non-foothold session at the PC and carry needsHeld, which the server removes. One of needsDropped or needsSession, never both." },
-              "needsHeld": { "type": "string", "description": "grant_foothold session shape: the device (by id, type or name) the player plugs in; the server removes it on success. Its host object must not set consumesItem." },
-              "name": { "type": "string", "description": "give_item/grant_foothold: the item label (a link-item label for grant_foothold, not a secret)." },
-              "key": { "type": "string" },
-              "condition": { "type": "string", "minLength": 1, "description": "Any action: run it only while this holds, read when the action is reached. globalVars terms (globalVars.x, !globalVars.x, or a comparison with true, false, null, a number or a quoted string) joined by && and ||, no parentheses. Anything else never holds. Read by the client only: the server ignores it." },
-              "message": { "type": "string", "description": "hint: the toast text. Its heading is `title` (default 'Intelligence Received')." },
-              "fact": { "type": "string", "description": "grant_fact: the social intel fact id (00 S15)" },
-              "value": {"x-free-data": true},
-              "event_name": { "type": "string" },
-              "text": { 
-                "type": "string",
-                "description": "Confirmation text (for confirm_action)"
-              },
-              "onConfirm": {
-                "type": "array",
-                "description": "Actions to execute on confirmation (for confirm_action)",
-                "items": {"x-id-map": false,  "type": "object" }
-              },
-              "confirmLabel": { "type": "string", "minLength": 1, "pattern": "\\S", "description": "confirm_action: the confirm button's label, a named action (\"Switch off\", \"Flip it\"). Absent: Confirm." },
-              "cancelLabel": { "type": "string", "minLength": 1, "pattern": "\\S", "description": "confirm_action: the cancel button's label (\"Leave it\"). Absent: Cancel." },
-              "objectId": { "type": "string", "x-ref": "object" },
-              "itemId": { "type": "string", "x-ref": "item", "description": "wear: the held wearable item to put on; take_off: the worn item to take off (absent: whatever is worn)" },
-              "room_id": { "type": "string", "x-ref": "room" },
-              "item": {"x-id-map": false,  "type": "object" },
-              "roomId": { "type": "string", "x-ref": "room" },
-              "textureKey": { "type": "string" },
-              "color": { "type": "number" },
-              "pulse": { "type": "boolean" },
-              "title": { "type": "string" },
-              "body": { "type": "string" },
-              "buttonText": { "type": "string" },
-              "outcome": { "type": "string" },
-              "level": { "type": "number", "minimum": 0.2, "maximum": 1, "description": "lighting_dip: how far the lights sag (0.5 = half)" },
-              "ms": { "type": "number", "minimum": 800, "maximum": 4000, "description": "lighting_dip: length of the dip" },
-              "taskId": {"type": "string", "description": "complete_task: the task to complete (apply-actions.js)."},
-              "capture": {"type": "object", "x-id-map": false, "description": "add_capture: the capture to record (apply-actions.js)."},
-              "costume": {"type": "string", "description": "set_costume: the costume id (apply-actions.js; falls back to id, then value)."},
-              "card_id": {"x-id-map": false, "description": "revoke_card: the card id, or a list (apply-actions.js)."}
-            }
-          }
+          "items": { "$ref": "#/definitions/action" }
         },
         "requiresItem": {
           "description": "triggerOnInteract only fires if the player carries a matching inventory item (matched by its type, id or name). A string, or an array of any of those. Models deploying carried kit on a target (e.g. clip a keylogger onto a PC).",

@@ -13,7 +13,7 @@ Branch `build/schema-slice1`, from main 97b8dbb25. User decision D14: slice 1 no
 - A retired key (FormatUpgrade) gets only its rename line, as before. `fingerprintQuality` gets only its own "ignored" line, as before.
 - A `grant_foothold` action is left to its closed definition (`validate_grant_foothold_actions`), so one slip prints one line.
 - Declared grants and account-profile items, which sit in no room, are walked first with the item definition, so their warnings name the grant path as before; a hash reached twice is checked once.
-- The messages keep their old wording and `did you mean` hint (`unknown_key_message`), so the old tests and the corpus output read the same.
+- The messages keep their old wording and `did you mean` hint (`unknown_key_message`), but the path labels changed: items under `contents` and `itemsHeld` are labelled `id || name || type` (the old text used only one of those), so a few warning lines read differently from before. The corpus ERROR lines are unchanged.
 
 Where the old code worded its own message for a closed block (NPC `los`, `los.challengeOnSight`, `behavior.personalSpace`), the known keys now come from the schema (`schema_keys_at`), not a list.
 
@@ -82,6 +82,7 @@ The 20 keys still warned about, none with a reader (left for slice 2 to fix in t
 - `triggerOnInteract.type` enum lists `unlock_task` and `unlock_aim`, which `apply-actions.js` has no case for.
 - `onInteract`: declared as deprecated in slice 1 because the page still runs it (`interactions.js` handles `setVariable`, `actions`, `display` and `confirmationText`, and `DeclaredGrants` treats `onInteract.actions` as a run path). No scenario uses it. Retire it with the other aliases.
 - Other hand key lists outside `check_unknown_fields`: `known_actions` (about line 2900), `known_variant_fields` (portraitVariants) and `known_style_fields` (object style) in `validate_scenario.rb`, and `RING_KEYS` / `CALL_KEYS` in `validate_phone_calls.rb`.
+- No test blocks the slice 2 sweep: the review grepped `test/`, `scripts/`, `tools/` and `.claude/skills` for the keys slice 2 retires and found none pinned.
 - Unknown-key message wording still uses an em dash (kept from the old text so the output reads the same); change it with the messages in slice 2 or 3.
 - Everything in the audit's slice 2 and 3 plans: one spelling per verb, aliases retired, locks on `doors[]` an error, `x-ref` on every reference (slice 1 declared `triggerOnInteract.taskId` without one, so no new reference warning appears), then closing the core blocks.
 
@@ -90,3 +91,17 @@ The 20 keys still warned about, none with a reader (left for slice 2 to fix in t
 Status: slice 1 built and committed on `build/schema-slice1`, ready for review and a train. Not run: the full `bin/test-js` batch and the full Rails suite (the train check runs both). Next: slice 2, after the release, from the list above.
 
 Working files (session scratchpad, not in the repo): `schema1/corpus.sh` (corpus run), `schema1/before`, `schema1/after` (validator output per scenario), `schema1/edit_schema.py` and `schema1/jspan.py` (the schema edit, made by text insertion so the file keeps its layout).
+
+## R1 review outcomes
+
+Fixes for the first review of slice 1 (1 M, 5 m).
+
+- M1: the `triggerOnInteract` item schema moved to `#/definitions/action` (open, `additionalProperties: true`) and both `triggerOnInteract[].items` and `timers[].actions[].items` `$ref` it. Timer actions now accept every action key, so `emit_event`/`event_name`, `complete_task`/`taskId`, `set_global` `key` and `value`, `lighting_dip` `level` and `ms`, and `unlock_door` `room_id` give no warning, and the `roomId` suggestion for `unlock_door` is gone. The timer `item` is now the shared plain-object form, not the full item definition. The test fixture's timer carries one action of each of those types and asserts no warning.
+- m1: top-level `phoneNPCs` is declared as legacy (like `npcs`), so a scenario using it gets only the existing ERROR. A test asserts it.
+- m2: the reader-name check no longer reads `scripts/validate_scenario.rb`. That exposed two declared keys only the validator names, `fireOnlyWhenLoaded` (event mapping) and `mutuallyExclusiveGlobals` (top level); both are on the no-reader list for slice 2. For the blocks slice 1 rewrote (music events, `triggerOnInteract` actions, timers, `behavior.hostile`) every declared key must now be read as a property access (`entry.key`, `action.key`, `timer.key`, `hostile?.key`) in that block's reader files, comments removed. A second test proves `task_id`, `aim_id`, `volume`, `loop`, `fadeIn` and `fadeOut` fail it. The header states what is and is not proven.
+- m3: `revoke_card` and `remove_item` are real cases in `apply-actions.js`, so both are in the action type enum. `set_costume` reads `costume ?? id ?? value`, so `id` is declared too (`value` already was).
+- m4: the fixture's blocks loop now also covers declared grant items, account profile contents, `startItemsInInventory`, `contents`, `itemsHeld`, objectives, tasks, `doors[]`, `hostile`, `patrol` and timer actions, each with one undeclared key giving exactly one warning.
+- m5: the build log line about message wording corrected (above); the new labels stay.
+- m6: em dashes in the validator messages left as they are; the slice 2 note about test coverage added.
+
+Corpus after R1 (`--no-graph`, 181 scenarios): all exit 0, 73 ERROR lines identical per scenario to before, unknown-key warning lines 120, all WARNING lines 738 (identical to the pre-fix output).
