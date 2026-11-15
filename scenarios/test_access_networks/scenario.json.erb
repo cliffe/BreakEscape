@@ -142,7 +142,8 @@
   "policies": {
     "hardened": { "remote": "blocked" },
     "counted": { "maxAttempts": 5, "remote": "allowed" },
-    "kiosk_locked": { "remote": "blocked", "usb": "blocked" }
+    "kiosk_locked": { "remote": "blocked", "usb": "blocked" },
+    "nla": { "remote": "allowed", "remoteScreen": "typed" }
   },
 
   "globalVariables": {
@@ -292,7 +293,7 @@
           "takeable": false, "interactable": true, "active": true, "readable": true,
           "readDisplay": "gameDisplay", "addToNotes": false,
           "observations": "A test card for the capture log.",
-          "text": "CAPTURE CARD (test)\n\nReading this records Lena's sign-in in the capture log. Her tile then shows under Captured sign-ins on a remote sign-in screen.",
+          "text": "CAPTURE CARD (test)\n\nReading this records Lena's sign-in in the capture log. Her tile is then tagged Captured on a remote sign-in screen.",
           "triggerOnInteract": [
             { "type": "set_global", "key": "capture_card_lena", "value": true }
           ]
@@ -360,7 +361,7 @@
           "creds": { "username": "sokafor", "password": "Marmalade-82" },
           "eventMappings": [
             { "eventPattern": "network_share_opened", "condition": "data.resourceId === 'scanned_inbox' && data.via === 'session' && data.pcId === 'sam_pc'", "onceOnly": true, "completeTask": "p1_open_share_keyboard" },
-            { "eventPattern": "network_viewed", "condition": "data.networkId === 'office_lan' && data.hostList === 'door_box,kiosk_pc,lena_pc,sam_pc'", "onceOnly": true, "completeTask": "p3_see" },
+            { "eventPattern": "network_viewed", "condition": "data.networkId === 'office_lan' && data.hostList === 'door_box,it_pc,kiosk_pc,lena_pc,ops_pc,sam_pc'", "onceOnly": true, "completeTask": "p3_see" },
             { "eventPattern": "item_picked_up:text_file", "condition": "data.itemId === 'inbox_letter' && data.transfer === 'copy' && data.sourceResourceId === 'scanned_inbox'", "onceOnly": true, "completeTask": "p4_share_from_view" },
             { "eventPattern": "pc_signed_in", "condition": "data.pcId === 'lena_pc' && data.npcId === 'lena' && data.remote === true && !globalVars.p5_lena_remote", "onceOnly": true, "setGlobal": { "p5_lena_remote": true } },
             { "eventPattern": "item_unlocked", "condition": "data.itemId === 'ledger_yearend' && globalVars.p5_lena_remote", "onceOnly": true, "completeTask": "p5_remote_signin" },
@@ -785,6 +786,37 @@
               ]
             }
           ]
+        },
+        {
+          "type": "pc",
+          "id": "it_pc",
+          "name": "IT bench PC",
+          "host": "HB-IT-01",
+          "sprite": "pc_desktop",
+          "network": "office_lan",
+          "position": { "x": 3, "y": 6 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": "accounts",
+          "access": { "roles": ["it"] },
+          "observations": "The IT bench PC. Its default policy allows remote sign-in and shows its account tiles."
+        },
+        {
+          "type": "pc",
+          "id": "ops_pc",
+          "name": "Ops desk PC",
+          "host": "HB-OPS-02",
+          "sprite": "pc_desktop",
+          "network": "office_lan",
+          "position": { "x": 5, "y": 6 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": "accounts",
+          "access": { "roles": ["staff"] },
+          "policy": "nla",
+          "observations": "The ops desk PC. Its nla policy lists no accounts until you sign in (the typed remote screen)."
         }
       ]
     },
