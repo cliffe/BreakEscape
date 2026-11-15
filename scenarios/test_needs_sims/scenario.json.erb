@@ -1112,6 +1112,7 @@
       "door_sign": "Staff Room",
       "needsPrivateTo": ["keith", "jodie"],
       "connections": { "west": "it_room" },
+      "_comment": "Faulty light. Asked for 3 dips of 150 to 250 ms every few seconds, but lighting.js takes flicker only as true/false: the dip length (90 ms), depth and the one-or-two dips per burst, 2.5 to 8.5 s apart, are fixed in the engine, so this stays flicker: true. Photosensitivity: each dip is one short drop on a single ceiling panel's pool, far under the three-flashes-a-second limit (WCAG 2.3.1), a burst is at most two dips (never more than three), and bursts are seconds apart. Reduced motion turns it off: with prefers-reduced-motion the panel holds steady.",
       "lighting": { "flicker": true, "variants": [{ "condition": "globalVars.job_cleared === true", "flicker": false }] },
       "objects": [
         {
