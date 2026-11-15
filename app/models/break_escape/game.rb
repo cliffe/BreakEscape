@@ -1771,6 +1771,15 @@ module BreakEscape
             kept_fields[field] = room_data[field] if room_data.key?(field)
           end
           self.class.strip_lock_answers!(kept_fields)
+          # A pad lock's answer never leaves this method: fill the PIN pad length first, then drop
+          # `requires` unless it names a card, as GamesController#filter_requires_recursive does
+          # again on the way out. Doing it here too means the client-bound bootstrap is safe on
+          # every path that calls this method, not only the one the controller wraps.
+          self.class.set_pin_length!(kept_fields)
+          lock_type = kept_fields['lockType']
+          if lock_type.is_a?(String) && !CARD_REFERENCE_LOCK_TYPES.include?(lock_type)
+            kept_fields.delete('requires')
+          end
 
           # A motion-sensor room is lit only when someone's actually in it. NPCs are stripped
           # from the lazy payload, so expose just whether a present (non-phone, non-hidden) NPC
