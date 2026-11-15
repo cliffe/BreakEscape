@@ -1,7 +1,7 @@
 require 'json'
 require 'erb'
 require 'set'
-load File.join(ARGV[0],'scripts/validate_scenario.rb') rescue nil
+load File.join(ARGV[0], 'scripts/validate_scenario.rb') rescue nil
 root = ARGV[0]
 # Mirror of NPCManager._ringRecheckCondition + ringConditionHolds gating
 def recheck(cond, sg)
@@ -22,7 +22,7 @@ Dir.glob(File.join(root, 'scenarios/*/scenario.json*')).sort.each do |f|
   begin
     j = f.end_with?('.erb') ? render_erb_to_json(f) : JSON.parse(src)
   rescue => e
-    warn "#{f}: #{e.message[0,100]}"; next
+    warn "#{f}: #{e.message[0, 100]}"; next
   end
   scen = File.basename(File.dirname(f))
   walk(j) do |h|
@@ -33,8 +33,9 @@ Dir.glob(File.join(root, 'scenarios/*/scenario.json*')).sort.each do |f|
       next unless m.is_a?(Hash) && m['ring']
       rc = recheck(m['condition'], m['setGlobal'])
       cls = if rc.nil? then 'none'
-            elsif !rc.split('&&').map(&:strip).all? { |t| t =~ /^globalVars\./ } then 'SKIP(non-global term)'
-            else 'RECHECK' end
+      elsif !rc.split('&&').map(&:strip).all? { |t| t =~ /^globalVars\./ } then 'SKIP(non-global term)'
+      else 'RECHECK'
+      end
       cls = 'FORCED-exempt' if m['disableClose']
       flag = (rc && rc =~ /(data\.|\bvalue\b|\bname\b)/ && cls == 'RECHECK') ? ' !!DATA-IN-RECHECK' : ''
       flag += ' !!OR' if m['condition'].to_s.include?('||')
