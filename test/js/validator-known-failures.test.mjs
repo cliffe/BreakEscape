@@ -11,6 +11,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { readDecisions, signOffProblems, sharedHeadings } from './validator-decisions-reader.mjs';
+import { acknowledgedApproved } from './validator-acknowledged-clues-reader.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const LIST = join(root, 'scripts/validator_known_failures.json');
@@ -127,13 +128,15 @@ function knownFailureApproved() {
     .filter(([, h]) => typeof h === 'string');
 }
 
-// The other two lists, once they exist: payload scan exceptions (6a-1) and acknowledgedClues (step 3,
-// read from the scenario templates' raw text, as the markers never ship).
+// The other two lists: payload scan exceptions (6a-1) and the acknowledgedClues markers (step 3,
+// read from the scenario templates' raw text with the shared reader, as the markers never ship).
+// Both feed the shared-heading rule, so one heading cannot back an entry in two lists.
 function otherApproved() {
   const pairs = [];
   if (existsSync(EXCEPTIONS)) {
     JSON.parse(readFileSync(EXCEPTIONS, 'utf8')).forEach((e, i) => pairs.push([`payload scan exception ${i} (${e.scenario})`, e.approved]));
   }
+  for (const pair of acknowledgedApproved(root)) pairs.push(pair);
   return pairs;
 }
 
@@ -316,7 +319,7 @@ test('exceptions: a passed reviewBy warns, and fails with MERGE_BATCH=1', () => 
   assert.match(checkExc([e], text, { mergeBatch: true }).problems.join('\n'), /reviewBy 2026-11-11 has passed/);
 });
 
-test('exceptions: the real list is an empty array until step 3 lands', () => {
+test('exceptions: the real payload_scan_exceptions file parses to a JSON array', () => {
   const list = existsSync(EXCEPTIONS) ? JSON.parse(readFileSync(EXCEPTIONS, 'utf8')) : null;
   assert.ok(Array.isArray(list), 'payload_scan_exceptions.json must be a JSON array');
 });

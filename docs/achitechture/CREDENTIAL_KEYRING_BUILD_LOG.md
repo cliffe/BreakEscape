@@ -86,3 +86,265 @@ Keyless server: `env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true bundle exec 
 - UI slice 6 session lock is already on main (see deviation above); the remote screen's locked-session branch (`capturedHtml` only when `s.current?.locked !== true`) must be preserved through the re-layout.
 - `accounts` tiles already come from `login_account_tiles` (includes portrait); the remote answer's `loginAccounts` uses the same shape.
 - Commit before testing; stage explicit paths; check `git diff --cached --stat`; UK English; no em/en dashes; no model names; no bare `git stash`; delete by moving into `tmp/delete/`.
+
+## K0 client half: progress and handover (run 1)
+
+Run 1 of the client half merged main, fixed a test-harness regression the WIP tip left, and built the small, well-defined, independently-testable pieces (api-client param, the badge art, the harness copy-list wiring). The bulk (the `password-minigame.js` merged-row re-layout, the dual fetch in `unlock-system.js`, the CSS fold rules, `signin-fit.mjs`, the scenario/PLAYTEST edits, the new tests and the live proof) is iterative browser-fit work and is left for a focused run, as plan 5.2 and the project rule "new features need full tests incl. live browser proof" direct: a browser-unproven re-layout of the 1900-line sign-in minigame must not land on the shared branch half-verified.
+
+### Done and committed (branch `build/keyring-k0`)
+- **Merge of main `4629372fe` into the branch** (merge commit `43ace5489`). Clean: no conflicts (git auto-merged; the branch base `bfcd5663c` is main's K0 server tip, so main's later UI work -- PC polish, slice 6 session lock already present at base, VPN-stylesheet removal -- came in without touching K0 files). No conflict resolution needed; nothing to record beyond "clean".
+- **Harness regression fix** (`ac421a23b`): the WIP tip `3f665db1c` added a static `import` of `utils/remote-host-text.js` to `systems/network-links.js` but did not add that file to the three node harness copy lists, so `network-links.test.mjs`, `network-view.test.mjs` and `access-remote-signin.test.mjs` failed `ERR_MODULE_NOT_FOUND`. Added `utils/remote-host-text.js` to each copy list (before `network-links.js`). All three pass again (70, 59, 17). Any further new static import in `unlock-system.js` or `password-minigame.js` to `remote-host-text.js` will need the same addition to every harness that copies those modules.
+- **api-client foothold param** (`bd396e19c`): `ApiClient.loginAccounts(pcId, { foothold } = {})` appends `&foothold=<enc>` only when given; the keyboard request (no foothold) is byte-identical.
+- **Art** (`bd396e19c`): `public/break_escape/assets/icons/badge-key.png`, hand-placed 8x8 key glyph (hollow bow, central shaft, two teeth), off-white `#eeeeee` on transparent, no antialiasing, 16 opaque px. The short-window password-kind badge. `badge-plug.png` is K3a, not built.
+
+### Already present from the WIP tip (reuse as-is)
+- `public/break_escape/js/utils/remote-host-text.js` -- the shared remote strings of plan 8.5, no imports (so it only needs adding to copy lists, never grows one further). Exports: `notRespondingMessage`, `unreachableMessage`, `remoteOffMessage`, `remoteNotPermittedMessage`, `remoteLockedOutMessage`; the K0 state-line builders `REMOTE_CHECKING_TEXT`, `REMOTE_STILL_CHECKING_TEXT`, `REMOTE_CAPTURES_FAILED_TEXT`, `remoteTypedLine(host)`, `remoteHeadlessLine(host)`, `remoteAccountsFailedLine(host)`, `remoteBothFailedLine(host)`; and the tag helpers `TAG_TEXT` (currently only the `captured` kind), `tileTagLabels(kinds)` (at most two, "+N" past two), `tileBadgeGroups(kinds)`. `network-links.js` already re-exports `unreachableMessage`/`notRespondingMessage` from it, so the view and tray stay in step.
+- These helpers are the contract for the minigame's state lines and tags; the remaining work wires them in, it does not re-author the strings.
+
+### Remaining (the focused run), by handover item
+1. **Not done** -- api-client: DONE (above).
+2. **`unlock-system.js` `openRemoteSignInScreen` (~line 650)**: replace the single `/capture_secrets` fetch (`remoteCapturedSignIns`, and the `setCapturedSignIns` cap at ~704-712) with the dual fetch of `/login_accounts?foothold=` (via the new `api.loginAccounts(pcId, { foothold })`) AND `/capture_secrets`, one `REMOTE_CAPTURES_WAIT_MS` (3 s) cap for the pair. Until both answer or the cap passes: "Checking..." with no form and no focus (the screen already opens with `capturedLoading: true`; keep that gating). Both in time -> `scene.setRemoteAccounts({ picker, headless, tiles, captured, remoteScreen, host, accountsFailed, capturedFailed })`, reading `picker`/`headless`/`remoteScreen` from the `/login_accounts` answer, never the lockable. After the cap -> Other-user form + "Still checking for accounts..."; each late answer redraws in place (the existing `{ quiet: late }` redraw pattern keeps focus and typed text -- reuse it). A 403/422 from `/login_accounts` closes the screen with the shared strings (`remoteBlocked` -> `remoteOffMessage(host)`; `reason: not_responding` -> `notRespondingMessage(host)`; 403 reach -> `unreachableMessage(host)`). Pass the server tiles to `sessions.screenShown(pcId, tiles, ...)` (currently `[]` at ~668); `screenShown` already derives usernames, no change there. Switch user on a remote desktop (`switching: true`) takes the same dual fetch.
+3. **`password-minigame.js` (the bulk)**: replace the separate captured block (`capturedListHtml` ~1710, `placeCapturedBlock` ~1585, `setCapturedSignIns` ~1754, the `#signin-captured`/`signin-captured-title` markup ~1419-1420, `capturedTiles` ~1618) with ONE merged tile row and a new `setRemoteAccounts(...)`. Merge rule (plan 5.2 / 8.5): PC tiles (from the answer's `loginAccounts` when `picker !== false` and not headless) plus captured tiles matched to PC tiles by `username` (no duplicate -- a matched PC tile just gains the `captured` tag); under `picker: "accounts"` drop captured tiles the PC does not list; under `known`/`false`/`typed`/headless show the unlisted captured tiles tagged. Each tile carries `data-username` and its tag(s) via `tileTagLabels`; short window -> a 12x12 badge drawn from `badge-key.png` per `tileBadgeGroups`. State lines (`remote-host-text.js`) go in the message line keyed off the answer's `host`, never "This PC": loading, "Still checking...", none, typed NLA, headless, `/login_accounts` failed, `/capture_secrets` failed, both failed. `signInErrorMessage`/`signInRefusalMessage` on remote screens must use the shared remote strings (currently `signInErrorMessage` at ~321 returns "This PC ..." -- branch on `this.signIn?.remote`). Preserve the locked-session branch (no strip when `s.current?.locked === true`). Keyboard screens unchanged: all new logic behind `this.signIn?.remote`.
+4. **14px overflow fix**: not started. Measure on the calibrated replica / in `signin-fit.mjs`; merge the "Signed in now" + remote lines into one slab and drop the Username/Password label slabs at x2 and in the short window (keep placeholders + `aria-label`); 4px gaps at x2, 2px slab padding at 915x412. Targets: win back >=35px at x2, >=20px at 915x412. Record measured heights here.
+5. **`pc-sessions.js` `screenShown`**: no signature change needed; just pass the server-fetched tiles from the remote path (item 2). Done implicitly there.
+6. **Art**: DONE (`badge-key.png`).
+7. **CSS** (`public/break_escape/css/password-minigame.css`): scope new fold rules to the remote screen class (the `:1045` fold is shared with the keyboard screen -- do not touch). Tags under the pixel-art rule (2px borders, Press Start 2P 8px).
+
+### Tests, scenarios, live proof -- all remaining
+- `test/js/password-signin-mode.test.mjs` (64 tests today, strong behavioural coverage) extend per plan 5.4; `test/js/access-remote-signin.test.mjs` change "no /login_accounts request" to "one with the foothold, never a post-it" + Switch user sends the foothold; `test/js/pc-monitor-frame.test.mjs` row + scroller structure; new `tools/playtest/signin-fit.mjs`. Rails `network_remote_tiles_test.rb` already covers the server (done in the server half).
+- Scenarios: `test_access_networks/scenario.json.erb` (the `nla` policy, `it_pc`/`ops_pc`, `p3_see` six-host list, the capture-card wording) and both PLAYTEST.md files -- not started.
+- Live proof on ports 3062-3064: not started.
+
+### Verification at handover
+- No regressions from the committed work: the full password/access/network/capture/pc-session/unlock/signin JS families run 0 failures (`password-signin-mode` 64, `access-remote-signin` 17, `network-links` 70, `network-view` 59, `pc-monitor-frame` 58, `pc-sessions` 43, `validator-access-model` 41, and ~25 more, all `# fail 0`).
+- Full `bin/test-js` and `bin/rails test` under the shared lock were NOT run in this run (no mechanism change to warrant the full suite yet); run them after the bulk lands.
+
+### Run-1 gotchas found
+- The WIP tip is a net positive: `remote-host-text.js` is a clean, import-free home for the 8.5 strings and the tag/badge helpers; keep it. Its only cost was the missing copy-list entries (now fixed).
+- `screenShown(pcId, tiles, ...)` already turns tiles into `usernames`/`usernameList` -- the remote path just needs to hand it the real tiles, no engine change.
+- `signInErrorMessage` (password-minigame.js ~321) still returns keyboard "This PC ..." strings; the remote branch must override with the shared host-named strings, or remote refusals will read wrong.
+
+## K0 client half: progress and handover (run 2)
+
+Run 2 built the mechanism and its unit tests: the merged tile row and `setRemoteAccounts`, the dual fetch in `unlock-system.js`, the remote state lines and refusal strings, the tag/badge CSS, and the three updated test families. Commit `8326d0943` on `build/keyring-k0`. The measured fit (the 14px overflow win-back at the four sizes), `tools/playtest/signin-fit.mjs`, the scenarios and the live proof are run 3, as plan 5.2 and the "full tests incl. live browser proof" rule direct; the browser-iterative fold tuning was kept out of this run so a measured, not guessed, layout lands.
+
+### Done and committed (branch `build/keyring-k0`, commit `8326d0943`)
+- **`unlock-system.js` `openRemoteSignInScreen`**: the single `/capture_secrets` fetch is replaced by the dual fetch of `api.loginAccounts(pcId, { foothold })` AND `remoteCapturedSignIns()` under one `REMOTE_CAPTURES_WAIT_MS` (3 s) cap for the pair. Until both answer or the cap passes the screen shows "Checking..." with no form and no focus; after the cap it shows the Other user form and "Still checking for accounts...", and each late answer redraws in place (`setRemoteAccounts`, quiet) keeping focus and typed text. `picker`/`headless`/`remoteScreen`/`host`/`tiles` come from the `/login_accounts` answer, never the lockable. A 403/422 from `/login_accounts` closes the screen with the shared strings (`remoteBlocked` -> `remoteOffMessage`, `reason: not_responding` -> `notRespondingMessage`, 403 reach -> `unreachableMessage`). The server tiles go to `sessions.screenShown(pcId, tiles, ...)` once the answer lands (it was `[]` at open). Switch user on a remote desktop takes the same path. The function awaits both fetches (`Promise.allSettled`) so callers that await it see the settled state.
+- **`password-minigame.js`**: the separate captured block (`capturedListHtml`, `placeCapturedBlock`, `setCapturedSignIns`, `fillCapturedSignIn`, `capturedTiles`, the `#signin-captured`/`signin-captured-title` markup) is gone. One merged tile row: `mergeRemoteTiles(...)` (exported, pure) pairs the PC's own tiles and the captured sign-ins by username (no duplicate; a matched PC tile gains the `captured` kind), drops an unlisted captured account only under picker `accounts` on a tiles screen, and shows unlisted captured accounts tagged under `known`/`false`, a typed (NLA) screen or a headless host. `setRemoteAccounts({ picker, headless, remoteScreen, host, tiles, captured, accountsFailed, capturedFailed, pending })` lays the row out and rebuilds it in place. Tags via `tileTagLabels`; the short-window badge via `tileBadgeGroups` + `badge-key.png`. State lines (`remoteStateLine()`) go in the message line keyed off `host`: Checking, Still checking, typed NLA, headless, `/login_accounts` failed, `/capture_secrets` failed, both failed, else "Choose an account."; they show under the Other user form too (not only before it), and never over a refusal (a refusal, kind `error`, persists until Change; the base line is recomputed each render, never stored). `signInErrorMessage`/`signInRefusalMessage` take `{ remote, host }` and use the shared strings on remote screens (lockout, not-permitted, remote-off, not-responding, unreachable); the keyboard path is byte-identical. All new behaviour is behind `this.signIn?.remote`, so keyboard screens are unchanged. The slice 6 locked remote branch drops the tile row (the account is pre-chosen).
+- **CSS** (`css/password-minigame.css`): the dead `.signin-captured*` rules are replaced with `.signin-remote-tile .signin-tag` (Press Start 2P 8px, 2px border, no radius, ellipsis-cut, max 72px) and the short-window `.signin-badge` (8x8 glyph inside a 2px border = 12x12, shown under `.pc-monitor[data-short]`, the text tags hidden there). Scoped to the remote tile class; the shared fold at `:1045` is untouched.
+- **Tests**: `password-signin-mode.test.mjs` rewritten for the merged row (67 pass): the merge/match cases, the per-kind tag, the 32-char label, the picker rules, headless/NLA/failed/both-failed lines, the loading state (no form/focus), the pair cap with "Still checking", the in-place late redraw keeping focus and typed text, the foothold on the sign-in, and the shared remote refusal strings. `access-remote-signin.test.mjs` (17 pass): one `/login_accounts` request carrying the foothold and never a post-it; Switch user sends the foothold; the dual fetch under the cap; `setRemoteAccounts` layouts. `pc-monitor-frame.test.mjs` (58 pass): the one row and its scroller with seven tiles, tags, 2px borders. `utils/remote-host-text.js` added to every harness that imports a module importing it (copy lists: `password-signin-mode`, `password-join-mode`, `pc-monitor-frame`, `lock-scope-refusal`; write-stubs: `password-case-hint`, `password-minigame-submit`; data-URL stub maps: `access-signin-postit`, `access-signin-routing`, `access-rfid-acl`). Harnesses that only `readFileSync` the source (`engine-fixes-pass4b`, `engine-fixes-round6`, `escaping-shared-helpers`, `unlock-route-room-retry`) were left unchanged.
+
+### Tests run (0 failures)
+- `password-signin-mode` 67, `access-remote-signin` 17, `pc-monitor-frame` 58, `password-join-mode` 6, `password-case-hint`, `password-minigame-submit`, `access-signin-postit`, `access-signin-routing`, `access-rfid-acl`, `lock-scope-refusal` 12, plus a sweep of ~50 password/access/network/pc/unlock/capture/social/validator families and every harness that imports `password-minigame.js` or `unlock-system.js`: all green. (`social-captures-view` prints a handled "could not load capture secrets" console line but passes 7/7.)
+- Syntax checked (`node --check`) on `password-minigame.js` and `unlock-system.js`.
+
+### Run 3 must do
+- **The measured fit (plan 5.2 "Fit", Appendix A round 9)**: the 14px overflow fix. On remote Switch-user screens merge the "Signed in now" and remote lines into one slab and drop the "Username:"/"Password:" label slabs at x2 and in the short window (keep placeholders and `aria-label`); 4px gaps at x2, 2px slab padding at 915x412. Targets: win back >=35px at x2, >=20px at 915x412. Record the measured heights here. Run 2 added only the tag/badge CSS and left the slab/label fold for browser measurement.
+- **`tools/playtest/signin-fit.mjs`** (new): load each K0 fixture at the four sizes with the real CSS and pixel fonts; fail on `.pc-monitor-area` scrollHeight > clientHeight, a fixed-word line's scrollWidth > its box, a line over its limit, or Password/Sign in outside the visible area. Fixtures per plan 5.2.
+- **Scenarios**: `test_access_networks/scenario.json.erb` (the `nla` policy, `it_pc`/`ops_pc`, the `p3_see` six-host list, the capture-card wording) and both PLAYTEST.md files; `lab_physical_pentest/PLAYTEST.md` tagged-tile wording.
+- **Live proof** on ports 3062-3064 (never :3000) at the four sizes, including the loading state with `/login_accounts` delayed, the late redraw after the cap, the Other-user form with a refusal at 1400x1000, and tampered-client checks.
+
+### Run-2 gotchas found
+- The state line must NOT be stored in `signInState.message`: that field holds refusals (kind `error`) only, and the base/state line is recomputed each render, else "Checking..." sticks after the answer lands. The remote screen shows the base line when no concrete account is picked (`selected === null`), so the NLA/headless/failed lines sit under the Other user form; the keyboard keeps its own `!chosen` rule so its typed form shows no prompt (byte-identical).
+- `signInHost()` reads `signIn.host` (the server answer's host, set to `hostLabel` at open and overwritten by `setRemoteAccounts`), never `pcName` (which is "Name (HOST)"), so the lines name the bare host.
+- jsdom does not expand the `border-radius` shorthand in `getComputedStyle`, so the pixel-art "no radius" tag rule is asserted by source/visual, not a computed-style check, in `pc-monitor-frame`.
+- A remote `/login_accounts` request may answer `not_responding`/reach-403/422; these close the screen, but a slow `/capture_secrets` cannot delay that close because the two fetches are handled independently (the close fires on the `/login_accounts` resolution).
+
+## K0 client half: progress and handover (run 3)
+
+Run 3 merged main, measured and landed the remote sign-in fit in a real headless browser, built the
+reusable `signin-fit.mjs`, made the `test_access_networks` scenario/PLAYTEST edits and the lab
+PLAYTEST wording, and took the live proof. Commits on `build/keyring-k0`: `58d5fbe19` (scenario +
+PLAYTEST), `97c0faab9` (fit + tool), plus this log.
+
+### Merge of main
+`git merge main` (main `32516127c`) merged clean by the ort strategy: no conflicts, no K0 files
+touched (the incoming work was the phone-calls writing land and a few TTS/ink files).
+
+### The measured fit (item 1)
+The 14px overflow is gone, measured, not guessed. The fix, scoped to a new `.signin-remote-screen`
+class so every keyboard screen is byte-identical:
+- A remote Switch-user screen with a held, unlocked session merges the "Signed in now" line and the
+  "Remote sign-in" line into one slab, `"{displayName} signed in, through {link}"` (one line at x2).
+- At x2 (`data-ui-scale="2"`) and the short window (`data-short`) the "Username:"/"Password:" label
+  slabs are dropped; the fields keep their `placeholder` and gain an `aria-label`.
+- At x2 the screen and form gaps drop to 4px; at 915x412 the chosen slab takes 2px vertical padding.
+- The remote tile row now folds at **every** size once an account or Other user is chosen (plan 5.2:
+  "folds at every size on a remote screen"); before, the fold was only at x2 and the short window, so
+  the Other-user form plus the still-shown tile row overran at 800x600 and 390x844. This was the
+  real driver of the overflow once labels were dropped.
+
+Measured in `tools/playtest/signin-fit.mjs` (real CSS, real pixel fonts, headless chromium, game
+5028). Spare = `.pc-monitor-area` clientHeight minus the laid-out sign-in content height (offsetHeight,
+layout px, so the x2 zoom does not distort it). No fixture overflows at any size.
+
+| Fixture | 1400x1000 (x2, client 350) | 915x412 (short, client 306) |
+|---|---|---|
+| Other user form + longest refusal | 77px spare | 68px spare |
+| Switch user, held session, Other user + refusal | 73px spare | 68px spare |
+| Headless line | 77px spare | 68px spare |
+| Typed (NLA) line | 77px spare | 68px spare |
+| Tagged tile row (one tile three tags) | 159px spare | 146px spare |
+
+Targets met with margin: >=35px at x2 (lowest 73), >=20px at 915x412 (lowest 68). All five fixtures
+also fit at 800x600, 390x844 and 320x640 with no overflow (positive spare everywhere).
+
+### signin-fit.mjs (item 2)
+`tools/playtest/signin-fit.mjs`: loads the K0 fixtures (Other-user-plus-refusal, Switch-user held
+session, headless line, typed NLA line, a tagged tile row, and the Checking... state) at five sizes
+(the plan's 1400x1000/800x600/915x412/390x844 plus the 320x640 narrow phone). It builds each screen
+from the real `PasswordMinigame` inside a real game page served by the keyless server, so the real
+`password-minigame.css`, `pc-monitor.css` and the pixel fonts are in force (rather than reinventing
+the jsdom stubs). It fails (exit non-zero) on `.pc-monitor-area` overflow or on Password/Sign in
+outside the visible area (only checked when the form is actually shown). `SHOTS=<dir>` also writes a
+PNG of each state. Deviation from plan 5.2's "fixture screens": the fixtures are constructed through
+the real client code path (`initSignIn`/`setRemoteAccounts`) in a live page, not a static harness;
+this is more faithful (real app CSS and fonts) and needs no stub set. Run: `PORT=3062 node
+tools/playtest/signin-fit.mjs [gameId]`.
+
+### Scenario and PLAYTEST (item 3)
+- `scenarios/test_access_networks/scenario.json.erb`: policy `"nla": { "remote": "allowed",
+  "remoteScreen": "typed" }`; `it_pc` (`HB-IT-01`, roles `["it"]`, default policy, picker `accounts`,
+  at `{x:3,y:6}`) and `ops_pc` (`HB-OPS-02`, roles `["staff"]`, policy `nla`, picker `accounts`, at
+  `{x:5,y:6}`) in `desk_room` on `office_lan`, clear of Sam's desk (`5,4`) and the dock (`7,4`);
+  `p3_see`'s `network_viewed` condition is the six-host list
+  `door_box,it_pc,kiosk_pc,lena_pc,ops_pc,sam_pc`; the capture card at `:296` reads "Her tile is then
+  tagged Captured on a remote sign-in screen."
+- `test_access_networks/PLAYTEST.md`: the capture-card harness note rewritten for the merged row and
+  the `.signin-tile[data-username="lfox"] .signin-tag` selector and `clickText('Other user')` before
+  typing; P3 six hosts and the ordered list; Run 0 step 5 and the validator expected-output line gain
+  `it_pc`/`ops_pc`; new beats P5b (the PC's own tiles merged with captured), P5c (HB-IT-01 Ian tile
+  tagged, no duplicate, Lena left out under `accounts`), P5d (HB-OPS-02 typed NLA, captured tiles
+  only); P6 updated for the merged held slab and captured-only tiles on `lena_pc`.
+- `lab_physical_pentest/PLAYTEST.md`: the two "Captured sign-ins" references (`:1028`, `:1033`) become
+  the merged tagged-tile wording. Note: the plan prose for this edit described an LW-OPEN-07/hot-desk
+  passage, but the only "Captured sign-ins" occurrences in the file are the `store_controller`/
+  `c.hampshire` lines, so those were reworded faithfully to the merged row; no LW-OPEN-07 "Captured
+  sign-ins" text exists to change.
+- Validator: `test_access_networks` is 0 errors, 7 warnings, the same warning set as main's baseline
+  (no new errors or warnings from the `nla` policy or the two PCs).
+
+### Live proof (item 4) — ports 3062, headless, setFPS(20), fixed steps on
+Keyless server on `:3062` (started by run 3, keyless confirmed in the boot log). Game id **5028**
+(`test_access_networks`). Screenshots in the run-3 scratchpad `.../scratchpad/k0run3/` (`<fixture>-
+<w>x<h>.png`, 30 files):
+- The merged tile row with captured tags (Sam Okafor, Lena Fox tagged Captured, Other user) and the
+  short-window key badge on Lena's tile (`tagged-tiles-915x412.png`): the 8x8 `badge-key.png` glyph in
+  a 2px border, top-right corner.
+- The Switch-user held-session screen at x2 (`switch-held-refusal-1400x1000.png`): the merged "Lena
+  Fox signed in, through Drop box: Comms room" slab, the Other-user form with dropped labels
+  (placeholders only), Change, Sign in and the "That account can't sign in on HB-FIN-02." refusal, all
+  inside `.pc-monitor-area` with no scrollbar.
+- The Checking... state (`checking-*.png`): the header and "Checking..." line with no form and no
+  focus.
+- The headless line, the typed NLA line and the Other-user-plus-refusal at every size.
+- Tampered-client checks against the real server (curl from the keyless server): a held-but-unowned
+  `foothold=jack_comms_port` on `lena_pc` answers **403** (PC not reachable); a structured
+  `foothold[]=x` is coerced to a string and also **403** (not held, never a 500, matching the server
+  R1 m4 test); the keyboard answer (`sam_pc`, no foothold) is **200**, unchanged.
+
+Deviation/left for a follow-up: the dual-fetch transition states (the late redraw after the cap, and
+the 403/422 close) live in `unlock-system.js openRemoteSignInScreen` and are covered by
+`access-remote-signin.test.mjs` (the foothold request, the dual fetch under the cap, the late
+in-place redraw, and the close strings). The run-3 live proof rendered and measured every K0 screen
+state through the real client code and verified the real server's refusals, but did not drive the
+full in-game plant->view->sign-in flow to a 200 tile answer for `it_pc`/`ops_pc` (that needs the
+foothold planted in-game). The server's 200 answers for picker/headless/typed are covered by
+`network_remote_tiles_test.rb`. A later run that wants the end-to-end in-game screenshot should drive
+Run 0's plant then click the view's `HB-IT-01`/`HB-OPS-02`/`HB-FIN-02` rows.
+
+### Suites (item 5)
+Run under the shared lock (`flock .../tests.lock`): `bin/test-js -j 3; bin/rails test`, on tip
+`38251f241`. Both green:
+- JS: 654 files passed, 0 failed (shell-x passed this run; no env failure in the batch).
+- Rails: 2754 runs, 45981 assertions, 0 failures, 0 errors, 2 skips (finished in ~93s).
+
+### Run-3 gotchas
+- `signin-fit.mjs` must measure content height with `offsetHeight` (layout px), not
+  `getBoundingClientRect().height`: at x2 the pc-monitor draws through a zoom/scale, so the rect
+  height is ~2x the layout height and would read as a huge false overflow. `scrollHeight` vs
+  `clientHeight` is the authoritative overflow gate; the screen element's `offsetHeight` gives the
+  true spare (`scrollHeight` clamps up to `clientHeight`, so it cannot show positive spare).
+- The Mission Brief notes popup (intentional, reappears) paints over the sign-in overlay in a raw
+  screenshot; the fit measurement is DOM/layout based and unaffected, but the screenshot step hides
+  the other body children and the canvas first.
+- The real driver of the x2/800x600 overflow, once labels were dropped, was the tile row not folding
+  at every size. Folding the remote row at all sizes (not only x2/short) is what wins the headroom;
+  the merge and the dropped labels alone were not enough at 800x600 and 390x844.
+
+## K0 client half: R1 fixes (UX review round 1: 9 majors, 7 minors)
+
+Fixes on `build/keyring-k0`; commits `8fc2882a1` (client, tests) and `209a8717b` (signin-fit), then
+the live driver and this log. The server controller and its tests are untouched (another branch).
+Keyboard (non-remote) screens: every change is behind `signIn.remote` or a remote-only class, and the
+keyboard suites (`password-signin-mode`, `access-signin-*`, `password-minigame-submit`) pass unchanged.
+
+| Finding | Fix | Proof |
+|---|---|---|
+| M1 failed or pending `/login_accounts` hid captures | `remotePicker` starts `null`; `setRemoteAccounts` sets it only from a real answer (`paint()` omits `picker` on a failure; a success defaults to `accounts`); `mergeRemoteTiles` drops unlisted captures only for `accounts` | `password-signin-mode` (paint's real failed shape; the pending variant), `access-remote-signin` (failure sends no `picker` key). Live E2 (500): Lena and Ian tiles, tagged, with the "HB-FIN-02's accounts could not be loaded." line |
+| M2 "Choose an account." under Other user and locked form | on a remote screen a chosen form clears a base line that equals the prompt; state lines (Checking, NLA, headless, failed) still show | state test, CSS test; live: Other user message is empty |
+| M3 late answer redrew into a folded row | option (a): `typing` is text in a field, not focus; the late answer returns the row. A locked session keeps its form | pc-monitor-frame computed `display` test; live E1: form at the cap, row visible after the late answer |
+| M4 Change dead or stranding | `signin-chosen` (Change) is `chosen && tiles offered`; the fold is its own `signin-remote-folded`; remote `signInTilesOffered()` is false for a locked session; `clearSignInChoice` is a no-op with no row | state and computed-style tests (typed, locked, tiles) |
+| M5 no scroller for many tiles | `fitSignInTiles()` caps `#signin-tiles` to the height left (trims for the scrollbar and cue), square 8px scrollbar, "More below" cue (`REMOTE_MORE_BELOW_TEXT`, equal to `more-below.js`, pinned by a test: a new import would need adding to 12 harness copy lists). Re-run after every render and on resize | seven-tile fixture in signin-fit at five sizes (320x640 was 10px over before the trim loop; now 12px spare); stubbed-layout test |
+| M6 full kind names | tile `title` "Lena Fox, Captured password", badge `role=img` with an `aria-label`, chosen line "Lena Fox (lfox), Captured password" | state test; live titles |
+| M7/m5 signin-fit | three-tag tile drawn by the real tag renderer (two pills, `+2`, asserted); seven-tile fixture; scrollWidth and line-count (Range rects) checks; no-wrap host check; true longest refusal across all refusal strings; headless fixture holds a `current`; `cleanup()` between fixtures; `CHROME`, `PLAYWRIGHT` env with fallbacks; `chdir` to the repo root | 35 checks PASS at 1400x1000, 800x600, 915x412, 390x844, 320x640 (game 5063). Corrected spare table below |
+| M8/m6 tests on what is on screen | new tests: the 403/422/404/`not_responding` closes with `/capture_secrets` pending, slow `/login_accounts` past the cap and its late answer, close then late 403/200, failed accounts; computed-style tests for the late redraw, Change, scroller and ellipsis; `32-character` and `seven tiles` tests renamed to what they assert. Each new test fails on the pre-fix code (checked by restoring the old sources) |
+| m1 late 403 toast after close | `closeScreen` returns before the alert when the screen is gone; toast kind `error` | access-remote-signin; live E4: no toast |
+| m2 `pc_signin_shown` | emitted from `paint()` once the answer has laid out, with the tiles the row shows, never after a close | access-remote-signin |
+| m3 host split at hyphens | a host label is a `.signin-nowrap` span in the message (text unchanged, so playtest text matches still work; a U+2060 joiner was tried and rejected, it changes the text) | computed-style test, signin-fit split check |
+| m4 late answer over "Signing in..." | `_signingIn` flag skips the base-line write | state test |
+| m7 new PC positions | NOT DONE: the finance and desk doors are locked in a fresh game and `loadRoom` needs engine arguments I did not chase; positions stay as run 3 recorded. Open item | none |
+
+Choices: M3 took option (a) (the row returns), not the "Accounts found" line. With captures present and
+no answer yet, the cap now shows the captured tile row with "Still checking for accounts..." rather than the
+Other user form (keyboard behaviour: captures start on their tiles); with none, the cap shows the form.
+
+Corrected fit table (signin-fit, spare px, game 5063): other-refusal-longest (longest refusal is now the
+49-character wrong-password line) 105 at x2, 96 at 915x412; switch-held 101/96; headless with a held
+session 73/68; typed 77/68; tagged tiles with the real three-tag tile 141/170; seven tiles 33/118
+(1400x1000 / 915x412). The earlier "159px spare, three tags" row was a one-tag tile.
+
+### Live proof (plan 5.5, driven in game): `tools/playtest/signin-live-drive.mjs`
+Keyless server on :3062, headless, setFPS(20), fixed steps on. Shots in
+`/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/4ecd98f2-4e95-460a-a7ea-2031ffddfff5/scratchpad/k0fix1/shots/`.
+- Game 5067 (`main`): took `kit_dropbox`, planted at `comms_port` ("Plug it in", the view opened itself, footholds
+  `jack_comms_port`). Sam's PC before the cards: the PC's three tiles untagged. Lena's PC before: the Other user
+  form (picker false, no tiles). After the cards (read in the lobby): Sam's PC tags Lena and Ian Captured; HB-IT-01 one
+  tagged Ian tile; HB-OPS-02 NLA line plus the two captured tiles; HB-DOOR-01 headless line plus captured tiles;
+  Lena's PC captured tiles. Other user: empty message, Change shown, row folded. Delay run (route holds
+  `/login_accounts` 5 s): +1 s "Checking...", +3.6 s the captured row with "Still checking for accounts...",
+  +6.2 s "Choose an account." with the row visible. Chose the Lena tile ("Lena Fox (lfox), Captured password"),
+  typed the earned letter password, remote session opened (`sessions.lena_pc` remote, `jack_comms_port`).
+  No page errors. Screens at 1400x1000, 800x600, 915x412, 390x844.
+- Game 5069 (`edge`, fresh): no captures, 5 s delay on Sam's PC: Other user form at the cap, the row on the late answer
+  (M3). With captures, forced 500: captured tiles stay with the failed line (M1). Forced 403 `not_responding`: back
+  to the view with "HB-FIN-02 is not responding." as an `error` toast (P6). Late 403 after X: no toast (m1).
+- Not driven live: the headless host on Switch user (needs a held session on HB-DOOR-01; covered by the
+  `headless-line` fixture with a held `current`), a locked remote session (P8, covered by state and computed-style
+  tests and the fixture), N14.
+
+Suites (shared lock, tip before this line): JS 657 files passed, 0 failed; Rails 2761 runs, 46003 assertions, 0 failures, 0 errors, 2 skips.
+
+## K0 client half: R2 fixes (UX review round 2: 0 blockers, 2 majors, 3 minors)
+
+- N1 (M): `selectSignInTile('other')` sets `signInState.otherPicked`; `setRemoteAccounts` treats a picked Other user as
+  typing, so the late answer keeps the form and focus. Only the form the cap opened by itself returns to the row.
+  `clearSignInChoice` and a tile pick clear the flag.
+- N2 (M): after the row is rebuilt, a chosen account that is no longer in it resets `selected`, `other` and
+  `otherPicked`, and clears the username and password fields and `gameData.password`. The row shows, the chosen line is gone.
+- N3 (m): `.signin-tiles-more` takes the message line's slab (`#12161a`, 2px `#4a5560` border, border-box, same 18px
+  height). Checked at 320x640 (`seven-tiles-320x640.png`); the fit sums hold.
+- N4 (m): `it_pc` and `ops_pc` in `test_access_networks` desk_room moved from (3,6),(5,6) to (3,7),(5,7), a row down.
+  Rendered headless: they stand at world (416,224) and (480,224), 12px below the chair at (419,196), clear of Sam's PC
+  (480,128) and the dock (544,128). Screenshot `k0fix2/desk-room-1400x1000.png`. PLAYTEST.md carries no coordinates.
+  Validator: 0 errors with `--no-graph`.
+- N5 (m): `signin-live-drive.mjs` reads `PORT`, finds Playwright and Chrome as `signin-fit.mjs` does, defaults `SHOTS`
+  to a temp folder, and unsets the Gemini keys for `new-game.rb`. New mode `late` drives N1 and N2.
+- Tests (`password-signin-mode.test.mjs`, 3 new, each fails on the R1 code): N1 (cap row, Other user, late answer:
+  form displayed, username focused, message line empty), N2 (cap row, pick Lena, answer lists only Ian: row, no chosen
+  line, password empty, `selected` null), N3 (computed background and border of the cue from the loaded sheet).
+- Live (keyless :3062, headless, setFPS(20), fixed steps on; games 5099 `late`, 5098 render): N1 after the 5 s answer the
+  form, username row and focus (`signin-username`) stay, message empty; N2 the row shows only Ian, "Choose an account.",
+  chosen line gone, password empty. signin-fit: ALL PASS over 35 checks.
+
+Suites (shared lock, tip before this line): JS 657 files passed, 0 failed; Rails 2764 runs, 46029 assertions, 0 failures, 0 errors, 2 skips.

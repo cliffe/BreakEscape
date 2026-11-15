@@ -40,7 +40,6 @@
             "type": "pc",
             "name": "Computer",
             "takeable": false,
-            "requires": "password",
             "observations": "Numbers are important, remember these to proceed:\n- Prime modulus (p): 23\n- Base (g): 5\n- Tim's private key (a): (5^3) MOD 23\n- Jullie's private key (b): (5^5) MOD 23\nEnter the shared secret key to decrypt the next clue."
           },
           {
@@ -123,7 +122,6 @@
             "type": "pc",
             "name": "RSA Modulus Computer",
             "takeable": false,
-            "requires": "password",
             "observations": "Calculate N by multiplying two prime numbers (p and q). The pin is the last 4 digits of N."
           }
         ]
@@ -142,7 +140,6 @@
                 "type": "pc",
                 "name": "Pop up message - decrypt message using private key",
                 "takeable": false,
-                "requires": "password",
                 "text": "Decrypt this base64 encrypted message using the private key.",
                 "observations": "jIYyQYFFzXNKgKS1Z744Sudq2KAXdRgSHlExns9MNVNlTZRlnBSm#vVGw6TeEjOhohJeGbFrWk5qNlPhvm0PmneIBbzZ9u4BwzaZ4vxHclLMDQ55e7tOByQ3KVjUgcxX1skW7qj1mPpic2IFsS1kyIyLE3ly1eNZxMCEy1S03bq0="
             },
@@ -178,7 +175,6 @@
             "type": "pc",
             "name": "RSA Encryption Computer",
             "takeable": false,
-            "requires": "password",
             "text": "Mcfluffins has sent out a memo to all llama population spot which one is the real one and the first four charecters will help you proceed",
             "observations": "Verify the correct rsa signature from hex. remember 'llamas are the best' -----BEGIN PUBLIC KEY-----MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDXSTdvKibflOrDlUuICO4I93xzuv5cKdM5QEcXMkJSPe0b/B7NQgOW4PumqwZw4sfEKgMIIAoW9BYErgQS38Ax6UelDaSIIGVtoqIXM8fDvchLXHqBh6L9rfxX5GsTybZqX5wQJtZRM8uAAldo98SByUMR6zjBp+ZTBLHLUt15vQIDAQAB-----END PUBLIC KEY-----"
           },
@@ -213,7 +209,6 @@
             "type": "pc",
             "name": "A terminal with a flickering screen",
             "takeable": false,
-            "requires": "password",
             "observations": "Use RSA decryption (m = c^d mod n). For example, if c=3, calculate (3^53 mod 161). Do this for all ciphertext values to reveal the town's hex message. '212,48,9,9,276,23,155,231' d=269 n=286"
           },
           {

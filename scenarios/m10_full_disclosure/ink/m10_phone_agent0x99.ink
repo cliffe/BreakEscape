@@ -581,7 +581,8 @@ Get out of the container onto that host. That opens the way up to him.
 // Puzzle chains R3 m2 (VM handoff B6), dialogue R5 n1: "in the core", which lies below the gallery's slit windows; "disarm" as on the lamp and the 06:00 screen.
 The host holds the release's kill config: how six o'clock is armed, and what stops it. The disarm's on his console, in the core.
 // VM pass 2026-11-11: the duty sheet's login opens the shift home, whose handover log names the release service's port.
-One of his operators dropped a duty sheet by the east racks. The login's on it, and the log it points to says where the service listens.
+One of his operators dropped a duty sheet by the east racks.
+The login's on it, and the log it points to says where the service listens.
 -> support_hub
 
 === monitor_topic ===

@@ -178,6 +178,15 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: deep_state_drop. Pack
 
   "startRoom": "main_lobby",
 
+  "acknowledgedClues": [
+    {
+      "lock": "interrogation_room",
+      "in": "global:suite_code",
+      "reason": "Netherton says the interrogation suite code aloud in his voiced ink, so the global carries it from game start; accepted as a best-effort clue (q85).",
+      "approved": "2026-11-14: m08 suite_code spoken clue"
+    }
+  ],
+
   "flags": {
     "safetynet_gitlist_server": <%= vm_flags_json('safetynet_gitlist_server', ['flag{gitlist_argument_injection}', 'flag{stashed_credentials_recovered}', 'flag{home_directory_access}', 'flag{root_via_sudo_apt}']) %>
   },
@@ -795,7 +804,7 @@ CREDITS
               "condition": "value === true",
               "onceOnly": true,
               "setGlobal": { "found_gitlist_vuln": true, "gitsecrets_guide_offered": true },
-              "sendTimedMessage": { "delay": 1500, "message": "Our own code server, and its repo is open to anyone. No password. That's a report nobody will enjoy. The credential's gone from the files, not from the history. Break in and read it. Want the git secrets guide?" }
+              "sendTimedMessage": { "delay": 1500, "message": "Our code server's repo is open to anyone: a report nobody will enjoy. The credential's gone from the files, not the history. Break in and read it. Git secrets guide?" }
             },
             {
               "_comment": "Flag 2 -- the break-in and the stashed credentials. GitList remote command execution with no login gives the foothold; the mole's opsec failure (creds committed to the repo, removed, never rotated) is in its history. PASS 4 (fix 19): its guide is now offered at flag 1.",
@@ -803,7 +812,7 @@ CREDITS
               "condition": "value === true",
               "onceOnly": true,
               "setGlobal": { "found_leaked_creds": true },
-              "sendTimedMessage": { "delay": 1500, "message": "You're in, and so were the credentials: committed straight into the repo, deleted, never rotated. Log in properly with them and see what the account keeps at home. If anything in there is sealed, the Director has held a key for nine days: the full Portland intercept, in his safe." }
+              "sendTimedMessage": { "delay": 1500, "message": "You're in, and so were the credentials, never rotated. Log in properly. If anything's sealed, the Director's held the key nine days: the full Portland intercept, in his safe." }
             },
             {
               "_comment": "Flag 3 -- proper login, home-directory flag. The mailbox ties the account to the Portland intercept (an account, not yet a person: PASS 5 Option B). Also opens the privilege-escalation guide.",
@@ -811,7 +820,7 @@ CREDITS
               "condition": "value === true",
               "onceOnly": true,
               "setGlobal": { "found_architect_comms": true, "privesc_guide_offered": true },
-              "sendTimedMessage": { "delay": 1500, "message": "The intercept's seal opened their drop. The mail goes to architect@entropy.onion, from the sender on the Portland intercept. The logs need root, and that account hasn't got it. The web service you landed as has a sudo rule. Privesc guide?" }
+              "sendTimedMessage": { "delay": 1500, "message": "The seal opened their drop: mail to architect@entropy.onion, from the intercept's sender. The logs need root, which this account lacks; your web foothold has a sudo rule. Privesc guide?" }
             },
 <%# Flag 4 -- root. Access logs become readable: a terminal and a time (PASS 5,
     Option B; see below for the fallbacks that still set mole_identified).
