@@ -42,6 +42,7 @@ require_relative 'validate_npc_habits'
 require_relative '../lib/break_escape/access_work'
 require_relative '../lib/break_escape/owner_claim'
 require_relative 'validate_access_work'
+require_relative 'validate_office_life'
 
 # Try to load json-schema gem, provide helpful error if missing
 begin
@@ -7825,7 +7826,9 @@ def main
     skip_ink: false,
     no_lint: false,
     strict_social: false,
-    known_failures: File.join(__dir__, 'validator_known_failures.json')
+    known_failures: File.join(__dir__, 'validator_known_failures.json'),
+    campaign: false,
+    office_summary: false
   }
 
   OptionParser.new do |opts|
@@ -7866,6 +7869,14 @@ def main
 
     opts.on('--no-known-failures', 'Ignore the known-failures list and show the raw result') do
       options[:known_failures] = nil
+    end
+
+    opts.on('--campaign', 'Treat this scenario as a campaign mission for the office-life checks V2, V4 and V5 (fixture tests)') do
+      options[:campaign] = true
+    end
+
+    opts.on('--office-summary', 'Print the office-life summary (V1): one line per NPC, sorted by id so it diffs') do
+      options[:office_summary] = true
     end
 
     opts.on('-h', '--help', 'Show this help message') do
@@ -8356,6 +8367,9 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
   run.call('check_wearables') { check_wearables(json_data, scenario_dir) }
   run.call('check_phone_calls') { check_phone_calls(json_data, repo_root) }
   run.call('ValidateAccessWork') { ValidateAccessWork.check(json_data) }
+  run.call('ValidateOfficeLife') do
+    ValidateOfficeLife.check(json_data, scenario_id: File.basename(scenario_dir), campaign: options[:campaign])
+  end
   run.call('ValidateNpcHabits') do
     ValidateNpcHabits.check(json_data, expanded: habits_copy, report: habits_report, scenario_dir: scenario_dir)
   end
@@ -8435,6 +8449,20 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
   work_lines = report.run_check('work', 'work report') { ValidateAccessWork.report_lines(json_data) }
   unless work_lines.empty?
     work_lines.each { |line| puts line }
+    puts
+  end
+
+  # The office-life sync budget (V8) and, with --office-summary, the per-NPC summary (V1)
+  report.stage = 'work'
+  budget_lines = report.run_check('work', 'office-life sync budget') { ValidateOfficeLife.sync_budget_lines(json_data) }
+  unless budget_lines.empty?
+    budget_lines.each { |line| puts line }
+    puts
+  end
+  if options[:office_summary]
+    summary = report.run_check('work', 'office-life summary') { ValidateOfficeLife.office_summary(json_data) }
+    puts "OFFICE-LIFE SUMMARY (V1): #{summary.length} NPC(s)"
+    summary.each { |line| puts "  #{line}" }
     puts
   end
 
