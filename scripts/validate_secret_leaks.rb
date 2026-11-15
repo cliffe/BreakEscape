@@ -245,6 +245,44 @@ module SecretLeaks
   NARRATIVE_STRING_KEYS = %w[name door_sign lockedHint].freeze
   COPY_SINK_KEYS = %w[globalVariables minigameData scenarioData].freeze
 
+  # The two conditional-text surfaces: an object's textVariants/observationVariants are arrays of
+  # { condition, value } and the client ships EVERY variant's `value` at load, picking one by the
+  # live globals (public/break_escape/js/utils/conditional-text.js). Nothing in app/ or lib/ reads
+  # these keys, so the server never withholds a later variant, and an answer written into one is in
+  # the browser before the condition that reveals it holds. This is the warning path (like the
+  # narrative fields): a deliberate gated clue is declared with an acknowledgedClues entry.
+  VARIANT_FIELD_KEYS = %w[textVariants observationVariants].freeze
+
+  # The schema file, read once to list every property the server strips (x-serverOnly). A
+  # revealOnGlobal object ships whole at load (revealOnGlobal is client-only too), so its
+  # client-visible string leaves are scanned, minus the server-only keys and the lock answer.
+  SCHEMA_PATH = File.expand_path('scenario-schema.json', __dir__)
+
+  # Every property name the schema marks x-serverOnly (true or a conditional form). The server
+  # deletes these before a payload ships, so a copy of an answer under one of them does not reach
+  # the browser and must not be flagged as a revealOnGlobal leak. None of the display-text fields
+  # (name, text, observations, door_sign, lockedHint) is server-only, so the scan keeps reading them.
+  def server_only_keys
+    @server_only_keys ||= begin
+      schema = JSON.parse(File.read(SCHEMA_PATH))
+      keys = Set.new
+      walk = lambda do |node|
+        case node
+        when Hash
+          props = node['properties']
+          props.each { |name, sub| keys << name if sub.is_a?(Hash) && sub.key?('x-serverOnly') } if props.is_a?(Hash)
+          node.each_value { |v| walk.call(v) }
+        when Array
+          node.each { |v| walk.call(v) }
+        end
+      end
+      walk.call(schema)
+      keys
+    rescue StandardError
+      Set.new
+    end
+  end
+
   # The shipped prose strings, each with its path and the id of the nearest enclosing object/room
   # (for an acknowledgedClues `in` match). Only strings the browser actually receives at game
   # start: the copy-sink subtrees are skipped (they are the error path above), and so is anything
@@ -309,6 +347,113 @@ module SecretLeaks
         next unless answer_matches_leaf?(na, { value: narr[:value] })
 
         out[[answer[:path], narr[:path]]] = { answer: answer, narrative: narr }
+      end
+    end
+    out
+  end
+
+  # Every textVariants/observationVariants `value` string, with its path and the id of the nearest
+  # enclosing object/room (for an acknowledgedClues `in` match). A variant inside a LOCKED object's
+  # `contents` is withheld fresh (the server strips `contents`), so the same hidden rule as the
+  # narrative walk skips it; a variant on an object that only hides client-side (revealOnGlobal, or
+  # a conditional display) still ships, so it is kept.
+  def collect_variant_strings(data)
+    out = []
+    walk = lambda do |node, path, here_id, hidden|
+      case node
+      when Hash
+        nid = node['id'].is_a?(String) ? node['id'] : here_id
+        room_match = path.match(%r{\A/rooms/([^/]+)\z})
+        container = room_match ? room_match[1] : nid
+        unless hidden
+          VARIANT_FIELD_KEYS.each do |k|
+            next unless node[k].is_a?(Array)
+
+            node[k].each_with_index do |v, i|
+              out << { value: v['value'], path: "#{path}/#{k}[#{i}]/value", container: container, field: k } if v.is_a?(Hash) && v['value'].is_a?(String)
+            end
+          end
+        end
+        node_locked = node['locked'] == true
+        node.each { |k, v| walk.call(v, "#{path}/#{k}", nid, hidden || (k == 'contents' && node_locked)) }
+      when Array
+        node.each_with_index { |v, i| walk.call(v, "#{path}[#{i}]", here_id, hidden) }
+      end
+    end
+    walk.call(data, '', nil, false)
+    out
+  end
+
+  # The keys skipped when scanning a revealOnGlobal object's string leaves: the server-strips set,
+  # the copy-sink and variant subtrees (their own surfaces above), the narrative display fields (the
+  # narrative walk already warns on them), and the lock answer / reveal-trigger / sprite-name fields
+  # (not display text). What is left is the client-visible prose the narrative walk leaves out on
+  # purpose (`text`, `observations` and the like), which for a hidden-but-shipped object is the leak.
+  def revealed_skip_keys
+    @revealed_skip_keys ||=
+      server_only_keys +
+      COPY_SINK_KEYS + VARIANT_FIELD_KEYS + NARRATIVE_STRING_KEYS +
+      %w[requires spriteVariants revealOnGlobal acknowledgedClues]
+  end
+
+  # Every client-visible string leaf of an object carrying revealOnGlobal (the object ships in the
+  # room payload at load and is only hidden client-side until the global is set), with its path and
+  # the reveal object's id as the container for an acknowledgedClues `in` match. A nested LOCKED
+  # container's `contents` is still withheld fresh, so the hidden rule skips it.
+  def collect_revealed_strings(data)
+    out = []
+    skip = revealed_skip_keys
+    gather = lambda do |node, path, container, hidden|
+      case node
+      when Hash
+        locked = node['locked'] == true
+        node.each do |k, v|
+          next if skip.include?(k)
+
+          child_hidden = hidden || (k == 'contents' && locked)
+          if v.is_a?(String)
+            out << { value: v, path: "#{path}/#{k}", container: container, field: 'revealOnGlobal' } unless hidden
+          else
+            gather.call(v, "#{path}/#{k}", container, child_hidden)
+          end
+        end
+      when Array
+        node.each_with_index { |v, i| gather.call(v, "#{path}[#{i}]", container, hidden) }
+      end
+    end
+
+    walk = lambda do |node, path|
+      case node
+      when Hash
+        if node['revealOnGlobal'].is_a?(String)
+          room_match = path.match(%r{\A/rooms/([^/]+)\z})
+          rid = node['id'].is_a?(String) ? node['id'] : (room_match && room_match[1])
+          gather.call(node, path, rid, false)
+        end
+        node.each { |k, v| walk.call(v, "#{path}/#{k}") }
+      when Array
+        node.each_with_index { |v, i| walk.call(v, "#{path}[#{i}]") }
+      end
+    end
+    walk.call(data, '')
+    out
+  end
+
+  # Matches (answer, variant/revealed string) in one render, keyed by (answer path, string path).
+  # Flags are left out as the narrative check leaves them out (a flag format is common flavour), and
+  # a combination is collapsed to its dash form by narrative_answer so the whole-word rule applies.
+  def variant_matches_for(data)
+    answers = collect_answers(data).reject { |a| a[:kind] == 'flag' }
+    strings = collect_variant_strings(data) + collect_revealed_strings(data)
+    out = {}
+    answers.each do |answer|
+      na = narrative_answer(answer)
+      next if na.nil?
+
+      strings.each do |str|
+        next unless answer_matches_leaf?(na, { value: str[:value] })
+
+        out[[answer[:path], str[:path]]] = { answer: answer, string: str }
       end
     end
     out
@@ -402,6 +547,34 @@ module SecretLeaks
         issues << "ℹ️ acknowledged clue in narrative: #{lock_id} in #{container}: #{clue['reason']}"
       else
         issues << "⚠️ WARNING: possible secret leak: the #{answer[:kind]} answer at #{answer[:path]} also appears in the shipped narrative string at #{narr[:path]}, which the browser receives at game start. Reword it so the answer is not written out, or, if it is a deliberate clue, add an acknowledgedClues entry"
+      end
+    end
+
+    # Variant and revealOnGlobal leaks (warning): an answer in a textVariants/observationVariants
+    # value or in a revealOnGlobal object's shipped display text. Same double render, so a random
+    # value that only collides under one seed is dropped.
+    v1 = variant_matches_for(first)
+    v2 = variant_matches_for(second)
+    (v1.keys & v2.keys).each do |key|
+      hit = v1[key]
+      answer = hit[:answer]
+      str = hit[:string]
+      container = str[:container]
+      lock_id = answer[:lock_id]
+
+      clue = clues.find do |c|
+        next false if lock_id.nil?
+
+        c['lock'].to_s == lock_id.to_s && c['in'].to_s == container.to_s
+      end
+
+      if clue
+        used_clues << clue.object_id
+        issues << "ℹ️ acknowledged clue in #{str[:field]}: #{lock_id} in #{container}: #{clue['reason']}"
+      else
+        opens = lock_id ? "opens the '#{lock_id}' lock" : "a #{answer[:kind]} secret"
+        marker = "lock: #{lock_id || '<lock id>'}, in: #{container}"
+        issues << "⚠️ WARNING: possible secret leak: the #{answer[:kind]} answer at #{answer[:path]} (#{opens}) also appears in the #{str[:field]} field at #{str[:path]}, which the browser receives at game start though the object is hidden until earned. Move the text so the browser does not get it until the lock opens, or, if it is a deliberate gated clue, add an acknowledgedClues entry (#{marker})"
       end
     end
 
