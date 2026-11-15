@@ -93,7 +93,7 @@ def main():
     save([[phone[r][c] for c in keep_c] for r in keep_r], os.path.join(ASSETS, 'icons', 'npc-phone.png'))
 
     piece('sheet_c0.png', 0).save(os.path.join(ASSETS, 'objects', 'cake1.png'))
-    piece('sheet_c12.png', 1).save(os.path.join(ASSETS, 'objects', 'wall_socket1.png'))
+    # wall_socket1.png is no longer written: retired 2026-11-15 for the power_socket art (POWER_SOCKETS_BUILD_LOG.md)
 
 
 if __name__ == '__main__':
