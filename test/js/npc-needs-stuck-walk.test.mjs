@@ -103,7 +103,7 @@ test('a far arrival on the way home is re-issued round other bodies', () => {
     assert.equal(homeMoves(w, sys).at(-1).reroute, true);
 });
 
-test('a wedged outbound leg re-routes keeping its deadline, then fails with walk_stuck, not a timeout', () => {
+test('a wedged outbound leg re-routes keeping its deadline, then logs walk_stuck once and the deadline fails it', () => {
     const { sys, w } = toGoto();
     const job = sys.states.get('clerk').job;
     const deadline = job.deadline;
@@ -113,11 +113,12 @@ test('a wedged outbound leg re-routes keeping its deadline, then fails with walk
     assert.equal(rr[0].phase, 'goto_target');
     assert.equal(w.calls.moves.at(-1).reroute, true);
     assert.equal(sys.states.get('clerk').job.deadline, deadline, 'a re-route does not extend the deadline');
-    for (let i = 0; i < STUCK_TRIES; i++) sys.step(RETURN_YIELD_MS + NEEDS_TICK_MS);
-    assert.equal(evs(sys, 'walk_stuck').length, 1);
-    assert.ok(sys.getLog().some(e => e.npc === 'clerk' && e.ev === 'job_failed' && e.reason === 'stuck'), JSON.stringify(sys.getLog().slice(-6)));
-    assert.equal(evs(sys, 'job_failed').filter(e => e.reason === 'timeout').length, 0);
-    assert.notEqual(sys.getState('clerk').mode, 'job', 'the job is over (it goes home as any failed job does)');
+    for (let i = 0; i < STUCK_TRIES + 2; i++) sys.step(RETURN_YIELD_MS + NEEDS_TICK_MS);
+    assert.equal(evs(sys, 'walk_rerouted').length, STUCK_TRIES, 'no re-route after giving up');
+    assert.equal(evs(sys, 'walk_stuck').length, 1, 'one walk_stuck line');
+    sys.step(Math.max(0, deadline - sys.clockMs) + NEEDS_TICK_MS);
+    assert.ok(sys.getLog().some(e => e.npc === 'clerk' && e.ev === 'job_failed' && e.reason === 'timeout'), 'the job still ends on its deadline');
+    assert.notEqual(sys.getState('clerk').mode, 'job');
 });
 
 test('a walk making progress is never re-routed', () => {

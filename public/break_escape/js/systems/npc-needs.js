@@ -41,7 +41,7 @@ const RETURN_STILL_PX = 4;    // less than this between ticks counts as standing
 // Stalled needs walks (OFFICE_LIFE_STUCK_RETURN.md): a walk still for RETURN_YIELD_MS is re-issued
 // round other bodies; a stall within STUCK_SAME_PX of the last one is another try in the same place.
 // After STUCK_TRIES re-routes in one place a walk home logs return_stuck and stands for
-// RETURN_STUCK_BACKOFF_MS before trying again; an outbound leg fails the job with `stuck`.
+// RETURN_STUCK_BACKOFF_MS before trying again; an outbound leg logs walk_stuck and waits for its deadline.
 export const STUCK_SAME_PX = 24;
 export const STUCK_TRIES = 3;
 export const RETURN_STUCK_BACKOFF_MS = 15000;
@@ -4055,7 +4055,7 @@ export class NPCNeedsSystem {
      * Outbound counterpart of _watchReturn (OFFICE_LIFE_STUCK_RETURN.md): a goto_item or
      * goto_target leg that has not moved RETURN_STILL_PX for RETURN_YIELD_MS is re-issued round
      * other bodies (`walk_rerouted`), keeping the job's deadline; after STUCK_TRIES re-routes in
-     * one place the job fails with `stuck` and the NPC walks home.
+     * one place it logs `walk_stuck` once and stops, and the deadline fails the job (`timeout`).
      * @returns {boolean} true when the job ended here
      */
     _watchWalk(s, pos) {
@@ -4076,9 +4076,14 @@ export class NPCNeedsSystem {
         else job.stall = { x: pos.x, y: pos.y, tries: 1, phase: job.phase };
         const tries = job.stall.tries;
         if (tries > STUCK_TRIES) {
-            this._log(s.npcId, 'walk_stuck', { phase: job.phase, x: Math.round(pos.x), y: Math.round(pos.y), tries: tries - 1 });
-            this._failJob(s, 'stuck');
-            return true;
+            // Give up re-routing: one walk_stuck line, then the job's own deadline fails it
+            // (`timeout`, its cooldown and the walk home), as before this watch
+            if (!job.walkStuckLogged) {
+                job.walkStuckLogged = true;
+                this._log(s.npcId, 'walk_stuck', { phase: job.phase, x: Math.round(pos.x), y: Math.round(pos.y), tries: tries - 1 });
+            }
+            job.walkWatch = { x: pos.x, y: pos.y, since: this.clockMs, phase: job.phase };
+            return false;
         }
         this._log(s.npcId, 'walk_rerouted', { phase: job.phase, x: Math.round(pos.x), y: Math.round(pos.y) });
         const deadline = job.deadline;
