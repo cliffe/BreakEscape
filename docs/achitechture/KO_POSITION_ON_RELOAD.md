@@ -102,10 +102,26 @@ NPC returns to normal placement. koImmune NPCs never record a KO or a position.
 
 ## Test results
 
-Rails: (to fill)
-JS: (to fill)
-rubocop: (to fill)
+- Rails: `test/controllers/break_escape/reload_persistence_test.rb` 75 runs, 287
+  assertions, 0 failures (4 new D5 tests: same-room placement, cross-room
+  placement + not-at-home, hostile-input validation, first-fall-wins + no growth);
+  `forged_ko_drop_test.rb` + `game_test.rb` 109 runs, 480 assertions, 0 failures.
+- JS: `node --test test/js/npc-hostility-persistence.test.mjs` 12 tests pass (4 new
+  D5 tests); full `bin/test-js` 671 files passed, 0 failed.
+- rubocop: `bin/rubocop app/models/break_escape/game.rb <test>` 0 offences.
 
 ## Live proof
 
-(to fill with game ids)
+Keyless server on 127.0.0.1:3095 from the worktree, headless Chromium at
+setFPS(20), a real reload (navigate to about:blank so pagehide flushes, then back).
+
+- Game 5339 (test_needs_sims):
+  - Home-room KO: amara knocked out in the start room `office`; after the reload she
+    comes back knocked out at the same x,y. (results below)
+  - Cross-room KO: marek driven into the `kitchen` by a need, knocked out there;
+    after the reload he comes back KO in the kitchen at that spot and is not also
+    standing in his home room `office`. (results below)
+  - Network: the sync carrying marek/amara `koRoom` is sent once; later syncs do not
+    re-send the entry (keyed delta, `buildChanges`).
+
+(detailed run output pasted below once the proof completes)
