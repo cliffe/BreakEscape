@@ -94,6 +94,44 @@ namespace :break_escape do
     end
 
     desc <<~DESC
+      List every office-life clip of a scenario per voice, cached or not (V6; read only, keyless).
+
+      Chatter pool lines and the lines of exchange and phone-call knots, keyed
+      as the client requests them (no delivery note), reduced to distinct cache
+      keys (voice and text) and grouped by voice. Each clip is marked cached or
+      uncached under the current cache key, and "shared" when a person-chat
+      line holds the same key; totals give characters and clips. EventMapping
+      barks are not listed. Generates nothing and writes nothing. STRICT=1 exits
+      1 when any clip is uncached (the merge gate's "0 uncached office-life
+      clips"). TTS_CACHE_DIR reads another cache directory (tests).
+        bin/rails "app:break_escape:tts:office_lines[m02_ransomed_trust]"
+    DESC
+    task :office_lines, [:scenario] => :environment do |_task, args|
+      scenario = args[:scenario].presence || ENV['SCENARIO'].presence
+      abort 'usage: bin/rails "app:break_escape:tts:office_lines[<mission>]"' unless scenario
+      unless File.exist?(BreakEscape::Engine.root.join('scenarios', scenario, 'scenario.json.erb'))
+        abort "#{scenario}: no scenarios/#{scenario}/scenario.json.erb"
+      end
+
+      cache_dir = ENV['TTS_CACHE_DIR'].presence || BreakEscape::TtsService::CACHE_DIR
+      report = BreakEscape::TtsOfficeLines.for_scenario(scenario, cache_dir: cache_dir)
+      puts "#{scenario}: office-life clips per voice (distinct cache keys)"
+      report.voices.each do |voice|
+        puts ""
+        puts "#{voice.label} [#{voice.npc_ids.join(', ')}]: #{voice.clips.size} clip(s), " \
+             "#{voice.uncached.size} uncached, #{voice.characters} characters"
+        voice.clips.each do |clip|
+          where = clip.knot ? "#{clip.kind} #{clip.knot}" : clip.kind
+          puts "  #{clip.cached ? 'cached  ' : 'UNCACHED'} #{clip.npc_id} (#{where}#{clip.shared ? ', shared with person-chat' : ''}): #{clip.text}"
+        end
+      end
+      puts ""
+      puts "Total: #{report.clips.size} office-life clip(s), #{report.uncached.size} uncached " \
+           "(#{report.uncached.sum { |c| c.text.length }} characters uncached of #{report.characters})."
+      exit 1 if ENV['STRICT'] == '1' && report.uncached.any?
+    end
+
+    desc <<~DESC
       Find cached TTS audio that no longer matches any line of dialogue. Dry run by default.
 
       Builds every line each scenario can still voice (ink source with every inline

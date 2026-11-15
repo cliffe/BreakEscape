@@ -120,6 +120,17 @@ module BreakEscape
       end
     end
 
+    # Every host story line, before the batch's dedupe by cache key. Yields
+    # [host_id, story_path, line_path, npc_id, text]; the caller picks the
+    # lines it wants and keys them itself (TtsOfficeLines keys exchange and
+    # call lines with no delivery note, as NpcChatterVoice requests them).
+    def each_host_story_line
+      each_host_line do |host_id, _ink_path, line, npc_id, text|
+        story = hosts.find { |h| h['id'] == host_id }&.dig('storyPath')
+        yield host_id, story, line.path, npc_id, text
+      end
+    end
+
     # Ink stories this scenario's voiced conversation hosts load.
     def hosts
       @hosts ||= begin
