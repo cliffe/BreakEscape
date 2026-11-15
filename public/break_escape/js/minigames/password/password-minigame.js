@@ -1654,10 +1654,19 @@ export class PasswordMinigame extends MinigameScene {
         // scrollHeight clamps up to clientHeight, so it is the content height only when it overflows
         const over = area.scrollHeight - area.clientHeight;
         if (over <= 0) return;
-        const CUE = 20, MIN_ROW = 96;
-        tilesEl.style.maxHeight = `${Math.max(MIN_ROW, rowH - over - CUE)}px`;
+        const CUE = 28, MIN_ROW = 96;
+        let cap = Math.max(MIN_ROW, rowH - over - CUE);
+        tilesEl.style.maxHeight = `${cap}px`;
         tilesEl.classList.add('signin-tiles-scroll');
         this.updateSignInTilesMore();
+        // The scrollbar narrows the row and the cue takes a line: trim what still overflows
+        for (let i = 0; i < 3; i++) {
+            const left = area.scrollHeight - area.clientHeight;
+            if (left <= 0 || cap <= MIN_ROW) break;
+            cap = Math.max(MIN_ROW, cap - left);
+            tilesEl.style.maxHeight = `${cap}px`;
+            this.updateSignInTilesMore();
+        }
     }
 
     /** Show the "More below" cue while the capped row has rows left to scroll to. */

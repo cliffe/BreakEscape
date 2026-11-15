@@ -9,15 +9,48 @@
 // with fixture data (never by solving the mission) and measured.
 //
 //   PORT=3062 node tools/playtest/signin-fit.mjs [gameId]
+//   (optional: CHROME=<executable> PLAYWRIGHT=<node_modules holding playwright> SHOTS=<dir>)
 //
 // A failure is .pc-monitor-area scrollHeight > clientHeight, or Password/Sign in outside the
 // visible area. Spare = clientHeight - scrollHeight (>=0 is a pass). Targets recorded in the build
 // log: >=35px spare at x2 (1400x1000), >=20px at 915x412.
-import { chromium } from 'playwright';
 import { execFileSync } from 'node:child_process';
+import { createRequire } from 'node:module';
+import { readdirSync, existsSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+// Portable setup. Run from anywhere: the repo root is found from this file. Playwright is taken
+// from $PLAYWRIGHT (a node_modules folder that holds it) or the repo's own, then this process's
+// resolution; Chrome from $CHROME, else the newest headless shell or chromium in
+// $PLAYWRIGHT_BROWSERS_PATH (default ~/.cache/ms-playwright), else playwright's own default.
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+process.chdir(ROOT);
+async function loadPlaywright() {
+    for (const base of [process.env.PLAYWRIGHT, join(ROOT, 'node_modules')].filter(Boolean)) {
+        try { return createRequire(join(base, '/'))('playwright'); } catch { /* try the next */ }
+    }
+    return (await import('playwright')).default || (await import('playwright'));
+}
+function findChrome() {
+    if (process.env.CHROME) return process.env.CHROME;
+    const base = process.env.PLAYWRIGHT_BROWSERS_PATH || join(homedir(), '.cache', 'ms-playwright');
+    try {
+        const dirs = readdirSync(base).filter(d => /^chromium/.test(d)).sort().reverse();
+        for (const d of dirs) {
+            for (const rel of ['chrome-headless-shell-linux64/chrome-headless-shell', 'chrome-linux/chrome', 'chrome-linux64/chrome']) {
+                const exe = join(base, d, rel);
+                if (existsSync(exe)) return exe;
+            }
+        }
+    } catch { /* none: use playwright's default */ }
+    return undefined;
+}
+const { chromium } = await loadPlaywright();
 
 const PORT = Number(process.env.PORT || 3062), BASE = `http://127.0.0.1:${PORT}`;
-const CHROME = process.env.CHROME || '/home/cliffe/.cache/ms-playwright/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell';
+const CHROME = findChrome();
 const SHOTS = process.env.SHOTS || '';
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -47,6 +80,7 @@ const FIXTURES = [
                action: 'other', refusal: 'not_permitted' } },
     { name: 'headless-line', desc: 'Switch user on a headless host, the headless line',
       build: { host: 'HB-DOOR-01', pcName: 'Door controller (HB-DOOR-01)', picker: false, linkName: 'Drop box: Comms room',
+               current: { username: 'lfox', displayName: 'Lena Fox', via: 'password' },
                remote: { footholdId: 'jack', linkName: 'Drop box: Comms room' }, set: { headless: true, host: 'HB-DOOR-01', tiles: [], captured: [{ targetId: 'iharper', username: 'iharper', label: 'Ian Harper', password: 'x' }] },
                action: 'other' } },
     { name: 'typed-nla', desc: 'A typed (NLA) screen with its line',
@@ -58,8 +92,18 @@ const FIXTURES = [
                remote: { footholdId: 'jack', linkName: 'Drop box: Comms room' },
                set: { picker: 'known', host: 'HB-KIOSK-01',
                       tiles: [{ username: 'sokafor', displayName: 'Sam Okafor' }, { username: 'lfox', displayName: 'Lena Fox' }],
-                      captured: [{ targetId: 'lfox', username: 'lfox', label: 'Lena Fox', password: 'x', kinds: ['captured', 'saved', 'granted'] }] },
-               action: 'tiles' } },
+                      captured: [{ targetId: 'lfox', username: 'lfox', label: 'Lena Fox', password: 'x' }] },
+               // The merge gives a capture the one kind `captured`; the three-tag tile is that merged
+               // tile with two more kinds, drawn by the real tag renderer (K3a adds the kinds for real)
+               extraKinds: { username: 'lfox', kinds: ['captured', 'saved', 'granted'] },
+               action: 'tiles', expectTags: { username: 'lfox', shown: 2, plusText: '+2' } } },
+    { name: 'seven-tiles', desc: 'Six PC accounts, one captured, plus Other user: the row scrolls or fits',
+      build: { host: 'HB-FIN-02', pcName: 'Finance PC (HB-FIN-02)', picker: 'accounts', linkName: 'Drop box: Comms room',
+               remote: { footholdId: 'jack', linkName: 'Drop box: Comms room' },
+               set: { picker: 'accounts', host: 'HB-FIN-02',
+                      tiles: ['a', 'b', 'c', 'd', 'e', 'f'].map((u, i) => ({ username: u, displayName: `User ${i}` })),
+                      captured: [{ targetId: 'a', username: 'a', label: 'User 0', password: 'x' }] },
+               action: 'tiles', expectSevenTiles: true } },
     { name: 'checking', desc: 'The Checking... state before either fetch answers (no form, no focus)',
       build: { host: 'HB-FIN-02', pcName: 'Lena Fox PC (HB-FIN-02)', picker: false, linkName: 'Drop box: Comms room',
                remote: { footholdId: 'jack', linkName: 'Drop box: Comms room' }, checking: true, action: 'none' } },
@@ -72,6 +116,9 @@ async function measure(page, fx) {
             const mod = await import('/break_escape/js/minigames/password/password-minigame.js');
             const { PasswordMinigame } = mod;
             // A clean container; keep the game's own framework object but point currentMinigame at ours
+            // Tear the last fixture down properly (document listeners and all), then clear its markup
+            try { window.__probeMg?.cleanup?.(); } catch { /* already gone */ }
+            window.__probeMg = null;
             document.querySelectorAll('#fit-host, .pc-monitor').forEach(e => e.remove());
             const host = document.createElement('div');
             host.id = 'fit-host';
@@ -86,11 +133,22 @@ async function measure(page, fx) {
                     remote: b.remote, host: b.host, captured: [], capturedLoading: true
                 }
             });
+            window.__probeMg = mg;
             window.MinigameFramework.currentMinigame = mg;
             mg.init();
             mg.start?.();
             // The Checking... state is before either fetch answers: no setRemoteAccounts yet
             if (!b.checking) mg.setRemoteAccounts?.(b.set || {});
+            if (b.extraKinds) {
+                const t = mg.signInState.tiles.find(x => x.username === b.extraKinds.username);
+                if (t) {
+                    t.kinds = b.extraKinds.kinds;
+                    const row = document.querySelector('#signin-tiles');
+                    row.innerHTML = mg.signInTilesInnerHtml();
+                    mg.bindSignInTiles();
+                    mg.renderSignInForm({ quiet: true });
+                }
+            }
             // Drive to the fixture's end state
             if (fx.build.action === 'other') {
                 const other = document.querySelector('#fit-host .signin-other, .pc-monitor .signin-other');
@@ -103,12 +161,22 @@ async function measure(page, fx) {
             // A one-line refusal built from the real shared strings (never guessed)
             if (b.refusal) {
                 const opts = { remote: true, host: b.host };
-                const msg = b.refusal === 'unreachable' ? mod.signInErrorMessage({ status: 403 }, opts)
-                    : (b.refusal === 'not_permitted' ? mod.signInRefusalMessage({ reason: 'not_permitted' }, opts)
-                        : mod.signInRefusalMessage({ reason: 'locked_out' }, opts));
+                // Every refusal the screen can show; the fixture takes the longest of them
+                const all = [
+                    mod.signInErrorMessage({ status: 403 }, opts), mod.signInErrorMessage({ status: 404 }, opts),
+                    mod.signInErrorMessage({ error: true }, opts),
+                    mod.signInRefusalMessage({ reason: 'not_permitted' }, opts),
+                    mod.signInRefusalMessage({ reason: 'locked_out' }, opts),
+                    mod.signInRefusalMessage({ reason: 'remote_blocked' }, opts),
+                    mod.signInRefusalMessage({ reason: 'wrong', message: 'Incorrect username or password', attemptsLeft: 2 }, opts),
+                    mod.signInRefusalMessage({ reason: 'wrong', message: 'Incorrect username or password', attemptsLeft: 1 }, opts)
+                ].filter(m => typeof m === 'string');
+                const msg = all.reduce((a, m) => (m.length > a.length ? m : a), '');
+                out.longestRefusal = msg;
                 mg.setSignInMessage?.(msg, 'error');
             }
             await (document.fonts?.ready || Promise.resolve());
+            mg.fitSignInTiles?.();   // the fonts are in: the same re-fit the real screen gets on a resize
             await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
             const area = document.querySelector('.pc-monitor .pc-monitor-area') || document.querySelector('.pc-monitor-area');
             if (!area) { out.ok = false; out.notes.push('no .pc-monitor-area'); return out; }
@@ -135,6 +203,50 @@ async function measure(page, fx) {
                     formKids: [...(document.querySelector('.pc-monitor #signin-form')?.children || [])].map(c => `${c.className.split(' ')[0]||c.id}:${Math.round(c.getBoundingClientRect().height)}`)
                 };
             }
+            // Text checks (plan 5.2): no fixed-word line wider than its box, no message over two
+            // lines (the merged slab over one at x2), and a host label never split over two lines
+            const lines = (el) => {
+                const r = document.createRange(); r.selectNodeContents(el);
+                return new Set([...r.getClientRects()].filter(x => x.width > 0).map(x => Math.round(x.top / 2))).size;
+            };
+            const shown = (el) => !!el && el.offsetParent !== null && getComputedStyle(el).display !== 'none';
+            const x2 = document.querySelector('.pc-monitor')?.dataset?.uiScale === '2';
+            for (const [sel, limit] of [['.pc-monitor #signin-message', 2], ['.pc-monitor .signin-current-remote', x2 ? 1 : 2]]) {
+                const el = document.querySelector(sel);
+                if (!shown(el) || !el.textContent) continue;
+                const n = lines(el);
+                if (n > limit) { out.ok = false; out.notes.push(`${sel.replace('.pc-monitor ', '')} runs ${n} lines (limit ${limit})`); }
+            }
+            for (const sel of ['.pc-monitor .signin-current', '.pc-monitor .signin-remote', '.pc-monitor .signin-tile .signin-name',
+                '.pc-monitor .signin-tile .signin-username', '.pc-monitor #signin-message']) {
+                for (const el of document.querySelectorAll(sel)) {
+                    if (shown(el) && el.scrollWidth > el.clientWidth + 1) { out.ok = false; out.notes.push(`${sel.replace('.pc-monitor ', '')} is wider than its box (${el.scrollWidth} > ${el.clientWidth})`); }
+                }
+            }
+            for (const el of document.querySelectorAll('.pc-monitor .signin-nowrap')) {
+                if (shown(el) && el.getClientRects().length > 1) { out.ok = false; out.notes.push(`host label "${el.textContent}" is split over lines`); }
+            }
+            if (fx.build.expectTags) {
+                const tile = document.querySelector(`.pc-monitor .signin-tile[data-username="${fx.build.expectTags.username}"]`);
+                const tags = tile ? [...tile.querySelectorAll('.signin-tag')].map(t => t.textContent) : [];
+                out.tags = tags;
+                if (tags.length !== fx.build.expectTags.shown || tags[tags.length - 1] !== fx.build.expectTags.plusText) {
+                    out.ok = false; out.notes.push(`expected ${fx.build.expectTags.shown} tags ending "${fx.build.expectTags.plusText}", got ${JSON.stringify(tags)}`);
+                }
+                // Tag text should fit its pill unless the ellipsis is meant to cut it (noted, not a failure)
+                const cut = [...(tile?.querySelectorAll('.signin-tag') || [])].filter(t => shown(t) && t.scrollWidth > t.clientWidth + 1).map(t => t.textContent);
+                if (cut.length) out.notes.push(`info: tag cut by ellipsis ${JSON.stringify(cut)}`);
+            }
+            if (fx.build.expectSevenTiles) {
+                const row = document.querySelector('.pc-monitor #signin-tiles');
+                out.rowScroll = row ? { scrolls: row.classList.contains('signin-tiles-scroll'), more: !document.querySelector('.pc-monitor #signin-tiles-more')?.hidden } : null;
+                // "Choose an account." must be inside the visible area, and a capped row shows the cue
+                const prompt = document.querySelector('.pc-monitor #signin-prompt, .pc-monitor #signin-message');
+                const ar = area.getBoundingClientRect();
+                const pr = prompt?.getBoundingClientRect();
+                if (!pr || pr.bottom > ar.bottom + 1) { out.ok = false; out.notes.push('the prompt line is outside the visible area'); }
+                if (out.rowScroll?.scrolls && !out.rowScroll.more) { out.ok = false; out.notes.push('a scrolling row shows no More below cue'); }
+            }
             // Password and Sign in inside the visible area
             const areaRect = area.getBoundingClientRect();
             for (const sel of ['#password-field', '#submit-password']) {
@@ -156,7 +268,7 @@ async function measure(page, fx) {
 
 (async () => {
     const id = Number(process.argv[2]) || newGame();
-    const browser = await chromium.launch({ executablePath: CHROME, headless: true, args: ['--no-sandbox'] });
+    const browser = await chromium.launch({ ...(CHROME ? { executablePath: CHROME } : {}), headless: true, args: ['--no-sandbox'] });
     const page = await browser.newPage({ viewport: { width: 1400, height: 1000 } });
     page.on('pageerror', e => { /* game-side errors are not ours */ });
     await page.addInitScript(() => { try { localStorage.setItem('tutorial_declined', 'true'); } catch {} });
@@ -182,7 +294,7 @@ async function measure(page, fx) {
             const verdict = m.ok ? 'PASS' : 'FAIL';
             if (!m.ok) failed++;
             if (process.env.FITDEBUG) console.log("    dbg", JSON.stringify(m.dbg));
-            rows.push({ tag, verdict, spare: m.spare, scrollHeight: m.scrollHeight, clientHeight: m.clientHeight, notes: m.notes, stateLine: m.stateLine });
+            rows.push({ tag, verdict, spare: m.spare, scrollHeight: m.scrollHeight, clientHeight: m.clientHeight, notes: m.notes, stateLine: m.stateLine, longestRefusal: m.longestRefusal });
             console.log(`${verdict}  ${tag.padEnd(34)} spare=${String(m.spare ?? '?').padStart(5)}  (scroll ${m.scrollHeight ?? '?'} / client ${m.clientHeight ?? '?'})${m.notes?.length ? '  ' + m.notes.join('; ') : ''}`);
             if (SHOTS) {
                 try {

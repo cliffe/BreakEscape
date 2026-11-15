@@ -1588,13 +1588,14 @@ test('R1 M5/m6: a row taller than the space left is capped, scrolls inside, and 
         const row = document.querySelector('#signin-tiles');
         // jsdom has no layout: the area is 350 tall and its content runs 120px past that
         Object.defineProperty(area, 'clientHeight', { configurable: true, get: () => 350 });
-        Object.defineProperty(area, 'scrollHeight', { configurable: true, get: () => 470 });
-        Object.defineProperty(row, 'offsetHeight', { configurable: true, get: () => 320 });
+        // the content gets shorter as the row's cap shrinks it, as a real layout does
+        Object.defineProperty(area, 'scrollHeight', { configurable: true, get: () => 470 - (320 - Math.min(320, parseFloat(row.style.maxHeight) || 320)) });
+        Object.defineProperty(row, 'offsetHeight', { configurable: true, get: () => Math.min(320, parseFloat(row.style.maxHeight) || 320) });
         Object.defineProperty(row, 'clientHeight', { configurable: true, get: () => 180 });
         Object.defineProperty(row, 'scrollHeight', { configurable: true, get: () => 320 });
         mg.setRemoteAccounts({ picker: 'accounts', host: 'HB-FIN-02', tiles: pcTiles, captured: [LENA] });
         assert.equal(row.classList.contains('signin-tiles-scroll'), true, 'the row is a scroller');
-        assert.equal(row.style.maxHeight, '180px', 'capped to the height left (320 - 120 over - 20 for the cue)');
+        assert.equal(row.style.maxHeight, '172px', 'capped to the height left (320 - 120 over - 28 for the cue)');
         assert.equal(window.getComputedStyle(row).overflowY, 'auto');
         const more = document.querySelector('#signin-tiles-more');
         assert.equal(more.hidden, false, 'More below shows while rows run on');
