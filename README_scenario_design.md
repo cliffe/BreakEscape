@@ -2547,6 +2547,7 @@ Scenario files are `.json.erb` templates. Available helpers:
 | `<%= vm_object('system_name', fallback_hash) %>` | Returns VM console data as JSON for the named SecGen `system_name` (usually the attacker/Kali box); Hacktivity context or fallback |
 | `<%= flags_for_vm('system_name', fallback_array) %>` | Returns the flag **array** as JSON for the named SecGen `system_name` (used in a flag-station's `flags:`) |
 | `<%= vm_flags_json('system_name', fallback_array) %>` | Returns the flag **map** `{ "flag_1": value, … }` for the named `system_name` (used in the top-level `flags:` block). Same lookup as `flags_for_vm`, different shape. When no VM context is present, builds the map from `fallback_array`; when context is present but the name has no flags, returns `{}` (surfacing a wrong `system_name` rather than masking it) |
+| `<%= json(value) %>` | JSON-encodes a value, the same as `value.to_json`. Use it (or `.to_json`) for any authored string that might carry a quote, backslash or newline: `"title": <%= json(title) %>` instead of pasting the raw value between quotes, so a stray `"` cannot break the render |
 | `<%= base64_encode("text") %>` | Base64-encodes a string (for encoded notes puzzles) |
 | `<%= rot13("text") %>` | ROT13-encodes a string (for cipher puzzles) |
 
