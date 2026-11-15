@@ -12,6 +12,7 @@
 # Under the lock it records HEAD, starts a keyless server from the worktree
 # on <port>, makes games for m01_first_contact, sis01_healthcare and sis02_energy, then runs:
 #   0. tools/playtest/shell-x-check.mjs on the m01 game, once, in the background beside step 1 (shellx.txt)
+#   0b. bin/rubocop (the CI lint job), in the background beside step 1; any offence is RED (rubocop.txt)
 #   1. the Rails suite                      (rails.txt)
 #   1b. RUN_OPENED_SCAN=1 test/models/break_escape/payload_scan_opened_state_test.rb, after step 1 and
 #      in the background beside steps 2 and 3 (the only other test-database user is step 1); a
@@ -65,6 +66,7 @@ RED=()
 SKIPPED=()
 cleanup() {
   if [ -n "${SHELLX_PID:-}" ] && kill -0 "$SHELLX_PID" 2>/dev/null; then kill "$SHELLX_PID" 2>/dev/null || true; fi
+  if [ -n "${RUBOCOP_PID:-}" ] && kill -0 "$RUBOCOP_PID" 2>/dev/null; then kill "$RUBOCOP_PID" 2>/dev/null || true; fi
   if [ -n "${OPENED_PID:-}" ] && kill -0 "$OPENED_PID" 2>/dev/null; then kill "$OPENED_PID" 2>/dev/null || true; fi
   if [ -n "$SERVER_PID" ] && kill -0 "$SERVER_PID" 2>/dev/null; then
     kill "$SERVER_PID" 2>/dev/null
@@ -114,6 +116,10 @@ if [ "${TRAIN_CHECK_SKIP_JS:-0}" != 1 ] && [ -n "${GAME[m01_first_contact]:-}" ]
   SHELLX_PID=$!
 fi
 
+# ---- 0b. rubocop (the CI lint job), beside the Rails suite ----
+RBENV_VERSION=2.7.8 bin/rubocop --format simple > "$OUT/rubocop.txt" 2>&1 &
+RUBOCOP_PID=$!
+
 # ---- 1. Rails ----
 if [ "${TRAIN_CHECK_SKIP_RAILS:-0}" = 1 ]; then
   echo "rails SKIPPED" >> "$SUM"; SKIPPED+=(rails)
@@ -151,6 +157,11 @@ elif [ -n "$SHELLX_PID" ]; then
 else
   echo "shell-x FAILED: no m01 game" >> "$SUM"; RED+=("shell-x: no m01 game")
 fi
+
+# ---- rubocop result (started at step 0b) ----
+wait "$RUBOCOP_PID"; rc=$?
+echo "rubocop exit $rc: $(grep -E 'files? inspected' "$OUT/rubocop.txt" | tail -1)" >> "$SUM"
+[ "$rc" -ne 0 ] && RED+=("rubocop exit $rc (see rubocop.txt; bin/rubocop -a fixes safe layout offences)")
 
 # ---- 3. smoke ----
 SMOKE_ARGS=()
