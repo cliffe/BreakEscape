@@ -2,7 +2,7 @@
 // Run with: bin/test-js test/js/npc-action-icons.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { pickIcon, DEFAULT_ICONS } from '../../public/break_escape/js/systems/npc-action-icons.js';
+import { pickIcon, DEFAULT_ICONS, speechCovers, NpcActionIcons } from '../../public/break_escape/js/systems/npc-action-icons.js';
 
 test('pickIcon: no job -> null; pickup job -> curiosity; object id beats satisfies beats type; fallback', () => {
     const icons = { coffee_machine: 'C', caffeine: 'K', pc: 'P' };
@@ -65,4 +65,26 @@ test('q17: once the cause has cleared the frustration icon fades, with no pulse,
     const held = m.stateIconEntry({ job: null, tell: 2, judged, causeCleared: false }, {}, false);
     assert.equal(held.fading, undefined, 'solid while the cause holds');
     assert.equal(held.pulse, true);
+});
+
+// SIMS-5 design R2 m8: three markers stacked over one head at the cooler (the chat picture, the
+// speech bubble and the rest thought bubble). Any bubble showing over the NPC hides both icons.
+test('m8: speechCovers: talking, a bark, or a bubble still showing; hideFor hides the icon and the thought bubble', () => {
+    const bubbles = (says, shown) => ({ hasLine: id => says.includes(id), showsBubble: id => shown.includes(id) });
+    assert.equal(speechCovers({ talking: { line: 'Hi' } }, null, 'rosa'), true);
+    assert.equal(speechCovers({}, null, 'rosa'), false);
+    assert.equal(speechCovers({}, bubbles(['rosa'], []), 'rosa'), true, 'a bark');
+    assert.equal(speechCovers({}, bubbles([], ['rosa']), 'rosa'), true, 'a bubble left from the last pass');
+    assert.equal(speechCovers({}, bubbles([], ['sanjay']), 'rosa'), false, 'another NPC\'s bubble');
+    assert.equal(speechCovers({}, { hasLine: () => { throw new Error('x'); } }, 'rosa'), false, 'a throwing layer counts as none');
+    const box = () => ({ visible: true, setVisible(v) { this.visible = v; } });
+    const icons = new NpcActionIcons();
+    icons.icons.set('rosa', { box: box() });
+    icons.bubbles.set('rosa', { box: box() });
+    icons.icons.set('sanjay', { box: box() });
+    icons.hideFor('rosa');
+    assert.equal(icons.icons.get('rosa').box.visible, false);
+    assert.equal(icons.bubbles.get('rosa').box.visible, false);
+    assert.equal(icons.icons.get('sanjay').box.visible, true, 'only the speaker');
+    icons.hideFor('nobody');
 });

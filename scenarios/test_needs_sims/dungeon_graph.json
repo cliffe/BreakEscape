@@ -19,6 +19,24 @@
       "label": "Lounge",
       "kind": "room",
       "optional": false
+    },
+    {
+      "id": "it_room",
+      "label": "IT",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "manager_office",
+      "label": "Manager's Office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "staff_room",
+      "label": "Staff Room",
+      "kind": "room",
+      "optional": false
     }
   ],
   "edges": [
@@ -30,6 +48,21 @@
     {
       "from": "office",
       "to": "lounge",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "it_room",
+      "soft": false
+    },
+    {
+      "from": "it_room",
+      "to": "manager_office",
+      "soft": false
+    },
+    {
+      "from": "it_room",
+      "to": "staff_room",
       "soft": false
     }
   ]
