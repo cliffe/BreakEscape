@@ -22,7 +22,7 @@
  *
  * Seated wins: a seated NPC (seating.js, behavior._seat) keeps its sit frame. The pose holds
  * under a world speech bubble (chatter at the cooler, a phone call's lines) and drops for a
- * conversation with the player, face-player, hostility, a knock-out, a hit or attack
+ * conversation with the player, hostility, a knock-out, a hit or attack
  * animation, or any movement; the idle comes back when it drops.
  *
  * No static imports (so no test harness copy lists change); core/game.js imports it.
@@ -35,7 +35,8 @@ export const USE_LEAD_MS = 3000;
 /** Object type, officeType or texture key that reads as a machine operated by hand. */
 export const MACHINE_RE = /(coffee|kettle|cooler|boiler|copier|printer|microwave|vending|keypad|socket)/i;
 
-const BLOCKING_STATES = new Set(['face_player', 'maintain_space', 'chase', 'flee']);
+// face_player is no blocker: it only turns the NPC, and the pose follows b.direction
+const BLOCKING_STATES = new Set(['maintain_space', 'chase', 'flee']);
 const BLOCKING_ANIM_RE = /(attack|punch|-jab-|-hit-|death)/;
 
 const win = () => (typeof window !== 'undefined' ? window : globalThis);
