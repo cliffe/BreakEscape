@@ -1,0 +1,13 @@
+{
+  "key": "4ba5c43c9885b91a1e8cc2e9d1c29a79",
+  "npc": "marek",
+  "text": "Not with him there.",
+  "voice": "Orus",
+  "style": "Telecoms contractor, fifties, Polish-born, years in the UK. Gruff but not unfriendly.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:24:32Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "ad5729039d3a55214275ef0f3e31a15f",
+  "npc": "rosa",
+  "text": "How was the weekend?",
+  "voice": "Leda",
+  "style": "Team lead, forties, Spanish-born, years in the UK. Relaxed and friendly.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:26:14Z"
+}

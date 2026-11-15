@@ -1,0 +1,13 @@
+{
+  "key": "7bcd8734a58d40f880681c2d8d26df28",
+  "npc": "sanjay",
+  "text": "Not bad, you?",
+  "voice": "Puck",
+  "style": "Developer, mid twenties, British Indian, Leicester accent. Polite and a little shy.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:22:23Z"
+}

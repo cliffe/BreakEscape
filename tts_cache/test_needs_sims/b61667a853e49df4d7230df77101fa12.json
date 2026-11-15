@@ -1,0 +1,13 @@
+{
+  "key": "b61667a853e49df4d7230df77101fa12",
+  "npc": "tom",
+  "text": "Not with him there.",
+  "voice": "Charon",
+  "style": "Sales assistant, late twenties, white British, Yorkshire accent. Cheerful and easily distracted.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:18:16Z"
+}

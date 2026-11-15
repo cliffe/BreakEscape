@@ -1,0 +1,13 @@
+{
+  "key": "d358b74b28b002faf87f7a1ff1cde8ab",
+  "npc": "grace",
+  "text": "Not bad, you?",
+  "voice": "Kore",
+  "style": "Office manager, early sixties, Swedish-born, decades in the UK. Kind and brisk.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:20:13Z"
+}

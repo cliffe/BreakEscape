@@ -1,0 +1,13 @@
+{
+  "key": "d5da044889b6200a5e93d133c9d519b4",
+  "npc": "sanjay",
+  "text": "Missed it.",
+  "voice": "Puck",
+  "style": "Developer, mid twenties, British Indian, Leicester accent. Polite and a little shy.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:22:54Z"
+}

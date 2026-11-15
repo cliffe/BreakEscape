@@ -2151,6 +2151,9 @@ module BreakEscape
 
     # { npc_id => [koRoom, koX, koY] } for every KO'd NPC whose hostility record holds
     # a stored fall position. The values were validated at store time (ko_position_from).
+    # This serve path trusts the write-time reachability gate (ko_room_reachable?): it does
+    # not re-check koRoom against unlockedRooms, so if that set ever becomes shrinkable, the
+    # serve path must re-check reachability here.
     def ko_positions
       hostility = player_state['npcHostility']
       return {} unless hostility.is_a?(Hash)

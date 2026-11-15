@@ -1,0 +1,13 @@
+{
+  "key": "a324edd50aa20f2db1bfbcd092766483",
+  "npc": "grace",
+  "text": "Not with him there.",
+  "voice": "Kore",
+  "style": "Office manager, early sixties, Swedish-born, decades in the UK. Kind and brisk.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:20:20Z"
+}

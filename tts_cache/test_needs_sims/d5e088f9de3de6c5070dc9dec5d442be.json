@@ -1,0 +1,13 @@
+{
+  "key": "d5e088f9de3de6c5070dc9dec5d442be",
+  "npc": "neil",
+  "text": "Is there any milk left?",
+  "voice": "Umbriel",
+  "style": "IT support engineer, mid forties, white British, Geordie accent. Dry, settled, unhurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T18:08:23Z"
+}

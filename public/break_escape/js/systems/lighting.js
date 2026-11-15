@@ -14,7 +14,11 @@
  *     "mode": "on" | "motion" | "dark",   // motion: off until the player walks in
  *     "startOn": false,                    // motion rooms with NPCs start lit unless this is false
  *     "offAfter": 30,                      // motion: seconds after the player leaves before lights go off
- *     "flicker": true,                     // one faulty fluorescent panel
+ *     "flicker": true,                     // one faulty fluorescent panel; or an object, clamped for
+ *                                          // photosensitivity: { "dips": 3, "dipMs": [150, 250],
+ *                                          // "gapMs": [2500, 8500], "depth": 0.6 } (see resolveFlicker).
+ *                                          // Omitted fields default to the stock panel: dips 2, dipMs [90, 90]
+ *                                          // (raised to 100 by the clamp), gapMs [2500, 8500], depth 0.45
  *     "ambient": "#dfe3ec", "darkAmbient": "#101424",
  *     "panels": false,                     // no ceiling panel pools
  *     "lights": [{ "x": 5, "y": 4, "color": "#ffd9a0", "radius": 80, "intensity": 0.8 }],  // tile coords
@@ -313,13 +317,80 @@ function panelColorFor(ambient) {
 const smooth = (t) => t * t * (3 - 2 * t);
 
 // Fluorescent strike: [ms, level] keyframes, played per panel with a random delay.
-// Kept to two flashes per tube, and the faulty panel to two short dips per burst, so
+// Kept to two flashes per tube, and the faulty panel to three dips per burst at most (starts 0.55 s apart), so
 // nothing flashes more than three times a second (WCAG 2.3.1). With reduced motion
 // set, tubes fade up instead and the faulty panel holds steady.
 const STRIKE_SEQUENCE = [[0, 0], [60, 0.7], [160, 0.12], [420, 0.12], [460, 1]];
 const FADE_MS = 400;
 const DIP_MS = 90;
 const DIP_LEVEL = 0.55;
+
+// Faulty panel options. `flicker: true` is the stock panel (one or two 90 ms dips to 0.55,
+// 2.5 to 8.5 s apart). An object tunes it: { dips, dipMs: [min, max], gapMs: [min, max],
+// depth }. Missing fields take the stock values (see the defaults below). Everything is clamped for photosensitivity (WCAG 2.3.1): at most 3 dips a
+// burst, dips of at least 100 ms with at least 100 ms between them, dip starts at least
+// FLICKER_MIN_PERIOD_MS apart (so never more than 2 flashes in any second), and at least
+// 2 s between bursts.
+const FLICKER_MAX_DIPS = 3;
+// Defaults for fields the object form leaves out, so `{ depth: 0.7 }` is the stock panel but deeper:
+// 2 dips, 90 ms (raised to the 100 ms floor by the clamp), 2.5 to 8.5 s apart, depth 0.45.
+const FLICKER_DEFAULT_DIPS = 2;
+const STOCK_DIP_MS = 90;
+const FLICKER_MIN_DIP_MS = 100;
+const FLICKER_MAX_DIP_MS = 600;
+const FLICKER_MIN_IN_GAP_MS = 100;
+const FLICKER_MIN_PERIOD_MS = 550;
+const FLICKER_MIN_BURST_GAP_MS = 2000;
+const FLICKER_MAX_BURST_GAP_MS = 60000;
+const FLICKER_MIN_DEPTH = 0.1;
+const FLICKER_MAX_DEPTH = 0.9;
+
+function numberOr(v, fallback) { return Number.isFinite(v) ? v : fallback; }
+function clampRange(pair, lo, hi, fallback) {
+  const a = Array.isArray(pair) ? pair : (Number.isFinite(pair) ? [pair, pair] : fallback);
+  let min = Math.min(hi, Math.max(lo, numberOr(a[0], fallback[0])));
+  let max = Math.min(hi, Math.max(lo, numberOr(a[1], numberOr(a[0], fallback[1]))));
+  if (max < min) [min, max] = [max, min];
+  return [min, max];
+}
+
+/**
+ * Read a room's `lighting.flicker` into a clamped plan, or null when off.
+ * `true` (or anything not an object) is the stock panel.
+ */
+export function resolveFlicker(flicker) {
+  if (!flicker) return null;
+  if (typeof flicker !== 'object' || Array.isArray(flicker)) return { stock: true };
+  return {
+    stock: false,
+    dips: Math.min(FLICKER_MAX_DIPS, Math.max(1, Math.round(numberOr(flicker.dips, FLICKER_DEFAULT_DIPS)))),
+    dipMs: clampRange(flicker.dipMs, FLICKER_MIN_DIP_MS, FLICKER_MAX_DIP_MS, [STOCK_DIP_MS, STOCK_DIP_MS]),
+    gapMs: clampRange(flicker.gapMs, FLICKER_MIN_BURST_GAP_MS, FLICKER_MAX_BURST_GAP_MS, [2500, 8500]),
+    level: 1 - Math.min(FLICKER_MAX_DEPTH, Math.max(FLICKER_MIN_DEPTH, numberOr(flicker.depth, 1 - DIP_LEVEL))),
+  };
+}
+
+/** Plan the next burst from `now`: [{ at, len }] dips, the panel's level in a dip, and when the burst ends. */
+export function planFlickerBurst(plan, now, rand = Math.random) {
+  if (plan.stock) {
+    const first = now + 2500 + rand() * 6000;
+    const starts = rand() < 0.5 ? [first] : [first, first + 260 + rand() * 200];
+    const dips = starts.map(at => ({ at, len: DIP_MS }));
+    return { dips, level: DIP_LEVEL, end: starts[starts.length - 1] + DIP_MS };
+  }
+  const at0 = now + plan.gapMs[0] + rand() * (plan.gapMs[1] - plan.gapMs[0]);
+  const dips = [];
+  let at = at0;
+  for (let i = 0; i < plan.dips; i++) {
+    const len = plan.dipMs[0] + rand() * (plan.dipMs[1] - plan.dipMs[0]);
+    dips.push({ at, len });
+    // Gap of 150 to 350 ms, but never under the minimum gap or the minimum start-to-start period.
+    const gap = Math.max(FLICKER_MIN_IN_GAP_MS, FLICKER_MIN_PERIOD_MS - len, 150 + rand() * 200);
+    at += len + gap;
+  }
+  const last = dips[dips.length - 1];
+  return { dips, level: plan.level, end: last.at + last.len };
+}
 
 // Fire (effect "fire"): the glow flickers irregularly and shifts towards yellow, and
 // small flame tongues rise and fade across its width. Flash-safe: the glow's only
@@ -703,7 +774,9 @@ export class LightingSystem {
       })),
     });
     if (cfg.flicker && state.panels.length) {
-      state.panels[Math.floor(Math.random() * state.panels.length)].faulty = true;
+      const faulty = state.panels[Math.floor(Math.random() * state.panels.length)];
+      faulty.faulty = true;
+      faulty.flickerPlan = resolveFlicker(cfg.flicker);
     }
   }
 
@@ -983,6 +1056,8 @@ export class LightingSystem {
       } else {
         p.level = 1; p.strikeAt = null;
       }
+      // Drop any burst planned before the lights went off, so none resumes right after the strike.
+      p.dips = null;
     });
   }
 
@@ -990,7 +1065,7 @@ export class LightingSystem {
     const state = this.rooms.get(roomId);
     if (!state) return;
     state.on = false;
-    state.panels.forEach(p => { p.level = 0; p.strikeAt = null; });
+    state.panels.forEach(p => { p.level = 0; p.strikeAt = null; p.dips = null; });
   }
 
   /** How loud a room's sounds are where the player is: own room 1, through a door 0.4, else 0. */
@@ -1071,11 +1146,12 @@ export class LightingSystem {
       } else if (state.on && p.faulty && !this.reducedMotion) {
         // Mostly steady; every few seconds, one or two short dips.
         if (!p.dips || now > p.nextBurst) {
-          const first = now + 2500 + Math.random() * 6000;
-          p.dips = Math.random() < 0.5 ? [first] : [first, first + 260 + Math.random() * 200];
-          p.nextBurst = p.dips[p.dips.length - 1] + DIP_MS;
+          const burst = planFlickerBurst(p.flickerPlan || { stock: true }, now);
+          p.dips = burst.dips;
+          p.dipLevel = burst.level;
+          p.nextBurst = burst.end;
         }
-        p.level = p.dips.some(d => now >= d && now < d + DIP_MS) ? DIP_LEVEL : 1;
+        p.level = p.dips.some(d => now >= d.at && now < d.at + d.len) ? p.dipLevel : 1;
       }
     }
   }
