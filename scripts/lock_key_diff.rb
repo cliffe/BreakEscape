@@ -27,15 +27,20 @@
 # graph's room edges: the graph draws none into or out of a locked room. The rooms holding
 # required content or a critical-path lock that the start room reaches now but not once that room
 # (or door) is removed are named. A critical-path lock the baseline had that is gone, or no longer
-# locked: true, is a bypass and a RULE 2 line too. Array members with no id are keyed by type and
-# name (position when those repeat), so inserting a prop shifts nothing.
+# locked: true, is a bypass and a RULE 2 line too, and so is a critical-path lock whose lockType or
+# requirement (requires, key_id, targetFlags, requiresGlobal; keyPins and difficulty are left out)
+# changed: nothing here can rank two requirements, so any change is reported, and a lock that is
+# only tuned or made stricter is for the reviewer to wave through. Array members with no id are
+# keyed by type and name (position when those repeat), so inserting a prop shifts nothing; locks
+# whose paths differ only by the suffix a same-named sibling adds are still matched, by best fit.
 #
 # V9 consumes the graph's output and shares none of its code, so a change to the graph's JSON
 # format needs a matching change here; test/js/lock-key-diff.test.mjs pins the fields read:
 # nodes[].id/kind/optional and edges[].from/to/soft.
 #
 # Exit status: 0 no change; 1 changes, none guarding required content; 2 a new door or gate guards
-# required content, or a critical-path lock is removed or switched off (rule 2); 64 usage or
+# required content, or a critical-path lock is removed, switched off or has its lockType or
+# requirement changed (rule 2); 64 usage or
 # input error.
 #
 # Renders through BreakEscape::ScenarioBinding (the one render path), with its random values fixed
@@ -49,8 +54,11 @@ require_relative '../lib/break_escape/scenario_binding'
 
 module LockKeyDiff
   TOOL = 'scripts/lock_key_diff.rb (V9)'
-  FORMAT = 2
+  FORMAT = 3
   REQ_KEYS = %w[lockType requires keyPins key_id targetFlags difficulty requiresGlobal requireGlobal].freeze
+  # What a lock asks of the player (a change is a rule 2 line on a critical-path lock); keyPins and
+  # difficulty are left out, they tune a lock without swapping what opens it.
+  REQUIRES_KEYS = %w[requires key_id targetFlags requiresGlobal requireGlobal].freeze
   GATE_KEYS = %w[gate access wearable].freeze
   TASK_DROP = %w[title description _comment status currentCount showProgress].freeze
 
@@ -155,7 +163,8 @@ module LockKeyDiff
     walk(scenario, '') do |o, path|
       if o.key?('lockType') || o['locked'] == true
         locks << { 'path' => path, 'id' => o['id'] || o['name'], 'lockType' => o['lockType'],
-                   'locked' => o['locked'], 'requirementHash' => h(o.slice(*REQ_KEYS)) }
+                   'locked' => o['locked'], 'requirementHash' => h(o.slice(*REQ_KEYS)),
+                   'requiresHash' => h(o.slice(*REQUIRES_KEYS)) }
       end
       GATE_KEYS.each { |k| gates << { 'path' => path, 'field' => k, 'valueHash' => h(o[k]), 'on' => gate_on(o, path) } if o.key?(k) }
       conclude << { 'path' => path, 'concludeRequires' => o['concludeRequires'] } if o.key?('concludeRequires')
@@ -197,10 +206,14 @@ module LockKeyDiff
   def layout(scenario)
     rooms = scenario['rooms'].is_a?(Hash) ? scenario['rooms'] : {}
     adj = Hash.new { |hh, k| hh[k] = [] }
+    parallel = {}
     rooms.each do |rid, room|
       next unless room.is_a?(Hash)
 
       adj[rid]
+      Array(room['doors']).select { |d| d.is_a?(Hash) && d['connectedRoom'].is_a?(String) }.map { |d| d['connectedRoom'] }.tally.each do |d, n|
+        parallel[[rid, d].sort.join('|')] = true if n > 1
+      end
       dests = (room['connections'].is_a?(Hash) ? room['connections'].values : []).flat_map { |d| Array(d) }
       dests += Array(room['doors']).select { |d| d.is_a?(Hash) }.map { |d| d['connectedRoom'] }
       dests.select { |d| d.is_a?(String) && rooms.key?(d) }.each do |d|
@@ -208,7 +221,10 @@ module LockKeyDiff
         adj[d] << rid
       end
     end
-    { 'start' => scenario['startRoom'], 'adj' => adj.transform_values { |v| v.uniq.sort }.sort.to_h }
+    out = { 'start' => scenario['startRoom'], 'adj' => adj.transform_values { |v| v.uniq.sort }.sort.to_h }
+    # room pairs with two doors in one room: locking one leaves the other way through
+    out['parallel'] = parallel.keys.sort unless parallel.empty?
+    out
   end
 
   # What a gate sits on: a door (its far side, connectedRoom), a room, or an object.
@@ -318,12 +334,12 @@ module LockKeyDiff
 
       kind, tgt = m['eventPattern'].to_s.split(':', 2)
       id = tgt && placement[tgt] ? tgt : nil
-      # a global trigger names no room: the rooms where that global can be set stand for it. Only
-      # when nothing in the scenario sets it (engine code, such as a minigame result, does) does the
-      # holding NPC's room stand in, so no task is left without a room.
+      # a global trigger names no room: the rooms where the scenario sets that global stand for it,
+      # and so does the holding NPC's room, because engine code (a minigame result) may set it too
+      # and nothing here can tell whether the scripted setters are all of them. No task is left
+      # naming only an optional room.
       rs = if kind == 'global_variable_changed'
-             sr = global_set_rooms(rooms, tgt, base_dir)
-             sr.empty? ? [holder_room] : sr
+             global_set_rooms(rooms, tgt, base_dir) | [holder_room]
            else
              [(tgt && (placement[tgt] || (rooms.key?(tgt) ? tgt : nil))) || holder_room]
            end
@@ -457,10 +473,17 @@ module LockKeyDiff
   def cut_off(snap, room: nil, edge: nil)
     lay = snap['layout']
     return [] unless lay.is_a?(Hash) && lay['start']
+    return [] if edge && Array(lay['parallel']).include?(edge.sort.join('|'))
 
     lost = reachable(lay) - reachable(lay, cut_room: room, cut_edge: edge) - [room].compact
     needed = required_rooms(snap) + lock_rooms(snap)
     (lost & needed).sort.map { |r| "room '#{r}' (reachable only through #{room ? "'#{room}'" : "door #{edge.join(' to ')}"})" }
+  end
+
+  # A door's path key is its connectedRoom, with @x,y or #n added when a room has two doors to
+  # one room (member_keys): the room name is what the layout and graph know it by.
+  def door_room(key)
+    key.to_s.sub(/(?:@[^\]]*|#\d+)\z/, '')
   end
 
   def graph_nid(s)
@@ -488,7 +511,7 @@ module LockKeyDiff
       return (required_rooms(snap).include?(room) ? ["room '#{room}' (required content)"] : []) | cut_off(snap, room: room)
     end
     if (m = path.match(%r{\A/rooms/([^/\[]+)/doors\[([^\]]+)\]\z}))
-      room = m[2]
+      room = door_room(m[2])
       return (required_rooms(snap).include?(room) ? ["room '#{room}' (required content)"] : []) | cut_off(snap, edge: [m[1], room])
     end
 
@@ -510,7 +533,7 @@ module LockKeyDiff
       g = guards(snap, start)
       g |= ["room '#{room}' (required content)"] if required_rooms(snap).include?(room)
       door = gt['path'].to_s.match(%r{\A/rooms/([^/\[]+)/doors\[([^\]]+)\]\z})
-      g |= door ? cut_off(snap, edge: [door[1], door[2]]) : cut_off(snap, room: room)
+      g |= door ? cut_off(snap, edge: [door[1], door_room(door[2])]) : cut_off(snap, room: room)
       return g
     end
     id = on['object']
@@ -528,9 +551,34 @@ module LockKeyDiff
   def lock_node_of?(l, node)
     path = l['path'].to_s
     room = path[%r{\A/rooms/([^/\[]+)\z}, 1] || path[%r{/doors\[([^\]]+)\]\z}, 1]
-    return node == "door_#{room}" if room
+    return node == "door_#{door_room(room)}" if room
 
     l['id'].is_a?(String) && ["lock_#{l['id']}", "lock_#{graph_nid(l['id'])}"].include?(node)
+  end
+
+  # [[baseline lock, current lock]]: equal paths first, then the rest by best fit, locks whose
+  # paths differ only in the @x,y or #n a same-named sibling adds (member_keys).
+  def pair_locks(base_locks, cur_locks)
+    stem = ->(l) { l['path'].to_s.sub(/(?:@[^\]\/]*|#\d+)\]\z/, ']') }
+    by_path = cur_locks.to_h { |l| [l['path'], l] }
+    pairs = []
+    rest_b = []
+    taken = {}
+    base_locks.each do |l|
+      if (c = by_path[l['path']]) && !taken[c['path']]
+        taken[c['path']] = true
+        pairs << [l, c]
+      else
+        rest_b << l
+      end
+    end
+    rest_c = cur_locks.reject { |c| taken[c['path']] }
+    rest_b.each do |l|
+      c = rest_c.find { |x| stem.call(x) == stem.call(l) } or next
+      rest_c.delete(c)
+      pairs << [l, c]
+    end
+    pairs
   end
 
   def lines_of(obj)
@@ -563,25 +611,42 @@ module LockKeyDiff
       end
       flagged << "new lock '#{n['id']}' guards #{g.join(', ')}" unless g.empty?
     end
-    # a lock put on, or switched on, where the graph has no new node for it
-    was_on = base['locks'].select { |l| lock_on?(l) }.map { |l| l['path'] }
+    # a lock put on, or switched on, where the graph has no new node for it. Locks are matched to
+    # the baseline's by path, else by best fit (pair_locks), so a same-named sibling that shifts an
+    # id-less lock's path neither makes it a new lock nor a removed one.
+    pairs = pair_locks(base['locks'], cur['locks'])
+    old_of = pairs.to_h { |b, c| [c['path'], b] }
+    new_of = pairs.to_h { |b, c| [b['path'], c] }
     cur['locks'].each do |l|
-      next if !lock_on?(l) || was_on.include?(l['path']) || done.include?(l['path'])
+      next if !lock_on?(l) || (old_of[l['path']] && lock_on?(old_of[l['path']])) || done.include?(l['path'])
 
       g = lock_entry_guards(cur, l)
       flagged << "new lock at #{l['path']} guards #{g.join(', ')}" unless g.empty?
     end
     # rule 2 also forbids a lock removed or switched off: a critical-path (non-optional) lock of
     # the baseline that is gone, or whose entry is no longer locked: true (the graph keeps the node
-    # of an object left with a lockType), is a bypass
+    # of an object left with a lockType), is a bypass; so is a changed lockType or requirement on
+    # one, which may swap what the player must hold for something they already have (or for
+    # something they cannot get). Any change is reported, as nothing here can rank two requirements.
     now_locks = cur['graph']['lockNodes'].map { |n| n['id'] }
     gone = base['graph']['lockNodes'].reject { |n| n['optional'] || now_locks.include?(n['id']) }.map { |n| n['id'] }
-    now_on = cur['locks'].select { |l| lock_on?(l) }.map { |l| l['path'] }
-    base['locks'].select { |l| lock_on?(l) && !now_on.include?(l['path']) }.each do |l|
+    changed = []
+    base['locks'].select { |l| lock_on?(l) }.each do |l|
       node = base['graph']['lockNodes'].find { |n| !n['optional'] && lock_node_of?(l, n['id']) }
-      gone << node['id'] if node
+      next unless node
+
+      c = new_of[l['path']]
+      if c.nil? || !lock_on?(c)
+        gone << node['id']
+      else
+        what = []
+        what << "lockType #{l['lockType'].inspect} to #{c['lockType'].inspect}" if l['lockType'] != c['lockType']
+        what << 'requirement' if l['requiresHash'] && l['requiresHash'] != c['requiresHash']
+        changed << "critical-path lock '#{node['id']}' changed (#{what.join(', ')}): a bypass or a block" unless what.empty?
+      end
     end
     gone.uniq.each { |id| flagged << "critical-path lock '#{id}' removed or switched off (a bypass)" }
+    flagged.concat(changed.uniq)
     old_gates = base['gates'].map { |g| [g['path'], g['field']] }
     cur['gates'].each do |gt|
       next if old_gates.include?([gt['path'], gt['field']])

@@ -86,8 +86,10 @@ test('V9: a changed requirement shows as a changed hash, never the secret', { sk
         run('--write', base, '--graph-json', gj);
         write(scenario({ pin: '9999' }), graph());
         const r = run(base, '--graph-json', gj);
-        assert.equal(r.status, 1, r.stdout + r.stderr);
+        // the vault door is a critical-path lock, so the changed requirement is a RULE 2 line (R4 minor 2)
+        assert.equal(r.status, 2, r.stdout + r.stderr);
         assert.match(r.stdout, /== locks: 1 removed, 1 added/);
+        assert.match(r.stdout, /RULE 2: critical-path lock 'door_vault' changed \(requirement\)/);
         assert.doesNotMatch(r.stdout + readFileSync(base, 'utf8'), /9999|4821/);
     });
 });
@@ -440,7 +442,7 @@ test('V9 R3 minor 4: completesTask and completesTaskOnOpen tie a task to the obj
     });
 });
 
-test('V9 R3 minor 5: a global-triggered mapping counts the rooms that set the global, not the holder NPC room', { skip }, () => {
+test('V9 R3 minor 5: a global-triggered mapping counts the rooms that set the global and the holder NPC room', { skip }, () => {
     fixture(fx => {
         const mapping = g => ({ eventPattern: `global_variable_changed:${g}`, completeTask: 'decode' });
         const holder = { id: 'phone', npcType: 'phone', displayName: 'P', eventMappings: [mapping('seen'), { ...mapping('engine_only'), completeTask: 'other' }] };
@@ -450,11 +452,97 @@ test('V9 R3 minor 5: a global-triggered mapping counts the rooms that set the gl
         fx.write(s, layGraph(Object.keys(s.rooms), []));
         assert.equal(fx.run('--write', fx.base, '--graph-json', fx.gj).status, 0);
         const rc = JSON.parse(readFileSync(fx.base, 'utf8')).requiredContent.filter(([, w]) => /mapping/.test(w));
-        assert.deepEqual(rc.filter(([, w]) => /decode/.test(w)).map(r => r[0]), ['vault']);
+        // the holder's room stands in alongside the scripted setter, since engine code may set it too
+        assert.deepEqual(rc.filter(([, w]) => /decode/.test(w)).map(r => r[0]).sort(), ['office', 'vault']);
         // nothing in the scenario sets it (a minigame result): the holder's room stands in
         assert.deepEqual(rc.filter(([, w]) => /task other/.test(w)).map(r => r[0]), ['office']);
     });
 });
+
+// a graph for lay() scenarios with extra lock nodes
+const withNodes = (s, ids) => { const g = layGraph(Object.keys(s.rooms), []); ids.forEach(id => g.nodes.push({ id, label: id, kind: 'lock', optional: false })); return g; };
+
+test('V9 R4 minor 1: a same-type, same-name sibling does not shift an id-less lock into a false bypass', { skip }, () => {
+    fixture(fx => {
+        const cab = { type: 'safe', name: 'Main Filing Cabinet', position: { x: 1, y: 1 }, locked: true, lockType: 'key', requires: 'k1' };
+        const twin = { type: 'safe', name: 'Main Filing Cabinet', position: { x: 4, y: 2 } };
+        const mk = objs => lay({ rooms: chain, objects: { hall: objs } });
+        const run = (before, after) => {
+            fx.write(before, withNodes(before, ['lock_main_filing_cabinet']));
+            assert.equal(fx.run('--write', fx.base, '--graph-json', fx.gj).status, 0);
+            fx.write(after, withNodes(after, ['lock_main_filing_cabinet']));
+            return fx.run(fx.base, '--graph-json', fx.gj);
+        };
+        for (const after of [mk([twin, cab]), mk([cab, twin])]) {
+            const r = run(mk([cab]), after);
+            assert.equal(r.status, 1, r.stdout + r.stderr);
+            assert.doesNotMatch(r.stdout, /RULE 2/);
+        }
+        // no position: the #n suffix shifts the same way
+        const bare = { ...cab }; delete bare.position;
+        const twinBare = { type: 'safe', name: 'Main Filing Cabinet' };
+        const r2 = run(mk([bare]), mk([twinBare, bare]));
+        assert.equal(r2.status, 1, r2.stdout + r2.stderr);
+        assert.doesNotMatch(r2.stdout, /RULE 2/);
+        // the lock really switched off while a sibling arrives is still a bypass
+        const r3 = run(mk([cab]), mk([twin, { ...cab, locked: false }]));
+        assert.equal(r3.status, 2, r3.stdout + r3.stderr);
+        assert.match(r3.stdout, /RULE 2: critical-path lock 'lock_main_filing_cabinet' removed or switched off/);
+    });
+});
+
+test('V9 R4 minor 2: a changed lockType or requirement on a critical-path lock is a RULE 2 line (exit 2)', { skip }, () => {
+    fixture(fx => {
+        const cab = x => ({ id: 'cab', type: 'safe', name: 'Cab', locked: true, lockType: 'key', requires: 'k', ...x });
+        const mk = x => lay({ rooms: chain, objects: { hall: [cab(x)] } });
+        const run = (before, after, optional = false) => {
+            const g = s => { const gr = withNodes(s, ['lock_cab']); if (optional) gr.nodes.find(n => n.id === 'lock_cab').optional = true; return gr; };
+            fx.write(before, g(before));
+            assert.equal(fx.run('--write', fx.base, '--graph-json', fx.gj).status, 0);
+            fx.write(after, g(after));
+            return fx.run(fx.base, '--graph-json', fx.gj);
+        };
+        const req = run(mk({}), mk({ requires: 'other' }));
+        assert.equal(req.status, 2, req.stdout + req.stderr);
+        assert.match(req.stdout, /RULE 2: critical-path lock 'lock_cab' changed \(requirement\)/);
+        const typ = run(mk({}), mk({ lockType: 'pin', requires: '1234' }));
+        assert.equal(typ.status, 2);
+        assert.match(typ.stdout, /RULE 2: critical-path lock 'lock_cab' changed \(lockType "key" to "pin", requirement\)/);
+        // keyPins alone tunes the lock without swapping what opens it
+        assert.equal(run(mk({}), mk({ keyPins: [1, 2, 3] })).status, 1);
+        // an optional lock may change
+        assert.equal(run(mk({}), mk({ requires: 'other' }), true).status, 1);
+        // unchanged
+        assert.equal(run(mk({}), mk({})).status, 0);
+    });
+});
+
+test('V9 R4 minor 3: a global set by scripted content in an optional room still names the holder room; two doors to one room get the room name back', { skip }, () => {
+    fixture(fx => {
+        const holder = { id: 'phone', npcType: 'phone', displayName: 'P', eventMappings: [{ eventPattern: 'global_variable_changed:seen', completeTask: 'decode' }] };
+        const s = lay({ rooms: { ...chain, den: { south: 'hall' } }, objects: { den: [{ id: 'note', type: 'notes', name: 'N', onRead: { setVariable: { seen: true } } }] } });
+        s.rooms.office.npcs.push(holder);
+        s.objectives[0].tasks.push({ taskId: 'decode', title: 'D', type: 'manual', status: 'active' });
+        fx.write(s, layGraph(Object.keys(s.rooms), []));
+        assert.equal(fx.run('--write', fx.base, '--graph-json', fx.gj).status, 0);
+        const rc = JSON.parse(readFileSync(fx.base, 'utf8')).requiredContent.filter(([, w]) => /task decode/.test(w));
+        assert.deepEqual(rc.map(r => r[0]).sort(), ['den', 'office']);
+        // two doors from one room to one required room are keyed vault#1 and vault#2: locking one
+        // still guards the room, but cuts nothing off (the other door is a way through)
+        const two = lockOne => { const x = lay({ rooms: { office: {}, vault: {} } });
+            x.rooms.office.doors = [{ connectedRoom: 'vault' }, { connectedRoom: 'vault' }];
+            if (lockOne) Object.assign(x.rooms.office.doors[0], { locked: true, lockType: 'key', requires: 'k' }); return x; };
+        const g = x => layGraph(Object.keys(x.rooms), []);
+        fx.write(two(false), g(two(false)));
+        assert.equal(fx.run('--write', fx.base, '--graph-json', fx.gj).status, 0);
+        fx.write(two(true), g(two(true)));
+        const r = fx.run(fx.base, '--graph-json', fx.gj);
+        assert.equal(r.status, 2, r.stdout + r.stderr);
+        assert.match(r.stdout, /RULE 2: new lock at \/rooms\/office\/doors\[vault#1\] guards room 'vault' \(required content\)/);
+        assert.doesNotMatch(r.stdout, /reachable only through/);
+    });
+});
+
 
 test('V9 R3 minor 7: a lockType without locked: true is no lock, as the engine reads it', { skip }, () => {
     fixture(fx => {

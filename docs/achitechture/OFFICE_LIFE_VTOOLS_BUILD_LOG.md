@@ -14,7 +14,7 @@ Branch `build/ol-vtools`, from main 896ec3cd8 (format step 5 merged, so one `Bre
 | V6 | `BreakEscape::TtsOfficeLines` (`app/services/break_escape/tts_office_lines.rb`), rake `app:break_escape:tts:office_lines[<mission>]` | report task, read only, keyless | `test/unit/break_escape/tts_office_lines_test.rb` (4) |
 | V7 | `check_chatter_repeats` | warning, every scenario | same node file (2) |
 | V8 | `sync_budget`, `sync_budget_lines`, `check_sync_budget` | info line `ℹ Office-life sync budget (V8)`, warning above a cap | same node file (1) |
-| V9 | `scripts/lock_key_diff.rb` | report tool | `test/js/lock-key-diff.test.mjs` (24 after R3) |
+| V9 | `scripts/lock_key_diff.rb` | report tool | `test/js/lock-key-diff.test.mjs` (27 after R4) |
 
 Corpus pins (node file): the campaign constant is m01 to m10; V5 gives 0 errors on each; V2, V4 and V5 say nothing on `lab_physical_pentest`, `lab_social_engineering`, `test_needs_sims`, `test_access_work` and `test_access_social`. `README_scenario_design.md` has an "Office-life tools (V1 to V9)" section.
 
@@ -139,3 +139,14 @@ Review: `OFFICE_LIFE_VTOOLS_REVIEW_R3.md` (REVISE, 0 blockers, 1 major, 7 minors
 ### R3 corpus run
 
 Every scenario with a `scenario.json.erb` or `scenario.json` (180) was validated with `--no-graph --skip-ink --no-lint`, once with the R2 tip's `scripts/` and once with this branch (main eae23283d merged in). Exit code, error and warning counts and V-line counts are identical for all 180 (`test_author_notes` is a `scenario.json` with no template and exits 1 in both runs). m01 to m10: exit 0, no office-life line. V9 self-diff (`--write` then a diff) on m01 to m10: empty, exit 0, for all ten. Required-content placement: every required task of m01 to m10 has a room (the node pin passes). Reviewer mutations on scratch copies: m01 `hallway_east` and `hallway_west` and m05 locked annex exit 2, m05 unlocked annex exit 1, m01 inserted plant exit 0, m09 `plan_cabinet` off exit 2.
+
+## R4 outcomes
+
+Review: `OFFICE_LIFE_VTOOLS_REVIEW_R4.md` (ACCEPT, 0 blockers, 0 majors, 3 minors). All three were reproduced or confirmed from the code first; the review's Outcomes section gives the detail.
+
+- **Minor 1 fixed.** V9 matches lock entries to the baseline's by path, then by best fit (paths that differ only by the `@x,y` or `#n` a same-named sibling adds), for both the removal check and the new-lock check. The m01 second "Main Filing Cabinet" copy went from a false exit 2 to exit 1.
+- **Minor 2 fixed.** A critical-path lock whose `lockType` or requirement changed is a RULE 2 line and exit 2. The snapshot gains `requiresHash` and the baseline format is now 3. Any change is reported, because nothing in the tool can say one requirement is as strict as another. The header comment records the rule.
+- **Minor 3 fixed.** A global-triggered mapping names the holder NPC's room as well as the rooms that script the global, since engine code may set it too. The `#n` door suffix could miss the cut (`lock_entry_guards` read `vault#1` as a room name); `door_room` strips it, and two doors to one room are recorded as `parallel` in the layout so locking one claims no cut.
+- **Tests.** V9 24 to 27 cases (the changed-requirement case now expects exit 2), V1 to V8 unchanged at 32.
+
+Corpus: every scenario (180) validated with `--no-graph --skip-ink --no-lint`: exit code and result line identical to the R4 review run (V9 is not part of the validator, so this guards against collateral change only); V9 self diffs of m01 to m10 on copies are empty (exit 0).
