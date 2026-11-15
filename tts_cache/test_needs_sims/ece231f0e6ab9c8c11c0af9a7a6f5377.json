@@ -1,0 +1,13 @@
+{
+  "key": "ece231f0e6ab9c8c11c0af9a7a6f5377",
+  "npc": "keith",
+  "text": "Is it raining again?",
+  "voice": "Algenib",
+  "style": "Night security officer, mid fifties, white British, West Country (Bristol) accent. Steady, dry, unhurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T18:11:35Z"
+}

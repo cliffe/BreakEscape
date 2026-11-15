@@ -1,0 +1,13 @@
+{
+  "key": "3036c155f10492622f87f4583b240b47",
+  "npc": "keith",
+  "text": "Quiet on the radio still.",
+  "voice": "Algenib",
+  "style": "Night security officer, mid fifties, white British, West Country (Bristol) accent. Steady, dry, unhurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T18:10:31Z"
+}

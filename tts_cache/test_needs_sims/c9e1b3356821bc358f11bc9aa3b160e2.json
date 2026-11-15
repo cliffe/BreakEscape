@@ -1,0 +1,13 @@
+{
+  "key": "c9e1b3356821bc358f11bc9aa3b160e2",
+  "npc": "marek",
+  "text": "Cheers.",
+  "voice": "Orus",
+  "style": "Telecoms contractor, fifties, Polish-born, years in the UK. Gruff but not unfriendly.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:11:21Z"
+}

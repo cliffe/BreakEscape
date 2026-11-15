@@ -1,0 +1,13 @@
+{
+  "key": "e54d78a271a1fcb56fe3eda5c4c2d070",
+  "npc": "marek",
+  "text": "No coffee here, then.",
+  "voice": "Orus",
+  "style": "Telecoms contractor, fifties, Polish-born, years in the UK. Gruff but not unfriendly.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:24:51Z"
+}

@@ -24,7 +24,7 @@
 
   "actionIcons": {
     "lounge_kettle": { "sprite": "kettle1", "text": "K" },
-    "upkeep": "icon:npc-work"
+    "upkeep": "icon:npc-upkeep"
   },
 
   "globalVariables": {
@@ -1086,7 +1086,7 @@
           "storyPath": "scenarios/test_needs_sims/ink/neil.json",
           "currentKnot": "start",
           "reopenRefreshesHub": true,
-          "voice": { "name": "Charon", "style": "IT support engineer, mid forties, white British, Geordie accent. Dry, settled, unhurried.", "language": "en-GB" },
+          "voice": { "name": "Umbriel", "style": "IT support engineer, mid forties, white British, Geordie accent. Dry, settled, unhurried.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "needsHome": "neil_mug",
           "needsRooms": ["it_room"],
@@ -1117,7 +1117,8 @@
       "door_sign": "Staff Room",
       "needsPrivateTo": ["keith", "jodie"],
       "connections": { "west": "it_room" },
-      "lighting": { "flicker": true, "variants": [{ "condition": "globalVars.job_cleared === true", "flicker": false }] },
+      "_comment": "Faulty light: one panel dips three times a burst, each dip 150 to 250 ms and deep (depth 0.7), a burst every 2.5 to 8.5 s. The engine clamps the object form for photosensitivity (WCAG 2.3.1): at most three dips a burst, dips and gaps of at least 100 ms, dip starts at least 0.55 s apart (so never more than two flashes in any second), and at least 2 s between bursts. Each dip is one drop on a single ceiling panel's pool, not the whole room. Reduced motion turns it off: with prefers-reduced-motion the panel holds steady.",
+      "lighting": { "flicker": { "dips": 3, "dipMs": [150, 250], "gapMs": [2500, 8500], "depth": 0.7 }, "variants": [{ "condition": "globalVars.job_cleared === true", "flicker": false }] },
       "objects": [
         {
           "type": "hot_water_boiler",
@@ -1181,7 +1182,7 @@
           "spriteVisemes": "assets/characters/security_guard_visemes.png",
           "storyPath": "scenarios/test_needs_sims/ink/keith.json",
           "currentKnot": "start",
-          "voice": { "name": "Orus", "style": "Night security officer, mid fifties, white British, West Country (Bristol) accent. Steady, dry, unhurried.", "language": "en-GB" },
+          "voice": { "name": "Algenib", "style": "Night security officer, mid fifties, white British, West Country (Bristol) accent. Steady, dry, unhurried.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "needsHome": { "room": "staff_room", "x": 6.97, "y": 4.85 },
           "needsRooms": ["staff_room"],
@@ -1214,7 +1215,7 @@
           "spriteSheet": "female_telecom_v2",
           "storyPath": "scenarios/test_needs_sims/ink/jodie.json",
           "currentKnot": "start",
-          "voice": { "name": "Leda", "style": "Maintenance assistant, mid twenties, Glaswegian accent. Quick, warm, practical.", "language": "en-GB" },
+          "voice": { "name": "Zephyr", "style": "Maintenance assistant, mid twenties, Glaswegian accent. Quick, warm, practical.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "needsHome": { "room": "staff_room", "x": 4.2, "y": 6.1 },
           "needsRooms": ["staff_room"],

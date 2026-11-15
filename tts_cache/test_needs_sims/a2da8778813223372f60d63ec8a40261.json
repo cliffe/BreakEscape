@@ -1,0 +1,13 @@
+{
+  "key": "a2da8778813223372f60d63ec8a40261",
+  "npc": "amara",
+  "text": "Friday drinks again?",
+  "voice": "Aoede",
+  "style": "Office administrator, thirties, British Nigerian, London accent. Warm and quick.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:15:36Z"
+}

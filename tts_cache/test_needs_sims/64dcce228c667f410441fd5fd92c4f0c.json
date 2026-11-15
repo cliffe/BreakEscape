@@ -1,0 +1,13 @@
+{
+  "key": "64dcce228c667f410441fd5fd92c4f0c",
+  "npc": "neil",
+  "text": "There's always something on the go. I like it better that way, mind.",
+  "voice": "Umbriel",
+  "style": "IT support engineer, mid forties, white British, Geordie accent. Dry, settled, unhurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T18:06:29Z"
+}

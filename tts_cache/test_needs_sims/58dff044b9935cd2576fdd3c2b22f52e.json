@@ -1,0 +1,13 @@
+{
+  "key": "58dff044b9935cd2576fdd3c2b22f52e",
+  "npc": "amara",
+  "text": "He's not at his desk just now.",
+  "voice": "Aoede",
+  "style": "Office administrator, thirties, British Nigerian, London accent. Warm and quick.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:14:50Z"
+}

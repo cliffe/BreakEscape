@@ -1,0 +1,13 @@
+{
+  "key": "f34d5c6b80f0638a546f1b63ad289a55",
+  "npc": "marek",
+  "text": "Printer's off. Brilliant.",
+  "voice": "Orus",
+  "style": "Telecoms contractor, fifties, Polish-born, years in the UK. Gruff but not unfriendly.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:24:59Z"
+}
