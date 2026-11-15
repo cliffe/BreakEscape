@@ -42,3 +42,7 @@ None left: the `again`/`place` rewrite uses `prev` consistently, the imports in 
 
 - `bin/test-js`: Files: 676 passed, 0 failed, 676 total (includes `npc-needs-nudge-adapter`, `npc-needs-stuck-walk` and `seating`).
 - `BUNDLE_PATH=/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/vendor/bundle bundle exec rubocop`: 366 files inspected, no offenses detected.
+
+## Outcomes
+
+- m1: fixed. The header comment by RETURN_STUCK_MAX_BACKOFFS now also names an abandon past RETURN_MAX_ABANDONS in one return as final.

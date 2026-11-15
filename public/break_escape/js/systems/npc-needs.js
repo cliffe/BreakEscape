@@ -53,7 +53,7 @@ export const RETURN_STUCK_BACKOFF_MS = 15000;
 // Round 7 (game 5431: 8 minutes of back-offs in one place): after this many back-offs in the same
 // place the walk home ends (`return_abandoned`): the NPC idles where it stands and the next tick
 // re-plans from scratch (the selector first, else a fresh walk home). A second abandon in the same
-// place is final: only RETURN_FINAL_REPLANS late walks home follow, then it idles there until a
+// place, or any abandon past RETURN_MAX_ABANDONS in one return, is final: only RETURN_FINAL_REPLANS late walks home follow, then it idles there until a
 // job moves it, so the cycle cannot run for ever.
 export const RETURN_STUCK_MAX_BACKOFFS = 2;
 // After a final abandon the NPC tries another walk home this long later (needs clock), so a
