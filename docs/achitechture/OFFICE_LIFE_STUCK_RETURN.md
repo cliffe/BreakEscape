@@ -351,3 +351,22 @@ Suites on `36eda6c9d`: `bin/test-js` 675 files passed, 0 failed. On `c90193ecb` 
 | lab_physical_pentest smoke | `c90193ecb` | 5476 | clean with needs NPCs present: all three doors walked, player in `open_plan`; 4 needs NPCs (Kieran walked 966 px, Hampshire 431, Lord 18, Pierce 16), 6 job lines in 60 s of needs clock; no `walk_stuck`, `walk_rerouted`, `return_stuck`, `return_abandoned` or `seat_gave_up`; 0 page errors |
 
 Pass counts: row 2 3 of 3 for both tasks, 3 of 3 home under 20 s (6 to 6.25 s), 3 of 3 with a spoken overheard grumble. Tour rows 1, 3, 5 and 6 pass. The lab smoke exercised four needs NPCs with no stall loop. The away-point run and the m01 and m02 train smokes were not repeated this round: the R2 changes touch the needs nudge, stall counting, late re-plans, seat give-up expiry and the outbound deadline floor, and m01 and m02 do not run the needs layer.
+
+## Live re-check after code review R3
+
+The R3 fixes (`OFFICE_LIFE_STUCK_RETURN_REVIEW_R3.md`, Outcomes) are in `e96ebc2ea`, and every run below is on that commit. Run 2026-11-15, keyless server on port 3093 from the worktree, headless setFPS(20) with fixed steps, a fresh game per run made with `tools/playtest/new-game.rb`. Row 2 uses `needs-stuck-return-proof.mjs` with the player held at (232,176). No driver changes this round.
+
+Suites on `e96ebc2ea`: `bin/test-js` 675 files passed, 0 failed; `tts_office_lines_test.rb` 9 runs, 46 assertions, 0 failures; `bin/rubocop` 366 files, no offences.
+
+| Run | Code | Game | Result |
+|---|---|---|---|
+| Row 2, run 1 | `e96ebc2ea` | 5478 | pass: `see_turned_back`, `see_look_round`; grumble spoken and overheard at 1.8 s, `sayings` and the shown line agree; Marek home in 6 s; 2 stalls, 0 stuck; Tom seated; 0 `seat_gave_up`; 0 page errors |
+| Row 2, run 2 | `e96ebc2ea` | 5479 | pass: both tasks; grumble spoken and overheard at 1.5 s; Marek home in 6 s; 2 stalls, 0 stuck; Tom seated; 0 page errors |
+| Tour row 1 | `e96ebc2ea` | 5480 | pass (queue seen, 69 s) |
+| Tour row 3 | `e96ebc2ea` | 5480 | pass: board read on the second try (the first ended 64 px short behind Amara's chair); Tom and Marek queued and both turned back at the switch-off, Marek's grumble spoken, Tom's a picture; back on |
+| Tour row 5 | `e96ebc2ea` | 5480 | pass: board read on the first try (42 px short, one nudge), chat seen at 150 s |
+| Tour row 6 | `e96ebc2ea` | 5480 | pass: rota read on the first try; Sanjay's social set to 35; `see_outcast` ticked at 50 s |
+| Tour stalls | `e96ebc2ea` | 5480 | 2 stall lines in the whole tour, as in R2; no loops; rooms kitchen, office, lounge, office all entered; 0 page errors |
+| lab_physical_pentest smoke | `e96ebc2ea` | 5481 | clean with needs NPCs present: all three doors walked, player in `open_plan`; 4 needs NPCs (Kieran walked 978 px, Hampshire 416, Lord 21, Pierce 23), 6 job lines in 61 s of needs clock; no `walk_stuck`, `walk_rerouted`, `return_stuck`, `return_abandoned` or `seat_gave_up`; 0 page errors |
+
+Pass counts: row 2 2 of 2 for both tasks, 2 of 2 home in 6 s, 2 of 2 with a spoken overheard grumble. Tour rows 1, 3, 5 and 6 pass on the tip, so the outbound deadline floor (m3) now has a live run behind it as well as unit proof. The tour driver reports the count of stall lines but not where they were, so this round does not say which NPCs logged them.
