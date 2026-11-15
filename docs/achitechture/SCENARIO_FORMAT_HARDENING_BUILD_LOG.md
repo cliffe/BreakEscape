@@ -3359,6 +3359,106 @@ A server-side sweep (every strip, filter, WITHHELD list and delete) found more s
 The node declared-top-level test asserts every mark. The validator exits 0 on m01, m02, lab_physical_pentest
 and test_access_networks.
 
+### Step 6a-1 part 2: the fresh-state corpus scan body (branch build/hard-6a1-scan)
+
+Date: 2026-11-15. Built on the step-3 tip with main merged (`1f322f593`). Part 1 (the server-only
+marks, the declared top level, `PayloadLeafClassifier`, the held scan) is on main; step 3
+(`acknowledgedClues`, the answer model, `validate_secret_leaks.rb`) is merged beside it. This part
+replaces the `SCAN_PENDING`/`SCAN_READY` hold with the real scan and makes it pass.
+
+**What changed.** All in `test/`, `docs/` and the fixture, no `app/` or `lib/` code, no payload, no
+player_state.
+
+- `test/models/break_escape/payload_scan_fresh_state_test.rb` is now an
+  `ActionDispatch::IntegrationTest`: it renders every `scenarios/*/scenario.json.erb` under
+  `srand(1)` (restored after), creates a standalone game with a fresh player state, and fetches the
+  fresh-state routes over the real engine routes: `GET scenario`, `GET room/:id` for every
+  accessible room, `GET container/:id` and `GET login_accounts` for each reachable container and
+  sign-in PC, and `GET network` with no foothold. A refusal (403) passes. Every 200 body is walked
+  with the ScenarioSchema node tree carrying the server-only-ancestor precedence, and each leaf is
+  classed with `PayloadLeafClassifier`. It fails on every class 1 leaf, every class 2 leaf
+  `class2_reports?` returns true for, and every class 4 value match with no serving field, naming
+  the scenario, route, response path and class. The eleven routes left out (`scenario_map`,
+  `objectives`, `capture_secrets`, `ink`, and the POST routes) are listed with a reason in
+  `SKIP_ROUTES`, asserted by its own test.
+- Class 2 and class 4 reuse step 3's one rule: `SecretLeaks.collect_answers` over the created game's
+  authored `scenario_data` for the answer set and `SecretLeaks.answer_matches_leaf?` for the match,
+  so a leaked value is judged here exactly as the validator judges it.
+- `clue_covers?` is aligned to step 3's real `acknowledgedClues` shape (`{ lock, in, reason,
+  approved }`): it covers a leaf when `lock` equals the matched answer's lock id and `in` equals the
+  leaf's container (an object id or `global:<name>`). `class2_reports?` now takes the answer set, the
+  leaf and the clue list, and reports a matched leaf unless a clue covers its (lock, container).
+- `playerInventory` (the bootstrap's rename of `startItemsInInventory`) has no top-level schema key,
+  so its items are walked with the item-array node (`#/definitions/item/properties/contents`). This
+  makes an inventory item's `name`/`observations` class 3 (authored display text), not an
+  undeclared class 4 leaf. Without it, test_unlock_gaps' start item "Pocket Cryptex" collided with
+  its own cryptex answer "POCKET" (a 6+ char whole-word match) and failed falsely.
+- Wiring (handover item 6): `acknowledgedApproved()` from the shared reader
+  `test/js/validator-acknowledged-clues-reader.mjs` is added as the third `otherApproved` list in
+  `test/js/validator-known-failures.test.mjs`, so the shared-heading rule now spans all three lists
+  (known failures, payload-scan exceptions, acknowledgedClues markers).
+
+**Scan results (fresh state, 180 scenarios, ~11 s).** Three findings, all the legacy inert `pc`
+objects (`requires: "password"`, no `lockType`, not locked), each the one PC reachable from the
+scenario's start room; the room filter strips `requires` only when a `lockType` is present, so the
+literal string ships, and the fail-closed rule marks the unmarked `requires` class 1. Step 3 warns
+the field is inert. Each is in the exceptions file:
+
+- `scenarios/crypto2_rsa_asymmetric/scenario.json.erb` `GET room/:id` `rooms/room_start/objects[2]/requires`
+- `scenarios/crypto3_aes_symmetric/scenario.json.erb` `GET room/:id` `rooms/room_reception/objects[0]/requires`
+- `scenarios/crypto4_encoding_encryption/scenario.json.erb` `GET room/:id` `rooms/room_reception/objects[0]/requires`
+
+ceo_exfil and crypto1's legacy PCs, and the other PCs in these three scenarios, sit in locked rooms,
+so the fresh-state scan does not reach them; they are the opened-state scan's (6a-2) concern. The
+three exceptions carry a dated heading in `docs/agents/VALIDATOR_DECISIONS.md` with the required json
+block, each marked **Pending orchestrator sign-off** (and "awaiting orchestrator sign-off" so the
+`MERGE_BATCH=1` gate holds them until signed). `reviewBy` is 2026-12-31.
+
+**`social.intelFacts`: no mark (handover item 4).** Read from the serving code:
+`SocialFeed.withhold_feed_facts!` / `strip_feed_facts!` (`social_feed.rb:303-316`) deletes from the
+bootstrap only the intelFacts entries a feed post gates; those are served later through `feedPosts`
+(a constructed class-4 answer judged by value). Every other intelFacts entry ships in the bootstrap
+and is read client-side by the OSINT browser, the intel board, the mail client and pretext prep
+(`social-intel.js`, `board-model.js`, `mail-bridge.js`, `pretext-card.js`): it is client-visible
+earned/OSINT data, and its text is authored clue text (class 3), not a section-2 secret. A
+whole-record `x-serverOnly` on `intelFacts` would wrongly flag the client-visible facts that ship by
+design. So `social.intelFacts` stays unmarked: the feed-gated subset is withheld at serve time by
+the strip, not by a schema mark, and when served via `feedPosts` the scan judges it as a class-4
+constructed value. (The `x-servedBy "feedPosts"` the plan puts inside the server-only `feed` record
+is on the feed `POST_KEYS`, not on the top-level `intelFacts` block.)
+
+**Per-class fixtures (handover item 5).** A fixture test runs the scan body over a crafted payload
+and proves each class is caught and a legitimate leaf passes: a `postitNote` clue (class 3, passes),
+a `requires` under a pin lock (class 1), a PIN copied into a global with and without a covering
+`acknowledgedClues` entry (class 2 reported, then exempt), a password under an undeclared key (class
+4), and the same password under `postitNote` on `GET /login_accounts` (class 4 allowance, served).
+The corpus fixtures are named cases of the live scan: m01's `postitNote` (class 3) passes; the three
+legacy PCs (class 1) are the exceptions; test_unlock_gaps' inventory item name passes once
+`playerInventory` is classed by the item schema.
+
+**Live proof.** Keyless server on port 3679 from this worktree (PID 1822033), headless, over the real
+HTTP routes against the shared dev DB; games made only through `tools/playtest/new-game.rb`.
+`m01_first_contact` -> GAME_ID 5015, `GET /scenario` HTTP 200 (20 KB, `formatVersion: 3`).
+`crypto3_aes_symmetric` -> GAME_ID 5016, `GET /room/room_reception` HTTP 200 with `objects[0]` the
+legacy `type: pc`, `requires: "password"`, no `lockType`, exactly the class-1 finding the exception
+covers, so the scan's finding is a field the real route genuinely serves. Server stopped by its PID;
+port 3679 confirmed down. Port 3000 never touched; no db: task run.
+
+**Tests.**
+- `test/models/break_escape/payload_scan_fresh_state_test.rb`: 14 runs, 56 assertions, 0 failures
+  (the classifier units, the per-class fixture, the skip-routes assertion and the corpus scan).
+- `test/js/validator-known-failures.test.mjs`: 21 pass (now reading the three exceptions and the
+  acknowledgedClues markers through the shared reader).
+- `test/js/validator-acknowledged-clues.test.mjs` and `test/js/validator-declared-top-level.test.mjs`:
+  pass (unchanged behaviour).
+
+**Run time.** The corpus scan runs in about 11 seconds over 180 scenarios, well under the plan's
+two-minute threshold, so the file stays in the default `bin/rails test` run.
+
+**Files touched (part 2).** `test/models/break_escape/payload_scan_fresh_state_test.rb`,
+`test/js/validator-known-failures.test.mjs`, `test/fixtures/files/payload_scan_exceptions.json`,
+`docs/agents/VALIDATOR_DECISIONS.md`, this log.
+
 ## Step 5. One ScenarioBinding in lib/ for every renderer, and a JSON-safe ERB helper (build/hard-step5)
 
 Built on main at `cb259dbdf`. phone-calls is merged into main; **build/phone-calls-writing is still
