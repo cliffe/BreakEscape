@@ -6,7 +6,7 @@
 // Run with: node test/js/npc-needs-stuck-walk.test.mjs
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { NPCNeedsSystem, NEEDS_TICK_MS, RETURN_YIELD_MS, STUCK_TRIES, RETURN_STUCK_BACKOFF_MS, RETURN_STUCK_MAX_BACKOFFS, RETURN_FINAL_REPLAN_MS, RETURN_FINAL_REPLANS, REROUTE_MIN_LEFT_MS, STUCK_SAME_PX } from '../../public/break_escape/js/systems/npc-needs.js';
+import { NPCNeedsSystem, NEEDS_TICK_MS, RETURN_YIELD_MS, STUCK_TRIES, RETURN_STUCK_BACKOFF_MS, RETURN_STUCK_MAX_BACKOFFS, RETURN_FINAL_REPLAN_MS, RETURN_FINAL_REPLANS, RETURN_MAX_ABANDONS, REROUTE_MIN_LEFT_MS, STUCK_SAME_PX } from '../../public/break_escape/js/systems/npc-needs.js';
 import { makeWorld } from './fixtures/needs-stub-world.mjs';
 
 function office() {
@@ -378,4 +378,65 @@ test('R3 m3: a stall that fires on the deadline tick times out; no floor', () =>
     assert.ok(rerouteAt != null, 'the stall watch fired');
     assert.equal(failAt, rerouteAt, 'and the job timed out on that same tick');
     assert.ok(!job.rerouteGrace, 'the floor was not used');
+});
+
+// Code review R4 m1: every abandon is counted per return, quick re-plans included
+test('R4 m1: wedges alternating between two places on quick re-plans end the walk', () => {
+    const { sys, w } = toReturning();
+    const st = sys.states.get('clerk');
+    let seen = 0, lastMove = 0;
+    for (let i = 0; i < 40 * 60 * 4; i++) {
+        st.levels.caffeine = 100;
+        const before = homeMoves(w, sys).length;
+        sys.step(NEEDS_TICK_MS);
+        const ab = evs(sys, 'return_abandoned').length;
+        if (ab > seen) {
+            seen = ab;
+            w.pos.clerk.x = w.pos.clerk.x === 200 ? 400 : 200;   // the re-plan wedges on the other route
+        }
+        if (homeMoves(w, sys).length > before) lastMove = sys.clockMs;
+    }
+    const abandons = evs(sys, 'return_abandoned');
+    assert.ok(abandons.some(e => e.x === 400) && abandons.some(e => e.x === 200), 'it wedged in both places');
+    assert.ok(abandons.length <= RETURN_MAX_ABANDONS + 1 + RETURN_FINAL_REPLANS, 'a bounded number of abandons: ' + abandons.length);
+    assert.ok(abandons.slice(RETURN_MAX_ABANDONS).every(e => e.final), 'every abandon past the cap is final');
+    assert.equal(sys.getState('clerk').mode, 'idle');
+    assert.ok(sys.clockMs - lastMove > 20 * 60000, 'and then no more walks home');
+});
+
+// Code review R4 m2: a player-blocked abandon is allowed past the late cap, after the 60 s wait
+test('R4 m2: a player-blocked abandon after the late cap still gets a walk home, after the wait', () => {
+    const { sys, w } = toReturning();
+    const st = sys.states.get('clerk');
+    let guard = 0;
+    while (!evs(sys, 'return_abandoned').some(e => e.final) && guard++ < 4000) sys.step(NEEDS_TICK_MS);
+    let late = 0, starts = 0, capAt = null;
+    for (let i = 0; i < 16 * 60 * 4 && capAt == null; i++) {
+        st.levels.caffeine = 100;
+        sys.step(NEEDS_TICK_MS);
+        if ((st.returnLate || 0) > late) {
+            starts++;
+            w.pos.clerk.x = w.pos.clerk.x === 200 ? 400 : 200;
+            if (starts === RETURN_FINAL_REPLANS) { w.setPlayerNear(true); capAt = sys.clockMs; }
+        }
+        late = st.returnLate || 0;
+    }
+    assert.equal(starts, RETURN_FINAL_REPLANS, 'the cap was reached');
+    // The third late walk abandons with the player beside the NPC (re-issues of that walk come first)
+    const finals = evs(sys, 'return_abandoned').length;
+    let guard2 = 0;
+    while (evs(sys, 'return_abandoned').length === finals && guard2++ < 4000) { st.levels.caffeine = 100; sys.step(NEEDS_TICK_MS); }
+    assert.equal(st.returnAbandon.player, true);
+    assert.equal(st.mode, 'idle');
+    const t0 = sys.clockMs;
+    const moves = homeMoves(w, sys).length;
+    let walkAt = null;
+    while (sys.clockMs - t0 < 3 * RETURN_FINAL_REPLAN_MS && walkAt == null) {
+        st.levels.caffeine = 100;
+        sys.step(NEEDS_TICK_MS);
+        if (homeMoves(w, sys).length > moves) walkAt = sys.clockMs;
+    }
+    assert.ok(walkAt != null, 'a walk home past the cap');
+    assert.ok(walkAt - t0 >= RETURN_FINAL_REPLAN_MS - NEEDS_TICK_MS, 'after the 60 s wait');
+    assert.equal(st.returnLate, RETURN_FINAL_REPLANS, 'not counted');
 });

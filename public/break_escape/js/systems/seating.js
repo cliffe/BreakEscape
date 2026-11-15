@@ -2003,6 +2003,10 @@ function updateNeedsSeat(behavior, ns, playerPos) {
             return !!behavior._seatMove; // stepping off
         }
         sprite.body.setVelocity(0, 0);
+        // Seated at its stop: the give-up and retry counts start again (R4 m3)
+        behavior._seatGiveUpExpiries = 0;
+        behavior._seatRetries = 0;
+        behavior._fetchRetries = 0;
         // Swivel: face the work, the player while they talk, a colleague speaking nearby, or now
         // and then a glance round (slice 21); the roll and the swivel wait while the NPC is busy
         const sys = window.npcNeedsSystem;

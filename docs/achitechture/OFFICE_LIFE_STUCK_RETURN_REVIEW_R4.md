@@ -58,3 +58,10 @@ Fix: add two small tests with a stub behaviour object on `window.npcBehaviorMana
 | R3 m3, deadline tick | Yes, as above. |
 | R3 m4, seating expiry | Yes: the old code reset `_fetchRetries` and `_fetchTriedAt`, and left `_seatGaveUpAt` set. |
 | R2 M1 rewrite | Yes on the new nudge reporting; it needs `setNudge`, which the old code ignored. |
+
+## Outcomes
+
+- **m1: fixed.** `s.returnAbandons` counts every abandon per return (quick re-plans included), cleared with `returnLate` at arrival and at job pick. Past `RETURN_MAX_ABANDONS` (6) the abandon is final whatever the place, so the quick re-plan stops and only the capped late walks follow. Test: `R4 m1`, wedges alternating between two places on quick re-plans, which ends with at most 6 + 1 + 3 abandons and no walk for 20 minutes after.
+- **m2: fixed.** A player-blocked abandon bypasses `RETURN_FINAL_REPLANS` in the selector and in `_replanAbandoned`, but still waits `RETURN_FINAL_REPLAN_MS`, and is still not counted. Test: `R4 m2` reaches the cap with alternating late walks, then abandons with the player beside it and checks the walk comes after the 60 s wait with `returnLate` unchanged.
+- **m3: fixed.** `updateSeatedNPC` sets `_seatGiveUpExpiries`, `_seatRetries` and `_fetchRetries` to 0 on every update while the NPC is seated at its stop. Test: `R4 m3` in `seating.test.mjs`.
+- **m4: tested, no big scaffolding.** New `test/js/npc-needs-nudge-adapter.test.mjs` builds a behaviour on the real `NPCBehavior.prototype` (as `npc-behavior-arrival.test.mjs` does) and uses the real `createEngineWorld`: `_lastNudge` landing, then null when refused (player beside) and when no nudge was asked; `moveTo` returns `{ nudged }`; `playerBlocks` true at 40 px, false at 80 px, false with no behaviour.

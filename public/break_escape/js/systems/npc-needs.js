@@ -63,6 +63,7 @@ export const RETURN_STUCK_MAX_BACKOFFS = 2;
 // started after an abandon with the player beside the NPC is not counted (R3 m2).
 export const RETURN_FINAL_REPLAN_MS = 60000;
 export const RETURN_FINAL_REPLANS = 3;
+export const RETURN_MAX_ABANDONS = 6;   // abandons in one return, quick re-plans included, before the next is final (R4 m1)
 // An outbound leg's deadline comes from the straight-line distance (at least 20 s, three times the
 // walk). A re-route round held bodies may take a longer path, so a re-route that leaves less than
 // this much before the deadline moves it out to this much, once per job (code review R2, m6).
@@ -1475,6 +1476,7 @@ export class NPCNeedsSystem {
             // Only a real trip emits; a session at one's own post object never left it
             s.returnAbandon = null;
             s.returnLate = 0;   // late walks are counted per return (R3 m1)
+            s.returnAbandons = 0;
             if (!s.atPost) {
                 s.atPost = true;
                 this._log(id, 'returned_post');
@@ -1520,12 +1522,13 @@ export class NPCNeedsSystem {
             s.selectRetryAt = 0;
             s.returnAbandon = null;   // a job moves it on; its walk home is a fresh return
             s.returnLate = 0;
+            s.returnAbandons = 0;
             s.returnStuckUntil = 0;   // and a back-off it was standing through ends (code review R1, m7)
             s.returnBackoffs = 0;
             this._startJob(s, pick);
         } else if (s.returnAbandon && s.mode === 'idle' && !s.atPost
-            && (s.returnAbandon.replan || ((s.returnLate || 0) < RETURN_FINAL_REPLANS
-                && this.clockMs - s.returnAbandon.at >= RETURN_FINAL_REPLAN_MS))) {
+            && (s.returnAbandon.replan || (this.clockMs - s.returnAbandon.at >= RETURN_FINAL_REPLAN_MS
+                && (s.returnAbandon.player || (s.returnLate || 0) < RETURN_FINAL_REPLANS)))) {
             this._replanAbandoned(s);
         } else if (this.selectBackoff && this._selectSearched) {
             // A free target it could not reach, or an item with nowhere to take it: searching
@@ -4113,14 +4116,19 @@ export class NPCNeedsSystem {
      * within STUCK_SAME_PX of its first stall or of where a nudge there put the body) is final: no
      * quick re-plan, only one late one per RETURN_FINAL_REPLAN_MS of needs clock. Late walks are
      * counted per return in s.returnLate, whatever the place, RETURN_FINAL_REPLANS at most (R3 m1);
-     * one that started while the player stood beside the NPC is not counted (R3 m2).
+     * one that started while the player stood beside the NPC is not counted, and is allowed past the
+     * cap, still after the 60 s wait (R3 m2, R4 m2). Every abandon is counted in s.returnAbandons;
+     * past RETURN_MAX_ABANDONS the next is final (R4 m1).
      */
     _abandonReturn(s, pos) {
         const prev = s.returnAbandon;
-        const again = !!(prev && this._samePlace(prev, pos));
+        // Every abandon is counted per return; past RETURN_MAX_ABANDONS the next is final wherever it is,
+        // so wedges alternating between places on quick re-plans end too (R4 m1)
+        s.returnAbandons = (s.returnAbandons || 0) + 1;
+        const again = !!(prev && this._samePlace(prev, pos)) || s.returnAbandons > RETURN_MAX_ABANDONS;
         const st = s.stall;
         // The abandon's place: the previous one when it is the same place (no drift), else this stall's
-        const place = again ? { x: prev.x, y: prev.y, nx: prev.nx, ny: prev.ny }
+        const place = again && prev && this._samePlace(prev, pos) ? { x: prev.x, y: prev.y, nx: prev.nx, ny: prev.ny }
             : st ? { x: st.x, y: st.y, nx: st.nx, ny: st.ny } : { x: pos.x, y: pos.y };
         const player = typeof this.world.playerBlocks === 'function' && !!this.world.playerBlocks(s.npcId);
         this.world.cancelMove(s.npcId);
@@ -4138,7 +4146,7 @@ export class NPCNeedsSystem {
     _replanAbandoned(s) {
         const a = s.returnAbandon;
         if (!a || s.mode !== 'idle' || s.atPost || s.job || this.tickCount <= a.tick) return;   // the next tick, not this one
-        if (!a.replan && (!(this.clockMs - a.at >= RETURN_FINAL_REPLAN_MS) || (s.returnLate || 0) >= RETURN_FINAL_REPLANS)) return;
+        if (!a.replan && (!(this.clockMs - a.at >= RETURN_FINAL_REPLAN_MS) || (!a.player && (s.returnLate || 0) >= RETURN_FINAL_REPLANS))) return;
         // A late try after a final abandon (R2 m2), counted per return (R3 m1); not when the player
         // held the walk up, a blocker who steps away (R3 m2)
         if (!a.replan && !a.player) s.returnLate = (s.returnLate || 0) + 1;

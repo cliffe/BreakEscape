@@ -1167,6 +1167,27 @@ test('R3 m4: a seat give-up expiry keeps the fetch count and is capped per stop'
     } finally { rig.restore(); }
 });
 
+// Code review R4 m3: sitting at the stop gives the expiry and retry counts back
+test('R4 m3: an NPC that sits starts its give-up expiries and retries again', () => {
+    const rig = labSeatRig(235);
+    try {
+        assert.equal(seating.updateSeatedNPC(rig.behavior, { x: 320, y: 191 }), true);
+        for (let i = 0; i < 40 && !rig.behavior._seat; i++) {
+            const v = rig.sprite.body.velocity;
+            rig.sprite.x += v.x * 0.05; rig.sprite.y += v.y * 0.05;
+            seating.updateSeatedNPC(rig.behavior, { x: 320, y: 191 });
+        }
+        assert.ok(rig.behavior._seat, 'seated');
+        rig.behavior._seatGiveUpExpiries = seating.SEAT_GIVE_UP_EXPIRIES;
+        rig.behavior._seatRetries = 2;
+        rig.behavior._fetchRetries = 1;
+        seating.updateSeatedNPC(rig.behavior, { x: 320, y: 191 });
+        assert.equal(rig.behavior._seatGiveUpExpiries, 0);
+        assert.equal(rig.behavior._seatRetries, 0);
+        assert.equal(rig.behavior._fetchRetries, 0);
+    } finally { rig.restore(); }
+});
+
 test('M2 and m6: retry caps per kind and a recent fetch claims the chair for its fetcher', () => {
     assert.equal(seating.postRetryAllowed('seat', 0), true);
     assert.equal(seating.postRetryAllowed('seat', seating.POST_SEAT_RETRY_MAX - 1), true);
