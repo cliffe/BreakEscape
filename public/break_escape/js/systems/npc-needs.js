@@ -938,7 +938,8 @@ export class NPCNeedsSystem {
      * and is not avoided either way (groups do not matter) learns of it, whatever is shown. The
      * hearers are taken when the line or picture shows; with nobody to tell there is no announce
      * at all. The line comes from the magnet's announce pool, ignores the bark cooldown and waits
-     * for the speech lock, up to NEWS_WAIT_MS; then a `news` picture. Telling happens even when
+     * for the speech lock, up to NEWS_WAIT_MS; then a `news` picture. With the player out of
+     * earshot (m7) it is a picture at once and no line is taken. Telling happens even when
      * nothing can be shown ("chatter": false).
      */
     _tickNews(s, pos) {
@@ -956,7 +957,11 @@ export class NPCNeedsSystem {
             const topic = m.cfg.announce || 'news';
             const waited = s.newsWait?.id === id ? this.clockMs - s.newsWait.since : 0;
             const first = m.satisfies.find(n => NEED_ICONS.includes(n));
-            const pick = this._pickBark(s, topic, { waitForLock: waited < NEWS_WAIT_MS, ignoreCooldown: true, icons: [first || 'social'] });
+            // SIMS-5 design R2 m7 (E7 for announces): with the player out of earshot of the teller the
+            // telling still happens, as a picture; no line is taken from the bag, so none is voiced unheard
+            const radius = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter).overhearRadius || OVERHEAR_RADIUS;
+            const unheard = typeof this.world.playerHears === 'function' && !(this.world.playerHears(s.npcId, radius) || {}).overheard;
+            const pick = this._pickBark(s, topic, { waitForLock: waited < NEWS_WAIT_MS, ignoreCooldown: true, unheard, icons: [first || 'social'] });
             if (pick?.wait) {
                 if (s.newsWait?.id !== id) s.newsWait = { id, since: this.clockMs };
                 return;
