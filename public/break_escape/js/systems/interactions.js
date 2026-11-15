@@ -2203,7 +2203,7 @@ export function tryInteractWithNearest() {
         let score = angularDiff(faceX, faceY) * 1000 + dist; // angle to the object's centre, range to its nearest part
         if (target && !npcSprite && window.seating?.isSeat(target)) score += 30000; // a chair loses to anything else faced
         if (npcSprite && npcGivesWay(player, npcSprite, inReachIds)) score += 30000; // so does someone walking away (q55 d)
-        if (score < bestScore) { bestScore = score; best = { objX: faceX, objY, handleFn }; }
+        if (score < bestScore) { bestScore = score; best = { objX: faceX, objY: faceY, handleFn }; }
     }
 
     // E/W side doors are centered on their tile but the player stands at floor level (tile bottom).

@@ -68,8 +68,8 @@ const dir = mkdtempSync(join(tmpdir(), 'reachy-'));
 writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 const stubs = {
     '../utils/constants.js': 'export const INTERACTION_RANGE=32, INTERACTION_RANGE_SQ=1024, INTERACTION_CHECK_INTERVAL=0, DOOR_INTERACTION_RANGE_SQ=0; export function overlayDepth(){return 0;}',
-    '../core/rooms.js': 'export const rooms={};',
-    '../core/player.js': 'export function facePlayerToward(){}',
+    '../core/rooms.js': 'export const rooms = (globalThis.__testRooms = {});',
+    '../core/player.js': 'export function facePlayerToward(x, y){ (globalThis.__faceCalls ||= []).push([x, y]); }',
     './unlock-system.js': 'export function handleUnlock(){}',
     './doors.js': 'export function handleDoorInteraction(){}',
     './biometrics.js': 'export function collectFingerprint(){} export function handleBiometricScan(){}',
@@ -100,7 +100,7 @@ for (const [spec, body] of Object.entries(stubs)) {
 }
 writeFileSync(join(dir, 'interactions.mjs'), src);
 globalThis.window = {};
-const { isObjectInInteractionRange } = await import(pathToFileURL(join(dir, 'interactions.mjs')).href);
+const { isObjectInInteractionRange, tryInteractWithNearest } = await import(pathToFileURL(join(dir, 'interactions.mjs')).href);
 
 const inRange = (obj, x, y) => { window.player = { x, y, direction: 'up' }; return isObjectInInteractionRange(obj); };
 
@@ -121,6 +121,19 @@ test('isObjectInInteractionRange: a wall-mounted socket is still out of reach fr
     assert.equal(inRange(socket, 120, 97), false, 'more than 32 px below the floor line');
     assert.equal(inRange(socket, 60, 50), false, 'more than 32 px to the left');
     assert.equal(inRange(socket, 120, 95), true, 'within 32 px of the floor line');
+});
+
+// Review R3 m1: scoring and the turn use the top edge (faceY), only the range uses reachY
+test('E key: a player level with the cable, facing up, is not turned sideways towards the clamped point', () => {
+    globalThis.__faceCalls = [];
+    for (const k of Object.keys(globalThis.__testRooms)) delete globalThis.__testRooms[k];
+    globalThis.__testRooms.r = { objects: { s: { ...socket, active: true, interactable: true, visible: true } } };
+    window.player = { x: 124, y: 55, direction: 'up' };
+    try { tryInteractWithNearest(); } catch (e) { /* the use itself is stubbed out; only the turn matters */ }
+    const calls = globalThis.__faceCalls;
+    // Aimed at the top edge (y 16) the socket is straight ahead: no turn. At the clamped point (y 55) it is level: a turn to y 55
+    assert.deepEqual(calls.filter(([, y]) => y === 55), [], `turned towards the clamped point: ${JSON.stringify(calls)}`);
+    assert.deepEqual(calls, [], 'facing up at a socket above needs no turn');
 });
 
 // ---------------------------------------------------------------------------
