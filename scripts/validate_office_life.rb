@@ -1164,8 +1164,10 @@ module ValidateOfficeLife
     ctx.npc_list.each do |n|
       r = Set[ctx.home_room[n]]
       # The start room counts, unless the engine runs the NPC and its leash bars that room: the NPC
-      # then walks home and never goes back (_roomForbidden exempts only the home room), so a pool
-      # whose source or avoided partner sits there is dead for it. A leash never moves a patrol or
+      # then walks home and never goes back (_roomForbidden exempts only the home room, npc-needs.js
+      # 1308-1316), so a pool whose source or avoided partner sits there is dead for it. The engine
+      # has no walk-out at load: the NPC stays in the barred room, idle, until its first job (the
+      # _goHome calls follow a job, a block or a resume), so the warning is true from that first trip. A leash never moves a patrol or
       # an NPC the engine does not run.
       r << ctx.npc_room[n] unless runs?(n) && VN.leash_rule(json, n, ctx.npc_room[n], ctx.home_room[n])
       ctx.knows[n] = Set.new

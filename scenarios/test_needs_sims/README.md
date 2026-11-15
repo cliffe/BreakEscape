@@ -4,6 +4,12 @@ A demo and live test of the NPC needs system (`public/break_escape/js/systems/np
 
 `test_npc_needs` stays as the minimal fixture; this scenario is the showcase.
 
+## Copy the levers, not the counts
+
+The validator's sync-budget check (V8) warns on this scenario: reveal and left-behind globals 14 against a cap of 6, onceOnly mappings 57 against 10, items 9 against 4, and an info line for small keys at 89 against 64. That is a demo ceiling. The showcase packs many beats into one map on purpose. A mission stays under the caps, or says why in its plan when it goes over. The `outcast_pending` idiom (arm on a beat, tick the task, disarm on the return) costs one global and three mappings, so use it only where a task must hang on a beat that can fail.
+
+The timeline under "How to watch it" is what happens if you only watch. The tour table below is the order to pull the levers: open nothing before rows 1 to 3.
+
 ## Layout and cast
 
 ```

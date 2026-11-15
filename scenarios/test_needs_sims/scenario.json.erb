@@ -569,7 +569,7 @@
             { "eventPattern": "npc_queued:office_coffee", "onceOnly": true, "cooldown": 0, "completeTask": "see_queue" },
             { "eventPattern": "npc_chatted:office_coffee", "onceOnly": true, "cooldown": 0, "completeTask": "see_queue_chat" },
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Activity Board'", "cooldown": 30000, "needs": { "set": { "caffeine": 10 } } },
-            { "eventPattern": "npc_avoided:sanjay", "condition": "data.avoidedId === \"marek\"", "cooldown": 0, "setGlobal": { "outcast_pending": true }, "_comment": "Design review R3 M3: Sanjay's refused chat only arms the task; it ticks when Marek then drinks at the cooler, and Marek back at his post disarms it (a walk that fails ticks nothing)." },
+            { "eventPattern": "npc_avoided:sanjay", "condition": "data.avoidedId === \"marek\" && data.objectId === \"water_cooler\"", "cooldown": 0, "setGlobal": { "outcast_pending": true }, "_comment": "Design review R3 M3: Sanjay's refused chat at the cooler (not the coffee machine) only arms the task; it ticks when Marek then drinks at the cooler, and Marek back at his post disarms it (a walk that fails ticks nothing)." },
             { "eventPattern": "npc_used:water_cooler", "condition": "data.npcId === \"marek\" && globalVars.outcast_pending", "onceOnly": true, "cooldown": 0, "completeTask": "see_outcast" },
             { "eventPattern": "npc_returned_post:marek", "cooldown": 0, "setGlobal": { "outcast_pending": false } },
             { "eventPattern": "npc_used:lounge_sofa", "cooldown": 0, "setGlobal": { "last_activity": "sofa" } },
