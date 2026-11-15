@@ -307,3 +307,25 @@ Where it applies, needs moves only (`_moveOwner === 'needs'`), so patrols and sc
 - Patrols, scripted `goToAndStay` moves and seating's chair fetch: no `reroute`, no `includeHeld`, the two-tile collision arrival.
 - m01 to m10: their needs NPCs, where they have any, only behave differently where a walk is wedged now.
 - The node stub world never stalls, so the sims-day log is unchanged.
+
+## Live re-check after code review R1
+
+Run 2026-11-15 on `8a061ccb2` (the otherHeld fix), keyless server on port 3093, headless setFPS(20) with fixed steps, a fresh game per run. Row 2 uses the stuck-return driver with the player held at (232,176).
+
+Suites on `8a061ccb2`: `bin/test-js` 675 files passed, 0 failed; `tts_office_lines_test.rb` 9 runs, 46 assertions, 0 failures; rubocop 366 files, no offences.
+
+| Run | Game | Result |
+|---|---|---|
+| Row 2, run 1 | 5465 | pass: `see_turned_back`, `see_look_round`; grumble `sayings` and `sanjay_grumble_shown` agree (spoken, overheard at 1 s); Marek home in 6 s; 0 page errors |
+| Row 2, run 2 | 5466 | pass: both tasks; grumble spoken and overheard at 1.3 s; Marek home in 6 s; 0 page errors |
+| Row 2, run 3 | 5467 | pass: both tasks; grumble spoken and overheard at 1.5 s; Marek home in 6.25 s; 0 page errors |
+| Row 2, away point 300,40 | 5471 | pass: both tasks; player held at (269,9), 270 px from Sanjay; the grumble was recorded as a picture (`topic: grumble`, `picture: avoid`, 1.8 s) with no spoken line; Marek home in 2.75 s, no stalls; 0 page errors |
+| Tour row 1 | 5472 | pass (queue seen, 69 s) |
+| Tour row 3 | 5472 | pass: the first board try still stopped at (220,103), 62 px short, with nothing in `near` but Amara (held) and her chair at (228,123); the second try from (200,176) read the board; switch-off turned Marek and Tom back, Marek's grumble spoken, Tom's a picture; back on |
+| Tour row 5 | 5472 | pass (board read, chat seen at 25 s) |
+| Tour row 6 | 5472 | fail: rota read, but `see_outcast` did not tick in 180 s. Straight after row 5 the chat has met Sanjay's social need, which the README says stops the task from ticking; not a movement fault. 4 stall lines in the run (Tom `return_stuck` at (-15,84), Marek `walk_stuck` at (42,90), Sanjay `return_stuck` at (26,73), Tom `walk_stuck` at (9,86)); every NPC finished its walks |
+| lab_physical_pentest smoke | 5468 | clean but empty: 60 s of needs clock, 0 page errors, no stall lines, but `npcs: 0` and `jobs: 0`, so no needs NPC was in the game and no walk was exercised |
+| Train smoke m01 | 5469 | OK, start room `reception_area` |
+| Train smoke m02 | 5470 | OK, start room `reception_lobby` |
+
+Pass counts: row 2 3 of 3 for `see_turned_back` and `see_look_round`, 3 of 3 under 20 s home (6 to 6.25 s), 3 of 3 with a spoken overheard grumble. Away run: picture recorded. Tour: rows 1, 3, 5 pass, row 6 fails (see above). Train smoke 2 of 2. No `ReferenceError` or other page error in any run.
