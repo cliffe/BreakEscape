@@ -333,13 +333,14 @@
           "_comment": "Slice 7 producer: sanjay_pc's and tom_pc's onUse revealOutput show its first free slot (copier_out_a, then b to e). Slice 17: uncollectedAfterSeconds 150 is above Tom's fetchAfterSeconds range (30 to 120), so npc_print_uncollected:tom marks a print that is really forgotten. The copier preset (photocopier1) gives the rest of its affordance; nobody satisfies a need here. Slice 22: offWhen office_copier_off (set by office_copier_socket): while it holds Tom's prints go to the kitchen copier (his hook lists both) and Sanjay's (a string hook) print nothing; a print already on the tray stays."
         },
         {
-          "type": "power_socket2",
+          "type": "power_socket_drop1",
           "id": "office_copier_socket",
           "name": "Wall socket",
-          "position": { "x": 5.65625, "y": 0.75, "elevation": -8 },
-          "spriteVariants": [{ "condition": "globalVars.office_copier_off", "value": "power_socket_off2" }],
+          "position": { "x": 5.90625, "y": 0.5 },
+          "wallMounted": true,
+          "spriteVariants": [{ "condition": "globalVars.office_copier_off", "value": "power_socket_drop_off1" }],
           "takeable": false,
-          "_comment": "Slice 22: the copier's switch, as the coffee machine's (slice 18a): a state-worded hint with a neutral title. UX slice 15 R1 (m3, R4e) and R2 (n4): a named confirm each way, as Ian's socket. Power sockets (2026-11-15): now the 32x48 plug-and-cable sprite with an off variant; top at y 24 px so a tap walk reaches the plate (reach is measured from the sprite top), with the cable curl on the floor; elevation -8 keeps it at the back-wall depth (64.5) so the player always draws in front.",
+          "_comment": "Slice 22: the copier's switch, as the coffee machine's (slice 18a): a state-worded hint with a neutral title. UX slice 15 R1 (m3, R4e) and R2 (n4): a named confirm each way, as Ian's socket. Power sockets (2026-11-15): the 32x48 socket with an off variant. Round 2: the drop sprite (cable straight down to the floor line, as if under the carpet), because the copier stands below the floor line and could not hide a curl's end; plate where it was, sprite bottom on the floor line (depth 64.5, the back-wall level), wallMounted so reach is measured to the nearest part of the sprite (interaction-reach.js reachY).",
           "triggerOnInteract": [
             {
               "type": "confirm_action",
