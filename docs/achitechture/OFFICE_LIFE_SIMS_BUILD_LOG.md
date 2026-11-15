@@ -608,3 +608,11 @@ and is listed here with its tests and proof; nothing here is on `build/ol-sims`.
   carry the latest shared-tree changes (sync-ring build review R3). No conflicts in the SIMS-2 files.
 - 2026-11-14: main d69c29089 (sync-ring follow-up, keyring server half) merged into both branches, then
   build/ol-sims-2 merged into build/ol-sims so SIMS-3 builds on the arrival check. Only this log conflicted.
+- 2026-11-15: Merge with V1 to V9 (main 082c51fb7, the office-life validator tools). Two conflicts.
+  `scripts/validate_office_life.rb` took main's file as the base (V1 to V9) with all of V10 appended below
+  V8; V10's entry point is renamed `check_v10(json)` (main's `check(json, scenario_id:, campaign:)` calls it
+  at the V10 slot) and V10 keeps its own world/held build. `scripts/validate_scenario.rb` kept main's
+  three-line `run.call`. `test/js/validator-office-life-v10.test.mjs` now calls `check_v10`, since `check`
+  also returns V3 to V8 warnings (test_needs_sims has three real V8 cap warnings). Corpus run (180
+  scenarios, `--skip-ink --no-graph --no-lint`): all exit 0, no V10 warning, and the `❌` lines on the six
+  scenarios that print any match main's run exactly.
