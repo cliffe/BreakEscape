@@ -324,3 +324,27 @@ Keyless server on :3062, headless, setFPS(20), fixed steps on. Shots in
   tests and the fixture), N14.
 
 Suites (shared lock, tip before this line): JS 657 files passed, 0 failed; Rails 2761 runs, 46003 assertions, 0 failures, 0 errors, 2 skips.
+
+## K0 client half: R2 fixes (UX review round 2: 0 blockers, 2 majors, 3 minors)
+
+- N1 (M): `selectSignInTile('other')` sets `signInState.otherPicked`; `setRemoteAccounts` treats a picked Other user as
+  typing, so the late answer keeps the form and focus. Only the form the cap opened by itself returns to the row.
+  `clearSignInChoice` and a tile pick clear the flag.
+- N2 (M): after the row is rebuilt, a chosen account that is no longer in it resets `selected`, `other` and
+  `otherPicked`, and clears the username and password fields and `gameData.password`. The row shows, the chosen line is gone.
+- N3 (m): `.signin-tiles-more` takes the message line's slab (`#12161a`, 2px `#4a5560` border, border-box, same 18px
+  height). Checked at 320x640 (`seven-tiles-320x640.png`); the fit sums hold.
+- N4 (m): `it_pc` and `ops_pc` in `test_access_networks` desk_room moved from (3,6),(5,6) to (3,7),(5,7), a row down.
+  Rendered headless: they stand at world (416,224) and (480,224), 12px below the chair at (419,196), clear of Sam's PC
+  (480,128) and the dock (544,128). Screenshot `k0fix2/desk-room-1400x1000.png`. PLAYTEST.md carries no coordinates.
+  Validator: 0 errors with `--no-graph`.
+- N5 (m): `signin-live-drive.mjs` reads `PORT`, finds Playwright and Chrome as `signin-fit.mjs` does, defaults `SHOTS`
+  to a temp folder, and unsets the Gemini keys for `new-game.rb`. New mode `late` drives N1 and N2.
+- Tests (`password-signin-mode.test.mjs`, 3 new, each fails on the R1 code): N1 (cap row, Other user, late answer:
+  form displayed, username focused, message line empty), N2 (cap row, pick Lena, answer lists only Ian: row, no chosen
+  line, password empty, `selected` null), N3 (computed background and border of the cue from the loaded sheet).
+- Live (keyless :3062, headless, setFPS(20), fixed steps on; games 5099 `late`, 5098 render): N1 after the 5 s answer the
+  form, username row and focus (`signin-username`) stay, message empty; N2 the row shows only Ian, "Choose an account.",
+  chosen line gone, password empty. signin-fit: ALL PASS over 35 checks.
+
+Suites (shared lock, tip before this line): JS 657 files passed, 0 failed; Rails 2764 runs, 46029 assertions, 0 failures, 0 errors, 2 skips.

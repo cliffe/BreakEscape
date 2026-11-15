@@ -1,25 +1,50 @@
 // K0 R1 live drive (credential keyring plan 5.5): plants the drop box in game, opens each remote
 // sign-in from the view (before and after the capture cards), runs once with /login_accounts held
 // 5 s by a route, then signs in from a captured tile. Modes: main | edge (failed, 403 and late-403
-// closes) | plant. Needs a keyless server on port 3062 from this worktree.
-//   SHOTS=<dir> [CHROME=<exe>] node tools/playtest/signin-live-drive.mjs main [gameId]
+// closes) | late (R2: a player's choice made at the cap survives or resets on the late answer) | plant. Needs a keyless server on port 3062 from this worktree.
+//   [PORT=3062] [SHOTS=<dir>] [CHROME=<exe>] [PLAYWRIGHT=<node_modules>] node tools/playtest/signin-live-drive.mjs main [gameId]
 import { createRequire } from 'node:module';
 import { execFileSync } from 'node:child_process';
+import { mkdirSync, readdirSync, existsSync } from 'node:fs';
+import { homedir, tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const { chromium } = createRequire(ROOT + '/node_modules/')('playwright');
-const PORT = 3062, BASE = `http://127.0.0.1:${PORT}`;
-const SHOTS = process.env.SHOTS, MODE = process.argv[2] || 'main';
+// As signin-fit.mjs: Playwright from $PLAYWRIGHT or the repo, then this process; Chrome from $CHROME
+// or the newest headless shell in the Playwright browsers folder.
+async function loadPlaywright() {
+    for (const base of [process.env.PLAYWRIGHT, join(ROOT, 'node_modules')].filter(Boolean)) {
+        try { return createRequire(join(base, '/'))('playwright'); } catch { /* try the next */ }
+    }
+    return (await import('playwright')).default || (await import('playwright'));
+}
+function findChrome() {
+    if (process.env.CHROME) return process.env.CHROME;
+    const base = process.env.PLAYWRIGHT_BROWSERS_PATH || join(homedir(), '.cache', 'ms-playwright');
+    try {
+        for (const d of readdirSync(base).filter(d => /^chromium/.test(d)).sort().reverse()) {
+            for (const rel of ['chrome-headless-shell-linux64/chrome-headless-shell', 'chrome-linux/chrome', 'chrome-linux64/chrome']) {
+                const exe = join(base, d, rel);
+                if (existsSync(exe)) return exe;
+            }
+        }
+    } catch { /* none: use playwright's default */ }
+    return undefined;
+}
+const { chromium } = await loadPlaywright();
+const PORT = Number(process.env.PORT || 3062), BASE = `http://127.0.0.1:${PORT}`;
+const SHOTS = process.env.SHOTS || join(tmpdir(), 'signin-live-drive-shots');
+mkdirSync(SHOTS, { recursive: true });
+const MODE = process.argv[2] || 'main';
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 function newGame() {
     const out = execFileSync('bundle', ['exec', 'rails', 'runner', 'tools/playtest/new-game.rb', 'test_access_networks'], {
-        cwd: ROOT, env: { ...process.env, PLAYTEST_PORT: String(PORT), BREAK_ESCAPE_STANDALONE: 'true', RBENV_VERSION: '2.7.8' }, encoding: 'utf8' });
+        cwd: ROOT, env: { ...Object.fromEntries(Object.entries(process.env).filter(([k]) => !['GEMINI_API_KEY', 'GOOGLE_API_KEY', 'GOOGLE_GENERATIVE_AI_API_KEY'].includes(k))), PLAYTEST_PORT: String(PORT), BREAK_ESCAPE_STANDALONE: 'true', RBENV_VERSION: '2.7.8' }, encoding: 'utf8' });
     return Number(out.match(/GAME_ID=(\d+)/)[1]);
 }
 const id = Number(process.argv[3]) || newGame();
 console.log('GAME', id);
-const browser = await chromium.launch({ headless: true, args: ['--no-sandbox'], executablePath: process.env.CHROME });
+const browser = await chromium.launch({ headless: true, args: ['--no-sandbox'], executablePath: findChrome() });
 const page = await browser.newPage({ viewport: { width: 1400, height: 1000 } });
 const errs = []; page.on('pageerror', e => errs.push(String(e).slice(0, 200)));
 await page.addInitScript(() => { try { localStorage.setItem('tutorial_declined', 'true'); } catch {} });
@@ -146,6 +171,31 @@ if (MODE === 'edge') {
     await clickSel('[data-host-id="lena_pc"] [data-action="sign-in"]'); await sleep(400);
     await T(() => window.__test.minigame.close()); await sleep(3500);
     log('E4 late 403 after X:', JSON.stringify(await T(() => ({ mg: window.__test.minigame.which?.()?.type, alerts: window.__alerts }))));
+    log('errors:', JSON.stringify(errs));
+}
+
+if (MODE === 'late') {
+    await interact('kit_dropbox'); await enter('comms_room'); await interact('comms_port'); await sleep(500);
+    await confirm('Plug it in'); await sleep(2500);
+    await enter('lobby');
+    for (const c of ['capture_note_lena', 'capture_note_ian']) { await interact(c); await sleep(800); await clear(); }
+    await enter('comms_room');
+    const open = async (host) => { await clear(); await interact('comms_port'); await sleep(1200); return clickSel(`[data-host-id="${host}"] [data-action="sign-in"]`); };
+    // N1: at the cap, the captured row shows; the player clicks Other user; the late answer keeps the form and focus
+    H.setDelay(5000); await open('sam_pc'); await sleep(3700);
+    log('N1 cap:', JSON.stringify(await snap()));
+    await clickSel('.signin-other'); await sleep(400);
+    log('N1 other clicked:', JSON.stringify(await snap())); await shot('n1-other-clicked', [[800, 600]]);
+    await sleep(2800);
+    log('N1 after late answer:', JSON.stringify(await snap())); await shot('n1-after-late-answer', [[800, 600]]);
+    // N2: it_pc lists only Ian; the player picks Lena's captured tile at the cap; the late answer drops her
+    H.setDelay(5000); await open('it_pc'); await sleep(3700);
+    log('N2 cap:', JSON.stringify(await snap()));
+    await T(() => document.querySelector('.signin-tile[data-username="lfox"]')?.click()); await sleep(400);
+    log('N2 lfox chosen:', JSON.stringify(await snap()), 'pw len', await T(() => document.querySelector('#password-field')?.value.length)); await shot('n2-lena-chosen', [[800, 600]]);
+    await sleep(2800);
+    log('N2 after late answer:', JSON.stringify(await snap()), 'pw len', await T(() => document.querySelector('#password-field')?.value.length)); await shot('n2-after-late-answer', [[800, 600]]);
+    H.setDelay(0);
     log('errors:', JSON.stringify(errs));
 }
 

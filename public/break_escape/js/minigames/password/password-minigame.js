@@ -1698,6 +1698,7 @@ export class PasswordMinigame extends MinigameScene {
         if (idx === 'other') {
             st.selected = null;
             st.other = true;
+            st.otherPicked = true;
             if (this.passwordField) this.passwordField.value = '';
             this.gameData.password = '';
         } else {
@@ -1705,6 +1706,7 @@ export class PasswordMinigame extends MinigameScene {
             if (!tile) return;
             st.selected = tile.username;
             st.other = false;
+            st.otherPicked = false;
             if (this.usernameField) this.usernameField.value = '';
             // A captured sign-in fills the password the server served; the server still checks it (4.4)
             const pw = tile.password || '';
@@ -1725,6 +1727,7 @@ export class PasswordMinigame extends MinigameScene {
         if (remote && !this.signInTilesOffered()) return;
         st.selected = null;
         st.other = false;
+        st.otherPicked = false;
         this.passwordField.value = '';
         this.gameData.password = '';
         this.setSignInMessage('');
@@ -1853,8 +1856,19 @@ export class PasswordMinigame extends MinigameScene {
         // so a late answer returns the row to view (the cap focused the empty form for them).
         // A locked session keeps its form: its account is chosen already.
         const st = this.signInState;
-        const typing = !!st.other && !!(this.usernameField?.value || this.passwordField?.value);
+        // Other user clicked by the player is a choice too (N1): only the cap's own form returns.
+        const typing = !!st.other && (!!st.otherPicked
+            || !!(this.usernameField?.value || this.passwordField?.value));
         const locked = s.current?.locked === true;
+        // The chosen account may not be in the rebuilt row (N2): back to the row, nothing hidden kept
+        if (st.selected !== null && !this.signInTileFor(st.selected)) {
+            st.selected = null;
+            st.other = false;
+            st.otherPicked = false;
+            if (this.passwordField) this.passwordField.value = '';
+            if (this.usernameField) this.usernameField.value = '';
+            this.gameData.password = '';
+        }
         if (st.selected === null && !typing && !locked) st.other = !this.signInTilesOffered();
         this.renderSignInForm({ quiet: late });
         return true;

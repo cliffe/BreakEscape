@@ -1329,3 +1329,51 @@ test('R3 m1 (K0): an unlocked remote screen still shows its merged tile row', ()
     assert.ok(q('#signin-tiles'), 'the row stays when nothing is locked');
     mg.cleanup?.();
 });
+
+// ---------------------------------------------------------------- K0 client fix round 2
+
+const CAP_PENDING = () => ({ pending: true, accountsPending: true, capturedPending: false,
+    captured: capturedSignIns(CAPTURES, { lena: 'lfox', ian: 'ishaw' }, { lena: 'Ledger-Lena-9' }) });
+
+test('R2 N1: Other user clicked on the cap row survives the late answer, form and focus kept', () => {
+    const mg = openRemote();
+    mg.setRemoteAccounts(CAP_PENDING());
+    assert.deepEqual(dataUsernames(), ['lfox', 'ishaw'], 'the cap shows the captured row');
+    q('.signin-other').click();
+    assert.equal(visible(q('#signin-form')) && visible(q('#signin-username-row')), true);
+    assert.equal(document.activeElement, q('#signin-username'));
+    answerRemote(mg, { tiles: [{ username: 'sokafor', displayName: 'Sam Okafor' }], captured: CAP_PENDING().captured });
+    assert.equal(visible(q('#signin-form')), true, 'the form the player chose stays');
+    assert.equal(visible(q('#signin-username-row')), true);
+    assert.equal(document.activeElement, q('#signin-username'), 'focus stays');
+    assert.equal(messageText(), '', 'no "Choose an account." under the form');
+});
+
+test('R2 N2: a late answer that drops the chosen captured account returns to the row, nothing hidden kept', () => {
+    const mg = openRemote();
+    mg.setRemoteAccounts(CAP_PENDING());
+    q('.signin-tile[data-username="lfox"]').click();
+    assert.equal(q('#password-field').value, 'Ledger-Lena-9');
+    assert.match(q('#signin-selected').textContent, /lfox/);
+    answerRemote(mg, { tiles: [{ username: 'ishaw', displayName: 'Ian Shaw' }], captured: CAP_PENDING().captured });
+    assert.deepEqual(dataUsernames(), ['ishaw'], 'Lena is no longer listed');
+    assert.equal(mg.signInState.selected, null);
+    assert.equal(q('#password-field').value, '', 'no password left behind');
+    assert.equal(mg.gameData.password, '');
+    assert.equal(visible(q('#signin-form')), false, 'the row is back, no form');
+    assert.equal(visible(q('#signin-selected')), false, 'no chosen line');
+    assert.equal(visible(q('#signin-tiles')), true);
+});
+
+test('R2 N3: the "More below" cue sits on a dark slab, as the message line does', () => {
+    const css = readFileSync(join(here, '../../public/break_escape/css/password-minigame.css'), 'utf8');
+    const style = document.createElement('style');
+    style.textContent = css;
+    document.head.appendChild(style);
+    try {
+        openRemote();
+        const more = window.getComputedStyle(q('#signin-tiles-more'));
+        assert.equal(more.backgroundColor, 'rgb(18, 22, 26)', 'the cue has the message line slab colour');
+        assert.equal(more.borderTopWidth, '2px');
+    } finally { style.remove(); }
+});
