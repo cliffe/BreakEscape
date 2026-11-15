@@ -113,8 +113,12 @@ const st = id => page.evaluate(id => { const s = window.npcNeedsSystem.getState(
 const tasksDone = () => page.evaluate(() => Object.values(window.objectivesManager?.taskIndex || {}).filter(x => x.status === 'completed' || x.status === 'completing').map(x => x.taskId || x.id));
 
 // Row 1's queue: wait until nobody is headed for, queued at or using the office coffee (60 s+)
+// Up to 420 s wall: in game 5415 the old 200 s cap ran out with Marek still at the coffee from row 1
+// (back at his post only at needs s 228), so the notice was read with no left_post to follow and
+// Sanjay never set off. A wait that never clears now ends the run as skipped, not as a row 2 miss.
 const t0 = Date.now();
-while (Date.now() - t0 < 200000) {
+let cleared = false;
+while (Date.now() - t0 < 420000) {
     const c = await clock();
     // and Marek is back at his post: the notice's beat keys on him leaving it (npc_left_post), so
     // a notice read while he still walks home from row 1 sends him straight back with no
@@ -124,10 +128,20 @@ while (Date.now() - t0 < 200000) {
         // and Sanjay is free at his desk: a work spell is never interrupted, and one that ends after
         // Marek reaches the coffee parks the caffeine at selection, with no turn-back (game 5378)
         || window.npcNeedsSystem.getState('sanjay')?.mode !== 'idle');
-    if (c > 60000 && !busy) break;
+    if (c > 60000 && !busy) { cleared = true; break; }
     await t(1000);
 }
 report.queue_cleared_s = Math.round((await clock()) / 1000);
+if (!cleared) {
+    report.skipped = 'queue_never_cleared';
+    report.at_skip = await page.evaluate(() => Object.fromEntries(['marek', 'sanjay'].map(id => { const s = window.npcNeedsSystem.getState(id) || {}; const p = window.npcNeedsSystem.world.npcPos(id);
+        return [id, { mode: s.mode, need: s.job?.need || null, target: s.job?.targetId || null, phase: s.job?.phase || null, x: p ? Math.round(p.x) : null, y: p ? Math.round(p.y) : null }]; })));
+    report.log_tail = await page.evaluate(() => window.npcNeedsSystem.getLog().filter(e => ['marek', 'sanjay'].includes(e.npc) && !/^(need|decay)/.test(e.ev)).slice(-40));
+    fs.writeFileSync(`${outDir}/stuck-proof-${gid}.json`, JSON.stringify(report, null, 1));
+    console.log(JSON.stringify({ gid, skipped: report.skipped, at_skip: report.at_skip }));
+    await browser.close();
+    process.exit(3);
+}
 console.log('queue cleared at needs s', report.queue_cleared_s, 'wall s', Math.round((Date.now() - t0) / 1000));
 const where = await page.evaluate(() => {
     const s = window.npcBehaviorManager.getBehavior('sanjay').sprite.body.center;

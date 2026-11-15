@@ -280,13 +280,6 @@ test('postFetchRetryDue: a post retry fetches once per fetch timeout (15 s of ne
     assert.equal(seating.postFetchRetryDue(null, undefined, 0), false);
 });
 
-test('fetchPushShort: a push that stopped more than 12 px from the spot walks again, three times at most', () => {
-    const spot = { x: 92, y: 164 };
-    assert.equal(seating.fetchPushShort({ x: 116, y: 207 }, spot, 0), true, 'Tom, live 5413: 46 px short');
-    assert.equal(seating.fetchPushShort({ x: 116, y: 207 }, spot, 3), false, 'no tries left');
-    assert.equal(seating.fetchPushShort({ x: 96, y: 170 }, spot, 0), false, 'close enough: the seat move does the rest');
-});
-
 test('needs NPC standing at its post fetches a chair again after a failed fetch, once per fetch timeout (OFFICE_LIFE_STUCK_RETURN round 5)', () => {
     const rig = labSeatRig(235);
     // Only a loose swivel chair 60 px south of the home cell (204,172): out of sitting reach, in fetch range
