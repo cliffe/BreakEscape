@@ -875,3 +875,13 @@ Sanjay and Rosa are a coupled cooler pair (`chatterCooldownMin: 2`, `npc_use_sta
 | No exchange with only the second speaker heard (E9) | PASS (game 4461) | see the build log; the first attempts put the second speaker against the wall |
 | R1 rerun: no line drawn unheard or past the overlap | PASS, 5 of 5 | games 4516, 4517 (coupling only, 2 draws each, both heard and said inside the overlap), 4539 (heard turn with 3.2 s left: a picture, nothing drawn), 4541 (4.5 s left: the line said, ending 1 s before the overlap); on the round 1 engine, game 4540 drew Rosa's `cooler:1` and never said it |
 | R1 rerun: an existing bag survives an unheard break | PASS, 2 of 2 | games 4516, 4517: after a heard break, a second break with the player in the office (4517 with both cooldowns cleared): 6 `picture:` turns, both bags' `order` and `last` unchanged |
+
+### Marek's post, history (moved from the README cast table)
+
+His office post was (6,8) before slice 10, then (3,8), where his walk passed behind Sanjay's chair and wedged, then (1.65, 3.5), which crowded the kitchen-door row, and is now (1.65, 4.0), which keeps the west doorway clear (commit `e2b84421b`, R3 M3).
+
+### SIMS-5 F2 live proof: the arm keyed to the cooler (2026-11-15, keyless, headless, worktree p-ol-sims5)
+
+The `outcast_pending` arm mapping needs `data.objectId === "water_cooler"` as well as `avoidedId === "marek"` (`scenario.json.erb:572`). Games 5231 (rota read, Marek drank at the cooler, `see_outcast` ticked), 5229 and 5230 (no rota read; Sanjay's cooler avoid of Marek armed it naturally and the task ticked). The R5 review found no recorded run that read the Coffee Notice and showed no arm; none is claimed here. Static reasoning: the only `npc_avoided` caller is the shared-object check (`npc-needs.js:1553`), which now carries `objectId`.
+
+Row 6 depends on timing: the tick needs Sanjay's social need due while Marek holds the cooler. Games 5229 and 5230 ticked with no rota for that reason; row 6 straight after row 5 may not tick.

@@ -1,5 +1,15 @@
 # Office life sims showcase: handover
 
+## Final state, 2026-11-15 (read this first)
+
+**SIMS-5 is closed and the branch is ready to train.** Branch `build/ol-sims`, worktree `p-ol-sims`. Main 082c51fb7 is merged. Review rounds (blocker/major/minor), all fixed:
+- Code: R2 0/2/7, R3 0/2/4, R4 0/0/2.
+- Design: R2 0/5/8, R3 0/4/4, R4 0/1/3, R5 0/1/4 (R5 was the last round; its Outcomes are in `OFFICE_LIFE_SIMS5_DESIGN_REVIEW_R5.md`).
+
+Last changes were text only: README row 6 now says its tick needs Sanjay's social need due while Marek holds the cooler, the F2 live proof (games 5229 to 5231) is recorded, a "leave these out when copying" list was added, and Marek's post history moved to `PROOF_HISTORY.md`. Validator on test_needs_sims: 0 errors, 35 warnings.
+
+Open owner items, deferred (no change): R2 m7 and R3 m1 (a grumble is spoken even out of earshot); R3 m4 (toasts cover the east wall); E-carry-422; Neil's page click hitting the copier; E-reload-ko-pos; the faint staff-room flicker; art for a Jodie stepladder pose and an `upkeep` icon. The sections below are older state and are superseded by this one.
+
 ## Lead's state, 2026-11-14, third lead (read this first)
 
 Branch `build/ol-sims`, worktree `p-ol-sims`, tip after 4e87d9bb0 (SIMS-5 R2 fixes) and the SIMS-5
