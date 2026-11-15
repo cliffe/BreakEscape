@@ -28,7 +28,9 @@ module BreakEscape
   #   - item pickup through POST inventory (m1): every collectible (takeable object, container item,
   #     NPC itemsHeld item, declared grant) is picked up through the real route
   #     (validate_item_collectible -> canonical_inventory_item -> add_inventory_item!), then the
-  #     served playerInventory is scanned, so an unfiltered canonical copy at pickup would be caught.
+  #     served playerInventory is scanned. That proves what ships: client_inventory re-runs
+  #     filter_inventory_for_client!, so an unfiltered stored copy is caught only if it also gets
+  #     past that serve-time filter.
   #   - POST unlock's own roomData/contents are covered by the POST-unlock fixture test below (GET
   #     room and GET container over the unlocked state serve the same filtered subtrees).
   # A refusal in the opened state is recorded with its reason (not hard-failed) when a generic seeder
@@ -469,8 +471,8 @@ module BreakEscape
       end
 
       # Item pickup (review R1 m1): pick up every collectible through POST inventory, the real path
-      # (validate_item_collectible -> canonical_inventory_item -> add_inventory_item!), so an
-      # unfiltered canonical copy would reach playerInventory and be caught below.
+      # (validate_item_collectible -> canonical_inventory_item -> add_inventory_item!), then scan
+      # the served playerInventory below (what ships, after filter_inventory_for_client!).
       pickup_collectibles(game, refusals)
 
       # Re-fetch the bootstrap now the feeds are revealed and the collectibles are held, and scan the

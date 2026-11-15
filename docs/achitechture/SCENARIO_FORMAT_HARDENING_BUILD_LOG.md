@@ -4728,3 +4728,11 @@ off, and the new third heading (the inventory `name`) with them. The `hl_box` it
 shows only after the hl_box unlock); the reading_room `drop_terminal_screen` textVariants are a
 deliberate clue gated in the world on `flag2_submitted`/`invoice_booked`, with a follow-up for m09's
 owner to declare it in `acknowledgedClues` (m09 not edited here).
+
+#### R2 outcomes (orchestrator, 2026-11-15)
+
+R2 counts: 0 blockers, 1 major, 2 minors.
+
+- Major: nothing set RUN_OPENED_SCAN, so the corpus-wide opened-state tests guarded no train. Fixed in tools/playtest/train-check.sh on build/train-check-2, which runs the file with RUN_OPENED_SCAN=1 after the Rails suite and goes RED on a failure or a skip. That branch lands in the same train as this one.
+- Minor: the playerInventory pass proves what is served, not what is stored, because client_inventory re-runs filter_inventory_for_client!. The test comments and the plan now say so.
+- Minor: the third m09 exception is pinned to playerInventory[7]. The index holds because the scan seeds srand(1). If the pickup order shifts, the stale-exception check flags the entry for review, so nothing is masked. Accepted as it stands. The orchestrator confirms all three m09 headings: each is either display text the player sees only after unlocking hl_box, or a deliberate clue gated on flag 2.
