@@ -322,3 +322,5 @@ Keyless server on :3062, headless, setFPS(20), fixed steps on. Shots in
 - Not driven live: the headless host on Switch user (needs a held session on HB-DOOR-01; covered by the
   `headless-line` fixture with a held `current`), a locked remote session (P8, covered by state and computed-style
   tests and the fixture), N14.
+
+Suites (shared lock, tip before this line): JS 657 files passed, 0 failed; Rails 2761 runs, 46003 assertions, 0 failures, 0 errors, 2 skips.
