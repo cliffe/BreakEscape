@@ -840,6 +840,27 @@ module BreakEscape
       assert_equal({ 'hostile' => true, 'ko' => true }, game.reload.player_state.dig('npcHostility', 'errand'))
     end
 
+    # D5 fix: rooms laid out left of or above the origin have negative world
+    # coordinates (e.g. test_needs_sims' kitchen), so a KO there sends a negative
+    # koX/koY that must be stored, not dropped. The magnitude bound still rejects a
+    # hugely negative forged number.
+    test 'KO position accepts legitimate negative coordinates but rejects a huge negative one' do
+      game = ko_scenario_game
+      put sync_state_game_url(game), params: { npcHostility: {
+        'errand' => { hostile: true, ko: true, koRoom: 'break_room', koX: -264, koY: -12 }
+      } }, as: :json
+      assert_response :success
+      assert_equal({ 'hostile' => true, 'ko' => true, 'koRoom' => 'break_room', 'koX' => -264, 'koY' => -12 },
+                   game.reload.player_state.dig('npcHostility', 'errand'), 'legitimate negative position kept')
+
+      put sync_state_game_url(game), params: { npcHostility: {
+        'guard' => { hostile: true, ko: true, koRoom: 'break_room', koX: -(10**9), koY: 10 }
+      } }, as: :json
+      assert_response :success
+      assert_equal({ 'hostile' => true, 'ko' => true }, game.reload.player_state.dig('npcHostility', 'guard'),
+                   'huge negative dropped, KO kept')
+    end
+
     test 'KO position is first-fall-wins and does not grow the state per sync' do
       game = ko_scenario_game
       first = { hostile: true, ko: true, koRoom: 'break_room', koX: 100, koY: 100 }

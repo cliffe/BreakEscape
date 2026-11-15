@@ -5097,8 +5097,10 @@ module BreakEscape
       player_state['npcHostility'] = merged
     end
 
-    # The largest KO coordinate the server will store: generous enough for any map,
-    # small enough to reject a huge forged number (D5).
+    # The largest KO coordinate magnitude the server will store: generous enough for
+    # any map, small enough to reject a huge forged number (D5). World coordinates are
+    # legitimately negative for rooms laid out left of or above the origin (e.g. the
+    # kitchen in test_needs_sims sits at x <= -260), so the bound is symmetric.
     MAX_KO_COORD = 100_000
 
     # Validate and store a KO's fall position (room id + world x,y) on the hostility
@@ -5133,7 +5135,7 @@ module BreakEscape
       return false if value.respond_to?(:nan?) && value.nan?
       return false if value.respond_to?(:infinite?) && value.infinite?
 
-      value >= 0 && value <= MAX_KO_COORD
+      value >= -MAX_KO_COORD && value <= MAX_KO_COORD
     end
 
     # The ids of every room in this scenario. Reads scenario_data when it is loaded;

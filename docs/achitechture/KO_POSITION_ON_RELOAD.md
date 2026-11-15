@@ -55,8 +55,11 @@ In `Game#merge_npc_hostility!`, only when `ko` is true and only these fields:
   (`scenario_room_ids`, read from `scenario_data` when loaded, else a narrow jsonb
   query like the existing `ko_claimable_room_npc_ids`). A wrong/unknown room is
   dropped. This also rejects another game's room id.
-- `koX`, `koY`: must be finite `Numeric` within `0..MAX_KO_COORD` (100000). Rejects
-  strings, `NaN`/`Infinity`, negatives and huge numbers.
+- `koX`, `koY`: must be finite `Numeric` within `-MAX_KO_COORD..MAX_KO_COORD`
+  (+/-100000). Rejects strings, `NaN`/`Infinity` and huge numbers of either sign.
+  The bound is symmetric because world coordinates are legitimately negative for
+  rooms laid out left of or above the origin (test_needs_sims' kitchen is at
+  x <= -260); an earlier `0` lower bound silently dropped those cross-room KOs.
 - Extra keys: the record is built field by field from known keys, so any extra key
   the client sends is never stored.
 - Another game's NPC: already gated by `known = scenario_npc_ids` and by
