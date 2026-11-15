@@ -1035,8 +1035,12 @@ module BreakEscape
         return render json: { success: false, message: 'Missing roomId or actionType' }, status: :bad_request
       end
 
-      # Validate room is accessible
-      unless @game.room_unlocked?(room_id)
+      # Validate room is accessible. consume_carried acts only on the server-verified
+      # npcCarry entry and names no room to change, so its client room is not trusted as
+      # a gate (review R1 m3). Every other action acts on room_id and keeps the gate; the
+      # KO room of a ko_drop is always a room the player reached, so it passes here and
+      # the KO itself is re-verified in the model.
+      unless action_type == 'consume_carried' || @game.room_unlocked?(room_id)
         return render json: { success: false, message: 'Room not accessible' }, status: :forbidden
       end
 
@@ -1117,6 +1121,17 @@ module BreakEscape
         end
 
         @game.consume_carried!(npc_id, item_id)
+
+      when 'ko_drop_carried'
+        npc_id = data && (data[:npcId] || data['npcId'])
+        item_id = data && (data[:itemId] || data['itemId'])
+        unless npc_id.present? && item_id.present?
+          return render json: { success: false, message: 'Missing npcId or itemId' }, status: :bad_request
+        end
+
+        raw_pos = data[:position] || data['position']
+        position = raw_pos.respond_to?(:to_unsafe_h) ? raw_pos.to_unsafe_h : raw_pos
+        @game.ko_drop_carried!(room_id, npc_id, item_id, position)
 
       # No 'move_npc' action: nothing in the game called it, and a client could name any NPC
       # and any room next to an unlocked one, so the NPC was served there and recorded as met

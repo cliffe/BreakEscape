@@ -412,6 +412,21 @@ export async function consumeCarried(npcId, itemId, npcRoom) {
     return postRoomAction({ roomId: npcRoom, actionType: 'consume_carried', data: { npcId, itemId } });
 }
 
+/**
+ * A carrying NPC is knocked out: the carried object drops to the KO room floor and
+ * the carry ends. The server trusts the recorded KO (not put-down reachability), so
+ * the KO room need not be adjacent to the pick-up room, and clears the carry so the
+ * object is served once, on the floor.
+ * @param {string} npcId
+ * @param {string} itemId
+ * @param {string} koRoom - the room the NPC fell in
+ * @param {{px:number, py:number}} position - the body position, world pixels
+ */
+export async function koDropObject(npcId, itemId, koRoom, position) {
+    if (isStandInObjectId(itemId)) return false;
+    return postRoomAction({ roomId: koRoom, actionType: 'ko_drop_carried', data: { npcId, itemId, position } });
+}
+
 // Export to window for global access
 if (typeof window !== 'undefined') window.RoomStateSync = {
     addItemToRoom,
@@ -422,7 +437,8 @@ if (typeof window !== 'undefined') window.RoomStateSync = {
     batchUpdateRoomState,
     carryObject,
     putDownObject,
-    consumeCarried
+    consumeCarried,
+    koDropObject
 };
 
 console.log('✅ Room State Sync system loaded');

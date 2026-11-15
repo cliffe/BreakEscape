@@ -235,6 +235,87 @@ module BreakEscape
       assert_nil landed['opens_lock'], 'no forged lock reference'
     end
 
+    # === m1: allowlist cross-reference =======================================
+
+    test 'an object required by a lock elsewhere is not carriable even with a needsTag' do
+      build
+      g = @game.reload
+      # A de facto key: ordinary fields, a needsTag, but a terminal requires it by id.
+      g.scenario_data['rooms']['office']['objects'] << {
+        'type' => 'usb_stick', 'id' => 'secret_usb', 'name' => 'USB Stick', 'takeable' => true, 'needsTag' => 'dirty_mugs'
+      }
+      g.scenario_data['rooms']['office']['objects'] << {
+        'type' => 'terminal', 'id' => 'vault_terminal', 'name' => 'Terminal', 'requires' => 'secret_usb'
+      }
+      g.save!
+
+      carry('grace', 'secret_usb')
+      assert_response :unprocessable_entity, 'a lock-referenced id is refused'
+      assert_nil @game.reload.player_state['npcCarry']
+      assert g.reload.carriable_object_index['secret_usb'].nil?, 'excluded from the allowlist'
+      assert g.carriable_object_index['office_mugs'].present?, 'ordinary dressing still carriable'
+    end
+
+    # === M1: KO while carrying drops the object once, carry cleared ===========
+
+    test 'KO while carrying ends the carry and lands the object once in the KO room' do
+      build('encounteredNPCs' => %w[grace])
+      carry('grace', 'office_mugs')
+      g = @game.reload
+      # Record the KO as the client would (update_npc_state), so npc_defeated? is true.
+      g.player_state['room_states']['kitchen'] ||= { 'objects_added' => [], 'objects_removed' => [], 'object_states' => {}, 'npc_states' => {} }
+      g.player_state['room_states']['kitchen']['npc_states']['grace'] = { 'isKO' => true, 'currentHP' => 0 }
+      g.save!
+
+      post update_room_game_url(@game), params: {
+        roomId: 'kitchen', actionType: 'ko_drop_carried',
+        data: { npcId: 'grace', itemId: 'office_mugs', position: { px: 119, py: 111 } }
+      }, as: :json
+      assert_response :success
+
+      assert_nil carry_state['grace'], 'carry cleared on the KO drop'
+      landed = room_objects('kitchen').select { |o| o['id'] == 'office_mugs' }
+      assert_equal 1, landed.size, 'exactly one mug on the KO room floor'
+      assert_equal({ 'px' => 119, 'py' => 111 }, landed.first['position'])
+      assert_not npc_held('office', 'grace').any? { |i| i['id'] == 'office_mugs' }, 'not also served in the hand'
+    end
+
+    test 'a KO drop for an NPC with no KO record is refused' do
+      build
+      carry('grace', 'office_mugs')
+      post update_room_game_url(@game), params: {
+        roomId: 'kitchen', actionType: 'ko_drop_carried',
+        data: { npcId: 'grace', itemId: 'office_mugs', position: { px: 10, py: 20 } }
+      }, as: :json
+      assert_response :unprocessable_entity, 'no KO, no drop'
+      assert carry_state['grace'], 'still carried'
+      assert_not room_objects('kitchen').any? { |o| o['id'] == 'office_mugs' }
+    end
+
+    # === M2: a forged sync_state cannot mint a carry =========================
+
+    test 'a forged npcCarry sync with no action behind it is dropped, not served in both places' do
+      build
+      # No carry action ran: the object is still in the office, nothing removed.
+      body = { npcCarry: { 'grace' => { 'itemId' => 'office_mugs', 'fromRoom' => 'office' } } }
+      put sync_state_game_url(@game), params: body.merge(clientTs: 1000), as: :json
+      assert_response :success
+
+      assert carry_state.blank?, 'forged entry not minted into npcCarry'
+      assert room_objects('office').any? { |o| o['id'] == 'office_mugs' }, 'still on the office floor'
+      assert_not npc_held('office', 'grace').to_a.any? { |i| i['id'] == 'office_mugs' }, 'not served in the hand too'
+    end
+
+    test 'apply_npc_carry! does not serve a stored carry whose object was never removed from its origin' do
+      build
+      g = @game.reload
+      # Force a stored entry directly (as a pre-reconcile forged state might), with no objects_removed.
+      g.player_state['npcCarry'] = { 'grace' => { 'itemId' => 'office_mugs', 'fromRoom' => 'office' } }
+      g.save!
+      assert room_objects('office').any? { |o| o['id'] == 'office_mugs' }, 'object still in its origin room'
+      assert_not npc_held('office', 'grace').any? { |i| i['id'] == 'office_mugs' }, 'inert: not served held'
+    end
+
     # === delta hygiene (sync) ================================================
 
     test 'syncing the same carry twice leaves npcCarry unchanged and bounded; extra keys are dropped' do

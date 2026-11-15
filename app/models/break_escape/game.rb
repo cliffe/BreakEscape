@@ -707,7 +707,19 @@ module BreakEscape
       return if entries.any? { |e| e == entry }
 
       entries << entry
+      # m4 (slice C delivery hook): a carried object taken from the NPC's hand ends the
+      # carry, so apply_npc_carry! stops re-serving it held even without an inventory entry.
+      clear_npc_carry_on_delivery!(npc_id, entry['id'])
       save!
+    end
+
+    # Clear a carry when its object is delivered to the player (review R1 m4).
+    def clear_npc_carry_on_delivery!(npc_id, item_id)
+      carry = player_state['npcCarry']
+      return unless carry.is_a?(Hash) && item_id.present?
+
+      entry = carry[npc_id.to_s]
+      carry.delete(npc_id.to_s) if entry.is_a?(Hash) && entry['itemId'] == item_id
     end
 
     def remove_inventory_item!(item_id)
@@ -1165,12 +1177,58 @@ module BreakEscape
 
               id = obj['id']
               next unless id.is_a?(String) && obj['needsTag'].present? && carriable_object?(obj)
+              # Cross-reference (review R1 m1): an object whose id is a de facto key,
+              # named as a requirement by any lock, terminal or objective elsewhere, is
+              # never carriable even without a disqualifying field on its own definition.
+              next if lock_referenced_object_ids.include?(id)
 
               index[id] = { 'room' => room_id, 'object' => obj }
             end
           end
         end
         index
+      end
+    end
+
+    # Object-reference fields that name another object/key by id: a lock the door or
+    # object needs, a key/card identity, or an objective/terminal requirement. A
+    # carriable candidate whose own id appears as one of these values is a de facto
+    # key for something and must not be carriable (review R1 m1).
+    LOCK_REFERENCE_KEYS = %w[
+      requires required requiredItem requiredItems requiredObject requiredObjects
+      key_id keyId card_id cardId opens_lock opensLock unlocks target
+    ].freeze
+
+    # Every object id referenced as a requirement anywhere in the scenario (locks,
+    # terminals, objectives). Memoised; reads scenario_data (loaded for every carry
+    # action and room serve). Bounded by the scenario.
+    def lock_referenced_object_ids
+      @lock_referenced_object_ids ||= begin
+        refs = Set.new
+        collect_lock_references(scenario_data, refs) if scenario_data.is_a?(Hash)
+        refs
+      end
+    end
+
+    # Walk the scenario tree collecting the values of LOCK_REFERENCE_KEYS (strings or
+    # arrays of strings). Only these named keys are read, so an ordinary field that
+    # happens to hold a carriable id (a needs mapping, an affordance) is never
+    # collected, and legitimate office dressing stays carriable.
+    def collect_lock_references(node, refs)
+      case node
+      when Hash
+        node.each do |key, value|
+          if LOCK_REFERENCE_KEYS.include?(key)
+            if value.is_a?(String)
+              refs << value
+            elsif value.is_a?(Array)
+              value.each { |v| refs << v if v.is_a?(String) }
+            end
+          end
+          collect_lock_references(value, refs) if value.is_a?(Hash) || value.is_a?(Array)
+        end
+      when Array
+        node.each { |v| collect_lock_references(v, refs) if v.is_a?(Hash) || v.is_a?(Array) }
       end
     end
 
@@ -1275,6 +1333,60 @@ module BreakEscape
       true
     end
 
+    # KO while carrying (review R1 M1, slice C): the carrying NPC is knocked out, so
+    # the carried object drops to the KO room floor and the carry ends. The KO room
+    # need not be reachable from the pick-up room (a hostile NPC is chased through
+    # doors); instead the server trusts the KO itself, exactly as add_item_to_room!'s
+    # npc_defeated branch: the NPC must be defeated (its KO recorded) or KO-claimable,
+    # and if claimable but not yet recorded, this drop records the KO. Clears the carry
+    # so the object is served exactly once, on the floor, never also in the hand.
+    def ko_drop_carried!(room_id, npc_id, item_id, position = nil)
+      return false unless room_id.is_a?(String) && npc_id.is_a?(String) && item_id.is_a?(String)
+      return false unless scenario_room_ids.include?(room_id)
+
+      carry = player_state['npcCarry']
+      entry = carry.is_a?(Hash) ? carry[npc_id] : nil
+      return false unless entry.is_a?(Hash) && entry['itemId'] == item_id
+
+      info = carriable_object_index[item_id]
+      return false unless info.is_a?(Hash) && info['object'].is_a?(Hash)
+
+      defeated = npc_defeated?(npc_id)
+      claimable = npc_ko_claimable?(npc_id)
+      return false unless defeated || claimable
+
+      player_state_will_change!
+      player_state['room_states'] ||= {}
+      player_state['room_states'][room_id] ||= { 'objects_added' => [], 'objects_removed' => [], 'object_states' => {}, 'npc_states' => {} }
+
+      # Record the KO when claimable but not yet recorded: the same trust as the gift
+      # KO drop (the server takes isKO from the browser).
+      if !defeated && claimable
+        player_state['room_states'][room_id]['npc_states'] ||= {}
+        player_state['room_states'][room_id]['npc_states'][npc_id] ||= {}
+        player_state['room_states'][room_id]['npc_states'][npc_id].merge!('isKO' => true, 'currentHP' => 0)
+      end
+
+      item = info['object'].deep_dup.except('texture')
+             .merge('takeable' => true, 'interactable' => true, 'active' => true, 'visible' => true)
+      item = apply_carry_position(item, position)
+      player_state['room_states'][room_id]['objects_added'].reject! { |o| o['id'] == item_id }
+      player_state['room_states'][room_id]['objects_added'] << item
+      carry.delete(npc_id)
+      save!
+      true
+    end
+
+    # True when the object is recorded removed from the room (objects_removed). The
+    # carry action writes this at pick-up, so it is the authoritative marker that a
+    # carry really happened (review R1 M2).
+    def object_removed_from_room?(room_id, item_id)
+      return false unless room_id.is_a?(String) && item_id.is_a?(String)
+
+      removed = player_state.dig('room_states', room_id, 'objects_removed')
+      removed.is_a?(Array) && removed.include?(item_id)
+    end
+
     # A carried object is set down in the room it was picked up from or a room
     # adjacent to it (the needs system only walks it to a neighbouring room). The
     # controller has already required to_room unlocked. The object is server-built
@@ -1310,13 +1422,24 @@ module BreakEscape
       return unless incoming.is_a?(Hash)
 
       scenario_loaded = has_attribute?(:scenario_data) && scenario_data.is_a?(Hash)
-      merged = (player_state['npcCarry'] || {}).dup
+      existing = player_state['npcCarry'] || {}
+      merged = existing.dup
       incoming.each do |npc_id, entry|
         next unless npc_id.is_a?(String) && entry.is_a?(Hash)
 
         item_id = entry['itemId']
         from_room = entry['fromRoom']
         next unless item_id.is_a?(String) && from_room.is_a?(String)
+
+        # Reconcile-only (review R1 M2): the carry action owns the authoritative write
+        # (it also records the object removed from its origin room). A sync never mints
+        # a new carry, so a forged sync_state entry cannot serve an object both on its
+        # origin floor and in a hand. Keep an incoming entry only when the action path
+        # already created it: a matching stored entry, or the object recorded removed
+        # from its claimed fromRoom.
+        prior = existing[npc_id]
+        matches_stored = prior.is_a?(Hash) && prior['itemId'] == item_id && prior['fromRoom'] == from_room
+        next unless matches_stored || object_removed_from_room?(from_room, item_id)
 
         if scenario_loaded
           next unless needs_npc_ids.include?(npc_id)
@@ -1349,6 +1472,10 @@ module BreakEscape
 
         info = carriable_object_index[entry['itemId']]
         next npc unless info.is_a?(Hash)
+        # Serve held only when the carry invariant holds: the object has actually left
+        # its origin room (review R1 M2). A stored entry without the matching removal
+        # (a forged sync that slipped through) is inert: never served in a hand.
+        next npc unless object_removed_from_room?(entry['fromRoom'], entry['itemId'])
         # The carried id sits in the origin room's objects_removed, so delivered_item_ids
         # would wrongly suppress it. Suppress only when the player has actually taken it
         # into their inventory.
