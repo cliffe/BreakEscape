@@ -22,7 +22,7 @@ A demo and live test of the NPC needs system (`public/break_escape/js/systems/np
 | Grace Lindqvist | female_blowse_v2 | grace_laptop | rest 12/40/64, thirst 15/40/79 | `dirty_mugs`, weight 3, office + kitchen |
 | Sanjay Mehta | male_nerd_v2 | sanjay_pc | work 15/50/65, hunger 8/40/64, social 12/40/76 | none |
 | Rosa Delgado | female_scientist_v2 | rosa_laptop (lounge) | social 15/40/70, caffeine 15/40/85, rest 10/40/75 | none |
-| Marek Nowak (slice 8) | male_telecom_v2 | spot office (1.65,3.5), the north-west corner by the kitchen door (was (3,8) until design review R3 M3: his walk from there passed behind Sanjay's chair and wedged; (6,8) before slice 10) | thirst 2/30/95 (sent by the Kitchen Rota), caffeine 1/30/95 (slice 10: sent when Tom joins the coffee queue); `needsCompany: { avoids: ["*"] }` | none |
+| Marek Nowak (slice 8) | male_telecom_v2 | spot office (1.65,4.0), the north-west corner just below the kitchen-door row (was (1.65,3.5) in R3, (3,8) until design review R3 M3: his walk from there passed behind Sanjay's chair and wedged; (6,8) before slice 10) | thirst 2/30/95 (sent by the Kitchen Rota), caffeine 1/30/95 (slice 10: sent when Tom joins the coffee queue); `needsCompany: { avoids: ["*"] }` | none |
 
 Six need types: caffeine, hunger, thirst, rest, social, work. The engine has no fixed list (a need is any name matched against an object's `affordance.satisfies`), so these six are the scenario's choice.
 
