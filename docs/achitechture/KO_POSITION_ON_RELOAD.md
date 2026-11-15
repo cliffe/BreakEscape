@@ -233,3 +233,41 @@ served x,y: amara at (224, 65) (her desk) instead of near (128, 214), marek at (
 fall spot is dropped on the client. Crops: see the scratchpad `ko-live` sheets
 (before left, after right). Note the stale `body.center` after reload is a disabled body,
 see the measurement caveat above.
+
+## Live proof (after the D5 client-read fix)
+
+The R1 table above ended with "the body does NOT land where it fell": the server stored
+the right spot but served it as a top-level `x`/`y` the client never read
+(`createNPCSprite` places from `npc.position` only). The fix serves the fall spot as
+`position: { px, py }` (absolute world pixels, the frame `koX`/`koY` was captured in) and
+drops the unused `x`/`y`.
+
+Harness: `tools/playtest/ko-pos-proof.mjs`, unchanged. Keyless server on 3095, two fresh
+`test_needs_sims` games, headless at setFPS(20). Amara is moved off her desk first; Marek
+is moved into the kitchen and knocked out there. Reload is about:blank then back. Sprite
+x,y is the reliable reloaded-KO signal (the disabled body's `center` goes stale); it is
+compared with the sprite x,y when it fell.
+
+| game | case | stored koX / koY (served px / py) | sprite x, y when it fell | sprite x, y after reload | diff x, y (px) | KO after reload |
+| ---- | ---- | --------------------------------- | ------------------------ | ------------------------ | -------------- | --------------- |
+| 5405 | amara office, same-room | 128 / 240 | 128, 214 | 128, 209 | 0, -5 | yes |
+| 5405 | marek kitchen, cross-room | -160 / 192 | -160, 161 | -160, 161 | 0, 0 | yes |
+| 5406 | amara office, same-room | 128 / 240 | 128, 214 | 128, 209 | 0, -5 | yes |
+| 5406 | marek kitchen, cross-room | -160 / 192 | -160, 161 | -160, 161 | 0, 0 | yes |
+
+The body now lands where it fell. x is pixel-exact in every case and Marek is exact in y.
+After the reload `koY - sprite.y = 31` for both NPCs, the standard 80x80 atlas
+body-to-anchor offset, so the restored body centre sits exactly on the served `py` (= the
+stored `koY`): the restore is faithful to the stored value. Amara's -5 px in y is not a
+placement error: the live death animation lowers her ~5 px further after `koY` is captured
+at the KO instant, so the 2500 ms-later "when it fell" read sits that much below the
+KO-instant spot the restore reproduces (Marek's death pose settles at the same offset the
+restore uses, so his diff is 0). This is the death-pose capture-vs-settle detail already
+noted in R1 ("within 4 px in y from the death-pose origin"), independent of the client-read
+fix; before the fix these diffs were 96 / -149 and -107 / -64.
+
+Also confirmed in both games: the kitchen serves Marek at `position.px/py` equal to the
+stored `koX`/`koY` with `isKO: true`; the office serves without Marek (ids amara, tom,
+grace, sanjay), so a cross-room KO leaves its home room; each NPC's `koRoom` rides the sync
+exactly once (`syncsWithKoRoom` = 1 for amara and 1 for marek across the whole run,
+including after the reload), so the delta stays single and bounded.
