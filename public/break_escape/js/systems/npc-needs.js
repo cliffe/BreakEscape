@@ -50,6 +50,11 @@ export const CHAT_MAX_MS = 4000;
 export const CHAT_GAP_MS = 500;
 export const OVERHEAR_RADIUS = 160;   // px, five tiles: npc_chatted `overheard`
 export const CHAT_LINE_MAX = 40;      // characters; the validator enforces it
+// SIMS-5 design R2 M4: two speakers drawing from one scenario pool keep separate bags, so the
+// partner could say the line just said. A line spoken within ECHO_WINDOW_MS by anyone within
+// ECHO_RADIUS px in the same room is passed over while the bag has another. In memory only.
+export const ECHO_WINDOW_MS = 120000;
+export const ECHO_RADIUS = 2 * OVERHEAR_RADIUS;
 // Queues at shared machines (slice 10: OFFICE_LIFE_PLAN 2.5)
 export const QUEUE_MAX_WAIT_S = 30;   // affordance.queue.maxWaitSeconds default
 export const QUEUE_COOLDOWN_MS = 60000;   // after giving up on a queue, that object is skipped this long
@@ -401,6 +406,8 @@ export class NPCNeedsSystem {
         // a time, across all NPCs) and exchanges played this session (the heard_<knot> global is
         // what survives a reload)
         this._bags = new Map();
+        // Lines said lately, for the echo check (M4): [{ text, at, roomId, x, y }], oldest first
+        this._recentLines = [];
         this._speechUntil = 0;
         // Mutters waiting for the speech lock, oldest first: [{ npcId, topic, since }] (9.2 B)
         this._mutterWaits = [];
@@ -579,6 +586,7 @@ export class NPCNeedsSystem {
         this._chatSeq = 0;
         this._queueSeq = 0;
         this._bags.clear();
+        this._recentLines = [];
         this._speechUntil = 0;
         this._mutterWaits = [];
         this._exPlayed.clear();
@@ -2723,14 +2731,64 @@ export class NPCNeedsSystem {
         return b.last;
     }
 
-    /** The index _bagNext would return next, without changing the bag (R1 M1: draw only what fits). */
-    _bagPeek(npcId, topic, lines) {
+    /**
+     * M4: was `text` said lately near this speaker? Same room, within ECHO_RADIUS of where it was
+     * said and within ECHO_WINDOW_MS. Old entries are dropped as they are read.
+     */
+    _echoes(s, text) {
+        const cut = this.clockMs - ECHO_WINDOW_MS;
+        while (this._recentLines.length && this._recentLines[0].at < cut) this._recentLines.shift();
+        if (!this._recentLines.length) return false;
+        const pos = this.world.npcPos?.(s.npcId);
+        return this._recentLines.some(r => r.text === text && (!pos || !r.roomId || !pos.roomId
+            || (r.roomId === pos.roomId && Math.hypot(pos.x - r.x, pos.y - r.y) <= ECHO_RADIUS)));
+    }
+
+    /** M4: note a line as said by this speaker now (at most 32 kept). */
+    _noteSaid(s, text) {
+        const pos = this.world.npcPos?.(s.npcId) || {};
+        this._recentLines.push({ text, at: this.clockMs, roomId: pos.roomId || null, x: pos.x || 0, y: pos.y || 0 });
+        if (this._recentLines.length > 32) this._recentLines.shift();
+    }
+
+    /**
+     * The order left in this speaker's bag for a topic, as _bagNext would draw it, without changing
+     * the bag (R1 M1: draw only what fits): the bag's own order, or the refill it would make.
+     */
+    _bagOrderLeft(npcId, topic, lines) {
         const key = `${npcId}|${topic}`;
         const b = this._bags.get(key);
         const fresh = !b || b.sig !== lines.join('\n');
+        if (!fresh && b.order.length) return b.order;
         const round = fresh ? 0 : b.round, last = fresh ? -1 : b.last;
-        if (!fresh && b.order.length) return b.order[0];
-        return bagOrder(lines.length, createSeededRng(hash32(`${this.seed}:${key}:bag:${round}`)), last)[0];
+        return bagOrder(lines.length, createSeededRng(hash32(`${this.seed}:${key}:bag:${round}`)), last);
+    }
+
+    /**
+     * M4: the index the next draw for this speaker gives: the first line left in the bag that is not
+     * an echo (_echoes), else the bag's own next line. Changes nothing (the fit check reads it).
+     */
+    _bagPeek(s, topic, lines) {
+        const order = this._bagOrderLeft(s.npcId, topic, lines);
+        if (!this._recentLines.length || !this._echoes(s, lines[order[0]])) return order[0];
+        const k = order.find(i => !this._echoes(s, lines[i]));
+        return k === undefined ? order[0] : k;
+    }
+
+    /**
+     * M4: draw the line _bagPeek names. A line passed over stays in the bag in its place, so it
+     * comes later in the round; the bag still never repeats a line before it is empty.
+     */
+    _bagTake(s, topic, lines) {
+        const want = this._bagPeek(s, topic, lines);
+        const idx = this._bagNext(s.npcId, topic, lines);   // fills the bag if it was empty
+        if (idx === want) return idx;
+        const b = this._bags.get(`${s.npcId}|${topic}`);
+        const j = b.order.indexOf(want);
+        if (j < 0) return idx;
+        b.order.splice(j, 1, idx);   // the passed-over line takes the drawn line's place
+        b.last = want;
+        return want;
     }
 
     _cooldownMs(s) {
@@ -2754,11 +2812,13 @@ export class NPCNeedsSystem {
      */
     _pickBark(s, topic, { waitForLock = false, ignoreCooldown = false, unheard = false, maxMs = Infinity, icons: iconsFor = null } = {}) {
         const pool = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter);
+        // M4: the next line passes over one said lately nearby (an echo), for the fit check and the draw
         const ready = !unheard && pool.lines.length && (ignoreCooldown || !(s.chatterQuietUntil > this.clockMs))
-            && !(maxMs < CHAT_MAX_MS && bubbleMs(pool.lines[this._bagPeek(s.npcId, topic, pool.lines)]) > maxMs);
+            && !(maxMs < CHAT_MAX_MS && bubbleMs(pool.lines[this._bagPeek(s, topic, pool.lines)]) > maxMs);
         if (ready && this._speechFree()) {
-            const idx = this._bagNext(s.npcId, topic, pool.lines);
+            const idx = this._bagTake(s, topic, pool.lines);
             s.chatterQuietUntil = this.clockMs + this._cooldownMs(s);
+            this._noteSaid(s, pool.lines[idx]);
             return { line: pool.lines[idx], idx, picture: null, pool };
         }
         if (ready && waitForLock) return { wait: true, pool };

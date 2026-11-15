@@ -487,46 +487,43 @@
           "needsTag": "printout"
         },
         {
-          "type": "notes1",
+          "type": "aes_clipboard1",
           "id": "print_queue_note",
           "name": "Print Queue",
+          "position": { "x": 3.125, "y": 0.8125 },
           "takeable": false,
           "readable": true,
+          "readDisplay": "gameDisplay",
           "addToNotes": false,
           "text": "PRINT QUEUE\n\nOne job held for Tom Fletcher. Released when read.",
-          "observations": "A note about the copier's print queue. Reading it releases a job Tom sent and then forgot about.",
-          "_comment": "Slice 17 lever: a mapping on Tom prints as him at once, with forget true, so the printout waits on the tray and npc_print_uncollected:tom follows after 150 s. cooldown 60000, not onceOnly: onceOnly is saved to the server, while a reload files the forgotten print."
+          "observations": "A clipboard on the wall by the photocopier: the copier's print queue. Reading it releases a job Tom sent and then forgot about.",
+          "_comment": "SIMS-5 design R2 M2: a clipboard hung on the back wall just left of the copier (the bookcase behind it), so the lever reads as the copier's and not as a scrap on the carpet; its top-left is over 32 px from the copier's centre, so a tap on it opens no pick-one menu. Slice 17 lever: a mapping on Tom prints as him at once, with forget true, so the printout waits on the tray and npc_print_uncollected:tom follows after 150 s. cooldown 60000, not onceOnly: onceOnly is saved to the server, while a reload files the forgotten print."
         },
         {
-          "type": "notes1",
+          "type": "notice_board1",
           "id": "deadline_memo",
           "name": "Deadline Memo",
+          "position": { "x": 8.1875, "y": 0.6875 },
           "takeable": false,
           "readable": true,
+          "readDisplay": "gameDisplay",
           "addToNotes": false,
           "text": "MEMO\n\nThe quarterly report is due by four, not five. Sorry, all.\n\nTom, Amara: your sections, please.",
-          "observations": "A memo pinned up for Tom and Amara. Reading it out loud would ruin their afternoon."
+          "observations": "A memo pinned up on the noticeboard for Tom and Amara. Reading it out loud would ruin their afternoon.",
+          "_comment": "SIMS-5 design R2 M2: the noticeboard on the back wall right of the Activity Board, above Amara's desk. Its top-left is over 32 px from the board's centre, so the two do not share a tap."
         },
         {
-          "type": "notes1",
-          "id": "kitchen_rota",
-          "name": "Kitchen Rota",
-          "takeable": false,
-          "readable": true,
-          "addToNotes": false,
-          "text": "KITCHEN ROTA\n\nThis week: Sanjay.\n\nContractors: the water cooler is in the kitchen.",
-          "observations": "The kitchen rota. Reading it reminds Marek that he is parched; as he heads for the cooler, Sanjay decides he fancies a chat too."
-        },
-        {
-          "type": "notes1",
+          "type": "notes6",
           "id": "coffee_notice",
           "name": "Coffee Notice",
+          "position": { "x": 9.125, "y": 5.875 },
           "takeable": false,
           "readable": true,
+          "readDisplay": "gameDisplay",
           "addToNotes": false,
           "text": "FRESH BEANS\n\nNew beans in the office machine. Help yourselves.",
-          "observations": "A notice about the coffee. Reading it sends Marek to the office machine, and Sanjay fancies one too.",
-          "_comment": "Slice 14 (OFFICE_LIFE_PLAN 10): Marek's caffeine is set low on reading it; Sanjay's follows npc_left_post:marek to office_coffee. Sanjay queues behind Marek's claim, then turns back when Marek comes within two tiles (avoidRadius), grumbles, and with the kitchen shut parks with the closed-door badge."
+          "observations": "A notice taped to the wall above the coffee station. Reading it sends Marek to the office machine, and Sanjay fancies one too.",
+          "_comment": "SIMS-5 design R2 M2: taped on the east wall above the coffee station's wall socket, more than 32 px from the socket so each has its own tap. Slice 14 (OFFICE_LIFE_PLAN 10): Marek's caffeine is set low on reading it; Sanjay's follows npc_left_post:marek to office_coffee. Sanjay queues behind Marek's claim, then turns back when Marek comes within two tiles (avoidRadius), grumbles, and with the kitchen shut parks with the closed-door badge."
         }
       ],
       "npcs": [
@@ -782,6 +779,19 @@
           "observations": "A water cooler. Room for two to stand and chat.",
           "_comment": "E7 to E9 showcase: Sanjay and Rosa are coupled on npc_use_started here, so the partner sets off only once the first has started. A capacity-2 object a coupled pair shares uses for at least the partner's walk plus 20 s; the preset's 15 s gave them 3 to 7 s together.",
           "affordance": { "useSeconds": 40 }
+        },
+        {
+          "type": "rota_board1",
+          "id": "kitchen_rota",
+          "name": "Kitchen Rota",
+          "position": { "x": 8.0, "y": 0.8125 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "KITCHEN ROTA\n\nThis week: Sanjay.\n\nContractors: the water cooler is in the kitchen.",
+          "observations": "The kitchen rota on the wall by the bookcases. Reading it reminds Marek that he is parched; as he heads for the cooler, Sanjay decides he fancies a chat too.",
+          "_comment": "SIMS-5 design R2 M2: moved from the office floor to the kitchen's back wall, right of the bookcases. Marek's mapping matches the name (object_interacted, data.objectName), so the room does not matter to it; reading it here means the kitchen, and so the cooler, is loaded."
         },
         {
           "type": "mugs_tray1",
