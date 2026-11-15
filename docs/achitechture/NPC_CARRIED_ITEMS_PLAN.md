@@ -1,5 +1,26 @@
 # NPC carried items: server-tracked held items
 
+## Handover (R2 fixes, 2026-11-15)
+
+All six R2 findings are fixed and committed on `build/ol-carry` (commit
+`cf15812c5`); see the Outcomes section of `NPC_CARRIED_ITEMS_REVIEW_R2.md`.
+
+- **Fixed:** M1 (merge_npc_carry! keeps only `matches_stored`, never re-mints an
+  ended carry), m1 (ko_drop_carried! requires `npc_in_room?` before the KO record),
+  m2 (requiresItem/targetObject/targetId/objectId/unlockedBy added to
+  LOCK_REFERENCE_KEYS), m3 (consumeHeld keeps the sprite until the server confirms),
+  m4 (postRoomAction returns null on transport errors vs false on a true refusal),
+  m5 (koDropCarried reconciles the floor copy on a refusal).
+- **Tests added and passing locally:** Rails npc_carried_items_test (25 runs, 0
+  failures), forged_ko_drop_test + game_test (109 runs, 0 failures), JS
+  npc-carry-wiring + new room-state-sync-refusal (20 tests, 0 failures); rubocop
+  clean on the changed Ruby files.
+- **Left from R2 / not done:** the full suite sweep (reload_persistence_test and
+  bin/test-js in full) was not run, and the live keyless-server proof on port 3095
+  (`tools/playtest/npc-carry-live-proof.mjs`, the consume / put-down / KO beats with
+  the 422 count) was **not done** — the session was wound down first. No :3095
+  server was ever started. These three remain for a follow-up session.
+
 ## Build status (slices A and B done; slice C KO drop and delivery pulled forward in R1 fixes)
 
 Slices A (server) and B (client wiring) are built and tested. The R1 review fixes
