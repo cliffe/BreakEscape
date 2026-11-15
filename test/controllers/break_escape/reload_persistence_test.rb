@@ -764,6 +764,104 @@ module BreakEscape
                    scenario_json(game)['savedNpcHostility'])
     end
 
+    # D5 (KO position on reload): a KO now also saves the room it fell in and its
+    # x,y, so a reload lays the NPC where it dropped. The position rides the same
+    # npcHostility delta and is validated as untrusted client input.
+    def ko_scenario_game(unlocked: %w[lobby])
+      game = create_game
+      game.scenario_data['rooms'] = {
+        'lobby' => { 'type' => 'room_office', 'locked' => false, 'connections' => {}, 'objects' => [],
+                     'npcs' => [{ 'id' => 'errand', 'npcType' => 'person', 'x' => 10, 'y' => 20 }] },
+        'break_room' => { 'type' => 'room_office', 'locked' => false, 'connections' => {}, 'objects' => [],
+                          'npcs' => [{ 'id' => 'guard', 'npcType' => 'person', 'x' => 5, 'y' => 5 }] }
+      }
+      game.player_state['unlockedRooms'] = unlocked
+      game.player_state['encounteredNPCs'] = %w[errand guard]
+      game.save!
+      game
+    end
+
+    def room_npcs(game, room_id)
+      get room_game_url(game, room_id: room_id)
+      assert_response :success
+      response.parsed_body.dig('room', 'npcs') || []
+    end
+
+    test 'a same-room KO comes back at the spot it fell' do
+      game = ko_scenario_game
+      put sync_state_game_url(game), params: { npcHostility: {
+        'guard' => { hostile: true, ko: true, koRoom: 'break_room', koX: 300, koY: 420 }
+      } }, as: :json
+      assert_response :success
+
+      assert_equal({ 'hostile' => true, 'ko' => true, 'koRoom' => 'break_room', 'koX' => 300, 'koY' => 420 },
+                   game.reload.player_state.dig('npcHostility', 'guard'))
+      guard = room_npcs(game, 'break_room').find { |n| n['id'] == 'guard' }
+      assert_equal [300, 420], [guard['x'], guard['y']], 'placed where it fell, not at its spawn (5,5)'
+    end
+
+    test 'a cross-room KO comes back in the room it fell in, not standing at home' do
+      game = ko_scenario_game(unlocked: %w[lobby break_room])
+      put sync_state_game_url(game), params: { npcHostility: {
+        'errand' => { hostile: true, ko: true, koRoom: 'break_room', koX: 150, koY: 260 }
+      } }, as: :json
+      assert_response :success
+
+      # Injected into the room it fell in, knocked out, at that spot
+      errand = room_npcs(game, 'break_room').find { |n| n['id'] == 'errand' }
+      assert errand, 'the errand NPC appears in the room it fell in'
+      assert_equal [150, 260], [errand['x'], errand['y']]
+      assert_equal true, errand['isKO']
+      assert_equal 0, errand['currentHP']
+
+      # And it is no longer standing in its home room
+      assert_nil room_npcs(game, 'lobby').find { |n| n['id'] == 'errand' },
+                 'the KO NPC is not also at home'
+    end
+
+    test 'KO position is validated as untrusted input (room, range, type, extra keys)' do
+      game = ko_scenario_game
+      # Wrong room, out-of-range, wrong type and an extra key: the KO is kept, the position dropped
+      put sync_state_game_url(game), params: { npcHostility: {
+        'errand' => { hostile: true, ko: true, koRoom: 'no_such_room', koX: 10, koY: 10 },
+        'guard' => { hostile: true, ko: true, koRoom: 'break_room', koX: 10**9, koY: 10,
+                     evil: 'DROP TABLE', koZ: 9 }
+      } }, as: :json
+      assert_response :success
+      saved = game.reload.player_state['npcHostility']
+      assert_equal({ 'hostile' => true, 'ko' => true }, saved['errand'], 'unknown room dropped, KO kept')
+      assert_equal({ 'hostile' => true, 'ko' => true }, saved['guard'], 'huge x dropped, extra keys never stored')
+
+      # A string coordinate is dropped too
+      put sync_state_game_url(game), params: { npcHostility: {
+        'errand' => { hostile: true, ko: true, koRoom: 'break_room', koX: 'left', koY: 10 }
+      } }, as: :json
+      assert_response :success
+      assert_equal({ 'hostile' => true, 'ko' => true }, game.reload.player_state.dig('npcHostility', 'errand'))
+    end
+
+    test 'KO position is first-fall-wins and does not grow the state per sync' do
+      game = ko_scenario_game
+      first = { hostile: true, ko: true, koRoom: 'break_room', koX: 100, koY: 100 }
+      put sync_state_game_url(game), params: { npcHostility: { 'guard' => first } }, as: :json
+      assert_response :success
+      stored = game.reload.player_state['npcHostility'].deep_dup
+
+      # A later, different position for the same KO must not move it
+      put sync_state_game_url(game), params: { npcHostility: {
+        'guard' => { hostile: true, ko: true, koRoom: 'lobby', koX: 999, koY: 999 }
+      } }, as: :json
+      assert_response :success
+      assert_equal stored, game.reload.player_state['npcHostility'], 'first fall wins'
+
+      # Re-sending the identical entry several times does not grow npcHostility
+      3.times do
+        put sync_state_game_url(game), params: { npcHostility: { 'guard' => first } }, as: :json
+        assert_response :success
+      end
+      assert_equal stored, game.reload.player_state['npcHostility'], 'stable per sync, no growth'
+    end
+
     test 'no savedNpcHostility when nothing has turned' do
       assert_nil scenario_json(create_game)['savedNpcHostility']
     end

@@ -166,3 +166,71 @@ test('a hurt NPC saves its HP with its hostility, and a reload restores it', () 
     sys.announceRestoredHostile('hurt_on_load', { attackDamage: 4, maxHP: 60 });
     assert.equal(sys.getState('hurt_on_load').currentHP, 25);
 });
+
+// D5 (KO position on reload): a KO now also records the room it fell in and its
+// world x,y, so a reload lays the NPC where it dropped, in the room it was knocked
+// out in even when that is not its home room. The server does the placement from
+// this same record (Game#apply_ko_positions!); the client just saves and restores
+// the three fields on the hostility record.
+test('a KO records its fall room and x,y for the save', () => {
+    const savedMgr = window.npcManager;
+    window.npcManager = {
+        getNPC: (id) => (id === 'errand_npc'
+            ? { _sprite: { x: 412.4, y: 268.6, once: () => {} }, roomId: 'break_room' }
+            : null)
+    };
+    try {
+        sys.setNPCHostile('errand_npc', true);
+        sys.damageNPC('errand_npc', 10_000);
+        assert.deepEqual(sys.exportHostility().errand_npc, {
+            hostile: true, ko: true, facing: 'down',
+            koRoom: 'break_room', koX: 412, koY: 269
+        }, 'room from the sprite feet (falls back to npc.roomId), x,y rounded');
+    } finally {
+        window.npcManager = savedMgr;
+    }
+});
+
+test('a saved KO position is restored and re-exported unchanged (round trip)', () => {
+    sys.restoreHostility({
+        fell_away: { hostile: true, ko: true, facing: 'left', koRoom: 'server_room', koX: 100, koY: 200 }
+    });
+    const st = sys.getState('fell_away');
+    assert.equal(st.isKO, true);
+    assert.equal(st.koRoom, 'server_room');
+    assert.deepEqual(sys.exportHostility().fell_away, {
+        hostile: true, ko: true, facing: 'left', koRoom: 'server_room', koX: 100, koY: 200
+    });
+});
+
+test('a KO position only rides when all three fields are valid', () => {
+    sys.restoreHostility({
+        no_pos: { hostile: true, ko: true },
+        bad_room: { hostile: true, ko: true, koRoom: '', koX: 10, koY: 10 },
+        bad_xy: { hostile: true, ko: true, koRoom: 'lab', koX: 'x', koY: 10 }
+    });
+    assert.deepEqual(sys.exportHostility().no_pos, { hostile: true, ko: true });
+    assert.deepEqual(sys.exportHostility().bad_room, { hostile: true, ko: true });
+    assert.deepEqual(sys.exportHostility().bad_xy, { hostile: true, ko: true });
+});
+
+test('repeated exports do not grow the KO entry (stable per sync)', () => {
+    const savedMgr = window.npcManager;
+    window.npcManager = {
+        getNPC: (id) => (id === 'stable_npc'
+            ? { _sprite: { x: 50, y: 60, once: () => {} }, roomId: 'lobby' }
+            : null)
+    };
+    try {
+        sys.setNPCHostile('stable_npc', true);
+        sys.damageNPC('stable_npc', 10_000);
+        const first = JSON.stringify(sys.exportHostility().stable_npc);
+        // Several more "syncs": nothing changed, so the entry is byte-for-byte stable.
+        for (let i = 0; i < 5; i++) {
+            assert.equal(JSON.stringify(sys.exportHostility().stable_npc), first);
+        }
+        assert.equal(Object.keys(sys.exportHostility().stable_npc).length, 6);
+    } finally {
+        window.npcManager = savedMgr;
+    }
+});

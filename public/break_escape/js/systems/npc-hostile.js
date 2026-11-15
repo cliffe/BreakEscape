@@ -23,6 +23,15 @@ function recordHostility(npcId, state) {
   // The way it fell, so a reload lays it in that death animation's last frame
   // rather than facing down (m08 confirmation R4: ATHENA fell right, came back down)
   if (state.isKO && KO_FACINGS.has(state.koFacing)) entry.facing = state.koFacing;
+  // Where it fell (room id and world x,y), so a reload lays it in the spot it
+  // dropped rather than at its spawn point, in the room it was knocked out in even
+  // when that is not its home room (D5). Written once at the KO; first fall wins.
+  if (state.isKO && typeof state.koRoom === 'string' && state.koRoom &&
+      Number.isFinite(state.koX) && Number.isFinite(state.koY)) {
+    entry.koRoom = state.koRoom;
+    entry.koX = state.koX;
+    entry.koY = state.koY;
+  }
   if (!state.isKO && state.currentHP > 0 && state.currentHP < state.maxHP) {
     entry.hp = state.currentHP;
     entry.maxHP = state.maxHP;
@@ -162,6 +171,14 @@ export function restoreHostility(saved) {
       state.isKO = true;
       state.currentHP = 0;
       if (KO_FACINGS.has(entry.facing)) state.koFacing = entry.facing;
+      // Carry the saved fall position back, so the re-export stays consistent (the
+      // server does the actual placement from this same record). First fall wins.
+      if (typeof entry.koRoom === 'string' && entry.koRoom &&
+          Number.isFinite(entry.koX) && Number.isFinite(entry.koY)) {
+        state.koRoom = entry.koRoom;
+        state.koX = entry.koX;
+        state.koY = entry.koY;
+      }
     } else if (validSavedHP(entry)) {
       state.maxHP = entry.maxHP;
       state.currentHP = entry.hp;
@@ -300,6 +317,19 @@ function damageNPC(npcId, amount) {
     // The facing playNPCDeathAnimation reads below, saved with the KO
     if (sprite) {
       try { state.koFacing = getNPCDirection(npcId, sprite); } catch (e) { /* no facing */ }
+      // Where it fell: the room it is physically standing in (not its home room, so
+      // a cross-room KO comes back in the right room) and its world x,y (D5). First
+      // fall wins: set only once.
+      if (state.koRoom === undefined && Number.isFinite(sprite.x) && Number.isFinite(sprite.y)) {
+        try {
+          const fellIn = roomIdAtFeet(sprite.x, sprite.y) || npc?.roomId || null;
+          if (typeof fellIn === 'string' && fellIn) {
+            state.koRoom = fellIn;
+            state.koX = Math.round(sprite.x);
+            state.koY = Math.round(sprite.y);
+          }
+        } catch (e) { /* no room */ }
+      }
     }
     recordHostility(npcId, state);
     // Save the KO (npcHostility, globalVarOnKO) soon rather than at the next 30 s sync,

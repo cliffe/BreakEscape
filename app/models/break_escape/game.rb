@@ -2098,6 +2098,54 @@ module BreakEscape
       room
     end
 
+    # Place knocked-out NPCs where they fell (D5). Driven by the KO position stored on
+    # each npcHostility record (merge_ko_position!). A same-room KO moves the native
+    # NPC to its fall spot; a cross-room KO strips the NPC from its home room here and,
+    # when this is the room it fell in, injects a copy of its scenario def at that spot.
+    def apply_ko_positions!(room, room_id)
+      positions = ko_positions
+      return if positions.empty?
+
+      if room['npcs'].is_a?(Array)
+        room['npcs'] = room['npcs'].filter_map do |npc|
+          pos = npc.is_a?(Hash) ? positions[npc['id']] : nil
+          next npc unless pos
+
+          ko_room, kx, ky = pos
+          ko_room == room_id ? npc.merge('x' => kx, 'y' => ky) : nil
+        end
+      end
+
+      positions.each do |npc_id, (ko_room, kx, ky)|
+        next unless ko_room == room_id
+        next if room['npcs'].is_a?(Array) && room['npcs'].any? { |n| n.is_a?(Hash) && n['id'] == npc_id }
+
+        npc_def = find_npc_in_scenario(npc_id)
+        next unless npc_def.is_a?(Hash)
+
+        room['npcs'] ||= []
+        room['npcs'] << npc_def.deep_dup.merge('x' => kx, 'y' => ky, 'isKO' => true, 'currentHP' => 0)
+      end
+    end
+
+    # { npc_id => [koRoom, koX, koY] } for every KO'd NPC whose hostility record holds
+    # a stored fall position. The values were validated at store time (ko_position_from).
+    def ko_positions
+      hostility = player_state['npcHostility']
+      return {} unless hostility.is_a?(Hash)
+
+      hostility.each_with_object({}) do |(npc_id, entry), out|
+        next unless npc_id.is_a?(String) && entry.is_a?(Hash) && entry['ko'] == true
+
+        room_id = entry['koRoom']
+        kx = entry['koX']
+        ky = entry['koY']
+        next unless room_id.is_a?(String) && kx.is_a?(Numeric) && ky.is_a?(Numeric)
+
+        out[npc_id] = [room_id, kx, ky]
+      end
+    end
+
     # Apply room_states delta to room data
     def apply_room_state_changes!(room, room_id)
       # Apply room_states delta (removals, additions, state changes) if an entry exists.
@@ -2150,6 +2198,11 @@ module BreakEscape
           end
         end
       end
+
+      # Place knocked-out NPCs where they fell (D5), always, regardless of a
+      # room_states entry: a same-room KO moves the NPC to koX,koY; a cross-room KO
+      # takes the NPC out of its home room and injects it into the room it fell in.
+      apply_ko_positions!(room, room_id)
 
       # These filters always run regardless of whether a room_states entry exists,
       # so that items/notes already collected in a previous session are suppressed
@@ -5030,12 +5083,74 @@ module BreakEscape
           facing = merged.dig(npc_id, 'facing')
           facing = entry['facing'] unless NPC_FACINGS.include?(facing)
           record['facing'] = facing if NPC_FACINGS.include?(facing)
+
+          # Where it fell (room id and world x,y), so a reload lays it in the spot it
+          # dropped, in the room it was knocked out in even when that is not its home
+          # room (D5). Untrusted client input: only a real room of this scenario and
+          # finite numbers in range are kept, nothing else; the first fall wins.
+          merge_ko_position!(record, merged[npc_id], entry)
         end
         merged[npc_id] = record
       end
       return if merged.size > MAX_NPC_VISIBILITY
 
       player_state['npcHostility'] = merged
+    end
+
+    # The largest KO coordinate the server will store: generous enough for any map,
+    # small enough to reject a huge forged number (D5).
+    MAX_KO_COORD = 100_000
+
+    # Validate and store a KO's fall position (room id + world x,y) on the hostility
+    # record. First fall wins: a stored valid position is kept over an incoming one.
+    # The room id must be a real room of this scenario; x,y must be finite numbers in
+    # range. Anything else is dropped (the KO is still kept, just unplaced).
+    def merge_ko_position!(record, stored, entry)
+      room_id, kx, ky = ko_position_from(stored)
+      room_id, kx, ky = ko_position_from(entry) if room_id.nil?
+      return if room_id.nil?
+
+      record['koRoom'] = room_id
+      record['koX'] = kx
+      record['koY'] = ky
+    end
+
+    # Pull a valid (room_id, x, y) from a hostility-record-shaped hash, or nils.
+    def ko_position_from(source)
+      return [nil, nil, nil] unless source.is_a?(Hash)
+
+      room_id = source['koRoom']
+      kx = source['koX']
+      ky = source['koY']
+      return [nil, nil, nil] unless room_id.is_a?(String) && scenario_room_ids.include?(room_id)
+      return [nil, nil, nil] unless valid_ko_coord?(kx) && valid_ko_coord?(ky)
+
+      [room_id, kx, ky]
+    end
+
+    def valid_ko_coord?(value)
+      return false unless value.is_a?(Numeric)
+      return false if value.respond_to?(:nan?) && value.nan?
+      return false if value.respond_to?(:infinite?) && value.infinite?
+
+      value >= 0 && value <= MAX_KO_COORD
+    end
+
+    # The ids of every room in this scenario. Reads scenario_data when it is loaded;
+    # sync_state's narrow load leaves it out, so a jsonb query reads just the keys
+    # (as ko_claimable_room_npc_ids does). Memoised per instance for the sync pass.
+    def scenario_room_ids
+      @scenario_room_ids ||=
+        if has_attribute?(:scenario_data)
+          rooms = scenario_data.is_a?(Hash) ? scenario_data['rooms'] : nil
+          rooms.is_a?(Hash) ? rooms.keys.select { |k| k.is_a?(String) }.to_set : Set.new
+        else
+          keys = self.class.where(id: id).pick(
+            Arel.sql("jsonb_path_query_array(scenario_data, '$.rooms.keyvalue().key')")
+          )
+          keys = JSON.parse(keys) if keys.is_a?(String)
+          Set.new(Array(keys).select { |k| k.is_a?(String) })
+        end
     end
 
     MAX_PLAYER_HP = 100_000
