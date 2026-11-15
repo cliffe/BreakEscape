@@ -272,6 +272,48 @@ test('needs NPC standing at its post tries its chair again once it is free (OFFI
     } finally { rig.restore(); }
 });
 
+test('postFetchRetryDue: a post retry fetches once per fetch timeout (15 s of needs clock)', () => {
+    assert.equal(seating.postFetchRetryDue({ post: true }, undefined, 0), true, 'never fetched at this stop');
+    assert.equal(seating.postFetchRetryDue({ post: true }, 1000, 15999), false);
+    assert.equal(seating.postFetchRetryDue({ post: true }, 1000, 16000), true);
+    assert.equal(seating.postFetchRetryDue({ post: false }, 1000, 60000), false, 'away from the post: never');
+    assert.equal(seating.postFetchRetryDue(null, undefined, 0), false);
+});
+
+test('fetchPushShort: a push that stopped more than 12 px from the spot walks again, three times at most', () => {
+    const spot = { x: 92, y: 164 };
+    assert.equal(seating.fetchPushShort({ x: 116, y: 207 }, spot, 0), true, 'Tom, live 5413: 46 px short');
+    assert.equal(seating.fetchPushShort({ x: 116, y: 207 }, spot, 3), false, 'no tries left');
+    assert.equal(seating.fetchPushShort({ x: 96, y: 170 }, spot, 0), false, 'close enough: the seat move does the rest');
+});
+
+test('needs NPC standing at its post fetches a chair again after a failed fetch, once per fetch timeout (OFFICE_LIFE_STUCK_RETURN round 5)', () => {
+    const rig = labSeatRig(235);
+    // Only a loose swivel chair 60 px south of the home cell (204,172): out of sitting reach, in fetch range
+    const chair = Object.assign(swivel('chair-white-1-rotate', 1), { x: 196, y: 206, width: 16, height: 26, depth: 232, active: true, objectId: 'loose_chair' });
+    chair.body = { enable: true, offset: { x: 0, y: 18 }, width: 16, height: 8, velocity: { x: 0, y: 0 },
+        setVelocity(x, y) { this.velocity.x = x; this.velocity.y = y; }, reset(x, y) { chair.x = x; chair.y = y; } };
+    chair.setPosition = (x, y) => { chair.x = x; chair.y = y; };
+    window.rooms = { open_plan: { objects: { loose_chair: chair } } };
+    const moves = [];
+    rig.behavior.goToAndStay = (x, y) => { moves.push([x, y]); rig.behavior._goToStayDest = { x, y }; };
+    rig.behavior.cancelMove = () => { rig.behavior._goToStayDest = null; };
+    try {
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), true, 'the first try fetches');
+        assert.ok(rig.behavior._fetch, 'fetching');
+        assert.equal(moves.length, 1);
+        seating.cancelFetch(rig.behavior); // the fetch fails (here: called away and back)
+        rig.behavior._goToStayDest = null;
+        window.npcNeedsSystem.clockMs = 4000;
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), false, 'a 4 s retry finds no chair in reach and does not fetch yet');
+        assert.equal(moves.length, 1);
+        window.npcNeedsSystem.clockMs = 15000;
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), true, 'the retry 15 s after the fetch fetches again');
+        assert.ok(rig.behavior._fetch);
+        assert.equal(moves.length, 2);
+    } finally { rig.restore(); }
+});
+
 test('a needs NPC stopped away from its post tries a chair once only', () => {
     const rig = labSeatRig(235);
     try {

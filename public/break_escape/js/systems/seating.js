@@ -1744,6 +1744,13 @@ const FETCH_TIMEOUT_MS = 15000;
 // try can end short (the walk onto the seat stuck against a colleague walking past), and a standing
 // NPC at a desk can block the only way to someone else's post (OFFICE_LIFE_STUCK_RETURN.md)
 const POST_SEAT_RETRY_MS = 4000;
+// A post retry fetches a chair no more often than this (needs clock): a fetch that failed (the push
+// ended short and the seat move stuck on the desk, leaving the chair out of reach) is tried again
+const POST_FETCH_RETRY_MS = FETCH_TIMEOUT_MS;
+// The push ends this close to the work spot, or it is walked again (pathfinding goes round the desk;
+// the seat move's own walk is a straight line and sticks on a desk corner)
+const FETCH_SPOT_PX = 12;
+const FETCH_PUSH_TRIES = 3;
 
 /** Where a needs NPC is parked: { key, targetId } or null while it's on the move. */
 export function needsStop(ns) {
@@ -1932,6 +1939,21 @@ export function postSeatRetryDue(stop, triedAt, now) {
     return now - triedAt >= POST_SEAT_RETRY_MS;
 }
 
+/**
+ * Whether a post retry may fetch a chair: only at the post, and POST_FETCH_RETRY_MS of needs clock
+ * after the last fetch at this stop (never fetched here: due).
+ */
+export function postFetchRetryDue(stop, fetchedAt, now) {
+    if (!stop?.post) return false;
+    if (!Number.isFinite(fetchedAt)) return true;
+    return now - fetchedAt >= POST_FETCH_RETRY_MS;
+}
+
+/** Whether a chair push that has stopped walks again: further than FETCH_SPOT_PX from the spot, tries left. */
+export function fetchPushShort(feet, spot, tries) {
+    return tries < FETCH_PUSH_TRIES && Math.hypot(spot.x - feet.x, spot.y - feet.y) > FETCH_SPOT_PX;
+}
+
 function updateNeedsSeat(behavior, ns, playerPos) {
     const sprite = behavior.sprite;
     const stop = needsStop(ns);
@@ -2012,6 +2034,7 @@ function updateNeedsSeat(behavior, ns, playerPos) {
     const retry = behavior._seatStopKey === stop.key;
     if (retry && (!postSeatRetryDue(stop, behavior._seatTriedAt, now)
         || window.npcNeedsSystem?.world?.inChatWith?.(behavior.npcId))) return false; // not mid-conversation
+    if (!retry) behavior._fetchTriedAt = undefined; // a new stop: the first try may fetch
     behavior._seatStopKey = stop.key;
     behavior._seatTriedAt = now;
     if (!hasSitFrames(sprite.texture.key)) return false;
@@ -2031,11 +2054,13 @@ function updateNeedsSeat(behavior, ns, playerPos) {
         // Walk to the work cell, roll a swivel chair out to it and in to the desk front, walk onto the seat
         return startSeatMove(behavior, near.obj, near.seat, { toward, needsStop: stop.key, ref: { x: feet.x, y: feet.y } });
     }
-    // A retry sits only on a chair already there: fetching one is a single try per stop
-    if (pref !== 'fetch' || retry) return false;
+    // A retry fetches only at the post and at most once per fetch timeout (Tom in test_needs_sims stood
+    // for good after his first fetch failed; OFFICE_LIFE_STUCK_RETURN.md round 5)
+    if (pref !== 'fetch' || (retry && !postFetchRetryDue(stop, behavior._fetchTriedAt, now))) return false;
     const fetchable = chairsNear(behavior.roomId, feet.x, feet.y, FETCH_RANGE)
         .filter(c => c.seat.kind === 'swivel' && c.obj.body && free(c))[0];
     if (!fetchable) return false; // work standing
+    behavior._fetchTriedAt = now;
     startFetch(behavior, fetchable.obj, feet, toward, stop.key);
     return true;
 }
@@ -2061,7 +2086,7 @@ export function tuckIn(chair, seat, facing, { glide = false } = {}) {
 function startFetch(behavior, chair, spot, toward, stopKey) {
     const foot = bodyFeet(chair);
     behavior._fetch = { chair, spot: { x: spot.x, y: spot.y }, toward, stopKey, phase: 'to_chair',
-                        until: Date.now() + FETCH_TIMEOUT_MS, issued: false };
+                        until: Date.now() + FETCH_TIMEOUT_MS, issued: false, pushes: 0 };
     chair.seatedBy = behavior.npcId; // reserved
     const pm = window.pathfindingManager;
     const grab = pm?.findNearestWalkableWorldCell?.(foot.x, foot.y + 12, 2) || { x: foot.x, y: foot.y + 12 };
@@ -2126,6 +2151,13 @@ function advanceFetch(behavior, ns, stop) {
     if (seat?.kind === 'swivel' && !arrived) setChairFacing(f.chair, snapFacing(dirC, seat.valid), seat);
     window.updateSpriteDepth?.(f.chair, f.chair.elevation || 0);
     if (!arrived) return false;
+    // Stopped short (a bump ends a walk early): walk the rest by the grid, round the desk
+    if (fetchPushShort(feet, f.spot, f.pushes)) {
+        f.pushes++;
+        seatLog(behavior, 'fetch_push_short', { tries: f.pushes });
+        moveNeeds(behavior, f.spot.x, f.spot.y);
+        return false;
+    }
     // The seat move tucks it to the desk's contact line before seating (section 6 item 3)
     return endFetch(behavior, true);
 }

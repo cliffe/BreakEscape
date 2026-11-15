@@ -35,6 +35,11 @@ const closeUi = async () => {
 };
 await closeUi();
 await page.evaluate(() => { const loop = window.game.sys.game.loop, raf = loop.raf; if (loop.actualFps < 10 && !raf.isSetTimeOut) { const cb = raf.callback; raf.stop(); raf.start(cb, true, 4); } loop.smoothStep = false; loop.minFps = 1; window.game.physics.world.setFPS(20); });
+// Turn-backs, parks and spoken or pictured lines, for row 3's switch-off turn-back
+await page.evaluate(() => {
+    const ed = window.eventDispatcher; window.__ev = []; const orig = ed.emit.bind(ed);
+    ed.emit = (ev, data) => { try { if (/^npc_(turned_back|need_parked|overheard|chatted)/.test(ev) && window.__ev.length < 400) window.__ev.push({ c: window.npcNeedsSystem.clockMs, ev, npcId: data?.npcId || data?.speakerId, reason: data?.reason, line: data?.line, picture: !!data?.picture, topic: data?.topic }); } catch (e) {} return orig(ev, data); };
+});
 const clock = () => page.evaluate(() => window.npcNeedsSystem.clockMs);
 const done = () => page.evaluate(() => Object.values(window.objectivesManager?.taskIndex || {}).filter(x => x.status === 'completed' || x.status === 'completing').map(x => x.taskId || x.id));
 /** Wait up to `ms` of needs clock (and 4x that of wall time) until every task in `want` has ticked. */
@@ -49,7 +54,22 @@ async function waitTasks(want, ms) {
     return { ok: false, missing: want.filter(x => !d.includes(x)), s: Math.round(((await clock()) - c0) / 1000) };
 }
 const coffeeBusy = () => page.evaluate(() => ['amara', 'tom', 'marek', 'sanjay'].some(id => window.npcNeedsSystem.getState(id)?.job?.targetId === 'office_coffee'));
-const read = async id => { await page.evaluate(id => window.__test.moveToNear(id, { timeoutMs: 20000 }), id).catch(() => null); await t(400); const r = await page.evaluate(id => window.__test.interact(id), id).catch(e => ({ err: String(e) })); await t(1200); await closeUi(); return r?.ok ?? r; };
+// Read a lever, walking up to it first. From the coffee station (bottom right) a walk to the back
+// wall can time out behind the staff at the station (game 5409: the Activity Board read returned
+// false, so no fresh queue formed), so a failed walk or read is tried again, up to three times
+const read = async id => {
+    const tries = [];
+    for (let i = 0; i < 3; i++) {
+        const mv = await page.evaluate(id => window.__test.moveToNear(id, { timeoutMs: 30000 }), id).catch(e => ({ err: String(e) }));
+        await t(400);
+        const r = await page.evaluate(id => window.__test.interact(id), id).catch(e => ({ err: String(e) }));
+        await t(1200); await closeUi();
+        tries.push({ move: mv?.ok ?? mv, read: r?.ok ?? r, reason: r?.reason || r?.error || r?.err || undefined });
+        if (r?.ok) return { ok: true, tries };
+        await t(1500);
+    }
+    return { ok: false, tries };
+};
 const confirmClick = () => page.evaluate(() => { const b = document.querySelector('.game-confirm-ok'); if (b) { b.click(); return true; } return false; });
 
 // Row 1: the queue at the office coffee, by itself after about a minute
@@ -61,19 +81,33 @@ console.log('row 1', JSON.stringify(report.rows[1]));
 // two wait in line, then back on
 for (let i = 0; i < 120 && await coffeeBusy(); i++) await t(1000);
 report.rows[3] = { board: await read('activity_board') };
-await page.evaluate(() => window.__test.moveToNear('office_coffee_socket', { timeoutMs: 20000 })).catch(() => null);
-const cq = Date.now();
-while (Date.now() - cq < 120000) {
-    const n = await page.evaluate(() => ['amara', 'tom', 'marek'].filter(id => window.npcNeedsSystem.getState(id)?.job?.phase === 'queued').length);
-    if (n >= 1) break;
+await page.evaluate(() => window.__test.moveToNear('office_coffee_socket', { timeoutMs: 30000 })).catch(() => null);
+// The README switches the socket off while Tom and Marek wait in line: wait for two in the queue
+// (one after 90 s), and read the board again once if nobody has queued by then
+const queued = () => page.evaluate(() => ['amara', 'tom', 'marek', 'sanjay'].filter(id => window.npcNeedsSystem.getState(id)?.job?.phase === 'queued'));
+let cq = Date.now(), q = [];
+while (Date.now() - cq < 150000) {
+    q = await queued();
+    if (q.length >= 2 || (q.length >= 1 && Date.now() - cq > 90000)) break;
+    if (!q.length && Date.now() - cq > 75000 && !report.rows[3].board2) {
+        report.rows[3].board2 = await read('activity_board');
+        await page.evaluate(() => window.__test.moveToNear('office_coffee_socket', { timeoutMs: 30000 })).catch(() => null);
+    }
     await t(500);
 }
+report.rows[3].queued_at_off = q;
+const offAt = await clock();
 await page.evaluate(() => window.__test.interact('office_coffee_socket')).catch(() => null); await t(800);
 report.rows[3].off = await confirmClick(); await t(500); await closeUi();
 report.rows[3].wait = await waitTasks(['see_coffee_off'], 40000);
+await t(3000);
+// The switch-off turn-back: who in the queue turned back or parked, and what was said or pictured
+report.rows[3].after_off = await page.evaluate(c => window.__ev.filter(e => e.c >= c), offAt);
+report.rows[3].turned_back = [...new Set(report.rows[3].after_off.filter(e => e.ev.startsWith('npc_turned_back') || e.ev.startsWith('npc_need_parked')).map(e => e.npcId))];
+report.rows[3].grumbles = report.rows[3].after_off.filter(e => /^npc_(overheard|chatted)/.test(e.ev) && /grumble/.test(e.topic || '')).map(e => ({ npc: e.npcId, line: e.line || null, picture: e.picture }));
 await page.evaluate(() => window.__test.interact('office_coffee_socket')).catch(() => null); await t(800);
 report.rows[3].on = await confirmClick(); await t(500); await closeUi();
-report.rows[3].ok = report.rows[3].wait.ok;
+report.rows[3].ok = report.rows[3].board.ok && q.length > 0 && report.rows[3].wait.ok && q.every(id => report.rows[3].turned_back.includes(id));
 console.log('row 3', JSON.stringify(report.rows[3]));
 
 // Open the kitchen and the lounge (walk into each and back)
@@ -99,6 +133,6 @@ console.log('row 6', JSON.stringify(report.rows[6]));
 report.stuck = await page.evaluate(() => window.npcNeedsSystem.getLog().filter(e => /^(return_stuck|walk_stuck)$/.test(e.ev)).map(e => ({ t: e.t, npc: e.npc, ev: e.ev, x: e.x, y: e.y })));
 await page.screenshot({ path: `${outDir}/tour-${gid}.png` });
 fs.writeFileSync(`${outDir}/tour-${gid}.json`, JSON.stringify(report, null, 1));
-console.log(JSON.stringify({ gid, row1: report.rows[1].ok, row3: report.rows[3].ok, row5: report.rows[5].ok, row6: report.rows[6].ok, rooms: report.rooms, stuck: report.stuck.length, errs: errs.length }));
+console.log(JSON.stringify({ gid, row1: report.rows[1].ok, row3: report.rows[3].ok, row3_queued: q, row3_turned_back: report.rows[3].turned_back, row3_grumbles: report.rows[3].grumbles, row5: report.rows[5].ok, row6: report.rows[6].ok, rooms: report.rooms, stuck: report.stuck.length, errs: errs.length }));
 await page.goto('about:blank');
 await browser.close();
