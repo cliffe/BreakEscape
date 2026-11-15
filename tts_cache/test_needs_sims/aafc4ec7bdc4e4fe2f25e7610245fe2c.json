@@ -1,0 +1,13 @@
+{
+  "key": "aafc4ec7bdc4e4fe2f25e7610245fe2c",
+  "npc": "jodie",
+  "text": "Fix whatever Keith's radio turns up. Lights, locks, leaks.",
+  "voice": "Zephyr",
+  "style": "Maintenance assistant, mid twenties, Glaswegian accent. Quick, warm, practical.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T18:07:13Z"
+}

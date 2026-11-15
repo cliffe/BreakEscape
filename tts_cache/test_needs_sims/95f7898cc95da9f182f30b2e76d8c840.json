@@ -1,0 +1,13 @@
+{
+  "key": "95f7898cc95da9f182f30b2e76d8c840",
+  "npc": "amara",
+  "text": "Go on, after you.",
+  "voice": "Aoede",
+  "style": "Office administrator, thirties, British Nigerian, London accent. Warm and quick.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:15:04Z"
+}

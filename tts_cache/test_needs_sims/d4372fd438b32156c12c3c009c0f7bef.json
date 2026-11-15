@@ -1,0 +1,13 @@
+{
+  "key": "d4372fd438b32156c12c3c009c0f7bef",
+  "npc": "amara",
+  "text": "Fine, I'll print it later.",
+  "voice": "Aoede",
+  "style": "Office administrator, thirties, British Nigerian, London accent. Warm and quick.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:16:39Z"
+}

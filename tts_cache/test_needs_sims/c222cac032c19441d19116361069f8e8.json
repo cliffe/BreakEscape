@@ -1,0 +1,13 @@
+{
+  "key": "c222cac032c19441d19116361069f8e8",
+  "npc": "neil",
+  "text": "Is it raining again?",
+  "voice": "Umbriel",
+  "style": "IT support engineer, mid forties, white British, Geordie accent. Dry, settled, unhurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T18:08:54Z"
+}

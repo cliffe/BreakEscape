@@ -1,0 +1,13 @@
+{
+  "key": "54b2ef373475dcfe971f9e7c1eef7dd4",
+  "npc": "grace",
+  "text": "Who left the window open?",
+  "voice": "Kore",
+  "style": "Office manager, early sixties, Swedish-born, decades in the UK. Kind and brisk.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:19:20Z"
+}

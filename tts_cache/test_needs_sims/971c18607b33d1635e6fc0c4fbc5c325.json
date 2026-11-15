@@ -1,0 +1,13 @@
+{
+  "key": "971c18607b33d1635e6fc0c4fbc5c325",
+  "npc": "marek",
+  "text": "Who brought cake in?",
+  "voice": "Orus",
+  "style": "Telecoms contractor, fifties, Polish-born, years in the UK. Gruff but not unfriendly.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:25:10Z"
+}

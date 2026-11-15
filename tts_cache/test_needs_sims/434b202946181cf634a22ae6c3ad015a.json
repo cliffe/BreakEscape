@@ -1,0 +1,13 @@
+{
+  "key": "434b202946181cf634a22ae6c3ad015a",
+  "npc": "amara",
+  "text": "Is it raining again?",
+  "voice": "Aoede",
+  "style": "Office administrator, thirties, British Nigerian, London accent. Warm and quick.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:15:46Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "119c5a7beb162acf9df8c3867bbeea37",
+  "npc": "jodie",
+  "text": "Nae bother. Away you go.",
+  "voice": "Zephyr",
+  "style": "Maintenance assistant, mid twenties, Glaswegian accent. Quick, warm, practical.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T18:07:29Z"
+}
