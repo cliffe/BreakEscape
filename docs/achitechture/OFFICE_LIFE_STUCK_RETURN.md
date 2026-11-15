@@ -1,5 +1,33 @@
 # Office life: stuck needs walks and re-routing
 
+## Handover (2026-11-15, round 5, budget stop): not ready for review
+
+**Cause of Tom's wedge, confirmed** (seating trace, games 5413 and 5414). Tom spawns at (96,192), 28 px below his home cell (92,164), with no chair within 36 px of it, so his first seat try fetches the loose swivel chair at about (115,223). He reaches it and pushes it toward the home cell, but the push walk ends 46 px short at about (116,207) (a bump ends a walk early). `endFetch` then starts the seat move, whose walk is a straight line, not a grid path: it sticks on his desk corner at (108,193), more than 8 px from the spot (`seat_move_end walk_stuck`, stage `walk`). The chair is left about 49 px from the home cell, beyond the 36 px sit reach, and the round 4 post retry never fetched, so he stood there until his stop key changed (93 s later in both games, after a coffee, when a second fetch from his desk worked). In 5404 and 5407 the stop never changed during row 2, so there was no seated listener.
+
+**Fix** (`public/break_escape/js/systems/seating.js`, `781614e66`):
+- A chair push that stops more than 12 px from the work spot (`FETCH_SPOT_PX`) walks the rest by the grid, round the desk, up to 3 times (`fetchPushShort`, log line `fetch_push_short`), before the seat move takes over.
+- The post retry fetches again, at most once per fetch timeout, 15 s of needs clock (`postFetchRetryDue`, `POST_FETCH_RETRY_MS`, `behavior._fetchTriedAt`, cleared on a new stop), so a fetch that failed for any other reason heals. Away from the post one try is still final.
+- Trace (`a5a89878d`): `fetch_start`, `fetch_end` (reason `arrived`, `timeout`, `stop_changed`, `no_stop`, `status`, `chair_gone`, `move:<owner>`) and `seat_move_end` (reason `walk_stuck`, `mount_stuck`, `unseated`, `stop_changed`, `no_stop`, `chair_gone`) go in the needs log; `goToAndStay` passes its owner to `cancelFetch`. The stuck-return driver keeps every seating line from the start of the game (`seat_lines`) and reports `staff_seated`.
+- Node tests in `test/js/seating.test.mjs`: `postFetchRetryDue`, `fetchPushShort`, and a rig where a failed fetch is not retried at 4 s and is retried at 15 s. The seating suite is 48 passed, 0 failed. The full `bin/test-js` and `tts_office_lines_test.rb` have **not** been run on this round's commits. `bin/rubocop`: no offences.
+
+**Drivers:**
+- `tools/playtest/needs-tour-regression.mjs` (`781614e66`): the Activity Board read walks up to the board again and retries up to three times (5409's read failed from the coffee station). It waits for two in the queue (one after 90 s, with one more board read at 75 s if nobody has queued). It records who turned back or parked after the switch-off and any `grumble` line or picture. Row 3 passes only when everyone queued turned back. **Not run yet** (game 5427 made for it).
+- `tools/playtest/needs-stuck-return-proof.mjs` (`55bc3de30`): an optional 5th argument `x,y` holds the player there once Sanjay sets off for the coffee, and reports his distance at the grumble (`away_check`). Sanjay turns back from the coffee queue at about (204,269) in every run read (5413, 5414), so the away point has to be over 160 px from there: `300,40` was planned. **Not run yet** (game 5426 made for it).
+- README row 2 (`2e186efbd`): the stand point is in earshot of the coffee queue, where Sanjay turns back, not of his desk.
+
+Live table (port 3093, keyless, headless setFPS(20), stand 232,176):
+
+| Game | Code | Row 2 played | see_turned_back | see_look_round | Grumble | Marek home (s) | Tom |
+|---|---|---|---|---|---|---|---|
+| 5413 | trace only, before the fix | yes | yes | yes | spoken, overheard | 6.25 | first fetch `walk_stuck`, sat after the second fetch at tick 374 |
+| 5414 | trace only, before the fix | yes | yes | **no** | spoken, overheard | 6 | the same: `walk_stuck` at (108,192), second fetch at tick 372 |
+| 5415 | the fix | **no**: no turn-back, no grumble (cause not read) | no | no | none | 6.25 | first fetch still `walk_stuck`; the post retry fetched at tick 65 and he sat |
+| 5422 | the fix | yes | yes | yes | spoken, overheard | 6 | the same: retry fetch at tick 65, seated |
+
+**What the two runs with the fix show.** The post fetch retry heals Tom: in both games he was seated about 13 s after his first fetch failed (tick 65 against tick 16), long before row 2. The push re-walk does not help: all three re-issues end within a tick, at the spot where the first push stopped (the re-issued `goToAndStay` ends at once), so the first fetch still ends `walk_stuck`. Next round, read why the re-issued walk ends at once (probably the grid's nearest walkable cell to the home cell is where Tom already stands, the cell below the desk), and either drop `fetchPushShort` or make the seat move's walk follow a grid path. 5415 did not play row 2: read its `sanjay_log` and `events` in `tmp/stuck-proof/stuck-proof-5415.json` before counting it against the fix. Row 2 is 1 of 2 with the fix, so the 5 of 5 target is not met yet.
+
+**Next steps (fresh context):** read 5415 and the push re-walk (above); run row 2 on five new games for 5 of 5; run the away proof (`node tools/playtest/needs-stuck-return-proof.mjs <gid> 3093 tmp/stuck-proof 232,176 300,40`) and check `away_check.dist` > 160 and the grumble is a picture, not overheard; run the tour on one game; then the train smoke on m01 and m02. Then `bin/test-js` in full and `tts_office_lines_test.rb`. Games 5423 to 5429 were made in this run and not driven (5428 is m01, 5429 is m02); they can be reused if the server is on the same DB. If everything passes, set this handover to ready for code review, with the summary of every engine change on the branch: slices 1 and 2, the settle guard, chair-aware re-route, chair ownership, post seat retry and this round.
+
 ## Handover (2026-11-15, round 4): not ready for review
 
 **Cause of the round 3 wedge, confirmed** (seating trace and chair probe in the proof driver, games 5391, 5392, 5398). After his turn-back Sanjay stops idle at his post with his feet 32 to 35 px from his home cell (92,124), so the seat search looks from the home cell (`needsSeatRef`, within `POST_SNAP`). It runs once (`_seatStopKey` set), starts no seat move and no fetch. His own chair, tucked in when he stood, has its foot at (89,126): 4 px from his home cell and 35.9 px from Marek's post (53,128). Marek's post is more than 36 px from Sanjay's home cell, so the `free()` filter in `updateNeedsSeat` counted it as another NPC's post, and any chair within 36 px of it was Marek's. Sanjay's own chair was refused, he stood in the corridor mouth for good, and Marek waited on him.
