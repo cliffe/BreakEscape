@@ -70,6 +70,23 @@ await page.evaluate(() => {
             chairFoot: cf && { x: Math.round(cf.x), y: Math.round(cf.y) }, dChair: cf ? Math.round(Math.hypot(cf.x - feet.x, cf.y - feet.y)) : null,
             dChairHome: cf && ns.home ? Math.round(Math.hypot(cf.x - ns.home.x, cf.y - ns.home.y)) : null, chairBy: ch?.seatedBy || null });
     });
+    // Any office staff member standing idle at the post after a seat try (Tom in game 5404): the
+    // chairs within 48 px of the home cell, with who holds them, once per 8 s each
+    window.__staffProbes = []; const lastProbe = {};
+    window.npcNeedsSystem.onTick(sys => {
+        if (window.__staffProbes.length > 60) return;
+        for (const id of ['amara', 'tom', 'grace', 'marek', 'sanjay']) {
+            const b = window.npcBehaviorManager.getBehavior(id); const ns = sys.getState(id);
+            if (!b?.sprite?.body || !ns?.home || b._seat || b._seatMove || b._fetch || b.isMoving || !b._seatStopKey || ns.mode !== 'idle' || !ns.atPost) continue;
+            if (lastProbe[id] && sys.clockMs - lastProbe[id] < 8000) continue;
+            lastProbe[id] = sys.clockMs;
+            const bb = b.sprite.body;
+            const objs = Object.values(window.rooms?.[b.roomId]?.objects || {});
+            window.__staffProbes.push({ c: sys.clockMs, id, feet: { x: Math.round(bb.center.x), y: Math.round(bb.bottom) }, home: { x: Math.round(ns.home.x), y: Math.round(ns.home.y) },
+                chairs: objs.filter(o => o.active && (o.isSwivelChair || /chair/.test(o.texture?.key || ''))).map(o => { const f = { x: o.x + o.width / 2, y: o.y + o.height };
+                    return { key: o.texture?.key, foot: { x: Math.round(f.x), y: Math.round(f.y) }, dHome: Math.round(Math.hypot(f.x - ns.home.x, f.y - ns.home.y)), by: o.seatedBy || null }; }).filter(c => c.dHome < 48) });
+        }
+    });
     window.npcNeedsSystem.onTick(sys => {
         const sj = sys.getState('sanjay'); const sp = sys.speakers.find(x => x.npcId === 'sanjay');
         if (!sp || window.__listen.length > 40) return;
@@ -172,6 +189,8 @@ report.marek_arrivals = mlog.filter(e => e.ev === 'arrival').map(e => ({ t: e.t,
 report.events = await page.evaluate(() => window.__p.filter(e => !e.ev.startsWith('npc_chatted') || ['sanjay', 'marek'].includes(e.d?.speakerId || e.d?.npcId)));
 report.listen = await page.evaluate(() => window.__listen);
 report.sanjay_seat = await page.evaluate(ra => window.__seatTrace.filter(e => e.c >= ra - 5000), readAt);
+report.staff_probes = await page.evaluate(() => window.__staffProbes);
+report.staff_log = await page.evaluate(() => window.npcNeedsSystem.getLog().filter(e => /fetch|seat|chair/.test(e.ev)).slice(-40));
 report.sanjay_seat_probes = await page.evaluate(ra => (window.__seatProbes || []).filter(e => e.c >= ra), readAt);
 report.sanjay_log = needsLog.filter(e => e.npc === 'sanjay' && e.t >= readTick - 40 && !/^(arrival|need|decay)/.test(e.ev)).slice(0, 40);
 report.marek_path = trace.filter((e, i) => i % 2 === 0).map(e => [e.c, e.x, e.y]);
