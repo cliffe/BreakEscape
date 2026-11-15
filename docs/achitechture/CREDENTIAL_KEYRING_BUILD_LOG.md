@@ -271,3 +271,54 @@ Run under the shared lock (`flock .../tests.lock`): `bin/test-js -j 3; bin/rails
 - The real driver of the x2/800x600 overflow, once labels were dropped, was the tile row not folding
   at every size. Folding the remote row at all sizes (not only x2/short) is what wins the headroom;
   the merge and the dropped labels alone were not enough at 800x600 and 390x844.
+
+## K0 client half: R1 fixes (UX review round 1: 9 majors, 7 minors)
+
+Fixes on `build/keyring-k0`; commits `8fc2882a1` (client, tests) and `209a8717b` (signin-fit), then
+the live driver and this log. The server controller and its tests are untouched (another branch).
+Keyboard (non-remote) screens: every change is behind `signIn.remote` or a remote-only class, and the
+keyboard suites (`password-signin-mode`, `access-signin-*`, `password-minigame-submit`) pass unchanged.
+
+| Finding | Fix | Proof |
+|---|---|---|
+| M1 failed or pending `/login_accounts` hid captures | `remotePicker` starts `null`; `setRemoteAccounts` sets it only from a real answer (`paint()` omits `picker` on a failure; a success defaults to `accounts`); `mergeRemoteTiles` drops unlisted captures only for `accounts` | `password-signin-mode` (paint's real failed shape; the pending variant), `access-remote-signin` (failure sends no `picker` key). Live E2 (500): Lena and Ian tiles, tagged, with the "HB-FIN-02's accounts could not be loaded." line |
+| M2 "Choose an account." under Other user and locked form | on a remote screen a chosen form clears a base line that equals the prompt; state lines (Checking, NLA, headless, failed) still show | state test, CSS test; live: Other user message is empty |
+| M3 late answer redrew into a folded row | option (a): `typing` is text in a field, not focus; the late answer returns the row. A locked session keeps its form | pc-monitor-frame computed `display` test; live E1: form at the cap, row visible after the late answer |
+| M4 Change dead or stranding | `signin-chosen` (Change) is `chosen && tiles offered`; the fold is its own `signin-remote-folded`; remote `signInTilesOffered()` is false for a locked session; `clearSignInChoice` is a no-op with no row | state and computed-style tests (typed, locked, tiles) |
+| M5 no scroller for many tiles | `fitSignInTiles()` caps `#signin-tiles` to the height left (trims for the scrollbar and cue), square 8px scrollbar, "More below" cue (`REMOTE_MORE_BELOW_TEXT`, equal to `more-below.js`, pinned by a test: a new import would need adding to 12 harness copy lists). Re-run after every render and on resize | seven-tile fixture in signin-fit at five sizes (320x640 was 10px over before the trim loop; now 12px spare); stubbed-layout test |
+| M6 full kind names | tile `title` "Lena Fox, Captured password", badge `role=img` with an `aria-label`, chosen line "Lena Fox (lfox), Captured password" | state test; live titles |
+| M7/m5 signin-fit | three-tag tile drawn by the real tag renderer (two pills, `+2`, asserted); seven-tile fixture; scrollWidth and line-count (Range rects) checks; no-wrap host check; true longest refusal across all refusal strings; headless fixture holds a `current`; `cleanup()` between fixtures; `CHROME`, `PLAYWRIGHT` env with fallbacks; `chdir` to the repo root | 35 checks PASS at 1400x1000, 800x600, 915x412, 390x844, 320x640 (game 5063). Corrected spare table below |
+| M8/m6 tests on what is on screen | new tests: the 403/422/404/`not_responding` closes with `/capture_secrets` pending, slow `/login_accounts` past the cap and its late answer, close then late 403/200, failed accounts; computed-style tests for the late redraw, Change, scroller and ellipsis; `32-character` and `seven tiles` tests renamed to what they assert. Each new test fails on the pre-fix code (checked by restoring the old sources) |
+| m1 late 403 toast after close | `closeScreen` returns before the alert when the screen is gone; toast kind `error` | access-remote-signin; live E4: no toast |
+| m2 `pc_signin_shown` | emitted from `paint()` once the answer has laid out, with the tiles the row shows, never after a close | access-remote-signin |
+| m3 host split at hyphens | a host label is a `.signin-nowrap` span in the message (text unchanged, so playtest text matches still work; a U+2060 joiner was tried and rejected, it changes the text) | computed-style test, signin-fit split check |
+| m4 late answer over "Signing in..." | `_signingIn` flag skips the base-line write | state test |
+| m7 new PC positions | NOT DONE: the finance and desk doors are locked in a fresh game and `loadRoom` needs engine arguments I did not chase; positions stay as run 3 recorded. Open item | none |
+
+Choices: M3 took option (a) (the row returns), not the "Accounts found" line. With captures present and
+no answer yet, the cap now shows the captured tile row with "Still checking for accounts..." rather than the
+Other user form (keyboard behaviour: captures start on their tiles); with none, the cap shows the form.
+
+Corrected fit table (signin-fit, spare px, game 5063): other-refusal-longest (longest refusal is now the
+49-character wrong-password line) 105 at x2, 96 at 915x412; switch-held 101/96; headless with a held
+session 73/68; typed 77/68; tagged tiles with the real three-tag tile 141/170; seven tiles 33/118
+(1400x1000 / 915x412). The earlier "159px spare, three tags" row was a one-tag tile.
+
+### Live proof (plan 5.5, driven in game): `tools/playtest/signin-live-drive.mjs`
+Keyless server on :3062, headless, setFPS(20), fixed steps on. Shots in
+`/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/4ecd98f2-4e95-460a-a7ea-2031ffddfff5/scratchpad/k0fix1/shots/`.
+- Game 5067 (`main`): took `kit_dropbox`, planted at `comms_port` ("Plug it in", the view opened itself, footholds
+  `jack_comms_port`). Sam's PC before the cards: the PC's three tiles untagged. Lena's PC before: the Other user
+  form (picker false, no tiles). After the cards (read in the lobby): Sam's PC tags Lena and Ian Captured; HB-IT-01 one
+  tagged Ian tile; HB-OPS-02 NLA line plus the two captured tiles; HB-DOOR-01 headless line plus captured tiles;
+  Lena's PC captured tiles. Other user: empty message, Change shown, row folded. Delay run (route holds
+  `/login_accounts` 5 s): +1 s "Checking...", +3.6 s the captured row with "Still checking for accounts...",
+  +6.2 s "Choose an account." with the row visible. Chose the Lena tile ("Lena Fox (lfox), Captured password"),
+  typed the earned letter password, remote session opened (`sessions.lena_pc` remote, `jack_comms_port`).
+  No page errors. Screens at 1400x1000, 800x600, 915x412, 390x844.
+- Game 5069 (`edge`, fresh): no captures, 5 s delay on Sam's PC: Other user form at the cap, the row on the late answer
+  (M3). With captures, forced 500: captured tiles stay with the failed line (M1). Forced 403 `not_responding`: back
+  to the view with "HB-FIN-02 is not responding." as an `error` toast (P6). Late 403 after X: no toast (m1).
+- Not driven live: the headless host on Switch user (needs a held session on HB-DOOR-01; covered by the
+  `headless-line` fixture with a held `current`), a locked remote session (P8, covered by state and computed-style
+  tests and the fixture), N14.
