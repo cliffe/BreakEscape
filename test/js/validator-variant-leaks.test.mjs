@@ -141,6 +141,17 @@ test('unauthorizedTextVariants: an answer in a { condition, text } variant warns
   assert.deepEqual(errors(l), []);
 });
 
+test('unauthorizedTextVariants inside minigameData (where the engine reads it): a combination in prose warns', { skip }, () => {
+  const lock = { id: 'pwbox', locked: true, lockType: 'combination', requires: [12, 30, 5] };
+  const l = issues(scene({ id: 'esd', minigameData: { unauthorizedTextVariants: [{ condition: 'globalVars.x', text: 'dial 12-30-5 first' }] } }, { lock }));
+  assertHas(warnings(l), 'minigameData/unauthorizedTextVariants[0]/text');
+});
+
+test('narrative walk: a name inside contents whose locked is any truthy value is skipped', { skip }, () => {
+  const l = issues(scene({ id: 'crate', type: 'safe', locked: 'yes', lockType: 'key', contents: [{ id: 'tag', name: 'Tag Satchel42' }] }));
+  assertNot(warnings(l), 'Tag Satchel42');
+});
+
 // ── where the variant sits ─────────────────────────────────────────────────────────────────────
 
 const box = (extra) => ({ id: 'crate', type: 'safe', contents: [tv('the code is Satchel42')], ...extra });

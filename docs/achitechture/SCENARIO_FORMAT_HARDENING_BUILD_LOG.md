@@ -4797,7 +4797,7 @@ edited here, another track owns it):
 { "lock": "hl_box", "in": "drop_terminal_screen", "reason": "the drop terminal's live-capture ledger names the HL file number (the hl_box password) only under invoice_booked/flag2_submitted, after the player has earned flag 2, which itself gives the file number", "approved": "<a new heading in docs/agents/VALIDATOR_DECISIONS.md>" }
 ```
 
-**Tests.** `test/js/validator-variant-leaks.test.mjs` (25 subtests): each of the original three
+**Tests.** `test/js/validator-variant-leaks.test.mjs` (27 subtests): each of the original three
 surfaces warns on a matching answer, stays silent under an acknowledgedClues marker (which becomes an
 info line), stays silent on a short (<6 char) answer, and stays silent on a non-matching value; a
 revealOnGlobal object's server-only field (`usePayload.secret`, x-serverOnly) carrying the answer is
@@ -4841,3 +4841,11 @@ Reviewer notes, recorded and not changed:
 - The m09 wording in the first draft ("deliberate gated clue, not an early leak") reasoned about when
   a variant is displayed, but the check exists because all variant values ship at load. The triage
   paragraph above now says so; the outcome (a warning, declare with a marker) is unchanged.
+
+#### Variant fields: R2 outcomes (orchestrator, 2026-11-15)
+
+R2 counts: 0 blockers, 0 majors, 2 minors. Both are fixed.
+
+- Variants inside `minigameData` and `scenarioData` are walked again. Only `globalVariables` is still skipped. The step 1 error path matches a combination only as an array or a bare digits string, so a combination written in prose in `minigameData.unauthorizedTextVariants` (where the engine reads it) went unreported. A line that step 1 already reports as an error may now also get a warning; that is accepted over a missed leak.
+- Two subtests were added (now 27). One shows a prose combination in `minigameData.unauthorizedTextVariants` warns. The other shows the narrative walk skips contents whose `locked` is any truthy value.
+- The corpus rerun over every scenario is unchanged: m09 gives 5 variant warnings and nothing else fires.

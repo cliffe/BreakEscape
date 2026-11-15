@@ -432,8 +432,11 @@ module SecretLeaks
         end
         withheld = contents_withheld?(node, ctx)
         node.each do |k, v|
-          # minigameData and scenarioData strings are already compared by the stronger error path
-          next if COPY_SINK_KEYS.include?(k)
+          # Variants inside minigameData and scenarioData are walked too: the step 1 error path
+          # matches a combination only as an array or a bare digits string, so a combination in
+          # variant prose there would otherwise go unreported. A line already reported as an error
+          # may also get a warning; that is accepted over a missed leak.
+          next if k == 'globalVariables'
 
           walk.call(v, "#{path}/#{k}", nid, hidden || (k == 'contents' && withheld))
         end
