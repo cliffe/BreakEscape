@@ -25,6 +25,7 @@ writeFileSync(join(root, 'utils', 'lock-scope-refusal.js'), readFileSync(join(he
 writeFileSync(join(root, 'utils', 'computer-keywords.js'), readFileSync(join(here, '../../public/break_escape/js/utils/computer-keywords.js'), 'utf8'));
 writeFileSync(join(root, 'utils', 'pc-monitor.js'), readFileSync(join(here, '../../public/break_escape/js/utils/pc-monitor.js'), 'utf8'));
 writeFileSync(join(root, 'utils', 'npc-headshot.js'), readFileSync(join(here, '../../public/break_escape/js/utils/npc-headshot.js'), 'utf8'));
+writeFileSync(join(root, 'utils', 'remote-host-text.js'), readFileSync(join(here, '../../public/break_escape/js/utils/remote-host-text.js'), 'utf8'));
 writeFileSync(join(dir, 'framework', 'base-minigame.js'), 'export class MinigameScene { constructor() {} }\n');
 writeFileSync(join(dir, 'password', 'password-minigame.mjs'), readFileSync(src, 'utf8'));
 

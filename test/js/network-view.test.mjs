@@ -29,6 +29,7 @@ copy('utils/more-below.js');
 copy('utils/author-html.js');
 copy('utils/conditional-text.js');
 copy('systems/global-writer.js');
+copy('utils/remote-host-text.js');
 copy('systems/network-links.js');
 copy('minigames/framework/base-minigame.js');
 copy('minigames/network-view/network-view-minigame.js');

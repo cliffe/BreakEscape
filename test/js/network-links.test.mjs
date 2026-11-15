@@ -36,6 +36,7 @@ copy('systems/forced-minigame-guard.js', 'systems/forced-minigame-guard.mjs');
 copy('systems/consumables.js', 'systems/consumables.mjs');
 copy('utils/conditional-text.js', 'utils/conditional-text.js');
 copy('systems/global-writer.js', 'systems/global-writer.js');
+copy('utils/remote-host-text.js', 'utils/remote-host-text.js');
 const inventoryUrl = copy('systems/inventory.js', 'systems/inventory.mjs', [
     ["'../core/rooms.js'", "'./rooms-stub.mjs'"],
     ["'./ink/ink-engine.js'", "'./ink-stub.mjs'"],

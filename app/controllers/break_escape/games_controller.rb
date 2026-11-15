@@ -1448,9 +1448,19 @@ module BreakEscape
       # A request that carries a foothold is the remote sign-in screen (credential keyring K0,
       # section 5.1): judged by reach through the foothold, never at the keyboard, and never
       # given a post-it. A malformed foothold is refused here (400), never falling through to
-      # the keyboard branch.
-      if params[:foothold].present?
-        result = @game.remote_login_accounts(info, params[:foothold].to_s)
+      # the keyboard branch. "Carries a foothold" means any non-empty string (a whitespace-only
+      # scalar such as foothold=%09 is not present? but still a foothold request, so it must not
+      # win the keyboard answer), or a structured value (array or hash/Parameters). Only a
+      # missing or truly empty foothold= stays on the keyboard path below.
+      foothold = params[:foothold]
+      foothold_request =
+        case foothold
+        when String then !foothold.empty?
+        when Array, Hash, ActionController::Parameters then true
+        else false
+        end
+      if foothold_request
+        result = @game.remote_login_accounts(info, foothold.to_s)
         return render json: result[:body], status: result[:status]
       end
 
