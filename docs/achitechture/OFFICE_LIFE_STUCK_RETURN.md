@@ -1,5 +1,36 @@
 # Office life: stuck needs walks and re-routing
 
+## Handover (2026-11-15, third budget stop): not ready for review
+
+Row 2 now plays: 2 of 3 runs give both `see_turned_back` and `see_look_round` with the spoken grumble. Marek's walk home after his cup is broken in every run that plays row 2 (0 of 4): a new wedge, cause found below, not fixed.
+
+This run (`410f716f9` scenario and driver, `9d4eb9276` stall dump, and the handover commit after them):
+- **Stand point.** The player standing in Marek's path is the intended yield (README tour step 7), so no engine change. The driver now stands at (232,176), in the office's east half south of Amara's desk, off both of Marek's legs; within 160 px of Sanjay's desk (about 140 px), and the grumble was overheard from there in 5382 and 5383. (64,224), tried first, is on Marek's outbound leg from his post (game 5378: `walk_stuck` at his post, the player in the way). README row 2's "where to stand" now names this spot.
+- **see_look_round.** Slice 2 did not break it. A grumble out of earshot is a picture, and a picture still sets `s.saying`, which `_buildSpeakers` reads, so seated staff turn for a picture as for a line (OFFICE_LIFE_PLAN 12.7 choice 3). The 0 of 5 came from row 2 not playing: with no turn-back there is no grumble to look round at. The earlier driver also counted the grumble from `npc_chatted`, which a grumble never emits (it emits `npc_overheard`), so `sanjay_grumble` was always empty; fixed. Every run here with a turn-back had listen swivels (Amara, Tom, Marek) within a second of the line.
+- **see_turned_back.** Row 2 needs the turn-back path. Sanjay's caffeine is set when Marek leaves his post; Sanjay starts the job at once, queues at his desk behind Marek's claim (`queued`, `windup`) and turns back when Marek starts using the machine (`turned_back avoid`, about 5 s later). That needs Sanjay free when Marek leaves. A work spell is never interrupted, and one that ends after Marek has reached the coffee chooses no job: `parked avoid` at selection, no `npc_turned_back`, no grumble (game 5378, tick 1124). Fix, scenario and driver: reading the Coffee Notice also sets Sanjay's `work` to 100, so no work spell starts during the beat; the driver reads the notice only when Sanjay and Marek are both idle; README row 2 tells a player to read it while Sanjay is not typing.
+- **Driver watch bug.** The watch for Marek's cup counted any `used` from the start of the game, so row 1's cup and walk home ended the watch at once (5375, 5376). It counts only cups after the notice now.
+
+**Open: the new wedge (next step).** After his turn-back Sanjay walks back to his post and stops short of his chair, standing at about (116,140) body centre, not seated (his chair, `chair-white-1-rotate8` at (77,115), is not immovable). He stands in the mouth of the only corridor to Marek's post (52.8,128): Sanjay's chair above (y 115 to 126), desk1 below (41 to 99 x 147 to 157), Tom seated at (81,158). Stall dump, game 5383: Marek's body (107,145) 20x10, velocity 0, `isMoving` false, nothing touching, `pathIndex` 0 of a 10-point path straight through Sanjay ([116,148] [116,140] [108,132] then west on y 132). The `includeHeld` search finds no way round (the gap above Sanjay is 9 px for a 10 px body), so it falls back to the plain path, and the local avoidance yields to a standing NPC that never moves; `return_stuck` after three tries, the 15 s back-off, again. Leads, in order:
+  1. Why Sanjay did not sit. `updateNeedsSeat` tries once per stop (`_seatStopKey`); his feet are probably more than `NEAR_CHAIR` (36 px) from the chair's foot, or the seat move went `stuck` against Marek, and it is never tried again at this stop. A retry while the NPC stands idle at its post (say every few seconds, or when the blocker has gone) would clear the corridor. Check `needsSeatRef`'s `POST_SNAP` case with his home cell.
+  2. Whether a needs NPC standing idle at its post should step aside for a walker that has yielded to it for a while.
+  The earlier 4 of 4 at 6 s were runs where row 2 did not play, so Sanjay was seated (or away) when Marek walked home.
+
+Also open: the grumble earshot pair live (one out of earshot as a picture), README tour rows 1, 3, 5 and 6, and a node test for the settle guard.
+
+Live table (port 3093, keyless, headless setFPS(20)):
+
+| Game | Stand | Row 2 played | see_turned_back | see_look_round | Grumble | Marek home (s) |
+|---|---|---|---|---|---|---|
+| 5375, 5376 | 64,224 | no (watch bug ended the run) | no | no | none | not measured |
+| 5377 | 64,224 | yes | yes | yes | spoken, overheard | never: `return_stuck` at (118,150) |
+| 5378 | 64,224 | no: Marek `walk_stuck` at his post (player on his route); Sanjay parked at selection | no | no | none | never |
+| 5381 | 232,176 | no (queue cleared at 203 s; cause not read) | no | no | none | never: stuck at (109,138) |
+| 5382 | 232,176 | yes | yes | yes | spoken, overheard | never: stuck at (108,133) |
+| 5383 | 232,176 | yes | yes | yes | spoken, overheard | never: `return_stuck` at (117,150), dump above |
+| 5387, 5388 | train smoke m01, m02 | | | | | SMOKE OK, 0 failed |
+
+Tests: `bin/test-js` 673 passed, 0 failed; `tts_office_lines_test.rb` 9 runs, 0 failures; `bin/rubocop` no offences.
+
 ## Handover (2026-11-15, second budget stop)
 
 Earlier: slice 1 (`0a5cdfd98`, `5a6525cf9`), slice 2 grumble earshot (`6c2eb2d6b`), proof driver (`9620e78f1`).
