@@ -387,3 +387,26 @@ Files touched:
   units, live proof of the mug carry with no 422.
 - **Slice C (KO and reload):** KO-while-carrying drop and reload-mid-carry
   behaviour, with their live proofs.
+
+### Live proof through the game client
+
+Keyless server on :3095 from this worktree, headless, `setFPS(20)` with fixed steps on, fresh
+`test_needs_sims` games. Driver: `tools/playtest/npc-carry-live-proof.mjs` (Grace notices the office
+mugs and carries them to the washing-up tray; the `consume` beat lets her finish, the `drop` beat
+suspends her mid-carry with `npcNeedsSystem.control('grace', 'suspend')`). The room fetch is read
+before, mid-carry, after and after an `about:blank` reload.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Pick-up | PASS | `carry_object` grace/office_mugs 200 in games 5515, 5516, 5517, 5522, 5523; room fetch mid-carry: office has no mug, Grace `itemsHeld: [office_mugs]` |
+| Consume at the tray | PASS | games 5517 and 5523: `consume_carried` grace/office_mugs 200 (roomId kitchen); after it the office and kitchen fetches hold no mug and Grace's `itemsHeld` is empty |
+| Reload after consume | PASS | about:blank then back: office, kitchen and lounge fetches hold no mug; no mug in `window.rooms` |
+| Put-down (job aborted or suspended) | PASS | games 5515, 5516, 5522: `put_down_object` 200 with the NPC position; fetch shows one `office_mugs` in the office at that `position` and Grace's `itemsHeld` empty |
+| Reload after put-down | PASS | game 5522: the same single mug at `px 119.2, py 111.4` after the reload, none in the kitchen or lounge, one object in `window.rooms` |
+| No `remove_object` for the mug, no mug 422 | PASS | 0 `remove_object` requests in the whole server log; every carry_object, put_down_object and consume_carried for `office_mugs` answered 200 |
+| Page errors | PASS for the mug beats | 0 pageerrors, 0 console errors in games 5515, 5516, 5522 (see the next row for 5517) |
+| Copier output carried by Amara | FINDING | `carry_object` and `put_down_object` for `copier_out_a` (a reveal slot, outside the allowlist) both answer 422 (6 in the log, games 5517 and 5523); the client ignores them, but they show as console errors. The plan's "put-down is a no-op" holds for the game state, not the status code |
+| README tour rows 1, 3, 5, 6 (`needs-tour-regression.mjs`, game 5523) | rows 3, 5, 6 PASS; row 1 FAIL | row 1 missed the `see_queue_chat` task (151 s); 0 page errors, 0 stuck. Row 1 is the queue chat, not a carry path; not compared against a run without this branch |
+| train-smoke m01 and m02 (games 5524, 5525) | PASS | `TRAIN-SMOKE 2 games, 0 failed` |
+
+Not done: KO while carrying and reload mid-carry (slice C).
