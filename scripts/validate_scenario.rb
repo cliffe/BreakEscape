@@ -740,78 +740,107 @@ def check_desktop_users(json_data, chars_dir = DESKTOP_USER_CHARS_DIR)
   issues
 end
 
-# Check for unknown fields in JSON that aren't in the schema
+# Check for keys the schema does not declare. The schema (scripts/scenario-schema.json) is the one
+# list of known keys: every open block it describes (rooms, objects, NPCs, event mappings, timers,
+# music events and the rest) is checked against the properties it declares there, so there is no
+# second list in this file. A closed block (additionalProperties: false) is left to json-schema,
+# which reports its unknown keys as errors. A "_" author note, an id-map key and anything inside
+# free data are never unknown. Unknown keys here stay warnings.
+def schema_unknown_key_warnings(data, node, warnings, prefix: nil, seen: nil)
+  retired = BreakEscape::FormatUpgrade.retired_entries.map { |e| e[:key] }.to_set
+  schema = BreakEscape::ScenarioSchema
+  item_def = schema.at('#/definitions/item').branches.first
+  room_def = schema.at('#/definitions/room').branches.first
+  BreakEscape::SchemaWalk.walk(data, node) do |value, vnode, vpath|
+    next unless value.is_a?(Hash) && vnode.is_a?(schema::Node)
+    next if vnode.free_branch?
+    # a hash reached twice (a declared grant's item is also under timers[].actions) is checked once
+    next if seen&.include?(value.object_id)
+
+    seen&.add(value.object_id)
+
+    obranches = vnode.object_branches
+    next if obranches.empty? || obranches.any? { |b| schema.map_branch?(b) }
+    next if obranches.any? { |b| b['additionalProperties'] == false }
+
+    declared = vnode.declared_property_keys
+    next if declared.empty?
+
+    is_item = vnode.branches.any? { |b| b.equal?(item_def) }
+    is_room = vnode.branches.any? { |b| b.equal?(room_def) }
+    value.each_key do |key|
+      k = key.to_s
+      next if declared.include?(k)
+      next if BreakEscape::AuthorNotes.note?(vnode, k)
+      # A retired key (renamed by a FormatUpgrade step) already gets its rename line from
+      # check_retired_keys, so one slip prints one line.
+      next if retired.include?(k)
+
+      hint = unknown_key_hint(k, declared)
+      rel = unknown_key_path(data, vpath)
+      where = if prefix.nil? then rel
+              elsif rel.empty? || rel.start_with?('[') then "#{prefix}#{rel}"
+              else "#{prefix}/#{rel}"
+              end
+      warnings << if vpath.empty? && prefix.nil?
+                    "⚠️ WARNING: Top-level field '#{k}' is not recognized in the schema#{hint} — this field will be ignored by the game engine. Remove it if not needed, or check if the spelling is correct."
+                  elsif is_room && vpath.length == 2 && vpath.first == 'rooms'
+                    "⚠️ WARNING: Room '#{vpath.last}' has unknown field '#{k}'#{hint} — this field will be ignored by the game engine."
+                  elsif is_item
+                    "⚠️ WARNING: '#{where}' has unknown field '#{k}'#{hint} — if this is minigame-specific configuration data, nest it under 'minigameData' instead."
+                  else
+                    "⚠️ WARNING: '#{where}' has unknown field '#{k}'#{hint} — this field will be ignored by the game engine."
+                  end
+    end
+  end
+  warnings
+end
+
+# "rooms/office/objects[2](safe)/minigameData": the data path, with the id (or name or type) of
+# each array entry, as the unknown-key warnings print it.
+def unknown_key_path(data, vpath)
+  out = +''
+  cur = data
+  vpath.each do |seg|
+    cur = cur.is_a?(Hash) ? cur[seg] : (cur.is_a?(Array) && seg.is_a?(Integer) ? cur[seg] : nil)
+    if seg.is_a?(Integer)
+      tag = cur.is_a?(Hash) ? (cur['id'] || cur['name'] || cur['type']) : nil
+      out << "[#{seg}]"
+      out << "(#{tag})" if tag.is_a?(String) || tag.is_a?(Numeric)
+    else
+      out << '/' unless out.empty?
+      out << seg.to_s
+    end
+  end
+  out
+end
+
+# The keys the schema declares at a pointer in STARTS-free terms: the Node reached from the root
+# by the given data keys ("[]" for an array item). Used by the checks below that word their own
+# message for a closed block (personalSpace, los, challengeOnSight).
+def schema_keys_at(*keys)
+  node = BreakEscape::ScenarioSchema.root
+  keys.each do |k|
+    node = k == '[]' ? BreakEscape::ScenarioSchema.item(node) : BreakEscape::ScenarioSchema.child(node, k)
+  end
+  node.is_a?(BreakEscape::ScenarioSchema::Node) ? node.declared_property_keys : []
+end
+
 def check_unknown_fields(json_data)
   warnings = []
 
-  # Known top-level fields
-  known_top_level = %w[
-    scenario_id scenario_name scenario_brief endGoal version startRoom startPosition resumeSpawn titleScreenName pcWallpaper pcWallpaperFocus
-    show_scenario_brief disableAttacks creditsTheme creditsOverlay gameClock flags music startItemsInInventory globalVariables
-    player objectives rooms npcs phoneNPCs narrator timers _comment mutuallyExclusiveGlobals lighting acknowledgedClues
-    importGlobals exportGlobals social npcNeedsSeed disguises actionIcons officeVisuals npcWindupMs showPressingNeeds showNpcIntentBubbles needsDebugOverlay officePresets chatter lockCues roomTone roomToneTypes
-    ttsPregenerateChatter
-    accountProfiles policies defaultPolicy
-    networks networkLinks resources
-    roles
-  ]
+  # Unknown keys anywhere the schema describes, from the schema itself.
+  checked = Set.new
+  schema_unknown_key_warnings(json_data, BreakEscape::ScenarioSchema.root, warnings, seen: checked) if json_data.is_a?(Hash)
 
-  # Check top-level unknown fields
-  json_data.each_key do |key|
-    unless known_top_level.include?(key)
-      warnings << "⚠️ WARNING: Top-level field '#{key}' is not recognized in the schema — this field will be ignored by the game engine. Remove it if not needed, or check if the spelling is correct."
-    end
-  end
-
-  # Known room fields
-  known_room_fields = %w[
-    type door_sign connections locked lockType requires keyPins lockedHint difficulty
-    ambientSound ambientVolume objects npcs _comment dimensions biometricMatchThreshold lighting
-    chatBackground doors needsPrivateTo access acceptsUIDOnly
-    network cryptexConfig
-  ]
-
-  # Known NPC fields
-  known_npc_fields = %w[
-    id displayName npcType position spriteSheet spriteTalk spriteVisemes spriteConfig seated
-    voice behavior globalVarOnKO restartOnRetalk reopenRefreshesHub livePreview taskOnKO koImmune storyPath callId currentKnot avatar
-    phoneId phoneTheme handle profile voiced callLabel unlockable externalVariables persistentVariables
-    timedMessages timedConversation eventMappings itemsHeld puzzle_graph_actions
-    needs interests needsHome needsSpeed needsRooms needsAvoidRooms needsCompany chatter chattiness usePayload onUse
-    captureProof
-    maxQueue needsDeferMin exchanges chatterCooldownMin swivel swivelChance
-    answersPhones phoneCalls call
-    role creds staff cloneable
-    awareness habits
-    workNeeds frustration workarounds phone socialUse feed
-    observations disableClose los rfidCard chatBackground spriteStyle gender portraitVariants _comment
-  ]
-
-  # Known NPC los fields, and those of the opt-in los.challengeOnSight
-  known_los_fields = %w[enabled range angle visualize occlusion origin challengeOnSight _comment]
-  known_sight_challenge_fields = %w[enabled cooldown event rooms requireGlobal skipIfGlobal near _comment]
+  # NPC los and the opt-in los.challengeOnSight inside it, and behavior.personalSpace: closed in
+  # the schema (so json-schema reports an unknown key there as an error), and worded here as well
+  # with the known keys, which come from the schema.
+  known_los_fields = schema_keys_at('rooms', 'x', 'npcs', '[]', 'los') + ['_comment']
+  known_sight_challenge_fields = schema_keys_at('rooms', 'x', 'npcs', '[]', 'los', 'challengeOnSight') + ['_comment']
+  known_personal_space_fields = schema_keys_at('rooms', 'x', 'npcs', '[]', 'behavior', 'personalSpace') | ['_comment']
   sight_challenges = []   # { path:, event: } checked against every eventMapping below
   mapping_patterns = []
-
-  # Known NPC behavior fields
-  known_behavior_fields = %w[
-    initiallyHidden immovable hostile facePlayer facePlayerDistance personalSpace patrol staticSprite
-    collisionBox _comment torch
-  ]
-  # behavior.personalSpace sub-fields (npc-behavior.js parseConfig)
-  known_personal_space_fields = %w[enabled distance backAwaySpeed backAwayDistance _comment]
-
-  # Known eventMapping fields
-  known_event_mapping_fields = %w[
-    eventPattern condition onceOnly maxTriggers cooldown fireOnlyWhenLoaded delayMs
-    bark message barkDelay
-    targetKnot conversationMode background disableClose resume voiced callLabel videoLabel participantTag ring
-    patrolOverride setPatrolSpeed setDwellMultiplier setVisible
-    sendTimedMessage sendEmail setGlobal completeTask skipTask unlockTask unlockAim unlockDoor closeDoor
-    openMinigame endingCheck needs addCapture emitEvent emitEventData
-    _comment
-  ]
-
   # Load minigameData schemas (flat map; entries with _dispatch:"lockType" are matched by lockType)
   minigame_schemas_path = File.join(__dir__, 'minigame-data-schemas.json')
   minigame_schemas = if File.exist?(minigame_schemas_path)
@@ -860,58 +889,15 @@ def check_unknown_fields(json_data)
     end
   end
 
-  # Known item (object) fields — any unknown field should be inside minigameData
-  known_item_fields = %w[
-    type id name takeable readable interactable active locked important
-    position observations observationVariants spriteVariants observationDisplay readDisplay addToNotes
-    text textVariants
-    voice ttsVoice sender timestamp avatar sprite
-    collection_group onRead onPickup onInteract
-    lockType requires opens_lock key_id keyPins card_id difficulty
-    passwordHint showHint showKeyboard maxAttempts pinLength cryptexConfig
-    postitNote showPostit
-    hasFingerprint fingerprintOwner fingerprintDifficulty fingerprintQuality
-    fingerprintOwnerName fingerprintPattern fingerprintSurface fingerprintCandidates biometricMatchThreshold
-    mac canScanBluetooth phoneId npcIds app
-    site owner private deskPhone
-    hacktivityMode vm acceptsVms flags flagRewards
-    mode onAbort onLaunch abortConfirmText launchConfirmText operationName abortedText launchedText
-    itemsHeld contents hasContents triggerOnInteract
-    requiresItem requiresItemHint requiresItemHintVariants consumesItem revealOnGlobal outputOf leftBehindChance
-    minigameData interactionType
-    holds storeIn
-    gateVar sealedMessage openableReadyMessage
-    puzzle_graph_role puzzle_graph_aim puzzle_graph_unlocks
-    puzzle_graph_and_with puzzle_graph_reveals puzzle_graph_optional puzzle_graph_note
-    storyPath currentKnot
-    completesTask completesTaskOnOpen
-    puzzle_graph_links hintOnlyFlags acceptsVmLabels
-    affordance offWhen needsTag droppable officeType wearable
-    usbClass wallMounted
-    workstation locksScreenOnLeave lockChance screenLocked autoLockSeconds
-    rings
-    actions onOwnerNoticesMissing interactionWarning saved_cards rfid_protocol
-    access acceptsUIDOnly loginPicker policy transfer cloneable identity
-    network host desktopUser headless networkJack jackConfirm plantedSprite linkName linkStoreIn rogueDevice
-    wifiAp portSecurity portSecurityMessage
-    _comment
-  ]
-
-  # A retired item/object key (renamed by a FormatUpgrade step: screenOwner, phoneOwner, phoneOf,
-  # leftBehindBy) reaches here as an unknown field, but check_retired_keys already prints its rename
-  # line, so the redundant unknown-field warning is suppressed (one slip, one line).
-  retired_item_keys = BreakEscape::FormatUpgrade.retired_entries.map { |e| e[:key] }.to_set
+  # Item checks that are not key lists: fingerprintQuality is ignored. Recurses into contents and
+  # itemsHeld, as the item walk does.
   check_item_fields = lambda do |item, path|
     next unless item.is_a?(Hash)
     warnings << "⚠️ WARNING: '#{path}' sets fingerprintQuality, which is ignored: lift quality now comes from the dusting minigame." if item.key?('fingerprintQuality')
-    item.each_key do |key|
-      unless known_item_fields.include?(key) || retired_item_keys.include?(key)
-        warnings << "⚠️ WARNING: '#{path}' has unknown field '#{key}'#{unknown_key_hint(key, known_item_fields)} — if this is minigame-specific configuration data, nest it under 'minigameData' instead."
-      end
-    end
-    item['contents']&.each_with_index { |c, i| check_item_fields.call(c, "#{path}/contents[#{i}](#{c['id'] || c['type'] || '?'})") }
-    item['itemsHeld']&.each_with_index { |c, i| check_item_fields.call(c, "#{path}/itemsHeld[#{i}](#{c['type'] || '?'})") }
+    item['contents']&.each_with_index { |c, i| check_item_fields.call(c, "#{path}/contents[#{i}](#{c['id'] || c['type'] || '?'})") if c.is_a?(Hash) }
+    item['itemsHeld']&.each_with_index { |c, i| check_item_fields.call(c, "#{path}/itemsHeld[#{i}](#{c['type'] || '?'})") if c.is_a?(Hash) }
   end
+  item_node = BreakEscape::ScenarioSchema.at('#/definitions/item')
 
   # Check startItemsInInventory fields
   json_data['startItemsInInventory']&.each_with_index do |item, idx|
@@ -926,6 +912,7 @@ def check_unknown_fields(json_data)
   BreakEscape::DeclaredGrants.for(json_data).each do |grant|
     grant_path = "#{grant['path']}/item(#{grant['item']['id'] || grant['item']['type'] || '?'})"
     check_item_fields.call(grant['item'], grant_path)
+    schema_unknown_key_warnings(grant['item'], item_node, warnings, prefix: grant_path, seen: checked)
     check_minigame_data.call(grant['item'], grant_path)
   end
 
@@ -938,22 +925,17 @@ def check_unknown_fields(json_data)
         next unless item.is_a?(Hash)
         item_path = "accountProfiles/#{profile_id}/contents[#{idx}](#{item['id'] || item['name'] || '?'})"
         check_item_fields.call(item, item_path)
+        schema_unknown_key_warnings(item, item_node, warnings, prefix: item_path, seen: checked)
         check_minigame_data.call(item, item_path)
       end
     end
   end
 
-  # Check room fields and recurse into NPCs and objects
+  # Room objects and NPCs: the checks that are not key lists
   if json_data['rooms']
     json_data['rooms'].each do |room_id, room|
       next unless room.is_a?(Hash)
-      room.each_key do |key|
-        unless known_room_fields.include?(key)
-          warnings << "⚠️ WARNING: Room '#{room_id}' has unknown field '#{key}'#{unknown_key_hint(key, known_room_fields)} — this field will be ignored by the game engine."
-        end
-      end
 
-      # Check object fields
       room['objects']&.each_with_index do |obj, idx|
         next unless obj.is_a?(Hash)
         obj_path = "rooms/#{room_id}/objects[#{idx}](#{obj['id'] || obj['name'] || '?'})"
@@ -961,26 +943,12 @@ def check_unknown_fields(json_data)
         check_minigame_data.call(obj, obj_path)
       end
 
-      # Check NPC fields
       room['npcs']&.each_with_index do |npc, idx|
         next unless npc.is_a?(Hash)
         npc_path = "rooms/#{room_id}/npcs[#{idx}](#{npc['id'] || '?'})"
-        npc.each_key do |key|
-          # A retired NPC key (renamed by a FormatUpgrade step: screenHabit, printHabit, usbHabit)
-          # reaches here as an unknown field, but check_retired_keys already prints its rename line;
-          # suppress the redundant unknown-field warning so a reintroduced key prints only that line.
-          unless known_npc_fields.include?(key) || retired_item_keys.include?(key)
-            warnings << "⚠️ WARNING: '#{npc_path}' has unknown field '#{key}'#{unknown_key_hint(key, known_npc_fields)} — this field will be ignored by the game engine."
-          end
-        end
 
-        # Check NPC behavior fields
+        # NPC behavior values (unknown keys are checked against the schema above)
         if npc['behavior'].is_a?(Hash)
-          npc['behavior'].each_key do |key|
-            unless known_behavior_fields.include?(key)
-              warnings << "⚠️ WARNING: '#{npc_path}/behavior' has unknown field '#{key}' — this field will be ignored by the game engine."
-            end
-          end
           fpd = npc['behavior']['facePlayerDistance']
           if npc['behavior'].key?('facePlayerDistance') && !(fpd.is_a?(Numeric) && fpd > 0)
             warnings << "⚠️ WARNING: '#{npc_path}/behavior/facePlayerDistance' should be a positive number of pixels " \
@@ -1036,11 +1004,6 @@ def check_unknown_fields(json_data)
           next unless mapping.is_a?(Hash)
           mapping_path = "#{npc_path}/eventMappings[#{midx}]"
           mapping_patterns << mapping['eventPattern'] if mapping['eventPattern'].is_a?(String)
-          mapping.each_key do |key|
-            unless known_event_mapping_fields.include?(key)
-              warnings << "⚠️ WARNING: '#{mapping_path}' has unknown field '#{key}' — this field will be ignored by the game engine."
-            end
-          end
           # unlockDoor (F19): each room it names must exist, or the server refuses the unlock
           [mapping['unlockDoor']].flatten.compact.each do |rid|
             next if rid.is_a?(String) && json_data['rooms'].is_a?(Hash) && json_data['rooms'].key?(rid)

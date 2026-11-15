@@ -178,13 +178,20 @@
           "type": "array",
           "items": {
             "type": "object",
+            "description": "One music cue, read by music/scenario-music-events.js, music/closing-sequence.js and music/ending-audio.js. An entry with credits or a closingCard is the ending.",
             "properties": {
-              "trigger": { "type": "string" },
-              "track": { "type": "string" },
-              "volume": { "type": "number" },
-              "loop": { "type": "boolean" },
-              "fadeIn": { "type": "number" },
-              "fadeOut": { "type": "number" }
+              "trigger": { "type": "string", "description": "The event that plays the cue: game_loaded, conversation_closed:<npcId>, npc_hostile_state_changed, global_variable_changed:<name>, all_hostiles_ko, or any other event name." },
+              "playlist": { "type": "string", "description": "The playlist to switch to (music-config.js)." },
+              "track": { "type": "string", "description": "A track in playlist to play; absent, the playlist plays from its start." },
+              "fade": { "type": "boolean", "description": "Fade across to the new music (default true)." },
+              "condition": { "type": "string", "description": "A JS expression over the event's data (and globalVars) that must hold, such as \"value === true\"." },
+              "autoStop": { "type": "boolean", "description": "Stop the music after the current track; the visualiser stays open." },
+              "stopAfterTrack": { "type": "boolean", "description": "Legacy: stop after the current track and close the visualiser." },
+              "disableClose": { "type": "boolean", "description": "Hide the visualiser's close button." },
+              "headerText": { "type": "string", "description": "The visualiser's header, such as \"MISSION FAILED // AUDIO INTEL\"." },
+              "statusText": { "type": "string", "description": "The visualiser's status line, such as \"COMPROMISED\"." },
+              "credits": { "type": "array", "x-id-map": false, "description": "The credits shown with this cue (closing-sequence.js)." },
+              "closingCard": { "type": "object", "x-id-map": false, "description": "The closing card shown before the credits (closing-sequence.js)." }
             }
           }
         }
@@ -427,7 +434,8 @@
           "type": "object",
           "description": "TTS voice configuration",
           "additionalProperties": true
-        }
+        },
+        "skipTextValidation": {"type": "boolean", "description": "TTS: the narrator's lines are matched more loosely (its barks and lines in any story), not only as one conversation's lines (tts_line_resolver.rb)."}
       }
     },
     "social": {
@@ -865,11 +873,96 @@
     "timers": {
       "type": "array",
       "description": "Optional timer system configuration for the scenario (array of timer objects)",
-      "items": {"x-id-map": false, "properties": { "setGlobal": { "type": "object", "additionalProperties": true, "x-id-map": true }, "actions": { "type": "array", "items": { "type": "object", "additionalProperties": true, "properties": { "item": { "$ref": "#/definitions/item" } } } } }, 
+      "items": {
+        "x-id-map": false,
+        "properties": {
+          "setGlobal": {
+            "type": "object",
+            "additionalProperties": true,
+            "x-id-map": true
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "item": {
+                  "$ref": "#/definitions/item"
+                },
+                "type": {
+                  "type": "string",
+                  "description": "The action type, as triggerOnInteract (apply-actions.js)."
+                },
+                "title": {
+                  "type": "string",
+                  "description": "hint: the toast heading."
+                },
+                "message": {
+                  "type": "string",
+                  "description": "hint: the toast text."
+                },
+                "condition": {
+                  "type": "string",
+                  "description": "Run the action only while this globalVars condition holds."
+                },
+                "roomId": {
+                  "type": "string",
+                  "description": "tint_objects: the room."
+                },
+                "textureKey": {
+                  "type": "string",
+                  "description": "tint_objects: the sprite texture to tint."
+                },
+                "color": {
+                  "type": "number",
+                  "description": "tint_objects: the tint colour."
+                },
+                "pulse": {
+                  "type": "boolean",
+                  "description": "tint_objects: pulse the tint (default true)."
+                }
+              }
+            }
+          },
+          "id": {
+            "type": "string",
+            "description": "The timer's id."
+          },
+          "delayMs": {
+            "type": "number",
+            "description": "Milliseconds after the start (or after startOnGlobal) before the timer fires."
+          },
+          "startOnGlobal": {
+            "type": "string",
+            "description": "The timer waits, dormant, until this global is set (scenario-timer.js)."
+          },
+          "cancelOnGlobal": {
+            "type": "string",
+            "description": "The timer is cancelled once this global is set (scenario-timer-dispatcher.js)."
+          },
+          "condition": {
+            "type": "string",
+            "description": "Fires only while this globalVars condition holds (scenario-timer-dispatcher.js)."
+          },
+          "label": {
+            "type": "string",
+            "description": "The countdown's caption (scenario-timer.js)."
+          },
+          "showCountdown": {
+            "type": "boolean",
+            "description": "Show this timer in the on-screen countdown."
+          },
+          "countdownHours": {
+            "type": "number",
+            "description": "The countdown stands for this many hours in the story (scenario-timer.js)."
+          }
+        },
         "type": "object",
         "additionalProperties": true
       }
-    }
+    },
+    "npcs": {"type": "array", "items": {"$ref": "#/definitions/npc"}, "description": "Legacy: NPCs with no room (phone contacts), read by the person-chat cast lookup. Put NPCs in rooms instead."}
   },
   "definitions": {
     "gateCreditBlock": {
@@ -963,7 +1056,7 @@
         "emailRecord": {
           "type": "object",
           "description": "A headless NPC record for the email channel; spread into an NPC record (scenario-npc-records.js), so any NPC field is accepted",
-          "properties": {"storyPath": {"type": "string"}, "displayName": {"type": "string"}, "itemsHeld": {"items": { "$ref": "#/definitions/item" }, "type": "array"}},
+          "properties": {"storyPath": {"type": "string"}, "displayName": {"type": "string"}, "itemsHeld": {"items": { "$ref": "#/definitions/item" }, "type": "array"}, "unlockable": {"type": "array", "items": {"type": "string"}, "description": "Rooms or objects this email correspondent may unlock; the server checks it (game.rb)."}},
           "additionalProperties": true
         },
         "emailReplyDelay": {"type": "number", "minimum": 0, "description": "Seconds before an email reply arrives (default 20)"},
@@ -1274,7 +1367,8 @@
             "storyPath": {"type": "string"},
             "displayName": {"type": "string"},
             "itemsHeld": {"items": { "$ref": "#/definitions/item" }, "type": "array"},
-            "replyDelaySeconds": {"type": "number", "minimum": 0}
+            "replyDelaySeconds": {"type": "number", "minimum": 0},
+            "unlockable": {"type": "array", "items": {"type": "string"}, "description": "Rooms or objects this email correspondent may unlock; the server checks it (game.rb)."}
           },
           "additionalProperties": true
         },
@@ -2782,7 +2876,15 @@
                 "properties": {
                   "id": {"type": "string"},
                   "kind": {"type": "string", "enum": ["email", "sms", "voicemail", "qr", "page", "call", "push"]},
-                  "note": {"type": "string"}
+                  "note": {"type": "string"},
+                  "folder": {"type": "string", "description": "email: the folder shown (default Sent)."},
+                  "from": {"type": "string", "description": "The sender's address."},
+                  "to": {"type": "string", "description": "The recipient's address."},
+                  "subject": {"type": "string", "description": "The subject, also the sender label of a non-email item with no from."},
+                  "time": {"type": "string", "description": "The time shown."},
+                  "body": {"type": "string", "description": "A non-email item's text (flip-view.js)."},
+                  "sender": {"type": "string", "description": "A non-email item's sender label."},
+                  "push": {"type": "object", "x-id-map": false, "description": "push: the sign-in prompt shown (flip-view.js renderKindSurface)."}
                 },
                 "additionalProperties": true
               }
@@ -3862,7 +3964,9 @@
               "type": "array",
               "items": { "type": "string", "x-ref": "aim" },
               "description": "Array variant of aimCompleted -- unlocks when ALL listed aims are completed"
-            }
+            },
+            "globalVariable": {"type": "string", "description": "The aim unlocks when this global equals `equals` (objectives-manager.js)."},
+            "equals": {"x-id-map": false, "description": "The value globalVariable must hold; true when absent."}
           }
         },
         "missionConclusion": {
@@ -3975,7 +4079,9 @@
               "additionalProperties": true
             }
           }
-        }
+        },
+        "description": {"type": "string", "description": "Not shown to players; the test bridge uses it as a title fallback."},
+        "puzzle_graph_unlocks": {"x-id-map": false, "description": "Author metadata for the dungeon graph (the validator's graph generator). Not read by the game."}
       }
     },
     "room": {
@@ -4172,7 +4278,10 @@
         "npcs": {
           "type": "array",
           "items": { "$ref": "#/definitions/npc" }
-        }
+        },
+        "chatBackground": {"x-id-map": false, "description": "The person-chat background for conversations in this room: an image path, or a list of views (person-chat-background.js, cctv-feeds.js)."},
+        "dimensions": {"type": "object", "x-id-map": false, "description": "Room size in tiles, {width, height}. Read by the layout tools (scripts/predict_door_sides.py, scripts/room_gen/pov_prep.py); the game takes the size from the room's map."},
+        "name": {"type": "string", "description": "A label for the room, used where a network names a room that has no door_sign (network_access.rb)."}
       }
     },
     "npc": {
@@ -4314,7 +4423,8 @@
             "idleFrameRate": { "type": "number" },
             "walkFrameStart": { "type": "integer" },
             "walkFrameEnd": { "type": "integer" },
-            "walkFrameRate": { "type": "number" }
+            "walkFrameRate": { "type": "number" },
+            "idleFrame": {"type": "number", "description": "The idle frame of a legacy (non-atlas) sprite sheet (default 20; npc-sprites.js)."}
           }
         },
         "voice": {
@@ -4354,7 +4464,18 @@
                   "properties": {
                     "chaseSpeed": { "type": "number" },
                     "attackDamage": { "type": "number" },
-                    "pauseToAttack": { "type": "boolean" }
+                    "pauseToAttack": { "type": "boolean" },
+                    "startHostile": {"type": "boolean", "description": "Start the game hostile."},
+                    "influenceThreshold": {"type": "number", "description": "Influence at or below which the NPC turns hostile (default -50)."},
+                    "fleeSpeed": {"type": "number", "description": "Speed when fleeing (default 180)."},
+                    "aggroDistance": {"type": "number", "description": "Pixels at which a hostile NPC starts the chase (default 160)."},
+                    "maxHP": {"type": "number", "description": "Hit points (default from combat-config.js)."},
+                    "attackCooldown": {"type": "number", "description": "Milliseconds between attacks (default from combat-config.js)."},
+                    "attackRange": {"type": "number", "description": "Attack reach in pixels (default from combat-config.js)."},
+                    "leash": {"type": "boolean", "description": "true limits the chase to chaseRange from the NPC's post (npc-chase-leash.js)."},
+                    "chaseRange": {"type": "number", "description": "With leash: how far from its post, in pixels, the NPC chases."},
+                    "chaseAcrossRooms": {"type": "boolean", "description": "With leash: the NPC still follows the player out of its room."},
+                    "fightStyle": {"type": "string", "description": "How it fights (fight-styles.js): brawler (default), guarded, slugger or cower."}
                   }
                 }
               ]
@@ -4446,9 +4567,13 @@
                       }
                     }
                   }
-                }
+                },
+                "bounds": {"type": "object", "x-id-map": false, "description": "A rectangle {x, y, width, height} to wander in when there are no waypoints (npc-behavior.js)."},
+                "multiRoom": {"type": "boolean", "description": "Walk the multi-room route in route (npc-behavior.js)."}
               }
-            }
+            },
+            "facePlayer": {"type": "boolean", "description": "Turn to face the player when near (default true; npc-behavior.js parseConfig)."},
+            "staticSprite": {"type": "boolean", "description": "true draws the NPC from one still frame, with no walk or idle animation (npc-sprites.js)."}
           }
         },
         "observations": {
@@ -4592,7 +4717,8 @@
               "waitForEvent": {
                 "type": "string",
                 "description": "Event pattern to wait for before sending this timed message"
-              }
+              },
+              "skipIfGlobal": {"type": "string", "description": "The message is not sent when this global is truthy at delivery (npc-manager.js)."}
             }
           }
         },
@@ -4634,7 +4760,10 @@
             "participantTag": {
               "type": "string",
               "description": "(videoCall) A participant tag beside the peer name (e.g. 'External'). Absent, no tag shows."
-            }
+            },
+            "disableClose": {"type": "boolean", "description": "Hide the close button and block Esc for this conversation."},
+            "voiced": {"type": "boolean", "description": "Speak the NPC's lines through TTS (a phone call)."},
+            "ring": {"x-id-map": false, "description": "An incoming call that rings before it opens: true or a ring config (phone-ringer-dom.js). Not for a video call."}
           }
         },
         "eventMappings": {
@@ -4762,7 +4891,12 @@
             },
             "additionalProperties": false
           }
-        }
+        },
+        "call": {"x-id-map": false, "description": "Calls the player can place to this phone contact: one entry or a list (npc-manager.js, phone-ringer-dom.js)."},
+        "callLabel": {"type": "string", "description": "The caption under the contact's name on a voice call (phone-chat-ui.js callLabelFor)."},
+        "chatBackground": {"x-id-map": false, "description": "This NPC's own person-chat background, used ahead of the room's (person-chat-background.js)."},
+        "voiced": {"type": "boolean", "description": "true speaks this phone contact's lines through TTS (phone-chat-speaker.js)."},
+        "puzzle_graph_actions": {"x-id-map": false, "description": "Author metadata for the dungeon graph (the validator's graph generator). Not read by the game."}
       }
     },
     "eventMapping": {
@@ -4915,12 +5049,19 @@
           ]
         },
         "setGlobal": {"x-id-map": true,  "type": "object" },
-        "addCapture": { "type": "object", "description": "Record a capture into se_captures (merged with the npc_used payload). proof: the capture proof shorthand, counted for the account whose username equals the address, or, with no address, for the NPC carrying the mapping (engine plan section 6).", "properties": { "targetId": { "type": "string" }, "secret": { "x-serverOnly": true, "x-servedBy": "GET /capture_secrets", "type": "string", "description": "Hardening step 6a-1: the capture secret this mapping records. Stripped from the bootstrap (Game.strip_capture_secrets!, CAPTURE_SECRET_KEYS includes 'addCapture'); served by GET /capture_secrets once the capture is earned." }, "proof": { "type": "object", "description": "One capture proof: { \"planted\": item, \"on\"?: object }, { \"dropped\": item } or { \"session\": pc } (engine plan section 6)", "properties": { "planted": { "type": "string" }, "on": { "type": "string" }, "dropped": { "type": "string" }, "session": { "type": "string" } }, "patternProperties": { "^_": {} }, "additionalProperties": false } } },
+        "addCapture": { "type": "object", "description": "Record a capture into se_captures (merged with the npc_used payload). proof: the capture proof shorthand, counted for the account whose username equals the address, or, with no address, for the NPC carrying the mapping (engine plan section 6).", "properties": { "targetId": { "type": "string" }, "secret": { "x-serverOnly": true, "x-servedBy": "GET /capture_secrets", "type": "string", "description": "Hardening step 6a-1: the capture secret this mapping records. Stripped from the bootstrap (Game.strip_capture_secrets!, CAPTURE_SECRET_KEYS includes 'addCapture'); served by GET /capture_secrets once the capture is earned." }, "proof": { "type": "object", "description": "One capture proof: { \"planted\": item, \"on\"?: object }, { \"dropped\": item } or { \"session\": pc } (engine plan section 6)", "properties": { "planted": { "type": "string" }, "on": { "type": "string" }, "dropped": { "type": "string" }, "session": { "type": "string" } }, "patternProperties": { "^_": {} }, "additionalProperties": false }, "kind": {"type": "string", "description": "The capture kind; credential when absent (capture_model.rb)."}, "roleLabel": {"type": "string", "description": "The role shown on the capture log entry."}, "address": {"type": "string", "description": "The captured account's address; the server matches the holder by it."}, "host": {"type": "string", "description": "The host the capture is for."}, "note": {"type": "string", "description": "A note shown on the capture log entry."} } },
         "completeTask": { "oneOf": [ { "type": "string", "x-ref": "task" }, { "type": "array", "items": { "type": "string", "x-ref": "task" } } ] },
         "unlockTask": { "oneOf": [ { "type": "string", "x-ref": "task" }, { "type": "array", "items": { "type": "string", "x-ref": "task" } } ] },
         "unlockAim": { "oneOf": [ { "type": "string", "x-ref": "aim" }, { "type": "array", "items": { "type": "string", "x-ref": "aim" } } ] },
         "skipTask": { "oneOf": [ { "type": "string", "x-ref": "task" }, { "type": "array", "items": { "type": "string", "x-ref": "task" } } ] },
-        "_comment": { "type": "string" }
+        "_comment": { "type": "string" },
+        "endingCheck": {"type": "boolean", "description": "This mapping opens the ending or debrief, so the player is warned first while optional objectives are open (systems/ending-check.js)."},
+        "resume": {"type": "boolean", "description": "phone-chat: reopen the saved thread, with no knot jump."},
+        "voiced": {"type": "boolean", "description": "phone-chat: speak the NPC's lines through TTS."},
+        "ring": {"x-id-map": false, "description": "phone-chat: an incoming call that rings, true or a ring config."},
+        "unlockDoor": {"x-id-map": false, "description": "A room id, or a list of them, whose door the server unlocks when this fires (npc-game-bridge.js). The server also reads it to allow the unlock (game.rb), so keep it even where the mapping never fires."},
+        "emitEvent": {"type": "string", "description": "An event to emit when the mapping fires."},
+        "emitEventData": {"type": "object", "x-id-map": false, "description": "The payload sent with emitEvent."}
       }
     },
     "item": {
@@ -5169,12 +5310,12 @@
           "type": "string",
           "description": "Operational mode for launch-device items (e.g., 'launch-abort')"
         },
-        "onAbort": {"x-id-map": false, "properties": { "setGlobal": { "type": "object", "additionalProperties": true, "x-id-map": true } }, 
+        "onAbort": {"x-id-map": false, "properties": { "setGlobal": { "type": "object", "additionalProperties": true, "x-id-map": true }, "emitEvent": {"type": "string", "description": "An event to emit when the launch is aborted (flag-station-minigame.js)."} }, 
           "type": "object",
           "description": "Actions to fire when launch is aborted",
           "additionalProperties": true
         },
-        "onLaunch": {"x-id-map": false, "properties": { "setGlobal": { "type": "object", "additionalProperties": true, "x-id-map": true } }, 
+        "onLaunch": {"x-id-map": false, "properties": { "setGlobal": { "type": "object", "additionalProperties": true, "x-id-map": true }, "emitEvent": {"type": "string", "description": "An event to emit on launch (flag-station-minigame.js)."} }, 
           "type": "object",
           "description": "Actions to fire when launch is confirmed",
           "additionalProperties": true
@@ -5228,8 +5369,6 @@
               "fact": { "type": "string", "description": "grant_fact: the social intel fact id (00 S15)" },
               "value": {"x-free-data": true},
               "event_name": { "type": "string" },
-              "task_id": { "type": "string" },
-              "aim_id": { "type": "string" },
               "text": { 
                 "type": "string",
                 "description": "Confirmation text (for confirm_action)"
@@ -5254,7 +5393,11 @@
               "buttonText": { "type": "string" },
               "outcome": { "type": "string" },
               "level": { "type": "number", "minimum": 0.2, "maximum": 1, "description": "lighting_dip: how far the lights sag (0.5 = half)" },
-              "ms": { "type": "number", "minimum": 800, "maximum": 4000, "description": "lighting_dip: length of the dip" }
+              "ms": { "type": "number", "minimum": 800, "maximum": 4000, "description": "lighting_dip: length of the dip" },
+              "taskId": {"type": "string", "description": "complete_task: the task to complete (apply-actions.js)."},
+              "capture": {"type": "object", "x-id-map": false, "description": "add_capture: the capture to record (apply-actions.js)."},
+              "costume": {"type": "string", "description": "set_costume: the costume id (apply-actions.js; falls back to id, then value)."},
+              "card_id": {"x-id-map": false, "description": "revoke_card: the card id, or a list (apply-actions.js)."}
             }
           }
         },
@@ -5360,7 +5503,41 @@
         "storeIn": { "type": "string", "minLength": 1, "description": "The id of the holder item this item is filed in while both are held (engine plan section 6). An item with storeIn is never added to the Notepad." },
         "leftBehindChance": { "type": "number", "minimum": 0, "maximum": 1, "description": "Left-behind item (NPC needs, OFFICE_LIFE_PLAN 2.10, slice 11): its presence marks this a left-behind item owned by its owner (an NPC with needsHome). The chance (0-1) that the owner leaves this item at its post on each real leave. On each real leave a seeded roll under this shows it at its declared spot (object_revealed:<id> with owner; npc_left_post gains leftBehind); on return the owner picks it up again (hidden, global false, no server call). Taken by the player, it is gone for good (npc_left_item_gone:<npcId> on the owner's return). Needs its own revealOnGlobal, which the engine owns; a reload files it away. A non-takeable readable notes* item must use readDisplay gameDisplay. Rolled with the needs seed, so a day replays the same. Default 0 (never)." },
         "outputOf": { "type": "string", "minLength": 1, "description": "Reveal slot (NPC needs, OFFICE_LIFE_PLAN 2.2 Part A): the object id of the producer (a copier) whose onUse revealOutput shows this object. Needs its own revealOnGlobal, which the engine owns (true on reveal, false when filed away; a reload files every revealed slot). A delivered slot is placed or stowed, never consumed. A non-takeable readable notes* slot must use readDisplay gameDisplay." },
-        "revealOnGlobal": { "type": "string", "description": "This object stays hidden and non-interactive until the named global turns true, then appears (and persists across reload, since globals are restored before the room reveals). Models a planted device appearing in place — e.g. a keylogger that shows on the PC once planted." }
+        "revealOnGlobal": { "type": "string", "description": "This object stays hidden and non-interactive until the named global turns true, then appears (and persists across reload, since globals are restored before the room reveals). Models a planted device appearing in place — e.g. a keylogger that shows on the PC once planted." },
+        "puzzle_graph_role": {"x-id-map": false, "description": "Author metadata for the dungeon graph (the validator's graph generator). The client also reads it to tell a prop with a role from a plain one (consumables.js)."},
+        "puzzle_graph_unlocks": {"x-id-map": false, "description": "Author metadata for the dungeon graph (the validator's graph generator). The client also reads it to tell a prop with a role from a plain one (consumables.js)."},
+        "puzzle_graph_reveals": {"x-id-map": false, "description": "Author metadata for the dungeon graph (the validator's graph generator). Not read by the game."},
+        "puzzle_graph_optional": {"x-id-map": false, "description": "Author metadata for the dungeon graph (the validator's graph generator). Not read by the game."},
+        "puzzle_graph_note": {"x-id-map": false, "description": "Author metadata for the dungeon graph (the validator's graph generator). Not read by the game."},
+        "puzzle_graph_aim": {"x-id-map": false, "description": "Author metadata for the dungeon graph (the validator's graph generator). Not read by the game."},
+        "puzzle_graph_and_with": {"x-id-map": false, "description": "Author metadata for the dungeon graph (the validator's graph generator). Not read by the game."},
+        "puzzle_graph_links": {"x-id-map": false, "description": "Author metadata for the dungeon graph (the validator's graph generator). Not read by the game."},
+        "labUrl": {"type": "string", "description": "The lab page a lab workstation opens (interactions.js)."},
+        "acceptsVmLabels": {"type": "object", "x-id-map": false, "description": "The VM labels a flag station accepts flags from (flag-station-minigame.js)."},
+        "important": {"type": "boolean", "description": "Marks the note this item adds to the Notepad as important (inventory.js)."},
+        "rfid_protocol": {"type": "string", "description": "A keycard's RFID protocol, such as EM4100 (rfid-data.js)."},
+        "rfid_hex": {"type": "string", "description": "Legacy keycard data: the card's hex (rfid-data.js; rfid_data.hex is the newer form)."},
+        "rfid_facility": {"x-id-map": false, "description": "Legacy keycard data: the facility code (rfid-data.js)."},
+        "rfid_card_number": {"x-id-map": false, "description": "Legacy keycard data: the card number (rfid-data.js)."},
+        "saved_cards": {"type": "array", "x-id-map": false, "description": "The cards a card cloner starts with (rfid-data.js)."},
+        "tableItems": {"type": "array", "x-id-map": false, "description": "Objects placed on this table (rooms.js)."},
+        "uuids": {"x-id-map": false, "description": "BLE scanner: the service UUIDs this device advertises (ble-scanner-minigame.js)."},
+        "allowedPins": {"x-id-map": false, "description": "BLE scanner: the pairing PINs this device accepts."},
+        "maxPinAttempts": {"type": "number", "description": "BLE scanner: pairing attempts before lockout (default 3)."},
+        "handshakeFingerprint": {"type": "string", "description": "BLE scanner: the handshake hash the player must match."},
+        "completesTask": {"x-id-map": false, "description": "BLE scanner: the task completed when this device is paired (ble-scanner-minigame.js)."},
+        "completesTaskOnOpen": {"x-id-map": false, "description": "A task id, or a list, completed when the ransomware display opens (unlock-system.js)."},
+        "gateVar": {"type": "string", "description": "NCSC brief: the global that must be truthy before the brief opens (ncsc-brief-minigame.js)."},
+        "sealedMessage": {"type": "string", "description": "NCSC brief: the text shown while sealed."},
+        "openableReadyMessage": {"type": "string", "description": "NCSC brief: the text shown once it can be opened."},
+        "interactionType": {"type": "string", "description": "Opens a named minigame from a generic object: blockchain_explorer or shredded_document (interactions.js)."},
+        "pinLength": {"type": "number", "description": "The length of a PIN that is not 4 digits; the server strips requires, so the keypad needs it (minigame-starters.js)."},
+        "onOwnerNoticesMissing": {"x-id-map": false, "description": "Actions run when the owner notices this left-behind card is missing (left-card-consequence.js)."},
+        "hasContents": {"type": "boolean", "description": "A container whose contents the server serves only to its holder. The server sets it; a declared grant may set it too (interactions.js)."},
+        "actions": {"x-id-map": false, "description": "The object's action menu entries (action-menu.js)."},
+        "storyPath": {"type": "string", "description": "A phone object's ink story; a phone with one is not converted to simple messages (phone-message-converter.js)."},
+        "screenLocked": {"type": "boolean", "description": "A workstation's starting screen lock. Absent, the engine decides when the owner leaves (workstation-state.js)."},
+        "onInteract": {"x-id-map": false, "description": "Deprecated: use triggerOnInteract and observationDisplay. The page still runs it (setVariable, actions, display, confirmationText) and logs a deprecation warning (interactions.js)."}
       }
     },
     "flagReward": {
@@ -5387,7 +5564,8 @@
         },
         "value": {"x-free-data": true, 
           "description": "Value to assign to the global variable (used with type: 'set_global')"
-        }
+        },
+        "label": {"type": "string", "description": "The flag's name on the flag station (flag-station-minigame.js)."}
       }
     }
   }
