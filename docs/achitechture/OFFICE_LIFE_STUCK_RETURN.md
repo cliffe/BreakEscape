@@ -1,6 +1,26 @@
 # Office life: stuck needs walks and re-routing
 
-## Handover (2026-11-15, round 7, budget stop): not ready for code review
+## Handover (2026-11-15, round 8): ready for the full live proof
+
+Status: **ready for the full live proof**. Round 8 fixed fault 2 from round 7 (the blocker-ahead heading) and passed one quick row 1 check. The full live proof (row 2 5 of 5, three more row 1 wedge checks, the tour, the m01 and m02 train smoke) has not been run.
+
+Done and committed:
+- **Local avoidance follows the path** (`46dfad42b`). `npc-behavior.js` `nearestBlockerOnPath`: a blocker counts when it is within the lane half-width (13 px) of the path polyline (feet, then each waypoint left), walking the segments until 42 px of path (`AVOID_LOOKAHEAD_PX`) is used up. The first segment keeps the old forward rule, so a body behind or beside the walker still never blocks; later segments use the distance to the segment, rounded at its start, so a body at a corner counts; the last segment runs on past the final waypoint for whatever look-ahead is left, as the heading check did. With one waypoint left this is `nearestBlockerAhead` on the heading. `_handleBlockerAhead` uses it when `nextWaypoint` is `currentPath[pathIndex]`, and the heading check otherwise. In game 5443 Marek's detour first leg (8 px) pointed at the player and then turned away; the player no longer counts, so the detour is walked.
+- **Who it affects.** `_handleBlockerAhead` is the one avoidance check for every path-following walker (needs walks, patrols, scripted routes, `goToAndStay`), so all of them change. On a straight stretch the result is the same as before (collinear waypoints). At a corner: a body straight ahead past the turn no longer stops the walker (it was never on the path), and a body on the path just after the turn, within 42 px, now counts where the heading check missed it, so the walker waits or detours a little earlier instead of bumping it. Patrols in m01 to m10 may stop slightly less often for a player standing off a corner, which is the intended effect. The tailgate/body-block lever is unchanged: the first segment still ignores bodies behind and beside.
+- **Driver hook** (`23aad084e`). `tools/playtest/needs-stuck-return-proof.mjs` wraps `pathfindingManager.findWorldPath` and logs Marek's searches (clock, ends, `includeHeld`, points found, first six points) as `report.marek_searches`, capped at 400, in both the skipped and the full report. Not run in a full driver pass this round.
+- Tests: `test/js/npc-local-avoidance.test.mjs` 24 passed (7 new: straight path blocks; first short leg turning away does not, while the heading check alone would; a body on a later segment within 42 px blocks, with `fwd` the path distance; a body beyond 42 px of path does not although it is 41 px away in a straight line; a body behind does not; a one-point path matches the heading check; a walker on the game 5443 shape keeps walking). `bin/test-js` 675 passed, 0 failed; `tts_office_lines_test.rb` 9 runs, 46 assertions, 0 failures; `bin/rubocop` 366 files, no offences (all on `23aad084e`).
+
+Quick live check (port 3093, keyless, headless setFPS(20), the round 7 wedge probe with the setFPS line added, row 1 only, player left at spawn about (160,223)):
+
+| Game | Code | Result |
+|---|---|---|
+| 5447 | `23aad084e` | **passed**: Marek got his cup at needs tick 396 and was `returned_post` at tick 426, 7.5 s home, passing within 26 px of the player; no `return_stuck`, no `return_abandoned`; 272 searches, none with 0 points. One `return_resumed` at (195,276) after 4 s standing still beside the coffee, 64 px from the player, before he set off (not the wedge; not read further). |
+
+Game 5446 was made and not driven.
+
+Still to do (the full live proof): row 2 5 of 5 with the stuck-return driver; why 5442 and 5443 had no turn-back (read `sanjay_log`; the late queue clear after the wedge is the likely cause, and should be gone now); three more row 1 wedge checks; the tour (rows 1, 3, 5, 6, driver `e617cd48f` not run yet); the train smoke on m01 and m02. Worth a look while there: the 4 s stand at the coffee before the walk home in 5447.
+
+## Handover (2026-11-15, round 7, budget stop): not ready for code review (superseded by round 8 above)
 
 Status: **not ready**. Round 7 hit its tool-call budget part way through the live proof.
 
