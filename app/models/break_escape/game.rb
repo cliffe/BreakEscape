@@ -2116,6 +2116,7 @@ module BreakEscape
         end
       end
 
+      delivered = nil
       positions.each do |npc_id, (ko_room, kx, ky)|
         next unless ko_room == room_id
         next if room['npcs'].is_a?(Array) && room['npcs'].any? { |n| n.is_a?(Hash) && n['id'] == npc_id }
@@ -2123,8 +2124,20 @@ module BreakEscape
         npc_def = find_npc_in_scenario(npc_id)
         next unless npc_def.is_a?(Hash)
 
+        injected = npc_def.deep_dup.merge('x' => kx, 'y' => ky, 'isKO' => true, 'currentHP' => 0)
+        # Strip held items a real KO already dropped to the floor (objects_added) or that
+        # reached the player (review R1 m4): the scenario def still lists them, but on a
+        # cross-room injection they must not be resurrected on the summoned body. Matches
+        # the delivered-item suppression a native room NPC gets in filtered_room_data.
+        if injected['itemsHeld'].is_a?(Array) && !injected['itemsHeld'].empty?
+          delivered ||= delivered_item_ids
+          injected['itemsHeld'] = injected['itemsHeld'].reject do |i|
+            i.is_a?(Hash) && i['id'].is_a?(String) && delivered.include?(i['id'])
+          end
+        end
+
         room['npcs'] ||= []
-        room['npcs'] << npc_def.deep_dup.merge('x' => kx, 'y' => ky, 'isKO' => true, 'currentHP' => 0)
+        room['npcs'] << injected
       end
     end
 
@@ -2141,6 +2154,11 @@ module BreakEscape
         kx = entry['koX']
         ky = entry['koY']
         next unless room_id.is_a?(String) && kx.is_a?(Numeric) && ky.is_a?(Numeric)
+        # Re-check the room against the live scenario (review R1 m2): a scenario edited
+        # mid-game could drop koRoom, and an entry pointing at a gone room would strip the
+        # NPC from its home room (apply_ko_positions!) without ever being re-injected. Skip
+        # it instead, so the NPC is served at home, still KO'd, rather than lost.
+        next unless scenario_room_ids.include?(room_id)
 
         out[npc_id] = [room_id, kx, ky]
       end
@@ -5125,9 +5143,23 @@ module BreakEscape
       kx = source['koX']
       ky = source['koY']
       return [nil, nil, nil] unless room_id.is_a?(String) && scenario_room_ids.include?(room_id)
+      return [nil, nil, nil] unless ko_room_reachable?(room_id)
       return [nil, nil, nil] unless valid_ko_coord?(kx) && valid_ko_coord?(ky)
 
       [room_id, kx, ky]
+    end
+
+    # A KO only ever happens in a room the player is standing in, so a stored fall
+    # position is kept only for a room the player has actually reached (review R1 M1).
+    # Without this bound a forged sync could claim a met-but-unfought NPC was knocked
+    # out in any scenario room and have the server relocate it, with its full scenario
+    # definition, into a never-entered room. unlockedRooms is seeded with the start
+    # room at game creation and grows on every room access, so it is the same "the
+    # player has been here" notion GET /room gates on (games_controller.rb ~554), and
+    # it needs no scenario_data, which the narrow sync load leaves out. A forged
+    # position is dropped; the KO itself is still kept.
+    def ko_room_reachable?(room_id)
+      Array(player_state['unlockedRooms']).include?(room_id)
     end
 
     def valid_ko_coord?(value)

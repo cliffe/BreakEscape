@@ -320,13 +320,22 @@ function damageNPC(npcId, amount) {
       // Where it fell: the room it is physically standing in (not its home room, so
       // a cross-room KO comes back in the right room) and its world x,y (D5). First
       // fall wins: set only once.
-      if (state.koRoom === undefined && Number.isFinite(sprite.x) && Number.isFinite(sprite.y)) {
+      // Capture the body centre (the NPC's feet / world position), not the sprite
+      // anchor. Every NPC's x,y is restored as its body centre on reload (npc-sprites
+      // positions the body there), and roomIdAtFeet is documented to take the body
+      // centre too, so the drop path (which uses body.center) and this capture now
+      // resolve the same room (review R1 m1) and the body lands where it fell instead
+      // of the sprite-anchor-to-body-centre offset higher (the 30 px cross-room gap).
+      const koBc = sprite.body?.center;
+      const koFx = Number.isFinite(koBc?.x) ? koBc.x : sprite.x;
+      const koFy = Number.isFinite(koBc?.y) ? koBc.y : sprite.y;
+      if (state.koRoom === undefined && Number.isFinite(koFx) && Number.isFinite(koFy)) {
         try {
-          const fellIn = roomIdAtFeet(sprite.x, sprite.y) || npc?.roomId || null;
+          const fellIn = roomIdAtFeet(koFx, koFy) || npc?.roomId || null;
           if (typeof fellIn === 'string' && fellIn) {
             state.koRoom = fellIn;
-            state.koX = Math.round(sprite.x);
-            state.koY = Math.round(sprite.y);
+            state.koX = Math.round(koFx);
+            state.koY = Math.round(koFy);
           }
         } catch (e) { /* no room */ }
       }
