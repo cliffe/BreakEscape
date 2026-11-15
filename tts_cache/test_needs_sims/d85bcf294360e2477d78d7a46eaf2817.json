@@ -1,0 +1,13 @@
+{
+  "key": "d85bcf294360e2477d78d7a46eaf2817",
+  "npc": "keith",
+  "text": "Always. Jodie and me take our breaks while it's slow.",
+  "voice": "Algenib",
+  "style": "Night security officer, mid fifties, white British, West Country (Bristol) accent. Steady, dry, unhurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T18:06:57Z"
+}

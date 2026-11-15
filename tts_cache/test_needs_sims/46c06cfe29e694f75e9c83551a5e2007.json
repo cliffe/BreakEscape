@@ -1,0 +1,13 @@
+{
+  "key": "46c06cfe29e694f75e9c83551a5e2007",
+  "npc": "keith",
+  "text": "Evening. Keith, night security. I'm parked here till the radio wants me.",
+  "voice": "Algenib",
+  "style": "Night security officer, mid fifties, white British, West Country (Bristol) accent. Steady, dry, unhurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T18:06:43Z"
+}

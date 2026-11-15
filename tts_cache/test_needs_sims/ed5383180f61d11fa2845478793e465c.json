@@ -1,0 +1,13 @@
+{
+  "key": "ed5383180f61d11fa2845478793e465c",
+  "npc": "jodie",
+  "text": "Go on, after you.",
+  "voice": "Zephyr",
+  "style": "Maintenance assistant, mid twenties, Glaswegian accent. Quick, warm, practical.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T18:13:40Z"
+}
