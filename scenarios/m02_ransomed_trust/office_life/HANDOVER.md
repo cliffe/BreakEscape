@@ -1,4 +1,18 @@
-# m02 office life: stage 4 round 1 fixes, handover 2026-11-15
+# m02 office life: stage 4 closed, handover 2026-11-15
+
+Stage 4 is closed. Reviews: dialogue R1 0/2/11, implementation R1 0/2/8, combined R2 0/0/7 (stop rule met); all fixed (outcomes in each review file). Live checks: `STAGE4_LIVE.md`, `STAGE4_LIVE_R2a.md`, `STAGE4_LIVE_R2b.md`, `STAGE4_LIVE_R3.md` (new ink, reloads, attack probe, crossings, copier page, the printout and cover flags). No product failure found. Spoken lines: 71 in all, every change against the approved sample listed in `SPOKEN_LINES.md`; voicing waits for the user.
+
+Decided at close:
+- The untaken printout is gone after a reload (the engine stows revealed slots on load, `npc-needs.js` `stowRevealedSlots`); the page is blank flavour and PLAN 3.1 accepts this. No engine change.
+- `cover_restored` and `bernie_vouched` after the burn come from Val's corridor challenge and Bernie's trust, unchanged by office life.
+
+Carried to stage 5 (needs E6, SIMS-2, on main first; it is on `build/ol-sims`, in the integrator's train):
+- Live checks not yet run: Val's catch (10.1 step 4), step 5, the 40 s mid-break variants, a break left to run with the player outside, the burned-not-cleared and not-told radio branches.
+- The staff-room lighting loop and the room-tone listen; the per-cell earshot and cup-click dressing checks.
+- The sprite keys change to `ernesto_bautista` and `hodan_warsame` when their art merges (`build/ol-m02-art`).
+- Hodan stays busy about 100 s after a mid-exchange attack (engine-side, no wrong behaviour).
+
+## Earlier: m02 office life: stage 4 round 1 fixes, handover 2026-11-15
 
 Branch `build/ol-m02`, worktree `.claude/worktrees/p-ol-m02`. Stage 4 is built and live-checked in part (`STAGE4_LIVE.md`); round 1 of the dialogue and implementation reviews (`DIALOGUE_REVIEW_R1.md` 0/2/11, `IMPL_REVIEW_R1.md` 0/2/8) is fixed, with each finding's outcome in the review files. The dressing checks, the staff-room lighting loop and several live checks are still open (below), so not every part of PLAN section 3 is done.
 
