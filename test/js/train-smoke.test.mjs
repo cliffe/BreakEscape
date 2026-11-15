@@ -61,9 +61,9 @@ test('badRequestFailure ignores page-cancelled requests, keyless /tts and the fa
     assert.equal(badRequestFailure({ method: 'GET', url: u('/favicon.ico'), error: 'net::ERR_FAILED' }), false);
 });
 
-test('badConsole lets the HTTP-status echo and keyless TTS noise through, not other errors', () => {
+test('badConsole lets the HTTP-status echo through, not other errors', () => {
     assert.equal(badConsole('Failed to load resource: the server responded with a status of 503 (Service Unavailable)'), false);
-    assert.equal(badConsole('TTS unavailable: no key'), false);
+    assert.equal(badConsole('TTS failed: TypeError x is undefined'), true);
     assert.equal(badConsole('Error loading room data: TypeError x is undefined'), true);
 });
 

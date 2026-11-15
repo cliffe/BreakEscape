@@ -66,8 +66,9 @@ export function badRequestFailure({ method, url, error }) {
     return true;
 }
 
-// console.error text that is expected on a keyless server and is not a boot problem.
-export const CONSOLE_ALLOW = [/Failed to load resource/i, /\btts\b.*(?:key|unavailable|503|failed)/i, /(?:key|unavailable|503).*\btts\b/i, /favicon/i];
+// console.error text that is expected on a keyless server and is not a boot problem. Keep it to
+// messages the engine really logs: a broad pattern (such as anything mentioning tts) would hide a real error.
+export const CONSOLE_ALLOW = [/Failed to load resource/i, /favicon/i];
 export function badConsole(text) {
     return !CONSOLE_ALLOW.some(re => re.test(String(text)));
 }

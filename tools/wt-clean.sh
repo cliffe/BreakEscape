@@ -17,6 +17,8 @@ git worktree list --porcelain | awk '/^worktree /{print $2}' | grep '/.claude/wo
   if ! git merge-base --is-ancestor "$head" main; then echo "SKIP  $n (not in main)"; continue; fi
   dirty=$(git -C "$wt" status --porcelain | grep -vE '^\?\? (node_modules|\.bundle/?)$')
   if [ -n "$dirty" ]; then echo "SKIP  $n (uncommitted changes)"; continue; fi
+  if ls "$wt"/tmp/pids/*.pid >/dev/null 2>&1; then echo "SKIP  $n (server pid file)"; continue; fi
+  if [ -n "$(for p in /proc/[0-9]*; do c=$(readlink $p/cwd 2>/dev/null); case "$c" in "$wt"|"$wt"/*) echo x;; esac; done | head -1)" ]; then echo "SKIP  $n (a process is working in it)"; continue; fi
   gd=$(git -C "$wt" rev-parse --git-dir)
   age=$(( now - $(stat -c %Y "$gd/logs/HEAD" 2>/dev/null || echo $now) ))
   if [ $age -lt 10800 ]; then echo "SKIP  $n (touched $((age/60)) min ago)"; continue; fi

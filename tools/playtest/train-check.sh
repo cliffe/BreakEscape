@@ -63,12 +63,13 @@ cleanup() {
 trap cleanup EXIT
 trap 'exit 130' INT TERM
 
-echo "HEAD $(git rev-parse HEAD)" > "$SUM"
+HEAD0="$(git rev-parse HEAD)"
+echo "HEAD $HEAD0" > "$SUM"
 [ "${NOLOCK_WARN:-0}" = 1 ] && echo "WARNING: TESTS_LOCK not set, test database not serialised" >> "$SUM"
 
 # ---- keyless server on <port> ----
 if curl -s -o /dev/null --max-time 2 "http://127.0.0.1:${PORT}/"; then
-  echo "RED: something already answers on :${PORT}; pick a free port" | tee -a "$SUM" >&2
+  echo "SETUP: something already answers on :${PORT}; pick a free port" | tee -a "$SUM" >&2
   exit 2
 fi
 rm -f "tmp/pids/server-${PORT}.pid"
@@ -150,7 +151,9 @@ else
   [ "$ue" -ne 0 ] && RED+=("unknown validator ERROR lines $ue")
 fi
 
-echo "HEAD after $(git rev-parse HEAD)" >> "$SUM"
+HEAD1="$(git rev-parse HEAD)"
+echo "HEAD after $HEAD1" >> "$SUM"
+[ "$HEAD1" != "$HEAD0" ] && RED+=("HEAD moved during the run")
 echo "git status:" >> "$SUM"
 DIRTY="$(git status --short | grep -vE '^\?\? (node_modules|\.bundle)/?$')"
 [ -n "$DIRTY" ] && echo "$DIRTY" >> "$SUM"
