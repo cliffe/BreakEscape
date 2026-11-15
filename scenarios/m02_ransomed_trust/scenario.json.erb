@@ -3495,6 +3495,10 @@ boardroom_pin = "0417"
           "needsRooms": ["staff_room"],
           "needsCompany": { "groups": ["night_staff"] },
           "chatterCooldownMin": 2,
+          "chatter": {
+            "coffee": ["Lab's quiet. That never lasts.", "Thirty years. Never seen it like this.", "Bloods all night. All on foot.", "Tea's stewed. Still hot, mind."],
+            "cooler": ["Cold in that corridor tonight.", "Last cup's always the one with a hole.", "Lift's out again. Stairs it is.", "Water's free, at least."]
+          },
           "needs": {
             "caffeine": { "initial": 45, "decayPerMin": 5, "urgentAt": 35, "jitterPct": 10 },
             "thirst": { "initial": 65, "decayPerMin": 3, "urgentAt": 30 },
@@ -3527,6 +3531,17 @@ boardroom_pin = "0417"
           "needsRooms": ["staff_room"],
           "needsCompany": { "groups": ["night_staff"] },
           "chatterCooldownMin": 2,
+          "chatter": {
+            "coffee": ["Four beds turned. Linen's run out.", "Every bed I turn, they want two.", "Matron's lot want it done yesterday.", "Can't feel my hands. Mop water's cold."],
+            "cooler": ["This cooler's warmer than the sink.", "My feet have given up, Ernesto.", "Bed manager's on my radio every hour.", "Floor's done till they call me."]
+          },
+<%# Exchanges (office_life/PLAN.md 6): read in order, the first unheard one whose gates hold
+    plays when the pair meet with Hodan in earshot. The knots are in her ink. %>
+          "exchanges": [
+            { "with": "ernesto_bautista", "knot": "night_watch_burned", "requireGlobal": { "cover_burned": true, "night_staff_attacked": false, "gary_ko": false, "dr_kim_ko": false, "patient_bed4_deceased": false } },
+            { "with": "ernesto_bautista", "knot": "night_watch_cleared", "requireGlobal": { "cover_restored": true, "heard_night_watch_burned": true, "attacked_guard": false, "guard_knocked_out": false, "night_staff_attacked": false, "gary_ko": false, "dr_kim_ko": false, "patient_bed4_deceased": false } },
+            { "with": "ernesto_bautista", "knot": "night_watch_paper", "requireGlobal": { "night_staff_attacked": false, "patient_bed4_deceased": false } }
+          ],
           "needs": {
             "caffeine": { "initial": 65, "decayPerMin": 5, "urgentAt": 35, "jitterPct": 10 },
             "thirst": { "initial": 65, "decayPerMin": 3, "urgentAt": 30 }
@@ -3770,6 +3785,9 @@ boardroom_pin = "0417"
     "hodan_warsame_ko": false,
     "night_staff_attacked": false,
     "it_copier_page_shown": false,
+    "heard_night_watch_burned": false,
+    "heard_night_watch_cleared": false,
+    "heard_night_watch_paper": false,
     "briefing_played": false,
     "mission_started": false,
 <%# ransomware_deployed gates the ransomware_display lockType. Without it the five
