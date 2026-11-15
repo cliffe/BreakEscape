@@ -6,6 +6,8 @@ Decided at close:
 - The untaken printout is gone after a reload (the engine stows revealed slots on load, `npc-needs.js` `stowRevealedSlots`); the page is blank flavour and PLAN 3.1 accepts this. No engine change.
 - `cover_restored` and `bernie_vouched` after the burn come from Val's corridor challenge and Bernie's trust, unchanged by office life.
 
+Stage 4 leftovers, run 2026-11-15 after E6 reached main (f8c43d0c9): staff-room lighting in (0894dd0fb, section below); live round 4 in `STAGE4_LIVE_R4.md` (66e128687): 23 PASS, 0 FAIL, 2 NOT RUN. That covers the round 2 ink on all branches, Val's catch, step 5, both crossings at 5 of 5, reload after an attack, the clues and cups with the pair at the counter and the copier page. Still open: `playerHears` from every floor cell, the path search to the second-user cells, the whole-room walkthrough counts and the gap between the HaX strike and KO texts. Hodan's held use after a mid-exchange cut measured 111.5 s (game 5291), the engine item below. The room-snapshot diff noise is lighting sprites from 0894dd0fb, not object moves. Stage 5 playtests wait for the real sprites (PLAN: real atlases before any stage 5 playtest).
+
 Carried to stage 5 (needs E6, SIMS-2, on main first; it is on `build/ol-sims`, in the integrator's train):
 - Live checks not yet run: Val's catch (10.1 step 4), step 5, the 40 s mid-break variants, a break left to run with the player outside, the burned-not-cleared and not-told radio branches.
 - The staff-room lighting loop and the room-tone listen; the per-cell earshot and cup-click dressing checks.
