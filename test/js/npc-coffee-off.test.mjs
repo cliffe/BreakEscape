@@ -170,14 +170,19 @@ const turnOff = (opts) => {
 };
 
 test('grumble_off is used when it has lines; a scenario with only a grumble pool still says a grumble line (the lab)', () => {
-    const own = turnOff({ chatter: { grumble: ['Not with him there.'], grumble_off: ["Machine's dead."] } });
+    // SIMS-5 design R3 m1: a grumble is spoken only within earshot, as chatter is
+    const heard = () => ({ overheard: true, distance: 60 });
+    const own = turnOff({ chatter: { grumble: ['Not with him there.'], grumble_off: ["Machine's dead."] }, hears: heard });
     assert.deepEqual([own.sys.getState('tom').talking.topic, own.sys.getState('tom').talking.line], ['grumble_off', "Machine's dead."]);
     assert.equal(own.evs('turned_back')[0].grumble, 'grumble_off');
-    const lab = turnOff({ chatter: { grumble: ['Not with him there.'] } });
+    const far = turnOff({ chatter: { grumble: ['Not with him there.'], grumble_off: ["Machine's dead."] } });
+    assert.deepEqual([far.sys.getState('tom').talking.topic, far.sys.getState('tom').talking.line, far.sys.getState('tom').talking.picture],
+        ['grumble_off', null, 'caffeine'], 'out of earshot: the picture, no line spent');
+    const lab = turnOff({ chatter: { grumble: ['Not with him there.'] }, hears: heard });
     assert.deepEqual([lab.sys.getState('tom').talking.topic, lab.sys.getState('tom').talking.line], ['grumble', 'Not with him there.']);
     assert.equal(lab.evs('turned_back')[0].grumble, 'grumble');
     // An NPC's own grumble_off lines count too
-    const npc = turnOff({ rec: { chatter: { grumble_off: ['Kitchen, then.'] } } });
+    const npc = turnOff({ rec: { chatter: { grumble_off: ['Kitchen, then.'] } }, hears: heard });
     assert.equal(npc.sys.getState('tom').talking.line, 'Kitchen, then.');
     // chatter false: no grumble at all
     const off = turnOff({ chatter: false });

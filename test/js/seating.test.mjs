@@ -223,6 +223,105 @@ test('needs NPC back at its post sits in its own chair though the walk stopped a
     } finally { rig.restore(); }
 });
 
+test('chairAtOtherPost: the nearest post owns a chair; within 36 px of a neighbour but nearer home stays own', () => {
+    const home = { x: 92, y: 124 }, marek = { x: 53, y: 128 };
+    assert.equal(seating.chairAtOtherPost({ x: 89, y: 126.4 }, home, [marek]), false, "Sanjay's tucked chair (live 5398)");
+    assert.equal(seating.chairAtOtherPost({ x: 60, y: 126 }, home, [marek]), true, 'by the neighbour: theirs');
+    assert.equal(seating.chairAtOtherPost({ x: 60, y: 126 }, home, []), false, 'no other posts');
+    assert.equal(seating.chairAtOtherPost({ x: 10, y: 126 }, home, [marek]), false, 'too far from the post');
+});
+
+test('needs NPC at its post sits in its own chair though a neighbour\'s post is within 36 px of it', () => {
+    const rig = labSeatRig(235);
+    try {
+        // chair foot (200,186), home cell (204,172); a neighbour's post 35 px west of the foot
+        window.npcNeedsSystem.states.set('neighbour', { npcId: 'neighbour', mode: 'idle', atPost: true, home: { x: 165, y: 186, roomId: 'open_plan' } });
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), true, 'walking onto the seat');
+    } finally { rig.restore(); }
+});
+
+test('postSeatRetryDue: at the post every 4 s of needs clock; away from the post one try is final', () => {
+    assert.equal(seating.postSeatRetryDue({ post: true }, undefined, 0), true);
+    assert.equal(seating.postSeatRetryDue({ post: true }, 1000, 4999), false);
+    assert.equal(seating.postSeatRetryDue({ post: true }, 1000, 5000), true);
+    assert.equal(seating.postSeatRetryDue({ post: false }, 1000, 60000), false);
+    assert.equal(seating.postSeatRetryDue(null, 1000, 60000), false);
+});
+
+test('needs NPC standing at its post tries its chair again once it is free (OFFICE_LIFE_STUCK_RETURN round 4)', () => {
+    const rig = labSeatRig(235);
+    try {
+        rig.chair.seatedBy = 'someone_else'; // the first try finds no free chair: stands
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), false);
+        assert.equal(rig.behavior._seatMove ?? null, null, 'no seat move on the first try');
+        delete rig.chair.seatedBy;
+        window.npcNeedsSystem.clockMs = 3000;
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), false, 'not due yet');
+        window.npcNeedsSystem.world.inChatWith = () => true;
+        window.npcNeedsSystem.clockMs = 4000;
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), false, 'never mid-conversation');
+        window.npcNeedsSystem.world.inChatWith = () => false;
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), true, 'the retry walks onto the seat');
+        for (let i = 0; i < 40 && !rig.behavior._seat; i++) {
+            const v = rig.sprite.body.velocity;
+            rig.sprite.x += v.x * 0.05; rig.sprite.y += v.y * 0.05;
+            seating.updateSeatedNPC(rig.behavior, null);
+        }
+        assert.ok(rig.behavior._seat, 'seated');
+        assert.equal(rig.chair.seatedBy, 'pierce');
+    } finally { rig.restore(); }
+});
+
+test('postFetchRetryDue: a post retry fetches once per fetch timeout (15 s of needs clock)', () => {
+    assert.equal(seating.postFetchRetryDue({ post: true }, undefined, 0), true, 'never fetched at this stop');
+    assert.equal(seating.postFetchRetryDue({ post: true }, 1000, 15999), false);
+    assert.equal(seating.postFetchRetryDue({ post: true }, 1000, 16000), true);
+    assert.equal(seating.postFetchRetryDue({ post: false }, 1000, 60000), false, 'away from the post: never');
+    assert.equal(seating.postFetchRetryDue(null, undefined, 0), false);
+});
+
+test('needs NPC standing at its post fetches a chair again after a failed fetch, once per fetch timeout (OFFICE_LIFE_STUCK_RETURN round 5)', () => {
+    const rig = labSeatRig(235);
+    // Only a loose swivel chair 60 px south of the home cell (204,172): out of sitting reach, in fetch range
+    const chair = Object.assign(swivel('chair-white-1-rotate', 1), { x: 196, y: 206, width: 16, height: 26, depth: 232, active: true, objectId: 'loose_chair' });
+    chair.body = { enable: true, offset: { x: 0, y: 18 }, width: 16, height: 8, velocity: { x: 0, y: 0 },
+        setVelocity(x, y) { this.velocity.x = x; this.velocity.y = y; }, reset(x, y) { chair.x = x; chair.y = y; } };
+    chair.setPosition = (x, y) => { chair.x = x; chair.y = y; };
+    window.rooms = { open_plan: { objects: { loose_chair: chair } } };
+    const moves = [];
+    rig.behavior.goToAndStay = (x, y) => { moves.push([x, y]); rig.behavior._goToStayDest = { x, y }; };
+    rig.behavior.cancelMove = () => { rig.behavior._goToStayDest = null; };
+    try {
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), true, 'the first try fetches');
+        assert.ok(rig.behavior._fetch, 'fetching');
+        assert.equal(moves.length, 1);
+        seating.cancelFetch(rig.behavior); // the fetch fails (here: called away and back)
+        rig.behavior._goToStayDest = null;
+        window.npcNeedsSystem.clockMs = 4000;
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), false, 'a 4 s retry finds no chair in reach and does not fetch yet');
+        assert.equal(moves.length, 1);
+        window.npcNeedsSystem.clockMs = 15000;
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), true, 'the retry 15 s after the fetch fetches again');
+        assert.ok(rig.behavior._fetch);
+        assert.equal(moves.length, 2);
+    } finally { rig.restore(); }
+});
+
+test('a needs NPC stopped away from its post tries a chair once only', () => {
+    const rig = labSeatRig(235);
+    try {
+        window.npcManager = { getNPC: () => ({ needsHome: 'elsewhere' }) }; // at a stop that is not its post
+        const ns = window.npcNeedsSystem.states.get('pierce');
+        Object.assign(ns, { mode: 'job', atPost: false, job: { kind: 'use', phase: 'using', targetId: 'staff_pc_2', need: 'work' } });
+        rig.chair.seatedBy = 'someone_else';
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), false);
+        delete rig.chair.seatedBy;
+        window.npcNeedsSystem.clockMs = 60000;
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), false, 'no retry away from the post');
+        assert.equal(rig.behavior._seatMove ?? null, null);
+    } finally { rig.restore(); }
+});
+
 test('breathDown: head and shoulders are down for 40% of each 3.6s breath, offset by phase', () => {
     let down = 0;
     for (let t = 0; t < 3600; t += 10) if (seating.breathDown(t, 0)) down++;
@@ -811,7 +910,7 @@ test('swivelFacing: same for a seed, about 5% of 6 s slots, one compass step sna
     assert.notEqual(seating.swivelFacing({ state: coffee, clockMs: 500, homeFacing: 'south', roll: roll(1), chance: 1 }), 'south');
 });
 
-test('listenTarget: the nearest speaker in the same room within four tiles, until the line ends; never itself', () => {
+test('listenTarget: the nearest speaker in the same room within earshot (five tiles), until the line ends; never itself', () => {
     const speakers = [
         { npcId: 'rosa', roomId: 'office', x: 300, y: 100, until: 5000 },
         { npcId: 'amara', roomId: 'office', x: 180, y: 100, until: 5000 },
@@ -823,6 +922,18 @@ test('listenTarget: the nearest speaker in the same room within four tiles, unti
     assert.equal(seating.listenTarget({ ...base, clockMs: 5000 }), null, 'the line has ended');
     assert.equal(seating.listenTarget({ ...base, x: 400, y: 400, clockMs: 1000 }), null, 'too far');
     assert.equal(seating.listenTarget({ ...base, speakers: [], clockMs: 0 }), null);
+});
+
+test('listenTarget: the listen radius is the earshot radius, or the speaker\'s own overhearRadius', () => {
+    assert.equal(seating.LISTEN_RADIUS, 160, 'the earshot default (OVERHEAR_RADIUS)');
+    const at = (d, radius) => [{ npcId: 'sanjay', roomId: 'office', x: 100 + d, y: 100, until: 5000, ...(radius ? { radius } : {}) }];
+    const base = { npcId: 'tom', roomId: 'office', x: 100, y: 100, clockMs: 1000 };
+    // Round 6, game 5434: seated staff 149 to 192 px from the turn-back; 149 and 155 hear a 160 px line
+    assert.equal(seating.listenTarget({ ...base, speakers: at(149) })?.npcId, 'sanjay', 'inside 160 px (was outside 128)');
+    assert.equal(seating.listenTarget({ ...base, speakers: at(160) })?.npcId, 'sanjay', 'on the edge');
+    assert.equal(seating.listenTarget({ ...base, speakers: at(192) }), null, 'out of earshot');
+    assert.equal(seating.listenTarget({ ...base, speakers: at(192, 200) })?.npcId, 'sanjay', 'a wider pool overhearRadius');
+    assert.equal(seating.listenTarget({ ...base, speakers: at(100, 80) }), null, 'a narrower pool overhearRadius');
 });
 
 test('swivelEnabled: swivel false, officeVisuals false and los.enabled turn it off', () => {
@@ -960,4 +1071,132 @@ test('updateSeatedNPC (needs): no swivel or listening on a call, paired, talking
     } finally {
         Object.assign(window, { npcNeedsSystem: prev.n, npcManager: prev.m, eventDispatcher: prev.e, gameScenario: prev.g });
     }
+});
+
+// ── Code review R1 (OFFICE_LIFE_STUCK_RETURN_REVIEW_R1.md) M2 and m6 ──────────────────────
+
+test('M2: post seat retries stop after POST_SEAT_RETRY_MAX when every seat move sticks; one seat_gave_up line', () => {
+    const rig = labSeatRig(235);
+    const log = [];
+    try {
+        window.npcNeedsSystem._log = (npc, ev, data) => log.push({ npc, ev, ...data });
+        let starts = 0;
+        for (let i = 0; i < 12; i++) {
+            if (seating.updateSeatedNPC(rig.behavior, null) && rig.behavior._seatMove) starts++;
+            // the seat move always sticks: it ends short with the NPC standing at its post
+            rig.behavior._seatMove = null;
+            rig.behavior.isMoving = false;
+            window.npcNeedsSystem.clockMs += 4000;
+        }
+        assert.equal(starts, 1 + seating.POST_SEAT_RETRY_MAX, 'the first try and three retries, then no more');
+        const gave = log.filter(e => e.ev === 'seat_gave_up');
+        assert.equal(gave.length, 1, 'one give-up line');
+        assert.equal(gave[0].npc, 'pierce');
+        assert.equal(gave[0].seatRetries, seating.POST_SEAT_RETRY_MAX);
+    } finally { rig.restore(); }
+});
+
+// Code review R2 m3 and m7: a give-up expires after SEAT_GIVE_UP_MS (one stop key can last the
+// session), and a new stop key resets the counts through updateSeatedNPC
+test('R2 m3: seat_gave_up expires after SEAT_GIVE_UP_MS; a new stop key resets the retry counts', () => {
+    const rig = labSeatRig(235);
+    const log = [];
+    const tryOnce = () => {
+        const started = seating.updateSeatedNPC(rig.behavior, null) && !!rig.behavior._seatMove;
+        rig.behavior._seatMove = null;
+        rig.behavior.isMoving = false;
+        window.npcNeedsSystem.clockMs += 4000;
+        return started;
+    };
+    try {
+        window.npcNeedsSystem._log = (npc, ev, data) => log.push({ npc, ev, ...data });
+        for (let i = 0; i < 6; i++) tryOnce();
+        assert.equal(log.filter(e => e.ev === 'seat_gave_up').length, 1);
+        assert.equal(rig.behavior._seatGaveUp, true);
+        let starts = 0;
+        const until = window.npcNeedsSystem.clockMs + seating.SEAT_GIVE_UP_MS - 12000;
+        while (window.npcNeedsSystem.clockMs < until) if (tryOnce()) starts++;
+        assert.equal(starts, 0, 'stands through the give-up');
+        for (let i = 0; i < 6 && !starts; i++) if (tryOnce()) starts++;
+        assert.equal(starts, 1, 'then the stop starts over and the seat move runs again');
+        assert.equal(rig.behavior._seatGaveUp, false);
+        // a new stop key resets every count, whatever they were
+        rig.behavior._seatRetries = 2;
+        rig.behavior._fetchRetries = 1;
+        rig.behavior._seatGaveUp = true;
+        rig.behavior._seatStopKey = 'at:somewhere_else';
+        tryOnce();
+        assert.equal(rig.behavior._seatGaveUp, false, 'a new stop: no give-up');
+        assert.ok((rig.behavior._seatRetries || 0) <= 1, 'retry count started again');
+        assert.equal(rig.behavior._fetchRetries || 0, 0);
+    } finally { rig.restore(); }
+});
+
+// Code review R3 m4: the expiry gives back the seat retries only, never the chair fetches, and runs
+// at most SEAT_GIVE_UP_EXPIRIES times per stop key; then the give-up lasts until the stop changes
+test('R3 m4: a seat give-up expiry keeps the fetch count and is capped per stop', () => {
+    const rig = labSeatRig(235);
+    const log = [];
+    const tryOnce = () => {
+        const started = seating.updateSeatedNPC(rig.behavior, null) && !!rig.behavior._seatMove;
+        rig.behavior._seatMove = null;
+        rig.behavior.isMoving = false;
+        window.npcNeedsSystem.clockMs += 4000;
+        return started;
+    };
+    try {
+        window.npcNeedsSystem._log = (npc, ev, data) => log.push({ npc, ev, ...data });
+        for (let i = 0; i < 6; i++) tryOnce();
+        assert.equal(rig.behavior._seatGaveUp, true);
+        rig.behavior._fetchRetries = seating.POST_FETCH_RETRY_MAX;   // its fetches were spent too
+        const fetchedAt = rig.behavior._fetchTriedAt;
+        let starts = 0;
+        const end = window.npcNeedsSystem.clockMs + (seating.SEAT_GIVE_UP_EXPIRIES + 3) * (seating.SEAT_GIVE_UP_MS + 20000);
+        while (window.npcNeedsSystem.clockMs < end) if (tryOnce()) starts++;
+        assert.equal(rig.behavior._fetchRetries, seating.POST_FETCH_RETRY_MAX, 'the expiry does not give the fetches back');
+        assert.equal(rig.behavior._fetchTriedAt, fetchedAt, 'nor clear the last fetch time');
+        assert.equal(log.filter(e => e.ev === 'seat_gave_up').length, 1 + seating.SEAT_GIVE_UP_EXPIRIES,
+            'one give-up per expiry, then it lasts');
+        assert.equal(starts, seating.SEAT_GIVE_UP_EXPIRIES * (1 + seating.POST_SEAT_RETRY_MAX) - seating.SEAT_GIVE_UP_EXPIRIES,
+            'each expiry allows POST_SEAT_RETRY_MAX seat moves');
+        assert.equal(rig.behavior._seatGaveUp, true, 'given up for good at this stop');
+        rig.behavior._seatStopKey = 'at:somewhere_else';
+        tryOnce();
+        assert.equal(rig.behavior._seatGiveUpExpiries, 0, 'a new stop starts the expiry count again');
+        assert.equal(rig.behavior._seatGaveUpAt, undefined, 'and clears the give-up date with the flag');
+    } finally { rig.restore(); }
+});
+
+// Code review R4 m3: sitting at the stop gives the expiry and retry counts back
+test('R4 m3: an NPC that sits starts its give-up expiries and retries again', () => {
+    const rig = labSeatRig(235);
+    try {
+        assert.equal(seating.updateSeatedNPC(rig.behavior, { x: 320, y: 191 }), true);
+        for (let i = 0; i < 40 && !rig.behavior._seat; i++) {
+            const v = rig.sprite.body.velocity;
+            rig.sprite.x += v.x * 0.05; rig.sprite.y += v.y * 0.05;
+            seating.updateSeatedNPC(rig.behavior, { x: 320, y: 191 });
+        }
+        assert.ok(rig.behavior._seat, 'seated');
+        rig.behavior._seatGiveUpExpiries = seating.SEAT_GIVE_UP_EXPIRIES;
+        rig.behavior._seatRetries = 2;
+        rig.behavior._fetchRetries = 1;
+        seating.updateSeatedNPC(rig.behavior, { x: 320, y: 191 });
+        assert.equal(rig.behavior._seatGiveUpExpiries, 0);
+        assert.equal(rig.behavior._seatRetries, 0);
+        assert.equal(rig.behavior._fetchRetries, 0);
+    } finally { rig.restore(); }
+});
+
+test('M2 and m6: retry caps per kind and a recent fetch claims the chair for its fetcher', () => {
+    assert.equal(seating.postRetryAllowed('seat', 0), true);
+    assert.equal(seating.postRetryAllowed('seat', seating.POST_SEAT_RETRY_MAX - 1), true);
+    assert.equal(seating.postRetryAllowed('seat', seating.POST_SEAT_RETRY_MAX), false);
+    assert.equal(seating.postRetryAllowed('fetch', seating.POST_FETCH_RETRY_MAX - 1), true);
+    assert.equal(seating.postRetryAllowed('fetch', seating.POST_FETCH_RETRY_MAX), false);
+    const chair = { fetchedBy: 'tom', fetchedAt: 10000 };
+    assert.equal(seating.chairClaimedByOther(chair, 'tom', 20000), false, 'the fetcher may fetch it again');
+    assert.equal(seating.chairClaimedByOther(chair, 'amara', 20000), true, 'another fetcher may not, so no back and forth');
+    assert.equal(seating.chairClaimedByOther(chair, 'amara', 10000 + seating.FETCH_CLAIM_MS), false, 'the claim lapses');
+    assert.equal(seating.chairClaimedByOther({}, 'amara', 0), false, 'never fetched');
 });

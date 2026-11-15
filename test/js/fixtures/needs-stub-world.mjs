@@ -11,6 +11,8 @@ export function makeWorld({ npcs, objects, arrive = true }) {
     const calls = { moves: [], emits: [], globals: {}, consumed: [], dropped: [], cancels: [] };
     let sys = null;
     let chatWith = null;
+    let nudgeTo = null;        // (id, pos) => landing point, or null: a refused nudge
+    let playerNear = false;
     const world = {
         elapsedMs: () => 0,
         isVmActive: () => false,
@@ -25,10 +27,14 @@ export function makeWorld({ npcs, objects, arrive = true }) {
         tileToWorld: (r, x, y) => ({ x: x * TILE, y: y * TILE }),
         speedFor: () => 80,
         moveTo(id, x, y, speed, opts) {
-            calls.moves.push({ id, x, y, yieldToPlayer: opts.yieldToPlayer, moveId: opts.moveId });
+            calls.moves.push({ id, x, y, yieldToPlayer: opts.yieldToPlayer, moveId: opts.moveId, ...(opts.reroute ? { reroute: true } : {}), ...(opts.nudge ? { nudge: true } : {}) });
             // SIMS-2: place the NPC on its destination and echo the move id, so the arrival counts.
+            const nudged = opts.nudge && nudgeTo ? nudgeTo(id, { ...pos[id] }) : null;
+            if (nudged) { pos[id].x = nudged.x; pos[id].y = nudged.y; }
             if (arrive) { pos[id].x = x; pos[id].y = y; sys.onArrived(id, 'needs', { x, y, moveId: opts.moveId }); }
+            return { nudged };
         },
+        playerBlocks: () => playerNear,
         cancelMove: id => calls.cancels.push(id),
         faceTo() {},
         pickUp(npcId, itemId) {
@@ -45,6 +51,9 @@ export function makeWorld({ npcs, objects, arrive = true }) {
     return {
         world, calls, objs, pos,
         attach(s) { sys = s; },
-        setChat(id) { chatWith = id; }
+        setChat(id) { chatWith = id; },
+        /** fn(id, pos) returns where a requested nudge lands, or null (refused); unset: no nudge runs */
+        setNudge(fn) { nudgeTo = fn; },
+        setPlayerNear(v) { playerNear = !!v; }
     };
 }

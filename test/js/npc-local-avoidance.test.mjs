@@ -33,7 +33,66 @@ const quiet = fn => {
 };
 const mod = await quiet(() => import(pathToFileURL(join(dir, 'npc-behavior.mjs')).href));
 const { NPCBehavior } = mod.default;
-const { nearestBlockerAhead, avoidanceYieldsTo, AVOID_LOOKAHEAD_PX } = mod;
+const { nearestBlockerAhead, nearestBlockerOnPath, avoidanceYieldsTo, AVOID_LOOKAHEAD_PX } = mod;
+
+// ── nearestBlockerOnPath: "ahead" follows the path for the look-ahead ──────────
+
+test('path: a body straight ahead on a straight path still blocks', () => {
+    const path = [{ x: 16, y: 0 }, { x: 32, y: 0 }, { x: 48, y: 0 }, { x: 64, y: 0 }];
+    const hit = nearestBlockerOnPath({ x: 0, y: 0 }, path, [{ x: 30, y: 2, id: 'p' }]);
+    assert.ok(hit, 'a body on the line ahead blocks');
+    assert.equal(hit.id, 'p');
+    assert.ok(Math.abs(hit.fwd - 30) < 1e-9);
+});
+
+test('path: a body ahead of a short first leg, where the path turns away, does not block (game 5443)', () => {
+    // Marek 8 px from his next waypoint, which points at the player 33 px away;
+    // the detour then turns up and away round the player.
+    const pos = { x: 0, y: 0 };
+    const path = [{ x: 8, y: 0 }, { x: 8, y: -16 }, { x: 8, y: -32 }, { x: 16, y: -48 }];
+    const player = [{ x: 33, y: 0, id: 'player', isPlayer: true }];
+    assert.ok(nearestBlockerAhead(pos, { x: 1, y: 0 }, player), 'the heading check alone would block');
+    assert.equal(nearestBlockerOnPath(pos, path, player), null, 'the path check does not');
+});
+
+test('path: a body on a later segment within the look-ahead blocks', () => {
+    const path = [{ x: 10, y: 0 }, { x: 10, y: -40 }];
+    const hit = nearestBlockerOnPath({ x: 0, y: 0 }, path, [{ x: 12, y: -20, id: 'n' }]);
+    assert.ok(hit, 'a body round the corner on the path blocks');
+    assert.ok(Math.abs(hit.fwd - 30) < 1e-9, 'fwd is the distance along the path');
+});
+
+test('path: a body beyond the look-ahead along the path does not block', () => {
+    // 10 px then 40 px up: 50 px of path to reach it, past the 42 px look-ahead,
+    // although it is only about 41 px from the walker in a straight line.
+    const path = [{ x: 10, y: 0 }, { x: 10, y: -60 }];
+    assert.ok(AVOID_LOOKAHEAD_PX < 50);
+    assert.equal(nearestBlockerOnPath({ x: 0, y: 0 }, path, [{ x: 10, y: -40, id: 'n' }]), null);
+});
+
+test('path: a body behind the walker never blocks, even on a path', () => {
+    const path = [{ x: 16, y: 0 }, { x: 32, y: 0 }];
+    assert.equal(nearestBlockerOnPath({ x: 0, y: 0 }, path, [{ x: -10, y: 0, id: 'p' }]), null);
+});
+
+test('path: a one-point path falls back to the heading check', () => {
+    const one = [{ x: 8, y: 0 }];
+    const body = [{ x: 33, y: 0, id: 'p' }];
+    const hit = nearestBlockerOnPath({ x: 0, y: 0 }, one, body);
+    assert.deepEqual(hit, nearestBlockerAhead({ x: 0, y: 0 }, { x: 8, y: 0 }, body));
+    assert.ok(hit, 'past the single waypoint along the heading still blocks');
+});
+
+test('walker: a detour that bends away from the player is walked, not held', () => {
+    window.__npcAvoidOff = false;
+    window.player = { body: { enable: true, center: { x: 33, y: 0 } } };
+    window.rooms = {};
+    const b = walker();
+    b.currentPath = [{ x: 8, y: 0 }, { x: 8, y: -16 }, { x: 8, y: -32 }, { x: 16, y: -48 }];
+    b.pathIndex = 0;
+    assert.equal(b._handleBlockerAhead(100000, b.currentPath[0]), false);
+    assert.equal(b._avoid, null);
+});
 
 // ── nearestBlockerAhead: only bodies AHEAD, in lane, closest first ───────────────
 
@@ -246,4 +305,99 @@ test('needs errand: a player far from the target (mid-path) is still a normal yi
     b._handleBlockerAhead(t, { x: 400, y: 0 });
     t += 700; b._handleBlockerAhead(t, { x: 400, y: 0 });  // past wait, before give-up squeeze
     assert.deepEqual(b._vel, { x: 0, y: 0 }, 'a mid-path player is still a plain hold — the squeeze is scoped to the pickup cell');
+});
+
+// ── Code review R1 (OFFICE_LIFE_STUCK_RETURN_REVIEW_R1.md) ───────────────────────
+
+test('M1: a needs detour that finds nothing round held bodies retries the plain detour before giving up', () => {
+    window.player = { body: { enable: true, center: { x: 28, y: 0 } } };
+    window.rooms = {};
+    const detour = [{ x: 50, y: 60 }, { x: 400, y: 0 }];
+    const seen = [];
+    // Tucked-in chairs close the only aisle when held bodies count: that search finds nothing
+    const pf = { findNearestWalkableStartCell: (x, y) => ({ x, y }),
+        findWorldPath: (sx, sy, ex, ey, cb, _w, opts) => {
+            const held = !!opts?.avoidDynamic?.includeHeld;
+            seen.push(held);
+            cb(held ? null : detour);
+        } };
+    const b = walker({ busy: true, pathfinder: pf });
+    b._moveOwner = 'needs';
+    let t = 100000;
+    quiet(() => b._handleBlockerAhead(t, { x: 400, y: 0 }));
+    t += 700; quiet(() => b._handleBlockerAhead(t, { x: 400, y: 0 }));
+    assert.deepEqual(seen, [true, false], 'held-aware first, then the plain detour');
+    assert.equal(b.currentPath, detour, 'the plain detour is adopted');
+    assert.equal(b._avoid, null, 'and it did not give up');
+});
+
+test('M1: with both searches empty the needs walker still gives up as before', () => {
+    window.player = { body: { enable: true, center: { x: 28, y: 0 } } };
+    window.rooms = {};
+    const pf = { findNearestWalkableStartCell: (x, y) => ({ x, y }),
+        findWorldPath: (sx, sy, ex, ey, cb) => cb(null) };
+    const b = walker({ busy: true, pathfinder: pf });
+    b._moveOwner = 'needs';
+    let t = 100000;
+    quiet(() => b._handleBlockerAhead(t, { x: 400, y: 0 }));
+    t += 700; quiet(() => b._handleBlockerAhead(t, { x: 400, y: 0 }));
+    assert.equal(b._avoid?.gaveUp, true);
+    assert.equal(b._avoid?.pending, false);
+});
+
+test('m5: nearestBlockerOnPath reads the path in place from startIndex, same answer as a copy', () => {
+    const path = [{ x: -40, y: 0 }, { x: -20, y: 0 }, { x: 8, y: 0 }, { x: 8, y: 30 }, { x: 8, y: 80 }];
+    const blockers = [{ x: 30, y: 0, id: 'p', isPlayer: true }, { x: 8, y: 24, id: 'b' }];
+    const pos = { x: 0, y: 0 };
+    const inPlace = nearestBlockerOnPath(pos, path, blockers, AVOID_LOOKAHEAD_PX, 13, 2);
+    const copied = nearestBlockerOnPath(pos, path.slice(2), blockers);
+    assert.deepEqual(inPlace, copied);
+    assert.equal(inPlace.id, 'b', 'the body past the turn, not the one straight ahead');
+    assert.equal(nearestBlockerOnPath(pos, path, blockers, AVOID_LOOKAHEAD_PX, 13, 5), null, 'nothing left to walk');
+});
+
+test('m3: a needs re-route with nudge steps onto the nearest walkable cell first', () => {
+    const pf = { findNearestWalkableStartCell: () => ({ x: 10, y: 0 }) };
+    const b = walker({ pathfinder: pf });
+    let reset = null;
+    b.sprite.body.reset = (x, y) => { reset = { x, y }; };
+    b.npcBodyPos = () => ({ x: 0, y: 0 });
+    window.seating = null;
+    window.player = null;
+    window.rooms = {};
+    quiet(() => b.goToAndStay(400, 0, 90, { owner: 'needs', reroute: true, nudge: true }));
+    assert.deepEqual(reset, { x: 10, y: 0 }, 'nudged 10 px onto the walkable cell');
+    reset = null;
+    quiet(() => b.goToAndStay(400, 0, 90, { owner: 'needs', reroute: true }));
+    assert.equal(reset, null, 'no nudge without the flag');
+    quiet(() => b.goToAndStay(400, 0, 90, { owner: 'script', nudge: true }));
+    assert.equal(reset, null, 'and never for a script move');
+});
+
+// Code review R2 m1: the needs nudge has the same player-beside guard as _checkPathStuck, only
+// leaves a grid-blocked cell, and never lands on another moving body
+test('R2 m1: no needs nudge with the player beside, from a walkable cell, or onto a moving body', () => {
+    let cell = { x: 20, y: 0 };
+    const pf = { findNearestWalkableStartCell: () => cell };
+    const b = walker({ pathfinder: pf });
+    let reset = null;
+    b.sprite.body.reset = (x, y) => { reset = { x, y }; };
+    b.npcBodyPos = () => ({ x: 0, y: 0 });
+    window.seating = null;
+    window.rooms = {};
+    const go = () => { reset = null; quiet(() => b.goToAndStay(400, 0, 90, { owner: 'needs', reroute: true, nudge: true })); return reset; };
+    window.player = { body: { enable: true, center: { x: -30, y: 0 } } };
+    assert.equal(go(), null, 'the player beside: no nudge');
+    window.player = { body: { enable: true, center: { x: -200, y: 0 } } };
+    assert.deepEqual(go(), { x: 20, y: 0 }, 'the player well away: the nudge runs');
+    cell = { x: 3, y: 3 };
+    assert.equal(go(), null, 'a walkable cell of its own: only a re-centre, so no nudge');
+    cell = { x: 20, y: 0 };
+    const other = { npcId: 'tom', body: { enable: true, immovable: false, center: { x: 24, y: 2 } } };
+    window.rooms = { office: { npcSprites: [other] } };
+    assert.equal(go(), null, 'the cell under another moving body: no nudge');
+    other.body.immovable = true;
+    assert.deepEqual(go(), { x: 20, y: 0 }, 'a held body is the grid search\'s business, not this guard\'s');
+    window.rooms = {};
+    window.player = null;
 });

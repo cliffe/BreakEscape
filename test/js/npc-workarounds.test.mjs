@@ -944,7 +944,9 @@ test('q42 on the needs system: behind another NPC\'s line, the share\'s line com
     const t = workWorld({ npcs, objects, chatter: { login_aloud: ["It's dmorgan. Password's in my head."], mei_talk: [long] } });
     t.w.world.cellBeside = id => (id === 'ruth' ? { x: 432, y: 100 } : null);
     let hearsFrom = Infinity;
-    t.w.world.playerHears = () => ({ overheard: t.sys.clockMs >= hearsFrom });
+    // Mei's line is spoken (the player is within her earshot), so it holds the lock; an unheard
+    // mutter would be a picture and hold nothing (ambient mutters follow the grumble earshot rule)
+    t.w.world.playerHears = id => ({ overheard: id === 'mei' || t.sys.clockMs >= hearsFrom });
     const sends = [];
     const runner = new NpcWorkarounds({
         send: async body => { sends.push(body); return {}; },
@@ -1169,4 +1171,27 @@ test('q42 R2 n1: a share\'s start line still waiting when the NPC arrives is dro
         [['dana', 'login_aloud'], ['mei', 'mei_a'], ['mei', 'mei_b'], ['mei', 'mei_c']], 'the stale start line is gone');
     assert.ok(stepUntil(sys, () => evs('npc_mutter:').length === 5, 60000));
     assert.deepEqual(evs('npc_mutter:dana').map(e => e.data.topic), ['work_fail', 'login_aloud'], 'no start line after the shared login');
+});
+
+test('mutters follow the grumble earshot rule: an ambient start line out of earshot is a picture, login_aloud keeps its line', () => {
+    const npcs = { dana: { pos: { x: 100, y: 100 }, rec: dana() } };
+    const t = workWorld({ npcs, objects: baseObjects(), chatter: { wk_writes_down: ['I will just jot this down.'], login_aloud: ["It's dmorgan."] } });
+    let hears = false;
+    t.w.world.playerHears = () => ({ overheard: hears });
+    const said = [];
+    const orig = t.w.world.emit.bind(t.w.world);
+    t.w.world.emit = (name, data) => { orig(name, data); if (name === 'npc_mutter:dana') said.push({ topic: data.topic, line: data.line }); };
+    t.sys.registerAll();
+    assert.equal(t.sys.mutter('dana', 'wk_writes_down'), true);
+    stepUntil(t.sys, () => said.length >= 1, 20000);
+    assert.equal(said[0].line, null, 'out of earshot: a picture, no line taken or voiced');
+    stepUntil(t.sys, () => !t.sys.getState('dana')?.saying, 20000);
+    assert.equal(t.sys.mutter('dana', 'login_aloud'), true);
+    stepUntil(t.sys, () => said.length >= 2, 20000);
+    assert.equal(said[1].line, "It's dmorgan.", 'login_aloud is said for the player to overhear, heard or not yet');
+    hears = true;
+    stepUntil(t.sys, () => !t.sys.getState('dana')?.saying, 20000);
+    assert.equal(t.sys.mutter('dana', 'wk_writes_down'), true);
+    stepUntil(t.sys, () => said.length >= 3, 20000);
+    assert.equal(said[2].line, 'I will just jot this down.', 'within earshot: spoken');
 });
