@@ -40,6 +40,25 @@ await page.evaluate(() => {
     ed.emit = (ev, data) => { try { if (/^(npc_(turned_back|swivelled|chatted|returned_post|left_post|overheard|need_parked|mutter)|task_completed)/.test(ev)) window.__p.push({ c: window.npcNeedsSystem.clockMs, ev, d: data && { npcId: data.npcId, reason: data.reason, line: data.line, picture: !!data.picture, overheard: data.overheard, speakerId: data.speakerId, topic: data.topic } }); } catch (e) {} return orig(ev, data); };
     // Each tick Sanjay has a line or picture up: who could look round (seated, distance, typing)
     window.__listen = [];
+    // Sanjay's seating, on every change: stop key, seat move stage, seated, feet to his home cell
+    // and to his chair's foot (a seat move that ends unseated ended on its last stage)
+    window.__seatTrace = [];
+    window.npcNeedsSystem.onTick(sys => {
+        const b = window.npcBehaviorManager.getBehavior('sanjay'); const ns = sys.getState('sanjay');
+        if (!b?.sprite?.body || !ns || window.__seatTrace.length > 300) return;
+        const bb = b.sprite.body, feet = { x: bb.center.x, y: bb.bottom };
+        const ch = (window.chairs || []).find(c => c.texture?.key === 'chair-white-1-rotate8');
+        const cf = ch?.body ? { x: ch.body.center.x, y: ch.body.bottom } : null;
+        const row = { mode: ns.mode, atPost: !!ns.atPost, key: b._seatStopKey || null, mv: b._seatMove?.stage || null, fetch: b._fetch?.phase || null,
+            seated: !!b._seat, moving: !!b.isMoving, dest: !!b._goToStayDest };
+        const last = window.__seatTrace.at(-1);
+        if (last && JSON.stringify(last.row) === JSON.stringify(row)) return;
+        window.__seatTrace.push({ c: sys.clockMs, row, feet: { x: Math.round(feet.x), y: Math.round(feet.y) },
+            home: ns.home ? { x: Math.round(ns.home.x), y: Math.round(ns.home.y) } : null,
+            dHome: ns.home ? Math.round(Math.hypot(ns.home.x - feet.x, ns.home.y - feet.y)) : null,
+            chairFoot: cf && { x: Math.round(cf.x), y: Math.round(cf.y) }, dChair: cf ? Math.round(Math.hypot(cf.x - feet.x, cf.y - feet.y)) : null,
+            dChairHome: cf && ns.home ? Math.round(Math.hypot(cf.x - ns.home.x, cf.y - ns.home.y)) : null, chairBy: ch?.seatedBy || null });
+    });
     window.npcNeedsSystem.onTick(sys => {
         const sj = sys.getState('sanjay'); const sp = sys.speakers.find(x => x.npcId === 'sanjay');
         if (!sp || window.__listen.length > 40) return;
@@ -141,6 +160,7 @@ report.stall_lines = needsLog.filter(e => e.t >= readTick && /^(return_resumed|r
 report.marek_arrivals = mlog.filter(e => e.ev === 'arrival').map(e => ({ t: e.t, pathLeft: e.pathLeft, dist: e.dist }));
 report.events = await page.evaluate(() => window.__p.filter(e => !e.ev.startsWith('npc_chatted') || ['sanjay', 'marek'].includes(e.d?.speakerId || e.d?.npcId)));
 report.listen = await page.evaluate(() => window.__listen);
+report.sanjay_seat = await page.evaluate(ra => window.__seatTrace.filter(e => e.c >= ra - 5000), readAt);
 report.sanjay_log = needsLog.filter(e => e.npc === 'sanjay' && e.t >= readTick - 40 && !/^(arrival|need|decay)/.test(e.ev)).slice(0, 40);
 report.marek_path = trace.filter((e, i) => i % 2 === 0).map(e => [e.c, e.x, e.y]);
 const tasks = await tasksDone();
