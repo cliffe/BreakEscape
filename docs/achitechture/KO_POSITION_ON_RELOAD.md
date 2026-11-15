@@ -202,3 +202,34 @@ and the sprite anchor `sprite.x`/`sprite.y`, plus the visual crop, not `npcPos`.
   should still be captured to close the visual proof. Run a crop script from inside the
   worktree (playwright resolves from the worktree node_modules, not the scratchpad), and
   force marek into the kitchen by a reliable route rather than the flaky needs walk.
+
+### Live proof (after R1)
+
+Harness: `tools/playtest/ko-pos-proof.mjs` (run from inside the worktree, `OUT=<dir>` for
+crops). Keyless server on 3095, two fresh `test_needs_sims` games, headless at setFPS(20).
+The cross-room case enters the kitchen as the player, then moves marek's sprite and body
+into it through the game objects (needs and behaviour updates frozen, `body.moves = false`)
+and knocks him out with the bridge's `debugKO`. Amara is moved off her desk first so a
+same-room restore cannot be confused with her spawn. Reload is about:blank then back.
+
+| game | case | stored koRoom / koX / koY (body centre) | sprite x, y when it fell | sprite x, y after reload | difference x, y (px) | KO after reload |
+| ---- | ---- | --------------------------------------- | ------------------------ | ------------------------ | -------------------- | --------------- |
+| 5395 | amara office, same-room | office / 128 / 240 | 128, 214 | 224, 65 | 96, -149 | True |
+| 5395 | marek kitchen, cross-room | kitchen / -160 / 192 | -160, 161 | -267, 97 | -107, -64 | True |
+| 5396 | amara office, same-room | office / 128 / 240 | 128, 214 | 224, 65 | 96, -149 | True |
+| 5396 | marek kitchen, cross-room | kitchen / -160 / 192 | -160, 161 | -267, 97 | -107, -64 | True |
+
+Also read in both games: the server serves the kitchen entry for marek at x,y equal to the
+stored koX,koY and the office room without marek (ids amara, tom, grace, sanjay); the
+`sync_state` body carries each NPC's entry once (1 for amara, 1 for marek, across the whole
+run including after the reload); marek is KO'd and in the kitchen after the reload.
+
+**Result: the body does NOT land where it fell.** The server side is right, the client
+restore is not. After the reload both sprites sit at their scenario spawn tile, not at the
+served x,y: amara at (224, 65) (her desk) instead of near (128, 214), marek at (-267, 97)
+(his home-room tile position 1.65, 4 applied to the kitchen's origin) instead of near
+(-160, 161). Nothing in `createNPCSprite` / `calculateNPCWorldPosition` reads the served
+`x`/`y`: it positions from `npc.position` (px, or tile units) only, so the restored
+fall spot is dropped on the client. Crops: see the scratchpad `ko-live` sheets
+(before left, after right). Note the stale `body.center` after reload is a disabled body,
+see the measurement caveat above.
