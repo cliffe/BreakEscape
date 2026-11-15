@@ -16,12 +16,21 @@
 //     cryptex answer (no `requires` on any door or object, no locked contents), on test_secret_leaks
 //     and on m06_follow_the_money (which has an acknowledgedClues marker with reason prose), after
 //     load and after reload. window.gameScenario.acknowledgedClues is undefined.
-//       Note: a scenario's authored narrative (scenario_brief / scenario_name / endGoal) is flavour
-//       text the author chose to ship; test_secret_leaks' brief documents its own codes, so the raw
-//       secret scan excludes those narrative fields and asserts the structured answer FIELDS instead.
+//       The before-proof secret scan reads the WHOLE raw bootstrap JSON and both room payloads, with
+//       no field skipped: test_secret_leaks' brief now describes its cases without any literal value,
+//       so a secret appearing in any shipped field (narrative included) fails the proof. A regression
+//       that pasted an answer back into the brief or any other shipped string would be caught here.
 //   - the comparator on test_unlock_gaps (read only): combination and cryptex locks refuse a wrong /
 //     blank / malformed answer and open with the right one; a different-case cryptex answer opens
 //     (casecmp?); a lock given only wrong answers stays shut across a reload.
+//   - the runtime door-entry strip (R2): a scenario with a bare PIN door entry and an rfid door
+//     entry (door-strip-game.rb, in-memory, no Mission row). GET /room/office strips the PIN
+//     entry's `requires` (the PIN is absent from the whole room payload) and keeps the rfid card
+//     id; the vault still opens with the right PIN on POST /unlock (a legitimate player is never
+//     refused).
+//   - no-regression on two shipped missions through POST /unlock: m01's PIN safe (derek_storage_safe,
+//     1337) and lab_physical_pentest's shoulder-surf safe (p4_safe, 7041) each refuse a wrong PIN
+//     and open with the right one.
 //
 // Games are created only through the app's normal routes (swap-scenario-game.rb, new-game.rb).
 //
@@ -60,6 +69,21 @@ function newGame(mission, port) {
   const m = out.match(/GAME_ID=(\d+)/);
   if (!m) throw new Error(`new-game.rb gave no GAME_ID for ${mission}:\n${out}`);
   return Number(m[1]);
+}
+
+// A game whose stored scenario carries a bare PIN door entry (the validator would reject it), so
+// the runtime door-entry strip can be shown on the real GET /room payload. No Mission row.
+function newDoorStripGame(host, port) {
+  const out = execFileSync('bin/rails', ['runner', 'tools/playtest/door-strip-game.rb', host], { env: railsEnv(port), encoding: 'utf8' });
+  const m = out.match(/GAME_ID=(\d+)/);
+  if (!m) throw new Error(`door-strip-game.rb gave no GAME_ID:\n${out}`);
+  return Number(m[1]);
+}
+
+async function roomJson(baseUrl, gameId, roomId) {
+  const r = await fetch(`${baseUrl}/break_escape/games/${gameId}/room/${roomId}`);
+  if (!r.ok) throw new Error(`room GET failed: ${r.status}`);
+  return r.json();
 }
 
 // Dismiss the startup overlays the way a player does: the title screen (Enter), the Mission Brief
@@ -110,12 +134,6 @@ async function waitFor(pred, ms = 15000) {
 
 const present = (text, secret) => String(text).toLowerCase().includes(secret.toLowerCase());
 
-// The bootstrap with authored narrative fields removed, as a raw string, for the secret scan.
-function bootWithoutNarrative(boot) {
-  const copy = { ...boot };
-  for (const k of ['scenario_brief', 'scenario_name', 'endGoal', 'scenario_id']) delete copy[k];
-  return JSON.stringify(copy);
-}
 // Any `requires` answer still present on a door or object anywhere in the bootstrap rooms?
 function bootHasRequires(boot) {
   let found = false;
@@ -157,8 +175,9 @@ async function run() {
       !hasCluesKey && !hasRequires && clues0 === 'undefined',
       `acknowledgedClues-key=${hasCluesKey} requires-present=${hasRequires} window=${clues0}`);
 
-    // No raw secret in the bootstrap's non-narrative fields, nor in either room, nor in capture_secrets.
-    const bootScan = bootWithoutNarrative(boot0);
+    // No raw secret anywhere in the whole bootstrap JSON (narrative included), nor in either room,
+    // nor in capture_secrets. No field is skipped.
+    const bootScan = JSON.stringify(boot0);
     const office0 = await roomText(baseUrl, slId, 'office');
     const vault0 = await roomText(baseUrl, slId, 'vault');
     const cs0 = JSON.stringify(await captureSecrets(baseUrl, slId));
@@ -269,6 +288,55 @@ async function run() {
       `wrong-refused=${!arWrong?.success} archive-locked-after-reload=${archiveLocked}`);
     await tug2.close();
     await tug.close();
+
+    // ================================================================ runtime door-entry strip
+    // A scenario with a bare PIN door entry (office -> vault) and an rfid door entry
+    // (office -> secure). GET /room/office must strip the PIN entry's `requires` (the client
+    // validates a pad lock server-side) but keep the rfid card id (clone-as-entry reads it).
+    const dsId = newDoorStripGame('test_seating', opts.port);
+    ids.door_strip = dsId;
+    const dsPage = await openPage(browser, baseUrl, dsId);
+    const office = (await roomJson(baseUrl, dsId, 'office')).room;
+    const dsDoors = office?.doors || [];
+    const pinEntry = dsDoors.find(d => d.connectedRoom === 'vault') || {};
+    const rfidEntry = dsDoors.find(d => d.connectedRoom === 'secure') || {};
+    const officeRaw = JSON.stringify(office);
+    record('door-strip: bare PIN door entry requires stripped, PIN absent from room payload',
+      !('requires' in pinEntry) && !present(officeRaw, '7781'),
+      `pin-entry=${JSON.stringify(pinEntry)} 7781-present=${present(officeRaw, '7781')}`);
+    record('door-strip: rfid door entry keeps its card id (clone-as-entry)',
+      rfidEntry.requires === 'badge01', `rfid-entry=${JSON.stringify(rfidEntry)}`);
+    // A legitimate player still opens the vault with the right PIN (never refused by the strip).
+    // ApiClient.unlock throws on a non-2xx (a refused attempt is 422), so catch and treat as a miss.
+    const tryUnlock = (page, tt, id, att, m) => page.evaluate(([tt, id, att, m]) =>
+      window.ApiClient.unlock(tt, id, att, m).then(r => r).catch(e => ({ success: false, err: e.message })), [tt, id, att, m]);
+    const dsVault = await tryUnlock(dsPage, 'door', 'vault', '7781', 'pin');
+    record('door-strip: legit vault PIN 7781 still opens through POST /unlock', dsVault?.success === true, JSON.stringify(dsVault).slice(0, 120));
+    await dsPage.close();
+
+    // ================================================================ m01 PIN no-regression
+    // A shipped-mission PIN lock (derek_storage_safe, 1337) opens with the right PIN and refuses
+    // a wrong one through the real POST /unlock. Wrong first: a right unlock would mark it open.
+    const m01Id = newGame('m01_first_contact', opts.port);
+    ids.m01_first_contact = m01Id;
+    const m01 = await openPage(browser, baseUrl, m01Id);
+    const m01Wrong = await tryUnlock(m01, 'object', 'derek_storage_safe', '0000', 'pin');
+    const m01Right = await tryUnlock(m01, 'object', 'derek_storage_safe', '1337', 'pin');
+    record('m01 PIN no-regression: wrong 0000 refused, right 1337 opens (derek_storage_safe)',
+      !m01Wrong?.success && m01Right?.success === true, `wrong=${m01Wrong?.success} right=${m01Right?.success}`);
+    await m01.close();
+
+    // ================================================================ lab shoulder-surf PIN no-regression
+    // The lab's shoulder-surf payoff is the archive safe (p4_safe, PIN 7041). The surfed PIN opens
+    // it and a wrong one is refused on the real POST /unlock route, unchanged by the door strip.
+    const labId = newGame('lab_physical_pentest', opts.port);
+    ids.lab_physical_pentest = labId;
+    const lab = await openPage(browser, baseUrl, labId);
+    const labWrong = await tryUnlock(lab, 'object', 'p4_safe', '9999', 'pin');
+    const labRight = await tryUnlock(lab, 'object', 'p4_safe', '7041', 'pin');
+    record('lab shoulder-surf PIN no-regression: wrong 9999 refused, surfed 7041 opens (p4_safe)',
+      !labWrong?.success && labRight?.success === true, `wrong=${labWrong?.success} right=${labRight?.success}`);
+    await lab.close();
   } finally {
     await browser.close();
   }

@@ -29,6 +29,10 @@ module SecretLeaks
   GLOBAL_CLUES_ALLOWED = true
 
   ANSWER_LOCK_TYPES = %w[pin password combination cryptex].freeze
+  # Card-reference kinds: `requires` names a collectible card/device id, which is equally valid as a
+  # string ("badge") or a one-element array (["badge"]). The client fills and checks either, so the
+  # two shapes are the same card and must not read as a mismatch.
+  CARD_REFERENCE_LOCK_TYPES = %w[rfid biometric bluetooth].freeze
 
   # An answer and the lock it opens: { kind:, value:, path:, lock_id: }. lock_id is the id of the
   # object, room or item carrying the lockType, used to match an acknowledgedClues marker; nil for
@@ -230,6 +234,86 @@ module SecretLeaks
     result
   end
 
+  # Always-shipped framing strings. GET /scenario ships scenario_brief and endGoal verbatim, and
+  # GET /room ships each object's/room's name, door_sign and lockedHint; none is ever stripped. These
+  # fields frame the mission and are never where a clue belongs, so an answer written out in one is a
+  # slip (a player reading the Mission Brief sees the code). Note text and observations are left out
+  # on purpose: they are the game's clue surfaces (a password on a post-it is the puzzle), and
+  # checking them warned on every deliberate clue in the corpus. The copy-sink channels
+  # (globalVariables/minigameData/scenarioData) are the error path above; these framing fields are
+  # the warning path below.
+  NARRATIVE_STRING_KEYS = %w[name door_sign lockedHint].freeze
+  COPY_SINK_KEYS = %w[globalVariables minigameData scenarioData].freeze
+
+  # The shipped prose strings, each with its path and the id of the nearest enclosing object/room
+  # (for an acknowledgedClues `in` match). Only strings the browser actually receives at game
+  # start: the copy-sink subtrees are skipped (they are the error path above), and so is anything
+  # inside a LOCKED node's `contents`, which the server strips and lazy-loads only once the lock
+  # opens (Game#filter_requires_and_contents_recursive). A string inside a lock is withheld by the
+  # same mechanism step 3 verifies, so flagging it would contradict that guarantee.
+  def collect_narrative_strings(data)
+    out = []
+    %w[scenario_brief endGoal].each do |k|
+      out << { value: data[k], path: k, container: k } if data[k].is_a?(String)
+    end
+
+    walk = lambda do |node, path, here_id, hidden|
+      case node
+      when Hash
+        nid = node['id'].is_a?(String) ? node['id'] : here_id
+        room_match = path.match(%r{\A/rooms/([^/]+)\z})
+        container = room_match ? room_match[1] : nid
+        unless hidden
+          NARRATIVE_STRING_KEYS.each do |k|
+            out << { value: node[k], path: "#{path}/#{k}", container: container } if node[k].is_a?(String)
+          end
+        end
+        node_locked = node['locked'] == true
+        node.each do |k, v|
+          next if COPY_SINK_KEYS.include?(k)
+
+          walk.call(v, "#{path}/#{k}", nid, hidden || (k == 'contents' && node_locked))
+        end
+      when Array
+        node.each_with_index { |v, i| walk.call(v, "#{path}[#{i}]", here_id, hidden) }
+      end
+    end
+    walk.call(data, '', nil, false)
+    out
+  end
+
+  # The answer form used to match a narrative string: a combination is compared by its canonical
+  # dash form ("12-30-5"), long enough for the whole-word rule, through the password branch of
+  # answer_matches_leaf?; every other kind keeps its own value and kind, so the same minimum-length,
+  # whole-word and case rules apply. A combination that does not parse yields nil (no match).
+  def narrative_answer(answer)
+    return answer unless answer[:kind] == 'combination'
+
+    nums = BreakEscape::CaptureModel.combination_numbers(answer[:value])
+    return nil if nums.nil?
+
+    answer.merge(kind: 'password', value: nums.join('-'))
+  end
+
+  # Matches (answer, narrative string) in one render, keyed by (answer path, narrative path). Flags
+  # are left out: a flag format in a brief is common flavour, not a leak of this class.
+  def narrative_matches_for(data)
+    answers = collect_answers(data).reject { |a| a[:kind] == 'flag' }
+    narratives = collect_narrative_strings(data)
+    out = {}
+    answers.each do |answer|
+      na = narrative_answer(answer)
+      next if na.nil?
+
+      narratives.each do |narr|
+        next unless answer_matches_leaf?(na, { value: narr[:value] })
+
+        out[[answer[:path], narr[:path]]] = { answer: answer, narrative: narr }
+      end
+    end
+    out
+  end
+
   # The matches (answer, leaf) in one render, keyed by (answer path, leaf path) so two renders can
   # be intersected.
   def matches_for(data)
@@ -294,6 +378,31 @@ module SecretLeaks
 
       where = container.to_s.start_with?('global:') ? container.to_s : "#{leaf[:source]} of #{container}"
       issues << "❌ ERROR: secret leak: the #{answer[:kind]} answer at #{answer[:path]} is also at #{leaf[:path]} (#{where}), which the browser receives at game start. Keep the value where the browser does not get it, or mark it as an acknowledgedClues entry"
+    end
+
+    # Narrative leaks (warning): an answer in an always-shipped prose field. Same double render, so a
+    # random value that only collides under one seed is dropped.
+    n1 = narrative_matches_for(first)
+    n2 = narrative_matches_for(second)
+    (n1.keys & n2.keys).each do |key|
+      hit = n1[key]
+      answer = hit[:answer]
+      narr = hit[:narrative]
+      container = narr[:container]
+      lock_id = answer[:lock_id]
+
+      clue = clues.find do |c|
+        next false if lock_id.nil?
+
+        c['lock'].to_s == lock_id.to_s && c['in'].to_s == container.to_s
+      end
+
+      if clue
+        used_clues << clue.object_id
+        issues << "ℹ️ acknowledged clue in narrative: #{lock_id} in #{container}: #{clue['reason']}"
+      else
+        issues << "⚠️ WARNING: possible secret leak: the #{answer[:kind]} answer at #{answer[:path]} also appears in the shipped narrative string at #{narr[:path]}, which the browser receives at game start. Reword it so the answer is not written out, or, if it is a deliberate clue, add an acknowledgedClues entry"
+      end
     end
 
     # Stale and malformed markers.
@@ -369,7 +478,18 @@ module SecretLeaks
         end
 
         lock_type_differs = !own_lock_type.nil? && own_lock_type != room_lock_type
-        requires_differs = entry.key?('requires') && entry['requires'] != connected['requires']
+        # For a card-reference lock the card id is the same whether written as a string or a
+        # one-element array, so normalise both sides to an array before comparing; a string in one
+        # place and an array in the other is not a mismatch. Secret kinds stay a raw comparison,
+        # where a true display/server split matters.
+        requires_differs =
+          if !entry.key?('requires')
+            false
+          elsif CARD_REFERENCE_LOCK_TYPES.include?(resolved)
+            Array(entry['requires']) != Array(connected['requires'])
+          else
+            entry['requires'] != connected['requires']
+          end
         if lock_type_differs || requires_differs
           issues << "⚠️ WARNING: #{path} has a lock type or `requires` that differs from its connected room '#{entry['connectedRoom']}'; the server checks the room's lock, so the player sees one lock and the server checks another"
         end

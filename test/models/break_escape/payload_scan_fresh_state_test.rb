@@ -653,14 +653,15 @@ module BreakEscape
     #   message       NPC dialogue (eventMappings sendTimedMessage): spoken lines are best effort
     #                 under the cheat policy, like GET ink, which this scan already skips.
     #   observations  item examine text: in-world flavour/clue text.
-    #   name          item/object display name. Also the test_unlock_gaps false positive the
-    #                 playerInventory remap fixed: "Pocket Cryptex" (a name) whole-word-matches its
-    #                 own cryptex answer POCKET, which is not a leak.
+    # A display `name` is NOT exempt: it is a framing field, as in step 3's narrative check
+    # (validate_secret_leaks.rb NARRATIVE_STRING_KEYS), and an answer in a name is a slip. The one
+    # corpus hit (test_unlock_gaps' "Pocket Cryptex" over the answer POCKET) was fixed in the
+    # scenario, whose answer is now TINDER.
     # Exempting these leaves the check covering author metadata not meant as an in-world clue, above
     # all `scenario_brief` (served by GET scenario), which is the realistic leak Major 1 flagged.
     # A secret in one of these fields stays human-review territory, as do short secrets (see the
     # class-3 comment on classify_scalar).
-    CLASS3_VALUE_EXEMPT_KEYS = %w[postitNote text message observations name].freeze
+    CLASS3_VALUE_EXEMPT_KEYS = %w[postitNote text message observations].freeze
 
     def class3_value_exempt?(_route, path)
       key = path.split('/').last.to_s.sub(/\[\d+\]\z/, '')

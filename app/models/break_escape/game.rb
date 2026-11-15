@@ -6179,6 +6179,17 @@ module BreakEscape
         # Keep lockType - client needs it to show correct UI
         # Keep locked - client needs it to show lock status
 
+        # A room's `doors` array reaches the client through this room payload (the bootstrap
+        # drops `doors`). This filter descends into objects/npcs/contents but not `doors`, and
+        # it strips `requires` only from a hash carrying its OWN secret lockType, so a door
+        # entry's `requires` rode along untouched: a bare entry (no own lockType) resolving to
+        # a pad lock shipped the room code. Strip it here too, resolving the entry's lock type
+        # the client's way. Defence in depth behind the validator's door-entry leak guard; the
+        # client never needs a pad lock's `requires` (unlock-system.js validates server-side),
+        # only the card-reference kinds do (rfid/biometric/bluetooth name a collectible card
+        # or device, not a secret answer).
+        strip_door_entry_requires!(obj)
+
         # Recursively filter nested objects, NPCs, tableItems and NPC-held items.
         # itemsHeld matters: an NPC can carry a flag-station or launch-device
         # (see find_flag_station_for_flag), so skipping it leaves a leak.
@@ -6195,6 +6206,34 @@ module BreakEscape
 
       when Array
         obj.each { |item| filter_requires_and_contents_recursive(item) }
+      end
+    end
+
+    # Strip a room door entry's own `requires` unless the entry's resolved lock type is a
+    # card-reference kind (rfid/biometric/bluetooth). The resolved type is the entry's own
+    # `lockType`, else the connected room's (the client's rule, doors.js). For any other type
+    # (pin/password/combination/cryptex/key, or none) the answer never reaches the client and a
+    # `requires` on the entry would ship the code, so it is removed. An entry no doorway reads
+    # (NpcHabits.doorway_problem flags it) is never resolved by the client, so it is left alone.
+    # Mirrors CaptureModel.each_lock_answer's resolution and the validator's door_entry_issues.
+    CARD_REFERENCE_LOCK_TYPES = %w[biometric bluetooth rfid].freeze
+    def strip_door_entry_requires!(room)
+      doors = room['doors']
+      return unless doors.is_a?(Array)
+
+      rooms = scenario_data.is_a?(Hash) ? scenario_data['rooms'] : nil
+      doors.each_with_index do |entry, i|
+        next unless entry.is_a?(Hash) && entry.key?('requires')
+        next unless BreakEscape::NpcHabits.doorway_problem(room, i).nil?
+
+        lock_type = entry['lockType']
+        if lock_type.nil? && rooms.is_a?(Hash)
+          connected = rooms[entry['connectedRoom']]
+          lock_type = connected['lockType'] if connected.is_a?(Hash)
+        end
+        next if lock_type.is_a?(String) && CARD_REFERENCE_LOCK_TYPES.include?(lock_type)
+
+        entry.delete('requires')
       end
     end
 

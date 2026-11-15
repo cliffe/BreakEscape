@@ -121,6 +121,48 @@ test('a clean scenario raises no leak', { skip }, () => {
   assert.deepEqual(errors(issues(withLock(pinLock, { globals: { msg: 'welcome' } }))), []);
 });
 
+// ── narrative leaks (always-shipped prose) ───────────────────────────────────────────────────
+
+test('the old test_secret_leaks brief (a combination written out) is caught as a warning', { skip }, () => {
+  // scenario_brief ships verbatim in GET /scenario. A combination written as its dash form is 7
+  // chars, so the whole-word rule catches it as a warning; it is not an error (a clue can hint).
+  const sc = withLock({ id: 'combo', locked: true, lockType: 'combination', requires: [12, 30, 5] });
+  sc.scenario_brief = 'The strongbox is a combination padlock (12-30-5). Open it.';
+  const l = issues(sc);
+  assertHas(warnings(l), 'appears in the shipped narrative string');
+  assert.deepEqual(errors(l), []);
+});
+
+test('a brief that describes the lock without the value is not caught', { skip }, () => {
+  const sc = withLock({ id: 'combo', locked: true, lockType: 'combination', requires: [12, 30, 5] });
+  sc.scenario_brief = 'The strongbox is a combination padlock whose code is a capture secret.';
+  assertNot(issues(sc), 'appears in the shipped narrative string');
+});
+
+test('a short common answer in prose does not warn (noise control)', { skip }, () => {
+  // "open" is four chars, under the six-char whole-word threshold, so it never fires as a substring
+  // of ordinary prose; only an exact/trimmed-equal field would.
+  const sc = withLock({ id: 'pwbox', locked: true, lockType: 'password', requires: 'open' });
+  sc.scenario_brief = 'Please open the vault and read the sign.';
+  assertNot(issues(sc), 'appears in the shipped narrative string');
+});
+
+test('a deliberate narrative clue is acknowledged, not warned', { skip }, () => {
+  const sc = withLock({ id: 'cryptexbox', locked: true, lockType: 'cryptex', requires: 'nightjar' });
+  sc.rooms.r.objects.push({ id: 'poster', name: 'Poster reading NIGHTJAR' });
+  sc.acknowledgedClues = [{ lock: 'cryptexbox', in: 'poster', reason: 'the poster is the clue', approved: 'h' }];
+  const l = issues(sc);
+  assertNot(warnings(l), 'appears in the shipped narrative string');
+  assertHas(infos(l), 'acknowledged clue in narrative: cryptexbox in poster');
+});
+
+test('note text and observations are clue surfaces, not checked (a password on a post-it is the puzzle)', { skip }, () => {
+  const sc = withLock({ id: 'cryptexbox', locked: true, lockType: 'cryptex', requires: 'nightjar' });
+  sc.rooms.r.objects.push({ id: 'poster', name: 'Poster', observations: 'A faded poster reads NIGHTJAR.' });
+  sc.rooms.r.objects.push({ id: 'postit', type: 'notes', name: 'Post-it', text: 'cryptex: nightjar' });
+  assertNot(warnings(issues(sc)), 'appears in the shipped narrative string');
+});
+
 // ── lock-type rules ──────────────────────────────────────────────────────────────────────────
 
 test('a requires with no lockType errors when locked, warns when unlocked', { skip }, () => {
@@ -186,6 +228,26 @@ test('a door entry matching its connected room raises nothing', { skip }, () => 
     store: { locked: true, lockType: 'rfid', requires: 'card01', connections: {}, objects: [] }
   } };
   assert.deepEqual(issues(sc), []);
+});
+
+test('an rfid card written as a string in one place and an array in the other is not a mismatch', { skip }, () => {
+  // R2 m3: an rfid card id is the same card whether written as "badge" or ["badge"]; the client
+  // fills and checks either, so the two shapes must not read as a mismatch warning.
+  const sc = { rooms: {
+    lobby: { connections: { east: 'secure' }, objects: [],
+      doors: [{ connectedRoom: 'secure', direction: 'east', requires: 'badge' }] },
+    secure: { locked: true, lockType: 'rfid', requires: ['badge'], connections: {}, objects: [] }
+  } };
+  assert.deepEqual(issues(sc), []);
+});
+
+test('an rfid card that is genuinely a different id still warns (normalise does not hide a real mismatch)', { skip }, () => {
+  const sc = { rooms: {
+    lobby: { connections: { east: 'secure' }, objects: [],
+      doors: [{ connectedRoom: 'secure', direction: 'east', lockType: 'rfid', requires: ['badge_a'] }] },
+    secure: { locked: true, lockType: 'rfid', requires: ['badge_b'], connections: {}, objects: [] }
+  } };
+  assertHas(warnings(issues(sc)), 'the server checks the room');
 });
 
 test('a requires in a social block and a clue on a note text raise nothing', { skip }, () => {
