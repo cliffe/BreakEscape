@@ -2994,7 +2994,7 @@ export class NPCBehavior {
      */
     goToAndStay(worldX, worldY, speed, opts = {}) {
         window.seating?.unseatNPC?.(this); // a seated NPC gets up first
-        if (!opts?.fromSeating) window.seating?.cancelFetch?.(this); // and drops a chair it was fetching
+        if (!opts?.fromSeating) window.seating?.cancelFetch?.(this, `move:${opts?.owner || 'script'}`); // and drops a chair it was fetching
         // Who asked for the move (npc-needs.js passes owner 'needs'); a move by
         // anyone else suspends the NPC's needs, so scripts always win.
         this._moveOwner = opts?.owner;

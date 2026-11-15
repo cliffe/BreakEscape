@@ -72,6 +72,12 @@ await page.evaluate(() => {
     });
     // Any office staff member standing idle at the post after a seat try (Tom in game 5404): the
     // chairs within 48 px of the home cell, with who holds them, once per 8 s each
+    // Every seating line (fetch_start, fetch_end, seat_move_end) from the start of the game: the
+    // needs log keeps only its last 2000 lines
+    const sys0 = window.npcNeedsSystem, seatRe = /^(fetch_|seat_move_end)/;
+    window.__seatLines = sys0.getLog().filter(e => seatRe.test(e.ev));
+    const log0 = sys0._log.bind(sys0);
+    sys0._log = (npcId, ev, extra) => { if (seatRe.test(ev) && window.__seatLines.length < 400) window.__seatLines.push({ t: sys0.tickCount, npc: npcId, ev, ...extra }); return log0(npcId, ev, extra); };
     window.__staffProbes = []; const lastProbe = {};
     window.npcNeedsSystem.onTick(sys => {
         if (window.__staffProbes.length > 60) return;
@@ -191,6 +197,9 @@ report.listen = await page.evaluate(() => window.__listen);
 report.sanjay_seat = await page.evaluate(ra => window.__seatTrace.filter(e => e.c >= ra - 5000), readAt);
 report.staff_probes = await page.evaluate(() => window.__staffProbes);
 report.staff_log = await page.evaluate(() => window.npcNeedsSystem.getLog().filter(e => /fetch|seat|chair/.test(e.ev)).slice(-40));
+report.seat_lines = await page.evaluate(() => window.__seatLines);
+report.staff_seated = await page.evaluate(() => Object.fromEntries(['amara', 'tom', 'grace', 'marek', 'sanjay'].map(id => { const b = window.npcBehaviorManager.getBehavior(id);
+    const bb = b?.sprite?.body; return [id, { seated: !!b?._seat, x: bb ? Math.round(bb.center.x) : null, y: bb ? Math.round(bb.bottom) : null }]; })));
 report.sanjay_seat_probes = await page.evaluate(ra => (window.__seatProbes || []).filter(e => e.c >= ra), readAt);
 report.sanjay_log = needsLog.filter(e => e.npc === 'sanjay' && e.t >= readTick - 40 && !/^(arrival|need|decay)/.test(e.ev)).slice(0, 40);
 report.marek_path = trace.filter((e, i) => i % 2 === 0).map(e => [e.c, e.x, e.y]);
@@ -203,6 +212,6 @@ report.player = await page.evaluate(() => ({ x: Math.round(window.player.body.ce
 report.trace_tail = trace.slice(-5);
 await page.screenshot({ path: `${outDir}/stuck-proof-${gid}.png` });
 fs.writeFileSync(`${outDir}/stuck-proof-${gid}.json`, JSON.stringify(report, null, 1));
-console.log(JSON.stringify({ gid, notice_closed: report.notice_closed, turned_back: report.see_turned_back, look_round: report.see_look_round, marek_home_s: report.marek_home_s, stalls: report.stall_lines.length, stuck: report.stall_lines.filter(e => /stuck/.test(e.ev)).length, sanjay: report.sanjay_grumble, errs: errs.length }));
+console.log(JSON.stringify({ gid, notice_closed: report.notice_closed, turned_back: report.see_turned_back, look_round: report.see_look_round, marek_home_s: report.marek_home_s, stalls: report.stall_lines.length, stuck: report.stall_lines.filter(e => /stuck/.test(e.ev)).length, sanjay: report.sanjay_grumble, tom_seated: report.staff_seated.tom.seated, tom_seat_lines: report.seat_lines.filter(e => e.npc === 'tom').map(e => `${e.t}:${e.ev}:${e.reason || ''}`), errs: errs.length }));
 await page.goto('about:blank');
 await browser.close();

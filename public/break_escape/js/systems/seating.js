@@ -1473,11 +1473,18 @@ function startMount(behavior, m) {
     }
 }
 
+/** A seating line in the needs log (fetch and seat-move ends), so a proof run can read why an NPC stands. */
+function seatLog(behavior, ev, extra = {}) {
+    const f = behavior?.sprite?.body ? bodyFeet(behavior.sprite) : null;
+    window.npcNeedsSystem?._log?.(behavior.npcId, ev, { ...extra, x: f ? Math.round(f.x) : undefined, y: f ? Math.round(f.y) : undefined });
+}
+
 /** End a seat move. Restores the NPC's body and the chair; the NPC stands where it got to. */
-function endSeatMove(behavior) {
+function endSeatMove(behavior, reason = 'done') {
     const m = behavior._seatMove;
     if (!m) return;
     behavior._seatMove = null;
+    if (reason !== 'done') seatLog(behavior, 'seat_move_end', { reason, stage: m.stage || undefined });
     const sprite = behavior.sprite;
     if (m.chair) {
         stopGlide(m.chair);
@@ -1500,13 +1507,13 @@ function endSeatMove(behavior) {
 function advanceSeatMove(behavior) {
     const m = behavior._seatMove;
     const sprite = behavior.sprite;
-    if (!sprite?.body || (m.chair && !m.chair.active)) { endSeatMove(behavior); return false; }
+    if (!sprite?.body || (m.chair && !m.chair.active)) { endSeatMove(behavior, 'chair_gone'); return false; }
     switch (m.stage) {
         case 'walk': {
             const r = npcWalkTick(behavior, m, m.opts.ref);
             if (r === 'moving') return true;
             const f = bodyFeet(sprite);
-            if (r === 'stuck' && Math.hypot(m.opts.ref.x - f.x, m.opts.ref.y - f.y) > NPC_WALK_GIVE_UP_PX) { endSeatMove(behavior); return false; }
+            if (r === 'stuck' && Math.hypot(m.opts.ref.x - f.x, m.opts.ref.y - f.y) > NPC_WALK_GIVE_UP_PX) { endSeatMove(behavior, 'walk_stuck'); return false; }
             m.opts.ref = { x: f.x, y: f.y }; // work from where it got to
             behavior.isMoving = false;
             behavior.playAnimation?.('idle', behavior.direction);
@@ -1528,7 +1535,7 @@ function advanceSeatMove(behavior) {
             if (r === 'stuck') {
                 const f = bodyFeet(sprite);
                 const reach = m.seat.kind === 'swivel' ? SWIVEL_REACH_PX : STATIC_REACH_PX;
-                if (Math.hypot(target.x - f.x, target.y - f.y) > reach) { endSeatMove(behavior); return false; }
+                if (Math.hypot(target.x - f.x, target.y - f.y) > reach) { endSeatMove(behavior, 'mount_stuck'); return false; }
                 if (m.seat.kind === 'swivel') moveFeetTo(sprite, target.x, target.y);
             }
             const { chair, opts } = m;
@@ -1597,7 +1604,7 @@ export function seatNPC(behavior, chair, opts = {}) {
 export function unseatNPC(behavior) {
     const st = behavior?._seat;
     if (!st) {
-        if (behavior?._seatMove && behavior._seatMove.stage !== 'step') endSeatMove(behavior);
+        if (behavior?._seatMove && behavior._seatMove.stage !== 'step') endSeatMove(behavior, 'unseated');
         return false;
     }
     const sprite = behavior.sprite;
@@ -1932,7 +1939,7 @@ function updateNeedsSeat(behavior, ns, playerPos) {
 
     if (behavior._seatMove) {
         const m = behavior._seatMove;
-        if (!stop || stop.key !== m.stopKey || status.ko || status.hostile) { endSeatMove(behavior); return false; }
+        if (!stop || stop.key !== m.stopKey || status.ko || status.hostile) { endSeatMove(behavior, stop ? 'stop_changed' : 'no_stop'); return false; }
         return advanceSeatMove(behavior);
     }
     if (behavior._fetch) return advanceFetch(behavior, ns, stop);
@@ -2059,6 +2066,7 @@ function startFetch(behavior, chair, spot, toward, stopKey) {
     const pm = window.pathfindingManager;
     const grab = pm?.findNearestWalkableWorldCell?.(foot.x, foot.y + 12, 2) || { x: foot.x, y: foot.y + 12 };
     moveNeeds(behavior, grab.x, grab.y);
+    seatLog(behavior, 'fetch_start', { chair: chair.objectId || chair.texture?.key, cx: Math.round(foot.x), cy: Math.round(foot.y) });
     window.eventDispatcher?.emit?.('npc_fetching_chair', { npcId: behavior.npcId, objectId: chair.objectId });
 }
 
@@ -2068,10 +2076,11 @@ function moveNeeds(behavior, x, y) {
     behavior._fetch.issued = true;
 }
 
-function endFetch(behavior, seatIt) {
+function endFetch(behavior, seatIt, reason = seatIt ? 'arrived' : 'dropped') {
     const f = behavior._fetch;
     behavior._fetch = null;
     if (!f) return false;
+    seatLog(behavior, 'fetch_end', { reason, phase: f.phase });
     const chair = f.chair;
     if (chair.body) { chair.body.enable = true; placeBody(chair, chair.x, chair.y); chair.body.setVelocity(0, 0); }
     if (chair.seatedBy === behavior.npcId) delete chair.seatedBy;
@@ -2081,8 +2090,8 @@ function endFetch(behavior, seatIt) {
 }
 
 /** A move from elsewhere (a script, the needs selector) drops a chair being fetched where it is. */
-export function cancelFetch(behavior) {
-    if (behavior?._fetch) endFetch(behavior, false);
+export function cancelFetch(behavior, reason = 'cancelled') {
+    if (behavior?._fetch) endFetch(behavior, false, reason);
 }
 
 function advanceFetch(behavior, ns, stop) {
@@ -2091,7 +2100,9 @@ function advanceFetch(behavior, ns, stop) {
     // The work ended (or the NPC was called away) while fetching: leave the chair where it is
     if (!stop || stop.key !== f.stopKey || status.ko || status.hostile || Date.now() > f.until || !f.chair.active) {
         if (behavior._goToStayDest && stop && stop.key === f.stopKey) behavior.cancelMove?.();
-        endFetch(behavior, false);
+        const why = !stop ? 'no_stop' : stop.key !== f.stopKey ? 'stop_changed' : (status.ko || status.hostile) ? 'status'
+            : !f.chair.active ? 'chair_gone' : 'timeout';
+        endFetch(behavior, false, why);
         return false;
     }
     const arrived = f.issued && !behavior._goToStayDest && !behavior.isMoving;
