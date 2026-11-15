@@ -64,3 +64,41 @@ V1 NPC counts for the stage 0 summaries: m01 7, m02 17, m03 10, m04 12, m05 12, 
 ## Suites
 
 On f9dcfa4d7: `bin/test-js -j 3` 656 files passed, 0 failed; `bin/rails test` 2747 runs, 0 failures, 0 errors, 1 skip.
+
+## R1 outcomes
+
+Review: `OFFICE_LIFE_VTOOLS_REVIEW_R1.md` (REVISE, 4 majors, 14 minors). Main e1303fc0c (format step 6a-1 part 1) merged first with no conflicts; the validator node tests passed on the merge before any fix.
+
+### Majors
+
+- **M1 fixed.** `hostile` only for `behavior.hostile.startHostile: true` (a bare `hostile: true` still counts); a tuning block alone gives the new `fights` hint. The V1 fixture now has the real shape, and a new test uses m01's receptionist shape (tuning only: `fights`, no `hostile`).
+- **M2 fixed.** Door entries are keyed by `connectedRoom` (`doors[secure_area]`), so adding a door no longer re-keys the others. Each gate records what it sits on. A door gate starts at `door_<connectedRoom>` (else the room) and guards that room; a room gate starts at `door_<room>`; an object gate starts at `lock_<id>` (the generator's id form), else the object's own node, and also flags when a required task names the object or the object is a lock. Its own room no longer counts. On a scratch copy of `lab_physical_pentest`: `access` on `coffee_station` now exits 1 (was 2); a baseline with the secure_area door's `gate` removed, diffed against the real file, exits 2 with `new gate at /rooms/open_plan/doors[secure_area] guards room 'secure_area' (required content), critical-path lock 'door_P4', ...`. Fixture tests cover the non-lock object (exit 1), a door gate from an empty room into a required room (exit 2, and an earlier door does not re-key), a gate on a required task's item, and an object gate on a lock that reaches through `lock_<id>`.
+- **M3 fixed.** The snapshot holds `requiredContent`: `[room, why, id]` for every required task's `targetRoom`, `targetObject`, `targetNPC`, `targetItemIds` and `targetItems` (by type); the room of each NPC whose story (the `.ink`, else the compiled JSON) has `#complete_task:<id>`; the room of the object, NPC or room a completing mapping's eventPattern names (else of the holding NPC); and, beyond the review, every flag station and VM launcher for `submit_flags` tasks. Every required task in m03 (17), m08 (14) and m10 (20) now has a room. Tests: an m08-shaped `custom` task set by an NPC's ink, the same task completed by a `conversation_closed` mapping, a `submit_flags` task, and an optional room that stays exit 1.
+- **M4 fixed.** An `unlockObject`/`unlockDoor` on an office-life trigger whose target is the `targetObject`/`targetRoom` of a required `unlock_object`/`unlock_room` task is `❌ ERROR` naming the task. Object and room targets are kept apart, so an object id equal to a room task's room is still a warning. Other locks stay a warning; raising non-optional graph locks to errors when the graph is generated was not done (V5 usually runs with `--no-graph`, and V9 already flags them on the diff).
+
+### Minors
+
+1. **Fixed.** V6 no longer uses the extractor's keys for exchange and call lines. `TtsLineExtractor#each_host_story_line` (new, public) yields every host line before the batch's dedupe, and V6 keys each line with `cache_key_for(text, name, style, language)`, no delivery, then dedupes itself. Test: a `#delivery:whispering` exchange line keys without it, and only an MP3 under that key shows cached.
+2. **Fixed (listed, marked).** A clip whose key a person-chat line also holds is listed with `shared` (the task prints `shared with person-chat`). Test: a start line that repeats a chatter line.
+3. **Fixed.** Office knots are keyed on `[storyPath of the NPC holding the entry, knot]`. Test: a same-named knot in another NPC's story is left out.
+4. **Fixed.** The test asserts the exact person-chat texts left out and the exact office-life texts kept. New task tests run `bin/rails "app:break_escape:tts:office_lines[test_needs_sims]"` in a subprocess with `GEMINI_API_KEY` unset and `TTS_CACHE_DIR` (new, for tests) on a fixture cache: exit 0 without STRICT, 1 with STRICT while uncached, 0 with STRICT once every key is cached, and the usage abort (exit 1). Fixture stories: `test/fixtures/files/tts_office_lines/{amara,sam}.ink` and their compiled JSON.
+5. **Fixed.** Other writers now include `#set_variable:` tags, `{ type: "set_global", key }` actions, `{ type: "setGlobal", global }` influence effects, and `"VAR=": "<name>"` in a story's compiled JSON when no `.ink` is beside it. Tests for each.
+6. **Fixed.** Office-life globals are followed to a fixed point: a mapping triggered by an office-life global is office life, the globals it sets join the set, and it stops counting as another writer. Test: workaround global, then a `global_variable_changed` mapping setting `step2`, then a required task on `step2` (error); a story-event writer of `step2` clears it.
+7. **Fixed.** A `patrolOverride` exempts only when the NPC starts in its home room (the tile is resolved in the room the NPC is in when the mapping fires, `npc-manager.js`) and the mapping's event is not office life. Tests for both.
+8. **Fixed in part.** Away rooms now include print fetches (the output tray of an `onUse` `revealOutput` producer or a `needs.print` mapping's producer), `interests` items (`needsTag`), and any reachable room when a droppable magnet satisfies one of the NPC's needs. Each room shows why (`kitchen (print fetch)`). Visits are not covered: the readers expose no static visit target to check against.
+9. **Fixed.** V4 lists held item ids, and the NPC-level `disableAttacks` no longer exempts; when set, the line says it has no effect.
+10. **Fixed.** No `attackable` on phone NPCs; `patrol` for enabled, `waypoints` or `bounds` (`npc-behavior.js`); `exchanges=` counts exchanges others start `with` the NPC; `task` (ink) and `task-mapping` (held mapping) are separate hints.
+11. **Fixed.** `npc_arrived:*` warns when any NPC has needs.
+12. **Fixed (first option).** The onceOnly row also counts mappings with an office-life action, whatever the trigger: `needs` (a print command included), `patrolOverride`, or an `emitEvent` that is an office-life event.
+13. **Fixed.** New pin: `lab_physical_pentest` forced to `campaign: true` gives exactly its 3 real V5 errors (`grab_creds` through `kp_creds_captured`, `drop_usb`, `usb_foothold`), so deleting V5 fails it. The scope-gate pin stays.
+14. **Fixed.** `render` seeds `Kernel#rand` before each of two renders and refuses (exit 64) when they differ, which catches `SecureRandom` in a template. Test: a fixture with `<%= random_pin %>` and `<%= rand(1000..9999) %>` diffs empty three runs in a row; a `SecureRandom.hex` one is refused.
+
+V9's baseline format is now 2 (gate `on`, door keys, `requiredContent`); no format 1 baseline is committed anywhere. On scratch copies of m01, m02, m08 and `lab_physical_pentest`, `--write` then a diff gives "empty", exit 0.
+
+### R1 corpus run
+
+Every `scenarios/*/scenario.json.erb` (179) was validated with `--no-graph --skip-ink --no-lint`, once with main e1303fc0c's `scripts/` and once with this branch. Exit codes and `❌` counts are identical for every scenario, and nothing printed `could not run`. Warnings differ only in `lab_physical_pentest` (+1), `test_access_social` (+4), `test_access_work` (+3) and `test_needs_sims` (+2), the same V8 lines and counts as the R0 table above. No scenario gets a V3 wildcard warning, and no V8 count changed under the wider onceOnly rule.
+
+### R1 suites
+
+On 885f740d0: `bin/test-js -j 3` 657 files passed, 0 failed; `bin/rails test` 2763 runs, 0 failures, 0 errors, 2 skips (1 before; this round adds no skip, so the second most likely arrived with the main merge, not checked).
