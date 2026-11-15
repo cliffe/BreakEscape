@@ -78,3 +78,8 @@ Notes for the next person:
 | m15 smoke and wrapper | `train-smoke.mjs` refuses 3000, 3085 and 3086, listens for `requestfailed` and `console.error`. Failing: any failed request except a page-cancelled one (`ERR_ABORTED`), keyless `/tts` and the favicon; any `console.error` except the browser's "Failed to load resource" echo of an HTTP status (judged separately) and keyless TTS noise. Reason: a boot step that logs and carries on is exactly the regression the smoke should catch. `TESTS_LOCK` unset now warns in `summary.txt` and on stderr. `$HOME` replaces the hard-coded home, `RUBY` overrides the validator ruby (default `/usr/bin/ruby3.2` if present, else `ruby`). `$OUT` is passed to the `bash -c` as `$2`. |
 
 Known gap left as the reviewer described it: the smoke covers the first 2.5 s of m01, sis01 and sis02 only.
+
+## Faster runs (user, 2026-11-15)
+
+- shell-x runs once per train, started in the background beside the Rails suite (`shellx.txt`, a `shell-x exit` line in the summary, RED on failure). The batch sets `SHELL_X_SEPARATE=1`, which makes `test/js/shell-x-check.test.mjs` skip with that reason instead of failing the merge-batch guard. Only train-check.sh sets it.
+- The JS batch runs `-j ${TRAIN_CHECK_JS_JOBS:-8}` instead of `-j 3`. The machine has 32 cores but other sessions share it and free memory can be low, so lower the setting when the load is high. bin/test-js retries the known fixture-resolution race, which more workers make more likely.

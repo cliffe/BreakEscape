@@ -10,8 +10,9 @@
 #
 # Under the lock (if TESTS_LOCK is set) it records HEAD, starts a keyless server from the worktree
 # on <port>, makes games for m01_first_contact, sis01_healthcare and sis02_energy, then runs:
+#   0. tools/playtest/shell-x-check.mjs on the m01 game, once, in the background beside step 1 (shellx.txt)
 #   1. the Rails suite                      (rails.txt)
-#   2. MERGE_BATCH=1 bin/test-js -j 3       (js.txt; shell-x-check gets SHELL_X_PORT and the m01 game)
+#   2. MERGE_BATCH=1 SHELL_X_SEPARATE=1 bin/test-js -j $TRAIN_CHECK_JS_JOBS (default 8)   (js.txt)
 #   3. tools/playtest/train-smoke.mjs       (smoke.txt)
 #   4. the scenario validator over every scenarios/*/scenario.json.erb (v_<scenario>.txt)
 # and writes <outdir>/summary.txt. It kills only the server it started. It never touches ports 3000,
@@ -20,6 +21,7 @@
 #      RUBY (the ruby for the validator corpus; default /usr/bin/ruby3.2 if present, else ruby on PATH),
 #      TESTS_LOCK (strongly advised: without it two trains can share the test database; a warning is
 #      written to summary.txt and stderr when it is unset),
+#      TRAIN_CHECK_JS_JOBS (JS files run at once; default 8, lower it on a loaded machine),
 #      TRAIN_CHECK_SKIP_RAILS=1 / _SKIP_JS=1 / _SKIP_CORPUS=1 for a partial run (summary says SKIPPED;
 #      a partial run exits 3 and is not a green train).
 # Green also needs a clean tree afterwards (nothing in git status but node_modules and .bundle): the
@@ -54,6 +56,7 @@ SERVER_PID=""
 RED=()
 SKIPPED=()
 cleanup() {
+  if [ -n "${SHELLX_PID:-}" ] && kill -0 "$SHELLX_PID" 2>/dev/null; then kill "$SHELLX_PID" 2>/dev/null || true; fi
   if [ -n "$SERVER_PID" ] && kill -0 "$SERVER_PID" 2>/dev/null; then
     kill "$SERVER_PID" 2>/dev/null
     for _ in 1 2 3 4 5 6 7 8 9 10; do kill -0 "$SERVER_PID" 2>/dev/null || break; sleep 1; done
@@ -95,6 +98,13 @@ for m in m01_first_contact sis01_healthcare sis02_energy; do
 done
 echo "games m01=${GAME[m01_first_contact]:-none} sis01=${GAME[sis01_healthcare]:-none} sis02=${GAME[sis02_energy]:-none}" >> "$SUM"
 
+# ---- 0. shell X check, once, beside the Rails suite ----
+SHELLX_PID=""
+if [ "${TRAIN_CHECK_SKIP_JS:-0}" != 1 ] && [ -n "${GAME[m01_first_contact]:-}" ]; then
+  node "$TOOLS/shell-x-check.mjs" --port "$PORT" --game "${GAME[m01_first_contact]}" > "$OUT/shellx.txt" 2>&1 &
+  SHELLX_PID=$!
+fi
+
 # ---- 1. Rails ----
 if [ "${TRAIN_CHECK_SKIP_RAILS:-0}" = 1 ]; then
   echo "rails SKIPPED" >> "$SUM"; SKIPPED+=(rails)
@@ -108,10 +118,21 @@ fi
 if [ "${TRAIN_CHECK_SKIP_JS:-0}" = 1 ]; then
   echo "js SKIPPED" >> "$SUM"; SKIPPED+=(js)
 else
-  MERGE_BATCH=1 SHELL_X_PORT="$PORT" SHELL_X_GAME="${GAME[m01_first_contact]:-}" bin/test-js -j 3 > "$OUT/js.txt" 2>&1; rc=$?
+  MERGE_BATCH=1 SHELL_X_SEPARATE=1 bin/test-js -j "${TRAIN_CHECK_JS_JOBS:-8}" > "$OUT/js.txt" 2>&1; rc=$?
   echo "js exit $rc: $(grep -E '^Files: ' "$OUT/js.txt" | tail -1)" >> "$SUM"
   grep -E '^Failed: ' "$OUT/js.txt" >> "$SUM" || true
   [ "$rc" -ne 0 ] && RED+=("js exit $rc")
+fi
+
+# ---- shell X result (started at step 0) ----
+if [ "${TRAIN_CHECK_SKIP_JS:-0}" = 1 ]; then
+  echo "shell-x SKIPPED" >> "$SUM"
+elif [ -n "$SHELLX_PID" ]; then
+  wait "$SHELLX_PID"; rc=$?
+  echo "shell-x exit $rc: $(grep -E '^SHELL-X-CHECK ' "$OUT/shellx.txt" | tail -1)" >> "$SUM"
+  [ "$rc" -ne 0 ] && RED+=("shell-x exit $rc")
+else
+  echo "shell-x FAILED: no m01 game" >> "$SUM"; RED+=("shell-x: no m01 game")
 fi
 
 # ---- 3. smoke ----
