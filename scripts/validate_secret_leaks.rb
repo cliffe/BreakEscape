@@ -234,14 +234,15 @@ module SecretLeaks
     result
   end
 
-  # Always-shipped narrative string fields. GET /scenario ships scenario_brief and endGoal verbatim,
-  # and GET /room ships each object's/room's name, observations, door_sign, lockedHint and a readable
-  # note's text; none is ever stripped. An author who pastes a lock answer, account password or
-  # capture secret into one of these leaks it in plain sight (a player reading the Mission Brief or
-  # examining a prop sees the code). The copy-sink channels (globalVariables/minigameData/
-  # scenarioData) are the error path above; these prose fields are the warning path below, because a
-  # deliberate clue can legitimately hint at an answer.
-  NARRATIVE_STRING_KEYS = %w[name observations door_sign lockedHint].freeze
+  # Always-shipped framing strings. GET /scenario ships scenario_brief and endGoal verbatim, and
+  # GET /room ships each object's/room's name, door_sign and lockedHint; none is ever stripped. These
+  # fields frame the mission and are never where a clue belongs, so an answer written out in one is a
+  # slip (a player reading the Mission Brief sees the code). Note text and observations are left out
+  # on purpose: they are the game's clue surfaces (a password on a post-it is the puzzle), and
+  # checking them warned on every deliberate clue in the corpus. The copy-sink channels
+  # (globalVariables/minigameData/scenarioData) are the error path above; these framing fields are
+  # the warning path below.
+  NARRATIVE_STRING_KEYS = %w[name door_sign lockedHint].freeze
   COPY_SINK_KEYS = %w[globalVariables minigameData scenarioData].freeze
 
   # The shipped prose strings, each with its path and the id of the nearest enclosing object/room
@@ -265,9 +266,6 @@ module SecretLeaks
         unless hidden
           NARRATIVE_STRING_KEYS.each do |k|
             out << { value: node[k], path: "#{path}/#{k}", container: container } if node[k].is_a?(String)
-          end
-          if node['text'].is_a?(String) && (node['type'] == 'notes' || node['readable'])
-            out << { value: node['text'], path: "#{path}/text", container: container }
           end
         end
         node_locked = node['locked'] == true

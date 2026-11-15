@@ -149,11 +149,18 @@ test('a short common answer in prose does not warn (noise control)', { skip }, (
 
 test('a deliberate narrative clue is acknowledged, not warned', { skip }, () => {
   const sc = withLock({ id: 'cryptexbox', locked: true, lockType: 'cryptex', requires: 'nightjar' });
-  sc.rooms.r.objects.push({ id: 'poster', name: 'Poster', observations: 'A faded poster reads NIGHTJAR.' });
+  sc.rooms.r.objects.push({ id: 'poster', name: 'Poster reading NIGHTJAR' });
   sc.acknowledgedClues = [{ lock: 'cryptexbox', in: 'poster', reason: 'the poster is the clue', approved: 'h' }];
   const l = issues(sc);
   assertNot(warnings(l), 'appears in the shipped narrative string');
   assertHas(infos(l), 'acknowledged clue in narrative: cryptexbox in poster');
+});
+
+test('note text and observations are clue surfaces, not checked (a password on a post-it is the puzzle)', { skip }, () => {
+  const sc = withLock({ id: 'cryptexbox', locked: true, lockType: 'cryptex', requires: 'nightjar' });
+  sc.rooms.r.objects.push({ id: 'poster', name: 'Poster', observations: 'A faded poster reads NIGHTJAR.' });
+  sc.rooms.r.objects.push({ id: 'postit', type: 'notes', name: 'Post-it', text: 'cryptex: nightjar' });
+  assertNot(warnings(issues(sc)), 'appears in the shipped narrative string');
 });
 
 // ── lock-type rules ──────────────────────────────────────────────────────────────────────────
