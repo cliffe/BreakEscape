@@ -107,6 +107,22 @@ while ((await clock()) - readAt < 100000 && Date.now() - tw < 300000) {
     const m = await st('marek');
     trace.push({ c: Math.round(((await clock()) - readAt) / 100) / 10, ...m });
     if (trace.length % 15 === 0) console.log('t', trace.at(-1).c, JSON.stringify(m));
+    // A stall on the walk home: one dump of Marek's path and every body within 48 px
+    const prev = trace.at(-6);
+    if (!report.stall_dump && m.mode === 'returning' && prev && prev.mode === 'returning' && Math.hypot(prev.x - m.x, prev.y - m.y) < 2) {
+        report.stall_dump = await page.evaluate(() => {
+            const b = window.npcBehaviorManager.getBehavior('marek'), sp = b.sprite, c = sp.body.center;
+            const near = [];
+            const look = (o, tag) => { const bb = o?.body; if (!bb || !o.active) return; const d = Math.hypot(bb.center.x - c.x, bb.center.y - c.y); if (d < 48) near.push({ tag, key: o.texture?.key || o.name, x: Math.round(bb.x), y: Math.round(bb.y), w: bb.width, h: bb.height, imm: !!bb.immovable, d: Math.round(d) }); };
+            for (const id of ['amara', 'tom', 'grace', 'sanjay']) look(window.npcBehaviorManager.getBehavior(id)?.sprite, id);
+            for (const ch of window.chairs || []) look(ch, 'chair');
+            look(window.player, 'player');
+            const r = window.rooms.office; for (const o of Object.values(r.objects || {})) look(o, 'obj');
+            return { body: { x: Math.round(sp.body.x), y: Math.round(sp.body.y), w: sp.body.width, h: sp.body.height, vx: Math.round(sp.body.velocity.x), vy: Math.round(sp.body.velocity.y) },
+                path: (b.currentPath || b.path || []).map(p => [Math.round(p.x), Math.round(p.y)]), idx: b.pathIndex, dest: b._goToStayDest, moving: b.isMoving, settle: b._settleUntil || b.settleUntil || null,
+                touching: { ...sp.body.touching }, blocked: { ...sp.body.blocked }, near };
+        });
+    }
     const log = await page.evaluate(() => window.npcNeedsSystem.getLog().filter(e => e.npc === 'marek'));
     // after the notice only: row 1's queue gave Marek a cup and a walk home before it, which ended
     // this watch at once (games 5375, 5376)
