@@ -13,7 +13,10 @@ import fs from 'node:fs';
 const require = createRequire('/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/.claude/worktrees/p-9-2-h/node_modules/');
 const { chromium } = require('playwright-core');
 const EXEC = '/home/cliffe/.cache/ms-playwright/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell';
-const [gid, port = '3093', outDir = './tmp/stuck-proof/', standArg = '232,176'] = process.argv.slice(2);
+const [gid, port = '3093', outDir = './tmp/stuck-proof/', standArg = '232,176', awayArg = ''] = process.argv.slice(2);
+// Optional away point (5th argument, "x,y"): once Sanjay sets off for the coffee the player is held
+// there, out of earshot (over 160 px) of where he turns back, to prove the grumble is a picture
+const away = awayArg ? awayArg.split(',').map(Number) : null;
 const [standX, standY] = standArg.split(',').map(Number);
 if (!gid) { console.error('usage: needs-stuck-return-proof.mjs <gameId> [port] [outDir]'); process.exit(2); }
 fs.mkdirSync(outDir, { recursive: true });
@@ -158,6 +161,14 @@ const trace = [];
 const tw = Date.now();
 while ((await clock()) - readAt < 100000 && Date.now() - tw < 300000) {
     const m = await st('marek');
+    if (away && !report.away_from) {
+        const sj = await st('sanjay');
+        if (sj.target === 'office_coffee') report.away_from = { c: Math.round(((await clock()) - readAt) / 100) / 10, sanjay: sj };
+    }
+    if (report.away_from) {
+        report.away_at = await page.evaluate(([x, y]) => { const pm = window.pathfindingManager; const p = pm?.findNearestWalkableWorldCell?.(x, y, 4) || { x, y };
+            const pl = window.player; pl.body.setVelocity(0, 0); pl.body.reset(p.x, p.y); return { x: Math.round(pl.body.center.x), y: Math.round(pl.body.center.y) }; }, away);
+    }
     trace.push({ c: Math.round(((await clock()) - readAt) / 100) / 10, ...m });
     if (trace.length % 15 === 0) console.log('t', trace.at(-1).c, JSON.stringify(m));
     // A stall on the walk home: one dump of Marek's path and every body within 48 px
@@ -208,6 +219,12 @@ report.see_turned_back = tasks.includes('see_turned_back');
 report.see_look_round = tasks.includes('see_look_round');
 const sanjayChat = report.events.filter(e => /^npc_(chatted|overheard)/.test(e.ev) && (e.d?.speakerId || e.d?.npcId) === 'sanjay');
 report.sanjay_grumble = sanjayChat.map(e => ({ s: Math.round((e.c - readAt) / 100) / 10, line: e.d.line || null, picture: e.d.picture, overheard: e.d.overheard }));
+if (away) {
+    // Where Sanjay was while his grumble was up, and how far the held player was from him
+    const sp = report.listen.find(e => e.saying && /grumble|quieter/.test(`${e.saying.topic || ''} ${e.saying.line || ''}`)) || report.listen[0];
+    report.away_check = sp && report.away_at ? { sanjay: sp.sp, saying: sp.saying, player: report.away_at, dist: Math.round(Math.hypot(sp.sp.x - report.away_at.x, sp.sp.y - report.away_at.y)) } : null;
+    console.log('away', JSON.stringify(report.away_check));
+}
 report.player = await page.evaluate(() => ({ x: Math.round(window.player.body.center.x), y: Math.round(window.player.body.center.y) }));
 report.trace_tail = trace.slice(-5);
 await page.screenshot({ path: `${outDir}/stuck-proof-${gid}.png` });
