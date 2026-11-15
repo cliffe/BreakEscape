@@ -156,7 +156,7 @@ test('objectStandPoint: approaching a tall socket from the side, the cell level 
     const player = { x: 40, y: 70, body: { center: { x: 40, y: 101 } } };
     // Two walkable strips at sprite centre y 40-55 (feet 71-86): one 20 px left of the plate (sprite centre x 88),
     // one further along (x 100, a gap in the furniture). The aim (x 95.5) snaps to the first.
-    const findCell = (x, y) => ({ x: x <= 91 ? 88 : 100, y: Math.min(Math.max(y, 71), 86) });
+    const findCell = (x, y) => ({ x: x <= 96 ? 88 : 100, y: Math.min(Math.max(y, 71), 86) });
     const withY = objectStandPoint(socket, player, { range: 32, findCell, reachY: (o, y) => reachY(o, y) });
     const without = objectStandPoint(socket, player, { range: 32, findCell });
     // New measure: 20 px from the plate, inside the 28 px margin, so the aimed cell is returned as it is
