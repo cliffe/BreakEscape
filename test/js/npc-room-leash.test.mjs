@@ -60,7 +60,10 @@ test('the stuck recovery repath carries them too', () => {
     silently(() => b.goToAndStay(256, 128, 80, { owner: 'needs', avoidRooms: ['lounge'] }));
     b.patrolTarget = { x: 256, y: 128 };
     silently(() => b._recoverFromStuck(1, 0, 0));
-    assert.deepEqual(lastOpts(calls), { avoidRooms: ['lounge'] });
+    // OFFICE_LIFE_STUCK_RETURN.md: a wedged needs walk also plans round seated and held bodies
+    const opts = lastOpts(calls);
+    assert.deepEqual(opts.avoidRooms, ['lounge']);
+    assert.equal(opts.avoidDynamic?.includeHeld, true);
 });
 
 test('a needs move without avoidRooms (seating\'s chair fetch) keeps the value; a script move drops it', () => {

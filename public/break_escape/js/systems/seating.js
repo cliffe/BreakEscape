@@ -1245,7 +1245,10 @@ function fidgetChair(st, sprite, held) {
 
 export const SWIVEL_SLOT_MS = 6000;
 export const SWIVEL_CHANCE = 0.05;
-export const LISTEN_RADIUS = 128; // px, four tiles
+// Round 7 (user, 2026-11-15: "the same earshot approach"): a seated colleague looks round at a
+// line it could hear, so the default is the earshot radius (npc-needs.js OVERHEAR_RADIUS, five
+// tiles) and a speaker entry's own `radius` (its pool's overhearRadius) wins over it.
+export const LISTEN_RADIUS = 160; // px, five tiles
 
 /** True while a needs NPC is typing: a `work` use in its `using` phase (the typing bob's rule). */
 export function isTyping(ns) {
@@ -1278,13 +1281,17 @@ export function swivelFacing({ state, clockMs, homeFacing, valid = COMPASS, roll
     return snapFacing(COMPASS[(i + (u < 0.5 ? 1 : 7)) % 8], valid);
 }
 
-/** Pure: the nearest colleague speaking in the same room within `radius`, or null. */
+/**
+ * Pure: the nearest colleague speaking in the same room within earshot, or null. Earshot is the
+ * speaker's own `radius` (the overhearRadius its line was said with), else `radius`.
+ */
 export function listenTarget({ npcId, roomId, x, y, speakers, clockMs, radius = LISTEN_RADIUS }) {
     let best = null, bestD = Infinity;
     for (const sp of speakers || []) {
         if (!sp || sp.npcId === npcId || sp.roomId !== roomId || !(sp.until > clockMs)) continue;
         const d = Math.hypot(sp.x - x, sp.y - y);
-        if (d <= radius && d < bestD) { best = sp; bestD = d; }
+        const r = Number(sp.radius) > 0 ? Number(sp.radius) : radius;
+        if (d <= r && d < bestD) { best = sp; bestD = d; }
     }
     return best;
 }
@@ -1473,11 +1480,18 @@ function startMount(behavior, m) {
     }
 }
 
+/** A seating line in the needs log (fetch and seat-move ends), so a proof run can read why an NPC stands. */
+function seatLog(behavior, ev, extra = {}) {
+    const f = behavior?.sprite?.body ? bodyFeet(behavior.sprite) : null;
+    window.npcNeedsSystem?._log?.(behavior.npcId, ev, { ...extra, x: f ? Math.round(f.x) : undefined, y: f ? Math.round(f.y) : undefined });
+}
+
 /** End a seat move. Restores the NPC's body and the chair; the NPC stands where it got to. */
-function endSeatMove(behavior) {
+function endSeatMove(behavior, reason = 'done') {
     const m = behavior._seatMove;
     if (!m) return;
     behavior._seatMove = null;
+    if (reason !== 'done') seatLog(behavior, 'seat_move_end', { reason, stage: m.stage || undefined });
     const sprite = behavior.sprite;
     if (m.chair) {
         stopGlide(m.chair);
@@ -1500,13 +1514,13 @@ function endSeatMove(behavior) {
 function advanceSeatMove(behavior) {
     const m = behavior._seatMove;
     const sprite = behavior.sprite;
-    if (!sprite?.body || (m.chair && !m.chair.active)) { endSeatMove(behavior); return false; }
+    if (!sprite?.body || (m.chair && !m.chair.active)) { endSeatMove(behavior, 'chair_gone'); return false; }
     switch (m.stage) {
         case 'walk': {
             const r = npcWalkTick(behavior, m, m.opts.ref);
             if (r === 'moving') return true;
             const f = bodyFeet(sprite);
-            if (r === 'stuck' && Math.hypot(m.opts.ref.x - f.x, m.opts.ref.y - f.y) > NPC_WALK_GIVE_UP_PX) { endSeatMove(behavior); return false; }
+            if (r === 'stuck' && Math.hypot(m.opts.ref.x - f.x, m.opts.ref.y - f.y) > NPC_WALK_GIVE_UP_PX) { endSeatMove(behavior, 'walk_stuck'); return false; }
             m.opts.ref = { x: f.x, y: f.y }; // work from where it got to
             behavior.isMoving = false;
             behavior.playAnimation?.('idle', behavior.direction);
@@ -1528,7 +1542,7 @@ function advanceSeatMove(behavior) {
             if (r === 'stuck') {
                 const f = bodyFeet(sprite);
                 const reach = m.seat.kind === 'swivel' ? SWIVEL_REACH_PX : STATIC_REACH_PX;
-                if (Math.hypot(target.x - f.x, target.y - f.y) > reach) { endSeatMove(behavior); return false; }
+                if (Math.hypot(target.x - f.x, target.y - f.y) > reach) { endSeatMove(behavior, 'mount_stuck'); return false; }
                 if (m.seat.kind === 'swivel') moveFeetTo(sprite, target.x, target.y);
             }
             const { chair, opts } = m;
@@ -1597,7 +1611,7 @@ export function seatNPC(behavior, chair, opts = {}) {
 export function unseatNPC(behavior) {
     const st = behavior?._seat;
     if (!st) {
-        if (behavior?._seatMove && behavior._seatMove.stage !== 'step') endSeatMove(behavior);
+        if (behavior?._seatMove && behavior._seatMove.stage !== 'step') endSeatMove(behavior, 'unseated');
         return false;
     }
     const sprite = behavior.sprite;
@@ -1733,6 +1747,29 @@ const NEAR_CHAIR = 36;      // px from the NPC's feet to a chair's foot to sit s
 const POST_SNAP = 48;       // px (1.5 tiles): at its post, an NPC this close to its home cell looks from there
 const FETCH_RANGE = 192;    // px to look for a chair to fetch
 const FETCH_TIMEOUT_MS = 15000;
+// At its post an NPC still standing tries its own chair again this often (needs clock): the first
+// try can end short (the walk onto the seat stuck against a colleague walking past), and a standing
+// NPC at a desk can block the only way to someone else's post (OFFICE_LIFE_STUCK_RETURN.md)
+const POST_SEAT_RETRY_MS = 4000;
+// A post retry fetches a chair no more often than this (needs clock): a fetch that failed (the push
+// ended short and the seat move stuck on the desk, leaving the chair out of reach) is tried again
+const POST_FETCH_RETRY_MS = FETCH_TIMEOUT_MS;
+// Post retries are capped per stop, so a seat move that always sticks or a push that always ends
+// short is not repeated for the rest of the session (code review R1, M2): then seat_gave_up, stand
+export const POST_SEAT_RETRY_MAX = 3;
+export const POST_FETCH_RETRY_MAX = 2;
+// A seat_gave_up ends after this much needs clock, or when a job starts after it, and the stop
+// starts over (code review R2, m3): an NPC whose jobs are all at its own desk keeps one stop key,
+// so a give-up caused by a passing obstacle used to last the session.
+export const SEAT_GIVE_UP_MS = 120000;
+// The expiry gives the seat retries back but not the chair fetches (a stop whose chair is out of
+// reach for good would fetch and drag one back every SEAT_GIVE_UP_MS, and two NPCs could shuttle one
+// chair for the session), and runs at most this many times per stop key; after that the give-up
+// lasts until the stop key changes (code review R3, m4).
+export const SEAT_GIVE_UP_EXPIRIES = 3;
+// A chair another NPC fetched this recently (needs clock) is theirs: two chairless fetchers at
+// nearby posts do not take one chair back and forth on their retries (code review R1, m6)
+export const FETCH_CLAIM_MS = 60000;
 
 /** Where a needs NPC is parked: { key, targetId } or null while it's on the move. */
 export function needsStop(ns) {
@@ -1895,6 +1932,57 @@ export function needsSeatRef(feet, stop, home) {
     return { x: feet.x, y: feet.y };
 }
 
+/**
+ * Whether a chair (its foot) belongs to another needs NPC's post: within NEAR_CHAIR of that post and
+ * nearer to it than to this NPC's own spot (`ref`). Nearest post wins, so a desk chair tucked in
+ * 4 px from its own NPC's home cell and 35.9 px from a neighbour's post stays its own (test_needs_sims:
+ * Sanjay stood beside his desk for good after his coffee turn-back, in the only corridor to Marek's
+ * post; OFFICE_LIFE_STUCK_RETURN.md round 4).
+ */
+export function chairAtOtherPost(foot, ref, posts) {
+    const mine = Math.hypot(foot.x - ref.x, foot.y - ref.y);
+    return posts.some(p => {
+        const d = Math.hypot(p.x - foot.x, p.y - foot.y);
+        return d < NEAR_CHAIR && d < mine;
+    });
+}
+
+/**
+ * Whether a needs NPC that has tried to sit at this stop tries again: only at its post (stop.post),
+ * once POST_SEAT_RETRY_MS of needs clock have passed since the last try. Away from the post one try
+ * is final (it never takes a chair it was passing).
+ */
+export function postSeatRetryDue(stop, triedAt, now) {
+    if (!stop?.post) return false;
+    if (!Number.isFinite(triedAt)) return true;
+    return now - triedAt >= POST_SEAT_RETRY_MS;
+}
+
+/**
+ * Whether a post retry may fetch a chair: only at the post, and POST_FETCH_RETRY_MS of needs clock
+ * after the last fetch at this stop (never fetched here: due).
+ */
+export function postFetchRetryDue(stop, fetchedAt, now) {
+    if (!stop?.post) return false;
+    if (!Number.isFinite(fetchedAt)) return true;
+    return now - fetchedAt >= POST_FETCH_RETRY_MS;
+}
+
+/**
+ * Post retries left at this stop. `tries` counts retries made (the first try is not one); a seat
+ * retry stops after POST_SEAT_RETRY_MAX, a fetch retry after POST_FETCH_RETRY_MAX.
+ */
+export function postRetryAllowed(kind, tries) {
+    const max = kind === 'fetch' ? POST_FETCH_RETRY_MAX : POST_SEAT_RETRY_MAX;
+    return (tries || 0) < max;
+}
+
+/** Whether `chair` was fetched by another NPC within FETCH_CLAIM_MS of needs clock. */
+export function chairClaimedByOther(chair, npcId, now) {
+    if (!chair?.fetchedBy || chair.fetchedBy === npcId) return false;
+    return Number.isFinite(chair.fetchedAt) && now - chair.fetchedAt < FETCH_CLAIM_MS;
+}
+
 function updateNeedsSeat(behavior, ns, playerPos) {
     const sprite = behavior.sprite;
     const stop = needsStop(ns);
@@ -1902,7 +1990,7 @@ function updateNeedsSeat(behavior, ns, playerPos) {
 
     if (behavior._seatMove) {
         const m = behavior._seatMove;
-        if (!stop || stop.key !== m.stopKey || status.ko || status.hostile) { endSeatMove(behavior); return false; }
+        if (!stop || stop.key !== m.stopKey || status.ko || status.hostile) { endSeatMove(behavior, stop ? 'stop_changed' : 'no_stop'); return false; }
         return advanceSeatMove(behavior);
     }
     if (behavior._fetch) return advanceFetch(behavior, ns, stop);
@@ -1915,6 +2003,10 @@ function updateNeedsSeat(behavior, ns, playerPos) {
             return !!behavior._seatMove; // stepping off
         }
         sprite.body.setVelocity(0, 0);
+        // Seated at its stop: the give-up and retry counts start again (R4 m3)
+        behavior._seatGiveUpExpiries = 0;
+        behavior._seatRetries = 0;
+        behavior._fetchRetries = 0;
         // Swivel: face the work, the player while they talk, a colleague speaking nearby, or now
         // and then a glance round (slice 21); the roll and the swivel wait while the NPC is busy
         const sys = window.npcNeedsSystem;
@@ -1970,8 +2062,31 @@ function updateNeedsSeat(behavior, ns, playerPos) {
 
     if (!stop || status.ko || status.hostile) { behavior._seatStopKey = null; return false; }
     if (behavior.isMoving || behavior._goToStayDest) return false;
-    if (behavior._seatStopKey === stop.key) return false; // already tried at this stop
+    const now = window.npcNeedsSystem?.clockMs ?? 0;
+    // Tried at this stop already: elsewhere that's final; at the post, try again now and then
+    const retry = behavior._seatStopKey === stop.key;
+    if (retry && (!postSeatRetryDue(stop, behavior._seatTriedAt, now)
+        || window.npcNeedsSystem?.world?.inChatWith?.(behavior.npcId))) return false; // not mid-conversation
+    if (!retry) { // a new stop: the first try may fetch, and the retry counts start again
+        behavior._fetchTriedAt = undefined;
+        behavior._seatRetries = 0;
+        behavior._fetchRetries = 0;
+        behavior._seatGaveUp = false;
+        behavior._seatGaveUpAt = undefined;   // never outlives the flag it dates
+        behavior._seatGiveUpExpiries = 0;
+    }
+    if (retry && behavior._seatGaveUp) {
+        const job = window.npcNeedsSystem?.states?.get?.(behavior.npcId)?.job;
+        const since = behavior._seatGaveUpAt ?? now;
+        if (now - since < SEAT_GIVE_UP_MS && !(job && job.startedAt > since)) return false;
+        if ((behavior._seatGiveUpExpiries || 0) >= SEAT_GIVE_UP_EXPIRIES) return false;   // for good at this stop
+        // The give-up has expired: the seat retries start over, the fetch count does not (R3 m4)
+        behavior._seatGiveUpExpiries = (behavior._seatGiveUpExpiries || 0) + 1;
+        behavior._seatRetries = 0;
+        behavior._seatGaveUp = false;
+    }
     behavior._seatStopKey = stop.key;
+    behavior._seatTriedAt = now;
     if (!hasSitFrames(sprite.texture.key)) return false;
 
     const obj = needsObject(stop.targetId);
@@ -1982,17 +2097,38 @@ function updateNeedsSeat(behavior, ns, playerPos) {
     const toward = facePointFor(obj, feet);
     // Chairs at another needs NPC's post are theirs, unless this is that spot too
     const posts = otherPosts(behavior.npcId).filter(p => Math.hypot(p.x - feet.x, p.y - feet.y) > NEAR_CHAIR);
-    const free = c => !posts.some(p => Math.hypot(p.x - (c.obj.x + c.obj.width / 2), p.y - (c.obj.y + c.obj.height)) < NEAR_CHAIR);
+    const free = c => !chairAtOtherPost({ x: c.obj.x + c.obj.width / 2, y: c.obj.y + c.obj.height }, feet, posts);
+    const giveUp = () => {
+        behavior._seatGaveUp = true;
+        behavior._seatGaveUpAt = now;
+        window.npcNeedsSystem?._log?.(behavior.npcId, 'seat_gave_up',
+            { stop: stop.key, seatRetries: behavior._seatRetries || 0, fetchRetries: behavior._fetchRetries || 0 });
+        return false;
+    };
     const near = chairsNear(behavior.roomId, feet.x, feet.y, NEAR_CHAIR)
         .find(c => free(c) && (c.seat.kind === 'swivel' || staticFacesToward(c.seat, feet, toward)));
     if (near) {
+        if (retry) {
+            if (!postRetryAllowed('seat', behavior._seatRetries)) return giveUp();
+            behavior._seatRetries = (behavior._seatRetries || 0) + 1;
+        }
         // Walk to the work cell, roll a swivel chair out to it and in to the desk front, walk onto the seat
         return startSeatMove(behavior, near.obj, near.seat, { toward, needsStop: stop.key, ref: { x: feet.x, y: feet.y } });
     }
-    if (pref !== 'fetch') return false;
+    // A retry fetches only at the post and at most once per fetch timeout (Tom in test_needs_sims stood
+    // for good after his first fetch failed; OFFICE_LIFE_STUCK_RETURN.md round 5)
+    if (pref !== 'fetch' || (retry && !postFetchRetryDue(stop, behavior._fetchTriedAt, now))) return false;
     const fetchable = chairsNear(behavior.roomId, feet.x, feet.y, FETCH_RANGE)
-        .filter(c => c.seat.kind === 'swivel' && c.obj.body && free(c))[0];
+        .filter(c => c.seat.kind === 'swivel' && c.obj.body && free(c)
+            && !chairClaimedByOther(c.obj, behavior.npcId, now))[0];
     if (!fetchable) return false; // work standing
+    if (retry) {
+        if (!postRetryAllowed('fetch', behavior._fetchRetries)) return giveUp();
+        behavior._fetchRetries = (behavior._fetchRetries || 0) + 1;
+    }
+    behavior._fetchTriedAt = now;
+    fetchable.obj.fetchedBy = behavior.npcId;
+    fetchable.obj.fetchedAt = now;
     startFetch(behavior, fetchable.obj, feet, toward, stop.key);
     return true;
 }
@@ -2023,6 +2159,7 @@ function startFetch(behavior, chair, spot, toward, stopKey) {
     const pm = window.pathfindingManager;
     const grab = pm?.findNearestWalkableWorldCell?.(foot.x, foot.y + 12, 2) || { x: foot.x, y: foot.y + 12 };
     moveNeeds(behavior, grab.x, grab.y);
+    seatLog(behavior, 'fetch_start', { chair: chair.objectId || chair.texture?.key, cx: Math.round(foot.x), cy: Math.round(foot.y) });
     window.eventDispatcher?.emit?.('npc_fetching_chair', { npcId: behavior.npcId, objectId: chair.objectId });
 }
 
@@ -2032,10 +2169,11 @@ function moveNeeds(behavior, x, y) {
     behavior._fetch.issued = true;
 }
 
-function endFetch(behavior, seatIt) {
+function endFetch(behavior, seatIt, reason = seatIt ? 'arrived' : 'dropped') {
     const f = behavior._fetch;
     behavior._fetch = null;
     if (!f) return false;
+    seatLog(behavior, 'fetch_end', { reason, phase: f.phase });
     const chair = f.chair;
     if (chair.body) { chair.body.enable = true; placeBody(chair, chair.x, chair.y); chair.body.setVelocity(0, 0); }
     if (chair.seatedBy === behavior.npcId) delete chair.seatedBy;
@@ -2045,8 +2183,8 @@ function endFetch(behavior, seatIt) {
 }
 
 /** A move from elsewhere (a script, the needs selector) drops a chair being fetched where it is. */
-export function cancelFetch(behavior) {
-    if (behavior?._fetch) endFetch(behavior, false);
+export function cancelFetch(behavior, reason = 'cancelled') {
+    if (behavior?._fetch) endFetch(behavior, false, reason);
 }
 
 function advanceFetch(behavior, ns, stop) {
@@ -2055,7 +2193,9 @@ function advanceFetch(behavior, ns, stop) {
     // The work ended (or the NPC was called away) while fetching: leave the chair where it is
     if (!stop || stop.key !== f.stopKey || status.ko || status.hostile || Date.now() > f.until || !f.chair.active) {
         if (behavior._goToStayDest && stop && stop.key === f.stopKey) behavior.cancelMove?.();
-        endFetch(behavior, false);
+        const why = !stop ? 'no_stop' : stop.key !== f.stopKey ? 'stop_changed' : (status.ko || status.hostile) ? 'status'
+            : !f.chair.active ? 'chair_gone' : 'timeout';
+        endFetch(behavior, false, why);
         return false;
     }
     const arrived = f.issued && !behavior._goToStayDest && !behavior.isMoving;

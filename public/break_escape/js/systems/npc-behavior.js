@@ -38,6 +38,8 @@ export const NPC_STUCK_MS = 4000;
 export const NPC_STUCK_MOVE_PX = TILE_SIZE / 2;
 const NPC_STUCK_GAP_MS = 500;
 const NPC_STUCK_NUDGE_MAX_PX = TILE_SIZE;   // never nudge further than one tile
+const NPC_NUDGE_OWN_CELL_PX = 6;    // half an 8 px grid cell's diagonal: the nearest walkable centre is the body's own cell
+const NPC_NUDGE_BODY_PX = 14;       // a needs nudge keeps this far from another moving body's centre
 const NPC_STUCK_PLAYER_PX = TILE_SIZE * 1.5; // the player this close: not wedged, held up
 // Wedged this close to a route waypoint that carries an action (unlockRoom at a badge
 // reader), the NPC has arrived: a chair or another body is standing on the spot.
@@ -97,6 +99,79 @@ export function nearestBlockerAhead(pos, heading, blockers, lookAhead = AVOID_LO
         }
     }
     return best;
+}
+
+// Scratch segments for nearestBlockerOnPath, reused every call (no per-frame arrays)
+const _pathSegs = [];
+
+/**
+ * The nearest blocker that lies on the walker's PATH for its first `lookAhead`
+ * px, or null. `pos` {x,y} the walker's feet; `waypoints` the path points still
+ * to walk, the next one first. The path is the polyline pos -> waypoints[0] ->
+ * waypoints[1] ...; a blocker counts when it is within `laneHalf` of a segment,
+ * walking the segments until `lookAhead` px of path is used up. The first
+ * segment keeps the forward rule (a body behind or beside the walker never
+ * blocks); later segments use the distance to the segment, rounded at its
+ * start, so a body at a corner counts. The last segment runs on past the final waypoint for any
+ * look-ahead left, as the heading check does. So a body ahead of a short first
+ * segment where the path turns away no longer counts: a detour that bends
+ * round the player is walked, not stopped by the same check (game 5443).
+ * With fewer than two waypoints this is nearestBlockerAhead on the heading.
+ * `startIndex` reads `waypoints` from that index in place (the walker's pathIndex),
+ * so the frame loop copies no path.
+ * Returns the blocker nearest along the path (`.fwd` the path distance,
+ * `.lat` its offset), ties broken by id.
+ * @private exported for unit tests
+ */
+export function nearestBlockerOnPath(pos, waypoints, blockers, lookAhead = AVOID_LOOKAHEAD_PX, laneHalf = AVOID_LANE_HALF_PX, startIndex = 0) {
+    if (!blockers || !blockers.length || !waypoints) return null;
+    const left = waypoints.length - startIndex;
+    if (left <= 0) return null;
+    if (left < 2) {
+        const w = waypoints[startIndex];
+        return nearestBlockerAhead(pos, { x: w.x - pos.x, y: w.y - pos.y }, blockers, lookAhead, laneHalf);
+    }
+    let n = 0, used = 0, sx = pos.x, sy = pos.y;
+    for (let i = startIndex; i < waypoints.length && used < lookAhead; i++) {
+        const w = waypoints[i];
+        const dx = w.x - sx, dy = w.y - sy;
+        const full = Math.hypot(dx, dy);
+        if (full < 1e-6) continue;
+        const last = i === waypoints.length - 1;
+        const len = last ? lookAhead - used : Math.min(full, lookAhead - used);
+        const s = _pathSegs[n] || (_pathSegs[n] = {});
+        s.sx = sx; s.sy = sy; s.ux = dx / full; s.uy = dy / full; s.len = len; s.s0 = used; s.first = n === 0;
+        n++;
+        used += len;
+        sx = w.x; sy = w.y;
+    }
+    let best = null, bestFwd = 0, bestLat = 0;
+    for (const b of blockers) {
+        for (let k = 0; k < n; k++) {
+            const s = _pathSegs[k];
+            const dx = b.x - s.sx, dy = b.y - s.sy;
+            const t = dx * s.ux + dy * s.uy;
+            const lat = dx * -s.uy + dy * s.ux;
+            let along;
+            if (s.first) {
+                if (t <= 0 || t > s.len || Math.abs(lat) > laneHalf) continue;
+                along = t;
+            } else {
+                // A corner (segment start) is rounded; the far end is not, since
+                // the next segment's start covers a corner and the look-ahead stops.
+                if (t > s.len) continue;
+                along = Math.max(0, t);
+                if (Math.hypot(dx - along * s.ux, dy - along * s.uy) > laneHalf) continue;
+            }
+            const fwd = s.s0 + along;
+            if (!best || fwd < bestFwd ||
+                (fwd === bestFwd && String(b.id) < String(best.id))) {
+                best = b; bestFwd = fwd; bestLat = lat;
+            }
+            break;   // the first segment it touches is the nearest along the path
+        }
+    }
+    return best ? { ...best, fwd: bestFwd, lat: bestLat } : null;
 }
 
 /**
@@ -1333,6 +1408,19 @@ export class NPCBehavior {
         return true;
     }
 
+    /**
+     * May a needs re-route nudge the body from (x, y)? (code review R2, m1) Only when its cell is
+     * grid-blocked (a walkable cell's nearest centre is its own, under NPC_NUDGE_OWN_CELL_PX
+     * away, and the nudge would only re-centre it), never with the player beside it (as
+     * _checkPathStuck), and never onto a cell another moving body covers.
+     */
+    _needsNudgeSafe(pfm, x, y) {
+        if (this._playerBeside(x, y)) return false;
+        const cell = pfm.findNearestWalkableStartCell?.(x, y);
+        if (!cell || (cell.x - x) ** 2 + (cell.y - y) ** 2 < NPC_NUDGE_OWN_CELL_PX ** 2) return false;
+        return !this._dynamicBlockers().some(b => (b.x - cell.x) ** 2 + (b.y - cell.y) ** 2 < NPC_NUDGE_BODY_PX ** 2);
+    }
+
     /** Is the player's body within NPC_STUCK_PLAYER_PX of (x, y)? */
     _playerBeside(x, y) {
         const p = window.player;
@@ -1368,6 +1456,8 @@ export class NPCBehavior {
             return { x, y };
         }
 
+        // A wedged needs walk plans round seated and held bodies from here on (_planMovePath)
+        if (this._moveOwner === 'needs' && this._stopOnArrival) this._moveReroute = true;
         let at = { x, y };
         if (attempt >= 2) at = this._nudgeToWalkable(pfm, x, y);
         const from = pfm.findNearestWalkableStartCell?.(at.x, at.y) || at;
@@ -1498,8 +1588,15 @@ export class NPCBehavior {
         if (window.__npcAvoidOff) { this._avoid = null; return false; }
         if (!(this.config.patrol.speed > 0)) return false;
         const pos = this.npcBodyPos();
-        const heading = { x: nextWaypoint.x - pos.x, y: nextWaypoint.y - pos.y };
-        const hit = nearestBlockerAhead(pos, heading, this._dynamicBlockers());
+        // "Ahead" follows the path itself for the look-ahead, not just the heading
+        // to the next waypoint: a short first leg that points at a body before the
+        // path turns away (a detour round the player) is not blocked by it. With no
+        // path behind nextWaypoint, the heading check alone.
+        const path = this.currentPath;
+        const onPath = Array.isArray(path) && path[this.pathIndex] === nextWaypoint;
+        const hit = onPath
+            ? nearestBlockerOnPath(pos, path, this._dynamicBlockers(), AVOID_LOOKAHEAD_PX, AVOID_LANE_HALF_PX, this.pathIndex)
+            : nearestBlockerAhead(pos, { x: nextWaypoint.x - pos.x, y: nextWaypoint.y - pos.y }, this._dynamicBlockers());
         if (!hit) { this._avoid = null; return false; }
 
         // A needs-driven NPC whose pickup/use cell has the player standing on or
@@ -1602,25 +1699,47 @@ export class NPCBehavior {
         const from = pfm.findNearestWalkableStartCell?.(pos.x, pos.y) || pos;
         a.pending = true;
         const rooms = this._moveOwner === 'needs' ? this._moveAvoidRooms : null;
-        const opts = { avoidDynamic: { exceptSprite: this.sprite } };
-        if (rooms?.length) opts.avoidRooms = rooms;
-        pfm.findWorldPath(from.x, from.y, target.x, target.y, (path) => {
-            a.pending = false;
-            if (this.patrolTarget !== target) { this._avoid = null; return; }  // re-targeted meanwhile
-            if (path && path.length > 0) {
-                this.currentPath = path;
-                this.pathIndex = 0;
-                this.pathFollowingActive = true;
-                this._avoid = null;        // detour adopted — resume normal following
-                console.log(`↪️ [${this.npcId}] Detoured round a blocker (${path.length} waypoints)`);
-            } else {
-                a.gaveUp = true;           // nothing routes round the blocker
-            }
-        }, false, opts);
+        // A needs walk first routes round held bodies too (chairs, seated staff); when their
+        // clearance rings close the only aisle that search finds nothing, so it tries the plain
+        // detour round the moving bodies before giving up (code review R1, M1)
+        const held = this._moveOwner === 'needs';
+        const search = (includeHeld) => {
+            const opts = { avoidDynamic: { exceptSprite: this.sprite, includeHeld } };
+            if (rooms?.length) opts.avoidRooms = rooms;
+            pfm.findWorldPath(from.x, from.y, target.x, target.y, (path) => {
+                if (this.patrolTarget !== target) { a.pending = false; this._avoid = null; return; }  // re-targeted meanwhile
+                if (this._avoid !== a) { a.pending = false; return; }   // avoidance cleared or replaced meanwhile (R2 m4)
+                if (path && path.length > 0) {
+                    a.pending = false;
+                    this.currentPath = path;
+                    this.pathIndex = 0;
+                    this.pathFollowingActive = true;
+                    this._avoid = null;        // detour adopted — resume normal following
+                    console.log(`↪️ [${this.npcId}] Detoured round a blocker (${path.length} waypoints${includeHeld ? '' : ', plain'})`);
+                } else if (includeHeld) {
+                    search(false);             // held-aware found nothing: the plain detour
+                } else {
+                    a.pending = false;
+                    a.gaveUp = true;           // nothing routes round the blocker
+                }
+            }, false, opts);
+        };
+        search(held);
     }
 
     _planMovePath(pfm, sx, sy, ex, ey, callback) {
         const rooms = this._moveOwner === 'needs' ? this._moveAvoidRooms : null;
+        // A stalled needs walk (OFFICE_LIFE_STUCK_RETURN.md) plans round every other body,
+        // seated and held ones included; with no such path it takes the plain one.
+        if (this._moveOwner === 'needs' && this._moveReroute) {
+            const opts = { avoidDynamic: { exceptSprite: this.sprite, includeHeld: true } };
+            if (rooms?.length) opts.avoidRooms = rooms;
+            return pfm.findWorldPath(sx, sy, ex, ey, (path) => {
+                if (path && path.length > 0) { callback(path); return; }
+                if (rooms?.length) pfm.findWorldPath(sx, sy, ex, ey, callback, false, { avoidRooms: rooms });
+                else pfm.findWorldPath(sx, sy, ex, ey, callback);
+            }, false, opts);
+        }
         if (rooms?.length) return pfm.findWorldPath(sx, sy, ex, ey, callback, false, { avoidRooms: rooms });
         return pfm.findWorldPath(sx, sy, ex, ey, callback);
     }
@@ -2981,7 +3100,7 @@ export class NPCBehavior {
      */
     goToAndStay(worldX, worldY, speed, opts = {}) {
         window.seating?.unseatNPC?.(this); // a seated NPC gets up first
-        if (!opts?.fromSeating) window.seating?.cancelFetch?.(this); // and drops a chair it was fetching
+        if (!opts?.fromSeating) window.seating?.cancelFetch?.(this, `move:${opts?.owner || 'script'}`); // and drops a chair it was fetching
         // Who asked for the move (npc-needs.js passes owner 'needs'); a move by
         // anyone else suspends the NPC's needs, so scripts always win.
         this._moveOwner = opts?.owner;
@@ -2992,6 +3111,22 @@ export class NPCBehavior {
         else if (Array.isArray(opts.avoidRooms)) this._moveAvoidRooms = opts.avoidRooms.slice();
         // Walk-home moves pause for a nearby player like a patrol does.
         this._moveYieldsToPlayer = !!opts?.yieldToPlayer;
+        // A needs re-issue after a stall plans round other bodies (OFFICE_LIFE_STUCK_RETURN.md)
+        this._moveReroute = opts?.owner === 'needs' && !!opts?.reroute;
+        // The needs stall watch's last re-route in one place: step onto the nearest walkable cell
+        // first, the stuck recovery's attempt 2, which a needs walk's 3 s re-issues never reach.
+        // _lastNudge says where the body landed, or null when no nudge ran (refused by
+        // _needsNudgeSafe, or under 2 px), so the needs layer marks a place nudged only when it was
+        // (code review R3, M1)
+        this._lastNudge = null;
+        if (this._moveReroute && opts?.nudge && this.sprite?.body) {
+            const pfm = this.pathfindingManager || window.pathfindingManager;
+            const at = this.npcBodyPos();
+            if (pfm && this._needsNudgeSafe(pfm, at.x, at.y)) {
+                const to = this._nudgeToWalkable(pfm, at.x, at.y);
+                if (to.x !== at.x || to.y !== at.y) this._lastNudge = { x: to.x, y: to.y };
+            }
+        }
         if (opts?.owner !== 'needs') window.npcNeedsSystem?.onExternalMove?.(this.npcId, opts?.owner);
         // Stop current movement
         this.currentPath = [];
@@ -3045,6 +3180,7 @@ export class NPCBehavior {
         this._moveOwner = undefined;
         this._moveAvoidRooms = undefined;
         this._moveYieldsToPlayer = false;
+        this._moveReroute = false;
         this.config.patrol.enabled = false;
         this.pathFollowingActive = false;
         this.currentPath = [];
@@ -3074,6 +3210,7 @@ export class NPCBehavior {
         this._moveOwner = undefined;
         this._moveAvoidRooms = undefined;
         this._moveYieldsToPlayer = false;
+        this._moveReroute = false;
         this._stopOnArrival = false;
         this._goToStayDest = null;
         this.config.patrol.enabled = false;

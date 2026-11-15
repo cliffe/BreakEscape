@@ -340,9 +340,14 @@ test('the grumble is overheard like a chat line (npc_overheard, no npc_chatted);
     assert.equal(ov[0].data.line, null);
     assert.ok(PICTURE_CHATTER.grumble.includes(ov[0].data.picture));
     assert.equal(heard.emitted('npc_chatted').length, 0);
-    const own = turn({ chatter: { grumble: ['Not with him there.'] } });
+    // SIMS-5 design R3 m1: a grumble line is spent only within earshot, as chatter is
+    const own = turn({ chatter: { grumble: ['Not with him there.'] }, hears: () => ({ overheard: true, distance: 60 }) });
     assert.equal(own.sys.getState('sanjay').talking.line, 'Not with him there.');
-    assert.equal(own.emitted('npc_overheard').length, 0, 'not heard: no event');
+    assert.equal(own.emitted('npc_overheard').length, 1);
+    const far = turn({ chatter: { grumble: ['Not with him there.'] } });
+    assert.equal(far.sys.getState('sanjay').talking.line, null, 'out of earshot: no line spent');
+    assert.ok(PICTURE_CHATTER.grumble.includes(far.sys.getState('sanjay').talking.picture), 'the grumble picture instead');
+    assert.equal(far.emitted('npc_overheard').length, 0, 'not heard: no event');
     const off = turn({ chatter: false });
     assert.equal(off.sys.getState('sanjay').talking, null, 'chatter false: no built-in grumble');
 });

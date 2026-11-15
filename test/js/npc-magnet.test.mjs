@@ -24,7 +24,7 @@ const cake = (extra = {}, magnet = {}) => ({
 });
 const fridge = () => ({ id: 'fridge', roomId: 'office', x: 200, y: 300, affordance: { satisfies: 'hunger', restores: 50, useSeconds: 10 } });
 
-function office(npcs, { objects = [fridge()], arrive = false, seed = 7, globals = {}, tickCache = true, chatter } = {}) {
+function office(npcs, { objects = [fridge()], arrive = false, seed = 7, globals = {}, tickCache = true, chatter, hears = null } = {}) {
     const cfg = { npcs: {}, objects };
     for (const [id, n] of Object.entries(npcs)) {
         const pos = n.pos || { x: 100, y: 500 };
@@ -35,7 +35,7 @@ function office(npcs, { objects = [fridge()], arrive = false, seed = 7, globals 
     w.world.globalHolds = cond => requiredGlobalsHold(cond, globals);
     w.world.getGlobal = name => globals[name];
     w.world.setGlobal = (name, v) => { globals[name] = v; w.calls.globals[name] = v; };
-    w.world.playerHears = () => ({ overheard: false, distance: null });
+    w.world.playerHears = hears || (() => ({ overheard: false, distance: null }));
     w.world.playerProximity = () => ({ nearby: false, distance: null });
     w.world.removeMagnet = id => { removed.push(id); const o = w.objs.find(x => x.id === id); if (o) o.roomId = null; return true; };
     if (chatter !== undefined) w.world.chatterConfig = () => chatter;
@@ -117,7 +117,7 @@ test('a drop where nobody may go: magnet_unreachable; a told, leashed NPC keeps 
 test('capacity 3, two servings, three tempted walkers: two eat, the third turns back gone ("Missed it."), does not park; the magnet is finished and removed', () => {
     const chatter = { grumble_gone: ['Missed it.'] };
     const o = office({ amara: { rec: { needs: hunger(65) } }, sanjay: { rec: { needs: hunger(64) } }, tom: { rec: { needs: hunger(65) } } },
-        { objects: [cake()], chatter });
+        { objects: [cake()], chatter, hears: () => ({ overheard: true, distance: 60 }) });   // in earshot, so the grumble is spoken (R3 m1)
     o.sys.scanMagnets();
     o.know('amara', 'sanjay', 'tom');
     o.ticks(1);

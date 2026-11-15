@@ -450,20 +450,35 @@ export class NPCPathfindingManager {
      * body and skips the walker's own sprite. skipCX/skipCY: never avoid the
      * walker's own start cell.
      */
-    _avoidDynamicPositions(exceptSprite, skipCX, skipCY) {
+    _avoidDynamicPositions(exceptSprite, skipCX, skipCY, { includeHeld = false, endCX = -1, endCY = -1 } = {}) {
         if (!this.worldPathfinder || !this.worldGridBounds) return;
         const { minX, minY, cols, rows, step } = this.worldGridBounds;
         const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-        const avoidBody = (body) => {
-            if (!body || !body.enable || body.immovable) return;
+        // includeHeld (a stalled needs walk, OFFICE_LIFE_STUCK_RETURN.md): NPC bodies held
+        // immovable (seated, using an object) are avoided too; the world grid never has them.
+        // Round 7 (game 5439): the clearance ring round a body is soft near the walker's start and
+        // goal. With includeHeld a home cell always has the NPC's own chair (and often a seated
+        // neighbour) beside it, and their rings closed every cell round the goal, so the search found
+        // nothing, fell back to the plain path, and that ran Marek into a player standing on it. A
+        // body's own cells stay avoided; only ring cells within END_RING_CELLS of an end are kept open.
+        const END_RING_CELLS = 2;
+        const nearEnd = (cx, cy) => includeHeld && (
+            (Math.abs(cx - skipCX) <= END_RING_CELLS && Math.abs(cy - skipCY) <= END_RING_CELLS) ||
+            (endCX >= 0 && Math.abs(cx - endCX) <= END_RING_CELLS && Math.abs(cy - endCY) <= END_RING_CELLS));
+        const avoidBody = (body, npc = false) => {
+            if (!body || !body.enable || (body.immovable && !(includeHeld && npc))) return;
             // One cell of clearance either side, as _avoidNPCPositions uses.
-            const cx1 = clamp(Math.floor((body.left   - minX) / step) - 1, 0, cols - 1);
-            const cy1 = clamp(Math.floor((body.top    - minY) / step) - 1, 0, rows - 1);
-            const cx2 = clamp(Math.floor((body.right  - minX - 1) / step) + 1, 0, cols - 1);
-            const cy2 = clamp(Math.floor((body.bottom - minY - 1) / step) + 1, 0, rows - 1);
+            const bx1 = Math.floor((body.left - minX) / step), bx2 = Math.floor((body.right - minX - 1) / step);
+            const by1 = Math.floor((body.top - minY) / step), by2 = Math.floor((body.bottom - minY - 1) / step);
+            const cx1 = clamp(bx1 - 1, 0, cols - 1);
+            const cy1 = clamp(by1 - 1, 0, rows - 1);
+            const cx2 = clamp(bx2 + 1, 0, cols - 1);
+            const cy2 = clamp(by2 + 1, 0, rows - 1);
             for (let cy = cy1; cy <= cy2; cy++) {
                 for (let cx = cx1; cx <= cx2; cx++) {
-                    if (cx === skipCX && cy === skipCY) continue;
+                    if ((cx === skipCX && cy === skipCY) || (cx === endCX && cy === endCY)) continue;
+                    const ring = cx < bx1 || cx > bx2 || cy < by1 || cy > by2;
+                    if (ring && nearEnd(cx, cy)) continue;
                     if (this.worldGrid[cy]?.[cx] === 0) this.worldPathfinder.avoidAdditionalPoint(cx, cy);
                 }
             }
@@ -476,7 +491,16 @@ export class NPCPathfindingManager {
             if (!sprites) continue;
             for (const sprite of sprites) {
                 if (sprite === exceptSprite) continue;
-                avoidBody(sprite.body);
+                avoidBody(sprite.body, true);
+            }
+        }
+        // A stalled needs walk also routes round chairs. A loose chair is a dynamic body, so the
+        // world grid never has it, and one pinned against a desk or a seated colleague's chair
+        // cannot be pushed: the walk bumped it, settled and bumped it again (game 5347, Marek
+        // north-east of Sanjay's seat). A seated chair may have moved since the grid was built.
+        if (includeHeld && Array.isArray(window.chairs)) {
+            for (const chair of window.chairs) {
+                if (chair && !chair.destroyed && chair.body) avoidBody(chair.body, true);
             }
         }
     }
@@ -490,6 +514,8 @@ export class NPCPathfindingManager {
      * ring avoided for this search only.
      * opts.avoidDynamic = { exceptSprite }: route round the player and every other active NPC
      * body (npc-behavior.js local detour); exceptSprite is the walking NPC's own sprite.
+     * includeHeld: true also avoids seated and held (immovable) NPC bodies and every chair,
+     * and never avoids the goal cell.
      */
     findWorldPath(startX, startY, endX, endY, callback, avoidNPCs = false, opts = null) {
         if (!this.worldPathfinder || !this.worldGridBounds) {
@@ -520,7 +546,8 @@ export class NPCPathfindingManager {
 
         if (avoidNPCs) this._avoidNPCPositions(sx, sy);
         const avoidDyn = opts?.avoidDynamic || null;
-        if (avoidDyn) this._avoidDynamicPositions(avoidDyn.exceptSprite, sx, sy);
+        if (avoidDyn) this._avoidDynamicPositions(avoidDyn.exceptSprite, sx, sy,
+            avoidDyn.includeHeld ? { includeHeld: true, endCX: toCX(endX), endCY: toCY(endY) } : undefined);
         // Player paths also pay extra to cross "prefer to route around" objects
         // (path-avoid.js). calculate() runs every queued search to the end
         // before it returns, so the costs are cleared straight after it.
