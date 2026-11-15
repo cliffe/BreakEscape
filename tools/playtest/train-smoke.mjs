@@ -4,7 +4,12 @@
 //
 // Per game it checks: 0 page errors, the player is present, the start room is resolved (the engine
 // names a current room and has it loaded), and no 4xx/5xx responses except the two expected on a
-// keyless server: POST /tts cache misses (no key, so no live generation) and /favicon.
+// keyless server: POST /tts cache misses (no key, so no live generation) and /favicon. It also fails on
+// a failed request (connection reset, aborted module load; a request the page itself cancelled,
+// net::ERR_ABORTED, and the same /tts and favicon requests are ignored) and on a console.error line,
+// except the browser's own "Failed to load resource" echo of an HTTP status (already judged above)
+// and the keyless text-to-speech noise. Any other console.error means a boot step failed and was
+// logged instead of thrown, so it fails the smoke; the allow-list is CONSOLE_ALLOW below.
 // Prints one "SMOKE <game> OK|FAIL ..." line per game and a final "TRAIN-SMOKE n games, f failed".
 // Exit 0 when nothing failed, 1 on any failure, 2 on a setup error (bad arguments, no browser).
 //
@@ -33,7 +38,7 @@ export function parseArgs(argv, env = {}) {
     }
     const ids = games.map(g => g.trim()).filter(Boolean);
     if (!port || !/^\d+$/.test(String(port))) return { error: '--port <number> is required' };
-    if (Number(port) === 3000) return { error: 'port 3000 is never used for the smoke' };
+    if ([3000, 3085, 3086].includes(Number(port))) return { error: `port ${port} is reserved and never used for the smoke` };
     if (!ids.length) return { error: 'at least one --game <id> is required' };
     const bad = ids.find(g => !/^\d+$/.test(g));
     if (bad) return { error: `game id must be a number, got "${bad}"` };
@@ -51,6 +56,22 @@ export function badResponse({ status, method, url }) {
     return true;
 }
 
+/** Is this failed request (Playwright requestfailed) a failure? */
+export function badRequestFailure({ method, url, error }) {
+    if (/ERR_ABORTED/i.test(String(error))) return false;
+    let path = url;
+    try { path = new URL(url).pathname; } catch { /* already a path */ }
+    if (/\/favicon/i.test(path)) return false;
+    if (String(method).toUpperCase() === 'POST' && /\/tts\/?$/.test(path)) return false;
+    return true;
+}
+
+// console.error text that is expected on a keyless server and is not a boot problem.
+export const CONSOLE_ALLOW = [/Failed to load resource/i, /\btts\b.*(?:key|unavailable|503|failed)/i, /(?:key|unavailable|503).*\btts\b/i, /favicon/i];
+export function badConsole(text) {
+    return !CONSOLE_ALLOW.some(re => re.test(String(text)));
+}
+
 /** Turn what one game's page showed into a result: { game, ok, problems }. */
 export function judgeGame(game, obs) {
     const problems = [];
@@ -62,6 +83,8 @@ export function judgeGame(game, obs) {
         else if (!obs.roomLoaded) problems.push(`start room "${obs.room}" is not loaded`);
     }
     for (const r of obs.badResponses || []) problems.push(`HTTP ${r.status} ${r.method} ${r.url}`);
+    for (const r of obs.failedRequests || []) problems.push(`request failed ${r.method} ${r.url}: ${r.error}`);
+    for (const c of obs.consoleErrors || []) problems.push(`console error: ${c}`);
     return { game, ok: problems.length === 0, room: obs.room || null, problems };
 }
 
@@ -75,13 +98,22 @@ export function summarise(results) {
 }
 
 async function smokeOne(browser, port, game, timeoutMs) {
-    const obs = { pageErrors: [], badResponses: [] };
+    const obs = { pageErrors: [], badResponses: [], failedRequests: [], consoleErrors: [] };
     const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
     const page = await ctx.newPage();
     page.on('pageerror', e => obs.pageErrors.push(String(e && e.message || e).split('\n')[0].slice(0, 200)));
     page.on('response', res => {
         const rec = { status: res.status(), method: res.request().method(), url: res.url() };
         if (badResponse(rec)) obs.badResponses.push(rec);
+    });
+    page.on('requestfailed', req => {
+        const rec = { method: req.method(), url: req.url(), error: (req.failure() && req.failure().errorText) || 'failed' };
+        if (badRequestFailure(rec)) obs.failedRequests.push({ ...rec, url: rec.url.slice(0, 160) });
+    });
+    page.on('console', msg => {
+        if (msg.type() !== 'error') return;
+        const text = msg.text().split('\n')[0].slice(0, 200);
+        if (badConsole(text)) obs.consoleErrors.push(text);
     });
     try {
         await page.goto(`http://127.0.0.1:${port}/break_escape/games/${game}?skip_resume=1`, { waitUntil: 'domcontentloaded', timeout: timeoutMs });
