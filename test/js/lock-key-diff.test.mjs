@@ -192,6 +192,79 @@ test('V9: a submit_flags task makes the flag station room required', { skip }, (
     });
 });
 
+// R2 M1: a new lock on the required object itself, which has nothing downstream in the graph.
+test('V9: a new lock on a flag station or on a required task\'s targetObject is flagged (exit 2)', { skip }, () => {
+    fixture(fx => {
+        const tasks = [{ taskId: 'flags', title: 'F', type: 'submit_flags', targetFlags: ['fs:box-flag1'], status: 'active' },
+                       { taskId: 'read_ws', title: 'W', type: 'custom', targetObject: 'ws', status: 'active' }];
+        const objs = (fsx = {}, wsx = {}) => [{ id: 'fs', type: 'flag-station', name: 'Drop site', ...fsx },
+                                              { id: 'ws', type: 'pc', name: 'Workstation', ...wsx }];
+        // no lock node in the graph: the lock entry is checked against the object
+        const r = diffAfter(fx, scenario({ tasks, storeObjs: objs() }),
+            scenario({ tasks, storeObjs: objs({ locked: true, lockType: 'key', requires: 'k' }) }));
+        assert.equal(r.status, 2, r.stdout + r.stderr);
+        assert.match(r.stdout, /RULE 2: new lock at \/rooms\/store\/objects\[fs\] guards object 'fs' \(task flags \(flag station\)\)$/m);
+        // with the lock node the generator writes (lock_<id>, under its room, nothing downstream)
+        fx.write(scenario({ tasks, storeObjs: objs() }), graph());
+        fx.run('--write', fx.base, '--graph-json', fx.gj);
+        const g = graph();
+        g.nodes.push({ id: 'lock_ws', label: 'Workstation', kind: 'lock', optional: false });
+        g.edges.push({ from: 'store', to: 'lock_ws', soft: false });
+        fx.write(scenario({ tasks, storeObjs: objs({}, { locked: true, lockType: 'password', requires: 'pw' }) }), g);
+        const l = fx.run(fx.base, '--graph-json', fx.gj);
+        assert.equal(l.status, 2, l.stdout + l.stderr);
+        assert.match(l.stdout, /RULE 2: new lock 'lock_ws' guards object 'ws' \(task read_ws\)$/m);
+        assert.doesNotMatch(l.stdout, /new lock at /);
+        // a lock on an object nothing requires is a change only
+        const o = diffAfter(fx, scenario({ tasks, storeObjs: [...objs(), { id: 'drawer', type: 'notes', name: 'Drawer' }] }),
+            scenario({ tasks, storeObjs: [...objs(), { id: 'drawer', type: 'notes', name: 'Drawer', locked: true, lockType: 'key', requires: 'k' }] }));
+        assert.equal(o.status, 1, o.stdout + o.stderr);
+    });
+});
+
+// R2 M2: the other ways the engine completes a required task, and station attribution.
+test('V9: required content from object complete_task actions, targetItemIds by name or lock ref, and targetGroup', { skip }, () => {
+    fixture(fx => {
+        const tasks = [
+            { taskId: 'read_temp', title: 'T', type: 'custom', status: 'active' },
+            { taskId: 'shut_down', title: 'S', type: 'custom', status: 'active' },
+            { taskId: 'get_keys', title: 'K', type: 'collect_items', targetItemIds: ["Office Key", 'office_lock'], status: 'active' },
+            { taskId: 'get_files', title: 'G', type: 'collect_items', targetGroup: 'pc_files', status: 'active' }];
+        const objs = [
+            { id: 'thermo', type: 'notes', name: 'Thermometer', triggerOnInteract: [{ type: 'complete_task', taskId: 'read_temp' }] },
+            { id: 'button', type: 'pc', name: 'Button', completionActions: [{ type: 'complete_task', taskId: 'shut_down' }] },
+            { id: 'drawer', type: 'notes', name: 'Drawer', contents: [{ type: 'key', name: 'Office Key' }, { type: 'key', name: 'Spare', opens_lock: 'office_lock' }] },
+            { id: 'pc', type: 'pc', name: 'PC', contents: [{ type: 'text_file', name: 'Mail', collection_group: 'pc_files' }] }];
+        fx.write(scenario({ tasks, storeObjs: objs }), graph());
+        assert.equal(fx.run('--write', fx.base, '--graph-json', fx.gj).status, 0);
+        const rc = JSON.parse(readFileSync(fx.base, 'utf8')).requiredContent.filter(([room]) => room === 'store');
+        assert.deepEqual(rc, [
+            ['store', "task get_files (group 'pc_files')", 'Mail'],
+            ['store', 'task get_keys', 'Office Key'],
+            ['store', 'task get_keys', 'Spare'],
+            ['store', "task read_temp (action on 'thermo')", 'thermo'],
+            ['store', "task shut_down (action on 'button')", 'button']]);
+    });
+});
+
+test('V9: a flag task is tied to the station its targetFlags name, any type, else by the VM it accepts', { skip }, () => {
+    fixture(fx => {
+        const tasks = [{ taskId: 'f1', title: 'F', type: 'submit_flags', targetFlags: ['fs_a:box-flag1'], status: 'active' },
+                       { taskId: 'f2', title: 'F', type: 'submit_flags', targetFlags: ['box:flag_2'], status: 'active' }];
+        const storeObjs = [{ id: 'fs_a', type: 'flag-station', name: 'A', acceptsVms: ['other'] },
+                           { id: 'fs_b', type: 'flag-station', name: 'B', acceptsVms: ['other'] },
+                           { id: 'launch', type: 'launch-device', name: 'L', acceptsVms: ['box'] },
+                           { id: 'kali', type: 'vm-launcher', name: 'Kali' }];
+        fx.write(scenario({ tasks, storeObjs }), graph());
+        assert.equal(fx.run('--write', fx.base, '--graph-json', fx.gj).status, 0);
+        const rc = JSON.parse(readFileSync(fx.base, 'utf8')).requiredContent.filter(([room]) => room === 'store');
+        assert.deepEqual(rc, [
+            ['store', 'VM launcher (flag tasks)', 'kali'],
+            ['store', 'task f1 (flag station)', 'fs_a'],
+            ['store', 'task f2 (flag station)', 'launch']]);
+    });
+});
+
 // Minor 14: an ERB template that draws random values still diffs empty.
 test('V9: random_pin and Kernel#rand in the template hash alike run to run; SecureRandom is refused', { skip }, () => {
     fixture(fx => {
@@ -232,4 +305,25 @@ test('V9: run without --graph-json it generates the graph, whose JSON carries th
         assert.ok(g.nodes.some(n => n.kind === 'lock'), 'the fixture has a lock node');
         assert.equal(run(base).status, 0);
     });
+});
+
+// R2 M2: every required task in m01 to m10 places at least one room in requiredContent. A task
+// with no static room (none today) goes in EXCEPTIONS with the reason.
+const EXCEPTIONS = {};
+test('corpus: every required task of m01 to m10 has a requiredContent room', { skip }, () => {
+    const script = `$stdout = File.open(File::NULL, 'w')
+      load ${JSON.stringify(tool)}
+      out = Dir[File.join(${JSON.stringify(root)}, 'scenarios', 'm{0,1}[0-9]_*', 'scenario.json.erb')].sort.to_h do |erb|
+        sc = LockKeyDiff.render(erb)
+        pl = {}
+        sc['rooms'].each { |rid, room| LockKeyDiff.walk(room, '') { |o, _| pl[o['id'].to_s] ||= rid if o['id'].is_a?(String) } }
+        placed = LockKeyDiff.required_content(sc, pl, erb).select(&:first).map { |r| r[1][/\\Atask (\\S+)/, 1] }.compact
+        [File.basename(File.dirname(erb)), LockKeyDiff.required_task_ids(sc).map { |t| t['taskId'] } - placed]
+      end
+      STDOUT.puts JSON.generate(out)`;
+    const r = spawnSync('ruby', ['-e', script], { encoding: 'utf8', env, maxBuffer: 1 << 26 });
+    assert.equal(r.status, 0, r.stderr);
+    const out = JSON.parse(r.stdout.trim().split('\n').pop());
+    assert.equal(Object.keys(out).length, 10, Object.keys(out).join(', '));
+    for (const [id, missing] of Object.entries(out)) assert.deepEqual(missing.filter(t => !EXCEPTIONS[`${id}:${t}`]), [], id);
 });

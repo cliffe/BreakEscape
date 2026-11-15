@@ -363,10 +363,17 @@ module ValidateOfficeLife
     out.uniq
   end
 
+  # A magnet the player can carry and drop elsewhere: takeable (the engine picks up only a truthy
+  # takeable, interactions.js), droppable, or in the starting inventory.
+  def self.carried?(o)
+    o.room.nil? || o.data['takeable'] == true || o.data['droppable'] == true
+  end
+
   # Rooms other than its home that its needs can take it to, under its leash: an object meeting a
   # need that it may use; the output tray of a printer it prints to (a print fetch); an item tagged
-  # for one of its interests; and, when a droppable magnet satisfies one of its needs, any room it
-  # can reach (the player can drop the magnet anywhere). [rooms, reasons].
+  # for one of its interests; a magnet meeting one of its needs (its own room when fixed, any room
+  # it can reach when the player can carry it); and its workaround visits with a fixed target (a
+  # prop_door's door and prop, a borrow_session's PC). [rooms, reasons].
   def self.away_need_rooms(w, npc, room)
     home = home_room(w, npc, room)
     reach = VN.leash_reach(w.json, npc, home)
@@ -387,8 +394,23 @@ module ValidateOfficeLife
     end
     tags = npc['interests'].is_a?(Hash) ? npc['interests'].keys : []
     w.objs.each { |o| add.call(o.room, 'interest') if tags.include?(o.data['needsTag']) } unless tags.empty?
-    if w.objs.any? { |o| (m = o.data['affordance']).is_a?(Hash) && m['magnet'].is_a?(Hash) && (VN.list(m['satisfies']) & needs).any? }
-      reach.each { |r| add.call(r, 'magnet') }
+    w.objs.each do |o|
+      m = o.data['affordance']
+      next unless m.is_a?(Hash) && m['magnet'].is_a?(Hash) && (VN.list(m['satisfies']) & needs).any?
+
+      carried?(o) ? reach.each { |r| add.call(r, 'magnet') } : add.call(o.room, 'magnet')
+    end
+    # workaround visits with a fixed target: the door a prop_door props and the room of its prop,
+    # resolved as validate_access_work.rb does (AW.object_index), and the PC a borrow_session sits at
+    index = AW.object_index(w.json)
+    AW.workarounds(w.json, npc).each do |wa|
+      case wa['do']
+      when 'prop_door'
+        add.call(wa['door'], 'workaround visit') if wa['door'].is_a?(String)
+        add.call(index.dig(wa['prop'], :room_id), 'workaround visit') if wa['prop'].is_a?(String)
+      when 'borrow_session'
+        add.call(index.dig(wa['pc'], :room_id), 'workaround visit') if wa['pc'].is_a?(String)
+      end
     end
     rooms.keys.sort.map { |r| "#{r} (#{rooms[r].uniq.join('/')})" }
   end
@@ -745,14 +767,21 @@ module ValidateOfficeLife
       c['reveal and left-behind globals'] += 1 if left
       c['office-life items'] += 1 if (left || (a.is_a?(Hash) && a['magnet'].is_a?(Hash))) && o.data['takeable'] != false
     end
-    c['office-life onceOnly mappings'] = w.mappings.count { |m, _| m['onceOnly'] == true && (office_life_event?(m['eventPattern']) || office_life_action?(m)) }
+    globals = office_life_globals(w)
+    c['office-life onceOnly mappings'] = w.mappings.count do |m, _|
+      m['onceOnly'] == true && (office_life_event?(m['eventPattern']) || office_life_action?(m, globals))
+    end
     BUDGET_CAPS.map { |kind, cap| [kind, c[kind], cap] }
   end
 
-  # A mapping that drives office life whatever its trigger: a needs command (print included), a
-  # patrolOverride, or an emitted office-life event (desk_phone_ring and the like).
-  def self.office_life_action?(m)
-    m['needs'].is_a?(Hash) || m['patrolOverride'].is_a?(Hash) || office_life_event?(m['emitEvent'])
+  # A mapping that drives office life whatever its trigger: a needs command (print included) or an
+  # emitted office-life event (desk_phone_ring and the like). A patrolOverride counts only on an
+  # office-life trigger (an event, or a global only office life writes); on a story trigger it is
+  # scripted patrol (m02's roaming nurse, m09's old_coyote).
+  def self.office_life_action?(m, globals = {})
+    return true if m['needs'].is_a?(Hash) || office_life_event?(m['emitEvent'])
+
+    m['patrolOverride'].is_a?(Hash) && !office_trigger(m, globals).nil?
   end
 
   def self.check_sync_budget(w, issues)

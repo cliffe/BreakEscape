@@ -19,7 +19,8 @@
 # concludeRequires, and the rooms that hold required content (requiredContent, see
 # required_content). The diff names what changed and flags any new lock node or gate whose far
 # side holds required content or a critical-path (non-optional) lock: a door gate's far side is its
-# connectedRoom, an object gate's is the object's lock node and the object itself.
+# connectedRoom, an object gate's is the object's lock node and the object itself. A new lock on an
+# object is checked the same way: downstream of its lock node, and the object itself.
 #
 # V9 consumes the graph's output and shares none of its code, so a change to the graph's JSON
 # format needs a matching change here; test/js/lock-key-diff.test.mjs pins the fields read:
@@ -189,32 +190,52 @@ module LockKeyDiff
     ''
   end
 
-  # [[room, why, id]] for every room holding required content (id: the object or NPC, when one). A required task's own refs (targetRoom,
-  # targetObject, targetNPC, targetItemIds, targetItems by type); the room of each NPC whose story
-  # sets it with #complete_task; and for each mapping that completes it, the room of the object,
-  # NPC or room its eventPattern names (else of the NPC holding the mapping); for submit_flags,
-  # every flag station and VM launcher. That covers manual, custom, collect_items and flag tasks,
-  # which have no target of their own.
+  # [[room, why, id]] for every room holding required content (id: the object or NPC, when one).
+  # A required task's own refs: targetRoom, targetObject, targetNPC, targetItemIds (matched on an
+  # item's id, opens_lock, key_id or name, as objectives-manager.js targetIdMatches does),
+  # targetItems by type and targetGroup by collection_group. Then the room of each NPC whose story
+  # sets it with #complete_task; each object (or room) whose action lists hold a
+  # { type: complete_task } (triggerOnInteract, completionActions and the like, apply-actions.js);
+  # each mapping that completes it, at the object, NPC or room its eventPattern names (else the NPC
+  # holding the mapping); and for submit_flags the station its targetFlags name. Every VM launcher
+  # counts too, as one row each, when any required task submits flags.
   def required_content(scenario, placement, erb_path)
     out = []
     tasks = required_task_ids(scenario)
     ids = tasks.map { |t| t['taskId'].to_s }
     rooms = scenario['rooms'].is_a?(Hash) ? scenario['rooms'] : {}
+    objs = []
+    rooms.each { |rid, room| walk(room, '') { |o, pa| objs << [rid, o] if pa != '' } if room.is_a?(Hash) }
+    ref = ->(o) { o['id'].is_a?(String) ? o['id'] : o['name'] }
     by_type = Hash.new { |hh, k| hh[k] = [] }
-    rooms.each do |rid, room|
-      walk(room, '') { |o, pa| by_type[o['type']] << [rid, o['id']] if pa != '' && o['type'].is_a?(String) } if room.is_a?(Hash)
+    aliases = Hash.new { |hh, k| hh[k] = [] }
+    groups = Hash.new { |hh, k| hh[k] = [] }
+    objs.each do |rid, o|
+      by_type[o['type']] << [rid, o['id']] if o['type'].is_a?(String)
+      %w[id name opens_lock key_id].each { |k| aliases[o[k]] << [rid, ref.call(o)] if o[k].is_a?(String) && !o[k].empty? }
+      g = o['collection_group'] || o['collectionGroup']
+      groups[g] << [rid, ref.call(o)] if g.is_a?(String)
     end
     tasks.each do |t|
       tid = t['taskId']
       out << [t['targetRoom'], "task #{tid}", nil] if t['targetRoom'].is_a?(String)
-      ([t['targetObject'], t['targetNPC']] + Array(t['targetItemIds'])).each do |id|
-        out << [placement[id], "task #{tid}", id] if id.is_a?(String) && placement[id]
-      end
+      [t['targetObject'], t['targetNPC']].each { |id| out << [placement[id], "task #{tid}", id] if id.is_a?(String) && placement[id] }
+      Array(t['targetItemIds']).each { |id| aliases[id].uniq.each { |r, x| out << [r, "task #{tid}", x] } if id.is_a?(String) }
       Array(t['targetItems']).each { |ty| by_type[ty.to_s].uniq.each { |r, id| out << [r, "task #{tid}", id] } }
-      # flags are submitted at a flag station after launching the VM; every station counts
+      groups[t['targetGroup']].uniq.each { |r, id| out << [r, "task #{tid} (group '#{t['targetGroup']}')", id] } if t['targetGroup'].is_a?(String)
       next unless t['type'] == 'submit_flags'
 
-      (by_type['flag-station'] + by_type['vm-launcher']).uniq.each { |r, id| out << [r, "task #{tid} (flag station)", id] }
+      flag_stations(t, objs, placement, by_type).each { |r, id| out << [r, "task #{tid} (flag station)", id] }
+    end
+    if tasks.any? { |t| t['type'] == 'submit_flags' }
+      by_type['vm-launcher'].uniq.each { |r, id| out << [r, 'VM launcher (flag tasks)', id] }
+    end
+    rooms.each do |rid, room|
+      next unless room.is_a?(Hash)
+
+      complete_task_actions(room, nil) do |owner, tid|
+        out << [rid, "task #{tid} (action on #{owner ? "'#{owner}'" : "room '#{rid}'"})", owner] if ids.include?(tid)
+      end
     end
     base_dir = File.dirname(File.expand_path(erb_path))
     mappings = Array(scenario['eventMappings']).map { |m| [m, nil] }
@@ -233,7 +254,9 @@ module LockKeyDiff
     mappings.each do |m, holder_room|
       next unless m.is_a?(Hash)
 
-      done = (m['completeTask'].is_a?(Array) ? m['completeTask'] : [m['completeTask']]).map(&:to_s) & ids
+      done = (m['completeTask'].is_a?(Array) ? m['completeTask'] : [m['completeTask']]).map(&:to_s)
+      complete_task_actions(m, nil) { |_o, tid| done << tid }
+      done = done.uniq & ids
       next if done.empty?
 
       tgt = m['eventPattern'].to_s.split(':', 2)[1]
@@ -242,6 +265,35 @@ module LockKeyDiff
       done.each { |tid| out << [room, "task #{tid} (mapping '#{m['eventPattern']}')", id] } if room
     end
     out.uniq.sort_by { |r| r.map(&:to_s) }
+  end
+
+  # Yields [owner id, taskId] for each { type: complete_task } action under node; the owner is the
+  # nearest enclosing hash with a string id (nil for the room itself).
+  def complete_task_actions(node, owner, &blk)
+    case node
+    when Hash
+      owner = node['id'] if node['id'].is_a?(String)
+      blk.call(owner, node['taskId'].to_s) if node['type'] == 'complete_task' && node['taskId']
+      node.each_value { |v| complete_task_actions(v, owner, &blk) }
+    when Array then node.each { |v| complete_task_actions(v, owner, &blk) }
+    end
+  end
+
+  # The stations a submit_flags task's targetFlags (<station>:<vm>-flagN, or <vm>:flag_N) point
+  # at: the object the prefix names (any type); else objects whose flags list holds the ref; else
+  # objects whose acceptsVms holds the prefix; else every flag station. [[room, id]].
+  def flag_stations(task, objs, placement, by_type)
+    refs = Array(task['targetFlags']).select { |f| f.is_a?(String) }
+    found = refs.flat_map do |f|
+      pre = f.split(':', 2)[0]
+      next [[placement[pre], pre]] if placement[pre]
+
+      hit = objs.select { |_r, o| Array(o['flags']).include?(f) }
+      hit = objs.select { |_r, o| Array(o['acceptsVms']).include?(pre) } if hit.empty?
+      hit.map { |r, o| [r, o['id']] }
+    end
+    found = by_type['flag-station'] if found.empty?
+    found.uniq
   end
 
   SECTIONS = %w[graph locks gates aims concludeRequires].freeze
@@ -282,6 +334,29 @@ module LockKeyDiff
     s.to_s.downcase.gsub(/[^a-z0-9]/, '_').gsub(/_+/, '_').sub(/\A_+/, '').sub(/_+\z/, '')
   end
 
+  # The object itself, when required content names it (a task target, a station, the object whose
+  # action completes a task).
+  def object_guards(snap, id)
+    why = Array(snap['requiredContent']).select { |_r, _w, x| x == id }.map { |_r, w, _x| w }.uniq
+    why.empty? ? [] : ["object '#{id}' (#{why.join('; ')})"]
+  end
+
+  # A lock in effect: locked: true, or a lockType not switched off with locked: false.
+  def lock_on?(l)
+    l['locked'] == true || (l['lockType'] && l['locked'] != false)
+  end
+
+  # What a new lock entry sits on and guards: a room lock guards the room, a door lock its
+  # connectedRoom (the path key), an object lock the object when required content names it.
+  def lock_entry_guards(snap, l)
+    path = l['path'].to_s
+    if (room = path[%r{\A/rooms/([^/\[]+)\z}, 1] || path[%r{/doors\[([^\]]+)\]\z}, 1])
+      return required_rooms(snap).include?(room) ? ["room '#{room}' (required content)"] : []
+    end
+
+    l['id'].is_a?(String) ? object_guards(snap, l['id']) : []
+  end
+
   # Where a new gate's far side starts in the graph, and what it guards. A door gate starts at
   # door_<connectedRoom> (or the room itself); a room gate at door_<room>; an object gate at its
   # lock node lock_<id>, else its own node. An object gate also guards the object when a required
@@ -303,8 +378,7 @@ module LockKeyDiff
 
     start = ["lock_#{graph_nid(id)}", id].find { |n| known.call(n) }
     g = start ? guards(snap, start) : []
-    why = Array(snap['requiredContent']).select { |_r, _w, x| x == id }.map { |_r, w, _x| w }.uniq
-    g |= ["object '#{id}' (#{why.join('; ')})"] unless why.empty?
+    g |= object_guards(snap, id)
     g |= ["object '#{id}' (critical-path lock)"] if on['lock'] && !(start && snap['graph']['lockNodes'].any? { |n| n['id'] == start && n['optional'] })
     g
   end
@@ -327,11 +401,25 @@ module LockKeyDiff
     end
     flagged = []
     old_locks = base['graph']['lockNodes'].map { |n| n['id'] }
+    done = []
     cur['graph']['lockNodes'].each do |n|
       next if old_locks.include?(n['id'])
 
       g = guards(cur, n['id'])
+      # the locked object itself: the generator names its node lock_<id> (generate_dungeon_graph.rb)
+      cur['locks'].select { |l| l['id'].is_a?(String) && ["lock_#{l['id']}", "lock_#{graph_nid(l['id'])}"].include?(n['id']) }.each do |l|
+        done << l['path']
+        g |= lock_entry_guards(cur, l)
+      end
       flagged << "new lock '#{n['id']}' guards #{g.join(', ')}" unless g.empty?
+    end
+    # a lock put on, or switched on, where the graph has no new node for it
+    was_on = base['locks'].select { |l| lock_on?(l) }.map { |l| l['path'] }
+    cur['locks'].each do |l|
+      next if !lock_on?(l) || was_on.include?(l['path']) || done.include?(l['path'])
+
+      g = lock_entry_guards(cur, l)
+      flagged << "new lock at #{l['path']} guards #{g.join(', ')}" unless g.empty?
     end
     old_gates = base['gates'].map { |g| [g['path'], g['field']] }
     cur['gates'].each do |gt|

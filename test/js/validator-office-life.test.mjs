@@ -155,6 +155,35 @@ test('V2: a print fetch, an interest and a dropped magnet also take a story NPC 
     assertHas(campaign(magnet), 'to kitchen (magnet)');
 });
 
+test('V2: a fixed magnet (no takeable) counts only in its own room; a takeable one anywhere', { skip }, () => {
+    const keyed = worker({ itemsHeld: [{ type: 'key', name: 'Key', key_id: 'k1' }] });
+    const cake = (extra) => ({ id: 'cake', type: 'cake', position: { x: 1, y: 1 }, ...extra,
+        affordance: { satisfies: ['caffeine'], magnet: { tempt: 50, servings: 4, perPerson: 1 } } });
+    // in the NPC's own office and fixed: nothing takes it away
+    assertNot(campaign(scenario({ kitchenObjs: [], officeObjs: [coffee('desk_coffee'), cake({ takeable: false })], npcs: [keyed] })), 'V2');
+    assertNot(campaign(scenario({ kitchenObjs: [], officeObjs: [coffee('desk_coffee'), cake()], npcs: [keyed] })), 'V2');
+    // takeable in the office: the player can carry it next door
+    assertHas(campaign(scenario({ kitchenObjs: [], officeObjs: [coffee('desk_coffee'), cake({ takeable: true })], npcs: [keyed] })), 'to kitchen (magnet)');
+    // fixed in the kitchen: the kitchen, as a magnet
+    assertHas(campaign(scenario({ kitchenObjs: [cake({ takeable: false })], officeObjs: [coffee('desk_coffee')], npcs: [keyed] })), 'to kitchen (magnet)');
+});
+
+test('V2: a prop_door workaround visits its door and its prop; borrow_session the PC', { skip }, () => {
+    const keyed = (wa) => worker({ itemsHeld: [{ type: 'key', name: 'Key', key_id: 'k1' }], workarounds: [wa] });
+    const base = { kitchenObjs: [], officeObjs: [coffee('desk_coffee')] };
+    const store = { type: 'room_office', connections: { west: 'kitchen' }, locked: true, lockType: 'key', requires: 'k9', objects: [], npcs: [] };
+    const withStore = (s) => { s.rooms.kitchen.connections.east = 'store'; s.rooms.store = store; return s; };
+    const prop = withStore(scenario({ ...base, kitchenObjs: [{ id: 'wedge', type: 'notes', position: { x: 1, y: 1 } }],
+        npcs: [keyed({ at: 50, do: 'prop_door', door: 'store', prop: 'wedge', setGlobal: 'store_propped' })] }));
+    const out = campaign(prop);
+    assertHas(out, 'kitchen (workaround visit)');
+    assertHas(out, 'store (workaround visit)');
+    const pc = { id: 'hotdesk', type: 'pc', locked: true, lockType: 'login', position: { x: 1, y: 1 } };
+    assertHas(campaign(scenario({ ...base, kitchenObjs: [pc], npcs: [keyed({ at: 50, do: 'borrow_session', pc: 'hotdesk' })] })), 'to kitchen (workaround visit)');
+    // a leash that keeps it in the office clears it
+    assertNot(campaign(scenario({ ...base, kitchenObjs: [pc], npcs: [{ ...keyed({ at: 50, do: 'borrow_session', pc: 'hotdesk' }), needsRooms: ['office'] }] })), 'V2');
+});
+
 // ── V3 ─────────────────────────────────────────────────────────────────────────────────────
 
 test('V3: npc_arrived:<id> on a needs NPC warns in every scenario; on a still NPC it does not', { skip }, () => {
@@ -337,6 +366,18 @@ test('V8: an onceOnly mapping carrying an office-life action counts, whatever it
     assert.match(call(s, 'ValidateOfficeLife.sync_budget_lines(json)')[0], /office-life onceOnly mappings 2\/10/);
 });
 
+test('V8: a patrolOverride counts only on an office-life trigger, not on a story one (m02 nurse shape)', { skip }, () => {
+    const tile = { patrolOverride: { targetTile: { x: 3, y: 3 } } };
+    const story = scenario({ npcs: [worker({ eventMappings: [
+        { eventPattern: 'global_variable_changed:patient_bed4_state', onceOnly: true, ...tile }] })] });
+    assert.doesNotMatch(call(story, 'ValidateOfficeLife.sync_budget_lines(json)').join('\n'), /onceOnly/);
+    const office = scenario({ npcs: [worker({ eventMappings: [
+        { eventPattern: 'npc_used:coffee', onceOnly: true, ...tile },
+        { eventPattern: 'global_variable_changed:coffee_servings', onceOnly: true, ...tile }] })],
+        kitchenObjs: [coffee('coffee', { affordance: { satisfies: ['caffeine'], magnet: { tempt: 50, servings: 2, perPerson: 1 } } })] });
+    assert.match(call(office, 'ValidateOfficeLife.sync_budget_lines(json)')[0], /office-life onceOnly mappings 2\/10/);
+});
+
 // ── corpus pins ────────────────────────────────────────────────────────────────────────────
 
 function corpus(ids, opts) {
@@ -358,6 +399,19 @@ test('corpus: the campaign constant is m01 to m10, and V5 gives 0 errors on each
     assert.deepEqual(call({}, 'ValidateOfficeLife::CAMPAIGN_MISSIONS'), CAMPAIGN);
     const out = corpus(CAMPAIGN, 'scenario_id: id');
     for (const id of CAMPAIGN) assert.deepEqual(out[id].filter(l => l.includes('V5') && l.startsWith('❌')), [], id);
+});
+
+test('corpus: m02 and m09 count no office-life onceOnly mapping (their patrolOverrides are story patrol)', { skip }, () => {
+    for (const id of ['m02_ransomed_trust', 'm09_digital_archaeology']) {
+        const script = `$stdout = File.open(File::NULL, 'w'); $stderr = File.open(File::NULL, 'w')
+          require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
+          json = render_erb_to_json(File.join(${JSON.stringify(root)}, 'scenarios', '${id}', 'scenario.json.erb'))
+          STDOUT.puts JSON.generate(ValidateOfficeLife.sync_budget(ValidateOfficeLife::World.build(json)))`;
+        const r = spawnSync('ruby', ['-e', script], { encoding: 'utf8', env, maxBuffer: 1 << 26 });
+        assert.equal(r.status, 0, r.stderr);
+        const rows = JSON.parse(r.stdout.trim().split('\n').pop());
+        assert.deepEqual(rows.find(([k]) => k === 'office-life onceOnly mappings'), ['office-life onceOnly mappings', 0, 10], id);
+    }
 });
 
 test('corpus: V2, V4 and V5 report nothing on the labs and test scenarios that use office life', { skip }, () => {

@@ -102,3 +102,23 @@ Every `scenarios/*/scenario.json.erb` (179) was validated with `--no-graph --ski
 ### R1 suites
 
 On 885f740d0: `bin/test-js -j 3` 657 files passed, 0 failed; `bin/rails test` 2763 runs, 0 failures, 0 errors, 2 skips (1 before; this round adds no skip, so the second most likely arrived with the main merge, not checked).
+
+## R2 outcomes
+
+Review: `OFFICE_LIFE_VTOOLS_REVIEW_R2.md` (REVISE, 0 blockers, 2 majors, 5 minors). Each finding was reproduced before the fix and none is withdrawn; the review's Outcomes section gives file:line for each.
+
+- **M1 fixed.** A new lock node, or a lock put on or switched on with no new node, is now checked against the locked object itself as well as what lies downstream. On a scratch copy of m04, a key lock on `flag_station_dropsite` and one on `analog_thermometer` both exit 2 (both exited 1 at R1).
+- **M2 fixed.** Required content now also comes from `{ type: complete_task }` actions in any object, NPC or room action list, from `targetItemIds` matched on id, name, `opens_lock` or `key_id`, and from `targetGroup` on `collection_group`. Required tasks with a room, per mission: m01 26/26 (24 at R1), m02 26/26, m03 17/17, m04 12/12 (10 at R1), m05 22/22, m06 20/20, m07 11/11, m08 14/14, m09 22/22, m10 20/20. A node corpus pin keeps this at no gaps.
+- **Flag stations (minor 1) fixed.** Each flag task is tied to the station its `targetFlags` prefix names, any type (m01's `entropy_launch_device` included); a ref whose prefix is a VM name falls back to the objects that list the ref or accept that VM, then to every station. VM launchers are kept as required content, one row each, since every campaign launcher is the shared attack box.
+- **V8 (minor 2) fixed.** A `patrolOverride` counts as office life only on an office-life trigger. The R1 sentence "no V8 count changed under the wider onceOnly rule" was wrong: at R1, m02 (`roaming_ward_nurse`) and m09 (`old_coyote`) each printed `office-life onceOnly mappings 1/10`, because that corpus comparison counted warnings and errors and not info lines. Both now count 0, and a corpus pin holds them there.
+- **V2 visits (minor 3) fixed.** A `prop_door` workaround's door and its prop's room, and a `borrow_session`'s PC room, are away rooms, resolved through `AW.object_index` as `validate_access_work.rb` does.
+- **V2 magnets (minor 4) fixed.** Only a magnet the player can carry (`takeable: true`, `droppable: true`, or in the starting inventory) adds every reachable room; a fixed one adds its own room. A magnet with no `takeable` is fixed too, because the engine picks up only a truthy `takeable`.
+- **Tests (minor 5).** New: 4 V9 cases (new lock on a station and on a `targetObject`, the three completion routes, station attribution, the m01 to m10 placement pin) and 4 V1 to V8 cases (fixed magnet, workaround visits, story `patrolOverride`, the m02 and m09 pin).
+
+V9's baseline format stays 2: the snapshot fields are unchanged, only the rows `requiredContent` holds. Launcher rows now read `VM launcher (flag tasks)` instead of one row per flag task, so the m01 to m10 row counts drop (m10 56 to 35) while the rooms they cover rise or hold (m01 7 to 8).
+
+### R2 corpus run
+
+Every `scenarios/*/scenario.json.erb` (179) was validated with `--no-graph --skip-ink --no-lint`, once with main 32516127c's `scripts/` and `lib/` and once with this branch. Exit codes are identical for every scenario, `❌` counts are identical, and nothing printed `could not run`. (Six scenarios first showed exit 1 on main, from the scratch copy's absolute paths missing `validator_known_failures.json`; rerun with repo-relative paths, all six exit 0.) Warnings differ only in `lab_physical_pentest` (+1), `test_access_social` (+4), `test_access_work` (+3) and `test_needs_sims` (+2), the same V8 lines and counts as at R1. m01 to m10: exit 0, no office-life warning or error, and no V8 info line (m02 and m09 included). V8 info lines print for the same nine lab and test scenarios as at R0.
+
+V9 on scratch copies of m01 to m10: `--write` then a diff gives "empty", exit 0, for all ten.
