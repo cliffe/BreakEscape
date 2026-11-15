@@ -1483,24 +1483,26 @@ export class PasswordMinigame extends MinigameScene {
         const showTiles = remote ? (s.current?.locked !== true) : (s.picker !== false);
         const tiles = showTiles ? `
             <div class="signin-tiles" id="signin-tiles">${this.signInTilesInnerHtml()}</div>` : '';
-        const current = s.current
-            ? (s.current.locked === true
-                // A locked session (UI slice 6): it is held, but needs its password again
-                ? `<div class="signin-current signin-current-locked">Locked: ${escapeHtml(s.current.displayName || s.current.username)}. Enter the password to unlock</div>`
-                : `<div class="signin-current">Signed in now: ${escapeHtml(s.current.displayName || s.current.username)} (${escapeHtml(s.current.username)})</div>`)
-            : '';
-        const remoteLine = s.remote
-            ? `<div class="signin-remote">Remote sign-in${s.remote.linkName ? ` through ${escapeHtml(displayDashes(s.remote.linkName))}` : ''}</div>`
-            : '';
+        // A remote Switch-user screen (a held, unlocked session) merges the "Signed in now" line
+        // and the remote line into one slab (credential keyring plan 5.2 Fit): one line at x2,
+        // two at 390x844. It wins back a line's height so the form fits .pc-monitor-area.
+        const remoteHeld = s.remote && s.current && s.current.locked !== true;
+        const headerSlabs = remoteHeld
+            ? `<div class="signin-current signin-current-remote">${escapeHtml(s.current.displayName || s.current.username)} signed in${s.remote.linkName ? `, through ${escapeHtml(displayDashes(s.remote.linkName))}` : ''}</div>`
+            : `${s.remote ? `<div class="signin-remote">Remote sign-in${s.remote.linkName ? ` through ${escapeHtml(displayDashes(s.remote.linkName))}` : ''}</div>` : ''}${s.current
+                ? (s.current.locked === true
+                    // A locked session (UI slice 6): it is held, but needs its password again
+                    ? `<div class="signin-current signin-current-locked">Locked: ${escapeHtml(s.current.displayName || s.current.username)}. Enter the password to unlock</div>`
+                    : `<div class="signin-current">Signed in now: ${escapeHtml(s.current.displayName || s.current.username)} (${escapeHtml(s.current.username)})</div>`)
+                : ''}`;
 
         const inMonitor = !!this.pcMonitor;
         this.gameContainer.innerHTML = `
-            <div class="password-minigame-area signin-mode${inMonitor ? ' pc-screen-area' : ''}">
+            <div class="password-minigame-area signin-mode${inMonitor ? ' pc-screen-area' : ''}${remote ? ' signin-remote-screen' : ''}">
                 <div class="${inMonitor ? 'pc-lock-screen' : 'monitor-bezel'}">
                     <div class="${inMonitor ? 'signin-screen' : 'monitor-screen signin-screen'}">
                         <div class="signin-title">${escapeHtml(displayDashes(s.pcName))}</div>
-                        ${remoteLine}
-                        ${current}
+                        ${headerSlabs}
                         ${tiles}${inMonitor ? `
                         <div class="signin-prompt" id="signin-prompt" aria-live="polite" hidden></div>
                         <div class="signin-card" id="signin-card">` : ''}
@@ -1512,12 +1514,12 @@ export class PasswordMinigame extends MinigameScene {
                             </div>
                             <div class="signin-field-row" id="signin-username-row">
                                 <label for="signin-username">Username:</label>
-                                <input type="text" id="signin-username" class="password-field" placeholder="Username" maxlength="64" autocomplete="off" spellcheck="false">
+                                <input type="text" id="signin-username" class="password-field" placeholder="Username" aria-label="Username" maxlength="64" autocomplete="off" spellcheck="false">
                             </div>
                             <div class="signin-field-row" id="signin-password-row">
                                 <label for="password-field">Password:</label>
                                 <div class="password-field-wrapper">
-                                    <input type="password" id="password-field" class="password-field" placeholder="Password" maxlength="64" autocomplete="off">
+                                    <input type="password" id="password-field" class="password-field" placeholder="Password" aria-label="Password" maxlength="64" autocomplete="off">
                                     <button type="button" class="toggle-password-btn${inMonitor ? ' pc-os-btn pc-os-icon-btn' : ''}" id="toggle-password">
                                         <img class="icon-small" src="/break_escape/assets/icons/hidden.png" alt="Toggle password visibility">
                                     </button>
@@ -1806,7 +1808,10 @@ export class PasswordMinigame extends MinigameScene {
         // Submit, the message line and the post-it fit together (UX slice 2a R3 m4); the
         // chosen account's line holds a Change button back to the tiles.
         const area = this.gameContainer.querySelector('.signin-mode');
-        area?.classList.toggle('signin-chosen', chosen && this.signInTilesOffered());
+        // On a remote screen the tile row folds at every size once an account (or Other user) is
+        // chosen (credential keyring plan 5.2 Fit), so the merged slab, the form and the message
+        // fit .pc-monitor-area; the keyboard screen keeps its "tiles offered" rule unchanged.
+        area?.classList.toggle('signin-chosen', this.signIn?.remote ? chosen : (chosen && this.signInTilesOffered()));
         // A locked screen has its account already: on a narrow screen the tiles fold as in a
         // short window, so the card and its message fit in view (fix round 1, m4)
         area?.classList.toggle('signin-locked', this.signIn?.current?.locked === true);
