@@ -12,8 +12,19 @@ module BreakEscape
   #   1. a source path marked x-serverOnly (on a route its x-servedBy does not name): fails.
   #   2. a source path under globalVariables / minigameData / scenarioData: step 3's leak rule, with
   #      acknowledged clues when `acknowledgedClues` is present.
-  #   3. a declared field with no mark: passes (authored clue text, which step 3 allows).
+  #   3. a declared field with no mark: authored clue text. Still value-checked (review R1 M1): a
+  #      string that equals or contains a value-matchable answer is reported as a class 2 finding
+  #      (coverable by acknowledgedClues on the enclosing object), unless the field is one whose job
+  #      is to show a secret in the world (CLASS3_VALUE_EXEMPT_KEYS). Other authored text passes.
   #   4. an undeclared key, or a constructed answer with no source path: the value check.
+  #
+  # What the scan does NOT detect, and so cannot claim: it reports no class 1, class 2 or unexempted
+  # class 4 *value-matchable* leaf, not "no secret ships". It cannot see a secret shorter than 6
+  # characters (most PINs, a 4-letter cryptex word) embedded in a longer string, nor a combination
+  # quoted in prose, because answer_matches_leaf? cannot match those without unacceptable false
+  # positives (4821, 1234, 12-30-5 occur in ordinary text, dates and room numbers); and it does not
+  # value-check the in-world clue-delivery fields (CLASS3_VALUE_EXEMPT_KEYS). Those stay human-review
+  # territory.
   module PayloadLeafClassifier
     module_function
 
@@ -230,8 +241,11 @@ module BreakEscape
       'POST network/plant' => 'plant_device! body; opened-state, fetched by 6a-2.',
       'POST network/implant' => 'implant_foothold! body; opened-state, fetched by 6a-2.',
       'POST feed_post' => 'reveal_feed_post! body; serialised like feedPosts (class 4), fetched by 6a-2.',
+      'POST friendface_phone' => 'open_friendface_phone body; opened-state, needs a held phone item (:forbidden in a fresh inventory) and never asks posts=1; serves feedPosts (class 4), fetched by 6a-2.',
       'POST flags' => 'process_flag_rewards body; opened-state, fetched by 6a-2.',
-      'POST unlock' => 'roomData / container contents after an unlock; fetched by 6a-2.'
+      'POST unlock' => 'roomData / container contents after an unlock; fetched by 6a-2.',
+      'GET vm_panel' => 'redirect only (Hacktivity VM panel); carries no scenario JSON payload.',
+      'GET vm_set_panel' => 'redirect only (Hacktivity VM set panel); carries no scenario JSON payload.'
     }.freeze
 
     setup do
@@ -244,7 +258,7 @@ module BreakEscape
     end
 
     test 'the fresh-state scan names the routes it leaves out, each with a reason' do
-      assert_equal 11, SKIP_ROUTES.size
+      assert_equal 14, SKIP_ROUTES.size
       SKIP_ROUTES.each_value { |reason| assert reason.length > 20 }
     end
 
@@ -306,9 +320,30 @@ module BreakEscape
       clues = []
 
       # Class 3: a declared unmarked field (postitNote) holding the password is authored clue text.
+      # Value-checked (M1) but `postitNote` is value-exempt (the written-down-password clue), so it
+      # passes; a non-matching declared field passes because no answer matches it.
       room = { 'type' => 'office', 'objects' => [{ 'id' => 'desk', 'type' => 'notes', 'postitNote' => 'Satchel42' }] }
       assert_equal [], scan_subtree_findings(SS.at('#/definitions/room'), room, 'GET room/:id', 'rooms/office', answers, clues),
-                   'a postitNote clue is class 3 and passes'
+                   'a postitNote clue is class 3 and value-exempt, so it passes'
+      plain = { 'type' => 'office', 'id' => 'hall', 'door_sign' => 'Staff only beyond this point' }
+      assert_equal [], scan_subtree_findings(SS.at('#/definitions/room'), plain, 'GET room/:id', 'rooms/office', answers, clues),
+                   'a declared field whose text matches no answer passes'
+
+      # Class 3 value check (M1): a 6+ char secret in a declared, non-exempt field is reported as
+      # class 2. In scenario_brief (author metadata, no enclosing object) it has no container, so no
+      # acknowledgedClues entry can cover it.
+      brief = { 'scenario_brief' => 'Ops note: the backup box password is Satchel42. Do not ship.' }
+      fb = scan_subtree_findings(SS.root, brief, 'GET scenario', '', answers, clues)
+      assert_equal [:class2], fb.map { |f| f[:klass] }, 'a 6+ char secret pasted into scenario_brief is caught'
+
+      # The same check on a declared field inside an object carries the object id as the container, so
+      # an acknowledgedClues entry keyed on (lock, object) can cover it, like a class-2 global.
+      signed = { 'type' => 'office', 'id' => 'lobby', 'door_sign' => '4821' }
+      fs = scan_subtree_findings(SS.at('#/definitions/room'), signed, 'GET room/:id', 'rooms/lobby', answers, clues)
+      assert_equal [:class2], fs.map { |f| f[:klass] }, 'a PIN on a declared door_sign is class 2'
+      assert_equal [], scan_subtree_findings(SS.at('#/definitions/room'), signed, 'GET room/:id', 'rooms/lobby', answers,
+                                             [{ 'lock' => 'vault', 'in' => 'lobby' }]),
+                   'an acknowledgedClues entry on the enclosing object exempts the class-3 match'
 
       # Class 1: a `requires` under a pin lock (resolved lock type pin) ships the answer.
       locked = { 'type' => 'office', 'objects' => [{ 'id' => 'safe', 'lockType' => 'pin', 'requires' => '4821' }] }
@@ -473,7 +508,7 @@ module BreakEscape
     # Walk one response body with its source node and emit findings.
     def scan_body(node, body, route, root_path, scenario_path, answers, clues)
       findings = []
-      walk_leaf(node, body, root_path, route, nil, false, nil, nil, answers, clues) do |klass, path, value, container|
+      walk_leaf(node, body, root_path, route, nil, false, nil, nil, nil, answers, clues) do |klass, path, value, container|
         findings << { scenario: scenario_path, route: route, path: path, klass: klass, value: value, container: container }
       end
       findings
@@ -482,7 +517,7 @@ module BreakEscape
     # The scan body over an in-memory payload, for the per-class fixture test (no HTTP).
     def scan_subtree_findings(node, body, route, root_path, answers, clues)
       findings = []
-      walk_leaf(node, body, root_path, route, nil, false, nil, nil, answers, clues) do |klass, path, value, container|
+      walk_leaf(node, body, root_path, route, nil, false, nil, nil, nil, answers, clues) do |klass, path, value, container|
         findings << { route: route, path: path, klass: klass, value: value, container: container }
       end
       findings
@@ -492,11 +527,14 @@ module BreakEscape
     # flag that an unconditional server-only ancestor withholds this route (precedence); the
     # class-2 source kind (:global/:minigame/:scenario_data) and container once under one of those
     # blocks. Yields [klass, path, value, container] for every leaf that fails.
-    def walk_leaf(node, data, path, route, lock_type, under_withheld, class2, container, answers, clues, &emit)
+    def walk_leaf(node, data, path, route, lock_type, under_withheld, class2, container, obj_id, answers, clues, &emit)
       case data
       when Hash
         here_lock = data['lockType'].is_a?(String) ? data['lockType'] : lock_type
         here_id = data['id'].is_a?(String) ? data['id'] : container_object_id(container)
+        # The nearest enclosing object id, carried so a class-3 value match (M1) names a container an
+        # acknowledgedClues entry can cover; a top-level field (scenario_brief) has none.
+        child_obj_id = data['id'].is_a?(String) ? data['id'] : obj_id
         data.each do |k, v|
           child = (node.equal?(SS.root) && k == 'playerInventory') ? ITEM_ARRAY : SS.child(node, k)
           child_withheld = under_withheld
@@ -508,7 +546,7 @@ module BreakEscape
           child_class2, child_container = descend_class2(k, v, class2, container, here_id)
           # For a global block, the container is the global name at the next level, so recurse per name.
           walk_leaf(child, v, "#{path}/#{k}", route, here_lock, child_withheld, child_class2, child_container,
-                    answers, clues, &emit)
+                    child_obj_id, answers, clues, &emit)
         end
       when Array
         item = SS.item(node)
@@ -518,10 +556,12 @@ module BreakEscape
           emit.call(:class2, path, data, container) if C.class2_reports?(answers, leaf, clues)
         end
         data.each_with_index do |v, i|
-          walk_leaf(item, v, "#{path}[#{i}]", route, lock_type, under_withheld, class2, container, answers, clues, &emit)
+          walk_leaf(item, v, "#{path}[#{i}]", route, lock_type, under_withheld, class2, container, obj_id,
+                    answers, clues, &emit)
         end
       else
-        classify_scalar(node, data, path, route, lock_type, under_withheld, class2, container, answers, clues, &emit)
+        classify_scalar(node, data, path, route, lock_type, under_withheld, class2, container, obj_id,
+                        answers, clues, &emit)
       end
     end
 
@@ -549,7 +589,7 @@ module BreakEscape
       container.start_with?('global:') ? nil : container
     end
 
-    def classify_scalar(node, value, path, route, lock_type, under_withheld, class2, container, answers, clues)
+    def classify_scalar(node, value, path, route, lock_type, under_withheld, class2, container, obj_id, answers, clues)
       return if value.nil?
 
       if class2 && class2 != :pending_global
@@ -571,8 +611,21 @@ module BreakEscape
         return if class4_served?(route, path)
 
         yield(:class4, path, value, container)
+      when :class3
+        # M1: a declared authored-text string is still value-checked. If it equals or contains a
+        # value-matchable answer (answer_matches_leaf?: a 6+ char password/cryptex whole word, or a
+        # combination-form leaf), it is a leak, reported as class 2 and coverable by acknowledgedClues
+        # keyed on the enclosing object (global:<name> is never the container here, so a top-level
+        # field such as scenario_brief has no container and cannot be clue-exempted). Non-matching
+        # authored text (the common case) still passes. Short secrets (under 6 chars: WOLF, a 4-digit
+        # PIN) and a combination quoted in prose do not match, so they are not caught here.
+        return unless value.is_a?(String)
+        return if class3_value_exempt?(route, path)
+
+        leaf = { value: value, path: path, container: obj_id, source: :class3 }
+        yield(:class2, path, value, obj_id) if C.class2_reports?(answers, leaf, clues)
       end
-      # :class3 and :not_secret pass.
+      # :not_secret passes.
     end
 
     def value_is_a_secret?(answers, value)
@@ -587,6 +640,31 @@ module BreakEscape
       key = path.split('/').last.to_s.sub(/\[\d+\]\z/, '')
       (route == 'GET /login_accounts' && key == 'postitNote') ||
         (route == 'GET /network' && key == 'psk')
+    end
+
+    # Scan tuning for the M1 class-3 value check (the scan, never the shared match rule): declared
+    # fields whose job is to show a secret to the player in the world, where a value match is by
+    # design and not a leak. Corpus evidence (build log, "Scan review R1 fixes"): across 180
+    # scenarios every class-3 value match outside `scenario_brief` landed on one of these keys.
+    #   postitNote    the written-down-password clue (the same field GET /login_accounts serves under
+    #                 the class-4 allowance): a sticky note exists to show the password.
+    #   text          note, sign and item bodies: the primary in-world clue-delivery field (a note
+    #                 that reads "the code is 2817" is the intended way to learn it).
+    #   message       NPC dialogue (eventMappings sendTimedMessage): spoken lines are best effort
+    #                 under the cheat policy, like GET ink, which this scan already skips.
+    #   observations  item examine text: in-world flavour/clue text.
+    #   name          item/object display name. Also the test_unlock_gaps false positive the
+    #                 playerInventory remap fixed: "Pocket Cryptex" (a name) whole-word-matches its
+    #                 own cryptex answer POCKET, which is not a leak.
+    # Exempting these leaves the check covering author metadata not meant as an in-world clue, above
+    # all `scenario_brief` (served by GET scenario), which is the realistic leak Major 1 flagged.
+    # A secret in one of these fields stays human-review territory, as do short secrets (see the
+    # class-3 comment on classify_scalar).
+    CLASS3_VALUE_EXEMPT_KEYS = %w[postitNote text message observations name].freeze
+
+    def class3_value_exempt?(_route, path)
+      key = path.split('/').last.to_s.sub(/\[\d+\]\z/, '')
+      CLASS3_VALUE_EXEMPT_KEYS.include?(key)
     end
 
     def load_exceptions

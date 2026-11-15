@@ -319,7 +319,7 @@ test('exceptions: a passed reviewBy warns, and fails with MERGE_BATCH=1', () => 
   assert.match(checkExc([e], text, { mergeBatch: true }).problems.join('\n'), /reviewBy 2026-11-11 has passed/);
 });
 
-test('exceptions: the real list is an empty array until step 3 lands', () => {
+test('exceptions: the real payload_scan_exceptions file parses to a JSON array', () => {
   const list = existsSync(EXCEPTIONS) ? JSON.parse(readFileSync(EXCEPTIONS, 'utf8')) : null;
   assert.ok(Array.isArray(list), 'payload_scan_exceptions.json must be a JSON array');
 });

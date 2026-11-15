@@ -3415,7 +3415,7 @@ block, each marked **Pending orchestrator sign-off** (and "awaiting orchestrator
 `MERGE_BATCH=1` gate holds them until signed). `reviewBy` is 2026-12-31.
 
 **`social.intelFacts`: no mark (handover item 4).** Read from the serving code:
-`SocialFeed.withhold_feed_facts!` / `strip_feed_facts!` (`social_feed.rb:303-316`) deletes from the
+`SocialFeed.withhold_feed_facts!` (`social_feed.rb:306`) deletes from the
 bootstrap only the intelFacts entries a feed post gates; those are served later through `feedPosts`
 (a constructed class-4 answer judged by value). Every other intelFacts entry ships in the bootstrap
 and is read client-side by the OSINT browser, the intel board, the mail client and pretext prep
@@ -3458,6 +3458,92 @@ two-minute threshold, so the file stays in the default `bin/rails test` run.
 **Files touched (part 2).** `test/models/break_escape/payload_scan_fresh_state_test.rb`,
 `test/js/validator-known-failures.test.mjs`, `test/fixtures/files/payload_scan_exceptions.json`,
 `docs/agents/VALIDATOR_DECISIONS.md`, this log.
+
+### Scan review R1 fixes (part 2)
+
+Date: 2026-11-15. Branch `build/hard-6a1-scan`. Resolving
+`docs/achitechture/SCENARIO_FORMAT_6A1_SCAN_REVIEW_R1.md` (0 blockers, 1 major, 3 minors). No `app/`
+or `lib/` change; all edits are in the test file, one JS test name and this log.
+
+**M1 (major): class-3 declared text is now value-checked.** `classify_scalar` no longer passes every
+class-3 (declared, unmarked) string. A class-3 string leaf is compared with the scenario's answers
+through `SecretLeaks.answer_matches_leaf?` (the shared rule, called as it stands so step 3's tuning
+is picked up on merge) and a match is reported as a class 2 finding. The walk now carries the nearest
+enclosing object id, so a class-3 match names that object as its container and an `acknowledgedClues`
+entry on `(lock, object)` can cover it, exactly as a class-2 global is coverable; a top-level field
+such as `scenario_brief` has no enclosing object, so it has no container and cannot be clue-exempted.
+
+What the fix deliberately does **not** claim, stated in the classifier comment and narrowing the
+earlier "no secret ships" framing: the scan reports no class 1, class 2 or unexempted class 4
+**value-matchable** leaf, not "no secret ships". It cannot see a secret shorter than 6 characters
+(most PINs, a 4-letter cryptex word) embedded in a longer string, nor a combination quoted in prose,
+because `answer_matches_leaf?` matches a short answer only when the whole leaf equals it (a 6+ char
+password/cryptex matches as a whole word inside prose); loosening that would false-positive on `4821`,
+`1234`, `12-30-5` in ordinary text, dates and room numbers. These stay human-review territory.
+
+**Scan tuning (noise), not the match rule.** The class-3 value check is scoped by
+`CLASS3_VALUE_EXEMPT_KEYS = %w[postitNote text message observations name]` in the test. Over the whole
+corpus (180 scenarios) every class-3 value match outside `scenario_brief` landed on one of these
+in-world clue-delivery fields, where a value match is by design and not a leak:
+
+- `postitNote` -- the written-down-password clue (the field `GET /login_accounts` already serves under
+  the class-4 allowance): ceo_exfil `reception/objects[2]/postitNote` = "Password: secret123".
+- `text` -- note/sign/item bodies, the primary clue-delivery field: crypto3 OSINT profile,
+  lab_intro_linux VM lab instructions, test_simple_vm_flag, test_access_networks Wi-Fi key sign,
+  m05_insider_trading IT-ticket item, m10_full_disclosure `itemsHeld` whose whole text is a 4-digit
+  PIN (`2817`, `6083`, exact-match only), test-tesseract-probes envelope hash, test_unlock_gaps lobby
+  note.
+- `message` -- NPC dialogue (`eventMappings` `sendTimedMessage`): m02_ransomed_trust sticky-note
+  credentials. Spoken lines are best effort under the cheat policy, like `GET ink`, already skipped.
+- `observations` -- item examine text: test-tesseract-probes `objects[8]/observations`.
+- `name` -- item/object display name. Also the test_unlock_gaps false positive the `playerInventory`
+  remap fixed: "Pocket Cryptex" (a name) whole-word-matches its own cryptex answer POCKET, not a leak.
+
+Exempting these leaves the check covering author metadata not meant as an in-world clue, above all
+`scenario_brief` (served by `GET scenario`), which is the realistic leak Major 1 flagged.
+
+**Corpus delta after M1 (real leaks, reported, not fixed here).** Two findings remain, both
+`scenario_brief` secrets that ship via `GET scenario`:
+
+- `scenarios/test_secret_leaks/scenario.json.erb` `GET scenario` `/scenario_brief`. **Known-pending.**
+  Matched by the `usePayload` secret `12-30-5` (7 chars, a 6+ whole-word match on the prose "(12-30-5)"),
+  **not** by `WOLF` or the PIN `4821` (both 4 chars, which the scan cannot see in prose, as above). The
+  `build/hard-step3` builder is rewriting this brief so it holds no secret; the finding vanishes when
+  that merges. **No payload-scan exception is added for it** (an exception would wrongly bless a genuine
+  leak the other branch is fixing); it is left firing and marked known-pending here.
+- `scenarios/test_unlock_gaps/scenario.json.erb` `GET scenario` `/scenario_brief`. **Reported to the
+  orchestrator.** This dev engine-check scenario's brief is a solution walkthrough that names
+  `Satchel42`, `POCKET`, `CIPHER` (6+ char answers). It is not a player-facing mission (not in any
+  course or event), so the listing is arguably by design, but it is the same class as test_secret_leaks
+  and the scan cannot tell them apart by scenario kind, so it is left firing for the orchestrator to
+  decide (trim the brief, or add a sanctioned exception). Not fixed here (no scenario edits in scope).
+
+Because both real leaks are left firing per the review and the brief, the corpus scan assertion is red
+(1 failure) until step 3's brief rewrite merges (clears test_secret_leaks) and the orchestrator resolves
+test_unlock_gaps. The other 13 tests in the file pass.
+
+**m1 (minor): `SKIP_ROUTES` completed.** Added `POST friendface_phone` (opened-state, needs a held
+phone item so it is `:forbidden` in a fresh inventory and never asks `posts=1`; serves `feedPosts`,
+class 4, fetched by 6a-2) parallel to `feed_post`, and the two redirect-only Hacktivity panel routes
+`GET vm_panel` and `GET vm_set_panel` (no scenario JSON payload). The skip-routes test asserts 14.
+
+**m2 (minor): build-log method name.** The feed-fact withholding is
+`SocialFeed.withhold_feed_facts!` (`social_feed.rb:306`); the non-existent `/ strip_feed_facts!` is
+dropped from this section.
+
+**m3 (minor): stale JS test name.** `test/js/validator-known-failures.test.mjs`'s
+"exceptions: the real list is an empty array until step 3 lands" is renamed to "exceptions: the real
+payload_scan_exceptions file parses to a JSON array", matching what it asserts (the file parses to an
+array; it is no longer empty-until-step-3).
+
+**Tests (R1 fixes).**
+- `test/models/break_escape/payload_scan_fresh_state_test.rb`: 14 runs, 63 assertions, 1 failure --
+  the one failure is the known-pending corpus scan (test_secret_leaks and test_unlock_gaps
+  `scenario_brief`, above); the classifier units, the per-class fixture (now including the
+  `scenario_brief` catch and the object-nested class-3 clue coverage) and the skip-routes assertion
+  pass.
+- `test/js/validator-known-failures.test.mjs`: 21 pass. `test/js/validator-declared-top-level.test.mjs`:
+  7 pass.
 
 ## Step 5. One ScenarioBinding in lib/ for every renderer, and a JSON-safe ERB helper (build/hard-step5)
 
