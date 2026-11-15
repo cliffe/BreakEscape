@@ -257,7 +257,7 @@
           "position": { "x": 8.65625, "y": 7.0625 },
           "spriteVariants": [{ "condition": "globalVars.office_coffee_off", "value": "power_socket_off2" }],
           "takeable": false,
-          "_comment": "Slice 18a: the coffee machine's switch is its own object, so clicking the machine still shows its observations. The hint is worded as a state, so it reads well on every click, and carries a neutral title (without one it shows under 'Intelligence Received'). UX slice 15 R1 (m3, R4e) and R2 (n4): a named confirm each way, as every physical switch and as Ian's socket: switch off while it is on, switch back on while it is off.",
+          "_comment": "Slice 18a: the coffee machine's switch is its own object, so clicking the machine still shows its observations. The hint is worded as a state, so it reads well on every click, and carries a neutral title (without one it shows under 'Intelligence Received'). UX slice 15 R1 (m3, R4e) and R2 (n4): a named confirm each way, as every physical switch and as Ian's socket: switch off while it is on, switch back on while it is off. Power sockets (2026-11-15): now the 32x48 plug-and-cable sprite with an off variant, on the east wall where the old plate was, the cable dropping towards the machine.",
           "triggerOnInteract": [
             {
               "type": "confirm_action",
@@ -336,10 +336,10 @@
           "type": "power_socket2",
           "id": "office_copier_socket",
           "name": "Wall socket",
-          "position": { "x": 5.65625, "y": 0.75 },
+          "position": { "x": 5.65625, "y": 0.75, "elevation": -8 },
           "spriteVariants": [{ "condition": "globalVars.office_copier_off", "value": "power_socket_off2" }],
           "takeable": false,
-          "_comment": "Slice 22: the copier's switch, as the coffee machine's (slice 18a): a state-worded hint with a neutral title. UX slice 15 R1 (m3, R4e) and R2 (n4): a named confirm each way, as Ian's socket.",
+          "_comment": "Slice 22: the copier's switch, as the coffee machine's (slice 18a): a state-worded hint with a neutral title. UX slice 15 R1 (m3, R4e) and R2 (n4): a named confirm each way, as Ian's socket. Power sockets (2026-11-15): now the 32x48 plug-and-cable sprite with an off variant; top at y 24 px so a tap walk reaches the plate (reach is measured from the sprite top), with the cable curl on the floor; elevation -8 keeps it at the back-wall depth (64.5) so the player always draws in front.",
           "triggerOnInteract": [
             {
               "type": "confirm_action",
