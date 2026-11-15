@@ -77,6 +77,22 @@ test('includeHeld never avoids the goal cell, so a home beside a seated colleagu
     assert.ok(p.searched.avoided.includes('19,19'), 'the cells round it are still avoided');
 });
 
+test('includeHeld also avoids chairs, loose or seated (never in the world grid when loose); the plain detour does not', () => {
+    const me = { body: body(40, 40) };
+    window.rooms = { r: { npcSprites: [me] } };
+    window.player = null;
+    window.chairs = [{ body: body(120, 200) }, { body: body(200, 120, { immovable: true }) }, { destroyed: true, body: body(240, 240) }];
+    const a = pfm();
+    a.findWorldPath(40, 40, 300, 300, () => {}, false, { avoidDynamic: { exceptSprite: me } });
+    assert.equal(a.searched.avoided.length, 0, 'a patrol detour ignores chairs, as before');
+    const b = pfm();
+    b.findWorldPath(40, 40, 300, 300, () => {}, false, { avoidDynamic: { exceptSprite: me, includeHeld: true } });
+    assert.ok(b.searched.avoided.includes('15,25'), 'the loose chair\'s cell is avoided');
+    assert.ok(b.searched.avoided.includes('25,15'), 'the seated chair\'s cell is avoided');
+    assert.ok(!b.searched.avoided.includes('30,30'), 'a destroyed chair is not');
+    window.chairs = undefined;
+});
+
 // ── behaviour: when a needs walk plans round bodies ──
 function walker({ owner = 'needs', reroute = false, detour = [{ x: 9, y: 9 }] } = {}) {
     const b = Object.create(NPCBehavior.prototype);

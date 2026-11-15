@@ -481,6 +481,15 @@ export class NPCPathfindingManager {
                 avoidBody(sprite.body, true);
             }
         }
+        // A stalled needs walk also routes round chairs. A loose chair is a dynamic body, so the
+        // world grid never has it, and one pinned against a desk or a seated colleague's chair
+        // cannot be pushed: the walk bumped it, settled and bumped it again (game 5347, Marek
+        // north-east of Sanjay's seat). A seated chair may have moved since the grid was built.
+        if (includeHeld && Array.isArray(window.chairs)) {
+            for (const chair of window.chairs) {
+                if (chair && !chair.destroyed && chair.body) avoidBody(chair.body, true);
+            }
+        }
     }
 
     /**
@@ -492,8 +501,8 @@ export class NPCPathfindingManager {
      * ring avoided for this search only.
      * opts.avoidDynamic = { exceptSprite }: route round the player and every other active NPC
      * body (npc-behavior.js local detour); exceptSprite is the walking NPC's own sprite.
-     * includeHeld: true also avoids seated and held (immovable) NPC bodies, and never avoids
-     * the goal cell.
+     * includeHeld: true also avoids seated and held (immovable) NPC bodies and every chair,
+     * and never avoids the goal cell.
      */
     findWorldPath(startX, startY, endX, endY, callback, avoidNPCs = false, opts = null) {
         if (!this.worldPathfinder || !this.worldGridBounds) {

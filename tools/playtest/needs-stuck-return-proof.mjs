@@ -68,6 +68,7 @@ for (let i = 0; i < 10; i++) {
     await page.keyboard.press('Escape'); await t(300);
     await page.evaluate(() => window.__test.dismissBlockingUi && window.__test.dismissBlockingUi()).catch(() => {});
 }
+report.notice_closed = await page.evaluate(() => !window.__test.getState().blockingUi && !window.MinigameFramework?.currentMinigame);
 const readAt = await clock();
 console.log('notice read', JSON.stringify(report.after_read_ui), 'clock', readAt);
 if (where.coffee) {
@@ -106,6 +107,6 @@ report.player = await page.evaluate(() => ({ x: Math.round(window.player.body.ce
 report.trace_tail = trace.slice(-5);
 await page.screenshot({ path: `${outDir}/stuck-proof-${gid}.png` });
 fs.writeFileSync(`${outDir}/stuck-proof-${gid}.json`, JSON.stringify(report, null, 1));
-console.log(JSON.stringify({ gid, turned_back: report.see_turned_back, look_round: report.see_look_round, marek_home_s: report.marek_home_s, stalls: report.stall_lines.length, stuck: report.stall_lines.filter(e => /stuck/.test(e.ev)).length, sanjay: report.sanjay_grumble, errs: errs.length }));
+console.log(JSON.stringify({ gid, notice_closed: report.notice_closed, turned_back: report.see_turned_back, look_round: report.see_look_round, marek_home_s: report.marek_home_s, stalls: report.stall_lines.length, stuck: report.stall_lines.filter(e => /stuck/.test(e.ev)).length, sanjay: report.sanjay_grumble, errs: errs.length }));
 await page.goto('about:blank');
 await browser.close();
