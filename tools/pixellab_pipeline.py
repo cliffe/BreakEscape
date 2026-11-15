@@ -1988,8 +1988,11 @@ def cmd_import(args):
         args.key = args.key or args.target
         args.idle_from = args.idle_from or manifest[args.target].get("idle_from")
         args.sit_from = getattr(args, "sit_from", None) or manifest[args.target].get("sit_from")
+        args.poses = parse_pose_from(getattr(args, "pose_from", None), manifest[args.target].get("poses"))
         args.white_threshold = args.white_threshold or manifest[args.target].get("white_threshold")
         args.target = manifest[args.target]["character_id"]
+    if getattr(args, "poses", None) is None:
+        args.poses = parse_pose_from(getattr(args, "pose_from", None))
     cid = resolve_character(args.target, args.workdir)
     api = PixelLab()
     character = api.get(f"/characters/{cid}")
@@ -2049,6 +2052,10 @@ def cmd_import(args):
         sit_cid = resolve_character(args.sit_from, args.workdir)
         sit_char = api.get(f"/characters/{sit_cid}")
         take_sit_from_state(root, state_folder(export_dir, sit_cid, sit_char, api), sit_char)
+    for name, ref in sorted((getattr(args, "poses", None) or {}).items()):
+        pose_cid = resolve_character(ref, args.workdir)
+        pose_char = api.get(f"/characters/{pose_cid}")
+        take_pose_from_state(root, state_folder(export_dir, pose_cid, pose_char, api), pose_char, name)
     if not args.keep_white:
         # Before the overrides, so a hand-edited frame is used exactly as committed.
         clear_white_backgrounds(root, args.white_threshold or WHITE_BG_THRESHOLD)
@@ -2091,14 +2098,16 @@ def take_idle_from_state(root, idle_root, idle_char, api):
     print(f"breathing-idle taken from state '{idle_char.get('state_name') or idle_char['id'][:8]}'")
 
 
-def take_sit_from_state(root, sit_root, sit_char):
-    """Add a one-frame 'sit' animation per direction from a seated state's rotations
-    (a "sitting in an invisible chair" state). systems/seating.js shows these frames on
-    chairs; atlases without them can't sit."""
-    rotations = sit_root / "rotations"
+POSE_NAMES = ("drink", "use", "phone")
+
+
+def take_frames_from_state(root, state_root, state_char, anim_name, label):
+    """Copy a state's 8 rotations to animations/<anim_name>/<direction>/frame_000.png: one
+    frame per direction, the way seated ('sit') and pose ('pose_<name>') frames are made."""
+    rotations = state_root / "rotations"
     if not rotations.is_dir():
-        sys.exit(f"state {sit_char['id']} has no rotations folder")
-    dest = root / "animations" / "sit"
+        sys.exit(f"state {state_char['id']} has no rotations folder")
+    dest = root / "animations" / anim_name
     shutil.rmtree(dest, ignore_errors=True)
     n = 0
     for png in sorted(rotations.glob("*.png")):
@@ -2106,8 +2115,40 @@ def take_sit_from_state(root, sit_root, sit_char):
         shutil.copy(png, dest / png.stem / "frame_000.png")
         n += 1
     if n != 8:
-        sys.exit(f"seated state {sit_char['id'][:8]} has {n} rotations, expected 8")
-    print(f"sit frames taken from state '{sit_char.get('state_name') or sit_char['id'][:8]}'")
+        shutil.rmtree(dest, ignore_errors=True)
+        sys.exit(f"{label} state {state_char['id'][:8]} has {n} rotations, expected 8")
+    print(f"{anim_name} frames taken from state '{state_char.get('state_name') or state_char['id'][:8]}'")
+
+
+def take_sit_from_state(root, sit_root, sit_char):
+    """Add a one-frame 'sit' animation per direction from a seated state's rotations
+    (a "sitting in an invisible chair" state). systems/seating.js shows these frames on
+    chairs; atlases without them can't sit."""
+    take_frames_from_state(root, sit_root, sit_char, "sit", "seated")
+
+
+def take_pose_from_state(root, pose_root, pose_char, name):
+    """Add a one-frame 'pose_<name>' animation per direction (drink, use, phone) from a
+    standing state's rotations. systems/npc-poses.js shows these frames during office-life
+    uses; atlases without them keep the normal idle."""
+    if name not in POSE_NAMES:
+        sys.exit(f"unknown pose '{name}': use one of {', '.join(POSE_NAMES)}")
+    take_frames_from_state(root, pose_root, pose_char, f"pose_{name}", f"pose {name}")
+
+
+def parse_pose_from(values, stored=None):
+    """--pose-from name=<state id or URL>, repeatable, merged over the manifest's stored
+    poses (a new value for one name replaces only that name). Returns {name: state ref}."""
+    poses = dict(stored or {})
+    for v in values or []:
+        name, sep, ref = v.partition("=")
+        name, ref = name.strip(), ref.strip()
+        if not sep or not ref:
+            sys.exit(f"--pose-from takes name=<state id or URL>, got '{v}'")
+        if name not in POSE_NAMES:
+            sys.exit(f"unknown pose '{name}': use one of {', '.join(POSE_NAMES)}")
+        poses[name] = ref
+    return poses
 
 
 def convert_and_record(args, key, cid, character, export_dir):
@@ -2132,6 +2173,8 @@ def convert_and_record(args, key, cid, character, export_dir):
         manifest[key]["idle_from"] = resolve_character(args.idle_from, args.workdir)
     if getattr(args, "sit_from", None):
         manifest[key]["sit_from"] = resolve_character(args.sit_from, args.workdir)
+    if getattr(args, "poses", None):
+        manifest[key]["poses"] = {n: resolve_character(r, args.workdir) for n, r in sorted(args.poses.items())}
     if getattr(args, "white_threshold", None):
         manifest[key]["white_threshold"] = args.white_threshold
     IMPORT_MANIFEST.write_text(json.dumps(dict(sorted(manifest.items())), indent=2) + "\n")
@@ -2452,6 +2495,11 @@ def main():
                    "'hands in pockets' state; remembered in the manifest for later re-imports")
     p.add_argument("--sit-from", help="a seated state (id or URL; 'sitting in an invisible chair') whose 8 "
                    "rotations become the 'sit' frames used on chairs; remembered in the manifest")
+    p.add_argument("--pose-from", action="append", metavar="NAME=STATE",
+                   help="repeatable: a standing pose state (id or URL) whose 8 rotations become the "
+                   "'pose_<NAME>' frames (NAME is drink, use or phone) shown by systems/npc-poses.js "
+                   "during office-life uses; flood-filled like every frame, remembered in the manifest "
+                   "(a new value for one name replaces only that name)")
     p.set_defaults(func=cmd_import)
 
     p.add_argument("--offline", action="store_true", help="reconvert the last download (after `fix`) without downloading")

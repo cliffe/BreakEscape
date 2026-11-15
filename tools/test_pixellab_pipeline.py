@@ -12,7 +12,9 @@ import numpy as np
 from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from pixellab_pipeline import clear_edge_white, clear_white_backgrounds  # noqa: E402
+from pixellab_pipeline import (clear_edge_white, clear_white_backgrounds,  # noqa: E402
+                               parse_pose_from, take_pose_from_state)
+from convert_pixellab_to_spritesheet import normalize_anim_type  # noqa: E402
 
 WHITE = (254, 255, 254, 255)
 OFF_WHITE = (254, 252, 250, 255)
@@ -122,6 +124,66 @@ class ClearEdgeWhiteTest(unittest.TestCase):
             self.assertEqual((strip / "frame_001.png").read_bytes(), before)
             self.assertEqual(np.asarray(Image.open(strip / "frame_000.png"))[1, 1, 3], 0)
             self.assertEqual(clear_white_backgrounds(root), (0, 0))  # idempotent
+
+
+COMPASS = ["south", "south-east", "east", "north-east", "north", "north-west", "west", "south-west"]
+
+
+class PoseFromTest(unittest.TestCase):
+    """--pose-from: a standing state's 8 rotations become pose_<name> frames."""
+
+    def state(self, tmp, n=8, background=WHITE):
+        rot = Path(tmp) / "state" / "rotations"
+        rot.mkdir(parents=True)
+        for d in COMPASS[:n]:
+            Image.fromarray(figure_frame(background), "RGBA").save(rot / f"{d}.png")
+        return rot.parent
+
+    def test_copies_eight_rotations_and_flood_fills_them(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            src = self.state(tmp)
+            root = Path(tmp) / "export"
+            (root / "rotations").mkdir(parents=True)
+            take_pose_from_state(root, src, {"id": "x" * 36}, "drink")
+            frames = sorted((root / "animations" / "pose_drink").rglob("*.png"))
+            self.assertEqual(len(frames), 8)
+            self.assertEqual({f.parent.name for f in frames}, set(COMPASS))
+            self.assertTrue(all(f.name == "frame_000.png" for f in frames))
+            # The import's white pass covers the pose frames like every animation frame
+            changed, _ = clear_white_backgrounds(root)
+            self.assertEqual(changed, 8)
+            self.assertEqual(Image.open(frames[0]).getpixel((2, 2))[3], 0)
+
+    def test_wrong_rotation_count_exits_and_leaves_nothing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            src = self.state(tmp, n=4)
+            root = Path(tmp) / "export"
+            with self.assertRaises(SystemExit):
+                take_pose_from_state(root, src, {"id": "x" * 36}, "phone")
+            self.assertFalse((root / "animations" / "pose_phone").exists())
+
+    def test_unknown_name_exits(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaises(SystemExit):
+                take_pose_from_state(Path(tmp), self.state(tmp), {"id": "x" * 36}, "dance")
+
+    def test_parse_merges_over_stored(self):
+        stored = {"drink": "a" * 36, "phone": "b" * 36}
+        got = parse_pose_from(["phone=" + "c" * 36, "use = " + "d" * 36], stored)
+        self.assertEqual(got, {"drink": "a" * 36, "phone": "c" * 36, "use": "d" * 36})
+        self.assertEqual(stored["phone"], "b" * 36)   # the stored dict is not changed
+        self.assertEqual(parse_pose_from(None, None), {})
+
+    def test_parse_rejects_bad_values(self):
+        for bad in (["drink"], ["drink="], ["wave=" + "a" * 36]):
+            with self.assertRaises(SystemExit):
+                parse_pose_from(bad)
+
+    def test_converter_keeps_pose_names(self):
+        self.assertEqual(normalize_anim_type("pose_drink"), "pose_drink")
+        self.assertEqual(normalize_anim_type("pose_use"), "pose_use")
+        self.assertEqual(normalize_anim_type("Breathing_Idle-9fa0f8f5"), "breathing-idle")
+        self.assertEqual(normalize_anim_type("sit"), "sit")
 
 
 if __name__ == "__main__":
