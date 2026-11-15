@@ -77,6 +77,30 @@ test('includeHeld never avoids the goal cell, so a home beside a seated colleagu
     assert.ok(p.searched.avoided.includes('19,19'), 'the cells round it are still avoided');
 });
 
+test('includeHeld keeps the clearance ring open near the start and the goal; body cells stay avoided (game 5439)', () => {
+    const me = { body: body(164, 236) };
+    // Marek's own chair beside his home cell (52,132) and a seated colleague just past it
+    const chair = { body: body(52, 146), destroyed: false };
+    const seated = { body: body(72, 120, { immovable: true }) };
+    // the player standing in open floor between the coffee and the desks
+    window.player = { body: body(160, 223) };
+    window.rooms = { r: { npcSprites: [me, seated] } };
+    window.chairs = [chair];
+    const p = pfm();
+    p.findWorldPath(164, 236, 52, 132, () => {}, false, { avoidDynamic: { exceptSprite: me, includeHeld: true } });
+    const av = new Set(p.searched.avoided);
+    // goal cell (6,16): the ring cells round it are open (chair ring below, seated ring above right)
+    for (const c of ['5,15', '6,15', '5,16', '7,16']) assert.ok(!av.has(c), `ring cell ${c} next to the goal is open`);
+    assert.ok(av.has('6,17') && av.has('6,18'), 'the chair body itself is still avoided');
+    assert.ok(av.has('8,14') && av.has('7,15'), 'and the seated body, even beside the goal');
+    // start (20,29): the player ring next to it is open, the player's own cells are not
+    assert.ok(!av.has('19,29') && !av.has('21,30'), 'ring cells by the start are open');
+    assert.ok(av.has('19,27') && av.has('20,27'), 'the player body is avoided');
+    // far from both ends the ring still applies
+    assert.ok(av.has('17,26'), 'the player ring away from the start');
+    window.player = null; window.chairs = [];
+});
+
 test('includeHeld also avoids chairs, loose or seated (never in the world grid when loose); the plain detour does not', () => {
     const me = { body: body(40, 40) };
     window.rooms = { r: { npcSprites: [me] } };

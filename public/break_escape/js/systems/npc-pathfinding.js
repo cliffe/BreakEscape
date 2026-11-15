@@ -456,16 +456,29 @@ export class NPCPathfindingManager {
         const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
         // includeHeld (a stalled needs walk, OFFICE_LIFE_STUCK_RETURN.md): NPC bodies held
         // immovable (seated, using an object) are avoided too; the world grid never has them.
+        // Round 7 (game 5439): the clearance ring round a body is soft near the walker's start and
+        // goal. With includeHeld a home cell always has the NPC's own chair (and often a seated
+        // neighbour) beside it, and their rings closed every cell round the goal, so the search found
+        // nothing, fell back to the plain path, and that ran Marek into a player standing on it. A
+        // body's own cells stay avoided; only ring cells within END_RING_CELLS of an end are kept open.
+        const END_RING_CELLS = 2;
+        const nearEnd = (cx, cy) => includeHeld && (
+            (Math.abs(cx - skipCX) <= END_RING_CELLS && Math.abs(cy - skipCY) <= END_RING_CELLS) ||
+            (endCX >= 0 && Math.abs(cx - endCX) <= END_RING_CELLS && Math.abs(cy - endCY) <= END_RING_CELLS));
         const avoidBody = (body, npc = false) => {
             if (!body || !body.enable || (body.immovable && !(includeHeld && npc))) return;
             // One cell of clearance either side, as _avoidNPCPositions uses.
-            const cx1 = clamp(Math.floor((body.left   - minX) / step) - 1, 0, cols - 1);
-            const cy1 = clamp(Math.floor((body.top    - minY) / step) - 1, 0, rows - 1);
-            const cx2 = clamp(Math.floor((body.right  - minX - 1) / step) + 1, 0, cols - 1);
-            const cy2 = clamp(Math.floor((body.bottom - minY - 1) / step) + 1, 0, rows - 1);
+            const bx1 = Math.floor((body.left - minX) / step), bx2 = Math.floor((body.right - minX - 1) / step);
+            const by1 = Math.floor((body.top - minY) / step), by2 = Math.floor((body.bottom - minY - 1) / step);
+            const cx1 = clamp(bx1 - 1, 0, cols - 1);
+            const cy1 = clamp(by1 - 1, 0, rows - 1);
+            const cx2 = clamp(bx2 + 1, 0, cols - 1);
+            const cy2 = clamp(by2 + 1, 0, rows - 1);
             for (let cy = cy1; cy <= cy2; cy++) {
                 for (let cx = cx1; cx <= cx2; cx++) {
                     if ((cx === skipCX && cy === skipCY) || (cx === endCX && cy === endCY)) continue;
+                    const ring = cx < bx1 || cx > bx2 || cy < by1 || cy > by2;
+                    if (ring && nearEnd(cx, cy)) continue;
                     if (this.worldGrid[cy]?.[cx] === 0) this.worldPathfinder.avoidAdditionalPoint(cx, cy);
                 }
             }
