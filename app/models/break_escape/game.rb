@@ -1319,7 +1319,7 @@ module BreakEscape
         self.class.strip_puzzle_graph_keys!(obj)
         BreakEscape::DeclaredGrants.strip_grant_contents!(obj)
         strip_capture_secrets!(obj)
-        obj.delete('requires') if lock_type && !%w[biometric bluetooth rfid].include?(lock_type)
+        obj.delete('requires') if lock_type && !CARD_REFERENCE_LOCK_TYPES.include?(lock_type)
         obj.each_value { |value| filter_inventory_for_client!(value) }
       when Array
         obj.each { |item| filter_inventory_for_client!(item) }
@@ -6129,7 +6129,7 @@ module BreakEscape
 
         self.class.set_pin_length!(obj)
         self.class.strip_lock_answers!(obj)
-        if lock_type && !%w[biometric bluetooth rfid].include?(lock_type)
+        if lock_type && !CARD_REFERENCE_LOCK_TYPES.include?(lock_type)
           obj.delete('requires')
         end
 
