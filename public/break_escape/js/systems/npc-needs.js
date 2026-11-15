@@ -2067,7 +2067,9 @@ export class NPCNeedsSystem {
         const icons = opts && 'icons' in opts ? opts.icons : (reason !== 'avoid' && NEED_ICONS.includes(need) ? [need] : null);
         // SIMS-5 design R3 m1 (E7 for grumbles, as chatter and announces): with the player out of
         // earshot the grumble still shows, as a picture; no line is taken from the bag, so none is
-        // voiced unheard. A mutter (always: true) keeps its line, heard or not.
+        // voiced unheard. Mutters follow the same rule (a workaround's start line is as ambient as
+        // a grumble); only a line the player is meant to overhear (always: true, the priority
+        // mutters such as login_aloud, whose listening window opens when it is said) keeps its line.
         const unheard = !opts?.always && this._unheard(s, topic);
         const pick = this._pickBark(s, topic, { icons, ignoreCooldown: !!opts?.ignoreCooldown, unheard });
         if (!pick) return;
@@ -2189,7 +2191,7 @@ export class NPCNeedsSystem {
     _sayMutter(s, topic) {
         const npcId = s.npcId;
         const before = s.saying;
-        this._grumble(s, null, topic, topic, { ignoreCooldown: true, icons: null, minMs: MUTTER_BUBBLE_MS, always: true });
+        this._grumble(s, null, topic, topic, { ignoreCooldown: true, icons: null, minMs: MUTTER_BUBBLE_MS, always: PRIORITY_MUTTERS.has(topic) });
         // npc_mutter:<npcId> (slice 9.2 B): what was shown, heard or not, so a scripted run can check
         // a failure mutter or a workaround's start line (npc_overheard fires only within earshot)
         const said = s.saying !== before ? s.saying : null;
