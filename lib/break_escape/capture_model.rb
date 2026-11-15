@@ -3,6 +3,10 @@
 require 'set'
 # Step 2b: author_notes (and, through it, scenario_schema) so each_capture_writer can skip notes.
 require_relative 'author_notes' unless defined?(BreakEscape::AuthorNotes)
+# Step 3: npc_habits for NpcHabits.doorway_problem, so each_lock_answer resolves door entries the
+# client reads. The guarded form the other lib files use; the engine autoloads lib/ inside Rails,
+# and NpcHabits uses AccessIdentities only inside methods, so this require order stays safe.
+require_relative 'npc_habits' unless defined?(BreakEscape::NpcHabits)
 
 module BreakEscape
   # Capture routes and capture proofs (docs/achitechture/PHYSICAL_PENTEST_FEEDBACK_PLAN_ENGINE.md,
@@ -166,37 +170,183 @@ module BreakEscape
     end
 
     LOCK_CODE_TYPES = %w[password pin].freeze
+    # The answer kinds both sets collect (step 3). password and pin stay exact; combination and
+    # cryptex are normalised by answer_key, the same normalisation Game.lock_answer_matches? uses.
+    LOCK_ANSWER_TYPES = %w[password pin combination cryptex].freeze
 
-    # Every code of a password or PIN lock anywhere in the scenario (rooms, doors, objects and
-    # their contents at any depth, NPC items, granted items, timers), as strings.
-    def lock_codes(data)
-      out = Set.new
-      walk = lambda do |node|
-        case node
-        when Hash
-          req = node['requires']
-          if LOCK_CODE_TYPES.include?(node['lockType']) && (req.is_a?(String) || req.is_a?(Integer))
-            code = req.to_s
-            out << code unless code.strip.empty?
+    # The integers of a combination answer, or nil when there are none. The lambda moved verbatim
+    # from Game.lock_answer_matches? (unlock gaps build): an Array's elements are converted with
+    # to_s and stripped, a String is split on runs of non-digits, empty parts are dropped, and any
+    # part that is not all digits gives nil. [12, 30, 5], "12-30-05", "12 30 5" and "L12 R30 L5"
+    # all give [12, 30, 5]; nil, "", "twelve" and [] give nil (no numbers).
+    def combination_numbers(value)
+      parts = value.is_a?(Array) ? value.map(&:to_s) : value.to_s.split(/[^0-9]+/)
+      parts = parts.map(&:strip).reject(&:empty?)
+      return nil unless parts.all? { |p| p.match?(/\A\d+\z/) }
+
+      nums = parts.map(&:to_i)
+      nums.empty? ? nil : nums
+    end
+
+    # The canonical answer key for a lock answer, a String or nil. Shared by both answer sets and
+    # by Game.lock_answer_matches?, so "what equal means" is decided in one place.
+    #   combination: "combination:" + the integers joined by "-" (nil with no numbers).
+    #   cryptex:     "cryptex:" + strip.downcase(:fold), the same Unicode folding casecmp? applies;
+    #                nil unless the value is a String whose strip is non-empty.
+    #   every other kind: "<kind>:" + to_s, exactly (nil for nil or an empty to_s). Passwords and
+    #                PINs stay exact because the server's unlock compares them with to_s ==.
+    def answer_key(lock_type, value)
+      case lock_type
+      when 'combination'
+        nums = combination_numbers(value)
+        nums ? "combination:#{nums.join('-')}" : nil
+      when 'cryptex'
+        return nil unless value.is_a?(String)
+
+        folded = value.strip
+        folded.empty? ? nil : "cryptex:#{folded.downcase(:fold)}"
+      else
+        return nil if value.nil?
+
+        str = value.to_s
+        str.empty? ? nil : "#{lock_type}:#{str}"
+      end
+    end
+
+    # Yields (lock_type, requires, path) for every Hash that carries a String lockType, wherever it
+    # sits (rooms, objects and contents at any depth, items held and granted, timers, flag rewards),
+    # plus each rooms.*.doors[] entry the client reads, with its resolved lock type and requires
+    # (the entry's own, else the connected room's: the client's rule, filled from the connected room
+    # when the entry leaves a gap). Only door entries NpcHabits.doorway_problem clears are resolved;
+    # an entry it flags is one the client never reads. Both answer sets and step 3's leak check are
+    # built from this one walk.
+    def each_lock_answer(data, &block)
+      return enum_for(:each_lock_answer, data) unless block
+
+      rooms = data.is_a?(Hash) ? data['rooms'] : nil
+      if rooms.is_a?(Hash)
+        rooms.each do |room_id, room|
+          next unless room.is_a?(Hash) && room['doors'].is_a?(Array)
+
+          room['doors'].each_with_index do |entry, i|
+            next unless entry.is_a?(Hash)
+            next unless BreakEscape::NpcHabits.doorway_problem(room, i).nil?
+
+            connected = rooms[entry['connectedRoom']]
+            lock_type = entry['lockType']
+            lock_type = connected['lockType'] if lock_type.nil? && connected.is_a?(Hash)
+            next unless lock_type.is_a?(String)
+
+            requires = entry.key?('requires') ? entry['requires'] : (connected.is_a?(Hash) ? connected['requires'] : nil)
+            yield lock_type, requires, "rooms/#{room_id}/doors[#{i}]"
           end
-          node.each_value { |value| walk.call(value) }
-        when Array
-          node.each { |value| walk.call(value) }
         end
       end
-      walk.call(data)
-      out
+
+      # Every other lock-typed hash. A door entry is skipped here (resolved above): descending into
+      # a value under the key "doors" marks its immediate hashes as door entries.
+      walk = lambda do |node, path, in_doors|
+        case node
+        when Hash
+          yield node['lockType'], node['requires'], path if !in_doors && node['lockType'].is_a?(String)
+          node.each { |k, v| walk.call(v, "#{path}/#{k}", k == 'doors') }
+        when Array
+          node.each_with_index { |v, i| walk.call(v, "#{path}[#{i}]", in_doors) }
+        end
+      end
+      walk.call(data, '', false)
+    end
+
+    # Whether a value could open a lock whose answer is in keys: builds every key the value could
+    # match and tests each with include?. keys is an answer set (hard_access_values or
+    # lock_answer_keys), both built from answer_key. Never matches nil or a blank value: a blank,
+    # nil or malformed secret opens nothing, as Game.lock_answer_matches? also refuses.
+    def lock_answer?(keys, value)
+      return false if value.nil?
+
+      str = value.to_s
+      return false if str.strip.empty?
+
+      candidates = LOCK_CODE_TYPES.map { |k| "#{k}:#{str}" }
+      candidates << "rfid:#{str}" << "biometric:#{str}" << "flag:#{str}"
+      combo = answer_key('combination', value)
+      candidates << combo if combo
+      cryptex = answer_key('cryptex', value)
+      candidates << cryptex if cryptex
+      candidates.any? { |candidate| keys.include?(candidate) }
     end
 
     # The lock types whose requires value grants hard access if known: a password or PIN code,
     # and the card/owner value an RFID or biometric lock accepts.
     HARD_ACCESS_LOCK_TYPES = %w[password pin rfid biometric].freeze
 
-    # Every value that grants hard access if known, as strings: the code of a password or PIN
-    # lock, the requires of an RFID or biometric lock, a Wi-Fi PSK, or a flag value. A capture
-    # secret equal to one of these is never served on the capture record alone (the server's
-    # authored_capture_secret withholds it). A secret that opens nothing is not in this set.
+    # Every answer that opens a password, PIN, combination or cryptex lock anywhere in the scenario,
+    # as canonical answer keys (answer_key). The set the capture-proof warning and
+    # CaptureProofs#account_password_opens_something? probe through lock_answer?. Renamed from
+    # lock_codes by step 3, and keyed, so a caller still treating it as raw values fails loudly.
+    def lock_answer_keys(data)
+      out = Set.new
+      each_lock_answer(data) do |lock_type, value, _path|
+        next unless LOCK_ANSWER_TYPES.include?(lock_type)
+
+        key = answer_key(lock_type, value)
+        out << key if key
+      end
+      out
+    end
+
+    # Every value that grants hard access if known, as canonical answer keys: the answer of a
+    # password, PIN, combination or cryptex lock, the requires of an RFID or biometric lock
+    # (each element, "<kind>:<v>"), a Wi-Fi PSK ("password:<psk>"), or a flag value ("flag:<v>").
+    # A capture secret that lock_answer? finds in this set is never served on the capture record
+    # alone (the server's authored_capture_secret withholds it). A secret that opens nothing is not
+    # in this set: a stray "5" beside a combination [12, 30, 5] gives "combination:5", not here.
     def hard_access_values(data)
+      out = Set.new
+      each_lock_answer(data) do |lock_type, value, _path|
+        case lock_type
+        when 'password', 'pin', 'combination', 'cryptex'
+          key = answer_key(lock_type, value)
+          out << key if key
+        when 'rfid', 'biometric'
+          Array(value).each do |v|
+            out << "#{lock_type}:#{v}" if (v.is_a?(String) || v.is_a?(Integer)) && !v.to_s.strip.empty?
+          end
+        end
+      end
+
+      networks = data.is_a?(Hash) ? data['networks'] : nil
+      if networks.is_a?(Hash)
+        networks.each_value do |net|
+          wifi = net.is_a?(Hash) ? net['wifi'] : nil
+          next unless wifi.is_a?(Hash)
+
+          Array(wifi['psk']).each do |v|
+            out << "password:#{v}" if (v.is_a?(String) || v.is_a?(Integer)) && !v.to_s.strip.empty?
+          end
+        end
+      end
+
+      flags = data.is_a?(Hash) ? data['flags'] : nil
+      if flags.is_a?(Hash)
+        flags.each_value do |group|
+          next unless group.is_a?(Hash)
+
+          group.each_value do |v|
+            Array(v).each do |leaf|
+              out << "flag:#{leaf}" if (leaf.is_a?(String) || leaf.is_a?(Integer)) && !leaf.to_s.strip.empty?
+            end
+          end
+        end
+      end
+
+      out
+    end
+
+    # The raw hard-access strings (not keyed): the lock-opening values a capture note or other
+    # string field must not quote. For substring/text checks only (validate_capture_log's note
+    # leak), where the keyed set cannot help. Mirrors the pre-step-3 hard_access_values.
+    def hard_access_raw_values(data)
       out = Set.new
       add = lambda do |value|
         Array(value).each do |v|
@@ -204,16 +354,9 @@ module BreakEscape
         end
       end
 
-      walk = lambda do |node|
-        case node
-        when Hash
-          add.call(node['requires']) if HARD_ACCESS_LOCK_TYPES.include?(node['lockType'])
-          node.each_value { |value| walk.call(value) }
-        when Array
-          node.each { |value| walk.call(value) }
-        end
+      each_lock_answer(data) do |lock_type, value, _path|
+        add.call(value) if HARD_ACCESS_LOCK_TYPES.include?(lock_type)
       end
-      walk.call(data)
 
       networks = data.is_a?(Hash) ? data['networks'] : nil
       if networks.is_a?(Hash)
@@ -231,14 +374,14 @@ module BreakEscape
       out
     end
 
-    # Whether this account holder's password is also the code of a password or PIN lock, so a
-    # served password opens that lock. codes: lock_codes(data), passed in when checking many
-    # accounts.
+    # Whether this account holder's password opens a password, PIN, combination or cryptex lock,
+    # so a served password opens that lock. codes: lock_answer_keys(data), passed in when checking
+    # many accounts.
     def password_opens_lock?(npc, data, codes = nil)
       password = npc.is_a?(Hash) && npc['creds'].is_a?(Hash) ? npc['creds']['password'] : nil
       return false unless present_string?(password)
 
-      (codes || lock_codes(data)).include?(password)
+      lock_answer?(codes || lock_answer_keys(data), password)
     end
 
     # The proof's kind ('planted', 'dropped' or 'session') or nil for a malformed proof.

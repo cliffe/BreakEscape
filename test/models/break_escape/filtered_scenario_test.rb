@@ -130,7 +130,7 @@ module BreakEscape
       assert_nil start_room["npcs"]
     end
 
-    test 'filtered_scenario_for_bootstrap preserves lock requirements' do
+    test 'filtered_scenario_for_bootstrap keeps the lock state but never the answer' do
       mission = break_escape_missions(:ceo_exfil)
       player = break_escape_demo_users(:test_user)
 
@@ -141,10 +141,28 @@ module BreakEscape
 
       locked_room = filtered["rooms"]["next_room"]
 
-      # Keep lock data for server-side validation
+      # The client needs to know the door is locked and how; the server validates against its own
+      # scenario_data, so the answer itself never leaves this method (hardening step 3).
       assert_equal true, locked_room["locked"]
       assert_equal "key", locked_room["lockType"]
-      assert_equal "key123", locked_room["requires"]
+      assert_nil locked_room["requires"]
+      refute_includes filtered.to_json, "key123"
+    end
+
+    test 'filtered_scenario_for_bootstrap gives a PIN room its pad length, drops the PIN, keeps an rfid card ref' do
+      data = @scenario_data.deep_dup
+      data['rooms']['next_room'].merge!('lockType' => 'pin', 'requires' => '48213')
+      data['rooms']['card_room'] = { 'type' => 'room_office', 'connections' => {}, 'locked' => true,
+                                     'lockType' => 'rfid', 'requires' => ['staff_badge'] }
+      game = Game.new(mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user),
+                      scenario_data: data)
+      game.save(validate: false)
+
+      rooms = game.filtered_scenario_for_bootstrap['rooms']
+      assert_nil rooms['next_room']['requires']
+      assert_equal 5, rooms['next_room']['pinLength']
+      assert_equal ['staff_badge'], rooms['card_room']['requires']
+      refute_includes game.filtered_scenario_for_bootstrap.to_json, '48213'
     end
 
     # ─── targetFlags security tests ──────────────────────────────────────────

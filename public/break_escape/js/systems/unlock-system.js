@@ -18,6 +18,7 @@ import { appendLockedHint, lockedHintDuration, showLockedHintToast, doorRefusalT
 import { startFingerprintReader } from '../minigames/biometrics/fingerprint-reader-minigame.js';
 import { catchLockpickInView } from './lockpick-catch.js';
 import { unlockWithRouteRoomRetry } from '../utils/lock-scope-refusal.js';
+import { remoteOffMessage, notRespondingMessage, unreachableMessage } from '../utils/remote-host-text.js';
 
 // Helper function to notify server of unlock and get room/container data
 export async function notifyServerUnlock(lockable, type, method) {
@@ -665,7 +666,8 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
 
     const linkName = window.networkLinks?.get?.(footholdId)?.name || null;
     const hostLabel = data.host || data.name || pcId;
-    sessions?.screenShown?.(pcId, [], switching ? 'switch' : (reason || 'remote'), false);
+    // The PC tiles shown go to sessions.screenShown once the server answers (plan item 5), with
+    // the server-fetched tiles, never [] as the opener did.
     // The current session, unless it is a claim: an unlocked screen is not offered over
     // the network (4.3), and a remote sign-in replaces it as a keyboard one would
     const held = sessions?.get?.(pcId) || null;
@@ -682,6 +684,7 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
             // A locked held session pre-chooses its own account, as the local screen does
             preselect: held && held.via !== 'claim' && held.locked ? held.username : null,
             remote: { footholdId, linkName },
+            host: hostLabel,
             captured: [],
             capturedLoading: true
         },
@@ -701,15 +704,91 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
             if ((!landing || landing.landing === 'none') && switching && signedIn) openLoginDesktop(lockable);
         }
     });
-    const stillOpen = () => !!scene && framework.currentMinigame === scene && typeof scene.setCapturedSignIns === 'function';
-    let answered = false;
-    const cap = setTimeout(() => {
-        if (!answered && stillOpen()) scene.setCapturedSignIns([], { pending: true });
-    }, REMOTE_CAPTURES_WAIT_MS);
-    const { list, failed } = await remoteCapturedSignIns();
-    answered = true;
+    // The two fetches under one cap (credential keyring plan 5.2, K0): GET /login_accounts (the
+    // PC's own tiles, picker, headless, remoteScreen) and GET /capture_secrets (the captured
+    // sign-ins). Until both answer or the cap passes, the screen shows "Checking..." with no form
+    // and no focus; after the cap it shows the Other user form and "Still checking for accounts...",
+    // and each late answer redraws the merged row in place, keeping focus and typed text.
+    const api = window.ApiClient || window.APIClient;
+    const stillOpen = () => !!scene && framework.currentMinigame === scene && typeof scene.setRemoteAccounts === 'function';
+    const fetchRemoteAccounts = async () => {
+        try {
+            const answer = api?.loginAccounts ? await api.loginAccounts(pcId, { foothold: footholdId }) : null;
+            return {
+                ok: true,
+                picker: answer?.loginPicker ?? 'accounts',
+                headless: !!answer?.headless,
+                remoteScreen: answer?.remoteScreen,
+                host: answer?.host || hostLabel,
+                tiles: Array.isArray(answer?.loginAccounts) ? answer.loginAccounts : []
+            };
+        } catch (error) {
+            // A 403 or 422 closes the screen with the shared remote strings (plan 5.2, 8.5)
+            if (error?.status === 422 && error?.body?.remoteBlocked) return { close: 'remoteBlocked' };
+            if (error?.status === 403 && error?.body?.reason === 'not_responding') return { close: 'not_responding' };
+            if (error?.status === 403 || error?.status === 404) return { close: 'unreachable' };
+            // Any other failure: the accounts could not be loaded (the state line names the host)
+            console.warn('Could not load the remote account tiles', error);
+            return { ok: true, failed: true, host: hostLabel, tiles: [] };
+        }
+    };
+
+    let loginAns = null, captureAns = { list: [], failed: false };
+    let loginDone = false, captureDone = false, capFired = false, closed = false, shown = false;
+
+    const closeScreen = (kind) => {
+        if (closed) return;
+        closed = true;
+        const msg = kind === 'remoteBlocked' ? remoteOffMessage(hostLabel)
+            : (kind === 'not_responding' ? notRespondingMessage(hostLabel) : unreachableMessage(hostLabel));
+        // The player already left this screen: no toast over the view they returned to
+        if (!stillOpen()) return;
+        window.gameAlert?.(msg, 'error', data.name || 'Sign in', 3000);
+        scene.closeByPlayer?.();
+    };
+
+    const paint = () => {
+        if (closed || !stillOpen()) return;
+        const both = loginDone && captureDone;
+        if (!both && !capFired) return; // keep "Checking..." until both answer or the cap passes
+        scene.setRemoteAccounts({
+            // A failed answer sends no picker: the screen keeps every captured sign-in visible
+            ...(loginDone ? {
+                ...(loginAns.failed ? {} : { picker: loginAns.picker }),
+                headless: loginAns.headless, remoteScreen: loginAns.remoteScreen,
+                host: loginAns.host, tiles: loginAns.tiles, accountsFailed: !!loginAns.failed
+            } : { accountsFailed: false }),
+            captured: captureAns.list,
+            capturedFailed: captureAns.failed,
+            accountsPending: !loginDone,
+            capturedPending: !captureDone,
+            pending: !both
+        });
+        // pc_signin_shown fires once the screen has laid out with the server's answer, with the
+        // tiles the row actually shows (never the ones the merge dropped), and never after a close
+        if (loginDone && !shown) {
+            shown = true;
+            sessions?.screenShown?.(pcId, scene.signInState?.tiles || [], switching ? 'switch' : (reason || 'remote'), false);
+        }
+    };
+
+    const cap = setTimeout(() => { capFired = true; paint(); }, REMOTE_CAPTURES_WAIT_MS);
+
+    const loginP = fetchRemoteAccounts().then((a) => {
+        if (a.close) { clearTimeout(cap); closeScreen(a.close); return; }
+        loginAns = a;
+        loginDone = true;
+        if (loginDone && captureDone) clearTimeout(cap);
+        paint();
+    });
+    const captureP = remoteCapturedSignIns().then((c) => {
+        captureAns = { list: Array.isArray(c?.list) ? c.list : [], failed: !!c?.failed };
+        captureDone = true;
+        if (loginDone && captureDone) clearTimeout(cap);
+        paint();
+    });
+    await Promise.allSettled([loginP, captureP]);
     clearTimeout(cap);
-    if (stillOpen()) scene.setCapturedSignIns(list, { failed });
 }
 
 export function handleUnlock(lockable, type) {

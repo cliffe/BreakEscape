@@ -1771,6 +1771,15 @@ module BreakEscape
             kept_fields[field] = room_data[field] if room_data.key?(field)
           end
           self.class.strip_lock_answers!(kept_fields)
+          # A pad lock's answer never leaves this method: fill the PIN pad length first, then drop
+          # `requires` unless it names a card, as GamesController#filter_requires_recursive does
+          # again on the way out. Doing it here too means the client-bound bootstrap is safe on
+          # every path that calls this method, not only the one the controller wraps.
+          self.class.set_pin_length!(kept_fields)
+          lock_type = kept_fields['lockType']
+          if lock_type.is_a?(String) && !CARD_REFERENCE_LOCK_TYPES.include?(lock_type)
+            kept_fields.delete('requires')
+          end
 
           # A motion-sensor room is lit only when someone's actually in it. NPCs are stripped
           # from the lazy payload, so expose just whether a present (non-phone, non-hidden) NPC
@@ -1797,6 +1806,10 @@ module BreakEscape
 
       # Strip top-level flag values — client must never see actual flag answers.
       filtered.delete('flags')
+
+      # Step 3: acknowledgedClues is an authoring record (each reason is a spoiler, though not a
+      # secret). No client code reads it; it never ships.
+      filtered.delete('acknowledgedClues')
 
       # Account profiles (access model 5.1) are served only by GET /container against a
       # sign-in session, never in the bootstrap. policies and defaultPolicy hold no
@@ -1953,7 +1966,7 @@ module BreakEscape
     def hard_access_capture_value?(secret)
       return false unless secret.is_a?(String) && !secret.empty?
 
-      (@hard_access_capture_values ||= CaptureModel.hard_access_values(scenario_data)).include?(secret)
+      CaptureModel.lock_answer?(@hard_access_capture_values ||= CaptureModel.hard_access_values(scenario_data), secret)
     end
 
     # { target_id => { secret:, address:, proof: } } for every non-account capture writer with
@@ -3546,19 +3559,13 @@ module BreakEscape
     # can only differ by an authoring slip. A blank secret or answer never opens.
     def self.lock_answer_matches?(lock_type, secret, attempt)
       case lock_type
-      when 'combination'
-        numbers = lambda do |value|
-          parts = value.is_a?(Array) ? value.map(&:to_s) : value.to_s.split(/[^0-9]+/)
-          parts = parts.map(&:strip).reject(&:empty?)
-          parts.all? { |p| p.match?(/\A\d+\z/) } ? parts.map(&:to_i) : nil
-        end
-        want = numbers.call(secret)
-        got = numbers.call(attempt)
-        want.present? && got.present? && want == got
-      when 'cryptex'
-        want = secret.is_a?(String) ? secret.strip : ''
-        got = attempt.is_a?(String) ? attempt.strip : ''
-        !want.empty? && want.casecmp?(got)
+      when 'combination', 'cryptex'
+        # The normalisation lives in one place, CaptureModel.answer_key, so the comparator and
+        # the two answer sets agree on what equal means. A blank, nil or malformed secret or
+        # attempt gives nil, which never equals a real key, so nothing opens.
+        want = CaptureModel.answer_key(lock_type, secret)
+        got = CaptureModel.answer_key(lock_type, attempt)
+        !want.nil? && want == got
       else
         false
       end
@@ -6181,6 +6188,17 @@ module BreakEscape
         # Keep lockType - client needs it to show correct UI
         # Keep locked - client needs it to show lock status
 
+        # A room's `doors` array reaches the client through this room payload (the bootstrap
+        # drops `doors`). This filter descends into objects/npcs/contents but not `doors`, and
+        # it strips `requires` only from a hash carrying its OWN secret lockType, so a door
+        # entry's `requires` rode along untouched: a bare entry (no own lockType) resolving to
+        # a pad lock shipped the room code. Strip it here too, resolving the entry's lock type
+        # the client's way. Defence in depth behind the validator's door-entry leak guard; the
+        # client never needs a pad lock's `requires` (unlock-system.js validates server-side),
+        # only the card-reference kinds do (rfid/biometric/bluetooth name a collectible card
+        # or device, not a secret answer).
+        strip_door_entry_requires!(obj)
+
         # Recursively filter nested objects, NPCs, tableItems and NPC-held items.
         # itemsHeld matters: an NPC can carry a flag-station or launch-device
         # (see find_flag_station_for_flag), so skipping it leaves a leak.
@@ -6197,6 +6215,34 @@ module BreakEscape
 
       when Array
         obj.each { |item| filter_requires_and_contents_recursive(item) }
+      end
+    end
+
+    # Strip a room door entry's own `requires` unless the entry's resolved lock type is a
+    # card-reference kind (rfid/biometric/bluetooth). The resolved type is the entry's own
+    # `lockType`, else the connected room's (the client's rule, doors.js). For any other type
+    # (pin/password/combination/cryptex/key, or none) the answer never reaches the client and a
+    # `requires` on the entry would ship the code, so it is removed. An entry no doorway reads
+    # (NpcHabits.doorway_problem flags it) is never resolved by the client, so it is left alone.
+    # Mirrors CaptureModel.each_lock_answer's resolution and the validator's door_entry_issues.
+    CARD_REFERENCE_LOCK_TYPES = %w[biometric bluetooth rfid].freeze
+    def strip_door_entry_requires!(room)
+      doors = room['doors']
+      return unless doors.is_a?(Array)
+
+      rooms = scenario_data.is_a?(Hash) ? scenario_data['rooms'] : nil
+      doors.each_with_index do |entry, i|
+        next unless entry.is_a?(Hash) && entry.key?('requires')
+        next unless BreakEscape::NpcHabits.doorway_problem(room, i).nil?
+
+        lock_type = entry['lockType']
+        if lock_type.nil? && rooms.is_a?(Hash)
+          connected = rooms[entry['connectedRoom']]
+          lock_type = connected['lockType'] if connected.is_a?(Hash)
+        end
+        next if lock_type.is_a?(String) && CARD_REFERENCE_LOCK_TYPES.include?(lock_type)
+
+        entry.delete('requires')
       end
     end
 

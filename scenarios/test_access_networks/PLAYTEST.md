@@ -55,12 +55,15 @@ The leak check must say `VERDICT: no leaks found` after every beat. Compare the 
 
 - **The capture cards (UX slice 2b0)** in the lobby, `capture_note_lena` and `capture_note_ian`,
   record a credential capture each. Once the drop box is in the comms room, the remote sign-in
-  screen offers them as account tiles with headshots
-  (`.signin-captured-tile[data-target-id="lena"]`), and Other user (`.signin-other`) for typing.
-  A tile chooses the account and fills only the username: this scenario does not reveal
-  captured secrets, so the password is still typed from its earned source (P5 the letter,
-  P8 the handover note). Ian's tile is refused on Lena's PC. A run that skips the cards sees
-  the typed form, as before.
+  screen merges the PC's own account tiles and the captured sign-ins into one tile row
+  (credential keyring K0): a captured account is one tile tagged Captured
+  (`.signin-tile[data-username="lfox"] .signin-tag`), matched to a PC tile by username with no
+  duplicate. On a tiles screen with picker `accounts`, use `clickText('Other user')`
+  (`.signin-other`) before typing into field 0; a captured account the PC does not list is left
+  out there. A tile chooses the account and fills only the username: this scenario does not
+  reveal captured secrets, so the password is still typed from its earned source (P5 the letter,
+  P8 the handover note). Ian's tile is refused on Lena's PC. A run that skips the cards sees the
+  PC's own tiles (or the typed form on an NLA screen), as before.
 - **The jack's prompts are `gameConfirm` dialogs, not minigames.** Answer the plant confirm with
   `{"cmd":"dismiss","label":"Plug it in"}` (or `"Cancel"`). `mg clickSelector` cannot see it.
   A planted jack has no prompt (UI PC 2, 2026-11-14): a click opens the box's network view with
@@ -102,8 +105,8 @@ The leak check must say `VERDICT: no leaks found` after every beat. Compare the 
    - Server: `footholds` has `jack_comms_port` on `office_lan`; `gainedFootholds` has
      `comms_port`; the link item in the inventory and the box not.
 5. Click the link item in the inventory: the same one-line toast; `networkView('jack_comms_port')`
-   lists the hosts `door_box`, `kiosk_pc`, `lena_pc`, `sam_pc` (in that order), then
-   `ledger_archive`, `print_queue`, `scanned_inbox`, and nothing of the workshop network.
+   lists the hosts `door_box`, `it_pc`, `kiosk_pc`, `lena_pc`, `ops_pc`, `sam_pc` (in that order),
+   then `ledger_archive`, `print_queue`, `scanned_inbox`, and nothing of the workshop network.
 6. `interact` `comms_port`: the drop box's network view opens, with Unplug in its header. Close
    it with the X: nothing changes, no unplug request.
 7. `interact` again and press Unplug (`[data-unplug]`): the view closes; one box in the
@@ -148,10 +151,11 @@ item in the inventory and the box not.
 
 ### P3 See
 
-The view: `HB-DESK-01` with **Open** and Sam's name (from P1), `HB-FIN-02` **Sign in**,
-`HB-KIOSK-01` remote sign-in off, `HB-DOOR-01` **Sign in**; then the open share with **Open**, the
-finance share with a padlock, the print queue. Nothing of the workshop network. Task `p3_see`
-completes (`network_viewed` for `office_lan` with all four hosts). The leak check over every
+The view: `HB-DESK-01` with **Open** and Sam's name (from P1), `HB-IT-01` **Sign in**, `HB-FIN-02`
+**Sign in**, `HB-KIOSK-01` remote sign-in off, `HB-OPS-02` **Sign in**, `HB-DOOR-01` **Sign in**;
+then the open share with **Open**, the finance share with a padlock, the print queue. Nothing of
+the workshop network. Task `p3_see` completes (`network_viewed` for `office_lan` with all six
+hosts, in order `door_box,it_pc,kiosk_pc,lena_pc,ops_pc,sam_pc`). The leak check over every
 response before P2 finds no network, host or share string.
 
 Server: no change.
@@ -179,10 +183,44 @@ Server: `sessions.lena_pc = { id: "lena", via: "password", foothold: "jack_comms
 `signedInPcs` has `lena_pc`; `finance_office` still locked; no failure entry for Lena (her sign-in
 cleared it); `ledger_yearend` in `unlockedObjects`.
 
+### P5b The PC's own tiles, merged with the captured ones (Run B)
+
+In Run B, Sam's PC has not been opened at the keyboard. From the box's view, `HB-DESK-01`
+**Sign in**: the remote screen lists Sam's PC's own account tiles over the network. Every account
+holder has the `staff` role, so the row shows Sam, Lena and Ian (`.signin-tile[data-username]`).
+Before the lobby capture cards are read, none carries a tag; after them, Lena (`lfox`) and Ian
+(`iharper`) each carry one Captured tag on their own PC tile, matched by username with no duplicate
+(no separate captured tile). Other user (`.signin-other`) still types any name. Leaving the screen
+shows no desktop (no sign-in attempted).
+
+Server: no session change; `loginFailures` 0.
+
+### P5c HB-IT-01 after Ian's card: the captured tile is the PC's own, tagged (Run B)
+
+From the box's view, `HB-IT-01` **Sign in** (picker `accounts`, default policy, `it` role). After
+Ian's capture card, the row shows Ian's account as one tile tagged Captured
+(`.signin-tile[data-username="iharper"] .signin-tag` reads `Captured`), not a second captured
+tile. Lena's captured account is not listed (the PC does not admit the `finance` role on an
+`accounts` screen), so it is left out. Other user types any name.
+
+Server: no session change.
+
+### P5d HB-OPS-02: the typed NLA screen, captured tiles only (Run B)
+
+From the box's view, `HB-OPS-02` **Sign in**. Its `nla` policy is `remoteScreen: "typed"`, so the
+PC lists no accounts of its own: the message line reads "HB-OPS-02 lists no accounts until you sign
+in (NLA)." The only tiles are the captured ones (Lena and Ian, tagged), then Other user. The
+headless/NLA line sits under the Other user form too, until an account is picked.
+
+Server: no session change.
+
 ### P6 Switch user, remotely
 
-On Lena's remote desktop, Switch user: the remote sign-in screen with no tiles. Sam's details are
-refused; leaving the screen shows Lena's desktop again. Task `p6_switch_remote` completes.
+On Lena's remote desktop, Switch user: the remote sign-in screen. Lena's PC lists none of its own
+accounts (`loginPicker: false`), so the row holds only the captured tiles (Lena and Ian, tagged)
+when the cards were read, else just Other user. The held session shows as one merged "Lena Fox
+signed in, through Drop box: Comms room" slab (the fit merge). Sam's details are refused; leaving
+the screen shows Lena's desktop again. Task `p6_switch_remote` completes.
 
 Server: `sessions.lena_pc` unchanged.
 
@@ -368,10 +406,10 @@ reload.
 `LANG=C.UTF-8`): no errors. One warning, the `maxAttempts` lockout warning the first slice gives
 for `lena_pc` (policy `counted`). No "doors skipped" warning (`counted` writes `remote` out).
 Information lines: the identity reach of each account (every account holder has the implicit
-`staff` role, so Lena and Ian also sign in at `sam_pc` and `kiosk_pc`); each jack's reach (now
-including `secure_port` on `office_lan`, sub-slice P); and
-"Reachable without a foothold" for `sam_pc` and `kiosk_pc` (open rooms, not headless) and for the
-finance share, which maps for Lena on both of those. The open shares are not on that list, nor is
+`staff` role, so Lena and Ian also sign in at `sam_pc`, `kiosk_pc` and `ops_pc`; `it_pc` admits
+the `it` role); each jack's reach (now including `secure_port` on `office_lan`, sub-slice P); and
+"Reachable without a foothold" for `sam_pc`, `it_pc`, `ops_pc` and `kiosk_pc` (open desk-room
+rooms, not headless) and for the finance share, which maps for Lena on both of those. The open shares are not on that list, nor is
 `lena_pc` (behind a PIN door) or `door_box` (headless): the chain's payoff, "Door codes", is on the
 headless host, so it still needs the box. Plus the generic suggestions every small test scenario
 gets.
