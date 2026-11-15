@@ -100,6 +100,70 @@ export function nearestBlockerAhead(pos, heading, blockers, lookAhead = AVOID_LO
 }
 
 /**
+ * The nearest blocker that lies on the walker's PATH for its first `lookAhead`
+ * px, or null. `pos` {x,y} the walker's feet; `waypoints` the path points still
+ * to walk, the next one first. The path is the polyline pos -> waypoints[0] ->
+ * waypoints[1] ...; a blocker counts when it is within `laneHalf` of a segment,
+ * walking the segments until `lookAhead` px of path is used up. The first
+ * segment keeps the forward rule (a body behind or beside the walker never
+ * blocks); later segments use the distance to the segment, rounded at its
+ * start, so a body at a corner counts. The last segment runs on past the final waypoint for any
+ * look-ahead left, as the heading check does. So a body ahead of a short first
+ * segment where the path turns away no longer counts: a detour that bends
+ * round the player is walked, not stopped by the same check (game 5443).
+ * With fewer than two waypoints this is nearestBlockerAhead on the heading.
+ * Returns the blocker nearest along the path (`.fwd` the path distance,
+ * `.lat` its offset), ties broken by id.
+ * @private exported for unit tests
+ */
+export function nearestBlockerOnPath(pos, waypoints, blockers, lookAhead = AVOID_LOOKAHEAD_PX, laneHalf = AVOID_LANE_HALF_PX) {
+    if (!blockers || !blockers.length || !waypoints || !waypoints.length) return null;
+    if (waypoints.length < 2) {
+        const w = waypoints[0];
+        return nearestBlockerAhead(pos, { x: w.x - pos.x, y: w.y - pos.y }, blockers, lookAhead, laneHalf);
+    }
+    const segs = [];
+    let used = 0, sx = pos.x, sy = pos.y;
+    for (let i = 0; i < waypoints.length && used < lookAhead; i++) {
+        const w = waypoints[i];
+        const dx = w.x - sx, dy = w.y - sy;
+        const full = Math.hypot(dx, dy);
+        if (full < 1e-6) continue;
+        const last = i === waypoints.length - 1;
+        const len = last ? lookAhead - used : Math.min(full, lookAhead - used);
+        segs.push({ sx, sy, ux: dx / full, uy: dy / full, len, s0: used, first: segs.length === 0 });
+        used += len;
+        sx = w.x; sy = w.y;
+    }
+    let best = null;
+    for (const b of blockers) {
+        for (const s of segs) {
+            const dx = b.x - s.sx, dy = b.y - s.sy;
+            const t = dx * s.ux + dy * s.uy;
+            const lat = dx * -s.uy + dy * s.ux;
+            let along;
+            if (s.first) {
+                if (t <= 0 || t > s.len || Math.abs(lat) > laneHalf) continue;
+                along = t;
+            } else {
+                // A corner (segment start) is rounded; the far end is not, since
+                // the next segment's start covers a corner and the look-ahead stops.
+                if (t > s.len) continue;
+                along = Math.max(0, t);
+                if (Math.hypot(dx - along * s.ux, dy - along * s.uy) > laneHalf) continue;
+            }
+            const fwd = s.s0 + along;
+            if (!best || fwd < best.fwd ||
+                (fwd === best.fwd && String(b.id) < String(best.id))) {
+                best = { ...b, fwd, lat };
+            }
+            break;   // the first segment it touches is the nearest along the path
+        }
+    }
+    return best;
+}
+
+/**
  * Deterministic tie-break for a head-on NPC meeting: does `self` give way to
  * `other`? A busy NPC (on a scripted/needs errand) keeps its priority over an
  * idle wanderer; between two equally-busy (or equally-idle) NPCs the higher id
@@ -1500,8 +1564,15 @@ export class NPCBehavior {
         if (window.__npcAvoidOff) { this._avoid = null; return false; }
         if (!(this.config.patrol.speed > 0)) return false;
         const pos = this.npcBodyPos();
-        const heading = { x: nextWaypoint.x - pos.x, y: nextWaypoint.y - pos.y };
-        const hit = nearestBlockerAhead(pos, heading, this._dynamicBlockers());
+        // "Ahead" follows the path itself for the look-ahead, not just the heading
+        // to the next waypoint: a short first leg that points at a body before the
+        // path turns away (a detour round the player) is not blocked by it. With no
+        // path behind nextWaypoint, the heading check alone.
+        const path = this.currentPath;
+        const onPath = Array.isArray(path) && path[this.pathIndex] === nextWaypoint;
+        const hit = onPath
+            ? nearestBlockerOnPath(pos, path.slice(this.pathIndex), this._dynamicBlockers())
+            : nearestBlockerAhead(pos, { x: nextWaypoint.x - pos.x, y: nextWaypoint.y - pos.y }, this._dynamicBlockers());
         if (!hit) { this._avoid = null; return false; }
 
         // A needs-driven NPC whose pickup/use cell has the player standing on or

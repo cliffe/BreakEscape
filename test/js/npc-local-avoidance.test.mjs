@@ -33,7 +33,66 @@ const quiet = fn => {
 };
 const mod = await quiet(() => import(pathToFileURL(join(dir, 'npc-behavior.mjs')).href));
 const { NPCBehavior } = mod.default;
-const { nearestBlockerAhead, avoidanceYieldsTo, AVOID_LOOKAHEAD_PX } = mod;
+const { nearestBlockerAhead, nearestBlockerOnPath, avoidanceYieldsTo, AVOID_LOOKAHEAD_PX } = mod;
+
+// ── nearestBlockerOnPath: "ahead" follows the path for the look-ahead ──────────
+
+test('path: a body straight ahead on a straight path still blocks', () => {
+    const path = [{ x: 16, y: 0 }, { x: 32, y: 0 }, { x: 48, y: 0 }, { x: 64, y: 0 }];
+    const hit = nearestBlockerOnPath({ x: 0, y: 0 }, path, [{ x: 30, y: 2, id: 'p' }]);
+    assert.ok(hit, 'a body on the line ahead blocks');
+    assert.equal(hit.id, 'p');
+    assert.ok(Math.abs(hit.fwd - 30) < 1e-9);
+});
+
+test('path: a body ahead of a short first leg, where the path turns away, does not block (game 5443)', () => {
+    // Marek 8 px from his next waypoint, which points at the player 33 px away;
+    // the detour then turns up and away round the player.
+    const pos = { x: 0, y: 0 };
+    const path = [{ x: 8, y: 0 }, { x: 8, y: -16 }, { x: 8, y: -32 }, { x: 16, y: -48 }];
+    const player = [{ x: 33, y: 0, id: 'player', isPlayer: true }];
+    assert.ok(nearestBlockerAhead(pos, { x: 1, y: 0 }, player), 'the heading check alone would block');
+    assert.equal(nearestBlockerOnPath(pos, path, player), null, 'the path check does not');
+});
+
+test('path: a body on a later segment within the look-ahead blocks', () => {
+    const path = [{ x: 10, y: 0 }, { x: 10, y: -40 }];
+    const hit = nearestBlockerOnPath({ x: 0, y: 0 }, path, [{ x: 12, y: -20, id: 'n' }]);
+    assert.ok(hit, 'a body round the corner on the path blocks');
+    assert.ok(Math.abs(hit.fwd - 30) < 1e-9, 'fwd is the distance along the path');
+});
+
+test('path: a body beyond the look-ahead along the path does not block', () => {
+    // 10 px then 40 px up: 50 px of path to reach it, past the 42 px look-ahead,
+    // although it is only about 41 px from the walker in a straight line.
+    const path = [{ x: 10, y: 0 }, { x: 10, y: -60 }];
+    assert.ok(AVOID_LOOKAHEAD_PX < 50);
+    assert.equal(nearestBlockerOnPath({ x: 0, y: 0 }, path, [{ x: 10, y: -40, id: 'n' }]), null);
+});
+
+test('path: a body behind the walker never blocks, even on a path', () => {
+    const path = [{ x: 16, y: 0 }, { x: 32, y: 0 }];
+    assert.equal(nearestBlockerOnPath({ x: 0, y: 0 }, path, [{ x: -10, y: 0, id: 'p' }]), null);
+});
+
+test('path: a one-point path falls back to the heading check', () => {
+    const one = [{ x: 8, y: 0 }];
+    const body = [{ x: 33, y: 0, id: 'p' }];
+    const hit = nearestBlockerOnPath({ x: 0, y: 0 }, one, body);
+    assert.deepEqual(hit, nearestBlockerAhead({ x: 0, y: 0 }, { x: 8, y: 0 }, body));
+    assert.ok(hit, 'past the single waypoint along the heading still blocks');
+});
+
+test('walker: a detour that bends away from the player is walked, not held', () => {
+    window.__npcAvoidOff = false;
+    window.player = { body: { enable: true, center: { x: 33, y: 0 } } };
+    window.rooms = {};
+    const b = walker();
+    b.currentPath = [{ x: 8, y: 0 }, { x: 8, y: -16 }, { x: 8, y: -32 }, { x: 16, y: -48 }];
+    b.pathIndex = 0;
+    assert.equal(b._handleBlockerAhead(100000, b.currentPath[0]), false);
+    assert.equal(b._avoid, null);
+});
 
 // ── nearestBlockerAhead: only bodies AHEAD, in lane, closest first ───────────────
 
