@@ -370,3 +370,20 @@ Suites on `e96ebc2ea`: `bin/test-js` 675 files passed, 0 failed; `tts_office_lin
 | lab_physical_pentest smoke | `e96ebc2ea` | 5481 | clean with needs NPCs present: all three doors walked, player in `open_plan`; 4 needs NPCs (Kieran walked 978 px, Hampshire 416, Lord 21, Pierce 23), 6 job lines in 61 s of needs clock; no `walk_stuck`, `walk_rerouted`, `return_stuck`, `return_abandoned` or `seat_gave_up`; 0 page errors |
 
 Pass counts: row 2 2 of 2 for both tasks, 2 of 2 home in 6 s, 2 of 2 with a spoken overheard grumble. Tour rows 1, 3, 5 and 6 pass on the tip, so the outbound deadline floor (m3) now has a live run behind it as well as unit proof. The tour driver reports the count of stall lines but not where they were, so this round does not say which NPCs logged them.
+
+## Live re-check after code review R4
+
+The R4 fixes (`OFFICE_LIFE_STUCK_RETURN_REVIEW_R4.md`, Outcomes) are in `806037fef`, and every run below is on that commit. Run 2026-11-15, keyless server on port 3093 from the worktree, headless setFPS(20) with fixed steps, a fresh game per run made with `tools/playtest/new-game.rb`. Row 2 uses `needs-stuck-return-proof.mjs` with the player held at (232,176). No driver changes.
+
+Suites on `806037fef`: `bin/test-js` 676 files passed, 0 failed; `tts_office_lines_test.rb` 9 runs, 46 assertions, 0 failures; `rubocop` 366 files, no offences.
+
+| Run | Code | Game | Result |
+|---|---|---|---|
+| Row 2 | `806037fef` | 5484 | pass: `notice_closed`, `turned_back`, `look_round`; grumble spoken and overheard at 1.8 s; Marek home in 6 s; 2 stalls, 0 stuck; Tom seated; 0 `seat_gave_up`; 0 page errors |
+| Tour row 1 | `806037fef` | 5485 | pass (queue seen, 60 s) |
+| Tour row 3 | `806037fef` | 5485 | pass: board read on the second try; Tom and Marek queued and both turned back at the switch-off, Marek's grumble spoken, Tom's a picture |
+| Tour row 5 | `806037fef` | 5485 | pass: board read on the first try, chat seen at 108 s |
+| Tour row 6 | `806037fef` | 5485 | pass: rota read on the first try; Sanjay's social set to 35; `see_outcast` ticked at 55 s |
+| Tour overall | `806037fef` | 5485 | rooms kitchen, office, lounge, office all entered; 0 stuck; 0 page errors |
+
+Row 2 was run once, as asked (R3 ran it twice).
