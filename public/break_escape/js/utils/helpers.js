@@ -17,8 +17,16 @@ export function introduceScenario() {
         return;
     }
 
-    console.log(gameScenario.scenario_brief);
-    
+    // No brief: no empty "Mission Brief" note and no popup with nothing in it
+    // (addNote also coerces a missing body, as a safety net).
+    const brief = gameScenario.scenario_brief;
+    if (typeof brief !== 'string' || brief.trim() === '') {
+        console.log('📋 No scenario brief; nothing to add to the Notepad');
+        return;
+    }
+
+    console.log(brief);
+
     // Add scenario brief as a regular note
     window.addNote("Mission Brief", gameScenario.scenario_brief, false);
 

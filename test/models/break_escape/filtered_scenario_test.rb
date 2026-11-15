@@ -483,5 +483,82 @@ module BreakEscape
       assert game.scenario_data['timers'][0]['actions'][0]['item'].key?('contents'),
              'the stored scenario keeps the contents'
     end
+
+    # ─── lock-answer strip parity (6a-2 deferred minors) ─────────────────────
+    # The requires-strip rule lives in three places folded onto
+    # Game::CARD_REFERENCE_LOCK_TYPES: Game#filter_inventory_for_client!,
+    # Game#filter_requires_and_contents_recursive and
+    # GamesController#filter_requires_recursive. These prove a nil lockType, the
+    # filters' idempotency, and that the model filter and the controller filter
+    # agree on `requires` for every lock kind.
+
+    LOCK_KIND_REQUIRES = {
+      'pin' => '48213', 'password' => 'hunter2', 'key' => 'brass_key',
+      'rfid' => ['staff_badge'], 'biometric' => 'Mrs Moo', 'bluetooth' => '00:11:22:33:44:55'
+    }.freeze
+    REQUIRES_KEPT_KINDS = BreakEscape::Game::CARD_REFERENCE_LOCK_TYPES # rfid, biometric, bluetooth
+
+    def filter_game
+      Game.new(mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user))
+    end
+
+    def controller_filter(obj)
+      copy = obj.deep_dup
+      BreakEscape::GamesController.new.send(:filter_requires_recursive, copy)
+      copy
+    end
+
+    def model_filter(obj)
+      copy = obj.deep_dup
+      filter_game.send(:filter_requires_and_contents_recursive, copy)
+      copy
+    end
+
+    test 'a nil lockType keeps requires in both the model filter and the controller filter' do
+      obj = { 'id' => 'legacy_pc', 'type' => 'pc', 'locked' => true, 'requires' => 'password' }
+      assert_equal 'password', model_filter(obj)['requires'],
+                   'no lockType: the model filter leaves the inert requires in place'
+      assert_equal 'password', controller_filter(obj)['requires'],
+                   'no lockType: the controller filter leaves the inert requires in place'
+    end
+
+    test 'the model filter and the controller filter agree on requires for every lock kind' do
+      LOCK_KIND_REQUIRES.each do |kind, value|
+        obj = { 'id' => "lock_#{kind}", 'locked' => true, 'lockType' => kind, 'requires' => value }
+        model_req = model_filter(obj)['requires']
+        ctrl_req  = controller_filter(obj)['requires']
+        assert_equal model_req, ctrl_req, "model and controller disagree on requires for #{kind}"
+        if REQUIRES_KEPT_KINDS.include?(kind)
+          assert_equal value, model_req, "#{kind} is a card-reference kind: requires is kept"
+        else
+          assert_nil model_req, "#{kind} is an answer kind: requires is stripped"
+        end
+      end
+    end
+
+    test 'the controller requires filter is idempotent' do
+      LOCK_KIND_REQUIRES.each do |kind, value|
+        obj = { 'id' => "lock_#{kind}", 'locked' => true, 'lockType' => kind, 'requires' => value }
+        once = controller_filter(obj)
+        twice = controller_filter(once)
+        assert_equal once, twice, "controller filter is not idempotent for #{kind}"
+      end
+    end
+
+    test 'filtered_scenario_for_bootstrap is idempotent over its own room payload' do
+      data = @scenario_data.deep_dup
+      data['rooms']['next_room'].merge!('lockType' => 'pin', 'requires' => '48213')
+      game = Game.new(mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user),
+                      scenario_data: data)
+      game.save(validate: false)
+
+      once = game.filtered_scenario_for_bootstrap
+      twice = game.filtered_scenario_for_bootstrap
+      assert_equal once, twice, 'two bootstrap filters of the same game give the same output'
+      # Feeding the bootstrap room payload back through the controller filter changes nothing.
+      room = once['rooms']['next_room']
+      assert_equal room, controller_filter(room),
+                   'the controller filter is a no-op on an already-filtered bootstrap room'
+    end
   end
 end
