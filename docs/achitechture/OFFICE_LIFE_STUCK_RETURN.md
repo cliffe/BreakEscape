@@ -1,6 +1,33 @@
 # Office life: stuck needs walks and re-routing
 
-## Review summary (2026-11-15, round 6): not ready for code review
+## Handover (2026-11-15, round 7, budget stop): not ready for code review
+
+Status: **not ready**. Round 7 hit its tool-call budget part way through the live proof.
+
+Done and committed:
+- **Look-round radius** (`4ea5d4bc1`, coordinator's call after the user's "same earshot approach"). `seating.js` `LISTEN_RADIUS` is 160 px (was 128), the earshot default (`OVERHEAR_RADIUS`). `npc-needs.js` `_buildSpeakers` gives each speaker entry a `radius`: the pool's `overhearRadius` for a grumble or picture (`s.saying.radius`, set in `_showSaying`), `_chatRadius` for a chat line, `OVERHEAR_RADIUS` for a desk-phone call. `listenTarget` uses the entry's radius before its default. So whoever could hear a line turns to it. **Cross-mission effect:** seated staff in m01 to m10 look round at lines up to 160 px away (or a pool's own radius), so there is slightly more swivelling. Tests: `test/js/seating.test.mjs` (renamed listenTarget test, new radius test; 48 passed). Live: 5440 and 5441 both had `see_look_round`.
+- **Bounded give-up** (`aaeb84a82`). `npc-needs.js` `RETURN_STUCK_MAX_BACKOFFS` (2): after two `return_stuck` back-offs in one place the walk home ends (`return_abandoned`), the NPC idles where it stands, and the next tick (selector first) re-plans one fresh walk home round held bodies (`_replanAbandoned`). A second abandon within `STUCK_SAME_PX` is `final` and leaves it idle until a job moves it. Test in `test/js/npc-needs-stuck-walk.test.mjs`. Seen live in 5439: `return_abandoned` at needs tick 675, `final` at 917, no further cycling.
+- **Pathfinding, clearance rings near the ends** (`d488b3552`). `npc-pathfinding.js` `_avoidDynamicPositions` with `includeHeld`: ring cells (the one-cell clearance round a body) within 2 cells of the start or goal are left open; body cells stay avoided. Test in `test/js/npc-needs-reroute-held.test.mjs`.
+- Drivers: `2d851fab1` (stuck-return driver dumps only walk stalls before the notice, up to four); `e617cd48f` (tour driver walks to 232,176 before each Activity Board read and records the move's aim, arrival and nudges; **not run yet**).
+- `bin/test-js`: 675 passed, 0 failed (on `aaeb84a82`, before `d488b3552`; not rerun since). `tts_office_lines_test.rb` and `bin/rubocop` not run this round.
+
+**Cause of Marek's coffee-route wedge (games 5430, 5431, 5439, 5443).** Not the coffee station, the queue cells, the socket or the notice. During row 1 the player stands at the spawn point, about (160,223) body centre, in open floor (the grid probe shows x 96 to 272 free at y 208 to 296) on Marek's line home from the coffee. Two engine faults stack:
+1. The held-body re-route found no path at all (5439: every `includeHeld` search from (180,252) and (164,236) to his home cell (52,132) returned 0 points), because the clearance rings of his own chair and seated neighbours closed every cell round the goal. It fell back to the plain path, straight through the player. Fixed in `d488b3552`.
+2. With that fixed (5443) the re-route now bends round the player ((188,244) (180,236) (180,228) (188,220)), but Marek still stands still 33 px from the player: velocity 0, nothing touching. `_handleBlockerAhead` (`npc-behavior.js`) judges "ahead" from the heading to the next waypoint only (`nearestBlockerAhead`, 42 px lookahead, 13 px lane). The next waypoint is 8 px away and its heading points at the player, so the player counts as ahead although the path turns away; each detour is adopted and the same check stops it again. **Next step, not built:** test the blocker against the path polyline for the first 42 px (distance from the blocker to each segment under the lane half-width) instead of the single heading, keep `nearestBlockerAhead` for a path with one point, and add node tests in `test/js/npc-local-avoidance.test.mjs`.
+
+Live (port 3093, keyless, headless setFPS(20)):
+
+| Game | Code | Run | Result |
+|---|---|---|---|
+| 5439 | `aaeb84a82` | wedge probe (row 1 only) | Marek wedged against the player at spawn, crept 12 px in 8 minutes; `return_abandoned` then `final` |
+| 5440 | `4ea5d4bc1` | row 2 | played: turned back, look round, grumble overheard, Marek home 6 s; queue cleared at s 196 after a wedge against the player |
+| 5441 | `4ea5d4bc1` | row 2 | played: turned back, look round, Marek home 6 s; wedge at (186,250) beside the player, s 110 to 151 |
+| 5442 | `d488b3552` | row 2 | **not played**: no turn-back; queue cleared at s 236; cause not read |
+| 5443 | `d488b3552` | row 2 | **not played**: no turn-back; queue cleared at s 225 after the wedge in fault 2 |
+
+Still to do: fix fault 2; read why 5442 and 5443 had no turn-back (probably the late clear after the wedge, as in 5415, but check `sanjay_log`); then row 2 5 of 5, three more row 1 wedge checks, the tour (rows 1, 3, 5, 6) and the train smoke on m01 and m02; then `bin/test-js`, `tts_office_lines_test.rb` and `bin/rubocop`. Games 5444 and 5445 were made and not driven. The wedge probe is in the round 7 session scratchpad only; its hook (wrap `pathfindingManager.findWorldPath` and log Marek's searches) is worth adding to the stuck-return driver.
+
+## Review summary (2026-11-15, round 6): not ready for code review (superseded by the round 7 handover above)
 
 Status: **not ready**. Three things still fail live (listed under "Still failing" below). Everything else on the branch is done and tested.
 
