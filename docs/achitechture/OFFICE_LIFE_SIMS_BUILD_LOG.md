@@ -462,6 +462,32 @@ spoken and heard. No pool was given a new trigger, so there was none to prove. S
 
 Engine and server changes: none (the validator script is tooling).
 
+## SIMS-5 live proof
+
+2026-11-14 to 15, keyless :3095, headless (physics `setFPS(20)`, fixed steps on), from a clean
+detached worktree `p-ol-sims5` at fd9842b83. The SIMS-5 R2 fixes (4e87d9bb0) touch only
+`scripts/validate_office_life.rb`, its node test and a review file, so these results hold at the tip.
+`_pickBark` was wrapped to log every line spoken (NPC, topic, room, player distance), and
+`eventDispatcher.emit` to log `npc_overheard`, `npc_chatted`, `npc_exchange_heard` and
+`npc_call_heard`. Needs were forced with `window.__test.needs.set` to start each beat in seconds;
+the staff-room counts ran on the natural clock. Scripts and dumps are in the session scratchpad
+`s5-proof/` (`beats.mjs`, `s3.mjs`, `fix.mjs`, `lib.mjs`; results in `out/`). No page errors in any run.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Staff room, player at the boiler (in earshot), 20 game minutes | PASS | Game 4985 (1204 s): 35 staff `_pickBark` turns, 7 voiced lines (Keith 4, Jodie 3, all `staff_tea`) and 28 pictures (`staff_tea` 12, `staff_water` 16); `exchange_waiting` heard complete. `s3-in-4985.json` |
+| Staff room, player in the office (out of earshot), 10 game minutes | PASS | Game 4986 (604 s): 25 staff turns, **0** lines, 25 pictures, no exchange. No pool line is spent unheard (E7 holds). `s3-out-4986.json` |
+| Fixture `grumble_none` rerun (rule changed in 248293e6e) | PASS | Game 4983, 10 minutes: the warned NPC spoke nothing; the control pair spoke 4 `ctrl` lines (2 each). `fx-grumble_none-4983.json` |
+| Fixture `no_phone_calls` rerun (colleague rule changed in 248293e6e) | PASS | Game 4984, 10 minutes, spare phone read every 2 minutes: no call started, the warned NPC spoke nothing; the control pair spoke 2 `ctrl` lines. `fx-no_phone_calls-4984.json` |
+| Fixtures whose rule did not change (5 of 7) | NOT RERUN | Old and new V10 give the same warning set on all seven regenerated fixtures (only the wording changed), so games 4668 to 4674 stand |
+| `phone_message`, Amara answering Tom's empty desk | PASS | Game 4987: ring 1 played the `call_take_message` knot (5 lines overheard, `npc_call_heard:call_take_message`); rings 2 and 3 fell to her `phone_message` pool, 3 lines each, all voiced and overheard (`npc_overheard:amara` topic `phone_message`, every line drawn from that pool's bag). A pool call has no knot, so it emits no `npc_call_heard` (`_finishCall`, `npc-needs.js` emits only when `c.knot` is set); the probe's first tally counted only that event, hence the earlier "heard false". Ring 4 was not answered in the window. `beat-phone-4987.json` |
+| `grumble_printer_off`, both copier sockets off | PASS | Game 4988: both sockets switched off through the confirm dialog (globals true); Sanjay grumbled first (43 px, office), then Tom on his ninth forced work use: `print_blocked` `tom_pc` with both copiers as producers, his `grumble_printer_off` line spoken at 33 px in the office. `beat-printer-4988.json`, `pr-grumble-4988.png` |
+| `grumble_gone`, the cake taken from under two walkers | PASS | Game 5001: cake dropped by the office copier, Tom and Amara sent hungry; picked up while both were in `goto_target cake`; both `turned_back` reason `gone` with `grumble_gone`; Amara's line voiced at 62 px, Tom's turn a picture (the speech lock was hers). `beat-gone-5001.json`, `gone-5001.png` |
+| Amara's own `coffee` pool spoken as hers | PASS | Game 5003: over five forced coffee breaks with Tom, Amara spoke both lines that exist only in her own pool (the second break, then the fifth at 21 px in the office), alongside scenario `coffee` lines. `beat-amara-5003.json`, `amara-own-coffee-5003.png` |
+
+With these rows every item the SIMS-5 handover listed as open is proved live. Engine and server
+changes: none.
+
 ## Engine and server changes (every slice)
 
 SIMS-4 R2 / SIMS-3 R4 fix round: none.

@@ -2,13 +2,12 @@
 
 ## Lead's state, 2026-11-14, third lead (read this first)
 
-Branch `build/ol-sims`, worktree `p-ol-sims`, tip after 78b0b8fc5. Main merged up to 896ec3cd8
-(E7 to E9 chatter, phish A to C, ScenarioBinding); **main e1303fc0c (format step 6a-1 part 1, schema
-marks in `scripts/scenario-schema.json` plus tests) is not yet merged**; expect at most a schema
-conflict. No sub-agent is running. No server is listening on 3093 to 3095. Worktrees: `p-ol-sims`
-(the branch); `p-ol-sims5` (detached at ed0a5cd1f, a clean copy used only for SIMS-5 live runs so they
-did not see another agent's uncommitted edits; move it to the tip or remove it); `p-ol-sims2` (fully
-contained, no further work).
+Branch `build/ol-sims`, worktree `p-ol-sims`, tip after 4e87d9bb0 (SIMS-5 R2 fixes) and the SIMS-5
+live-proof docs commit. Main e1303fc0c and 4629372fe are merged (ce71352cd, fd9842b83). A SIMS-5 R3
+review (`OFFICE_LIFE_SIMS5_REVIEW_R3.md`) was being written when the live proof finished. No server is
+listening on 3093 to 3095. Worktrees: `p-ol-sims` (the branch); `p-ol-sims5` (detached at fd9842b83, a
+clean copy used only for SIMS-5 live runs so they did not see another agent's uncommitted edits; move
+it to the tip or remove it); `p-ol-sims2` (fully contained, no further work).
 
 Integrator decision applied (3f4068967): the three dead `cooler` pools on test_needs_sims became
 Amara's and Tom's own `coffee` pools; Marek's was dropped; Amara's "Lovely and cold, this." became
@@ -33,13 +32,16 @@ Slice status (B/M/m per round, all fixed unless said):
   object or magnet passed; colleague-phone rules; announce rule), all fixed in 248293e6e, **not yet
   re-reviewed**. V10 then flagged five dead own `grumble` pools (amara, tom, grace, rosa, marek);
   all five removed. Corpus run, 180 files: no error, no V10 warning. Node set 658/658.
-  **Live proof, partial:** office beats in games 4646, 4687, 4702, 4705, 4935: spoken and heard were
-  scenario coffee and cooler, grumble, news_cake, cake, Tom's phone pool, `grumble_off` (4935),
-  exchanges tom_parcel and rosa_rota, calls supplier and take_message. Fixtures (scratch folders, now
-  in tmp/delete/) 4668 to 4674: all seven warned pools stayed silent for 10 minutes while each control
-  pool spoke. Still open: `grumble_gone`, `grumble_printer_off`, `phone_message`, Amara's own coffee
-  line seen as hers, the 20-minute staff-room count in earshot and 10 minutes out of earshot. The
-  fixtures predate the 248293e6e rule changes; rerun any whose warning changed.
+  **Live proof, complete** (build log "SIMS-5 live proof"): office beats in games 4646, 4687, 4702,
+  4705, 4935: spoken and heard were scenario coffee and cooler, grumble, news_cake, cake, Tom's phone
+  pool, `grumble_off` (4935), exchanges tom_parcel and rosa_rota, calls supplier and take_message.
+  Fixtures 4668 to 4674: all seven warned pools silent for 10 minutes while each control pool spoke;
+  the two whose rule changed in 248293e6e were rerun (4983 `grumble_none`, 4984 `no_phone_calls`):
+  warned silent, control spoke. Then (:3095, fd9842b83): staff room in earshot 20 min (4985) 7 lines
+  and 28 pictures, one exchange heard; out of earshot 10 min (4986) 0 lines, 25 pictures;
+  `phone_message` pool voiced and overheard on rings 2 and 3 (4987; a pool call emits no
+  `npc_call_heard`, only a knot does); `grumble_printer_off` by Sanjay and Tom (4988); `grumble_gone`
+  on a cake pickup mid-walk (5001); Amara's own coffee lines spoken by her (5003).
   Gotcha: the coffee and copier sockets open a confirm dialog; click "Switch off". Escape cancels it,
   and the global does not change (the first SIMS-5 runs fell into this). Scripts and notes:
   scratchpad `officelife-sims/s5-full/` and `s5-full2/` (HANDOVER.md in each, lib.mjs has the toggle
@@ -58,7 +60,7 @@ removed; five own grumble lines removed (one each: Amara, Tom, Grace, Rosa, Mare
 
 Next, in order:
 1. Merge main e1303fc0c; rerun `bin/test-js` and the validator on test_needs_sims.
-2. Finish the SIMS-5 live proof above (port 3095, keyless), from a worktree at the tip.
+2. SIMS-5 live proof: done (see above).
 3. SIMS-5 R2: a code reviewer and a design reviewer with live proof; fix; a third round only if R2
    has a blocker or major (stop rule: at least two rounds, stop once one is clean of both).
 4. README SIMS-5 rows, build log and this handover.
