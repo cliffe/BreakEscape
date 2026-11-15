@@ -1,8 +1,8 @@
-require "erb"; require "json"; require "base64"
-def base64_encode(t); Base64.strict_encode64(t); end
-def vm_context; {}; end
-def vm_object(n, o = {}); o.merge("system_name"=>n).to_json; end
-def flags_for_vm(vm, flags = []); flags.to_json; end
-def vm_flags_json(vm, flags = []); flags.to_json; end
+# Render a scenario template to pretty JSON (plan step 5: one binding for every renderer).
+# This renders through the server's BreakEscape::ScenarioBinding, so vm_object, flags_for_vm and
+# vm_flags_json behave as the server builds them, not the drifted local copies this file carried.
+# It loses trim_mode: '-' with the move; no scenario template uses -%>.
+require "json"
+require_relative "../../lib/break_escape/scenario_binding"
 src, out = ARGV
-File.write(out, JSON.pretty_generate(JSON.parse(ERB.new(File.read(src), trim_mode: "-").result(binding))))
+File.write(out, JSON.pretty_generate(JSON.parse(BreakEscape::ScenarioBinding.render(File.read(src), {}))))

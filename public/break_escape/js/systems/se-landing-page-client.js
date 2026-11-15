@@ -28,6 +28,15 @@ export function landingPageBuildBody({ pageId, targetId, choices }) {
     return { pageId, targetId, choices };
 }
 
+// The POSTed build body, with the re-drive marker added only when set (A+B R2 minor 1). Kept off
+// landingPageBuildBody so that stays the pure closed set the render test pins; the server trusts
+// redrive:true only to refuse a downgrade, never to serve more.
+function buildRequestBody(item) {
+    const body = landingPageBuildBody(item);
+    if (item.redrive === true) body.redrive = true;
+    return body;
+}
+
 // The latest in-flight (or settled) build POST per page id, resolving to { ok } (ok true only on a
 // 2xx answer). The phish send client awaits this before it posts a send (plan section 11:
 // linkCredible reads the server's own page meetsThreshold, which Route 1 must record first) and
@@ -44,6 +53,10 @@ const buildQueue = new Map();
 // sends. Null until a send is ever recorded (a build-only session needs no send drain).
 let afterBuildDrain = null;
 let drainBound = false;
+// A+B R2 minor 4: a single in-flight flag so an `online` drain and a `sync-ok` drain that overlap
+// (sync-ok fires on every successful sync) do not both post the same queued builds and sends. The
+// server records are idempotent, so overlap was safe; the flag just removes the redundant POSTs.
+let draining = false;
 
 /**
  * The in-flight (or settled) build POST promise for a page id, or null when none was posted.
@@ -95,10 +108,12 @@ async function attemptBuild(body, deps) {
     }
 }
 
-function enqueueBuild({ pageId, targetId, choices }, deps) {
+function enqueueBuild({ pageId, targetId, choices, redrive }, deps) {
     if (typeof pageId !== 'string' || !pageId) return;
     // Keep only the deps a later drain needs (fetch/window), never a live closure that could grow.
-    buildQueue.set(pageId, { pageId, targetId, choices, deps: { fetch: deps.fetch, window: deps.window } });
+    // The redrive marker rides the queue entry so a failed re-drive build keeps its downgrade guard
+    // when the queue drains later (A+B R2 minor 1).
+    buildQueue.set(pageId, { pageId, targetId, choices, redrive: redrive === true, deps: { fetch: deps.fetch, window: deps.window } });
     ensurePhishDrainBound(deps);
 }
 
@@ -126,7 +141,7 @@ export async function drainBuildQueue(extraDeps = {}) {
     if (buildQueue.size === 0) return;
     for (const [pageId, item] of Array.from(buildQueue.entries())) {
         const deps = { ...item.deps, ...extraDeps };
-        const res = await attemptBuild(landingPageBuildBody(item), deps);
+        const res = await attemptBuild(buildRequestBody(item), deps);
         if (res && res.ok) {
             buildQueue.delete(pageId);
             buildPosts.set(pageId, Promise.resolve({ ok: true }));
@@ -135,10 +150,20 @@ export async function drainBuildQueue(extraDeps = {}) {
     }
 }
 
-/** Drain the build queue, then the send queue (builds before sends, plan section 11). */
+/**
+ * Drain the build queue, then the send queue (builds before sends, plan section 11). A+B R2 minor
+ * 4: guarded by a single in-flight flag so overlapping `online` and `sync-ok` drains do not
+ * double-post; an overlapping call returns at once and the in-flight drain finishes the work.
+ */
 export async function drainPhishQueues(extraDeps = {}) {
-    await drainBuildQueue(extraDeps);
-    if (afterBuildDrain) await afterBuildDrain(extraDeps);
+    if (draining) return;
+    draining = true;
+    try {
+        await drainBuildQueue(extraDeps);
+        if (afterBuildDrain) await afterBuildDrain(extraDeps);
+    } finally {
+        draining = false;
+    }
 }
 
 /**
@@ -147,18 +172,19 @@ export async function drainPhishQueues(extraDeps = {}) {
  * failure never stops the player attaching the page, so the UI is unchanged whether or not the
  * server answers. A failed POST (offline, 5xx, network error) is held in the bounded re-post queue.
  */
-export function recordLandingPageBuild({ pageId, targetId, choices }, deps = {}) {
+export function recordLandingPageBuild({ pageId, targetId, choices, redrive }, deps = {}) {
     try {
         const cfg = configOf(deps);
         const fetchFn = fetchOf(deps);
         if (!cfg || !cfg.apiBasePath || typeof fetchFn !== 'function') return null;
-        const post = attemptBuild(landingPageBuildBody({ pageId, targetId, choices }), deps)
+        const item = { pageId, targetId, choices, redrive: redrive === true };
+        const post = attemptBuild(buildRequestBody(item), deps)
             .then((res) => {
                 // res is never null here (config and fetch are present), so { ok } always.
-                if (!res || res.ok !== true) enqueueBuild({ pageId, targetId, choices }, deps);
+                if (!res || res.ok !== true) enqueueBuild(item, deps);
                 return res || { ok: false };
             })
-            .catch(() => { enqueueBuild({ pageId, targetId, choices }, deps); return { ok: false }; });
+            .catch(() => { enqueueBuild(item, deps); return { ok: false }; });
         if (typeof pageId === 'string' && pageId) buildPosts.set(pageId, post);
         return post;
     } catch (e) {
@@ -176,4 +202,5 @@ export function _resetLandingPageClient() {
     buildQueue.clear();
     afterBuildDrain = null;
     drainBound = false;
+    draining = false;
 }

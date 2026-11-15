@@ -29,6 +29,7 @@ require_relative 'validate_wearable'
 require_relative 'validate_phone_calls'
 require_relative '../lib/break_escape/scenario_schema'
 require_relative '../lib/break_escape/author_notes'
+require_relative '../lib/break_escape/schema_walk'
 require_relative '../lib/break_escape/format_upgrade'
 require_relative '../lib/break_escape/declared_grants'
 require_relative '../lib/break_escape/access_identities'
@@ -59,60 +60,10 @@ rescue LoadError
   exit 1
 end
 
-# ScenarioBinding class - replicates the one from app/models/break_escape/mission.rb
-class ScenarioBinding
-  def initialize(vm_context = {})
-    require 'securerandom'
-    @random_password = SecureRandom.alphanumeric(8)
-    @random_pin = rand(1000..9999).to_s
-    @random_code = SecureRandom.hex(4)
-    @vm_context = vm_context || {}
-  end
-
-  attr_reader :random_password, :random_pin, :random_code, :vm_context
-
-  # Get a VM from the context by title, or return a fallback VM object
-  def vm_object(title, fallback = {})
-    if vm_context && vm_context['hacktivity_mode'] && vm_context['vms']
-      vm = vm_context['vms'].find { |v| v['title'] == title }
-      return vm.to_json if vm
-    end
-
-    result = fallback.dup
-    if vm_context && vm_context['vm_ips'] && vm_context['vm_ips'][title]
-      result['ip'] = vm_context['vm_ips'][title]
-    end
-    result.to_json
-  end
-
-  # Get flags for a specific VM from the context
-  def flags_for_vm(vm_name, fallback = [])
-    if vm_context && vm_context['flags_by_vm']
-      flags = vm_context['flags_by_vm'][vm_name]
-      return flags.to_json if flags
-    end
-    fallback.to_json
-  end
-
-  # Get a slice of flags for a VM (mirrors Mission::ScenarioBinding#flags_for_vm_slice).
-  def flags_for_vm_slice(vm_name, start_index, count, fallback = [])
-    if vm_context && vm_context['flags_by_vm']
-      flags = vm_context['flags_by_vm'][vm_name]
-      return flags.slice(start_index, count).to_json if flags
-    end
-    fallback.to_json
-  end
-
-  # Get VM flags as a JSON array for use in the top-level 'flags' object.
-  # Mirrors flags_for_vm but used in the top-level flags: { vm_name: vm_flags_json('vm_name') } pattern.
-  def vm_flags_json(vm_name, fallback = [])
-    flags_for_vm(vm_name, fallback)
-  end
-
-  def get_binding
-    binding
-  end
-end
+# One ERB binding for every renderer (plan step 5): the validator renders through the same
+# BreakEscape::ScenarioBinding as the server, so a top-level `flags` block is the Hash the server
+# builds, not the plain array the validator's old copy produced.
+require_relative '../lib/break_escape/scenario_binding'
 
 # Load valid item types from the objects asset directory.
 # Returns a Set of type strings (filenames without .png extension), or nil if the directory
@@ -127,6 +78,22 @@ def load_valid_item_types(base_dir)
   Set.new(types)
 end
 
+# Load valid room types from the engine's room map registry. A room's "type" is the key the engine
+# registers with this.load.tilemapTiledJSON('<type>', 'rooms/<file>.json') in game.js; a type with
+# no registration cannot load. This reads those keys straight from the engine, the way the sprite
+# check reads the object asset files, so a new room map is accepted the moment the engine loads it
+# and no hand-maintained enum can drift. Returns a Set of type strings, or nil when game.js cannot be
+# found (callers skip the check).
+def load_valid_room_types(base_dir)
+  game_js = File.join(base_dir, 'public', 'break_escape', 'js', 'core', 'game.js')
+  return nil unless File.exist?(game_js)
+
+  types = File.read(game_js).scan(/tilemapTiledJSON\(\s*['"]([^'"]+)['"]/).flatten
+  return nil if types.empty?
+
+  Set.new(types)
+end
+
 # Render ERB template to JSON
 def render_erb_to_json(erb_path, vm_context = {}, include_rendered: false)
   unless File.exist?(erb_path)
@@ -134,9 +101,7 @@ def render_erb_to_json(erb_path, vm_context = {}, include_rendered: false)
   end
 
   erb_content = File.read(erb_path)
-  erb = ERB.new(erb_content)
-  binding_context = ScenarioBinding.new(vm_context)
-  json_output = erb.result(binding_context.get_binding)
+  json_output = BreakEscape::ScenarioBinding.render(erb_content, vm_context)
 
   parsed = JSON.parse(json_output)
   include_rendered ? [parsed, json_output] : parsed
@@ -7953,6 +7918,224 @@ def main
   exit code
 end
 
+# ---------------------------------------------------------------------------
+# Step 4. Reference and id checks driven by schema annotations.
+#
+# Every property that names something carries "x-ref": "<kind>" in the schema (on the property, or,
+# for an array of references, on its items). This check walks the scenario with the shared schema
+# walker (BreakEscape::SchemaWalk, which pairs each value with its schema Node through the step 2b
+# resolver), reads the x-ref kind off each string leaf's Node, and resolves it against an index of
+# every id of that kind in the scenario. An unresolved reference is a ⚠️ WARNING; the existing
+# one-off checks that already error (connections, targetRoom, unlockDoor, setVariable globals) keep
+# their level, so x-ref is placed on the fields they do not cover.
+#
+# It also reports id-uniqueness: an object id used by two objects at any depth, and an NPC id used
+# twice, each a warning (the social lint already errors on duplicate top-level room-object ids, so
+# those are left to it); a string used as both a task id and a global is a note.
+
+# Collect every object/item id at any depth: rooms[*].objects and their contents/itemsHeld, plus
+# startItemsInInventory. Yields [id, path_string] for each object that carries a non-empty id.
+def each_object_id(json_data)
+  return enum_for(:each_object_id, json_data) unless block_given?
+
+  visit = lambda do |obj, path|
+    next unless obj.is_a?(Hash)
+
+    id = obj['id']
+    yield id, path if id.is_a?(String) && !id.empty?
+    %w[contents itemsHeld].each do |key|
+      Array(obj[key]).each_with_index { |child, i| visit.call(child, "#{path}/#{key}[#{i}]") }
+    end
+  end
+
+  (json_data['rooms'] || {}).each do |room_id, room|
+    next unless room.is_a?(Hash)
+
+    Array(room['objects']).each_with_index { |obj, i| visit.call(obj, "rooms/#{room_id}/objects[#{i}]") }
+  end
+  Array(json_data['startItemsInInventory']).each_with_index do |obj, i|
+    visit.call(obj, "startItemsInInventory[#{i}]")
+  end
+end
+
+# Every id of an item that an action creates in the inventory: a give_item action's nested "item"
+# object, anywhere in the scenario (triggerOnInteract, flagRewards, onConfirm, timers, onInteract).
+# Yields the id string. These are not in any room's objects, so each_object_id misses them, but a
+# wear/take_off/unlock_object reference can name them, so the index needs them.
+def each_given_item_id(json_data)
+  return enum_for(:each_given_item_id, json_data) unless block_given?
+
+  visit = lambda do |node|
+    case node
+    when Hash
+      item = node['item']
+      if item.is_a?(Hash) && item['id'].is_a?(String) && !item['id'].empty?
+        yield item['id']
+      end
+      node.each_value { |v| visit.call(v) }
+    when Array
+      node.each { |v| visit.call(v) }
+    end
+  end
+  visit.call(json_data)
+end
+
+# Every NPC id: rooms[*].npcs, top-level npcs and phoneNPCs. Yields [id, path_string].
+def each_npc_id(json_data)
+  return enum_for(:each_npc_id, json_data) unless block_given?
+
+  (json_data['rooms'] || {}).each do |room_id, room|
+    next unless room.is_a?(Hash)
+
+    Array(room['npcs']).each_with_index do |npc, i|
+      yield npc['id'], "rooms/#{room_id}/npcs[#{i}]" if npc.is_a?(Hash) && npc['id'].is_a?(String) && !npc['id'].empty?
+    end
+  end
+  %w[npcs phoneNPCs].each do |key|
+    Array(json_data[key]).each_with_index do |npc, i|
+      yield npc['id'], "#{key}[#{i}]" if npc.is_a?(Hash) && npc['id'].is_a?(String) && !npc['id'].empty?
+    end
+  end
+end
+
+# The index of every id by x-ref kind. Globals are the declared globalVariables plus the
+# engine-written patterns the schema lists under "x-engineGlobals" (e.g. "<npcId>_frustration").
+def build_reference_index(json_data)
+  object_ids = Set.new
+  each_object_id(json_data) { |id, _| object_ids.add(id) }
+  # Items defined inside a give_item action (triggerOnInteract, flagRewards, onConfirm, timers) are
+  # real inventory ids a wear/take_off/unlock_object action can name, but they live in an action,
+  # not in a room's objects, so each_object_id does not see them. Fold them into the object/item
+  # index so such a reference resolves (e.g. lab_physical_pentest's granted hi-vis vest).
+  each_given_item_id(json_data) { |id| object_ids.add(id) }
+  npc_ids = Set.new
+  each_npc_id(json_data) { |id, _| npc_ids.add(id) }
+  room_ids = (json_data['rooms'] || {}).keys.to_set
+  task_ids = Set.new
+  aim_ids = Set.new
+  Array(json_data['objectives']).each do |aim|
+    next unless aim.is_a?(Hash)
+
+    aim_ids.add(aim['aimId']) if aim['aimId'].is_a?(String)
+    Array(aim['tasks']).each { |t| task_ids.add(t['taskId']) if t.is_a?(Hash) && t['taskId'].is_a?(String) }
+  end
+
+  globals = (json_data['globalVariables'] || {}).keys.to_set
+  engine = begin
+    BreakEscape::ScenarioSchema.root.table.root_schema['x-engineGlobals']
+  rescue StandardError
+    nil
+  end
+  Array(engine).each do |pat|
+    next unless pat.is_a?(Hash) && pat['suffix'].is_a?(String)
+
+    over = pat['over'] == 'npc' ? npc_ids : object_ids
+    over.each { |id| globals.add("#{id}#{pat['suffix']}") }
+  end
+
+  {
+    'room' => room_ids,
+    'npc' => npc_ids,
+    'object' => object_ids,
+    'item' => object_ids,
+    'task' => task_ids,
+    'aim' => aim_ids,
+    'global' => globals,
+    'network' => (json_data['networks'] || {}).keys.to_set,
+    'resource' => (json_data['resources'] || {}).keys.to_set,
+    'policy' => (json_data['policies'] || {}).keys.to_set,
+    'role' => (json_data['roles'] || {}).keys.to_set
+  }
+end
+
+def check_references(json_data, _repo_root = nil)
+  issues = []
+  return issues unless json_data.is_a?(Hash)
+
+  index = build_reference_index(json_data)
+  root = BreakEscape::ScenarioSchema.root
+  BreakEscape::SchemaWalk.walk(json_data, root) do |value, node, path|
+    next unless value.is_a?(String) && !value.empty?
+
+    kind = BreakEscape::SchemaWalk.ref_kind(node)
+    next unless kind
+
+    known = index[kind]
+    next if known.nil? || known.include?(value)
+
+    issues << "⚠️ WARNING: '#{BreakEscape::SchemaWalk.path_string(path)}' references #{kind} '#{value}', " \
+              'which is not defined in this scenario.'
+  end
+
+  issues.concat(reference_uniqueness_issues(json_data, index))
+  issues
+end
+
+# Every room's "type" must be a room map the engine can load. The valid set is the engine's own
+# tilemapTiledJSON registry (load_valid_room_types), the same way the sprite check reads the object
+# asset files, so no hand-maintained enum can drift. An unknown type is an ❌ ERROR, as the sprite
+# check reports an unknown object type: the room cannot load. Skipped when game.js cannot be found.
+def check_room_types(json_data, repo_root)
+  issues = []
+  return issues unless json_data.is_a?(Hash)
+
+  valid = load_valid_room_types(repo_root)
+  if valid.nil?
+    # Fail loudly, never silently: a missing game.js or a parse that finds no room maps means
+    # the check could not run, and the author must know that rather than read a clean pass.
+    return ["⚠️ WARNING: room type check skipped: public/break_escape/js/core/game.js is missing " \
+            "or registers no tilemapTiledJSON room maps, so room 'type' values were not checked."]
+  end
+
+  (json_data['rooms'] || {}).each do |room_id, room|
+    next unless room.is_a?(Hash)
+
+    type = room['type']
+    next unless type.is_a?(String) && !type.empty?
+    next if valid.include?(type)
+
+    issues << "❌ ERROR: room '#{room_id}' has type '#{type}', which no room map registers (no " \
+              "tilemapTiledJSON('#{type}', ...) in game.js); check the spelling or add the room map."
+  end
+
+  issues
+end
+
+# Object ids reused at any depth, and NPC ids reused, each a warning. The social lint already errors
+# on duplicate top-level room-object ids, so a set of occurrences that are all top-level room objects
+# is left to it (no double report); any set that includes a nested occurrence is reported here.
+def reference_uniqueness_issues(json_data, index = nil)
+  index ||= build_reference_index(json_data)
+  issues = []
+
+  obj_paths = Hash.new { |h, k| h[k] = [] }
+  each_object_id(json_data) { |id, path| obj_paths[id] << path }
+  top_level = /\Arooms\/[^\/]+\/objects\[\d+\]\z/
+  obj_paths.each do |id, paths|
+    next if paths.length < 2
+    next if paths.all? { |p| p =~ top_level } # the social lint's duplicate-object-ids error owns these
+
+    issues << "⚠️ WARNING: object id '#{id}' is used by more than one object (#{paths.join(', ')}); " \
+              'the unlock endpoint takes the first hit by id, so the others could never be targeted.'
+  end
+
+  npc_paths = Hash.new { |h, k| h[k] = [] }
+  each_npc_id(json_data) { |id, path| npc_paths[id] << path }
+  npc_paths.each do |id, paths|
+    next if paths.length < 2
+
+    issues << "⚠️ WARNING: NPC id '#{id}' is used by more than one NPC (#{paths.join(', ')}); give each a unique id."
+  end
+
+  # A string used as both a task id and a global can be confused by a bare-string reference field.
+  (index['task'] & index['global']).each do |name|
+    issues << "💡 SUGGESTION: '#{name}' is both a task id and a global variable; a bare-string reference to " \
+              'it is ambiguous. Consider renaming one.'
+  end
+
+  issues
+end
+
 # The body of a run. It never exits: every section prints, and ValidatorReport#finish decides
 # the exit code from the ❌ lines it counted.
 def run_validation(report, erb_path, schema_path, repo_root, options)
@@ -8140,6 +8323,8 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
   common_issues = []
   run = ->(name, &blk) { common_issues.concat(report.run_check('common', name, &blk)) }
   run.call('check_common_issues') { check_common_issues(json_data, valid_item_types) }
+  run.call('check_references') { check_references(json_data, repo_root) }
+  run.call('check_room_types') { check_room_types(json_data, repo_root) }
   run.call('check_lock_credentials') { check_lock_credentials(json_data) }
   run.call('check_pin_locks') { check_pin_locks(json_data) }
   run.call('check_combination_cryptex_locks') { check_combination_cryptex_locks(json_data) }

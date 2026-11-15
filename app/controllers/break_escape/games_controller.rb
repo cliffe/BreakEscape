@@ -856,15 +856,6 @@ module BreakEscape
         # stamps.
         @sync_client_ts = params[:clientTs].is_a?(Numeric) ? params[:clientTs].to_i : nil
         stale = stale_sync_request?
-        # 6b review m1: fingerprint the phish evidence before the merge, only when something is
-        # waiting on it, so the capture step can tell whether this request advanced that evidence
-        # and skip the scenario load otherwise. A forged, never-provable unproven entry no longer
-        # forces the scenario load on every later evidence-carrying sync.
-        # Branch review R1 n2: gate on phish_gated_unproven_captures?, not unproven_captures?. An
-        # entry unproven only because a part 3 proof (a captureProof) has not yet held can never be
-        # advanced by a sync_state request (part 3 proofs arrive through other routes), so it needs
-        # no fingerprint; walking the whole mailbox to produce one a sync can never move is wasted.
-        @phish_fp_before = (!stale && @game.phish_gated_unproven_captures?) ? @game.phish_evidence_fingerprint : nil
         # Snapshot the last-write-wins sections before the merge so the ring can
         # record only the keys a merge actually changed (a no-op resend then
         # records nothing and forces no save). Taken only on the path that merges
@@ -949,27 +940,12 @@ module BreakEscape
       @capture_answers = {}
       @capture_refused = {}
       @capture_incoming_any = incoming.any?
-      # 6b: a request that carries globalVariables or mailState can complete an unproven entry's
-      # part 2 evidence, so the step runs (and loads the scenario) to stamp it, even with no new
-      # capture. A stale request's mail is not merged and confirms nothing, so it never stamps.
-      # 6b review m1: only when this request actually advanced the phish evidence. The merge has
-      # already run, so compare the post-merge fingerprint (counting the request's own sent
-      # messages, so a mail section refused over a cap still counts) with the pre-merge one. When
-      # they match, no new evidence arrived and the scenario load is skipped, so a forged,
-      # never-provable unproven entry does not force the load on every later sync.
-      mail_incoming = params[:mailState].respond_to?(:to_unsafe_h) ? params[:mailState].to_unsafe_h : nil
-      # Branch review R1 m1: parse the incoming mail (incoming_sent_messages re-sanitises the whole
-      # body) only when extra_sent can be used: when this request can advance the phish evidence
-      # (an unproven phish-gated entry, so @phish_fp_before is set), or carries a new capture, or
-      # has a legacy global to migrate and then stamp. The common sync (no incoming, nothing
-      # unproven and phish-gated, no legacy) now skips the second mail walk.
-      extra_sent = (!stale && (incoming.any? || !@phish_fp_before.nil? || @game.legacy_captures?)) ?
-        @game.incoming_sent_messages(mail_incoming) : []
-      needs_stamp = false
-      if !stale && !@phish_fp_before.nil?
-        needs_stamp = @game.phish_evidence_fingerprint(extra_sent: extra_sent) != @phish_fp_before
-      end
-      return if incoming.empty? && !@game.legacy_captures? && !needs_stamp
+      # Chunk C (plan section 6): a sync_state request can no longer advance the phish evidence.
+      # The gate reads only the two server-owned stores (seLandingPages, sePhishSends), written by
+      # the two gated routes, each of which re-stamps the capture itself. So the sync step runs only
+      # when it has a capture to record or a legacy se_captures global to migrate; it no longer
+      # fingerprints the mailbox or forwards the request's own sent messages.
+      return if incoming.empty? && !@game.legacy_captures?
 
       scenario = @game.stored_scenario_data
       @game.migrate_legacy_captures!(scenario: scenario) if @game.legacy_captures?
@@ -998,14 +974,13 @@ module BreakEscape
         @capture_refused[target_id] = 'invalid'
       end
 
-      # 6b: stamp proven: true on any unproven entry whose evidence now holds, counting the
-      # request's own sent messages (the capture and its landed phish mail ride one sync; a mail
-      # section refused over a cap still proves the capture). Non-stale only: a stale request's
-      # mail is not merged. The answers rebuild below from the stamped record.
+      # Stamp proven: true on any unproven entry whose evidence now holds (reading the server
+      # stores; a capture recorded here is served the instant its route-written evidence is there).
+      # Non-stale only: a stale request records but does not stamp. The answers rebuild below from
+      # the stamped record.
       return if stale
 
-      # extra_sent was computed above (reused from the needs_stamp fingerprint check).
-      @game.stamp_proven_captures!(scenario: scenario, extra_sent: extra_sent)
+      @game.stamp_proven_captures!(scenario: scenario)
     end
 
     # params[:captures] (an array) plus each value of the old tab's
@@ -1700,7 +1675,10 @@ module BreakEscape
 
       choices = params[:choices]
       choices = choices.to_unsafe_h if choices.respond_to?(:to_unsafe_h)
-      input = { 'pageId' => params[:pageId], 'targetId' => params[:targetId], 'choices' => choices }
+      # A+B R2 minor 1: the reload re-drive marks its body redrive:true so the model refuses to
+      # replace a recorded meetsThreshold build with a weaker one. Passed only as a trusted boolean.
+      input = { 'pageId' => params[:pageId], 'targetId' => params[:targetId], 'choices' => choices,
+                'redrive' => params[:redrive] == true }
 
       result = @game.build_landing_page!(input)
       render json: result[:body], status: result[:status]

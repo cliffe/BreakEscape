@@ -160,6 +160,37 @@ module BreakEscape
       assert_equal 1, store.size, 'the rebuild replaces the entry, it does not add a row'
     end
 
+    # A+B R2 minor 1: a reload re-drive (body redrive:true) must never downgrade a recorded build.
+    # A convincing page is recorded, then a re-drive posts weaker choices (a drifted client global):
+    # the server keeps the stronger recorded verdict. A normal rebuild (no flag) would last-wins.
+    test 'a re-drive never downgrades a recorded convincing build' do
+      build_game
+      post_build(choices: CONVINCING)
+      assert_response :success
+      assert_equal true, store['payroll_login']['meetsThreshold']
+
+      post game_path('se/landing_page'),
+           params: { pageId: 'payroll_login', targetId: 'lord', choices: WEAK, redrive: true }, as: :json
+      assert_response :success
+      entry = store['payroll_login']
+      assert_equal true, entry['meetsThreshold'], 'the re-drive does not replace the strong build with a weak one'
+      assert_equal 87, entry['credibility'], 'the recorded convincing verdict is kept'
+      assert_equal true, response.parsed_body['meetsThreshold'], 'the answer reports the kept strong verdict'
+    end
+
+    # An honest deliberate weaken (no re-drive flag) still lowers the verdict (live case f: a
+    # rebuild replaces the entry), so the downgrade guard bites only the reload re-drive.
+    test 'an honest rebuild without the re-drive flag still lowers a convincing build' do
+      build_game
+      post_build(choices: CONVINCING)
+      assert_response :success
+      assert_equal true, store['payroll_login']['meetsThreshold']
+
+      post_build(choices: WEAK)
+      assert_response :success
+      assert_equal false, store['payroll_login']['meetsThreshold'], 'a normal rebuild is last-wins'
+    end
+
     test 'a convincing fakeCheck build records the server verdict from the check choices' do
       build_game(fakecheck_scenario)
       post_build(page_id: 'e10_check', target_id: 'visitor', choices: CHECK_CONVINCING)

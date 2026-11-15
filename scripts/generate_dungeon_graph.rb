@@ -25,6 +25,7 @@ require_relative '../lib/break_escape/npc_habits'
 require_relative '../lib/break_escape/npc_habits/clues'
 require_relative '../lib/break_escape/access_work'
 require_relative '../lib/break_escape/wearable_model'
+require_relative '../lib/break_escape/scenario_binding'
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -51,43 +52,12 @@ JSON_FILE     = File.join(File.dirname(SCENARIO_FILE), 'dungeon_graph.json')
 SCENARIO_ID   = File.basename(File.dirname(SCENARIO_FILE))
 
 # ---------------------------------------------------------------------------
-# ERB context — replicates app/models/break_escape/mission.rb ScenarioBinding
-# ---------------------------------------------------------------------------
-class ScenarioBinding
-  def initialize
-    @random_password = SecureRandom.alphanumeric(8)
-    @random_pin      = rand(1000..9999).to_s
-    @random_code     = SecureRandom.hex(4)
-  end
-
-  attr_reader :random_password, :random_pin, :random_code
-
-  def vm_context
-    nil
-  end
-
-  def vm_object(_title, fallback = {})
-    fallback.to_json
-  end
-
-  def flags_for_vm(_vm, fallback = [])
-    fallback.to_json
-  end
-
-  def vm_flags_json(_vm, fallback = [])
-    fallback.to_json
-  end
-
-  def get_binding
-    binding
-  end
-end
-
-# ---------------------------------------------------------------------------
-# Parse
+# Parse: one ERB binding for every renderer (plan step 5). The generator's old copy had its
+# own vm_flags_json returning the fallback array; it now renders through the server's
+# BreakEscape::ScenarioBinding, so the top-level `flags` block is the Hash the server builds.
 # ---------------------------------------------------------------------------
 src      = File.read(SCENARIO_FILE)
-rendered = ERB.new(src).result(ScenarioBinding.new.get_binding)
+rendered = BreakEscape::ScenarioBinding.render(src)
 scenario = JSON.parse(rendered)
 
 # ---------------------------------------------------------------------------
