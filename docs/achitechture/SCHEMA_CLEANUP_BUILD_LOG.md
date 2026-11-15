@@ -98,10 +98,19 @@ Fixes for the first review of slice 1 (1 M, 5 m).
 
 - M1: the `triggerOnInteract` item schema moved to `#/definitions/action` (open, `additionalProperties: true`) and both `triggerOnInteract[].items` and `timers[].actions[].items` `$ref` it. Timer actions now accept every action key, so `emit_event`/`event_name`, `complete_task`/`taskId`, `set_global` `key` and `value`, `lighting_dip` `level` and `ms`, and `unlock_door` `room_id` give no warning, and the `roomId` suggestion for `unlock_door` is gone. The shared `item` property is `$ref #/definitions/item` (the timer side already used it; the first R1 attempt used a plain object and `scenario_schema_test` caught the `setVariable` map under nil), and the corpus output is unchanged by it. The test fixture's timer carries one action of each of those types and asserts no warning.
 - m1: top-level `phoneNPCs` is declared as legacy (like `npcs`), so a scenario using it gets only the existing ERROR. A test asserts it.
-- m2: the reader-name check no longer reads `scripts/validate_scenario.rb`. That exposed two declared keys only the validator names, `fireOnlyWhenLoaded` (event mapping) and `mutuallyExclusiveGlobals` (top level); both are on the no-reader list for slice 2. For the blocks slice 1 rewrote (music events, `triggerOnInteract` actions, timers, `behavior.hostile`) every declared key must now be read as a property access (`entry.key`, `action.key`, `timer.key`, `hostile?.key`) in that block's reader files, comments removed. A second test proves `task_id`, `aim_id`, `volume`, `loop`, `fadeIn` and `fadeOut` fail it. The header states what is and is not proven.
+- m2: the reader-name check no longer reads `scripts/validate_scenario.rb`. That exposed two declared keys only the validator names, `fireOnlyWhenLoaded` (event mapping) and `mutuallyExclusiveGlobals` (top level); both are deliberate validator opt-outs and sit on their own VALIDATOR_ONLY list (R2 m1), never queued for retirement. For music events, timers and `behavior.hostile` every declared key must now be read as a property access (`entry.key`, `timer.key`, `hostile?.key`) in that block's reader files, comments removed; for `triggerOnInteract` actions only the keys slice 1 added are checked that way (R2 m2), since apply-actions.js reads the rest by destructuring or passes the object on. A second test proves `task_id`, `aim_id`, `volume`, `loop`, `fadeIn` and `fadeOut` fail it. The header states what is and is not proven.
 - m3: `revoke_card` and `remove_item` are real cases in `apply-actions.js`, so both are in the action type enum. `set_costume` reads `costume ?? id ?? value`, so `id` is declared too (`value` already was).
 - m4: the fixture's blocks loop now also covers declared grant items, account profile contents, `startItemsInInventory`, `contents`, `itemsHeld`, objectives, tasks, `doors[]`, `hostile`, `patrol` and timer actions, each with one undeclared key giving exactly one warning.
 - m5: the build log line about message wording corrected (above); the new labels stay.
 - m6: em dashes in the validator messages left as they are; the slice 2 note about test coverage added.
 
 Corpus after R1 (`--no-graph`, 181 scenarios): all exit 0, 73 ERROR lines identical per scenario to before, unknown-key warning lines 120, all WARNING lines 738 (identical to the pre-fix output).
+
+
+## R2 review outcomes (delta, 15 Nov)
+
+SHIP, 0/0/2, both fixed by the integrator:
+- m1: `fireOnlyWhenLoaded` and `mutuallyExclusiveGlobals` moved from NO_READER to a VALIDATOR_ONLY list in the reader test. They are validator opt-outs that scenarios use on purpose (test_needs_sims, test_access_social, sis02_energy), so slice 2 must not retire them.
+- m2: the test header and the m2 line above now say the triggerOnInteract action check covers only the keys slice 1 added.
+
+Notes for slice 2, not counted: `onConfirm` items are still a plain object, not `$ref #/definitions/action`, so a typo inside a confirm_action's actions gets no warning; the type enum still lists `unlock_task` and `unlock_aim`, which apply-actions.js has no case for. Both predate slice 1.

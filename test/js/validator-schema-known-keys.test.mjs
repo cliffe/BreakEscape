@@ -6,10 +6,13 @@
 //      timers, music events, triggerOnInteract);
 //   3. every key the schema declares is named in engine, server or tools source (not the validator
 //      or the schema, which would match themselves) or is on the short no-reader list; a name match
-//      anywhere is all this proves. For the blocks slice 1 rewrote (music events, triggerOnInteract
-//      actions, timers, behavior.hostile) it is stricter: the key must be read as a property access
-//      (`entry.key`, `action.key`, `timer.key`, `hostile?.key`) in that block's reader files, comments
-//      removed. The old dead keys (task_id, aim_id, volume, loop, fadeIn, fadeOut) fail that check.
+//      anywhere is all this proves. For the blocks slice 1 rewrote it is stricter: music events,
+//      timers and behavior.hostile check every declared key as a property access (`entry.key`,
+//      `timer.key`, `hostile?.key`) in that block's reader files, comments removed; triggerOnInteract
+//      actions check only the keys slice 1 added there (apply-actions.js reads the rest by
+//      destructuring, passes the object on, or the server reads them). The old dead keys (task_id,
+//      aim_id, volume, loop, fadeIn, fadeOut) fail that check. Validator-only opt-outs
+//      (VALIDATOR_ONLY) are deliberate and never queued for retirement.
 // Run with: node --test test/js/validator-schema-known-keys.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -120,6 +123,11 @@ test('timer actions of every action type give no unknown-key warning, and roomId
   assert.ok(!/roomId/.test(bad[0]));
 });
 
+// Validator opt-outs: the schema declares them for the validator only ("Validator opt-out, no effect
+// in the game"; "The onceOnly overlap check reads these"), and scenarios use them on purpose. They are
+// exempt like puzzle_graph_* author metadata and must not be retired.
+const VALIDATOR_ONLY = ['fireOnlyWhenLoaded', 'mutuallyExclusiveGlobals'];
+
 // Keys the schema declares that nothing reads (no engine, server or tools source names them).
 // Slice 2 of the schema cleanup retires or explains each; remove an entry once it has a reader or
 // leaves the schema. The test fails on a stale entry as well as on a new key with no reader.
@@ -127,9 +135,7 @@ const NO_READER = [
   'canScanBluetooth',     // item
   'durationTargetMin',    // social awareness episode
   'externalVariables',    // npc
-  'fireOnlyWhenLoaded',   // event mapping: only the validator names it
   'genericValues',        // social phish target primedFor
-  'mutuallyExclusiveGlobals', // top level: only the validator names it
   'persistentVariables',  // npc
   'reportAlwaysVisible',  // social awareness defend: "Reserved, not read"
   'showTitleScreen',      // top level: "No reader on main"
@@ -177,7 +183,7 @@ test('every declared key has a reader, or is on the short no-reader list', () =>
   const src = sourceText();
   const read = (k) => new RegExp(`(^|[^A-Za-z0-9])${k.replace(/[.*+?^${}()|[\]\\-]/g, '\\$&')}($|[^A-Za-z0-9])`).test(src);
   // puzzle_graph_* is author metadata for the dungeon graph, which may name it only by its prefix.
-  const unread = [...keys].filter((k) => !k.startsWith('puzzle_graph_') && !read(k)).sort();
+  const unread = [...keys].filter((k) => !k.startsWith('puzzle_graph_') && !VALIDATOR_ONLY.includes(k) && !read(k)).sort();
   assert.deepEqual(unread.filter((k) => !NO_READER.includes(k)), [], 'declared keys nothing reads (add a reader, drop the key, or list it in NO_READER for slice 2)');
   assert.deepEqual(NO_READER.filter((k) => !unread.includes(k)), [], 'NO_READER entries that now have a reader or are no longer declared');
 });
