@@ -3710,7 +3710,8 @@ password/cryptex matches as a whole word inside prose); loosening that would fal
 `1234`, `12-30-5` in ordinary text, dates and room numbers. These stay human-review territory.
 
 **Scan tuning (noise), not the match rule.** The class-3 value check is scoped by
-`CLASS3_VALUE_EXEMPT_KEYS = %w[postitNote text message observations name]` in the test. Over the whole
+`CLASS3_VALUE_EXEMPT_KEYS = %w[postitNote text message observations]` in the test (`name` was
+exempt at first and is now checked; see the narrowing note at the end of this log). Over the whole
 corpus (180 scenarios) every class-3 value match outside `scenario_brief` landed on one of these
 in-world clue-delivery fields, where a value match is by design and not a leak:
 
@@ -3724,8 +3725,9 @@ in-world clue-delivery fields, where a value match is by design and not a leak:
 - `message` -- NPC dialogue (`eventMappings` `sendTimedMessage`): m02_ransomed_trust sticky-note
   credentials. Spoken lines are best effort under the cheat policy, like `GET ink`, already skipped.
 - `observations` -- item examine text: test-tesseract-probes `objects[8]/observations`.
-- `name` -- item/object display name. Also the test_unlock_gaps false positive the `playerInventory`
-  remap fixed: "Pocket Cryptex" (a name) whole-word-matches its own cryptex answer POCKET, not a leak.
+- `name` is NOT exempt (changed at the step 3 merge, 0fbef85ed). A display name is a framing field,
+  as in step 3's narrative check. Its one corpus hit, test_unlock_gaps' "Pocket Cryptex" over the
+  answer POCKET, was fixed in the scenario (answer now TINDER, 5124574c4).
 
 Exempting these leaves the check covering author metadata not meant as an in-world clue, above all
 `scenario_brief` (served by `GET scenario`), which is the realistic leak Major 1 flagged.
@@ -4552,3 +4554,26 @@ and served from GET /capture_secrets only after the dropped-USB proof holds; the
 there is no first-request difference. (A harmless `PAGEERROR ... reading 'length'` prints during an
 overlay close on both runs and fails no check.) The server was stopped by its logged PID
 (`2147008`) and port 3678 confirmed down. No new gems or npm packages.
+
+### Narrative and class 3 checks narrowed to framing fields (orchestrator, 2026-11-15)
+
+Commits fb22ad44c and 5124574c4 on build/hard-step3, then the merge 0fbef85ed on build/hard-6a1-scan.
+This supersedes the field list and the "32 new WARNING lines" delta in "Step 3 review R3 fixes" above.
+
+- **Step 3's narrative check** (`scripts/validate_secret_leaks.rb`, `NARRATIVE_STRING_KEYS`) now reads
+  only the framing fields: `scenario_brief`, `endGoal`, and each object's and room's `name`,
+  `door_sign` and `lockedHint`. Note `text` and `observations` were dropped. They are the game's clue
+  surfaces, and every one of the 32 corpus hits there was a deliberate clue (a password on a post-it,
+  a PIN on a scrap of paper), so the warning was noise.
+- **The scan's class 3 value check** exempts `postitNote`, `text`, `message` and `observations`, and
+  checks `name`. The two checks agree on the framing fields. The scan uses an exempt list rather
+  than an allow list, so it also checks other declared text such as `scenario_name`: it is stricter,
+  never looser.
+- **test_unlock_gaps:** its brief no longer lists the answers (they stay on the in-game Codes note),
+  and the pocket cryptex answer is TINDER, six letters like the six-wheel cryptex.
+- **Corpus after the narrowing:** 0 narrative warnings from the validator, and 0 scan findings with 0
+  exceptions over 180 scenarios.
+- **What neither check can catch:** a secret shorter than 6 characters (a PIN, a four-letter word)
+  inside prose; a combination written into prose in another form; and a 6+ character answer pasted
+  into note text or observations that was not meant as that lock's clue. These stay human-review and
+  playtest territory.
