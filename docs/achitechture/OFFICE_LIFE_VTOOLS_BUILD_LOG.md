@@ -122,3 +122,7 @@ V9's baseline format stays 2: the snapshot fields are unchanged, only the rows `
 Every `scenarios/*/scenario.json.erb` (179) was validated with `--no-graph --skip-ink --no-lint`, once with main 32516127c's `scripts/` and `lib/` and once with this branch. Exit codes are identical for every scenario, `❌` counts are identical, and nothing printed `could not run`. (Six scenarios first showed exit 1 on main, from the scratch copy's absolute paths missing `validator_known_failures.json`; rerun with repo-relative paths, all six exit 0.) Warnings differ only in `lab_physical_pentest` (+1), `test_access_social` (+4), `test_access_work` (+3) and `test_needs_sims` (+2), the same V8 lines and counts as at R1. m01 to m10: exit 0, no office-life warning or error, and no V8 info line (m02 and m09 included). V8 info lines print for the same nine lab and test scenarios as at R0.
 
 V9 on scratch copies of m01 to m10: `--write` then a diff gives "empty", exit 0, for all ten.
+
+### R2 suites
+
+On aa4cc5844: `bin/test-js -j 3` 657 files passed, 0 failed; `test/unit/break_escape/tts_office_lines_test.rb` (keyless) 9 runs, 0 failures, 0 skips. The full Rails suite was not run this round: no Rails code changed.
