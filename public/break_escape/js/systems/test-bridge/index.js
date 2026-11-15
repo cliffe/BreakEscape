@@ -1479,7 +1479,10 @@ const bridge = {
 
         let target;
         if (labelMatch) {
-            target = buttons.find(b => (b.innerText || '').toLowerCase().includes(String(labelMatch).toLowerCase()));
+            // A display dialog's only close control is the X, labelled by aria-label, so the label
+            // matches that too ("Close" finds the X).
+            const want = String(labelMatch).toLowerCase();
+            target = buttons.find(b => ((b.innerText || '') + ' ' + (b.getAttribute('aria-label') || '')).toLowerCase().includes(want));
             if (!target) return fail(`no-button-matching:${labelMatch}`, { blocker });
         } else if (buttons.length === 1) {
             target = buttons[0];

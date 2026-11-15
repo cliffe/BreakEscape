@@ -486,9 +486,6 @@ export function gameDisplay(message, title = '', options = {}) {
                 <button class="game-modal-close" aria-label="Close">&times;</button>
                 ${title ? `<div class="game-display-title">${html ? title : ''}</div>` : ''}
                 <div class="game-display-body">${html ? String(message).replace(/\n/g, '<br>') : ''}</div>
-                <div class="game-confirm-buttons">
-                    <button class="game-confirm-btn game-confirm-ok">Close</button>
-                </div>
             </div>`;
         if (!html) {
             // Author text in, plain text out: textContent, never innerHTML.
@@ -496,11 +493,24 @@ export function gameDisplay(message, title = '', options = {}) {
             setPlainLines(overlay.querySelector('.game-display-body'), displayDashes(message));
         }
 
+        // The X is the only close control (UX design language: no Close button beside it),
+        // and Esc closes through the modal stack. Focus starts on the X so Enter or Space
+        // closes it from the keyboard, and goes back to whatever had it on close.
+        const closeBtn = overlay.querySelector('.game-modal-close');
+        const previousFocus = document.activeElement;
+        let done = false;
         const unregister = registerModal(() => finish());
-        const finish = () => { unregister(); overlay.remove(); resolve(); };
-        overlay.querySelector('.game-confirm-ok').addEventListener('click', finish);
-        overlay.querySelector('.game-modal-close').addEventListener('click', finish);
+        const finish = () => {
+            if (done) return;
+            done = true;
+            unregister();
+            overlay.remove();
+            try { if (previousFocus && previousFocus.isConnected && previousFocus.focus) previousFocus.focus(); } catch (e) { /* best effort */ }
+            resolve();
+        };
+        closeBtn.addEventListener('click', finish);
         document.body.appendChild(overlay);
+        try { closeBtn.focus(); } catch (e) { /* best effort */ }
     });
 }
 

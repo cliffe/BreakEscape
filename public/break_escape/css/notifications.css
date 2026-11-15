@@ -296,6 +296,12 @@ body.hud-compact .notification.brief .notification-message {
     line-height: 1.5;
     overflow-y: auto;
     flex: 1;
-    margin-bottom: 20px;
+    /* No button row below: the dialog's own padding closes the frame */
+    margin-bottom: 0;
     padding-right: 4px;
+}
+
+/* With no title the body starts at the top edge, under the close X */
+.game-display-dialog .game-display-body:first-child {
+    padding-right: 40px;
 }
