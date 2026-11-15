@@ -340,9 +340,9 @@ module LockKeyDiff
       # naming only an optional room.
       rs = if kind == 'global_variable_changed'
              global_set_rooms(rooms, tgt, base_dir) | [holder_room]
-           else
+      else
              [(tgt && (placement[tgt] || (rooms.key?(tgt) ? tgt : nil))) || holder_room]
-           end
+      end
       rs.compact.each { |room| done.each { |tid| out << [room, "task #{tid} (mapping '#{m['eventPattern']}')", id] } }
     end
     out.uniq.sort_by { |r| r.map(&:to_s) }

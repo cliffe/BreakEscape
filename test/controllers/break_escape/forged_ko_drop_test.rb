@@ -179,7 +179,7 @@ module BreakEscape
       assert_equal 200, drop('sarah', { 'type' => 'key', 'id' => 'sarah_held_0', 'name' => 'Office Key' }).status
       assert_equal ['sarah_held_0'], added.map { |o| o['id'] }
     end
-  
+
     test 'M1: a phone NPC listed in a room is never KO, so a forged KO drops nothing' do
       build
       get_room('reception_area')

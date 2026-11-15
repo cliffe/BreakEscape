@@ -284,5 +284,4 @@ class NpcHabitsCluesTest < ActiveSupport::TestCase
     refute CL.readable_texts(no_need).any? { |t| t[:path].include?('/feed/') }
     refute CL.backing(no_need['rooms']['office']['npcs'][0], no_need, CL.readable_texts(no_need), 'poster')[:backed]
   end
-
 end
