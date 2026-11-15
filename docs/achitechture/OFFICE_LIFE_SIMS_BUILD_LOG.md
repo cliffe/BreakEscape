@@ -513,6 +513,32 @@ Review: `docs/achitechture/OFFICE_LIFE_SIMS5_DESIGN_REVIEW_R2.md` (0 blockers, 5
 | M4: no echo on a shared pool | PASS | Game 5045: six cooler meetings, 14 lines, 4 passed over, 0 repeats within 120 s; Grace passed over "Friday drinks again?" 4 s after Rosa said it (`m4-5045.json`). Test aid: a 15 s cooldown set in the page for Grace, Rosa and Sanjay |
 | m8: no icon under a speech bubble | SEEN | Game 5045 `m4-cooler-5045.png`, game 5046 `m3-mid-mid-5046.png` |
 
+## SIMS-5 design R3 fixes (2026-11-15, build/ol-sims)
+
+Review: `docs/achitechture/OFFICE_LIFE_SIMS5_DESIGN_REVIEW_R3.md` (0 blockers, 4 majors, 4 minors; outcomes at its end). Commits `9a501c132` (scenario, README, V10 and its tests), then the docs commit.
+
+- **M1.** README tour split by door state: rows 1 to 3 (the queue, the Coffee Notice turn-back, the socket) under "Before you open any door", then "Now open the kitchen and lounge doors", then the rest. Rows renumbered in reading order: old 5 is now 2, old 6 is 3, old 2 is 4, old 3 is 5, old 4 is 6; rows 7 to 15 unchanged.
+- **M2.** Row 3 (the socket) now uses an Activity Board queue with the kitchen still shut, and says to switch the socket back on. The `npc_used:kitchen_coffee` + `office_coffee_off` mapping for `see_coffee_off` is gone; only the `off` turn-back ticks it. Task title rewritten to match. The coffee machine, copiers and their three sockets did not move.
+- **M3** (live proof open, see below). Marek's post and spawn moved from office (3,8) to (1.65,3.5), the north-west corner by the kitchen door, west of Sanjay's chair, so his walk to the cooler no longer passes behind a seated colleague. The engine's stuck recovery (E-carry above) is untouched; this sidesteps it. `see_outcast`: Sanjay's `npc_avoided` (avoidedId marek) now only sets `outcast_pending`; Marek's `npc_used:water_cooler` with it set ticks the task; `npc_returned_post:marek` clears it, so a walk that fails ticks nothing. New global `outcast_pending`.
+- **M4.** `scripts/validate_office_life.rb`: V10 ranks the blocks at an object nearest first (pair rules and the seat, then the object's own `private`, then a missing need, then an NPC not run, then a room leash). A need miss counts as far when either NPC is also leashed out of the room. Room-leash misses are dropped while a nearer one exists, objects are ordered by their nearest block, and the fixes come only from the nearest rank, so no fix opens a private room to bystanders. Fixtures f1 to f3 now read "'jodie' avoids 'keith'", "private to ["keith"]" and "'keith' has no need it meets", with no office staff named.
+- **m1.** Row 2 says to stand mid-office and that Sanjay may turn back at once from his desk. Grumbles still skip the earshot check: deferred, not a one-line change. Passing `unheard` in `_grumble` would turn every grumble in the node fixtures into a picture (their stub world answers `overheard: false` by default) and change the pinned sims-day hash, so it needs its own fixture changes and a browser regression. Owner item beside R2 m7.
+- **m2.** Row 4 (the memo) says Tom may join a short queue instead, and to read the memo again once he is back.
+- **m3.** V10's ring fix names any `desk_phone_ring:<id>` emit whose id is no desk phone's ("check the spelling").
+- **m4.** Not changed: owner note (toasts). The row 3 beat plays mid-screen with the player at the socket; the toasts cover the right third.
+
+**Spoken lines.** None added, changed or removed (0 / 0 / 0). Two task titles changed (`see_coffee_off`, `see_outcast`); they are read on screen, not voiced.
+
+**Tests.** `validator-office-life-v10.test.mjs` tests 36 (f1 to f3 as inline fixtures) and 37 (phone typo): 37 pass. `bin/test-js` in full on `9a501c132`: 662 files passed, 0 failed. Validator on the scenario: 0 errors, 32 warnings (the same set; only mapping indices moved).
+
+**Live proof** (keyless :3093, headless, `setFPS(20)` with fixed steps on, worktree `p-ol-sims5` detached at `9a501c132`; scripts and outputs in the session scratchpad `s5-design-r3-fix/`):
+
+| Check | Result | Evidence |
+|---|---|---|
+| M1: the tour top-down in one game | PASS | Game 5092: rows 1 to 6 in table order; each row's task ticked (`tour-5092.json`, `t-r1-queue-5092.png` to `t-r6-rota-0-5092.png`) |
+| M2: the socket beat on the queue, 3 runs | PASS 3/3 | Games 5092, 5093, 5094: Tom and Marek turned back with `off` and parked; `grumble_off` heard at 107 and 106 px (5092, 5094), a picture in 5093; `see_coffee_off` ticked on the turn-back; Marek drank at the kitchen machine once it opened (`t-r3-off-5092.png`) |
+| M3: the rota reaches the cooler, 3 runs | OPEN, 3 of 5 | Games 5092 (1/1) and 5093 (2/2): Marek drank at the cooler alone, Sanjay parked at his desk; `see_outcast` ticked after the drink (`t-r6-rota-1-5093.png`). Game 5094 (0/2): the rota was never read, the player stayed in the office with Marek idle at the new post by the west door (`t-r6-rota-0-5094.png`); suspected doorway crowding. Next: post (1.65, 4.0) and rerun |
+| m1: Sanjay's turn-back from mid-office | PASS | Line heard at 108, 21 and 99 px (5092 to 5094) |
+
 ## Engine and server changes (every slice)
 
 SIMS-4 R2 / SIMS-3 R4 fix round: none.
