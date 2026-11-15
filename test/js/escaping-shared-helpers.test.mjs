@@ -273,7 +273,7 @@ test('gameDisplay html mode inserts the built HTML as given, newlines as <br>', 
     assert.equal(dlg.querySelector('.game-display-body em').getAttribute('data-k'), 'a--b', 'no dash display inside markup');
     assert.ok(dlg.querySelector('.game-display-body').innerHTML.includes('line -- two'), 'the caller applies the dash display, not gameDisplay');
     assert.equal(dlg.querySelector('.game-display-title').textContent, 'T & C');
-    dlg.querySelector('.game-confirm-ok').click();
+    dlg.querySelector('.game-modal-close').click();
     await done;
 });
 
@@ -283,7 +283,7 @@ test('gameDisplay plain mode still shows hostile text as text with the dash disp
     const dlg = document.querySelector('.game-display-dialog');
     assertNoInjection(dlg, 'gameDisplay');
     assert.ok(dlg.querySelector('.game-display-body').textContent.includes('A – B'));
-    dlg.querySelector('.game-confirm-ok').click();
+    dlg.querySelector('.game-modal-close').click();
     await done;
 });
 
