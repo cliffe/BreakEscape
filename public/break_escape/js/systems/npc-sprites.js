@@ -1396,12 +1396,17 @@ function handleNPCCollision(npcSprite, otherNPC) {
         return;
     }
 
-    // ALWAYS trigger settling on collision, regardless of patrol type
-    // This prevents NPCs from being pushed across the room by pausing their behavior briefly
-    const gameTime = npcBehavior.clockNow ? npcBehavior.clockNow() : (npcSprite.scene?.time?.now ?? performance.now());
-    npcBehavior.triggerSettling(gameTime);
-    if (npcSprite.body) {
-        npcSprite.body.setVelocity(0, 0);
+    // Trigger settling on collision, regardless of patrol type: it stops NPCs pushing each
+    // other across the room. Not against a held body (seated, or held still while using
+    // something; OFFICE_LIFE_STUCK_RETURN.md): it cannot push, and the walker touching it
+    // re-collides every frame, so each settle ended in another and the walk never moved off
+    // the contact (game 5347: Marek against seated Sanjay's corner for 70 s). Physics
+    // separation slides the walker along it instead.
+    const otherHeld = !!otherNPC.body?.immovable;
+    if (!otherHeld) {
+        const gameTime = npcBehavior.clockNow ? npcBehavior.clockNow() : (npcSprite.scene?.time?.now ?? performance.now());
+        npcBehavior.triggerSettling(gameTime);
+        if (npcSprite.body) npcSprite.body.setVelocity(0, 0);
     }
 
     // Only handle waypoint avoidance if NPC is in patrol or face_player mode with waypoints
@@ -1457,7 +1462,7 @@ function handleNPCCollision(npcSprite, otherNPC) {
     // Just trigger settling to pause patrol
     
     // Trigger settling state to pause patrol briefly while physics settles
-    if (npcBehavior) {
+    if (npcBehavior && !otherHeld) {
         const gameTime = npcBehavior.clockNow ? npcBehavior.clockNow() : (npcSprite.scene?.time?.now ?? performance.now());
         npcBehavior.triggerSettling(gameTime);
         // Ensure velocity is zero while settling
