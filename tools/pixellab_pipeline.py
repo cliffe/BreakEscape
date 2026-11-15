@@ -1850,7 +1850,8 @@ def cmd_reroll(args):
             for i, url in enumerate(urls):
                 frame = api.download(url)
                 if not args.keep_white:
-                    frame, _ = clear_edge_white(frame)
+                    frame, _ = clear_edge_white(frame, args.white_threshold or
+                                                manifest[args.key].get("white_threshold") or WHITE_BG_THRESHOLD)
                 frame.save(out / f"frame_{i:03d}.png")
             print(f"t{n:02d}: {len(urls)} frames")
         finally:
@@ -1987,6 +1988,7 @@ def cmd_import(args):
         args.key = args.key or args.target
         args.idle_from = args.idle_from or manifest[args.target].get("idle_from")
         args.sit_from = getattr(args, "sit_from", None) or manifest[args.target].get("sit_from")
+        args.white_threshold = args.white_threshold or manifest[args.target].get("white_threshold")
         args.target = manifest[args.target]["character_id"]
     cid = resolve_character(args.target, args.workdir)
     api = PixelLab()
@@ -2025,7 +2027,7 @@ def cmd_import(args):
         # Rebuild from the last download, e.g. after `fix`. Overrides are reapplied.
         root = export_root_for(key)
         if not args.keep_white:
-            clear_white_backgrounds(root)
+            clear_white_backgrounds(root, args.white_threshold or WHITE_BG_THRESHOLD)
         apply_overrides(key, root)
         return convert_and_record(args, key, cid, character, DEFAULT_WORKDIR / "_export" / key)
 
@@ -2049,7 +2051,7 @@ def cmd_import(args):
         take_sit_from_state(root, state_folder(export_dir, sit_cid, sit_char, api), sit_char)
     if not args.keep_white:
         # Before the overrides, so a hand-edited frame is used exactly as committed.
-        clear_white_backgrounds(root)
+        clear_white_backgrounds(root, args.white_threshold or WHITE_BG_THRESHOLD)
     apply_overrides(key, root)
 
     return convert_and_record(args, key, cid, character, export_dir)
@@ -2130,6 +2132,8 @@ def convert_and_record(args, key, cid, character, export_dir):
         manifest[key]["idle_from"] = resolve_character(args.idle_from, args.workdir)
     if getattr(args, "sit_from", None):
         manifest[key]["sit_from"] = resolve_character(args.sit_from, args.workdir)
+    if getattr(args, "white_threshold", None):
+        manifest[key]["white_threshold"] = args.white_threshold
     IMPORT_MANIFEST.write_text(json.dumps(dict(sorted(manifest.items())), indent=2) + "\n")
     print(f"recorded {key} -> {cid} in {IMPORT_MANIFEST.relative_to(REPO)}")
     if args.register:
@@ -2459,6 +2463,10 @@ def main():
                    f"transparent (4-connected flood fill, every channel >= {WHITE_BG_THRESHOLD}), because "
                    "some PixelLab characters come back on opaque white. White enclosed by the figure "
                    "(eyes, badges, highlights) stays; a transparent frame is unchanged")
+    p.add_argument("--white-threshold", type=int,
+                   help=f"near-white cut-off for that fill (default {WHITE_BG_THRESHOLD}). Lower it for a "
+                   "character whose halo is darker and whose figure has no light greys of its own "
+                   "(check the palette first); remembered in the manifest for re-imports")
 
     p = sub.add_parser("qa", help="contact sheets + hints for reviewing an imported character's frames")
     p.add_argument("key", help="an imported key, e.g. bernie_nwosu")
@@ -2483,6 +2491,8 @@ def main():
     p.add_argument("--accept", help="install take tNN as overrides")
     p.add_argument("--keep-white", action="store_true",
                    help="keep a white background on downloaded takes (default: cleared, as in import)")
+    p.add_argument("--white-threshold", type=int, help="fill cut-off (default: the manifest's, else "
+                   f"{WHITE_BG_THRESHOLD})")
     p.add_argument("--dry-run", action="store_true")
     p.set_defaults(func=cmd_reroll)
 
