@@ -977,6 +977,29 @@ module BreakEscape
       refute_includes held, 'keycard_01', 'a delivered held item is not resurrected on the summoned body'
     end
 
+    # A native room NPC never ships creds, role or awareness (withhold_npc_secrets!,
+    # WITHHELD_NPC_KEYS). The cross-room injected copy is added to room['npcs'] before
+    # filter_requires_and_contents_recursive runs, so it goes through the same stripping.
+    # Pin it: a forged KO cannot turn a cross-room injection into a leak of these fields.
+    test 'a cross-room injected NPC has creds, role and awareness stripped like a native one' do
+      extra = {
+        'creds' => { 'username' => 'errand.svc', 'password' => 'hunter2', 'card' => { 'uid' => 'AA:BB' } },
+        'role' => 'security',
+        'awareness' => { 'phishing' => 3 }
+      }
+      game = ko_scenario_game(errand_extra: extra)
+      put sync_state_game_url(game), params: { npcHostility: {
+        'errand' => { hostile: true, ko: true, koRoom: 'break_room', koX: 150, koY: 260 }
+      } }, as: :json
+      assert_response :success
+
+      errand = room_npcs(game, 'break_room').find { |n| n['id'] == 'errand' }
+      assert errand, 'injected into the room it fell in'
+      refute errand.key?('creds'), 'creds are not served on the injected copy'
+      refute errand.key?('role'), 'role is not served on the injected copy'
+      refute errand.key?('awareness'), 'awareness is not served on the injected copy'
+    end
+
     # Review R1 m2: a scenario edit that drops koRoom must not strip the NPC from its
     # home room. With the room gone, the NPC is served at home, still KO'd.
     test 'a stored KO whose room no longer exists serves the NPC at home, not lost' do
