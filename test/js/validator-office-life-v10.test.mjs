@@ -16,7 +16,7 @@ const haveSchema = spawnSync('ruby', ['-e', "require 'json-schema'"], { encoding
 // V10 on an in-memory scenario object.
 function check(scenario) {
     const script = `require ${JSON.stringify(join(root, 'scripts/validate_office_life.rb'))}
-      puts JSON.generate(ValidateOfficeLife.check(JSON.parse(STDIN.read)))`;
+      puts JSON.generate(ValidateOfficeLife.check_v10(JSON.parse(STDIN.read)))`;
     const r = spawnSync('ruby', ['-e', script], { input: JSON.stringify(scenario), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' } });
     assert.equal(r.status, 0, r.stderr);
     return JSON.parse(r.stdout.trim().split('\n').pop());
@@ -31,11 +31,11 @@ function checkFile(relPath, { render = false } = {}) {
         ? `load ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
            require ${JSON.stringify(join(root, 'scripts/validate_office_life.rb'))}
            j, _ = render_erb_to_json(${JSON.stringify(abs)}, {}, include_rendered: true)
-           $stderr.puts JSON.generate(ValidateOfficeLife.check(j))`
+           $stderr.puts JSON.generate(ValidateOfficeLife.check_v10(j))`
         : `require ${JSON.stringify(join(root, 'lib/break_escape/scenario_binding.rb'))}
            require ${JSON.stringify(join(root, 'scripts/validate_office_life.rb'))}
            j = JSON.parse(BreakEscape::ScenarioBinding.render(File.read(${JSON.stringify(abs)}), {}))
-           puts JSON.generate(ValidateOfficeLife.check(j))`;
+           puts JSON.generate(ValidateOfficeLife.check_v10(j))`;
     const r = spawnSync('ruby', ['-e', script], { encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' } });
     assert.equal(r.status, 0, r.stderr);
     // The render path loads the full validator, which prints to stdout, so its result is on stderr.
