@@ -223,39 +223,3 @@ Owner: m06. Acknowledged clue (step 3). The custody console PIN (`data_center/ob
 Signed off by the hardening orchestrator, 2026-11-15.
 
 Owner: m08. Acknowledged clue in a global (step 3), printed as a warning, not an info line. The interrogation suite PIN is held in `globalVariables.suite_code` so Netherton's voiced ink can speak it. Server-held globals are dropped (q85); this is the cheat policy's best effort for a clue an NPC must say aloud.
-
-## 2026-11-15: crypto2 legacy PC requires
-
-```json
-{
-  "scenario": "scenarios/crypto2_rsa_asymmetric/scenario.json.erb",
-  "route": "GET room/:id",
-  "paths": ["rooms/room_start/objects[2]/requires"]
-}
-```
-
-Pending orchestrator sign-off. Awaiting orchestrator sign-off at the merge batch. Payload scan exception (6a-1, fresh state). The reception/start PC is a legacy `type:pc` object with `requires: "password"` and no `lockType`; the room filter strips `requires` only when a `lockType` is present, so the literal string `"password"` ships in the room payload. It is not the account answer and the PC is not locked, so step 3 warns the field is inert. The fresh-state scan fails closed on the unmarked `requires` until the owner removes the field. Only this one PC is reachable in the fresh state; the scenario's other legacy PCs sit in locked rooms and are the opened-state scan's (6a-2) concern.
-
-## 2026-11-15: crypto3 legacy PC requires
-
-```json
-{
-  "scenario": "scenarios/crypto3_aes_symmetric/scenario.json.erb",
-  "route": "GET room/:id",
-  "paths": ["rooms/room_reception/objects[0]/requires"]
-}
-```
-
-Pending orchestrator sign-off. Awaiting orchestrator sign-off at the merge batch. Payload scan exception (6a-1, fresh state). The reception PC is a legacy `type:pc` object with `requires: "password"` and no `lockType`; the room filter strips `requires` only when a `lockType` is present, so the literal string `"password"` ships in the room payload. It is not the account answer and the PC is not locked, so step 3 warns the field is inert. The fresh-state scan fails closed on the unmarked `requires` until the owner removes the field.
-
-## 2026-11-15: crypto4 legacy PC requires
-
-```json
-{
-  "scenario": "scenarios/crypto4_encoding_encryption/scenario.json.erb",
-  "route": "GET room/:id",
-  "paths": ["rooms/room_reception/objects[0]/requires"]
-}
-```
-
-Pending orchestrator sign-off. Awaiting orchestrator sign-off at the merge batch. Payload scan exception (6a-1, fresh state). The reception PC is a legacy `type:pc` object with `requires: "password"` and no `lockType`; the room filter strips `requires` only when a `lockType` is present, so the literal string `"password"` ships in the room payload. It is not the account answer and the PC is not locked, so step 3 warns the field is inert. The fresh-state scan fails closed on the unmarked `requires` until the owner removes the field.
