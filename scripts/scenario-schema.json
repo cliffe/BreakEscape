@@ -960,7 +960,7 @@
         "objectId": { "type": "string", "x-ref": "object" },
         "itemId": { "type": "string", "x-ref": "item", "description": "wear: the held wearable item to put on; take_off: the worn item to take off (absent: whatever is worn)" },
         "room_id": { "type": "string", "x-ref": "room" },
-        "item": {"x-id-map": false,  "type": "object" },
+        "item": { "$ref": "#/definitions/item" },
         "roomId": { "type": "string", "x-ref": "room" },
         "textureKey": { "type": "string" },
         "color": { "type": "number" },
