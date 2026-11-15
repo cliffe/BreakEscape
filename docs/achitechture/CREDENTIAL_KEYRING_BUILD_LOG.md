@@ -348,3 +348,106 @@ Suites (shared lock, tip before this line): JS 657 files passed, 0 failed; Rails
   chosen line gone, password empty. signin-fit: ALL PASS over 35 checks.
 
 Suites (shared lock, tip before this line): JS 657 files passed, 0 failed; Rails 2764 runs, 46029 assertions, 0 failures, 0 errors, 2 skips.
+
+## Slice K1: the registry, proofs and keyring (server and validator)
+
+Branch `build/keyring-k1` (worktree `.claude/worktrees/p-k1`), base main `9a20b4967`. No sign-in
+behaviour changes (plan 6): the client calls nothing new yet.
+
+### Deviations against the code's truth
+- Game includes concerns by `include` (not `extend ActiveSupport::Concern` on the host); `CredentialKeyring`
+  is added to the include list after `CaptureProofs`.
+- Plan 6.1 names `known_top_level` / `known_item_fields` lists in the validator. The validator has no
+  such lists: unknown keys are checked by `SchemaWalk` against `scenario-schema.json` (the one source,
+  as the K0 server half found). So `credentials`, policy `accepts` and item `credential` were added to
+  the schema; no separate known-key list exists to edit.
+- The `foothold` proof set in `check_credentials` is built from jack ids, Wi-Fi access-point ids and
+  `grant_foothold` PCs (the ids those actions create). This matches "any jack, access point or implant
+  action can create"; it is a superset that could miss an exotic implant id shape, but none exists in
+  the corpus.
+
+### Server (plan 6.1, 6.2)
+- `lib/break_escape/credential_model.rb` (new): `KINDS` (password/saved_connection/assist_invite
+  built; token and hash not built in K1), `DEFAULT_ACCEPTS` (no token until K5), `PROOF_KINDS`,
+  `proof_kind` (exactly one key), `registry` (first 64 by sorted id, Hash values only), `accepts` /
+  `accepts?` (password always accepted), `end_globals`, `room_npcs`, `account_npc`, `sign_in_pcs` /
+  `sign_in_pc`, `policy_for`, `pcs_accepting`, `pc_admits_account?`, `item_definition` (the static
+  `held` scope walk, declared grants and start inventory included). Plain Ruby, shared by the validator.
+- `app/models/break_escape/credential_keyring.rb` (new concern in `Game`): `credential_proof_holds?`
+  (session/planted/dropped through `capture_proof_holds?`; held identity-strict; foothold via
+  `player_state['footholds']`), `credential_held_proof_holds?` (type and id match, stored `credential`
+  equals the registry id, not `client_forged?`, no name fallback), `keyring_for_client`
+  (implicit captured entries from `account_capture_usernames` + `capture_secrets_for_client`, plus
+  registry entries of built kinds whose proof holds), `keyring_rev` (MD5[0,6] of the entries).
+- `lib/break_escape/item_identity.rb`: `credential` added to `FORGEABLE_ITEM_FIELDS`.
+- `app/models/break_escape/game.rb`: `include CredentialKeyring`; `filtered_scenario_for_bootstrap`
+  now `filtered.delete('credentials')` (server-only registry, stripped from the bootstrap).
+- `scripts/scenario-schema.json`: top-level `credentials` (closed entry shape, id pattern, proof
+  sub-object, x-serverOnly), policy `accepts` (unique strings), item `credential` (string).
+- `config/routes.rb`, `app/controllers/break_escape/games_controller.rb`,
+  `app/policies/break_escape/game_policy.rb`: GET `keyring` route; the `keyring` action (on
+  `set_game`, off `with_game_lock`, `no-store`, `rev`/`unchanged`, `foothold`/`from`/`relay` read as
+  the screen the client draws, never asserting reach); `GamePolicy#keyring?` = `show?`.
+
+### Validator (plan 6.3)
+- `scripts/validate_scenario.rb`: `require_relative '../lib/break_escape/credential_model'`;
+  `check_credentials(json_data)` wired into the run list after `check_access_model`. Covers all of
+  6.3's errors (unknown/not-built kind, accepts naming an unknown kind, account not a holder,
+  connectsTo rules, proof exactly-one and each kind's target, held item can-never-hold, notes-family /
+  always-allowed credential items, password foundIn rules, item `credential` naming a registry id,
+  endsOnGlobal, the 64 cap and id pattern) and the key warnings (no machine accepts, access list does
+  not admit, saved_connection with no reach, held/credential mismatch, grant-placed invite and saved
+  connection, session proof on an invite's own PC, accepts-without-password, unused accepts,
+  unlock_object on an invite PC) plus the saved_connection-maxAttempts info line.
+- A no-op on scenarios without `credentials` (verified on `m01_first_contact`: 0 errors, unchanged
+  warning set). Fires correctly on a crafted bad scenario (10+ distinct findings exercised by hand).
+
+### Tests (passing, run file by file)
+- `test/unit/credential_model_test.rb`: 12 runs / 40 assertions / 0 failures.
+- `test/models/break_escape/credential_keyring_test.rb`: 11 runs / 31 assertions / 0 failures (held
+  proof holds and drops; the three forgery cases: always-allowed notepad, wrong id, client-forged add;
+  session proof; assist invite relay route and ended; token/hash never listed; no password value; rev
+  stability; pc_id scope). Built from `test_simple_success` with scenario_data/player_state overridden
+  in memory.
+- `test/controllers/break_escape/keyring_route_test.rb`: 6 runs / 19 assertions / 0 failures (200 +
+  rev + entries + `no-store`; no non-password value; rev `unchanged`; stale rev; pc_id fields; parity
+  with GET /capture_secrets for another player's game).
+- `bin/rubocop` clean on every changed Ruby file.
+
+### Sync size (plan 6.6)
+Nothing is stored by K1. The bootstrap loses the `credentials` key (it never shipped a value anyway).
+GET /keyring is a read: at most 64 registry entries plus one per captured account; a repeat with a
+matching `rev` returns `{ rev, unchanged: true }`, a few bytes. Synced `player_state` is unchanged:
+K1 adds no key to it (the model test and route test override state in memory only).
+
+### Remaining for K1 (handover)
+Not built, in priority order. None blocks main (nothing client-side calls the new route; the validator
+and schema changes are inert without a `credentials` key):
+1. **`tools/playtest/lib/access_leak_scanner.rb`** (plan 6.1): flag a response carrying a `credentials`
+   key, a keyring entry whose proof does not hold in the recorded state, and a registry password entry
+   carrying `password`. Not started.
+2. **`test/controllers/break_escape/capture_secrets_unchanged_test.rb`** (plan 6.4): the golden check
+   that GET /capture_secrets answers are byte-identical (K1 edits none of its readers; this pins it).
+3. **`test/controllers/break_escape/sync_payload_size_test.rb`** (plan 6.4): bootstrap without
+   `credentials`; GET /keyring at 64 entries under 16 KB.
+4. **`test/js/validator-credentials.test.mjs`** (plan 6.4): one fixture per error and warning through
+   the real validator. The Ruby side is verified by hand; this is the standing regression harness.
+5. **Scenario `test_access_keyring`** (plan 9.1, 6.4): the full browser-only scenario (rooms, cast,
+   registry, Jake's invite/timer, policies, resources), its PLAYTEST.md with the expected warnings
+   (`ops_rdp`: no machine accepts it, by design) and its dungeon graph. Large; not started.
+6. **Dungeon graph edges** (plan 6.1): proof source -> credential node -> accepting PCs. Not started.
+7. **README_scenario_design.md** credentials section + correct line ~2753 (a reload resumes a timer
+   from its saved running time). **docs/IDEAS_BACKLOG.md**: the connection icon, the later kinds (RFID
+   card as credential, one-time code, key file), an optional per-entry teaching line.
+8. **Live proof (plan 6.5)** on a keyless server on :3062: GET /keyring from the page on a new
+   `test_access_keyring` game before/after each honest proof; the notepad forgery leaves the keyring
+   unchanged; the bootstrap has no `credentials` key. Needs the scenario (item 5) first.
+
+### Gotchas
+- A Game must be created from a real scenario name (`test_simple_success` works) before scenario_data
+  can be overridden; `Mission` name is unique, so reuse `@game.mission` for a second game in one test.
+- `keyring_for_client` is read-only (no `save!`), so tests override `scenario_data`/`player_state` in
+  memory; the route test uses `update_columns` to persist without the format/callbacks re-stamping.
+- The validator has no `known_top_level`/`known_item_fields` list; the schema is the one source.
+- Running `scripts/validate_scenario.rb` without `--no-graph` regenerates `dungeon_graph.*`; use
+  `--no-graph` for smoke runs (the smoke scenario lived in the scratchpad, so nothing tracked moved).
