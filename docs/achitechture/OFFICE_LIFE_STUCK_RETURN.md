@@ -20,6 +20,33 @@ Game 5446 was made and not driven.
 
 Still to do (the full live proof): row 2 5 of 5 with the stuck-return driver; why 5442 and 5443 had no turn-back (read `sanjay_log`; the late queue clear after the wedge is the likely cause, and should be gone now); three more row 1 wedge checks; the tour (rows 1, 3, 5, 6, driver `e617cd48f` not run yet); the train smoke on m01 and m02. Worth a look while there: the 4 s stand at the coffee before the walk home in 5447.
 
+## Full live proof (round 8 code)
+
+Run 2026-11-15 on `67bf8502f`, keyless server on port 3093, headless setFPS(20) with fixed steps, a fresh game per run. Row 2 uses the stuck-return driver with the player held at (232,176).
+
+| Run | Game | Result |
+|---|---|---|
+| Row 2, run 1 | 5448 | pass: `see_turned_back`, `see_look_round`; grumble spoken and overheard at 4.3 s; Marek home in 6 s |
+| Row 2, run 2 | 5449 | pass: both tasks; grumble spoken and overheard at 1.8 s; Marek home in 6 s |
+| Row 2, run 3 | 5450 | pass: both tasks; grumble spoken and overheard at 1.3 s; Marek home in 6 s |
+| Row 2, run 4 | 5451 | pass: both tasks; grumble spoken and overheard at 2.5 s; Marek home in 6.25 s |
+| Row 2, run 5 | 5452 | pass: both tasks; grumble spoken and overheard at 1.5 s; Marek home in 6 s |
+| Row 2, away point 300,40 | 5457 | partial: `see_turned_back` and `see_look_round` true; player held at (269,9), 267 px from Sanjay at (204,268); staff swivelled with reason `listen` from 121.25 s; Marek home in 2.75 s, no stalls; no spoken or overheard grumble. Not confirmed as a picture: `saying` is null in the listen probes and no event carries a picture flag for the grumble, so the driver cannot tell a picture from silence |
+| Tour row 1 | 5454 | pass (queue seen, 69 s) |
+| Tour row 3 | 5454 | fail: the switch-off itself worked (off, Marek and Tom turned back, Tom's grumble as a picture, back on), but the driver could not read the Activity Board first: three tries, player stopped at (220,103) aiming for (222,41), 62 px short, nudges moved 0 |
+| Tour row 5 | 5454 | pass (board read, chat seen at 25 s) |
+| Tour row 6 | 5454 | pass (Kitchen Rota read, 97 s) |
+| Train smoke m01 | 5455 | OK, start room `reception_area` |
+| Train smoke m02 | 5456 | OK, start room `reception_lobby` |
+
+Pass counts: row 2 5 of 5 for `see_turned_back` and `see_look_round`, 5 of 5 under 20 s home (6 to 6.25 s), 5 of 5 with a spoken overheard grumble. Away run: distance and swivelling met, picture not confirmed. Tour: rows 1, 5, 6 pass, row 3 fails on the board read. Train smoke 2 of 2, 0 page errors.
+
+Notes:
+- Game 5453 was a wrong first attempt at the away run (the point was passed as the stand argument, the 4th, not the away argument, the 5th); it behaved as a plain row 2 run with the player at (300,40) clamped to (279,210), 105 px from Sanjay, grumble overheard. It is not counted. Game 5457 is the real away run.
+- Row 3 cause (not fixed): the player's walk to the Activity Board (222,41) ends at (220,103) every try, with the nudge unable to move. Amara sits at about (228,123) with her desk and chair near that line, so something on the approach (her desk or chair) blocks the player; row 5 reached the same board at (219,47) from another approach in the same game. Likely a driver path problem, not Marek's or Sanjay's walk.
+- The tour log also has one `walk_stuck` for Grace at (42,138), tick 1240, early in the run; Grace carried on and the rows after it passed.
+- No `return_stuck` or `return_abandoned` in any row 2 run.
+
 ## Handover (2026-11-15, round 7, budget stop): not ready for code review (superseded by round 8 above)
 
 Status: **not ready**. Round 7 hit its tool-call budget part way through the live proof.
