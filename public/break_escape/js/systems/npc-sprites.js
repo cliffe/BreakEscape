@@ -1416,7 +1416,7 @@ function handleNPCCollision(npcSprite, otherNPC) {
     // re-collides every frame, so each settle ended in another and the walk never moved off
     // the contact (game 5347: Marek against seated Sanjay's corner for 70 s). Physics
     // separation slides the walker along it instead.
-    settleOnContact(npcBehavior, npcSprite, otherNPC);
+    const otherHeld = !settleOnContact(npcBehavior, npcSprite, otherNPC);
 
     // Only handle waypoint avoidance if NPC is in patrol or face_player mode with waypoints
     // (face_player is also a valid patrolling state, just with player-facing behavior)

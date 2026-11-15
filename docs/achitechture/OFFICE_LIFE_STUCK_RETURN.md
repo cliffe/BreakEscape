@@ -20,6 +20,25 @@ Game 5446 was made and not driven.
 
 Still to do (the full live proof): row 2 5 of 5 with the stuck-return driver; why 5442 and 5443 had no turn-back (read `sanjay_log`; the late queue clear after the wedge is the likely cause, and should be gone now); three more row 1 wedge checks; the tour (rows 1, 3, 5, 6, driver `e617cd48f` not run yet); the train smoke on m01 and m02. Worth a look while there: the 4 s stand at the coffee before the walk home in 5447.
 
+## Code review R1 fixes (2026-11-15): live re-check not done
+
+Status: **fixes in, live re-check still to do.** The R1 outcomes, one line per finding, are in `OFFICE_LIFE_STUCK_RETURN_REVIEW_R1.md` ("Outcomes"). Commits: `359bc1104` (the fixes, tests and driver changes) and the follow-up commit that fixes the `otherHeld` regression below and records this section.
+
+Suites on `359bc1104`: `bin/test-js` 675 files passed, 0 failed; `tts_office_lines_test.rb` 9 runs, 46 assertions, 0 failures; `bin/rubocop` 366 files, no offences. Not rerun after the one-line follow-up fix (`npc-needs-reroute-held.test.mjs` 10 passed on it).
+
+Live (port 3093, keyless, headless setFPS(20), fresh games):
+
+| Run | Game | Code | Result |
+|---|---|---|---|
+| Row 2, run 1 | 5458 | `359bc1104` | **broken by this branch, not a behaviour result**: page error `ReferenceError: otherHeld is not defined` on the first NPC contact; the needs clock stopped at about 6 s, driver `skipped: queue_never_cleared` |
+| Row 2, run 2 | 5459 | `359bc1104` | same page error and skip |
+
+Cause: the m7 refactor moved the settle guard into `settleOnContact` and dropped the local `otherHeld`, which `handleNPCCollision` still reads further down. Fixed in the follow-up commit (`const otherHeld = !settleOnContact(...)`). The node tests could not catch it because nothing drives `handleNPCCollision`.
+
+Not done (budget stop): row 2 twice on the fixed code, the away run with the new `sayings` and `sanjay_grumble_shown` records (`needs-stuck-return-proof.mjs` now wraps `npcNeedsSystem._showSaying` in the page), tour row 3 with the varied mid points and the `near` record (`needs-tour-regression.mjs`), and the lab_physical_pentest smoke (scratchpad script, 60 s of needs clock counting `walk_stuck`, `return_stuck`, `return_abandoned`, `seat_gave_up` and how far each needs NPC walked; `train-smoke.mjs` takes game ids only, so a boot smoke alone would not cover the walks). Games 5460, 5461 (test_needs_sims) and 5462 (lab_physical_pentest) were made and not driven.
+
+Behaviour changes to watch in that re-check: the world adapter now passes `reroute` to the behaviour layer (before, needs re-issues planned the plain path and only the detour used `includeHeld`), and the last re-route in one place nudges onto a walkable cell. Both reach every needs walk, so row 2 and row 1 timings may move. The tour row 3 stop in 5454 was not a different approach from row 5: both took mid (232,176) and aimed at (222,41), so what stopped the player at (220,103) was a body or chair that had moved by row 5.
+
 ## Full live proof (round 8 code)
 
 Run 2026-11-15 on `67bf8502f`, keyless server on port 3093, headless setFPS(20) with fixed steps, a fresh game per run. Row 2 uses the stuck-return driver with the player held at (232,176).
@@ -52,7 +71,7 @@ Notes:
 Status: **not ready**. Round 7 hit its tool-call budget part way through the live proof.
 
 Done and committed:
-- **Look-round radius** (`4ea5d4bc1`, coordinator's call after the user's "same earshot approach"). `seating.js` `LISTEN_RADIUS` is 160 px (was 128), the earshot default (`OVERHEAR_RADIUS`). `npc-needs.js` `_buildSpeakers` gives each speaker entry a `radius`: the pool's `overhearRadius` for a grumble or picture (`s.saying.radius`, set in `_showSaying`), `_chatRadius` for a chat line, `OVERHEAR_RADIUS` for a desk-phone call. `listenTarget` uses the entry's radius before its default. So whoever could hear a line turns to it. **Cross-mission effect:** seated staff in m01 to m10 look round at lines up to 160 px away (or a pool's own radius), so there is slightly more swivelling. Tests: `test/js/seating.test.mjs` (renamed listenTarget test, new radius test; 48 passed). Live: 5440 and 5441 both had `see_look_round`.
+- **Look-round radius** (`4ea5d4bc1`, coordinator's call after the user's "same earshot approach"). `seating.js` `LISTEN_RADIUS` is 160 px (was 128), the earshot default (`OVERHEAR_RADIUS`). `npc-needs.js` `_buildSpeakers` gives each speaker entry a `radius`: the pool's `overhearRadius` for a grumble or picture (`s.saying.radius`, set in `_showSaying`), `_chatRadius` for a chat line, `OVERHEAR_RADIUS` for a desk-phone call. `listenTarget` uses the entry's radius before its default. So whoever could hear a line turns to it. **Cross-mission effect (corrected after code review R1, m9):** none on main for m01 to m10. `listenTarget` is only called from `updateNeedsSeat` with the needs system's speakers, and no m01 to m10 scenario on main has a needsHome NPC. The player-facing scenario that gets this and the other needs-layer changes is lab_physical_pentest. The m02 office-life pilot (branch build/ol-m02, not on main yet) adds needs NPCs, so m02 will be affected when it lands. Tests: `test/js/seating.test.mjs` (renamed listenTarget test, new radius test; 48 passed). Live: 5440 and 5441 both had `see_look_round`.
 - **Bounded give-up** (`aaeb84a82`). `npc-needs.js` `RETURN_STUCK_MAX_BACKOFFS` (2): after two `return_stuck` back-offs in one place the walk home ends (`return_abandoned`), the NPC idles where it stands, and the next tick (selector first) re-plans one fresh walk home round held bodies (`_replanAbandoned`). A second abandon within `STUCK_SAME_PX` is `final` and leaves it idle until a job moves it. Test in `test/js/npc-needs-stuck-walk.test.mjs`. Seen live in 5439: `return_abandoned` at needs tick 675, `final` at 917, no further cycling.
 - **Pathfinding, clearance rings near the ends** (`d488b3552`). `npc-pathfinding.js` `_avoidDynamicPositions` with `includeHeld`: ring cells (the one-cell clearance round a body) within 2 cells of the start or goal are left open; body cells stay avoided. Test in `test/js/npc-needs-reroute-held.test.mjs`.
 - Drivers: `2d851fab1` (stuck-return driver dumps only walk stalls before the notice, up to four); `e617cd48f` (tour driver walks to 232,176 before each Activity Board read and records the move's aim, arrival and nudges; **not run yet**).
