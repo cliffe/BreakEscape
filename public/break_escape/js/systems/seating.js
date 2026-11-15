@@ -1733,6 +1733,10 @@ const NEAR_CHAIR = 36;      // px from the NPC's feet to a chair's foot to sit s
 const POST_SNAP = 48;       // px (1.5 tiles): at its post, an NPC this close to its home cell looks from there
 const FETCH_RANGE = 192;    // px to look for a chair to fetch
 const FETCH_TIMEOUT_MS = 15000;
+// At its post an NPC still standing tries its own chair again this often (needs clock): the first
+// try can end short (the walk onto the seat stuck against a colleague walking past), and a standing
+// NPC at a desk can block the only way to someone else's post (OFFICE_LIFE_STUCK_RETURN.md)
+const POST_SEAT_RETRY_MS = 4000;
 
 /** Where a needs NPC is parked: { key, targetId } or null while it's on the move. */
 export function needsStop(ns) {
@@ -1895,6 +1899,17 @@ export function needsSeatRef(feet, stop, home) {
     return { x: feet.x, y: feet.y };
 }
 
+/**
+ * Whether a needs NPC that has tried to sit at this stop tries again: only at its post (stop.post),
+ * once POST_SEAT_RETRY_MS of needs clock have passed since the last try. Away from the post one try
+ * is final (it never takes a chair it was passing).
+ */
+export function postSeatRetryDue(stop, triedAt, now) {
+    if (!stop?.post) return false;
+    if (!Number.isFinite(triedAt)) return true;
+    return now - triedAt >= POST_SEAT_RETRY_MS;
+}
+
 function updateNeedsSeat(behavior, ns, playerPos) {
     const sprite = behavior.sprite;
     const stop = needsStop(ns);
@@ -1970,8 +1985,13 @@ function updateNeedsSeat(behavior, ns, playerPos) {
 
     if (!stop || status.ko || status.hostile) { behavior._seatStopKey = null; return false; }
     if (behavior.isMoving || behavior._goToStayDest) return false;
-    if (behavior._seatStopKey === stop.key) return false; // already tried at this stop
+    const now = window.npcNeedsSystem?.clockMs ?? 0;
+    // Tried at this stop already: elsewhere that's final; at the post, try again now and then
+    const retry = behavior._seatStopKey === stop.key;
+    if (retry && (!postSeatRetryDue(stop, behavior._seatTriedAt, now)
+        || window.npcNeedsSystem?.world?.inChatWith?.(behavior.npcId))) return false; // not mid-conversation
     behavior._seatStopKey = stop.key;
+    behavior._seatTriedAt = now;
     if (!hasSitFrames(sprite.texture.key)) return false;
 
     const obj = needsObject(stop.targetId);
@@ -1989,7 +2009,8 @@ function updateNeedsSeat(behavior, ns, playerPos) {
         // Walk to the work cell, roll a swivel chair out to it and in to the desk front, walk onto the seat
         return startSeatMove(behavior, near.obj, near.seat, { toward, needsStop: stop.key, ref: { x: feet.x, y: feet.y } });
     }
-    if (pref !== 'fetch') return false;
+    // A retry sits only on a chair already there: fetching one is a single try per stop
+    if (pref !== 'fetch' || retry) return false;
     const fetchable = chairsNear(behavior.roomId, feet.x, feet.y, FETCH_RANGE)
         .filter(c => c.seat.kind === 'swivel' && c.obj.body && free(c))[0];
     if (!fetchable) return false; // work standing

@@ -223,6 +223,53 @@ test('needs NPC back at its post sits in its own chair though the walk stopped a
     } finally { rig.restore(); }
 });
 
+test('postSeatRetryDue: at the post every 4 s of needs clock; away from the post one try is final', () => {
+    assert.equal(seating.postSeatRetryDue({ post: true }, undefined, 0), true);
+    assert.equal(seating.postSeatRetryDue({ post: true }, 1000, 4999), false);
+    assert.equal(seating.postSeatRetryDue({ post: true }, 1000, 5000), true);
+    assert.equal(seating.postSeatRetryDue({ post: false }, 1000, 60000), false);
+    assert.equal(seating.postSeatRetryDue(null, 1000, 60000), false);
+});
+
+test('needs NPC standing at its post tries its chair again once it is free (OFFICE_LIFE_STUCK_RETURN round 4)', () => {
+    const rig = labSeatRig(235);
+    try {
+        rig.chair.seatedBy = 'someone_else'; // the first try finds no free chair: stands
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), false);
+        assert.equal(rig.behavior._seatMove ?? null, null, 'no seat move on the first try');
+        delete rig.chair.seatedBy;
+        window.npcNeedsSystem.clockMs = 3000;
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), false, 'not due yet');
+        window.npcNeedsSystem.world.inChatWith = () => true;
+        window.npcNeedsSystem.clockMs = 4000;
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), false, 'never mid-conversation');
+        window.npcNeedsSystem.world.inChatWith = () => false;
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), true, 'the retry walks onto the seat');
+        for (let i = 0; i < 40 && !rig.behavior._seat; i++) {
+            const v = rig.sprite.body.velocity;
+            rig.sprite.x += v.x * 0.05; rig.sprite.y += v.y * 0.05;
+            seating.updateSeatedNPC(rig.behavior, null);
+        }
+        assert.ok(rig.behavior._seat, 'seated');
+        assert.equal(rig.chair.seatedBy, 'pierce');
+    } finally { rig.restore(); }
+});
+
+test('a needs NPC stopped away from its post tries a chair once only', () => {
+    const rig = labSeatRig(235);
+    try {
+        window.npcManager = { getNPC: () => ({ needsHome: 'elsewhere' }) }; // at a stop that is not its post
+        const ns = window.npcNeedsSystem.states.get('pierce');
+        Object.assign(ns, { mode: 'job', atPost: false, job: { kind: 'use', phase: 'using', targetId: 'staff_pc_2', need: 'work' } });
+        rig.chair.seatedBy = 'someone_else';
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), false);
+        delete rig.chair.seatedBy;
+        window.npcNeedsSystem.clockMs = 60000;
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), false, 'no retry away from the post');
+        assert.equal(rig.behavior._seatMove ?? null, null);
+    } finally { rig.restore(); }
+});
+
 test('breathDown: head and shoulders are down for 40% of each 3.6s breath, offset by phase', () => {
     let down = 0;
     for (let t = 0; t < 3600; t += 10) if (seating.breathDown(t, 0)) down++;
