@@ -298,12 +298,13 @@
           "offWhen": "office_coffee_off"
         },
         {
-          "type": "wall_socket1",
+          "type": "power_socket2",
           "id": "office_coffee_socket",
           "name": "Wall socket",
-          "position": { "x": 9.05, "y": 7.3 },
+          "position": { "x": 8.65625, "y": 7.0625 },
+          "spriteVariants": [{ "condition": "globalVars.office_coffee_off", "value": "power_socket_off2" }],
           "takeable": false,
-          "_comment": "Slice 18a: the coffee machine's switch is its own object, so clicking the machine still shows its observations. The hint is worded as a state, so it reads well on every click, and carries a neutral title (without one it shows under 'Intelligence Received'). UX slice 15 R1 (m3, R4e) and R2 (n4): a named confirm each way, as every physical switch and as Ian's socket: switch off while it is on, switch back on while it is off.",
+          "_comment": "Slice 18a: the coffee machine's switch is its own object, so clicking the machine still shows its observations. The hint is worded as a state, so it reads well on every click, and carries a neutral title (without one it shows under 'Intelligence Received'). UX slice 15 R1 (m3, R4e) and R2 (n4): a named confirm each way, as every physical switch and as Ian's socket: switch off while it is on, switch back on while it is off. Power sockets (2026-11-15): now the 32x48 plug-and-cable sprite with an off variant, on the east wall where the old plate was, the cable dropping towards the machine.",
           "triggerOnInteract": [
             {
               "type": "confirm_action",
@@ -379,12 +380,14 @@
           "_comment": "Slice 7 producer: sanjay_pc's and tom_pc's onUse revealOutput show its first free slot (copier_out_a, then b to e). Slice 17: uncollectedAfterSeconds 150 is above Tom's fetchAfterSeconds range (30 to 120), so npc_print_uncollected:tom marks a print that is really forgotten. The copier preset (photocopier1) gives the rest of its affordance; nobody satisfies a need here. Slice 22: offWhen office_copier_off (set by office_copier_socket): while it holds Tom's prints go to the kitchen copier (his hook lists both) and Sanjay's (a string hook) print nothing; a print already on the tray stays."
         },
         {
-          "type": "wall_socket1",
+          "type": "power_socket_drop1",
           "id": "office_copier_socket",
           "name": "Wall socket",
-          "position": { "x": 5.6, "y": 1.75 },
+          "position": { "x": 5.90625, "y": 0.5 },
+          "wallMounted": true,
+          "spriteVariants": [{ "condition": "globalVars.office_copier_off", "value": "power_socket_drop_off1" }],
           "takeable": false,
-          "_comment": "Slice 22: the copier's switch, as the coffee machine's (slice 18a): a state-worded hint with a neutral title. UX slice 15 R1 (m3, R4e) and R2 (n4): a named confirm each way, as Ian's socket.",
+          "_comment": "Slice 22: the copier's switch, as the coffee machine's (slice 18a): a state-worded hint with a neutral title. UX slice 15 R1 (m3, R4e) and R2 (n4): a named confirm each way, as Ian's socket. Power sockets (2026-11-15): the 32x48 socket with an off variant. Round 2: the drop sprite (cable straight down to the floor line, as if under the carpet), because the copier stands below the floor line and could not hide a curl's end; plate where it was, sprite bottom on the floor line (depth 64.5, the back-wall level), wallMounted so reach is measured to the nearest part of the sprite (interaction-reach.js reachY).",
           "triggerOnInteract": [
             {
               "type": "confirm_action",
@@ -816,12 +819,13 @@
           "_comment": "Slice 22: Tom's second printer (his hook lists office_copier first). In the south-east corner, square to the east wall and clear of the door; the copier preset stands him below it. offWhen kitchen_copier_off, set by kitchen_copier_socket: with both copiers off his prints are blocked."
         },
         {
-          "type": "wall_socket1",
+          "type": "power_socket2",
           "id": "kitchen_copier_socket",
           "name": "Wall socket",
-          "position": { "x": 9.05, "y": 7.4 },
+          "position": { "x": 8.65625, "y": 6.625 },
+          "spriteVariants": [{ "condition": "globalVars.kitchen_copier_off", "value": "power_socket_off2" }],
           "takeable": false,
-          "_comment": "Slice 22: the kitchen copier's switch. UX slice 15 R2 (n4): a named confirm each way, as the office sockets and Ian's. UX slice 15 R3 (m2): on the east wall beside the copier, level with the walkable column at its side, so a click can reach it; at y 6.4 a tap walk stopped short and nothing opened.",
+          "_comment": "Slice 22: the kitchen copier's switch. UX slice 15 R2 (n4): a named confirm each way, as the office sockets and Ian's. UX slice 15 R3 (m2): on the east wall beside the copier, level with the walkable column at its side, so a click can reach it; at y 6.4 a tap walk stopped short and nothing opened. Power sockets (2026-11-14): now the 32x48 plug-and-cable sprite (top-left 8.66, 6.625; the plate sits where the old one was and the cable drops behind the copier), at least 32 px from the copier's position so one click cannot open both; a plate click from the kitchen floor walks up and opens the confirm.",
           "triggerOnInteract": [
             {
               "type": "confirm_action",

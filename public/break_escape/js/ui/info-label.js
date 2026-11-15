@@ -10,7 +10,7 @@ import { resolveObjectField } from '../utils/conditional-text.js';
 import { worldObservations } from '../utils/pc-observations.js';
 import { displayDashes } from '../utils/display-dashes.js';
 import { interactionLineClear } from '../systems/interaction-walls.js';
-import { reachX, aimX } from '../systems/interaction-reach.js';
+import { reachX, reachY, aimX } from '../systems/interaction-reach.js';
 
 const SIDE_DOOR_RANGE_SQ  = INTERACTION_RANGE_SQ * 4;  // 2× radius for E/W doors
 const SIDE_DOOR_Y_OFFSET  = INTERACTION_RANGE / 2;
@@ -132,13 +132,13 @@ export function updateInfoLabel() {
     let bestScore = Infinity;
     let bestText  = null;
 
-    function consider(ox, oy, text, rangeSq, target = null, faceX = ox) {
+    function consider(ox, oy, text, rangeSq, target = null, faceX = ox, faceY = oy) {
         if (!text) return;
         const dx = ox - px;
         const dy = oy - py;
         if (dx * dx + dy * dy > rangeSq) return;
         if (target && !interactionLineClear(player, target)) return; // wall between
-        const score = angularDiff(faceX, oy) * 1000 + Math.sqrt(dx * dx + dy * dy);
+        const score = angularDiff(faceX, faceY) * 1000 + Math.sqrt(dx * dx + dy * dy);
         if (score < bestScore) {
             bestScore = score;
             bestText  = text;
@@ -161,7 +161,7 @@ export function updateInfoLabel() {
                 }
                 // A sign-in PC with a sticky note picture says so (slice 9.2 B)
                 if (window.postitMarks?.label) text = window.postitMarks.label(obj.scenarioData?.id, text);
-                consider(reachX(obj, px), obj.y, text, INTERACTION_RANGE_SQ, obj, aimX(obj));
+                consider(reachX(obj, px), reachY(obj, py), text, INTERACTION_RANGE_SQ, obj, aimX(obj), obj.y);
             });
         }
 

@@ -5354,6 +5354,7 @@
           "required": ["costume", "global"]
         },
         "droppable": { "type": "boolean", "description": "true: clicking this item in the inventory drops it at the player's feet (systems/item-drop.js). Needs a unique id; usually paired with needsTag." },
+        "wallMounted": { "type": "boolean", "description": "A tall interactable fixed to a back wall (a power socket whose plate is high on the wall and whose cable reaches the floor line): reach is measured to the nearest part of the sprite's vertical span, not to its top edge (interaction-reach.js reachY). Unmarked objects keep the top-edge measure. docs/achitechture/POWER_SOCKETS_BUILD_LOG.md." },
         "usbClass": { "type": "string", "enum": ["storage", "hid"], "description": "Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 7): the USB device class a policy's usb value judges. storage: a memory stick; hid: a device that presents itself as a keyboard. An item with no usbClass is never refused." },
         "holds": { "type": "object", "description": "An inventory holder (engine plan section 6): captures true lists se_captures, items true files held items whose storeIn equals this item's id.", "properties": { "captures": { "type": "boolean" }, "items": { "type": "boolean" } }, "patternProperties": { "^_": {} }, "additionalProperties": false },
         "storeIn": { "type": "string", "minLength": 1, "description": "The id of the holder item this item is filed in while both are held (engine plan section 6). An item with storeIn is never added to the Notepad." },

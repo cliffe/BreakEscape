@@ -21,7 +21,7 @@ writeFileSync(join(dir, 'display-dashes.js'), 'export const displayDashes = t =>
 writeFileSync(join(dir, 'computer-keywords.js'), readFileSync(join(js, 'utils/computer-keywords.js'), 'utf8'));
 writeFileSync(join(dir, 'pc-observations.js'), readFileSync(join(js, 'utils/pc-observations.js'), 'utf8'));
 writeFileSync(join(dir, 'walls.js'), 'export const interactionLineClear = () => true;');
-writeFileSync(join(dir, 'reach.js'), 'export const reachX = o => o.x; export const aimX = o => o.x;');
+writeFileSync(join(dir, 'reach.js'), 'export const reachX = o => o.x; export const reachY = o => o.y; export const aimX = o => o.x;');
 const code = readFileSync(join(js, 'ui/info-label.js'), 'utf8')
     .replace("'../utils/constants.js'", "'./constants.js'")
     .replace("'../utils/conditional-text.js'", "'./conditional-text.js'")

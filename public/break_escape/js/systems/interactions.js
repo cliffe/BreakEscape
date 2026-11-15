@@ -20,7 +20,7 @@ import { shouldExamine, startExamine } from './examine.js';
 import { showPastTalkingToast } from './combat-input.js';
 import { shouldConsumeOnInteract, useConsumable } from './consumables.js';
 import { interactionLineClear } from './interaction-walls.js';
-import { reachX, aimX, npcGivesWay, objectIdOf } from './interaction-reach.js';
+import { reachX, reachY, aimX, npcGivesWay, objectIdOf } from './interaction-reach.js';
 import { displayDashes } from '../utils/display-dashes.js';
 import { escapeHtml } from '../utils/escape-html.js';
 import { hasMinigameStarter, startRegisteredMinigame } from './minigame-registry.js';
@@ -255,7 +255,7 @@ export function checkObjectInteractions() {
 
             // Use simple radial distance from player centre (matches visual highlight zone)
             const dx = reachX(obj, px) - px; // nearest part of a wide object (interaction-reach.js)
-            const dy = obj.y - py;
+            const dy = reachY(obj, py) - py; // and of a tall wall-mounted one
             const distanceSq = dx * dx + dy * dy;
 
             // In range and no wall between (interaction-walls.js)
@@ -1668,7 +1668,7 @@ export function handleObjectInteraction(sprite) {
         if (!player) return;
         
         // Measure distance with direction-based offset
-        const distanceSq = getInteractionDistance(player, reachX(sprite, player.x), sprite.y);
+        const distanceSq = getInteractionDistance(player, reachX(sprite, player.x), reachY(sprite, player.y));
         
         if (distanceSq > INTERACTION_RANGE_SQ) {
             console.log('INTERACTION_OUT_OF_RANGE', { 
@@ -2191,7 +2191,7 @@ export function tryInteractWithNearest() {
     // Ids of the objects in reach: an owner on the move from her own PC among them gives way (review R2 m1)
     const inReachIds = [];
 
-    function consider(objX, objY, handleFn, rangeSq = INTERACTION_RANGE_SQ, npcSprite = null, target = npcSprite, faceX = objX) {
+    function consider(objX, objY, handleFn, rangeSq = INTERACTION_RANGE_SQ, npcSprite = null, target = npcSprite, faceX = objX, faceY = objY) {
         const dx = objX - px;
         const dy = objY - py;
         const plainSq = dx * dx + dy * dy;
@@ -2200,10 +2200,10 @@ export function tryInteractWithNearest() {
         if (target && !interactionLineClear(player, target)) return; // wall between
         if (target && !npcSprite) inReachIds.push(objectIdOf(target));
         const dist = Math.sqrt(distSq);
-        let score = angularDiff(faceX, objY) * 1000 + dist; // angle to the object's centre, range to its nearest part
+        let score = angularDiff(faceX, faceY) * 1000 + dist; // angle to the object's centre, range to its nearest part
         if (target && !npcSprite && window.seating?.isSeat(target)) score += 30000; // a chair loses to anything else faced
         if (npcSprite && npcGivesWay(player, npcSprite, inReachIds)) score += 30000; // so does someone walking away (q55 d)
-        if (score < bestScore) { bestScore = score; best = { objX: faceX, objY, handleFn }; }
+        if (score < bestScore) { bestScore = score; best = { objX: faceX, objY: faceY, handleFn }; }
     }
 
     // E/W side doors are centered on their tile but the player stands at floor level (tile bottom).
@@ -2217,7 +2217,7 @@ export function tryInteractWithNearest() {
             Object.values(room.objects).forEach(obj => {
                 if (!obj.active || !obj.interactable || !obj.visible) return;
                 if (seatedOn && obj === seatedOn) return; // E from a chair reaches what's around it
-                consider(reachX(obj, px), obj.y, () => handleObjectInteraction(obj), INTERACTION_RANGE_SQ, null, obj, aimX(obj));
+                consider(reachX(obj, px), reachY(obj, py), () => handleObjectInteraction(obj), INTERACTION_RANGE_SQ, null, obj, aimX(obj), obj.y);
             });
         }
 
@@ -2308,7 +2308,7 @@ export function isObjectInInteractionRange(sprite) {
     const player = window.player;
     if (!player || !sprite) return false;
     const dx = reachX(sprite, player.x) - player.x;
-    const dy = sprite.y - player.y;
+    const dy = reachY(sprite, player.y) - player.y; // a tall wall-mounted object: its nearest part
     const distSq = dx * dx + dy * dy;
     if ((sprite._isNPC ? npcReachDistSq(player, sprite, distSq) : distSq) > INTERACTION_RANGE_SQ) return false;
     return interactionLineClear(player, sprite);

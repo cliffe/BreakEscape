@@ -88,7 +88,7 @@ const STUBS = ['window', 'document', 'Phaser', 'player', 'playerIsMoving', 'pend
     'SPRITE_PADDING_BOTTOM_LEGACY', 'DOOR_INTERACTION_RANGE', 'INTERACTION_RANGE'];
 const IMPORTS = { ...tapPick, ...reachMod, openHandIcon: menuIcons.openHandIcon, jabHandIcon: menuIcons.jabHandIcon, talkIcon: menuIcons.talkIcon };
 const IMPORT_NAMES = ['tapPickList', 'farUnderTap', 'npcYieldsToObject', 'npcYieldTarget', 'opaqueAt', 'opaqueNear', 'objectStandPoint',
-    'createPendingTapUse', 'aimX', 'withoutChairsIfOthers', 'takeablesBeforeChairs', 'npcGivesWay', 'objectIdOf',
+    'createPendingTapUse', 'aimX', 'reachY', 'withoutChairsIfOthers', 'takeablesBeforeChairs', 'npcGivesWay', 'objectIdOf',
     'withoutLeavingNpcsIfObjects', 'openHandIcon', 'jabHandIcon', 'talkIcon'];
 const body = [
     ...HELPERS.map(fnSource),
