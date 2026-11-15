@@ -6,7 +6,7 @@
 // Run with: node test/js/npc-needs-stuck-walk.test.mjs
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { NPCNeedsSystem, NEEDS_TICK_MS, RETURN_YIELD_MS, STUCK_TRIES, RETURN_STUCK_BACKOFF_MS, RETURN_STUCK_MAX_BACKOFFS, RETURN_FINAL_REPLAN_MS, RETURN_FINAL_REPLANS, REROUTE_DEADLINE_GRACE_MS, STUCK_SAME_PX, STUCK_NUDGE_REACH_PX } from '../../public/break_escape/js/systems/npc-needs.js';
+import { NPCNeedsSystem, NEEDS_TICK_MS, RETURN_YIELD_MS, STUCK_TRIES, RETURN_STUCK_BACKOFF_MS, RETURN_STUCK_MAX_BACKOFFS, RETURN_FINAL_REPLAN_MS, RETURN_FINAL_REPLANS, REROUTE_MIN_LEFT_MS, STUCK_SAME_PX, STUCK_NUDGE_REACH_PX } from '../../public/break_escape/js/systems/npc-needs.js';
 import { makeWorld } from './fixtures/needs-stub-world.mjs';
 
 function office() {
@@ -137,19 +137,24 @@ test('a far arrival on the way home is re-issued round other bodies', () => {
     assert.equal(homeMoves(w, sys).at(-1).reroute, true);
 });
 
-test('a wedged outbound leg re-routes keeping its deadline (one grace), then logs walk_stuck once and the deadline fails it', () => {
+test('a wedged outbound leg re-routes keeping its deadline, then logs walk_stuck once and the deadline fails it', () => {
     const { sys, w } = toGoto();
     const job = sys.states.get('clerk').job;
-    const deadline = job.deadline + REROUTE_DEADLINE_GRACE_MS;   // code review R2 m6: one grace per job
+    let deadline = job.deadline;
     sys.step(RETURN_YIELD_MS + NEEDS_TICK_MS);
     const rr = evs(sys, 'walk_rerouted');
     assert.equal(rr.length, 1);
     assert.equal(rr[0].phase, 'goto_target');
     assert.equal(w.calls.moves.at(-1).reroute, true);
-    assert.equal(sys.states.get('clerk').job.deadline, deadline, 'the first re-route adds one grace');
+    assert.equal(sys.states.get('clerk').job.deadline, deadline, 'a re-route with time left does not extend the deadline');
+    // Code review R2 m6: a re-route close to the deadline gets REROUTE_MIN_LEFT_MS to walk the new path, once
+    job.deadline = sys.clockMs + RETURN_YIELD_MS + 2 * NEEDS_TICK_MS;
     sys.step(RETURN_YIELD_MS + NEEDS_TICK_MS);
-    assert.equal(sys.states.get('clerk').job.deadline, deadline, 'later re-routes add nothing');
-    for (let i = 0; i < STUCK_TRIES + 1; i++) sys.step(RETURN_YIELD_MS + NEEDS_TICK_MS);
+    assert.equal(evs(sys, 'walk_rerouted').length, 2);
+    assert.ok(job.deadline - sys.clockMs >= REROUTE_MIN_LEFT_MS - 2 * NEEDS_TICK_MS, 'moved out to the floor');
+    deadline = job.deadline;
+    assert.equal(job.rerouteGrace, true, 'once per job: the next re-route keeps this deadline');
+    for (let i = 0; i < STUCK_TRIES; i++) sys.step(RETURN_YIELD_MS + NEEDS_TICK_MS);
     assert.equal(evs(sys, 'walk_rerouted').length, STUCK_TRIES, 'no re-route after giving up');
     assert.equal(evs(sys, 'walk_stuck').length, 1, 'one walk_stuck line');
     sys.step(Math.max(0, deadline - sys.clockMs) + NEEDS_TICK_MS);

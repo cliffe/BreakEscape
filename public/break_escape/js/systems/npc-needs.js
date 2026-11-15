@@ -62,11 +62,13 @@ export const RETURN_STUCK_MAX_BACKOFFS = 2;
 // R2, m2), then it idles until a job moves it on.
 export const RETURN_FINAL_REPLAN_MS = 60000;
 export const RETURN_FINAL_REPLANS = 3;
-// An outbound leg's deadline comes from the straight-line distance. The first re-route round
-// held bodies may take a longer path, so it adds this much once per job (code review R2, m6).
-// Once only: the needs layer does not see the new path's length, and the deadline must still end
-// a leg that re-routes from place to place.
-export const REROUTE_DEADLINE_GRACE_MS = 15000;
+// An outbound leg's deadline comes from the straight-line distance (at least 20 s, three times the
+// walk). A re-route round held bodies may take a longer path, so a re-route that leaves less than
+// this much before the deadline moves it out to this much, once per job (code review R2, m6).
+// A floor, not a flat extension: a blocked walk with time left still times out when it did (a
+// borrow's start window and the queue timeout depend on that). Once only: the needs layer does not
+// see the new path's length, and the deadline must still end a leg that re-routes from place to place.
+export const REROUTE_MIN_LEFT_MS = 10000;
 const CAUGHT_RADIUS = 48;    // px (1.5 tiles) from the home approach cell: "you were in my chair"
 export const NOTICED_MS = 3000;   // getState().noticed after npc_caught_at_post (the "noticed" action icon)
 
@@ -4147,8 +4149,8 @@ export class NPCNeedsSystem {
     /**
      * Outbound counterpart of _watchReturn (OFFICE_LIFE_STUCK_RETURN.md): a goto_item or
      * goto_target leg that has not moved RETURN_STILL_PX for RETURN_YIELD_MS is re-issued round
-     * other bodies (`walk_rerouted`), keeping the job's deadline (one grace on the first
-     * re-route, REROUTE_DEADLINE_GRACE_MS); after STUCK_TRIES re-routes in
+     * other bodies (`walk_rerouted`), keeping the job's deadline (moved out to
+     * REROUTE_MIN_LEFT_MS once per job when the re-route comes close to it); after STUCK_TRIES re-routes in
      * one place it logs `walk_stuck` once and stops, and the deadline fails the job (`timeout`).
      * @returns {boolean} true when the job ended here
      */
@@ -4181,9 +4183,13 @@ export class NPCNeedsSystem {
         }
         this._log(s.npcId, 'walk_rerouted', { phase: job.phase, x: Math.round(pos.x), y: Math.round(pos.y) });
         if (tries === STUCK_TRIES) job.stall.nudged = true;   // the place reaches past the nudge (R2 M1)
-        // The first re-route may take a longer path round held bodies: one grace per job (R2 m6)
-        const deadline = job.deadline + (job.rerouteGrace ? 0 : REROUTE_DEADLINE_GRACE_MS);
-        job.rerouteGrace = true;
+        // A re-route may take a longer path round held bodies: close to the deadline it gets at
+        // least REROUTE_MIN_LEFT_MS to walk it, once per job (R2 m6)
+        let deadline = job.deadline;
+        if (!job.rerouteGrace && deadline - this.clockMs < REROUTE_MIN_LEFT_MS) {
+            deadline = this.clockMs + REROUTE_MIN_LEFT_MS;
+            job.rerouteGrace = true;
+        }
         this._moveForPhase(s, { reroute: true, nudge: tries === STUCK_TRIES });
         if (s.job === job) {
             job.deadline = deadline;
