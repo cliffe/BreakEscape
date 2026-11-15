@@ -1,0 +1,13 @@
+{
+  "key": "a9ad5c19abbe8a4f63cbbf845e98544a",
+  "npc": "ernesto_bautista",
+  "text": "Fuss over nothing, like I said.",
+  "voice": "Algieba",
+  "style": "Hospital night porter, early sixties, Filipino-British, thirty years in the job. Warm and unhurried, dry humour, a soft Filipino lilt over a Midlands base. Never raises his voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:11:10Z"
+}

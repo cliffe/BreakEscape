@@ -1,0 +1,13 @@
+{
+  "key": "526b199d9f34046f64ec951dcf5d2af2",
+  "npc": "ernesto_bautista",
+  "text": "Mind how you go.",
+  "voice": "Algieba",
+  "style": "Hospital night porter, early sixties, Filipino-British, thirty years in the job. Warm and unhurried, dry humour, a soft Filipino lilt over a Midlands base. Never raises his voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:11:32Z"
+}

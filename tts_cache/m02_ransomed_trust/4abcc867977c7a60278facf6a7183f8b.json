@@ -1,0 +1,13 @@
+{
+  "key": "4abcc867977c7a60278facf6a7183f8b",
+  "npc": "hodan_warsame",
+  "text": "How many lab runs is that now, Ernesto?",
+  "voice": "Laomedeia",
+  "style": "Night domestic, early twenties, British-Somali, Birmingham accent. Quick, wry and chatty, tired but sharp; drops her voice for gossip.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:13:35Z"
+}
