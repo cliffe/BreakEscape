@@ -1,5 +1,67 @@
 # Office life: stuck needs walks and re-routing
 
+## Review summary (2026-11-15, round 6): not ready for code review
+
+Status: **not ready**. Three things still fail live (listed under "Still failing" below). Everything else on the branch is done and tested.
+
+### Engine changes on the branch since main
+
+Slice 1, stalled needs walks re-route and give up (`0a5cdfd98`, `5a6525cf9`):
+- `npc-sprites.js` `handleNPCCollision`, `handleNPCPlayerCollision`: a needs walk (`_moveOwner === 'needs'`) ends early on a bump only within `ARRIVAL_NEAR_PX` (48 px) of the destination by body centre; other moves keep the two-tile rule.
+- `npc-pathfinding.js` `_avoidDynamicPositions` and the `avoidDynamic` option of the path search: `includeHeld` also blocks seated and held (immovable) NPC bodies, never the start or goal cell, for that one search; no path falls back to the plain search.
+- `npc-behavior.js`: `moveTo(..., { reroute: true })` stores `_moveReroute`; `_recoverFromStuck` and `_requestDetour` pass `includeHeld` for needs moves.
+- `npc-needs.js` `_watchWalk`, `_stallTry`, `_goHome({ reroute })`, `_moveForPhase({ reroute })`: the stall watch on walks out and home (`RETURN_STILL_PX`, `RETURN_YIELD_MS`), re-issue with `reroute` (`return_resumed`, `walk_rerouted`), three tries in the same place (`STUCK_SAME_PX`, `STUCK_TRIES`) then `return_stuck` and a 15 s back-off (`RETURN_STUCK_BACKOFF_MS`) home, or `walk_stuck` and the job failed out.
+
+Slice 2, grumble earshot (`6c2eb2d6b`): `npc-needs.js` `_unheard` uses `world.playerHears` (the chatter earshot check); a grumble out of earshot is a picture, not a line.
+
+Mutter gating (`c11767214`): `npc-needs.js` `_sayMutter` passes `always` only for `PRIORITY_MUTTERS` (`login_aloud`); the workaround start mutters follow the grumble rule.
+
+Settle guard (`2608540fa`): `npc-sprites.js` `handleNPCCollision` does not settle a walker touching a held (immovable) NPC body, which re-collided every frame and froze it.
+
+Chair-aware re-route (`873504ef6`): `npc-pathfinding.js` `_avoidDynamicPositions` with `includeHeld` also avoids every chair body (`window.chairs`; loose chairs are not in the world grid).
+
+Post seat retry (`a480ba800`): `seating.js` `updateNeedsSeat`, `postSeatRetryDue`, `POST_SEAT_RETRY_MS` (4 s of needs clock): an NPC standing idle at its post tries its chair again; never mid-conversation, never away from the post, only a chair already in reach.
+
+Chair ownership (`42f64f738`): `seating.js` `chairAtOtherPost`: a chair belongs to another NPC's post only when its foot is within `NEAR_CHAIR` of that post and nearer to it than to this NPC's own spot.
+
+Seating trace (`a5a89878d`): `seating.js` `startFetch`, `endFetch`, `endSeatMove` log `fetch_start`, `fetch_end` and `seat_move_end` with a reason; `npc-behavior.js` `goToAndStay` passes its owner to `cancelFetch`.
+
+Post fetch retry (`781614e66`): `seating.js` `postFetchRetryDue`, `POST_FETCH_RETRY_MS` (15 s, the fetch timeout), `behavior._fetchTriedAt` (cleared on a new stop): at the post a failed fetch is tried again once per fetch timeout. Away from the post one try stays final.
+
+Removed in round 6 (`b252d1e0f`): the chair push re-walk (`fetchPushShort`, `FETCH_SPOT_PX`, `FETCH_PUSH_TRIES`, log line `fetch_push_short`). Every re-issue ended within a tick at the spot where the first push stopped (5415, 5422), so it never changed a result; the post fetch retry seats Tom about 13 s after his first fetch fails (tick 65 to 69 against tick 14 in every run this round).
+
+### Scenario changes (`scenarios/test_needs_sims`)
+- `scenario.json.erb`: Sanjay's caffeine follows `npc_left_post:marek` to the office coffee only during the Coffee Notice beat (global `coffee_notice_beat`, set by reading the notice, cleared by Marek's cup); reading the notice also tops Sanjay's `work` up to 100 so no work spell starts during the beat.
+- `README.md` row 2: where to stand (in earshot of the coffee queue, where Sanjay turns back, and off Marek's routes), and read the notice while Sanjay is not typing.
+
+### Tests
+- New: `test/js/npc-needs-reroute-held.test.mjs` (re-route round held bodies and chairs), `test/js/npc-needs-stuck-walk.test.mjs` (stall watch, `return_stuck`, `walk_stuck`).
+- Extended: `test/js/seating.test.mjs` (`postSeatRetryDue`, post retry rig, `chairAtOtherPost`, `postFetchRetryDue`, fetch retry rig), `npc-room-leash`, `npc-avoidance`, `npc-coffee-off`, `npc-magnet`, `npc-printer-power`, `npc-workarounds` (earshot premises), `test/js/fixtures/needs-stub-world.mjs`.
+- Drivers: `tools/playtest/needs-stuck-return-proof.mjs` (row 2, Marek's walk home, the away point, seating trace, stall dumps; round 6: waits up to 420 s for row 1's queue and reports a run that never clears as `skipped`, `b252d1e0f`; dumps on a stall in the wait and on any walk, `c808ec67b`), `tools/playtest/needs-tour-regression.mjs` (rows 1, 3, 5, 6).
+- Round 6 runs, on `c808ec67b`: `bin/test-js` 674 passed, 0 failed; `tts_office_lines_test.rb` 9 runs, 46 assertions, 0 failures; `bin/rubocop` 366 files, no offences. The seating suite is 47 passed (one test removed with `fetchPushShort`).
+
+### Game 5415 (round 5)
+Driver, not engine. The queue wait's 200 s cap ran out with Marek still at the coffee from row 1 (back at his post only at needs s 228), so the notice was read with no `npc_left_post:marek` to follow and Sanjay's caffeine was never set. 5381 (round 3) had the same 203 s pattern. The driver now waits up to 420 s and reports a run that never clears as skipped. Why Marek took 167 s over row 1's coffee in 5415 was not read; 5431 below suggests the same wedge.
+
+### Final live table (port 3093, keyless, headless setFPS(20), stand 232,176, code `c808ec67b` or `b252d1e0f`)
+
+| Game | Run | Row 2 played | see_turned_back | see_look_round | Grumble | Marek home (s) | Tom seated |
+|---|---|---|---|---|---|---|---|
+| 5430 | row 2 | **no**: Sanjay queued, no turn-back; Marek's walk to the coffee `walk_stuck` at (180,236) after three re-routes, so he went home without a cup | no | no | none | not measured (no cup) | yes at tick 69 (post fetch retry); standing at the coffee at the end |
+| 5431 | row 2 | **skipped**: row 1's queue never cleared in 420 s; Marek `returning`, standing at (186,250), `return_resumed` pairs every back-off from tick 1121 to 1613 | | | | | |
+| 5432 | row 2 | yes | yes | **no**: at the grumble Amara was off her desk (`returning`, 66 px), Tom seated at 155 px, outside `LISTEN_RADIUS` (128 px) | spoken, overheard | 5.75 | yes at tick 68 |
+| 5433 | row 2 | yes | yes | yes | spoken, overheard | 6 | yes at tick 69 |
+| 5434 | row 2 | yes | yes | **no**: Amara 149 px, Tom 154 px, Grace 192 px from Sanjay at (204,270), all seated, all outside `LISTEN_RADIUS` | spoken, overheard | 5.75 | yes at tick 69 |
+| 5435 | away point 300,40 | yes | yes | yes | **picture**: no `npc_overheard`, player held at (269,9), 275 px from Sanjay at (204,276); Tom, Amara and Grace swivelled to listen | 2.75 | yes |
+| 5436 | tour rows 1, 3, 5, 6 | row 1 yes (69 s), row 5 yes (24 s), row 6 yes (64 s); row 3 behaviour yes (Tom queued; after the switch-off Tom and Marek turned back, Tom's grumble a picture) but the driver marks it failed because both Activity Board reads ended `still-out-of-range`; two `walk_stuck` lines (Tom tick 1288, Grace tick 1418, both at (44,138)) | | | | | |
+| 5437, 5438 | train smoke m01, m02 | SMOKE OK, 0 failed | | | | | |
+
+### Still failing
+1. **Row 2 is 1 of 5 in full** (5433). Marek home under 20 s in all three runs that played (5.75, 6, 5.75), and Tom was seated by the post fetch retry in every run.
+2. **see_look_round, 1 of 3 played runs.** The turn-back happens at the coffee queue, about (204,270), and the seated staff are 149 to 192 px from there, outside `LISTEN_RADIUS` (128 px, `seating.js`, unchanged from main). Staff look round only when Sanjay turns back nearer his desk, or passes within 128 px with the bubble still up (5433, 5435, 5422). Options for the next round: raise `LISTEN_RADIUS` to the earshot radius (160 px; a shared constant, so it changes listening in m01 to m10 too), or a scenario change that makes Sanjay turn back nearer the desks. Not changed here, as it is a design call.
+3. **Marek wedges on the coffee route before the notice** (5430 out at (180,236), 5431 home at (186,250), probably 5415 too). The give-up works (`walk_stuck`, `return_stuck` back-off), but in 5431 he never got free in 8 minutes. The new `wait_dump` in the driver records the bodies round him on the next such run; 5432 and 5433 caught only queue waits.
+4. Tour row 3's Activity Board read (driver: `moveToNear` does not get in range).
+
 ## Handover (2026-11-15, round 5, budget stop): not ready for review
 
 **Cause of Tom's wedge, confirmed** (seating trace, games 5413 and 5414). Tom spawns at (96,192), 28 px below his home cell (92,164), with no chair within 36 px of it, so his first seat try fetches the loose swivel chair at about (115,223). He reaches it and pushes it toward the home cell, but the push walk ends 46 px short at about (116,207) (a bump ends a walk early). `endFetch` then starts the seat move, whose walk is a straight line, not a grid path: it sticks on his desk corner at (108,193), more than 8 px from the spot (`seat_move_end walk_stuck`, stage `walk`). The chair is left about 49 px from the home cell, beyond the 36 px sit reach, and the round 4 post retry never fetched, so he stood there until his stop key changed (93 s later in both games, after a coffee, when a second fetch from his desk worked). In 5404 and 5407 the stop never changed during row 2, so there was no seated listener.
