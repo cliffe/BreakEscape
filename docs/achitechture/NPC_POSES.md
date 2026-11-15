@@ -1,18 +1,65 @@
 # NPC poses (drink, use-machine, phone)
 
-## Handover (2026-11-15, session wound down early)
+## Handover (2026-11-15, second session)
 
-Built: nothing yet. No code, tests or art changed on build/ol-poses. This note holds the
-reading done so far and the planned design, so the next agent can start straight away.
+Built on build/ol-poses:
 
-Tested: nothing. No server was started.
+- Pipeline: `import --pose-from name=<state id or URL>` (repeatable; drink, use, phone) copies a
+  standing state's 8 rotations to `animations/pose_<name>/<dir>/frame_000.png`. They are
+  flood-filled with the rest (manifest threshold), the converter keeps the `pose_` name and leaves
+  pose frames out of the feet line, and the manifest stores `"poses": {name: state id}`, merged on
+  re-import (a re-import with no flags rebuilt all three poses; checked live).
+- Engine: `systems/npc-poses.js`, imported dynamically from `core/game.js` beside the office
+  visuals (no static imports, so no harness copy lists changed). It runs on `postupdate`, reads
+  `npcNeedsSystem.states`, and plays `npc-<id>-pose_<name>-<direction>` when that animation has
+  frames. Nothing changed in npc-needs.js.
+- Schema: `affordance.pose` ("drink" | "use" | "phone" | false), `affordance.machine` (boolean),
+  NPC `poses` (false or a list of names).
+- Tests: `test/js/npc-poses.test.mjs` (13: mapping, machines, override, phone, exclusions,
+  seated precedence, per-NPC limits, blockers, and the postupdate pass with a stub scene: use then
+  drink then idle, no frames means nothing touched, a missing `use` frame skipped silently,
+  seated kept, walking off, facing). `tools/test_pixellab_pipeline.py` gained 6 (`PoseFromTest`).
+- Art (test only, not approved to merge, own commit so it can be dropped): pose frames for
+  ernesto_bautista, hodan_warsame and male_office_worker_v2 from the 9 existing test states.
+  male_office_worker_v2's committed atlas had 85 frames that differed from PixelLab plus overrides;
+  they were adopted as overrides first, so the re-import added the 24 pose frames and changed
+  nothing else (all three atlases: 0 existing frames changed).
+- Live proof (test_needs_sims, Tom): the desk phone rings while he stands at his post, the phone
+  pose shows from pickup and follows his facing; he sits mid-call and the sit frame wins; with
+  caffeine low he walks to office_coffee, shows use for 3 s, then drink, then the idle as he leaves.
 
-Left: all of it. In order:
+Decisions:
 
-1. Pipeline (`tools/pixellab_pipeline.py`, `tools/convert_pixellab_to_spritesheet.py`).
-2. Engine hook (new `public/break_escape/js/systems/npc-poses.js`, installed from `core/game.js`).
-3. Node tests, Python tests, skill doc section.
-4. Live proof on :3093 with a scratchpad placeholder atlas or a bridge stub.
+1. Machines: `affordance.machine` when given (works through office presets too), else the
+   object's `type`, `officeType` or texture key matched against
+   coffee|kettle|cooler|boiler|copier|printer|microwave|vending|keypad|socket. `affordance.pose`
+   overrides the whole mapping for one object.
+2. Speech bubbles: the pose holds under a world speech bubble (cooler chatter, a phone call's
+   lines). It drops for a conversation with the player (`inChatWith`), hostility, a knock-out,
+   combat animations, seating and movement. Face-player is not a blocker: the first live run showed
+   it suppressed every pose whenever the player stood within 96 px, and it only turns the NPC,
+   which the pose follows anyway.
+3. Drink "at the machine first, then standing": at a drinks machine the NPC shows `use` for
+   `USE_LEAD_MS` (3 s of needs clock), then `drink` for the rest of the use. A drink source that
+   is no machine (a mug) shows `drink` from the start. With no `use` frames the idle shows until
+   drink.
+4. Seated always wins, including a seated owner on a desk call. A colleague answering a ringing
+   phone stands, so it gets the phone pose.
+5. The hook is keyed by pose name only. A new take (a smartphone phone, a one-handed use)
+   replaces a state through `--pose-from phone=<new id>` without engine changes.
+
+Left:
+
+- D24 breathing on pose frames: not started. Plan: move `breathRows`, `breathDown` and the
+  draw helper from seating.js (~85-160) into a shared module with no imports of its own; seating.js
+  imports it statically, so add it to every test harness copy list that copies seating.js
+  (`grep -l seating.js test/js`). npc-poses.js then calls it for pose frames; standing idles get
+  an opt-in, default off until a screenshot says otherwise. Keep a test that the seated output is
+  unchanged.
+- Pose art: the use take reads as a reach on side views (see the notes in
+  tmp/handover/ac4_poses/notes.md); new takes are being tried. Nothing is approved to merge.
+- Full `bin/test-js` run: only the validator suites, office visuals and the new file were run.
+- Skill doc (pixellab-character-pipeline) has no `--pose-from` section yet.
 
 ### What the reading found
 

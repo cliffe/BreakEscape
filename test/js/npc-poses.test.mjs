@@ -77,13 +77,14 @@ test('seated wins, and per-NPC limits', () => {
     assert.equal(npcAllows(null, 'use'), true);
 });
 
-test('blockers: seat, movement, face-player, chat, combat animations', () => {
+test('blockers: seat, movement, chase, chat, combat animations', () => {
     const sprite = { anims: { currentAnim: { key: 'npc-a-idle-down' }, isPlaying: true } };
     assert.equal(poseBlocked({ sprite }), false);
     assert.equal(poseBlocked({ sprite, _seat: {} }), true);
     assert.equal(poseBlocked({ sprite, _seatMove: {} }), true);
     assert.equal(poseBlocked({ sprite, isMoving: true }), true);
-    assert.equal(poseBlocked({ sprite, currentState: 'face_player' }), true);
+    assert.equal(poseBlocked({ sprite, currentState: 'face_player' }), false, 'facing the player keeps the pose');
+    assert.equal(poseBlocked({ sprite, currentState: 'chase' }), true);
     assert.equal(poseBlocked({ sprite }, { inChat: true }), true);
     assert.equal(poseBlocked({ sprite }, { ko: true }), true);
     assert.equal(poseBlocked({ sprite: { anims: { currentAnim: { key: 'npc-a-attack-down' }, isPlaying: true } } }), true);
