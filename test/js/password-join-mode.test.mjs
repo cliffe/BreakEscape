@@ -28,6 +28,7 @@ copy('utils/pc-monitor.js');
 copy('utils/npc-headshot.js');
 copy('utils/display-dashes.js'); // the real module, so the header's escapeHtml(displayDashes(...)) is exercised as it ships
 copy('minigames/framework/base-minigame.js');
+copy('utils/remote-host-text.js');
 copy('minigames/password/password-minigame.js');
 
 const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });

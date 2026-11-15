@@ -936,6 +936,10 @@ function nextNoteId() {
 
 // Global addNote function for compatibility with the old notes system
 window.addNote = function(title, text, important = false) {
+    // Tolerate a missing body: a caller (e.g. introduceScenario with a scenario that
+    // ships no scenario_brief) may pass undefined/null. Coerce to '' so text.length and
+    // the later text.split calls never throw. A brief-less note is simply empty.
+    text = (text == null) ? '' : String(text);
     console.log('Global addNote called:', { title, important, textLength: text.length });
     
     // Initialize game state if not exists

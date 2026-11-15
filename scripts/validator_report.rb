@@ -27,7 +27,7 @@ class ValidatorReport
   INK_COMPILE_FAILURE_RE = /fails to compile|compilation failed|compiled but output file was not created|produced invalid JSON|contains invalid JSON/.freeze
   WARNING_RE = /\A\s*(?:\d+\.\s+)?⚠️/.freeze
 
-  attr_reader :errors, :known, :warnings, :stage_lines
+  attr_reader :errors, :known, :warnings, :acknowledged, :stage_lines
 
   def initialize(out, scenario_paths: [], known_failures: [])
     @out = out
@@ -36,6 +36,7 @@ class ValidatorReport
     @errors = 0
     @known = 0
     @warnings = 0
+    @acknowledged = 0
     @not_full = {}
     @stage_lines = Hash.new(0)
     @scenario_paths = scenario_paths.map(&:to_s)
@@ -168,8 +169,9 @@ class ValidatorReport
       skipped = not_checked.uniq.join(', ')
       tail = "; #{not_checked.length} known failure(s) not checked (#{skipped} skipped)"
     end
+    clues = @acknowledged.positive? ? ", #{@acknowledged} acknowledged clues" : ''
     @header = true
-    puts "Result: #{@errors} errors (#{@known} known), #{@warnings} warnings#{tail}"
+    puts "Result: #{@errors} errors (#{@known} known), #{@warnings} warnings#{clues}#{tail}"
     @header = false
     flush
     unlisted.positive? ? 1 : 0
@@ -212,6 +214,8 @@ class ValidatorReport
       end
     elsif line.match?(WARNING_RE)
       @warnings += 1
+    elsif line.include?('ℹ️ acknowledged clue:')
+      @acknowledged += 1
     end
     @out.write("#{line}\n")
   end

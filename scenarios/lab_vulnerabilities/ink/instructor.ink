@@ -95,7 +95,9 @@ Penetration Testing Instructor: Think about it this way: what if an attacker wan
 
 Penetration Testing Instructor: Unfortunately, it turns out that writing secure code is quite hard. Innocent and seemingly small programming mistakes can cause serious security vulnerabilities.
 
-Penetration Testing Instructor: In many cases, software vulnerabilities can lead to attackers being able to take control of the vulnerable software. When an attacker can run any code they like, this is known as "arbitrary code execution."
+Penetration Testing Instructor: In many cases, software vulnerabilities can lead to attackers being able to take control of the vulnerable software.
+
+Penetration Testing Instructor: When an attacker can run any code they like, this is known as "arbitrary code execution."
 
 + [What does arbitrary code execution allow an attacker to do?]
     Penetration Testing Instructor: With arbitrary code execution, attackers can essentially assume the identity of the vulnerable software and misbehave.
@@ -158,7 +160,9 @@ Penetration Testing Instructor: Let me clarify these two important concepts.
 
 Penetration Testing Instructor: An exploit is an action - or a piece of software that performs an action - that takes advantage of a vulnerability.
 
-Penetration Testing Instructor: The result is that an attacker makes the system perform in ways that are not intentionally authorized. This could include arbitrary code execution, changes to databases, or denial of service like crashing the system.
+Penetration Testing Instructor: The result is that an attacker makes the system perform in ways that are not intentionally authorized.
+
+Penetration Testing Instructor: This could include arbitrary code execution, changes to databases, or denial of service like crashing the system.
 
 Penetration Testing Instructor: The action that takes place when an exploit is successful is known as the payload.
 

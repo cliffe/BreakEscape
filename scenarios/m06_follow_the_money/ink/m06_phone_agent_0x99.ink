@@ -234,7 +234,8 @@ And once one account falls, try that password on the rest. Admins reuse.
 === password_help_choices ===
 + [And on the backend?]
     The cracking guide covers it. Volkova's list works there too.
-    Type her words into a file on the Kali box and point John the Ripper at it. Bare words, no years. The years are for the doors.
+    Type her words into a file on the Kali box and point John the Ripper at it.
+    Bare words, no years. The years are for the doors.
     -> hub
 + [Got it.]
     -> hub

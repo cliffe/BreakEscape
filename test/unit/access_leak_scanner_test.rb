@@ -97,6 +97,51 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     assert_empty AccessLeakScanner.new(scenario, served_npcs: ['jake']).scan(rows)
   end
 
+  # Scenario format hardening step 3: non-account capture secrets.
+  CAPTURE_SECRET = 'Dossier-Phrase-7781'.freeze
+
+  def capture_scenario
+    {
+      'rooms' => { 'office' => { 'type' => 'room_office', 'npcs' => [
+        # A non-account NPC (no creds) whose usePayload carries a capture secret.
+        { 'id' => 'informant', 'npcType' => 'person',
+          'usePayload' => { 'targetId' => 'informant', 'secret' => CAPTURE_SECRET } },
+        # An addCapture mapping with a secret, on a phone NPC (no account).
+        { 'id' => 'hax', 'npcType' => 'phone',
+          'eventMappings' => [{ 'eventPattern' => 'x', 'addCapture' => { 'targetId' => 'drop', 'secret' => 'Drop-Note-Code-99' } }] }
+      ] } }
+    }
+  end
+
+  test 'a non-account capture secret is served only by /capture_secrets, reported elsewhere' do
+    cap = '/break_escape/games/1/capture_secrets'
+    # Served through its own route: allowed.
+    assert_empty scan({ 'secrets' => { 'informant' => CAPTURE_SECRET } }, path: cap, data: capture_scenario)
+    # The same secret in a room response is a leak, named by its target id, never its value.
+    findings = scan({ 'room' => { 'objects' => [{ 'id' => 'board', 'hint' => CAPTURE_SECRET }] } }, data: capture_scenario)
+    assert_equal [[1, 'capture_secret', 'capture:informant']], summary(findings)
+    refute_includes findings.first.json_path, CAPTURE_SECRET
+    # A capture page the tester read (a dom row) is the other allowed place.
+    page = [['dom.jsonl', 1, { 'dom' => "Captures\n#{CAPTURE_SECRET}", 'label' => 'capture log' }]]
+    assert_empty AccessLeakScanner.new(capture_scenario).scan(page)
+    # The mapping secret is caught the same way, by its own target id.
+    mapping = scan({ 'note' => "left behind: Drop-Note-Code-99" }, data: capture_scenario)
+    assert_equal [[1, 'capture_secret', 'capture:drop']], summary(mapping)
+    assert_equal 2, AccessLeakScanner.new(capture_scenario).counts[:capture_secrets]
+  end
+
+  test 'an account capture secret stays with the password rule, not the capture_secret rule' do
+    # A secret equal to an account holder's own creds.password is a password, not a capture secret:
+    # build_authored_capture_secrets skips a writer on an account holder, and so does the scanner.
+    data = { 'rooms' => { 'office' => { 'type' => 'room_office', 'npcs' => [
+      { 'id' => 'rhea', 'npcType' => 'person', 'creds' => { 'username' => 'r.m', 'password' => 'Rhea-Pass-55' },
+        'eventMappings' => [{ 'eventPattern' => 'x', 'addCapture' => { 'targetId' => 'rhea', 'secret' => 'Rhea-Pass-55' } }] }
+    ] } } }
+    findings = scan({ 'room' => { 'objects' => [{ 'id' => 'board', 'hint' => 'Rhea-Pass-55' }] } }, data: data)
+    assert_equal [[1, 'password', 'npc:rhea']], summary(findings)
+    assert_equal 0, AccessLeakScanner.new(data).counts[:capture_secrets]
+  end
+
   test 'profile text in a room response is reported and in a container response is not' do
     budget = { 'id' => 'jake_budget', 'type' => 'text_file', 'name' => 'Q3 budget forecast.xlsx',
                'text' => 'PROFILE-BUDGET-SECRET-TEXT' }

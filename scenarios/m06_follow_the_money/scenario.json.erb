@@ -669,6 +669,15 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
 
   "startRoom": "reception_lobby",
 
+  "acknowledgedClues": [
+    {
+      "lock": "cold_storage_console",
+      "in": "transaction_server",
+      "reason": "Tracing the three suspense withdrawals to the matching slot number is the puzzle; the slots are shown in the unlocked transaction server, not on the custody console.",
+      "approved": "2026-11-14: m06 custody console slot clue"
+    }
+  ],
+
   "startItemsInInventory": [
     {
       "type": "phone",
@@ -1150,7 +1159,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "onceOnly": true,
               "setGlobal": { "recon_guide_offered": true, "druid_guide_offered": true, "cracking_guide_offered": true },
               "completeTask": "access_hackme_vm",
-              "sendTimedMessage": { "delay": 1800, "message": "You're on the backend. A data-analytics service is listening that shouldn't be: that's your way in. Four service accounts hold what we want, and one operator login runs the box. Map first. I've recon, Druid and cracking guides." }
+              "sendTimedMessage": { "delay": 1800, "message": "Backend. An analytics service that shouldn't be listening is your way in. Four accounts hold what we want; one operator login runs the box. Recon, Druid, cracking guides?" }
             },
             {
               "_comment": "PASS 2: used to read the passphrase out ('bitcoin2025') the moment the checklist was picked up, which made the puzzle a pickup. Now HaX points at the second half of the clue.",
@@ -1189,7 +1198,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "onceOnly": true,
               "setGlobal": { "flag2_submitted": true },
               "_comment": "Story pass 2026-11-11: flag 2 pays out the ledger's compliance holds (Ledger Hold Log). Volkova held all three ENTROPY deposits herself; flag2_submitted opens a leverage choice in her recruitment_decision.",
-              "sendTimedMessage": { "delay": 5500, "message": "Second account, their ledger. Same password, as the rack sheet admitted. Read the hold log: Volkova stopped all three ENTROPY deposits herself, then let them go. Next is the financial database. Its account runs their doors.", "skipIfGlobal": "flag3_submitted" }
+              "sendTimedMessage": { "delay": 5500, "message": "Second account, their ledger, same password. Read the hold log: Volkova held all three ENTROPY deposits herself, then released them. Next, the financial database: it runs their doors.", "skipIfGlobal": "flag3_submitted" }
             },
             {
               "eventPattern": "objective_task_completed:submit_flag3",

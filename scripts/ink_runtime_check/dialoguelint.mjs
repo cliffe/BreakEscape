@@ -14,8 +14,35 @@
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
 
 export const CAPS = { person: 30, phone: 25, text: 30, choice: 15 };
+
+// Lines over the word cap that already have cached voice audio. Changing the text would re-key the
+// clip (a new paid generation), so such a line is reported as a WARN with its reason, never an
+// ERROR. The list is wordcap_audio_exempt.json beside this file: { file, text_md5, start, reason }.
+// file is the path under scenarios/ (for example sis03_cyber_insurance/ink/npc_eleanor_vance.ink or
+// sis03_cyber_insurance/scenario.json.erb), text_md5 is the MD5 of the whole line after the TTS
+// normalisation (lower case, no punctuation, single spaces; the same text the clip key is built
+// from), and start is the first eight normalised words, for humans only. The match is the full text,
+// so any edit to the line, even in its last word, makes it an ERROR again. A line that has no audio
+// gets no entry: split it instead. A line carrying a #delivery tag keys its clip on different text,
+// so check the clip before adding such a line. Entries that no longer match a live over-cap line
+// are stale; test/js/dialoguelint-wordcap-exempt.test.mjs fails on them.
+export const WORD_CAP_AUDIO_EXEMPT = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'wordcap_audio_exempt.json'), 'utf8'));
+export const ttsNormalise = t => String(t).toLowerCase().replace(/[^\w\s]/g, '').trim().replace(/\s+/g, ' ');
+export const normalisedMd5 = t => createHash('md5').update(ttsNormalise(t)).digest('hex');
+/** Does this exemption entry cover this file path (any prefix, matched on whole path segments)? */
+const fileMatches = (file, entryFile) => {
+  const p = String(file || '').replace(/\\/g, '/');
+  return p === entryFile || p.endsWith('/' + entryFile);
+};
+/** The finding for an over-cap line: an error, or a warn when the line has an exempt clip. */
+export function capFinding(finding, file, list = WORD_CAP_AUDIO_EXEMPT) {
+  const md5 = normalisedMd5(finding.text);
+  const hit = list.find(e => fileMatches(file, e.file) && e.text_md5 === md5);
+  return hit ? { ...finding, level: 'warn', exemptMd5: md5, note: `over the cap but has cached voice audio, text frozen: ${hit.reason}` } : finding;
+}
 
 // ---------- AI-tell and house-style rules (applied to spoken text, choice text, texts) ----------
 const BANNED = ['delve', 'delves', 'delving', 'intricate', 'intricacies', 'tapestry', 'pivotal', 'underscore', 'underscores',
@@ -257,7 +284,7 @@ export function lintInk(text, { channel = 'person', names = [], file = '', home 
       if (speaker !== 'Narrator') {
         const w = countWords(body);
         lengths.push(w);
-        if (w > cap) findings.push({ level: 'error', rule: 'line-len', line: n, words: w, cap, speaker, text: body });
+        if (w > cap) findings.push(capFinding({ level: 'error', rule: 'line-len', line: n, words: w, cap, speaker, text: body }, file));
       }
       for (const h of tellHits(body)) findings.push({ level: 'warn', rule: h.rule, line: n, match: h.match, speaker, text: body });
       callInText(i, body, speaker);
@@ -272,7 +299,7 @@ export function lintInk(text, { channel = 'person', names = [], file = '', home 
       if (channel === 'phone') {
         const w = countWords(body);
         lengths.push(w);
-        if (w > cap) findings.push({ level: 'error', rule: 'line-len', line: n, words: w, cap, speaker: 'contact', text: body });
+        if (w > cap) findings.push(capFinding({ level: 'error', rule: 'line-len', line: n, words: w, cap, speaker: 'contact', text: body }, file));
       }
       for (const h of tellHits(body)) findings.push({ level: 'warn', rule: h.rule, line: n, match: h.match, text: body });
       callInText(i, body, null);
@@ -1109,13 +1136,13 @@ export function scenarioInfo(erb) {
   return { channels, names, homes, texts };
 }
 
-export function lintTexts(texts) {
+export function lintTexts(texts, file = '') {
   const findings = [];
   const lengths = [];
   for (const t of texts) {
     const w = countWords(t.text);
     lengths.push(w);
-    if (w > CAPS.text) findings.push({ level: 'error', rule: 'text-len', line: t.line, words: w, cap: CAPS.text, text: t.text });
+    if (w > CAPS.text) findings.push(capFinding({ level: 'error', rule: 'text-len', line: t.line, words: w, cap: CAPS.text, text: t.text }, file));
     for (const h of tellHits(t.text)) findings.push({ level: 'warn', rule: h.rule, line: t.line, match: h.match, text: t.text });
   }
   return { findings, stats: stats(lengths) };
@@ -1152,7 +1179,7 @@ export function lintTargets(args) {
     Object.assign(channels, info.channels);
     Object.assign(names, info.names);
     Object.assign(homes, info.homes);
-    const r = lintTexts(info.texts);
+    const r = lintTexts(info.texts, sc);
     report.texts.push({ file: sc, ...r, count: info.texts.length });
   }
   for (const f of files) {

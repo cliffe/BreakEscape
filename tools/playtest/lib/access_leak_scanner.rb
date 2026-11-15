@@ -113,6 +113,13 @@ require 'uri'
 # carries (a sign-in PC's, a profile's or a share's file of the same name, review R3 n3) is left
 # to that secret, since the other file's own answer would otherwise be reported as the stick's.
 #
+# Scenario format hardening step 3 (SCENARIO_FORMAT_HARDENING_PLAN) adds the non-account capture
+# secrets (rule `capture_secret`): the `secret` on an add_capture action, an addCapture mapping or a
+# non-account NPC's usePayload, keyed by its target id. The server serves these only through GET
+# /capture_secrets once the capture is earned, so the value is reported anywhere else, with the same
+# exception /capture_secrets and a capture page already carry (the account-password rule). Account
+# capture secrets are an NPC's creds.password and stay with the password rule.
+#
 # A finding names the rule, the route, the response line and the secret's owner (an NPC or
 # item id), never the value. Every output line is checked against the secret values before it
 # is returned, so blind runs can use it too.
@@ -164,6 +171,7 @@ class AccessLeakScanner
     @shared = Set.new # passwords a heard share_login answer has carried, so far (sub-slice H)
     @passwords = {}          # password => [npc_id, ...]
     @capture_npcs = Set.new  # npc ids the capture_secrets exception covers
+    @capture_secrets = {}    # a non-account capture secret => [target_id, ...] (served only by /capture_secrets)
     @items = {}              # item_id => { strings:, scope:, profile:, pc:, ancestors:, locked_ancestors: }
     @public_strings = Set.new
     @clue_holders = Hash.new { |h, k| h[k] = Set.new } # password => item ids holding it on purpose
@@ -206,6 +214,7 @@ class AccessLeakScanner
     @feed_posters = Set.new
     @reaction_items = 0
     collect_passwords
+    collect_capture_secrets
     collect_items
     collect_network_secrets
     collect_wifi_secrets
@@ -219,6 +228,7 @@ class AccessLeakScanner
   def counts
     {
       passwords: @passwords.values.flatten.uniq.length,
+      capture_secrets: @capture_secrets.length,
       login_items: @items.count { |_, i| i[:scope] && i[:scope] != :stick },
       stick_items: @items.count { |_, i| i[:scope] == :stick },
       locked_items: @items.count { |_, i| i[:locked_ancestors].any? },
@@ -282,6 +292,7 @@ class AccessLeakScanner
                                 cmd_seq: row['cmdSeq'], json_path: json_path)
       end
       scan_passwords(body, ctx, legit, add)
+      scan_capture_secrets(body, ctx, add)
       scan_withheld_keys(body, add)
       scan_login_content(body, ctx, legit, add)
       scan_locked_content(body, add)
@@ -314,6 +325,7 @@ class AccessLeakScanner
 
   RULE_TEXT = {
     'password' => 'an NPC password in a response',
+    'capture_secret' => 'a non-account capture secret outside a GET /capture_secrets answer or a capture page',
     'signin_content' => 'sign-in PC content outside its own container response',
     'stick_content' => "a habit USB stick's files outside a container or unlock response for that stick",
     'profile_content' => 'profile content outside a sign-in PC container response',
@@ -338,7 +350,7 @@ class AccessLeakScanner
   private
 
   def secret_values
-    @secret_values ||= (@passwords.keys + @items.values.flat_map { |i| i[:strings] } + @network_strings.keys +
+    @secret_values ||= (@passwords.keys + @capture_secrets.keys + @items.values.flat_map { |i| i[:strings] } + @network_strings.keys +
                         @wifi_secrets.keys + @share_items.values.flat_map { |i| i[:strings] } + @feed_texts.keys).uniq.sort_by { |v| -v.length }
   end
 
@@ -383,6 +395,35 @@ class AccessLeakScanner
       (@passwords[password] ||= []) << id
       @capture_npcs << id if reveal && BreakEscape::Game.capture_route?(npc)
     end
+  end
+
+  # Non-account capture secrets (step 3, SCENARIO_FORMAT_HARDENING_PLAN): the `secret` on an
+  # add_capture action, an addCapture mapping or a non-account NPC's usePayload, keyed by target
+  # id. The server serves these only through GET /capture_secrets once the capture is earned (and
+  # its proof holds), so, like an account password, the value must appear nowhere else. Account
+  # secrets stay with collect_passwords (they are an NPC's creds.password, caught there); a writer
+  # on an account holder is skipped here, as build_authored_capture_secrets does.
+  def collect_capture_secrets
+    cm = BreakEscape::CaptureModel
+    cm.each_capture_writer(@data) do |capture, _kind, _path, owner|
+      next if owner.is_a?(Hash) && cm.account_holder?(owner)
+
+      add_capture_secret(capture['secret'], capture['targetId'])
+    end
+    each_room_npc do |npc|
+      payload = npc['usePayload']
+      next unless payload.is_a?(Hash) && !cm.account_holder?(npc)
+
+      add_capture_secret(payload['secret'], payload['targetId'] || npc['id'])
+    end
+  end
+
+  def add_capture_secret(secret, target)
+    return unless secret.is_a?(String) && !secret.strip.empty?
+
+    owner = target.is_a?(String) && !target.strip.empty? ? target.strip : 'capture'
+    owners = (@capture_secrets[secret.strip] ||= [])
+    owners << owner unless owners.include?(owner)
   end
 
   def each_room_npc(&block)
@@ -706,6 +747,22 @@ class AccessLeakScanner
 
           add.call('password', "npc:#{npc_id}", safe_path(json_path))
         end
+      end
+    end
+  end
+
+  # A non-account capture secret anywhere but the two routes that legitimately serve it: a GET
+  # /capture_secrets answer and a capture page the tester read (a dom row, labelled a capture log
+  # or captures terminal). Both set ctx[:capture_secrets]. The match rule mirrors a password: a
+  # secret of six or more characters is matched as a substring, a shorter one as a whole token.
+  def scan_capture_secrets(body, ctx, add)
+    return if @capture_secrets.empty? || ctx[:capture_secrets]
+
+    each_string(body) do |str, json_path, _owner|
+      @capture_secrets.each do |secret, targets|
+        next unless contains_password?(str, secret)
+
+        targets.each { |t| add.call('capture_secret', "capture:#{t}", safe_path(json_path)) }
       end
     end
   end

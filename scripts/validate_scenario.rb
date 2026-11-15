@@ -25,6 +25,7 @@ require_relative 'validate_social'
 require_relative 'validate_npc_needs'
 require_relative 'validate_network'
 require_relative 'validate_capture_log'
+require_relative 'validate_secret_leaks'
 require_relative 'validate_wearable'
 require_relative 'validate_phone_calls'
 require_relative '../lib/break_escape/scenario_schema'
@@ -747,7 +748,7 @@ def check_unknown_fields(json_data)
   known_top_level = %w[
     scenario_id scenario_name scenario_brief endGoal version startRoom startPosition resumeSpawn titleScreenName pcWallpaper pcWallpaperFocus
     show_scenario_brief disableAttacks creditsTheme creditsOverlay gameClock flags music startItemsInInventory globalVariables
-    player objectives rooms npcs phoneNPCs narrator timers _comment mutuallyExclusiveGlobals lighting
+    player objectives rooms npcs phoneNPCs narrator timers _comment mutuallyExclusiveGlobals lighting acknowledgedClues
     importGlobals exportGlobals social npcNeedsSeed disguises actionIcons officeVisuals npcWindupMs showPressingNeeds showNpcIntentBubbles needsDebugOverlay officePresets chatter lockCues roomTone roomToneTypes
     ttsPregenerateChatter
     accountProfiles policies defaultPolicy
@@ -7180,7 +7181,7 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
     room_npcs.reject { |e| ai.account?(e[:npc]) }.each do |e|
       npc = e[:npc]
       payload = npc['usePayload']
-      if payload.is_a?(Hash) && hard_access.include?(payload['secret'].to_s)
+      if payload.is_a?(Hash) && BreakEscape::CaptureModel.lock_answer?(hard_access, payload['secret'])
         own = payload['targetId']
         ungated = if own.is_a?(String) && !own.strip.empty?
                     !payload['proof'].is_a?(Hash)
@@ -7200,7 +7201,7 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
       end
       Array(npc['eventMappings']).each_with_index do |mapping, i|
         capture = mapping.is_a?(Hash) ? mapping['addCapture'] : nil
-        next unless capture.is_a?(Hash) && hard_access.include?(capture['secret'].to_s)
+        next unless capture.is_a?(Hash) && BreakEscape::CaptureModel.lock_answer?(hard_access, capture['secret'])
         next if capture['proof'].is_a?(Hash)
 
         warn.call("NPC #{name_of.call(npc)} eventMappings[#{i}].addCapture.secret is also a hard-access value " \
@@ -7250,7 +7251,7 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
       next unless capture.is_a?(Hash)
 
       secret = capture['secret']
-      next unless BreakEscape::CaptureModel.present_string?(secret) && hard_access.include?(secret.to_s)
+      next unless BreakEscape::CaptureModel.present_string?(secret) && BreakEscape::CaptureModel.lock_answer?(hard_access, secret)
 
       page_id = page['id']
       page_label = BreakEscape::CaptureModel.present_string?(page_id) ? page_id : '(no id)'
@@ -8362,6 +8363,7 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
   run.call('check_speaker_id_name_clashes') { check_speaker_id_name_clashes(json_data) }
   run.call('check_network_model') { check_network_model(json_data, scenario_dir) }
   run.call('check_capture_log') { check_capture_log(json_data) }
+  run.call('check_secret_leaks') { check_secret_leaks(json_data, erb_path) }
   run.call('check_wearables') { check_wearables(json_data, scenario_dir) }
   run.call('check_phone_calls') { check_phone_calls(json_data, repo_root) }
   run.call('ValidateAccessWork') { ValidateAccessWork.check(json_data) }

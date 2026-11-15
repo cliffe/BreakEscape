@@ -1,0 +1,7 @@
+{
+  "display_name": "Test: Secret Leaks",
+  "description": "Scenario format hardening step 3 fixture: a non-account capture secret equal to a combination padlock answer, an account password equal to a cryptex answer, and a resolved door-entry PIN, each withheld until a capture proof holds. Validator and live-proof fixture; no Mission row (collection testing).",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing"
+}

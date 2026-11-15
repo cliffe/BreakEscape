@@ -1177,7 +1177,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
               "onceOnly": true,
               "completeTask": "investigate_compromised_services",
               "setGlobal": { "erlang_guide_offered": true },
-              "sendTimedMessage": { "delay": 2000, "message": "There's an Erlang/OTP SSH daemon on a high port there — the crew's way back in, with a brand-new pre-auth RCE. Their job card names the port. I've a guide if you want it.", "skipIfGlobal": "flag_erlang_rce_submitted" }
+              "sendTimedMessage": { "delay": 2000, "message": "There's an Erlang/OTP SSH daemon on a high port: the crew's way back in, a brand-new pre-auth RCE. The job card names the port. Want the guide?", "skipIfGlobal": "flag_erlang_rce_submitted" }
             },
             <%# PASS 3 P15 (review): the sudo offer on the FTP flag, only if the
                 Erlang SSH RCE flag hasn't already made it. %>
