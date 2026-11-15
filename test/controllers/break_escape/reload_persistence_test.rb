@@ -764,6 +764,239 @@ module BreakEscape
                    scenario_json(game)['savedNpcHostility'])
     end
 
+    # D5 (KO position on reload): a KO now also saves the room it fell in and its
+    # x,y, so a reload lays the NPC where it dropped. The position rides the same
+    # npcHostility delta and is validated as untrusted client input.
+    # Both rooms are unlocked by default: a KO only ever happens in a room the player
+    # has entered, so the reachability bound (review R1 M1) needs break_room unlocked
+    # for a legitimately-stored KO there. Tests that exercise an unreachable koRoom pass
+    # unlocked: %w[lobby] so break_room stands in for a never-entered room.
+    def ko_scenario_game(unlocked: %w[lobby break_room], errand_extra: {})
+      game = create_game
+      game.scenario_data['rooms'] = {
+        'lobby' => { 'type' => 'room_office', 'locked' => false, 'connections' => {}, 'objects' => [],
+                     'npcs' => [{ 'id' => 'errand', 'npcType' => 'person', 'x' => 10, 'y' => 20 }.merge(errand_extra)] },
+        'break_room' => { 'type' => 'room_office', 'locked' => false, 'connections' => {}, 'objects' => [],
+                          'npcs' => [{ 'id' => 'guard', 'npcType' => 'person', 'x' => 5, 'y' => 5 }] }
+      }
+      game.player_state['unlockedRooms'] = unlocked
+      game.player_state['encounteredNPCs'] = %w[errand guard]
+      game.save!
+      game
+    end
+
+    def room_npcs(game, room_id)
+      get room_game_url(game, room_id: room_id)
+      assert_response :success
+      response.parsed_body.dig('room', 'npcs') || []
+    end
+
+    test 'a same-room KO comes back at the spot it fell' do
+      game = ko_scenario_game(unlocked: %w[lobby break_room])
+      put sync_state_game_url(game), params: { npcHostility: {
+        'guard' => { hostile: true, ko: true, koRoom: 'break_room', koX: 300, koY: 420 }
+      } }, as: :json
+      assert_response :success
+
+      assert_equal({ 'hostile' => true, 'ko' => true, 'koRoom' => 'break_room', 'koX' => 300, 'koY' => 420 },
+                   game.reload.player_state.dig('npcHostility', 'guard'))
+      guard = room_npcs(game, 'break_room').find { |n| n['id'] == 'guard' }
+      # Served in the form createNPCSprite reads: position.px/py (absolute world pixels),
+      # not a top-level x,y the client ignores.
+      assert_equal({ 'px' => 300, 'py' => 420 }, guard['position'],
+                   'placed where it fell (position.px/py), not at its spawn (5,5)')
+    end
+
+    test 'a cross-room KO comes back in the room it fell in, not standing at home' do
+      game = ko_scenario_game(unlocked: %w[lobby break_room])
+      put sync_state_game_url(game), params: { npcHostility: {
+        'errand' => { hostile: true, ko: true, koRoom: 'break_room', koX: 150, koY: 260 }
+      } }, as: :json
+      assert_response :success
+
+      # Injected into the room it fell in, knocked out, at that spot
+      errand = room_npcs(game, 'break_room').find { |n| n['id'] == 'errand' }
+      assert errand, 'the errand NPC appears in the room it fell in'
+      assert_equal({ 'px' => 150, 'py' => 260 }, errand['position'],
+                   'injected at the fall spot in position.px/py form')
+      assert_equal true, errand['isKO']
+      assert_equal 0, errand['currentHP']
+
+      # And it is no longer standing in its home room
+      assert_nil room_npcs(game, 'lobby').find { |n| n['id'] == 'errand' },
+                 'the KO NPC is not also at home'
+    end
+
+    test 'KO position is validated as untrusted input (room, range, type, extra keys)' do
+      game = ko_scenario_game
+      # Wrong room, out-of-range, wrong type and an extra key: the KO is kept, the position dropped
+      put sync_state_game_url(game), params: { npcHostility: {
+        'errand' => { hostile: true, ko: true, koRoom: 'no_such_room', koX: 10, koY: 10 },
+        'guard' => { hostile: true, ko: true, koRoom: 'break_room', koX: 10**9, koY: 10,
+                     evil: 'DROP TABLE', koZ: 9 }
+      } }, as: :json
+      assert_response :success
+      saved = game.reload.player_state['npcHostility']
+      assert_equal({ 'hostile' => true, 'ko' => true }, saved['errand'], 'unknown room dropped, KO kept')
+      assert_equal({ 'hostile' => true, 'ko' => true }, saved['guard'], 'huge x dropped, extra keys never stored')
+
+      # A string coordinate is dropped too
+      put sync_state_game_url(game), params: { npcHostility: {
+        'errand' => { hostile: true, ko: true, koRoom: 'break_room', koX: 'left', koY: 10 }
+      } }, as: :json
+      assert_response :success
+      assert_equal({ 'hostile' => true, 'ko' => true }, game.reload.player_state.dig('npcHostility', 'errand'))
+    end
+
+    # D5 fix: rooms laid out left of or above the origin have negative world
+    # coordinates (e.g. test_needs_sims' kitchen), so a KO there sends a negative
+    # koX/koY that must be stored, not dropped. The magnitude bound still rejects a
+    # hugely negative forged number.
+    test 'KO position accepts legitimate negative coordinates but rejects a huge negative one' do
+      game = ko_scenario_game
+      put sync_state_game_url(game), params: { npcHostility: {
+        'errand' => { hostile: true, ko: true, koRoom: 'break_room', koX: -264, koY: -12 }
+      } }, as: :json
+      assert_response :success
+      assert_equal({ 'hostile' => true, 'ko' => true, 'koRoom' => 'break_room', 'koX' => -264, 'koY' => -12 },
+                   game.reload.player_state.dig('npcHostility', 'errand'), 'legitimate negative position kept')
+
+      put sync_state_game_url(game), params: { npcHostility: {
+        'guard' => { hostile: true, ko: true, koRoom: 'break_room', koX: -(10**9), koY: 10 }
+      } }, as: :json
+      assert_response :success
+      assert_equal({ 'hostile' => true, 'ko' => true }, game.reload.player_state.dig('npcHostility', 'guard'),
+                   'huge negative dropped, KO kept')
+    end
+
+    test 'KO position is first-fall-wins and does not grow the state per sync' do
+      game = ko_scenario_game
+      first = { hostile: true, ko: true, koRoom: 'break_room', koX: 100, koY: 100 }
+      put sync_state_game_url(game), params: { npcHostility: { 'guard' => first } }, as: :json
+      assert_response :success
+      stored = game.reload.player_state['npcHostility'].deep_dup
+
+      # A later, different position for the same KO must not move it
+      put sync_state_game_url(game), params: { npcHostility: {
+        'guard' => { hostile: true, ko: true, koRoom: 'lobby', koX: 999, koY: 999 }
+      } }, as: :json
+      assert_response :success
+      assert_equal stored, game.reload.player_state['npcHostility'], 'first fall wins'
+
+      # Re-sending the identical entry several times does not grow npcHostility
+      3.times do
+        put sync_state_game_url(game), params: { npcHostility: { 'guard' => first } }, as: :json
+        assert_response :success
+      end
+      assert_equal stored, game.reload.player_state['npcHostility'], 'stable per sync, no growth'
+    end
+
+    # Review R1 M1: a forged KO claim must not relocate a met NPC into a room the
+    # player has never entered. The reachability bound drops the position (keeping the
+    # KO), the NPC stays in its home room, and the never-entered room is not fetchable.
+    test 'a forged KO cannot relocate a met NPC into a never-entered room' do
+      game = ko_scenario_game(unlocked: %w[lobby]) # break_room never entered
+      put sync_state_game_url(game), params: { npcHostility: {
+        'errand' => { hostile: true, ko: true, koRoom: 'break_room', koX: 150, koY: 260 }
+      } }, as: :json
+      assert_response :success
+      assert_equal({ 'hostile' => true, 'ko' => true }, game.reload.player_state.dig('npcHostility', 'errand'),
+                   'never-entered room dropped, KO kept')
+
+      errand = room_npcs(game, 'lobby').find { |n| n['id'] == 'errand' }
+      assert errand, 'the NPC stays in its home room, not stripped'
+      assert_equal [10, 20], [errand['x'], errand['y']], 'at its spawn, not relocated'
+
+      # The access gate GET /room uses still refuses the never-entered room
+      get room_game_url(game, room_id: 'break_room')
+      assert_response :forbidden
+    end
+
+    # Review R1 M1: a locked room the player was gated out of is likewise not a valid
+    # koRoom. break_room stays unlocked here only after a legitimate entry.
+    test 'a KO in a legitimately entered room is still stored and placed' do
+      game = ko_scenario_game # both rooms unlocked (entered)
+      put sync_state_game_url(game), params: { npcHostility: {
+        'errand' => { hostile: true, ko: true, koRoom: 'break_room', koX: 150, koY: 260 }
+      } }, as: :json
+      assert_response :success
+      assert_equal 'break_room', game.reload.player_state.dig('npcHostility', 'errand', 'koRoom'),
+                   'an entered room is reachable, position kept'
+      # The position is not just stored but actually served into the fall room (R2 m3:
+      # the earlier test name over-claimed "placed" while only checking storage).
+      errand = room_npcs(game, 'break_room').find { |n| n['id'] == 'errand' }
+      assert errand, 'injected into the room it fell in'
+      assert_equal({ 'px' => 150, 'py' => 260 }, errand['position'], 'served at the fall spot')
+    end
+
+    # Review R2 m1: ko_room_reachable? must match the full GET /room gate. A gated NPC
+    # route room the player has slipped into (npcRouteRooms, kept out of unlockedRooms)
+    # is a room the player can legitimately stand and fight in, so a KO there is stored.
+    test 'a KO in a gated NPC route room the player is standing in is stored and placed' do
+      game = ko_scenario_game(unlocked: %w[lobby]) # break_room is NOT unlocked
+      game.player_state['npcRouteRooms'] = %w[break_room] # but reachable as a route room
+      game.save!
+      put sync_state_game_url(game), params: { npcHostility: {
+        'guard' => { hostile: true, ko: true, koRoom: 'break_room', koX: 150, koY: 260 }
+      } }, as: :json
+      assert_response :success
+      assert_equal 'break_room', game.reload.player_state.dig('npcHostility', 'guard', 'koRoom'),
+                   'a route room is reachable, position kept'
+
+      guard = room_npcs(game, 'break_room').find { |n| n['id'] == 'guard' }
+      assert guard, 'the route room serves (GET /room gate allows it)'
+      assert_equal({ 'px' => 150, 'py' => 260 }, guard['position'], 'placed where it fell')
+    end
+
+    # Review R1 m3 and m4: a cross-room injection must carry the NPC's full scenario
+    # definition (itemsHeld, eventMappings, conversation, needs) through the deep_dup,
+    # while an itemsHeld entry a real KO already delivered is not resurrected on the body.
+    test 'a cross-room injection carries the full definition minus already-dropped items' do
+      extra = {
+        'itemsHeld' => [{ 'id' => 'keycard_01', 'type' => 'keycard' }, { 'id' => 'badge_02', 'type' => 'badge' }],
+        'eventMappings' => [{ 'event' => 'defeat', 'setGlobal' => 'errand_down' }],
+        'conversation' => { 'start' => 'errand_intro' },
+        'needs' => { 'caffeine' => 50 }
+      }
+      game = ko_scenario_game(errand_extra: extra)
+      game.player_state['inventory'] = [{ 'id' => 'keycard_01' }] # keycard already delivered to the player
+      game.save!
+
+      put sync_state_game_url(game), params: { npcHostility: {
+        'errand' => { hostile: true, ko: true, koRoom: 'break_room', koX: 150, koY: 260 }
+      } }, as: :json
+      assert_response :success
+
+      errand = room_npcs(game, 'break_room').find { |n| n['id'] == 'errand' }
+      assert errand, 'injected into the room it fell in'
+      assert_equal [{ 'event' => 'defeat', 'setGlobal' => 'errand_down' }], errand['eventMappings'], 'eventMappings survive'
+      assert_equal({ 'start' => 'errand_intro' }, errand['conversation'], 'conversation survives')
+      assert_equal({ 'caffeine' => 50 }, errand['needs'], 'needs survive')
+      held = Array(errand['itemsHeld']).map { |i| i['id'] }
+      assert_includes held, 'badge_02', 'an undropped held item is kept'
+      refute_includes held, 'keycard_01', 'a delivered held item is not resurrected on the summoned body'
+    end
+
+    # Review R1 m2: a scenario edit that drops koRoom must not strip the NPC from its
+    # home room. With the room gone, the NPC is served at home, still KO'd.
+    test 'a stored KO whose room no longer exists serves the NPC at home, not lost' do
+      game = ko_scenario_game
+      put sync_state_game_url(game), params: { npcHostility: {
+        'errand' => { hostile: true, ko: true, koRoom: 'break_room', koX: 150, koY: 260 }
+      } }, as: :json
+      assert_response :success
+
+      # The scenario is edited: break_room is removed
+      game.reload
+      game.scenario_data['rooms'].delete('break_room')
+      game.player_state['unlockedRooms'] = %w[lobby]
+      game.save!
+
+      errand = room_npcs(game, 'lobby').find { |n| n['id'] == 'errand' }
+      assert errand, 'the NPC is served at home, not stripped into nowhere'
+      assert_equal [10, 20], [errand['x'], errand['y']], 'at its home spawn'
+    end
+
     test 'no savedNpcHostility when nothing has turned' do
       assert_nil scenario_json(create_game)['savedNpcHostility']
     end
