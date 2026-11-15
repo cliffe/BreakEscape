@@ -589,6 +589,43 @@ def check_retired_keys(json_data)
   issues
 end
 
+# "wallMounted": true is for a tall interactable fixed to a back wall (a power socket): reach is
+# measured to the nearest part of the sprite's height (interaction-reach.js reachY). Warn where it
+# sits on something it cannot help: an NPC, an object with interactable: false, or a type that is
+# not one of generate_rooms.py's WALL_MOUNTED_EXTRAS (read from that file, so there is one list).
+WALL_MOUNTED_EXTRAS_FILE = File.join(File.expand_path('..', __dir__), 'scripts', 'generate_rooms.py')
+
+def wall_mounted_extras
+  @wall_mounted_extras ||= begin
+    m = File.read(WALL_MOUNTED_EXTRAS_FILE).match(/WALL_MOUNTED_EXTRAS = \{\n(.*?)\n\}/m)
+    m ? m[1].scan(/"([a-z0-9_]+)"/).flatten : nil
+  end
+end
+
+def check_wall_mounted(json_data, extras = wall_mounted_extras)
+  issues = []
+  return issues unless json_data.is_a?(Hash) && json_data['rooms'].is_a?(Hash)
+  json_data['rooms'].each do |rid, room|
+    next unless room.is_a?(Hash)
+    { 'objects' => 'object', 'npcs' => 'NPC' }.each do |key, kind|
+      Array(room[key]).each_with_index do |o, i|
+        next unless o.is_a?(Hash) && o['wallMounted'] == true
+        why = if kind == 'NPC'
+          'it is an NPC (the key is read for scenario objects only)'
+        elsif o['interactable'] == false
+          'the object has interactable: false, so nothing reaches for it'
+        elsif extras && !extras.include?(o['type'].to_s.sub(/\d+\z/, ''))
+          "type '#{o['type']}' is not a wall-mounted type (WALL_MOUNTED_EXTRAS in scripts/generate_rooms.py)"
+        end
+        next unless why
+        issues << "⚠️ WARNING: rooms/#{rid}/#{key}[#{i}] '#{o['id'] || o['name']}': wallMounted is set but #{why}. " \
+                  'Use it only on a tall interactable fixed to a back wall, such as a power socket.'
+      end
+    end
+  end
+  issues
+end
+
 # Step 8b (format 2). The merged `owner` field: a single-owner kind (a workstation, a desk phone,
 # a Friendface phone, a left-behind item) carries one NPC id, never a list; a private object may
 # list several. Warn where a workstation or private object has no owner of its own but an NPC's
@@ -8326,6 +8363,7 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
   run.call('check_recurring_bugs') { check_recurring_bugs(json_data, repo_root) }
   run.call('check_retired_keys') { check_retired_keys(json_data) }
   run.call('check_owner_fields') { check_owner_fields(json_data) }
+  run.call('check_wall_mounted') { check_wall_mounted(json_data) }
   run.call('check_unheard_room_triggers') { check_unheard_room_triggers(json_data, repo_root) }
   habits_copy = nil
   habits_report = nil
