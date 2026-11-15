@@ -149,7 +149,6 @@ module BreakEscape
       # Kai listing only the share's down, marked rearmed, while the global is true: still the park floor
       assert travel_to(t + 6) { report(fail_r('kai', 'finance_share', 'down', 'kai_pc', rearmed: true)).first['tooSoon'] }
       assert_equal 40, travel_to(t + 25) { report(fail_r('kai', 'finance_share', 'down', 'kai_pc', rearmed: true)).first['level'] }
-
     end
 
     test 'R2 m2 and L: a lockout with no check record is no cause: locked_out is refused, the station eases, rearmed keeps the use floor' do
