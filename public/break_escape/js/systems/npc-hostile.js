@@ -324,7 +324,7 @@ function damageNPC(npcId, amount) {
       // anchor. Every NPC's x,y is restored as its body centre on reload (npc-sprites
       // positions the body there), and roomIdAtFeet is documented to take the body
       // centre too, so the drop path (which uses body.center) and this capture now
-      // resolve the same room (review R1 m1) and the body lands where it fell instead
+      // resolve the same room and the body lands where it fell instead
       // of the sprite-anchor-to-body-centre offset higher (the 30 px cross-room gap).
       const koBc = sprite.body?.center;
       const koFx = Number.isFinite(koBc?.x) ? koBc.x : sprite.x;

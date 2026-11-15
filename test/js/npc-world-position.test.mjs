@@ -28,6 +28,15 @@ test('position.px/py is returned as world pixels whatever the room origin', () =
   assert.deepEqual(S.calculateNPCWorldPosition(npc, { worldX: 99, worldY: 99 }), { x: -160, y: 192 });
 });
 
+test('a body that fell at world x or y = 0 is still placed there', () => {
+  assert.deepEqual(S.calculateNPCWorldPosition({ position: { px: 0, py: 0 } }, { position: { x: 640, y: 480 } }), { x: 0, y: 0 });
+  assert.deepEqual(S.calculateNPCWorldPosition({ position: { px: 0, py: 192 } }, {}), { x: 0, y: 192 });
+});
+
+test('px without py is not read as a pixel position', () => {
+  assert.equal(S.calculateNPCWorldPosition({ position: { px: 10 } }, {}), null);
+});
+
 test('px/py wins over tile x/y when both are present', () => {
   const npc = { position: { x: 5, y: 3, px: 10, py: 20 } };
   assert.deepEqual(S.calculateNPCWorldPosition(npc, { position: { x: 64, y: 64 } }), { x: 10, y: 20 });

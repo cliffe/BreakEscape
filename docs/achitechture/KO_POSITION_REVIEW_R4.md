@@ -55,3 +55,8 @@ range with the comment text anchor ("Tile coordinates mean feet (body.center)" i
 
 B 0, M 0, m 2. Fine to merge; both minors are small follow-ups. The test's temp directory
 is never removed, which matches the other copy-list tests and is not worth a finding.
+
+## Outcomes
+
+- m1: fixed. `test/js/npc-world-position.test.mjs` gains a body at world x or y = 0 and a px-only position (6 tests).
+- m2: fixed. The D5 comments in `game.rb` and `npc-hostile.js` no longer cite review ids or a line range; the restore contract is named by function (`createNPCSprite`). Older comments outside D5 were left as they are.

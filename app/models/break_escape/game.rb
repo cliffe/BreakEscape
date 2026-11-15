@@ -2115,7 +2115,7 @@ module BreakEscape
           # Serve the fall spot in the form the client reads: createNPCSprite places
           # the sprite via calculateNPCWorldPosition(npc.position), so a top-level x,y
           # is ignored. px,py are absolute world pixels and land the body centre there
-          # (npc-sprites.js:118-126), which is the frame koX,koY was captured in.
+          # (createNPCSprite in npc-sprites.js), which is the frame koX,koY was captured in.
           ko_room == room_id ? npc.merge('position' => { 'px' => kx, 'py' => ky }) : nil
         end
       end
@@ -2134,7 +2134,7 @@ module BreakEscape
           'position' => { 'px' => kx, 'py' => ky }, 'isKO' => true, 'currentHP' => 0
         )
         # Strip held items a real KO already dropped to the floor (objects_added) or that
-        # reached the player (review R1 m4): the scenario def still lists them, but on a
+        # reached the player: the scenario def still lists them, but on a
         # cross-room injection they must not be resurrected on the summoned body. Matches
         # the delivered-item suppression a native room NPC gets in filtered_room_data.
         if injected['itemsHeld'].is_a?(Array) && !injected['itemsHeld'].empty?
@@ -2162,7 +2162,7 @@ module BreakEscape
         kx = entry['koX']
         ky = entry['koY']
         next unless room_id.is_a?(String) && kx.is_a?(Numeric) && ky.is_a?(Numeric)
-        # Re-check the room against the live scenario (review R1 m2): a scenario edited
+        # Re-check the room against the live scenario: a scenario edited
         # mid-game could drop koRoom, and an entry pointing at a gone room would strip the
         # NPC from its home room (apply_ko_positions!) without ever being re-injected. Skip
         # it instead, so the NPC is served at home, still KO'd, rather than lost.
@@ -5158,7 +5158,7 @@ module BreakEscape
     end
 
     # A KO only ever happens in a room the player is standing in, so a stored fall
-    # position is kept only for a room the player has actually reached (review R1 M1).
+    # position is kept only for a room the player has actually reached.
     # Without this bound a forged sync could claim a met-but-unfought NPC was knocked
     # out in any scenario room and have the server relocate it, with its full scenario
     # definition, into a never-entered room. unlockedRooms is seeded with the start
