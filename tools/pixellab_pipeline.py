@@ -42,6 +42,10 @@ outside the pipeline:  pixellab_pipeline.py import <url> --key bernie_nwosu
 Other commands: status, collect (finish jobs a killed run left pending), balance, visemes.
 Every paid command accepts --dry-run, which prints the request without sending it.
 
+White backgrounds: `import` (online and --offline) and `reroll` make the near-white pixels
+connected to each frame's edges transparent, because some characters come back from PixelLab
+on opaque white. Enclosed white (eyes, badges) stays. `--keep-white` turns it off.
+
 Auth: PIXELLAB_API_KEY (or PIXELLAB_API_TOKEN) env var, else the Authorization header of
 the `pixellab` MCP server in ~/.claude.json. The token is never printed.
 """
@@ -1844,7 +1848,10 @@ def cmd_reroll(args):
             out = trial_dir / f"t{n:02d}"
             out.mkdir(parents=True, exist_ok=True)
             for i, url in enumerate(urls):
-                api.download(url).save(out / f"frame_{i:03d}.png")
+                frame = api.download(url)
+                if not args.keep_white:
+                    frame, _ = clear_edge_white(frame)
+                frame.save(out / f"frame_{i:03d}.png")
             print(f"t{n:02d}: {len(urls)} frames")
         finally:
             # The take lives on locally; remove the temporary group so the character stays clean.
@@ -1890,6 +1897,71 @@ def ai_edit_frames(root, args, frames, idx):
     if len(out) < len(idx):
         sys.exit(f"edit returned {len(out)} image(s) for {len(idx)} frame(s)")
     return {i: (im if im.size == size else fit_square(im, size[0])) for i, im in zip(idx, out)}
+
+
+# Near-white means every RGB channel at or above this. Measured on the November 2026 m02
+# night-staff candidates: PixelLab's painted background is (254,255,254) or (254,252,250),
+# the lightest figure pixels (grey hair, a shirt highlight) top out at 232, and the outline
+# next to the background is dark (no light anti-aliased fringe). 240 sits in that gap.
+WHITE_BG_THRESHOLD = 240
+
+
+def clear_edge_white(im, threshold=WHITE_BG_THRESHOLD):
+    """Make near-white pixels connected to the frame edges fully transparent.
+
+    Some PixelLab characters come back with the background painted opaque white instead of
+    transparent. A 4-connected flood fill is seeded from every edge pixel that is near-white
+    or already transparent, and spreads through near-white and transparent pixels only, so
+    white enclosed by the figure (eye whites, a badge, a highlight) stays: the outline
+    separates it from the background, and 4-connectivity cannot leak through a diagonal gap.
+    Returns (new RGBA image, number of pixels cleared). An already-transparent background
+    clears nothing and leaves the image unchanged.
+    """
+    from collections import deque
+    a = np.array(im.convert("RGBA"))
+    h, w = a.shape[:2]
+    passable = (a[..., 3] == 0) | (a[..., :3].min(axis=2) >= threshold)
+    seen = np.zeros((h, w), dtype=bool)
+    queue = deque()
+    for y in range(h):
+        for x in (0, w - 1):
+            if passable[y, x] and not seen[y, x]:
+                seen[y, x] = True
+                queue.append((y, x))
+    for x in range(w):
+        for y in (0, h - 1):
+            if passable[y, x] and not seen[y, x]:
+                seen[y, x] = True
+                queue.append((y, x))
+    while queue:
+        y, x = queue.popleft()
+        for ny, nx in ((y - 1, x), (y + 1, x), (y, x - 1), (y, x + 1)):
+            if 0 <= ny < h and 0 <= nx < w and passable[ny, nx] and not seen[ny, nx]:
+                seen[ny, nx] = True
+                queue.append((ny, nx))
+    clear = seen & (a[..., 3] > 0)
+    n = int(clear.sum())
+    if n:
+        a[clear] = (0, 0, 0, 0)
+    return Image.fromarray(a, "RGBA"), n
+
+
+def clear_white_backgrounds(root, threshold=WHITE_BG_THRESHOLD):
+    """clear_edge_white on every rotation and animation frame under an export folder
+    (rotations/*.png and animations/<template>/<direction>/*.png, the sit frames included).
+    Rewrites only the frames that change. Returns (frames changed, pixels cleared)."""
+    files = sorted((root / "rotations").glob("*.png")) + sorted((root / "animations").rglob("*.png"))
+    frames = pixels = 0
+    for f in files:
+        out, n = clear_edge_white(Image.open(f), threshold)
+        if n:
+            out.save(f)
+            frames += 1
+            pixels += n
+    if frames:
+        print(f"cleared the white background on {frames} of {len(files)} frame(s) "
+              f"({pixels} pixels; --keep-white turns this off)")
+    return frames, pixels
 
 
 def cmd_import(args):
@@ -1939,6 +2011,8 @@ def cmd_import(args):
     if args.offline:
         # Rebuild from the last download, e.g. after `fix`. Overrides are reapplied.
         root = export_root_for(key)
+        if not args.keep_white:
+            clear_white_backgrounds(root)
         apply_overrides(key, root)
         return convert_and_record(args, key, cid, character, DEFAULT_WORKDIR / "_export" / key)
 
@@ -1960,6 +2034,9 @@ def cmd_import(args):
         sit_cid = resolve_character(args.sit_from, args.workdir)
         sit_char = api.get(f"/characters/{sit_cid}")
         take_sit_from_state(root, state_folder(export_dir, sit_cid, sit_char, api), sit_char)
+    if not args.keep_white:
+        # Before the overrides, so a hand-edited frame is used exactly as committed.
+        clear_white_backgrounds(root)
     apply_overrides(key, root)
 
     return convert_and_record(args, key, cid, character, export_dir)
@@ -2363,6 +2440,12 @@ def main():
     p.add_argument("--offline", action="store_true", help="reconvert the last download (after `fix`) without downloading")
     p.add_argument("--ignore-drift", action="store_true",
                    help="replace the atlas even if it has hand edits not saved as overrides (they are lost)")
+    p.add_argument("--keep-white", action="store_true",
+                   help="skip the white-background fill. By default every rotation and animation frame "
+                   "(sit frames included) has the near-white pixels connected to the frame edges made "
+                   f"transparent (4-connected flood fill, every channel >= {WHITE_BG_THRESHOLD}), because "
+                   "some PixelLab characters come back on opaque white. White enclosed by the figure "
+                   "(eyes, badges, highlights) stays; a transparent frame is unchanged")
 
     p = sub.add_parser("qa", help="contact sheets + hints for reviewing an imported character's frames")
     p.add_argument("key", help="an imported key, e.g. bernie_nwosu")
@@ -2385,6 +2468,8 @@ def main():
     p.add_argument("direction")
     p.add_argument("--tries", type=int, default=2, help="takes to generate (default 2)")
     p.add_argument("--accept", help="install take tNN as overrides")
+    p.add_argument("--keep-white", action="store_true",
+                   help="keep a white background on downloaded takes (default: cleared, as in import)")
     p.add_argument("--dry-run", action="store_true")
     p.set_defaults(func=cmd_reroll)
 
