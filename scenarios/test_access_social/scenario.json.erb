@@ -1605,11 +1605,12 @@
           "observations": "The breaker for the sales system. Click it to switch it off, and again to switch it back on."
         },
         {
-          "type": "power_socket1",
+          "type": "power_socket_drop1",
           "id": "f12_socket",
           "name": "Wall socket",
-          "position": { "x": 3.375, "y": 0.75, "elevation": -8 },
-          "spriteVariants": [{ "condition": "globalVars.f12_pc_unplugged", "value": "power_socket_off1" }],
+          "position": { "x": 3.375, "y": 0.5 },
+          "wallMounted": true,
+          "spriteVariants": [{ "condition": "globalVars.f12_pc_unplugged", "value": "power_socket_drop_off1" }],
           "takeable": false,
           "interactable": true,
           "triggerOnInteract": [

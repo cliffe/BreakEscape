@@ -1590,11 +1590,12 @@
           "observations": "A plain PC nobody owns."
         },
         {
-          "type": "power_socket1",
+          "type": "power_socket_drop1",
           "id": "ian_socket",
           "name": "Wall socket",
-          "position": { "x": 3.375, "y": 0.75, "elevation": -8 },
-          "spriteVariants": [{ "condition": "globalVars.ian_pc_unplugged", "value": "power_socket_off1" }],
+          "position": { "x": 3.375, "y": 0.5 },
+          "wallMounted": true,
+          "spriteVariants": [{ "condition": "globalVars.ian_pc_unplugged", "value": "power_socket_drop_off1" }],
           "takeable": false,
           "interactable": true,
           "triggerOnInteract": [
