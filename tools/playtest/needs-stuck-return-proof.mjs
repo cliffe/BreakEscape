@@ -52,6 +52,17 @@ await page.evaluate(() => {
         const row = { mode: ns.mode, atPost: !!ns.atPost, key: b._seatStopKey || null, mv: b._seatMove?.stage || null, fetch: b._fetch?.phase || null,
             seated: !!b._seat, moving: !!b.isMoving, dest: !!b._goToStayDest };
         const last = window.__seatTrace.at(-1);
+        // Standing idle at the post after a seat try: every chair near the home cell (its foot as
+        // seating's post filter measures it) and every other needs NPC's home, once per 4 s
+        if (row.key && !row.seated && !row.mv && !row.moving && ns.home && (!window.__seatProbeAt || sys.clockMs - window.__seatProbeAt >= 4000) && (window.__seatProbes ||= []).length < 30) {
+            window.__seatProbeAt = sys.clockMs;
+            const objs = Object.values(window.rooms?.[b.roomId]?.objects || {});
+            const homes = [...sys.states.entries()].filter(([id, s]) => id !== 'sanjay' && s.home && s.home.roomId === b.roomId).map(([id, s]) => ({ id, x: Math.round(s.home.x), y: Math.round(s.home.y) }));
+            window.__seatProbes.push({ c: sys.clockMs, feet: { x: Math.round(feet.x), y: Math.round(feet.y) }, home: { x: Math.round(ns.home.x), y: Math.round(ns.home.y) }, homes,
+                chairs: objs.filter(o => o.active && (o.isSwivelChair || /chair|stool|sofa/.test(o.texture?.key || ''))).map(o => { const f = { x: o.x + o.width / 2, y: o.y + o.height };
+                    return { key: o.texture?.key, foot: { x: Math.round(f.x), y: Math.round(f.y) }, dHome: Math.round(Math.hypot(f.x - ns.home.x, f.y - ns.home.y)), by: o.seatedBy || null,
+                        posts: homes.filter(h => Math.hypot(h.x - f.x, h.y - f.y) < 36).map(h => h.id) }; }).filter(c => c.dHome < 64) });
+        }
         if (last && JSON.stringify(last.row) === JSON.stringify(row)) return;
         window.__seatTrace.push({ c: sys.clockMs, row, feet: { x: Math.round(feet.x), y: Math.round(feet.y) },
             home: ns.home ? { x: Math.round(ns.home.x), y: Math.round(ns.home.y) } : null,
@@ -161,6 +172,7 @@ report.marek_arrivals = mlog.filter(e => e.ev === 'arrival').map(e => ({ t: e.t,
 report.events = await page.evaluate(() => window.__p.filter(e => !e.ev.startsWith('npc_chatted') || ['sanjay', 'marek'].includes(e.d?.speakerId || e.d?.npcId)));
 report.listen = await page.evaluate(() => window.__listen);
 report.sanjay_seat = await page.evaluate(ra => window.__seatTrace.filter(e => e.c >= ra - 5000), readAt);
+report.sanjay_seat_probes = await page.evaluate(ra => (window.__seatProbes || []).filter(e => e.c >= ra), readAt);
 report.sanjay_log = needsLog.filter(e => e.npc === 'sanjay' && e.t >= readTick - 40 && !/^(arrival|need|decay)/.test(e.ev)).slice(0, 40);
 report.marek_path = trace.filter((e, i) => i % 2 === 0).map(e => [e.c, e.x, e.y]);
 const tasks = await tasksDone();
