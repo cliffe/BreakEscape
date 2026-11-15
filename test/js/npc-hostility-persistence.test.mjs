@@ -183,7 +183,9 @@ test('a KO records its fall room and x,y for the save', () => {
             ? {
                 _sprite: {
                     x: 412.4, y: 268.6, once: () => {},
-                    body: { center: { x: 382.6, y: 238.4 } }
+                    // A physics body: center for the capture, plus the few stubs the KO
+                    // disable path touches (setVelocity, checkCollision, enable).
+                    body: { center: { x: 382.6, y: 238.4 }, setVelocity: () => {}, checkCollision: {} }
                 },
                 roomId: 'break_room'
             }
