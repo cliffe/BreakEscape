@@ -105,9 +105,10 @@ NPC returns to normal placement. koImmune NPCs never record a KO or a position.
 
 ## Test results
 
-- Rails: `test/controllers/break_escape/reload_persistence_test.rb` 75 runs, 287
-  assertions, 0 failures (4 new D5 tests: same-room placement, cross-room
-  placement + not-at-home, hostile-input validation, first-fall-wins + no growth);
+- Rails: `test/controllers/break_escape/reload_persistence_test.rb` 76 runs, 291
+  assertions, 0 failures (5 D5 tests: same-room placement, cross-room
+  placement + not-at-home, hostile-input validation, first-fall-wins + no growth,
+  negative-coordinate acceptance + huge-negative rejection);
   `forged_ko_drop_test.rb` + `game_test.rb` 109 runs, 480 assertions, 0 failures.
 - JS: `node --test test/js/npc-hostility-persistence.test.mjs` 12 tests pass (4 new
   D5 tests); full `bin/test-js` 671 files passed, 0 failed.
@@ -117,14 +118,46 @@ NPC returns to normal placement. koImmune NPCs never record a KO or a position.
 
 Keyless server on 127.0.0.1:3095 from the worktree, headless Chromium at
 setFPS(20), a real reload (navigate to about:blank so pagehide flushes, then back).
+Games made in-run with `new-game.rb test_needs_sims`. The cross-room KO is set up
+by moving marek's sprite into the `kitchen` through the test bridge and knocking
+him out there (the needs errand to the kitchen does not fire headless); the kitchen
+sits at world x <= -260, so this is also the case that exercised the negative-coord
+fix above. The authoritative "where is the NPC served" check reads the room-fetch
+endpoint directly (`GET .../room/<id>`).
 
-- Game 5339 (test_needs_sims):
-  - Home-room KO: amara knocked out in the start room `office`; after the reload she
-    comes back knocked out at the same x,y. (results below)
-  - Cross-room KO: marek driven into the `kitchen` by a need, knocked out there;
-    after the reload he comes back KO in the kitchen at that spot and is not also
-    standing in his home room `office`. (results below)
-  - Network: the sync carrying marek/amara `koRoom` is sent once; later syncs do not
-    re-send the entry (keyed delta, `buildChanges`).
+### The 30 px question (measurement, not a bug)
 
-(detailed run output pasted below once the proof completes)
+The earlier run read `npcPos('amara')` as (224,124) at KO and (194,61) after the
+reload and asked whether the 30 px x shift was real. It is a measuring artefact.
+`world.npcPos` returns `sprite.body.center`, while the KO records `sprite.x`,
+`sprite.y`. Measuring like with like (amara, game 5348, already KO'd and reloaded):
+
+| quantity                     | before reload | after reload |
+| ---------------------------- | ------------- | ------------ |
+| `sprite.x`, `sprite.y`       | 224, 65       | 224, 65      |
+| `sprite.body.center` (npcPos)| 194, 61       | 194, 61      |
+| stored `koX`, `koY`          | 224, 69       | 224, 69      |
+
+The sprite's own x,y are identical across the reload (pixel-identical in x, within
+4 px in y from the death-pose origin), so the body lands in the same place on
+screen. The 30 px is `sprite.x` (224) minus `body.center.x` (194), a constant body
+offset, present before and after; it is not a placement change.
+
+### Live proof table
+
+| run | game | case       | stored koRoom/koX/koY | served after reload (room/x/y, isKO) | not at home | sent once |
+| --- | ---- | ---------- | --------------------- | ------------------------------------ | ----------- | --------- |
+| 1   | 5354 | same-room  | office / 224 / 69     | office / 224 / 69, isKO              | n/a         | yes       |
+| 1   | 5354 | cross-room | kitchen / -238 / 132  | kitchen / -238 / 132, isKO          | office: absent | yes    |
+| 2   | 5355 | same-room  | office / 224 / 69     | office / 224 / 69, isKO              | n/a         | yes       |
+| 2   | 5355 | cross-room | kitchen / -262 / 127  | kitchen / -262 / 127, isKO          | office: absent | yes    |
+
+"Sent once": the `sync_state` body carrying `koRoom` is seen exactly once per NPC;
+syncs after the KO and after the reload carry no `amara`/`marek` entry (keyed delta).
+Client render confirmed too: after the reload the kitchen loads with marek in its
+`npcSprites`, visible and KO (games 5354 and 5355), and the office serves and renders
+only amara, tom, grace, sanjay (marek dropped from his home room).
+
+Pre-fix baseline: game 5348, cross-room, the server rejected the negative koX and
+marek came back in the office (his home) at his spawn, not in the kitchen. The fix
+in commit `f4149bfc3` (symmetric coordinate bound) is what makes runs 1 and 2 pass.
