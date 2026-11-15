@@ -324,8 +324,10 @@ export class NPCBehaviorManager {
 
 /**
  * NPCBehavior - Individual NPC behavior instance
+ * Exported for the SIMS-2 arrival unit test (test/js/npc-behavior-arrival.test.mjs); the manager
+ * remains the only constructor used in the game.
  */
-class NPCBehavior {
+export class NPCBehavior {
     constructor(npcId, sprite, config, scene, pathfindingManager) {
         this.npcId = npcId;
         this.sprite = sprite;
@@ -3016,6 +3018,7 @@ class NPCBehavior {
         this.config.patrol.enabled = true;
         this._stopOnArrival = true; // New flag: disable patrol after reaching this waypoint
         this._goToStayDest = { x: worldX, y: worldY }; // Original destination for arrival-tolerance guard
+        this._moveId = opts?.moveId ?? null;   // SIMS-2: echoed in npc_arrived so needs can ignore a stale arrival
         this._arriveWithin = Number(opts?.arriveWithin) > 0 ? Number(opts.arriveWithin) : 0;   // 0: the 1-tile guard
         this._nearDestSince = 0;
 
@@ -3038,6 +3041,7 @@ class NPCBehavior {
     cancelMove() {
         this._stopOnArrival = false;
         this._goToStayDest = null;
+        this._moveId = null;   // SIMS-2: a cancelled move issues no arrival
         this._moveOwner = undefined;
         this._moveAvoidRooms = undefined;
         this._moveYieldsToPlayer = false;
@@ -3063,6 +3067,10 @@ class NPCBehavior {
 
     _triggerGoToStayArrival() {
         const owner = this._moveOwner;
+        // SIMS-2: read the move id and the steps the path had left before the path is cleared below.
+        const moveId = this._moveId ?? null;
+        const pathLeft = Math.max(0, (this.currentPath?.length || 0) - (this.pathIndex || 0));
+        this._moveId = null;
         this._moveOwner = undefined;
         this._moveAvoidRooms = undefined;
         this._moveYieldsToPlayer = false;
@@ -3098,7 +3106,9 @@ class NPCBehavior {
                 npcId: this.npcId,
                 x: arrivedPos.x,
                 y: arrivedPos.y,
-                owner
+                owner,
+                moveId,
+                pathLeft
             });
         }
     }
