@@ -100,9 +100,14 @@ async function settle(page) {
   return false;
 }
 
+// Every page error on any page booted by this proof is collected here. A page error is a hard
+// failure: the final check asserts the list is empty, so a crash (e.g. a stripped pad-lock door
+// boot throwing in addNote) can no longer hide behind an otherwise-green run.
+const pageErrors = [];
+
 async function openPage(browser, baseUrl, gameId) {
   const page = await browser.newPage({ viewport: { width: 1200, height: 900 } });
-  page.on('pageerror', e => console.log('  PAGEERROR', String(e).slice(0, 160)));
+  page.on('pageerror', e => { const s = String(e); pageErrors.push(`game ${gameId}: ${s}`); console.log('  PAGEERROR', s.slice(0, 160), (e && e.stack) ? `\n  STACK: ${e.stack}` : ''); });
   await page.goto(`${baseUrl}/break_escape/games/${gameId}?skip_resume=1`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => !!window.__test, null, { timeout: 180000 });
   await page.evaluate(() => window.__test.waitUntilReady({ timeoutMs: 90000 }));
@@ -340,6 +345,11 @@ async function run() {
   } finally {
     await browser.close();
   }
+
+  // No page booted during the proof may have thrown an uncaught error. This covers the
+  // door-strip pad-lock boot (a brief-less stripped scenario once threw in addNote).
+  record('no page errors on any booted page (door strip included)', pageErrors.length === 0,
+    pageErrors.length ? pageErrors.join(' ; ').slice(0, 300) : 'pageErrors=0');
 
   const failed = checks.filter(c => !c.pass);
   console.log(`\nGAME IDS: ${JSON.stringify(ids)}`);
