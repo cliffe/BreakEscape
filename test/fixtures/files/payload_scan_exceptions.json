@@ -1,1 +1,29 @@
-[]
+[
+  {
+    "scenario": "scenarios/crypto2_rsa_asymmetric/scenario.json.erb",
+    "route": "GET room/:id",
+    "paths": ["rooms/room_start/objects[2]/requires"],
+    "reason": "Legacy unlocked PC: a type:pc object with requires:\"password\" and no lockType ships its requires because the room filter strips requires only when a lockType is present. The value is the literal string \"password\", not the account answer, and the PC is not locked, so step 3 warns the field is inert. Fail-closed flags it class 1 until the owner deletes the field.",
+    "added": "2026-11-15",
+    "reviewBy": "2026-12-31",
+    "approved": "2026-11-15: crypto2 legacy PC requires"
+  },
+  {
+    "scenario": "scenarios/crypto3_aes_symmetric/scenario.json.erb",
+    "route": "GET room/:id",
+    "paths": ["rooms/room_reception/objects[0]/requires"],
+    "reason": "Legacy unlocked PC: a type:pc object with requires:\"password\" and no lockType ships its requires because the room filter strips requires only when a lockType is present. The value is the literal string \"password\", not the account answer, and the PC is not locked, so step 3 warns the field is inert. Fail-closed flags it class 1 until the owner deletes the field.",
+    "added": "2026-11-15",
+    "reviewBy": "2026-12-31",
+    "approved": "2026-11-15: crypto3 legacy PC requires"
+  },
+  {
+    "scenario": "scenarios/crypto4_encoding_encryption/scenario.json.erb",
+    "route": "GET room/:id",
+    "paths": ["rooms/room_reception/objects[0]/requires"],
+    "reason": "Legacy unlocked PC: a type:pc object with requires:\"password\" and no lockType ships its requires because the room filter strips requires only when a lockType is present. The value is the literal string \"password\", not the account answer, and the PC is not locked, so step 3 warns the field is inert. Fail-closed flags it class 1 until the owner deletes the field.",
+    "added": "2026-11-15",
+    "reviewBy": "2026-12-31",
+    "approved": "2026-11-15: crypto4 legacy PC requires"
+  }
+]

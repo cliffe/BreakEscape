@@ -114,6 +114,12 @@ module BreakEscape
 
     # The content-object node (a container's contents[] item), for the GET /container subtree.
     CONTENTS_ITEM = SS.item(SS.at('#/definitions/item/properties/contents'))
+    # The bootstrap renames `startItemsInInventory` to `playerInventory`, so its items have no
+    # top-level schema key, but they are authored items (plan 6a-1 "Two shapes of response": an
+    # inventory item is a subtree payload at the authored path of the item with that id). Walk it
+    # with the item-array node so an item's `name`/`observations` is class 3, not an undeclared
+    # class 4 leaf that would coincide with a lock answer (test_unlock_gaps' "Pocket Cryptex").
+    ITEM_ARRAY = SS.at('#/definitions/item/properties/contents')
     EXCEPTIONS_PATH = File.expand_path('../../fixtures/files/payload_scan_exceptions.json', __dir__)
 
     # ── classifier unit tests (they prove the 6a-1 marks resolve to the right class) ──
@@ -251,6 +257,7 @@ module BreakEscape
 
       scenario_templates.each do |scenario_path|
         name = File.basename(File.dirname(scenario_path))
+        rel = "scenarios/#{name}/scenario.json.erb"
         data = render_template(scenario_path)
         if data.nil?
           skipped << name
@@ -258,7 +265,7 @@ module BreakEscape
         end
 
         game = build_game(data)
-        scn_findings = scan_game(game, scenario_path)
+        scn_findings = scan_game(game, rel)
         per_scenario[name] = scn_findings.size
 
         scn_findings.each do |f|
@@ -491,7 +498,7 @@ module BreakEscape
         here_lock = data['lockType'].is_a?(String) ? data['lockType'] : lock_type
         here_id = data['id'].is_a?(String) ? data['id'] : container_object_id(container)
         data.each do |k, v|
-          child = SS.child(node, k)
+          child = (node.equal?(SS.root) && k == 'playerInventory') ? ITEM_ARRAY : SS.child(node, k)
           child_withheld = under_withheld
           unless under_withheld
             mark = C.server_only_mark(child)
