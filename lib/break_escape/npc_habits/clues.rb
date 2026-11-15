@@ -154,9 +154,9 @@ module BreakEscape
           entry = { text: post['text'], path: "rooms/#{room_id}/npcs[#{index}]/feed/posts[#{j}]", object_id: nil, scope: nil, locks: [] }
           if members.include?(post['id'])
             set = if !aw.reply_post?(post) then post['id']
-                  elsif own_ids.include?(post['insteadOf']) then post['insteadOf']
-                  else post['id']
-                  end
+            elsif own_ids.include?(post['insteadOf']) then post['insteadOf']
+            else post['id']
+            end
             yield entry.merge(set: set), set
           else
             yield entry, nil

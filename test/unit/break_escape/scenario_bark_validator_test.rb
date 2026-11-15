@@ -107,6 +107,5 @@ module BreakEscape
       refute ScenarioBarkValidator.validate_shared({}, "Psst.")
       refute ScenarioBarkValidator.validate_shared(nil, "Psst.")
     end
-
   end
 end
