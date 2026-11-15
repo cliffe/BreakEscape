@@ -801,7 +801,10 @@ module BreakEscape
       assert_equal({ 'hostile' => true, 'ko' => true, 'koRoom' => 'break_room', 'koX' => 300, 'koY' => 420 },
                    game.reload.player_state.dig('npcHostility', 'guard'))
       guard = room_npcs(game, 'break_room').find { |n| n['id'] == 'guard' }
-      assert_equal [300, 420], [guard['x'], guard['y']], 'placed where it fell, not at its spawn (5,5)'
+      # Served in the form createNPCSprite reads: position.px/py (absolute world pixels),
+      # not a top-level x,y the client ignores.
+      assert_equal({ 'px' => 300, 'py' => 420 }, guard['position'],
+                   'placed where it fell (position.px/py), not at its spawn (5,5)')
     end
 
     test 'a cross-room KO comes back in the room it fell in, not standing at home' do
@@ -814,7 +817,8 @@ module BreakEscape
       # Injected into the room it fell in, knocked out, at that spot
       errand = room_npcs(game, 'break_room').find { |n| n['id'] == 'errand' }
       assert errand, 'the errand NPC appears in the room it fell in'
-      assert_equal [150, 260], [errand['x'], errand['y']]
+      assert_equal({ 'px' => 150, 'py' => 260 }, errand['position'],
+                   'injected at the fall spot in position.px/py form')
       assert_equal true, errand['isKO']
       assert_equal 0, errand['currentHP']
 
@@ -918,6 +922,30 @@ module BreakEscape
       assert_response :success
       assert_equal 'break_room', game.reload.player_state.dig('npcHostility', 'errand', 'koRoom'),
                    'an entered room is reachable, position kept'
+      # The position is not just stored but actually served into the fall room (R2 m3:
+      # the earlier test name over-claimed "placed" while only checking storage).
+      errand = room_npcs(game, 'break_room').find { |n| n['id'] == 'errand' }
+      assert errand, 'injected into the room it fell in'
+      assert_equal({ 'px' => 150, 'py' => 260 }, errand['position'], 'served at the fall spot')
+    end
+
+    # Review R2 m1: ko_room_reachable? must match the full GET /room gate. A gated NPC
+    # route room the player has slipped into (npcRouteRooms, kept out of unlockedRooms)
+    # is a room the player can legitimately stand and fight in, so a KO there is stored.
+    test 'a KO in a gated NPC route room the player is standing in is stored and placed' do
+      game = ko_scenario_game(unlocked: %w[lobby]) # break_room is NOT unlocked
+      game.player_state['npcRouteRooms'] = %w[break_room] # but reachable as a route room
+      game.save!
+      put sync_state_game_url(game), params: { npcHostility: {
+        'guard' => { hostile: true, ko: true, koRoom: 'break_room', koX: 150, koY: 260 }
+      } }, as: :json
+      assert_response :success
+      assert_equal 'break_room', game.reload.player_state.dig('npcHostility', 'guard', 'koRoom'),
+                   'a route room is reachable, position kept'
+
+      guard = room_npcs(game, 'break_room').find { |n| n['id'] == 'guard' }
+      assert guard, 'the route room serves (GET /room gate allows it)'
+      assert_equal({ 'px' => 150, 'py' => 260 }, guard['position'], 'placed where it fell')
     end
 
     # Review R1 m3 and m4: a cross-room injection must carry the NPC's full scenario

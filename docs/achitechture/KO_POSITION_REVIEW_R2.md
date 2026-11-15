@@ -154,3 +154,70 @@ handled with defence in depth, and the delta stays bounded and single. No blocke
 major. The four minors are a route-room gate gap, the acknowledged forged-home-strip
 residual, a JS test that misses the body-centre branch, and a cosmetic old-save
 offset.
+
+## Outcomes (D5 fix round after R2)
+
+The R2 review found the four minors above and, separately, the coordinator confirmed
+from the code the headline bug the whole feature turned on: the client never reads the
+served position. Both are addressed here.
+
+### Headline bug: the client never read the served KO position (now fixed)
+
+`apply_ko_positions!` wrote a top-level `'x'`/`'y'` on the served NPC, for both the
+same-room merge and the cross-room injection. `createNPCSprite` places a sprite with
+`calculateNPCWorldPosition(npc, roomData)` (npc-sprites.js:303), which reads only
+`npc.position`: `{px, py}` as absolute world pixels or `{x, y}` as tiles from the room
+origin. The top-level `x`/`y` were dropped on the client, so every KO'd NPC came back
+at its scenario spawn after a reload (live games 5395, 5396: Amara and Marek back on
+their spawn tiles). The Rails tests asserted the top-level `x`/`y`, so they passed while
+the live path broke, the "fix claims need live proof" pattern.
+
+Fix (smallest, server-side): serve the position in the form the client reads,
+`'position' => { 'px' => kx, 'py' => ky }`, and drop the unused top-level `x`/`y`.
+`px`/`py` are absolute world pixels; createNPCSprite shifts the new sprite so its
+`body.center` lands on that world point (npc-sprites.js:118-126), which is the exact
+frame `koX`/`koY` was captured in (R1 m1, `sprite.body.center`). So the stored value and
+the restore frame agree and the body lands where it fell. Other `npc.position` readers
+(npc-los.js:212, npc-sight-occlusion.js:394) prefer the live sprite/body and only fall
+back to `position.x`/`.y`; a KO'd NPC has its body disabled and never sights, so serving
+`px`/`py` without `x`/`y` does not affect them. The same-room merge overwrites the
+scenario tile `position` wholesale; the cross-room injection overwrites it on the dup.
+Rails tests now assert `position.px`/`py`; a JS test supplies a `body.center` offset from
+the anchor and asserts the capture stores the centre.
+
+### m1 (route-room gate gap): fixed
+
+`ko_room_reachable?` (game.rb ~5161) now also accepts an NPC route room
+(`in_npc_route_room?`), so it matches the set GET /room serves. Start and awareness
+world rooms need no special case: the start room is seeded into `unlockedRooms` at
+creation and a world room is auto-promoted into `unlockedRooms` on first fetch, so both
+are already covered; only a gated route room is kept out of `unlockedRooms` by design.
+`in_npc_route_room?` reads `player_state['npcRouteRooms']` alone, so the predicate stays
+correct under the narrow sync load that has no `scenario_data`. A legitimate KO in a
+route room the player is standing in is now stored and served there. Test:
+`a KO in a gated NPC route room the player is standing in is stored and placed`.
+
+### m2 (forged home-strip residual): accepted as it stands
+
+A crafted `sync_state` can still set `ko: true` for a met-but-unfought, non-`koImmune`
+NPC and name any already-visited room, stripping that NPC from its home room and
+injecting a non-interactive KO'd copy. The payoff is self-inflicted (no gate unlocked,
+delivered items stripped, collisions off on a KO'd body), so this is griefing-yourself,
+not a cheat, and is unchanged in severity from R1's residual note. Accepted. A mission
+that needs a specific home-room NPC present for a cue should mark it `koImmune`, which
+blocks any position or relocation being stored for it.
+
+### m3 (JS test missed the body.center branch): fixed
+
+The capture test's mock sprite had no `body`, so it proved only the sprite-anchor
+fallback. The mock now carries a `body.center` offset from the anchor and asserts the
+stored `koX`/`koY` are the centre, not the anchor; a second test keeps the bodyless
+fallback covered. The "still stored and placed" Rails test now also asserts the served
+`position.px`/`py`, not just the stored `koRoom`.
+
+### m4 (old dev saves offset): accepted, cosmetic
+
+A KO stored before the R1 body-centre capture holds `koX`/`koY` in the sprite-anchor
+frame; first-fall-wins never rewrites it, so such a save renders a KO'd NPC shifted by
+the anchor-to-centre offset. These are dev-only saves, so no migration is warranted.
+Recorded as a known cosmetic effect, lowest severity.

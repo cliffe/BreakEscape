@@ -174,9 +174,19 @@ test('a hurt NPC saves its HP with its hostility, and a reload restores it', () 
 // the three fields on the hostility record.
 test('a KO records its fall room and x,y for the save', () => {
     const savedMgr = window.npcManager;
+    // R2 m3: the sprite has a physics body whose centre is offset from the anchor,
+    // so this exercises the body.center capture branch (the headline m1 fix), not the
+    // sprite-anchor fallback. The server restores the body centre at koX,koY, so the
+    // capture must store the centre, not sprite.x/sprite.y.
     window.npcManager = {
         getNPC: (id) => (id === 'errand_npc'
-            ? { _sprite: { x: 412.4, y: 268.6, once: () => {} }, roomId: 'break_room' }
+            ? {
+                _sprite: {
+                    x: 412.4, y: 268.6, once: () => {},
+                    body: { center: { x: 382.6, y: 238.4 } }
+                },
+                roomId: 'break_room'
+            }
             : null)
     };
     try {
@@ -184,8 +194,29 @@ test('a KO records its fall room and x,y for the save', () => {
         sys.damageNPC('errand_npc', 10_000);
         assert.deepEqual(sys.exportHostility().errand_npc, {
             hostile: true, ko: true, facing: 'down',
+            koRoom: 'break_room', koX: 383, koY: 238
+        }, 'x,y from the body centre (not the anchor 412,269), room falls back to npc.roomId');
+    } finally {
+        window.npcManager = savedMgr;
+    }
+});
+
+// R2 m3 guard: without a body the capture must still fall back to the sprite anchor,
+// so a sprite that has no physics body is not dropped.
+test('a KO without a physics body falls back to the sprite anchor', () => {
+    const savedMgr = window.npcManager;
+    window.npcManager = {
+        getNPC: (id) => (id === 'bodyless_npc'
+            ? { _sprite: { x: 412.4, y: 268.6, once: () => {} }, roomId: 'break_room' }
+            : null)
+    };
+    try {
+        sys.setNPCHostile('bodyless_npc', true);
+        sys.damageNPC('bodyless_npc', 10_000);
+        assert.deepEqual(sys.exportHostility().bodyless_npc, {
+            hostile: true, ko: true, facing: 'down',
             koRoom: 'break_room', koX: 412, koY: 269
-        }, 'room from the sprite feet (falls back to npc.roomId), x,y rounded');
+        }, 'anchor fallback, x,y rounded');
     } finally {
         window.npcManager = savedMgr;
     }

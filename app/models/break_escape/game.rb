@@ -2112,7 +2112,11 @@ module BreakEscape
           next npc unless pos
 
           ko_room, kx, ky = pos
-          ko_room == room_id ? npc.merge('x' => kx, 'y' => ky) : nil
+          # Serve the fall spot in the form the client reads: createNPCSprite places
+          # the sprite via calculateNPCWorldPosition(npc.position), so a top-level x,y
+          # is ignored. px,py are absolute world pixels and land the body centre there
+          # (npc-sprites.js:118-126), which is the frame koX,koY was captured in.
+          ko_room == room_id ? npc.merge('position' => { 'px' => kx, 'py' => ky }) : nil
         end
       end
 
@@ -2124,7 +2128,11 @@ module BreakEscape
         npc_def = find_npc_in_scenario(npc_id)
         next unless npc_def.is_a?(Hash)
 
-        injected = npc_def.deep_dup.merge('x' => kx, 'y' => ky, 'isKO' => true, 'currentHP' => 0)
+        injected = npc_def.deep_dup.merge(
+          # Absolute world pixels the client reads (see the same-room branch above);
+          # overwrites the scenario def's tile position so the body lands where it fell.
+          'position' => { 'px' => kx, 'py' => ky }, 'isKO' => true, 'currentHP' => 0
+        )
         # Strip held items a real KO already dropped to the floor (objects_added) or that
         # reached the player (review R1 m4): the scenario def still lists them, but on a
         # cross-room injection they must not be resurrected on the summoned body. Matches
@@ -5159,7 +5167,14 @@ module BreakEscape
     # it needs no scenario_data, which the narrow sync load leaves out. A forged
     # position is dropped; the KO itself is still kept.
     def ko_room_reachable?(room_id)
-      Array(player_state['unlockedRooms']).include?(room_id)
+      # Match the set GET /room serves (games_controller.rb ~554: start, unlocked,
+      # world, route). unlockedRooms already covers the start room (seeded at creation)
+      # and an awareness world room (auto-promoted into unlockedRooms on first fetch),
+      # so only a gated NPC route room needs adding: a player may legitimately stand and
+      # fight in one, but it is kept out of unlockedRooms by design. npcRouteRooms is read
+      # from player_state alone, so this stays correct under the narrow sync load that has
+      # no scenario_data.
+      Array(player_state['unlockedRooms']).include?(room_id) || in_npc_route_room?(room_id)
     end
 
     def valid_ko_coord?(value)
