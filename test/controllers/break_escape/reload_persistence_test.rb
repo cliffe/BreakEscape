@@ -788,7 +788,7 @@ module BreakEscape
     end
 
     test 'a same-room KO comes back at the spot it fell' do
-      game = ko_scenario_game
+      game = ko_scenario_game(unlocked: %w[lobby break_room])
       put sync_state_game_url(game), params: { npcHostility: {
         'guard' => { hostile: true, ko: true, koRoom: 'break_room', koX: 300, koY: 420 }
       } }, as: :json
