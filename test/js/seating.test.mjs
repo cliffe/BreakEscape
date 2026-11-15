@@ -1132,6 +1132,41 @@ test('R2 m3: seat_gave_up expires after SEAT_GIVE_UP_MS; a new stop key resets t
     } finally { rig.restore(); }
 });
 
+// Code review R3 m4: the expiry gives back the seat retries only, never the chair fetches, and runs
+// at most SEAT_GIVE_UP_EXPIRIES times per stop key; then the give-up lasts until the stop changes
+test('R3 m4: a seat give-up expiry keeps the fetch count and is capped per stop', () => {
+    const rig = labSeatRig(235);
+    const log = [];
+    const tryOnce = () => {
+        const started = seating.updateSeatedNPC(rig.behavior, null) && !!rig.behavior._seatMove;
+        rig.behavior._seatMove = null;
+        rig.behavior.isMoving = false;
+        window.npcNeedsSystem.clockMs += 4000;
+        return started;
+    };
+    try {
+        window.npcNeedsSystem._log = (npc, ev, data) => log.push({ npc, ev, ...data });
+        for (let i = 0; i < 6; i++) tryOnce();
+        assert.equal(rig.behavior._seatGaveUp, true);
+        rig.behavior._fetchRetries = seating.POST_FETCH_RETRY_MAX;   // its fetches were spent too
+        const fetchedAt = rig.behavior._fetchTriedAt;
+        let starts = 0;
+        const end = window.npcNeedsSystem.clockMs + (seating.SEAT_GIVE_UP_EXPIRIES + 3) * (seating.SEAT_GIVE_UP_MS + 20000);
+        while (window.npcNeedsSystem.clockMs < end) if (tryOnce()) starts++;
+        assert.equal(rig.behavior._fetchRetries, seating.POST_FETCH_RETRY_MAX, 'the expiry does not give the fetches back');
+        assert.equal(rig.behavior._fetchTriedAt, fetchedAt, 'nor clear the last fetch time');
+        assert.equal(log.filter(e => e.ev === 'seat_gave_up').length, 1 + seating.SEAT_GIVE_UP_EXPIRIES,
+            'one give-up per expiry, then it lasts');
+        assert.equal(starts, seating.SEAT_GIVE_UP_EXPIRIES * (1 + seating.POST_SEAT_RETRY_MAX) - seating.SEAT_GIVE_UP_EXPIRIES,
+            'each expiry allows POST_SEAT_RETRY_MAX seat moves');
+        assert.equal(rig.behavior._seatGaveUp, true, 'given up for good at this stop');
+        rig.behavior._seatStopKey = 'at:somewhere_else';
+        tryOnce();
+        assert.equal(rig.behavior._seatGiveUpExpiries, 0, 'a new stop starts the expiry count again');
+        assert.equal(rig.behavior._seatGaveUpAt, undefined, 'and clears the give-up date with the flag');
+    } finally { rig.restore(); }
+});
+
 test('M2 and m6: retry caps per kind and a recent fetch claims the chair for its fetcher', () => {
     assert.equal(seating.postRetryAllowed('seat', 0), true);
     assert.equal(seating.postRetryAllowed('seat', seating.POST_SEAT_RETRY_MAX - 1), true);

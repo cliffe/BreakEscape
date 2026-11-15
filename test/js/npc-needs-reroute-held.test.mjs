@@ -217,7 +217,7 @@ test('settleOnContact: settles against a movable NPC body and not against an imm
 
 // Code review R2 m7: drive handleNPCCollision itself, so a dropped local (the otherHeld
 // ReferenceError of games 5458 and 5459) throws here, not in a live game
-test('handleNPCCollision: settles and inserts a side step against a movable body; slides along a held one', async () => {
+test('handleNPCCollision: settles against a movable body; slides along a held one', async () => {
     const { handleNPCCollision } = await import('../../public/break_escape/js/systems/npc-sprites.js');
     const behaviours = {};
     const prevManager = window.npcBehaviorManager;

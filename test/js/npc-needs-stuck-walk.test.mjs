@@ -6,7 +6,7 @@
 // Run with: node test/js/npc-needs-stuck-walk.test.mjs
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { NPCNeedsSystem, NEEDS_TICK_MS, RETURN_YIELD_MS, STUCK_TRIES, RETURN_STUCK_BACKOFF_MS, RETURN_STUCK_MAX_BACKOFFS, RETURN_FINAL_REPLAN_MS, RETURN_FINAL_REPLANS, REROUTE_MIN_LEFT_MS, STUCK_SAME_PX, STUCK_NUDGE_REACH_PX } from '../../public/break_escape/js/systems/npc-needs.js';
+import { NPCNeedsSystem, NEEDS_TICK_MS, RETURN_YIELD_MS, STUCK_TRIES, RETURN_STUCK_BACKOFF_MS, RETURN_STUCK_MAX_BACKOFFS, RETURN_FINAL_REPLAN_MS, RETURN_FINAL_REPLANS, REROUTE_MIN_LEFT_MS, STUCK_SAME_PX } from '../../public/break_escape/js/systems/npc-needs.js';
 import { makeWorld } from './fixtures/needs-stub-world.mjs';
 
 function office() {
@@ -239,15 +239,10 @@ test('m7: a job picked during a back-off clears the back-off, so the walk home a
 test('R2 M1: a walk home nudged 28 px back and forth in one wedge still backs off and is abandoned', () => {
     const { sys, w } = toReturning();
     assert.ok(28 > STUCK_SAME_PX, "a nudge longer than one place");   // and up to the 32 px nudge cap
-    let seen = homeMoves(w, sys).length;
+    // The nudge runs and reports its landing (R3 M1), then the body is held back in the wedge
+    w.setNudge((id, p) => ({ x: p.x === 200 ? 228 : 200, y: p.y }));
     let guard = 0;
-    while (!evs(sys, 'return_abandoned').length && guard++ < 2000) {
-        sys.step(NEEDS_TICK_MS);
-        const moves = homeMoves(w, sys);
-        for (; seen < moves.length; seen++) {
-            if (moves[seen].nudge) w.pos.clerk.x = w.pos.clerk.x === 200 ? 228 : 200;   // the nudge, then held back in the wedge
-        }
-    }
+    while (!evs(sys, 'return_abandoned').length && guard++ < 2000) sys.step(NEEDS_TICK_MS);
     assert.ok(homeMoves(w, sys).some(m => m.nudge), 'the nudge ran');
     assert.equal(evs(sys, 'return_stuck').length, 1, 'return_stuck comes');
     assert.equal(evs(sys, 'return_abandoned').length, 1, 'and the walk is abandoned, not re-routed for ever');
@@ -272,7 +267,7 @@ test('R2 m2: late re-plans after a final abandon come RETURN_FINAL_REPLAN_MS apa
         sys.step(NEEDS_TICK_MS);
         const ab = evs(sys, 'return_abandoned').length;
         if (ab > finals) { finals = ab; lastFinal = sys.clockMs; }
-        const now = st.returnAbandon?.late || 0;
+        const now = st.returnLate || 0;   // counted per return (R3 m1)
         if (now > late) {
             assert.equal(homeMoves(w, sys).length, before + 1, 'a late try is one walk home');
             starts.push(sys.clockMs - lastFinal);
@@ -284,4 +279,103 @@ test('R2 m2: late re-plans after a final abandon come RETURN_FINAL_REPLAN_MS apa
     assert.ok(evs(sys, 'return_abandoned').slice(-RETURN_FINAL_REPLANS).every(e => e.final), 'each ends in a final abandon');
     assert.equal(sys.getState('clerk').mode, 'idle', 'then it idles there');
     assert.ok(sys.clockMs - lastFinal > 4 * RETURN_FINAL_REPLAN_MS, 'for minutes, with no fourth try');
+});
+
+// Code review R3 M1: a place covers where a nudge put the body only when the nudge ran. A refused
+// nudge (the body on a walkable cell of its own) leaves the place at STUCK_SAME_PX
+test('R3 M1: a refused nudge keeps the place at STUCK_SAME_PX; stalls 40 px apart are two places', () => {
+    const { sys, w } = toReturning();
+    const st = sys.states.get('clerk');
+    let guard = 0;
+    while (!homeMoves(w, sys).some(m => m.nudge) && guard++ < 400) sys.step(NEEDS_TICK_MS);
+    assert.ok(homeMoves(w, sys).some(m => m.nudge), 'the last re-route asked for a nudge');
+    assert.equal(st.stall.tries, STUCK_TRIES);
+    assert.ok(!Number.isFinite(st.stall.nx), 'no nudge ran (none reported), so no landing is kept');
+    // Held 28 px on: past STUCK_SAME_PX, a new place with a fresh three re-routes
+    w.pos.clerk.x = 228;
+    sys.step(RETURN_YIELD_MS + 2 * NEEDS_TICK_MS);
+    assert.equal(st.stall.tries, 1, 'a new place, not a fourth try');
+    assert.equal(evs(sys, 'return_stuck').length, 0);
+    // Two stalls 40 px apart, no nudge: two places
+    assert.equal(sys._samePlace({ x: 200, y: 200 }, { x: 240, y: 200 }), false);
+    assert.equal(sys._samePlace({ x: 200, y: 200 }, { x: 220, y: 200 }), true);
+    assert.equal(sys._samePlace({ x: 200, y: 200, nx: 228, ny: 200 }, { x: 248, y: 200 }), true, 'within 24 px of the landing');
+    assert.equal(sys._samePlace({ x: 200, y: 200, nx: 228, ny: 200 }, { x: 214, y: 230 }), false, 'nothing between and beyond');
+});
+
+test('R3 M1: a nudge that ran is kept on the place; the back-off does not re-centre it', () => {
+    const { sys, w } = toReturning();
+    const st = sys.states.get('clerk');
+    w.setNudge((id, p) => ({ x: p.x + 20, y: p.y }));
+    let guard = 0;
+    while (!evs(sys, 'return_stuck').length && guard++ < 400) sys.step(NEEDS_TICK_MS);
+    assert.equal(evs(sys, 'return_stuck').length, 1);
+    assert.deepEqual({ x: st.stall.x, y: st.stall.y, nx: st.stall.nx, tries: st.stall.tries }, { x: 200, y: 200, nx: 220, tries: 1 },
+        'the back-off keeps the first centre and the landing');
+    // Through the back-off it creeps 50 px on: more than 24 px from both, a new place
+    w.setNudge(null);
+    w.pos.clerk.x = 250;
+    sys.step(RETURN_STUCK_BACKOFF_MS + RETURN_YIELD_MS + 4 * NEEDS_TICK_MS);
+    assert.equal(st.returnBackoffs, 0, 'a new place starts the back-off count again');
+});
+
+// Code review R3 m1: late walks are counted per return, so two wedges in turn cannot run for ever
+test('R3 m1: late walks alternating between two wedges stop after RETURN_FINAL_REPLANS', () => {
+    const { sys, w } = toReturning();
+    const st = sys.states.get('clerk');
+    let guard = 0;
+    while (!evs(sys, 'return_abandoned').some(e => e.final) && guard++ < 4000) sys.step(NEEDS_TICK_MS);
+    let late = 0, starts = 0, lastMove = 0;
+    for (let i = 0; i < 16 * 60 * 4; i++) {
+        st.levels.caffeine = 100;
+        const before = homeMoves(w, sys).length;
+        sys.step(NEEDS_TICK_MS);
+        if ((st.returnLate || 0) > late) {
+            starts++;
+            w.pos.clerk.x = w.pos.clerk.x === 200 ? 400 : 200;   // this late walk wedges on the other route
+        }
+        late = st.returnLate || 0;
+        if (homeMoves(w, sys).length > before) lastMove = sys.clockMs;
+    }
+    assert.ok(evs(sys, 'return_abandoned').some(e => e.x === 400), 'it did abandon in the second place');
+    assert.equal(starts, RETURN_FINAL_REPLANS, 'three late walks home in all, whatever the place');
+    assert.equal(sys.getState('clerk').mode, 'idle');
+    assert.ok(sys.clockMs - lastMove > 4 * RETURN_FINAL_REPLAN_MS, 'then no more walks home');
+});
+
+// Code review R3 m2: a late walk after an abandon with the player beside the NPC does not count
+test('R3 m2: late walks held up by the player are not counted; it walks home once the player moves', () => {
+    const { sys, w } = toReturning();
+    const st = sys.states.get('clerk');
+    w.setPlayerNear(true);
+    let guard = 0;
+    while (!evs(sys, 'return_abandoned').some(e => e.final) && guard++ < 4000) sys.step(NEEDS_TICK_MS);
+    assert.equal(st.returnAbandon.player, true);
+    const t0 = sys.clockMs;
+    while (sys.clockMs - t0 < 14 * RETURN_FINAL_REPLAN_MS) { st.levels.caffeine = 100; sys.step(NEEDS_TICK_MS); }
+    assert.equal(st.returnLate || 0, 0, 'none counted');
+    assert.ok(evs(sys, 'return_abandoned').filter(e => e.final).length > RETURN_FINAL_REPLANS + 1, 'it kept trying while held');
+    // The player steps away and the wedge clears: the next late walk gets home
+    w.setPlayerNear(false);
+    const moves = homeMoves(w, sys).length;
+    while (homeMoves(w, sys).length === moves && sys.clockMs - t0 < 20 * RETURN_FINAL_REPLAN_MS) { st.levels.caffeine = 100; sys.step(NEEDS_TICK_MS); }
+    assert.equal(homeMoves(w, sys).length, moves + 1, 'another walk home');
+});
+
+// Code review R3 m3: the deadline floor applies only while the deadline is ahead
+test('R3 m3: a stall that fires on the deadline tick times out; no floor', () => {
+    const { sys } = toGoto();
+    const job = sys.states.get('clerk').job;
+    sys.step(RETURN_YIELD_MS + NEEDS_TICK_MS);
+    assert.equal(evs(sys, 'walk_rerouted').length, 1);
+    job.deadline = sys.clockMs + RETURN_YIELD_MS;   // reached on the tick the next stall fires
+    let rerouteAt = null, failAt = null, guard = 0;
+    while (failAt == null && guard++ < 200) {
+        sys.step(NEEDS_TICK_MS);
+        if (rerouteAt == null && evs(sys, 'walk_rerouted').length === 2) rerouteAt = sys.clockMs;
+        if (sys.getLog().some(e => e.npc === 'clerk' && e.ev === 'job_failed' && e.reason === 'timeout')) failAt = sys.clockMs;
+    }
+    assert.ok(rerouteAt != null, 'the stall watch fired');
+    assert.equal(failAt, rerouteAt, 'and the job timed out on that same tick');
+    assert.ok(!job.rerouteGrace, 'the floor was not used');
 });

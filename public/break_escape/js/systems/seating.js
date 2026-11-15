@@ -1762,6 +1762,11 @@ export const POST_FETCH_RETRY_MAX = 2;
 // starts over (code review R2, m3): an NPC whose jobs are all at its own desk keeps one stop key,
 // so a give-up caused by a passing obstacle used to last the session.
 export const SEAT_GIVE_UP_MS = 120000;
+// The expiry gives the seat retries back but not the chair fetches (a stop whose chair is out of
+// reach for good would fetch and drag one back every SEAT_GIVE_UP_MS, and two NPCs could shuttle one
+// chair for the session), and runs at most this many times per stop key; after that the give-up
+// lasts until the stop key changes (code review R3, m4).
+export const SEAT_GIVE_UP_EXPIRIES = 3;
 // A chair another NPC fetched this recently (needs clock) is theirs: two chairless fetchers at
 // nearby posts do not take one chair back and forth on their retries (code review R1, m6)
 export const FETCH_CLAIM_MS = 60000;
@@ -2063,14 +2068,17 @@ function updateNeedsSeat(behavior, ns, playerPos) {
         behavior._seatRetries = 0;
         behavior._fetchRetries = 0;
         behavior._seatGaveUp = false;
+        behavior._seatGaveUpAt = undefined;   // never outlives the flag it dates
+        behavior._seatGiveUpExpiries = 0;
     }
     if (retry && behavior._seatGaveUp) {
         const job = window.npcNeedsSystem?.states?.get?.(behavior.npcId)?.job;
         const since = behavior._seatGaveUpAt ?? now;
         if (now - since < SEAT_GIVE_UP_MS && !(job && job.startedAt > since)) return false;
-        behavior._fetchTriedAt = undefined;   // the give-up has expired: the stop starts over
+        if ((behavior._seatGiveUpExpiries || 0) >= SEAT_GIVE_UP_EXPIRIES) return false;   // for good at this stop
+        // The give-up has expired: the seat retries start over, the fetch count does not (R3 m4)
+        behavior._seatGiveUpExpiries = (behavior._seatGiveUpExpiries || 0) + 1;
         behavior._seatRetries = 0;
-        behavior._fetchRetries = 0;
         behavior._seatGaveUp = false;
     }
     behavior._seatStopKey = stop.key;

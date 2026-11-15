@@ -3114,11 +3114,18 @@ export class NPCBehavior {
         // A needs re-issue after a stall plans round other bodies (OFFICE_LIFE_STUCK_RETURN.md)
         this._moveReroute = opts?.owner === 'needs' && !!opts?.reroute;
         // The needs stall watch's last re-route in one place: step onto the nearest walkable cell
-        // first, the stuck recovery's attempt 2, which a needs walk's 3 s re-issues never reach
+        // first, the stuck recovery's attempt 2, which a needs walk's 3 s re-issues never reach.
+        // _lastNudge says where the body landed, or null when no nudge ran (refused by
+        // _needsNudgeSafe, or under 2 px), so the needs layer marks a place nudged only when it was
+        // (code review R3, M1)
+        this._lastNudge = null;
         if (this._moveReroute && opts?.nudge && this.sprite?.body) {
             const pfm = this.pathfindingManager || window.pathfindingManager;
             const at = this.npcBodyPos();
-            if (pfm && this._needsNudgeSafe(pfm, at.x, at.y)) this._nudgeToWalkable(pfm, at.x, at.y);
+            if (pfm && this._needsNudgeSafe(pfm, at.x, at.y)) {
+                const to = this._nudgeToWalkable(pfm, at.x, at.y);
+                if (to.x !== at.x || to.y !== at.y) this._lastNudge = { x: to.x, y: to.y };
+            }
         }
         if (opts?.owner !== 'needs') window.npcNeedsSystem?.onExternalMove?.(this.npcId, opts?.owner);
         // Stop current movement
