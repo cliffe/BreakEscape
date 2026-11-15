@@ -17,6 +17,21 @@ import { fileURLToPath } from 'node:url';
 
 export const CAPS = { person: 30, phone: 25, text: 30, choice: 15 };
 
+// Lines over the word cap that already have cached voice audio. Changing the text would re-key the
+// clip (a new paid generation), so such a line is reported as a WARN with its reason, never an
+// ERROR. The list is wordcap_audio_exempt.json beside this file: { file, start, reason } where file
+// is the basename, start is the line's first words after the TTS normalisation (lower case, no
+// punctuation). A line that has no audio gets no entry: split it instead. Keep entries narrow.
+export const WORD_CAP_AUDIO_EXEMPT = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'wordcap_audio_exempt.json'), 'utf8'));
+const ttsNormalise = t => String(t).toLowerCase().replace(/[^\w\s]/g, '').trim().replace(/\s+/g, ' ');
+/** The finding for an over-cap line: an error, or a warn when the line has an exempt clip. */
+export function capFinding(finding, file, list = WORD_CAP_AUDIO_EXEMPT) {
+  const base = basename(file || '');
+  const n = ttsNormalise(finding.text);
+  const hit = list.find(e => e.file === base && n.startsWith(e.start));
+  return hit ? { ...finding, level: 'warn', note: `over the cap but has cached voice audio, text frozen: ${hit.reason}` } : finding;
+}
+
 // ---------- AI-tell and house-style rules (applied to spoken text, choice text, texts) ----------
 const BANNED = ['delve', 'delves', 'delving', 'intricate', 'intricacies', 'tapestry', 'pivotal', 'underscore', 'underscores',
   'underscored', 'landscape', 'foster', 'fosters', 'fostering', 'enhance', 'enhances', 'enhanced', 'enhancing', 'crucial',
@@ -257,7 +272,7 @@ export function lintInk(text, { channel = 'person', names = [], file = '', home 
       if (speaker !== 'Narrator') {
         const w = countWords(body);
         lengths.push(w);
-        if (w > cap) findings.push({ level: 'error', rule: 'line-len', line: n, words: w, cap, speaker, text: body });
+        if (w > cap) findings.push(capFinding({ level: 'error', rule: 'line-len', line: n, words: w, cap, speaker, text: body }, file));
       }
       for (const h of tellHits(body)) findings.push({ level: 'warn', rule: h.rule, line: n, match: h.match, speaker, text: body });
       callInText(i, body, speaker);
@@ -272,7 +287,7 @@ export function lintInk(text, { channel = 'person', names = [], file = '', home 
       if (channel === 'phone') {
         const w = countWords(body);
         lengths.push(w);
-        if (w > cap) findings.push({ level: 'error', rule: 'line-len', line: n, words: w, cap, speaker: 'contact', text: body });
+        if (w > cap) findings.push(capFinding({ level: 'error', rule: 'line-len', line: n, words: w, cap, speaker: 'contact', text: body }, file));
       }
       for (const h of tellHits(body)) findings.push({ level: 'warn', rule: h.rule, line: n, match: h.match, text: body });
       callInText(i, body, null);
@@ -1109,13 +1124,13 @@ export function scenarioInfo(erb) {
   return { channels, names, homes, texts };
 }
 
-export function lintTexts(texts) {
+export function lintTexts(texts, file = '') {
   const findings = [];
   const lengths = [];
   for (const t of texts) {
     const w = countWords(t.text);
     lengths.push(w);
-    if (w > CAPS.text) findings.push({ level: 'error', rule: 'text-len', line: t.line, words: w, cap: CAPS.text, text: t.text });
+    if (w > CAPS.text) findings.push(capFinding({ level: 'error', rule: 'text-len', line: t.line, words: w, cap: CAPS.text, text: t.text }, file));
     for (const h of tellHits(t.text)) findings.push({ level: 'warn', rule: h.rule, line: t.line, match: h.match, text: t.text });
   }
   return { findings, stats: stats(lengths) };
@@ -1152,7 +1167,7 @@ export function lintTargets(args) {
     Object.assign(channels, info.channels);
     Object.assign(names, info.names);
     Object.assign(homes, info.homes);
-    const r = lintTexts(info.texts);
+    const r = lintTexts(info.texts, sc);
     report.texts.push({ file: sc, ...r, count: info.texts.length });
   }
   for (const f of files) {
