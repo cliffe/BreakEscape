@@ -1368,6 +1368,8 @@ export class NPCBehavior {
             return { x, y };
         }
 
+        // A wedged needs walk plans round seated and held bodies from here on (_planMovePath)
+        if (this._moveOwner === 'needs' && this._stopOnArrival) this._moveReroute = true;
         let at = { x, y };
         if (attempt >= 2) at = this._nudgeToWalkable(pfm, x, y);
         const from = pfm.findNearestWalkableStartCell?.(at.x, at.y) || at;
@@ -1602,7 +1604,7 @@ export class NPCBehavior {
         const from = pfm.findNearestWalkableStartCell?.(pos.x, pos.y) || pos;
         a.pending = true;
         const rooms = this._moveOwner === 'needs' ? this._moveAvoidRooms : null;
-        const opts = { avoidDynamic: { exceptSprite: this.sprite } };
+        const opts = { avoidDynamic: { exceptSprite: this.sprite, includeHeld: this._moveOwner === 'needs' } };
         if (rooms?.length) opts.avoidRooms = rooms;
         pfm.findWorldPath(from.x, from.y, target.x, target.y, (path) => {
             a.pending = false;
@@ -1621,6 +1623,17 @@ export class NPCBehavior {
 
     _planMovePath(pfm, sx, sy, ex, ey, callback) {
         const rooms = this._moveOwner === 'needs' ? this._moveAvoidRooms : null;
+        // A stalled needs walk (OFFICE_LIFE_STUCK_RETURN.md) plans round every other body,
+        // seated and held ones included; with no such path it takes the plain one.
+        if (this._moveOwner === 'needs' && this._moveReroute) {
+            const opts = { avoidDynamic: { exceptSprite: this.sprite, includeHeld: true } };
+            if (rooms?.length) opts.avoidRooms = rooms;
+            return pfm.findWorldPath(sx, sy, ex, ey, (path) => {
+                if (path && path.length > 0) { callback(path); return; }
+                if (rooms?.length) pfm.findWorldPath(sx, sy, ex, ey, callback, false, { avoidRooms: rooms });
+                else pfm.findWorldPath(sx, sy, ex, ey, callback);
+            }, false, opts);
+        }
         if (rooms?.length) return pfm.findWorldPath(sx, sy, ex, ey, callback, false, { avoidRooms: rooms });
         return pfm.findWorldPath(sx, sy, ex, ey, callback);
     }
@@ -2992,6 +3005,8 @@ export class NPCBehavior {
         else if (Array.isArray(opts.avoidRooms)) this._moveAvoidRooms = opts.avoidRooms.slice();
         // Walk-home moves pause for a nearby player like a patrol does.
         this._moveYieldsToPlayer = !!opts?.yieldToPlayer;
+        // A needs re-issue after a stall plans round other bodies (OFFICE_LIFE_STUCK_RETURN.md)
+        this._moveReroute = opts?.owner === 'needs' && !!opts?.reroute;
         if (opts?.owner !== 'needs') window.npcNeedsSystem?.onExternalMove?.(this.npcId, opts?.owner);
         // Stop current movement
         this.currentPath = [];
@@ -3045,6 +3060,7 @@ export class NPCBehavior {
         this._moveOwner = undefined;
         this._moveAvoidRooms = undefined;
         this._moveYieldsToPlayer = false;
+        this._moveReroute = false;
         this.config.patrol.enabled = false;
         this.pathFollowingActive = false;
         this.currentPath = [];
@@ -3074,6 +3090,7 @@ export class NPCBehavior {
         this._moveOwner = undefined;
         this._moveAvoidRooms = undefined;
         this._moveYieldsToPlayer = false;
+        this._moveReroute = false;
         this._stopOnArrival = false;
         this._goToStayDest = null;
         this.config.patrol.enabled = false;

@@ -38,6 +38,13 @@ const SELECT_BACKOFF_TICKS = 4; // a selection that path-searched and found noth
 // it is re-issued without yielding, or a player standing near the route holds it for ever.
 export const RETURN_YIELD_MS = 3000;
 const RETURN_STILL_PX = 4;    // less than this between ticks counts as standing still
+// Stalled needs walks (OFFICE_LIFE_STUCK_RETURN.md): a walk still for RETURN_YIELD_MS is re-issued
+// round other bodies; a stall within STUCK_SAME_PX of the last one is another try in the same place.
+// After STUCK_TRIES re-routes in one place a walk home logs return_stuck and stands for
+// RETURN_STUCK_BACKOFF_MS before trying again; an outbound leg fails the job with `stuck`.
+export const STUCK_SAME_PX = 24;
+export const STUCK_TRIES = 3;
+export const RETURN_STUCK_BACKOFF_MS = 15000;
 const CAUGHT_RADIUS = 48;    // px (1.5 tiles) from the home approach cell: "you were in my chair"
 export const NOTICED_MS = 3000;   // getState().noticed after npc_caught_at_post (the "noticed" action icon)
 
@@ -721,7 +728,7 @@ export class NPCNeedsSystem {
             // on the first far arrival of this return only — `returnFarReissued` persists across the
             // _watchReturn re-issues (keepFarFlag), so an unreachable home spins quietly, not a line a
             // tick. A genuinely new return re-arms the flag (and the log) in _goHome.
-            if (!s.returnFarReissued) { logFar(); s.returnFarReissued = true; this._goHome(s, { yieldToPlayer: false, keepFarFlag: true }); }
+            if (!s.returnFarReissued) { logFar(); s.returnFarReissued = true; this._goHome(s, { yieldToPlayer: false, keepFarFlag: true, reroute: true }); }
             return false;
         }
         logFar();
@@ -1465,6 +1472,7 @@ export class NPCNeedsSystem {
         if (s.knows.size && this._magnets.size && !s.call) this._tickNews(s, pos);
 
         if (s.mode === 'job') {
+            if (!arrived && this._watchWalk(s, pos)) return;
             this._advanceJob(s, arrived);
             return;
         }
@@ -3272,7 +3280,7 @@ export class NPCNeedsSystem {
         this._emit(`npc_caught_at_post:${s.npcId}`, { npcId: s.npcId, objectId: home.objectId, playerDistance, inMinigame: !!p.inMinigame });
     }
 
-    _moveForPhase(s) {
+    _moveForPhase(s, { reroute = false } = {}) {
         const id = s.npcId;
         const job = s.job;
         const destId = job.phase === 'goto_item' ? job.itemId : job.targetId;
@@ -3316,7 +3324,7 @@ export class NPCNeedsSystem {
         const moveId = this._nextMoveId();
         job.moveId = moveId;
         // arriveWithin: walk on to the cell itself (the behaviour layer's default stops a tile short)
-        this.world.moveTo(id, cell.x, cell.y, speed, { yieldToPlayer: false, avoidRooms: this._avoidRooms(s), arriveWithin: 6, moveId });
+        this.world.moveTo(id, cell.x, cell.y, speed, { yieldToPlayer: false, avoidRooms: this._avoidRooms(s), arriveWithin: 6, moveId, ...(reroute ? { reroute: true } : {}) });
     }
 
     _advanceJob(s, arrived) {
@@ -3971,12 +3979,13 @@ export class NPCNeedsSystem {
      * yieldToPlayer: the walk stops to face a player within reach (the behaviour layer's
      * face_player); _watchReturn turns it off after RETURN_YIELD_MS without progress.
      */
-    _goHome(s, { stayPut = false, yieldToPlayer = true, keepFarFlag = false } = {}) {
+    _goHome(s, { stayPut = false, yieldToPlayer = true, keepFarFlag = false, reroute = false } = {}) {
         const id = s.npcId;
         s.mode = 'returning';
         s.returnWatch = null;
         // SIMS-2: a fresh return re-arms the one far re-issue; a re-issue from _acceptArrival keeps it.
-        if (!keepFarFlag) s.returnFarReissued = false;
+        // A fresh return also clears the stall count and the once-per-return return_stuck line.
+        if (!keepFarFlag) { s.returnFarReissued = false; s.stall = null; s.returnStuckLogged = false; s.returnStuckUntil = 0; }
         const pos = this.world.npcPos(id);
         if (!s.home || !pos) { s.mode = 'idle'; return; }
         if (stayPut || Math.hypot(pos.x - s.home.x, pos.y - s.home.y) <= HOME_EPS) {
@@ -3986,7 +3995,7 @@ export class NPCNeedsSystem {
         }
         const moveId = this._nextMoveId();
         s.returnMoveId = moveId;
-        this.world.moveTo(id, s.home.x, s.home.y, this.world.speedFor(id), { yieldToPlayer, avoidRooms: this._avoidRooms(s), moveId });
+        this.world.moveTo(id, s.home.x, s.home.y, this.world.speedFor(id), { yieldToPlayer, avoidRooms: this._avoidRooms(s), moveId, ...(reroute ? { reroute: true } : {}) });
     }
 
     /**
@@ -3997,17 +4006,88 @@ export class NPCNeedsSystem {
      * sat. A re-issue also re-plans the path, which covers a walk wedged for another reason.
      */
     _watchReturn(s, pos) {
+        // Gave up for now (return_stuck): stand still until the back-off ends, then try again
+        if (s.returnStuckUntil) {
+            if (this.clockMs < s.returnStuckUntil) return;
+            s.returnStuckUntil = 0;
+            this._goHome(s, { yieldToPlayer: false, keepFarFlag: true, reroute: true });
+            s.returnWatch = { x: pos.x, y: pos.y, since: this.clockMs };
+            return;
+        }
         const w = s.returnWatch;
         if (!w || Math.hypot(pos.x - w.x, pos.y - w.y) >= RETURN_STILL_PX) {
             s.returnWatch = { x: pos.x, y: pos.y, since: this.clockMs };
             return;
         }
         if (this.clockMs - w.since < RETURN_YIELD_MS) return;
+        // OFFICE_LIFE_STUCK_RETURN.md: re-routes in one place are counted, and the walk gives up
+        // (one return_stuck line per return) rather than log return_resumed for ever.
+        const tries = this._stallTry(s, pos);
+        if (tries > STUCK_TRIES) {
+            if (!s.returnStuckLogged) {
+                s.returnStuckLogged = true;
+                this._log(s.npcId, 'return_stuck', { x: Math.round(pos.x), y: Math.round(pos.y), tries: tries - 1 });
+            }
+            s.stall = { x: pos.x, y: pos.y, tries: 1 };   // the next stall here re-routes at once
+            s.returnWatch = null;
+            s.returnStuckUntil = this.clockMs + RETURN_STUCK_BACKOFF_MS;
+            this.world.cancelMove(s.npcId);
+            return;
+        }
         this._log(s.npcId, 'return_resumed', { x: Math.round(pos.x), y: Math.round(pos.y) });
         // SIMS-2 m1: keep returnFarReissued so an unreachable home logs `arrival_far` once per return,
         // not once per _watchReturn cycle; this re-plans the walk without re-arming the far log.
-        this._goHome(s, { yieldToPlayer: false, keepFarFlag: true });
+        // The first re-issue keeps the plain path (a player who held the walk has gone); later ones
+        // plan round other bodies, seated and held ones included.
+        this._goHome(s, { yieldToPlayer: false, keepFarFlag: true, reroute: tries > 1 });
         s.returnWatch = { x: pos.x, y: pos.y, since: this.clockMs };
+    }
+
+    /** Count a stalled walk: another try when within STUCK_SAME_PX of the last stall, else the first. */
+    _stallTry(s, pos) {
+        const st = s.stall;
+        if (st && Math.hypot(pos.x - st.x, pos.y - st.y) <= STUCK_SAME_PX) st.tries++;
+        else s.stall = { x: pos.x, y: pos.y, tries: 1 };
+        return s.stall.tries;
+    }
+
+    /**
+     * Outbound counterpart of _watchReturn (OFFICE_LIFE_STUCK_RETURN.md): a goto_item or
+     * goto_target leg that has not moved RETURN_STILL_PX for RETURN_YIELD_MS is re-issued round
+     * other bodies (`walk_rerouted`), keeping the job's deadline; after STUCK_TRIES re-routes in
+     * one place the job fails with `stuck` and the NPC walks home.
+     * @returns {boolean} true when the job ended here
+     */
+    _watchWalk(s, pos) {
+        const job = s.job;
+        if (!job || (job.phase !== 'goto_item' && job.phase !== 'goto_target') || job.moveId == null || job.windupUntil) {
+            if (job) job.walkWatch = null;
+            return false;
+        }
+        const w = job.walkWatch;
+        if (!w || w.phase !== job.phase || Math.hypot(pos.x - w.x, pos.y - w.y) >= RETURN_STILL_PX) {
+            job.walkWatch = { x: pos.x, y: pos.y, since: this.clockMs, phase: job.phase };
+            return false;
+        }
+        if (this.clockMs - w.since < RETURN_YIELD_MS) return false;
+        if (!job.stall || job.stall.phase !== job.phase) job.stall = null;
+        const st = job.stall;
+        if (st && Math.hypot(pos.x - st.x, pos.y - st.y) <= STUCK_SAME_PX) st.tries++;
+        else job.stall = { x: pos.x, y: pos.y, tries: 1, phase: job.phase };
+        const tries = job.stall.tries;
+        if (tries > STUCK_TRIES) {
+            this._log(s.npcId, 'walk_stuck', { phase: job.phase, x: Math.round(pos.x), y: Math.round(pos.y), tries: tries - 1 });
+            this._failJob(s, 'stuck');
+            return true;
+        }
+        this._log(s.npcId, 'walk_rerouted', { phase: job.phase, x: Math.round(pos.x), y: Math.round(pos.y) });
+        const deadline = job.deadline;
+        this._moveForPhase(s, { reroute: true });
+        if (s.job === job) {
+            job.deadline = deadline;
+            job.walkWatch = { x: pos.x, y: pos.y, since: this.clockMs, phase: job.phase };
+        }
+        return s.job !== job;
     }
 
     // ── social pairing and compatibility (slice 8: OFFICE_LIFE_PLAN 2.4, 7.3) ──

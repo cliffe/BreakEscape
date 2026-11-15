@@ -655,6 +655,28 @@ export function updateNPCDepth(sprite) {
 // NPC-NPC collider later in the same step also sees him unpushable: one step at most.
 export const PLAYER_WALL_MARGIN_PX = 12;
 
+/**
+ * Does a bump end this goToAndStay walk as an arrival? Any move: within two tiles of the
+ * destination, measured from the sprite's origin, as before. A needs move only counts within
+ * NEEDS_COLLISION_ARRIVE_PX of it by body centre, the radius npc-needs.js accepts
+ * (ARRIVAL_NEAR_PX): a bump further out was an arrival the needs layer rejected as far, and
+ * the walk home stood still and re-issued into the same colleague for minutes (game 5260,
+ * OFFICE_LIFE_STUCK_RETURN.md). Further out the walk goes on and routes round the body.
+ */
+export const NEEDS_COLLISION_ARRIVE_PX = 48;
+export function collisionArrives(behavior, sprite) {
+    const dest = behavior?._goToStayDest;
+    if (!dest) return false;
+    if (behavior._moveOwner === 'needs') {
+        const c = sprite?.body?.center || sprite;
+        const dx = dest.x - c.x, dy = dest.y - c.y;
+        return dx * dx + dy * dy <= NEEDS_COLLISION_ARRIVE_PX * NEEDS_COLLISION_ARRIVE_PX;
+    }
+    const gdx = dest.x - sprite.x;
+    const gdy = dest.y - sprite.y;
+    return gdx * gdx + gdy * gdy < (TILE_SIZE * 2) * (TILE_SIZE * 2);
+}
+
 /** Does this NPC keep a route the player must not push it off? Patrol on, not hostile, not KO'd. */
 export function keepsRouteAgainstPlayer(behavior, npcId) {
     if (!behavior?.config?.patrol?.enabled) return false;
@@ -1453,15 +1475,11 @@ function handleNPCCollision(npcSprite, otherNPC) {
         // Arrival-tolerance guard: if this NPC is doing a goToAndStay move and is
         // already close enough to its destination, stop here instead of inserting
         // an avoidance waypoint that would cause oscillation.
-        if (npcBehavior._stopOnArrival && npcBehavior._goToStayDest) {
-            const gdx = npcBehavior._goToStayDest.x - npcSprite.x;
-            const gdy = npcBehavior._goToStayDest.y - npcSprite.y;
-            if (gdx * gdx + gdy * gdy < (TILE_SIZE * 2) * (TILE_SIZE * 2)) {
-                if (typeof npcBehavior._triggerGoToStayArrival === 'function') {
-                    npcBehavior._triggerGoToStayArrival();
-                }
-                return;
+        if (npcBehavior._stopOnArrival && npcBehavior._goToStayDest && collisionArrives(npcBehavior, npcSprite)) {
+            if (typeof npcBehavior._triggerGoToStayArrival === 'function') {
+                npcBehavior._triggerGoToStayArrival();
             }
+            return;
         }
 
         // Get the current travel direction
@@ -1642,15 +1660,11 @@ function handleNPCPlayerCollision(npcSprite, player) {
         npcBehavior.config.patrol.waypoints.length > 0) {
 
         // Arrival-tolerance guard: same as NPC-to-NPC collision — settle here if close enough.
-        if (npcBehavior._stopOnArrival && npcBehavior._goToStayDest) {
-            const gdx = npcBehavior._goToStayDest.x - npcSprite.x;
-            const gdy = npcBehavior._goToStayDest.y - npcSprite.y;
-            if (gdx * gdx + gdy * gdy < (TILE_SIZE * 2) * (TILE_SIZE * 2)) {
-                if (typeof npcBehavior._triggerGoToStayArrival === 'function') {
-                    npcBehavior._triggerGoToStayArrival();
-                }
-                return;
+        if (npcBehavior._stopOnArrival && npcBehavior._goToStayDest && collisionArrives(npcBehavior, npcSprite)) {
+            if (typeof npcBehavior._triggerGoToStayArrival === 'function') {
+                npcBehavior._triggerGoToStayArrival();
             }
+            return;
         }
 
         // Get the current travel direction

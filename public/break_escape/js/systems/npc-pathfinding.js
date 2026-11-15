@@ -450,12 +450,14 @@ export class NPCPathfindingManager {
      * body and skips the walker's own sprite. skipCX/skipCY: never avoid the
      * walker's own start cell.
      */
-    _avoidDynamicPositions(exceptSprite, skipCX, skipCY) {
+    _avoidDynamicPositions(exceptSprite, skipCX, skipCY, { includeHeld = false, endCX = -1, endCY = -1 } = {}) {
         if (!this.worldPathfinder || !this.worldGridBounds) return;
         const { minX, minY, cols, rows, step } = this.worldGridBounds;
         const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-        const avoidBody = (body) => {
-            if (!body || !body.enable || body.immovable) return;
+        // includeHeld (a stalled needs walk, OFFICE_LIFE_STUCK_RETURN.md): NPC bodies held
+        // immovable (seated, using an object) are avoided too; the world grid never has them.
+        const avoidBody = (body, npc = false) => {
+            if (!body || !body.enable || (body.immovable && !(includeHeld && npc))) return;
             // One cell of clearance either side, as _avoidNPCPositions uses.
             const cx1 = clamp(Math.floor((body.left   - minX) / step) - 1, 0, cols - 1);
             const cy1 = clamp(Math.floor((body.top    - minY) / step) - 1, 0, rows - 1);
@@ -463,7 +465,7 @@ export class NPCPathfindingManager {
             const cy2 = clamp(Math.floor((body.bottom - minY - 1) / step) + 1, 0, rows - 1);
             for (let cy = cy1; cy <= cy2; cy++) {
                 for (let cx = cx1; cx <= cx2; cx++) {
-                    if (cx === skipCX && cy === skipCY) continue;
+                    if ((cx === skipCX && cy === skipCY) || (cx === endCX && cy === endCY)) continue;
                     if (this.worldGrid[cy]?.[cx] === 0) this.worldPathfinder.avoidAdditionalPoint(cx, cy);
                 }
             }
@@ -476,7 +478,7 @@ export class NPCPathfindingManager {
             if (!sprites) continue;
             for (const sprite of sprites) {
                 if (sprite === exceptSprite) continue;
-                avoidBody(sprite.body);
+                avoidBody(sprite.body, true);
             }
         }
     }
@@ -490,6 +492,8 @@ export class NPCPathfindingManager {
      * ring avoided for this search only.
      * opts.avoidDynamic = { exceptSprite }: route round the player and every other active NPC
      * body (npc-behavior.js local detour); exceptSprite is the walking NPC's own sprite.
+     * includeHeld: true also avoids seated and held (immovable) NPC bodies, and never avoids
+     * the goal cell.
      */
     findWorldPath(startX, startY, endX, endY, callback, avoidNPCs = false, opts = null) {
         if (!this.worldPathfinder || !this.worldGridBounds) {
@@ -520,7 +524,8 @@ export class NPCPathfindingManager {
 
         if (avoidNPCs) this._avoidNPCPositions(sx, sy);
         const avoidDyn = opts?.avoidDynamic || null;
-        if (avoidDyn) this._avoidDynamicPositions(avoidDyn.exceptSprite, sx, sy);
+        if (avoidDyn) this._avoidDynamicPositions(avoidDyn.exceptSprite, sx, sy,
+            avoidDyn.includeHeld ? { includeHeld: true, endCX: toCX(endX), endCY: toCY(endY) } : undefined);
         // Player paths also pay extra to cross "prefer to route around" objects
         // (path-avoid.js). calculate() runs every queued search to the end
         // before it returns, so the costs are cleared straight after it.
