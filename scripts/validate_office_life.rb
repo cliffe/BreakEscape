@@ -34,6 +34,8 @@ module ValidateOfficeLife
   OFFICE_TOPICS = (%w[coffee cooler greet news] + GRUMBLE_TOPICS + PHONE_TOPICS).freeze
   # _avoidRadius: needsCompany.avoidRadius (0 to 10), else 2 when the NPC declares avoids, else 0.
   AVOID_RADIUS_TILES = 2
+  # magnetOf: newsRadius default (NEWS_RADIUS), in tiles.
+  NEWS_RADIUS_TILES = 5
   POOL_FIX = 'give it a partner or trigger, or remove the lines'
 
   # Every topic the needs engine (and its access/workaround siblings) can speak, read from
@@ -62,7 +64,7 @@ module ValidateOfficeLife
 
     world = []   # top-level room objects: the sprites listObjects gives the needs engine
     held = []    # container contents, itemsHeld and the player's start inventory: only a magnet
-                 # counts (onItemDropped makes a dropped magnet a source where it lies)
+    # counts (onItemDropped makes a dropped magnet a source where it lies)
     npcs = []
     json['rooms'].each do |room_id, room|
       next unless room.is_a?(Hash)
@@ -138,15 +140,33 @@ module ValidateOfficeLife
     m.is_a?(Hash) ? m : nil
   end
 
-  # JavaScript Number(v) for JSON values (nil is null); NaN for anything Number cannot read.
+  # JavaScript Number(v) for JSON values (nil is null); NaN for anything Number cannot read. An
+  # array reads as its string form ([] is 0, [3] is 3, [true] and [1, 2] are NaN); an object is NaN.
   def self.js_number(v)
     case v
     when Numeric then v.to_f
     when nil, false then 0.0
     when true then 1.0
-    when String then v.strip.empty? ? 0.0 : (Float(v.strip, exception: false) || Float::NAN)
+    when String then js_number_string(v)
+    when Array
+      return 0.0 if v.empty?
+      return Float::NAN unless v.length == 1
+
+      e = v.first
+      e.nil? || e.is_a?(Numeric) || e.is_a?(String) || e.is_a?(Array) ? js_number(e) : Float::NAN
     else Float::NAN
     end
+  end
+
+  # Number(string): trimmed; empty is 0; decimal with optional exponent, 0x/0b/0o integers, Infinity.
+  def self.js_number_string(str)
+    s = str.strip
+    return 0.0 if s.empty?
+    return (s.start_with?('-') ? -Float::INFINITY : Float::INFINITY) if s.match?(/\A[+-]?Infinity\z/)
+    return Integer(s[2..], { 'x' => 16, 'b' => 2, 'o' => 8 }[s[1].downcase]).to_f if s.match?(/\A0(?:[xX]\h+|[bB][01]+|[oO][0-7]+)\z/)
+    return Float::NAN unless s.match?(/\A[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?\z/)
+
+    Float(s.sub(/\A([+-]?)\./, '\10.').sub(/\.(?=[eE]|\z)/, '.0'))
   end
 
   # magnetOf: Math.floor(Number(servings) clamped to 0..1000), 1 when absent or not a number.
@@ -237,9 +257,9 @@ module ValidateOfficeLife
     c = company(n)
     return 0 unless c
 
-    r = c['avoidRadius']
-    v = r.is_a?(Numeric) ? r : (r.is_a?(String) ? Float(r, exception: false) : nil)
-    return v.to_f.clamp(0, 10) unless v.nil?
+    # Number(avoidRadius) when it is set and finite ("" is 0, true is 1); absent or null: the default
+    v = c['avoidRadius'].nil? ? Float::NAN : js_number(c['avoidRadius'])
+    return v.clamp(0, 10) if v.finite?
 
     c['avoids'].is_a?(Array) && !c['avoids'].empty? ? AVOID_RADIUS_TILES : 0
   end
@@ -269,8 +289,50 @@ module ValidateOfficeLife
     n['npcType'] != 'phone' && (!needs_of(n).empty? || !interests_of(n).empty?)
   end
 
-  def self.patrols?(n)
-    n['behavior'].is_a?(Hash) && n['behavior']['patrol'].is_a?(Hash) && n['behavior']['patrol']['enabled'] == true
+  # JavaScript truthiness for JSON values.
+  def self.js_truthy?(v)
+    !(v.nil? || v == false || v == '' || (v.is_a?(Numeric) && (v.zero? || (v.is_a?(Float) && v.nan?))))
+  end
+
+  # The rooms a patrol (npc-behavior.js) walks, or nil with no patrol. It is on when `enabled` is
+  # truthy, or when waypoints (non-empty) or bounds are given, whatever `enabled` says (the
+  # constructor's auto-enable). A multiRoom route that validateMultiRoomRoute accepts walks its
+  # rooms; anything else stays in the start room. The needs leash does not govern a patrol.
+  def self.patrol_rooms(json, n, start_room)
+    p = n['behavior'].is_a?(Hash) ? n['behavior']['patrol'] : nil
+    return nil unless p.is_a?(Hash)
+
+    wp = p['waypoints']
+    on = js_truthy?(p['enabled']) || ((wp.is_a?(Array) || wp.is_a?(String)) && !wp.empty?) || js_truthy?(p['bounds'])
+    return nil unless on
+
+    route = p['route']
+    return Set[start_room] unless js_truthy?(p['multiRoom']) && route.is_a?(Array) && !route.empty?
+
+    rooms = multi_room_route(json, route)
+    rooms ? Set.new(rooms) | [start_room] : Set[start_room]
+  end
+
+  # validateMultiRoomRoute: every segment names a scenario room, its waypoints (when an array) all
+  # have x and y, and each room connects to the next (the last loops back to the first). Returns the
+  # route's rooms, or nil when the engine turns multiRoom off.
+  def self.multi_room_route(json, route)
+    rooms = json['rooms']
+    ids = route.map do |seg|
+      return nil unless seg.is_a?(Hash) && seg['room'].is_a?(String) && !seg['room'].empty? && rooms[seg['room']].is_a?(Hash)
+
+      w = seg['waypoints']
+      return nil if w.is_a?(Array) && !w.all? { |pt| pt.is_a?(Hash) && pt.key?('x') && pt.key?('y') }
+
+      seg['room']
+    end
+    ids.each_with_index do |id, i|
+      nxt = ids[(i + 1) % ids.length]
+      conns = rooms[id]['connections']
+      linked = conns.is_a?(Hash) && conns.values.any? { |v| (v.is_a?(Array) ? v : [v]).include?(nxt) }
+      return nil unless linked
+    end
+    ids
   end
 
   # _judged: social_media, or work with a work plan. Their off and failed turn-backs speak
@@ -294,24 +356,27 @@ module ValidateOfficeLife
 
   # Where each NPC can be, and which fixed magnets it can know of. Nothing in the needs engine
   # wanders: an NPC moves only to a source it may use for one of its needs (_select), a magnet it
-  # knows of (_magnetsFor reads s.knows), a print errand's printer, an interest item, a workaround
-  # visit, or along a patrol. So the rooms are the home and start rooms, the rooms of usable world
-  # objects and print producers, and the whole leash reach for a patrol, an interest or a work
-  # plan (whose targets V10 does not model). A magnet becomes known by sight (_sight: being in
-  # its room) or by word (_tickNews: a knower at home away from it tells a hearer in that room);
-  # a known magnet it may use adds its room. Repeat until nothing changes.
+  # knows of (_magnetsFor reads s.knows), the reveal slot of a print it owns (the fetch errand), an
+  # interest item, a workaround visit, or along a patrol. So the rooms are the home and start
+  # rooms, the rooms of usable world objects, the slot rooms of owned prints (errand_rooms), the
+  # whole leash reach for an interest or a work plan (whose targets V10 does not model), and a
+  # patrol's own rooms (patrol_rooms: the start room, or a multiRoom route, which the needs leash
+  # does not govern). A magnet becomes known by sight (_sight: being in its room) or by word
+  # (_tickNews: a knower at home away from it tells a hearer in that room); a known magnet it may
+  # use adds its room. Repeat until nothing changes.
   def self.build_rooms(json, ctx)
     ctx.rooms = {}.compare_by_identity
     ctx.knows = {}.compare_by_identity
-    prods = ctx.world.select(&:id).group_by(&:id)
     ctx.npc_list.each do |n|
       r = Set[ctx.home_room[n], ctx.npc_room[n]]
       ctx.knows[n] = Set.new
       if runs?(n)
         ctx.world.each { |o| r << o.room if o.room && !fixed_magnet?(o) && can_use?(json, n, o, nil, ctx) }
-        print_producers(n).flatten.each { |id| (prods[id] || []).each { |o| r << o.room if o.room } }
+        r.merge(errand_rooms(json, n, ctx, known: false))
+        r.merge(reach(json, n, ctx)) if !interests_of(n).empty? || AW.work_plan?(json, n)
       end
-      r.merge(reach(json, n, ctx)) if patrols?(n) || (runs?(n) && (!interests_of(n).empty? || AW.work_plan?(json, n)))
+      pr = patrol_rooms(json, n, ctx.npc_room[n])
+      r.merge(pr) if pr
       ctx.rooms[n] = r
     end
     fixed = ctx.magnets.select { |o| fixed_magnet?(o) }
@@ -344,30 +409,104 @@ module ValidateOfficeLife
 
   # [teller, hearer] pairs for a fixed magnet: _tickNews runs for a knower in its home room when
   # that is not the magnet's room; _newsHearers takes any other running NPC that can be in that
-  # room and that neither avoids (groups do not matter).
+  # room, does not know yet and that neither avoids (groups do not matter). A magnet whose
+  # newsRadius reads 0 is told to nobody (a hearer would have to stand on the teller's centre, and
+  # NPC bodies collide). An NPC that starts in the room of a magnet shown from the start sees it on
+  # its first tick, before any teller can be home, so it is never a hearer of that magnet.
   def self.news_pairs(o, actors, ctx)
+    return [] if news_radius(o) <= 0
+
+    seen_at_start = !revealed_later?(o)
     actors.select { |k| knows?(k, o, ctx) && ctx.home_room[k] != o.room }.flat_map do |k|
       home = ctx.home_room[k]
-      actors.select { |h| !h.equal?(k) && ctx.rooms[h].include?(home) && !avoids_either?(k, h) }.map { |h| [k, h] }
+      actors.select do |h|
+        !h.equal?(k) && ctx.rooms[h].include?(home) && !avoids_either?(k, h) &&
+          !(seen_at_start && ctx.npc_room[h] == o.room)
+      end.map { |h| [k, h] }
     end
   end
 
-  # Print producer lists for an NPC's print habit (onUse revealOutput) and needs.print mappings.
-  def self.print_producers(n)
-    prods = []
-    (n['onUse'].is_a?(Hash) ? n['onUse'].values : []).each do |h|
-      prods << VN.printer_list(h['revealOutput']) if h.is_a?(Hash) && h['revealOutput']
-    end
-    Array(n['eventMappings']).each do |em|
-      pr = em.is_a?(Hash) && em['needs'].is_a?(Hash) && em['needs']['print'].is_a?(Hash) ? em['needs']['print']['producer'] : nil
-      prods << VN.printer_list(pr) if pr
-    end
-    prods
+  # magnetOf: Number(newsRadius) clamped to 0..50, the default (above 0) when absent or not a number.
+  def self.news_radius(o)
+    m = magnet_of(o)
+    v = m.key?('newsRadius') ? js_number(m['newsRadius']) : Float::NAN
+    v.finite? ? v.clamp(0, 50) : NEWS_RADIUS_TILES
   end
 
-  # May npc use obj for one of `needs` (default all its needs)? A need obj satisfies, no
+  # _hidden: a revealOnGlobal object is not shown until its global holds, so it can be news later
+  # even to an NPC that starts in its room.
+  def self.revealed_later?(o)
+    g = o.data['revealOnGlobal']
+    g.is_a?(String) && !g.empty?
+  end
+
+  # The producer lists of an NPC's onUse print hooks that can print: _startJob rolls a hook only on
+  # a use job of the hook's own object, and _completeJob prints only when that job was for a need
+  # (so the NPC must be able to use the object for one), the roll succeeded (`chance` absent, not a
+  # finite number, or above 0: a chance of 0, null or "" never prints) and the list is not empty.
+  # `known: false` (the reach pass) does not ask whether a fixed magnet is known yet.
+  def self.hook_print_lists(json, n, ctx, known: true)
+    return [] unless n['onUse'].is_a?(Hash)
+
+    n['onUse'].filter_map do |obj_id, h|
+      next unless h.is_a?(Hash)
+
+      list = VN.printer_list(h['revealOutput'])
+      next if list.empty?
+
+      if h.key?('chance')
+        c = js_number(h['chance'])
+        next if c.finite? && c <= 0
+      end
+      next unless ctx.world.any? { |o| o.id == obj_id && can_use?(json, n, o, nil, ctx, known: known) }
+
+      list
+    end
+  end
+
+  # needs.print mapping producer lists, as control reads them: a string or a list is the producer,
+  # an object its `producer`.
+  def self.command_print_lists(n)
+    Array(n['eventMappings']).filter_map do |em|
+      pr = em.is_a?(Hash) && em['needs'].is_a?(Hash) ? em['needs']['print'] : nil
+      spec = pr.is_a?(String) || pr.is_a?(Array) ? pr : (pr.is_a?(Hash) ? pr['producer'] : nil)
+      list = VN.printer_list(spec)
+      list.empty? ? nil : list
+    end
+  end
+
+  # habits.print as _completeJob reads it (typeof 'object': an array counts, null does not).
+  def self.print_habit?(n)
+    h = n['habits'].is_a?(Hash) ? n['habits']['print'] : nil
+    h.is_a?(Hash) || h.is_a?(Array)
+  end
+
+  # Producers whose prints this NPC owns and so fetches (_reserve, _errandCandidate): every needs.print
+  # mapping (control always owns its print), and a print hook only with a habits.print. The errand
+  # carries the slot to the needsHome object, so it needs one.
+  def self.errand_producers(json, n, ctx, known: true)
+    return [] unless n['needsHome'].is_a?(String) && ctx.world.any? { |o| o.id == n['needsHome'] }
+
+    lists = command_print_lists(n)
+    lists += hook_print_lists(json, n, ctx, known: known) if print_habit?(n)
+    lists.flatten.uniq
+  end
+
+  # The rooms of a producer's reveal slots (outputOf) the leash lets this NPC walk to: where a
+  # fetch errand goes (_errandCandidate checks _permitted on the slot, not the printer).
+  def self.errand_rooms(json, n, ctx, known: true)
+    prods = errand_producers(json, n, ctx, known: known)
+    return [] if prods.empty?
+
+    ctx.world.select { |o| o.room && prods.include?(o.data['outputOf']) && VN.leash_rule(json, n, o.room, ctx.home_room[n]).nil? }.map(&:room)
+  end
+
+  # May npc use obj for one of `needs` (default all its needs)? The engine runs it (runs?: a
+  # phone contact with needs has no sprite and uses nothing), a need obj satisfies, no
   # leash/privacy rule bars it, and a fixed magnet is one it knows of (`known: false` skips that).
   def self.can_use?(json, npc, obj, _npcs, ctx, needs = needs_of(npc), known: true)
+    return false unless runs?(npc)
+
     aff = obj.data['affordance']
     return false unless aff.is_a?(Hash)
     return false if (needs & VN.list(aff['satisfies'])).empty?
@@ -392,13 +531,14 @@ module ValidateOfficeLife
     v.finite? ? [0, v.floor].max : nil
   end
 
-  # Does this object pair users a and b: capacity 2 or more (_maybePair), or a queue the second
+  # Does this object pair users a and b: Number(capacity) 2 or more (_maybePair), or a queue the second
   # joins (_tickQueueChats), which _balks refuses an NPC whose maxQueue is 0? With no pair given,
   # whether it can pair anyone.
   def self.pairs?(obj, a = nil, b = nil)
     aff = obj.data['affordance']
     return false unless aff.is_a?(Hash)
-    return true if (aff['capacity'] || 1).to_i >= 2
+    cap = js_number(aff['capacity'])
+    return true if cap.finite? && cap >= 2
     return false unless queue?(aff['queue'])
 
     a.nil? || b.nil? || max_queue(a) != 0 || max_queue(b) != 0
@@ -458,14 +598,14 @@ module ValidateOfficeLife
     ctx.magnets.any? { |o| can_use?(json, n, o, npcs, ctx) }
   end
 
-  # printer_off: a print source (onUse revealOutput, or a needs.print mapping) all of whose producers
-  # have offWhen. _printBlocked speaks grumble_printer_off only (no fallback to grumble).
-  def self.printer_off_turn_back?(_json, n, _npcs, ctx)
+  # printer_off: an onUse print hook that can print (hook_print_lists) all of whose producers have
+  # offWhen. _printBlocked speaks grumble_printer_off only (no fallback to grumble), and only from
+  # _completeJob: a needs.print mapping goes through control with viaCommand, which never speaks.
+  def self.printer_off_turn_back?(json, n, _npcs, ctx)
     return false unless runs?(n)
 
     off = ->(id) { (o = ctx.world.find { |x| x.id == id }) && o.data['offWhen'] }
-    all_off = ->(list) { !list.empty? && list.all? { |id| off.call(id) } }
-    print_producers(n).any? { |list| all_off.call(list) }
+    hook_print_lists(json, n, ctx).any? { |list| list.all? { |id| off.call(id) } }
   end
 
   # chatterPool merges the scenario pool and the NPC's own: does `n` have lines for `topic`?

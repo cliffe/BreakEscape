@@ -381,9 +381,9 @@ test('an avoided NPC with no source in the room is never there; a magnet needs a
     assert.ok(has(check(sc(false)), "NPC 'a' chatter pool 'grumble'"), 'b only needs coffee, served in the office, so it is never at the kitchen cooler');
     const i = check(sc(true));
     assert.ok(!has(i, "NPC 'a' chatter pool 'grumble'"), 'with the coffee in the kitchen, b can be beside the cooler: ' + i.join('\n'));
-    // A patrol takes an NPC with no needs anywhere its leash reaches.
+    // A multiRoom route takes an NPC with no needs through the route's rooms.
     const patrol = sc(false);
-    patrol.rooms.office.npcs[1] = { id: 'b', needsHome: 'b_pc', behavior: { patrol: { enabled: true } } };
+    patrol.rooms.office.npcs[1] = { id: 'b', needsHome: 'b_pc', behavior: { patrol: { enabled: true, multiRoom: true, route: [{ room: 'office' }, { room: 'kitchen' }] } } };
     assert.ok(!has(check(patrol), "NPC 'a' chatter pool 'grumble'"), 'a patrolling b can walk past the kitchen cooler');
 });
 
@@ -445,9 +445,10 @@ test('a group with that names only the partner mirrors; with another member it w
 // ── 25 (review R2 m6): printer off, judged off turn-back, deferrable false, default news ──
 test('grumble_printer_off, a judged need off, a non-deferrable avoid and the default news topic', { skip }, () => {
     const printer = off => ({ id: 'pr1', type: 'printer', ...(off ? { offWhen: 'printer_jam' } : {}) });
-    const printing = { id: 'a', needsHome: 'a_pc', needs: thirst, onUse: { a_pc: { revealOutput: 'pr1' } }, chatter: { grumble_printer_off: ['Jammed again.'] } };
-    assert.ok(!has(check(oneRoom({ objects: [desk('a_pc'), printer(true)], npcs: [printing] })), "chatter pool 'grumble_printer_off'"), 'every listed printer can be off');
-    assert.ok(has(check(oneRoom({ objects: [desk('a_pc'), printer(false)], npcs: [printing] })), "NPC 'a' chatter pool 'grumble_printer_off'"), 'the printer has no offWhen');
+    // The hook is on the cooler a drinks at, so a use job of it rolls the print (review R3 M1).
+    const printing = { id: 'a', needsHome: 'a_pc', needs: thirst, onUse: { c1: { revealOutput: 'pr1' } }, chatter: { grumble_printer_off: ['Jammed again.'] } };
+    assert.ok(!has(check(oneRoom({ objects: [desk('a_pc'), cooler('c1'), printer(true)], npcs: [printing] })), "chatter pool 'grumble_printer_off'"), 'every listed printer can be off');
+    assert.ok(has(check(oneRoom({ objects: [desk('a_pc'), cooler('c1'), printer(false)], npcs: [printing] })), "NPC 'a' chatter pool 'grumble_printer_off'"), 'the printer has no offWhen');
 
     const station = { id: 'a_pc', type: 'pc', offWhen: 'power_cut', affordance: { satisfies: 'work', capacity: 1 } };
     const worker = extra => ({ id: 'a', needsHome: 'a_pc', needs: { work: { decayPerMin: 5, urgentAt: 40 } }, chatter: { grumble_off: ["It's off."] }, ...extra });
@@ -471,4 +472,135 @@ test('grumble_printer_off, a judged need off, a non-deferrable avoid and the def
     };
     const i = check(sc);
     assert.ok(!has(i, "scenario chatter pool 'news'"), 'a magnet with no announce is told from news: ' + i.join('\n'));
+});
+
+// ── 26 (review R3 M1): grumble_printer_off comes only from a hook print that can happen ──
+test('a mapping print, a hook on an unused object and a chance of 0 never speak grumble_printer_off', { skip }, () => {
+    const objs = [desk('a_pc'), cooler('c1'), { id: 'pr1', type: 'printer', offWhen: 'jam' }];
+    const a = extra => ({ id: 'a', needsHome: 'a_pc', needs: thirst, chatter: { grumble_printer_off: ['Jammed.'] }, ...extra });
+    const frag = "NPC 'a' chatter pool 'grumble_printer_off'";
+    for (const print of [{ producer: 'pr1' }, 'pr1', ['pr1']]) {
+        const i = check(oneRoom({ objects: objs, npcs: [a({ eventMappings: [{ eventPattern: 'x', needs: { print } }] })] }));
+        assert.ok(has(i, frag), `control prints with viaCommand, and _printBlocked returns before speaking (${JSON.stringify(print)})`);
+    }
+    assert.ok(has(check(oneRoom({ objects: objs, npcs: [a({ onUse: { a_pc: { revealOutput: 'pr1' } } })] })), frag), 'a never uses the desk (no affordance), so the hook never runs');
+    for (const chance of [0, -1, '0', null, '']) {
+        const i = check(oneRoom({ objects: objs, npcs: [a({ onUse: { c1: { revealOutput: 'pr1', chance } } })] }));
+        assert.ok(has(i, frag), `chance ${JSON.stringify(chance)} is Number 0 or less: the roll never prints`);
+    }
+    for (const chance of [0.25, 'x', 2]) {
+        const i = check(oneRoom({ objects: objs, npcs: [a({ onUse: { c1: { revealOutput: 'pr1', chance } } })] }));
+        assert.ok(!has(i, frag), `chance ${JSON.stringify(chance)} can print: ` + i.join('\n'));
+    }
+});
+
+// ── 27 (review R3 M2): an owned print's fetch errand takes the NPC to the slot's room ──
+test('every needs.print form and a hook with a print habit add the slot room; a hook alone does not', { skip }, () => {
+    const coffee = { id: 'cof', type: 'coffee_station', affordance: { satisfies: 'caffeine', capacity: 1 } };
+    const slot = { id: 'slot1', type: 'paper', outputOf: 'pr1', revealOnGlobal: 'slot1_shown' };
+    const sc = b => ({
+        officePresets: false,
+        rooms: {
+            office: { connections: { north: 'kitchen' }, objects: [desk('a_pc'), desk('b_pc'), coffee], npcs: [
+                { id: 'a', needsHome: 'a_pc', needs: thirst, needsCompany: { avoids: ['b'] }, chatter: { grumble: ['Typical.'] } },
+                { id: 'b', needsHome: 'b_pc', needs: caffeine, ...b }] },
+            kitchen: { connections: { south: 'office' }, objects: [cooler('k1'), { id: 'pr1', type: 'printer' }, slot] }
+        }
+    });
+    const frag = "NPC 'a' chatter pool 'grumble'";
+    for (const print of [{ producer: 'pr1' }, 'pr1', ['pr1']]) {
+        const i = check(sc({ eventMappings: [{ eventPattern: 'x', needs: { print } }] }));
+        assert.ok(!has(i, frag), `a mapping print is owned, so b fetches it from the kitchen (${JSON.stringify(print)}): ` + i.join('\n'));
+    }
+    assert.ok(has(check(sc({ onUse: { cof: { revealOutput: 'pr1' } } })), frag), 'with no habits.print the hook print is not owned, so b never fetches it');
+    const i = check(sc({ onUse: { cof: { revealOutput: 'pr1' } }, habits: { print: { weight: 2 } } }));
+    assert.ok(!has(i, frag), 'with habits.print b owns the print and fetches it: ' + i.join('\n'));
+    const noHome = sc({ eventMappings: [{ eventPattern: 'x', needs: { print: 'pr1' } }] });
+    delete noHome.rooms.office.npcs[1].needsHome;
+    assert.ok(has(check(noHome), frag), 'the errand carries the print to the needsHome object, so with none there is no errand');
+});
+
+// ── 28 (review R3 m1): a patrol walks its start room or a valid multiRoom route, leash or not ──
+test('a one-room patrol stays put; a route ignores the needs leash; waypoints auto-enable', { skip }, () => {
+    const sc = b => ({
+        officePresets: false,
+        rooms: {
+            office: { connections: { north: 'kitchen' }, objects: [desk('a_pc'), desk('b_pc')], npcs: [
+                { id: 'a', needsHome: 'a_pc', needs: thirst, needsCompany: { avoids: ['b'] }, chatter: { grumble: ['Typical.'] } },
+                { id: 'b', needsHome: 'b_pc', ...b }] },
+            kitchen: { connections: { south: 'office' }, objects: [cooler('k1')] }
+        }
+    });
+    const frag = "NPC 'a' chatter pool 'grumble'";
+    const route = [{ room: 'office' }, { room: 'kitchen' }];
+    assert.ok(has(check(sc({ behavior: { patrol: { enabled: true, waypoints: [{ x: 3, y: 3 }] } } })), frag), 'a single-room patrol never leaves the office');
+    let i = check(sc({ needsAvoidRooms: ['kitchen'], behavior: { patrol: { enabled: true, multiRoom: true, route } } }));
+    assert.ok(!has(i, frag), 'needsAvoidRooms does not govern the route: ' + i.join('\n'));
+    i = check(sc({ behavior: { patrol: { multiRoom: true, waypoints: [{ x: 3, y: 3 }], route } } }));
+    assert.ok(!has(i, frag), 'waypoints turn the patrol on with no enabled flag: ' + i.join('\n'));
+    i = check(sc({ behavior: { patrol: { enabled: false, bounds: { x: 1, y: 1, width: 4, height: 4 }, multiRoom: true, route } } }));
+    assert.ok(!has(i, frag), 'bounds turn it on even with enabled false: ' + i.join('\n'));
+    assert.ok(has(check(sc({ behavior: { patrol: { multiRoom: true, route } } })), frag), 'no enabled, waypoints or bounds: no patrol');
+    assert.ok(has(check(sc({ behavior: { patrol: { enabled: true, multiRoom: true, route: [{ room: 'office' }, { room: 'lab' }] } } })), frag),
+        'a route naming a missing room turns multiRoom off');
+});
+
+// ── 29 (review R3 m2): a phone contact with needs never uses, pairs at or turns back from anything ──
+test('a phone contact with needs is no cooler partner, no exchange partner and has no off turn-back', { skip }, () => {
+    const phone = extra => ({ id: 'p', npcType: 'phone', needs: thirst, ...extra });
+    let i = check(oneRoom({ objects: [desk('a_pc'), cooler('c1')], npcs: [{ id: 'a', needsHome: 'a_pc', needs: thirst, chatter: { cooler: ['Hi'] } }, phone()] }));
+    assert.ok(has(i, "NPC 'a' chatter pool 'cooler'"), 'the only partner has no sprite');
+    i = check(oneRoom({ objects: [desk('a_pc'), cooler('c1')], npcs: [{ id: 'a', needsHome: 'a_pc', needs: thirst, exchanges: [{ with: 'p', knot: 'k' }] }, phone()] }));
+    assert.ok(has(i, "exchange 'k'"), 'an exchange with a phone contact never plays');
+    i = check(oneRoom({ objects: [{ ...cooler('c1'), offWhen: 'g' }], npcs: [phone({ chatter: { grumble_off: ['Off.'] } })] }));
+    assert.ok(has(i, "NPC 'p' chatter pool 'grumble_off'"), 'a phone contact never walks to the off cooler');
+});
+
+// ── 30 (review R3 m3): newsRadius 0 tells nobody; a hearer who starts by the magnet already knows ──
+test('newsRadius 0 and a hearer who sees the magnet on its first tick leave a news pool dead', { skip }, () => {
+    const hunger = { hunger: { decayPerMin: 4, urgentAt: 40 } };
+    const cake = (m = {}, extra = {}) => ({ id: 'cake', type: 'cake1', ...extra, affordance: { satisfies: 'hunger', capacity: 3, magnet: { servings: 2, announce: 'news_cake', ...m } } });
+    const fridge = { id: 'f1', type: 'fridge', affordance: { satisfies: 'hunger', capacity: 1 } };
+    const sc = (c, kitchenNpcs, officeNpcs) => ({
+        officePresets: false, chatter: { news_cake: ["Cake's out!"] },
+        rooms: {
+            office: { connections: { north: 'kitchen' }, objects: [desk('a_pc'), desk('b_pc'), cooler('c1')], npcs: officeNpcs },
+            kitchen: { connections: { south: 'office' }, objects: [desk('h_pc'), c, fridge], npcs: kitchenNpcs }
+        }
+    });
+    const ta = { id: 'a', needsHome: 'a_pc', needs: hunger };
+    const tb = { id: 'b', needsHome: 'b_pc', needs: thirst };
+    const frag = "scenario chatter pool 'news_cake'";
+    let i = check(sc(cake(), [], [ta, tb]));
+    assert.ok(!has(i, frag), 'default radius: a tells b in the office: ' + i.join('\n'));
+    for (const newsRadius of [0, '0', '', null, -3]) {
+        assert.ok(has(check(sc(cake({ newsRadius }), [], [ta, tb])), frag), `newsRadius ${JSON.stringify(newsRadius)} reads 0`);
+    }
+    assert.ok(!has(check(sc(cake({ newsRadius: 'wide' }), [], [ta, tb])), frag), 'a newsRadius Number cannot read takes the default');
+    const h = { id: 'h', needsHome: 'h_pc', needs: thirst };
+    assert.ok(has(check(sc(cake(), [h], [ta])), frag), 'h starts in the cake room, so it knows before a can tell it');
+    i = check(sc(cake({}, { revealOnGlobal: 'cake_out' }), [h], [ta]));
+    assert.ok(!has(i, frag), 'a cake revealed later can still be news to h: ' + i.join('\n'));
+});
+
+// ── 31 (review R3 m4): capacity and avoidRadius read as JavaScript Number ──
+test('capacity true does not raise and pairs nobody; capacity "2" pairs; avoidRadius "" is no avoidance', { skip }, () => {
+    const pair = capacity => oneRoom({ objects: [desk('a_pc'), desk('b_pc'), cooler('c1', { capacity })], npcs: [
+        { id: 'a', needsHome: 'a_pc', needs: thirst, chatter: { cooler: ['Hi'] } }, { id: 'b', needsHome: 'b_pc', needs: thirst }] });
+    for (const capacity of [true, { n: 2 }, [1, 2]]) {
+        assert.ok(has(check(pair(capacity)), "NPC 'a' chatter pool 'cooler'"), `capacity ${JSON.stringify(capacity)} is Number 1 or NaN, so 1`);
+    }
+    for (const capacity of ['2', [3]]) {
+        const i = check(pair(capacity));
+        assert.ok(!has(i, "NPC 'a' chatter pool 'cooler'"), `capacity ${JSON.stringify(capacity)} is Number 2 or more: ` + i.join('\n'));
+    }
+    const fridge = { id: 'f1', type: 'fridge', affordance: { satisfies: 'thirst', capacity: 1 } };
+    const avoid = avoidRadius => oneRoom({ objects: [desk('a_pc'), desk('b_pc'), fridge], npcs: [
+        { id: 'a', needsHome: 'a_pc', needs: thirst, needsCompany: { avoids: ['b'], ...(avoidRadius === undefined ? {} : { avoidRadius }) }, chatter: { grumble: ['Typical.'] } },
+        { id: 'b', needsHome: 'b_pc', needs: thirst }] });
+    for (const r of ['', false, 0]) assert.ok(has(check(avoid(r)), "NPC 'a' chatter pool 'grumble'"), `avoidRadius ${JSON.stringify(r)} is 0: no avoidance`);
+    for (const r of [undefined, null, true, 'far']) {
+        const i = check(avoid(r));
+        assert.ok(!has(i, "NPC 'a' chatter pool 'grumble'"), `avoidRadius ${JSON.stringify(r)} takes a radius above 0: ` + i.join('\n'));
+    }
 });
