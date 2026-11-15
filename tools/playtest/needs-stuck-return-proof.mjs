@@ -41,6 +41,19 @@ await page.evaluate(() => { const loop = window.game.sys.game.loop, raf = loop.r
 // his sprite as the avoidDynamic exception, with the clock, ends, the includeHeld flag and the
 // first points found. A search that returns 0 points, or a held re-route that bends round the
 // player and still stalls, shows here (games 5439, 5443). Capped at 400 entries.
+// Every line or picture the needs layer shows (its _showSaying path), heard or not: a picture
+// emits nothing when the player is out of earshot, so the away run needs this to tell a picture
+// from silence (code review R1 follow-up). Wraps the method in the page; no game behaviour change.
+await page.evaluate(() => {
+    window.__sayings = [];
+    const sys = window.npcNeedsSystem;
+    if (!sys || typeof sys._showSaying !== 'function') return;
+    const orig = sys._showSaying.bind(sys);
+    sys._showSaying = (s, pick, topic, objectId, minMs) => {
+        try { if (window.__sayings.length < 400) window.__sayings.push({ c: sys.clockMs, npc: s?.npcId, topic, line: pick?.line || null, picture: pick?.picture || null, objectId: objectId || null }); } catch (e) {}
+        return orig(s, pick, topic, objectId, minMs);
+    };
+});
 await page.evaluate(() => {
     window.__marekSearches = [];
     const mk = window.npcBehaviorManager.getBehavior('marek');
@@ -269,6 +282,8 @@ const tasks = await tasksDone();
 report.see_turned_back = tasks.includes('see_turned_back');
 report.see_look_round = tasks.includes('see_look_round');
 const sanjayChat = report.events.filter(e => /^npc_(chatted|overheard)/.test(e.ev) && (e.d?.speakerId || e.d?.npcId) === 'sanjay');
+report.sayings = await page.evaluate(ra => (window.__sayings || []).filter(e => e.c >= ra - 1000), readAt);
+report.sanjay_grumble_shown = report.sayings.filter(e => e.npc === 'sanjay' && /grumble/.test(e.topic || '')).map(e => ({ s: Math.round((e.c - readAt) / 100) / 10, topic: e.topic, line: e.line, picture: e.picture }));
 report.sanjay_grumble = sanjayChat.map(e => ({ s: Math.round((e.c - readAt) / 100) / 10, line: e.d.line || null, picture: e.d.picture, overheard: e.d.overheard }));
 if (away) {
     // Where Sanjay was while his grumble was up, and how far the held player was from him
@@ -281,6 +296,6 @@ report.trace_tail = trace.slice(-5);
 await page.screenshot({ path: `${outDir}/stuck-proof-${gid}.png` });
 report.marek_searches = await page.evaluate(() => window.__marekSearches);
 fs.writeFileSync(`${outDir}/stuck-proof-${gid}.json`, JSON.stringify(report, null, 1));
-console.log(JSON.stringify({ gid, notice_closed: report.notice_closed, turned_back: report.see_turned_back, look_round: report.see_look_round, marek_home_s: report.marek_home_s, stalls: report.stall_lines.length, stuck: report.stall_lines.filter(e => /stuck/.test(e.ev)).length, sanjay: report.sanjay_grumble, tom_seated: report.staff_seated.tom.seated, tom_seat_lines: report.seat_lines.filter(e => e.npc === 'tom').map(e => `${e.t}:${e.ev}:${e.reason || ''}`), errs: errs.length }));
+console.log(JSON.stringify({ gid, notice_closed: report.notice_closed, turned_back: report.see_turned_back, look_round: report.see_look_round, marek_home_s: report.marek_home_s, stalls: report.stall_lines.length, stuck: report.stall_lines.filter(e => /stuck/.test(e.ev)).length, sanjay: report.sanjay_grumble, shown: report.sanjay_grumble_shown, seat_gave_up: (report.staff_log || []).filter(e => e.ev === "seat_gave_up").length, tom_seated: report.staff_seated.tom.seated, tom_seat_lines: report.seat_lines.filter(e => e.npc === 'tom').map(e => `${e.t}:${e.ev}:${e.reason || ''}`), errs: errs.length }));
 await page.goto('about:blank');
 await browser.close();

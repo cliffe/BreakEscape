@@ -1072,3 +1072,39 @@ test('updateSeatedNPC (needs): no swivel or listening on a call, paired, talking
         Object.assign(window, { npcNeedsSystem: prev.n, npcManager: prev.m, eventDispatcher: prev.e, gameScenario: prev.g });
     }
 });
+
+// ── Code review R1 (OFFICE_LIFE_STUCK_RETURN_REVIEW_R1.md) M2 and m6 ──────────────────────
+
+test('M2: post seat retries stop after POST_SEAT_RETRY_MAX when every seat move sticks; one seat_gave_up line', () => {
+    const rig = labSeatRig(235);
+    const log = [];
+    try {
+        window.npcNeedsSystem._log = (npc, ev, data) => log.push({ npc, ev, ...data });
+        let starts = 0;
+        for (let i = 0; i < 12; i++) {
+            if (seating.updateSeatedNPC(rig.behavior, null) && rig.behavior._seatMove) starts++;
+            // the seat move always sticks: it ends short with the NPC standing at its post
+            rig.behavior._seatMove = null;
+            rig.behavior.isMoving = false;
+            window.npcNeedsSystem.clockMs += 4000;
+        }
+        assert.equal(starts, 1 + seating.POST_SEAT_RETRY_MAX, 'the first try and three retries, then no more');
+        const gave = log.filter(e => e.ev === 'seat_gave_up');
+        assert.equal(gave.length, 1, 'one give-up line');
+        assert.equal(gave[0].npc, 'pierce');
+        assert.equal(gave[0].seatRetries, seating.POST_SEAT_RETRY_MAX);
+    } finally { rig.restore(); }
+});
+
+test('M2 and m6: retry caps per kind and a recent fetch claims the chair for its fetcher', () => {
+    assert.equal(seating.postRetryAllowed('seat', 0), true);
+    assert.equal(seating.postRetryAllowed('seat', seating.POST_SEAT_RETRY_MAX - 1), true);
+    assert.equal(seating.postRetryAllowed('seat', seating.POST_SEAT_RETRY_MAX), false);
+    assert.equal(seating.postRetryAllowed('fetch', seating.POST_FETCH_RETRY_MAX - 1), true);
+    assert.equal(seating.postRetryAllowed('fetch', seating.POST_FETCH_RETRY_MAX), false);
+    const chair = { fetchedBy: 'tom', fetchedAt: 10000 };
+    assert.equal(seating.chairClaimedByOther(chair, 'tom', 20000), false, 'the fetcher may fetch it again');
+    assert.equal(seating.chairClaimedByOther(chair, 'amara', 20000), true, 'another fetcher may not, so no back and forth');
+    assert.equal(seating.chairClaimedByOther(chair, 'amara', 10000 + seating.FETCH_CLAIM_MS), false, 'the claim lapses');
+    assert.equal(seating.chairClaimedByOther({}, 'amara', 0), false, 'never fetched');
+});

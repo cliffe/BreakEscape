@@ -6,7 +6,7 @@
 // Run with: node test/js/npc-needs-stuck-walk.test.mjs
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { NPCNeedsSystem, NEEDS_TICK_MS, RETURN_YIELD_MS, STUCK_TRIES, RETURN_STUCK_BACKOFF_MS, RETURN_STUCK_MAX_BACKOFFS } from '../../public/break_escape/js/systems/npc-needs.js';
+import { NPCNeedsSystem, NEEDS_TICK_MS, RETURN_YIELD_MS, STUCK_TRIES, RETURN_STUCK_BACKOFF_MS, RETURN_STUCK_MAX_BACKOFFS, RETURN_FINAL_REPLAN_MS } from '../../public/break_escape/js/systems/npc-needs.js';
 import { makeWorld } from './fixtures/needs-stub-world.mjs';
 
 function office() {
@@ -109,10 +109,14 @@ test('the back-off is bounded: after RETURN_STUCK_MAX_BACKOFFS in one place the 
     assert.equal(evs(sys, 'return_abandoned').at(-1).final, true);
     assert.equal(evs(sys, 'return_stuck').length, 2, 'one return_stuck for the fresh return');
     const after = homeMoves(w, sys).length;
-    sys.step(60000);
+    sys.step(RETURN_FINAL_REPLAN_MS - 5000);
     assert.equal(sys.getState('clerk').mode, 'idle', 'idles where it stands');
-    assert.equal(homeMoves(w, sys).length, after, 'no more walks home: the cycle has ended');
+    assert.equal(homeMoves(w, sys).length, after, 'no quick walks home: the cycle has ended');
     assert.equal(evs(sys, 'return_abandoned').length, 2);
+    // Code review R1 m2: one late re-plan after RETURN_FINAL_REPLAN_MS, so it does not stand there for minutes
+    sys.step(5000 + 2 * NEEDS_TICK_MS);
+    assert.equal(homeMoves(w, sys).length, after + 1, 'one late walk home');
+    assert.equal(sys.getState('clerk').mode, 'returning');
     assert.ok(RETURN_STUCK_MAX_BACKOFFS >= 1);
 });
 
@@ -155,4 +159,70 @@ test('a walk making progress is never re-routed', () => {
     const { sys, w } = toGoto();
     for (let i = 0; i < 60; i++) { w.pos.clerk.x += 3; w.pos.clerk.y += 3; sys.step(NEEDS_TICK_MS); }
     assert.equal(evs(sys, 'walk_rerouted').length, 0);
+});
+
+// ── Code review R1 (OFFICE_LIFE_STUCK_RETURN_REVIEW_R1.md) ───────────────────────
+
+function toBackoff() {
+    const r = toReturning();
+    let guard = 0;
+    while (!r.sys.states.get('clerk').returnStuckUntil && guard++ < 4000) r.sys.step(NEEDS_TICK_MS);
+    assert.ok(r.sys.states.get('clerk').returnStuckUntil > 0, 'backing off');
+    return r;
+}
+
+test('m1: back-offs count per place: one in each of two places never abandons the walk', () => {
+    const { sys, w } = toBackoff();
+    const s = sys.states.get('clerk');
+    assert.equal(s.returnBackoffs, 1);
+    sys.step(RETURN_STUCK_BACKOFF_MS + NEEDS_TICK_MS);   // the back-off ends: a fresh try
+    w.pos.clerk.x -= 60;                                 // held again, somewhere else
+    let guard = 0;
+    sys.step(NEEDS_TICK_MS);
+    while (!s.returnStuckUntil && guard++ < 4000) sys.step(NEEDS_TICK_MS);
+    assert.equal(s.returnBackoffs, 1, 'the new place starts its own count');
+    assert.equal(evs(sys, 'return_abandoned').length, 0);
+});
+
+test('m3: the last re-route in one place carries nudge; earlier ones do not', () => {
+    const { sys, w } = toReturning();
+    for (let i = 0; i < STUCK_TRIES; i++) sys.step(RETURN_YIELD_MS + NEEDS_TICK_MS);
+    const moves = homeMoves(w, sys).slice(-STUCK_TRIES);
+    assert.deepEqual(moves.map(m => !!m.nudge), [...Array(STUCK_TRIES - 1).fill(false), true]);
+});
+
+test('m3: an outbound leg nudges on its last re-route too', () => {
+    const { sys, w } = toGoto();
+    for (let i = 0; i < STUCK_TRIES; i++) sys.step(RETURN_YIELD_MS + NEEDS_TICK_MS);
+    const rr = w.calls.moves.filter(m => m.id === 'clerk' && m.reroute);
+    assert.equal(rr.length, STUCK_TRIES);
+    assert.equal(rr.at(-1).nudge, true);
+    assert.ok(rr.slice(0, -1).every(m => !m.nudge));
+});
+
+test('m7: a conversation during a back-off ends it: the walk home starts fresh on unfreeze', () => {
+    const { sys, w } = toBackoff();
+    const s = sys.states.get('clerk');
+    w.setChat('clerk');
+    sys.step(2 * NEEDS_TICK_MS);
+    assert.equal(sys.getState('clerk').mode, 'frozen');
+    const before = homeMoves(w, sys).length;
+    w.setChat(null);
+    sys.step(NEEDS_TICK_MS);
+    assert.equal(sys.getState('clerk').mode, 'returning');
+    assert.equal(homeMoves(w, sys).length, before + 1, 'walks home at once, not after the back-off');
+    assert.equal(homeMoves(w, sys).at(-1).reroute, undefined, 'a fresh plain walk');
+    assert.equal(s.returnStuckUntil, 0);
+    assert.equal(s.returnBackoffs, 0);
+});
+
+test('m7: a job picked during a back-off clears the back-off, so the walk home after it is not held', () => {
+    const { sys } = toBackoff();
+    const s = sys.states.get('clerk');
+    s.levels.caffeine = 0;   // urgent now: the selector picks the coffee
+    let guard = 0;
+    while (sys.getState('clerk').mode !== 'job' && guard++ < 200) sys.step(NEEDS_TICK_MS);
+    assert.equal(sys.getState('clerk').mode, 'job');
+    assert.equal(s.returnStuckUntil, 0, 'no stale back-off');
+    assert.equal(s.returnBackoffs, 0);
 });

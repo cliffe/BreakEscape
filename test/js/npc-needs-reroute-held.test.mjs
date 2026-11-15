@@ -199,3 +199,18 @@ test('a bump far from a needs destination is not an arrival; near, or for other 
     assert.equal(collisionArrives({ _goToStayDest: dest, _moveOwner: 'script' }, at(100, 152)), true, 'a scripted move keeps the two-tile rule');
     assert.equal(collisionArrives({ _goToStayDest: dest, _moveOwner: undefined }, at(100, 190)), false);
 });
+
+// Code review R1 m7: the settle guard (game 5347) settles against a movable body, not a held one
+test('settleOnContact: settles against a movable NPC body and not against an immovable (held) one', async () => {
+    const { settleOnContact } = await import('../../public/break_escape/js/systems/npc-sprites.js');
+    const settled = [];
+    const vel = [];
+    const behaviour = { clockNow: () => 1234, triggerSettling: t => settled.push(t) };
+    const sprite = { body: { setVelocity: (x, y) => vel.push([x, y]) } };
+    assert.equal(settleOnContact(behaviour, sprite, { body: { immovable: false } }), true);
+    assert.deepEqual(settled, [1234]);
+    assert.deepEqual(vel, [[0, 0]]);
+    assert.equal(settleOnContact(behaviour, sprite, { body: { immovable: true } }), false, 'a seated body: no settle');
+    assert.deepEqual(settled, [1234], 'triggerSettling not called again');
+    assert.equal(vel.length, 1, 'and the walker keeps its velocity, sliding along the held body');
+});

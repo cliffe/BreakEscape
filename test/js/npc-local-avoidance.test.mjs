@@ -306,3 +306,68 @@ test('needs errand: a player far from the target (mid-path) is still a normal yi
     t += 700; b._handleBlockerAhead(t, { x: 400, y: 0 });  // past wait, before give-up squeeze
     assert.deepEqual(b._vel, { x: 0, y: 0 }, 'a mid-path player is still a plain hold — the squeeze is scoped to the pickup cell');
 });
+
+// ── Code review R1 (OFFICE_LIFE_STUCK_RETURN_REVIEW_R1.md) ───────────────────────
+
+test('M1: a needs detour that finds nothing round held bodies retries the plain detour before giving up', () => {
+    window.player = { body: { enable: true, center: { x: 28, y: 0 } } };
+    window.rooms = {};
+    const detour = [{ x: 50, y: 60 }, { x: 400, y: 0 }];
+    const seen = [];
+    // Tucked-in chairs close the only aisle when held bodies count: that search finds nothing
+    const pf = { findNearestWalkableStartCell: (x, y) => ({ x, y }),
+        findWorldPath: (sx, sy, ex, ey, cb, _w, opts) => {
+            const held = !!opts?.avoidDynamic?.includeHeld;
+            seen.push(held);
+            cb(held ? null : detour);
+        } };
+    const b = walker({ busy: true, pathfinder: pf });
+    b._moveOwner = 'needs';
+    let t = 100000;
+    quiet(() => b._handleBlockerAhead(t, { x: 400, y: 0 }));
+    t += 700; quiet(() => b._handleBlockerAhead(t, { x: 400, y: 0 }));
+    assert.deepEqual(seen, [true, false], 'held-aware first, then the plain detour');
+    assert.equal(b.currentPath, detour, 'the plain detour is adopted');
+    assert.equal(b._avoid, null, 'and it did not give up');
+});
+
+test('M1: with both searches empty the needs walker still gives up as before', () => {
+    window.player = { body: { enable: true, center: { x: 28, y: 0 } } };
+    window.rooms = {};
+    const pf = { findNearestWalkableStartCell: (x, y) => ({ x, y }),
+        findWorldPath: (sx, sy, ex, ey, cb) => cb(null) };
+    const b = walker({ busy: true, pathfinder: pf });
+    b._moveOwner = 'needs';
+    let t = 100000;
+    quiet(() => b._handleBlockerAhead(t, { x: 400, y: 0 }));
+    t += 700; quiet(() => b._handleBlockerAhead(t, { x: 400, y: 0 }));
+    assert.equal(b._avoid?.gaveUp, true);
+    assert.equal(b._avoid?.pending, false);
+});
+
+test('m5: nearestBlockerOnPath reads the path in place from startIndex, same answer as a copy', () => {
+    const path = [{ x: -40, y: 0 }, { x: -20, y: 0 }, { x: 8, y: 0 }, { x: 8, y: 30 }, { x: 8, y: 80 }];
+    const blockers = [{ x: 30, y: 0, id: 'p', isPlayer: true }, { x: 8, y: 24, id: 'b' }];
+    const pos = { x: 0, y: 0 };
+    const inPlace = nearestBlockerOnPath(pos, path, blockers, AVOID_LOOKAHEAD_PX, 13, 2);
+    const copied = nearestBlockerOnPath(pos, path.slice(2), blockers);
+    assert.deepEqual(inPlace, copied);
+    assert.equal(inPlace.id, 'b', 'the body past the turn, not the one straight ahead');
+    assert.equal(nearestBlockerOnPath(pos, path, blockers, AVOID_LOOKAHEAD_PX, 13, 5), null, 'nothing left to walk');
+});
+
+test('m3: a needs re-route with nudge steps onto the nearest walkable cell first', () => {
+    const pf = { findNearestWalkableStartCell: () => ({ x: 10, y: 0 }) };
+    const b = walker({ pathfinder: pf });
+    let reset = null;
+    b.sprite.body.reset = (x, y) => { reset = { x, y }; };
+    b.npcBodyPos = () => ({ x: 0, y: 0 });
+    window.seating = null;
+    quiet(() => b.goToAndStay(400, 0, 90, { owner: 'needs', reroute: true, nudge: true }));
+    assert.deepEqual(reset, { x: 10, y: 0 }, 'nudged 10 px onto the walkable cell');
+    reset = null;
+    quiet(() => b.goToAndStay(400, 0, 90, { owner: 'needs', reroute: true }));
+    assert.equal(reset, null, 'no nudge without the flag');
+    quiet(() => b.goToAndStay(400, 0, 90, { owner: 'script', nudge: true }));
+    assert.equal(reset, null, 'and never for a script move');
+});

@@ -64,14 +64,28 @@ const read = async id => {
         // floor mid-office first (the stuck-return driver's stand point, off the staff's routes),
         // so moveToNear's solver starts from a side of the board it can reach, not from behind the
         // queue at the station; then close in on the board
-        const mid = await page.evaluate(() => window.__test.moveTo(232, 176, { timeoutMs: 20000, pointer: false })).catch(e => ({ err: String(e) }));
+        // Code review R1 follow-up: 5454's row 3 and row 5 took this same approach (mid 232,176, aim
+        // 222,41); row 3 stopped at (220,103) every try, so what stopped it moves (a body or a chair in
+        // the aisle). Each try starts from a different mid point, and a short stop records what is near
+        const [mx, my] = [[232, 176], [200, 176], [264, 176]][i];
+        const mid = await page.evaluate(([x, y]) => window.__test.moveTo(x, y, { timeoutMs: 20000, pointer: false }), [mx, my]).catch(e => ({ err: String(e) }));
         await t(300);
         const mv = await page.evaluate(id => window.__test.moveToNear(id, { timeoutMs: 30000 }), id).catch(e => ({ err: String(e) }));
         await t(400);
         const r = await page.evaluate(id => window.__test.interact(id), id).catch(e => ({ err: String(e) }));
         await t(1200); await closeUi();
         const pl = await page.evaluate(() => ({ x: Math.round(window.player.x), y: Math.round(window.player.y) }));
-        tries.push({ mid: mid?.ok ?? mid?.reason ?? mid, move: mv?.ok ?? mv, move_reason: mv?.reason, aimed: mv?.aimedAt, arrived: mv?.arrivedAt, short: mv?.moveShortfall, nudges: mv?.nudges, player: pl, read: r?.ok ?? r, reason: r?.reason || r?.error || r?.err || undefined });
+        const near = r?.ok ? undefined : await page.evaluate(() => {
+            const p = window.player.body.center, out = [];
+            for (const room of Object.values(window.rooms || {})) for (const sp of room.npcSprites || []) {
+                const c = sp.body?.center; if (c && Math.hypot(c.x - p.x, c.y - p.y) < 48) out.push({ npc: sp.npcId, x: Math.round(c.x), y: Math.round(c.y), held: !!sp.body.immovable });
+            }
+            for (const ch of window.chairs || []) {
+                const c = ch.body?.center; if (c && Math.hypot(c.x - p.x, c.y - p.y) < 48) out.push({ chair: ch.objectId, x: Math.round(c.x), y: Math.round(c.y), seatedBy: ch.seatedBy || null, fetchedBy: ch.fetchedBy || null });
+            }
+            return out;
+        }).catch(() => null);
+        tries.push({ from: [mx, my], near, mid: mid?.ok ?? mid?.reason ?? mid, move: mv?.ok ?? mv, move_reason: mv?.reason, aimed: mv?.aimedAt, arrived: mv?.arrivedAt, short: mv?.moveShortfall, nudges: mv?.nudges, player: pl, read: r?.ok ?? r, reason: r?.reason || r?.error || r?.err || undefined });
         if (r?.ok) return { ok: true, tries };
         await t(1500);
     }

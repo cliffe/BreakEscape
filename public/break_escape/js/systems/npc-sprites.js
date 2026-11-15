@@ -1369,6 +1369,20 @@ function isDirectionSafe(npcSprite, velocityX, velocityY, roomId, ignoreNPCs) {
 }
 
 /**
+ * The settle guard (game 5347): a walker touching another NPC settles (stops, then re-plans)
+ * unless that body is held (immovable: seated, or held still using something), which cannot
+ * push and would re-collide every frame. Returns true when it settled.
+ * @private exported for unit tests
+ */
+export function settleOnContact(npcBehavior, npcSprite, otherNPC) {
+    if (otherNPC?.body?.immovable) return false;
+    const gameTime = npcBehavior.clockNow ? npcBehavior.clockNow() : (npcSprite.scene?.time?.now ?? performance.now());
+    npcBehavior.triggerSettling(gameTime);
+    if (npcSprite.body) npcSprite.body.setVelocity(0, 0);
+    return true;
+}
+
+/**
  * Handle NPC-to-NPC collision by inserting an avoidance waypoint
  * 
  * When two NPCs collide during wayfinding:
@@ -1402,12 +1416,7 @@ function handleNPCCollision(npcSprite, otherNPC) {
     // re-collides every frame, so each settle ended in another and the walk never moved off
     // the contact (game 5347: Marek against seated Sanjay's corner for 70 s). Physics
     // separation slides the walker along it instead.
-    const otherHeld = !!otherNPC.body?.immovable;
-    if (!otherHeld) {
-        const gameTime = npcBehavior.clockNow ? npcBehavior.clockNow() : (npcSprite.scene?.time?.now ?? performance.now());
-        npcBehavior.triggerSettling(gameTime);
-        if (npcSprite.body) npcSprite.body.setVelocity(0, 0);
-    }
+    settleOnContact(npcBehavior, npcSprite, otherNPC);
 
     // Only handle waypoint avoidance if NPC is in patrol or face_player mode with waypoints
     // (face_player is also a valid patrolling state, just with player-facing behavior)
