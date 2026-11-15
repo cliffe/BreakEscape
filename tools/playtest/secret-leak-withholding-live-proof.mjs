@@ -311,7 +311,10 @@ async function run() {
     record('door-strip: rfid door entry keeps its card id (clone-as-entry)',
       rfidEntry.requires === 'badge01', `rfid-entry=${JSON.stringify(rfidEntry)}`);
     // A legitimate player still opens the vault with the right PIN (never refused by the strip).
-    const dsVault = await dsPage.evaluate(() => window.ApiClient.unlock('door', 'vault', '7781', 'pin'));
+    // ApiClient.unlock throws on a non-2xx (a refused attempt is 422), so catch and treat as a miss.
+    const tryUnlock = (page, tt, id, att, m) => page.evaluate(([tt, id, att, m]) =>
+      window.ApiClient.unlock(tt, id, att, m).then(r => r).catch(e => ({ success: false, err: e.message })), [tt, id, att, m]);
+    const dsVault = await tryUnlock(dsPage, 'door', 'vault', '7781', 'pin');
     record('door-strip: legit vault PIN 7781 still opens through POST /unlock', dsVault?.success === true, JSON.stringify(dsVault).slice(0, 120));
     await dsPage.close();
 
@@ -321,8 +324,8 @@ async function run() {
     const m01Id = newGame('m01_first_contact', opts.port);
     ids.m01_first_contact = m01Id;
     const m01 = await openPage(browser, baseUrl, m01Id);
-    const m01Wrong = await m01.evaluate(() => window.ApiClient.unlock('object', 'derek_storage_safe', '0000', 'pin'));
-    const m01Right = await m01.evaluate(() => window.ApiClient.unlock('object', 'derek_storage_safe', '1337', 'pin'));
+    const m01Wrong = await tryUnlock(m01, 'object', 'derek_storage_safe', '0000', 'pin');
+    const m01Right = await tryUnlock(m01, 'object', 'derek_storage_safe', '1337', 'pin');
     record('m01 PIN no-regression: wrong 0000 refused, right 1337 opens (derek_storage_safe)',
       !m01Wrong?.success && m01Right?.success === true, `wrong=${m01Wrong?.success} right=${m01Right?.success}`);
     await m01.close();
@@ -333,8 +336,8 @@ async function run() {
     const labId = newGame('lab_physical_pentest', opts.port);
     ids.lab_physical_pentest = labId;
     const lab = await openPage(browser, baseUrl, labId);
-    const labWrong = await lab.evaluate(() => window.ApiClient.unlock('object', 'p4_safe', '9999', 'pin'));
-    const labRight = await lab.evaluate(() => window.ApiClient.unlock('object', 'p4_safe', '7041', 'pin'));
+    const labWrong = await tryUnlock(lab, 'object', 'p4_safe', '9999', 'pin');
+    const labRight = await tryUnlock(lab, 'object', 'p4_safe', '7041', 'pin');
     record('lab shoulder-surf PIN no-regression: wrong 9999 refused, surfed 7041 opens (p4_safe)',
       !labWrong?.success && labRight?.success === true, `wrong=${labWrong?.success} right=${labRight?.success}`);
     await lab.close();

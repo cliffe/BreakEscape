@@ -3981,4 +3981,31 @@ true, so on merge with 6a-1 the held `payload_scan_fresh_state_test` self-activa
 `SCAN_READY` until its corpus-scan body (being built on `build/hard-6a1-scan`) is written; both must
 land in the same merge batch.
 
-Focused tests and the live results are recorded in the follow-up commit below.
+**Focused tests** (under the shared flock lock, `RBENV_VERSION=2.7.8`):
+- Step 3 Rails set plus the new door-strip route test:
+  `secret_leak_withholding_test`, `combination_cryptex_unlock_test`, `capture_proofs_test`,
+  `capture_secret_endpoint_test`, `capture_payload_secret_routes_test`, `access_leak_scanner_test`,
+  `access_leak_scanner_feed_test` together: **165 runs, 838 assertions, 0 failures, 0 errors, 0
+  skips** (was 164; +1 is the GET /room strip test).
+- Rooms-route controller tests: `gated_route_room_controller_test`, `access_model_no_password_test`,
+  `author_notes_sentinel_test`, `current_room_guard_refusal_test`, `saved_current_room_test`:
+  **32 runs, 771 assertions, 0 failures.**
+- Node: `validator-secret-leaks` **26/0** (was 24; +2 m3 fixtures), `validator-acknowledged-clues`
+  **10/0**.
+
+**Live browser proof** (keyless headless server on 3678, `setFPS(20)`, fixed steps on; tip
+`bfa720b4e`): **27 of 27 checks passed** (the original 22 plus the 5 new R2 cases). Game ids:
+test_secret_leaks 5011, m06_follow_the_money 5012, test_unlock_gaps 5013, door_strip 5014,
+m01_first_contact 5017, lab_physical_pentest 5018.
+- Door-entry strip: GET /room/office on the door-strip game stripped the bare PIN entry's
+  `requires` (the vault PIN `7781` absent from the whole room payload) and kept the rfid entry's
+  `badge01`; the vault door then opened with PIN `7781` on POST /unlock (never refused).
+- m01 PIN no-regression: `derek_storage_safe` refused `0000` and opened with `1337`.
+- lab shoulder-surf PIN no-regression: `p4_safe` refused `9999` and opened with the surfed `7041`.
+- The original 22 checks (withholding before/after the proof, the bootstrap strip on
+  test_secret_leaks and m06, the combination/cryptex comparator on test_unlock_gaps) all passed
+  unchanged.
+(A first run on the cold server showed three transient test_secret_leaks before-proof misreads; a
+warm re-run was clean at 27/27 and a direct fetch of a fresh test_secret_leaks bootstrap confirmed
+the three secrets sit only in `scenario_brief`, which the scan strips.) The server was stopped by
+its logged PID afterwards and the port confirmed down. No new gems or npm packages.
