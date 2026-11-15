@@ -223,3 +223,31 @@ Owner: m06. Acknowledged clue (step 3). The custody console PIN (`data_center/ob
 Signed off by the hardening orchestrator, 2026-11-15.
 
 Owner: m08. Acknowledged clue in a global (step 3), printed as a warning, not an info line. The interrogation suite PIN is held in `globalVariables.suite_code` so Netherton's voiced ink can speak it. Server-held globals are dropped (q85); this is the cheat policy's best effort for a clue an NPC must say aloud.
+
+## 2026-11-15: m09_digital_archaeology opened-state class-2 display text
+
+```json
+{
+  "scenario": "scenarios/m09_digital_archaeology/scenario.json.erb",
+  "route": "GET room/:id",
+  "paths": [
+    "rooms/reading_room/objects[2]/textVariants"
+  ]
+}
+```
+
+**Pending orchestrator sign-off** (awaiting orchestrator sign-off). Owner: m09. Opened-state payload scan (6a-2), class 2 (step 3's leak rule): a 6+ character lock answer appears as a whole word inside the locked reading room's in-world display text. Not a filter gap; does not start 6b. The owner adds an acknowledgedClues entry or moves the answer out of the display text.
+
+## 2026-11-15: m09_digital_archaeology opened-state class-2 item name
+
+```json
+{
+  "scenario": "scenarios/m09_digital_archaeology/scenario.json.erb",
+  "route": "GET /container",
+  "paths": [
+    "container/hl_box/contents[0]/name"
+  ]
+}
+```
+
+**Pending orchestrator sign-off** (awaiting orchestrator sign-off). Owner: m09. Opened-state payload scan (6a-2), class 2 (step 3's leak rule): a 6+ character lock answer appears as a whole word inside a held item's display name, in the locked hl_box container. Not a filter gap; does not start 6b.

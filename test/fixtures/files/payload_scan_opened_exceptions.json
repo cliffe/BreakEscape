@@ -1,0 +1,24 @@
+[
+  {
+    "scenario": "scenarios/m09_digital_archaeology/scenario.json.erb",
+    "route": "GET room/:id",
+    "paths": [
+      "rooms/reading_room/objects[2]/textVariants"
+    ],
+    "reason": "Class 2 (step 3's leak rule), not a filter gap: a 6+ character lock answer appears as a whole word inside the reading-room object's in-world display text (its textVariants). The reading room is locked, so only the opened-state scan reaches it. Reported to m09_digital_archaeology's owner to add an acknowledgedClues entry or move the answer out of the display text; it does not start 6b. Pending orchestrator sign-off.",
+    "added": "2026-11-15",
+    "reviewBy": "2026-12-31",
+    "approved": "2026-11-15: m09_digital_archaeology opened-state class-2 display text"
+  },
+  {
+    "scenario": "scenarios/m09_digital_archaeology/scenario.json.erb",
+    "route": "GET /container",
+    "paths": [
+      "container/hl_box/contents[0]/name"
+    ],
+    "reason": "Class 2 (step 3's leak rule), not a filter gap: a 6+ character lock answer appears as a whole word inside a held item's display name (a placement-record reference). hl_box is a locked container, reached only by the opened-state scan. Reported to m09_digital_archaeology's owner; it does not start 6b. Pending orchestrator sign-off.",
+    "added": "2026-11-15",
+    "reviewBy": "2026-12-31",
+    "approved": "2026-11-15: m09_digital_archaeology opened-state class-2 item name"
+  }
+]

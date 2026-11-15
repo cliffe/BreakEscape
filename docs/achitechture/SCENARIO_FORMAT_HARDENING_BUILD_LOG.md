@@ -4577,3 +4577,104 @@ This supersedes the field list and the "32 new WARNING lines" delta in "Step 3 r
   inside prose; a combination written into prose in another form; and a 6+ character answer pasted
   into note text or observations that was not meant as that lock's clue. These stay human-review and
   playtest territory.
+
+## Step 6a-2: the opened-state scan, the identity check and the mutation tests (branch build/hard-6a2)
+
+Date: 2026-11-15. Built on 5172cfe7d (main 536f284ec merged). No `app/` or `lib/` behaviour change
+beyond folding three duplicated card-reference lists onto one constant (below); everything else is in
+`test/`, `tools/playtest/` and `docs/`.
+
+### Deferred 6a-1 minors
+
+- **Card list dedup.** The three copies of `%w[biometric bluetooth rfid]`
+  (`Game#filter_inventory_for_client!` game.rb:1322, `Game#filter_requires_and_contents_recursive`
+  game.rb:6132, `GamesController#filter_requires_recursive` games_controller.rb:2637) are folded onto
+  `BreakEscape::Game::CARD_REFERENCE_LOCK_TYPES` (the constant already used by
+  `filtered_scenario_for_bootstrap` and `strip_door_entry_requires!`). No behaviour change; the
+  controller already references `BreakEscape::Game::` constants, so `BreakEscape::Game::CARD_REFERENCE_LOCK_TYPES`
+  is in scope there.
+- **Bootstrap filter coverage** (`filtered_scenario_test.rb`): a nil `lockType` keeps `requires` in
+  both the model filter and the controller filter (the documented legacy-inert behaviour); the
+  controller requires filter is idempotent per lock kind; `filtered_scenario_for_bootstrap` is
+  idempotent over its own room payload and the controller filter is a no-op on an already-filtered
+  room; and the model filter and the controller filter agree on `requires` for every lock kind
+  (pin/password/key stripped, rfid/biometric/bluetooth kept). 26 runs, 112 assertions, 0 failures.
+
+### The shared scan engine
+
+The classifier and the recursive walk are extracted from `payload_scan_fresh_state_test.rb` into
+`test/support/payload_scan.rb` (`BreakEscape::PayloadLeafClassifier` and `BreakEscape::PayloadScan`,
+pure module functions). The fresh-state test is rewritten to use them (14 runs, 63 assertions, 0
+failures, unchanged behaviour), and the opened-state test uses the same body, so one walk judges both
+states.
+
+### The opened-state scan (`payload_scan_opened_state_test.rb`)
+
+The test writes player_state directly (as `access_model_withholding_test.rb` does) to open a scenario,
+then re-scans the shared routes with the shared engine. For each scenario it:
+
+1. unlocks every room (`unlockedRooms`) and encounters every NPC (`encounteredNPCs`) while objects
+   stay LOCKED, and scans `GET scenario` and `GET room/:id` for every room. Objects start locked on
+   purpose: a locked object's `requires` ships in the room payload, and unlocking it first strips that
+   surface (confirmed: a pre-unlocked object drops its `requires`, so the room pass would miss the
+   legacy-inert `pc` leak the fresh-state scan found while locked).
+2. unlocks every object (`unlockedObjects`) and scans `GET container/:id` for every container, then
+   `GET login_accounts` and, per sign-in PC, `GET container/:id` once for each account the PC admits
+   (`pc_admits_account?`) with a session seeded in `player_state['sessions']`, then `GET network`.
+
+**The identity check.** For each sign-in PC and each admitted session, every item id in the
+`GET container` answer must be in the set built from the created game's scenario_data WITHOUT going
+through `login_desktop_contents`: the PC's own `contents`, each profile `admitted_profiles(npc)`
+returns, and `mapped_share_stubs`. Building the expected set independently is what lets mutation (c)
+fail.
+
+**Mutation tests (prove the scan can fail).** (a) a `cryptexConfig.answer` copy with
+`Game.strip_lock_answers!` stubbed (Minitest `stub`) is caught as class 1 on the `cryptexConfig/answer`
+path; (b) `Game#filter_requires_and_contents_recursive` and `GamesController#filter_requires_recursive`
+replaced by identity (instance_method save / define_method restore) ships a locked `requires` (class 1);
+(c) `login_desktop_contents` replaced to serve every profile fails the identity check; (d) the
+`accountProfiles` delete removed from the bootstrap is caught as class 1 on `GET scenario`. All pass.
+
+**Fixtures.** A `POST unlock` of a PIN safe holding an inner locked case ships no inner answer in its
+`contents` (scanned as a subtree). A seeded feed with a reply post (NPC `needs.social_media` set so
+`feeds?` is true, `feedRevealed` seeded with the reply's `to` record) scans `feedPosts` clean.
+
+**Scan results (opened state, 180 scenarios, ~117 s).** Two findings, both in m09_digital_archaeology
+and both class 2 (step 3's leak rule, judged by value): a 6+ character lock answer appears as a whole
+word inside the locked reading room's in-world display text (`reading_room/objects[2]/textVariants[0]/value`)
+and inside a held item's display name in the locked `hl_box` container
+(`hl_box/contents[0]/name`). Both areas are behind locks, so only the opened-state scan reaches them.
+The scan seeds `srand(1)` around each scenario's route fetches so a route that picks a random text
+variant renders the same body on every run, and the exceptions match by object/container path prefix,
+so a variant index need not be pinned.
+These are **class 2, not a filter gap**: `name` and `textVariants[].value` are display text the format
+ships by design, so no filter touches them. Per the plan a class 2 finding is step 3's finding and goes
+to the scenario's owner, not into the filters, and does not start 6b. They are listed in
+`test/fixtures/files/payload_scan_opened_exceptions.json` (pending orchestrator sign-off, `reviewBy`
+2026-12-31, with headings in `docs/agents/VALIDATOR_DECISIONS.md`) and reported to m09's owner.
+
+**Does anything trigger 6b? No.** The opened-state scan found no class 1 leaf, no unexempted class 4
+leaf and no identity-check violation across every scenario and route; its only findings are class 2
+authored-value matches (m09), which are the owner's concern. 6b stays on hold until a new secret-bearing
+block or a new authored-data route arrives.
+
+**Decisions where the plan and the code/corpus differ (brief: follow the code, record it).**
+- *Separate exceptions file.* The opened-state scan reads its own
+  `payload_scan_opened_exceptions.json`, not 6a-1's `payload_scan_exceptions.json`. A shared file would
+  make the fresh-state scan mark every opened-only path stale (it never reaches m09's locked areas) and
+  fail. Wiring the opened file into the node list test (`validator-known-failures.test.mjs` shared-heading
+  rule) alongside the other three lists is a handover follow-up.
+- *Refusals recorded, not hard-failed.* The plan fails on any opened-state refusal not listed with a
+  reason. A generic seeder cannot satisfy every scenario's bespoke gating (a foothold, a proof, a
+  switched-off host), so the scan records each refusal with its reason in the run report and keeps the
+  hard assertion on leak findings (the scan's real guarantee). The common recorded refusals are sign-in
+  PCs with no seeded session on the plain container pass (expected) and a few `status 404` containers.
+- *Reductions left as handover items* (they add no leak surface over the direct unlock seeding above,
+  and each is exercised by a fixture): foothold seeding and `GET network` per foothold; full feed reveal
+  across the corpus and `POST friendface_phone`; item pickup through `POST inventory` into
+  `playerInventory`; and `POST unlock` across the corpus (GET room/GET container over the unlocked state
+  serve the same filtered subtrees; POST unlock's own roomData/contents are covered by the fixture).
+
+**Run time.** ~117 s over 180 scenarios, just under the plan's two-minute threshold, so the file stays
+in the default `bin/rails test` run for now. It is close; if it creeps over two minutes it should be
+tagged out of the default run and run at each merge batch (as the plan allows).
