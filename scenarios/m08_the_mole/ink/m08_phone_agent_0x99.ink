@@ -187,7 +187,8 @@ So I'm going to be very professional tonight. Bear with me.
     -> hub
 + { found_architect_comms and not found_access_logs } [The mail's real. How do I make it stick?]
     You need root. A user shell shows you the drop. Root shows you the logs, and logs put an account at a terminal.
-    Not from their account, it hasn't got any. The web service you first landed as has a sudo rule begging to be abused. Go back to your foothold and take it.
+    Not from their account, it hasn't got any.
+    The web service you first landed as has a sudo rule begging to be abused. Go back to your foothold and take it.
     -> hub
 // Puzzle chains R1 browser (P1): retires once the player has been inside;
 // every other step topic goes at its own step.

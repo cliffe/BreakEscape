@@ -1080,7 +1080,8 @@ Thursday, nine o'clock. My office.
 // VM integration (2026-11-10): the handover note points to the server
 // room's on-call lockbox; the code is Owen's badge number (#4430).
 - not portal_login_found:
-    The note says the portal login's in the on-call lockbox in the server room. The code's Owen's badge number. It's on his swipe log, or ask him.
+    The note says the portal login's in the on-call lockbox in the server room.
+    The code's Owen's badge number. It's on his swipe log, or ask him.
 - not flag1_submitted:
     You've got the login card. You still want the handover note off the portal: map the subnet and find it.
 - not flag2_submitted:
