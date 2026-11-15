@@ -974,14 +974,14 @@ scada_password = "CascadeWindow19"
               "condition": "value === true && globalVars.scada_password_found === true",
               "onceOnly": true,
               "setGlobal": { "ssh_guide_offered": true },
-              "sendTimedMessage": { "delay": 1500, "message": "Their listener gives out the operator's password in clear, and it's Elena's door code. One password for both, so she told you the truth. Capture's in your inventory. Name and password: want the SSH guide?" }
+              "sendTimedMessage": { "delay": 1500, "message": "Their listener gives out the operator's password in clear: it's Elena's door code. One password for both, so she told the truth. Capture's in your inventory. Want the SSH guide?" }
             },
             {
               "eventPattern": "global_variable_changed:flag2_submitted",
               "condition": "value === true && !globalVars.scada_password_found",
               "onceOnly": true,
               "setGlobal": { "scada_password_found": true, "ssh_guide_offered": true },
-              "sendTimedMessage": { "delay": 1500, "message": "Their listener gives out the operator's password in clear, and the same string opens the control room door. Capture's in your inventory. You've got a name and a password now. Want the SSH guide?" }
+              "sendTimedMessage": { "delay": 1500, "message": "Their listener gives out the operator's password in clear, and the same string opens the control room door. Capture's in your inventory. Name and password: want the SSH guide?" }
             },
             {
               "_comment": "VM integration 2026-11-10 (one secret): the door code Elena gives is also the operator's login on the attack host. A player who has her code and the operator's name (flag 1) before the listener gets a nudge to try it, plus the window warning that the flag-2 row below would otherwise carry. Two rows (either order), latched on reuse_hint_sent.",
@@ -989,7 +989,7 @@ scada_password = "CascadeWindow19"
               "condition": "value === true && globalVars.scada_password_found === true && !globalVars.flag2_submitted && !globalVars.flag3_submitted && !globalVars.reuse_hint_sent",
               "onceOnly": true,
               "setGlobal": { "reuse_hint_sent": true },
-              "sendTimedMessage": { "delay": 9000, "message": "You've got their operator's name. Elena says he's too vain to change a password twice, so her door code may be his login too. If it works, remember: the moment that operator flag goes through the relay, they see you and the window to move the team shuts." }
+              "sendTimedMessage": { "delay": 9000, "message": "He's too vain to change passwords: try Elena's door code as his login. Once that flag goes through, they see you and the window to move the team shuts." }
             },
             {
               "_comment": "Elena turned after flag 1: keyed on her chat closing, never mid-scene, and after her verdict toast (1.5 s).",
@@ -997,7 +997,7 @@ scada_password = "CascadeWindow19"
               "condition": "globalVars.scada_password_found === true && globalVars.flag1_submitted === true && !globalVars.flag2_submitted && !globalVars.flag3_submitted && !globalVars.reuse_hint_sent",
               "onceOnly": true,
               "setGlobal": { "reuse_hint_sent": true },
-              "sendTimedMessage": { "delay": 6000, "message": "You've got their operator's name. Elena says he's too vain to change a password twice, so her door code may be his login too. If it works, remember: the moment that operator flag goes through the relay, they see you and the window to move the team shuts." }
+              "sendTimedMessage": { "delay": 6000, "message": "He's too vain to change passwords: try Elena's door code as his login. Once that flag goes through, they see you and the window to move the team shuts." }
             },
             {
               "_comment": "R5 (VM weave): once the operator password is in hand, submitting the login flag is what closes the redirect window. Fire a can't-miss warning the instant flag 2 lands while the window is still open, for every player (not only one who already revised the projection and assigned a team), so nobody loses the chance to move the team without warning. R4: the trigger is the flag going through the relay, not the act of logging in on the host.",
