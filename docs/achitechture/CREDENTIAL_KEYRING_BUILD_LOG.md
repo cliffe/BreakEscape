@@ -149,3 +149,123 @@ Run 2 built the mechanism and its unit tests: the merged tile row and `setRemote
 - `signInHost()` reads `signIn.host` (the server answer's host, set to `hostLabel` at open and overwritten by `setRemoteAccounts`), never `pcName` (which is "Name (HOST)"), so the lines name the bare host.
 - jsdom does not expand the `border-radius` shorthand in `getComputedStyle`, so the pixel-art "no radius" tag rule is asserted by source/visual, not a computed-style check, in `pc-monitor-frame`.
 - A remote `/login_accounts` request may answer `not_responding`/reach-403/422; these close the screen, but a slow `/capture_secrets` cannot delay that close because the two fetches are handled independently (the close fires on the `/login_accounts` resolution).
+
+## K0 client half: progress and handover (run 3)
+
+Run 3 merged main, measured and landed the remote sign-in fit in a real headless browser, built the
+reusable `signin-fit.mjs`, made the `test_access_networks` scenario/PLAYTEST edits and the lab
+PLAYTEST wording, and took the live proof. Commits on `build/keyring-k0`: `58d5fbe19` (scenario +
+PLAYTEST), `97c0faab9` (fit + tool), plus this log.
+
+### Merge of main
+`git merge main` (main `32516127c`) merged clean by the ort strategy: no conflicts, no K0 files
+touched (the incoming work was the phone-calls writing land and a few TTS/ink files).
+
+### The measured fit (item 1)
+The 14px overflow is gone, measured, not guessed. The fix, scoped to a new `.signin-remote-screen`
+class so every keyboard screen is byte-identical:
+- A remote Switch-user screen with a held, unlocked session merges the "Signed in now" line and the
+  "Remote sign-in" line into one slab, `"{displayName} signed in, through {link}"` (one line at x2).
+- At x2 (`data-ui-scale="2"`) and the short window (`data-short`) the "Username:"/"Password:" label
+  slabs are dropped; the fields keep their `placeholder` and gain an `aria-label`.
+- At x2 the screen and form gaps drop to 4px; at 915x412 the chosen slab takes 2px vertical padding.
+- The remote tile row now folds at **every** size once an account or Other user is chosen (plan 5.2:
+  "folds at every size on a remote screen"); before, the fold was only at x2 and the short window, so
+  the Other-user form plus the still-shown tile row overran at 800x600 and 390x844. This was the
+  real driver of the overflow once labels were dropped.
+
+Measured in `tools/playtest/signin-fit.mjs` (real CSS, real pixel fonts, headless chromium, game
+5028). Spare = `.pc-monitor-area` clientHeight minus the laid-out sign-in content height (offsetHeight,
+layout px, so the x2 zoom does not distort it). No fixture overflows at any size.
+
+| Fixture | 1400x1000 (x2, client 350) | 915x412 (short, client 306) |
+|---|---|---|
+| Other user form + longest refusal | 77px spare | 68px spare |
+| Switch user, held session, Other user + refusal | 73px spare | 68px spare |
+| Headless line | 77px spare | 68px spare |
+| Typed (NLA) line | 77px spare | 68px spare |
+| Tagged tile row (one tile three tags) | 159px spare | 146px spare |
+
+Targets met with margin: >=35px at x2 (lowest 73), >=20px at 915x412 (lowest 68). All five fixtures
+also fit at 800x600, 390x844 and 320x640 with no overflow (positive spare everywhere).
+
+### signin-fit.mjs (item 2)
+`tools/playtest/signin-fit.mjs`: loads the K0 fixtures (Other-user-plus-refusal, Switch-user held
+session, headless line, typed NLA line, a tagged tile row, and the Checking... state) at five sizes
+(the plan's 1400x1000/800x600/915x412/390x844 plus the 320x640 narrow phone). It builds each screen
+from the real `PasswordMinigame` inside a real game page served by the keyless server, so the real
+`password-minigame.css`, `pc-monitor.css` and the pixel fonts are in force (rather than reinventing
+the jsdom stubs). It fails (exit non-zero) on `.pc-monitor-area` overflow or on Password/Sign in
+outside the visible area (only checked when the form is actually shown). `SHOTS=<dir>` also writes a
+PNG of each state. Deviation from plan 5.2's "fixture screens": the fixtures are constructed through
+the real client code path (`initSignIn`/`setRemoteAccounts`) in a live page, not a static harness;
+this is more faithful (real app CSS and fonts) and needs no stub set. Run: `PORT=3062 node
+tools/playtest/signin-fit.mjs [gameId]`.
+
+### Scenario and PLAYTEST (item 3)
+- `scenarios/test_access_networks/scenario.json.erb`: policy `"nla": { "remote": "allowed",
+  "remoteScreen": "typed" }`; `it_pc` (`HB-IT-01`, roles `["it"]`, default policy, picker `accounts`,
+  at `{x:3,y:6}`) and `ops_pc` (`HB-OPS-02`, roles `["staff"]`, policy `nla`, picker `accounts`, at
+  `{x:5,y:6}`) in `desk_room` on `office_lan`, clear of Sam's desk (`5,4`) and the dock (`7,4`);
+  `p3_see`'s `network_viewed` condition is the six-host list
+  `door_box,it_pc,kiosk_pc,lena_pc,ops_pc,sam_pc`; the capture card at `:296` reads "Her tile is then
+  tagged Captured on a remote sign-in screen."
+- `test_access_networks/PLAYTEST.md`: the capture-card harness note rewritten for the merged row and
+  the `.signin-tile[data-username="lfox"] .signin-tag` selector and `clickText('Other user')` before
+  typing; P3 six hosts and the ordered list; Run 0 step 5 and the validator expected-output line gain
+  `it_pc`/`ops_pc`; new beats P5b (the PC's own tiles merged with captured), P5c (HB-IT-01 Ian tile
+  tagged, no duplicate, Lena left out under `accounts`), P5d (HB-OPS-02 typed NLA, captured tiles
+  only); P6 updated for the merged held slab and captured-only tiles on `lena_pc`.
+- `lab_physical_pentest/PLAYTEST.md`: the two "Captured sign-ins" references (`:1028`, `:1033`) become
+  the merged tagged-tile wording. Note: the plan prose for this edit described an LW-OPEN-07/hot-desk
+  passage, but the only "Captured sign-ins" occurrences in the file are the `store_controller`/
+  `c.hampshire` lines, so those were reworded faithfully to the merged row; no LW-OPEN-07 "Captured
+  sign-ins" text exists to change.
+- Validator: `test_access_networks` is 0 errors, 7 warnings, the same warning set as main's baseline
+  (no new errors or warnings from the `nla` policy or the two PCs).
+
+### Live proof (item 4) — ports 3062, headless, setFPS(20), fixed steps on
+Keyless server on `:3062` (started by run 3, keyless confirmed in the boot log). Game id **5028**
+(`test_access_networks`). Screenshots in the run-3 scratchpad `.../scratchpad/k0run3/` (`<fixture>-
+<w>x<h>.png`, 30 files):
+- The merged tile row with captured tags (Sam Okafor, Lena Fox tagged Captured, Other user) and the
+  short-window key badge on Lena's tile (`tagged-tiles-915x412.png`): the 8x8 `badge-key.png` glyph in
+  a 2px border, top-right corner.
+- The Switch-user held-session screen at x2 (`switch-held-refusal-1400x1000.png`): the merged "Lena
+  Fox signed in, through Drop box: Comms room" slab, the Other-user form with dropped labels
+  (placeholders only), Change, Sign in and the "That account can't sign in on HB-FIN-02." refusal, all
+  inside `.pc-monitor-area` with no scrollbar.
+- The Checking... state (`checking-*.png`): the header and "Checking..." line with no form and no
+  focus.
+- The headless line, the typed NLA line and the Other-user-plus-refusal at every size.
+- Tampered-client checks against the real server (curl from the keyless server): a held-but-unowned
+  `foothold=jack_comms_port` on `lena_pc` answers **403** (PC not reachable); a structured
+  `foothold[]=x` is coerced to a string and also **403** (not held, never a 500, matching the server
+  R1 m4 test); the keyboard answer (`sam_pc`, no foothold) is **200**, unchanged.
+
+Deviation/left for a follow-up: the dual-fetch transition states (the late redraw after the cap, and
+the 403/422 close) live in `unlock-system.js openRemoteSignInScreen` and are covered by
+`access-remote-signin.test.mjs` (the foothold request, the dual fetch under the cap, the late
+in-place redraw, and the close strings). The run-3 live proof rendered and measured every K0 screen
+state through the real client code and verified the real server's refusals, but did not drive the
+full in-game plant->view->sign-in flow to a 200 tile answer for `it_pc`/`ops_pc` (that needs the
+foothold planted in-game). The server's 200 answers for picker/headless/typed are covered by
+`network_remote_tiles_test.rb`. A later run that wants the end-to-end in-game screenshot should drive
+Run 0's plant then click the view's `HB-IT-01`/`HB-OPS-02`/`HB-FIN-02` rows.
+
+### Suites (item 5)
+Run under the shared lock (`flock .../tests.lock`): `bin/test-js -j 3; bin/rails test`. See the
+run-3 report for the counts; shell-x is the known env failure, reported separately.
+
+### Run-3 gotchas
+- `signin-fit.mjs` must measure content height with `offsetHeight` (layout px), not
+  `getBoundingClientRect().height`: at x2 the pc-monitor draws through a zoom/scale, so the rect
+  height is ~2x the layout height and would read as a huge false overflow. `scrollHeight` vs
+  `clientHeight` is the authoritative overflow gate; the screen element's `offsetHeight` gives the
+  true spare (`scrollHeight` clamps up to `clientHeight`, so it cannot show positive spare).
+- The Mission Brief notes popup (intentional, reappears) paints over the sign-in overlay in a raw
+  screenshot; the fit measurement is DOM/layout based and unaffected, but the screenshot step hides
+  the other body children and the canvas first.
+- The real driver of the x2/800x600 overflow, once labels were dropped, was the tile row not folding
+  at every size. Folding the remote row at all sizes (not only x2/short) is what wins the headroom;
+  the merge and the dropped labels alone were not enough at 800x600 and 390x844.

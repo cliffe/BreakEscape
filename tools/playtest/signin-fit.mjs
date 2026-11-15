@@ -53,13 +53,16 @@ const FIXTURES = [
       build: { host: 'HB-OPS-02', pcName: 'Ops desk PC (HB-OPS-02)', picker: false, linkName: 'Drop box: Comms room',
                remote: { footholdId: 'jack', linkName: 'Drop box: Comms room' }, set: { remoteScreen: 'typed', host: 'HB-OPS-02', tiles: [], captured: [{ targetId: 'lfox', username: 'lfox', label: 'Lena Fox', password: 'x' }] },
                action: 'other' } },
-    { name: 'tagged-tiles', desc: 'A row of tagged tiles, one with three tags',
+    { name: 'tagged-tiles', desc: 'A row of tagged tiles, one with three tags (short window shows the badge)',
       build: { host: 'HB-KIOSK-01', pcName: 'Reception kiosk (HB-KIOSK-01)', picker: 'known', linkName: 'Drop box: Comms room',
                remote: { footholdId: 'jack', linkName: 'Drop box: Comms room' },
                set: { picker: 'known', host: 'HB-KIOSK-01',
                       tiles: [{ username: 'sokafor', displayName: 'Sam Okafor' }, { username: 'lfox', displayName: 'Lena Fox' }],
                       captured: [{ targetId: 'lfox', username: 'lfox', label: 'Lena Fox', password: 'x', kinds: ['captured', 'saved', 'granted'] }] },
-               action: 'chosen' } },
+               action: 'tiles' } },
+    { name: 'checking', desc: 'The Checking... state before either fetch answers (no form, no focus)',
+      build: { host: 'HB-FIN-02', pcName: 'Lena Fox PC (HB-FIN-02)', picker: false, linkName: 'Drop box: Comms room',
+               remote: { footholdId: 'jack', linkName: 'Drop box: Comms room' }, checking: true, action: 'none' } },
 ];
 
 async function measure(page, fx) {
@@ -86,7 +89,8 @@ async function measure(page, fx) {
             window.MinigameFramework.currentMinigame = mg;
             mg.init();
             mg.start?.();
-            mg.setRemoteAccounts?.(b.set || {});
+            // The Checking... state is before either fetch answers: no setRemoteAccounts yet
+            if (!b.checking) mg.setRemoteAccounts?.(b.set || {});
             // Drive to the fixture's end state
             if (fx.build.action === 'other') {
                 const other = document.querySelector('#fit-host .signin-other, .pc-monitor .signin-other');
@@ -135,15 +139,16 @@ async function measure(page, fx) {
             const areaRect = area.getBoundingClientRect();
             for (const sel of ['#password-field', '#submit-password']) {
                 const el = document.querySelector('.pc-monitor ' + sel);
-                if (el) {
+                // Only when the field is actually shown: the form is hidden before an account is
+                // chosen (the tile row, or the Checking... state), where Password/Sign in do not apply.
+                if (el && el.offsetParent !== null) {
                     const r = el.getBoundingClientRect();
                     const vis = r.top >= areaRect.top - 1 && r.bottom <= areaRect.bottom + 1;
                     if (!vis) { out.ok = false; out.notes.push(`${sel} outside visible area (top ${Math.round(r.top)}, bottom ${Math.round(r.bottom)} vs ${Math.round(areaRect.top)}..${Math.round(areaRect.bottom)})`); }
                 }
             }
             out.stateLine = (document.querySelector('.pc-monitor #signin-message')?.textContent || '').slice(0, 80);
-            mg.cleanup?.();
-            document.querySelectorAll('#fit-host, .pc-monitor').forEach(e => e.remove());
+            // The overlay is left up for a screenshot; the next measure() clears it first.
         } catch (e) { out.ok = false; out.notes.push('throw: ' + String(e).slice(0, 160)); }
         return out;
     }, fx);
@@ -179,7 +184,20 @@ async function measure(page, fx) {
             if (process.env.FITDEBUG) console.log("    dbg", JSON.stringify(m.dbg));
             rows.push({ tag, verdict, spare: m.spare, scrollHeight: m.scrollHeight, clientHeight: m.clientHeight, notes: m.notes, stateLine: m.stateLine });
             console.log(`${verdict}  ${tag.padEnd(34)} spare=${String(m.spare ?? '?').padStart(5)}  (scroll ${m.scrollHeight ?? '?'} / client ${m.clientHeight ?? '?'})${m.notes?.length ? '  ' + m.notes.join('; ') : ''}`);
-            if (SHOTS && !m.ok) { try { await page.screenshot({ path: `${SHOTS}/fail-${fx.name}-${w}x${h}.png` }); } catch {} }
+            if (SHOTS) {
+                try {
+                    // Hide the game canvas and any other overlay (the Mission Brief popup) so the
+                    // screenshot shows only the sign-in overlay; it does not affect the measurement.
+                    await page.evaluate(() => {
+                        const mon = document.querySelector('.pc-monitor');
+                        document.querySelectorAll('body > *').forEach(e => { if (e !== mon && !e.contains(mon)) e.style.visibility = 'hidden'; });
+                        document.querySelectorAll('canvas').forEach(c => { c.style.visibility = 'hidden'; });
+                    });
+                    const el = await page.$('.pc-monitor');
+                    if (el) await el.screenshot({ path: `${SHOTS}/${fx.name}-${w}x${h}.png` });
+                    await page.evaluate(() => { document.querySelectorAll('body > *, canvas').forEach(e => { e.style.visibility = ''; }); });
+                } catch {}
+            }
         }
     }
     console.log(`\n${failed === 0 ? 'ALL PASS' : failed + ' FAILURE(S)'} over ${rows.length} checks (game ${id})`);
