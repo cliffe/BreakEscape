@@ -2351,9 +2351,9 @@ boardroom_pin = "0417"
         { "type": "photocopier", "id": "it_photocopier", "name": "Photocopier", "takeable": false,
           "observations": "A floor-standing copier. It needs no network, which makes it one of the few things in here still working." },
         { "type": "notes", "id": "it_copier_page", "name": "Downtime Fault Log", "takeable": true, "readable": true,
-          "position": { "x": 6.45, "y": 6.55 },
+          "position": { "x": 6.92, "y": 6.55 },
           "text": "ST. CATHERINE'S REGIONAL -- IT DOWNTIME FAULT LOG\n\nUse while clinical systems are unavailable.\nOne line per fault. Hand to IT at handover.\n\nTIME | WARD | EQUIPMENT / SYSTEM | FAULT | REPORTED BY\n-----+------+--------------------+-------+------------\n     |      |                    |       |\n     |      |                    |       |\n     |      |                    |       |",
-          "observations": "A blank fault log, warm from the copier. Paper is how the wards report anything tonight.",
+          "observations": "A blank downtime fault log. The only thing the copier has printed all night.",
           "outputOf": "it_photocopier", "revealOnGlobal": "it_copier_page_shown" }
       ]
     },
@@ -3491,13 +3491,16 @@ boardroom_pin = "0417"
 <%# Office life (office_life/PLAN.md 2.5 to 2.7): breaks at the boiler and the cooler, shared
     with Hodan; the microwave alone. Mapped breaks: entering the staff room, the burn, leaving
     Kim's office, and a cooler break as the player arrives from the ward. The couplings bring
-    the partner to the same object. %>
+    the partner to the same object. Every mapping here listens only once the staff room has
+    loaded (npc-lazy-loader.js registers a room's NPCs as it loads). The staff room is IT's only
+    connection, so it has always loaded before the burn; if it had not, mapping 1 on the next
+    entry starts a break and the burn exchange, first in Hodan's list, plays then. %>
           "needsRooms": ["staff_room"],
           "needsCompany": { "groups": ["night_staff"] },
           "chatterCooldownMin": 2,
           "chatter": {
             "coffee": ["Lab's quiet. That never lasts.", "Thirty years. Never seen it like this.", "Bloods all night. All on foot.", "Tea's stewed. Still hot, mind."],
-            "cooler": ["Cold in that corridor tonight.", "Last cup's always the one with a hole.", "Lift's out again. Stairs it is.", "Water's free, at least."]
+            "cooler": ["Cold in that corridor tonight.", "Last cone's always the one with a hole.", "Lift's out again. Stairs it is.", "Water's free, at least."]
           },
           "needs": {
             "caffeine": { "initial": 45, "decayPerMin": 5, "urgentAt": 35, "jitterPct": 10 },
@@ -3512,7 +3515,7 @@ boardroom_pin = "0417"
             { "eventPattern": "npc_use_started:staff_boiler", "condition": "data.npcId === 'hodan_warsame'", "needs": { "set": { "caffeine": 20 } } },
             { "eventPattern": "npc_use_started:staff_cooler", "condition": "data.npcId === 'hodan_warsame'", "needs": { "set": { "thirst": 20 } } }
           ],
-          "observations": "The night porter. A two-way radio on his belt and a stack of empty specimen boxes by his feet."
+          "observations": "The night porter. A two-way radio on his belt and the soles of his shoes worn nearly through."
         },
         {
           "id": "hodan_warsame",
@@ -3539,7 +3542,7 @@ boardroom_pin = "0417"
     plays when the pair meet with Hodan in earshot. The knots are in her ink. %>
           "exchanges": [
             { "with": "ernesto_bautista", "knot": "night_watch_burned", "requireGlobal": { "cover_burned": true, "night_staff_attacked": false, "gary_ko": false, "dr_kim_ko": false, "patient_bed4_deceased": false } },
-            { "with": "ernesto_bautista", "knot": "night_watch_cleared", "requireGlobal": { "cover_restored": true, "heard_night_watch_burned": true, "attacked_guard": false, "guard_knocked_out": false, "night_staff_attacked": false, "gary_ko": false, "dr_kim_ko": false, "patient_bed4_deceased": false } },
+            { "with": "ernesto_bautista", "knot": "night_watch_cleared", "requireGlobal": { "cover_restored": true, "heard_night_watch_burned": true, "attacked_guard": false, "guard_knocked_out": false, "night_staff_attacked": false, "gary_ko": false, "dr_kim_ko": false, "patient_bed4_deceased": false, "insider_asset_arrested": false, "night_security_supervisor_ko": false } },
             { "with": "ernesto_bautista", "knot": "night_watch_paper", "requireGlobal": { "night_staff_attacked": false, "patient_bed4_deceased": false } }
           ],
           "needs": {
@@ -3617,7 +3620,8 @@ boardroom_pin = "0417"
 <%# Office life (office_life/PLAN.md 2.5, 2.8, 3): the night staff's break objects, claiming the
     drawn sprites (no position). offWhen stops every use after an attack on either of them.
     overhearRadius 360 covers the whole room, so a pool line or exchange counts as heard from
-    any floor cell here. The cooler's useFrom is measured live (handover). %>
+    any floor cell here. The cooler's useFrom is the measured cell (office_life/STAGE4_LIVE.md 5):
+    approach (276, -12), second user (244, -12), 160 px or more from every doorway. %>
         { "type": "hot_water_boiler", "id": "staff_boiler", "name": "Hot Water Boiler", "takeable": false,
           "officeType": "kettle", "offWhen": "night_staff_attacked",
           "observations": "A wall-mounted boiler over the sink. Somebody has written NO KETTLES on the tiles beside it.",
@@ -3627,7 +3631,7 @@ boardroom_pin = "0417"
           "offWhen": "night_staff_attacked",
           "observations": "A water cooler by the door, a stack of paper cones on top.",
           "affordance": { "capacity": 2, "chatter": "cooler", "queue": false, "useSeconds": 25, "restores": 40,
-                          "overhearRadius": 360 } },
+                          "overhearRadius": 360, "useFrom": { "dx": 0, "dy": 1 } } },
         { "type": "microwave", "id": "staff_microwave", "name": "Microwave", "takeable": false,
           "officeType": "microwave", "offWhen": "night_staff_attacked",
           "observations": "The staff room microwave. The turntable squeaks.",

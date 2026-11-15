@@ -11,26 +11,32 @@
 VAR night_staff_attacked = false
 // Set by the engine once a line of the night_watch_burned exchange was heard.
 VAR heard_night_watch_burned = false
+// Set by the engine once a line of the night_watch_cleared exchange was heard.
+VAR heard_night_watch_cleared = false
 // Re-entry line for a re-talk, skipped once after an answer or a goodbye.
 VAR hub_quiet = false
 
 === start ===
 ~ hub_quiet = true
 {night_staff_attacked:
-    Hodan Warsame: Don't come any nearer. I'm on the radio if I need to be.
+    Hodan Warsame: Don't come any nearer. I'm on the radio if I need to be. #delivery: frightened, holding it together
     -> hub
 }
 Hodan Warsame: You lost? Everyone's lost tonight.
--> hub
+* [Just looking for somewhere quiet.]
+    Hodan Warsame: You've found it. Till the radio goes.
+* [I know where I'm going.]
+    Hodan Warsame: First one tonight, then.
+- -> hub
 
 === hub ===
 {hub_quiet:
     ~ hub_quiet = false
 - else:
     {night_staff_attacked:
-        Hodan Warsame: I'm not talking to you.
+        Hodan Warsame: I'm not talking to you. #delivery: frightened, holding it together
     - else:
-        Hodan Warsame: Still about, then?
+        Hodan Warsame: {&You again.|Still about, then?|Don't step on that bit, it's wet.}
     }
 }
 * {not night_staff_attacked} [What are you on tonight?]
@@ -40,19 +46,24 @@ Hodan Warsame: You lost? Everyone's lost tonight.
     -> hub
 * {not night_staff_attacked} [Long night?]
     Hodan Warsame: I'm on my third wind. The second went somewhere on the back stairs.
-    Hodan Warsame: Don't tell Ernesto. He'll make me a tea and I'll never get up again.
+    Hodan Warsame: If the bed manager rings, you haven't seen me. I'm owed five minutes.
     ~ hub_quiet = true
     -> hub
-* {not night_staff_attacked && heard_night_watch_burned} [Anything happening on the radio?]
+* {not night_staff_attacked && heard_night_watch_burned && not heard_night_watch_cleared} [Anything happening on the radio?]
     Hodan Warsame: Security were after some visitor. Half the building heard it.
     Hodan Warsame: None of mine, unless they've walked across a wet floor.
     ~ hub_quiet = true
     -> hub
+* {not night_staff_attacked && heard_night_watch_cleared} [Did security find their visitor?]
+    Hodan Warsame: Called off. A mix-up with a list, they reckon.
+    Hodan Warsame: Lists. Never once been on the right one myself.
+    ~ hub_quiet = true
+    -> hub
 + [I'll let you get on.]
     {night_staff_attacked:
-        Hodan Warsame: Go.
+        Hodan Warsame: Go. #delivery: frightened, holding it together
     - else:
-        Hodan Warsame: Go on, then.
+        Hodan Warsame: Watch the floor. I've just done it.
     }
     ~ hub_quiet = true
     #exit_conversation

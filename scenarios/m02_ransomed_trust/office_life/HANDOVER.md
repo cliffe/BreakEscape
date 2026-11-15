@@ -1,6 +1,48 @@
-# m02 office life: stage 4 (implementation), handover 2026-11-15
+# m02 office life: stage 4 round 1 fixes, handover 2026-11-15
 
-Branch `build/ol-m02`, worktree `.claude/worktrees/p-ol-m02`. Every slice of PLAN.md draft 8 is in; the live checks (10.2 to 10.4) have not started. A fresh agent picks up there.
+Branch `build/ol-m02`, worktree `.claude/worktrees/p-ol-m02`. Stage 4 is built and live-checked in part (`STAGE4_LIVE.md`); round 1 of the dialogue and implementation reviews (`DIALOGUE_REVIEW_R1.md` 0/2/11, `IMPL_REVIEW_R1.md` 0/2/8) is fixed, with each finding's outcome in the review files. The dressing checks, the staff-room lighting loop and several live checks are still open (below), so not every part of PLAN section 3 is done.
+
+## Round 1 fixes
+
+- Dialogue M1, M2 and m1 to m9, m11 fixed; m10 wording fixed, its `takeable: false` deferred. Ernesto now asks "You with IT?" and the player answers it (local `VAR ernesto_told_security`, read back by his radio topic); both conversations show a small agenda (his pride at being needed, her stolen five minutes). Hodan has a topic once the cleared exchange was heard (`VAR heard_night_watch_cleared`). `#delivery:` on the six wary lines.
+- Spoken lines against the 55 of the first build: 12 added, 12 changed (5 delivery-only), 0 removed; 67 in all (`SPOKEN_LINES.md`). Pool and exchange lines in `DIALOGUE_SAMPLE.md` unchanged; one other pool line changed ("cone" for "cup").
+- Impl M1: cooler `useFrom { dx: 0, dy: 1 }` written explicitly, the measured default (no doorway problem was found live). M2: static dressing checks below; the rest is on the open list. m1 page x 6.45 to 6.92 (centred on the copier from the live screenshot), m3 noted below, m4 partly, m7 the cleared exchange also needs `insider_asset_arrested` and `night_security_supervisor_ko` false.
+- Mapping 2 and an unloaded staff room: NPC mappings register as their room loads (`npc-lazy-loader.js` `loadNPCsForRoom`); `fireOnlyWhenLoaded` is a validator opt-out only. IT's only connection is the staff room, so in play it has always loaded; only a harness that starts in IT hits this, and mapping 1 covers it on the next entry (the burn exchange is first in the list). No data or engine change; noted in an ERB comment.
+
+## Static check results (after round 1)
+
+- Ink compiled with inklecate, no warnings. Validator `--no-graph`: 0 errors, 31 warnings (unchanged). `lock_key_diff.rb` against `baseline_locks.json`: empty, exit 0. dialoguelint: nothing in the two new files. inkcheck and loopcheck at `start`: clean for both stories in the default, `night_staff_attacked`, `heard_night_watch_burned`, burned plus `heard_night_watch_cleared`, and burned plus `ernesto_told_security` states. reopencheck m02: 0 problems. tagdiff against the pre-edit snapshot: the structure changes listed in `DIALOGUE_REVIEW_R1.md` Outcomes, nothing else.
+- V8 note (impl m3): V8 prints `office-life onceOnly 2/10` because it counts office-life mappings only (Gary's print, Ernesto's burn break). The full new `onceOnly` cost is 7 (plus HaX's five attack and KO mappings), as planned. Later missions should not read 2/10 as the whole cost.
+
+## Dressing checks (PLAN 3), static part
+
+Coordinates are live world pixels (room-local y = live y + 256, from the cooler's sprite against its measured position).
+
+- Doorway cells: boiler approach (164, -132) and second user (196, -132), cooler (276, -12) and (244, -12), microwave (228, -132). Nearest doorway first floor cell to any of them is the east (260, -172), 51 px from the microwave cell and 76 px from the boiler's second user; the cooler cells are 192 px or more from the south doorway. None within one tile. The posts (Ernesto about (223, 155) room-local, Hodan about (134, 195)) are clear of the x 52 line between the south and north doorways.
+- Earshot: live, one pool line from each speaker at every doorway for both objects (8 of 8). Every floor cell not checked.
+- Second user reachable: live, 13 of 13 breaks with both `using` and no `no_beside_cell`. Path search from both posts not run.
+- Free cups: none of the three new staff-room objects is a cup type, so none claims `office-misc-cup`, `office-misc-cup3` or `mugs_tray1`. Clicking each with both seated, and with the porter hostile, is open.
+- Clues with the pair at the counter: the handover board claims the rota board (room-local x 68 to 98, y 29 to 50) and the noticeboard notes claim `notice_board1` (214 to 256, 21 to 52); the snag list takes the first free `notes6`, at x 236 to 250, y 36 to 54, right above the microwave cell (228, 124 room-local). With a 64 px frame the microwave user's head reaches about y 60, so the sprites do not overlap on paper, but the gap is 6 px: this is the plan's named risk and the first live check to run. The laptop (93, 127 to 145) and lanyard (84, 211 to 227) are far from the counter.
+- Sprites hidden by a declaration and the room snapshot: not run (`tools/playtest/room-snapshot.mjs` needs a live load).
+
+## Open (next agent)
+
+1. Live: the snag list, handover board, noticeboard, laptop and lanyard each open their object with both NPCs `using` the boiler and the porter at the microwave; the three cups clickable with both seated and with the porter hostile; `room-snapshot.mjs` before and after; `playerHears` from every floor cell at both objects; path search to the second-user cells from both posts.
+2. The staff-room lighting loop (`mission-room-lighting`): the room is now lit from load because NPCs sit in it (PLAN 3). Then the room-tone listen (impl m2), after dressing and lighting.
+3. Live screenshot of the page at x 6.92 on the copier; microwave and boiler in use together.
+4. `STAGE4_LIVE.md` section 8: reload checks 10.3, the 10.2 and 10.4 items not run, 10.5 rhythm numbers, the 5179 anomaly; HaX attack and KO text gap (impl m6).
+5. Live: Ernesto's two first-meeting choices, his radio topic on both branches, Hodan's cleared topic after the cleared exchange.
+6. Fault log `takeable: false` (dialogue m10): decide after a live print check.
+7. For the rollout: the struck-only credits line hides a second victim (impl m5); V10 is still on `build/ol-sims`, with false knot errors from that tree and a `needsRooms` mutation it misses (impl m8, for the V10 owner).
+8. Voicing waits for the user: 67 clips now.
+
+## Files (round 1)
+
+`scenario.json.erb`, `ink/m02_npc_ernesto_bautista.ink` and `.json`, `ink/m02_npc_hodan_warsame.ink` and `.json`, and in this folder `SPOKEN_LINES.md`, `DIALOGUE_REVIEW_R1.md`, `IMPL_REVIEW_R1.md`, this file.
+
+# m02 office life: stage 4 (implementation), handover 2026-11-15 (superseded by the section above)
+
+Branch `build/ol-m02`, worktree `.claude/worktrees/p-ol-m02`. Every slice of PLAN.md draft 8 was built; the dressing checks and the lighting loop were not (see the section above). The live checks have since run in part (`STAGE4_LIVE.md`).
 
 ## Done
 

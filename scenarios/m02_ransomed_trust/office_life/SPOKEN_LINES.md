@@ -1,6 +1,6 @@
 # m02 office life: spoken lines (stage 4)
 
-Every line here is scenario data (NPC JSON or ink) and voiceable. No TTS has been generated for any of them. Existing m02 lines changed: none. Removed: none.
+Every line here is scenario data (NPC JSON or ink) and voiceable. No TTS has been generated for any of them. Existing m02 lines (those before office life) changed: none. Removed: none. The "Stage 4 round 1 fixes" section below lists every office-life line changed or added after the first build.
 
 Not spoken, for the record: Gary's NPC observation (`scenario.json.erb`, `gary_whitlock.observations`) now counts two dead terminals instead of four, matching the ink's first-meeting narration and the two PCs in IT. Observations are shown, never voiced, so no clip changes. The HaX texts and credits lines for the night staff are text only.
 
@@ -22,10 +22,46 @@ After slice 4, V6 (`app:break_escape:tts:office_lines[m02_ransomed_trust]`) list
 
 Total new clips at the end of slice 6: 55 (16 pool, 11 exchange, 28 conversation). The plan estimated about 53.
 
-## Changed
+## Stage 4 round 1 fixes (2026-11-15)
 
-None.
+From `DIALOGUE_REVIEW_R1.md` (M1, M2, m1 to m9). The approved sample's pool lines and all three exchanges are unchanged. One pool line not shown in the sample changed (m9). Counts against the 55 above: **12 added, 12 changed (5 of them only gain a `#delivery:` note, which still means a fresh clip), 0 removed**, so 67 clips in all. A `{&a|b|c}` cycle counts one clip per alternative.
 
-## Removed
+### Changed (old, then new)
 
-None.
+| Speaker | Where | Old | New | Why |
+|---|---|---|---|---|
+| Ernesto | `chatter.cooler` | Last cup's always the one with a hole. | Last cone's always the one with a hole. | m9, the cooler has paper cones |
+| Ernesto | ink `start`, wary greeting | That's close enough. Say what you want and go. | That's close enough. Whatever you want, I haven't got it. `#delivery: flat and guarded` | m2, m6 |
+| Ernesto | ink `hub`, re-entry | Still here? Radio's quiet for once. | Back again? (first of a cycle of three) | m1 |
+| Ernesto | ink `hub`, wary re-entry | I've nothing to say to you. | same words, `#delivery: flat and guarded` | m6 |
+| Ernesto | ink `hub`, wards topic | Ward radios want nurses, not me. | The wards want nurses tonight, not porters. | m3 |
+| Ernesto | ink `hub`, radio topic | Somebody's always looking for somebody, on a night like this. | Always someone looking for someone, a night like this. (when the player gave a vague answer at the first meeting) | m7, M1 |
+| Ernesto | ink `hub`, wary exit | Go on, then. | same words, `#delivery: flat and guarded` | m6 |
+| Hodan | ink `start`, wary greeting | Don't come any nearer. I'm on the radio if I need to be. | same words, `#delivery: frightened, holding it together` | m6 |
+| Hodan | ink `hub`, wary re-entry | I'm not talking to you. | same words, `#delivery: frightened, holding it together` | m6 |
+| Hodan | ink `hub`, long-night topic | Don't tell Ernesto. He'll make me a tea and I'll never get up again. | If the bed manager rings, you haven't seen me. I'm owed five minutes. | M2 |
+| Hodan | ink `hub`, wary exit | Go. | same word, `#delivery: frightened, holding it together` | m6 |
+| Hodan | ink `hub`, exit | Go on, then. | Watch the floor. I've just done it. | m4 |
+
+### Added
+
+| Speaker | Where | Line | Why |
+|---|---|---|---|
+| Ernesto | ink `start`, after the player answers "Security..." | Then I hope they're paying you nights. | M1 |
+| Ernesto | ink `start`, after "Something like that." | Fair enough. Nobody's anything tonight. | M1 |
+| Ernesto | ink `hub`, re-entry cycle | Pull up a chair, if you're stopping. | m1 |
+| Ernesto | ink `hub`, re-entry cycle | You'll wear a path in that floor. | m1 |
+| Ernesto | ink `hub`, miles topic (was "What do you do here?") | Nobody notices the porter, normally. Tonight they're all waiting on me. | M2 |
+| Ernesto | ink `hub`, radio topic, when the player gave their cover | Your department too, I'd have thought. You'll hear before I do. | M1 |
+| Hodan | ink `start`, after "Just looking for somewhere quiet." | You've found it. Till the radio goes. | m11 |
+| Hodan | ink `start`, after "I know where I'm going." | First one tonight, then. | m11 |
+| Hodan | ink `hub`, re-entry cycle | You again. | m1 |
+| Hodan | ink `hub`, re-entry cycle | Don't step on that bit, it's wet. | m1 |
+| Hodan | ink `hub`, new topic once the cleared exchange was heard | Called off. A mix-up with a list, they reckon. | m5 |
+| Hodan | ink `hub`, same topic | Lists. Never once been on the right one myself. | m5 |
+
+### Removed
+
+None. Hodan's "Still about, then?" stays, as the second line of her re-entry cycle.
+
+Not spoken, changed in the same round: Ernesto's observation (no specimen boxes), the fault log's observation (no warmth, no paper-night restatement).
