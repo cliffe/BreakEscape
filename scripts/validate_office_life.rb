@@ -373,7 +373,7 @@ module ValidateOfficeLife
   # need that it may use; the output tray of a printer it prints to (a print fetch); an item tagged
   # for one of its interests; a magnet meeting one of its needs (its own room when fixed, any room
   # it can reach when the player can carry it); and its workaround visits with a fixed target (a
-  # prop_door's door and prop, a borrow_session's PC). [rooms, reasons].
+  # prop_door's prop, a borrow_session's PC, a share_login colleague's room). [rooms, reasons].
   def self.away_need_rooms(w, npc, room)
     home = home_room(w, npc, room)
     reach = VN.leash_reach(w.json, npc, home)
@@ -400,16 +400,20 @@ module ValidateOfficeLife
 
       carried?(o) ? reach.each { |r| add.call(r, 'magnet') } : add.call(o.room, 'magnet')
     end
-    # workaround visits with a fixed target: the door a prop_door props and the room of its prop,
-    # resolved as validate_access_work.rb does (AW.object_index), and the PC a borrow_session sits at
+    # workaround visits with a fixed target: the room of the prop a prop_door props (a visit to the
+    # prop only, npc-workarounds.js; the door's room is the one propped open, never visited), the
+    # PC a borrow_session sits at, and the colleague a share_login goes to (`with`), resolved as
+    # validate_access_work.rb does (AW.object_index)
     index = AW.object_index(w.json)
     AW.workarounds(w.json, npc).each do |wa|
       case wa['do']
       when 'prop_door'
-        add.call(wa['door'], 'workaround visit') if wa['door'].is_a?(String)
         add.call(index.dig(wa['prop'], :room_id), 'workaround visit') if wa['prop'].is_a?(String)
       when 'borrow_session'
         add.call(index.dig(wa['pc'], :room_id), 'workaround visit') if wa['pc'].is_a?(String)
+      when 'share_login'
+        mate = w.npcs.find { |_r, n| n.is_a?(Hash) && n['id'] == wa['with'] } if wa['with'].is_a?(String)
+        add.call(home_room(w, mate[1], mate[0]), 'workaround visit') if mate
       end
     end
     rooms.keys.sort.map { |r| "#{r} (#{rooms[r].uniq.join('/')})" }
@@ -761,11 +765,12 @@ module ValidateOfficeLife
       c['workstation globals'] += 3 if VN.workstation?(o.data) && VN.station_owner(o.data)
       if a.is_a?(Hash) && a['magnet'].is_a?(Hash)
         c['magnet servings'] += 1
-        c['dropped magnet items'] += 1
+        c['dropped magnet items'] += 1 if carried?(o)
       end
       left = o.data['revealOnGlobal'].is_a?(String) && (o.data.key?('outputOf') || o.data.key?('leftBehindChance'))
       c['reveal and left-behind globals'] += 1 if left
-      c['office-life items'] += 1 if (left || (a.is_a?(Hash) && a['magnet'].is_a?(Hash))) && o.data['takeable'] != false
+      magnet = a.is_a?(Hash) && a['magnet'].is_a?(Hash)
+      c['office-life items'] += 1 if (left && o.data['takeable'] != false) || (magnet && carried?(o))
     end
     globals = office_life_globals(w)
     c['office-life onceOnly mappings'] = w.mappings.count do |m, _|

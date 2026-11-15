@@ -22,12 +22,21 @@
 # connectedRoom, an object gate's is the object's lock node and the object itself. A new lock on an
 # object is checked the same way: downstream of its lock node, and the object itself.
 #
+# Which rooms a new locked room, door or gate cuts off is worked out from the scenario's own
+# connections and doors (snapshot 'layout', both directions, locks ignored), never from the
+# graph's room edges: the graph draws none into or out of a locked room. The rooms holding
+# required content or a critical-path lock that the start room reaches now but not once that room
+# (or door) is removed are named. A critical-path lock the baseline had that is gone, or no longer
+# locked: true, is a bypass and a RULE 2 line too. Array members with no id are keyed by type and
+# name (position when those repeat), so inserting a prop shifts nothing.
+#
 # V9 consumes the graph's output and shares none of its code, so a change to the graph's JSON
 # format needs a matching change here; test/js/lock-key-diff.test.mjs pins the fields read:
 # nodes[].id/kind/optional and edges[].from/to/soft.
 #
 # Exit status: 0 no change; 1 changes, none guarding required content; 2 a new door or gate guards
-# required content (rule 2); 64 usage or input error.
+# required content, or a critical-path lock is removed or switched off (rule 2); 64 usage or
+# input error.
 #
 # Renders through BreakEscape::ScenarioBinding (the one render path), with its random values fixed
 # so the requirement hashes are stable from run to run.
@@ -103,18 +112,38 @@ module LockKeyDiff
     g
   end
 
-  # Walk the rendered scenario. Array members are keyed by id (doors by connectedRoom) where they
-  # have one, so a new object or door declared before an existing one does not shift the paths.
+  # The key an array member goes by in a path: its id (doors by connectedRoom), else its own
+  # fields (type and name, the position when two members share them), never its array position,
+  # so a new object declared before an existing one does not shift the paths.
+  def member_keys(arr)
+    keys = arr.map do |v|
+      next nil unless v.is_a?(Hash)
+
+      k = v['id'] || v['taskId'] || v['aimId'] || v['connectedRoom']
+      k ||= [v['type'], v['name']].select { |x| x.is_a?(String) && !x.empty? }.join('|') if v['type'] || v['name']
+      k && k.to_s.gsub(/[\[\]]/, '')
+    end
+    seen = Hash.new(0)
+    counts = keys.compact.tally
+    keys.each_with_index.map do |k, i|
+      next nil unless k
+
+      seen[k] += 1
+      next k if counts[k] == 1
+
+      pos = arr[i]['position'] || arr[i].slice('x', 'y')
+      pos.is_a?(Hash) && pos['x'] ? "#{k}@#{pos['x']},#{pos['y']}" : "#{k}##{seen[k]}"
+    end
+  end
+
   def walk(node, path, &blk)
     case node
     when Hash
       blk.call(node, path)
       node.each { |k, v| walk(v, "#{path}/#{k}", &blk) }
     when Array
-      node.each_with_index do |v, i|
-        key = v.is_a?(Hash) && (v['id'] || v['taskId'] || v['aimId'] || v['connectedRoom'])
-        walk(v, key ? "#{path}[#{key}]" : "#{path}[#{i}]", &blk)
-      end
+      keys = member_keys(node)
+      node.each_with_index { |v, i| walk(v, keys[i] ? "#{path}[#{keys[i]}]" : "#{path}[#{i}]", &blk) }
     end
   end
 
@@ -157,8 +186,29 @@ module LockKeyDiff
       'aims' => aims,
       'concludeRequires' => conclude.sort_by { |c| c['path'] },
       'placement' => placement.sort.to_h,
+      'layout' => layout(scenario),
       'requiredContent' => required_content(scenario, placement, erb_path)
     }
+  end
+
+  # The physical layout from the scenario's own connections and doors, locks ignored (the dungeon
+  # graph draws no room edge into or out of a locked room, so it cannot show what lies beyond one):
+  # { 'start' => room, 'adj' => { room => [rooms, both directions] } }.
+  def layout(scenario)
+    rooms = scenario['rooms'].is_a?(Hash) ? scenario['rooms'] : {}
+    adj = Hash.new { |hh, k| hh[k] = [] }
+    rooms.each do |rid, room|
+      next unless room.is_a?(Hash)
+
+      adj[rid]
+      dests = (room['connections'].is_a?(Hash) ? room['connections'].values : []).flat_map { |d| Array(d) }
+      dests += Array(room['doors']).select { |d| d.is_a?(Hash) }.map { |d| d['connectedRoom'] }
+      dests.select { |d| d.is_a?(String) && rooms.key?(d) }.each do |d|
+        adj[rid] << d
+        adj[d] << rid
+      end
+    end
+    { 'start' => scenario['startRoom'], 'adj' => adj.transform_values { |v| v.uniq.sort }.sort.to_h }
   end
 
   # What a gate sits on: a door (its far side, connectedRoom), a room, or an object.
@@ -166,7 +216,7 @@ module LockKeyDiff
     return { 'door' => o['connectedRoom'] } if path =~ %r{/doors\[[^\]]+\]\z} && o['connectedRoom'].is_a?(String)
     return { 'room' => path[%r{\A/rooms/([^/\[]+)\z}, 1] } if path =~ %r{\A/rooms/[^/\[]+\z}
 
-    { 'object' => o['id'].is_a?(String) ? o['id'] : nil, 'lock' => o.key?('lockType') || o['locked'] == true }
+    { 'object' => o['id'].is_a?(String) ? o['id'] : nil, 'lock' => o['locked'] == true }
   end
 
   def required_task_ids(scenario)
@@ -230,6 +280,13 @@ module LockKeyDiff
     if tasks.any? { |t| t['type'] == 'submit_flags' }
       by_type['vm-launcher'].uniq.each { |r, id| out << [r, 'VM launcher (flag tasks)', id] }
     end
+    # completesTask on a flag-locked object (games_controller.rb) and completesTaskOnOpen
+    # (unlock-system.js): the object itself completes the task
+    objs.each do |rid, o|
+      %w[completesTask completesTaskOnOpen].each do |k|
+        Array(o[k]).map(&:to_s).select { |tid| ids.include?(tid) }.each { |tid| out << [rid, "task #{tid} (#{k} on '#{ref.call(o)}')", ref.call(o)] }
+      end
+    end
     rooms.each do |rid, room|
       next unless room.is_a?(Hash)
 
@@ -259,12 +316,39 @@ module LockKeyDiff
       done = done.uniq & ids
       next if done.empty?
 
-      tgt = m['eventPattern'].to_s.split(':', 2)[1]
-      room = (tgt && (placement[tgt] || (rooms.key?(tgt) ? tgt : nil))) || holder_room
+      kind, tgt = m['eventPattern'].to_s.split(':', 2)
       id = tgt && placement[tgt] ? tgt : nil
-      done.each { |tid| out << [room, "task #{tid} (mapping '#{m['eventPattern']}')", id] } if room
+      # a global trigger names no room: the rooms where that global can be set stand for it. Only
+      # when nothing in the scenario sets it (engine code, such as a minigame result, does) does the
+      # holding NPC's room stand in, so no task is left without a room.
+      rs = if kind == 'global_variable_changed'
+             sr = global_set_rooms(rooms, tgt, base_dir)
+             sr.empty? ? [holder_room] : sr
+           else
+             [(tgt && (placement[tgt] || (rooms.key?(tgt) ? tgt : nil))) || holder_room]
+           end
+      rs.compact.each { |room| done.each { |tid| out << [room, "task #{tid} (mapping '#{m['eventPattern']}')", id] } }
     end
     out.uniq.sort_by { |r| r.map(&:to_s) }
+  end
+
+  # The rooms where this global can be set: a { type: set_global } action, a setGlobal or
+  # setVariable map naming it (onRead, onPickup and the like), or the ink of an NPC there that
+  # assigns it (`~ name =` or `# set_global:name`).
+  def global_set_rooms(rooms, name, base_dir = nil)
+    out = []
+    return out unless name.is_a?(String)
+
+    rooms.each do |rid, room|
+      next unless room.is_a?(Hash)
+
+      walk(room, '') do |o, _p|
+        out << rid if o['type'] == 'set_global' && (o['key'] || o['global'] || o['name']) == name
+        %w[setGlobal setVariable].each { |k| out << rid if o[k].is_a?(Hash) && o[k].key?(name) }
+        out << rid if o['npcType'] && base_dir && story_text(o, base_dir) =~ /(~\s*#{Regexp.escape(name)}\s*=|set_global\s*:\s*#{Regexp.escape(name)}\b)/
+      end
+    end
+    out.uniq
   end
 
   # Yields [owner id, taskId] for each { type: complete_task } action under node; the owner is the
@@ -288,9 +372,13 @@ module LockKeyDiff
       pre = f.split(':', 2)[0]
       next [[placement[pre], pre]] if placement[pre]
 
-      hit = objs.select { |_r, o| Array(o['flags']).include?(f) }
-      hit = objs.select { |_r, o| Array(o['acceptsVms']).include?(pre) } if hit.empty?
-      hit.map { |r, o| [r, o['id']] }
+      hit = objs.select { |_r, o| Array(o['flags']).include?(f) || o['requires'] == f }
+      # <vm>:flag_N is a reference, never accepted by VM at a station: only the lock requiring it
+      # (and the object's completesTask) names the place. <vm>-flagN goes to every object
+      # accepting the VM, of any type.
+      vm = f.include?(':') ? nil : f.sub(/-flag\d+\z/, '')
+      hit = objs.select { |_r, o| Array(o['acceptsVms']).include?(vm) } if hit.empty? && vm
+      hit.map { |r, o| [r, o['id'].is_a?(String) ? o['id'] : o['name']] }
     end
     found = by_type['flag-station'] if found.empty?
     found.uniq
@@ -330,6 +418,51 @@ module LockKeyDiff
     hits.uniq
   end
 
+  def reachable(layout, cut_room: nil, cut_edge: nil)
+    start = layout['start']
+    seen = {}
+    return [] if start.nil? || start == cut_room
+
+    queue = [start]
+    seen[start] = true
+    until queue.empty?
+      n = queue.shift
+      Array(layout['adj'][n]).each do |m|
+        next if seen[m] || m == cut_room || (cut_edge && cut_edge.sort == [n, m].sort)
+
+        seen[m] = true
+        queue << m
+      end
+    end
+    seen.keys
+  end
+
+  # The room a critical-path lock node sits in: door_<room> is the room, lock_<id> the room of the
+  # object (placement, by the graph's node name).
+  def lock_rooms(snap)
+    place = (snap['placement'] || {}).to_h { |id, r| [graph_nid(id), r] }
+    rooms = (snap['layout']['adj'] || {}).keys
+    snap['graph']['lockNodes'].reject { |n| n['optional'] }.filter_map do |n|
+      id = n['id'].to_s
+      if id.start_with?('door_') && rooms.include?(id.sub('door_', '')) then id.sub('door_', '')
+      elsif id.start_with?('lock_') then place[id.sub('lock_', '')]
+      end
+    end
+  end
+
+  # Rooms that hold required content or a critical-path lock, which the player can reach from the
+  # start room in this layout but not once the room (or the door between two rooms) is taken out:
+  # a locked room or corridor in front of them. The room itself is left out (its own content is
+  # judged separately). Nothing when the layout is unknown (an old snapshot).
+  def cut_off(snap, room: nil, edge: nil)
+    lay = snap['layout']
+    return [] unless lay.is_a?(Hash) && lay['start']
+
+    lost = reachable(lay) - reachable(lay, cut_room: room, cut_edge: edge) - [room].compact
+    needed = required_rooms(snap) + lock_rooms(snap)
+    (lost & needed).sort.map { |r| "room '#{r}' (reachable only through #{room ? "'#{room}'" : "door #{edge.join(' to ')}"})" }
+  end
+
   def graph_nid(s)
     s.to_s.downcase.gsub(/[^a-z0-9]/, '_').gsub(/_+/, '_').sub(/\A_+/, '').sub(/_+\z/, '')
   end
@@ -341,17 +474,22 @@ module LockKeyDiff
     why.empty? ? [] : ["object '#{id}' (#{why.join('; ')})"]
   end
 
-  # A lock in effect: locked: true, or a lockType not switched off with locked: false.
+  # A lock in effect: locked: true, as the engine and the graph read it (a lockType alone is not
+  # a lock, interactions.js).
   def lock_on?(l)
-    l['locked'] == true || (l['lockType'] && l['locked'] != false)
+    l['locked'] == true
   end
 
   # What a new lock entry sits on and guards: a room lock guards the room, a door lock its
   # connectedRoom (the path key), an object lock the object when required content names it.
   def lock_entry_guards(snap, l)
     path = l['path'].to_s
-    if (room = path[%r{\A/rooms/([^/\[]+)\z}, 1] || path[%r{/doors\[([^\]]+)\]\z}, 1])
-      return required_rooms(snap).include?(room) ? ["room '#{room}' (required content)"] : []
+    if (room = path[%r{\A/rooms/([^/\[]+)\z}, 1])
+      return (required_rooms(snap).include?(room) ? ["room '#{room}' (required content)"] : []) | cut_off(snap, room: room)
+    end
+    if (m = path.match(%r{\A/rooms/([^/\[]+)/doors\[([^\]]+)\]\z}))
+      room = m[2]
+      return (required_rooms(snap).include?(room) ? ["room '#{room}' (required content)"] : []) | cut_off(snap, edge: [m[1], room])
     end
 
     l['id'].is_a?(String) ? object_guards(snap, l['id']) : []
@@ -371,6 +509,8 @@ module LockKeyDiff
       start = known.call("door_#{room}") ? "door_#{room}" : room
       g = guards(snap, start)
       g |= ["room '#{room}' (required content)"] if required_rooms(snap).include?(room)
+      door = gt['path'].to_s.match(%r{\A/rooms/([^/\[]+)/doors\[([^\]]+)\]\z})
+      g |= door ? cut_off(snap, edge: [door[1], door[2]]) : cut_off(snap, room: room)
       return g
     end
     id = on['object']
@@ -381,6 +521,16 @@ module LockKeyDiff
     g |= object_guards(snap, id)
     g |= ["object '#{id}' (critical-path lock)"] if on['lock'] && !(start && snap['graph']['lockNodes'].any? { |n| n['id'] == start && n['optional'] })
     g
+  end
+
+  # Whether graph lock node `node` is the one this lock entry makes: lock_<id> for an object, the
+  # door_<room> node for a room's own lock or a door's.
+  def lock_node_of?(l, node)
+    path = l['path'].to_s
+    room = path[%r{\A/rooms/([^/\[]+)\z}, 1] || path[%r{/doors\[([^\]]+)\]\z}, 1]
+    return node == "door_#{room}" if room
+
+    l['id'].is_a?(String) && ["lock_#{l['id']}", "lock_#{graph_nid(l['id'])}"].include?(node)
   end
 
   def lines_of(obj)
@@ -407,7 +557,7 @@ module LockKeyDiff
 
       g = guards(cur, n['id'])
       # the locked object itself: the generator names its node lock_<id> (generate_dungeon_graph.rb)
-      cur['locks'].select { |l| l['id'].is_a?(String) && ["lock_#{l['id']}", "lock_#{graph_nid(l['id'])}"].include?(n['id']) }.each do |l|
+      cur['locks'].select { |l| lock_node_of?(l, n['id']) }.each do |l|
         done << l['path']
         g |= lock_entry_guards(cur, l)
       end
@@ -421,6 +571,17 @@ module LockKeyDiff
       g = lock_entry_guards(cur, l)
       flagged << "new lock at #{l['path']} guards #{g.join(', ')}" unless g.empty?
     end
+    # rule 2 also forbids a lock removed or switched off: a critical-path (non-optional) lock of
+    # the baseline that is gone, or whose entry is no longer locked: true (the graph keeps the node
+    # of an object left with a lockType), is a bypass
+    now_locks = cur['graph']['lockNodes'].map { |n| n['id'] }
+    gone = base['graph']['lockNodes'].reject { |n| n['optional'] || now_locks.include?(n['id']) }.map { |n| n['id'] }
+    now_on = cur['locks'].select { |l| lock_on?(l) }.map { |l| l['path'] }
+    base['locks'].select { |l| lock_on?(l) && !now_on.include?(l['path']) }.each do |l|
+      node = base['graph']['lockNodes'].find { |n| !n['optional'] && lock_node_of?(l, n['id']) }
+      gone << node['id'] if node
+    end
+    gone.uniq.each { |id| flagged << "critical-path lock '#{id}' removed or switched off (a bypass)" }
     old_gates = base['gates'].map { |g| [g['path'], g['field']] }
     cur['gates'].each do |gt|
       next if old_gates.include?([gt['path'], gt['field']])

@@ -247,21 +247,26 @@ test('V9: required content from object complete_task actions, targetItemIds by n
     });
 });
 
-test('V9: a flag task is tied to the station its targetFlags name, any type, else by the VM it accepts', { skip }, () => {
+test('V9: a flag task is tied to the station its targetFlags name, any type, else by the lock or VM it names', { skip }, () => {
     fixture(fx => {
         const tasks = [{ taskId: 'f1', title: 'F', type: 'submit_flags', targetFlags: ['fs_a:box-flag1'], status: 'active' },
-                       { taskId: 'f2', title: 'F', type: 'submit_flags', targetFlags: ['box:flag_2'], status: 'active' }];
+                       { taskId: 'f2', title: 'F', type: 'submit_flags', targetFlags: ['box:flag_2'], status: 'active' },
+                       { taskId: 'f3', title: 'F', type: 'submit_flags', targetFlags: ['box-flag3'], status: 'active' }];
         const storeObjs = [{ id: 'fs_a', type: 'flag-station', name: 'A', acceptsVms: ['other'] },
                            { id: 'fs_b', type: 'flag-station', name: 'B', acceptsVms: ['other'] },
                            { id: 'launch', type: 'launch-device', name: 'L', acceptsVms: ['box'] },
-                           { id: 'kali', type: 'vm-launcher', name: 'Kali' }];
+                           { id: 'kali', type: 'vm-launcher', name: 'Kali' },
+                           { id: 'vault_box', type: 'safe', name: 'Box', locked: true, lockType: 'flag', requires: 'box:flag_2' }];
         fx.write(scenario({ tasks, storeObjs }), graph());
         assert.equal(fx.run('--write', fx.base, '--graph-json', fx.gj).status, 0);
         const rc = JSON.parse(readFileSync(fx.base, 'utf8')).requiredContent.filter(([room]) => room === 'store');
+        // R3 minor 4: <vm>:flag_N is a reference, so f2 names the lock that requires it, not the
+        // launch device that accepts the VM; the unqualified <vm>-flagN (f3) goes to every acceptor
         assert.deepEqual(rc, [
             ['store', 'VM launcher (flag tasks)', 'kali'],
             ['store', 'task f1 (flag station)', 'fs_a'],
-            ['store', 'task f2 (flag station)', 'launch']]);
+            ['store', 'task f2 (flag station)', 'vault_box'],
+            ['store', 'task f3 (flag station)', 'launch']]);
     });
 });
 
@@ -304,6 +309,167 @@ test('V9: run without --graph-json it generates the graph, whose JSON carries th
         for (const e of g.edges) for (const f of ['from', 'to', 'soft']) assert.ok(f in e, `edge field ${f}`);
         assert.ok(g.nodes.some(n => n.kind === 'lock'), 'the fixture has a lock node');
         assert.equal(run(base).status, 0);
+    });
+});
+
+// ── R3 ─────────────────────────────────────────────────────────────────────────────────────
+// Layout fixtures: rooms by name with connections, the scenario's task reaching `vault`.
+function lay({ rooms, locked = [], start = 'office', objects = {} }) {
+    const out = {};
+    for (const [id, conns] of Object.entries(rooms)) {
+        out[id] = { type: 'room_office', connections: conns, objects: objects[id] || [], npcs: [],
+            ...(locked.includes(id) ? { locked: true, lockType: 'key', requires: `k_${id}` } : {}) };
+    }
+    return { startRoom: start, objectives: [{ aimId: 'a', title: 'A', status: 'active', order: 0, tasks: [
+        { taskId: 'reach_vault', title: 'Reach the vault', type: 'enter_room', targetRoom: 'vault', status: 'active' }] }], rooms: out };
+}
+function layGraph(rooms, locked) {
+    // as generate_dungeon_graph.rb draws it: no room edge into or out of a locked room
+    const nodes = rooms.map(r => ({ id: r, label: r, kind: 'room', optional: r !== 'vault' }));
+    locked.forEach(r => nodes.push({ id: `door_${r}`, label: r, kind: 'lock', optional: false }));
+    return { scenario: 'fixture', start_room: 'office', nodes, edges: [] };
+}
+function layDiff(fx, before, after) {
+    const rooms = s => Object.keys(s.rooms);
+    const lk = s => rooms(s).filter(r => s.rooms[r].locked);
+    fx.write(before, layGraph(rooms(before), lk(before)));
+    assert.equal(fx.run('--write', fx.base, '--graph-json', fx.gj).status, 0);
+    fx.write(after, layGraph(rooms(after), lk(after)));
+    return fx.run(fx.base, '--graph-json', fx.gj);
+}
+const chain = { office: { north: 'hall' }, hall: { south: 'office', north: 'vault' }, vault: { south: 'hall' } };
+
+test('V9 R3 M1: a lock on a corridor in front of a locked required room exits 2, though the graph has no edge past it', { skip }, () => {
+    fixture(fx => {
+        const r = layDiff(fx, lay({ rooms: chain, locked: ['vault'] }), lay({ rooms: chain, locked: ['vault', 'hall'] }));
+        assert.equal(r.status, 2, r.stdout + r.stderr);
+        assert.match(r.stdout, /RULE 2: new lock 'door_hall' guards room 'vault' \(reachable only through 'hall'\)/);
+    });
+});
+
+test('V9 R3 M1: a new locked room between the start room and the rest exits 2', { skip }, () => {
+    fixture(fx => {
+        const after = { office: { north: 'annex' }, annex: { south: 'office', north: 'hall' }, hall: { south: 'annex', north: 'vault' }, vault: { south: 'hall' } };
+        const r = layDiff(fx, lay({ rooms: chain }), lay({ rooms: after, locked: ['annex'] }));
+        assert.equal(r.status, 2, r.stdout + r.stderr);
+        assert.match(r.stdout, /RULE 2: new lock 'door_annex' guards .*room 'vault' \(reachable only through 'annex'\)/);
+    });
+});
+
+test('V9 R3 M1: a locked side room whose onward room has another way in exits 1; a locked dead-end room too', { skip }, () => {
+    fixture(fx => {
+        const loop = { office: { north: 'hall', east: 'side' }, hall: { south: 'office', north: 'vault', east: 'side' }, side: { west: 'office', north: 'hall' }, vault: { south: 'hall' } };
+        const r = layDiff(fx, lay({ rooms: loop }), lay({ rooms: loop, locked: ['side'] }));
+        assert.equal(r.status, 1, r.stdout + r.stderr);
+        assert.doesNotMatch(r.stdout, /RULE 2/);
+        const dead = { ...chain, office: { north: 'hall', east: 'closet' }, closet: { west: 'office' } };
+        assert.equal(layDiff(fx, lay({ rooms: dead }), lay({ rooms: dead, locked: ['closet'] })).status, 1);
+    });
+});
+
+test('V9 R3 M1: a gate on a door that is the only way to a required room exits 2; with a second way in it exits 1', { skip }, () => {
+    fixture(fx => {
+        const sc = (second) => { const s = lay({ rooms: second ? { ...chain, office: { north: 'hall', east: 'vault' }, vault: { south: 'hall', west: 'office' } } : chain });
+            s.rooms.office.doors = [{ connectedRoom: 'hall' }]; return s; };
+        const gated = (second) => { const s = sc(second); s.rooms.office.doors[0].gate = { requireGlobal: 'ok' }; return s; };
+        const r = layDiff(fx, sc(false), gated(false));
+        assert.equal(r.status, 2, r.stdout + r.stderr);
+        assert.match(r.stdout, /RULE 2: new gate at \/rooms\/office\/doors\[hall\] guards .*room 'vault'/);
+        assert.equal(layDiff(fx, sc(true), gated(true)).status, 1);
+    });
+});
+
+test('V9 R3 minor 2: an id-less lock keeps its path when an object is inserted before it', { skip }, () => {
+    fixture(fx => {
+        const cab = { type: 'safe', name: 'Main Filing Cabinet', locked: true, lockType: 'key', requires: 'k1' };
+        const plant = { type: 'plant', name: 'Plant' };
+        const mk = objs => lay({ rooms: chain, objects: { hall: objs } });
+        const r = layDiff(fx, mk([cab]), mk([plant, cab]));
+        assert.equal(r.status, 0, r.stdout + r.stderr);
+        assert.match(r.stdout, /lock and key diff: empty/);
+        // two id-less objects of one type and name stay apart by position
+        const a = { type: 'safe', name: 'Safe', position: { x: 1, y: 1 }, locked: true, lockType: 'key', requires: 'a' };
+        const b = { type: 'safe', name: 'Safe', position: { x: 2, y: 1 } };
+        assert.equal(layDiff(fx, mk([a, b]), mk([plant, a, b])).status, 0);
+    });
+});
+
+test('V9 R3 minor 3: removing or switching off a critical-path lock is a RULE 2 bypass (exit 2)', { skip }, () => {
+    fixture(fx => {
+        const before = lay({ rooms: chain, locked: ['vault'] });
+        fx.write(before, layGraph(Object.keys(before.rooms), ['vault']));
+        assert.equal(fx.run('--write', fx.base, '--graph-json', fx.gj).status, 0);
+        const after = lay({ rooms: chain });
+        fx.write(after, layGraph(Object.keys(after.rooms), []));
+        const r = fx.run(fx.base, '--graph-json', fx.gj);
+        assert.equal(r.status, 2, r.stdout + r.stderr);
+        assert.match(r.stdout, /RULE 2: critical-path lock 'door_vault' removed or switched off/);
+        // an object switched to locked: false keeps its graph node, but is still a bypass
+        const obj = locked => { const x = lay({ rooms: chain, objects: { hall: [{ id: 'cab', type: 'safe', name: 'Cab', lockType: 'key', requires: 'k', locked }] } }); return x; };
+        const og = () => { const gr = layGraph(['office', 'hall', 'vault'], []); gr.nodes.push({ id: 'lock_cab', label: 'Cab', kind: 'lock', optional: false }); return gr; };
+        fx.write(obj(true), og());
+        fx.run('--write', fx.base, '--graph-json', fx.gj);
+        fx.write(obj(false), og());
+        const sw = fx.run(fx.base, '--graph-json', fx.gj);
+        assert.equal(sw.status, 2, sw.stdout + sw.stderr);
+        assert.match(sw.stdout, /RULE 2: critical-path lock 'lock_cab' removed or switched off/);
+        // an optional lock removed is an ordinary change
+        const opt = layGraph(Object.keys(before.rooms), ['vault']);
+        opt.nodes.find(n => n.id === 'door_vault').optional = true;
+        fx.write(before, opt);
+        fx.run('--write', fx.base, '--graph-json', fx.gj);
+        fx.write(after, layGraph(Object.keys(after.rooms), []));
+        assert.equal(fx.run(fx.base, '--graph-json', fx.gj).status, 1);
+    });
+});
+
+test('V9 R3 minor 4: completesTask and completesTaskOnOpen tie a task to the object', { skip }, () => {
+    fixture(fx => {
+        const s = lay({ rooms: chain, objects: { hall: [
+            { id: 'archive', type: 'safe', name: 'Archive', locked: true, lockType: 'flag', requires: 'box:flag_1', completesTask: 'submit' },
+            { id: 'monitor', type: 'pc', name: 'Monitor', completesTaskOnOpen: ['check'] }] } });
+        s.objectives[0].tasks.push({ taskId: 'submit', title: 'S', type: 'submit_flags', targetFlags: ['box:flag_1'], status: 'active' },
+            { taskId: 'check', title: 'C', type: 'custom', status: 'active' });
+        s.rooms.office.objects.push({ id: 'launch', type: 'launch-device', name: 'L', acceptsVms: ['box'] });
+        fx.write(s, layGraph(Object.keys(s.rooms), []));
+        assert.equal(fx.run('--write', fx.base, '--graph-json', fx.gj).status, 0);
+        const rc = JSON.parse(readFileSync(fx.base, 'utf8')).requiredContent;
+        assert.ok(rc.some(([r, w, x]) => r === 'hall' && x === 'archive' && /completesTask on 'archive'/.test(w)), JSON.stringify(rc));
+        assert.ok(rc.some(([r, w, x]) => r === 'hall' && x === 'monitor' && /completesTaskOnOpen/.test(w)), JSON.stringify(rc));
+        assert.ok(!rc.some(([, , x]) => x === 'launch'), 'the launch device does not complete a <vm>:flag_N task');
+    });
+});
+
+test('V9 R3 minor 5: a global-triggered mapping counts the rooms that set the global, not the holder NPC room', { skip }, () => {
+    fixture(fx => {
+        const mapping = g => ({ eventPattern: `global_variable_changed:${g}`, completeTask: 'decode' });
+        const holder = { id: 'phone', npcType: 'phone', displayName: 'P', eventMappings: [mapping('seen'), { ...mapping('engine_only'), completeTask: 'other' }] };
+        const s = lay({ rooms: { ...chain, den: { south: 'hall' } }, objects: { vault: [{ id: 'note', type: 'notes', name: 'N', onRead: { setVariable: { seen: true } } }] } });
+        s.rooms.office.npcs.push(holder);
+        s.objectives[0].tasks.push({ taskId: 'decode', title: 'D', type: 'manual', status: 'active' }, { taskId: 'other', title: 'O', type: 'manual', status: 'active' });
+        fx.write(s, layGraph(Object.keys(s.rooms), []));
+        assert.equal(fx.run('--write', fx.base, '--graph-json', fx.gj).status, 0);
+        const rc = JSON.parse(readFileSync(fx.base, 'utf8')).requiredContent.filter(([, w]) => /mapping/.test(w));
+        assert.deepEqual(rc.filter(([, w]) => /decode/.test(w)).map(r => r[0]), ['vault']);
+        // nothing in the scenario sets it (a minigame result): the holder's room stands in
+        assert.deepEqual(rc.filter(([, w]) => /task other/.test(w)).map(r => r[0]), ['office']);
+    });
+});
+
+test('V9 R3 minor 7: a lockType without locked: true is no lock, as the engine reads it', { skip }, () => {
+    fixture(fx => {
+        const tasks = [{ taskId: 'get', title: 'G', type: 'unlock_object', targetObject: 'ledger', status: 'active' }];
+        const mk = locked => { const s = lay({ rooms: chain }); s.objectives[0].tasks.push(...tasks);
+            s.rooms.hall.objects = [{ id: 'ledger', type: 'safe', name: 'Ledger', lockType: 'pin', requires: '1', ...(locked ? { locked: true } : {}) }]; return s; };
+        const base = lay({ rooms: chain }); base.objectives[0].tasks.push(...tasks);
+        base.rooms.hall.objects = [{ id: 'ledger', type: 'safe', name: 'Ledger' }];
+        fx.write(base, layGraph(Object.keys(base.rooms), []));
+        fx.run('--write', fx.base, '--graph-json', fx.gj);
+        fx.write(mk(false), layGraph(Object.keys(base.rooms), []));
+        const r = fx.run(fx.base, '--graph-json', fx.gj);
+        assert.equal(r.status, 1, r.stdout + r.stderr);
+        fx.write(mk(true), layGraph(Object.keys(base.rooms), []));
+        assert.equal(fx.run(fx.base, '--graph-json', fx.gj).status, 2);
     });
 });
 

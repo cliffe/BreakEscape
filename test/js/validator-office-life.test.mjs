@@ -177,7 +177,17 @@ test('V2: a prop_door workaround visits its door and its prop; borrow_session th
         npcs: [keyed({ at: 50, do: 'prop_door', door: 'store', prop: 'wedge', setGlobal: 'store_propped' })] }));
     const out = campaign(prop);
     assertHas(out, 'kitchen (workaround visit)');
-    assertHas(out, 'store (workaround visit)');
+    // R3 minor 1: the door's room is the one propped open; the NPC walks to the prop only
+    assertNot(out, 'store');
+    // a prop in the NPC's own office, a locked store next door: no V2 warning at all
+    const own = withStore(scenario({ ...base, officeObjs: [{ id: 'wedge', type: 'notes', position: { x: 1, y: 1 } }],
+        npcs: [keyed({ at: 50, do: 'prop_door', door: 'store', prop: 'wedge', setGlobal: 'store_propped' })] }));
+    assertNot(campaign(own), 'V2');
+    // share_login goes to the colleague named in `with`
+    const mate = { id: 'pat', displayName: 'Pat', npcType: 'person', position: { x: 4, y: 4 } };
+    const shared = scenario({ ...base, npcs: [keyed({ at: 50, do: 'share_login', with: 'pat' })] });
+    shared.rooms.kitchen.npcs.push(mate);
+    assertHas(campaign(shared), 'kitchen (workaround visit)');
     const pc = { id: 'hotdesk', type: 'pc', locked: true, lockType: 'login', position: { x: 1, y: 1 } };
     assertHas(campaign(scenario({ ...base, kitchenObjs: [pc], npcs: [keyed({ at: 50, do: 'borrow_session', pc: 'hotdesk' })] })), 'to kitchen (workaround visit)');
     // a leash that keeps it in the office clears it
@@ -356,6 +366,17 @@ test('V8: the budget counts each kind, sums the small keys and warns above a cap
     assert.match(lines[0], /workstation globals 27\/24; heard_ globals 1\/8; small keys 28\/64/);
     assertHas(check(s), 'V8: sync budget workstation globals is 27, above its cap of 24');
     assert.deepEqual(call(scenario({ npcs: [] , kitchenObjs: [] }), 'ValidateOfficeLife.sync_budget_lines(json)'), []);
+});
+
+test('V8: fixed magnets count neither as dropped magnet items nor as office-life items (R3 minor 6)', { skip }, () => {
+    const cake = (id, extra) => ({ id, type: 'cake', position: { x: 1, y: 1 }, ...extra,
+        affordance: { satisfies: ['caffeine'], magnet: { tempt: 50, servings: 1, perPerson: 1 } } });
+    const fixed = scenario({ officeObjs: [cake('c1', { takeable: false }), cake('c2'), cake('c3', { takeable: false })] });
+    const lines = call(fixed, 'ValidateOfficeLife.sync_budget_lines(json)').join('\n');
+    assert.doesNotMatch(lines, /dropped magnet items/);
+    assertNot(check(fixed), 'dropped magnet items');
+    const carried = scenario({ officeObjs: [cake('c1', { takeable: true }), cake('c2', { droppable: true }), cake('c3', { takeable: true })] });
+    assertHas(check(carried), 'V8: sync budget dropped magnet items is 3, above its cap of 2');
 });
 
 test('V8: an onceOnly mapping carrying an office-life action counts, whatever its trigger', { skip }, () => {
