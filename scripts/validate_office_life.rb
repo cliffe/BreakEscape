@@ -12,6 +12,8 @@
 #
 # V10: a chatter pool, exchange or call that nothing in the scenario can trigger. A lone NPC at a
 # chatter object says nothing, so an untriggerable pool is voiced and paid for and never heard.
+# Each warning names the rule that failed (and, for a chatter object, each object and partner)
+# and a fix for that rule.
 require 'json'
 require 'set'
 require_relative 'validate_npc_needs'
@@ -36,7 +38,8 @@ module ValidateOfficeLife
   AVOID_RADIUS_TILES = 2
   # magnetOf: newsRadius default (NEWS_RADIUS), in tiles.
   NEWS_RADIUS_TILES = 5
-  POOL_FIX = 'give it a partner or trigger, or remove the lines'
+  # How many partners, pairs or objects a chatter-pool warning names before "and N more".
+  SHOWN = 3
 
   # Every topic the needs engine (and its access/workaround siblings) can speak, read from
   # PICTURE_CHATTER in npc-needs.js so the list cannot drift. The ones outside OFFICE_TOPICS
@@ -95,7 +98,7 @@ module ValidateOfficeLife
   end
 
   Ctx = Struct.new(:npc_room, :home_room, :by_topic, :announce, :phones, :rung, :world, :magnets,
-                   :npc_list, :reach, :rooms, :knows, :tellers, keyword_init: true)
+                   :npc_list, :reach, :rooms, :knows, :tellers, :phone_owners, keyword_init: true)
 
   def self.build_context(json, world, held, npcs)
     by_id = world.select(&:id).group_by(&:id)
@@ -126,6 +129,8 @@ module ValidateOfficeLife
       # onPhoneRing ignores a phone whose owner is not a String
       phones: world.select { |o| o.data['deskPhone'] == true && !o.id.to_s.empty? && o.data['owner'].is_a?(String) && !o.data['owner'].empty? },
       rung: ring_targets(json),
+      # validate_npc_needs.rb check_phones reads any deskPhone object's owner (for its pointer)
+      phone_owners: Set.new((world + held).select { |o| o.data['deskPhone'] == true }.map { |o| o.data['owner'] }),
       world: sources, magnets: magnets,
       npc_list: npcs.map(&:last),
       reach: {}.compare_by_identity
@@ -444,8 +449,10 @@ module ValidateOfficeLife
   # a use job of the hook's own object, and _completeJob prints only when that job was for a need
   # (so the NPC must be able to use the object for one), the roll succeeded (`chance` absent, not a
   # finite number, or above 0: a chance of 0, null or "" never prints) and the list is not empty.
-  # `known: false` (the reach pass) does not ask whether a fixed magnet is known yet.
-  def self.hook_print_lists(json, n, ctx, known: true)
+  # The use counts through `satisfies` or, for social_media, the NPC's own station (social_home?).
+  # `known: false` (the reach pass) does not ask whether a fixed magnet is known yet. Returns
+  # [producer list, rooms of the hook's object] pairs.
+  def self.hook_prints(json, n, ctx, known: true)
     return [] unless n['onUse'].is_a?(Hash)
 
     n['onUse'].filter_map do |obj_id, h|
@@ -458,10 +465,24 @@ module ValidateOfficeLife
         c = js_number(h['chance'])
         next if c.finite? && c <= 0
       end
-      next unless ctx.world.any? { |o| o.id == obj_id && can_use?(json, n, o, nil, ctx, known: known) }
+      objs = ctx.world.select { |o| o.id == obj_id && (can_use?(json, n, o, nil, ctx, known: known) || social_home?(json, n, o)) }
+      next if objs.empty?
 
-      list
+      [list, objs.map(&:room).uniq]
     end
+  end
+
+  def self.hook_print_lists(json, n, ctx, known: true)
+    hook_prints(json, n, ctx, known: known).map(&:first)
+  end
+
+  # _socialCandidate: for social_media the NPC's own station (its needsHome, a desk by isDeskData)
+  # is a source whatever its affordance says, so a print hook on it rolls on that use. A blocked or
+  # locked-out station only costs a missed warning. A borrowed PC (_borrowCandidate) is another use
+  # outside satisfies, but a hook on another NPC's PC is too unlikely to model.
+  def self.social_home?(json, n, o)
+    runs?(n) && needs_of(n).include?('social_media') && n['needsHome'].is_a?(String) &&
+      o.id == n['needsHome'] && AW.social_station?(json, n, 'social_media')
   end
 
   # needs.print mapping producer lists, as control reads them: a string or a list is the producer,
@@ -505,14 +526,35 @@ module ValidateOfficeLife
   # phone contact with needs has no sprite and uses nothing), a need obj satisfies, no
   # leash/privacy rule bars it, and a fixed magnet is one it knows of (`known: false` skips that).
   def self.can_use?(json, npc, obj, _npcs, ctx, needs = needs_of(npc), known: true)
-    return false unless runs?(npc)
+    use_block(json, npc, obj, ctx, needs, known: known).nil?
+  end
+
+  # The first rule in can_use? that stops `npc` using `obj`, as [kind, text, fix], or nil when it may.
+  # The text and fix name the NPC, so a warning can say what to change.
+  def self.use_block(json, npc, obj, ctx, needs = needs_of(npc), known: true)
+    who = "'#{npc['id']}'"
+    return [:phone_contact, "#{who} is a phone contact", "pair with an NPC who stands in a room instead of #{who}; a phone contact uses nothing"] if npc['npcType'] == 'phone'
+    return [:not_run, "the needs engine does not run #{who} (it has no need or interest)", "give #{who} a need or interest, so the needs engine runs it"] unless runs?(npc)
 
     aff = obj.data['affordance']
-    return false unless aff.is_a?(Hash)
-    return false if (needs & VN.list(aff['satisfies'])).empty?
-    return false if known && fixed_magnet?(obj) && !knows?(npc, obj, ctx)
+    meets = aff.is_a?(Hash) ? VN.list(aff['satisfies']).select { |x| x.is_a?(String) } : []
+    if (needs & meets).empty?
+      return [:need, "#{who} has no need it meets" + (meets.empty? ? '' : " (it meets #{meets.join(', ')})"),
+              "give #{who} a need '#{obj.id}' meets (affordance.satisfies)"]
+    end
+    if known && fixed_magnet?(obj) && !knows?(npc, obj, ctx)
+      return [:unknown_magnet, "#{who} never learns of it",
+              "let #{who} see '#{obj.id}' (start in its room, or have another reason to visit it) or be told of it"]
+    end
 
-    VN.use_rule(json, npc, obj, ctx.home_room[npc], ctx.npc_list).nil?
+    rule = VN.use_rule(json, npc, obj, ctx.home_room[npc], ctx.npc_list)
+    return nil unless rule
+
+    if rule.start_with?('it is private')
+      [:private, "#{who} may not use it: #{rule}", "drop private from '#{obj.id}', or make #{who} one of its owners"]
+    else
+      [:leash, "#{who} may not use it: #{rule}", "let #{who} use room '#{obj.room}' (its needsRooms or needsAvoidRooms, or the room's needsPrivateTo)"]
+    end
   end
 
   # _queueCfg: a queue is a Hash whose cells hold at least one numeric { dx, dy }.
@@ -601,11 +643,21 @@ module ValidateOfficeLife
   # printer_off: an onUse print hook that can print (hook_print_lists) all of whose producers have
   # offWhen. _printBlocked speaks grumble_printer_off only (no fallback to grumble), and only from
   # _completeJob: a needs.print mapping goes through control with viaCommand, which never speaks.
+  # In a list of two or more, _pickProducer also treats a producer the world does not know as off
+  # (its room not loaded: the live getObject finds only sprites in loaded rooms). The hook object's
+  # room is loaded while the NPC uses it, so a producer there is known; one in another room, or not
+  # a world object at all, can be off.
   def self.printer_off_turn_back?(json, n, _npcs, ctx)
     return false unless runs?(n)
 
-    off = ->(id) { (o = ctx.world.find { |x| x.id == id }) && o.data['offWhen'] }
-    hook_print_lists(json, n, ctx).any? { |list| list.all? { |id| off.call(id) } }
+    hook_prints(json, n, ctx).any? do |list, rooms|
+      list.all? do |id|
+        objs = ctx.world.select { |x| x.id == id }
+        next true if list.length >= 2 && (objs.empty? || objs.any? { |o| !rooms.include?(o.room) })
+
+        objs.any? { |o| o.data['offWhen'] }
+      end
+    end
   end
 
   # chatterPool merges the scenario pool and the NPC's own: does `n` have lines for `topic`?
@@ -678,13 +730,19 @@ module ValidateOfficeLife
     pools.is_a?(Hash) ? pools.keys.reject { |k| k == '_comment' } : []
   end
 
+  # "has 1 line ... speak it" or "has 3 lines ... speak them".
+  def self.lines_phrase(pool)
+    k = VN.pool_lines(pool).length
+    k == 1 ? ['1 line', 'it'] : ["#{k} lines", 'them']
+  end
+
   def self.check_pools(json, npcs, ctx, issues)
     scenario = json['chatter']
     pool_topics(scenario).each do |topic|
       next if VN.pool_lines(scenario[topic]).empty?
 
-      ok = topic_triggerable?(json, topic, nil, npcs, ctx)
-      issues << "⚠️ WARNING: scenario chatter pool '#{topic}' is voiced but nothing in the scenario can trigger it (#{ok[1]}); no NPC will ever speak it: #{POOL_FIX}." unless ok[0]
+      ok, why, fix = topic_triggerable?(json, topic, nil, npcs, ctx)
+      issues << "⚠️ WARNING: scenario chatter pool '#{topic}' has #{lines_phrase(scenario[topic])[0]} but no NPC will ever speak #{lines_phrase(scenario[topic])[1]}: #{why}. To fix: #{fix}; or remove the lines." unless ok
     end
     npcs.each do |_r, n|
       next unless n['chatter'].is_a?(Hash)
@@ -692,57 +750,192 @@ module ValidateOfficeLife
       pool_topics(n['chatter']).each do |topic|
         next if VN.pool_lines(n['chatter'][topic]).empty?
 
-        ok = topic_triggerable?(json, topic, n, npcs, ctx)
-        issues << "⚠️ WARNING: NPC '#{n['id']}' chatter pool '#{topic}' is voiced but nothing can trigger it (#{ok[1]}); that NPC's own lines for it are never heard: #{POOL_FIX}." unless ok[0]
+        ok, why, fix = topic_triggerable?(json, topic, n, npcs, ctx)
+        issues << "⚠️ WARNING: NPC '#{n['id']}' chatter pool '#{topic}' has #{lines_phrase(n['chatter'][topic])[0]} but that NPC will never speak #{lines_phrase(n['chatter'][topic])[1]}: #{why}. To fix: #{fix}; or remove the lines." unless ok
       end
     end
   end
 
-  # [said when it can happen, said when it cannot]
+  # [said when it can happen, said when it cannot, the fix]
   GRUMBLE_REASON = {
     'grumble' => ['an avoidance turn-back, or an off or gone turn-back with no lines of its own, can happen',
-                  'no avoidance turn-back, which needs an avoid radius and an avoided NPC who can be at a source this NPC uses, and no off or gone turn-back falls back to it'],
+                  'no avoidance turn-back can happen (that needs an avoid radius above 0 and an avoided NPC who can be at a source this NPC uses), and no off or gone turn-back falls back to it',
+                  'give the NPC needsCompany.avoids naming an NPC who can be at a source it uses, with avoidRadius above 0 or unset (the default is 2 tiles)'],
     'grumble_off' => ['a dead-machine (offWhen) turn-back can happen',
-                      'no dead-machine (offWhen) turn-back can happen for a need that is not judged'],
-    'grumble_gone' => ['a magnet can run out', 'no magnet this NPC knows of and may use, so none can run out on it'],
+                      'no source it uses for a need that is not judged has an offWhen',
+                      'give an offWhen to a source the NPC uses for a need other than social_media (or work with a work plan, which speaks its own failure pools)'],
+    'grumble_gone' => ['a magnet can run out', 'no magnet this NPC knows of and may use, so none can run out on it',
+                       'give the NPC a need that a magnet it can reach meets, and a way to see it or be told of it'],
     'grumble_printer_off' => ['a print with every listed printer off can happen',
-                              'no print with every listed printer off can happen']
+                              'no onUse print hook on an object it uses for a need lists only printers that can be off',
+                              'add an onUse hook with revealOutput on an object the NPC uses for a need, and give every printer in that list an offWhen']
   }.freeze
 
-  # [triggerable?, reason]. `n` nil for a scenario-level pool (any NPC). V10 judges every
+  # The NPCs a pool's warning is about: `n`, or every NPC for a scenario-level pool.
+  def self.who_phrase(n)
+    n ? "'#{n['id']}'" : 'any NPC'
+  end
+
+  # [triggerable?, reason, fix]. `n` nil for a scenario-level pool (any NPC). V10 judges every
   # office-life topic; a topic another subsystem speaks (work failures, access workarounds) is left
   # to that subsystem's check, and a topic nothing speaks at all is a warning.
   def self.topic_triggerable?(json, topic, n, npcs, ctx)
     who = n ? [n] : ctx.npc_list
     if GRUMBLE_TOPICS.include?(topic)
       ok = who.any? { |m| grumble_for?(json, topic, m, npcs, ctx) }
-      return [ok, GRUMBLE_REASON[topic][ok ? 0 : 1]]
+      can, cannot, fix = GRUMBLE_REASON[topic]
+      return [ok, ok ? can : cannot, fix]
     end
     if topic == 'phone'
-      ok = who.any? { |m| owns_rung_phone?(m, ctx) }
-      return [ok, ok ? 'an owner answers a rung phone' : 'no NPC the needs engine runs owns a desk phone that something rings']
+      return [true, 'an owner answers a rung phone'] if who.any? { |m| owns_rung_phone?(m, ctx) }
+
+      return [false, *phone_owner_reason(n, ctx)]
     end
     if topic == 'phone_message'
-      ok = who.any? { |m| answers_rung_phone?(json, m, npcs, ctx) }
-      return [ok, ok ? 'a colleague answers a rung phone' : 'no answersPhones NPC that the needs engine runs is at home in the room of another NPC\'s rung phone']
+      return [true, 'a colleague answers a rung phone'] if who.any? { |m| answers_rung_phone?(json, m, npcs, ctx) }
+
+      return [false, *phone_answer_reason(n, ctx)]
     end
     tried = []
+    fixes = []
     if ctx.announce.key?(topic)
       return [true, 'an NPC can tell people about the magnet'] if announce_triggerable?(json, topic, n, ctx)
 
       tried << 'no NPC can see the magnet and then, in its own home room away from the magnet, tell another NPC'
+      fixes << 'give an NPC who can see the magnet a home room away from it, and another NPC who can be in that home room to hear'
     end
     if ctx.by_topic.key?(topic)
       return [true, 'a compatible pair can share the object'] if chatter_pair?(json, topic, n, npcs, ctx)
 
-      tried << 'no compatible pair of NPCs can share an object with this chatter'
+      why, fix = chatter_reason(json, ctx.by_topic[topic], n, ctx)
+      tried << why
+      fixes << fix
     end
-    return [false, tried.join('; ')] unless tried.empty?
-    return [false, 'no magnet without its own announce pool, so nobody tells news'] if topic == 'news'
-    return [false, "no object has affordance.chatter \"#{topic}\""] if OFFICE_TOPICS.include?(topic)
+    return [false, tried.join('; '), fixes.join('; ')] unless tried.empty?
+    return [false, 'no magnet without its own announce pool, so nobody tells news', 'add a magnet (affordance.magnet) with no announce pool of its own'] if topic == 'news'
+    if OFFICE_TOPICS.include?(topic)
+      return [false, "no object has affordance.chatter \"#{topic}\"", "give an object affordance.chatter \"#{topic}\" with capacity 2 or a queue"]
+    end
     return [true, 'spoken by another engine subsystem (work failures or access workarounds); outside V10'] if other_subsystem_topic?(topic)
 
-    [false, 'the needs engine speaks no pool for this topic (not a chatter object, magnet announce, grumble, work-failure or phone topic)']
+    [false, 'the needs engine speaks no pool for this topic (not a chatter object, magnet announce, grumble, work-failure or phone topic)',
+     'rename the pool to a topic the engine speaks, such as the affordance.chatter of an object or a magnet\'s announce']
+  end
+
+  # ── why a chatter object pairs nobody (V10 R2 design review M5) ─────────────────────────────
+
+  # The capacity check in validate_npc_needs.rb (check_social) fires for this object too.
+  def self.capacity_warned?(o)
+    aff = o.data['affordance']
+    cap = aff['capacity'] || 1
+    cap = cap.respond_to?(:to_i) ? cap.to_i : 0
+    cap < 2 && !aff['queue'].is_a?(Hash)
+  end
+
+  def self.seat_block(o)
+    [:seat, 'it seats one and has no queue' + (capacity_warned?(o) ? ', as the capacity warning above says' : ''),
+     "set '#{o.id}' affordance.capacity to 2 or more, or give it a queue"]
+  end
+
+  # The first rule that stops `a` and `b` meeting at `o`, which pairs? someone: [kind, text, fix] or nil.
+  def self.pair_block(json, o, a, b, ctx)
+    [a, b].each { |m| (r = use_block(json, m, o, ctx)) && (return r) }
+    if avoids_either?(a, b)
+      x, y = avoids_one_way?(a, b) ? [a, b] : [b, a]
+      return [:avoid, "'#{x['id']}' avoids '#{y['id']}'", "drop '#{y['id']}' from the needsCompany.avoids of '#{x['id']}'"]
+    end
+    pair = "'#{a['id']}' and '#{b['id']}'"
+    return [:groups, "#{pair} share no needsCompany group", "give #{pair} a shared needsCompany group, or leave one of them with none"] unless compatible?(a, b)
+    unless pairs?(o, a, b)
+      return [:max_queue, "#{pair} both have maxQueue 0, so neither joins its queue",
+              "raise maxQueue above 0 for one of #{pair}, or set '#{o.id}' capacity to 2"]
+    end
+
+    nil
+  end
+
+  # The blocks at one object for pool owner `n` (nil: any pair) and its possible partners.
+  def self.object_blocks(json, o, n, ctx)
+    return [seat_block(o)] unless pairs?(o)
+
+    unless n
+      users = ctx.npc_list.select { |m| can_use?(json, m, o, nil, ctx) }
+      if users.length >= 2
+        return users.combination(2).filter_map { |x, y| pair_block(json, o, x, y, ctx) }
+      elsif users.empty?
+        runners = ctx.npc_list.select { |m| runs?(m) }
+        return [[:lone, 'no NPC the needs engine runs', "give two NPCs a need '#{o.id}' meets"]] if runners.empty?
+
+        return runners.filter_map { |m| use_block(json, m, o, ctx) }
+      end
+      n = users.first
+    end
+    (r = use_block(json, n, o, ctx)) && (return [r])
+    others = ctx.npc_list.reject { |m| m.equal?(n) || !runs?(m) }
+    return [[:lone, "'#{n['id']}' is the only NPC the needs engine runs", "add a second NPC with a need '#{o.id}' meets"]] if others.empty?
+
+    others.filter_map { |m| pair_block(json, o, n, m, ctx) }
+  end
+
+  def self.shown(list, noun)
+    return list.join(', ') if list.length <= SHOWN
+
+    "#{list.first(SHOWN).join(', ')} and #{list.length - SHOWN} more #{noun}"
+  end
+
+  # [reason, fix] for a chatter-object topic no pair can speak: each object, and the first rule
+  # that stopped each partner there; the fixes for the rules named.
+  def self.chatter_reason(json, objs, n, ctx)
+    blocks_why(objs.uniq(&:object_id).map { |o| [o, object_blocks(json, o, n, ctx)] })
+  end
+
+  # [reason, fix] from [object, blocks] pairs; the fixes follow the objects and partners shown.
+  def self.blocks_why(per_obj)
+    fixes = []
+    parts = per_obj.first(SHOWN).map do |o, blocks|
+      fixes.concat(blocks.first(SHOWN).map(&:last))
+      "at '#{o.id}': #{shown(blocks.map { |b| b[1] }.uniq, 'NPCs')}"
+    end
+    parts << "and #{per_obj.length - SHOWN} more objects" if per_obj.length > SHOWN
+    [parts.join('; '), fixes.uniq.join('; ')]
+  end
+
+  # ── why nobody answers (phone, phone_message) ──────────────────────────────────────────────
+
+  def self.ring_fix(phones)
+    ids = phones.map(&:id).uniq
+    "have an event mapping, a needs hook or an emit_event action emit #{ids.map { |i| "desk_phone_ring:#{i}" }.join(' or ')}"
+  end
+
+  # [reason, fix] when no owner answers a rung phone.
+  def self.phone_owner_reason(n, ctx)
+    if n
+      return ["the needs engine does not run '#{n['id']}' (it has no need or interest), so it never picks up", "give '#{n['id']}' a need or interest"] unless runs?(n)
+
+      own = ctx.phones.select { |p| p.data['owner'] == n['id'] }
+      return ["'#{n['id']}' owns no deskPhone", "give '#{n['id']}' a deskPhone with owner \"#{n['id']}\", and have something emit desk_phone_ring:<that phone's id>"] if own.empty?
+
+      return ["nothing rings #{shown(own.map { |p| "'#{p.id}'" }.uniq, 'phones')}", ring_fix(own)]
+    end
+    return ['no deskPhone has an owner', 'give a deskPhone an owner the needs engine runs, and have something emit desk_phone_ring:<its id>'] if ctx.phones.empty?
+
+    unrung = ctx.phones.reject { |p| ctx.rung.include?(p.id) }
+    return ["nothing rings #{shown(unrung.map { |p| "'#{p.id}'" }.uniq, 'phones')}", ring_fix(unrung)] if unrung.length == ctx.phones.length
+
+    ['the needs engine runs no owner of a rung phone (an owner needs a need or interest)', 'give the owner of a rung phone a need or interest']
+  end
+
+  # [reason, fix] when no colleague answers a rung phone.
+  def self.phone_answer_reason(n, ctx)
+    fix = 'set answersPhones: true on an NPC the needs engine runs whose home room holds another NPC\'s rung desk phone, and who does not avoid that owner'
+    if n
+      return ["'#{n['id']}' does not have answersPhones: true", fix] unless n['answersPhones'] == true
+      return ["the needs engine does not run '#{n['id']}' (it has no need or interest)", "give '#{n['id']}' a need or interest"] unless runs?(n)
+      return ['nothing rings any desk phone', ring_fix(ctx.phones)] if rung_phones(ctx).empty? && !ctx.phones.empty?
+
+      return ["no rung desk phone of another NPC is in its home room '#{ctx.home_room[n]}', or that phone's owner and it avoid each other", fix]
+    end
+    ['no answersPhones NPC that the needs engine runs is at home in the room of another NPC\'s rung phone', fix]
   end
 
   # ── exchanges and calls ──────────────────────────────────────────────────────────────────────
@@ -761,7 +954,7 @@ module ValidateOfficeLife
           partners = exchange_partners(n, e['with'], by_id, npcs)
           next if partners.any? { |p| share_any_object?(json, n, p, npcs, ctx) }
 
-          issues << "⚠️ WARNING: NPC '#{n['id']}' exchange '#{e['knot']}' (with '#{e['with']}') can never play: the two NPCs share no chatter object they can both use, so they never meet to speak it."
+          issues << "⚠️ WARNING: NPC '#{n['id']}' exchange '#{e['knot']}' (with '#{e['with']}') can never play: #{exchange_reason(json, n, partners, ctx)}"
         end
       end
       next unless n['phoneCalls'].is_a?(Array)
@@ -772,7 +965,7 @@ module ValidateOfficeLife
         entries[e['knot']] << [n, 'phoneCalls', nil]
         next if owns_rung_phone?(n, ctx) || answers_rung_phone?(json, n, npcs, ctx)
 
-        issues << "⚠️ WARNING: NPC '#{n['id']}' phoneCalls knot '#{e['knot']}' can never play: this NPC owns no desk phone that something rings, and answers none either (answersPhones, at home in the phone's room)."
+        issues << "⚠️ WARNING: NPC '#{n['id']}' phoneCalls knot '#{e['knot']}' can never play: #{call_reason(n, ctx)}"
       end
     end
     # _exchangeHeard is shared by exchanges and calls: one heard_<knot> global per knot name.
@@ -807,6 +1000,33 @@ module ValidateOfficeLife
       npcs.map(&:last).select { |m| !m.equal?(n) && groups(m).include?(g) }
     else
       [by_id[with]].compact
+    end
+  end
+
+  # Why an exchange never plays: the pair meet at no chatter object. Names each object and the
+  # rule that stopped each partner, with the fixes for those rules.
+  def self.exchange_reason(json, n, partners, ctx)
+    objs = ctx.by_topic.values.flatten.uniq(&:object_id)
+    return 'it has no partner: no NPC is in that group.' if partners.empty?
+    return 'no object has an affordance.chatter, so no pair ever meets to speak. To fix: give an object they both use affordance.chatter, with capacity 2 or a queue.' if objs.empty?
+
+    why, fix = blocks_why(objs.map { |o| [o, pairs?(o) ? partners.filter_map { |p| pair_block(json, o, n, p, ctx) } : [seat_block(o)]] })
+    "the two never meet at a chatter object: #{why}. To fix: #{fix}."
+  end
+
+  # Why a phoneCalls knot never plays: the NPC answers no rung phone, as owner or colleague. Points
+  # at validate_npc_needs.rb's phoneCalls warning when that fires for the same cause.
+  def self.call_reason(n, ctx)
+    owned = ctx.phone_owners.include?(n['id'])
+    see = !owned && n['answersPhones'] != true ? ' (the phoneCalls warning above has the same cause)' : ''
+    if !runs?(n)
+      "the needs engine does not run this NPC (it has no need or interest), so it never picks up#{see}. To fix: give it a need or interest."
+    elsif n['answersPhones'] == true && !owned
+      "#{phone_answer_reason(n, ctx).first}. To fix: #{phone_answer_reason(n, ctx).last}."
+    else
+      why, fix = phone_owner_reason(n, ctx)
+      fix += '; or set answersPhones: true on it, with its home in the room of a colleague\'s rung phone' unless n['answersPhones'] == true
+      "#{why}, and it answers no colleague's phone#{see}. To fix: #{fix}."
     end
   end
 

@@ -604,3 +604,139 @@ test('capacity true does not raise and pairs nobody; capacity "2" pairs; avoidRa
         assert.ok(!has(i, "NPC 'a' chatter pool 'grumble'"), `avoidRadius ${JSON.stringify(r)} takes a radius above 0: ` + i.join('\n'));
     }
 });
+
+// ── 32 (review R4 m1): a print hook on a social_media NPC's own station rolls on that use ──
+test('a social_media NPC prints from a hook on its own station; a non-desk home or no social need does not', { skip }, () => {
+    const social = { social_media: { decayPerMin: 5, urgentAt: 40 } };
+    const printer = id => ({ id, type: 'printer', offWhen: 'jam' });
+    const frag = "NPC 'a' chatter pool 'grumble_printer_off'";
+    const a = (needs, extra = {}) => ({ id: 'a', needsHome: 'a_pc', needs, chatter: { grumble_printer_off: ['Jammed.'] }, onUse: { a_pc: { revealOutput: 'pr1' } }, ...extra });
+    const stations = {
+        'a workstation that satisfies work': { id: 'a_pc', type: 'pc', workstation: true, affordance: { satisfies: 'work', capacity: 1 } },
+        'a workstation with no affordance': { id: 'a_pc', type: 'pc', workstation: true }
+    };
+    for (const [name, st] of Object.entries(stations)) {
+        const i = check(oneRoom({ objects: [st, printer('pr1')], npcs: [a(social)] }));
+        assert.ok(!has(i, frag), `${name}: _socialCandidate takes the own station for social_media: ` + i.join('\n'));
+    }
+    const presets = oneRoom({ objects: [{ id: 'a_pc', type: 'pc' }, printer('pr1')], npcs: [a(social)] });
+    presets.officePresets = true;
+    let i = check(presets);
+    assert.ok(!has(i, frag), 'the desk_pc preset makes the pc a station: ' + i.join('\n'));
+    const plain = stations['a workstation with no affordance'];
+    assert.ok(has(check(oneRoom({ objects: [plain, cooler('c1'), printer('pr1')], npcs: [a(thirst)] })), frag), 'no social_media need: the station is never used');
+    const plant = { id: 'a_pc', type: 'plant' };
+    assert.ok(has(check(oneRoom({ objects: [plant, printer('pr1')], npcs: [a(social)] })), frag), 'a needsHome that is no desk is no social station');
+
+    // The errand: the social-station print, owned through habits.print, takes b to the kitchen slot
+    const sc = b => ({
+        officePresets: false,
+        rooms: {
+            office: { connections: { north: 'kitchen' }, objects: [desk('a_pc'), { id: 'b_pc', type: 'pc', workstation: true }], npcs: [
+                { id: 'a', needsHome: 'a_pc', needs: thirst, needsCompany: { avoids: ['b'] }, chatter: { grumble: ['Typical.'] } },
+                { id: 'b', needsHome: 'b_pc', needs: social, onUse: { b_pc: { revealOutput: 'pr1' } }, ...b }] },
+            kitchen: { connections: { south: 'office' }, objects: [cooler('k1'), { id: 'pr1', type: 'printer' }, { id: 'slot1', type: 'paper', outputOf: 'pr1', revealOnGlobal: 'slot1_shown' }] }
+        }
+    });
+    i = check(sc({ habits: { print: { weight: 2 } } }));
+    assert.ok(!has(i, "NPC 'a' chatter pool 'grumble'"), 'b owns the station print and fetches it from the kitchen, where a meets it: ' + i.join('\n'));
+    assert.ok(has(check(sc({})), "NPC 'a' chatter pool 'grumble'"), 'with no habits.print b never fetches it');
+});
+
+// ── 33 (review R4 m2): in a list of two or more, a printer outside the hook's room can be off ──
+test('a printer list of two counts a producer in another room or not in the world as off; one printer needs offWhen', { skip }, () => {
+    const frag = "NPC 'a' chatter pool 'grumble_printer_off'";
+    const pr = (id, off) => ({ id, type: 'printer', ...(off ? { offWhen: 'jam' } : {}) });
+    const sc = (list, officeExtra = [], kitchenExtra = []) => ({
+        officePresets: false,
+        rooms: {
+            office: { connections: { north: 'kitchen' }, objects: [desk('a_pc'), cooler('c1'), pr('pr1', true), ...officeExtra], npcs: [
+                { id: 'a', needsHome: 'a_pc', needs: thirst, chatter: { grumble_printer_off: ['Jammed.'] }, onUse: { c1: { revealOutput: list } } }] },
+            kitchen: { connections: { south: 'office' }, objects: kitchenExtra }
+        }
+    });
+    let i = check(sc(['pr1', 'pr2'], [], [pr('pr2', false)]));
+    assert.ok(!has(i, frag), 'pr2 is off while the kitchen is not loaded (_pickProducer): ' + i.join('\n'));
+    i = check(sc(['pr1', 'ghost']));
+    assert.ok(!has(i, frag), 'a producer the world does not know is off in a list of two: ' + i.join('\n'));
+    assert.ok(has(check(sc(['pr1', 'pr2'], [pr('pr2', false)])), frag), 'pr2 sits in the cooler\'s room, which is loaded, and is never off');
+    assert.ok(has(check(sc(['pr2'], [], [pr('pr2', false)])), frag), 'a list of one: the producer is used wherever it is, and it has no offWhen');
+    assert.ok(has(check(sc(['ghost'])), frag), 'a list of one with an unknown producer is not judged off');
+});
+
+// ── 34 (design review R2 M5): a chatter-pool warning names each object, the rule and its fix ──
+test('the chatter-pool warning names the object and the rule that stopped each partner, with a fix for that rule', { skip }, () => {
+    const a = { id: 'a', needsHome: 'a_pc', needs: thirst, chatter: { cooler: ['Hi.', 'Hot one.'] } };
+    const b = (extra = {}) => ({ id: 'b', needsHome: 'b_pc', needs: thirst, ...extra });
+    const objs = [desk('a_pc'), desk('b_pc')];
+    const warn = sc => {
+        const i = check(sc);
+        const w = i.find(x => x.includes("NPC 'a' chatter pool 'cooler'"));
+        assert.ok(w, i.join('\n'));
+        return w;
+    };
+    const cases = [
+        ['lone', oneRoom({ objects: [desk('a_pc'), cooler('c1')], npcs: [a] }),
+            "at 'c1': 'a' is the only NPC the needs engine runs", "add a second NPC with a need 'c1' meets"],
+        ['avoider', oneRoom({ objects: [...objs, cooler('c1')], npcs: [a, b({ needsCompany: { avoids: ['a'] } })] }),
+            "at 'c1': 'b' avoids 'a'", "drop 'a' from the needsCompany.avoids of 'b'"],
+        ['private', oneRoom({ objects: [...objs, cooler('c1', { private: true, owner: 'z' })], npcs: [a, b()] }),
+            "at 'c1': 'a' may not use it: it is private to", "drop private from 'c1', or make 'a' one of its owners"],
+        ['no queue', oneRoom({ objects: [...objs, cooler('c1', { capacity: 1 })], npcs: [a, b()] }),
+            "at 'c1': it seats one and has no queue, as the capacity warning above says", "set 'c1' affordance.capacity to 2 or more, or give it a queue"],
+        ['groups', oneRoom({ objects: [...objs, cooler('c1')], npcs: [{ ...a, needsCompany: { groups: ['x'] } }, b({ needsCompany: { groups: ['y'] } })] }),
+            "'a' and 'b' share no needsCompany group", "give 'a' and 'b' a shared needsCompany group"],
+        ['no need', oneRoom({ objects: [...objs, cooler('c1')], npcs: [a, b({ needs: caffeine })] }),
+            "'b' has no need it meets (it meets thirst)", "give 'b' a need 'c1' meets"],
+        ['leash', {
+            officePresets: false,
+            rooms: {
+                office: { connections: { north: 'kitchen' }, objects: objs, npcs: [a, b({ needsAvoidRooms: ['kitchen'] })] },
+                kitchen: { connections: { south: 'office' }, objects: [cooler('c1')] }
+            }
+        }, "'b' may not use it: room 'kitchen' is in needsAvoidRooms", "let 'b' use room 'kitchen'"],
+        ['max queue', oneRoom({ objects: [...objs, cooler('c1', { capacity: 1, queue: { cells: [{ dx: 0, dy: 1 }] } })], npcs: [{ ...a, maxQueue: 0 }, b({ maxQueue: 0 })] }),
+            "'a' and 'b' both have maxQueue 0", "raise maxQueue above 0 for one of 'a' and 'b'"]
+    ];
+    for (const [name, sc, why, fix] of cases) {
+        const w = warn(sc);
+        assert.ok(w.includes(`: ${why}`) || w.includes(why), `${name}: names the rule: ${w}`);
+        assert.ok(w.includes(`To fix: ${fix}`) || w.includes(`; ${fix}`), `${name}: gives its fix: ${w}`);
+        assert.ok(w.endsWith('or remove the lines.'), `${name}: ${w}`);
+    }
+    // the capacity pointer only when validate_npc_needs.rb gives the capacity warning too
+    const emptyQueue = warn(oneRoom({ objects: [...objs, cooler('c1', { capacity: 1, queue: { cells: [] } })], npcs: [a, b()] }));
+    assert.ok(emptyQueue.includes('it seats one and has no queue') && !emptyQueue.includes('capacity warning above'), emptyQueue);
+    // a scenario pool with one user names that user's partners
+    const i = check(oneRoom({ objects: [...objs, cooler('c1')], npcs: [b(), { id: 'c', needsHome: 'a_pc', needs: caffeine }], chatter: { cooler: ['Hi.'] } }));
+    const w = i.find(x => x.includes("scenario chatter pool 'cooler'"));
+    assert.ok(w && w.includes("at 'c1': 'c' has no need it meets") && w.includes("give 'c' a need 'c1' meets"), i.join('\n'));
+    // the exchange warning names the object and rule too
+    const ex = check(oneRoom({ objects: [...objs, cooler('c1')], npcs: [{ ...a, exchanges: [{ with: 'b', knot: 'k' }] }, b({ needsCompany: { avoids: ['a'] } })] }))
+        .find(x => x.includes("exchange 'k' (with 'b') can never play"));
+    assert.ok(ex && ex.includes("at 'c1': 'b' avoids 'a'") && ex.includes("To fix: drop 'a' from the needsCompany.avoids of 'b'."), ex);
+});
+
+// ── 35 (design review R2 m2, m3, M5): line counts, family fixes, phone reasons, duplicate pointers ──
+test('warnings count the lines, give a fix per topic family, name the phone rule and point at the earlier phoneCalls warning', { skip }, () => {
+    const a = extra => ({ id: 'a', needsHome: 'a_pc', needs: thirst, ...extra });
+    let i = check(oneRoom({ objects: [desk('a_pc'), cooler('c1')], npcs: [a({ chatter: { grumble: ['Typical.'], cooler: ['One.', 'Two.', 'Three.'] } })] }));
+    assert.ok(i.every(x => !x.includes('voiced')), i.join('\n'));
+    assert.ok(has(i, "pool 'grumble' has 1 line but that NPC will never speak it:"), i.join('\n'));
+    assert.ok(has(i, "pool 'cooler' has 3 lines but that NPC will never speak them:"), i.join('\n'));
+    assert.ok(has(i, 'To fix: give the NPC needsCompany.avoids naming an NPC'), 'grumble family fix: ' + i.join('\n'));
+
+    const phone = { id: 'ph1', type: 'phone', deskPhone: true, owner: 'a' };
+    i = check(oneRoom({ objects: [desk('a_pc')], npcs: [a({ chatter: { phone: ['Hello?'] }, phoneCalls: [{ knot: 'call_a' }] })] }));
+    assert.ok(has(i, "'a' owns no deskPhone. To fix: give 'a' a deskPhone with owner \"a\""), i.join('\n'));
+    assert.ok(has(i, "phoneCalls knot 'call_a' can never play: 'a' owns no deskPhone, and it answers no colleague's phone (the phoneCalls warning above has the same cause)"), i.join('\n'));
+    i = check(oneRoom({ objects: [desk('a_pc'), phone], npcs: [a({ chatter: { phone: ['Hello?'] }, phoneCalls: [{ knot: 'call_a' }] })] }));
+    assert.ok(has(i, "nothing rings 'ph1'. To fix: have an event mapping, a needs hook or an emit_event action emit desk_phone_ring:ph1"), i.join('\n'));
+    assert.ok(!has(i, 'warning above has the same cause'), 'a owns a phone, so the needs check is silent: ' + i.join('\n'));
+    i = check(oneRoom({ objects: [desk('a_pc'), phone], npcs: [{ id: 'a', needsHome: 'a_pc', chatter: { phone: ['Hello?'] } }] }));
+    assert.ok(has(i, "the needs engine does not run 'a' (it has no need or interest), so it never picks up. To fix: give 'a' a need or interest"), i.join('\n'));
+    i = check(oneRoom({ objects: [desk('a_pc'), desk('b_pc'), phone], npcs: [a(), { id: 'b', needsHome: 'b_pc', needs: thirst, chatter: { phone_message: ['I will tell her.'] } }] }));
+    assert.ok(has(i, "'b' does not have answersPhones: true. To fix: set answersPhones: true"), i.join('\n'));
+    i = check(oneRoom({ objects: [desk('a_pc')], npcs: [a({ chatter: { banter: ['Ha.'] } })] }));
+    assert.ok(has(i, 'To fix: rename the pool to a topic the engine speaks'), i.join('\n'));
+});
