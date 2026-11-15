@@ -6,12 +6,16 @@
 # Setup errors (bad arguments, a busy port) exit 2. Scripts can use `train-check.sh ... && merge`.
 #
 #   tools/playtest/train-check.sh <worktree> <outdir> <port>
-#   TESTS_LOCK=/path/to/tests.lock tools/playtest/train-check.sh ...   (serialise with other batches)
+#   TESTS_LOCK=/path/to/tests.lock tools/playtest/train-check.sh ...   (serialise with other batches;
+#   the default is the shared lock <main checkout>/tmp/tests.lock, which every session uses)
 #
-# Under the lock (if TESTS_LOCK is set) it records HEAD, starts a keyless server from the worktree
+# Under the lock it records HEAD, starts a keyless server from the worktree
 # on <port>, makes games for m01_first_contact, sis01_healthcare and sis02_energy, then runs:
 #   0. tools/playtest/shell-x-check.mjs on the m01 game, once, in the background beside step 1 (shellx.txt)
 #   1. the Rails suite                      (rails.txt)
+#   1b. RUN_OPENED_SCAN=1 test/models/break_escape/payload_scan_opened_state_test.rb, after step 1 and
+#      in the background beside steps 2 and 3 (the only other test-database user is step 1), when
+#      the file exists (opened_scan.txt)
 #   2. MERGE_BATCH=1 SHELL_X_SEPARATE=1 bin/test-js -j $TRAIN_CHECK_JS_JOBS (default 8)   (js.txt)
 #   3. tools/playtest/train-smoke.mjs       (smoke.txt)
 #   4. the scenario validator over every scenarios/*/scenario.json.erb (v_<scenario>.txt)
@@ -19,8 +23,8 @@
 # 3085 or 3086 and runs no db: task.
 # Env: PLAYWRIGHT_CHROMIUM_EXECUTABLE (default: the chrome-headless-shell in $HOME/.cache/ms-playwright),
 #      RUBY (the ruby for the validator corpus; default /usr/bin/ruby3.2 if present, else ruby on PATH),
-#      TESTS_LOCK (strongly advised: without it two trains can share the test database; a warning is
-#      written to summary.txt and stderr when it is unset),
+#      TESTS_LOCK (default: <main checkout>/tmp/tests.lock, shared by every session and worktree;
+#      TESTS_LOCK=none runs unlocked, with a warning in summary.txt and on stderr),
 #      TRAIN_CHECK_JS_JOBS (JS files run at once; default 8, lower it on a loaded machine),
 #      TRAIN_CHECK_SKIP_RAILS=1 / _SKIP_JS=1 / _SKIP_CORPUS=1 for a partial run (summary says SKIPPED;
 #      a partial run exits 3 and is not a green train).
@@ -42,11 +46,15 @@ export PLAYWRIGHT_CHROMIUM_EXECUTABLE="${PLAYWRIGHT_CHROMIUM_EXECUTABLE:-$HOME/.
 if [ -n "${RUBY:-}" ]; then TC_RUBY="$RUBY"; elif [ -x /usr/bin/ruby3.2 ]; then TC_RUBY=/usr/bin/ruby3.2; else TC_RUBY=ruby; fi
 export TC_RUBY
 
-if [ -n "${TESTS_LOCK:-}" ]; then
+if [ -z "${TESTS_LOCK:-}" ]; then
+  TESTS_LOCK="$(dirname "$(git -C "$WT" rev-parse --path-format=absolute --git-common-dir)")/tmp/tests.lock"
+  mkdir -p "$(dirname "$TESTS_LOCK")"
+fi
+if [ "$TESTS_LOCK" != none ]; then
   exec 9>"$TESTS_LOCK"
   flock 9
 else
-  echo "WARNING: TESTS_LOCK is not set; another train check or test batch may share the test database" >&2
+  echo "WARNING: TESTS_LOCK=none; another train check or test batch may share the test database" >&2
   NOLOCK_WARN=1
 fi
 
@@ -57,6 +65,7 @@ RED=()
 SKIPPED=()
 cleanup() {
   if [ -n "${SHELLX_PID:-}" ] && kill -0 "$SHELLX_PID" 2>/dev/null; then kill "$SHELLX_PID" 2>/dev/null || true; fi
+  if [ -n "${OPENED_PID:-}" ] && kill -0 "$OPENED_PID" 2>/dev/null; then kill "$OPENED_PID" 2>/dev/null || true; fi
   if [ -n "$SERVER_PID" ] && kill -0 "$SERVER_PID" 2>/dev/null; then
     kill "$SERVER_PID" 2>/dev/null
     for _ in 1 2 3 4 5 6 7 8 9 10; do kill -0 "$SERVER_PID" 2>/dev/null || break; sleep 1; done
@@ -68,7 +77,7 @@ trap 'exit 130' INT TERM
 
 HEAD0="$(git rev-parse HEAD)"
 echo "HEAD $HEAD0" > "$SUM"
-[ "${NOLOCK_WARN:-0}" = 1 ] && echo "WARNING: TESTS_LOCK not set, test database not serialised" >> "$SUM"
+[ "${NOLOCK_WARN:-0}" = 1 ] && echo "WARNING: TESTS_LOCK=none, test database not serialised" >> "$SUM"
 
 # ---- keyless server on <port> ----
 if curl -s -o /dev/null --max-time 2 "http://127.0.0.1:${PORT}/"; then
@@ -114,6 +123,14 @@ else
   [ "$rc" -ne 0 ] && RED+=("rails exit $rc")
 fi
 
+# ---- 1b. opened-state payload scan, in the background beside steps 2 and 3 ----
+OPENED_PID=""
+OPENED_TEST=test/models/break_escape/payload_scan_opened_state_test.rb
+if [ "${TRAIN_CHECK_SKIP_RAILS:-0}" != 1 ] && [ -f "$OPENED_TEST" ]; then
+  RUN_OPENED_SCAN=1 RBENV_VERSION=2.7.8 bin/rails test "$OPENED_TEST" > "$OUT/opened_scan.txt" 2>&1 &
+  OPENED_PID=$!
+fi
+
 # ---- 2. JS ----
 if [ "${TRAIN_CHECK_SKIP_JS:-0}" = 1 ]; then
   echo "js SKIPPED" >> "$SUM"; SKIPPED+=(js)
@@ -145,6 +162,18 @@ if [ "${#SMOKE_ARGS[@]}" -gt 0 ]; then
   [ "$rc" -ne 0 ] && RED+=("smoke exit $rc")
 else
   echo "smoke FAILED: no games to boot" >> "$SUM"; RED+=("smoke: no games")
+fi
+
+# ---- opened-state scan result (started at step 1b) ----
+if [ -n "$OPENED_PID" ]; then
+  wait "$OPENED_PID"; rc=$?
+  echo "opened-scan exit $rc: $(grep -E '^[0-9]+ runs, ' "$OUT/opened_scan.txt" | tail -1)" >> "$SUM"
+  [ "$rc" -ne 0 ] && RED+=("opened-scan exit $rc")
+  grep -qE ', [1-9][0-9]* skips' "$OUT/opened_scan.txt" && RED+=("opened-scan skipped tests")
+elif [ "${TRAIN_CHECK_SKIP_RAILS:-0}" = 1 ]; then
+  echo "opened-scan SKIPPED (rails skipped)" >> "$SUM"
+else
+  echo "opened-scan n/a: $OPENED_TEST not on this branch" >> "$SUM"
 fi
 
 # ---- 4. validator corpus (three at a time) ----
