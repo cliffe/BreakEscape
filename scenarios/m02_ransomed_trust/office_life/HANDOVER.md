@@ -1,3 +1,18 @@
+# m02 office life: stage 5, handover 2026-11-15
+
+## Stage 5
+
+- Sprite swap (df1450933): Ernesto on `ernesto_bautista`, Hodan on `hodan_warsame`, with their own `_talk.png` and `_visemes.png`, set up as Gary is (headshots resolve from the sprite key, no `avatar` field). The ERB comment above the pair now names the old stand-ins. `male_telecom_v2` and `female_telecom_v2` stay on `validSprites`: PLAN 2.2 says they were already on the list, not added for this pilot.
+- Stage 6 re-measure on the real atlases: seated shifts (0, -1) for Ernesto and (0, -3) for Hodan; he sits south on `staff_room_hospital_chair_south_20` at (223, 154), she sits north on `staff_room_hospital_chair_north_14` at (117, 176); boiler cells (172, 92) and second user (196, 92), cooler (276, 212) and (236, 220), microwave (228, 92) beside Hodan at the boiler's approach (164, 92). All 12 routes from the posts to these cells are found. No post or seat coordinate needed changing.
+- Live round: `STAGE5_LIVE.md`, 19 PASS, 2 FAIL, 2 NOT RUN. Visemes animate and headshots resolve for both; Val's catch, step 5, both radio branches, the reload after an attack, the outside break and the KO timing (texts 4.0 s apart in a 4.6 s knock-out) pass. Hodan's held use after a mid-exchange cut is now 47.7 s.
+- FAIL 1: walking in on a break, the next turn was a `picture:` line, not a pool line (5556); every turn of the cooler break before it, with the player in the room, was a picture too. Check `chatterCooldownMin` first.
+- FAIL 2: the per-cell earshot scan heard Ernesto from 0 of 112 cells at the cooler (Hodan 112), but a live cooler break heard him at 109 px. Boiler: both from 112 of 112.
+
+Open (next agent), stage 5:
+1. Rerun the cooler earshot by walking the player to each cell, not resetting the body; decide whether Ernesto has a blind spot at the cooler.
+2. Find why overheard turns are pictures and not pool lines (cooldown, bag, or voice-less server), then re-check the walk-in.
+3. Not run: the 40 s mid-break variants; the whole-room walkthrough counts; a seat close-up screenshot on the real atlases.
+
 # m02 office life: stage 4 closed, handover 2026-11-15
 
 Stage 4 is closed. Reviews: dialogue R1 0/2/11, implementation R1 0/2/8, combined R2 0/0/7 (stop rule met); all fixed (outcomes in each review file). Live checks: `STAGE4_LIVE.md`, `STAGE4_LIVE_R2a.md`, `STAGE4_LIVE_R2b.md`, `STAGE4_LIVE_R3.md` (new ink, reloads, attack probe, crossings, copier page, the printout and cover flags). No product failure found. Spoken lines: 71 in all, every change against the approved sample listed in `SPOKEN_LINES.md`; voicing waits for the user.
