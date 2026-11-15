@@ -2065,9 +2065,20 @@ export class NPCNeedsSystem {
         const need = s.job?.need;
         // Access 9.2: a caller's options ({ ignoreCooldown, icons }) win; icons: null is the topic's own picture
         const icons = opts && 'icons' in opts ? opts.icons : (reason !== 'avoid' && NEED_ICONS.includes(need) ? [need] : null);
-        const pick = this._pickBark(s, topic, { icons, ignoreCooldown: !!opts?.ignoreCooldown });
+        // SIMS-5 design R3 m1 (E7 for grumbles, as chatter and announces): with the player out of
+        // earshot the grumble still shows, as a picture; no line is taken from the bag, so none is
+        // voiced unheard. A mutter (always: true) keeps its line, heard or not.
+        const unheard = !opts?.always && this._unheard(s, topic);
+        const pick = this._pickBark(s, topic, { icons, ignoreCooldown: !!opts?.ignoreCooldown, unheard });
         if (!pick) return;
         this._showSaying(s, pick, topic, objectId, opts?.minMs);
+    }
+
+    /** Is the player out of earshot of this speaker for this topic (its pool's overhearRadius)? */
+    _unheard(s, topic) {
+        if (typeof this.world.playerHears !== 'function') return false;
+        const radius = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter).overhearRadius || OVERHEAR_RADIUS;
+        return !(this.world.playerHears(s.npcId, radius) || {}).overheard;
     }
 
     /**
@@ -2178,7 +2189,7 @@ export class NPCNeedsSystem {
     _sayMutter(s, topic) {
         const npcId = s.npcId;
         const before = s.saying;
-        this._grumble(s, null, topic, topic, { ignoreCooldown: true, icons: null, minMs: MUTTER_BUBBLE_MS });
+        this._grumble(s, null, topic, topic, { ignoreCooldown: true, icons: null, minMs: MUTTER_BUBBLE_MS, always: true });
         // npc_mutter:<npcId> (slice 9.2 B): what was shown, heard or not, so a scripted run can check
         // a failure mutter or a workaround's start line (npc_overheard fires only within earshot)
         const said = s.saying !== before ? s.saying : null;
@@ -3779,7 +3790,7 @@ export class NPCNeedsSystem {
         this._log(id, 'print_blocked', { target: objectId || undefined, producers: list.slice(), viaCommand: viaCommand || undefined });
         this._emit(`npc_print_blocked:${id}`, { npcId: id, objectId: objectId || null, producers: list.slice(), viaCommand: !!viaCommand, ...this._playerProximity(id) });
         if (viaCommand) return;
-        const pick = this._pickBark(s, 'grumble_printer_off');
+        const pick = this._pickBark(s, 'grumble_printer_off', { unheard: this._unheard(s, 'grumble_printer_off') });
         if (pick) this._showSaying(s, pick, 'grumble_printer_off', objectId);
     }
 
