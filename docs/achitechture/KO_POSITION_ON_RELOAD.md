@@ -258,13 +258,14 @@ compared with the sprite x,y when it fell.
 The body now lands where it fell. x is pixel-exact in every case and Marek is exact in y.
 After the reload `koY - sprite.y = 31` for both NPCs, the standard 80x80 atlas
 body-to-anchor offset, so the restored body centre sits exactly on the served `py` (= the
-stored `koY`): the restore is faithful to the stored value. Amara's -5 px in y is not a
-placement error: the live death animation lowers her ~5 px further after `koY` is captured
-at the KO instant, so the 2500 ms-later "when it fell" read sits that much below the
-KO-instant spot the restore reproduces (Marek's death pose settles at the same offset the
-restore uses, so his diff is 0). This is the death-pose capture-vs-settle detail already
-noted in R1 ("within 4 px in y from the death-pose origin"), independent of the client-read
-fix; before the fix these diffs were 96 / -149 and -107 / -64.
+stored `koY`): the restore is faithful to the stored value. Amara's -5 px in y is not a placement error, and its cause is unverified.
+The death path changes only the sprite origin, not `sprite.y`, so the death animation is
+not an established explanation. A seating or needs nudge during the 2.5 s wait is as
+likely, since the harness first moves her off her desk. The restore matches the stored
+`koY` exactly, so the 5 px is a difference in the "when it fell" read, not in the
+restore. The harness now records `sprite.y` and `body.center.y` immediately after `debugKO`
+as well as at +2.5 s, so a later run can say which. Marek (cross-room) is 0 px. This is
+independent of the client-read fix; before the fix these diffs were 96 / -149 and -107 / -64.
 
 Also confirmed in both games: the kitchen serves Marek at `position.px/py` equal to the
 stored `koX`/`koY` with `isKO: true`; the office serves without Marek (ids amara, tom,

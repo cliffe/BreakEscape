@@ -100,3 +100,13 @@ needs it.
 ## Outcome checklist
 
 B 0, M 0, m 2. No change needed for merge; m1 and m2 are small follow-ups.
+
+## Outcomes
+
+- m1: documented. KO_POSITION_ON_RELOAD.md now calls the cause of Amara's 5 px y
+  difference unverified, and `tools/playtest/ko-pos-proof.mjs` records `sprite.y` and
+  `body.center.y` immediately after `debugKO` (`home.atKo`) as well as at +2.5 s. The
+  harness has not been re-run.
+- m2: fixed. `test/js/npc-world-position.test.mjs` (4 tests) covers `position.px/py` as
+  world pixels for any room origin, tile `x/y` offset by the room origin times
+  `TILE_SIZE`, and no position returning null.

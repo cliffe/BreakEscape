@@ -148,6 +148,7 @@ try {
   out.home.placed = await placeNpc(page, 'amara', 'office', 0.4, 0.75);
   await sleep(300);
   out.home.koResult = await page.evaluate(() => window.__test.debugKO('amara'));
+  out.home.atKo = await readNpc(page, 'amara'); // sprite.y and body.center.y at the KO instant
   await sleep(2500);
   out.home.before = await readNpc(page, 'amara');
   out.home.cropBefore = await cropNpc(page, 'amara', 'home-before');
