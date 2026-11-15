@@ -831,6 +831,9 @@ export class NpcWorldBubbles {
     /** Is a bark bubble up for this NPC now? (npc-action-icons.js hides its icons meanwhile.) */
     hasLine(npcId) { return this.says.has(npcId); }
 
+    /** Is a speech bubble (chatter, a picture or a bark) showing over this NPC now? (SIMS-5 design R2 m8) */
+    showsBubble(npcId) { return !!this.bubbles.get(npcId)?.box?.visible; }
+
     /**
      * Close every bark bubble answering `tag` (an event pattern), with no remainder: a newer
      * answer (the door's own notification for a refusal in the guard's cooldown) replaces it
@@ -1104,6 +1107,9 @@ export class NpcWorldBubbles {
             const depth = bubbleDepth();   // follows lighting on or off (R4 n2)
             if (bb.box.depth !== depth) bb.box.setDepth(depth);
             bb.box.setPosition(pos.x, pos.y).setVisible(true);
+            // m8: the speaker's action icon and thought bubble go in the same frame as the bubble
+            // shows (the icon layer updates before this pass)
+            try { win().npcActionIcons?.hideFor?.(id); } catch (e) { /* icons never break a frame */ }
             if (!bark && line) {
                 this.chatterShown.set(id, line);
                 const v = this.chatterVoice.get(id);

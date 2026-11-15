@@ -25,8 +25,9 @@ export function makeWorld({ npcs, objects, arrive = true }) {
         tileToWorld: (r, x, y) => ({ x: x * TILE, y: y * TILE }),
         speedFor: () => 80,
         moveTo(id, x, y, speed, opts) {
-            calls.moves.push({ id, x, y, yieldToPlayer: opts.yieldToPlayer });
-            if (arrive) { pos[id].x = x; pos[id].y = y; sys.onArrived(id, 'needs'); }
+            calls.moves.push({ id, x, y, yieldToPlayer: opts.yieldToPlayer, moveId: opts.moveId });
+            // SIMS-2: place the NPC on its destination and echo the move id, so the arrival counts.
+            if (arrive) { pos[id].x = x; pos[id].y = y; sys.onArrived(id, 'needs', { x, y, moveId: opts.moveId }); }
         },
         cancelMove: id => calls.cancels.push(id),
         faceTo() {},

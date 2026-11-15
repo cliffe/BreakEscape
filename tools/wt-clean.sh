@@ -1,14 +1,17 @@
 #!/bin/bash
-# Move landed worktrees into tmp/delete/worktrees. Dry run unless --apply.
+# Remove landed worktrees (the user approved deleting them outright, 2026-11-15:
+# parking them in tmp/delete filled the disk). Dry run unless --apply.
 # A worktree moves only if: its HEAD is in main, it has no changes other than
 # untracked node_modules/.bundle, it HEAD has not moved for 3 hours (git status rewrites index, so index mtime is useless), and it isn't on the keep list.
+# It is also skipped if git-ignored files other than build and test clutter are
+# present (for example tmp/pixellab art), so nothing worth keeping is lost.
 # Branches are never deleted (that needs the user's yes).
 R=/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape
 KEEP="p-9-2-h p-train36-live"
-DEST=$R/tmp/delete/worktrees
+# Ignored paths that are safe to lose with the worktree.
+SAFE='^(\.bundle/|node_modules|log/|tmp/(cache|pids|sockets|storage)/|tmp/(restart|local_secret|development_secret)\.txt$|test/dummy/(log|tmp|storage)/|.*__pycache__/|coverage/)'
 APPLY=0; [ "$1" = "--apply" ] && APPLY=1
 cd $R || exit 1
-mkdir -p $DEST
 now=$(date +%s)
 git worktree list --porcelain | awk '/^worktree /{print $2}' | grep '/.claude/worktrees/' | while read -r wt; do
   n=$(basename "$wt")
@@ -22,8 +25,9 @@ git worktree list --porcelain | awk '/^worktree /{print $2}' | grep '/.claude/wo
   gd=$(git -C "$wt" rev-parse --git-dir)
   age=$(( now - $(stat -c %Y "$gd/logs/HEAD" 2>/dev/null || echo $now) ))
   if [ $age -lt 10800 ]; then echo "SKIP  $n (touched $((age/60)) min ago)"; continue; fi
+  keep=$(git -C "$wt" status --porcelain --ignored -uall 2>/dev/null | sed -n 's/^!! //p' | grep -vE "$SAFE" | head -1)
+  if [ -n "$keep" ]; then echo "SKIP  $n (ignored file worth keeping: $keep)"; continue; fi
   if [ $APPLY = 1 ]; then
-    t=$DEST/$n; [ -e "$t" ] && t=$t-$(date +%s)
-    if git worktree move "$wt" "$t" 2>/dev/null; then echo "MOVED $n"; else echo "FAIL  $n"; fi
+    if git worktree remove --force "$wt" 2>/dev/null; then echo "REMOVED $n"; else echo "FAIL  $n"; fi
   else echo "WOULD $n"; fi
 done
