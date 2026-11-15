@@ -6,7 +6,7 @@
 // Run with: node test/js/npc-needs-stuck-walk.test.mjs
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { NPCNeedsSystem, NEEDS_TICK_MS, RETURN_YIELD_MS, STUCK_TRIES, RETURN_STUCK_BACKOFF_MS } from '../../public/break_escape/js/systems/npc-needs.js';
+import { NPCNeedsSystem, NEEDS_TICK_MS, RETURN_YIELD_MS, STUCK_TRIES, RETURN_STUCK_BACKOFF_MS, RETURN_STUCK_MAX_BACKOFFS } from '../../public/break_escape/js/systems/npc-needs.js';
 import { makeWorld } from './fixtures/needs-stub-world.mjs';
 
 function office() {
@@ -84,6 +84,36 @@ test('a wedged walk home re-routes, then logs return_stuck once and backs off in
     sys.onArrived('clerk', 'needs', { x: home.x, y: home.y, moveId: id });
     sys.step(RETURN_STUCK_BACKOFF_MS + NEEDS_TICK_MS);
     assert.equal(sys.getState('clerk').atPost, true);
+});
+
+test('the back-off is bounded: after RETURN_STUCK_MAX_BACKOFFS in one place the walk ends, one fresh re-plan, then idle (game 5431)', () => {
+    const { sys, w } = toReturning();
+    const t0 = sys.clockMs;
+    let guard = 0;
+    while (!evs(sys, 'return_abandoned').length && guard++ < 4000) sys.step(NEEDS_TICK_MS);
+    const first = evs(sys, 'return_abandoned');
+    assert.equal(first.length, 1, 'the walk home ends');
+    assert.deepEqual({ x: first[0].x, y: first[0].y, final: first[0].final }, { x: 200, y: 200, final: undefined });
+    assert.ok(sys.clockMs - t0 < 120000, 'within two minutes, not eight');
+    const stuckBefore = evs(sys, 'return_stuck').length;
+    assert.equal(stuckBefore, 1);
+    // The next tick re-plans from scratch: a fresh walk home, round other bodies
+    const issued = homeMoves(w, sys).length;
+    sys.step(2 * NEEDS_TICK_MS);
+    assert.equal(sys.getState('clerk').mode, 'returning', 'a fresh walk home');
+    assert.equal(homeMoves(w, sys).length, issued + 1);
+    assert.equal(homeMoves(w, sys).at(-1).reroute, true);
+    // Still wedged in the same place: the second abandon is final and it idles there
+    guard = 0;
+    while (evs(sys, 'return_abandoned').length < 2 && guard++ < 4000) sys.step(NEEDS_TICK_MS);
+    assert.equal(evs(sys, 'return_abandoned').at(-1).final, true);
+    assert.equal(evs(sys, 'return_stuck').length, 2, 'one return_stuck for the fresh return');
+    const after = homeMoves(w, sys).length;
+    sys.step(60000);
+    assert.equal(sys.getState('clerk').mode, 'idle', 'idles where it stands');
+    assert.equal(homeMoves(w, sys).length, after, 'no more walks home: the cycle has ended');
+    assert.equal(evs(sys, 'return_abandoned').length, 2);
+    assert.ok(RETURN_STUCK_MAX_BACKOFFS >= 1);
 });
 
 test('stalls in different places are not counted together', () => {

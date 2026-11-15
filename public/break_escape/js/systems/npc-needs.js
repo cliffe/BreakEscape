@@ -45,6 +45,11 @@ const RETURN_STILL_PX = 4;    // less than this between ticks counts as standing
 export const STUCK_SAME_PX = 24;
 export const STUCK_TRIES = 3;
 export const RETURN_STUCK_BACKOFF_MS = 15000;
+// Round 7 (game 5431: 8 minutes of back-offs in one place): after this many back-offs in the same
+// place the walk home ends (`return_abandoned`): the NPC idles where it stands and the next tick
+// re-plans from scratch (the selector first, else a fresh walk home). A second abandon in the same
+// place leaves it idle there until a job moves it, so the cycle can never run for ever.
+export const RETURN_STUCK_MAX_BACKOFFS = 2;
 const CAUGHT_RADIUS = 48;    // px (1.5 tiles) from the home approach cell: "you were in my chair"
 export const NOTICED_MS = 3000;   // getState().noticed after npc_caught_at_post (the "noticed" action icon)
 
@@ -1448,6 +1453,7 @@ export class NPCNeedsSystem {
         if (s.mode === 'returning' && arrived) {
             s.mode = 'idle';
             // Only a real trip emits; a session at one's own post object never left it
+            s.returnAbandon = null;
             if (!s.atPost) {
                 s.atPost = true;
                 this._log(id, 'returned_post');
@@ -1491,7 +1497,10 @@ export class NPCNeedsSystem {
         const pick = this._select(s, pos);
         if (pick) {
             s.selectRetryAt = 0;
+            s.returnAbandon = null;   // a job moves it on; its walk home is a fresh return
             this._startJob(s, pick);
+        } else if (s.returnAbandon?.replan && s.mode === 'idle' && !s.atPost) {
+            this._replanAbandoned(s);
         } else if (this.selectBackoff && this._selectSearched) {
             // A free target it could not reach, or an item with nowhere to take it: searching
             // again next tick would find the same. Waiting on a claimed target searches nothing
@@ -3999,7 +4008,7 @@ export class NPCNeedsSystem {
         s.returnWatch = null;
         // SIMS-2: a fresh return re-arms the one far re-issue; a re-issue from _acceptArrival keeps it.
         // A fresh return also clears the stall count and the once-per-return return_stuck line.
-        if (!keepFarFlag) { s.returnFarReissued = false; s.stall = null; s.returnStuckLogged = false; s.returnStuckUntil = 0; }
+        if (!keepFarFlag) { s.returnFarReissued = false; s.stall = null; s.returnStuckLogged = false; s.returnStuckUntil = 0; s.returnBackoffs = 0; }
         const pos = this.world.npcPos(id);
         if (!s.home || !pos) { s.mode = 'idle'; return; }
         if (stayPut || Math.hypot(pos.x - s.home.x, pos.y - s.home.y) <= HOME_EPS) {
@@ -4042,6 +4051,10 @@ export class NPCNeedsSystem {
                 s.returnStuckLogged = true;
                 this._log(s.npcId, 'return_stuck', { x: Math.round(pos.x), y: Math.round(pos.y), tries: tries - 1 });
             }
+            // Back-offs are counted in one place (s.stall carries the place across them)
+            const backoffs = (s.returnBackoffs || 0) + 1;
+            if (backoffs > RETURN_STUCK_MAX_BACKOFFS) { this._abandonReturn(s, pos); return; }
+            s.returnBackoffs = backoffs;
             s.stall = { x: pos.x, y: pos.y, tries: 1 };   // the next stall here re-routes at once
             s.returnWatch = null;
             s.returnStuckUntil = this.clockMs + RETURN_STUCK_BACKOFF_MS;
@@ -4055,6 +4068,33 @@ export class NPCNeedsSystem {
         // plan round other bodies, seated and held ones included.
         this._goHome(s, { yieldToPlayer: false, keepFarFlag: true, reroute: tries > 1 });
         s.returnWatch = { x: pos.x, y: pos.y, since: this.clockMs };
+    }
+
+    /**
+     * End a walk home that backed off RETURN_STUCK_MAX_BACKOFFS times in one place: idle where it
+     * stands (`return_abandoned`). `s.returnAbandon` asks the next tick for a fresh plan
+     * (_replanAbandoned); a second abandon within STUCK_SAME_PX of the first gives no more re-plans.
+     */
+    _abandonReturn(s, pos) {
+        const prev = s.returnAbandon;
+        const again = !!(prev && Math.hypot(pos.x - prev.x, pos.y - prev.y) <= STUCK_SAME_PX);
+        this.world.cancelMove(s.npcId);
+        s.mode = 'idle';
+        s.returnMoveId = null;
+        s.returnWatch = null;
+        s.returnStuckUntil = 0;
+        s.returnBackoffs = 0;
+        s.stall = null;
+        s.returnAbandon = { x: pos.x, y: pos.y, replan: !again, tick: this.tickCount };
+        this._log(s.npcId, 'return_abandoned', { x: Math.round(pos.x), y: Math.round(pos.y), final: again || undefined });
+    }
+
+    /** After return_abandoned, when the selector chose nothing: one fresh walk home, planned round held bodies. */
+    _replanAbandoned(s) {
+        const a = s.returnAbandon;
+        if (!a || !a.replan || s.mode !== 'idle' || s.atPost || s.job || this.tickCount <= a.tick) return;   // the next tick, not this one
+        a.replan = false;
+        this._goHome(s, { yieldToPlayer: false, reroute: true });
     }
 
     /** Count a stalled walk: another try when within STUCK_SAME_PX of the last stall, else the first. */
