@@ -716,7 +716,7 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
             const answer = api?.loginAccounts ? await api.loginAccounts(pcId, { foothold: footholdId }) : null;
             return {
                 ok: true,
-                picker: answer?.loginPicker,
+                picker: answer?.loginPicker ?? 'accounts',
                 headless: !!answer?.headless,
                 remoteScreen: answer?.remoteScreen,
                 host: answer?.host || hostLabel,
@@ -741,8 +741,10 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
         closed = true;
         const msg = kind === 'remoteBlocked' ? remoteOffMessage(hostLabel)
             : (kind === 'not_responding' ? notRespondingMessage(hostLabel) : unreachableMessage(hostLabel));
-        window.gameAlert?.(msg, 'info', data.name || 'Sign in', 3000);
-        if (stillOpen()) scene.closeByPlayer?.();
+        // The player already left this screen: no toast over the view they returned to
+        if (!stillOpen()) return;
+        window.gameAlert?.(msg, 'error', data.name || 'Sign in', 3000);
+        scene.closeByPlayer?.();
     };
 
     const paint = () => {
@@ -750,8 +752,10 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
         const both = loginDone && captureDone;
         if (!both && !capFired) return; // keep "Checking..." until both answer or the cap passes
         scene.setRemoteAccounts({
+            // A failed answer sends no picker: the screen keeps every captured sign-in visible
             ...(loginDone ? {
-                picker: loginAns.picker, headless: loginAns.headless, remoteScreen: loginAns.remoteScreen,
+                ...(loginAns.failed ? {} : { picker: loginAns.picker }),
+                headless: loginAns.headless, remoteScreen: loginAns.remoteScreen,
                 host: loginAns.host, tiles: loginAns.tiles, accountsFailed: !!loginAns.failed
             } : { accountsFailed: false }),
             captured: captureAns.list,
@@ -760,6 +764,12 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
             capturedPending: !captureDone,
             pending: !both
         });
+        // pc_signin_shown fires once the screen has laid out with the server's answer, with the
+        // tiles the row actually shows (never the ones the merge dropped), and never after a close
+        if (loginDone && !shown) {
+            shown = true;
+            sessions?.screenShown?.(pcId, scene.signInState?.tiles || [], switching ? 'switch' : (reason || 'remote'), false);
+        }
     };
 
     const cap = setTimeout(() => { capFired = true; paint(); }, REMOTE_CAPTURES_WAIT_MS);
@@ -768,7 +778,6 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
         if (a.close) { clearTimeout(cap); closeScreen(a.close); return; }
         loginAns = a;
         loginDone = true;
-        if (!shown) { shown = true; sessions?.screenShown?.(pcId, a.tiles || [], switching ? 'switch' : (reason || 'remote'), false); }
         if (loginDone && captureDone) clearTimeout(cap);
         paint();
     });

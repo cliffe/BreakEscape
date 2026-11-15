@@ -62,3 +62,28 @@ export function tileBadgeGroups(kinds) {
     }
     return out;
 }
+
+/** The full kind names of these kinds, for a tile's title and the chosen line (plan 8.5). */
+export function tileFullNames(kinds) {
+    return (Array.isArray(kinds) ? kinds : []).map(k => TAG_TEXT[k]?.full || String(k));
+}
+
+/**
+ * Host labels break at their hyphens ("HB-FIN-" over "02"). This returns the line as HTML-safe
+ * markup with each hyphenated word in a no-wrap span, so the label stays on one line while the
+ * element's text is still the plain line. `esc` is the caller's HTML escaper.
+ */
+export function nowrapHostsHtml(text, esc) {
+    const out = [];
+    let last = 0;
+    const src = String(text ?? '');
+    for (const m of src.matchAll(/[A-Za-z0-9]+(?:-[A-Za-z0-9]+)+/g)) {
+        out.push(esc(src.slice(last, m.index)), `<span class="signin-nowrap">${esc(m[0])}</span>`);
+        last = m.index + m[0].length;
+    }
+    out.push(esc(src.slice(last)));
+    return out.join('');
+}
+
+/** The scroll cue's words for a remote tile row that outgrows its box. Same words as utils/more-below.js (a test pins them). */
+export const REMOTE_MORE_BELOW_TEXT = 'More below';

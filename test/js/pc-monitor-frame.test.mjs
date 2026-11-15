@@ -1028,7 +1028,7 @@ test('R3 m1: the chosen account line carries that NPC\'s headshot in the monitor
     }
 });
 
-test('K0: a remote sign-in is one merged tile row with the PC tiles and the captured sign-ins, scrolling with seven tiles', async () => {
+test('K0: a remote sign-in is one merged tile row with the PC tiles and the captured sign-ins (seven tiles, one Other user)', async () => {
     const restore = sizeWindow(800, 600);
     try {
         document.body.innerHTML = '<div id="mg"></div>';
@@ -1509,4 +1509,122 @@ test('final n1: the window X touch area stays 44px tall but leaves a gap to the 
     // Measured at 390x844, 360x640, 667x375, 844x390 and 1400x900: the bezel X's bottom edge is
     // at least 12px above the window X's top edge. The hit area may use up to 8 of them.
     assert.ok(top <= 8, 'the target leaves at least 4px to the bezel X');
+});
+
+
+// ── K0 client review R1: what the player sees, from the real stylesheets ────────────────────
+
+/** A remote sign-in screen in the monitor with the real sheets loaded; `answer` goes to setRemoteAccounts. */
+function remoteScreen({ current = null, preselect, host = 'HB-FIN-02' } = {}) {
+    document.body.innerHTML = '<div id="mg"></div>';
+    window.MinigameFramework = { currentMinigame: null, endMinigame: () => {} };
+    window.playUISound = () => {};
+    const mg = new PasswordMinigame(document.getElementById('mg'), {
+        title: 'Sign in',
+        signIn: { pcId: 'hb_fin_02', pcName: host, picker: false, tiles: [], current,
+                  ...(preselect ? { preselect } : {}),
+                  remote: { footholdId: 'jack', linkName: 'Comms port' }, host, captured: [], capturedLoading: true }
+    });
+    window.MinigameFramework.currentMinigame = mg;
+    mg.init();
+    return mg;
+}
+const LENA = { targetId: 'lena', username: 'lfox', label: 'Lena Fox', password: 'x' };
+const shownBox = (sel) => { const el = document.querySelector(sel); return !!el && window.getComputedStyle(el).display !== 'none' && el.style.display !== 'none' && !el.hidden; };
+
+test('R1 M3: a late answer after the cap puts the tile row on screen (computed display), not in a folded box', async () => {
+    const restore = sizeWindow(800, 600);
+    const unsheet = withSheets('password-minigame.css', 'pc-monitor.css');
+    try {
+        const mg = remoteScreen();
+        mg.setRemoteAccounts({ pending: true, accountsPending: true, capturedPending: true, captured: [] });
+        assert.equal(shownBox('#signin-form'), true, 'the cap shows the Other user form');
+        assert.equal(shownBox('#signin-tiles'), false, 'and the row is folded away behind it');
+        mg.setRemoteAccounts({ picker: 'accounts', host: 'HB-FIN-02', tiles: [{ username: 'sokafor', displayName: 'Sam Okafor' }],
+            captured: [LENA], pending: false });
+        assert.equal(shownBox('#signin-tiles'), true, 'the row is visible once the late answer lands');
+        assert.equal(shownBox('#signin-form'), false);
+        assert.deepEqual([...document.querySelectorAll('.signin-tile[data-username]')].map(t => shownBox('.signin-tile[data-username="' + t.dataset.username + '"]')), [true]);
+        mg.cleanup?.();
+    } finally { unsheet(); restore(); }
+});
+
+test('R1 M2/M4: Other user shows an empty line; Change shows only where a row waits; a locked screen and a typed screen have none', async () => {
+    const restore = sizeWindow(800, 600);
+    const unsheet = withSheets('password-minigame.css', 'pc-monitor.css');
+    try {
+        let mg = remoteScreen();
+        mg.setRemoteAccounts({ picker: 'accounts', host: 'HB-FIN-02', tiles: [{ username: 'sokafor', displayName: 'Sam Okafor' }], captured: [] });
+        document.querySelector('.signin-other').click();
+        assert.equal(document.querySelector('#signin-message').textContent, '', 'no "Choose an account." under the form');
+        assert.equal(shownBox('#signin-change'), true, 'Change shows over the form, a row waits');
+        assert.equal(shownBox('#signin-tiles'), false, 'the row is folded');
+        mg.clearSignInChoice();
+        assert.equal(shownBox('#signin-tiles'), true, 'Change brings the row back');
+        mg.cleanup?.();
+
+        mg = remoteScreen();
+        mg.setRemoteAccounts({ remoteScreen: 'typed', host: 'HB-OPS-02', tiles: [], captured: [] });
+        assert.equal(shownBox('#signin-form'), true);
+        assert.equal(shownBox('#signin-change'), false, 'a typed screen with no captures has no Change');
+        mg.cleanup?.();
+
+        mg = remoteScreen({ current: { username: 'lfox', displayName: 'Lena Fox', via: 'password', locked: true }, preselect: 'lfox' });
+        mg.setRemoteAccounts({ picker: 'accounts', host: 'HB-FIN-02', tiles: [{ username: 'lfox', displayName: 'Lena Fox' }], captured: [] });
+        assert.equal(shownBox('#signin-form'), true, 'the locked form is on screen');
+        assert.equal(shownBox('#signin-change'), false, 'a locked screen has no Change');
+        assert.notEqual(document.querySelector('#signin-message').textContent, 'Choose an account.');
+        mg.cleanup?.();
+    } finally { unsheet(); restore(); }
+});
+
+test('R1 M5/m6: a row taller than the space left is capped, scrolls inside, and shows the More below cue', async () => {
+    const restore = sizeWindow(800, 600);
+    const unsheet = withSheets('password-minigame.css', 'pc-monitor.css');
+    try {
+        const mg = remoteScreen();
+        const pcTiles = ['a', 'b', 'c', 'd', 'e', 'f'].map((u, i) => ({ username: u, displayName: `User ${i}` }));
+        const area = document.querySelector('.pc-monitor-area');
+        const row = document.querySelector('#signin-tiles');
+        // jsdom has no layout: the area is 350 tall and its content runs 120px past that
+        Object.defineProperty(area, 'clientHeight', { configurable: true, get: () => 350 });
+        Object.defineProperty(area, 'scrollHeight', { configurable: true, get: () => 470 });
+        Object.defineProperty(row, 'offsetHeight', { configurable: true, get: () => 320 });
+        Object.defineProperty(row, 'clientHeight', { configurable: true, get: () => 180 });
+        Object.defineProperty(row, 'scrollHeight', { configurable: true, get: () => 320 });
+        mg.setRemoteAccounts({ picker: 'accounts', host: 'HB-FIN-02', tiles: pcTiles, captured: [LENA] });
+        assert.equal(row.classList.contains('signin-tiles-scroll'), true, 'the row is a scroller');
+        assert.equal(row.style.maxHeight, '180px', 'capped to the height left (320 - 120 over - 20 for the cue)');
+        assert.equal(window.getComputedStyle(row).overflowY, 'auto');
+        const more = document.querySelector('#signin-tiles-more');
+        assert.equal(more.hidden, false, 'More below shows while rows run on');
+        assert.equal(more.textContent, 'More below');
+        Object.defineProperty(row, 'scrollTop', { configurable: true, get: () => 140 });
+        row.dispatchEvent(new window.Event('scroll'));
+        assert.equal(more.hidden, true, 'and goes at the bottom');
+        // A row that fits is not capped
+        Object.defineProperty(area, 'scrollHeight', { configurable: true, get: () => 350 });
+        mg.fitSignInTiles();
+        assert.equal(row.classList.contains('signin-tiles-scroll'), false);
+        assert.equal(row.style.maxHeight, '');
+        mg.cleanup?.();
+    } finally { unsheet(); restore(); }
+});
+
+test('R1 m6: a long tag is cut with an ellipsis (computed from the sheet), the host label stays on one line, and the cue words match the shared ones', async () => {
+    const restore = sizeWindow(800, 600);
+    const unsheet = withSheets('password-minigame.css', 'pc-monitor.css');
+    try {
+        const mg = remoteScreen();
+        mg.setRemoteAccounts({ picker: 'known', host: 'HB-FIN-02', tiles: [], captured: [LENA] });
+        const tag = window.getComputedStyle(document.querySelector('.signin-tag'));
+        assert.equal(tag.overflow, 'hidden');
+        assert.equal(tag.textOverflow, 'ellipsis');
+        assert.equal(tag.whiteSpace, 'nowrap');
+        mg.setSignInMessage("That account can't sign in on HB-FIN-02.", 'error');
+        assert.equal(window.getComputedStyle(document.querySelector('#signin-message .signin-nowrap')).whiteSpace, 'nowrap');
+        mg.cleanup?.();
+    } finally { unsheet(); restore(); }
+    const shared = readFileSync(join(here, '../../public/break_escape/js/utils/more-below.js'), 'utf8').match(/MORE_BELOW_TEXT = '([^']+)'/)[1];
+    assert.equal(readFileSync(join(here, '../../public/break_escape/js/utils/remote-host-text.js'), 'utf8').match(/REMOTE_MORE_BELOW_TEXT = '([^']+)'/)[1], shared);
 });

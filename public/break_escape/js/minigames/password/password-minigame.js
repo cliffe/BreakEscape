@@ -15,6 +15,7 @@ import { headshotCandidates, headshotKeys, noteMissingHeadshot, npcRecordFor, he
 import {
     tileTagLabels, tileBadgeGroups,
     REMOTE_CHECKING_TEXT, REMOTE_STILL_CHECKING_TEXT, REMOTE_CAPTURES_FAILED_TEXT,
+    tileFullNames, nowrapHostsHtml, REMOTE_MORE_BELOW_TEXT,
     remoteTypedLine, remoteHeadlessLine, remoteAccountsFailedLine, remoteBothFailedLine,
     notRespondingMessage, unreachableMessage, remoteOffMessage, remoteNotPermittedMessage, remoteLockedOutMessage
 } from '../../utils/remote-host-text.js';
@@ -453,7 +454,7 @@ export class PasswordMinigame extends MinigameScene {
             // (the server answer, never the lockable); they arrive through setRemoteAccounts, so they
             // start empty and the keyboard picker stays false (credential keyring plan 5.2, K0).
             if (remote) {
-                this.signIn.remotePicker = this.signIn.remotePicker ?? 'accounts';
+                this.signIn.remotePicker = this.signIn.remotePicker ?? null;
                 this.signIn.headless = !!this.signIn.headless;
                 this.signIn.remoteScreen = this.signIn.remoteScreen ?? null;
                 this.signIn.host = this.signIn.host || this.signIn.pcName || '';
@@ -1482,7 +1483,8 @@ export class PasswordMinigame extends MinigameScene {
         // has its account already (the held session's), so it drops the row (UI slice 6 R3 m1).
         const showTiles = remote ? (s.current?.locked !== true) : (s.picker !== false);
         const tiles = showTiles ? `
-            <div class="signin-tiles" id="signin-tiles">${this.signInTilesInnerHtml()}</div>` : '';
+            <div class="signin-tiles" id="signin-tiles">${this.signInTilesInnerHtml()}</div>${remote ? `
+            <div class="signin-tiles-more" id="signin-tiles-more" hidden aria-hidden="true"><span class="signin-tiles-more-arrow"></span><span>${REMOTE_MORE_BELOW_TEXT}</span></div>` : ''}` : '';
         // A remote Switch-user screen (a held, unlocked session) merges the "Signed in now" line
         // and the remote line into one slab (credential keyring plan 5.2 Fit): one line at x2,
         // two at 390x844. It wins back a line's height so the form fits .pc-monitor-area.
@@ -1589,6 +1591,11 @@ export class PasswordMinigame extends MinigameScene {
         this.addEventListener(this.togglePasswordBtn, 'click', () => this.togglePasswordVisibility());
         this.addEventListener(this.submitBtn, 'click', () => this.submitPassword());
 
+        if (remote) {
+            const row = this.gameContainer.querySelector('#signin-tiles');
+            if (row) this.addEventListener(row, 'scroll', () => this.updateSignInTilesMore());
+            this.addEventListener(window, 'resize', () => this.fitSignInTiles());
+        }
         this.renderSignInForm();
     }
 
@@ -1606,10 +1613,16 @@ export class PasswordMinigame extends MinigameScene {
             if (!kinds.length) return '';
             const labels = tileTagLabels(kinds).map(l => `<span class="signin-tag">${escapeHtml(l)}</span>`).join('');
             const badges = tileBadgeGroups(kinds).map(g => `<img class="signin-badge" src="/break_escape/assets/icons/badge-${g}.png" alt="" aria-hidden="true">`).join('');
-            return `<span class="signin-tags">${labels}</span><span class="signin-badges" aria-hidden="true">${badges}</span>`;
+            // The short window shows only the badge, so it carries the full kind names as its text
+            return `<span class="signin-tags">${labels}</span><span class="signin-badges" role="img" aria-label="${escapeHtml(tileFullNames(kinds).join(', '))}">${badges}</span>`;
+        };
+        // A tile's title: its name, then the full kind names (plan 8.5), for hover and screen readers
+        const titleFor = (tile) => {
+            const full = remote && Array.isArray(tile.kinds) && tile.kinds.length ? `, ${tileFullNames(tile.kinds).join(', ')}` : '';
+            return `${tile.displayName || tile.username}${full}`;
         };
         const tileHtml = (tile, i) => `
-                <button type="button" class="signin-tile${remote ? ' signin-remote-tile' : ''}" data-tile-index="${i}"${remote ? ` data-username="${escapeHtml(tile.username)}"` : ''} title="${escapeHtml(tile.displayName || tile.username)}">
+                <button type="button" class="signin-tile${remote ? ' signin-remote-tile' : ''}" data-tile-index="${i}"${remote ? ` data-username="${escapeHtml(tile.username)}"` : ''} title="${escapeHtml(titleFor(tile))}">
                     <span class="signin-portrait"></span>
                     <span class="signin-name">${escapeHtml(tile.displayName || tile.username)}</span>
                     <span class="signin-username">${escapeHtml(tile.username)}</span>${remote ? tagHtml(tile) : ''}
@@ -1620,6 +1633,40 @@ export class PasswordMinigame extends MinigameScene {
                     <span class="signin-name">Other user</span>
                     <span class="signin-username">type a name</span>
                 </button>`;
+    }
+
+    /**
+     * A remote row that outgrows the monitor area (plan 5.2 Fit): its box is capped to the height
+     * left and scrolls inside, with a "More below" cue; the rest of the screen stays in view.
+     * Run after each rebuild of the row and on resize. No layout (jsdom) or a folded row: no cap.
+     */
+    fitSignInTiles() {
+        if (!this.signIn?.remote) return;
+        const tilesEl = this.gameContainer?.querySelector?.('#signin-tiles');
+        const more = this.gameContainer?.querySelector?.('#signin-tiles-more');
+        if (!tilesEl) return;
+        tilesEl.style.maxHeight = '';
+        tilesEl.classList.remove('signin-tiles-scroll');
+        if (more) more.hidden = true;
+        const area = tilesEl.closest('.pc-monitor-area');
+        const rowH = tilesEl.offsetHeight;
+        if (!area || !rowH) return;
+        // scrollHeight clamps up to clientHeight, so it is the content height only when it overflows
+        const over = area.scrollHeight - area.clientHeight;
+        if (over <= 0) return;
+        const CUE = 20, MIN_ROW = 96;
+        tilesEl.style.maxHeight = `${Math.max(MIN_ROW, rowH - over - CUE)}px`;
+        tilesEl.classList.add('signin-tiles-scroll');
+        this.updateSignInTilesMore();
+    }
+
+    /** Show the "More below" cue while the capped row has rows left to scroll to. */
+    updateSignInTilesMore() {
+        const tilesEl = this.gameContainer?.querySelector?.('#signin-tiles');
+        const more = this.gameContainer?.querySelector?.('#signin-tiles-more');
+        if (!tilesEl || !more) return;
+        const scrolls = tilesEl.classList.contains('signin-tiles-scroll');
+        more.hidden = !(scrolls && (tilesEl.scrollHeight - tilesEl.clientHeight - tilesEl.scrollTop) > 2);
     }
 
     /** Bind every tile in the row (the PC's own and the captured ones alike) to its portrait and click. */
@@ -1665,9 +1712,10 @@ export class PasswordMinigame extends MinigameScene {
         if (!st) return;
         const remote = !!this.signIn?.remote;
         if (!remote && this.signIn?.picker === false) return;
+        // A remote screen with no row to go back to (typed, headless, locked) keeps its form
+        if (remote && !this.signInTilesOffered()) return;
         st.selected = null;
-        // A remote screen goes back to its tile row, or to the typed form when it has no tiles
-        st.other = remote && !this.signInTilesOffered();
+        st.other = false;
         this.passwordField.value = '';
         this.gameData.password = '';
         this.setSignInMessage('');
@@ -1691,7 +1739,10 @@ export class PasswordMinigame extends MinigameScene {
 
     /** Whether this screen offers any tiles: the keyboard picker, or a remote row with tiles. */
     signInTilesOffered() {
-        return this.signIn?.picker !== false || (!!this.signIn?.remote && this.signInState.tiles.length > 0);
+        // A remote screen offers its row when it has tiles to choose and is not a locked session
+        // (its account is chosen already, the row is not drawn)
+        if (this.signIn?.remote) return this.signIn.current?.locked !== true && this.signInState.tiles.length > 0;
+        return this.signIn?.picker !== false;
     }
 
     /** The account tile for a username. */
@@ -1767,7 +1818,9 @@ export class PasswordMinigame extends MinigameScene {
         const s = this.signIn;
         // A redraw after the first paint (the cap, or an answer landing after it) keeps focus
         const late = s.capturedLoading === false || !!s.stillChecking;
-        if ('picker' in info) s.remotePicker = (info.picker === undefined || info.picker === null) ? 'accounts' : info.picker;
+        // The picker is known only from a successful /login_accounts answer (a failed or pending one
+        // sends none), so captured sign-ins stay on screen until the server actually says `accounts`
+        if ('picker' in info && info.picker !== undefined) s.remotePicker = info.picker === null ? 'accounts' : info.picker;
         if ('headless' in info) s.headless = !!info.headless;
         if ('remoteScreen' in info) s.remoteScreen = info.remoteScreen || null;
         if ('host' in info && info.host) s.host = info.host;
@@ -1787,12 +1840,13 @@ export class PasswordMinigame extends MinigameScene {
             this.bindSignInTiles();
         }
         // The row decides the screen once (as the keyboard does): its tiles, or with none the typed
-        // form. A player already typing (a field holds text or focus) keeps it.
+        // form. A player already typing (a field holds text) keeps it; focus alone is not typing,
+        // so a late answer returns the row to view (the cap focused the empty form for them).
+        // A locked session keeps its form: its account is chosen already.
         const st = this.signInState;
-        const active = typeof document !== 'undefined' ? document.activeElement : null;
-        const typing = !!st.other && !!(this.usernameField?.value || this.passwordField?.value
-            || (active && (active === this.usernameField || active === this.passwordField)));
-        if (st.selected === null && !typing) st.other = !this.signInTilesOffered();
+        const typing = !!st.other && !!(this.usernameField?.value || this.passwordField?.value);
+        const locked = s.current?.locked === true;
+        if (st.selected === null && !typing && !locked) st.other = !this.signInTilesOffered();
         this.renderSignInForm({ quiet: late });
         return true;
     }
@@ -1811,14 +1865,20 @@ export class PasswordMinigame extends MinigameScene {
         // On a remote screen the tile row folds at every size once an account (or Other user) is
         // chosen (credential keyring plan 5.2 Fit), so the merged slab, the form and the message
         // fit .pc-monitor-area; the keyboard screen keeps its "tiles offered" rule unchanged.
-        area?.classList.toggle('signin-chosen', this.signIn?.remote ? chosen : (chosen && this.signInTilesOffered()));
+        // `signin-chosen` is the keyboard rule (also what shows Change); the remote fold is its own
+        // class, so a remote screen with no row to go back to (typed, headless, locked) has no Change.
+        area?.classList.toggle('signin-chosen', chosen && this.signInTilesOffered());
+        area?.classList.toggle('signin-remote-folded', !!this.signIn?.remote && chosen);
         // A locked screen has its account already: on a narrow screen the tiles fold as in a
         // short window, so the card and its message fit in view (fix round 1, m4)
         area?.classList.toggle('signin-locked', this.signIn?.current?.locked === true);
         const selectedEl = this.gameContainer.querySelector('#signin-selected');
         const tile = st.other ? null : this.signInTileFor(st.selected);
         if (selectedEl) {
-            selectedEl.textContent = tile ? `${tile.displayName || tile.username} (${tile.username})` : '';
+            // A tagged remote tile names its kinds in full too: "Lena Fox (lfox), Captured password"
+            const kinds = tile && this.signIn?.remote && Array.isArray(tile.kinds) && tile.kinds.length
+                ? `, ${tileFullNames(tile.kinds).join(', ')}` : '';
+            selectedEl.textContent = tile ? `${tile.displayName || tile.username} (${tile.username})${kinds}` : '';
             show(selectedEl, !!tile);
         }
         this.applySelectedHeadshot(tile);
@@ -1834,9 +1894,11 @@ export class PasswordMinigame extends MinigameScene {
         // its state line keyed off the host, and it shows under the Other user form too (the NLA,
         // headless and failed lines), until a concrete account is picked; the keyboard keeps its
         // own rule (the prompt only before an account or the typed form is chosen).
-        const showBase = this.signIn?.remote ? (st.selected === null) : !chosen;
+        const showBase = this.signIn?.remote ? (st.selected === null && !this._signingIn) : !chosen;
         if (showBase) {
-            const base = this.signIn?.remote ? this.remoteStateLine() : SIGNIN_PROMPT;
+            let base = this.signIn?.remote ? this.remoteStateLine() : SIGNIN_PROMPT;
+            // "Choose an account." is for the row; under a chosen form it is blank, as at the keyboard
+            if (this.signIn?.remote && chosen && base === SIGNIN_PROMPT) base = '';
             // A refusal (kind 'error') persists until Change; the base/state line is recomputed each
             // render and never kept, so it can change (Checking... -> the row's line) as answers land
             const keepRefusal = !!st.message && this.signInMessageEl?.dataset.kind === 'error';
@@ -1848,6 +1910,7 @@ export class PasswordMinigame extends MinigameScene {
         // Once an account is chosen, the form down to its message line (Submit, the attempts
         // left) scrolls into view in a short window (UX slice 2a R2 M2)
         if (!quiet && chosen) revealInFrame(this.signInMessageEl?.textContent ? this.signInMessageEl : this.submitBtn);
+        this.fitSignInTiles();
     }
 
     /**
@@ -1906,7 +1969,9 @@ export class PasswordMinigame extends MinigameScene {
     setSignInMessage(text, kind = 'info') {
         this.signInState.message = text;
         if (!this.signInMessageEl) return;
-        this.signInMessageEl.textContent = text;
+        // A remote line names a host: the label stays on one line (a no-wrap span; the text is unchanged)
+        if (this.signIn?.remote) this.signInMessageEl.innerHTML = nowrapHostsHtml(text, escapeHtml);
+        else this.signInMessageEl.textContent = text;
         this.signInMessageEl.dataset.kind = kind;
         this.syncSignInCard();
         // A result (a wrong password and the attempts left, a lockout) is always on screen,
@@ -1934,9 +1999,16 @@ export class PasswordMinigame extends MinigameScene {
         }
         this.setSignInMessage('Signing in...');
         const foothold = this.signIn.remote?.footholdId || null;
-        const result = foothold
-            ? await sessions.signIn(this.signIn.pcId, username, password, { foothold })
-            : await sessions.signIn(this.signIn.pcId, username, password);
+        // A late /login_accounts answer must not swap "Signing in..." for the state line
+        this._signingIn = true;
+        let result;
+        try {
+            result = foothold
+                ? await sessions.signIn(this.signIn.pcId, username, password, { foothold })
+                : await sessions.signIn(this.signIn.pcId, username, password);
+        } finally {
+            this._signingIn = false;
+        }
         if (result.ok) {
             this.signInAccepted(result.session);
             return;
