@@ -17,6 +17,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const LIST = join(root, 'scripts/validator_known_failures.json');
 const DECISIONS = join(root, 'docs/agents/VALIDATOR_DECISIONS.md');
 const EXCEPTIONS = join(root, 'test/fixtures/files/payload_scan_exceptions.json');
+const OPENED = join(root, 'test/fixtures/files/payload_scan_opened_exceptions.json');
 const STAGES = ['ink', 'schema', 'common', 'habits', 'work', 'social'];
 const UNMATCHABLE = ['could not run', 'stale known failure', 'Result:'];
 // scripts/validator_report.rb INK_COMPILE_FAILURE_RE: a compile failure cannot be listed.
@@ -128,14 +129,30 @@ function knownFailureApproved() {
     .filter(([, h]) => typeof h === 'string');
 }
 
-// The other two lists: payload scan exceptions (6a-1) and the acknowledgedClues markers (step 3,
-// read from the scenario templates' raw text with the shared reader, as the markers never ship).
-// Both feed the shared-heading rule, so one heading cannot back an entry in two lists.
+// The 6a-1 payload scan exceptions as [label, heading] pairs (for the opened list's shared-heading rule).
+function sixA1ExceptionApproved() {
+  if (!existsSync(EXCEPTIONS)) return [];
+  return JSON.parse(readFileSync(EXCEPTIONS, 'utf8'))
+    .map((e, i) => [`payload scan exception ${i} (${e && e.scenario})`, e && e.approved])
+    .filter(([, h]) => typeof h === 'string');
+}
+
+// The opened-state payload scan exceptions (6a-2) as [label, heading] pairs.
+function openedExceptionApproved() {
+  if (!existsSync(OPENED)) return [];
+  return JSON.parse(readFileSync(OPENED, 'utf8'))
+    .map((e, i) => [`opened-state exception ${i} (${e && e.scenario})`, e && e.approved])
+    .filter(([, h]) => typeof h === 'string');
+}
+
+// The other three lists: payload scan exceptions (6a-1), the opened-state exceptions (6a-2) and the
+// acknowledgedClues markers (step 3, read from the scenario templates' raw text with the shared
+// reader, as the markers never ship). All feed the shared-heading rule, so one heading cannot back
+// an entry in two lists.
 function otherApproved() {
   const pairs = [];
-  if (existsSync(EXCEPTIONS)) {
-    JSON.parse(readFileSync(EXCEPTIONS, 'utf8')).forEach((e, i) => pairs.push([`payload scan exception ${i} (${e.scenario})`, e.approved]));
-  }
+  for (const pair of sixA1ExceptionApproved()) pairs.push(pair);
+  for (const pair of openedExceptionApproved()) pairs.push(pair);
   for (const pair of acknowledgedApproved(root)) pairs.push(pair);
   return pairs;
 }
@@ -280,10 +297,31 @@ test('a reviewBy earlier than its added date fails', () => {
 test('the real payload scan exceptions list is well formed and signed off under its own heading', () => {
   const list = existsSync(EXCEPTIONS) ? JSON.parse(readFileSync(EXCEPTIONS, 'utf8')) : [];
   const { problems, warnings } = checkPayloadScanExceptions(list, decisions, {
-    mergeBatch: process.env.MERGE_BATCH === '1', otherApproved: knownFailureApproved()
+    mergeBatch: process.env.MERGE_BATCH === '1',
+    otherApproved: [...knownFailureApproved(), ...openedExceptionApproved(), ...acknowledgedApproved(root)]
   });
   for (const w of warnings) console.warn(`WARNING: ${w}`);
   assert.deepEqual(problems, []);
+});
+
+// ── the opened-state payload scan exceptions list (step 6a-2) ──────────────────────────────────
+// The same schema as the 6a-1 list (scenario, route, paths), in its own file so the fresh-state
+// scan never marks an opened-only m09 path stale. Checked with checkPayloadScanExceptions and the
+// shared-heading rule against the other three lists.
+
+test('the real opened-state payload scan exceptions list is well formed and signed off under its own heading', () => {
+  const list = existsSync(OPENED) ? JSON.parse(readFileSync(OPENED, 'utf8')) : [];
+  const { problems, warnings } = checkPayloadScanExceptions(list, decisions, {
+    mergeBatch: process.env.MERGE_BATCH === '1',
+    otherApproved: [...knownFailureApproved(), ...sixA1ExceptionApproved(), ...acknowledgedApproved(root)]
+  });
+  for (const w of warnings) console.warn(`WARNING: ${w}`);
+  assert.deepEqual(problems, []);
+});
+
+test('opened-state exceptions: the real payload_scan_opened_exceptions file parses to a JSON array', () => {
+  const list = existsSync(OPENED) ? JSON.parse(readFileSync(OPENED, 'utf8')) : null;
+  assert.ok(Array.isArray(list), 'payload_scan_opened_exceptions.json must be a JSON array');
 });
 
 const goodExc = {

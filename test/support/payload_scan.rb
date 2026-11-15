@@ -234,13 +234,36 @@ module BreakEscape
       answers.any? { |a| SecretLeaks.answer_matches_leaf?(a, leaf) }
     end
 
+    # The post fields the feed legitimately ships under the feedPosts block: mirrors
+    # BreakEscape::SocialFeed::POST_KEYS (the post block the browser renders) plus the feed's
+    # site/person and a reply's name labels. An answer under any OTHER key in the block is still
+    # reported (feedPosts_test proves both: the allowed field passes, the stray key is caught).
+    FEED_POST_DISPLAY_KEYS = %w[id text fact date note replyTo site person replyToPerson namedPerson].freeze
+
     # The class-4 serving-field allowance for the scanned routes, mirroring the x-servedBy marks:
     # creds.password is served under `postitNote` on GET /login_accounts, a Wi-Fi psk under `psk`
-    # on GET /network. Feed and friendface routes serve post text under feed fields.
+    # on GET /network. The feed routes serve a revealed post's own display text (and the OSINT fact
+    # entry it earned) through `x-servedBy: feedPosts`.
     def class4_served?(route, path)
       key = path.split('/').last.to_s.sub(/\[\d+\]\z/, '')
       (route == 'GET /login_accounts' && key == 'postitNote') ||
-        (route == 'GET /network' && key == 'psk')
+        (route == 'GET /network' && key == 'psk') ||
+        (feed_route?(route) && feed_post_served?(path, key))
+    end
+
+    # GET scenario carries feedPosts in the bootstrap; POST /friendface_phone returns a slice of it.
+    def feed_route?(route)
+      route == 'GET scenario' || route == 'POST /friendface_phone'
+    end
+
+    # A leaf inside the feedPosts block that the feed is entitled to ship: a post's own authored
+    # display field, or a revealed OSINT fact entry (`.../fact/entry/...`, the clue the player
+    # earned by revealing the post). Anything else under feedPosts stays value-checked.
+    def feed_post_served?(path, key)
+      return false unless path.include?('/feedPosts/')
+      return true if path.include?('/fact/entry')
+
+      FEED_POST_DISPLAY_KEYS.include?(key)
     end
 
     def class3_value_exempt?(_route, path)

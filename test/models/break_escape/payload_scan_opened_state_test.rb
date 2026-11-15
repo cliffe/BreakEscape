@@ -18,22 +18,30 @@ module BreakEscape
   #   - for each sign-in PC, one session per account the PC admits (pc_admits_account?), each fetched
   #     separately, so render_login_desktop serves that identity's admitted profiles
   #
-  # Reductions from the plan, recorded in the build log (6a-2) and left as handover items because
-  # they add no new leak surface over the direct unlock seeding above:
-  #   - foothold seeding and GET network per foothold: GET network's rows are a constructed class-4
-  #     body already scanned (fresh and opened) with no foothold; a foothold changes which rows show,
-  #     not their shape. A container that still refuses without a foothold is recorded, not failed.
-  #   - full feed reveal across the corpus and POST friendface_phone: feedPosts is a constructed
-  #     class-4 body; it is scanned here as whatever the seeded feed returns, and exercised directly
-  #     by the feed fixture test below.
-  #   - item pickup through POST inventory: playerInventory is scanned in the bootstrap; the corpus
-  #     scan does not move items into it, so a future unfiltered pickup path is a handover item.
-  #   - POST unlock across the corpus: GET room and GET container over the directly-unlocked state
-  #     serve the same filtered subtrees; POST unlock's own roomData/contents are covered by the
-  #     POST-unlock fixture test below.
+  # Also exercised across the corpus (review R1 fixes):
+  #   - foothold seeding and GET network per foothold (m3): every grantable foothold is seeded (as
+  #     network_withholding_test.rb does) and GET network is fetched for each, so the joined-network
+  #     body (psk, plant/implant rows) is scanned, not only the no-foothold view.
+  #   - full feed reveal and POST friendface_phone (m2): feedRevealed is seeded for every NPC with a
+  #     feed, so feedPosts carries every post; every declared Friendface phone is put in the
+  #     inventory and POST friendface_phone is fetched for each, and both bodies are scanned.
+  #   - item pickup through POST inventory (m1): every collectible (takeable object, container item,
+  #     NPC itemsHeld item, declared grant) is picked up through the real route
+  #     (validate_item_collectible -> canonical_inventory_item -> add_inventory_item!), then the
+  #     served playerInventory is scanned, so an unfiltered canonical copy at pickup would be caught.
+  #   - POST unlock's own roomData/contents are covered by the POST-unlock fixture test below (GET
+  #     room and GET container over the unlocked state serve the same filtered subtrees).
   # A refusal in the opened state is recorded with its reason (not hard-failed) when a generic seeder
-  # cannot satisfy a scenario's bespoke gating (a foothold, a proof, a switched-off host); the hard
-  # assertion is on leak findings, the scan's real guarantee.
+  # cannot satisfy a scenario's bespoke gating (a foothold, a proof, a switched-off host, a desktop
+  # or share item that needs a session the seeder did not open); the hard assertion is on leak
+  # findings, the scan's real guarantee.
+  #
+  # Runtime: the two corpus-wide tests (the corpus scan and the identity check) are tagged out of the
+  # default `bin/rails test` run (they run only with RUN_OPENED_SCAN set). The full file runs 118-146 s
+  # (the corpus scan renders all 181 templates, the identity check renders them again), which crosses
+  # the plan's two-minute threshold under load, so the orchestrator runs it at each merge batch
+  # (`RUN_OPENED_SCAN=1 bin/rails test test/models/break_escape/payload_scan_opened_state_test.rb`). The
+  # mutation tests and fixtures below are fast and stay in the default run.
   class PayloadScanOpenedStateTest < ActionDispatch::IntegrationTest
     include Engine.routes.url_helpers
 
@@ -55,6 +63,7 @@ module BreakEscape
     # ── the opened-state corpus scan ──
 
     test 'opened-state corpus scan: no class 1, class 2 or unexempted class 4 leaf ships once everything is unlocked' do
+      skip 'opened-state corpus scan: set RUN_OPENED_SCAN=1 (tagged out of the default run, runs at merge batches)' unless ENV['RUN_OPENED_SCAN']
       exceptions = load_exceptions
       used_exceptions = {}
       findings = []
@@ -110,6 +119,7 @@ module BreakEscape
     # ── the identity check (plan 6a-2 "The identity check") ──
 
     test 'opened-state identity check: a sign-in PC serves only its own and the session identity\'s admitted items' do
+      skip 'opened-state identity check: set RUN_OPENED_SCAN=1 (tagged out of the default run, runs at merge batches)' unless ENV['RUN_OPENED_SCAN']
       violations = []
       scenario_templates.each do |scenario_path|
         name = File.basename(File.dirname(scenario_path))
@@ -256,6 +266,30 @@ module BreakEscape
       assert_equal [], findings.map { |f| "#{f[:path]} #{f[:klass]}" }, 'the seeded feed leaked a secret'
     ensure
       game&.destroy
+    end
+
+    # ── the feedPosts class-4 allowance (plan 6a-2 table; review R1 m2) ──
+
+    test 'feedPosts allowance: a post display field may carry an answer, a stray key may not' do
+      data = { 'rooms' => { 'r' => { 'objects' => [
+        { 'id' => 'case', 'locked' => true, 'lockType' => 'password', 'requires' => 'Satchel42' }
+      ] } } }
+      answers = SecretLeaks.collect_answers(data)
+      assert answers.any? { |a| a[:value] == 'Satchel42' }, 'fixture answer not collected'
+
+      # The answer in a post's own display text (the allowance applies): no finding.
+      allowed = { 'feedPosts' => { 'ivy' => { 'site' => 'friendface', 'person' => 'ivy', 'done' => true,
+        'posts' => [{ 'index' => 0, 'post' => { 'id' => 'p1', 'text' => 'The passcode is Satchel42.' } }] } } }
+      allowed_findings = PS.scan_body(nil, allowed, 'GET scenario', '', 'fixture', answers, [])
+      assert_equal [], allowed_findings.map { |f| "#{f[:path]} #{f[:klass]}" },
+                   'a post display field is allowed to carry an answer'
+
+      # The same answer under a key the feed never serves (a stray field) is still caught as class 4.
+      stray = { 'feedPosts' => { 'ivy' => { 'done' => true,
+        'posts' => [{ 'index' => 0, 'post' => { 'id' => 'p1', 'text' => 'hi' }, 'leakedAnswer' => 'Satchel42' }] } } }
+      stray_findings = PS.scan_body(nil, stray, 'GET scenario', '', 'fixture', answers, [])
+      assert(stray_findings.any? { |f| f[:klass] == :class4 && f[:path].end_with?('leakedAnswer') },
+             "expected a class-4 finding for the stray key, got:\n#{stray_findings.map { |f| "#{f[:path]} #{f[:klass]}" }.join("\n")}")
     end
 
     private
@@ -415,8 +449,42 @@ module BreakEscape
         clear_sessions(game)
       end
 
+      # Footholds (review R1 m3): seed every grantable foothold, then GET network for each, so the
+      # joined-network body (psk, plant/implant rows) is scanned, not only the no-foothold view.
+      foothold_ids = seed_all_footholds!(game)
       get network_game_url(game), as: :json
       findings.concat(PS.scan_body(nil, parsed_body, 'GET /network', 'network', scenario_path, answers, clues)) if response.status == 200
+      foothold_ids.each do |fid|
+        get network_game_url(game, foothold: fid), as: :json
+        findings.concat(PS.scan_body(nil, parsed_body, 'GET /network', "network/#{fid}", scenario_path, answers, clues)) if response.status == 200
+      end
+
+      # Feeds (review R1 m2): reveal every NPC's feed and hold every declared Friendface phone, then
+      # POST friendface_phone for each owned phone; the slice is scanned here and the whole feedPosts
+      # block in the re-fetched bootstrap below.
+      seed_full_feeds!(game)
+      seed_friendface_phones!(game).each do |npc_id|
+        post friendface_phone_game_url(game), params: { npc_id: npc_id, posts: 1 }, as: :json
+        findings.concat(PS.scan_body(nil, parsed_body, 'POST /friendface_phone', "friendface/#{npc_id}", scenario_path, answers, clues)) if response.status == 200
+      end
+
+      # Item pickup (review R1 m1): pick up every collectible through POST inventory, the real path
+      # (validate_item_collectible -> canonical_inventory_item -> add_inventory_item!), so an
+      # unfiltered canonical copy would reach playerInventory and be caught below.
+      pickup_collectibles(game, refusals)
+
+      # Re-fetch the bootstrap now the feeds are revealed and the collectibles are held, and scan the
+      # two server-added blocks that were empty on the first fetch (the top level was scanned there).
+      get scenario_game_url(game), as: :json
+      if response.status == 200
+        body = parsed_body
+        if body['feedPosts'].is_a?(Hash) && !body['feedPosts'].empty?
+          findings.concat(PS.scan_body(nil, { 'feedPosts' => body['feedPosts'] }, 'GET scenario', '', scenario_path, answers, clues))
+        end
+        if body['playerInventory'].is_a?(Array)
+          findings.concat(PS.scan_body(PS::ITEM_ARRAY, body['playerInventory'], 'GET scenario', 'playerInventory', scenario_path, answers, clues))
+        end
+      end
 
       [findings, refusals]
     ensure
@@ -458,6 +526,130 @@ module BreakEscape
         npc = game.send(:scenario_room_npc, npc_id)
         npc && game.pc_admits_account?(pc, npc)
       end
+    end
+
+    # Seed every grantable foothold (review R1 m3), as network_withholding_test.rb seeds one: one
+    # per network jack, keyed jack_<id>, on the jack's network. Returns the foothold ids.
+    def seed_all_footholds!(game)
+      data = game.scenario_data
+      jacks = BreakEscape::NetworkModel.jacks(data).select { |e| e[:network].is_a?(String) && e[:object]['id'].is_a?(String) }
+      return [] if jacks.empty?
+
+      footholds = {}
+      gained = []
+      jacks.each_with_index do |e, i|
+        jid = e[:object]['id']
+        footholds["jack_#{jid}"] = { 'via' => 'jack', 'network' => e[:network], 'source' => jid, 'device' => {}, 'seq' => i + 1 }
+        gained << jid
+      end
+      game.player_state['footholds'] = footholds
+      game.player_state['gainedFootholds'] = gained.uniq
+      game.save!(validate: false)
+      footholds.keys
+    end
+
+    # Reveal every NPC feed in full (review R1 m2): every post id in authored order into `shown`, so
+    # feed_posts_for_client returns every post. A reply with a cross-NPC replyTo resolves its thread
+    # through AccessWork.reply_target even with an empty `to`; a self-referential reply is dropped.
+    def seed_full_feeds!(game)
+      data = game.scenario_data
+      store = {}
+      now = Time.current.to_f
+      collect_npc_ids(data).each do |npc_id|
+        npc = game.send(:scenario_room_npc, npc_id)
+        next unless npc && BreakEscape::AccessWork.feeds?(npc)
+
+        ids = BreakEscape::AccessWork.feed_posts(npc).map { |p| p['id'] }
+        next if ids.empty?
+
+        seq = {}
+        ids.each_with_index { |pid, i| seq[pid] = i + 1 }
+        store[npc_id] = { 'shown' => ids, 'at' => now, 'seq' => seq, 'to' => {} }
+      end
+      return if store.empty?
+
+      game.player_state['feedRevealed'] = store
+      game.save!(validate: false)
+    end
+
+    # Put every declared Friendface phone in the inventory (review R1 m2), so POST friendface_phone
+    # is served. Returns the owner NPC ids to open (the player's own phone has no owner, so no POST).
+    def seed_friendface_phones!(game)
+      declared = game.send(:declared_friendface_phones)
+      return [] if declared.empty?
+
+      inv = (game.player_state['inventory'] ||= [])
+      owners = []
+      declared.each do |phone|
+        next unless phone.is_a?(Hash) && phone['id'].is_a?(String)
+        next if inv.any? { |i| i.is_a?(Hash) && i['id'] == phone['id'] }
+
+        inv << phone.deep_dup
+        owner = phone['owner']
+        owners << owner if owner.is_a?(String) && !owner.empty?
+      end
+      game.save!(validate: false)
+      owners.uniq
+    end
+
+    # Pick up every collectible through the real POST inventory path (review R1 m1): takeable room
+    # objects and container items (no source), NPC itemsHeld items (source_npc_id) and declared
+    # grants. A refusal is recorded with its reason, never hard-failed (a desktop or share item the
+    # generic seeder cannot claim).
+    def pickup_collectibles(game, refusals)
+      data = game.scenario_data
+      collect_pickup_candidates(data).each do |cand|
+        params = { action_type: 'add', item: cand[:item] }
+        params[:source_npc_id] = cand[:npc_id] if cand[:npc_id]
+        post inventory_game_url(game), params: params, as: :json
+        ok = response.status == 200 && (parsed_body['success'] || parsed_body['already'])
+        refusals << "POST inventory #{cand[:label]} #{refusal_reason}" unless ok
+      end
+      Array(game.declared_grants).each do |grant|
+        item = grant.is_a?(Hash) ? grant['item'] : nil
+        next unless item.is_a?(Hash)
+
+        post inventory_game_url(game), params: { action_type: 'add', item: client_item_for(item) }, as: :json
+        ok = response.status == 200 && (parsed_body['success'] || parsed_body['already'])
+        refusals << "POST inventory grant #{item['id'] || item['name']} #{refusal_reason}" unless ok
+      end
+    end
+
+    # Takeable room objects and container items (recursing contents), and NPC itemsHeld items named
+    # by their NPC so validate_item_collectible's NPC rule passes.
+    def collect_pickup_candidates(data)
+      cands = []
+      rooms = data['rooms']
+      return cands unless rooms.is_a?(Hash)
+
+      add_obj = nil
+      add_obj = lambda do |obj|
+        return unless obj.is_a?(Hash)
+
+        if obj['takeable'] && (obj['id'].is_a?(String) || obj['name'].is_a?(String))
+          cands << { item: client_item_for(obj), npc_id: nil, label: "takeable #{obj['id'] || obj['name']}" }
+        end
+        Array(obj['contents']).each { |c| add_obj.call(c) }
+      end
+      rooms.each_value do |room|
+        next unless room.is_a?(Hash)
+
+        Array(room['objects']).each { |o| add_obj.call(o) }
+        Array(room['npcs']).each do |n|
+          next unless n.is_a?(Hash) && n['id'].is_a?(String)
+
+          Array(n['itemsHeld']).each do |it|
+            next unless it.is_a?(Hash)
+
+            cands << { item: client_item_for(it), npc_id: n['id'], label: "itemsHeld #{n['id']}/#{it['id'] || it['name']}" }
+          end
+        end
+      end
+      cands
+    end
+
+    def client_item_for(item)
+      { type: item['type'], id: item['id'], name: item['name'] }.compact
     end
 
     def seed_session(game, pc_id, npc_id)

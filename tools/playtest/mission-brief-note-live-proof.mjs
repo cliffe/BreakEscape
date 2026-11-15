@@ -80,7 +80,7 @@ async function run() {
   const browser = await chromium.launch({ headless: !process.env.HEADED, executablePath: exe || undefined });
 
   const checks = [];
-  const record = (name, pass, detail) => { checks.push({ name, pass }); console.log(`${pass ? 'PASS' : 'FAIL'}  ${name}${detail ? ` — ${detail}` : ''}`); };
+  const record = (name, pass, detail) => { checks.push({ name, pass }); console.log(`${pass ? 'PASS' : 'FAIL'}  ${name}${detail ? `: ${detail}` : ''}`); };
 
   const host = process.env.HOST_MISSION || 'ceo_exfil';
   const { briefId, noBriefId } = makeGames(host, opts.port);

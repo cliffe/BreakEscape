@@ -236,7 +236,7 @@ Owner: m08. Acknowledged clue in a global (step 3), printed as a warning, not an
 }
 ```
 
-**Pending orchestrator sign-off** (awaiting orchestrator sign-off). Owner: m09. Opened-state payload scan (6a-2), class 2 (step 3's leak rule): a 6+ character lock answer appears as a whole word inside the locked reading room's in-world display text. Not a filter gap; does not start 6b. The owner adds an acknowledgedClues entry or moves the answer out of the display text.
+**Signed by the orchestrator, 2026-11-15.** Owner: m09. Opened-state payload scan (6a-2), class 2 (step 3's leak rule): a 6+ character lock answer appears as a whole word inside the locked reading room's in-world display text (the `drop_terminal_screen` textVariants), a deliberate clue gated in the game world on `flag2_submitted`/`invoice_booked`. Not a filter gap; does not start 6b. Follow-up for m09's owner: declare it in `acknowledgedClues`.
 
 ## 2026-11-15: m09_digital_archaeology opened-state class-2 item name
 
@@ -250,4 +250,18 @@ Owner: m08. Acknowledged clue in a global (step 3), printed as a warning, not an
 }
 ```
 
-**Pending orchestrator sign-off** (awaiting orchestrator sign-off). Owner: m09. Opened-state payload scan (6a-2), class 2 (step 3's leak rule): a 6+ character lock answer appears as a whole word inside a held item's display name, in the locked hl_box container. Not a filter gap; does not start 6b.
+**Signed by the orchestrator, 2026-11-15.** Owner: m09. Opened-state payload scan (6a-2), class 2 (step 3's leak rule): a 6+ character lock answer appears as a whole word inside a held item's display name, in the locked hl_box container. The name is shown only after the hl_box unlock, so it is harmless. Not a filter gap; does not start 6b.
+
+## 2026-11-15: m09_digital_archaeology opened-state class-2 inventory name
+
+```json
+{
+  "scenario": "scenarios/m09_digital_archaeology/scenario.json.erb",
+  "route": "GET scenario",
+  "paths": [
+    "playerInventory[7]/name"
+  ]
+}
+```
+
+**Signed by the orchestrator, 2026-11-15.** Owner: m09. Opened-state payload scan (6a-2), class 2 (step 3's leak rule): the same held item as the hl_box entry above. Once the player unlocks hl_box and picks the item up, its display name travels with it into playerInventory. The item is only takeable after the hl_box unlock that earns the answer, so this adds no new exposure. Not a filter gap; does not start 6b.

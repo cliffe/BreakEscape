@@ -4637,21 +4637,29 @@ replaced by identity (instance_method save / define_method restore) ships a lock
 
 **Fixtures.** A `POST unlock` of a PIN safe holding an inner locked case ships no inner answer in its
 `contents` (scanned as a subtree). A seeded feed with a reply post (NPC `needs.social_media` set so
-`feeds?` is true, `feedRevealed` seeded with the reply's `to` record) scans `feedPosts` clean.
+`feeds?` is true, `feedRevealed` seeded with the reply's `to` record) scans `feedPosts` clean. R1 m2
+adds a `feedPosts` allowance fixture that proves both halves of the `class4_served?` feed allowance: a
+lock answer in a post's own display text passes, the same answer under a stray key under `feedPosts`
+is still caught as class 4.
 
-**Scan results (opened state, 180 scenarios, ~117 s).** Two findings, both in m09_digital_archaeology
-and both class 2 (step 3's leak rule, judged by value): a 6+ character lock answer appears as a whole
-word inside the locked reading room's in-world display text (`reading_room/objects[2]/textVariants[0]/value`)
-and inside a held item's display name in the locked `hl_box` container
-(`hl_box/contents[0]/name`). Both areas are behind locks, so only the opened-state scan reaches them.
+**Scan results (opened state, 181 scenarios).** After the R1 pickup, feed and foothold passes the only
+findings are in m09_digital_archaeology, all class 2 (step 3's leak rule, judged by value): a 6+
+character lock answer appears as a whole word inside the locked reading room's in-world display text
+(`reading_room/objects[2]/textVariants[0]/value`), inside a held item's display name in the locked
+`hl_box` container (`hl_box/contents[0]/name`), and, once that item is picked up, inside its name in
+`playerInventory` (`GET scenario playerInventory[7]/name`, the same string on a second route). All are
+behind locks, so only the opened-state scan reaches them, and the inventory copy is only takeable after
+the hl_box unlock that earns the answer. No class 1, no unexempted class 4, no identity violation, and
+no finding from the feed, friendface, foothold or network passes anywhere in the corpus.
 The scan seeds `srand(1)` around each scenario's route fetches so a route that picks a random text
 variant renders the same body on every run, and the exceptions match by object/container path prefix,
 so a variant index need not be pinned.
 These are **class 2, not a filter gap**: `name` and `textVariants[].value` are display text the format
 ships by design, so no filter touches them. Per the plan a class 2 finding is step 3's finding and goes
-to the scenario's owner, not into the filters, and does not start 6b. They are listed in
-`test/fixtures/files/payload_scan_opened_exceptions.json` (pending orchestrator sign-off, `reviewBy`
-2026-12-31, with headings in `docs/agents/VALIDATOR_DECISIONS.md`) and reported to m09's owner.
+to the scenario's owner, not into the filters, and does not start 6b. They are the three entries in
+`test/fixtures/files/payload_scan_opened_exceptions.json` (signed off by the orchestrator at R1,
+`reviewBy` 2026-12-31, with headings in `docs/agents/VALIDATOR_DECISIONS.md`) and reported to m09's
+owner.
 
 **Does anything trigger 6b? No.** The opened-state scan found no class 1 leaf, no unexempted class 4
 leaf and no identity-check violation across every scenario and route; its only findings are class 2
@@ -4662,19 +4670,61 @@ block or a new authored-data route arrives.
 - *Separate exceptions file.* The opened-state scan reads its own
   `payload_scan_opened_exceptions.json`, not 6a-1's `payload_scan_exceptions.json`. A shared file would
   make the fresh-state scan mark every opened-only path stale (it never reaches m09's locked areas) and
-  fail. Wiring the opened file into the node list test (`validator-known-failures.test.mjs` shared-heading
-  rule) alongside the other three lists is a handover follow-up.
+  fail. The opened file is wired into the node list test (`validator-known-failures.test.mjs`) as a
+  fourth list, checked with `checkPayloadScanExceptions` and the shared-heading rule against the other
+  three lists (R1 m4, below).
 - *Refusals recorded, not hard-failed.* The plan fails on any opened-state refusal not listed with a
   reason. A generic seeder cannot satisfy every scenario's bespoke gating (a foothold, a proof, a
   switched-off host), so the scan records each refusal with its reason in the run report and keeps the
   hard assertion on leak findings (the scan's real guarantee). The common recorded refusals are sign-in
   PCs with no seeded session on the plain container pass (expected) and a few `status 404` containers.
-- *Reductions left as handover items* (they add no leak surface over the direct unlock seeding above,
-  and each is exercised by a fixture): foothold seeding and `GET network` per foothold; full feed reveal
-  across the corpus and `POST friendface_phone`; item pickup through `POST inventory` into
-  `playerInventory`; and `POST unlock` across the corpus (GET room/GET container over the unlocked state
-  serve the same filtered subtrees; POST unlock's own roomData/contents are covered by the fixture).
+- *Routes exercised across the corpus at R1* (R1 m1/m2/m3): foothold seeding and `GET network` per
+  foothold; full feed reveal across the corpus, every declared Friendface phone held and `POST
+  friendface_phone` fetched; and item pickup through `POST inventory` (takeable objects, container items,
+  NPC `itemsHeld` items and declared grants) into `playerInventory`. `POST unlock`'s own
+  roomData/contents stay covered by the POST-unlock fixture (GET room/GET container over the unlocked
+  state serve the same filtered subtrees). Only the R1 original note claimed "each exercised by a
+  fixture"; that was inaccurate (only POST unlock and the feed had fixtures) and is corrected here.
 
-**Run time.** ~117 s over 180 scenarios, just under the plan's two-minute threshold, so the file stays
-in the default `bin/rails test` run for now. It is close; if it creeps over two minutes it should be
-tagged out of the default run and run at each merge batch (as the plan allows).
+**Run time.** The full file (both corpus-wide tests plus the mutations and fixtures) runs 118-146 s
+over 181 scenarios. It crosses the plan's two-minute threshold under load, so after R1 the two
+corpus-wide tests (the corpus scan and the identity check) are tagged out of the default `bin/rails
+test` run behind `RUN_OPENED_SCAN`; the orchestrator runs them at each merge batch with
+`RUN_OPENED_SCAN=1 bin/rails test test/models/break_escape/payload_scan_opened_state_test.rb`. The
+mutation tests and the fixtures are fast and stay in the default run.
+
+### R1 outcomes
+
+Review `scratchpad/6a2-review-r1.md` (B/M/m = 0/2/3). All five findings fixed; the m09 headings signed off.
+
+- **R1 m1 (inventory pickup).** `scan_opened_game` now picks up every collectible through the real
+  `POST inventory` path (takeable room objects, container contents, NPC `itemsHeld` items with
+  `source_npc_id`, and declared grants), then scans the served `playerInventory` in a re-fetched
+  bootstrap. `canonical_inventory_item` leaked **no** answer: the only inventory finding is the m09
+  held item's authored display `name` (class 2, the same string already exempted on `GET /container`),
+  which `filter_inventory_for_client!` and `canonical_inventory_item` both leave as display text by
+  design. It is the third opened-state exception (`GET scenario playerInventory[7]/name`). No model fix
+  was needed; the existing `inventory_canonical_item_test.rb` already covers the forged-field cases.
+- **R1 m2 (feed).** `feedRevealed` is seeded in full for every NPC with a feed across the corpus (every
+  post id into `shown`, cross-NPC replies resolving their thread through `AccessWork.reply_target`),
+  every declared Friendface phone is put in the inventory, and `POST friendface_phone` is fetched for
+  each owned phone; both the `feedPosts` bootstrap block and the phone slice are scanned. The
+  `class4_served?` feed allowance is implemented (`feed_post_served?`: a post's own display fields and
+  its revealed OSINT fact entry pass; anything else under `feedPosts` stays value-checked). A new
+  fixture proves both halves: a lock answer in a post's display text passes, the same answer under a
+  stray key is caught as class 4. No feed leak anywhere in the corpus.
+- **R1 m3 (foothold).** Every grantable foothold is seeded (one per network jack, as
+  `network_withholding_test.rb` seeds one) and `GET network` is fetched for each, so the joined-network
+  body is scanned, not only the no-foothold view. No network leak. The inaccurate "each reduction is
+  exercised by a fixture" claim is corrected above.
+- **R1 m4 (exceptions list).** `payload_scan_opened_exceptions.json` is wired into
+  `validator-known-failures.test.mjs` as a fourth list (its own real test plus a parse test), and its
+  approved headings join the shared-heading rule the other three lists use.
+- **R1 m5 (em dash).** The em dash in `tools/playtest/mission-brief-note-live-proof.mjs:83` is replaced
+  with a colon.
+
+**m09 sign-off (orchestrator).** The two pending m09 headings in `VALIDATOR_DECISIONS.md` are signed
+off, and the new third heading (the inventory `name`) with them. The `hl_box` item name is harmless (it
+shows only after the hl_box unlock); the reading_room `drop_terminal_screen` textVariants are a
+deliberate clue gated in the world on `flag2_submitted`/`invoice_booked`, with a follow-up for m09's
+owner to declare it in `acknowledgedClues` (m09 not edited here).
