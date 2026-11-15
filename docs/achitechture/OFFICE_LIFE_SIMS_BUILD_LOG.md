@@ -475,7 +475,7 @@ the staff-room counts ran on the natural clock. Scripts and dumps are in the ses
 
 | Check | Result | Evidence |
 |---|---|---|
-| Staff room, player at the boiler (in earshot), 20 game minutes | PASS | Game 4985 (1204 s): 35 staff `_pickBark` turns, 7 voiced lines (Keith 4, Jodie 3, all `staff_tea`) and 28 pictures (`staff_tea` 12, `staff_water` 16); `exchange_waiting` heard complete. `s3-in-4985.json` |
+| Staff room, player at the boiler (in earshot of the boiler, not the cooler), 20 game minutes | PASS for the boiler | Game 4985 (1204 s): 35 staff `_pickBark` turns. Per object: boiler (`staff_tea`) 7 lines of 19 turns (Keith 4, Jodie 3) and 12 pictures; cooler (`staff_water`) 0 lines of 16 turns, all pictures, because the cooler is beyond 160 px of the boiler (SIMS-5 design R2 M3; corrected 2026-11-15). `exchange_waiting` heard complete. `s3-in-4985.json`. From mid-room both are heard: see "SIMS-5 design R2 fixes" |
 | Staff room, player in the office (out of earshot), 10 game minutes | PASS | Game 4986 (604 s): 25 staff turns, **0** lines, 25 pictures, no exchange. No pool line is spent unheard (E7 holds). `s3-out-4986.json` |
 | Fixture `grumble_none` rerun (rule changed in 248293e6e) | PASS | Game 4983, 10 minutes: the warned NPC spoke nothing; the control pair spoke 4 `ctrl` lines (2 each). `fx-grumble_none-4983.json` |
 | Fixture `no_phone_calls` rerun (colleague rule changed in 248293e6e) | PASS | Game 4984, 10 minutes, spare phone read every 2 minutes: no call started, the warned NPC spoke nothing; the control pair spoke 2 `ctrl` lines. `fx-no_phone_calls-4984.json` |
@@ -487,6 +487,31 @@ the staff-room counts ran on the natural clock. Scripts and dumps are in the ses
 
 With these rows every item the SIMS-5 handover listed as open is proved live. Engine and server
 changes: none.
+
+## SIMS-5 design R2 fixes (2026-11-15, build/ol-sims)
+
+Review: `docs/achitechture/OFFICE_LIFE_SIMS5_DESIGN_REVIEW_R2.md` (0 blockers, 5 majors, 8 minors). This round took M1 to M4 and m1, m4 to m8; M5, m2 and m3 (V10's wording) went to the V10 fixer. Commits `7dbe11e50` (M4 engine and tests, M2 scenario), `962050a9b` (m8), `0100477ce` (m7), then the docs commit.
+
+- **M1.** README: a lever tour, "Office beats you can cause", at the top (fifteen rows: beat, lever and where it is, where to stand, what you see and hear, tasks), including the spare phone. The dated proof sections moved whole to `scenarios/test_needs_sims/PROOF_HISTORY.md`; the README keeps a one-line-per-section results appendix. Step 1 now describes the queue (m1); step 8 and tour row 2 say who shows `leashed` (m4); tour row 6 pairs the coffee socket with a walker (m5); a paragraph on copying levers into missions (m6).
+- **M2.** The four lever papers now use existing art and fixed places: Deadline Memo `notice_board1` (office back wall, right of the Activity Board), Print Queue `aes_clipboard1` (back wall, left of the copier), Coffee Notice `notes6` (east wall above the coffee socket), Kitchen Rota `rota_board1` (moved to the kitchen's back wall). All `readDisplay: gameDisplay`. Each top-left is at least 32 px from a neighbouring interactable's centre, so none shares a tap. No art was generated or is needed. The coffee machine, both copiers and the three sockets were not moved.
+- **M3.** Decision: keep the cooler where m02's map draws it and state the figure per standing spot. A real break room has its tea point and water cooler on different walls, and a player finds the talk by walking into the middle of the room; moving the cooler would change m02's map to fix where the player stood. The README gives per-spot counts (boiler spot, mid-room, office) and the tour sends the player mid-room; the SIMS-5 live-proof row above now gives per-object counts.
+- **M4.** `npc-needs.js`: `_pickBark` draws through `_bagPeek`/`_bagTake`, which pass over a line said by anyone within `ECHO_WINDOW_MS` (120 s) and `ECHO_RADIUS` (320 px) in the same room while the bag has another; the passed-over line keeps its place in the bag. `_recentLines` is in memory only (at most 32, cleared on `reset`); nothing new reaches `player_state`, so the sync rule holds. The old `_bagPeek(npcId, ...)` became `_bagOrderLeft` plus `_bagPeek(s, ...)`.
+- **m7.** `_tickNews` passes `unheard` when the player is out of the announce pool's earshot: the telling still happens, as a news picture, and no line is taken or voiced.
+- **m8.** `npc-action-icons.js` `speechCovers` and `hideFor`, `npc-world-bubbles.js` `showsBubble`: a speech bubble over an NPC hides its action icon and thought bubble in the same frame (the bubble pass runs in the camera's preRender, after the icon layer's update).
+
+**Spoken lines.** None added, changed or removed (0 / 0 / 0). The lever texts and observations that changed are read on screen, not voiced: Deadline Memo, Print Queue, Coffee Notice and Kitchen Rota observations now name where each hangs. Their `text` fields are unchanged.
+
+**Tests.** Node: `npc-voiced-chatter.test.mjs` five new M4 tests and the peek test moved to the new signature; `npc-news.test.mjs` one new (m7), its fixture now stands the player in earshot by default; `npc-action-icons.test.mjs` one new (m8). `bin/test-js` in full on `0100477ce`: 659 files passed, 0 failed. Validator on the scenario: 0 errors, 32 warnings (the same 32 as before). No new static imports.
+
+**Live proof** (keyless :3093, headless, `setFPS(20)` with fixed steps on, scratch worktree `p-ol-sims5` at `962050a9b`; scripts and outputs in the session scratchpad `s5-design-fix/`):
+
+| Check | Result | Evidence |
+|---|---|---|
+| M2: the four levers told apart at game zoom | PASS | Game 5049, `m2-office-clean-5049.png`, `m2-kitchen-clean-5049.png`, `m2-levers-crops-5049.png` |
+| M2: each reads alone and starts its beat | PASS | Game 5044: no pick-one menu; memo set Tom and Amara caffeine to 19; Print Queue showed `copier_out_a`; rota in the kitchen set Marek's thirst 94 to 10 (`m2-5044.json`) |
+| M3: staff room from mid-room | PASS | Game 5046, 13 minutes: boiler 4 lines of 11 turns, cooler 2 of 7, at 61 to 76 px; `exchange_waiting` complete (`m3-mid-5046.json`) |
+| M4: no echo on a shared pool | PASS | Game 5045: six cooler meetings, 14 lines, 4 passed over, 0 repeats within 120 s; Grace passed over "Friday drinks again?" 4 s after Rosa said it (`m4-5045.json`). Test aid: a 15 s cooldown set in the page for Grace, Rosa and Sanjay |
+| m8: no icon under a speech bubble | SEEN | Game 5045 `m4-cooler-5045.png`, game 5046 `m3-mid-mid-5046.png` |
 
 ## Engine and server changes (every slice)
 
