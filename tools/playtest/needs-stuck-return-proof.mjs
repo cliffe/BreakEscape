@@ -116,8 +116,22 @@ const tasksDone = () => page.evaluate(() => Object.values(window.objectivesManag
 // Up to 420 s wall: in game 5415 the old 200 s cap ran out with Marek still at the coffee from row 1
 // (back at his post only at needs s 228), so the notice was read with no left_post to follow and
 // Sanjay never set off. A wait that never clears now ends the run as skipped, not as a row 2 miss.
+// Marek's path and every body within 48 px of him
+const dumpMarek = () => page.evaluate(() => {
+            const b = window.npcBehaviorManager.getBehavior('marek'), sp = b.sprite, c = sp.body.center;
+            const near = [];
+            const look = (o, tag) => { const bb = o?.body; if (!bb || !o.active) return; const d = Math.hypot(bb.center.x - c.x, bb.center.y - c.y); if (d < 48) near.push({ tag, key: o.texture?.key || o.name, x: Math.round(bb.x), y: Math.round(bb.y), w: bb.width, h: bb.height, imm: !!bb.immovable, d: Math.round(d) }); };
+            for (const id of ['amara', 'tom', 'grace', 'sanjay']) look(window.npcBehaviorManager.getBehavior(id)?.sprite, id);
+            for (const ch of window.chairs || []) look(ch, 'chair');
+            look(window.player, 'player');
+            const r = window.rooms.office; for (const o of Object.values(r.objects || {})) look(o, 'obj');
+            return { body: { x: Math.round(sp.body.x), y: Math.round(sp.body.y), w: sp.body.width, h: sp.body.height, vx: Math.round(sp.body.velocity.x), vy: Math.round(sp.body.velocity.y) },
+                path: (b.currentPath || b.path || []).map(p => [Math.round(p.x), Math.round(p.y)]), idx: b.pathIndex, dest: b._goToStayDest, moving: b.isMoving, settle: b._settleUntil || b.settleUntil || null,
+                touching: { ...sp.body.touching }, blocked: { ...sp.body.blocked }, near };
+        });
 const t0 = Date.now();
 let cleared = false;
+const waitTrace = [];
 while (Date.now() - t0 < 420000) {
     const c = await clock();
     // and Marek is back at his post: the notice's beat keys on him leaving it (npc_left_post), so
@@ -129,6 +143,9 @@ while (Date.now() - t0 < 420000) {
         // Marek reaches the coffee parks the caffeine at selection, with no turn-back (game 5378)
         || window.npcNeedsSystem.getState('sanjay')?.mode !== 'idle');
     if (c > 60000 && !busy) { cleared = true; break; }
+    // Marek standing still on a walk before the notice (5430: out, 5431: home): one dump
+    const wm = await st('marek'); waitTrace.push(wm); const wp = waitTrace.at(-9);
+    if (!report.wait_dump && wm.mode !== 'idle' && wp && wp.mode !== 'idle' && Math.hypot(wp.x - wm.x, wp.y - wm.y) < 2) report.wait_dump = { c: Math.round(c / 1000), mode: wm.mode, ...(await dumpMarek()) };
     await t(1000);
 }
 report.queue_cleared_s = Math.round((await clock()) / 1000);
@@ -185,21 +202,10 @@ while ((await clock()) - readAt < 100000 && Date.now() - tw < 300000) {
     }
     trace.push({ c: Math.round(((await clock()) - readAt) / 100) / 10, ...m });
     if (trace.length % 15 === 0) console.log('t', trace.at(-1).c, JSON.stringify(m));
-    // A stall on the walk home: one dump of Marek's path and every body within 48 px
+    // A stall on a walk (out or home): one dump of Marek's path and every body within 48 px
     const prev = trace.at(-6);
-    if (!report.stall_dump && m.mode === 'returning' && prev && prev.mode === 'returning' && Math.hypot(prev.x - m.x, prev.y - m.y) < 2) {
-        report.stall_dump = await page.evaluate(() => {
-            const b = window.npcBehaviorManager.getBehavior('marek'), sp = b.sprite, c = sp.body.center;
-            const near = [];
-            const look = (o, tag) => { const bb = o?.body; if (!bb || !o.active) return; const d = Math.hypot(bb.center.x - c.x, bb.center.y - c.y); if (d < 48) near.push({ tag, key: o.texture?.key || o.name, x: Math.round(bb.x), y: Math.round(bb.y), w: bb.width, h: bb.height, imm: !!bb.immovable, d: Math.round(d) }); };
-            for (const id of ['amara', 'tom', 'grace', 'sanjay']) look(window.npcBehaviorManager.getBehavior(id)?.sprite, id);
-            for (const ch of window.chairs || []) look(ch, 'chair');
-            look(window.player, 'player');
-            const r = window.rooms.office; for (const o of Object.values(r.objects || {})) look(o, 'obj');
-            return { body: { x: Math.round(sp.body.x), y: Math.round(sp.body.y), w: sp.body.width, h: sp.body.height, vx: Math.round(sp.body.velocity.x), vy: Math.round(sp.body.velocity.y) },
-                path: (b.currentPath || b.path || []).map(p => [Math.round(p.x), Math.round(p.y)]), idx: b.pathIndex, dest: b._goToStayDest, moving: b.isMoving, settle: b._settleUntil || b.settleUntil || null,
-                touching: { ...sp.body.touching }, blocked: { ...sp.body.blocked }, near };
-        });
+    if (!report.stall_dump && m.mode !== 'idle' && prev && prev.mode !== 'idle' && Math.hypot(prev.x - m.x, prev.y - m.y) < 2) {
+        report.stall_dump = { mode: m.mode, ...(await dumpMarek()) };
     }
     const log = await page.evaluate(() => window.npcNeedsSystem.getLog().filter(e => e.npc === 'marek'));
     // after the notice only: row 1's queue gave Marek a cup and a walk home before it, which ended
