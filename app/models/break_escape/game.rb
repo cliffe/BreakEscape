@@ -1220,9 +1220,11 @@ module BreakEscape
       return false if existing.is_a?(Hash) && existing['itemId'].present?
       return false unless item_in_room?(from_room, item_id)
 
-      remove_item_from_room!(from_room, item_id)
+      # Write the carry entry first so it rides remove_item_from_room!'s save!: a
+      # second save! after that one would not see the nested jsonb mutation as dirty.
+      player_state_will_change!
       carry[npc_id] = { 'itemId' => item_id, 'fromRoom' => from_room }
-      save!
+      remove_item_from_room!(from_room, item_id)
       true
     end
 
@@ -1247,6 +1249,7 @@ module BreakEscape
              .merge('takeable' => true, 'interactable' => true, 'active' => true, 'visible' => true)
       item = apply_carry_position(item, position)
 
+      player_state_will_change!
       player_state['room_states'] ||= {}
       player_state['room_states'][to_room] ||= { 'objects_added' => [], 'objects_removed' => [], 'object_states' => {}, 'npc_states' => {} }
       player_state['room_states'][to_room]['objects_added'].reject! { |o| o['id'] == item_id }
@@ -1266,6 +1269,7 @@ module BreakEscape
       entry = carry.is_a?(Hash) ? carry[npc_id] : nil
       return false unless entry.is_a?(Hash) && entry['itemId'] == item_id
 
+      player_state_will_change!
       carry.delete(npc_id)
       save!
       true
@@ -1337,7 +1341,6 @@ module BreakEscape
       carry = player_state['npcCarry']
       return unless carry.is_a?(Hash) && carry.any? && room['npcs'].is_a?(Array)
 
-      delivered = nil
       room['npcs'] = room['npcs'].map do |npc|
         next npc unless npc.is_a?(Hash)
 
@@ -1346,15 +1349,26 @@ module BreakEscape
 
         info = carriable_object_index[entry['itemId']]
         next npc unless info.is_a?(Hash)
-
-        delivered ||= delivered_item_ids
-        next npc if delivered.include?(entry['itemId'])
+        # The carried id sits in the origin room's objects_removed, so delivered_item_ids
+        # would wrongly suppress it. Suppress only when the player has actually taken it
+        # into their inventory.
+        next npc if carried_item_in_inventory?(entry['itemId'])
 
         existing = npc['itemsHeld'].is_a?(Array) ? npc['itemsHeld'] : []
         next npc if existing.any? { |i| i.is_a?(Hash) && i['id'] == entry['itemId'] }
 
         held = info['object'].deep_dup.except('texture').merge('takeable' => true)
         npc.merge('itemsHeld' => existing + [held])
+      end
+    end
+
+    # True when the player holds the carried object in their inventory (they took it
+    # from the NPC's hand). Matches the item's scenario id, however the inventory
+    # entry wraps it.
+    def carried_item_in_inventory?(item_id)
+      Array(player_state['inventory']).any? do |inv|
+        data = inv.is_a?(Hash) ? (inv['scenarioData'] || inv) : nil
+        data.is_a?(Hash) && (data['id'] == item_id || inv['id'] == item_id)
       end
     end
 
