@@ -60,14 +60,20 @@ module ValidateOfficeLife
   def self.check(json)
     return [] unless json.is_a?(Hash) && json['rooms'].is_a?(Hash)
 
-    world = []   # room objects (and their contents): things an NPC walks to and uses
-    held = []    # NPC itemsHeld and the player's start inventory: only a magnet counts (onItemDropped
-                 # makes a dropped magnet a source where it lies; nothing else held is one)
+    world = []   # top-level room objects: the sprites listObjects gives the needs engine
+    held = []    # container contents, itemsHeld and the player's start inventory: only a magnet
+                 # counts (onItemDropped makes a dropped magnet a source where it lies)
     npcs = []
     json['rooms'].each do |room_id, room|
       next unless room.is_a?(Hash)
 
-      Array(room['objects']).each { |o| VN.collect(o, room_id, world) }
+      Array(room['objects']).each do |o|
+        next unless o.is_a?(Hash)
+
+        pos = o['position'].is_a?(Hash) ? o['position'] : {}
+        world << VN::Obj.new(id: o['id'], room: room_id, data: o, x: pos['x'].to_f, y: pos['y'].to_f)
+        (Array(o['contents']) + Array(o['itemsHeld'])).each { |c| VN.collect(c, nil, held) }
+      end
       Array(room['npcs']).each do |n|
         next unless n.is_a?(Hash)
 
@@ -87,7 +93,7 @@ module ValidateOfficeLife
   end
 
   Ctx = Struct.new(:npc_room, :home_room, :by_topic, :announce, :phones, :rung, :world, :magnets,
-                   :npc_list, :reach, keyword_init: true)
+                   :npc_list, :reach, :rooms, :knows, :tellers, keyword_init: true)
 
   def self.build_context(json, world, held, npcs)
     by_id = world.select(&:id).group_by(&:id)
@@ -97,8 +103,10 @@ module ValidateOfficeLife
       npc_room[n] = room_id
       home_room[n] = home_room_of(json, n, room_id, by_id)
     end
-    magnets = (world + held).select { |o| magnet_of(o) }
-    sources = world + held.select { |o| magnet_of(o) }   # a held magnet's room is wherever it is dropped (nil)
+    # A magnet with no servings is never a source, never gone and never told (magnetOf, _tickNews).
+    magnets = (world + held).select { |o| magnet_of(o) && servings(o) >= 1 }
+    sources = world.reject { |o| magnet_of(o) && servings(o) < 1 } +
+              held.select { |o| magnet_of(o) && servings(o) >= 1 }   # a held magnet's room is wherever it is dropped (nil)
     chatter_objs = sources.select do |o|
       a = o.data['affordance']
       a.is_a?(Hash) && a['chatter'].is_a?(String) && !a['chatter'].empty?
@@ -109,7 +117,7 @@ module ValidateOfficeLife
       topic = m['announce'].is_a?(String) && !m['announce'].empty? ? m['announce'] : 'news'
       (announce[topic] ||= []) << o
     end
-    Ctx.new(
+    ctx = Ctx.new(
       npc_room: npc_room, home_room: home_room,
       by_topic: chatter_objs.group_by { |o| o.data['affordance']['chatter'] },
       announce: announce,
@@ -120,12 +128,37 @@ module ValidateOfficeLife
       npc_list: npcs.map(&:last),
       reach: {}.compare_by_identity
     )
+    build_rooms(json, ctx)
+    ctx
   end
 
   def self.magnet_of(o)
     a = o.data['affordance']
     m = a.is_a?(Hash) ? a['magnet'] : nil
     m.is_a?(Hash) ? m : nil
+  end
+
+  # JavaScript Number(v) for JSON values (nil is null); NaN for anything Number cannot read.
+  def self.js_number(v)
+    case v
+    when Numeric then v.to_f
+    when nil, false then 0.0
+    when true then 1.0
+    when String then v.strip.empty? ? 0.0 : (Float(v.strip, exception: false) || Float::NAN)
+    else Float::NAN
+    end
+  end
+
+  # magnetOf: Math.floor(Number(servings) clamped to 0..1000), 1 when absent or not a number.
+  def self.servings(o)
+    m = magnet_of(o)
+    v = m.key?('servings') ? js_number(m['servings']) : Float::NAN
+    v.finite? ? v.clamp(0, 1000).floor : 1
+  end
+
+  # A magnet fixed in a room (not held): a source only for an NPC that knows of it (_magnetBarred).
+  def self.fixed_magnet?(o)
+    !o.room.nil? && !magnet_of(o).nil?
   end
 
   def self.home_room_of(_json, npc, npc_room, by_id)
@@ -139,14 +172,17 @@ module ValidateOfficeLife
     npc_room
   end
 
-  # Every phone id named by a desk_phone_ring:<id> emit anywhere in the scenario (an object's
-  # triggerOnInteract emit_event, or a mapping's emitEvent). onPhoneRing listens on desk_phone_ring:*.
+  # Every phone id a desk_phone_ring:<id> emitter names anywhere in the scenario: an emitEvent (an
+  # event mapping, a needs hook, a launch device) or an emit_event action's event_name. A listener
+  # (an eventPattern) rings nothing. onPhoneRing listens on desk_phone_ring:*.
   def self.ring_targets(node, out = Set.new)
     case node
-    when String
-      out << Regexp.last_match(1) if node =~ /\Adesk_phone_ring:(.+)\z/
     when Array then node.each { |v| ring_targets(v, out) }
-    when Hash then node.each_value { |v| ring_targets(v, out) }
+    when Hash
+      emits = [node['emitEvent']]
+      emits << node['event_name'] if node['type'] == 'emit_event'
+      emits.each { |e| out << Regexp.last_match(1) if e.is_a?(String) && e =~ /\Adesk_phone_ring:(.+)\z/ }
+      node.each_value { |v| ring_targets(v, out) }
     end
     out
   end
@@ -210,8 +246,31 @@ module ValidateOfficeLife
 
   # ── needs, use and reach ─────────────────────────────────────────────────────────────────────
 
+  # The needs register keeps: normaliseNeed drops one without decayPerMin > 0 and urgentAt > 0.
   def self.needs_of(n)
-    n['needs'].is_a?(Hash) ? n['needs'].keys : []
+    return [] unless n['needs'].is_a?(Hash)
+
+    n['needs'].select do |_k, v|
+      v.is_a?(Hash) && js_number(v['decayPerMin']) > 0 && js_number(v['urgentAt']) > 0
+    end.keys
+  end
+
+  # normaliseInterest: a number is the weight; a weight above 0 keeps it.
+  def self.interests_of(n)
+    return [] unless n['interests'].is_a?(Hash)
+
+    n['interests'].select { |_k, v| js_number(v.is_a?(Hash) ? v['weight'] : (v.is_a?(Numeric) ? v : Float::NAN)) > 0 }.keys
+  end
+
+  # Does the needs engine run this NPC? register keeps it only with a need or interest that
+  # survives normalising, and every rule V10 mirrors reads this.states. A phone contact
+  # (npcType "phone") has no sprite, so npcPos is null and it never tells, hears, answers or is avoided.
+  def self.runs?(n)
+    n['npcType'] != 'phone' && (!needs_of(n).empty? || !interests_of(n).empty?)
+  end
+
+  def self.patrols?(n)
+    n['behavior'].is_a?(Hash) && n['behavior']['patrol'].is_a?(Hash) && n['behavior']['patrol']['enabled'] == true
   end
 
   # _judged: social_media, or work with a work plan. Their off and failed turn-backs speak
@@ -224,23 +283,95 @@ module ValidateOfficeLife
     ctx.reach[n] ||= VN.leash_reach(json, n, ctx.home_room[n])
   end
 
-  # Can NPC `n` stand in `room` at some point? Its home or start room always; any room its leash
-  # reaches when something moves it (needs, or a patrol).
-  def self.can_be_in?(json, n, room, ctx)
-    return true if room.nil?
-    return true if ctx.home_room[n] == room || ctx.npc_room[n] == room
-
-    patrol = n['behavior'].is_a?(Hash) && n['behavior']['patrol'].is_a?(Hash) && n['behavior']['patrol']['enabled'] == true
-    moves = !needs_of(n).empty? || patrol
-    moves && reach(json, n, ctx).include?(room)
+  # Can NPC `n` stand in `room` at some point? `room` nil is a dropped magnet, wherever it lies.
+  def self.can_be_in?(_json, n, room, ctx)
+    room.nil? || ctx.rooms[n].include?(room)
   end
 
-  # May npc use obj for one of `needs` (default all its needs)? A need obj satisfies, and no
-  # leash/privacy rule bars it.
-  def self.can_use?(json, npc, obj, _npcs, ctx, needs = needs_of(npc))
+  def self.knows?(n, o, ctx)
+    ctx.knows[n].include?(o.object_id)
+  end
+
+  # Where each NPC can be, and which fixed magnets it can know of. Nothing in the needs engine
+  # wanders: an NPC moves only to a source it may use for one of its needs (_select), a magnet it
+  # knows of (_magnetsFor reads s.knows), a print errand's printer, an interest item, a workaround
+  # visit, or along a patrol. So the rooms are the home and start rooms, the rooms of usable world
+  # objects and print producers, and the whole leash reach for a patrol, an interest or a work
+  # plan (whose targets V10 does not model). A magnet becomes known by sight (_sight: being in
+  # its room) or by word (_tickNews: a knower at home away from it tells a hearer in that room);
+  # a known magnet it may use adds its room. Repeat until nothing changes.
+  def self.build_rooms(json, ctx)
+    ctx.rooms = {}.compare_by_identity
+    ctx.knows = {}.compare_by_identity
+    prods = ctx.world.select(&:id).group_by(&:id)
+    ctx.npc_list.each do |n|
+      r = Set[ctx.home_room[n], ctx.npc_room[n]]
+      ctx.knows[n] = Set.new
+      if runs?(n)
+        ctx.world.each { |o| r << o.room if o.room && !fixed_magnet?(o) && can_use?(json, n, o, nil, ctx) }
+        print_producers(n).flatten.each { |id| (prods[id] || []).each { |o| r << o.room if o.room } }
+      end
+      r.merge(reach(json, n, ctx)) if patrols?(n) || (runs?(n) && (!interests_of(n).empty? || AW.work_plan?(json, n)))
+      ctx.rooms[n] = r
+    end
+    fixed = ctx.magnets.select { |o| fixed_magnet?(o) }
+    actors = ctx.npc_list.select { |n| runs?(n) }
+    loop do
+      changed = false
+      fixed.each do |o|
+        actors.each do |m|
+          if !knows?(m, o, ctx) && ctx.rooms[m].include?(o.room)
+            ctx.knows[m] << o.object_id
+            changed = true
+          end
+          next unless knows?(m, o, ctx) && !ctx.rooms[m].include?(o.room) && can_use?(json, m, o, nil, ctx, known: false)
+
+          ctx.rooms[m] << o.room
+          changed = true
+        end
+        news_pairs(o, actors, ctx).each do |_k, h|
+          next if knows?(h, o, ctx)
+
+          ctx.knows[h] << o.object_id
+          changed = true
+        end
+      end
+      break unless changed
+    end
+    ctx.tellers = {}.compare_by_identity
+    fixed.each { |o| ctx.tellers[o] = news_pairs(o, actors, ctx).map(&:first).uniq(&:object_id) }
+  end
+
+  # [teller, hearer] pairs for a fixed magnet: _tickNews runs for a knower in its home room when
+  # that is not the magnet's room; _newsHearers takes any other running NPC that can be in that
+  # room and that neither avoids (groups do not matter).
+  def self.news_pairs(o, actors, ctx)
+    actors.select { |k| knows?(k, o, ctx) && ctx.home_room[k] != o.room }.flat_map do |k|
+      home = ctx.home_room[k]
+      actors.select { |h| !h.equal?(k) && ctx.rooms[h].include?(home) && !avoids_either?(k, h) }.map { |h| [k, h] }
+    end
+  end
+
+  # Print producer lists for an NPC's print habit (onUse revealOutput) and needs.print mappings.
+  def self.print_producers(n)
+    prods = []
+    (n['onUse'].is_a?(Hash) ? n['onUse'].values : []).each do |h|
+      prods << VN.printer_list(h['revealOutput']) if h.is_a?(Hash) && h['revealOutput']
+    end
+    Array(n['eventMappings']).each do |em|
+      pr = em.is_a?(Hash) && em['needs'].is_a?(Hash) && em['needs']['print'].is_a?(Hash) ? em['needs']['print']['producer'] : nil
+      prods << VN.printer_list(pr) if pr
+    end
+    prods
+  end
+
+  # May npc use obj for one of `needs` (default all its needs)? A need obj satisfies, no
+  # leash/privacy rule bars it, and a fixed magnet is one it knows of (`known: false` skips that).
+  def self.can_use?(json, npc, obj, _npcs, ctx, needs = needs_of(npc), known: true)
     aff = obj.data['affordance']
     return false unless aff.is_a?(Hash)
     return false if (needs & VN.list(aff['satisfies'])).empty?
+    return false if known && fixed_magnet?(obj) && !knows?(npc, obj, ctx)
 
     VN.use_rule(json, npc, obj, ctx.home_room[npc], ctx.npc_list).nil?
   end
@@ -253,13 +384,24 @@ module ValidateOfficeLife
     q['cells'].any? { |c| c.is_a?(Hash) && num.call(c['dx']) && num.call(c['dy']) }
   end
 
-  # An object pairs two users: capacity 2 or more (_maybePair), or a queue the second joins
-  # (_tickQueueChats).
-  def self.pairs?(obj)
+  # _maxQueue: Math.max(0, floor(Number(maxQueue))), or no limit when absent or not a number.
+  def self.max_queue(n)
+    return nil if n['maxQueue'].nil?
+
+    v = js_number(n['maxQueue'])
+    v.finite? ? [0, v.floor].max : nil
+  end
+
+  # Does this object pair users a and b: capacity 2 or more (_maybePair), or a queue the second
+  # joins (_tickQueueChats), which _balks refuses an NPC whose maxQueue is 0? With no pair given,
+  # whether it can pair anyone.
+  def self.pairs?(obj, a = nil, b = nil)
     aff = obj.data['affordance']
     return false unless aff.is_a?(Hash)
+    return true if (aff['capacity'] || 1).to_i >= 2
+    return false unless queue?(aff['queue'])
 
-    (aff['capacity'] || 1).to_i >= 2 || queue?(aff['queue'])
+    a.nil? || b.nil? || max_queue(a) != 0 || max_queue(b) != 0
   end
 
   # Can NPC `n` and some compatible partner meet at an object with this chatter topic (both may use
@@ -271,9 +413,9 @@ module ValidateOfficeLife
 
       users = ctx.npc_list.select { |m| can_use?(json, m, o, npcs, ctx) }
       if n
-        users.any? { |u| u.equal?(n) } && users.any? { |m| !m.equal?(n) && compatible?(n, m) }
+        users.any? { |u| u.equal?(n) } && users.any? { |m| !m.equal?(n) && compatible?(n, m) && pairs?(o, n, m) }
       else
-        users.combination(2).any? { |a, b| compatible?(a, b) }
+        users.combination(2).any? { |a, b| compatible?(a, b) && pairs?(o, a, b) }
       end
     end
   end
@@ -283,14 +425,15 @@ module ValidateOfficeLife
   # avoid: _recheck runs only for an NPC with _avoidRadius > 0, on a use job for a deferrable need.
   # _avoidedAt then turns it back from any use object (not its own needsHome) when an NPC it
   # avoids, or that avoids it, is using it, queued for it or standing near it in its room. Any NPC
-  # counts, needs or not; groups play no part; a requireGlobal avoid counts while its global holds.
+  # counts, needs or not (it stays at its post), but not a phone contact, which has no position;
+  # groups play no part; a requireGlobal avoid counts while its global holds.
   def self.avoid_turn_back?(json, n, npcs, ctx)
     return false if avoid_radius(n) <= 0
 
     needs = needs_of(n).reject { |k| n.dig('needs', k).is_a?(Hash) && n.dig('needs', k, 'deferrable') == false }
     return false if needs.empty?
 
-    others = ctx.npc_list.reject { |m| m.equal?(n) }.select { |m| avoids_either?(n, m, conditional: true) }
+    others = ctx.npc_list.reject { |m| m.equal?(n) || m['npcType'] == 'phone' }.select { |m| avoids_either?(n, m, conditional: true) }
     return false if others.empty?
 
     ctx.world.any? do |o|
@@ -309,8 +452,8 @@ module ValidateOfficeLife
     end
   end
 
-  # gone: a magnet `n` may use (need, leash, privacy). Every magnet runs out (magnetOf: servings
-  # default 1, at most 1000), and a hidden one is gone too.
+  # gone: a magnet with servings that `n` knows of and may use (need, leash, privacy). Every such
+  # magnet runs out (magnetOf: servings default 1, at most 1000), and a hidden one is gone too.
   def self.gone_turn_back?(json, n, npcs, ctx)
     ctx.magnets.any? { |o| can_use?(json, n, o, npcs, ctx) }
   end
@@ -318,17 +461,11 @@ module ValidateOfficeLife
   # printer_off: a print source (onUse revealOutput, or a needs.print mapping) all of whose producers
   # have offWhen. _printBlocked speaks grumble_printer_off only (no fallback to grumble).
   def self.printer_off_turn_back?(_json, n, _npcs, ctx)
+    return false unless runs?(n)
+
     off = ->(id) { (o = ctx.world.find { |x| x.id == id }) && o.data['offWhen'] }
     all_off = ->(list) { !list.empty? && list.all? { |id| off.call(id) } }
-    prods = []
-    (n['onUse'].is_a?(Hash) ? n['onUse'].values : []).each do |h|
-      prods << VN.printer_list(h['revealOutput']) if h.is_a?(Hash) && h['revealOutput']
-    end
-    Array(n['eventMappings']).each do |em|
-      pr = em.is_a?(Hash) ? em.dig('needs', 'print', 'producer') : nil
-      prods << VN.printer_list(pr) if pr
-    end
-    prods.any? { |list| all_off.call(list) }
+    print_producers(n).any? { |list| all_off.call(list) }
   end
 
   # chatterPool merges the scenario pool and the NPC's own: does `n` have lines for `topic`?
@@ -357,58 +494,35 @@ module ValidateOfficeLife
     ctx.phones.select { |p| ctx.rung.include?(p.id) }
   end
 
+  # _tickRings answers for an owner only through this.states: an owner the engine does not run
+  # never picks up, and the phone rings out (or a colleague claims it).
   def self.owns_rung_phone?(n, ctx)
-    !n['id'].nil? && rung_phones(ctx).any? { |p| p.data['owner'] == n['id'] }
+    !n['id'].nil? && runs?(n) && rung_phones(ctx).any? { |p| p.data['owner'] == n['id'] }
   end
 
-  # _claimAnswerer: an answersPhones NPC, idle at its post in the phone's room (its home room is
-  # that room), that does not avoid the owner either way.
+  # _claimAnswerer: a running answersPhones NPC, idle at its post in the phone's room (its home
+  # room is that room), that does not avoid the owner either way (checked only for a running owner,
+  # as the engine reads the owner from this.states).
   def self.answers_rung_phone?(_json, n, _npcs, ctx)
-    return false unless n['answersPhones'] == true
+    return false unless n['answersPhones'] == true && runs?(n)
 
     rung_phones(ctx).any? do |p|
       owner_id = p.data['owner']
       next false if owner_id == n['id'] || ctx.home_room[n] != p.room
 
-      owner = ctx.npc_list.find { |m| m['id'] == owner_id }
+      owner = ctx.npc_list.find { |m| m['id'] == owner_id && runs?(m) }
       !(owner && avoids_either?(n, owner))
     end
   end
 
   # ── news (_sight, _tickNews, _newsHearers) ──────────────────────────────────────────────────
 
-  # The NPCs that can announce this magnet. A knower (one that can be in the magnet's room, which
-  # _sight gives it whatever its needs, or one told by a teller) tells in its own home room when
-  # that is not the magnet's room and another NPC can be there that neither avoids the other; each
-  # such hearer becomes a knower in turn. A room-less (held, droppable) magnet is not fixed.
-  def self.news_tellers(json, o, ctx)
-    return [] if magnet_of(o)['servings'].is_a?(Numeric) && magnet_of(o)['servings'] < 1
+  # The NPCs that can announce this magnet (build_rooms). A held (droppable) magnet has no
+  # fixed room, so it is not judged: whoever is near where it is dropped can tell.
+  def self.news_tellers(_json, o, ctx)
+    return ctx.npc_list.select { |n| runs?(n) } unless fixed_magnet?(o)
 
-    knows = ctx.npc_list.select { |m| can_be_in?(json, m, o.room, ctx) }
-    tellers = []
-    loop do
-      added = false
-      knows.dup.each do |k|
-        next if tellers.any? { |t| t.equal?(k) }
-
-        home = ctx.home_room[k]
-        next if o.room && home == o.room
-
-        hearers = ctx.npc_list.select { |h| !h.equal?(k) && can_be_in?(json, h, home, ctx) && !avoids_either?(k, h) }
-        next if hearers.empty?
-
-        tellers << k
-        hearers.each do |h|
-          next if knows.any? { |x| x.equal?(h) }
-
-          knows << h
-          added = true
-        end
-        added = true
-      end
-      break unless added
-    end
-    tellers
+    ctx.tellers[o] || []
   end
 
   def self.announce_triggerable?(json, topic, n, ctx)
@@ -447,10 +561,10 @@ module ValidateOfficeLife
   # [said when it can happen, said when it cannot]
   GRUMBLE_REASON = {
     'grumble' => ['an avoidance turn-back, or an off or gone turn-back with no lines of its own, can happen',
-                  'no avoidance turn-back (that needs an avoid radius and an avoided NPC who can be at a source this NPC uses), and no off or gone turn-back falls back to it'],
+                  'no avoidance turn-back, which needs an avoid radius and an avoided NPC who can be at a source this NPC uses, and no off or gone turn-back falls back to it'],
     'grumble_off' => ['a dead-machine (offWhen) turn-back can happen',
                       'no dead-machine (offWhen) turn-back can happen for a need that is not judged'],
-    'grumble_gone' => ['a magnet can run out', 'no magnet this NPC may use, so none can run out on it'],
+    'grumble_gone' => ['a magnet can run out', 'no magnet this NPC knows of and may use, so none can run out on it'],
     'grumble_printer_off' => ['a print with every listed printer off can happen',
                               'no print with every listed printer off can happen']
   }.freeze
@@ -466,11 +580,11 @@ module ValidateOfficeLife
     end
     if topic == 'phone'
       ok = who.any? { |m| owns_rung_phone?(m, ctx) }
-      return [ok, ok ? 'an owner answers a rung phone' : 'no NPC owns a desk phone that something rings']
+      return [ok, ok ? 'an owner answers a rung phone' : 'no NPC the needs engine runs owns a desk phone that something rings']
     end
     if topic == 'phone_message'
       ok = who.any? { |m| answers_rung_phone?(json, m, npcs, ctx) }
-      return [ok, ok ? 'a colleague answers a rung phone' : 'no answersPhones NPC at home in the room of another NPC\'s rung phone']
+      return [ok, ok ? 'a colleague answers a rung phone' : 'no answersPhones NPC that the needs engine runs is at home in the room of another NPC\'s rung phone']
     end
     tried = []
     if ctx.announce.key?(topic)
@@ -524,19 +638,27 @@ module ValidateOfficeLife
     # _exchangeHeard is shared by exchanges and calls: one heard_<knot> global per knot name.
     entries.each do |knot, list|
       next if list.length < 2
-      next if mirrored_pair?(list)
+      next if mirrored_pair?(list, npcs)
 
       desc = list.map { |n, kind, with| kind == 'exchange' ? "#{n['id']} exchange with #{with}" : "#{n['id']} phoneCalls" }
       issues << "⚠️ WARNING: knot '#{knot}' is used by more than one exchange or phone call (#{desc.join('; ')}); heard_#{knot} is one global by name, so hearing one silences the others."
     end
   end
 
-  # `a` lists the knot with `b` and `b` lists it with `a`: one exchange, written on both NPCs.
-  def self.mirrored_pair?(list)
+  # `a` lists the knot with `b` and `b` lists it with `a`: one exchange, written on both NPCs. A
+  # group `with` counts when the group's only other member is the partner.
+  def self.mirrored_pair?(list, npcs)
     return false unless list.length == 2 && list.all? { |_n, kind, _w| kind == 'exchange' }
 
     (a, _, wa), (b, _, wb) = list
-    !a.equal?(b) && wa == b['id'] && wb == a['id']
+    names = lambda do |n, with, partner|
+      next false unless with.is_a?(String)
+      next with == partner['id'] unless with.start_with?('group:')
+
+      members = exchange_partners(n, with, {}, npcs)
+      members.length == 1 && members.first.equal?(partner)
+    end
+    !a.equal?(b) && names.call(a, wa, b) && names.call(b, wb, a)
   end
 
   def self.exchange_partners(n, with, by_id, npcs)
@@ -552,7 +674,7 @@ module ValidateOfficeLife
     return false unless compatible?(a, b)
 
     ctx.by_topic.values.flatten.uniq.any? do |o|
-      pairs?(o) && can_use?(json, a, o, npcs, ctx) && can_use?(json, b, o, npcs, ctx)
+      pairs?(o, a, b) && can_use?(json, a, o, npcs, ctx) && can_use?(json, b, o, npcs, ctx)
     end
   end
 end
