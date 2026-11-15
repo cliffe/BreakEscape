@@ -2109,6 +2109,14 @@ boardroom_pin = "0417"
     sight, the steel filing cabinet beside his locked one hid a player picking it from
     the front (browser check, game 3180), and this catch is meant to always fire. %>
           "los": { "enabled": true, "range": 400, "angle": 360, "visualize": false, "occlusion": false },
+<%# Office life (office_life/PLAN.md 2.1): Gary sips from his own mug at his post and never
+    walks (the mug is his only source; IT's kettle is opted out). swivel false keeps his sight
+    beat as it is. After the conversation in which the keycard changes hands, the copier runs
+    once (appended, so the cabinet catch keeps its handler index). %>
+          "needsHome": "gary_mug",
+          "needsRooms": ["it_department"],
+          "swivel": false,
+          "needs": { "caffeine": { "initial": 60, "decayPerMin": 4, "urgentAt": 35 } },
           "eventMappings": [
             {
               "eventPattern": "lockpick_used_in_view",
@@ -2116,6 +2124,13 @@ boardroom_pin = "0417"
               "conversationMode": "person-chat",
               "condition": "!globalVars.accused_wrong_suspect && data.lockable.scenarioData.id === 'it_filing_cabinet'",
               "onceOnly": true
+            },
+            {
+              "eventPattern": "conversation_closed:gary_whitlock",
+              "condition": "globalVars.cover_burned === true && globalVars.gary_ko !== true",
+              "onceOnly": true,
+              "delayMs": 6000,
+              "needs": { "print": { "producer": "it_photocopier", "forget": true } }
             }
           ],
           "puzzle_graph_actions": [
@@ -3473,6 +3488,26 @@ boardroom_pin = "0417"
           "voice": { "name": "Algieba", "style": "Hospital night porter, early sixties, Filipino-British, thirty years in the job. Warm and unhurried, dry humour, a soft Filipino lilt over a Midlands base. Never raises his voice.", "language": "en-GB" },
           "globalVarOnKO": "ernesto_bautista_ko",
           "behavior": { "hostile": { "leash": true } },
+<%# Office life (office_life/PLAN.md 2.5 to 2.7): breaks at the boiler and the cooler, shared
+    with Hodan; the microwave alone. Mapped breaks: entering the staff room, the burn, leaving
+    Kim's office, and a cooler break as the player arrives from the ward. The couplings bring
+    the partner to the same object. %>
+          "needsRooms": ["staff_room"],
+          "needsCompany": { "groups": ["night_staff"] },
+          "chatterCooldownMin": 2,
+          "needs": {
+            "caffeine": { "initial": 45, "decayPerMin": 5, "urgentAt": 35, "jitterPct": 10 },
+            "thirst": { "initial": 65, "decayPerMin": 3, "urgentAt": 30 },
+            "hunger": { "initial": 70, "decayPerMin": 2, "urgentAt": 30 }
+          },
+          "eventMappings": [
+            { "eventPattern": "room_entered:staff_room", "cooldown": 120000, "delayMs": 2000, "needs": { "set": { "caffeine": 20 } } },
+            { "eventPattern": "conversation_closed:gary_whitlock", "condition": "globalVars.cover_burned === true", "onceOnly": true, "needs": { "set": { "caffeine": 20 } } },
+            { "eventPattern": "conversation_closed:dr_sarah_kim", "cooldown": 120000, "needs": { "set": { "caffeine": 20 } } },
+            { "eventPattern": "room_entered:office_corridor", "condition": "data.previousRoom === 'ward_hall'", "fireOnlyWhenLoaded": true, "cooldown": 120000, "needs": { "set": { "thirst": 20 } } },
+            { "eventPattern": "npc_use_started:staff_boiler", "condition": "data.npcId === 'hodan_warsame'", "needs": { "set": { "caffeine": 20 } } },
+            { "eventPattern": "npc_use_started:staff_cooler", "condition": "data.npcId === 'hodan_warsame'", "needs": { "set": { "thirst": 20 } } }
+          ],
           "observations": "The night porter. A two-way radio on his belt and a stack of empty specimen boxes by his feet."
         },
         {
@@ -3488,6 +3523,18 @@ boardroom_pin = "0417"
           "voice": { "name": "Laomedeia", "style": "Night domestic, early twenties, British-Somali, Birmingham accent. Quick, wry and chatty, tired but sharp; drops her voice for gossip.", "language": "en-GB" },
           "globalVarOnKO": "hodan_warsame_ko",
           "behavior": { "hostile": { "leash": true } },
+<%# Office life (office_life/PLAN.md 2.5 to 2.7): boiler and cooler breaks, coupled to Ernesto's. %>
+          "needsRooms": ["staff_room"],
+          "needsCompany": { "groups": ["night_staff"] },
+          "chatterCooldownMin": 2,
+          "needs": {
+            "caffeine": { "initial": 65, "decayPerMin": 5, "urgentAt": 35, "jitterPct": 10 },
+            "thirst": { "initial": 65, "decayPerMin": 3, "urgentAt": 30 }
+          },
+          "eventMappings": [
+            { "eventPattern": "npc_use_started:staff_boiler", "condition": "data.npcId === 'ernesto_bautista'", "needs": { "set": { "caffeine": 20 } } },
+            { "eventPattern": "npc_use_started:staff_cooler", "condition": "data.npcId === 'ernesto_bautista'", "needs": { "set": { "thirst": 20 } } }
+          ],
           "observations": "The night domestic. A radio clipped to her tabard and a bed list written on the back of something else."
         }
       ],
