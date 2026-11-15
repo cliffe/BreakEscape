@@ -1,132 +1,158 @@
 [
   {
-    "file": "m03_closing_debrief.ink",
+    "file": "m03_ghost_in_the_machine/ink/m03_closing_debrief.ink",
+    "text_md5": "0135c3918860aba65ff31a18c69f8ba8",
     "start": "their ftp note said before every healthcare job",
     "reason": "cached voice audio in tts_cache/m03_ghost_in_the_machine"
   },
   {
-    "file": "m04_closing_debrief.ink",
+    "file": "m04_critical_failure/ink/m04_closing_debrief.ink",
+    "text_md5": "d88bdf4ed02b25cf43dc9b93023112d1",
     "start": "you ran their own way in back at",
     "reason": "cached voice audio in tts_cache/m04_critical_failure"
   },
   {
-    "file": "m05_closing_debrief.ink",
+    "file": "m05_insider_trading/ink/m05_closing_debrief.ink",
+    "text_md5": "60dd8a301656559bac9497f49019b26d",
     "start": "owen was when he wasnt fixing everything else",
     "reason": "cached voice audio in tts_cache/m05_insider_trading"
   },
   {
-    "file": "npc_eleanor_vance.ink",
-    "start": "three first confirm the forensic chain cyber event",
-    "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
-  },
-  {
-    "file": "npc_eleanor_vance.ink",
-    "start": "the policy binder is there on the table",
-    "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
-  },
-  {
-    "file": "npc_eleanor_vance.ink",
-    "start": "the insuring clause confirms whether cyberphysical damage is",
-    "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
-  },
-  {
-    "file": "npc_eleanor_vance.ink",
-    "start": "look for three things 1 how did the",
-    "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
-  },
-  {
-    "file": "npc_eleanor_vance.ink",
-    "start": "when you can answer all three and connect",
-    "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
-  },
-  {
-    "file": "npc_eleanor_vance.ink",
-    "start": "at the time of the incident albion still",
-    "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
-  },
-  {
-    "file": "npc_eleanor_vance.ink",
-    "start": "w09 is serious its account hygiene a basic",
-    "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
-  },
-  {
-    "file": "npc_eleanor_vance.ink",
-    "start": "its material but secondary the breach doesnt directly",
-    "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
-  },
-  {
-    "file": "npc_eleanor_vance.ink",
-    "start": "thats a conversation for after we determine our",
-    "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
-  },
-  {
-    "file": "npc_eleanor_vance.ink",
-    "start": "the albion incident a single battery storage facility",
-    "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
-  },
-  {
-    "file": "npc_eleanor_vance.ink",
-    "start": "but more than that think about the precedent",
-    "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
-  },
-  {
-    "file": "npc_eleanor_vance.ink",
-    "start": "complete the form based on everything youve reviewed",
-    "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
-  },
-  {
-    "file": "npc_eleanor_vance.ink",
-    "start": "insurance is not just financial protection its a",
-    "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
-  },
-  {
-    "file": "npc_eleanor_vance.ink",
-    "start": "in practice that meant four distinct securityinformed safety",
-    "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
-  },
-  {
-    "file": "npc_eleanor_vance.ink",
-    "start": "the problem is that mechanism fails if we",
-    "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
-  },
-  {
-    "file": "npc_eleanor_vance.ink",
+    "file": "sis03_cyber_insurance/ink/npc_eleanor_vance.ink",
+    "text_md5": "a3ad75a357474d2e9622aecae68a419e",
     "start": "albion has fortyeight hours to either accept our",
     "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
   },
   {
-    "file": "npc_eleanor_vance.ink",
-    "start": "thats a generous position it shows you read",
+    "file": "sis03_cyber_insurance/ink/npc_eleanor_vance.ink",
+    "text_md5": "28779af83ee4413763ea5322b2156dd4",
+    "start": "at the time of the incident albion still",
     "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
   },
   {
-    "file": "npc_eleanor_vance.ink",
+    "file": "sis03_cyber_insurance/ink/npc_eleanor_vance.ink",
+    "text_md5": "6c3b4a5035a63be6be07665598973b84",
+    "start": "but more than that think about the precedent",
+    "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
+  },
+  {
+    "file": "sis03_cyber_insurance/ink/npc_eleanor_vance.ink",
+    "text_md5": "842611ff62fd7529dff0eb4ec0ebbd5c",
+    "start": "complete the form based on everything youve reviewed",
+    "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
+  },
+  {
+    "file": "sis03_cyber_insurance/ink/npc_eleanor_vance.ink",
+    "text_md5": "7eff026f8cef896821cc7b4caaefde10",
     "start": "i hope you reviewed the underwriting file carefully",
     "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
   },
   {
-    "file": "npc_eleanor_vance.ink",
-    "start": "thats why w03 matters educationally as much as",
-    "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
-  },
-  {
-    "file": "npc_eleanor_vance.ink",
+    "file": "sis03_cyber_insurance/ink/npc_eleanor_vance.ink",
+    "text_md5": "3840578e59c9c2c2dbc2b3f1c79444f4",
     "start": "if that message spreads if every critical infrastructure",
     "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
   },
   {
-    "file": "npc_eleanor_vance.ink",
+    "file": "sis03_cyber_insurance/ink/npc_eleanor_vance.ink",
+    "text_md5": "c61b8f0be2efdcdb2e62a49a1d4a7050",
+    "start": "in practice that meant four distinct securityinformed safety",
+    "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
+  },
+  {
+    "file": "sis03_cyber_insurance/ink/npc_eleanor_vance.ink",
+    "text_md5": "5ae15685d07feed2e5e3ab2fa4b9c3f0",
+    "start": "insurance is not just financial protection its a",
+    "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
+  },
+  {
+    "file": "sis03_cyber_insurance/ink/npc_eleanor_vance.ink",
+    "text_md5": "b6f569f9f1b20b96393a3848a01b8c22",
+    "start": "its material but secondary the breach doesnt directly",
+    "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
+  },
+  {
+    "file": "sis03_cyber_insurance/ink/npc_eleanor_vance.ink",
+    "text_md5": "586aaffcbee3e9a909700ec8d03a30ad",
+    "start": "look for three things 1 how did the",
+    "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
+  },
+  {
+    "file": "sis03_cyber_insurance/ink/npc_eleanor_vance.ink",
+    "text_md5": "07e20cdc0aae20ba5aecf435a815c3a0",
+    "start": "thats a conversation for after we determine our",
+    "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
+  },
+  {
+    "file": "sis03_cyber_insurance/ink/npc_eleanor_vance.ink",
+    "text_md5": "62f2c941da70017d4bd273413ecce1ed",
+    "start": "thats a generous position it shows you read",
+    "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
+  },
+  {
+    "file": "sis03_cyber_insurance/ink/npc_eleanor_vance.ink",
+    "text_md5": "9ab28a7b9690e87d4604cef1e4431ec5",
     "start": "thats the final claim in the chain insurance",
     "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
   },
   {
-    "file": "scenario.json.erb",
-    "start": "note the evidence gap in exhibit b the",
+    "file": "sis03_cyber_insurance/ink/npc_eleanor_vance.ink",
+    "text_md5": "ae7d8586ac56eba1d580bb6462768f70",
+    "start": "thats why w03 matters educationally as much as",
     "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
   },
   {
-    "file": "scenario.json.erb",
+    "file": "sis03_cyber_insurance/ink/npc_eleanor_vance.ink",
+    "text_md5": "dfda7ad300b0d53d58eea8aa322bff67",
+    "start": "the albion incident a single battery storage facility",
+    "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
+  },
+  {
+    "file": "sis03_cyber_insurance/ink/npc_eleanor_vance.ink",
+    "text_md5": "b05ec887db48cce49d8606c5347c4ef8",
+    "start": "the insuring clause confirms whether cyberphysical damage is",
+    "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
+  },
+  {
+    "file": "sis03_cyber_insurance/ink/npc_eleanor_vance.ink",
+    "text_md5": "6b5826626f57fad88bfc27c7b8e6bf29",
+    "start": "the policy binder is there on the table",
+    "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
+  },
+  {
+    "file": "sis03_cyber_insurance/ink/npc_eleanor_vance.ink",
+    "text_md5": "812698ad4bf0548d1a2c6ef4a6d5c15b",
+    "start": "the problem is that mechanism fails if we",
+    "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
+  },
+  {
+    "file": "sis03_cyber_insurance/ink/npc_eleanor_vance.ink",
+    "text_md5": "8c0ca6b58e2b8654973398292bdd8088",
+    "start": "three first confirm the forensic chain cyber event",
+    "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
+  },
+  {
+    "file": "sis03_cyber_insurance/ink/npc_eleanor_vance.ink",
+    "text_md5": "eb91ff40bdeaf95009b6a35d53788572",
+    "start": "w09 is serious its account hygiene a basic",
+    "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
+  },
+  {
+    "file": "sis03_cyber_insurance/ink/npc_eleanor_vance.ink",
+    "text_md5": "f48bab55be7056c360309d0de9f00df2",
+    "start": "when you can answer all three and connect",
+    "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
+  },
+  {
+    "file": "sis03_cyber_insurance/scenario.json.erb",
+    "text_md5": "a7f91c953a38d6a448000bd75090897a",
     "start": "eleanor vance warranty assessment recorded youve now pinned",
+    "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
+  },
+  {
+    "file": "sis03_cyber_insurance/scenario.json.erb",
+    "text_md5": "d9f2cc2bad9de8ea6b0490cbd03f8411",
+    "start": "note the evidence gap in exhibit b the",
     "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
   }
 ]

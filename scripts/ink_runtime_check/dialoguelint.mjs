@@ -14,22 +14,34 @@
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
 
 export const CAPS = { person: 30, phone: 25, text: 30, choice: 15 };
 
 // Lines over the word cap that already have cached voice audio. Changing the text would re-key the
 // clip (a new paid generation), so such a line is reported as a WARN with its reason, never an
-// ERROR. The list is wordcap_audio_exempt.json beside this file: { file, start, reason } where file
-// is the basename, start is the line's first words after the TTS normalisation (lower case, no
-// punctuation). A line that has no audio gets no entry: split it instead. Keep entries narrow.
+// ERROR. The list is wordcap_audio_exempt.json beside this file: { file, text_md5, start, reason }.
+// file is the path under scenarios/ (for example sis03_cyber_insurance/ink/npc_eleanor_vance.ink or
+// sis03_cyber_insurance/scenario.json.erb), text_md5 is the MD5 of the whole line after the TTS
+// normalisation (lower case, no punctuation, single spaces; the same text the clip key is built
+// from), and start is the first eight normalised words, for humans only. The match is the full text,
+// so any edit to the line, even in its last word, makes it an ERROR again. A line that has no audio
+// gets no entry: split it instead. A line carrying a #delivery tag keys its clip on different text,
+// so check the clip before adding such a line. Entries that no longer match a live over-cap line
+// are stale; test/js/dialoguelint-wordcap-exempt.test.mjs fails on them.
 export const WORD_CAP_AUDIO_EXEMPT = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'wordcap_audio_exempt.json'), 'utf8'));
-const ttsNormalise = t => String(t).toLowerCase().replace(/[^\w\s]/g, '').trim().replace(/\s+/g, ' ');
+export const ttsNormalise = t => String(t).toLowerCase().replace(/[^\w\s]/g, '').trim().replace(/\s+/g, ' ');
+export const normalisedMd5 = t => createHash('md5').update(ttsNormalise(t)).digest('hex');
+/** Does this exemption entry cover this file path (any prefix, matched on whole path segments)? */
+const fileMatches = (file, entryFile) => {
+  const p = String(file || '').replace(/\\/g, '/');
+  return p === entryFile || p.endsWith('/' + entryFile);
+};
 /** The finding for an over-cap line: an error, or a warn when the line has an exempt clip. */
 export function capFinding(finding, file, list = WORD_CAP_AUDIO_EXEMPT) {
-  const base = basename(file || '');
-  const n = ttsNormalise(finding.text);
-  const hit = list.find(e => e.file === base && n.startsWith(e.start));
-  return hit ? { ...finding, level: 'warn', note: `over the cap but has cached voice audio, text frozen: ${hit.reason}` } : finding;
+  const md5 = normalisedMd5(finding.text);
+  const hit = list.find(e => fileMatches(file, e.file) && e.text_md5 === md5);
+  return hit ? { ...finding, level: 'warn', exemptMd5: md5, note: `over the cap but has cached voice audio, text frozen: ${hit.reason}` } : finding;
 }
 
 // ---------- AI-tell and house-style rules (applied to spoken text, choice text, texts) ----------

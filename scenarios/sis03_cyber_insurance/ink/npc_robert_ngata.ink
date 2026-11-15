@@ -215,7 +215,7 @@ Insurance is the financial consequence mechanism.
 
 If a critical infrastructure operator knows that a security failure will result in an insurance claim denial, they take the failure seriously.
 
-But if they know that an insurance claim will be denied specifically because a nation-state was involved, because the exclusion applies to state-sponsored attacks, the incentive flips.
+But if they know a claim will be denied because a nation-state was involved, under the state-sponsored attack exclusion, the incentive flips.
 
 It becomes: "Why invest in security against nation-states? The insurance won't cover it anyway."
 
