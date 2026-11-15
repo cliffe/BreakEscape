@@ -162,3 +162,63 @@ the wiring and that no carry path calls `removeItemFromRoom`, but it stubs
 `RoomStateSync`, so it does not exercise a server refusal (m2) or the knockout
 drop (M1). Add a knockout-while-carrying model test and a forged-sync duplication
 test.
+
+## Outcomes
+
+All seven findings fixed on branch build/ol-carry (commit c3bd46ba0, after the
+merge of train 80 into the branch). Slice C is pulled forward (KO drop and the
+delivery clear).
+
+- **M1 fixed.** A KO while carrying now ends the carry as a KO put-down.
+  `ko_drop_carried!` (game.rb) lands the object once in the KO room from the
+  scenario definition and deletes `npcCarry[npc]`. It trusts the recorded KO, not a
+  client room claim: the NPC must be `npc_defeated?` or `npc_ko_claimable?`, and a
+  claimable-but-unrecorded KO is recorded by the drop, the same trust as
+  `add_item_to_room!`'s `npc_defeated` branch. On the client, `dropNPCItems`
+  (npc-hostile.js) splits `_needsCarried` items out of the generic gift drop and
+  routes them to a new `koDropCarried` world method, which re-shows the live carried
+  sprite in the KO room and calls the new `ko_drop_carried` action. The object is
+  served exactly once, on the floor. Covered by a Rails model test (KO drop lands one
+  and clears the carry; a drop with no KO record is refused) and a JS test.
+- **M2 fixed.** `merge_npc_carry!` is now reconcile-only: it keeps an incoming entry
+  only when the action path already wrote it (a matching stored entry, or the object
+  recorded removed from its `fromRoom`), so a forged `sync_state` cannot mint a
+  carry. As a second guard, `apply_npc_carry!` serves the held item only when the
+  object is recorded removed from its origin room, so a stored entry without that
+  removal is inert. Two Rails tests: a forged sync drops the entry and does not serve
+  the object in both places; a directly forced stored entry with no removal is never
+  served held.
+- **m1 fixed.** `carriable_object_index` excludes any id named as a requirement
+  elsewhere: `lock_referenced_object_ids` collects the values of lock, key, card,
+  unlock and objective-requirement fields across the scenario, and a candidate whose
+  id is in that set is dropped from the allowlist. Only those named reference keys
+  are read, so ordinary dressing stays carriable. Rails test: a `usb_stick` with a
+  `needsTag` that a terminal `requires` is refused, while `office_mugs` stays
+  carriable.
+- **m2 fixed.** The client carry calls no longer fire and forget. On a `false`
+  result, `carryObject` undoes the local pick-up (`_uncarryToOrigin`, object back in
+  its origin room) and `putDownObject`/`consumeCarried` reinstate the held record
+  (`_reinstateHeld`), so the client stops diverging from the server. Two JS tests (a
+  refused carry restores the object; a refused consume reinstates the held item).
+- **m3 fixed.** `consume_carried` no longer runs the client-named-room unlocked gate;
+  it acts only on the server-verified `npcCarry` entry and names no room to change.
+- **m4 fixed.** `record_npc_gift!` clears `npcCarry[npc]` when a carried object is
+  delivered to the player, so `apply_npc_carry!` stops re-serving it held even
+  without an inventory entry.
+- **m5 fixed.** `pickUp` skips the `itemsHeld` mirror and the `carryObject` call for
+  a reveal slot, and `placeHeld` skips the `putDownObject` call for one, so a reveal
+  slot (the copier output) touches neither the server carry nor `itemsHeld`. The six
+  live 422s for `copier_out_a` are gone. JS test: a slot pick-up sends no server
+  carry and is not mirrored into `itemsHeld`.
+- **Live finding (tour row 1 `see_queue_chat`).** This branch cannot affect the
+  coffee queue chat: the queue chat is a needs-system social exchange with no carry,
+  put-down, KO or allowlist path, and none of the carry changes touch its code. The
+  R1 miss (151 s, not compared against a run without the branch) is a flake. The
+  re-run row 1 result is recorded in the plan doc's live table.
+
+Verification: Rails `npc_carried_items_test` 20 runs, 74 assertions, 0 failures;
+`reload_persistence_test` + `forged_ko_drop_test` + `game_test` 190 runs, 801
+assertions, 0 failures. `bin/test-js` 677 files passed, 0 failed (the carry wiring
+test now 9 tests). rubocop 0 offences on the changed files. Live proof on :3095 is
+in the plan doc, with 0 `Completed 422` in the whole server log, the copier
+included.

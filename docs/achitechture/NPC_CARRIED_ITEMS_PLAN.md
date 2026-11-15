@@ -1,9 +1,12 @@
 # NPC carried items: server-tracked held items
 
-## Build status (slices A and B done; slice C out of scope)
+## Build status (slices A and B done; slice C KO drop and delivery pulled forward in R1 fixes)
 
-Slices A (server) and B (client wiring) are built and tested. Slice C (KO while
-carrying, reload mid-carry) is not built; its hooks are noted below.
+Slices A (server) and B (client wiring) are built and tested. The R1 review fixes
+(commit c3bd46ba0) pull the slice C KO-while-carrying drop and the delivery clear
+forward. Reload mid-carry is already correct server-side (served held, never
+duplicated). See the "R1 fix outcomes" in NPC_CARRIED_ITEMS_REVIEW_R1.md and the
+"R1 fixes live proof" table below.
 
 Design as built, differences from the plan:
 
@@ -410,3 +413,24 @@ before, mid-carry, after and after an `about:blank` reload.
 | train-smoke m01 and m02 (games 5524, 5525) | PASS | `TRAIN-SMOKE 2 games, 0 failed` |
 
 Not done: KO while carrying and reload mid-carry (slice C).
+
+### R1 fixes live proof (keyless server :3095 from the worktree)
+
+Fresh `test_needs_sims` games, one per beat, headless at `setFPS(20)` with fixed
+steps on. Driver `tools/playtest/npc-carry-live-proof.mjs` (beats `consume`,
+`drop`, and the new `ko` beat that KOs Grace mid-carry); tour row 1 by
+`tools/playtest/needs-tour-regression.mjs`. The copier NPC (Amara) runs through the
+same sim, so its reveal-slot flow is exercised in every run.
+
+| Beat | Game | Requests (status) | Result |
+|---|---|---|---|
+| Mug consume at the tray | 5545 | carry_object 200, consume_carried 200 | PASS. 0 page/console errors. After the tray use and an about:blank reload the mug is gone from office, kitchen and lounge. |
+| Mug put-down (suspended mid-carry) | 5550 | carry_object 200, put_down_object 200 | PASS. 0 errors. Exactly one `office_mugs` sprite after the reload (office, visible), none duplicated. |
+| KO while carrying | 5551 | carry_object 200, update_npc_state 200 (KO recorded), ko_drop_carried 200 | PASS. 0 errors. Grace KO'd in the office; exactly one `office_mugs` on the KO room floor at the drop spot (px 119.5, py 112.1), none in the kitchen, Grace's `itemsHeld` empty, not also served in the hand; one mug sprite after the reload. |
+| README tour row 1 (`see_queue_chat`) | 5554 | n/a (queue chat, no carry path) | PASS (row 1 `ok`, 68 s; rows 3, 5, 6 also `ok`; 0 errors). Confirms the R1 miss was a flake: this branch has no code on the queue-chat path. |
+
+Server log (all beats share the :3095 server): **0 `Completed 422` in the whole
+log**, and 0 `Completed` 4xx or 5xx of any kind. The previous six `copier_out_a`
+422s are gone: with the m5 fix the client sends no carry or put-down for a reveal
+slot (0 copier carry/put-down requests captured in any run). The copier object is
+still served in room fetches, so its client-only place-then-file flow is unchanged.

@@ -73,7 +73,18 @@ if (!carrying) { report.fail = 'Grace never picked up the mugs'; }
 else {
     await t(1500);
     report.steps.carryFetch = { office: await fetchRoom('office'), kitchen: await fetchRoom('kitchen'), grace: await graceState() };
-    if (beat === 'drop') {
+    if (beat === 'ko') {
+        // KO Grace mid-carry: make her hostile so she has a combat state, then knock her
+        // out. dropNPCItems ends the needs-carry as a KO put-down (ko_drop_carried), so the
+        // mug lands once on the KO room floor and npcCarry clears.
+        report.steps.ko = await page.evaluate(() => {
+            try { window.npcHostileSystem?.setNPCHostile?.('grace', true); } catch (e) {}
+            const before = window.npcHostileSystem?.getState?.('grace');
+            const ok = window.npcHostileSystem?.damageNPC?.('grace', 99999);
+            return { ok, isKO: window.npcHostileSystem?.isNPCKO?.('grace'), room: window.npcBehaviorManager?.getBehavior?.('grace')?.roomId, hadState: !!before };
+        });
+        await t(4000);
+    } else if (beat === 'drop') {
         report.steps.suspend = await page.evaluate(() => window.npcNeedsSystem.control('grace', 'suspend'));
         await t(3000);
     } else {
