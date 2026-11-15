@@ -1396,8 +1396,9 @@ export function settleOnContact(npcBehavior, npcSprite, otherNPC) {
  * 
  * @param {Phaser.Sprite} npcSprite - NPC sprite that collided
  * @param {Phaser.Sprite} otherNPC - Other NPC sprite it collided with
+ * @private exported for unit tests
  */
-function handleNPCCollision(npcSprite, otherNPC) {
+export function handleNPCCollision(npcSprite, otherNPC) {
     if (!npcSprite || !otherNPC || npcSprite.destroyed || otherNPC.destroyed) {
         return;
     }

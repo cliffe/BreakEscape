@@ -1758,6 +1758,10 @@ const POST_FETCH_RETRY_MS = FETCH_TIMEOUT_MS;
 // short is not repeated for the rest of the session (code review R1, M2): then seat_gave_up, stand
 export const POST_SEAT_RETRY_MAX = 3;
 export const POST_FETCH_RETRY_MAX = 2;
+// A seat_gave_up ends after this much needs clock, or when a job starts after it, and the stop
+// starts over (code review R2, m3): an NPC whose jobs are all at its own desk keeps one stop key,
+// so a give-up caused by a passing obstacle used to last the session.
+export const SEAT_GIVE_UP_MS = 120000;
 // A chair another NPC fetched this recently (needs clock) is theirs: two chairless fetchers at
 // nearby posts do not take one chair back and forth on their retries (code review R1, m6)
 export const FETCH_CLAIM_MS = 60000;
@@ -2060,7 +2064,15 @@ function updateNeedsSeat(behavior, ns, playerPos) {
         behavior._fetchRetries = 0;
         behavior._seatGaveUp = false;
     }
-    if (retry && behavior._seatGaveUp) return false;
+    if (retry && behavior._seatGaveUp) {
+        const job = window.npcNeedsSystem?.states?.get?.(behavior.npcId)?.job;
+        const since = behavior._seatGaveUpAt ?? now;
+        if (now - since < SEAT_GIVE_UP_MS && !(job && job.startedAt > since)) return false;
+        behavior._fetchTriedAt = undefined;   // the give-up has expired: the stop starts over
+        behavior._seatRetries = 0;
+        behavior._fetchRetries = 0;
+        behavior._seatGaveUp = false;
+    }
     behavior._seatStopKey = stop.key;
     behavior._seatTriedAt = now;
     if (!hasSitFrames(sprite.texture.key)) return false;
@@ -2076,6 +2088,7 @@ function updateNeedsSeat(behavior, ns, playerPos) {
     const free = c => !chairAtOtherPost({ x: c.obj.x + c.obj.width / 2, y: c.obj.y + c.obj.height }, feet, posts);
     const giveUp = () => {
         behavior._seatGaveUp = true;
+        behavior._seatGaveUpAt = now;
         window.npcNeedsSystem?._log?.(behavior.npcId, 'seat_gave_up',
             { stop: stop.key, seatRetries: behavior._seatRetries || 0, fetchRetries: behavior._fetchRetries || 0 });
         return false;

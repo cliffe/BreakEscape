@@ -214,3 +214,43 @@ test('settleOnContact: settles against a movable NPC body and not against an imm
     assert.deepEqual(settled, [1234], 'triggerSettling not called again');
     assert.equal(vel.length, 1, 'and the walker keeps its velocity, sliding along the held body');
 });
+
+// Code review R2 m7: drive handleNPCCollision itself, so a dropped local (the otherHeld
+// ReferenceError of games 5458 and 5459) throws here, not in a live game
+test('handleNPCCollision: settles and inserts a side step against a movable body; slides along a held one', async () => {
+    const { handleNPCCollision } = await import('../../public/break_escape/js/systems/npc-sprites.js');
+    const behaviours = {};
+    const prevManager = window.npcBehaviorManager;
+    const prevRooms = window.rooms;
+    window.npcBehaviorManager = { getBehavior: id => behaviours[id] };
+    window.rooms = {};   // no wallCollisionBoxes: every direction is safe; no roomData: no waypoint insert
+    const make = () => {
+        const settled = [];
+        const vel = [];
+        const b = {
+            currentState: 'patrol', patrolTarget: { x: 200, y: 100 }, roomId: 'office', direction: 'right',
+            waypointIndex: 0, _stopOnArrival: false,
+            config: { patrol: { waypoints: [{ tileX: 6, tileY: 3, worldX: 200, worldY: 100 }] } },
+            clockNow: () => 5000, triggerSettling: t => settled.push(t)
+        };
+        const sprite = { npcId: 'marek', x: 100, y: 100, body: { setVelocity: (x, y) => vel.push([x, y]) } };
+        return { b, sprite, settled, vel };
+    };
+    try {
+        const one = make();
+        behaviours.marek = one.b;
+        handleNPCCollision(one.sprite, { npcId: 'tom', x: 116, y: 100, body: { immovable: false } });
+        assert.ok(one.settled.length >= 1, 'a movable body: the walker settles');
+        assert.ok(one.vel.every(v => v[0] === 0 && v[1] === 0), 'and stops');
+
+        const two = make();
+        behaviours.marek = two.b;
+        handleNPCCollision(two.sprite, { npcId: 'sanjay', x: 116, y: 100, body: { immovable: true } });
+        assert.deepEqual(two.settled, [], 'a held (seated) body: no settle at all');
+        assert.deepEqual(two.vel, [], 'velocity untouched: physics slides it along');
+        assert.equal(two.b.config.patrol.waypoints.length, 1, 'no waypoint inserted without room data');
+    } finally {
+        window.npcBehaviorManager = prevManager;
+        window.rooms = prevRooms;
+    }
+});

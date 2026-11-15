@@ -6,7 +6,7 @@
 // Run with: node test/js/npc-needs-stuck-walk.test.mjs
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { NPCNeedsSystem, NEEDS_TICK_MS, RETURN_YIELD_MS, STUCK_TRIES, RETURN_STUCK_BACKOFF_MS, RETURN_STUCK_MAX_BACKOFFS, RETURN_FINAL_REPLAN_MS } from '../../public/break_escape/js/systems/npc-needs.js';
+import { NPCNeedsSystem, NEEDS_TICK_MS, RETURN_YIELD_MS, STUCK_TRIES, RETURN_STUCK_BACKOFF_MS, RETURN_STUCK_MAX_BACKOFFS, RETURN_FINAL_REPLAN_MS, RETURN_FINAL_REPLANS, REROUTE_DEADLINE_GRACE_MS, STUCK_SAME_PX, STUCK_NUDGE_REACH_PX } from '../../public/break_escape/js/systems/npc-needs.js';
 import { makeWorld } from './fixtures/needs-stub-world.mjs';
 
 function office() {
@@ -137,17 +137,19 @@ test('a far arrival on the way home is re-issued round other bodies', () => {
     assert.equal(homeMoves(w, sys).at(-1).reroute, true);
 });
 
-test('a wedged outbound leg re-routes keeping its deadline, then logs walk_stuck once and the deadline fails it', () => {
+test('a wedged outbound leg re-routes keeping its deadline (one grace), then logs walk_stuck once and the deadline fails it', () => {
     const { sys, w } = toGoto();
     const job = sys.states.get('clerk').job;
-    const deadline = job.deadline;
+    const deadline = job.deadline + REROUTE_DEADLINE_GRACE_MS;   // code review R2 m6: one grace per job
     sys.step(RETURN_YIELD_MS + NEEDS_TICK_MS);
     const rr = evs(sys, 'walk_rerouted');
     assert.equal(rr.length, 1);
     assert.equal(rr[0].phase, 'goto_target');
     assert.equal(w.calls.moves.at(-1).reroute, true);
-    assert.equal(sys.states.get('clerk').job.deadline, deadline, 'a re-route does not extend the deadline');
-    for (let i = 0; i < STUCK_TRIES + 2; i++) sys.step(RETURN_YIELD_MS + NEEDS_TICK_MS);
+    assert.equal(sys.states.get('clerk').job.deadline, deadline, 'the first re-route adds one grace');
+    sys.step(RETURN_YIELD_MS + NEEDS_TICK_MS);
+    assert.equal(sys.states.get('clerk').job.deadline, deadline, 'later re-routes add nothing');
+    for (let i = 0; i < STUCK_TRIES + 1; i++) sys.step(RETURN_YIELD_MS + NEEDS_TICK_MS);
     assert.equal(evs(sys, 'walk_rerouted').length, STUCK_TRIES, 'no re-route after giving up');
     assert.equal(evs(sys, 'walk_stuck').length, 1, 'one walk_stuck line');
     sys.step(Math.max(0, deadline - sys.clockMs) + NEEDS_TICK_MS);
@@ -225,4 +227,56 @@ test('m7: a job picked during a back-off clears the back-off, so the walk home a
     assert.equal(sys.getState('clerk').mode, 'job');
     assert.equal(s.returnStuckUntil, 0, 'no stale back-off');
     assert.equal(s.returnBackoffs, 0);
+});
+
+// Code review R2 M1: a nudge longer than STUCK_SAME_PX used to start a new place, so a walk home
+// nudged in and out of one wedge re-routed for ever and never reached return_abandoned
+test('R2 M1: a walk home nudged 28 px back and forth in one wedge still backs off and is abandoned', () => {
+    const { sys, w } = toReturning();
+    assert.ok(28 > STUCK_SAME_PX, "a nudge longer than one place");   // and up to the 32 px nudge cap
+    let seen = homeMoves(w, sys).length;
+    let guard = 0;
+    while (!evs(sys, 'return_abandoned').length && guard++ < 2000) {
+        sys.step(NEEDS_TICK_MS);
+        const moves = homeMoves(w, sys);
+        for (; seen < moves.length; seen++) {
+            if (moves[seen].nudge) w.pos.clerk.x = w.pos.clerk.x === 200 ? 228 : 200;   // the nudge, then held back in the wedge
+        }
+    }
+    assert.ok(homeMoves(w, sys).some(m => m.nudge), 'the nudge ran');
+    assert.equal(evs(sys, 'return_stuck').length, 1, 'return_stuck comes');
+    assert.equal(evs(sys, 'return_abandoned').length, 1, 'and the walk is abandoned, not re-routed for ever');
+    assert.ok(evs(sys, 'return_resumed').length <= 2 * STUCK_TRIES + 2, 'a bounded number of re-routes');
+});
+
+// Code review R2 m2: the final abandon's late re-plans are spaced RETURN_FINAL_REPLAN_MS apart and
+// capped at RETURN_FINAL_REPLANS; then it idles until a job moves it
+test('R2 m2: late re-plans after a final abandon come RETURN_FINAL_REPLAN_MS apart, at most RETURN_FINAL_REPLANS', () => {
+    const { sys, w } = toReturning();
+    let guard = 0;
+    while (!evs(sys, 'return_abandoned').some(e => e.final) && guard++ < 4000) sys.step(NEEDS_TICK_MS);
+    assert.ok(evs(sys, 'return_abandoned').at(-1).final);
+    const starts = [];
+    let lastFinal = sys.clockMs;
+    let finals = evs(sys, 'return_abandoned').length;
+    let late = 0;
+    const st = sys.states.get('clerk');
+    for (let i = 0; i < 12 * 60 * 4; i++) {   // 12 minutes of needs clock, no need urgent (a job would end it)
+        st.levels.caffeine = 100;
+        const before = homeMoves(w, sys).length;
+        sys.step(NEEDS_TICK_MS);
+        const ab = evs(sys, 'return_abandoned').length;
+        if (ab > finals) { finals = ab; lastFinal = sys.clockMs; }
+        const now = st.returnAbandon?.late || 0;
+        if (now > late) {
+            assert.equal(homeMoves(w, sys).length, before + 1, 'a late try is one walk home');
+            starts.push(sys.clockMs - lastFinal);
+        }
+        late = now;
+    }
+    assert.equal(starts.length, RETURN_FINAL_REPLANS, 'three late walks home, then no more');
+    assert.ok(starts.every(dt => dt >= RETURN_FINAL_REPLAN_MS - NEEDS_TICK_MS), 'each a full interval after the last abandon');
+    assert.ok(evs(sys, 'return_abandoned').slice(-RETURN_FINAL_REPLANS).every(e => e.final), 'each ends in a final abandon');
+    assert.equal(sys.getState('clerk').mode, 'idle', 'then it idles there');
+    assert.ok(sys.clockMs - lastFinal > 4 * RETURN_FINAL_REPLAN_MS, 'for minutes, with no fourth try');
 });

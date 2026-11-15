@@ -44,16 +44,29 @@ const RETURN_STILL_PX = 4;    // less than this between ticks counts as standing
 // RETURN_STUCK_BACKOFF_MS before trying again; an outbound leg logs walk_stuck and waits for its deadline.
 export const STUCK_SAME_PX = 24;
 export const STUCK_TRIES = 3;
+// The last re-route in one place nudges the body onto the nearest walkable cell, up to one tile
+// (NPC_STUCK_NUDGE_MAX_PX in npc-behavior.js). After a nudge the place reaches this much further,
+// so a stall where the nudge moved it, or back in the wedge, still counts in the same place
+// (code review R2, M1: a 28 px nudge used to start a new place and re-route for ever).
+export const STUCK_NUDGE_REACH_PX = 32;
 export const RETURN_STUCK_BACKOFF_MS = 15000;
 // Round 7 (game 5431: 8 minutes of back-offs in one place): after this many back-offs in the same
 // place the walk home ends (`return_abandoned`): the NPC idles where it stands and the next tick
 // re-plans from scratch (the selector first, else a fresh walk home). A second abandon in the same
-// place leaves it idle there until a job moves it, so the cycle can never run for ever.
+// place is final: only RETURN_FINAL_REPLANS late walks home follow, then it idles there until a
+// job moves it, so the cycle cannot run for ever.
 export const RETURN_STUCK_MAX_BACKOFFS = 2;
-// After a final abandon the NPC tries one more walk home this long later (needs clock), so a
+// After a final abandon the NPC tries another walk home this long later (needs clock), so a
 // player who held it in a corridor and walked away does not leave it standing there for minutes
-// (code review R1, m2). At most one search per this long, so the cycle stays cheap.
+// (code review R1, m2). At most RETURN_FINAL_REPLANS such late tries in one place (code review
+// R2, m2), then it idles until a job moves it on.
 export const RETURN_FINAL_REPLAN_MS = 60000;
+export const RETURN_FINAL_REPLANS = 3;
+// An outbound leg's deadline comes from the straight-line distance. The first re-route round
+// held bodies may take a longer path, so it adds this much once per job (code review R2, m6).
+// Once only: the needs layer does not see the new path's length, and the deadline must still end
+// a leg that re-routes from place to place.
+export const REROUTE_DEADLINE_GRACE_MS = 15000;
 const CAUGHT_RADIUS = 48;    // px (1.5 tiles) from the home approach cell: "you were in my chair"
 export const NOTICED_MS = 3000;   // getState().noticed after npc_caught_at_post (the "noticed" action icon)
 
@@ -1506,7 +1519,8 @@ export class NPCNeedsSystem {
             s.returnBackoffs = 0;
             this._startJob(s, pick);
         } else if (s.returnAbandon && s.mode === 'idle' && !s.atPost
-            && (s.returnAbandon.replan || this.clockMs - s.returnAbandon.at >= RETURN_FINAL_REPLAN_MS)) {
+            && (s.returnAbandon.replan || ((s.returnAbandon.late || 0) < RETURN_FINAL_REPLANS
+                && this.clockMs - s.returnAbandon.at >= RETURN_FINAL_REPLAN_MS))) {
             this._replanAbandoned(s);
         } else if (this.selectBackoff && this._selectSearched) {
             // A free target it could not reach, or an item with nowhere to take it: searching
@@ -4065,7 +4079,7 @@ export class NPCNeedsSystem {
             const backoffs = (s.returnBackoffs || 0) + 1;
             if (backoffs > RETURN_STUCK_MAX_BACKOFFS) { this._abandonReturn(s, pos); return; }
             s.returnBackoffs = backoffs;
-            s.stall = { x: pos.x, y: pos.y, tries: 1 };   // the next stall here re-routes at once
+            s.stall = { x: pos.x, y: pos.y, tries: 1, nudged: !!s.stall?.nudged };   // the next stall here re-routes at once
             s.returnWatch = null;
             s.returnStuckUntil = this.clockMs + RETURN_STUCK_BACKOFF_MS;
             this.world.cancelMove(s.npcId);
@@ -4079,6 +4093,7 @@ export class NPCNeedsSystem {
         // The 3 s re-issue always comes before the behaviour layer's 4 s stuck watch (a new path re-arms
         // it), so its nudge onto a walkable cell never runs for a needs walk; the last re-route in one
         // place does that nudge itself (code review R1, m3)
+        if (tries === STUCK_TRIES) s.stall.nudged = true;   // the place now reaches past the nudge (R2 M1)
         this._goHome(s, { yieldToPlayer: false, keepFarFlag: true, reroute: tries > 1, nudge: tries === STUCK_TRIES });
         s.returnWatch = { x: pos.x, y: pos.y, since: this.clockMs };
     }
@@ -4087,11 +4102,14 @@ export class NPCNeedsSystem {
      * End a walk home that backed off RETURN_STUCK_MAX_BACKOFFS times in one place: idle where it
      * stands (`return_abandoned`). `s.returnAbandon` asks the next tick for a fresh plan
      * (_replanAbandoned); a second abandon within STUCK_SAME_PX of the first is final: no quick
-     * re-plan, only one late one per RETURN_FINAL_REPLAN_MS of needs clock.
+     * re-plan, only one late one per RETURN_FINAL_REPLAN_MS of needs clock, RETURN_FINAL_REPLANS
+     * at most in that place.
      */
     _abandonReturn(s, pos) {
         const prev = s.returnAbandon;
-        const again = !!(prev && Math.hypot(pos.x - prev.x, pos.y - prev.y) <= STUCK_SAME_PX);
+        const nudged = !!s.stall?.nudged;
+        const reach = STUCK_SAME_PX + (nudged || prev?.nudged ? STUCK_NUDGE_REACH_PX : 0);
+        const again = !!(prev && Math.hypot(pos.x - prev.x, pos.y - prev.y) <= reach);
         this.world.cancelMove(s.npcId);
         s.mode = 'idle';
         s.returnMoveId = null;
@@ -4099,7 +4117,8 @@ export class NPCNeedsSystem {
         s.returnStuckUntil = 0;
         s.returnBackoffs = 0;
         s.stall = null;
-        s.returnAbandon = { x: pos.x, y: pos.y, replan: !again, tick: this.tickCount, at: this.clockMs };
+        s.returnAbandon = { x: pos.x, y: pos.y, replan: !again, tick: this.tickCount, at: this.clockMs,
+            nudged: nudged || (again && !!prev.nudged), late: again ? (prev.late || 0) : 0 };
         this._log(s.npcId, 'return_abandoned', { x: Math.round(pos.x), y: Math.round(pos.y), final: again || undefined });
     }
 
@@ -4107,16 +4126,20 @@ export class NPCNeedsSystem {
     _replanAbandoned(s) {
         const a = s.returnAbandon;
         if (!a || s.mode !== 'idle' || s.atPost || s.job || this.tickCount <= a.tick) return;   // the next tick, not this one
-        if (!a.replan && !(this.clockMs - a.at >= RETURN_FINAL_REPLAN_MS)) return;
+        if (!a.replan && (!(this.clockMs - a.at >= RETURN_FINAL_REPLAN_MS) || (a.late || 0) >= RETURN_FINAL_REPLANS)) return;
+        if (!a.replan) a.late = (a.late || 0) + 1;   // a late try after a final abandon (R2 m2)
         a.replan = false;
         a.at = this.clockMs;   // a final abandon's late re-plan: once per RETURN_FINAL_REPLAN_MS
         this._goHome(s, { yieldToPlayer: false, reroute: true });
     }
 
-    /** Count a stalled walk: another try when within STUCK_SAME_PX of the last stall, else the first. */
+    /**
+     * Count a stalled walk: another try when within STUCK_SAME_PX of the last stall (plus
+     * STUCK_NUDGE_REACH_PX once that place has nudged the body), else the first.
+     */
     _stallTry(s, pos) {
         const st = s.stall;
-        if (st && Math.hypot(pos.x - st.x, pos.y - st.y) <= STUCK_SAME_PX) st.tries++;
+        if (st && Math.hypot(pos.x - st.x, pos.y - st.y) <= STUCK_SAME_PX + (st.nudged ? STUCK_NUDGE_REACH_PX : 0)) st.tries++;
         else s.stall = { x: pos.x, y: pos.y, tries: 1 };
         return s.stall.tries;
     }
@@ -4124,7 +4147,8 @@ export class NPCNeedsSystem {
     /**
      * Outbound counterpart of _watchReturn (OFFICE_LIFE_STUCK_RETURN.md): a goto_item or
      * goto_target leg that has not moved RETURN_STILL_PX for RETURN_YIELD_MS is re-issued round
-     * other bodies (`walk_rerouted`), keeping the job's deadline; after STUCK_TRIES re-routes in
+     * other bodies (`walk_rerouted`), keeping the job's deadline (one grace on the first
+     * re-route, REROUTE_DEADLINE_GRACE_MS); after STUCK_TRIES re-routes in
      * one place it logs `walk_stuck` once and stops, and the deadline fails the job (`timeout`).
      * @returns {boolean} true when the job ended here
      */
@@ -4142,7 +4166,7 @@ export class NPCNeedsSystem {
         if (this.clockMs - w.since < RETURN_YIELD_MS) return false;
         if (!job.stall || job.stall.phase !== job.phase) job.stall = null;
         const st = job.stall;
-        if (st && Math.hypot(pos.x - st.x, pos.y - st.y) <= STUCK_SAME_PX) st.tries++;
+        if (st && Math.hypot(pos.x - st.x, pos.y - st.y) <= STUCK_SAME_PX + (st.nudged ? STUCK_NUDGE_REACH_PX : 0)) st.tries++;
         else job.stall = { x: pos.x, y: pos.y, tries: 1, phase: job.phase };
         const tries = job.stall.tries;
         if (tries > STUCK_TRIES) {
@@ -4156,7 +4180,10 @@ export class NPCNeedsSystem {
             return false;
         }
         this._log(s.npcId, 'walk_rerouted', { phase: job.phase, x: Math.round(pos.x), y: Math.round(pos.y) });
-        const deadline = job.deadline;
+        if (tries === STUCK_TRIES) job.stall.nudged = true;   // the place reaches past the nudge (R2 M1)
+        // The first re-route may take a longer path round held bodies: one grace per job (R2 m6)
+        const deadline = job.deadline + (job.rerouteGrace ? 0 : REROUTE_DEADLINE_GRACE_MS);
+        job.rerouteGrace = true;
         this._moveForPhase(s, { reroute: true, nudge: tries === STUCK_TRIES });
         if (s.job === job) {
             job.deadline = deadline;

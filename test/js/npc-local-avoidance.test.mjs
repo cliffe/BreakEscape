@@ -363,6 +363,8 @@ test('m3: a needs re-route with nudge steps onto the nearest walkable cell first
     b.sprite.body.reset = (x, y) => { reset = { x, y }; };
     b.npcBodyPos = () => ({ x: 0, y: 0 });
     window.seating = null;
+    window.player = null;
+    window.rooms = {};
     quiet(() => b.goToAndStay(400, 0, 90, { owner: 'needs', reroute: true, nudge: true }));
     assert.deepEqual(reset, { x: 10, y: 0 }, 'nudged 10 px onto the walkable cell');
     reset = null;
@@ -370,4 +372,32 @@ test('m3: a needs re-route with nudge steps onto the nearest walkable cell first
     assert.equal(reset, null, 'no nudge without the flag');
     quiet(() => b.goToAndStay(400, 0, 90, { owner: 'script', nudge: true }));
     assert.equal(reset, null, 'and never for a script move');
+});
+
+// Code review R2 m1: the needs nudge has the same player-beside guard as _checkPathStuck, only
+// leaves a grid-blocked cell, and never lands on another moving body
+test('R2 m1: no needs nudge with the player beside, from a walkable cell, or onto a moving body', () => {
+    let cell = { x: 20, y: 0 };
+    const pf = { findNearestWalkableStartCell: () => cell };
+    const b = walker({ pathfinder: pf });
+    let reset = null;
+    b.sprite.body.reset = (x, y) => { reset = { x, y }; };
+    b.npcBodyPos = () => ({ x: 0, y: 0 });
+    window.seating = null;
+    window.rooms = {};
+    const go = () => { reset = null; quiet(() => b.goToAndStay(400, 0, 90, { owner: 'needs', reroute: true, nudge: true })); return reset; };
+    window.player = { body: { enable: true, center: { x: -30, y: 0 } } };
+    assert.equal(go(), null, 'the player beside: no nudge');
+    window.player = { body: { enable: true, center: { x: -200, y: 0 } } };
+    assert.deepEqual(go(), { x: 20, y: 0 }, 'the player well away: the nudge runs');
+    cell = { x: 3, y: 3 };
+    assert.equal(go(), null, 'a walkable cell of its own: only a re-centre, so no nudge');
+    cell = { x: 20, y: 0 };
+    const other = { npcId: 'tom', body: { enable: true, immovable: false, center: { x: 24, y: 2 } } };
+    window.rooms = { office: { npcSprites: [other] } };
+    assert.equal(go(), null, 'the cell under another moving body: no nudge');
+    other.body.immovable = true;
+    assert.deepEqual(go(), { x: 20, y: 0 }, 'a held body is the grid search\'s business, not this guard\'s');
+    window.rooms = {};
+    window.player = null;
 });

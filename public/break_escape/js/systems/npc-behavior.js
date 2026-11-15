@@ -38,6 +38,8 @@ export const NPC_STUCK_MS = 4000;
 export const NPC_STUCK_MOVE_PX = TILE_SIZE / 2;
 const NPC_STUCK_GAP_MS = 500;
 const NPC_STUCK_NUDGE_MAX_PX = TILE_SIZE;   // never nudge further than one tile
+const NPC_NUDGE_OWN_CELL_PX = 6;    // half an 8 px grid cell's diagonal: the nearest walkable centre is the body's own cell
+const NPC_NUDGE_BODY_PX = 14;       // a needs nudge keeps this far from another moving body's centre
 const NPC_STUCK_PLAYER_PX = TILE_SIZE * 1.5; // the player this close: not wedged, held up
 // Wedged this close to a route waypoint that carries an action (unlockRoom at a badge
 // reader), the NPC has arrived: a chair or another body is standing on the spot.
@@ -1406,6 +1408,19 @@ export class NPCBehavior {
         return true;
     }
 
+    /**
+     * May a needs re-route nudge the body from (x, y)? (code review R2, m1) Only when its cell is
+     * grid-blocked (a walkable cell's nearest centre is its own, under NPC_NUDGE_OWN_CELL_PX
+     * away, and the nudge would only re-centre it), never with the player beside it (as
+     * _checkPathStuck), and never onto a cell another moving body covers.
+     */
+    _needsNudgeSafe(pfm, x, y) {
+        if (this._playerBeside(x, y)) return false;
+        const cell = pfm.findNearestWalkableStartCell?.(x, y);
+        if (!cell || (cell.x - x) ** 2 + (cell.y - y) ** 2 < NPC_NUDGE_OWN_CELL_PX ** 2) return false;
+        return !this._dynamicBlockers().some(b => (b.x - cell.x) ** 2 + (b.y - cell.y) ** 2 < NPC_NUDGE_BODY_PX ** 2);
+    }
+
     /** Is the player's body within NPC_STUCK_PLAYER_PX of (x, y)? */
     _playerBeside(x, y) {
         const p = window.player;
@@ -1693,6 +1708,7 @@ export class NPCBehavior {
             if (rooms?.length) opts.avoidRooms = rooms;
             pfm.findWorldPath(from.x, from.y, target.x, target.y, (path) => {
                 if (this.patrolTarget !== target) { a.pending = false; this._avoid = null; return; }  // re-targeted meanwhile
+                if (this._avoid !== a) { a.pending = false; return; }   // avoidance cleared or replaced meanwhile (R2 m4)
                 if (path && path.length > 0) {
                     a.pending = false;
                     this.currentPath = path;
@@ -3102,7 +3118,7 @@ export class NPCBehavior {
         if (this._moveReroute && opts?.nudge && this.sprite?.body) {
             const pfm = this.pathfindingManager || window.pathfindingManager;
             const at = this.npcBodyPos();
-            if (pfm) this._nudgeToWalkable(pfm, at.x, at.y);
+            if (pfm && this._needsNudgeSafe(pfm, at.x, at.y)) this._nudgeToWalkable(pfm, at.x, at.y);
         }
         if (opts?.owner !== 'needs') window.npcNeedsSystem?.onExternalMove?.(this.npcId, opts?.owner);
         // Stop current movement

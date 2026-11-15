@@ -146,6 +146,14 @@ console.log('row 5', JSON.stringify(report.rows[5]));
 
 // Row 6: the Kitchen Rota, then wait in the kitchen
 report.rows[6] = { rota: await read('kitchen_rota') };
+// The row 5 chat met Sanjay's social need, and the README says row 6 will not tick straight after
+// it: wait a few minutes, or read the rota when his S bar turns amber. Rather than wait, set his
+// social need just under its urgentAt (40) with the scenario's own needs command, as the Activity
+// Board mapping does, so it falls due while Marek holds the cooler.
+report.rows[6].sanjay_social = await page.evaluate(() => {
+    window.npcNeedsSystem.control('sanjay', { set: { social: 35 } });
+    return window.npcNeedsSystem.getState('sanjay')?.levels?.social ?? null;
+});
 await page.evaluate(() => window.__test.moveToNear('water_cooler', { timeoutMs: 20000 })).catch(() => null);
 report.rows[6].wait = await waitTasks(['see_outcast'], 180000);
 report.rows[6].ok = report.rows[6].wait.ok;

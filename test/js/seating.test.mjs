@@ -1096,6 +1096,42 @@ test('M2: post seat retries stop after POST_SEAT_RETRY_MAX when every seat move 
     } finally { rig.restore(); }
 });
 
+// Code review R2 m3 and m7: a give-up expires after SEAT_GIVE_UP_MS (one stop key can last the
+// session), and a new stop key resets the counts through updateSeatedNPC
+test('R2 m3: seat_gave_up expires after SEAT_GIVE_UP_MS; a new stop key resets the retry counts', () => {
+    const rig = labSeatRig(235);
+    const log = [];
+    const tryOnce = () => {
+        const started = seating.updateSeatedNPC(rig.behavior, null) && !!rig.behavior._seatMove;
+        rig.behavior._seatMove = null;
+        rig.behavior.isMoving = false;
+        window.npcNeedsSystem.clockMs += 4000;
+        return started;
+    };
+    try {
+        window.npcNeedsSystem._log = (npc, ev, data) => log.push({ npc, ev, ...data });
+        for (let i = 0; i < 6; i++) tryOnce();
+        assert.equal(log.filter(e => e.ev === 'seat_gave_up').length, 1);
+        assert.equal(rig.behavior._seatGaveUp, true);
+        let starts = 0;
+        const until = window.npcNeedsSystem.clockMs + seating.SEAT_GIVE_UP_MS - 12000;
+        while (window.npcNeedsSystem.clockMs < until) if (tryOnce()) starts++;
+        assert.equal(starts, 0, 'stands through the give-up');
+        for (let i = 0; i < 6 && !starts; i++) if (tryOnce()) starts++;
+        assert.equal(starts, 1, 'then the stop starts over and the seat move runs again');
+        assert.equal(rig.behavior._seatGaveUp, false);
+        // a new stop key resets every count, whatever they were
+        rig.behavior._seatRetries = 2;
+        rig.behavior._fetchRetries = 1;
+        rig.behavior._seatGaveUp = true;
+        rig.behavior._seatStopKey = 'at:somewhere_else';
+        tryOnce();
+        assert.equal(rig.behavior._seatGaveUp, false, 'a new stop: no give-up');
+        assert.ok((rig.behavior._seatRetries || 0) <= 1, 'retry count started again');
+        assert.equal(rig.behavior._fetchRetries || 0, 0);
+    } finally { rig.restore(); }
+});
+
 test('M2 and m6: retry caps per kind and a recent fetch claims the chair for its fetcher', () => {
     assert.equal(seating.postRetryAllowed('seat', 0), true);
     assert.equal(seating.postRetryAllowed('seat', seating.POST_SEAT_RETRY_MAX - 1), true);
