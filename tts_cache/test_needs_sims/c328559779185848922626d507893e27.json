@@ -1,0 +1,13 @@
+{
+  "key": "c328559779185848922626d507893e27",
+  "npc": "neil",
+  "text": "This machine takes forever.",
+  "voice": "Charon",
+  "style": "IT support engineer, mid forties, white British, Geordie accent. Dry, settled, unhurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:27:53Z"
+}

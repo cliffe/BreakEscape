@@ -1,0 +1,13 @@
+{
+  "key": "bd50ae81ff2b4dd6ea9d5c65238d8580",
+  "npc": "jodie",
+  "text": "Hiya. Jodie, maintenance. On call for whatever breaks, mostly the kettle.",
+  "voice": "Leda",
+  "style": "Maintenance assistant, mid twenties, Glaswegian accent. Quick, warm, practical.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:13:14Z"
+}

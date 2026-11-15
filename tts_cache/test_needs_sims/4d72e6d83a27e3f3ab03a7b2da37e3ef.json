@@ -1,0 +1,13 @@
+{
+  "key": "4d72e6d83a27e3f3ab03a7b2da37e3ef",
+  "npc": "tom",
+  "text": "Anyone watching the match tonight?",
+  "voice": "Charon",
+  "style": "Sales assistant, late twenties, white British, Yorkshire accent. Cheerful and easily distracted.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:17:08Z"
+}

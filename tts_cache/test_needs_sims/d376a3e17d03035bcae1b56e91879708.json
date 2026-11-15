@@ -1,0 +1,13 @@
+{
+  "key": "d376a3e17d03035bcae1b56e91879708",
+  "npc": "jodie",
+  "text": "Printer's off. Brilliant.",
+  "voice": "Leda",
+  "style": "Maintenance assistant, mid twenties, Glaswegian accent. Quick, warm, practical.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:34:27Z"
+}

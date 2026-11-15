@@ -1,0 +1,13 @@
+{
+  "key": "ce004544ad27b5178a2772a565326da8",
+  "npc": "sanjay",
+  "text": "Who keeps taking the mugs?",
+  "voice": "Puck",
+  "style": "Developer, mid twenties, British Indian, Leicester accent. Polite and a little shy.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:21:52Z"
+}

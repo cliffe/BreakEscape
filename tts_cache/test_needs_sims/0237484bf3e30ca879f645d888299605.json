@@ -1,0 +1,13 @@
+{
+  "key": "0237484bf3e30ca879f645d888299605",
+  "npc": "marek",
+  "text": "I'll get a drink at the cooler when I'm parched. They tend to wait until I've gone.",
+  "voice": "Orus",
+  "style": "Telecoms contractor, fifties, Polish-born, years in the UK. Gruff but not unfriendly.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:11:17Z"
+}

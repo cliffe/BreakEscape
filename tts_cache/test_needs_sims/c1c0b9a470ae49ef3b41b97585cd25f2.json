@@ -1,0 +1,13 @@
+{
+  "key": "c1c0b9a470ae49ef3b41b97585cd25f2",
+  "npc": "marek",
+  "text": "Is it raining again?",
+  "voice": "Orus",
+  "style": "Telecoms contractor, fifties, Polish-born, years in the UK. Gruff but not unfriendly.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:24:14Z"
+}

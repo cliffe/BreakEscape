@@ -1,0 +1,13 @@
+{
+  "key": "8128c0e3662c5d387a8dddd7dfaa3510",
+  "npc": "jodie",
+  "text": "Strong one today?",
+  "voice": "Leda",
+  "style": "Maintenance assistant, mid twenties, Glaswegian accent. Quick, warm, practical.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:33:23Z"
+}

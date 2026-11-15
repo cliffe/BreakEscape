@@ -1,0 +1,13 @@
+{
+  "key": "aab58dadf1a82d2707f2660abb979b47",
+  "npc": "keith",
+  "text": "Boiler does a proper brew. Best thing about nights, that.",
+  "voice": "Orus",
+  "style": "Night security officer, mid fifties, white British, West Country (Bristol) accent. Steady, dry, unhurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:13:03Z"
+}

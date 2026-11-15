@@ -1,0 +1,13 @@
+{
+  "key": "e40308e078c3473a1ae4b4303fa1310b",
+  "npc": "amara",
+  "text": "Morning. I'm at my desk, apart from the coffee runs.",
+  "voice": "Aoede",
+  "style": "Office administrator, thirties, British Nigerian, London accent. Warm and quick.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:08:47Z"
+}

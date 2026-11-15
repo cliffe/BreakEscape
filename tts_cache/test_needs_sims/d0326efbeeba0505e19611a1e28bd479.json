@@ -1,0 +1,13 @@
+{
+  "key": "d0326efbeeba0505e19611a1e28bd479",
+  "npc": "rosa",
+  "text": "Ah. Swap with Tom, he owes you one.",
+  "voice": "Leda",
+  "style": "Team lead, forties, Spanish-born, years in the UK. Relaxed and friendly.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:11:00Z"
+}

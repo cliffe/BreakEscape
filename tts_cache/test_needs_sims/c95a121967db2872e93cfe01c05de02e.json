@@ -1,0 +1,13 @@
+{
+  "key": "c95a121967db2872e93cfe01c05de02e",
+  "npc": "jodie",
+  "text": "Not bad, you?",
+  "voice": "Leda",
+  "style": "Maintenance assistant, mid twenties, Glaswegian accent. Quick, warm, practical.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:33:54Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "a5780cd227b6781351407b5ada69e8fc",
+  "npc": "keith",
+  "text": "Friday drinks again?",
+  "voice": "Orus",
+  "style": "Night security officer, mid fifties, white British, West Country (Bristol) accent. Steady, dry, unhurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:30:56Z"
+}

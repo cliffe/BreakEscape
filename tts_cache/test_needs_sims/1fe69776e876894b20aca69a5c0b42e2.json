@@ -1,0 +1,13 @@
+{
+  "key": "1fe69776e876894b20aca69a5c0b42e2",
+  "npc": "jodie",
+  "text": "Who keeps taking the mugs?",
+  "voice": "Leda",
+  "style": "Maintenance assistant, mid twenties, Glaswegian accent. Quick, warm, practical.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:33:26Z"
+}

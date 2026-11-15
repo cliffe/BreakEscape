@@ -1,0 +1,13 @@
+{
+  "key": "ba4e0f8640cd7bdb2a7d33318061fa78",
+  "npc": "jodie",
+  "text": "Boiler takes an age.",
+  "voice": "Leda",
+  "style": "Maintenance assistant, mid twenties, Glaswegian accent. Quick, warm, practical.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:32:29Z"
+}

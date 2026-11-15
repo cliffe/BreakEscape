@@ -1,0 +1,13 @@
+{
+  "key": "a1e5f9caa4dd681fa5efbf160954c821",
+  "npc": "neil",
+  "text": "Cake! It's somebody's birthday.",
+  "voice": "Charon",
+  "style": "IT support engineer, mid forties, white British, Geordie accent. Dry, settled, unhurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:29:41Z"
+}

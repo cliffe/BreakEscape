@@ -1,0 +1,13 @@
+{
+  "key": "8f4a0ec8d52d65db717861add6a1ec96",
+  "npc": "tom",
+  "text": "Cake! It's somebody's birthday.",
+  "voice": "Charon",
+  "style": "Sales assistant, late twenties, white British, Yorkshire accent. Cheerful and easily distracted.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:19:16Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "f7ae36dc3b76a65d3f9424a312e59521",
+  "npc": "keith",
+  "text": "No coffee here, then.",
+  "voice": "Orus",
+  "style": "Night security officer, mid fifties, white British, West Country (Bristol) accent. Steady, dry, unhurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:31:42Z"
+}
