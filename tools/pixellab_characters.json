@@ -266,7 +266,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-11-15"
+    "imported": "2026-11-15",
+    "sit_from": "89d8a68a-f140-4ed7-9ad9-6cd6b7a19739"
   },
   "farah_qureshi": {
     "character_id": "39dfe7c3-8ef6-45b5-a240-d74e93f46ecd",
@@ -527,6 +528,7 @@
       "height": 60
     },
     "imported": "2026-11-15",
+    "sit_from": "f13c749b-24f8-4e80-9fa8-bbcbea32759b",
     "white_threshold": 185
   },
   "ibrahim_diallo": {
