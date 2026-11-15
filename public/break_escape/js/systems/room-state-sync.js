@@ -345,14 +345,21 @@ export async function batchUpdateRoomState(updates) {
 }
 
 /**
- * Internal: POST one update_room action and report success. The server validates
+ * Internal: POST one update_room action and report the outcome. The server validates
  * every field; the client never names an arbitrary room for a carried item.
+ *
+ * Returns true on a committed success, false ONLY on a true server refusal
+ * (an HTTP response whose body is `success: false`), and null on a transport error
+ * where the request may or may not have reached the server (review R2 m4). Carry
+ * callers reconcile their optimistic state on a strict `=== false` (a refusal the
+ * server owns) and leave it untouched on null, letting the next room fetch reconcile,
+ * so a dropped response never undoes a change the server actually committed.
  */
 async function postRoomAction(body) {
     const gameId = window.breakEscapeConfig?.gameId;
     if (!gameId) {
         console.error('Cannot sync room state: gameId not available');
-        return false;
+        return null;
     }
     try {
         const response = await fetch(`/break_escape/games/${gameId}/update_room`, {
@@ -363,13 +370,27 @@ async function postRoomAction(body) {
             },
             body: JSON.stringify(body)
         });
+        if (!response.ok) {
+            // A definite refusal (a 4xx that is not a timeout or rate limit: the room
+            // is locked, the NPC does not carry it, a mismatch) is one the client
+            // reconciles against. A 5xx, 408 or 429 is transient: the server may have
+            // committed, so leave the optimistic state for the next room fetch.
+            if (isDefiniteRefusal(response)) {
+                console.warn(`❌ Refused ${body.actionType}: ${response.status}`);
+                return false;
+            }
+            console.warn(`⚠️ Transient failure syncing ${body.actionType}: ${response.status}`);
+            return null;
+        }
         const result = await response.json();
         if (result.success) return true;
-        console.warn(`❌ Failed to sync ${body.actionType}: ${result.message}`);
+        console.warn(`❌ Refused ${body.actionType}: ${result.message}`);
         return false;
     } catch (error) {
-        console.error(`Error syncing ${body.actionType}:`, error);
-        return false;
+        // No usable response (network loss, parse failure): the server may have
+        // committed. Do not reconcile; the next room fetch will.
+        console.error(`Error syncing ${body.actionType} (transport):`, error);
+        return null;
     }
 }
 

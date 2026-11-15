@@ -5625,19 +5625,25 @@ export function createEngineWorld() {
             if (!held) return;
             delete rec._needsCarried[itemId];
             if (Array.isArray(rec.itemsHeld)) rec.itemsHeld = rec.itemsHeld.filter(i => !(i && i._needsCarried && i.id === itemId));
-            try { held.sprite.destroy?.(); } catch (e) { /* already gone */ }
+            const sp = held.sprite;
+            const sd = sp?.scenarioData || {};
+            // Hide the carried sprite but keep it until the server confirms (review R2 m3):
+            // on a refusal the NPC still holds it server-side, so _reinstateHeld gets this
+            // same sprite back and the hand is never left holding an invisible item.
+            // Destroy it only once the consume is confirmed.
+            try { sp?.setVisible?.(false); if (sp) sp.interactable = false; sp?.disableInteractive?.(); } catch (e) { /* already gone */ }
             // Used up: tell the server the NPC consumed it, so the carry is cleared
             // and a reload keeps it gone. No room is named (the old remove_object sent
             // the carrier's room and 422'd), so there is no wrong-room failure.
             const npcRoom = W().npcBehaviorManager?.getBehavior?.(npcId)?.roomId || held.roomId;
-            const sd = held.sprite?.scenarioData || {};
-            // On a server refusal the NPC still holds it server-side, so reinstate the
-            // held record rather than leaving the client diverged (review R1 m2).
             try {
                 Promise.resolve(W().RoomStateSync?.consumeCarried?.(npcId, itemId, npcRoom))
-                    .then(ok => { if (ok === false) this._reinstateHeld(npcId, itemId, { roomId: held.roomId, key: held.key, type: sd.type, name: sd.name }); })
+                    .then(ok => {
+                        if (ok === false) this._reinstateHeld(npcId, itemId, { sprite: sp, roomId: held.roomId, key: held.key, type: sd.type, name: sd.name });
+                        else { try { sp?.destroy?.(); } catch (e) { /* already gone */ } }
+                    })
                     .catch(() => {});
-            } catch (e) { /* offline */ }
+            } catch (e) { try { sp?.destroy?.(); } catch (er) { /* ok */ } }
         },
         dropHeld(npcId, itemId) {
             const rec = W().npcManager?.getNPC?.(npcId);
@@ -5781,7 +5787,17 @@ export function createEngineWorld() {
                     const room = W().rooms?.[toRoom] || W().rooms?.[held.roomId];
                     if (room) { room.objects = room.objects || {}; room.objects[held.key] = sp; sp.roomId = toRoom; }
                 }
-                try { Promise.resolve(W().RoomStateSync?.koDropObject?.(npcId, itemId, toRoom, pos ? { px: pos.x, py: pos.y } : null)).catch(() => {}); } catch (e) { /* offline */ }
+                // On a server refusal the carry survives server-side, so the floor copy
+                // the client just drew is not backed (review R2 m5). Reinstate the held
+                // record pointing at the drop room, which removes that floor copy and puts
+                // the object back in the hand, matching the server until the KO catches up.
+                const sd = sp?.scenarioData || {};
+                const heldKey = held.key;
+                try {
+                    Promise.resolve(W().RoomStateSync?.koDropObject?.(npcId, itemId, toRoom, pos ? { px: pos.x, py: pos.y } : null))
+                        .then(ok => { if (ok === false) this._reinstateHeld(npcId, itemId, { sprite: sp, roomId: toRoom, key: heldKey, type: sd.type, name: sd.name }); })
+                        .catch(() => {});
+                } catch (e) { /* offline */ }
                 dropped.push(itemId);
             }
             return dropped;

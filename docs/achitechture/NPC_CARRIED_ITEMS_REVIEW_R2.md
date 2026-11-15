@@ -207,3 +207,42 @@ Delta sync stays bounded and idempotent: `merge_npc_carry!` rebuilds each entry 
 `{itemId, fromRoom}` only, caps at `MAX_NPC_VISIBILITY` and returns without
 writing when exceeded. M1 is a correctness break in which entries are kept, not a
 growth or idempotency break.
+
+## Outcomes
+
+All six findings fixed on branch `build/ol-carry`.
+
+- **M1 (fixed).** `merge_npc_carry!` now keeps an incoming entry only on
+  `matches_stored`; the `object_removed_from_room?` alternative is gone. The carry
+  action writes the stored `npcCarry` entry atomically with the origin removal and
+  saves it (via `remove_item_from_room!`), so a legitimate carry, including one made
+  then reloaded before the sync, still reconciles through `matches_stored`. A carry
+  that has ended (consume or put-down) has no stored entry, so a replayed or forged
+  sync cannot revive it from the append-only removal marker. Tests added:
+  stale-sync-after-consume and stale-sync-after-put-down, each asserting the carry is
+  not re-minted, not served held, and not duplicated.
+- **m1 (fixed).** `ko_drop_carried!` now requires `npc_in_room?(npc_id, room_id)`
+  before writing the `isKO` record in the claimable-but-unrecorded branch, matching
+  `add_item_to_room!` and `update_npc_state!`. The object drop still lands in
+  `room_id`; only the fake-KO record is gated. Tests added: a forged KO drop in a
+  room the NPC is not in records no KO and leaves the NPC in play, and a drop in the
+  NPC's own room records the KO as before.
+- **m2 (fixed).** `requiresItem`, `targetObject`, `targetId`, `objectId` added to
+  `LOCK_REFERENCE_KEYS`, plus `unlockedBy` (a real unlock reference found by grep;
+  names account/key ids). A scenario grep found no other field naming a required
+  object id. Test added: a needs-tagged object named by `requiresItem` or an
+  objective `targetObject` is excluded from the carriable allowlist.
+- **m3 (fixed).** `consumeHeld` now hides the carried sprite and keeps it until the
+  server confirms: on a refusal `_reinstateHeld` restores the record with the same
+  sprite (no invisible held item); on a confirmed consume the sprite is destroyed.
+  JS tests added for both.
+- **m4 (fixed).** `postRoomAction` now returns `false` only on a definite refusal (a
+  parsed `success: false`, or a 4xx that is not 408/429, via `isDefiniteRefusal`) and
+  `null` on a transport error (5xx/408/429/network loss). Carry callers reconcile on
+  a strict `=== false` only, so a dropped response no longer undoes a committed
+  change. JS tests added at the `postRoomAction` level (success/422/500/429/network)
+  and the engine level (a transport error does not undo a carry or reinstate a
+  consume).
+- **m5 (fixed).** `koDropCarried` now handles the server result: on a refusal it
+  reinstates the held record pointing at the drop room, which removes the unbacked
+  floor copy and returns the object to the hand. JS test added.

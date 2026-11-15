@@ -331,5 +331,93 @@ module BreakEscape
       assert_equal({ 'itemId' => 'office_mugs', 'fromRoom' => 'office' }, carry_state['grace'], 'extra keys dropped')
       assert_equal 1, carry_state.size, 'bounded by the NPC count'
     end
+
+    # === R2 M1: a stale sync must not re-mint a carry that has ended ==========
+    # The origin-room removal is append-only, so a replayed sync that arrives after
+    # the carry ended must be reconciled against the live stored entry only, never
+    # revived from the standing removal marker.
+
+    test 'a stale npcCarry sync replayed after a consume does not re-mint the ended carry' do
+      build
+      carry('grace', 'office_mugs') # entry written, office objects_removed gains office_mugs
+      consume('grace', 'office_mugs') # entry deleted, origin removal stays
+      assert_nil carry_state['grace'], 'carry ended on the consume'
+
+      # A sync the client had queued before the consume, replaying the old entry.
+      body = { npcCarry: { 'grace' => { 'itemId' => 'office_mugs', 'fromRoom' => 'office' } } }
+      put sync_state_game_url(@game), params: body.merge(clientTs: 2000), as: :json
+      assert_response :success
+
+      assert carry_state.blank?, 'consumed carry not re-minted by a stale sync'
+      assert_not npc_held('office', 'grace').to_a.any? { |i| i['id'] == 'office_mugs' }, 'consumed mug not served held again'
+      assert_not room_objects('office').any? { |o| o['id'] == 'office_mugs' }, 'consumed mug not duplicated back onto the floor'
+    end
+
+    test 'a stale npcCarry sync replayed after a put-down does not duplicate the object' do
+      build
+      carry('grace', 'office_mugs')
+      put_down('grace', 'office_mugs', room: 'kitchen', position: { px: 50, py: 60 })
+      assert_nil carry_state['grace'], 'carry ended on the put-down'
+
+      body = { npcCarry: { 'grace' => { 'itemId' => 'office_mugs', 'fromRoom' => 'office' } } }
+      put sync_state_game_url(@game), params: body.merge(clientTs: 2000), as: :json
+      assert_response :success
+
+      assert carry_state.blank?, 'ended carry not re-minted by a stale sync'
+      assert_not npc_held('office', 'grace').to_a.any? { |i| i['id'] == 'office_mugs' }, 'not served held again'
+      assert_equal 1, room_objects('kitchen').select { |o| o['id'] == 'office_mugs' }.size, 'exactly one mug, not duplicated'
+    end
+
+    # === R2 m1: a KO drop cannot forge a KO record in a room the NPC is not in =
+
+    test 'ko_drop_carried does not record a KO for an encountered unfought NPC in a room it is not in' do
+      build('encounteredNPCs' => %w[grace])
+      carry('grace', 'office_mugs') # grace is in the office, never fought, no KO record
+      post update_room_game_url(@game), params: {
+        roomId: 'kitchen', actionType: 'ko_drop_carried',
+        data: { npcId: 'grace', itemId: 'office_mugs', position: { px: 10, py: 20 } }
+      }, as: :json
+
+      g = @game.reload
+      assert_nil g.player_state.dig('room_states', 'kitchen', 'npc_states', 'grace', 'isKO'),
+                 'no fake KO recorded in a room grace was never in'
+      assert_not g.npc_defeated?('grace'), 'grace is not knocked out of play by the forged drop'
+    end
+
+    test 'ko_drop_carried records the KO when the NPC is in the drop room' do
+      build('encounteredNPCs' => %w[grace])
+      carry('grace', 'office_mugs')
+      post update_room_game_url(@game), params: {
+        roomId: 'office', actionType: 'ko_drop_carried',
+        data: { npcId: 'grace', itemId: 'office_mugs', position: { px: 10, py: 20 } }
+      }, as: :json
+      assert_response :success
+
+      g = @game.reload
+      assert_equal true, g.player_state.dig('room_states', 'office', 'npc_states', 'grace', 'isKO'),
+                   'KO recorded in the room grace is in'
+      assert g.npc_defeated?('grace'), 'grace is knocked out'
+    end
+
+    # === R2 m2: lock cross-reference covers item-requirement and target keys ===
+
+    test 'a needs-tagged object named by requiresItem or an objective targetObject is not carriable' do
+      build
+      g = @game.reload
+      g.scenario_data['rooms']['office']['objects'] << {
+        'type' => 'usb_stick', 'id' => 'kit_badusb', 'name' => 'BadUSB', 'takeable' => true, 'needsTag' => 'dirty_mugs'
+      }
+      g.scenario_data['rooms']['office']['objects'] << {
+        'type' => 'terminal', 'id' => 'drop_terminal', 'name' => 'Terminal', 'requiresItem' => 'kit_badusb'
+      }
+      g.scenario_data['objectives'] = [{ 'id' => 'obj_clean', 'targetObject' => 'office_mugs' }]
+      g.save!
+
+      carry('grace', 'kit_badusb')
+      assert_response :unprocessable_entity, 'a requiresItem-referenced id is refused'
+      assert_nil @game.reload.player_state['npcCarry']
+      assert g.reload.carriable_object_index['kit_badusb'].nil?, 'requiresItem id excluded from the allowlist'
+      assert g.carriable_object_index['office_mugs'].nil?, 'objective targetObject id excluded from the allowlist'
+    end
   end
 end

@@ -1197,6 +1197,7 @@ module BreakEscape
     LOCK_REFERENCE_KEYS = %w[
       requires required requiredItem requiredItems requiredObject requiredObjects
       key_id keyId card_id cardId opens_lock opensLock unlocks target
+      requiresItem targetObject targetId objectId unlockedBy
     ].freeze
 
     # Every object id referenced as a requirement anywhere in the scenario (locks,
@@ -1360,8 +1361,11 @@ module BreakEscape
       player_state['room_states'][room_id] ||= { 'objects_added' => [], 'objects_removed' => [], 'object_states' => {}, 'npc_states' => {} }
 
       # Record the KO when claimable but not yet recorded: the same trust as the gift
-      # KO drop (the server takes isKO from the browser).
-      if !defeated && claimable
+      # KO drop (the server takes isKO from the browser). Match add_item_to_room! and
+      # update_npc_state! (review R2 m1): only write the KO record for an NPC actually
+      # in the named room, so a client cannot mark an unfought NPC KO'd in a room it
+      # was never in. The object drop can still land in room_id regardless.
+      if !defeated && claimable && npc_in_room?(npc_id, room_id)
         player_state['room_states'][room_id]['npc_states'] ||= {}
         player_state['room_states'][room_id]['npc_states'][npc_id] ||= {}
         player_state['room_states'][room_id]['npc_states'][npc_id].merge!('isKO' => true, 'currentHP' => 0)
@@ -1437,9 +1441,16 @@ module BreakEscape
         # origin floor and in a hand. Keep an incoming entry only when the action path
         # already created it: a matching stored entry, or the object recorded removed
         # from its claimed fromRoom.
+        # Reconcile-only, and only to a live stored carry (review R2 M1): the carry
+        # action writes the stored npcCarry entry atomically with the origin-room
+        # removal and saves it, so a legitimate carry (including one made then reloaded
+        # before this sync) already has a matching stored entry. The origin removal is
+        # append-only and is never cleared when a carry ends, so it cannot be the guard:
+        # a consumed or put-down object leaves the removal standing, and a stale or
+        # forged sync replaying the old entry must not revive the ended carry.
         prior = existing[npc_id]
         matches_stored = prior.is_a?(Hash) && prior['itemId'] == item_id && prior['fromRoom'] == from_room
-        next unless matches_stored || object_removed_from_room?(from_room, item_id)
+        next unless matches_stored
 
         if scenario_loaded
           next unless needs_npc_ids.include?(npc_id)

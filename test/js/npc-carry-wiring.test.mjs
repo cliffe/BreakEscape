@@ -31,7 +31,9 @@ function setup(opts = {}) {
     const slot = makeSlotSprite('copier_out_a', 'office');
     const rec = { id: 'grace', itemsHeld: [] };
     const graceBehaviour = { sprite: { body: { center: { x: 50, y: 60 } }, destroyed: false }, roomId: 'office' };
-    const ok = (v) => Promise.resolve(opts.refuse ? false : (v === undefined ? true : v));
+    // opts.refuse: the server refuses (false). opts.transport: a transport error
+    // (null from postRoomAction), where the client must not reconcile (review R2 m4).
+    const ok = (v) => Promise.resolve(opts.transport ? null : (opts.refuse ? false : (v === undefined ? true : v)));
     global.window = {
         gameScenario: { officeVisuals: false },
         rooms: { office: { objects: { office_mugs: sprite, copier_out_a: slot } }, kitchen: { objects: {} } },
@@ -153,4 +155,65 @@ test('koDropCarried drops the carried item into the KO room and clears the hand'
     await flush();
     assert.deepEqual(calls.koDrop, [{ npcId: 'grace', itemId: 'office_mugs', koRoom: 'kitchen', position: { px: 40, py: 50 } }]);
     assert.equal(calls.putDown.length, 0, 'not the put-down path');
+});
+
+// review R2 m3: consumeHeld must not destroy the carried sprite before the server
+// confirms. On a refusal the same sprite is reinstated (no invisible held item); a
+// confirmed consume destroys it.
+test('a refused consume keeps the sprite and reinstates it in the hand (review R2 m3)', async () => {
+    const { world, rec, sprite } = setup({ refuse: true });
+    rec._needsCarried = { office_mugs: { sprite, roomId: 'office', key: 'office_mugs' } };
+    rec.itemsHeld = [{ id: 'office_mugs', _needsCarried: true }];
+    world.consumeHeld('grace', 'office_mugs');
+    assert.ok(!sprite.destroyed, 'sprite not destroyed before the server answers');
+    await flush();
+    assert.ok(!sprite.destroyed, 'sprite kept after a refusal, not left invisible and gone');
+    assert.equal(rec._needsCarried.office_mugs && rec._needsCarried.office_mugs.sprite, sprite, 'held record reinstated with its sprite');
+    assert.ok(rec.itemsHeld.some(i => i.id === 'office_mugs'), 'still served in the hand');
+});
+
+test('a confirmed consume destroys the sprite (review R2 m3)', async () => {
+    const { world, rec, sprite } = setup();
+    rec._needsCarried = { office_mugs: { sprite, roomId: 'office', key: 'office_mugs' } };
+    rec.itemsHeld = [{ id: 'office_mugs', _needsCarried: true }];
+    world.consumeHeld('grace', 'office_mugs');
+    await flush();
+    assert.ok(sprite.destroyed, 'sprite destroyed once the consume is confirmed');
+    assert.ok(!rec._needsCarried.office_mugs, 'carry cleared');
+});
+
+// review R2 m4: a transport error (null) is not a refusal, so the client keeps its
+// optimistic state and lets the next room fetch reconcile.
+test('a transport error on carry does not undo the pick-up (review R2 m4)', async () => {
+    const { world, calls, rec } = setup({ transport: true });
+    world.pickUp('grace', 'office_mugs');
+    assert.equal(calls.carry.length, 1);
+    await flush();
+    assert.equal(window.rooms.office.objects.office_mugs, undefined, 'object stays carried, not restored to origin');
+    assert.ok(rec.itemsHeld.some(i => i.id === 'office_mugs'), 'still held optimistically');
+});
+
+test('a transport error on consume does not reinstate the held item (review R2 m4)', async () => {
+    const { world, rec, sprite } = setup({ transport: true });
+    rec._needsCarried = { office_mugs: { sprite, roomId: 'office', key: 'office_mugs' } };
+    rec.itemsHeld = [{ id: 'office_mugs', _needsCarried: true }];
+    world.consumeHeld('grace', 'office_mugs');
+    await flush();
+    assert.ok(!rec._needsCarried.office_mugs, 'optimistic consume kept, not reinstated');
+    assert.ok(!rec.itemsHeld.some(i => i.id === 'office_mugs'), 'hand stays empty');
+});
+
+// review R2 m5: a refused koDrop removes the client-only floor copy and reinstates
+// the held record, so the live frame matches the server (the carry survives).
+test('a refused koDrop removes the floor copy and reinstates the held record (review R2 m5)', async () => {
+    const { world, rec, sprite } = setup({ refuse: true });
+    rec._needsCarried = { office_mugs: { sprite, roomId: 'office', key: 'office_mugs' } };
+    rec.itemsHeld = [{ id: 'office_mugs', _needsCarried: true }];
+    const dropped = world.koDropCarried('grace', 'kitchen', { x: 40, y: 50 });
+    assert.deepEqual(dropped, ['office_mugs']);
+    assert.equal(window.rooms.kitchen.objects.office_mugs, sprite, 'floor copy drawn optimistically');
+    await flush();
+    assert.equal(window.rooms.kitchen.objects.office_mugs, undefined, 'unbacked floor copy removed on refusal');
+    assert.ok(rec._needsCarried.office_mugs, 'held record reinstated');
+    assert.ok(rec.itemsHeld.some(i => i.id === 'office_mugs'), 'back in the hand');
 });
