@@ -227,6 +227,9 @@ boardroom_pin = "0417"
           { "text": "DR SARAH KIM: Assaulted in her own office",                       "style": "warning", "condition": "globalVars.dr_kim_ko" },
           { "text": "GARY WHITLOCK: Assaulted at his desk — keycard taken",            "style": "warning", "condition": "globalVars.gary_ko" },
           { "text": "WARD STAFF: Nurse assaulted mid-shift",                           "style": "warning", "condition": "globalVars.ward_nurse_ko || globalVars.raval_ko" },
+          { "text": "ERNESTO BAUTISTA, NIGHT PORTER: Assaulted on shift",             "style": "warning", "condition": "globalVars.ernesto_bautista_ko" },
+          { "text": "HODAN WARSAME, NIGHT DOMESTIC: Assaulted on shift",              "style": "warning", "condition": "globalVars.hodan_warsame_ko" },
+          { "text": "NIGHT STAFF: Porter or domestic struck by the agent",             "style": "warning", "condition": "globalVars.night_staff_attacked && !globalVars.ernesto_bautista_ko && !globalVars.hodan_warsame_ko" },
           { "text": "PATIENT ASSAULTED: A ward patient struck by the agent",           "style": "warning", "condition": "globalVars.patient_assaulted" },
           { "text": "GRAHAM REEVES (badge SC-4471): Identified and detained — cell thread recovered", "style": "entry", "condition": "globalVars.insider_asset_arrested" },
           { "text": "GRAHAM REEVES (badge SC-4471): Walked out of the boardroom — no trace",  "style": "warning", "condition": "globalVars.insider_asset_escaped && !globalVars.insider_asset_arrested && !globalVars.night_security_supervisor_ko" },
@@ -1363,6 +1366,38 @@ boardroom_pin = "0417"
               "condition": "value === true",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 1200, "message": "What are you doing? That is a patient in a hospital bed. Whatever you think you saw, stop. Now." }
+            },
+<%# Office life (office_life/PLAN.md 2.2, 2.11): the night porter and the night domestic in the
+    staff room can be struck. An attack short of a knock-out sets night_staff_attacked (the
+    exchanges and the three break objects read it); each knock-out has its own global. Text
+    only, no clips. Appended at the end so no saved onceOnly handler index moves. %>
+            {
+              "eventPattern": "npc_attacked:ernesto_bautista",
+              "onceOnly": true,
+              "setGlobal": { "night_staff_attacked": true }
+            },
+            {
+              "eventPattern": "npc_attacked:hodan_warsame",
+              "onceOnly": true,
+              "setGlobal": { "night_staff_attacked": true }
+            },
+            {
+              "eventPattern": "global_variable_changed:ernesto_bautista_ko",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2000, "message": "The night porter is down in the handover room. He has been walking bloods to the wards all night. That is not who we came for." }
+            },
+            {
+              "eventPattern": "global_variable_changed:hodan_warsame_ko",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2000, "message": "The night domestic is down in the handover room. She has been turning beds for the wards all night. That is not who we came for." }
+            },
+            {
+              "eventPattern": "global_variable_changed:night_staff_attacked",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2000, "message": "You just hit one of the night staff in the handover room. They are hospital workers, not the enemy. Leave them be." }
             }
           ]
         },
@@ -3398,7 +3433,42 @@ boardroom_pin = "0417"
         "west": "conference_room",
         "east": "it_department"
       },
-      "npcs": [],
+<%# Office life (office_life/PLAN.md 2.2): two night staff waiting for radio calls between runs.
+    Ambient: no story duty, nothing held, no clue, no task. spriteSheet values are stand-ins
+    until their own art lands (office_life/HANDOVER.md). The hostile leash keeps a chase inside
+    this room. %>
+      "npcs": [
+        {
+          "id": "ernesto_bautista",
+          "displayName": "Ernesto Bautista",
+          "npcType": "person",
+          "position": { "x": 6.97, "y": 4.85 },
+          "spriteSheet": "male_telecom_v2",
+          "spriteTalk": "assets/characters/male_telecom_talk.png",
+          "spriteVisemes": "assets/characters/male_telecom_visemes.png",
+          "storyPath": "scenarios/m02_ransomed_trust/ink/m02_npc_ernesto_bautista.json",
+          "currentKnot": "start",
+          "voice": { "name": "Algieba", "style": "Hospital night porter, early sixties, Filipino-British, thirty years in the job. Warm and unhurried, dry humour, a soft Filipino lilt over a Midlands base. Never raises his voice.", "language": "en-GB" },
+          "globalVarOnKO": "ernesto_bautista_ko",
+          "behavior": { "hostile": { "leash": true } },
+          "observations": "The night porter. A two-way radio on his belt and a stack of empty specimen boxes by his feet."
+        },
+        {
+          "id": "hodan_warsame",
+          "displayName": "Hodan Warsame",
+          "npcType": "person",
+          "position": { "x": 4.2, "y": 6.1 },
+          "spriteSheet": "female_telecom_v2",
+          "spriteTalk": "assets/characters/female_telecom_talk.png",
+          "spriteVisemes": "assets/characters/female_telecom_visemes.png",
+          "storyPath": "scenarios/m02_ransomed_trust/ink/m02_npc_hodan_warsame.json",
+          "currentKnot": "start",
+          "voice": { "name": "Laomedeia", "style": "Night domestic, early twenties, British-Somali, Birmingham accent. Quick, wry and chatty, tired but sharp; drops her voice for gossip.", "language": "en-GB" },
+          "globalVarOnKO": "hodan_warsame_ko",
+          "behavior": { "hostile": { "leash": true } },
+          "observations": "The night domestic. A radio clipped to her tabard and a bed list written on the back of something else."
+        }
+      ],
       "objects": [
         {
           "type": "notes",
@@ -3608,6 +3678,10 @@ boardroom_pin = "0417"
 
   "globalVariables": {
     "player_name": "Agent 0x00",
+<%# Office life (office_life/PLAN.md 7): the night staff's KO and attack globals. %>
+    "ernesto_bautista_ko": false,
+    "hodan_warsame_ko": false,
+    "night_staff_attacked": false,
     "briefing_played": false,
     "mission_started": false,
 <%# ransomware_deployed gates the ransomware_display lockType. Without it the five

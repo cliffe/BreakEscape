@@ -1,3 +1,9 @@
+# m02 office life: stage 4 (implementation)
+
+## Sprite stand-ins (2026-11-15)
+
+Stage 4 builds Ernesto on `male_telecom_v2` and Hodan on `female_telecom_v2` (with the `male_telecom` and `female_telecom` talk and viseme sheets), as PLAN.md 2.2 says. When their own art lands from the art branch, `spriteSheet`, `spriteTalk` and `spriteVisemes` change to the `ernesto_bautista` and `hodan_warsame` keys, and stage 6 re-measures posts, seats and both pairings.
+
 # m02 office life: handover after stage 2 (exit rule met)
 
 Branch `build/ol-m02`, worktree `.claude/worktrees/p-ol-m02`. Base commit `9fe568a7c`. Main has since moved to `e1303fc0c` (format step 6a-1 part 1, schema `x-serverOnly`/`x-servedBy` marks): merge it before any stage 4 work. Nothing in `scenario.json.erb` or the ink has been touched.
