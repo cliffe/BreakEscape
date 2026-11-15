@@ -43,7 +43,9 @@ const pinMismatch = (j) => { Object.assign(j.rooms.r1, { locked: true, lockType:
 const MUTATIONS = {
   common: [pinMismatch, /❌ ERROR: 'rooms\/r1' has pinLength 4 but its PIN is 5 digits/],
   ink: [(j) => { j.rooms.r1.npcs.push(npc({ storyPath: 'ink/dana.json' })); }, /❌ ERROR: 'rooms\/r1\/npcs\[0\]' uses deprecated relative path 'ink\/dana\.json'/],
-  schema: [(j) => { j.rooms.r1.type = 'room_nowhere'; }, /❌ ERROR: schema: #\/rooms\/r1\/type \(room 'r1'\): value "room_nowhere"/],
+  // Step 4 replaced the room type enum with check_room_types, so the schema module is exercised
+  // through another enum (difficulty) that the schema still owns.
+  schema: [(j) => { j.rooms.r1.difficulty = 'nowhere'; }, /❌ ERROR: schema: #\/rooms\/r1\/difficulty \(room 'r1'\): value "nowhere"/],
   habits: [(j) => { j.rooms.r1.npcs.push(npc({ awareness: 'bogus' })); }, /❌ ERROR: habits: NPC 'dana' awareness 'bogus'/],
   work: [(j) => { j.rooms.r1.npcs.push(npc({ needs: { work: { decayPerMin: 40, urgentAt: 50, initial: 60 } }, workarounds: [{ bogus: 1 }] })); },
     /❌ ERROR: work: dana\.workarounds\[0\]\.at is nil/],
@@ -252,7 +254,7 @@ test('a ❌ inside author content is not an error: plain, -o and -v runs agree (
   }
   assert.match(run(fixture, { flags: ['--skip-ink', '-o'] }).out, /"text": "❌ door left open"/);
   // The -v dump prints after a schema failure: only the schema line counts, not the dumped ❌.
-  const broken = scenario((j) => { notes('❌ door left open')(j); j.rooms.r1.type = 'room_nowhere'; });
+  const broken = scenario((j) => { notes('❌ door left open')(j); j.rooms.r1.difficulty = 'nowhere'; });
   const v = run(broken, { flags: ['--skip-ink', '-v'] });
   assert.equal(v.status, 1);
   assert.match(v.out, /Full JSON structure:/);
@@ -307,10 +309,10 @@ for (const [name, prelude] of [
   ['split_schema_errors', 'def ValidateSocial.split_schema_errors(*); raise "boom"; end']
 ]) {
   test(`${name} raising: the schema line still prints, and so do the checks after it (m7)`, { skip }, () => {
-    const r = run(scenario((j) => { j.rooms.r1.type = 'room_nowhere'; pinMismatch(j); }), { prelude });
+    const r = run(scenario((j) => { j.rooms.r1.difficulty = 'nowhere'; pinMismatch(j); }), { prelude });
     assert.equal(r.status, 1, r.out + r.err);
     assert.match(r.out, /❌ ERROR: schema report could not run: RuntimeError: boom/);
-    assert.match(r.out, /❌ ERROR: schema: .*room_nowhere/);
+    assert.match(r.out, /❌ ERROR: schema: .*nowhere/);
     assert.match(r.out, MUTATIONS.common[1]);
     assert.doesNotMatch(r.out, /validator could not run/);
   });
