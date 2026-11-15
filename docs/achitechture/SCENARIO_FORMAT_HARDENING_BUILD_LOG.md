@@ -4000,3 +4000,46 @@ non-account capture secret allowed only on `/capture_secrets` and a capture page
 else) is asserted directly here against fresh `/capture_secrets`, `/room` and `/scenario` responses,
 so a separate `access-leak-check.rb` run over a captured `responses.jsonl` was not added. The server
 was stopped by its logged PID afterwards and the port confirmed down.
+
+## Legacy inert `requires` removed (6a-1)
+
+Step 3's validator warned about 15 inert `requires` fields on legacy PCs: `ceo_exfil`
+(1), `crypto1_captain_meow` (2), `crypto2_rsa_asymmetric` (5), `crypto3_aes_symmetric`
+(2) and `crypto4_encoding_encryption` (5). Each is a `type: "pc"` object carrying
+`requires: "password"` with no `lockType` and not locked. The room filter strips
+`requires` only from a node that has its own `lockType`
+(`Game#filter_requires_and_contents_recursive`, `GamesController#filter_requires_recursive`),
+so the literal string shipped to the browser in the `GET /room` payload. The fresh-state
+scan (6a-1) flagged 3 of them (crypto2/3/4) and they were covered, for a time, by three
+exceptions in `test/fixtures/files/payload_scan_exceptions.json` and three pending
+headings in `docs/agents/VALIDATOR_DECISIONS.md`.
+
+The field is inert. No client or server path reads `requires` on an unlocked,
+`lockType`-less PC. On the server both filters read `requires` only to delete it, gated
+on `lockType` (game.rb lock_type check; games_controller.rb the same); the unlock route's
+`requires` read sits inside a `completesTask`/flag branch these PCs never enter. On the
+client every `requires` read is gated by a `lockType` (`unlock-system.js`), by the key-lock
+minigame starter (`minigame-starters.js`, only for `lockType: "key"`), by `doors.js`, or by
+the RFID path; the interaction handler for a `type: "pc"` object with no lockType falls
+through to the examine/observation render and never consults `requires`.
+
+The decision was to remove the dead field rather than sign the exceptions off: it is the
+cleaner design, it changes no scenario's behaviour, and a field that ships an answer-like
+string to the browser should not exist. The 15 `requires` fields were deleted from the five
+scenarios, the three exceptions cleared (the file is now `[]`), and the three pending
+`VALIDATOR_DECISIONS` headings removed.
+
+Validator before and after (ink on): the 15 "field is inert (delete it)" warnings are gone
+and nothing else changed; the pre-existing known errors (missing `keyPins`, phone
+`targetKnot`, `give_item`) are untouched. `payload_scan_fresh_state_test.rb` passes with 0
+findings and 0 exceptions; `validator-known-failures.test.mjs` and
+`validator-secret-leaks.test.mjs` pass (45/45).
+
+Live proof on a keyless server. Fresh games of `crypto3_aes_symmetric` and
+`crypto4_encoding_encryption` were created through `tools/playtest/new-game.rb`. In a
+headless browser (setFPS 20, fixed steps on), the affected PC was opened on the real path:
+"AES Encrypted Terminal" and "Base64 Terminal" each opened their examine overlay exactly as
+before. A fresh `GET /room/room_reception` then shipped the PC object with keys
+`id, name, type, takeable, observations` and no `requires`; in crypto3 the only remaining
+"password" in the payload is the Safe's non-secret `lockType` value, not a `requires`. The
+server was stopped by its logged PID and the port confirmed down.
