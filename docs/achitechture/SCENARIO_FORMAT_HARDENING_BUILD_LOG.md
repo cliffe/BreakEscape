@@ -3727,6 +3727,16 @@ ships), `acknowledgedApproved(root)` (the `[label, heading]` pairs for the share
 it into that file's `otherApproved()` (the third list beside the known failures and the payload
 scan exceptions); no change to this branch's files is needed for that.
 
+Merge sequencing (R2 m4): step 3 adds the top-level `acknowledgedClues` declaration to
+`scripts/scenario-schema.json`, which flips `schema_declares_acknowledged_clues?` true. 6a-1 part 1
+ships `test/models/break_escape/payload_scan_fresh_state_test.rb`, whose held scan skips on
+`SCAN_PENDING` only while that predicate is false; the moment step 3's declaration lands in a tree
+that also carries the 6a-1 test, the skip lifts and the test runs `flunk SCAN_READY` on purpose, to
+force the fresh-state corpus scan body to be written. So merging step 3 with 6a-1 activates the held
+scan (SCAN_READY), and step 3 must land together with the 6a-1 scan body (being built on
+`build/hard-6a1-scan`) in the same batch, or main's model suite goes red on that deliberate
+tripwire. Do both in the one merge batch.
+
 ### Item 6 handover: the live proof (not yet run)
 
 Items 1 to 5 are complete and committed; the verification suite is green (Rails 164 runs / 833
@@ -3900,3 +3910,75 @@ non-account capture secret allowed only on `/capture_secrets` and a capture page
 else) is asserted directly here against fresh `/capture_secrets`, `/room` and `/scenario` responses,
 so a separate `access-leak-check.rb` run over a captured `responses.jsonl` was not added. The server
 was stopped by its logged PID afterwards and the port confirmed down.
+
+### Step 3 review R2 fixes (2026-11-15)
+
+Review `SCENARIO_FORMAT_STEP3_REVIEW_R2.md` shipped with two minors (m3, m4) and the orchestrator
+added a defence-in-depth decision: the server must not rely on the validator alone to keep a
+pad-lock door-entry answer off the client. Four pieces of work.
+
+**Runtime door-entry strip (the orchestrator decision).** A room's `doors` array reaches the client
+only through the room payload (`filtered_room_data` / `filter_requires_and_contents_recursive`); the
+bootstrap drops `doors` from its room keep-list, and the opened-room answer from POST /unlock reuses
+`filtered_room_data`. That filter descends into objects/npcs/contents but not `doors`, and it strips
+`requires` only from a hash with its OWN secret `lockType`, so a bare door entry (no own `lockType`)
+resolving to a pad lock shipped the room code. `Game#filter_requires_and_contents_recursive` now
+calls `strip_door_entry_requires!(room)`: for each `doors[]` entry the client reads
+(`NpcHabits.doorway_problem` nil, as `CaptureModel.each_lock_answer` resolves), it deletes the
+entry's own `requires` unless the resolved lock type (the entry's own `lockType`, else the connected
+room's) is a card-reference kind (rfid/biometric/bluetooth).
+
+Client-code evidence that no pad-lock door entry needs `requires` on the client:
+- `public/break_escape/js/systems/unlock-system.js:755` reads a door's lock state from `locked`,
+  "instead of `requires` (which is filtered server-side for security)". The pin and password cases
+  (`:936`, `:946`) pass `null` for the required code and validate server-side; the combination and
+  cryptex cases (`:925`, `:913`) keep the answer on the server ("the combination stays on the server
+  ... nothing about the answer is passed to the minigame"); the key case (`:805`) sets
+  `requiredKey = null`. Only the card-reference kinds read `requires`: bluetooth (`:1037`
+  `requiredDevice`), rfid (`:1124`), and biometric through `lockRequirements`.
+- `public/break_escape/js/systems/doors.js:541` sets up the door's pad options with the note "the
+  answer in `requires` is never sent to the client". The only client reads of a door's `requires`
+  are the rfid clone-as-entry path (`:688` `playerHoldsRfidCredentialFor(props.requires)`) and the
+  gate bump (`:800`), both rfid.
+
+The two corpus rfid door entries keep their card id: `test_gate_tailgate` (entry `requires:
+"test_staff_badge"`, connected `staff_room` is `lockType: rfid`) and `lab_physical_pentest` (entry
+`requires: "cm_records_badge"`, connected `secure_area` is `lockType: rfid`). Both are bare entries
+(no own `lockType`) resolving to the connected room's rfid type, so the strip leaves them. No corpus
+scenario carries a pad-lock door-entry `requires` after the R1 `test_secret_leaks` fix, so the
+runtime strip changes nothing on the corpus; it is defence in depth behind the validator guard.
+
+A legitimate player is never refused: the strip removes only a field the client does not read for
+pad locks, and the server validates the unlock against the room/object `requires` it holds, unchanged.
+
+**Rails test (real GET /room route).** `secret_leak_withholding_test.rb` gains
+`door_strip_scenario` and `GET /room/:id strips a bare PIN door entry requires and keeps an rfid
+one`: it drives the real room route and asserts the PIN entry has no `requires`, the PIN does not
+appear anywhere in the payload, and the rfid entry keeps its card id. The fixture is a Rails-level
+in-memory scenario (built with `Game.create!`), chosen because the validator rejects a bare pad-lock
+door entry (the R1 M1 error), so it cannot be a corpus scenario file; an in-memory row still goes
+through the real server filter, which is the code under test.
+
+**Live proof extended.** `tools/playtest/secret-leak-withholding-live-proof.mjs` gains three cases,
+driven on the real keyless server: the runtime door-entry strip (a new in-memory scenario,
+`tools/playtest/door-strip-game.rb`, with a bare PIN entry and an rfid entry: GET /room/office
+strips the PIN and keeps the card, and the vault opens with the right PIN on POST /unlock); and two
+shipped-mission PIN no-regressions on the real POST /unlock route, m01 (`derek_storage_safe`, 1337)
+and lab_physical_pentest's shoulder-surf safe (`p4_safe`, 7041), each refusing a wrong PIN and
+opening with the right one.
+
+**R2 m3, the door mismatch false-positive.** `scripts/validate_secret_leaks.rb` `door_entry_issues`
+compared `requires` with a raw `!=`, so an rfid card written as `"badge"` in one place and
+`["badge"]` in the other false-positived. The comparison now normalises both sides to `Array(...)`
+for the card-reference kinds (rfid/biometric/bluetooth), where a string and a one-element array name
+the same card; secret kinds stay a raw comparison. Node fixtures added to
+`validator-secret-leaks.test.mjs` (now 26 subtests): a string-vs-array rfid pairing raises nothing,
+and a genuinely different card id still warns.
+
+**R2 m4, merge sequencing note.** A paragraph was added to the "Reader wiring for the 6a-1 merge"
+note: step 3's `acknowledgedClues` schema declaration flips `schema_declares_acknowledged_clues?`
+true, so on merge with 6a-1 the held `payload_scan_fresh_state_test` self-activates and flunks
+`SCAN_READY` until its corpus-scan body (being built on `build/hard-6a1-scan`) is written; both must
+land in the same merge batch.
+
+Focused tests and the live results are recorded in the follow-up commit below.

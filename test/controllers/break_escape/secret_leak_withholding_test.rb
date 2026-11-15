@@ -204,5 +204,43 @@ module BreakEscape
       refute_includes response.body, 'acknowledgedClues', 'the key must not ship'
       refute_includes response.body, 'UNIQUE-REASON-SENTINEL', 'no reason prose ships'
     end
+
+    # ── the room route strips a pad-lock door entry's `requires`, keeps a card one ─────
+
+    # A room reached through both a bare PIN door entry (resolves to the vault's pin lock) and an
+    # rfid door entry (resolves to the secure room's rfid lock). The client validates a pad lock
+    # server-side and never needs its `requires`; an rfid entry's card id is not a secret and the
+    # clone-as-entry path reads it. So GET /room/:id must strip the PIN but keep the card.
+    def door_strip_scenario
+      {
+        'startRoom' => 'office',
+        'rooms' => {
+          'office' => {
+            'type' => 'room_office', 'connections' => { 'north' => 'vault', 'east' => 'secure' },
+            'doors' => [
+              { 'connectedRoom' => 'vault', 'direction' => 'north', 'requires' => '7781' },
+              { 'connectedRoom' => 'secure', 'direction' => 'east', 'requires' => 'badge01' }
+            ],
+            'objects' => []
+          },
+          'vault' => { 'type' => 'room_office', 'locked' => true, 'lockType' => 'pin',
+                       'requires' => '7781', 'connections' => { 'south' => 'office' }, 'objects' => [] },
+          'secure' => { 'type' => 'room_office', 'locked' => true, 'lockType' => 'rfid',
+                        'requires' => 'badge01', 'connections' => { 'west' => 'office' }, 'objects' => [] }
+        }
+      }
+    end
+
+    test 'GET /room/:id strips a bare PIN door entry requires and keeps an rfid one' do
+      game = game_with(door_strip_scenario)
+      get room_game_url(game, room_id: 'office'), as: :json
+      assert_response :success
+      doors = response.parsed_body['room']['doors']
+      pin_entry = doors.find { |d| d['connectedRoom'] == 'vault' }
+      rfid_entry = doors.find { |d| d['connectedRoom'] == 'secure' }
+      refute pin_entry.key?('requires'), 'the pad-lock door entry must not ship its `requires`'
+      refute_includes response.body, '7781', 'the vault PIN must not appear anywhere in the payload'
+      assert_equal 'badge01', rfid_entry['requires'], 'the rfid card id must survive for clone-as-entry'
+    end
   end
 end

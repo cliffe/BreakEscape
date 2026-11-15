@@ -188,6 +188,26 @@ test('a door entry matching its connected room raises nothing', { skip }, () => 
   assert.deepEqual(issues(sc), []);
 });
 
+test('an rfid card written as a string in one place and an array in the other is not a mismatch', { skip }, () => {
+  // R2 m3: an rfid card id is the same card whether written as "badge" or ["badge"]; the client
+  // fills and checks either, so the two shapes must not read as a mismatch warning.
+  const sc = { rooms: {
+    lobby: { connections: { east: 'secure' }, objects: [],
+      doors: [{ connectedRoom: 'secure', direction: 'east', requires: 'badge' }] },
+    secure: { locked: true, lockType: 'rfid', requires: ['badge'], connections: {}, objects: [] }
+  } };
+  assert.deepEqual(issues(sc), []);
+});
+
+test('an rfid card that is genuinely a different id still warns (normalise does not hide a real mismatch)', { skip }, () => {
+  const sc = { rooms: {
+    lobby: { connections: { east: 'secure' }, objects: [],
+      doors: [{ connectedRoom: 'secure', direction: 'east', lockType: 'rfid', requires: ['badge_a'] }] },
+    secure: { locked: true, lockType: 'rfid', requires: ['badge_b'], connections: {}, objects: [] }
+  } };
+  assertHas(warnings(issues(sc)), 'the server checks the room');
+});
+
 test('a requires in a social block and a clue on a note text raise nothing', { skip }, () => {
   const social = { rooms: { r: { objects: [{ id: 'safe', locked: true, lockType: 'pin', requires: '4821' },
     { id: 'note', type: 'notes', text: 'the code is 4821' }] } },

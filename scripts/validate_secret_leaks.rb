@@ -29,6 +29,10 @@ module SecretLeaks
   GLOBAL_CLUES_ALLOWED = true
 
   ANSWER_LOCK_TYPES = %w[pin password combination cryptex].freeze
+  # Card-reference kinds: `requires` names a collectible card/device id, which is equally valid as a
+  # string ("badge") or a one-element array (["badge"]). The client fills and checks either, so the
+  # two shapes are the same card and must not read as a mismatch.
+  CARD_REFERENCE_LOCK_TYPES = %w[rfid biometric bluetooth].freeze
 
   # An answer and the lock it opens: { kind:, value:, path:, lock_id: }. lock_id is the id of the
   # object, room or item carrying the lockType, used to match an acknowledgedClues marker; nil for
@@ -369,7 +373,18 @@ module SecretLeaks
         end
 
         lock_type_differs = !own_lock_type.nil? && own_lock_type != room_lock_type
-        requires_differs = entry.key?('requires') && entry['requires'] != connected['requires']
+        # For a card-reference lock the card id is the same whether written as a string or a
+        # one-element array, so normalise both sides to an array before comparing; a string in one
+        # place and an array in the other is not a mismatch. Secret kinds stay a raw comparison,
+        # where a true display/server split matters.
+        requires_differs =
+          if !entry.key?('requires')
+            false
+          elsif CARD_REFERENCE_LOCK_TYPES.include?(resolved)
+            Array(entry['requires']) != Array(connected['requires'])
+          else
+            entry['requires'] != connected['requires']
+          end
         if lock_type_differs || requires_differs
           issues << "⚠️ WARNING: #{path} has a lock type or `requires` that differs from its connected room '#{entry['connectedRoom']}'; the server checks the room's lock, so the player sees one lock and the server checks another"
         end
