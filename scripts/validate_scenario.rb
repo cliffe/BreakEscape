@@ -778,25 +778,33 @@ def schema_unknown_key_warnings(data, node, warnings, prefix: nil, seen: nil)
       # A retired key (renamed by a FormatUpgrade step) already gets its rename line from
       # check_retired_keys, so one slip prints one line.
       next if retired.include?(k)
+      # fingerprintQuality has its own line ("ignored: lift quality comes from the dusting minigame").
+      next if is_item && k == 'fingerprintQuality'
 
-      hint = unknown_key_hint(k, declared)
       rel = unknown_key_path(data, vpath)
-      where = if prefix.nil? then rel
-              elsif rel.empty? || rel.start_with?('[') then "#{prefix}#{rel}"
-              else "#{prefix}/#{rel}"
-              end
-      warnings << if vpath.empty? && prefix.nil?
-                    "⚠️ WARNING: Top-level field '#{k}' is not recognized in the schema#{hint} — this field will be ignored by the game engine. Remove it if not needed, or check if the spelling is correct."
-                  elsif is_room && vpath.length == 2 && vpath.first == 'rooms'
-                    "⚠️ WARNING: Room '#{vpath.last}' has unknown field '#{k}'#{hint} — this field will be ignored by the game engine."
-                  elsif is_item
-                    "⚠️ WARNING: '#{where}' has unknown field '#{k}'#{hint} — if this is minigame-specific configuration data, nest it under 'minigameData' instead."
-                  else
-                    "⚠️ WARNING: '#{where}' has unknown field '#{k}'#{hint} — this field will be ignored by the game engine."
-                  end
+      rel = "#{prefix}#{rel.empty? || rel.start_with?('[') ? '' : '/'}#{rel}" if prefix
+      room_id = vpath.last if is_room && vpath.length == 2 && vpath.first == 'rooms'
+      warnings << unknown_key_message(k, unknown_key_hint(k, declared), rel,
+                                      top: vpath.empty? && prefix.nil?, room_id: room_id, item: is_item)
     end
   end
   warnings
+end
+
+# The unknown-key warning, worded for where the key sits (the wording the hand-list checks used).
+def unknown_key_message(key, hint, where, top:, room_id:, item:)
+  ignored = 'this field will be ignored by the game engine.'
+  if top
+    "⚠️ WARNING: Top-level field '#{key}' is not recognized in the schema#{hint} — #{ignored} " \
+      'Remove it if not needed, or check if the spelling is correct.'
+  elsif room_id
+    "⚠️ WARNING: Room '#{room_id}' has unknown field '#{key}'#{hint} — #{ignored}"
+  elsif item
+    "⚠️ WARNING: '#{where}' has unknown field '#{key}'#{hint} — " \
+      "if this is minigame-specific configuration data, nest it under 'minigameData' instead."
+  else
+    "⚠️ WARNING: '#{where}' has unknown field '#{key}'#{hint} — #{ignored}"
+  end
 end
 
 # "rooms/office/objects[2](safe)/minigameData": the data path, with the id (or name or type) of
