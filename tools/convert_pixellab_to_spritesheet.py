@@ -43,6 +43,10 @@ def normalize_anim_type(raw_name):
     """
     # Strip trailing -XXXXXXXX hash (8 hex chars)
     name = re.sub(r'-[0-9a-f]{8}$', '', raw_name)
+    # Pose frames (pipeline --pose-from) keep their underscore: 'pose_drink' stays
+    # 'pose_drink', so the frames are pose_drink_<direction>_frame_000 (systems/npc-poses.js).
+    if name.lower().startswith('pose_'):
+        return name.lower()
     # PascalCase_With_Underscores → lowercase-hyphen
     name = name.replace('_', '-').lower()
     # PixelLab uses the bare name 'animation' for unrecognised animations, which are walk cycles
@@ -179,9 +183,10 @@ def frame_offsets(character_data, canvas, feet_y):
     # feet line and centre. Take the median per frame size, so one odd strip (or a patched
     # frame) can't shift the whole character.
     samples = {}
-    # 'sit' frames (seated pose) don't share the standing feet line, so they never set it.
+    # 'sit' frames (seated pose) and 'pose_*' frames (one-frame standing poses from another
+    # state) don't set the feet line: the standing animations alone do.
     for anim_type, directions in anims.items():
-        if anim_type == 'sit':
+        if anim_type == 'sit' or anim_type.startswith('pose_'):
             for frames in directions.values():
                 for f in frames:
                     with Image.open(f) as img:
