@@ -36,6 +36,22 @@ ruby scripts/validate_scenario.rb scenarios/my_scenario/scenario.json.erb --outp
 ruby scripts/validate_scenario.rb scenarios/my_scenario/scenario.json.erb --no-known-failures
 ```
 
+### Office-life tools (V1 to V9)
+
+The office-life checks live in `scripts/validate_office_life.rb` (OFFICE_LIFE_MISSIONS_PLAN.md section 4). None of them changes the game.
+
+- **V1** `--office-summary`: one line per NPC, sorted by id so it diffs: class hints (`task` from ink, `task-mapping` from a held mapping, `conv`, `key`, `hostile` for `behavior.hostile.startHostile`, `fights` for a combat tuning block alone, `patrol` (enabled, waypoints or bounds), `hidden`, `attackable`, never on a phone NPC), post, leash, needs, groups, avoids, habits, and chatter, exchange (started or joined) and call counts.
+- **V2** (warning, campaign only): a needs NPC that sets a required task, is a conversation-mode mapping target, or holds a key or card, and whose needs can take it out of its own room (a need object, a print fetch, an interest item, or anywhere a matching magnet can be dropped), unless it starts in its home room and has a `patrolOverride.targetTile` mapping on a story event. `deferrable: false` never exempts.
+- **V3** (warning): an `npc_arrived:<id>` mapping on an NPC that has `needs`, and `npc_arrived:*` when any NPC has needs.
+- **V4** (warning, campaign only): a needs NPC that can be attacked (no scenario `disableAttacks`, not `koImmune`), with its KO globals, tasks and held items. An NPC-level `disableAttacks` has no effect and is called out.
+- **V5** (error, campaign only): a required task, a required aim's `unlockCondition`, or `concludeRequires` triggered only by an office-life event (`OFFICE_LIFE_EVENT_PREFIXES`) or a global only office life writes (workaround and `onUse` `setGlobal`s, `heard_<knot>`, `<magnet>_servings`, workstation globals, reveal globals, and globals set by mappings those globals trigger, followed to a fixed point). Ink `#set_global`/`#set_variable` and `~ x =`, compiled-only stories, `set_global` actions and influence `setGlobal` effects count as other writers. An `unlockDoor`/`unlockObject` mapping on such a trigger is an error when a required `unlock_room`/`unlock_object` task targets that lock, and a warning otherwise. `test/js/validator-office-life-events.test.mjs` keeps the event lists in step with the engine's emit sites.
+- **V7** (warning): a chatter pool line that repeats another pool line, a bark, or the first line of the NPC's ink opener.
+- **V8** (info, warning above a cap): the sync budget of section 7, printed as `ℹ Office-life sync budget (V8): ...`.
+- **V6**: `bin/rails "app:break_escape:tts:office_lines[<mission>]"` lists every chatter, exchange and call clip per voice, keyed as the client asks (no delivery note), cached or uncached, marked shared when a person-chat line holds the same key (keyless, read only; `STRICT=1` exits 1 on any uncached clip).
+- **V9**: `ruby scripts/lock_key_diff.rb <scenario.json.erb> --write <baseline.json>` saves a lock and key baseline; `ruby scripts/lock_key_diff.rb <scenario.json.erb> <baseline.json>` diffs against it and exits 2 when a new door, gate or locked room cuts off required content, or when a lock on the critical path is removed, switched off, or has its lock type or requirement changed (rule 2). Reachability comes from the scenario's room connections, not the dungeon graph. Required content is the room of every required task's target, item, completing NPC ink or mapping, and flag station; a door gate guards its `connectedRoom`, an object gate its lock node and the object. A template whose render changes run to run (unseeded randomness) is refused.
+
+V2, V4 and V5 run only for the ten campaign missions (`CAMPAIGN_MISSIONS`, m01 to m10); `--campaign` adds the scenario being checked for one run.
+
 ### The exit code is the answer
 
 Every hard finding prints as `❌ ERROR: <text>` (social lints as `❌ ERROR: SOCIAL: <text>`, schema errors as `❌ ERROR: schema: <json pointer> (<room, object or NPC>): <message>`). The validator **exits 1 when any `❌` line is not covered by the known-failures list**, and 0 otherwise; warnings (`⚠️`) and suggestions never fail a run. You no longer count `❌` lines by hand. An error line is one that starts with `❌` (after indentation and a list number); a `❌` inside your own content, such as a note's text in the `-o` dump or an ink line quoted by the dialogue lint, is not counted.
