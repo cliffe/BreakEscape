@@ -41,7 +41,11 @@ const tasksDone = () => page.evaluate(() => Object.values(window.objectivesManag
 const t0 = Date.now();
 while (Date.now() - t0 < 200000) {
     const c = await clock();
-    const busy = await page.evaluate(() => ['amara', 'tom', 'marek', 'sanjay'].some(id => window.npcNeedsSystem.getState(id)?.job?.targetId === 'office_coffee'));
+    // and Marek is back at his post: the notice's beat keys on him leaving it (npc_left_post), so
+    // a notice read while he still walks home from row 1 sends him straight back with no
+    // left_post, and Sanjay never sets off (games 5349 to 5352, 5358)
+    const busy = await page.evaluate(() => ['amara', 'tom', 'marek', 'sanjay'].some(id => window.npcNeedsSystem.getState(id)?.job?.targetId === 'office_coffee')
+        || window.npcNeedsSystem.getState('marek')?.mode !== 'idle');
     if (c > 60000 && !busy) break;
     await t(1000);
 }
