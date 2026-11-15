@@ -2,13 +2,19 @@
 // row 2 of the README tour ("Someone turns back": see_turned_back, see_look_round) and Marek's
 // walk home after his coffee (used -> returned_post), with every return_resumed, return_stuck,
 // walk_rerouted, walk_stuck and arrival line from the needs log. Headless, setFPS(20).
-//   node tools/playtest/needs-stuck-return-proof.mjs <gameId> [port] [outDir]
+//   node tools/playtest/needs-stuck-return-proof.mjs <gameId> [port] [outDir] [standX,standY]
+// The stand point (default 232,176, east of mid-office, south of Amara's desk) is off Marek's routes
+// between his post (west wall, about 52,176) and the office coffee (bottom right): a player on a
+// route is yielded to (README tour step 7), which held Marek up in games 5361, 5363 and 5366 (the
+// old midpoint, 176,192) and 5378 (64,224, south of his post). It is within earshot (160 px) of
+// Sanjay's desk and of the seated staff.
 import { createRequire } from 'node:module';
 import fs from 'node:fs';
 const require = createRequire('/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/.claude/worktrees/p-9-2-h/node_modules/');
 const { chromium } = require('playwright-core');
 const EXEC = '/home/cliffe/.cache/ms-playwright/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell';
-const [gid, port = '3093', outDir = './tmp/stuck-proof/'] = process.argv.slice(2);
+const [gid, port = '3093', outDir = './tmp/stuck-proof/', standArg = '232,176'] = process.argv.slice(2);
+const [standX, standY] = standArg.split(',').map(Number);
 if (!gid) { console.error('usage: needs-stuck-return-proof.mjs <gameId> [port] [outDir]'); process.exit(2); }
 fs.mkdirSync(outDir, { recursive: true });
 const browser = await chromium.launch({ headless: true, executablePath: EXEC });
@@ -31,7 +37,20 @@ await page.evaluate(() => { const loop = window.game.sys.game.loop, raf = loop.r
 await page.evaluate(() => {
     const ed = window.eventDispatcher; window.__p = [];
     const orig = ed.emit.bind(ed);
-    ed.emit = (ev, data) => { try { if (/^(npc_(turned_back|swivelled|chatted|returned_post|left_post)|task_completed)/.test(ev)) window.__p.push({ c: window.npcNeedsSystem.clockMs, ev, d: data && { npcId: data.npcId, reason: data.reason, line: data.line, picture: !!data.picture, overheard: data.overheard, speakerId: data.speakerId, topic: data.topic } }); } catch (e) {} return orig(ev, data); };
+    ed.emit = (ev, data) => { try { if (/^(npc_(turned_back|swivelled|chatted|returned_post|left_post|overheard|need_parked|mutter)|task_completed)/.test(ev)) window.__p.push({ c: window.npcNeedsSystem.clockMs, ev, d: data && { npcId: data.npcId, reason: data.reason, line: data.line, picture: !!data.picture, overheard: data.overheard, speakerId: data.speakerId, topic: data.topic } }); } catch (e) {} return orig(ev, data); };
+    // Each tick Sanjay has a line or picture up: who could look round (seated, distance, typing)
+    window.__listen = [];
+    window.npcNeedsSystem.onTick(sys => {
+        const sj = sys.getState('sanjay'); const sp = sys.speakers.find(x => x.npcId === 'sanjay');
+        if (!sp || window.__listen.length > 40) return;
+        const out = { c: sys.clockMs, saying: sj?.saying ? { line: sj.saying.line || null, picture: sj.saying.picture || null, topic: sj.saying.topic } : null, sp: { x: Math.round(sp.x), y: Math.round(sp.y), roomId: sp.roomId }, staff: {} };
+        for (const id of ['amara', 'tom', 'grace', 'marek']) {
+            const b = window.npcBehaviorManager.getBehavior(id); const p = sys.world.npcPos(id); const ns = sys.getState(id) || {};
+            out.staff[id] = { seated: !!b?._seat, kind: b?._seat?.seat?.kind || null, facing: b?._seat?.facing || null, home: b?._seat?.homeFacing || null,
+                d: p ? Math.round(Math.hypot(p.x - sp.x, p.y - sp.y)) : null, room: p?.roomId, typing: !!(ns.mode === 'job' && ns.job?.need === 'work' && ns.job?.phase === 'using'), mode: ns.mode, phase: ns.job?.phase || null };
+        }
+        window.__listen.push(out);
+    });
 });
 const clock = () => page.evaluate(() => window.npcNeedsSystem.clockMs);
 const st = id => page.evaluate(id => { const s = window.npcNeedsSystem.getState(id) || {}; const b = window.npcBehaviorManager.getBehavior(id); const c = b?.sprite?.body?.center; return { mode: s.mode, phase: s.job?.phase, target: s.job?.targetId, x: c ? Math.round(c.x) : null, y: c ? Math.round(c.y) : null }; }, id);
@@ -45,7 +64,10 @@ while (Date.now() - t0 < 200000) {
     // a notice read while he still walks home from row 1 sends him straight back with no
     // left_post, and Sanjay never sets off (games 5349 to 5352, 5358)
     const busy = await page.evaluate(() => ['amara', 'tom', 'marek', 'sanjay'].some(id => window.npcNeedsSystem.getState(id)?.job?.targetId === 'office_coffee')
-        || window.npcNeedsSystem.getState('marek')?.mode !== 'idle');
+        || window.npcNeedsSystem.getState('marek')?.mode !== 'idle'
+        // and Sanjay is free at his desk: a work spell is never interrupted, and one that ends after
+        // Marek reaches the coffee parks the caffeine at selection, with no turn-back (game 5378)
+        || window.npcNeedsSystem.getState('sanjay')?.mode !== 'idle');
     if (c > 60000 && !busy) break;
     await t(1000);
 }
@@ -75,11 +97,9 @@ for (let i = 0; i < 10; i++) {
 report.notice_closed = await page.evaluate(() => !window.__test.getState().blockingUi && !window.MinigameFramework?.currentMinigame);
 const readAt = await clock();
 console.log('notice read', JSON.stringify(report.after_read_ui), 'clock', readAt);
-if (where.coffee) {
-    const mx = (where.sanjay.x + where.coffee.x) / 2, my = (where.sanjay.y + where.coffee.y) / 2;
-    report.stand = { x: Math.round(mx), y: Math.round(my) };
-    await page.evaluate(([x, y]) => window.__test.moveTo(x, y, { timeoutMs: 15000 }), [mx, my]).catch(() => null);
-}
+report.stand = { x: standX, y: standY };
+await page.evaluate(([x, y]) => window.__test.moveTo(x, y, { timeoutMs: 15000 }), [standX, standY]).catch(() => null);
+report.npcs_at_read = await page.evaluate(() => Object.fromEntries(['amara', 'tom', 'grace', 'sanjay', 'marek'].map(id => { const p = window.npcNeedsSystem.world.npcPos(id); return [id, p && { x: Math.round(p.x), y: Math.round(p.y) }]; })));
 // Watch for 100 s of needs clock: Marek's coffee and his walk home
 const trace = [];
 const tw = Date.now();
@@ -88,7 +108,9 @@ while ((await clock()) - readAt < 100000 && Date.now() - tw < 300000) {
     trace.push({ c: Math.round(((await clock()) - readAt) / 100) / 10, ...m });
     if (trace.length % 15 === 0) console.log('t', trace.at(-1).c, JSON.stringify(m));
     const log = await page.evaluate(() => window.npcNeedsSystem.getLog().filter(e => e.npc === 'marek'));
-    const used = log.filter(e => e.ev === 'used' && e.target === 'office_coffee' && e.t >= 0);
+    // after the notice only: row 1's queue gave Marek a cup and a walk home before it, which ended
+    // this watch at once (games 5375, 5376)
+    const used = log.filter(e => e.ev === 'used' && e.target === 'office_coffee' && e.t >= Math.round(readAt / 250));
     if (used.length && log.some(e => e.ev === 'returned_post' && e.t > used[used.length - 1].t)) { await t(3000); break; }
     await t(1000);
 }
@@ -102,10 +124,13 @@ report.marek_home_s = used && back ? (back.t - used.t) * 0.25 : null;
 report.stall_lines = needsLog.filter(e => e.t >= readTick && /^(return_resumed|return_stuck|walk_rerouted|walk_stuck|arrival_far)$/.test(e.ev)).map(e => ({ t: e.t, npc: e.npc, ev: e.ev, x: e.x, y: e.y }));
 report.marek_arrivals = mlog.filter(e => e.ev === 'arrival').map(e => ({ t: e.t, pathLeft: e.pathLeft, dist: e.dist }));
 report.events = await page.evaluate(() => window.__p.filter(e => !e.ev.startsWith('npc_chatted') || ['sanjay', 'marek'].includes(e.d?.speakerId || e.d?.npcId)));
+report.listen = await page.evaluate(() => window.__listen);
+report.sanjay_log = needsLog.filter(e => e.npc === 'sanjay' && e.t >= readTick - 40 && !/^(arrival|need|decay)/.test(e.ev)).slice(0, 40);
+report.marek_path = trace.filter((e, i) => i % 2 === 0).map(e => [e.c, e.x, e.y]);
 const tasks = await tasksDone();
 report.see_turned_back = tasks.includes('see_turned_back');
 report.see_look_round = tasks.includes('see_look_round');
-const sanjayChat = report.events.filter(e => e.ev.startsWith('npc_chatted') && (e.d?.speakerId || e.d?.npcId) === 'sanjay');
+const sanjayChat = report.events.filter(e => /^npc_(chatted|overheard)/.test(e.ev) && (e.d?.speakerId || e.d?.npcId) === 'sanjay');
 report.sanjay_grumble = sanjayChat.map(e => ({ s: Math.round((e.c - readAt) / 100) / 10, line: e.d.line || null, picture: e.d.picture, overheard: e.d.overheard }));
 report.player = await page.evaluate(() => ({ x: Math.round(window.player.body.center.x), y: Math.round(window.player.body.center.y) }));
 report.trace_tail = trace.slice(-5);
