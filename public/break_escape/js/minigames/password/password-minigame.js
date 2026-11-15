@@ -1860,17 +1860,33 @@ export class PasswordMinigame extends MinigameScene {
         const typing = !!st.other && (!!st.otherPicked
             || !!(this.usernameField?.value || this.passwordField?.value));
         const locked = s.current?.locked === true;
-        // The chosen account may not be in the rebuilt row (N2): back to the row, nothing hidden kept
-        if (st.selected !== null && !this.signInTileFor(st.selected)) {
-            st.selected = null;
-            st.other = false;
-            st.otherPicked = false;
-            if (this.passwordField) this.passwordField.value = '';
-            if (this.usernameField) this.usernameField.value = '';
-            this.gameData.password = '';
-        }
+        // The chosen account may not be in the rebuilt row (N2): back to the row, nothing hidden kept.
+        // Not while a sign-in is in flight: the outcome decides (see _submitSignInOnce).
+        if (!this._signingIn) this.dropChosenIfGone();
         if (st.selected === null && !typing && !locked) st.other = !this.signInTilesOffered();
         this.renderSignInForm({ quiet: late });
+        return true;
+    }
+
+    /** The chosen tile is no longer in the row (N2): forget it and the typed values. True if dropped. */
+    dropChosenIfGone() {
+        const st = this.signInState;
+        if (st.selected === null || this.signInTileFor(st.selected)) return false;
+        st.selected = null;
+        st.other = false;
+        st.otherPicked = false;
+        if (this.passwordField) this.passwordField.value = '';
+        if (this.usernameField) this.usernameField.value = '';
+        this.gameData.password = '';
+        return true;
+    }
+
+    /** After a failed sign-in: if a late answer dropped the account meanwhile, show the row with no stale message. */
+    settleDroppedAccount() {
+        if (!this.dropChosenIfGone()) return false;
+        this.signInState.other = !this.signInTilesOffered();
+        this.setSignInMessage('');
+        this.renderSignInForm({ quiet: true });
         return true;
     }
 
@@ -2043,12 +2059,14 @@ export class PasswordMinigame extends MinigameScene {
         const remoteOpts = this.signIn.remote ? { remote: true, host: this.signInHost() } : undefined;
         if (result.error) {
             this.setSignInMessage(signInErrorMessage(result, remoteOpts), 'error');
+            this.settleDroppedAccount();
             return;
         }
         if (window.playUISound) window.playUISound('reject');
         this.setSignInMessage(signInRefusalMessage(result, remoteOpts), 'error');
         this.passwordField.value = '';
         this.gameData.password = '';
+        if (this.settleDroppedAccount()) return;
         this.passwordField.focus?.();
     }
 

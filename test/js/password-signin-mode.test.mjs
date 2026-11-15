@@ -1365,6 +1365,78 @@ test('R2 N2: a late answer that drops the chosen captured account returns to the
     assert.equal(visible(q('#signin-tiles')), true);
 });
 
+// K0 R3 UX m1: the N2 reset waits for an in-flight sign-in; the outcome decides.
+function holdSignIn(mg) {
+    let release;
+    const held = new Promise(r => { release = r; });
+    window.pcSessions.signIn = async (...a) => { signIns.push(a); return held; };
+    return release;
+}
+const tick = () => new Promise(r => setTimeout(r, 0));
+
+test('R3 m1: a late answer dropping the account mid-submit waits; the refusal then shows the row, no stale message', async () => {
+    const mg = openRemote();
+    mg.setRemoteAccounts(CAP_PENDING());
+    q('.signin-tile[data-username="lfox"]').click();
+    q('#password-field').value = 'wrong-one';
+    const release = holdSignIn(mg);
+    const submit = mg._submitSignInOnce();
+    await tick();
+    assert.equal(mg._signingIn, true);
+    answerRemote(mg, { tiles: [{ username: 'ishaw', displayName: 'Ian Shaw' }], captured: CAP_PENDING().captured });
+    assert.equal(mg.signInState.selected, 'lfox', 'the account is kept while the request runs');
+    assert.equal(q('#password-field').value, 'wrong-one', 'the typed password is kept in flight');
+    assert.equal(signIns.length, 1);
+    assert.equal(signIns[0][1], 'lfox');
+    release({ ok: false, reason: 'wrong', message: 'Incorrect username or password', attemptsLeft: 2 });
+    await submit;
+    assert.deepEqual(dataUsernames(), ['ishaw'], 'the row shows Ian only');
+    assert.equal(mg.signInState.selected, null, 'nothing selected');
+    assert.doesNotMatch(mg.signInState.message, /Incorrect/, 'no stale refusal state');
+    assert.doesNotMatch(messageText(), /Incorrect|attempt/, 'no stale refusal on screen');
+    assert.equal(q('#signin-message').dataset.kind, 'info', 'the row line, not an error');
+    assert.equal(q('#password-field').value, '');
+    assert.equal(mg.gameData.password, '');
+    assert.equal(visible(q('#signin-form')), false, 'the row is back, no form');
+    assert.equal(visible(q('#signin-tiles')), true);
+    mg.cleanup?.();
+});
+
+test('R3 m1: a refusal for an account that stays listed keeps its message and the form', async () => {
+    const mg = openRemote();
+    mg.setRemoteAccounts(CAP_PENDING());
+    q('.signin-tile[data-username="lfox"]').click();
+    q('#password-field').value = 'wrong-one';
+    const release = holdSignIn(mg);
+    const submit = mg._submitSignInOnce();
+    await tick();
+    answerRemote(mg, { tiles: [{ username: 'lfox', displayName: 'Lena Fox' }], captured: CAP_PENDING().captured });
+    release({ ok: false, reason: 'wrong', message: 'Incorrect username or password', attemptsLeft: 2 });
+    await submit;
+    assert.equal(mg.signInState.selected, 'lfox');
+    assert.match(messageText(), /Incorrect/);
+    mg.cleanup?.();
+});
+
+test('R3 m1: a success in flight is not disturbed by a late answer that drops the account', async () => {
+    const mg = openRemote();
+    mg.setRemoteAccounts(CAP_PENDING());
+    q('.signin-tile[data-username="lfox"]').click();
+    q('#password-field').value = 'Ledger-Lena-9';
+    const release = holdSignIn(mg);
+    const submit = mg._submitSignInOnce();
+    await tick();
+    answerRemote(mg, { tiles: [{ username: 'ishaw', displayName: 'Ian Shaw' }], captured: CAP_PENDING().captured });
+    assert.equal(mg.signInState.selected, 'lfox');
+    assert.equal(q('#password-field').value, 'Ledger-Lena-9', 'the typed password is not cleared');
+    release({ ok: true, session: { username: 'lfox', displayName: 'Lena Fox' } });
+    await submit;
+    assert.equal(mg.gameResult?.success, true);
+    assert.equal(mg.gameResult?.signIn?.username, 'lfox', 'signed in as the account that was submitted');
+    assert.equal(signIns.length, 1);
+    mg.cleanup?.();
+});
+
 test('R2 N3: the "More below" cue sits on a dark slab, as the message line does', () => {
     const css = readFileSync(join(here, '../../public/break_escape/css/password-minigame.css'), 'utf8');
     const style = document.createElement('style');

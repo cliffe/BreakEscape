@@ -192,9 +192,14 @@ if (MODE === 'late') {
     H.setDelay(5000); await open('it_pc'); await sleep(3700);
     log('N2 cap:', JSON.stringify(await snap()));
     await T(() => document.querySelector('.signin-tile[data-username="lfox"]')?.click()); await sleep(400);
-    log('N2 lfox chosen:', JSON.stringify(await snap()), 'pw len', await T(() => document.querySelector('#password-field')?.value.length)); await shot('n2-lena-chosen', [[800, 600]]);
+    // The Captured tile fills Lena's served password (social.captures.revealSecret is on), so the clear shows
+    const pwProbe = () => T(() => ({ field: document.querySelector('#password-field')?.value.length ?? null, data: window.MinigameFramework?.currentMinigame?.gameData?.password?.length ?? null }));
+    const before = await pwProbe();
+    log('N2 lfox chosen:', JSON.stringify(await snap()), 'pw', JSON.stringify(before)); await shot('n2-lena-chosen', [[800, 600]]);
     await sleep(2800);
-    log('N2 after late answer:', JSON.stringify(await snap()), 'pw len', await T(() => document.querySelector('#password-field')?.value.length)); await shot('n2-after-late-answer', [[800, 600]]);
+    const after = await pwProbe();
+    log('N2 after late answer:', JSON.stringify(await snap()), 'pw', JSON.stringify(after)); await shot('n2-after-late-answer', [[800, 600]]);
+    log('N2 password filled before:', before.field > 0 && before.data > 0 ? 'PASS' : 'FAIL', '| cleared after (field and gameData):', !after.field && !after.data ? 'PASS' : 'FAIL');
     H.setDelay(0);
     log('errors:', JSON.stringify(errs));
 }
