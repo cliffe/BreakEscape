@@ -64,3 +64,23 @@ The 40 s mid-break variants; the whole-room walkthrough counts (crossings, pool 
 ## 7. Housekeeping
 
 Games made and driven in this run: 5532 (script fault, partial), 5533 (script fault before any punch), 5534, 5535, 5537, 5538, 5539, 5540, 5541, 5544, 5546, 5552, 5553 (script fault, staff room not loaded), 5555, 5556. The server on 3092 was stopped by its PID at the end.
+
+## R2 (2026-11-15, same branch, tip 654ca5f87)
+
+Keyless server on 3092 again, headless, `setFPS(20)`, fixed steps on. Scripts and logs in the same scratchpad folder: `f1.mjs` (`f1-5561.log`), `f2.mjs` (`f2-5563.log`), `mb.mjs` (`mbA-5564.log`), with `lib2.mjs` (the round 1 library plus a compact event capture). The round was cut short when the sessions were wound down.
+
+| Check | Result | Game | Evidence |
+|---|---|---|---|
+| FAIL 1 explained: why overheard turns were pictures | designed, no fault | 5561 | Every `_pickBark` call logged with the speaker's cooldown left. `chatterCooldownMin: 2` runs on the needs clock, which kept pace with wall time here. A heard line starts that speaker's 2-minute quiet; every heard turn inside it is a picture. Load break: Ernesto `coffee:2` at clock 8 s, Hodan `coffee:1` at 41 s, then pictures. A boiler break started at 73 s: all 16 turns pictures (quiet 11 to 88 s left). A cooler break straight after: Ernesto `cooler:2` (his quiet had just run out), Hodan pictures (quiet 11 to 23 s left). This is PLAN 2.5 as written ("with the 2-minute cooldown each speaker says at most one pool line a break, pictures between"). On 5556 the cooler break and the walk-in both fell inside the quiet left by the heard break before them. The T79 earshot gate on grumbles and mutters plays no part: the pair have no grumble pools, and nothing but a taken chatter line sets `chatterQuietUntil`. No scenario or engine change |
+| The player walks in and hears a pool line on the next turn (cooldown run out) | PASS | 5561 | Quiet waited out, boiler break run with the player in the corridor: 3 turns, all `unheard` pictures, no line taken. Walk-in: Hodan's first heard turn `coffee:0`, then Ernesto's `coffee:3`; pictures after that |
+| FAIL 2 explained: Ernesto heard from 0 cells at the cooler | probe artefact | 5563 | `canSeePlayerToFace` (`npc-behavior.js`) caches its answer for 150 ms (`FACE_SIGHT_MS`), keyed on time, not position. The round 1 scan ran every cell in one synchronous call, so each speaker got whatever it had cached first. Reproduced: with the cache kept, the scan now gives 0 of 88 for both speakers at both objects |
+| Earshot, player walked to cells | PASS | 5563 | Player walked (`moveTo`) to 5 cells around the room during each break (the NW, SW, NE, north and SE areas): both speakers heard from 5 of 5 at the cooler and 5 of 5 at the boiler |
+| Earshot, every floor cell | NOT RUN (partial) | 5563 | With the cache cleared per cell: 52 of 88 cells hear both at each object, and both speakers miss the same 36 cells. The body still landed up to 73 px off the target cell (`maxOff`), so those 36 are not trusted. Some lie within 75 px of the speaker, while walked cells in the same areas all hear. Needs a scan with a correct centre offset, or a full walk |
+| 10.2 mid-break, paper already heard: no new break, burn exchange heard in the running break | PASS, with a note | 5564 | `cover_burned` and `heard_night_watch_paper` seeded. Mapping-1 break: Ernesto `using` 3.3 s after entry. Gary's conversation opened and closed in IT 5.4 s after the use started, then the player walked straight back. No new `npc_use_started`. `night_watch_burned` lines 0 to 2 all overheard, then `coffee:1` and pictures; `heard_night_watch_burned` true. Note: the capture did not show a `conversation_closed:gary_whitlock` event, so this proves that the running break plays the gated exchange; it does not prove that mapping 2 was absorbed. One try, not five |
+| 10.2 mid-break, paper exchange already played in that break | NOT RUN | | Script ready (`mb.mjs` mode B) |
+| Whole-room walkthrough counts | NOT RUN | | |
+| Seat close-up screenshots | NOT RUN | | Script ready (`seat.mjs`: world rect to CSS pixels by camera zoom times canvas display scale) |
+
+Totals after R2: 22 PASS, 0 FAIL, 4 NOT RUN (the cut-short items above). Both round 1 FAILs are closed, as designed behaviour and as a probe artefact.
+
+Games made and driven in R2: 5561, 5563, 5564. The server on 3092 was stopped by its PID.
