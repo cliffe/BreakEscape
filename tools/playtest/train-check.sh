@@ -13,7 +13,8 @@
 # and writes <outdir>/summary.txt. It kills only the server it started. It never touches ports 3000,
 # 3085 or 3086 and runs no db: task.
 # Env: PLAYWRIGHT_CHROMIUM_EXECUTABLE (default: the chrome-headless-shell in ~/.cache/ms-playwright),
-#      TRAIN_CHECK_SKIP_RAILS=1 / TRAIN_CHECK_SKIP_CORPUS=1 for a quick partial run (summary says SKIPPED).
+#      TRAIN_CHECK_SKIP_RAILS=1 / _SKIP_JS=1 / _SKIP_CORPUS=1 for a partial run (summary says SKIPPED;
+#      a partial run is not a green train).
 set -uo pipefail
 
 if [ "$#" -ne 3 ]; then echo "usage: $0 <worktree> <outdir> <port>" >&2; exit 2; fi
@@ -85,9 +86,13 @@ else
 fi
 
 # ---- 2. JS ----
-MERGE_BATCH=1 SHELL_X_PORT="$PORT" SHELL_X_GAME="${GAME[m01_first_contact]:-}" bin/test-js -j 3 > "$OUT/js.txt" 2>&1; rc=$?
-echo "js exit $rc: $(grep -E '^Files: ' "$OUT/js.txt" | tail -1)" >> "$SUM"
-grep -E '^Failed: ' "$OUT/js.txt" >> "$SUM" || true
+if [ "${TRAIN_CHECK_SKIP_JS:-0}" = 1 ]; then
+  echo "js SKIPPED" >> "$SUM"
+else
+  MERGE_BATCH=1 SHELL_X_PORT="$PORT" SHELL_X_GAME="${GAME[m01_first_contact]:-}" bin/test-js -j 3 > "$OUT/js.txt" 2>&1; rc=$?
+  echo "js exit $rc: $(grep -E '^Files: ' "$OUT/js.txt" | tail -1)" >> "$SUM"
+  grep -E '^Failed: ' "$OUT/js.txt" >> "$SUM" || true
+fi
 
 # ---- 3. smoke ----
 SMOKE_ARGS=()
