@@ -800,3 +800,41 @@ test('a desk_phone_ring emit naming no desk phone is pointed at as a likely typo
     i = check(oneRoom({ objects: [desk('a_pc'), phone, ringer('ph1')], npcs: [a] }));
     assert.ok(!has(i, 'check the spelling'), i.join('\n'));
 });
+
+// ── needsRooms (design review R3 follow-up): a leash that excludes the room a pool's sources sit in ──
+// _roomForbidden exempts only the NPC's home room, so a staff-room pair whose needsRooms names
+// another room keeps its staff-room pools while the home stays in the staff room, and loses them
+// once the home moves out. Likewise a start room the leash bars is not a place the NPC can be.
+const twoRooms = ({ staffObjects = [], staffNpcs = [], officeObjects = [], officeNpcs = [] }) => ({
+    officePresets: false,
+    rooms: {
+        office: { type: 'room_office', connections: { north: 'staff' }, objects: officeObjects, npcs: officeNpcs },
+        staff: { type: 'room_office', connections: { south: 'office' }, objects: staffObjects, npcs: staffNpcs }
+    }
+});
+
+test('needsRooms: a staff-room pair keeps its pools while its home stays in the staff room, loses them when the home moves out', { skip }, () => {
+    const pair = (home, rooms) => ['k', 'j'].map(id => ({
+        id, needsHome: home(id), needsRooms: rooms, needs: thirst, chatter: { cooler: ['Water?'] }
+    }));
+    const W = "chatter pool 'cooler'";
+    const stay = twoRooms({ officeObjects: [desk('d')], staffObjects: [cooler('cool1')],
+        staffNpcs: pair(id => ({ room: 'staff', x: 3, y: 3 }), ['office']) });
+    assert.ok(!has(check(stay), W), 'home in the staff room: exempt from needsRooms, the cooler pool stays live: ' + check(stay).join('\n'));
+
+    const moved = twoRooms({ officeObjects: [desk('d')], staffObjects: [cooler('cool1')],
+        staffNpcs: pair(id => ({ room: 'office', x: 3, y: 3 }), ['office']) });
+    const i = check(moved);
+    assert.ok(has(i, "NPC 'k' " + W) && has(i, "NPC 'j' " + W), 'home in the office, needsRooms office: the staff-room cooler is out of bounds: ' + i.join('\n'));
+    assert.ok(has(i, 'outside needsRooms'), 'and the warning names the rule');
+});
+
+test('needsRooms: a start room the leash bars is not a place the NPC can be, so an avoider of it never turns back there', { skip }, () => {
+    const g = { grumble: ['Not him again.'] };
+    const a = { id: 'a', needsHome: 'a_pc', needs: thirst, needsCompany: { avoids: ['b'] }, chatter: g };
+    const b = rooms => ({ id: 'b', needsHome: { room: 'office', x: 3, y: 3 }, needs: thirst, ...(rooms ? { needsRooms: rooms } : {}) });
+    const build = rooms => twoRooms({ officeObjects: [desk('a_pc')], officeNpcs: [a], staffObjects: [cooler('cool1')], staffNpcs: [b(rooms)] });
+    const W = "NPC 'a' chatter pool 'grumble'";
+    assert.ok(!has(check(build(null)), W), 'unleashed b starts in the staff room and can stand at the cooler: ' + check(build(null)).join('\n'));
+    assert.ok(has(check(build(['office'])), W), 'b is leashed to the office and walks home from its start room for good');
+});

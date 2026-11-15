@@ -1162,7 +1162,12 @@ module ValidateOfficeLife
     ctx.rooms = {}.compare_by_identity
     ctx.knows = {}.compare_by_identity
     ctx.npc_list.each do |n|
-      r = Set[ctx.home_room[n], ctx.npc_room[n]]
+      r = Set[ctx.home_room[n]]
+      # The start room counts, unless the engine runs the NPC and its leash bars that room: the NPC
+      # then walks home and never goes back (_roomForbidden exempts only the home room), so a pool
+      # whose source or avoided partner sits there is dead for it. A leash never moves a patrol or
+      # an NPC the engine does not run.
+      r << ctx.npc_room[n] unless runs?(n) && VN.leash_rule(json, n, ctx.npc_room[n], ctx.home_room[n])
       ctx.knows[n] = Set.new
       if runs?(n)
         ctx.world.each { |o| r << o.room if o.room && !fixed_magnet?(o) && can_use?(json, n, o, nil, ctx) }
