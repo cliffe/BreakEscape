@@ -223,6 +223,23 @@ test('needs NPC back at its post sits in its own chair though the walk stopped a
     } finally { rig.restore(); }
 });
 
+test('chairAtOtherPost: the nearest post owns a chair; within 36 px of a neighbour but nearer home stays own', () => {
+    const home = { x: 92, y: 124 }, marek = { x: 53, y: 128 };
+    assert.equal(seating.chairAtOtherPost({ x: 89, y: 126.4 }, home, [marek]), false, "Sanjay's tucked chair (live 5398)");
+    assert.equal(seating.chairAtOtherPost({ x: 60, y: 126 }, home, [marek]), true, 'by the neighbour: theirs');
+    assert.equal(seating.chairAtOtherPost({ x: 60, y: 126 }, home, []), false, 'no other posts');
+    assert.equal(seating.chairAtOtherPost({ x: 10, y: 126 }, home, [marek]), false, 'too far from the post');
+});
+
+test('needs NPC at its post sits in its own chair though a neighbour\'s post is within 36 px of it', () => {
+    const rig = labSeatRig(235);
+    try {
+        // chair foot (200,186), home cell (204,172); a neighbour's post 35 px west of the foot
+        window.npcNeedsSystem.states.set('neighbour', { npcId: 'neighbour', mode: 'idle', atPost: true, home: { x: 165, y: 186, roomId: 'open_plan' } });
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), true, 'walking onto the seat');
+    } finally { rig.restore(); }
+});
+
 test('postSeatRetryDue: at the post every 4 s of needs clock; away from the post one try is final', () => {
     assert.equal(seating.postSeatRetryDue({ post: true }, undefined, 0), true);
     assert.equal(seating.postSeatRetryDue({ post: true }, 1000, 4999), false);

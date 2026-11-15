@@ -1900,6 +1900,21 @@ export function needsSeatRef(feet, stop, home) {
 }
 
 /**
+ * Whether a chair (its foot) belongs to another needs NPC's post: within NEAR_CHAIR of that post and
+ * nearer to it than to this NPC's own spot (`ref`). Nearest post wins, so a desk chair tucked in
+ * 4 px from its own NPC's home cell and 35.9 px from a neighbour's post stays its own (test_needs_sims:
+ * Sanjay stood beside his desk for good after his coffee turn-back, in the only corridor to Marek's
+ * post; OFFICE_LIFE_STUCK_RETURN.md round 4).
+ */
+export function chairAtOtherPost(foot, ref, posts) {
+    const mine = Math.hypot(foot.x - ref.x, foot.y - ref.y);
+    return posts.some(p => {
+        const d = Math.hypot(p.x - foot.x, p.y - foot.y);
+        return d < NEAR_CHAIR && d < mine;
+    });
+}
+
+/**
  * Whether a needs NPC that has tried to sit at this stop tries again: only at its post (stop.post),
  * once POST_SEAT_RETRY_MS of needs clock have passed since the last try. Away from the post one try
  * is final (it never takes a chair it was passing).
@@ -2002,7 +2017,7 @@ function updateNeedsSeat(behavior, ns, playerPos) {
     const toward = facePointFor(obj, feet);
     // Chairs at another needs NPC's post are theirs, unless this is that spot too
     const posts = otherPosts(behavior.npcId).filter(p => Math.hypot(p.x - feet.x, p.y - feet.y) > NEAR_CHAIR);
-    const free = c => !posts.some(p => Math.hypot(p.x - (c.obj.x + c.obj.width / 2), p.y - (c.obj.y + c.obj.height)) < NEAR_CHAIR);
+    const free = c => !chairAtOtherPost({ x: c.obj.x + c.obj.width / 2, y: c.obj.y + c.obj.height }, feet, posts);
     const near = chairsNear(behavior.roomId, feet.x, feet.y, NEAR_CHAIR)
         .find(c => free(c) && (c.seat.kind === 'swivel' || staticFacesToward(c.seat, feet, toward)));
     if (near) {
