@@ -217,8 +217,17 @@ export class ApiClient {
   // screen opens: { pc_id, loginAccounts: [{ username, displayName, portrait, avatar }] },
   // plus postitNote ("<username> / <password>") when the owner writes the password down
   // (slice 9.1, 5.3). Sent no-store; never asked for a PC the player is not at.
-  static async loginAccounts(pcId) {
-    return this.get(`/login_accounts?pc_id=${encodeURIComponent(pcId)}`);
+  //
+  // A remote sign-in screen passes { foothold }: the request names the foothold the player
+  // reached the PC through (credential keyring K0, plan 5.2), so the server answers from
+  // Game#remote_login_accounts (the PC's own tiles under remoteScreen "tiles", never the
+  // post-it) instead of the keyboard branch. Additive: with no foothold the URL is unchanged.
+  static async loginAccounts(pcId, { foothold } = {}) {
+    let url = `/login_accounts?pc_id=${encodeURIComponent(pcId)}`;
+    if (foothold !== undefined && foothold !== null && foothold !== '') {
+      url += `&foothold=${encodeURIComponent(foothold)}`;
+    }
+    return this.get(url);
   }
 
   /**
