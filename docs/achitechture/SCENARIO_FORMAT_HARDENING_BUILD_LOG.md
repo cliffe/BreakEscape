@@ -4736,3 +4736,63 @@ R2 counts: 0 blockers, 1 major, 2 minors.
 - Major: nothing set RUN_OPENED_SCAN, so the corpus-wide opened-state tests guarded no train. Fixed in tools/playtest/train-check.sh on build/train-check-2, which runs the file with RUN_OPENED_SCAN=1 after the Rails suite and goes RED on a failure or a skip. That branch lands in the same train as this one.
 - Minor: the playerInventory pass proves what is served, not what is stored, because client_inventory re-runs filter_inventory_for_client!. The test comments and the plan now say so.
 - Minor: the third m09 exception is pinned to playerInventory[7]. The index holds because the scan seeds srand(1). If the pickup order shifts, the stale-exception check flags the entry for review, so nothing is masked. Accepted as it stands. The orchestrator confirms all three m09 headings: each is either display text the player sees only after unlocking hl_box, or a deliberate clue gated on flag 2.
+
+## Variant fields (orchestrator pick A, 2026-11-15)
+
+Branch `build/hard-variant-leaks`, from main at 90d8fa338. Closes the section 9 known limit and the
+IDEAS_BACKLOG entry of 2026-11-12: fields that ship to the browser before the player is shown them
+were not checked for secrets. Step 3's answer match (an answer equal to, or a whole word inside, a
+leaf, 6-character minimum, acknowledgedClues matching) now reaches three surfaces, all through
+`scripts/validate_secret_leaks.rb`:
+
+- **textVariants** and **observationVariants**: an object ships every variant `value` at load and
+  the client picks one by the live globals (`public/break_escape/js/utils/conditional-text.js`);
+  nothing in `app/` or `lib/` reads these keys, so the server never withholds a later variant.
+- **revealOnGlobal**: the object ships whole in the room payload and is only hidden client-side
+  until the global is set (`public/break_escape/js/core/rooms.js`; no reader in `app/` or `lib/`).
+  Every client-visible string leaf is scanned, skipping the x-serverOnly keys (read once from
+  `scripts/scenario-schema.json`), the lock answer (`requires`), the copy-sink and variant subtrees
+  (their own surfaces), and the narrative display fields (`name`/`door_sign`/`lockedHint`, which the
+  narrative walk already warns on). What is left is the prose the narrative walk skips on purpose
+  (`text`, `observations`), which for a hidden-but-shipped object is the leak.
+
+**Severity: WARNING only** (plus an `ℹ️ acknowledged clue in <field>` info line when a marker
+covers it, and the stale-marker check now counts a variant marker as used). No new `❌ ERROR`: the
+exit code and the known/unknown error counts are unchanged. Each warning names the answer path, the
+lock it opens, the field, the shipped-string path, and the fix (move the text, or add an
+acknowledgedClues entry, with the exact `lock`/`in` to use). The same double render as the narrative
+check drops a random value that only collides under one seed.
+
+**Corpus triage.** The validator ran over all 181 shared scenarios (each rendered with
+`ScenarioBinding`, `srand(1)`; 0 crashes, 0 render failures). One scenario produces findings, all of
+one class; no observationVariants or revealOnGlobal finding anywhere in the corpus.
+
+| Scenario | Track | Path(s) | Lock | Judgement |
+|---|---|---|---|---|
+| m09_digital_archaeology | missions | `rooms/reading_room/objects[2]` (`drop_terminal_screen`) `textVariants[0..4]/value` | `hl_box` (password `HL2015-0477`) | Deliberate clue to declare |
+
+Counts per judgement: deliberate clue to declare 1 (5 warning lines, one marker covers all);
+**real early leak 0**; false match 0.
+
+The five lines are the hl_box password written into the drop terminal's `textVariants` (directly in
+variant 0 and through the shared `ledger_block` in variants 1 to 4); variant 5 (`flag1_submitted`,
+"FULL CATALOGUE") carries no file number and is not flagged. The variants are gated in the world on
+`invoice_booked`/`flag2_submitted`, and the file number itself is derived from flag 2 ("the lid
+takes the file number from flag 2", `scenario.json.erb` line 1511), so the player has earned the
+means to the answer before any variant that names it is shown. This is the same case the 6a-2
+opened-state scan exempted (`payload_scan_opened_exceptions.json`, reading_room entry) with a
+follow-up for m09's owner. A deliberate gated clue, not an early leak.
+
+**The acknowledgedClues entry m09's owner would add** (one marker covers all five lines; m09 not
+edited here, another track owns it):
+
+```json
+{ "lock": "hl_box", "in": "drop_terminal_screen", "reason": "the drop terminal's live-capture ledger names the HL file number (the hl_box password) only under invoice_booked/flag2_submitted, after the player has earned flag 2, which itself gives the file number", "approved": "<a new heading in docs/agents/VALIDATOR_DECISIONS.md>" }
+```
+
+**Tests.** `test/js/validator-variant-leaks.test.mjs` (14 subtests): each of the three surfaces
+warns on a matching answer, stays silent under an acknowledgedClues marker (which becomes an info
+line), stays silent on a short (<6 char) answer, and stays silent on a non-matching value; a
+revealOnGlobal object's server-only field (`usePayload.secret`, x-serverOnly) carrying the answer is
+not reported. `test/js/validator-secret-leaks.test.mjs` is unchanged and still passes (the new
+surfaces do not alter the error, narrative or acknowledged-clue paths).
