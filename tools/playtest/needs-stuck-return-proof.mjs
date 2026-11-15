@@ -145,7 +145,15 @@ while (Date.now() - t0 < 420000) {
     if (c > 60000 && !busy) { cleared = true; break; }
     // Marek standing still on a walk before the notice (5430: out, 5431: home): one dump
     const wm = await st('marek'); waitTrace.push(wm); const wp = waitTrace.at(-9);
-    if (!report.wait_dump && wm.mode !== 'idle' && wp && wp.mode !== 'idle' && Math.hypot(wp.x - wm.x, wp.y - wm.y) < 2) report.wait_dump = { c: Math.round(c / 1000), mode: wm.mode, ...(await dumpMarek()) };
+    // Round 7: a queue wait is not a stall (5432, 5433 dumped only those), so skip queued and
+    // using, and keep up to four dumps on the walk (the first stall and the ones after a re-route)
+    report.wait_dumps = report.wait_dumps || [];
+    const walking = wm.mode === 'returning' || wm.phase === 'goto_item' || wm.phase === 'goto_target';
+    if (report.wait_dumps.length < 4 && walking && wp && wp.mode === wm.mode && Math.hypot(wp.x - wm.x, wp.y - wm.y) < 2
+        && !(report.wait_dumps.at(-1) && c / 1000 - report.wait_dumps.at(-1).c < 20)) {
+        const d = { c: Math.round(c / 1000), mode: wm.mode, phase: wm.phase || null, ...(await dumpMarek()) };
+        report.wait_dumps.push(d); if (!report.wait_dump) report.wait_dump = d;
+    }
     await t(1000);
 }
 report.queue_cleared_s = Math.round((await clock()) / 1000);
