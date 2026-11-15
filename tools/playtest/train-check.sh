@@ -14,8 +14,8 @@
 #   0. tools/playtest/shell-x-check.mjs on the m01 game, once, in the background beside step 1 (shellx.txt)
 #   1. the Rails suite                      (rails.txt)
 #   1b. RUN_OPENED_SCAN=1 test/models/break_escape/payload_scan_opened_state_test.rb, after step 1 and
-#      in the background beside steps 2 and 3 (the only other test-database user is step 1), when
-#      the file exists (opened_scan.txt)
+#      in the background beside steps 2 and 3 (the only other test-database user is step 1); a
+#      missing file is RED, so a rename cannot switch the scan off (opened_scan.txt)
 #   2. MERGE_BATCH=1 SHELL_X_SEPARATE=1 bin/test-js -j $TRAIN_CHECK_JS_JOBS (default 8)   (js.txt)
 #   3. tools/playtest/train-smoke.mjs       (smoke.txt)
 #   4. the scenario validator over every scenarios/*/scenario.json.erb (v_<scenario>.txt)
@@ -173,7 +173,7 @@ if [ -n "$OPENED_PID" ]; then
 elif [ "${TRAIN_CHECK_SKIP_RAILS:-0}" = 1 ]; then
   echo "opened-scan SKIPPED (rails skipped)" >> "$SUM"
 else
-  echo "opened-scan n/a: $OPENED_TEST not on this branch" >> "$SUM"
+  echo "opened-scan FAILED: $OPENED_TEST is missing" >> "$SUM"; RED+=("opened-scan test file missing")
 fi
 
 # ---- 4. validator corpus (three at a time) ----
