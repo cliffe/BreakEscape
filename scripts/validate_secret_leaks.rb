@@ -19,6 +19,7 @@
 require 'json'
 require 'set'
 require_relative '../lib/break_escape/capture_model'
+require_relative '../lib/break_escape/declared_grants'
 require_relative '../lib/break_escape/scenario_binding'
 
 module SecretLeaks
@@ -251,7 +252,60 @@ module SecretLeaks
   # these keys, so the server never withholds a later variant, and an answer written into one is in
   # the browser before the condition that reveals it holds. This is the warning path (like the
   # narrative fields): a deliberate gated clue is declared with an acknowledgedClues entry.
-  VARIANT_FIELD_KEYS = %w[textVariants observationVariants].freeze
+  VARIANT_FIELDS = {
+    'textVariants' => 'value',
+    'observationVariants' => 'value',
+    # [{ condition, value }] like the two above (utils/conditional-text.js resolveObjectField)
+    'requiresItemHintVariants' => 'value',
+    'jackConfirmVariants' => 'value',
+    # the ESD minigame maps { condition, text } to { condition, value } before resolving
+    # (esd-pushbutton-minigame.js); it lives under minigameData, so see collect_variant_strings
+    'unauthorizedTextVariants' => 'text'
+  }.freeze
+  VARIANT_FIELD_KEYS = VARIANT_FIELDS.keys.freeze
+
+  # Context for contents_withheld?: the ids of every USB habit stick (an NPC with habits.usb and a
+  # storage-class usb item in itemsHeld, as AccessWork.usb_stick picks it) and the item hash of every
+  # identified give_item (a declared grant) anywhere in the tree.
+  WithheldContext = Struct.new(:stick_ids, :grant_items)
+
+  def withheld_context(data)
+    stick_ids = Set.new
+    grant_items = {}.compare_by_identity
+    walk = lambda do |node|
+      case node
+      when Hash
+        habits = node['habits']
+        held = node['itemsHeld']
+        if habits.is_a?(Hash) && habits['usb'].is_a?(Hash) && held.is_a?(Array)
+          stick = held.find do |i|
+            i.is_a?(Hash) && i['type'] == 'usb' && i['id'].is_a?(String) && !i['id'].strip.empty? &&
+              [nil, 'storage'].include?(i['usbClass'])
+          end
+          stick_ids << stick['id'] if stick
+        end
+        grant_items[node['item']] = true if BreakEscape::DeclaredGrants.identified_give_item?(node)
+        node.each_value { |v| walk.call(v) }
+      when Array
+        node.each { |v| walk.call(v) }
+      end
+    end
+    walk.call(data)
+    WithheldContext.new(stick_ids, grant_items)
+  end
+
+  # Whether the server removes this node's `contents` from every payload, mirroring
+  # Game#filter_requires_and_contents_recursive: a locked node (any truthy `locked`), a sign-in PC
+  # (lockType login), a USB habit stick, and an identified give_item's item (declared grant). A
+  # capture secret is not a contents case: it deletes a `secret` key, which is already in
+  # server_only_keys.
+  def contents_withheld?(node, ctx)
+    return true if node['locked']
+    return true if node['lockType'] == 'login'
+    return true if node['type'] == 'usb' && node['id'].is_a?(String) && ctx.stick_ids.include?(node['id'])
+
+    ctx.grant_items.key?(node)
+  end
 
   # The schema file, read once to list every property the server strips (x-serverOnly). A
   # revealOnGlobal object ships whole at load (revealOnGlobal is client-only too), so its
@@ -295,6 +349,7 @@ module SecretLeaks
       out << { value: data[k], path: k, container: k } if data[k].is_a?(String)
     end
 
+    ctx = withheld_context(data)
     walk = lambda do |node, path, here_id, hidden|
       case node
       when Hash
@@ -306,11 +361,11 @@ module SecretLeaks
             out << { value: node[k], path: "#{path}/#{k}", container: container } if node[k].is_a?(String)
           end
         end
-        node_locked = node['locked'] == true
+        withheld = contents_withheld?(node, ctx)
         node.each do |k, v|
           next if COPY_SINK_KEYS.include?(k)
 
-          walk.call(v, "#{path}/#{k}", nid, hidden || (k == 'contents' && node_locked))
+          walk.call(v, "#{path}/#{k}", nid, hidden || (k == 'contents' && withheld))
         end
       when Array
         node.each_with_index { |v, i| walk.call(v, "#{path}[#{i}]", here_id, hidden) }
@@ -359,6 +414,7 @@ module SecretLeaks
   # a conditional display) still ships, so it is kept.
   def collect_variant_strings(data)
     out = []
+    ctx = withheld_context(data)
     walk = lambda do |node, path, here_id, hidden|
       case node
       when Hash
@@ -366,16 +422,21 @@ module SecretLeaks
         room_match = path.match(%r{\A/rooms/([^/]+)\z})
         container = room_match ? room_match[1] : nid
         unless hidden
-          VARIANT_FIELD_KEYS.each do |k|
+          VARIANT_FIELDS.each do |k, text_key|
             next unless node[k].is_a?(Array)
 
             node[k].each_with_index do |v, i|
-              out << { value: v['value'], path: "#{path}/#{k}[#{i}]/value", container: container, field: k } if v.is_a?(Hash) && v['value'].is_a?(String)
+              out << { value: v[text_key], path: "#{path}/#{k}[#{i}]/#{text_key}", container: container, field: k } if v.is_a?(Hash) && v[text_key].is_a?(String)
             end
           end
         end
-        node_locked = node['locked'] == true
-        node.each { |k, v| walk.call(v, "#{path}/#{k}", nid, hidden || (k == 'contents' && node_locked)) }
+        withheld = contents_withheld?(node, ctx)
+        node.each do |k, v|
+          # minigameData and scenarioData strings are already compared by the stronger error path
+          next if COPY_SINK_KEYS.include?(k)
+
+          walk.call(v, "#{path}/#{k}", nid, hidden || (k == 'contents' && withheld))
+        end
       when Array
         node.each_with_index { |v, i| walk.call(v, "#{path}[#{i}]", here_id, hidden) }
       end
@@ -403,14 +464,15 @@ module SecretLeaks
   def collect_revealed_strings(data)
     out = []
     skip = revealed_skip_keys
+    ctx = withheld_context(data)
     gather = lambda do |node, path, container, hidden|
       case node
       when Hash
-        locked = node['locked'] == true
+        withheld = contents_withheld?(node, ctx)
         node.each do |k, v|
           next if skip.include?(k)
 
-          child_hidden = hidden || (k == 'contents' && locked)
+          child_hidden = hidden || (k == 'contents' && withheld)
           if v.is_a?(String)
             out << { value: v, path: "#{path}/#{k}", container: container, field: 'revealOnGlobal' } unless hidden
           else
@@ -422,20 +484,21 @@ module SecretLeaks
       end
     end
 
-    walk = lambda do |node, path|
+    walk = lambda do |node, path, hidden|
       case node
       when Hash
-        if node['revealOnGlobal'].is_a?(String)
+        if node['revealOnGlobal'].is_a?(String) && !hidden
           room_match = path.match(%r{\A/rooms/([^/]+)\z})
           rid = node['id'].is_a?(String) ? node['id'] : (room_match && room_match[1])
           gather.call(node, path, rid, false)
         end
-        node.each { |k, v| walk.call(v, "#{path}/#{k}") }
+        withheld = contents_withheld?(node, ctx)
+        node.each { |k, v| walk.call(v, "#{path}/#{k}", hidden || (k == 'contents' && withheld)) }
       when Array
-        node.each_with_index { |v, i| walk.call(v, "#{path}[#{i}]") }
+        node.each_with_index { |v, i| walk.call(v, "#{path}[#{i}]", hidden) }
       end
     end
-    walk.call(data, '')
+    walk.call(data, '', false)
     out
   end
 

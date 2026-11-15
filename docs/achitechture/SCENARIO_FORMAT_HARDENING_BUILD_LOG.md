@@ -4745,7 +4745,8 @@ were not checked for secrets. Step 3's answer match (an answer equal to, or a wh
 leaf, 6-character minimum, acknowledgedClues matching) now reaches three surfaces, all through
 `scripts/validate_secret_leaks.rb`:
 
-- **textVariants** and **observationVariants**: an object ships every variant `value` at load and
+- **textVariants**, **observationVariants**, **requiresItemHintVariants** and **jackConfirmVariants**
+  (R1 m3 added the last two; all four are `[{ condition, value }]`): an object ships every variant `value` at load and
   the client picks one by the live globals (`public/break_escape/js/utils/conditional-text.js`);
   nothing in `app/` or `lib/` reads these keys, so the server never withholds a later variant.
 - **revealOnGlobal**: the object ships whole in the room payload and is only hidden client-side
@@ -4763,9 +4764,11 @@ lock it opens, the field, the shipped-string path, and the fix (move the text, o
 acknowledgedClues entry, with the exact `lock`/`in` to use). The same double render as the narrative
 check drops a random value that only collides under one seed.
 
-**Corpus triage.** The validator ran over all 181 shared scenarios (each rendered with
-`ScenarioBinding`, `srand(1)`; 0 crashes, 0 render failures). One scenario produces findings, all of
-one class; no observationVariants or revealOnGlobal finding anywhere in the corpus.
+**Corpus triage (re-run after R1).** The validator ran over all 181 shared scenarios
+(`RBENV_VERSION=2.7.8`, each rendered with `ScenarioBinding`, `srand(1)`; 0 crashes). One scenario
+produces findings, all of one class; no observationVariants, requiresItemHintVariants,
+jackConfirmVariants, unauthorizedTextVariants or revealOnGlobal finding anywhere in the corpus, and
+the wider hidden rule (below) changed no result.
 
 | Scenario | Track | Path(s) | Lock | Judgement |
 |---|---|---|---|---|
@@ -4776,12 +4779,16 @@ Counts per judgement: deliberate clue to declare 1 (5 warning lines, one marker 
 
 The five lines are the hl_box password written into the drop terminal's `textVariants` (directly in
 variant 0 and through the shared `ledger_block` in variants 1 to 4); variant 5 (`flag1_submitted`,
-"FULL CATALOGUE") carries no file number and is not flagged. The variants are gated in the world on
-`invoice_booked`/`flag2_submitted`, and the file number itself is derived from flag 2 ("the lid
-takes the file number from flag 2", `scenario.json.erb` line 1511), so the player has earned the
-means to the answer before any variant that names it is shown. This is the same case the 6a-2
-opened-state scan exempted (`payload_scan_opened_exceptions.json`, reading_room entry) with a
-follow-up for m09's owner. A deliberate gated clue, not an early leak.
+"FULL CATALOGUE") carries no file number and is not flagged. The finding is real in the sense the
+check cares about: every variant `value` ships to the browser at load whatever its condition, so the
+hl_box password is in the browser from game start. The mitigation is in the world, not the payload:
+the variants are gated on `invoice_booked`/`flag2_submitted`, and the file number is derived from
+flag 2 ("the lid takes the file number from flag 2", `scenario.json.erb` line 1511), so the player
+has earned the means to the answer before any variant that names it is displayed. That is the case
+the 6a-2 opened-state scan exempted (`payload_scan_opened_exceptions.json`, reading_room entry) with
+a follow-up for m09's owner. Judged a deliberate gated clue to declare, not a bug to fix. This branch
+adds no marker and no known-failure entry, so m09 prints 5 raw (non-fatal) warnings on every
+validate until its owner lands the marker.
 
 **The acknowledgedClues entry m09's owner would add** (one marker covers all five lines; m09 not
 edited here, another track owns it):
@@ -4790,9 +4797,47 @@ edited here, another track owns it):
 { "lock": "hl_box", "in": "drop_terminal_screen", "reason": "the drop terminal's live-capture ledger names the HL file number (the hl_box password) only under invoice_booked/flag2_submitted, after the player has earned flag 2, which itself gives the file number", "approved": "<a new heading in docs/agents/VALIDATOR_DECISIONS.md>" }
 ```
 
-**Tests.** `test/js/validator-variant-leaks.test.mjs` (14 subtests): each of the three surfaces
-warns on a matching answer, stays silent under an acknowledgedClues marker (which becomes an info
-line), stays silent on a short (<6 char) answer, and stays silent on a non-matching value; a
+**Tests.** `test/js/validator-variant-leaks.test.mjs` (25 subtests): each of the original three
+surfaces warns on a matching answer, stays silent under an acknowledgedClues marker (which becomes an
+info line), stays silent on a short (<6 char) answer, and stays silent on a non-matching value; a
 revealOnGlobal object's server-only field (`usePayload.secret`, x-serverOnly) carrying the answer is
-not reported. `test/js/validator-secret-leaks.test.mjs` is unchanged and still passes (the new
-surfaces do not alter the error, narrative or acknowledged-clue paths).
+not reported. R1 added: one warning test each for requiresItemHintVariants, jackConfirmVariants and
+unauthorizedTextVariants (`{ condition, text }`); a variant on an item in an unlocked container; a
+variant on a `startItemsInInventory` item; a variant and a revealOnGlobal object inside a locked
+container (skipped); a combination answer held as an array matching in a variant; a variant inside a
+login PC, a habit USB stick and a declared-grant item (skipped); and the narrative walk skipping a
+name inside a login PC. `test/js/validator-secret-leaks.test.mjs` is unchanged and still passes (the
+new surfaces do not alter the error, narrative or acknowledged-clue paths).
+
+### R1 outcomes (0 blocker / 0 major / 5 minor, all fixed)
+
+- **m1** `collect_revealed_strings` now threads `hidden` through its outer walk like the variant
+  walk, so a revealOnGlobal object inside a shut container's contents is skipped.
+- **m2** One helper, `contents_withheld?` (with `withheld_context`), mirrors the server's contents
+  stripping in `Game#filter_requires_and_contents_recursive` and is used by the variant walk, the
+  revealOnGlobal walk and the step 3 narrative walk: any truthy `locked`; `lockType == 'login'`; a
+  USB habit stick (an NPC with `habits.usb` holding a storage-class `usb` item, matched by id, as
+  `AccessWork.usb_stick` picks it); and the `item` of an identified give_item (declared grant, using
+  `DeclaredGrants.identified_give_item?`, plain Ruby already shared with the validator). The script
+  now requires `declared_grants` for this. The narrative walk previously tested `locked == true`
+  only; it now uses the truthy rule the server uses. Not mirrored: capture secrets. That stripping
+  deletes a `secret` key, not `contents`, and `secret` is already in `server_only_keys`, so it
+  needs no helper; it is listed here only so the next author does not look for it. Nothing else was
+  left out.
+- **m3** `VARIANT_FIELDS` now maps each field to its text key: `requiresItemHintVariants` and
+  `jackConfirmVariants` use `value`, `unauthorizedTextVariants` uses `text` (the ESD minigame maps it
+  to `value` before resolving). `unauthorizedTextVariants` is read from `minigameData`, a copy sink
+  that the stronger step 1 error path already compares in full, so the variant walk now skips
+  `minigameData`/`scenarioData` subtrees to avoid reporting the same string twice (an error and a
+  warning); the field is still warned on when authored at the object top level.
+- **m4** The subtest count is 25 (it was stated as 14; there were 13).
+- **m5** The five coverage gaps above are tests.
+
+Reviewer notes, recorded and not changed:
+
+- A single acknowledgedClues marker prints one `info` line per covered variant line, so m09 with its
+  marker would print 5 info lines for one marker. Cosmetic; the stale-marker check still counts it
+  as one used marker.
+- The m09 wording in the first draft ("deliberate gated clue, not an early leak") reasoned about when
+  a variant is displayed, but the check exists because all variant values ship at load. The triage
+  paragraph above now says so; the outcome (a warning, declare with a marker) is unchanged.
