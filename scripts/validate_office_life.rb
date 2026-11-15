@@ -854,27 +854,55 @@ module ValidateOfficeLife
     nil
   end
 
-  # The blocks at one object for pool owner `n` (nil: any pair) and its possible partners.
+  # How near each block is to letting the pair meet (V10 design review R3 M4): a pair rule (avoid,
+  # groups, maxQueue) or the object's own seat comes first, then the object being private to its
+  # owners, then a partner with no need it meets, then an NPC the engine does not run. A room leash
+  # (needsRooms, needsAvoidRooms, needsPrivateTo) is the far miss: the pair would also have to be
+  # let into another room. A need miss counts as far when either NPC is leashed out of the room too.
+  NEAR_RANK = { avoid: 0, groups: 0, max_queue: 0, seat: 0, lone: 0, private: 1, need: 2, unknown_magnet: 2,
+                not_run: 3, phone_contact: 3 }.freeze
+  FAR_RANK = 4
+
+  def self.block_rank(json, o, block, who, ctx)
+    r = NEAR_RANK.fetch(block[0], FAR_RANK)
+    return r unless %i[need unknown_magnet].include?(block[0])
+
+    leashed = who.compact.any? do |m|
+      rule = runs?(m) && VN.use_rule(json, m, o, ctx.home_room[m], ctx.npc_list)
+      rule && !rule.start_with?('it is private')
+    end
+    leashed ? FAR_RANK : r
+  end
+
+  # [[rank, block]] sorted nearest first (stable, so scenario order breaks ties); far misses are
+  # dropped whenever a nearer one exists, so the fix never opens a room to bystanders.
+  def self.rank_blocks(json, o, pairs, ctx)
+    ranked = pairs.each_with_index.map { |(who, b), i| [block_rank(json, o, b, who, ctx), i, b] }
+    ranked = ranked.reject { |r, _, _| r == FAR_RANK } if ranked.any? { |r, _, _| r < FAR_RANK }
+    ranked.sort_by { |r, i, _| [r, i] }.map { |r, _, b| [r, b] }
+  end
+
+  # The ranked blocks at one object for pool owner `n` (nil: any pair) and its possible partners.
   def self.object_blocks(json, o, n, ctx)
-    return [seat_block(o)] unless pairs?(o)
+    return [[0, seat_block(o)]] unless pairs?(o)
 
     unless n
       users = ctx.npc_list.select { |m| can_use?(json, m, o, nil, ctx) }
       if users.length >= 2
-        return users.combination(2).filter_map { |x, y| pair_block(json, o, x, y, ctx) }
+        return rank_blocks(json, o, users.combination(2).filter_map { |x, y| (b = pair_block(json, o, x, y, ctx)) && [[x, y], b] }, ctx)
       elsif users.empty?
         runners = ctx.npc_list.select { |m| runs?(m) }
-        return [[:lone, 'no NPC the needs engine runs', "give two NPCs a need '#{o.id}' meets"]] if runners.empty?
+        return [[0, [:lone, 'no NPC the needs engine runs', "give two NPCs a need '#{o.id}' meets"]]] if runners.empty?
 
-        return runners.filter_map { |m| use_block(json, m, o, ctx) }
+        return rank_blocks(json, o, runners.filter_map { |m| (b = use_block(json, m, o, ctx)) && [[m], b] }, ctx)
       end
       n = users.first
     end
-    (r = use_block(json, n, o, ctx)) && (return [r])
+    (r = use_block(json, n, o, ctx)) && (return rank_blocks(json, o, [[[n], r]], ctx))
     others = ctx.npc_list.reject { |m| m.equal?(n) || !runs?(m) }
-    return [[:lone, "'#{n['id']}' is the only NPC the needs engine runs", "add a second NPC with a need '#{o.id}' meets"]] if others.empty?
+    return [[0, [:lone, "'#{n['id']}' is the only NPC the needs engine runs", "add a second NPC with a need '#{o.id}' meets"]]] if others.empty?
 
-    others.filter_map { |m| pair_block(json, o, n, m, ctx) }
+    rank_blocks(json, o, others.filter_map { |m| (b = pair_block(json, o, n, m, ctx)) && [[n, m], b] }, ctx)
   end
 
   def self.shown(list, noun)
@@ -889,12 +917,19 @@ module ValidateOfficeLife
     blocks_why(objs.uniq(&:object_id).map { |o| [o, object_blocks(json, o, n, ctx)] })
   end
 
-  # [reason, fix] from [object, blocks] pairs; the fixes follow the objects and partners shown.
+  # [reason, fix] from [object, ranked blocks] pairs; the fixes follow the objects and partners
+  # shown. Objects whose nearest block is nearer come first; objects that only far misses stop are
+  # dropped while another object has a nearer one. The fixes are those of the nearest blocks.
   def self.blocks_why(per_obj)
+    per_obj = per_obj.reject { |_o, rb| rb.empty? }
+    best = ->(rb) { rb.map(&:first).min }
+    per_obj = per_obj.each_with_index.sort_by { |(_o, rb), i| [best.call(rb), i] }.map(&:first)
+    per_obj = per_obj.reject { |_o, rb| best.call(rb) == FAR_RANK } if per_obj.any? { |_o, rb| best.call(rb) < FAR_RANK }
+    top = per_obj.map { |_o, rb| best.call(rb) }.min
     fixes = []
-    parts = per_obj.first(SHOWN).map do |o, blocks|
-      fixes.concat(blocks.first(SHOWN).map(&:last))
-      "at '#{o.id}': #{shown(blocks.map { |b| b[1] }.uniq, 'NPCs')}"
+    parts = per_obj.first(SHOWN).map do |o, rb|
+      fixes.concat(rb.first(SHOWN).select { |r, _| r == top }.map { |_, b| b.last })
+      "at '#{o.id}': #{shown(rb.map { |_, b| b[1] }.uniq, 'NPCs')}"
     end
     parts << "and #{per_obj.length - SHOWN} more objects" if per_obj.length > SHOWN
     [parts.join('; '), fixes.uniq.join('; ')]
@@ -902,9 +937,19 @@ module ValidateOfficeLife
 
   # ── why nobody answers (phone, phone_message) ──────────────────────────────────────────────
 
-  def self.ring_fix(phones)
+  # A desk_phone_ring:<id> emit whose id is no desk phone's (design review R3 m3): likely a typo.
+  def self.stray_rings(ctx)
+    ids = ctx.world.select { |o| o.data['deskPhone'] == true }.map(&:id)
+    (ctx.rung.to_a - ids).sort
+  end
+
+  def self.ring_fix(phones, ctx)
     ids = phones.map(&:id).uniq
-    "have an event mapping, a needs hook or an emit_event action emit #{ids.map { |i| "desk_phone_ring:#{i}" }.join(' or ')}"
+    fix = "have an event mapping, a needs hook or an emit_event action emit #{ids.map { |i| "desk_phone_ring:#{i}" }.join(' or ')}"
+    stray = stray_rings(ctx)
+    return fix if stray.empty?
+
+    "#{fix} (the scenario emits #{stray.map { |i| "desk_phone_ring:#{i}" }.join(' and ')}, but no desk phone has the id #{stray.map { |i| "'#{i}'" }.join(' or ')}: check the spelling)"
   end
 
   # [reason, fix] when no owner answers a rung phone.
@@ -915,12 +960,12 @@ module ValidateOfficeLife
       own = ctx.phones.select { |p| p.data['owner'] == n['id'] }
       return ["'#{n['id']}' owns no deskPhone", "give '#{n['id']}' a deskPhone with owner \"#{n['id']}\", and have something emit desk_phone_ring:<that phone's id>"] if own.empty?
 
-      return ["nothing rings #{shown(own.map { |p| "'#{p.id}'" }.uniq, 'phones')}", ring_fix(own)]
+      return ["nothing rings #{shown(own.map { |p| "'#{p.id}'" }.uniq, 'phones')}", ring_fix(own, ctx)]
     end
     return ['no deskPhone has an owner', 'give a deskPhone an owner the needs engine runs, and have something emit desk_phone_ring:<its id>'] if ctx.phones.empty?
 
     unrung = ctx.phones.reject { |p| ctx.rung.include?(p.id) }
-    return ["nothing rings #{shown(unrung.map { |p| "'#{p.id}'" }.uniq, 'phones')}", ring_fix(unrung)] if unrung.length == ctx.phones.length
+    return ["nothing rings #{shown(unrung.map { |p| "'#{p.id}'" }.uniq, 'phones')}", ring_fix(unrung, ctx)] if unrung.length == ctx.phones.length
 
     ['the needs engine runs no owner of a rung phone (an owner needs a need or interest)', 'give the owner of a rung phone a need or interest']
   end
@@ -931,7 +976,7 @@ module ValidateOfficeLife
     if n
       return ["'#{n['id']}' does not have answersPhones: true", fix] unless n['answersPhones'] == true
       return ["the needs engine does not run '#{n['id']}' (it has no need or interest)", "give '#{n['id']}' a need or interest"] unless runs?(n)
-      return ['nothing rings any desk phone', ring_fix(ctx.phones)] if rung_phones(ctx).empty? && !ctx.phones.empty?
+      return ['nothing rings any desk phone', ring_fix(ctx.phones, ctx)] if rung_phones(ctx).empty? && !ctx.phones.empty?
 
       return ["no rung desk phone of another NPC is in its home room '#{ctx.home_room[n]}', or that phone's owner and it avoid each other", fix]
     end
@@ -1010,7 +1055,7 @@ module ValidateOfficeLife
     return 'it has no partner: no NPC is in that group.' if partners.empty?
     return 'no object has an affordance.chatter, so no pair ever meets to speak. To fix: give an object they both use affordance.chatter, with capacity 2 or a queue.' if objs.empty?
 
-    why, fix = blocks_why(objs.map { |o| [o, pairs?(o) ? partners.filter_map { |p| pair_block(json, o, n, p, ctx) } : [seat_block(o)]] })
+    why, fix = blocks_why(objs.map { |o| [o, pairs?(o) ? rank_blocks(json, o, partners.filter_map { |p| (b = pair_block(json, o, n, p, ctx)) && [[n, p], b] }, ctx) : [[0, seat_block(o)]]] })
     "the two never meet at a chatter object: #{why}. To fix: #{fix}."
   end
 

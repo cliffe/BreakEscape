@@ -740,3 +740,63 @@ test('warnings count the lines, give a fix per topic family, name the phone rule
     i = check(oneRoom({ objects: [desk('a_pc')], npcs: [a({ chatter: { banter: ['Ha.'] } })] }));
     assert.ok(has(i, 'To fix: rename the pool to a topic the engine speaks'), i.join('\n'));
 });
+
+// ── 36 (design review R3 M4, m3): the nearest partner first; no fix opens a room to bystanders ──
+test('V10 names the partner the pair rule blocks before office bystanders, and drops room-leash fixes', { skip }, () => {
+    const office = (id, extra = {}) => ({ id, needsHome: `${id}_pc`, needs: thirst, ...extra });
+    const staff = (keith = {}, jodie = {}, cool = {}) => ({
+        officePresets: false,
+        rooms: {
+            office: {
+                connections: { east: 'staff_room' },
+                objects: [desk('amara_pc'), desk('tom_pc'), desk('grace_pc'), cooler('office_cooler', { chatter: 'office_water' })],
+                npcs: [office('amara'), office('tom'), office('grace', { needs: caffeine })]
+            },
+            staff_room: {
+                needsPrivateTo: ['keith', 'jodie'],
+                connections: { west: 'office' },
+                objects: [desk('keith_pc'), desk('jodie_pc'), cooler('staff_cooler', { chatter: 'staff_water', ...cool })],
+                npcs: [
+                    { id: 'keith', needsHome: 'keith_pc', needsRooms: ['staff_room'], needs: thirst, chatter: { staff_water: ['Kettle on?'] }, ...keith },
+                    { id: 'jodie', needsHome: 'jodie_pc', needsRooms: ['staff_room'], needs: thirst, exchanges: [{ with: 'keith', knot: 'ex_kj' }], ...jodie }
+                ]
+            }
+        }
+    });
+    const pool = i => i.find(x => x.includes("NPC 'keith' chatter pool 'staff_water'"));
+    const ex = i => i.find(x => x.includes("exchange 'ex_kj' (with 'keith') can never play"));
+    const bystanders = w => ['amara', 'tom', 'grace', "use room 'staff_room'", 'more NPCs', 'office_cooler'].filter(f => w.includes(f));
+
+    // f1: Jodie avoids Keith
+    let i = check(staff({}, { needsCompany: { avoids: ['keith'] } }));
+    let w = pool(i);
+    assert.ok(w && w.includes("at 'staff_cooler': 'jodie' avoids 'keith'. To fix: drop 'keith' from the needsCompany.avoids of 'jodie'"), String(i.join('\n')));
+    assert.deepEqual(bystanders(w), [], w);
+    w = ex(i);
+    assert.ok(w && w.includes("never meet at a chatter object: at 'staff_cooler': 'jodie' avoids 'keith'"), String(i.join('\n')));
+    assert.deepEqual(bystanders(w), [], 'the exchange lists the object both can use, not office_cooler: ' + w);
+
+    // f2: the staff cooler is private to Keith alone
+    i = check(staff({}, {}, { private: true, owner: ['keith'] }));
+    w = pool(i);
+    assert.ok(w && w.includes("at 'staff_cooler': 'jodie' may not use it: it is private to") && w.includes("drop private from 'staff_cooler', or make 'jodie' one of its owners"), String(i.join('\n')));
+    assert.deepEqual(bystanders(w), [], w);
+
+    // f3: Keith has no thirst need; Jodie's exchange names Keith, not the office staff
+    i = check(staff({ needs: caffeine }));
+    w = ex(i);
+    assert.ok(w && w.includes("'keith' has no need it meets") && w.includes("give 'keith' a need 'staff_cooler' meets"), String(i.join('\n')));
+    assert.deepEqual(bystanders(w), [], w);
+
+    // a lone room-leash cause is still named with its fix: test 34's 'leash' case
+});
+
+test('a desk_phone_ring emit naming no desk phone is pointed at as a likely typo', { skip }, () => {
+    const a = { id: 'a', needsHome: 'a_pc', needs: thirst, chatter: { phone: ['Hello?'] } };
+    const phone = { id: 'ph1', type: 'phone', deskPhone: true, owner: 'a' };
+    const ringer = id => ({ id: 'ringer', type: 'phone', triggerOnInteract: [{ type: 'emit_event', event_name: `desk_phone_ring:${id}` }] });
+    let i = check(oneRoom({ objects: [desk('a_pc'), phone, ringer('ph2')], npcs: [a] }));
+    assert.ok(has(i, "emit desk_phone_ring:ph1 (the scenario emits desk_phone_ring:ph2, but no desk phone has the id 'ph2': check the spelling)"), i.join('\n'));
+    i = check(oneRoom({ objects: [desk('a_pc'), phone, ringer('ph1')], npcs: [a] }));
+    assert.ok(!has(i, 'check the spelling'), i.join('\n'));
+});
