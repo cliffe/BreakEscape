@@ -187,5 +187,52 @@ module BreakEscape
       keyboard_tiles('door_box')
       assert_response :forbidden
     end
+
+    # ---- a whitespace-only foothold is still a foothold request (R1 m1) ----------------
+    # params[:foothold].present? is false for a whitespace-only scalar, so a request carrying
+    # foothold=%09 or foothold=%20%20 used to fall through to the keyboard branch and win the
+    # keyboard answer (and the post-it). A foothold request must never reach the keyboard branch.
+
+    test 'a whitespace foothold on a post-it PC never gets the keyboard answer or the note (R1 m1)' do
+      data = NS.scenario
+      sam = data['rooms']['lobby']['npcs'].find { |n| n['id'] == 'sam' }
+      sam['habits'] = { 'writesDown' => true }
+      with_office_foothold({}, data)
+
+      # The keyboard answer here does carry the written-down note, to prove the whitespace
+      # foothold is diverted away from exactly this branch.
+      kb = keyboard_tiles('sam_pc')
+      assert_response :success
+      assert kb['postitNote'].is_a?(String) && !kb['postitNote'].empty?, 'the keyboard answer carries the note'
+
+      ["\t", '  ', ' '].each do |ws|
+        body = remote_tiles('sam_pc', ws)
+        refute_equal 'sam_pc', body['pc_id'], "a whitespace foothold (#{ws.inspect}) must not win the keyboard answer"
+        refute body.key?('postitNote'), "a whitespace foothold (#{ws.inspect}) must never carry the post-it"
+        # It is judged by reach: the whitespace string is not a held foothold, so 403 not reachable.
+        assert_response :forbidden
+        assert_equal 'PC not reachable: sam_pc', body['error']
+      end
+    end
+
+    test 'an empty foothold= still gets the keyboard answer and its note (R1 m1)' do
+      data = NS.scenario
+      sam = data['rooms']['lobby']['npcs'].find { |n| n['id'] == 'sam' }
+      sam['habits'] = { 'writesDown' => true }
+      with_office_foothold({}, data)
+
+      body = remote_tiles('sam_pc', '')
+      assert_response :success
+      assert_equal 'sam_pc', body['pc_id']
+      assert body['postitNote'].is_a?(String) && !body['postitNote'].empty?, 'an empty foothold stays on the keyboard path'
+    end
+
+    test 'a hash foothold is coerced and 403s, never falling through to the keyboard (R1 m1)' do
+      with_office_foothold
+      get game_path('login_accounts'), params: { pc_id: 'sam_pc', foothold: { a: 'jack_comms_port' } }, as: :json
+      assert_response :forbidden
+      assert_equal 'PC not reachable: sam_pc', response.parsed_body['error']
+      refute response.parsed_body.key?('postitNote'), 'a hash foothold never reaches the keyboard answer'
+    end
   end
 end
