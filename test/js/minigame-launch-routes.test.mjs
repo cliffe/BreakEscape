@@ -627,3 +627,21 @@ test('skipIfGlobal: a video call without it opens even when that global is true'
         assert.equal(videoCalls(t).length, 1);
     } finally { t.restore(); }
 });
+
+test('m02: Ghost\'s "Back at the console" call is onceOnly and interrupts, so it cuts in at most once (R4)', () => {
+    const erb = readFileSync(join(here, '../../scenarios/m02_ransomed_trust/scenario.json.erb'), 'utf8');
+    const at = erb.indexOf('"targetKnot": "on_console_again"');
+    assert.ok(at > 0, 'mapping present');
+    const start = erb.lastIndexOf('{', at);
+    const block = erb.slice(start, erb.indexOf('}', at) + 1);
+    assert.match(block, /"onceOnly": true/);
+    assert.match(block, /"interrupt": true/);
+    const t = setup();
+    try {
+        const cfg = t.m._buildMappingConfig({ eventPattern: 'object_interacted', onceOnly: true, interrupt: true, targetKnot: 'on_console_again' }, 1);
+        const key = 'ghost:object_interacted:1';
+        assert.equal(t.m._mappingWouldFire('ghost', 'object_interacted', cfg, {}).fire, true);
+        t.m.triggeredEvents.set(key, { count: 1, lastTime: Date.now() - 600000 });
+        assert.equal(t.m._mappingWouldFire('ghost', 'object_interacted', cfg, {}).fire, false);
+    } finally { t.restore(); }
+});
