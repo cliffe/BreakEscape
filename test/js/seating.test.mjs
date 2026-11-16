@@ -1200,3 +1200,38 @@ test('M2 and m6: retry caps per kind and a recent fetch claims the chair for its
     assert.equal(seating.chairClaimedByOther(chair, 'amara', 10000 + seating.FETCH_CLAIM_MS), false, 'the claim lapses');
     assert.equal(seating.chairClaimedByOther({}, 'amara', 0), false, 'never fetched');
 });
+
+// SIMS_TIDY_LOG.md item 3: Tom's straight seat walk caught a desk corner with his body edge.
+// Desk office_desk1_91: body x 40..98, y 195..205; Tom at (116,204), his work spot (96,192).
+test('seatWalkClear: an 18 x 10 walking box along the line, the last 8 px to the spot not checked', () => {
+    const desk = { l: 40, r: 98, t: 195, b: 205 };
+    const boxClear = (x, y) => !(x + 9 > desk.l && x - 9 < desk.r && y + 5 > desk.t && y - 5 < desk.b);
+    assert.equal(seating.seatWalkClear(boxClear, { x: 116, y: 204 }, { x: 96, y: 192 }), false, 'the body edge meets the desk corner');
+    assert.equal(seating.seatWalkClear(boxClear, { x: 96, y: 170 }, { x: 96, y: 192 }), true, 'from above, the stop short of the spot is within the give-up distance');
+    assert.equal(seating.seatWalkClear(() => true, { x: 0, y: 0 }, { x: 0, y: 0 }), true, 'no distance');
+    let calls = 0;
+    seating.seatWalkClear(() => { calls++; return true; }, { x: 0, y: 0 }, { x: 40, y: 0 });
+    assert.equal(calls, 7, 'every 4 px, stopping 8 px short of the spot (4..28)');
+});
+
+test('seatWalkWaypoints: drops points at the start and the spot, collapses straight runs, ends at the spot', () => {
+    const from = { x: 116, y: 204 }, ref = { x: 96, y: 192 };
+    const path = [{ x: 116, y: 204 }, { x: 116, y: 196 }, { x: 116, y: 188 }, { x: 116, y: 180 }, { x: 108, y: 180 },
+                  { x: 100, y: 180 }, { x: 96, y: 184 }, { x: 96, y: 190 }];
+    assert.deepEqual(seating.seatWalkWaypoints(path, from, ref),
+        [{ x: 116, y: 180 }, { x: 100, y: 180 }, { x: 96, y: 184 }, { x: 96, y: 192 }]);
+    assert.deepEqual(seating.seatWalkWaypoints([], from, ref), [{ x: 96, y: 192 }], 'no path: straight to the spot');
+    assert.deepEqual(seating.seatWalkWaypoints([{ x: 96, y: 200 }, { x: 96, y: 196 }], { x: 96, y: 210 }, ref), [{ x: 96, y: 192 }],
+        'points in line with the spot collapse into one leg');
+    assert.deepEqual(seating.seatWalkWaypoints([{ x: 100, y: 204 }, { x: 116, y: 204 }], from, { x: 140, y: 204 }),
+        [{ x: 100, y: 204 }, { x: 140, y: 204 }], 'a back-and-forth point is kept (not the same direction)');
+});
+
+test('a post seat waits for a resolved home before its first try (SIMS_TIDY_LOG.md item 3)', async () => {
+    const { readFileSync } = await import('node:fs');
+    const src = readFileSync(new URL('../../public/break_escape/js/systems/seating.js', import.meta.url), 'utf8');
+    assert.match(src, /if \(stop\.post && ns\?\.home\?\.provisional && now < POST_HOME_WAIT_MS\) return false;/);
+    assert.ok(src.indexOf('POST_HOME_WAIT_MS) return false') < src.indexOf('behavior._seatStopKey = stop.key'),
+        'the wait comes before the stop is marked tried, so the first try is not spent');
+    assert.match(src, /m\.route = planSeatWalk\(behavior, chair, f, opts\.ref\)/);
+});

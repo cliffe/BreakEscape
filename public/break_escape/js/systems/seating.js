@@ -1318,6 +1318,7 @@ const NPC_TICK_S = 0.05;           // npc-behavior.js updateInterval
 const NPC_SEAT_SPEED = 70;         // px/s onto and off a seat
 const NPC_STUCK_TICKS = 4;         // ticks without 0.5 px of progress: blocked
 const NPC_MOVE_MAX_TICKS = 40;     // 2 s
+const POST_HOME_WAIT_MS = 5000;    // needs clock: a post seat waits this long for a resolved home
 const NPC_WALK_GIVE_UP_PX = 8;     // blocked this far from the work spot: work standing
 const CHAIR_GLIDE_SPEED = 80;      // px/s a pulled or tucked chair rolls at
 const GLIDE_MAX_FRAMES = 150;
@@ -1421,6 +1422,76 @@ function npcWalkTick(behavior, m, target) {
 
 function resetWalk(m) { m.ticks = 0; m.still = 0; m.last = Infinity; }
 
+/**
+ * Whether the straight walk from `from` to the work spot `ref` is clear for a walking body:
+ * `boxClear(x, y)` (an 18 x 10 walking box with its feet there) every 4 px. Points within
+ * `giveUp` px of `ref` are not checked, since a walk that stops there works from where it got to.
+ */
+export function seatWalkClear(boxClear, from, ref, { step = 4, giveUp = NPC_WALK_GIVE_UP_PX } = {}) {
+    const len = Math.hypot(ref.x - from.x, ref.y - from.y);
+    const n = Math.max(1, Math.ceil(len / step));
+    for (let i = 1; i <= n; i++) {
+        const x = from.x + (ref.x - from.x) * i / n, y = from.y + (ref.y - from.y) * i / n;
+        if (Math.hypot(ref.x - x, ref.y - y) <= giveUp) break;
+        if (!boxClear(x, y)) return false;
+    }
+    return true;
+}
+
+/**
+ * The legs of a seat walk from a grid path (tile-centre points): leading points within `near`
+ * px of `from` dropped, points within `near` of `ref` dropped, `ref` appended, and the middle
+ * point of three in a line (same direction) collapsed.
+ */
+export function seatWalkWaypoints(path, from, ref, { near = 4 } = {}) {
+    const pts = [];
+    for (const p of path || []) {
+        if (!pts.length && Math.hypot(p.x - from.x, p.y - from.y) <= near) continue;
+        pts.push({ x: p.x, y: p.y });
+    }
+    while (pts.length && Math.hypot(pts[pts.length - 1].x - ref.x, pts[pts.length - 1].y - ref.y) <= near) pts.pop();
+    pts.push({ x: ref.x, y: ref.y });
+    const out = [];
+    let prev = from;
+    for (let i = 0; i < pts.length; i++) {
+        const b = pts[i], c = pts[i + 1];
+        if (c) {
+            const ax = b.x - prev.x, ay = b.y - prev.y, bx = c.x - b.x, by = c.y - b.y;
+            if (Math.abs(ax * by - ay * bx) < 1e-6 && ax * bx + ay * by > 0) continue;
+        }
+        out.push(b);
+        prev = b;
+    }
+    return out;
+}
+
+/**
+ * A grid route for a seat walk whose straight line is blocked (Tom in test_needs_sims caught a
+ * desk corner with his body edge and stood for a minute: SIMS_TIDY_LOG.md item 3), or null for
+ * the straight walk: line clear, no grid yet, or no path.
+ */
+function planSeatWalk(behavior, chair, from, ref) {
+    const scene = behavior.sprite?.scene;
+    const ignore = [behavior.sprite, chair];
+    if (!scene || seatWalkClear((x, y) => walkBoxClear(scene, x, y, { ignore }), from, ref)) return null;
+    const pm = window.pathfindingManager;
+    const pf = pm?.worldPathfinder;
+    if (!pm?.findWorldPath || !pf || !pm.worldGridBounds) return null;
+    const goal = pm.findNearestWalkableWorldCell?.(ref.x, ref.y, 2) || ref;
+    const canSync = !!(pf.enableSync && pf.disableSync);
+    let path = null;
+    if (canSync) pf.enableSync();
+    try {
+        pm.findWorldPath(from.x, from.y, goal.x, goal.y, p => { path = p; });
+    } catch (e) {
+        path = null;
+    } finally {
+        if (canSync) pf.disableSync();
+    }
+    if (!path?.length) return null;
+    return seatWalkWaypoints(path, from, ref);
+}
+
 function npcHold(behavior, chair) {
     return () => behavior._seat?.chair === chair || behavior._seatMove?.chair === chair;
 }
@@ -1441,8 +1512,12 @@ function startSeatMove(behavior, chair, seat, opts) {
         chair.seatedBy = behavior.npcId; // reserved
         ghostPair(sprite, chair, npcHold(behavior, chair));
         const f = bodyFeet(sprite);
-        if (Math.hypot(opts.ref.x - f.x, opts.ref.y - f.y) > ARRIVE_PX) m.stage = 'walk';
-        else startPull(m);
+        if (Math.hypot(opts.ref.x - f.x, opts.ref.y - f.y) > ARRIVE_PX) {
+            m.stage = 'walk';
+            m.route = planSeatWalk(behavior, chair, f, opts.ref);
+            m.leg = 0;
+            if (m.route) seatLog(behavior, 'seat_walk_routed', { legs: m.route.length });
+        } else startPull(m);
     } else {
         startMount(behavior, m);
     }
@@ -1517,8 +1592,11 @@ function advanceSeatMove(behavior) {
     if (!sprite?.body || (m.chair && !m.chair.active)) { endSeatMove(behavior, 'chair_gone'); return false; }
     switch (m.stage) {
         case 'walk': {
-            const r = npcWalkTick(behavior, m, m.opts.ref);
+            // A routed walk goes leg by leg; the last leg is the work spot
+            const lastLeg = !m.route || m.leg >= m.route.length - 1;
+            const r = npcWalkTick(behavior, m, lastLeg ? m.opts.ref : m.route[m.leg]);
             if (r === 'moving') return true;
+            if (r === 'arrived' && !lastLeg) { m.leg++; resetWalk(m); return true; }
             const f = bodyFeet(sprite);
             if (r === 'stuck' && Math.hypot(m.opts.ref.x - f.x, m.opts.ref.y - f.y) > NPC_WALK_GIVE_UP_PX) { endSeatMove(behavior, 'walk_stuck'); return false; }
             m.opts.ref = { x: f.x, y: f.y }; // work from where it got to
@@ -2063,6 +2141,9 @@ function updateNeedsSeat(behavior, ns, playerPos) {
     if (!stop || status.ko || status.hostile) { behavior._seatStopKey = null; return false; }
     if (behavior.isMoving || behavior._goToStayDest) return false;
     const now = window.npcNeedsSystem?.clockMs ?? 0;
+    // At the post, the first try waits (a while) for the home cell: a provisional home is the
+    // spawn feet, which can sit against a desk (SIMS_TIDY_LOG.md item 3)
+    if (stop.post && ns?.home?.provisional && now < POST_HOME_WAIT_MS) return false;
     // Tried at this stop already: elsewhere that's final; at the post, try again now and then
     const retry = behavior._seatStopKey === stop.key;
     if (retry && (!postSeatRetryDue(stop, behavior._seatTriedAt, now)
