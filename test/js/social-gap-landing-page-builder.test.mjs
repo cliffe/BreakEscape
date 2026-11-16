@@ -27,6 +27,7 @@ const clone = (o) => JSON.parse(JSON.stringify(o));
 const dir = mkdtempSync(join(tmpdir(), 'social-gap-lpb-'));
 writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 for (const rel of [
+    'minigames/helpers/step-stepper.js',
     'minigames/landing-page-builder/landing-page-builder-minigame.js',
     'minigames/landing-page-builder/landing-page-model.js',
     'minigames/landing-page-builder/landing-page-render.js',

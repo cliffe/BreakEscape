@@ -140,6 +140,7 @@ test('C-X1 hand-rolled text Close buttons are gone from the SE scenes', () => {
         'minigames/assistant-chat/assistant-chat-minigame.js',
         'minigames/intel-board/intel-board-minigame.js',
         'minigames/engagement-report/engagement-report-minigame.js',
+        'minigames/helpers/step-stepper.js',
         'minigames/landing-page-builder/landing-page-builder-minigame.js',
         'minigames/osint-browser/osint-browser-minigame.js',
         'minigames/pretext-prep/pretext-prep-minigame.js'
