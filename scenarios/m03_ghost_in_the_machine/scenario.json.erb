@@ -641,14 +641,14 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "puzzle_graph_optional": true
         },
 <%# Office life (SLICE3_4.md): the reception coffee station claims the drawn sprite (no position).
-    useSeconds 19 (preset 12; slice 4 raised it from 17 so the open laptop window lasts 20 s) so a coffee trip is long enough to read as a break. offWhen stops
+    useSeconds 16 (preset 12; raised so the open laptop window lasts over 20 s) so a coffee trip is long enough to read as a break. offWhen stops
     every use once the day staff are upset. zainab_laptop is Zainab's seat object (no preset)
     and, from slice 4, her readable laptop with the screen habit. %>
         {
           "type": "coffee_station", "id": "reception_coffee", "name": "Reception Coffee Station", "takeable": false,
           "offWhen": "wh_staff_upset",
           "observations": "A pod machine on the side table, a stack of paper cups beside it.",
-          "affordance": { "useSeconds": 19, "capacity": 2 }
+          "affordance": { "useSeconds": 16, "capacity": 2 }
         },
         {
           "type": "laptop1", "id": "zainab_laptop", "name": "Zainab's Laptop", "takeable": false,
@@ -823,7 +823,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "globalVarOnKO": "zainab_ko",
           "behavior": { "hostile": { "leash": true } },
           "needsHome": "zainab_laptop",
-          "habits": { "screen": { "lockChance": 1, "lockIfAwayOverSeconds": 23, "_comment": "Slice 4: expectedAwayMs follows the start cell, the route and the use time: coffee 20.5 to 21.8 s (stays open), cooler about 24.2 s or more with its 18 s use (locks). 23 sits between them." } },
+          "habits": { "screen": { "lockChance": 1, "lockIfAwayOverSeconds": 24, "_comment": "R1: measured on the Tiled machines (coffee at 262,189; cooler at 192,-101): coffee (use 16) expectedAwayMs about 18.6 s, real away about 22 s, so the screen stays open for over 20 s; cooler (use 20) expectedAwayMs about 28.7 s, real about 32 s, so it locks. 24 sits 5 s above one and 5 s below the other." } },
           "needsRooms": ["reception_lobby", "main_hallway"],
           "needsCompany": { "groups": ["wh_day_staff"] },
           "needs": {
@@ -1550,7 +1550,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
       "objects": [
         { "type": "water_cooler", "id": "hallway_cooler", "name": "Water Cooler", "takeable": false,
           "offWhen": "wh_staff_upset",
-          "affordance": { "useSeconds": 18 },
+          "affordance": { "useSeconds": 20 },
           "observations": "A water cooler by the wall, a stack of paper cones on top." }
       ],
       "npcs": []
