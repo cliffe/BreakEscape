@@ -138,4 +138,7 @@ test('CSS carries the batch-4 skin and meter fixes', () => {
 
     const triage = readFileSync(join(cssDir, 'inbox-triage-minigame.css'), 'utf8');
     assert.match(triage, /\.mail-row-badge\.mail-row-badge-wrong\s*\{[^}]*color:\s*var\(--ui-danger/);
+    // Narrow: the close X shares the title row (top right) and the stepper takes the row below.
+    assert.match(triage, /\.triage-client \.tri-toolbar \.se-overlay-close\s*\{[^}]*order:\s*2;[^}]*margin-left:\s*auto/, 'triage X stays in the top-right of the header at 390');
+    assert.match(triage, /\.triage-client \.tri-steps\s*\{\s*order:\s*3;/, 'triage stepper sits below the title and X');
 });

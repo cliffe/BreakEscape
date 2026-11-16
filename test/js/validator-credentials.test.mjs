@@ -293,3 +293,12 @@ test('I: a saved_connection PC whose policy sets maxAttempts', { skip }, () => {
     { objects: [{ ...PC(), policy: 'p1' }, item, JACK], top: { policies: { p1: { maxAttempts: 3, accepts: ['saved_connection', 'password'] } } } }));
   assertInfo(l, 'whose policy sets maxAttempts');
 });
+
+test('W: a credential label over 32 characters', { skip }, () => {
+  const item = { id: 'conn_file', type: 'text_file', name: 'conn.rdp', credential: 'c1', takeable: true };
+  const mk = (label) => issues(sc({ c1: { kind: 'saved_connection', account: 'lena', connectsTo: 'lena_pc', label, proof: { held: 'conn_file' } } },
+    { objects: [PC(), item, JACK] }));
+  assertWarn(mk('x'.repeat(33)), 'label is 33 characters');
+  assert.ok(!has(warnings(mk('x'.repeat(32))), 'characters; over 32'), 'exactly 32 is fine');
+  assert.ok(!has(warnings(mk('HB-FIN-02.rdp')), 'characters; over 32'));
+});

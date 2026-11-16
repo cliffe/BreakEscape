@@ -59,7 +59,8 @@ module BreakEscape
       get scenario_game_url(game), as: :json
       assert_response :success
       refute response.parsed_body.key?('credentials'), 'the registry must be stripped from the bootstrap'
-      refute_includes response.body, 'credentials', 'the server-only registry must never reach the browser'
+      # The K3a flag credentialsDeclared is allowed; the registry's own key and its entries are not
+      refute_match(/"credentials"\s*:/, response.body, 'the server-only registry must never reach the browser')
     end
 
     test 'GET /keyring at the 64-entry cap stays well under 16 KB' do

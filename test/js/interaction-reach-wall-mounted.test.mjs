@@ -201,3 +201,54 @@ test('engine: the range checks and the E key measure y with reachY, the facing a
     assert.match(game, /reachY: \(o, y\) => reachY\(o, y\)/, 'walkToObjectThenUse passes reachY to objectStandPoint');
     assert.equal(typeof reachX, 'function');
 });
+
+// ---------------------------------------------------------------------------
+// Behaviour: the real solveStandingPoint (test-bridge/state.js, its imports stubbed) samples
+// stand points round every edge of a tall wall-mounted target, not only its top edge.
+// ---------------------------------------------------------------------------
+const stateStubs = {
+    './input.js': 'export const isWorldPointOnScreen = () => true; export const getCanvas = () => null;',
+    '../npc-reach.js': 'export const staticNpcBodyDistSq = () => 0;',
+    '../interaction-walls.js': 'export const interactionLineClear = () => true; export const wallClearFrom = () => true; export const sameRoomFrom = () => true; export const playerFeet = (p) => p;',
+    '../interaction-reach.js': readFileSync(join(js, 'systems/interaction-reach.js'), 'utf8'),
+    '../doors.js': 'export const calculateDoorPositionsForRoom = () => [];',
+    '../../utils/constants.js': 'export const TILE_SIZE = 32, INTERACTION_RANGE = 32, DOOR_INTERACTION_RANGE = 64;',
+};
+let stateSrc = readFileSync(join(js, 'systems/test-bridge/state.js'), 'utf8');
+for (const [spec, body] of Object.entries(stateStubs)) {
+    const before = stateSrc;
+    stateSrc = stateSrc.split(`'${spec}'`).join(`'${dataUrl(body)}'`);
+    if (stateSrc === before) throw new Error(`import specifier not found to stub: ${spec}`);
+}
+writeFileSync(join(dir, 'bridge-state.mjs'), stateSrc);
+const { solveStandingPoint } = await import(pathToFileURL(join(dir, 'bridge-state.mjs')).href);
+
+// A tall fixture: top-left (200, 20), 32 wide, 96 tall (span y 20..116). Only the cells left of
+// it and level with its lower part are walkable, 70 px or more below its top edge.
+const tall = (wallMounted) => ({ x: 200, y: 20, displayWidth: 32, displayHeight: 96, originX: 0, originY: 0,
+    scenarioData: { id: 'tall_fixture', ...(wallMounted ? { wallMounted: true } : {}) } });
+function walkOnlyLeftOfLowerPart() {
+    const step = 4, cols = 100, rows = 60, grid = [];
+    for (let cy = 0; cy < rows; cy++) {
+        grid.push(Array.from({ length: cols }, (_, cx) => (cx * step >= 150 && cx * step < 190 && cy * step >= 90 && cy * step < 130) ? 0 : 1));
+    }
+    window.pathfindingManager = { worldGrid: grid, worldGridBounds: { minX: 0, minY: 0, step } };
+}
+
+test('solveStandingPoint: a tall wall-mounted target is approached from beside its lower part', () => {
+    walkOnlyLeftOfLowerPart();
+    const t = tall(true);
+    const p = solveStandingPoint(t.x, t.y, 170, 200, { x: 0, y: 0 }, t);
+    assert.ok(p, 'a stand point is found');
+    assert.ok(p.y >= 90 && p.x < 190, `stand point ${p.x},${p.y} is in the walkable cells beside the lower part`);
+    assert.ok(p.predictedDistance <= 32 * 0.9, 'and in reach by the reachY measure');
+});
+
+test('solveStandingPoint: the same sprite unmarked keeps its top-edge measure, so no walkable cell beside its lower part is chosen', () => {
+    walkOnlyLeftOfLowerPart();
+    const t = tall(false);
+    // The walkable-cell search fails, so the unfiltered fallback picks a point by the top edge
+    const p = solveStandingPoint(t.x, t.y, 170, 200, { x: 0, y: 0 }, t);
+    assert.ok(!p || p.y < 90, `chose ${p && p.x},${p && p.y}`);
+    delete window.pathfindingManager;
+});

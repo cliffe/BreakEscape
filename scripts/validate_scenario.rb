@@ -594,6 +594,12 @@ end
 # measured to the nearest part of the sprite's height (interaction-reach.js reachY). Warn where it
 # sits on something it cannot help: an NPC, an object with interactable: false, or a type that is
 # not one of generate_rooms.py's WALL_MOUNTED_EXTRAS (read from that file, so there is one list).
+# An object given an explicit position (tiles from the room's top-left) is judged by position.y,
+# which is the sprite's TOP edge (origin 0,0; rooms.js sets sprite.y = room y + position.y * TILE_SIZE).
+# The back wall is 2 rows in every room, so a top edge at y >= 2 starts on the floor, not the wall.
+# Not judged: objects with no position (they take the room template's slot) and objects placed with
+# pixel position.px/py (not converted here).
+WALL_MOUNTED_MAX_Y = 2.0
 WALL_MOUNTED_EXTRAS_FILE = File.join(File.expand_path('..', __dir__), 'scripts', 'generate_rooms.py')
 
 def wall_mounted_extras
@@ -617,6 +623,8 @@ def check_wall_mounted(json_data, extras = wall_mounted_extras)
           'the object has interactable: false, so nothing reaches for it'
         elsif extras && !extras.include?(o['type'].to_s.sub(/\d+\z/, ''))
           "type '#{o['type']}' is not a wall-mounted type (WALL_MOUNTED_EXTRAS in scripts/generate_rooms.py)"
+        elsif o['position'].is_a?(Hash) && o['position']['y'].is_a?(Numeric) && o['position']['y'] >= WALL_MOUNTED_MAX_Y
+          "position.y #{o['position']['y']} starts at or below the back wall's floor line (#{WALL_MOUNTED_MAX_Y.to_i} tiles, top edge), so the object is not on a wall"
         end
         next unless why
         issues << "⚠️ WARNING: rooms/#{rid}/#{key}[#{i}] '#{o['id'] || o['name']}': wallMounted is set but #{why}. " \
@@ -7219,6 +7227,11 @@ def check_credentials(json_data)
     elsif !cm.kind_built?(kind)
       hint = kind == 'token' ? 'not supported until K5' : 'not supported until phase 3'
       err.call("#{label} kind '#{kind}' is #{hint}.")
+    end
+
+    # Label: the sign-in screen and desktop keep it on one line and cut it with an ellipsis.
+    if entry['label'].is_a?(String) && entry['label'].length > 32
+      warn.call("#{label} label is #{entry['label'].length} characters; over 32 it is cut with an ellipsis on a narrow screen. Shorten it.")
     end
 
     # Account.

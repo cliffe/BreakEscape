@@ -214,6 +214,38 @@ test('a password session hides the padlock and its end shows it again, both sile
     assert.equal(ss.transitions.length, n);
 });
 
+test('K3a (3.8): a credential session hides the padlock like a password session, its end shows it again, both silent; a claim still never hides it', () => {
+    const w = world({ objects: [pcA()] });
+    const ss = new ScreenStates().install();
+    const sessions = new Map();
+    window.pcSessions = { has: (id) => sessions.has(id), get: (id) => sessions.get(id) || null };
+    w.left('ann');
+    w.played.length = 0;
+    sessions.set('pc_a', { pcId: 'pc_a', via: 'credential', kind: 'saved_connection', label: 'HB-FIN-02.rdp' });
+    w.d.emit('pc_signed_in', { pcId: 'pc_a' });
+    assert.equal(w.sprites.pc_a.texture.key, 'pc_desktop', 'the desktop look');
+    sessions.delete('pc_a');
+    w.d.emit('pc_signed_out', { pcId: 'pc_a' });
+    assert.equal(w.sprites.pc_a.texture.key, 'pc_desktop_locked');
+    assert.deepEqual(w.played, [], 'no sound either way');
+    assert.deepEqual(ss.transitions.slice(1).map(t => [t.locked, t.sound]), [[false, null], [true, null]]);
+    const n = ss.transitions.length;
+    sessions.set('pc_a', { pcId: 'pc_a', via: 'claim' });
+    w.d.emit('pc_signed_in', { pcId: 'pc_a' });
+    assert.equal(w.sprites.pc_a.texture.key, 'pc_desktop_locked', 'a claim keeps the lock');
+    assert.equal(ss.transitions.length, n);
+});
+
+test('K3a (3.8): a credential session held across the owner\'s leave keeps the base look, with no sound', () => {
+    const w = world({ objects: [pcA()] });
+    window.pcSessions = { get: () => ({ pcId: 'pc_a', via: 'credential', kind: 'saved_connection', label: 'a.rdp' }) };
+    const ss = new ScreenStates().install();
+    w.left('ann'); w.back('ann');
+    assert.deepEqual(w.sprites.pc_a.setCalls, []);
+    assert.deepEqual(w.played, []);
+    assert.deepEqual(ss.transitions, []);
+});
+
 test('an auto lock with a claimed session held sounds at once, whatever the listener order (the real tick path)', () => {
     // The workstation state's own policy, clock and tick: its _checkAutoLock sets the state and emits
     let clock = 0;

@@ -18,13 +18,32 @@ export function characterKey(pathOrKey) {
     return file.replace(/\.\w+$/, '').replace(/[_-](talk|headshot|visemes)$/, '');
 }
 
+/**
+ * True when a loaded Phaser texture is a plain spritesheet (numbered frames), which is what
+ * furniture and object sprites are (bed2, bed_ms_chen). Character atlases name their frames
+ * ("walk_south_frame_000"). A key with no loaded texture is not an object sprite as far as we
+ * can tell, so it is still tried. `textures` is injectable for tests.
+ */
+export function isObjectSpriteKey(key, textures = (typeof window !== 'undefined' ? window.game?.textures : null)) {
+    try {
+        if (!key || !textures?.exists?.(key)) return false;
+        const names = textures.get(key)?.getFrameNames?.() || [];
+        return names.every((n) => /^\d+$/.test(String(n)));
+    } catch (e) {
+        return false;
+    }
+}
+
 /** The headshot keys to try for { avatar, spriteSheet, portrait }, most specific first, no repeats. */
-export function headshotKeys({ avatar = null, spriteSheet = null, portrait = null } = {}) {
+export function headshotKeys({ avatar = null, spriteSheet = null, portrait = null } = {}, { textures } = {}) {
     const keys = [];
     const add = (k) => { if (k && !keys.includes(k)) keys.push(k); };
     if (typeof avatar === 'string' && /_headshot\.png$/i.test(avatar.split(/[?#]/)[0])) add(characterKey(avatar));
-    if (typeof spriteSheet === 'string' && spriteSheet) add(characterKey(spriteSheet));
-    if (typeof portrait === 'string' && portrait) {
+    // A character who wears an object sprite (a bed patient) has no headshot by design (the
+    // rule avatar_unlocks.rb applies), so neither the sprite key nor the talk stem is tried.
+    const objectSprite = typeof spriteSheet === 'string' && isObjectSpriteKey(spriteSheet, textures);
+    if (typeof spriteSheet === 'string' && spriteSheet && !objectSprite) add(characterKey(spriteSheet));
+    if (!objectSprite && typeof portrait === 'string' && portrait) {
         const stem = characterKey(portrait);
         if (stem.endsWith('_v2')) { add(stem); add(stem.replace(/_v2$/, '')); }
         else { add(`${stem}_v2`); add(stem); }
@@ -43,6 +62,9 @@ export function headshotCandidates(source) {
 }
 
 const warned = new Set();
+
+/** Per-session outcome of each headshot URL looked up: true = loaded at 32x32, false = missed. A miss is never requested again. */
+const headshotOutcome = new Map();
 
 /**
  * Log a character with no headshot file, once per key list. `keys` is the list tried (or
@@ -173,6 +195,7 @@ export function applyHeadshotBox(el, source, { ImageCtor = (typeof Image !== 'un
     const hide = () => { el.hidden = true; el.style.backgroundImage = ''; onResult?.(null); };
     if (!ImageCtor) { hide(); return; }
     const tryAt = (i) => {
+        while (i < urls.length && headshotOutcome.get(urls[i]) === false) i++;
         if (i >= urls.length) {
             if (keys.length) {
                 el.dataset.headshotMissing = keys.join(' ');
@@ -185,11 +208,12 @@ export function applyHeadshotBox(el, source, { ImageCtor = (typeof Image !== 'un
         img.onload = () => {
             const w = img.naturalWidth || img.width;
             const h = img.naturalHeight || img.height;
-            if (w !== SHORT_PORTRAIT_PX || h !== SHORT_PORTRAIT_PX) { tryAt(i + 1); return; }
+            if (w !== SHORT_PORTRAIT_PX || h !== SHORT_PORTRAIT_PX) { headshotOutcome.set(urls[i], false); tryAt(i + 1); return; }
+            headshotOutcome.set(urls[i], true);
             el.dataset.headshot = keys[i];
             show(urls[i], `${w}px ${h}px`, '0px 0px', 'headshot');
         };
-        img.onerror = () => tryAt(i + 1);
+        img.onerror = () => { headshotOutcome.set(urls[i], false); tryAt(i + 1); };
         img.src = urls[i];
     };
     tryAt(0);
@@ -198,6 +222,7 @@ export function applyHeadshotBox(el, source, { ImageCtor = (typeof Image !== 'un
 /** Forget the logged keys (tests). */
 export function resetMissingHeadshots() {
     warned.clear();
+    headshotOutcome.clear();
 }
 
 /**
