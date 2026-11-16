@@ -54,6 +54,10 @@ module BreakEscape
       show?
     end
 
+    def keyring?
+      show?
+    end
+
     def complete_task?
       show?
     end
