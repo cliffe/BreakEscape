@@ -34,6 +34,7 @@ copy('utils/pc-monitor.js');
 copy('utils/npc-headshot.js');
 copy('utils/pc-taskbar.js');
 copy('utils/author-html.js');
+copy('utils/remote-host-text.js');
 put('utils/conditional-text.js', 'export function resolveObjectField(o, f, d) { return (o && o[f] != null) ? o[f] : d; }\n');
 put('systems/inventory.js',
     'export const adds = [];\n' +
@@ -955,4 +956,50 @@ test('R2 m2: a mapped share icon on a desktop lands at x2; a 16px glyph at x3; t
     fitWholeScale(big, 56, { pad: true, onlyIfFits: true });
     load(big, 64, 64);
     assert.equal(big.style.width, '', 'a picture larger than the box keeps its CSS size');
+});
+
+// K3c R6: an unlocked folder in a container (m1: an empty authored folder stays inert), its picture
+// on the desktop and in the standard grid (m2) and in the header (containerImageUrl).
+test('R6 m1: isInteractiveItem on a folder', () => {
+    const f = (item) => ContainerMinigame.prototype.isInteractiveItem.call({}, item);
+    assert.equal(f({ type: 'folder', name: 'A', contents: [{ type: 'text_file', name: 'x' }] }), true, 'non-empty contents');
+    assert.equal(f({ type: 'folder', name: 'A', hasContents: true }), true, 'hasContents, contents not loaded');
+    assert.equal(f({ type: 'folder', name: 'A', contents: [] }), false, 'authored empty folder is inert');
+    assert.equal(f({ type: 'folder', name: 'A' }), false, 'neither');
+    assert.equal(f({ type: 'folder', name: 'A', locked: true }), true, 'locked takes the lock path');
+    assert.equal(f({ type: 'key', name: 'A', contents: [{ type: 'text_file', name: 'x' }] }), false, 'non-folder with contents');
+});
+
+const FOLDERS = [
+    { id: 'f1', type: 'folder', name: 'Plain', hasContents: true },
+    { id: 'f2', type: 'folder', name: 'Custom', hasContents: true, iconImage: '/custom-folder.png' }
+];
+ANSWERS.folder_desk = { contents: FOLDERS };
+ANSWERS.folder_cabinet = { contents: FOLDERS };
+
+test('R6 m2: a folder on a desktop draws SHARE_ICON, or its own iconImage', async () => {
+    setup();
+    const desk = { scenarioData: { id: 'folder_desk', name: 'Desk', type: 'pc', locked: false } };
+    window.startContainerMinigame(desk, null, false, true);
+    await settle();
+    const src = (name) => icon(name).querySelector('img').getAttribute('src');
+    assert.equal(src('Plain'), SHARE_ICON);
+    assert.equal(src('Custom'), '/custom-folder.png');
+});
+
+test('R6 m2: a folder in the standard grid draws SHARE_ICON, or its own iconImage, never folder.png', async () => {
+    setup();
+    window.startContainerMinigame({ scenarioData: { id: 'folder_cabinet', name: 'Cabinet', type: 'safe', locked: false } }, null, false, false);
+    await settle();
+    const src = (name) => icon(name).querySelector('img').getAttribute('src');
+    assert.equal(src('Plain'), SHARE_ICON);
+    assert.equal(src('Custom'), '/custom-folder.png');
+    assert.doesNotMatch(document.body.innerHTML, /objects\/folder\.png/);
+});
+
+test('R6: containerImageUrl for a folder: SHARE_ICON, iconImage, or the object URL when a texture exists', () => {
+    const tp = (d) => d.type;
+    assert.equal(containerImageUrl({ scenarioData: { type: 'folder' } }, tp), SHARE_ICON);
+    assert.equal(containerImageUrl({ scenarioData: { type: 'folder', iconImage: '/x.png' } }, tp), '/x.png');
+    assert.equal(containerImageUrl({ scenarioData: { type: 'folder' }, texture: { key: 'myfolder' } }, tp), '/break_escape/assets/objects/myfolder.png');
 });

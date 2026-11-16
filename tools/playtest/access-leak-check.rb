@@ -11,8 +11,17 @@
 #
 # A line {"dom": "<page text>", "label": "<what>"} in a file is the text of a page the tester read
 # (the capture log device: eval `() => document.querySelector('.capture-log')?.innerText`), checked
-# like a /capture_secrets answer. A password passes there, and in /capture_secrets, only for an
-# account the server would serve now (its capture proofs applied, engine plan section 6).
+# like a /capture_secrets answer when its label names a capture page (/\bcaptures?\b/i; any other
+# page, such as a device console, is scanned in full). A password passes there, and in
+# /capture_secrets, only for an account the server would serve now (its capture proofs applied,
+# engine plan section 6).
+#
+# Order of the plant (PHYSICAL_PENTEST_DEVICES_PLAN.md E0.3): every file given is one log, read
+# in argument order. A capture secret, or an account password whose proofs include a plant on a
+# room object, passes on a capture route only after the tagged POST /inventory plant row. DOM
+# rows carry no `n`, so pass each DOM file after the response files it was read beside: a DOM
+# file passed first sits before the plant row and is flagged. Logs written before the recorder
+# tagged POST /inventory rows (`inv`) are judged by the old rules.
 #
 # "Now" is when this check runs, not when the response was taken. Proofs only grow, so a
 # /capture_secrets answer that served a password before its proof held (the bug this exception

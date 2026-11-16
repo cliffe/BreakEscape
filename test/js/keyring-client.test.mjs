@@ -180,10 +180,10 @@ test('step 2: an item with no name falls back to "That sign-in"', async () => {
     assert.deepEqual(toasts(), ['That sign-in no longer works.']);
 });
 
-test('step 2: an assist invite never answers Connect before K3c (CONNECT_KINDS is saved_connection only)', async () => {
+test('step 2: an assist invite answers Connect from K3c (CONNECT_KINDS has both kinds); a token still does not', async () => {
     setup();
-    assert.deepEqual(CONNECT_KINDS, ['saved_connection']);
-    keyringAnswer = () => ({ entries: [INVITE], rev: 'r1' });
+    assert.deepEqual(CONNECT_KINDS, ['saved_connection', 'assist_invite']);
+    keyringAnswer = () => ({ entries: [{ ...INVITE, kind: 'token' }], rev: 'r1' });
     assertOnlyToast(await window.keyring.connect(ITEM), 'missing', 'HB-FIN-02.rdp no longer works.');
 });
 
@@ -547,7 +547,7 @@ test('listen hooks inventory_changed once per dispatcher and asks through trayCh
     assert.equal(kr.listen(), true);
     assert.equal(kr.listen(), false);
     assert.deepEqual(handlers.map(h => h[0]),
-        ['inventory_changed', 'pc_signed_in', 'pc_desktop_opened', 'network_foothold_gained', 'conversation_closed:*']);
+        ['inventory_changed', 'pc_signed_in', 'pc_signed_out', 'pc_desktop_opened', 'network_foothold_gained', 'conversation_closed:*']);
     handlers[0][1]({ items: [{ scenarioData: { id: 'lena_rdp_file' } }] });
     await settle();
     assert.equal(calls.filter(c => c[0] === 'keyring').length, 1);
@@ -566,24 +566,24 @@ test('openCredentialSignIn ignores a call with no pc or foothold', () => {
 });
 
 // ── Part B: the find toasts (plan 8.2 second bullet, 8.5 "find toasts") ───────────────────────
-const JAKE = { username: 'jsmith', displayName: 'Jake Smith', npcId: 'jake' };
+const JAKE = { username: 'jbrooks', displayName: 'Jake Brooks', npcId: 'jake' };
 const PW = { id: 'k_pw', kind: 'password', source: 'registry', label: 'passwords.txt', account: JAKE, host: 'HB-FIN-03', connectsTo: 'jake_pc', foundIn: 'passwords_txt' };
 const CAPTURED = { id: 'k_cap', kind: 'password', source: 'capture', label: 'Captured', account: JAKE, host: 'HB-FIN-03', connectsTo: 'jake_pc' };
 const RDP_FOUND = 'Saved connection found: HB-FIN-02.rdp for Lena Fox on HB-FIN-02.';
 const RDP2_FOUND = 'Saved connection found: HB-FIN-03.rdp for Lena Fox on HB-FIN-03.';
-const PW_FOUND = "Jake Smith's password is in passwords.txt.";
+const PW_FOUND = "Jake Brooks's password is in passwords.txt.";
 const keyringGets = () => calls.filter(c => c[0] === 'keyring');
 const answers = (...list) => { let i = 0; keyringAnswer = () => list[Math.min(i++, list.length - 1)]; };
 const finds = () => alerts.filter(a => a[1] === 'info' && a[4]?.whole === true);
 
 test('8.5 find strings are exactly the plan text', () => {
     assert.equal(text.savedConnectionFoundMessage({ label: 'HB-FIN-02.rdp', displayName: 'Lena Fox', host: 'HB-FIN-02' }), RDP_FOUND);
-    assert.equal(text.passwordInFileFoundMessage({ label: 'passwords.txt', displayName: 'Jake Smith' }), PW_FOUND);
+    assert.equal(text.passwordInFileFoundMessage({ label: 'passwords.txt', displayName: 'Jake Brooks' }), PW_FOUND);
     assert.equal(text.findMoreLine(3), 'and 3 more');
     assert.equal(text.findLine(RDP), RDP_FOUND);
     assert.equal(text.findLine(PW), PW_FOUND);
     assert.equal(text.findLine(CAPTURED), null, 'a capture has no find line');
-    assert.equal(text.findLine(INVITE), null, 'no invite toast before K3c');
+    assert.equal(text.findLine(INVITE), "Assist code: Connect it from your inventory to join Lena Fox's session.", 'K3c: the invite line');
 });
 
 test('find toasts: the page-start prime is the baseline and toasts nothing', async () => {
@@ -641,17 +641,20 @@ test('find toasts: one per kind, two in one toast, more than two names two then 
     await kr.refresh(); await settle();
     assert.equal(alerts.length, 3, 'one toast per answer');
     assert.equal(toasts()[2],
-        "Ana Abara's password is in notes.txt.\nJake Smith's password is in old.txt.\nand 1 more",
-        'three toastable finds: two named, then "and 1 more" (the invite and the capture are not counted)');
+        "Ana Abara's password is in notes.txt.\nJake Brooks's password is in old.txt.\nand 2 more",
+        'four toastable finds: two named, then "and 2 more" (the invite counts from K3c; the capture is not counted)');
 });
 
-test('find toasts: a capture and an assist invite stay silent', async () => {
+test('find toasts: a capture stays silent; an assist invite toasts its K3c line', async () => {
     setup();
     const kr = window.keyring;
-    answers({ entries: [RDP], rev: 'r1' }, { entries: [RDP, CAPTURED, INVITE, { ...RDP, id: 'k_rdpc', source: 'capture' }], rev: 'r2' });
+    answers({ entries: [RDP], rev: 'r1' }, { entries: [RDP, CAPTURED, { ...INVITE, id: 'k_invc', source: 'capture' }, { ...RDP, id: 'k_rdpc', source: 'capture' }], rev: 'r2' },
+        { entries: [RDP, CAPTURED, INVITE], rev: 'r3' });
     await kr.prime();
     await kr.refresh(); await settle();
-    assert.equal(alerts.length, 0);
+    assert.equal(alerts.length, 0, 'captures, an invite capture among them, are silent');
+    await kr.refresh(); await settle();
+    assert.deepEqual(toasts(), ["Assist code: Connect it from your inventory to join Lena Fox's session."]);
 });
 
 test('find toasts: a password in a file waits until its file is opened, then asks once with rev', async () => {
@@ -948,4 +951,184 @@ test('R2 t1: a background ask that never answers times out, so the chain moves o
     const after = await kr.refresh(); await settle();
     assert.deepEqual(after.map(e => e.id), ['k_rdp'], 'a later ask is answered');
     assert.deepEqual(toasts(), [RDP_FOUND]);
+});
+
+test('R3 t1: a sync PUT that never answers is inside the same cap, so the chain moves on', async () => {
+    setup();
+    const kr = window.keyring;
+    answers({ entries: [], rev: 'r0' });
+    await kr.prime();
+    kr.askTimeoutMs = 30;
+    let hang = true;
+    window.stateSync = { syncConfirmed: () => (hang ? new Promise(() => {}) : Promise.resolve()) };
+    const realNow = Date.now, frozen = realNow();
+    const t0 = realNow();
+    const getsBefore = keyringGets().length;
+    // R3 t1: freeze the clock for the hung refresh, so a reverted fix always has the whole cap
+    // left for a GET (setTimeout still fires on real time after 30 ms)
+    Date.now = () => frozen;
+    try {
+        assert.equal(await kr.refresh(), null, 'the hung PUT spends the cap and the refresh gives up');
+    } finally { Date.now = realNow; }
+    assert.ok(realNow() - t0 < 1000, 'well inside a second');
+    // K3c R2 t1: no GET at all once the PUT has spent the cap (a GET sent with a sliver left
+    // could beat its own timeout and return [] instead of null)
+    assert.equal(keyringGets().length, getsBefore, 'no GET while the PUT hangs');
+    hang = false;
+    answers({ entries: [RDP], rev: 'r1' });
+    const after = await kr.refresh(); await settle();
+    assert.deepEqual(after.map(e => e.id), ['k_rdp'], 'a later refresh is answered');
+});
+
+test('R3 t2: the no-rev retry shares the first ask\'s deadline, not a fresh one', async () => {
+    setup();
+    const kr = window.keyring;
+    let n = 0, retrySignal = null;
+    window.ApiClient.keyring = (pcId, opts = {}) => {
+        calls.push(['keyring', pcId, opts.rev ?? null]);
+        // The first answer is unusable after most of the budget; the retry never answers
+        if (++n === 1) return new Promise(r => setTimeout(() => r({ unusable: true }), 320));
+        retrySignal = opts.signal;
+        return new Promise(() => {});
+    };
+    const t0 = Date.now();
+    await assert.rejects(kr.fetch(null, { timeoutMs: 400 }), /timed out/);
+    const spent = Date.now() - t0;
+    assert.equal(keyringGets().length, 2, 'the retry went out');
+    assert.ok(spent < 560, `one 400 ms deadline in all (took ${spent} ms; a fresh one would be about 720)`);
+    assert.ok(retrySignal?.aborted, 'the retry is aborted at the deadline');
+});
+
+test('K3c R1 t1: the GET gets only the time the sync PUT left of the cap', async () => {
+    setup();
+    const kr = window.keyring;
+    answers({ entries: [], rev: 'r0' });
+    await kr.prime();
+    kr.askTimeoutMs = 400;
+    window.stateSync = { syncConfirmed: () => new Promise(r => setTimeout(r, 320)) };   // spends most of the cap
+    let signal = null;
+    window.ApiClient.keyring = (pcId, opts = {}) => { signal = opts.signal; return new Promise(() => {}); };
+    const t0 = Date.now();
+    assert.equal(await kr.refresh(), null, 'the hung GET gives up');
+    const spent = Date.now() - t0;
+    assert.ok(signal?.aborted, 'and its request is aborted');
+    assert.ok(spent < 560, `one 400 ms cap for PUT and GET together (took ${spent} ms; a fresh cap for the GET would be about 720)`);
+});
+
+test('part A R2 m1: with no tray change seen, a held find shows at the close even if the latest answer lacks it', async () => {
+    setup();
+    const kr = window.keyring;
+    answers({ entries: [], rev: 'r0' }, { entries: [RDP], rev: 'r1' }, { entries: [], rev: 'r2' });
+    await kr.prime();
+    window.currentConversationNPCId = 'lena';
+    await kr.refresh(); await settle();             // r1: the find is held (no trayChanged, so _trayIds is null)
+    assert.equal(kr._trayIds, null, 'no tray change seen');
+    assert.equal(alerts.length, 0, 'held while talking');
+    await kr.refresh(); await settle();             // r2: lacks it
+    window.currentConversationNPCId = null;
+    await kr.releaseHeld(); await settle();
+    assert.deepEqual(toasts(), [RDP_FOUND], 'no client drop can have happened, so it shows');
+});
+
+test('K3c R1 M1: a held find is still toasted once when the latest answer briefly lacks it', async () => {
+    setup();
+    const kr = window.keyring;
+    answers({ entries: [], rev: 'r0' }, { entries: [RDP], rev: 'r1' }, { entries: [], rev: 'r2' }, { entries: [RDP], rev: 'r3' });
+    await kr.prime();
+    window.currentConversationNPCId = 'lena';
+    await kr.trayChanged([ITEM]); await settle();   // r1: the find is held
+    assert.equal(alerts.length, 0, 'held while talking');
+    await kr.refresh(); await settle();             // r2: lacks it, the file is still in the tray
+    window.currentConversationNPCId = null;
+    await kr.releaseHeld(); await settle();
+    assert.deepEqual(toasts(), [RDP_FOUND], 'exactly one toast');
+    await kr.refresh(); await settle();             // r3: back
+    assert.deepEqual(toasts(), [RDP_FOUND], 'and none when it returns');
+});
+
+test('K3c R1 M1: a held find whose file left the tray is dropped at the close', async () => {
+    setup();
+    const kr = window.keyring;
+    answers({ entries: [], rev: 'r0' }, { entries: [RDP], rev: 'r1' }, { entries: [], rev: 'r2' });
+    await kr.prime();
+    window.currentConversationNPCId = 'lena';
+    await kr.trayChanged([ITEM]); await settle();
+    await kr.trayChanged([]); await settle();
+    window.currentConversationNPCId = null;
+    await kr.releaseHeld(); await settle();
+    assert.deepEqual(toasts(), [], 'dropped meanwhile: no toast');
+});
+
+test('K3c R1 m1: a drop and a retake before the answer returns still toasts the retake', async () => {
+    setup();
+    const kr = window.keyring;
+    answers({ entries: [], rev: 'r0' }, { entries: [RDP], rev: 'r1' });
+    await kr.prime();
+    await kr.trayChanged([ITEM]); await settle();
+    assert.deepEqual(toasts(), [RDP_FOUND]);
+    const pending = [];
+    window.ApiClient.keyring = (pcId, opts = {}) => { calls.push(['keyring', pcId, opts.rev ?? null]); const d = deferred(); pending.push(d); return d.promise; };
+    kr.trayChanged([]); await settle();        // ask A goes out
+    kr.trayChanged([ITEM]); await settle();    // retaken before A returns: ask B queued
+    assert.equal(pending.length, 1, 'only A is out');
+    pending[0].resolve({ entries: [], rev: 'r2' }); await settle();
+    assert.equal(pending.length, 2, 'B goes out after A');
+    pending[1].resolve({ entries: [RDP], rev: 'r3' }); await settle();
+    assert.deepEqual(toasts(), [RDP_FOUND, RDP_FOUND], 'the retake toasts again');
+});
+
+test('K3c R1 m2: a later answer without heldItem keeps the known item, so the find is still forgotten with it', async () => {
+    setup();
+    const kr = window.keyring;
+    const { heldItem, ...bare } = RDP;
+    answers({ entries: [], rev: 'r0' }, { entries: [RDP], rev: 'r1' }, { entries: [bare], rev: 'r2' }, { entries: [RDP], rev: 'r3' });
+    await kr.prime();
+    await kr.trayChanged([ITEM]); await settle();   // r1: toast
+    await kr.refresh(); await settle();             // r2: same id, no heldItem
+    await kr.trayChanged([]); await settle();       // the file leaves (latest names no heldItem: no ask)
+    await kr.trayChanged([ITEM]); await settle();   // r3: back
+    assert.deepEqual(toasts(), [RDP_FOUND, RDP_FOUND], 'a retaken file toasts again');
+});
+
+test('reconnect: an answer that briefly lacks a held find does not toast it again; drop and retake does', async () => {
+    setup();
+    const kr = window.keyring;
+    answers({ entries: [], rev: 'r0' }, { entries: [RDP], rev: 'r1' }, { entries: [], rev: 'r2' }, { entries: [RDP], rev: 'r3' },
+        { entries: [], rev: 'r4' }, { entries: [RDP], rev: 'r5' });
+    await kr.prime();
+    await kr.trayChanged([ITEM]); await settle();
+    assert.deepEqual(toasts(), [RDP_FOUND], 'the first find toasts');
+    // A reconnect: one answer without the entry while the file is still in the tray, then it is back
+    await kr.refresh(); await settle();
+    await kr.refresh(); await settle();
+    assert.deepEqual(toasts(), [RDP_FOUND], 'no second toast for the same file');
+    // The file leaves the tray (its entry goes with it), then is taken again
+    await kr.trayChanged([]); await settle();
+    await kr.trayChanged([ITEM]); await settle();
+    assert.deepEqual(toasts(), [RDP_FOUND, RDP_FOUND], 'retaking a dropped file toasts again');
+});
+
+test('reconnect: a find held during a conversation is one line however often it is held, and a dropped one is not toasted', async () => {
+    setup();
+    const kr = window.keyring;
+    answers({ entries: [RDP, OTHER_RDP], rev: 'r0' }, { entries: [RDP], rev: 'r1' });
+    await kr.prime();
+    window.currentConversationNPCId = 'lena';
+    kr.announceFinds([RDP, OTHER_RDP]);
+    kr.announceFinds([RDP]);
+    assert.deepEqual(kr._held.map(e => e.id), ['k_rdp', 'k_rdp2'], 'held once each');
+    // OTHER_RDP's file leaves the tray meanwhile (a real drop: with no tray change seen, a held
+    // find always shows, part A R2 m1), and the answer the drop asks for lacks it
+    await kr.trayChanged([ITEM]); await settle();
+    await kr.refresh(); await settle();
+    window.currentConversationNPCId = null;
+    await kr.releaseHeld(); await settle();
+    assert.deepEqual(toasts(), [RDP_FOUND], 'one line, the dropped find left out');
+});
+
+test('D49: the plug group draws its own badge; an unknown group falls back to the key badge', () => {
+    assert.equal(text.BADGE_FILE.plug, 'badge-plug.png');
+    assert.equal(text.badgeSrc('plug'), '/break_escape/assets/icons/badge-plug.png');
+    assert.equal(text.badgeSrc('key'), '/break_escape/assets/icons/badge-key.png');
+    assert.equal(text.badgeSrc('nope'), '/break_escape/assets/icons/badge-key.png');
 });
