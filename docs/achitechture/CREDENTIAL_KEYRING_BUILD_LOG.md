@@ -911,3 +911,19 @@ Run 2 took run 1's four decisions as accepted by the integrator. It stopped at t
 5. Live proof on :3063 (R2, R3 sign-in half, R4, R5a), or hand it over.
 
 **Open for the user**: `badge-plug.png` art (the plug group shows the key badge until then).
+
+### Run 3 (partial: tests written, mutations and suites still to do)
+
+Run 3 stopped at the context limit after step 2's writing. Commits `d42e4d7ce` and `fdab5f7c1` on `build/keyring-k3a`.
+
+**Done**
+- bin/test-js on `d4ecac8b4`: 711 of 712 files passed. The one failure, `pc-monitor-frame.test.mjs` (E06 card CSS), was the test, not the code: it sliced the CSS from the E06 marker to the end of the file, so the K3a rules (which set `border-radius: 0`) fell inside the check. The slice now ends at the K3a comment (`d42e4d7ce`). No ERR_MODULE_NOT_FOUND: keyring.js loads by dynamic import, as designed.
+- `test/js/keyring-signin.test.mjs`: 46 tests, all passing. Own harness (real password-minigame, unlock-system, keyring, pc-sessions, pc-taskbar, remote-host-text, api-client, network-links). Covers: tag kinds and `credentialsDeclared`; usable kinds per screen (invite never, other-PC and ended dropped); the In file wait and the reload case; `rev`/unchanged/lost-rev fetch; teachOnce; api-client request shapes (no `relay`); one tile per account and the picker rules (accounts/known/typed/false) for remote and keyboard; tags, two-tag "+N", badges; ways box (buttons with "Connect with" whole, title, Password always present, found lines); greyed refused button (aria-disabled, short reason, click shows the full reason, no request); credential sign-in route and session kind/label; teaching toast once per kind (and typed in_file); every 8.5 refusal text (wrongPc, kindRefused x2, notPermitted, lockedOut, ended, remoteBlocked, generic, 403 x2); server kindRefused greys the button; keyring failed lines (alone and combined); markup shown as text; keyboard screen picker false/accounts/known, no-credentials unchanged, failed lines, late redraw; remote loading (route, one layout, In file filter, cap and late relayout, failure, no call without credentials); keyboard loading (passwords only, cap, late `setKeyringEntries`, failure); start panel line (escaped, other sessions none); reload keeps kind/label; `endedPcIds` to `linkDropped` in both sign-in paths; 403/bad answer fail closed.
+- `screen-states.test.mjs`: two credential cases added (26 pass).
+- Bugs in K3a code found: none so far. Observation, not changed: a keyring answer that arrives after the player chose a tile does not fill the Password field (the test pins that it does not overwrite).
+
+**Not done (next run, in order)**
+1. Mutation checks: for each group of tests, break the source once (for example `signedInVia` back to `=== 'password'`, drop `_dropEnded`, make `screenEntries` list `assist_invite`, remove the `foundVisible` check, change `kindRefusedShort`, drop the third list from `paint`'s `both`), confirm the test fails, restore with `git checkout -- <file>`. Record each here.
+2. `tools/playtest/signin-fit.mjs` K3a fixtures (plan 8.1 worst cases) and run if headless.
+3. bin/test-js again, full Rails suite, rubocop on changed Ruby files.
+4. Live proof on :3063; `badge-plug.png` art for the user (the plug group still shows the key badge).
