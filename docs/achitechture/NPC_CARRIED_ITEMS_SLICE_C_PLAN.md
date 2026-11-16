@@ -1,5 +1,30 @@
 # NPC carried items, slice C: a reload in the middle of a carry
 
+> **Handover (build/ol-carry-c, commit 7f811b06c).**
+> **Done and committed:** C1 (`carry_object!` stores a sanitised `fromPos` from the
+> server's own objects_added record; `sanitised_carry_position` helper keeps only valid
+> x/y/px/py/elevation; `end_stranded_carries!` merges `fromPos` as the put-back position
+> and gained the `carried_item_in_inventory?` guard). C2 (a confirmed `consumeCarried`
+> calls `window.stateSync?.requestSoon?.()`; evidence that the npc_used event-mapping
+> global write requests no sync of its own is in the code comment and the live doc). The
+> 7 Rails tests, the JS test, the new `tools/playtest/npc-carry-reload-proof.mjs`, and the
+> three doc edits (carry plan reload rule, lab PLAYTEST.md, test_needs_sims README).
+> **C1 failing-then-passing:** with the put-back merge line removed (main behaviour) the
+> placed-copy test lands the mug at the scenario spot (4,7); with the fix it lands at the
+> drop spot (6.4,5.1). PASS with fix.
+> **Green:** bin/test-js 681/0. Rails: npc_carried_items 42/0, and
+> forged_ko_drop + game_test + reload_persistence together 234/0. Full `rails test`
+> 2861 runs, 0 failures, 0 errors, 3 skips. Rubocop 368 files, 0 offences.
+> **Left (blocked):** the live reload beats (T1 T2, L1 to L5) did not run. Port 3091 is
+> held by another session's server (PID 1830947, the sibling `p-ol-carry` worktree); the
+> brief pins 3091 only and forbids other ports or killing a PID I did not launch, so no
+> live beat was driven and there were no live results. My own server exited on the bind
+> conflict, so nothing of mine is left running. Resume steps and the two open questions,
+> settled from the code (tile (2.55,0.95) is in the open_plan north wall, not reachable;
+> onceOnly handlers survive a reload via synced `triggeredEvents`, so Sofia's bark does
+> not normally replay), are in `NPC_CARRIED_ITEMS_SLICE_C_LIVE.md`. Free 3091, then run
+> the driver per that doc.
+
 Owner direction (D3, verbatim): "When an NPC picks up an item it should be in held
 items, and can be moved."
 
