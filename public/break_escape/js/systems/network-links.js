@@ -727,6 +727,12 @@ export class NetworkLinks {
         const trip = this._startTrip({ footholdId, start: 'session', pcId,
             returnTo: typeof returnTo === 'function' ? returnTo : null });
         const startDesktop = win().openRemoteDesktop;
+        // A session opened from another desktop (K4) has no foothold; it reopens by its source
+        const fromPcId = !footholdId && typeof session?.fromPcId === 'string' && session.fromPcId ? session.fromPcId : null;
+        if (fromPcId && typeof win().openFromDesktop === 'function') {
+            win().openFromDesktop(pcId, fromPcId);
+            return trip;
+        }
         if (typeof startDesktop === 'function' && footholdId) {
             startDesktop(pcId, footholdId);
             return trip;
