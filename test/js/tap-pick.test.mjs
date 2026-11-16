@@ -655,6 +655,23 @@ test('overlap 11b: overlapStandPoint steps the reach margin 12, 8, 4, 0 over wal
     assert.ok(inReachFrom(pc, a, 12) && inReachFrom(pc, c, 12));
 });
 
+test('overlap 11c: overlapStandPoint picks the cell with the most slack at the winning margin, ties to the shortest walk', () => {
+    const player = { x: 0, y: 0 };
+    const reach = 20;
+    const inReachFrom = (p, h, margin = 12) => Math.hypot(p.x - h.x, p.y - h.y) <= reach - margin;
+    const findCell = (x, y) => ({ x, y });
+    // Two hits 8 px apart: at margin 12 (reach 8) many cells pass, the nearest to the player sits on the
+    // edge of both circles; the cell midway between them (100,4) is 4 px inside both, the most slack
+    const p = overlapStandPoint([{ id: 'a', x: 100, y: 0 }, { id: 'b', x: 100, y: 8 }], { x: 100, y: 4 }, player,
+        { range: 32, inReachFrom, findCell });
+    assert.deepEqual(p, { x: 100, y: 4 });
+    // Equal slack goes to the shorter walk: hits mirrored about the player's row give two equal cells
+    const hits = [{ id: 'a', x: 100, y: -4 }, { id: 'b', x: 100, y: 4 }];
+    const tie = overlapStandPoint(hits, { x: 100, y: 0 }, { x: 0, y: 0 },
+        { range: 32, inReachFrom, findCell: (x, y) => (Math.abs(x - 100) === 4 && y === 0 ? { x, y } : null) });
+    assert.deepEqual(tie, { x: 96, y: 0 }, 'x 96 and 104 tie on slack; 96 is the shorter walk');
+});
+
 test('overlap 12: farUnderTap with every NPC under the tap finds the far one on her figure', () => {
     const a = { id: 'a', on: false }, b = { id: 'b', on: true };
     const deps = { inReach: () => false, npcOnFigure: (n) => n.on };

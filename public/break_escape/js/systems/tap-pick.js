@@ -243,8 +243,9 @@ export const OVERLAP_MARGINS = [12, 8, 4, 0];
  * OVERLAP_MARGINS (12, 8, 4, 0 px inside the range, widest first), the click point's stand
  * point, then each hit's own (topmost first), each from objectStandPoint; then, when none of
  * those reaches every hit, the walkable cells round the hits (deps.findCell on a 4 px lattice,
- * nearest walk first) that deps.wallClear / deps.sameRoom allow. The first point from which
- * every hit passes deps.inReachFrom wins. Null only when no walkable cell reaches them all.
+ * nearest walk first) that deps.wallClear / deps.sameRoom allow. At the highest margin where any
+ * point passes, the point with the most slack (largest margin it still passes) wins, ties to the
+ * shortest walk. Null only when no walkable cell reaches them all.
  *
  * @param {Array<object>} hits - the menu hits, topmost first
  * @param {{x:number,y:number}} click
@@ -301,9 +302,26 @@ export function overlapStandPoint(hits, click, player, deps) {
         cells.sort((a, b) => a.walk - b.walk);
         return cells;
     };
+    // Highest margin at which any candidate reaches every hit wins; at that margin the candidate
+    // with the most slack (largest margin it still passes, probed 1 px at a time) is chosen, ties
+    // going to the shortest walk, so the exact stand point is not on the knife-edge of the range.
+    const fromPt = (() => {
+        const fx = player?.body ? player.body.center.x - player.x : 0;
+        const fy = player?.body ? player.body.center.y - player.y : 0;
+        return { x: player.x + fx, y: player.y + fy };
+    })();
+    const walkOf = (p) => Math.hypot(p.x - fromPt.x, p.y - fromPt.y);
+    const MAX_SLACK = 24;
     for (const margin of OVERLAP_MARGINS) {
-        for (const p of named) if (allIn(p, margin)) return p;
-        for (const c of lattice()) if (allIn(c.p, margin)) return c.p;
+        const pool = [...named.map(p => ({ p, walk: walkOf(p) })), ...lattice()];
+        let best = null;
+        for (const c of pool) {
+            if (!allIn(c.p, margin)) continue;
+            let slack = margin;
+            while (slack < MAX_SLACK && allIn(c.p, slack + 1)) slack++;
+            if (!best || slack > best.slack || (slack === best.slack && c.walk < best.walk)) best = { p: c.p, slack, walk: c.walk };
+        }
+        if (best) return best.p;
     }
     return null;
 }
