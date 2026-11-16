@@ -1,5 +1,5 @@
 {
-  "scenario_brief": "Test Scenario: Explicit Item Coordinates\n\nDemonstrates specifying coordinates on any scenario item:\n\n  Floor items  –  x/y are room-relative pixel offsets from the room\n                   top-left corner.  Tiled designer positions are ignored.\n\n  Table items  –  x/y inside a tableItems entry are table-relative pixel\n                   offsets from the table sprite's top-left corner.\n                   This replaces the automatic even-spread positioning.\n\nLayout:\n  [CEO Office - room_ceo2]\n         ↑\n  [Office - room_office2] (start)",
+  "scenario_brief": "Test Scenario: Explicit Item Coordinates\n\nDemonstrates specifying coordinates on any scenario item:\n\n  Floor items  –  position x/y are room-relative TILE coordinates from the\n                   room top-left corner.  Tiled designer positions are ignored.\n\n  Table items  –  x/y inside a tableItems entry are table-relative pixel\n                   offsets from the table sprite's top-left corner.\n                   This replaces the automatic even-spread positioning.\n\nLayout:\n  [CEO Office - room_ceo2]\n         ↑\n  [Office - room_office2] (start)",
   "startRoom": "office",
   "rooms": {
     "office": {
@@ -13,7 +13,7 @@
           "name": "Test Guide",
           "takeable": true,
           "readable": true,
-          "text": "COORDINATE TEST – OFFICE ROOM\n\nFloor items with explicit room-relative coords:\n  • Safe (x=50, y=80)  – near the top-left area of the room.\n  • Keycard (x=160, y=240) – centre of the room floor.\n\nFirst desk (Tiled) – table-relative coords on tableItems:\n  • Note  at table (x=10, y=8)  – left of desk surface.\n  • Bag   at table (x=48, y=0)  – right of desk surface; open it.\n\nSecond desk (Tiled) – no coords; items auto-spread (default):\n  • Laptop and phone placed automatically.\n\nHead north for the CEO office test."
+          "text": "COORDINATE TEST – OFFICE ROOM\n\nFloor items with explicit room-relative tile coords:\n  • Safe (x=8, y=8)  – towards the bottom-right of the room floor.\n\nFirst desk (Tiled) – table-relative coords on tableItems:\n  • Note  at table (x=10, y=8)  – left of desk surface.\n  • Bag   at table (x=48, y=0)  – right of desk surface; open it.\n\nSecond desk (Tiled) – no coords; items auto-spread (default):\n  • Laptop and phone placed automatically.\n\nHead north for the CEO office test."
         },
         {
           "type": "safe",
@@ -104,7 +104,7 @@
               "position": { "x": 30, "y": 10 },
               "takeable": false,
               "readable": true,
-              "text": "CEO PRIVATE TERMINAL\n\nThis laptop is at table-relative (x=5, y=5) on a\ndynamically created desk placed at room-relative tile (x=4, y=4).\n\nPhase 2: Approved.",
+              "text": "CEO PRIVATE TERMINAL\n\nThis laptop is at table-relative (x=5, y=5) on a\ndynamically created desk placed at room-relative tile (x=4, y=6.5).\n\nPhase 2: Approved.",
               "observations": "An expensive laptop, lid half-open (table-relative coords)."
             },
             {
@@ -136,7 +136,7 @@
           "name": "CEO Test Guide",
           "takeable": true,
           "readable": true,
-          "text": "COORDINATE TEST – CEO ROOM\n\nDynamic desk (sprite=desk-ceo2, x=60, y=80) with table-relative coords:\n  • Laptop  at table (x=5,  y=5) – top-left of desk.\n  • Dossier at table (x=50, y=8) – right of desk surface."
+          "text": "COORDINATE TEST – CEO ROOM\n\nDynamic desk (sprite=desk-ceo2, tile x=4, y=5) with table-relative coords:\n  • Laptop  at table (x=5,  y=5) – top-left of desk.\n  • Dossier at table (x=50, y=8) – right of desk surface."
         },
         {
           "type": "table",
@@ -150,7 +150,7 @@
               "position": { "x": 5, "y": 5 },
               "takeable": false,
               "readable": true,
-              "text": "CEO PRIVATE TERMINAL\n\nThis laptop is at table-relative (x=5, y=5) on a\ndynamically created desk placed at room-relative tile (x=4, y=7).\n\nPhase 2: Approved.",
+              "text": "CEO PRIVATE TERMINAL\n\nThis laptop is at table-relative (x=5, y=5) on a\ndynamically created desk placed at room-relative tile (x=4, y=5).\n\nPhase 2: Approved.",
               "observations": "An expensive laptop, lid half-open (table-relative coords)."
             },
             {

@@ -29,6 +29,9 @@ module BreakEscape
     end
     # Hacktivity loads these two from here, so they are report-only.
     REPORT_ONLY = %w[test_objectives test_simple_success].freeze
+    # Objects deliberately placed under the south room's wall: test_behind_wall_fade checks that an
+    # object in office_n's bottom row (y 8 of 10) is drawn under the hall's back wall and never fades.
+    DELIBERATE_UNDER_WALL = [%w[test_behind_wall_fade office_n north_card]].freeze
 
     def scenario_files
       (Dir[ROOT.join('scenarios/*/scenario.json.erb').to_s] + Dir[ROOT.join('scenarios/*/scenario.json').to_s] +
@@ -38,6 +41,11 @@ module BreakEscape
     def render_scenario(f)
       text = File.read(f)
       JSON.parse(f.end_with?('.erb') ? BreakEscape::ScenarioBinding.render(text, {}) : text)
+    end
+
+    # The bottom two rows of a room with a south neighbour sit under that room's top wall.
+    def hidden_under_south_wall?(y, rows)
+      y >= rows - 2
     end
 
     def collect(obj, acc)
@@ -98,7 +106,7 @@ module BreakEscape
           Array(room['objects']).each { |o| collect(o, objs) }
           objs.each do |o|
             pos = o['position']
-            next unless pos.is_a?(Hash) && pos['y'].is_a?(Numeric) && pos['y'] > size[1] - 2
+            next unless pos.is_a?(Hash) && pos['y'].is_a?(Numeric) && hidden_under_south_wall?(pos['y'], size[1]) && !DELIBERATE_UNDER_WALL.include?([name, room_id, o['id']])
 
             line = "#{f.sub("#{ROOT}/", '')} #{room_id} #{o['type']} #{o['name'].inspect}: y=#{pos['y']} (room #{size[1]} rows, south neighbour)"
             (name.start_with?('test') && !REPORT_ONLY.include?(name) ? test_hits : mission_hits) << line
@@ -107,6 +115,16 @@ module BreakEscape
       end
       warn "Objects in the bottom two rows of a room with a south neighbour (report only):\n#{mission_hits.join("\n")}" if mission_hits.any?
       assert_empty test_hits, "hidden under the south room's wall:\n#{test_hits.join("\n")}"
+    end
+
+    # The rule is inclusive: in a 10-row room y 8 is already inside the hidden band (rows 8 and 9).
+    test 'y equal to height - 2 is flagged and y below it is not' do
+      size = MAPS['room_office']
+      assert size, 'room_office map missing'
+      assert_equal 10, size[1]
+      assert hidden_under_south_wall?(8, size[1]), 'y 8 in a 10-row room with a south neighbour must be flagged'
+      assert hidden_under_south_wall?(9, size[1])
+      assert_not hidden_under_south_wall?(7, size[1])
     end
   end
 end
