@@ -13,6 +13,9 @@ const named = (host, fallback = 'That host') => (host ? String(host) : fallback)
 /** A host whose own service is off, reached over the network (the view's row says "Powered down"). */
 export const notRespondingMessage = (host) => `${named(host)} is not responding.`;
 
+/** A held session that the server has ended (a 403 no_session on its desktop). */
+export const sessionEndedMessage = (host) => `Your session on ${host || 'that host'} has ended.`;
+
 /** A host that a remote screen or the view cannot reach through the link in play. */
 export const unreachableMessage = (host) => `${named(host)} can't be reached over this link.`;
 

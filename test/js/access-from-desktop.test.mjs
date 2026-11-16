@@ -298,6 +298,24 @@ test('Connect on a held file takes nothing; returnTo reopens this desktop only w
     assert.equal(started.length, before + 1, 'this desktop reopens');
 });
 
+test('Connect from a foothold desktop on a trip marks the trip to come back here; a toast-only Connect clears it', async () => {
+    const { d } = await connectSetup({ id: 'ops_rdp', name: 'Ops RDP', connect: true }, true);
+    const marks = [];
+    window.networkLinks = { trip: {}, setConnectBack: (id) => { marks.push(id); return true; } };
+    d.remote = { footholdId: 'f1' };
+    window.MinigameFramework.currentMinigame = d;
+    await d.connectFromDesktop({ id: 'ops_rdp', connect: true }, null);
+    assert.deepEqual(marks, ['ops_pc', null], 'marked, then cleared because this desktop is still up');
+    marks.length = 0;
+    window.MinigameFramework.currentMinigame = null;
+    await d.connectFromDesktop({ id: 'ops_rdp', connect: true }, null);
+    assert.deepEqual(marks, ['ops_pc'], 'closed for the screens Connect opened: the mark stays');
+    marks.length = 0;
+    d.remote = null;
+    await d.connectFromDesktop({ id: 'ops_rdp', connect: true }, null);
+    assert.deepEqual(marks, [], 'a from desktop marks nothing');
+});
+
 test('a failed take stops Connect', async () => {
     setup();
     await fromDesktopOpen();

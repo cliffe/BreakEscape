@@ -1245,3 +1245,13 @@ Branch `build/keyring-k4-client`, JS only (the server half is in the K4 server c
 ### Tests
 
 New `access-from-desktop.test.mjs` (14: fetch, 403 reasons, trip line, no self-reopen, folder reopen, Connect copy/move/held/failed, offer rules; run capped like the relay one). Added tests in access-remote-signin, pc-sessions (displaced endedPcIds, from fields, open order), network-links, network-view, npc-workarounds and capture-log. access-relay-desktop passes (21) under the ulimit recipe.
+
+## K4 client R1 fixes
+
+- M1 fixed. A `from` session opened from the capture log has no foothold, so `landed()` (network-links.js) now leaves the trip with the ending's own line (session ended, unreachable, not responding) instead of resuming into "The link is gone."; Sign out and displaced leave quietly. Tests in network-links.test.mjs reproduced the wrong line first.
+- m1 done (plan 9 followed). Connect from a foothold desktop on a running trip marks the trip (`setConnectBack`); the target's X reopens that source desktop once. Any other ending of the target clears the mark; a toast-only Connect clears it too. Tested in network-links.test.mjs and access-from-desktop.test.mjs.
+- m2 skipped here (server side, another agent).
+- m3 deferred (pre-existing, same class as foothold folders): one-line entry added to docs/IDEAS_BACKLOG.md.
+- m4 deferred. A re-sign-in at the keyboard in another tab raises no client event, and the server answers `unreachable` (route mismatch), which the client must keep for real unreachable hosts. A correct drop needs the server to answer a distinct reason for a route mismatch; low impact.
+- t1 done: the "or a dropped one" test now tests a dropped answer carrying `endedPcIds`; the `openedOrder` test asserts it is stable across another PC and rises on a new open.
+- t2 done: `sessionEndedMessage` moved to utils/remote-host-text.js (re-exported by network-links.js) and used by the container; no new static import, so no harness copy list changes.

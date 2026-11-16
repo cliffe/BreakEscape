@@ -1029,5 +1029,9 @@ test('openedOrder rises with each open of a desktop session (K4)', async () => {
     await s.signIn('hot_desk', 'sokafor', 'right-sam');
     const a = s.openedOrder('hot_desk');
     await s.signIn('fin_pc', 'ishaw', 'right-ian').catch(() => {});
+    const b = s.openedOrder('hot_desk');
     assert.ok(typeof a === 'number' && a > 0);
+    assert.equal(b, a, 'another PC signing in does not move this one');
+    s._markOpened('hot_desk');
+    assert.ok(s.openedOrder('hot_desk') > a, 'opening it again raises its order');
 });

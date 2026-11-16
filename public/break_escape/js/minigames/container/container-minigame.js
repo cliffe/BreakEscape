@@ -9,7 +9,7 @@ import { escapeHtml } from '../../utils/escape-html.js';
 import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { mentionsComputer } from '../../utils/computer-keywords.js';
 import { mountPcMonitor, bindPcWindowCloses, cssZoomOf, postitNotebookEntry, pcPostitButtonHtml } from '../../utils/pc-monitor.js';
-import { RELAY_FOLDER_UNAVAILABLE_TEXT, notRespondingMessage, unreachableMessage } from '../../utils/remote-host-text.js';
+import { RELAY_FOLDER_UNAVAILABLE_TEXT, sessionEndedMessage, notRespondingMessage, unreachableMessage } from '../../utils/remote-host-text.js';
 import { MORE_BELOW_TEXT } from '../../utils/more-below.js';
 import { mountPcTaskbar, pcTaskbarModel, credentialSessionLine, credentialLineHtml, titleCredentialLabels, lockSupported, lockPcSession, rememberDesktop, rememberedDesktop, findPcData, RELAY_HEADER_TEXT, RELAY_NO_SHARES_TEXT, RELAY_DISCONNECTED_TEXT, relayAccountText } from '../../utils/pc-taskbar.js';
 
@@ -680,7 +680,7 @@ export class ContainerMinigame extends MinigameScene {
                 if (!window.networkLinks?.trip) {
                     const host = this.networkDetail().host;
                     const line = reason === 'unreachable' ? unreachableMessage(host)
-                        : (reason === 'not_responding' ? notRespondingMessage(host) : `Your session on ${host || 'that host'} has ended.`);
+                        : (reason === 'not_responding' ? notRespondingMessage(host) : sessionEndedMessage(host));
                     window.gameAlert?.(line, 'info', this.containerItem?.scenarioData?.name || 'PC', 3000);
                 }
                 return null;
@@ -1705,12 +1705,17 @@ export class ContainerMinigame extends MinigameScene {
             if (desktop && typeof window.startContainerMinigame === 'function') window.startContainerMinigame(desktop, null, false, true);
         };
         this.exitReason = 'handover';
+        // A foothold desktop on a running trip: the target's X comes back here, not to the view
+        const marked = this.remote && !!from && !!window.networkLinks?.setConnectBack?.(from);
         let r;
         try {
             r = await window.keyring.connect({ scenarioData: { id: item.id, name: item.name } }, { from, returnTo });
         } finally {
             // Connect only toasted and this desktop is still up: a later close is a plain close
-            if (window.MinigameFramework?.currentMinigame === this && !this._ending) this.exitReason = 'close';
+            if (window.MinigameFramework?.currentMinigame === this && !this._ending) {
+                this.exitReason = 'close';
+                if (marked) window.networkLinks?.setConnectBack?.(null);
+            }
         }
         return r;
     }
