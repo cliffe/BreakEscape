@@ -1320,6 +1320,10 @@ module BreakEscape
         self.class.strip_puzzle_graph_keys!(obj)
         BreakEscape::DeclaredGrants.strip_grant_contents!(obj)
         strip_capture_secrets!(obj)
+        # The item-level `credential` is a server-only field (CREDENTIAL_KEYRING_PLAN.md section 15):
+        # the `held` proof reads it from the stored inventory, the client never needs it (K3 draws
+        # Connect from GET /keyring), so it never rides a client inventory copy or echo (R1 m1).
+        obj.delete('credential')
         obj.delete('requires') if lock_type && !CARD_REFERENCE_LOCK_TYPES.include?(lock_type)
         obj.each_value { |value| filter_inventory_for_client!(value) }
       when Array
@@ -6353,6 +6357,12 @@ module BreakEscape
         # entirely server-side (find_hint_only_message); the client never reads
         # it, so remove it outright rather than keeping a count.
         obj.delete('hintOnlyFlags')
+
+        # The item-level `credential` is a server-only field (CREDENTIAL_KEYRING_PLAN.md section 15):
+        # a credential item left loose in a room, on a desktop or in a share is served through this
+        # filter, so strip the field here too (R1 m1). The `held` proof reads it only from the
+        # stored inventory, never from a client payload.
+        obj.delete('credential')
 
         # Networks (slice 9.3a, section 6): membership never ships, and a jack's link
         # name and holder arrive on the link item instead.
