@@ -17,7 +17,7 @@ const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true 
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const imp = (rel) => import(pathToFileURL(join(js, rel)).href);
-const { PlayerPoses, isPhoneScene, playerPoseKey, USE_MS, DRINK_MS, PHONE_CLOSE_MS } = await imp('systems/player-poses.js');
+const { PlayerPoses, isPhoneScene, playerPoseKey, USE_MS, DRINK_MS, PHONE_CLOSE_MS, PHONE_LEAD_MS } = await imp('systems/player-poses.js');
 
 const ALL = ['drink', 'use', 'phone'].flatMap(n => ['south', 'north', 'east', 'west', 'north-east', 'north-west', 'south-east', 'south-west'].map(d => `pose_${n}_${d}`));
 
@@ -166,4 +166,198 @@ test('trigger: handleObjectInteraction asks for the use pose before the interact
     assert.ok(hook > 0, 'the hook is in handleObjectInteraction');
     assert.ok(hook < body.indexOf("emit('object_interacted'"), 'before the interaction event');
     assert.ok(hook > body.indexOf('maybeInteractionWarning(sprite)'), 'after the warning gate');
+});
+
+// ---- review fixes: walking at open, exclusions, drink in a chat, other minigames ----
+
+test('phone opened while still moving: the pose arrives once the player stops, and the close pose follows', async () => {
+    const { poses, player, scene } = rig();
+    player.body.velocity.x = 80;
+    const inst = {};
+    assert.equal(poses.onMinigameStart('phone-chat', {}, inst), false, 'refused while walking');
+    assert.notEqual(player.anims.currentAnim.key, 'pose_phone_south');
+    poses.update();
+    assert.notEqual(player.anims.currentAnim.key, 'pose_phone_south', 'still walking');
+    player.body.velocity.x = 0;
+    poses.update();
+    assert.equal(player.anims.currentAnim.key, 'pose_phone_south');
+    assert.equal(poses.cur.hold, true);
+    assert.equal(poses.onMinigameEnd(inst), true);
+    assert.equal(poses.phoneWanted, false);
+    scene.time.now += PHONE_CLOSE_MS;
+    poses.update();
+    assert.equal(player.anims.currentAnim.key, 'idle-down');
+});
+
+test('phone minigame during which the pose never showed: no close pose', () => {
+    const { poses, player } = rig();
+    window.seating.isSeated = () => true;
+    const inst = {};
+    poses.onMinigameStart('phone-chat', {}, inst);
+    poses.update();
+    assert.equal(poses.cur, null);
+    window.seating.isSeated = () => false;   // stood up just as it closed
+    assert.equal(poses.onMinigameEnd(inst), false);
+    assert.equal(poses.cur, null);
+    assert.notEqual(player.anims.currentAnim.key, 'pose_phone_south');
+});
+
+test('use: only for world objects (not NPCs, chairs, swivel chairs, container sprites, or over a minigame)', () => {
+    const cases = [
+        ['npc', { _isNPC: true, npcId: 'a' }],
+        ['swivel chair', { isSwivelChair: true }],
+        ['temp sprite', { objectId: 'temp_container_item_3' }]
+    ];
+    for (const [label, sprite] of cases) {
+        const r = rig();
+        assert.equal(r.poses.use(sprite), false, label);
+        assert.equal(r.played.length, 0, label);
+    }
+    let r = rig();
+    const chair = { scenarioData: { type: 'chair' } };
+    window.seating.isSeat = (s) => s === chair;
+    assert.equal(r.poses.use(chair), false, 'seat');
+    delete window.seating.isSeat;
+    r = rig();
+    window.MinigameFramework = { currentMinigame: {} };
+    assert.equal(r.poses.use({ scenarioData: {} }), false, 'minigame open');
+    delete window.MinigameFramework;
+    assert.equal(r.poses.use({ scenarioData: {}, objectId: 'desk_1' }), true, 'a world object still does');
+});
+
+test('a drink during a phone chat: the phone pose comes back when the drink ends', () => {
+    const { poses, player, scene } = rig();
+    const inst = {};
+    poses.onMinigameStart('phone-chat', {}, inst);
+    assert.equal(poses.drink(), true);
+    assert.equal(player.anims.currentAnim.key, 'pose_drink_south');
+    scene.time.now += DRINK_MS;
+    poses.update();
+    assert.equal(player.anims.currentAnim.key, 'pose_phone_south', 'back at once, no idle frame between');
+    assert.equal(poses.cur.hold, true);
+    assert.equal(poses.onMinigameEnd(inst), true);
+});
+
+test('a use or drink pose clears when a non-phone minigame opens; a held phone does not', () => {
+    let { poses, player } = rig();
+    poses.drink();
+    assert.equal(poses.onMinigameStart('pin', {}, {}), false);
+    assert.equal(player.anims.currentAnim.key, 'idle-down');
+    assert.equal(poses.cur, null);
+    ({ poses, player } = rig());
+    poses.onMinigameStart('phone-chat', {}, {});
+    poses.onMinigameStart('notes', {}, {});
+    assert.equal(player.anims.currentAnim.key, 'pose_phone_south');
+});
+
+// ---- the phone lead-in ----
+
+function leadRig(opts) {
+    const r = rig(opts);
+    const timers = [];
+    r.poses.timer = (fn, ms) => timers.push({ fn, ms });
+    r.timers = timers;
+    r.opened = 0;
+    r.open = () => { r.opened++; return 'opened'; };
+    return r;
+}
+
+test('openWithPhoneLead: the pose shows at once, the phone opens after PHONE_LEAD_MS', () => {
+    const r = leadRig();
+    assert.equal(PHONE_LEAD_MS, 300);
+    assert.equal(r.poses.openWithPhoneLead(r.open), true);
+    assert.equal(r.player.anims.currentAnim.key, 'pose_phone_south');
+    assert.equal(r.opened, 0);
+    assert.equal(r.timers.length, 1);
+    assert.equal(r.timers[0].ms, PHONE_LEAD_MS);
+    r.timers[0].fn();
+    assert.equal(r.opened, 1);
+    assert.equal(r.poses.leadPending, false);
+    // The minigame opening turns the timed pose into the held one
+    r.poses.onMinigameStart('phone-chat', {}, {});
+    assert.equal(r.poses.cur.hold, true);
+});
+
+test('openWithPhoneLead: a second tap during the lead does not open twice', () => {
+    const r = leadRig();
+    r.poses.openWithPhoneLead(r.open);
+    assert.equal(r.poses.openWithPhoneLead(r.open), true);
+    assert.equal(r.timers.length, 1);
+    r.timers[0].fn();
+    assert.equal(r.opened, 1);
+    // After it, a new tap works again
+    r.poses.leadPending = false;
+    window.MinigameFramework = undefined;
+    r.poses.openWithPhoneLead(r.open);
+    assert.equal(r.timers.length, 2);
+});
+
+test('openWithPhoneLead: another minigame opening during the lead wins', () => {
+    const r = leadRig();
+    r.poses.openWithPhoneLead(r.open);
+    window.MinigameFramework = { currentMinigame: {} };
+    r.timers[0].fn();
+    delete window.MinigameFramework;
+    assert.equal(r.opened, 0);
+    assert.equal(r.poses.leadPending, false, 'the player can tap again');
+});
+
+test('openWithPhoneLead: a knock out during the lead drops the open', () => {
+    const r = leadRig();
+    r.poses.openWithPhoneLead(r.open);
+    window.playerIsKnockedOut = () => true;
+    r.timers[0].fn();
+    assert.equal(r.opened, 0);
+    assert.equal(r.poses.leadPending, false);
+    window.playerIsKnockedOut = () => false;
+});
+
+test('openWithPhoneLead: scene gone or replaced during the lead drops the open', () => {
+    let r = leadRig();
+    r.poses.openWithPhoneLead(r.open);
+    r.poses.dead = true;
+    r.timers[0].fn();
+    assert.equal(r.opened, 0);
+    r = leadRig();
+    r.poses.openWithPhoneLead(r.open);
+    window.playerPoses = {};
+    r.timers[0].fn();
+    assert.equal(r.opened, 0);
+});
+
+test('openWithPhoneLead: no pose frames (or a blocked pose) opens at once, no timer', () => {
+    let r = leadRig({ poseKeys: [] });
+    assert.equal(r.poses.openWithPhoneLead(r.open), 'opened');
+    assert.equal(r.opened, 1);
+    assert.equal(r.timers.length, 0);
+    assert.equal(r.poses.leadPending, false);
+    r = leadRig();
+    r.player.body.velocity.x = 80;   // walking: show is refused, the phone opens now
+    assert.equal(r.poses.openWithPhoneLead(r.open), 'opened');
+    assert.equal(r.timers.length, 0);
+});
+
+test('phoneLead: shows the pose for the existing wait, no callback', () => {
+    const r = leadRig();
+    assert.equal(r.poses.phoneLead(), true);
+    assert.equal(r.player.anims.currentAnim.key, 'pose_phone_south');
+    assert.equal(r.timers.length, 0);
+    assert.equal(leadRig({ poseKeys: [] }).poses.phoneLead(), false);
+});
+
+test('lead-in call sites: interactions, barks, ringer answer and scripted calls', () => {
+    const read = (f) => readFileSync(join(js, f), 'utf8');
+    const inter = read('systems/interactions.js');
+    assert.equal(inter.split('openWithPhoneLead(go)').length - 1, 2, 'both phone-object opens');
+    assert.match(read('systems/npc-barks.js'), /openWithPhoneLead\(go\)/);
+    assert.match(read('minigames/phone-chat/phone-ringer.js'), /call\('answering', o\)/);
+    assert.match(read('minigames/phone-chat/phone-ringer-dom.js'), /answering\(\) \{[^}]*phoneLead/);
+    const mgr = read('systems/npc-manager.js');
+    const fn = mgr.slice(mgr.indexOf('_queueScriptedConversation(conv) {'));
+    const lead = fn.indexOf('phoneLead?.()');
+    assert.ok(lead > fn.indexOf('framework.endMinigame') && lead < fn.indexOf('setTimeout(() => {'), 'inside the start-delay branch');
+    assert.ok(lead > fn.indexOf('if (!conv.startDelayMs)'), 'not for an immediate open');
+    // Not at the sites the design leaves alone
+    const def = mgr.indexOf('  _openScriptedConversation(conv) {');
+    assert.ok(!/phoneLead|openWithPhoneLead/.test(mgr.slice(def, def + 900)));
 });

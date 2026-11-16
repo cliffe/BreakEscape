@@ -269,3 +269,21 @@ taps the phone with a pose-frame player atlas must wait for the minigame rather 
 synchronously (or set `PHONE_LEAD_MS` to 0 through the instance in that harness).
 
 M1 should land first: the lead-in would otherwise inherit the walking refusal at open.
+
+## Outcomes
+
+| Finding | Outcome |
+| --- | --- |
+| M1 | Fixed. `phoneWanted` and `phoneShown` in player-poses.js; `update()` retries `show('phone', 0, { hold: true })` while a phone-style minigame is open and no pose is up; the close pose shows only when the phone showed. Tests: open while walking, then stop; a minigame where the pose never showed. Live: opened mid-walk, the pose shows once the walk stops. |
+| m1 | Fixed. `use()` refuses NPCs, swivel chairs, seats (`seating.isSeat`), `temp_` container sprites and any open minigame. One test per exclusion. |
+| m2 | Fixed by `phoneWanted`: after a drink ends, `update()` re-shows the held phone in the same pass (no idle frame between). Test added. |
+| m3 | Fixed. `onMinigameStart` releases a timed pose for a non-phone minigame; a held phone stays. Test added. |
+| Phone lead-in | Built as designed: `PHONE_LEAD_MS = 300`, `openWithPhoneLead(open)`, `phoneLead()`. Wired at interactions.js (both phone opens), npc-barks.js `openPhoneChat`, the ringer `beginOpen` (adapter hook `answering`) and `_queueScriptedConversation` (`startDelayMs > 0`, phone and video). Not at rows 5, 7, 8, 9, 10. Tests: lead, double tap, another minigame during the lead, KO during the lead, scene gone, no frames, walking, the call sites. |
+
+Live (test_phone_calls, player swapped with `updatePlayerSprite`, headless, 20 fps, fixed steps):
+tap still: pose 5 ms after the tap, phone open at 345 ms (about 300 ms plus a sampling step);
+tap mid-walk: opens at once (the pose was refused while moving) and the pose shows once the walk
+stops, held while open; answering a ringing call: pose 15 ms after the answer, phone opens at
+533 ms, the ringer's existing 500 ms wait, nothing added. Close poses showed after all three.
+Existing playtest scripts: none needed a change (the bridge's `interactInventory` already waits
+for the minigame to open).

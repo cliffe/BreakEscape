@@ -25,7 +25,7 @@ Fourth session: review R1 fixed (outcomes in NPC_POSES_REVIEW_R1.md) and player 
   swapped to male_office_worker_v2; shots in the owner's quality pack (scratch, not committed).
 
 Left: owner verdicts D26 and on standing idle breathing; whether a phone pose should also show a
-moment before the phone opens (it shows from the frame it opens, see Player poses).
+moment before the phone opens: built (see Player poses, "Phone lead-in"); awaits the owner's look.
 
 ## Player poses
 
@@ -42,14 +42,30 @@ that core/player.js already builds from any atlas frames; with no such frames no
 Phone-style minigames: `phone-chat` (texts, voice calls, ringing incoming calls) and
 `person-chat` with `videoCall` (a video call). Not included: `authenticator` (it shows the
 target's phone, not the player's), the scanners (handheld tools), `mail-client` and the rest.
-The pose starts the frame the minigame opens; the open is not delayed, because
-`startMinigame` returns the instance synchronously and callers rely on it.
+`startMinigame` stays synchronous (callers keep the returned instance). If the player's phone
+could not show at the open (still walking), `phoneWanted` keeps the wish and `update()` shows the
+phone once the player stops; the close pose shows only if the phone showed while it was open.
+A use pose fires only for world objects (not NPCs, seats, swivel chairs, container sprites or
+while a minigame is open); a drink during a phone chat is followed by the phone again; a use or
+drink pose clears when a non-phone minigame opens.
+
+### Phone lead-in
+
+`PHONE_LEAD_MS = 300`. `openWithPhoneLead(open)` shows the phone pose, then runs `open` 300 ms
+later (a second tap during the lead is dropped; another minigame, a KO or a replaced scene drops
+the open). With no pose frames or a blocked pose it calls `open` at once. Wired at:
+interactions.js `handleObjectInteraction` phone branch (both opens), npc-barks.js `openPhoneChat`.
+`phoneLead()` (the pose for a wait that already exists, nothing added) is called from the ringer's
+`beginOpen` through the adapter hook `answering`, and from npc-manager.js
+`_queueScriptedConversation` in its `startDelayMs > 0` branch for phone and video calls. Left
+alone: outgoing dial, `startDelayMs: 0` story calls and the queue, the ringer `reopen`, returns
+from the notepad or tag actions, and the pretext panel swap.
 
 Skipped while seated, walking, knocked out, fighting (punch, jab, hit or death animation, or an
 NPC chasing) or with `"officeVisuals": false`; a walk or any other animation ends a pose at once.
 Client only: nothing is synced. A held pose breathes (sprite-breath.js). `updatePlayerSprite`
 now also removes the `pose_*` animations, so a swapped-in atlas never shows the old one's poses.
-Tests: `test/js/player-poses.test.mjs` (9, including the three trigger sites).
+Tests: `test/js/player-poses.test.mjs` (22, including the trigger and lead-in call sites).
 
 ## Handover (2026-11-16, third session; second session below)
 
