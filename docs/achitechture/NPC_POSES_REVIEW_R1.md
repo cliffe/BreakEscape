@@ -208,3 +208,31 @@ It still says `pose: null` turns a pose off (the code and schema use `false`), l
 `face_player` among the blockers, and describes setting a texture frame with
 `textures.get(key).has(frame)` instead of playing the animation. Rewrite it as the design as built,
 or drop it now that the handover records the decisions.
+
+## Outcomes (fourth session)
+
+- M1 fixed: `lastAnimationKey` stays on the idle key; the test stub copies the real dedupe and
+  runs behaviour ticks between passes (100 ticks, 0 plays). Live, test_needs_sims, Tom at the
+  coffee machine: 0 animation start events in 5 s (300 frames, 93 behaviour playAnimation calls).
+- M2 fixed: `use` only within one compass step of the object; turned away, `drink` for a drink
+  need, else none. Owner call taken: a social use at the cooler shows `drink`. test:23 replaced.
+- M3 fixed: `split_frame_name` parses from the right in audit and adopt; tests for the split
+  and for adopting a `pose_drink` frame.
+- m1 fixed: preset list first (coffee, kettle, cooler, microwave, copier, shredder), regex with
+  table, cup and mug excluded; tests for coffee_cups1 and glass_coffee_table1. `filing` and
+  `post_tray` are drawers and trays, not machines; an author can set `affordance.machine: true`.
+- m2 fixed: a hunger use at a machine shows `use` for the lead, then nothing.
+- m3 fixed: the object is looked up once per job, only in `using` (test counts lookups).
+- m4 fixed: the lead pauses while in a chat; stale `useStart` and pending entries are removed.
+- m5 fixed: the first pose waits `SETTLE_MS` (150 ms real time); test with a seat appearing
+  inside the window. Live pose log: no on-off pair under 100 ms.
+- m6 fixed: `"officeVisuals": false` turns poses off.
+- m7 fixed: three validator warnings (`test/js/validator-npc-poses.test.mjs`).
+- m8 fixed: `--pose-from name=` removes a stored pose and its export folder.
+- m9 fixed: a pose-only canvas size uses the pose frames' feet. The south drop was PixelLab's
+  breathing-idle drawn 1 to 2 px above the rotations (the pose states match the rotations), so the
+  converter now aligns each pose frame to its direction's idle frame 0 (shifts up to 4 px). The
+  three atlases were rebuilt offline by key; only pose frames changed.
+- m10: pipeline tests for the manifest round trip, feet line and shifts; pass tests for
+  hostility, KO, chat, leaving `states`, a destroyed sprite and behaviour ticks.
+- m11: the planned-design section now points at the design as built.
