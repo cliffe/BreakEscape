@@ -143,9 +143,9 @@ Music: game_loaded plays noir, any hostile turning plays threat, all_hostiles_ko
       <tr><th>Optional tasks</th><td class="val">0 / 0</td></tr>
       <tr><th>VM flag challenges</th><td class="val">0</td></tr>
       <tr><th>AND-gate convergences</th><td class="val">0</td></tr>
-      <tr><th>Physical locks (puzzle)</th><td class="val">2</td></tr>
-      <tr><th>Rooms</th><td class="val">4</td></tr>
-      <tr><th>Puzzle nodes / edges</th><td class="val">6 / 3</td></tr>
+      <tr><th>Physical locks (puzzle)</th><td class="val">3</td></tr>
+      <tr><th>Rooms</th><td class="val">5</td></tr>
+      <tr><th>Puzzle nodes / edges</th><td class="val">8 / 4</td></tr>
       <tr><th>Story nodes / edges</th><td class="val">0 / 0</td></tr>
     </table>
   </div>
@@ -176,17 +176,20 @@ Music: game_loaded plays noir, any hostile turning plays threat, all_hostiles_ko
 
   door_vault["Vault<br/>PIN lock"]
   vault("Vault")
+  door_cellar["Cellar<br/>PIN lock"]
+  cellar("Cellar")
   door_closet["Closet<br/>PIN lock"]
   closet("Closet")
   lobby("Lobby")
   annex("Annex")
 
   door_vault --> vault
+  door_cellar --> cellar
   door_closet --> closet
   lobby --> annex
 
-  class door_vault,door_closet lock
-  class vault,closet,lobby,annex room
+  class door_vault,door_cellar,door_closet lock
+  class vault,cellar,closet,lobby,annex room
   class node_start start`,
       story:      `flowchart TD
 
@@ -229,17 +232,20 @@ Music: game_loaded plays noir, any hostile turning plays threat, all_hostiles_ko
 
   door_vault["Vault<br/>PIN lock"]
   vault("Vault")
+  door_cellar["Cellar<br/>PIN lock"]
+  cellar("Cellar")
   door_closet["Closet<br/>PIN lock"]
   closet("Closet")
   lobby("Lobby")
   annex("Annex")
 
   door_vault --> vault
+  door_cellar --> cellar
   door_closet --> closet
   lobby --> annex
 
-  class door_vault,door_closet lock
-  class vault,closet,lobby,annex room
+  class door_vault,door_cellar,door_closet lock
+  class vault,cellar,closet,lobby,annex room
   class node_start start`,
       rooms:      `flowchart TD
 
@@ -264,14 +270,16 @@ Music: game_loaded plays noir, any hostile turning plays threat, all_hostiles_ko
   lobby("Lobby")
   vault["Vault<br/>(locked)"]
   annex("Annex")
+  cellar["Cellar<br/>(locked)"]
   closet["Closet<br/>(locked)"]
 
   lobby --> vault
   lobby --> annex
   lobby --> closet
+  lobby --> cellar
 
   class lobby,annex room
-  class vault,closet lock
+  class vault,cellar,closet lock
   class node_start start`,
       contents:   `flowchart TD
 
@@ -296,21 +304,25 @@ Music: game_loaded plays noir, any hostile turning plays threat, all_hostiles_ko
   lobby("Lobby")
   vault["Vault<br/>(locked)"]
   annex("Annex")
+  cellar["Cellar<br/>(locked)"]
   closet["Closet<br/>(locked)"]
   rc_npc_guard_1("Guard")
-  rc_npc_clerk_2("Clerk")
-  rc_npc_day_guard_3("Day Guard")
+  rc_npc_reserve_guard_2("Reserve Guard")
+  rc_npc_clerk_3("Clerk")
+  rc_npc_day_guard_4("Day Guard")
 
   lobby --> vault
   lobby --> annex
   lobby --> closet
+  lobby --> cellar
   lobby --> rc_npc_guard_1
-  lobby --> rc_npc_clerk_2
-  annex --> rc_npc_day_guard_3
+  lobby --> rc_npc_reserve_guard_2
+  lobby --> rc_npc_clerk_3
+  annex --> rc_npc_day_guard_4
 
   class lobby,annex room
-  class vault,closet lock
-  class rc_npc_guard_1,rc_npc_clerk_2,rc_npc_day_guard_3 npc
+  class vault,cellar,closet lock
+  class rc_npc_guard_1,rc_npc_reserve_guard_2,rc_npc_clerk_3,rc_npc_day_guard_4 npc
   class node_start start`
     };
     const rendered = {};

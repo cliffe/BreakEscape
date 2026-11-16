@@ -67,7 +67,7 @@ m10, game 6333 earlier (`tools/playtest/m10-opening-music-read.mjs`, read only h
 
 ## Static check of the eight missions that use both `setVisible: false` and `all_hostiles_ko`
 
-Method: every literal `setVisible: false` mapping in `scenarios/m02` to `m07`, `m09` and `m10` (`scenario.json.erb`; m10 has 31 literal lines, the complete list is below), matched to its NPC, and each condition read for whether it can hide an NPC that is hostile and conscious. All hostility in these missions comes from an ink `#hostile:` tag or the player punching an NPC; only m10's `reinforcement_a` and `reinforcement_b` use `startHostile`, and they start hidden with no record, so they count as before.
+Method: every literal `setVisible: false` mapping in `scenarios/m02` to `m07`, `m09` and `m10` (`scenario.json.erb`; m10 has 31 literal lines, the complete list is below), matched to its NPC, and each condition read for whether it can hide an NPC that is hostile and conscious. All hostility in these missions comes from an ink `#hostile:` tag or the player punching an NPC; only m10's `reinforcement_a` and `reinforcement_b` use `startHostile`, and they start hidden, so since R2 they are not hostile and do not count until their first reveal.
 
 The rule changes nothing unless a hostile, conscious NPC is hidden by a mapping. In that case the old code held the fight playlist until the NPC was KO'd (the bug); the new code lets the next `npc_ko` of another hostile end it. The hides below are all peaceful outcomes, so they hide a calm NPC and the music is unchanged on the normal route:
 

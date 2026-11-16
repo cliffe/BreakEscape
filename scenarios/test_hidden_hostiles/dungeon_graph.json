@@ -15,6 +15,18 @@
       "optional": false
     },
     {
+      "id": "door_cellar",
+      "label": "Cellar<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "cellar",
+      "label": "Cellar",
+      "kind": "room",
+      "optional": false
+    },
+    {
       "id": "door_closet",
       "label": "Closet<br/>PIN lock",
       "kind": "lock",
@@ -43,6 +55,11 @@
     {
       "from": "door_vault",
       "to": "vault",
+      "soft": false
+    },
+    {
+      "from": "door_cellar",
+      "to": "cellar",
       "soft": false
     },
     {

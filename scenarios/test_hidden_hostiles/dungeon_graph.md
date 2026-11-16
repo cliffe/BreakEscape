@@ -9,6 +9,7 @@ Music: game_loaded plays noir, any hostile turning plays threat, all_hostiles_ko
 2. Try the vault door (night): the day guard is hidden (setVisible false). Knock out the lobby guard: the fight music ends, though the hidden guard is still hostile and conscious. Or knock out the lobby guard first and then try the vault door: hiding the last conscious hostile ends the fight too.
 3. Reload: the hidden guard does not bring the fight music back when the annex loads.
 4. Try the closet door (dawn): the day guard is shown again and the fight music returns.
+5. The reserve guard (startHostile, initiallyHidden) is in the lobby but unseen. While it is hidden it is not hostile, plays no fight music and does not stop all_hostiles_ko (knock out the lobby guard: noir music). Reload while it is hidden: still no cue. Try the cellar door: the reserve guard appears, turns hostile and the fight music plays once.
 
 ## Scenario Statistics
 
@@ -17,10 +18,10 @@ Music: game_loaded plays noir, any hostile turning plays threat, all_hostiles_ko
 | Story aims | 0 |
 | Total tasks | 0 (0 optional) |
 | VM flag challenges | 0 |
-| Physical locks | 2 |
+| Physical locks | 3 |
 | AND-gate convergences | 0 |
-| Rooms | 4 |
-| Puzzle graph nodes / edges | 6 / 3 |
+| Rooms | 5 |
+| Puzzle graph nodes / edges | 8 / 4 |
 | Story graph nodes / edges | 0 / 0 |
 
 ## Critical Path
@@ -77,17 +78,20 @@ flowchart TD
 
   door_vault["Vault<br/>PIN lock"]
   vault("Vault")
+  door_cellar["Cellar<br/>PIN lock"]
+  cellar("Cellar")
   door_closet["Closet<br/>PIN lock"]
   closet("Closet")
   lobby("Lobby")
   annex("Annex")
 
   door_vault --> vault
+  door_cellar --> cellar
   door_closet --> closet
   lobby --> annex
 
-  class door_vault,door_closet lock
-  class vault,closet,lobby,annex room
+  class door_vault,door_cellar,door_closet lock
+  class vault,cellar,closet,lobby,annex room
   class node_start start
 ```
 
@@ -144,17 +148,20 @@ flowchart TD
 
   door_vault["Vault<br/>PIN lock"]
   vault("Vault")
+  door_cellar["Cellar<br/>PIN lock"]
+  cellar("Cellar")
   door_closet["Closet<br/>PIN lock"]
   closet("Closet")
   lobby("Lobby")
   annex("Annex")
 
   door_vault --> vault
+  door_cellar --> cellar
   door_closet --> closet
   lobby --> annex
 
-  class door_vault,door_closet lock
-  class vault,closet,lobby,annex room
+  class door_vault,door_cellar,door_closet lock
+  class vault,cellar,closet,lobby,annex room
   class node_start start
 ```
 
@@ -186,14 +193,16 @@ flowchart TD
   lobby("Lobby")
   vault["Vault<br/>(locked)"]
   annex("Annex")
+  cellar["Cellar<br/>(locked)"]
   closet["Closet<br/>(locked)"]
 
   lobby --> vault
   lobby --> annex
   lobby --> closet
+  lobby --> cellar
 
   class lobby,annex room
-  class vault,closet lock
+  class vault,cellar,closet lock
   class node_start start
 ```
 
@@ -225,20 +234,24 @@ flowchart TD
   lobby("Lobby")
   vault["Vault<br/>(locked)"]
   annex("Annex")
+  cellar["Cellar<br/>(locked)"]
   closet["Closet<br/>(locked)"]
   rc_npc_guard_1("Guard")
-  rc_npc_clerk_2("Clerk")
-  rc_npc_day_guard_3("Day Guard")
+  rc_npc_reserve_guard_2("Reserve Guard")
+  rc_npc_clerk_3("Clerk")
+  rc_npc_day_guard_4("Day Guard")
 
   lobby --> vault
   lobby --> annex
   lobby --> closet
+  lobby --> cellar
   lobby --> rc_npc_guard_1
-  lobby --> rc_npc_clerk_2
-  annex --> rc_npc_day_guard_3
+  lobby --> rc_npc_reserve_guard_2
+  lobby --> rc_npc_clerk_3
+  annex --> rc_npc_day_guard_4
 
   class lobby,annex room
-  class vault,closet lock
-  class rc_npc_guard_1,rc_npc_clerk_2,rc_npc_day_guard_3 npc
+  class vault,cellar,closet lock
+  class rc_npc_guard_1,rc_npc_reserve_guard_2,rc_npc_clerk_3,rc_npc_day_guard_4 npc
   class node_start start
 ```

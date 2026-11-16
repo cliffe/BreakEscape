@@ -89,8 +89,17 @@ const cues = page => page.evaluate(() => window.__cues || []);
 if (route === 'reserve') {
   expect('start: reserve guard hidden, not hostile', await reserve(page), { hostile: false, ko: false, hiddenByMapping: false });
   expect('start: reserve guard sprite is hidden', await page.evaluate(() => window.npcBehaviorManager?.behaviors?.get('reserve_guard')?.sprite?.visible), false);
+  // noir is also the game_loaded playlist, so judging the playlist alone could pass without the
+  // event. Record every switchPlaylist call across the KO: all_hostiles_ko must make exactly one,
+  // to noir (this fails if the hidden reserve guard still counted as a live hostile).
+  await page.evaluate(() => {
+    window.__switches = [];
+    const mc = window.MusicController, orig = mc.switchPlaylist.bind(mc);
+    mc.switchPlaylist = (...a) => { window.__switches.push(a[0]); return orig(...a); };
+  });
   await ko('fight_guard');
-  expect('lobby guard KO with the reserve guard hidden: all_hostiles_ko fires', await music(page), 'noir');
+  expect('lobby guard KO with the reserve guard hidden: all_hostiles_ko switches to noir once', await page.evaluate(() => window.__switches), ['noir']);
+  expect('lobby guard KO with the reserve guard hidden: music is noir', await music(page), 'noir');
   await sleep(2500);   // let the state sync before the reload
   await boot(`${BASE}/break_escape/games/${gameId}?skip_resume=1`);
   expect('reload while hidden: still not hostile', await reserve(page), { hostile: false, ko: false, hiddenByMapping: false });
