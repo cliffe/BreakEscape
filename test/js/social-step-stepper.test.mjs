@@ -14,7 +14,7 @@ const js = join(here, '../../public/break_escape/js');
 
 const dir = mkdtempSync(join(tmpdir(), 'social-step-stepper-'));
 writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
-for (const rel of ['minigames/helpers/step-stepper.js']) {
+for (const rel of ['minigames/helpers/step-stepper.js', 'minigames/episode-runner/step-strip.js']) {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
     writeFileSync(join(dir, rel), readFileSync(join(js, rel), 'utf8'));
 }
@@ -24,6 +24,7 @@ globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 
 const { buildStepItems, applyStepStates } = await import(pathToFileURL(join(dir, 'minigames/helpers/step-stepper.js')));
+const { renderStepStrip } = await import(pathToFileURL(join(dir, 'minigames/episode-runner/step-strip.js')));
 
 const list = () => { document.body.textContent = ''; const ol = document.createElement('ol'); document.body.appendChild(ol); return ol; };
 const steps3 = [{ id: 'a', label: 'Alpha' }, { id: 'b', label: 'Beta' }, { id: 'c', label: 'Gamma' }];
@@ -137,4 +138,16 @@ test('applyStepStates: index-based resolve (inbox-triage shape) marks done befor
     assert.equal(items.get('result').classList.contains('done'), false);
     assert.equal(items.get('result').classList.contains('current'), false);
     assert.equal(ol.querySelector('[aria-current="step"]').dataset.step, 'review');
+});
+
+test('C-X7 golden: episode step strip outerHTML is unchanged (done, current, future)', () => {
+    document.body.textContent = '';
+    renderStepStrip(document.body, { stages: ['brief', 'osint', 'write', 'flip', 'defend', 'debrief'], current: 'osint', done: ['brief'] });
+    assert.equal(document.body.querySelector('ol.aw-steps').outerHTML,
+        '<ol class="aw-steps"><li class="aw-step aw-step-done" data-stage="brief"><span class="aw-step-num">1</span><span class="aw-step-label">Brief</span><span class="aw-step-sr"> (done)</span></li>'
+        + '<li class="aw-step aw-step-current" data-stage="osint" aria-current="step"><span class="aw-step-num">2</span><span class="aw-step-label">Research</span></li>'
+        + '<li class="aw-step" data-stage="write"><span class="aw-step-num">3</span><span class="aw-step-label">Write</span></li>'
+        + '<li class="aw-step" data-stage="flip"><span class="aw-step-num">4</span><span class="aw-step-label">Your message</span></li>'
+        + '<li class="aw-step" data-stage="defend"><span class="aw-step-num">5</span><span class="aw-step-label">Defend</span></li>'
+        + '<li class="aw-step" data-stage="debrief"><span class="aw-step-num">6</span><span class="aw-step-label">Debrief</span></li></ol>');
 });
