@@ -68,3 +68,23 @@ Both are cheap to add with the existing `startHostileBehavior` and `mapReveal` h
 - The visible `startHostile` path is unchanged (`npc-behavior.js:601-602`), so `test_needs_attack` and the lobby guard in `test_hidden_hostiles` behave as on main.
 - No new static import, so no harness copy list changes.
 - `scripts/validate_office_life.rb:62` exclusion unchanged since R2.
+
+## R3 outcomes
+
+Merged main (11fae1a6d) first. Tests were written first; four of the new ones failed before the code change (the two m7 tests passed at once, as the review predicted, and now guard the behaviour).
+
+| Minor | Choice | What changed |
+|---|---|---|
+| m1 calm lost on reload | Guard + test | `setHostile(false)` on a pending NPC calls the new `npcHostileSystem.recordCalm(id)` (`npc-hostile.js`), which saves `{ hostile: false, ko: false }` with no event and never overwrites an existing record. The reload then takes the restored branch and the flag is not set again. |
+| m2 reveal of a KO'd pending NPC | Guard + test | `setNPCVisible` clears `_startHostileOnReveal` either way and only calls `setHostile(true)` when the hostile system says the NPC is not KO'd. |
+| m3 restored hidden hostile counted but not announced | Guard + test | The constructor records such an NPC as hidden (`recordNpcVisibility(id, false)`), so it neither counts nor cues until the reveal, which announces it. Chosen over making `anyHostilesAlive` skip every hidden sprite: that would change the tested rule that a never-touched `initiallyHidden` hostile still counts. |
+| m4 proof KO check | Fixed | The reserve route wraps `switchPlaylist` before the KO and expects exactly `['noir']` across it, so it fails if `all_hostiles_ko` does not fire. The playlist check stays as a second line. |
+| m5 stale graph | Fixed | Validator run on `test_hidden_hostiles` (0 errors, 7 warnings); the three `dungeon_graph` files are committed. |
+| m6 stale text | Fixed | `HIDDEN_HOSTILES_MUSIC.md` line 70 and the scenario brief step 5 ("noir music"). |
+| m7 test gaps | Tests | A second reveal gives no second cue; ink making a hidden pending NPC hostile then a reveal gives one announce and no second `npc_hostile_state_changed`. |
+
+No doc notes were needed; every minor got a guard or a test.
+
+Live (keyless server on :3093, `setFPS(20)`, fixed steps on, games 6411, 6412 and 6413 from new-game.rb): hide-then-ko, ko-then-hide and reserve all passed with 0 failed checks. The server was stopped afterwards.
+
+Suites: `bin/test-js` and `bin/rails test` (3014 runs, 0 failures, 0 errors, 3 skips); `bin/test-js` 720 files passed, 0 failed (the two suites overlapped in time because test-js ran past the foreground limit).
