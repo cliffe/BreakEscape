@@ -22,6 +22,8 @@
 
 .rogue-ap.device-frame {
     width: min(calc(100vw - 32px), 760px);
+    /* the 9-slice bezel leaves 4px of face before the content: 6px more keeps a clear gap */
+    padding: 6px;
     font-family: 'VT323', monospace;
     font-size: 20px;
     line-height: 24px;

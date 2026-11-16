@@ -27,6 +27,7 @@
 }
 
 .patch-panel > .device-frame-title {
+    padding-left: 6px;
     padding-right: 36px;
 }
 
@@ -238,6 +239,7 @@
 
 .patch-panel-footer {
     flex: 0 0 auto;
+    padding-left: 6px;
     margin-top: 8px;
     min-height: 20px;
     font-size: 20px;
