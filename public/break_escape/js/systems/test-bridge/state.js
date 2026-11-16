@@ -679,12 +679,27 @@ function solveStandingPointWhere(targetX, targetY, fromX, fromY, standable, targ
             if (!centres.includes(cx)) centres.push(cx);
         }
     }
+    // The same for a tall wall-mounted target: reachY measures to the nearest part of its
+    // height, so the ring is also centred down its left and right edges and its bottom edge,
+    // not round the top edge only. Unmarked targets keep the top edge (reachY returns sprite.y).
+    const centresY = [targetY];
+    const h = target && target.scenarioData?.wallMounted === true
+        ? (target.displayHeight ?? target.height ?? 0) : 0;
+    if (h > 16) {
+        const top = target.y - (target.originY ?? 0.5) * h;
+        const n = Math.min(6, Math.ceil(h / 16));
+        for (let i = 0; i <= n; i++) {
+            const cy = top + (h * i) / n;
+            if (!centresY.some(v => Math.abs(v - cy) < 0.5)) centresY.push(cy);
+        }
+    }
     for (const centreX of centres)
+    for (const centreY of centresY)
     for (let r = 12; r <= 56; r += 4) {
         for (let a = 0; a < 360; a += 15) {
             const rad = a * Math.PI / 180;
             const sx = centreX + Math.cos(rad) * r;
-            const sy = targetY + Math.sin(rad) * r;
+            const sy = centreY + Math.sin(rad) * r;
             if (!standable(sx, sy)) continue;
             // The game faces the player at the target before checking, so
             // predict the direction it will pick, then apply that offset.
