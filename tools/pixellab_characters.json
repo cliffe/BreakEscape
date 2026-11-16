@@ -211,7 +211,7 @@
   },
   "cody_old_coyote": {
     "character_id": "30db8608-97e0-46fc-9bb2-1860721e6585",
-    "name": "Make portrait for Cody Old Coyote\nA young Apsáaloo...",
+    "name": "Make portrait for Cody Old Coyote\nA young Aps\u00e1aloo...",
     "size": {
       "width": 60,
       "height": 60
@@ -260,12 +260,12 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-11-14",
+    "imported": "2026-11-16",
     "sit_from": "6f2edec6-a625-4f44-ac06-0785c06360be",
     "poses": {
       "drink": "213cc877-3f47-4d1b-980d-7f6d077a0074",
-      "use": "1eb3e8ff-17bf-4d24-9ce9-77d8c8891a6d",
-      "phone": "df8e0464-a9b9-4410-8f76-8fb75fbe4c6a"
+      "phone": "df8e0464-a9b9-4410-8f76-8fb75fbe4c6a",
+      "use": "1eb3e8ff-17bf-4d24-9ce9-77d8c8891a6d"
     }
   },
   "danny_foster": {
@@ -607,7 +607,7 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-11-14",
+    "imported": "2026-11-16",
     "sit_from": "881cc210-800c-4791-b2c7-a24675666ece",
     "poses": {
       "drink": "85f890ac-e81c-407f-a62e-5702b65c711c",
@@ -742,7 +742,7 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-11-14",
+    "imported": "2026-11-16",
     "sit_from": "1198fb80-da48-4f86-a33f-3858bec7fdd2",
     "poses": {
       "drink": "957ed90c-5852-47f3-8756-a38b56402853",
@@ -1074,7 +1074,7 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-11-14",
+    "imported": "2026-11-16",
     "sit_from": "170c26bd-8dca-4650-82f4-98dc661deb5c",
     "poses": {
       "drink": "5b1c6707-9c21-461c-90c6-c5b532114806",
@@ -1210,12 +1210,12 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-11-14",
+    "imported": "2026-11-16",
     "sit_from": "d8f2c2ec-296d-476f-84ba-6bbedcc49632",
     "poses": {
+      "drink": "d62f0ef4-5a53-46a7-a28c-c076c0c6ee47",
       "phone": "48b34c64-1bbd-498f-bc07-0e388d6968e3",
-      "use": "6cedd8bc-0bec-4fb3-8351-1911d436e31a",
-      "drink": "d62f0ef4-5a53-46a7-a28c-c076c0c6ee47"
+      "use": "6cedd8bc-0bec-4fb3-8351-1911d436e31a"
     }
   },
   "margaret_sorensen": {
@@ -1255,12 +1255,12 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-11-14",
+    "imported": "2026-11-16",
     "sit_from": "8faf4ffa-e1ac-47fe-950e-835bd6ac4071",
     "poses": {
       "drink": "b47f67c8-9a90-41da-8cfe-fb85c6379741",
-      "use": "d31a530d-07e1-44ae-b411-942ebb2a5cca",
-      "phone": "5c27d5e7-2c79-4961-ae17-5aeea6fcff66"
+      "phone": "5c27d5e7-2c79-4961-ae17-5aeea6fcff66",
+      "use": "d31a530d-07e1-44ae-b411-942ebb2a5cca"
     }
   },
   "netherton": {
@@ -1285,7 +1285,7 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-11-14",
+    "imported": "2026-11-16",
     "sit_from": "9262254a-68c7-4ff1-ad1e-4fbb8eaf6bff",
     "poses": {
       "drink": "673f934c-bb0e-4946-8a7c-9c73d453e90c",
@@ -1465,13 +1465,12 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-11-08",
-    "sit_from": "cd6e850e-833f-4fc7-ba4b-441817d08a6d",
-    "replaces": "25e40fb9-1d46-4265-a3c2-ce1a02defeb6 (retired, not deleted; hand-edited eye whites carried into the new character)",
+    "imported": "2026-11-16",
+    "sit_from": "0f4b1bc2-dca1-414f-8b48-a4a9310f7efb",
     "poses": {
       "drink": "f6965a46-4adc-4c93-88eb-4dc90e47cf45",
-      "use": "763551a6-fcaf-4ac1-b294-0b1471b3b047",
-      "phone": "37d9caee-2460-4305-8432-ecaf298af585"
+      "phone": "37d9caee-2460-4305-8432-ecaf298af585",
+      "use": "763551a6-fcaf-4ac1-b294-0b1471b3b047"
     }
   },
   "pieter_vos": {
@@ -1616,7 +1615,7 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-11-06",
+    "imported": "2026-11-16",
     "sit_from": "3b5704b9-a6d5-4d32-a549-e598774b01d1",
     "poses": {
       "drink": "61b333db-17ca-424c-845f-444ae0cca1c4",
@@ -1750,7 +1749,7 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-10-17",
+    "imported": "2026-11-16",
     "poses": {
       "drink": "e942a526-159e-4953-842c-cdcdce24298c",
       "phone": "07acb00b-d019-4ebe-a52c-e4f8a8bd072f",
@@ -1839,7 +1838,7 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-11-14",
+    "imported": "2026-11-16",
     "sit_from": "6b4a1d75-4e3a-4cc8-9c79-3611a1965e34",
     "poses": {
       "drink": "ba5b47e6-c195-4555-94a5-06909db28c61",
