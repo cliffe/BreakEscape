@@ -330,6 +330,73 @@ module BreakEscape
       refute_equal before, @game.keyring_for_client[:rev]
     end
 
+    test 'K3d: a rowTag from the wrong kind is ignored' do
+      npcs = @game.scenario_data['rooms']['office']['npcs']
+      npcs[0]['eventMappings'] = [
+        { 'eventPattern' => 'a', 'addCapture' => { 'targetId' => 'bad_foot', 'kind' => 'foothold', 'host' => 'Back door', 'rowTag' => 'pin' } },
+        { 'eventPattern' => 'b', 'addCapture' => { 'targetId' => 'bad_cred', 'kind' => 'credential', 'address' => 'someone', 'secret' => 'abc', 'rowTag' => 'foothold' } },
+        { 'eventPattern' => 'c', 'addCapture' => { 'targetId' => 'junk_tag', 'kind' => 'credential', 'address' => 'someone', 'secret' => 'abc', 'rowTag' => 'banana' } }
+      ]
+      store('bad_foot', 'kind' => 'foothold', 'host' => 'Back door')
+      store('bad_cred', 'kind' => 'credential', 'address' => 'someone')
+      store('junk_tag', 'kind' => 'credential', 'address' => 'someone')
+      assert_equal 'finding', captures['bad_foot']['tag']
+      assert_equal 'password', captures['bad_cred']['tag']
+      assert_equal 'password', captures['junk_tag']['tag']
+    end
+
+    test 'K3d: a rowSource other than phished is ignored, and phished on a foothold capture too' do
+      npcs = @game.scenario_data['rooms']['office']['npcs']
+      npcs[0]['eventMappings'] = [
+        { 'eventPattern' => 'a', 'addCapture' => { 'targetId' => 'rec_cred', 'kind' => 'credential', 'address' => 'someone', 'rowSource' => 'recorded' } },
+        { 'eventPattern' => 'b', 'addCapture' => { 'targetId' => 'odd_cred', 'kind' => 'credential', 'address' => 'someone', 'rowSource' => 'bogus' } },
+        { 'eventPattern' => 'c', 'addCapture' => { 'targetId' => 'ph_foot', 'kind' => 'foothold', 'host' => 'Back door', 'rowSource' => 'phished' } }
+      ]
+      store('rec_cred', 'kind' => 'credential', 'address' => 'someone')
+      store('odd_cred', 'kind' => 'credential', 'address' => 'someone')
+      store('ph_foot', 'kind' => 'foothold', 'host' => 'Back door')
+      assert_equal 'recorded', captures['rec_cred']['source']
+      assert_equal 'recorded', captures['odd_cred']['source']
+      assert_equal 'recorded', captures['ph_foot']['source']
+    end
+
+    test 'K3d: a phish landing page capture and a phish foothold default to phished' do
+      scn = @game.scenario_data
+      page = [{ fields: { 'targetId' => 'p1', 'kind' => 'credential', 'address' => 'x' }, source: { page: 'login_page', overlaid: false } }]
+      foot = [{ fields: { 'targetId' => 'p2', 'kind' => 'foothold', 'host' => 'H' }, source: { phish_foothold: true, overlaid: false } }]
+      m1 = CaptureModel.capture_row_meta(scn, { 'targetId' => 'p1', 'kind' => 'credential', 'address' => 'x' }, candidates: page)
+      m2 = CaptureModel.capture_row_meta(scn, { 'targetId' => 'p2', 'kind' => 'foothold', 'host' => 'H' }, candidates: foot)
+      assert_equal 'phished', m1['source']
+      assert_equal 'phished', m2['source']
+      assert_equal 'foothold', m2['tag']
+    end
+
+    test 'K3d R1: gainedAt stamps each entry once, in the order it was listed, and survives a reload' do
+      assert_nil entry('lena_rdp')
+      hold_rdp_with_foothold
+      assert @game.stamp_keyring_gained!
+      first = entry('lena_rdp')['gainedAt']
+      assert_kind_of Integer, first
+      refute @game.stamp_keyring_gained!, 'nothing new to stamp'
+      sleep 0.01
+      @game.player_state['signedInPcs'] = ['lena_pc']
+      @game.player_state['sessions'] = { 'lena_pc' => { 'id' => 'lena' } }
+      assert @game.stamp_keyring_gained!
+      later = entry('jake_pw_note')['gainedAt']
+      assert_operator later, :>, first
+      assert_equal first, entry('lena_rdp')['gainedAt'], 'an entry keeps its first gained time'
+      @game.reload
+      assert_equal first, entry('lena_rdp')['gainedAt']
+      assert_equal later, entry('jake_pw_note')['gainedAt']
+    end
+
+    test 'K3d R1: the gained map is bounded' do
+      @game.player_state['keyringGained'] = (1..CredentialKeyring::KEYRING_GAINED_MAX).to_h { |i| ["x#{i}", i] }
+      hold_rdp_with_foothold
+      assert_empty @game.keyring_gained_pending
+      refute @game.stamp_keyring_gained!
+    end
+
     test 'K3d: how is given for an itemsHeld item, found for a desktop file and a session proof' do
       inv([{ 'id' => 'lena_rdp_file', 'type' => 'text_file', 'name' => 'HB-FIN-02.rdp', 'credential' => 'lena_rdp' },
            { 'id' => 'jake_assist_code', 'type' => 'text_file', 'name' => 'Remote assist code (Jake)', 'credential' => 'jake_assist' }])

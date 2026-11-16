@@ -64,7 +64,7 @@ function makeVisible(keyring, openedFiles) {
 
 /**
  * The rows (plan 8.7). Returns { signins, captures }: credential rows and capture rows, each
- * oldest first (a capture by its `at`, a registry entry by when this page first got it, then by
+ * oldest first (a capture by its `at`, a registry entry by the server's `gainedAt`, else when this page first got it, then by
  * key).
  *
  *   captures     se_captures (map or list) or the globals
@@ -83,6 +83,8 @@ export function buildSignInRows({ captures, secrets = null, keyring = null, soci
         const v = firstSeen instanceof Map ? firstSeen.get(id) : (isObj(firstSeen) ? firstSeen[id] : null);
         return Number.isFinite(v) ? v : Number.MAX_SAFE_INTEGER;
     };
+    // The server's gained time (stable across a reload); this page's first sight when it has none
+    const gainedAt = (e) => (Number.isFinite(e.gainedAt) ? e.gainedAt : seenAt(e.id));
     const visible = makeVisible(keyring, openedFiles);
 
     const byKey = new Map();
@@ -97,9 +99,14 @@ export function buildSignInRows({ captures, secrets = null, keyring = null, soci
         return byKey.get(key);
     };
 
-    // 1. captures, oldest first (the server's tag and account join when it has answered)
+    // 1. captures, oldest first (the server's tag and account join when it has answered). Once
+    // an answer exists, a capture it does not list yet (recorded since that answer, or one the
+    // server skips) is held back until the next answer: guessing a tag for it would draw a second
+    // row for an account the join has not reached, and count it in the badge.
+    const answered = isObj(keyring?.captures);
     for (const c of captureEntries(captures)) {
         const m = isObj(meta[c.targetId]) ? meta[c.targetId] : null;
+        if (answered && !m) continue;
         const tag = m?.tag || fallbackTag(c);
         const at = Number.isFinite(c.at) ? c.at : 0;
         const oldKey = `capture:${c.targetId}`;
@@ -148,13 +155,13 @@ export function buildSignInRows({ captures, secrets = null, keyring = null, soci
             row.password = e;
             pushOnce(row.kinds, 'in_file');
             pushOnce(row.sources, sourceTagOfHow(e.how));
-            row.order = Math.min(row.order, seenAt(e.id));
+            row.order = Math.min(row.order, gainedAt(e));
             continue;
         }
         if (!CONNECTING_KINDS.includes(e.kind)) continue;
         const key = `cred:${e.id}`;
         const row = { key, type: 'credential', kinds: [e.kind], sources: [], captures: [], seenKeys: [key],
-            order: seenAt(e.id), entry: e, title: who, subtitle: e.account?.username || null, label: e.label || null };
+            order: gainedAt(e), entry: e, title: who, subtitle: e.account?.username || null, label: e.label || null };
         if (e.kind === 'token') {
             // K5 hook (plan 8.7, token row): K5 fills the "through {link}, about {n} min left" line
             // from its own fields; until then a token row is drawn with its tag and source only.

@@ -311,3 +311,33 @@ test('buildSignInRow draws tags and text as textContent, and marks the secret no
     assert.ok(grey.row.classList.contains('signin-row-greyed'));
     delete global.document;
 });
+
+test('a capture the keyring answer does not list yet is held back, not guessed (no duplicate row)', () => {
+    const fresh = cap('ian_fresh', { address: 'ian.k@corp', secret: 'hunter2', at: 200 });
+    const stale = { entries: [fileEntry({ foundIn: 'pw_file' })], captures: {} };
+    const held = build({ captures: [fresh], secrets: { ian_fresh: 'hunter2' }, openedFiles: new Set(['pw_file']), keyring: stale });
+    assert.equal(held.signins.length, 1, 'the account shows once');
+    assert.equal(held.signins[0].key, 'account:ian');
+    assert.equal(held.signins[0].captures.length, 0);
+    // With the fresh answer it joins the account row
+    const fresh2 = { ...stale, captures: { ian_fresh: meta('password', { account: 'ian' }) } };
+    const joined = build({ captures: [fresh], secrets: { ian_fresh: 'hunter2' }, openedFiles: new Set(['pw_file']), keyring: fresh2 });
+    assert.equal(joined.signins.length, 1);
+    assert.equal(joined.signins[0].captures.length, 1);
+    // Before any answer (keyring null) a guessed row still shows
+    assert.equal(build({ captures: [fresh], keyring: null }).signins.length, 1);
+});
+
+test('the order follows the server gainedAt, so a reload (which resets firstSeen) keeps it', () => {
+    const early = { ...lenaRdp, id: 'early', gainedAt: 1000 };
+    const late = fileEntry({ id: 'late', gainedAt: 3000, foundIn: 'pw_file' });
+    const mid = cap('mid_cap', { address: 'x', at: 2000 });
+    const run = (firstSeen) => build({
+        captures: [mid], secrets: { mid_cap: 's' }, openedFiles: new Set(['pw_file']),
+        keyring: { entries: [late, early], captures: { mid_cap: meta('password') }, firstSeen }
+    }).signins.map((r) => r.key);
+    const expected = ['cred:early', 'capture:mid_cap', 'account:ian'];
+    // page-local first-seen times in the opposite order, and none at all after a reload
+    assert.deepEqual(run(new Map([['early', 9e12], ['late', 1]])), expected);
+    assert.deepEqual(run(null), expected);
+});

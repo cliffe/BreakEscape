@@ -795,7 +795,6 @@ module BreakEscape
     # --- Row tags for the Sign-ins list (keyring K3d, plan 8.7) ------------------------------
 
     ROW_TAGS = { 'credential' => %w[password pin], 'foothold' => %w[foothold finding] }.freeze
-    ROW_SOURCES = %w[phished recorded].freeze
     PIN_PATTERN = /\A\d{3,8}\z/
 
     # The writer's authored row fields, kept beside a candidate's source (never in its fields, so

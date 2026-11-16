@@ -69,11 +69,43 @@ module BreakEscape
     # and sessions only.
     def keyring_for_client(pc_id: nil, route: nil)
       entries = implicit_keyring_entries + registry_keyring_entries
+      gained = keyring_gained_map
+      entries.each { |e| e['gainedAt'] = gained[e['id']] if gained[e['id']].is_a?(Integer) }
       # A pc_id is scoped (forThisPc/accepted) only when the player can open a screen for it,
       # by keyboard or by the named route (section 6.2); an unopenable pc_id is ignored.
       entries = keyring_scope_to_pc(entries, pc_id) if CredentialModel.present_string?(pc_id) && keyring_pc_openable?(pc_id, route)
       captures = keyring_captures
       { rev: keyring_rev(entries, captures), entries: entries, captures: captures }
+    end
+
+    KEYRING_GAINED_MAX = 128
+
+    def keyring_gained_map
+      map = player_state['keyringGained']
+      map.is_a?(Hash) ? map : {}
+    end
+
+    # Registry entries listed now that have no gained time yet (the Sign-ins list's order).
+    def keyring_gained_pending
+      known = keyring_gained_map
+      return [] if known.size >= KEYRING_GAINED_MAX
+
+      registry_keyring_entries.map { |e| e['id'] }.reject { |id| known.key?(id) }
+    end
+
+    # Stamp each newly listed registry entry with the server time it was first listed, one
+    # millisecond apart in registry order, so the order is the same after a reload. The caller
+    # holds the game lock (the controller). Returns whether anything was stamped.
+    def stamp_keyring_gained!
+      pending = keyring_gained_pending
+      return false if pending.empty?
+
+      map = keyring_gained_map.dup
+      base = capture_now_ms
+      pending.first(KEYRING_GAINED_MAX - map.size).each_with_index { |id, i| map[id] = base + i }
+      player_state['keyringGained'] = map
+      save!
+      true
     end
 
     # The short digest of the answer (section 6.2): a stable hash of the entries and (K3d) the
@@ -87,7 +119,7 @@ module BreakEscape
     # is declared, proven or not: { tag, source, account? }. It carries no value: a `pin` tag says
     # only that a capture the player already holds is short and numeric.
     def keyring_captures
-      record = player_state['seCaptures']
+      record = player_state['seCaptures'] # not se_captures_record: bootstrap has migrated a legacy save by now
       return {} unless record.is_a?(Hash) && record.any?
 
       declared = declared_capture_target_ids

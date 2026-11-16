@@ -181,9 +181,11 @@
           "id": "pat",
           "displayName": "Pat Doyle",
           "npcType": "person",
-          "position": { "x": 10, "y": 5 },
+          "position": { "x": 7, "y": 7 },
           "spriteSheet": "female_office_worker_v2",
           "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "storyPath": "scenarios/test_access_keyring/ink/pat.json",
+          "currentKnot": "start",
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "role": "reception",
           "eventMappings": [
@@ -302,7 +304,7 @@
           "creds": { "username": "ishaw", "password": "Patchday!2026" },
           "captureProof": [ { "planted": "kit_dropbox", "on": "comms_port" } ],
           "eventMappings": [
-            { "eventPattern": "global_variable_changed:capture_card_ian", "condition": "value === true", "onceOnly": true, "completeTask": "k1_capture", "addCapture": { "targetId": "ian", "roleLabel": "Harbour office, IT", "kind": "credential", "address": "ishaw", "note": "Test capture for the keyring (an implicit password entry with its value)." } }
+            { "eventPattern": "global_variable_changed:capture_card_ian", "condition": "value === true", "onceOnly": true, "completeTask": "k1_capture", "addCapture": { "targetId": "ian", "roleLabel": "Harbour office, IT", "kind": "credential", "address": "ishaw", "note": "Read off Ian's card in the lobby." } }
           ]
         }
       ]
