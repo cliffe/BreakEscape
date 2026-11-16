@@ -118,6 +118,22 @@ const read = async (id, mids = [[232, 176], [200, 176], [264, 176]], front = nul
             for (const ch of window.chairs || []) {
                 const c = ch.body?.center; if (c && Math.hypot(c.x - p.x, c.y - p.y) < 48) out.push({ chair: ch.objectId, x: Math.round(c.x), y: Math.round(c.y), seatedBy: ch.seatedBy || null, fetchedBy: ch.fetchedBy || null });
             }
+            // Item 1: static bodies and dynamic non-NPC bodies within 40 px of the player's box, and
+            // the path grid in the player's column from y 56 to the player (1 walkable, 0 blocked)
+            const pb = window.player.body, box = b => [Math.round(b.x), Math.round(b.y), Math.round(b.right), Math.round(b.bottom)];
+            const close = b => b.right > pb.x - 40 && b.x < pb.right + 40 && b.bottom > pb.y - 40 && b.y < pb.bottom + 40;
+            const w = window.game.scene.scenes[0]?.physics?.world || window.player.scene.physics.world;
+            w.staticBodies.iterate(b => { if (close(b)) out.push({ static: b.gameObject?.objectId || b.gameObject?.name || b.gameObject?.texture?.key || '?', box: box(b) }); });
+            for (const b of w.bodies.entries) {
+                if (b === pb || !close(b) || b.gameObject?.npcId || (window.chairs || []).includes(b.gameObject)) continue;
+                out.push({ body: b.gameObject?.objectId || b.gameObject?.texture?.key || '?', box: box(b), enable: b.enable, imm: b.immovable });
+            }
+            const pm = window.pathfindingManager, gb = pm?.worldGridBounds, g = pm?.worldGrid;
+            if (gb && g) {
+                const col = []; const cx = Math.floor((p.x - gb.minX) / gb.step);
+                for (let y = 56; y <= p.y + 8; y += gb.step) { const cy = Math.floor((y - gb.minY) / gb.step); col.push(g[cy]?.[cx] === 0 ? 1 : 0); }
+                out.push({ grid: { x: gb.minX + cx * gb.step, y0: 56, step: gb.step, col: col.join('') } });
+            }
             return out;
         }).catch(() => null);
         tries.push({ from: [mx, my], near, mid: mid?.ok ?? mid?.reason ?? mid, move: mv?.ok ?? mv, move_reason: mv?.reason, aimed: mv?.aimedAt, arrived: mv?.arrivedAt, short: mv?.moveShortfall, nudges: mv?.nudges, player: pl, read: r?.ok ?? r, reason: r?.reason || r?.error || r?.err || undefined });
