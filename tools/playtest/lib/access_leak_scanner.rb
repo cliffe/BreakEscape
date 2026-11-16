@@ -374,6 +374,7 @@ class AccessLeakScanner
     'credential_registry' => 'a credentials key in a response (the credential registry is server-only, stripped from the bootstrap)',
     'credential_unheld' => 'a registry credential in a GET /keyring answer whose proof does not hold in the recorded state',
     'credential_password_value' => 'a registry password credential carrying its password value in a GET /keyring answer',
+    'credential_clock' => 'a credentialClock key, or a recorded token clock value, in a response (the token clock is server-only; the client gets expiresInS only)',
     'credential_field' => 'an item-level credential field in a response (server-only; both client filters strip it)'
   }.freeze
 
@@ -1247,6 +1248,13 @@ class AccessLeakScanner
       # The item-level `credential` field is server-only: both client filters strip it, so it
       # must never reach the browser. A second guard on the field R1 m1 flagged (K1 R2 m3).
       add.call('credential_field', 'credential', safe_path("#{path}.credential")) if hash['credential'].is_a?(String)
+      # K5: the token clock is server-only (never the key, never a recorded value).
+      add.call('credential_clock', 'credentialClock', safe_path("#{path}.credentialClock")) if hash.key?('credentialClock')
+      next if credential_clock_values.empty?
+
+      hash.each do |k, v|
+        add.call('credential_clock', 'credentialClock', safe_path("#{path}.#{k}")) if v.is_a?(Numeric) && credential_clock_values.include?(v.to_f)
+      end
     end
 
     entries = keyring_entries_in(body)
@@ -1320,6 +1328,14 @@ class AccessLeakScanner
                                     .select { |id, entry| @game.credential_proof_holds?(id, entry) }
                                     .keys.map(&:to_s).to_set
       end
+  end
+
+  # The recorded token clock values of the game read at scan time (empty without a game).
+  def credential_clock_values
+    @credential_clock_values ||= begin
+      state = @game.respond_to?(:player_state) && @game.player_state.is_a?(Hash) ? @game.player_state['credentialClock'] : nil
+      (state.is_a?(Hash) ? state.values : []).select { |v| v.is_a?(Numeric) }.map(&:to_f).to_set
+    end
   end
 
   def walk_hashes(node, path, &block)

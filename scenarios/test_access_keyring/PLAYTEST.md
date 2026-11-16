@@ -63,6 +63,30 @@ warning, by design:
   listed on the keyring (listing is by proof, not by acceptance); the refusal is a K3 UI concern
   (the greyed Connect button). This mirrors plan 9.1's `ops_rdp` expected warning.
 
+**K5 additions.** `lena_token` (token for Lena, `connectsTo: lena_pc`, proof `jack_comms_port`, `expiresMin: 4`)
+adds one info line and two expected warnings, both by design (a token sign-in never adds its PC to
+`signedInPcs`, so neither can be satisfied by it):
+
+- `credential 'jake_pw_note' proof is a session on 'lena_pc', a token's connectsTo` (the typed sign-in of K1b
+  still satisfies it).
+- `an unlock_object task targets 'lena_pc', a token's connectsTo` (task `k1_session`; a typed sign-in
+  completes it).
+
+## Run E / R12 (K5: the token)
+
+Run E starts a new game, plants the drop box in `comms_port` and never takes the .rdp.
+
+- **R12.** The token toast on planting (the four minutes start at the plant). From the drop box view,
+  HB-FIN-02 lists Lena tagged "Token"; "Connect with HB-FIN-02 sign-in token" signs in and the bar says about
+  {n} min left. Reload: the bar and timer resume from the server's `expiresInS`. The drop box view lists
+  `server_lan` through Lena's session. When the four minutes are up the desktop closes with "HB-FIN-02
+  sign-in token expired. Your session on HB-FIN-02 ended."; the view no longer lists `server_lan`;
+  HB-FIN-02's sign-in screen shows the greyed token button with "HB-FIN-02 sign-in token has expired.".
+- Tampered checks from the page: the token through another foothold (generic refusal); after expiry, POST
+  /login (422 `expired`), GET /container with `foothold=` (403, reason `expired`) and a share request through
+  the session; a cleared client state does not revive it. `credentialClock` and its values never appear in an
+  answer (the leak scanner's `credential_clock` finding).
+
 ## TODO: later slices (K2 to K5)
 
 These extend this scenario and are **not built in K1**:

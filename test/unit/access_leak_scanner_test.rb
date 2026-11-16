@@ -934,6 +934,37 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     assert_equal [[1, 'credential_field', 'credential']], summary(findings)
   end
 
+  # K5 (CREDENTIAL_KEYRING_PLAN.md, section 10): the token clock is server-only. The key never
+  # appears in an answer; with a game given, a recorded clock value never appears either.
+  class ClockGame
+    def initialize(clock)
+      @player_state = { 'credentialClock' => clock }
+    end
+    attr_reader :player_state
+  end
+
+  test 'K5: a credentialClock key in any response is reported, wherever it nests' do
+    findings = scan({ 'playerState' => { 'credentialClock' => { 'lena_token' => 1_731_700_000.5 } } }, data: CRED_SCENARIO)
+    assert_equal [[1, 'credential_clock', 'credentialClock']], summary(findings)
+    refute(AccessLeakScanner.new(CRED_SCENARIO).report_lines(findings).any? { |l| l.include?('1731700000') })
+  end
+
+  test 'K5: an empty credentialClock key is still reported' do
+    assert_equal [[1, 'credential_clock', 'credentialClock']],
+                 summary(scan({ 'credentialClock' => {} }, data: CRED_SCENARIO))
+  end
+
+  test 'K5: a recorded token clock value in an answer is reported, an expiresInS is not' do
+    game = ClockGame.new('lena_token' => 1_731_700_000.5)
+    leak = [['r.jsonl', 1, { 'method' => 'GET', 'path' => '/break_escape/games/1/keyring', 'status' => 200,
+                             'body' => { 'rev' => 'abc', 'entries' => [], 'note' => 1_731_700_000.5 } }]]
+    assert_equal [[1, 'credential_clock', 'credentialClock']],
+                 summary(AccessLeakScanner.new(CRED_SCENARIO, game: game).scan(leak))
+    clean = [['r.jsonl', 1, { 'method' => 'GET', 'path' => '/break_escape/games/1/keyring', 'status' => 200,
+                              'body' => { 'rev' => 'abc', 'entries' => [], 'unchanged' => true, 'expiresInS' => { 'lena_token' => 237 } } }]]
+    assert_empty AccessLeakScanner.new(CRED_SCENARIO, game: game).scan(clean)
+  end
+
   # ---- E0.3 (PHYSICAL_PENTEST_DEVICES_PLAN.md): a capture secret and a plant-proofed account ----
   # password are served legitimately only after the plant; a Wi-Fi key with a proof is judged as
   # a capture secret; a capture descriptor's secret is not public room text.

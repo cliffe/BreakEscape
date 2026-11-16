@@ -7219,6 +7219,46 @@ def check_credentials(json_data)
     end
   end
 
+  # Tokens (K5): a token sign-in never adds its PC to signedInPcs, so a session proof or an
+  # unlock_object task on a token's connectsTo is never satisfied by it.
+  token_connect_pcs = creds.select { |_id, e| e.is_a?(Hash) && e['kind'] == 'token' }
+                           .filter_map { |_id, e| e['connectsTo'].to_s if cm.present_string?(e['connectsTo']) }.to_set
+  if !token_connect_pcs.empty? && json_data['objectives'].is_a?(Array)
+    json_data['objectives'].each do |obj|
+      Array(obj.is_a?(Hash) ? obj['tasks'] : nil).each do |task|
+        next unless task.is_a?(Hash) && task['type'] == 'unlock_object'
+
+        target = task['targetObject'] || task['target'] || task['object']
+        warn.call("an unlock_object task targets '#{target}', a token's connectsTo; a token sign-in never completes it.") if token_connect_pcs.include?(target.to_s)
+      end
+    end
+  end
+
+  # The network a foothold id sits on: a jack's own, wifi_<network>, or an implant PC's.
+  net_entries = nm.room_objects(json_data)
+  foothold_network = lambda do |fid|
+    if fid.start_with?('jack_')
+      jid = fid.delete_prefix('jack_')
+      nm.jacks(json_data).find { |e| e[:object]['id'].to_s == jid }&.dig(:network)
+    elsif fid.start_with?('wifi_')
+      fid.delete_prefix('wifi_')
+    elsif fid.start_with?('implant_')
+      pid = fid.delete_prefix('implant_')
+      net_entries.find { |e| e[:object].is_a?(Hash) && e[:object]['id'].to_s == pid }&.dig(:network)
+    end
+  end
+  networks_reach = lambda do |from, to|
+    seen = Set[from]
+    queue = [from]
+    until queue.empty?
+      cur = queue.shift
+      return true if cur == to
+
+      nm.linked_networks(json_data, cur).each { |nb| queue << nb if seen.add?(nb) }
+    end
+    false
+  end
+
   creds.each do |id, entry|
     next unless entry.is_a?(Hash)
 
@@ -7229,8 +7269,16 @@ def check_credentials(json_data)
     if !cm::KINDS.key?(kind)
       err.call("#{label} has an unknown kind '#{kind}'.")
     elsif !cm.kind_built?(kind)
-      hint = kind == 'token' ? 'not supported until K5' : 'not supported until phase 3'
-      err.call("#{label} kind '#{kind}' is #{hint}.")
+      err.call("#{label} kind '#{kind}' is not supported until phase 3.")
+    end
+
+    # Token (K5, plan section 10): a label, a bounded life and a foothold proof.
+    if kind == 'token'
+      err.call("#{label} is a token and must set label (the sign-in screen and the Sign-ins list name it).") unless cm.present_string?(entry['label'])
+      err.call("#{label} expiresMin must be a whole number of minutes from 1 to #{cm::TOKEN_MAX_MIN}.") if cm.token_expires_min(entry).nil?
+      pk0 = cm.proof_kind(entry['proof'])
+      err.call("#{label} is a token and its proof must be a foothold (the token is recorded by the foothold that holds it).") if pk0 && pk0 != 'foothold'
+      info.call("#{label} a token expires on a clock that starts when its foothold is first gained; it must not be the only route to something the mission needs.")
     end
 
     # Label: the sign-in screen and desktop keep it on one line and cut it with an ellipsis.
@@ -7286,6 +7334,8 @@ def check_credentials(json_data)
           err.call("#{label} proof session '#{session_pc}' is not a sign-in PC.")
         elsif kind == 'assist_invite' && connects_to.to_s == session_pc
           warn.call("#{label} proof is a session on the invite's own connectsTo; a relay sign-in never satisfies it.")
+        elsif token_connect_pcs.include?(session_pc)
+          warn.call("#{label} proof is a session on '#{session_pc}', a token's connectsTo; a token sign-in never adds the PC to the signed-in list, so it never satisfies it.")
         end
       when 'held'
         item_id = proof['held'].to_s
@@ -7337,6 +7387,21 @@ def check_credentials(json_data)
       policy = cm.policy_for(json_data, pc)
       if kind == 'saved_connection' && policy.is_a?(Hash) && policy['maxAttempts']
         info.call("#{label} connectsTo '#{connects_to}' whose policy sets maxAttempts; a lockout there refuses the connection for the rest of the game (lockouts never expire), so it must not be the only route to something the mission needs.")
+      end
+    end
+
+    # Token warnings: the proof foothold must be able to reach the PC, and its policy must accept tokens.
+    if kind == 'token' && connecting && pcs_by_id.key?(connects_to.to_s)
+      tpc = pcs_by_id[connects_to.to_s]
+      tpolicy = cm.policy_for(json_data, tpc)
+      if tpolicy.is_a?(Hash) && tpolicy['accepts'].is_a?(Array) && !tpolicy['accepts'].include?('token')
+        warn.call("#{label} connectsTo '#{connects_to}' whose policy '#{tpc['policy'] || json_data['defaultPolicy']}' does not accept 'token'; add it to the policy's accepts list.")
+      end
+      fid = cm.token_proof_foothold(entry)
+      from_net = fid ? foothold_network.call(fid) : nil
+      to_net = net_entries.find { |e| e[:object].is_a?(Hash) && e[:object]['id'].to_s == connects_to.to_s }&.dig(:network)
+      if from_net && to_net && !networks_reach.call(from_net, to_net)
+        warn.call("#{label} proof foothold network cannot reach '#{connects_to}': '#{from_net}' has no link path to '#{to_net}'.")
       end
     end
 
