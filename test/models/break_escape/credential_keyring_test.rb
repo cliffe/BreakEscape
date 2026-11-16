@@ -25,6 +25,7 @@ module BreakEscape
             ],
             'objects' => [
               { 'id' => 'lena_pc', 'type' => 'pc', 'lockType' => 'login', 'name' => 'Lena PC', 'host' => 'HB-FIN-02',
+                'network' => 'office_lan',
                 'access' => { 'people' => %w[lena jake] },
                 'contents' => [
                   { 'id' => 'lena_passwords_txt', 'type' => 'text_file', 'name' => 'passwords.txt', 'readable' => true },
@@ -46,6 +47,12 @@ module BreakEscape
 
     def base_state
       Game::ACCESS_STATE_DEFAULTS.transform_values(&:dup).merge('inventory' => [])
+    end
+
+    # Hold the .rdp (so lena_rdp proves held) and a jack foothold on lena_pc's network.
+    def hold_rdp_with_foothold
+      inv([{ 'id' => 'lena_rdp_file', 'type' => 'text_file', 'name' => 'HB-FIN-02.rdp', 'credential' => 'lena_rdp' }])
+      @game.player_state['footholds'] = { 'jack1' => { 'via' => 'jack', 'network' => 'office_lan', 'source' => 'comms_port', 'seq' => 1 } }
     end
 
     def inv(entries)
@@ -167,6 +174,44 @@ module BreakEscape
       e = @game.keyring_for_client(pc_id: 'no_such_pc')[:entries].find { |x| x['id'] == 'lena_rdp' }
       refute e.key?('forThisPc'), 'an unopenable pc_id adds no scoping fields'
       refute e.key?('accepted')
+    end
+
+    # --- saved_connection route / power / sessionHeld (R1 m5) ----------------------------------
+
+    test 'a held foothold reaching the PC lists the route, and targetOff rides only with a route' do
+      hold_rdp_with_foothold
+      e = entry('lena_rdp')
+      assert_equal [{ 'foothold' => 'jack1' }], e['routes'], 'the held foothold that reaches lena_pc is a route'
+      assert_equal false, e['targetOff'], 'targetOff rides because routes is non-empty and the PC is on'
+      assert_equal false, e['remoteBlocked'], 'the default policy does not block remote sign-in'
+      assert_equal false, e['sessionHeld'], 'no session is held yet'
+    end
+
+    test 'with no reaching foothold the route list is empty and targetOff is omitted' do
+      inv([{ 'id' => 'lena_rdp_file', 'type' => 'text_file', 'name' => 'HB-FIN-02.rdp', 'credential' => 'lena_rdp' }])
+      e = entry('lena_rdp')
+      assert_equal [], e['routes']
+      refute e.key?('targetOff'), 'power is told only where the PC could be reached (section 6.2)'
+    end
+
+    test 'sessionHeld is true when a session at the PC was opened with this credential' do
+      hold_rdp_with_foothold
+      @game.player_state['sessions'] = { 'lena_pc' => { 'id' => 'lena', 'credential' => 'lena_rdp' } }
+      assert_equal true, entry('lena_rdp')['sessionHeld']
+    end
+
+    test 'targetOff is true when routes exist and the host service is off' do
+      hold_rdp_with_foothold
+      @game.scenario_data['rooms']['office']['objects'][0]['offWhen'] = 'lena_pc_off'
+      @game.player_state['globalVariables'] = { 'lena_pc_off' => true }
+      assert_equal true, entry('lena_rdp')['targetOff']
+    end
+
+    test 'remoteBlocked reflects the connectsTo policy for a saved_connection' do
+      hold_rdp_with_foothold
+      @game.scenario_data['rooms']['office']['objects'][0]['policy'] = 'blocked'
+      @game.scenario_data['policies'] = { 'blocked' => { 'remote' => 'blocked' } }
+      assert_equal true, entry('lena_rdp')['remoteBlocked']
     end
   end
 end
