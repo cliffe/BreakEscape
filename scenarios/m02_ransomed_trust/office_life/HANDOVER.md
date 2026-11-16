@@ -228,3 +228,11 @@ All section 9 items are decided except the voicing spend (about 53 clips, V6 at 
 ## Next
 
 Stage 4 once V1 to V10 are on main and main is merged. Art runs separately for `ernesto_bautista` and `hodan_warsame`.
+
+## P9 (Ghost's empty console popup), fixed
+
+Cause: the two Ghost video-call mappings on the recovery console (`on_recovery_console`, `on_console_again`) fire on `object_interacted`, which is emitted as the console opens. The scripted call finds the console minigame open, so it waits in the call queue and opens when the player closes the console, after the restore is chosen. `on_console_again` exits straight to DONE once `ransom_decision_made` is set (the ink guard at ink/m02_phone_ghost.ink), which showed "End of conversation". `on_recovery_console` has no such guard, so with the old code it played the whole offer after the decision.
+
+No post-decision line for this call is intended (Ghost's real post-decision lines live in `post_decision_contact`, reached from the phone), so the call is dropped, not rerouted. Fix: new optional mapping field `skipIfGlobal` for `conversationMode: "video-call"` (public/break_escape/js/systems/npc-manager.js: copied in `_buildMappingConfig`, checked in the call's `beforeOpen`, like the timed conversation of the same name). Both mappings set `skipIfGlobal: "ransom_decision_made"`, and also gained `!globalVars.ransom_decision_made` in their conditions. No spoken lines were written.
+
+Live proof (keyless :3090, fresh games from new-game.rb with `--start-room server_room` and the four VM flags submitted via `--submit-flag`; `restore_manifest_obtained` set in the page because the pick-up event does not replay for a seeded item): old code on game 5917 showed Ghost's "Before you touch that console" call after the restore was confirmed; fixed code on game 5931 showed no popup, `ghost_offer_made` stayed false, queue empty. Ransom Payment was the source confirmed (Combined Recovery needs the escrow keys and the staging cache, not seeded); the decision path is the same `ransom_decision_made` for every source.

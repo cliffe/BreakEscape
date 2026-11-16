@@ -1466,7 +1466,8 @@ boardroom_pin = "0417"
               "onceOnly": true,
               "conversationMode": "video-call",
               "voiced": true,
-              "targetKnot": "on_recovery_console"
+              "targetKnot": "on_recovery_console",
+              "skipIfGlobal": "ransom_decision_made"
             },
             {
               "_comment": "Second and last ask, for a player who said 'I need time to think': the next console use.",
@@ -1475,7 +1476,8 @@ boardroom_pin = "0417"
               "onceOnly": true,
               "conversationMode": "video-call",
               "voiced": true,
-              "targetKnot": "on_console_again"
+              "targetKnot": "on_console_again",
+              "skipIfGlobal": "ransom_decision_made"
             },
             {
               "eventPattern": "global_variable_changed:offline_keys_recovered",

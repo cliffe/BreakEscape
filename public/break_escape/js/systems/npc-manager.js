@@ -1183,6 +1183,7 @@ export default class NPCManager {
         endingCheck:   mapping.endingCheck === true,    // this mapping opens the ending/debrief: warn first (systems/ending-check.js)
         disableClose:  mapping.disableClose  || false,  // hide × and block Esc for this conversation
         resume:        mapping.resume === true,         // phone-chat: reopen the saved thread, no knot jump
+        skipIfGlobal:  mapping.skipIfGlobal  || null,   // video-call: drop the call if this global is true when a queued call opens
         voiced:        mapping.voiced === true,         // phone-chat: speak the NPC's lines through TTS (F17)
         callLabel:     mapping.callLabel     || null,   // phone-chat voiced call: caption under the caller's name
         ring:          mapping.ring          || null,   // phone-chat: an incoming call that rings (plan 3.1)
@@ -1857,6 +1858,14 @@ export default class NPCManager {
           label: eventPattern,
           sceneType: 'person-chat',
           startDelayMs: NPCManager.SCRIPTED_CALL_START_MS,
+          // skipIfGlobal: a call queued behind an open minigame is dropped if the global
+          // became true while it waited (m02 P9: Ghost's console call after the decision).
+          beforeOpen: () => {
+            if (config.skipIfGlobal && window.gameState?.globalVariables?.[config.skipIfGlobal] === true) {
+              console.log(`📵 video call for ${npcId} (${eventPattern}) dropped at open: ${config.skipIfGlobal} is set`);
+              return false;
+            }
+          },
           params: () => ({
             npcId: npc.id,
             startKnot: knotToUse,
