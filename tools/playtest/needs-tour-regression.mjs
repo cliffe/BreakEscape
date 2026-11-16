@@ -38,7 +38,7 @@ await page.evaluate(() => { const loop = window.game.sys.game.loop, raf = loop.r
 // Turn-backs, parks and spoken or pictured lines, for row 3's switch-off turn-back
 await page.evaluate(() => {
     const ed = window.eventDispatcher; window.__ev = []; const orig = ed.emit.bind(ed);
-    ed.emit = (ev, data) => { try { if (/^npc_(turned_back|need_parked|overheard|chatted)/.test(ev) && window.__ev.length < 400) window.__ev.push({ c: window.npcNeedsSystem.clockMs, ev, npcId: data?.npcId || data?.speakerId, reason: data?.reason, line: data?.line, picture: !!data?.picture, topic: data?.topic }); } catch (e) {} return orig(ev, data); };
+    ed.emit = (ev, data) => { try { if (/^npc_(turned_back|need_parked|overheard|chatted|sat$)/.test(ev) && window.__ev.length < 400) window.__ev.push({ c: window.npcNeedsSystem.clockMs, ev, npcId: data?.npcId || data?.speakerId, reason: data?.reason, line: data?.line, picture: !!data?.picture, topic: data?.topic }); } catch (e) {} return orig(ev, data); };
 });
 const clock = () => page.evaluate(() => window.npcNeedsSystem.clockMs);
 const done = () => page.evaluate(() => Object.values(window.objectivesManager?.taskIndex || {}).filter(x => x.status === 'completed' || x.status === 'completing').map(x => x.taskId || x.id));
@@ -57,7 +57,9 @@ const coffeeBusy = () => page.evaluate(() => ['amara', 'tom', 'marek', 'sanjay']
 // Read a lever, walking up to it first. From the coffee station (bottom right) a walk to the back
 // wall can time out behind the staff at the station (game 5409: the Activity Board read returned
 // false, so no fresh queue formed), so a failed walk or read is tried again, up to three times
-const read = async id => {
+// `mids` orders the mid-office points tried first (row 3 starts at 200,176: Amara's chair stands
+// in the aisle north of 232,176 and stopped every first try there, the sims tidy pass)
+const read = async (id, mids = [[232, 176], [200, 176], [264, 176]]) => {
     const tries = [];
     for (let i = 0; i < 3; i++) {
         // Round 7 (5436: every read from the coffee station ended still-out-of-range): walk to open
@@ -67,7 +69,7 @@ const read = async id => {
         // Code review R1 follow-up: 5454's row 3 and row 5 took this same approach (mid 232,176, aim
         // 222,41); row 3 stopped at (220,103) every try, so what stopped it moves (a body or a chair in
         // the aisle). Each try starts from a different mid point, and a short stop records what is near
-        const [mx, my] = [[232, 176], [200, 176], [264, 176]][i];
+        const [mx, my] = mids[i];
         const mid = await page.evaluate(([x, y]) => window.__test.moveTo(x, y, { timeoutMs: 20000, pointer: false }), [mx, my]).catch(e => ({ err: String(e) }));
         await t(300);
         const mv = await page.evaluate(id => window.__test.moveToNear(id, { timeoutMs: 30000 }), id).catch(e => ({ err: String(e) }));
@@ -101,7 +103,7 @@ console.log('row 1', JSON.stringify(report.rows[1]));
 // Row 3: once the queue has cleared, a fresh one from the Activity Board; switch the coffee off while
 // two wait in line, then back on
 for (let i = 0; i < 120 && await coffeeBusy(); i++) await t(1000);
-report.rows[3] = { board: await read('activity_board') };
+report.rows[3] = { board: await read('activity_board', [[200, 176], [264, 176], [232, 176]]) };
 await page.evaluate(() => window.__test.moveToNear('office_coffee_socket', { timeoutMs: 30000 })).catch(() => null);
 // The README switches the socket off while Tom and Marek wait in line: wait for two in the queue
 // (one after 90 s), and read the board again once if nobody has queued by then
@@ -111,7 +113,7 @@ while (Date.now() - cq < 150000) {
     q = await queued();
     if (q.length >= 2 || (q.length >= 1 && Date.now() - cq > 90000)) break;
     if (!q.length && Date.now() - cq > 75000 && !report.rows[3].board2) {
-        report.rows[3].board2 = await read('activity_board');
+        report.rows[3].board2 = await read('activity_board', [[200, 176], [264, 176], [232, 176]]);
         await page.evaluate(() => window.__test.moveToNear('office_coffee_socket', { timeoutMs: 30000 })).catch(() => null);
     }
     await t(500);
@@ -160,8 +162,12 @@ report.rows[6].ok = report.rows[6].wait.ok;
 console.log('row 6', JSON.stringify(report.rows[6]));
 
 report.stuck = await page.evaluate(() => window.npcNeedsSystem.getLog().filter(e => /^(return_stuck|walk_stuck)$/.test(e.ev)).map(e => ({ t: e.t, npc: e.npc, ev: e.ev, x: e.x, y: e.y })));
+// Seating: every NPC's first time seated (needs clock, s) and the fetch and seat-move ends (the
+// needs log's t is in 250 ms ticks), for the sims tidy pass's Tom check
+report.first_sat = await page.evaluate(() => { const o = {}; for (const e of window.__ev) if (e.ev === 'npc_sat' && !(e.npcId in o)) o[e.npcId] = Math.round(e.c / 1000); return o; });
+report.seating = await page.evaluate(() => window.npcNeedsSystem.getLog().filter(e => /^(fetch_start|fetch_end|seat_move_end|seat_gave_up)$/.test(e.ev)).map(e => ({ s: Math.round(e.t / 4), npc: e.npc, ev: e.ev, reason: e.reason, stage: e.stage, phase: e.phase, x: e.x, y: e.y })));
 await page.screenshot({ path: `${outDir}/tour-${gid}.png` });
 fs.writeFileSync(`${outDir}/tour-${gid}.json`, JSON.stringify(report, null, 1));
-console.log(JSON.stringify({ gid, row1: report.rows[1].ok, row3: report.rows[3].ok, row3_queued: q, row3_turned_back: report.rows[3].turned_back, row3_grumbles: report.rows[3].grumbles, row5: report.rows[5].ok, row6: report.rows[6].ok, rooms: report.rooms, stuck: report.stuck.length, errs: errs.length }));
+console.log(JSON.stringify({ gid, row1: report.rows[1].ok, row3: report.rows[3].ok, row3_queued: q, row3_turned_back: report.rows[3].turned_back, row3_grumbles: report.rows[3].grumbles, row5: report.rows[5].ok, row6: report.rows[6].ok, rooms: report.rooms, stuck: report.stuck, tom_sat: report.first_sat.tom ?? null, errs: errs.length }));
 await page.goto('about:blank');
 await browser.close();
