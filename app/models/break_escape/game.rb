@@ -1372,7 +1372,11 @@ module BreakEscape
       return false unless defeated || claimable
       # Bound the drop to the room the NPC is in or an adjacent one. The carrying NPC
       # is always a needs NPC (only needs NPCs carry), so it is at most a doorway from
-      # its placed room; refuse a drop into a far room the client names.
+      # its placed room; refuse a drop into a far room the client names. Known limit:
+      # the bound is measured from the scenario placement, not the live position, so a
+      # carrier made hostile and chased two or more rooms from home would have its KO
+      # drop refused; a reload then returns the object to the pick-up room. No shipped
+      # scenario does this.
       return false unless npc_can_reach_room?(npc_id, room_id)
 
       player_state_will_change!

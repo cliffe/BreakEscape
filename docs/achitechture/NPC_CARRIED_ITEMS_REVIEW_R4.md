@@ -178,3 +178,8 @@ an unreachable room. The two minors are confined to ordinary office dressing, th
 only class the allowlist admits.
 
 R4: 0/0/2
+
+## Outcomes
+
+- m1 (KO-drop bound narrower than "chased through doors"): accepted as a known limit. No shipped scenario triggers it, the carriers are non-hostile office workers that stay within one room of home, and a reload returns the object to the pick-up room, so nothing is lost or duplicated. The comment on `ko_drop_carried!` now states the limit.
+- m2 (`rooms_connected?` ignored array-valued exits): fixed in 2988d4b2e, with a test in `test/models/break_escape/game_test.rb`.
