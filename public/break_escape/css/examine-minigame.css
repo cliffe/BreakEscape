@@ -82,13 +82,14 @@
         gap: 10px;
     }
     /* Pixel fonts draw crisply on their own grid: Press Start 2P at multiples of 8, GNF at
-       multiples of 8 from 16. 16px is the smallest crisp size of either, so the phone keeps
-       the name at 16 (it was 13, off the grid) and the body at 16 (it was 18, off the grid). */
+       multiples of 8 from 16. The name stays at 16 (Press Start 2P's smallest crisp size). The
+       body takes 24 on a phone, the same GNF size as the conversation's dialogue text
+       (person-chat-minigame.css), because 16 read too small at 390 wide. */
     .examine-name {
         font-size: 16px;
     }
     .examine-observations,
     .examine-text {
-        font-size: 16px;
+        font-size: 24px;
     }
 }
