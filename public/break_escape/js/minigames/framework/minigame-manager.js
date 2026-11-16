@@ -253,8 +253,18 @@ export const MinigameFramework = {
         if (rec.returning === true) return;
         const cur = this.currentMinigame;
         const open = !!cur && !cur._ending;
-        if (open && (cur.mode === 'npc' || cur._sceneType === 'rfid')) return;
-        if (open && window.pendingContainerReturn) return;
+        // The inventory itself, or the clone reader this chat started (not a door reader)
+        if (open && (cur.mode === 'npc' || (cur._sceneType === 'rfid' && cur.params?.mode === 'clone'))) return;
+        // A reader started from THIS NPC's inventory; a stale return from any other container
+        // does not count
+        const fromInventory = window.pendingContainerReturn?.npcOptions?.npcId === rec.npcId;
+        if (open && fromInventory) return;
+        // An interactionWarning confirm for an inventory item is a dialog, not a minigame:
+        // look again once it is answered
+        if (!open && fromInventory && window.gameConfirmOpen?.()) {
+            setTimeout(() => this._settleChatReturn(rec), this.CHAT_RETURN_SETTLE_MS);
+            return;
+        }
         window.pendingConversationReturn = null;
     },
 
@@ -351,7 +361,6 @@ export const MinigameFramework = {
             if (!this.currentMinigame) {
                 document.querySelectorAll('.minigame-container:not([data-external])').forEach(el => el.remove());
             }
-            this._queueChatReturnSettle();
             // Barks held back while the minigame was open play now (D5)
             this._updateBarkLayer();
             if (!this.currentMinigame) {
@@ -359,6 +368,11 @@ export const MinigameFramework = {
             }
             console.log(`Ended minigame with success: ${success}`);
             } finally {
+                // Queued here so a throwing cleanup or onComplete cannot skip it; a parent
+                // handing over to a child leaves the record to the child (POSE_FIXES_REVIEW_R5 m3)
+                if (ending._suspendedForChild !== true) {
+                    try { this._queueChatReturnSettle(); } catch (e) { console.error('chat return settle failed', e); }
+                }
                 // A parent handing over to a child does not end for the ringer's purposes (2.9).
                 // The hook gets the ending minigame: it reads params.ringerCall, _endedByCall and
                 // _callFinished off it.

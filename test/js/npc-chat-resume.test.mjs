@@ -345,6 +345,7 @@ test('R4 M2: the real card reader complete() keeps the chat and restarts it (clo
 test('R4 m2: a superseded reader or inventory flags and restarts nothing', async () => {
     for (const [Real, scene, extra] of [[RealRFID, 'rfid', {}], [RealContainer, 'container', { mode: 'npc', npcId: 'tom' }]]) {
         const fw = frame();
+        window.pendingContainerReturn = null;   // independent of earlier tests (R5 m2)
         const old = fw.startMinigame(scene, null, extra);
         old.mode = 'npc';
         fw.currentMinigame = new FakeOther(null, {});   // a fresh minigame has taken over
@@ -359,4 +360,66 @@ test('R4 m2: a superseded reader or inventory flags and restarts nothing', async
         delete window.returnToConversationAfterRFID; delete window.returnToConversationAfterNPCInventory;
         window.pendingConversationReturn = null;
     }
+});
+
+
+// ---- R5 (POSE_FIXES_REVIEW_R5.md) ----
+test('R5 M1: a clone reader that displaces the chat keeps the record until the copy completes, then the chat resumes', async () => {
+    const fw = settleFrame();
+    fw.startMinigame('person-chat', null, { npcId: 'tom' });
+    window.pendingConversationReturn = { npcId: 'tom', type: 'person-chat' };   // what the clone tag sets
+    const reader = fw.startMinigame('rfid', null, { mode: 'clone' });             // displaces the chat
+    await wait(80);                                                               // past the settle
+    assert.ok(window.pendingConversationReturn, 'the open clone reader keeps the record');
+    const restarted = [];
+    window.returnToConversationAfterRFID = () => { restarted.push(window.pendingConversationReturn?.npcId); };
+    RealRFID.prototype.complete.call(reader, true);
+    await wait(150);
+    assert.deepEqual(restarted, ['tom'], 'the chat resumed after the copy');
+    delete window.returnToConversationAfterRFID;
+    window.pendingConversationReturn = null;
+});
+
+test('R5 m1: a door reader opened inside the window does not keep the record', async () => {
+    const fw = settleFrame();
+    fw.startMinigame('person-chat', null, { npcId: 'tom' });
+    window.pendingConversationReturn = { npcId: 'tom', type: 'person-chat' };
+    fw.startMinigame('rfid', null, { mode: 'unlock' });
+    await wait(80);
+    assert.equal(window.pendingConversationReturn, null, 'dropped');
+    fw.forceCloseMinigame();
+});
+
+test('R5 m1: a stale pendingContainerReturn from another container does not keep the record', async () => {
+    const fw = settleFrame();
+    handOver(fw);
+    window.pendingContainerReturn = { containerItem: {}, contents: [], npcOptions: null };   // left by some other container
+    fw.startMinigame('other', null, {});
+    await wait(80);
+    assert.equal(window.pendingConversationReturn, null, 'dropped');
+    fw.forceCloseMinigame();
+    window.pendingContainerReturn = null;
+});
+
+test('R5 m3: a throwing cleanup cannot skip the settle', async () => {
+    const fw = settleFrame();
+    const mg = fw.startMinigame('other', null, {});
+    mg.cleanup = () => { throw new Error('boom'); };
+    assert.throws(() => fw.endMinigame(true, null), /boom/);
+    await wait(80);
+    assert.equal(window.pendingConversationReturn, null, 'settled although cleanup threw');
+});
+
+test('R5 m3: an interactionWarning confirm keeps the record while it is open, then it settles', async () => {
+    const fw = settleFrame();
+    handOver(fw);
+    let open = true;
+    window.gameConfirmOpen = () => open;
+    await wait(80);
+    assert.ok(window.pendingConversationReturn, 'kept while the dialog is open');
+    open = false;
+    await wait(80);
+    assert.equal(window.pendingConversationReturn, null, 'dropped once it is answered and nothing opened');
+    delete window.gameConfirmOpen;
+    window.pendingContainerReturn = null;
 });
