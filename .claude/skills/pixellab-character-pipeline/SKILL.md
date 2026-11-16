@@ -15,6 +15,7 @@ One script, [tools/pixellab_pipeline.py](../../../tools/pixellab_pipeline.py), d
 | 3 walk character  | `character` | `/create-character-pro` (`create_from_concept`, style character) | a PixelLab character id                                    |
 | 4 animations      | `animate`   | `/characters/animations` (template mode)                         | the standard 6 × 8 directions on that character            |
 | 4b seated frames  | (MCP or web UI), then `import --sit-from` | `/create-character-state` | a seated state: 8 rotations, imported as `sit_<direction>` |
+| 4c pose frames    | (MCP or web UI), then `import --pose-from name=<state>` | `/create-character-state` | a standing state per pose: 8 rotations, imported as `pose_<name>_<direction>` |
 | 5 review / repair | `qa`, `fix` | `/edit-images-v2` only for `fix --use ai`                        | contact sheets; committed frame overrides                  |
 | 6 import          | `import`    | `/characters/{id}/zip`                                           | `<key>.png/.json/_headshot.png`, game.js preload, manifest |
 
@@ -166,6 +167,16 @@ Every character gets seated frames, so it can sit on chairs (`js/systems/seating
 3. **Import** with the state: `import <key> --force --sit-from <state id or URL>`. The 8 rotations become one-frame `sit_<direction>` animations and every other frame is unchanged; the converter keeps them out of the standing feet-line sampling. The manifest records `sit_from`, so later re-imports keep them without the flag. The engine measures each atlas's hip point from `sit_south` at runtime, so no anchor needs setting.
 4. **Hand-edited atlases** (nightshade, agent_hax, sarah_mitchell in the November batch): `import` refuses, or the drift check shows existing frames moving. Don't force it, and don't `--adopt` those edits either: the converter places frames differently from the hand alignment, so adopted overrides land at the wrong offsets. Append the 8 sit frames as one new row on the committed atlas PNG and add the `sit_<direction>_frame_000` entries to its JSON, leaving every existing frame untouched.
 5. **Check in game** on `scenarios/test_seating` (pick the character as the player avatar, or swap it onto one of the seated NPCs): sit in all four swivel-chair families and one static chair, and look at the south, side and north facings (hips on the seat, head above the backrest when facing away).
+
+## Stage 4c: pose frames (drink, use, phone)
+
+Office-life NPCs can show a one-frame standing pose while they use something (`js/systems/npc-poses.js`, docs/achitechture/NPC_POSES.md): `drink` (a mug at the mouth), `use` (hands at a machine) and `phone` (a handset at the ear). An atlas without pose frames keeps its idle, so this stage is optional, and pose art is still at the test stage: check NPC_POSES.md for what the owner has approved before making a batch.
+
+1. **Make one standing state per pose** of the finished walk character, with **use colour palette from reference** on, as in Stage 4b. One take makes 8 rotations (about 10 generations for a 60px character); say so before a batch, and never start one without the owner's yes.
+2. **Look at all 8 rotations** on a contact sheet beside the south idle: the prop should read at 1x (a mug, a phone at the ear), the side views should not read as a reach, and clothes and colours should match the walk rotation.
+3. **Import** with the states, by key so the stored settings are kept: `import <key> --force --pose-from drink=<state> --pose-from use=<state> --pose-from phone=<state>`. The flag is repeatable; `name` is one of drink, use, phone, and the state is an id or a pixellab.ai URL. Each state's 8 rotations become `animations/pose_<name>/<direction>/frame_000.png`, flood-filled like every frame, and come out as `pose_<name>_<direction>_frame_000` (the converter keeps the `pose_` name and leaves these frames out of the feet line). The manifest stores `"poses": {name: state id}`; a later `--pose-from` for one name replaces only that name, and a re-import without the flag rebuilds all of them. A re-import by character id or URL with `--key <existing key>` keeps the stored poses and `sit_from` too.
+4. **Check nothing else moved**: compare the old and new atlas frame by frame (every frame other than the replaced `pose_<name>_*` should be byte-identical). Overrides in `tools/pixellab_overrides/<key>` are applied after the download, as for every import.
+5. **Check in game** on `scenarios/test_needs_sims`: a desk-phone ring while the NPC stands shows `phone`; low caffeine sends it to the coffee machine for `use`, then `drink`, then the idle. Pose frames breathe (head and shoulders sink 1px on a 3.6 s cycle, `js/systems/sprite-breath.js`), as seated frames do; a seated NPC keeps its sit frame.
 
 ## Stage 5: review and repair frames
 
