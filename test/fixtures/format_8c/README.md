@@ -55,3 +55,9 @@ Note (A2, 2026-11-16): the lab now renders a per-game `@random_password` (the st
 corpus test pins it to `FixedPw1` in `live_render` (SecureRandom ignores `srand`), and the lab loader
 fixture carries that same value. The fixture was refreshed by overlaying the A2 lab content (Kieran's
 account, networks, rogue AP kit, objectives, hints) on the frozen format-2 loader output.
+
+Note (A3 run 3, 2026-11-16): the lab loader fixture was refreshed again for the A3 device art and
+reception dressing. Only the `briefing_room` `kit_rogue_ap` object and the `reception` objects
+(`rogue_ap_spot`, `planted_rogue_ap`, `lw_staff_ap`, `lw_guest_ap`, `lw_guest_card`) and the
+reception `lighting` block changed, overlaid from the live render; the fold-related habit keys are
+untouched. The base did not grow beyond those few objects and a small lighting block.
