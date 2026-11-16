@@ -145,3 +145,45 @@ test('R3 n2: a UI theme switch measures the phone texts again; at rest nothing i
   assert.equal(r.clones(), n + 1, 'one clone after the theme changes');
   r.win.close();
 });
+
+// R4 m2: the toast's own height cache follows the font status and the UI theme too
+function toastRig() {
+  const r = rig();
+  r.add('<div class="notification warning show" data-h="60">w</div>', null, r.container)._toast = { type: 'warning', shownAt: Date.now(), duration: 60000 };
+  return r;
+}
+
+test('R4 m2: a UI theme switch measures the toast again; at rest nothing is cloned', () => {
+  const r = toastRig();
+  applyLanes(r.doc, r.win);
+  const n = r.clones();
+  assert.ok(n > 0, 'setup: the toast was measured by clone');
+  applyLanes(r.doc, r.win);
+  assert.equal(r.clones(), n, 'at rest');
+  r.doc.documentElement.dataset.uiTheme = 'pixel';
+  applyLanes(r.doc, r.win);
+  assert.equal(r.clones(), n + 1, 'one clone after the theme changes');
+  r.win.close();
+});
+
+test('R4 m2: the font status changing measures the toast again', () => {
+  const r = toastRig();
+  const fonts = { status: 'loading' };
+  Object.defineProperty(r.doc, 'fonts', { value: fonts, configurable: true });
+  applyLanes(r.doc, r.win);
+  const n = r.clones();
+  fonts.status = 'loaded';
+  applyLanes(r.doc, r.win);
+  assert.equal(r.clones(), n + 1, 'one clone after the fonts load');
+  r.win.close();
+});
+
+test('R4 n2: a toast keeps at most 16 cached heights', () => {
+  const r = toastRig();
+  const fonts = { status: 'a' };
+  Object.defineProperty(r.doc, 'fonts', { value: fonts, configurable: true });
+  const t = r.container.querySelector('.notification');
+  for (let i = 0; i < 40; i++) { fonts.status = `s${i}`; applyLanes(r.doc, r.win); assert.ok(t._hudLaneH.size <= 16, `size ${t._hudLaneH.size}`); }
+  assert.ok(t._hudLaneH.size >= 1);
+  r.win.close();
+});

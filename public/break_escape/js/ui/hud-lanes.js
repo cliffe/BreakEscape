@@ -295,7 +295,7 @@ export function toastSpot({ vw, vh, lane, z = 1, heightAt, titles = [], xs = [],
     if (!heights.has(w)) { const h = Number(heightAt?.(w)); heights.set(w, Number.isFinite(h) && h > 0 ? Math.ceil(h) : 0); }
     return heights.get(w);
   };
-  // A box inside another control's box can only be hit with it: the outermost boxes decide
+  // A box inside another control's box can only be overlapped with it: the outermost boxes decide
   const ctl = outermostBoxes(controls.filter(c => !c.listRow));
   const hard = [...xs, ...(banner ? [banner] : [])];
   const fits = (p) => p.left >= 0 && p.left + p.width <= vw && p.top >= edge && p.top + p.height <= vh - edge;
@@ -740,15 +740,18 @@ function cloneHeightAt(doc, el, w, z, { keepId = false, fontFrom = null } = {}) 
   try { return Math.ceil(c.getBoundingClientRect().height || 0); } finally { host.remove(); }
 }
 
-/** A toast's height at screen width `w`, cached on the toast by width and zoom (its text never changes). */
 // What else changes a clone's height without touching the DOM it copies: the web font arriving
 // (the fallback font wraps differently) and a UI theme switch (themed padding and borders)
 const renderEnv = (doc) => `${doc.fonts?.status || ''}${doc.documentElement?.dataset?.uiTheme || ''}`;
 
+/** A toast's height at screen width `w`, cached on the toast by width and zoom (its text never changes). */
 function toastHeightAt(doc, t, w, z, container) {
   const key = `${w}@${z}#${renderEnv(doc)}@${doc.body?.classList.contains('hud-compact') ? 'c' : 'w'}`;   // compact padding differs
   if (!t._hudLaneH) t._hudLaneH = new Map();
-  if (!t._hudLaneH.has(key)) t._hudLaneH.set(key, cloneHeightAt(doc, t, w, z, { fontFrom: container }));
+  if (!t._hudLaneH.has(key)) {
+    if (t._hudLaneH.size >= 16) t._hudLaneH.clear();   // a long drag adds a width per frame (R4 n2)
+    t._hudLaneH.set(key, cloneHeightAt(doc, t, w, z, { fontFrom: container }));
+  }
   return t._hudLaneH.get(key);
 }
 
