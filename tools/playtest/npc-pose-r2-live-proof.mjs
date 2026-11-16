@@ -3,7 +3,8 @@
 // m2: after a chat, _chatFaced is clear while Tom is seated, and a chat opened as he steps off his chair for a call turns him to the player.
 // Headless, setFPS(20) with fixed steps on. node tools/playtest/npc-pose-r2-live-proof.mjs <gameId> <port>
 // Exits 1 if any check fails (R3 m1). A third argument 'forceclose' adds the R3 M1 case: a hit while the
-// inventory is open from a chat must leave Tom free.
+// inventory is open from a chat must leave Tom free. 'itemexit' adds the R4 M1 case: a note opened from Tom's
+// inventory mid-chat and closed by a non-return route (a hit, then a force close) must leave Tom free.
 import { chromium } from 'playwright';
 const [gid, port, extra] = process.argv.slice(2);
 const browser = await chromium.launch({ headless: true });
@@ -95,6 +96,34 @@ if (extra === 'forceclose') {
         R.m1fc.hitFree = await tom();
     }
 }
+// ---- M1 (R4): a note opened from the inventory, closed by a route that never returns to the container
+if (extra === 'itemexit') {
+    R.m1ie = {};
+    for (const route of ['hit', 'forceclose']) {
+        const r = R.m1ie[route] = {};
+        r.waitSeated = await waitFor(t => t.seated && !t.call && !t.chat, 60000);
+        await page.evaluate(() => window.__test.moveToNear('tom').catch(() => null));
+        r.open = await page.evaluate(() => window.__test.interact('tom').then(r => !!r.ok).catch(e => String(e).slice(0, 100)));
+        await page.waitForTimeout(800);
+        await page.evaluate(() => { const npc = window.npcManager.getNPC('tom'); npc.itemsHeld = [{ type: 'notes', name: 'Tom note', readable: true, text: 'Remember the milk.', takeable: true, observations: 'test' }]; });
+        r.bridge = await page.evaluate(() => { window.__test.minigame.close(); return window.npcGameBridge.showNPCInventory('tom'); });
+        await page.waitForTimeout(800);
+        r.inInventory = await tom();
+        r.clicked = await page.evaluate(() => { const el = document.querySelector('.container-content-item'); if (el) el.click(); return !!el; });
+        await page.waitForTimeout(1200);
+        r.reader = await tom();   // the notes reader is open; the pending chat return is still held
+        if (route === 'hit') await page.evaluate(() => window.playerHealth.damage(1));
+        else await page.evaluate(() => window.MinigameFramework.forceCloseMinigame());
+        await page.waitForTimeout(1500);
+        r.afterExit = await tom();
+        // an unrelated minigame must not make Tom count as in a chat
+        r.unrelated = await page.evaluate(() => { try { window.MinigameFramework.startMinigame('notes', null, { title: 'x', text: 'y' }); } catch (e) {} return window.npcNeedsSystem.world.inChatWith('tom'); });
+        await page.evaluate(() => { try { window.__test.minigame.close(); } catch (e) {} window.MinigameFramework.forceCloseMinigame(); });
+        await page.waitForTimeout(600);
+        r.free = await tom();
+        r.backOnSchedule = await waitFor(t => t.seated || t.moving || t.seatMove, 60000);
+    }
+}
 R.errs = errs;
 // Pass or fail (R3 m1)
 const checks = {
@@ -110,7 +139,17 @@ const checks = {
 if (extra === 'forceclose') {
     checks.m1fc_in_chat_while_open = !!R.m1fc.during && R.m1fc.during.chat === true && !!R.m1fc.during.pending;
     checks.m1fc_free_after = !!R.m1fc.after && R.m1fc.after.chat === false && R.m1fc.after.pending === false;
+    if (R.m1fc.hasHealth) checks.m1fc_hit_chat_resumed = !!R.m1fc.hitAfter && R.m1fc.hitAfter.chat === true;
     if (R.m1fc.hasHealth) checks.m1fc_free_after_hit = !!R.m1fc.hitFree && R.m1fc.hitFree.chat === false && R.m1fc.hitFree.pending === false;
+}
+if (extra === 'itemexit') {
+    for (const route of ['hit', 'forceclose']) {
+        const r = R.m1ie[route];
+        checks[`m1ie_${route}_note_open`] = !!r.reader && /Notes/i.test(r.reader.mg || '') && r.reader.chat === true;
+        checks[`m1ie_${route}_free`] = !!r.afterExit && r.afterExit.chat === false && r.afterExit.pending === false;
+        checks[`m1ie_${route}_free_during_other`] = r.unrelated === false;
+        checks[`m1ie_${route}_schedule`] = !!r.backOnSchedule && r.free?.chat === false;
+    }
 }
 R.checks = checks;
 const failed = Object.entries(checks).filter(([, ok]) => !ok).map(([k]) => k);
