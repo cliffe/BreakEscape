@@ -157,4 +157,31 @@ class CaptureProofSatisfiableTest < ActiveSupport::TestCase
     data['social']['landingPages'] = [{ 'id' => 'p', 'capture' => { 'address' => 'phish.example', 'secret' => 'page-secret' } }]
     assert_equal %w[three-secret], served(data).map { |c| c['secret'] }
   end
+
+  test 'a session proof names a sign-in PC inside a plain container, as the server signs in on it' do
+    data = { 'rooms' => { 'r' => { 'objects' => [{ 'id' => 'desk', 'contents' => [PC.dup] }] } } }
+    ids = CM.sign_in_pc_ids(data)
+    assert_equal %w[pc1], ids
+    assert CM.proof_satisfiable?({ 'session' => 'pc1' }, ITEMS, CM.top_level_room_objects(data), nil, sign_in_pc_ids: ids)
+    refute CM.proof_satisfiable?({ 'session' => 'pc1' }, ITEMS, CM.top_level_room_objects(data), nil)
+  end
+
+  test 'a session proof does not accept a PC nested in another sign-in PC or held by an NPC' do
+    data = { 'rooms' => { 'r' => { 'objects' => [
+      { 'id' => 'outer', 'lockType' => 'login', 'contents' => [{ 'id' => 'inner', 'lockType' => 'login' }] }
+    ], 'npcs' => [{ 'id' => 'n', 'itemsHeld' => [{ 'id' => 'held', 'lockType' => 'login' }] }] } } }
+    ids = CM.sign_in_pc_ids(data)
+    assert_equal %w[outer], ids
+    refute CM.proof_satisfiable?({ 'session' => 'inner' }, ITEMS, CM.top_level_room_objects(data), nil, sign_in_pc_ids: ids)
+    refute CM.proof_satisfiable?({ 'session' => 'held' }, ITEMS, CM.top_level_room_objects(data), nil, sign_in_pc_ids: ids)
+    assert CM.proof_satisfiable?({ 'session' => 'outer' }, ITEMS, CM.top_level_room_objects(data), nil, sign_in_pc_ids: ids)
+  end
+
+  test 'a plant on a jack nested in a container is satisfiable, as the server records it as a foothold' do
+    data = { 'rooms' => { 'r' => { 'objects' => [{ 'id' => 'rack', 'contents' => [JACK.dup] }] } } }
+    jacks = CM.reachable_jack_ids(data)
+    assert_equal %w[jack1], jacks
+    assert CM.proof_satisfiable?({ 'planted' => 'stick', 'on' => 'jack1' }, ITEMS, CM.top_level_room_objects(data), nil, jack_ids: jacks)
+    refute CM.proof_satisfiable?({ 'planted' => 'stick', 'on' => 'jack1' }, ITEMS, CM.top_level_room_objects(data), nil)
+  end
 end

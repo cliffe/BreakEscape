@@ -182,11 +182,14 @@ def check_network_model(json_data, scenario_dir = nil)
   cm = BreakEscape::CaptureModel
   plain_objects = all_objects.map { |e| e[:object] }
   plant_objects = cm.top_level_room_objects(json_data) # the server records a plant on these only
+  jack_ids = cm.reachable_jack_ids(json_data) # a jack plant is a foothold, found through contents
+  sign_in_pc_ids = cm.sign_in_pc_ids(json_data) # login_scope_of's rule, not top level only
   cm.each_capture_writer(json_data) do |capture, _kind, path, _owner|
     proof = capture['proof']
     next unless cm.proof_kind(proof) == 'planted'
 
     on = proof['on']
+    # A nested jack counts: the server records a jack plant as a foothold (find_jack walks contents).
     next if on && plain_objects.any? { |o| o['id'].to_s == on.to_s && nm.jack?(o) }
 
     item = capture_item_defs[proof['planted'].to_s]
@@ -244,7 +247,8 @@ def check_network_model(json_data, scenario_dir = nil)
     end
     served_writers = cm.served_capture_writers(json_data)
     proven = capture_writers_of_psk.any? do |cap, *_|
-      served_writers.any? { |c| c.equal?(cap) } && cm.proof_satisfiable?(cap['proof'], capture_item_defs, plant_objects, nil)
+      served_writers.any? { |c| c.equal?(cap) } && cm.proof_satisfiable?(cap['proof'], capture_item_defs, plant_objects, nil,
+                                                                      jack_ids: jack_ids, sign_in_pc_ids: sign_in_pc_ids)
     end
     unless readable.include?(psk) || proven
       # C3 (plan 9): a psk found only in alternative-set feed posts may never ship.

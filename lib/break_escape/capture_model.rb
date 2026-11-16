@@ -440,21 +440,29 @@ module BreakEscape
     # droppable item; a session proof needs a sign-in PC (lockType login). item_defs is
     # { itemId => definition }, objects the room object hashes. holder (an account holder NPC
     # or nil) is accepted so both validators call it alike; no kind reads it today. Pure.
-    def proof_satisfiable?(proof, item_defs, objects, _holder = nil)
+    #
+    # objects is the top-level room object list (top_level_room_objects): where a non-jack plant
+    # is recorded. The server resolves the other two kinds differently, so they take their own
+    # id lists, defaulting to what objects holds: jack_ids (reachable_jack_ids, a jack plant is
+    # a foothold on a jack found in nested contents) and sign_in_pc_ids (sign_in_pc_ids, the
+    # server's login_scope_of rule).
+    def proof_satisfiable?(proof, item_defs, objects, _holder = nil, jack_ids: nil, sign_in_pc_ids: nil)
       kind = proof_kind(proof)
       return false unless kind
 
       objects = Array(objects).select { |o| o.is_a?(Hash) }
+      jack_ids ||= objects.select { |o| o['networkJack'] == true }.map { |o| o['id'].to_s }
+      sign_in_pc_ids ||= objects.select { |o| o['lockType'] == 'login' }.map { |o| o['id'].to_s }
       case kind
       when 'planted'
         item = item_defs[proof['planted'].to_s]
         return false unless item
 
         on = proof['on']
-        return false if on && objects.none? { |o| o['id'].to_s == on.to_s }
+        return false if on && objects.none? { |o| o['id'].to_s == on.to_s } && !jack_ids.include?(on.to_s)
         # A jack plant is recorded only against the jack it names: with no `on` the server reads
         # plantedItems alone (capture_proof_holds?), and only a non-jack plant writes that.
-        return true if on && objects.any? { |o| o['id'].to_s == on.to_s && o['networkJack'] == true }
+        return true if on && jack_ids.include?(on.to_s)
 
         objects.any? do |o|
           present_string?(o['id']) && (on.nil? || o['id'].to_s == on.to_s) && object_takes_item?(o, item)
@@ -463,7 +471,7 @@ module BreakEscape
         item = item_defs[proof['dropped'].to_s]
         !item.nil? && item['droppable'] == true
       when 'session'
-        objects.any? { |o| o['id'].to_s == proof['session'].to_s && o['lockType'] == 'login' }
+        sign_in_pc_ids.include?(proof['session'].to_s)
       else
         false
       end
@@ -501,6 +509,11 @@ module BreakEscape
       first = {}
       reachable = {}
       each_capture_writer(data) do |capture, _kind, _path, owner|
+        # A holder-owned writer is skipped before reachable[id], unlike the server, which skips it
+        # for the authored secret only: an entry earned through one with a non-username address
+        # could still reach authored[id] set by another writer. Left as is: that needs a holder
+        # writer with an explicit non-username address on an id a non-holder writer also names,
+        # and the cost is a false warning only (E0 R4 t2).
         next if owner && holders.any? { |npc| npc.equal?(owner) }
 
         id = capture['targetId']
@@ -571,6 +584,44 @@ module BreakEscape
 
       rooms.values.flat_map { |room| room.is_a?(Hash) && room['objects'].is_a?(Array) ? room['objects'] : [] }
            .select { |o| o.is_a?(Hash) }
+    end
+
+    # The jacks a jack plant (a foothold, Game#find_jack via NetworkAccess#network_object_in) can
+    # name: networkJack objects anywhere under rooms.<id>.objects through contents, but not under
+    # a sign-in object and not on an NPC. Ids as strings. Unlike a plant, a nested jack counts.
+    def reachable_jack_ids(data)
+      ids = []
+      walk = lambda do |list|
+        Array(list).each do |obj|
+          next unless obj.is_a?(Hash)
+
+          ids << obj['id'].to_s if obj['networkJack'] == true
+          walk.call(obj['contents']) unless obj['lockType'] == 'login'
+        end
+      end
+      rooms = data.is_a?(Hash) ? data['rooms'] : nil
+      rooms.values.each { |room| walk.call(room['objects']) if room.is_a?(Hash) } if rooms.is_a?(Hash)
+      ids
+    end
+
+    # The sign-in PCs the server accepts a sign-in on (Game#find_login_pc via login_scope_of and
+    # locate_object_in): a lockType login object found by walking rooms.<id>.objects through
+    # contents, unless it sits inside another sign-in PC. A desk or cabinet around it does not
+    # matter; an NPC's itemsHeld is never searched. Ids as strings.
+    def sign_in_pc_ids(data)
+      ids = []
+      walk = lambda do |list, inside_pc|
+        Array(list).each do |obj|
+          next unless obj.is_a?(Hash)
+
+          login = obj['lockType'] == 'login'
+          ids << obj['id'].to_s if login && !inside_pc
+          walk.call(obj['contents'], inside_pc || login)
+        end
+      end
+      rooms = data.is_a?(Hash) ? data['rooms'] : nil
+      rooms.values.each { |room| walk.call(room['objects'], false) if room.is_a?(Hash) } if rooms.is_a?(Hash)
+      ids
     end
 
     # The authored landing-page definition (social.landingPages entry) for a page id, or nil.

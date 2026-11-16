@@ -147,6 +147,8 @@ def check_capture_log(json_data)
 
   # ---- Each proof: well formed, naming what exists ----
   plant_objects = cm.top_level_room_objects(json_data) # the server records a plant on these only
+  jack_ids = cm.reachable_jack_ids(json_data) # a jack plant is a foothold, found through contents
+  sign_in_pc_ids = cm.sign_in_pc_ids(json_data) # login_scope_of's rule, not top level only
   # Pass or fail comes from CaptureModel.proof_satisfiable? (the helper the network validator
   # shares, written to the server's capture_proof_holds? and its recorders); this lambda keeps
   # the per-reason messages and the extra warnings.
@@ -157,7 +159,7 @@ def check_capture_log(json_data)
                "or { \"session\": pc }, got #{proof.to_json}")
       next
     end
-    ok = cm.proof_satisfiable?(proof, item_defs, plant_objects, holder)
+    ok = cm.proof_satisfiable?(proof, item_defs, plant_objects, holder, jack_ids: jack_ids, sign_in_pc_ids: sign_in_pc_ids)
     case kind
     when 'planted'
       item_id = proof['planted'].to_s
@@ -168,6 +170,7 @@ def check_capture_log(json_data)
         err.call("#{where}: planted on \"#{on}\", which is no room object")
         next
       end
+      # A nested jack is valid: the server records a jack plant as a foothold (find_jack walks contents).
       jack = on && objects.any? { |e| e[:object]['id'].to_s == on.to_s && nm.jack?(e[:object]) }
       next if jack || item.nil?
 
