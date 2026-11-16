@@ -577,3 +577,20 @@ test('a headless object\'s click shows its observations and opens nothing', asyn
     assert.equal(alerts[0][0], 'A door controller with no screen or keyboard.');
     delete window.workstationState;
 });
+
+test('a from lockable opens the remote sign-in screen asking /login_accounts with from, headed by the source host (K4)', async () => {
+    setup();
+    const { fromLockable } = await imp('systems/unlock-system.js');
+    window.ApiClient.loginAccounts = async (pcId, opts = {}) => { calls.push(['loginAccounts', pcId, opts.foothold ?? null, opts.from ?? null]); return { loginAccounts: [{ username: 'lfox', displayName: 'Lena Fox' }], loginPicker: 'accounts', headless: false, host: 'HB-FIN-02' }; };
+    const l = fromLockable('lena_pc', 'ops_pc');
+    l.scenarioData.remote.fromHost = 'OPS-PC';
+    await openLoginSignIn(l);
+    const la = calls.filter(c => c[0] === 'loginAccounts');
+    assert.equal(la.length, 1);
+    assert.deepEqual(la[0], ['loginAccounts', 'lena_pc', null, 'ops_pc']);
+    const [type, params] = started[0];
+    assert.equal(type, 'password');
+    assert.equal(params.signIn.remote.fromPcId, 'ops_pc');
+    assert.equal(params.signIn.remote.footholdId ?? null, null);
+    assert.equal(params.showPostit, false, 'a sticky note is never shown remotely');
+});

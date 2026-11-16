@@ -1126,3 +1126,16 @@ test('a join publishes <apId>_planted as load() does: true at the first access p
     assert.equal(window.gameState.globalVariables.guest_ap_planted, live.guest_ap_planted);
     assert.equal(window.gameState.globalVariables.guest_ap2_planted, live.guest_ap2_planted);
 });
+
+test('openSession: a from session (no foothold) reopens through its source desktop, with a trip', async () => {
+    await reset({ planted: true });
+    withStarters();
+    const froms = [];
+    window.openFromDesktop = (pcId, fromPcId) => { froms.push([pcId, fromPcId]); return true; };
+    window.pcSessions = { has: () => true, get: (id) => ({ pcId: id, footholdId: null, fromPcId: 'lena_pc', host: 'OPS-PC' }) };
+    const trip = links.openSession('ops_pc', { returnTo: () => {} });
+    assert.deepEqual(froms, [['ops_pc', 'lena_pc']]);
+    assert.deepEqual(desktops, [], 'not the foothold route');
+    assert.ok(trip, 'a trip started');
+    delete window.openFromDesktop;
+});
