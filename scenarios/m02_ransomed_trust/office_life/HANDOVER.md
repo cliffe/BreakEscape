@@ -1,3 +1,12 @@
+# m02 office life: stage 5 closed after R3, handover 2026-11-16
+
+- R2 fixes are in (941f2764a): Ernesto's opener is 38 characters and voiced, the m2/m3 evidence and comments are corrected. R3 found 0/0/6; m1 to m4 are fixed (docs), m5 and m6 are not office life.
+- The exchange line-length check is now a WARNING. It becomes an error once AC0's build/lab-pentest-bubbles lands.
+- The full playthrough is complete: game 5801, verify-run 27 of 28 tasks, score 95, credits reached (`STAGE5_PLAYTHROUGH.md`, "Debrief and credits").
+- P6 (debrief not appearing) was a harness artefact, the ending warning overlay holding it; fixed in the playtest harness by 98b51890b.
+- P9 (Ghost's popup showing only "End of conversation") and the laptop pick-up overlay are already on main and have been handed to AC0. Do not reopen them as office life bugs. Kim's "boardroom code again?" option is by design.
+- Running-break live criterion accepted at three tries (`PLAN.md` section 10.2).
+
 # m02 office life: stage 5 R5 live checks done (2026-11-16)
 
 - m4 (5 of 5 PASS) and m5 (variant A 4 of 4, variant B 3 of 3 PASS) are in `STAGE5_LIVE_R5.md`, run on the lobby start by adjacent hops with access unlocked through `new-game.rb --unlock`. The variant B runs (corrected after R2) started a NEW break after Gary's close, because the script waited for 5 paper lines and timed out at 50 s; they did not test the running-break case, which is rerun in `STAGE5_LIVE_R5.md`. No fault found.

@@ -72,3 +72,16 @@ Fix (engine owner): for a takeable workstation, add it to the inventory and show
 - The harness change 98b51890b: reads sound. The overlay is reported in `blockingUi`, and `mg close`/`pressKey Escape` refuse while `#ending-check-overlay` exists. Covered by `test/js/playtest-ending-overlay-guard.test.mjs`. Live proof used a stand-in element, so the real overlay is not exercised by the guard; low risk.
 - `network-links.js` (`LEAVE_LABEL`) came from the main merge; not office life.
 - Validator run on this round's tip: m02 0 errors / 33 warnings; `lab_physical_pentest` 0 / 13; `test_needs_sims` 0 / 36; `test_exercise_station` 0 / 0; `m10_full_disclosure` 0 / 64.
+
+R3: 0/0/6
+
+## R3 Outcomes
+
+| Item | Outcome |
+|---|---|
+| m1 | Fixed (R2 outcome row says warning). |
+| m2 | Fixed. Pointer added at the head of `STAGE5_PLAYTHROUGH.md`. |
+| m3 | Fixed. New top entry in `HANDOVER.md`. |
+| m4 | Fixed. `PLAN.md` section 10.2 accepts three tries (5593, 5850, 5881, all consistent). The criterion sits in the section heading, not at line 400. |
+| m5 | Already on main, handed to AC0. |
+| m6 | Already on main, handed to AC0. |

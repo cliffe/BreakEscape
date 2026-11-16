@@ -1,5 +1,7 @@
 # m02 stage 5 natural playthrough: stopped part-way (2026-11-16)
 
+Final result: completed in game 5801, verify-run 27 of 28 tasks, score 95; see the "Debrief and credits" section at the end. P6 was a harness mishap, not a game fault.
+
 Branch `build/ol-m02`, tip 931044ef4. Keyless server on port 3090 (own pidfile, stopped at the end), headless browser, `setFPS(20)` with fixed steps on (`fixedStep` read true). Game 5801, fresh from `tools/playtest/new-game.rb` with no `--unlock` and VM flags seeded (`--flags`, 4 valid). Session log: `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/b8fb6615-769e-4015-b3ae-9cb0a729b510/scratchpad/m02-play/session-5801.jsonl` (313 commands). Machine load average was about 45, so timings are slow, not representative.
 
 ## Result

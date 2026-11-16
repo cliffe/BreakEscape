@@ -384,7 +384,7 @@ Decided by the user (2026-11-14): Gary option (a), no line changes; Ernesto and 
 
 Every step of `TESTING_WALKTHROUGH.md` with office life on, VM flags seeded (`new-game.rb` FLAGS_XML to `session-start.sh --flags`), on a keyless server from this worktree on ports 3090 to 3092. In particular step 5 (Bernie), 10 (Night Handover: now two staff), 11 (Kim), 12 (IT door, key and picks; nobody reacts), the Gary conversation on every route in `TESTING_WALKTHROUGH.md` step 15 (rapport, transaction, reluctant, blame, leverage, walk away then return, and knock-out; on walk away then return, tested with two returns before the card changes hands, only the close in which it changes hands prints), the cabinet catch (`on_cabinet_picked`), Val's `cover_challenge` on the first corridor entry after the burn, the Boardroom ambush and the close. Nothing mapped to NPC position fires early or twice. The aim chain stays at 4 hops.
 
-### 10.2 Office-life checks, live (stage 4, then stage 5; five tries each at walking pace unless stated)
+### 10.2 Office-life checks, live (stage 4, then stage 5; five tries each at walking pace unless stated; the running-break case is accepted at three tries (5593, 5850, 5881, all consistent), the rule being one engine path with its own unit tests)
 
 Gary:
 
