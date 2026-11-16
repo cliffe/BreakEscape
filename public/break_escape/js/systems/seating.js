@@ -1874,8 +1874,9 @@ export function sweepDoorwayChairs(now = Date.now()) {
         const from = [Math.round(f.x), Math.round(f.y)];
         // R2 m3: a glide that ends blocked inside the gap leaves the foot where it was; the next
         // sweep would pick the same spot again. Three tries from one foot, then give up (one log)
-        // until the chair moves.
-        const sweepKey = from.join(',');
+        // until the chair moves. R3 m1: the key is a coarse 4 px cell, so a glide that ends blocked but
+        // is nudged a pixel by physics still counts as the same try.
+        const sweepKey = Math.round(f.x / 4) + ',' + Math.round(f.y / 4);
         const sw = chair._doorSweep?.key === sweepKey ? chair._doorSweep : (chair._doorSweep = { key: sweepKey, tries: 0, gaveUp: false });
         if (!spot.to) {
             const key = from.join(',');

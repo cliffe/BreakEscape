@@ -1468,7 +1468,7 @@ function updatePlayerMouseMovement() {
     // once; blocked on one axis while sliding along a wall still gains ground, so that walk goes on.
     // After the replan a contact stops it as before.
     if (!playerFollowingPath && !holdWalkActive && directWalk.armed) {
-        const verdict = directWalkStall(directWalk, { blocked: player.body.blocked.none === false, dist: Math.sqrt(distanceSq), now: gameRef?.loop?.time ?? performance.now() });
+        const verdict = directWalkStall(directWalk, { blocked: player.body.blocked.none === false, dist: Math.sqrt(distanceSq), now: gameRef?.loop?.time ?? performance.now() }, { speed: MOVEMENT_SPEED });
         if (verdict === 'wait') return;
         if (verdict === 'replan') {
             const goal = targetPoint;

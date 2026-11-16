@@ -1448,6 +1448,21 @@ test('sweepDoorwayChairs (R2 m3): a glide that never gets out is tried three tim
     } finally { rig.restore(); }
 });
 
+test('sweepDoorwayChairs (R3 m1): a stuck glide that shifts the foot 1 px each time still gives up after three tries, logging once', () => {
+    const chair = doorChair(8, 79);
+    const rig = doorSweepRig([chair]);
+    try {
+        let n = 0;
+        for (let t = 1000; t <= 8000; t += 1000) {
+            seating.sweepDoorwayChairs(t);
+            for (let i = 0; i < 12; i++) seating.updateGlides();
+            chair.x = 8 + (++n % 2); // physics nudges the foot 1 px after every failed glide (8, 9, 8, 9 ...)
+        }
+        assert.equal(rig.log.filter(l => l.ev === 'chair_out_of_doorway').length, 3, 'three tries, not one a second');
+        assert.equal(rig.log.filter(l => l.ev === 'chair_in_doorway_no_spot').length, 1, 'one give-up line');
+    } finally { rig.restore(); }
+});
+
 test('sweepDoorwayChairs: a chair sat on, fetched, mounted, gliding or moving stays; once a second at most', () => {
     const make = () => doorChair(8, 79);
     const cases = {

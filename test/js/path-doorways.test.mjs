@@ -198,3 +198,11 @@ test('player.js: only the straight walk arms the stall watch; the replan skips l
     const stop = src.indexOf("if (!playerFollowingPath && !holdWalkActive && player.body.blocked.none === false)");
     assert.ok(stall > 0 && stall < stop, 'the watch runs before the contact stop');
 });
+
+test('player.js (R3 m2): the stall watch gets the walk speed from MOVEMENT_SPEED, not the helper default', () => {
+    const src = readFileSync(join(js, 'core/player.js'), 'utf8');
+    assert.match(src, /directWalkStall\(directWalk, \{[^}]*\}, \{ speed: MOVEMENT_SPEED \}\)/);
+    const consts = readFileSync(join(js, 'utils/constants.js'), 'utf8');
+    assert.equal(Number(consts.match(/export const MOVEMENT_SPEED\s*=\s*(\d+)/)?.[1]), DIRECT_WALK_SPEED,
+        'the helper default (used by tests only) matches MOVEMENT_SPEED');
+});

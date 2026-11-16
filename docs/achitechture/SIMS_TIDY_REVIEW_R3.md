@@ -106,3 +106,18 @@ a library that may no longer read costs for avoided neighbours, silently skippin
 above). Fix: add a node test that reads show.html.erb, extracts the `easystarjs@x.y.z` version, and asserts
 it equals the version in the vendored filename, with a message to re-vendor and re-run the probe tests on a
 bump. Optionally add a comment beside `trip` (npc-pathfinding.js:594) naming that test.
+
+## Outcomes
+
+All three minors fixed, plus the extra margin.
+
+- **m1 fixed.** seating.js keys the doorway sweep's give-up on a 4 px cell (`Math.round(x / 4)`, `Math.round(y / 4)`),
+  not the exact rounded foot. New seating test: the foot is nudged 1 px after every failed glide (8, 9, 8, 9) and the
+  sweep still stops at three tries with one give-up line. It fails on the old code.
+- **m2 fixed.** player.js passes `{ speed: MOVEMENT_SPEED }` to `directWalkStall`. The helper keeps its default of 150
+  for the node tests, which cannot import constants.js. New path-doorways test: the call site passes the constant, and
+  the default equals the value in constants.js. It fails on the old code.
+- **m3 fixed.** New `test/js/easystar-version.test.mjs` reads the EasyStar version from
+  app/views/break_escape/games/show.html.erb and asserts that it matches the vendored file name under test/js/vendor.
+  The message says to re-vendor and re-run the probe tests. Checked by changing the URL to 0.4.5 (fails), then reverting.
+- **Extra margin.** The Deadline Memo in scenarios/test_needs_sims/scenario.json.erb is marked `wallMounted: true`.
