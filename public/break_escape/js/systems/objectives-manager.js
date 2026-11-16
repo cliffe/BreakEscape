@@ -817,7 +817,7 @@ export class ObjectivesManager {
           // `online` or a manager sync, so the queue cannot spin).
           this.enqueueEnterRoom(taskId);
           if (window.gameAlert) {
-            window.gameAlert('Could not save that objective yet. It will retry -- keep playing.',
+            window.gameAlert('Could not save that objective yet. It will retry. Keep playing.',
                              'warning', 'Sync Pending');
           }
         } else {
@@ -866,7 +866,7 @@ export class ObjectivesManager {
         this.enqueueEnterRoom(taskId);
       }
       if (window.gameAlert) {
-        window.gameAlert('Could not save that objective. It will retry -- keep playing.',
+        window.gameAlert('Could not save that objective. It will retry. Keep playing.',
                          'error', 'Sync Error');
       }
       return;

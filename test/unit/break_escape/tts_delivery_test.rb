@@ -5,6 +5,7 @@ require 'json'
 require 'base64'
 require 'minitest/mock'
 require 'open3'
+require 'net/http'
 
 module BreakEscape
   # Per-line delivery notes (`#delivery: quietly, almost to herself`): the note
