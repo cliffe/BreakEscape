@@ -185,3 +185,30 @@ them.
 - `bin/test-js` full: still running when this file was committed; not recorded here (no code changed since b4cbf5961, where the R3 Outcomes report 687 passed).
 
 R4: 0/1/3
+
+## Outcomes
+
+Fixes on `build/ol-carry-c`; main (e0f05538e) merged with `git merge --no-edit main`, no conflicts.
+
+- **M1: fixed.** Moved to row 7 on clear floor, out of door columns: test-rfid Success Note (3,7) and CEO
+  Keycard (7,7); multiprotocol desfire_room Success note (2,7), Executive Card (4,7), Master Override Card
+  (6,7). CEO Desk moved to (4,5) (y 160..221 px, inside the floor and clear of the Tiled `desk-ceo2`).
+  Executive Desk moved from (4,4) to (4,6.5): at (4,4) it filled the aisle between the two desk banks; at
+  y 6.5 it sits in the open band below them (y 208..269, banks end at 205). It overlaps the 32 px item at
+  x 99..131 by about 3 px on its left edge (Tiled geometry, not rendered).
+- **M1 render check** (keyless server on :3092, games 5914 test-rfid and 5913 test-rfid-multiprotocol,
+  `--unlock` per room): all five moved objects are visible on open floor in the shots
+  (`g5914-test_secure.png`, `g5913-desfire_room.png`), outlines non-empty, nothing overlapping them.
+  The other multiprotocol objects were unchanged and still render. `test_table_items` has no Mission
+  row, so it was checked from the Tiled maps only.
+- **M1 test extension.** `scenario_object_tile_bounds_test.rb` has a second test: an object whose tile
+  row is beyond `height - 2` in a room with a `south` connection fails if the scenario is a `test*` one
+  (except the two Hacktivity fixtures, which are report-only), and is printed without failing for real
+  missions. Real-mission hits: only `lab_physical_pentest` hall, the fire extinguisher and the propped
+  door entry at y 5.3 in a 6-row hall (the deliberate door prop). No object was moved.
+- **m1: fixed.** `assert_nil` when the expected value is nil (`npc_carried_items_test.rb`).
+- **m2: fixed.** The test now builds its room lookup from the `tilemapTiledJSON` key and file pairs in
+  `game.js` and matches the room type exactly, as the runtime does.
+- **Suites on the merged tip:** `bin/test-js` 687 files passed, 0 failed; full Rails suite 2935 runs, 48077 assertions, 0 failures, 0 errors, 3 skips; rubocop on the two changed Ruby files clean.
+- **m3: fixed.** The test comment now says rooms.js reads a table item's top-level `x`/`y` and ignores
+  `position` inside `tableItems`. The dead `position` blocks in `test_table_items` are left as they were.
