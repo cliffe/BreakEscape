@@ -15,7 +15,7 @@
 
 import { TILE_SIZE, PATHFINDING_STEP } from '../utils/constants.js';
 import { addDoorway } from './path-doorways.js';
-import { AVOID_CELL_COST, collectAvoidRects, avoidCells, crossesAvoidRect, roomFloorRect, onFloor, floorRingCells } from './path-avoid.js';
+import { AVOID_CELL_COST, collectAvoidRects, avoidCells, crossesAvoidRect, roomFloorRect, onFloor, floorRingCells, seatedAvoidCells, seatedBodyCellKeys } from './path-avoid.js';
 
 const PATROL_EDGE_OFFSET = 2; // Distance from room edge (2 tiles)
 
@@ -103,6 +103,12 @@ export function applyNSDoorCornerBlocks(grid, bounds, doorWorldX, doorWorldY) {
 function gateShowsOpen(body) {
     const props = body?.gameObject?.doorProperties;
     return !!props && !!props.gateKey && props.open === true;
+}
+
+/** Seated chairs (seatedBy, held still): their bodies, which a seated NPC's body overlaps. */
+function seatedChairBodies() {
+    const chairs = (typeof window !== 'undefined' && Array.isArray(window.chairs)) ? window.chairs : [];
+    return chairs.filter(c => c && !c.destroyed && c.seatedBy && c.body?.enable && c.body.immovable).map(c => c.body);
 }
 
 function isDebug() {
@@ -315,7 +321,7 @@ export class NPCPathfindingManager {
      *
      * @param {{ exclude?: Iterable<object> }} [opts] game objects whose bodies are left out
      */
-    buildWorldGrid({ exclude = null } = {}) {
+    buildWorldGrid({ exclude = null, skipSeated = false } = {}) {
         const scene = this.scene;
         if (!scene?.physics?.world) return null;
 
@@ -334,7 +340,13 @@ export class NPCPathfindingManager {
 
         const grid = Array.from({ length: rows }, () => new Array(cols).fill(0));
         const skip = exclude ? new Set(exclude) : null;
-        const left = body => (!!skip && !!body.gameObject && skip.has(body.gameObject)) || gateShowsOpen(body);
+        // skipSeated (the live grid, sims tidy item 1): seated chairs and the NPCs on them stay out,
+        // as they move once the NPC stands; findWorldPath avoids them per search while seated.
+        const seated = skipSeated ? seatedChairBodies() : [];
+        const onSeat = b => seated.some(c => c === b || (b.gameObject?.npcId
+            && b.left < c.right && b.right > c.left && b.top < c.bottom && b.bottom > c.top));
+        const left = body => (!!skip && !!body.gameObject && skip.has(body.gameObject)) || gateShowsOpen(body)
+            || (seated.length > 0 && body.immovable && onSeat(body));
 
         // Mark every grid cell that substantially overlaps an immovable physics body.
         // Subtracting 1 before flooring the right/bottom edge prevents a body whose
@@ -386,7 +398,7 @@ export class NPCPathfindingManager {
      * Called automatically at the end of initializeRoomPathfinding().
      */
     rebuildWorldGrid() {
-        const built = this.buildWorldGrid();
+        const built = this.buildWorldGrid({ skipSeated: true });
         if (!built) return;
         const { grid, bounds } = built;
 
@@ -583,16 +595,58 @@ export class NPCPathfindingManager {
         // rings are removed in the finally straight after it (never in the callback, which runs a
         // tick later in async mode), cell by cell so the player's NPC-avoid set is kept.
         const ringed = opts?.avoidRooms?.length ? this._avoidRoomRings(opts.avoidRooms, startX, startY) : null;
+        // Seated chairs are out of the grid (rebuildWorldGrid), so every search avoids them while
+        // seated. A search that then finds nothing runs again without them (opts.ignoreSeated), so
+        // no home or seat becomes unreachable; in sync mode the callback runs inside calculate(),
+        // so that retry waits until calculate() has returned. The seated cells are blocked with
+        // a directional condition that allows no direction, so EasyStar reads it (the length
+        // below) only when the search reaches a cell next to one: the rerun runs only when the
+        // failed search touched a seated cell (sims tidy R1 m2). The condition goes on the chair
+        // body cells only (what a collider must never clip); the padding is an avoid point,
+        // which EasyStar's no-corner-cutting test ignores, so a diagonal step past the padding
+        // still works as it did before the conditions (R2 m2). opts.keepSeated: chair bodies
+        // the walk may end in (the seat being walked to).
+        const seatCells = opts?.ignoreSeated ? [] : seatedAvoidCells(seatedChairBodies(), this.worldGridBounds,
+            this.worldGrid, [{ x: startX, y: startY }, { x: endX, y: endY }], { keep: opts?.keepSeated || [] });
+        const probe = { touched: false };
+        let padCosted = false;
+        const byCondition = seatCells.length > 0 && typeof this.worldPathfinder.setDirectionalCondition === 'function';
+        if (byCondition) {
+            const none = { get length() { probe.touched = true; return 0; } };
+            // A padding avoid point is never entered, so EasyStar never reads anything off it; its
+            // extra cost is read for every neighbour a search expands (1 * cost), avoided or not,
+            // so a cost whose valueOf flags the probe tells "the search got next to the padding".
+            // Without that an untouched failure beside blocking padding would skip the rerun.
+            const trip = this.worldPathfinder.setAdditionalPointCost ? { valueOf() { probe.touched = true; return 1; } } : null;
+            if (!trip) probe.touched = true;
+            for (const { cx, cy, pad } of seatCells) {
+                if (pad) {
+                    this.worldPathfinder.avoidAdditionalPoint(cx, cy);
+                    if (trip) { this.worldPathfinder.setAdditionalPointCost(cx, cy, trip); padCosted = true; }
+                } else this.worldPathfinder.setDirectionalCondition(cx, cy, none);
+            }
+        } else {
+            probe.touched = true; // no way to tell: always rerun
+            for (const { cx, cy } of seatCells) this.worldPathfinder.avoidAdditionalPoint(cx, cy);
+        }
+        let retry = false;
+        const again = () => this.findWorldPath(startX, startY, endX, endY, callback, avoidNPCs, { ...(opts || {}), ignoreSeated: true });
+        this._calcDepth = (this._calcDepth || 0) + 1;
         try {
             this.worldPathfinder.findPath(sx, sy, toCX(endX), toCY(endY), (tilePath) => {
                 if (avoidNPCs || avoidDyn) this.worldPathfinder.stopAvoidingAllAdditionalPoints();
+                if (!(tilePath?.length > 0) && seatCells.length && probe.touched) { if (this._calcDepth > 0) retry = true; else again(); return; }
                 callback(tilePath?.length > 0 ? tilePath.map(p => toWorld(p.x, p.y)) : null);
             });
             this.worldPathfinder.calculate();
         } finally {
+            this._calcDepth--;
             if (ringed) for (const { cx, cy } of ringed) this.worldPathfinder.stopAvoidingAdditionalPoint(cx, cy);
-            if (costed) this.worldPathfinder.removeAllAdditionalPointCosts();
+            if (byCondition) this.worldPathfinder.removeAllDirectionalConditions();
+            for (const { cx, cy, pad } of seatCells) if (pad || !byCondition) this.worldPathfinder.stopAvoidingAdditionalPoint(cx, cy);
+            if (costed || padCosted) this.worldPathfinder.removeAllAdditionalPointCosts();
         }
+        if (retry) again();
     }
 
     /**
@@ -675,15 +729,19 @@ export class NPCPathfindingManager {
      * Find the nearest walkable cell in the world grid to a world position.
      * Returns the Euclidean-closest walkable cell, or null if none within maxRadius.
      */
-    findNearestWalkableWorldCell(worldX, worldY, maxRadius = 8) {
+    findNearestWalkableWorldCell(worldX, worldY, maxRadius = 8, { avoidSeated = false } = {}) {
         if (!this.worldGrid || !this.worldGridBounds) return null;
         const { minX, minY, cols, rows, step } = this.worldGridBounds;
 
         const centerCX = Math.floor((worldX - minX) / step);
         const centerCY = Math.floor((worldY - minY) / step);
+        // avoidSeated: the live grid leaves seated chairs out, so a goal snap marks their cells
+        // blocked itself and moves a goal off someone's seat (sims tidy R1 m3)
+        const seated = avoidSeated ? seatedBodyCellKeys(seatedChairBodies(), this.worldGridBounds) : null;
+        const open = (cx, cy) => this.worldGrid[cy][cx] === 0 && !(seated && seated.has(`${cx},${cy}`));
 
         if (centerCY >= 0 && centerCY < rows && centerCX >= 0 && centerCX < cols &&
-            this.worldGrid[centerCY][centerCX] === 0) {
+            open(centerCX, centerCY)) {
             return { x: minX + centerCX * step + step / 2, y: minY + centerCY * step + step / 2 };
         }
 
@@ -694,7 +752,7 @@ export class NPCPathfindingManager {
                     if (Math.abs(dx) !== r && Math.abs(dy) !== r) continue;
                     const cx = centerCX + dx, cy = centerCY + dy;
                     if (cy < 0 || cy >= rows || cx < 0 || cx >= cols) continue;
-                    if (this.worldGrid[cy][cx] !== 0) continue;
+                    if (!open(cx, cy)) continue;
                     const wx = minX + cx * step + step / 2;
                     const wy = minY + cy * step + step / 2;
                     const distSq = (wx - worldX) ** 2 + (wy - worldY) ** 2;

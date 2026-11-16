@@ -1200,3 +1200,464 @@ test('M2 and m6: retry caps per kind and a recent fetch claims the chair for its
     assert.equal(seating.chairClaimedByOther(chair, 'amara', 10000 + seating.FETCH_CLAIM_MS), false, 'the claim lapses');
     assert.equal(seating.chairClaimedByOther({}, 'amara', 0), false, 'never fetched');
 });
+
+// SIMS_TIDY_LOG.md item 3: Tom's straight seat walk caught a desk corner with his body edge.
+// Desk office_desk1_91: body x 40..98, y 195..205; Tom at (116,204), his work spot (96,192).
+test('seatWalkClear: an 18 x 10 walking box along the line, the last 8 px to the spot not checked', () => {
+    const desk = { l: 40, r: 98, t: 195, b: 205 };
+    const boxClear = (x, y) => !(x + 9 > desk.l && x - 9 < desk.r && y + 5 > desk.t && y - 5 < desk.b);
+    assert.equal(seating.seatWalkClear(boxClear, { x: 116, y: 204 }, { x: 96, y: 192 }), false, 'the body edge meets the desk corner');
+    assert.equal(seating.seatWalkClear(boxClear, { x: 96, y: 170 }, { x: 96, y: 192 }), true, 'from above, the stop short of the spot is within the give-up distance');
+    assert.equal(seating.seatWalkClear(() => true, { x: 0, y: 0 }, { x: 0, y: 0 }), true, 'no distance');
+    let calls = 0;
+    seating.seatWalkClear(() => { calls++; return true; }, { x: 0, y: 0 }, { x: 40, y: 0 });
+    assert.equal(calls, 7, 'every 4 px, stopping 8 px short of the spot (4..28)');
+});
+
+test('seatWalkWaypoints: drops points at the start and the spot, collapses straight runs, ends at the spot', () => {
+    const from = { x: 116, y: 204 }, ref = { x: 96, y: 192 };
+    const path = [{ x: 116, y: 204 }, { x: 116, y: 196 }, { x: 116, y: 188 }, { x: 116, y: 180 }, { x: 108, y: 180 },
+                  { x: 100, y: 180 }, { x: 96, y: 184 }, { x: 96, y: 190 }];
+    assert.deepEqual(seating.seatWalkWaypoints(path, from, ref),
+        [{ x: 116, y: 180 }, { x: 100, y: 180 }, { x: 96, y: 184 }, { x: 96, y: 192 }]);
+    assert.deepEqual(seating.seatWalkWaypoints([], from, ref), [{ x: 96, y: 192 }], 'no path: straight to the spot');
+    assert.deepEqual(seating.seatWalkWaypoints([{ x: 96, y: 200 }, { x: 96, y: 196 }], { x: 96, y: 210 }, ref), [{ x: 96, y: 192 }],
+        'points in line with the spot collapse into one leg');
+    assert.deepEqual(seating.seatWalkWaypoints([{ x: 100, y: 204 }, { x: 116, y: 204 }], from, { x: 140, y: 204 }),
+        [{ x: 100, y: 204 }, { x: 140, y: 204 }], 'a back-and-forth point is kept (not the same direction)');
+});
+
+test('a post seat waits for a resolved home before its first try (SIMS_TIDY_LOG.md item 3)', async () => {
+    const { readFileSync } = await import('node:fs');
+    const src = readFileSync(new URL('../../public/break_escape/js/systems/seating.js', import.meta.url), 'utf8');
+    const wait = 'if (postHomePending(stop, ns?.home, now, behavior._postWaitSince)) return false;';
+    assert.ok(src.includes(wait));
+    assert.ok(src.indexOf(wait) < src.indexOf('behavior._seatStopKey = stop.key'),
+        'the wait comes before the stop is marked tried, so the first try is not spent');
+    assert.match(src, /m\.route = planSeatWalk\(behavior, chair, f, opts\.ref\)/);
+});
+
+test('postHomePending (R1 M2): null always waits; a provisional home waits 5 s from the first seat check', () => {
+    const post = { post: true, key: 'at:desk' };
+    const prov = { x: 96, y: 192, provisional: true };
+    assert.equal(seating.postHomePending(post, null, 0, 0), true, 'home null before the first needs tick: wait');
+    assert.equal(seating.postHomePending(post, undefined, 1000, 0), true, 'no home yet: wait');
+    assert.equal(seating.postHomePending(post, null, 125000, 120000), true, 'null waits however long');
+    assert.equal(seating.postHomePending(post, prov, 4999, 0), true, 'provisional from clock 0: wait');
+    assert.equal(seating.postHomePending(post, prov, 5000, 0), false, 'wait over');
+    assert.equal(seating.postHomePending(post, prov, 120000, 120000), true, 'a room loaded late: first seen at 120000, waits');
+    assert.equal(seating.postHomePending(post, prov, 124999, 120000), true);
+    assert.equal(seating.postHomePending(post, prov, 125000, 120000), false, 'five seconds after the first check');
+    assert.equal(seating.postHomePending(post, { x: 92, y: 164 }, 0, 0), false, 'resolved home: no wait');
+    assert.equal(seating.postHomePending({ post: false, key: 'at:x' }, null, 0, 0), false, 'not the post: no wait');
+    assert.equal(seating.postHomePending(null, null, 0), false, 'no stop');
+});
+
+test('a late-loaded room\'s post NPC waits for its home: timed from its first seat check, not needs clock 0 (R1 M2)', () => {
+    const rig = labSeatRig(235);
+    try {
+        const ns = window.npcNeedsSystem.states.get('pierce');
+        const home = ns.home;
+        ns.home = null;
+        window.npcNeedsSystem.clockMs = 120000;
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), false, 'home null at 120000: waits');
+        assert.equal(rig.behavior._seatMove ?? null, null);
+        ns.home = { ...home, provisional: true };
+        window.npcNeedsSystem.clockMs = 121000;
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), false, 'provisional, 1 s after the first check: waits');
+        window.npcNeedsSystem.clockMs = 124999;
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), false, 'still waiting');
+        assert.equal(rig.behavior._seatMove ?? null, null);
+        window.npcNeedsSystem.clockMs = 125000;
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), true, 'five seconds on: the first try walks onto the seat');
+    } finally { rig.restore(); }
+});
+
+test('a resolved home seats at once, and the wait start is per stop', () => {
+    const rig = labSeatRig(235);
+    try {
+        window.npcNeedsSystem.clockMs = 120000;
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), true, 'resolved: no wait');
+        assert.equal(rig.behavior._postWaitSince, 120000);
+    } finally { rig.restore(); }
+});
+
+test('doorGapRect: side and front doors give their gaps', () => {
+    assert.deepEqual(seating.doorGapRect({ direction: 'west', worldX: 0, worldY: 80 }), { x0: -32, x1: 32, y0: 64, y1: 96, side: true });
+    assert.deepEqual(seating.doorGapRect({ direction: 'north', worldX: 160, worldY: 0 }), { x0: 144, x1: 176, y0: -32, y1: 32, side: false });
+    assert.equal(seating.doorGapRect({ direction: 'east' }), null, 'no position');
+});
+
+test('doorGapExit: a chair foot in a door gap goes out to its own side, clear of the mouth', () => {
+    const side = seating.doorGapRect({ direction: 'west', worldX: 0, worldY: 80 });
+    // Sanjay's reserved chair in tour 5658: foot (13,79), office side of the kitchen doorway
+    assert.deepEqual(seating.doorGapExit({ x: 13, y: 79 }, [side], { w: 11, h: 6 }), { x: 67, y: 79 });
+    assert.deepEqual(seating.doorGapExit({ x: -5, y: 85 }, [side], { w: 11, h: 6 }), { x: -67, y: 85 }, 'kitchen side');
+    assert.equal(seating.doorGapExit({ x: 92, y: 129 }, [side]), null, 'at its desk: stays');
+    assert.equal(seating.doorGapExit({ x: 13, y: 100 }, [side]), null, 'below the gap: stays');
+    const front = seating.doorGapRect({ direction: 'south', worldX: 160, worldY: 320 });
+    assert.deepEqual(seating.doorGapExit({ x: 158, y: 310 }, [null, front], { w: 11, h: 6 }), { x: 158, y: 258 }, 'front door: out north');
+});
+
+// Doorway chairs (sims tidy R1 M1 and m1). The kitchen doorway in test_needs_sims as two door sprites,
+// one per room, 32 px apart: the merged gap is centred on the door line at x 0.
+const KITCHEN_DOORS = [
+    { roomId: 'office', connectedRoom: 'kitchen', direction: 'west', worldX: 16, worldY: 80 },
+    { roomId: 'kitchen', connectedRoom: 'office', direction: 'east', worldX: -16, worldY: 80 }
+];
+
+test('doorGapRects (R1 m1): both sprites of one doorway merge into one gap centred between them', () => {
+    const rects = seating.doorGapRects(KITCHEN_DOORS);
+    assert.deepEqual(rects, [{ x0: -32, x1: 32, y0: 64, y1: 96, side: true }]);
+    // The review's case: foot (8,79), office side of the line at 0; per-sprite rects sent it west
+    assert.deepEqual(seating.doorGapExit({ x: 8, y: 79 }, rects, { w: 11, h: 6 }), { x: 67, y: 79 }, 'exits east, into the office');
+    assert.equal(seating.doorGapExit({ x: 8, y: 79 }, KITCHEN_DOORS.map(seating.doorGapRect), { w: 11, h: 6 }).x < 0, true,
+        'unmerged, the office sprite\'s rect (mid 16) sends it west: the bug');
+    assert.equal(seating.doorGapRects([...KITCHEN_DOORS, { roomId: 'office', connectedRoom: 'hall', direction: 'west', worldX: 16, worldY: 112 }]).length, 2,
+        'another room pair is its own gap');
+    assert.equal(seating.doorGapRects([KITCHEN_DOORS[0], { ...KITCHEN_DOORS[1], worldY: 160 }]).length, 2, 'same pair, another line: not merged');
+    assert.equal(seating.doorGapRects([KITCHEN_DOORS[0], { ...KITCHEN_DOORS[1], worldX: -80 }]).length, 2, 'more than 64 px apart: not merged');
+    const front = seating.doorGapRects([{ roomId: 'a', connectedRoom: 'b', direction: 'north', worldX: 160, worldY: 16 },
+        { roomId: 'b', connectedRoom: 'a', direction: 'south', worldX: 160, worldY: -16 }]);
+    assert.deepEqual(front, [{ x0: 144, x1: 176, y0: -32, y1: 32, side: false }], 'a front doorway merges along y');
+    assert.deepEqual(seating.doorGapRects([null, { direction: 'west' }]), [], 'no position: no gap');
+});
+
+test('doorwayChairCandidates: a tile beyond straight out and a tile sideways each way, then a tile sideways; near side first; straight out itself is not offered', () => {
+    const r = seating.doorGapRects(KITCHEN_DOORS)[0];
+    assert.deepEqual(seating.doorwayChairCandidates({ x: 8, y: 79 }, r, { w: 11, h: 6 }),
+        [{ x: 99, y: 47 }, { x: 99, y: 111 }, { x: 67, y: 47 }, { x: 67, y: 111 }]);
+    assert.deepEqual(seating.doorwayChairCandidates({ x: -8, y: 90 }, r, { w: 11, h: 6 }).slice(0, 2),
+        [{ x: -99, y: 122 }, { x: -99, y: 58 }], 'kitchen side, lower half: down first');
+    assert.deepEqual(seating.doorwayChairCandidates({ x: 100, y: 79 }, r), [], 'not in the gap');
+});
+
+test('doorwayChairSpot: refuses lane and blocked spots, takes the first clear one, { to: null } with none', () => {
+    const rects = seating.doorGapRects(KITCHEN_DOORS);
+    const half = { w: 11, h: 6 };
+    const tried = [];
+    const all = seating.doorwayChairSpot({ x: 8, y: 79 }, rects, half, (x, y) => { tried.push([x, y]); return true; });
+    assert.deepEqual(all, { to: { x: 99, y: 47 }, index: 0 }, 'the first candidate, a tile beyond straight out and a tile up');
+    assert.deepEqual(tried, [[99, 47]], 'the lane is checked before the box test');
+    assert.deepEqual(seating.doorwayChairSpot({ x: 8, y: 79 }, rects, half, (x, y) => y > 100), { to: { x: 99, y: 111 }, index: 1 });
+    assert.deepEqual(seating.doorwayChairSpot({ x: 8, y: 79 }, rects, half, () => false), { to: null }, 'nothing clear');
+    assert.equal(seating.doorwayChairSpot({ x: 120, y: 79 }, rects, half, () => true), null, 'not in a gap');
+    // A second doorway's lane counts too
+    const two = [...rects, ...seating.doorGapRects([{ roomId: 'office', connectedRoom: 'hall', direction: 'south', worldX: 96, worldY: 128 }])];
+    assert.deepEqual(seating.doorwayChairSpot({ x: 8, y: 79 }, two, half, () => true), { to: { x: 67, y: 47 }, index: 2 },
+        'the hall lane (x 80..112, y 48..208) takes (99,47) and (99,111): box x 88..110 overlaps it');
+});
+
+test('doorwayChairSpot: the straight-out point would always be in its own lane (why it is not a candidate)', () => {
+    // Any foot inside a gap: the chair box at foot.y overlaps the gap's band, and straight out
+    // (half gap + half chair + DOOR_CLEAR_PX) stays within the DOOR_LANE_PX lane, so the lane rule refuses it.
+    const half = { w: 11, h: 6 };
+    for (const door of [...KITCHEN_DOORS, { roomId: 'office', connectedRoom: 'hall', direction: 'south', worldX: 96, worldY: 128 }]) {
+        const r = seating.doorGapRects([door])[0];
+        const lane = seating.doorLaneRect(r);
+        for (const foot of [{ x: r.x0 + 1, y: r.y0 + 1 }, { x: (r.x0 + r.x1) / 2 + 1, y: (r.y0 + r.y1) / 2 + 1 }, { x: r.x1 - 1, y: r.y1 - 1 }]) {
+            const c = seating.doorGapExit(foot, [r], half);
+            const overlaps = c.x + half.w > lane.x0 && c.x - half.w < lane.x1 && c.y + half.h > lane.y0 && c.y - half.h < lane.y1;
+            assert.ok(overlaps, `straight out from ${JSON.stringify(foot)} sits in the lane`);
+            assert.ok(!seating.doorwayChairCandidates(foot, r, half).some(p => p.x === c.x && p.y === c.y), 'and is not offered');
+        }
+    }
+});
+
+/** A resting swivel chair whose feet are (x, y), with its own stub physics world. */
+function doorChair(x, y, bodies = []) {
+    const c = Object.assign(swivel('chair-grey-1-rotate', 1), { x, y, displayOriginX: 11, displayOriginY: 6, scaleX: 1, scaleY: 1,
+        active: true, objectId: `chair_${x}_${y}` });
+    c.body = { enable: true, offset: { x: 0, y: 0 }, width: 22, height: 12, velocity: { x: 0, y: 0 },
+        setVelocity(vx, vy) { this.velocity.x = vx; this.velocity.y = vy; }, reset() {} };
+    c.scene = { physics: { world: { staticBodies: { iterate(fn) { bodies.forEach(fn); } }, bodies: { iterate(fn) { [c.body].forEach(fn); } } } } };
+    return c;
+}
+
+function doorSweepRig(chairs, { behaviors = {} } = {}) {
+    const saved = {};
+    for (const k of ['chairs', 'rooms', 'npcBehaviorManager', 'npcNeedsSystem']) saved[k] = window[k];
+    const log = [];
+    window.chairs = chairs;
+    const map = { widthInPixels: 320, heightInPixels: 320 };
+    window.rooms = {
+        office: { position: { x: 0, y: 0 }, map, doorSprites: [{ doorProperties: KITCHEN_DOORS[0] }] },
+        kitchen: { position: { x: -320, y: 0 }, map, doorSprites: [{ doorProperties: KITCHEN_DOORS[1] }] }
+    };
+    window.npcBehaviorManager = { getBehavior: id => behaviors[id] || null };
+    window.npcNeedsSystem = { _log: (who, ev, d) => log.push({ who, ev, ...d }) };
+    seating.resetDoorSweep();
+    const restore = () => {
+        for (const c of chairs) c.active = false;
+        seating.updateGlides(); // drops the stopped chairs' glides
+        for (const [k, v] of Object.entries(saved)) window[k] = v;
+        seating.resetDoorSweep();
+    };
+    return { log, restore };
+}
+
+test('sweepDoorwayChairs (R1 M1): a resting chair in the gap glides to a clear spot off the lane; the log names the spot', () => {
+    const chair = doorChair(8, 79);
+    const rig = doorSweepRig([chair]);
+    try {
+        seating.sweepDoorwayChairs(1000);
+        assert.deepEqual(seating.glideTarget(chair), { x: 99, y: 111 }, 'y 47 is off the floor (the wall rows): the next spot');
+        assert.deepEqual(rig.log, [{ who: 'chair', ev: 'chair_out_of_doorway', chair: 'chair_8_79', from: [8, 79], to: [99, 111], spot: 1 }]);
+        assert.equal(chair.x, 8, 'no teleport: it glides');
+    } finally { rig.restore(); }
+});
+
+test('sweepDoorwayChairs: a blocked spot is passed over; with none clear it logs chair_in_doorway_no_spot once and stays', () => {
+    const desk = { enable: true, left: 84, right: 120, top: 100, bottom: 124 };
+    const chair = doorChair(8, 79, [desk]);
+    const rig = doorSweepRig([chair]);
+    try {
+        seating.sweepDoorwayChairs(1000);
+        assert.deepEqual(seating.glideTarget(chair), { x: 67, y: 111 }, 'the desk covers (99,111): the last spot');
+    } finally { rig.restore(); }
+    const boxed = doorChair(8, 79, [{ enable: true, left: 40, right: 120, top: 100, bottom: 124 }]);
+    const rig2 = doorSweepRig([boxed]);
+    try {
+        seating.sweepDoorwayChairs(1000);
+        assert.equal(seating.glideTarget(boxed), null, 'no clear spot: stays');
+        seating.sweepDoorwayChairs(1500);
+        seating.sweepDoorwayChairs(2000);
+        assert.deepEqual(rig2.log, [{ who: 'chair', ev: 'chair_in_doorway_no_spot', chair: 'chair_8_79', at: [8, 79] }],
+            'logged once for that foot position; the 1500 call is inside the second');
+    } finally { rig2.restore(); }
+});
+
+test('sweepDoorwayChairs (R2 m3): a glide that never gets out is tried three times from that foot, then logged once and left', () => {
+    const chair = doorChair(8, 79); // the stub body never moves, as a chair stuck on a wall corner does not
+    const rig = doorSweepRig([chair]);
+    try {
+        for (let t = 1000; t <= 8000; t += 1000) {
+            seating.sweepDoorwayChairs(t);
+            for (let i = 0; i < 12; i++) seating.updateGlides(); // the glide ends blocked (8 still frames)
+        }
+        const out = rig.log.filter(l => l.ev === 'chair_out_of_doorway');
+        const gaveUp = rig.log.filter(l => l.ev === 'chair_in_doorway_no_spot');
+        assert.equal(out.length, 3, 'three glides from the same foot, not one a second');
+        assert.equal(gaveUp.length, 1, 'then one give-up line');
+        assert.deepEqual(gaveUp[0].at, [8, 79]);
+        assert.equal(seating.glideTarget(chair), null, 'no further glide');
+        // The chair really moves (a push, say): the count starts again from the new foot
+        chair.x = 14; chair.y = 85;
+        seating.sweepDoorwayChairs(9000);
+        assert.ok(seating.glideTarget(chair), 'a new foot position is tried afresh');
+    } finally { rig.restore(); }
+});
+
+test('sweepDoorwayChairs (R3 m1, R4 m1): a stuck glide that shifts the foot 1 px each time, across a rounding edge, still gives up after three tries, logging once', () => {
+    const chair = doorChair(5, 79); // 5 and 6 fall in different cells of a 4 px rounding grid
+    const rig = doorSweepRig([chair]);
+    try {
+        let n = 0;
+        for (let t = 1000; t <= 8000; t += 1000) {
+            seating.sweepDoorwayChairs(t);
+            for (let i = 0; i < 12; i++) seating.updateGlides();
+            chair.x = 5 + (++n % 2); // physics nudges the foot 1 px after every failed glide (6, 5, 6, 5 ...)
+        }
+        assert.equal(rig.log.filter(l => l.ev === 'chair_out_of_doorway').length, 3, 'three tries, not one a second');
+        assert.equal(rig.log.filter(l => l.ev === 'chair_in_doorway_no_spot').length, 1, 'one give-up line');
+    } finally { rig.restore(); }
+});
+
+test('sweepDoorwayChairs (R4 m1): a genuine move of more than 4 px from the first-try foot starts the count again', () => {
+    const chair = doorChair(5, 79);
+    const rig = doorSweepRig([chair]);
+    try {
+        const run = (from, to) => {
+            for (let t = from; t <= to; t += 1000) {
+                seating.sweepDoorwayChairs(t);
+                for (let i = 0; i < 12; i++) seating.updateGlides();
+            }
+        };
+        run(1000, 8000);
+        assert.equal(rig.log.filter(l => l.ev === 'chair_out_of_doorway').length, 3, 'three tries, then given up');
+        chair.x = 10; // 5 px from the first-try foot (5): a real move
+        run(9000, 16000);
+        assert.equal(rig.log.filter(l => l.ev === 'chair_out_of_doorway').length, 6, 'three more tries from the new foot');
+        assert.equal(rig.log.filter(l => l.ev === 'chair_in_doorway_no_spot').length, 2, 'and a second give-up line');
+        chair.x = 14; // 4 px from the new anchor (10): still the same spot, no fresh tries
+        run(17000, 20000);
+        assert.equal(rig.log.filter(l => l.ev === 'chair_out_of_doorway').length, 6, 'a 4 px nudge does not reset');
+    } finally { rig.restore(); }
+});
+
+test('sweepDoorwayChairs (R5 m1): a foot swinging 0, 3, 6, 3, 0 past the anchor reaches the total cap, logs once and stops', () => {
+    const chair = doorChair(5, 79);
+    const rig = doorSweepRig([chair]);
+    try {
+        const xs = [5, 8, 11, 8]; // a triangle wave in 3 px steps: every 6 px excursion resets the anchor
+        for (let n = 0, t = 1000; n < 24; n++, t += 1000) {
+            chair.x = xs[n % 4];
+            seating.sweepDoorwayChairs(t);
+            for (let i = 0; i < 12; i++) seating.updateGlides();
+        }
+        assert.equal(rig.log.filter(l => l.ev === 'chair_out_of_doorway').length, 9, 'nine glides in all, then none');
+        assert.equal(rig.log.filter(l => l.ev === 'chair_in_doorway_no_spot').length, 1, 'one give-up line');
+        assert.equal(seating.glideTarget(chair), null, 'no further glide');
+    } finally { rig.restore(); }
+});
+
+test('sweepDoorwayChairs (R5 m2): the anchor clears once the foot leaves every door gap, so a return gets fresh tries', () => {
+    const chair = doorChair(8, 79);
+    const rig = doorSweepRig([chair]);
+    try {
+        const run = (from, to) => {
+            for (let t = from; t <= to; t += 1000) {
+                seating.sweepDoorwayChairs(t);
+                for (let i = 0; i < 12; i++) seating.updateGlides();
+            }
+        };
+        run(1000, 8000);
+        assert.equal(rig.log.filter(l => l.ev === 'chair_out_of_doorway').length, 3, 'given up after three');
+        assert.ok(chair._doorSweep, 'anchor held while in the gap');
+        chair.x = 400; chair.y = 400; // well clear of every gap
+        seating.sweepDoorwayChairs(9000);
+        assert.equal(chair._doorSweep, undefined, 'anchor cleared');
+        chair.x = 8; chair.y = 79; // pushed back into the same gap
+        run(10000, 17000);
+        assert.equal(rig.log.filter(l => l.ev === 'chair_out_of_doorway').length, 6, 'three fresh tries');
+    } finally { rig.restore(); }
+});
+
+// R6 m1: the cap must not outlive a real move. The rig's 0, 3, 6, 3 swing caps the chair first.
+const capChair = (chair, t0 = 1000) => {
+    const xs = [5, 8, 11, 8];
+    let t = t0;
+    for (let n = 0; n < 24; n++, t += 1000) {
+        chair.x = xs[n % 4];
+        seating.sweepDoorwayChairs(t);
+        for (let i = 0; i < 12; i++) seating.updateGlides();
+    }
+    return t;
+};
+const sweepFor = (t, n) => {
+    for (let k = 0; k < n; k++, t += 1000) {
+        seating.sweepDoorwayChairs(t);
+        for (let i = 0; i < 12; i++) seating.updateGlides();
+    }
+    return t;
+};
+const glideCount = rig => rig.log.filter(l => l.ev === 'chair_out_of_doorway').length;
+
+test('sweepDoorwayChairs (R6 m1): a capped chair shoved more than a chair width along the gap gets fresh tries', () => {
+    const chair = doorChair(5, 79);
+    const rig = doorSweepRig([chair]);
+    try {
+        let t = capChair(chair);
+        assert.equal(glideCount(rig), 9, 'capped');
+        assert.ok(chair._doorSweep?.capped);
+        t = sweepFor(t, 2); // a still, capped chair stays capped
+        assert.equal(glideCount(rig), 9, 'no glide while it has not moved');
+        chair.x = -20; chair.y = 85; // 25 px along the gap, to the kitchen side
+        sweepFor(t, 3);
+        assert.ok(glideCount(rig) > 9, 'glides again after a real move');
+        assert.ok(!chair._doorSweep?.capped, 'cap cleared');
+    } finally { rig.restore(); }
+});
+
+test('sweepDoorwayChairs (R6 m1): a capped chair sat on, carried out and back in, then let go gets fresh tries', () => {
+    const chair = doorChair(5, 79);
+    const beh = { amara: { _seat: null } };
+    const rig = doorSweepRig([chair], { behaviors: beh });
+    try {
+        let t = capChair(chair);
+        assert.equal(glideCount(rig), 9, 'capped');
+        chair.seatedBy = 'amara'; beh.amara._seat = { chair };
+        chair.x = 200; chair.y = 200; // rolled out while sat on: never seen resting outside the gaps
+        t = sweepFor(t, 3);
+        chair.x = -10; chair.y = 80; // and back into the gap
+        t = sweepFor(t, 2);
+        assert.equal(glideCount(rig), 9, 'no glide while sat on');
+        beh.amara._seat = null; chair.seatedBy = undefined; // let go
+        sweepFor(t, 3);
+        assert.ok(glideCount(rig) > 9, 'glides again once let go');
+    } finally { rig.restore(); }
+});
+
+test('sweepDoorwayChairs: a chair sat on, fetched, mounted, gliding or moving stays; once a second at most', () => {
+    const make = () => doorChair(8, 79);
+    const cases = {
+        seated: c => { c.seatedBy = 'sanjay'; return { sanjay: { _seat: { chair: c } } }; },
+        fetching: c => { c.seatedBy = 'sanjay'; return { sanjay: { _fetch: { chair: c } } }; },
+        mounting: c => { c.seatedBy = 'sanjay'; return { sanjay: { _seatMove: { chair: c } } }; },
+        moving: c => { c.body.velocity.x = 20; return {}; },
+        inactive: c => { c.active = false; return {}; }
+    };
+    for (const [name, setup] of Object.entries(cases)) {
+        const c = make();
+        const rig = doorSweepRig([c], { behaviors: setup(c) });
+        try {
+            seating.sweepDoorwayChairs(1000);
+            assert.equal(seating.glideTarget(c), null, `${name}: stays`);
+            assert.equal(rig.log.length, 0, `${name}: no log`);
+        } finally { rig.restore(); }
+    }
+    // Reserved by an NPC whose behaviour no longer holds it (Sanjay's chair in 5658): it moves
+    const loose = make(); loose.seatedBy = 'sanjay';
+    const rigLoose = doorSweepRig([loose], { behaviors: { sanjay: {} } });
+    try {
+        seating.sweepDoorwayChairs(1000);
+        assert.ok(seating.glideTarget(loose), 'a stale reservation does not hold it');
+        assert.equal(rigLoose.log[0].who, 'sanjay');
+    } finally { rigLoose.restore(); }
+    // Already gliding elsewhere: its target is kept
+    const gliding = make();
+    const rigG = doorSweepRig([gliding]);
+    try {
+        seating.glideChairFootTo(gliding, 30, 200);
+        seating.sweepDoorwayChairs(1000);
+        assert.deepEqual(seating.glideTarget(gliding), { x: 30, y: 200 });
+    } finally { rigG.restore(); }
+    // Once a second
+    const late = make();
+    const rigT = doorSweepRig([late]);
+    try {
+        seating.sweepDoorwayChairs(1000);
+        seating.updateGlides(); // no physics step here: the glide just sets velocity
+        const t = seating.glideTarget(late);
+        assert.ok(t);
+        late.active = false; seating.updateGlides(); late.active = true; // glide dropped
+        late.body.setVelocity(0, 0); // and at rest again
+        seating.sweepDoorwayChairs(1999);
+        assert.equal(seating.glideTarget(late), null, 'within the second: not swept again');
+        seating.sweepDoorwayChairs(2000);
+        assert.ok(seating.glideTarget(late), 'next second: swept');
+    } finally { rigT.restore(); }
+});
+
+test('sweepDoorwayChairs runs from every NPC behaviour update', async () => {
+    const { readFileSync } = await import('node:fs');
+    const src = readFileSync(new URL('../../public/break_escape/js/systems/seating.js', import.meta.url), 'utf8');
+    const fn = src.slice(src.indexOf('export function updateSeatedNPC('));
+    assert.match(fn.slice(0, 200), /^export function updateSeatedNPC\(behavior, playerPos\) \{\s*sweepDoorwayChairs\(\);/);
+});
+
+test('a routed seat walk goes leg by leg: through the waypoint, then the work spot (m.leg++)', () => {
+    const rig = labSeatRig(235);
+    const chair = Object.assign(swivel('chair-white-1-rotate', 1), { x: 196, y: 206, width: 16, height: 26, depth: 232, active: true, objectId: 'own_chair' });
+    chair.body = { enable: true, offset: { x: 0, y: 18 }, width: 16, height: 8, velocity: { x: 0, y: 0 },
+        setVelocity(x, y) { this.velocity.x = x; this.velocity.y = y; }, reset(x, y) { chair.x = x; chair.y = y; } };
+    try {
+        const key = seating.needsStop(window.npcNeedsSystem.states.get('pierce')).key;
+        const ref = { x: 204, y: 172 }, via = { x: 220, y: 196 };
+        rig.behavior._seatMove = { chair, seat: seating.seatSpec(chair), opts: { ref, needsStop: key }, stopKey: key,
+            savedImm: false, savedBody: null, stage: 'walk', ticks: 0, still: 0, last: Infinity, route: [via, ref], leg: 0 };
+        let maxY = 0, i = 0;
+        for (; i < 80 && rig.behavior._seatMove?.stage === 'walk'; i++) {
+            const v = rig.sprite.body.velocity;
+            rig.sprite.x += v.x * 0.05; rig.sprite.y += v.y * 0.05;
+            maxY = Math.max(maxY, rig.sprite.y);
+            seating.updateSeatedNPC(rig.behavior, null);
+        }
+        assert.ok(maxY >= 194, `walked via the waypoint (max y ${maxY.toFixed(1)})`);
+        assert.equal(rig.behavior._seatMove?.stage, 'pull', 'the last leg reached the work spot and the pull started');
+        assert.ok(Math.hypot(rig.sprite.x - ref.x, rig.sprite.y - ref.y) <= 2, 'at the work spot');
+    } finally {
+        chair.active = false; seating.updateGlides();
+        rig.restore();
+    }
+});
