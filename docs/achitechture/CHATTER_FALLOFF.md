@@ -151,3 +151,32 @@ Keyless server on :3092 from this worktree, fresh test_needs_sims game 6383, hea
 - 10 A person-chat with Amara, marked suspended, with a `notes` minigame opened over it (`returnTo` person-chat): `conversationOpen` true, `faintVolume` 0, `playerHears` false, and a direct `say` is logged `conversation`. After the child closes, `conversationOpen` is false again.
 
 Screenshots (headless, the music widget at 300 px): `chatter-switch-on.png` and `chatter-switch-off.png` (themed skin), `chatter-switch-plain-on.png` and `chatter-switch-plain-off.png` (no theme), all under the session scratchpad. The text sits on one line in all four (themed button 256 px wide with scrollWidth equal to clientWidth, plain 276 px).
+
+
+## R3 fixes
+
+From `CHATTER_FALLOFF_REVIEW_R3.md` (0 blocking, 2 major, 6 minor). Main merged first, and again before the final suites (Train 111, 11fae1a6d). Code and tests are commit cc4e2490a; unit tests are in `test/js/npc-chatter-faint.test.mjs` (now 44 cases).
+
+| Finding | Fix | Test |
+|---|---|---|
+| M1 priority mutters skip the background level | `_speak` sets `unheard` once, from `!overheard && !faint && !call`, so every line takes one path (the exchange call site no longer passes it). `_showSaying` marks a priority mutter `secret`. In `say`, a `secret` line that is not overheard plays no audio at all (log reason `secret_unheard`): no faint version, no through-door version, switch on or off. Its bubble and the speech lock are those of any unheard bubble. An overheard one is voiced in full and credited, as on main | three "R3 M1" cases: `unheard` derivation, a real `login_aloud` mutter in and out of earshot, and the four silent placements plus the heard line |
+| M2 switch looks disabled | Same button face as SKIP, PAUSE and VISUALISER at full strength in both states: no filter, no opacity, solid 2px border. An 8px CSS marker (`::before`, filled on, hollow off, after `dusting.css:94-95`). On: accent text and border. Off: the normal button text colour (`#ccc` plain, `--ui-button-text` themed). The 11px override is gone | screenshots below |
+| m1 late blip | `TTSManager.play` takes `cancelled`; it is asked after the metadata wait and before `setDistanceGain` and `audio.play()`, and a true answer stops and returns null. The chatter voice passes `() => tok.abort` for faint lines. The mute-then-stop in `say` stays as a backstop for a clip already playing | the real `play` extracted onto a stub audio element (never calls `audio.play()`); and the voice passes a live `cancelled` |
+| m2 type and announcement | Font size and letter spacing overrides dropped (12px, 0.5px like its neighbours). The button text is the fixed "Background voices"; `aria-pressed` is the one state signal for a screen reader, the marker and colour for the eye | live check below |
+| m3 two copies | `conversationOpen` is now one export of `npc-needs.js` (still import-free). `createEngineWorld` uses it, `npc-needs-chatter.js` and `office-room-tone.js` import it, and the copy in `room-hearing.js` is removed. No harness copy list changed: the lighting harnesses copy `room-hearing.js`, which no longer carries it | one table of ten minigame shapes run through the shared function, the real adapter and the voice |
+| m4 faintChatter: false | `_faintOff()` reads the scenario flag beside the player's switch, so every background voice (drawn faint, unheard exchange) obeys both | "R3 m4" |
+| m5 room tone under a child minigame | Kept, on purpose. A cloner or lockpick opened from a conversation leaves the chat suspended under it, and the conversation still counts as open; the office bed and typing loop duck for it as for the chat itself, which is what the player expects while a dialogue is on screen. `NPC_NEEDS_SYSTEM.md` now says so | covered by the shared-table case |
+| m6 Audio page | Screenshot taken, below | n/a |
+
+Not changed: the 250 ms window in which a clip that was already playing when its abort landed is heard until the follow tick.
+
+### Live proof (R3)
+
+Keyless server on :3092 from this worktree (killed afterwards), fresh test_needs_sims game 6401, headless, `setFPS(20)` with fixed steps on. `PORT=3092 PLAYTEST_PORT=3092 node tools/playtest/chatter-falloff-proof.mjs 6401 faint`, no page errors. Cases 1 to 10 unchanged from R2 (1 faint 0.441, 2 through the door 0.152, 3 and 4 the conversation mute and 0.77 after the call, 5 full over faint, 6 under a bark 0.089, 9a `background_off`, 9b 0.355, 10 child minigame keeps the mute).
+
+- 11a (new) `login_aloud` from Amara in the office, player in the kitchen through the open door (hearing 0.4): the mutter is shown, `plays` is empty, log `secret_unheard`, no `npc_overheard`.
+- 11b (new) The same mutter with the player 52 px away in the office: played at volume 1, and `npc_overheard:amara` fires.
+
+The `login_aloud` pool is set on the page copy only (test_needs_sims has none); no game row or scenario file was touched.
+
+Screenshots (headless, themed skin, in the session scratchpad): `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/b8fb6615-769e-4015-b3ae-9cb0a729b510/scratchpad/chatter-switch-on.png`, `chatter-switch-off.png`, `chatter-audio-page.png` (game menu Audio page, switch on), plus `chatter-audio-page-off.png`, `chatter-switch-plain-on.png` and `chatter-switch-plain-off.png`.

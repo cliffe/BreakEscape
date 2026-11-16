@@ -659,9 +659,11 @@ during the walk home (exists). Player-facing behaviour:
   above still holds: the speaker has a line ready when the player walks up. A faint line never waits
   for or takes the speech lock from another line, and gives the lock to any line the player hears
   in full (bark, exchange line, desk call, mutter) at once, fading its voice in 0.3 s. It ducks under
-  a scripted bark. While a person-chat or phone-chat is open (the live minigame's scene type, not
-  the sticky type) no chatter is overheard, voiced or toasted. The scenario flag `"faintChatter":
-  false` and the player's "Background voices" switch in the music widget turn faint lines off. An
+  a scripted bark. While a person-chat or phone-chat is open, or a minigame opened from one (its
+  `returnTo` names the chat; the chat is suspended under it), by the live minigame's scene type and
+  not the sticky type, no chatter is overheard, voiced or toasted, and room tone ducks too. A priority
+  mutter that carries a secret (`login_aloud`) the player does not overhear is not voiced at all. The scenario flag `"faintChatter":
+  false` and the player's "Background voices" switch in the music widget turn every background voice off. An
   exchange line voiced out of earshot keeps the lock, shows a dimmed bubble and is a background voice
   too (the same switch, the same 0.5 scale), though no full line cuts it. Design, tests and
   live proof: `CHATTER_FALLOFF.md`.
