@@ -247,11 +247,12 @@ export class ApiClient {
   // with the screen's route. Never sends relay: false. Answers as login() with kind and label;
   // a refusal throws with err.status and err.body (wrongPc, kindRefused, notPermitted,
   // lockedOut, ended, remoteBlocked, or the generic message).
-  static async loginWithCredential(pcId, credential, { foothold } = {}) {
+  static async loginWithCredential(pcId, credential, { foothold, relay } = {}) {
+    // K3c: the relay route is relay: true, and only when asked; one route at a time
     return this.post('/login', {
       pc_id: pcId,
       credential,
-      ...(foothold ? { foothold } : {})
+      ...(relay === true ? { relay: true } : (foothold ? { foothold } : {}))
     });
   }
 

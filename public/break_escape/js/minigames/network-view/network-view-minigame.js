@@ -118,20 +118,21 @@ export const UNPLUG_TEXT = 'Unplug';
 export const UNPLUGGING_TEXT = 'Unplugging...';
 
 export const SHARE_LOCKED_TEXT = "Needs an account with access. It opens from that account's desktop.";
-const KIND_LABELS = { file_share: 'File share', printer: 'Printer', pc: 'Computer' };
+const KIND_LABELS = { file_share: 'File share', printer: 'Printer', pc: 'Computer', phone: 'Phone' };
 const WIFI_ICON = '/break_escape/assets/icons/wifi.png';
 const KIND_ICONS = {
     pc: '/break_escape/assets/objects/pc_desktop.png',
     file_share: '/break_escape/assets/objects/m09_folder1.png',
-    printer: '/break_escape/assets/icons/npc-print.png'
+    printer: '/break_escape/assets/icons/npc-print.png',
+    phone: '/break_escape/assets/objects/phone5.png'
 };
 
 // The order rows are shown in (UX access R1 finding 10): computers, then shares, then
 // printers and other devices, each group by its name. The server's order is the scenario's.
-const KIND_RANK = { pc: 0, file_share: 1, printer: 2 };
-const KIND_GROUPS = { pc: 'Computers', file_share: 'File shares', printer: 'Printers and devices' };
+const KIND_RANK = { pc: 0, file_share: 1, printer: 2, phone: 3 };
+const KIND_GROUPS = { pc: 'Computers', file_share: 'File shares', printer: 'Printers and devices', phone: 'Phones' };
 const rowLabel = (r) => String((r?.kind === 'pc' ? (r.host || r.id) : (r?.name || r?.id)) || '');
-const rowRank = (r) => KIND_RANK[r?.kind] ?? 3;
+const rowRank = (r) => KIND_RANK[r?.kind] ?? 4;
 
 /** Rows in display order: by kind, then by name (numbers compared as numbers). Exported for tests. */
 export function displayOrder(rows) {

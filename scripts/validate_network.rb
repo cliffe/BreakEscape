@@ -11,6 +11,7 @@ require 'set'
 require_relative '../lib/break_escape/network_model'
 require_relative '../lib/break_escape/access_identities'
 require_relative '../lib/break_escape/access_work'
+require_relative '../lib/break_escape/capture_model'
 require_relative '../lib/break_escape/declared_grants'
 require_relative '../lib/break_escape/author_notes'
 require_relative '../lib/break_escape/npc_habits/clues'
@@ -134,6 +135,64 @@ def check_network_model(json_data, scenario_dir = nil)
     err.call("jack '#{label.call(entry[:object], entry[:path])}' has no network of its own or from its room.")
   end
 
+  # ---- Patch panel (panelOf / panelPorts) ----
+  # A jack with panelOf has no sprite and no position and is reached only through its panel;
+  # a panel's panelPorts entries with a jack name top-level jacks in the same room that name it back.
+  rooms.each do |room_id, room|
+    next unless room.is_a?(Hash) && room['objects'].is_a?(Array)
+
+    objs = room['objects'].select { |o| o.is_a?(Hash) }
+    by_id = objs.to_h { |o| [o['id'], o] }
+    objs.each do |o|
+      next unless o.key?('panelOf')
+
+      where = "jack '#{o['id']}' in room '#{room_id}'"
+      panel = o['panelOf'].is_a?(String) ? by_id[o['panelOf']] : nil
+      if panel.nil?
+        err.call("#{where} has panelOf '#{o['panelOf']}', which is no object in the same room.")
+      elsif !Array(panel['panelPorts']).any? { |pp| pp.is_a?(Hash) && pp['jack'] == o['id'] }
+        err.call("#{where} has panelOf '#{o['panelOf']}', but that object does not list it in panelPorts.")
+      end
+      err.call("#{where} has panelOf and a 'sprite' texture; a panel port has no sprite.") if o.key?('sprite')
+      err.call("#{where} has panelOf and a position; a panel port has none.") if %w[x y position].any? { |k| o.key?(k) }
+      err.call("#{where} has panelOf but is not a networkJack; a panel port is a jack.") unless nm.jack?(o)
+    end
+    objs.each do |panel|
+      next unless panel.key?('panelPorts')
+
+      pwhere = "panel '#{panel['id']}' in room '#{room_id}'"
+      unless panel['panelPorts'].is_a?(Array)
+        err.call("#{pwhere} has panelPorts that is not an array.")
+        next
+      end
+      seen_ports = {}
+      seen_jacks = {}
+      panel['panelPorts'].each do |pp|
+        next unless pp.is_a?(Hash)
+
+        if pp.key?('port')
+          err.call("#{pwhere} lists port #{pp['port']} more than once.") if seen_ports[pp['port']]
+          seen_ports[pp['port']] = true
+        end
+        if pp.key?('jack')
+          err.call("#{pwhere} lists jack '#{pp['jack']}' more than once.") if seen_jacks[pp['jack']]
+          seen_jacks[pp['jack']] = true
+        end
+        next unless pp.key?('jack')
+
+        jack = by_id[pp['jack']]
+        if jack.nil?
+          err.call("#{pwhere} lists port #{pp['port']} with jack '#{pp['jack']}', which is no object in the same room.")
+        elsif !nm.jack?(jack)
+          err.call("#{pwhere} lists port #{pp['port']} with '#{pp['jack']}', which is not a networkJack.")
+        elsif jack.key?('panelOf') && jack['panelOf'] != panel['id']
+          err.call("#{pwhere} lists jack '#{pp['jack']}', whose panelOf names '#{jack['panelOf']}' instead.")
+        end
+        # A jack with a world sprite (network_port) may also be listed; it need not name the panel back.
+      end
+    end
+  end
+
   # ---- Rogue devices (3.3) ----
   device_entries = []
   all_objects.each { |e| device_entries << [e[:object], e[:path], e[:path].include?('/itemsHeld') ? :npc : :room] }
@@ -141,6 +200,9 @@ def check_network_model(json_data, scenario_dir = nil)
     device_entries << [item, "startItemsInInventory[#{i}]", :start] if item.is_a?(Hash)
   end
   BreakEscape::DeclaredGrants.for(json_data).each { |grant| device_entries << [grant['item'], grant['path'], :grant] }
+  # Item definitions by id, for the capture-proof checks below (before the device filter).
+  capture_item_defs = {}
+  device_entries.each { |item, _p, _h| capture_item_defs[item['id'].to_s] ||= item if item.is_a?(Hash) && item['id'].is_a?(String) }
   device_entries.select! { |item, _path, _home| nm.rogue_device?(item) }
   device_entries.each do |item, path, home|
     where = "rogue device at '#{path}'"
@@ -171,6 +233,28 @@ def check_network_model(json_data, scenario_dir = nil)
   if device_entries.any? && jacks.empty?
     warn.call("the scenario has a rogue device (#{quote_list.call(device_entries.map { |i, p, _| i['id'] || p })}) " \
               'but no jack to plant it in.')
+  end
+
+  # A planted proof on a non-jack object names a kit the object takes by id; a rogueDevice flag
+  # would offer that kit to every jack as well (held_rogue_device).
+  cm = BreakEscape::CaptureModel
+  plain_objects = all_objects.map { |e| e[:object] }
+  plant_objects = cm.top_level_room_objects(json_data) # the server records a plant on these only
+  jack_ids = cm.reachable_jack_ids(json_data) # a jack plant is a foothold, found through contents
+  sign_in_pc_ids = cm.sign_in_pc_ids(json_data) # login_scope_of's rule, not top level only
+  cm.each_capture_writer(json_data) do |capture, _kind, path, _owner|
+    proof = capture['proof']
+    next unless cm.proof_kind(proof) == 'planted'
+
+    on = proof['on']
+    # A nested jack counts: the server records a jack plant as a foothold (find_jack walks contents).
+    next if on && plain_objects.any? { |o| o['id'].to_s == on.to_s && nm.jack?(o) }
+
+    item = capture_item_defs[proof['planted'].to_s]
+    next unless item && nm.rogue_device?(item)
+
+    warn.call("#{path}/proof: planted \"#{proof['planted']}\" carries rogueDevice but is planted on a non-jack object; " \
+              'a rogue device is offered to every jack. Drop rogueDevice from this item')
   end
 
   # ---- Headless hosts (3.4) ----
@@ -214,7 +298,17 @@ def check_network_model(json_data, scenario_dir = nil)
     next unless psk.is_a?(String) && !psk.strip.empty?
 
     warn.call("'networks/#{net_id}/wifi' psk is shorter than eight characters.") if psk.length < 8
-    unless readable.include?(psk)
+    capture_writers_of_psk = cm.each_capture_writer(json_data).select { |cap, _k, _p, _o| cap['secret'] == psk }
+    if capture_writers_of_psk.any? { |cap, *_| cap['proof'].nil? }
+      warn.call("'networks/#{net_id}/wifi' psk is the secret of a capture writer that carries no proof; the server " \
+                'never serves it, so the tablet stays blank. Give the writer a proof')
+    end
+    served_writers = cm.served_capture_writers(json_data)
+    proven = capture_writers_of_psk.any? do |cap, *_|
+      served_writers.any? { |c| c.equal?(cap) } && cm.proof_satisfiable?(cap['proof'], capture_item_defs, plant_objects, nil,
+                                                                      jack_ids: jack_ids, sign_in_pc_ids: sign_in_pc_ids)
+    end
+    unless readable.include?(psk) || proven
       # C3 (plan 9): a psk found only in alternative-set feed posts may never ship.
       sets = BreakEscape::NpcHabits::Clues.set_member_texts(json_data).select { |t| t[:text].to_s.include?(psk) }
       if sets.any?

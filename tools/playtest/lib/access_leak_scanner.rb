@@ -146,6 +146,10 @@ class AccessLeakScanner
   MIN_NETWORK_STRING = 3
   # Room data keys the server withholds: their strings are not public.
   WITHHELD_ROOM_KEYS = %w[network linkName linkStoreIn creds].freeze
+  # A hash under one of these keys is a capture descriptor: its `secret` never ships (E0.3)
+  CAPTURE_DESCRIPTOR_KEYS = %w[capture addCapture usePayload].freeze
+  # A page the tester read counts as a capture page only when its label says so (E0.3)
+  CAPTURE_PAGE_LABEL = /\bcaptures?\b/i.freeze
 
   Finding = Struct.new(:rule, :owner, :route, :source, :line, :cmd_seq, :json_path, keyword_init: true)
 
@@ -173,6 +177,15 @@ class AccessLeakScanner
     @passwords = {}          # password => [npc_id, ...]
     @capture_npcs = Set.new  # npc ids the capture_secrets exception covers
     @capture_secrets = {}    # a non-account capture secret => [target_id, ...] (served only by /capture_secrets)
+    # E0.3: a capture secret => the `proof` of each writer (nil for a writer with none). A secret
+    # whose writers all carry a proof is served only once one held, so its served rows are
+    # order-checked against the plant (proof_held_before?)
+    @capture_secret_proofs = Hash.new { |h, k| h[k] = [] }
+    # E0.3: the log's plant rows, filled by prepare_plant_rows at the start of each scan
+    @plant_rows = {}
+    @plant_rows_any = {}
+    @log_mode = :pre
+    @untagged_remove = false
     @items = {}              # item_id => { strings:, scope:, profile:, pc:, ancestors:, locked_ancestors: }
     @public_strings = Set.new
     @clue_holders = Hash.new { |h, k| h[k] = Set.new } # password => item ids holding it on purpose
@@ -216,6 +229,16 @@ class AccessLeakScanner
     @reaction_items = 0
     collect_passwords
     collect_capture_secrets
+    @object_by_id = BreakEscape::AccessIdentities.room_objects(@data).each_with_object({}) do |e, h|
+      id = e[:object]['id']
+      h[id.to_s] ||= e[:object] if id.is_a?(String) && !id.empty?
+    end
+    # A plant is recorded only on a top-level room object (CaptureProofs#planted_target_object),
+    # so the plant lookup ignores objects nested in contents or an NPC's itemsHeld.
+    @plant_object_by_id = BreakEscape::CaptureModel.top_level_room_objects(@data).each_with_object({}) do |o, h|
+      id = o['id']
+      h[id.to_s] ||= o if id.is_a?(String) && !id.empty?
+    end
     collect_items
     collect_network_secrets
     collect_wifi_secrets
@@ -273,7 +296,8 @@ class AccessLeakScanner
     seen = Set.new
     legit = Set.new # items already served by their own allowed route earlier in the run
     prepare_feed_base(lines)
-    lines.each do |source, line_no, row|
+    prepare_plant_rows(lines)
+    lines.each_with_index do |(source, line_no, row), index|
       next unless row.is_a?(Hash)
 
       note_feed_unreadable(row) if feed_unreadable?(row)
@@ -283,7 +307,7 @@ class AccessLeakScanner
       end
       next if body.nil?
 
-      ctx = response_context(row)
+      ctx = response_context(row).merge(index: index)
       add = lambda do |rule, owner, json_path|
         key = [source, line_no, rule, owner]
         next if seen.include?(key)
@@ -414,22 +438,29 @@ class AccessLeakScanner
     cm.each_capture_writer(@data) do |capture, _kind, _path, owner|
       next if owner.is_a?(Hash) && cm.account_holder?(owner)
 
-      add_capture_secret(capture['secret'], capture['targetId'])
+      add_capture_secret(capture['secret'], capture['targetId'], capture['proof'])
     end
     each_room_npc do |npc|
       payload = npc['usePayload']
       next unless payload.is_a?(Hash) && !cm.account_holder?(npc)
 
-      add_capture_secret(payload['secret'], payload['targetId'] || npc['id'])
+      add_capture_secret(payload['secret'], payload['targetId'] || npc['id'], payload['proof'])
     end
   end
 
-  def add_capture_secret(secret, target)
+  def add_capture_secret(secret, target, proof = nil)
     return unless secret.is_a?(String) && !secret.strip.empty?
 
     owner = target.is_a?(String) && !target.strip.empty? ? target.strip : 'capture'
     owners = (@capture_secrets[secret.strip] ||= [])
     owners << owner unless owners.include?(owner)
+    @capture_secret_proofs[secret.strip] << (proof.is_a?(Hash) ? proof : nil)
+  end
+
+  # The proofs of a capture secret whose writers all carry one, or nil (E0.3)
+  def capture_secret_proofs(secret)
+    list = @capture_secret_proofs.fetch(secret, [])
+    list.empty? || list.any?(&:nil?) ? nil : list
   end
 
   def each_room_npc(&block)
@@ -493,6 +524,10 @@ class AccessLeakScanner
         v = wifi[field]
         next unless v.is_a?(String) && v.strip.length >= MIN_NETWORK_STRING
         next if public_strings.any? { |s| s.include?(v.strip) }
+        # E0.3: a key that is also a capture secret whose writers all carry a proof is served on
+        # GET /capture_secrets once the proof holds, so scan_capture_secrets judges it there (by
+        # the order of the plant). With no proof the server never serves it: a Wi-Fi secret.
+        next if field == 'psk' && capture_secret_proofs(v.strip)
 
         (@wifi_secrets[v.strip] ||= []) << "network:#{net_id}"
       end
@@ -515,10 +550,12 @@ class AccessLeakScanner
   end
 
   # Every string room data ships as authored: rooms, door signs, objects and NPCs, except the
-  # keys the server withholds, sign-in PC desktops and the contents of locked containers.
+  # keys the server withholds, sign-in PC desktops, the contents of locked containers and the
+  # `secret` of a capture descriptor (a hash under capture, addCapture or usePayload), which
+  # Game#strip_capture_secrets! removes before room data ships (E0.3).
   def room_data_strings
     out = Set.new
-    walk = lambda do |node|
+    walk = lambda do |node, descriptor = false|
       case node
       when String then out << node.strip
       when Array then node.each { |v| walk.call(v) }
@@ -527,8 +564,9 @@ class AccessLeakScanner
         node.each do |k, v|
           next if WITHHELD_ROOM_KEYS.include?(k)
           next if k == 'contents' && hidden
+          next if k == 'secret' && descriptor
 
-          walk.call(v)
+          walk.call(v, CAPTURE_DESCRIPTOR_KEYS.include?(k) && v.is_a?(Hash))
         end
       end
     end
@@ -699,7 +737,10 @@ class AccessLeakScanner
 
   def response_context(row)
     if row.key?('dom')
-      return { route: "page #{row['label'] || 'dom'}", container: nil, unlock: false, capture_secrets: true,
+      # E0.3: only a page labelled as a capture page (a capture log, a captures terminal) is
+      # exempt like a GET /capture_secrets answer; any other page (a device console) is scanned
+      return { route: "page #{row['label'] || 'dom'}", container: nil, unlock: false,
+               capture_secrets: row['label'].to_s.match?(CAPTURE_PAGE_LABEL),
                network: false, any_container: false, scenario: false }
     end
 
@@ -758,7 +799,8 @@ class AccessLeakScanner
         next if reveal_secret? && @shared.include?(password) && json_path.include?('.captures')
 
         owners.each do |npc_id|
-          next if ctx[:capture_secrets] && @capture_npcs.include?(npc_id) && (@served_npcs.nil? || @served_npcs.include?(npc_id))
+          next if ctx[:capture_secrets] && @capture_npcs.include?(npc_id) && (@served_npcs.nil? || @served_npcs.include?(npc_id)) &&
+                  account_proof_held_before?(npc_id, ctx[:index])
 
           add.call('password', "npc:#{npc_id}", safe_path(json_path))
         end
@@ -770,12 +812,16 @@ class AccessLeakScanner
   # /capture_secrets answer and a capture page the tester read (a dom row, labelled a capture log
   # or captures terminal). Both set ctx[:capture_secrets]. The match rule mirrors a password: a
   # secret of six or more characters is matched as a substring, a shorter one as a whole token.
+  #
+  # E0.3: on those routes a secret whose writers all carry a proof passes only when one of its
+  # proofs held before the row (proof_held_before?).
   def scan_capture_secrets(body, ctx, add)
-    return if @capture_secrets.empty? || ctx[:capture_secrets]
+    return if @capture_secrets.empty?
 
     each_string(body) do |str, json_path, _owner|
       @capture_secrets.each do |secret, targets|
         next unless contains_password?(str, secret)
+        next if ctx[:capture_secrets] && capture_secret_served_in_order?(secret, ctx[:index])
 
         targets.each { |t| add.call('capture_secret', "capture:#{t}", safe_path(json_path)) }
       end
@@ -1542,6 +1588,119 @@ class AccessLeakScanner
   # as GET /container would, for example a held grant item whose file names a share's host)
   # and the footholds block of /scenario. Both container exemptions cover every network
   # string, by design (see the header).
+  # ---- order of the plant (E0.3) -------------------------------------------------------------
+
+  # The log's POST /inventory rows: the index of the earliest tagged 200 remove for each
+  # [item, used_on]; whether any row carries an `inv` key (a log written after the recorder
+  # change); and whether a 200 remove row is untagged (inv null or missing) in such a log.
+  # Rows are indexed in the order given, every file in argument order, DOM rows included.
+  def prepare_plant_rows(lines)
+    @plant_rows = {}
+    @plant_rows_any = {}
+    rows = []
+    lines.each_with_index do |(_source, _line_no, row), index|
+      next unless row.is_a?(Hash) && !row.key?('dom')
+      next unless row['method'].to_s.upcase == 'POST' && row['path'].to_s.split('?').first.to_s.end_with?('/inventory')
+
+      rows << [index, row]
+    end
+    tagged = rows.any? { |_i, row| row.key?('inv') }
+    @log_mode = if rows.empty? then :no_inventory
+    elsif tagged then :tagged
+    else :pre
+    end
+    @untagged_remove = false
+    rows.each do |index, row|
+      next unless row['status'].to_i == 200
+
+      inv = row['inv']
+      if inv.is_a?(Hash)
+        next unless inv['action'] == 'remove' && inv['usedOn'].is_a?(String)
+
+        # A remove naming an object but no readable item id may have been the plant (t1)
+        unless inv['itemId'].is_a?(String)
+          @untagged_remove = true
+          next
+        end
+
+        @plant_rows[[inv['itemId'], inv['usedOn']]] ||= index
+        # The earliest plant of the item on any non-jack object, for a proof with no `on` (m2)
+        used = @plant_object_by_id[inv['usedOn']]
+        # and only an object that takes the item records a plant: the server refuses the rest
+        # (object_takes_item?), so a remove on a decoy object is no plant (R2 m1)
+        if used.is_a?(Hash) && !BreakEscape::NetworkModel.jack?(used) &&
+           BreakEscape::CaptureModel.object_takes_item?(used, BreakEscape::CredentialModel.item_definition(@data, inv['itemId']))
+          @plant_rows_any[inv['itemId']] ||= index
+        end
+      elsif tagged
+        # A remove row whose body the recorder could not read may have been the plant. Untagged
+        # rows carry no action, so any 200 row with a null or missing tag counts as one
+        @untagged_remove = true
+      end
+    end
+  end
+
+  # A planted proof on a room object that is no network jack, or with no `on` (met only by a
+  # non-jack plant): the only plants sent as a POST /inventory remove with used_on, so the only
+  # ones the log can order
+  def order_checked_plant?(proof)
+    return false unless BreakEscape::CaptureModel.proof_kind(proof) == 'planted'
+
+    on = proof['on']
+    return true if on.nil?
+    return false unless on.is_a?(String) && !on.empty?
+
+    obj = @object_by_id[on]
+    obj.is_a?(Hash) && !BreakEscape::NetworkModel.jack?(obj)
+  end
+
+  # Whether an order-checked plant proof held before the row at index. A pre-change log is not
+  # order-checked. A tagged plant row must come first (and, with a game, the proof must hold
+  # now). With no plant row: an untagged remove row makes the log unverifiable; otherwise, with
+  # a game, the plant predates the log when the proof holds now; without one it is flagged.
+  def plant_held_before?(proof, index)
+    return true if @log_mode == :pre
+
+    final = @game.nil? || @game.capture_proof_holds?(proof)
+    at = proof['on'].nil? ? @plant_rows_any[proof['planted']] : @plant_rows[[proof['planted'], proof['on']]]
+    return at < index && final if at
+    return false if @untagged_remove || @game.nil?
+
+    final
+  end
+
+  # A capture secret on a capture route: one with no proof on some writer keeps the old
+  # exemption. Otherwise one of its proofs must have held before the row: an order-checked
+  # plant by plant_held_before?, any other kind by the final state with a game (no check
+  # without one, as before).
+  def capture_secret_served_in_order?(secret, index)
+    proofs = capture_secret_proofs(secret)
+    return true unless proofs
+
+    proofs.any? do |proof|
+      if order_checked_plant?(proof) then plant_held_before?(proof, index)
+      else @game.nil? || @game.capture_proof_holds?(proof)
+      end
+    end
+  end
+
+  # An account password on a capture route, for an NPC whose proofs include an order-checked
+  # plant: one of its proofs must have held before the row, a plant by plant_held_before? and
+  # any other kind by the final state with a game, as the capture secret route does (R1 m1). Other NPCs pass as before.
+  def account_proof_held_before?(npc_id, index)
+    npc = each_room_npc.find { |n| n['id'].to_s == npc_id }
+    return true unless npc
+
+    proofs = BreakEscape::CaptureModel.proofs_for(npc, @data)
+    return true unless proofs.any? { |proof| order_checked_plant?(proof) }
+
+    proofs.any? do |proof|
+      if order_checked_plant?(proof) then plant_held_before?(proof, index)
+      else @game.nil? || @game.capture_proof_holds?(proof)
+      end
+    end
+  end
+
   def scan_network_strings(body, ctx, add)
     return if @network_strings.empty?
     return if ctx[:network] || ctx[:any_container]
