@@ -573,6 +573,23 @@ function createSpriteFromMatch(tiledItem, scenarioObj, position, roomId, index, 
  * - 2 tiles (64px) from top
  * - 2 tiles (64px) + 16px from bottom, plus sprite height to prevent overlap with southern room walls
  */
+// Place a room object from its scenario position. Tile x/y are room-relative and win
+// when present (every authored object). Otherwise a stored px/py is the sprite centre
+// in absolute world pixels, the form an NPC put-down or KO drop writes to
+// objects_added (room-state-sync.js putDownObject/koDropObject): without this a
+// reload rebuilt such an object at a random spot instead of where it was set down
+// (NPC carried items slice C, T1/T2 live run). Same centring as the live put-down.
+function applyScenarioObjectPosition(sprite, scenarioPos, roomPos) {
+    if (!sprite || !scenarioPos || typeof scenarioPos !== 'object') return;
+    const hasTile = scenarioPos.x !== undefined || scenarioPos.y !== undefined;
+    if (scenarioPos.x !== undefined) sprite.x = Math.round(roomPos.x + scenarioPos.x * TILE_SIZE);
+    if (scenarioPos.y !== undefined) sprite.y = Math.round(roomPos.y + scenarioPos.y * TILE_SIZE);
+    if (!hasTile && Number.isFinite(scenarioPos.px) && Number.isFinite(scenarioPos.py)) {
+        sprite.x = Math.round(scenarioPos.px - (sprite.displayWidth || 0) / 2);
+        sprite.y = Math.round(scenarioPos.py - (sprite.displayHeight || 0) / 2);
+    }
+}
+
 function createSpriteAtRandomPosition(scenarioObj, position, roomId, index, map) {
     // Get actual room dimensions from the tilemap
     let roomWidth = 10 * TILE_SIZE;   // fallback
@@ -2459,9 +2476,9 @@ export function createRoom(roomId, roomData, position) {
 
                     // Override with explicit room-relative coordinates when specified.
                     // Tiled designer positions are ignored for coordinates-specified items.
-                    // Coordinates are tile-based and converted to pixels (multiply by TILE_SIZE)
-                    if (scenarioObj.position?.x !== undefined) sprite.x = Math.round(position.x + scenarioObj.position.x * TILE_SIZE);
-                    if (scenarioObj.position?.y !== undefined) sprite.y = Math.round(position.y + scenarioObj.position.y * TILE_SIZE);
+                    // Coordinates are tile-based and converted to pixels (multiply by TILE_SIZE);
+                    // an NPC put-down's px/py world-pixel centre is honoured too
+                    applyScenarioObjectPosition(sprite, scenarioObj.position, position);
 
                     // A table-layer match joins the table it overlaps; anything else (or a
                     // table-layer match moved off every table) is stored at its own depth
@@ -2473,9 +2490,9 @@ export function createRoom(roomId, roomData, position) {
                     sprite = createSpriteAtRandomPosition(scenarioObj, position, roomId, index, map);
 
                     // Override with explicit room-relative coordinates when specified.
-                    // Coordinates are tile-based and converted to pixels (multiply by TILE_SIZE)
-                    if (scenarioObj.position?.x !== undefined) sprite.x = Math.round(position.x + scenarioObj.position.x * TILE_SIZE);
-                    if (scenarioObj.position?.y !== undefined) sprite.y = Math.round(position.y + scenarioObj.position.y * TILE_SIZE);
+                    // Coordinates are tile-based and converted to pixels (multiply by TILE_SIZE);
+                    // an NPC put-down's px/py world-pixel centre is honoured too
+                    applyScenarioObjectPosition(sprite, scenarioObj.position, position);
 
                     // Set depth and store
                     setDepthAndStore(sprite, position, roomId, false, scenarioObj);
