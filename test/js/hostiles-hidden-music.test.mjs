@@ -37,7 +37,8 @@ function bus() {
 // A real NPCManager and a real NPCBehaviorManager.setNPCVisible, so a setVisible mapping goes
 // through the same path as in play. Hostility is a stub that also records announcements.
 const announced = [];
-function setup(ids, { hostile = ids, ko = [] } = {}) {
+function setup(ids, { hostile = ids, ko = [], threat = false } = {}) {
+    hostile = [...hostile];
     window.eventDispatcher = bus();
     const m = new NPCManager(window.eventDispatcher, null);
     ids.forEach((id) => m.npcs.set(id, { id, npcType: 'person', isVisible: true }));
@@ -48,12 +49,20 @@ function setup(ids, { hostile = ids, ko = [] } = {}) {
     const sys = {
         isNPCHostile: (id) => hostile.includes(id),
         isNPCKO: (id) => ko.includes(id),
+        // what the real hostile system does on a turn: record it and announce it once
+        setNPCHostile: (id, h) => {
+            if (h && !hostile.includes(id)) {
+                hostile.push(id);
+                window.eventDispatcher.emit('npc_hostile_state_changed', { npcId: id, isHostile: true });
+            }
+        },
         announceRestoredHostile: (id) => { announced.push(id); return true; }
     };
     window.npcHostileSystem = sys;
     announced.length = 0;
     switches.length = 0;
     initScenarioMusicEvents({ music: { events: [
+        ...(threat ? [{ trigger: 'npc_hostile_state_changed', condition: 'isHostile === true', playlist: 'threat', fade: false }] : []),
         { trigger: 'all_hostiles_ko', playlist: 'calm', fade: true }
     ] } });
     return { m, bm, sys, ko, hostile };
@@ -71,10 +80,10 @@ const koEvent = (id, ctx) => { ctx.ko.push(id); window.eventDispatcher.emit('npc
 
 test('hide first, KO second: a hostile hidden by a mapping no longer holds the fight music', () => {
     const c = setup(['a', 'b']); mapHide(c.m, 'b');
-    koEvent('a', c);
-    assert.deepEqual(switches, [], 'b is hostile and visible: still fighting');
     night();
-    assert.deepEqual(switches, ['calm'], 'hiding the only conscious hostile ends the fight');
+    assert.deepEqual(switches, [], 'a is still conscious and visible: still fighting');
+    koEvent('a', c);
+    assert.deepEqual(switches, ['calm'], 'a was the last visible hostile; hidden b does not count');
 });
 
 test('M1: KO first, hide second ends the fight (no npc_ko follows the hide)', () => {
@@ -176,11 +185,100 @@ test('M2 then reveal: reload with the NPC hidden, later revealed, announces once
     assert.deepEqual(announced, ['b']);
 });
 
-test('m6 (partial): a hidden hostile with no record is announced on its first reveal', () => {
-    // startHostile runs setHostile at creation and is outside this change (see the doc);
-    // what this change adds is the announcement on the first reveal of a hidden hostile.
+test('a hidden hostile with no record is announced on its first reveal (reveal branch only)', () => {
+    // The startHostile creation path is covered by the real NPCBehavior tests below.
     const c = setup(['a', 'r']); mapHide(c.m, 'r');
     c.m.npcs.get('r').isVisible = false;   // initiallyHidden, no record yet
     day();
     assert.deepEqual(announced, ['r']);
+});
+
+test('m1: hiding an already-hidden conscious hostile again does not re-fire all_hostiles_ko', () => {
+    const c = setup(['a', 'b']); mapHide(c.m, 'b');
+    koEvent('a', c);
+    night();
+    assert.deepEqual(switches, ['calm']);
+    night();
+    assert.deepEqual(switches, ['calm'], 'nothing changed, so no second switch');
+    day(); night();
+    assert.deepEqual(switches, ['calm', 'calm'], 'positive control: a hide after a reveal is a real hide');
+});
+
+// M1: real NPCBehavior with startHostile whose sprite starts hidden (initiallyHidden)
+function makeSprite(visible) {
+    const sprite = { x: 0, y: 0, visible, alpha: visible ? 1 : 0, displayWidth: 32, displayHeight: 32, originX: 0.5, originY: 0.5,
+        body: { offset: { x: 0, y: 0 }, halfWidth: 8, halfHeight: 8, enable: visible },
+        setTint() {}, clearTint() {},
+        setVisible(v) { this.visible = v; return this; }, setAlpha(a) { this.alpha = a; return this; } };
+    return sprite;
+}
+function startHostileBehavior(c, id, visible, restored = null) {
+    window.npcHostileSystem.takeRestoredHostility = () => restored;
+    const b = new NPCBehavior(id, makeSprite(visible), { hostile: { startHostile: true } }, {}, {});
+    c.bm.behaviors.set(id, b);
+    return b;
+}
+function mapReveal(c, id) {
+    c.m._setupEventMappings(id, [
+        { eventPattern: 'global_variable_changed:day', condition: 'value === true', cooldown: 0, setVisible: true }
+    ]);
+}
+
+test('M1: a startHostile NPC that starts hidden is not hostile, announces nothing and does not count', () => {
+    const c = setup(['a', 'r'], { hostile: ['a'], threat: true });
+    c.m.npcs.get('r').isVisible = false;
+    const b = startHostileBehavior(c, 'r', false);
+    assert.equal(b.hostile, false, 'no hostility while nobody can see it');
+    assert.equal(c.sys.isNPCHostile('r'), false);
+    assert.deepEqual(switches, [], 'no threat cue for an NPC on nobody\'s screen');
+    koEvent('a', c);
+    assert.deepEqual(switches, ['calm'], 'all_hostiles_ko can fire with the hidden reinforcement');
+});
+
+test('M1: revealing it turns it hostile with exactly one threat cue, and it counts from then on', () => {
+    const c = setup(['a', 'r'], { hostile: ['a'], threat: true });
+    c.m.npcs.get('r').isVisible = false; mapReveal(c, 'r');
+    const b = startHostileBehavior(c, 'r', false);
+    day();
+    assert.equal(b.sprite.visible, true);
+    assert.equal(c.sys.isNPCHostile('r'), true);
+    assert.deepEqual(switches, ['threat'], 'one cue, with the NPC on screen');
+    assert.deepEqual(announced, [], 'no second announce for the same reveal');
+    koEvent('a', c);
+    assert.deepEqual(switches, ['threat'], 'r counts again');
+    koEvent('r', c);
+    assert.deepEqual(switches, ['threat', 'calm'], 'positive control');
+});
+
+test('M1: a visible startHostile NPC is still hostile at creation', () => {
+    const c = setup(['r'], { hostile: [], threat: true });
+    const b = startHostileBehavior(c, 'r', true);
+    assert.equal(b.hostile, true);
+    assert.deepEqual(switches, ['threat']);
+});
+
+test('M1 reload: still hidden, nothing saved, so still no cue, and the reveal gives one', () => {
+    const c = setup(['a', 'r'], { hostile: ['a'], threat: true });
+    c.m.npcs.get('r').isVisible = false; mapReveal(c, 'r');
+    c.m.restoreNpcVisibility({});
+    const b = startHostileBehavior(c, 'r', false, null);   // nothing was recorded before the reload
+    assert.deepEqual(switches, []);
+    assert.equal(b.hostile, false);
+    day();
+    assert.deepEqual(switches, ['threat']);
+});
+
+test('M1 reload after the reveal: hostility restored, visible, announced once', () => {
+    const c = setup(['a', 'r'], { hostile: ['a'], threat: true });
+    startHostileBehavior(c, 'r', true, { hostile: true, ko: false });
+    assert.deepEqual(announced, ['r']);
+});
+
+test('M1 reload: a restored hostile on a hidden sprite with no mapping record waits for the reveal', () => {
+    const c = setup(['a', 'r'], { hostile: ['a'], threat: true });
+    c.m.npcs.get('r').isVisible = false; mapReveal(c, 'r');
+    startHostileBehavior(c, 'r', false, { hostile: true, ko: false });
+    assert.deepEqual(announced, [], 'hidden, so not announced at room load');
+    day();
+    assert.deepEqual(announced, ['r'], 'announced on the reveal');
 });
