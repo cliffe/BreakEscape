@@ -516,7 +516,8 @@ end
 valid = g.send(:extract_valid_flags_from_scenario)
 puts "MISSION=#{mission.name} (id #{mission.id})"
 puts "GAME_ID=#{g.id}"
-puts "URL=http://127.0.0.1:#{ENV.fetch('PLAYTEST_PORT', '3000')}/break_escape/games/#{g.id}"
+require_relative 'lib/playtest_url'
+PlaytestUrl.lines(g.id, ENV['PLAYTEST_PORT']).each { |line| puts line }
 puts "FLAG_SOURCE=#{source}"
 puts "HEAD_START=#{head_start_notes.join(' | ')}" if head_start_notes.any?
 if g.scenario_data['importedGlobals'].present?
