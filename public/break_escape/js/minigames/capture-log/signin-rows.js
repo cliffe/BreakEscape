@@ -48,7 +48,7 @@ function pushOnce(list, v) {
 
 /** The captures as a list, oldest first; accepts the globals-shaped map, a list, or the globals. */
 function captureEntries(captures) {
-    if (Array.isArray(captures)) return captures.filter((c) => isObj(c) && isStr(c.targetId));
+    if (Array.isArray(captures)) return captures.filter((c) => isObj(c) && isStr(c.targetId)).sort((a, b) => (a.at || 0) - (b.at || 0) || String(a.targetId).localeCompare(String(b.targetId)));
     if (isObj(captures) && isObj(captures.se_captures)) return captureList(captures);
     if (isObj(captures)) return captureList({ se_captures: captures });
     return [];
