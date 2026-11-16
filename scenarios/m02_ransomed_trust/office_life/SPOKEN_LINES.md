@@ -93,7 +93,7 @@ None. Ernesto's two earlier radio lines stay for a player who has not heard the 
 
 ## Stage 5 R1 fixes (2026-11-16, in progress)
 
-From `REVIEW_STAGE5_R1.md` and the owner's calls. Counts against the 71 above so far: **4 added, 0 changed, 0 removed**, so 75 clips. m2 split Ernesto's radio topic into two choices; the spoken lines are the same clips, and the new choice label "Security still after that visitor?" is not voiced.
+From `REVIEW_STAGE5_R1.md` and the owner's calls. Counts against the 71 above so far: **4 added, 0 changed, 0 removed**, so 75 clips; the m8 bark below makes 76. m2 split Ernesto's radio topic into two choices; the spoken lines are the same clips, and the new choice label "Security still after that visitor?" is not voiced.
 
 ### Added
 
@@ -108,9 +108,10 @@ The cooler pools stay at 4: one cooler break in nine in the R4 run, so they do n
 
 ### To voice
 
-None of the office-life clips has audio yet (D2). New in this round, all four above:
+None of the office-life clips has audio yet (D2). New in this round, the four above plus the m8 bark (5 in all):
 
 1. Ernesto, coffee: Same mug since ninety-six.
 2. Ernesto, coffee: Third wheelchair I've chased tonight.
 3. Hodan, coffee: Somebody's had my good mop again.
 4. Hodan, coffee: Two minutes. Then the stairs again.
+5. Hodan, one-off bark on taking the ward clerk's laptop (`scenario.json.erb`, her `eventMappings`, `item_picked_up:workstation`): Clerk'll want that back. Just saying. (37 characters; the first draft, "Ward clerk'll want that back. Just saying.", was 42.)

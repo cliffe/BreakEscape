@@ -3561,7 +3561,9 @@ boardroom_pin = "0417"
           },
           "eventMappings": [
             { "eventPattern": "npc_use_started:staff_boiler", "condition": "data.npcId === 'ernesto_bautista'", "needs": { "set": { "caffeine": 20 } } },
-            { "eventPattern": "npc_use_started:staff_cooler", "condition": "data.npcId === 'ernesto_bautista'", "needs": { "set": { "thirst": 20 } } }
+            { "eventPattern": "npc_use_started:staff_cooler", "condition": "data.npcId === 'ernesto_bautista'", "needs": { "set": { "thirst": 20 } } },
+<%# m8 (REVIEW_STAGE5_R1): the one moment the room's people work against the scene. Hodan sits at the clerk's desk; a one-off line when the laptop is taken. Event name is the item type. 37 characters, under the 40 bubble limit. %>
+            { "eventPattern": "item_picked_up:workstation", "condition": "data.itemId === 'ward_clerk_laptop' && !globalVars.night_staff_attacked && !globalVars.hodan_warsame_ko", "onceOnly": true, "bark": "Clerk'll want that back. Just saying.", "barkDelay": 800 }
           ],
           "observations": "The night domestic. A radio clipped to her tabard and a bed list written on the back of something else."
         }

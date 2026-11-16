@@ -105,3 +105,21 @@ Weak or partial: the items in m5; the whole-room counts (teleport, no story beat
 - `inklecate` on `m02_npc_ernesto_bautista.ink` and `m02_npc_hodan_warsame.ink`: output identical to the committed JSON.
 
 Stage 5 R1: 0/1/8
+
+## Outcomes (2026-11-16)
+
+| Finding | Outcome |
+|---|---|
+| M1 | Done. The long walkthrough ran in R4 (`STAGE5_LIVE.md`, "R4 walkthrough", game 5626): moveTo between rooms, real Kim and Gary conversations, 26 PASS, 0 FAIL, 0 NOT RUN. The target caveats it raised are in that section. |
+| m1 | Held for D30 (paper exchange order, heard rule). Nothing changed. |
+| m2 | Fixed (part 1). Ernesto's radio topic is two choices, burned and cleared; recompiled and checked in 5 states. |
+| m3 | Fixed (part 1). Mappings 1 and 3 walk-in cooldown 150000 ms. Mapping 4 stays at 120 s, because the review named only 1 and 3. |
+| m4 | Live check in `STAGE5_LIVE_R5.md` (separate run). |
+| m5 | Live check in `STAGE5_LIVE_R5.md` (separate run). |
+| m6 | No fault. The silence was the hostile porter knocking the player out during the wait (game-over screen blocked `interact`); the greeting opens in 245 ms after a reload (game 5673). No ink or engine change. |
+| m7 | Fixed (part 1). Baseline recorded as 0 errors, 33 warnings; the timer `onceOnly` fields are left to the m02 owner. |
+| m8 | Fixed (part 2). Hodan's seat cannot move, so she barks once when the clerk's laptop is taken: "Clerk'll want that back. Just saying." (37 characters; the first draft was 42, over the bubble limit). Proved live, game 5671. On the To voice list. |
+| D1 | Held for D30. |
+| D2 | Open. Voicing waits for the owner: 76 clips, none generated. |
+| Carried: copier page `takeable` | Open, does not block the ship. |
+| Carried: struck-only credits line | Added to `docs/IDEAS_BACKLOG.md` as an office-life rollout item. |

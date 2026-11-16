@@ -128,3 +128,28 @@ Views on the targets:
 - Pool size is adequate for the stated walkthrough length but thin beyond it: Ernesto's 4 coffee lines repeat from 10.5 minutes. The cooler pools are barely used in a normal run (1 cooler break in 9). Growing Ernesto's coffee pool to 6 would push the first repeat past 15 minutes.
 
 Games made in R4: 5611 (probe for Gary's conversation, enter failed, no Gary step), 5612 (probe, Gary conversation read through, burn set), 5615 (first full run, stopped by PID: the HaX bark and person-chat blocked `enterRoom`, script fault; reached clock 366), 5626 (the run above). The server on 3090 was stopped by its PID. Nothing else was touched.
+
+## R5 fixes (2026-11-16, branch `build/ol-m02`, main merged at 80b5ff9e3)
+
+Fixes to the findings in `REVIEW_STAGE5_R1.md`, in two parts. The m4 and m5 live checks are in `STAGE5_LIVE_R5.md` (a separate run on port 3095). Live checks here ran on a keyless server on :3090, headless, `setFPS(20)`, fixed steps on. Scripts: session scratchpad `m02-fix1/` and `m02-fix2/`.
+
+Part 1 (bb556b1c5):
+
+| Finding | Change | Check |
+|---|---|---|
+| m3 | Walk-in cooldowns for mapping 1 (`room_entered:staff_room`) and mapping 3 (`conversation_closed:dr_sarah_kim`): 120000 to 150000 ms. Mapping 4 (ward to corridor cooler) stays at 120000, because the review named only mappings 1 and 3. | Data change; the "pair at an object" share is rechecked in the m5 run. |
+| m2 | Ernesto's radio topic split in two: `[Busy night on the radio?]` (burned, not cleared) and `[Security still after that visitor?]` (cleared). The second label is not voiced. | Recompiled; inkcheck and loopcheck clean in 5 states; inkjs run of burned-then-cleared reaches both read-backs for told and not-told (`m02-fix1/radio.cjs`). |
+| R4 pools | Coffee pools for Ernesto and Hodan 4 to 6 lines; four new clips on the To voice list. | Validator: no bubble over 40 characters. |
+| m7 | Validator baseline recorded as 0 errors, 33 warnings. | Validator. |
+
+Part 2:
+
+| Finding | Result | Evidence |
+|---|---|---|
+| m8 | Hodan's seat cannot move (only the two table chairs have a seat spec), so she reacts instead: a one-off bark when the clerk's laptop is taken. Event `item_picked_up:workstation` (named for the item type), condition on `data.itemId`, `onceOnly`, `barkDelay` 800, guarded on `!night_staff_attacked && !hodan_warsame_ko`. The planned line was 42 characters, over the 40 limit; the line is now "Clerk'll want that back. Just saying." (37). | PASS, game 5671. The event fired with `itemId: ward_clerk_laptop` and `roomId: staff_room`; `barkSystem.showBark` ran for `hodan_warsame` with that text 842 ms later; no page errors. The pick-up opens the laptop (crypto workstation) screen over the room, so no clean screenshot of the bubble was taken; the proof is the `showBark` call. |
+| m6 | No fault. After an attack and a reload, her wary greeting opens normally. The earlier null came from the hostile porter knocking the player out during the 60 s wait: `interact` returned `blocking-ui` on the "KNOCKED OUT" screen. | PASS, game 5673: porter hostile, hp 80, 44 px away, 5 s after the reload; person-chat opened in 245 ms with "Don't come any nearer. I'm on the radio if I need to be." (359 ms with no reload). The 5540 script on game 5677 reproduced the silence and showed the game-over screen. No ink or engine change. |
+| Backlog | Struck-only credits line (impl R1 m5) added to `docs/IDEAS_BACKLOG.md` as an office-life rollout item for m01 to m10. | Entry dated 2026-11-16. |
+
+Checks run before the commit: `scripts/validate_scenario.rb` for m02 (0 errors, 33 warnings, unchanged); `scripts/lock_key_diff.rb` against `baseline_locks.json` (empty); `bin/test-js` (681 files passed, 0 failed). No ink changed in part 2, so no recompile.
+
+Totals for this section: 2 PASS (m8, m6), 0 FAIL. Games made: 5671, 5673, 5677. The server on :3090 was stopped by its PID.
