@@ -244,4 +244,12 @@ same-or-adjacent admits every legitimate walk while refusing a client that names
 far, unreachable room.
 
 Suites: npc_carried_items_test 33/0, forged_ko_drop + game_test + reload_persistence
-191/0, bin/test-js green, rubocop 368 files 0 offences.
+191/0, bin/test-js 680/0, rubocop 368 files 0 offences.
+
+Live proof (keyless server on :3091 from the worktree, full detail in
+`NPC_CARRIED_ITEMS_LIVE_R3.md`): five beats, every carry/put-down/consume/KO-drop
+200, 0 x 422, 0 errors. consume (game 5591) leaves the mug gone after reload; drop
+(5592) and KO (5594) leave exactly one mug on the floor after reload; M1 (5595) picks
+the mug up from the kitchen after a put-down there (cross-room, 200, was 422); M2
+(5596) ends the stranded carry on reload (mug back on the floor once) and the NPC
+carries again.
