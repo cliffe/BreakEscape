@@ -494,3 +494,25 @@ SIMS_TIDY_REVIEW_R1.md and Handover 6 here.
 - Neil's room (it_room) is behind a closed door, so the late-room proof used Rosa only.
 - Game 5956 was reported dirty by another session; not used.
 - Ready for review round 2.
+
+## Handover 7 (R2 fixes committed; row 3 probe half done, stopped at the context guard)
+
+- Commit 22a9815ba: m1 (directWalkStall now takes `now`, 180 ms window, a third of free-walk gain; tests at 20, 60
+  and 360 Hz), m2 (seated chair body cells keep the directional condition, padding is an avoid point; a padding
+  cost whose valueOf flags the touch probe, so a corridor blocked by padding still reruns; real EasyStar 0.4.4
+  vendored in test/js/vendor, test/js/path-seated-easystar.test.mjs), m3 (three glides from one foot, then one
+  chair_in_doorway_no_spot line), m4 (tour row 3: turned_back is npc_turned_back reason off only, parked listed
+  apart, needs_at_read, needs_samples every 5 s, no_queue_why). New tests fail on the old code (git apply -R).
+- bin/test-js was still running in the background at the guard (output in the scratchpad file testjs.out, last
+  line at the time was a PASS; no FAIL so far). Read its Files line before merging.
+- Row 3 probe, HEAD, BOARD_ROUTE=direct, game 6019: the board read succeeded (board true, clock 105 s) but the
+  needs did not change: caffeine at the first snapshot 88 (Amara), 93 (Tom), 79 (Marek), decaying slowly after,
+  never 10. So the `object_interacted` mapping with needs set caffeine 10 (scenario.json.erb:588, 668) did not
+  take effect, whatever the cause. Nobody queued.
+- Not done: the same probe on af5344f84 (worktree made and removed; server on :3093 started and stopped; game 6022
+  was created there for it and not played). Next: start a keyless server from a hand-made worktree at af5344f84,
+  run row3b.mjs with BOARD_ROUTE=direct on game 6022 (or a new one), compare caffeine after the read. If it
+  drops to 10 there and not on HEAD, bisect; if not, it is the mapping (cooldown 30000, or the event not
+  reaching the mapping) on main. Check the mapping cooldown and where npc-manager matches object_interacted.
+- Not done: R2 Outcomes section in SIMS_TIDY_REVIEW_R2.md.
+- Servers on :3093 stopped; the temporary worktree removed.
