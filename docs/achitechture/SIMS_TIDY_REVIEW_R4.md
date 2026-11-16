@@ -87,3 +87,21 @@ Game 6061 (second fresh test_needs_sims, same command):
 Row 5's one failure is a driver positioning flake; the approach to the rota in row 6 is also fragile in the driver. Neither
 touches the changes in this round. Worth a driver retry on park, but not a finding against the slice. Games 6060 and 6061
 were created for this round; the server (PID 133785) was killed afterwards.
+
+## R4 Outcomes
+
+- **m1 fixed.** `sweepDoorwayChairs` (seating.js) now keeps the first-try foot per chair (`_doorSweep.fromX, fromY`) and counts
+  a later try as the same spot while the foot is within `DOOR_SWEEP_SAME_PX` (4 px, Euclidean) of it. Only a move further
+  than that starts a fresh count. The rounding grid is gone. The R3 test now starts at x 5 with the nudge `5 + (++n % 2)`
+  (the edge-crossing case from this review). A new test moves the chair 5 px after the give-up (three more tries and a
+  second give-up line) and then 4 px from the new anchor (no reset). Both fail with the source change reverted
+  (`git apply -R` on seating.js only).
+- **m2 fixed, with a finding.** needs-sims-board-reach.test.mjs now pins `deadline_memo` as `wallMounted` and checks its marked
+  reach from the floor in front of it. The mark assertion fails without `wallMounted` (checked by removing it from the
+  scenario). The sprite is 42 x 31 at y 22, so its top edge is 30 px from the lowest stand point (y 52): unmarked it is
+  just inside the 32 px reach there, unlike the board (39 px). The test therefore does not claim an unmarked miss; it
+  asserts the marked distance is never longer. No live read was taken (no server started).
+- **Tour driver.** `parkByCooler` in tools/playtest/needs-tour-regression.mjs makes one re-approach when the first walk
+  ends 24 px or more from the aim, and reports `retried`. Not run live (no server started).
+- **Suites.** bin/test-js: 708 of 708 files pass. Rails: 2940 runs, 0 failures, 0 errors, 3 skips on the second run; the first
+  run showed 1 error that did not recur (run while the JS suite was also running).
