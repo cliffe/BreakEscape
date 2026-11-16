@@ -1199,6 +1199,18 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
                  summary(plant_scan([decoy, served_psk, plant_row], data: data, game: ProofGame.new(true)))
   end
 
+  test 'R3 m2: a remove of the kit on a taker nested in a container is no plant for a proof with no on' do
+    data = no_on_scenario
+    data['rooms']['reception']['objects'] << { 'id' => 'cabinet', 'type' => 'safe', 'name' => 'Cabinet', 'contents' => [
+      { 'id' => 'nested_spot', 'type' => 'plant_spot', 'name' => 'Nested', 'requiresItem' => 'kit_rogue_ap',
+        'consumesItem' => true, 'triggerOnInteract' => [] }
+    ] }
+    nested = plant_row(on: 'nested_spot')
+    # The server records a plant on a top-level object only, so the nested remove is not the earliest plant
+    assert_equal [[2, 'capture_secret', 'capture:staff_wifi_key']],
+                 summary(plant_scan([nested, served_psk, plant_row], data: data, game: ProofGame.new(true)))
+  end
+
   test 'R1 m1: a holder with a plant proof and another kind is not passed unconditionally' do
     data = pentest_scenario
     kieran = data['rooms']['reception']['npcs'].find { |n| n['id'] == 'kieran' }

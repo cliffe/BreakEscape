@@ -100,12 +100,59 @@ class CaptureProofSatisfiableTest < ActiveSupport::TestCase
     assert_equal %w[real-secret], served(data).map { |c| c['secret'] }
   end
 
-  test 'served_capture_writers keeps a whitespace-only targetId, as the server does' do
-    assert_equal %w[one-secret], served(served_data([writer('a', '  ', 'one-secret')])).map { |c| c['secret'] }
+  test 'served_capture_writers skips a whitespace-only targetId, as the server declares no such id' do
+    assert_empty served(served_data([writer('a', '  ', 'one-secret')]))
+    assert_equal %w[one-secret], served(served_data([writer('a', 't', 'one-secret')])).map { |c| c['secret'] }
   end
 
-  test 'served_capture_writers skips a writer whose address is a landing page capture address, and it still claims the id' do
-    data = served_data([writer('a', 't', 'one-secret', 'address' => 'phish.example'), writer('b', 't', 'two-secret'),
+  test 'served_capture_writers skips a foothold writer, which the server never serves' do
+    assert_empty served(served_data([writer('a', 't', 'one-secret', 'kind' => 'foothold')]))
+    # The first writer still owns the id's authored secret, but a credential entry earned through
+    # the second writer reaches it
+    data = served_data([writer('a', 't', 'one-secret', 'kind' => 'foothold'), writer('b', 't', 'two-secret')])
+    assert_equal %w[one-secret], served(data).map { |c| c['secret'] }
+  end
+
+  test 'served_capture_writers skips a phish target when exactly one landing page carries a secret' do
+    data = served_data([writer('a', 'receptionist', 'one-secret'), writer('b', 'other', 'two-secret')])
+    data['social']['phishTargets'] = [{ 'id' => 'receptionist' }]
+    data['social']['landingPages'] = [{ 'id' => 'p', 'capture' => { 'address' => 'x.example', 'secret' => 'page-secret' } }]
+    assert_equal %w[two-secret], served(data).map { |c| c['secret'] }
+    # Two landing page secrets: the single-secret fallback is off, so the writer is served
+    data['social']['landingPages'] << { 'id' => 'q', 'capture' => { 'address' => 'y.example', 'secret' => 'page-two' } }
+    assert_equal %w[one-secret two-secret], served(data).map { |c| c['secret'] }
+  end
+
+  test 'served_capture_writers reads landingPages as an Array only, as the server does' do
+    data = served_data([writer('a', 't', 'one-secret', 'address' => 'phish.example')])
+    data['social']['landingPages'] = { 'p' => { 'id' => 'p', 'capture' => { 'address' => 'phish.example', 'secret' => 'page-secret' } } }
+    assert_equal %w[one-secret], served(data).map { |c| c['secret'] }
+  end
+
+  test 'served_capture_writers judges the landing address on the earning writer, not only the first' do
+    data = served_data([writer('a', 't', 'one-secret', 'address' => 'phish.example'), writer('b', 't', 'two-secret')])
+    data['social']['landingPages'] = [{ 'id' => 'p', 'capture' => { 'address' => 'phish.example', 'secret' => 'page-secret' } }]
+    # An entry earned through b has no landing address, so it is served the first writer's secret
+    assert_equal %w[one-secret], served(data).map { |c| c['secret'] }
+  end
+
+  test 'top_level_room_objects skips objects nested in contents or held by an NPC' do
+    data = { 'rooms' => { 'r' => { 'objects' => [
+      { 'id' => 'box', 'contents' => [{ 'id' => 'inner' }] }, { 'id' => 'lap' }
+    ], 'npcs' => [{ 'id' => 'n', 'itemsHeld' => [{ 'id' => 'held' }] }] } } }
+    assert_equal %w[box lap], CM.top_level_room_objects(data).map { |o| o['id'] }
+  end
+
+  test 'a plant on an object that is not top level is not satisfiable once only top-level objects are passed' do
+    nested = { 'id' => 'lap', 'requiresItem' => 'kit', 'consumesItem' => true, 'triggerOnInteract' => [] }
+    data = { 'rooms' => { 'r' => { 'objects' => [{ 'id' => 'locker', 'contents' => [nested] }] } } }
+    refute sat({ 'planted' => 'kit', 'on' => 'lap' }, CM.top_level_room_objects(data))
+    refute sat({ 'planted' => 'kit' }, CM.top_level_room_objects(data))
+  end
+
+  test 'served_capture_writers skips a lone writer whose address is a landing page capture address' do
+    data = served_data([writer('a', 't', 'one-secret', 'address' => 'phish.example'),
+                        writer('b', 't', 'two-secret', 'address' => 'phish.example'),
                         writer('c', 'u', 'three-secret', 'address' => 'other.example')])
     data['social']['landingPages'] = [{ 'id' => 'p', 'capture' => { 'address' => 'phish.example', 'secret' => 'page-secret' } }]
     assert_equal %w[three-secret], served(data).map { |c| c['secret'] }

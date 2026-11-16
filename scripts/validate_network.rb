@@ -181,6 +181,7 @@ def check_network_model(json_data, scenario_dir = nil)
   # would offer that kit to every jack as well (held_rogue_device).
   cm = BreakEscape::CaptureModel
   plain_objects = all_objects.map { |e| e[:object] }
+  plant_objects = cm.top_level_room_objects(json_data) # the server records a plant on these only
   cm.each_capture_writer(json_data) do |capture, _kind, path, _owner|
     proof = capture['proof']
     next unless cm.proof_kind(proof) == 'planted'
@@ -243,7 +244,7 @@ def check_network_model(json_data, scenario_dir = nil)
     end
     served_writers = cm.served_capture_writers(json_data)
     proven = capture_writers_of_psk.any? do |cap, *_|
-      served_writers.any? { |c| c.equal?(cap) } && cm.proof_satisfiable?(cap['proof'], capture_item_defs, plain_objects, nil)
+      served_writers.any? { |c| c.equal?(cap) } && cm.proof_satisfiable?(cap['proof'], capture_item_defs, plant_objects, nil)
     end
     unless readable.include?(psk) || proven
       # C3 (plan 9): a psk found only in alternative-set feed posts may never ship.

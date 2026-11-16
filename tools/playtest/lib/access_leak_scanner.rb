@@ -233,6 +233,12 @@ class AccessLeakScanner
       id = e[:object]['id']
       h[id.to_s] ||= e[:object] if id.is_a?(String) && !id.empty?
     end
+    # A plant is recorded only on a top-level room object (CaptureProofs#planted_target_object),
+    # so the plant lookup ignores objects nested in contents or an NPC's itemsHeld.
+    @plant_object_by_id = BreakEscape::CaptureModel.top_level_room_objects(@data).each_with_object({}) do |o, h|
+      id = o['id']
+      h[id.to_s] ||= o if id.is_a?(String) && !id.empty?
+    end
     collect_items
     collect_network_secrets
     collect_wifi_secrets
@@ -1619,7 +1625,7 @@ class AccessLeakScanner
 
         @plant_rows[[inv['itemId'], inv['usedOn']]] ||= index
         # The earliest plant of the item on any non-jack object, for a proof with no `on` (m2)
-        used = @object_by_id[inv['usedOn']]
+        used = @plant_object_by_id[inv['usedOn']]
         # and only an object that takes the item records a plant: the server refuses the rest
         # (object_takes_item?), so a remove on a decoy object is no plant (R2 m1)
         if used.is_a?(Hash) && !BreakEscape::NetworkModel.jack?(used) &&

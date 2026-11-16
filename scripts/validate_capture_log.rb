@@ -146,7 +146,7 @@ def check_capture_log(json_data)
   end
 
   # ---- Each proof: well formed, naming what exists ----
-  plain_objects = objects.map { |e| e[:object] }
+  plant_objects = cm.top_level_room_objects(json_data) # the server records a plant on these only
   # Pass or fail comes from CaptureModel.proof_satisfiable? (the helper the network validator
   # shares, written to the server's capture_proof_holds? and its recorders); this lambda keeps
   # the per-reason messages and the extra warnings.
@@ -157,7 +157,7 @@ def check_capture_log(json_data)
                "or { \"session\": pc }, got #{proof.to_json}")
       next
     end
-    ok = cm.proof_satisfiable?(proof, item_defs, plain_objects, holder)
+    ok = cm.proof_satisfiable?(proof, item_defs, plant_objects, holder)
     case kind
     when 'planted'
       item_id = proof['planted'].to_s

@@ -480,28 +480,43 @@ module BreakEscape
 
       holders = room_npc_list(data).select { |npc| account_holder?(npc) }
       usernames = holders.map { |npc| normalise_username(npc['creds']['username']) }.to_set
-      # Game#capture_secrets_for_client answers a landing page's secret first when the earned
-      # entry's address matches that page's capture.address, so a writer sharing such an address
-      # is never the one served.
-      landing = landing_pages(data).filter_map do |page|
-        cap = page['capture'] if page.is_a?(Hash)
-        cap['address'] if cap.is_a?(Hash) && cap['secret'].is_a?(String) && !cap['secret'].empty? &&
+      # Game#capture_secrets_for_client answers by the earned entry's address first: a landing
+      # page's capture.address, then an account username, then (for a phish target, when exactly
+      # one landing page carries a secret) that one secret, and only then the authored secret
+      # of the id's first writer. It also serves credential entries only and skips an id no
+      # writer declares (present_string?). The first writer owns the id's authored secret, but
+      # the entry may be earned through any writer of that id, so the id is served when some
+      # writer of it could earn an entry that reaches the authored pass.
+      social = data['social']
+      list = social.is_a?(Hash) ? social['landingPages'] : nil
+      pages = (list.is_a?(Array) ? list : []).select { |page| page.is_a?(Hash) && page['capture'].is_a?(Hash) }
+      landing_secrets = pages.map { |page| page['capture']['secret'] }
+                             .select { |sec| sec.is_a?(String) && !sec.empty? }
+      landing = pages.filter_map do |page|
+        cap = page['capture']
+        cap['address'] if cap['secret'].is_a?(String) && !cap['secret'].empty? &&
                           cap['address'].is_a?(String) && !cap['address'].empty?
       end.to_set
-      seen = {}
-      each_capture_writer(data).filter_map do |capture, _kind, _path, owner|
+      single_secret_phish = landing_secrets.size == 1 ? phish_target_ids(data).map(&:to_s).to_set : Set.new
+      first = {}
+      reachable = {}
+      each_capture_writer(data) do |capture, _kind, _path, owner|
         next if owner && holders.any? { |npc| npc.equal?(owner) }
 
         id = capture['targetId']
-        next unless id.is_a?(String) && !id.empty? && capture['secret'].is_a?(String) && !capture['secret'].empty?
-        next if capture['address'].is_a?(String) && usernames.include?(normalise_username(capture['address']))
-        next if seen[id]
+        next unless present_string?(id)
 
-        seen[id] = true
-        # The server still maps this writer to the id, so it claims it; the page's secret wins
-        next if capture['address'].is_a?(String) && landing.include?(capture['address'])
+        addr = capture['address']
+        next if addr.is_a?(String) && usernames.include?(normalise_username(addr))
 
-        capture
+        kind_ok = !CAPTURE_KINDS.include?(capture['kind']) || capture['kind'] == 'credential'
+        reachable[id] = true if kind_ok && !(addr.is_a?(String) && landing.include?(addr))
+        next unless capture['secret'].is_a?(String) && !capture['secret'].empty?
+
+        first[id] ||= capture
+      end
+      first.filter_map do |id, capture|
+        capture if reachable[id] && !single_secret_phish.include?(id)
       end
     end
 
@@ -545,6 +560,17 @@ module BreakEscape
       return list if list.is_a?(Array)
 
       list.is_a?(Hash) ? list.values : []
+    end
+
+    # The room objects a plant can land on, as the server records one: only a top-level entry of
+    # rooms.<id>.objects (CaptureProofs#planted_target_object), never an object nested in a
+    # container's contents or an NPC's itemsHeld. Plain object hashes.
+    def top_level_room_objects(data)
+      rooms = data.is_a?(Hash) ? data['rooms'] : nil
+      return [] unless rooms.is_a?(Hash)
+
+      rooms.values.flat_map { |room| room.is_a?(Hash) && room['objects'].is_a?(Array) ? room['objects'] : [] }
+           .select { |o| o.is_a?(Hash) }
     end
 
     # The authored landing-page definition (social.landingPages entry) for a page id, or nil.

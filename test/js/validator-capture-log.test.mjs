@@ -158,6 +158,14 @@ test('a planted proof is satisfied by a confirm remove_item object or by a netwo
     assert.deepEqual(errors(issues(sc)), []);
 });
 
+test('R3 m2: a planted proof whose only taker is nested in a container is an error (the server records top-level plants only)', { skip }, () => {
+    const sc = clean();
+    const desk = sc.rooms.office.objects.find(o => o.id === 'chris_desk');
+    sc.rooms.office.objects = sc.rooms.office.objects.filter(o => o !== desk);
+    sc.rooms.office.objects.push({ id: 'cabinet', type: 'safe', name: 'Cabinet', contents: [desk] });
+    assert.ok(errors(issues(sc)).length > 0, 'a nested taker is no plant site');
+});
+
 test('storeIn: no holder, not takeable, addToNotes ignored, a code in the text', { skip }, () => {
     let sc = clean();
     sc.timers[0].actions[0].item.storeIn = 'nope';

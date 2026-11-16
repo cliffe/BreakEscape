@@ -779,6 +779,24 @@ test('E0.4: a key with a satisfiable proof-carrying capture writer counts as rea
     assertNot(warnings(list), 'appears nowhere the player can read');
 });
 
+test('R3 m2: a key whose plant site is nested in a container is still unreadable', { skip }, () => {
+    const sc = keyCaptureScenario({ planted: 'kit_ap', on: 'ap_spot' });
+    const lobby = room(sc, 'lobby');
+    const spot = lobby.objects.find(o => o.id === 'ap_spot');
+    lobby.objects = lobby.objects.filter(o => o !== spot);
+    lobby.objects.push({ id: 'cabinet', type: 'safe', name: 'Cabinet', contents: [spot] });
+    assertHas(warnings(issues(sc)), 'appears nowhere the player can read');
+});
+
+test('R3 m1: a key writer with kind foothold, or a whitespace targetId, is never served, so it still warns', { skip }, () => {
+    let sc = keyCaptureScenario({ planted: 'kit_ap', on: 'ap_spot' });
+    room(sc, 'lobby').npcs.find(n => n.id === 'hax').eventMappings[0].addCapture.kind = 'foothold';
+    assertHas(warnings(issues(sc)), 'appears nowhere the player can read');
+    sc = keyCaptureScenario({ planted: 'kit_ap', on: 'ap_spot' });
+    room(sc, 'lobby').npcs.find(n => n.id === 'hax').eventMappings[0].addCapture.targetId = '  ';
+    assertHas(warnings(issues(sc)), 'appears nowhere the player can read');
+});
+
 test('E0.4: a key with no capture writer is still unreadable', { skip }, () => {
     const sc = keyCaptureScenario({ planted: 'kit_ap', on: 'ap_spot' });
     room(sc, 'lobby').npcs = (room(sc, 'lobby').npcs || []).filter(n => n.id !== 'hax');
