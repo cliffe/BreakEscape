@@ -650,7 +650,7 @@ function renderNotification(message, type, title, duration, seen = false, option
     if (overPanel) {
         notification._toast.pending = true;
         notification._toast.arrivedAt = Date.now();
-        dropWaitingWarnings(notificationContainer, type === 'warning' ? notification : null);
+        if (type === 'warning') dropWaitingWarnings(notificationContainer, notification);
         notification._onReplace = replaceHandler(notification);
         notification._watchdogTimer = setTimeout(() => {
             notification._watchdogTimer = null;
