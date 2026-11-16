@@ -2234,7 +2234,7 @@ module BreakEscape
     # Last-write-wins sections the ring records per key (the string is the claim
     # key). mailState and notes are keyed too but derive their claim key
     # specially, so they are handled on their own below.
-    RING_KEYED_SECTIONS = %w[globalVariables npcInkVariables npcVisibility npcHostility npcCarry phoneState].freeze
+    RING_KEYED_SECTIONS = %w[globalVariables npcInkVariables npcVisibility npcHostility phoneState].freeze
     # Sections the server replaces whole (replace_timed_messages!,
     # merge_player_health!): recorded as a whole-section claim ("true"), never per
     # key, so a stale-but-recent request is skipped for them rather than handed a
@@ -2595,12 +2595,10 @@ module BreakEscape
         @game.merge_npc_hostility!(host) if host
       end
 
-      # Carried items reconcile per NPC (npcCarry delta): the carry actions own the
-      # authoritative writes, and the serve path re-validates every stored carry.
-      if params[:npcCarry].respond_to?(:to_unsafe_h)
-        carry = ring_filter_section('npcCarry', params[:npcCarry].to_unsafe_h, skip)
-        @game.merge_npc_carry!(carry) if carry
-      end
+      # Carried items are written only by the four update_room carry actions and never
+      # synced by the client, so an incoming npcCarry delta is ignored: the carry
+      # actions own the authoritative writes and the serve path re-validates every
+      # stored carry. (No sync merge: a forged npcCarry in sync_state writes nothing.)
 
       # The player's HP (m05 E6): latest wins, so a stale flush can't undo a hit
       if params[:playerHealth].respond_to?(:to_unsafe_h) && !ring_whole_claimed?('playerHealth', skip)

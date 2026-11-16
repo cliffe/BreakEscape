@@ -271,16 +271,22 @@ the player takes is not resurrected in its origin room.
 
 ### Reload in the middle of a carry
 
-On reload the server serves the object in the carrying NPC's `itemsHeld` (from the
-`npcCarry` delta), and not in its origin room (origin `objects_removed`). The
-client's needs state is fresh after a reload (it does not restore an in-flight
-carry job), so the NPC is not mid-walk holding it; the item is simply shown as a
-held item of that NPC until a new job moves it, the player takes it, or (if the
-scenario prefers) a reload-time rule sets it back down at the NPC. Preferred
-simple rule: on reload, a still-carried item is served in `itemsHeld`; the needs
-system may stow/drop it on its next tick (it already stows revealed slots on
-sight, npc-needs.js:5751). No new client restore code is required for correctness;
-the object is never lost and never duplicated.
+On reload the server ends any carry that outlived the reload: the bootstrap step
+(`prepare_bootstrap_state!` -> `end_stranded_carries!`) puts each carried object
+back where it was picked up (`fromRoom`, scenario position, added to that room's
+`objects_added`) and deletes the `npcCarry` entry. A reload always lands on the
+bootstrap before any room fetch, so by the time the first room loads the object is
+on the floor and the NPC is free to carry again.
+
+This replaces the earlier "serve it in the hand on reload" rule. The client's needs
+state is fresh after a reload (it does not restore an in-flight carry job): a
+non-slot carried item served in the hand had no `_needsCarried` record and no
+sprite, so the needs world could neither stow, drop nor consume it, and the carry
+lived forever (the object gone from the world, the NPC unable to carry again). Ending
+the carry on load keeps the object in play and the NPC free, with no new client
+restore code and no duplication (the origin `objects_removed` stays, so exactly one
+floor copy results). Resuming the walk mid-carry (serving it in the hand and having
+the needs system continue) is future work (slice C "resume carry").
 
 ---
 

@@ -419,5 +419,148 @@ module BreakEscape
       assert g.reload.carriable_object_index['kit_badusb'].nil?, 'requiresItem id excluded from the allowlist'
       assert g.carriable_object_index['office_mugs'].nil?, 'objective targetObject id excluded from the allowlist'
     end
+
+    test 'targetId, objectId and unlockedBy each exclude a needs-tagged object from the allowlist' do
+      build
+      g = @game.reload
+      g.scenario_data['rooms']['office']['objects'] << {
+        'type' => 'usb_stick', 'id' => 'ref_target', 'name' => 'Target', 'takeable' => true, 'needsTag' => 'dirty_mugs'
+      }
+      g.scenario_data['rooms']['office']['objects'] << {
+        'type' => 'usb_stick', 'id' => 'ref_object', 'name' => 'Object', 'takeable' => true, 'needsTag' => 'dirty_mugs'
+      }
+      g.scenario_data['rooms']['office']['objects'] << {
+        'type' => 'usb_stick', 'id' => 'ref_unlocker', 'name' => 'Unlocker', 'takeable' => true, 'needsTag' => 'dirty_mugs'
+      }
+      g.scenario_data['rooms']['office']['objects'] << {
+        'type' => 'terminal', 'id' => 't_targetid', 'name' => 'T1', 'targetId' => 'ref_target'
+      }
+      g.scenario_data['rooms']['office']['objects'] << {
+        'type' => 'terminal', 'id' => 't_objectid', 'name' => 'T2', 'objectId' => 'ref_object'
+      }
+      g.scenario_data['rooms']['office']['objects'] << {
+        'type' => 'account', 'id' => 'acct', 'name' => 'Account', 'unlockedBy' => 'ref_unlocker'
+      }
+      g.save!
+
+      %w[ref_target ref_object ref_unlocker].each do |bad_id|
+        carry('grace', bad_id)
+        assert_response :unprocessable_entity, "#{bad_id} must be refused"
+        assert g.reload.carriable_object_index[bad_id].nil?, "#{bad_id} excluded from the allowlist"
+      end
+      assert g.carriable_object_index['office_mugs'].present?, 'ordinary dressing still carriable'
+    end
+
+    # === R3 M1: a carry from any room the object is actually in ================
+
+    test 'a carry picks the object up from a non-scenario room it was moved to' do
+      build
+      carry('grace', 'office_mugs')
+      put_down('grace', 'office_mugs', room: 'kitchen', position: { px: 50, py: 60 })
+      assert_nil carry_state['grace'], 'carry ended; mug now sits in the kitchen'
+      assert room_objects('kitchen').any? { |o| o['id'] == 'office_mugs' }, 'mug on the kitchen floor'
+
+      # Pick it up again from the kitchen (not its scenario room): the needs system does
+      # this for a player-dropped device. It used to 422; now it is accepted.
+      carry('grace', 'office_mugs', room: 'kitchen')
+      assert_response :success
+      assert_equal({ 'itemId' => 'office_mugs', 'fromRoom' => 'kitchen' }, carry_state['grace'])
+      assert_not room_objects('kitchen').any? { |o| o['id'] == 'office_mugs' }, 'mug left the kitchen floor'
+      assert npc_held('office', 'grace').any? { |i| i['id'] == 'office_mugs' }, 'served in the hand again'
+    end
+
+    test 'a carry from a room the NPC cannot reach is refused' do
+      build
+      g = @game.reload
+      # storeroom is unlocked but not connected to the office, where grace is placed.
+      g.scenario_data['rooms']['storeroom']['objects'] << {
+        'type' => 'dirty_mugs1', 'id' => 'store_mug', 'name' => 'Store Mug', 'takeable' => true, 'needsTag' => 'dirty_mugs'
+      }
+      g.save!
+      carry('grace', 'store_mug', room: 'storeroom')
+      assert_response :unprocessable_entity, 'grace cannot reach the storeroom'
+      assert_nil carry_state
+      assert room_objects('storeroom').any? { |o| o['id'] == 'store_mug' }, 'mug did not move'
+    end
+
+    # === R3 m4: a knocked-out NPC cannot carry ===============================
+
+    test 'a KOd NPC cannot pick up a carriable object' do
+      build('encounteredNPCs' => %w[grace])
+      g = @game.reload
+      g.player_state['room_states']['office'] ||= { 'objects_added' => [], 'objects_removed' => [], 'object_states' => {}, 'npc_states' => {} }
+      g.player_state['room_states']['office']['npc_states']['grace'] = { 'isKO' => true, 'currentHP' => 0 }
+      g.save!
+      assert g.npc_defeated?('grace'), 'grace is knocked out'
+
+      carry('grace', 'office_mugs')
+      assert_response :unprocessable_entity, 'a KO d NPC cannot carry'
+      assert_nil carry_state
+      assert room_objects('office').any? { |o| o['id'] == 'office_mugs' }, 'mug stayed on the floor'
+    end
+
+    # === R3 m1: KO drop is bounded to the NPC room or an adjacent one =========
+
+    test 'a KO drop into a room the NPC cannot reach is refused with the carry intact' do
+      build('encounteredNPCs' => %w[grace])
+      carry('grace', 'office_mugs')
+      # grace is in the office; the storeroom is unlocked but not adjacent.
+      post update_room_game_url(@game), params: {
+        roomId: 'storeroom', actionType: 'ko_drop_carried',
+        data: { npcId: 'grace', itemId: 'office_mugs', position: { px: 10, py: 20 } }
+      }, as: :json
+      assert_response :unprocessable_entity, 'cannot drop in a far room'
+      assert carry_state['grace'], 'still carried'
+      assert_not room_objects('storeroom').any? { |o| o['id'] == 'office_mugs' }, 'nothing added to the storeroom'
+    end
+
+    # === R3 M2: a reload ends a stranded carry and puts the object back =======
+
+    test 'a reload (bootstrap) ends a stranded carry and puts the object back in its pick-up room' do
+      build
+      carry('grace', 'office_mugs')
+      assert_equal 'office', carry_state['grace']['fromRoom'], 'carried before the reload'
+
+      # A reload hits the bootstrap before any room fetch.
+      get scenario_game_url(@game), as: :json
+      assert_response :success
+
+      assert carry_state.blank?, 'the stranded carry is ended'
+      landed = room_objects('office').select { |o| o['id'] == 'office_mugs' }
+      assert_equal 1, landed.size, 'mug back on the office floor exactly once'
+      assert_not npc_held('office', 'grace').to_a.any? { |i| i['id'] == 'office_mugs' }, 'no longer served in the hand'
+
+      # The NPC is free to carry again afterwards.
+      carry('grace', 'office_mugs')
+      assert_response :success
+      assert_equal({ 'itemId' => 'office_mugs', 'fromRoom' => 'office' }, carry_state['grace'], 'carries again after the reload')
+    end
+
+    # === R3 m3: delivery to the player clears the carry =======================
+
+    test 'recording a carried object as given to the player clears the carry' do
+      build
+      carry('grace', 'office_mugs')
+      assert carry_state['grace'], 'carried'
+
+      g = @game.reload
+      g.record_npc_gift!('grace', { 'type' => 'dirty_mugs1', 'id' => 'office_mugs', 'name' => 'Abandoned Mugs' })
+      assert_nil g.player_state['npcCarry']['grace'], 'carry cleared on delivery'
+      assert_not npc_held('office', 'grace').to_a.any? { |i| i['id'] == 'office_mugs' }, 'no longer served held'
+    end
+
+    # === serving m1: put-down / KO drop refuse once the player holds the item ==
+
+    test 'put down and KO drop refuse when the player already holds the carried object' do
+      build('encounteredNPCs' => %w[grace])
+      carry('grace', 'office_mugs')
+      g = @game.reload
+      g.player_state['inventory'] = [{ 'id' => 'office_mugs' }]
+      g.save!
+
+      assert_equal false, g.put_down_carried!('kitchen', 'grace', 'office_mugs'), 'put-down refused: already taken'
+      assert_equal false, g.ko_drop_carried!('office', 'grace', 'office_mugs'), 'KO drop refused: already taken'
+      assert_not room_objects('kitchen').any? { |o| o['id'] == 'office_mugs' }, 'not duplicated into the kitchen'
+    end
   end
 end

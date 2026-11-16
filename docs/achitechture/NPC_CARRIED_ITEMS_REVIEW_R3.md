@@ -219,3 +219,29 @@ not scenario keys, and the branch adds no scenario key. The keys the allowlist r
 (`needsTag`, `requiresItem`, `targetObject`, `targetId`, `objectId`, `unlockedBy`)
 are already declared in `scripts/scenario-schema.json`, so
 `test/js/validator-schema-known-keys.test.mjs` needs nothing new.
+
+## Outcomes (R3 fixes)
+
+All nine findings (R3 0/2/4 plus serving 0/0/3) fixed on `build/ol-carry`. Code in
+`app/models/break_escape/game.rb` and `app/controllers/break_escape/games_controller.rb`;
+tests in `test/controllers/break_escape/npc_carried_items_test.rb`.
+
+| Finding | Outcome |
+|---|---|
+| M1 cross-room carry refused | `carry_object!` drops the scenario-room equality; it now accepts any room the object is actually in (`item_in_room?`) that the NPC can reach. New test: pick up a mug from the kitchen after a put-down there (200, served held, gone from the kitchen floor). |
+| M2 reload strands a carry | New bootstrap writer `end_stranded_carries!` (run by `prepare_bootstrap_state!`) puts each carried object back in its `fromRoom` (scenario position) and deletes the entry. New test: carry, GET /scenario, object back on the floor once, carry again returns 200. Reload behaviour documented in the plan (slice C resume-carry remains future work). |
+| R3 m1 / serving m3 KO drop lands anywhere | `ko_drop_carried!` now requires `npc_can_reach_room?` (NPC room or adjacent); refuses a far room. New test: KO drop into the non-adjacent storeroom is 422, carry intact, nothing added. |
+| R3 m2 dead sync path | Removed `merge_npc_carry!`, the `npcCarry` sync branch and `npcCarry` from `RING_KEYED_SECTIONS`. An incoming `npcCarry` is ignored; existing forged/stale/replay sync tests now assert it is dropped. |
+| R3 m3 delivery clear untested | New test: `record_npc_gift!` of a carried object clears the entry and stops it being served held. |
+| R3 m4 / serving m2 KO'd NPC and NPC-not-in-room | `carry_object!` now refuses a KO'd NPC (`npc_defeated?`) and requires `npc_can_reach_room?` (NPC room or adjacent). New tests: a KO'd NPC cannot carry; a carry from an unreachable room is refused. |
+| serving m1 inventory guard | `put_down_carried!` and `ko_drop_carried!` return false when `carried_item_in_inventory?`. New test: both refuse once the player holds the object, nothing duplicated. |
+| R2 m2 test gap | New test covers `targetId`, `objectId` and `unlockedBy` in `LOCK_REFERENCE_KEYS` (requiresItem/targetObject already covered). |
+
+Reachability rule (m1 / m4 / serving m2/m3): "the NPC's scenario room or one
+adjacent to it". The server tracks only an NPC's scenario placement, not its live
+simulated position; a needs walk only ever steps into a neighbouring room, so
+same-or-adjacent admits every legitimate walk while refusing a client that names a
+far, unreachable room.
+
+Suites: npc_carried_items_test 33/0, forged_ko_drop + game_test + reload_persistence
+191/0, bin/test-js green, rubocop 368 files 0 offences.

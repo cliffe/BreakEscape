@@ -129,3 +129,18 @@ sync-refusal path are covered by `test/js/npc-carry-wiring.test.mjs` and
 needed for the minors above; each is a hardening suggestion, not an exploit.
 
 Serving: 0/0/3
+
+## Outcomes (serving minors)
+
+- minor 1: `put_down_carried!` and `ko_drop_carried!` now `return false if
+  carried_item_in_inventory?(item_id)`, mirroring the serve-path guard. Test:
+  "put down and KO drop refuse when the player already holds the carried object".
+- minor 2: `carry_object!` now requires `npc_can_reach_room?(npc_id, from_room)`
+  (the NPC's scenario room or one adjacent to it) and refuses a KO'd NPC. Chosen
+  over a strict same-room rule because the server sees only an NPC's scenario
+  placement, not its live simulated position, and a needs walk only ever crosses
+  into a neighbouring room. Tests: "a carry from a room the NPC cannot reach is
+  refused", "a KOd NPC cannot pick up a carriable object".
+- minor 3: `ko_drop_carried!` now bounds the drop to the same reachability rule
+  (`npc_can_reach_room?`) rather than any named unlocked room. Test: "a KO drop
+  into a room the NPC cannot reach is refused with the carry intact".

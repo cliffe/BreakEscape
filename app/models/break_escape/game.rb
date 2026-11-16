@@ -1269,9 +1269,18 @@ module BreakEscape
     def carry_object!(from_room, npc_id, item_id)
       return false unless from_room.is_a?(String) && npc_id.is_a?(String) && item_id.is_a?(String)
       return false unless needs_npc_ids.include?(npc_id)
+      # A knocked-out NPC is out of play: it cannot pick anything up, else the object
+      # leaves the world in the hand of an NPC that can never put it down.
+      return false if npc_defeated?(npc_id)
 
       info = carriable_object_index[item_id]
-      return false unless info && info['room'] == from_room
+      return false unless info
+      # The object may be in any room now, not only its scenario room: a player drop,
+      # a put-down or a KO drop lands it elsewhere, and the needs system picks it up
+      # from there. The pick-up room must be one the NPC can reach (its own room or
+      # one adjacent to it): the server tracks only an NPC's scenario placement, and
+      # a needs walk only ever crosses into a neighbouring room.
+      return false unless npc_can_reach_room?(npc_id, from_room)
 
       carry = player_state['npcCarry'] ||= {}
       existing = carry[npc_id]
@@ -1298,6 +1307,9 @@ module BreakEscape
       carry = player_state['npcCarry']
       entry = carry.is_a?(Hash) ? carry[npc_id] : nil
       return false unless entry.is_a?(Hash) && entry['itemId'] == item_id
+      # The player has already taken this object into their inventory, so a put-down
+      # would duplicate it onto the floor. Mirror the serve-path guard and refuse.
+      return false if carried_item_in_inventory?(item_id)
       return false unless scenario_room_ids.include?(to_room)
       return false unless put_down_room_reachable?(entry['fromRoom'], to_room)
 
@@ -1334,10 +1346,10 @@ module BreakEscape
       true
     end
 
-    # KO while carrying (review R1 M1, slice C): the carrying NPC is knocked out, so
-    # the carried object drops to the KO room floor and the carry ends. The KO room
-    # need not be reachable from the pick-up room (a hostile NPC is chased through
-    # doors); instead the server trusts the KO itself, exactly as add_item_to_room!'s
+    # KO while carrying (slice C): the carrying NPC is knocked out, so the carried
+    # object drops to the KO room floor and the carry ends. The drop room must be the
+    # NPC's room or one adjacent to it (a needs NPC is at most a doorway from where it
+    # is placed), and the server trusts the KO itself, exactly as add_item_to_room!'s
     # npc_defeated branch: the NPC must be defeated (its KO recorded) or KO-claimable,
     # and if claimable but not yet recorded, this drop records the KO. Clears the carry
     # so the object is served exactly once, on the floor, never also in the hand.
@@ -1348,6 +1360,9 @@ module BreakEscape
       carry = player_state['npcCarry']
       entry = carry.is_a?(Hash) ? carry[npc_id] : nil
       return false unless entry.is_a?(Hash) && entry['itemId'] == item_id
+      # The player has already taken this object, so a KO drop would duplicate it
+      # onto the floor. Mirror the serve-path guard and refuse.
+      return false if carried_item_in_inventory?(item_id)
 
       info = carriable_object_index[item_id]
       return false unless info.is_a?(Hash) && info['object'].is_a?(Hash)
@@ -1355,6 +1370,10 @@ module BreakEscape
       defeated = npc_defeated?(npc_id)
       claimable = npc_ko_claimable?(npc_id)
       return false unless defeated || claimable
+      # Bound the drop to the room the NPC is in or an adjacent one. The carrying NPC
+      # is always a needs NPC (only needs NPCs carry), so it is at most a doorway from
+      # its placed room; refuse a drop into a far room the client names.
+      return false unless npc_can_reach_room?(npc_id, room_id)
 
       player_state_will_change!
       player_state['room_states'] ||= {}
@@ -1364,7 +1383,7 @@ module BreakEscape
       # KO drop (the server takes isKO from the browser). Match add_item_to_room! and
       # update_npc_state! (review R2 m1): only write the KO record for an NPC actually
       # in the named room, so a client cannot mark an unfought NPC KO'd in a room it
-      # was never in. The object drop can still land in room_id regardless.
+      # was never in. The drop into room_id has already been bounded reachable above.
       if !defeated && claimable && npc_in_room?(npc_id, room_id)
         player_state['room_states'][room_id]['npc_states'] ||= {}
         player_state['room_states'][room_id]['npc_states'][npc_id] ||= {}
@@ -1414,57 +1433,13 @@ module BreakEscape
       item.merge('position' => { 'px' => px, 'py' => py })
     end
 
-    # Reconcile the npcCarry delta the client syncs (RING_KEYED_SECTIONS). Each
-    # entry is rebuilt field by field from known keys, so extra keys are never
-    # stored and repeats are idempotent; the map is bounded by the NPC count. When
-    # scenario_data is loaded, an entry is kept only for a real needs NPC carrying a
-    # real carriable object from its home room. The narrow sync load cannot read the
-    # allowlist, but the serve path (apply_npc_carry!) re-validates every carry
-    # against it under full scenario_data, so a stored entry that is not carriable is
-    # inert: it is never served, put down or consumed.
-    def merge_npc_carry!(incoming)
-      return unless incoming.is_a?(Hash)
-
-      scenario_loaded = has_attribute?(:scenario_data) && scenario_data.is_a?(Hash)
-      existing = player_state['npcCarry'] || {}
-      merged = existing.dup
-      incoming.each do |npc_id, entry|
-        next unless npc_id.is_a?(String) && entry.is_a?(Hash)
-
-        item_id = entry['itemId']
-        from_room = entry['fromRoom']
-        next unless item_id.is_a?(String) && from_room.is_a?(String)
-
-        # Reconcile-only (review R1 M2): the carry action owns the authoritative write
-        # (it also records the object removed from its origin room). A sync never mints
-        # a new carry, so a forged sync_state entry cannot serve an object both on its
-        # origin floor and in a hand. Keep an incoming entry only when the action path
-        # already created it: a matching stored entry, or the object recorded removed
-        # from its claimed fromRoom.
-        # Reconcile-only, and only to a live stored carry (review R2 M1): the carry
-        # action writes the stored npcCarry entry atomically with the origin-room
-        # removal and saves it, so a legitimate carry (including one made then reloaded
-        # before this sync) already has a matching stored entry. The origin removal is
-        # append-only and is never cleared when a carry ends, so it cannot be the guard:
-        # a consumed or put-down object leaves the removal standing, and a stale or
-        # forged sync replaying the old entry must not revive the ended carry.
-        prior = existing[npc_id]
-        matches_stored = prior.is_a?(Hash) && prior['itemId'] == item_id && prior['fromRoom'] == from_room
-        next unless matches_stored
-
-        if scenario_loaded
-          next unless needs_npc_ids.include?(npc_id)
-
-          info = carriable_object_index[item_id]
-          next unless info && info['room'] == from_room
-        end
-
-        merged[npc_id] = { 'itemId' => item_id, 'fromRoom' => from_room }
-      end
-      return if merged.size > MAX_NPC_VISIBILITY
-
-      player_state['npcCarry'] = merged
-    end
+    # Carried items are written only by the four update_room carry actions, never by
+    # a client sync, so there is no npcCarry sync merge: an incoming npcCarry delta in
+    # sync_state is ignored (the controller drops it), which cannot mint, change or
+    # end a carry. The carry action owns the authoritative write (it records the object
+    # removed from its origin room), and the serve path (apply_npc_carry!) re-validates
+    # every stored carry against the allowlist under full scenario_data, so a stored
+    # entry that is not carriable is inert: never served, put down or consumed.
 
     # Serve a carried object in the carrying NPC's itemsHeld, so it shows in the hand
     # and can be taken. Driven by the npcCarry delta; the object left its origin room
@@ -1662,7 +1637,14 @@ module BreakEscape
     # and stampable_captures?; until then no bootstrap write is ever needed.
     def bootstrap_state_needs_write?
       cards_need_repair? || legacy_cloned_cards? || legacy_captures? || legacy_phish_evidence? ||
-        unrecorded_shared_logins? || stampable_captures?
+        unrecorded_shared_logins? || stampable_captures? || stranded_npc_carries?
+    end
+
+    # True when a carry is still stored at load time. A reload lands on the bootstrap
+    # before any room fetch, so a carry that outlived a reload is ended here.
+    def stranded_npc_carries?
+      carry = player_state['npcCarry']
+      carry.is_a?(Hash) && carry.any?
     end
 
     # Run the bootstrap writers inside the lock (none of which saves) and return
@@ -1686,7 +1668,43 @@ module BreakEscape
       # 6b: an unproven entry whose page evidence now holds is stamped proven: true on the
       # bootstrap, so a secret earned across a reload is served without a fresh sync.
       changed = stamp_proven_captures!(scenario: scenario) || changed
+      # End any carry that outlived a reload: the client's needs state is fresh and
+      # cannot resume an in-flight carry, so put each carried object back on the floor
+      # and free the NPC.
+      changed = end_stranded_carries! || changed
       changed
+    end
+
+    # End every stored carry by putting its object back where it was picked up
+    # (fromRoom, scenario position) and dropping the entry. The client then sees the
+    # object on the floor and the NPC is free to carry again. Mirrors put_down_carried!
+    # (add to objects_added, keep the origin objects_removed), so nothing duplicates.
+    # Resuming the walk mid-carry is future work (plan slice C). Returns whether it
+    # changed anything.
+    def end_stranded_carries!
+      carry = player_state['npcCarry']
+      return false unless carry.is_a?(Hash) && carry.any?
+
+      player_state_will_change!
+      player_state['room_states'] ||= {}
+      carry.keys.each do |npc_id|
+        entry = carry[npc_id]
+        if entry.is_a?(Hash)
+          item_id = entry['itemId']
+          from_room = entry['fromRoom']
+          info = item_id.is_a?(String) ? carriable_object_index[item_id] : nil
+          if info.is_a?(Hash) && info['object'].is_a?(Hash) && from_room.is_a?(String)
+            room_state = (player_state['room_states'][from_room] ||=
+              { 'objects_added' => [], 'objects_removed' => [], 'object_states' => {}, 'npc_states' => {} })
+            item = info['object'].deep_dup.except('texture')
+                       .merge('takeable' => true, 'interactable' => true, 'active' => true, 'visible' => true)
+            room_state['objects_added'].reject! { |o| o['id'] == item_id }
+            room_state['objects_added'] << item
+          end
+        end
+        carry.delete(npc_id)
+      end
+      true
     end
 
     def filter_inventory_for_client!(obj)
@@ -1923,6 +1941,31 @@ module BreakEscape
       added = player_state.dig('room_states', room_id, 'npcs_added')&.any? { |npc| npc['id'] == npc_id }
 
       (scenario_has_npc && !removed) || added
+    end
+
+    # The ids of the rooms an NPC is placed in by the scenario (minus a permanent
+    # removal, plus a permanent add). Bounded by the scenario.
+    def npc_scenario_room_ids(npc_id)
+      ids = Set.new
+      rooms = scenario_data.is_a?(Hash) ? scenario_data['rooms'] : nil
+      return ids unless rooms.is_a?(Hash)
+
+      rooms.each_key do |room_id|
+        ids << room_id if npc_in_room?(npc_id, room_id)
+      end
+      ids
+    end
+
+    # True when an NPC can reach a room for a carry action: it is placed in that
+    # room, or in a room adjacent to it. The server cannot see a needs NPC's live
+    # simulated position, only its scenario placement; a needs walk only ever steps
+    # into a neighbouring room, so same-or-adjacent covers every legitimate walk
+    # while still refusing a client that names a far, unreachable room.
+    def npc_can_reach_room?(npc_id, room_id)
+      return false unless npc_id.is_a?(String) && room_id.is_a?(String)
+      return true if npc_in_room?(npc_id, room_id)
+
+      npc_scenario_room_ids(npc_id).any? { |placed| rooms_connected?(placed, room_id) }
     end
 
     # Check if item exists in a room
