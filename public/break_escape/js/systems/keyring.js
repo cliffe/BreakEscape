@@ -423,10 +423,11 @@ export class Keyring {
     releaseHeld() {
         if (this._holdTimer) { clearInterval(this._holdTimer); this._holdTimer = null; }
         // A held find is dropped only once forgotten (its tray item left the tray); an answer that
-        // briefly lacks it keeps it (K3c R1 M1). Without a known tray the latest answer decides.
-        const live = this._findIds;
-        const held = this._trayIds !== null ? this._held.filter(e => this._announced.has(e.id))
-            : live ? this._held.filter(e => live.has(e.id)) : this._held;
+        // briefly lacks it keeps it (K3c R1 M1). With no tray change seen yet (_trayIds null) no
+        // client drop can have happened, so every held find shows (part A R2 m1). A find with no
+        // heldItem is never forgotten, so it shows even if the latest answer dropped it (a
+        // password is knowledge and is not revoked).
+        const held = this._trayIds !== null ? this._held.filter(e => this._announced.has(e.id)) : this._held;
         this._held = [];
         return held.length ? this.showFinds(held) : Promise.resolve(null);
     }

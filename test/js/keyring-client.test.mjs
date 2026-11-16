@@ -977,7 +977,7 @@ test('R3 t2: the no-rev retry shares the first ask\'s deadline, not a fresh one'
     window.ApiClient.keyring = (pcId, opts = {}) => {
         calls.push(['keyring', pcId, opts.rev ?? null]);
         // The first answer is unusable after most of the budget; the retry never answers
-        if (++n === 1) return new Promise(r => setTimeout(() => r({ unusable: true }), 120));
+        if (++n === 1) return new Promise(r => setTimeout(() => r({ unusable: true }), 320));
         retrySignal = opts.signal;
         return new Promise(() => {});
     };
@@ -985,7 +985,7 @@ test('R3 t2: the no-rev retry shares the first ask\'s deadline, not a fresh one'
     await assert.rejects(kr.fetch(null, { timeoutMs: 400 }), /timed out/);
     const spent = Date.now() - t0;
     assert.equal(keyringGets().length, 2, 'the retry went out');
-    assert.ok(spent < 480, `one 400 ms deadline in all (took ${spent} ms; a fresh one would be about 520)`);
+    assert.ok(spent < 560, `one 400 ms deadline in all (took ${spent} ms; a fresh one would be about 720)`);
     assert.ok(retrySignal?.aborted, 'the retry is aborted at the deadline');
 });
 
@@ -994,15 +994,30 @@ test('K3c R1 t1: the GET gets only the time the sync PUT left of the cap', async
     const kr = window.keyring;
     answers({ entries: [], rev: 'r0' });
     await kr.prime();
-    kr.askTimeoutMs = 200;
-    window.stateSync = { syncConfirmed: () => new Promise(r => setTimeout(r, 100)) };   // spends half the cap
+    kr.askTimeoutMs = 400;
+    window.stateSync = { syncConfirmed: () => new Promise(r => setTimeout(r, 320)) };   // spends most of the cap
     let signal = null;
     window.ApiClient.keyring = (pcId, opts = {}) => { signal = opts.signal; return new Promise(() => {}); };
     const t0 = Date.now();
     assert.equal(await kr.refresh(), null, 'the hung GET gives up');
     const spent = Date.now() - t0;
     assert.ok(signal?.aborted, 'and its request is aborted');
-    assert.ok(spent < 260, `one 200 ms cap for PUT and GET together (took ${spent} ms; a fresh cap for the GET would be about 300)`);
+    assert.ok(spent < 560, `one 400 ms cap for PUT and GET together (took ${spent} ms; a fresh cap for the GET would be about 720)`);
+});
+
+test('part A R2 m1: with no tray change seen, a held find shows at the close even if the latest answer lacks it', async () => {
+    setup();
+    const kr = window.keyring;
+    answers({ entries: [], rev: 'r0' }, { entries: [RDP], rev: 'r1' }, { entries: [], rev: 'r2' });
+    await kr.prime();
+    window.currentConversationNPCId = 'lena';
+    await kr.refresh(); await settle();             // r1: the find is held (no trayChanged, so _trayIds is null)
+    assert.equal(kr._trayIds, null, 'no tray change seen');
+    assert.equal(alerts.length, 0, 'held while talking');
+    await kr.refresh(); await settle();             // r2: lacks it
+    window.currentConversationNPCId = null;
+    await kr.releaseHeld(); await settle();
+    assert.deepEqual(toasts(), [RDP_FOUND], 'no client drop can have happened, so it shows');
 });
 
 test('K3c R1 M1: a held find is still toasted once when the latest answer briefly lacks it', async () => {
@@ -1092,7 +1107,10 @@ test('reconnect: a find held during a conversation is one line however often it 
     kr.announceFinds([RDP, OTHER_RDP]);
     kr.announceFinds([RDP]);
     assert.deepEqual(kr._held.map(e => e.id), ['k_rdp', 'k_rdp2'], 'held once each');
-    await kr.refresh(); await settle();   // OTHER_RDP left the answer meanwhile
+    // OTHER_RDP's file leaves the tray meanwhile (a real drop: with no tray change seen, a held
+    // find always shows, part A R2 m1), and the answer the drop asks for lacks it
+    await kr.trayChanged([ITEM]); await settle();
+    await kr.refresh(); await settle();
     window.currentConversationNPCId = null;
     await kr.releaseHeld(); await settle();
     assert.deepEqual(toasts(), [RDP_FOUND], 'one line, the dropped find left out');
