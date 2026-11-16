@@ -21,7 +21,7 @@
  * The find toasts (plan 8.2, part B): the first answer with no screen (the page-start prime, or
  * the first later one when the prime failed) is the baseline. After it, each no-screen answer
  * is diffed against the previous one, and registry entries new since then give one toast
- * (`findToastText`). Captures, assist invites (until K3c) and other kinds stay silent; a password
+ * (`findToastText`). Captures and other kinds stay silent; a password
  * in a file waits until its file is opened here. While a conversation is open (an NPC give) the
  * toast is held until it closes. The asks come from `listen()`: a sign-in once its desktop has
  * opened, a tray change, a plant, implant or Wi-Fi join (network_foothold_gained), and
@@ -50,8 +50,8 @@ export function entryTagKind(entry) {
     return typeof entry.kind === 'string' ? entry.kind : null;
 }
 
-/** The kinds Connect runs for. K3c adds 'assist_invite' here, with its relay route in connectRoute. */
-export const CONNECT_KINDS = ['saved_connection'];
+/** The kinds Connect runs for: a saved connection by a foothold, an assist invite (K3c) by the relay. */
+export const CONNECT_KINDS = ['saved_connection', 'assist_invite'];
 
 /** How long Connect waits for its screen to appear before it gives up watching for the close. */
 export const RETURN_TO_OPEN_WAIT_MS = 3000;
@@ -59,14 +59,14 @@ export const RETURN_TO_POLL_MS = 250;
 
 /**
  * The route Connect signs in by (plan 8.2 step 8): K4's `from` first, then footholds, then
- * (K3c) the relay. Today only a foothold route is built, so the other two are skipped.
+ * the relay (K3c, an assist invite only). K4's `from` is not built yet, so it is skipped.
  */
 export function connectRoute(entry) {
     const routes = Array.isArray(entry?.routes) ? entry.routes : [];
     // K4: a { from } route goes first here, once pc-sessions can post it
     const foothold = routes.find(r => r && typeof r.foothold === 'string' && r.foothold);
     if (foothold) return { foothold: foothold.foothold };
-    // K3c: { relay: true } for an assist_invite goes here
+    if (entry.kind === 'assist_invite' && routes.some(r => r && r.relay === true)) return { relay: true };
     return null;
 }
 
@@ -124,6 +124,8 @@ export class Keyring {
         this._held = [];
         this._holdTimer = null;
         this._signedInPcs = new Set();
+        // The prompt-end trigger (8.3): armed while a relay session is held, else null
+        this._relaySync = null;
     }
 
     /** An item opened in this page (container-minigame's file hooks call this). */
@@ -269,12 +271,52 @@ export class Keyring {
         this._listening = d;
         d.on('inventory_changed', (data) => this.trayChanged(data?.items));
         // A sign-in asks once its desktop has opened (a desktop reopened on a held session does not)
-        d.on('pc_signed_in', (data) => { if (data?.pcId) this._signedInPcs.add(data.pcId); });
+        d.on('pc_signed_in', (data) => {
+            if (data?.pcId) this._signedInPcs.add(data.pcId);
+            if (data?.relay === true) this.armRelaySync();
+        });
+        d.on('pc_signed_out', () => this.relaySyncCheck());
         d.on('pc_desktop_opened', (data) => { if (data?.pcId && this._signedInPcs.delete(data.pcId)) this.refresh(); });
         // A plant, an implant and a Wi-Fi join each emit this once
         d.on('network_foothold_gained', () => this.refresh());
         d.on('conversation_closed:*', () => this.releaseHeld());
         return true;
+    }
+
+    /**
+     * The prompt-end trigger (plan 8.3): while a relay session is held, any global change asks
+     * stateSync.sync() at once, so an end global (the holder ending the assist) reaches the
+     * server within a second or so, not at the next 30 s sync. The answer's endedRelayPcIds
+     * then closes the relay desktop (pc-sessions.js). Idempotent; it disarms once no relay
+     * session is held (a sign-out, or the first change after the last relay has gone).
+     */
+    armRelaySync() {
+        const d = typeof window !== 'undefined' ? window.eventDispatcher : null;
+        if (!d || typeof d.on !== 'function') return false;
+        if (this._relaySync?.dispatcher === d) return true;
+        this.disarmRelaySync();
+        const fn = (data) => {
+            if (!this.relaySyncCheck()) return;
+            if (data && 'oldValue' in data && data.value === data.oldValue) return;
+            try { window.stateSync?.sync?.(); } catch (e) { /* the 30 s sync still runs */ }
+        };
+        d.on('global_variable_changed:*', fn);
+        this._relaySync = { dispatcher: d, fn };
+        return true;
+    }
+
+    disarmRelaySync() {
+        const r = this._relaySync;
+        if (!r) return;
+        this._relaySync = null;
+        try { r.dispatcher.off?.('global_variable_changed:*', r.fn); } catch (e) { /* gone */ }
+    }
+
+    /** True while a relay session is held; disarms the trigger once none is. */
+    relaySyncCheck() {
+        const held = typeof window !== 'undefined' && window.pcSessions?.hasRelay?.() === true;
+        if (!held) this.disarmRelaySync();
+        return held;
     }
 
     /**
@@ -461,6 +503,12 @@ export class Keyring {
         if (entry.targetOff === true) return toast(t.notRespondingMessage(host), 'target_off');
         if (entry.sessionHeld === true) {
             const held = w.pcSessions?.get?.(pcId);
+            if (held?.relay === true || (!held && connectRoute(entry)?.relay === true)) {
+                // Re-entry to a relay session is by Connect only (8.3)
+                w.openRelayDesktop?.(pcId);
+                if (held?.relay === true) this.armRelaySync();
+                return opened('session_held', { relay: true });
+            }
             const foothold = held?.footholdId || connectRoute(entry)?.foothold || null;
             w.openRemoteDesktop?.(pcId, foothold);
             return opened('session_held', { foothold });
@@ -473,7 +521,12 @@ export class Keyring {
         const result = await w.pcSessions.signInWithCredential(pcId, entry.id, route);
         if (result?.ok) {
             // signInWithCredential has already handed any endedPcIds to linkDropped (route_ended)
-            w.openRemoteDesktop?.(pcId, route.foothold);
+            if (route.relay === true) {
+                this.armRelaySync();
+                w.openRelayDesktop?.(pcId);
+            } else {
+                w.openRemoteDesktop?.(pcId, route.foothold);
+            }
             if (this.teachOnce(entry.kind)) {
                 const line = t.teachLine(entry.kind, { displayName });
                 if (line) { try { w.gameAlert?.(line, 'info', '', 8000, { plainText: true, whole: true }); } catch (e) { /* none */ } }
@@ -507,7 +560,8 @@ export class Keyring {
             });
             return opened('signin_screen', { reason });
         }
-        // K3c: an assist invite's kind_refused or ended maps to 8.5's toast here
+        // An assist invite's kind_refused ("{host} does not allow remote assistance.") and ended
+        // ("{displayName} ended the remote assist.") are 8.5's toasts here; there is no relay screen
         const line = t.credentialRefusalLine(reason, { host, label: data.name, displayName, kind: result?.kind || entry.kind });
         return toast(line || t.CONNECT_FAILED_TEXT, reason || 'refused');
     }
@@ -554,8 +608,8 @@ export class Keyring {
     }
 }
 
-/** The kinds with a find toast today (K3c adds 'assist_invite'); a capture is always silent. */
-export const FIND_KINDS = ['saved_connection', 'password'];
+/** The kinds with a find toast; a capture is always silent. */
+export const FIND_KINDS = ['saved_connection', 'password', 'assist_invite'];
 // The capture filter below is paired with findLine's in remote-host-text.js (a double guard).
 function findKindToasts(entry) {
     return entry.source !== 'capture' && FIND_KINDS.includes(entry.kind);

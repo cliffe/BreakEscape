@@ -141,15 +141,18 @@ export const savedConnectionFoundMessage = ({ label, displayName, host } = {}) =
     `Saved connection found: ${label || 'a file'} for ${displayName || 'an account'} on ${named(host, 'another PC')}.`;
 export const passwordInFileFoundMessage = ({ label, displayName } = {}) =>
     `${displayName || 'An account'}'s password is in ${label || 'a file'}.`;
+export const assistInviteFoundMessage = ({ label, displayName } = {}) =>
+    `${label || 'An invite'}: Connect it from your inventory to join ${displayName || 'an account'}'s session.`;
 export const findMoreLine = (n) => `and ${n} more`;
 
-/** One find's line by kind, or null for a kind with no find toast yet (assist invites until K3c). */
+/** One find's line by kind, or null for a kind with no find toast. */
 // The capture check here is paired with findKindToasts in systems/keyring.js (a double guard).
 export function findLine(entry) {
     if (!entry || typeof entry !== 'object' || entry.source === 'capture') return null;
     const fields = { label: entry.label, displayName: whoOf(entry), host: entry.host || entry.connectsTo };
     if (entry.kind === 'saved_connection') return savedConnectionFoundMessage(fields);
     if (entry.kind === 'password') return passwordInFileFoundMessage(fields);
+    if (entry.kind === 'assist_invite') return assistInviteFoundMessage(fields);
     return null;
 }
 
