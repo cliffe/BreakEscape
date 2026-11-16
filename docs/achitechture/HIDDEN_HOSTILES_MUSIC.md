@@ -128,3 +128,7 @@ A restored hostile on a hidden sprite is recorded hidden (`recordNpcVisibility(i
 
 The restore path also adds one permanent `npcVisibility` key for that NPC to the synced state (one boolean, never removed; its value follows later reveals and hides).
 
+
+## R5 outcomes
+
+A hostile turn while the NPC is still hidden (mapping record or hidden sprite) is now recorded without an event, and re-arms `_startHostileOnReveal`, so a calmed pending NPC that ink turns hostile again gives no cue while hidden and exactly one at the reveal (before: one at the ink turn and a second at the reveal). The two R5 m2 tests (with and without a reload) now pin this and fail on c3a58cae5.

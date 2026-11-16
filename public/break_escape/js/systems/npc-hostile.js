@@ -268,6 +268,19 @@ function setNPCHostile(npcId, isHostile, config) {
   state.isHostile = isHostile;
   if (wasHostile !== isHostile) recordHostility(npcId, state);
 
+  // A hostile turn while the NPC is still hidden (a mapping hid it, or its sprite is hidden)
+  // is recorded but not announced: the threat cue would fire for nobody, and the reveal
+  // (setNPCVisible) announces it again. Re-arm the pending start so the reveal tints it and
+  // gives exactly one cue. A visible NPC is unchanged.
+  if (isHostile && wasHostile !== isHostile) {
+    const hiding = window.npcBehaviorManager?.getBehavior?.(npcId);
+    if (window.npcManager?.isHiddenByMapping?.(npcId) || hiding?.sprite?.visible === false) {
+      if (hiding) hiding._startHostileOnReveal = true;
+      console.log(`⚔️ NPC ${npcId} hostile while hidden: recorded, announced at the reveal`);
+      return true;
+    }
+  }
+
   console.log(`⚔️ NPC ${npcId} hostile: ${wasHostile} → ${isHostile}`);
 
   // Emit event if state changed
