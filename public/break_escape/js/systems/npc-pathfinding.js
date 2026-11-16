@@ -575,15 +575,30 @@ export class NPCPathfindingManager {
         // so that retry waits until calculate() has returned. The seated cells are blocked with
         // a directional condition that allows no direction, so EasyStar reads it (the length
         // below) only when the search reaches a cell next to one: the rerun runs only when the
-        // failed search touched a seated cell (sims tidy R1 m2). opts.keepSeated: chair bodies
+        // failed search touched a seated cell (sims tidy R1 m2). The condition goes on the chair
+        // body cells only (what a collider must never clip); the padding is an avoid point,
+        // which EasyStar's no-corner-cutting test ignores, so a diagonal step past the padding
+        // still works as it did before the conditions (R2 m2). opts.keepSeated: chair bodies
         // the walk may end in (the seat being walked to).
         const seatCells = opts?.ignoreSeated ? [] : seatedAvoidCells(seatedChairBodies(), this.worldGridBounds,
             this.worldGrid, [{ x: startX, y: startY }, { x: endX, y: endY }], { keep: opts?.keepSeated || [] });
         const probe = { touched: false };
+        let padCosted = false;
         const byCondition = seatCells.length > 0 && typeof this.worldPathfinder.setDirectionalCondition === 'function';
         if (byCondition) {
             const none = { get length() { probe.touched = true; return 0; } };
-            for (const { cx, cy } of seatCells) this.worldPathfinder.setDirectionalCondition(cx, cy, none);
+            // A padding avoid point is never entered, so EasyStar never reads anything off it; its
+            // extra cost is read for every neighbour a search expands (1 * cost), avoided or not,
+            // so a cost whose valueOf flags the probe tells "the search got next to the padding".
+            // Without that an untouched failure beside blocking padding would skip the rerun.
+            const trip = this.worldPathfinder.setAdditionalPointCost ? { valueOf() { probe.touched = true; return 1; } } : null;
+            if (!trip) probe.touched = true;
+            for (const { cx, cy, pad } of seatCells) {
+                if (pad) {
+                    this.worldPathfinder.avoidAdditionalPoint(cx, cy);
+                    if (trip) { this.worldPathfinder.setAdditionalPointCost(cx, cy, trip); padCosted = true; }
+                } else this.worldPathfinder.setDirectionalCondition(cx, cy, none);
+            }
         } else {
             probe.touched = true; // no way to tell: always rerun
             for (const { cx, cy } of seatCells) this.worldPathfinder.avoidAdditionalPoint(cx, cy);
@@ -602,8 +617,8 @@ export class NPCPathfindingManager {
             this._calcDepth--;
             if (ringed) for (const { cx, cy } of ringed) this.worldPathfinder.stopAvoidingAdditionalPoint(cx, cy);
             if (byCondition) this.worldPathfinder.removeAllDirectionalConditions();
-            else for (const { cx, cy } of seatCells) this.worldPathfinder.stopAvoidingAdditionalPoint(cx, cy);
-            if (costed) this.worldPathfinder.removeAllAdditionalPointCosts();
+            for (const { cx, cy, pad } of seatCells) if (pad || !byCondition) this.worldPathfinder.stopAvoidingAdditionalPoint(cx, cy);
+            if (costed || padCosted) this.worldPathfinder.removeAllAdditionalPointCosts();
         }
         if (retry) again();
     }

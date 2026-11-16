@@ -1427,6 +1427,27 @@ test('sweepDoorwayChairs: a blocked spot is passed over; with none clear it logs
     } finally { rig2.restore(); }
 });
 
+test('sweepDoorwayChairs (R2 m3): a glide that never gets out is tried three times from that foot, then logged once and left', () => {
+    const chair = doorChair(8, 79); // the stub body never moves, as a chair stuck on a wall corner does not
+    const rig = doorSweepRig([chair]);
+    try {
+        for (let t = 1000; t <= 8000; t += 1000) {
+            seating.sweepDoorwayChairs(t);
+            for (let i = 0; i < 12; i++) seating.updateGlides(); // the glide ends blocked (8 still frames)
+        }
+        const out = rig.log.filter(l => l.ev === 'chair_out_of_doorway');
+        const gaveUp = rig.log.filter(l => l.ev === 'chair_in_doorway_no_spot');
+        assert.equal(out.length, 3, 'three glides from the same foot, not one a second');
+        assert.equal(gaveUp.length, 1, 'then one give-up line');
+        assert.deepEqual(gaveUp[0].at, [8, 79]);
+        assert.equal(seating.glideTarget(chair), null, 'no further glide');
+        // The chair really moves (a push, say): the count starts again from the new foot
+        chair.x = 14; chair.y = 85;
+        seating.sweepDoorwayChairs(9000);
+        assert.ok(seating.glideTarget(chair), 'a new foot position is tried afresh');
+    } finally { rig.restore(); }
+});
+
 test('sweepDoorwayChairs: a chair sat on, fetched, mounted, gliding or moving stays; once a second at most', () => {
     const make = () => doorChair(8, 79);
     const cases = {

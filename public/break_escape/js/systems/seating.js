@@ -1806,6 +1806,8 @@ export function doorwayChairSpot(foot, rects, half, clear) {
 
 const TILE_PX = 32;
 const DOOR_SWEEP_MS = 1000;
+/** Glides from one foot position before the sweep gives up on that chair (R2 m3). */
+const DOOR_SWEEP_TRIES = 3;
 const DOOR_SPOT_MARGIN = 2;
 let doorSweepAt = 0;
 
@@ -1867,9 +1869,14 @@ export function sweepDoorwayChairs(now = Date.now()) {
         const f = bodyFeet(chair);
         const half = { w: chair.body.width / 2, h: chair.body.height / 2 };
         const spot = doorwayChairSpot(f, rects, half, (x, y) => chairSpotClear(chair, x, y, half));
-        if (!spot) continue;
+        if (!spot) { chair._doorSweep = undefined; continue; }
         const id = chair.objectId || chair.texture?.key;
         const from = [Math.round(f.x), Math.round(f.y)];
+        // R2 m3: a glide that ends blocked inside the gap leaves the foot where it was; the next
+        // sweep would pick the same spot again. Three tries from one foot, then give up (one log)
+        // until the chair moves.
+        const sweepKey = from.join(',');
+        const sw = chair._doorSweep?.key === sweepKey ? chair._doorSweep : (chair._doorSweep = { key: sweepKey, tries: 0, gaveUp: false });
         if (!spot.to) {
             const key = from.join(',');
             if (chair._doorNoSpotAt !== key) {
@@ -1879,6 +1886,14 @@ export function sweepDoorwayChairs(now = Date.now()) {
             continue;
         }
         chair._doorNoSpotAt = undefined;
+        if (sw.tries >= DOOR_SWEEP_TRIES) {
+            if (!sw.gaveUp) {
+                sw.gaveUp = true;
+                window.npcNeedsSystem?._log?.(chair.seatedBy || 'chair', 'chair_in_doorway_no_spot', { chair: id, at: from, tries: sw.tries });
+            }
+            continue;
+        }
+        sw.tries++;
         glideChairFootTo(chair, spot.to.x, spot.to.y);
         window.npcNeedsSystem?._log?.(chair.seatedBy || 'chair', 'chair_out_of_doorway',
             { chair: id, from, to: [Math.round(spot.to.x), Math.round(spot.to.y)], spot: spot.index });

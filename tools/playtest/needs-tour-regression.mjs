@@ -181,7 +181,13 @@ console.log('row 1', JSON.stringify(report.rows[1]));
 // Row 3: once the queue has cleared, a fresh one from the Activity Board; switch the coffee off while
 // two wait in line, then back on
 for (let i = 0; i < 120 && await coffeeBusy(); i++) await t(1000);
+// Sims tidy R2 m4: the needs clock and each of amara/tom/marek's caffeine and job phase at the board
+// read and every 5 s of wall time until the switch-off, so a run with no queue says why
+const needsSnap = () => page.evaluate(() => ({ clock: Math.round(window.npcNeedsSystem.clockMs / 1000), npcs: ['amara', 'tom', 'marek'].map(id => { const st = window.npcNeedsSystem.getState(id); return { id, caffeine: Math.round(st?.levels?.caffeine ?? -1), job: st?.job ? `${st.job.need}:${st.job.targetId}:${st.job.phase}` : null }; }) })).catch(() => null);
 report.rows[3] = { board: await read('activity_board', [[200, 176], [264, 176], [232, 176]], BOARD_FRONT) };
+report.rows[3].needs_at_read = await needsSnap();
+report.rows[3].needs_samples = [];
+let lastSnap = Date.now();
 await page.evaluate(() => window.__test.moveToNear('office_coffee_socket', { timeoutMs: 30000 })).catch(() => null);
 // The README switches the socket off while Tom and Marek wait in line: wait for two in the queue
 // (one after 90 s), and read the board again once if nobody has queued by then
@@ -190,6 +196,7 @@ let cq = Date.now(), q = [];
 while (Date.now() - cq < 150000) {
     q = await queued();
     if (q.length >= 2 || (q.length >= 1 && Date.now() - cq > 90000)) break;
+    if (Date.now() - lastSnap >= 5000) { lastSnap = Date.now(); report.rows[3].needs_samples.push(await needsSnap()); }
     if (!q.length && Date.now() - cq > 75000 && !report.rows[3].board2) {
         report.rows[3].board2 = await read('activity_board', [[200, 176], [264, 176], [232, 176]], BOARD_FRONT);
         await page.evaluate(() => window.__test.moveToNear('office_coffee_socket', { timeoutMs: 30000 })).catch(() => null);
@@ -204,7 +211,11 @@ report.rows[3].wait = await waitTasks(['see_coffee_off'], 40000);
 await t(3000);
 // The switch-off turn-back: who in the queue turned back or parked, and what was said or pictured
 report.rows[3].after_off = await page.evaluate(c => window.__ev.filter(e => e.c >= c), offAt);
-report.rows[3].turned_back = [...new Set(report.rows[3].after_off.filter(e => e.ev.startsWith('npc_turned_back') || e.ev.startsWith('npc_need_parked')).map(e => e.npcId))];
+// R2 m4: a turn-back is npc_turned_back with reason off; a park (npc_need_parked, say reason no_source)
+// is a different thing and is listed apart, never counted
+report.rows[3].turned_back = [...new Set(report.rows[3].after_off.filter(e => e.ev === 'npc_turned_back' && e.reason === 'off').map(e => e.npcId))];
+report.rows[3].parked = report.rows[3].after_off.filter(e => e.ev === 'npc_need_parked').map(e => ({ npc: e.npcId, reason: e.reason, at: Math.round(e.c / 1000) }));
+report.rows[3].no_queue_why = q.length ? null : { needs_at_read: report.rows[3].needs_at_read, last_sample: report.rows[3].needs_samples.at(-1) || null, parked: report.rows[3].parked };
 report.rows[3].grumbles = report.rows[3].after_off.filter(e => /^npc_(overheard|chatted)/.test(e.ev) && /grumble/.test(e.topic || '')).map(e => ({ npc: e.npcId, line: e.line || null, picture: e.picture }));
 await page.evaluate(() => window.__test.interact('office_coffee_socket')).catch(() => null); await t(800);
 report.rows[3].on = await confirmClick(); await t(500); await closeUi();

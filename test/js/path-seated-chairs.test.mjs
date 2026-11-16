@@ -198,6 +198,8 @@ function pfmCond(found = () => true, touch = () => true) {
     pm.conditions = new Map();
     pm.worldPathfinder.setDirectionalCondition = (cx, cy, dirs) => pm.conditions.set(`${cx},${cy}`, dirs);
     pm.worldPathfinder.removeAllDirectionalConditions = () => pm.conditions.clear();
+    pm.worldPathfinder.setAdditionalPointCost = () => {}; // the padding's touch probe (R2 m2); the stub never reads it
+    pm.worldPathfinder.removeAllAdditionalPointCosts = () => {};
     const findPath = pm.worldPathfinder.findPath;
     pm.worldPathfinder.findPath = function (...a) { findPath.apply(this, a); pm.searches[pm.searches.length - 1].conds = [...pm.conditions.keys()]; };
     const calc = pm.worldPathfinder.calculate;

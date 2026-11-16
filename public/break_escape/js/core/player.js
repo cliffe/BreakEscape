@@ -1464,11 +1464,11 @@ function updatePlayerMouseMovement() {
     // flickering between walk and idle animations. Physics already holds them at the wall.
     // A straight walk from movePlayerToPoint first watches for a stall: line of sight was checked
     // once, against fixed bodies, and a chair turns solid when its sitter mounts (R1 m4). With
-    // under 5 px gained towards the goal over DIRECT_WALK_STALL_FRAMES it replans through the grid
+    // under a third of the free-walk gain over DIRECT_WALK_STALL_MS (wall time, so a 360 Hz display is no different) it replans through the grid
     // once; blocked on one axis while sliding along a wall still gains ground, so that walk goes on.
     // After the replan a contact stops it as before.
     if (!playerFollowingPath && !holdWalkActive && directWalk.armed) {
-        const verdict = directWalkStall(directWalk, { blocked: player.body.blocked.none === false, dist: Math.sqrt(distanceSq) });
+        const verdict = directWalkStall(directWalk, { blocked: player.body.blocked.none === false, dist: Math.sqrt(distanceSq), now: gameRef?.loop?.time ?? performance.now() });
         if (verdict === 'wait') return;
         if (verdict === 'replan') {
             const goal = targetPoint;

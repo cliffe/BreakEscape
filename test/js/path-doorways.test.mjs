@@ -11,7 +11,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const js = join(here, '../../public/break_escape/js');
 const dir = mkdtempSync(join(tmpdir(), 'path-doorways-'));
 writeFileSync(join(dir, 'pd.mjs'), readFileSync(join(js, 'systems/path-doorways.js'), 'utf8'));
-const { canonicalDoorway, addDoorway, crossingPoints, insertDoorwayWaypoints, lastPinnedIndex, directWalkStall, DIRECT_WALK_STALL_FRAMES }
+const { canonicalDoorway, addDoorway, crossingPoints, insertDoorwayWaypoints, lastPinnedIndex, directWalkStall, DIRECT_WALK_STALL_MS, DIRECT_WALK_SPEED }
     = await import(pathToFileURL(join(dir, 'pd.mjs')).href);
 
 // lab_tesseract_trials: foyer (0,0) 320x320, common room (320,0) to its east,
@@ -121,56 +121,73 @@ test('a path that never meets a doorway is unchanged', () => {
     assert.deepEqual(insertDoorwayWaypoints({ x: 90, y: 190 }, raw, []), raw);
 });
 
-// Sims tidy R1 m4: a direct player walk up x 220 meets Amara's chair, which turned solid when she
-// mounted after the walk began (games 5748 and 5793).
-test('directWalkStall: a chair that turns solid mid-walk; ten frames with no ground gained replans once, then a contact stops', () => {
-    assert.equal(DIRECT_WALK_STALL_FRAMES, 10);
-    const st = { replanned: false };
-    let dist = 200;
-    // 6 px a frame: walking speed at the headless 20 fps
-    for (let i = 0; i < 20; i++) { dist -= 6; assert.equal(directWalkStall(st, { blocked: false, dist }), 'ok', `walking, frame ${i}`); }
-    // Amara mounts: the chair is solid in the lane; the feet stop with 80 px to go
-    const verdicts = [];
-    for (let i = 0; i < 10; i++) verdicts.push(directWalkStall(st, { blocked: true, dist }));
-    assert.deepEqual(verdicts, [...new Array(9).fill('wait'), 'replan'], 'nine frames of pushing, then one replan');
-    assert.equal(st.replanned, true);
-    assert.equal(directWalkStall(st, { blocked: true, dist }), 'stop', 'after the replan a contact stops the walk');
-    assert.equal(directWalkStall(st, { blocked: false, dist: dist - 2 }), 'ok');
+// Sims tidy R1 m4 and R2 m1: a direct player walk up x 220 meets Amara's chair, which turned solid when
+// she mounted after the walk began (games 5748 and 5793). The stall window is wall time, so the
+// verdicts are the same at any refresh rate: each test runs at 20 (headless), 60 and 360 Hz.
+const RATES = [20, 60, 360];
+/** Drive `ms` of walk at `hz`; `gain(dtMs)` is the distance gained in a frame. Returns the verdicts. */
+function drive(st, clock, hz, ms, { blocked = false, gain = dt => DIRECT_WALK_SPEED * dt / 1000, dist }) {
+    const dt = 1000 / hz, out = [];
+    for (let t = 0; t < ms - 1e-9; t += dt) {
+        clock.now += dt; clock.dist -= gain(dt);
+        out.push(directWalkStall(st, { blocked, dist: clock.dist, now: clock.now }));
+    }
+    return out;
+}
+
+test('directWalkStall: a free walk never replans at 20, 60 or 360 Hz (R2 m1)', () => {
+    assert.ok(DIRECT_WALK_STALL_MS >= 100 && DIRECT_WALK_STALL_MS <= 250);
+    for (const hz of RATES) {
+        const st = { replanned: false }, clock = { now: 5000, dist: 400 };
+        const v = drive(st, clock, hz, 2000, {});
+        assert.ok(v.every(x => x === 'ok'), `${hz} Hz: all ok`);
+        assert.equal(st.replanned, false);
+    }
+});
+
+test('directWalkStall: a chair that turns solid mid-walk; a window with no ground gained replans once, then a contact stops', () => {
+    for (const hz of RATES) {
+        const st = { replanned: false }, clock = { now: 5000, dist: 400 };
+        drive(st, clock, hz, 500, {});
+        // Amara mounts: the chair is solid in the lane; the feet stop
+        const v = drive(st, clock, hz, 400, { blocked: true, gain: () => 0 });
+        const at = v.indexOf('replan');
+        assert.ok(at > 0, `${hz} Hz: replans`);
+        const waited = (at + 1) * 1000 / hz;
+        assert.ok(waited >= 100 && waited <= DIRECT_WALK_STALL_MS + 2000 / hz + 1, `${hz} Hz: within about one window of the block (${waited.toFixed(0)} ms)`);
+        assert.ok(v.slice(0, at).every(x => x === 'wait'));
+        assert.equal(st.replanned, true);
+        assert.equal(directWalkStall(st, { blocked: true, dist: clock.dist, now: clock.now + 5 }), 'stop', 'after the replan a contact stops the walk');
+        assert.equal(directWalkStall(st, { blocked: false, dist: clock.dist - 2, now: clock.now + 10 }), 'ok');
+    }
 });
 
 test('directWalkStall: sliding along a wall while blocked on one axis gains ground and never replans; the corner does', () => {
-    const st = { replanned: false };
-    let dist = 150;
-    const slide = [];
-    // Blocked on x every frame, sliding in y: the distance still falls 3 px a frame
-    for (let i = 0; i < 40; i++) { dist -= 3; slide.push(directWalkStall(st, { blocked: true, dist })); }
-    assert.ok(slide.every(v => v === 'wait'), 'forty blocked frames of slide: all wait (keep walking), no replan');
-    assert.equal(st.replanned, false);
-    // The slide ends in a corner: no more ground
-    const corner = [];
-    for (let i = 0; i < 10; i++) corner.push(directWalkStall(st, { blocked: true, dist }));
-    assert.deepEqual(corner.slice(0, 9), [...new Array(8).fill('wait'), 'replan'],
-        'the replan fires once the window holds under 5 px of gain (the last slide frame plus eight in the corner)');
-    // A shallow slide (0.4 px a frame, 4 px over the window) is a stall too
-    const sh = { replanned: false };
-    let d2 = 100, v2 = [];
-    for (let i = 0; i < 11; i++) { d2 -= 0.4; v2.push(directWalkStall(sh, { blocked: true, dist: d2 })); }
-    assert.equal(v2[10], 'replan');
+    for (const hz of RATES) {
+        const st = { replanned: false }, clock = { now: 5000, dist: 400 };
+        // Blocked on x, sliding in y at half speed: still well over a third of a free walk
+        const slide = drive(st, clock, hz, 1500, { blocked: true, gain: dt => 75 * dt / 1000 });
+        assert.ok(slide.every(x => x === 'wait'), `${hz} Hz: a slide waits and goes on`);
+        assert.equal(st.replanned, false);
+        const corner = drive(st, clock, hz, 600, { blocked: true, gain: () => 0 });
+        assert.ok(corner.includes('replan'), `${hz} Hz: the corner replans`);
+        // A shallow slide (a tenth of a free walk) is a stall too
+        const sh = { replanned: false }, c2 = { now: 5000, dist: 400 };
+        assert.ok(drive(sh, c2, hz, 600, { blocked: true, gain: dt => 15 * dt / 1000 }).includes('replan'), `${hz} Hz: shallow slide stalls`);
+    }
 });
 
 test('directWalkStall: no ground gained without a contact counts too; a brief bump does not replan', () => {
-    const st = { replanned: false };
-    const v = [];
-    for (let i = 0; i < 11; i++) v.push(directWalkStall(st, { blocked: false, dist: 50 - i * 0.1 }));
-    assert.deepEqual(v, [...new Array(10).fill('ok'), 'replan'], 'free but held (pushing a chair, say): 1 px over the window');
-    const b = { replanned: false };
-    let d = 100;
-    for (let i = 0; i < 10; i++) { d -= 6; directWalkStall(b, { blocked: false, dist: d }); }
-    const bump = [];
-    for (let i = 0; i < 5; i++) bump.push(directWalkStall(b, { blocked: true, dist: d }));
-    for (let i = 0; i < 10; i++) { d -= 6; bump.push(directWalkStall(b, { blocked: false, dist: d })); }
-    assert.ok(!bump.includes('replan'), 'a five-frame bump, then free: no replan');
-    assert.equal(b.replanned, false);
+    for (const hz of RATES) {
+        const st = { replanned: false }, clock = { now: 5000, dist: 400 };
+        drive(st, clock, hz, 300, {});
+        assert.ok(drive(st, clock, hz, 400, { gain: dt => 10 * dt / 1000 }).includes('replan'), `${hz} Hz: free but held (pushing a chair)`);
+        const b = { replanned: false }, c2 = { now: 5000, dist: 400 };
+        drive(b, c2, hz, 300, {});
+        const bump = drive(b, c2, hz, 100, { blocked: true, gain: () => 0 });
+        bump.push(...drive(b, c2, hz, 500, {}));
+        assert.ok(!bump.includes('replan'), `${hz} Hz: a 100 ms bump, then free: no replan`);
+    }
 });
 
 test('player.js: only the straight walk arms the stall watch; the replan skips line of sight and counts itself', () => {

@@ -179,7 +179,7 @@ export function seatedAvoidCells(rects, gridBounds, grid, ends = [], { keep = []
             const pad = c.cx < bx1 || c.cx > bx2 || c.cy < by1 || c.cy > by2;
             if (endCells.some(e => (e.cx === c.cx && e.cy === c.cy)
                 || (pad && Math.abs(e.cx - c.cx) <= 2 && Math.abs(e.cy - c.cy) <= 2))) continue;
-            out.push(c);
+            out.push({ cx: c.cx, cy: c.cy, pad });
         }
     }
     return out;
