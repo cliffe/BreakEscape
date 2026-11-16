@@ -257,6 +257,22 @@ export function rfidAccessDeniedLine(access, type = 'door') {
 // locked in every room response, so the next click comes back here. pc-sessions.js
 // (window.pcSessions) holds the sessions and does every sign-in and sign-out.
 
+/**
+ * A session the player holds at pcId's own keyboard (keyring K3c, 3.8 and 8.3): a relay
+ * session is the holder's, reached only by Connect, so here it counts as none. Falls back to
+ * has() for a mirror without heldAtKeyboard.
+ */
+export function heldAtKeyboard(pcId, sessions = window.pcSessions) {
+    if (!pcId || !sessions) return false;
+    if (typeof sessions.heldAtKeyboard === 'function') return sessions.heldAtKeyboard(pcId) === true;
+    return !!sessions.has?.(pcId);
+}
+
+/** The held session at pcId as the keyboard sees it: null for a relay (K3c). */
+function keyboardSession(pcId, sessions = window.pcSessions) {
+    return heldAtKeyboard(pcId, sessions) ? (sessions?.get?.(pcId) || null) : null;
+}
+
 /** True for a sign-in PC object (not a door). */
 export function isLoginPc(lockable, type = 'item') {
     return type !== 'door' && lockable?.scenarioData?.lockType === 'login';
@@ -272,7 +288,7 @@ export function openLoginPc(lockable) {
     }
     // A locked session (UI slice 6) stays held, but opens the sign-in screen (account
     // pre-chosen), not the desktop: the player re-enters the password to continue.
-    if (pcId && window.pcSessions?.has(pcId) && !window.pcSessions?.isLocked?.(pcId)) {
+    if (pcId && heldAtKeyboard(pcId) && !window.pcSessions?.isLocked?.(pcId)) {
         openLoginDesktop(lockable);
     } else {
         openLoginSignIn(lockable);
@@ -345,6 +361,46 @@ export function openCredentialSignIn({ pcId, host = null, footholdId, username =
     const row = remoteRowFor(pcId, footholdId);
     return openLoginSignIn(remoteLockable({ ...row, host: row?.host || host, name: row?.name || host || pcId }, footholdId),
         { connect: { username, refusal } });
+}
+
+/**
+ * The lockable of a relay desktop (keyring K3c, 8.3): the PC's own sprite shape with
+ * remote: { relay: true }. Not a network screen: no foothold and no view to land on.
+ */
+export function relayLockable(pcId) {
+    const s = window.pcSessions?.get?.(pcId);
+    const pc = findPcObject(pcId);
+    const sprite = pc?.sprite || pc?.texture || 'pc_desktop';
+    const host = s?.host || pc?.host || null;
+    return {
+        scenarioData: {
+            id: pcId, name: pc?.name || host || pcId, host, type: 'pc', sprite, lockType: 'login', locked: true, loginPicker: false,
+            remote: { relay: true }
+        },
+        name: sprite,
+        texture: { key: typeof sprite === 'string' ? sprite : 'pc_desktop' },
+        objectId: `relay_${pcId}`
+    };
+}
+
+/** The scenario's own object for pcId, from the loaded scenario's rooms, or null. */
+function findPcObject(pcId) {
+    const rooms = window.gameScenario?.rooms || {};
+    for (const room of Object.values(rooms)) {
+        const found = (Array.isArray(room?.objects) ? room.objects : []).find(o => o?.id === pcId);
+        if (found) return found;
+    }
+    return null;
+}
+
+/**
+ * A held relay session's desktop (K3c, 8.3): Connect on an accepted invite opens it, and
+ * Connect again reaches it (the network view never lists it). Returns false with no relay held.
+ */
+export function openRelayDesktop(pcId) {
+    if (!pcId || !window.pcSessions?.isRelay?.(pcId)) return false;
+    openLoginDesktop(relayLockable(pcId));
+    return true;
 }
 
 /**
@@ -523,7 +579,7 @@ export async function interactLoginPc(lockable) {
         await showPcInUse(lockable, userAt);
         return 'in_use';
     }
-    if (sessions?.has?.(pcId)) {
+    if (heldAtKeyboard(pcId, sessions)) {
         // A locked session (UI slice 6): the sign-in screen with the account pre-chosen, not
         // the desktop and never a claim (the player already holds the session here).
         if (sessions?.isLocked?.(pcId)) {
@@ -670,7 +726,8 @@ export async function openLoginSignIn(lockable, { switching = false, reason = un
     sessions?.screenShown?.(pcId, picker === false ? [] : tiles, switching ? 'switch' : reason, showPostit);
     // A locked session (UI slice 6) pre-chooses its own account: the player only re-enters the
     // password. The username is the held session's; the server still checks the password.
-    const current = sessions?.get?.(pcId) || null;
+    // A relay held here is the holder's (K3c): at the keyboard it is no current session
+    const current = keyboardSession(pcId, sessions);
     const keyboardScene = framework.startMinigame('password', null, {
         title: data.name || 'Sign in',
         lockable,
@@ -689,7 +746,7 @@ export async function openLoginSignIn(lockable, { switching = false, reason = un
         showPostit,
         requiresKeyboardInput: true,
         onComplete: (success) => {
-            const signedIn = !!sessions?.has?.(pcId);
+            const signedIn = heldAtKeyboard(pcId, sessions);
             if ((success && signedIn) || (switching && signedIn)) {
                 openLoginDesktop(lockable);
             }
@@ -728,7 +785,7 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
     // the server-fetched tiles, never [] as the opener did.
     // The current session, unless it is a claim: an unlocked screen is not offered over
     // the network (4.3), and a remote sign-in replaces it as a keyboard one would
-    const held = sessions?.get?.(pcId) || null;
+    const held = keyboardSession(pcId, sessions);
     const scene = framework.startMinigame('password', null, {
         title: data.name || 'Sign in',
         lockable,
@@ -752,7 +809,7 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
         showPostit: false,
         requiresKeyboardInput: true,
         onComplete: (success) => {
-            const signedIn = !!sessions?.has?.(pcId) && sessions.get(pcId)?.via !== 'claim';
+            const signedIn = heldAtKeyboard(pcId, sessions) && sessions.get(pcId)?.via !== 'claim';
             const links = window.networkLinks;
             if (success && signedIn) {
                 links?.landed?.('signin', 'handover', { pcId, host: hostLabel });
@@ -1683,6 +1740,8 @@ window.openLoginSignIn = openLoginSignIn;
 // The network screens (slice 9.3a): network-links.js looks openRemoteDesktop up on window
 window.openRemoteSignIn = openRemoteSignIn;
 window.openRemoteDesktop = openRemoteDesktop;
+// Keyring K3c (8.3): keyring.js's Connect and a relay folder's close look this up on window
+window.openRelayDesktop = openRelayDesktop;
 // Connect from the tray (keyring K3b): keyring.js looks this up on window, so it needs no import
 window.openCredentialSignIn = openCredentialSignIn;
 
