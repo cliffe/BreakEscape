@@ -85,7 +85,7 @@ module BreakEscape
         elsif from then { 'from' => from }
         else { 'foothold' => foothold }
         end
-      { status: :ok, body: with_token_expired_pc_ids(with_ended_pc_ids({ success: true }.merge(answer), ended)) }
+      { status: :ok, body: with_ended_pc_ids({ success: true }.merge(answer), ended) }
     end
 
     # kind and label for a credential session's answer (3.8), from the registry; {} when the id is

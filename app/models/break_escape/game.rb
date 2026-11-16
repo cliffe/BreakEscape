@@ -2884,7 +2884,10 @@ module BreakEscape
       # Keyring K2 (CREDENTIAL_KEYRING_PLAN.md 7.1): invites the NPC has ended (grow-only, at most 64)
       # and the cached { global => [credId] } map the sync merge reads in place of scenario_data.
       # Server-written only, never read from a sync body and never sent to the client.
-      'endedCredentials' => [], 'credentialEndGlobals' => {}
+      'endedCredentials' => [], 'credentialEndGlobals' => {},
+      # Keyring K5 (plan 10): { tokenCredId => server time its clock started }. Grow-only, at most
+      # 64 entries, server-written only, never read from a sync body and never sent.
+      'credentialClock' => {}
     }.freeze
 
     # Globals the server owns (sync deltas R2, 6a): the client never stores them. se_captures
@@ -3543,17 +3546,22 @@ module BreakEscape
     end
 
     # A session the holder's keyboard sees as held: any session but a relay (keyring K2, 3.8).
+    # An expired token session counts as not held either (K5, plan 10): a claim or sign-in there
+    # replaces it in the one slot.
     def session_held_at_keyboard?(pc_id)
       session = access_sessions[pc_id.to_s]
-      session.is_a?(Hash) && !relay_session?(session)
+      session.is_a?(Hash) && !relay_session?(session) && !credential_session_expired?(session)
     end
 
     # A sign-in answer gains endedPcIds when the sign-in replaced a session and the prune that
     # followed ended any onward ones (keyring K2, plan 3.8). Absent otherwise, so the common
     # answer is unchanged.
+    #
+    # Keyring K5 (plan 10): when that prune ended an expired token session, the answer also
+    # carries tokenExpiredPcIds (a subset of endedPcIds).
     def with_ended_pc_ids(body, ended)
       ended = Array(ended)
-      ended.empty? ? body : body.merge(endedPcIds: ended)
+      ended.empty? ? body : with_token_expired_pc_ids(body.merge(endedPcIds: ended))
     end
 
     # { pcId => { npcId, username, displayName, via } } for the scenario response (5.3).
@@ -3581,6 +3589,9 @@ module BreakEscape
     # "false"), so the answer never grows for the common case.
     def session_for_client(pc_id)
       session = access_sessions[pc_id.to_s]
+      # Keyring K5 (plan 10): an expired token session is never handed to the client
+      return nil if credential_session_expired?(session)
+
       npc = session.is_a?(Hash) ? scenario_room_npc(session['id']) : nil
       return nil unless npc && self.class.account_holder?(npc)
 
@@ -3991,7 +4002,9 @@ module BreakEscape
     # all give nil, so they still answer exactly as an invented id. Only an object with every
     # folder above it already unlocked gets a reason. The lock screen counts no attempt.
     UNLOCK_REFUSAL_MESSAGES = { 'off' => NetworkAccess::PC_OFF_MESSAGE, 'not_responding' => 'This PC is not responding.',
-                                'unreachable' => "This PC can't be reached." }.freeze
+                                'unreachable' => "This PC can't be reached.",
+                                # Keyring K5 (plan 10): %{label} is the token's label
+                                'expired' => '%{label} has expired.' }.freeze
 
     def unlock_session_refusal(target_type, target_id)
       return nil if target_type.to_s == 'door' || !unlock_scope_refused?(target_id)
@@ -4017,6 +4030,14 @@ module BreakEscape
       return nil if pcs.empty? || pcs.any? { |pc_id| session_route_up?(pc_id) }
 
       pc_id = pcs.first
+      # Keyring K5 (plan 10): a session token that has run out
+      expired = access_sessions[pc_id]
+      if credential_session_expired?(expired)
+        label = credential_label(token_entry(expired['credential']))
+        label = 'The session token' if label.blank?
+        return { reason: 'expired', message: format(UNLOCK_REFUSAL_MESSAGES['expired'], label: label) }
+      end
+
       info = find_login_pc(pc_id)
       reason =
         if info && host_service_off?(info[:object])
@@ -4174,7 +4195,9 @@ module BreakEscape
       record['from'] = from.to_s if from.present?
       record['relay'] = true if relay
       player_state['sessions'][pc_id.to_s] = record
-      unless relay
+      # Neither a relay nor a token sign-in is a lasting sign-in (K2, K5 plan 10): signedInPcs is
+      # grow-only and proves `session` credentials and sign-in tasks for good
+      unless relay || (credential.present? && token_entry(credential))
         player_state['signedInPcs'] = signed_in_pcs
         player_state['signedInPcs'] << pc_id.to_s unless player_state['signedInPcs'].include?(pc_id.to_s)
       end
