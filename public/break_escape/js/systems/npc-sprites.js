@@ -1431,6 +1431,11 @@ export function handleNPCCollision(npcSprite, otherNPC) {
     // waypoint below clears its path and sets _needsPathRecalc, and updatePatrol returns for that
     // before it moves the body, so redoing it on every overlap frame kept a walker against a
     // face_player NPC still for ever (game 6330).
+    // A goToAndStay walker that is close enough still arrives inside the grace (not up to 600 ms late).
+    if (npcBehavior._stopOnArrival && npcBehavior._goToStayDest && collisionArrives(npcBehavior, npcSprite)) {
+        if (typeof npcBehavior._triggerGoToStayArrival === 'function') npcBehavior._triggerGoToStayArrival();
+        return;
+    }
     if (settleGraceRunning(npcBehavior, npcSprite)) return;
 
     // Only handle waypoint avoidance if NPC is in patrol or face_player mode with waypoints
@@ -1596,7 +1601,7 @@ export function handleNPCCollision(npcSprite, otherNPC) {
  * @param {Phaser.Sprite} npcSprite - NPC sprite that collided with player
  * @param {Phaser.Sprite} player - Player sprite
  */
-function handleNPCPlayerCollision(npcSprite, player) {
+export function handleNPCPlayerCollision(npcSprite, player) {
     if (!npcSprite || !player || npcSprite.destroyed || player.destroyed) {
         return;
     }
@@ -1621,6 +1626,11 @@ function handleNPCPlayerCollision(npcSprite, player) {
     }
 
     // The same grace as the NPC-to-NPC handler: no avoidance re-plan while the walker pulls away.
+    // A goToAndStay walker that is close enough still arrives inside the grace (not up to 600 ms late).
+    if (npcBehavior._stopOnArrival && npcBehavior._goToStayDest && collisionArrives(npcBehavior, npcSprite)) {
+        if (typeof npcBehavior._triggerGoToStayArrival === 'function') npcBehavior._triggerGoToStayArrival();
+        return;
+    }
     if (settleGraceRunning(npcBehavior, npcSprite)) return;
 
     // Only handle waypoint avoidance if NPC is in patrol or face_player mode with waypoints

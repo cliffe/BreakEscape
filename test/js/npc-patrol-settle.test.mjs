@@ -11,7 +11,7 @@ import { tmpdir } from 'node:os';
 
 globalThis.window = globalThis.window || {};
 window.gameState = window.gameState || { globalVariables: {} };
-const { handleNPCCollision } = await import('../../public/break_escape/js/systems/npc-sprites.js');
+const { handleNPCCollision, handleNPCPlayerCollision } = await import('../../public/break_escape/js/systems/npc-sprites.js');
 
 const here = dirname(fileURLToPath(import.meta.url));
 const js = join(here, '../../public/break_escape/js');
@@ -150,4 +150,72 @@ test('settle grace: contact inside the grace does not wipe the path and replan e
     delete window.pathfindingManager;
     assert.equal(graceChooses, 0, 'no avoidance re-plan while the settle grace is running');
     assert.ok(174 - c.x > 8, `the walker pulled away from the contact (moved ${(174 - c.x).toFixed(1)} px)`);
+});
+
+// Minor 1 of the delta review: the player handler has the same guard, and nothing covered it.
+test('settle grace: the player collision handler does not replan inside the grace either', () => {
+    const { b } = setup();
+    b.roomId = 'r';
+    window.rooms = { r: { position: { x: 0, y: 0 } } };
+    window.player = { currentRoom: 'r' };  // the player handler returns early without a room
+    window.pathfindingManager = { findNearestWalkableStartCell: (x, y) => ({ x, y }) };
+    const player = { x: 170, y: 170, body: { center: { x: 170, y: 170 } } };
+    let chooses = 0;
+    b.chooseWaypointTarget = function () { chooses++; this.patrolTarget = { x: 20, y: 174, dwellTime: 0 }; };
+    b._planMovePath = (pfm, sx, sy, tx, ty, cb) => cb([{ x: sx - 30, y: 174 }, { x: 20, y: 174 }]);
+    const t0 = 100000, c = b.sprite.body.center, vel = b._vel;
+    let lastUpdate = -Infinity, graceChooses = 0, graceFrames = 0;
+    quiet(() => {
+        for (let t = t0; t < t0 + 6000; t += 1000 / 60) {
+            b.scene.time.now = t;
+            if (t - lastUpdate >= 50) { lastUpdate = t; b.updatePatrol(t, 50); }
+            const inGrace = b._settleGraceUntil > t;
+            const before = chooses;
+            if (Math.abs(c.x - player.x) < 20) handleNPCPlayerCollision(b.sprite, player);
+            if (inGrace) { graceFrames++; graceChooses += chooses - before; }
+            c.x += vel.x / 60; b.sprite.x = c.x;
+        }
+    });
+    delete window.pathfindingManager;
+    window.player = undefined;
+    assert.ok(graceFrames > 0, 'the walker was in contact during a grace');
+    assert.equal(graceChooses, 0, 'no avoidance re-plan while the settle grace is running');
+    assert.ok(174 - c.x > 8, `the walker pulled away from the player (moved ${(174 - c.x).toFixed(1)} px)`);
+});
+
+// Minor 2: a goToAndStay walker close enough to its destination arrives inside the grace.
+test('settle grace: a goToAndStay walker arrives inside the grace, not 600 ms later', () => {
+    for (const handler of [
+        (b, other) => handleNPCCollision(b.sprite, other),
+        (b) => handleNPCPlayerCollision(b.sprite, { x: 170, y: 170, body: { center: { x: 170, y: 170 } } }),
+    ]) {
+        const { b, other } = setup();
+        let arrived = 0;
+        b._stopOnArrival = true; b._goToStayDest = { x: 180, y: 174 };
+        b._triggerGoToStayArrival = () => { arrived++; };
+        quiet(() => {
+            b.scene.time.now = 100000;
+            handler(b, other);                 // first contact: settles
+            b.updatePatrol(100400, 50);        // settle over, grace running
+            b.scene.time.now = 100400;
+            assert.ok(b._settleGraceUntil > 100400, 'grace running');
+            const before = arrived;
+            handler(b, other);
+            assert.equal(arrived - before, 1, 'arrival fired inside the grace');
+        });
+    }
+});
+
+// Minor 3: the grace is stamped and read on clockNow(), and a stamp from another clock is pulled back.
+test('settle grace: stamped on clockNow() and a far-future stamp is clamped', () => {
+    const { b } = setup();
+    quiet(() => {
+        b.isSettling = true; b.settleEndTime = 100000;
+        b.scene.time.now = 100200;             // scene clock differs from the time argument
+        b.updatePatrol(100100, 50);
+        assert.equal(b._settleGraceUntil, 100200 + 600, 'stamped on the clockNow() timeline');
+        b._settleGraceUntil = 1.8e12;          // a stamp from another clock
+        b.updatePatrol(100250, 50);
+        assert.ok(b._settleGraceUntil <= b.clockNow() + 600, `clamped (${b._settleGraceUntil})`);
+    });
 });

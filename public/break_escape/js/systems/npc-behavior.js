@@ -1197,6 +1197,14 @@ export class NPCBehavior {
             this.settleEndTime = time + this.settleDuration;
         }
 
+        // The settle grace is stamped and read on clockNow() (npc-sprites settleGraceRunning), so a
+        // stamp from another clock must not outlive one grace: it would switch off settling and
+        // avoidance for this walker. Pull it back like settleEndTime.
+        if (this._settleGraceUntil) {
+            const graceNow = this.clockNow();
+            if (this._settleGraceUntil - graceNow > SETTLE_GRACE_MS) this._settleGraceUntil = graceNow + SETTLE_GRACE_MS;
+        }
+
         // If settling after collision, pause patrol briefly to let physics settle
         if (this.isSettling) {
             if (time >= this.settleEndTime) {
@@ -1204,7 +1212,7 @@ export class NPCBehavior {
                 this.isSettling = false;
                 // A walker still touching a body that will not move away would re-settle on the
                 // next overlap callback, before its velocity ever moved it: the grace lets it walk.
-                this._settleGraceUntil = time + SETTLE_GRACE_MS;
+                this._settleGraceUntil = this.clockNow() + SETTLE_GRACE_MS;
                 console.log(`✅ [${this.npcId}] Finished settling, resuming patrol`);
             } else {
                 // Still settling - don't move, just idle
