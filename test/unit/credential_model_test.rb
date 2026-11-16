@@ -6,18 +6,17 @@ require 'test_helper'
 class CredentialModelTest < ActiveSupport::TestCase
   CM = BreakEscape::CredentialModel
 
-  test 'kinds built in phase 1, token and hash not yet' do
+  test 'kinds built in phase 1 (token from K5), hash not yet' do
     assert CM.kind_built?('password')
     assert CM.kind_built?('saved_connection')
     assert CM.kind_built?('assist_invite')
-    refute CM.kind_built?('token')
+    assert CM.kind_built?('token')
     refute CM.kind_built?('hash')
     refute CM.kind_built?('nonsense')
   end
 
-  test 'default accepts omits token until K5' do
-    assert_equal %w[password saved_connection assist_invite], CM::DEFAULT_ACCEPTS
-    refute_includes CM::DEFAULT_ACCEPTS, 'token'
+  test 'default accepts includes token from K5' do
+    assert_equal %w[password saved_connection assist_invite token], CM::DEFAULT_ACCEPTS
   end
 
   test 'accepts falls back to default, password always accepted' do
