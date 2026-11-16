@@ -754,3 +754,39 @@ test('a Wi-Fi key only in set member posts warns about timing; on an own post ou
     w = warnings(issues(sc));
     assert.ok(!w.some(s => s.includes('psk appears')), w.join('\n'));
 });
+
+// ---- Patch panel: panelOf / panelPorts (Pentest B1, E0.4) ----
+function panelScenario(mutate) {
+    const s = {
+        startRoom: 'r1',
+        networks: { office_lan: { name: 'LAN' }, lw_voice: { name: 'Voice' } },
+        rooms: { r1: { type: 'room_office', objects: [
+            { id: 'panel', type: 'table', name: 'Patch panel', interactable: true,
+              panelPorts: [{ port: 1, label: 'D01', desk: 'Desk 1', jack: 'lan_port' }, { port: 2, label: 'V02', desk: 'Phone', jack: 'voice_port' }, { port: 3, label: 'D03', desk: 'Spare' }] },
+            { id: 'lan_port', type: 'table', name: 'LAN port', networkJack: true, network: 'office_lan' },
+            { id: 'voice_port', name: 'Voice port', networkJack: true, network: 'lw_voice', panelOf: 'panel' }
+        ] } }
+    };
+    if (mutate) mutate(s.rooms.r1.objects);
+    return s;
+}
+test('panelOf: a well-formed panel raises no panel error', () => {
+    const list = errors(issues(panelScenario()));
+    assertNot(list, 'panelOf');
+    assertNot(list, 'panelPorts');
+});
+test('panelOf: names no object in the room', () => {
+    assertHas(errors(issues(panelScenario(o => { o[2].panelOf = 'nope'; }))), "has panelOf 'nope'");
+});
+test('panelOf: the panel does not list the jack', () => {
+    assertHas(errors(issues(panelScenario(o => { o[0].panelPorts.splice(1, 1); }))), 'does not list it in panelPorts');
+});
+test('panelOf: a sprite or a position is refused', () => {
+    assertHas(errors(issues(panelScenario(o => { o[2].sprite = 'x'; }))), 'a panel port has no sprite');
+    assertHas(errors(issues(panelScenario(o => { o[2].x = 4; }))), 'a panel port has none');
+});
+test('panelPorts: an entry names a missing jack, a non-jack, or a jack for another panel', () => {
+    assertHas(errors(issues(panelScenario(o => { o[0].panelPorts[0].jack = 'ghost'; }))), "jack 'ghost'");
+    assertHas(errors(issues(panelScenario(o => { delete o[1].networkJack; }))), 'not a networkJack');
+    assertHas(errors(issues(panelScenario(o => { o[2].panelOf = 'lan_port'; o[1].panelPorts = []; }))), 'panelOf names');
+});
