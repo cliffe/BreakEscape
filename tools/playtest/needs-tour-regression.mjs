@@ -40,6 +40,23 @@ await page.evaluate(() => {
     const ed = window.eventDispatcher; window.__ev = []; const orig = ed.emit.bind(ed);
     ed.emit = (ev, data) => { try { if (/^npc_(turned_back|need_parked|overheard|chatted|sat$)/.test(ev) && window.__ev.length < 400) window.__ev.push({ c: window.npcNeedsSystem.clockMs, ev, npcId: data?.npcId || data?.speakerId, reason: data?.reason, line: data?.line, picture: !!data?.picture, topic: data?.topic }); } catch (e) {} return orig(ev, data); };
 });
+// Player path searches (sims tidy 5): each avoidNPCs search, the seated chairs at that moment, the
+// path found, whether it was the rerun without seated chairs, and whether any path cell lies in a
+// seated chair's box
+await page.evaluate(() => {
+    const pm = window.pathfindingManager; window.__psearch = []; const orig = pm.findWorldPath.bind(pm);
+    pm.findWorldPath = (sx, sy, ex, ey, cb, avoidNPCs, opts) => {
+        if (!avoidNPCs || window.__psearch.length >= 300) return orig(sx, sy, ex, ey, cb, avoidNPCs, opts);
+        const seated = (window.chairs || []).filter(c => c?.seatedBy && c.body?.immovable).map(c => ({ by: c.seatedBy, box: [c.body.left, c.body.top, c.body.right, c.body.bottom].map(Math.round) }));
+        const rec = { from: [Math.round(sx), Math.round(sy)], to: [Math.round(ex), Math.round(ey)], rerun: !!opts?.ignoreSeated, seated };
+        window.__psearch.push(rec);
+        return orig(sx, sy, ex, ey, p => {
+            rec.len = p ? p.length : 0;
+            if (p) { rec.path = p.map(q => [Math.round(q.x), Math.round(q.y)]); rec.through = seated.filter(c => p.some(q => q.x >= c.box[0] && q.x <= c.box[2] && q.y >= c.box[1] && q.y <= c.box[3])).map(c => c.by); }
+            cb(p);
+        }, avoidNPCs, opts);
+    };
+});
 // Stall snapshots (sims tidy item 2): on each stall line, what is within 64 px of the NPC: the
 // player, other NPC bodies, chairs and static bodies, with their boxes
 await page.evaluate(() => {
@@ -93,7 +110,11 @@ const coffeeBusy = () => page.evaluate(() => ['amara', 'tom', 'marek', 'sanjay']
 // feet at y 134 (the sprite at y 103) against Amara, seated in her pulled-out chair at box
 // 217..239 x 118..129. The path grid leaves seated NPCs and their chairs out, so the planner sees a
 // clear column. Go up x 200, west of her, first: `front` may be a list of waypoints
-const BOARD_FRONT = [[200, 104], [220, 76]];
+// BOARD_ROUTE=direct (sims tidy 5): the old single front point, to show the engine's path grid fix
+// (seated chairs avoided per search, 22724fa2f) does the work without the driver's waypoints.
+// FRONT_CLICK=1 issues the front moves as real canvas clicks.
+const BOARD_FRONT = process.env.BOARD_ROUTE === 'direct' ? [220, 76] : [[200, 104], [220, 76]];
+const FRONT_CLICK = process.env.FRONT_CLICK === '1';
 const read = async (id, mids = [[232, 176], [200, 176], [264, 176]], front = null) => {
     const tries = [];
     for (let i = 0; i < 3; i++) {
@@ -109,7 +130,7 @@ const read = async (id, mids = [[232, 176], [200, 176], [264, 176]], front = nul
         await t(300);
         let mv = null;
         if (front) for (const pt of (Array.isArray(front[0]) ? front : [front])) {
-            mv = await page.evaluate(([x, y]) => window.__test.moveTo(x, y, { timeoutMs: 30000, pointer: false }), pt).catch(e => ({ err: String(e) }));
+            mv = await page.evaluate(([x, y, click]) => window.__test.moveTo(x, y, { timeoutMs: 30000, pointer: click }), [...pt, FRONT_CLICK]).catch(e => ({ err: String(e) }));
         }
         mv = front
             ? mv
@@ -237,6 +258,19 @@ report.rows[6].ok = report.rows[6].wait.ok;
 console.log('row 6', JSON.stringify(report.rows[6]));
 
 report.stalls = await page.evaluate(() => window.__stalls);
+report.player_searches = await page.evaluate(() => window.__psearch);
+report.doorway_sweeps = await page.evaluate(() => window.npcNeedsSystem.getLog().filter(e => e.ev === 'chair_out_of_doorway'));
+// Marek (sims tidy item 2): his chair, seat and facing, and a shot centred on him
+report.marek = await page.evaluate(() => {
+    const b = window.npcBehaviorManager?.getBehavior?.('marek'), sp = b?.sprite, st = b?._seat;
+    return { feet: sp?.body ? [Math.round(sp.body.center.x), Math.round(sp.body.bottom)] : null, seated: !!st,
+        chair: st?.chair?.objectId || null, facing: st?.facing || null, homeFacing: st?.homeFacing || null, direction: b?.direction || null,
+        fetches: window.npcNeedsSystem.getLog().filter(e => e.npc === 'marek' && /^(fetch_start|fetch_end|seat_move_end|seat_gave_up)$/.test(e.ev)) };
+});
+await page.evaluate(() => { const sp = window.npcBehaviorManager?.getBehavior?.('marek')?.sprite; if (sp) { const cam = window.game.scene.scenes.find(s => s.cameras?.main)?.cameras.main; cam?.stopFollow?.(); cam?.centerOn?.(sp.x, sp.y); } });
+await t(500);
+await page.screenshot({ path: `${outDir}/marek-${gid}.png` });
+await page.evaluate(() => { const cam = window.game.scene.scenes.find(s => s.cameras?.main)?.cameras.main; if (window.player) cam?.startFollow?.(window.player); });
 report.stuck = await page.evaluate(() => window.npcNeedsSystem.getLog().filter(e => /^(return_stuck|walk_stuck)$/.test(e.ev)).map(e => ({ t: e.t, npc: e.npc, ev: e.ev, x: e.x, y: e.y })));
 // Seating: every NPC's first time seated (needs clock, s) and the fetch and seat-move ends (the
 // needs log's t is in 250 ms ticks), for the sims tidy pass's Tom check
@@ -244,6 +278,6 @@ report.first_sat = await page.evaluate(() => { const o = {}; for (const e of win
 report.seating = await page.evaluate(() => window.npcNeedsSystem.getLog().filter(e => /^(fetch_start|fetch_end|seat_move_end|seat_gave_up)$/.test(e.ev)).map(e => ({ s: Math.round(e.t / 4), npc: e.npc, ev: e.ev, reason: e.reason, stage: e.stage, phase: e.phase, x: e.x, y: e.y })));
 await page.screenshot({ path: `${outDir}/tour-${gid}.png` });
 fs.writeFileSync(`${outDir}/tour-${gid}.json`, JSON.stringify(report, null, 1));
-console.log(JSON.stringify({ gid, row1: report.rows[1].ok, row3: report.rows[3].ok, row3_queued: q, row3_turned_back: report.rows[3].turned_back, row3_grumbles: report.rows[3].grumbles, row5: report.rows[5].ok, row6: report.rows[6].ok, rooms: report.rooms, stuck: report.stuck, tom_sat: report.first_sat.tom ?? null, errs: errs.length }));
+console.log(JSON.stringify({ gid, row1: report.rows[1].ok, row3: report.rows[3].ok, row3_queued: q, row3_turned_back: report.rows[3].turned_back, row3_grumbles: report.rows[3].grumbles, row5: report.rows[5].ok, row6: report.rows[6].ok, rooms: report.rooms, stuck: report.stuck, tom_sat: report.first_sat.tom ?? null, marek: { chair: report.marek.chair, facing: report.marek.facing }, sweeps: report.doorway_sweeps.length, seated_through: report.player_searches.filter(r => r.through?.length).length, reruns: report.player_searches.filter(r => r.rerun).length, errs: errs.length }));
 await page.goto('about:blank');
 await browser.close();
