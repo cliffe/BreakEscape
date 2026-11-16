@@ -238,9 +238,16 @@ async function parkByCooler() {
         if (!cell) return { ok: false, reason: 'no_cooler' };
         const pm = window.pathfindingManager;
         const aim = pm?.findNearestWalkableWorldCell?.(cell.x + off.x, cell.y + off.y, 3) || { x: cell.x + off.x, y: cell.y + off.y };
-        const r = await window.__test.moveTo(aim.x, aim.y, { timeoutMs: 20000, pointer: false }).catch(e => ({ err: String(e) }));
-        const p = window.player.body.center;
-        return { ok: !!r?.ok || Math.hypot(p.x - aim.x, p.y - aim.y) < 24, cooler: [Math.round(cell.x), Math.round(cell.y)],
+        let r = await window.__test.moveTo(aim.x, aim.y, { timeoutMs: 20000, pointer: false }).catch(e => ({ err: String(e) }));
+        let p = window.player.body.center;
+        // Sims tidy R4: the walk can stall far from the aim (seen at (-36, 87) against (-196, 292)); one re-approach
+        let retried = false;
+        if (!r?.ok && Math.hypot(p.x - aim.x, p.y - aim.y) >= 24) {
+            retried = true;
+            r = await window.__test.moveTo(aim.x, aim.y, { timeoutMs: 20000, pointer: false }).catch(e => ({ err: String(e) }));
+            p = window.player.body.center;
+        }
+        return { retried, ok: !!r?.ok || Math.hypot(p.x - aim.x, p.y - aim.y) < 24, cooler: [Math.round(cell.x), Math.round(cell.y)],
                  aim: [Math.round(aim.x), Math.round(aim.y)], player: [Math.round(p.x), Math.round(p.y)] };
     }, COOLER_OFFSET).catch(e => ({ ok: false, err: String(e).slice(0, 120) }));
 }

@@ -1448,18 +1448,40 @@ test('sweepDoorwayChairs (R2 m3): a glide that never gets out is tried three tim
     } finally { rig.restore(); }
 });
 
-test('sweepDoorwayChairs (R3 m1): a stuck glide that shifts the foot 1 px each time still gives up after three tries, logging once', () => {
-    const chair = doorChair(8, 79);
+test('sweepDoorwayChairs (R3 m1, R4 m1): a stuck glide that shifts the foot 1 px each time, across a rounding edge, still gives up after three tries, logging once', () => {
+    const chair = doorChair(5, 79); // 5 and 6 fall in different cells of a 4 px rounding grid
     const rig = doorSweepRig([chair]);
     try {
         let n = 0;
         for (let t = 1000; t <= 8000; t += 1000) {
             seating.sweepDoorwayChairs(t);
             for (let i = 0; i < 12; i++) seating.updateGlides();
-            chair.x = 8 + (++n % 2); // physics nudges the foot 1 px after every failed glide (8, 9, 8, 9 ...)
+            chair.x = 5 + (++n % 2); // physics nudges the foot 1 px after every failed glide (6, 5, 6, 5 ...)
         }
         assert.equal(rig.log.filter(l => l.ev === 'chair_out_of_doorway').length, 3, 'three tries, not one a second');
         assert.equal(rig.log.filter(l => l.ev === 'chair_in_doorway_no_spot').length, 1, 'one give-up line');
+    } finally { rig.restore(); }
+});
+
+test('sweepDoorwayChairs (R4 m1): a genuine move of more than 4 px from the first-try foot starts the count again', () => {
+    const chair = doorChair(5, 79);
+    const rig = doorSweepRig([chair]);
+    try {
+        const run = (from, to) => {
+            for (let t = from; t <= to; t += 1000) {
+                seating.sweepDoorwayChairs(t);
+                for (let i = 0; i < 12; i++) seating.updateGlides();
+            }
+        };
+        run(1000, 8000);
+        assert.equal(rig.log.filter(l => l.ev === 'chair_out_of_doorway').length, 3, 'three tries, then given up');
+        chair.x = 10; // 5 px from the first-try foot (5): a real move
+        run(9000, 16000);
+        assert.equal(rig.log.filter(l => l.ev === 'chair_out_of_doorway').length, 6, 'three more tries from the new foot');
+        assert.equal(rig.log.filter(l => l.ev === 'chair_in_doorway_no_spot').length, 2, 'and a second give-up line');
+        chair.x = 14; // 4 px from the new anchor (10): still the same spot, no fresh tries
+        run(17000, 20000);
+        assert.equal(rig.log.filter(l => l.ev === 'chair_out_of_doorway').length, 6, 'a 4 px nudge does not reset');
     } finally { rig.restore(); }
 });
 

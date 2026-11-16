@@ -1807,6 +1807,7 @@ export function doorwayChairSpot(foot, rects, half, clear) {
 const TILE_PX = 32;
 const DOOR_SWEEP_MS = 1000;
 /** Glides from one foot position before the sweep gives up on that chair (R2 m3). */
+const DOOR_SWEEP_SAME_PX = 4; // R4 m1: a later try within this distance of the first-try foot is the same spot
 const DOOR_SWEEP_TRIES = 3;
 const DOOR_SPOT_MARGIN = 2;
 let doorSweepAt = 0;
@@ -1874,10 +1875,13 @@ export function sweepDoorwayChairs(now = Date.now()) {
         const from = [Math.round(f.x), Math.round(f.y)];
         // R2 m3: a glide that ends blocked inside the gap leaves the foot where it was; the next
         // sweep would pick the same spot again. Three tries from one foot, then give up (one log)
-        // until the chair moves. R3 m1: the key is a coarse 4 px cell, so a glide that ends blocked but
-        // is nudged a pixel by physics still counts as the same try.
-        const sweepKey = Math.round(f.x / 4) + ',' + Math.round(f.y / 4);
-        const sw = chair._doorSweep?.key === sweepKey ? chair._doorSweep : (chair._doorSweep = { key: sweepKey, tries: 0, gaveUp: false });
+        // until the chair moves. R3 m1 and R4 m1: "the same foot" is within DOOR_SWEEP_SAME_PX of the
+        // first-try foot (kept per chair), so a pixel of physics nudge, on either side of any rounding
+        // edge, still counts as the same try; a move further than that starts the count again.
+        let sw = chair._doorSweep;
+        if (!sw || Math.hypot(f.x - sw.fromX, f.y - sw.fromY) > DOOR_SWEEP_SAME_PX) {
+            sw = chair._doorSweep = { fromX: f.x, fromY: f.y, tries: 0, gaveUp: false };
+        }
         if (!spot.to) {
             const key = from.join(',');
             if (chair._doorNoSpotAt !== key) {

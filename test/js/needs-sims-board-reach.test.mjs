@@ -42,3 +42,29 @@ test('the same board unmarked is out of reach from there (the old behaviour)', (
 test('a player far from the board is still out of reach', () => {
     assert.ok(distFrom(217, 140) > RANGE);
 });
+
+// m2 (R4): the Deadline Memo (notice_board1, 8.1875 x 0.6875 tiles, sprite 42 x 31) hangs on the same back
+// wall and is marked wallMounted so its caffeine 20 mapping is reached by measuring to the part of the
+// sprite level with the player. Note: the memo's top edge (y 22) is 30 px above the lowest stand point
+// (y 52), so unmarked it is just inside the 32 px reach there; the mark is what keeps it in reach for
+// every stand point along the sprite's height and any later nudge of the wall art, so the test pins the
+// mark and the marked distances, and shows the unmarked distance is never shorter.
+const memo = Object.values(scenario.rooms).flatMap(r => r.objects || []).find(o => o.id === 'deadline_memo');
+const TILE = 32;
+const memoSprite = { x: memo.position.x * TILE, y: memo.position.y * TILE, displayWidth: 42, displayHeight: 31, originX: 0, originY: 0, scenarioData: memo };
+
+test('the Deadline Memo is marked wallMounted', () => {
+    assert.ok(memo, 'deadline_memo exists');
+    assert.equal(memo.wallMounted, true);
+});
+
+test('the Deadline Memo is within reach from the floor in front of it, and the mark never lengthens the reach', () => {
+    const plain = { ...memoSprite, scenarioData: { ...memo, wallMounted: false } };
+    const dist = (s, px, py) => Math.hypot(reachX(s, px) - px, reachY(s, py) - py);
+    for (const [dx, py] of [[10, 49], [10, 52], [30, 52], [30, 40]]) {
+        const px = memoSprite.x + dx;
+        assert.ok(dist(memoSprite, px, py) <= RANGE, `(${px},${py}) is ${dist(memoSprite, px, py)} away`);
+        assert.ok(dist(memoSprite, px, py) <= dist(plain, px, py));
+    }
+    assert.ok(dist(memoSprite, memoSprite.x + 10, 140) > RANGE, 'far away is still out of reach');
+});
