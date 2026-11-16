@@ -1008,7 +1008,8 @@
 [data-ui-theme] .game-modal-close,
 [data-ui-theme] .modal-close-button,
 [data-ui-theme] #music-widget-panel .mw-close-btn,
-[data-ui-theme] .game-menu-close {
+[data-ui-theme] .game-menu-close,
+[data-ui-theme] .notification-close {
   border-style: solid;
   border-width: var(--ui-small-button-px);
   border-image-source: var(--ui-small-button-image);
@@ -1026,7 +1027,8 @@
 [data-ui-theme] .game-modal-close:hover,
 [data-ui-theme] .modal-close-button:hover,
 [data-ui-theme] #music-widget-panel .mw-close-btn:hover,
-[data-ui-theme] .game-menu-close:hover {
+[data-ui-theme] .game-menu-close:hover,
+[data-ui-theme] .notification-close:hover {
   background: none;
   color: var(--ui-danger);
   filter: brightness(1.3) var(--ui-glow-filter);
@@ -1340,7 +1342,6 @@
 [data-ui-theme] .notification.warning { box-shadow: inset 4px 0 0 #f39c12; }
 [data-ui-theme] .notification.error   { box-shadow: inset 4px 0 0 var(--ui-danger); }
 [data-ui-theme] .notification-title { color: var(--ui-accent); font-family: var(--ui-heading-font); }
-[data-ui-theme] .notification-close { color: var(--ui-text-dim); }
 
 /* --- Bark toasts (UI decision B2 option A): a phone text takes the toasts' small frame with
        its green stripe; speech in the building takes the caption's frame, as they share the

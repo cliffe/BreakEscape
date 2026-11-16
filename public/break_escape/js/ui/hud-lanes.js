@@ -200,30 +200,29 @@ export function stackMembers(heights, laneMax, gap = LANE_GAP) {
 /**
  * Where the incoming-call banner goes while a minigame is open (UI backlog 5d, review R1 M1).
  * `titles` and `controls` are the boxes of the minigame's headings and of everything the player
- * can press or must read (buttons, inputs, the PIN display); `toasts` are the notify lane's toasts
- * showing now. Spots, tried in order, the first that touches none of them wins:
+ * can press or must read (buttons, inputs, the PIN display). Toasts are not obstacles: the banner
+ * is placed first and the toasts keep clear of it (toastSpot), so the two never chase each other.
+ * Spots, tried in order, the first that touches none of them wins:
  *   1. bottom   the bottom centre (where the tutorial step panel's banner sits, phone-ring.css)
  *   1. bottom   then the bottom right
  *   2. below    just under the minigame's frame (`frame`), kept inside the viewport
  *   3. lane     the right-hand end of the notify lane
- *   4. lane-below  the same spot moved under the lowest toast showing, if that is clear and on screen
  * With none clear, the top centre where it always sat: a covered title costs less than a covered key.
  * With no minigame boxes at all it stays top centre. Boxes are grown by `margin` (default 4px).
  * @param {{vw:number, vh:number, size:{width:number,height:number},
  *          titles?:Array<{left,top,right,bottom}>, controls?:Array<{left,top,right,bottom}>,
- *          toasts?:Array<{left,top,right,bottom}>, frame?:{left,top,right,bottom}|null,
+ *          frame?:{left,top,right,bottom}|null,
  *          lane?:{top:number,left:number,width:number}, top?:number, edge?:number, margin?:number}} a
- * @returns {{name:'default'|'bottom'|'below'|'lane'|'lane-below', top:number, left:number}}
+ * @returns {{name:'default'|'bottom'|'below'|'lane', top:number, left:number}}
  */
-export function ringLayerSpot({ vw, vh = 0, size, titles = [], controls = [], toasts = [], frame = null, lane,
+export function ringLayerSpot({ vw, vh = 0, size, titles = [], controls = [], frame = null, lane,
   top = 12, edge = SIDE_GUTTER, margin = 4 } = {}) {
   const w = Math.max(0, size?.width || 0);
   const h = Math.max(0, size?.height || 0);
   const centre = Math.round((vw - w) / 2);
   const blockers = [...titles, ...controls];
   if (!blockers.length) return { name: 'default', top, left: centre };
-  const hits = (l, tp) => blockers.some(r => l < r.right + margin && r.left < l + w + margin && tp < r.bottom + margin && r.top < tp + h + margin)
-    || toasts.some(r => l < r.right + margin && r.left < l + w + margin && tp < r.bottom + margin && r.top < tp + h + margin);
+  const hits = (l, tp) => blockers.some(r => l < r.right + margin && r.left < l + w + margin && tp < r.bottom + margin && r.top < tp + h + margin);
   const tryAt = (name, l, tp) => (hits(l, tp) ? null : { name, top: tp, left: l });
   const fit = (y) => Math.round(vh > 0 ? Math.max(0, Math.min(y, vh - h - edge)) : y);
   const bottom = fit(vh - h - edge);
@@ -233,11 +232,196 @@ export function ringLayerSpot({ vw, vh = 0, size, titles = [], controls = [], to
   if (lane) {
     const laneLeft = Math.round(Math.max(lane.left, lane.left + lane.width - w));
     spots.push(tryAt('lane', laneLeft, lane.top));
-    // A toast in the lane: try just under the lowest one before giving up and covering a title
-    const under = toasts.length ? Math.round(Math.max(...toasts.map(r => r.bottom)) + LANE_GAP) : null;
-    if (under !== null && (vh <= 0 || under + h <= vh - edge)) spots.push(tryAt('lane-below', laneLeft, under));
   }
   return spots.find(Boolean) || { name: 'default', top, left: centre };
+}
+
+// ------------------------------------------------------------ toasts over an open panel
+
+export const TOAST_SPOT_MARGIN = 4;     // px kept round every blocker
+export const TOAST_SPOT_STEP = 8;       // px between the tops tried
+export const TOAST_SPOT_EDGE = 8;       // px kept from the viewport's top and bottom
+export const TOAST_SPOT_WIDTHS = [480, 360, 240];   // narrower widths tried, times the HUD zoom
+export const PANEL_THROTTLE_MS = 100;   // changes inside an open panel re-place at most this often
+
+const overlaps = (l, t, w, h, m) => (r) => l < r.right + m && r.left < l + w + m && t < r.bottom + m && r.top < t + h + m;
+const areaOver = (l, t, w, h, r) => Math.max(0, Math.min(l + w, r.right) - Math.max(l, r.left))
+  * Math.max(0, Math.min(t + h, r.bottom) - Math.max(t, r.top));
+
+/** Controls that are not inside another control's box (a table row and its cells count once). */
+export function outermostBoxes(boxes) {
+  // Largest first (equal boxes in input order): a box is inside another only if that one comes
+  // earlier, and an inner box of a dropped box is inside the dropped box's keeper too, so each is
+  // tested against the keepers alone
+  const area = (b) => (b.right - b.left) * (b.bottom - b.top);
+  const order = boxes.map((b, i) => i).sort((i, j) => area(boxes[j]) - area(boxes[i]) || i - j);
+  const keep = [];
+  const kept = new Set();
+  for (const i of order) {
+    const a = boxes[i];
+    if (keep.some(b => b.left <= a.left && b.top <= a.top && b.right >= a.right && b.bottom >= a.bottom)) continue;
+    keep.push(a);
+    kept.add(i);
+  }
+  return boxes.filter((a, i) => kept.has(i));
+}
+
+/**
+ * Where the notify lane's toast block goes while a panel (a minigame or a workstation popup) is
+ * open. Pure; every number is screen px.
+ *
+ * Blockers: `titles` (headings and the close X), `xs` (the close X on its own), `controls` (boxes;
+ * those with `listRow: true` are rows in a scrolling list and are not avoided), `canvases` (play
+ * canvases) and `banner` (the incoming-call banner, or null).
+ *   1. the lane, at the lane width, when clear (checked first, so a block that moved comes back)
+ *   2. `current`, the block's place now when it is away from the lane, if still clear (no jitter)
+ *   3. the nearest clear place: sides right-aligned to the lane, centred, the 16 px left gutter;
+ *      on each side the lane width then 480, 360 and 240 times `z` (not wider than the lane); for
+ *      each width the tops in 8 px steps, nearest to the lane top first
+ *   4. the fallback rungs, over the same places with the lane first; the X and the banner are
+ *      never covered: (1) cover a title, (2) the fewest canvas pixels, (3) the fewest outermost
+ *      controls (title-free wins a tie), (4) nothing fits whole: the lane column, top just under
+ *      any X or banner in it, cut at the viewport bottom
+ * `heightAt(w)` is the block's height at width `w`. With `clearOnly` the fallback is not tried and
+ * null means no clear place.
+ * @returns {{name:'lane'|'current'|'moved'|'fallback', rung:number, side:string, left:number,
+ *   top:number, width:number, height:number, maxHeight:number|null, covers?:object}|null}
+ */
+export function toastSpot({ vw, vh, lane, z = 1, heightAt, titles = [], xs = [], controls = [], canvases = [],
+  banner = null, current = null, margin = TOAST_SPOT_MARGIN, step = TOAST_SPOT_STEP, edge = TOAST_SPOT_EDGE,
+  gutter = SIDE_GUTTER, clearOnly = false } = {}) {
+  const heights = new Map();
+  const hAt = (w) => {
+    if (!heights.has(w)) { const h = Number(heightAt?.(w)); heights.set(w, Number.isFinite(h) && h > 0 ? Math.ceil(h) : 0); }
+    return heights.get(w);
+  };
+  // A box inside another control's box can only be overlapped with it: the outermost boxes decide
+  const ctl = outermostBoxes(controls.filter(c => !c.listRow));
+  const hard = [...xs, ...(banner ? [banner] : [])];
+  const fits = (p) => p.left >= 0 && p.left + p.width <= vw && p.top >= edge && p.top + p.height <= vh - edge;
+  const clearOf = (p, list) => !list.some(overlaps(p.left, p.top, p.width, p.height, margin));
+  const allBlockers = [...titles, ...hard, ...ctl, ...canvases];
+  const spot = (name, rung, side, left, top, width, extra = {}) => ({ name, rung, side, left: Math.round(left),
+    top: Math.round(top), width, height: hAt(width), maxHeight: null, ...extra });
+
+  const laneW = Math.round(lane.width);
+  const laneP = spot('lane', 0, 'lane', lane.left, lane.top, laneW);
+  if (laneP.height && fits(laneP) && clearOf(laneP, allBlockers)) return laneP;
+  if (current && Number.isFinite(current.top) && Number.isFinite(current.left) && current.width > 0) {
+    const cw = Math.round(current.width);
+    const cur = spot('current', 0, current.side || 'current', current.left, current.top, cw);
+    if (cur.height && fits(cur) && clearOf(cur, allBlockers)) return cur;
+  }
+  const widths = [laneW];
+  for (const base of TOAST_SPOT_WIDTHS) {
+    const w = Math.round(base * z);
+    if (w <= laneW && !widths.includes(w)) widths.push(w);
+  }
+  const sides = [['lane-side', w => lane.left + lane.width - w], ['centre', w => (vw - w) / 2], ['left', () => gutter]];
+  // Every place in search order, lazily (a clear one usually turns up early)
+  function* places() {
+    for (const [side, xf] of sides) {
+      for (const w of widths) {
+        const h = hAt(w);
+        if (!h) continue;
+        const left = Math.round(xf(w));
+        if (left < 0 || left + w > vw) continue;
+        const tops = [];
+        for (let t = edge; t + h <= vh - edge; t += step) tops.push(t);
+        tops.sort((a, b) => Math.abs(a - lane.top) - Math.abs(b - lane.top) || a - b);
+        for (const t of tops) yield spot('moved', 0, side, left, t, w);
+      }
+    }
+  }
+  for (const p of places()) if (clearOf(p, allBlockers)) return p;
+  if (clearOnly) return null;
+
+  // Fallback (2.4): the lane first, then the same places; the X and the banner are hard in every rung
+  const all = [laneP, ...places()].filter(p => p.height && fits(p));
+  const titleHit = (p) => titles.some(overlaps(p.left, p.top, p.width, p.height, margin));
+  const r1 = all.find(p => clearOf(p, [...hard, ...ctl, ...canvases]));
+  if (r1) return { ...r1, name: 'fallback', rung: 1, covers: { titles: titles.filter(overlaps(r1.left, r1.top, r1.width, r1.height, margin)).length } };
+  if (canvases.length) {
+    let best = null;
+    for (const p of all) {
+      if (!clearOf(p, [...hard, ...ctl])) continue;
+      const px = canvases.reduce((a, k) => a + areaOver(p.left, p.top, p.width, p.height, k), 0);
+      if (!best || px < best.px) best = { p, px };
+    }
+    if (best) return { ...best.p, name: 'fallback', rung: 2, covers: { canvasPx: best.px, titles: titleHit(best.p) ? 1 : 0 } };
+  }
+  const outer = ctl;
+  let best3 = null;
+  all.forEach((p, i) => {
+    if (!clearOf(p, hard)) return;
+    const n = outer.filter(overlaps(p.left, p.top, p.width, p.height, margin)).length;
+    const tt = titleHit(p) ? 1 : 0;
+    if (!best3 || n < best3.n || (n === best3.n && tt < best3.tt)) best3 = { p, n, tt, i };
+  });
+  if (best3) return { ...best3.p, name: 'fallback', rung: 3, covers: { controls: best3.n, titles: best3.tt } };
+  // Nothing fits whole: the lane column, starting under any X or banner in it, cut at the bottom
+  let top = lane.top;
+  for (const r of hard) {
+    if (lane.left < r.right + margin && r.left < lane.left + laneW + margin && r.top < vh - edge) {
+      top = Math.max(top, Math.ceil(r.bottom + margin));
+    }
+  }
+  if (top > vh - edge - step) top = lane.top;
+  return { ...laneP, name: 'fallback', rung: 4, top: Math.round(top), maxHeight: Math.max(0, Math.round(vh - edge - top)) };
+}
+
+export const TOAST_WARNING_FLOOR_MS = 1500;   // TOAST_STAGGER_MS in notifications.js
+export const TOAST_ERROR_FLOOR_MS = 5000;     // ERROR_TOAST_MIN_MS in notifications.js
+export const TOAST_WARNING_WAIT_MS = 5000;    // a warning behind errors waits no longer than this
+
+/**
+ * The answer for each toast waiting to show over a panel (warnings and errors). Pure.
+ * @param {object} a
+ *   block    the toasts showing now, in container order: [{el, type, shownAt, duration}]
+ *            (closing ones left out by the caller)
+ *   pending  the toasts waiting, in arrival order: [{el, type, arrivedAt}]
+ *   now      Date.now()
+ *   spotFor  (toasts) => truthy when the block made of these toasts has a clear place
+ *   panelOpen  false: every answer is 'stack'
+ * @returns {Array<{el, answer:'stack'|'wait'|object}>} queue order (errors first, then warnings);
+ *   an element answer means "replace that toast at its floor"
+ */
+export function pendingAnswers({ block = [], pending = [], now = Date.now(), spotFor = () => true, panelOpen = true } = {}) {
+  const errorsFirst = [...pending.filter(p => p.type === 'error'), ...pending.filter(p => p.type !== 'error')];
+  if (!panelOpen) return errorsFirst.map(p => ({ el: p.el, answer: 'stack' }));
+  const stacked = [];
+  const targeted = new Set();
+  const out = [];
+  const byShown = (a, b) => (a.shownAt || 0) - (b.shownAt || 0);
+  for (const p of errorsFirst) {
+    let answer;
+    const shownNow = [...block, ...stacked];
+    if (spotFor([...shownNow, p])) answer = 'stack';
+    else {
+      const errors = shownNow.filter(t => t.type === 'error');
+      if (p.type === 'error') {
+        if (errors.length === 0) {
+          const warn = block.filter(t => t.type === 'warning').sort(byShown)[0];
+          answer = warn ? warn.el : 'stack';
+        } else if (errors.length === 1) {
+          answer = 'stack';
+        } else {
+          const target = block.filter(t => t.type === 'error' && t.duration > 0 && !targeted.has(t.el)).sort(byShown)[0];
+          if (target) { targeted.add(target.el); answer = target.el; } else answer = 'wait';
+        }
+      } else {
+        const warn = shownNow.filter(t => t.type === 'warning' && !targeted.has(t.el)).sort(byShown)[0];
+        if (warn) { targeted.add(warn.el); answer = warn.el; }
+        else if (errors.length) {
+          const oldest = Math.min(...errors.map(t => (Number.isFinite(t.shownAt) ? t.shownAt : now)));
+          answer = (now - oldest >= TOAST_ERROR_FLOOR_MS || now - (p.arrivedAt ?? now) >= TOAST_WARNING_WAIT_MS) ? 'stack' : 'wait';
+        } else answer = 'stack';
+      }
+    }
+    if (answer === 'stack') stacked.push({ el: p.el, type: p.type, shownAt: now, duration: p.duration });
+    out.push({ el: p.el, answer });
+  }
+  return out;
 }
 
 /**
@@ -375,67 +559,134 @@ const MINIGAME_CONTROLS = ['button', 'input', 'textarea', 'select', 'a[href]', '
 
 function boxOf(r) { return { left: r.left, top: r.top, right: r.right, bottom: r.bottom }; }
 
+// The pointer-cursor scan, cached per element (toast plan 2.8): `cursor` is { map: WeakMap,
+// dirty: null | Node[] }; null re-reads everything, otherwise only elements inside a node named
+// in the panel's mutation records are read again. Without a cache every element is read.
+function pointerCursor(el, cursor) {
+  if (!cursor) return gcs(el).cursor === 'pointer';
+  const d = cursor.dirty;
+  if (d === null || !cursor.map.has(el) || d.some(n => n === el || n.contains?.(el))) {
+    cursor.map.set(el, gcs(el).cursor === 'pointer');
+  }
+  return cursor.map.get(el);
+}
+
+// The workstation popups (CyberChef, lab sheets) are plain DOM outside any .minigame-container
+const POPUP_ROOTS = ['#laptop-popup', '#lab-popup'];
+// A scrolling list counts as one only while its scroller is under this share of the frame's height
+export const LIST_FRAME_SHARE = 0.6;
+
+// `memo` (a Map, one per measure pass) keeps the answer per element: a panel with hundreds of
+// controls walks the same few ancestors for each, and each read is a getComputedStyle call
+function scrollsY(el, memo = null) {
+  if (memo && memo.has(el)) return memo.get(el);
+  const v = /(auto|scroll)/.test(gcs(el).overflowY || '') && el.scrollHeight > el.clientHeight + 1;
+  if (memo) memo.set(el, v);
+  return v;
+}
+
 /**
- * The boxes in the open minigame(s): headings, controls (the listed selectors plus anything with a
- * pointer cursor), and the frame to place a banner under. Shown elements only; an element over
- * half the screen (a clickable backdrop) is no control.
+ * A control that is a row in a scrolling list (toasts may cover those, 2.2 of the toast plan):
+ * its nearest scrolling ancestor is inside the panel and is not the panel root, the frame or an
+ * ancestor of the frame; that scroller is under LIST_FRAME_SHARE of the frame's height; and the
+ * control, or an ancestor of it below the scroller, is one of at least 3 siblings with the same
+ * tag and class.
  */
-export function measureMinigame(doc, win) {
+function isListRow(el, root, frameEl, frameH, memo = null) {
+  let sc = null;
+  for (let q = el.parentElement; q && q !== root.parentElement; q = q.parentElement) {
+    if (scrollsY(q, memo)) { sc = q; break; }
+  }
+  if (!sc || sc === root || sc === frameEl || (frameEl && sc.contains(frameEl))) return false;
+  if (!(frameH > 0) || sc.clientHeight >= LIST_FRAME_SHARE * frameH) return false;
+  for (let n = el; n && n !== sc; n = n.parentElement) {
+    const par = n.parentElement;
+    if (!par) break;
+    let k = 0;
+    for (const c of par.children) if (c.tagName === n.tagName && c.className === n.className && ++k >= 3) return true;
+  }
+  return false;
+}
+
+/**
+ * The boxes in the open minigame(s) and the shown workstation popup: headings (`titles`, the close
+ * X among them), the close X on its own (`xs`), controls (the listed selectors plus anything with
+ * a pointer cursor; each box carries `listRow`, see isListRow), play `canvases` (not the
+ * conversation portrait) and the frame to place a banner under. Shown elements only; an element
+ * over half the screen (a clickable backdrop) is no control.
+ */
+export function measureMinigame(doc, win, cursor = null) {
   const titles = [];
+  const xs = [];
   const controls = [];
+  const canvases = [];
   let frame = null;
   const area = (win.innerWidth || 0) * (win.innerHeight || 0);
+  const grow = (fr) => {
+    frame = frame ? { left: Math.min(frame.left, fr.left), top: Math.min(frame.top, fr.top), right: Math.max(frame.right, fr.right), bottom: Math.max(frame.bottom, fr.bottom) } : boxOf(fr);
+  };
   for (const mg of doc.querySelectorAll('.minigame-container')) {
     if (!shownRect(mg)) continue;
     for (const sel of MINIGAME_TITLES) {
       for (const t of mg.querySelectorAll(sel)) {
         const r = shownRect(t);
-        if (r) titles.push(boxOf(r));
+        if (!r) continue;
+        titles.push(boxOf(r));
+        if (sel === '.minigame-close-button') xs.push(boxOf(r));
       }
     }
+    const anchor = win.MinigameFramework?.currentMinigame?.closeAnchor?.();
+    const frameEl = anchor && mg.contains(anchor) ? anchor : mg.querySelector('.minigame-game-container');
+    const fr = shownRect(frameEl);
+    const frameH = fr ? fr.height : (shownRect(mg)?.height || 0);
     const seen = new Set();
+    const scrollMemo = new Map();
     const add = (el) => {
       if (seen.has(el) || el.closest?.('#phone-ring-layer')) return;
       seen.add(el);
+      // A play canvas is a canvas, not also a control (the dusting canvas has tabindex and was
+      // counted as both, which ruled out the place that covers a canvas rather than a control)
+      if (el.tagName === 'CANVAS' && !el.classList.contains('person-chat-portrait')) return;
       const r = shownRect(el);
-      if (r && (!area || r.width * r.height <= area / 2)) controls.push(boxOf(r));
+      if (r && (!area || r.width * r.height <= area / 2)) controls.push({ ...boxOf(r), listRow: isListRow(el, mg, frameEl, frameH, scrollMemo) });
     };
     mg.querySelectorAll(MINIGAME_CONTROLS.join(', ')).forEach(add);
-    mg.querySelectorAll('*').forEach((el) => { if (!seen.has(el) && gcs(el).cursor === 'pointer') add(el); });
-    const anchor = win.MinigameFramework?.currentMinigame?.closeAnchor?.();
-    const fr = shownRect(anchor && mg.contains(anchor) ? anchor : mg.querySelector('.minigame-game-container'));
-    if (fr) frame = frame ? { left: Math.min(frame.left, fr.left), top: Math.min(frame.top, fr.top), right: Math.max(frame.right, fr.right), bottom: Math.max(frame.bottom, fr.bottom) } : boxOf(fr);
+    mg.querySelectorAll('*').forEach((el) => { if (!seen.has(el) && pointerCursor(el, cursor)) add(el); });
+    for (const c of mg.querySelectorAll('canvas')) {
+      if (c.classList.contains('person-chat-portrait')) continue;
+      const r = shownRect(c);
+      if (r) canvases.push(boxOf(r));
+    }
+    if (fr) grow(fr);
   }
-  return { titles, controls, frame };
+  for (const sel of POPUP_ROOTS) {
+    const pop = doc.querySelector(sel);
+    if (!pop || !shownRect(pop)) continue;
+    for (const t of pop.querySelectorAll('.title-bar')) { const r = shownRect(t); if (r) titles.push(boxOf(r)); }
+    for (const x of pop.querySelectorAll('.minigame-close-button')) {
+      const r = shownRect(x);
+      if (r) { titles.push(boxOf(r)); xs.push(boxOf(r)); }
+    }
+    const fr = shownRect(pop.querySelector('.laptop-screen'));
+    if (fr) grow(fr);
+  }
+  return { titles, xs, controls, canvases, frame };
 }
 
-// A toast slides in and out with a translateY (notifications.css), so its box mid-slide is up to
-// 20px off where it settles, and nothing re-places the banner when the slide ends. The vertical
-// shift is taken back out, so the banner is placed against the settled box.
-function settledBox(el, r) {
-  const m = /^matrix\(([^)]*)\)$/.exec(gcs(el).transform || '');
-  const ty = m ? parseFloat(m[1].split(',')[5]) : 0;
-  const b = boxOf(r);
-  if (Number.isFinite(ty) && ty) { b.top -= ty; b.bottom -= ty; }
-  return b;
-}
-
-function placeRingLayer(doc, win, lanes) {
+function placeRingLayer(doc, win, lanes, measure) {
   const layer = doc.getElementById('phone-ring-layer');
   if (!layer) return null;
   const clear = () => { for (const k of ['top', 'left', 'transform']) if (layer.style[k]) layer.style[k] = ''; };
   // Only a banner over a minigame needs placing; the tutorial step panel has its own spot (CSS)
   if (!shownRect(layer.querySelector('.incoming-call')) || layer.classList.contains('under-tutorial')) { clear(); return null; }
-  const mg = measureMinigame(doc, win);
-  const toasts = [];
-  for (const el of doc.querySelectorAll('#notification-container .notification')) {
-    const r = shownRect(el);
-    if (r && !el.classList.contains('hud-lane-yield')) toasts.push(settledBox(el, r));
-  }
+  const mg = measure();
   clear();                                   // measure the banner where the CSS puts it
   const box = layer.getBoundingClientRect();
   const spot = ringLayerSpot({ vw: win.innerWidth, vh: win.innerHeight, size: { width: box.width, height: box.height },
-    titles: mg.titles, controls: mg.controls, toasts, frame: mg.frame, lane: lanes.notify });
+    titles: mg.titles, controls: mg.controls, frame: mg.frame, lane: lanes.notify });
+  // The banner's box once placed, for the toasts to keep clear of
+  spot.box = spot.name === 'default' ? boxOf(box)
+    : { left: spot.left, top: spot.top, right: spot.left + box.width, bottom: spot.top + box.height };
   if (spot.name === 'default') return spot;
   layer.style.transform = 'none';
   setPx(layer, 'top', spot.top);
@@ -443,10 +694,238 @@ function placeRingLayer(doc, win, lanes) {
   return spot;
 }
 
-/** Place the lane members for one measurement. Exposed for tests and the proof scripts. */
-export function applyLanes(doc = document, win = window) {
+// ------------------------------------------------- the toast block over an open panel
+
+/** A minigame (not ending) or a workstation popup is open: overlay-open.js fullScreenPanelOpen. */
+function panelOpenIn(doc, win) {
+  const m = win.MinigameFramework?.currentMinigame;
+  if (m && !m._ending) return true;
+  return POPUP_ROOTS.some((sel) => {
+    const el = doc.querySelector(sel);
+    return !!el && !!el.style && el.style.display !== '' && el.style.display !== 'none';
+  });
+}
+
+function phoneOpenIn(doc) {
+  return !!shownRect(doc.querySelector('[data-minigame="phone-chat"]'));
+}
+
+/**
+ * An element's height (screen px) laid out at screen width `w`: a clone inside a hidden host
+ * with the zoom `z` of the element's container, so the answer is in screen px as the boxes are.
+ * The host goes on `body`, never inside a lane container (it would add to the lane sums).
+ */
+const MEASURE_HOST_ATTR = 'data-hud-measure';
+const isMeasureHost = (n) => n?.nodeType === 1 && n.hasAttribute?.(MEASURE_HOST_ATTR);
+
+function cloneHeightAt(doc, el, w, z, { keepId = false, fontFrom = null } = {}) {
+  const body = doc.body;
+  if (!body?.appendChild) return 0;
+  const host = doc.createElement('div');
+  host.style.cssText = 'position: fixed; left: -9000px; top: 0; visibility: hidden; pointer-events: none;';
+  host.style.zoom = String(z);
+  host.setAttribute(MEASURE_HOST_ATTR, '1');   // the lanes' own body observer ignores it
+  if (fontFrom) {
+    const cs = gcs(fontFrom);
+    for (const k of ['fontFamily', 'fontSize', 'lineHeight', 'letterSpacing']) if (cs[k]) host.style[k] = cs[k];
+  }
+  const c = el.cloneNode(true);
+  if (!keepId) c.removeAttribute?.('id');
+  c.classList.remove('toast-pending', 'hud-lane-yield');
+  if (c.classList.contains('notification')) c.classList.add('show', 'placed-over-panel');
+  Object.assign(c.style, { position: 'static', transform: 'none', transition: 'none', boxSizing: 'border-box',
+    width: `${w / z}px`, maxHeight: 'none', top: 'auto', left: 'auto' });
+  host.appendChild(c);
+  body.appendChild(host);
+  try { return Math.ceil(c.getBoundingClientRect().height || 0); } finally { host.remove(); }
+}
+
+// What else changes a clone's height without touching the DOM it copies: the web font arriving
+// (the fallback font wraps differently) and a UI theme switch (themed padding and borders)
+const renderEnv = (doc) => `${doc.fonts?.status || ''}${doc.documentElement?.dataset?.uiTheme || ''}`;
+
+/** A toast's height at screen width `w`, cached on the toast by width and zoom (its text never changes). */
+function toastHeightAt(doc, t, w, z, container) {
+  const key = `${w}@${z}#${renderEnv(doc)}@${doc.body?.classList.contains('hud-compact') ? 'c' : 'w'}`;   // compact padding differs
+  if (!t._hudLaneH) t._hudLaneH = new Map();
+  if (!t._hudLaneH.has(key)) {
+    // A long drag adds a width per frame (R4 n2). 16 is well above the 5 to 10 keys one pass
+    // needs (lane widths x rungs), so a steady screen never misses and a drag re-clones in bursts
+    if (t._hudLaneH.size >= 16) t._hudLaneH.clear();
+    t._hudLaneH.set(key, cloneHeightAt(doc, t, w, z, { fontFrom: container }));
+  }
+  return t._hudLaneH.get(key);
+}
+
+function clearBlockPlacing(el) {
+  for (const k of ['top', 'left', 'right', 'bottom', 'width', 'maxHeight']) if (el.style[k]) el.style[k] = '';
+}
+
+/**
+ * The notify lane's toasts while a panel is open (toast plan 2.3 to 2.6): one block (the toast
+ * container, and the phone-text container under it over the phone) placed by toastSpot, the
+ * class `placed-over-panel` on each toast in it while it is away from the lane, and an answer
+ * (pendingAnswers) for every toast waiting with `toast-pending`. Runs after the banner is
+ * placed. `prev` is the last pass's { away, spot }. Returns the new { away, spot }.
+ */
+function placeNotifyBlock(doc, win, lanes, measure, prev, ringSpot) {
+  const el = doc.getElementById('notification-container');
+  if (!el) return { away: false, spot: null };
+  const n = lanes.notify;
+  const phoneEl = doc.getElementById('npc-bark-container');
+  const toLane = (members) => {
+    for (const m of members) {
+      if (!m) continue;
+      if (prev.away) { setPx(m, 'top', n.top); setPx(m, 'left', n.left); setPx(m, 'width', n.width); m.style.maxHeight = 'none'; }
+    }
+  };
+  const setClass = (on) => {
+    for (const t of el.querySelectorAll('.notification')) {
+      const want = on.has(t);
+      if (t.classList.contains('placed-over-panel') !== want) t.classList.toggle('placed-over-panel', want);
+    }
+  };
+  const answerAll = (answers) => {
+    for (const { el: t, answer } of answers) {
+      try { t._onReplace?.(answer); } catch (e) { /* the toast went meanwhile */ }
+    }
+  };
+  try {
+    const all = Array.from(el.querySelectorAll('.notification'));
+    const shownEls = all.filter(t => !t.classList.contains('toast-pending') && !t._toast?.closing && !t.classList.contains('hud-lane-yield'));
+    const pendingEls = all.filter(t => t.classList.contains('toast-pending') && !t._toast?.closing);
+    const panelOpen = panelOpenIn(doc, win);
+    const phoneOpen = panelOpen && phoneOpenIn(doc) && !!phoneEl;
+    const z = zoomOf(el);
+    const gapOf = (t) => { const mb = parseFloat(gcs(t).marginBottom); return (Number.isFinite(mb) ? mb : 10) * z; };
+    const texts = phoneOpen ? Array.from(phoneEl.querySelectorAll('.npc-bark')).filter(b => !b._removing && !b.classList.contains('hud-lane-yield')) : [];
+    // Kept on the phone container across passes: keyed by width, zoom and compact flag, and dropped
+    // when what the clone renders changes (review R1 M1). The clone copies every child, so the
+    // signature reads every child: its text, whether it is leaving or stepped aside, whether its
+    // headshot is showing (unhidden on image load, no text change), and the clear-all button.
+    const phoneSig = phoneEl
+      ? Array.from(phoneEl.children).map(b => [b.textContent, b._removing ? 'r' : '', b.classList.contains('hud-lane-yield') ? 'y' : '',
+        b.querySelector?.('.npc-bark-head')?.hidden === false ? 'h' : '', b.style?.display || ''].join('\u0002')).join('\u0001')
+        + `|${doc.body?.classList.contains('hud-compact') ? 'c' : 'w'}|${renderEnv(doc)}`
+      : '';
+    if (phoneEl && phoneEl._hudLaneSig !== phoneSig) { phoneEl._hudLaneSig = phoneSig; phoneEl._hudLaneH = new Map(); }
+    const phoneH = (w) => {
+      if (!texts.length) return 0;
+      const cache = phoneEl._hudLaneH || (phoneEl._hudLaneH = new Map());
+      const key = `${w}@${zoomOf(phoneEl)}`;
+      if (!cache.has(key)) {
+        if (cache.size >= 8) cache.clear();   // a window drag adds a width per frame (R2 n2)
+        cache.set(key, cloneHeightAt(doc, phoneEl, w, zoomOf(phoneEl), { keepId: true, fontFrom: phoneEl }));
+      }
+      return cache.get(key);
+    };
+    // The toasts' part: heights plus one gap between each pair; the phone texts start one gap below
+    const toastsPart = (list, w) => list.reduce((h, t, i) => h + toastHeightAt(doc, t, w, z, el) + (i ? gapOf(t) : 0), 0);
+    const heightFor = (list) => (w) => {
+      const tp = toastsPart(list, w);
+      const ph = phoneH(w);
+      return ph ? tp + (list.length ? gapOf(list[list.length - 1]) : 0) + ph : tp;
+    };
+    const mg = panelOpen ? measure() : null;
+    const banner = ringSpot?.box && shownRect(doc.querySelector('#phone-ring-layer .incoming-call')) ? ringSpot.box : null;
+    const spotArgs = mg ? { vw: win.innerWidth, vh: win.innerHeight, lane: n, z, titles: mg.titles, xs: mg.xs,
+      controls: mg.controls, canvases: mg.canvases, banner } : null;
+    const info = (t) => ({ el: t, type: t._toast?.type, shownAt: t._toast?.shownAt, arrivedAt: t._toast?.arrivedAt, duration: t._toast?.duration });
+    const answers = pendingAnswers({ block: shownEls.map(info), pending: pendingEls.map(info), now: Date.now(), panelOpen,
+      spotFor: (list) => !!toastSpot({ ...spotArgs, heightAt: heightFor(list.map(x => x.el)), clearOnly: true }) });
+    // Two warnings shown over the panel with no clear place for both (a panel opened over
+    // them): the older goes once it has been up 1.5 s, the warning rule of plan 2.5
+    // A pass where the condition no longer holds (the panel closed, room appeared) cancels it.
+    const warns = shownEls.filter(t => t._toast?.type === 'warning');
+    const superseded = new Set();
+    if (spotArgs && warns.length > 1 && !toastSpot({ ...spotArgs, heightAt: heightFor(shownEls), clearOnly: true })) {
+      const newest = warns.reduce((a, b) => ((b._toast.shownAt || 0) >= (a._toast.shownAt || 0) ? b : a));
+      for (const t of warns) if (t !== newest) superseded.add(t);
+    }
+    // Every warning that is not waiting hears it, including one that stepped aside (hud-lane-yield)
+    // and so is in neither list, or its timer runs on after the panel closes (R2 m1)
+    for (const t of all) {
+      if (t._toast?.type !== 'warning' || t._toast.pending || t._toast.closing) continue;
+      try { t._onSupersede?.(superseded.has(t)); } catch (e) { /* gone */ }
+    }
+    const stacked = new Set(answers.filter(a => a.answer === 'stack').map(a => a.el));
+    const blockEls = all.filter(t => shownEls.includes(t) || stacked.has(t));
+    let res = { away: false, spot: null };
+    let placed = false;
+    if (panelOpen && (blockEls.length || texts.length)) {
+      const spot = toastSpot({ ...spotArgs, heightAt: heightFor(blockEls), current: prev.away ? prev.spot : null });
+      if (spot && spot.name !== 'lane') {
+        setPx(el, 'top', spot.top);
+        setPx(el, 'left', spot.left);
+        setPx(el, 'width', spot.width);
+        if (spot.maxHeight != null) setPx(el, 'maxHeight', spot.maxHeight); else el.style.maxHeight = 'none';
+        if (phoneOpen) {
+          const below = blockEls.length ? toastsPart(blockEls, spot.width) + gapOf(blockEls[blockEls.length - 1]) : 0;
+          setPx(phoneEl, 'top', spot.top + below);
+          setPx(phoneEl, 'left', spot.left);
+          setPx(phoneEl, 'width', spot.width);
+          phoneEl.style.maxHeight = 'none';
+        }
+        setClass(new Set(blockEls));
+        // A fallback place that is the lane's own box is still the lane: the sums keep counting it (R1 n1)
+        const atLane = Math.round(spot.left) === Math.round(n.left) && Math.round(spot.top) === Math.round(n.top) && Math.round(spot.width) === Math.round(n.width);
+        res = { away: !atLane, spot };
+        placed = true;
+      } else res.spot = spot;
+    }
+    if (!placed) { toLane([el, phoneEl]); setClass(new Set()); }
+    answerAll(answers);
+    return res;
+  } catch (e) {
+    // Fail open: the block goes back to the lane and every waiting toast shows (2.6 item 8)
+    try { toLane([el, phoneEl]); setClass(new Set()); } catch (e2) { /* nothing more to do */ }
+    for (const t of el.querySelectorAll('.notification')) { try { t._onSupersede?.(false); } catch (e3) { /* gone */ } }
+    answerAll(Array.from(el.querySelectorAll('.notification.toast-pending')).map(t => ({ el: t, answer: 'stack' })));
+    console.debug('[hud-lanes] toast block', e);
+    return { away: false, spot: null };
+  }
+}
+
+/**
+ * The relayout itself failed (rAF catch, 2.6 item 8): the toast container goes back to its
+ * stylesheet spot at the top right and every waiting toast shows there.
+ */
+export function failOpenToasts(doc, win) {
+  const el = doc.getElementById('notification-container');
+  if (win?.__hudLanes) win.__hudLanes.notifyAway = false;
+  if (!el) return;
+  clearBlockPlacing(el);
+  for (const t of el.querySelectorAll('.notification')) {
+    t.classList.remove('placed-over-panel');
+    if (t.classList.contains('toast-pending')) { try { t._onReplace?.('stack'); } catch (e) { /* gone */ } }
+  }
+}
+
+/**
+ * Place the lane members for one measurement. Exposed for tests and the proof scripts. When the
+ * block's away answer flips, the lane sums used the old answer, so a second pass runs in the same
+ * frame (R3 m1: otherwise one frame paints the phone texts over the toasts after a panel closes).
+ * It cannot loop: a third pass is queued for the next frame only if the answer flips again.
+ */
+export function applyLanes(doc = document, win = window, opts = {}) {
+  const before = !!win.__hudLanes?.notifyAway;
+  const shared = { panel: null };   // the panel's boxes, measured once for both passes
+  let r = applyLanesPass(doc, win, { ...opts, shared });
+  if (r.block.away !== before) {
+    const mid = r.block.away;
+    r = applyLanesPass(doc, win, { ...opts, shared });
+    if (r.block.away !== mid) win.__hudLanesStarted?.relayout?.();
+  }
+  return r;
+}
+
+function applyLanesPass(doc, win, { cursor = null, shared = { panel: null } } = {}) {
   placeHearts(doc);
   const m = measureHud(doc, win);
+  // The toast block placed away from the lane over a panel counts as 0 in the lane sums (toast
+  // plan 2.7); the sums run before it is placed, so they read the last pass's answer
+  const prevBlock = { away: !!win.__hudLanes?.notifyAway, spot: win.__hudLanes?.notifySpot || null };
+  const awayPhone = prevBlock.away && phoneOpenIn(doc);
   const toastsEl = doc.getElementById('notification-container');
   const phoneEl = doc.getElementById('npc-bark-container');
   const captionEl = doc.getElementById('hud-info-label');
@@ -475,10 +954,11 @@ export function applyLanes(doc = document, win = window) {
   if (clearAllEl && seenClearAll > 0) clearAllEl._laneH = seenClearAll;
   const clearAllH = clearAllEl ? (seenClearAll || clearAllEl._laneH || 0) : 0;
   const phoneSum = (hidden) => {
+    if (awayPhone) return 0;
     const shown = textH.slice(hidden).filter(h => h > 0);
     return sum(shown) + (shown.length >= 2 && clearAllH ? clearAllH + LANE_GAP : 0);
   };
-  const toastH = contentOf(toastsEl);
+  const toastH = prevBlock.away ? 0 : contentOf(toastsEl);
   const speechH = contentOf(speechEl);
   m.notifyContent = sum([toastH, phoneSum(0)]);
   m.messageContent = sum([cap.h, speechH]);
@@ -486,7 +966,7 @@ export function applyLanes(doc = document, win = window) {
   // One at a time when space is short (H1 option A): see laneYields for the order
   const free = Math.max(0, (m.vh - lanes.message.bottom) - lanes.notify.top);
   const budget = Math.floor(free * laneBudgetShare(m));
-  const y = laneYields({ caption: cap.h, speech: speechH, toasts: toastH, phone: textH, phoneExtra: clearAllH }, budget);
+  const y = laneYields({ caption: cap.h, speech: speechH, toasts: toastH, phone: awayPhone ? [] : textH, phoneExtra: awayPhone ? 0 : clearAllH }, budget);
   if (captionEl && y.caption !== cap.was) captionEl.classList.toggle('hud-lane-yield', y.caption);
   // Hidden texts are the oldest y.phoneHidden (empty heights are not counted by laneYields)
   let toHide = y.phoneHidden;
@@ -510,7 +990,8 @@ export function applyLanes(doc = document, win = window) {
   // have stepped aside above; next the other toasts step aside, oldest first (their countdown
   // waits, notifications.js), and they stay aside while a brief line shows. Then the notify lane
   // gets the brief line's height whole (notifyFloor). With no brief line they all come back.
-  const toastEls = toastsEl ? Array.from(toastsEl.querySelectorAll('.notification')).filter(el => !el._toast?.closing) : [];
+  const toastEls = toastsEl ? Array.from(toastsEl.querySelectorAll('.notification'))
+    .filter(el => !el._toast?.closing && !el.classList.contains('toast-pending')) : [];
   const yieldToast = (el, hide) => {
     if (el.classList.contains('hud-lane-yield') === hide) return;
     el.classList.toggle('hud-lane-yield', hide);
@@ -571,7 +1052,7 @@ export function applyLanes(doc = document, win = window) {
   const toasts = doc.getElementById('notification-container');
   const phone = doc.getElementById('npc-bark-container');
   const n = lanes.notify;
-  const nHeights = [toasts ? toasts.scrollHeight * zoomOf(toasts) : 0, 0];
+  const nHeights = [toasts && !prevBlock.away ? toasts.scrollHeight * zoomOf(toasts) : 0, 0];
   const nStack = stackMembers(nHeights, n.maxHeight);
   [toasts, phone].forEach((el, i) => {
     if (!el) return;
@@ -610,9 +1091,12 @@ export function applyLanes(doc = document, win = window) {
     speech.style.overflow = 'hidden';
     speech.dataset.lane = 'message';
   }
-  const ringSpot = placeRingLayer(doc, win, lanes);
-  win.__hudLanes = { measured: m, lanes, ringSpot };
-  return { measured: m, lanes };
+  // One measure of the open panel per relayout, shared by the banner and the toast block
+  const measure = () => (shared.panel ||= measureMinigame(doc, win, cursor));
+  const ringSpot = placeRingLayer(doc, win, lanes, measure);
+  const block = placeNotifyBlock(doc, win, lanes, measure, prevBlock, ringSpot);
+  win.__hudLanes = { measured: m, lanes, ringSpot, notifyAway: block.away, notifySpot: block.spot, toastSpot, pendingAnswers };
+  return { measured: m, lanes, block };
 }
 
 /**
@@ -622,27 +1106,78 @@ export function applyLanes(doc = document, win = window) {
  */
 export function startHudLanes(doc = document, win = window) {
   if (win.__hudLanesStarted) return win.__hudLanesStarted;
+  // `queued` is true exactly while a frame for applyLanes is queued; an explicit call queues one
+  // unless one already is. The panel throttle below has its own timer and never touches it.
   let queued = false;
+  const cursor = { map: new WeakMap(), dirty: null };
+  const perf = win.performance;
+  const run = () => {
+    queued = false;
+    const timing = !!win.__hudLanesTiming && typeof perf?.mark === 'function';
+    if (timing) perf.mark('hud-lanes-relayout-start');
+    try {
+      applyLanes(doc, win, { cursor });
+      syncPanelWatch();
+    } catch (e) {
+      console.debug('[hud-lanes]', e);
+      try { failOpenToasts(doc, win); } catch (e2) { /* the toasts' own hard release stands behind this */ }
+    }
+    // From here only what the panel observers report is read again
+    cursor.dirty = watching.length ? [] : null;
+    if (timing) {
+      try {
+        perf.mark('hud-lanes-relayout-end');
+        perf.measure('hud-lanes-relayout', 'hud-lanes-relayout-start', 'hud-lanes-relayout-end');
+      } catch (e) { /* no user timing */ }
+      perf.clearMarks?.('hud-lanes-relayout-start');
+      perf.clearMarks?.('hud-lanes-relayout-end');
+    }
+  };
   const relayout = () => {
     if (queued) return;
     queued = true;
-    win.requestAnimationFrame(() => { queued = false; try { applyLanes(doc, win); syncMinigameWatch(); } catch (e) { console.debug('[hud-lanes]', e); } });
+    win.requestAnimationFrame(run);
   };
   win.addEventListener('resize', relayout);
-  // While the banner is placed over an open minigame, a control added inside it (a view switch,
-  // a confirm step) re-places the banner; the observer is dropped when either goes (review R2 m2)
-  let mgObs = null;
-  let mgTarget = null;
-  const syncMinigameWatch = () => {
-    const shown = !!doc.querySelector('#phone-ring-layer .incoming-call');
-    const mg = shown ? doc.querySelector('.minigame-container') : null;
-    if (mg === mgTarget) return;
-    mgObs?.disconnect();
-    mgObs = null;
-    mgTarget = mg;
-    if (mg && typeof win.MutationObserver === 'function') {
-      mgObs = new win.MutationObserver(() => relayout());
-      mgObs.observe(mg, { childList: true, subtree: true });
+  // Changes inside an open panel re-place the banner and the toasts at most once per
+  // PANEL_THROTTLE_MS, with a trailing call so the last state is always placed (toast plan 2.8)
+  let thrTimer = null;
+  let thrLast = -Infinity;
+  const throttled = () => {
+    if (thrTimer) return;
+    const wait = PANEL_THROTTLE_MS - (Date.now() - thrLast);
+    if (wait <= 0) { thrLast = Date.now(); relayout(); return; }
+    thrTimer = setTimeout(() => { thrTimer = null; thrLast = Date.now(); relayout(); }, wait);
+  };
+  // While a toast or the banner shows, every minigame container and the shown popup are watched:
+  // anything that appears, moves or changes class inside re-places them. The set is re-checked
+  // on every relayout, so a container shown later is picked up; observers are only re-attached
+  // when it changes.
+  let watching = [];
+  const panelMo = typeof win.MutationObserver === 'function' ? new win.MutationObserver((records) => {
+    if (cursor.dirty) for (const r of records) cursor.dirty.push(r.target);
+    throttled();
+  }) : null;
+  const panelRo = typeof win.ResizeObserver === 'function' ? new win.ResizeObserver(() => { cursor.dirty = null; throttled(); }) : null;
+  const syncPanelWatch = () => {
+    // Only while a toast or the banner shows over an open panel (review R1 n3): lane toasts with
+    // nothing open do not attach observers to hidden scene DOM
+    const up = (!!doc.querySelector('#phone-ring-layer .incoming-call') || !!doc.querySelector('#notification-container .notification'))
+      && (panelOpenIn(doc, win) || !!doc.querySelector('#phone-ring-layer .incoming-call'));
+    const want = up ? [...doc.querySelectorAll('.minigame-container'),
+      ...POPUP_ROOTS.map(sel => doc.querySelector(sel)).filter(el => el && shownRect(el))] : [];
+    if (want.length === watching.length && want.every((el, i) => el === watching[i])) return;
+    panelMo?.disconnect();
+    panelRo?.disconnect();
+    cursor.dirty = null;
+    watching = want;
+    for (const el of want) {
+      panelMo?.observe(el, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class', 'hidden', 'disabled'] });
+      if (panelRo) {
+        panelRo.observe(el);
+        const frame = el.querySelector('.minigame-game-container, .laptop-screen');
+        if (frame) panelRo.observe(frame);
+      }
     }
   };
   const ro = typeof win.ResizeObserver === 'function' ? new win.ResizeObserver(relayout) : null;
@@ -666,12 +1201,21 @@ export function startHudLanes(doc = document, win = window) {
     const ring = doc.getElementById('phone-ring-layer');
     if (ring && !attached.has(ring)) { attached.add(ring); mo.observe(ring, { childList: true, attributes: true, attributeFilter: ['class'] }); }
   };
-  mo = new win.MutationObserver(() => { watch(); attach(); relayout(); });
+  mo = new win.MutationObserver((records) => {
+    // The measuring hosts come and go on body; that must not queue another pass (review R1 M1)
+    const real = records.some(r => ![...r.addedNodes, ...r.removedNodes].every(isMeasureHost) || (!r.addedNodes.length && !r.removedNodes.length));
+    if (!real) return;
+    watch(); attach(); relayout();
+  });
   mo.observe(doc.body, { childList: true });
   watch();
   attach();
   relayout();
-  win.__hudLanesStarted = { relayout, stop: () => { ro?.disconnect(); mo.disconnect(); mgObs?.disconnect(); mgObs = null; mgTarget = null; win.removeEventListener('resize', relayout); win.__hudLanesStarted = null; } };
+  win.__hudLanesStarted = { relayout, stop: () => {
+    ro?.disconnect(); mo.disconnect(); panelMo?.disconnect(); panelRo?.disconnect(); watching = [];
+    clearTimeout(thrTimer); thrTimer = null;
+    win.removeEventListener('resize', relayout); win.__hudLanesStarted = null;
+  } };
   win.hudLanesRelayout = relayout;
   return win.__hudLanesStarted;
 }
