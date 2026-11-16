@@ -133,7 +133,7 @@ module BreakEscape
       return true if panel_id.blank?
 
       found = network_object_in(room['objects'], panel_id.to_s, [])
-      found ? path_unlocked?([found[:object]]) : true
+      found ? path_unlocked?(found[:path] + [found[:object]]) : false
     end
 
     # The first rogue device the server inventory holds, in scenario order, or the one
