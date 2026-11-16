@@ -423,3 +423,58 @@ SIMS_TIDY_REVIEW_R1.md and Handover 6 here.
   `seatedBodyCellKeys` export (a80f4ddb0 imports it). Stub fixed in the next commit; door-gates then
   passes on its own. The full suite has not been rerun after that fix: rerun it first.
 - No server was started and no game was made this session.
+
+## Handover 6c (fix round, stopped at the context guard before the live tour runs)
+
+### Done
+- Merge of main e0f05538e: 616b971d6, clean (hampshire ink, train-check.sh). bin/test-js on the merge:
+  687 of 687 files pass (run started just before the next commit's edits; rerun once more at the end).
+- 22a9b4866, the two code points from 6b:
+  - doorwayChairSpot: the straight-out point is no longer a candidate (the foot is inside the gap's
+    band, so a chair there always sits in that doorway's own lane; a new test proves the overlap for
+    feet across the side and front gaps). The four candidates are now indices 0..3, so
+    `chair_out_of_doorway` spot 0 is "a tile beyond straight out, a tile towards the near wall".
+  - directWalkStall: a stall is now "under limit * minStep (5 px) gained towards the goal over the last
+    10 frames", kept in `st.hist`. Blocked while sliding along a wall still gains ground, so it returns
+    'wait' (keep walking) and never replans; the corner it ends in replans. New tests: a 40-frame
+    blocked slide never replans, the corner does, a shallow 0.4 px/frame slide does, a 5-frame bump does
+    not. Both test files fail on the old code (path-doorways 2, seating 4). player.js state is
+    `{ armed, hist, replanned }`.
+- 615807990, Marek: `marek_tool_roll` (m10_tool_roll1, interactable false, owner marek, private,
+  position (2.0, 5.4) elevation 24, useFrom 0,1) on office_desk1_91 (sprite 30..108 x 166..205; the
+  desk Tom's PC, badge and phone and Grace's laptop sit on, so it is not a spare desk), and his
+  needsHome is its id. Validator 0 errors, 36 warnings. README row updated.
+  LIVE (game 5932): approach cell (76,212), home resolved non-provisional, he fetched chair 155 and sat
+  facing north (frame sit_north_frame_000, feet 76,216); screenshot
+  scratchpad/sims-tidy6/marek-5932.png, looked at: his back to the camera, facing the desk.
+- Tour driver (uncommitted until this note's commit): row 6 now always records `doors` (each door
+  sprite's doorProperties, the merged gaps via a dynamic import of seating.js, and the
+  chair_out_of_doorway / chair_in_doorway_no_spot lines); the report has `player_walk_replans`, and
+  the summary line prints replans and row6_doors.
+
+### Still to do, in order
+1. Late-room home wait: no new scenario case is needed. Rosa (lounge, home rosa_laptop) and Neil
+   (it_room, home neil_mug) are already object homes in rooms that load late (at start only the
+   office's door sprites exist). Prove it live: wait until the needs clock passes 8 s, enterRoom
+   lounge (and it_room), then poll each 250 ms: state.home.provisional, behaviour._postWaitKey /
+   _postWaitSince, and the first fetch_start / seat for rosa and neil must come after their
+   home_resolved log line. There is no log line for the wait itself.
+2. Tour with BOARD_ROUTE=direct, 3 or more games (new-game.rb via `BREAK_ESCAPE_STANDALONE=true
+   bin/rails runner tools/playtest/new-game.rb test_needs_sims`, BUNDLE_PATH set to the main
+   checkout's vendor/bundle). Run in the background (it takes minutes). Read replans, stuck, sweeps,
+   row 6 doors (both kitchen sprites' worldX and the merged gap) from tour-<gid>.json.
+3. Sweep proof: if no tour run logs chair_out_of_doorway, stage one in a probe (place a loose chair's
+   foot at (8,79) in the browser, no game record edit), then check the logged `to` and that the
+   chair's box at rest overlaps no body.
+4. R1 Outcomes in SIMS_TIDY_REVIEW_R1.md and the final Handover 6; rerun bin/test-js.
+
+### Gotchas
+- Pressing Escape six times at load (as my first probe and click.mjs did) can leave the pause menu
+  open: the scene is paused, the needs clock stops at about 3 s, and NPCs freeze mid-walk. Use
+  dismissBlockingUi only, then press Escape only while scene.sys.isPaused(). The tour's closeUi is
+  fine (it presses Escape only while something blocks).
+- Server: start it from the worktree with BUNDLE_PATH=<main>/vendor/bundle, `-P` a pidfile in the
+  scratchpad; new-game.rb needs `bin/rails runner`, not plain ruby.
+- Games this session: 5928 (old roll position), 5932 (current). One earlier new-game call printed
+  no id (probably 5927). Server on :3093 stopped. Probe scripts: scratchpad/sims-tidy6/probe.mjs
+  (Marek and doors), eval.mjs (runs an expression file after a wait).

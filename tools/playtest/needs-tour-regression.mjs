@@ -244,6 +244,21 @@ console.log('row 5', JSON.stringify(report.rows[5]));
 
 // Row 6: the Kitchen Rota, then wait in the kitchen
 report.rows[6] = { rota: await read('kitchen_rota') };
+// Sims tidy R1 (m1 and M1): every door sprite's doorProperties (the kitchen doorway has one sprite
+// per room, so two worldX values), the gaps the doorway sweep works from after the merge, and the
+// sweep's log lines so far (chair_out_of_doorway with its target and candidate index, and
+// chair_in_doorway_no_spot)
+report.rows[6].doors = await page.evaluate(async () => {
+    const doors = [];
+    for (const [rid, room] of Object.entries(window.rooms || {})) for (const d of room?.doorSprites || []) {
+        const p = d?.doorProperties; if (!p) continue;
+        doors.push({ room: rid, roomId: p.roomId, connectedRoom: p.connectedRoom, direction: p.direction, worldX: p.worldX, worldY: p.worldY, open: p.open ?? p.isOpen ?? null });
+    }
+    let gaps = null;
+    try { const m = await import('/break_escape/js/systems/seating.js'); gaps = m.doorGapRects(doors); } catch (e) { gaps = String(e).slice(0, 120); }
+    const lines = window.npcNeedsSystem.getLog().filter(e => e.ev === 'chair_out_of_doorway' || e.ev === 'chair_in_doorway_no_spot');
+    return { doors, gaps, lines };
+}).catch(e => ({ err: String(e) }));
 // Sims tidy 5 (5793: every rota try stopped at x 41, the doorway's office end): the grid round the
 // kitchen doorway (# blocked, . open), the seated chairs and the NPC bodies within 96 px of it
 if (!report.rows[6].rota.ok) report.rows[6].doorway = await page.evaluate(() => {
@@ -269,7 +284,9 @@ console.log('row 6', JSON.stringify(report.rows[6]));
 
 report.stalls = await page.evaluate(() => window.__stalls);
 report.player_searches = await page.evaluate(() => window.__psearch);
-report.doorway_sweeps = await page.evaluate(() => window.npcNeedsSystem.getLog().filter(e => e.ev === 'chair_out_of_doorway'));
+report.doorway_sweeps = await page.evaluate(() => window.npcNeedsSystem.getLog().filter(e => e.ev === 'chair_out_of_doorway' || e.ev === 'chair_in_doorway_no_spot'));
+// Sims tidy R1 m4: how many direct player walks stalled and replanned through the grid
+report.player_walk_replans = await page.evaluate(() => window.__playerWalkReplans || 0);
 // Marek (sims tidy item 2): his chair, seat and facing, and a shot centred on him
 report.marek = await page.evaluate(() => {
     const b = window.npcBehaviorManager?.getBehavior?.('marek'), sp = b?.sprite, st = b?._seat;
@@ -289,6 +306,6 @@ report.first_sat = await page.evaluate(() => { const o = {}; for (const e of win
 report.seating = await page.evaluate(() => window.npcNeedsSystem.getLog().filter(e => /^(fetch_start|fetch_end|seat_move_end|seat_gave_up)$/.test(e.ev)).map(e => ({ s: Math.round(e.t / 4), npc: e.npc, ev: e.ev, reason: e.reason, stage: e.stage, phase: e.phase, x: e.x, y: e.y })));
 await page.screenshot({ path: `${outDir}/tour-${gid}.png` });
 fs.writeFileSync(`${outDir}/tour-${gid}.json`, JSON.stringify(report, null, 1));
-console.log(JSON.stringify({ gid, row1: report.rows[1].ok, row3: report.rows[3].ok, row3_queued: q, row3_turned_back: report.rows[3].turned_back, row3_grumbles: report.rows[3].grumbles, row5: report.rows[5].ok, row6: report.rows[6].ok, rooms: report.rooms, stuck: report.stuck, tom_sat: report.first_sat.tom ?? null, marek: { chair: report.marek.chair, facing: report.marek.facing }, sweeps: report.doorway_sweeps.length, seated_through: report.player_searches.filter(r => r.through?.length).length, reruns: report.player_searches.filter(r => r.rerun).length, errs: errs.length }));
+console.log(JSON.stringify({ gid, row1: report.rows[1].ok, row3: report.rows[3].ok, row3_queued: q, row3_turned_back: report.rows[3].turned_back, row3_grumbles: report.rows[3].grumbles, row5: report.rows[5].ok, row6: report.rows[6].ok, rooms: report.rooms, stuck: report.stuck, tom_sat: report.first_sat.tom ?? null, marek: { chair: report.marek.chair, facing: report.marek.facing }, sweeps: report.doorway_sweeps.length, replans: report.player_walk_replans, row6_doors: (report.rows[6].doors?.doors || []).map(d => `${d.room}:${d.direction}@${d.worldX},${d.worldY}`), seated_through: report.player_searches.filter(r => r.through?.length).length, reruns: report.player_searches.filter(r => r.rerun).length, errs: errs.length }));
 await page.goto('about:blank');
 await browser.close();
