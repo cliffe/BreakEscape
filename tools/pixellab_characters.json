@@ -780,12 +780,12 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-11-15",
+    "imported": "2026-11-16",
     "sit_from": "2700d754-04d2-4dbf-8739-a56afcaed3f0",
     "poses": {
       "drink": "6bd09056-a3c8-43f9-a43c-50810915d719",
-      "phone": "3e0d6c7c-9567-40f0-939e-bd0a7ff7f83d",
-      "use": "b30b2494-46c8-4aaa-a787-535edb148cf5"
+      "phone": "7d83b546-ceb9-46b6-96b0-f858f294fc2e",
+      "use": "dc21f2ad-5208-470c-8247-bed67956c0f8"
     }
   },
   "male_security_guard_v2": {
