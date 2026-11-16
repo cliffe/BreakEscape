@@ -3009,7 +3009,7 @@ module BreakEscape
 
       if route.nil?
         session = @game.access_sessions[pc_id.to_s]
-        return !(session.is_a?(Hash) && session['relay'] == true)
+        return !@game.relay_session?(session)
       end
       @game.desktop_request_allowed?(info, route)
     end

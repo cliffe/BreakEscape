@@ -502,12 +502,16 @@ export class Keyring {
         const displayName = entry.account?.displayName || entry.account?.username || null;
         if (entry.ended === true) return toast(t.endedAssistMessage(displayName), 'ended');
         if (entry.targetOff === true) return toast(t.notRespondingMessage(host), 'target_off');
-        if (entry.sessionHeld === true) {
-            const held = w.pcSessions?.get?.(pcId);
-            if (held?.relay === true || (!held && connectRoute(entry)?.relay === true)) {
+        const held = w.pcSessions?.get?.(pcId);
+        // A server-held relay with no mirrored copy (after a reload, or a dropped local copy)
+        // has nothing to open: it falls through to sign in again by the relay below, which
+        // replaces the identical record server-side (R1 M1)
+        const relayLost = entry.sessionHeld === true && !held && connectRoute(entry)?.relay === true;
+        if (entry.sessionHeld === true && !relayLost) {
+            if (held?.relay === true) {
                 // Re-entry to a relay session is by Connect only (8.3)
                 w.openRelayDesktop?.(pcId);
-                if (held?.relay === true) this.armRelaySync();
+                this.armRelaySync();
                 return opened('session_held', { relay: true });
             }
             const foothold = held?.footholdId || connectRoute(entry)?.foothold || null;

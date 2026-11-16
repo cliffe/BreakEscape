@@ -566,19 +566,19 @@ test('openCredentialSignIn ignores a call with no pc or foothold', () => {
 });
 
 // ── Part B: the find toasts (plan 8.2 second bullet, 8.5 "find toasts") ───────────────────────
-const JAKE = { username: 'jsmith', displayName: 'Jake Smith', npcId: 'jake' };
+const JAKE = { username: 'jbrooks', displayName: 'Jake Brooks', npcId: 'jake' };
 const PW = { id: 'k_pw', kind: 'password', source: 'registry', label: 'passwords.txt', account: JAKE, host: 'HB-FIN-03', connectsTo: 'jake_pc', foundIn: 'passwords_txt' };
 const CAPTURED = { id: 'k_cap', kind: 'password', source: 'capture', label: 'Captured', account: JAKE, host: 'HB-FIN-03', connectsTo: 'jake_pc' };
 const RDP_FOUND = 'Saved connection found: HB-FIN-02.rdp for Lena Fox on HB-FIN-02.';
 const RDP2_FOUND = 'Saved connection found: HB-FIN-03.rdp for Lena Fox on HB-FIN-03.';
-const PW_FOUND = "Jake Smith's password is in passwords.txt.";
+const PW_FOUND = "Jake Brooks's password is in passwords.txt.";
 const keyringGets = () => calls.filter(c => c[0] === 'keyring');
 const answers = (...list) => { let i = 0; keyringAnswer = () => list[Math.min(i++, list.length - 1)]; };
 const finds = () => alerts.filter(a => a[1] === 'info' && a[4]?.whole === true);
 
 test('8.5 find strings are exactly the plan text', () => {
     assert.equal(text.savedConnectionFoundMessage({ label: 'HB-FIN-02.rdp', displayName: 'Lena Fox', host: 'HB-FIN-02' }), RDP_FOUND);
-    assert.equal(text.passwordInFileFoundMessage({ label: 'passwords.txt', displayName: 'Jake Smith' }), PW_FOUND);
+    assert.equal(text.passwordInFileFoundMessage({ label: 'passwords.txt', displayName: 'Jake Brooks' }), PW_FOUND);
     assert.equal(text.findMoreLine(3), 'and 3 more');
     assert.equal(text.findLine(RDP), RDP_FOUND);
     assert.equal(text.findLine(PW), PW_FOUND);
@@ -641,7 +641,7 @@ test('find toasts: one per kind, two in one toast, more than two names two then 
     await kr.refresh(); await settle();
     assert.equal(alerts.length, 3, 'one toast per answer');
     assert.equal(toasts()[2],
-        "Ana Abara's password is in notes.txt.\nJake Smith's password is in old.txt.\nand 2 more",
+        "Ana Abara's password is in notes.txt.\nJake Brooks's password is in old.txt.\nand 2 more",
         'four toastable finds: two named, then "and 2 more" (the invite counts from K3c; the capture is not counted)');
 });
 

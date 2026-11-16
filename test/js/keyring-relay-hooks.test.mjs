@@ -41,7 +41,7 @@ const settle = async (n = 6) => { for (let i = 0; i < n; i++) await new Promise(
 const refusal = (status, body) => Object.assign(new Error('refused'), { status, body });
 
 // ── Fixtures ────────────────────────────────────────────────────────────────────────────────
-const JAKE = { username: 'jsmith', displayName: 'Jake Smith', npcId: 'jake' };
+const JAKE = { username: 'jbrooks', displayName: 'Jake Brooks', npcId: 'jake' };
 const CODE = { scenarioData: { id: 'jake_assist_code', name: 'Remote assist code (Jake)', type: 'text_file' } };
 const INVITE = {
     id: 'jake_assist', kind: 'assist_invite', source: 'registry', label: 'Remote assist code (Jake)', account: JAKE,
@@ -53,7 +53,7 @@ const RDP = {
     host: 'HB-FIN-02', connectsTo: 'lena_pc', heldItem: 'lena_rdp_file', routes: [{ foothold: 'jack_comms_port' }]
 };
 const RELAY_ANSWER = () => ({
-    success: true, npcId: 'jake', username: 'jsmith', displayName: 'Jake Smith', via: 'credential', kind: 'assist_invite',
+    success: true, npcId: 'jake', username: 'jbrooks', displayName: 'Jake Brooks', via: 'credential', kind: 'assist_invite',
     label: 'Remote assist code (Jake)', relay: true, host: 'HB-FIN-03', endedPcIds: []
 });
 
@@ -122,7 +122,7 @@ test('Connect on an invite posts relay: true only, opens the relay desktop and t
     assert.deepEqual(posts(), [['post', 'jake_pc', 'jake_assist', { relay: true }]], 'relay: true, no foothold key');
     assert.deepEqual(desktops(), [['relay_desktop', 'jake_pc']], 'the relay desktop, never the remote one');
     assert.equal(window.pcSessions.isRelay('jake_pc'), true);
-    assert.deepEqual(toasts(), ['Jake Smith let you into the session. Check who is asking before you share access.']);
+    assert.deepEqual(toasts(), ['Jake Brooks let you into the session. Check who is asking before you share access.']);
 });
 
 test('a saved connection still posts its foothold only and opens the remote desktop', async () => {
@@ -169,17 +169,22 @@ test('re-entry: a held relay session opens the relay desktop by Connect, with no
     assert.equal(alerts.length, 0);
 });
 
-test('re-entry with no mirrored session (after a reload) still opens the relay desktop for an invite', async () => {
+test('re-entry with no mirrored session (after a reload) signs in again by the relay and arms the trigger', async () => {
     setup();
     keyringAnswer = () => ({ entries: [{ ...INVITE, sessionHeld: true }], rev: 'r2' });
     await window.keyring.connect(CODE);
+    // The mirror is empty, so there is nothing for openRelayDesktop to open: one relay POST first (R1 M1)
+    assert.deepEqual(posts().map(p => p[3]), [{ relay: true }]);
     assert.deepEqual(desktops(), [['relay_desktop', 'jake_pc']]);
+    changeGlobal('jake_done', true, false);
+    await settle();
+    assert.equal(syncs, 1, 'the prompt-end trigger is armed');
 });
 
 test('invite refusals are toasts with 8.5\'s lines, never a sign-in screen', async () => {
     for (const [body, line] of [
         [{ kindRefused: 'assist_invite' }, 'HB-FIN-03 does not allow remote assistance.'],
-        [{ ended: true }, 'Jake Smith ended the remote assist.']
+        [{ ended: true }, 'Jake Brooks ended the remote assist.']
     ]) {
         setup();
         loginAnswer = () => refusal(422, body);
@@ -196,7 +201,7 @@ test('an ended invite in the GET answer is the ended toast, with no POST', async
     keyringAnswer = () => ({ entries: [{ ...INVITE, ended: true }], rev: 'r1' });
     const r = await window.keyring.connect(CODE);
     assert.equal(r.outcome, 'ended');
-    assert.deepEqual(toasts(), ['Jake Smith ended the remote assist.']);
+    assert.deepEqual(toasts(), ['Jake Brooks ended the remote assist.']);
     assert.equal(posts().length, 0);
 });
 
@@ -204,7 +209,7 @@ test('an ended invite in the GET answer is the ended toast, with no POST', async
 
 test('an invite found after the baseline toasts the 8.2 line', async () => {
     setup();
-    assert.equal(text.findLine(INVITE), 'Remote assist code (Jake): Connect it from your inventory to join Jake Smith\'s session.');
+    assert.equal(text.findLine(INVITE), 'Remote assist code (Jake): Connect it from your inventory to join Jake Brooks\'s session.');
     assert.equal(text.findLine({ ...INVITE, source: 'capture' }), null, 'a capture stays silent');
     let n = 0;
     keyringAnswer = () => (n++ === 0 ? { entries: [], rev: 'r1' } : { entries: [INVITE], rev: 'r2' });
@@ -212,7 +217,7 @@ test('an invite found after the baseline toasts the 8.2 line', async () => {
     await settle();
     await window.keyring.refresh();
     await settle();
-    assert.deepEqual(toasts(), ['Remote assist code (Jake): Connect it from your inventory to join Jake Smith\'s session.']);
+    assert.deepEqual(toasts(), ['Remote assist code (Jake): Connect it from your inventory to join Jake Brooks\'s session.']);
 });
 
 // ── The prompt end (8.3) ────────────────────────────────────────────────────────────────────

@@ -585,6 +585,14 @@ export class ContainerMinigame extends MinigameScene {
                 // A folder from a relay desktop whose assist has ended: the session is gone, the
                 // screen closes to the world with the ended line (K3c, 8.3)
                 if (response.status === 403 && this.sourcePcId && window.pcSessions?.isRelay?.(this.sourcePcId)) {
+                    let why = null;
+                    try { why = (await response.json())?.reason; } catch (e) { /* no body */ }
+                    // A powered-off PC is not an end: keep the relay and say so (R1 m1)
+                    if (why === 'off' || why === 'not_responding') {
+                        // Closing reopens the relay desktop, which shows the PC-off line itself
+                        this.complete(false);
+                        return [];
+                    }
                     const name = window.pcSessions.get?.(this.sourcePcId)?.displayName;
                     window.pcSessions.dropLocal?.(this.sourcePcId);
                     this.exitReason = 'no_session';
@@ -647,6 +655,12 @@ export class ContainerMinigame extends MinigameScene {
                 if (reason === 'no_session') window.pcSessions?.dropLocal?.(pcId);
                 this.exitReason = reason;
                 this.complete(false);
+                return null;
+            }
+            if (response.status === 403 && this.relay && ['off', 'not_responding'].includes(refusal?.reason)) {
+                // A powered-off PC is not an end: the relay is kept for when it comes back (R1 m1)
+                this.complete(false);
+                window.gameAlert?.(refusal.error || PC_OFF_TEXT, 'info', this.containerItem?.scenarioData?.name || 'PC', 3000);
                 return null;
             }
             if (response.status === 403 && this.relay) {

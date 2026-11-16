@@ -49,7 +49,7 @@ put('systems/inventory.js',
     'export function inventoryImageKey(d) { return (typeof d?.sprite === "string" && d.sprite) || d?.type; }\n');
 for (const rel of ['utils/locked-hint.js', 'utils/conditional-text.js', 'systems/global-writer.js', 'systems/captures.js',
     'utils/remote-host-text.js',
-    'systems/unlock-system.js', 'systems/pc-sessions.js', 'systems/network-links.js',
+    'systems/unlock-system.js', 'systems/pc-sessions.js', 'systems/keyring.js', 'systems/network-links.js',
     'minigames/framework/base-minigame.js', 'minigames/container/container-item-image.js',
     'minigames/container/container-minigame.js']) copy(rel);
 
@@ -59,6 +59,7 @@ globalThis.document = dom.window.document;
 const imp = (rel) => import(pathToFileURL(join(dir, rel)));
 const { openLoginSignIn, interactLoginPc, openLoginPc, openRelayDesktop, relayLockable, heldAtKeyboard } = await imp('systems/unlock-system.js');
 const { PcSessions } = await imp('systems/pc-sessions.js');
+const { Keyring } = await imp('systems/keyring.js');
 const { ContainerMinigame, folderRouteQuery } = await imp('minigames/container/container-minigame.js');
 const { endedAssistMessage } = await imp('utils/remote-host-text.js');
 
@@ -66,7 +67,7 @@ const startAction = (id) => { document.querySelector('.pc-start-btn').click(); d
 const settle = async (n = 4) => { for (let i = 0; i < n; i++) await new Promise(r => setTimeout(r, 0)); };
 
 const JAKE_PC = { id: 'jake_pc', type: 'pc', name: "Jake's PC", host: 'HB-FIN-03', lockType: 'login', locked: true, loginPicker: 'accounts' };
-const RELAY_ANSWER = { success: true, npcId: 'jake', username: 'jmercer', displayName: 'Jake Mercer', via: 'credential',
+const RELAY_ANSWER = { success: true, npcId: 'jake', username: 'jbrooks', displayName: 'Jake Brooks', via: 'credential',
     kind: 'assist_invite', label: 'Remote assist code', relay: true, host: 'HB-FIN-03' };
 
 let calls, started, alerts, sessions, fetches, fetchAnswer, signInScreens;
@@ -84,7 +85,7 @@ function setup() {
     window.gameAlert = (...a) => alerts.push(a);
     window.playUISound = () => {};
     window.ApiClient = {
-        loginAccounts: async (pcId) => { calls.push(['loginAccounts', pcId]); return { loginAccounts: [{ username: 'jmercer', displayName: 'Jake Mercer' }], loginPicker: 'accounts' }; },
+        loginAccounts: async (pcId) => { calls.push(['loginAccounts', pcId]); return { loginAccounts: [{ username: 'jbrooks', displayName: 'Jake Brooks' }], loginPicker: 'accounts' }; },
         loginWithCredential: async (pcId, id, route) => { calls.push(['loginWithCredential', pcId, id, route]); return { ...RELAY_ANSWER }; },
         logout: async (pcId) => { calls.push(['logout', pcId]); return { success: true }; },
         get: async (path) => { calls.push(['get', path]); return { secrets: {}, accounts: {} }; }
@@ -154,7 +155,7 @@ test('relayLockable is the PC with remote: { relay: true } and no foothold', () 
 test('openRelayDesktop opens nothing with no relay held', () => {
     setup();
     assert.equal(openRelayDesktop('jake_pc'), false);
-    sessions.sessions.set('jake_pc', { npcId: 'jake', username: 'jmercer', via: 'password' });
+    sessions.sessions.set('jake_pc', { npcId: 'jake', username: 'jbrooks', via: 'password' });
     assert.equal(openRelayDesktop('jake_pc'), false, 'a keyboard session is not a relay');
     assert.equal(started.length, 0);
 });
@@ -170,12 +171,12 @@ test('the relay sign-in posts relay: true, and the desktop fetch says relay=1', 
     assert.equal(current().remote, null, 'a relay desktop is no network screen');
 });
 
-test('the relay desktop reads "Remote assist session" and "Using Jake Mercer\'s session (jmercer)", with no link line', async () => {
+test('the relay desktop reads "Remote assist session" and "Using Jake Brooks\'s session (jbrooks)", with no link line', async () => {
     setup();
     await relayDesktopOpen();
     const text = document.body.textContent;
     assert.match(text, /Remote assist session/);
-    assert.match(text, /Using Jake Mercer's session \(jmercer\)/);
+    assert.match(text, /Using Jake Brooks's session \(jbrooks\)/);
     assert.doesNotMatch(text, /Remote session through/);
     assert.doesNotMatch(text, /Remote through/);
 });
@@ -201,14 +202,14 @@ test('Disconnect is POST /logout and closes to the world, never the sign-in scre
     assert.ok(alerts.some(a => a[0] === 'Disconnected'));
 });
 
-test('endedRelayPcIds closes the open relay desktop with "Jake Mercer ended the remote assist."', async () => {
+test('endedRelayPcIds closes the open relay desktop with "Jake Brooks ended the remote assist."', async () => {
     setup();
     await relayDesktopOpen();
     sessions.relayAnswer({ endedRelayPcIds: ['jake_pc'] });
     await settle();
     assert.equal(current(), null);
-    assert.ok(alerts.some(a => a[0] === endedAssistMessage('Jake Mercer')));
-    assert.equal(alerts.find(a => a[0] === endedAssistMessage('Jake Mercer'))[0], 'Jake Mercer ended the remote assist.');
+    assert.ok(alerts.some(a => a[0] === endedAssistMessage('Jake Brooks')));
+    assert.equal(alerts.find(a => a[0] === endedAssistMessage('Jake Brooks'))[0], 'Jake Brooks ended the remote assist.');
     assert.equal(signInScreens.length, 0);
     assert.ok(!calls.some(c => c[0] === 'logout'), 'the server already ended it: no request');
 });
@@ -222,7 +223,7 @@ test('a 403 on the relay desktop drops the session and closes to the world with 
     assert.equal(sessions.has('jake_pc'), false);
     assert.equal(current(), null);
     assert.equal(signInScreens.length, 0, 'never the sign-in screen');
-    assert.ok(alerts.some(a => a[0] === 'Jake Mercer ended the remote assist.'));
+    assert.ok(alerts.some(a => a[0] === 'Jake Brooks ended the remote assist.'));
 });
 
 test('a folder under the relay desktop names relay=1, and its Close reopens the relay desktop', async () => {
@@ -251,7 +252,7 @@ test('a folder 403 under a relay drops it and closes with the ended line', async
     await settle(6);
     assert.equal(sessions.has('jake_pc'), false);
     assert.equal(current(), null);
-    assert.ok(alerts.some(a => a[0] === 'Jake Mercer ended the remote assist.'));
+    assert.ok(alerts.some(a => a[0] === 'Jake Brooks ended the remote assist.'));
 });
 
 test('folderRouteQuery: relay=1 for a relay, foothold= for a remote session, nothing at the keyboard or with none', () => {
@@ -319,3 +320,56 @@ test('loop guard: closing the relay desktop itself reopens nothing (its sourcePc
     assert.equal(started.length, opened, 'no desktop reopened');
     assert.equal(fetches.filter(u => /jake_pc/.test(u)).length, 1, 'one desktop fetch only');
 });
+
+// R1 M1: after a reload the server still holds the relay but the mirror is empty. Connect must
+// sign in again with { relay: true } and open the real relay desktop (real pc-sessions, real
+// openRelayDesktop), not call openRelayDesktop on nothing.
+test('Connect on a server-held relay with an empty mirror signs in again by the relay and opens the desktop', async () => {
+    setup();
+    const posts = [];
+    window.ApiClient.keyring = async () => ({ rev: 'r1', entries: [{
+        id: 'jake_assist', kind: 'assist_invite', source: 'registry', label: 'Remote assist code', account: { username: 'jbrooks', displayName: 'Jake Brooks' },
+        host: 'HB-FIN-03', connectsTo: 'jake_pc', heldItem: 'jake_assist_code', routes: [{ relay: true }],
+        sessionHeld: true, targetOff: false, remoteBlocked: false, ended: false }] });
+    const real = window.ApiClient.loginWithCredential;
+    window.ApiClient.loginWithCredential = async (...a) => { posts.push(a); return real(...a); };
+    window.stateSync = { syncConfirmed: async () => {}, sync: () => Promise.resolve(true) };
+    window.eventDispatcher = { emit: () => {}, on: () => {}, off: () => {} };
+    assert.equal(sessions.isRelay('jake_pc'), false, 'nothing mirrored');
+    const kr = new Keyring();
+    const r0 = await kr.connect({ scenarioData: { id: 'jake_assist_code', name: 'Remote assist code' } });
+    await settle(8);
+    assert.equal(posts.length, 1, JSON.stringify([r0, alerts]));
+    assert.equal(posts[0][1], 'jake_assist');
+    assert.equal(posts[0][2].relay, true);
+    assert.equal(sessions.isRelay('jake_pc'), true);
+    assert.ok(current() instanceof ContainerMinigame && current().relay, 'the relay desktop is open');
+});
+
+// R1 m1: a powered-off PC refuses with reason off or not_responding, which is not an end
+for (const reason of ['off', 'not_responding']) {
+    test(`a ${reason} 403 on the relay desktop keeps the relay and says the PC is off, not ended`, async () => {
+        setup();
+        await sessions.signInWithCredential('jake_pc', 'jake_assist', { relay: true });
+        fetchAnswer = { status: 403, body: { error: 'PC is off: jake_pc', reason } };
+        openRelayDesktop('jake_pc');
+        await settle(6);
+        assert.equal(sessions.isRelay('jake_pc'), true, 'the relay is kept');
+        assert.equal(current(), null);
+        assert.equal(signInScreens.length, 0);
+        assert.ok(!alerts.some(a => /ended the remote assist/.test(a[0])), 'no ended line');
+        assert.equal(alerts.length, 1, JSON.stringify(alerts));
+    });
+    test(`a ${reason} 403 on a relay folder keeps the relay and says the PC is off, not ended`, async () => {
+        setup();
+        await sessions.signInWithCredential('jake_pc', 'jake_assist', { relay: true });
+        const folder = { scenarioData: { id: 'jake_docs', type: 'folder', name: 'Documents', locked: false }, sourcePcId: 'jake_pc' };
+        fetchAnswer = { status: 403, body: { error: 'PC is off: jake_pc', reason } };
+        window.startContainerMinigame(folder, null, false, false, { sourcePcId: 'jake_pc' });
+        await settle(6);
+        assert.equal(sessions.isRelay('jake_pc'), true, 'the relay is kept');
+        assert.equal(current(), null);
+        assert.ok(!alerts.some(a => /ended the remote assist/.test(a[0])), 'no ended line');
+        assert.equal(alerts.length, 1, JSON.stringify(alerts));
+    });
+}
