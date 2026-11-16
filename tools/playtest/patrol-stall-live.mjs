@@ -4,14 +4,17 @@
 // current patrol target (standing in its path), so the player-collision and player-wait code is exercised.
 // Headless, setFPS(20) with fixed steps on. Never presses Escape blindly (it pauses the scene).
 // Prints the longest stand-still of waypoint_fast and whether a settle/avoidance flag was set during it.
-import { createRequire } from 'node:module';
+// Exit status: 0 clean; 1 a stall over STALL_SECS (default 20, or --stall-secs=N), a page error or a stopped
+// clock; 2 the scene is still paused. Playwright and Chromium resolve as in the other tools/playtest scripts.
 import fs from 'node:fs';
-const require = createRequire('/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/.claude/worktrees/p-9-2-h/node_modules/');
-const { chromium } = require('playwright-core');
-const EXEC = '/home/cliffe/.cache/ms-playwright/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell';
-const [gid, port, out] = process.argv.slice(2);
+import { chromium } from 'playwright';
+const flag = process.argv.find(a => a.startsWith('--stall-secs='));
+const STALL_SECS = flag ? +flag.split('=')[1] : (+process.env.STALL_SECS || 20);
+const [gid, port, out] = process.argv.slice(2).filter(a => !a.startsWith('--'));
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const browser = await chromium.launch({ headless: true, executablePath: EXEC });
+const browser = await chromium.launch({ headless: true });
+let exitCode = 0;
+try {
 const page = await browser.newPage({ viewport: { width: 1200, height: 800 } });
 const errs = []; page.on('pageerror', e => errs.push(String(e).slice(0, 200)));
 const logs = { stuck: [], reached: {}, detour: 0, other: [] };
@@ -28,7 +31,7 @@ await page.waitForTimeout(2000);
 // Escape toggles the game menu, which pauses the scene (game-menu.js open()). Never press it blindly.
 for (let i = 0; i < 3; i++) { await page.evaluate(() => window.__test.dismissBlockingUi && window.__test.dismissBlockingUi()).catch(() => {}); await page.waitForTimeout(300); }
 for (let i = 0; i < 3 && await page.evaluate(() => window.npcBehaviorManager.behaviors.get('waypoint_fast').scene.sys.isPaused()); i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(400); }
-if (await page.evaluate(() => window.npcBehaviorManager.behaviors.get('waypoint_fast').scene.sys.isPaused())) { console.log('SCENE STILL PAUSED'); process.exit(2); }
+if (await page.evaluate(() => window.npcBehaviorManager.behaviors.get('waypoint_fast').scene.sys.isPaused())) { console.log('SCENE STILL PAUSED'); exitCode = 2; throw new Error('paused'); }
 await page.evaluate(() => { const loop = window.game.sys.game.loop, raf = loop.raf; if (loop.actualFps < 10 && !raf.isSetTimeOut) { const cb = raf.callback; raf.stop(); raf.start(cb, true, 4); } loop.smoothStep = false; loop.minFps = 1; window.game.physics.world.setFPS(20); });
 
 const fixed = await page.evaluate(() => window.game.physics.world.fixedStep);
@@ -66,4 +69,14 @@ const summary = { mode: MODE, secs: rows.length, clockAdvanced, longestStillSecs
   playerBesideDuringStill: seg.some(r => r.pb), minPlayerDist: seg.length ? Math.min(...seg.map(r => r.dpl)) : null };
 console.log('SUMMARY', JSON.stringify(summary));
 console.log('errs', errs, 'detours', logs.detour, logs.stuck.slice(0, 3));
-await browser.close();
+const fails = [];
+if (best.len > STALL_SECS) fails.push(`stand-still ${best.len} s over ${STALL_SECS} s`);
+if (errs.length) fails.push(`${errs.length} page error(s)`);
+if (!clockAdvanced) fails.push('game clock did not advance');
+if (fails.length) { console.log('FAIL', fails.join('; ')); exitCode = 1; } else console.log('PASS');
+} catch (e) {
+  if (!exitCode) { console.log('ERROR', String(e).slice(0, 300)); exitCode = 1; }
+} finally {
+  await browser.close();
+}
+process.exit(exitCode);
