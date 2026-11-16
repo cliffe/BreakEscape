@@ -249,38 +249,59 @@ for (const r of ['kitchen', 'office', 'lounge', 'office']) report.rooms.push([r,
 // player stood in its approach and Sanjay's return stalled against him (SIMS_TIDY_LOG.md item 2,
 // tour 5658: return_stuck at (-244,254) next to the player at (-248,244))
 const COOLER_OFFSET = { x: 80, y: 16 };
+// The kitchen doorway's one-body lane (the gap x -16..48 at y 84 and the kitchen's east column down
+// to y 108): the passage box the head-on metric watches, widened to the gap's office end
+const LANE = { x0: -70, x1: 48, y0: 64, y1: 108 };
 async function parkByCooler() {
-    return page.evaluate(async off => {
+    return page.evaluate(async ({ off, lane }) => {
         const w = window.npcNeedsSystem.world, obj = w.getObject('water_cooler');
         const cell = obj ? w.approachCell(obj) : null;
         if (!cell) return { ok: false, reason: 'no_cooler' };
-        const pm = window.pathfindingManager;
-        const aim = pm?.findNearestWalkableWorldCell?.(cell.x + off.x, cell.y + off.y, 3) || { x: cell.x + off.x, y: cell.y + off.y };
-        let r = await window.__test.moveTo(aim.x, aim.y, { timeoutMs: 20000, pointer: false }).catch(e => ({ err: String(e) }));
-        let p = window.player.body.center;
-        // Sims tidy R4: the walk can stall far from the aim (seen at (-36, 87) against (-196, 292)); one re-approach
-        let retried = false, alt = null;
-        // R5 M1: moveTo can report ok while short of the aim (row 6: ok at 260 px off), so retry on distance alone.
-        // R6 m2: the same walk straight away met the same blockage (NPCs in the kitchen doorway); wait 3 s
-        // for them to move on, then aim at one neighbouring cell of the aim instead (the first walkable
-        // one a tile away, west, north, south, then east), still in view of the cooler
-        if (Math.hypot(p.x - aim.x, p.y - aim.y) >= 24) {
-            retried = true;
-            await new Promise(res => setTimeout(res, 3000));
-            for (const [dx, dy] of [[-32, 0], [0, -32], [0, 32], [32, 0]]) {
-                const c = pm?.findNearestWalkableWorldCell?.(aim.x + dx, aim.y + dy, 1);
-                if (c && Math.hypot(c.x - aim.x, c.y - aim.y) >= 16) { alt = c; break; }
+        const pm = window.pathfindingManager, sleep = ms => new Promise(res => setTimeout(res, ms));
+        const inLane = c => c.x >= lane.x0 && c.x <= lane.x1 && c.y >= lane.y0 && c.y <= lane.y1;
+        const laneNpcs = () => {
+            const out = [];
+            for (const room of Object.values(window.rooms || {})) for (const sp of room.npcSprites || []) {
+                const c = sp.body?.center; if (c && inLane(c)) out.push(sp.npcId);
             }
-            const goal = alt || aim;
-            r = await window.__test.moveTo(goal.x, goal.y, { timeoutMs: 20000, pointer: false }).catch(e => ({ err: String(e) }));
-            p = window.player.body.center;
+            return out;
+        };
+        // R6 (game 6116): the scripted player walked into the lane while Tom and Grace stood in it, its
+        // search (round NPC bodies) found nothing, and after one retry it stood in the lane for the
+        // whole row 6 wait, so Sanjay and then Marek could not get through to the cooler. Each try
+        // now waits (up to 20 s) for the lane to clear first, up to four tries, and a player still in
+        // the lane at the end walks back to where it started (a real player steps out of the way).
+        const waitClear = async () => { const t0 = Date.now(); while (laneNpcs().length && Date.now() - t0 < 20000) await sleep(250); return Math.round((Date.now() - t0) / 1000); };
+        const aim = pm?.findNearestWalkableWorldCell?.(cell.x + off.x, cell.y + off.y, 3) || { x: cell.x + off.x, y: cell.y + off.y };
+        // Fallback aims: the first walkable cell a tile west, north, south or east of the aim
+        const goals = [aim];
+        for (const [dx, dy] of [[-32, 0], [0, -32], [0, 32], [32, 0]]) {
+            const c = pm?.findNearestWalkableWorldCell?.(aim.x + dx, aim.y + dy, 1);
+            if (c && Math.hypot(c.x - aim.x, c.y - aim.y) >= 16) goals.push(c);
         }
-        const goal = alt || aim;
+        const start = { x: window.player.body.center.x, y: window.player.body.center.y };
+        const tries = [];
+        let p = start, goal = aim;
+        for (let i = 0; i < 4; i++) {
+            goal = goals[Math.min(i, goals.length - 1)];
+            const waited = await waitClear();
+            await window.__test.moveTo(goal.x, goal.y, { timeoutMs: 20000, pointer: false }).catch(e => ({ err: String(e) }));
+            p = window.player.body.center;
+            tries.push({ goal: [Math.round(goal.x), Math.round(goal.y)], waited, at: [Math.round(p.x), Math.round(p.y)] });
+            if (Math.hypot(p.x - goal.x, p.y - goal.y) < 24) break;
+            await sleep(3000);
+        }
         const dist = Math.round(Math.hypot(p.x - goal.x, p.y - goal.y));
-        return { retried, ok: dist < 24, dist, cooler: [Math.round(cell.x), Math.round(cell.y)],
-                 aim: [Math.round(aim.x), Math.round(aim.y)], alt: alt && [Math.round(alt.x), Math.round(alt.y)],
-                 player: [Math.round(p.x), Math.round(p.y)] };
-    }, COOLER_OFFSET).catch(e => ({ ok: false, err: String(e).slice(0, 120) }));
+        let left_lane = null;
+        if (dist >= 24 && inLane(p) && !inLane(start)) {
+            await window.__test.moveTo(start.x, start.y, { timeoutMs: 20000, pointer: false }).catch(() => null);
+            const q = window.player.body.center;
+            left_lane = [Math.round(q.x), Math.round(q.y)];
+            p = q;
+        }
+        return { retried: tries.length > 1, tries, ok: dist < 24, dist, cooler: [Math.round(cell.x), Math.round(cell.y)],
+                 aim: [Math.round(aim.x), Math.round(aim.y)], left_lane, player: [Math.round(p.x), Math.round(p.y)] };
+    }, { off: COOLER_OFFSET, lane: LANE }).catch(e => ({ ok: false, err: String(e).slice(0, 120) }));
 }
 
 // Row 5: the Activity Board again, then stand by the water cooler in the kitchen
@@ -319,14 +340,13 @@ if (!report.rows[6].rota.ok) report.rows[6].doorway = await page.evaluate(() => 
     const seated = (window.chairs || []).filter(c => c?.seatedBy).map(c => ({ by: c.seatedBy, chair: c.objectId, box: box(c.body), imm: !!c.body?.immovable }));
     return { x0: -64, step: gb.step, rows, npcs, seated, player: [Math.round(window.player.x), Math.round(window.player.y)] };
 }).catch(e => ({ err: String(e) }));
-// The row 5 chat met Sanjay's social need, and the README says row 6 will not tick straight after
-// it: wait a few minutes, or read the rota when his S bar turns amber. Rather than wait, set his
-// social need just under its urgentAt (40) with the scenario's own needs command, as the Activity
-// Board mapping does, so it falls due while Marek holds the cooler.
-report.rows[6].sanjay_social = await page.evaluate(() => {
-    window.npcNeedsSystem.control('sanjay', { set: { social: 35 } });
-    return window.npcNeedsSystem.getState('sanjay')?.levels?.social ?? null;
-});
+// R6 (games 6116, 6117): the driver used to set Sanjay's social need to 35 here, before Marek had
+// left his desk. Grace was drinking at the cooler, so Marek (who avoids everyone) waited; Sanjay
+// went to chat with her, his npc_use_started armed Rosa's coupled cooler break, hers re-armed his,
+// and the two held the cooler for most of the 180 s wait. The scenario already sets Sanjay's social
+// need due when Marek leaves for the cooler (Sanjay's npc_left_post:marek mapping), which is the
+// moment the row is about, so the driver no longer touches it and only records the level.
+report.rows[6].sanjay_social = await page.evaluate(() => window.npcNeedsSystem.getState('sanjay')?.levels?.social ?? null);
 report.rows[6].park = await parkByCooler();
 report.rows[6].wait = await waitTasks(['see_outcast'], 180000);
 report.rows[6].ok = report.rows[6].wait.ok;
