@@ -91,6 +91,16 @@ module BreakEscape
 
     # ─── Game show ───────────────────────────────────────────────────────────
 
+    # The CyberChef page's own CSP gained frame-src data: (static_files_controller); the game page must not.
+    test 'game page CSP is unchanged: no frame-src, default-src self https, object-src none' do
+      get game_url(@game)
+      assert_response :success
+      csp = response.headers['Content-Security-Policy'].to_s
+      assert_no_match(/frame-src/, csp)
+      assert_match(/default-src 'self' https:/, csp)
+      assert_match(/object-src 'none'/, csp)
+    end
+
     test 'should show game' do
       get game_url(@game)
       assert_response :success
