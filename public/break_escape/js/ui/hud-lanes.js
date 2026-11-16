@@ -564,8 +564,13 @@ const POPUP_ROOTS = ['#laptop-popup', '#lab-popup'];
 // A scrolling list counts as one only while its scroller is under this share of the frame's height
 export const LIST_FRAME_SHARE = 0.6;
 
-function scrollsY(el) {
-  return /(auto|scroll)/.test(gcs(el).overflowY || '') && el.scrollHeight > el.clientHeight + 1;
+// `memo` (a Map, one per measure pass) keeps the answer per element: a panel with hundreds of
+// controls walks the same few ancestors for each, and each read is a getComputedStyle call
+function scrollsY(el, memo = null) {
+  if (memo && memo.has(el)) return memo.get(el);
+  const v = /(auto|scroll)/.test(gcs(el).overflowY || '') && el.scrollHeight > el.clientHeight + 1;
+  if (memo) memo.set(el, v);
+  return v;
 }
 
 /**
@@ -575,10 +580,10 @@ function scrollsY(el) {
  * control, or an ancestor of it below the scroller, is one of at least 3 siblings with the same
  * tag and class.
  */
-function isListRow(el, root, frameEl, frameH) {
+function isListRow(el, root, frameEl, frameH, memo = null) {
   let sc = null;
   for (let q = el.parentElement; q && q !== root.parentElement; q = q.parentElement) {
-    if (scrollsY(q)) { sc = q; break; }
+    if (scrollsY(q, memo)) { sc = q; break; }
   }
   if (!sc || sc === root || sc === frameEl || (frameEl && sc.contains(frameEl))) return false;
   if (!(frameH > 0) || sc.clientHeight >= LIST_FRAME_SHARE * frameH) return false;
@@ -623,6 +628,7 @@ export function measureMinigame(doc, win, cursor = null) {
     const fr = shownRect(frameEl);
     const frameH = fr ? fr.height : (shownRect(mg)?.height || 0);
     const seen = new Set();
+    const scrollMemo = new Map();
     const add = (el) => {
       if (seen.has(el) || el.closest?.('#phone-ring-layer')) return;
       seen.add(el);
@@ -630,7 +636,7 @@ export function measureMinigame(doc, win, cursor = null) {
       // counted as both, which ruled out the place that covers a canvas rather than a control)
       if (el.tagName === 'CANVAS' && !el.classList.contains('person-chat-portrait')) return;
       const r = shownRect(el);
-      if (r && (!area || r.width * r.height <= area / 2)) controls.push({ ...boxOf(r), listRow: isListRow(el, mg, frameEl, frameH) });
+      if (r && (!area || r.width * r.height <= area / 2)) controls.push({ ...boxOf(r), listRow: isListRow(el, mg, frameEl, frameH, scrollMemo) });
     };
     mg.querySelectorAll(MINIGAME_CONTROLS.join(', ')).forEach(add);
     mg.querySelectorAll('*').forEach((el) => { if (!seen.has(el) && pointerCursor(el, cursor)) add(el); });
