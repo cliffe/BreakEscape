@@ -6,6 +6,7 @@ module BreakEscape
     include ScoreBreakdown
     include NetworkAccess
     include CaptureProofs
+    include CredentialKeyring
     include NpcFrustration
     include SocialFeed
     include Wearables
@@ -640,6 +641,12 @@ module BreakEscape
     def add_inventory_item!(item)
       player_state['inventory'] ||= []
 
+      # `credential` is a forgeable field (stripped from every client contribution and
+      # by both client filters), so a stored take never carries it. Re-stamp it here
+      # from the scenario's own definition, matched by type and id, so the keyring's
+      # `held` proof can match. A client-supplied value is never trusted (K1 live fix).
+      restamp_item_credential!(item)
+
       # Check if item already exists in inventory (by id or combination of type and name)
       item_exists = inventory_includes?(item)
 
@@ -651,6 +658,39 @@ module BreakEscape
       else
         Rails.logger.info "[BreakEscape] Item already in inventory, skipping: #{item['type']} / #{item['name']}"
       end
+    end
+
+    # Re-stamp a stored inventory item's `credential` from the scenario's own definition
+    # (CredentialModel.item_definition, matched by type and id), never from the client.
+    # `credential` is forgeable, so any client-supplied value is dropped first; the
+    # authored value is restored only when the definition is the scenario's own item of
+    # the same type. Stamps onto the same level the keyring `held` proof reads
+    # (`inv['scenarioData'] || inv`). Without this, both client filters strip `credential`
+    # on the way out and the client posts the item back without it, so the `held` proof
+    # could never match through the real request path (K1 live fix).
+    def restamp_item_credential!(item)
+      return unless item.is_a?(Hash)
+
+      data = item['scenarioData'].is_a?(Hash) ? item['scenarioData'] : item
+      # Drop any client-supplied value up front (forgeable field).
+      data.delete('credential')
+
+      # The notepad and decor cups are client-built (no scenario lookup), so their id is
+      # client-chosen: never stamp a credential on them (R3 m1; the validator also errors).
+      return if BreakEscape::DeclaredGrants::ALWAYS_ALLOWED.include?(data['type'].to_s)
+      return if BreakEscape::DeclaredGrants::DECOR_CUPS.include?(data['type'].to_s)
+
+      # Look up by id, exactly as the `held` proof matches (def_id == data['id']).
+      item_id = data['id'].to_s
+      return if item_id.empty?
+
+      definition = BreakEscape::CredentialModel.item_definition(scenario_data, item_id)
+      return unless definition.is_a?(Hash)
+      return unless definition['type'].to_s == data['type'].to_s
+      return unless definition['id'].to_s == item_id
+
+      credential = definition['credential']
+      data['credential'] = credential if BreakEscape::CredentialModel.present_string?(credential)
     end
 
     # A deep copy of a stored inventory item without saved_cards, for any item an
@@ -1720,6 +1760,10 @@ module BreakEscape
         self.class.strip_puzzle_graph_keys!(obj)
         BreakEscape::DeclaredGrants.strip_grant_contents!(obj)
         strip_capture_secrets!(obj)
+        # The item-level `credential` is a server-only field (CREDENTIAL_KEYRING_PLAN.md section 15):
+        # the `held` proof reads it from the stored inventory, the client never needs it (K3 draws
+        # Connect from GET /keyring), so it never rides a client inventory copy or echo (R1 m1).
+        obj.delete('credential')
         obj.delete('requires') if lock_type && !CARD_REFERENCE_LOCK_TYPES.include?(lock_type)
         obj.each_value { |value| filter_inventory_for_client!(value) }
       when Array
@@ -2245,6 +2289,11 @@ module BreakEscape
       # The top-level roles (slice 9.1, 5.2; slice 9.2 adds its own keys): default
       # awareness levels by role. Nothing in the browser reads it.
       filtered.delete('roles')
+
+      # Credential keyring (CREDENTIAL_KEYRING_PLAN.md section 6): the top-level `credentials`
+      # registry is server-only. No answer sends it whole; the keyring reaches the client only
+      # through GET /keyring, one proven entry at a time.
+      filtered.delete('credentials')
 
       # Networks (slice 9.3a, section 6): a network's name and what it exposes reach the
       # browser only through GET /network and GET /container, for a foothold or session
@@ -6777,6 +6826,12 @@ module BreakEscape
         # it, so remove it outright rather than keeping a count.
         obj.delete('hintOnlyFlags')
 
+        # The item-level `credential` is a server-only field (CREDENTIAL_KEYRING_PLAN.md section 15):
+        # a credential item left loose in a room, on a desktop or in a share is served through this
+        # filter, so strip the field here too (R1 m1). The `held` proof reads it only from the
+        # stored inventory, never from a client payload.
+        obj.delete('credential')
+
         # Networks (slice 9.3a, section 6): membership never ships, and a jack's link
         # name and holder arrive on the link item instead.
         BreakEscape::NetworkAccess::WITHHELD_OBJECT_FIELDS.each { |field| obj.delete(field) }
@@ -7061,6 +7116,9 @@ module BreakEscape
             if item.is_a?(Hash)
               copy = item.deep_dup
               filter_requires_and_contents_recursive(copy)
+              # The filter strips `credential` (forgeable); restore it from the scenario's
+              # own definition so a credential start item still proves `held` (K1 live fix).
+              restamp_item_credential!(copy)
               self.player_state['inventory'] << copy
             else
               self.player_state['inventory'] << item

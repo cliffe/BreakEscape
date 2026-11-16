@@ -56,6 +56,7 @@ BreakEscape::Engine.routes.draw do
       # Objectives system
       get 'objectives'                                      # Get current objective state
       get 'capture_secrets'   # SE: authored secret for each earned credential capture (stripped from the bootstrap)
+      get 'keyring'           # Credential keyring (CREDENTIAL_KEYRING_PLAN.md K1): the player's earned credentials, computed server-side
       post 'se/landing_page', to: 'games#se_landing_page', as: 'se_landing_page' # SE: record a landing-page build server-side (phish evidence plan, Route 1)
       post 'se/phish_send',   to: 'games#se_phish_send',   as: 'se_phish_send'   # SE: record a phish send server-side (phish evidence plan, Route 2)
       post 'objectives/tasks/:task_id', to: 'games#complete_task', as: 'complete_task'
