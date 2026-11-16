@@ -320,7 +320,7 @@ Base: main after K0. Size: M. No sign-in behaviour changes.
 - `tools/playtest/lib/access_leak_scanner.rb`: flag any response with a `credentials` key, a keyring entry whose proof does not hold in the recorded state, or a registry password entry carrying `password`.
 - `scripts/validate_scenario.rb`: `credentials` in `known_top_level`, `credential` in `known_item_fields`, new `check_credentials` (6.3).
 - Dungeon graph: edges proof source (item, PC, foothold) to a credential node, and credential node to each PC that accepts it.
-- `README_scenario_design.md`: a credentials section (registry, kinds, proofs, policy `accepts`, item `credential`, the item type rule, where a credential item may be placed, the ink gift path for an invite, the relay invariant); and correct line 2753: a reload resumes a timer from its saved running time, it does not restart it.
+- `README_scenario_design.md`: a credentials section (registry, kinds, proofs, policy `accepts`, item `credential`, the item type rule, where a credential item may be placed, the ink gift path for an invite, the relay invariant); and correct the timer bullet (now `README_scenario_design.md:2806`): a reload resumes a timer from its saved running time, it does not restart it.
 - `docs/IDEAS_BACKLOG.md`: the connection icon; the later kinds (RFID card as a credential, one-time code, key file); an optional per-entry teaching line for scenario-specific wording. (K3d adds: the engagement report reading the Sign-ins rows, masked.)
 
 ### 6.2 GET /keyring
