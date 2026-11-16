@@ -950,6 +950,13 @@ export function handleObjectInteraction(sprite) {
         return;
     }
 
+    // A patch panel (pentest slice B1, 5.4): an object with panelPorts opens the patch-panel
+    // minigame, whose ports plant through networkLinks.interactJack.
+    if (Array.isArray(sprite.scenarioData.panelPorts)) {
+        window.startPatchPanelMinigame?.(sprite.scenarioData);
+        return;
+    }
+
     // A network link item in the tray (slice 9.3a, 4.1): its own click opens the network
     // view for its foothold. It has no menu, no contents and is never dropped.
     if (sprite.scenarioData.type === 'network_link') {
