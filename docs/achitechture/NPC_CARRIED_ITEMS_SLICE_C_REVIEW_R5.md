@@ -79,3 +79,18 @@ leftover debug found in the changed files.
 - `bin/test-js`: run in the background; result noted in the hand-off message.
 
 R5: 0/0/2
+
+## Outcomes
+
+- **m1: fixed.** The rule is now `y >= rows - 2`, held in `hidden_under_south_wall?` so the test and the
+  new case share it. `test_behind_wall_fade` `office_n` `north_card` (y 8) is exempt through the named
+  `DELIBERATE_UNDER_WALL` list, with a comment giving the reason. A new test proves y 8 and y 9 are
+  flagged in a 10-row room and y 7 is not. With the exemption emptied the main test fails on that
+  keycard, so the exemption is needed. No other scenario is newly flagged. `test_objectives` and
+  `test_simple_success` are untouched. Real missions stay warn-only: the only entries are the two
+  `lab_physical_pentest` hall `fire_extinguisher1` objects (y 5.3, 6-row hall), unchanged.
+- **m2: fixed.** The laptop texts now say (4, 6.5) and (4, 5). The brief says tile coordinates. The
+  Test Guide lists the safe at x=8, y=8 and the CEO desk at tile (4, 5). The guide also named a
+  keycard at (x=160, y=240) that does not exist in the scenario, so that line was removed.
+- **Suites on the final tip:** `bin/test-js` 687 passed, 0 failed, 687 total. `bin/rails test`
+  2936 runs, 48082 assertions, 0 failures, 0 errors, 3 skips. Rubocop on the changed Ruby file: no offences.
