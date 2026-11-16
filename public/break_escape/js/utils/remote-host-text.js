@@ -119,6 +119,36 @@ export const kindRefusedMessage = (kind, host) => {
 export const kindRefusedShort = (host) => `${named(host)}: type the password.`;
 export const endedAssistMessage = (displayName) => `${displayName || 'The account holder'} ended the remote assist.`;
 export const noLongerWorksMessage = (label) => `${label || 'That sign-in'} no longer works.`;
+// Connect from the tray (K3b, plan 8.2 and 8.5)
+export const CONNECT_FAILED_TEXT = 'Connect could not reach the game server. Try again.';
+export const trayUnreachableMessage = (host) => `${named(host)} can't be reached from here. You need a way onto its network.`;
+
+// The find toasts (K3b, plan 8.2 and 8.5, the "no capture log" lines; K3d adds the capture
+// log wording). Names, hosts and labels are the entry's, drawn as plain text by gameAlert.
+const whoOf = (entry) => entry?.account?.displayName || entry?.account?.username || 'an account';
+export const savedConnectionFoundMessage = ({ label, displayName, host } = {}) =>
+    `Saved connection found: ${label || 'a file'} for ${displayName || 'an account'} on ${named(host, 'another PC')}.`;
+export const passwordInFileFoundMessage = ({ label, displayName } = {}) =>
+    `${displayName || 'An account'}'s password is in ${label || 'a file'}.`;
+export const findMoreLine = (n) => `and ${n} more`;
+
+/** One find's line by kind, or null for a kind with no find toast yet (assist invites until K3c). */
+// The capture check here is paired with findKindToasts in systems/keyring.js (a double guard).
+export function findLine(entry) {
+    if (!entry || typeof entry !== 'object' || entry.source === 'capture') return null;
+    const fields = { label: entry.label, displayName: whoOf(entry), host: entry.host || entry.connectsTo };
+    if (entry.kind === 'saved_connection') return savedConnectionFoundMessage(fields);
+    if (entry.kind === 'password') return passwordInFileFoundMessage(fields);
+    return null;
+}
+
+/** The one toast for a set of finds: each line, or with more than two, two then "and N more". */
+export function findToastText(entries) {
+    const lines = (Array.isArray(entries) ? entries : []).map(findLine).filter(Boolean);
+    if (!lines.length) return null;
+    if (lines.length > 2) return [lines[0], lines[1], findMoreLine(lines.length - 2)].join('\n');
+    return lines.join('\n');
+}
 
 /** The teaching toast per kind, shown once per page after the first successful use (8.1). */
 export function teachLine(kind, { displayName } = {}) {

@@ -205,6 +205,17 @@ body.hud-compact .notification.brief .notification-message {
     overflow: visible;
 }
 
+/* A long sentence read whole (options.whole: a keyring find, a teaching line). Only the clamp
+   is lifted: no brief priority, so it queues and yields like any other toast. */
+body.hud-compact .notification.whole .notification-message,
+body.hud-compact .notification.warning.whole .notification-message,
+body.hud-compact .notification.error.whole .notification-message {
+    display: block;
+    -webkit-line-clamp: none;
+    line-clamp: none;
+    overflow: visible;
+}
+
 /* Over an open panel (placed-over-panel, set by ui/hud-lanes.js) the toast is placed clear of
    the panel's title and controls, so on a phone its title wraps and its message is never cut.
    Selectors at least as specific as the clamp rules above, and after them. */

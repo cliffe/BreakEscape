@@ -40,6 +40,20 @@
       "proof": { "session": "lena_pc" },
       "foundIn": "lena_passwords_txt"
     },
+    "lena_rdp_gift": {
+      "kind": "saved_connection",
+      "account": "lena",
+      "connectsTo": "lena_pc",
+      "label": "HB-FIN-02 copy.rdp",
+      "proof": { "held": "lena_rdp_gift" }
+    },
+    "ops_rdp": {
+      "kind": "saved_connection",
+      "account": "ian",
+      "connectsTo": "ops_pc",
+      "label": "SV-OPS-01 admin.rdp",
+      "proof": { "held": "ops_rdp_file" }
+    },
     "ops_cookie": {
       "kind": "saved_connection",
       "account": "ian",
@@ -119,6 +133,16 @@
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "role": "finance",
           "creds": { "username": "lfox", "password": "Ledger-Lena-9" },
+          "itemsHeld": [
+            {
+              "type": "text_file",
+              "id": "lena_rdp_gift",
+              "name": "HB-FIN-02 copy.rdp",
+              "takeable": true,
+              "droppable": true,
+              "credential": "lena_rdp_gift"
+            }
+          ],
           "eventMappings": [
             { "eventPattern": "item_picked_up:text_file", "condition": "data.itemId === 'lena_rdp_file'", "onceOnly": true, "completeTask": "k1_held" }
           ]
@@ -243,6 +267,14 @@
               "readable": true,
               "text": "Shared sign-ins (do not circulate).\n\nJake: jbrooks / Vault-Jake-4\n\n(K1b: once you are signed in here, Jake's found password appears on your keyring.)",
               "observations": "A plain-text file of shared sign-ins, left on Lena's desktop."
+            },
+            {
+              "type": "text_file",
+              "id": "ops_rdp_file",
+              "name": "SV-OPS-01 admin.rdp",
+              "takeable": true,
+              "droppable": true,
+              "credential": "ops_rdp"
             }
           ]
         },
