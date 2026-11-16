@@ -447,3 +447,58 @@ test('R4 m3: setNPCHostile(false) on an NPC with no pending start records nothin
     sys.setNPCHostile('r', false);
     assert.equal(sys.exportHostility().r, undefined);
 });
+
+// R5 m2: calm, then re-hostile by ink, then reveal, on an NPC that is pending its reveal.
+test('R5 m2: calm, then ink re-hostile, then reveal leaves it hostile; the ink turn cues once and the reveal repeats the same cue', async () => {
+    const c = setup(['a', 'r'], { hostile: ['a'], threat: true });
+    c.m.npcs.get('r').isVisible = false; mapReveal(c, 'r');
+    const sys = await realHostileSystem('r5m2-direct');
+    window.npcHostileSystem = sys;
+    const b = new NPCBehavior('r', makeSprite(false), { hostile: { startHostile: true } }, {}, {});
+    c.bm.behaviors.set('r', b);
+    const before = switches.length;
+    sys.setNPCHostile('r', false);
+    assert.deepEqual(sys.exportHostility().r, { hostile: false, ko: false }, 'calm recorded');
+    sys.setNPCHostile('r', true);
+    assert.deepEqual(sys.exportHostility().r, { hostile: true, ko: false }, 'the re-hostile overwrites the calm');
+    assert.equal(switches.length - before, 1, 'the ink turn cues once');
+    day();
+    assert.equal(sys.isNPCHostile('r'), true, 'hostile after the reveal');
+    assert.ok(!b._startHostileOnReveal, 'the calm cleared the pending start, so the reveal does not re-hostile it');
+    // setNPCVisible announces any hostile that was hidden, so the reveal repeats the cue. Both
+    // are the same playlist, so the second switch is a no-op in play.
+    assert.deepEqual(switches.slice(before), ['threat', 'threat']);
+});
+
+test('R5 m2 reload: calm, reload, then ink re-hostile, then reveal is hostile (cue repeated once)', async () => {
+    const c = setup(['a', 'r'], { hostile: ['a'], threat: true });
+    c.m.npcs.get('r').isVisible = false; mapReveal(c, 'r');
+    const sys1 = await realHostileSystem('r5m2-reload1');
+    window.npcHostileSystem = sys1;
+    const b1 = new NPCBehavior('r', makeSprite(false), { hostile: { startHostile: true } }, {}, {});
+    c.bm.behaviors.set('r', b1);
+    sys1.setNPCHostile('r', false);
+    const saved = JSON.parse(JSON.stringify(sys1.exportHostility()));
+    assert.deepEqual(saved.r, { hostile: false, ko: false });
+
+    // Reload: fresh system and behaviour, calm restored, still pending its reveal
+    const c2 = setup(['a', 'r'], { hostile: ['a'], threat: true });
+    c2.m.npcs.get('r').isVisible = false; mapReveal(c2, 'r');
+    const sys2 = await realHostileSystem('r5m2-reload2');
+    sys2.restoreHostility(saved);
+    window.npcHostileSystem = sys2;
+    const b2 = new NPCBehavior('r', makeSprite(false), { hostile: { startHostile: true } }, {}, {});
+    c2.bm.behaviors.set('r', b2);
+    assert.ok(!b2._startHostileOnReveal, 'the restored calm wins');
+    const before = switches.length;
+    sys2.setNPCHostile('r', true);
+    const afterInk = switches.length;
+    day();
+    assert.equal(sys2.isNPCHostile('r'), true);
+    assert.equal(sys2.exportHostility().r.hostile, true);
+    // After a reload the constructor recorded the sprite hidden, so the reveal announces the
+    // hostile NPC even though the ink turn already cued: two cues, both the same playlist, so
+    // the second switch is a no-op in play. Pinned so a change to this is deliberate.
+    assert.equal(afterInk - before, 1, 'the ink turn cues once');
+    assert.deepEqual(switches.slice(before), ['threat', 'threat'], 'the reveal repeats the same cue');
+});

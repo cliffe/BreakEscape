@@ -126,5 +126,5 @@ Live proof, keyless server on :3093 from the worktree, `setFPS(20)` with fixed s
 
 A restored hostile on a hidden sprite is recorded hidden (`recordNpcVisibility(id, false)` in the `NPCBehavior` constructor), so it neither counts in `anyHostilesAlive` nor cues the music until a reveal announces it. The same NPC, made hostile by ink while it was hidden and not reloaded, has no visibility record and does count. The two cases differ across a reload on purpose: making them match would mean either hiding every hidden hostile from the count (this breaks the tested rule that a never-touched `initiallyHidden` hostile counts) or recording visibility at every ink turn (wider than this fix). Nothing but `setNPCVisible` reveals a hidden sprite, so the restored case cannot stay stuck.
 
-The restore path also adds one permanent `npcVisibility` key for that NPC to the synced state (one boolean, written once, never removed).
+The restore path also adds one permanent `npcVisibility` key for that NPC to the synced state (one boolean, never removed; its value follows later reveals and hides).
 
