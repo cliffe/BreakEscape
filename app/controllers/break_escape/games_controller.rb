@@ -441,6 +441,11 @@ module BreakEscape
         # button, but only when the scenario has at least one sign-in PC (R1 minor 2). A
         # capability flag, not per-session state; the client never sends it back.
         filtered['sessionLockingSupported'] = @game.scenario_has_login_pc?
+        # Keyring K3a (8.1): the scenario declares credentials, so the sign-in screens fetch
+        # GET /keyring. The bootstrap drops the credentials registry itself; this static
+        # capability flag is all the client learns, and it is never part of player_state.
+        creds = @game.scenario_data['credentials']
+        filtered['credentialsDeclared'] = creds.is_a?(Hash) && creds.any?
         # Footholds held and every jack one was gained from (slice 9.3a, section 6)
         filtered['footholds'] = @game.footholds_for_client
         filtered['gainedFootholds'] = @game.gained_footholds
