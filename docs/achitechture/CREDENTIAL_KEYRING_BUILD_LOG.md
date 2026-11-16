@@ -946,3 +946,14 @@ Run 3 stopped at the context limit after step 2's writing. Commits `d42e4d7ce` a
 | 10 | Start panel line not escaped | pc-taskbar.js | 1 (start panel line, escaped) |
 | 11 | Credential button label set as HTML | password-minigame.js | 1 (author text is text) |
 | 12 | `credentialSessionLine` returns null | pc-taskbar.js | 2 (start panel line, reload keeps kind and label) |
+
+**Fixtures.** `tools/playtest/signin-fit.mjs` gains `ways-longest` (three long-label saved connections, one refused, two found passwords), `ways-refused-short` (one greyed connection with its short reason) and `keyring-both-failed` (the combined failed line). A new `expectWays` check fails when the ways box is not shown, its first button sits outside the visible area, "Connect with" is cut, a scrolling box has no "More below" cue, or the Password field is missing. Not run: the script needs a keyless server and a browser, and this run had no servers. To run it: start the keyless server on a free port (AGENTS.md) and `PORT=<port> node tools/playtest/signin-fit.mjs` (add `SHOTS=<dir>` for screenshots). Syntax checked with `node --check`.
+
+**Suites** (tip before this entry `f0927b3ad` plus the fix below)
+- `bin/test-js`: 713 files, 713 passed, 0 failed.
+- Rails full suite: 2995 runs, 48452 assertions, 1 failure, 0 errors, 3 skips. The failure was fallout from K3a: `sync_payload_size_test.rb` "the bootstrap scenario carries no credentials key" refuted the substring `credentials` anywhere in the body, which now matches the `credentialsDeclared` flag. The test now refutes the `"credentials":` key instead (the registry still cannot reach the browser). The file re-run: 3 runs, 0 failures. Not a second full run.
+- rubocop on the changed Ruby files (`games_controller.rb`, `keyring_route_test.rb`) and the fixed test: no offences.
+
+**Open**
+- Live proof on :3063 (R2, R3 sign-in half, R4, R5a) and the `signin-fit.mjs` run, both needing a server.
+- `assets/icons/badge-plug.png` art for the user (8x8 by hand); the plug group shows the key badge until then.
