@@ -1662,6 +1662,12 @@ export class ContainerMinigame extends MinigameScene {
             return true;
         }
         
+        // An unlocked folder on a desktop opens like a locked one after its unlock: the main
+        // handler loads its contents (server-side, by route). Without this its icon was inert.
+        if (item.type === 'folder' && (Array.isArray(item.contents) || item.hasContents)) {
+            return true;
+        }
+
         // Workstation (crypto workstation)
         if (item.type === 'workstation') {
             return true;
