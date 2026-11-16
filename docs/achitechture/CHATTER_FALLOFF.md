@@ -80,4 +80,36 @@ No page errors. The stand-in in case 6 was restored straight after. Case 5 shows
 
 Built, unit-tested, live-proved (above) and committed. The suites ran after this commit; their figures are in the commit that follows.
 
-Not done: grumbles and mutters draw no faint lines (chat turns only); the music-widget "Background chatter" toggle (optional in the plan); exchange lines that are unheard but voiced still follow the old rule apart from the mute.
+Not done at this point: grumbles and mutters drawing faint lines, the music-widget toggle, dimmed unheard exchange lines. All three were done in round 1 (below).
+
+
+## R1 fixes
+
+From `CHATTER_FALLOFF_REVIEW_R1.md` (0 blocking, 3 major, 10 minor). Main merged first (a0f35064f). Tests are in `test/js/npc-chatter-faint.test.mjs` (28 cases) and `test/js/tts-distance-gain.test.mjs` (4). M1, M2, M3 and the m1 to m8 tests were run against the old sources and failed there. Commits: A = bae7e2f1e (majors), B = 2af863cba (minors and docs), C = 13010d7c5 (m10 tests), D = ee0561985 (live proof cases).
+
+| Finding | Fix | Test | Commit |
+|---|---|---|---|
+| M1 stale phone-chat type makes every minigame a conversation | `conversationOpen` tests the open minigame's `_sceneType`; the sticky type is gone | "R1 M1" | A |
+| M2 faint line spent the full cooldown | A faint pick sets `faintQuietUntil` (25 s) and leaves `chatterQuietUntil` alone; faint picks check the faint throttle | "R1 M2", first-case assertion changed | A |
+| M3 mutters waited behind a faint line | Mutter entry and `_tickMutterWaits` ask `_speechFreeFor(!full)`, with `ahead` checked first | "R1 M3" | A |
+| m1 faint line at full volume | Faint volume capped at `FAINT_MAX` 0.5, at draw and in the follow tick | "R1 m1" | B |
+| m2 abort did not abort the load | A token per faint line made in `say`, aborted for all faint lines by `fadeFaint`; the load is raced against the abort; a late clip is stopped unless a newer one started | two "R1 m2" cases | B |
+| m3 conversation opens during a load | Re-checked after `play` returns | "R1 m3" | B |
+| m4 mute hung off the voice module | `createEngineWorld` has its own inline `conversationOpen` | covered by the live cases | B |
+| m5 curve ignored `overhearRadius` | Radius passed through `faintVolume` and `info.radius`; near = r, far = 3r | "R1 m5" | B |
+| m6 no faint grumbles or mutters | `_grumble` draws a faint line out of earshot (not for `always` priority mutters), on the faint throttle | "R1 m6" | B |
+| m7 no toggle, dead mute | `_muted` reads `barkSystem`; "Background voices" switch in the music widget (`window.backgroundChatter`, saved as `be_bg_chatter`), faint lines only | "R1 m7" | B |
+| m8 unheard exchange line looked full | Its bubble is dimmed; it still holds the lock and is not preemptable | "R1 m8" | B |
+| m9 NPC_NEEDS_SYSTEM.md stale | "Faint chatter" paragraph added; earshot paragraph reworded | n/a | B |
+| m10 test gaps | `setDistanceGain` unit tests, heard grumble through the preempt, stale-type case | `tts-distance-gain.test.mjs`, "R1 m10" | C |
+| perf nit | The follow tick skips `setDistanceGain` when the level moved under 0.01 | n/a | B |
+
+Not covered by a direct test: an unheard exchange line waiting behind a faint line (the `_speechFreeFor(!nextHeard)` call is unchanged; the unit cases hold the lock logic).
+
+### Live proof (R1)
+
+Keyless server on :3092 from this worktree, fresh test_needs_sims game 6359, headless, `setFPS(20)`, fixed steps on. `node tools/playtest/chatter-falloff-proof.mjs 6359 faint`, no page errors. Cases 1 to 6 re-run; the faint volume is now capped at 0.5.
+
+- 1 Faint from 270 px: `play` 0.5 (was 0.707). 2 Through the open door: 0.304. 3 Person-chat open: `faintVolume` 0.5 before, 0 during, a direct `say` logged `conversation`. 4 After the phone-chat closes: 0.5, and a heard line voiced at 0.77. 5 Full line over faint: `preempted`, gain 0, then Amara at 1. 6 Under a bark: 0.125 (0.25 of 0.5). Case 6 needs `faintQuietUntil` cleared by the harness, because Sanjay had just spoken faintly (the new throttle at work).
+- 7 (new, M1) Phone-chat open: `conversationOpen` true, scene type `phone-chat`. 300 ms after close: false, `faintVolume` 0.30, though `currentConversationMinigameType` is still `phone-chat`. With a stand-in lockpick minigame as the current one: false.
+- 8 (new, M2) A faint `_pickBark` took a line, left `chatterQuietUntil` at 0 and set `faintQuietUntil` 25000 ms; a second faint pick gave a picture; a heard pick straight after gave a line and started the 120 s cooldown.
