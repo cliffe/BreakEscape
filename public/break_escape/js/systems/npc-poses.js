@@ -110,6 +110,22 @@ export function facesObject(b, obj) {
     return facesWithin(b.direction || 'down', directionTo(dx, dy));
 }
 
+/**
+ * The direction from a behaviour's feet to the needs object's centre, or null when either has
+ * no position or they coincide. The turn an NPC makes on arriving to use a machine.
+ */
+export function directionToObject(b, obj) {
+    const o = obj?._sprite;
+    const sp = b?.sprite;
+    if (!o || !sp || !Number.isFinite(o.x) || !Number.isFinite(sp.x)) return null;
+    const c = o.getCenter?.();
+    const ox = Number.isFinite(c?.x) ? c.x : o.x;
+    const oy = Number.isFinite(c?.y) ? c.y : o.y;
+    const dx = ox - sp.x, dy = oy - sp.y;
+    if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return null;
+    return directionTo(dx, dy);
+}
+
 /** Does this NPC's record allow this pose? (`poses`: false none; a list only those.) */
 export function npcAllows(npcRecord, name) {
     const p = npcRecord?.poses;
@@ -178,6 +194,8 @@ export class NpcPoses {
         this.breath = new Map();    // npcId -> { breath } (sprite-breath.js holder) while breathing
         this.idleBreathing = false; // debug: every standing idle breathes
         this.settleMs = SETTLE_MS;
+        this.holding = new Set();   // npcIds whose behaviour has _poseHoldFacing on
+        this.callTurn = new Map();  // npcId -> the s.call already turned to (an owner answering its own phone)
         this.poseCheck = new Map(); // npcId -> { tex, has, at }: does the atlas have any pose frames
     }
 
@@ -258,6 +276,7 @@ export class NpcPoses {
     /** Drop a pose: back to the idle when the sprite still shows it. */
     release(id, b) {
         this.pending.delete(id);
+        if (b) b._poseHoldFacing = false;   // face_player may turn the NPC again
         const key = this.active.get(id);
         if (!key) return;
         this.active.delete(id);
@@ -270,6 +289,14 @@ export class NpcPoses {
         }
     }
 
+    /** Does this NPC's atlas have a phone pose, and may it use one? (seating: only then does a call stand it up.) */
+    hasPhonePose(id) {
+        if (win().gameScenario?.officeVisuals === false) return false;   // the pose loop does nothing with the visuals off
+        const npc = win().npcManager?.getNPC?.(id);
+        const scene = this.scene;
+        return npcAllows(npc, 'phone') && DIRECTIONS.some(d => hasPoseAnim(scene, poseAnimKey(id, 'phone', d)));
+    }
+
     /** Per frame (postupdate). */
     update() {
         const w = win();
@@ -280,6 +307,7 @@ export class NpcPoses {
         const clockMs = Number(sys?.clockMs) || 0;
         const now = this._now();
         const seen = new Set();
+        const held = new Set();   // ids whose hold stays on this frame
         const blockedFor = (id, b, inChat = !!sys?.world?.inChatWith?.(id)) => poseBlocked(b, {
             hostile: !!w.npcHostileSystem?.isNPCHostile?.(id),
             ko: !!w.npcHostileSystem?.isNPCKO?.(id),
@@ -305,6 +333,27 @@ export class NpcPoses {
                     if (rec.obj === undefined) rec.obj = sys.world?.getObject?.(s.job.targetId) || null;
                     obj = rec.obj;
                 }
+                // Arriving to use a machine (or answering a phone): face it for the lead pose and keep
+                // face_player off while that pose needs the facing (use, phone), not for a drink. The
+                // behaviour turns to the player every tick, so the turn is made once, and a chat
+                // starts by turning the NPC to the player (NPCBehavior.faceForChat).
+                if (s.call?.phoneId) {
+                    // Answering a desk phone, owner or colleague, whatever the NPC was doing: one turn per call
+                    const phone = sys.world?.getObject?.(s.call.phoneId) || null;
+                    if (this.callTurn.get(id) !== s.call) {
+                        this.callTurn.set(id, s.call);
+                        const to = phone && !facesObject(b, phone) ? directionToObject(b, phone) : null;
+                        if (to) b.direction = to;
+                    }
+                } else if (rec && obj) {
+                    const usingMs = Math.max(0, clockMs - rec.at);
+                    const lead = wantedPose({ s, obj, usingMs, seated: false, npc: w.npcManager?.getNPC?.(id), facing: true });
+                    if (lead === 'use' || lead === 'phone') {
+                        const to = rec.turned || facesObject(b, obj) ? null : directionToObject(b, obj);
+                        if (to) b.direction = to;
+                        rec.turned = true;
+                    }
+                }
                 const name = wantedPose({
                     s, obj, usingMs: rec ? Math.max(0, clockMs - rec.at) : 0, seated: false,
                     npc: w.npcManager?.getNPC?.(id), facing: facesObject(b, obj)
@@ -315,6 +364,8 @@ export class NpcPoses {
                 }
             }
             if (!key) { this.release(id, b); continue; }
+            // face_player stays off only while the pose needs the NPC turned to its machine or phone
+            if (pose === 'use' || pose === 'phone') { b._poseHoldFacing = true; held.add(id); } else b._poseHoldFacing = false;
             // First pose of a use: wait SETTLE_MS so an NPC about to sit never flashes it
             if (!this.active.has(id)) {
                 let p = this.pending.get(id);
@@ -337,7 +388,11 @@ export class NpcPoses {
             this.release(id, mgr.getBehavior?.(id));
             this.active.delete(id);
         }
-        for (const m of [this.useStart, this.pending]) for (const id of [...m.keys()]) if (!seen.has(id)) m.delete(id);
+        // Any exit that dropped a pose without release() (a texture change, a state left, visuals off)
+        // leaves no hold behind
+        for (const id of this.holding) if (!held.has(id)) { const hb = mgr.getBehavior?.(id); if (hb) hb._poseHoldFacing = false; }
+        this.holding = held;
+        for (const m of [this.useStart, this.pending, this.callTurn]) for (const id of [...m.keys()]) if (!seen.has(id)) m.delete(id);
         // Standing idles (opt-in): any NPC with a behaviour, needs or not, showing its idle
         const behaviours = mgr.behaviors instanceof Map ? mgr.behaviors : null;
         for (const [id, h] of [...this.breath]) {
