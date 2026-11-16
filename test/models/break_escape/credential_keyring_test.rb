@@ -161,5 +161,12 @@ module BreakEscape
       assert_equal true, e['forThisPc']
       assert_equal true, e['accepted'], 'the default policy accepts a saved_connection'
     end
+
+    test 'a pc_id naming no sign-in PC the player can open is ignored (R1 m3)' do
+      inv([{ 'id' => 'lena_rdp_file', 'type' => 'text_file', 'name' => 'HB-FIN-02.rdp', 'credential' => 'lena_rdp' }])
+      e = @game.keyring_for_client(pc_id: 'no_such_pc')[:entries].find { |x| x['id'] == 'lena_rdp' }
+      refute e.key?('forThisPc'), 'an unopenable pc_id adds no scoping fields'
+      refute e.key?('accepted')
+    end
   end
 end

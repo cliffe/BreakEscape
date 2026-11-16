@@ -68,8 +68,10 @@ module BreakEscape
     # assert reach. All reach, sessionHeld and power fields are computed from server-held footholds
     # and sessions only.
     def keyring_for_client(pc_id: nil, route: nil)
-      entries = implicit_keyring_entries + registry_keyring_entries(pc_id: pc_id)
-      entries = keyring_scope_to_pc(entries, pc_id) if CredentialModel.present_string?(pc_id)
+      entries = implicit_keyring_entries + registry_keyring_entries
+      # A pc_id is scoped (forThisPc/accepted) only when the player can open a screen for it,
+      # by keyboard or by the named route (section 6.2); an unopenable pc_id is ignored.
+      entries = keyring_scope_to_pc(entries, pc_id) if CredentialModel.present_string?(pc_id) && keyring_pc_openable?(pc_id, route)
       { rev: keyring_rev(entries), entries: entries }
     end
 
@@ -105,8 +107,27 @@ module BreakEscape
       end
     end
 
+    # Whether the player can open a sign-in screen for this pc_id, by keyboard or by the named
+    # route (section 6.2's "a pc_id the player cannot open a screen for is ignored"). route is the
+    # screen the client says it is drawing ({ foothold: }, { from: }, { relay: true } or nil); it
+    # names the screen, it never asserts reach. A foothold screen is openable only when that
+    # foothold reaches the host now. A from/relay screen is trusted here (K4/K2 own their reach
+    # checks); a keyboard screen (no route) needs the PC physically reachable now.
+    def keyring_pc_openable?(pc_id, route)
+      info = find_login_pc(pc_id)
+      return false unless info
+
+      if route.is_a?(Hash) && CredentialModel.present_string?(route[:foothold])
+        host_reachable_through?(route[:foothold].to_s, info[:object])
+      elsif route.is_a?(Hash) && (route[:relay] || CredentialModel.present_string?(route[:from]))
+        true
+      else
+        login_pc_reachable?(info)
+      end
+    end
+
     # Registry entries of built kinds whose proof holds (section 6.2).
-    def registry_keyring_entries(pc_id: nil)
+    def registry_keyring_entries
       ended = Array(player_state['endedCredentials'])
       CredentialModel.registry(scenario_data).filter_map do |id, entry|
         kind = entry['kind']
