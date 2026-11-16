@@ -574,7 +574,8 @@ export class ContainerMinigame extends MinigameScene {
 
         try {
             // A folder under a sign-in PC names the route its session went by (K3c, K2 m4)
-            const query = folderRouteQuery(this.sourcePcId);
+            // (a share is its own scope, which the server judges without a route)
+            const query = this.shareFolder ? '' : folderRouteQuery(this.sourcePcId);
             const response = await fetch(`/break_escape/games/${gameId}/container/${containerId}${query}`, {
                 headers: { 'Accept': 'application/json' }
             });
