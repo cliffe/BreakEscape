@@ -128,7 +128,7 @@ test('a network failure on the pickup: no repeat and one message', async () => {
   assert.equal(count('open'), 0);
 });
 
-test('a duplicate opens the held copy once, with no repeat and one message', async () => {
+test('a duplicate launch device opens nothing and says one message', async () => {
   const heldCopy = floorDevice();
   heldCopy.objectId = 'inventory_entropy_launch_device';
   heldCopy.scenarioData = { ...heldCopy.scenarioData, takeable: false };
@@ -140,7 +140,7 @@ test('a duplicate opens the held copy once, with no repeat and one message', asy
   await runFor(6);
   assert.equal(count('pickup'), 1, 'one inventory POST');
   assert.equal(count('alert'), 1, 'one message');
-  assert.deepEqual(globalThis.__calls.filter(c => c[0] === 'open'), [['open', 'flag-station', 'entropy_launch_device']]);
+  assert.equal(count('open'), 0);
 });
 
 test('a duplicate whose held copy is still marked takeable opens nothing rather than loop', async () => {
@@ -153,15 +153,28 @@ test('a duplicate whose held copy is still marked takeable opens nothing rather 
   assert.equal(count('open'), 0);
 });
 
-test('a pickup that succeeds still opens the device once, about a second after the click', async () => {
+test('a pickup that succeeds only adds the launch device: no timer, nothing opens, one announcement', async () => {
   setup({ answer: (s) => { s.scenarioData.takeable = false; return Promise.resolve({ ok: true, reason: 'added' }); } });
+  const announced = [];
+  globalThis.window.announcePickup = (sprite, res) => announced.push([sprite.scenarioData.id, res.reason]);
   handleObjectInteraction(floorDevice());
+  await runFor(6);
+  assert.equal(count('pickup'), 1);
+  assert.equal(timers.length, 0, 'no reopen timer');
+  assert.equal(count('open'), 0);
+  assert.deepEqual(announced, [['entropy_launch_device', 'added']]);
+});
+
+test('a successful phone pickup still opens it about a second after the click', async () => {
+  setup({ answer: (s) => { s.scenarioData.takeable = false; return Promise.resolve({ ok: true, reason: 'added' }); } });
+  handleObjectInteraction({ objectId: 'x_phone', name: 'phone', x: 0, y: 0,
+    scenarioData: { type: 'phone', id: 'x_phone', name: 'Phone', takeable: true, phoneId: 'p1' } });
   for (let j = 0; j < 5; j++) await Promise.resolve();
   assert.equal(timers.length, 1);
   assert.ok(timers[0].ms > 900 && timers[0].ms <= 1000, `reopen delay ${timers[0].ms}`);
   await runFor(6);
   assert.equal(count('pickup'), 1);
-  assert.deepEqual(globalThis.__calls.filter(c => c[0] === 'open'), [['open', 'flag-station', 'entropy_launch_device']]);
+  assert.equal(timers.filter(t => !t.live).length, 1, 'the reopen timer ran');
 });
 
 for (const type of ['workstation', 'lab-workstation', 'vm-launcher', 'vm_launcher', 'launch-device', 'phone', 'mail_terminal', 'phone_friendface']) {
