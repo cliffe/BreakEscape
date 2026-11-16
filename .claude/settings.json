@@ -41,6 +41,16 @@
             "statusMessage": "rubocop -a"
           }
         ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/subagent-context-guard.py",
+            "timeout": 10
+          }
+        ]
       }
     ]
   }
