@@ -1,0 +1,50 @@
+/* Device frame: the in-world gadget window shared by the patch-panel and rogue-ap minigames
+   (docs/achitechture/PHYSICAL_PENTEST_DEVICES_PLAN.md 4.4, 5.4). It looks the same under every
+   UI theme, because a device in the world does not change with the player's theme (theme
+   minigame frames vary from 16 to 28 px).
+
+   This is the plain placeholder: a 2px pixel border with a 14px inner pad, so the frame edge
+   is 16 CSS px per side, the same width as the bespoke 9-slice that replaces it (slice B3,
+   after the user's yes on the art). Swapping in the 9-slice changes only this file:
+   border-image on .device-frame, with the padding cut to 0 so the edge stays 16px.
+
+   Use: put .device-frame on the element that wraps the device's content (title bar, body,
+   footer). The frame wraps its content with no empty band; size the content, not the frame. */
+
+.device-frame {
+    --device-frame-edge: #8a96aa;
+    --device-frame-face: #1b212e;
+    --device-frame-text: #e6ebf2;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    max-width: calc(100vw - 32px);
+    max-height: calc(100dvh - 32px);
+    padding: 14px;
+    border: 2px solid var(--device-frame-edge);
+    border-radius: 0;
+    box-shadow: none;
+    background: var(--device-frame-face);
+    color: var(--device-frame-text);
+    image-rendering: pixelated;
+}
+
+/* The title bar row: device name on the left, the shared pixel X on the right. */
+.device-frame > .device-frame-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 0 0 8px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 16px;
+    line-height: 24px;
+}
+
+@media (max-width: 559px) {
+    /* W below 480 (W is the viewport less 32 gutters, 32 frame and 16 padding): the title drops to 8px (plan 5.4). */
+    .device-frame > .device-frame-title {
+        font-size: 8px;
+        line-height: 16px;
+    }
+}
