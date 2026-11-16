@@ -1620,7 +1620,12 @@ class AccessLeakScanner
         @plant_rows[[inv['itemId'], inv['usedOn']]] ||= index
         # The earliest plant of the item on any non-jack object, for a proof with no `on` (m2)
         used = @object_by_id[inv['usedOn']]
-        @plant_rows_any[inv['itemId']] ||= index if used.is_a?(Hash) && !BreakEscape::NetworkModel.jack?(used)
+        # and only an object that takes the item records a plant: the server refuses the rest
+        # (object_takes_item?), so a remove on a decoy object is no plant (R2 m1)
+        if used.is_a?(Hash) && !BreakEscape::NetworkModel.jack?(used) &&
+           BreakEscape::CaptureModel.object_takes_item?(used, BreakEscape::CredentialModel.item_definition(@data, inv['itemId']))
+          @plant_rows_any[inv['itemId']] ||= index
+        end
       elsif tagged
         # A remove row whose body the recorder could not read may have been the plant. Untagged
         # rows carry no action, so any 200 row with a null or missing tag counts as one

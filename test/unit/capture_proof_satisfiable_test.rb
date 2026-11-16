@@ -99,4 +99,15 @@ class CaptureProofSatisfiableTest < ActiveSupport::TestCase
     data = served_data([holder, writer('b', 't', ''), writer('c', 't', 'real-secret')])
     assert_equal %w[real-secret], served(data).map { |c| c['secret'] }
   end
+
+  test 'served_capture_writers keeps a whitespace-only targetId, as the server does' do
+    assert_equal %w[one-secret], served(served_data([writer('a', '  ', 'one-secret')])).map { |c| c['secret'] }
+  end
+
+  test 'served_capture_writers skips a writer whose address is a landing page capture address, and it still claims the id' do
+    data = served_data([writer('a', 't', 'one-secret', 'address' => 'phish.example'), writer('b', 't', 'two-secret'),
+                        writer('c', 'u', 'three-secret', 'address' => 'other.example')])
+    data['social']['landingPages'] = [{ 'id' => 'p', 'capture' => { 'address' => 'phish.example', 'secret' => 'page-secret' } }]
+    assert_equal %w[three-secret], served(data).map { |c| c['secret'] }
+  end
 end

@@ -952,6 +952,7 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     key_capture = { 'targetId' => 'staff_wifi_key', 'kind' => 'credential', 'secret' => STAFF_PSK }
     key_capture['proof'] = PLANT_PROOF.dup if psk_proof
     {
+      'startItemsInInventory' => [{ 'type' => 'kit', 'id' => 'kit_rogue_ap', 'name' => 'Rogue AP kit' }],
       'social' => { 'captures' => { 'revealSecret' => true } },
       'networks' => {
         'office_lan' => { 'name' => 'Office LAN segment', 'wifi' => { 'ssid' => 'LW-Staff-Secure', 'psk' => STAFF_PSK } },
@@ -1187,6 +1188,15 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     # A plant on a jack is no plant for a proof with no on
     assert_equal [[2, 'capture_secret', 'capture:staff_wifi_key']],
                  summary(plant_scan([plant_row(on: 'chris_jack'), served_psk], data: data))
+  end
+
+  test 'R2 m1: a remove of the kit on an object that does not take it is no plant for a proof with no on' do
+    data = no_on_scenario
+    data['rooms']['reception']['objects'] << { 'id' => 'decoy', 'type' => 'plant_spot', 'name' => 'Decoy', 'requiresItem' => 'kit_other' }
+    decoy = plant_row(on: 'decoy')
+    # The decoy remove comes first, the real plant after the served row: flagged
+    assert_equal [[2, 'capture_secret', 'capture:staff_wifi_key']],
+                 summary(plant_scan([decoy, served_psk, plant_row], data: data, game: ProofGame.new(true)))
   end
 
   test 'R1 m1: a holder with a plant proof and another kind is not passed unconditionally' do

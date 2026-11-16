@@ -480,16 +480,27 @@ module BreakEscape
 
       holders = room_npc_list(data).select { |npc| account_holder?(npc) }
       usernames = holders.map { |npc| normalise_username(npc['creds']['username']) }.to_set
+      # Game#capture_secrets_for_client answers a landing page's secret first when the earned
+      # entry's address matches that page's capture.address, so a writer sharing such an address
+      # is never the one served.
+      landing = landing_pages(data).filter_map do |page|
+        cap = page['capture'] if page.is_a?(Hash)
+        cap['address'] if cap.is_a?(Hash) && cap['secret'].is_a?(String) && !cap['secret'].empty? &&
+                          cap['address'].is_a?(String) && !cap['address'].empty?
+      end.to_set
       seen = {}
       each_capture_writer(data).filter_map do |capture, _kind, _path, owner|
         next if owner && holders.any? { |npc| npc.equal?(owner) }
 
         id = capture['targetId']
-        next unless present_string?(id) && id.is_a?(String) && !id.empty? && capture['secret'].is_a?(String) && !capture['secret'].empty?
+        next unless id.is_a?(String) && !id.empty? && capture['secret'].is_a?(String) && !capture['secret'].empty?
         next if capture['address'].is_a?(String) && usernames.include?(normalise_username(capture['address']))
         next if seen[id]
 
         seen[id] = true
+        # The server still maps this writer to the id, so it claims it; the page's secret wins
+        next if capture['address'].is_a?(String) && landing.include?(capture['address'])
+
         capture
       end
     end
