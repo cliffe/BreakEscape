@@ -44,3 +44,15 @@ export function chatterVolume(d, { near = CHATTER_NEAR, far = CHATTER_FAR, floor
     if (d >= far) return floor;
     return 1 - (1 - floor) * ((d - near) / (far - near));
 }
+
+/**
+ * Is a person-chat or phone-chat open? Used by room tone (duck the bed) and by chatter (nobody
+ * overhears, voices or toasts chatter while the player is in a conversation). Read the open
+ * minigame, not `currentConversationMinigameType` alone: that stays 'phone-chat' after a call
+ * closes, because only person-chat clears it. `w` is the window (injectable for tests).
+ */
+export function conversationOpen(w = (typeof window !== 'undefined' ? window : {})) {
+    const mg = w.MinigameFramework?.currentMinigame;
+    if (!mg) return false;
+    return /PersonChat|PhoneChat/.test(mg.constructor?.name || '') || ['person-chat', 'phone-chat'].includes(w.currentConversationMinigameType);
+}

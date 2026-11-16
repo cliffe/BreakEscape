@@ -14,6 +14,7 @@
  */
 import { seededRoll } from './npc-needs.js';
 import { roomToneOn, USE_SOUND_SCALE } from './npc-office-visuals.js';
+import { conversationOpen } from './room-hearing.js';
 
 export { roomToneOn };
 export const SPOT_SLOT_MS = 20000;
@@ -99,10 +100,7 @@ export class OfficeRoomTone {
     _note(e) { this.log.push({ t: Date.now(), ...e }); if (this.log.length > 300) this.log.shift(); }
 
     chatOpen() {
-        const w = win();
-        const mg = w.MinigameFramework?.currentMinigame;
-        if (!mg) return false;
-        return /PersonChat|PhoneChat/.test(mg.constructor?.name || '') || ['person-chat', 'phone-chat'].includes(w.currentConversationMinigameType);
+        return conversationOpen(win());
     }
 
     holds(roomId) {
