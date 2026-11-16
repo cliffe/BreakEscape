@@ -476,3 +476,66 @@ test('R2 m1: no needs nudge with the player beside, from a walkable cell, or ont
     window.rooms = {};
     window.player = null;
 });
+
+// Sims tidy R6, three NPCs in a one-body lane (the kitchen passage). Before the yield hold, the
+// yielder's step took it just past the look-ahead, its avoidance state cleared, it walked back in
+// and met the same NPC after a fresh wait, over and over: nobody got through in 90 s, and two NPCs
+// could both end up pinned and hold for ever. Drives the real _handleBlockerAhead for every NPC
+// with a crude lane: |x| <= 100 is one body wide (y 0); beyond it each NPC has its own room offset,
+// where a detour is found and bodies pass side by side.
+function laneRun(spec, { laneHalf = 100, gap = 20, maxMs = 60000 } = {}) {
+    const pf = { findNearestWalkableStartCell: (x, y) => ({ x, y }),
+        findWorldPath: (sx, sy, ex, ey, cb) => cb(Math.abs(sx) > laneHalf ? [{ x: ex, y: ey }] : null) };
+    const ws = spec.map(([id, x, tx], i) => {
+        const off = 30 * (i + 1) * (i % 2 ? 1 : -1);
+        const b = Object.create(NPCBehavior.prototype);
+        const body = { enable: true, immovable: false, center: { x, y: 0 }, velocity: { x: 0, y: 0 },
+            setVelocity(vx, vy) { this.velocity.x = vx; this.velocity.y = vy; } };
+        Object.assign(b, { npcId: id, scene: { time: { now: 0 } }, sprite: { x, y: 0, body, npcId: id },
+            direction: 'right', isMoving: true, config: { patrol: { enabled: true, speed: 90 } },
+            patrolTarget: { x: tx, y: off }, _off: off, pathIndex: 0, pathFollowingActive: true,
+            _stopOnArrival: true, pathfindingManager: pf, playAnimation: () => {} });
+        b.currentPath = [b.patrolTarget];
+        return b;
+    });
+    window.player = undefined;
+    window.rooms = { r: { npcSprites: ws.map(w => w.sprite) } };
+    window.npcBehaviorManager = { getBehavior: id => ws.find(w => w.npcId === id) };
+    const dt = 50, log = { handovers: 0, maxPinned: 0, done: {} };
+    let last = null;
+    for (let t = 100000; t < 100000 + maxMs; t += dt) {
+        for (const w of ws) {
+            const c = w.sprite.body.center;
+            if (Math.abs(c.x - w.patrolTarget.x) < 4) { w.sprite.body.setVelocity(0, 0); log.done[w.npcId] ??= t - 100000; continue; }
+            w.currentPath = [w.patrolTarget]; w.pathIndex = 0;
+            if (!w._handleBlockerAhead(t, w.patrolTarget)) w.sprite.body.setVelocity(Math.sign(w.patrolTarget.x - c.x) * 90, 0);
+        }
+        for (const w of ws) {
+            const c = w.sprite.body.center, vx = w.sprite.body.velocity.x;
+            let nx = c.x + vx * dt / 1000;
+            for (const o of ws) {
+                if (o === w) continue;
+                const oc = o.sprite.body.center, ny = Math.abs(nx) > laneHalf ? w._off : 0;
+                if (Math.abs(oc.y - ny) >= 16) continue;
+                if (vx > 0 && oc.x > c.x && nx > oc.x - gap) nx = Math.max(c.x, oc.x - gap);
+                if (vx < 0 && oc.x < c.x && nx < oc.x + gap) nx = Math.min(c.x, oc.x + gap);
+            }
+            c.x = nx; w.sprite.x = nx; c.y = Math.abs(nx) > laneHalf ? w._off : 0;
+        }
+        log.maxPinned = Math.max(log.maxPinned, ws.filter(w => w._avoid?.pinned).length);
+        const backing = ws.filter(w => w._avoid?.backoffUntil > t).map(w => w.npcId).join(',');
+        if (backing && backing !== last) { if (last) log.handovers++; last = backing; }
+        if (Object.keys(log.done).length === ws.length) break;
+    }
+    return log;
+}
+
+test('R6: three NPCs in a one-body lane all get through, with a few yield handovers and no mutual pin', () => {
+    const log = quiet(() => laneRun([['amy', -30, 300], ['bob', 10, -300], ['cat', 30, -300]]));
+    assert.deepEqual(Object.keys(log.done).sort(), ['amy', 'bob', 'cat'],
+        `every NPC reaches its target within 60 s (reached: ${JSON.stringify(log.done)})`);
+    assert.ok(log.handovers <= 6, `the yield settles instead of oscillating (${log.handovers} handovers)`);
+    assert.ok(log.maxPinned < 2, 'two NPCs are never both pinned');
+    window.rooms = {};
+    window.npcBehaviorManager = undefined;
+});
