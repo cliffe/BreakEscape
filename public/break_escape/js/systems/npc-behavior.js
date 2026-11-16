@@ -68,6 +68,16 @@ const AVOID_REPATH_MS      = 400;   // at most one detour re-path this often
 const AVOID_GIVEUP_MS      = 2500;  // no detour found by now: back off or squeeze
 const AVOID_SQUEEZE_MS     = 450;   // a gentle nudge lasts this long, then a cooldown wait
 const AVOID_SQUEEZE_FACTOR = 0.45;  // squeeze/back-off speed as a fraction of patrol speed
+// Head-on yield (sims tidy R6 M1, games 6093 to 6104): a back-off used to last one behaviour
+// update (about 2 px), then the full wait and detour cycle ran again, so a yielder in a one-lane
+// passage gave ground at about 1 px a second and the two stood nose to nose for 20 s or more.
+// Now each back-off step lasts AVOID_BACKOFF_MS, and while the detour still finds nothing the
+// next step follows at once, so the yielder walks back out of the lane. A step that gains less
+// than AVOID_BACKOFF_PINNED_PX is pinned (a body behind it): the pinned NPC stops yielding for
+// this meeting and the NPCs that meet it yield to it instead (the one with room behind backs off).
+export const AVOID_BACKOFF_MS = 700;
+export const AVOID_BACKOFF_PINNED_PX = 3;
+const AVOID_BACKOFF_REACH_PX = TILE_SIZE * 2;   // how far ahead of the step its aim point lies
 
 /**
  * The nearest blocker that lies AHEAD of a walker on its heading, or null.
@@ -1549,6 +1559,11 @@ export class NPCBehavior {
         return !!this._stopOnArrival;
     }
 
+    /** Pinned in a head-on meeting: its back-off gained no ground, so others yield to it. */
+    _avoidIsPinned() {
+        return !!this._avoid?.pinned;
+    }
+
     /** Feet centres of the player and every other active, non-seated NPC. */
     _dynamicBlockers() {
         const out = [];
@@ -1566,7 +1581,7 @@ export class NPCBehavior {
                 if (!b || !b.enable || b.immovable) continue;  // skip disabled and seated/held NPCs
                 const beh = window.npcBehaviorManager?.getBehavior?.(sprite.npcId);
                 out.push({ x: b.center.x, y: b.center.y, id: sprite.npcId,
-                    busy: !!beh?._avoidIsBusy?.(), isPlayer: false, sprite });
+                    busy: !!beh?._avoidIsBusy?.(), pinned: !!beh?._avoidIsPinned?.(), isPlayer: false, sprite });
             }
         }
         return out;
@@ -1620,6 +1635,17 @@ export class NPCBehavior {
         if (a.squeezeUntil && time >= a.squeezeUntil) {   // squeeze done → cooldown wait, re-assess
             a.squeezeUntil = 0; a.since = time; a.gaveUp = false; a.repathAfter = 0;
         }
+        // Phase: a back-off step (head-on yield) runs for AVOID_BACKOFF_MS. When it ends, a fresh
+        // detour try comes at once and, if none, the next step: no new wait (R6 M1).
+        if (a.backoffUntil && time < a.backoffUntil) {
+            this._moveToward(a.backoffTo, this.config.patrol.speed * AVOID_SQUEEZE_FACTOR);
+            return true;
+        }
+        if (a.backoffUntil) {
+            const gained = Math.hypot(pos.x - a.backoffFrom.x, pos.y - a.backoffFrom.y);
+            if (gained < AVOID_BACKOFF_PINNED_PX) a.pinned = true;
+            a.backoffUntil = 0; a.since = time - AVOID_GIVEUP_MS - 1; a.gaveUp = false; a.repathAfter = 0;
+        }
 
         // Default action while deciding: hold still (no shove).
         this._stopHere();
@@ -1636,7 +1662,9 @@ export class NPCBehavior {
             return true;
         }
 
-        const amYielder = hit.isPlayer || avoidanceYieldsTo(this.npcId, this._avoidIsBusy(), hit.id, hit.busy);
+        // A pinned NPC (no room behind) stops yielding; one that meets a pinned NPC yields to it
+        const amYielder = hit.isPlayer || (!a.pinned
+            && (!!hit.pinned || avoidanceYieldsTo(this.npcId, this._avoidIsBusy(), hit.id, hit.busy)));
         // A higher-priority NPC first gives the yielder time to move, then tries its own detour.
         if (!amYielder && waited < AVOID_PRIORITY_WAIT_MS) return true;
 
@@ -1652,8 +1680,12 @@ export class NPCBehavior {
             // No way round. A yielding NPC meeting another NPC backs off to clear the
             // path; otherwise (player, doorway) a short, gentle squeeze forward.
             if (!hit.isPlayer && amYielder) {
-                this._moveAwayFrom(hit, this.config.patrol.speed * AVOID_SQUEEZE_FACTOR);
-                a.since = time; a.gaveUp = false; a.repathAfter = 0;   // re-assess after the step
+                // One step of AVOID_BACKOFF_MS straight away from the blocker; re-assessed when it ends
+                const dx = pos.x - hit.x, dy = pos.y - hit.y, d = Math.hypot(dx, dy) || 1;
+                a.backoffFrom = { x: pos.x, y: pos.y };
+                a.backoffTo = { x: pos.x + dx / d * AVOID_BACKOFF_REACH_PX, y: pos.y + dy / d * AVOID_BACKOFF_REACH_PX };
+                a.backoffUntil = time + AVOID_BACKOFF_MS;
+                this._moveToward(a.backoffTo, this.config.patrol.speed * AVOID_SQUEEZE_FACTOR);
                 return true;
             }
             a.squeezeUntil = time + AVOID_SQUEEZE_MS;
@@ -1678,12 +1710,6 @@ export class NPCBehavior {
         this.direction = this.calculateDirection(dx, dy);
         this.playAnimation('walk', this.direction);
         this.isMoving = true;
-    }
-
-    /** Step directly away from a blocker (the yielder clearing a corridor). */
-    _moveAwayFrom(hit, speed) {
-        const pos = this.npcBodyPos();
-        this._moveToward({ x: pos.x - (hit.x - pos.x), y: pos.y - (hit.y - pos.y) }, speed);
     }
 
     /**

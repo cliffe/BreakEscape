@@ -33,7 +33,7 @@ const quiet = fn => {
 };
 const mod = await quiet(() => import(pathToFileURL(join(dir, 'npc-behavior.mjs')).href));
 const { NPCBehavior } = mod.default;
-const { nearestBlockerAhead, nearestBlockerOnPath, avoidanceYieldsTo, AVOID_LOOKAHEAD_PX } = mod;
+const { nearestBlockerAhead, nearestBlockerOnPath, avoidanceYieldsTo, AVOID_LOOKAHEAD_PX, AVOID_BACKOFF_MS } = mod;
 
 // ── nearestBlockerOnPath: "ahead" follows the path for the look-ahead ──────────
 
@@ -220,6 +220,81 @@ test('a yielding NPC backs off from a head-on NPC when there is no way round', (
     t += 700; b._handleBlockerAhead(t, { x: 400, y: 0 });   // detour fails
     t += 3000; b._handleBlockerAhead(t, { x: 400, y: 0 });  // giveup → back off
     assert.ok(b._vel.x < 0, 'the yielder steps away from the blocker (−x), clearing the corridor');
+});
+
+// Sims tidy R6 M1 (games 6093 to 6104): two needs NPCs met head-on in the one-lane kitchen passage.
+// The yielder's back-off lasted one update (about 2 px), then the whole wait and detour cycle ran
+// again, so it gave ground at about 1 px a second and the pair stood nose to nose for 20 s.
+function headOn({ self = 'zoe', other = 'amy', otherPinned = false, otherAt = 28 } = {}) {
+    window.player = undefined;
+    const otherBody = { enable: true, immovable: false, center: { x: otherAt, y: 0 } };
+    window.rooms = { r: { npcSprites: [{ npcId: other, body: otherBody }] } };
+    window.npcBehaviorManager = { getBehavior: () => ({ _avoidIsBusy: () => true, _avoidIsPinned: () => otherPinned }) };
+    const pf = { findNearestWalkableStartCell: (x, y) => ({ x, y }), findWorldPath: (sx, sy, ex, ey, cb) => cb(null) };
+    const b = walker({ id: self, busy: true, pathfinder: pf });
+    return { b, otherBody };
+}
+
+test('R6 M1: a yielder backs off for a whole step, not one update', () => {
+    const { b } = headOn();
+    let t = 100000;
+    b._handleBlockerAhead(t, { x: 400, y: 0 });
+    t += 700; b._handleBlockerAhead(t, { x: 400, y: 0 });    // detour fails
+    t += 2600; b._handleBlockerAhead(t, { x: 400, y: 0 });   // back-off starts
+    assert.ok(b._vel.x < 0, 'the step is away from the blocker');
+    b.sprite.body.center.x = -2;
+    t += 50; b._handleBlockerAhead(t, { x: 400, y: 0 });     // the next update: still stepping back
+    assert.ok(b._vel.x < 0, 'still backing off one update later (the old code stopped here)');
+    t += AVOID_BACKOFF_MS - 100; b._handleBlockerAhead(t, { x: 400, y: 0 });
+    assert.ok(b._vel.x < 0, 'still backing off near the end of the step');
+});
+
+test('R6 M1: with still no way round, the next back-off step follows at once', () => {
+    const { b } = headOn();
+    let t = 100000;
+    b._handleBlockerAhead(t, { x: 400, y: 0 });
+    t += 700; b._handleBlockerAhead(t, { x: 400, y: 0 });
+    t += 2600; b._handleBlockerAhead(t, { x: 400, y: 0 });   // step 1
+    b.sprite.body.center.x = -8;                              // it gained ground (still within the look-ahead)
+    t += AVOID_BACKOFF_MS + 10; b._handleBlockerAhead(t, { x: 400, y: 0 });   // step over: detour retried, fails
+    t += 50; b._handleBlockerAhead(t, { x: 400, y: 0 });     // no fresh 2.5 s wait: step 2 at once
+    assert.ok(b._vel.x < 0, 'a second step without the long wait');
+    assert.equal(b._avoid.pinned, undefined, 'a step that gained ground is not pinned');
+});
+
+test('R6 M1: a yielder that cannot back off is pinned and stops yielding; the other side yields to it', () => {
+    const { b } = headOn();
+    let t = 100000;
+    b._handleBlockerAhead(t, { x: 400, y: 0 });
+    t += 700; b._handleBlockerAhead(t, { x: 400, y: 0 });
+    t += 2600; b._handleBlockerAhead(t, { x: 400, y: 0 });   // step 1, but a body behind holds it
+    t += AVOID_BACKOFF_MS + 10; b._handleBlockerAhead(t, { x: 400, y: 0 });
+    assert.equal(b._avoid.pinned, true);
+    assert.equal(b._avoidIsPinned(), true);
+    t += 50; b._handleBlockerAhead(t, { x: 400, y: 0 });
+    assert.ok(b._vel.x >= 0, 'a pinned NPC no longer steps back');
+    // amy (the lower id, who would keep priority) meets zoe, who is pinned: amy yields and backs off
+    const { b: amy } = headOn({ self: 'amy', other: 'zoe', otherPinned: true });
+    let u = 200000;
+    amy._handleBlockerAhead(u, { x: 400, y: 0 });
+    u += 700; amy._handleBlockerAhead(u, { x: 400, y: 0 });
+    u += 2600; amy._handleBlockerAhead(u, { x: 400, y: 0 });
+    assert.ok(amy._vel.x < 0, 'the NPC with room behind backs off');
+    // without the pin amy keeps priority and squeezes forward, as before
+    const { b: amy2 } = headOn({ self: 'amy', other: 'zoe', otherPinned: false });
+    u = 300000;
+    amy2._handleBlockerAhead(u, { x: 400, y: 0 });
+    u += 700; amy2._handleBlockerAhead(u, { x: 400, y: 0 });
+    u += 2600; amy2._handleBlockerAhead(u, { x: 400, y: 0 });   // its own detour try (fails)
+    u += 50; amy2._handleBlockerAhead(u, { x: 400, y: 0 });
+    assert.ok(amy2._vel.x > 0, 'unpinned, the priority NPC squeezes on');
+});
+
+test('R6 M1: blockers carry the pinned flag', () => {
+    headOn({ otherPinned: true });
+    const b = walker({ id: 'zoe' });
+    const hit = b._dynamicBlockers().find(o => o.id === 'amy');
+    assert.equal(hit.pinned, true);
 });
 
 test('a detour that is found is adopted, and avoidance state clears', () => {
