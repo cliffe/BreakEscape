@@ -11,6 +11,11 @@
 //   PORT=3062 node tools/playtest/signin-fit.mjs [gameId]
 //   (optional: CHROME=<executable> PLAYWRIGHT=<node_modules holding playwright> SHOTS=<dir>)
 //
+// K3a fixtures (ways-longest, ways-refused-short, keyring-both-failed) need no VM and no keyring
+// route: the entries are passed to setRemoteAccounts directly. This script needs a running keyless
+// server and a browser, so it was not run in the run that added them (no servers allowed there):
+// start the server on a free port (see AGENTS.md) and run  PORT=<port> node tools/playtest/signin-fit.mjs
+//
 // A failure is .pc-monitor-area scrollHeight > clientHeight, or Password/Sign in outside the
 // visible area. Spare = clientHeight - scrollHeight (>=0 is a pass). Targets recorded in the build
 // log: >=35px spare at x2 (1400x1000), >=20px at 915x412.
@@ -104,6 +109,30 @@ const FIXTURES = [
                       tiles: ['a', 'b', 'c', 'd', 'e', 'f'].map((u, i) => ({ username: u, displayName: `User ${i}` })),
                       captured: [{ targetId: 'a', username: 'a', label: 'User 0', password: 'x' }] },
                action: 'tiles', expectSevenTiles: true } },
+    // Keyring K3a (plan 8.1) worst cases: the chosen account's ways box. Entries are the GET /keyring shape.
+    { name: 'ways-longest', desc: 'K3a: chosen account with three long-label saved connections, a refused one, and two found passwords',
+      build: { host: 'HB-FIN-03', pcName: 'Finance server (HB-FIN-03)', picker: 'known', linkName: 'Drop box: Comms room',
+               remote: { footholdId: 'jack', linkName: 'Drop box: Comms room' },
+               set: { picker: 'known', host: 'HB-FIN-03', tiles: [{ username: 'sokafor', displayName: 'Sam Okafor' }], captured: [],
+                      keyring: [
+                          { id: 'c1', kind: 'saved_connection', accepted: true, forThisPc: true, label: 'Finance remote desktop (long label for the cut)', host: 'HB-FIN-03', account: { username: 'sokafor', displayName: 'Sam Okafor' } },
+                          { id: 'c2', kind: 'saved_connection', accepted: true, forThisPc: true, label: 'Backup operator connection from the comms room', host: 'HB-FIN-03', account: { username: 'sokafor', displayName: 'Sam Okafor' } },
+                          { id: 'c3', kind: 'saved_connection', accepted: false, forThisPc: true, label: 'Old audit connection', host: 'HB-FIN-03', account: { username: 'sokafor', displayName: 'Sam Okafor' } },
+                          { id: 'p1', kind: 'password', source: 'registry', foundIn: 'f1', label: 'passwords.txt in the finance share', account: { username: 'sokafor', displayName: 'Sam Okafor' } },
+                          { id: 'p2', kind: 'password', source: 'registry', foundIn: 'f2', label: 'a sticky note under the second keyboard on the left desk', account: { username: 'sokafor', displayName: 'Sam Okafor' } }
+                      ] },
+               action: 'chosen', expectWays: true } },
+    { name: 'ways-refused-short', desc: 'K3a: one greyed saved connection with its short reason under it, in the short window',
+      build: { host: 'HB-FIN-03', pcName: 'Finance server (HB-FIN-03)', picker: 'known', linkName: 'Drop box: Comms room',
+               remote: { footholdId: 'jack', linkName: 'Drop box: Comms room' },
+               set: { picker: 'known', host: 'HB-FIN-03', tiles: [{ username: 'sokafor', displayName: 'Sam Okafor' }], captured: [],
+                      keyring: [{ id: 'c3', kind: 'saved_connection', accepted: false, forThisPc: true, label: 'Old audit connection', host: 'HB-FIN-03', account: { username: 'sokafor', displayName: 'Sam Okafor' } }] },
+               action: 'chosen', expectWays: true } },
+    { name: 'keyring-both-failed', desc: 'K3a: the combined failed line when the keyring and another answer both fail',
+      build: { host: 'HB-FIN-03', pcName: 'Finance server (HB-FIN-03)', picker: false, linkName: 'Drop box: Comms room',
+               remote: { footholdId: 'jack', linkName: 'Drop box: Comms room' },
+               set: { picker: false, host: 'HB-FIN-03', tiles: [], captured: [], keyringFailed: true, capturedFailed: true },
+               action: 'other' } },
     { name: 'checking', desc: 'The Checking... state before either fetch answers (no form, no focus)',
       build: { host: 'HB-FIN-02', pcName: 'Lena Fox PC (HB-FIN-02)', picker: false, linkName: 'Drop box: Comms room',
                remote: { footholdId: 'jack', linkName: 'Drop box: Comms room' }, checking: true, action: 'none' } },
@@ -236,6 +265,24 @@ async function measure(page, fx) {
                 // Tag text should fit its pill unless the ellipsis is meant to cut it (noted, not a failure)
                 const cut = [...(tile?.querySelectorAll('.signin-tag') || [])].filter(t => shown(t) && t.scrollWidth > t.clientWidth + 1).map(t => t.textContent);
                 if (cut.length) out.notes.push(`info: tag cut by ellipsis ${JSON.stringify(cut)}`);
+            }
+            if (fx.build.expectWays) {
+                // The ways box: every button inside the visible area or inside the box's own scroller,
+                // the fixed words "Connect with" whole, the first button in view, Password present
+                const box = document.querySelector('.pc-monitor #signin-ways');
+                const first = box?.querySelector('.signin-cred');
+                const ar = area.getBoundingClientRect();
+                out.ways = { shown: !!box && !box.hidden, scrolls: !!box?.classList.contains('signin-ways-scroll'), buttons: box ? box.querySelectorAll('.signin-cred').length : 0 };
+                if (!box || box.hidden) { out.ok = false; out.notes.push('the ways box is not shown'); }
+                else {
+                    const fr = first?.getBoundingClientRect();
+                    if (!fr || fr.top < ar.top - 1 || fr.bottom > ar.bottom + 1) { out.ok = false; out.notes.push('the first ways button is outside the visible area'); }
+                    for (const fixed of box.querySelectorAll('.signin-cred-fixed')) {
+                        if (fixed.scrollWidth > fixed.clientWidth + 1) { out.ok = false; out.notes.push('"Connect with" is cut'); break; }
+                    }
+                    if (out.ways.scrolls && document.querySelector('.pc-monitor #signin-ways-more')?.hidden) { out.ok = false; out.notes.push('a scrolling ways box shows no More below cue'); }
+                }
+                if (!document.querySelector('.pc-monitor #password-field')) { out.ok = false; out.notes.push('no Password field under the ways box'); }
             }
             if (fx.build.expectSevenTiles) {
                 const row = document.querySelector('.pc-monitor #signin-tiles');
