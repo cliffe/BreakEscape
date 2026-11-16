@@ -61,3 +61,12 @@ Cause: the settle was re-armed in step with the pause. The behaviour manager upd
 Test: `test/js/npc-patrol-settle.test.mjs`, "continuous contact ... for ever": 0.0 px moved in 10 s with `settling true` on the old code, passes on the new. Two guards: a single contact still pauses for `settleDuration` then resumes; contact after the grace settles as before and a settle in progress is not extended.
 
 Fix: `triggerSettling` returns false for `SETTLE_GRACE_MS` (600 ms) after a settle ends, and the four contact sites in `npc-sprites.js` only zero the velocity when it returns anything but false. The avoidance-waypoint logic in `handleNPCCollision` is untouched.
+
+### Live check of the settle fix, and a second stand-still still open
+
+Suites on 44c4f618e: `bin/test-js` 713 passed, 0 failed; `bin/rails test` 2940 runs, 48173 assertions, 0 failures, 0 errors, 3 skips.
+
+Live on :3095 (keyless, game 6188 from new-game.rb, headless, setFPS(20), fixed steps on, only the player teleported, server stopped): no settle freeze in 70 s with the player parked at (170,170) beside waypoint_with_face. Two things stop this being a clean proof:
+
+- In 3 of 5 runs the page's game clock stopped after about 10 to 14 s (`scene.time.now` constant), so those rows prove nothing. This is the harness loop, not the NPC.
+- In the one run with a live clock, from about 50 s waypoint_fast stood at (175,161) for 20 s: v 0, `pathIndex` 0, `_avoid` null, `_playerBeside` true (player 44 px away), waypoint_with_face 18 px away, and its target and path changed every 5 s or so (re-targets that never moved it). `isSettling` was not recorded in that run, so it is not known whether this is the settle (the fix should prevent it) or the local-avoidance and stall-reset path (`_checkPathStuck` re-armed by `_playerBeside`, `_stuckWatch` reset on each new path). Next step: rerun with `isSettling`, `_settleGraceUntil` and `_stuckWatch` in the row (scratchpad `stall-live2.mjs` has the first two) and a game clock that stays live.
