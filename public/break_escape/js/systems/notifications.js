@@ -176,6 +176,7 @@ export function toastDuration(type, duration) {
 // names, observations, task titles and server text, none of which may become markup.
 // options.html === true: the caller built the title and message as HTML on purpose and has
 // escaped every piece of author text in it. options.plainText is accepted and changes nothing.
+// options.whole: lift the phone's two-line limit for this toast and nothing else.
 // options.verbatim: the message exactly as given, with no " -- " dash display,
 // for text the player must copy character for character (an overheard password).
 export function showNotification(message, type = 'info', title = '', duration = 5000, options = {}) {
@@ -647,6 +648,9 @@ function renderNotification(message, type, title, duration, seen = false, option
     // A short line with no title (a finished task on a phone, objectives-manager.js): its text
     // is never cut, so the task's name can always be read (review R1 M2)
     if (options?.brief === true) notification.classList.add('brief');
+    // options.whole only lifts the phone's two-line limit: a long sentence (a keyring find, a
+    // teaching line) is read whole, with none of brief's push-aside or skipped limit (K3b R1 m2)
+    if (options?.whole === true) notification.classList.add('whole');
     notification._toast = { message, type, title, duration, shownAt: overPanel ? null : Date.now(), seen, html: !plainText, verbatim };
     notification._onLaneYield = laneYieldHandler(notification);
     if (hudLanesActive()) notification._onSupersede = supersedeHandler(notification);
